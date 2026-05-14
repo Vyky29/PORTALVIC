@@ -1,9 +1,11 @@
 ---
-description: Staff profile annual self-update — HTML, WordPress, Supabase project, Edge Functions, bootstrap SQL
+description: PORTALVIC — Staff profile annual self-update (HTML, WordPress/Vercel, Portal Supabase, Edge Functions)
 alwaysApply: true
 ---
 
-# Staff profile self-service (annual) — PORTAL context
+# Staff profile self-service (annual) — PORTALVIC / PORTAL repo context
+
+**Display name:** **PORTALVIC** (this codebase / deployment). GitHub remote may still be `PORTAL` until the repository is renamed in GitHub settings.
 
 ## What it is
 
