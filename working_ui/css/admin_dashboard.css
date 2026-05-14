@@ -2872,11 +2872,10 @@
       padding:max(0px, env(safe-area-inset-top, 0px)) max(0px, env(safe-area-inset-right, 0px)) max(0px, env(safe-area-inset-bottom, 0px)) max(0px, env(safe-area-inset-left, 0px));
       display:flex;
       flex-direction:column;
-      /* Altura = contenido: evita franja blanca enorme bajo Participants cuando el tablero es más bajo que el viewport */
-      flex:0 1 auto;
-      flex-grow:0;
+      flex:1 1 auto;
+      flex-grow:1;
       min-height:0;
-      overflow-y:visible;
+      overflow-y:auto;
       align-self:stretch;
       width:100%
     }
@@ -2885,8 +2884,7 @@
       background:#fff;
       flex:1;
       min-height:0;
-      /* La columna principal no fuerza 100% de altura: el workspace encaja al Day ops sin hueco debajo */
-      align-self:flex-start;
+      align-self:stretch;
       width:100%;
       max-width:100%
     }

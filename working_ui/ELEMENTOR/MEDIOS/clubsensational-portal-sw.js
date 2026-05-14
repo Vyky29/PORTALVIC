@@ -41,7 +41,7 @@ self.addEventListener('push', function (event) {
       if (t) body = t.slice(0, 200);
     } catch (e2) {}
   }
-  var icon = 'ELEMENTOR/MEDIOS/F-02-1.png';
+  var icon = 'ELEMENTOR/MEDIOS/portal_crest.svg';
   event.waitUntil(
     self.registration.showNotification(title, {
       body: body,
