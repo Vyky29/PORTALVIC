@@ -6234,6 +6234,15 @@
             <div id="portalQuickMenuReminderBannerHost"></div>
           </div>
         </div>
+        <div class="menu-group" id="portalAnnualProfileQuickGroup">
+          <div class="menu-group-title">Profile</div>
+          <div class="menu-grid">
+            <button type="button" class="menu-btn menu-btn--work-timesheet" id="quickMenuAnnualProfileCheckin" data-portal-external-url="https://portalvic.vercel.app/staff_profile_update.html" aria-label="Annual profile check-in — confirm your details">
+              <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+              <div class="menu-btn-copy"><strong>Annual profile check-in</strong><span class="menu-btn-sub">Confirm phone and address (OTP). This shortcut hides after you submit.</span></div>
+            </button>
+          </div>
+        </div>
         <div class="menu-group">
           <div class="menu-group-title">Work</div>
           <div class="menu-grid">
@@ -15790,6 +15799,23 @@
       window.addEventListener("portal:supabase-ready", rehydrateFromProfile);
       setTimeout(rehydrateFromProfile, 200);
       setTimeout(rehydrateFromProfile, 1200);
+    })();
+  </script>
+  <script>
+    (function () {
+      try {
+        var force = false;
+        try {
+          force = new URLSearchParams(window.location.search).get('portalAnnualProfile') === '1';
+        } catch (_) {}
+        if (!force && localStorage.getItem('portalvic_annual_profile_checkin_v1') === '1') {
+          var g = document.getElementById('portalAnnualProfileQuickGroup');
+          if (g) {
+            g.hidden = true;
+            g.setAttribute('aria-hidden', 'true');
+          }
+        }
+      } catch (_) {}
     })();
   </script>
 </body>

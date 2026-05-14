@@ -301,7 +301,7 @@ with map(username, full_name, auth_email, app_role, staff_role, dashboard_route,
   ('Carlos',  'Carlos Herrero',       'stf014@staff.import.pending','staff','climbing', '/p1/','+447873439001'),
   ('Alex',    'Alex Stone',           'stf015@staff.import.pending','staff','climbing', '/p1/','+447414724084'),
   ('simon',   'Simon Griffiths',      'stf016@staff.import.pending','staff','swimming', '/p1/','+447775897684'),
-  ('Javi',    'Javi',                 'stf017@staff.import.pending','ceo',  'manager',  '/ce/', null),
+  ('Javi',    'Javi Arranz Escorial', 'stf017@staff.import.pending','ceo',  'manager',  '/ce/', null),
   ('Raul',    'Raul',                 'stf018@staff.import.pending','ceo',  'manager',  '/ce/', null),
   ('Sevitha', 'Sevitha',              'stf019@staff.import.pending','admin','admin',    '/operations-admin/', null),
   ('demo',    'Demo',                 'stf020@staff.import.pending','staff','swimming', '/p1/', null),
@@ -349,7 +349,8 @@ commit;
 -- Javi / Raul / Sevitha / Demo.
 --
 -- Después de esto:
---   1) Crea las 4 Edge Functions en este mismo proyecto:
+--   1) Crea las 5 Edge Functions en este mismo proyecto:
+--      - staff-profile-session-from-portal
 --      - staff-profile-otp-request
 --      - staff-profile-otp-verify
 --      - staff-profile-update-load

@@ -13,7 +13,7 @@
 //   {
 //     ok: true,
 //     staff: {
-//       id, full_name, username, staff_role,
+//       id, full_name, username, app_role, staff_role,
 //       phone_e164, email_personal,
 //       address: { line1, line2, city, postcode },
 //       emergency_contact: { name, relationship, phone },
@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
   const { data: row, error: rowErr } = await supabase
     .from("staff_profiles")
     .select(
-      "id, full_name, username, staff_role, phone_e164, email_personal, " +
+      "id, full_name, username, app_role, staff_role, phone_e164, email_personal, " +
         "address_line1, address_line2, address_city, address_postcode, " +
         "emergency_contact_name, emergency_contact_relationship, emergency_contact_phone, " +
         "availability_summary, availability_status, availability_changes, " +
@@ -108,6 +108,7 @@ Deno.serve(async (req) => {
         id: row.id,
         full_name: row.full_name,
         username: row.username,
+        app_role: row.app_role,
         staff_role: row.staff_role,
         phone_e164: row.phone_e164,
         email_personal: row.email_personal,

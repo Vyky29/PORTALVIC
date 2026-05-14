@@ -2,24 +2,29 @@
 <html lang="en-GB">
 <head>
   <!--
-    clubSENsational Portal — Staff Profile Update (mobile-first, OTP-gated)
-    ---------------------------------------------------------------------
+    clubSENsational Portal — Staff Profile Update (mobile-first)
+    -------------------------------------------------------------
     Self-service flow for staff to confirm/update their personal details.
     Production embed: WordPress page that includes this HTML (Elementor / shortcode).
 
-    Flow:
-      Step 1: Identification    — Full Name + Mobile Number
-      Step 2: OTP verification  — code sent via WhatsApp / SMS
-      Step 3: Profile update    — 7 sections, per-block Edit/Confirm
+    Flow (default when already signed in on the same origin, e.g. portalvic login → this page):
+      Portal session — Supabase Auth access_token → Edge Function staff-profile-session-from-portal
+      → same 30-min profile session token as OTP path → profile update screens.
+
+    Fallback (no portal session, or ?portalUseOtp=1):
+      Step 1: Identification — Full Name + Mobile Number
+      Step 2: OTP — code sent via WhatsApp / SMS
+      Step 3: Profile update — 7 sections, per-block Edit/Confirm
 
     Backend (Supabase Edge Functions):
-      staff-profile-otp-request   — generic success, no enumeration
-      staff-profile-otp-verify    — issues a 30-min session token
-      staff-profile-update-load   — fetch the staff_profile row
-      staff-profile-update-save   — partial update + per-field change log
+      staff-profile-session-from-portal — mint session from logged-in portal user
+      staff-profile-otp-request         — generic success, no enumeration
+      staff-profile-otp-verify          — issues a 30-min session token
+      staff-profile-update-load         — fetch the staff_profile row
+      staff-profile-update-save         — partial update + per-field change log
 
     The page never reads from any other table directly. All access is gated by
-    the session token returned from staff-profile-otp-verify.
+    the session token returned from staff-profile-otp-verify or staff-profile-session-from-portal.
   -->
   <script>
     (function () {
@@ -732,36 +737,80 @@
     .profile-stack {
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 12px;
     }
 
     .profile-section {
+      position: relative;
       background: var(--white);
       border-radius: var(--radius);
       border: 1px solid var(--line);
-      box-shadow: var(--shadowSoft);
+      box-shadow: 0 2px 12px rgba(23, 50, 71, .05);
       overflow: hidden;
       min-width: 0;
     }
 
+    /* Franja izquierda fija en todas las tarjetas (alineada, sin “mitades” raras). */
+    .profile-section::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: rgba(45, 132, 179, .22);
+      pointer-events: none;
+      border-radius: var(--radius) 0 0 var(--radius);
+    }
+
+    .profile-section[aria-expanded="true"]::before {
+      background: linear-gradient(180deg, var(--blue) 0%, var(--blueDeep) 100%);
+    }
+
+    .profile-section.is-confirmed::before {
+      background: linear-gradient(180deg, #1a7f4a 0%, #0e5535 100%);
+    }
+
+    .profile-section.is-editing::before {
+      background: linear-gradient(180deg, var(--sen-gold) 0%, #e0a020 100%);
+    }
+
     .profile-section.is-confirmed {
-      border-color: rgba(21, 115, 71, .35);
-      box-shadow: 0 8px 22px rgba(21, 115, 71, .08);
+      border-color: rgba(21, 115, 71, .28);
+      box-shadow: 0 4px 18px rgba(21, 115, 71, .07);
     }
 
     .profile-section.is-editing {
-      border-color: rgba(45, 132, 179, .45);
-      box-shadow: 0 12px 28px rgba(45, 132, 179, .14);
+      border-color: rgba(45, 132, 179, .4);
+      box-shadow: 0 6px 22px rgba(45, 132, 179, .1);
     }
 
+    /* Cabecera: rejilla fija para que icono y chevron queden alineados en todas las secciones. */
     .ps-head {
-      display: flex;
+      display: grid;
+      grid-template-columns: 44px minmax(0, 1fr) 36px;
       align-items: center;
-      gap: 12px;
-      padding: 14px 16px;
+      gap: 0 12px;
+      padding: 14px 14px 14px 12px;
       cursor: pointer;
       user-select: none;
       min-width: 0;
+      width: 100%;
+      text-align: left;
+      background: #fafcfd;
+      border: none;
+      font: inherit;
+      box-sizing: border-box;
+      transition: background .15s ease;
+    }
+
+    .ps-head:hover {
+      background: #f3f8fc;
+    }
+
+    .profile-section[aria-expanded="true"] .ps-head {
+      background: linear-gradient(180deg, #ffffff 0%, #f4f9fd 100%);
+      box-shadow: inset 0 -1px 0 var(--line);
     }
 
     .ps-head[disabled],
@@ -770,9 +819,9 @@
     }
 
     .ps-icon {
-      flex: 0 0 auto;
-      width: 36px;
-      height: 36px;
+      grid-column: 1;
+      width: 40px;
+      height: 40px;
       border-radius: 12px;
       background: var(--blueSoft);
       color: var(--blueDeep);
@@ -793,25 +842,26 @@
     .ps-icon svg { width: 18px; height: 18px; }
 
     .ps-text {
-      flex: 1 1 auto;
+      grid-column: 2;
       min-width: 0;
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 3px;
+      justify-content: center;
     }
 
     .ps-title {
       margin: 0;
-      font-size: .98rem;
+      font-size: 1rem;
       font-weight: 700;
       color: var(--ink);
-      line-height: 1.25;
+      line-height: 1.28;
       overflow-wrap: break-word;
     }
 
     .ps-status {
       margin: 0;
-      font-size: .76rem;
+      font-size: .78rem;
       color: var(--muted);
       line-height: 1.35;
       overflow-wrap: break-word;
@@ -821,11 +871,12 @@
     .profile-section.is-editing .ps-status { color: var(--warn); font-weight: 600; }
 
     .ps-chev {
-      flex: 0 0 auto;
+      grid-column: 3;
       width: 22px;
       height: 22px;
       color: var(--muted);
       transition: transform .2s ease;
+      flex-shrink: 0;
     }
 
     .profile-section[aria-expanded="true"] .ps-chev {
@@ -834,9 +885,9 @@
 
     .ps-body {
       display: none;
-      padding: 4px 16px 18px;
+      padding: 14px 16px 18px 18px;
       border-top: 1px solid var(--line);
-      background: var(--blueSofter);
+      background: #f7fafc;
       flex-direction: column;
       gap: 14px;
       min-width: 0;
@@ -849,7 +900,7 @@
     .readonly-list {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
       margin: 4px 0 6px;
       padding: 0;
       list-style: none;
@@ -858,13 +909,32 @@
 
     .readonly-row {
       display: grid;
-      grid-template-columns: 38% minmax(0, 1fr);
-      gap: 10px;
-      padding: 8px 10px;
-      border-radius: 10px;
+      grid-template-columns: minmax(0, 34%) minmax(0, 1fr);
+      gap: 10px 12px;
+      padding: 10px 12px;
+      border-radius: 12px;
       background: var(--white);
       border: 1px solid var(--line);
       min-width: 0;
+      align-items: start;
+    }
+
+    @media (max-width: 420px) {
+      .readonly-row {
+        grid-template-columns: 1fr;
+        gap: 4px;
+      }
+      .readonly-row .readonly-label {
+        align-self: start;
+      }
+      .ps-head {
+        grid-template-columns: 40px minmax(0, 1fr) 32px;
+        padding: 12px 12px 12px 10px;
+      }
+      .ps-icon {
+        width: 36px;
+        height: 36px;
+      }
     }
 
     .readonly-label {
@@ -1189,7 +1259,7 @@
       </div>
     </div>
 
-    <div class="step-meter" role="progressbar" aria-label="Profile update progress" aria-valuemin="1" aria-valuemax="3" aria-valuenow="1" id="stepMeter">
+    <div class="step-meter" role="progressbar" aria-label="Profile update progress" aria-valuemin="1" aria-valuemax="3" aria-valuenow="1" id="stepMeter" hidden>
       <span class="step-meter-dot is-active" data-step="1"></span>
       <span class="step-meter-dot" data-step="2"></span>
       <span class="step-meter-dot" data-step="3"></span>
@@ -1200,8 +1270,26 @@
       <span class="session-bar-text" id="sessionBarText">Secure session active.</span>
     </div>
 
+    <!-- Shown first while checking Supabase Auth on the same origin (hides when OTP path is used). -->
+    <section class="screen is-active" id="screenPortalBoot" aria-labelledby="screenPortalBootTitle">
+      <div class="card">
+        <div class="card-head">
+          <span class="card-head-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+          </span>
+          <div class="card-head-text">
+            <h2 class="card-head-title" id="screenPortalBootTitle">Opening your profile</h2>
+            <p class="card-head-sub">Checking your portal sign-in…</p>
+          </div>
+        </div>
+        <p class="card-help" style="min-width:0;overflow-wrap:break-word;">
+          If you already used the portal login on this site, we skip the text code step. Otherwise we will ask for your name and mobile next.
+        </p>
+      </div>
+    </section>
+
     <!-- =========================================================== STEP 1 -->
-    <section class="screen is-active" id="screenIdentify" aria-labelledby="screenIdentifyTitle">
+    <section class="screen" id="screenIdentify" aria-labelledby="screenIdentifyTitle">
       <div class="card">
         <div class="card-head">
           <span class="card-head-icon" aria-hidden="true">
@@ -1725,6 +1813,7 @@
     const state = {
       identity: { full_name: "", phone_number: "" },
       session: { token: "", expiresAt: 0 },
+      usedPortalSession: false,
       otpExpiresAt: 0,
       otpTimerId: null,
       resendTimerId: null,
@@ -1772,20 +1861,27 @@
     }
 
     function activateScreen(id) {
-      ["screenIdentify", "screenOtp", "screenProfile", "screenDone"].forEach((sid) => {
+      ["screenPortalBoot", "screenIdentify", "screenOtp", "screenProfile", "screenDone"].forEach((sid) => {
         const el = $(sid);
         if (!el) return;
         el.classList.toggle("is-active", sid === id);
       });
-      const stepIndex = id === "screenIdentify" ? 1 : id === "screenOtp" ? 2 : 3;
+      const stepIndex =
+        id === "screenIdentify" ? 1 : id === "screenOtp" ? 2 : id === "screenPortalBoot" ? 0 : 3;
       const meter = $("stepMeter");
       if (meter) {
-        meter.setAttribute("aria-valuenow", String(stepIndex));
-        meter.querySelectorAll(".step-meter-dot").forEach((dot) => {
-          const n = Number(dot.dataset.step || "0");
-          dot.classList.toggle("is-active", n === stepIndex);
-          dot.classList.toggle("is-done", n < stepIndex);
-        });
+        const hideMeter =
+          id === "screenPortalBoot" ||
+          (state.usedPortalSession && (id === "screenProfile" || id === "screenDone"));
+        meter.hidden = hideMeter;
+        if (!hideMeter) {
+          meter.setAttribute("aria-valuenow", String(Math.max(1, stepIndex)));
+          meter.querySelectorAll(".step-meter-dot").forEach((dot) => {
+            const n = Number(dot.dataset.step || "0");
+            dot.classList.toggle("is-active", n === stepIndex);
+            dot.classList.toggle("is-done", n < stepIndex);
+          });
+        }
       }
       const sessionBar = $("sessionBar");
       sessionBar.classList.toggle("is-visible", id === "screenProfile");
@@ -2059,7 +2155,8 @@
     const submitUpdatesBtn = $("submitUpdates");
     const confirmedSummary = $("confirmedSummary");
 
-    async function loadProfileAndShow() {
+    async function loadProfileAndShow(opts = {}) {
+      const fromPortal = opts.fromPortal === true;
       try {
         const res = await fetch(FN("staff-profile-update-load"), {
           method: "POST",
@@ -2073,9 +2170,18 @@
         });
         const body = await res.json().catch(() => ({}));
         if (!res.ok || !body?.ok) {
-          show(otpNotice, "error", "Could not open your profile. Please verify again.");
-          activateScreen("screenOtp");
-          return;
+          if (fromPortal) {
+            show(
+              identifyNotice,
+              "error",
+              "Could not open your profile with your portal sign-in. Use name and mobile below, or sign in again from the portal.",
+            );
+            activateScreen("screenIdentify");
+          } else {
+            show(otpNotice, "error", "Could not open your profile. Please verify again.");
+            activateScreen("screenOtp");
+          }
+          return false;
         }
         state.profile = body.staff;
         state.pristine = JSON.parse(JSON.stringify(body.staff));
@@ -2083,11 +2189,79 @@
         activateScreen("screenProfile");
         startSessionBar();
         startIdleTimer();
+        return true;
       } catch (err) {
         console.error("[profile] load failed", err);
-        show(otpNotice, "error", "Could not open your profile. Please verify again.");
-        activateScreen("screenOtp");
+        if (fromPortal) {
+          show(identifyNotice, "error", "Could not open your profile. Use verification below or try again later.");
+          activateScreen("screenIdentify");
+        } else {
+          show(otpNotice, "error", "Could not open your profile. Please verify again.");
+          activateScreen("screenOtp");
+        }
+        return false;
       }
+    }
+
+    async function tryPortalBootstrap() {
+      try {
+        const forceOtp = new URLSearchParams(window.location.search).get("portalUseOtp") === "1";
+        if (forceOtp) return false;
+
+        const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.49.1");
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+          auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true,
+          },
+        });
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (!session?.access_token) return false;
+
+        const res = await fetch(FN("staff-profile-session-from-portal"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: "{}",
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || !body?.ok || !body.session_token) return false;
+
+        state.session.token = String(body.session_token || "");
+        state.session.expiresAt = new Date(body.expires_at || 0).getTime();
+        state.usedPortalSession = true;
+
+        const loaded = await loadProfileAndShow({ fromPortal: true });
+        if (!loaded) {
+          state.usedPortalSession = false;
+          state.session.token = "";
+          state.session.expiresAt = 0;
+        }
+        return loaded;
+      } catch (e) {
+        console.warn("[profile] portal bootstrap", e);
+        return false;
+      }
+    }
+
+    function resolvePortalLoginUrl() {
+      try {
+        const w = typeof window !== "undefined" && window.PORTAL_LOGIN_URL;
+        if (w && String(w).trim()) return String(w).trim();
+      } catch (_) {}
+      try {
+        const h = (typeof location !== "undefined" && location.hostname) || "";
+        if (/vercel\.app$/i.test(h) || h === "localhost" || h === "127.0.0.1") {
+          return new URL("login.html", location.href).href;
+        }
+      } catch (_) {}
+      return "https://www.clubsensational.org/l0/";
     }
 
     function setReadonlyValue(key, value, opts = {}) {
@@ -2121,8 +2295,14 @@
       return parts.length ? parts.join(", ") : "";
     }
 
-    function fmtRoleLabel(role) {
-      if (!role) return "Staff";
+    function fmtRoleLabel(role, profile) {
+      const p = profile && typeof profile === "object" ? profile : {};
+      const app = String(p.app_role || "").trim().toLowerCase();
+      if (app === "ceo") return "CEO";
+      if (app === "admin") return "Admin";
+      const u = String(p.username || "").trim().toLowerCase();
+      if (u === "javier") return "Swimming Instructor 3";
+      if (!role) return app === "lead" ? "Lead" : "Staff";
       const map = {
         swimming: "Swimming staff",
         fitness: "Fitness staff",
@@ -2130,8 +2310,9 @@
         support: "Support staff",
         manager: "Manager",
         admin: "Admin",
+        lead: "Lead",
       };
-      return map[String(role).toLowerCase()] || (role.charAt(0).toUpperCase() + role.slice(1));
+      return map[String(role).toLowerCase()] || (String(role).charAt(0).toUpperCase() + String(role).slice(1));
     }
 
     function fmtOtherWorkStatus(s) {
@@ -2147,11 +2328,11 @@
 
       // Section 1: staff details
       setReadonlyValue("full_name", p.full_name);
-      setReadonlyValue("staff_role", fmtRoleLabel(p.staff_role));
+      setReadonlyValue("staff_role", fmtRoleLabel(p.staff_role, p));
       setReadonlyValue("email_personal", p.email_personal, { empty: "Not provided" });
       setReadonlyValue("phone_e164", p.phone_e164, { empty: "Not provided" });
       setEditValue("full_name", p.full_name);
-      setEditValue("staff_role", fmtRoleLabel(p.staff_role));
+      setEditValue("staff_role", fmtRoleLabel(p.staff_role, p));
       setEditValue("email_personal", p.email_personal);
       setEditValue("phone_e164", p.phone_e164);
 
@@ -2517,7 +2698,13 @@
             show(profileNotice, 'error', `One of the fields is invalid: ${err.split(':')[1] || ''}. Please review and try again.`);
           } else if (err === 'invalid_session' || err === 'expired_session') {
             show(profileNotice, 'error', 'Your secure session has expired. Please verify again.');
-            setTimeout(() => activateScreen('screenIdentify'), 1400);
+            if (state.usedPortalSession) {
+              setTimeout(() => {
+                window.location.replace(resolvePortalLoginUrl());
+              }, 1200);
+            } else {
+              setTimeout(() => activateScreen('screenIdentify'), 1400);
+            }
           } else {
             show(profileNotice, 'error', 'Could not save your updates. Please try again.');
           }
@@ -2531,6 +2718,9 @@
           ? 'You confirmed your details. No changes were made.'
           : `You updated ${changedCount} ${changedCount === 1 ? 'field' : 'fields'}.`;
         stopIdleTimer();
+        try {
+          localStorage.setItem('portalvic_annual_profile_checkin_v1', '1');
+        } catch (_) {}
         activateScreen('screenDone');
       } catch (err) {
         console.error('[profile] save failed', err);
@@ -2614,6 +2804,11 @@
       state.session.token = '';
       state.profile = null;
       state.pristine = null;
+      if (state.usedPortalSession) {
+        state.usedPortalSession = false;
+        window.location.replace(resolvePortalLoginUrl());
+        return;
+      }
       show(otpNotice, 'warn', message);
       activateScreen('screenIdentify');
       show(identifyNotice, 'warn', message);
@@ -2629,6 +2824,23 @@
       state.pristine = null;
       identifyForm.reset();
       hide(identifyNotice);
+      if (state.usedPortalSession) {
+        let dest = "";
+        try {
+          dest = (new URLSearchParams(window.location.search).get("portalReturn") || "").trim();
+        } catch (_) {}
+        if (dest) {
+          try {
+            const u = new URL(dest, window.location.href);
+            if (u.protocol === "http:" || u.protocol === "https:") {
+              window.location.replace(u.href);
+              return;
+            }
+          } catch (_) {}
+        }
+        window.location.replace(resolvePortalLoginUrl());
+        return;
+      }
       activateScreen('screenIdentify');
     });
 
@@ -2637,22 +2849,23 @@
     // Accepted aliases:
     //   ?staff=… | ?name=… | ?full_name=…   → Full name
     //   ?phone=… | ?mobile=… | ?tel=…       → Mobile number
+    //   ?portalUseOtp=1                     → skip portal session bootstrap (force OTP path)
     // Example: …/profile_update/?staff=Victor&phone=07715444979
     // -----------------------------------------------------------------
-    (function prefillFromQuery() {
+    function prefillFromQuery() {
       try {
         const params = new URLSearchParams(window.location.search);
         const nameParam = (
-          params.get('staff') ||
-          params.get('name') ||
-          params.get('full_name') ||
-          ''
+          params.get("staff") ||
+          params.get("name") ||
+          params.get("full_name") ||
+          ""
         ).trim();
         const phoneParam = (
-          params.get('phone') ||
-          params.get('mobile') ||
-          params.get('tel') ||
-          ''
+          params.get("phone") ||
+          params.get("mobile") ||
+          params.get("tel") ||
+          ""
         ).trim();
         if (nameParam && identifyName) {
           identifyName.value = nameParam.slice(0, 120);
@@ -2663,22 +2876,29 @@
       } catch (e) {
         /* ignore */
       }
-    })();
+    }
 
-    // Initial focus — if name pre-filled, jump to phone; if phone pre-filled too, jump to submit.
-    setTimeout(() => {
-      try {
-        if (identifyName?.value && !identifyPhone?.value) {
-          identifyPhone?.focus();
-        } else if (identifyName?.value && identifyPhone?.value) {
-          identifySubmit?.focus();
-        } else {
+    async function bootstrapEntry() {
+      const ok = await tryPortalBootstrap();
+      if (ok) return;
+      activateScreen("screenIdentify");
+      prefillFromQuery();
+      setTimeout(() => {
+        try {
+          if (identifyName?.value && !identifyPhone?.value) {
+            identifyPhone?.focus();
+          } else if (identifyName?.value && identifyPhone?.value) {
+            identifySubmit?.focus();
+          } else {
+            identifyName?.focus();
+          }
+        } catch (e) {
           identifyName?.focus();
         }
-      } catch (e) {
-        identifyName?.focus();
-      }
-    }, 120);
+      }, 120);
+    }
+
+    void bootstrapEntry();
   </script>
 </body>
 </html>

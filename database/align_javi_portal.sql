@@ -41,7 +41,7 @@ from (values ('stf017@staff.import.pending', 'Javi')) as e(expected_email, label
 -- B) staff_profiles — ejecutar solo si auth_ok = true en A
 -- -----------------------------------------------------------------------------
 insert into public.staff_profiles (id, full_name, username, app_role, staff_role, dashboard_route, is_active)
-select au.id, 'Javi', 'Javi', 'ceo', 'manager', '/ce/', true
+select au.id, 'Javi Arranz Escorial', 'Javi', 'ceo', 'manager', '/ce/', true
 from auth.users au
 where lower(au.email) = lower('stf017@staff.import.pending')
 on conflict (id) do update

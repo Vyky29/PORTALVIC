@@ -9,7 +9,7 @@ alwaysApply: true
 
 ## What it is
 
-- **User-facing page:** `working_ui/staff_profile_update.html` — mobile-first HTML/CSS/JS (no framework). Staff identify with **full name + mobile on file**, then **OTP**, then seven collapsible sections (read-only until Edit/Confirm). Submit writes only deltas and appends **audit rows** (`staff_profile_change_log`).
+- **User-facing page:** `working_ui/staff_profile_update.html` — mobile-first HTML/CSS/JS (no framework). When the browser already has a **Portal Supabase Auth session** (same origin, e.g. after `login.html` on Vercel), the page calls **`staff-profile-session-from-portal`** and skips name/mobile + OTP. Otherwise staff use **full name + mobile on file**, then **OTP**, then seven collapsible sections (read-only until Edit/Confirm). Submit writes only deltas and appends **audit rows** (`staff_profile_change_log`). Query `?portalUseOtp=1` forces the OTP path.
 - **Hosting:** typically uploaded to **WordPress Media Library** and shown via **iframe** (or direct link). Prefer **Elementor Canvas** (or equivalent) on that page so theme header/footer do not wrap the iframe. The HTML includes aggressive CSS/JS to hide common theme chrome when the file is opened **inside** WP (cannot hide parent page chrome from inside the iframe).
 - **Branding:** club logo block mirrors `working_ui/login.html` (orbital SVG + `F-02-1.png`).
 
@@ -22,13 +22,14 @@ When the user says “Portal” or “Onboarding”, use these names. Default al
 
 ## Browser configuration (in the HTML)
 
-- Endpoints: `SUPABASE_URL/functions/v1/{staff-profile-otp-request|staff-profile-otp-verify|staff-profile-update-load|staff-profile-update-save}`.
+- Endpoints: `SUPABASE_URL/functions/v1/{staff-profile-session-from-portal|staff-profile-otp-request|staff-profile-otp-verify|staff-profile-update-load|staff-profile-update-save}`.
 - Auth for those calls: **publishable / anon key** in `Authorization` and `apikey` headers (same as other portal static pages). **No** service role in the browser.
 - Optional overrides before the main script: `window.SUPABASE_URL`, `window.SUPABASE_ANON_KEY` (e.g. Elementor HTML widget above the embed).
-- URL prefill params supported: `staff`, `name`, `full_name`, `phone`, `mobile`, `tel` (for WhatsApp/deep links).
+- URL prefill params supported: `staff`, `name`, `full_name`, `phone`, `mobile`, `tel` (for WhatsApp/deep links). `portalUseOtp=1` forces the OTP path. `portalReturn=` (absolute `https` URL) is used with **Back to start** after a portal session flow when the quick menu added it.
 
 ## Edge Functions (Deno, repo paths)
 
+- `supabase/functions/staff-profile-session-from-portal/index.ts` — verifies caller's **Supabase user JWT** (`Authorization: Bearer`), checks `staff_profiles.id = auth user id`, mints the same short-lived **session token** as OTP verify.
 - `supabase/functions/staff-profile-otp-request/index.ts` — identity match via RPC, rate limits, generic success (anti-enumeration); sends WhatsApp/Twilio if env configured else logs OTP.
 - `supabase/functions/staff-profile-otp-verify/index.ts` — verifies OTP hash, issues short-lived **session token**.
 - `supabase/functions/staff-profile-update-load/index.ts` — session header → profile row.
