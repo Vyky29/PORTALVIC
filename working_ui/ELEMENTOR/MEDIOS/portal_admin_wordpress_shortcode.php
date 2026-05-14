@@ -39,7 +39,7 @@
  * Si tras A2–A4 sigues viendo [cs_portal_admin] como texto: el snippet no está activo en este sitio,
  * hay otro snippet duplicado con error, o la plantilla de esa página no es la que editas en Elementor.
  *
- * Página canónica del admin: https://www.clubsensational.org/operations-admin/
+ * Página canónica del admin: admin_dashboard.html
  * (PORTAL_ADMIN_DASHBOARD_URL en login.html / fallback en auth-handler.js).
  *
  * Al cambiar versión Medios, edita $v abajo (mismo valor que PORTAL_ADMIN_MEDIOS_V en
@@ -49,7 +49,10 @@ defined('ABSPATH') || die();
 
 add_shortcode('cs_portal_admin', static function (): string {
     $v = '20260507-portal-admin-colors';
-    $base = 'https://www.clubsensational.org/wp-content/uploads/2026/05/admin_embed.html';
+    /* Same WordPress site as this shortcode (no hardcoded www). For Vercel-only admin, point iframe elsewhere via filter. */
+    $base = function_exists('content_url')
+      ? content_url('uploads/2026/05/admin_embed.html')
+      : 'ELEMENTOR/MEDIOS/admin_embed.html';
     $src = esc_url($base . '?v=' . rawurlencode($v));
 
     /* Iframe a pantalla completa: escapa del contenedor «boxed» de Elementor (evita márgenes blancos y doble scroll). */

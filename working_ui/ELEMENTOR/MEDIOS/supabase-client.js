@@ -347,10 +347,18 @@ export function portalMergeReviewKeysIntoMemoryMap(memory, packs) {
  * @returns {() => void}
  */
 export function bindPortalRemoteLogoutOnStaleAuthGeneration(supabase, userId, opts = {}) {
+  let defaultLogin = "login.html";
+  try {
+    if (typeof window !== "undefined" && window.location && window.location.href) {
+      defaultLogin = new URL("login.html", window.location.href).href;
+    }
+  } catch {
+    /* ignore */
+  }
   const loginUrl = String(
     opts.loginUrl ||
       (typeof window !== "undefined" && window.PORTAL_LOGIN_REDIRECT_URL) ||
-      "https://www.clubsensational.org/l0/"
+      defaultLogin
   ).trim();
   let stopped = false;
   /** @type {ReturnType<typeof setInterval> | null} */

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en-GB">
 <head>
-  <!-- CEO portal · www.clubsensational.org/ce/ · auth-handler uploads/2026/05/ -->
+  <!-- CEO portal · `ceo_dashboard.html` + Medios (`ELEMENTOR/MEDIOS/`). -->
   <script>
     (function () {
       try {
@@ -845,11 +845,11 @@
   <script>
     (function () {
       try {
-        window.PORTAL_CEO_DASHBOARD_URL = "https://www.clubsensational.org/ce/";
-        window.PORTAL_ADMIN_DASHBOARD_URL = "https://www.clubsensational.org/operations-admin/";
-        window.PORTAL_STAFF_DASHBOARD_URL = "https://www.clubsensational.org/p1/";
-        window.PORTAL_LEAD_DASHBOARD_URL = "https://www.clubsensational.org/l1/";
-        window.PORTAL_COMPANY_INSIGHTS_URL = "https://www.clubsensational.org/Insights_portal/";
+        window.PORTAL_CEO_DASHBOARD_URL = "ceo_dashboard.html";
+        window.PORTAL_ADMIN_DASHBOARD_URL = "admin_dashboard.html";
+        window.PORTAL_STAFF_DASHBOARD_URL = "staff_dashboard.html";
+        window.PORTAL_LEAD_DASHBOARD_URL = "lead_dashboard.html";
+        window.PORTAL_COMPANY_INSIGHTS_URL = "company_insights.html";
       } catch (e) {}
     })();
   </script>
@@ -859,7 +859,7 @@
       <div class="ceo-sidebar-brand">
         <div class="ceo-sidebar-brand-mark">
           <img
-            src="https://www.clubsensational.org/wp-content/uploads/2026/03/F-02-1.png"
+            src="ELEMENTOR/MEDIOS/F-02-1.png"
             alt="clubSENsational"
             decoding="async"
             referrerpolicy="no-referrer-when-downgrade"
@@ -872,8 +872,8 @@
       <div class="ceo-sidebar-body">
         <p class="ceo-nav-kicker">Workspace</p>
         <div class="ceo-dash-switch" role="group" aria-label="Open another dashboard">
-          <a class="ceo-dash-switch__opt" id="portalCeoNavAdmin" href="https://www.clubsensational.org/operations-admin/">Admin</a>
-          <a class="ceo-dash-switch__opt" id="portalCeoNavStaff" href="https://www.clubsensational.org/p1/">Staff</a>
+          <a class="ceo-dash-switch__opt" id="portalCeoNavAdmin" href="admin_dashboard.html">Admin</a>
+          <a class="ceo-dash-switch__opt" id="portalCeoNavStaff" href="staff_dashboard.html">Staff</a>
         </div>
         <div class="ceo-nav-aux">
           <a href="#ceo-insights">Jump to company insights</a>
@@ -921,7 +921,7 @@
             <iframe id="ceoInsightsFrame" title="Company insights" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
           </div>
           <p class="ceo-panel__hint" style="margin-top: 12px">
-            <a id="portalCeoNavInsights" href="https://www.clubsensational.org/Insights_portal/">Open company insights in a full tab</a>
+            <a id="portalCeoNavInsights" href="company_insights.html">Open company insights in a full tab</a>
           </p>
         </section>
       </main>
@@ -1007,10 +1007,10 @@
       var path = (typeof location !== "undefined" && location.pathname) ? String(location.pathname).toLowerCase() : "";
       var isWorkingUi = path.indexOf("/working_ui/") !== -1;
       var adminUrl = String((typeof window !== "undefined" && window.PORTAL_ADMIN_DASHBOARD_URL) || "").trim();
-      if (!adminUrl) adminUrl = "https://www.clubsensational.org/operations-admin/";
+      if (!adminUrl) adminUrl = "admin_dashboard.html";
       if (adminUrl.charAt(adminUrl.length - 1) !== "/") adminUrl += "/";
       var insightsUrl = String((typeof window !== "undefined" && window.PORTAL_COMPANY_INSIGHTS_URL) || "").trim();
-      if (!insightsUrl) insightsUrl = "https://www.clubsensational.org/Insights_portal/";
+      if (!insightsUrl) insightsUrl = "company_insights.html";
       var staff = document.getElementById("portalCeoNavStaff");
       var adm = document.getElementById("portalCeoNavAdmin");
       var ins = document.getElementById("portalCeoNavInsights");
@@ -1217,10 +1217,10 @@
 
       var path = (typeof location !== "undefined" && location.pathname) ? String(location.pathname).toLowerCase() : "";
       var isWorkingUi = path.indexOf("/working_ui/") !== -1;
-      var portalCeoLogoutUrl = isWorkingUi ? "login.html" : "https://www.clubsensational.org/l0/";
+      var portalCeoLogoutUrl = isWorkingUi ? "login.html" : "login.html";
 
       var portalJsVer = "20260513-ceo-dm-author-chips";
-      var portalJsBase = "https://www.clubsensational.org/wp-content/uploads/2026/05/";
+      var portalJsBase = "ELEMENTOR/MEDIOS/";
       var ceoDmImportBase = isWorkingUi ? "./ELEMENTOR/MEDIOS/" : portalJsBase;
       var s = document.createElement("script");
       s.type = "module";

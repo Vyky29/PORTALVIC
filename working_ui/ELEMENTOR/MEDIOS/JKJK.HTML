@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en-GB" data-portal-session-feedback-v="20260507-portalfix" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
 <head>
-  <!-- Admin portal · producción www.clubsensational.org/a1/ · login /l0 · staff /p1 · lead /l1 · CEO /ce/ · Medios ?v=20260429-portal -->
-  <!-- Portal app shell: hide WordPress theme header/footer when this markup is embedded on clubsensational.org. If a theme map/widget still paints on top, lower its z-index in Elementor/CSS — .admin-shell is z-index:1000. -->
+  <!-- Admin embed snapshot · repo `working_ui/ELEMENTOR/MEDIOS/JKJK.HTML` (no producción canónica). -->
+  <!-- Optional: hide parent site chrome when embedded (WordPress or any wrapper). If a theme map/widget paints on top, lower its z-index — .admin-shell is z-index:1000. -->
   <script>
     (function () {
       try {
@@ -3254,7 +3254,7 @@
         <div class="admin-sidebar-logo" aria-label="clubSENsational logo">
           <div class="admin-brand-wrap">
             <div class="admin-brand-mark">
-              <img src="https://www.clubsensational.org/wp-content/uploads/2026/03/F-02-1.png" alt="clubSENsational - Autism Consultancy Services" decoding="async" referrerpolicy="no-referrer-when-downgrade" onerror="this.onerror=null;this.src='F-02-1.png';" />
+              <img src="ELEMENTOR/MEDIOS/F-02-1.png" alt="clubSENsational - Autism Consultancy Services" decoding="async" referrerpolicy="no-referrer-when-downgrade" onerror="this.onerror=null;this.src='F-02-1.png';" />
             </div>
             <div class="admin-brand-orbit" aria-hidden="true">
               <svg class="admin-brand-orbit-svg" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
@@ -3375,17 +3375,17 @@
   </aside>
   <div id="opwfToast" class="opwf-toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
-  <script src="https://www.clubsensational.org/wp-content/uploads/2026/05/term_from_timetable.js?v=20260429-portal"></script>
-  <!-- Roster: must use absolute uploads URL on WordPress (relative ../database/ breaks on server → empty STAFF_DASHBOARD_SOURCE → diagnostic ribbon). Subir bundle actualizado a uploads/2026/05/. -->
-  <script src="https://www.clubsensational.org/wp-content/uploads/2026/05/staff_dashboard_spreadsheet_bundle.js?v=20260430-portal"></script>
-  <script src="https://www.clubsensational.org/wp-content/uploads/2026/05/clients_info_embed.js?v=20260429-portal"></script>
-  <script src="https://www.clubsensational.org/wp-content/uploads/2026/05/staff_dashboard_spreadsheet_adapter.js?v=20260430-portal"></script>
-  <!-- Session feedback: SOLO uploads www — no &lt;script src="session_feedback…"&gt; relativo en /a1/ (WordPress suele devolver HTML 404 y rompe el parseo). Bump data-portal-session-feedback-v tras export. -->
-  <script src="https://www.clubsensational.org/wp-content/uploads/2026/05/session_feedback_portal_data.js?v=20260507-portalfix"></script>
+  <script src="ELEMENTOR/MEDIOS/term_from_timetable.js?v=20260429-portal"></script>
+  <!-- Roster: `staff_dashboard_spreadsheet_bundle.js` next to this page under ELEMENTOR/MEDIOS/ (Vercel/repo). Sync export → deploy. -->
+  <script src="ELEMENTOR/MEDIOS/staff_dashboard_spreadsheet_bundle.js?v=20260430-portal"></script>
+  <script src="ELEMENTOR/MEDIOS/clients_info_embed.js?v=20260429-portal"></script>
+  <script src="ELEMENTOR/MEDIOS/staff_dashboard_spreadsheet_adapter.js?v=20260430-portal"></script>
+  <!-- Session feedback export: `session_feedback_portal_data.js` in ELEMENTOR/MEDIOS/. Bump data-portal-session-feedback-v after export. -->
+  <script src="ELEMENTOR/MEDIOS/session_feedback_portal_data.js?v=20260507-portalfix"></script>
   <script>
   (function portalSessionFeedbackBootstrap(){
     var v = (document.documentElement.getAttribute('data-portal-session-feedback-v') || document.documentElement.getAttribute('data-portal-uploads-js-v') || '20260507-portalfix').trim();
-    var cdnWww = 'https://www.clubsensational.org/wp-content/uploads/2026/05/session_feedback_portal_data.js?v=' + encodeURIComponent(v);
+    var cdnWww = 'ELEMENTOR/MEDIOS/session_feedback_portal_data.js?v=' + encodeURIComponent(v);
     function portalSfRowCount(){
       var s = typeof window !== 'undefined' ? window.SESSION_FEEDBACK_PORTAL_SOURCE : null;
       return s && Array.isArray(s.rows) ? s.rows.length : 0;
@@ -3411,14 +3411,14 @@
   })();
   </script>
   <!-- Clients Payments: CDN default; same-folder <code>working_ui/clients_payments_portal_data.js</code> overwrites when present (export from <code>Clients Payments (PORTAL).xlsx</code>). -->
-  <script src="https://www.clubsensational.org/wp-content/uploads/2026/05/clients_payments_portal_data.js?v=20260507-portalfix"></script>
+  <script src="ELEMENTOR/MEDIOS/clients_payments_portal_data.js?v=20260507-portalfix"></script>
   <script src="clients_payments_portal_data.js"></script>
-  <!-- Absentees & Credits: mismo patrón que session_feedback / participants — solo uploads www en /a1/. Bump data-portal-absentees-credits-v tras export. -->
-  <script src="https://www.clubsensational.org/wp-content/uploads/2026/05/absentees_credits_portal_data.js?v=20260530-abs"></script>
+  <!-- Absentees & Credits: same pattern — JS in ELEMENTOR/MEDIOS/. Bump data-portal-absentees-credits-v after export. -->
+  <script src="ELEMENTOR/MEDIOS/absentees_credits_portal_data.js?v=20260530-abs"></script>
   <script>
   (function portalAbsenteesCreditsBootstrap(){
     var v = (document.documentElement.getAttribute('data-portal-absentees-credits-v') || document.documentElement.getAttribute('data-portal-uploads-js-v') || '20260530-abs').trim();
-    var cdn = 'https://www.clubsensational.org/wp-content/uploads/2026/05/absentees_credits_portal_data.js?v=' + encodeURIComponent(v);
+    var cdn = 'ELEMENTOR/MEDIOS/absentees_credits_portal_data.js?v=' + encodeURIComponent(v);
     function portalAbsCreditsRowCount(){
       var s = typeof window !== 'undefined' ? window.ABSENTEES_CREDITS_PORTAL_SOURCE : null;
       return s && Array.isArray(s.rows) ? s.rows.length : 0;
@@ -3444,12 +3444,12 @@
   })();
   </script>
   <!-- Participants / parents: CDN default; <code>working_ui/participants_parents_portal_data.js</code> overwrites when present (export from <code>Participants_Parents info (PORTAL).xlsx</code>). -->
-  <script src="https://www.clubsensational.org/wp-content/uploads/2026/05/participants_parents_portal_data.js?v=20260430-pp"></script>
+  <script src="ELEMENTOR/MEDIOS/participants_parents_portal_data.js?v=20260430-pp"></script>
   <script src="participants_parents_portal_data.js"></script>
   <script>
   (function portalParticipantsParentsBootstrap(){
     var v = (document.documentElement.getAttribute('data-portal-participants-parents-v') || document.documentElement.getAttribute('data-portal-uploads-js-v') || '20260430-pp').trim();
-    var cdn = 'https://www.clubsensational.org/wp-content/uploads/2026/05/participants_parents_portal_data.js?v=' + encodeURIComponent(v);
+    var cdn = 'ELEMENTOR/MEDIOS/participants_parents_portal_data.js?v=' + encodeURIComponent(v);
     function portalPpRowCount(){
       var s = typeof window !== 'undefined' ? window.PARTICIPANTS_PARENTS_PORTAL_SOURCE : null;
       return s && Array.isArray(s.rows) ? s.rows.length : 0;
@@ -3474,11 +3474,11 @@
     }catch(_e){}
   })();
   </script>
-  <script src="https://www.clubsensational.org/wp-content/uploads/2026/05/old_participants_portal_data.js?v=20260430-oldpax-export"></script>
+  <script src="ELEMENTOR/MEDIOS/old_participants_portal_data.js?v=20260430-oldpax-export"></script>
   <script>
   (function portalOldParticipantsBootstrap(){
     var v = (document.documentElement.getAttribute('data-portal-old-participants-v') || document.documentElement.getAttribute('data-portal-uploads-js-v') || '20260430-oldpax-export').trim();
-    var cdn = 'https://www.clubsensational.org/wp-content/uploads/2026/05/old_participants_portal_data.js?v=' + encodeURIComponent(v);
+    var cdn = 'ELEMENTOR/MEDIOS/old_participants_portal_data.js?v=' + encodeURIComponent(v);
     function portalOldOk(){
       var s = typeof window !== 'undefined' ? window.OLD_PARTICIPANTS_PORTAL_SOURCE : null;
       return s && Array.isArray(s.rows);
@@ -3506,7 +3506,7 @@
   <script>
   (function portalClientsPaymentsBootstrap(){
     var v = (document.documentElement.getAttribute('data-portal-clients-payments-v') || document.documentElement.getAttribute('data-portal-uploads-js-v') || '20260507-portalfix').trim();
-    var cdn = 'https://www.clubsensational.org/wp-content/uploads/2026/05/clients_payments_portal_data.js?v=' + encodeURIComponent(v);
+    var cdn = 'ELEMENTOR/MEDIOS/clients_payments_portal_data.js?v=' + encodeURIComponent(v);
     function portalPayRowCount(){
       var s = typeof window !== 'undefined' ? window.CLIENTS_PAYMENTS_PORTAL_SOURCE : null;
       return s && Array.isArray(s.rows) ? s.rows.length : 0;
@@ -3532,11 +3532,11 @@
   })();
   </script>
   <!-- Waiting list: Watiting List (Portal).xlsx → waiting_list_portal_data.js. Add desiredService + slotTime columns in the sheet; bump data-portal-waiting-list-v after export. -->
-  <script src="https://www.clubsensational.org/wp-content/uploads/2026/05/waiting_list_portal_data.js?v=20260430-waitlist"></script>
+  <script src="ELEMENTOR/MEDIOS/waiting_list_portal_data.js?v=20260430-waitlist"></script>
   <script>
   (function portalWaitingListBootstrap(){
     var v = (document.documentElement.getAttribute('data-portal-waiting-list-v') || document.documentElement.getAttribute('data-portal-uploads-js-v') || '20260430-waitlist').trim();
-    var cdn = 'https://www.clubsensational.org/wp-content/uploads/2026/05/waiting_list_portal_data.js?v=' + encodeURIComponent(v);
+    var cdn = 'ELEMENTOR/MEDIOS/waiting_list_portal_data.js?v=' + encodeURIComponent(v);
     function portalWlRowCount(){
       var s = typeof window !== 'undefined' ? window.WAITING_LIST_PORTAL_SOURCE : null;
       return s && Array.isArray(s.rows) ? s.rows.length : 0;
@@ -3574,11 +3574,11 @@
       var pp = n(window.PARTICIPANTS_PARENTS_PORTAL_SOURCE);
       var ac = n(window.ABSENTEES_CREDITS_PORTAL_SOURCE);
       var parts = [];
-      if(sf < 1) parts.push('Session feedback: <strong>0</strong> rows — sube <code>session_feedback_portal_data.js</code> a <code>wp-content/uploads/2026/05/</code> (debe devolver JS, no una página HTML).');
+      if(sf < 1) parts.push('Session feedback: <strong>0</strong> rows — sube <code>session_feedback_portal_data.js</code> a <code>ELEMENTOR/MEDIOS/</code> (debe devolver JS, no una página HTML).');
       if(pay < 1) parts.push('Payments: <strong>0</strong> rows — sube <code>clients_payments_portal_data.js</code> al mismo sitio.');
       if(roster < 1) parts.push('Roster: vacío — sube <code>staff_dashboard_spreadsheet_bundle.js</code> + adapter + <code>clients_info_embed.js</code>.');
-      if(ac < 1 && sf > 0 && pay > 0 && roster > 0) parts.push('Absentees &amp; credits: <strong>0</strong> rows — sube <code>absentees_credits_portal_data.js</code> (export <code>database/export_absentees_credits_portal_js.py</code>) a <code>wp-content/uploads/2026/05/</code> si esa cola debe salir del libro.');
-      if(pp < 1) parts.push('Participants: <strong>0</strong> filas en <code>participants_parents_portal_data.js</code> — la pestaña <strong>Participants</strong> usará la lista demo hasta que el JS cargue desde <code>wp-content/uploads/2026/05/</code> (export <code>database/export_participants_parents_portal_js.py</code>).');
+      if(ac < 1 && sf > 0 && pay > 0 && roster > 0) parts.push('Absentees &amp; credits: <strong>0</strong> rows — sube <code>absentees_credits_portal_data.js</code> (export <code>database/export_absentees_credits_portal_js.py</code>) a <code>ELEMENTOR/MEDIOS/</code> si esa cola debe salir del libro.');
+      if(pp < 1) parts.push('Participants: <strong>0</strong> filas en <code>participants_parents_portal_data.js</code> — la pestaña <strong>Participants</strong> usará la lista demo hasta que el JS cargue desde <code>ELEMENTOR/MEDIOS/</code> (export <code>database/export_participants_parents_portal_js.py</code>).');
       if(wl < 1 && sf > 0 && pay > 0 && roster > 0) parts.push('Waiting list: <strong>0</strong> rows — opcional: sube <code>waiting_list_portal_data.js</code> (export <code>database/export_waiting_list_portal_js.py</code> · hoja <code>Watiting List (Portal).xlsx</code>; columnas <code>desiredService</code> y <code>slotTime</code> para servicio y franja).');
       if(!parts.length) return;
       var er = [];
@@ -3595,7 +3595,7 @@
       var vpp = (root.getAttribute('data-portal-participants-parents-v') || '20260430-pp').trim();
       var vold = (root.getAttribute('data-portal-old-participants-v') || '20260430-oldpax-export').trim();
       var vabs = (root.getAttribute('data-portal-absentees-credits-v') || '20260530-abs').trim();
-      var U = 'https://www.clubsensational.org/wp-content/uploads/2026/05/';
+      var U = 'ELEMENTOR/MEDIOS/';
       var probe = [
         ['session_feedback_portal_data.js', 'Session feedback', vsf],
         ['clients_payments_portal_data.js', 'Clients payments', vpay],
@@ -3633,7 +3633,7 @@
         parts.map(function(p){ return '<div style="margin:6px 0;max-width:56rem;overflow-wrap:break-word">' + p + '</div>'; }).join('') +
         (er.length ? '<div style="margin-top:10px;color:#fecaca;max-width:56rem;overflow-wrap:break-word">' + er.join('<br>') + '</div>' : '') +
         probeHtml +
-        '<div style="margin-top:10px;opacity:.88;max-width:56rem;overflow-wrap:break-word"><strong>Medios</strong> a veces renombra el archivo (<code>…-scaled</code>, <code>…-1.js</code>): el nombre en el servidor debe ser <strong>exactamente</strong> el de arriba, o cambia la URL en <code>admin_dashboard.html</code>. FTP/SFTP a <code>wp-content/uploads/2026/05/</code> es más fiable que arrastrar a Medios. Tras subir: vaciar caché del plugin + Ctrl+F5.</div>' +
+        '<div style="margin-top:10px;opacity:.88;max-width:56rem;overflow-wrap:break-word">Asegura que el JS esté en <code>ELEMENTOR/MEDIOS/</code> en el deploy (Vercel/repo). Algunos hosts renombran archivos (<code>…-scaled</code>, <code>…-1.js</code>): el nombre debe coincidir con el que referencia <code>admin_dashboard.html</code>. Si más tarde usas WordPress Medios, sube una copia con el mismo nombre y vacía caché si aplica.</div>' +
         '<div style="margin-top:8px;opacity:.88;max-width:56rem;overflow-wrap:break-word">Si Elementor elimina <code>&lt;script&gt;</code> del HTML, carga estos JS con «Insert Headers and Footers» o <code>functions.php</code>.</div>';
       document.body.appendChild(div);
     }catch(_e){}
@@ -13270,7 +13270,7 @@ var __OPWF_HTML = {"opHome":"<h2 class=\"page-title\">Control centre</h2>\n     
         : '<p class="muted" style="margin:0">No emergency contacts on file.</p>';
       var regPanel =
         '<div class="card card-pad"><h3 style="margin:0 0 10px">Registration</h3>'+
-        '<p class="muted" style="margin:0 0 12px;font-size:12px;max-width:48rem;overflow-wrap:break-word">Core household and billing contact data. Answers from the online <a href="https://www.clubsensational.org/registration" target="_blank" rel="noopener noreferrer">registration form</a> (stored in <strong>Clients Info (PORTAL).xlsx</strong>) — questionnaire fields are parsed on the <strong>Assessment</strong> tab into the same columns as <strong>Clients Info (PORTAL) - structured.xlsx</strong>.</p>'+
+        '<p class="muted" style="margin:0 0 12px;font-size:12px;max-width:48rem;overflow-wrap:break-word">Core household and billing contact data. Answers from the online <a href="https://clubsensational.org/registration" target="_blank" rel="noopener noreferrer">registration form</a> (stored in <strong>Clients Info (PORTAL).xlsx</strong>) — questionnaire fields are parsed on the <strong>Assessment</strong> tab into the same columns as <strong>Clients Info (PORTAL) - structured.xlsx</strong>.</p>'+
         '<div class="c4k-abc"><section>'+adminPaxWsSectionH4('\ud83d\udc76', 'Child')+
         adminPaxWsKvIcoRowPlain('\ud83d\udc64', 'Name', esc(P.name||'—'))+
         adminPaxWsKvIcoRowPlain('\ud83d\udcc5', 'Date of birth', esc(P.dobDisplay||'—'))+
@@ -14794,7 +14794,7 @@ var __OPWF_HTML = {"opHome":"<h2 class=\"page-title\">Control centre</h2>\n     
             '<div class="sched-banner" role="status" style="margin:0 0 12px;max-width:52rem;min-width:0;overflow-wrap:break-word;font-size:13px;line-height:1.45">' +
             '<strong>Workbook not loaded on this URL.</strong> You are seeing <strong>embedded demo</strong> table rows (not your v1 export). ' +
             'On disk the file <code>session_feedback_portal_data.js</code> loads next to the HTML; on the web it must exist under ' +
-            '<code>https://www.clubsensational.org/wp-content/uploads/2026/05/session_feedback_portal_data.js</code> (same folder as <code>clients_payments_portal_data.js</code>). ' +
+            '<code>ELEMENTOR/MEDIOS/session_feedback_portal_data.js</code> (same folder as <code>clients_payments_portal_data.js</code>). ' +
             'Bump <code>data-portal-session-feedback-v</code> / <code>data-portal-clients-payments-v</code> on <code>&lt;html&gt;</code> after exports, then Ctrl+F5.' +
             '</div>'
           )
@@ -15761,7 +15761,7 @@ var __OPWF_HTML = {"opHome":"<h2 class=\"page-title\">Control centre</h2>\n     
       refreshKpisFromDemo();
       var k = MOCK.kpi;
       return '<h1 class="page-title">Settings &amp; demo tools</h1><p class="page-desc">Connections and demo snapshot (board-level metrics use the CEO portal).</p>'+
-        '<div class="grid-2"><div class="card card-pad"><h3 style="margin:0 0 10px;font-size:14px">Connections</h3><p class="muted" style="margin:0 0 8px">Supabase project <strong style="color:var(--ink)">not linked</strong> — demo runs entirely in-browser.</p><p class="muted" style="margin:0">WordPress / parent portal — off.</p></div>'+
+        '<div class="grid-2"><div class="card card-pad"><h3 style="margin:0 0 10px;font-size:14px">Connections</h3><p class="muted" style="margin:0 0 8px">Supabase project <strong style="color:var(--ink)">not linked</strong> — demo runs entirely in-browser.</p><p class="muted" style="margin:0">External WordPress embed — off (local demo).</p></div>'+
         '<div class="card card-pad"><h3 style="margin:0 0 10px;font-size:14px">Operational snapshot (demo)</h3><p class="muted" style="margin:0">Open incidents: <strong style="color:var(--ink)">'+k.incidentsOpen+'</strong></p><p class="muted" style="margin:8px 0 0">Absents / credits pending: <strong style="color:var(--ink)">'+k.cancellationsOpen+'</strong></p><p class="muted" style="margin:8px 0 0">Reports in flight: <strong style="color:var(--ink)">'+k.reportsPending+'</strong> · Onboarding tasks: <strong style="color:var(--ink)">'+k.onboardingPending+'</strong></p><p class="muted" style="margin:8px 0 0">Billable sessions in model: <strong style="color:var(--ink)">'+MOCK.sessionEconomics.billableSessionCount+'</strong></p></div></div>'+
         '<div class="card" style="margin-top:14px"><div class="card-pad"><div class="toolbar"><button type="button" class="btn btn--sec" data-open-report>Report generator</button> <button type="button" class="btn btn--ghost" data-portal-logout>Log out</button></div></div></div>';
     }
@@ -17686,19 +17686,12 @@ var __OPWF_HTML = {"opHome":"<h2 class=\"page-title\">Control centre</h2>\n     
           if (typeof window.PORTAL_LOGIN_REDIRECT_URL === "string" && window.PORTAL_LOGIN_REDIRECT_URL.trim()) {
             return window.PORTAL_LOGIN_REDIRECT_URL.trim();
           }
-          var host = String(location.hostname || "").toLowerCase();
-          if (host === "www.clubsensational.org" || host === "clubsensational.org") {
-            return "https://www.clubsensational.org/l0/";
-          }
-          var path = String(location.pathname || "");
-          if (path.toLowerCase().indexOf("/working_ui/") !== -1) {
-            return new URL("login.html", location.href).href;
-          }
+          return new URL("login.html", location.href).href;
         } catch (_) {}
-        return "https://www.clubsensational.org/l0/";
+        return "login.html";
       };
       window.portalLogoutRedirectToLogin = async function (portalLogoutFn) {
-        var dest = typeof window.portalResolveLoginHref === "function" ? window.portalResolveLoginHref() : "https://www.clubsensational.org/l0/";
+        var dest = typeof window.portalResolveLoginHref === "function" ? window.portalResolveLoginHref() : "login.html";
         try {
           if (typeof portalLogoutFn === "function") {
             await Promise.race([
@@ -17730,7 +17723,7 @@ var __OPWF_HTML = {"opHome":"<h2 class=\"page-title\">Control centre</h2>\n     
       var s = document.createElement("script");
       s.type = "module";
       s.textContent = `
-        import { portalLogout, bootstrapDashboardSupabase } from "https://www.clubsensational.org/wp-content/uploads/2026/05/auth-handler.js?v=20260430-portalauth4";
+        import { portalLogout, bootstrapDashboardSupabase } from "ELEMENTOR/MEDIOS/auth-handler.js?v=20260430-portalauth4";
         try { await bootstrapDashboardSupabase({ page: "admin" }); } catch {}
         const profile = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
         if (profile) {
@@ -17758,7 +17751,7 @@ var __OPWF_HTML = {"opHome":"<h2 class=\"page-title\">Control centre</h2>\n     
             await window.portalLogoutRedirectToLogin(portalLogout);
           } else {
             try { await portalLogout(); } catch {}
-            window.location.replace("https://www.clubsensational.org/l0/");
+            window.location.replace("login.html");
           }
         });
       `;

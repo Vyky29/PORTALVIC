@@ -4,7 +4,7 @@
       const progressStatus = document.getElementById('progressStatus');
       const progressSteps = document.querySelectorAll('.pstep');
       const summaryOutput = document.getElementById('summaryOutput');
-      const LOGO_URL = 'https://www.clubsensational.org/wp-content/uploads/2025/07/F-01.png';
+      const LOGO_URL = 'ELEMENTOR/MEDIOS/F-01.png';
       const termLabels = { autumn: 'Autumn Term', spring: 'Spring Term', summer: 'Summer Term' };
       function isValidDDMMYYYY(str){
         const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(str || '').trim());
@@ -887,7 +887,7 @@
           const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = () => resolve(null); reader.readAsDataURL(blob);
         })).catch(() => null);
       }
-      const PORTAL_AUTH_MODULE = 'https://www.clubsensational.org/wp-content/uploads/2026/05/auth-handler.js?v=20260419-99';
+      const PORTAL_AUTH_MODULE = 'ELEMENTOR/MEDIOS/auth-handler.js?v=20260419-99';
       function snapshotResponsesFromForm(root){
         const out = {};
         root.querySelectorAll('input, select, textarea').forEach(function(el){

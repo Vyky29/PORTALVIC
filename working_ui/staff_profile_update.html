@@ -5,9 +5,9 @@
     clubSENsational Portal — Staff Profile Update (mobile-first)
     -------------------------------------------------------------
     Self-service flow for staff to confirm/update their personal details.
-    Production embed: WordPress page that includes this HTML (Elementor / shortcode).
+    Serve this file from the same origin as the rest of the portal (e.g. Vercel `working_ui/`). Optional later: embed inside WordPress.
 
-    Flow (default when already signed in on the same origin, e.g. portalvic login → this page):
+    Flow (default when already signed in on the same origin, e.g. after login on this host → this page):
       Portal session — Supabase Auth access_token → Edge Function staff-profile-session-from-portal
       → same 30-min profile session token as OTP path → profile update screens.
 
@@ -1247,7 +1247,7 @@
         <div class="brand-logo-shell">
           <img
             class="brand-logo"
-            src="https://www.clubsensational.org/wp-content/uploads/2026/05/F-02-1.png"
+            src="ELEMENTOR/MEDIOS/F-02-1.png"
             width="200"
             height="200"
             alt="clubSENsational - Autism Consultancy Services"
@@ -2261,7 +2261,7 @@
           return new URL("login.html", location.href).href;
         }
       } catch (_) {}
-      return "https://www.clubsensational.org/l0/";
+      return "login.html";
     }
 
     function setReadonlyValue(key, value, opts = {}) {

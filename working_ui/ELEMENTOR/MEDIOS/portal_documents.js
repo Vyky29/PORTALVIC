@@ -7,7 +7,7 @@ function portalAuthModuleUrl() {
       return new URL("./auth-handler.js?v=20260423-3", import.meta.url).href;
     }
   } catch (_) {}
-  return "https://www.clubsensational.org/wp-content/uploads/2026/05/auth-handler.js?v=20260423-3";
+  return "ELEMENTOR/MEDIOS/auth-handler.js?v=20260423-3";
 }
 
 function portalIsLikelyNetworkError(err) {

@@ -27,6 +27,18 @@ import {
   mergeStaffLoginEmailMap,
 } from "./auth-map.js";
 
+/** Same-origin HTML path for Vercel / static hosting (no hardcoded production domain). */
+function portalSameOriginPage(file) {
+  try {
+    if (typeof window !== "undefined" && window.location && window.location.href) {
+      return new URL(String(file || "").replace(/^\//, ""), window.location.href).href;
+    }
+  } catch {
+    /* ignore */
+  }
+  return String(file || "").replace(/^\//, "");
+}
+
 export {
   portalLogout,
   getSupabaseClient,
@@ -64,7 +76,7 @@ function extractStaffLoginEmailMap(body) {
 }
 
 /**
- * 1) window.PORTAL_STAFF_LOGIN_MAP from staff_login_map.js (WordPress-friendly; load before this module).
+ * 1) window.PORTAL_STAFF_LOGIN_MAP from staff_login_map.js (inline in HTML or sibling JSON).
  * 2) Optional fetch staff_login_map.json same folder as this module (local / hosts that allow .json).
  */
 async function tryMergeStaffLoginMapFromSiblingJson() {
@@ -101,21 +113,21 @@ function portalPublishedStaffUrl() {
     const w = String(window.PORTAL_STAFF_DASHBOARD_URL || "").trim();
     if (w) return w;
   }
-  return "https://www.clubsensational.org/p1/";
+  return portalSameOriginPage("staff_dashboard.html");
 }
 function portalPublishedAdminUrl() {
   if (typeof window !== "undefined") {
     const w = String(window.PORTAL_ADMIN_DASHBOARD_URL || "").trim();
     if (w) return w;
   }
-  return "https://www.clubsensational.org/operations-admin/";
+  return portalSameOriginPage("admin_dashboard.html");
 }
 function portalPublishedLeadUrl() {
   if (typeof window !== "undefined") {
     const w = String(window.PORTAL_LEAD_DASHBOARD_URL || "").trim();
     if (w) return w;
   }
-  return "https://www.clubsensational.org/l1/";
+  return portalSameOriginPage("lead_dashboard.html");
 }
 
 /** Same keys as login redirect; keeps staff off the Lead shell if they land on /l1/ by mistake. */
@@ -281,7 +293,7 @@ function bindLogin() {
     }
     const ceoUrl = String(
       (typeof window !== "undefined" && window.PORTAL_CEO_DASHBOARD_URL) ||
-        "https://www.clubsensational.org/ce/"
+        portalSameOriginPage("ceo_dashboard.html")
     ).trim();
     if (effectiveRole === "ceo") return ceoUrl;
     if (portalCanAccessAdminDashboard(profile, authEmail)) return portalPublishedAdminUrl();
@@ -427,7 +439,7 @@ export async function bootstrapDashboardSupabase(_opts) {
   const loginRedirect =
     typeof window !== "undefined" && window.PORTAL_LOGIN_REDIRECT_URL
       ? String(window.PORTAL_LOGIN_REDIRECT_URL).trim()
-      : "https://www.clubsensational.org/l0/";
+      : portalSameOriginPage("login.html");
 
   /** Only Admin + Lead shells enforce login + staff_profiles (Staff/CEO stay permissive like legacy demo: name + shared test password). */
   function portalDashboardRequiresStrictGate(page) {
@@ -530,7 +542,7 @@ export async function bootstrapDashboardSupabase(_opts) {
         const eff = portalInferEffectiveRole(profile, authEmailGate);
         const ceoUrl = String(
           (typeof window !== "undefined" && window.PORTAL_CEO_DASHBOARD_URL) ||
-            "https://www.clubsensational.org/ce/"
+            portalSameOriginPage("ceo_dashboard.html")
         ).trim();
         const dest =
           eff === "ceo"

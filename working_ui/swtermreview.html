@@ -24,12 +24,11 @@
         }
       } catch (e) {}
       try {
-        if (typeof location !== "undefined" && location.origin) {
-          bases.push(String(location.origin).replace(/\/$/, "") + "/wp-content/uploads/2026/05");
+        if (typeof location !== "undefined" && location.href) {
+          bases.push(String(new URL("ELEMENTOR/MEDIOS/", location.href).href).replace(/\/$/, ""));
         }
       } catch (e2) {}
-      bases.push("https://www.clubsensational.org/wp-content/uploads/2026/05");
-      bases.push("https://clubsensational.org/wp-content/uploads/2026/05");
+      bases.push("ELEMENTOR/MEDIOS");
       var seen = {};
       bases = bases.filter(function (b) {
         if (!b || seen[b]) return false;
@@ -1168,7 +1167,7 @@
       <div class="pageHeader-inner">
         <img
           class="pageHeader-logo"
-          src="https://www.clubsensational.org/wp-content/uploads/2026/05/Logo-CS-azul.png"
+          src="ELEMENTOR/MEDIOS/Logo-CS-azul.png"
           width="200"
           height="80"
           alt="clubSENsational — Autism Consultancy Services"
@@ -1634,8 +1633,8 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js?v=20260419-99"></script>
   <script
-    src="https://www.clubsensational.org/wp-content/uploads/2026/05/clients_info_embed.js?v=20260510-portal-admin"
-    onerror="this.onerror=null;this.src='https://clubsensational.org/wp-content/uploads/2026/05/clients_info_embed.js?v=20260510-portal-admin'"
+    src="ELEMENTOR/MEDIOS/clients_info_embed.js?v=20260510-portal-admin"
+    onerror="this.onerror=null;this.src='ELEMENTOR/MEDIOS/clients_info_embed.js?v=20260510-portal-admin'"
   ></script>
   <!-- swtermreview_app.js: absoluto + fallbacks (Elementor no resuelve rutas relativas al HTML local). -->
   <script>
@@ -1649,12 +1648,11 @@
         }
       } catch (e) {}
       try {
-        if (typeof location !== "undefined" && location.origin) {
-          bases.push(String(location.origin).replace(/\/$/, "") + "/wp-content/uploads/2026/05");
+        if (typeof location !== "undefined" && location.href) {
+          bases.push(String(new URL("ELEMENTOR/MEDIOS/", location.href).href).replace(/\/$/, ""));
         }
       } catch (e2) {}
-      bases.push("https://www.clubsensational.org/wp-content/uploads/2026/05");
-      bases.push("https://clubsensational.org/wp-content/uploads/2026/05");
+      bases.push("ELEMENTOR/MEDIOS");
       var seen = {};
       bases = bases.filter(function (b) {
         if (!b || seen[b]) return false;
@@ -1667,7 +1665,7 @@
       s.onerror = function () {
         i += 1;
         if (i >= bases.length) {
-          console.error("[swtermreview] Could not load " + file + " from any base. Upload it to wp-content/uploads/2026/05/ or set window.PORTAL_WP_UPLOADS_BASE.");
+          console.error("[swtermreview] Could not load " + file + " from any base. Ensure it exists under ELEMENTOR/MEDIOS/ on this origin, or set window.PORTAL_WP_UPLOADS_BASE.");
           return;
         }
         s.src = bases[i] + "/" + file + "?v=" + v;

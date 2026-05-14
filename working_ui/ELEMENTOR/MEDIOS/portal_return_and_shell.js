@@ -1,7 +1,5 @@
 /**
- * Embedded portal pages on www.clubsensational.org:
- * - Adds html.portal-app-shell + CSS to hide WordPress header/footer/admin bar.
- * - portalReturn query param: validated redirect back to dashboard after submit/complete.
+ * Embedded portal pages (e.g. WordPress): hide theme chrome and validate `portalReturn` redirects.
  */
 (function (global) {
   "use strict";
@@ -78,7 +76,13 @@
       } catch (eDecode) {
         decoded = String(raw);
       }
-      var u = new URL(decoded, typeof location !== "undefined" ? location.href : "https://www.clubsensational.org/");
+      var baseHref =
+        typeof location !== "undefined" && location.href
+          ? location.href
+          : typeof document !== "undefined" && document.baseURI
+            ? document.baseURI
+            : "http://localhost/";
+      var u = new URL(decoded, baseHref);
       if (u.protocol !== "http:" && u.protocol !== "https:") return "";
       if (!portalReturnHostAllowed(u.hostname)) return "";
       return u.href;

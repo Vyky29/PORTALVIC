@@ -139,12 +139,12 @@
         typeof window !== "undefined" && window.PORTAL_WP_UPLOADS_BASE
           ? String(window.PORTAL_WP_UPLOADS_BASE).trim().replace(/\/$/, "")
           : "";
-      const origin = typeof location !== "undefined" ? String(location.origin || "").trim() : "";
       const bases = [
         custom,
-        origin ? `${origin}/wp-content/uploads/2026/05` : "",
-        "https://www.clubsensational.org/wp-content/uploads/2026/05",
-        "https://clubsensational.org/wp-content/uploads/2026/05"
+        typeof location !== "undefined" && location.href
+          ? String(new URL("ELEMENTOR/MEDIOS/", location.href).href).replace(/\/$/, "")
+          : "",
+        "ELEMENTOR/MEDIOS",
       ].filter(Boolean);
       const uniq = [...new Set(bases)];
       for (const base of uniq) {
@@ -156,7 +156,7 @@
         }
       }
       throw new Error(
-        "Could not load portal_documents.js (404 in Network). Upload portal_documents.js to your uploads folder, or set window.PORTAL_WP_UPLOADS_BASE in Elementor to that folder URL (no trailing slash)."
+        "Could not load portal_documents.js. Add working_ui/ELEMENTOR/MEDIOS/portal_documents.js to the deploy (same origin as this page). Optional later: window.PORTAL_WP_UPLOADS_BASE if you mirror files elsewhere."
       );
     }
     const { portalListMyDocuments, portalCreateDocumentSignedUrl, portalHideMyDocumentFromList } =

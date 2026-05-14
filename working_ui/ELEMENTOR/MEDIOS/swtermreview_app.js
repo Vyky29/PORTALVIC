@@ -596,7 +596,7 @@ const LEVEL_DATA = {
     /* =========================
        1. Details — lectura (fecha / término / nombre) + participante con autocompletado (clients_info)
        ========================= */
-    const PORTAL_CLIENTS_INFO_SCRIPT = "https://www.clubsensational.org/wp-content/uploads/2026/05/clients_info_embed.js?v=20260419-99";
+    const PORTAL_CLIENTS_INFO_SCRIPT = "ELEMENTOR/MEDIOS/clients_info_embed.js?v=20260419-99";
     const PORTAL_AUTH_HANDLER_FILE = "auth-handler.js?v=20260419-99";
     const PORTAL_DOCUMENTS_MODULE_V = "20260423-13";
 
@@ -617,7 +617,7 @@ const LEVEL_DATA = {
           lastErr = e;
         }
       }
-      throw lastErr || new Error("Could not load portal_documents.js. Upload it to wp-content/uploads/2026/05/ or set window.PORTAL_WP_UPLOADS_BASE.");
+      throw lastErr || new Error("Could not load portal_documents.js. Add ELEMENTOR/MEDIOS/portal_documents.js on this origin (Vercel/repo), or set window.PORTAL_WP_UPLOADS_BASE.");
     }
 
     function closeOrReturnSwterm(){
@@ -769,12 +769,11 @@ const LEVEL_DATA = {
         }
       }catch(_){}
       try{
-        if(typeof location !== "undefined" && location.origin){
-          bases.push(String(location.origin).replace(/\/$/, "") + "/wp-content/uploads/2026/05");
+        if(typeof location !== "undefined" && location.href){
+          bases.push(new URL("ELEMENTOR/MEDIOS/", location.href).href.replace(/\/$/, ""));
         }
       }catch(_){}
-      bases.push("https://www.clubsensational.org/wp-content/uploads/2026/05");
-      bases.push("https://clubsensational.org/wp-content/uploads/2026/05");
+      bases.push("ELEMENTOR/MEDIOS");
       const seen = {};
       return bases.filter(b => {
         if(!b || seen[b]) return false;
@@ -1226,11 +1225,11 @@ const LEVEL_DATA = {
       out.innerHTML = renderTermReportHtml(lastTermSummarySections);
     }
 
-    const PDF_HEADER_LOGO_URL = "https://www.clubsensational.org/wp-content/uploads/2026/05/Logo-CS-azul.png";
+    const PDF_HEADER_LOGO_URL = "ELEMENTOR/MEDIOS/Logo-CS-azul.png";
     /** Landscape “Three stages · six levels” graphic for PDF under section 2 (no rotation). */
-    const PDF_PROGRAMME_SW_URL_WWW = "https://www.clubsensational.org/wp-content/uploads/2026/05/SWProgramme.png";
-    const PDF_PROGRAMME_SW_URL_APEX = "https://clubsensational.org/wp-content/uploads/2026/05/SWProgramme.png";
-    const PDF_PROGRAMME_LEGACY_URL = "https://www.clubsensational.org/wp-content/uploads/2026/05/Programme.png";
+    const PDF_PROGRAMME_SW_URL_WWW = "ELEMENTOR/MEDIOS/SWProgramme.png";
+    const PDF_PROGRAMME_SW_URL_APEX = "ELEMENTOR/MEDIOS/SWProgramme.png";
+    const PDF_PROGRAMME_LEGACY_URL = "ELEMENTOR/MEDIOS/Programme.png";
 
     function fetchLogoAsDataUrl(url){
       return fetch(url)
@@ -1294,10 +1293,11 @@ const LEVEL_DATA = {
         if(base) list.push(new URL("logoPDF.png", base).href);
       }catch(_){}
       try{
-        const origin = typeof location !== "undefined" ? String(location.origin || "").trim() : "";
-        if(origin) list.push(origin + "/wp-content/uploads/2026/05/F-02-1.png");
+        if(typeof location !== "undefined" && location.href){
+          list.push(new URL("ELEMENTOR/MEDIOS/F-02-1.png", location.href).href);
+        }
       }catch(_){}
-      list.push("https://www.clubsensational.org/wp-content/uploads/2026/05/F-02-1.png");
+      list.push("ELEMENTOR/MEDIOS/F-02-1.png");
       const seen = new Set();
       for(let i = 0; i < list.length; i++){
         const url = list[i];

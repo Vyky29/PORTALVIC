@@ -25,12 +25,11 @@
         }
       } catch (e) {}
       try {
-        if (typeof location !== "undefined" && location.origin) {
-          bases.push(String(location.origin).replace(/\/$/, "") + "/wp-content/uploads/2026/05");
+        if (typeof location !== "undefined" && location.href) {
+          bases.push(String(new URL("ELEMENTOR/MEDIOS/", location.href).href).replace(/\/$/, ""));
         }
       } catch (e2) {}
-      bases.push("https://www.clubsensational.org/wp-content/uploads/2026/05");
-      bases.push("https://clubsensational.org/wp-content/uploads/2026/05");
+      bases.push("ELEMENTOR/MEDIOS");
       var seen = {};
       bases = bases.filter(function (b) {
         if (!b || seen[b]) return false;
@@ -51,7 +50,7 @@
   </script>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <meta name="portal-production-url" content="https://www.clubsensational.org/certificates_portal/" />
+  <meta name="portal-production-url" content="certificates_portal.html" />
   <title>Certificates — preview</title>
   <style>
     *,*::before,*::after{box-sizing:border-box}

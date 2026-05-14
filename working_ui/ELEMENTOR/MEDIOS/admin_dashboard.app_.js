@@ -28,9 +28,9 @@
       { id:'policies', label:'Documents & compliance' },
       { id:'settings', label:'System settings' },
       { id:'portal_nav_alerts', label:'Alerts inbox', navAction:'alerts', skipBottomNav:true },
-      { id:'portal_nav_staff', label:'Staff dashboard', externalUrl:'https://www.clubsensational.org/p1/', skipBottomNav:true },
-      { id:'portal_nav_ceo', label:'CEO dashboard', externalUrl:'https://www.clubsensational.org/ce/', skipBottomNav:true },
-      { id:'portal_nav_admin', label:'Operations admin', externalUrl:'https://www.clubsensational.org/operations-admin/', skipBottomNav:true },
+      { id:'portal_nav_staff', label:'Staff dashboard', externalUrl:'staff_dashboard.html', skipBottomNav:true },
+      { id:'portal_nav_ceo', label:'CEO dashboard', externalUrl:'ceo_dashboard.html', skipBottomNav:true },
+      { id:'portal_nav_admin', label:'Operations admin', externalUrl:'admin_dashboard.html', skipBottomNav:true },
       { id:'portal_nav_logout', label:'Log out', navAction:'logout', skipBottomNav:true }
     ];
     var NAV_GROUPS = [
@@ -10006,7 +10006,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         : '<p class="muted" style="margin:0">No emergency contacts on file.</p>';
       var regPanel =
         '<div class="card card-pad"><h3 style="margin:0 0 10px">Registration</h3>'+
-        '<p class="muted" style="margin:0 0 12px;font-size:12px;max-width:48rem;overflow-wrap:break-word">Core household and billing contact data. Answers from the online <a href="https://www.clubsensational.org/registration" target="_blank" rel="noopener noreferrer">registration form</a> (stored in <strong>Clients Info (PORTAL).xlsx</strong>) — questionnaire fields are parsed on the <strong>Assessment</strong> tab into the same columns as <strong>Clients Info (PORTAL) - structured.xlsx</strong>.</p>'+
+        '<p class="muted" style="margin:0 0 12px;font-size:12px;max-width:48rem;overflow-wrap:break-word">Core household and billing contact data. Answers from the online <a href="https://clubsensational.org/registration" target="_blank" rel="noopener noreferrer">registration form</a> (stored in <strong>Clients Info (PORTAL).xlsx</strong>) — questionnaire fields are parsed on the <strong>Assessment</strong> tab into the same columns as <strong>Clients Info (PORTAL) - structured.xlsx</strong>.</p>'+
         '<div class="c4k-abc"><section>'+adminPaxWsSectionH4('\ud83d\udc76', 'Child')+
         adminPaxWsKvIcoRowPlain('\ud83d\udc64', 'Name', esc(P.name||'—'))+
         adminPaxWsKvIcoRowPlain('\ud83d\udcc5', 'Date of birth', esc(P.dobDisplay||'—'))+
@@ -11637,7 +11637,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             '<div class="sched-banner" role="status" style="margin:0 0 12px;max-width:52rem;min-width:0;overflow-wrap:break-word;font-size:13px;line-height:1.45">' +
             '<strong>Workbook not loaded on this URL.</strong> You are seeing <strong>embedded demo</strong> table rows (not your v1 export). ' +
             'On disk the file <code>session_feedback_portal_data.js</code> loads next to the HTML; on the web it must exist under ' +
-            '<code>https://www.clubsensational.org/wp-content/uploads/2026/05/session_feedback_portal_data.js</code> (same folder as <code>clients_payments_portal_data.js</code>). ' +
+            '<code>ELEMENTOR/MEDIOS/session_feedback_portal_data.js</code> (same folder as <code>clients_payments_portal_data.js</code>). ' +
             'Bump <code>data-portal-session-feedback-v</code> / <code>data-portal-clients-payments-v</code> on <code>&lt;html&gt;</code> after exports, then Ctrl+F5.' +
             '</div>'
           )
@@ -12634,7 +12634,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       refreshKpisFromDemo();
       var k = MOCK.kpi;
       return '<h1 class="page-title">Settings &amp; demo tools</h1><p class="page-intro">Session, connections, and demo snapshot controls for this admin build.</p>'+
-        '<div class="grid-2"><div class="card card-pad"><h3 style="margin:0 0 10px;font-size:14px">Connections</h3><p class="muted" style="margin:0 0 8px">Published admin entry: WordPress <strong style="color:var(--ink)">/operations-admin/</strong> with <code>[cs_portal_admin]</code> → Medios <code>admin_embed.html</code> + <code>admin_dashboard.app_.js</code>. Login redirect: <code>PORTAL_ADMIN_DASHBOARD_URL</code> in <code>login.html</code> / <code>auth-handler.js</code>.</p><p class="muted" style="margin:0">Supabase: active after sign-in inside the embed; this card does not probe live connection state.</p></div>'+
+        '<div class="grid-2"><div class="card card-pad"><h3 style="margin:0 0 10px;font-size:14px">Connections</h3><p class="muted" style="margin:0 0 8px">Primary admin UI: open <code>admin_dashboard.html</code> (or <code>admin_embed.html</code>) from the same origin as <code>ELEMENTOR/MEDIOS/</code> — e.g. Vercel static deploy. Optional later: WordPress shortcode <code>[cs_portal_admin]</code> can iframe the same embed. Login redirect: <code>PORTAL_ADMIN_DASHBOARD_URL</code> in <code>login.html</code> / <code>auth-handler.js</code>.</p><p class="muted" style="margin:0">Supabase: active after sign-in inside the embed; this card does not probe live connection state.</p></div>'+
         '<div class="card card-pad"><h3 style="margin:0 0 10px;font-size:14px">Operational snapshot (demo)</h3><p class="muted" style="margin:0">Open incidents: <strong style="color:var(--ink)">'+k.incidentsOpen+'</strong></p><p class="muted" style="margin:8px 0 0">Absents / credits pending: <strong style="color:var(--ink)">'+k.cancellationsOpen+'</strong></p><p class="muted" style="margin:8px 0 0">Reports in flight: <strong style="color:var(--ink)">'+k.reportsPending+'</strong> · Onboarding tasks: <strong style="color:var(--ink)">'+k.onboardingPending+'</strong></p><p class="muted" style="margin:8px 0 0">Billable sessions in model: <strong style="color:var(--ink)">'+MOCK.sessionEconomics.billableSessionCount+'</strong></p></div></div>'+
         '<div class="card" style="margin-top:14px"><div class="card-pad"><div class="toolbar"><button type="button" class="btn btn--sec" data-open-report>Report generator</button> <button type="button" class="btn btn--ghost" data-portal-logout>Log out</button></div></div></div>';
     }
@@ -16448,17 +16448,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var pl = typeof window.portalLogout === 'function' ? window.portalLogout : null;
           if(typeof window.portalLogoutRedirectToLogin === 'function'){
             Promise.resolve(window.portalLogoutRedirectToLogin(pl)).catch(function(){
-              try{ window.location.replace('https://www.clubsensational.org/l0/'); }catch(_){}
+              try{ window.location.replace('login.html'); }catch(_){}
             });
             return;
           }
           if(pl){
             Promise.resolve(pl()).catch(function(){}).then(function(){
-              try{ window.location.replace('https://www.clubsensational.org/l0/'); }catch(_){}
+              try{ window.location.replace('login.html'); }catch(_){}
             });
             return;
           }
-          try{ window.location.replace('https://www.clubsensational.org/l0/'); }catch(_){}
+          try{ window.location.replace('login.html'); }catch(_){}
         });
       }
       var sdc = $('schedDrawerClose');

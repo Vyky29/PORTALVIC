@@ -5,7 +5,7 @@
  */
 
 const PORTAL_AUTH_MODULE =
-  "https://www.clubsensational.org/wp-content/uploads/2026/05/auth-handler.js?v=20260419-99";
+  "ELEMENTOR/MEDIOS/auth-handler.js?v=20260419-99";
 
 const qs = new URLSearchParams(typeof location !== "undefined" ? location.search || "" : "");
 

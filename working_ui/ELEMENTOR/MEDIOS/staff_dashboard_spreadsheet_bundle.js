@@ -1,139 +1,139 @@
 (function () {
   // Source consumed by staff_dashboard_spreadsheet_adapter.js
   window.STAFF_DASHBOARD_SOURCE = {
-  "staffPhotosBaseUrl": "https://www.clubsensational.org/portal/staff_photos/",
+  "staffPhotosBaseUrl": "ELEMENTOR/MEDIOS/staff_photos/",
   "staffPhotoExtension": "jpg",
   "staffProfiles": {
     "sandra": {
       "staffId": "sandra",
       "staffName": "Sandra",
-      "avatarFile": "https://www.clubsensational.org/portal/staff_photos/sandra.jpg",
+      "avatarFile": "ELEMENTOR/MEDIOS/staff_photos/sandra.jpg",
       "staffRoleTrack": "fitness",
       "canViewAll": false
     },
     "roberto": {
       "staffId": "roberto",
       "staffName": "Roberto",
-      "avatarFile": "https://www.clubsensational.org/portal/staff_photos/roberto.jpg",
+      "avatarFile": "ELEMENTOR/MEDIOS/staff_photos/roberto.jpg",
       "staffRoleTrack": "swimming",
       "canViewAll": false
     },
     "dan": {
       "staffId": "dan",
       "staffName": "Dan",
-      "avatarFile": "https://www.clubsensational.org/portal/staff_photos/dan.jpg",
+      "avatarFile": "ELEMENTOR/MEDIOS/staff_photos/dan.jpg",
       "staffRoleTrack": "swimming",
       "canViewAll": false
     },
     "angel": {
       "staffId": "angel",
       "staffName": "Angel",
-      "avatarFile": "https://www.clubsensational.org/portal/staff_photos/angel.jpg",
+      "avatarFile": "ELEMENTOR/MEDIOS/staff_photos/angel.jpg",
       "staffRoleTrack": "swimming",
       "canViewAll": false
     },
     "youssef": {
       "staffId": "youssef",
       "staffName": "Youseff",
-      "avatarFile": "https://www.clubsensational.org/portal/staff_photos/youssef.jpg",
+      "avatarFile": "ELEMENTOR/MEDIOS/staff_photos/youssef.jpg",
       "staffRoleTrack": "swimming",
       "canViewAll": false
     },
     "john": {
       "staffId": "john",
       "staffName": "John",
-      "avatarFile": "https://www.clubsensational.org/portal/staff_photos/john.jpg",
+      "avatarFile": "ELEMENTOR/MEDIOS/staff_photos/john.jpg",
       "staffRoleTrack": "support_lead",
       "canViewAll": false
     },
     "bismark": {
       "staffId": "bismark",
       "staffName": "Bismark",
-      "avatarFile": "https://www.clubsensational.org/portal/staff_photos/bismark.jpg",
+      "avatarFile": "ELEMENTOR/MEDIOS/staff_photos/bismark.jpg",
       "staffRoleTrack": "support",
       "canViewAll": false
     },
     "giuseppe": {
       "staffId": "giuseppe",
       "staffName": "Giuseppe",
-      "avatarFile": "https://www.clubsensational.org/portal/staff_photos/giuseppe.jpg",
+      "avatarFile": "ELEMENTOR/MEDIOS/staff_photos/giuseppe.jpg",
       "staffRoleTrack": "support",
       "canViewAll": false
     },
     "godsway": {
       "staffId": "godsway",
       "staffName": "Godsway",
-      "avatarFile": "https://www.clubsensational.org/portal/staff_photos/godsway.jpg",
+      "avatarFile": "ELEMENTOR/MEDIOS/staff_photos/godsway.jpg",
       "staffRoleTrack": "support",
       "canViewAll": false
     },
     "javier": {
       "staffId": "javier",
       "staffName": "Javier",
-      "avatarFile": "https://www.clubsensational.org/portal/staff_photos/javier.jpg",
+      "avatarFile": "ELEMENTOR/MEDIOS/staff_photos/javier.jpg",
       "staffRoleTrack": "swimming",
       "canViewAll": false
     },
     "aurora": {
       "staffId": "aurora",
       "staffName": "Aurora",
-      "avatarFile": "https://www.clubsensational.org/portal/staff_photos/aurora.jpg",
+      "avatarFile": "ELEMENTOR/MEDIOS/staff_photos/aurora.jpg",
       "staffRoleTrack": "swimming",
       "canViewAll": false
     },
     "berta": {
       "staffId": "berta",
       "staffName": "Berta",
-      "avatarFile": "https://www.clubsensational.org/portal/staff_photos/berta.jpg",
+      "avatarFile": "ELEMENTOR/MEDIOS/staff_photos/berta.jpg",
       "staffRoleTrack": "support_lead",
       "canViewAll": false
     },
     "victor": {
       "staffId": "victor",
       "staffName": "Victor",
-      "avatarFile": "https://www.clubsensational.org/portal/staff_photos/victor.jpg",
+      "avatarFile": "ELEMENTOR/MEDIOS/staff_photos/victor.jpg",
       "staffRoleTrack": "manager",
       "canViewAll": true
     },
     "carlos": {
       "staffId": "carlos",
       "staffName": "Carlos",
-      "avatarFile": "https://www.clubsensational.org/portal/staff_photos/carlos.jpg",
+      "avatarFile": "ELEMENTOR/MEDIOS/staff_photos/carlos.jpg",
       "staffRoleTrack": "climbing",
       "canViewAll": false
     },
     "alex": {
       "staffId": "alex",
       "staffName": "Alex",
-      "avatarFile": "https://www.clubsensational.org/portal/staff_photos/alex.jpg",
+      "avatarFile": "ELEMENTOR/MEDIOS/staff_photos/alex.jpg",
       "staffRoleTrack": "climbing",
       "canViewAll": false
     },
     "javi": {
       "staffId": "javi",
       "staffName": "Javi",
-      "avatarFile": "https://www.clubsensational.org/portal/staff_photos/javi.jpg",
+      "avatarFile": "ELEMENTOR/MEDIOS/staff_photos/javi.jpg",
       "staffRoleTrack": "manager",
       "canViewAll": true
     },
     "raul": {
       "staffId": "raul",
       "staffName": "Raul",
-      "avatarFile": "https://www.clubsensational.org/portal/staff_photos/raul.jpg",
+      "avatarFile": "ELEMENTOR/MEDIOS/staff_photos/raul.jpg",
       "staffRoleTrack": "manager",
       "canViewAll": true
     },
     "sevitha": {
       "staffId": "sevitha",
       "staffName": "Sevitha",
-      "avatarFile": "https://www.clubsensational.org/portal/staff_photos/sevitha.jpg",
+      "avatarFile": "ELEMENTOR/MEDIOS/staff_photos/sevitha.jpg",
       "staffRoleTrack": "admin",
       "canViewAll": true
     },
     "demo": {
       "staffId": "demo",
       "staffName": "Demo",
-      "avatarFile": "https://www.clubsensational.org/portal/staff_photos/youssef.jpg",
+      "avatarFile": "ELEMENTOR/MEDIOS/staff_photos/youssef.jpg",
       "staffRoleTrack": "swimming",
       "canViewAll": false
     }

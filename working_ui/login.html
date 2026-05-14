@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en-GB">
 <head>
-  <!-- Portal app shell: hide WordPress theme header/footer when this markup is embedded on clubsensational.org -->
+  <!-- Optional: hide parent site chrome when embedded (WordPress or any wrapper). -->
   <script>
     (function () {
       try {
@@ -69,18 +69,15 @@
   <meta name="apple-mobile-web-app-title" content="Portal" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="theme-color" content="#f4f8fb" />
-  <!-- PWA · producción: https://www.clubsensational.org/l0/ (login; admin /operations-admin/ · staff /p1/ · CEO /ce/) -->
+  <!-- PWA · producción: login.html (login; admin /operations-admin/ · staff /p1/ · CEO /ce/) -->
   <script>
   (function(){
     try {
       if (document.getElementById('portalLoginPwaManifest')) return;
       if (location.protocol !== 'https:' && location.protocol !== 'http:') return;
-      var host = String(location.hostname || '').toLowerCase();
-      var isCs = host === 'www.clubsensational.org' || host === 'clubsensational.org';
-      var start = isCs ? 'https://www.clubsensational.org/l0/' : (location.origin + location.pathname + (location.search || ''));
+      var start = (location.origin + location.pathname + (location.search || ''));
       if (!start) return;
-      var p = (location.pathname || '/');
-      var sc = isCs ? (location.origin + '/') : ((p === '/l0' || p.indexOf('/l0/') === 0) ? (location.origin + '/l0/') : (location.origin + '/'));
+      var sc = location.origin + '/';
       var payload = {
         'name': 'clubSENsational Portal',
         'short_name': 'Sign in',
@@ -402,7 +399,7 @@
           <div class="login-logo-shell">
             <img
               class="login-logo"
-              src="https://www.clubsensational.org/wp-content/uploads/2026/05/F-02-1.png"
+              src="ELEMENTOR/MEDIOS/F-02-1.png"
               width="200"
               height="200"
               alt="clubSENsational - Autism Consultancy Services"
@@ -432,7 +429,7 @@
     </div>
   </div>
 
-  <!-- Name→email map inlined so WordPress does not need a separate staff_login_map upload (Media often blocks it). Keep in sync with database/auth-map.js. -->
+  <!-- Name→email map inlined so the login page does not need a separate staff_login_map fetch. Keep in sync with database/auth-map.js. -->
   <script>
     window.PORTAL_STAFF_LOGIN_MAP = {
       version: 1,
@@ -513,20 +510,14 @@
         window.location.search.indexOf("preview=true") !== -1 ||
         document.documentElement.classList.contains("elementor-editor-active");
       if (isElementorPreview) return;
-      window.PORTAL_CEO_DASHBOARD_URL = "https://www.clubsensational.org/ce/";
-      /* Staff login redirect after Supabase sign-in — must be a published WordPress page (404 = wrong slug or draft). */
-      window.PORTAL_STAFF_DASHBOARD_URL = "https://www.clubsensational.org/p1/";
-      window.PORTAL_ADMIN_DASHBOARD_URL = "https://www.clubsensational.org/operations-admin/";
-      window.PORTAL_LEAD_DASHBOARD_URL = "https://www.clubsensational.org/l1/";
+      window.PORTAL_CEO_DASHBOARD_URL = "ceo_dashboard.html";
+      /* After Supabase sign-in, redirects use the PORTAL_*_URL values above (same-origin HTML on Vercel/static). */
+      window.PORTAL_STAFF_DASHBOARD_URL = "staff_dashboard.html";
+      window.PORTAL_ADMIN_DASHBOARD_URL = "admin_dashboard.html";
+      window.PORTAL_LEAD_DASHBOARD_URL = "lead_dashboard.html";
       var portalJsVer = "20260511-l0-auth";
-      /* ES modules are fetched with CORS. Loading auth-handler from WordPress from another
-         origin (e.g. *.vercel.app) fails if uploads do not send ACAO. Same-origin: use MEDIOS
-         path next to this HTML when not served from the club WordPress host. */
-      var portalHost = (window.location.hostname || "").toLowerCase();
-      var portalJsBase =
-        portalHost === "www.clubsensational.org" || portalHost === "clubsensational.org"
-          ? "https://www.clubsensational.org/wp-content/uploads/2026/05/"
-          : new URL("ELEMENTOR/MEDIOS/", window.location.href).href;
+      /* Auth ES module: load from ELEMENTOR/MEDIOS next to this page (same origin avoids CORS issues). */
+      var portalJsBase = new URL("ELEMENTOR/MEDIOS/", window.location.href).href;
       var s = document.createElement("script");
       s.type = "module";
       s.src = portalJsBase + "auth-handler.js?v=" + portalJsVer;

@@ -1,12 +1,12 @@
 /**
- * venue_review.html — logic split (producción: https://www.clubsensational.org/venue_portal/):
+ * venue_review.html — logic split (same-origin `venue_review.html` when deployed with this repo):
  * - Backend: Supabase insert into public.venue_reviews
  * - When has_issues = Yes and notes are non-empty, DB trigger fills public.venue_review_admin_notifications (admin/CEO alerts).
  * - Front-end: DOM, query context, issues toggles, submit handler
  */
 
 const PORTAL_AUTH_MODULE =
-  "https://www.clubsensational.org/wp-content/uploads/2026/05/auth-handler.js?v=20260419-99";
+  "ELEMENTOR/MEDIOS/auth-handler.js?v=20260419-99";
 
 const qs = new URLSearchParams(typeof location !== "undefined" ? location.search || "" : "");
 
