@@ -6108,7 +6108,7 @@
         <span class="dock-nav-item__label">My participants</span>
       </button>
       <button type="button" class="dock-nav-item dock-nav-item--dashboard" id="dockDashboardTile" aria-label="Home — return to dashboard and close open panels">
-        <img class="dock-nav-item__logo" src="ELEMENTOR/MEDIOS/F-02-1.png" alt="clubSENsational" width="120" height="120" decoding="async" referrerpolicy="no-referrer-when-downgrade" />
+        <img class="dock-nav-item__logo" src="ELEMENTOR/MEDIOS/portal_crest.svg" alt="clubSENsational" width="120" height="120" decoding="async" referrerpolicy="no-referrer-when-downgrade" />
       </button>
       <button type="button" class="dock-nav-item dock-nav-item--quick-menu" id="dockQuickMenuTile" aria-label="Open quick menu">
         <span class="dock-nav-item__icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1" fill="none"/><rect x="14" y="3" width="7" height="7" rx="1" fill="none"/><rect x="3" y="14" width="7" height="7" rx="1" fill="none"/><rect x="14" y="14" width="7" height="7" rx="1" fill="none"/></svg></span>
@@ -8470,7 +8470,7 @@
         const now = Date.now();
         const escalated = level > (Number(last.level) || -1);
         if(!escalated && (now - (Number(last.t) || 0) < minGap) && String(last.body || '') === body) return;
-        const icon = 'ELEMENTOR/MEDIOS/F-02-1.png';
+        const icon = 'ELEMENTOR/MEDIOS/portal_crest.svg';
         try{
           const n = new Notification(title, {
             body: body,
@@ -10188,7 +10188,7 @@
         }catch(_){}
       }
       if(typeof Notification === 'undefined' || Notification.permission !== 'granted') return false;
-      var icon = 'ELEMENTOR/MEDIOS/F-02-1.png';
+      var icon = 'ELEMENTOR/MEDIOS/portal_crest.svg';
       try{
         var n = new Notification(String(title || 'clubSENsational'), {
           body: String(body || ''),
@@ -11766,10 +11766,10 @@
     try{ window.buildTodayFromLauraModel = buildTodayFromLauraModel; }catch(_){}
     try{ window.buildSelectedDayViewFromLauraModel = buildSelectedDayViewFromLauraModel; }catch(_){}
 
-    /** Topbar logos: /2026/05/*.png devolvían 404 en Medios; F-06 idle, F-02 aviso/recordatorio hasta subir PNG dedicados en 05/. */
+    /** Topbar logos: default F-06; avisos/recordatorios usan crest vectorial en repo (`portal_crest.svg`) si no hay PNG dedicado. */
     const PORTAL_DEFAULT_TOPBAR_AVATAR_URL = 'ELEMENTOR/MEDIOS/F-06-1.png';
-    const PORTAL_ANNOUNCEMENT_TOPBAR_AVATAR_URL = 'ELEMENTOR/MEDIOS/F-02-1.png';
-    const PORTAL_REMINDER_TOPBAR_AVATAR_URL = 'ELEMENTOR/MEDIOS/F-02-1.png';
+    const PORTAL_ANNOUNCEMENT_TOPBAR_AVATAR_URL = 'ELEMENTOR/MEDIOS/portal_crest.svg';
+    const PORTAL_REMINDER_TOPBAR_AVATAR_URL = 'ELEMENTOR/MEDIOS/portal_crest.svg';
     try{ window.__PORTAL_DEFAULT_TOPBAR_AVATAR__ = PORTAL_DEFAULT_TOPBAR_AVATAR_URL; }catch(_){}
     try{ window.__PORTAL_ANNOUNCEMENT_TOPBAR_AVATAR__ = PORTAL_ANNOUNCEMENT_TOPBAR_AVATAR_URL; }catch(_){}
     try{ window.__PORTAL_REMINDER_TOPBAR_AVATAR__ = PORTAL_REMINDER_TOPBAR_AVATAR_URL; }catch(_){}
@@ -12188,6 +12188,7 @@
       if(/logoamarillo\.png(\?|#|$)/i.test(s)) return true;
       if(/logoazul\.png(\?|#|$)/i.test(s)) return true;
       if(/F-02-1\.png(\?|#|$)/i.test(s)) return true;
+      if(/portal_crest\.svg(\?|#|$)/i.test(s)) return true;
       if(/F-06-1\.png(\?|#|$)/i.test(s)) return true;
       if(/F-07-1\.png(\?|#|$)/i.test(s)) return true;
       return false;

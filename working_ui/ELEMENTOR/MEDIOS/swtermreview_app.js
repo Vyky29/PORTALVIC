@@ -1242,7 +1242,7 @@ const LEVEL_DATA = {
         }));
     }
 
-    /** Same pipeline as timesheet PDF: smaller JPEG in storage, F-02-1 / logoPDF fallbacks. */
+    /** Same pipeline as timesheet PDF: smaller JPEG in storage; portal_crest / logoPDF fallbacks. */
     function shrinkDataUrlAsJpegForPdfSwterm(dataUrl, maxEdgePx, quality){
       if(!dataUrl || String(dataUrl).indexOf("data:") !== 0) return Promise.resolve("");
       const maxE = maxEdgePx > 0 ? maxEdgePx : 380;
@@ -1294,10 +1294,10 @@ const LEVEL_DATA = {
       }catch(_){}
       try{
         if(typeof location !== "undefined" && location.href){
-          list.push(new URL("ELEMENTOR/MEDIOS/F-02-1.png", location.href).href);
+          list.push(new URL("ELEMENTOR/MEDIOS/portal_crest.svg", location.href).href);
         }
       }catch(_){}
-      list.push("ELEMENTOR/MEDIOS/F-02-1.png");
+      list.push("ELEMENTOR/MEDIOS/portal_crest.svg");
       const seen = new Set();
       for(let i = 0; i < list.length; i++){
         const url = list[i];
