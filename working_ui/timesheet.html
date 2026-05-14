@@ -278,7 +278,7 @@
         return "";
       }
     }
-    /** Logo PDF: `logoPDF.png` junto a la página, luego crest vectorial en `ELEMENTOR/MEDIOS/`. */
+    /** Logo PDF: `logoPDF.png` junto a la página, luego `ELEMENTOR/MEDIOS/F-02-1.png`, luego `portal_crest.svg`. */
     async function readPdfLogoDataUrl() {
       const list = [];
       try {
@@ -287,9 +287,15 @@
       } catch (_) {}
       try {
         if (typeof location !== "undefined" && location.href) {
+          list.push(new URL("ELEMENTOR/MEDIOS/F-02-1.png", location.href).href);
+        }
+      } catch (_) {}
+      try {
+        if (typeof location !== "undefined" && location.href) {
           list.push(new URL("ELEMENTOR/MEDIOS/portal_crest.svg", location.href).href);
         }
       } catch (_) {}
+      list.push("ELEMENTOR/MEDIOS/F-02-1.png");
       list.push("ELEMENTOR/MEDIOS/portal_crest.svg");
       const seen = new Set();
       for (let i = 0; i < list.length; i++) {
