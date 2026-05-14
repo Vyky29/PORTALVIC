@@ -19,5 +19,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Python
+__pycache__/
+*.py[cod]
+
 # Optional: uncomment if you add Node tooling later
 # node_modules/
