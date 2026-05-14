@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SaaS concept v2 — CEO / leadership (full vision + June V1)</title>
+  <style>
+    :root {
+      --ink: #0c1222;
+      --text: #334155;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --sidebar: #1e293b;
+      --accent: #7c3aed;
+      --accent-soft: #f5f3ff;
+      --ok: #059669;
+      --warn: #d97706;
+      --danger: #dc2626;
+      --v1-soft: #faf5ff;
+      --v1-border: #a78bfa;
+      --radius: 14px;
+      --shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 12px 32px rgba(15, 23, 42, 0.08);
+      --sidebar-w: 240px;
+      --topbar-h: 56px;
+      --banner-h: 88px;
+      --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body { font-family: var(--font); font-size: 14px; color: var(--text); background: var(--bg); overflow: hidden; }
+    .app { display: flex; flex-direction: column; height: 100dvh; max-height: 100dvh; min-width: 0; min-height: 0; }
+    .banner {
+      flex-shrink: 0;
+      z-index: 50;
+      background: linear-gradient(90deg, #4c1d95, #7c3aed);
+      color: #fff;
+      font-size: 12px;
+      padding: 8px 14px 10px;
+      min-width: 0;
+    }
+    .banner-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; justify-content: space-between; min-width: 0; }
+    .banner-row--sub { margin-top: 6px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.2); font-size: 11px; line-height: 1.45; opacity: 0.95; overflow-wrap: break-word; }
+    .banner a { color: #e9d5ff; overflow-wrap: anywhere; }
+    .banner strong { font-weight: 700; }
+    .app-body { flex: 1; display: flex; min-width: 0; min-height: 0; }
+    .overlay { display: none; position: fixed; inset: var(--banner-h) 0 0 0; background: rgba(15, 23, 42, 0.4); z-index: 35; }
+    .overlay.show { display: block; }
+    @media (min-width: 901px) { .overlay { display: none !important; } }
+    .sidebar {
+      width: var(--sidebar-w);
+      min-width: var(--sidebar-w);
+      background: var(--sidebar);
+      color: #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+      flex-shrink: 0;
+      min-height: 0;
+    }
+    .brand-lockup { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .brand-logo-img { width: 44px; height: 44px; object-fit: contain; border-radius: 10px; background: rgba(255, 255, 255, 0.08); flex-shrink: 0; }
+    .sidebar-brand { padding: 12px 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); min-width: 0; }
+    .sidebar-brand .logo { font-weight: 800; font-size: 13px; color: #fff; overflow-wrap: break-word; }
+    .sidebar-brand .sub { font-size: 10px; color: #94a3b8; margin-top: 3px; line-height: 1.35; overflow-wrap: break-word; }
+    .nav-scroll { flex: 1; overflow: auto; padding: 8px 6px; min-height: 0; }
+    .nav-item {
+      display: block; width: 100%; text-align: left; border: none; background: transparent; color: #cbd5e1;
+      font: inherit; padding: 9px 11px; border-radius: 10px; cursor: pointer; margin-bottom: 2px; min-width: 0; overflow-wrap: break-word;
+    }
+    .nav-item:hover { background: rgba(255, 255, 255, 0.06); color: #fff; }
+    .nav-item.active { background: rgba(124, 58, 237, 0.35); color: #fff; box-shadow: inset 0 0 0 1px rgba(196, 181, 253, 0.4); }
+    .sidebar-foot { padding: 10px; border-top: 1px solid rgba(255, 255, 255, 0.08); font-size: 10px; color: #94a3b8; }
+    .sidebar-foot a { color: #c4b5fd; }
+    .main { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+    .topbar {
+      height: var(--topbar-h); flex-shrink: 0; display: flex; align-items: center; gap: 10px; padding: 0 16px;
+      background: var(--surface); border-bottom: 1px solid var(--line); min-width: 0;
+    }
+    .topbar h1 { margin: 0; font-size: 16px; font-weight: 700; color: var(--ink); flex: 1; min-width: 0; overflow-wrap: break-word; }
+    .pill { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); white-space: nowrap; }
+    .content { flex: 1; overflow: auto; padding: 14px 16px 24px; min-height: 0; min-width: 0; }
+    .vplan {
+      border: 1px solid var(--v1-border);
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, var(--v1-soft), #eff6ff);
+      margin-bottom: 14px;
+      box-shadow: var(--shadow);
+      min-width: 0;
+    }
+    .vplan > summary { cursor: pointer; padding: 11px 13px; font-weight: 700; color: #5b21b6; list-style: none; overflow-wrap: break-word; }
+    .vplan > summary::-webkit-details-marker { display: none; }
+    .vplan-body { padding: 0 13px 13px; font-size: 13px; line-height: 1.55; color: #4c1d95; overflow-wrap: break-word; }
+    .vplan-body ul { margin: 6px 0 0; padding-left: 1.15rem; }
+    .vplan-body li { margin-bottom: 5px; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .grid-kpi { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-bottom: 14px; }
+    .card {
+      background: var(--surface); border-radius: var(--radius); border: 1px solid var(--line); box-shadow: var(--shadow);
+      padding: 14px; min-width: 0;
+    }
+    .card h3 { margin: 0 0 5px; font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .card .val { font-size: 22px; font-weight: 800; color: var(--ink); letter-spacing: -0.02em; }
+    .card .sub { font-size: 11px; color: var(--muted); margin-top: 5px; line-height: 1.4; overflow-wrap: break-word; }
+    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+    @media (max-width: 900px) { .row-2 { grid-template-columns: 1fr; } }
+    .table-wrap { overflow: auto; border-radius: 10px; border: 1px solid var(--line); max-width: 100%; min-width: 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 400px; }
+    th, td { padding: 7px 9px; text-align: left; border-bottom: 1px solid var(--line); overflow-wrap: break-word; word-break: break-word; vertical-align: top; }
+    th { background: #f8fafc; font-weight: 600; color: var(--muted); font-size: 10px; text-transform: uppercase; }
+    tr:last-child td { border-bottom: none; }
+    .alert-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+    .alert { display: flex; gap: 10px; padding: 11px 12px; border-radius: 12px; border: 1px solid var(--line); background: #fffbeb; min-width: 0; }
+    .alert.danger { background: #fef2f2; border-color: #fecaca; }
+    .alert .meta { font-size: 11px; color: var(--muted); margin-top: 4px; overflow-wrap: break-word; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--warn); flex-shrink: 0; margin-top: 4px; }
+    .alert.danger .dot { background: var(--danger); }
+    .links-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 9px 14px; border-radius: 10px; font: inherit; font-weight: 600; font-size: 12px;
+      border: none; cursor: pointer; background: var(--accent); color: #fff; text-decoration: none; max-width: 100%; min-width: 0; overflow-wrap: break-word;
+    }
+    .btn.secondary { background: var(--surface); color: var(--accent); border: 1px solid #ddd6fe; }
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 12px; min-width: 0; }
+    .toggle-row:last-child { border-bottom: none; }
+    .switch { width: 38px; height: 20px; border-radius: 999px; background: #cbd5e1; flex-shrink: 0; position: relative; }
+    .switch.on { background: var(--ok); }
+    .switch::after { content: ""; position: absolute; width: 16px; height: 16px; border-radius: 50%; background: #fff; top: 2px; left: 2px; }
+    .switch.on::after { left: 20px; }
+    .traffic-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 6px; background: #fafafa; min-width: 0; }
+    .traffic-row span:first-child { font-size: 12px; min-width: 0; overflow-wrap: break-word; }
+    .sem { font-size: 10px; font-weight: 700; padding: 3px 7px; border-radius: 6px; flex-shrink: 0; }
+    .sem.ok { background: #d1fae5; color: #065f46; }
+    .sem.mid { background: #fef3c7; color: #92400e; }
+    .sem.bad { background: #fee2e2; color: #991b1b; }
+    .v1-footer { margin-top: 14px; padding: 11px 13px; border-radius: 12px; border: 1px dashed var(--v1-border); background: var(--v1-soft); min-width: 0; }
+    .v1-footer h4 { margin: 0 0 7px; font-size: 11px; color: #5b21b6; }
+    .pick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 5px; }
+    .pick { display: flex; align-items: flex-start; gap: 7px; font-size: 11px; min-width: 0; }
+    .pick input { margin-top: 2px; flex-shrink: 0; }
+    .pick span { min-width: 0; overflow-wrap: break-word; }
+    .menu-mob { display: none; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 7px 11px; font: inherit; cursor: pointer; }
+    @media (max-width: 900px) {
+      .sidebar { position: fixed; left: 0; top: var(--banner-h); bottom: 0; z-index: 40; transform: translateX(-102%); transition: transform 0.22s ease; box-shadow: 8px 0 32px rgba(0, 0, 0, 0.15); }
+      .sidebar.open { transform: translateX(0); }
+      .menu-mob { display: inline-flex; align-items: center; gap: 5px; }
+    }
+    .kpi-reorder { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+    .code { font-family: ui-monospace, monospace; font-size: 11px; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; overflow-wrap: anywhere; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="banner">
+      <div class="banner-row">
+        <span><strong>v2 CEO · full vision</strong> (mock) — does not replace <code>ceo_dashboard.html</code>. <a href="ceo_dashboard_saas_concept_v2.html" style="color:#e9d5ff;font-weight:600;">Spanish v2 →</a></span>
+        <span>
+          <a href="ceo_dashboard_saas_concept.html">CEO v1</a> ·
+          <a href="admin_dashboard_saas_concept_v2_en.html">Admin v2 (EN)</a>
+        </span>
+      </div>
+      <div class="banner-row banner-row--sub">
+        <strong>Data &amp; timeline:</strong> KPIs use the <strong>same tables</strong> as operations. You can send <strong>data now</strong>; <strong>broad public opening stays in June</strong>, with a <strong>pilot</strong> first (staff, then selected families). Keep sending updates <strong>from the day after tomorrow through the day before launch</strong> to close gaps and stay current; then day-to-day form capture moves to the portal.
+      </div>
+    </header>
+    <div class="app-body">
+      <div class="overlay" id="navOverlay"></div>
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+          <div class="brand-lockup">
+            <img class="brand-logo-img" src="https://www.clubsensational.org/wp-content/uploads/2026/03/F-02-1.png" alt="clubSENsational" width="44" height="44" decoding="async" referrerpolicy="no-referrer-when-downgrade" />
+            <div style="min-width:0">
+              <div class="logo">clubSENsational</div>
+              <div class="sub">Leadership · concept v2</div>
+            </div>
+          </div>
+        </div>
+        <div class="nav-scroll">
+          <button type="button" class="nav-item active" data-panel="c-pulso">Pulse</button>
+          <button type="button" class="nav-item" data-panel="c-riesgos">Risks</button>
+          <button type="button" class="nav-item" data-panel="c-finanzas">Finance</button>
+          <button type="button" class="nav-item" data-panel="c-people">People</button>
+          <button type="button" class="nav-item" data-panel="c-enlaces">Ops + presentation</button>
+        </div>
+        <div class="sidebar-foot"><a href="admin_opinion_centralizacion.html">Note (ES)</a> · mock</div>
+      </aside>
+      <div class="main">
+        <header class="topbar">
+          <button type="button" class="menu-mob" id="btnMenu" aria-expanded="false" aria-controls="sidebar">☰ Menu</button>
+          <h1 id="pageTitle">Pulse</h1>
+          <span class="pill">Read-only</span>
+        </header>
+        <div class="content">
+          <details class="vplan" open>
+            <summary>CEO: pilot, June public launch, data through the eve of launch</summary>
+            <div class="vplan-body">
+              <p style="margin:0 0 6px;">For <strong>June V1</strong> you can keep only KPIs and alerts; other widgets stay “off” until ops ticks them in.</p>
+              <ul>
+                <li>CEO does not edit payments: detail lives in <a href="admin_dashboard_saas_concept_v2_en.html">admin v2 (EN)</a> (deep links).</li>
+                <li>Same rule as admin: data now + deltas through the day before public launch.</li>
+              </ul>
+            </div>
+          </details>
+
+          <section class="panel active" id="c-pulso">
+            <p class="kpi-reorder">Card order: <button type="button" class="btn secondary" style="padding:4px 8px;font-size:11px;">▲</button> <button type="button" class="btn secondary" style="padding:4px 8px;font-size:11px;">▼</button> (mock for drag / Monday priorities)</p>
+            <div class="grid-kpi">
+              <div class="card"><h3>Term revenue</h3><div class="val">£186k</div><div class="sub">Target £195k</div></div>
+              <div class="card"><h3>Arrears &gt;14d</h3><div class="val">6%</div><div class="sub">9 families</div></div>
+              <div class="card"><h3>Occupancy</h3><div class="val">81%</div><div class="sub">Global</div></div>
+              <div class="card"><h3>Covers 48h</h3><div class="val">2</div><div class="sub">Ops risk</div></div>
+              <div class="card"><h3>Interviews</h3><div class="val">4</div><div class="sub">Open pipeline</div></div>
+              <div class="card"><h3>Incidents</h3><div class="val">1</div><div class="sub">Open</div></div>
+            </div>
+            <div class="card" style="margin-bottom:12px;">
+              <h3 style="text-transform:none;letter-spacing:0;color:var(--ink);font-size:13px;">Term comparison (mock)</h3>
+              <div class="table-wrap" style="border:none;margin-top:8px;">
+                <table style="min-width:360px;">
+                  <thead><tr><th>Metric</th><th>Spring 26</th><th>Summer 26</th><th>Δ</th></tr></thead>
+                  <tbody>
+                    <tr><td>Occupancy</td><td>78%</td><td>81%</td><td><span style="color:var(--ok);font-weight:700;">+3</span></td></tr>
+                    <tr><td>Average ticket</td><td>£38</td><td>£40</td><td><span style="color:var(--ok);">+5%</span></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="card">
+              <h3 style="text-transform:none;letter-spacing:0;color:var(--ink);font-size:13px;">Arrears alert threshold</h3>
+              <div class="toggle-row"><span>Notify leadership if arrears &gt;</span><select style="font:inherit;padding:4px 8px;border-radius:6px;"><option>5%</option><option selected>7%</option><option>10%</option></select></div>
+              <div class="toggle-row"><span>Weekly summary email (mock)</span><span class="switch on"></span></div>
+            </div>
+            <div class="v1-footer">
+              <h4>June V1 decision — Pulse</h4>
+              <div class="pick-grid">
+                <label class="pick"><input type="checkbox" checked disabled /><span>6 basic KPIs</span></label>
+                <label class="pick"><input type="checkbox" disabled /><span>Term comparison</span></label>
+                <label class="pick"><input type="checkbox" disabled /><span>Threshold + email</span></label>
+                <label class="pick"><input type="checkbox" disabled /><span>Reorder cards</span></label>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" id="c-riesgos">
+            <div class="alert-list">
+              <div class="alert danger">
+                <span class="dot" aria-hidden="true"></span>
+                <div style="min-width:0">
+                  <strong>Unassigned cover</strong> — Thu 16:30
+                  <div class="meta">Severity <strong>P1</strong> · Owner <strong>Ops lead</strong> · Due <strong>29 Apr 18:00</strong> · Status <strong>Open</strong></div>
+                </div>
+              </div>
+              <div class="alert">
+                <span class="dot" aria-hidden="true"></span>
+                <div style="min-width:0">
+                  <strong>First aid renewal</strong>
+                  <div class="meta">P2 · HR · 30 May · In progress</div>
+                </div>
+              </div>
+            </div>
+            <div class="card" style="margin-bottom:12px;">
+              <h3 style="text-transform:none;letter-spacing:0;color:var(--ink);font-size:13px;">Alert history (same problem family)</h3>
+              <div class="table-wrap" style="border:none;margin-top:8px;">
+                <table style="min-width:420px;">
+                  <thead><tr><th>Closed</th><th>Type</th><th>Site</th><th>Notes</th></tr></thead>
+                  <tbody>
+                    <tr><td>20 Apr</td><td>Cover resolved</td><td>South</td><td>Swap accepted</td></tr>
+                    <tr><td>12 Apr</td><td>Arrears spike</td><td>All</td><td>Campaign sent</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="card">
+              <div class="toggle-row"><span>Post to Slack #leadership (mock)</span><span class="switch"></span></div>
+              <div class="toggle-row"><span>Only P1 and P0 alerts</span><span class="switch on"></span></div>
+            </div>
+            <div class="links-row" style="margin-top:12px;">
+              <a class="btn secondary" href="admin_dashboard_saas_concept_v2_en.html#p-excepciones">Open exceptions (admin v2 EN)</a>
+            </div>
+            <div class="v1-footer">
+              <h4>June V1 decision — Risks</h4>
+              <div class="pick-grid">
+                <label class="pick"><input type="checkbox" checked disabled /><span>Top 5 alert list</span></label>
+                <label class="pick"><input type="checkbox" disabled /><span>Severity / owner / date</span></label>
+                <label class="pick"><input type="checkbox" disabled /><span>History</span></label>
+                <label class="pick"><input type="checkbox" disabled /><span>Slack / P1 filters</span></label>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" id="c-finanzas">
+            <div class="card" style="margin-bottom:12px;">
+              <p style="font-size:12px;margin:0;color:#1e40af;background:#eff6ff;padding:10px;border-radius:10px;border:1px solid #bfdbfe;overflow-wrap:break-word;">
+                <strong>Drill-down:</strong> from here you only open detail in admin with permission; CEO does not edit payment lines (avoids two sources of truth).
+              </p>
+            </div>
+            <div class="row-2">
+              <div class="card">
+                <h3 style="text-transform:none;letter-spacing:0;color:var(--ink);font-size:13px;">Cash forecast (mock)</h3>
+                <div style="display:flex;align-items:flex-end;gap:6px;height:90px;margin-top:10px;">
+                  <span style="flex:1;min-width:0;height:35%;background:linear-gradient(180deg,#c4b5fd,#7c3aed);border-radius:6px 6px 0 0;"></span>
+                  <span style="flex:1;min-width:0;height:50%;background:linear-gradient(180deg,#c4b5fd,#7c3aed);border-radius:6px 6px 0 0;"></span>
+                  <span style="flex:1;min-width:0;height:45%;background:linear-gradient(180deg,#c4b5fd,#7c3aed);border-radius:6px 6px 0 0;"></span>
+                  <span style="flex:1;min-width:0;height:62%;background:linear-gradient(180deg,#c4b5fd,#7c3aed);border-radius:6px 6px 0 0;"></span>
+                </div>
+                <p class="sub" style="margin-top:8px;">Expected inflows from instalment plans + LA billing</p>
+              </div>
+              <div class="card">
+                <h3 style="text-transform:none;letter-spacing:0;color:var(--ink);font-size:13px;">LA / private mix</h3>
+                <p style="font-size:13px;margin:8px 0 0;line-height:1.5;">LA 62% · Private 31% · Mixed 7%</p>
+                <button type="button" class="btn secondary" style="margin-top:12px;">Export for adviser (CSV mock)</button>
+              </div>
+            </div>
+            <div class="v1-footer">
+              <h4>June V1 decision — Finance</h4>
+              <div class="pick-grid">
+                <label class="pick"><input type="checkbox" checked disabled /><span>Mix + term totals</span></label>
+                <label class="pick"><input type="checkbox" disabled /><span>Cash forecast</span></label>
+                <label class="pick"><input type="checkbox" disabled /><span>Adviser export</span></label>
+                <label class="pick"><input type="checkbox" disabled /><span>Drill-down policy</span></label>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" id="c-people">
+            <div class="card" style="margin-bottom:12px;">
+              <h3 style="text-transform:none;letter-spacing:0;color:var(--ink);font-size:13px;">Days to expiry (aggregate, no bank data)</h3>
+              <div class="table-wrap" style="border:none;margin-top:8px;">
+                <table style="min-width:320px;">
+                  <thead><tr><th>Type</th><th>Critical &lt;30d</th></tr></thead>
+                  <tbody>
+                    <tr><td>DBS</td><td>0</td></tr>
+                    <tr><td>First aid</td><td>2</td></tr>
+                    <tr><td>Induction</td><td>1</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="row-2">
+              <div class="card">
+                <h3 style="text-transform:none;letter-spacing:0;color:var(--ink);font-size:13px;">Headcount plan vs roster</h3>
+                <p style="font-size:12px;margin:6px 0 0;">Term FTE plan: <strong>18</strong> · Active roster: <strong>17</strong> <span class="sem mid">Gap 1</span></p>
+              </div>
+              <div class="card">
+                <h3 style="text-transform:none;letter-spacing:0;color:var(--ink);font-size:13px;">Candidates (no bank fields)</h3>
+                <p style="font-size:12px;margin:6px 0 0;">See pipeline in admin HR · sensitive data HR-only.</p>
+                <a class="btn secondary" style="margin-top:10px;" href="admin_dashboard_saas_concept_v2_en.html#p-people">Open people (admin v2 EN)</a>
+              </div>
+            </div>
+            <div class="traffic-row"><span>Overall compliance health</span><span class="sem ok">Green</span></div>
+            <div class="v1-footer">
+              <h4>June V1 decision — People</h4>
+              <div class="pick-grid">
+                <label class="pick"><input type="checkbox" checked disabled /><span>Global traffic light</span></label>
+                <label class="pick"><input type="checkbox" disabled /><span>Expiry table</span></label>
+                <label class="pick"><input type="checkbox" disabled /><span>Headcount plan vs actual</span></label>
+                <label class="pick"><input type="checkbox" disabled /><span>Pipeline link</span></label>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" id="c-enlaces">
+            <div class="card" style="margin-bottom:12px;">
+              <h3 style="text-transform:none;letter-spacing:0;color:var(--ink);font-size:14px;">Sample deep link</h3>
+              <p style="font-size:12px;margin:6px 0 0;overflow-wrap:break-word;">When backend exists: <span class="code">admin…#p-clientes?family=garcia</span> opens the record directly (mock).</p>
+            </div>
+            <div class="card" style="margin-bottom:12px;">
+              <h3 style="text-transform:none;letter-spacing:0;color:var(--ink);font-size:14px;">My pending actions (from alerts)</h3>
+              <ul style="margin:8px 0 0;padding-left:1.1rem;font-size:13px;line-height:1.55;">
+                <li>Approve report #INC-2401 (lead)</li>
+                <li>Validate daily sheet import (ops)</li>
+              </ul>
+            </div>
+            <div class="links-row" style="margin-bottom:12px;">
+              <a class="btn" href="admin_dashboard_saas_concept_v2_en.html#p-clientes">Billing</a>
+              <a class="btn secondary" href="admin_dashboard_saas_concept_v2_en.html#p-agenda">Capacity</a>
+              <a class="btn secondary" href="admin_dashboard_saas_concept_v2_en.html#p-excepciones">Exceptions</a>
+            </div>
+            <div class="card">
+              <h3 style="text-transform:none;letter-spacing:0;color:var(--ink);font-size:14px;">Presentation mode</h3>
+              <p style="font-size:12px;color:var(--muted);margin:6px 0 10px;">Clean screen for weekly meeting (hides sidebar in mock).</p>
+              <button type="button" class="btn" id="btnPres">Enter presentation (simulated)</button>
+            </div>
+            <div class="v1-footer">
+              <h4>June V1 decision — Links &amp; presentation</h4>
+              <div class="pick-grid">
+                <label class="pick"><input type="checkbox" checked disabled /><span>Buttons to admin v2 EN</span></label>
+                <label class="pick"><input type="checkbox" disabled /><span>Context deep links</span></label>
+                <label class="pick"><input type="checkbox" disabled /><span>“My actions” queue</span></label>
+                <label class="pick"><input type="checkbox" disabled /><span>Presentation mode</span></label>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var titles = { "c-pulso": "Pulse", "c-riesgos": "Risks", "c-finanzas": "Finance", "c-people": "People", "c-enlaces": "Ops + presentation" };
+      var sidebar = document.getElementById("sidebar");
+      var overlay = document.getElementById("navOverlay");
+      var btnMenu = document.getElementById("btnMenu");
+
+      function setPanel(id) {
+        document.querySelectorAll(".panel").forEach(function (p) {
+          p.classList.toggle("active", p.id === id);
+        });
+        document.querySelectorAll(".nav-item").forEach(function (b) {
+          b.classList.toggle("active", b.getAttribute("data-panel") === id);
+        });
+        var t = document.getElementById("pageTitle");
+        if (t) t.textContent = titles[id] || "CEO board";
+        sidebar.classList.remove("open");
+        overlay.classList.remove("show");
+        if (btnMenu) btnMenu.setAttribute("aria-expanded", "false");
+      }
+
+      document.querySelectorAll(".nav-item").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          setPanel(btn.getAttribute("data-panel"));
+        });
+      });
+      if (btnMenu) {
+        btnMenu.addEventListener("click", function () {
+          var open = !sidebar.classList.contains("open");
+          sidebar.classList.toggle("open", open);
+          overlay.classList.toggle("show", open);
+          btnMenu.setAttribute("aria-expanded", open ? "true" : "false");
+        });
+      }
+      overlay.addEventListener("click", function () {
+        sidebar.classList.remove("open");
+        overlay.classList.remove("show");
+        if (btnMenu) btnMenu.setAttribute("aria-expanded", "false");
+      });
+
+      function openFromHash() {
+        var h = (location.hash || "").replace(/^#/, "");
+        if (h && titles[h]) setPanel(h);
+      }
+      openFromHash();
+      window.addEventListener("hashchange", openFromHash);
+
+      var pres = document.getElementById("btnPres");
+      if (pres) {
+        pres.addEventListener("click", function () {
+          var m = document.querySelector(".main");
+          if (!m) return;
+          if (!document.fullscreenElement) {
+            m.requestFullscreen().catch(function () {
+              alert("Fullscreen not available in this browser; for meetings use F11 or maximise the window.");
+            });
+          } else {
+            document.exitFullscreen();
+          }
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

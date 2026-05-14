@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <title>clubSENsational — Company insights (registry)</title>
+  <style>
+    :root {
+      --blue: #2d84b3;
+      --blueSoft: #eaf5fb;
+      --ink: #173247;
+      --text: #314555;
+      --muted: #728290;
+      --line: rgba(23, 50, 71, 0.12);
+      --white: #ffffff;
+      --shadow: 0 18px 50px rgba(23, 50, 71, 0.08);
+      --radius: 22px;
+      --warn: #b45309;
+      --warnBg: #fffbeb;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background: linear-gradient(180deg, #f7fbff 0%, #edf4fb 100%);
+    }
+    .wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 24px 18px 40px;
+    }
+    header {
+      margin-bottom: 20px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--ink);
+      letter-spacing: -0.02em;
+    }
+    .sub {
+      margin: 0;
+      font-size: 0.92rem;
+      color: var(--muted);
+      line-height: 1.45;
+      max-width: 52rem;
+    }
+    .nav {
+      margin-top: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .nav a {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--blue);
+      text-decoration: none;
+      border: 1px solid rgba(45, 132, 179, 0.35);
+      padding: 8px 14px;
+      border-radius: 12px;
+      background: var(--white);
+    }
+    .nav a:hover {
+      background: var(--blueSoft);
+    }
+    .card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--line);
+      padding: 20px 18px 22px;
+      margin-bottom: 18px;
+    }
+    .card h2 {
+      margin: 0 0 12px;
+      font-size: 1.05rem;
+      color: var(--ink);
+    }
+    .banner {
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: var(--warnBg);
+      border: 1px solid rgba(180, 83, 9, 0.28);
+      color: #78350f;
+      font-size: 0.88rem;
+      line-height: 1.45;
+      margin-bottom: 16px;
+    }
+    .meta-list {
+      margin: 0;
+      padding-left: 1.1rem;
+      font-size: 0.86rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+    th, td {
+      text-align: left;
+      padding: 10px 8px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+    th {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      font-weight: 800;
+    }
+    .id { font-weight: 800; color: var(--ink); }
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      background: var(--blueSoft);
+      color: var(--blue);
+    }
+    .pill--todo {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    .roadmap li {
+      margin-bottom: 8px;
+      font-size: 0.88rem;
+      line-height: 1.4;
+    }
+    code {
+      font-size: 0.78em;
+      background: rgba(23, 50, 71, 0.06);
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1 id="pageTitle">Company insights</h1>
+      <p class="sub" id="pageSub">
+        Registry of data sources for a single cross-company view (daily operations plus end-of-term reviews).
+        Charts and Supabase aggregates come next; this page keeps the map in one place.
+      </p>
+      <div class="nav">
+        <a id="backCeo" href="https://www.clubsensational.org/ceo/">CEO portal</a>
+        <a id="backAdmin" href="https://www.clubsensational.org/a1/#ceo">Admin CEO view</a>
+      </div>
+    </header>
+
+    <div class="card" id="loadCard">
+      <div class="banner" id="loadBanner" hidden></div>
+      <h2>How this connects</h2>
+      <ul class="meta-list" id="metaNotes"></ul>
+    </div>
+
+    <div class="card">
+      <h2>Data sources</h2>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>Source</th>
+              <th>Category</th>
+              <th>Status</th>
+              <th>Primary date</th>
+              <th>CEO views (proposal)</th>
+            </tr>
+          </thead>
+          <tbody id="srcBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Roadmap (phases)</h2>
+      <ol class="roadmap" id="roadmapOl"></ol>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var path = (typeof location !== "undefined" && location.pathname) ? String(location.pathname).toLowerCase() : "";
+      var isWorkingUi = path.indexOf("/working_ui/") !== -1;
+      if (isWorkingUi) {
+        var back = document.getElementById("backCeo");
+        var adm = document.getElementById("backAdmin");
+        if (back) back.href = "ceo_dashboard.html";
+        if (adm) adm.href = "admin_dashboard.html#ceo";
+      }
+    })();
+
+    function statusPill(status) {
+      var s = String(status || "").toLowerCase();
+      var todo = s.indexOf("external") >= 0 || s.indexOf("tbd") >= 0 || s === "" || s.indexOf("spreadsheet") >= 0;
+      return '<span class="pill' + (todo ? " pill--todo" : "") + '">' + escapeHtml(String(status || "—")) + "</span>";
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function render(data) {
+      var meta = data && data.meta ? data.meta : {};
+      var title = document.getElementById("pageTitle");
+      if (title && meta.title) title.textContent = meta.title;
+
+      var notesEl = document.getElementById("metaNotes");
+      if (notesEl && Array.isArray(meta.notes_for_contributors)) {
+        notesEl.innerHTML = meta.notes_for_contributors
+          .map(function (n) {
+            return "<li>" + escapeHtml(n) + "</li>";
+          })
+          .join("");
+      }
+
+      var tbody = document.getElementById("srcBody");
+      if (tbody && Array.isArray(data.sources)) {
+        tbody.innerHTML = data.sources
+          .map(function (r) {
+            var views = Array.isArray(r.ceo_views) ? r.ceo_views.join("; ") : "";
+            return (
+              "<tr>" +
+              "<td><span class=\"id\">" +
+              escapeHtml(r.id || "") +
+              "</span><br><span style=\"color:var(--muted);font-size:0.78rem\">" +
+              escapeHtml(r.label || "") +
+              "</span>" +
+              (r.portal_html_path
+                ? "<br><code style=\"margin-top:4px;display:inline-block\">" + escapeHtml(r.portal_html_path) + "</code>"
+                : "") +
+              (r.public_form_url
+                ? "<br><a href=\"" +
+                  escapeHtml(r.public_form_url) +
+                  "\" target=\"_blank\" rel=\"noopener\">Public form</a>"
+                : "") +
+              "</td>" +
+              "<td>" +
+              escapeHtml(r.category || "—") +
+              "</td>" +
+              "<td>" +
+              statusPill(r.status) +
+              "</td>" +
+              "<td>" +
+              escapeHtml(r.primary_date_field || "—") +
+              "</td>" +
+              "<td>" +
+              escapeHtml(views) +
+              "</td>" +
+              "</tr>"
+            );
+          })
+          .join("");
+      }
+
+      var ol = document.getElementById("roadmapOl");
+      if (ol && Array.isArray(data.roadmap_phases)) {
+        ol.innerHTML = data.roadmap_phases
+          .map(function (p) {
+            var done = p.done ? " (done)" : "";
+            var det = p.detail ? " — " + escapeHtml(p.detail) : "";
+            var art = p.artifact ? " <code>" + escapeHtml(p.artifact) + "</code>" : "";
+            return "<li><strong>Phase " + escapeHtml(String(p.phase)) + "</strong>: " + escapeHtml(p.name || "") + done + det + art + "</li>";
+          })
+          .join("");
+      }
+    }
+
+    var dataUrl = "data/portal_insights_sources.json";
+    fetch(dataUrl)
+      .then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      })
+      .then(render)
+      .catch(function (err) {
+        var b = document.getElementById("loadBanner");
+        if (b) {
+          b.hidden = false;
+          b.textContent =
+            "Could not load " +
+            dataUrl +
+            ". If you opened this file from disk, use a local server or upload working_ui/data/ alongside this HTML. (" +
+            (err && err.message ? err.message : "error") +
+            ")";
+        }
+      });
+  </script>
+</body>
+</html>

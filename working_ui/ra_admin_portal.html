@@ -1,0 +1,2405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Risk assessments (admin) — clubSENsational</title>
+  <style>
+    :root {
+      --navy: #17354d;
+      --gold: #d7ab3c;
+      --soft-blue: #eaf1f5;
+      --bg: #f5f7f9;
+      --line: #cfd8df;
+      --text: #1f2a33;
+      --muted: #5f6b76;
+      --white: #ffffff;
+      --shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+      --radius: 10px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; color: var(--text); background: var(--bg); }
+    .app { max-width: 1500px; margin: 18px auto; padding: 0 14px 20px; }
+    .top-header {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px 18px;
+      margin-bottom: 14px;
+    }
+    .title-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 12px;
+      min-width: 0;
+    }
+    .title-block {
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+    .title-block h1 { margin: 0; font-size: 26px; color: var(--navy); letter-spacing: 0.2px; }
+    .title-block p { margin: 6px 0 0; font-size: 13px; color: var(--muted); }
+    .top-controls { display: grid; grid-template-columns: 1.4fr 220px auto auto; gap: 10px; align-items: center; }
+    input[type="text"], input[type="date"], input[type="time"], select, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 11px;
+      font-size: 14px;
+      color: var(--text);
+      background: var(--white);
+    }
+    textarea { min-height: 2.75em; resize: none; line-height: 1.45; overflow: hidden; }
+    button {
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 10px 12px;
+      cursor: pointer;
+    }
+    .btn-primary { background: var(--navy); color: var(--white); }
+    .btn-gold { background: var(--gold); color: #1f1f1f; }
+    .btn-light { background: #e8edf1; color: var(--navy); }
+    .btn-danger { background: #d9534f; color: #fff; }
+    .btn-sm { padding: 7px 9px; font-size: 12px; }
+    .btn-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border: 1px solid #c7d2db;
+      background: #f9fbfc;
+      color: var(--navy);
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      box-shadow: none;
+    }
+    .btn-action:hover {
+      background: #f0f5f8;
+      border-color: #b4c3d0;
+    }
+    .btn-print { color: #123247; }
+    .btn-send { color: #143b54; }
+    .layout {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      align-items: stretch;
+      width: 100%;
+    }
+    .sidebar {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px 16px;
+      width: 100%;
+      max-height: none;
+      overflow: visible;
+      position: relative;
+    }
+    #raList {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 10px;
+      width: 100%;
+    }
+    #raList > .empty-note {
+      grid-column: 1 / -1;
+    }
+    .sidebar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .sidebar-header h2 { margin: 0; color: var(--navy); font-size: 16px; }
+    .count-chip {
+      background: #eef3f7;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+      border-radius: 999px;
+      padding: 4px 9px;
+    }
+    .ra-card {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      margin-bottom: 0;
+      background: #fcfdfe;
+      cursor: pointer;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .ra-card:hover { border-color: #aebfca; }
+    .ra-card.selected { border-color: var(--navy); box-shadow: 0 0 0 2px rgba(23, 53, 77, 0.12); background: #f8fbfd; }
+    .card-top { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
+    .card-ref { font-size: 12px; color: var(--muted); margin-bottom: 2px; }
+    .card-venue { font-size: 14px; font-weight: 700; color: var(--navy); margin: 0 0 4px; }
+    .card-type { font-size: 12px; color: var(--muted); margin: 0; }
+    .status-badge { font-size: 11px; font-weight: 700; border-radius: 999px; padding: 4px 8px; border: 1px solid; white-space: nowrap; }
+    .status-active { color: #1f7a3e; background: #e8f7ec; border-color: #b9e4c5; }
+    .status-underreview { color: #996b00; background: #fff6de; border-color: #f1dfa5; }
+    .status-archived { color: #6d7781; background: #edf1f4; border-color: #d5dde3; }
+    .card-dates {
+      margin-top: 8px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 6px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .card-dates > div {
+      min-width: 0;
+      overflow-wrap: break-word;
+      word-wrap: break-word;
+    }
+    .main {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      width: 100%;
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .document-header {
+      background: #d7e2e8;
+      border-bottom: 2px solid var(--navy);
+      padding: 15px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .document-header h2 { margin: 0; color: var(--navy); font-size: 23px; }
+    .document-header p { margin: 5px 0 0; color: var(--muted); font-size: 13px; }
+    .document-header > div:first-of-type {
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+    .document-header h2,
+    .document-header p {
+      overflow-wrap: break-word;
+      word-wrap: break-word;
+    }
+    .doc-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .section { padding: 16px 18px; border-bottom: 1px solid #e7edf1; }
+    .section-title {
+      margin: 0 0 11px;
+      color: var(--navy);
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      align-items: start;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      align-items: start;
+    }
+    .grid-4 > *,
+    .grid-2 > * {
+      min-width: 0;
+    }
+    .field {
+      min-width: 0;
+    }
+    .field input,
+    .field textarea,
+    .field select {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+    }
+    .field textarea {
+      white-space: pre-wrap;
+      overflow-wrap: normal;
+      word-wrap: normal;
+      word-break: normal;
+    }
+    .ra-field-full-width {
+      margin-top: 10px;
+      width: 100%;
+    }
+    .field label {
+      display: block;
+      font-size: 11px;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      margin-bottom: 5px;
+      color: var(--muted);
+    }
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: 8px; }
+    th, td {
+      border: 1px solid #7f8c96;
+      font-size: 12px;
+      padding: 6px;
+      vertical-align: top;
+      min-width: 0;
+    }
+    th { background: var(--soft-blue); color: var(--navy); text-align: left; }
+    td textarea,
+    td input {
+      font-size: 12px;
+      border-radius: 6px;
+    }
+    td textarea {
+      white-space: pre-wrap;
+      overflow-wrap: normal;
+      word-break: normal;
+    }
+    .table-controls { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .signature-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      align-items: stretch;
+    }
+    .signature-grid > * {
+      min-width: 0;
+    }
+    .signature-box {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fcfdfe;
+      padding: 12px;
+      min-height: 120px;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: flex-start;
+      gap: 10px;
+    }
+    .signature-box strong { color: var(--navy); font-size: 13px; }
+    .signature-box input[type="text"] {
+      width: 100%;
+      min-width: 0;
+      flex: 1 1 auto;
+      min-height: 44px;
+    }
+    .signature-line {
+      margin-top: auto;
+      border-top: 1px solid #8ea0ad;
+      padding-top: 7px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+      overflow-wrap: break-word;
+    }
+    .empty-note {
+      border: 1px dashed #b6c3cc;
+      border-radius: 8px;
+      padding: 10px;
+      color: var(--muted);
+      background: #fbfdff;
+      font-size: 13px;
+    }
+    /* WordPress / Elementor: sin scroll interno; tabla y celdas al 100% del ancho útil */
+    #cs-ra-dashboard {
+      isolation: isolate;
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 100%;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, Helvetica, sans-serif !important;
+      color: var(--text) !important;
+      background: var(--bg) !important;
+      line-height: 1.45 !important;
+      text-align: left !important;
+      overflow-x: visible;
+    }
+    #cs-ra-dashboard *,
+    #cs-ra-dashboard *::before,
+    #cs-ra-dashboard *::after {
+      box-sizing: border-box !important;
+    }
+    #cs-ra-dashboard .app {
+      max-width: min(1650px, 100%) !important;
+      width: 100% !important;
+      margin-left: auto !important;
+      margin-right: auto !important;
+      padding-left: 12px !important;
+      padding-right: 12px !important;
+      min-width: 0;
+    }
+    #cs-ra-dashboard .title-block {
+      min-width: 0 !important;
+    }
+    #cs-ra-dashboard .layout {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 14px !important;
+      align-items: stretch !important;
+      width: 100% !important;
+    }
+    #cs-ra-dashboard .sidebar {
+      width: 100% !important;
+      max-height: none !important;
+      overflow: visible !important;
+      position: relative !important;
+    }
+    #cs-ra-dashboard #raList {
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)) !important;
+    }
+    #cs-ra-dashboard .main {
+      overflow: visible !important;
+      overflow-x: visible !important;
+      max-width: 100% !important;
+      min-width: 0;
+    }
+    #cs-ra-dashboard .cs-ra-table-scroll {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      margin-top: 8px;
+      overflow: visible;
+    }
+    #cs-ra-dashboard .cs-ra-table-scroll table,
+    #cs-ra-dashboard #hazardTable,
+    #cs-ra-dashboard #reviewTable {
+      width: 100% !important;
+      min-width: 0 !important;
+      max-width: 100% !important;
+      table-layout: fixed !important;
+      border-collapse: collapse !important;
+    }
+    #cs-ra-dashboard .cs-ra-table-scroll table {
+      margin-top: 0 !important;
+    }
+    #cs-ra-dashboard th {
+      word-break: normal !important;
+      overflow-wrap: break-word !important;
+      word-wrap: break-word !important;
+      hyphens: manual !important;
+    }
+    /* Evita partir palabras en mitad (p. ej. "Employee" + "s"); el texto baja de línea en espacios */
+    #cs-ra-dashboard td {
+      word-break: normal !important;
+      overflow-wrap: normal !important;
+      word-wrap: normal !important;
+      hyphens: manual !important;
+    }
+    #cs-ra-dashboard #hazardTable th,
+    #cs-ra-dashboard #hazardTable td,
+    #cs-ra-dashboard #reviewTable th,
+    #cs-ra-dashboard #reviewTable td {
+      font-size: 13px;
+    }
+    #cs-ra-dashboard #hazardTable td textarea {
+      min-height: 2.75em;
+      min-width: 0 !important;
+      width: 100% !important;
+      font-size: 13px !important;
+      line-height: 1.45 !important;
+      white-space: pre-wrap !important;
+      overflow-wrap: normal !important;
+      word-wrap: normal !important;
+      word-break: normal !important;
+    }
+    #cs-ra-dashboard #hazardTable td input {
+      font-size: 13px !important;
+      min-width: 0 !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+    }
+    #cs-ra-dashboard #reviewTable td textarea {
+      min-width: 0 !important;
+      width: 100% !important;
+      white-space: pre-wrap !important;
+      overflow-wrap: normal !important;
+      word-wrap: normal !important;
+      word-break: normal !important;
+    }
+    #cs-ra-dashboard #reviewTable td input {
+      min-width: 0 !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+    }
+    #cs-ra-dashboard td textarea,
+    #cs-ra-dashboard td input {
+      max-width: 100% !important;
+      min-width: 0 !important;
+      box-sizing: border-box !important;
+    }
+    #cs-ra-dashboard .grid-4 {
+      grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+      align-items: start !important;
+    }
+    #cs-ra-dashboard .grid-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      align-items: start !important;
+    }
+    #cs-ra-dashboard .signature-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+      align-items: stretch !important;
+    }
+    #cs-ra-dashboard .grid-4 > *,
+    #cs-ra-dashboard .grid-2 > *,
+    #cs-ra-dashboard .signature-grid > *,
+    #cs-ra-dashboard .field {
+      min-width: 0 !important;
+    }
+    #cs-ra-dashboard .field input,
+    #cs-ra-dashboard .field textarea,
+    #cs-ra-dashboard .field select {
+      width: 100% !important;
+      max-width: 100% !important;
+      min-width: 0 !important;
+    }
+    #cs-ra-dashboard .field textarea {
+      white-space: pre-wrap !important;
+      overflow-wrap: normal !important;
+      word-wrap: normal !important;
+      word-break: normal !important;
+    }
+    #cs-ra-dashboard .ra-field-full-width {
+      width: 100% !important;
+    }
+    #cs-ra-dashboard th,
+    #cs-ra-dashboard td {
+      min-width: 0;
+    }
+    #cs-ra-dashboard .section {
+      min-width: 0;
+    }
+    #cs-ra-dashboard .ra-read-ack-panel .btn-primary {
+      white-space: normal !important;
+      text-align: center;
+    }
+    #cs-ra-dashboard button {
+      white-space: nowrap !important;
+      touch-action: manipulation;
+    }
+    .ra-staff-banner {
+      display: none;
+      align-items: flex-start;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 12px 16px;
+      margin-bottom: 12px;
+      border-radius: var(--radius);
+      border: 1px solid #b8d4e8;
+      background: linear-gradient(135deg, #e8f4fc 0%, #f0f7fb 100%);
+      color: var(--navy);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+    .ra-staff-banner strong {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #0f4a6e;
+    }
+    .ra-staff-banner p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      max-width: 72ch;
+    }
+    #cs-ra-dashboard.cs-ra-mode-staff .ra-staff-banner {
+      display: flex;
+      flex-direction: column;
+    }
+    #cs-ra-dashboard.cs-ra-mode-staff #sendBtn {
+      display: none !important;
+    }
+    #cs-ra-dashboard.cs-ra-mode-staff .doc-actions,
+    #cs-ra-dashboard.cs-ra-mode-staff .table-controls,
+    #cs-ra-dashboard.cs-ra-mode-staff .row-delete {
+      display: none !important;
+    }
+    #cs-ra-dashboard.cs-ra-mode-staff #reviewTable th:last-child,
+    #cs-ra-dashboard.cs-ra-mode-staff #reviewTable td:last-child {
+      display: none !important;
+    }
+    #cs-ra-dashboard.cs-ra-mode-staff #mainPanel input:not([type="hidden"]),
+    #cs-ra-dashboard.cs-ra-mode-staff #mainPanel textarea,
+    #cs-ra-dashboard.cs-ra-mode-staff #mainPanel select {
+      background: #f1f5f8 !important;
+      cursor: default;
+      color: var(--text);
+    }
+    #cs-ra-dashboard.cs-ra-mode-staff #mainPanel input#raAckReaderName,
+    #cs-ra-dashboard.cs-ra-mode-staff #mainPanel input#raAckSignature {
+      background: #fff !important;
+      cursor: text !important;
+    }
+    #cs-ra-dashboard.cs-ra-mode-staff #mainPanel select {
+      opacity: 1;
+    }
+    #cs-ra-dashboard.cs-ra-mode-staff #mainPanel textarea {
+      cursor: default;
+    }
+    .ra-entry-gate {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 28px 18px 40px;
+      max-width: 720px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    .ra-entry-gate h1 {
+      margin: 0 0 10px;
+      font-size: 1.65rem;
+      color: var(--navy);
+    }
+    .ra-entry-gate .ra-entry-lead {
+      margin: 0 0 22px;
+      font-size: 15px;
+      color: var(--muted);
+      line-height: 1.5;
+      max-width: 52ch;
+    }
+    .ra-entry-cards {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      width: 100%;
+      max-width: 640px;
+    }
+    .ra-entry-card {
+      min-width: 0;
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px 18px;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .ra-entry-card h2 {
+      margin: 0;
+      font-size: 1.1rem;
+      color: var(--navy);
+    }
+    .ra-entry-card p {
+      margin: 0;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.45;
+      flex: 1;
+    }
+    .ra-entry-card button {
+      width: 100%;
+      margin-top: 4px;
+      min-height: 46px;
+      white-space: normal !important;
+    }
+    .ra-app-shell {
+      display: none;
+    }
+    #cs-ra-dashboard.cs-ra-app-active .ra-entry-gate {
+      display: none !important;
+    }
+    #cs-ra-dashboard.cs-ra-app-active .ra-app-shell {
+      display: block;
+    }
+    .ra-read-ack-panel {
+      background: #f0faf4;
+      border: 1px solid #b9e4c5;
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin: 14px 0 18px;
+    }
+    .ra-read-ack-panel h3 {
+      margin: 0 0 8px;
+      font-size: 15px;
+      color: #14532d;
+    }
+    .ra-read-ack-panel p {
+      margin: 0 0 10px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .ra-read-ack-panel .ra-read-ack-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: flex-end;
+    }
+    .ra-read-ack-panel .ra-read-ack-fields {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 12px;
+      max-width: 100%;
+      width: 100%;
+    }
+    .ra-read-ack-panel .ra-read-ack-fields label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 4px;
+    }
+    .ra-read-ack-panel .ra-read-ack-fields input[type="text"] {
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .ra-read-ack-panel .ra-read-ack-row input[type="text"] {
+      flex: 1 1 200px;
+      min-width: 0;
+      max-width: 320px;
+    }
+    .ra-read-ack-panel .ra-read-done {
+      margin: 0;
+      font-size: 14px;
+      color: #166534;
+      font-weight: 700;
+    }
+    .ra-card-read-badge {
+      display: inline-block;
+      margin-top: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #166534;
+      background: #dcfce7;
+      border: 1px solid #86efac;
+      border-radius: 999px;
+      padding: 3px 10px;
+    }
+    .governance-panel {
+      background: #f8fbfd;
+      border: 1px solid #dbe5ec;
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+    .governance-panel h4 {
+      margin: 0 0 8px;
+      font-size: 14px;
+      color: var(--navy);
+    }
+    .review-actions {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .review-action-btn {
+      border: 1px solid #d5dee6;
+      background: #fff;
+      color: var(--text);
+      text-align: left;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-weight: 700;
+    }
+    .review-action-btn small {
+      display: block;
+      margin-top: 4px;
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 400;
+    }
+    .review-action-btn.no-changes { border-left: 4px solid #7dbb93; }
+    .review-action-btn.minor { border-left: 4px solid #c9a65a; }
+    .review-action-btn.major { border-left: 4px solid #c17474; }
+    .ra-read-bullets {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 14px 10px 12px;
+      background: #fafcfd;
+      min-height: 2.75em;
+    }
+    .ra-read-bullets-compact {
+      padding: 8px 10px;
+      min-height: 2.25em;
+    }
+    .ra-prose-bullets {
+      margin: 0;
+      padding-left: 1.15em;
+      list-style-type: disc;
+    }
+    .ra-prose-bullets li {
+      margin: 0.4em 0;
+      line-height: 1.5;
+      color: var(--text);
+    }
+    .ra-prose-bullets li:first-child {
+      margin-top: 0;
+    }
+    .ra-prose-bullets li:last-child {
+      margin-bottom: 0;
+    }
+    .ra-bullet-empty {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .ra-hazard-read-cell {
+      vertical-align: top;
+    }
+    .distribution-log {
+      margin-top: 10px;
+      border-top: 1px solid #e3ebf1;
+      padding-top: 10px;
+    }
+    .distribution-log-item {
+      border: 1px solid #dbe5ec;
+      background: #fff;
+      border-radius: 8px;
+      padding: 8px 10px;
+      margin: 0 0 8px;
+      font-size: 12px;
+      color: var(--text);
+      line-height: 1.45;
+    }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(17, 30, 40, 0.42);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 40;
+      padding: 16px;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal-sheet {
+      width: min(680px, 100%);
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid #d5e0e8;
+      box-shadow: 0 14px 36px rgba(0,0,0,0.2);
+      overflow: hidden;
+    }
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 16px;
+      border-bottom: 1px solid #e5edf3;
+    }
+    .modal-head h3 { margin: 0; font-size: 17px; color: var(--navy); }
+    .modal-close {
+      background: #eef3f7;
+      border: 1px solid #d2dce5;
+      color: var(--muted);
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      font-size: 20px;
+      line-height: 1;
+      padding: 0;
+    }
+    .modal-body { padding: 14px 16px; }
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 12px 16px 16px;
+      border-top: 1px solid #e5edf3;
+    }
+    .modal-disclaimer {
+      margin: 10px 0 0;
+      padding: 10px;
+      font-size: 12px;
+      color: var(--muted);
+      background: #f6f9fb;
+      border: 1px solid #dde8ef;
+      border-radius: 8px;
+      line-height: 1.45;
+    }
+
+    /* Send modal: full viewport on narrow screens (same idea as policy overlay) */
+    @media (max-width: 1024px) {
+      #sendModal.modal-backdrop.open {
+        padding: 0;
+        align-items: stretch;
+        justify-content: stretch;
+        overflow: hidden;
+        height: 100dvh;
+        max-height: 100dvh;
+        min-height: 100vh;
+        min-height: -webkit-fill-available;
+      }
+      #sendModal .modal-sheet {
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        border-radius: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+        display: flex !important;
+        flex-direction: column !important;
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        min-width: 0 !important;
+        max-height: none !important;
+      }
+      #sendModal .modal-head {
+        flex: 0 0 auto;
+        padding-top: max(14px, env(safe-area-inset-top, 0px)) !important;
+        padding-left: max(16px, env(safe-area-inset-left, 0px)) !important;
+        padding-right: max(16px, env(safe-area-inset-right, 0px)) !important;
+      }
+      #sendModal .modal-body {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-y: contain;
+        padding-left: max(16px, env(safe-area-inset-left, 0px)) !important;
+        padding-right: max(16px, env(safe-area-inset-right, 0px)) !important;
+        padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)) !important;
+      }
+      #sendModal .modal-actions {
+        flex: 0 0 auto;
+        padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)) !important;
+        padding-left: max(16px, env(safe-area-inset-left, 0px)) !important;
+        padding-right: max(16px, env(safe-area-inset-right, 0px)) !important;
+      }
+    }
+
+    /* Móvil en horizontal: lista + documento a la vez, altura de viewport */
+    @media (max-width: 1024px) and (orientation: landscape) {
+      #cs-ra-dashboard.cs-ra-app-active #raAppShell {
+        min-height: 100dvh;
+        max-height: 100dvh;
+        min-height: -webkit-fill-available;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      #cs-ra-dashboard.cs-ra-app-active .ra-staff-banner {
+        flex: 0 0 auto;
+        padding: 8px 12px !important;
+        margin-bottom: 8px !important;
+      }
+      #cs-ra-dashboard.cs-ra-app-active .ra-staff-banner p {
+        display: none;
+      }
+      #cs-ra-dashboard.cs-ra-app-active .app {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex !important;
+        flex-direction: column !important;
+        margin-top: 0 !important;
+        margin-bottom: 0 !important;
+        padding-top: max(6px, env(safe-area-inset-top, 0px)) !important;
+        padding-bottom: max(8px, env(safe-area-inset-bottom, 0px)) !important;
+      }
+      #cs-ra-dashboard.cs-ra-app-active .top-header {
+        flex: 0 0 auto;
+        padding: 8px 12px !important;
+        margin-bottom: 8px !important;
+      }
+      #cs-ra-dashboard.cs-ra-app-active .title-block h1 {
+        font-size: 1.05rem !important;
+        line-height: 1.2 !important;
+      }
+      #cs-ra-dashboard.cs-ra-app-active .title-block p {
+        display: none;
+      }
+      #cs-ra-dashboard.cs-ra-app-active .top-controls {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 8px !important;
+      }
+      #cs-ra-dashboard.cs-ra-app-active .top-controls #searchInput {
+        grid-column: 1 / -1;
+      }
+      #cs-ra-dashboard.cs-ra-app-active .layout {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        flex-direction: row !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+        overflow: hidden;
+      }
+      #cs-ra-dashboard.cs-ra-app-active .sidebar {
+        width: min(38vw, 300px) !important;
+        max-width: min(38vw, 300px) !important;
+        flex: 0 0 min(38vw, 300px) !important;
+        max-height: none !important;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        padding: 10px !important;
+      }
+      #cs-ra-dashboard.cs-ra-app-active #raList {
+        grid-template-columns: 1fr !important;
+      }
+      #cs-ra-dashboard.cs-ra-app-active .main {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+      }
+      #cs-ra-dashboard.cs-ra-app-active .document-header {
+        padding: 10px 12px !important;
+      }
+      #cs-ra-dashboard.cs-ra-app-active .document-header h2 {
+        font-size: 1rem !important;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .ra-entry-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+    @media (max-width: 1180px) {
+      .top-controls { grid-template-columns: 1fr; }
+      .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .signature-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      #cs-ra-dashboard .top-controls { grid-template-columns: 1fr; }
+      #cs-ra-dashboard .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+      #cs-ra-dashboard .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+      #cs-ra-dashboard .signature-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+      #cs-ra-dashboard #raList {
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)) !important;
+      }
+    }
+    @media (max-width: 720px) {
+      #cs-ra-dashboard .app {
+        padding-left: max(10px, env(safe-area-inset-left)) !important;
+        padding-right: max(10px, env(safe-area-inset-right)) !important;
+        padding-bottom: max(16px, env(safe-area-inset-bottom)) !important;
+        margin-top: 8px !important;
+      }
+      #cs-ra-dashboard .top-header {
+        padding: 12px 14px;
+        margin-bottom: 10px;
+      }
+      #cs-ra-dashboard .title-block h1 {
+        font-size: 1.35rem;
+        line-height: 1.25;
+      }
+      #cs-ra-dashboard .title-block p {
+        font-size: 12px;
+      }
+      #cs-ra-dashboard .top-controls {
+        gap: 10px;
+      }
+      #cs-ra-dashboard .top-controls button {
+        width: 100%;
+        min-height: 46px;
+        font-size: 15px;
+        white-space: normal !important;
+        text-align: center;
+      }
+      #cs-ra-dashboard .sidebar {
+        padding: 12px;
+      }
+      #cs-ra-dashboard #raList {
+        grid-template-columns: 1fr !important;
+      }
+      #cs-ra-dashboard .ra-card {
+        padding: 12px;
+      }
+      #cs-ra-dashboard .main .section {
+        padding: 12px 14px;
+      }
+      #cs-ra-dashboard .section-title {
+        font-size: 1rem;
+      }
+      #cs-ra-dashboard .document-header {
+        padding: 12px 14px;
+        flex-direction: column;
+        align-items: stretch;
+      }
+      #cs-ra-dashboard .document-header h2 {
+        font-size: 1.15rem;
+      }
+      #cs-ra-dashboard .grid-4,
+      #cs-ra-dashboard .grid-2,
+      #cs-ra-dashboard .signature-grid {
+        grid-template-columns: 1fr !important;
+      }
+      .grid-4,
+      .grid-2,
+      .signature-grid {
+        grid-template-columns: 1fr;
+      }
+      #cs-ra-dashboard .doc-actions {
+        flex-direction: column;
+        width: 100%;
+      }
+      #cs-ra-dashboard .doc-actions button {
+        width: 100%;
+        min-height: 46px;
+        white-space: normal !important;
+        text-align: center;
+      }
+      .review-actions {
+        grid-template-columns: 1fr;
+      }
+      .modal-sheet {
+        width: 100%;
+      }
+      #cs-ra-dashboard .table-controls {
+        flex-direction: column;
+      }
+      #cs-ra-dashboard .table-controls button {
+        width: 100%;
+        min-height: 44px;
+        white-space: normal !important;
+      }
+      #cs-ra-dashboard input[type="text"],
+      #cs-ra-dashboard input[type="date"],
+      #cs-ra-dashboard input[type="time"],
+      #cs-ra-dashboard select,
+      #cs-ra-dashboard textarea {
+        font-size: 16px;
+        padding: 10px 12px;
+      }
+      #cs-ra-dashboard .cs-ra-table-scroll {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
+        margin-left: -6px;
+        margin-right: -6px;
+        padding-left: 6px;
+        padding-right: 6px;
+      }
+      #cs-ra-dashboard #hazardTable,
+      #cs-ra-dashboard #reviewTable {
+        min-width: 640px !important;
+      }
+      #cs-ra-dashboard #hazardTable th,
+      #cs-ra-dashboard #hazardTable td,
+      #cs-ra-dashboard #reviewTable th,
+      #cs-ra-dashboard #reviewTable td {
+        font-size: 12px;
+        padding: 6px 5px;
+      }
+      #cs-ra-dashboard .row-delete .btn-danger {
+        width: 100%;
+        min-height: 42px;
+        white-space: normal !important;
+      }
+    }
+    @media print {
+      body, html { background: #fff; }
+      #cs-ra-dashboard { overflow: visible !important; background: #fff !important; }
+      #cs-ra-dashboard .app { max-width: 100%; margin: 0; padding: 0; }
+      #cs-ra-dashboard .no-print, #cs-ra-dashboard .sidebar, #cs-ra-dashboard .top-header, #cs-ra-dashboard .doc-actions, #cs-ra-dashboard .table-controls, #cs-ra-dashboard .row-delete { display: none !important; }
+      #cs-ra-dashboard .layout { display: block; }
+      #cs-ra-dashboard .main { border: none; border-radius: 0; box-shadow: none; overflow: visible !important; }
+      #cs-ra-dashboard .cs-ra-table-scroll { overflow: visible !important; max-width: none !important; }
+      #cs-ra-dashboard #hazardTable,
+      #cs-ra-dashboard #reviewTable {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        table-layout: fixed !important;
+      }
+      #cs-ra-dashboard .document-header, #cs-ra-dashboard .section { break-inside: avoid; }
+      #cs-ra-dashboard .ra-read-bullets {
+        border: none !important;
+        background: transparent !important;
+        padding: 4px 0 !important;
+      }
+      #cs-ra-dashboard .ra-prose-bullets li {
+        color: #000;
+      }
+      #cs-ra-dashboard input, #cs-ra-dashboard select, #cs-ra-dashboard textarea {
+        border: none !important;
+        padding: 0 !important;
+        background: transparent !important;
+        color: #000 !important;
+        font: inherit !important;
+        appearance: none;
+        -webkit-appearance: none;
+      }
+      #cs-ra-dashboard textarea {
+        resize: none !important;
+        overflow: visible !important;
+        min-height: auto !important;
+        height: auto !important;
+      }
+      #cs-ra-dashboard table { break-inside: auto; }
+      #cs-ra-dashboard tr { break-inside: avoid; break-after: auto; }
+      #cs-ra-dashboard th, #cs-ra-dashboard td { border: 1px solid #666 !important; font-size: 11px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="cs-ra-dashboard" class="cs-ra-dashboard cs-ra-app-active">
+  <!-- Admin-only portal; staff view: working_ui/ra_portal.html -->
+  <div id="raAppShell" class="ra-app-shell">
+  <div class="ra-staff-banner no-print">
+    <strong>Staff view — read only</strong>
+    <p>Open each venue, read the document, and sign acknowledgement. Governance records remain in the admin view.</p>
+  </div>
+  <div class="app">
+    <header class="top-header no-print">
+      <div class="title-row">
+        <div class="title-block">
+          <h1 id="raDashboardHeading">clubSENsational Risk Assessment Admin Portal</h1>
+          <p id="raDashboardTagline">Operational governance workspace for document control, risk review, sign-off, and distribution.</p>
+        </div>
+      </div>
+      <div class="top-controls">
+        <input id="searchInput" type="text" placeholder="Search venue, reference, or keyword" />
+        <select id="typeFilter">
+          <option value="All">All Venues</option>
+          <option value="Aquatic Venues">Aquatic Venues</option>
+          <option value="Indoor Venues">Indoor Venues</option>
+          <option value="Climbing">Climbing</option>
+          <option value="Gym">Gym</option>
+        </select>
+        <button id="sendBtn" class="btn-action btn-send" type="button" title="Send risk assessment">
+          <span aria-hidden="true">✉</span> Send
+        </button>
+        <button id="printBtn" class="btn-action btn-print" type="button" title="Print risk assessment">
+          <span aria-hidden="true">⎙</span> Print
+        </button>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="sidebar no-print">
+        <div class="sidebar-header">
+          <h2>Risk Assessments</h2>
+          <span id="resultCount" class="count-chip">0</span>
+        </div>
+        <div id="raList"></div>
+      </aside>
+
+      <main class="main" id="mainPanel"></main>
+    </div>
+
+    <div id="sendModal" class="modal-backdrop no-print" aria-hidden="true">
+      <div class="modal-sheet" role="dialog" aria-modal="true" aria-labelledby="sendModalTitle">
+        <div class="modal-head">
+          <h3 id="sendModalTitle">Send Risk Assessment</h3>
+          <button type="button" class="modal-close" id="sendModalCloseBtn" aria-label="Close">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="grid-2">
+            <div class="field">
+              <label>Organisation name</label>
+              <input id="sendOrgInput" type="text" placeholder="Organisation" />
+            </div>
+            <div class="field">
+              <label>Recipient email</label>
+              <input id="sendEmailInput" type="text" placeholder="name@organisation.com" />
+            </div>
+          </div>
+          <div class="field">
+            <label>Document type</label>
+            <select id="sendDocTypeSelect">
+              <option value="Official PDF">Official PDF</option>
+              <option value="Editable version">Editable version</option>
+              <option value="Both">Both</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Optional note</label>
+            <textarea id="sendNoteInput" placeholder="Optional internal or recipient note"></textarea>
+          </div>
+          <p class="modal-disclaimer" id="sendEditableDisclaimer" style="display:none;">
+            This editable version is provided for adaptation by your organisation according to the needs of the individuals attending. Final review and approval remain the responsibility of your organisation.
+          </p>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-light" id="sendCancelBtn">Cancel</button>
+          <button type="button" class="btn-primary" id="sendSubmitBtn">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <script type="application/json" id="embedded-maria-defaults">[{"id":"RA-VENUE-001","category":"Aquatic Venues","documentControl":{"title":"Swimming Pool Activities","venue":"Swimming Pool Northolt","address":"Swimming Pool Environment Northolt","documentReference":"RA-VENUE-001","assessor":"Maria Lopez","assessmentDate":"2025-04-02","assessmentTime":"16:00","version":"1.0","lastReviewDate":"2025-04-02","nextReviewDate":"2026-04-02","approvedBy":"Raul Salvador Gallego","documentStatus":"Active"},"riskSummary":{"typeOfVenue":"Aquatic Venue","generalRiskLevel":"Medium to High depending on swimmer profile","supervisionModel":"1:1 supervision where required","emergencyProcedureReference":"Venue pool procedures, accident and incident reporting, staff briefings","mainRisks":"Deep water access, slippery surfaces, suction and entrapment hazards, diving related risks, poolside slips and trips, electrical hazards near water, damaged fixtures, visibility issues, hoist safety, and unsecured poolside equipment.","generalControlApproach":"Venue controls are supported by 1:1 supervision, staff training, quarterly briefings, induction content, swimming session procedures, and accident and incident reporting processes."},"hazards":[{"hazard":"Pool access directly into deep water","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Unsafe access into deeper water may lead to loss of balance, panic, or submersion risk.","venueControls":"Wall mounted depth marker signs are clearly visible to bathers in and out of the water.\nEnsures access onto the poolside is into the shallow end of the pool under 1.2m in depth.\nTrained and competent lifeguards scan their lifeguard zone and monitor bathers entering the pool water.","clubControls":"121 Supervision\nSafety Award training to swimming teachers\nSwimming instructor training to all staff\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and Incident report in place","actionByWhom":"Team Leaders\nJavier Arranz\nVictor Matilla\nRaul Salvador\nTeam Leaders\nRaul Salvador\nVictor Matilla\nJavier Arranz","actionByWhen":"9 April 2025\n11 April 2025\n13 April 2025\n16 April 2025\n20 April 2025\n23 April 2025\n26 April 2025"},{"hazard":"Slippery pool tank floor particularly in shallow water areas","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Wet and slippery surfaces may cause slips, trips, falls, and impact injuries.","venueControls":"Ensure slip resistance of tile and floor gradient are appropriate.","clubControls":"121 Supervision\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and Incident report in place","actionByWhom":"Team Leaders\nRaul Salvador\nVictor Matilla\nJavier Arranz","actionByWhen":"9 April 2025\n20 April 2025\n23 April 2025\n26 April 2025"},{"hazard":"Excessive suction from pool tank outlets may cause entrapment","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Body parts, hair, or clothing may become trapped, creating panic, injury, or submersion risk.","venueControls":"Ensures more than one suction outlet dispersed around the pool so suction levels are insignificant.\nEnsure location of pool water circulation pump emergency shut off is clearly identified.\nLifeguards are trained in its location.","clubControls":"121 Supervision\nSafety Award training to swimming teachers\nSwimming instructor training to all staff\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and Incident report in place","actionByWhom":"Team Leaders\nJavier Arranz\nVictor Matilla\nRaul Salvador\nTeam Leaders\nRaul Salvador\nVictor Matilla\nJavier Arranz","actionByWhen":"9 April 2025\n11 April 2025\n13 April 2025\n18 April 2025\n20 April 2025\n23 April 2025\n26 April 2025"},{"hazard":"Entrapment in pool grills","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Fingers, toes, hair, or clothing may become trapped, causing injury or distress.","venueControls":"Ensures pool grill apertures do not exceed 8mm.\nChecks outlet grids for damage and ensure they are securely in position.","clubControls":"121 Supervision\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and Incident report in place","actionByWhom":"Team Leaders\nRaul Salvador\nTeam Leaders\nRaul Salvador\nVictor Matilla\nJavier Arranz","actionByWhen":"9 April 2025\n18 April 2025\n20 April 2025\n23 April 2025\n26 April 2025"},{"hazard":"Entrapment caused by moveable floor","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Moveable floor operations may create trapping or crush hazards if not controlled.","venueControls":"Provide a SSOW for raising and lowering of moveable floor.\nProvide training for colleagues in the SSOW for raising and lowering of moveable floor.\nComplete daily equipment check of moveable floor.\nEnsure regular inspection and servicing by authorised contractor.","clubControls":"121 Supervision\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and Incident report in place","actionByWhom":"Team Leaders\nRaul Salvador\nTeam Leaders\nRaul Salvador\nVictor Matilla\nJavier Arranz","actionByWhen":"9 April 2025\n18 April 2025\n20 April 2025\n23 April 2025\n26 April 2025"},{"hazard":"Damaged pool tank tiles","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Broken or lifted tiles may cause cuts, slips, trips, or foot injuries.","venueControls":"Checks pool tiles for signs of visible damage or tile lifting.","clubControls":"121 Supervision\nReporting System in place","actionByWhom":"Team Leaders\nJavier Arranz","actionByWhen":"9 April 2025\n26 April 2025"},{"hazard":"Collision with objects or equipment in pool tank","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Users may collide with recessed fittings, lights, or equipment, causing impact injuries.","venueControls":"Ensure lane rope fittings are recessed into pool side or removed when not in use.\nEnsure all underwater lights are flush with the pool wall.","clubControls":"121 Supervision\nReporting System in place","actionByWhom":"Team Leaders\nJavier Arranz","actionByWhen":"9 April 2025\n26 April 2025"},{"hazard":"Unauthorised access to diving boards intended to be out of use","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Access to diving boards when not in use may result in unsafe jumping or diving injuries.","venueControls":"Ensures diving boards have a physical barrier to prevent access to them out of hours.","clubControls":"121 Supervision\nSafety Award training to swimming teachers\nSwimming instructor training to all staff\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and Incident report in place","actionByWhom":"Team Leaders\nJavier Arranz\nVictor Matilla\nRaul Salvador\nTeam Leaders\nRaul Salvador\nVictor Matilla\nJavier Arranz","actionByWhen":"9 April 2025\n11 April 2025\n13 April 2025\n18 April 2025\n20 April 2025\n23 April 2025\n26 April 2025"},{"hazard":"Diving into insufficient depth of water","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Diving in prohibited or shallow areas may cause serious head, neck, or spinal injury.","venueControls":"Ensure diving blocks are removed following galas or covers put on highlighting they are out of use.\nEnsure no diving signs are in place to prevent diving in prohibited areas.\nEnsure trained and competent lifeguards enforce pool rules and are trained in emergency procedures.","clubControls":"121 Supervision\nSafety Award training to swimming teachers\nSwimming instructor training to all staff\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and Incident report in place","actionByWhom":"Team Leaders\nJavier Arranz\nVictor Matilla\nRaul Salvador\nTeam Leaders\nRaul Salvador\nVictor Matilla\nJavier Arranz","actionByWhen":"9 April 2025\n11 April 2025\n13 April 2025\n18 April 2025\n20 April 2025\n23 April 2025\n26 April 2025"},{"hazard":"Infection through microbiological contaminates including E coli, Coliforms, Pseudomonas aeruginosa, Colony count, Cryptosporidium, and Giardia","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Poor water quality or contamination may cause infection, illness, and pool closure.","venueControls":"Ensures there is independent monthly microbiological testing by authorised and competent company.\nCarry out daily and weekly pool water tests to ensure pool remains within PWTAG guidelines.\nEnsures operation of automatic dosing at correct parameters.\nEnsures operation of automatic coagulant dosing at the correct rate.\nEnsures operation of secondary disinfection system at the correct parameters.\nEnsure six monthly maintenance and inspection checks of pool plant equipment by specialist contractor.\nCarry out weekly backwashing every seven days or in line with manufacturer guidance.\nFilter pressure gauges readings recorded.\nUndertake backwashing when pool is not in use, allowing 90 minutes after backwashing for the filter to resettle and recirculate before reopening the pool.\nAll Duty Managers are PPO trained.\nEnsure all lifeguards and Duty Managers are trained in CSOP, NOP, and EAP procedures.\nInclude EAP for release of faeces, blood, or vomit.\nFollow EAP and record on pool clearance incident sheet.\nDisplay sickness and diarrhoea exclusion information on web site and at reception.\nPool hygiene signage displayed encouraging swimmers to shower and use toilet facilities.\nEnsure customers are aware that swimmers not toilet trained are required to wear aqua nappies as per admission policy.\nHighlight that those suffering from an upset tummy within the last 48 hours or 14 days if diagnosed by GP as having Cryptosporidiosis are requested not to swim.\nEnsures that the Centre Safety Operating Procedures details procedure for discovery of faeces or vomit in pool as per PWTAG guidelines.","clubControls":"Pre Session Client Screening","actionByWhom":"Team Leaders","actionByWhen":"16 April 2025"},{"hazard":"Slips, trips, and falls on poolside due to poor cleaning, housekeeping, damaged or raised floor surface","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Wet or obstructed poolside surfaces may cause slips, trips, falls, and impact injuries.","venueControls":"Swimming pool floor and surround is slip resistant.\nEnsure poolside cleaning tasks as set out in the daily cleaning rota are carried out.\nEnsure poolside surround is free from debris and litter, free from any slip or trip hazard and that tiles or floor surface is free from damage.\nEnsure that running is prohibited on the poolside.\nEnsures pool edge is clearly highlighted.\nPool surround is a minimum of 2 metres in width.\nPool surround, steps, and tank floors have slip resistant tiles.\nThe gradient on the access ramps does not exceed 1:15 and has handrails on both sides.\nDrainage gullies are highlighted and covered by grating to prevent a tripping hazard.\nCompletes mapping of all poolside accidents to highlight any accident trends and identify additional measures to prevent reoccurrence.\nBarrier in place to prevent access from a freeboard greater than 380mm.","clubControls":"Ensure appropriate footwear is used when outside of the pool\nClear rules on walking and not rushing\n121 Supervision\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and Incident report in place","actionByWhom":"Team Leaders\nTeam Leaders\nTeam Leaders\nRaul Salvador\nTeam Leaders\nRaul Salvador\nVictor Matilla\nJavier Arranz","actionByWhen":"9 April 2025\n11 April 2025\n13 April 2025\n18 April 2025\n20 April 2025\n23 April 2025\n26 April 2025"},{"hazard":"Electricity causing possible electrocution","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Incorrect or damaged electrical equipment near water may cause shock, burns, or serious injury.","venueControls":"All electrical equipment for use on poolside is either battery operated or has the correct IP rating for the area or zone to be used in.\nElectrical sockets not to be sited within 1.25m of the pool edge and 0.3m from the floor and must be protected by a 30mA RCD.\nAny equipment to be used within the pool must be IPx8 rated.\nAny equipment to be used within 2m of the pool must be IPx5 rated.\nAny equipment used in excess of 2m from the pool must be IPx5.","clubControls":"121 Supervision\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and incident report in place","actionByWhom":"Team Leaders\nRaul Salvador\nTeam Leaders\nRaul Salvador\nVictor Matilla\nJavier Arranz","actionByWhen":"9 April 2025\n18 April 2025\n20 April 2025\n23 April 2025\n26 April 2025"},{"hazard":"Damaged glazing","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Broken or unsafe glazing may cause cuts or injury on impact.","venueControls":"All pool glass is safety glass.","clubControls":"121 Supervision\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nAccident and incident report in place","actionByWhom":"Team Leaders\nRaul Salvador\nTeam Leaders\nRaul Salvador\nJavier Arranz","actionByWhen":"9 April 2025\n18 April 2025\n20 April 2025\n26 April 2025"},{"hazard":"Glare preventing casualties from being seen","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Poor visibility may delay response and prevent swimmers being seen clearly.","venueControls":"Ensures lifeguard stations are located to minimise the effect of glare from the pool water surface.\nPool glazing treated or covered to minimise effects of glare through windows.","clubControls":"Information added to the induction sessions\nAccident and incident report in place","actionByWhom":"Raul Salvador\nJavier Arranz","actionByWhen":"20 April 2025\n26 April 2025"},{"hazard":"Unsecure or damaged pool steps","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Unstable steps or rails may cause slips, falls, or unsafe assisted transfers.","venueControls":"Ensures daily inspection of steps is completed to check:\nSteps are secure and stable\nNo sharp, rough or raised edges\nEnsures foot rails are secure\nGuard rails to prevent jumping onto poolside steps from the side\nPoolside steps gently graded and handrails available.","clubControls":"Swimming procedure highlights that teachers should get into the pool first","actionByWhom":"Victor Matilla","actionByWhen":"23 April 2025"},{"hazard":"Damage to pool hoist","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Damaged hoist or insecure fixing points may lead to transfer injuries or equipment failure.","venueControls":"Ensures daily check is completed to ensure hoist is free from visible damage and fixing points are secure.","clubControls":"121 Supervision\nAccident and Incident report in place","actionByWhom":"Team Leaders\nJavier Arranz","actionByWhen":"9 April 2025\n26 April 2025"},{"hazard":"Unsecured lifeguard chairs","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Unsecured chairs or poolview monitors may topple over and cause impact injury.","venueControls":"Any lifeguard chairs that have been modified to hold poolview monitors must be secured in a way that stops them from toppling over.","clubControls":"121 Supervision","actionByWhom":"Team Leaders","actionByWhen":"9 April 2025"}],"emergencyOperationalNotes":{"emergencyProcedures":"Emergency arrangements are supported by trained lifeguards, emergency procedures for prohibited diving, pool rules enforcement, accident and incident reporting, and contamination response under the venue pool procedures.","operationalNotes":"Quarterly briefings, induction content, 121 supervision, swimming session procedures, and reporting systems are repeatedly referenced throughout the consultant assessment and should remain active controls in delivery."},"reviewLog":[{"reviewDate":"2026-04-02","reviewedBy":"Raul Salvador Gallego","changesMade":"Annual review date carried over from the consultant assessment.","signature":"","nextReviewDue":"2026-10-02"},{"reviewDate":"","reviewedBy":"","changesMade":"","signature":"","nextReviewDue":""}],"signOff":{"assessor":"","reviewer":"","managerApproval":""}},{"id":"RA-VENUE-002","category":"Aquatic Venues","documentControl":{"title":"Swimming Pool Activities","venue":"Swimming Pool Acton","address":"Swimming Pool Environment Acton","documentReference":"RA-VENUE-002","assessor":"Maria Lopez","assessmentDate":"2025-04-01","assessmentTime":"16:00","version":"1.0","lastReviewDate":"2025-04-01","nextReviewDate":"2026-04-01","approvedBy":"Raul Salvador Gallego","documentStatus":"Active"},"riskSummary":{"typeOfVenue":"Aquatic Venue","generalRiskLevel":"Medium to High depending on swimmer profile","supervisionModel":"121 supervision where required","emergencyProcedureReference":"Venue pool procedures, accident and incident reporting, staff briefings","mainRisks":"Deep water access, slippery surfaces, suction and entrapment hazards, moveable floor hazards, diving related risks, microbiological contamination, poolside slips and trips, electrical hazards near water, damaged fixtures, glare, hoist safety, and unsecured poolside equipment.","generalControlApproach":"Venue controls are supported by 121 supervision, staff training, quarterly briefings, induction content, swimming session procedures, reporting systems, and operational follow up assigned to named leads."},"hazards":[{"hazard":"Pool access directly into deep water","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Unsafe access into deeper water may lead to loss of balance, panic, or submersion risk.","venueControls":"Wall mounted depth marker signs are clearly visible to bathers in and out of the water.\nEnsures access onto the poolside is into the shallow end of the pool under 1.2m in depth.\nTrained and competent lifeguards scan their lifeguard zone and monitor bathers entering the pool water.","clubControls":"121 Supervision\nSafety Award training to swimming teachers\nSwimming instructor training to all staff\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and incident report in place","actionByWhom":"Team Leaders\nJavier Arranz\nVictor Matilla\nRaul Salvador, Team Leaders\nRaul Salvador\nVictor Matilla\nJavier Arranz","actionByWhen":"8 April 2025\n10 April 2025\n12 April 2025\n17 April 2025\n19 April 2025\n22 April 2025\n25 April 2025"},{"hazard":"Slippery pool tank floor particularly in shallow water areas","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Wet and slippery surfaces may cause slips, trips, falls, and impact injuries.","venueControls":"Ensure slip resistance of tile and floor gradient are appropriate.","clubControls":"121 Supervision\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and incident report in place","actionByWhom":"Team Leaders\nRaul Salvador\nVictor Matilla\nJavier Arranz","actionByWhen":"8 April 2025\n19 April 2025\n22 April 2025\n25 April 2025"},{"hazard":"Excessive suction from pool tank outlets may cause entrapment","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Body parts, hair, or clothing may become trapped, creating panic, injury, or submersion risk.","venueControls":"Ensures more than one suction outlet dispersed around the pool so suction levels are insignificant.\nEnsure location of pool water circulation pump emergency shut off is clearly identified.\nLifeguards are trained in its location.","clubControls":"121 Supervision\nSafety Award training to swimming teachers\nSwimming instructor training to all staff\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and incident report in place","actionByWhom":"Team Leaders\nJavier Arranz\nVictor Matilla\nRaul Salvador, Team Leaders\nRaul Salvador\nVictor Matilla\nJavier Arranz","actionByWhen":"8 April 2025\n10 April 2025\n12 April 2025\n17 April 2025\n19 April 2025\n22 April 2025\n25 April 2025"},{"hazard":"Entrapment in pool grills","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Fingers, toes, hair, or clothing may become trapped, causing injury or distress.","venueControls":"Ensures pool grill apertures do not exceed 8mm.\nChecks outlet grids for damage and ensure they are securely in position.","clubControls":"121 Supervision\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and incident report in place","actionByWhom":"Team Leaders\nRaul Salvador, Team Leaders\nRaul Salvador\nVictor Matilla\nJavier Arranz","actionByWhen":"8 April 2025\n17 April 2025\n19 April 2025\n22 April 2025\n25 April 2025"},{"hazard":"Entrapment caused by moveable floor","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Moveable floor operations may create trapping or crush hazards if not controlled.","venueControls":"Provide a SSOW for raising and lowering of moveable floor.\nProvide training for colleagues in the SSOW for raising and lowering of moveable floor.\nComplete daily equipment check of moveable floor.\nEnsure regular inspection and servicing by authorised contractor.","clubControls":"121 Supervision\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and incident report in place","actionByWhom":"Team Leaders\nRaul Salvador, Team Leaders\nRaul Salvador\nVictor Matilla\nJavier Arranz","actionByWhen":"8 April 2025\n17 April 2025\n19 April 2025\n22 April 2025\n25 April 2025"},{"hazard":"Damaged pool tank tiles","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Broken or lifted tiles may cause cuts, slips, trips, or foot injuries.","venueControls":"Checks pool tiles for signs of visible damage or tile lifting.","clubControls":"121 Supervision\nReporting system in place","actionByWhom":"Team Leaders\nJavier Arranz","actionByWhen":"8 April 2025\n25 April 2025"},{"hazard":"Collision with objects or equipment in pool tank","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Users may collide with recessed fittings, lights, or equipment, causing impact injuries.","venueControls":"Ensure lane rope fittings are recessed into pool side or removed when not in use.\nEnsure all underwater lights are flush with the pool wall.","clubControls":"121 Supervision\nReporting system in place","actionByWhom":"Team Leaders\nJavier Arranz","actionByWhen":"8 April 2025\n25 April 2025"},{"hazard":"Unauthorised access to diving boards intended to be out of use","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Access to diving boards when not in use may result in unsafe jumping or diving injuries.","venueControls":"Ensures diving boards have a physical barrier to prevent access to them out of hours.","clubControls":"121 Supervision\nSafety Award training to swimming teachers\nSwimming instructor training to all staff\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and incident report in place","actionByWhom":"Team Leaders\nJavier Arranz\nVictor Matilla\nRaul Salvador, Team Leaders\nRaul Salvador\nVictor Matilla\nJavier Arranz","actionByWhen":"8 April 2025\n10 April 2025\n12 April 2025\n17 April 2025\n19 April 2025\n22 April 2025\n25 April 2025"},{"hazard":"Diving into insufficient depth of water","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Diving in prohibited or shallow areas may cause serious head, neck, or spinal injury.","venueControls":"Ensure diving blocks are removed following galas or covers put on highlighting they are out of use.\nEnsure no diving signs are in place to prevent diving in prohibited areas. These are electronic and highlight that there is no diving when under 1.5 metres on movable floors.\nEnsure trained and competent lifeguards enforce pool rules and are trained in emergency procedures.","clubControls":"121 Supervision\nSafety Award training to swimming teachers\nSwimming instructor training to all staff\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and incident report in place","actionByWhom":"Team Leaders\nJavier Arranz\nVictor Matilla\nRaul Salvador, Team Leaders\nRaul Salvador\nVictor Matilla\nJavier Arranz","actionByWhen":"8 April 2025\n10 April 2025\n12 April 2025\n17 April 2025\n19 April 2025\n22 April 2025\n25 April 2025"},{"hazard":"Infection through microbiological contaminates including E coli, Coliforms, Pseudomonas aeruginosa, Colony count, Cryptosporidium, and Giardia","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Poor water quality or contamination may cause infection, illness, and pool closure.","venueControls":"Ensures there is independent monthly microbiological testing by authorised and competent company for E coli, Coliforms, Pseudomonas aeruginosa and colony count.\nCarry out daily and weekly pool water tests to ensure pool remains within PWTAG guidelines.\nEnsures operation of automatic dosing to keep pool chemical balance at the correct parameters.\nEnsures operation of automatic coagulant dosing at the correct rate.\nEnsures operation of secondary disinfection system at the correct parameters.\nEnsure six monthly maintenance and inspection checks of pool plant equipment by specialist contractor.\nCarry out weekly backwashing every seven days or in line with manufacturer guidance.\nFilter pressure gauge readings recorded.\nUndertake backwashing when pool is not in use, allowing 90 minutes after backwashing for the filter to resettle and recirculate before reopening the pool.\nAll Duty Managers are PPO trained.\nEnsure all lifeguards and Duty Managers are trained in CSOP, NOP, and EAP procedures.\nInclude EAP for release of faeces, blood, or vomit.\nFollow EAP and record on pool clearance incident sheet.\nDisplay on website and at reception information relating to customers who have suffered from sickness and diarrhoea and must not swim until symptom free for 48 hours or 14 days if diagnosed by GP with Cryptosporidium.\nPool hygiene signage displayed encouraging swimmers to shower and use toilet facilities.\nEnsure customers are aware that swimmers not toilet trained are required to wear aqua nappies as per admission policy.\nHighlight that those suffering from an upset tummy within the last 48 hours or 14 days if diagnosed by GP as having Cryptosporidiosis are requested not to swim as per admission policy.\nEnsure the Centre Safety Operating Procedures detail the procedure for discovery of faeces or vomit in pool as per PWTAG guidelines.","clubControls":"Pre Session Client Screening","actionByWhom":"Team Leaders","actionByWhen":"15 April 2025"},{"hazard":"Slips, trips, and falls on poolside due to poor cleaning, housekeeping, damaged or raised floor surface","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Wet or obstructed poolside surfaces may cause slips, trips, falls, and impact injuries.","venueControls":"Swimming pool floor and surround is slip resistant.\nEnsure poolside cleaning tasks as set out in the daily cleaning rota are carried out.\nEnsure poolside surround is free from debris and litter, free from any slip or trip hazard and that tiles or floor surface is free from damage.\nEnsure that running is prohibited on the poolside.\nEnsures pool edge is clearly highlighted.\nPool surround is a minimum of 2 metres in width.\nPool surround, steps, and tank floors have slip resistant tiles.\nThe gradient on the access ramps does not exceed 1:15 and has handrails on both sides.\nDrainage gullies are highlighted and covered by grating to prevent a tripping hazard.\nCompletes mapping of all poolside accidents to highlight any accident trends and identify additional measures to prevent reoccurrence.\nBarrier in place to prevent access from a freeboard greater than 380mm.","clubControls":"Ensure appropriate footwear is used when outside of the pool\nClear rules on walking and not rushing\n121 Supervision\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and incident report in place","actionByWhom":"Team Leaders\nTeam Leaders\nTeam Leaders\nRaul Salvador, Team Leaders\nRaul Salvador\nVictor Matilla\nJavier Arranz","actionByWhen":"8 April 2025\n10 April 2025\n12 April 2025\n17 April 2025\n19 April 2025\n22 April 2025\n25 April 2025"},{"hazard":"Electricity causing possible electrocution","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Incorrect or damaged electrical equipment near water may cause shock, burns, or serious injury.","venueControls":"All electrical equipment for use on poolside is either battery operated or has the correct IP rating for the area or zone to be used in.\nElectrical sockets not to be sited within 1.25m of the pool edge and 0.3m from the floor and must be protected by a 30mA RCD.\nAny equipment to be used within the pool must be IPx8 rated.\nAny equipment to be used within 2m of the pool must be IPx5 rated.\nAny equipment used in excess of 2m from the pool must be IPx5.","clubControls":"121 Supervision\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and incident report in place","actionByWhom":"Team Leaders\nRaul Salvador, Team Leaders\nRaul Salvador\nVictor Matilla\nJavier Arranz","actionByWhen":"8 April 2025\n17 April 2025\n19 April 2025\n22 April 2025\n25 April 2025"},{"hazard":"Damaged glazing","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Broken or unsafe glazing may cause cuts or injury on impact.","venueControls":"All pool glass is safety glass.","clubControls":"121 Supervision\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nAccident and incident report in place","actionByWhom":"Team Leaders\nRaul Salvador, Team Leaders\nRaul Salvador\nJavier Arranz","actionByWhen":"8 April 2025\n17 April 2025\n19 April 2025\n25 April 2025"},{"hazard":"Glare preventing casualties from being seen","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Poor visibility may delay response and prevent swimmers being seen clearly.","venueControls":"Ensures lifeguard stations are located to minimise the effect of glare from the pool water surface.\nPool glazing treated or covered to minimise effects of glare through windows.","clubControls":"Information added to the induction sessions\nAccident and incident report in place","actionByWhom":"Raul Salvador\nJavier Arranz","actionByWhen":"19 April 2025\n25 April 2025"},{"hazard":"Unsecure or damaged pool steps","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Unstable steps or rails may cause slips, falls, or unsafe assisted transfers.","venueControls":"Ensures daily inspection of steps is completed to check:\nSteps are secure and stable\nNo sharp, rough or raised edges\nEnsures foot rails are secure\nGuard rails to prevent jumping onto poolside steps from the side.\nPoolside steps gently graded with handrails available.","clubControls":"Swimming procedure highlights that teachers should get into the pool first","actionByWhom":"Victor Matilla","actionByWhen":"22 April 2025"},{"hazard":"Damage to pool hoist","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Damaged hoist or insecure fixing points may lead to transfer injuries or equipment failure.","venueControls":"Ensures daily check is completed to ensure hoist is free from visible damage and fixing points are secure.","clubControls":"121 Supervision\nAccident and incident report in place","actionByWhom":"Team Leaders\nJavier Arranz","actionByWhen":"8 April 2025\n25 April 2025"},{"hazard":"Unsecured lifeguard chairs","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Unsecured chairs or poolview monitors may topple over and cause impact injury.","venueControls":"Any lifeguard chairs that have been modified to hold poolview monitors must be secured in a way that stops them from toppling over.","clubControls":"121 Supervision","actionByWhom":"Team Leaders","actionByWhen":"8 April 2025"}],"emergencyOperationalNotes":{"emergencyProcedures":"Emergency arrangements are supported by trained lifeguards, emergency procedures for prohibited diving, contamination response under the venue pool procedures, pool rules enforcement, and accident and incident reporting.","operationalNotes":"Quarterly briefings, induction content, 121 supervision, pre session screening for contamination risk, swimming session procedures, and reporting systems are repeated consultant controls and should remain part of routine delivery."},"reviewLog":[{"reviewDate":"2026-04-01","reviewedBy":"Raul Salvador Gallego","changesMade":"Annual review date carried over from the consultant assessment.","signature":"","nextReviewDue":"2026-10-01"},{"reviewDate":"","reviewedBy":"","changesMade":"","signature":"","nextReviewDue":""}],"signOff":{"assessor":"","reviewer":"","managerApproval":""}},{"id":"RA-VENUE-003","category":"Aquatic Venues","documentControl":{"title":"Hydrotherapy Pool Activities","venue":"SwimFarm","address":"W10 6RP","documentReference":"RA-VENUE-003","assessor":"Maria Lopez","assessmentDate":"2025-09-20","assessmentTime":"16:00","version":"1.0","lastReviewDate":"2025-10-15","nextReviewDate":"2026-04-15","approvedBy":"Raul Salvador Gallego","documentStatus":"Active"},"riskSummary":{"typeOfVenue":"Aquatic Venue / Hydrotherapy Pool","generalRiskLevel":"Medium to High depending on swimmer profile","supervisionModel":"1:1 supervision where required","emergencyProcedureReference":"Venue EAP / NOP / Accident and Incident Reporting","mainRisks":"Unsafe pool entry and exit, slippery pool tank floor and poolside, suction and grill entrapment, damaged tiles, collision with equipment or fixed objects, diving into insufficient depth, microbiological contamination, electrical hazards near water, visibility issues, unsafe steps or access points, and unsecured observation equipment.","generalControlApproach":"Venue controls are supported by trained staff, 1:1 supervision where required, Safety Award training, swimming instructor training, individual risk assessments, monthly or session start briefings, induction content, session procedures, equipment checks, and accident and incident reporting."},"hazards":[{"hazard":"Pool access into hydrotherapy pool","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Slips, loss of balance or unsafe entry and exit may cause injury, distress or a fall into the water.","venueControls":"Wall mounted depth marker signs are clearly visible to bathers in and out of the water.\nSwimFarm hydrotherapy pool has a uniform shallow depth of 0.8m and no direct access into deep water.\nEntry and exit are controlled by staff and users are supported according to individual need and risk assessment.\nTrained and competent staff supervise all entries into the water.","clubControls":"1:1 supervision where required\nSafety Award training to swimming teachers\nSwimming instructor training to all staff\nIndividual Risk Assessment\nBriefings with instructors to be completed monthly\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and Incident report in place","actionByWhom":"Session Lead","actionByWhen":"Before each session"},{"hazard":"Slippery pool tank floor and pool area","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Slippery surfaces may cause slips, trips or falls when moving in or around the hydrotherapy pool.","venueControls":"Ensure slip resistance of tile and floor gradient are appropriate.","clubControls":"121 Supervision\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and Incident report in place","actionByWhom":"All staff on duty","actionByWhen":"Throughout the session"},{"hazard":"Excessive suction from pool tank outlets may cause entrapment","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Body parts, hair or clothing could become trapped, leading to panic, injury or submersion risk.","venueControls":"Ensures more than one suction outlet dispersed around the pool so suction levels are insignificant.\nEnsure location of pool water circulation pump emergency shut off is clearly identified.\nLifeguards are trained in its location.","clubControls":"121 Supervision\nSafety Award training to swimming teachers\nSwimming instructor training to all staff\nIndividual Risk Assessment\nBriefings with instructors to be completed at the beginning of the sessions\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and Incident report in place","actionByWhom":"Session Lead","actionByWhen":"Before each session"},{"hazard":"Entrapment in pool grills","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Fingers, toes, hair or clothing could become trapped in damaged or insecure grills, causing injury.","venueControls":"Ensures pool grill apertures do not exceed 8mm.\nChecks outlet grids for damage and ensure they are securely in position.","clubControls":"121 Supervision\nIndividual Risk Assessment\nBriefings with instructors to be completed at the beginning of the sessions\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and Incident report in place","actionByWhom":"Session Lead","actionByWhen":"Before each session"},{"hazard":"Damaged pool tank tiles","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Broken or lifted tiles may cause cuts, trips or damage to feet and hands.","venueControls":"Checks pool tiles for signs of visible damage or tile lifting.","clubControls":"121 Supervision\nReporting System in place","actionByWhom":"Session Lead","actionByWhen":"Before each session"},{"hazard":"Collision with objects or therapy equipment in pool tank","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Swimmers may collide with equipment or fixed objects, causing impact injuries, distress or loss of balance.","venueControls":"Ensure floats, noodles, mats and therapy equipment are suitable for hydrotherapy use and removed when not in use.\nEnsure all underwater lights, rails and fixed fittings are flush and in safe condition.\nKeep the pool tank clear of unnecessary equipment during sessions.","clubControls":"1:1 supervision\nReporting System in place\nEquipment checks completed before sessions","actionByWhom":"Swimming Instructor","actionByWhen":"During each session"},{"hazard":"Diving into insufficient depth of water","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Diving into 0.8m water may result in serious head, neck or spinal injury.","venueControls":"Ensure all users are prevented from diving and are supported to enter the water safely in line with the pool depth and individual needs.","clubControls":"1:1 supervision\nSafety Award training to swimming teachers\nSwimming instructor training to all staff\nIndividual Risk Assessment\nBriefings with instructors to be completed monthly\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and Incident report in place","actionByWhom":"All staff on duty","actionByWhen":"Throughout the session"},{"hazard":"Infection through microbiological contaminates including E coli, Coliforms, Pseudomonas aeruginosa, Colony count, Cryptosporidium, and Giardia","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Poor water quality or contamination may cause illness, infection or required pool closure.","venueControls":"Ensures that there is independent monthly microbiological testing by authorised and competent company for E coli, Coliforms, Pseudomonas aeruginosa and colony count.\nCarry out daily and weekly pool water tests to ensure pool remains within PWTAG guidelines.\nEnsures operation of automatic dosing to keep pool chemical balance at the correct parameters.\nEnsures operation of automatic coagulant dosing at the correct rate.\nEnsures operation of secondary disinfection system at the correct parameters.\nEnsure six monthly maintenance and inspection checks of pool plant equipment by specialist contractor.\nCarry out weekly backwashing every seven days or when pressure differential rises by 0.5 bar or as per filter manufacturer instructions with freshwater dilution rates equal bather loading at 30 litres per bather per swim per day.\nFilter pressure gauge readings recorded.\nUndertake backwashing when pool is not in use, allowing 90 minutes after backwashing for the filter to resettle and recirculate before reopening the pool.\nAll Duty Managers are Pool Plant Operated trained.\nEnsure all Lifeguards and Duty Managers are trained in CSOP, NOP and EAP procedures.\nInclude EAP for release of faeces, blood or vomit.\nFollow EAP for release of faeces, blood or vomit and record on pool clearance incident sheet.\nMaintain safe pool water quality through daily and weekly water testing, monthly microbiological testing, correct automatic dosing, filtration and backwashing procedures, and immediate implementation of EAP and pool closure procedures where contamination is suspected or confirmed.","clubControls":"","actionByWhom":"Venue Staff","actionByWhen":"Daily and before each session if required"},{"hazard":"Slips, trips, falls on poolside due to poor cleaning, housekeeping, damaged or raised floor surface","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Wet or obstructed poolside surfaces may cause slips, trips and falls for swimmers, families or staff.","venueControls":"Swimming pool floor and surround is slip resistant.\nEnsure poolside cleaning tasks as set out in the daily cleaning rota are carried out.\nEnsure poolside surround is free from debris and litter, free from any slip or trip hazard and that tiles or floor surface is free from damage.\nEnsure that running is prohibited on the poolside.\nEnsures pool edge is clearly highlighted.\nPool surround is a minimum of 2 metres in width.\nPool surround, steps and tank floors have slip resistant tiles.\nThe gradient on the access ramps does not exceed 1:15 and has handrails on both sides.\nDrainage gullies are highlighted and covered by grating to prevent a tripping hazard.\nCompletes mapping of all poolside accidents to highlight any accident trends and identify additional measures to prevent reoccurrence.\nBarrier in place to prevent access from a freeboard greater than 380mm.","clubControls":"Ensure appropriate footwear is used when outside of the pool\nClear rules on walking and not rushing\n121 Supervision\nIndividual Risk Assessment\nBriefings with instructors to be completed monthly\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and Incident report in place","actionByWhom":"All staff on duty","actionByWhen":"Throughout the session"},{"hazard":"Electricity causing possible electrocution","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Incorrect or damaged electrical equipment near water may cause electric shock, burns or serious injury.","venueControls":"All electrical equipment for use on poolside is either battery operated or has the correct IP rating for the area or zone to be used in.\nElectrical sockets not to be sited within 1.25m of the pool edge and 0.3m from the floor and must be protected by a 30mA RCD.\nAny equipment to be used within the pool must be IPx8 rated.\nAny equipment to be used within 2m of the pool must be IPx5 rated.\nAny equipment used in excess of 2m from the pool must be IPx5.","clubControls":"121 Supervision\nIndividual Risk Assessment\nBriefings with instructors to be completed monthly\nInformation added to the induction sessions\nSwimming session procedure completed","actionByWhom":"Session Lead","actionByWhen":"Before each session"},{"hazard":"Damaged glazing","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Broken or unsafe glazing may cause cuts or injury if impacted.","venueControls":"All pool glass is safety glass.","clubControls":"121 Supervision\nBriefings with instructors to be completed monthly\nInformation added to the induction sessions","actionByWhom":"Session Lead","actionByWhen":"Before each session"},{"hazard":"Glare or visibility issues preventing bathers from being seen clearly","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Poor visibility may delay staff response and increase risk of incidents not being seen promptly.","venueControls":"Viewing positions are selected to minimise glare and blind spots on the hydrotherapy pool water surface.\nPool glazing, lighting and blinds are managed to reduce reflection where reasonably practicable.","clubControls":"1:1 supervision\nStaff positioned to maintain clear visual contact with bathers at all times","actionByWhom":"All staff on duty","actionByWhen":"Throughout the session"},{"hazard":"Unsecure or damaged pool steps / access points","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Unstable steps, rails or access points may lead to slips, falls or unsafe assisted transfers.","venueControls":"Ensures daily inspection of steps, rails and access points is completed to check:\nSteps are secure and stable\nNo sharp, rough or raised edges\nFoot rails and handrails are secure\nAccess route into the hydrotherapy pool is safe for assisted entry and exit","clubControls":"Swimming procedure highlights that teachers should get into the pool first where appropriate\nSupport provided according to individual risk assessment","actionByWhom":"Session Lead","actionByWhen":"Before each session"},{"hazard":"Unsecured observation chairs or portable poolside equipment","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Unstable portable equipment may topple, creating impact or trip hazards on poolside.","venueControls":"Any observation chair, portable seat, trolley or monitor used on poolside must be stable, positioned safely and secured where required so it cannot topple over.","clubControls":"1:1 supervision","actionByWhom":"All staff on duty","actionByWhen":"Throughout the session"}],"emergencyOperationalNotes":{"emergencyProcedures":"Emergency arrangements are supported by trained staff, identified emergency shut off awareness, contamination response under EAP procedures for faeces, blood or vomit, pool closure where required, and accident and incident reporting.","operationalNotes":"Monthly or session start briefings, induction content, 1:1 supervision where required, individual risk assessments, session procedures, equipment checks, and clear staff positioning for visual contact are repeated consultant controls and should remain part of routine delivery."},"reviewLog":[{"reviewDate":"2026-04-15","reviewedBy":"Raul Salvador Gallego","changesMade":"Review date carried over from the consultant assessment.","signature":"","nextReviewDue":"2026-10-15"},{"reviewDate":"","reviewedBy":"","changesMade":"","signature":"","nextReviewDue":""}],"signOff":{"assessor":"","reviewer":"","managerApproval":""}},{"id":"RA-VENUE-004","category":"Indoor Venues","documentControl":{"title":"Hub Operations and Session Delivery","venue":"clubSENsational Hub","address":"Indoor Operational and Activity Space","documentReference":"RA-VENUE-004","assessor":"Maria Lopez","assessmentDate":"2025-04-01","assessmentTime":"16:00","version":"1.0","lastReviewDate":"2025-04-01","nextReviewDate":"2026-04-01","approvedBy":"Raul Salvador Gallego","documentStatus":"Active"},"riskSummary":{"typeOfVenue":"Operational Hub / Indoor Activity Space","generalRiskLevel":"Medium","supervisionModel":"Staff led supervision with controlled access","emergencyProcedureReference":"Hub emergency procedure and incident reporting process","mainRisks":"Slips and trips, unauthorized access, kitchen hazards, behavior escalation, and electrical equipment safety.","generalControlApproach":"Daily checks, active supervision, restricted access to high risk areas, staff training, and consistent incident reporting."},"hazards":[{"hazard":"Slips, trips and falls","whoMayBeHarmed":"Clients\nStaff\nVisitors","howMayBeHarmed":"Wet floors or obstacles may cause impact injuries.","venueControls":"Cleaning routines and clear walkways.","clubControls":"Pre session checks and active housekeeping during delivery.","actionByWhom":"All staff on duty","actionByWhen":"Daily and during sessions"},{"hazard":"Unauthorized access","whoMayBeHarmed":"Clients\nVisitors","howMayBeHarmed":"Unsanctioned entry can create safeguarding and safety risks.","venueControls":"Controlled doors and staff monitored entry points.","clubControls":"Sign in process and supervised movement through the Hub.","actionByWhom":"Duty Manager","actionByWhen":"At all times"},{"hazard":"Kitchen hazards","whoMayBeHarmed":"Staff\nClients","howMayBeHarmed":"Hot liquids and appliances may cause burns or cuts.","venueControls":"Restricted access and safe use guidance.","clubControls":"No unsupervised client use and staff briefings on safe handling.","actionByWhom":"Hub Staff","actionByWhen":"During use"},{"hazard":"Behavior escalation","whoMayBeHarmed":"Clients\nStaff","howMayBeHarmed":"Escalation may lead to unsafe interaction or accidental injury.","venueControls":"Staff presence and de escalation procedures.","clubControls":"Individual support planning and calm break out strategy.","actionByWhom":"Session Lead","actionByWhen":"During sessions"},{"hazard":"Electrical equipment faults","whoMayBeHarmed":"All persons on site","howMayBeHarmed":"Damaged equipment may cause shock or fire risk.","venueControls":"PAT testing, scheduled maintenance, and safe cable management.","clubControls":"Visual checks before use and immediate fault isolation/reporting.","actionByWhom":"Duty Manager","actionByWhen":"Periodic checks and before use"}],"emergencyOperationalNotes":{"emergencyProcedures":"Follow Hub evacuation and first aid procedures, call emergency services if needed, and complete incident reporting for all significant events.","operationalNotes":"Deliver pre session checks, staff briefing points, and safeguarding controls consistently across all Hub activities."},"reviewLog":[{"reviewDate":"2026-04-01","reviewedBy":"Raul Salvador Gallego","changesMade":"Format aligned with the master clubSENsational template.","signature":"","nextReviewDue":"2026-10-01"},{"reviewDate":"","reviewedBy":"","changesMade":"","signature":"","nextReviewDue":""}],"signOff":{"assessor":"","reviewer":"","managerApproval":""}},{"id":"RA-VENUE-005","category":"Climbing","documentControl":{"title":"Climbing Session Activities","venue":"Westway Climbing Centre","address":"Indoor Climbing Environment","documentReference":"RA-VENUE-005","assessor":"Maria Lopez","assessmentDate":"2025-04-01","assessmentTime":"16:00","version":"1.0","lastReviewDate":"2025-04-01","nextReviewDate":"2026-04-01","approvedBy":"Raul Salvador Gallego","documentStatus":"Active"},"riskSummary":{"typeOfVenue":"Indoor Climbing Venue","generalRiskLevel":"Medium to High depending on participant profile","supervisionModel":"1:1 support where required and instructor led climbing","emergencyProcedureReference":"Venue EAP, first aid process, and accident reporting route","mainRisks":"Falls from height, harness misuse, belay errors, behaviour at height, collision with structures, slips and trips, and delayed evacuation response.","generalControlApproach":"Qualified staff lead all activities, pre session checks are completed, participants are supervised throughout, and incidents are reported and reviewed after each session."},"hazards":[{"hazard":"Fall from height","whoMayBeHarmed":"Clients\nStaff","howMayBeHarmed":"Loss of grip or incorrect climbing technique may result in falls and impact injuries.","venueControls":"Auto belay systems, padded flooring, and qualified climbing staff in place.","clubControls":"1:1 support where needed, controlled progression, and continuous instructor supervision.","actionByWhom":"Lead Instructor","actionByWhen":"During each session"},{"hazard":"Incorrect harness fitting","whoMayBeHarmed":"Clients","howMayBeHarmed":"Loose or incorrect fit can lead to poor restraint and increased fall risk.","venueControls":"Harness checks performed by venue climbing staff.","clubControls":"Double checks by clubSENsational staff before climbing begins.","actionByWhom":"Instructor","actionByWhen":"Before each session"},{"hazard":"Belay misuse","whoMayBeHarmed":"Clients\nStaff","howMayBeHarmed":"Incorrect belay operation may cause uncontrolled descent or fall.","venueControls":"Belay systems maintained and operated by qualified personnel.","clubControls":"No independent belay use by participants without approval and supervision.","actionByWhom":"Lead Instructor","actionByWhen":"Always"},{"hazard":"Behaviour at height","whoMayBeHarmed":"Clients","howMayBeHarmed":"Panic or unsafe movement may lead to slips, falls, or rescue situations.","venueControls":"Staff supervision and controlled climbing routes.","clubControls":"Gradual exposure, clear communication, and tailored support plans.","actionByWhom":"Instructor Team","actionByWhen":"Throughout session"},{"hazard":"Slips and trips","whoMayBeHarmed":"Clients\nStaff\nVisitors","howMayBeHarmed":"Obstacles or poor housekeeping may cause trips and impact injuries.","venueControls":"Clear designated walkways and regular housekeeping checks.","clubControls":"Pre session area check and immediate removal of hazards.","actionByWhom":"All staff on duty","actionByWhen":"Before and during session"},{"hazard":"Emergency evacuation from wall","whoMayBeHarmed":"Clients\nStaff","howMayBeHarmed":"Delay in evacuation may increase distress and injury risk.","venueControls":"Venue emergency procedures and first aid arrangements documented.","clubControls":"Staff briefed on emergency actions and incident recording process.","actionByWhom":"Manager and Lead Instructor","actionByWhen":"At induction and periodic review"}],"emergencyOperationalNotes":{"emergencyProcedures":"Follow venue EAP for falls, suspension events, and medical incidents. Escalate to first aid and emergency services when required, and complete accident reporting immediately.","operationalNotes":"Complete harness and equipment checks before sessions, maintain participant ratios, and deliver structured staff briefings for behaviour support and safe progression."},"reviewLog":[{"reviewDate":"2026-04-01","reviewedBy":"Raul Salvador Gallego","changesMade":"Format aligned with the master clubSENsational template.","signature":"","nextReviewDue":"2026-10-01"},{"reviewDate":"","reviewedBy":"","changesMade":"","signature":"","nextReviewDue":""}],"signOff":{"assessor":"","reviewer":"","managerApproval":""}},{"id":"RA-VENUE-006","category":"Gym","documentControl":{"title":"Gym Session Activities","venue":"clubSENsational Gym","address":"Indoor Gym Environment","documentReference":"RA-VENUE-006","assessor":"Maria Lopez","assessmentDate":"2025-04-01","assessmentTime":"16:00","version":"1.0","lastReviewDate":"2025-04-01","nextReviewDate":"2026-04-01","approvedBy":"Raul Salvador Gallego","documentStatus":"Active"},"riskSummary":{"typeOfVenue":"Indoor Gym Venue","generalRiskLevel":"Medium","supervisionModel":"Instructor led activities with close support where needed","emergencyProcedureReference":"Venue EAP, first aid process, and incident reporting","mainRisks":"Incorrect equipment use, slips and trips, manual handling strain, collisions, behavior escalation, and electrical equipment faults.","generalControlApproach":"Pre session safety checks, qualified staff supervision, clear participant instructions, controlled activity flow, and immediate incident reporting."},"hazards":[{"hazard":"Incorrect use of gym equipment","whoMayBeHarmed":"Clients\nStaff","howMayBeHarmed":"Improper posture or settings may cause strains, sprains, or impact injuries.","venueControls":"Equipment maintenance schedule and user guidance signage.","clubControls":"Demonstrations before use and direct staff supervision for each station.","actionByWhom":"Instructor Team","actionByWhen":"During all sessions"},{"hazard":"Slips, trips and falls","whoMayBeHarmed":"Clients\nStaff\nVisitors","howMayBeHarmed":"Wet surfaces, cables, or clutter may cause falls and injury.","venueControls":"Housekeeping standards and clear walkways.","clubControls":"Pre session floor checks and immediate hazard removal.","actionByWhom":"All staff on duty","actionByWhen":"Before and during sessions"},{"hazard":"Manual handling strain","whoMayBeHarmed":"Staff\nClients","howMayBeHarmed":"Lifting or assisting incorrectly may cause musculoskeletal injuries.","venueControls":"Manual handling guidance and safe lifting procedures.","clubControls":"Use progressive loads and assisted handling where required.","actionByWhom":"Lead Instructor","actionByWhen":"Throughout sessions"},{"hazard":"Collision with equipment or users","whoMayBeHarmed":"Clients\nStaff","howMayBeHarmed":"Congestion or poor spacing may result in knocks, bruises, or falls.","venueControls":"Layout zones with designated activity spaces.","clubControls":"Capacity management and controlled movement between activities.","actionByWhom":"Session Lead","actionByWhen":"During sessions"},{"hazard":"Electrical equipment faults","whoMayBeHarmed":"All persons on site","howMayBeHarmed":"Damaged equipment or cables may cause shock or fire risk.","venueControls":"PAT testing and planned maintenance.","clubControls":"Visual checks before use and isolation of defective items.","actionByWhom":"Duty Manager","actionByWhen":"Periodic and before use"},{"hazard":"Behavior escalation","whoMayBeHarmed":"Clients\nStaff","howMayBeHarmed":"Escalation may lead to unsafe interaction or abrupt movement.","venueControls":"Staff presence and behavior support procedures.","clubControls":"Calm de escalation strategy and individualized support plans.","actionByWhom":"Instructor Team","actionByWhen":"During sessions"}],"emergencyOperationalNotes":{"emergencyProcedures":"Follow venue EAP, call first aid and emergency services when needed, isolate unsafe equipment, and complete incident reports for all serious events.","operationalNotes":"Complete daily checks, staff briefings, and participant inductions before activity. Maintain supervision ratios and review controls after incidents."},"reviewLog":[{"reviewDate":"2026-04-01","reviewedBy":"Raul Salvador Gallego","changesMade":"Format aligned with the master clubSENsational template.","signature":"","nextReviewDue":"2026-10-01"},{"reviewDate":"","reviewedBy":"","changesMade":"","signature":"","nextReviewDue":""}],"signOff":{"assessor":"","reviewer":"","managerApproval":""}}]</script>
+
+  <script>
+    (function () {
+      var STAFF_MODE = false;
+      var APP_ACTIVE = true;
+      var READ_ACK_KEY = "clubSENsational_ra_staff_read_ack_v1";
+
+      var __portalRaAdminRemoteSigned = {};
+
+      function portalRaAdminComplianceClient() {
+        try {
+          var ps = typeof window !== "undefined" && window.__PORTAL_SUPABASE__;
+          return ps && ps.client ? ps.client : null;
+        } catch (eRac) {
+          return null;
+        }
+      }
+
+      function portalRaAdminComplianceUserId() {
+        try {
+          var ps = typeof window !== "undefined" && window.__PORTAL_SUPABASE__;
+          var u = ps && ps.session && ps.session.user;
+          return u && u.id ? String(u.id) : "";
+        } catch (eRau) {
+          return "";
+        }
+      }
+
+      function portalRaAdminComplianceUpsertSigned(raId) {
+        try {
+          var rid = String(raId || "").trim();
+          if (!rid) return;
+          var client = portalRaAdminComplianceClient();
+          var uid = portalRaAdminComplianceUserId();
+          if (!client || !uid) return;
+          var nowIso = new Date().toISOString();
+          client
+            .from("user_compliance_acknowledgements")
+            .upsert(
+              {
+                user_id: uid,
+                item_type: "risk_assessment",
+                item_id: rid,
+                signed: true,
+                signed_at: nowIso
+              },
+              { onConflict: "user_id,item_type,item_id" }
+            )
+            .then(function () {})
+            .catch(function () {});
+        } catch (eRau2) {}
+      }
+
+      function portalRaAdminMergeRemoteComplianceAcks() {
+        try {
+          var client = portalRaAdminComplianceClient();
+          var uid = portalRaAdminComplianceUserId();
+          if (!client || !uid) return;
+          client
+            .from("user_compliance_acknowledgements")
+            .select("item_id,signed,signed_at")
+            .eq("item_type", "risk_assessment")
+            .eq("signed", true)
+            .then(function (res) {
+              try {
+                var rows = res && res.data ? res.data : [];
+                var next = {};
+                for (var i = 0; i < rows.length; i++) {
+                  var r = rows[i];
+                  if (!r || !r.item_id || !r.signed) continue;
+                  next[String(r.item_id)] = { signed_at: r.signed_at || "" };
+                }
+                __portalRaAdminRemoteSigned = next;
+                renderAll();
+              } catch (eIn) {}
+            })
+            .catch(function () {});
+        } catch (eMr) {}
+      }
+
+      var rootDash = document.getElementById("cs-ra-dashboard");
+      document.title = "Risk assessments (admin) — clubSENsational";
+
+      var STORAGE_KEY = "clubSENsational_ra_dashboard_v3_maria";
+
+      function deepClone(v) {
+        return JSON.parse(JSON.stringify(v));
+      }
+
+            function getEmbeddedMariaDefaults() {
+        try {
+          var el = document.getElementById("embedded-maria-defaults");
+          if (!el || !el.textContent) return [];
+          return JSON.parse(el.textContent);
+        } catch (e) {
+          return [];
+        }
+      }
+      var DEFAULT_RAS = getEmbeddedMariaDefaults();
+
+
+      var data = loadData();
+      var selectedId = data[0] ? data[0].id : null;
+      var searchText = "";
+      var filterType = "All";
+
+      var elements = {
+        raList: document.getElementById("raList"),
+        mainPanel: document.getElementById("mainPanel"),
+        resultCount: document.getElementById("resultCount"),
+        searchInput: document.getElementById("searchInput"),
+        typeFilter: document.getElementById("typeFilter"),
+        printBtn: document.getElementById("printBtn"),
+        sendBtn: document.getElementById("sendBtn"),
+        sendModal: document.getElementById("sendModal"),
+        sendModalCloseBtn: document.getElementById("sendModalCloseBtn"),
+        sendCancelBtn: document.getElementById("sendCancelBtn"),
+        sendSubmitBtn: document.getElementById("sendSubmitBtn"),
+        sendOrgInput: document.getElementById("sendOrgInput"),
+        sendEmailInput: document.getElementById("sendEmailInput"),
+        sendDocTypeSelect: document.getElementById("sendDocTypeSelect"),
+        sendNoteInput: document.getElementById("sendNoteInput"),
+        sendEditableDisclaimer: document.getElementById("sendEditableDisclaimer")
+      };
+
+      function loadData() {
+        var saved = localStorage.getItem(STORAGE_KEY);
+        if (!saved) return deepClone(DEFAULT_RAS);
+        try {
+          var parsed = JSON.parse(saved);
+          if (!Array.isArray(parsed) || !parsed.length) return deepClone(DEFAULT_RAS);
+          return parsed;
+        } catch (e) {
+          return deepClone(DEFAULT_RAS);
+        }
+      }
+
+      function saveData() {
+        if (STAFF_MODE) return;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      }
+
+      function applyStaffReadOnly(panel) {
+        if (!STAFF_MODE || !panel) return;
+        var els = panel.querySelectorAll("input, textarea, select");
+        for (var i = 0; i < els.length; i++) {
+          var el = els[i];
+          if (el.id === "raAckReaderName" || el.id === "raAckSignature") continue;
+          var t = (el.type || "").toLowerCase();
+          if (t === "button" || t === "submit" || t === "reset" || t === "image") continue;
+          if (el.tagName === "SELECT") el.disabled = true;
+          else el.readOnly = true;
+        }
+      }
+
+      function getSelected() {
+        for (var i = 0; i < data.length; i++) {
+          if (data[i].id === selectedId) return data[i];
+        }
+        return null;
+      }
+
+      function statusClass(status) {
+        var s = String(status || "").toLowerCase().replace(/\s+/g, "");
+        if (s === "active") return "status-active";
+        if (s === "underreview") return "status-underreview";
+        return "status-archived";
+      }
+
+      function filteredData() {
+        return data.filter(function (item) {
+          var matchesFilter = filterType === "All" || item.category === filterType;
+          var q = searchText.trim().toLowerCase();
+          if (!q) return matchesFilter;
+          var hay = [
+            item.id,
+            item.documentControl.venue,
+            item.documentControl.title,
+            item.documentControl.documentReference,
+            item.riskSummary.typeOfVenue
+          ].join(" ").toLowerCase();
+          return matchesFilter && hay.indexOf(q) !== -1;
+        });
+      }
+
+      function escapeHtml(str) {
+        return String(str == null ? "" : str)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+
+      function escapeAttr(str) {
+        return String(str == null ? "" : str)
+          .replace(/&/g, "&amp;")
+          .replace(/"/g, "&quot;")
+          .replace(/</g, "&lt;");
+      }
+
+      function loadReadAcks() {
+        try {
+          var s = localStorage.getItem(READ_ACK_KEY);
+          if (!s) return {};
+          var o = JSON.parse(s);
+          return o && typeof o === "object" ? o : {};
+        } catch (err) {
+          return {};
+        }
+      }
+
+      function saveReadAcks(obj) {
+        try {
+          localStorage.setItem(READ_ACK_KEY, JSON.stringify(obj));
+        } catch (err) {}
+      }
+
+      function getReadAck(raId) {
+        return loadReadAcks()[raId] || null;
+      }
+
+      function formatAckWhen(iso) {
+        try {
+          var d = new Date(iso);
+          if (isNaN(d.getTime())) return iso || "";
+          return d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+        } catch (e) {
+          return iso || "";
+        }
+      }
+
+      function staffAckPanelHtml(ra) {
+        if (!STAFF_MODE || !ra) return "";
+        var ex = getReadAck(ra.id);
+        var remoteMeta = null;
+        try {
+          remoteMeta = __portalRaAdminRemoteSigned && __portalRaAdminRemoteSigned[ra.id];
+        } catch (eRms) {
+          remoteMeta = null;
+        }
+        var hasLocalSig = !!(ex && String(ex.signature || "").trim());
+        var acked = hasLocalSig || !!remoteMeta;
+        if (acked && !hasLocalSig && remoteMeta) {
+          ex = {
+            readAt: remoteMeta.signed_at || new Date().toISOString(),
+            readerName: "",
+            signature: ""
+          };
+        }
+        if (acked) {
+          var nameLine =
+            ex.readerName || ex.signature
+              ? "<p><strong>Name:</strong> " +
+                escapeHtml(ex.readerName || "—") +
+                " &nbsp;|&nbsp; <strong>Signature:</strong> " +
+                escapeHtml(ex.signature || "—") +
+                "</p>"
+              : "";
+          return (
+            '<div class="ra-read-ack-panel no-print">' +
+            "<h3>Reading confirmed</h3>" +
+            '<p class="ra-read-done">You confirmed you read and understood this risk assessment on ' +
+            escapeHtml(formatAckWhen(ex.readAt)) +
+            ".</p>" +
+            nameLine +
+            "<p>This is stored on this device only, not a central register. Formal review logs and sign-off sit in the admin view.</p>" +
+            '<button type="button" class="btn-light" id="raConfirmReadAgainBtn">Update confirmation (now)</button>' +
+            "</div>"
+          );
+        }
+        return (
+          '<div class="ra-read-ack-panel no-print">' +
+          "<h3>Staff acknowledgement</h3>" +
+          "<p>Read sections A–C above, then sign below. This record is saved on <strong>this device only</strong> (not a central audit trail).</p>" +
+          '<div class="ra-read-ack-fields">' +
+          "<div>" +
+          "<label for=\"raAckReaderName\">Your name (optional)</label>" +
+          '<input type="text" id="raAckReaderName" placeholder="Full name" maxlength="120" />' +
+          "</div>" +
+          "<div>" +
+          "<label for=\"raAckSignature\">Signature or initials (required)</label>" +
+          '<input type="text" id="raAckSignature" placeholder="Sign as you would on paper" maxlength="80" />' +
+          "</div>" +
+          "</div>" +
+          '<button type="button" class="btn-primary" id="raConfirmReadBtn">I have read and understood this risk assessment</button>' +
+          "</div>"
+        );
+      }
+
+      function recordReadAck(keepExisting) {
+        var ra = getSelected();
+        if (!ra || !STAFF_MODE) return;
+        var prev = getReadAck(ra.id);
+        var readerName = "";
+        var signature = "";
+        if (keepExisting && prev) {
+          readerName = prev.readerName || "";
+          signature = prev.signature || "";
+        } else {
+          var nameEl = document.getElementById("raAckReaderName");
+          var sigEl = document.getElementById("raAckSignature");
+          readerName = nameEl ? String(nameEl.value || "").trim() : "";
+          signature = sigEl ? String(sigEl.value || "").trim() : "";
+        }
+        if (!signature) {
+          window.alert("Please enter your signature or initials before confirming.");
+          return;
+        }
+        var all = loadReadAcks();
+        all[ra.id] = {
+          readAt: new Date().toISOString(),
+          readerName: readerName,
+          signature: signature,
+          venue: ra.documentControl ? ra.documentControl.venue : "",
+          ref: ra.documentControl ? ra.documentControl.documentReference || ra.id : ra.id
+        };
+        saveReadAcks(all);
+        portalRaAdminComplianceUpsertSigned(ra.id);
+        renderAll();
+      }
+
+      function fitTextarea(el) {
+        if (!el || el.tagName !== "TEXTAREA") return;
+        el.style.overflow = "hidden";
+        el.style.height = "0";
+        el.style.height = el.scrollHeight + "px";
+      }
+
+      function fitAllTextareas(root) {
+        if (!root) return;
+        var nodes = root.querySelectorAll("textarea");
+        for (var i = 0; i < nodes.length; i++) fitTextarea(nodes[i]);
+      }
+
+      function setByPath(obj, path, value) {
+        var keys = path.split(".");
+        var ref = obj;
+        for (var i = 0; i < keys.length - 1; i++) ref = ref[keys[i]];
+        ref[keys[keys.length - 1]] = value;
+      }
+
+      function field(label, path, value, type) {
+        type = type || "text";
+        return (
+          '<div class="field">' +
+          '<label>' + escapeHtml(label) + "</label>" +
+          '<input type="' + type + '" data-path="' + path + '" value="' + escapeAttr(value || "") + '" />' +
+          "</div>"
+        );
+      }
+
+      function area(label, path, value) {
+        return (
+          '<div class="field">' +
+          '<label>' + escapeHtml(label) + "</label>" +
+          '<textarea data-path="' + path + '">' +
+          escapeHtml(value || "") +
+          "</textarea>" +
+          "</div>"
+        );
+      }
+
+      function expandLineToSentenceFragments(line) {
+        line = String(line || "").trim();
+        if (!line) return [];
+        if (line.indexOf(". ") === -1) return [line];
+        var chunks = line.split(". ").map(function (c) {
+          return c.trim();
+        }).filter(Boolean);
+        if (chunks.length < 2) return [line];
+        var minLen = 12;
+        var shortParts = 0;
+        for (var i = 0; i < chunks.length; i++) {
+          if (chunks[i].length < minLen) shortParts++;
+        }
+        if (shortParts > 1) return [line];
+        if (chunks.length === 2 && (chunks[0].length < 20 || chunks[1].length < 20)) return [line];
+        return chunks.map(function (c, j, arr) {
+          if (j < arr.length - 1 && c.slice(-1) !== ".") return c + ".";
+          return c;
+        });
+      }
+
+      function proseToBulletHtml(raw) {
+        var text = String(raw == null ? "" : raw).replace(/\r\n/g, "\n");
+        var rawLines = text.split("\n");
+        var parts = [];
+        for (var i = 0; i < rawLines.length; i++) {
+          var trimmed = rawLines[i].trim();
+          if (!trimmed) continue;
+          var frags = expandLineToSentenceFragments(trimmed);
+          for (var j = 0; j < frags.length; j++) parts.push(frags[j]);
+        }
+        if (!parts.length) return '<p class="ra-bullet-empty">—</p>';
+        return (
+          '<ul class="ra-prose-bullets">' +
+          parts
+            .map(function (p) {
+              return "<li>" + escapeHtml(p) + "</li>";
+            })
+            .join("") +
+          "</ul>"
+        );
+      }
+
+      function readBlock(label, path, value) {
+        return (
+          '<div class="field ra-staff-read-field">' +
+          '<label>' + escapeHtml(label) + "</label>" +
+          '<div class="ra-read-bullets">' +
+          proseToBulletHtml(value) +
+          "</div></div>"
+        );
+      }
+
+      function areaOrRead(label, path, value) {
+        return STAFF_MODE ? readBlock(label, path, value) : area(label, path, value);
+      }
+
+      function hazardReadCell(val) {
+        return (
+          '<td class="ra-hazard-read-cell">' +
+          '<div class="ra-read-bullets ra-read-bullets-compact">' +
+          proseToBulletHtml(val) +
+          "</div></td>"
+        );
+      }
+
+      function splitLineForVenueClubBullets(line) {
+        line = String(line || "").trim();
+        if (!line) return [];
+        if (line.indexOf(", ") !== -1) {
+          var commaParts = line.split(", ").map(function (p) {
+            return p.trim();
+          }).filter(Boolean);
+          if (
+            commaParts.length >= 2 &&
+            commaParts.every(function (p) {
+              return p.length >= 3;
+            })
+          ) {
+            return commaParts;
+          }
+        }
+        return expandLineToSentenceFragments(line);
+      }
+
+      function proseToBulletHtmlVenueClub(raw) {
+        var text = String(raw == null ? "" : raw).replace(/\r\n/g, "\n");
+        var rawLines = text.split("\n");
+        var parts = [];
+        for (var i = 0; i < rawLines.length; i++) {
+          var trimmed = rawLines[i].trim();
+          if (!trimmed) continue;
+          var frags = splitLineForVenueClubBullets(trimmed);
+          for (var j = 0; j < frags.length; j++) parts.push(frags[j]);
+        }
+        if (!parts.length) return '<p class="ra-bullet-empty">—</p>';
+        return (
+          '<ul class="ra-prose-bullets">' +
+          parts
+            .map(function (p) {
+              return "<li>" + escapeHtml(p) + "</li>";
+            })
+            .join("") +
+          "</ul>"
+        );
+      }
+
+      function hazardReadCellVenueClub(val) {
+        return (
+          '<td class="ra-hazard-read-cell">' +
+          '<div class="ra-read-bullets ra-read-bullets-compact">' +
+          proseToBulletHtmlVenueClub(val) +
+          "</div></td>"
+        );
+      }
+
+      function renderCards() {
+        var list = filteredData();
+        elements.resultCount.textContent = String(list.length);
+        if (!list.length) {
+          elements.raList.innerHTML = '<div class="empty-note">No risk assessments match the current search/filter.</div>';
+          return;
+        }
+        elements.raList.innerHTML = list
+          .map(function (item) {
+            return (
+              '<div class="ra-card' +
+              (item.id === selectedId ? " selected" : "") +
+              '" data-id="' +
+              escapeAttr(item.id) +
+              '">' +
+              '<div class="card-top">' +
+              "<div>" +
+              '<div class="card-ref">' +
+              escapeHtml(item.documentControl.documentReference || item.id) +
+              "</div>" +
+              '<p class="card-venue">' +
+              escapeHtml(item.documentControl.venue) +
+              "</p>" +
+              '<p class="card-type">' +
+              escapeHtml(item.riskSummary.typeOfVenue) +
+              " (" +
+              escapeHtml(item.category) +
+              ")</p>" +
+              "</div>" +
+              '<span class="status-badge ' +
+              statusClass(item.documentControl.documentStatus) +
+              '">' +
+              escapeHtml(item.documentControl.documentStatus || "Archived") +
+              "</span>" +
+              "</div>" +
+              (STAFF_MODE &&
+              (getReadAck(item.id) || (__portalRaAdminRemoteSigned && __portalRaAdminRemoteSigned[item.id]))
+                ? '<span class="ra-card-read-badge">Read</span>'
+                : "") +
+              '<div class="card-dates">' +
+              "<div><strong>Last:</strong> " +
+              escapeHtml(item.documentControl.lastReviewDate || "-") +
+              "</div>" +
+              "<div><strong>Next:</strong> " +
+              escapeHtml(item.documentControl.nextReviewDate || "-") +
+              "</div>" +
+              "</div>" +
+              "</div>"
+            );
+          })
+          .join("");
+      }
+
+      function renderMain() {
+        var ra = getSelected();
+        if (!ra) {
+          elements.mainPanel.innerHTML = '<div class="section"><div class="empty-note">Select a risk assessment to begin.</div></div>';
+          return;
+        }
+
+        var hazardRows = ra.hazards
+          .map(function (row, idx) {
+            if (STAFF_MODE) {
+              return (
+                "<tr>" +
+                hazardReadCell(row.hazard) +
+                hazardReadCell(row.whoMayBeHarmed) +
+                hazardReadCell(row.howMayBeHarmed) +
+                hazardReadCellVenueClub(row.venueControls) +
+                hazardReadCellVenueClub(row.clubControls) +
+                hazardReadCell(row.actionByWhom) +
+                hazardReadCell(row.actionByWhen) +
+                "</tr>"
+              );
+            }
+            return (
+              "<tr>" +
+              '<td><textarea data-table="hazards" data-row="' +
+              idx +
+              '" data-key="hazard">' +
+              escapeHtml(row.hazard) +
+              "</textarea></td>" +
+              '<td><textarea data-table="hazards" data-row="' +
+              idx +
+              '" data-key="whoMayBeHarmed">' +
+              escapeHtml(row.whoMayBeHarmed) +
+              "</textarea></td>" +
+              '<td><textarea data-table="hazards" data-row="' +
+              idx +
+              '" data-key="howMayBeHarmed">' +
+              escapeHtml(row.howMayBeHarmed) +
+              "</textarea></td>" +
+              '<td><textarea data-table="hazards" data-row="' +
+              idx +
+              '" data-key="venueControls">' +
+              escapeHtml(row.venueControls) +
+              "</textarea></td>" +
+              '<td><textarea data-table="hazards" data-row="' +
+              idx +
+              '" data-key="clubControls">' +
+              escapeHtml(row.clubControls) +
+              "</textarea></td>" +
+              '<td><textarea data-table="hazards" data-row="' +
+              idx +
+              '" data-key="actionByWhom">' +
+              escapeHtml(row.actionByWhom) +
+              "</textarea></td>" +
+              "<td>" +
+              '<textarea data-table="hazards" data-row="' +
+              idx +
+              '" data-key="actionByWhen">' +
+              escapeHtml(row.actionByWhen) +
+              "</textarea>" +
+              '<div class="row-delete no-print" style="margin-top:6px;">' +
+              '<button type="button" class="btn-danger btn-sm delete-hazard-row" data-row="' +
+              idx +
+              '" title="Delete this row">Delete</button>' +
+              "</div>" +
+              "</td>" +
+              "</tr>"
+            );
+          })
+          .join("");
+
+        var staffAckBlock = staffAckPanelHtml(ra);
+        var signOffDetailed = ra.signOffDetailed || {
+          assessedBy: { name: "", signature: "", date: "" },
+          reviewedBy: { name: "", signature: "", date: "" },
+          approvedBy: { name: "", signature: "", date: "" }
+        };
+        var distLog = Array.isArray(ra.distributionLog) ? ra.distributionLog : [];
+        var populatedReviewRows = [];
+        for (var pr = 0; pr < ra.reviewLog.length; pr++) {
+          var rowItem = ra.reviewLog[pr];
+          if (rowItem.reviewDate || rowItem.reviewedBy || rowItem.changesMade || rowItem.nextReviewDue) {
+            populatedReviewRows.push({ row: rowItem, idx: pr });
+          }
+        }
+        var reviewRowsForDisplay = (populatedReviewRows.length ? populatedReviewRows : [])
+          .map(function (entry) {
+            var row = entry.row;
+            var idx = entry.idx;
+            return (
+              "<tr>" +
+              '<td><input type="date" data-table="reviewLog" data-row="' +
+              idx +
+              '" data-key="reviewDate" value="' +
+              escapeAttr(row.reviewDate) +
+              '" /></td>' +
+              '<td><input type="text" data-table="reviewLog" data-row="' +
+              idx +
+              '" data-key="reviewedBy" value="' +
+              escapeAttr(row.reviewedBy) +
+              '" /></td>' +
+              '<td><textarea data-table="reviewLog" data-row="' +
+              idx +
+              '" data-key="changesMade">' +
+              escapeHtml(row.changesMade) +
+              "</textarea></td>" +
+              '<td><input type="date" data-table="reviewLog" data-row="' +
+              idx +
+              '" data-key="nextReviewDue" value="' +
+              escapeAttr(row.nextReviewDue) +
+              '" /></td>' +
+              '<td class="no-print"><button type="button" class="btn-danger btn-sm delete-review-row" data-row="' +
+              idx +
+              '">Remove</button></td>' +
+              "</tr>"
+            );
+          })
+          .join("");
+
+        if (!reviewRowsForDisplay) {
+          reviewRowsForDisplay =
+            '<tr><td colspan="5"><div class="empty-note">No review records yet.</div></td></tr>';
+        }
+
+        var distributionRows = distLog
+          .slice()
+          .reverse()
+          .map(function (item) {
+            return (
+              '<div class="distribution-log-item">' +
+              "<strong>" +
+              escapeHtml(item.venue || ra.documentControl.venue || ra.id) +
+              "</strong><br/>" +
+              "Version: " +
+              escapeHtml(item.version || "-") +
+              " | Sent: " +
+              escapeHtml(item.sentAt || "-") +
+              "<br/>Recipient: " +
+              escapeHtml(item.email || "-") +
+              " | Sent by: " +
+              escapeHtml(item.sentBy || "-") +
+              "</div>"
+            );
+          })
+          .join("");
+
+        var adminTailSections =
+          '<section class="section no-print">' +
+          '<h3 class="section-title">D. Review Actions</h3>' +
+          '<div class="governance-panel">' +
+          "<h4>Record review outcome</h4>" +
+          '<div class="review-actions">' +
+          '<button type="button" class="review-action-btn no-changes" id="reviewNoChangesBtn">No Changes<small>Add standard review note</small></button>' +
+          '<button type="button" class="review-action-btn minor" id="reviewMinorBtn">Minor Changes<small>Short update and log entry</small></button>' +
+          '<button type="button" class="review-action-btn major" id="reviewMajorBtn">Major Changes<small>Detailed update and optional version increment</small></button>' +
+          "</div></div></section>" +
+          '<section class="section">' +
+          '<h3 class="section-title">E. Review Log</h3>' +
+          '<div class="cs-ra-table-scroll">' +
+          '<table id="reviewTable">' +
+          "<colgroup>" +
+          '<col style="width:20%;">' +
+          '<col style="width:24%;">' +
+          '<col style="width:42%;">' +
+          '<col style="width:14%;">' +
+          '<col style="width:10%;">' +
+          "</colgroup>" +
+          "<thead><tr>" +
+          "<th>Review Date</th>" +
+          "<th>Reviewed By</th>" +
+          "<th>Summary of Changes</th>" +
+          "<th>Next Review Due</th>" +
+          '<th class="no-print"></th>' +
+          "</tr></thead><tbody>" +
+          reviewRowsForDisplay +
+          "</tbody></table>" +
+          "</div>" +
+          '<div class="table-controls no-print">' +
+          '<button type="button" id="addReviewRowBtn" class="btn-light">Add review entry</button>' +
+          "</div>" +
+          "</section>" +
+          '<section class="section">' +
+          '<h3 class="section-title">F. Sign Off</h3>' +
+          '<div class="signature-grid">' +
+          '<div class="signature-box"><strong>Assessed By</strong>' +
+          '<input type="text" data-sign-role="assessedBy" data-sign-key="name" value="' +
+          escapeAttr(signOffDetailed.assessedBy.name || "") +
+          '" placeholder="Name" />' +
+          '<input type="text" data-sign-role="assessedBy" data-sign-key="signature" value="' +
+          escapeAttr(signOffDetailed.assessedBy.signature || "") +
+          '" placeholder="Signature" />' +
+          '<input type="date" data-sign-role="assessedBy" data-sign-key="date" value="' +
+          escapeAttr(signOffDetailed.assessedBy.date || "") +
+          '" />' +
+          "</div>" +
+          '<div class="signature-box"><strong>Reviewed By</strong>' +
+          '<input type="text" data-sign-role="reviewedBy" data-sign-key="name" value="' +
+          escapeAttr(signOffDetailed.reviewedBy.name || "") +
+          '" placeholder="Name" />' +
+          '<input type="text" data-sign-role="reviewedBy" data-sign-key="signature" value="' +
+          escapeAttr(signOffDetailed.reviewedBy.signature || "") +
+          '" placeholder="Signature" />' +
+          '<input type="date" data-sign-role="reviewedBy" data-sign-key="date" value="' +
+          escapeAttr(signOffDetailed.reviewedBy.date || "") +
+          '" />' +
+          "</div>" +
+          '<div class="signature-box"><strong>Approved By</strong>' +
+          '<input type="text" data-sign-role="approvedBy" data-sign-key="name" value="' +
+          escapeAttr(signOffDetailed.approvedBy.name || "") +
+          '" placeholder="Name" />' +
+          '<input type="text" data-sign-role="approvedBy" data-sign-key="signature" value="' +
+          escapeAttr(signOffDetailed.approvedBy.signature || "") +
+          '" placeholder="Signature" />' +
+          '<input type="date" data-sign-role="approvedBy" data-sign-key="date" value="' +
+          escapeAttr(signOffDetailed.approvedBy.date || "") +
+          '" />' +
+          "</div>" +
+          "</div></section>" +
+          '<section class="section no-print">' +
+          '<h3 class="section-title">Distribution History</h3>' +
+          '<div class="distribution-log">' +
+          (distributionRows || '<div class="empty-note">No distributions recorded.</div>') +
+          "</div></section>";
+
+        elements.mainPanel.innerHTML =
+          '<div class="document-header">' +
+          "<div>" +
+          "<h2>" +
+          escapeHtml(ra.documentControl.title || "Risk Assessment") +
+          "</h2>" +
+          "<p>" +
+          escapeHtml(ra.documentControl.venue) +
+          " - " +
+          escapeHtml(ra.documentControl.documentReference || ra.id) +
+          "</p>" +
+          "</div>" +
+          '<div class="doc-actions no-print"></div>' +
+          "</div>" +
+          '<section class="section">' +
+          '<h3 class="section-title">A. Document Control</h3>' +
+          '<div class="grid-4">' +
+          field("Risk Assessment Title", "documentControl.title", ra.documentControl.title) +
+          field("Venue", "documentControl.venue", ra.documentControl.venue) +
+          field("Document Reference", "documentControl.documentReference", ra.documentControl.documentReference) +
+          field("Version", "documentControl.version", ra.documentControl.version) +
+          field("Last Review Date", "documentControl.lastReviewDate", ra.documentControl.lastReviewDate, "date") +
+          field("Next Review Date", "documentControl.nextReviewDate", ra.documentControl.nextReviewDate, "date") +
+          field("Approved By", "documentControl.approvedBy", ra.documentControl.approvedBy) +
+          "</div>" +
+          "</section>" +
+          '<section class="section">' +
+          '<h3 class="section-title">B. Risk Summary</h3>' +
+          '<div class="grid-4">' +
+          areaOrRead("Type of Activity / Venue", "riskSummary.typeOfVenue", ra.riskSummary.typeOfVenue) +
+          areaOrRead("Overall Risk Level", "riskSummary.generalRiskLevel", ra.riskSummary.generalRiskLevel) +
+          areaOrRead("Supervision Model", "riskSummary.supervisionModel", ra.riskSummary.supervisionModel) +
+          "</div>" +
+          '<div class="grid-2" style="margin-top:10px;">' +
+          areaOrRead("Key Risks", "riskSummary.mainRisks", ra.riskSummary.mainRisks) +
+          areaOrRead("Control Approach", "riskSummary.generalControlApproach", ra.riskSummary.generalControlApproach) +
+          "</div>" +
+          "</section>" +
+          '<section class="section">' +
+          '<h3 class="section-title">C. Main Risk Table</h3>' +
+          '<div class="cs-ra-table-scroll">' +
+          '<table id="hazardTable">' +
+          "<colgroup>" +
+          '<col style="width:13%;">' +
+          '<col style="width:13%;">' +
+          '<col style="width:16%;">' +
+          '<col style="width:18%;">' +
+          '<col style="width:18%;">' +
+          '<col style="width:11%;">' +
+          '<col style="width:11%;">' +
+          "</colgroup>" +
+          "<thead><tr>" +
+          "<th>Hazard</th>" +
+          "<th>Who may be harmed</th>" +
+          "<th>How may they be harmed</th>" +
+          "<th>Venue controls</th>" +
+          "<th>clubSENsational controls</th>" +
+          "<th>Action, monitored by whom</th>" +
+          "<th>Action, monitored by when</th>" +
+          "</tr></thead>" +
+          "<tbody>" +
+          hazardRows +
+          "</tbody></table>" +
+          "</div>" +
+          '<div class="table-controls no-print">' +
+          '<button type="button" id="addHazardRowBtn" class="btn-light">Add row</button>' +
+          "</div>" +
+          "</section>" +
+          (STAFF_MODE ? staffAckBlock : "") +
+          (STAFF_MODE ? "" : adminTailSections);
+
+        bindMainActions();
+        requestAnimationFrame(function () {
+          fitAllTextareas(elements.mainPanel);
+          requestAnimationFrame(function () {
+            fitAllTextareas(elements.mainPanel);
+          });
+        });
+      }
+
+      function todayISO() {
+        var d = new Date();
+        var yyyy = d.getFullYear();
+        var mm = String(d.getMonth() + 1).padStart(2, "0");
+        var dd = String(d.getDate()).padStart(2, "0");
+        return yyyy + "-" + mm + "-" + dd;
+      }
+
+      function addMonthsIso(isoDate, months) {
+        if (!isoDate) return "";
+        var d = new Date(isoDate + "T12:00:00");
+        if (isNaN(d.getTime())) return "";
+        d.setMonth(d.getMonth() + months);
+        var yyyy = d.getFullYear();
+        var mm = String(d.getMonth() + 1).padStart(2, "0");
+        var dd = String(d.getDate()).padStart(2, "0");
+        return yyyy + "-" + mm + "-" + dd;
+      }
+
+      function ensureAdminUser() {
+        var key = "clubSENsational_ra_admin_user_v1";
+        var name = localStorage.getItem(key) || "";
+        if (name) return name;
+        name = window.prompt("Enter your name for governance records:", "") || "";
+        name = String(name).trim();
+        if (name) localStorage.setItem(key, name);
+        return name || "Admin";
+      }
+
+      function pushReviewLogEntry(ra, entry) {
+        if (!Array.isArray(ra.reviewLog)) ra.reviewLog = [];
+        ra.reviewLog.push(entry);
+      }
+
+      function applyReviewAction(type, ra) {
+        var reviewer = ensureAdminUser();
+        var reviewDate = todayISO();
+        var nextDue = addMonthsIso(reviewDate, 6);
+        var summary = "";
+
+        if (type === "no_changes") {
+          summary = "Periodic review completed. No changes required.";
+        } else if (type === "minor") {
+          var minorType = window.prompt(
+            "Minor change type:\n- Control wording updated\n- Minor supervision adjustment\n- Clarification added\n- Formatting update\n- Other",
+            "Control wording updated"
+          ) || "Other";
+          var minorNote = (window.prompt("Optional short note:", "") || "").trim();
+          summary = "Minor update: " + minorType + (minorNote ? " - " + minorNote : "");
+        } else if (type === "major") {
+          var majorType = window.prompt(
+            "Major change type:\n- Risk level updated\n- New hazard identified\n- Control measures updated\n- Venue procedure changed\n- Incident-informed update\n- Other",
+            "Risk level updated"
+          ) || "Other";
+          var majorNote = (window.prompt("Mandatory note for major change:", "") || "").trim();
+          if (!majorNote) {
+            window.alert("Please add a note for major changes.");
+            return;
+          }
+          var versionIncrement = window.confirm("Does this require a new version?");
+          summary = "Major update: " + majorType + " - " + majorNote;
+          if (versionIncrement) {
+            var currentV = String(ra.documentControl.version || "1.0");
+            var parts = currentV.split(".");
+            var major = Number(parts[0]) || 1;
+            var minor = Number(parts[1]) || 0;
+            minor += 1;
+            ra.documentControl.version = major + "." + minor;
+          }
+        }
+
+        pushReviewLogEntry(ra, {
+          reviewDate: reviewDate,
+          reviewedBy: reviewer,
+          changesMade: summary,
+          signature: "",
+          nextReviewDue: nextDue
+        });
+        ra.documentControl.lastReviewDate = reviewDate;
+        ra.documentControl.nextReviewDate = nextDue;
+        saveData();
+        renderAll();
+      }
+
+      function setSendDisclaimerVisibility() {
+        if (!elements.sendDocTypeSelect || !elements.sendEditableDisclaimer) return;
+        var val = elements.sendDocTypeSelect.value;
+        var show = val === "Editable version" || val === "Both";
+        elements.sendEditableDisclaimer.style.display = show ? "block" : "none";
+      }
+
+      function openSendModal() {
+        if (!elements.sendModal) return;
+        elements.sendModal.classList.add("open");
+        elements.sendModal.setAttribute("aria-hidden", "false");
+        setSendDisclaimerVisibility();
+      }
+
+      function closeSendModal() {
+        if (!elements.sendModal) return;
+        elements.sendModal.classList.remove("open");
+        elements.sendModal.setAttribute("aria-hidden", "true");
+      }
+
+      function handleSend() {
+        var ra = getSelected();
+        if (!ra) return;
+        var org = (elements.sendOrgInput.value || "").trim();
+        var email = (elements.sendEmailInput.value || "").trim();
+        var docType = elements.sendDocTypeSelect.value;
+        var note = (elements.sendNoteInput.value || "").trim();
+        if (!org || !email) {
+          window.alert("Please complete organisation name and recipient email.");
+          return;
+        }
+        var sender = ensureAdminUser();
+        var sentAt = new Date().toLocaleString();
+        if (!Array.isArray(ra.distributionLog)) ra.distributionLog = [];
+        ra.distributionLog.push({
+          venue: ra.documentControl.venue,
+          version: ra.documentControl.version || "1.0",
+          sentAt: sentAt,
+          email: email,
+          organisation: org,
+          documentType: docType,
+          note: note,
+          sentBy: sender,
+          disclaimer:
+            docType === "Editable version" || docType === "Both"
+              ? "This editable version is provided for adaptation by your organisation according to the needs of the individuals attending. Final review and approval remain the responsibility of your organisation."
+              : ""
+        });
+        saveData();
+        closeSendModal();
+        elements.sendOrgInput.value = "";
+        elements.sendEmailInput.value = "";
+        elements.sendNoteInput.value = "";
+        elements.sendDocTypeSelect.value = "Official PDF";
+        renderMain();
+      }
+
+      function bindMainActions() {
+        var panel = elements.mainPanel;
+        var ra = getSelected();
+        if (!ra) return;
+        if (STAFF_MODE) {
+          applyStaffReadOnly(panel);
+          var readBtn = document.getElementById("raConfirmReadBtn");
+          if (readBtn) readBtn.addEventListener("click", function () { recordReadAck(false); });
+          var readAgain = document.getElementById("raConfirmReadAgainBtn");
+          if (readAgain) readAgain.addEventListener("click", function () { recordReadAck(true); });
+          return;
+        }
+
+        var pathEls = panel.querySelectorAll("[data-path]");
+        for (var i = 0; i < pathEls.length; i++) {
+          (function (el) {
+            function handler() {
+              setByPath(ra, el.getAttribute("data-path"), el.value);
+              saveData();
+              renderCards();
+            }
+            el.addEventListener("input", handler);
+            el.addEventListener("change", handler);
+          })(pathEls[i]);
+        }
+
+        var tableEls = panel.querySelectorAll("[data-table]");
+        for (var j = 0; j < tableEls.length; j++) {
+          (function (el) {
+            var table = el.getAttribute("data-table");
+            var row = Number(el.getAttribute("data-row"));
+            var key = el.getAttribute("data-key");
+            function handler() {
+              ra[table][row][key] = el.value;
+              saveData();
+            }
+            el.addEventListener("input", handler);
+            el.addEventListener("change", handler);
+          })(tableEls[j]);
+        }
+
+        var signEls = panel.querySelectorAll("[data-sign-role][data-sign-key]");
+        for (var s = 0; s < signEls.length; s++) {
+          (function (el) {
+            function handler() {
+              if (!ra.signOffDetailed) ra.signOffDetailed = {};
+              var role = el.getAttribute("data-sign-role");
+              var key = el.getAttribute("data-sign-key");
+              if (!ra.signOffDetailed[role]) ra.signOffDetailed[role] = {};
+              ra.signOffDetailed[role][key] = el.value;
+              saveData();
+            }
+            el.addEventListener("input", handler);
+            el.addEventListener("change", handler);
+          })(signEls[s]);
+        }
+
+        var addHazardBtn = document.getElementById("addHazardRowBtn");
+        if (addHazardBtn) {
+          addHazardBtn.addEventListener("click", function () {
+            ra.hazards.push({
+              hazard: "",
+              whoMayBeHarmed: "",
+              howMayBeHarmed: "",
+              venueControls: "",
+              clubControls: "",
+              actionByWhom: "",
+              actionByWhen: ""
+            });
+            saveData();
+            renderMain();
+          });
+        }
+
+        var delHazardBtns = panel.querySelectorAll(".delete-hazard-row");
+        for (var h = 0; h < delHazardBtns.length; h++) {
+          (function (btn) {
+            btn.addEventListener("click", function () {
+              var idx = Number(btn.getAttribute("data-row"));
+              if (ra.hazards.length <= 1) return;
+              ra.hazards.splice(idx, 1);
+              saveData();
+              renderMain();
+            });
+          })(delHazardBtns[h]);
+        }
+
+        var addReviewBtn = document.getElementById("addReviewRowBtn");
+        if (addReviewBtn) {
+          addReviewBtn.addEventListener("click", function () {
+            ra.reviewLog.push({
+              reviewDate: todayISO(),
+              reviewedBy: ensureAdminUser(),
+              changesMade: "",
+              signature: "",
+              nextReviewDue: addMonthsIso(todayISO(), 6)
+            });
+            saveData();
+            renderMain();
+          });
+        }
+
+        var delReviewBtns = panel.querySelectorAll(".delete-review-row");
+        for (var r = 0; r < delReviewBtns.length; r++) {
+          (function (btn) {
+            btn.addEventListener("click", function () {
+              var idx = Number(btn.getAttribute("data-row"));
+              if (ra.reviewLog.length <= 1) return;
+              ra.reviewLog.splice(idx, 1);
+              saveData();
+              renderMain();
+            });
+          })(delReviewBtns[r]);
+        }
+
+        var reviewNoChangesBtn = document.getElementById("reviewNoChangesBtn");
+        if (reviewNoChangesBtn) reviewNoChangesBtn.addEventListener("click", function () { applyReviewAction("no_changes", ra); });
+        var reviewMinorBtn = document.getElementById("reviewMinorBtn");
+        if (reviewMinorBtn) reviewMinorBtn.addEventListener("click", function () { applyReviewAction("minor", ra); });
+        var reviewMajorBtn = document.getElementById("reviewMajorBtn");
+        if (reviewMajorBtn) reviewMajorBtn.addEventListener("click", function () { applyReviewAction("major", ra); });
+      }
+
+      function renderAll() {
+        if (!APP_ACTIVE) return;
+        var found = false;
+        for (var i = 0; i < data.length; i++) {
+          if (data[i].id === selectedId) {
+            found = true;
+            break;
+          }
+        }
+        if (!found && data[0]) selectedId = data[0].id;
+        renderCards();
+        renderMain();
+      }
+
+      elements.searchInput.addEventListener("input", function (e) {
+        searchText = e.target.value || "";
+        renderCards();
+      });
+
+      elements.typeFilter.addEventListener("change", function (e) {
+        filterType = e.target.value;
+        renderCards();
+      });
+
+      elements.printBtn.addEventListener("click", function () {
+        window.print();
+      });
+      if (!STAFF_MODE && elements.sendBtn) {
+        elements.sendBtn.addEventListener("click", openSendModal);
+      }
+      if (elements.sendDocTypeSelect) elements.sendDocTypeSelect.addEventListener("change", setSendDisclaimerVisibility);
+      if (elements.sendModalCloseBtn) elements.sendModalCloseBtn.addEventListener("click", closeSendModal);
+      if (elements.sendCancelBtn) elements.sendCancelBtn.addEventListener("click", closeSendModal);
+      if (elements.sendSubmitBtn) elements.sendSubmitBtn.addEventListener("click", handleSend);
+      if (elements.sendModal) {
+        elements.sendModal.addEventListener("click", function (e) {
+          if (e.target === elements.sendModal) closeSendModal();
+        });
+      }
+
+      elements.raList.addEventListener("click", function (e) {
+        var card = e.target.closest(".ra-card");
+        if (!card) return;
+        selectedId = card.getAttribute("data-id");
+        renderAll();
+      });
+
+      elements.mainPanel.addEventListener("input", function (e) {
+        if (e.target && e.target.tagName === "TEXTAREA") fitTextarea(e.target);
+      });
+      elements.mainPanel.addEventListener("focusin", function (e) {
+        if (e.target && e.target.tagName === "TEXTAREA") fitTextarea(e.target);
+      });
+
+      var resizeFitTimer;
+      window.addEventListener("resize", function () {
+        clearTimeout(resizeFitTimer);
+        resizeFitTimer = setTimeout(function () {
+          fitAllTextareas(elements.mainPanel);
+        }, 120);
+      });
+
+      if (APP_ACTIVE) renderAll();
+      try {
+        window.addEventListener("portal:supabase-ready", function __portalRaAdmSupReady() {
+          try {
+            portalRaAdminMergeRemoteComplianceAcks();
+          } catch (ePra) {}
+        });
+      } catch (ePrea) {}
+      setTimeout(function () {
+        try {
+          portalRaAdminMergeRemoteComplianceAcks();
+        } catch (ePraz) {}
+      }, 0);
+    })();
+  </script>
+  </div>
+</body>
+</html>

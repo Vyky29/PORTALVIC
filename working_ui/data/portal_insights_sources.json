@@ -1,0 +1,202 @@
+{
+  "meta": {
+    "title": "clubSENsational — insights data registry",
+    "version": 1,
+    "updated": "2026-04-21",
+    "intent": "Single checklist of every operational dataset that should feed company-wide views (daily + end-of-term). Fill public_form_url and spreadsheet_id_or_url when you have them; suggested_supabase_table names are proposals only.",
+    "live_url_registry": "working_ui/data/portal_live_urls.json",
+    "notes_for_contributors": [
+      "Public HTML URLs are enough to document field names (view source / network). They do not prove Google Sheet column layout — add sheet tab + column map when known.",
+      "After launch, ingestion should write the same logical events to Supabase; spreadsheets become archive or import-only."
+    ]
+  },
+  "grain": {
+    "operational_daily": "Rows keyed by calendar day + staff/venue where relevant.",
+    "term_review": "Rows keyed by term + date or session; joins term calendar in staff/lead dashboards.",
+    "longitudinal": "Client/parent entities across terms (re-enrolment, bookings)."
+  },
+  "sources": [
+    {
+      "id": "session_feedback",
+      "label": "Session feedback (staff)",
+      "category": "sessions_quality",
+      "status": "in_portal_code",
+      "portal_html_path": "working_ui/session_feedback.html",
+      "public_form_url": "https://www.clubsensational.org/session_feedback_portal/",
+      "spreadsheet_or_webhook": "Supabase public.session_feedback (insert via session_feedback.html)",
+      "suggested_supabase_table": "session_feedback",
+      "primary_date_field": "session_date",
+      "join_keys": ["portal_session_key", "client_id", "client_name", "completed_by_name", "service", "session_time"],
+      "payload_keys_observed": [
+        "submitted_by_user_id",
+        "feedback_role",
+        "portal_session_key",
+        "client_id",
+        "client_name",
+        "session_date",
+        "session_time",
+        "service",
+        "attendance",
+        "engagement_rating",
+        "engagement_patterns",
+        "positive_feedback",
+        "client_emotions",
+        "relevant_information",
+        "completed_by_name",
+        "has_positive_feedback",
+        "has_relevant_information",
+        "has_exceptional_challenges",
+        "incidents"
+      ],
+      "ceo_views": ["Engagement distribution", "Attendance rate", "Incidents rate", "By service / venue once venue joined"]
+    },
+    {
+      "id": "lead_session_reports",
+      "label": "Lead session report (service lead)",
+      "category": "sessions_quality",
+      "status": "in_portal_code",
+      "portal_html_path": "working_ui/lead_feedback_report.html",
+      "public_form_url": "https://www.clubsensational.org/lead_feedback_portal/",
+      "spreadsheet_or_webhook": "Supabase public.lead_session_reports (insert via lead_feedback_report_app.js)",
+      "suggested_supabase_table": "lead_session_reports",
+      "primary_date_field": "session_date",
+      "join_keys": ["portal_session_key", "client_id", "client_name", "submitted_by_name", "service", "is_bespoke_programme"],
+      "payload_keys_observed": [
+        "submitted_by_user_id",
+        "submitted_by_name",
+        "session_date",
+        "session_time",
+        "portal_session_key",
+        "client_id",
+        "client_name",
+        "service",
+        "is_bespoke_programme",
+        "engagement",
+        "brief_description",
+        "other_information",
+        "incidents",
+        "summary_text",
+        "origin"
+      ],
+      "ceo_views": ["Bespoke vs group / multi-activity", "Incidents flagged by lead", "By lead and by session key"]
+    },
+    {
+      "id": "venue_open_close_reports",
+      "label": "Venue open / close (same-day reports)",
+      "category": "safeguarding_operations",
+      "status": "portal_localstorage_only",
+      "portal_html_path": "working_ui/staff_dashboard.html (reminder chrome + venue mark buttons); form working_ui/venue_review.html",
+      "public_form_url": "https://www.clubsensational.org/venue_portal/",
+      "spreadsheet_or_webhook": "TBD — if Make writes sheet from another HTML, paste URL here",
+      "suggested_supabase_table": "portal_venue_day_reports",
+      "primary_date_field": "report_date_local",
+      "join_keys": ["staff_id", "venue_window_label"],
+      "payload_keys_observed": [],
+      "ceo_views": ["Completion rate by venue / by lead pool", "Late opens/closes"]
+    },
+    {
+      "id": "term_session_review",
+      "label": "Term grid session review (feedback / incident / absence flags)",
+      "category": "term_quality",
+      "status": "portal_localstorage_map",
+      "portal_html_path": "working_ui/staff_dashboard.html, working_ui/lead_dashboard.html",
+      "public_form_url": "",
+      "spreadsheet_or_webhook": "TBD",
+      "suggested_supabase_table": "portal_session_review_state",
+      "primary_date_field": "session_date_from_key",
+      "join_keys": ["sessionKey"],
+      "payload_keys_observed": ["feedbackDone", "incident", "absent", "cancelled"],
+      "ceo_views": ["% feedback complete per term week", "Outstanding orange rows by programme"]
+    },
+    {
+      "id": "interviews",
+      "label": "Interviews (hiring / induction)",
+      "category": "people",
+      "status": "spreadsheet_external",
+      "portal_html_path": "working_ui/Working_interview.html",
+      "public_form_url": "https://www.clubsensational.org/interviews_portal/",
+      "spreadsheet_or_webhook": "",
+      "suggested_supabase_table": "portal_interviews",
+      "primary_date_field": "interview_date",
+      "join_keys": ["role", "venue", "candidate_ref"],
+      "payload_keys_observed": [],
+      "ceo_views": ["Pipeline counts", "Time-to-hire", "Pass rate by interviewer"]
+    },
+    {
+      "id": "parents_bookings",
+      "label": "Parents bookings",
+      "category": "commercial",
+      "status": "spreadsheet_external",
+      "portal_html_path": "",
+      "public_form_url": "",
+      "spreadsheet_or_webhook": "",
+      "suggested_supabase_table": "portal_parent_bookings",
+      "primary_date_field": "booking_created_at_or_session_date",
+      "join_keys": ["parent_id", "client_id", "venue"],
+      "payload_keys_observed": [],
+      "ceo_views": ["Utilisation by venue", "Waitlist", "Cancellations"]
+    },
+    {
+      "id": "clients_info",
+      "label": "Clients information",
+      "category": "crm",
+      "status": "in_portal_spreadsheet_adapter",
+      "portal_html_path": "working_ui/staff_dashboard.html (rota + client sheets)",
+      "public_form_url": "",
+      "spreadsheet_or_webhook": "Staff machine / adapter bundle (see STAFF_DASHBOARD_SOURCE)",
+      "suggested_supabase_table": "portal_clients (existing direction in database/)",
+      "primary_date_field": "n/a entity snapshot",
+      "join_keys": ["clientId"],
+      "payload_keys_observed": [],
+      "ceo_views": ["Active clients by venue", "Programme mix", "SEN profile aggregates (aggregated only)"]
+    },
+    {
+      "id": "parents_info",
+      "label": "Parents / carers master data",
+      "category": "crm",
+      "status": "spreadsheet_external",
+      "portal_html_path": "",
+      "public_form_url": "",
+      "spreadsheet_or_webhook": "",
+      "suggested_supabase_table": "portal_parents",
+      "primary_date_field": "updated_at",
+      "join_keys": ["parent_id", "linked_client_ids"],
+      "payload_keys_observed": [],
+      "ceo_views": ["Consent / comms preferences", "Households per site"]
+    },
+    {
+      "id": "re_enrolments",
+      "label": "Re-enrolments",
+      "category": "commercial",
+      "status": "spreadsheet_external",
+      "portal_html_path": "",
+      "public_form_url": "",
+      "spreadsheet_or_webhook": "",
+      "suggested_supabase_table": "portal_re_enrolments",
+      "primary_date_field": "offer_sent_date_or_deadline",
+      "join_keys": ["client_id", "term", "venue"],
+      "payload_keys_observed": [],
+      "ceo_views": ["Conversion by term", "Churn reasons", "Forecast headcount"]
+    }
+  ],
+  "roadmap_phases": [
+    {
+      "phase": 1,
+      "name": "Registry + CEO shell",
+      "done": true,
+      "artifact": "working_ui/data/portal_insights_sources.json + working_ui/company_insights.html"
+    },
+    {
+      "phase": 2,
+      "name": "Snapshot ingest",
+      "done": false,
+      "detail": "Python or Edge: read CSV/XLSX exports you drop under data/snapshots/YYYY-MM-DD/ and upsert into Supabase staging tables matching suggested_supabase_table."
+    },
+    {
+      "phase": 3,
+      "name": "Live CEO dashboard",
+      "done": false,
+      "detail": "RLS-safe read models + charts in company_insights.html or ceo_dashboard #ceo-strategic."
+    }
+  ]
+}

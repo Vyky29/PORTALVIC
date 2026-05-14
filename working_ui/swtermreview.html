@@ -1,0 +1,1680 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <script>
+    (function () {
+      try { document.documentElement.classList.add("portal-app-shell"); } catch (e) {}
+    })();
+  </script>
+  <style id="portal-hide-wp-chrome">
+    html.portal-app-shell body.admin-bar{padding-top:0!important;margin-top:0!important}
+    html.portal-app-shell #wpadminbar,html.portal-app-shell #masthead,html.portal-app-shell header#masthead,html.portal-app-shell .site-header,html.portal-app-shell #site-header,html.portal-app-shell .ast-primary-header-bar,html.portal-app-shell .ast-above-header,html.portal-app-shell .elementor-location-header,html.portal-app-shell .elementor-location-footer,html.portal-app-shell #colophon,html.portal-app-shell footer.site-footer,html.portal-app-shell .site-footer,html.portal-app-shell #footer,html.portal-app-shell .site-bottom-footer-inner-wrap,html.portal-app-shell .footer-widget-area{display:none!important;visibility:hidden!important;height:0!important;overflow:hidden!important;pointer-events:none!important}
+    html.portal-app-shell .site-content,html.portal-app-shell #content,html.portal-app-shell .site-main,html.portal-app-shell #primary{margin-top:0!important;padding-top:0!important}
+    html.portal-app-shell #page,html.portal-app-shell .site{margin-top:0!important;padding-top:0!important}
+  </style>
+  <!-- Rutas relativas fallan en Elementor (404). Misma carpeta de uploads que el resto del portal. -->
+  <script>
+    (function () {
+      var v = "20260510-portal-admin";
+      var file = "portal_return_and_shell.js";
+      var bases = [];
+      try {
+        if (typeof window !== "undefined" && window.PORTAL_WP_UPLOADS_BASE) {
+          bases.push(String(window.PORTAL_WP_UPLOADS_BASE).trim().replace(/\/$/, ""));
+        }
+      } catch (e) {}
+      try {
+        if (typeof location !== "undefined" && location.origin) {
+          bases.push(String(location.origin).replace(/\/$/, "") + "/wp-content/uploads/2026/05");
+        }
+      } catch (e2) {}
+      bases.push("https://www.clubsensational.org/wp-content/uploads/2026/05");
+      bases.push("https://clubsensational.org/wp-content/uploads/2026/05");
+      var seen = {};
+      bases = bases.filter(function (b) {
+        if (!b || seen[b]) return false;
+        seen[b] = true;
+        return true;
+      });
+      var s = document.createElement("script");
+      s.async = false;
+      var i = 0;
+      s.onerror = function () {
+        i += 1;
+        if (i >= bases.length) return;
+        s.src = bases[i] + "/" + file + "?v=" + v;
+      };
+      s.src = bases[0] + "/" + file + "?v=" + v;
+      document.head.appendChild(s);
+    })();
+  </script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>clubSENsational Swimming Term Review</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&amp;display=swap" rel="stylesheet" />
+
+  <style>
+    :root{
+      --blue:#2d84b3;
+      --blueSoft:#e9f3f5;
+      --blueDeep:#2d84b3;
+      --blueMid:#89b5c1;
+      --text:#0b1220;
+      --muted:#5b6473;
+      --line:rgba(11,18,32,0.14);
+      --fieldBg:#fff6df;
+      --shadow:0 10px 30px rgba(11,18,32,0.08);
+      --radius:18px;
+      --focus:0 0 0 4px rgba(45,132,179,0.18);
+      --green:#168a4a;
+      --orange:#f4b740;
+      --gold:#f4b740;
+    }
+
+    *{ box-sizing:border-box; }
+    html, body{ height:100%; }
+    body{
+      margin:0;
+      font-family:Montserrat,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+      color:var(--text);
+      line-height:1.45;
+      background:#fff;
+    }
+    .wrap{ max-width:900px; margin:0 auto; padding:24px 16px 40px; position:relative; }
+
+    .pageHeader{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:16px;
+      flex-wrap:wrap;
+      text-align:center;
+      margin-bottom:14px;
+      padding:20px 18px;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+    }
+    .pageHeader-inner{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:12px;
+      max-width:100%;
+    }
+    @media (min-width:640px){
+      .pageHeader-inner{
+        flex-direction:row;
+        text-align:left;
+        align-items:center;
+      }
+      .pageHeader-text{ text-align:left; }
+    }
+    .pageHeader-logo{
+      width:112px;
+      height:auto;
+      max-height:64px;
+      object-fit:contain;
+      display:block;
+      filter:drop-shadow(0 6px 14px rgba(11,18,32,0.08));
+    }
+    .pageHeader-text h1{
+      margin:0;
+      font-size:clamp(1.1rem,2.8vw,1.45rem);
+      font-weight:800;
+      color:var(--blue);
+      letter-spacing:0.02em;
+      line-height:1.2;
+    }
+    .pageHeader-tagline{
+      margin:6px 0 0;
+      font-size:13px;
+      color:var(--muted);
+      font-weight:600;
+    }
+
+    .card{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:20px;
+      box-shadow:var(--shadow);
+      margin-top:14px;
+      overflow:hidden;
+    }
+    .card h2{
+      margin:0 0 12px 0;
+      font-size:clamp(14px,1.8vw,16px);
+      letter-spacing:0.2px;
+      font-weight:900;
+      text-transform:uppercase;
+      color:rgba(45,132,179,0.92);
+      display:flex;
+      align-items:center;
+      gap:11px;
+    }
+    .card h2::before{
+      content:"";
+      width:4px;
+      height:1.05em;
+      border-radius:99px;
+      background:linear-gradient(180deg, var(--blueDeep) 0%, var(--blueMid) 100%);
+      flex-shrink:0;
+      opacity:0.9;
+    }
+    .note{
+      margin:0 0 12px 0;
+      color:var(--muted);
+      font-size:clamp(12px,1.45vw,13px);
+      font-weight:700;
+    }
+    .divider{ height:1px; background:rgba(11,18,32,0.10); margin:12px 0; }
+
+    .row{ display:grid; grid-template-columns:1fr; gap:10px; }
+    @media (min-width:720px){
+      .row.cols2{ grid-template-columns:1fr 1fr; }
+      .row.cols3{ grid-template-columns:1fr 1fr 1fr; }
+    }
+
+    label{ display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:900; }
+    input[type="text"], input[type="date"], select, textarea{
+      width:100%;
+      border:1px solid rgba(11,18,32,0.14);
+      border-radius:12px;
+      padding:10px 12px;
+      font-size:14px;
+      background:#fff;
+      outline:none;
+      font-family:inherit;
+    }
+    textarea{ min-height:84px; resize:vertical; }
+    input:focus, select:focus, textarea:focus{
+      box-shadow:var(--focus);
+      border-color:rgba(45,132,179,0.40);
+    }
+
+    .sectionLabel{
+      font-weight:900;
+      font-size:13px;
+      margin-bottom:8px;
+      letter-spacing:0.2px;
+      text-transform:uppercase;
+      color:rgba(11,18,32,0.78);
+    }
+
+    /* Tiles */
+    .tileGroup{ display:grid; grid-template-columns:1fr; gap:10px; }
+    @media (min-width:720px){
+      .tileGroup.cols3{ grid-template-columns:1fr 1fr 1fr; }
+      .tileGroup.cols6{ grid-template-columns:repeat(6,minmax(0,1fr)); }
+      .tileGroup.cols2{ grid-template-columns:1fr 1fr; }
+    }
+
+    .tile{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      border:1px solid rgba(11,18,32,0.14);
+      border-radius:18px;
+      padding:12px 12px;
+      cursor:pointer;
+      background:#fff;
+      user-select:none;
+      transition:border-color .15s ease, box-shadow .15s ease, background .15s ease, transform .06s ease, opacity .15s ease;
+      min-height:52px;
+      min-width:0;
+    }
+    .tile:hover{ border-color:rgba(45,132,179,0.38); }
+    .tile:active{ transform:translateY(1px); }
+    .tile input{ display:none; }
+    .tile .dot{
+      width:16px; height:16px; border-radius:999px;
+      border:2px solid rgba(45,132,179,0.55);
+      flex:0 0 auto;
+      background:transparent;
+      position:relative;
+    }
+    .tile .txt{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+    .tile .title{
+      font-weight:900;
+      font-size:clamp(12px,1.55vw,13px);
+      line-height:1.2;
+      word-break:break-word;
+    }
+    .tile .desc{
+      font-weight:700;
+      font-size:clamp(11px,1.45vw,12px);
+      color:var(--muted);
+      line-height:1.2;
+      word-break:break-word;
+    }
+    .tile.active{
+      box-shadow:0 10px 24px rgba(11,18,32,0.12);
+      border-color:rgba(11,18,32,0.10);
+    }
+    .tile.active .dot{
+      border-color:rgba(255,255,255,0.95);
+      background:rgba(255,255,255,0.95);
+    }
+    .tile.active .dot::after{
+      content:"";
+      position:absolute;
+      left:4px; top:1px;
+      width:5px; height:9px;
+      border-right:2px solid rgba(45,132,179,0.95);
+      border-bottom:2px solid rgba(45,132,179,0.95);
+      transform:rotate(45deg);
+    }
+    .tile.disabled{
+      cursor:not-allowed;
+      opacity:0.45;
+      background:#fff;
+    }
+    .tile.disabled:hover{ border-color:rgba(11,18,32,0.14); }
+
+    /* Stage colours — solid fills + white text (aligned across all three stages) */
+    .tile.stage{
+      align-items:center; /* centre contents in the tile */
+      min-height:auto;
+    }
+    .tile.stage .dot{ margin-top:0; }
+    .tile.stage .txt{
+      text-align:center;
+      align-items:center;
+    }
+
+    /* Soft stage colours when not selected */
+    .tile.stage[data-stage="Swim Confidence"]:not(.active){
+      background:rgba(22,138,74,0.12);
+      border-color:rgba(11,18,32,0.10);
+    }
+    .tile.stage[data-stage="Swim Confidence"]:not(.active) .dot{
+      border-color:rgba(22,138,74,0.55);
+    }
+    .tile.stage[data-stage="Swim Confidence"]:not(.active) .title{
+      color:rgba(22,138,74,0.95);
+    }
+    .tile.stage[data-stage="Swim Confidence"]:not(.active) .desc.stageBlurb{
+      color:rgba(22,138,74,0.92);
+    }
+
+    .tile.stage[data-stage="Swim Basic"]:not(.active){
+      background:rgba(201,120,10,0.12);
+      border-color:rgba(11,18,32,0.10);
+    }
+    .tile.stage[data-stage="Swim Basic"]:not(.active) .dot{
+      border-color:rgba(201,120,10,0.55);
+    }
+    .tile.stage[data-stage="Swim Basic"]:not(.active) .title{
+      color:rgba(201,120,10,0.95);
+    }
+    .tile.stage[data-stage="Swim Basic"]:not(.active) .desc.stageBlurb{
+      color:rgba(201,120,10,0.92);
+    }
+
+    .tile.stage[data-stage="Swim Structured"]:not(.active){
+      background:rgba(26,106,148,0.12);
+      border-color:rgba(11,18,32,0.10);
+    }
+    .tile.stage[data-stage="Swim Structured"]:not(.active) .dot{
+      border-color:rgba(26,106,148,0.55);
+    }
+    .tile.stage[data-stage="Swim Structured"]:not(.active) .title{
+      color:rgba(26,106,148,0.95);
+    }
+    .tile.stage[data-stage="Swim Structured"]:not(.active) .desc.stageBlurb{
+      color:rgba(26,106,148,0.92);
+    }
+    .tile.stage.active[data-stage="Swim Confidence"]{
+      background:var(--green);
+      border-color:rgba(11,18,32,0.14);
+    }
+    .tile.stage.active[data-stage="Swim Confidence"] .title,
+    .tile.stage.active[data-stage="Swim Confidence"] .desc{
+      color:#fff;
+    }
+    .tile.stage.active[data-stage="Swim Basic"]{
+      /* Mismo amarillo/dorado que Level 3–4 seleccionado (--orange) */
+      background:var(--orange);
+      border-color:rgba(11,18,32,0.14);
+    }
+    .tile.stage.active[data-stage="Swim Basic"] .title,
+    .tile.stage.active[data-stage="Swim Basic"] .desc{
+      color:#fff;
+    }
+    .tile.stage.active[data-stage="Swim Structured"]{
+      /* Mismo azul que Level 5–6 seleccionado (--blue) */
+      background:var(--blue);
+      border-color:rgba(11,18,32,0.14);
+    }
+    .tile.stage.active[data-stage="Swim Structured"] .title,
+    .tile.stage.active[data-stage="Swim Structured"] .desc{
+      color:#fff;
+    }
+    .tile.stage .desc.stageBlurb{
+      font-weight:700;
+      font-size:clamp(10px,1.35vw,11.5px);
+      line-height:1.35;
+      margin-top:6px;
+      max-width:100%;
+    }
+    .tile.stage.active[data-stage="Swim Confidence"] .desc.stageBlurb{
+      color:rgba(255,255,255,0.92);
+    }
+
+    /* Level solid colours */
+    .tile.level{
+      align-items:center; /* centre contents in the tile */
+      min-height:auto;
+    }
+    .tile.level .dot{ margin-top:0; }
+    .tile.level .txt{
+      text-align:center;
+      align-items:center;
+    }
+    .tile.level .levelSub{
+      font-weight:600; /* intentionally not as bold as the LEVEL header */
+      font-size:clamp(8px,1.15vw,10px);
+      line-height:1.12;
+      color:rgba(78,91,103,0.95);
+      text-transform:none;
+      margin:0;
+      word-break:break-word;
+    }
+
+    /* Soft level colours when enabled but not selected */
+    .tile.level:not(.active):not(.disabled)[data-level="1"],
+    .tile.level:not(.active):not(.disabled)[data-level="2"]{
+      background:rgba(22,138,74,0.12);
+      border-color:rgba(11,18,32,0.10);
+    }
+    .tile.level:not(.active):not(.disabled)[data-level="1"] .dot,
+    .tile.level:not(.active):not(.disabled)[data-level="2"] .dot{
+      border-color:rgba(22,138,74,0.55);
+    }
+    .tile.level:not(.active):not(.disabled)[data-level="1"] .title,
+    .tile.level:not(.active):not(.disabled)[data-level="2"] .title{
+      color:rgba(22,138,74,0.95);
+    }
+    .tile.level:not(.active):not(.disabled)[data-level="1"] .levelSub,
+    .tile.level:not(.active):not(.disabled)[data-level="2"] .levelSub{
+      color:rgba(22,138,74,0.92);
+    }
+
+    .tile.level:not(.active):not(.disabled)[data-level="3"],
+    .tile.level:not(.active):not(.disabled)[data-level="4"]{
+      background:rgba(244,183,64,0.20);
+      border-color:rgba(11,18,32,0.10);
+    }
+    .tile.level:not(.active):not(.disabled)[data-level="3"] .dot,
+    .tile.level:not(.active):not(.disabled)[data-level="4"] .dot{
+      border-color:rgba(244,183,64,0.65);
+    }
+    .tile.level:not(.active):not(.disabled)[data-level="3"] .title,
+    .tile.level:not(.active):not(.disabled)[data-level="4"] .title{
+      color:rgba(170,105,0,0.95);
+    }
+    .tile.level:not(.active):not(.disabled)[data-level="3"] .levelSub,
+    .tile.level:not(.active):not(.disabled)[data-level="4"] .levelSub{
+      color:rgba(170,105,0,0.92);
+    }
+
+    .tile.level:not(.active):not(.disabled)[data-level="5"],
+    .tile.level:not(.active):not(.disabled)[data-level="6"]{
+      background:rgba(45,132,179,0.12);
+      border-color:rgba(11,18,32,0.10);
+    }
+    .tile.level:not(.active):not(.disabled)[data-level="5"] .dot,
+    .tile.level:not(.active):not(.disabled)[data-level="6"] .dot{
+      border-color:rgba(45,132,179,0.55);
+    }
+    .tile.level:not(.active):not(.disabled)[data-level="5"] .title,
+    .tile.level:not(.active):not(.disabled)[data-level="6"] .title{
+      color:rgba(45,132,179,0.95);
+    }
+    .tile.level:not(.active):not(.disabled)[data-level="5"] .levelSub,
+    .tile.level:not(.active):not(.disabled)[data-level="6"] .levelSub{
+      color:rgba(45,132,179,0.92);
+    }
+
+    .tile.level.active[data-level="1"], .tile.level.active[data-level="2"]{ background:var(--green); }
+    .tile.level.active[data-level="3"], .tile.level.active[data-level="4"]{ background:var(--orange); }
+    .tile.level.active[data-level="5"], .tile.level.active[data-level="6"]{ background:var(--blue); }
+    .tile.level.active .title{ color:#fff; }
+    .tile.level.active .levelSub{ color:#fff; }
+
+    .errMsg{
+      display:none;
+      margin-top:12px;
+      border:1px solid rgba(185,28,28,0.25);
+      background:rgba(185,28,28,0.12);
+      border-radius:16px;
+      padding:10px 12px;
+      font-weight:800;
+      font-size:13px;
+    }
+    .errMsg.show{ display:block; }
+
+    /* ===== Level Confirmation ===== */
+    .levelBox{
+      border:1px solid rgba(11,18,32,0.12);
+      border-radius:18px;
+      padding:12px;
+      background:rgba(255,255,255,0.92);
+    }
+    .progressWrap{
+      display:flex;
+      gap:12px;
+      align-items:flex-start;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      margin-bottom:10px;
+    }
+    .meter{
+      position:relative;
+      width:100%;
+      max-width:560px;
+      height:14px;
+      background:#f2f4f7;
+      border:1px solid rgba(11,18,32,0.12);
+      border-radius:999px;
+      overflow:hidden;
+    }
+    .meterFill{
+      position:absolute; left:0; top:0;
+      height:100%;
+      width:0%;
+      background:linear-gradient(90deg, rgba(137,181,193,0.35), rgba(45,132,179,0.95));
+      transition:width .18s ease;
+    }
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      border:1px solid rgba(11,18,32,0.12);
+      border-radius:999px;
+      padding:8px 10px;
+      background:#fff;
+      font-weight:900;
+      font-size:12px;
+      min-width:260px;
+      justify-content:center;
+    }
+    .badge .swatch{ width:10px; height:10px; border-radius:999px; background:var(--blueDeep); }
+
+    .focusGrid{ display:grid; grid-template-columns:1fr; gap:10px; }
+    @media (min-width:900px){ .focusGrid{ grid-template-columns:1fr 1fr; } }
+
+    .focusSection{
+      border:1px solid rgba(11,18,32,0.12);
+      border-radius:16px;
+      padding:12px;
+      background:#fff;
+      overflow:hidden;
+    }
+    .focusHead{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:10px;
+    }
+    .focusTitle{
+      margin:0;
+      font-size:13px;
+      font-weight:900;
+      text-transform:uppercase;
+      letter-spacing:0.2px;
+      color:rgba(11,18,32,0.80);
+    }
+
+    .focusItem{
+      border:1px solid rgba(11,18,32,0.10);
+      border-radius:14px;
+      padding:10px;
+      margin-bottom:10px;
+      background:#fff;
+      overflow:hidden;
+    }
+    .focusItem:last-child{ margin-bottom:0; }
+
+    .focusItem.lvl12{ background:rgba(22,138,74,0.12); border-color:rgba(22,138,74,0.22); }
+    .focusItem.lvl34{ background:rgba(244,183,64,0.20); border-color:rgba(244,183,64,0.30); }
+    .focusItem.lvl56{ background:rgba(45,132,179,0.14); border-color:rgba(45,132,179,0.26); }
+
+    .focusLine{
+      font-size:13px;
+      font-weight:900;
+      margin:0 0 10px 0;
+      color:rgba(11,18,32,0.92);
+    }
+
+    .triGrid{
+      display:grid;
+      grid-template-columns:repeat(3, minmax(0,1fr));
+      gap:8px;
+    }
+    .triBtn{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      padding:8px 8px;
+      border-radius:14px;
+      border:1px solid rgba(11,18,32,0.14);
+      background:#fff;
+      cursor:pointer;
+      user-select:none;
+      font-weight:900;
+      font-size:10px; /* smaller as requested */
+      text-transform:uppercase;
+      letter-spacing:0.2px;
+      transition:box-shadow .15s ease, border-color .15s ease, background .15s ease, transform .06s ease;
+      min-height:38px;
+      line-height:1.12;
+      white-space:normal;
+    }
+    .triBtn input{ display:none; }
+    .triBtn:active{ transform:translateY(1px); }
+    .triBtn.active{
+      border-color:rgba(45,132,179,0.45);
+      background:rgba(45,132,179,0.10);
+      box-shadow:0 10px 18px rgba(11,18,32,0.08);
+    }
+    .triBtn.independence{ white-space:nowrap; }
+
+    /* Mobile: fit labels, Independence one line, others can wrap */
+    @media (max-width:560px){
+      .triGrid{ gap:6px; }
+      .triBtn{
+        font-size:8px;
+        letter-spacing:0.10px;
+        padding:7px 5px;
+        min-height:32px;
+        line-height:1.05;
+      }
+      .triBtn.independence{ font-size:8px; } /* keep one line */
+    }
+
+    /* ===== Core Development Areas ===== */
+    .areasGrid{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+    .area[data-domain="engagement"]{ order:1; }
+    .area[data-domain="independence"]{ order:2; }
+    .area[data-domain="regulation"]{ order:3; }
+
+    .area{
+      border:1px solid rgba(11,18,32,0.12);
+      border-radius:18px;
+      padding:12px;
+      background:#fff;
+      overflow:hidden;
+      text-align:center;
+      display:flex;
+      flex-wrap:wrap;
+      justify-content:center;
+      gap:12px;
+      align-items:start;
+    }
+    .areaHead,
+    .domainProgress,
+    .area > label{
+      flex:0 0 100%; /* keep header/progress/evidence full width */
+    }
+    .area > label{
+      text-align:left;
+      align-items:flex-start;
+    }
+    .areaHead{ margin-bottom:0; }
+    .areaName{
+      font-weight:900;
+      font-size:14px;
+      margin:0;
+      text-transform:uppercase;
+      letter-spacing:0.2px;
+      text-align:center;
+    }
+    .areaDesc{
+      color:var(--muted);
+      font-size:13px;
+      margin:6px 0 0 0;
+      font-weight:800;
+      line-height:1.25;
+      text-align:center;
+    }
+
+    .domainProgress{
+      border:1px solid rgba(11,18,32,0.12);
+      border-radius:16px;
+      padding:12px;
+      background:rgba(255,255,255,0.92);
+      margin:0;
+    }
+    .domainTop{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:center;
+      margin-bottom:8px;
+    }
+    .domainTitle{
+      font-weight:900;
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:0.2px;
+      color:rgba(11,18,32,0.78);
+    }
+    .domainCount{
+      font-size:12px;
+      color:var(--muted);
+      font-weight:800;
+      margin-top:4px;
+    }
+    .domainBadge{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      border:1px solid rgba(11,18,32,0.12);
+      border-radius:999px;
+      padding:7px 10px;
+      background:#fff;
+      font-weight:900;
+      font-size:12px;
+      min-width:270px;
+      justify-content:center;
+      text-align:center;
+    }
+    .domainBadge .stars{
+      letter-spacing:1px;
+      font-size:12px;
+      color:var(--gold);
+    }
+    .domainBar{
+      position:relative;
+      height:14px;
+      border-radius:999px;
+      overflow:hidden;
+      background:#f2f4f7;
+      border:1px solid rgba(11,18,32,0.12);
+    }
+    .domainFill{
+      position:absolute;
+      left:0; top:0;
+      height:100%;
+      width:0%;
+      background:linear-gradient(90deg, rgba(137,181,193,0.35), rgba(45,132,179,0.95));
+      transition:width .18s ease;
+    }
+
+    .obsRow{
+      border:1px solid rgba(11,18,32,0.10);
+      border-radius:14px;
+      padding:10px 12px;
+      background:#fff;
+      margin-bottom:0;
+      display:flex;
+      flex-direction:row;
+      align-items:center;
+      justify-content:flex-start;
+      gap:12px 16px;
+      flex-wrap:nowrap;
+      flex:1 1 100%;
+      width:100%;
+      max-width:100%;
+      min-width:0;
+      text-align:left;
+    }
+
+    /* Stronger outer border per domain (neutral colour) */
+    .area[data-domain="engagement"],
+    .area[data-domain="independence"],
+    .area[data-domain="regulation"]{
+      border-width:2px;
+      border-color:rgba(11,18,32,0.12);
+    }
+    .obsRow:last-child{ margin-bottom:0; }
+
+    .obsTitleLine{
+      flex:1 1 auto;
+      min-width:0;
+      margin:0;
+      font-size:13px;
+      font-weight:900;
+      color:rgba(11,18,32,0.92);
+      line-height:1.35;
+      text-align:left;
+    }
+    .obsTitleLine span{
+      font-weight:600;
+      color:rgba(78,91,103,0.95);
+      display:inline;
+      margin:0;
+    }
+
+    .rsiGrid{
+      display:flex;
+      flex-direction:row;
+      flex-wrap:nowrap;
+      align-items:stretch;
+      gap:8px;
+      flex:0 0 auto;
+      margin-left:auto;
+    }
+    .rsiBtn{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      padding:8px 12px;
+      border-radius:14px;
+      border:1px solid rgba(11,18,32,0.14);
+      background:#fff;
+      cursor:pointer;
+      user-select:none;
+      font-weight:900;
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:0.2px;
+      transition:box-shadow .15s ease, border-color .15s ease, background .15s ease, transform .06s ease;
+      min-height:38px;
+      flex:0 0 auto;
+      white-space:nowrap;
+    }
+
+    /* Layout for obsRow: full-width rows; stack area column on narrow viewports */
+    @media (max-width:900px){
+      .area{
+        flex-direction:column;
+        flex-wrap:nowrap;
+        align-items:stretch;
+      }
+      .area .obsRow{
+        flex:0 0 auto;
+        width:100%;
+      }
+    }
+    @media (max-width:720px){
+      .obsRow{
+        flex-wrap:wrap;
+        align-items:flex-start;
+      }
+      .obsRow .rsiGrid{
+        margin-left:0;
+        width:100%;
+        justify-content:space-between;
+      }
+      .obsRow .rsiBtn{
+        flex:1 1 0;
+        min-width:0;
+        padding:8px 6px;
+        font-size:9px;
+        letter-spacing:0.06px;
+      }
+    }
+    .rsiBtn input{ display:none; }
+    .rsiBtn:active{ transform:translateY(1px); }
+    .rsiBtn.active{
+      border-color:rgba(45,132,179,0.45);
+      background:rgba(45,132,179,0.10);
+      box-shadow:0 10px 18px rgba(11,18,32,0.08);
+    }
+
+    /* ===== Term decision ===== */
+    .termDecision{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:10px;
+      margin-top:10px;
+    }
+    @media (min-width:720px){
+      .termDecision{ grid-template-columns:1fr 1fr; }
+    }
+
+    .termOption{ position:relative; }
+    .termOption input{ position:absolute; opacity:0; }
+    .termOption label{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid rgba(11,18,32,.12);
+      background:#fff;
+      cursor:pointer;
+      font-weight:800;
+      font-size:13px;
+      text-align:center;
+    }
+    .termOption label::before{
+      content:"";
+      width:16px;
+      height:16px;
+      border-radius:50%;
+      border:2px solid rgba(11,18,32,0.22);
+      background:#fff;
+      transition:.2s;
+      flex:0 0 auto;
+      order:-1;
+    }
+    .termOption--transition label::before{
+      border-color:#1a7f37;
+    }
+    .termOption--transition input:checked + label{
+      border-color:#1a7f37;
+      background:rgba(26,127,55,0.14);
+    }
+    .termOption--transition input:checked + label::before{
+      background:#1a7f37;
+      border-color:#1a7f37;
+    }
+    .termOption--consolidate label::before{
+      border-color:#c62828;
+    }
+    .termOption--consolidate input:checked + label{
+      border-color:#c62828;
+      background:rgba(198,40,40,0.10);
+    }
+    .termOption--consolidate input:checked + label::before{
+      background:#c62828;
+      border-color:#c62828;
+    }
+    .btn{
+      width:100%;
+      border-radius:22px;
+      padding:18px 18px;
+      font-family:inherit;
+      font-weight:900;
+      font-size:clamp(16px,2.2vw,22px);
+      letter-spacing:0.6px;
+      text-transform:uppercase;
+      cursor:pointer;
+      min-height:64px;
+    }
+    .btn.secondary{
+      background:rgba(255,255,255,0.92);
+      border:2px solid rgba(45,132,179,0.20);
+      color:rgba(45,132,179,0.92);
+      box-shadow:0 16px 30px rgba(11,18,32,0.08);
+    }
+    .btn.primary{
+      border:none;
+      color:#fff;
+      background:linear-gradient(135deg, rgba(45,132,179,0.98), rgba(45,132,179,0.84));
+      box-shadow:0 16px 30px rgba(11,18,32,0.16);
+    }
+    .btn:active{ transform:translateY(1px); }
+
+    .toast{
+      position:fixed;
+      left:16px; right:16px; bottom:16px;
+      max-width:720px;
+      margin:0 auto;
+      background:#fff;
+      border:1px solid rgba(11,18,32,0.12);
+      border-radius:16px;
+      box-shadow:var(--shadow);
+      padding:10px 12px;
+      font-weight:800;
+      font-size:13px;
+      display:none;
+      z-index:9999;
+    }
+    .toast.show{ display:block; }
+
+    /* Hide label next to stars; centre stars (domain progress badges) */
+    .domainBadge span[data-domain-label]{ display:none !important; }
+    .domainBadge{ justify-content:center !important; }
+
+    /* Term Review Summary (aligned with General Observation form) */
+    .summary-box{
+      border:1px solid rgba(45,132,179,0.18);
+      background:linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      border-radius:22px;
+      padding:18px;
+      margin-top:16px;
+      box-shadow:0 12px 30px rgba(11,18,32,0.07), 0 1px 0 rgba(255,255,255,0.7) inset;
+    }
+    .summary-box h3{
+      margin:0 0 10px;
+      font-size:16px;
+      font-weight:800;
+      color:var(--blueDeep);
+    }
+    .summary-output{
+      min-height:160px;
+      border:1px solid rgba(11,18,32,0.1);
+      background:#fff;
+      border-radius:18px;
+      padding:16px;
+      font-size:14px;
+      line-height:1.7;
+      white-space:pre-wrap;
+    }
+    .summary-output.summary-rich{ white-space:normal; }
+    .summary-output .summary-placeholder{ color:var(--muted); margin:0; }
+    .summary-output .report-block{ margin-bottom:22px; }
+    .summary-output .report-block:last-child{ margin-bottom:0; }
+    .summary-output .report-block-title{
+      font-weight:900;
+      font-size:17px;
+      color:#0b1220;
+      margin:0 0 10px;
+      letter-spacing:0.02em;
+    }
+    .summary-output .report-block-body{ font-size:13px; line-height:1.65; color:#0b1220; font-weight:500; }
+    /* Match label weight/size to level/core lines (bold before colon) */
+    .summary-output .report-block-body strong{
+      font-weight:900;
+      font-size:13px;
+    }
+    .summary-output .lc-line strong,
+    .summary-output .report-block-body li strong{
+      font-weight:900;
+      font-size:13px;
+    }
+    .summary-output .report-block-body p{ margin:0 0 10px; }
+    .summary-output .report-block-body p:last-child{ margin-bottom:0; }
+    .summary-output .report-block-body ul{ margin:0; padding-left:1.2em; }
+    .summary-output .report-block-body li{ margin-bottom:6px; }
+    .summary-output .report-block-body.lc-wrap{ text-align:left; }
+    .summary-output .lc-block{ margin:0 0 12px; }
+    .summary-output .lc-block:last-child{ margin-bottom:0; }
+    .summary-output .lc-outcome-wrap{
+      margin-top:18px;
+    }
+    .summary-output .lc-outcome-narrative{
+      margin:0 0 14px;
+      color:rgba(11,18,32,0.88);
+      line-height:1.65;
+    }
+    .summary-output .lc-outcome-wrap .lc-outcome-narrative:last-child{
+      margin-bottom:0;
+    }
+    .summary-output .lc-title{
+      font-weight:900;
+      text-transform:uppercase;
+      margin:0 0 6px;
+    }
+    .summary-output .lc-line{
+      margin:0 0 6px;
+    }
+    .summary-output .lc-line:last-child{ margin-bottom:0; }
+    .summary-hint{
+      margin-top:10px;
+      font-size:12px;
+      line-height:1.55;
+      color:var(--muted);
+    }
+    /* Submit: mismo criterio visual que timesheet / expenses (#submitBtn) */
+    .summary-actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:stretch;
+      margin-top:16px;
+    }
+    .summary-actions .btn{
+      border:0;
+      border-radius:10px;
+      padding:10px 14px;
+      font-weight:700;
+      cursor:pointer;
+      font:inherit;
+      min-height:44px;
+      touch-action:manipulation;
+    }
+    #btnSwtermSubmit{
+      background:#e4edf8!important;
+      background-color:#e4edf8!important;
+      background-image:none!important;
+      color:#0b2a5b!important;
+      border:1px solid #b0c7e2!important;
+    }
+    #btnSwtermSubmit:hover,
+    #btnSwtermSubmit:focus-visible{
+      background:#0b2a5b!important;
+      background-color:#0b2a5b!important;
+      color:#fff!important;
+      border-color:#0b2a5b!important;
+    }
+    #btnSwtermSubmit:focus-visible{
+      outline:2px solid rgba(11,42,91,.35);
+      outline-offset:2px;
+    }
+    #btnSwtermSubmit:disabled{ opacity:0.55; cursor:not-allowed; }
+
+    @media (max-width:560px){
+      .wrap{ padding:18px 12px 26px; }
+      .card{ padding:14px; }
+    }
+
+    /* 1. Details — solo participante editable; resto lectura (como timesheet / expenses) */
+    /* Dropdown del combo: la tarjeta global usa overflow:hidden; aquí permitimos overflow y
+       elevamos esta tarjeta sobre la siguiente para que la lista no quede tapada. */
+    #cardDetails{
+      overflow:visible;
+      position:relative;
+      z-index:2;
+    }
+    #cardProfile{ position:relative; z-index:1; }
+
+    .swterm-details-stack{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+      min-width:0;
+    }
+    .swterm-details-stack .detail-combo{
+      padding:10px 0 2px;
+      min-width:0;
+    }
+    /* Misma talla visual que las líneas Date / Term / Name (detail-readonly 15px). */
+    .swterm-details-stack .detail-combo .detail-label{
+      font-size:15px;
+      line-height:1.45;
+      margin-bottom:6px;
+    }
+
+    .detail-readonly{
+      font-size:15px;
+      line-height:1.45;
+      color:var(--text);
+      min-width:0;
+      max-width:100%;
+      overflow-wrap:break-word;
+      word-break:normal;
+      padding:10px 0 2px;
+    }
+    .detail-readonly strong{ font-weight:900; }
+    .detail-readonly span{ font-weight:400; }
+    .detail-combo .detail-label{
+      display:block;
+      font-size:13px;
+      font-weight:900;
+      margin-bottom:6px;
+      color:var(--text);
+    }
+    .combo-wrap{
+      position:relative;
+      min-width:0;
+      max-width:100%;
+    }
+    .combo-wrap > input[type="text"]{
+      width:100%;
+      max-width:100%;
+      min-width:0;
+    }
+    .swterm-suggest{
+      position:absolute;
+      left:0;
+      right:0;
+      top:calc(100% + 4px);
+      z-index:80;
+      max-height:min(240px, 42vh);
+      overflow:auto;
+      border:1px solid rgba(11,18,32,0.14);
+      border-radius:12px;
+      background:#fff;
+      box-shadow:0 12px 28px rgba(11,18,32,0.12);
+      -webkit-overflow-scrolling:touch;
+    }
+    .swterm-suggest[hidden]{ display:none !important; }
+    .swterm-suggest button{
+      display:block;
+      width:100%;
+      max-width:100%;
+      min-width:0;
+      text-align:left;
+      padding:10px 12px;
+      border:0;
+      border-bottom:1px solid rgba(11,18,32,0.08);
+      background:#fff;
+      font:inherit;
+      font-size:14px;
+      font-weight:600;
+      color:var(--text);
+      cursor:pointer;
+      overflow-wrap:break-word;
+    }
+    .swterm-suggest button:last-child{ border-bottom:0; }
+    #swimmerComboWrap .swterm-suggest button:hover,
+    #swimmerComboWrap .swterm-suggest button:focus-visible{
+      background:var(--blueSoft);
+      color:#0b1220 !important;
+      -webkit-text-fill-color:#0b1220 !important;
+      outline:none;
+    }
+    #swimmerComboWrap .swterm-suggest button:hover *,
+    #swimmerComboWrap .swterm-suggest button:focus-visible *{
+      color:#0b1220 !important;
+      -webkit-text-fill-color:#0b1220 !important;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <header class="pageHeader" aria-label="clubSENsational Swimming Term Review header">
+      <div class="pageHeader-inner">
+        <img
+          class="pageHeader-logo"
+          src="https://www.clubsensational.org/wp-content/uploads/2026/05/Logo-CS-azul.png"
+          width="200"
+          height="80"
+          alt="clubSENsational — Autism Consultancy Services"
+          decoding="async"
+          onerror="this.onerror=null;this.src='Logo%20CS%20azul.png';"
+        />
+        <div class="pageHeader-text">
+          <h1>Swimming term review</h1>
+          <p class="pageHeader-tagline">clubSENsational · Autism Consultancy Services</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- 1 Details: solo participante editable + autocompletado clientes; fecha / término / nombre staff lectura -->
+    <div class="card" id="cardDetails">
+      <h2>1. Details</h2>
+      <p class="note">Search the participant by typing. Date, term, and your name (from your login) are set for this review.</p>
+
+      <div class="swterm-details-stack">
+        <div class="detail-combo">
+          <span class="detail-label" id="swimmerNameLabel">Participant's name:</span>
+          <div class="combo-wrap" id="swimmerComboWrap">
+            <input
+              id="swimmerName"
+              type="text"
+              placeholder="Type a letter to search…"
+              autocomplete="off"
+              spellcheck="false"
+              aria-autocomplete="list"
+              aria-expanded="false"
+              aria-controls="swimmerSuggest"
+            />
+            <div id="swimmerSuggest" class="swterm-suggest" role="listbox" aria-label="Matching participants" hidden></div>
+          </div>
+        </div>
+
+        <div class="detail-readonly" id="termReadonly">
+          <strong>Term:</strong> <span id="termSelectDisplay">—</span>
+        </div>
+        <select id="termSelect" hidden aria-hidden="true" tabindex="-1">
+          <option value="">Select</option>
+          <option value="Autumn Term (Sep, Oct, Nov &amp; Dec)">Autumn Term (Sep, Oct, Nov &amp; Dec)</option>
+          <option value="Spring Term (Jan, Feb &amp; Mar)">Spring Term (Jan, Feb &amp; Mar)</option>
+          <option value="Summer Term (Apr, May, Jun &amp; Jul)">Summer Term (Apr, May, Jun &amp; Jul)</option>
+        </select>
+
+        <div class="detail-readonly" id="reviewDateReadonly">
+          <strong>Date of review:</strong> <span id="reviewDateDisplay">—</span>
+        </div>
+        <input type="hidden" id="reviewDate" value="" />
+
+        <div class="detail-readonly" id="instructorReadonly">
+          <strong>Name:</strong> <span id="instructorNameDisplay">—</span>
+        </div>
+        <input type="hidden" id="instructorName" value="" />
+      </div>
+
+      <div class="errMsg" id="errDetails">Please complete all required fields.</div>
+    </div>
+
+    <!-- 2 Profile Review -->
+    <div class="card" id="cardProfile">
+      <h2>2. Profile review</h2>
+      <p class="note">Select Stage first, then select the current Level. Stage controls which Levels are available.</p>
+
+      <div class="divider"></div>
+
+      <div class="sectionLabel">Stage</div>
+      <div class="tileGroup cols3" id="stageTiles">
+        <label class="tile stage" data-group="stage" data-stage="Swim Confidence" data-value="Swim Confidence">
+          <input type="radio" name="stage" value="Swim Confidence" />
+          <div class="dot"></div>
+          <div class="txt">
+            <div class="title">Stage 1 – Swim Confidence</div>
+            <div class="desc stageBlurb">Building safety, comfort, and trust in the water through sensory exploration and emotional readiness, supporting initial participation.</div>
+          </div>
+        </label>
+
+        <label class="tile stage" data-group="stage" data-stage="Swim Basic" data-value="Swim Basic">
+          <input type="radio" name="stage" value="Swim Basic" />
+          <div class="dot"></div>
+          <div class="txt">
+            <div class="title">Stage 2 – Swim Basic</div>
+            <div class="desc stageBlurb">Developing core aquatic skills and increasing independence while maintaining control, confidence, and engagement in the water.</div>
+          </div>
+        </label>
+
+        <label class="tile stage" data-group="stage" data-stage="Swim Structured" data-value="Swim Structured">
+          <input type="radio" name="stage" value="Swim Structured" />
+          <div class="dot"></div>
+          <div class="txt">
+            <div class="title">Stage 3 – Swim Structured</div>
+            <div class="desc stageBlurb">Refining aquatic skills into coordinated and structured swimming with improved control, efficiency, and independence.</div>
+          </div>
+        </label>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="sectionLabel">Current level</div>
+      <div class="tileGroup cols6" id="levelTiles">
+        <label class="tile level" data-group="level" data-value="Level 1" data-level="1">
+          <input type="radio" name="level" value="Level 1" />
+          <div class="dot"></div>
+          <div class="txt">
+            <div class="title">LEVEL 1</div>
+            <div class="levelSub">- Building early confidence in the water</div>
+            <div class="levelSub">- Staying calm and safe with support</div>
+          </div>
+        </label>
+
+        <label class="tile level" data-group="level" data-value="Level 2" data-level="2">
+          <input type="radio" name="level" value="Level 2" />
+          <div class="dot"></div>
+          <div class="txt">
+            <div class="title">LEVEL 2</div>
+            <div class="levelSub">- Progressing with reduced hesitation</div>
+            <div class="levelSub">- Improving breathing with less help</div>
+          </div>
+        </label>
+
+        <label class="tile level" data-group="level" data-value="Level 3" data-level="3">
+          <input type="radio" name="level" value="Level 3" />
+          <div class="dot"></div>
+          <div class="txt">
+            <div class="title">LEVEL 3</div>
+            <div class="levelSub">- Developing balance and body position</div>
+            <div class="levelSub">- Moving forward with guidance and control</div>
+          </div>
+        </label>
+
+        <label class="tile level" data-group="level" data-value="Level 4" data-level="4">
+          <input type="radio" name="level" value="Level 4" />
+          <div class="dot"></div>
+          <div class="txt">
+            <div class="title">LEVEL 4</div>
+            <div class="levelSub">- More control and coordination in movement</div>
+            <div class="levelSub">- Improving rotation, propulsion and direction</div>
+          </div>
+        </label>
+
+        <label class="tile level" data-group="level" data-value="Level 5" data-level="5">
+          <input type="radio" name="level" value="Level 5" />
+          <div class="dot"></div>
+          <div class="txt">
+            <div class="title">LEVEL 5</div>
+            <div class="levelSub">- Refining technique with stronger safety awareness</div>
+            <div class="levelSub">- Longer sequences with increasing independence</div>
+          </div>
+        </label>
+
+        <label class="tile level" data-group="level" data-value="Level 6" data-level="6">
+          <input type="radio" name="level" value="Level 6" />
+          <div class="dot"></div>
+          <div class="txt">
+            <div class="title">LEVEL 6</div>
+            <div class="levelSub">- Efficiency, rhythm and endurance</div>
+            <div class="levelSub">- Sustaining control and safety throughout sessions</div>
+          </div>
+        </label>
+      </div>
+
+      <div class="errMsg" id="errProfile">Please select Stage and Level.</div>
+    </div>
+
+    <!-- 3 Level Confirmation -->
+    <div class="card" id="cardLevelConf">
+      <h2>3. Level confirmation</h2>
+      <p class="note">Rate each focus area using Fully supported, Partially supported, or Independent.</p>
+
+      <div class="levelBox" id="levelBox">
+        <div class="progressWrap">
+          <div style="display:flex;flex-direction:column;gap:6px;min-width:240px;">
+            <div style="font-weight:900;font-size:13px;text-transform:uppercase;letter-spacing:0.2px;">Focus areas achieved</div>
+            <div style="font-size:12px;color:var(--muted);font-weight:800;" id="countTxt">Select a level to start</div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:8px;min-width:260px;flex:1;">
+            <div class="badge" id="progressBadge">
+              <span class="swatch" id="badgeSwatch"></span>
+              <span id="badgeTxt">Level progress not set</span>
+            </div>
+
+            <div class="meter" aria-label="Level Confirmation progress bar">
+              <div class="meterFill" id="meterFill"></div>
+            </div>
+
+            <div style="font-size:12px;color:var(--muted);font-weight:800;" id="percentTxt">Completion 0 percent</div>
+          </div>
+        </div>
+
+        <div id="focusWrap" class="focusGrid"></div>
+      </div>
+    </div>
+
+    <!-- 4 Core Development Areas -->
+    <div class="card" id="cardAreas">
+      <h2>4. Core development areas</h2>
+      <p class="note">Rate each item as Rarely, Sometimes, or Always. Progress fills automatically as you rate items.</p>
+
+      <div class="areasGrid">
+        <!-- Regulation -->
+        <div class="area" data-domain="regulation">
+          <div class="areaHead">
+            <p class="areaName">Regulation</p>
+            <p class="areaDesc">Observation Checklist. Tick what you observed this term.</p>
+          </div>
+
+          <div class="domainProgress" data-domain-progress="regulation">
+            <div class="domainTop">
+              <div>
+                <div class="domainTitle">Regulation progress</div>
+                <div class="domainCount" data-domain-count="regulation">0 of 5 rated</div>
+              </div>
+              <div class="domainBadge">
+                <span data-domain-label="regulation">Not set</span>
+                <span class="stars" data-domain-stars="regulation">☆☆☆☆☆</span>
+              </div>
+            </div>
+            <div class="domainBar" aria-label="Regulation progress bar">
+              <div class="domainFill" data-domain-fill="regulation"></div>
+            </div>
+          </div>
+
+          <div class="obsRow">
+            <p class="obsTitleLine">Emotional stability <span>(remains calm and able to continue the activity when faced with challenges)</span></p>
+            <div class="rsiGrid" data-rsi-domain="regulation">
+              <label class="rsiBtn"><input type="radio" name="reg_emotional" value="Rarely">Rarely</label>
+              <label class="rsiBtn"><input type="radio" name="reg_emotional" value="Sometimes">Sometimes</label>
+              <label class="rsiBtn"><input type="radio" name="reg_emotional" value="Always">Always</label>
+            </div>
+          </div>
+
+          <div class="obsRow">
+            <p class="obsTitleLine">Sensory tolerance <span>(tolerates water contact, movement, noise, or environmental changes)</span></p>
+            <div class="rsiGrid" data-rsi-domain="regulation">
+              <label class="rsiBtn"><input type="radio" name="reg_sensory" value="Rarely">Rarely</label>
+              <label class="rsiBtn"><input type="radio" name="reg_sensory" value="Sometimes">Sometimes</label>
+              <label class="rsiBtn"><input type="radio" name="reg_sensory" value="Always">Always</label>
+            </div>
+          </div>
+
+          <div class="obsRow">
+            <p class="obsTitleLine">Breath regulation <span>(manages breathing after effort, submersion, or sensory input)</span></p>
+            <div class="rsiGrid" data-rsi-domain="regulation">
+              <label class="rsiBtn"><input type="radio" name="reg_breath" value="Rarely">Rarely</label>
+              <label class="rsiBtn"><input type="radio" name="reg_breath" value="Sometimes">Sometimes</label>
+              <label class="rsiBtn"><input type="radio" name="reg_breath" value="Always">Always</label>
+            </div>
+          </div>
+
+          <div class="obsRow">
+            <p class="obsTitleLine">Recovery speed <span>(returns to participation after moments of hesitation or difficulty)</span></p>
+            <div class="rsiGrid" data-rsi-domain="regulation">
+              <label class="rsiBtn"><input type="radio" name="reg_recovery" value="Rarely">Rarely</label>
+              <label class="rsiBtn"><input type="radio" name="reg_recovery" value="Sometimes">Sometimes</label>
+              <label class="rsiBtn"><input type="radio" name="reg_recovery" value="Always">Always</label>
+            </div>
+          </div>
+
+          <div class="obsRow">
+            <p class="obsTitleLine">Consistency across session <span>(maintains regulation throughout different activities in the session)</span></p>
+            <div class="rsiGrid" data-rsi-domain="regulation">
+              <label class="rsiBtn"><input type="radio" name="reg_consistency" value="Rarely">Rarely</label>
+              <label class="rsiBtn"><input type="radio" name="reg_consistency" value="Sometimes">Sometimes</label>
+              <label class="rsiBtn"><input type="radio" name="reg_consistency" value="Always">Always</label>
+            </div>
+          </div>
+
+          <label style="margin-top:10px;">
+            Evidence this term
+            <textarea id="eviRegulation" placeholder="One or two lines, suitable for families"></textarea>
+          </label>
+        </div>
+
+        <!-- Independence -->
+        <div class="area" data-domain="independence">
+          <div class="areaHead">
+            <p class="areaName">Independence</p>
+            <p class="areaDesc">Observation Checklist. Tick what you observed this term.</p>
+          </div>
+
+          <div class="domainProgress" data-domain-progress="independence">
+            <div class="domainTop">
+              <div>
+                <div class="domainTitle">Independence progress</div>
+                <div class="domainCount" data-domain-count="independence">0 of 5 rated</div>
+              </div>
+              <div class="domainBadge">
+                <span data-domain-label="independence">Not set</span>
+                <span class="stars" data-domain-stars="independence">☆☆☆☆☆</span>
+              </div>
+            </div>
+            <div class="domainBar" aria-label="Independence progress bar">
+              <div class="domainFill" data-domain-fill="independence"></div>
+            </div>
+          </div>
+
+          <div class="obsRow">
+            <p class="obsTitleLine">Routine management <span>(follows the structure of the session or familiar routines)</span></p>
+            <div class="rsiGrid" data-rsi-domain="independence">
+              <label class="rsiBtn"><input type="radio" name="ind_routine" value="Rarely">Rarely</label>
+              <label class="rsiBtn"><input type="radio" name="ind_routine" value="Sometimes">Sometimes</label>
+              <label class="rsiBtn"><input type="radio" name="ind_routine" value="Always">Always</label>
+            </div>
+          </div>
+
+          <div class="obsRow">
+            <p class="obsTitleLine">Task initiation <span>(begins activities after instruction or demonstration)</span></p>
+            <div class="rsiGrid" data-rsi-domain="independence">
+              <label class="rsiBtn"><input type="radio" name="ind_initiation" value="Rarely">Rarely</label>
+              <label class="rsiBtn"><input type="radio" name="ind_initiation" value="Sometimes">Sometimes</label>
+              <label class="rsiBtn"><input type="radio" name="ind_initiation" value="Always">Always</label>
+            </div>
+          </div>
+
+          <div class="obsRow">
+            <p class="obsTitleLine">Support required <span>(participates with decreasing levels of assistance)</span></p>
+            <div class="rsiGrid" data-rsi-domain="independence">
+              <label class="rsiBtn"><input type="radio" name="ind_support" value="Rarely">Rarely</label>
+              <label class="rsiBtn"><input type="radio" name="ind_support" value="Sometimes">Sometimes</label>
+              <label class="rsiBtn"><input type="radio" name="ind_support" value="Always">Always</label>
+            </div>
+          </div>
+
+          <div class="obsRow">
+            <p class="obsTitleLine">Equipment management <span>(handles or uses equipment appropriately within the activity)</span></p>
+            <div class="rsiGrid" data-rsi-domain="independence">
+              <label class="rsiBtn"><input type="radio" name="ind_equipment" value="Rarely">Rarely</label>
+              <label class="rsiBtn"><input type="radio" name="ind_equipment" value="Sometimes">Sometimes</label>
+              <label class="rsiBtn"><input type="radio" name="ind_equipment" value="Always">Always</label>
+            </div>
+          </div>
+
+          <div class="obsRow">
+            <p class="obsTitleLine">Transfer across activities <span>(moves between activities with growing independence)</span></p>
+            <div class="rsiGrid" data-rsi-domain="independence">
+              <label class="rsiBtn"><input type="radio" name="ind_transfer" value="Rarely">Rarely</label>
+              <label class="rsiBtn"><input type="radio" name="ind_transfer" value="Sometimes">Sometimes</label>
+              <label class="rsiBtn"><input type="radio" name="ind_transfer" value="Always">Always</label>
+            </div>
+          </div>
+
+          <label style="margin-top:10px;">
+            Evidence this term
+            <textarea id="eviIndependence" placeholder="One or two lines, suitable for families"></textarea>
+          </label>
+        </div>
+
+        <!-- Engagement -->
+        <div class="area" data-domain="engagement">
+          <div class="areaHead">
+            <p class="areaName">Engagement</p>
+            <p class="areaDesc">Observation Checklist. Tick what you observed this term.</p>
+          </div>
+
+          <div class="domainProgress" data-domain-progress="engagement">
+            <div class="domainTop">
+              <div>
+                <div class="domainTitle">Engagement progress</div>
+                <div class="domainCount" data-domain-count="engagement">0 of 5 rated</div>
+              </div>
+              <div class="domainBadge">
+                <span data-domain-label="engagement">Not set</span>
+                <span class="stars" data-domain-stars="engagement">☆☆☆☆☆</span>
+              </div>
+            </div>
+            <div class="domainBar" aria-label="Engagement progress bar">
+              <div class="domainFill" data-domain-fill="engagement"></div>
+            </div>
+          </div>
+
+          <div class="obsRow">
+            <p class="obsTitleLine">Availability for instruction <span>(shows readiness to listen, watch, or follow guidance)</span></p>
+            <div class="rsiGrid" data-rsi-domain="engagement">
+              <label class="rsiBtn"><input type="radio" name="eng_availability" value="Rarely">Rarely</label>
+              <label class="rsiBtn"><input type="radio" name="eng_availability" value="Sometimes">Sometimes</label>
+              <label class="rsiBtn"><input type="radio" name="eng_availability" value="Always">Always</label>
+            </div>
+          </div>
+
+          <div class="obsRow">
+            <p class="obsTitleLine">Responsiveness <span>(reacts to cues, instructions, or demonstrations)</span></p>
+            <div class="rsiGrid" data-rsi-domain="engagement">
+              <label class="rsiBtn"><input type="radio" name="eng_responsive" value="Rarely">Rarely</label>
+              <label class="rsiBtn"><input type="radio" name="eng_responsive" value="Sometimes">Sometimes</label>
+              <label class="rsiBtn"><input type="radio" name="eng_responsive" value="Always">Always</label>
+            </div>
+          </div>
+
+          <div class="obsRow">
+            <p class="obsTitleLine">Task completion <span>(attempts or completes activities presented during the session)</span></p>
+            <div class="rsiGrid" data-rsi-domain="engagement">
+              <label class="rsiBtn"><input type="radio" name="eng_completion" value="Rarely">Rarely</label>
+              <label class="rsiBtn"><input type="radio" name="eng_completion" value="Sometimes">Sometimes</label>
+              <label class="rsiBtn"><input type="radio" name="eng_completion" value="Always">Always</label>
+            </div>
+          </div>
+
+          <div class="obsRow">
+            <p class="obsTitleLine">Integration of feedback <span>(adjusts actions following guidance or correction)</span></p>
+            <div class="rsiGrid" data-rsi-domain="engagement">
+              <label class="rsiBtn"><input type="radio" name="eng_feedback" value="Rarely">Rarely</label>
+              <label class="rsiBtn"><input type="radio" name="eng_feedback" value="Sometimes">Sometimes</label>
+              <label class="rsiBtn"><input type="radio" name="eng_feedback" value="Always">Always</label>
+            </div>
+          </div>
+
+          <div class="obsRow">
+            <p class="obsTitleLine">Sustained participation <span>(remains engaged in activities for increasing periods of time)</span></p>
+            <div class="rsiGrid" data-rsi-domain="engagement">
+              <label class="rsiBtn"><input type="radio" name="eng_sustained" value="Rarely">Rarely</label>
+              <label class="rsiBtn"><input type="radio" name="eng_sustained" value="Sometimes">Sometimes</label>
+              <label class="rsiBtn"><input type="radio" name="eng_sustained" value="Always">Always</label>
+            </div>
+          </div>
+
+          <label style="margin-top:10px;">
+            Evidence this term
+            <textarea id="eviEngagement" placeholder="One or two lines, suitable for families"></textarea>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5 Term Decision -->
+    <div class="card" id="cardDecision">
+      <h2>5. Term decision</h2>
+      <p class="note">Select the most appropriate decision. This can be auto selected when Level Confirmation is Secure at 100 percent.</p>
+
+      <div class="termDecision" id="termDecision">
+        <div class="termOption termOption--consolidate">
+          <input type="radio" name="termDecision" id="td_consolidate" value="Consolidate Current Level">
+          <label for="td_consolidate">Consolidate Current Level</label>
+        </div>
+
+        <div class="termOption termOption--transition">
+          <input type="radio" name="termDecision" id="td_transition" value="Transition to Next Stage">
+          <label for="td_transition">Transition to Next Stage</label>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <label>
+        Decision notes
+        <textarea id="decisionNotes" placeholder="Add any key notes for internal tracking or parent communication"></textarea>
+      </label>
+
+      <div class="summary-box">
+        <h3>Term Review Summary</h3>
+        <div class="summary-output" id="termSummaryOutput">Complete the term review to generate a summary of details, stage and level, level confirmation, core development areas, and term decision. The PDF mirrors this summary with corporate branding.</div>
+        <p class="summary-hint">The summary updates as you complete the form. Submit saves a PDF to <strong>My Documents</strong> (same as timesheet and expenses); open it there to download or print.</p>
+        <div class="summary-actions">
+          <button type="button" class="btn" id="btnSwtermSubmit">Submit</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="toast" id="toast"></div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js?v=20260419-99"></script>
+  <script
+    src="https://www.clubsensational.org/wp-content/uploads/2026/05/clients_info_embed.js?v=20260510-portal-admin"
+    onerror="this.onerror=null;this.src='https://clubsensational.org/wp-content/uploads/2026/05/clients_info_embed.js?v=20260510-portal-admin'"
+  ></script>
+  <!-- swtermreview_app.js: absoluto + fallbacks (Elementor no resuelve rutas relativas al HTML local). -->
+  <script>
+    (function () {
+      var v = "20260510-portal-admin";
+      var file = "swtermreview_app.js";
+      var bases = [];
+      try {
+        if (typeof window !== "undefined" && window.PORTAL_WP_UPLOADS_BASE) {
+          bases.push(String(window.PORTAL_WP_UPLOADS_BASE).trim().replace(/\/$/, ""));
+        }
+      } catch (e) {}
+      try {
+        if (typeof location !== "undefined" && location.origin) {
+          bases.push(String(location.origin).replace(/\/$/, "") + "/wp-content/uploads/2026/05");
+        }
+      } catch (e2) {}
+      bases.push("https://www.clubsensational.org/wp-content/uploads/2026/05");
+      bases.push("https://clubsensational.org/wp-content/uploads/2026/05");
+      var seen = {};
+      bases = bases.filter(function (b) {
+        if (!b || seen[b]) return false;
+        seen[b] = true;
+        return true;
+      });
+      var s = document.createElement("script");
+      s.async = false;
+      var i = 0;
+      s.onerror = function () {
+        i += 1;
+        if (i >= bases.length) {
+          console.error("[swtermreview] Could not load " + file + " from any base. Upload it to wp-content/uploads/2026/05/ or set window.PORTAL_WP_UPLOADS_BASE.");
+          return;
+        }
+        s.src = bases[i] + "/" + file + "?v=" + v;
+      };
+      s.src = bases[0] + "/" + file + "?v=" + v;
+      document.body.appendChild(s);
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+  (function () {
+    try { document.documentElement.classList.add("portal-app-shell"); } catch (e) {}
+  })();
+</script>
+<style id="portal-hide-wp-chrome">
+  html.portal-app-shell body.admin-bar{padding-top:0!important;margin-top:0!important}
+  html.portal-app-shell #wpadminbar,html.portal-app-shell #masthead,html.portal-app-shell header#masthead,html.portal-app-shell .site-header,html.portal-app-shell #site-header,html.portal-app-shell .ast-primary-header-bar,html.portal-app-shell .ast-above-header,html.portal-app-shell .elementor-location-header,html.portal-app-shell .elementor-location-footer,html.portal-app-shell #colophon,html.portal-app-shell footer.site-footer,html.portal-app-shell .site-footer,html.portal-app-shell #footer,html.portal-app-shell .site-bottom-footer-inner-wrap,html.portal-app-shell .footer-widget-area{display:none!important;visibility:hidden!important;height:0!important;overflow:hidden!important;pointer-events:none!important}
+  html.portal-app-shell .site-content,html.portal-app-shell #content,html.portal-app-shell .site-main,html.portal-app-shell #primary{margin-top:0!important;padding-top:0!important}
+  html.portal-app-shell #page,html.portal-app-shell .site{margin-top:0!important;padding-top:0!important}
+</style>
+<script src="https://www.clubsensational.org/wp-content/uploads/2026/05/portal_return_and_shell.js?v=20260510-portal-admin"></script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Incident Report</title>
+<style>
+:root{
+  --blue:#b4232c;
+  --line:rgba(11,18,32,0.14);
+  --fieldBg:#fff1f1;
+  --text:#0b1220;
+  --muted:#5b6473;
+  --radius:18px;
+  --focus:0 0 0 4px rgba(45,132,179,0.18);
+}
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  color:var(--text);
+  background:
+    radial-gradient(900px 350px at 20% -10%, #e9f3f5, transparent 60%),
+    radial-gradient(700px 300px at 85% 0%, rgba(244,183,64,0.18), transparent 55%),
+    #fff;
+  padding:24px;
+}
+.wrap{ max-width:980px; margin:0 auto; width:100%; }
+.card{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  box-shadow:0 10px 30px rgba(11,18,32,0.08);
+  overflow:hidden;
+}
+form{ padding:20px; }
+.grid{ display:grid; gap:14px; grid-template-columns:1fr; }
+.field{
+  border:1px solid rgba(11,18,32,0.12);
+  border-radius:14px;
+  padding:12px;
+  background:var(--fieldBg);
+}
+.field > label:first-child,
+.fieldLabel{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:12px;
+  font-weight:900;
+  margin:0 0 8px;
+  line-height:1.2;
+}
+.sym{
+  width:22px;
+  height:22px;
+  display:inline-grid;
+  place-items:center;
+  border-radius:8px;
+  background:rgba(180,35,44,0.10);
+  border:1px solid rgba(180,35,44,0.22);
+  color:var(--blue);
+  font-size:13px;
+  flex:0 0 22px;
+}
+input,select,textarea{
+  width:100%;
+  border:1px solid rgba(11,18,32,0.14);
+  border-radius:10px;
+  padding:10px 12px;
+  font-size:16px;
+  background:#fff;
+}
+textarea{ min-height:110px; resize:vertical; }
+input:focus,select:focus,textarea:focus{
+  outline:none;
+  border-color:rgba(180,35,44,0.55);
+  box-shadow:var(--focus);
+}
+.incident-summary{
+  margin:0;
+  padding:0 0 8px;
+  font-size:15px;
+  line-height:1.55;
+  color:var(--text);
+}
+.incident-summary__line{
+  margin:0 0 6px;
+}
+.incident-summary__line:last-child{
+  margin-bottom:0;
+}
+.actions{
+  margin-top:18px;
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+  border-top:1px solid rgba(11,18,32,0.10);
+  padding-top:16px;
+}
+button{
+  padding:12px 16px;
+  border-radius:12px;
+  border:none;
+  font-weight:900;
+  font-size:14px;
+  cursor:pointer;
+}
+.btnPrimary{
+  background:var(--blue);
+  color:#fff;
+  box-shadow:0 10px 22px rgba(45,132,179,0.22);
+}
+.btnGhost{
+  background:rgba(11,18,32,0.04);
+  border:1px solid rgba(11,18,32,0.10);
+}
+.small{
+  font-size:12px;
+  color:var(--muted);
+  line-height:1.4;
+  margin-top:6px;
+}
+.req{ color:#b91c1c; font-weight:900; margin-left:4px; }
+@media (max-width:720px){
+  body{ padding:14px; }
+  form{ padding:16px; }
+  .actions{ flex-wrap:wrap; }
+  .actions button{ flex:1 1 160px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <form id="incidentForm" novalidate>
+      <div class="grid">
+        <div class="field">
+          <div id="incidentContextSummary" class="incident-summary" aria-live="polite"></div>
+        </div>
+
+        <div class="field">
+          <label for="incidentTime"><span class="sym">⏰</span> Time of incident <span class="req">*</span></label>
+          <input id="incidentTime" name="incidentTime" type="time" required />
+        </div>
+
+        <div class="field">
+          <label for="incidentLocation"><span class="sym">📍</span> Location of incident</label>
+          <input id="incidentLocation" name="incidentLocation" type="text" maxlength="200" placeholder="Where the incident happened" />
+        </div>
+
+        <div class="field">
+          <label for="incidentCategory"><span class="sym">⚠️</span> Incident Category <span class="req">*</span></label>
+          <select id="incidentCategory" name="incidentCategory" required>
+            <option value="">Select category</option>
+            <option>Safeguarding Concern</option>
+            <option>Personal Injury</option>
+            <option>Client Injury</option>
+            <option>Property Damage</option>
+            <option>Dangerous occurrence</option>
+            <option>Fire incident</option>
+            <option>Fire drill</option>
+            <option>Security incident</option>
+            <option>Environmental incident</option>
+            <option>Near miss</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="staffInvolved"><span class="sym">👥</span> Staff involved</label>
+          <input id="staffInvolved" name="staffInvolved" type="text" maxlength="300" placeholder="Names of staff involved" />
+        </div>
+
+        <div class="field">
+          <label for="witness"><span class="sym">👁️</span> Witness</label>
+          <input id="witness" name="witness" type="text" maxlength="300" placeholder="Witness name(s)" />
+        </div>
+
+        <div class="field">
+          <label for="statementBefore"><span class="sym">📝</span> Statement BEFORE incident</label>
+          <textarea id="statementBefore" name="statementBefore" placeholder="What happened before the incident"></textarea>
+        </div>
+
+        <div class="field">
+          <label for="statementDuring"><span class="sym">📝</span> Statement DURING incident</label>
+          <textarea id="statementDuring" name="statementDuring" placeholder="What happened during the incident"></textarea>
+        </div>
+
+        <div class="field">
+          <label for="statementAfter"><span class="sym">📝</span> Statement AFTER incident</label>
+          <textarea id="statementAfter" name="statementAfter" placeholder="What happened after the incident"></textarea>
+        </div>
+
+        <div class="field">
+          <label for="injuriesClient"><span class="sym">🩹</span> Injuries (client)</label>
+          <textarea id="injuriesClient" name="injuriesClient" placeholder="Client injury details"></textarea>
+        </div>
+
+        <div class="field">
+          <label for="injuriesStaff"><span class="sym">🩹</span> Injuries (staff)</label>
+          <textarea id="injuriesStaff" name="injuriesStaff" placeholder="Staff injury details"></textarea>
+        </div>
+
+        <div class="actions">
+          <button type="button" class="btnGhost" id="clearBtn">Clear</button>
+          <button type="submit" class="btnPrimary" id="submitBtn">Submit</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+(function(){
+  const PORTAL_AUTH_MODULE = "https://www.clubsensational.org/wp-content/uploads/2026/05/auth-handler.js?v=20260506-portal-interactions";
+  const PORTAL_CLIENTS_INFO_SCRIPT = "https://www.clubsensational.org/wp-content/uploads/2026/05/clients_info_embed.js?v=20260506-portal-interactions";
+  const PORTAL_SPREADSHEET_BUNDLE_SCRIPT = "https://www.clubsensational.org/wp-content/uploads/2026/05/staff_dashboard_spreadsheet_bundle.js?v=20260506-portal-interactions";
+  const PORTAL_SESSION_REVIEW_MAP_STORAGE = "portalSessionReviewMap_v1";
+
+  const qs = new URLSearchParams(location.search || "");
+  const form = document.getElementById("incidentForm");
+  const clearBtn = document.getElementById("clearBtn");
+  const submitBtn = document.getElementById("submitBtn");
+
+  const contextSummaryEl = document.getElementById("incidentContextSummary");
+
+  const context = {
+    portalSessionKey: "",
+    sessionDate: String(qs.get("date") || "").trim(),
+    sessionTime: String(qs.get("time") || qs.get("sessionTime") || "").trim(),
+    clientId: String(qs.get("clientId") || "").trim(),
+    clientName: String(qs.get("name") || qs.get("clientName") || qs.get("client") || "").trim(),
+    service: String(qs.get("service") || "").trim(),
+    location: String(qs.get("location") || "").trim(),
+    submittedByUserId: "",
+    submittedByName: "",
+    origin: "dashboard"
+  };
+
+  function clean(v){ return String(v || "").replace(/\s+/g, " ").trim(); }
+  function slugify(v){
+    return clean(v).toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+  }
+  function parseSessionKey(sk){
+    const parts = String(sk || "").trim().split("|");
+    const d = clean(parts[0] || "");
+    return {
+      session_date: /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : "",
+      session_time: clean(parts[1] || ""),
+      client_id: clean(parts[2] || "")
+    };
+  }
+  function parseIsoToWeekday(iso){
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(String(iso || ""))) return "";
+    const p = String(iso).split("-").map(Number);
+    const d = new Date(p[0], p[1] - 1, p[2]);
+    return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("en-GB", { weekday: "long" });
+  }
+  function parseHm(token){
+    const t = clean(token);
+    const parts = t.split(".");
+    const h = parseInt(parts[0], 10) || 0;
+    const m = parts.length > 1 ? (parseInt(parts[1], 10) || 0) : 0;
+    return { h: h, m: m };
+  }
+  function hourTo24(hour, day){
+    if(day !== "Sunday" && hour < 8) return hour + 12;
+    if(day === "Sunday" && hour >= 1 && hour <= 3) return hour + 12;
+    return hour;
+  }
+  function parseTimeSlot(timeSlot, day){
+    const normalized = String(timeSlot || "").replace(/\s*-\s*/g, " to ").replace(/\s+/g, " ").trim();
+    const parts = normalized.split(/\s+to\s+/i);
+    if(parts.length < 2) return { start: "00:00", end: "00:30" };
+    const a = parseHm(parts[0]);
+    const b = parseHm(parts[1]);
+    const start = String(hourTo24(a.h, day)).padStart(2, "0") + ":" + String(a.m).padStart(2, "0");
+    const end = String(hourTo24(b.h, day)).padStart(2, "0") + ":" + String(b.m).padStart(2, "0");
+    return { start: start, end: end };
+  }
+  function loadPortalScriptOnce(src){
+    return new Promise(function(resolve, reject){
+      const scripts = document.getElementsByTagName("script");
+      for(let i = 0; i < scripts.length; i++){
+        if(scripts[i].src === src){ resolve(); return; }
+      }
+      const s = document.createElement("script");
+      s.src = src;
+      s.async = true;
+      s.onload = function(){ resolve(); };
+      s.onerror = function(){ reject(new Error("load failed: " + src)); };
+      document.head.appendChild(s);
+    });
+  }
+  function sessionDateDisplay(iso){
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(String(iso || ""))) return "—";
+    const p = String(iso).split("-").map(Number);
+    const d = new Date(p[0], p[1] - 1, p[2]);
+    if(Number.isNaN(d.getTime())) return "—";
+    return d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  }
+  function decodeSessionKeyB64Url(raw){
+    const token = clean(raw).replace(/-/g, "+").replace(/_/g, "/");
+    if(!token) return "";
+    try{
+      const pad = token.length % 4 ? "=".repeat(4 - (token.length % 4)) : "";
+      return decodeURIComponent(escape(atob(token + pad)));
+    }catch(_){
+      return "";
+    }
+  }
+  function displayContext(){
+    if(!contextSummaryEl) return;
+    contextSummaryEl.replaceChildren();
+    function addLine(label, value){
+      const v = clean(value);
+      if(!v) return;
+      const row = document.createElement("div");
+      row.className = "incident-summary__line";
+      const lab = document.createElement("strong");
+      lab.textContent = label + ":";
+      row.appendChild(lab);
+      row.appendChild(document.createTextNode(" " + v));
+      contextSummaryEl.appendChild(row);
+    }
+    addLine("Participant", context.clientName);
+    addLine("Service", context.service);
+    addLine("Date", sessionDateDisplay(context.sessionDate));
+    if(contextSummaryEl.childElementCount === 0){
+      const row = document.createElement("div");
+      row.className = "incident-summary__line";
+      row.textContent = "No session context detected yet.";
+      contextSummaryEl.appendChild(row);
+    }
+  }
+  function inferOriginFromReturn(baseTarget){
+    let origin = "dashboard";
+    const direct = clean(qs.get("origin") || "");
+    if(direct) origin = direct;
+    try{
+      const u = new URL(baseTarget, location.href);
+      origin = u.searchParams.get("portalReviewOrigin") || "dashboard";
+    }catch(_){}
+    origin = clean(origin);
+    if(origin !== "this_week" && origin !== "term" && origin !== "dashboard") origin = "dashboard";
+    context.origin = origin;
+  }
+
+  async function enrichContextFromScripts(){
+    const fromKey = parseSessionKey(context.portalSessionKey);
+    if(!context.sessionDate) context.sessionDate = fromKey.session_date;
+    if(!context.sessionTime) context.sessionTime = fromKey.session_time;
+    if(!context.clientId) context.clientId = fromKey.client_id;
+
+    if(!clean(context.clientName) && clean(context.clientId) && context.clientId !== "available" && context.clientId !== "closed"){
+      try{
+        if(!Array.isArray(window.PORTAL_CLIENTS_INFO_ROWS)) await loadPortalScriptOnce(PORTAL_CLIENTS_INFO_SCRIPT);
+        const rows = window.PORTAL_CLIENTS_INFO_ROWS || [];
+        const want = slugify(context.clientId);
+        for(let i = 0; i < rows.length; i++){
+          const nm = clean(rows[i] && rows[i].client_name);
+          if(nm && slugify(nm) === want){
+            context.clientName = nm;
+            break;
+          }
+        }
+      }catch(_){}
+    }
+
+    if((!clean(context.service) || !clean(context.location) || !clean(context.sessionTime)) && clean(context.clientId)){
+      try{
+        if(!window.STAFF_DASHBOARD_SOURCE || !Array.isArray(window.STAFF_DASHBOARD_SOURCE.rows)){
+          await loadPortalScriptOnce(PORTAL_SPREADSHEET_BUNDLE_SCRIPT);
+        }
+        const rows = (window.STAFF_DASHBOARD_SOURCE && window.STAFF_DASHBOARD_SOURCE.rows) || [];
+        const wd = parseIsoToWeekday(context.sessionDate);
+        const cidSlug = slugify(context.clientId);
+        for(let i = 0; i < rows.length; i++){
+          const r = rows[i] || {};
+          const rowClient = clean(r.client_name);
+          if(!rowClient || slugify(rowClient) !== cidSlug) continue;
+          if(wd && clean(r.day) !== wd) continue;
+          if(clean(context.sessionTime)){
+            const t = parseTimeSlot(r.time_slot, clean(r.day));
+            if(t.start !== clean(context.sessionTime)) continue;
+          }
+          if(!clean(context.service)) context.service = clean(r.service);
+          if(!clean(context.location)) context.location = clean(r.roster_area || r.area || r.venue);
+          if(!clean(context.sessionTime)) context.sessionTime = clean(r.time_slot);
+          if(!clean(context.clientName)) context.clientName = rowClient;
+          break;
+        }
+      }catch(_){}
+    }
+  }
+
+  async function hydrateAuthContext(){
+    const { getSupabaseClient } = await import(PORTAL_AUTH_MODULE);
+    const supabase = getSupabaseClient();
+
+    const { data: authData, error: authErr } = await supabase.auth.getUser();
+    if(authErr) throw authErr;
+    const authUser = authData && authData.user;
+    const submittedByUserId = authUser && authUser.id ? clean(authUser.id) : "";
+    if(!submittedByUserId) throw new Error("User not authenticated");
+
+    const { data: profileRow, error: profileErr } = await supabase
+      .from("staff_profiles")
+      .select("app_role, full_name, username")
+      .eq("id", submittedByUserId)
+      .maybeSingle();
+    if(profileErr) throw profileErr;
+
+    const role = clean(profileRow && profileRow.app_role).toLowerCase();
+    if(role !== "staff" && role !== "lead") throw new Error("Only staff/lead can submit incident reports");
+
+    const submittedByName = clean(profileRow && (profileRow.full_name || profileRow.username));
+    if(!submittedByName) throw new Error("Staff profile missing display name");
+
+    context.submittedByUserId = submittedByUserId;
+    context.submittedByName = submittedByName;
+    return { supabase: supabase };
+  }
+
+  function validateContext(){
+    const missing = [];
+    if(!clean(context.portalSessionKey)) missing.push("sessionKey");
+    if(!clean(context.sessionDate)) missing.push("session date");
+    if(!clean(context.clientName)) missing.push("participant name");
+    if(!clean(context.service)) missing.push("service");
+    if(!clean(context.submittedByUserId)) missing.push("authenticated staff user");
+    if(!clean(context.submittedByName)) missing.push("completed by / submitted by name");
+    return missing;
+  }
+
+  function redirectAfterSubmit(){
+    try{
+      if(typeof portalGetPortalReturnUrl === "function" && typeof portalRedirectToPortalReturn === "function"){
+        if(portalGetPortalReturnUrl()){
+          portalRedirectToPortalReturn();
+          return;
+        }
+      }
+    }catch(_){}
+    const returnUrl = clean(qs.get("return")) || "";
+    const returnPath = clean(qs.get("rp")) || "";
+    let baseTarget = returnUrl || returnPath || "";
+    if(!baseTarget) baseTarget = "/p1/";
+
+    let target = baseTarget;
+    try{
+      const u = new URL(baseTarget, location.href);
+      u.searchParams.delete("portalPostIncident");
+      u.searchParams.delete("portalReviewDay");
+      u.searchParams.delete("portalReviewDate");
+      u.searchParams.delete("portalAfterFeedback");
+      u.searchParams.set("portalAfterIncident", "1");
+      u.searchParams.set("portalReviewOrigin", context.origin);
+      if(clean(context.portalSessionKey)) u.searchParams.set("sessionKey", clean(context.portalSessionKey));
+      const rd = clean(qs.get("rd") || "");
+      const rday = clean(qs.get("rday") || "");
+      if(rd) u.searchParams.set("portalReviewDate", rd);
+      if(rday) u.searchParams.set("portalReviewDay", rday);
+      target = u.href;
+    }catch(_){}
+    location.href = target;
+  }
+  function persistPortalIncidentDone(){
+    const sk = clean(context.portalSessionKey);
+    if(!sk) return;
+    try{
+      const raw = localStorage.getItem(PORTAL_SESSION_REVIEW_MAP_STORAGE) || "{}";
+      const o = JSON.parse(raw);
+      const base = o && typeof o === "object" ? o : {};
+      const prev = base[sk] && typeof base[sk] === "object" ? base[sk] : {};
+      base[sk] = {
+        feedbackDone: !!prev.feedbackDone,
+        incident: true,
+        absent: !!prev.absent,
+        cancelled: !!prev.cancelled
+      };
+      localStorage.setItem(PORTAL_SESSION_REVIEW_MAP_STORAGE, JSON.stringify(base));
+    }catch(_){}
+  }
+
+  clearBtn.addEventListener("click", function(){
+    form.reset();
+  });
+
+  form.addEventListener("submit", async function(e){
+    e.preventDefault();
+    if(!form.checkValidity()){
+      form.reportValidity();
+      return;
+    }
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Submitting";
+
+    try{
+      const auth = await hydrateAuthContext();
+      await enrichContextFromScripts();
+      const missing = validateContext();
+      if(missing.length){
+        alert("Cannot submit incident report yet. Missing:\n• " + missing.join("\n• "));
+        return;
+      }
+
+      const fd = new FormData(form);
+      const row = {
+        submitted_by_user_id: context.submittedByUserId,
+        submitted_by_name: context.submittedByName,
+        client_id: clean(context.clientId) || null,
+        client_name: clean(context.clientName),
+        session_date: clean(context.sessionDate),
+        session_time: clean(context.sessionTime) || null,
+        incident_time: clean(fd.get("incidentTime")),
+        service: clean(context.service),
+        location: clean(fd.get("incidentLocation")) || null,
+        portal_session_key: clean(context.portalSessionKey) || null,
+        incident_category: clean(fd.get("incidentCategory")),
+        staff_involved: clean(fd.get("staffInvolved")) || null,
+        witness: clean(fd.get("witness")) || null,
+        statement_before: clean(fd.get("statementBefore")) || null,
+        statement_during: clean(fd.get("statementDuring")) || null,
+        statement_after: clean(fd.get("statementAfter")) || null,
+        injuries_client: clean(fd.get("injuriesClient")) || null,
+        injuries_staff: clean(fd.get("injuriesStaff")) || null,
+        origin: context.origin
+      };
+
+      const { error: insertErr } = await auth.supabase.from("incident_reports").insert([row]);
+      if(insertErr) throw insertErr;
+      persistPortalIncidentDone();
+      redirectAfterSubmit();
+    }catch(err){
+      console.error(err);
+      const msg = err && err.message ? String(err.message) : "";
+      alert("Submission failed. Please try again." + (msg ? "\n" + msg : ""));
+    }finally{
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Submit";
+    }
+  });
+
+  (async function init(){
+    try{
+      const decodedSk = decodeSessionKeyB64Url(qs.get("sk") || "");
+      context.portalSessionKey = clean(decodedSk || qs.get("sessionKey") || "");
+      context.sessionDate = clean(qs.get("date") || "");
+      context.sessionTime = clean(qs.get("time") || qs.get("sessionTime") || "");
+      context.clientId = clean(qs.get("clientId") || "");
+      context.clientName = clean(qs.get("name") || qs.get("clientName") || qs.get("client") || "");
+      context.service = clean(qs.get("service") || "");
+      context.location = clean(qs.get("location") || "");
+      const parsed = parseSessionKey(context.portalSessionKey);
+      if(!context.sessionDate) context.sessionDate = parsed.session_date;
+      if(!context.sessionTime) context.sessionTime = parsed.session_time;
+      if(!context.clientId) context.clientId = parsed.client_id;
+      inferOriginFromReturn(qs.get("return") || qs.get("rp") || "");
+      await hydrateAuthContext();
+      await enrichContextFromScripts();
+      displayContext();
+    }catch(err){
+      console.error(err);
+      displayContext();
+    }
+  })();
+})();
+</script>
+</body>
+</html>

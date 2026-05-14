@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Induction Training Portal</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
+    *{box-sizing:border-box;margin:0;padding:0;}
+    html{overflow-x:hidden;}
+    body{font-family:'Montserrat',sans-serif;background:linear-gradient(180deg,#fef8ec 0%,#ffffff 100%);color:#16324f;line-height:1.6;overflow-x:hidden;}
+    .training-portal{width:100%;padding:40px 20px 70px;}
+    .training-wrap{max-width:1280px;width:100%;min-width:0;margin:0 auto;box-sizing:border-box;}
+
+    .hero{
+      background:linear-gradient(135deg,#f0b323 0%,#f5cc6a 100%);
+      border-radius:30px;
+      padding:30px 24px;
+      color:#17324e;
+      position:relative;
+      overflow:hidden;
+      box-shadow:0 16px 38px rgba(145,96,9,.16);
+    }
+    .hero::before{
+      content:"";
+      position:absolute;
+      width:340px;height:340px;border-radius:50%;
+      background:rgba(255,255,255,.13);
+      top:-170px;right:-120px;
+    }
+    .hero::after{
+      content:"";
+      position:absolute;
+      width:250px;height:250px;border-radius:50%;
+      background:rgba(255,255,255,.1);
+      bottom:-140px;left:-100px;
+    }
+    .hero-content{
+      position:relative;z-index:2;max-width:760px;
+      display:flex;flex-direction:column;align-items:center;gap:16px;margin:0 auto;
+    }
+    .logo-box{
+      display:flex;align-items:center;justify-content:center;
+      background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.24);
+      border-radius:24px;padding:14px;backdrop-filter:blur(8px);
+    }
+    .ind-logo-stage{
+      position:relative;
+      width:min(230px,62vw);
+      aspect-ratio:1;
+      display:grid;
+      place-items:center;
+    }
+    .ind-orbit-svg{
+      position:absolute;inset:0;width:100%;height:100%;
+      pointer-events:none;z-index:0;overflow:visible;
+    }
+    .ind-orbit-layer--cw{transform-origin:0 0;animation:ind-orbit-cw 18s linear infinite;}
+    .ind-orbit-layer--ccw{transform-origin:0 0;animation:ind-orbit-ccw 14s linear infinite;}
+    .ind-orbit-layer--slow-ccw{transform-origin:0 0;animation:ind-orbit-ccw 26s linear infinite;}
+    @keyframes ind-orbit-cw{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+    @keyframes ind-orbit-ccw{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
+    .ind-logo-shell{
+      position:relative;z-index:1;
+      width:72%;
+      aspect-ratio:1;
+      border-radius:50%;
+      overflow:hidden;
+      background:#fff;
+      display:grid;
+      place-items:center;
+      box-shadow:
+        0 0 0 2px rgba(244,183,64,.65),
+        0 0 16px rgba(240,179,35,.45),
+        0 0 30px rgba(245,204,106,.3),
+        0 0 50px rgba(145,96,9,.14);
+    }
+    .ind-logo{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      transform:scale(1.16);
+      transform-origin:center center;
+      display:block;
+    }
+    .hero-title-box{
+      width:100%;max-width:760px;
+      background:rgba(255,255,255,0.14);
+      border:1px solid rgba(255,255,255,0.28);
+      border-radius:24px;
+      padding:24px 22px;
+      text-align:center;
+      backdrop-filter:blur(8px);
+    }
+    .hero h1{font-size:clamp(30px,4.1vw,42px);line-height:1.12;font-weight:800;margin-bottom:10px;}
+    .hero p{font-size:clamp(17px,2.2vw,19px);max-width:620px;margin:0 auto;color:rgba(23,50,78,0.95);}
+
+    .section-intro{text-align:center;padding:42px 10px 20px;max-width:900px;margin:0 auto;}
+    .section-intro h2{font-size:clamp(26px,3vw,38px);color:#8a5a08;font-weight:800;margin-bottom:14px;}
+    .section-intro p{font-size:17px;color:#786247;}
+
+    .path-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px;margin-top:24px;}
+    .path-card{
+      background:#fff;border-radius:24px;padding:34px 30px;box-shadow:0 14px 35px rgba(145,96,9,0.08);
+      border:1px solid #f3e4c6;transition:transform .25s ease, box-shadow .25s ease;position:relative;overflow:hidden;
+      min-width:0;
+    }
+    .path-card:hover{transform:translateY(-6px);box-shadow:0 20px 40px rgba(145,96,9,0.13);}
+    .path-card::before{content:"";position:absolute;top:0;left:0;width:100%;height:7px;}
+    .path-card.induction::before{background:#f0b323;}
+    .card-label{display:inline-block;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;padding:8px 12px;border-radius:999px;margin-bottom:18px;}
+    .induction .card-label{background:rgba(240,179,35,.15);color:#8a5a08;}
+    .path-card h3{font-size:30px;line-height:1.15;color:#16324f;margin-bottom:14px;font-weight:800;}
+    .path-card p{font-size:16px;color:#6f5f49;margin-bottom:22px;}
+    .feature-list{list-style:none;margin-bottom:28px;}
+    .feature-list li{position:relative;padding-left:18px;margin-bottom:10px;color:#5f4f38;font-size:15px;font-weight:500;}
+    .feature-list li::before{content:"•";position:absolute;left:0;color:#f0b323;font-weight:800;}
+
+    .card-actions{display:flex;gap:12px;flex-wrap:wrap;}
+    .portal-btn{
+      display:inline-flex;align-items:center;justify-content:center;text-decoration:none;border:none;cursor:pointer;
+      border-radius:14px;padding:14px 20px;font-weight:700;font-size:15px;transition:all .25s ease;min-width:170px;font-family:inherit;
+    }
+    .btn-primary{background:#f0b323;color:#17324e;}
+    .btn-primary:hover{background:#d79d15;}
+
+    .bottom-note{margin-top:34px;text-align:center;background:#fff4de;border:1px solid #f3dfb3;border-radius:20px;padding:22px;color:#7a6141;font-size:15px;font-weight:500;}
+
+    @media(max-width:1100px){
+      .path-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+    }
+    @media(max-width:700px){
+      .path-grid{grid-template-columns:1fr;}
+      .hero{padding:24px 16px;}
+      .path-card{padding:28px 22px;}
+      .portal-btn{width:100%;}
+      .card-actions{flex-direction:column;}
+    }
+    @media(max-width:640px){
+      .training-portal{padding:16px 12px 40px;}
+      .path-grid{gap:20px;}
+      .logo-box{padding:10px;}
+      .ind-logo-stage{width:min(200px,66vw);}
+      .hero{padding:20px 14px;}
+      .hero h1{font-size:clamp(24px,6vw,32px);}
+      .hero-title-box{padding:18px 14px;}
+      .hero p{font-size:16px;}
+      .section-intro{padding:24px 8px 12px;}
+      .section-intro p{font-size:15px;}
+      .path-card{padding:22px 16px;}
+      .path-card h3{font-size:24px;}
+      .bottom-note{padding:18px;margin-top:24px;}
+    }
+    @media(max-width:480px){
+      .training-portal{padding:16px 12px 40px;}
+    }
+    @media (prefers-reduced-motion:reduce){
+      .ind-orbit-layer--cw,.ind-orbit-layer--ccw,.ind-orbit-layer--slow-ccw{animation:none}
+    }
+  </style>
+  <link rel="stylesheet" href="../assets/training-content-containment.css" />
+</head>
+<body>
+  <section class="training-portal">
+    <div class="training-wrap">
+
+      <div class="hero">
+        <div class="hero-content">
+          <div class="logo-box">
+            <div class="ind-logo-stage">
+              <svg class="ind-orbit-svg" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
+                <defs>
+                  <filter id="ind-orb-soft" x="-40%" y="-40%" width="180%" height="180%">
+                    <feGaussianBlur in="SourceGraphic" stdDeviation="1.2" result="b"/>
+                    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+                  </filter>
+                </defs>
+                <g transform="translate(100,100)">
+                  <g class="ind-orbit-layer--cw" filter="url(#ind-orb-soft)">
+                    <circle cx="0" cy="-92" r="7" fill="#f0b323"/><circle cx="79.67" cy="-46" r="6" fill="#173247"/><circle cx="79.67" cy="46" r="6" fill="#d79d15"/><circle cx="0" cy="92" r="7" fill="#f5cc6a"/><circle cx="-79.67" cy="46" r="6" fill="#8a5a08"/><circle cx="-79.67" cy="-46" r="6" fill="#f0b323"/>
+                  </g>
+                  <g class="ind-orbit-layer--ccw" filter="url(#ind-orb-soft)">
+                    <circle cx="0" cy="-82" r="5" fill="#f5cc6a"/><circle cx="71.01" cy="-41" r="5" fill="#f0b323"/><circle cx="71.01" cy="41" r="5" fill="#173247"/><circle cx="0" cy="82" r="5" fill="#d79d15"/><circle cx="-71.01" cy="41" r="5" fill="#b57d12"/><circle cx="-71.01" cy="-41" r="5" fill="#f5cc6a"/>
+                  </g>
+                  <g class="ind-orbit-layer--slow-ccw" filter="url(#ind-orb-soft)">
+                    <circle cx="37.27" cy="-64" r="4" fill="#f0b323"/><circle cx="74" cy="-8" r="4" fill="#8a5a08"/><circle cx="37.27" cy="64" r="4" fill="#f5cc6a"/><circle cx="-37.27" cy="64" r="4" fill="#173247"/><circle cx="-74" cy="-8" r="4" fill="#d79d15"/><circle cx="-37.27" cy="-64" r="4" fill="#f3d58f"/>
+                  </g>
+                </g>
+              </svg>
+              <div class="ind-logo-shell">
+                <img class="ind-logo" src="https://www.clubsensational.org/wp-content/uploads/2025/07/F-01.png" alt="clubSENsational logo" />
+              </div>
+            </div>
+          </div>
+          <div class="hero-title-box">
+            <h1>Induction Training Portal</h1>
+            <p>A dedicated learning space for induction. Access the induction pathway from here.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-intro">
+        <h2>Choose your induction pathway</h2>
+        <p>Enter the induction training modules.</p>
+      </div>
+
+      <div class="path-grid">
+        <div class="path-card induction">
+          <div class="card-label">Core Pathway</div>
+          <h3>General Induction</h3>
+          <p>Foundation for all staff: expectations, values, safeguarding and core procedures.</p>
+          <ul class="feature-list">
+            <li>Values and culture</li>
+            <li>Professional expectations</li>
+            <li>Safeguarding and safety</li>
+            <li>Core procedures</li>
+          </ul>
+          <div class="card-actions">
+            <a class="portal-btn btn-primary" href="../Induction Modules/index.html">Enter Induction Modules</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottom-note">Use this portal as your induction hub to access your core training directly.</div>
+    </div>
+  </section>
+</body>
+</html>

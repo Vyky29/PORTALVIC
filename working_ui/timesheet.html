@@ -1,0 +1,767 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Timesheet</title>
+  <script>
+    (function () { try { document.documentElement.classList.add("portal-app-shell"); } catch (_) {} })();
+  </script>
+  <style id="portal-hide-wp-chrome">
+    html.portal-app-shell body.admin-bar{padding-top:0!important;margin-top:0!important}
+    html.portal-app-shell #wpadminbar,html.portal-app-shell #masthead,html.portal-app-shell header#masthead,html.portal-app-shell .site-header,html.portal-app-shell #site-header,html.portal-app-shell .ast-primary-header-bar,html.portal-app-shell .ast-above-header,html.portal-app-shell .elementor-location-header,html.portal-app-shell .elementor-location-footer,html.portal-app-shell #colophon,html.portal-app-shell footer.site-footer,html.portal-app-shell .site-footer,html.portal-app-shell #footer,html.portal-app-shell .site-bottom-footer-inner-wrap,html.portal-app-shell .footer-widget-area{display:none!important;visibility:hidden!important;height:0!important;overflow:hidden!important;pointer-events:none!important}
+    html.portal-app-shell .site-content,html.portal-app-shell #content,html.portal-app-shell .site-main,html.portal-app-shell #primary{margin-top:0!important;padding-top:0!important}
+    html.portal-app-shell #page,html.portal-app-shell .site{margin-top:0!important;padding-top:0!important}
+    body{font-family:Open Sans,Arial,sans-serif;background:#fff;color:#102238}
+    .page{max-width:980px;margin:0 auto;padding:14px}
+    .card{border:1px solid #e6ecf4;border-radius:14px;box-shadow:0 8px 24px rgba(17,24,39,.06);background:#fff}
+    .head{padding:14px 16px;border-bottom:1px solid #e6ecf4}
+    .head h1{margin:0;color:#0b2a5b;font-size:22px}
+    .sub{margin-top:6px;color:#60758a;font-size:13px}
+    .identity{padding:14px 16px 0;font-size:15px;line-height:1.5}
+    .table-wrap{padding:12px 16px 16px;overflow:auto}
+    table{width:100%;border-collapse:collapse;border:1px solid #dbe6f1;border-radius:12px;overflow:hidden}
+    th,td{padding:10px;border-bottom:1px solid #dbe6f1;text-align:center;vertical-align:middle}
+    th{background:#114f78;color:#fff;font-size:14px;text-align:center;vertical-align:middle}
+    thead th.th-compact{
+      font-size:12px;
+      line-height:1.25;
+      text-align:center;
+      vertical-align:middle;
+      white-space:nowrap;
+      overflow-wrap:normal;
+      word-break:normal;
+    }
+    td{font-size:14px}
+    .num{text-align:center}
+    .sum-row td{background:#f4f7fb;font-weight:700}
+    .sum-label{text-align:center}
+    .th-mob{display:none}
+    tbody tr.day-row--paid td{background:#eef9f1 !important}
+    tbody tr.day-row--pending td{background:#fff5e8 !important}
+    .actions{padding:0 16px 16px}
+    .btn{border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;background:#0b2a5b;color:#fff}
+    .btn-back{background:#e4edf8;color:#0b2a5b;border:1px solid #b0c7e2}
+    /* Tema/Elementor a veces fuerza <button>:hover en rosa; ID + !important igual que #submitBtn */
+    #backBtn{
+      background:#e4edf8!important;
+      background-color:#e4edf8!important;
+      background-image:none!important;
+      color:#0b2a5b!important;
+      border:1px solid #b0c7e2!important;
+    }
+    #backBtn:hover,
+    #backBtn:focus-visible{
+      background:#0b2a5b!important;
+      background-color:#0b2a5b!important;
+      background-image:none!important;
+      color:#fff!important;
+      border-color:#0b2a5b!important;
+    }
+    #backBtn:focus-visible{outline:2px solid rgba(11,42,91,.35);outline-offset:2px}
+    #backBtn:active{
+      background:#0b2a5b!important;
+      background-color:#0b2a5b!important;
+      color:#fff!important;
+      border-color:#0b2a5b!important;
+    }
+    #submitBtn{background:#e4edf8;color:#0b2a5b;border:1px solid #b0c7e2}
+    #submitBtn:hover{background:#0b2a5b;color:#fff;border-color:#0b2a5b}
+    #submitBtn:focus-visible{background:#0b2a5b;color:#fff;border-color:#0b2a5b;outline:2px solid rgba(11,42,91,.35);outline-offset:2px}
+    #submitBtn:disabled{opacity:.55;cursor:not-allowed}
+    .muted{color:#60758a}
+    .status-note{padding:0 16px 12px;font-size:13px;color:#60758a}
+    *,*::before,*::after{box-sizing:border-box}
+    html,body{overflow-x:hidden}
+    .page{min-width:0;max-width:100%;padding-bottom:max(14px, env(safe-area-inset-bottom, 0px))}
+    .card{min-width:0;max-width:100%}
+    .identity div{min-width:0;overflow-wrap:break-word}
+    .table-wrap{-webkit-overflow-scrolling:touch;max-width:100%;min-width:0}
+    td,th{min-width:0;overflow-wrap:break-word;word-break:normal}
+    .actions{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch}
+    .actions .btn{min-height:44px;touch-action:manipulation}
+    @media (max-width:560px){
+      .page{padding:8px;padding-bottom:max(12px, env(safe-area-inset-bottom, 0px))}
+      .head{padding:10px 12px}
+      .head h1{font-size:18px}
+      .identity{padding:10px 12px 0;font-size:13px}
+      .status-note{padding:0 10px 10px;font-size:12px}
+      .table-wrap{padding:6px 4px 10px}
+      table{width:100%;min-width:0;table-layout:fixed}
+      th,td{padding:5px 3px;font-size:11px;line-height:1.25;vertical-align:middle}
+      thead th{
+        --th-head-fs:12px;
+        font-size:var(--th-head-fs);
+        line-height:1.25;
+        text-align:center;
+        vertical-align:middle;
+        padding:6px 3px;
+      }
+      thead th.th-compact{
+        font-size:calc(var(--th-head-fs) - 2px);
+        line-height:1.25;
+        text-align:center;
+        vertical-align:middle;
+        white-space:nowrap;
+        overflow-wrap:normal;
+        word-break:normal;
+        padding:6px 2px;
+      }
+      .th-desk{display:none}
+      .th-mob{display:inline;white-space:nowrap}
+      .sum-row td{font-size:10px;padding:5px 3px;line-height:1.2}
+      .sum-label{text-align:left;font-weight:700}
+      .actions{padding:0 10px max(14px, env(safe-area-inset-bottom, 0px));flex-direction:column}
+      .actions .btn{width:100%}
+    }
+  </style>
+  <script src="https://www.clubsensational.org/wp-content/uploads/2026/05/portal_return_and_shell.js?v=20260510-portal-admin"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js?v=20260423-1"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js?v=20260419-99"></script>
+  <script src="/wp-content/uploads/2026/05/staff_dashboard_spreadsheet_bundle.js?v=20260510-portal-admin"></script>
+  <script src="/wp-content/uploads/2026/05/staff_dashboard_spreadsheet_adapter.js?v=20260510-portal-admin"></script>
+</head>
+<body>
+  <main class="page">
+    <article class="card">
+      <header class="head">
+        <h1>Timesheet</h1>
+        <div class="sub" id="periodLabel">Loading period...</div>
+      </header>
+      <section class="identity" id="identityBlock">
+        <div><strong>Month:</strong> <span id="monthTop">-</span></div>
+        <div><strong>Employee:</strong> <span id="empName">-</span></div>
+        <div><strong>Role:</strong> <span id="roleLabel">-</span></div>
+        <div><strong>Rate:</strong> <span id="rateTop">£0/h</span></div>
+      </section>
+      <div class="status-note" id="statusNote">Loading shifts...</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Day</th>
+              <th class="num th-compact">Hours</th>
+              <th class="num th-compact" title="Daily Total (GBP)"><span class="th-desk">Daily Total (GBP)</span><span class="th-mob">Daily £</span></th>
+            </tr>
+          </thead>
+          <tbody id="rowsBody">
+            <tr><td colspan="4" class="muted">Loading shifts...</td></tr>
+          </tbody>
+          <tfoot>
+            <tr class="sum-row"><td colspan="2" class="sum-label">Hours ready to pay now (green):</td><td class="num" id="totalHours">0.00</td><td></td></tr>
+            <tr class="sum-row"><td colspan="3" class="sum-label">Ready to pay now (GBP):</td><td class="num" id="totalCost">0.00</td></tr>
+            <tr class="sum-row"><td colspan="3" class="sum-label">Pending until feedback is completed (GBP):</td><td class="num" id="pendingCost">0.00</td></tr>
+            <tr class="sum-row"><td colspan="3" class="sum-label">Total if all feedback is completed (GBP):</td><td class="num" id="potentialCost">0.00</td></tr>
+          </tfoot>
+        </table>
+      </div>
+      <div class="actions">
+        <button id="backBtn" class="btn btn-back" type="button">Back to Dashboard</button>
+        <button id="submitBtn" class="btn" type="button">Submit timesheet</button>
+      </div>
+    </article>
+  </main>
+
+  <section id="pdfTemplate" style="display:none"></section>
+
+  <script type="module">
+    async function portalImportDocumentsModule(tag) {
+      const v = "20260423-12";
+      const custom =
+        typeof window !== "undefined" && window.PORTAL_WP_UPLOADS_BASE
+          ? String(window.PORTAL_WP_UPLOADS_BASE).trim().replace(/\/$/, "")
+          : "";
+      const origin = typeof location !== "undefined" ? String(location.origin || "").trim() : "";
+      const bases = [
+        custom,
+        origin ? `${origin}/wp-content/uploads/2026/05` : "",
+        "https://www.clubsensational.org/wp-content/uploads/2026/05",
+        "https://clubsensational.org/wp-content/uploads/2026/05"
+      ].filter(Boolean);
+      const uniq = [...new Set(bases)];
+      for (const base of uniq) {
+        const url = `${base}/portal_documents.js?v=${v}`;
+        try {
+          return await import(url);
+        } catch (e) {
+          console.warn("[portal]", tag, "import failed", url, e);
+        }
+      }
+      throw new Error(
+        "Could not load portal_documents.js (404 in Network). Upload portal_documents.js to your uploads folder, or set window.PORTAL_WP_UPLOADS_BASE in Elementor to that folder URL (no trailing slash)."
+      );
+    }
+    const { portalUploadPdfAndCreateDocument, portalRequireUser } = await portalImportDocumentsModule("timesheet");
+
+    const WEEKDAY = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const PORTAL_SESSION_REVIEW_MAP_STORAGE = "portalSessionReviewMap_v1";
+    const STAFF_CODE_TO_ROSTER_KEY = {
+      stf001: "sandra",
+      stf002: "roberto",
+      stf003: "dan",
+      stf004: "angel",
+      stf005: "youssef",
+      stf006: "john",
+      stf007: "bismark",
+      stf008: "giuseppe",
+      stf009: "godsway",
+      stf010: "javier",
+      stf011: "aurora",
+      stf012: "berta",
+      stf013: "victor",
+      stf014: "carlos",
+      stf015: "alex",
+      stf017: "javi",
+      stf018: "raul",
+      stf019: "sevitha",
+      stf020: "demo"
+    };
+    const state = {
+      userId: "",
+      employeeName: "",
+      roleLabel: "",
+      staffRosterKey: "",
+      hourlyRate: 0,
+      periodStart: "",
+      periodEnd: "",
+      entries: [],
+      payableEntries: [],
+      pendingEntries: [],
+      totalHours: 0,
+      potentialHours: 0,
+      totalCost: 0,
+      potentialCost: 0,
+      pendingCost: 0
+    };
+
+    function money(n) { return (Math.round((Number(n) + Number.EPSILON) * 100) / 100).toFixed(2); }
+    function esc(v) { return String(v || "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
+    function isoDate(d) { return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); }
+    function parseIsoDate(s) { const d = new Date(String(s || "") + "T00:00:00"); return Number.isNaN(d.getTime()) ? null : d; }
+    function dayOrdinal(n) {
+      const v = Number(n || 0);
+      if (v % 100 >= 11 && v % 100 <= 13) return `${v}th`;
+      if (v % 10 === 1) return `${v}st`;
+      if (v % 10 === 2) return `${v}nd`;
+      if (v % 10 === 3) return `${v}rd`;
+      return `${v}th`;
+    }
+    function displayDateFancy(iso) {
+      const d = parseIsoDate(iso);
+      if (!d) return String(iso || "");
+      const dd = dayOrdinal(d.getDate());
+      const month = d.toLocaleDateString("en-GB", { month: "long" });
+      const yy = d.getFullYear();
+      return `${dd}/${month}/${yy}`;
+    }
+    function formatIsoDmy(iso) {
+      const d = parseIsoDate(iso);
+      if (!d) return String(iso || "");
+      const dd = String(d.getDate()).padStart(2, "0");
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const yy = d.getFullYear();
+      return `${dd}-${mm}-${yy}`;
+    }
+    async function readImageUrlAsDataUrl(url) {
+      try {
+        const res = await fetch(url, { mode: "cors" });
+        if (!res.ok) return "";
+        const blob = await res.blob();
+        return await new Promise((resolve) => {
+          const r = new FileReader();
+          r.onload = () => resolve(String(r.result || ""));
+          r.onerror = () => resolve("");
+          r.readAsDataURL(blob);
+        });
+      } catch (_) {
+        return "";
+      }
+    }
+    /** Logo PDF: `logoPDF.png` junto a la página, luego WP mismo origen, luego CDN. */
+    async function readPdfLogoDataUrl() {
+      const list = [];
+      try {
+        const base = document.baseURI || (typeof location !== "undefined" ? location.href : "");
+        if (base) list.push(new URL("logoPDF.png", base).href);
+      } catch (_) {}
+      const origin = typeof location !== "undefined" ? String(location.origin || "").trim() : "";
+      if (origin) list.push(`${origin}/wp-content/uploads/2026/05/F-02-1.png`);
+      list.push("https://www.clubsensational.org/wp-content/uploads/2026/05/F-02-1.png");
+      const seen = new Set();
+      for (let i = 0; i < list.length; i++) {
+        const url = list[i];
+        if (!url || seen.has(url)) continue;
+        seen.add(url);
+        const data = await readImageUrlAsDataUrl(url);
+        if (data) return data;
+      }
+      return "";
+    }
+    /** Logo PNG del servidor suele ser muy pesado; JPEG pequeño en el PDF = descarga más rápida en My Documents. */
+    async function shrinkDataUrlAsJpegForPdf(dataUrl, maxEdgePx, quality) {
+      if (!dataUrl || !String(dataUrl).startsWith("data:")) return "";
+      const maxE = maxEdgePx > 0 ? maxEdgePx : 380;
+      const q = typeof quality === "number" ? quality : 0.8;
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+          try {
+            const w = img.naturalWidth || img.width || 1;
+            const h = img.naturalHeight || img.height || 1;
+            const scale = Math.min(1, maxE / Math.max(w, h));
+            const cw = Math.max(1, Math.round(w * scale));
+            const ch = Math.max(1, Math.round(h * scale));
+            const canvas = document.createElement("canvas");
+            canvas.width = cw;
+            canvas.height = ch;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) {
+              resolve("");
+              return;
+            }
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, cw, ch);
+            ctx.drawImage(img, 0, 0, cw, ch);
+            resolve(canvas.toDataURL("image/jpeg", q));
+          } catch (_) {
+            resolve("");
+          }
+        };
+        img.onerror = () => resolve("");
+        img.src = dataUrl;
+      });
+    }
+    function profileKey(v) {
+      return String(v || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "")
+        .trim();
+    }
+    function payrollMonthLabel(periodEndIso) {
+      const d = parseIsoDate(periodEndIso);
+      if (!d) return "";
+      return d.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+    }
+    function payrollMonthName(periodEndIso) {
+      const d = parseIsoDate(periodEndIso);
+      if (!d) return "";
+      return d.toLocaleDateString("en-GB", { month: "long" });
+    }
+
+    function computePayrollPeriod(anchor = new Date()) {
+      const y = anchor.getFullYear();
+      const m = anchor.getMonth();
+      const day = anchor.getDate();
+      let start; let end;
+      if (day >= 25) {
+        start = new Date(y, m, 25);
+        end = new Date(y, m + 1, 24);
+      } else {
+        start = new Date(y, m - 1, 25);
+        end = new Date(y, m, 24);
+      }
+      return { start, end };
+    }
+
+    function eachDateInclusive(start, end) {
+      const out = [];
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) out.push(new Date(d));
+      return out;
+    }
+
+    function parseReviewMap() {
+      try {
+        const raw = localStorage.getItem(PORTAL_SESSION_REVIEW_MAP_STORAGE);
+        const parsed = JSON.parse(raw || "{}");
+        return parsed && typeof parsed === "object" ? parsed : {};
+      } catch (_) {
+        return {};
+      }
+    }
+
+    function sessionIsCompleted(rec) {
+      const r = rec || {};
+      return !!(r.feedbackDone || r.absent || r.cancelled);
+    }
+
+    function dailyHoursFromSessions(sessions, dateObj, reviewMap) {
+      const dayName = WEEKDAY[dateObj.getDay()];
+      const dateKey = isoDate(dateObj);
+      const rows = (sessions || [])
+        .filter((s) => String(s.day || "").trim() === dayName)
+        .filter((s) => {
+          const st = String(s.status || "").toLowerCase();
+          return st !== "closed" && st !== "available";
+        });
+      if (!rows.length) return null;
+      let mins = 0;
+      let completedAll = true;
+      rows.forEach((s) => {
+        const start = String(s.start || "").trim();
+        const end = String(s.end || "").trim();
+        const a = Number(start.split(":")[0] || 0) * 60 + Number(start.split(":")[1] || 0);
+        let b = Number(end.split(":")[0] || 0) * 60 + Number(end.split(":")[1] || 0);
+        if (b < a) b += 24 * 60;
+        mins += Math.max(0, b - a);
+        const sk = `${dateKey}|${start}|${String(s.clientId || "").trim()}`;
+        if (!sessionIsCompleted(reviewMap[sk])) completedAll = false;
+      });
+      return {
+        date: dateKey,
+        day: dayName,
+        hours: Number((mins / 60).toFixed(2)),
+        completed: completedAll
+      };
+    }
+
+    function resolveRosterSessions(profile, user) {
+      if (typeof window.StaffDashboardSpreadsheetAdapter === "undefined" || !window.STAFF_DASHBOARD_SOURCE) {
+        throw new Error("Spreadsheet roster source is unavailable.");
+      }
+      const emailLocal = String((user && user.email) || "").split("@")[0] || "";
+      const meta = (user && user.user_metadata) || {};
+      const candidates = [
+        profileKey(profile.username),
+        profileKey(profile.full_name),
+        profileKey(String(profile.full_name || "").split(" ")[0]),
+        profileKey(meta.preferred_username),
+        profileKey(meta.username),
+        profileKey(meta.name),
+        profileKey(meta.full_name),
+        profileKey(emailLocal)
+      ].filter(Boolean);
+      const seen = new Set();
+      const dedup = candidates.filter((c) => {
+        if (seen.has(c)) return false;
+        seen.add(c);
+        return true;
+      });
+      dedup.forEach((k) => {
+        if (/^stf\d{3}$/i.test(k)) {
+          const alias = STAFF_CODE_TO_ROSTER_KEY[k.toLowerCase()];
+          if (alias && !seen.has(alias)) {
+            seen.add(alias);
+            dedup.push(alias);
+          }
+        }
+      });
+      for (let i = 0; i < dedup.length; i++) {
+        const boot = window.StaffDashboardSpreadsheetAdapter.bootstrap({
+          source: window.STAFF_DASHBOARD_SOURCE,
+          staffId: dedup[i]
+        });
+        if (boot && Array.isArray(boot.sessionsModel) && boot.sessionsModel.length) {
+          state.staffRosterKey = dedup[i];
+          return boot.sessionsModel;
+        }
+      }
+      return [];
+    }
+
+    function isDateInsideConfiguredTerm(dateObj) {
+      const src = window.STAFF_DASHBOARD_SOURCE || {};
+      const t = src.termCalendar || {};
+      const year = Number(t.termCalendarYear != null ? t.termCalendarYear : 2026);
+      const months = Array.isArray(t.termCalendarMonths) && t.termCalendarMonths.length
+        ? t.termCalendarMonths.map(Number)
+        : [3, 4, 5, 6];
+      const firstDom = t.termCalendarFirstDom && typeof t.termCalendarFirstDom === "object"
+        ? t.termCalendarFirstDom
+        : { 3: 13 };
+      if (dateObj.getFullYear() !== year) return false;
+      const mo = dateObj.getMonth();
+      if (!months.includes(mo)) return false;
+      const firstMonth = Math.min.apply(null, months);
+      if (mo === firstMonth) {
+        const minDom = Number(firstDom[String(firstMonth)] || 1);
+        if (dateObj.getDate() < minDom) return false;
+      }
+      return true;
+    }
+
+    function renderTable() {
+      const body = document.getElementById("rowsBody");
+      const note = document.getElementById("statusNote");
+      if (!body) return;
+      if (!state.entries.length) {
+        body.innerHTML = `<tr><td colspan="4" class="muted">No shifts found for this period.</td></tr>`;
+        if (note) note.textContent = "No roster shifts detected for this period.";
+      } else {
+        body.innerHTML = state.entries.map((e) => {
+          const daily = e.hours * state.hourlyRate;
+          const cls = e.completed ? "day-row--paid" : "day-row--pending";
+          return `<tr class="${cls}">
+            <td>${esc(displayDateFancy(e.date))}</td>
+            <td>${esc(e.day)}${e.completed ? " - completed" : " - pending feedback"}</td>
+            <td class="num">${money(e.hours)}</td>
+            <td class="num">${money(daily)}</td>
+          </tr>`;
+        }).join("");
+        if (note) {
+          note.textContent = state.pendingEntries.length
+            ? `${state.pendingEntries.length} day(s) pending feedback are shown in orange and are excluded from payable total.`
+            : "All shift days are completed (green) and included in payable total.";
+        }
+      }
+      document.getElementById("totalHours").textContent = money(state.totalHours);
+      document.getElementById("rateTop").textContent = `£${money(state.hourlyRate)}/h`;
+      document.getElementById("totalCost").textContent = money(state.totalCost);
+      document.getElementById("pendingCost").textContent = money(state.pendingCost);
+      document.getElementById("potentialCost").textContent = money(state.potentialCost);
+    }
+
+    async function loadData() {
+      const { user, supabase } = await portalRequireUser();
+      state.userId = String(user.id || "").trim();
+      const period = computePayrollPeriod(new Date());
+      state.periodStart = isoDate(period.start);
+      state.periodEnd = isoDate(period.end);
+      const monthLabel = payrollMonthLabel(state.periodEnd);
+      document.getElementById("monthTop").textContent = monthLabel || "-";
+      document.getElementById("periodLabel").textContent = `Period: ${state.periodStart} to ${state.periodEnd} (25 -> 24)`;
+
+      const [profileRes, rateRes] = await Promise.all([
+        supabase.from("staff_profiles").select("full_name, username, role_track, role, app_role").eq("id", state.userId).maybeSingle(),
+        supabase.from("staff_pay_rates").select("hourly_rate, role_label").eq("user_id", state.userId).maybeSingle()
+      ]);
+
+      const profile = profileRes.data || {};
+      const rateRow = rateRes.data || {};
+      const meta = user.user_metadata || {};
+      const emailLocal = String(user.email || "").split("@")[0] || "";
+      state.employeeName = String(
+        profile.full_name ||
+        profile.username ||
+        meta.full_name ||
+        meta.name ||
+        meta.preferred_username ||
+        emailLocal
+      ).trim();
+      state.roleLabel = String(rateRow.role_label || profile.role_track || profile.role || profile.app_role || "").trim();
+      state.hourlyRate = Number(rateRow.hourly_rate || 0);
+
+      const sessionsModel = resolveRosterSessions(profile, user);
+      try {
+        const sp = (window.STAFF_DASHBOARD_SOURCE && window.STAFF_DASHBOARD_SOURCE.staffProfiles) || {};
+        const rosterProfile = state.staffRosterKey ? sp[state.staffRosterKey] : null;
+        const rosterName = rosterProfile && rosterProfile.staffName ? String(rosterProfile.staffName).trim() : "";
+        if (rosterName) state.employeeName = rosterName;
+      } catch (_) {}
+      const reviewMap = parseReviewMap();
+      const dates = eachDateInclusive(parseIsoDate(state.periodStart), parseIsoDate(state.periodEnd));
+      state.entries = dates
+        .filter((d) => isDateInsideConfiguredTerm(d))
+        .map((d) => dailyHoursFromSessions(sessionsModel, d, reviewMap))
+        .filter(Boolean);
+      state.payableEntries = state.entries.filter((e) => e.completed);
+      state.pendingEntries = state.entries.filter((e) => !e.completed);
+      state.totalHours = Number(state.payableEntries.reduce((acc, e) => acc + e.hours, 0).toFixed(2));
+      state.potentialHours = Number(state.entries.reduce((acc, e) => acc + e.hours, 0).toFixed(2));
+      state.totalCost = Number((state.totalHours * state.hourlyRate).toFixed(2));
+      state.potentialCost = Number((state.potentialHours * state.hourlyRate).toFixed(2));
+      state.pendingCost = Number((state.potentialCost - state.totalCost).toFixed(2));
+
+      document.getElementById("empName").textContent = state.employeeName || "-";
+      document.getElementById("roleLabel").textContent = state.roleLabel || "-";
+      renderTable();
+    }
+
+    async function generatePdfBlob() {
+      const JsPDFCtor = window.jspdf && window.jspdf.jsPDF ? window.jspdf.jsPDF : null;
+      if (!JsPDFCtor) throw new Error("jsPDF is not available.");
+      const doc = new JsPDFCtor({ unit: "mm", format: "a4", orientation: "portrait" });
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+      const tableW = 184;
+      const left = (pageW - tableW) / 2;
+      const right = left + tableW;
+      let y = 12;
+
+      function line(text, size = 11, bold = false) {
+        doc.setFont("helvetica", bold ? "bold" : "normal");
+        doc.setFontSize(size);
+        doc.text(String(text), left, y);
+        y += size * 0.42 + 2;
+      }
+      function labeledLine(label, value, size = 11) {
+        const labelTxt = `${label}: `;
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(size);
+        doc.text(labelTxt, left, y);
+        const x = left + doc.getTextWidth(labelTxt);
+        doc.setFont("helvetica", "normal");
+        doc.text(String(value || "-"), x, y);
+        y += size * 0.42 + 2;
+      }
+      function ensureRoom(h) {
+        if (y + h > pageH - 10) {
+          doc.addPage();
+          y = 12;
+        }
+      }
+      const logoRaw = await readPdfLogoDataUrl();
+      let logoData = logoRaw;
+      if (logoRaw) {
+        const compact = await shrinkDataUrlAsJpegForPdf(logoRaw, 380, 0.8);
+        if (compact) logoData = compact;
+      }
+      if (logoData) {
+        const logoW = 28;
+        const logoH = 28;
+        const logoX = (pageW - logoW) / 2;
+        const logoFmt = /^data:image\/jpe?g/i.test(logoData) ? "JPEG" : "PNG";
+        doc.addImage(logoData, logoFmt, logoX, y, logoW, logoH);
+        y += logoH + 5;
+      }
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(15);
+      doc.text("TIMESHEET", pageW / 2, y, { align: "center" });
+      y += 8;
+      labeledLine("Employee", state.employeeName || "-", 11);
+      labeledLine("Role", state.roleLabel || "-", 11);
+      labeledLine("Period", `${formatIsoDmy(state.periodStart)} to ${formatIsoDmy(state.periodEnd)}`, 11);
+      y += 1;
+
+      const colX = [left, left + 34, left + 64, left + 88, left + 122, right];
+      const rowH = 7;
+      doc.setDrawColor(217, 227, 239);
+      doc.setFillColor(248, 251, 255);
+      doc.rect(colX[0], y, colX[5] - colX[0], rowH, "FD");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.text("Date", (colX[0] + colX[1]) / 2, y + 4.8, { align: "center" });
+      doc.text("Day", (colX[1] + colX[2]) / 2, y + 4.8, { align: "center" });
+      doc.text("Hours", (colX[2] + colX[3]) / 2, y + 4.8, { align: "center" });
+      doc.text("Daily Total", (colX[3] + colX[4]) / 2, y + 4.8, { align: "center" });
+      doc.text("Status", (colX[4] + colX[5]) / 2, y + 4.8, { align: "center" });
+      y += rowH;
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      for (let i = 0; i < state.entries.length; i++) {
+        ensureRoom(rowH + 1);
+        const e = state.entries[i];
+        const daily = money(e.hours * state.hourlyRate);
+        doc.rect(colX[0], y, colX[5] - colX[0], rowH, "S");
+        doc.text(displayDateFancy(e.date), (colX[0] + colX[1]) / 2, y + 4.8, { align: "center" });
+        doc.text(e.day, (colX[1] + colX[2]) / 2, y + 4.8, { align: "center" });
+        doc.text(money(e.hours), (colX[2] + colX[3]) / 2, y + 4.8, { align: "center" });
+        doc.text(daily, (colX[3] + colX[4]) / 2, y + 4.8, { align: "center" });
+        doc.text(e.completed ? "Completed" : "Pending feedback", (colX[4] + colX[5]) / 2, y + 4.8, { align: "center" });
+        y += rowH;
+      }
+
+      y += 10;
+      const summaryRows = [
+        { label: "Hours ready to pay now (green)", value: money(state.totalHours), tone: "ok" },
+        { label: "Rate", value: `£${money(state.hourlyRate)}/h`, tone: "neutral" },
+        { label: "Ready to pay now", value: `£${money(state.totalCost)}`, tone: "okStrong" },
+        { label: "Pending until feedback is completed", value: `£${money(state.pendingCost)}`, tone: "warn" },
+        { label: "Total if all feedback is completed", value: `£${money(state.potentialCost)}`, tone: "neutral" }
+      ];
+      const panelPad = 4;
+      const rowHeight = 10;
+      const panelHeight = panelPad * 2 + rowHeight * summaryRows.length;
+      ensureRoom(panelHeight + 2);
+      doc.setDrawColor(217, 227, 239);
+      doc.setFillColor(252, 253, 255);
+      doc.roundedRect(left, y, right - left, panelHeight, 2, 2, "FD");
+      let sy = y + panelPad + 6.5;
+      for (let i = 0; i < summaryRows.length; i++) {
+        const r = summaryRows[i];
+        if (r.tone === "okStrong") doc.setTextColor(12, 72, 43);
+        else if (r.tone === "warn") doc.setTextColor(153, 83, 0);
+        else if (r.tone === "total") doc.setTextColor(11, 42, 91);
+        else doc.setTextColor(16, 34, 56);
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10.5);
+        doc.text(`${r.label}:`, right - 34, sy, { align: "right" });
+        doc.text(r.value, right - 4, sy, { align: "right" });
+        doc.setTextColor(16, 34, 56);
+        sy += rowHeight;
+      }
+
+      const pdfBytes = doc.output("arraybuffer");
+      return new Blob([pdfBytes], { type: "application/pdf" });
+    }
+
+    function closeOrReturn() {
+      try {
+        if (typeof window.portalGetPortalReturnUrl === "function") {
+          const ret = window.portalGetPortalReturnUrl();
+          if (ret) { window.location.replace(ret); return; }
+        }
+      } catch (_) {}
+      try {
+        window.close();
+        setTimeout(() => { window.location.href = "/p1/"; }, 200);
+      } catch (_) {
+        window.location.href = "/p1/";
+      }
+    }
+
+    async function submitTimesheet(supabaseClient) {
+      if (!state.userId) throw new Error("Missing user");
+      const supabase =
+        supabaseClient && typeof supabaseClient.from === "function"
+          ? supabaseClient
+          : (await portalRequireUser()).supabase;
+      const periodMonth = `${state.periodEnd.slice(0, 7)}-01`;
+      const row = {
+        submitted_by_user_id: state.userId,
+        submitted_by_name: state.employeeName || "Staff",
+        period_month: periodMonth,
+        role_label: state.roleLabel || "Staff",
+        total_hours: state.totalHours,
+        entries: state.entries.map((e) => ({ date: e.date, day: e.day, hours: e.hours, completed: e.completed }))
+      };
+      const { error } = await supabase.from("staff_timesheets").insert([row]);
+      if (error) throw error;
+    }
+
+    document.getElementById("submitBtn").addEventListener("click", async () => {
+      const btn = document.getElementById("submitBtn");
+      btn.disabled = true;
+      try {
+        const [pdfBlob, auth] = await Promise.all([generatePdfBlob(), portalRequireUser()]);
+        const tsMonth = payrollMonthName(state.periodEnd);
+        await portalUploadPdfAndCreateDocument({
+          blob: pdfBlob,
+          document_type: "timesheet",
+          category: "finance",
+          title: `${tsMonth}'s Timesheet`,
+          related_date: state.periodEnd,
+          source_page: "timesheet",
+          reuseAuth: auth
+        });
+        try {
+          await submitTimesheet(auth.supabase);
+        } catch (rowErr) {
+          console.warn("[timesheet] My Documents OK; staff_timesheets insert failed:", rowErr);
+        }
+        alert("Timesheet submitted successfully");
+        closeOrReturn();
+      } catch (_) {
+        const msg = _ && _.message ? String(_.message) : "Unknown error";
+        console.error("[timesheet] submit failed:", _);
+        alert("Could not submit timesheet. " + msg);
+      } finally {
+        btn.disabled = false;
+      }
+    });
+    document.getElementById("backBtn").addEventListener("click", () => {
+      closeOrReturn();
+    });
+
+    loadData().catch(() => {
+      document.getElementById("rowsBody").innerHTML = `<tr><td colspan="4" class="muted">Could not load shifts for this timesheet.</td></tr>`;
+      document.getElementById("statusNote").textContent = "Could not resolve roster shifts for this account.";
+  });
+</script>
+</body>
+</html>

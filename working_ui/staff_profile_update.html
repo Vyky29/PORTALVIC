@@ -1,0 +1,2684 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <!--
+    clubSENsational Portal — Staff Profile Update (mobile-first, OTP-gated)
+    ---------------------------------------------------------------------
+    Self-service flow for staff to confirm/update their personal details.
+    Production embed: WordPress page that includes this HTML (Elementor / shortcode).
+
+    Flow:
+      Step 1: Identification    — Full Name + Mobile Number
+      Step 2: OTP verification  — code sent via WhatsApp / SMS
+      Step 3: Profile update    — 7 sections, per-block Edit/Confirm
+
+    Backend (Supabase Edge Functions):
+      staff-profile-otp-request   — generic success, no enumeration
+      staff-profile-otp-verify    — issues a 30-min session token
+      staff-profile-update-load   — fetch the staff_profile row
+      staff-profile-update-save   — partial update + per-field change log
+
+    The page never reads from any other table directly. All access is gated by
+    the session token returned from staff-profile-otp-verify.
+  -->
+  <script>
+    (function () {
+      try {
+        document.documentElement.classList.add("portal-app-shell");
+      } catch (e) {}
+    })();
+  </script>
+  <style id="portal-hide-wp-chrome">
+    /* WP admin bar (logged-in users) */
+    html.portal-app-shell body.admin-bar { padding-top: 0 !important; margin-top: 0 !important; }
+    html.portal-app-shell #wpadminbar { display: none !important; visibility: hidden !important; height: 0 !important; }
+
+    /* HEADER — selectores agresivos para cualquier tema (Astra, Hello, Twenty*, Avada, Divi, GeneratePress, OceanWP, Kadence, Storefront…) */
+    html.portal-app-shell #masthead,
+    html.portal-app-shell header#masthead,
+    html.portal-app-shell header.site-header,
+    html.portal-app-shell .site-header,
+    html.portal-app-shell #site-header,
+    html.portal-app-shell .global-header,
+    html.portal-app-shell .header-main,
+    html.portal-app-shell .main-header,
+    html.portal-app-shell #header,
+    html.portal-app-shell .ast-primary-header-bar,
+    html.portal-app-shell .ast-above-header,
+    html.portal-app-shell .ast-below-header,
+    html.portal-app-shell .ast-header-break-point,
+    html.portal-app-shell #ast-mobile-header,
+    html.portal-app-shell .elementor-location-header,
+    html.portal-app-shell [data-elementor-type="header"],
+    html.portal-app-shell .elementor-section-stretched.elementor-section-header,
+    html.portal-app-shell .header,
+    html.portal-app-shell .top-header,
+    html.portal-app-shell .header-bar,
+    html.portal-app-shell .menu-bar,
+    html.portal-app-shell #navigation,
+    html.portal-app-shell nav.main-navigation,
+    html.portal-app-shell #site-navigation,
+    html.portal-app-shell .breadcrumbs,
+    html.portal-app-shell .breadcrumb,
+    html.portal-app-shell .yoast-breadcrumbs,
+    /* FOOTER */
+    html.portal-app-shell footer#colophon,
+    html.portal-app-shell #colophon,
+    html.portal-app-shell footer.site-footer,
+    html.portal-app-shell .site-footer,
+    html.portal-app-shell .footer,
+    html.portal-app-shell #footer,
+    html.portal-app-shell .footer-widget-area,
+    html.portal-app-shell .footer-widgets,
+    html.portal-app-shell .site-bottom-footer-inner-wrap,
+    html.portal-app-shell .ast-small-footer,
+    html.portal-app-shell .footer-bar,
+    html.portal-app-shell .site-info,
+    html.portal-app-shell .copyright,
+    html.portal-app-shell .elementor-location-footer,
+    html.portal-app-shell [data-elementor-type="footer"],
+    /* SIDEBARS */
+    html.portal-app-shell #secondary,
+    html.portal-app-shell aside.widget-area,
+    html.portal-app-shell .widget-area,
+    html.portal-app-shell .sidebar {
+      display: none !important;
+      visibility: hidden !important;
+      height: 0 !important;
+      max-height: 0 !important;
+      min-height: 0 !important;
+      overflow: hidden !important;
+      pointer-events: none !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border: 0 !important;
+    }
+
+    /* Quitar el espacio que dejan los wrappers del tema */
+    html.portal-app-shell .site-content,
+    html.portal-app-shell #content,
+    html.portal-app-shell .site-main,
+    html.portal-app-shell main.site-main,
+    html.portal-app-shell #primary,
+    html.portal-app-shell #page,
+    html.portal-app-shell .site,
+    html.portal-app-shell .ast-container,
+    html.portal-app-shell .container,
+    html.portal-app-shell article,
+    html.portal-app-shell .entry-content,
+    html.portal-app-shell .entry-header,
+    html.portal-app-shell .post-thumbnail,
+    html.portal-app-shell .elementor-section-wrap {
+      margin: 0 !important;
+      padding: 0 !important;
+      max-width: 100% !important;
+      width: 100% !important;
+      background: transparent !important;
+    }
+    html.portal-app-shell .entry-title,
+    html.portal-app-shell .page-title,
+    html.portal-app-shell .post-title { display: none !important; }
+
+    html.portal-app-shell,
+    html.portal-app-shell body {
+      max-width: 100vw !important;
+      overflow-x: hidden !important;
+      background: #f4f8fb !important;
+    }
+  </style>
+  <script>
+    /* Fallback runtime: si el tema mete algo nuevo (sticky bar, popup, etc.)
+       que tape la app, lo escondemos al cargar y al cambiar el DOM. */
+    (function () {
+      try {
+        var SEL = [
+          '#wpadminbar', '#masthead', 'header#masthead', '.site-header', '#site-header',
+          '.ast-primary-header-bar', '.ast-above-header', '.ast-below-header', '#ast-mobile-header',
+          '.elementor-location-header', '[data-elementor-type="header"]',
+          '.global-header', '.header-main', '.main-header', '#header', '.top-header', '.header-bar',
+          '#colophon', 'footer#colophon', 'footer.site-footer', '.site-footer', '#footer', '.footer',
+          '.footer-widget-area', '.footer-widgets', '.elementor-location-footer',
+          '[data-elementor-type="footer"]', '.site-bottom-footer-inner-wrap', '.ast-small-footer',
+          '.copyright', '.site-info'
+        ].join(',');
+        function nuke() {
+          try {
+            document.querySelectorAll(SEL).forEach(function (el) {
+              el.style.setProperty('display', 'none', 'important');
+            });
+            document.body && document.body.classList.remove('admin-bar');
+          } catch (e) {}
+        }
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', nuke, { once: true });
+        } else {
+          nuke();
+        }
+        window.addEventListener('load', nuke);
+        if (typeof MutationObserver === 'function') {
+          var mo = new MutationObserver(nuke);
+          mo.observe(document.documentElement, { childList: true, subtree: true });
+          /* corta a los 5s para no quedar observando para siempre */
+          setTimeout(function () { try { mo.disconnect(); } catch (e) {} }, 5000);
+        }
+      } catch (e) {}
+    })();
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Profile" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="theme-color" content="#f4f8fb" />
+  <title>clubSENsational Portal — Update your details</title>
+  <style>
+    :root {
+      --blue: #2d84b3;
+      --blueDeep: #1f6587;
+      --blueSoft: #eaf5fb;
+      --blueSofter: #f3faff;
+      --gold: #f4b740;
+      --sen-gold: #f9bf2e;
+      --goldSoft: #fff4df;
+      --ink: #173247;
+      --inkSoft: #2a4a62;
+      --text: #314555;
+      --muted: #728290;
+      --mutedSoft: #94a3b0;
+      --line: rgba(23, 50, 71, .12);
+      --lineStrong: rgba(23, 50, 71, .22);
+      --white: #ffffff;
+      --bg: #f4f8fb;
+      --bgSoft: #eef5fb;
+      --shadow: 0 18px 50px rgba(23, 50, 71, .08);
+      --shadowSoft: 0 8px 24px rgba(23, 50, 71, .06);
+      --radius: 22px;
+      --radiusSm: 14px;
+      --radiusLg: 28px;
+      --danger: #d9534f;
+      --dangerSoft: #fff1f1;
+      --dangerInk: #8a2725;
+      --success: #157347;
+      --successSoft: #e8f7ef;
+      --warn: #b8741b;
+      --warnSoft: #fff4e2;
+      --layout-max: 460px;
+      --tap: 48px;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      min-height: 100dvh;
+      max-width: 100%;
+      overflow-x: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: var(--text);
+      -webkit-text-size-adjust: 100%;
+      overscroll-behavior-x: none;
+    }
+
+    body {
+      background: linear-gradient(180deg, #f7fbff 0%, #edf4fb 60%, #e6eef6 100%);
+      min-height: 100dvh;
+      padding:
+        max(20px, env(safe-area-inset-top, 0px))
+        clamp(14px, 4vw, 22px)
+        max(28px, env(safe-area-inset-bottom, 0px));
+    }
+
+    .stage {
+      width: 100%;
+      max-width: var(--layout-max);
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    /* -------------------------------------------------------------- header */
+    .stage-head {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding-top: 4px;
+      text-align: center;
+    }
+
+    /* -------------------------------------------------------------- brand logo (same look as login.html) */
+    .brand-stage {
+      margin: 0 auto 4px;
+      display: flex;
+      justify-content: center;
+    }
+    .brand-logo-stage {
+      position: relative;
+      width: min(160px, 44vw);
+      max-width: 100%;
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+    }
+    .brand-orbit-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      overflow: visible;
+    }
+    .brand-orbit-svg .orbit-layer--cw   { transform-origin: 0 0; animation: brand-orbit-cw  18s linear infinite; }
+    .brand-orbit-svg .orbit-layer--ccw  { transform-origin: 0 0; animation: brand-orbit-ccw 14s linear infinite; }
+    .brand-orbit-svg .orbit-layer--slow-ccw { transform-origin: 0 0; animation: brand-orbit-ccw 26s linear infinite; }
+    @keyframes brand-orbit-cw  { from { transform: rotate(0deg);   } to { transform: rotate(360deg);  } }
+    @keyframes brand-orbit-ccw { from { transform: rotate(0deg);   } to { transform: rotate(-360deg); } }
+    @media (prefers-reduced-motion: reduce) {
+      .brand-orbit-svg .orbit-layer--cw,
+      .brand-orbit-svg .orbit-layer--ccw,
+      .brand-orbit-svg .orbit-layer--slow-ccw { animation: none; }
+    }
+    .brand-logo-shell {
+      position: relative;
+      z-index: 1;
+      width: 70%;
+      max-width: 120px;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      overflow: hidden;
+      background: var(--white);
+      display: grid;
+      place-items: center;
+      box-shadow:
+        0 0 0 2px rgba(249, 191, 46, .5),
+        0 0 18px rgba(249, 191, 46, .45),
+        0 0 36px rgba(244, 183, 64, .32),
+        0 0 56px rgba(249, 191, 46, .22),
+        0 0 80px rgba(45, 132, 179, .12);
+    }
+    .brand-logo-shell .brand-logo {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      object-fit: cover;
+      transform: scale(1.32);
+      transform-origin: center center;
+      display: block;
+    }
+
+    .stage-logo {
+      width: 84px;
+      height: 84px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: var(--white);
+      display: grid;
+      place-items: center;
+      box-shadow:
+        0 0 0 2px rgba(249, 191, 46, .45),
+        0 0 18px rgba(249, 191, 46, .35),
+        0 8px 22px rgba(23, 50, 71, .08);
+    }
+
+    .stage-logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scale(1.32);
+    }
+
+    .stage-title {
+      margin: 4px 0 0;
+      font-size: clamp(1.3rem, 4.6vw, 1.55rem);
+      font-weight: 800;
+      color: var(--ink);
+      letter-spacing: -0.01em;
+      line-height: 1.18;
+      overflow-wrap: break-word;
+      max-width: 100%;
+    }
+
+    .stage-subtitle {
+      margin: 0;
+      font-size: .92rem;
+      color: var(--muted);
+      line-height: 1.45;
+      max-width: 36ch;
+      overflow-wrap: break-word;
+    }
+
+    /* -------------------------------------------------------------- step pills */
+    .step-meter {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 4px 6px;
+    }
+
+    .step-meter-dot {
+      flex: 1 1 0;
+      min-width: 0;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(23, 50, 71, .10);
+      transition: background .25s ease;
+    }
+
+    .step-meter-dot.is-active {
+      background: linear-gradient(90deg, var(--blue), var(--sen-gold));
+    }
+
+    .step-meter-dot.is-done {
+      background: var(--blue);
+    }
+
+    /* -------------------------------------------------------------- card primitives */
+    .card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--line);
+      padding: clamp(18px, 5vw, 26px);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .card-head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .card-head-icon {
+      flex: 0 0 auto;
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: var(--blueSoft);
+      color: var(--blueDeep);
+      display: grid;
+      place-items: center;
+    }
+
+    .card-head-icon svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .card-head-text {
+      flex: 1 1 auto;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .card-head-title {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--ink);
+      line-height: 1.25;
+      overflow-wrap: break-word;
+    }
+
+    .card-head-sub {
+      margin: 0;
+      font-size: .8rem;
+      color: var(--muted);
+      line-height: 1.35;
+      overflow-wrap: break-word;
+    }
+
+    .card-help {
+      margin: 0;
+      font-size: .85rem;
+      color: var(--muted);
+      line-height: 1.5;
+      overflow-wrap: break-word;
+    }
+
+    /* -------------------------------------------------------------- form bits */
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .field label {
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--ink);
+      letter-spacing: .01em;
+    }
+
+    .field input,
+    .field textarea,
+    .field select {
+      width: 100%;
+      min-width: 0;
+      padding: 13px 14px;
+      font-size: 1rem;
+      font-family: inherit;
+      color: var(--text);
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: var(--radiusSm);
+      transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    .field textarea {
+      min-height: 96px;
+      resize: vertical;
+      line-height: 1.45;
+      overflow-wrap: break-word;
+    }
+
+    .field input::placeholder,
+    .field textarea::placeholder {
+      color: var(--mutedSoft);
+    }
+
+    .field input:focus,
+    .field textarea:focus,
+    .field select:focus {
+      outline: none;
+      border-color: rgba(45, 132, 179, .55);
+      box-shadow: 0 0 0 4px rgba(45, 132, 179, .14);
+    }
+
+    .field input:disabled,
+    .field textarea:disabled,
+    .field select:disabled {
+      background: #f6f8fb;
+      color: var(--inkSoft);
+      cursor: default;
+    }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 12px;
+    }
+
+    @media (min-width: 420px) {
+      .field-grid.field-grid--2 {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      }
+    }
+
+    .field-hint {
+      font-size: .76rem;
+      color: var(--muted);
+      line-height: 1.4;
+      overflow-wrap: break-word;
+    }
+
+    .field-error {
+      display: none;
+      font-size: .78rem;
+      color: var(--danger);
+      line-height: 1.4;
+      overflow-wrap: break-word;
+    }
+
+    .field.has-error input,
+    .field.has-error textarea,
+    .field.has-error select {
+      border-color: rgba(217, 83, 79, .6);
+      box-shadow: 0 0 0 3px rgba(217, 83, 79, .12);
+    }
+
+    .field.has-error .field-error {
+      display: block;
+    }
+
+    /* -------------------------------------------------------------- buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: var(--tap);
+      padding: 12px 18px;
+      font-size: 1rem;
+      font-weight: 700;
+      font-family: inherit;
+      color: var(--white);
+      background: linear-gradient(180deg, var(--blue) 0%, var(--blueDeep) 100%);
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+      transition: transform .12s ease, box-shadow .15s ease, filter .15s ease, opacity .15s ease;
+      box-shadow: 0 8px 22px rgba(45, 132, 179, .28);
+      width: 100%;
+      min-width: 0;
+      overflow-wrap: break-word;
+      text-align: center;
+      line-height: 1.2;
+    }
+
+    .btn:hover { filter: brightness(1.04); }
+    .btn:active { transform: scale(.985); }
+    .btn:disabled,
+    .btn[aria-busy="true"] {
+      cursor: not-allowed;
+      opacity: .65;
+      filter: grayscale(.3);
+    }
+
+    .btn--ghost {
+      background: var(--white);
+      color: var(--ink);
+      border: 1px solid var(--lineStrong);
+      box-shadow: none;
+    }
+
+    .btn--ghost:hover {
+      background: var(--blueSoft);
+    }
+
+    .btn--gold {
+      background: linear-gradient(180deg, var(--sen-gold) 0%, var(--gold) 100%);
+      color: var(--ink);
+      box-shadow: 0 8px 22px rgba(244, 183, 64, .35);
+    }
+
+    .btn-row {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .btn--inline {
+      width: auto;
+      padding: 10px 16px;
+      font-size: .9rem;
+      min-height: 42px;
+      flex: 0 0 auto;
+    }
+
+    /* -------------------------------------------------------------- notice / banner */
+    .notice {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 12px 14px;
+      border-radius: 14px;
+      font-size: .88rem;
+      line-height: 1.45;
+      overflow-wrap: break-word;
+      min-width: 0;
+    }
+
+    .notice--info {
+      background: var(--blueSoft);
+      color: var(--inkSoft);
+      border: 1px solid rgba(45, 132, 179, .25);
+    }
+
+    .notice--ok {
+      background: var(--successSoft);
+      color: #0e5535;
+      border: 1px solid rgba(21, 115, 71, .28);
+    }
+
+    .notice--warn {
+      background: var(--warnSoft);
+      color: #6e4a16;
+      border: 1px solid rgba(184, 116, 27, .28);
+    }
+
+    .notice--error {
+      background: var(--dangerSoft);
+      color: var(--dangerInk);
+      border: 1px solid rgba(217, 83, 79, .28);
+    }
+
+    .notice-icon {
+      flex: 0 0 auto;
+      width: 18px;
+      height: 18px;
+      margin-top: 1px;
+    }
+
+    .notice-body {
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+
+    /* -------------------------------------------------------------- OTP inputs */
+    .otp-inputs {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 8px;
+      direction: ltr;
+    }
+
+    .otp-inputs input {
+      width: 100%;
+      min-width: 0;
+      aspect-ratio: 1 / 1.18;
+      max-height: 64px;
+      text-align: center;
+      font-size: clamp(1.1rem, 5vw, 1.5rem);
+      font-weight: 700;
+      color: var(--ink);
+      letter-spacing: .02em;
+      padding: 0;
+      border-radius: 14px;
+      border: 1px solid var(--lineStrong);
+      background: var(--white);
+      caret-color: var(--blue);
+      transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+    }
+
+    .otp-inputs input:focus {
+      outline: none;
+      border-color: var(--blue);
+      box-shadow: 0 0 0 4px rgba(45, 132, 179, .15);
+    }
+
+    .otp-inputs.has-error input {
+      border-color: rgba(217, 83, 79, .6);
+      box-shadow: 0 0 0 3px rgba(217, 83, 79, .12);
+    }
+
+    .otp-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: .82rem;
+      color: var(--muted);
+      min-width: 0;
+    }
+
+    .otp-meta .otp-resend {
+      background: none;
+      border: none;
+      color: var(--blueDeep);
+      font-weight: 600;
+      font-size: .82rem;
+      cursor: pointer;
+      padding: 6px 0;
+      min-height: 32px;
+      font-family: inherit;
+    }
+
+    .otp-meta .otp-resend:disabled {
+      color: var(--mutedSoft);
+      cursor: not-allowed;
+    }
+
+    /* -------------------------------------------------------------- profile sections */
+    .profile-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .profile-section {
+      background: var(--white);
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadowSoft);
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    .profile-section.is-confirmed {
+      border-color: rgba(21, 115, 71, .35);
+      box-shadow: 0 8px 22px rgba(21, 115, 71, .08);
+    }
+
+    .profile-section.is-editing {
+      border-color: rgba(45, 132, 179, .45);
+      box-shadow: 0 12px 28px rgba(45, 132, 179, .14);
+    }
+
+    .ps-head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      cursor: pointer;
+      user-select: none;
+      min-width: 0;
+    }
+
+    .ps-head[disabled],
+    .ps-head[aria-disabled="true"] {
+      cursor: default;
+    }
+
+    .ps-icon {
+      flex: 0 0 auto;
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      background: var(--blueSoft);
+      color: var(--blueDeep);
+      display: grid;
+      place-items: center;
+    }
+
+    .profile-section.is-confirmed .ps-icon {
+      background: var(--successSoft);
+      color: #0e5535;
+    }
+
+    .profile-section.is-editing .ps-icon {
+      background: linear-gradient(180deg, #fff7e0 0%, #ffe8b3 100%);
+      color: var(--warn);
+    }
+
+    .ps-icon svg { width: 18px; height: 18px; }
+
+    .ps-text {
+      flex: 1 1 auto;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .ps-title {
+      margin: 0;
+      font-size: .98rem;
+      font-weight: 700;
+      color: var(--ink);
+      line-height: 1.25;
+      overflow-wrap: break-word;
+    }
+
+    .ps-status {
+      margin: 0;
+      font-size: .76rem;
+      color: var(--muted);
+      line-height: 1.35;
+      overflow-wrap: break-word;
+    }
+
+    .profile-section.is-confirmed .ps-status { color: #0e5535; font-weight: 600; }
+    .profile-section.is-editing .ps-status { color: var(--warn); font-weight: 600; }
+
+    .ps-chev {
+      flex: 0 0 auto;
+      width: 22px;
+      height: 22px;
+      color: var(--muted);
+      transition: transform .2s ease;
+    }
+
+    .profile-section[aria-expanded="true"] .ps-chev {
+      transform: rotate(180deg);
+    }
+
+    .ps-body {
+      display: none;
+      padding: 4px 16px 18px;
+      border-top: 1px solid var(--line);
+      background: var(--blueSofter);
+      flex-direction: column;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .profile-section[aria-expanded="true"] .ps-body {
+      display: flex;
+    }
+
+    .readonly-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin: 4px 0 6px;
+      padding: 0;
+      list-style: none;
+      min-width: 0;
+    }
+
+    .readonly-row {
+      display: grid;
+      grid-template-columns: 38% minmax(0, 1fr);
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: var(--white);
+      border: 1px solid var(--line);
+      min-width: 0;
+    }
+
+    .readonly-label {
+      font-size: .76rem;
+      color: var(--muted);
+      font-weight: 600;
+      align-self: center;
+      overflow-wrap: break-word;
+    }
+
+    .readonly-value {
+      font-size: .92rem;
+      color: var(--ink);
+      font-weight: 600;
+      overflow-wrap: break-word;
+      word-break: break-word;
+    }
+
+    .readonly-value.is-empty {
+      color: var(--muted);
+      font-weight: 500;
+      font-style: italic;
+    }
+
+    .ps-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-top: 4px;
+    }
+
+    @media (min-width: 380px) {
+      .ps-actions {
+        flex-direction: row;
+        gap: 10px;
+      }
+      .ps-actions .btn {
+        flex: 1 1 0;
+      }
+    }
+
+    .ps-edit-form {
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .profile-section.is-editing .ps-edit-form { display: flex; }
+    .profile-section.is-editing .ps-readonly,
+    .profile-section.is-editing .ps-actions { display: none; }
+
+    /* -------------------------------------------------------------- radio groups */
+    .radio-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .radio-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: var(--white);
+      cursor: pointer;
+      min-height: var(--tap);
+      min-width: 0;
+      transition: border-color .12s ease, background .12s ease, box-shadow .12s ease;
+    }
+
+    .radio-row:hover {
+      background: var(--blueSofter);
+    }
+
+    .radio-row input[type="radio"] {
+      margin: 3px 0 0;
+      flex: 0 0 auto;
+      width: 18px;
+      height: 18px;
+      accent-color: var(--blue);
+    }
+
+    .radio-row input[type="radio"]:checked + .radio-body .radio-label {
+      color: var(--ink);
+    }
+
+    .radio-row:has(input[type="radio"]:checked) {
+      border-color: rgba(45, 132, 179, .55);
+      background: var(--blueSoft);
+      box-shadow: 0 4px 14px rgba(45, 132, 179, .12);
+    }
+
+    .radio-body {
+      flex: 1 1 auto;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .radio-label {
+      font-size: .94rem;
+      font-weight: 600;
+      color: var(--ink);
+      overflow-wrap: break-word;
+    }
+
+    .radio-sub {
+      font-size: .78rem;
+      color: var(--muted);
+      line-height: 1.4;
+      overflow-wrap: break-word;
+    }
+
+    /* -------------------------------------------------------------- conditional reveal */
+    .conditional {
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+      padding: 12px;
+      border: 1px dashed rgba(45, 132, 179, .35);
+      border-radius: 14px;
+      background: var(--blueSofter);
+    }
+
+    .conditional.is-visible {
+      display: flex;
+    }
+
+    /* -------------------------------------------------------------- final confirm */
+    .final-confirm {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 14px 16px;
+      border: 1px solid var(--lineStrong);
+      border-radius: 16px;
+      background: var(--white);
+      cursor: pointer;
+      min-width: 0;
+    }
+
+    .final-confirm input[type="checkbox"] {
+      margin: 3px 0 0;
+      flex: 0 0 auto;
+      width: 20px;
+      height: 20px;
+      accent-color: var(--blue);
+    }
+
+    .final-confirm-text {
+      flex: 1 1 auto;
+      min-width: 0;
+      font-size: .9rem;
+      line-height: 1.4;
+      color: var(--ink);
+      overflow-wrap: break-word;
+    }
+
+    /* -------------------------------------------------------------- screens */
+    .screen {
+      display: none;
+      flex-direction: column;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .screen.is-active {
+      display: flex;
+    }
+
+    /* -------------------------------------------------------------- footer note */
+    .stage-foot {
+      text-align: center;
+      font-size: .72rem;
+      color: var(--mutedSoft);
+      line-height: 1.4;
+      padding: 6px 8px 0;
+      overflow-wrap: break-word;
+    }
+
+    .session-bar {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: var(--blueSoft);
+      border: 1px solid rgba(45, 132, 179, .25);
+      border-radius: 12px;
+      font-size: .78rem;
+      color: var(--inkSoft);
+      min-width: 0;
+    }
+
+    .session-bar.is-visible {
+      display: flex;
+    }
+
+    .session-bar-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      flex: 0 0 auto;
+      box-shadow: 0 0 0 4px rgba(21, 115, 71, .15);
+    }
+
+    .session-bar-text {
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+
+    /* -------------------------------------------------------------- success screen */
+    .success-mark {
+      width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      background: var(--successSoft);
+      color: var(--success);
+      margin: 6px auto 4px;
+      display: grid;
+      place-items: center;
+      box-shadow:
+        0 0 0 6px rgba(21, 115, 71, .08),
+        0 8px 22px rgba(21, 115, 71, .12);
+    }
+
+    .success-mark svg { width: 36px; height: 36px; }
+
+    /* -------------------------------------------------------------- spinner */
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid currentColor;
+      border-right-color: transparent;
+      animation: spin .8s linear infinite;
+      flex: 0 0 auto;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* -------------------------------------------------------------- accessibility */
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .spinner { animation: none; }
+      .ps-chev { transition: none; }
+      .btn { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="stage" id="stage">
+    <div class="brand-stage" aria-hidden="true">
+      <div class="brand-logo-stage">
+        <svg class="brand-orbit-svg" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
+          <defs>
+            <filter id="brand-orb-soft" x="-40%" y="-40%" width="180%" height="180%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="1.2" result="b"/>
+              <feMerge>
+                <feMergeNode in="b"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>
+          <g transform="translate(100,100)">
+            <g class="orbit-layer orbit-layer--cw" filter="url(#brand-orb-soft)">
+              <circle cx="0"      cy="-92" r="7" fill="var(--blue)"/>
+              <circle cx="79.67"  cy="-46" r="6" fill="var(--sen-gold)"/>
+              <circle cx="79.67"  cy="46"  r="6" fill="var(--ink)"/>
+              <circle cx="0"      cy="92"  r="7" fill="var(--gold)"/>
+              <circle cx="-79.67" cy="46"  r="6" fill="var(--blue)"/>
+              <circle cx="-79.67" cy="-46" r="6" fill="#5a9fc4"/>
+            </g>
+            <g class="orbit-layer orbit-layer--ccw" filter="url(#brand-orb-soft)">
+              <circle cx="0"      cy="-82" r="5" fill="var(--sen-gold)"/>
+              <circle cx="71.01"  cy="-41" r="5" fill="var(--blue)"/>
+              <circle cx="71.01"  cy="41"  r="5" fill="var(--gold)"/>
+              <circle cx="0"      cy="82"  r="5" fill="var(--ink)"/>
+              <circle cx="-71.01" cy="41"  r="5" fill="#8ebfe0"/>
+              <circle cx="-71.01" cy="-41" r="5" fill="var(--sen-gold)"/>
+            </g>
+            <g class="orbit-layer orbit-layer--slow-ccw" filter="url(#brand-orb-soft)">
+              <circle cx="37.27"  cy="-64" r="4" fill="var(--gold)"/>
+              <circle cx="74"     cy="-8"  r="4" fill="var(--blue)"/>
+              <circle cx="37.27"  cy="64"  r="4" fill="var(--sen-gold)"/>
+              <circle cx="-37.27" cy="64"  r="4" fill="var(--ink)"/>
+              <circle cx="-74"    cy="-8"  r="4" fill="var(--blue)"/>
+              <circle cx="-37.27" cy="-64" r="4" fill="#f4d78a"/>
+            </g>
+          </g>
+        </svg>
+        <div class="brand-logo-shell">
+          <img
+            class="brand-logo"
+            src="https://www.clubsensational.org/wp-content/uploads/2026/05/F-02-1.png"
+            width="200"
+            height="200"
+            alt="clubSENsational - Autism Consultancy Services"
+            decoding="async"
+            referrerpolicy="no-referrer-when-downgrade"
+            onerror="this.onerror=null;this.src='F-02-1.png'"
+          />
+        </div>
+      </div>
+    </div>
+
+    <div class="step-meter" role="progressbar" aria-label="Profile update progress" aria-valuemin="1" aria-valuemax="3" aria-valuenow="1" id="stepMeter">
+      <span class="step-meter-dot is-active" data-step="1"></span>
+      <span class="step-meter-dot" data-step="2"></span>
+      <span class="step-meter-dot" data-step="3"></span>
+    </div>
+
+    <div class="session-bar" id="sessionBar" role="status" aria-live="polite">
+      <span class="session-bar-dot" aria-hidden="true"></span>
+      <span class="session-bar-text" id="sessionBarText">Secure session active.</span>
+    </div>
+
+    <!-- =========================================================== STEP 1 -->
+    <section class="screen is-active" id="screenIdentify" aria-labelledby="screenIdentifyTitle">
+      <div class="card">
+        <div class="card-head">
+          <span class="card-head-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </span>
+          <div class="card-head-text">
+            <h2 class="card-head-title" id="screenIdentifyTitle">Identify yourself</h2>
+            <p class="card-head-sub">We'll send a one-time code to your number on file.</p>
+          </div>
+        </div>
+
+        <p class="card-help">
+          Enter your <strong>full name</strong> and the <strong>mobile number</strong> we already have for you.
+        </p>
+
+        <form id="identifyForm" novalidate>
+          <div class="field-grid">
+            <div class="field" id="identifyNameField">
+              <label for="identifyName">Full name</label>
+              <input
+                id="identifyName"
+                name="full_name"
+                type="text"
+                autocomplete="name"
+                inputmode="text"
+                placeholder="e.g. Jane Smith"
+                required
+                maxlength="120"
+              />
+              <span class="field-error">Please enter your full name.</span>
+            </div>
+            <div class="field" id="identifyPhoneField">
+              <label for="identifyPhone">Mobile number</label>
+              <input
+                id="identifyPhone"
+                name="phone_number"
+                type="tel"
+                autocomplete="tel"
+                inputmode="tel"
+                placeholder="e.g. 07700 900 123"
+                required
+                maxlength="24"
+              />
+              <span class="field-hint">Use the number ClubSENsational has for you (with or without country code).</span>
+              <span class="field-error">Please enter a valid mobile number.</span>
+            </div>
+          </div>
+
+          <div class="btn-row" style="margin-top:14px;">
+            <button type="submit" class="btn" id="identifySubmit">
+              <span class="btn-label">Send verification code</span>
+            </button>
+          </div>
+        </form>
+
+        <div class="notice notice--info" id="identifyNotice" hidden>
+          <svg class="notice-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <span class="notice-body" id="identifyNoticeText"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================== STEP 2 -->
+    <section class="screen" id="screenOtp" aria-labelledby="screenOtpTitle">
+      <div class="card">
+        <div class="card-head">
+          <span class="card-head-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </span>
+          <div class="card-head-text">
+            <h2 class="card-head-title" id="screenOtpTitle">Enter verification code</h2>
+            <p class="card-head-sub">If your details matched, a 6-digit code has been sent.</p>
+          </div>
+        </div>
+
+        <p class="card-help" id="otpDestinationHint">
+          Check your WhatsApp first. If you don't see it, check your text messages.
+        </p>
+
+        <form id="otpForm" novalidate>
+          <div class="otp-inputs" id="otpInputs" role="group" aria-label="Six-digit verification code">
+            <input type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="one-time-code" aria-label="Digit 1" />
+            <input type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="1" aria-label="Digit 2" />
+            <input type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="1" aria-label="Digit 3" />
+            <input type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="1" aria-label="Digit 4" />
+            <input type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="1" aria-label="Digit 5" />
+            <input type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="1" aria-label="Digit 6" />
+          </div>
+          <div class="otp-meta" style="margin-top:10px;">
+            <span id="otpTimer" aria-live="polite">Code expires in 10:00</span>
+            <button type="button" class="otp-resend" id="otpResend" disabled>Resend code</button>
+          </div>
+
+          <div class="btn-row" style="margin-top:14px;">
+            <button type="submit" class="btn" id="otpSubmit">
+              <span class="btn-label">Verify and continue</span>
+            </button>
+            <button type="button" class="btn btn--ghost" id="otpBack">Use a different number</button>
+          </div>
+        </form>
+
+        <div class="notice notice--error" id="otpNotice" hidden>
+          <svg class="notice-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span class="notice-body" id="otpNoticeText"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================== STEP 3 -->
+    <section class="screen" id="screenProfile" aria-labelledby="screenProfileTitle">
+      <div class="card" style="background:linear-gradient(180deg,#ffffff 0%,#f7fbff 100%);">
+        <div class="card-head">
+          <span class="card-head-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          </span>
+          <div class="card-head-text">
+            <h2 class="card-head-title" id="screenProfileTitle">
+              Hi <span id="profileGreetingName">there</span>
+            </h2>
+            <p class="card-head-sub">Tap <strong>Confirm</strong> if a section is correct, or <strong>Edit</strong> to change it.</p>
+          </div>
+        </div>
+        <p class="card-help">
+          Only one section is editable at a time. Your changes are saved when you tap <strong>Submit updates</strong> at the bottom.
+        </p>
+      </div>
+
+      <div class="profile-stack" id="profileStack">
+        <!-- ==== Section 1: Staff Details ==== -->
+        <section class="profile-section" id="sectionStaffDetails" data-section="staff_details" aria-expanded="true">
+          <button type="button" class="ps-head" data-toggle="section" aria-controls="bodyStaffDetails">
+            <span class="ps-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </span>
+            <span class="ps-text">
+              <span class="ps-title">Staff details</span>
+              <span class="ps-status" data-section-status>Not yet confirmed</span>
+            </span>
+            <svg class="ps-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="ps-body" id="bodyStaffDetails">
+            <div class="ps-readonly">
+              <ul class="readonly-list">
+                <li class="readonly-row"><span class="readonly-label">Full name</span><span class="readonly-value" data-readonly="full_name">—</span></li>
+                <li class="readonly-row"><span class="readonly-label">Role</span><span class="readonly-value" data-readonly="staff_role">—</span></li>
+                <li class="readonly-row"><span class="readonly-label">Email</span><span class="readonly-value" data-readonly="email_personal">—</span></li>
+                <li class="readonly-row"><span class="readonly-label">Mobile</span><span class="readonly-value" data-readonly="phone_e164">—</span></li>
+              </ul>
+              <p class="field-hint">
+                Full name and role are managed by the office. Contact them if these need to change.
+              </p>
+            </div>
+            <form class="ps-edit-form" data-edit-form>
+              <div class="field">
+                <label>Full name</label>
+                <input type="text" disabled data-edit-readonly="full_name" />
+                <span class="field-hint">Managed by ClubSENsational office.</span>
+              </div>
+              <div class="field">
+                <label>Role</label>
+                <input type="text" disabled data-edit-readonly="staff_role" />
+                <span class="field-hint">Managed by ClubSENsational office.</span>
+              </div>
+              <div class="field" data-edit-field="email_personal">
+                <label for="editEmail">Personal email</label>
+                <input id="editEmail" type="email" inputmode="email" autocomplete="email" maxlength="254" data-edit-input="email_personal" placeholder="you@example.com" />
+                <span class="field-error">Please enter a valid email address.</span>
+              </div>
+              <div class="field" data-edit-field="phone_e164">
+                <label for="editPhone">Mobile number</label>
+                <input id="editPhone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" data-edit-input="phone_e164" placeholder="+44 7700 900123" />
+                <span class="field-hint">Used for verification and urgent contact.</span>
+                <span class="field-error">Please enter a valid mobile number.</span>
+              </div>
+            </form>
+            <div class="ps-actions">
+              <button type="button" class="btn btn--ghost" data-action="edit">Edit</button>
+              <button type="button" class="btn btn--gold" data-action="confirm">Confirm</button>
+              <button type="button" class="btn" data-action="save-edit" hidden>Save changes</button>
+              <button type="button" class="btn btn--ghost" data-action="cancel-edit" hidden>Cancel</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==== Section 2: Address ==== -->
+        <section class="profile-section" id="sectionAddress" data-section="address" aria-expanded="false">
+          <button type="button" class="ps-head" data-toggle="section" aria-controls="bodyAddress">
+            <span class="ps-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            </span>
+            <span class="ps-text">
+              <span class="ps-title">Home address</span>
+              <span class="ps-status" data-section-status>Not yet confirmed</span>
+            </span>
+            <svg class="ps-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="ps-body" id="bodyAddress">
+            <div class="ps-readonly">
+              <p class="field-hint" style="margin:0 0 4px;">Currently on file</p>
+              <ul class="readonly-list">
+                <li class="readonly-row"><span class="readonly-label">Address</span><span class="readonly-value" data-readonly="address_full">—</span></li>
+              </ul>
+            </div>
+            <form class="ps-edit-form" data-edit-form>
+              <div class="radio-stack" role="radiogroup" aria-label="Has your address changed?">
+                <label class="radio-row">
+                  <input type="radio" name="addressChange" value="unchanged" checked />
+                  <span class="radio-body">
+                    <span class="radio-label">My address is unchanged</span>
+                    <span class="radio-sub">Keep the address we have on file.</span>
+                  </span>
+                </label>
+                <label class="radio-row">
+                  <input type="radio" name="addressChange" value="changed" />
+                  <span class="radio-body">
+                    <span class="radio-label">My address has changed</span>
+                    <span class="radio-sub">Enter your new address below.</span>
+                  </span>
+                </label>
+              </div>
+              <div class="conditional" id="addressChangeFields" data-conditional-for="addressChange" data-show-when="changed">
+                <div class="field"><label for="editAddr1">Address line 1</label><input id="editAddr1" type="text" autocomplete="address-line1" maxlength="120" data-edit-input="address_line1" /></div>
+                <div class="field"><label for="editAddr2">Address line 2 <span style="color:var(--mutedSoft);font-weight:500;">(optional)</span></label><input id="editAddr2" type="text" autocomplete="address-line2" maxlength="120" data-edit-input="address_line2" /></div>
+                <div class="field-grid field-grid--2">
+                  <div class="field"><label for="editCity">Town / city</label><input id="editCity" type="text" autocomplete="address-level2" maxlength="80" data-edit-input="address_city" /></div>
+                  <div class="field"><label for="editPostcode">Postcode</label><input id="editPostcode" type="text" autocomplete="postal-code" maxlength="16" data-edit-input="address_postcode" /></div>
+                </div>
+              </div>
+            </form>
+            <div class="ps-actions">
+              <button type="button" class="btn btn--ghost" data-action="edit">Edit</button>
+              <button type="button" class="btn btn--gold" data-action="confirm">Confirm</button>
+              <button type="button" class="btn" data-action="save-edit" hidden>Save changes</button>
+              <button type="button" class="btn btn--ghost" data-action="cancel-edit" hidden>Cancel</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==== Section 3: Emergency Contact ==== -->
+        <section class="profile-section" id="sectionEmergency" data-section="emergency_contact" aria-expanded="false">
+          <button type="button" class="ps-head" data-toggle="section" aria-controls="bodyEmergency">
+            <span class="ps-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            </span>
+            <span class="ps-text">
+              <span class="ps-title">Emergency contact</span>
+              <span class="ps-status" data-section-status>Not yet confirmed</span>
+            </span>
+            <svg class="ps-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="ps-body" id="bodyEmergency">
+            <div class="ps-readonly">
+              <ul class="readonly-list">
+                <li class="readonly-row"><span class="readonly-label">Name</span><span class="readonly-value" data-readonly="emergency_contact_name">—</span></li>
+                <li class="readonly-row"><span class="readonly-label">Relationship</span><span class="readonly-value" data-readonly="emergency_contact_relationship">—</span></li>
+                <li class="readonly-row"><span class="readonly-label">Phone</span><span class="readonly-value" data-readonly="emergency_contact_phone">—</span></li>
+              </ul>
+            </div>
+            <form class="ps-edit-form" data-edit-form>
+              <div class="field"><label for="editECName">Contact name</label><input id="editECName" type="text" maxlength="120" data-edit-input="emergency_contact_name" placeholder="e.g. Maria Smith" /></div>
+              <div class="field">
+                <label for="editECRel">Relationship</label>
+                <select id="editECRel" data-edit-input="emergency_contact_relationship">
+                  <option value="">Select…</option>
+                  <option>Partner / spouse</option>
+                  <option>Parent</option>
+                  <option>Sibling</option>
+                  <option>Child (adult)</option>
+                  <option>Friend</option>
+                  <option>Other family member</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div class="field"><label for="editECPhone">Phone number</label><input id="editECPhone" type="tel" inputmode="tel" maxlength="20" data-edit-input="emergency_contact_phone" placeholder="+44 7700 900456" /></div>
+            </form>
+            <div class="ps-actions">
+              <button type="button" class="btn btn--ghost" data-action="edit">Edit</button>
+              <button type="button" class="btn btn--gold" data-action="confirm">Confirm</button>
+              <button type="button" class="btn" data-action="save-edit" hidden>Save changes</button>
+              <button type="button" class="btn btn--ghost" data-action="cancel-edit" hidden>Cancel</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==== Section 4: Availability ==== -->
+        <section class="profile-section" id="sectionAvailability" data-section="availability" aria-expanded="false">
+          <button type="button" class="ps-head" data-toggle="section" aria-controls="bodyAvailability">
+            <span class="ps-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </span>
+            <span class="ps-text">
+              <span class="ps-title">Availability for next academic year</span>
+              <span class="ps-status" data-section-status>Not yet confirmed</span>
+            </span>
+            <svg class="ps-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="ps-body" id="bodyAvailability">
+            <div class="ps-readonly">
+              <p class="field-hint" style="margin:0 0 4px;">Your current shifts, venues and sessions</p>
+              <ul class="readonly-list">
+                <li class="readonly-row"><span class="readonly-label">Current</span><span class="readonly-value" data-readonly="availability_summary">No availability on file yet.</span></li>
+              </ul>
+            </div>
+            <form class="ps-edit-form" data-edit-form>
+              <p class="field-hint">How would you like your availability to change for next academic year?</p>
+              <div class="radio-stack" role="radiogroup" aria-label="Availability for next year">
+                <label class="radio-row">
+                  <input type="radio" name="availabilityStatus" value="continue" data-edit-input="availability_status" />
+                  <span class="radio-body">
+                    <span class="radio-label">Continue with my current availability</span>
+                    <span class="radio-sub">No changes — keep me on the same shifts.</span>
+                  </span>
+                </label>
+                <label class="radio-row">
+                  <input type="radio" name="availabilityStatus" value="reduce" data-edit-input="availability_status" />
+                  <span class="radio-body">
+                    <span class="radio-label">Reduce my availability</span>
+                    <span class="radio-sub">Tell us what to drop.</span>
+                  </span>
+                </label>
+                <label class="radio-row">
+                  <input type="radio" name="availabilityStatus" value="increase" data-edit-input="availability_status" />
+                  <span class="radio-body">
+                    <span class="radio-label">Increase my availability</span>
+                    <span class="radio-sub">I can cover more shifts / sessions.</span>
+                  </span>
+                </label>
+                <label class="radio-row">
+                  <input type="radio" name="availabilityStatus" value="unsure" data-edit-input="availability_status" />
+                  <span class="radio-body">
+                    <span class="radio-label">I'm not sure yet</span>
+                    <span class="radio-sub">We'll follow up with you.</span>
+                  </span>
+                </label>
+              </div>
+              <div class="conditional" id="availabilityChangesField" data-conditional-for="availabilityStatus" data-show-when="reduce,increase,unsure">
+                <div class="field">
+                  <label for="editAvailNotes">Tell us more</label>
+                  <textarea id="editAvailNotes" rows="4" maxlength="2000" data-edit-input="availability_summary" placeholder="e.g. Drop Tuesday Wembley sessions; can add Saturday mornings."></textarea>
+                  <span class="field-hint">Mention shifts, venues, or session blocks you want to add or drop.</span>
+                </div>
+              </div>
+            </form>
+            <div class="ps-actions">
+              <button type="button" class="btn btn--ghost" data-action="edit">Edit</button>
+              <button type="button" class="btn btn--gold" data-action="confirm">Confirm</button>
+              <button type="button" class="btn" data-action="save-edit" hidden>Save changes</button>
+              <button type="button" class="btn btn--ghost" data-action="cancel-edit" hidden>Cancel</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==== Section 5: Other Work Commitments ==== -->
+        <section class="profile-section" id="sectionOtherWork" data-section="other_work" aria-expanded="false">
+          <button type="button" class="ps-head" data-toggle="section" aria-controls="bodyOtherWork">
+            <span class="ps-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+            </span>
+            <span class="ps-text">
+              <span class="ps-title">Other work commitments</span>
+              <span class="ps-status" data-section-status>Not yet confirmed</span>
+            </span>
+            <svg class="ps-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="ps-body" id="bodyOtherWork">
+            <div class="ps-readonly">
+              <ul class="readonly-list">
+                <li class="readonly-row"><span class="readonly-label">Status</span><span class="readonly-value" data-readonly="other_work_status_label">Not provided</span></li>
+                <li class="readonly-row" data-conditional-row="other_work_organisation"><span class="readonly-label">Organisation</span><span class="readonly-value" data-readonly="other_work_organisation">—</span></li>
+                <li class="readonly-row" data-conditional-row="other_work_schedule"><span class="readonly-label">Days / times</span><span class="readonly-value" data-readonly="other_work_schedule">—</span></li>
+                <li class="readonly-row" data-conditional-row="other_work_affects_availability"><span class="readonly-label">Affects availability</span><span class="readonly-value" data-readonly="other_work_affects_availability_label">—</span></li>
+              </ul>
+            </div>
+            <form class="ps-edit-form" data-edit-form>
+              <div class="radio-stack" role="radiogroup" aria-label="Do you work elsewhere?">
+                <label class="radio-row">
+                  <input type="radio" name="otherWorkStatus" value="only_clubsensational" data-edit-input="other_work_status" />
+                  <span class="radio-body">
+                    <span class="radio-label">I only work for ClubSENsational</span>
+                  </span>
+                </label>
+                <label class="radio-row">
+                  <input type="radio" name="otherWorkStatus" value="also_other" data-edit-input="other_work_status" />
+                  <span class="radio-body">
+                    <span class="radio-label">I also work for other organisations</span>
+                    <span class="radio-sub">Tell us a little so we can plan around it.</span>
+                  </span>
+                </label>
+              </div>
+              <div class="conditional" id="otherWorkFields" data-conditional-for="otherWorkStatus" data-show-when="also_other">
+                <div class="field"><label for="editOWOrg">Organisation name(s)</label><input id="editOWOrg" type="text" maxlength="200" data-edit-input="other_work_organisation" placeholder="e.g. Local school, swim school" /></div>
+                <div class="field">
+                  <label for="editOWSched">General working days / times</label>
+                  <textarea id="editOWSched" rows="3" maxlength="500" data-edit-input="other_work_schedule" placeholder="e.g. Mon–Wed 9–3, occasional Saturdays"></textarea>
+                </div>
+                <div class="field">
+                  <label>Does this affect your availability for ClubSENsational?</label>
+                  <div class="radio-stack" role="radiogroup" aria-label="Affects availability">
+                    <label class="radio-row">
+                      <input type="radio" name="otherWorkAffects" value="false" data-edit-input="other_work_affects_availability" />
+                      <span class="radio-body"><span class="radio-label">No, I can keep my current shifts</span></span>
+                    </label>
+                    <label class="radio-row">
+                      <input type="radio" name="otherWorkAffects" value="true" data-edit-input="other_work_affects_availability" />
+                      <span class="radio-body"><span class="radio-label">Yes, please review my availability</span></span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </form>
+            <div class="ps-actions">
+              <button type="button" class="btn btn--ghost" data-action="edit">Edit</button>
+              <button type="button" class="btn btn--gold" data-action="confirm">Confirm</button>
+              <button type="button" class="btn" data-action="save-edit" hidden>Save changes</button>
+              <button type="button" class="btn btn--ghost" data-action="cancel-edit" hidden>Cancel</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==== Section 6: Wellbeing ==== -->
+        <section class="profile-section" id="sectionWellbeing" data-section="wellbeing" aria-expanded="false">
+          <button type="button" class="ps-head" data-toggle="section" aria-controls="bodyWellbeing">
+            <span class="ps-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            </span>
+            <span class="ps-text">
+              <span class="ps-title">Wellbeing &amp; support <span style="color:var(--mutedSoft);font-weight:500;">(optional)</span></span>
+              <span class="ps-status" data-section-status>Optional</span>
+            </span>
+            <svg class="ps-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="ps-body" id="bodyWellbeing">
+            <div class="ps-readonly">
+              <ul class="readonly-list">
+                <li class="readonly-row"><span class="readonly-label">Notes</span><span class="readonly-value" data-readonly="wellbeing_notes">No notes yet.</span></li>
+              </ul>
+              <p class="field-hint">Anything you want us to know to support you better at work.</p>
+            </div>
+            <form class="ps-edit-form" data-edit-form>
+              <div class="field">
+                <label for="editWellbeing">Wellbeing notes (optional)</label>
+                <textarea id="editWellbeing" rows="4" maxlength="2000" data-edit-input="wellbeing_notes" placeholder="e.g. Heads-up about a recent injury, preferred pacing, support that helps."></textarea>
+                <span class="field-hint">Only the office sees this. Leave blank if you'd rather not share.</span>
+              </div>
+            </form>
+            <div class="ps-actions">
+              <button type="button" class="btn btn--ghost" data-action="edit">Edit</button>
+              <button type="button" class="btn btn--gold" data-action="confirm">Confirm</button>
+              <button type="button" class="btn" data-action="save-edit" hidden>Save changes</button>
+              <button type="button" class="btn btn--ghost" data-action="cancel-edit" hidden>Cancel</button>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- ==== Final confirmation ==== -->
+      <div class="card" id="finalCard">
+        <div class="card-head">
+          <span class="card-head-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </span>
+          <div class="card-head-text">
+            <h2 class="card-head-title">Final confirmation</h2>
+            <p class="card-head-sub" id="confirmedSummary">Confirm each section above before submitting</p>
+          </div>
+        </div>
+        <label class="final-confirm">
+          <input type="checkbox" id="finalConfirmCheckbox" />
+          <span class="final-confirm-text">
+            I confirm that the information above is accurate and up to date to the best of my knowledge.
+          </span>
+        </label>
+        <button type="button" class="btn" id="submitUpdates" disabled>
+          <span class="btn-label">Submit updates</span>
+        </button>
+        <div class="notice notice--error" id="profileNotice" hidden>
+          <svg class="notice-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span class="notice-body" id="profileNoticeText"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================== STEP 4 (success) -->
+    <section class="screen" id="screenDone" aria-labelledby="screenDoneTitle">
+      <div class="card" style="text-align:center;">
+        <div class="success-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <h2 class="card-head-title" id="screenDoneTitle" style="text-align:center;">Thank you</h2>
+        <p class="card-help" style="text-align:center;">
+          Your profile has been updated. The ClubSENsational team will review any changes.
+        </p>
+        <p class="card-help" id="doneSummary" style="text-align:center;color:var(--inkSoft);font-weight:600;"></p>
+        <div class="btn-row" style="margin-top:8px;">
+          <button type="button" class="btn btn--ghost" id="doneBack">Back to start</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script type="module">
+    // -----------------------------------------------------------------
+    // Edge Function endpoints — single production target: Portal
+    // (cklpnwhlqsulpmkipmqb). Deploy staff-profile-* functions here.
+    // Optional override: window.SUPABASE_URL / window.SUPABASE_ANON_KEY.
+    // -----------------------------------------------------------------
+    const DEFAULT_SUPABASE_URL = "https://cklpnwhlqsulpmkipmqb.supabase.co";
+    const DEFAULT_SUPABASE_ANON_KEY =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrbHBud2hscXN1bHBta2lwbXFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyMDg4NzIsImV4cCI6MjA5MTc4NDg3Mn0.-T7rVyDHQbzMqEKOVz6fi3OlZdB_gPH2i5p-ZPveopE";
+
+    const SUPABASE_URL = String(
+      (typeof window !== "undefined" && window.SUPABASE_URL) || DEFAULT_SUPABASE_URL,
+    ).replace(/\/$/, "");
+    const SUPABASE_ANON_KEY = String(
+      (typeof window !== "undefined" && window.SUPABASE_ANON_KEY) || DEFAULT_SUPABASE_ANON_KEY,
+    );
+
+    const FN = (name) => `${SUPABASE_URL}/functions/v1/${name}`;
+
+    const state = {
+      identity: { full_name: "", phone_number: "" },
+      session: { token: "", expiresAt: 0 },
+      otpExpiresAt: 0,
+      otpTimerId: null,
+      resendTimerId: null,
+      resendUnlockAt: 0,
+      idleTimerId: null,
+      profile: null,
+      pristine: null,           // server-side snapshot for diffing
+      pendingEdits: {},         // unsaved per-section edits
+      sectionState: {},         // sectionId -> 'pending' | 'confirmed' | 'edited'
+      currentlyEditing: null,
+    };
+
+    const SECTIONS = [
+      "sectionStaffDetails",
+      "sectionAddress",
+      "sectionEmergency",
+      "sectionAvailability",
+      "sectionOtherWork",
+      "sectionWellbeing",
+    ];
+    // Wellbeing is optional — count it once interacted-with too.
+    const REQUIRED_SECTIONS = SECTIONS.filter((id) => id !== "sectionWellbeing");
+
+    // -----------------------------------------------------------------
+    // Helpers
+    // -----------------------------------------------------------------
+    const $ = (id) => document.getElementById(id);
+    const escapeHtml = (s) =>
+      String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+      }[c]));
+
+    function show(notice, kind, text) {
+      if (!notice) return;
+      notice.hidden = false;
+      notice.classList.remove("notice--info", "notice--ok", "notice--warn", "notice--error");
+      notice.classList.add(`notice--${kind}`);
+      const body = notice.querySelector(".notice-body");
+      if (body) body.textContent = text;
+    }
+
+    function hide(notice) {
+      if (!notice) return;
+      notice.hidden = true;
+    }
+
+    function activateScreen(id) {
+      ["screenIdentify", "screenOtp", "screenProfile", "screenDone"].forEach((sid) => {
+        const el = $(sid);
+        if (!el) return;
+        el.classList.toggle("is-active", sid === id);
+      });
+      const stepIndex = id === "screenIdentify" ? 1 : id === "screenOtp" ? 2 : 3;
+      const meter = $("stepMeter");
+      if (meter) {
+        meter.setAttribute("aria-valuenow", String(stepIndex));
+        meter.querySelectorAll(".step-meter-dot").forEach((dot) => {
+          const n = Number(dot.dataset.step || "0");
+          dot.classList.toggle("is-active", n === stepIndex);
+          dot.classList.toggle("is-done", n < stepIndex);
+        });
+      }
+      const sessionBar = $("sessionBar");
+      sessionBar.classList.toggle("is-visible", id === "screenProfile");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function pad2(n) {
+      return String(Math.max(0, Math.floor(n))).padStart(2, "0");
+    }
+
+    function fmtMS(secsTotal) {
+      const m = Math.floor(secsTotal / 60);
+      const s = secsTotal - m * 60;
+      return `${m}:${pad2(s)}`;
+    }
+
+    // -----------------------------------------------------------------
+    // Step 1 — Identification
+    // -----------------------------------------------------------------
+    const identifyForm = $("identifyForm");
+    const identifyName = $("identifyName");
+    const identifyPhone = $("identifyPhone");
+    const identifyNotice = $("identifyNotice");
+    const identifySubmit = $("identifySubmit");
+
+    function validIdentify() {
+      let ok = true;
+      const name = identifyName.value.trim();
+      const phone = identifyPhone.value.trim().replace(/[^\d+]/g, "");
+      const nameField = $("identifyNameField");
+      const phoneField = $("identifyPhoneField");
+      if (name.length < 2 || !/[a-z]/i.test(name)) {
+        nameField.classList.add("has-error");
+        ok = false;
+      } else {
+        nameField.classList.remove("has-error");
+      }
+      if (phone.replace(/\D/g, "").length < 7) {
+        phoneField.classList.add("has-error");
+        ok = false;
+      } else {
+        phoneField.classList.remove("has-error");
+      }
+      return ok ? { name, phone } : null;
+    }
+
+    [identifyName, identifyPhone].forEach((el) => {
+      el.addEventListener("input", () => {
+        hide(identifyNotice);
+        $("identifyNameField").classList.remove("has-error");
+        $("identifyPhoneField").classList.remove("has-error");
+      });
+    });
+
+    identifyForm.addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      const ok = validIdentify();
+      if (!ok) return;
+
+      identifySubmit.setAttribute("aria-busy", "true");
+      identifySubmit.disabled = true;
+      const labelEl = identifySubmit.querySelector(".btn-label");
+      const oldLabel = labelEl.textContent;
+      labelEl.textContent = "Sending…";
+
+      state.identity = { full_name: ok.name, phone_number: ok.phone };
+
+      try {
+        await fetch(FN("staff-profile-otp-request"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            full_name: state.identity.full_name,
+            phone_number: state.identity.phone_number,
+          }),
+        });
+      } catch (err) {
+        // Even on a network error we keep the generic UX, but inform the user
+        // they should try again.
+        console.warn("[profile] otp request failed", err);
+      }
+
+      labelEl.textContent = oldLabel;
+      identifySubmit.removeAttribute("aria-busy");
+      identifySubmit.disabled = false;
+
+      // Generic message — never reveal match outcome.
+      show(identifyNotice, "info",
+        "If the information matches our records, a verification code will be sent.");
+
+      startOtpScreen();
+    });
+
+    // -----------------------------------------------------------------
+    // Step 2 — OTP
+    // -----------------------------------------------------------------
+    const otpInputs = Array.from(document.querySelectorAll("#otpInputs input"));
+    const otpForm = $("otpForm");
+    const otpSubmit = $("otpSubmit");
+    const otpBack = $("otpBack");
+    const otpResend = $("otpResend");
+    const otpTimer = $("otpTimer");
+    const otpNotice = $("otpNotice");
+
+    function startOtpScreen() {
+      activateScreen("screenOtp");
+      otpInputs.forEach((el) => (el.value = ""));
+      hide(otpNotice);
+      $("otpInputs").classList.remove("has-error");
+      state.otpExpiresAt = Date.now() + 10 * 60 * 1000;
+      state.resendUnlockAt = Date.now() + 30 * 1000;
+      tickOtp();
+      if (state.otpTimerId) clearInterval(state.otpTimerId);
+      state.otpTimerId = setInterval(tickOtp, 1000);
+      setTimeout(() => otpInputs[0]?.focus(), 80);
+    }
+
+    function tickOtp() {
+      const now = Date.now();
+      const remaining = Math.max(0, state.otpExpiresAt - now);
+      const secs = Math.floor(remaining / 1000);
+      otpTimer.textContent = remaining > 0 ? `Code expires in ${fmtMS(secs)}` : "Code expired";
+      if (remaining <= 0) {
+        otpResend.disabled = false;
+        if (state.otpTimerId) {
+          clearInterval(state.otpTimerId);
+          state.otpTimerId = null;
+        }
+        return;
+      }
+      const canResendIn = Math.max(0, state.resendUnlockAt - now);
+      if (canResendIn <= 0) {
+        otpResend.disabled = false;
+        otpResend.textContent = "Resend code";
+      } else {
+        otpResend.disabled = true;
+        otpResend.textContent = `Resend in ${Math.ceil(canResendIn / 1000)}s`;
+      }
+    }
+
+    otpInputs.forEach((input, idx) => {
+      input.addEventListener("input", (e) => {
+        const v = (e.target.value || "").replace(/\D/g, "");
+        e.target.value = v.slice(-1);
+        if (v && idx < otpInputs.length - 1) otpInputs[idx + 1].focus();
+        $("otpInputs").classList.remove("has-error");
+        hide(otpNotice);
+      });
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Backspace" && !input.value && idx > 0) {
+          otpInputs[idx - 1].focus();
+        } else if (e.key === "ArrowLeft" && idx > 0) {
+          otpInputs[idx - 1].focus();
+        } else if (e.key === "ArrowRight" && idx < otpInputs.length - 1) {
+          otpInputs[idx + 1].focus();
+        }
+      });
+      input.addEventListener("paste", (e) => {
+        const text = (e.clipboardData?.getData("text") || "").replace(/\D/g, "");
+        if (!text) return;
+        e.preventDefault();
+        text.split("").slice(0, otpInputs.length).forEach((ch, i) => {
+          otpInputs[i].value = ch;
+        });
+        const last = Math.min(text.length, otpInputs.length) - 1;
+        if (last >= 0) otpInputs[Math.min(last + 1, otpInputs.length - 1)].focus();
+      });
+    });
+
+    otpResend.addEventListener("click", async () => {
+      otpResend.disabled = true;
+      try {
+        await fetch(FN("staff-profile-otp-request"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            full_name: state.identity.full_name,
+            phone_number: state.identity.phone_number,
+          }),
+        });
+      } catch (e) {
+        console.warn("[profile] resend failed", e);
+      }
+      state.otpExpiresAt = Date.now() + 10 * 60 * 1000;
+      state.resendUnlockAt = Date.now() + 30 * 1000;
+      if (state.otpTimerId) clearInterval(state.otpTimerId);
+      state.otpTimerId = setInterval(tickOtp, 1000);
+      tickOtp();
+      show(otpNotice, "info",
+        "If the information matches our records, a new code has been sent.");
+    });
+
+    otpBack.addEventListener("click", () => {
+      if (state.otpTimerId) clearInterval(state.otpTimerId);
+      state.otpTimerId = null;
+      activateScreen("screenIdentify");
+    });
+
+    otpForm.addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      const code = otpInputs.map((i) => i.value).join("");
+      if (!/^\d{6}$/.test(code)) {
+        $("otpInputs").classList.add("has-error");
+        show(otpNotice, "error", "Enter the 6-digit code we sent you.");
+        return;
+      }
+
+      otpSubmit.setAttribute("aria-busy", "true");
+      otpSubmit.disabled = true;
+      const labelEl = otpSubmit.querySelector(".btn-label");
+      const oldLabel = labelEl.textContent;
+      labelEl.textContent = "Verifying…";
+      hide(otpNotice);
+
+      let res;
+      try {
+        res = await fetch(FN("staff-profile-otp-verify"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            full_name: state.identity.full_name,
+            phone_number: state.identity.phone_number,
+            code,
+          }),
+        });
+      } catch (e) {
+        labelEl.textContent = oldLabel;
+        otpSubmit.removeAttribute("aria-busy");
+        otpSubmit.disabled = false;
+        show(otpNotice, "error", "Network error — please try again.");
+        return;
+      }
+
+      labelEl.textContent = oldLabel;
+      otpSubmit.removeAttribute("aria-busy");
+      otpSubmit.disabled = false;
+
+      let body = null;
+      try { body = await res.json(); } catch {}
+
+      if (!res.ok || !body?.ok) {
+        $("otpInputs").classList.add("has-error");
+        show(otpNotice, "error", "That code didn't match, expired, or you've reached the maximum tries. Try again or send a new code.");
+        return;
+      }
+
+      state.session.token = String(body.session_token || "");
+      state.session.expiresAt = new Date(body.expires_at || 0).getTime();
+      if (state.otpTimerId) clearInterval(state.otpTimerId);
+      state.otpTimerId = null;
+      await loadProfileAndShow();
+    });
+
+    // -----------------------------------------------------------------
+    // Step 3 — Profile
+    // -----------------------------------------------------------------
+    const profileNotice = $("profileNotice");
+    const finalCheckbox = $("finalConfirmCheckbox");
+    const submitUpdatesBtn = $("submitUpdates");
+    const confirmedSummary = $("confirmedSummary");
+
+    async function loadProfileAndShow() {
+      try {
+        const res = await fetch(FN("staff-profile-update-load"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+            "x-staff-profile-session": state.session.token,
+          },
+          body: "{}",
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || !body?.ok) {
+          show(otpNotice, "error", "Could not open your profile. Please verify again.");
+          activateScreen("screenOtp");
+          return;
+        }
+        state.profile = body.staff;
+        state.pristine = JSON.parse(JSON.stringify(body.staff));
+        renderProfile();
+        activateScreen("screenProfile");
+        startSessionBar();
+        startIdleTimer();
+      } catch (err) {
+        console.error("[profile] load failed", err);
+        show(otpNotice, "error", "Could not open your profile. Please verify again.");
+        activateScreen("screenOtp");
+      }
+    }
+
+    function setReadonlyValue(key, value, opts = {}) {
+      document.querySelectorAll(`[data-readonly="${key}"]`).forEach((el) => {
+        const text = value == null || value === "" ? (opts.empty || "—") : value;
+        el.textContent = text;
+        el.classList.toggle("is-empty", value == null || value === "");
+      });
+    }
+
+    function setEditValue(key, value) {
+      document.querySelectorAll(`[data-edit-input="${key}"]`).forEach((el) => {
+        if (el.tagName === "INPUT" && (el.type === "radio")) {
+          el.checked = String(value ?? "") === String(el.value);
+        } else if (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT") {
+          el.value = value == null ? "" : String(value);
+        }
+      });
+      document.querySelectorAll(`[data-edit-readonly="${key}"]`).forEach((el) => {
+        el.value = value == null ? "" : String(value);
+      });
+    }
+
+    function fmtAddress(p) {
+      const parts = [
+        p.address?.line1 || "",
+        p.address?.line2 || "",
+        p.address?.city || "",
+        p.address?.postcode || "",
+      ].map((s) => String(s || "").trim()).filter(Boolean);
+      return parts.length ? parts.join(", ") : "";
+    }
+
+    function fmtRoleLabel(role) {
+      if (!role) return "Staff";
+      const map = {
+        swimming: "Swimming staff",
+        fitness: "Fitness staff",
+        climbing: "Climbing staff",
+        support: "Support staff",
+        manager: "Manager",
+        admin: "Admin",
+      };
+      return map[String(role).toLowerCase()] || (role.charAt(0).toUpperCase() + role.slice(1));
+    }
+
+    function fmtOtherWorkStatus(s) {
+      if (!s) return "Not provided";
+      if (s === "only_clubsensational") return "Only ClubSENsational";
+      if (s === "also_other") return "Also other organisations";
+      return s;
+    }
+
+    function renderProfile() {
+      const p = state.profile;
+      $("profileGreetingName").textContent = (p.full_name || "there").split(" ")[0];
+
+      // Section 1: staff details
+      setReadonlyValue("full_name", p.full_name);
+      setReadonlyValue("staff_role", fmtRoleLabel(p.staff_role));
+      setReadonlyValue("email_personal", p.email_personal, { empty: "Not provided" });
+      setReadonlyValue("phone_e164", p.phone_e164, { empty: "Not provided" });
+      setEditValue("full_name", p.full_name);
+      setEditValue("staff_role", fmtRoleLabel(p.staff_role));
+      setEditValue("email_personal", p.email_personal);
+      setEditValue("phone_e164", p.phone_e164);
+
+      // Section 2: address
+      const fullAddr = fmtAddress(p);
+      setReadonlyValue("address_full", fullAddr, { empty: "No address on file" });
+      setEditValue("address_line1", p.address?.line1);
+      setEditValue("address_line2", p.address?.line2);
+      setEditValue("address_city", p.address?.city);
+      setEditValue("address_postcode", p.address?.postcode);
+
+      // Section 3: emergency
+      setReadonlyValue("emergency_contact_name", p.emergency_contact?.name, { empty: "Not provided" });
+      setReadonlyValue("emergency_contact_relationship", p.emergency_contact?.relationship, { empty: "Not provided" });
+      setReadonlyValue("emergency_contact_phone", p.emergency_contact?.phone, { empty: "Not provided" });
+      setEditValue("emergency_contact_name", p.emergency_contact?.name);
+      setEditValue("emergency_contact_relationship", p.emergency_contact?.relationship);
+      setEditValue("emergency_contact_phone", p.emergency_contact?.phone);
+
+      // Section 4: availability
+      setReadonlyValue("availability_summary", p.availability?.summary, { empty: "No availability on file yet — confirm or tell us about changes below." });
+      setEditValue("availability_status", p.availability?.status);
+      setEditValue("availability_summary", p.availability?.summary);
+
+      // Section 5: other work
+      setReadonlyValue("other_work_status_label", fmtOtherWorkStatus(p.other_work?.status));
+      setReadonlyValue("other_work_organisation", p.other_work?.organisation, { empty: "—" });
+      setReadonlyValue("other_work_schedule", p.other_work?.schedule, { empty: "—" });
+      setReadonlyValue("other_work_affects_availability_label",
+        p.other_work?.affects_availability == null ? "—" :
+          (p.other_work.affects_availability ? "Yes — please review my availability" : "No — current shifts still work"));
+      // hide conditional rows when empty
+      const owVisible = p.other_work?.status === "also_other";
+      document.querySelectorAll('#sectionOtherWork [data-conditional-row]').forEach((row) => {
+        row.style.display = owVisible ? "" : "none";
+      });
+      setEditValue("other_work_status", p.other_work?.status);
+      setEditValue("other_work_organisation", p.other_work?.organisation);
+      setEditValue("other_work_schedule", p.other_work?.schedule);
+      setEditValue("other_work_affects_availability",
+        p.other_work?.affects_availability == null ? "" : String(Boolean(p.other_work.affects_availability)));
+
+      // Section 6: wellbeing
+      setReadonlyValue("wellbeing_notes", p.wellbeing_notes, { empty: "No notes yet." });
+      setEditValue("wellbeing_notes", p.wellbeing_notes);
+
+      // Reset section state
+      state.sectionState = {};
+      SECTIONS.forEach((id) => {
+        const el = $(id);
+        if (!el) return;
+        el.classList.remove("is-confirmed", "is-editing");
+        el.querySelector('[data-section-status]').textContent =
+          id === "sectionWellbeing" ? "Optional" : "Not yet confirmed";
+        // collapse all except first
+        el.setAttribute("aria-expanded", id === "sectionStaffDetails" ? "true" : "false");
+        // refresh conditional reveals based on loaded radio values
+        el.querySelectorAll('[data-conditional-for]').forEach(refreshConditional);
+      });
+      state.currentlyEditing = null;
+      state.pendingEdits = {};
+
+      updateConfirmedSummary();
+    }
+
+    function refreshConditional(condEl) {
+      const groupName = condEl.dataset.conditionalFor;
+      const showWhen = String(condEl.dataset.showWhen || "").split(",").map((s) => s.trim());
+      const checked = condEl
+        .closest('.profile-section')
+        ?.querySelector(`input[name="${groupName}"]:checked`);
+      const visible = checked ? showWhen.includes(String(checked.value)) : false;
+      condEl.classList.toggle("is-visible", visible);
+    }
+
+    document.querySelectorAll('[data-conditional-for]').forEach((cond) => {
+      const groupName = cond.dataset.conditionalFor;
+      const section = cond.closest('.profile-section');
+      if (!section) return;
+      section.addEventListener("change", (ev) => {
+        if (ev.target.matches(`input[name="${groupName}"]`)) refreshConditional(cond);
+      });
+    });
+
+    // -----------------------------------------------------------------
+    // Section toggle / edit / confirm
+    // -----------------------------------------------------------------
+    document.querySelectorAll('[data-toggle="section"]').forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const sec = btn.closest('.profile-section');
+        if (!sec) return;
+        // Don't allow collapsing while editing this section.
+        if (sec.classList.contains('is-editing')) return;
+        const expanded = sec.getAttribute('aria-expanded') === 'true';
+        sec.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+      });
+    });
+
+    function setSectionStatus(sec, kind) {
+      const statusEl = sec.querySelector('[data-section-status]');
+      sec.classList.remove('is-confirmed', 'is-editing');
+      if (kind === 'confirmed') {
+        sec.classList.add('is-confirmed');
+        statusEl.textContent = 'Confirmed';
+      } else if (kind === 'edited') {
+        sec.classList.add('is-confirmed');
+        statusEl.textContent = 'Updated — ready to submit';
+      } else if (kind === 'editing') {
+        sec.classList.add('is-editing');
+        statusEl.textContent = 'Editing — save your changes';
+      } else {
+        statusEl.textContent = sec.id === 'sectionWellbeing' ? 'Optional' : 'Not yet confirmed';
+      }
+      state.sectionState[sec.id] = kind;
+    }
+
+    function unlockSection(sec) {
+      // Lock everyone else first.
+      SECTIONS.forEach((id) => {
+        const other = $(id);
+        if (!other || other === sec) return;
+        if (other.classList.contains('is-editing')) {
+          // Cancel pending edit silently — keep saved state from pristine + pendingEdits
+          other.classList.remove('is-editing');
+          if (!state.sectionState[id] || state.sectionState[id] === 'editing') {
+            setSectionStatus(other, null);
+          }
+        }
+      });
+      sec.setAttribute('aria-expanded', 'true');
+      setSectionStatus(sec, 'editing');
+      state.currentlyEditing = sec.id;
+      // Toggle action buttons
+      sec.querySelectorAll('[data-action]').forEach((btn) => {
+        const a = btn.dataset.action;
+        if (a === 'edit' || a === 'confirm') btn.hidden = true;
+        if (a === 'save-edit' || a === 'cancel-edit') btn.hidden = false;
+      });
+    }
+
+    function relockSection(sec) {
+      sec.classList.remove('is-editing');
+      sec.querySelectorAll('[data-action]').forEach((btn) => {
+        const a = btn.dataset.action;
+        if (a === 'edit' || a === 'confirm') btn.hidden = false;
+        if (a === 'save-edit' || a === 'cancel-edit') btn.hidden = true;
+      });
+      if (state.currentlyEditing === sec.id) state.currentlyEditing = null;
+    }
+
+    function collectSectionEdits(sec) {
+      const out = {};
+      sec.querySelectorAll('[data-edit-input]').forEach((el) => {
+        const key = el.dataset.editInput;
+        if (el.type === 'radio') {
+          if (el.checked) out[key] = el.value;
+        } else {
+          out[key] = el.value;
+        }
+      });
+      return out;
+    }
+
+    function applyEditsToProfile(sec, edits) {
+      const id = sec.id;
+      const p = state.profile;
+      if (id === 'sectionStaffDetails') {
+        if ('email_personal' in edits) p.email_personal = edits.email_personal || null;
+        if ('phone_e164' in edits) p.phone_e164 = edits.phone_e164 || null;
+      } else if (id === 'sectionAddress') {
+        // Use addressChange radio
+        const changed = sec.querySelector('input[name="addressChange"]:checked')?.value;
+        if (changed === 'changed') {
+          p.address.line1 = edits.address_line1 || null;
+          p.address.line2 = edits.address_line2 || null;
+          p.address.city = edits.address_city || null;
+          p.address.postcode = edits.address_postcode || null;
+        }
+      } else if (id === 'sectionEmergency') {
+        p.emergency_contact.name = edits.emergency_contact_name || null;
+        p.emergency_contact.relationship = edits.emergency_contact_relationship || null;
+        p.emergency_contact.phone = edits.emergency_contact_phone || null;
+      } else if (id === 'sectionAvailability') {
+        p.availability.status = edits.availability_status || null;
+        p.availability.summary = edits.availability_summary || null;
+      } else if (id === 'sectionOtherWork') {
+        p.other_work.status = edits.other_work_status || null;
+        if (p.other_work.status === 'also_other') {
+          p.other_work.organisation = edits.other_work_organisation || null;
+          p.other_work.schedule = edits.other_work_schedule || null;
+          p.other_work.affects_availability =
+            edits.other_work_affects_availability === ''
+              ? null
+              : edits.other_work_affects_availability === 'true';
+        } else {
+          p.other_work.organisation = null;
+          p.other_work.schedule = null;
+          p.other_work.affects_availability = null;
+        }
+      } else if (id === 'sectionWellbeing') {
+        p.wellbeing_notes = edits.wellbeing_notes || null;
+      }
+      // Re-render readonly representation only.
+      renderReadonlyForSection(id);
+    }
+
+    function renderReadonlyForSection(id) {
+      const p = state.profile;
+      if (id === 'sectionStaffDetails') {
+        setReadonlyValue('email_personal', p.email_personal, { empty: 'Not provided' });
+        setReadonlyValue('phone_e164', p.phone_e164, { empty: 'Not provided' });
+      } else if (id === 'sectionAddress') {
+        setReadonlyValue('address_full', fmtAddress(p), { empty: 'No address on file' });
+      } else if (id === 'sectionEmergency') {
+        setReadonlyValue('emergency_contact_name', p.emergency_contact?.name, { empty: 'Not provided' });
+        setReadonlyValue('emergency_contact_relationship', p.emergency_contact?.relationship, { empty: 'Not provided' });
+        setReadonlyValue('emergency_contact_phone', p.emergency_contact?.phone, { empty: 'Not provided' });
+      } else if (id === 'sectionAvailability') {
+        setReadonlyValue('availability_summary', p.availability?.summary,
+          { empty: 'No availability on file yet — confirm or tell us about changes below.' });
+      } else if (id === 'sectionOtherWork') {
+        setReadonlyValue('other_work_status_label', fmtOtherWorkStatus(p.other_work?.status));
+        setReadonlyValue('other_work_organisation', p.other_work?.organisation, { empty: '—' });
+        setReadonlyValue('other_work_schedule', p.other_work?.schedule, { empty: '—' });
+        setReadonlyValue('other_work_affects_availability_label',
+          p.other_work?.affects_availability == null ? '—' :
+            (p.other_work.affects_availability ? 'Yes — please review my availability' : 'No — current shifts still work'));
+        const owVisible = p.other_work?.status === 'also_other';
+        document.querySelectorAll('#sectionOtherWork [data-conditional-row]').forEach((row) => {
+          row.style.display = owVisible ? '' : 'none';
+        });
+      } else if (id === 'sectionWellbeing') {
+        setReadonlyValue('wellbeing_notes', p.wellbeing_notes, { empty: 'No notes yet.' });
+      }
+    }
+
+    function validateSectionEdits(sec, edits) {
+      sec.querySelectorAll('.field.has-error').forEach((f) => f.classList.remove('has-error'));
+      let ok = true;
+      if (sec.id === 'sectionStaffDetails') {
+        const emailField = sec.querySelector('[data-edit-field="email_personal"]');
+        const phoneField = sec.querySelector('[data-edit-field="phone_e164"]');
+        const email = (edits.email_personal || '').trim();
+        if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          emailField.classList.add('has-error');
+          ok = false;
+        }
+        const digits = (edits.phone_e164 || '').replace(/\D/g, '');
+        if (digits && digits.length < 7) {
+          phoneField.classList.add('has-error');
+          ok = false;
+        }
+      }
+      return ok;
+    }
+
+    document.querySelectorAll('.profile-section').forEach((sec) => {
+      sec.addEventListener('click', (ev) => {
+        const btn = ev.target.closest('[data-action]');
+        if (!btn) return;
+        const a = btn.dataset.action;
+        if (a === 'confirm') {
+          setSectionStatus(sec, 'confirmed');
+          // Auto-collapse after confirm to nudge the user to the next section.
+          setTimeout(() => {
+            sec.setAttribute('aria-expanded', 'false');
+            const idx = SECTIONS.indexOf(sec.id);
+            const next = SECTIONS[idx + 1];
+            if (next) {
+              const n = $(next);
+              if (n && !n.classList.contains('is-editing')) {
+                n.setAttribute('aria-expanded', 'true');
+                n.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }
+            }
+          }, 220);
+          updateConfirmedSummary();
+        } else if (a === 'edit') {
+          unlockSection(sec);
+        } else if (a === 'save-edit') {
+          const edits = collectSectionEdits(sec);
+          if (!validateSectionEdits(sec, edits)) return;
+          applyEditsToProfile(sec, edits);
+          relockSection(sec);
+          setSectionStatus(sec, 'edited');
+          updateConfirmedSummary();
+        } else if (a === 'cancel-edit') {
+          // Revert this section's editor inputs from state.profile
+          const p = state.profile;
+          if (sec.id === 'sectionStaffDetails') {
+            setEditValue('email_personal', p.email_personal);
+            setEditValue('phone_e164', p.phone_e164);
+          } else if (sec.id === 'sectionAddress') {
+            setEditValue('address_line1', p.address?.line1);
+            setEditValue('address_line2', p.address?.line2);
+            setEditValue('address_city', p.address?.city);
+            setEditValue('address_postcode', p.address?.postcode);
+          } else if (sec.id === 'sectionEmergency') {
+            setEditValue('emergency_contact_name', p.emergency_contact?.name);
+            setEditValue('emergency_contact_relationship', p.emergency_contact?.relationship);
+            setEditValue('emergency_contact_phone', p.emergency_contact?.phone);
+          } else if (sec.id === 'sectionAvailability') {
+            setEditValue('availability_status', p.availability?.status);
+            setEditValue('availability_summary', p.availability?.summary);
+          } else if (sec.id === 'sectionOtherWork') {
+            setEditValue('other_work_status', p.other_work?.status);
+            setEditValue('other_work_organisation', p.other_work?.organisation);
+            setEditValue('other_work_schedule', p.other_work?.schedule);
+            setEditValue('other_work_affects_availability',
+              p.other_work?.affects_availability == null ? '' : String(Boolean(p.other_work.affects_availability)));
+          } else if (sec.id === 'sectionWellbeing') {
+            setEditValue('wellbeing_notes', p.wellbeing_notes);
+          }
+          sec.querySelectorAll('[data-conditional-for]').forEach(refreshConditional);
+          relockSection(sec);
+          // restore previous status
+          const prev = state.sectionState[sec.id];
+          setSectionStatus(sec, prev === 'confirmed' || prev === 'edited' ? prev : null);
+        }
+      });
+    });
+
+    function updateConfirmedSummary() {
+      const requiredConfirmed = REQUIRED_SECTIONS.filter(
+        (id) => ['confirmed', 'edited'].includes(state.sectionState[id]),
+      ).length;
+      confirmedSummary.textContent =
+        `${requiredConfirmed} of ${REQUIRED_SECTIONS.length} required sections confirmed`;
+      const allDone = requiredConfirmed === REQUIRED_SECTIONS.length;
+      submitUpdatesBtn.disabled = !(allDone && finalCheckbox.checked);
+    }
+
+    finalCheckbox.addEventListener('change', updateConfirmedSummary);
+
+    // -----------------------------------------------------------------
+    // Submit
+    // -----------------------------------------------------------------
+    submitUpdatesBtn.addEventListener('click', async () => {
+      hide(profileNotice);
+
+      const updates = diffProfile(state.pristine, state.profile);
+      submitUpdatesBtn.setAttribute('aria-busy', 'true');
+      submitUpdatesBtn.disabled = true;
+      const labelEl = submitUpdatesBtn.querySelector('.btn-label');
+      const oldLabel = labelEl.textContent;
+      labelEl.textContent = 'Submitting…';
+
+      try {
+        const res = await fetch(FN('staff-profile-update-save'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+            'x-staff-profile-session': state.session.token,
+          },
+          body: JSON.stringify({ updates, confirmed: true }),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || !body?.ok) {
+          const err = body?.error || 'unknown';
+          if (err.startsWith('invalid_field')) {
+            show(profileNotice, 'error', `One of the fields is invalid: ${err.split(':')[1] || ''}. Please review and try again.`);
+          } else if (err === 'invalid_session' || err === 'expired_session') {
+            show(profileNotice, 'error', 'Your secure session has expired. Please verify again.');
+            setTimeout(() => activateScreen('screenIdentify'), 1400);
+          } else {
+            show(profileNotice, 'error', 'Could not save your updates. Please try again.');
+          }
+          labelEl.textContent = oldLabel;
+          submitUpdatesBtn.removeAttribute('aria-busy');
+          submitUpdatesBtn.disabled = false;
+          return;
+        }
+        const changedCount = Array.isArray(body.changed_fields) ? body.changed_fields.length : 0;
+        $('doneSummary').textContent = changedCount === 0
+          ? 'You confirmed your details. No changes were made.'
+          : `You updated ${changedCount} ${changedCount === 1 ? 'field' : 'fields'}.`;
+        stopIdleTimer();
+        activateScreen('screenDone');
+      } catch (err) {
+        console.error('[profile] save failed', err);
+        show(profileNotice, 'error', 'Network error — please try again.');
+        labelEl.textContent = oldLabel;
+        submitUpdatesBtn.removeAttribute('aria-busy');
+        submitUpdatesBtn.disabled = false;
+      }
+    });
+
+    function diffProfile(pristine, current) {
+      const out = {};
+      const set = (k, prev, next) => { if ((prev ?? null) !== (next ?? null)) out[k] = next ?? null; };
+      set('phone_e164', pristine.phone_e164, current.phone_e164);
+      set('email_personal', pristine.email_personal, current.email_personal);
+      set('address_line1', pristine.address?.line1, current.address?.line1);
+      set('address_line2', pristine.address?.line2, current.address?.line2);
+      set('address_city', pristine.address?.city, current.address?.city);
+      set('address_postcode', pristine.address?.postcode, current.address?.postcode);
+      set('emergency_contact_name', pristine.emergency_contact?.name, current.emergency_contact?.name);
+      set('emergency_contact_relationship', pristine.emergency_contact?.relationship, current.emergency_contact?.relationship);
+      set('emergency_contact_phone', pristine.emergency_contact?.phone, current.emergency_contact?.phone);
+      set('availability_status', pristine.availability?.status, current.availability?.status);
+      set('availability_summary', pristine.availability?.summary, current.availability?.summary);
+      set('other_work_status', pristine.other_work?.status, current.other_work?.status);
+      set('other_work_organisation', pristine.other_work?.organisation, current.other_work?.organisation);
+      set('other_work_schedule', pristine.other_work?.schedule, current.other_work?.schedule);
+      set('other_work_affects_availability', pristine.other_work?.affects_availability, current.other_work?.affects_availability);
+      set('wellbeing_notes', pristine.wellbeing_notes, current.wellbeing_notes);
+      return out;
+    }
+
+    // -----------------------------------------------------------------
+    // Session bar + idle timeout
+    // -----------------------------------------------------------------
+    const sessionBarText = $('sessionBarText');
+
+    function startSessionBar() {
+      tickSessionBar();
+      if (state.sessionTimerId) clearInterval(state.sessionTimerId);
+      state.sessionTimerId = setInterval(tickSessionBar, 30 * 1000);
+    }
+
+    function tickSessionBar() {
+      const remaining = Math.max(0, state.session.expiresAt - Date.now());
+      const mins = Math.ceil(remaining / 60000);
+      sessionBarText.textContent =
+        remaining > 0
+          ? `Secure session active — ${mins} min${mins === 1 ? '' : 's'} remaining.`
+          : 'Secure session has expired.';
+      if (remaining <= 0) {
+        sessionExpired('Your secure session has expired for safety. Please verify again.');
+      }
+    }
+
+    function startIdleTimer() {
+      stopIdleTimer();
+      const reset = () => {
+        if (state.idleTimerId) clearTimeout(state.idleTimerId);
+        state.idleTimerId = setTimeout(
+          () => sessionExpired('You were inactive for a while. Please verify again to continue.'),
+          5 * 60 * 1000,
+        );
+      };
+      ['pointerdown', 'keydown', 'scroll', 'visibilitychange'].forEach((ev) =>
+        window.addEventListener(ev, reset, { passive: true }),
+      );
+      state._idleReset = reset;
+      reset();
+    }
+
+    function stopIdleTimer() {
+      if (state.idleTimerId) clearTimeout(state.idleTimerId);
+      state.idleTimerId = null;
+      if (state.sessionTimerId) clearInterval(state.sessionTimerId);
+      state.sessionTimerId = null;
+    }
+
+    function sessionExpired(message) {
+      stopIdleTimer();
+      state.session.token = '';
+      state.profile = null;
+      state.pristine = null;
+      show(otpNotice, 'warn', message);
+      activateScreen('screenIdentify');
+      show(identifyNotice, 'warn', message);
+    }
+
+    // -----------------------------------------------------------------
+    // "Back to start"
+    // -----------------------------------------------------------------
+    $('doneBack').addEventListener('click', () => {
+      stopIdleTimer();
+      state.session.token = '';
+      state.profile = null;
+      state.pristine = null;
+      identifyForm.reset();
+      hide(identifyNotice);
+      activateScreen('screenIdentify');
+    });
+
+    // -----------------------------------------------------------------
+    // Pre-fill from URL query params
+    // Accepted aliases:
+    //   ?staff=… | ?name=… | ?full_name=…   → Full name
+    //   ?phone=… | ?mobile=… | ?tel=…       → Mobile number
+    // Example: …/profile_update/?staff=Victor&phone=07715444979
+    // -----------------------------------------------------------------
+    (function prefillFromQuery() {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const nameParam = (
+          params.get('staff') ||
+          params.get('name') ||
+          params.get('full_name') ||
+          ''
+        ).trim();
+        const phoneParam = (
+          params.get('phone') ||
+          params.get('mobile') ||
+          params.get('tel') ||
+          ''
+        ).trim();
+        if (nameParam && identifyName) {
+          identifyName.value = nameParam.slice(0, 120);
+        }
+        if (phoneParam && identifyPhone) {
+          identifyPhone.value = phoneParam.slice(0, 24);
+        }
+      } catch (e) {
+        /* ignore */
+      }
+    })();
+
+    // Initial focus — if name pre-filled, jump to phone; if phone pre-filled too, jump to submit.
+    setTimeout(() => {
+      try {
+        if (identifyName?.value && !identifyPhone?.value) {
+          identifyPhone?.focus();
+        } else if (identifyName?.value && identifyPhone?.value) {
+          identifySubmit?.focus();
+        } else {
+          identifyName?.focus();
+        }
+      } catch (e) {
+        identifyName?.focus();
+      }
+    }, 120);
+  </script>
+</body>
+</html>

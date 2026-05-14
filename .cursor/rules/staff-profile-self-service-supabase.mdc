@@ -1,0 +1,68 @@
+---
+description: Staff profile annual self-update — HTML, WordPress, Supabase project, Edge Functions, bootstrap SQL
+alwaysApply: true
+---
+
+# Staff profile self-service (annual) — PORTAL context
+
+## What it is
+
+- **User-facing page:** `working_ui/staff_profile_update.html` — mobile-first HTML/CSS/JS (no framework). Staff identify with **full name + mobile on file**, then **OTP**, then seven collapsible sections (read-only until Edit/Confirm). Submit writes only deltas and appends **audit rows** (`staff_profile_change_log`).
+- **Hosting:** typically uploaded to **WordPress Media Library** and shown via **iframe** (or direct link). Prefer **Elementor Canvas** (or equivalent) on that page so theme header/footer do not wrap the iframe. The HTML includes aggressive CSS/JS to hide common theme chrome when the file is opened **inside** WP (cannot hide parent page chrome from inside the iframe).
+- **Branding:** club logo block mirrors `working_ui/login.html` (orbital SVG + `F-02-1.png`).
+
+## Supabase project names (single target: Portal)
+
+- **Portal** (canonical) — Dashboard **portal**; ref `cklpnwhlqsulpmkipmqb`. All club portal DB + Storage (`documents`, `staff-avatars`, …) + **`staff_profile_update.html` defaults** + Edge Functions **`staff-profile-*`**. This is the one project to extend when “real” portals ship next month.
+- **Onboarding** (club-onboarding; ref `aptbbkmvkjybjgrrwxpr`) — **Not production.** Originally for **new-hire onboarding pages only**. Do **not** host staff-facing flows here (e.g. cancellation, timesheet): those belong on **Portal** + Portal Supabase. If HTML was mistakenly uploaded against Onboarding keys/URLs, repoint or redeploy using **Portal** config. Storage folders there were test-only; recreate empty structure on **Portal** Storage if the product needs the same paths—no file migration required if there was nothing real.
+
+When the user says “Portal” or “Onboarding”, use these names. Default all new staff-profile work to **Portal** unless they explicitly say otherwise.
+
+## Browser configuration (in the HTML)
+
+- Endpoints: `SUPABASE_URL/functions/v1/{staff-profile-otp-request|staff-profile-otp-verify|staff-profile-update-load|staff-profile-update-save}`.
+- Auth for those calls: **publishable / anon key** in `Authorization` and `apikey` headers (same as other portal static pages). **No** service role in the browser.
+- Optional overrides before the main script: `window.SUPABASE_URL`, `window.SUPABASE_ANON_KEY` (e.g. Elementor HTML widget above the embed).
+- URL prefill params supported: `staff`, `name`, `full_name`, `phone`, `mobile`, `tel` (for WhatsApp/deep links).
+
+## Edge Functions (Deno, repo paths)
+
+- `supabase/functions/staff-profile-otp-request/index.ts` — identity match via RPC, rate limits, generic success (anti-enumeration); sends WhatsApp/Twilio if env configured else logs OTP.
+- `supabase/functions/staff-profile-otp-verify/index.ts` — verifies OTP hash, issues short-lived **session token**.
+- `supabase/functions/staff-profile-update-load/index.ts` — session header → profile row.
+- `supabase/functions/staff-profile-update-save/index.ts` — partial updates + audit log.
+
+Deploy **exact** function slugs (they define the URL path).
+
+## Database
+
+- **Full bootstrap for an empty Supabase project:** `database/supabase_admin_project_bootstrap.sql` — creates `staff_profiles` (+ self-service columns), OTP/session/audit tables, RLS helpers, `staff_profile_match_identity` (service_role only), seeds staff/auth as documented in that file.
+- **Incremental migration** on an existing `staff_profiles` table: `database/migrations/20260513170000_staff_profile_self_update.sql` (and duplicate under `supabase/migrations/`).
+
+## Security / support notes
+
+- OTPs are **hashed** at rest; admins do not read codes from SQL. For **integration testing** without SMS/WhatsApp, OTP may appear in **Edge Function logs** for `staff-profile-otp-request` (not a production support pattern once providers are live).
+- Identity match uses **last 10 digits** of normalized phone + normalized name vs `full_name` or `username`.
+
+## Editing constraints
+
+- Change **only** `working_ui/` for this HTML (not `backup_ui/`). After edits, the user must **re-upload** the file to WordPress Media (watch duplicate filenames like `-1`).
+
+## Related portal pages
+
+- This flow is **standalone** for the annual update; do not wire it into `lead_dashboard.html` / `ceo_dashboard.html` unless explicitly requested.
+
+## Stakeholder briefing (other teams / admin portal)
+
+Use this section when explaining the flow to teams that own a separate admin app or login surface.
+
+- **What it is not:** a new screen inside their admin SPA. It is a **static HTML page** hosted on the public website (WordPress → Media Library), often embedded in an **iframe** on a Canvas-style page, or linked from the portal login they maintain.
+- **Production URL pattern:** `https://www.clubsensational.org/wp-content/uploads/.../staff_profile_update.html` (exact path depends on upload date/folder).
+- **Three steps for the worker:** (1) identification — full name + mobile on file, generic API response (anti-enumeration); (2) OTP — ~10 minute TTL; (3) profile — seven sections, read-only until Edit/Confirm, submit writes deltas only plus **audit** rows in the database.
+- **Where logic runs:** the HTML does not embed staff PII. It calls the dedicated Supabase project via **Edge Functions**; the browser uses only the **publishable / anon** key. Sensitive work (service role, identity RPC, OTP hashing) stays on the server.
+- **Admin in Supabase vs this page:** admins with appropriate access already inspect `staff_profiles`, `staff_profile_change_log`, etc. This page is the **worker-facing UI** for once-a-year self-service without using the internal dashboard.
+- **OTP “validation” / support:** codes are **hashed** in the database, not plaintext. For **integration testing** when SMS/WhatsApp is missing or blocked, someone with Supabase project access may read the plaintext OTP from **Edge Functions → Logs** for `staff-profile-otp-request`. With a live messaging provider, day-to-day support should **not** rely on logs; the worker receives the code on their phone.
+- **After OTP verify:** the browser holds a **short-lived session token** (custom header) for load/save — this is **not** admin dashboard login; it is scoped to this form only.
+- **Why it feels “like it should live elsewhere”:** many products host forms inside the app or admin. Here, speed and **once-per-worker-per-year** usage led to **HTML + WordPress + Supabase**. A later iteration can move the same flow into the other codebase for unified UX/analytics if desired.
+- **What the other project should provide:** a **link** from login or staff area to the public HTML URL (optionally `?staff=…&phone=…` for prefill). Support for “validate the code” means either the worker gets SMS/WhatsApp, or in test phase a Supabase user checks **OTP function logs** — there is **no** second admin-only OTP panel inside the HTML.
+- **One-line summary:** A public, mobile-first web form backed by **Supabase Edge Functions** so each worker updates their record **once a year**; admins review data and audit in **Supabase**, and debug OTP via **function logs** only when appropriate.

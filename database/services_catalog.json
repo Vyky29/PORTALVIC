@@ -1,0 +1,98 @@
+[
+  {
+    "venue": "Acton",
+    "service": "Swimming Activity",
+    "days": ["Monday"],
+    "time_ranges": ["4-6.30"],
+    "instructors": ["Angel", "Youssef", "Directores"],
+    "notes": "Directores: Javi or Raul"
+  },
+  {
+    "venue": "Acton",
+    "service": "Swimming Activity",
+    "days": ["Tuesday", "Thursday", "Friday"],
+    "time_ranges": ["4-6.30"],
+    "instructors": ["Angel", "Youssef", "Roberto", "Directores"],
+    "notes": "Directores: Javi or Raul"
+  },
+  {
+    "venue": "Acton",
+    "service": "Swimming Activity",
+    "days": ["Wednesday"],
+    "time_ranges": ["4-4.30", "6-6.30"],
+    "instructors": ["Angel", "Youssef", "Directores"],
+    "notes": "Wed 4.30–6 reserved for Multi-Activity on site"
+  },
+  {
+    "venue": "Acton",
+    "service": "Swimming Activity",
+    "days": ["Saturday"],
+    "time_ranges": ["9.30-1"],
+    "instructors": ["Angel", "Youssef", "Roberto", "Directores"],
+    "notes": "Directores: Javi or Raul"
+  },
+  {
+    "venue": "Acton",
+    "service": "Multi-Activity",
+    "days": ["Wednesday"],
+    "time_ranges": ["4.30-6"],
+    "instructors": ["Berta", "Giuseppe"],
+    "notes": ""
+  },
+  {
+    "venue": "Northolt",
+    "service": "Swimming Activity",
+    "days": ["Monday", "Wednesday"],
+    "time_ranges": ["4.30-6.30"],
+    "instructors": ["Roberto", "Dan"],
+    "notes": ""
+  },
+  {
+    "venue": "SwimFarm",
+    "service": "Swimming Activity",
+    "days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+    "time_ranges": ["11-1.30"],
+    "instructors": ["Aurora", "Dan", "Youssef", "Javier", "Roberto"],
+    "notes": ""
+  },
+  {
+    "venue": "SwimFarm",
+    "service": "Swimming Activity",
+    "days": ["Sunday"],
+    "time_ranges": ["9-9.30", "2-3"],
+    "instructors": ["Aurora", "Dan", "Youssef", "Javier", "Roberto"],
+    "notes": ""
+  },
+  {
+    "venue": "SwimFarm",
+    "service": "Multi-Activity",
+    "days": ["Sunday"],
+    "time_ranges": ["9.30-2"],
+    "instructors": ["Aurora", "Dan", "Youssef", "Javier", "Roberto", "Berta", "John", "Bismark", "Giuseppe", "Godsway"],
+    "notes": ""
+  },
+  {
+    "venue": "SwimFarm",
+    "service": "Bespoke Programme",
+    "days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+    "time_ranges": ["10-4"],
+    "instructors": ["John", "Giuseppe", "Bismark", "Godsway", "Roberto", "Raul", "Victor"],
+    "notes": "Individual bespoke sessions booked inside this window"
+  },
+  {
+    "venue": "Westway",
+    "service": "Climbing Activity",
+    "days": ["Sunday"],
+    "time_ranges": ["10-2"],
+    "instructors": ["Alex", "Carlos", "Bismark"],
+    "notes": ""
+  },
+  {
+    "venue": "Westway",
+    "service": "Physical Activity",
+    "days": ["Monday"],
+    "time_ranges": ["4-6"],
+    "instructors": ["Carlos", "Bismark", "Alex"],
+    "notes": ""
+  }
+]

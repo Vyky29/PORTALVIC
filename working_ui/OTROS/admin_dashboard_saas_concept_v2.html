@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Concepto SaaS v2 — Admin operaciones (visión + V1 junio)</title>
+  <style>
+    :root {
+      --ink: #0c1222;
+      --text: #334155;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --bg: #f1f5f9;
+      --surface: #ffffff;
+      --sidebar: #0f172a;
+      --sidebar-muted: #94a3b8;
+      --accent: #2563eb;
+      --accent-soft: #eff6ff;
+      --ok: #059669;
+      --warn: #d97706;
+      --danger: #dc2626;
+      --v1: #7c3aed;
+      --v1-soft: #f5f3ff;
+      --radius: 14px;
+      --shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 12px 32px rgba(15, 23, 42, 0.08);
+      --sidebar-w: 272px;
+      --topbar-h: 56px;
+      --banner-h: 88px;
+      --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body { font-family: var(--font, system-ui, sans-serif); font-size: 14px; color: var(--text); background: var(--bg); overflow: hidden; }
+    .app { display: flex; height: 100dvh; max-height: 100dvh; min-width: 0; min-height: 0; flex-direction: column; }
+    .banner {
+      flex-shrink: 0;
+      z-index: 50;
+      background: linear-gradient(90deg, #1e3a8a, #2563eb);
+      color: #fff;
+      font-size: 12px;
+      padding: 8px 14px 10px;
+      min-width: 0;
+    }
+    .banner-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; justify-content: space-between; min-width: 0; }
+    .banner-row--sub { margin-top: 6px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.2); font-size: 11px; line-height: 1.45; opacity: 0.95; overflow-wrap: break-word; }
+    .banner a { color: #bfdbfe; overflow-wrap: anywhere; }
+    .banner strong { font-weight: 700; }
+    .app-body { flex: 1; display: flex; min-width: 0; min-height: 0; }
+    .overlay { display: none; position: fixed; inset: var(--banner-h) 0 0 0; background: rgba(15, 23, 42, 0.4); z-index: 35; }
+    .overlay.show { display: block; }
+    @media (min-width: 821px) { .overlay { display: none !important; } }
+    .sidebar {
+      width: var(--sidebar-w);
+      min-width: var(--sidebar-w);
+      max-width: var(--sidebar-w);
+      background: var(--sidebar);
+      color: #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid rgba(255, 255, 255, 0.06);
+      flex-shrink: 0;
+      min-height: 0;
+    }
+    .brand-lockup {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+    .brand-logo-img {
+      width: 48px;
+      height: 48px;
+      object-fit: contain;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.08);
+      flex-shrink: 0;
+    }
+    .sidebar-brand { padding: 14px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); min-width: 0; }
+    .sidebar-brand .logo { font-weight: 800; font-size: 14px; color: #fff; letter-spacing: -0.02em; overflow-wrap: break-word; }
+    .sidebar-brand .sub { font-size: 10px; color: var(--sidebar-muted); margin-top: 4px; line-height: 1.35; overflow-wrap: break-word; }
+    .nav-scroll { flex: 1; overflow: auto; padding: 8px 8px 14px; min-height: 0; }
+    .nav-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; padding: 10px 10px 5px; }
+    .nav-item {
+      display: block; width: 100%; text-align: left; border: none; background: transparent; color: #cbd5e1;
+      font: inherit; padding: 9px 11px; border-radius: 10px; cursor: pointer; margin-bottom: 2px; min-width: 0; overflow-wrap: break-word;
+    }
+    .nav-item:hover { background: rgba(255, 255, 255, 0.06); color: #fff; }
+    .nav-item.active { background: rgba(37, 99, 235, 0.35); color: #fff; box-shadow: inset 0 0 0 1px rgba(147, 197, 253, 0.35); }
+    .sidebar-foot { padding: 10px; border-top: 1px solid rgba(255, 255, 255, 0.08); font-size: 10px; color: var(--sidebar-muted); overflow-wrap: break-word; }
+    .sidebar-foot a { color: #93c5fd; }
+    .main { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+    .topbar {
+      height: var(--topbar-h); flex-shrink: 0; display: flex; align-items: center; gap: 10px; padding: 0 16px;
+      background: var(--surface); border-bottom: 1px solid var(--line); min-width: 0;
+    }
+    .topbar h1 { margin: 0; font-size: 16px; font-weight: 700; color: var(--ink); flex: 1; min-width: 0; overflow-wrap: break-word; }
+    .pill { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); white-space: nowrap; }
+    .pill-v1 { background: var(--v1-soft); color: var(--v1); }
+    .content { flex: 1; overflow: auto; padding: 14px 16px 24px; min-height: 0; min-width: 0; }
+    .vplan {
+      border: 1px solid #c4b5fd;
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, #faf5ff, #eff6ff);
+      margin-bottom: 16px;
+      box-shadow: var(--shadow);
+      min-width: 0;
+    }
+    .vplan > summary {
+      cursor: pointer;
+      padding: 12px 14px;
+      font-weight: 700;
+      color: #5b21b6;
+      list-style: none;
+      overflow-wrap: break-word;
+    }
+    .vplan > summary::-webkit-details-marker { display: none; }
+    .vplan > summary::after { content: " ▸"; opacity: 0.6; }
+    .vplan[open] > summary::after { content: " ▾"; }
+    .vplan-body { padding: 0 14px 14px; font-size: 13px; line-height: 1.55; color: #4c1d95; overflow-wrap: break-word; }
+    .vplan-body ul { margin: 8px 0 0; padding-left: 1.2rem; }
+    .vplan-body li { margin-bottom: 6px; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .grid-kpi { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-bottom: 14px; }
+    .card {
+      background: var(--surface); border-radius: var(--radius); border: 1px solid var(--line); box-shadow: var(--shadow);
+      padding: 14px; min-width: 0;
+    }
+    .card h3 { margin: 0 0 6px; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .card .val { font-size: 24px; font-weight: 800; color: var(--ink); letter-spacing: -0.02em; }
+    .card .delta { font-size: 12px; margin-top: 4px; color: var(--ok); }
+    .card .delta.warn { color: var(--warn); }
+    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+    @media (max-width: 960px) { .row-2 { grid-template-columns: 1fr; } }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; min-width: 0; }
+    .toolbar label { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; min-width: 0; }
+    select, .input-mock {
+      font: inherit; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); max-width: 100%; min-width: 0;
+    }
+    .btn {
+      font: inherit; cursor: pointer; border: none; border-radius: 10px; padding: 8px 14px; font-weight: 600; font-size: 13px;
+      background: var(--accent); color: #fff;
+    }
+    .btn.secondary { background: #e2e8f0; color: var(--ink); }
+    .btn.sm { padding: 6px 10px; font-size: 12px; }
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); min-width: 0; }
+    .toggle-row:last-child { border-bottom: none; }
+    .toggle-row span { font-size: 13px; min-width: 0; overflow-wrap: break-word; }
+    .switch { width: 40px; height: 22px; border-radius: 999px; background: #cbd5e1; flex-shrink: 0; position: relative; }
+    .switch.on { background: var(--ok); }
+    .switch::after { content: ""; position: absolute; width: 18px; height: 18px; border-radius: 50%; background: #fff; top: 2px; left: 2px; box-shadow: 0 1px 2px rgba(0,0,0,.15); }
+    .switch.on::after { left: 20px; }
+    .cta-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .table-wrap { overflow: auto; border-radius: 10px; border: 1px solid var(--line); max-width: 100%; min-width: 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 480px; }
+    th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; overflow-wrap: break-word; word-break: break-word; }
+    th { background: #f8fafc; font-weight: 600; color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; }
+    tr:last-child td { border-bottom: none; }
+    .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: #ecfdf5; color: var(--ok); }
+    .badge.warn { background: #fffbeb; color: var(--warn); }
+    .badge.danger { background: #fef2f2; color: var(--danger); }
+    .badge.neutral { background: #f1f5f9; color: var(--muted); }
+    .tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; border-bottom: 1px solid var(--line); min-width: 0; }
+    .tab-btn {
+      border: none; background: transparent; font: inherit; padding: 8px 12px; cursor: pointer; color: var(--muted);
+      border-radius: 8px 8px 0 0; margin-bottom: -1px; border-bottom: 2px solid transparent; min-width: 0; overflow-wrap: break-word;
+    }
+    .tab-btn.active { color: var(--accent); font-weight: 700; border-bottom-color: var(--accent); background: var(--accent-soft); }
+    .tab-pane { display: none; padding: 12px 0; font-size: 13px; line-height: 1.5; min-width: 0; }
+    .tab-pane.active { display: block; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+    .chip { font-size: 12px; padding: 4px 10px; border-radius: 999px; background: #e0e7ff; color: #3730a3; font-family: ui-monospace, monospace; }
+    .kanban { display: grid; grid-template-columns: repeat(4, minmax(140px, 1fr)); gap: 10px; overflow-x: auto; padding-bottom: 6px; min-width: 0; }
+    @media (max-width: 900px) { .kanban { grid-template-columns: repeat(4, minmax(120px, 1fr)); } }
+    .kcol { background: #f8fafc; border: 1px solid var(--line); border-radius: 10px; padding: 8px; min-width: 0; }
+    .kcol h4 { margin: 0 0 8px; font-size: 11px; color: var(--muted); text-transform: uppercase; }
+    .kcard { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px; font-size: 12px; margin-bottom: 6px; overflow-wrap: break-word; }
+    .week-strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+    .day-cell { background: #f8fafc; border: 1px solid var(--line); border-radius: 10px; padding: 8px; min-width: 0; font-size: 11px; cursor: pointer; overflow-wrap: break-word; }
+    .day-cell.expanded { outline: 2px solid var(--accent); background: var(--accent-soft); }
+    .day-cell strong { display: block; color: var(--ink); margin-bottom: 4px; }
+    .triple-bar { display: flex; align-items: flex-end; gap: 6px; height: 88px; margin-top: 8px; }
+    .triple-bar .b { flex: 1; min-width: 0; border-radius: 6px 6px 0 0; }
+    .note-strip { font-size: 12px; padding: 10px 12px; border-radius: 10px; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; margin-bottom: 12px; overflow-wrap: break-word; }
+    .stepper { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0; font-size: 12px; }
+    .step { padding: 6px 12px; border-radius: 999px; background: #e2e8f0; color: var(--muted); }
+    .step.done { background: #d1fae5; color: #065f46; }
+    .step.current { background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+    .v1-footer { margin-top: 16px; padding: 12px; border-radius: 12px; border: 1px dashed #a78bfa; background: var(--v1-soft); min-width: 0; }
+    .v1-footer h4 { margin: 0 0 8px; font-size: 12px; color: #5b21b6; }
+    .pick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px; }
+    .pick { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; min-width: 0; }
+    .pick input { margin-top: 3px; flex-shrink: 0; }
+    .pick span { min-width: 0; overflow-wrap: break-word; }
+    .menu-mob { display: none; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 8px 12px; font: inherit; cursor: pointer; }
+    @media (max-width: 820px) {
+      .sidebar { position: fixed; left: 0; top: var(--banner-h); bottom: 0; z-index: 40; transform: translateX(-102%); transition: transform 0.22s ease; box-shadow: 8px 0 32px rgba(0, 0, 0, 0.15); }
+      .sidebar.open { transform: translateX(0); }
+      .menu-mob { display: inline-flex; align-items: center; gap: 6px; }
+    }
+    .bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 100px; padding-top: 6px; }
+    .bar { flex: 1; min-width: 0; background: linear-gradient(180deg, #60a5fa, #2563eb); border-radius: 6px 6px 0 0; }
+    .matrix th, .matrix td { font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="banner">
+      <div class="banner-row">
+        <span><strong>v2 · visión completa</strong> (mock SaaS) — no sustituye <code>admin_dashboard.html</code>. Incluye todo lo de v1 como “ideas”. <span class="pill-v1" style="display:inline;padding:2px 8px;border-radius:6px;">V1 junio</span> = lo mínimo que marcáis para la primera entrega. <a href="admin_dashboard_saas_concept_v2_en.html" style="color:#bfdbfe;font-weight:600;">English v2 →</a></span>
+        <span>
+          <a href="admin_dashboard_saas_concept.html">v1 Admin</a> ·
+          <a href="ceo_dashboard_saas_concept_v2.html">v2 CEO</a> ·
+          <a href="admin_architecture_guide.html">Guía</a>
+        </span>
+      </div>
+      <div class="banner-row banner-row--sub">
+        <strong>Datos y calendario:</strong> podéis darnos <strong>datos ya</strong> para construir y probar. <strong>No abrimos al público amplio hasta junio</strong>; antes, <strong>piloto</strong> con parte del equipo y luego prueba con <strong>algunas familias/funciones</strong>. Si mandáis datos hoy y mañana, <strong>a partir de pasado mañana</strong> seguirán llegando datos nuevos: hace falta ir enviando actualizaciones <strong>desde esa fecha hasta la víspera del lanzamiento</strong> para que todo quede al día (incluido rellenar días desde la última subida). Tras el corte, lo que hoy vive en <strong>hojas diarias</strong> (formularios) pasa al portal; precios, terms y mucho HR son <strong>config más fija</strong> en el sistema.
+      </div>
+    </header>
+    <div class="app-body">
+      <div class="overlay" id="navOverlay"></div>
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+          <div class="brand-lockup">
+            <img class="brand-logo-img" src="https://www.clubsensational.org/wp-content/uploads/2026/03/F-02-1.png" alt="clubSENsational" width="48" height="48" decoding="async" referrerpolicy="no-referrer-when-downgrade" />
+            <div style="min-width:0">
+              <div class="logo">clubSENsational</div>
+              <div class="sub">Portal admin · concepto v2</div>
+            </div>
+          </div>
+        </div>
+        <div class="nav-scroll">
+          <div class="nav-label">Resumen</div>
+          <button type="button" class="nav-item active" data-panel="p-resumen">Panel de mando</button>
+          <div class="nav-label">Clientes (A)</div>
+          <button type="button" class="nav-item" data-panel="p-clientes">Participantes y cobros</button>
+          <button type="button" class="nav-item" data-panel="p-facturas">Facturación</button>
+          <div class="nav-label">Agenda (D)</div>
+          <button type="button" class="nav-item" data-panel="p-agenda">Semana y capacidad</button>
+          <button type="button" class="nav-item" data-panel="p-excepciones">Excepciones</button>
+          <div class="nav-label">Personas (B)</div>
+          <button type="button" class="nav-item" data-panel="p-people">Equipo e interviews</button>
+          <div class="nav-label">Comms / calidad</div>
+          <button type="button" class="nav-item" data-panel="p-comms">Padres</button>
+          <button type="button" class="nav-item" data-panel="p-calidad">Informes</button>
+          <div class="nav-label">Sistema</div>
+          <button type="button" class="nav-item" data-panel="p-sistema">Roles y entorno</button>
+        </div>
+        <div class="sidebar-foot"><a href="admin_backlog_priorizado.html">Backlog</a> · mock sin backend</div>
+      </aside>
+      <div class="main">
+        <header class="topbar">
+          <button type="button" class="menu-mob" id="btnMenu" aria-expanded="false" aria-controls="sidebar">☰ Menú</button>
+          <h1 id="pageTitle">Panel de mando</h1>
+          <span class="pill">Demo visual</span>
+        </header>
+        <div class="content">
+          <details class="vplan" open>
+            <summary>Plan: datos ya, piloto, junio público, y actualización hasta la víspera</summary>
+            <div class="vplan-body">
+              <p style="margin:0 0 8px;"><strong>V1 junio</strong> aquí abajo = checklist de lo que entra en la primera entrega operativa; no impide recibir datos antes.</p>
+              <ul>
+                <li><strong>Datos desde ya:</strong> cargas para desarrollo y pruebas (incluido histórico de meses hasta el corte que elijáis).</li>
+                <li><strong>Piloto:</strong> primero staff reducido; luego algunas familias/funciones — <strong>apertura pública amplia en junio</strong> como habéis dicho.</li>
+                <li><strong>Incremental:</strong> si mandáis hoy y mañana, a partir de <strong>pasado mañana</strong> seguirán existiendo novedades; nos pasáis deltas <strong>hasta la víspera del lanzamiento</strong> para quedar 100% al día (y cerrar huecos desde la última subida).</li>
+                <li><strong>Tras el lanzamiento:</strong> las hojas que solo reflejan el día a día del formulario pasan al portal; catálogo, precios y mucho HR siguen como configuración estable.</li>
+              </ul>
+            </div>
+          </details>
+
+          <section class="panel active" id="p-resumen">
+            <div class="toolbar">
+              <label>Sede <select aria-label="Sede"><option>Todas</option><option>Hub Norte</option><option>Hub Sur</option></select></label>
+              <label>Term <select aria-label="Term"><option>Summer 2026</option><option>Spring 2026</option></select></label>
+              <label style="margin-left:auto;">Modo compacto <span class="switch on" title="Mock"></span></label>
+            </div>
+            <div class="grid-kpi">
+              <div class="card"><h3>Ocupación semanal</h3><div class="val">84%</div><div class="delta">+3% vs. anterior</div></div>
+              <div class="card"><h3>Saldos pendientes</h3><div class="val">£12.4k</div><div class="delta warn">12 familias &gt; 7 días</div></div>
+              <div class="card"><h3>Covers 48h</h3><div class="val">2</div><div class="delta warn">Sin asignar</div></div>
+              <div class="card"><h3>Entrevistas semana</h3><div class="val">5</div><div class="delta">2 senior</div></div>
+            </div>
+            <div class="card" style="margin-bottom:12px;">
+              <h3 style="text-transform:none;letter-spacing:0;color:var(--ink);font-size:14px;">Alertas configurables (activas)</h3>
+              <div class="toggle-row"><span>Morosidad &gt; umbral (7 días)</span><span class="switch on" aria-hidden="true"></span></div>
+              <div class="toggle-row"><span>Hueco sin instructor &lt; 48h</span><span class="switch on" aria-hidden="true"></span></div>
+              <div class="toggle-row"><span>DBS / formación vence en 60d</span><span class="switch on" aria-hidden="true"></span></div>
+            </div>
+            <div class="cta-row">
+              <button type="button" class="btn sm">Resolver cover Jue 16:30</button>
+              <button type="button" class="btn secondary sm">Llamar lista morosos</button>
+              <button type="button" class="btn secondary sm">Abrir pipeline HR</button>
+            </div>
+            <div class="row-2" style="margin-top:14px;">
+              <div class="card">
+                <h3 style="text-transform:none;letter-spacing:0;color:var(--ink);font-size:14px;">Actividad reciente</h3>
+                <ul style="margin:8px 0 0;padding-left:1.1rem;font-size:13px;line-height:1.5;">
+                  <li>Override aprobado — Lun 16:30</li>
+                  <li>Pago parcial — García</li>
+                  <li>Plantilla “recordatorio pago” — borrador guardado</li>
+                </ul>
+              </div>
+              <div class="card">
+                <h3 style="text-transform:none;letter-spacing:0;color:var(--ink);font-size:14px;">Sesiones por día (mock)</h3>
+                <div class="bar-chart"><span class="bar" style="height:45%"></span><span class="bar" style="height:62%"></span><span class="bar" style="height:55%"></span><span class="bar" style="height:78%"></span><span class="bar" style="height:40%"></span></div>
+                <p style="margin:8px 0 0;font-size:11px;color:var(--muted);">En producción: consulta Supabase / agregados.</p>
+              </div>
+            </div>
+            <div class="v1-footer">
+              <h4>Decisión V1 junio — marcar lo que entra en la primera entrega</h4>
+              <div class="pick-grid">
+                <label class="pick"><input type="checkbox" checked disabled /><span>KPIs + filtros sede/term</span></label>
+                <label class="pick"><input type="checkbox" checked disabled /><span>Alertas + acciones rápidas</span></label>
+                <label class="pick"><input type="checkbox" disabled /><span>Modo compacto recepción</span></label>
+                <label class="pick"><input type="checkbox" disabled /><span>Comparativas term vs term</span></label>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" id="p-clientes">
+            <p class="note-strip">Lista + <strong>ficha única</strong> por participante (pestañas). Import Excel/CFK, historial de mensajes al padre y planes a plazos — todo visible aquí en v2.</p>
+            <div class="table-wrap" style="margin-bottom:12px;">
+              <table>
+                <thead><tr><th>Participante</th><th>Servicio</th><th>Funding</th><th>Saldo</th><th></th></tr></thead>
+                <tbody>
+                  <tr><td>A. López</td><td>Lun 16:30 · Sensory</td><td>LA</td><td>£120</td><td><button type="button" class="btn sm secondary">Ficha</button></td></tr>
+                  <tr><td>S. Khan</td><td>Mié 10:00 · 1:1</td><td>Privado</td><td>£0</td><td><button type="button" class="btn sm secondary">Ficha</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="card">
+              <h3 style="text-transform:none;letter-spacing:0;color:var(--ink);font-size:14px;">Ficha — A. López (mock)</h3>
+              <div class="tabs" role="tablist">
+                <button type="button" class="tab-btn active" data-tab="t1">Contrato</button>
+                <button type="button" class="tab-btn" data-tab="t2">Pagos</button>
+                <button type="button" class="tab-btn" data-tab="t3">Contacto padre</button>
+                <button type="button" class="tab-btn" data-tab="t4">Notas</button>
+              </div>
+              <div class="tab-pane active" data-pane="t1">Term Summer 2026 · 12 sesiones · Precio sesión £40 · <span class="badge">Activo</span></div>
+              <div class="tab-pane" data-pane="t2">Plan 3 plazos: £160 / £160 / £160 · próximo vence <strong>2 may</strong> · <button type="button" class="btn sm" style="margin-top:8px;">Generar recibo PDF (mock)</button></div>
+              <div class="tab-pane" data-pane="t3">María López · maria@email.com · WhatsApp +44… · consentimiento marketing: sí</div>
+              <div class="tab-pane" data-pane="t4">Nota interna: prefiere WhatsApp tardes. LA invoice ref #LA-8842.</div>
+            </div>
+            <div class="row-2" style="margin-top:12px;">
+              <div class="card">
+                <h3 style="text-transform:none;letter-spacing:0;">Historial mensajes a padres</h3>
+                <div class="table-wrap" style="border:none;margin-top:8px;">
+                  <table style="min-width:400px;">
+                    <thead><tr><th>Fecha</th><th>Canal</th><th>Plantilla</th><th>Usuario</th></tr></thead>
+                    <tbody>
+                      <tr><td>22 abr</td><td>WhatsApp</td><td>Recordatorio pago</td><td>Admin</td></tr>
+                      <tr><td>18 abr</td><td>Email</td><td>Cambio instructor</td><td>Admin</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="card">
+                <h3 style="text-transform:none;letter-spacing:0;">Import / sync</h3>
+                <p style="font-size:12px;color:var(--muted);margin:0 0 8px;">Líneas Excel o export CFK (definir mapeo).</p>
+                <button type="button" class="btn secondary sm">Elegir archivo…</button>
+                <p style="font-size:11px;margin:8px 0 0;color:var(--muted);">Última importación: <strong>—</strong> · filas válidas 0 (demo)</p>
+              </div>
+            </div>
+            <div class="v1-footer">
+              <h4>Decisión V1 junio</h4>
+              <div class="pick-grid">
+                <label class="pick"><input type="checkbox" checked disabled /><span>Tabla participantes + saldo</span></label>
+                <label class="pick"><input type="checkbox" disabled /><span>Ficha con pestañas completa</span></label>
+                <label class="pick"><input type="checkbox" disabled /><span>Historial mensajes</span></label>
+                <label class="pick"><input type="checkbox" disabled /><span>Import Excel/CFK</span></label>
+                <label class="pick"><input type="checkbox" disabled /><span>Planes plazos + PDF</span></label>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" id="p-facturas">
+            <div class="row-2">
+              <div class="card">
+                <h3 style="text-transform:none;letter-spacing:0;">Numeración</h3>
+                <p style="font-size:13px;margin:6px 0 0;">Serie <strong>INV-2026-###</strong> (oficial)</p>
+                <p style="font-size:13px;margin:4px 0 0;">Serie <strong>LA-INV-2026-###</strong> (LA / funding)</p>
+              </div>
+              <div class="card">
+                <h3 style="text-transform:none;letter-spacing:0;">Borrador actual</h3>
+                <p style="font-size:13px;margin:6px 0 0;">INV-2026-041 · 3 líneas · Total <strong>£480</strong></p>
+                <div class="cta-row"><button type="button" class="btn sm">Vista previa PDF</button><button type="button" class="btn secondary sm">CSV contable</button></div>
+              </div>
+            </div>
+            <div class="card" style="margin-top:12px;">
+              <h3 style="text-transform:none;letter-spacing:0;">Export contable (columnas)</h3>
+              <div class="table-wrap" style="border:none;margin-top:8px;">
+                <table class="matrix" style="min-width:520px;">
+                  <thead><tr><th>Fecha</th><th>Concepto</th><th>Base</th><th>IVA</th><th>Medio</th><th>Ref.</th></tr></thead>
+                  <tbody>
+                    <tr><td>01 may</td><td>Sessions pack</td><td>£400</td><td>£0</td><td>Transfer</td><td>INV-041</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="card" style="margin-top:12px;">
+              <h3 style="text-transform:none;letter-spacing:0;">Conciliación bancaria (simple)</h3>
+              <div class="table-wrap" style="border:none;margin-top:8px;">
+                <table style="min-width:440px;">
+                  <thead><tr><th>Línea</th><th>Importe</th><th>¿En extracto?</th></tr></thead>
+                  <tbody>
+                    <tr><td>Pago García 22/04</td><td>£80</td><td><input type="checkbox" checked aria-label="Marcado" /></td></tr>
+                    <tr><td>Pago Khan 20/04</td><td>£120</td><td><input type="checkbox" aria-label="Pendiente" /></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="v1-footer">
+              <h4>Decisión V1 junio</h4>
+              <div class="pick-grid">
+                <label class="pick"><input type="checkbox" checked disabled /><span>Generar factura + CSV básico</span></label>
+                <label class="pick"><input type="checkbox" disabled /><span>Doble serie INV / LA</span></label>
+                <label class="pick"><input type="checkbox" disabled /><span>Export contable extendido</span></label>
+                <label class="pick"><input type="checkbox" disabled /><span>Conciliación bancaria</span></label>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" id="p-agenda">
+            <p style="margin:0 0 10px;font-size:13px;color:var(--muted);">Clic en día → lista de slots (misma fuente roster + overrides en producción).</p>
+            <div class="week-strip">
+              <div class="day-cell"><strong>Lun</strong>18 ses. · 2 huecos</div>
+              <div class="day-cell"><strong>Mar</strong>14 ses.</div>
+              <div class="day-cell expanded"><strong>Mié</strong>20 ses. · 1 hueco</div>
+              <div class="day-cell"><strong>Jue</strong>16 ses. · 3 huecos</div>
+              <div class="day-cell"><strong>Vie</strong>12 ses.</div>
+              <div class="day-cell"><strong>Sáb</strong>6 ses.</div>
+              <div class="day-cell"><strong>Dom</strong>—</div>
+            </div>
+            <div class="card" style="margin-top:12px;">
+              <h3 style="text-transform:none;letter-spacing:0;">Slots miércoles (ejemplo)</h3>
+              <div class="table-wrap" style="border:none;margin-top:8px;">
+                <table style="min-width:480px;">
+                  <thead><tr><th>Hora</th><th>Sala</th><th>Instructor</th><th>Participante</th><th>Estado</th></tr></thead>
+                  <tbody>
+                    <tr><td>10:00</td><td>Aqua</td><td>J. Reed</td><td>S. Khan</td><td><span class="badge">OK</span></td></tr>
+                    <tr><td>16:30</td><td>Pool</td><td>—</td><td>—</td><td><span class="badge warn">Hueco</span></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="row-2" style="margin-top:12px;">
+              <div class="card">
+                <h3 style="text-transform:none;letter-spacing:0;">Semáforo por sede</h3>
+                <div class="table-wrap" style="border:none;margin-top:8px;">
+                  <table style="min-width:280px;">
+                    <tbody>
+                      <tr><td>Hub Norte</td><td><span class="badge">Verde</span></td></tr>
+                      <tr><td>Hub Sur</td><td><span class="badge warn">Ámbar</span></td></tr>
+                      <tr><td>Externo</td><td><span class="badge neutral">Gris</span></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="card">
+                <h3 style="text-transform:none;letter-spacing:0;">Declarada vs asignada vs cerrada</h3>
+                <div class="triple-bar" aria-hidden="true">
+                  <span class="b" style="height:100%;background:linear-gradient(180deg,#94a3b8,#64748b)"></span>
+                  <span class="b" style="height:78%;background:linear-gradient(180deg,#60a5fa,#2563eb)"></span>
+                  <span class="b" style="height:12%;background:linear-gradient(180deg,#fb923c,#ea580c)"></span>
+                </div>
+                <p style="font-size:11px;margin:6px 0 0;color:var(--muted);">Gris = capacidad declarada · Azul = asignada · Naranja = cerrada incidencia</p>
+              </div>
+            </div>
+            <div class="v1-footer">
+              <h4>Decisión V1 junio</h4>
+              <div class="pick-grid">
+                <label class="pick"><input type="checkbox" checked disabled /><span>Resumen semanal por día</span></label>
+                <label class="pick"><input type="checkbox" disabled /><span>Drill-down slots por día</span></label>
+                <label class="pick"><input type="checkbox" disabled /><span>Semáforo por sede</span></label>
+                <label class="pick"><input type="checkbox" disabled /><span>Triple capa declarada/asignada/cerrada</span></label>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" id="p-excepciones">
+            <p class="note-strip">Misma <strong>verdad operativa</strong> que participantes / bookings: un solo origen (roster + <code>schedule_overrides</code>).</p>
+            <div class="toolbar">
+              <label>Instructor <select><option>Todos</option><option>J. Reed</option></select></label>
+              <label>Sede <select><option>Todas</option></select></label>
+              <button type="button" class="btn secondary sm">Filtrar</button>
+            </div>
+            <div class="table-wrap" style="margin-bottom:12px;">
+              <table>
+                <thead><tr><th>Fecha</th><th>Tipo</th><th>Detalle</th><th>Estado</th><th>Acción</th></tr></thead>
+                <tbody>
+                  <tr><td>28 abr</td><td>Cover</td><td>16:30 sustitución</td><td><span class="badge">Activo</span></td><td><button type="button" class="btn sm secondary">Mensaje padre</button></td></tr>
+                  <tr><td>29 abr</td><td>Ausencia</td><td>1:1 compensación</td><td><span class="badge warn">Pendiente</span></td><td><button type="button" class="btn sm secondary">Mensaje padre</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="card">
+              <h3 style="text-transform:none;letter-spacing:0;">Auditoría (quién / cuándo)</h3>
+              <div class="table-wrap" style="border:none;margin-top:8px;">
+                <table style="min-width:440px;">
+                  <thead><tr><th>Timestamp</th><th>Usuario</th><th>Acción</th></tr></thead>
+                  <tbody>
+                    <tr><td>28 abr 09:12</td><td>admin@club</td><td>Crear override cover</td></tr>
+                    <tr><td>27 abr 18:40</td><td>lead@club</td><td>Anular borrador</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="v1-footer">
+              <h4>Decisión V1 junio</h4>
+              <div class="pick-grid">
+                <label class="pick"><input type="checkbox" checked disabled /><span>Tabla excepciones</span></label>
+                <label class="pick"><input type="checkbox" disabled /><span>Filtros instructor/sede</span></label>
+                <label class="pick"><input type="checkbox" disabled /><span>Borrador mensaje padre</span></label>
+                <label class="pick"><input type="checkbox" disabled /><span>Auditoría completa</span></label>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" id="p-people">
+            <p style="font-size:13px;color:var(--muted);margin:0 0 10px;">Calendario de <strong>entrevistas</strong> separado del roster de clases. Pipeline y datos sensibles con rol HR.</p>
+            <div class="card" style="margin-bottom:12px;">
+              <h3 style="text-transform:none;letter-spacing:0;">Calendario entrevistas (abril, mock)</h3>
+              <div class="week-strip" style="max-width:520px;">
+                <div class="day-cell"><strong>22</strong>—</div>
+                <div class="day-cell"><strong>23</strong>M.W. 10:00</div>
+                <div class="day-cell"><strong>24</strong>—</div>
+                <div class="day-cell"><strong>25</strong>2 entrevistas</div>
+                <div class="day-cell"><strong>26</strong>—</div>
+                <div class="day-cell"><strong>27</strong>—</div>
+                <div class="day-cell"><strong>28</strong>—</div>
+              </div>
+            </div>
+            <div class="kanban">
+              <div class="kcol"><h4>Aplicación</h4><div class="kcard">Candidato L.T.<br /><span class="badge neutral">Form web</span></div></div>
+              <div class="kcol"><h4>Entrevista</h4><div class="kcard">M.W. · Ronda 2</div><div class="kcard">K.P. · Ronda 1</div></div>
+              <div class="kcol"><h4>Referencias</h4><div class="kcard">J.D. · pendiente 1 ref</div></div>
+              <div class="kcol"><h4>Oferta</h4><div class="kcard">—</div></div>
+            </div>
+            <div class="row-2" style="margin-top:12px;">
+              <div class="card">
+                <h3 style="text-transform:none;letter-spacing:0;">Equipo — compliance</h3>
+                <p style="font-size:12px;"><span class="badge">Jamie</span> DBS OK · <span class="badge warn">Priya</span> First aid 45d · <span class="badge neutral">Alex</span> shadowing 2/4</p>
+              </div>
+              <div class="card">
+                <h3 style="text-transform:none;letter-spacing:0;">Import Staff Matrix</h3>
+                <p style="font-size:12px;color:var(--muted);">Solo HR puede ver bancarios / salud.</p>
+                <span class="badge neutral" style="margin-top:6px;display:inline-block;">Rol: HR</span>
+                <div class="cta-row"><button type="button" class="btn secondary sm">Sincronizar (mock)</button></div>
+                <p style="font-size:11px;margin:6px 0 0;">Última sync: <strong>—</strong></p>
+              </div>
+            </div>
+            <div class="v1-footer">
+              <h4>Decisión V1 junio</h4>
+              <div class="pick-grid">
+                <label class="pick"><input type="checkbox" disabled /><span>Calendario entrevistas</span></label>
+                <label class="pick"><input type="checkbox" disabled /><span>Kanban pipeline</span></label>
+                <label class="pick"><input type="checkbox" checked disabled /><span>Lista compliance básica</span></label>
+                <label class="pick"><input type="checkbox" disabled /><span>Import matriz + RLS HR</span></label>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" id="p-comms">
+            <div class="row-2">
+              <div class="card">
+                <h3 style="text-transform:none;letter-spacing:0;">Editor plantilla</h3>
+                <p style="font-size:13px;background:#f8fafc;padding:10px;border-radius:8px;border:1px solid var(--line);min-height:4rem;overflow-wrap:break-word;">Hola {{parent_name}}, recordatorio: el saldo de {{child_name}} es {{amount}} con fecha límite {{due_date}}.</p>
+                <div class="chips"><span class="chip">{{child_name}}</span><span class="chip">{{amount}}</span><span class="chip">{{due_date}}</span></div>
+              </div>
+              <div class="card">
+                <h3 style="text-transform:none;letter-spacing:0;">Preferencias familia</h3>
+                <label style="display:block;font-size:12px;margin-bottom:6px;">Idioma <select><option>ES</option><option>EN</option></select></label>
+                <label style="display:block;font-size:12px;">Consentimiento WhatsApp <span class="switch on" title="Mock"></span></label>
+              </div>
+            </div>
+            <div class="card" style="margin-top:12px;">
+              <h3 style="text-transform:none;letter-spacing:0;">Registro de envíos</h3>
+              <div class="table-wrap" style="border:none;margin-top:8px;">
+                <table style="min-width:440px;">
+                  <thead><tr><th>Fecha</th><th>Canal</th><th>Familia</th><th>Plantilla</th></tr></thead>
+                  <tbody>
+                    <tr><td>22 abr 14:02</td><td>WhatsApp</td><td>García</td><td>Recordatorio pago</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="v1-footer">
+              <h4>Decisión V1 junio</h4>
+              <div class="pick-grid">
+                <label class="pick"><input type="checkbox" checked disabled /><span>Plantillas fijas + copiar texto</span></label>
+                <label class="pick"><input type="checkbox" disabled /><span>Variables dinámicas</span></label>
+                <label class="pick"><input type="checkbox" disabled /><span>Registro envíos</span></label>
+                <label class="pick"><input type="checkbox" disabled /><span>Consentimiento / idioma</span></label>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" id="p-calidad">
+            <div class="card">
+              <h3 style="text-transform:none;letter-spacing:0;">Ticket #INC-2401 · Caída menor en pool</h3>
+              <div class="stepper">
+                <span class="step done">Staff</span><span>→</span><span class="step current">Lead</span><span>→</span><span class="step">Cerrado</span>
+              </div>
+              <div class="chips" style="margin-top:8px;">
+                <span class="chip" style="background:#fce7f3;color:#9d174d;">Safeguarding</span>
+                <span class="chip" style="background:#fef3c7;color:#92400e;">Lesión menor</span>
+              </div>
+              <p style="font-size:12px;margin:10px 0 0;color:var(--muted);">Adjuntos: foto1.jpg · informe_borrador.pdf (mock)</p>
+              <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:12px;"><span class="switch on"></span> Visible en resumen CEO (agregado)</label>
+            </div>
+            <div class="v1-footer">
+              <h4>Decisión V1 junio</h4>
+              <div class="pick-grid">
+                <label class="pick"><input type="checkbox" disabled /><span>Workflow aprobación</span></label>
+                <label class="pick"><input type="checkbox" disabled /><span>Etiquetas + adjuntos</span></label>
+                <label class="pick"><input type="checkbox" checked disabled /><span>Cola simple de informes</span></label>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" id="p-sistema">
+            <div class="card" style="margin-bottom:12px;">
+              <h3 style="text-transform:none;letter-spacing:0;">Roles (matriz mock)</h3>
+              <div class="table-wrap" style="border:none;margin-top:8px;">
+                <table class="matrix" style="min-width:400px;">
+                  <thead><tr><th></th><th>Leer</th><th>Editar</th><th>HR sensible</th></tr></thead>
+                  <tbody>
+                    <tr><td>Admin</td><td>✓</td><td>✓</td><td>✓</td></tr>
+                    <tr><td>Recepción</td><td>✓</td><td>parcial</td><td>—</td></tr>
+                    <tr><td>Solo lectura</td><td>✓</td><td>—</td><td>—</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="row-2">
+              <div class="card">
+                <h3 style="text-transform:none;letter-spacing:0;">Log crítico exportable</h3>
+                <p style="font-size:12px;color:var(--muted);">Pagos, overrides, cambios rol.</p>
+                <button type="button" class="btn secondary sm">Descargar CSV (mock)</button>
+              </div>
+              <div class="card">
+                <h3 style="text-transform:none;letter-spacing:0;">Entorno</h3>
+                <p style="font-size:13px;">Activo: <strong style="color:var(--ok);">Producción</strong> · Staging disponible para pruebas</p>
+                <div class="toggle-row"><span>Mostrar banner “STAGING”</span><span class="switch" aria-hidden="true"></span></div>
+              </div>
+            </div>
+            <div class="card" style="margin-top:12px;">
+              <h3 style="text-transform:none;letter-spacing:0;">Integraciones</h3>
+              <ul style="font-size:13px;margin:8px 0 0;"><li>Supabase — estado conectado (mock)</li><li>Roster spreadsheet — lectura diaria vía portal tras go-live</li><li>ClassForKids — sync futuro</li></ul>
+            </div>
+            <div class="v1-footer">
+              <h4>Decisión V1 junio</h4>
+              <div class="pick-grid">
+                <label class="pick"><input type="checkbox" checked disabled /><span>Supabase + roster</span></label>
+                <label class="pick"><input type="checkbox" disabled /><span>Matriz roles en UI</span></label>
+                <label class="pick"><input type="checkbox" disabled /><span>Export log auditoría</span></label>
+                <label class="pick"><input type="checkbox" disabled /><span>Banner staging</span></label>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var titles = {
+        "p-resumen": "Panel de mando",
+        "p-clientes": "Participantes y cobros",
+        "p-facturas": "Facturación",
+        "p-agenda": "Semana y capacidad",
+        "p-excepciones": "Excepciones",
+        "p-people": "Equipo e interviews",
+        "p-comms": "Padres",
+        "p-calidad": "Informes",
+        "p-sistema": "Roles y entorno"
+      };
+      var sidebar = document.getElementById("sidebar");
+      var overlay = document.getElementById("navOverlay");
+      var btnMenu = document.getElementById("btnMenu");
+
+      function setPanel(id) {
+        document.querySelectorAll(".panel").forEach(function (p) {
+          p.classList.toggle("active", p.id === id);
+        });
+        document.querySelectorAll(".nav-item").forEach(function (b) {
+          b.classList.toggle("active", b.getAttribute("data-panel") === id);
+        });
+        var t = document.getElementById("pageTitle");
+        if (t) t.textContent = titles[id] || "Admin";
+        sidebar.classList.remove("open");
+        overlay.classList.remove("show");
+        if (btnMenu) btnMenu.setAttribute("aria-expanded", "false");
+      }
+
+      document.querySelectorAll(".nav-item").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          setPanel(btn.getAttribute("data-panel"));
+        });
+      });
+      if (btnMenu) {
+        btnMenu.addEventListener("click", function () {
+          var open = !sidebar.classList.contains("open");
+          sidebar.classList.toggle("open", open);
+          overlay.classList.toggle("show", open);
+          btnMenu.setAttribute("aria-expanded", open ? "true" : "false");
+        });
+      }
+      overlay.addEventListener("click", function () {
+        sidebar.classList.remove("open");
+        overlay.classList.remove("show");
+        if (btnMenu) btnMenu.setAttribute("aria-expanded", "false");
+      });
+
+      function openFromHash() {
+        var h = (location.hash || "").replace(/^#/, "");
+        if (h && titles[h]) setPanel(h);
+      }
+      openFromHash();
+      window.addEventListener("hashchange", openFromHash);
+
+      document.querySelectorAll("#p-clientes .tab-btn").forEach(function (b) {
+        b.addEventListener("click", function () {
+          var id = b.getAttribute("data-tab");
+          var root = document.getElementById("p-clientes");
+          root.querySelectorAll(".tab-btn").forEach(function (x) { x.classList.toggle("active", x === b); });
+          root.querySelectorAll(".tab-pane").forEach(function (p) {
+            p.classList.toggle("active", p.getAttribute("data-pane") === id);
+          });
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

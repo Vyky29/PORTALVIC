@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Concepto SaaS — CEO / dirección (mock)</title>
+  <style>
+    :root {
+      --ink: #0c1222;
+      --text: #334155;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --sidebar: #1e293b;
+      --accent: #7c3aed;
+      --accent-soft: #f5f3ff;
+      --ok: #059669;
+      --warn: #d97706;
+      --danger: #dc2626;
+      --ideas-bg: #ecfeff;
+      --ideas-border: #0891b2;
+      --radius: 14px;
+      --shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 12px 32px rgba(15, 23, 42, 0.08);
+      --sidebar-w: 220px;
+      --topbar-h: 56px;
+      --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: var(--font);
+      font-size: 14px;
+      color: var(--text);
+      background: var(--bg);
+      overflow: hidden;
+    }
+    .banner {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 50;
+      background: linear-gradient(90deg, #5b21b6, #7c3aed);
+      color: #fff;
+      font-size: 12px;
+      padding: 8px 14px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px 16px;
+      justify-content: space-between;
+      min-width: 0;
+    }
+    .banner a { color: #e9d5ff; overflow-wrap: anywhere; }
+    .app {
+      display: flex;
+      height: 100dvh;
+      max-height: 100dvh;
+      margin-top: 38px;
+      min-width: 0;
+      min-height: 0;
+    }
+    .sidebar {
+      width: var(--sidebar-w);
+      min-width: var(--sidebar-w);
+      background: var(--sidebar);
+      color: #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+      flex-shrink: 0;
+      min-height: 0;
+    }
+    .sidebar-brand {
+      padding: 16px 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      min-width: 0;
+    }
+    .sidebar-brand .logo { font-weight: 800; font-size: 14px; color: #fff; overflow-wrap: break-word; }
+    .sidebar-brand .sub { font-size: 11px; color: #94a3b8; margin-top: 4px; line-height: 1.4; overflow-wrap: break-word; }
+    .nav-scroll { flex: 1; overflow: auto; padding: 10px 8px; min-height: 0; }
+    .nav-item {
+      display: block;
+      width: 100%;
+      text-align: left;
+      border: none;
+      background: transparent;
+      color: #cbd5e1;
+      font: inherit;
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-bottom: 2px;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .nav-item:hover { background: rgba(255, 255, 255, 0.06); color: #fff; }
+    .nav-item.active {
+      background: rgba(124, 58, 237, 0.35);
+      color: #fff;
+      box-shadow: inset 0 0 0 1px rgba(196, 181, 253, 0.4);
+    }
+    .sidebar-foot {
+      padding: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 11px;
+      color: #94a3b8;
+    }
+    .sidebar-foot a { color: #c4b5fd; }
+    .main { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+    .topbar {
+      height: var(--topbar-h);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 18px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+      min-width: 0;
+    }
+    .topbar h1 {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--ink);
+      flex: 1;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .topbar .pill {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      white-space: nowrap;
+    }
+    .content { flex: 1; overflow: auto; padding: 18px; min-height: 0; min-width: 0; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .grid-kpi {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      min-width: 0;
+    }
+    .card h3 {
+      margin: 0 0 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .card .val { font-size: 24px; font-weight: 800; color: var(--ink); letter-spacing: -0.02em; }
+    .card .sub { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.4; overflow-wrap: break-word; }
+    .alert-list { display: flex; flex-direction: column; gap: 10px; }
+    .alert {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: #fffbeb;
+      min-width: 0;
+    }
+    .alert.danger { background: #fef2f2; border-color: #fecaca; }
+    .alert .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--warn);
+      flex-shrink: 0;
+      margin-top: 5px;
+    }
+    .alert.danger .dot { background: var(--danger); }
+    .alert p { margin: 0; font-size: 13px; line-height: 1.45; min-width: 0; overflow-wrap: break-word; }
+    .links-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .links-row a {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #fff;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 13px;
+      max-width: 100%;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .links-row a.secondary {
+      background: var(--surface);
+      color: var(--accent);
+      border: 1px solid #ddd6fe;
+    }
+    .ideas {
+      margin-top: 14px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1px dashed var(--ideas-border);
+      background: var(--ideas-bg);
+      min-width: 0;
+    }
+    .ideas h4 {
+      margin: 0 0 10px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #0e7490;
+      overflow-wrap: break-word;
+    }
+    .ideas ul { margin: 0; padding-left: 1.15rem; }
+    .ideas li { margin-bottom: 6px; font-size: 13px; line-height: 1.45; color: #155e75; overflow-wrap: break-word; }
+    .split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    @media (max-width: 900px) {
+      .split { grid-template-columns: 1fr; }
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 38px;
+        bottom: 0;
+        z-index: 40;
+        transform: translateX(-102%);
+        transition: transform 0.22s ease;
+        box-shadow: 8px 0 32px rgba(0, 0, 0, 0.15);
+      }
+      .sidebar.open { transform: translateX(0); }
+    }
+    .menu-mob {
+      display: none;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font: inherit;
+      cursor: pointer;
+    }
+    @media (max-width: 900px) {
+      .menu-mob { display: inline-flex; align-items: center; gap: 6px; }
+    }
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 38px 0 0 0;
+      background: rgba(15, 23, 42, 0.4);
+      z-index: 35;
+    }
+    .overlay.show { display: block; }
+    @media (min-width: 901px) {
+      .overlay { display: none !important; }
+    }
+    .traffic {
+      display: grid;
+      gap: 8px;
+    }
+    .traffic-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fafafa;
+      min-width: 0;
+    }
+    .traffic-row span:first-child { font-size: 13px; min-width: 0; overflow-wrap: break-word; }
+    .sem { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; flex-shrink: 0; }
+    .sem.ok { background: #d1fae5; color: #065f46; }
+    .sem.mid { background: #fef3c7; color: #92400e; }
+    .sem.bad { background: #fee2e2; color: #991b1b; }
+  </style>
+</head>
+<body>
+  <div class="banner">
+    <span><strong>Mock conceptual SaaS</strong> — no sustituye <code>ceo_dashboard.html</code>. Vista de síntesis y riesgos; los detalles viven en operaciones (admin concept).</span>
+    <span><a href="admin_dashboard_saas_concept.html">Admin v1</a> · <a href="ceo_dashboard_saas_concept_v2.html"><strong>CEO v2</strong></a></span>
+  </div>
+  <div class="overlay" id="navOverlay"></div>
+  <div class="app">
+    <aside class="sidebar" id="sidebar" aria-label="Navegación CEO">
+      <div class="sidebar-brand">
+        <div class="logo">Dirección</div>
+        <div class="sub">CEO board · solo lectura + enlaces</div>
+      </div>
+      <div class="nav-scroll">
+        <button type="button" class="nav-item active" data-panel="c-pulso">Pulso</button>
+        <button type="button" class="nav-item" data-panel="c-riesgos">Riesgos y alertas</button>
+        <button type="button" class="nav-item" data-panel="c-finanzas">Finanzas agregadas</button>
+        <button type="button" class="nav-item" data-panel="c-people">Personas y compliance</button>
+        <button type="button" class="nav-item" data-panel="c-enlaces">Ir a operaciones</button>
+      </div>
+      <div class="sidebar-foot">
+        <a href="admin_opinion_centralizacion.html">Opinión centralización</a>
+      </div>
+    </aside>
+    <div class="main">
+      <header class="topbar">
+        <button type="button" class="menu-mob" id="btnMenu" aria-expanded="false" aria-controls="sidebar">☰ Menú</button>
+        <h1 id="pageTitle">Pulso</h1>
+        <span class="pill">Lectura + decisión</span>
+      </header>
+      <div class="content">
+        <section class="panel active" id="c-pulso">
+          <p style="margin:0 0 14px;color:var(--muted);max-width:48rem;overflow-wrap:break-word;">
+            Números que deberían salir <strong>de las mismas tablas</strong> que usa el admin operativo (cuando estén en Supabase), no de demos paralelos.
+          </p>
+          <div class="grid-kpi">
+            <div class="card"><h3>Ingresos reconocidos (term)</h3><div class="val">£186k</div><div class="sub">vs. objetivo £195k · mock</div></div>
+            <div class="card"><h3>Morosidad &gt; 14 días</h3><div class="val">6%</div><div class="sub">Familias: 9 · mock</div></div>
+            <div class="card"><h3>Ocupación global</h3><div class="val">81%</div><div class="sub">Por sede en drill-down futuro</div></div>
+            <div class="card"><h3>Covers críticos 48h</h3><div class="val">2</div><div class="sub">Enlace a excepciones en admin</div></div>
+            <div class="card"><h3>Entrevistas pendientes</h3><div class="val">4</div><div class="sub">Pipeline reclutamiento</div></div>
+            <div class="card"><h3>Incidentes abiertos</h3><div class="val">1</div><div class="sub">Calidad / safeguarding</div></div>
+          </div>
+          <div class="ideas">
+            <h4>¿Qué se podría añadir en “Pulso”?</h4>
+            <ul>
+              <li>Comparar term actual vs. anterior (ocupación, ticket medio, churn).</li>
+              <li>Umbral configurable: si morosidad &gt; X, email semanal automático.</li>
+              <li>Tarjetas arrastrables para ordenar lo que más miráis cada lunes.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="panel" id="c-riesgos">
+          <div class="alert-list">
+            <div class="alert danger">
+              <span class="dot" aria-hidden="true"></span>
+              <p><strong>Cover sin asignar</strong> — Jue 16:30 · grupo alto riesgo de cancelación si pasa 24h (ejemplo).</p>
+            </div>
+            <div class="alert">
+              <span class="dot" aria-hidden="true"></span>
+              <p><strong>Renovación first aid</strong> — 2 instructores en ventana de 30 días (ejemplo).</p>
+            </div>
+            <div class="alert">
+              <span class="dot" aria-hidden="true"></span>
+              <p><strong>Desviación de cobro</strong> — bloque LA con más retrasos que la media del term (ejemplo).</p>
+            </div>
+          </div>
+          <div class="links-row">
+            <a href="admin_dashboard_saas_concept.html#p-excepciones">Abrir excepciones en Admin concept</a>
+            <a class="secondary" href="admin_dashboard_saas_concept.html#p-people">Abrir personas en Admin concept</a>
+          </div>
+          <div class="ideas">
+            <h4>¿Qué se podría añadir en “Riesgos y alertas”?</h4>
+            <ul>
+              <li>Severidad, dueño (quién debe actuar), fecha límite y estado (abierto / mitigado).</li>
+              <li>Historial de alertas para ver si un problema es recurrente (misma sede, mismo día).</li>
+              <li>Integración con Slack o email solo para alertas P1.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="panel" id="c-finanzas">
+          <div class="split">
+            <div class="card">
+              <h3 style="text-transform:none;letter-spacing:0;color:var(--ink);font-size:14px;">Cobros por semana (mock)</h3>
+              <div style="display:flex;align-items:flex-end;gap:6px;height:100px;margin-top:12px;">
+                <span style="flex:1;min-width:0;height:40%;background:linear-gradient(180deg,#a78bfa,#7c3aed);border-radius:6px 6px 0 0;"></span>
+                <span style="flex:1;min-width:0;height:55%;background:linear-gradient(180deg,#a78bfa,#7c3aed);border-radius:6px 6px 0 0;"></span>
+                <span style="flex:1;min-width:0;height:48%;background:linear-gradient(180deg,#a78bfa,#7c3aed);border-radius:6px 6px 0 0;"></span>
+                <span style="flex:1;min-width:0;height:70%;background:linear-gradient(180deg,#a78bfa,#7c3aed);border-radius:6px 6px 0 0;"></span>
+              </div>
+              <p style="margin:10px 0 0;font-size:12px;color:var(--muted);">Decorativo; en producción: consultas agregadas.</p>
+            </div>
+            <div class="card">
+              <h3 style="text-transform:none;letter-spacing:0;color:var(--ink);font-size:14px;">Mix LA / privado (mock)</h3>
+              <p style="font-size:13px;margin:10px 0 0;line-height:1.5;">LA 62% · Privado 31% · Mixto 7%<br />Útil para planificar marketing y precios.</p>
+            </div>
+          </div>
+          <div class="ideas">
+            <h4>¿Qué se podría añadir en “Finanzas agregadas”?</h4>
+            <ul>
+              <li>Drill-down solo hasta nivel “familia” con permiso; nunca editar desde CEO si el admin es la mesa de trabajo.</li>
+              <li>Previsión de caja según planes de pago a plazos.</li>
+              <li>Export para asesor externo / contable en un clic.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="panel" id="c-people">
+          <p style="margin:0 0 12px;color:var(--muted);">Semáforo para dirección; el detalle sensible permanece en HR con roles restrictivos.</p>
+          <div class="traffic">
+            <div class="traffic-row"><span>DBS / RTW global</span><span class="sem ok">Verde</span></div>
+            <div class="traffic-row"><span>Formación obligatoria</span><span class="sem mid">Ámbar</span></div>
+            <div class="traffic-row"><span>Entrevistas retrasadas</span><span class="sem bad">Rojo</span></div>
+          </div>
+          <div class="ideas">
+            <h4>¿Qué se podría añadir en “Personas y compliance”?</h4>
+            <ul>
+              <li>Contador de “días hasta vencimiento” por tipo de documento.</li>
+              <li>Comparar headcount planificado vs. roster real.</li>
+              <li>Enlace al pipeline de candidatos sin mostrar datos bancarios en esta vista.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="panel" id="c-enlaces">
+          <div class="card" style="max-width:40rem;">
+            <h3 style="text-transform:none;letter-spacing:0;font-size:15px;color:var(--ink);">Saltar a operaciones (mock Admin SaaS)</h3>
+            <p style="font-size:13px;color:var(--muted);margin:8px 0 14px;">La dirección no duplica formularios: baja al detalle en el concepto de admin.</p>
+            <div class="links-row" style="margin-top:0;">
+              <a href="admin_dashboard_saas_concept.html#p-clientes">Cobros y participantes</a>
+              <a class="secondary" href="admin_dashboard_saas_concept.html#p-agenda">Capacidad semanal</a>
+            </div>
+            <div class="links-row">
+              <a href="admin_dashboard_saas_concept.html#p-excepciones">Excepciones</a>
+              <a class="secondary" href="admin_dashboard_saas_concept.html#p-comms">Avisos a padres</a>
+            </div>
+          </div>
+          <div class="ideas">
+            <h4>¿Qué se podría añadir en “Ir a operaciones”?</h4>
+            <ul>
+              <li>Deep links con contexto (ej. ?family= abre drawer en admin cuando exista).</li>
+              <li>Lista de “mis acciones pendientes” generada desde las mismas alertas.</li>
+              <li>Modo presentación para reunión semanal (pantalla completa, sin sidebar).</li>
+            </ul>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var titles = {
+        "c-pulso": "Pulso",
+        "c-riesgos": "Riesgos y alertas",
+        "c-finanzas": "Finanzas agregadas",
+        "c-people": "Personas y compliance",
+        "c-enlaces": "Ir a operaciones"
+      };
+      var sidebar = document.getElementById("sidebar");
+      var overlay = document.getElementById("navOverlay");
+      var btnMenu = document.getElementById("btnMenu");
+
+      function setPanel(id) {
+        document.querySelectorAll(".panel").forEach(function (p) {
+          p.classList.toggle("active", p.id === id);
+        });
+        document.querySelectorAll(".nav-item").forEach(function (b) {
+          b.classList.toggle("active", b.getAttribute("data-panel") === id);
+        });
+        var t = document.getElementById("pageTitle");
+        if (t) t.textContent = titles[id] || "CEO";
+        sidebar.classList.remove("open");
+        overlay.classList.remove("show");
+        if (btnMenu) btnMenu.setAttribute("aria-expanded", "false");
+      }
+
+      document.querySelectorAll(".nav-item").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          setPanel(btn.getAttribute("data-panel"));
+        });
+      });
+
+      if (btnMenu) {
+        btnMenu.addEventListener("click", function () {
+          var open = !sidebar.classList.contains("open");
+          sidebar.classList.toggle("open", open);
+          overlay.classList.toggle("show", open);
+          btnMenu.setAttribute("aria-expanded", open ? "true" : "false");
+        });
+      }
+      overlay.addEventListener("click", function () {
+        sidebar.classList.remove("open");
+        overlay.classList.remove("show");
+        if (btnMenu) btnMenu.setAttribute("aria-expanded", "false");
+      });
+
+      function openFromHash() {
+        var h = (location.hash || "").replace(/^#/, "");
+        if (h && titles[h]) setPanel(h);
+      }
+      openFromHash();
+      window.addEventListener("hashchange", openFromHash);
+    })();
+  </script>
+</body>
+</html>

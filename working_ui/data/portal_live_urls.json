@@ -1,0 +1,32 @@
+{
+  "meta": {
+    "site_base": "https://www.clubsensational.org",
+    "updated": "2026-04-30",
+    "intent": "Canonical WordPress paths (slug after site base). Production: login /l0/ · admin /operations-admin/ (shortcode cs_portal_admin → Medios admin_embed) · staff /p1/ · CEO /ce/ (lead /l1/). Portal JS/CSS assets: wp-content/uploads/2026/05/.",
+    "notes": [
+      "Repo filename for observation is observation_portal.html (sheet may say observation.html)."
+    ]
+  },
+  "by_filename": {
+    "login.html": "/l0/",
+    "staff_dashboard.html": "/p1/",
+    "lead_dashboard.html": "/l1/",
+    "admin_dashboard.html": "/operations-admin/",
+    "ceo_dashboard.html": "/ce/",
+    "company_insights.html": "/Insights_portal/",
+    "Working_interview.html": "/interviews_portal/",
+    "pickup.html": "/pickup_portal/",
+    "venue_review.html": "/venue_portal/",
+    "incident_report.html": "/incident_portal/",
+    "timesheet.html": "/timesheet_portal/",
+    "expenses.html": "/expenses_portal/",
+    "session_feedback.html": "/session_feedback_portal/",
+    "lead_feedback_report.html": "/lead_feedback_portal/",
+    "cancellation_report.html": "/cancellation_portal/",
+    "swtermreview.html": "/swclientreview_portal/",
+    "observation_portal.html": "/observation_portal/",
+    "termreview.html": "/termreview_portal/",
+    "performance.html": "/performance_portal/",
+    "announcements.html": "/announcements_portal/"
+  }
+}

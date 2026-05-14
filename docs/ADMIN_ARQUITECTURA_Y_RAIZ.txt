@@ -1,0 +1,195 @@
+================================================================================
+  PORTAL ADMIN — ARQUITECTURA DOCUMENTAL + INVENTARIO DE RAÍZ
+  ClubSENsational · consolidado para lectura (sin código ejecutable)
+  Última revisión de contenido: conversación técnica + Excel H&R + formulario re-enrol
+================================================================================
+
+
+0. ALCANCE Y REGLAS QUE FIJASTEIS
+--------------------------------------------------------------------------------
+• Este documento describe solo el ADMIN (working_ui/admin_dashboard.html y lo que
+  conecta: roster, Supabase overrides, localStorage de bookings, etc.).
+
+• NO se modifica staff_dashboard.html ni lead_dashboard.html salvo petición explícita
+  futura: esos dashboards se consideran cerrados y correctos.
+
+• Los padres NO interactúan con el portal interno: comunicación vía WhatsApp,
+  email, HTML públicos puntuales y ClassForKids donde aplique.
+
+
+1. CUATRO PILARES (MODELO MENTAL) + QUINTO “SISTEMA”
+--------------------------------------------------------------------------------
+
+1.1 PILAR A — CLIENTES (participantes + contrato + cobro)
+  Qué cubre:
+    - Quién es el participante, contexto LA/privado, intake, lifecycle.
+    - Pagos: total due, pagos parciales, saldo, próximos vencimientos, “salud” del cobro.
+    - Avisos al padre sobre cobros (borrador WhatsApp/email desde el admin).
+    - Ausencias / compensación cuando lo tengáis enlazado a política operativa.
+  Qué NO mete aquí:
+    - Compliance de empleados (DBS, etc.) → Pilar B.
+    - Catálogo maestro de “qué vendemos” como producto → Pilar C (puede enlazarse).
+
+1.2 PILAR B — INSTRUCTORES (people ops + condiciones de trabajo)
+  Qué cubre:
+    - Ficha staff, disponibilidad declarada, onboarding, entrevistas, políticas firmadas.
+    - Matriz tipo “Staff Matrix”: DBS, RTW, first aid, induction, shadowing, observaciones,
+      cursos pagados, etc. (hoy en Excel; en portal sería módulo HR o solo admin).
+  Qué NO mete aquí:
+    - La verdad de “quién está en el pool a las 16:30 hoy” → eso sale del roster + overrides
+      (Pilar D); aquí solo referencias por staffId / nombre coherente con el roster.
+
+1.3 PILAR C — SERVICIOS / OFERTA (estilo “admin ClassForKids” a alto nivel)
+  Qué cubre:
+    - Programmes: duración, sede, precio por sesión, sesiones por term, paquetes.
+    - Textos y reglas del re-enrol (formulario web público como referencia de negocio).
+  Qué NO mete aquí:
+    - Cada hueco ya asignado del día → Pilar D.
+    - Ledger del cliente → Pilar A.
+
+1.4 PILAR D — CRUCE OPERATIVO (agenda + excepciones + capacidad + atajos)
+  Qué cubre:
+    - Día / semana: slots del roster, quién imparte, quién participa (tras overrides).
+    - Overrides en Supabase (ausencia, cancel, replace, cover instructor, cierre).
+    - Capacidad agregada desde el mismo roster (sesiones por día, booked vs open vs closed).
+    - Mensajes a padre por cambio de instructor (borrador; foto se adjunta fuera).
+  Qué NO mete aquí:
+    - Contrato financiero completo del term → enlace mental al Pilar A.
+
+1.5 SISTEMA
+  Integraciones, exportaciones globales, ajustes, logout, placeholders Supabase/WordPress.
+
+
+2. MAPA DE NAVEGACIÓN SUGERIDO (DOCUMENTAL — NO ES OBLIGATORIO IMPLEMENTAR YA)
+--------------------------------------------------------------------------------
+Agrupar el menú lateral en bloques alineados con los pilares ayuda a no mezclar cosas.
+
+  Overview
+    • Dashboard (tablero de decisiones + KPIs demo + snapshot bookings desde localStorage)
+    • Operator (atajos demo: notificar, sesión, informes…)
+
+  Clients & revenue (Pilar A)
+    • Bookings (master contractual + payments & collections; capacidad semanal; waiting list demo)
+    • Invoices (invoice builder + CSV)
+    • (Futuro) Ficha única participante / “Client file”
+
+  Services & catalogue (Pilar C)
+    • (Futuro) Services & terms — hoy no existe módulo dedicado; el catálogo vive en web/Excel
+
+  Schedule & delivery (Pilar D)
+    • Scheduling & Covers (drawer overrides + mensajes a padre)
+    • (Opcional) Operations “live board” — hoy es demo; podría fusionarse con delivery real
+
+  People — staff (Pilar B)
+    • Staff & HR (demo lista, shifts, interviews resumen, notas)
+    • Onboarding (demo)
+    • Policy sign-offs (demo matriz + notas de cableado Supabase)
+
+  Comms & quality
+    • Communications (demo anuncios + historial; puede registrar borradores a padres)
+    • Reports & incidents (demo colas + log)
+
+  System
+    • Settings (placeholders conexión + snapshot demo)
+
+
+3. INVENTARIO ACTUAL DE VISTAS (admin_dashboard.html) — QUÉ HACE CADA UNA
+--------------------------------------------------------------------------------
+Nota: “Real” = conectado a datos vuestros (roster cargado, Supabase, localStorage).
+      “Demo” = MOCK en memoria de sesión; sirve de maqueta de proceso.
+
+  Dashboard          → KPIs demo + snapshot meta bookings (localStorage) + acciones + log.
+  Operator           → Sugerencias demo + enlaces a compose/shift/report/vistas.
+  Operations         → Demo: cancelaciones, sesiones, asignaciones (no es la agenda real).
+  Bookings           → REAL: roster + overrides + meta/finance LS + capacidad semanal +
+                        intake/billing/pagos/notify parent/export; Manage abre drawer scheduling.
+  Invoices           → Invoice builder + preview + CSV.
+  Scheduling & Covers→ REAL: mismo roster + overrides + log Supabase + mensajes padre en drawer.
+  Communications     → Demo: anuncios, cambios turno, outbox, historial.
+  Reports & incidents→ Demo: informes, incidentes, log extendido, generador borradores.
+  Participant activity→ Demo: lista participantes + drawer actividad.
+  Staff & HR         → Demo: staff, shifts, interviews, notas HR.
+  Onboarding         → Demo: pasos por persona, nudges simulados.
+  Policy sign-offs   → Demo: matriz políticas por staff + texto de producción futura.
+  Settings           → Placeholder integraciones + snapshot demo + logout.
+
+
+4. FLUJOS DE DATOS (QUIÉN ALIMENTA A QUIÉN)
+--------------------------------------------------------------------------------
+
+  [Spreadsheet / STAFF_DASHBOARD_SOURCE + Adapter]
+        → Sesiones por weekday + slots por fecha (Pilar D)
+        → Misma base para Bookings y Scheduling
+
+  [Supabase schedule_overrides]
+        → Cambios del día sobre anclas (staff, cliente, hora, venue, fecha exacta)
+        → Participante “efectivo” en UI (replace, etc.) → coherente con Bookings
+
+  [localStorage portal_booking_meta_v1_* / portal_booking_finance_v1_*]
+        → Intake, funding, contacto padre opcional, planes de pago, transacciones (Pilar A)
+        → Evolución natural: migrar a tablas Supabase
+
+  [Excel comercial / formulario re-enrol web]
+        → Hoy: verdad operativa humana + ClassForKids como vitrina
+        → Futuro: tabla “contrato term” + catálogo servicios (Pilares C → A)
+
+  [Excel Staff Matrix / Job applications]
+        → Especificación del Pilar B; no alimenta Staff/Lead dashboard por decisión vuestra
+
+
+5. FASES DE EVOLUCIÓN (SIN TOCAR STAFF/LEAD)
+--------------------------------------------------------------------------------
+  Fase 1 (ahora):   Pilares D + A operativos sobre roster + LS + overrides + avisos padre.
+  Fase 2:          Persistir Pilar A (y enlaces a Pilar C) en BD; ficha cliente o matriz cobros.
+  Fase 3:          Módulo HR en admin (import o captura desde Staff Matrix).
+  Fase 4:          Catálogo servicios que alimente precios / re-enrol interno cuando sustituyáis
+                    las HTML sueltas.
+
+
+6. REFERENCIAS EXTERNAS QUE USÁIS COMO MODELO DE NEGOCIO
+--------------------------------------------------------------------------------
+  • Re-enrol público (padres): https://www.clubsensational.org/RE-ENROLMENTS/
+      — Servicios por día, precio por sesión, nº sesiones del term, funding, método de pago,
+        total calculado. No eligen hora: mantienen slots del term anterior; el formulario explica
+        variación de coste por más/menos sesiones.
+  • ClassForKids: vitrina para familias; operación fuerte en hojas internas + admin portal.
+
+
+7. PREGUNTAS QUE QUEDARON ABIERTAS EN SU MOMENTO — RESPUESTAS INFERIDAS (PARA CERRAR CONTEXTO)
+--------------------------------------------------------------------------------
+  (1) URL formulario re-enrol → facilitada; activa para Summer 2026 en la web.
+  (2) Primera hoja grande Excel → uso como libro operativo del term; varias filas por cliente
+      para meses/bloques/correcciones (inferido del patrón).
+  (3) Segunda hoja → vista paralela muy orientada a cobros/LA/invoices (inferido).
+  (4) Dos pestañas Bookings vs ficha única → hoy dos pestañas; ficha única sería mejora UX.
+  (5) “Updated” CFK → razonable por línea de cobro o bloque; opcional fecha sync por term.
+  (6) Matriz mensual vs lista pagos → hábito Excel = matriz; implementación rápida = lista + CSV.
+  (7) Assign participant solo desde Manage/drawer → correcto hoy; modal solo Bookings = pendiente
+      si lo pedís explícitamente.
+  (8) Tras capacidad semanal, lista “tipo schedule del día” → siguiente bloque lógico en Bookings
+      u Operations cuando lo prioricéis.
+
+
+8. RESUMEN HR (EXCEL) VS PORTAL — SIN DUPLICAR STAFF/LEAD
+--------------------------------------------------------------------------------
+  Job Application Form (Responses):
+    Pipeline completo de candidatura (RTW, educación, empleo, DBS declaración, referencias, etc.).
+    No existe equivalente persistido en Staff/Lead; encajaría en Admin Pilar B (reclutamiento).
+
+  Staff Matrix (hojas vistas):
+    Employees info, Employee Docs (DBS, first aid, STA…), Induction & Safeguarding, Shadowings,
+    Observations, Interviews, Paid courses, Job application (incl. datos bancarios — muy sensible),
+    Health questionnaire.
+    Staff/Lead hoy: enlaces a formación externa e identidad sesión; NO guardan vencimientos ni
+    matriz HR. Todo eso es Pilar B futuro en Admin (o sistema HR aparte con API).
+
+
+9. DÓNDE ESTÁ EL ARCHIVO Y CÓMO ACTUALIZARLO
+--------------------------------------------------------------------------------
+  Ruta:  docs/ADMIN_ARQUITECTURA_Y_RAIZ.txt
+  Podéis copiarlo, versionarlo en git, o pedir que se amplíe una sección cuando cambie el producto.
+
+
+================================================================================
+  FIN DEL DOCUMENTO
+================================================================================

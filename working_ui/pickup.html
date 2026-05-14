@@ -1,0 +1,2147 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <script>
+    (function () {
+      try { document.documentElement.classList.add("portal-app-shell"); } catch (e) {}
+    })();
+  </script>
+  <style id="portal-hide-wp-chrome">
+    html.portal-app-shell body.admin-bar{padding-top:0!important;margin-top:0!important}
+    html.portal-app-shell #wpadminbar,html.portal-app-shell #masthead,html.portal-app-shell header#masthead,html.portal-app-shell .site-header,html.portal-app-shell #site-header,html.portal-app-shell .ast-primary-header-bar,html.portal-app-shell .ast-above-header,html.portal-app-shell .elementor-location-header,html.portal-app-shell .elementor-location-footer,html.portal-app-shell #colophon,html.portal-app-shell footer.site-footer,html.portal-app-shell .site-footer,html.portal-app-shell #footer,html.portal-app-shell .site-bottom-footer-inner-wrap,html.portal-app-shell .footer-widget-area{display:none!important;visibility:hidden!important;height:0!important;overflow:hidden!important;pointer-events:none!important}
+    html.portal-app-shell .site-content,html.portal-app-shell #content,html.portal-app-shell .site-main,html.portal-app-shell #primary{margin-top:0!important;padding-top:0!important}
+    html.portal-app-shell #page,html.portal-app-shell .site{margin-top:0!important;padding-top:0!important}
+  </style>
+  <script src="https://www.clubsensational.org/wp-content/uploads/2026/05/portal_return_and_shell.js?v=20260510-portal-admin"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>clubSENsational Drop Off - Pick Up Portal</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    :root{
+      --blue:#2d84b3;
+      --blueSoft:#eaf5fb;
+      --gold:#cc952b;
+      --goldSoft:#fff4df;
+      --ink:#173247;
+      --text:#314555;
+      --muted:#728290;
+      --line:rgba(23,50,71,.12);
+      --white:#ffffff;
+      --shadow:0 18px 50px rgba(23,50,71,.08);
+      --radius:22px;
+      /* Misma lógica que timesheet (outline + navy seleccionado / primario) */
+      --portalNavy:#0b2a5b;
+      --portalOutlineFill:#e4edf8;
+      --portalOutlineBorder:#b0c7e2;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body{
+      margin:0;
+      font-family:'Montserrat',sans-serif;
+      background:linear-gradient(180deg,#f6fbfe 0%,#f3f7fa 100%);
+      color:var(--text);
+    }
+
+    .page{
+      width:min(1720px,calc(100% - 32px));
+      margin:0 auto;
+      padding:18px 0 40px;
+    }
+
+    .topbar{
+      position:relative;
+      background:rgba(244,248,251,.96);
+      border:1px solid var(--line);
+      border-radius:26px;
+      box-shadow:var(--shadow);
+      padding:18px 20px;
+      margin-bottom:18px;
+    }
+
+    .topbar-grid{
+      display:grid;
+      grid-template-columns:minmax(260px,420px) minmax(0,1fr);
+      gap:18px;
+      align-items:end;
+    }
+
+    .brand h1{
+      margin:0 0 6px;
+      font-size:clamp(24px,2.8vw,38px);
+      line-height:1.06;
+      color:var(--ink);
+      font-weight:800;
+    }
+
+    .brand p{
+      margin:0;
+      font-size:14px;
+      line-height:1.6;
+      color:var(--muted);
+      max-width:620px;
+    }
+
+    .search-panel{
+      display:grid;
+      grid-template-columns:minmax(260px,1fr) auto auto;
+      gap:12px;
+      align-items:end;
+    }
+
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+
+    .field label{
+      font-size:12px;
+      font-weight:700;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      color:var(--muted);
+    }
+
+    .input{
+      width:100%;
+      border:1px solid rgba(23,50,71,.12);
+      background:#fff;
+      border-radius:14px;
+      padding:14px;
+      font-family:inherit;
+      font-size:14px;
+      color:var(--text);
+      outline:none;
+    }
+
+    .input:focus{
+      border-color:var(--blue);
+      box-shadow:0 0 0 4px rgba(45,132,179,.12);
+    }
+
+    .btn{
+      appearance:none;
+      border:1px solid transparent;
+      border-radius:999px;
+      padding:14px 18px;
+      min-height:50px;
+      font-family:inherit;
+      font-size:14px;
+      font-weight:800;
+      cursor:pointer;
+      transition:.2s ease;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      white-space:nowrap;
+    }
+
+    .btn-primary{
+      background:var(--portalNavy)!important;
+      background-color:var(--portalNavy)!important;
+      color:#fff!important;
+      border-color:var(--portalNavy)!important;
+    }
+    .btn-primary:hover,
+    .btn-primary:focus-visible{
+      background:#092448!important;
+      background-color:#092448!important;
+      border-color:#092448!important;
+      color:#fff!important;
+      transform:translateY(-1px);
+    }
+    .btn-primary:focus-visible{ outline:2px solid rgba(11,42,91,.35); outline-offset:2px; }
+    .btn-gold{ background:var(--gold); color:#fff; border-color:transparent; }
+    .btn-gold:hover{ background:#b58326; transform:translateY(-1px); }
+    .btn-secondary{
+      background:var(--portalOutlineFill)!important;
+      background-color:var(--portalOutlineFill)!important;
+      color:var(--portalNavy)!important;
+      border:1px solid var(--portalOutlineBorder)!important;
+    }
+    .btn-secondary:hover,
+    .btn-secondary:focus-visible{
+      background:var(--portalNavy)!important;
+      background-color:var(--portalNavy)!important;
+      color:#fff!important;
+      border-color:var(--portalNavy)!important;
+    }
+    .btn-secondary:focus-visible{ outline:2px solid rgba(11,42,91,.35); outline-offset:2px; }
+    .btn-new{ background:#23a55a; color:#fff; }
+    .btn-new:hover{ background:#1d8f4d; transform:translateY(-1px); }
+
+    .results-wrap{ margin-bottom:18px; }
+
+    .panel{
+      background:var(--white);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+
+    .panel-head{
+      padding:20px 22px 14px;
+      border-bottom:1px solid var(--line);
+      background:linear-gradient(180deg,#fff 0%,#fbfdff 100%);
+    }
+
+    .panel-title{
+      margin:0;
+      font-size:18px;
+      color:var(--ink);
+      font-weight:800;
+    }
+
+    .panel-body{ padding:20px 22px 24px; }
+
+    .result-list{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(285px,1fr));
+      gap:12px;
+    }
+
+    .participant-card{
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:14px;
+      background:#fff;
+      transition:.2s ease;
+      cursor:pointer;
+      min-height:140px;
+      position:relative;
+    }
+
+    .participant-card:hover{
+      border-color:rgba(45,132,179,.28);
+      box-shadow:0 10px 22px rgba(23,50,71,.06);
+      transform:translateY(-1px);
+    }
+
+    .participant-card.active{
+      border-color:var(--gold);
+      background:var(--goldSoft);
+    }
+
+    .participant-top{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:flex-start;
+      margin-bottom:8px;
+    }
+
+    .participant-name{
+      margin:0;
+      font-size:16px;
+      font-weight:800;
+      color:var(--ink);
+      line-height:1.3;
+    }
+
+    .participant-meta{ font-size:12px; color:var(--muted); line-height:1.5; }
+
+    .status-pill{
+      display:inline-flex;
+      align-items:center;
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:800;
+      text-transform:uppercase;
+      letter-spacing:.06em;
+    }
+
+    .status-open{ background:var(--blueSoft); color:var(--blue); }
+    .status-done{ background:#e8f7ef; color:#157347; }
+
+    .tick{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:20px;
+      height:20px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      font-size:12px;
+      margin-right:6px;
+      vertical-align:middle;
+    }
+
+    .tick.done{ background:#23a55a; color:#fff; border-color:#23a55a; }
+
+    .card-actions{ margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; }
+
+    .form-panel{ width:100%; max-width:100%; }
+
+    #f.grid,
+    #f .grid{
+      min-width:0;
+      width:100%;
+    }
+
+    .form-inner .dropoff-line,
+    .form-inner .grid > .full{
+      min-width:0;
+      max-width:100%;
+      box-sizing:border-box;
+    }
+
+    .form-inner input.input,
+    .form-inner input[type="date"],
+    .form-inner input[type="time"]{
+      max-width:100%;
+      min-width:0;
+      box-sizing:border-box;
+    }
+
+    .form-shell{
+      width:100%;
+      display:flex;
+      justify-content:center;
+    }
+
+    .form-wrap{ width:min(1360px,100%); }
+
+    .empty-box{
+      border:1px dashed rgba(23,50,71,.18);
+      border-radius:18px;
+      padding:28px;
+      background:#fbfdff;
+      color:var(--muted);
+      font-size:15px;
+      line-height:1.7;
+      text-align:center;
+      max-width:100%;
+      overflow-wrap:anywhere;
+      word-wrap:break-word;
+      word-break:break-word;
+      hyphens:auto;
+    }
+
+    .empty-box.list-empty{ min-height:auto; }
+
+    .hidden{ display:none !important; }
+
+    .form-inner-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      margin-bottom:16px;
+      flex-wrap:wrap;
+    }
+
+    .form-inner-header h2{
+      margin:0;
+      font-size:20px;
+      color:var(--ink);
+      font-weight:800;
+    }
+
+    .grid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+    .full{ grid-column:1/-1; }
+
+    fieldset{
+      margin:0;
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:12px;
+    }
+
+    legend{
+      padding:0 6px;
+      font-weight:700;
+      color:var(--blue);
+    }
+
+    .form-inner label{
+      display:block;
+      font-size:12px;
+      font-weight:700;
+      margin-bottom:4px;
+      color:var(--text);
+    }
+
+    .form-inner input,
+    .form-inner textarea{
+      width:100%;
+      padding:10px 12px;
+      border:1px solid var(--line);
+      border-radius:10px;
+      font:inherit;
+    }
+
+    .form-inner textarea{ min-height:72px; resize:vertical; }
+
+    .role-group{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
+
+    .dropoff-line{ margin-bottom:4px; }
+
+    .date-time-row{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-top:6px;
+    }
+
+    .field-label-block{
+      display:block;
+      font-size:12px;
+      font-weight:700;
+      margin-bottom:2px;
+      color:var(--text);
+    }
+
+    label.subl{
+      display:block;
+      font-size:11px;
+      font-weight:600;
+      margin-bottom:4px;
+      color:var(--muted);
+    }
+
+    .role-group.emotion-group{
+      grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+
+    @media (min-width:540px){
+      .role-group.emotion-group{ grid-template-columns:repeat(4,minmax(0,1fr)); }
+    }
+
+    .role-btn{
+      border:1px solid var(--portalOutlineBorder)!important;
+      background:var(--portalOutlineFill)!important;
+      background-color:var(--portalOutlineFill)!important;
+      color:var(--portalNavy)!important;
+      padding:8px;
+      border-radius:10px;
+      font-size:12px;
+      font-weight:700;
+      cursor:pointer;
+      max-width:100%;
+      min-width:0;
+      box-sizing:border-box;
+      overflow-wrap:anywhere;
+      word-break:break-word;
+      line-height:1.25;
+      text-align:center;
+    }
+    .role-btn:hover:not(.active){
+      border-color:#94b0d4!important;
+      background:#dbe8f8!important;
+      background-color:#dbe8f8!important;
+    }
+    .role-btn:focus-visible{
+      outline:2px solid rgba(11,42,91,.35);
+      outline-offset:2px;
+    }
+
+    .role-btn.active{
+      background:var(--portalNavy)!important;
+      background-color:var(--portalNavy)!important;
+      border-color:var(--portalNavy)!important;
+      color:#fff!important;
+    }
+
+    .is-hidden{ display:none !important; }
+
+    .row{ display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; align-items:center; }
+
+    .form-inner .row button{
+      border:1px solid var(--portalOutlineBorder)!important;
+      background:var(--portalOutlineFill)!important;
+      background-color:var(--portalOutlineFill)!important;
+      color:var(--portalNavy)!important;
+      padding:9px 12px;
+      border-radius:10px;
+      font-weight:700;
+      cursor:pointer;
+      font-family:inherit;
+    }
+    .form-inner .row button:hover:not(.primary){
+      border-color:#94b0d4!important;
+      background:#dbe8f8!important;
+      background-color:#dbe8f8!important;
+    }
+    .form-inner .row button:focus-visible{
+      outline:2px solid rgba(11,42,91,.35);
+      outline-offset:2px;
+    }
+
+    .form-inner .row button.primary{
+      background:var(--portalNavy)!important;
+      background-color:var(--portalNavy)!important;
+      color:#fff!important;
+      border-color:var(--portalNavy)!important;
+    }
+    .form-inner .row button.primary:hover,
+    .form-inner .row button.primary:focus-visible{
+      background:#092448!important;
+      background-color:#092448!important;
+      border-color:#092448!important;
+      color:#fff!important;
+    }
+
+    .hint{ font-size:12px; color:var(--muted); flex:1; min-width:140px; }
+
+    .signature-box{
+      width:100%;
+      max-width:100%;
+      min-width:0;
+      height:200px;
+      border:1px solid var(--line);
+      border-radius:12px;
+      background:#fff;
+      overflow:hidden;
+      touch-action:none;
+      box-sizing:border-box;
+    }
+
+    .signature-box canvas{
+      display:block;
+      width:100%;
+      height:200px;
+      cursor:crosshair;
+      touch-action:none;
+    }
+
+    .signature-actions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:8px;
+      align-items:center;
+    }
+
+    .btn-clear{
+      min-height:40px;
+      padding:8px 14px;
+      font-size:13px;
+      font-weight:700;
+      border-radius:10px;
+      border:1px solid var(--portalOutlineBorder)!important;
+      background:var(--portalOutlineFill)!important;
+      background-color:var(--portalOutlineFill)!important;
+      color:var(--portalNavy)!important;
+      cursor:pointer;
+      font-family:inherit;
+    }
+    .btn-clear:hover,
+    .btn-clear:focus-visible{
+      background:var(--portalNavy)!important;
+      background-color:var(--portalNavy)!important;
+      border-color:var(--portalNavy)!important;
+      color:#fff!important;
+    }
+    .btn-clear:focus-visible{ outline:2px solid rgba(11,42,91,.35); outline-offset:2px; }
+
+    .pickup-banner{
+      grid-column:1/-1;
+      padding:12px 14px;
+      border-radius:12px;
+      background:var(--blueSoft);
+      border:1px solid rgba(45,132,179,.25);
+      color:var(--ink);
+      font-size:14px;
+      line-height:1.5;
+      margin-bottom:4px;
+    }
+
+    @media (max-width:1200px){
+      .topbar-grid{ grid-template-columns:1fr; align-items:start; }
+      .search-panel{ grid-template-columns:1fr 1fr; }
+      .search-panel .field{ grid-column:1/-1; }
+    }
+
+    @media (max-width:768px){
+      html, body{ overflow-x:hidden; }
+
+      .page{
+        width:100%;
+        max-width:100%;
+        padding:10px 12px 24px;
+        margin:0 auto;
+        box-sizing:border-box;
+      }
+      .topbar{
+        padding:14px 12px;
+        border-radius:18px;
+        text-align:center;
+      }
+      .topbar-grid{
+        justify-items:center;
+        text-align:center;
+      }
+      .brand{
+        width:100%;
+        max-width:100%;
+      }
+      .brand h1,
+      .brand p{
+        text-align:center;
+        margin-left:auto;
+        margin-right:auto;
+        max-width:100%;
+      }
+      .brand p{
+        font-size:13px;
+        line-height:1.55;
+      }
+      .search-panel{
+        grid-template-columns:1fr;
+        width:100%;
+        max-width:100%;
+        justify-items:stretch;
+      }
+      .search-panel .field,
+      .search-panel .field label{
+        text-align:center;
+      }
+      .panel-head{
+        padding:16px 14px 12px;
+        text-align:center;
+      }
+      .panel-title{
+        font-size:16px;
+      }
+      .panel-body{
+        padding:14px max(10px, env(safe-area-inset-right)) 18px max(10px, env(safe-area-inset-left));
+        max-width:100%;
+        overflow-x:clip;
+        box-sizing:border-box;
+      }
+      .result-list{
+        grid-template-columns:1fr;
+        width:100%;
+        justify-items:stretch;
+      }
+      .participant-card{
+        max-width:100%;
+        text-align:center;
+      }
+      .participant-top{
+        flex-direction:column;
+        align-items:center;
+        text-align:center;
+      }
+      .participant-name{
+        font-size:15px;
+        overflow-wrap:anywhere;
+        word-break:break-word;
+      }
+      .participant-meta{
+        overflow-wrap:anywhere;
+      }
+      .card-actions{
+        justify-content:center;
+      }
+      .btn{
+        width:100%;
+        max-width:100%;
+        white-space:normal;
+        line-height:1.25;
+        min-height:48px;
+        padding:12px 14px;
+        font-size:13px;
+        box-sizing:border-box;
+      }
+      .grid{ grid-template-columns:1fr; min-width:0; }
+      .date-time-row{
+        grid-template-columns:1fr;
+        min-width:0;
+        max-width:100%;
+      }
+      .date-time-row > div{
+        min-width:0;
+        max-width:100%;
+      }
+      .role-group,
+      .role-group.emotion-group{
+        grid-template-columns:1fr !important;
+        width:100%;
+        max-width:100%;
+        min-width:0;
+        box-sizing:border-box;
+        justify-items:center;
+      }
+      .form-inner .role-btn{
+        width:100%;
+        max-width:min(320px, 100%);
+        margin-left:auto;
+        margin-right:auto;
+        justify-self:center;
+        padding:10px 8px;
+        font-size:12px;
+      }
+      .empty-box,
+      .result-list .empty-box{
+        padding:18px 12px;
+        font-size:clamp(11px,3.4vw,14px);
+        line-height:1.55;
+        margin:0 auto;
+        width:100%;
+        box-sizing:border-box;
+      }
+      .form-shell,
+      .form-wrap{
+        width:100%;
+        max-width:100%;
+        padding:0;
+        box-sizing:border-box;
+      }
+      .form-inner-header{
+        flex-direction:column;
+        align-items:center;
+        text-align:center;
+        gap:10px;
+      }
+      .form-inner-header h2{
+        font-size:17px;
+      }
+      #f .form-inner label,
+      #f .field-label-block,
+      #f label.subl,
+      #f legend{
+        text-align:left;
+      }
+      .form-inner .grid > div{
+        max-width:100%;
+      }
+      .pickup-fields-grid{
+        display:grid;
+        grid-template-columns:1fr;
+      }
+      .pickup-fields-grid .pu-name{ order:1; }
+      .pickup-fields-grid .pu-role{ order:2; }
+      .pickup-fields-grid .pu-time{ order:3; }
+      .pickup-fields-grid .pu-sig{ order:4; }
+      .form-inner .signature-actions{
+        justify-content:center;
+      }
+      #f .form-inner .dropoff-line > p,
+      #f .form-inner .pu-sig > p{
+        text-align:left;
+      }
+      .pickup-banner{
+        font-size:clamp(11px,3.2vw,13px);
+        padding:10px 12px;
+        text-align:center;
+        overflow-wrap:anywhere;
+        word-break:break-word;
+      }
+      .pickup-banner .btn-clear{
+        width:100%;
+        max-width:280px;
+        margin:0 auto;
+      }
+      .row{
+        flex-direction:column;
+        align-items:center;
+        justify-content:center;
+        width:100%;
+      }
+      .form-inner .row button{
+        width:100%;
+        max-width:320px;
+      }
+      .hint{
+        flex:none;
+        width:100%;
+        max-width:100%;
+        min-width:0;
+        text-align:center;
+        font-size:11px;
+        line-height:1.45;
+        overflow-wrap:anywhere;
+        word-break:break-word;
+      }
+      fieldset{
+        max-width:100%;
+        box-sizing:border-box;
+        padding:10px 8px;
+        min-width:0;
+      }
+    }
+
+    @media (max-width:380px){
+      .empty-box,
+      .result-list .empty-box{
+        font-size:11px;
+        padding:14px 10px;
+      }
+      .brand h1{
+        font-size:clamp(20px,6vw,28px);
+      }
+      .form-inner .role-btn{
+        font-size:11px;
+        padding:8px 6px;
+      }
+    }
+
+    /* ?solo=1 or ?clean=1 — handover form only (no search / participant cards) */
+    html.handover-solo .results-wrap,
+    html.handover-solo .search-panel{ display:none !important; }
+    html.handover-solo .topbar-grid{ grid-template-columns:1fr; align-items:start; }
+
+    .pickup-dash-back{
+      margin-top:28px;
+      padding-bottom:max(12px, env(safe-area-inset-bottom));
+      display:flex;
+      justify-content:center;
+    }
+    .pickup-dash-back .btn{
+      min-width:min(100%, 280px);
+      max-width:100%;
+    }
+  </style>
+</head>
+<body>
+  <script>
+    (function(){
+      var s = location.search || '';
+      if(/[?&]solo=1(?:&|$)/.test(s) || /[?&]clean=1(?:&|$)/.test(s)) document.documentElement.classList.add('handover-solo');
+    })();
+  </script>
+  <!--
+    URL options:
+    ?solo=1 or ?clean=1 — hide participant list & search; only the handover form (clean screen).
+    Completed handovers are hidden from the list (data stays in Supabase); the form clears when a record becomes complete.
+  -->
+  <div class="page">
+    <section class="topbar">
+      <div class="topbar-grid">
+        <div class="brand">
+          <h1>Drop Off & Pick Up</h1>
+        </div>
+        <div class="search-panel">
+          <div class="field">
+            <label for="searchInput">Participant name</label>
+            <input id="searchInput" class="input" type="text" placeholder="e.g. Alex Johnson" autocomplete="name" />
+          </div>
+          <button type="button" class="btn btn-gold" id="addParticipantBtn">Add New Participant</button>
+          <button type="button" class="btn btn-primary" id="searchBtn">Search Participant</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="results-wrap panel">
+      <div class="panel-head">
+        <h2 class="panel-title">Participant Results</h2>
+      </div>
+      <div class="panel-body">
+        <div id="searchResults" class="result-list"></div>
+      </div>
+    </section>
+
+    <section class="form-panel panel">
+      <div class="panel-body">
+        <div class="form-shell">
+          <div class="form-wrap" id="mainContent">
+            <div id="emptyState" class="empty-box">
+              Search for a participant or create a new one to begin the drop off and pick up record.
+            </div>
+
+            <div id="formSection" class="hidden form-inner">
+              <div class="form-inner-header">
+                <h2>Handover record</h2>
+                <button type="button" class="btn btn-new" id="newBtn">New</button>
+              </div>
+
+              <form id="f" class="grid">
+                <input type="hidden" id="dropOffSaved" value="">
+                <div id="pickupContextBanner" class="full pickup-banner hidden" role="status">
+                  <p id="pickupBannerLine" style="margin:0 0 8px;"></p>
+                  <button type="button" class="btn-clear hidden" id="showDropOffBtn">Edit drop off</button>
+                </div>
+                <div id="dropOffBlock" class="full">
+                  <fieldset>
+                    <legend>Drop Off Section</legend>
+                    <div class="grid">
+                      <div class="full dropoff-line">
+                        <label for="participantName">Name of participant</label>
+                        <input id="participantName" class="input" required>
+                      </div>
+                      <div class="full dropoff-line">
+                        <span class="field-label-block">Date and time</span>
+                        <div class="date-time-row">
+                          <div>
+                            <label class="subl" for="sessionDate">Date</label>
+                            <input id="sessionDate" type="date" class="input" required>
+                          </div>
+                          <div>
+                            <label class="subl" for="arrivalTime">Time</label>
+                            <input id="arrivalTime" type="time" class="input">
+                          </div>
+                        </div>
+                      </div>
+                      <div class="full dropoff-line">
+                        <span class="field-label-block">Participant emotional state</span>
+                        <input id="emotionalState" type="hidden" value="">
+                        <div class="role-group emotion-group" data-role-group="emotionalState">
+                          <button type="button" class="role-btn" data-value="Happy/Calm">Happy/Calm</button>
+                          <button type="button" class="role-btn" data-value="Sad">Sad</button>
+                          <button type="button" class="role-btn" data-value="Frustrated">Frustrated</button>
+                          <button type="button" class="role-btn" data-value="Upset">Upset</button>
+                        </div>
+                      </div>
+                      <div id="dropNameWrap" class="full dropoff-line">
+                        <label for="dropName">Drop off by:</label>
+                        <input id="dropName" class="input" required>
+                      </div>
+                      <div class="full dropoff-line">
+                        <span class="field-label-block">Drop off role</span>
+                        <input id="dropRole" type="hidden" value="">
+                        <div class="role-group role-group-drop" data-role-group="dropRole">
+                          <button type="button" class="role-btn" data-value="Parent">Parent</button>
+                          <button type="button" class="role-btn" data-value="Carer">Carer</button>
+                          <button type="button" class="role-btn" data-value="Other">Other</button>
+                        </div>
+                      </div>
+                      <div class="full dropoff-line">
+                        <label for="signatureCanvas">Signature (receiving staff) *</label>
+                        <p style="margin:0 0 8px;font-size:12px;color:var(--muted);">Sign with your finger on mobile or with the mouse on a computer.</p>
+                        <div class="signature-box">
+                          <canvas id="signatureCanvas" width="600" height="200"></canvas>
+                        </div>
+                        <input type="hidden" id="signatureData" value="">
+                        <div class="signature-actions">
+                          <button type="button" class="btn-clear" id="clearSignatureBtn">Clear signature</button>
+                        </div>
+                      </div>
+                    </div>
+                  </fieldset>
+                </div>
+                <div id="pickUpBlock" class="full hidden">
+                  <fieldset>
+                    <legend>Pick Up Section</legend>
+                    <div class="grid pickup-fields-grid">
+                      <div class="pu-row pu-time"><label for="pickupTime">Pick Up Time</label><input id="pickupTime" type="time" class="input"></div>
+                      <div class="pu-row pu-role">
+                        <label>Pick Up Role</label>
+                        <input id="pickupRole" type="hidden" value="">
+                        <div class="role-group" data-role-group="pickupRole">
+                          <button type="button" class="role-btn" data-value="Parent">Parent</button>
+                          <button type="button" class="role-btn" data-value="Carer">Carer</button>
+                          <button type="button" class="role-btn" data-value="Other">Other</button>
+                        </div>
+                      </div>
+                      <div id="pickupNameWrap" class="pu-row pu-name full dropoff-line"><label for="pickupName">Collected By</label><input id="pickupName" class="input" required></div>
+                      <div class="pu-row pu-sig full dropoff-line">
+                        <label for="pickupSignatureCanvas">Signature (collecting adult) *</label>
+                        <p style="margin:0 0 8px;font-size:12px;color:var(--muted);">Sign with your finger on mobile or with the mouse on a computer.</p>
+                        <div class="signature-box">
+                          <canvas id="pickupSignatureCanvas" width="600" height="200"></canvas>
+                        </div>
+                        <input type="hidden" id="pickupSignatureData" value="">
+                        <div class="signature-actions">
+                          <button type="button" class="btn-clear" id="clearPickupSignatureBtn">Clear signature</button>
+                        </div>
+                      </div>
+                    </div>
+                  </fieldset>
+                </div>
+              </form>
+
+              <div class="row">
+                <button class="primary" type="button" id="saveBtn">Save</button>
+                <button type="button" id="delBtn">Delete participant</button>
+                <span class="hint" id="status">Ready</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="pickup-dash-back" role="navigation" aria-label="Return to dashboard">
+      <button type="button" class="btn btn-secondary" id="pickupBackToDashboardBtn">Back to Dashboard</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2?v=20260419-99"></script>
+  <script>
+    (async function(){
+      const STORAGE_KEY = 'clubsensational_handover_records_v2';
+      const SUPABASE_URL = 'https://tehfptyoyutnbhuislvs.supabase.co';
+      const SUPABASE_KEY = 'sb_publishable_dULoLikBXTXDkiNfj-6kIA_-69Vmp5w';
+      const TABLE = 'daily_handover_logs';
+      const client = window.supabase && window.supabase.createClient
+        ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+        : null;
+
+      const SOLO_MODE = document.documentElement.classList.contains('handover-solo');
+
+      const form = document.getElementById('f');
+      form.addEventListener('submit', function(e){ e.preventDefault(); });
+      const status = document.getElementById('status');
+      const searchResults = document.getElementById('searchResults');
+      const searchInput = document.getElementById('searchInput');
+      const emptyState = document.getElementById('emptyState');
+      const formSection = document.getElementById('formSection');
+
+      function navigatePickupToDashboard(){
+        try{
+          if(typeof window.portalGetPortalReturnUrl === 'function'){
+            const u = window.portalGetPortalReturnUrl();
+            if(u){
+              window.location.replace(u);
+              return;
+            }
+          }
+        }catch(_){}
+        try{
+          const sp = new URLSearchParams(String(location.search || '').replace(/^\?/, ''));
+          const src = String(sp.get('source') || '').toLowerCase();
+          if(src === 'lead'){
+            window.location.replace('https://www.clubsensational.org/l1/');
+            return;
+          }
+          if(src === 'staff'){
+            window.location.replace('https://www.clubsensational.org/p1/');
+            return;
+          }
+        }catch(_){}
+        try{
+          const ref = document.referrer;
+          if(ref){
+            const r = new URL(ref);
+            if(r.origin === location.origin){
+              window.location.replace(ref.split('#')[0]);
+              return;
+            }
+          }
+        }catch(_){}
+        try{
+          window.location.href = 'https://www.clubsensational.org/p1/';
+        }catch(_){
+          window.location.href = '/p1/';
+        }
+      }
+
+      function showPickupDropOffSavedModal(){
+        const prev = document.getElementById('pickupDropOffSavedModal');
+        if(prev){
+          try{ prev.remove(); }catch(_){}
+        }
+        const wrap = document.createElement('div');
+        wrap.id = 'pickupDropOffSavedModal';
+        wrap.setAttribute('role', 'dialog');
+        wrap.setAttribute('aria-modal', 'true');
+        wrap.style.cssText =
+          'position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(23,50,71,.48);';
+        function closeAll(){
+          try{ wrap.remove(); }catch(_){}
+          navigatePickupToDashboard();
+        }
+        wrap.addEventListener('click', function(ev){
+          if(ev.target === wrap) closeAll();
+        });
+        const box = document.createElement('div');
+        box.style.cssText =
+          'max-width:420px;width:100%;background:#fff;border-radius:18px;padding:22px 20px 18px;box-shadow:0 20px 50px rgba(0,0,0,.22);text-align:center;';
+        box.addEventListener('click', function(ev){ ev.stopPropagation(); });
+        const p = document.createElement('p');
+        p.style.cssText =
+          'margin:0 0 18px;font-size:15px;line-height:1.45;color:#314555;font-weight:600;font-family:inherit;';
+        p.textContent = 'Drop off has been saved successfully.';
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn btn-primary';
+        btn.textContent = 'Close';
+        btn.style.minWidth = '160px';
+        btn.addEventListener('click', closeAll);
+        box.appendChild(p);
+        box.appendChild(btn);
+        wrap.appendChild(box);
+        document.body.appendChild(wrap);
+        try{ btn.focus(); }catch(_){}
+      }
+
+      (function bindPickupDashboardBack(){
+        ['pickupBackToDashboardBtn'].forEach(function(id){
+          const b = document.getElementById(id);
+          if(!b) return;
+          b.addEventListener('click', function(){ navigatePickupToDashboard(); });
+        });
+      })();
+
+      let sigDrawing = false;
+      let sigHadStroke = false;
+      let sigDrawingPickup = false;
+      let sigHadStrokePickup = false;
+      let currentId = '';
+      let recordsCache = [];
+      let syncTimer = null;
+      let channel = null;
+      let schemaMode = 'snake';
+
+      /** IDs deleted on this device: skip re-import from server if Supabase DELETE is blocked by RLS. */
+      const PENDING_DEL_KEY = 'clubsensational_handover_pending_deletes_v1';
+      function loadPendingDeletes(){
+        try{
+          const raw = sessionStorage.getItem(PENDING_DEL_KEY);
+          const a = raw ? JSON.parse(raw) : [];
+          return new Set(Array.isArray(a) ? a : []);
+        } catch(_){ return new Set(); }
+      }
+      function savePendingDeletes(set){
+        try{ sessionStorage.setItem(PENDING_DEL_KEY, JSON.stringify([...set])); } catch(_){}
+      }
+      let pendingLocalDeletes = loadPendingDeletes();
+      function markPendingDelete(id){
+        if(!id) return;
+        pendingLocalDeletes.add(id);
+        savePendingDeletes(pendingLocalDeletes);
+      }
+      function clearPendingDelete(id){
+        pendingLocalDeletes.delete(id);
+        savePendingDeletes(pendingLocalDeletes);
+      }
+
+      const ids = ['participantName','sessionDate','arrivalTime','emotionalState','dropRole','dropName','signatureData','dropOffSaved','pickupTime','pickupRole','pickupName','pickupSignatureData'];
+
+      let pickupOnlyView = false;
+
+      /**
+       * Pick up is allowed only after an explicit Save with complete drop off (dropOffSaved flag).
+       * Autosave never sets that flag. Records without the key (legacy) use legacyDropOffComplete(vals).
+       */
+      function isDropOffSaved(vals){
+        if(!vals || typeof vals !== 'object') return false;
+        if(Object.prototype.hasOwnProperty.call(vals, 'dropOffSaved')){
+          const v = vals.dropOffSaved;
+          return v === true || v === 'true' || v === '1' || v === 1;
+        }
+        return legacyDropOffComplete(vals);
+      }
+
+      /** Pre–emotional-state / pre–strict rules: used only to detect pick-up phase for old records. */
+      function legacyDropOffComplete(vals){
+        if(!vals || typeof vals !== 'object') return false;
+        return !!(vals.participantName && vals.sessionDate && hasSignatureData(vals) && String(vals.dropName || '').trim());
+      }
+
+      function refreshHandoverSections(vals){
+        const o = vals && typeof vals === 'object' ? vals : collect();
+        const dropSaved = isDropOffSaved(o);
+        const dropBlock = get('dropOffBlock');
+        const pickBlock = get('pickUpBlock');
+        const banner = get('pickupContextBanner');
+        if(!dropBlock || !pickBlock) return;
+        if(!dropSaved){
+          dropBlock.classList.remove('hidden');
+          pickBlock.classList.add('hidden');
+          if(banner){
+            banner.classList.add('hidden');
+            const line = get('pickupBannerLine');
+            if(line) line.textContent = '';
+            const ed = get('showDropOffBtn');
+            if(ed) ed.classList.add('hidden');
+          }
+          return;
+        }
+        if(pickupOnlyView){
+          dropBlock.classList.add('hidden');
+          pickBlock.classList.remove('hidden');
+          if(banner){
+            banner.classList.remove('hidden');
+            const line = get('pickupBannerLine');
+            if(line){
+              line.textContent = 'Pick up only — drop off is already saved. Participant: ' + (val('participantName') || '—') + ' · ' + (val('sessionDate') || '');
+            }
+            const ed = get('showDropOffBtn');
+            if(ed) ed.classList.remove('hidden');
+          }
+        } else {
+          dropBlock.classList.remove('hidden');
+          pickBlock.classList.remove('hidden');
+          if(banner){
+            banner.classList.add('hidden');
+            const line = get('pickupBannerLine');
+            if(line) line.textContent = '';
+            const ed = get('showDropOffBtn');
+            if(ed) ed.classList.add('hidden');
+          }
+        }
+      }
+      const get = id => document.getElementById(id);
+      const val = id => (get(id).value || '').trim();
+
+      function resizeSignatureCanvas(){
+        const canvas = get('signatureCanvas');
+        if(!canvas) return;
+        const box = canvas.parentElement;
+        const w = Math.max(280, box.offsetWidth || 600);
+        const h = 200;
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.style.width = w + 'px';
+        canvas.style.height = h + 'px';
+        canvas.width = Math.floor(w * dpr);
+        canvas.height = Math.floor(h * dpr);
+        const ctx = canvas.getContext('2d');
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.lineWidth = 2.5;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = '#173247';
+      }
+
+      function clearSignaturePad(){
+        resizeSignatureCanvas();
+        get('signatureData').value = '';
+        sigHadStroke = false;
+      }
+
+      function syncSignatureToHidden(){
+        const canvas = get('signatureCanvas');
+        if(!canvas) return;
+        if(!sigHadStroke && !get('signatureData').value) return;
+        try{
+          if(sigHadStroke) get('signatureData').value = canvas.toDataURL('image/png');
+        } catch(_){}
+      }
+
+      function restoreSignatureFromDataUrl(url){
+        if(!url || typeof url !== 'string' || !url.startsWith('data:image')){
+          clearSignaturePad();
+          return;
+        }
+        resizeSignatureCanvas();
+        const canvas = get('signatureCanvas');
+        const ctx = canvas.getContext('2d');
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const w = canvas.width / dpr;
+        const h = canvas.height / dpr;
+        const img = new Image();
+        img.onload = function(){
+          ctx.drawImage(img, 0, 0, w, h);
+          get('signatureData').value = url;
+          sigHadStroke = true;
+        };
+        img.onerror = function(){ clearSignaturePad(); };
+        img.src = url;
+      }
+
+      function initSignaturePad(){
+        const canvas = get('signatureCanvas');
+        if(!canvas || canvas.dataset.bound) return;
+        canvas.dataset.bound = '1';
+
+        function pos(ev){
+          const r = canvas.getBoundingClientRect();
+          return { x: ev.clientX - r.left, y: ev.clientY - r.top };
+        }
+
+        canvas.addEventListener('pointerdown', function(ev){
+          ev.preventDefault();
+          canvas.setPointerCapture(ev.pointerId);
+          sigDrawing = true;
+          const ctx = canvas.getContext('2d');
+          const p = pos(ev);
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+        });
+
+        canvas.addEventListener('pointermove', function(ev){
+          if(!sigDrawing) return;
+          ev.preventDefault();
+          const ctx = canvas.getContext('2d');
+          const p = pos(ev);
+          ctx.lineTo(p.x, p.y);
+          ctx.stroke();
+          sigHadStroke = true;
+        });
+
+        function endStroke(){
+          if(sigDrawing){
+            sigDrawing = false;
+            syncSignatureToHidden();
+          }
+        }
+
+        canvas.addEventListener('pointerup', endStroke);
+        canvas.addEventListener('pointercancel', endStroke);
+        canvas.addEventListener('pointerleave', function(ev){
+          if(!canvas.hasPointerCapture(ev.pointerId)) endStroke();
+        });
+
+        get('clearSignatureBtn').addEventListener('click', function(){
+          clearSignaturePad();
+        });
+
+        window.addEventListener('resize', function(){
+          const data = get('signatureData').value;
+          resizeSignatureCanvas();
+          if(data && data.startsWith('data:image')) restoreSignatureFromDataUrl(data);
+          else clearSignaturePad();
+        });
+      }
+
+      function resizePickupSignatureCanvas(){
+        const canvas = get('pickupSignatureCanvas');
+        if(!canvas) return;
+        const box = canvas.parentElement;
+        const w = Math.max(280, box.offsetWidth || 600);
+        const h = 200;
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.style.width = w + 'px';
+        canvas.style.height = h + 'px';
+        canvas.width = Math.floor(w * dpr);
+        canvas.height = Math.floor(h * dpr);
+        const ctx = canvas.getContext('2d');
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.lineWidth = 2.5;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = '#173247';
+      }
+
+      function clearPickupSignaturePad(){
+        resizePickupSignatureCanvas();
+        get('pickupSignatureData').value = '';
+        sigHadStrokePickup = false;
+      }
+
+      function syncPickupSignatureToHidden(){
+        const canvas = get('pickupSignatureCanvas');
+        if(!canvas) return;
+        if(!sigHadStrokePickup && !get('pickupSignatureData').value) return;
+        try{
+          if(sigHadStrokePickup) get('pickupSignatureData').value = canvas.toDataURL('image/png');
+        } catch(_){}
+      }
+
+      function restorePickupSignatureFromDataUrl(url){
+        if(!url || typeof url !== 'string' || !url.startsWith('data:image')){
+          clearPickupSignaturePad();
+          return;
+        }
+        resizePickupSignatureCanvas();
+        const canvas = get('pickupSignatureCanvas');
+        const ctx = canvas.getContext('2d');
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const w = canvas.width / dpr;
+        const h = canvas.height / dpr;
+        const img = new Image();
+        img.onload = function(){
+          ctx.drawImage(img, 0, 0, w, h);
+          get('pickupSignatureData').value = url;
+          sigHadStrokePickup = true;
+        };
+        img.onerror = function(){ clearPickupSignaturePad(); };
+        img.src = url;
+      }
+
+      function initPickupSignaturePad(){
+        const canvas = get('pickupSignatureCanvas');
+        if(!canvas || canvas.dataset.bound) return;
+        canvas.dataset.bound = '1';
+
+        function pos(ev){
+          const r = canvas.getBoundingClientRect();
+          return { x: ev.clientX - r.left, y: ev.clientY - r.top };
+        }
+
+        canvas.addEventListener('pointerdown', function(ev){
+          ev.preventDefault();
+          canvas.setPointerCapture(ev.pointerId);
+          sigDrawingPickup = true;
+          const ctx = canvas.getContext('2d');
+          const p = pos(ev);
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+        });
+
+        canvas.addEventListener('pointermove', function(ev){
+          if(!sigDrawingPickup) return;
+          ev.preventDefault();
+          const ctx = canvas.getContext('2d');
+          const p = pos(ev);
+          ctx.lineTo(p.x, p.y);
+          ctx.stroke();
+          sigHadStrokePickup = true;
+        });
+
+        function endStrokePickup(){
+          if(sigDrawingPickup){
+            sigDrawingPickup = false;
+            syncPickupSignatureToHidden();
+          }
+        }
+
+        canvas.addEventListener('pointerup', endStrokePickup);
+        canvas.addEventListener('pointercancel', endStrokePickup);
+        canvas.addEventListener('pointerleave', function(ev){
+          if(!canvas.hasPointerCapture(ev.pointerId)) endStrokePickup();
+        });
+
+        get('clearPickupSignatureBtn').addEventListener('click', function(){
+          clearPickupSignaturePad();
+        });
+
+        window.addEventListener('resize', function(){
+          const data = get('pickupSignatureData').value;
+          resizePickupSignatureCanvas();
+          if(data && data.startsWith('data:image')) restorePickupSignatureFromDataUrl(data);
+          else clearPickupSignaturePad();
+        });
+      }
+
+      function nowDate(){
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      }
+
+      /** Local time HH:MM for time inputs. */
+      function nowTime(){
+        const d = new Date();
+        return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+      }
+
+      /** Compare session dates as YYYY-MM-DD (handles "2025-03-20" and ISO timestamps from DB). */
+      function sessionDayKey(d){
+        if(d == null || d === '') return '';
+        const s = String(d).trim();
+        return s.length >= 10 ? s.slice(0, 10) : s;
+      }
+      function isTodaySession(d){
+        return sessionDayKey(d) === nowDate();
+      }
+
+      function readLocal(){ try{ const v = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); return Array.isArray(v) ? v : []; }catch(_){ return []; } }
+      function writeLocal(v){ localStorage.setItem(STORAGE_KEY, JSON.stringify(v)); }
+      function read(){ return recordsCache; }
+      function write(v){ recordsCache = v; writeLocal(v); }
+
+      function collect(){
+        syncSignatureToHidden();
+        syncPickupSignatureToHidden();
+        const o = {};
+        ids.forEach(function(id){ o[id] = get(id).value; });
+        return o;
+      }
+
+      function apply(o){
+        ids.forEach(function(id){
+          if(id === 'signatureData' || id === 'pickupSignatureData') return;
+          if(id in o) get(id).value = o[id] || '';
+        });
+        const sig = (o.signatureData || '').trim() ||
+          ((o.staffReceiving || '').trim().startsWith('data:image') ? (o.staffReceiving || '').trim() : '');
+        if(sig) restoreSignatureFromDataUrl(sig);
+        else clearSignaturePad();
+        const psig = (o.pickupSignatureData || '').trim();
+        if(psig) restorePickupSignatureFromDataUrl(psig);
+        else clearPickupSignaturePad();
+        renderRoleButtons('emotionalState');
+        renderRoleButtons('dropRole');
+        renderRoleButtons('pickupRole');
+        syncNameRules();
+        refreshHandoverSections(o);
+      }
+
+      function recId(o){
+        const n = (o.participantName || '').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+        const d = (o.sessionDate || '').trim();
+        return n && d ? `${d}__${n}` : '';
+      }
+
+      function hasSignatureData(o){
+        const s = (o.signatureData || '').trim();
+        if(s.startsWith('data:image') && s.length > 80) return true;
+        const leg = (o.staffReceiving || '').trim();
+        return leg.startsWith('data:image') && leg.length > 80;
+      }
+
+      function hasPickupSignatureData(o){
+        const s = (o.pickupSignatureData || '').trim();
+        return s.startsWith('data:image') && s.length > 80;
+      }
+
+      function dropDone(o){
+        const em = (o.emotionalState || '').trim();
+        const timeOk = (o.arrivalTime || '').trim();
+        const by = (o.dropName || '').trim();
+        return !!(o.participantName && String(o.participantName).trim() && o.sessionDate && timeOk && em && by && hasSignatureData(o));
+      }
+      function pickDone(o){
+        const pn = (o.pickupName || '').trim();
+        const pt = (o.pickupTime || '').trim();
+        return !!(pt && pn && hasPickupSignatureData(o));
+      }
+
+      function keepTodayOnly(){
+        const cleaned = read().filter(function(r){ return isTodaySession(r.sessionDate); });
+        write(cleaned);
+      }
+
+      /** Merge server rows into cache so an empty/partial API response never wipes a just-saved local record. */
+      function mergeRemoteIntoCache(mapped){
+        const byId = {};
+        read().forEach(function(r){
+          if(r && r.id && isTodaySession(r.sessionDate)) byId[r.id] = r;
+        });
+        (mapped || []).forEach(function(r){
+          if(r && r.id){
+            if(pendingLocalDeletes.has(r.id)) return;
+            byId[r.id] = r;
+          }
+        });
+        const merged = Object.values(byId).sort(function(a, b){
+          const ta = new Date(a.updatedAt || 0).getTime();
+          const tb = new Date(b.updatedAt || 0).getTime();
+          return tb - ta;
+        });
+        write(merged);
+      }
+
+      /** Open / in-progress handovers only (pick up not fully done). Completed rows stay in cache & Supabase but are not listed. */
+      function isActiveHandover(r){
+        return r && !r.locked;
+      }
+
+      function filterParticipants(query){
+        const q = (query || '').trim().toLowerCase();
+        const rows = read().filter(function(r){
+          return isTodaySession(r.sessionDate) && isActiveHandover(r);
+        });
+        if(!q) return rows;
+        return rows.filter(function(r){
+          return (r.participantName || '').toLowerCase().includes(q);
+        });
+      }
+
+      function showForm(){
+        emptyState.classList.add('hidden');
+        formSection.classList.remove('hidden');
+      }
+
+      function hideForm(){
+        currentId = '';
+        if(SOLO_MODE){
+          emptyState.classList.add('hidden');
+          formSection.classList.remove('hidden');
+          return;
+        }
+        formSection.classList.add('hidden');
+        emptyState.classList.remove('hidden');
+      }
+
+      function mapRemoteRow(r){
+        let vals = r.values || {};
+        if(typeof vals === 'string'){
+          try{ vals = JSON.parse(vals); }catch(_){ vals = {}; }
+        }
+        const sessionDate = r.session_date || r.sessionDate;
+        return {
+          id: r.id,
+          participantName: r.participant_name || r.participantName,
+          sessionDate: sessionDayKey(sessionDate) || sessionDate,
+          updatedAt: r.updated_at || r.updatedAt,
+          locked: !!r.locked,
+          values: vals
+        };
+      }
+
+      /** Pull using BOTH column naming styles so phone + desktop always see the same rows. */
+      async function pullTodayFromSupabase(){
+        if(!client){
+          status.textContent = 'No Supabase client (check script load)';
+          return { ok: false, error: 'No client' };
+        }
+        try{
+          const today = nowDate();
+          const byRemoteId = {};
+          const resSnake = await client.from(TABLE).select('*').eq('session_date', today).order('updated_at', { ascending: false });
+          const resCamel = await client.from(TABLE).select('*').eq('sessionDate', today).order('updatedAt', { ascending: false });
+          if(!resSnake.error && resSnake.data){
+            (resSnake.data || []).forEach(function(r){
+              const m = mapRemoteRow(r);
+              if(m.id && isTodaySession(m.sessionDate)) byRemoteId[m.id] = m;
+            });
+          }
+          if(!resCamel.error && resCamel.data){
+            (resCamel.data || []).forEach(function(r){
+              const m = mapRemoteRow(r);
+              if(m.id && isTodaySession(m.sessionDate)) byRemoteId[m.id] = m;
+            });
+          }
+          if(resSnake.error && resCamel.error){
+            throw resSnake.error || resCamel.error;
+          }
+          if(!resSnake.error) schemaMode = 'snake';
+          else if(!resCamel.error) schemaMode = 'camel';
+
+          const mapped = Object.values(byRemoteId).sort(function(a, b){
+            return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0);
+          });
+          mergeRemoteIntoCache(mapped);
+          renderSearchResults(filterParticipants(searchInput.value));
+          const t = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+          status.textContent = `Synced ${t} · ${read().length} today · ${mapped.length} row(s) from server`;
+          return { ok: true, count: read().length };
+        } catch(err){
+          status.textContent = `Sync error — ${err.message || 'remote error'} (using local list)`;
+          renderSearchResults(filterParticipants(searchInput.value));
+          return { ok: false, error: err.message || 'remote error' };
+        }
+      }
+
+      async function upsertSupabaseRow(row){
+        if(!client) return;
+        const upsertOpts = { onConflict: 'id' };
+        try{
+          let error = null;
+          let lastData = null;
+          if(schemaMode === 'snake'){
+            const res = await client.from(TABLE).upsert({
+              id: row.id,
+              participant_name: row.participantName,
+              session_date: sessionDayKey(row.sessionDate) || row.sessionDate,
+              updated_at: row.updatedAt,
+              locked: row.locked,
+              values: row.values
+            }, upsertOpts).select('id');
+            error = res.error;
+            lastData = res.data;
+            if(error){
+              const fallback = await client.from(TABLE).upsert({
+                id: row.id,
+                participantName: row.participantName,
+                sessionDate: sessionDayKey(row.sessionDate) || row.sessionDate,
+                updatedAt: row.updatedAt,
+                locked: row.locked,
+                values: row.values
+              }, upsertOpts).select('id');
+              error = fallback.error;
+              lastData = fallback.data;
+              if(!error) schemaMode = 'camel';
+            }
+          } else {
+            const res = await client.from(TABLE).upsert({
+              id: row.id,
+              participantName: row.participantName,
+              sessionDate: sessionDayKey(row.sessionDate) || row.sessionDate,
+              updatedAt: row.updatedAt,
+              locked: row.locked,
+              values: row.values
+            }, upsertOpts).select('id');
+            error = res.error;
+            lastData = res.data;
+            if(error){
+              const fallback = await client.from(TABLE).upsert({
+                id: row.id,
+                participant_name: row.participantName,
+                session_date: sessionDayKey(row.sessionDate) || row.sessionDate,
+                updated_at: row.updatedAt,
+                locked: row.locked,
+                values: row.values
+              }, upsertOpts).select('id');
+              error = fallback.error;
+              lastData = fallback.data;
+              if(!error) schemaMode = 'snake';
+            }
+          }
+          if(error) throw error;
+          if(!lastData || !lastData.length){
+            console.warn('Supabase upsert returned no row; check RLS SELECT after INSERT');
+          }
+          setTimeout(function(){ pullTodayFromSupabase(); }, 300);
+          setTimeout(function(){ pullTodayFromSupabase(); }, 1500);
+        } catch(err){
+          status.textContent = `Saved locally (${err.message || 'sync pending'})`;
+        }
+      }
+
+      async function deleteSupabaseRow(id){
+        markPendingDelete(id);
+        if(!client){
+          clearPendingDelete(id);
+          return;
+        }
+        try{
+          const { error } = await client.from(TABLE).delete().eq('id', id);
+          if(error) throw error;
+          clearPendingDelete(id);
+          await pullTodayFromSupabase();
+        } catch(err){
+          status.textContent = 'Removed on this device. If DELETE is blocked in Supabase (RLS), the row stays hidden here only.';
+        }
+      }
+
+      async function cleanupRemoteDaily(){
+        if(!client) return;
+        try{
+          const today = nowDate();
+          if(schemaMode === 'snake'){
+            await client.from(TABLE).delete().neq('session_date', today);
+          } else {
+            await client.from(TABLE).delete().neq('sessionDate', today);
+          }
+        } catch(_){}
+      }
+
+      const POLL_MS = 2500;
+
+      function startRealtimeSync(){
+        if(!client) return;
+        if(syncTimer) clearInterval(syncTimer);
+        syncTimer = setInterval(function(){
+          if(document.visibilityState === 'visible') pullTodayFromSupabase();
+        }, POLL_MS);
+        if(channel) client.removeChannel(channel);
+        channel = client
+          .channel('daily-handover-sync')
+          .on('postgres_changes', { event: '*', schema: 'public', table: TABLE }, function(){ pullTodayFromSupabase(); })
+          .subscribe(function(subState){
+            if(subState === 'TIMED_OUT' || subState === 'CHANNEL_ERROR'){
+              status.textContent = 'Live sync issue — polling every ' + (POLL_MS / 1000) + 's';
+            }
+          });
+        window.addEventListener('focus', function(){ pullTodayFromSupabase(); });
+        window.addEventListener('online', function(){ pullTodayFromSupabase(); });
+        window.addEventListener('pageshow', function(ev){ if(ev.persisted) pullTodayFromSupabase(); });
+        document.addEventListener('visibilitychange', function(){
+          if(document.visibilityState === 'visible') pullTodayFromSupabase();
+        });
+      }
+
+      function renderRoleButtons(roleId){
+        const holder = document.querySelector(`[data-role-group="${roleId}"]`);
+        if(!holder) return;
+        const value = get(roleId).value;
+        holder.querySelectorAll('.role-btn').forEach(function(btn){
+          btn.classList.toggle('active', btn.getAttribute('data-value') === value);
+        });
+      }
+
+      function syncNameRules(){
+        const dropNameWrap = get('dropNameWrap');
+        const dropName = get('dropName');
+        dropNameWrap.classList.remove('is-hidden');
+        dropName.required = true;
+
+        const pickupNameWrap = get('pickupNameWrap');
+        const pickupName = get('pickupName');
+        pickupNameWrap.classList.remove('is-hidden');
+        pickupName.required = true;
+      }
+
+      function renderSearchResults(filtered){
+        if(!filtered.length){
+          const q = (searchInput.value || '').trim();
+          const todayAll = read().filter(function(r){ return isTodaySession(r.sessionDate); });
+          const openToday = todayAll.filter(isActiveHandover);
+          let msg = 'No open handovers for today yet. Add a new participant above.';
+          if(todayAll.length && !openToday.length){
+            msg = 'No open handovers — today’s completed records are only in the database (not shown here). Add a new participant if needed.';
+          } else if(q && openToday.length){
+            msg = 'No open handover matches that name. Completed records are not listed here.';
+          } else if(q){
+            msg = 'No open handovers match your search.';
+          }
+          searchResults.innerHTML = '<div class="empty-box list-empty">' + msg + '</div>';
+          return;
+        }
+        searchResults.innerHTML = '';
+        filtered.forEach(function(r){
+          const card = document.createElement('div');
+          card.className = 'participant-card' + (r.id === currentId ? ' active' : '');
+          card.setAttribute('data-id', r.id);
+          const tick = '<span class="tick"></span>';
+          const pillClass = 'status-pill status-open';
+          const pillText = 'Open';
+          card.innerHTML = `
+            <div class="participant-top">
+              <div>
+                <p class="participant-name">${tick}${escapeHtml(r.participantName)}</p>
+                <div class="participant-meta">${escapeHtml(r.sessionDate || '')}</div>
+              </div>
+              <span class="${pillClass}">${pillText}</span>
+            </div>
+            <div class="card-actions">
+              <button type="button" class="btn btn-secondary" style="min-height:40px;padding:8px 14px;font-size:12px;" data-card-action="delete" data-id="${escapeAttr(r.id)}">Delete</button>
+            </div>
+          `;
+          searchResults.appendChild(card);
+        });
+      }
+
+      function escapeHtml(s){
+        const d = document.createElement('div');
+        d.textContent = s == null ? '' : String(s);
+        return d.innerHTML;
+      }
+      function escapeAttr(s){
+        return String(s == null ? '' : s).replace(/"/g, '&quot;');
+      }
+
+      function save(){
+        let o = collect();
+        const id = currentId || recId(o);
+        if(!id){
+          status.textContent = 'Add participant name + date first';
+          return false;
+        }
+        const pickupPhase = isDropOffSaved(o);
+        if(!pickupPhase){
+          if(!String(o.participantName || '').trim()){
+            alert('Please enter the name of participant.');
+            return false;
+          }
+          if(!String(o.sessionDate || '').trim()){
+            alert('Please enter the date.');
+            return false;
+          }
+          if(!String(o.arrivalTime || '').trim()){
+            alert('Please enter the time.');
+            return false;
+          }
+          if(!String(o.emotionalState || '').trim()){
+            alert('Please select the participant emotional state.');
+            return false;
+          }
+          if(!String(o.dropName || '').trim()){
+            alert('Please enter who dropped off the participant');
+            return false;
+          }
+          if(!hasSignatureData(o)){
+            alert('Please sign in the Signature box (receiving staff).');
+            return false;
+          }
+        } else {
+          if(!String(o.pickupTime || '').trim()){
+            alert('Please enter the pick up time.');
+            return false;
+          }
+          if(!String(o.pickupName || '').trim()){
+            alert('Please enter Collected By.');
+            return false;
+          }
+          if(!hasPickupSignatureData(o)){
+            alert('Pick up signature required before saving');
+            return false;
+          }
+        }
+        if(dropDone(o)) get('dropOffSaved').value = '1';
+        else get('dropOffSaved').value = '';
+        o = collect();
+        const rows = read().filter(function(r){ return r.id !== id; });
+        const row = {
+          id,
+          participantName: val('participantName') || 'Unnamed',
+          sessionDate: val('sessionDate') || 'No date',
+          updatedAt: new Date().toISOString(),
+          locked: dropDone(o) && pickDone(o),
+          values: o
+        };
+        rows.unshift(row);
+        write(rows);
+        currentId = id;
+        upsertSupabaseRow(row);
+        status.textContent = `Saved: ${row.participantName} (${row.sessionDate})`;
+        renderSearchResults(filterParticipants(searchInput.value));
+        if(row.locked){
+          form.reset();
+          get('sessionDate').value = nowDate();
+          clearSignaturePad();
+          clearPickupSignaturePad();
+          currentId = '';
+          renderRoleButtons('emotionalState');
+          renderRoleButtons('dropRole');
+          renderRoleButtons('pickupRole');
+          syncNameRules();
+          if(SOLO_MODE){
+            emptyState.classList.add('hidden');
+            formSection.classList.remove('hidden');
+            status.textContent = 'Handover completed — saved to the database. Form cleared for the next participant.';
+          } else {
+            emptyState.textContent = 'Handover saved to the database. Only open handovers appear in the list below.';
+            hideForm();
+            status.textContent = 'Completed and saved — this participant no longer appears in the active list.';
+          }
+          alert('Handover completed (drop off + pick up). Saved to the database; removed from the active list on this page.');
+          try{
+            if(typeof portalRedirectToPortalReturn === 'function') portalRedirectToPortalReturn();
+          }catch(_e){}
+          pickupOnlyView = false;
+          refreshHandoverSections();
+        } else {
+          pickupOnlyView = false;
+          if(dropDone(o) && !pickDone(o)){
+            if(!SOLO_MODE){
+              hideForm();
+              emptyState.textContent = 'Drop off saved. Use the participant list below — open the same person when you are ready for pick up, or add someone new.';
+              searchInput.value = row.participantName || '';
+              renderSearchResults(filterParticipants(searchInput.value));
+              status.textContent = 'Session list — open this participant’s card for pick up when they leave.';
+            } else {
+              refreshHandoverSections();
+            }
+            showPickupDropOffSavedModal();
+          } else {
+            refreshHandoverSections();
+            alert('Saved.');
+          }
+        }
+        return true;
+      }
+
+      function loadById(id){
+        const row = read().find(function(r){ return r.id === id; });
+        if(!row) return false;
+        if(row.locked){
+          status.textContent = 'That handover is already completed (not shown in the list). Data is in the database.';
+          return false;
+        }
+        pickupOnlyView = isDropOffSaved(row.values || {});
+        apply(row.values || {});
+        currentId = row.id;
+        searchInput.value = row.participantName || '';
+        showForm();
+        if(pickupOnlyView){
+          const tPick = nowTime();
+          get('pickupTime').value = tPick;
+        }
+        status.textContent = pickupOnlyView
+          ? `Pick up — ${row.participantName} (${row.sessionDate})`
+          : `Loaded: ${row.participantName} (${row.sessionDate})`;
+        renderSearchResults(filterParticipants(searchInput.value));
+        return true;
+      }
+
+      function delCurrent(){
+        const o = collect();
+        const id = currentId || recId(o);
+        if(!id){
+          alert('Open a participant from the list or fill name + date, then try again.');
+          return;
+        }
+        if(!confirm('Delete this participant record for today?')) return;
+        const openFormMatches = !formSection.classList.contains('hidden') && recId(o) === id;
+        deleteSupabaseRow(id);
+        write(read().filter(function(r){ return r.id !== id; }));
+        if(currentId === id || openFormMatches){
+          hideForm();
+          form.reset();
+          get('sessionDate').value = nowDate();
+          clearSignaturePad();
+          clearPickupSignaturePad();
+        }
+        renderRoleButtons('emotionalState');
+        renderRoleButtons('dropRole');
+        renderRoleButtons('pickupRole');
+        status.textContent = 'Participant removed';
+        pickupOnlyView = false;
+        refreshHandoverSections();
+        renderSearchResults(filterParticipants(searchInput.value));
+      }
+
+      function newRecord(){
+        pickupOnlyView = false;
+        form.reset();
+        currentId = '';
+        ids.forEach(function(id){ if(id !== 'sessionDate') get(id).value = ''; });
+        get('sessionDate').value = nowDate();
+        searchInput.value = '';
+        renderRoleButtons('emotionalState');
+        renderRoleButtons('dropRole');
+        renderRoleButtons('pickupRole');
+        syncNameRules();
+        clearSignaturePad();
+        clearPickupSignaturePad();
+        hideForm();
+        if(!SOLO_MODE){
+          emptyState.textContent = 'Search for a participant or create a new one to begin the drop off and pick up record.';
+          status.textContent = 'New — search or add a participant';
+        } else {
+          status.textContent = 'New handover — fill the form below.';
+        }
+        renderSearchResults(filterParticipants(''));
+        refreshHandoverSections();
+      }
+
+      function addNewParticipantFromInput(){
+        const name = searchInput.value.trim();
+        if(!name){
+          alert('Please enter the participant name first.');
+          searchInput.focus();
+          return;
+        }
+        const today = nowDate();
+        const rowsToday = read().filter(function(r){ return isTodaySession(r.sessionDate); });
+        const existingOpen = rowsToday.find(function(r){
+          return isActiveHandover(r) && (r.participantName || '').trim().toLowerCase() === name.toLowerCase();
+        });
+        if(existingOpen){
+          loadById(existingOpen.id);
+          alert('This participant already has an open handover for today. Their record has been opened.');
+          return;
+        }
+        const existingLocked = rowsToday.find(function(r){
+          return r.locked && (r.participantName || '').trim().toLowerCase() === name.toLowerCase();
+        });
+        if(existingLocked){
+          alert('This participant already completed handover today. The record is stored in the database and is not shown in this list. You cannot add a second open record with the same name today — contact admin if a second visit is needed.');
+          return;
+        }
+        const tArrive = nowTime();
+        const values = {
+          participantName: name,
+          sessionDate: today,
+          arrivalTime: tArrive,
+          emotionalState: '',
+          dropRole: '',
+          dropName: '',
+          signatureData: '',
+          dropOffSaved: '',
+          pickupTime: '',
+          pickupRole: '',
+          pickupName: '',
+          pickupSignatureData: ''
+        };
+        const id = recId(values);
+        const row = {
+          id,
+          participantName: name,
+          sessionDate: today,
+          updatedAt: new Date().toISOString(),
+          locked: false,
+          values: values
+        };
+        const rows = read().filter(function(r){ return r.id !== id; });
+        rows.unshift(row);
+        write(rows);
+        currentId = id;
+        upsertSupabaseRow(row);
+        pickupOnlyView = false;
+        apply(values);
+        get('sessionDate').value = today;
+        get('arrivalTime').value = tArrive;
+        showForm();
+        renderSearchResults(filterParticipants(searchInput.value.trim()));
+        status.textContent = `Created: ${name}`;
+      }
+
+      function runSearch(){
+        const filtered = filterParticipants(searchInput.value);
+        renderSearchResults(filtered);
+        if(filtered.length === 1){
+          loadById(filtered[0].id);
+        } else if(!filtered.length){
+          hideForm();
+          emptyState.classList.remove('hidden');
+          emptyState.textContent = 'No matching open handover for today. Completed records are hidden. Add a new participant if appropriate.';
+        }
+      }
+
+      searchResults.addEventListener('click', function(e){
+        const t = e.target;
+        if(!(t instanceof HTMLElement)) return;
+        const delBtn = t.closest('[data-card-action="delete"]');
+        if(delBtn){
+          e.stopPropagation();
+          const id = delBtn.getAttribute('data-id');
+          if(!id || !confirm('Delete this participant record for today?')) return;
+          deleteSupabaseRow(id);
+          write(read().filter(function(r){ return r.id !== id; }));
+          if(currentId === id){
+            hideForm();
+            form.reset();
+            get('sessionDate').value = nowDate();
+            clearSignaturePad();
+            clearPickupSignaturePad();
+            pickupOnlyView = false;
+            refreshHandoverSections();
+          }
+          renderSearchResults(filterParticipants(searchInput.value));
+          return;
+        }
+        const card = t.closest('.participant-card');
+        if(card && card.getAttribute('data-id')){
+          loadById(card.getAttribute('data-id'));
+        }
+      });
+
+      form.addEventListener('input', function(){
+        syncNameRules();
+      });
+
+      document.addEventListener('click', function(e){
+        const t = e.target;
+        if(!(t instanceof HTMLElement)) return;
+        if(!t.classList.contains('role-btn')) return;
+        const holder = t.closest('[data-role-group]');
+        if(!holder) return;
+        const roleId = holder.getAttribute('data-role-group');
+        if(!roleId) return;
+        const newValue = t.getAttribute('data-value') || '';
+        const input = get(roleId);
+        input.value = input.value === newValue ? '' : newValue;
+        renderRoleButtons(roleId);
+        syncNameRules();
+      });
+
+      document.getElementById('showDropOffBtn').addEventListener('click', function(){
+        pickupOnlyView = false;
+        refreshHandoverSections();
+      });
+
+      document.getElementById('saveBtn').addEventListener('click', function(){ save(); });
+      document.getElementById('newBtn').addEventListener('click', newRecord);
+      document.getElementById('delBtn').addEventListener('click', delCurrent);
+
+      document.getElementById('addParticipantBtn').addEventListener('click', addNewParticipantFromInput);
+      document.getElementById('searchBtn').addEventListener('click', runSearch);
+      searchInput.addEventListener('keydown', function(e){
+        if(e.key === 'Enter'){
+          e.preventDefault();
+          document.getElementById('searchBtn').click();
+        }
+      });
+
+      write(readLocal());
+      keepTodayOnly();
+      await cleanupRemoteDaily();
+      await pullTodayFromSupabase();
+      setTimeout(function(){ pullTodayFromSupabase(); }, 1000);
+      setTimeout(function(){ pullTodayFromSupabase(); }, 3500);
+      startRealtimeSync();
+      get('sessionDate').value = nowDate();
+      if(SOLO_MODE){
+        emptyState.classList.add('hidden');
+        formSection.classList.remove('hidden');
+        currentId = '';
+        status.textContent = 'Form-only mode: fill the record and Save. Remove ?solo=1 from the URL to show search & participant list.';
+      } else {
+        hideForm();
+      }
+      renderSearchResults(filterParticipants(''));
+      initSignaturePad();
+      resizeSignatureCanvas();
+      clearSignaturePad();
+      initPickupSignaturePad();
+      resizePickupSignatureCanvas();
+      clearPickupSignaturePad();
+
+      renderRoleButtons('emotionalState');
+      renderRoleButtons('dropRole');
+      renderRoleButtons('pickupRole');
+      syncNameRules();
+    })();
+  </script>
+</body>
+</html>

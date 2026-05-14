@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>clubSENsational · Operations Control</title>
+  
+  <link rel="stylesheet" href="admin_dashboard_styles.css" />
+</head>
+<body>
+<script>
+  (function(){
+    var h=document.documentElement;
+    try{
+      if(navigator.standalone) h.classList.add('portal-standalone');
+      else if(matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: fullscreen)').matches) h.classList.add('portal-standalone');
+      else h.classList.add('portal-in-browser');
+    }catch(e){ h.classList.add('portal-in-browser'); }
+  })();
+  
+  </script>
+  
+  <div class="admin-shell" id="adminShell">
+    <div class="sidebar-backdrop" id="sidebarBackdrop" aria-hidden="true"></div>
+    <aside class="admin-sidebar" id="adminSidebar" aria-label="Main navigation">
+      <div class="admin-sidebar-brand">
+        <div class="admin-sidebar-logo" aria-label="clubSENsational logo">
+          <img src="https://www.clubsensational.org/wp-content/uploads/2026/03/F-02-1.png" alt="clubSENsational logo" width="120" height="120" decoding="async" />
+        </div>
+        <strong>clubSENsational</strong>
+        <span>Operations Control</span>
+      </div>
+      <nav class="admin-nav" id="adminNav"></nav>
+      <div class="admin-sidebar-foot">Demo mode · full mock journeys</div>
+    </aside>
+    <div class="admin-main">
+      <header class="admin-topbar">
+        <button type="button" class="admin-menu-mob" id="btnMenuMob" aria-label="Open menu">☰</button>
+        <div class="admin-search-wrap">
+          <span class="admin-search-ico" aria-hidden="true">⌕</span>
+          <input type="search" id="globalSearch" placeholder="Search clients, staff, sessions…" autocomplete="off" aria-label="Global search" />
+        </div>
+        <div class="admin-topbar-meta">
+          <span class="admin-date" id="topDate"></span>
+          <button type="button" class="admin-icon-btn" id="btnAlerts" aria-label="Alerts" title="Alerts">
+            🔔
+            <span class="admin-badge" id="alertBadge">0</span>
+          </button>
+          <button type="button" class="view-toggle" id="viewToggle" role="switch" aria-checked="false" title="Narrow preview"></button>
+          <button type="button" class="admin-profile" id="btnProfileMini">
+            <span class="admin-av" id="miniAv">A</span>
+            <span id="miniName">Admin</span>
+          </button>
+        </div>
+      </header>
+      <main class="admin-workspace" id="workspace"></main>
+    </div>
+  </div>
+
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+  <aside class="drawer" id="clientDrawer" aria-hidden="true">
+    <div class="drawer-h">
+      <div>
+        <h2 id="drawerClientName">Client</h2>
+        <p style="margin:4px 0 0;font-size:12px;color:var(--muted)" id="drawerClientSub"></p>
+      </div>
+      <button type="button" class="btn btn--sec btn--sm" id="btnCloseDrawer">Close</button>
+    </div>
+    <div class="drawer-body" id="drawerBody"></div>
+    <div class="drawer-actions" id="drawerActions"></div>
+  </aside>
+
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal" role="dialog" aria-modal="true" id="modalRoot" aria-labelledby="modalTitle"></div>
+  </div>
+  <div class="alerts-pop" id="alertsPop" role="region" aria-label="Alerts"></div>
+
+  
+  <script src="admin_dashboard_scripts.js?v=20260419-99"></script>
+</body>
+</html>

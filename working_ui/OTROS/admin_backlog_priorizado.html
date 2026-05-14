@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Backlog priorizado — Admin &amp; Supabase</title>
+  <style>
+    :root {
+      --bg: #f4f6fa;
+      --surface: #fff;
+      --text: #1a1d26;
+      --muted: #5c6478;
+      --border: #d8dee9;
+      --accent: #2563eb;
+      --accent-soft: #eff6ff;
+      --p0: #b45309;
+      --p0-bg: #fffbeb;
+      --p1: #1d4ed8;
+      --p1-bg: #eff6ff;
+      --p2: #4b5563;
+      --p2-bg: #f3f4f6;
+      --radius: 12px;
+      --shadow: 0 4px 24px rgba(15, 23, 42, 0.08);
+      --font-base: 1.05rem;
+      --line: 1.65;
+      --max-read: 44rem;
+    }
+    [data-theme="dark"] {
+      --bg: #0f1219;
+      --surface: #171b24;
+      --text: #e8ebf2;
+      --muted: #9aa3b8;
+      --border: #2a3142;
+      --accent: #60a5fa;
+      --accent-soft: #1e293b;
+      --p0: #fbbf24;
+      --p0-bg: #422006;
+      --p1: #93c5fd;
+      --p1-bg: #1e3a5f;
+      --p2: #9ca3af;
+      --p2-bg: #27272f;
+      --shadow: 0 4px 28px rgba(0, 0, 0, 0.45);
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: system-ui, "Segoe UI", Roboto, Ubuntu, sans-serif;
+      font-size: var(--font-base);
+      line-height: var(--line);
+      color: var(--text);
+      background: var(--bg);
+      min-height: 100vh;
+    }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem 1rem;
+      padding: 0.75rem 1rem;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      min-width: 0;
+    }
+    .topbar h1 {
+      margin: 0;
+      font-size: clamp(1rem, 2.5vw, 1.2rem);
+      font-weight: 700;
+      flex: 1 1 12rem;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .topbar .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+    button {
+      font: inherit;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      padding: 0.45rem 0.75rem;
+      border-radius: 8px;
+    }
+    button:hover { border-color: var(--accent); color: var(--accent); }
+    button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    button.primary:hover { filter: brightness(1.08); color: #fff; }
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      max-width: 1200px;
+      margin: 0 auto;
+      min-width: 0;
+    }
+    @media (min-width: 900px) {
+      .layout { grid-template-columns: 268px minmax(0, 1fr); align-items: start; }
+    }
+    .toc-wrap {
+      position: sticky;
+      top: 3.5rem;
+      padding: 1rem;
+      max-height: calc(100vh - 4rem);
+      overflow: auto;
+      min-width: 0;
+      min-height: 0;
+    }
+    @media (max-width: 899px) {
+      .toc-wrap {
+        position: relative;
+        top: 0;
+        max-height: none;
+        border-bottom: 1px solid var(--border);
+        background: var(--surface);
+      }
+    }
+    .toc-wrap h2 {
+      margin: 0 0 0.5rem;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+    }
+    .toc { list-style: none; margin: 0; padding: 0; }
+    .toc a {
+      display: block;
+      padding: 0.4rem 0.5rem;
+      border-radius: 6px;
+      color: var(--text);
+      text-decoration: none;
+      overflow-wrap: break-word;
+      min-width: 0;
+    }
+    .toc a:hover, .toc a:focus-visible { background: var(--accent-soft); color: var(--accent); outline: none; }
+    .toc a.active { font-weight: 600; color: var(--accent); }
+    main { padding: 1rem 1.25rem 3rem; min-width: 0; }
+    .intro {
+      max-width: var(--max-read);
+      margin-bottom: 1rem;
+      color: var(--muted);
+      font-size: 0.95em;
+    }
+    .intro a { color: var(--accent); overflow-wrap: anywhere; }
+    details.section {
+      margin-bottom: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      min-width: 0;
+    }
+    details.section > summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 0.85rem 1rem;
+      font-weight: 650;
+      font-size: 1.05rem;
+      background: linear-gradient(180deg, var(--accent-soft), var(--surface));
+      user-select: none;
+      overflow-wrap: break-word;
+      min-width: 0;
+    }
+    details.section > summary::-webkit-details-marker { display: none; }
+    details.section[open] > summary { border-bottom: 1px solid var(--border); }
+    details.section > summary::after {
+      content: "▸";
+      float: right;
+      opacity: 0.5;
+      transition: transform 0.2s;
+    }
+    details.section[open] > summary::after { transform: rotate(90deg); }
+    .section-body {
+      padding: 1rem 1.1rem 1.15rem;
+      max-width: var(--max-read);
+      overflow-wrap: break-word;
+      word-break: break-word;
+    }
+    .section-body p { margin: 0 0 0.75rem; }
+    .section-body ol.backlog {
+      margin: 0 0 0.75rem;
+      padding-left: 1.35rem;
+    }
+    .section-body ol.backlog > li { margin-bottom: 0.65rem; }
+    .section-body ul { margin: 0.25rem 0 0.5rem; padding-left: 1.2rem; }
+    .section-body li { margin-bottom: 0.3rem; }
+    .pill {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 0.12rem 0.4rem;
+      border-radius: 4px;
+      vertical-align: middle;
+      margin-right: 0.35rem;
+      letter-spacing: 0.02em;
+    }
+    .pill-p0 { background: var(--p0-bg); color: var(--p0); border: 1px solid var(--border); }
+    .pill-p1 { background: var(--p1-bg); color: var(--p1); border: 1px solid var(--border); }
+    .pill-p2 { background: var(--p2-bg); color: var(--p2); border: 1px solid var(--border); }
+    .callout {
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      border-left: 4px solid var(--accent);
+      background: var(--accent-soft);
+      margin: 0 0 1rem;
+      font-size: 0.95em;
+    }
+    .kbd {
+      font-size: 0.85em;
+      padding: 0.1rem 0.35rem;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .skip {
+      position: absolute;
+      left: -9999px;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+    }
+    .skip:focus {
+      left: 1rem;
+      top: 1rem;
+      width: auto;
+      height: auto;
+      padding: 0.5rem 1rem;
+      background: var(--accent);
+      color: #fff;
+      z-index: 100;
+    }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#contenido">Ir al contenido</a>
+  <header class="topbar">
+    <h1>Backlog priorizado — Admin, CEO y Supabase</h1>
+    <div class="actions">
+      <button type="button" id="btnFontSm" title="Texto más pequeño">A−</button>
+      <button type="button" id="btnFontMd" title="Tamaño normal">A</button>
+      <button type="button" id="btnFontLg" title="Texto más grande">A+</button>
+      <button type="button" id="btnExpand" class="primary">Abrir todo</button>
+      <button type="button" id="btnCollapse">Cerrar todo</button>
+      <button type="button" id="btnTheme" aria-pressed="false">Modo oscuro</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="toc-wrap" aria-label="Índice">
+      <h2>Índice</h2>
+      <ul class="toc" id="toc">
+        <li><a href="#s0">Cómo leer esto</a></li>
+        <li><a href="#s1">Orden entre pilares</a></li>
+        <li><a href="#s2">Pilar D — Operación</a></li>
+        <li><a href="#s3">Pilar A — Clientes / cobro</a></li>
+        <li><a href="#s4">Pilar B — People / HR</a></li>
+        <li><a href="#s5">Pilar C — Servicios / terms</a></li>
+        <li><a href="#s6">CEO board y sistema</a></li>
+        <li><a href="#s7">UX / demos / limpieza</a></li>
+        <li><a href="#s8">Enlaces</a></li>
+      </ul>
+    </nav>
+
+    <main id="contenido">
+      <p class="intro">
+        Lista <strong>ordenada</strong> de épicas (trabajos grandes). Los niveles
+        <span class="pill pill-p0">P0</span><span class="pill pill-p1">P1</span><span class="pill pill-p2">P2</span>
+        indican urgencia sugerida; podéis reordenar cuando cambie el negocio.
+        Contexto: <a href="admin_architecture_guide.html">guía</a> ·
+        <a href="admin_opinion_centralizacion.html">opinión</a> ·
+        mocks v2 ES: <a href="admin_dashboard_saas_concept_v2.html">Admin</a> /
+        <a href="ceo_dashboard_saas_concept_v2.html">CEO</a> · v2 EN:
+        <a href="admin_dashboard_saas_concept_v2_en.html">Admin</a> /
+        <a href="ceo_dashboard_saas_concept_v2_en.html">CEO</a>.
+      </p>
+
+      <p class="callout">
+        <strong>P0</strong> = bloquea confianza o duplica verdad de datos.
+        <strong>P1</strong> = alto valor o desbloquea el siguiente tramo.
+        <strong>P2</strong> = mejora fuerte pero puede esperar sin romper el día a día.
+      </p>
+
+      <details class="section" id="s0" open>
+        <summary>Cómo leer y mantener el backlog</summary>
+        <div class="section-body">
+          <ul>
+            <li>Cada ítem es una <strong>épica</strong> (se desglosa en tareas pequeñas cuando lo abordéis).</li>
+            <li>Revisión semanal o quincenal: subir/bajar prioridad, tachar lo hecho, añadir una línea si aparece un agujero nuevo.</li>
+            <li>Si dos pilares compiten, mirad la sección “Orden entre pilares” como desempate por defecto.</li>
+            <li><strong>Staff/Lead dashboards</strong> siguen fuera de alcance salvo decisión explícita; el backlog asume Admin + Supabase + CEO.</li>
+          </ul>
+        </div>
+      </details>
+
+      <details class="section" id="s1" open>
+        <summary>Orden sugerido <em>entre</em> pilares (meta-prioridad)</summary>
+        <div class="section-body">
+          <ol class="backlog">
+            <li><span class="pill pill-p0">P0</span>Fijar por escrito qué es “verdad” hoy para <strong>agenda efectiva</strong> (roster + overrides Supabase) y qué sigue en Excel hasta fecha X.</li>
+            <li><span class="pill pill-p0">P0</span>Diseñar <strong>roles + RLS</strong> (quién lee/escribe qué) antes de volcar datos sensibles (cobros, HR) a tablas.</li>
+            <li><span class="pill pill-p1">P1</span><strong>Pilar A</strong>: modelo de datos de contrato/cobro en Supabase + migración desde <span class="kbd">localStorage</span> donde ya confiáis en el admin.</li>
+            <li><span class="pill pill-p1">P1</span><strong>Pilar D</strong>: una sola historia de datos entre Bookings y Scheduling (dos vistas, un origen).</li>
+            <li><span class="pill pill-p1">P1</span><strong>CEO board</strong>: KPIs solo desde agregados reales (misma BD que operación), no duplicar “demo” como si fuera oficial.</li>
+            <li><span class="pill pill-p2">P2</span><strong>Pilar B</strong>: pipeline entrevistas / candidatos enlazado a staff cuando aplique.</li>
+            <li><span class="pill pill-p2">P2</span><strong>Pilar C</strong>: catálogo programme/term que alimente precios y enlaces internos a re-enrol.</li>
+          </ol>
+        </div>
+      </details>
+
+      <details class="section" id="s2">
+        <summary>Pilar D — Operación (agenda, overrides, capacidad)</summary>
+        <div class="section-body">
+          <ol class="backlog">
+            <li><span class="pill pill-p0">P0</span>Documentar y respetar una sola cadena: spreadsheet/adapter → slots; <code>schedule_overrides</code> encima; participante efectivo igual en Bookings y Scheduling.</li>
+            <li><span class="pill pill-p1">P1</span><strong>Auditoría de overrides</strong>: quién/cuándo/qué (si aún no está cubierto al nivel que necesitéis para disputas o dirección).</li>
+            <li><span class="pill pill-p1">P1</span>UX: reducir sensación de “dos sitios” — mismos datos, accesos claros (contrato en Bookings, excepciones en Scheduling o pestañas coherentes).</li>
+            <li><span class="pill pill-p2">P2</span>Vista tipo “schedule del día” / lista operativa después de capacidad semanal (Bookings u Operations), según prioridad operativa.</li>
+            <li><span class="pill pill-p2">P2</span>Reglas de notificación a padre (cambio instructor / cobro) enlazadas a plantillas y a registro de “enviado” en BD cuando dejéis de depender solo de borradores locales.</li>
+          </ol>
+        </div>
+      </details>
+
+      <details class="section" id="s3">
+        <summary>Pilar A — Clientes, intake, cobros</summary>
+        <div class="section-body">
+          <ol class="backlog">
+            <li><span class="pill pill-p0">P0</span>Modelo Supabase: participante / enrolment por term, líneas de cargo, pagos parciales, saldo; alineado con cómo cobráis hoy (y con export CSV si lo necesitáis).</li>
+            <li><span class="pill pill-p0">P0</span>Plan de migración desde <span class="kbd">portal_booking_meta_v1_*</span> y <span class="kbd">portal_booking_finance_v1_*</span> (script único + comprobación; convivencia temporal).</li>
+            <li><span class="pill pill-p1">P1</span>Contacto padre y meta de billing en BD con RLS (no solo en localStorage) cuando el modelo esté estable.</li>
+            <li><span class="pill pill-p1">P1</span><strong>Ficha única participante</strong> (una pantalla que unifica lo que hoy está repartido en pestañas) — épica UX + consultas.</li>
+            <li><span class="pill pill-p2">P2</span>Matriz mensual de cobros vs lista + CSV: elegir una vista principal y mantener export para contabilidad.</li>
+            <li><span class="pill pill-p2">P2</span>Sincronización o campo “actualizado CFK” por línea o bloque, cuando defináis el proceso con ClassForKids.</li>
+          </ol>
+        </div>
+      </details>
+
+      <details class="section" id="s4">
+        <summary>Pilar B — People, interviews, compliance</summary>
+        <div class="section-body">
+          <ol class="backlog">
+            <li><span class="pill pill-p0">P0</span>Política de datos: qué campos son restringidos (bancarios, salud), qué roles los ven, retención y borrado; reflejada en RLS y en UI.</li>
+            <li><span class="pill pill-p1">P1</span>Tablas de <strong>candidato</strong> y <strong>entrevista</strong> (fecha, estado, notas, enlace a application form); más tarde enlace a <code>staff</code> cuando pase a contratado.</li>
+            <li><span class="pill pill-p1">P1</span>Compliance por persona: vencimientos DBS / first aid / políticas (read-model alimentado desde import o captura manual).</li>
+            <li><span class="pill pill-p2">P2</span>Import periódico desde Staff Matrix / Google Sheets (solo campos no ultra-sensibles primero) o captura en admin.</li>
+            <li><span class="pill pill-p2">P2</span>Recordatorios y semáforo para dirección (CEO board) sin exponer detalle sensible a todos los roles.</li>
+          </ol>
+        </div>
+      </details>
+
+      <details class="section" id="s5">
+        <summary>Pilar C — Servicios, terms, re-enrol</summary>
+        <div class="section-body">
+          <ol class="backlog">
+            <li><span class="pill pill-p1">P1</span>Catálogo interno: programme, sede, precio por sesión, sesiones por term (fuente para cálculos y para alinear con web pública).</li>
+            <li><span class="pill pill-p2">P2</span>Enlace explícito entre “oferta publicada” (re-enrol / web) y filas del catálogo para evitar divergencia de precios.</li>
+            <li><span class="pill pill-p2">P2</span>Contrato “term” en BD que una participación (Pilar A) referencia, en lugar de solo texto libre.</li>
+          </ol>
+        </div>
+      </details>
+
+      <details class="section" id="s6">
+        <summary>CEO board, integraciones y sistema</summary>
+        <div class="section-body">
+          <ol class="backlog">
+            <li><span class="pill pill-p0">P0</span>Definir qué métricas son “oficiales” y desde qué tablas se calculan (morosidad, ocupación, huecos sin cover, pipeline HR en números).</li>
+            <li><span class="pill pill-p1">P1</span>CEO board: solo lectura + enlaces “bajar a detalle” al admin operativo; sin segundo sitio de edición duplicado.</li>
+            <li><span class="pill pill-p1">P1</span>Integraciones (WordPress, exports, etc.) documentadas: qué sistema manda en cada flujo.</li>
+            <li><span class="pill pill-p2">P2</span>Alertas programadas (email/Slack) desde Supabase o edge functions cuando tengáis volumen que lo justifique.</li>
+          </ol>
+        </div>
+      </details>
+
+      <details class="section" id="s7">
+        <summary>UX, demos y reducción de repetición</summary>
+        <div class="section-body">
+          <ol class="backlog">
+            <li><span class="pill pill-p1">P1</span>Etiquetar vistas <strong>demo / laboratorio</strong> en el menú o cabecera para que no se confundan con registro real.</li>
+            <li><span class="pill pill-p2">P2</span>Converger Operator + Operations + trozos de Dashboard que cuenten la misma historia de “atajos” en un solo espacio o desactivar lo redundante.</li>
+            <li><span class="pill pill-p2">P2</span>Communications / Reports: o bien conectar a tablas reales o bien mantenerlas claramente como prototipo hasta segunda fase.</li>
+          </ol>
+        </div>
+      </details>
+
+      <details class="section" id="s8">
+        <summary>Otros archivos del proyecto</summary>
+        <div class="section-body">
+          <ul>
+            <li><code>docs/ADMIN_ARQUITECTURA_Y_RAIZ.txt</code></li>
+            <li><code>working_ui/admin_architecture_guide.html</code></li>
+            <li><code>working_ui/admin_opinion_centralizacion.html</code></li>
+            <li>Este backlog: <code>working_ui/admin_backlog_priorizado.html</code></li>
+          </ul>
+        </div>
+      </details>
+    </main>
+  </div>
+
+  <script>
+    (function () {
+      var root = document.documentElement;
+      var sections = document.querySelectorAll("details.section");
+      var LS_FONT = "adminBacklogFont";
+      var LS_THEME = "adminBacklogTheme";
+
+      function setFont(step) {
+        var sizes = { sm: "0.95rem", md: "1.05rem", lg: "1.2rem" };
+        root.style.setProperty("--font-base", sizes[step] || sizes.md);
+        try { localStorage.setItem(LS_FONT, step); } catch (e) {}
+      }
+      function applySavedFont() {
+        try {
+          var s = localStorage.getItem(LS_FONT);
+          if (s === "sm" || s === "lg") setFont(s);
+        } catch (e) {}
+      }
+      function setTheme(dark) {
+        var btn = document.getElementById("btnTheme");
+        if (dark) {
+          root.setAttribute("data-theme", "dark");
+          btn.textContent = "Modo claro";
+          btn.setAttribute("aria-pressed", "true");
+        } else {
+          root.removeAttribute("data-theme");
+          btn.textContent = "Modo oscuro";
+          btn.setAttribute("aria-pressed", "false");
+        }
+        try { localStorage.setItem(LS_THEME, dark ? "dark" : "light"); } catch (e) {}
+      }
+      function applySavedTheme() {
+        try {
+          if (localStorage.getItem(LS_THEME) === "dark") setTheme(true);
+        } catch (e) {}
+      }
+
+      document.getElementById("btnFontSm").addEventListener("click", function () { setFont("sm"); });
+      document.getElementById("btnFontMd").addEventListener("click", function () { setFont("md"); });
+      document.getElementById("btnFontLg").addEventListener("click", function () { setFont("lg"); });
+      document.getElementById("btnTheme").addEventListener("click", function () {
+        setTheme(root.getAttribute("data-theme") !== "dark");
+      });
+      document.getElementById("btnExpand").addEventListener("click", function () {
+        sections.forEach(function (d) { d.open = true; });
+      });
+      document.getElementById("btnCollapse").addEventListener("click", function () {
+        sections.forEach(function (d) { d.open = false; });
+      });
+
+      var tocLinks = document.querySelectorAll("#toc a");
+      var obs = new IntersectionObserver(
+        function (entries) {
+          entries.forEach(function (en) {
+            if (!en.isIntersecting) return;
+            var id = en.target.id;
+            tocLinks.forEach(function (a) {
+              a.classList.toggle("active", a.getAttribute("href") === "#" + id);
+            });
+          });
+        },
+        { rootMargin: "-20% 0px -60% 0px", threshold: 0 }
+      );
+      sections.forEach(function (s) { obs.observe(s); });
+
+      applySavedFont();
+      applySavedTheme();
+
+      document.querySelectorAll("#toc a").forEach(function (a) {
+        a.addEventListener("click", function () {
+          var el = document.getElementById(a.getAttribute("href").slice(1));
+          if (el) el.open = true;
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>
+    (function () {
+      try {
+        document.documentElement.classList.add("portal-app-shell");
+      } catch (e) {}
+    })();
+  </script>
+  <style id="portal-hide-wp-chrome">
+    html.portal-app-shell body.admin-bar {
+      padding-top: 0 !important;
+      margin-top: 0 !important;
+    }
+    html.portal-app-shell #wpadminbar,
+    html.portal-app-shell #masthead,
+    html.portal-app-shell header#masthead,
+    html.portal-app-shell .site-header,
+    html.portal-app-shell #site-header,
+    html.portal-app-shell .ast-primary-header-bar,
+    html.portal-app-shell .ast-above-header,
+    html.portal-app-shell .elementor-location-header,
+    html.portal-app-shell .elementor-location-footer,
+    html.portal-app-shell #colophon,
+    html.portal-app-shell footer.site-footer,
+    html.portal-app-shell .site-footer,
+    html.portal-app-shell #footer,
+    html.portal-app-shell .site-bottom-footer-inner-wrap,
+    html.portal-app-shell .footer-widget-area {
+      display: none !important;
+      visibility: hidden !important;
+      height: 0 !important;
+      overflow: hidden !important;
+      pointer-events: none !important;
+    }
+    html.portal-app-shell .site-content,
+    html.portal-app-shell #content,
+    html.portal-app-shell .site-main,
+    html.portal-app-shell #primary {
+      margin-top: 0 !important;
+      padding-top: 0 !important;
+    }
+    html.portal-app-shell #page,
+    html.portal-app-shell .site {
+      margin-top: 0 !important;
+      padding-top: 0 !important;
+    }
+    html.portal-app-shell,
+    html.portal-app-shell body {
+      max-width: 100vw !important;
+      overflow-x: hidden !important;
+    }
+    html.portal-app-shell #page,
+    html.portal-app-shell .site,
+    html.portal-app-shell .site-content,
+    html.portal-app-shell #content,
+    html.portal-app-shell #primary,
+    html.portal-app-shell .site-main {
+      max-width: 100vw !important;
+      overflow-x: hidden !important;
+    }
+  </style>
+  <script src="https://www.clubsensational.org/wp-content/uploads/2026/05/portal_return_and_shell.js?v=20260510-portal-admin"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Session Feedback (Service Leader)</title>
+
+  <style>
+    :root {
+      --blue: #2d84b3;
+      --blueSoft: #e9f3f5;
+      --fieldBg: #fff6df;
+      --text: #0b1220;
+      --muted: #5b6473;
+      --line: rgba(11, 18, 32, 0.14);
+      --radius: 18px;
+      --focus: 0 0 0 4px rgba(45, 132, 179, 0.18);
+      --engBlueBg: rgba(45, 132, 179, 0.14);
+      --engBlueBd: rgba(45, 132, 179, 0.45);
+      --engBlueTx: #155a7f;
+      --engYellowBg: rgba(244, 183, 64, 0.22);
+      --engYellowBd: rgba(244, 183, 64, 0.6);
+      --engYellowTx: #7a4e00;
+      --engGreenBg: rgba(34, 197, 94, 0.18);
+      --engGreenBd: rgba(34, 197, 94, 0.55);
+      --engGreenTx: #0f5a2a;
+      --engGreen2Bg: rgba(16, 185, 129, 0.18);
+      --engGreen2Bd: rgba(16, 185, 129, 0.55);
+      --engGreen2Tx: #065f46;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    html,
+    body {
+      height: 100%;
+    }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(900px 350px at 20% -10%, var(--blueSoft), transparent 60%),
+        radial-gradient(700px 300px at 85% 0%, rgba(244, 183, 64, 0.18), transparent 55%),
+        #fff;
+      padding: 24px;
+    }
+    .wrap {
+      max-width: 720px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(11, 18, 32, 0.08);
+    }
+    form {
+      padding: 20px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+    .field {
+      border: 1px solid rgba(11, 18, 32, 0.12);
+      border-radius: 14px;
+      padding: 12px;
+      background: var(--fieldBg);
+    }
+    .field > label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 900;
+      margin: 0 0 8px;
+      color: rgba(11, 18, 32, 0.92);
+    }
+    .sym {
+      width: 22px;
+      height: 22px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 8px;
+      background: rgba(45, 132, 179, 0.1);
+      border: 1px solid rgba(45, 132, 179, 0.18);
+      color: var(--blue);
+      font-size: 13px;
+      flex: 0 0 22px;
+    }
+    input,
+    textarea {
+      width: 100%;
+      border: 1px solid rgba(11, 18, 32, 0.14);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 16px;
+      background: #fff;
+    }
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+    input:focus,
+    textarea:focus {
+      outline: none;
+      border-color: rgba(45, 132, 179, 0.55);
+      box-shadow: var(--focus);
+    }
+    .options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(11, 18, 32, 0.16);
+      background: #fff;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      user-select: none;
+    }
+    .pill input {
+      margin: 0;
+      accent-color: var(--blue);
+      width: 18px;
+      height: 18px;
+    }
+    .pill.eng.isSelected[data-value="Very low"] {
+      background: var(--engBlueBg);
+      border-color: var(--engBlueBd);
+      color: var(--engBlueTx);
+    }
+    .pill.eng.isSelected[data-value="Mixed"] {
+      background: var(--engYellowBg);
+      border-color: var(--engYellowBd);
+      color: var(--engYellowTx);
+    }
+    .pill.eng.isSelected[data-value="Good"] {
+      background: var(--engGreenBg);
+      border-color: var(--engGreenBd);
+      color: var(--engGreenTx);
+    }
+    .pill.eng.isSelected[data-value="Excellent"] {
+      background: var(--engGreen2Bg);
+      border-color: var(--engGreen2Bd);
+      color: var(--engGreen2Tx);
+    }
+    .pill:hover {
+      border-color: rgba(45, 132, 179, 0.45);
+    }
+    .lead-session-question {
+      margin: 0 0 10px;
+      font-size: 14px;
+      font-weight: 800;
+      color: rgba(11, 18, 32, 0.92);
+    }
+    .pill.lr-session-pill.isSelected {
+      background: rgba(45, 132, 179, 0.14);
+      border-color: rgba(45, 132, 179, 0.45);
+      color: #155a7f;
+    }
+    .field:has(#leadSessionChoiceLabel) .lr-bespoke-participant-field {
+      display: none;
+    }
+    .field:has(#leadSessionChoiceLabel):has(input[name="sessionType"][value="bespoke"]:checked)
+      .lr-bespoke-participant-field {
+      display: block !important;
+    }
+    .lead-bespoke-notes-panel {
+      margin-top: 10px;
+      padding: 12px 14px;
+      border: 1px solid rgba(23, 50, 71, 0.14);
+      border-radius: 12px;
+      background: #fafbff;
+    }
+    .field-sub {
+      display: block;
+      margin: 0 0 6px;
+      font-size: 12px;
+      font-weight: 800;
+      color: rgba(11, 18, 32, 0.75);
+    }
+    .lr-bespoke-combo-wrap {
+      position: relative;
+      min-width: 0;
+    }
+    .lr-bespoke-suggest {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: calc(100% + 6px);
+      z-index: 30;
+      border: 1px solid rgba(11, 18, 32, 0.16);
+      border-radius: 10px;
+      background: #fff;
+      box-shadow: 0 12px 28px rgba(11, 18, 32, 0.14);
+      max-height: 220px;
+      overflow: auto;
+      min-width: 0;
+    }
+    .lr-bespoke-suggest[hidden] {
+      display: none !important;
+    }
+    .lr-bespoke-suggest button {
+      width: 100%;
+      border: 0;
+      border-bottom: 1px solid rgba(11, 18, 32, 0.08);
+      background: #fff;
+      text-align: left;
+      padding: 10px 12px;
+      font: inherit;
+      color: #0b1220;
+      cursor: pointer;
+      overflow-wrap: break-word;
+    }
+    .lr-bespoke-suggest button:last-child {
+      border-bottom: 0;
+    }
+    .lr-bespoke-suggest button:hover,
+    .lr-bespoke-suggest button:focus-visible {
+      background: rgba(45, 132, 179, 0.1);
+      outline: none;
+    }
+    .note {
+      margin-top: 10px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(244, 183, 64, 0.45);
+      background: rgba(244, 183, 64, 0.2);
+      font-size: 13px;
+      display: none;
+    }
+    .lr-auto-context-panel {
+      margin-bottom: 14px;
+      margin-top: 4px;
+      padding: 12px 14px;
+      border: 1px solid rgba(11, 18, 32, 0.12);
+      border-radius: 12px;
+      background: #f8fbfc;
+    }
+    .lr-auto-context-line {
+      font-size: 14px;
+      line-height: 1.45;
+      color: #0b1220;
+    }
+    .lr-auto-context-line strong {
+      font-weight: 700;
+    }
+    .lr-auto-context-line span {
+      font-weight: 400;
+    }
+    .actions {
+      margin-top: 8px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    button {
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: none;
+      font-weight: 900;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .btnPrimary {
+      background: var(--blue);
+      color: #fff;
+      box-shadow: 0 10px 22px rgba(45, 132, 179, 0.22);
+    }
+    .btnGhost {
+      background: rgba(11, 18, 32, 0.04);
+      border: 1px solid rgba(11, 18, 32, 0.1);
+    }
+    .req {
+      color: #b91c1c;
+      font-weight: 900;
+      margin-left: 4px;
+    }
+    @media (max-width: 520px) {
+      body {
+        padding: 14px;
+      }
+      form {
+        padding: 16px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="card">
+      <form id="feedbackForm" novalidate>
+        <div class="grid">
+          <div class="field">
+            <div class="lr-auto-context-panel" id="lrSessionContextBlock" aria-live="polite">
+              <div class="lr-auto-context-line"><strong>Service:</strong> <span id="ctxService"></span></div>
+              <div class="lr-auto-context-line"><strong>Venue:</strong> <span id="ctxVenue"></span></div>
+              <div class="lr-auto-context-line"><strong>Date:</strong> <span id="ctxDate"></span></div>
+              <div class="lr-auto-context-line"><strong>Time:</strong> <span id="ctxTime"></span></div>
+              <div class="lr-auto-context-line"><strong>Role:</strong> <span id="ctxRole"></span></div>
+              <div class="lr-auto-context-line"><strong>Name:</strong> <span id="ctxInstructor"></span></div>
+            </div>
+          </div>
+
+          <div class="field">
+            <p class="lead-session-question" id="leadSessionChoiceLabel">
+              <span class="sym">◎</span> Session <span class="req">*</span>
+            </p>
+            <div class="options" role="radiogroup" aria-labelledby="leadSessionChoiceLabel">
+              <label class="pill lr-session-pill" data-value="group">
+                <input type="radio" name="sessionType" value="group" required />
+                Group Session
+              </label>
+              <label class="pill lr-session-pill" data-value="bespoke">
+                <input type="radio" name="sessionType" value="bespoke" />
+                Bespoke Programme
+              </label>
+            </div>
+            <div class="lr-bespoke-participant-field" id="lrBespokeParticipantField" aria-hidden="true">
+              <div class="lead-bespoke-notes-panel">
+                <label class="field-sub" for="lrBespokeParticipant">
+                  <span class="sym">👤</span> Participant Name <span class="req">*</span>
+                </label>
+                <div class="lr-bespoke-combo-wrap" id="lrBespokeComboWrap">
+                  <input
+                    type="text"
+                    id="lrBespokeParticipant"
+                    name="bespokeParticipant"
+                    autocomplete="off"
+                    placeholder="Participant full name"
+                    role="combobox"
+                    aria-autocomplete="list"
+                    aria-expanded="false"
+                    aria-controls="lrBespokeSuggest"
+                  />
+                  <div class="lr-bespoke-suggest" id="lrBespokeSuggest" role="listbox" hidden></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label><span class="sym">🤝</span> Engagement <span class="req">*</span></label>
+            <div class="options" role="radiogroup" aria-label="Engagement">
+              <label class="pill eng" data-value="Very low"
+                ><input type="radio" name="engagement" value="Very low" required /> Very low</label
+              >
+              <label class="pill eng" data-value="Mixed"
+                ><input type="radio" name="engagement" value="Mixed" /> Mixed</label
+              >
+              <label class="pill eng" data-value="Good"
+                ><input type="radio" name="engagement" value="Good" /> Good</label
+              >
+              <label class="pill eng" data-value="Excellent"
+                ><input type="radio" name="engagement" value="Excellent" /> Excellent</label
+              >
+            </div>
+          </div>
+
+          <div class="field">
+            <label><span class="sym">📝</span> Brief description of the session <span class="req">*</span></label>
+            <textarea name="brief" required placeholder="What happened in the session"></textarea>
+          </div>
+
+          <div class="field">
+            <label><span class="sym">⚠</span> Any other information <span class="req">*</span></label>
+            <textarea name="other" required placeholder="Other relevant information (or write “None” if nothing)"></textarea>
+          </div>
+
+          <div class="field">
+            <label><span class="sym">🛡️</span> Incidents <span class="req">*</span></label>
+            <div class="options" role="radiogroup" aria-label="Incidents">
+              <label class="pill"><input type="radio" name="incidents" value="Yes" required /> Yes</label>
+              <label class="pill"><input type="radio" name="incidents" value="No" /> No</label>
+            </div>
+            <div id="incidentNote" class="note">
+              Please ensure the incident form is completed and parents informed where required.
+            </div>
+          </div>
+
+          <div class="actions">
+            <button type="button" class="btnGhost" id="clearBtn">Clear</button>
+            <button type="submit" class="btnPrimary" id="submitBtn">Submit</button>
+          </div>
+        </div>
+      </form>
+      <!-- Non-module guard: prevents native form navigation when the ES module does not run (e.g. file:// or failed JS load). -->
+      <script>
+        (function () {
+          function attachNativeSubmitGuard() {
+            var f = document.getElementById("feedbackForm");
+            if (!f) return;
+            f.addEventListener(
+              "submit",
+              function (e) {
+                try {
+                  e.preventDefault();
+                } catch (err) {}
+                if (window.__LR_FEEDBACK_MODULE_READY !== true) {
+                  try {
+                    var isFile =
+                      typeof location !== "undefined" && String(location.protocol || "") === "file:";
+                    alert(
+                      isFile
+                        ? "Lead Feedback JS module did not run (common on file://). Open over http(s). Reload was blocked."
+                        : "Lead Feedback JS module did not load or finish init. Check Network for lead_feedback_report_app.js (404 = wrong path; use full Media URL in the HTML script tag). Reload was blocked."
+                    );
+                  } catch (err2) {}
+                }
+              },
+              true
+            );
+          }
+          if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", attachNativeSubmitGuard);
+          } else {
+            attachNativeSubmitGuard();
+          }
+        })();
+      </script>
+    </div>
+  </div>
+
+  <!-- Absolute URL: relative src breaks on WordPress (resolves under page slug, 404). Same pattern as venue_review_app.js. -->
+  <script type="module" src="https://www.clubsensational.org/wp-content/uploads/2026/05/lead_feedback_report_app.js?v=20260510-portal-admin"></script>
+</body>
+</html>

@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>clubSENsational Staff Dashboard</title>
+  
+  <link rel="stylesheet" href="staff_dashboard_styles.css" />
+</head>
+<body>
+<script>
+  (function(){
+    var h = document.documentElement;
+    try{
+      if(window.navigator.standalone === true) h.classList.add('portal-standalone');
+      else if(window.matchMedia && (window.matchMedia('(display-mode: standalone)').matches || window.matchMedia('(display-mode: fullscreen)').matches)) h.classList.add('portal-standalone');
+      else h.classList.add('portal-in-browser');
+    }catch(e){ h.classList.add('portal-in-browser'); }
+  })();
+  
+  </script>
+<script>
+  (function(){
+    var KEY = 'staffDashDevMobilePreview';
+    var PORTAL_MOBILE_UX = 'staffPortalMobileUx';
+    var MQ = '(max-width: 720px)';
+    function applyMobilePreview(on, opts){
+      opts = opts || {};
+      var persist = opts.persist === true;
+      var b = document.body;
+      var h = document.documentElement;
+      if(!b) return;
+      if(on){ h.classList.add('dev-mobile-preview'); b.classList.add('dev-mobile-preview'); }
+      else { h.classList.remove('dev-mobile-preview'); b.classList.remove('dev-mobile-preview'); }
+      try{ sessionStorage.setItem(PORTAL_MOBILE_UX, on ? '1' : '0'); }catch(e){}
+      var sw = document.getElementById('menuViewModeToggle');
+      if(sw){
+        sw.setAttribute('aria-checked', on ? 'true' : 'false');
+        sw.setAttribute('aria-label', on ? 'Phone layout simulator on — switch to desktop' : 'Desktop layout — switch to phone simulator');
+      }
+      if(persist){
+        try{ sessionStorage.setItem(KEY, on ? '1' : '0'); }catch(e){}
+      }
+    }
+    window.staffDevMobileToggle = function(ev){
+      if(ev){ ev.preventDefault(); ev.stopPropagation(); }
+      applyMobilePreview(!document.body.classList.contains('dev-mobile-preview'), { persist: true });
+    };
+    function initViewportMobile(){
+      var stored = null;
+      try{ stored = sessionStorage.getItem(KEY); }catch(e){}
+      var mq = typeof window.matchMedia === 'function' ? window.matchMedia(MQ) : null;
+      var narrow = mq ? mq.matches : false;
+      var on;
+      if(stored === '1') on = true;
+      else if(stored === '0') on = false;
+      else on = narrow;
+      applyMobilePreview(on, { persist: false });
+      if(!mq || !mq.addEventListener) return;
+      mq.addEventListener('change', function(){
+        applyMobilePreview(mq.matches, { persist: false });
+      });
+    }
+    if(document.readyState === 'loading'){
+      document.addEventListener('DOMContentLoaded', initViewportMobile);
+    } else {
+      initViewportMobile();
+    }
+  })();
+  
+  </script>
+  
+  
+  <div class="app">
+    <main class="app-body-scroll" id="appBodyScroll">
+    <header class="topbar" aria-labelledby="staffName">
+      <div class="topbar-lead">
+        <div class="topbar-identity">
+          <div class="avatar-wrap">
+            <div class="avatar-aura" aria-hidden="true"></div>
+            <div class="avatar" id="avatar"><img src="https://www.clubsensational.org/wp-content/uploads/2026/04/yusef.jpeg" alt="" /></div>
+            <div class="avatar-orbit" aria-hidden="true">
+              <div class="avatar-orbit-rings"></div>
+              <div class="avatar-orbit-rotate">
+                <span class="avatar-orbit-dot avatar-orbit-dot--gold"></span>
+                <span class="avatar-orbit-dot avatar-orbit-dot--blue"></span>
+              </div>
+            </div>
+          </div>
+          <h1 class="topbar-name" id="staffName" aria-label="Yusef Moustafa">Yusef M.</h1>
+        </div>
+        <button type="button" class="topbar-date-btn" id="topbarDateBtn" aria-label="Working day">
+          <span id="topbarDate">13th April 2026</span>
+        </button>
+      </div>
+    </header>
+
+    <section class="section-card section-card--today" aria-labelledby="todayHeading">
+      <div class="section-head section-head--today">
+        <h2 class="today-section-title" id="todayHeading">TODAY</h2>
+        <div class="today-meta-btns">
+          <button type="button" class="today-meta-btn today-meta-btn--clients-count" id="todayClientsCountChip" aria-label="Sessions today">4 Clients</button>
+          <button type="button" class="today-meta-btn today-meta-btn--venue" id="todayVenueChip" aria-label="Venue">Acton</button>
+        </div>
+      </div>
+      <div class="today-grid" id="todayGrid" aria-live="polite">
+        <div class="today-grid-fallback" id="todayGridFallback">
+          <div class="today-grid-rows" role="list">
+            <div class="session-card session-card--closed" role="presentation" style="pointer-events:none;cursor:default"><div class="session-card-body"><div class="session-line session-line--time">4 to 4.30 pm</div><div class="session-line session-line--name"><span class="session-meta-name">Closed</span></div><div class="session-line session-line--symbol"><span class="session-pool-na" aria-hidden="true">—</span></div></div></div>
+            <div class="session-card" role="presentation" style="pointer-events:none;cursor:default"><div class="session-card-body"><div class="session-line session-line--time">4.30 to 5 pm</div><div class="session-line session-line--name"><span class="session-meta-name">Eddie</span></div><div class="session-line session-line--symbol"><span class="session-symbol-pool session-pool--fish" title="Teaching pool" aria-hidden="true"><svg class="session-pool-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="13" cy="12" rx="7" ry="4"/><path d="M6 12H2"/><path d="M6 12c0-1 1.2-2.2 3-2.7"/><circle cx="15" cy="11" r="1" fill="currentColor" stroke="none"/></svg></span></div></div></div>
+            <div class="session-card" role="presentation" style="pointer-events:none;cursor:default"><div class="session-card-body"><div class="session-line session-line--time">5 to 5.30 pm</div><div class="session-line session-line--name"><span class="session-meta-name">Joel</span></div><div class="session-line session-line--symbol"><span class="session-symbol-pool session-pool--fish" title="Teaching pool" aria-hidden="true"><svg class="session-pool-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="13" cy="12" rx="7" ry="4"/><path d="M6 12H2"/><path d="M6 12c0-1 1.2-2.2 3-2.7"/><circle cx="15" cy="11" r="1" fill="currentColor" stroke="none"/></svg></span></div></div></div>
+            <div class="session-card" role="presentation" style="pointer-events:none;cursor:default"><div class="session-card-body"><div class="session-line session-line--time">5.30 to 6.30 pm</div><div class="session-line session-line--name"><span class="session-meta-name">Abodi P</span></div><div class="session-line session-line--symbol"><span class="session-symbol-pool session-pool--fish" title="Teaching pool" aria-hidden="true"><svg class="session-pool-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="13" cy="12" rx="7" ry="4"/><path d="M6 12H2"/><path d="M6 12c0-1 1.2-2.2 3-2.7"/><circle cx="15" cy="11" r="1" fill="currentColor" stroke="none"/></svg></span></div></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-card section-card--overview" aria-labelledby="overviewHeading">
+      <div class="overview-section-head">
+        <h2 class="overview-section-title" id="overviewHeading">Overview</h2>
+      </div>
+      <div class="extra-grid">
+        <div class="mini-card" data-open="tomorrowSheet" role="button" tabindex="0" aria-label="Open next session list">
+          <span class="mini-card-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2"/><path d="M9 3h6M12 3v2"/></svg></span>
+          <div class="mini-card-text">
+            <div class="title">Next Session</div>
+          </div>
+        </div>
+        <div class="mini-card" data-open="weekSheet" role="button" tabindex="0" aria-label="Open this week’s sessions by day">
+          <span class="mini-card-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01"/></svg></span>
+          <div class="mini-card-text">
+            <div class="title">This week</div>
+          </div>
+        </div>
+        <div class="mini-card" data-open="termSheet" role="button" tabindex="0" aria-label="Open term working days">
+          <span class="mini-card-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 17.5h.01M12 17.5h.01M16 17.5h.01"/></svg></span>
+          <div class="mini-card-text">
+            <div class="title">Term</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="session-review-reminder-host" id="sessionReviewReminderHost" aria-live="polite"></div>
+
+    <section class="notice-stack" id="noticeStack">
+      <div class="notice announcement" id="announcementNotice">
+        <div class="icon" aria-hidden="true"><svg class="notice-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill="currentColor" d="M11 4.5v15l7-4.2V8.7L11 4.5zM3 9v6h3.5V9H3zm14 .5v7c1.66-.45 3-1.7 3-3.5s-1.34-3.05-3-3.5z"/></svg></div>
+        <div class="txt"><strong>Announcements</strong><span>Timetable changes</span></div>
+      </div>
+      <div class="notice training notice--opens-setup" id="trainingNotice" role="button" tabindex="0" aria-label="Open setup tasks: Reminder">
+        <div class="icon" aria-hidden="true"><svg class="notice-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill="currentColor" d="M12 2l2.4 7.4H22l-6 4.6 2.3 7-6.3-4.3-6.3 4.3 2.3-7-6-4.6h7.6L12 2z"/></svg></div>
+        <div class="txt"><strong>Reminder</strong><span>Pending inductions</span></div>
+      </div>
+    </section>
+
+    </main>
+  </div>
+
+  <nav class="dock-bar" aria-label="Main navigation">
+    <div class="dock-bar__nav" role="toolbar" aria-label="Footer navigation">
+      <button type="button" class="dock-nav-item dock-nav-item--clients" id="dockClientsTile" data-open="clientsSheet" aria-label="Open my clients">
+        <span class="dock-nav-item__icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+        <span class="dock-nav-item__label">My clients</span>
+      </button>
+      <button type="button" class="dock-nav-item dock-nav-item--dashboard" id="dockDashboardTile" aria-label="Dashboard">
+        <img class="dock-nav-item__logo" src="https://www.clubsensational.org/wp-content/uploads/2026/04/LOGO-CUADRADO.png" alt="clubSENsational" width="120" height="120" decoding="async" />
+      </button>
+      <button type="button" class="dock-nav-item dock-nav-item--quick-menu" id="dockQuickMenuTile" aria-label="Open quick menu">
+        <span class="dock-nav-item__icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1" fill="none"/><rect x="14" y="3" width="7" height="7" rx="1" fill="none"/><rect x="3" y="14" width="7" height="7" rx="1" fill="none"/><rect x="14" y="14" width="7" height="7" rx="1" fill="none"/></svg></span>
+        <span class="dock-nav-item__label">Quick menu</span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="sheet-backdrop" id="backdrop"></div>
+
+  <div class="demo-quick-overlay" id="demoQuickActionOverlay" hidden aria-hidden="true">
+    <div class="demo-quick-panel" role="dialog" aria-modal="true" aria-labelledby="demoQuickActionTitle" id="demoQuickActionPanel">
+      <h3 id="demoQuickActionTitle">Demo mode</h3>
+      <p class="demo-quick-body" id="demoQuickActionBody">In the final version, Feedback, Incident and Cancellation will only be active after this session’s end time. You can continue now to preview the flow; what follows is not yet the final form.</p>
+      <div class="demo-quick-btns">
+        <button type="button" class="demo-quick-btn demo-quick-btn--ghost" id="demoQuickActionCancel">Back</button>
+        <button type="button" class="demo-quick-btn demo-quick-btn--primary" id="demoQuickActionContinue">Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <section class="sheet sheet--fullscreen sheet--mobile-frame menu-sheet--layout" id="menuSheet">
+    <div class="sheet-head">
+      <div class="sheet-handle"></div>
+      <h3>Quick menu</h3>
+    </div>
+    <div class="sheet-body menu-sheet-body">
+      <div class="menu-sheet-main">
+        <div class="menu-group">
+          <div class="menu-group-title">Work</div>
+          <div class="menu-grid">
+            <button type="button" class="menu-btn menu-btn--work-venue">
+              <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V10l8-4 8 4v12"/><path d="M9 22v-6h6v6"/><path d="M8 6h8"/><path d="M10 10h4"/></svg></div>
+              <div class="menu-btn-copy"><strong>Venue Report</strong><span class="menu-btn-sub">Opening and closing checks</span></div>
+            </button>
+            <button type="button" class="menu-btn menu-btn--work-timesheet">
+              <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+              <div class="menu-btn-copy"><strong>Timesheet</strong><span class="menu-btn-sub">Log your hours</span></div>
+            </button>
+            <button type="button" class="menu-btn menu-btn--work-expenses">
+              <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div>
+              <div class="menu-btn-copy"><strong>Expenses</strong><span class="menu-btn-sub">Submit receipts and claims</span></div>
+            </button>
+          </div>
+        </div>
+        <div class="menu-group">
+          <div class="menu-group-title">Staff Tools</div>
+          <div class="menu-grid" id="quickMenuStaffToolsGrid">
+            <button type="button" class="menu-btn menu-btn--work-timesheet" data-open="staffSessionPlanSheet" id="quickMenuStaffSessionPlan">
+              <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V10l8-4 8 4v12"/><path d="M9 22v-6h6v6"/><path d="M8 6h8"/><path d="M10 10h4"/></svg></div>
+              <div class="menu-btn-copy"><strong>Session Plan</strong><span class="menu-btn-sub">Open the session plan</span></div>
+            </button>
+            <button type="button" class="menu-btn menu-btn--work-expenses" data-open="staffTermReviewSheet" id="quickMenuStaffTermReview">
+              <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+              <div class="menu-btn-copy"><strong>Term Review</strong><span class="menu-btn-sub">Review each child per term</span></div>
+            </button>
+          </div>
+        </div>
+        <div class="menu-group">
+          <div class="menu-group-title">Training</div>
+          <div class="menu-grid" id="quickMenuTrainingGrid">
+            <button type="button" class="menu-btn menu-btn--training-induction" data-setup-training-item id="quickMenuInduction">
+              <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 12h6M9 16h6"/></svg></div>
+              <div class="menu-btn-copy"><strong>Induction</strong><span class="menu-btn-sub">Core company training</span></div>
+            </button>
+            <button type="button" class="menu-btn menu-btn--training-safeguarding" data-setup-training-item id="quickMenuSafeguarding">
+              <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+              <div class="menu-btn-copy"><strong>Safeguarding</strong><span class="menu-btn-sub">Mandatory training</span></div>
+            </button>
+            <button type="button" class="menu-btn menu-btn--training-role-swimming" data-setup-training-item id="quickMenuRoleTraining">
+              <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div>
+              <div class="menu-btn-copy"><strong>Trainings</strong><span class="menu-btn-sub">Modules linked to your role</span></div>
+            </button>
+          </div>
+        </div>
+        <div class="menu-group">
+          <div class="menu-group-title">Settings</div>
+          <div class="menu-grid" id="quickMenuSettingsGrid">
+            <button type="button" class="menu-btn menu-btn--settings-alerts" data-open="alertsNotificationsSheet" id="quickMenuAlerts">
+              <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
+              <div class="menu-btn-copy"><strong>Alerts / Notifications</strong><span class="menu-btn-sub">What we can notify you about on your phone</span></div>
+            </button>
+            <div class="menu-btn menu-btn--settings-view" id="quickMenuViewRow">
+              <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+              <div class="menu-btn-copy">
+                <strong id="quickMenuViewLabel">View</strong>
+                <span class="menu-btn-sub">Desktop layout or phone simulator (~390px)</span>
+              </div>
+              <button type="button" class="menu-dev-view-switch" id="menuViewModeToggle" role="switch" aria-checked="false" aria-label="Desktop layout — switch to phone simulator"></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sheet client-sheet sheet--fullscreen sheet--mobile-frame" id="clientSheet">
+    <div class="client-sheet-center-wrap">
+    <div class="sheet-head client-head">
+      <div class="sheet-handle"></div>
+      <div class="client-photo-slot" id="clientPhotoSlot" aria-label="Client photo">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      </div>
+      <h3 id="clientTitle">Mariam</h3>
+      <p id="clientTime">4 to 4.30 pm</p>
+    </div>
+    <div class="client-quick-actions-dock" id="dockClientQuickActions" hidden aria-hidden="true">
+      <h4>Quick actions</h4>
+      <div class="quick-actions">
+        <button type="button" class="quick-action--feedback" id="clientQuickFeedback">
+          <span class="quick-action-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg></span>
+          <span class="quick-action-label">Feedback</span>
+        </button>
+        <button type="button" class="quick-action--incident" id="clientQuickIncident">
+          <span class="quick-action-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+          <span class="quick-action-label">Incident</span>
+        </button>
+        <button type="button" class="quick-action--cancellation" id="clientQuickCancellation">
+          <span class="quick-action-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="m9 16 6-6M15 16 9 10"/></svg></span>
+          <span class="quick-action-label">Cancellation</span>
+        </button>
+      </div>
+    </div>
+    <div class="sheet-body">
+    <div class="client-section client-section--info-nav">
+      <div class="client-info-buttons" id="clientInfoButtonRow">
+        <div class="client-info-row client-info-row--general">
+          <button type="button" class="client-info-btn--icon" id="clientBtnGeneral" aria-expanded="false" aria-controls="clientGeneralSheet" aria-label="General Info" title="General Info">
+            <span class="client-info-btn-stack">
+              <img class="client-info-logo" src="https://www.clubsensational.org/wp-content/uploads/2026/04/LOGO-CUADRADO.png" alt="" width="120" height="120" decoding="async" />
+              <span class="client-info-btn-caption">General Info</span>
+            </span>
+          </button>
+        </div>
+        <div class="client-info-services-stack" id="clientServiceButtonsRow" hidden></div>
+      </div>
+      <div class="client-info-panel" id="clientPanelSpecialty" hidden>
+        <p id="clientSpecialtyBody" style="margin:0"></p>
+      </div>
+    </div>
+    </div>
+    </div>
+  </section>
+
+  <section class="sheet sheet--fullscreen sheet--mobile-frame" id="clientGeneralSheet" aria-labelledby="clientGeneralSheetTitle" aria-hidden="true">
+    <div class="sheet-head client-general-sheet-head">
+      <button type="button" class="client-general-back" id="clientGeneralSheetBack">← Back to client</button>
+      <div class="sheet-handle"></div>
+      <h3 id="clientGeneralSheetTitle">Client</h3>
+      <p id="clientGeneralSheetSub" style="margin:6px 0 0;font-size:13px;color:var(--muted)"></p>
+    </div>
+    <div class="sheet-body">
+      <div class="client-general-sheet-prose">
+        <p id="clientGeneral"></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="sheet sheet--fullscreen sheet--mobile-frame" id="tomorrowSheet">
+    <div class="sheet-head">
+      <div class="sheet-handle"></div>
+      <h3 id="tomorrowSheetTitle">Tuesday, 14 April 2026</h3>
+    </div>
+    <div class="sheet-body">
+      <div class="calendar-list" id="tomorrowList"></div>
+    </div>
+  </section>
+
+  <section class="sheet sheet--fullscreen sheet--mobile-frame" id="weekSheet">
+    <div class="sheet-head">
+      <div class="sheet-handle"></div>
+      <h3>This week</h3>
+      <p>Sessions grouped by day</p>
+    </div>
+    <div class="sheet-body">
+      <div class="calendar-list" id="weekList"></div>
+    </div>
+  </section>
+
+  <section class="sheet sheet--fullscreen sheet--mobile-frame" id="alertsNotificationsSheet" aria-labelledby="alertsNotificationsTitle">
+    <div class="sheet-head">
+      <div class="sheet-handle"></div>
+      <h3 id="alertsNotificationsTitle">Alerts &amp; notifications</h3>
+      <p>What we can show on your phone when something needs your attention.</p>
+    </div>
+    <div class="sheet-body">
+      <p class="alerts-sheet-placeholder">Content coming soon: shift reminders, session reviews, induction tasks, register and feedback deadlines, and other time-sensitive updates. This screen will explain each alert type and how to control what you receive.</p>
+    </div>
+  </section>
+
+  <section class="sheet sheet--fullscreen sheet--mobile-frame" id="staffSessionPlanSheet" aria-labelledby="staffSessionPlanTitle">
+    <div class="sheet-head">
+      <div class="sheet-handle"></div>
+      <h3 id="staffSessionPlanTitle">Session Plan</h3>
+      <p>Plan and review upcoming staff sessions.</p>
+    </div>
+    <div class="sheet-body">
+      <p class="alerts-sheet-placeholder">Content coming soon: session planning tools for staff.</p>
+    </div>
+  </section>
+
+  <section class="sheet sheet--fullscreen sheet--mobile-frame" id="staffTermReviewSheet" aria-labelledby="staffTermReviewTitle">
+    <div class="sheet-head">
+      <div class="sheet-handle"></div>
+      <h3 id="staffTermReviewTitle">Term Review</h3>
+      <p>Review each child across the current term.</p>
+    </div>
+    <div class="sheet-body">
+      <p class="alerts-sheet-placeholder">Content coming soon: per-child term review details and notes.</p>
+    </div>
+  </section>
+
+  <section class="sheet sheet--fullscreen sheet--mobile-frame" id="termSheet">
+    <div class="sheet-head">
+      <div class="sheet-handle"></div>
+      <h3 id="termSheetTitle">Summer Term 2026</h3>
+      <p class="term-sheet-subtitle">Days confirmed to work this term</p>
+    </div>
+    <div class="sheet-body" id="termSheetBody">
+      <div class="term-cal-intro-banner" id="termCalIntroLayer" hidden aria-hidden="true">
+        <div class="term-cal-intro-banner-row" role="dialog" aria-modal="true" aria-labelledby="termCalIntroTitle">
+          <div class="term-cal-intro-icon" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          </div>
+          <div class="term-cal-intro-copy">
+            <p class="term-cal-intro-demo-tag" id="termCalIntroDemoTag" hidden>Demo</p>
+            <h4 class="term-cal-intro-title" id="termCalIntroTitle">How shift days are coloured</h4>
+            <p class="term-cal-intro-body" id="termCalIntroBody"></p>
+          </div>
+        </div>
+        <button type="button" class="term-cal-intro-btn" id="termCalIntroUnderstood">Understood</button>
+      </div>
+      <div class="term-cal-stack" id="termGrid" role="region" aria-label="Term calendars: shifts, feedback completion, half term"></div>
+    </div>
+  </section>
+
+  <section class="sheet sheet--fullscreen sheet--mobile-frame" id="clientsSheet">
+    <div class="sheet-head">
+      <div class="sheet-handle"></div>
+      <h3>Clients</h3>
+      <div class="clients-sheet-tabs" role="tablist" aria-label="Which clients to show">
+        <button type="button" class="clients-sheet-tab is-active" role="tab" id="clientsTabMy" aria-selected="true" aria-controls="clientsListGrid">My clients</button>
+        <button type="button" class="clients-sheet-tab" role="tab" id="clientsTabAll" aria-selected="false" aria-controls="clientsListGrid">All clients</button>
+      </div>
+    </div>
+    <div class="sheet-body clients-sheet-body">
+      <div class="clients-all-tools" id="clientsAllToolsWrap" hidden>
+        <label for="clientsDirectorySearch" class="topbar-sr-only">Search clients by name</label>
+        <div class="clients-search-input-wrap">
+          <span class="clients-search-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
+          <input type="search" id="clientsDirectorySearch" class="clients-directory-search-input" placeholder="Search by name…" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" />
+        </div>
+        <div class="clients-directory-suggest" id="clientsDirectorySuggest" role="listbox" aria-label="Clients matching your search" hidden></div>
+      </div>
+      <div class="clients-list-grid" id="clientsListGrid" role="tabpanel" aria-labelledby="clientsTabMy"></div>
+    </div>
+  </section>
+
+  <section class="sheet sheet--popover" id="setupReminderSheet" aria-modal="true" role="dialog" aria-labelledby="setupReminderTitle">
+    <div class="sheet-head">
+      <div class="setup-popover-title-row">
+        <span class="setup-popover-logo" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect x="8" y="2" width="8" height="4" rx="1" ry="1" stroke="white" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" stroke="white" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="m9 13 2 2 4-4" stroke="white" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+        <h3 id="setupReminderTitle">Complete your setup</h3>
+      </div>
+      <p class="setup-popover-intro">Finish these items while you continue shadowing.</p>
+      <p class="setup-popover-intro">Once complete, the Reminder tile disappears from your dashboard.</p>
+    </div>
+    <div class="sheet-body">
+      <div class="setup-list">
+        <a href="../Setup/setup_induction.html" class="setup-row setup-row--induction">
+          <span class="setup-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 12h6M9 16h6"/></svg></span>
+          <span class="setup-row-text">
+            <strong>Induction</strong>
+            <span class="setup-row-sub">Core company training and onboarding</span>
+          </span>
+          <span class="setup-row-chev" aria-hidden="true">›</span>
+        </a>
+        <a href="../Setup/setup_safeguarding.html" class="setup-row setup-row--safeguarding">
+          <span class="setup-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
+          <span class="setup-row-text">
+            <strong>Safeguarding</strong>
+            <span class="setup-row-sub">Mandatory policies and procedures</span>
+          </span>
+          <span class="setup-row-chev" aria-hidden="true">›</span>
+        </a>
+        <a href="../Setup/setup_role_training.html" class="setup-row setup-row--role-swimming" id="setupRoleTrainingLink">
+          <span class="setup-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></span>
+          <span class="setup-row-text">
+            <strong>Trainings</strong>
+            <span class="setup-row-sub">Modules linked to your role</span>
+          </span>
+          <span class="setup-row-chev" aria-hidden="true">›</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <script src="../../Training/staff_dashboard_spreadsheet_bundle.js?v=20260419-99"></script>
+  <script src="../../Training/staff_dashboard_spreadsheet_adapter.js?v=20260419-99"></script>
+  
+  <script src="staff_dashboard_scripts.js?v=20260419-99"></script>
+</body>
+</html>

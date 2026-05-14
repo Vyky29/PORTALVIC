@@ -1,0 +1,210 @@
+
+=== Alex (alex) — 0 rows ===
+
+=== Angel (angel) — 7 rows ===
+Monday, 4-5.30, Adam P, Aquatic Activity, Teaching Pool, Acton
+Monday, 5.30-6, Steven C, Aquatic Activity, Teaching Pool, Acton
+Monday, 6-6.30, Mario, Aquatic Activity, Teaching Pool, Acton
+Tuesday, 4.30-5, Cayra, Aquatic Activity, Lane (SE), Acton
+Tuesday, 5-5.30, Amir, Aquatic Activity, Teaching Pool, Acton
+Tuesday, 5.30-6, Hazem, Aquatic Activity, Teaching Pool, Acton
+Tuesday, 6-6.30, Richard, Aquatic Activity, Lane (SE), Acton
+
+=== Aurora (aurora) — 17 rows ===
+Tuesday, 4.30-5, Bediako, Aquatic Activity, Lane (SE), Acton
+Tuesday, 5-5.30, Junaid, Aquatic Activity, Teaching Pool, Acton
+Tuesday, 5.30-6, Aydaan, Aquatic Activity, Lane (DE), Acton
+Tuesday, 6-6.30, Eiji, Aquatic Activity, Lane, Acton
+Thursday, 4-4.30, Elijah, Aquatic Activity, Teaching Pool, Acton
+Thursday, 4.30-5.30, Aqsa, Aquatic Activity, Lane, Acton
+Thursday, 5.30-6, Hazem, Aquatic Activity, Teaching Pool, Acton
+Thursday, 6-6.30, Maiyar, Aquatic Activity, Teaching Pool, Acton
+Sunday, 1.15-2, Erik, Multi-Activity, Small Pool, SwimFarm
+Sunday, 10.15-11, Jack W, Multi-Activity, Big Pool, SwimFarm
+Sunday, 11-11.45, Arthur Ma, Multi-Activity, Big Pool, SwimFarm
+Sunday, 11.45-12.30, Cyrus, Multi-Activity, Small Pool, SwimFarm
+Sunday, 12.30-1.15, Aydaan Ah, Multi-Activity, Big Pool, SwimFarm
+Sunday, 2-2.30, Zakariya, Aquatic Activity, Big Pool, SwimFarm
+Sunday, 2.30-3, Faris, Aquatic Activity, Big Pool, SwimFarm
+Sunday, 9-9.30, Simon, Aquatic Activity, Small Pool, SwimFarm
+Sunday, 9.30-10.15, Adam Ab, Multi-Activity, Big Pool, SwimFarm
+
+=== Berta (berta) — 8 rows ===
+Wednesday, 4-5.15, Stephanie, Multi-Activity, Room 2, Acton
+Wednesday, 5.15-6, Adam A, Multi-Activity, Room 2, Acton
+Sunday, 10.15-11, Gabriel, Multi-Activity, Big Pool, SwimFarm
+Sunday, 10.15-11, Yusuf, Multi-Activity, Big Pool, SwimFarm
+Sunday, 11-11.45, Arthur Mo, Multi-Activity, Big Pool, SwimFarm
+Sunday, 11.45-12.30, Amaar Ah, Multi-Activity, Big Pool, SwimFarm
+Sunday, 12.30-1.15, Adaam Ah, Multi-Activity, Big Pool, SwimFarm
+Sunday, 9.30-10.15, Jack S, Multi-Activity, Big Pool, SwimFarm
+
+=== Bismark (bismark) — 9 rows ===
+Monday, 4.30-6, Tinashe, Bespoke Programme, Hub Room, SwimFarm
+Wednesday, 4.30-6, Tinashe, Bespoke Programme, Hub Room, SwimFarm
+Friday, 4.30-6, Tinashe, Bespoke Programme, Hub Room, SwimFarm
+Sunday, 1.15-2, Rayyan F, Multi-Activity, Small Pool, SwimFarm
+Sunday, 10.15-11, Zaid, Multi-Activity, Small Pool, SwimFarm
+Sunday, 11-11.45, Eiji, Multi-Activity, Big Pool, SwimFarm
+Sunday, 11.45-12.30, Hazem, Multi-Activity, Big Pool, SwimFarm
+Sunday, 12.30-1.15, Haneef, Multi-Activity, Big Pool, SwimFarm
+Sunday, 9.30-10.15, Samer, Multi-Activity, Small Pool, SwimFarm
+
+=== Carlos (carlos) — 5 rows ===
+Sunday, 1-2, Zakariya, Climbing Activity, Rodin, Westway
+Sunday, 10-11, Hazem, Climbing Activity, Eiji, Westway
+Sunday, 11-12, Zaid, Climbing Activity, Yusef, Westway
+Sunday, 12-1, Serine, Climbing Activity, Scott, Westway
+Sunday, 2-3, Rhys, Climbing Activity, Climbing Wall, Westway
+
+=== Dan (dan) — 20 rows ===
+Monday, 4.30-5, Kirushy, Aquatic Activity, Teaching Pool, Northolt
+Monday, 5-5.30, Gemma, Aquatic Activity, Teaching Pool, Northolt
+Monday, 5.30-6, Zayana, Aquatic Activity, Teaching Pool, Northolt
+Monday, 6-6.30, Aadam Ah, Aquatic Activity, Teaching Pool, Northolt
+Wednesday, 4.30-5, Tyson, Aquatic Activity, Teaching Pool, Northolt
+Wednesday, 5-5.30, Ruben, Aquatic Activity, Teaching Pool, Northolt
+Wednesday, 5.30-6.30, Mia, Aquatic Activity, Teaching Pool, Northolt
+Thursday, 4-4.30, NO CLIENT, Aquatic Activity, Teaching Pool, Acton
+Thursday, 4.30-5, Thushyan, Aquatic Activity, Lane, Acton
+Thursday, 5-5.30, Yuri, Aquatic Activity, Lane (SE), Acton
+Thursday, 5.30-6.30, Eiji, Aquatic Activity, Lane, Acton
+Sunday, 1.15-2, Erik, Multi-Activity, Small Pool, SwimFarm
+Sunday, 10.15-11, Jack W, Multi-Activity, Big Pool, SwimFarm
+Sunday, 11-11.45, Arthur Ma, Multi-Activity, Big Pool, SwimFarm
+Sunday, 11.45-12.30, Cyrus, Multi-Activity, Small Pool, SwimFarm
+Sunday, 12.30-1.15, Aydaan Ah, Multi-Activity, Big Pool, SwimFarm
+Sunday, 2-2.30, Zakariya, Aquatic Activity, Big Pool, SwimFarm
+Sunday, 2.30-3, Faris, Aquatic Activity, Big Pool, SwimFarm
+Sunday, 9-9.30, Simon, Aquatic Activity, Small Pool, SwimFarm
+Sunday, 9.30-10.15, Adam Ab, Multi-Activity, Big Pool, SwimFarm
+
+=== Demo (demo) — 0 rows ===
+
+=== Giuseppe (giuseppe) — 10 rows ===
+Monday, 4.30-6, Tinashe, Bespoke Programme, Hub Room, SwimFarm
+Wednesday, 4.30-5.15, Scott, Multi-Activity, Room 2, Acton
+Wednesday, 4.30-5.15, Cyrus, Multi-Activity, Room 2, Acton
+Friday, 4.30-6, Tinashe, Bespoke Programme, Hub Room, SwimFarm
+Sunday, 1.15-2, Erik, Multi-Activity, Big Pool, SwimFarm
+Sunday, 10.15-11, Adam Ab, Multi-Activity, Big Pool, SwimFarm
+Sunday, 11-11.45, Arthur Ma, Multi-Activity, Big Pool, SwimFarm
+Sunday, 12.30-1.15, Aydaan Ah, Multi-Activity, Small Pool, SwimFarm
+Sunday, 12.30-1.15, Cyrus, Multi-Activity, Big Pool, SwimFarm
+Sunday, 9.30-10.15, Jack W, Multi-Activity, Small Pool, SwimFarm
+
+=== Godsway (godsway) — 0 rows ===
+
+=== Javi (javi) — 0 rows ===
+
+=== Javier (javier) — 22 rows ===
+Tuesday, 4-4.30, Ayman, Aquatic Activity, Lane (SE), Acton
+Tuesday, 4.30-5, Adam M, Aquatic Activity, Teaching Pool, Acton
+Tuesday, 5-5.30, Linda, Aquatic Activity, Lane (SE), Acton
+Tuesday, 5.30-6, Eiji, Aquatic Activity, Lane, Acton
+Tuesday, 6-6.30, Kareena, Aquatic Activity, Lane (SE), Acton
+Wednesday, 4-5.15, Cyrus, Multi-Activity, Teaching Pool, Acton
+Wednesday, 5.15-6, Adam A, Multi-Activity, Teaching Pool, Acton
+Wednesday, 6-6.30, Kayden, Aquatic Activity, Lane, Acton
+Thursday, 4-5, Ayman, Aquatic Activity, Lane (SE), Acton
+Thursday, 5-5.30, Khalid Ab, Aquatic Activity, Lane (SE), Acton
+Thursday, 5.30-6, Karo, Aquatic Activity, Lane (SE), Acton
+Thursday, 6-6.30, Hazem, Aquatic Activity, Teaching Pool, Acton
+Sunday, 1.15-2, Haneef, Multi-Activity, Big Pool, SwimFarm
+Sunday, 10.15-11, Samer, Multi-Activity, Small Pool, SwimFarm
+Sunday, 11-11.45, Hazem, Multi-Activity, Big Pool, SwimFarm
+Sunday, 11.45-12.30, Eiji, Multi-Activity, Big Pool, SwimFarm
+Sunday, 12.30-1.15, Rayyan F, Multi-Activity, Small Pool, SwimFarm
+Sunday, 2-2.30, Max, Aquatic Activity, Small Pool, SwimFarm
+Sunday, 2.30-3, Shaan, Aquatic Activity, Small Pool, SwimFarm
+Sunday, 9-9.30, Shire, Aquatic Activity, Big Pool, SwimFarm
+Sunday, 9-9.30, Shire, Aquatic Activity, Small Pool, SwimFarm
+Sunday, 9.30-10.15, Zaid, Multi-Activity, Small Pool, SwimFarm
+
+=== John (john) — 8 rows ===
+Monday, 4.30-6, Tinashe, Bespoke Programme, Hub Room, SwimFarm
+Friday, 4.30-6, Tinashe, Bespoke Programme, Hub Room, SwimFarm
+Sunday, 10.15-11, Gabriel, Multi-Activity, Big Pool, SwimFarm
+Sunday, 10.15-11, Yusuf, Multi-Activity, Big Pool, SwimFarm
+Sunday, 11-11.45, Arthur Mo, Multi-Activity, Big Pool, SwimFarm
+Sunday, 11.45-12.30, Amaar Ah, Multi-Activity, Big Pool, SwimFarm
+Sunday, 12.30-1.15, Adaam Ah, Multi-Activity, Big Pool, SwimFarm
+Sunday, 9.30-10.15, Jack S, Multi-Activity, Big Pool, SwimFarm
+
+=== Raul (raul) — 1 rows ===
+Friday, 12.30-3, Fadi, Bespoke Programme, Hub Room, SwimFarm
+
+=== Roberto (roberto) — 36 rows ===
+Monday, 1.30-3, Fadi, Bespoke Programme, Hub Room, SwimFarm
+Monday, 12.30-1.30, Yaqoub, Aquatic Activity, Pools, SwimFarm
+Monday, 12.30-3, ACAT, Aquatic Activity, Hub Room, SwimFarm
+Monday, 4.30-5, Yunis, Aquatic Activity, Teaching Pool, Northolt
+Monday, 5-6, Amar Rai, Aquatic Activity, Teaching Pool, Northolt
+Monday, 6-6.30, Amaar Ah, Aquatic Activity, Teaching Pool, Northolt
+Tuesday, 12.30-3, Fadi, Bespoke Programme, Hub Room, SwimFarm
+Tuesday, 4-4.30, NO CLIENT, Aquatic Activity, Teaching Pool, Acton
+Tuesday, 4.30-5.30, Serine, Aquatic Activity, Lane (DE), Acton
+Tuesday, 5.30-6, Rayan T, Aquatic Activity, Teaching Pool, Acton
+Tuesday, 6-6.30, Hazem, Aquatic Activity, Teaching Pool, Acton
+Wednesday, 11-12, Q6 College, Aquatic Activity, Pools, SwimFarm
+Wednesday, 12.30-3, Fadi, Bespoke Programme, Hub Room, SwimFarm
+Wednesday, 4.30-5, Vithura, Aquatic Activity, Teaching Pool, Northolt
+Wednesday, 5-6, Amar Rai, Aquatic Activity, Teaching Pool, Northolt
+Wednesday, 6-6.30, Amber, Aquatic Activity, Teaching Pool, Northolt
+Thursday, 12.30-3, Fadi, Bespoke Programme, Hub Room, SwimFarm
+Thursday, 4-4.30, Tom, Aquatic Activity, Lane (SE), Acton
+Thursday, 4.30-5, NO CLIENT, Aquatic Activity, Teaching Pool, Acton
+Thursday, 5-5.30, Yossi, Aquatic Activity, Lane, Acton
+Thursday, 5.30-6.30, Mohammed, Aquatic Activity, Lane, Acton
+Friday, 12.30-3, Fadi, Bespoke Programme, Hub Room, SwimFarm
+Friday, 4-5.30, Adam P, Aquatic Activity, Teaching Pool, Acton
+Friday, 5.30-6, NO CLIENT, Aquatic Activity, Teaching Pool, Acton
+Friday, 6-6.30, NO CLIENT, Aquatic Activity, Teaching Pool, Acton
+Saturday, 10.30-11, Emani, Aquatic Activity, Teaching Pool, Acton
+Saturday, 11-11.30, Haider, Aquatic Activity, Teaching Pool, Acton
+Saturday, 9.30-10.30, Ikram, Aquatic Activity, Teaching Pool, Acton
+Sunday, 1.15-2, Adaam Ah, Multi-Activity, Big Pool, SwimFarm
+Sunday, 10.15-11, Jack S, Multi-Activity, Big Pool, SwimFarm
+Sunday, 11-11.45, Gabriel, Multi-Activity, Big Pool, SwimFarm
+Sunday, 11.45-12.30, Arthur Mo, Multi-Activity, Big Pool, SwimFarm
+Sunday, 12.30-1.15, Amaar Ah, Multi-Activity, Big Pool, SwimFarm
+Sunday, 2-2.30, Rodin, Aquatic Activity, Big Pool, SwimFarm
+Sunday, 2.30-3, Yoan, Aquatic Activity, Big Pool, SwimFarm
+Sunday, 9-10.15, Yusuf, Multi-Activity, Big Pool, SwimFarm
+
+=== Sandra (sandra) — 2 rows ===
+Monday, 4-5, Ayaan, Physical Activity, Gym, Westway
+Monday, 5-6, Serine, Physical Activity, Gym, Westway
+
+=== Sevitha (sevitha) — 0 rows ===
+
+=== Victor (victor) — 5 rows ===
+Monday, 11-4, Ikram, Bespoke Programme, Hub Room, SwimFarm
+Tuesday, 11-4, Ikram, Bespoke Programme, Hub Room, SwimFarm
+Wednesday, 11-4, Ikram, Bespoke Programme, Hub Room, SwimFarm
+Thursday, 3.30-5, Cyrus, Bespoke Programme, Hub Room, SwimFarm
+Friday, 11-4, Ikram, Bespoke Programme, Hub Room, SwimFarm
+
+=== Youssef (youssef) — 22 rows ===
+Monday, 4-4.30, CLOSED, Aquatic Activity, Teaching Pool, Acton
+Monday, 4.30-5, Eddie, Aquatic Activity, Teaching Pool, Acton
+Monday, 5-5.30, Joel, Aquatic Activity, Teaching Pool, Acton
+Monday, 5.30-6.30, Abodi P, Aquatic Activity, Teaching Pool, Acton
+Tuesday, 4-4.30, CLOSED, Aquatic Activity, Teaching Pool, Acton
+Tuesday, 4.30-5.30, Yassir, Aquatic Activity, Lane (DE), Acton
+Tuesday, 5.30-6.30, Rayyan F, Aquatic Activity, Lane, Acton
+Wednesday, 4-4.30, NO CLIENT, Aquatic Activity, Teaching Pool, Acton
+Wednesday, 4.30-5.15, Stephanie, Multi-Activity, Teaching Pool, Acton
+Wednesday, 5.15-6, Scott, Multi-Activity, Teaching Pool, Acton
+Wednesday, 6-6.30, NO CLIENT, Aquatic Activity, Teaching Pool, Acton
+Saturday, 11-12, Matthias, Aquatic Activity, Teaching Pool, Acton
+Saturday, 12-12.30, Saaib, Aquatic Activity, Teaching Pool, Acton
+Sunday, 1.15-2, Erik, Multi-Activity, Small Pool, SwimFarm
+Sunday, 10.15-11, Jack W, Multi-Activity, Big Pool, SwimFarm
+Sunday, 11-11.45, Arthur Ma, Multi-Activity, Big Pool, SwimFarm
+Sunday, 11.45-12.30, Cyrus, Multi-Activity, Small Pool, SwimFarm
+Sunday, 12.30-1.15, Aydaan Ah, Multi-Activity, Big Pool, SwimFarm
+Sunday, 2-2.30, Zakariya, Aquatic Activity, Big Pool, SwimFarm
+Sunday, 2.30-3, Faris, Aquatic Activity, Big Pool, SwimFarm
+Sunday, 9-9.30, Simon, Aquatic Activity, Small Pool, SwimFarm
+Sunday, 9.30-10.15, Adam Ab, Multi-Activity, Big Pool, SwimFarm

@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <!-- Portal app shell: hide WordPress theme header/footer when this markup is embedded on clubsensational.org -->
+  <script>
+    (function () {
+      try {
+        document.documentElement.classList.add("portal-app-shell");
+      } catch (e) {}
+    })();
+  </script>
+  <style id="portal-hide-wp-chrome">
+    html.portal-app-shell body.admin-bar {
+      padding-top: 0 !important;
+      margin-top: 0 !important;
+    }
+    html.portal-app-shell #wpadminbar,
+    html.portal-app-shell #masthead,
+    html.portal-app-shell header#masthead,
+    html.portal-app-shell .site-header,
+    html.portal-app-shell #site-header,
+    html.portal-app-shell .ast-primary-header-bar,
+    html.portal-app-shell .ast-above-header,
+    html.portal-app-shell .elementor-location-header,
+    html.portal-app-shell .elementor-location-footer,
+    html.portal-app-shell #colophon,
+    html.portal-app-shell footer.site-footer,
+    html.portal-app-shell .site-footer,
+    html.portal-app-shell #footer,
+    html.portal-app-shell .site-bottom-footer-inner-wrap,
+    html.portal-app-shell .footer-widget-area {
+      display: none !important;
+      visibility: hidden !important;
+      height: 0 !important;
+      overflow: hidden !important;
+      pointer-events: none !important;
+    }
+    html.portal-app-shell .site-content,
+    html.portal-app-shell #content,
+    html.portal-app-shell .site-main,
+    html.portal-app-shell #primary {
+      margin-top: 0 !important;
+      padding-top: 0 !important;
+    }
+    html.portal-app-shell #page,
+    html.portal-app-shell .site {
+      margin-top: 0 !important;
+      padding-top: 0 !important;
+    }
+    html.portal-app-shell,
+    html.portal-app-shell body {
+      max-width: 100vw !important;
+      overflow-x: hidden !important;
+    }
+    html.portal-app-shell #page,
+    html.portal-app-shell .site,
+    html.portal-app-shell .site-content,
+    html.portal-app-shell #content,
+    html.portal-app-shell #primary,
+    html.portal-app-shell .site-main {
+      max-width: 100vw !important;
+      overflow-x: hidden !important;
+    }
+  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <title>clubSENsational Portal — Sign in</title>
+  <style>
+    :root{
+      --blue:#2d84b3;
+      --blueSoft:#eaf5fb;
+      --gold:#f4b740;
+      --sen-gold:#f9bf2e;
+      --goldSoft:#fff4df;
+      --ink:#173247;
+      --text:#314555;
+      --muted:#728290;
+      --line:rgba(23,50,71,.12);
+      --white:#ffffff;
+      --bg:#f4f8fb;
+      --shadow:0 18px 50px rgba(23,50,71,.08);
+      --radius:22px;
+      --danger:#d9534f;
+      --dangerSoft:#fff1f1;
+    }
+
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{
+      margin:0;
+      padding:0;
+      min-height:100%;
+      min-height:100dvh;
+      max-width:100%;
+      overflow-x:hidden;
+      font-family:Arial,Helvetica,sans-serif;
+      color:var(--text);
+      -webkit-text-size-adjust:100%;
+      overscroll-behavior-x:none;
+    }
+    body{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:max(20px, env(safe-area-inset-top, 0px)) 18px max(20px, env(safe-area-inset-bottom, 0px));
+      background:linear-gradient(180deg,#f7fbff 0%,#edf4fb 100%);
+    }
+
+    .login-wrap{
+      width:100%;
+      max-width:420px;
+    }
+
+    .login-card{
+      background:var(--white);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      border:1px solid var(--line);
+      padding:clamp(28px,5vw,40px) clamp(22px,4vw,36px);
+      transition:box-shadow .25s ease, transform .25s ease;
+    }
+    .login-card:focus-within{
+      box-shadow:0 22px 56px rgba(23,50,71,.1);
+    }
+
+    .login-brand{
+      margin:0 0 20px;
+      text-align:center;
+    }
+    /* Stage: room for orbital SVG around the mark */
+    .login-logo-stage{
+      position:relative;
+      width:min(240px,64vw);
+      max-width:100%;
+      aspect-ratio:1;
+      margin:0 auto 12px;
+      display:grid;
+      place-items:center;
+    }
+    .login-orbit-svg{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      pointer-events:none;
+      z-index:0;
+      overflow:visible;
+    }
+    .orbit-layer--cw{
+      transform-origin:0 0;
+      animation:orbit-cw 18s linear infinite;
+    }
+    .orbit-layer--ccw{
+      transform-origin:0 0;
+      animation:orbit-ccw 14s linear infinite;
+    }
+    .orbit-layer--slow-ccw{
+      transform-origin:0 0;
+      animation:orbit-ccw 26s linear infinite;
+    }
+    @keyframes orbit-cw{
+      from{transform:rotate(0deg)}
+      to{transform:rotate(360deg)}
+    }
+    @keyframes orbit-ccw{
+      from{transform:rotate(0deg)}
+      to{transform:rotate(-360deg)}
+    }
+    @media (prefers-reduced-motion:reduce){
+      .orbit-layer--cw,.orbit-layer--ccw,.orbit-layer--slow-ccw{animation:none}
+    }
+
+    /* Official PNG has a black square canvas around the round mark — crop to the circle */
+    .login-logo-shell{
+      position:relative;
+      z-index:1;
+      width:70%;
+      max-width:168px;
+      aspect-ratio:1;
+      border-radius:50%;
+      overflow:hidden;
+      background:var(--white);
+      display:grid;
+      place-items:center;
+      box-shadow:
+        0 0 0 2px rgba(249,191,46,.5),
+        0 0 18px rgba(249,191,46,.45),
+        0 0 36px rgba(244,183,64,.32),
+        0 0 56px rgba(249,191,46,.22),
+        0 0 80px rgba(45,132,179,.12);
+    }
+    .login-logo-shell .login-logo{
+      width:100%;
+      height:100%;
+      margin:0;
+      object-fit:cover;
+      transform:scale(1.32);
+      transform-origin:center center;
+    }
+    .login-logo{
+      display:block;
+      max-width:100%;
+      height:auto;
+    }
+    .login-portal-text{
+      display:block;
+      margin:0;
+      font-size:clamp(1.05rem,3.2vw,1.2rem);
+      font-weight:700;
+      color:var(--ink);
+      letter-spacing:-.02em;
+    }
+    .login-sub{
+      margin:0 0 28px;
+      font-size:.9rem;
+      color:var(--muted);
+      text-align:center;
+      line-height:1.4;
+    }
+
+    .field{
+      margin-bottom:16px;
+    }
+    .field label{
+      display:block;
+      font-size:.8rem;
+      font-weight:600;
+      color:var(--ink);
+      margin-bottom:6px;
+    }
+    .field input{
+      width:100%;
+      padding:12px 14px;
+      font-size:1rem;
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:var(--white);
+      color:var(--text);
+      transition:border-color .2s ease, box-shadow .2s ease;
+    }
+    .field input::placeholder{color:var(--muted);opacity:.75}
+    .field input:focus{
+      outline:none;
+      border-color:rgba(45,132,179,.45);
+      box-shadow:0 0 0 3px var(--blueSoft);
+    }
+
+    .btn-login{
+      width:100%;
+      margin-top:8px;
+      padding:14px 18px;
+      font-size:1rem;
+      font-weight:700;
+      color:var(--white);
+      background:linear-gradient(180deg,var(--blue) 0%,#2676a0 100%);
+      border:none;
+      border-radius:14px;
+      cursor:pointer;
+      transition:transform .15s ease, box-shadow .2s ease, filter .2s ease;
+      box-shadow:0 4px 14px rgba(45,132,179,.28);
+    }
+    .btn-login:hover{filter:brightness(1.03)}
+    .btn-login:active{transform:scale(.985)}
+    .btn-login:focus-visible{
+      outline:2px solid var(--sen-gold);
+      outline-offset:2px;
+    }
+
+    .error-msg{
+      margin-top:14px;
+      padding:10px 12px;
+      font-size:.875rem;
+      color:var(--danger);
+      background:var(--dangerSoft);
+      border:1px solid rgba(217,83,79,.25);
+      border-radius:12px;
+      text-align:center;
+      opacity:0;
+      max-height:0;
+      overflow:hidden;
+      padding-top:0;
+      padding-bottom:0;
+      margin-top:0;
+      border-width:0;
+      transition:opacity .25s ease, max-height .3s ease, margin-top .25s ease, padding .25s ease, border-width .2s ease;
+    }
+    .error-msg.visible{
+      opacity:1;
+      max-height:80px;
+      margin-top:14px;
+      padding:10px 12px;
+      border-width:1px;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="login-wrap">
+    <div class="login-card" role="main">
+      <header class="login-brand">
+        <div class="login-logo-stage">
+          <svg class="login-orbit-svg" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
+            <defs>
+              <filter id="orb-soft" x="-40%" y="-40%" width="180%" height="180%">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="1.2" result="b"/>
+                <feMerge>
+                  <feMergeNode in="b"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
+            <g transform="translate(100,100)">
+              <!-- Radii > ~70 stay outside the circular logo (70% of viewBox ≈ r70) -->
+              <!-- Outer: clockwise -->
+              <g class="orbit-layer orbit-layer--cw" filter="url(#orb-soft)">
+                <circle cx="0" cy="-92" r="7" fill="var(--blue)"/>
+                <circle cx="79.67" cy="-46" r="6" fill="var(--sen-gold)"/>
+                <circle cx="79.67" cy="46" r="6" fill="var(--ink)"/>
+                <circle cx="0" cy="92" r="7" fill="var(--gold)"/>
+                <circle cx="-79.67" cy="46" r="6" fill="var(--blue)"/>
+                <circle cx="-79.67" cy="-46" r="6" fill="#5a9fc4"/>
+              </g>
+              <!-- Mid: counter-clockwise -->
+              <g class="orbit-layer orbit-layer--ccw" filter="url(#orb-soft)">
+                <circle cx="0" cy="-82" r="5" fill="var(--sen-gold)"/>
+                <circle cx="71.01" cy="-41" r="5" fill="var(--blue)"/>
+                <circle cx="71.01" cy="41" r="5" fill="var(--gold)"/>
+                <circle cx="0" cy="82" r="5" fill="var(--ink)"/>
+                <circle cx="-71.01" cy="41" r="5" fill="#8ebfe0"/>
+                <circle cx="-71.01" cy="-41" r="5" fill="var(--sen-gold)"/>
+              </g>
+              <!-- Inner: slow counter-clockwise, staggered (just outside logo edge) -->
+              <g class="orbit-layer orbit-layer--slow-ccw" filter="url(#orb-soft)">
+                <circle cx="37.27" cy="-64" r="4" fill="var(--gold)"/>
+                <circle cx="74" cy="-8" r="4" fill="var(--blue)"/>
+                <circle cx="37.27" cy="64" r="4" fill="var(--sen-gold)"/>
+                <circle cx="-37.27" cy="64" r="4" fill="var(--ink)"/>
+                <circle cx="-74" cy="-8" r="4" fill="var(--blue)"/>
+                <circle cx="-37.27" cy="-64" r="4" fill="#f4d78a"/>
+              </g>
+            </g>
+          </svg>
+          <div class="login-logo-shell">
+            <img
+              class="login-logo"
+              src="https://www.clubsensational.org/wp-content/uploads/2026/03/F-02-1.png"
+              width="200"
+              height="200"
+              alt="clubSENsational - Autism Consultancy Services"
+              decoding="async"
+              referrerpolicy="no-referrer-when-downgrade"
+              onerror="this.onerror=null;this.src='F-02-1.png'"
+            />
+          </div>
+        </div>
+        <h1 class="login-portal-text">Portal</h1>
+      </header>
+      <p class="login-sub">Sign in to continue</p>
+
+      <form id="login-form" novalidate method="post" action="">
+        <div class="field">
+          <label for="name">Name</label>
+          <input id="name" name="name" type="text" autocomplete="username" placeholder="Your name" />
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" placeholder="Password" />
+        </div>
+        <button type="submit" class="btn-login" id="btn-login">Login</button>
+      </form>
+
+      <div id="error-msg" class="error-msg" role="alert" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <!-- Name→email map inlined so WordPress does not need a separate staff_login_map upload (Media often blocks it). Keep in sync with database/auth-map.js. -->
+  <script>
+    window.PORTAL_STAFF_LOGIN_MAP = {
+      version: 1,
+      staff_username_to_email: {
+        Sandra: "stf001@staff.import.pending",
+        Roberto: "stf002@staff.import.pending",
+        Dan: "stf003@staff.import.pending",
+        Angel: "stf004@staff.import.pending",
+        Youssef: "stf005@staff.import.pending",
+        Yusef: "stf005@staff.import.pending",
+        John: "stf006@staff.import.pending",
+        Bismark: "stf007@staff.import.pending",
+        Giuseppe: "stf008@staff.import.pending",
+        Godsway: "stf009@staff.import.pending",
+        Javier: "stf010@staff.import.pending",
+        Aurora: "stf011@staff.import.pending",
+        Berta: "stf012@staff.import.pending",
+        Victor: "stf013@staff.import.pending",
+        Carlos: "stf014@staff.import.pending",
+        Alex: "stf015@staff.import.pending",
+        Javi: "stf017@staff.import.pending",
+        Raul: "stf018@staff.import.pending",
+        Sevitha: "stf019@staff.import.pending",
+        Demo: "stf020@staff.import.pending",
+        demo: "stf020@staff.import.pending"
+      }
+    };
+  </script>
+  <script>
+    (function () {
+      var isElementorPreview =
+        window.location.search.indexOf("elementor-preview=") !== -1 ||
+        window.location.search.indexOf("preview=true") !== -1 ||
+        document.documentElement.classList.contains("elementor-editor-active");
+      if (isElementorPreview) return;
+      window.PORTAL_CEO_DASHBOARD_URL = "https://www.clubsensational.org/ce/";
+      var portalJsVer = "20260419-99";
+      var portalJsBase = "https://www.clubsensational.org/wp-content/uploads/2026/04/";
+      var s = document.createElement("script");
+      s.type = "module";
+      s.src = portalJsBase + "auth-handler.js?v=" + portalJsVer;
+      s.onerror = function () {
+        var errorEl = document.getElementById("error-msg");
+        if (!errorEl) return;
+        errorEl.textContent = "Could not load login module. Please refresh and try again.";
+        errorEl.classList.add("visible");
+      };
+      document.body.appendChild(s);
+    })();
+  </script>
+</body>
+</html>

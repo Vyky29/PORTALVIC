@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+  (function () {
+    try { document.documentElement.classList.add("portal-app-shell"); } catch (e) {}
+  })();
+</script>
+<style id="portal-hide-wp-chrome">
+  html.portal-app-shell body.admin-bar{padding-top:0!important;margin-top:0!important}
+  html.portal-app-shell #wpadminbar,html.portal-app-shell #masthead,html.portal-app-shell header#masthead,html.portal-app-shell .site-header,html.portal-app-shell #site-header,html.portal-app-shell .ast-primary-header-bar,html.portal-app-shell .ast-above-header,html.portal-app-shell .elementor-location-header,html.portal-app-shell .elementor-location-footer,html.portal-app-shell #colophon,html.portal-app-shell footer.site-footer,html.portal-app-shell .site-footer,html.portal-app-shell #footer,html.portal-app-shell .site-bottom-footer-inner-wrap,html.portal-app-shell .footer-widget-area{display:none!important;visibility:hidden!important;height:0!important;overflow:hidden!important;pointer-events:none!important}
+  html.portal-app-shell .site-content,html.portal-app-shell #content,html.portal-app-shell .site-main,html.portal-app-shell #primary{margin-top:0!important;padding-top:0!important}
+  html.portal-app-shell #page,html.portal-app-shell .site{margin-top:0!important;padding-top:0!important}
+</style>
+<script src="https://www.clubsensational.org/wp-content/uploads/2026/05/portal_return_and_shell.js?v=20260510-portal-admin"></script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Performance</title>
+<style>
+:root{
+  --blue:#2d84b3;
+  --blueSoft:#e9f3f5;
+  --fieldBg:#fff6df;
+  --text:#0b1220;
+  --muted:#5b6473;
+  --line:rgba(11,18,32,0.14);
+  --radius:18px;
+  --focus:0 0 0 4px rgba(45,132,179,0.18);
+  --bandYellow:#fef3c7;
+  --bandYellowBd:#f59e0b;
+  --bandRedBg:#fef2f2;
+  --bandRedBd:#f87171;
+}
+*{ box-sizing:border-box; }
+html, body{ height:100%; }
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  color:var(--text);
+  background:#fff;
+  padding:24px;
+}
+.wrap{ max-width:920px; margin:0 auto; width:100%; }
+.card{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  overflow:hidden;
+  box-shadow:0 10px 30px rgba(11,18,32,0.08);
+}
+.banner{
+  margin:0;
+  padding:14px 20px;
+  font-size:14px;
+  font-weight:700;
+  background:var(--bandYellow);
+  border-bottom:1px solid var(--bandYellowBd);
+  color:#92400e;
+  line-height:1.45;
+}
+.gate{
+  padding:28px 20px;
+  text-align:center;
+  color:var(--muted);
+  font-size:15px;
+  line-height:1.5;
+}
+form{ padding:20px; }
+fieldset{
+  border:1px solid rgba(11,18,32,0.12);
+  border-radius:14px;
+  padding:14px 16px 16px;
+  margin:0 0 16px;
+  background:var(--fieldBg);
+}
+legend{
+  font-size:13px;
+  font-weight:900;
+  color:var(--blue);
+  padding:0 6px;
+}
+.grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+@media (max-width:720px){ .grid{ grid-template-columns:1fr; } }
+.field{ display:flex; flex-direction:column; gap:6px; }
+.field label, .field .label{
+  font-size:12px;
+  font-weight:800;
+  color:rgba(11,18,32,0.88);
+}
+input, textarea{
+  width:100%;
+  border:1px solid rgba(11,18,32,0.14);
+  border-radius:10px;
+  padding:10px 12px;
+  font-size:16px;
+  background:#fff;
+}
+textarea{ min-height:96px; resize:vertical; }
+input:focus, textarea:focus{
+  outline:none;
+  border-color:rgba(45,132,179,0.55);
+  box-shadow:var(--focus);
+}
+input[readonly]{ background:rgba(11,18,32,0.04); color:var(--muted); }
+.options{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+}
+.pill{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:10px 14px;
+  border-radius:999px;
+  border:1px solid rgba(11,18,32,0.16);
+  background:#fff;
+  font-size:14px;
+  font-weight:700;
+  cursor:pointer;
+  user-select:none;
+}
+.pill input{ width:auto; margin:0; accent-color:var(--blue); }
+.pill:hover{ border-color:rgba(45,132,179,0.45); }
+.pill.isSelected{
+  border-color:rgba(45,132,179,0.55);
+  background:rgba(45,132,179,0.10);
+}
+.cond{ display:none; margin-top:8px; }
+.cond.isOpen{ display:flex; flex-direction:column; gap:6px; }
+.contextBox{
+  border:1px dashed rgba(11,18,32,0.2);
+  border-radius:12px;
+  padding:12px;
+  background:#fff;
+  font-size:13px;
+  line-height:1.5;
+  max-height:320px;
+  overflow:auto;
+}
+.contextBox h4{ margin:0 0 8px; font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:0.04em; }
+.obsLine{ margin:0 0 10px; padding-bottom:10px; border-bottom:1px solid rgba(11,18,32,0.08); }
+.obsLine:last-child{ border-bottom:none; margin-bottom:0; padding-bottom:0; }
+.req{ color:#b91c1c; font-weight:900; margin-left:3px; }
+.small{ font-size:12px; color:var(--muted); line-height:1.45; margin-top:4px; }
+.actions{
+  margin-top:8px;
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+  flex-wrap:wrap;
+  padding-top:16px;
+  border-top:1px solid rgba(11,18,32,0.10);
+}
+button{
+  padding:12px 18px;
+  border-radius:12px;
+  border:none;
+  font-weight:800;
+  font-size:14px;
+  cursor:pointer;
+}
+.btnPrimary{
+  background:var(--blue);
+  color:#fff;
+  box-shadow:0 10px 22px rgba(45,132,179,0.22);
+}
+.btnGhost{
+  background:rgba(11,18,32,0.04);
+  border:1px solid rgba(11,18,32,0.10);
+  color:var(--text);
+}
+.done{
+  display:none;
+  padding:32px 20px;
+  text-align:center;
+}
+.done h2{ margin:0 0 8px; color:var(--blue); font-size:22px; }
+.mgmtBand{
+  background:var(--bandRedBg);
+  border:1px solid var(--bandRedBd);
+  border-radius:12px;
+  padding:10px 12px;
+  font-size:12px;
+  color:#991b1b;
+  margin-bottom:12px;
+  font-weight:700;
+}
+@media (max-width:520px){
+  body{ padding:14px; }
+  form{ padding:16px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <p class="banner" role="note">
+      In-meeting only: open this page during the scheduled performance review. Do not use it to prepare in advance or to follow up afterwards; the record is saved when you submit at the end of the session.
+    </p>
+    <div id="gate" class="gate">Checking access…</div>
+    <div id="done" class="done" role="status" aria-live="polite">
+      <h2>Review saved</h2>
+      <p class="small">The responses are stored for internal HR use. You can close this tab.</p>
+    </div>
+    <form id="perfForm" novalidate style="display:none;">
+      <input type="hidden" id="subjectUserId" name="subjectUserId" value="" />
+
+      <fieldset>
+        <legend>Discussion context (reference)</legend>
+        <p class="small" style="margin:0 0 10px;">
+          Session observations are pulled from submitted <strong>session feedback</strong> for the staff member (admin, ceo or lead) when you open this page with
+          <code style="font-size:11px;">?subject=&lt;staff-user-id&gt;</code> (same UUID as in <code style="font-size:11px;">staff_profiles.id</code>).
+          Term reviews are not stored in the portal DB yet — use the box below for points you go through in the room.
+        </p>
+        <div id="sessionContextMount" class="contextBox" aria-live="polite">
+          <h4>Session observations</h4>
+          <div id="sessionObservations" class="small">No linked staff user — enter the staff name below; optional URL parameter <code>?subject=</code> enables auto-list.</div>
+        </div>
+        <div class="field" style="margin-top:12px;">
+          <label for="termReviewNotes">Term / cycle review — points discussed (this meeting)</label>
+          <textarea id="termReviewNotes" name="termReviewNotes" rows="4" placeholder="Summarise term review outcomes or notes you are covering live (no automated feed yet)."></textarea>
+        </div>
+        <button type="button" class="btnGhost" id="reloadContextBtn" style="margin-top:8px;">Reload session list</button>
+      </fieldset>
+
+      <fieldset>
+        <legend>🟨 Basic Information</legend>
+        <div class="grid">
+          <div class="field">
+            <label for="staffName">Staff Name <span class="req">*</span></label>
+            <input id="staffName" name="staffName" type="text" required autocomplete="name" />
+          </div>
+          <div class="field">
+            <label for="reviewDate">Date of Review <span class="req">*</span> (DD-MM-YYYY)</label>
+            <input id="reviewDate" name="reviewDate" type="text" required placeholder="DD-MM-YYYY" inputmode="numeric" pattern="\d{2}-\d{2}-\d{4}" />
+          </div>
+          <div class="field" style="grid-column:1/-1;">
+            <label for="reviewerName">Reviewer Name <span class="req">*</span></label>
+            <input id="reviewerName" name="reviewerName" type="text" required readonly />
+            <span class="small">Taken from your signed-in profile (official reviewer of record).</span>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>🔹 Staff Voice</legend>
+        <div class="field">
+          <label for="feelingRole">How are you feeling in your current role?</label>
+          <textarea id="feelingRole" name="feelingRole" rows="3"></textarea>
+        </div>
+        <div class="field">
+          <span class="label">Do you feel supported by your team and line manager? <span class="req">*</span></span>
+          <div class="options" role="radiogroup" aria-label="Supported">
+            <label class="pill" data-supported><input type="radio" name="supported" value="Yes" required /> Yes</label>
+            <label class="pill" data-supported><input type="radio" name="supported" value="Partially" /> Partially</label>
+            <label class="pill" data-supported><input type="radio" name="supported" value="No" /> No</label>
+          </div>
+        </div>
+        <div id="supportedExplainWrap" class="field cond">
+          <label for="supportedExplain">Please explain</label>
+          <textarea id="supportedExplain" name="supportedExplain" rows="3"></textarea>
+        </div>
+        <div class="field">
+          <label for="concerns">Do you have any current concerns or challenges you'd like to share?</label>
+          <textarea id="concerns" name="concerns" rows="3"></textarea>
+        </div>
+        <div class="field">
+          <label for="jobBetter">Is there anything you feel would help you do your job better?</label>
+          <textarea id="jobBetter" name="jobBetter" rows="3"></textarea>
+        </div>
+        <div class="field">
+          <label for="mgmtOpsFeedback">Do you have any feedback or suggestions for management or operations?</label>
+          <textarea id="mgmtOpsFeedback" name="mgmtOpsFeedback" rows="3"></textarea>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>🟥 Feedback from Management</legend>
+        <div class="mgmtBand">Confidential — internal HR use only.</div>
+        <div class="field">
+          <label for="strengthsMgmt">Strengths observed</label>
+          <textarea id="strengthsMgmt" name="strengthsMgmt" rows="4"></textarea>
+        </div>
+        <div class="field">
+          <label for="improveMgmt">Areas for improvement</label>
+          <textarea id="improveMgmt" name="improveMgmt" rows="4"></textarea>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>🔹 Looking Forward</legend>
+        <div class="field">
+          <span class="label">Do you wish to continue in your current role? <span class="req">*</span></span>
+          <div class="options" role="radiogroup" aria-label="Continue role">
+            <label class="pill" data-continue><input type="radio" name="continueRole" value="Yes" required /> Yes</label>
+            <label class="pill" data-continue><input type="radio" name="continueRole" value="No" /> No</label>
+            <label class="pill" data-continue><input type="radio" name="continueRole" value="Not sure" /> Not sure</label>
+          </div>
+        </div>
+        <div id="continueExplainWrap" class="field cond">
+          <label for="continueExplain">Please explain</label>
+          <textarea id="continueExplain" name="continueExplain" rows="3"></textarea>
+        </div>
+        <div class="field">
+          <label for="exploreRoles">Are there any other roles, services or areas you would like to explore within ClubSENsational?</label>
+          <textarea id="exploreRoles" name="exploreRoles" rows="3"></textarea>
+        </div>
+        <div class="field">
+          <label for="availability">Are there any availability changes or preferences you would like to inform us about for the next term?</label>
+          <textarea id="availability" name="availability" rows="3"></textarea>
+        </div>
+      </fieldset>
+
+      <p class="small" style="margin:0 0 12px;"><span class="req">*</span> Indicates required question.</p>
+      <div class="actions">
+        <button type="button" class="btnGhost" id="clearDraftBtn">Reset form</button>
+        <button type="submit" class="btnPrimary" id="submitBtn">Save review</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script type="module" src="https://www.clubsensational.org/wp-content/uploads/2026/05/staff_performance_review_app.js?v=20260510-portal-admin"></script>
+</body>
+</html>

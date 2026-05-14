@@ -1,0 +1,15 @@
+---
+description: UI must stay inside its boxes—no horizontal bleed or overlap
+alwaysApply: true
+---
+
+# Containment: nothing leaves the box
+
+When editing **frontend** in `working_ui/` (HTML/CSS/JS):
+
+- **No overflow past borders**: long names, lists, subtitles, and badges must stay inside the intended card, row, pill, or sheet region. Do not let text run under chevrons, icons, or off the card edge.
+- **Flex/grid**: children that should shrink need `min-width: 0` (and `min-height: 0` in column layouts where relevant). Prefer `overflow-wrap: break-word` (or `anywhere` only when needed for unbroken strings).
+- **Prefer wrap + clipping policy**: multi-line wrap first; use `text-overflow: ellipsis` + `overflow: hidden` only when the design calls for a single line.
+- **After changes**: sanity-check with **long placeholder copy** (many words, long venue names, comma-separated lists).
+
+This applies across dashboards, sheets, notices, and any new components unless the product spec explicitly allows visible overflow (e.g. intentional scroll areas).

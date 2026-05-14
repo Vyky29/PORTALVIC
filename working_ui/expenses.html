@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Expenses</title>
+  <script>
+    (function () { try { document.documentElement.classList.add("portal-app-shell"); } catch (_) {} })();
+  </script>
+  <style id="portal-hide-wp-chrome">
+    html.portal-app-shell body.admin-bar{padding-top:0!important;margin-top:0!important}
+    html.portal-app-shell #wpadminbar,html.portal-app-shell #masthead,html.portal-app-shell header#masthead,html.portal-app-shell .site-header,html.portal-app-shell #site-header,html.portal-app-shell .ast-primary-header-bar,html.portal-app-shell .ast-above-header,html.portal-app-shell .elementor-location-header,html.portal-app-shell .elementor-location-footer,html.portal-app-shell #colophon,html.portal-app-shell footer.site-footer,html.portal-app-shell .site-footer,html.portal-app-shell #footer,html.portal-app-shell .site-bottom-footer-inner-wrap,html.portal-app-shell .footer-widget-area{display:none!important;visibility:hidden!important;height:0!important;overflow:hidden!important;pointer-events:none!important}
+    html.portal-app-shell .site-content,html.portal-app-shell #content,html.portal-app-shell .site-main,html.portal-app-shell #primary{margin-top:0!important;padding-top:0!important}
+    html.portal-app-shell #page,html.portal-app-shell .site{margin-top:0!important;padding-top:0!important}
+    body{font-family:Open Sans,Arial,sans-serif;background:#fff;color:#102238}
+    .wrap{max-width:980px;margin:0 auto;border:1px solid #e6ecf4;border-radius:14px;box-shadow:0 8px 24px rgba(17,24,39,.06)}
+    .body{padding:16px}
+    fieldset{border:1px solid #e6ecf4;border-radius:12px;margin:0 0 14px;padding:12px}
+    legend{font-size:12px;font-weight:700;color:#0b2a5b;padding:0 6px}
+    .field{display:flex;flex-direction:column;gap:6px}
+    .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px}
+    .autofill-block{margin-bottom:12px;padding:10px 12px;border:1px solid #e6ecf4;border-radius:10px;background:#fcfdff}
+    .autofill-line{margin:0 0 4px;font-size:15px;line-height:1.4}
+    .autofill-line:last-child{margin-bottom:0}
+    .label{font-size:13px;font-weight:700;color:#0b2a5b}
+    input,textarea,button{font:inherit}
+    .ctl{
+      width:100%;
+      padding:10px;
+      border:1px solid #cfd8e3;
+      border-radius:10px;
+      background:#fff;
+      min-width:0;
+    }
+    .ctl:focus-visible{outline:2px solid rgba(11,42,91,.45);outline-offset:2px}
+    .table-wrap{overflow:auto}
+    table{width:100%;border-collapse:collapse;border:1px solid #e6ecf4;border-radius:12px;overflow:hidden}
+    th,td{border-bottom:1px solid #e6ecf4;padding:8px;text-align:left;vertical-align:middle}
+    th{background:#f8fbff;color:#0b2a5b;font-size:12px}
+    thead th.th-compact{
+      font-size:11px;
+      line-height:1.25;
+      white-space:nowrap;
+      overflow-wrap:normal;
+      word-break:normal;
+    }
+    /* Cabeceras siempre centradas (.num pesa más que thead th si no lo reforzamos) */
+    thead th{text-align:center}
+    thead th.num{text-align:center}
+    tbody td.num{text-align:right}
+    .th-mob{display:none}
+    .num{text-align:right}
+    .toolbar{display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+    .btn{border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer}
+    .btn-main{background:#0b2a5b;color:#fff}
+    #submitBtn.btn-main{background:#e4edf8;color:#0b2a5b;border:1px solid #b0c7e2}
+    #submitBtn.btn-main:hover{background:#0b2a5b;color:#fff;border-color:#0b2a5b}
+    #submitBtn.btn-main:focus-visible{background:#0b2a5b;color:#fff;border-color:#0b2a5b;outline:2px solid rgba(11,42,91,.35);outline-offset:2px}
+    #submitBtn.btn-main:disabled{opacity:.55;cursor:not-allowed}
+    .btn-alt{background:#f0b400;color:#102238}
+    .btn-ghost{background:#e4edf8;color:#0b2a5b;border:1px solid #b0c7e2}
+    /* Elementor/tema tiñe <button> en rosa; id + !important (mismo criterio que timesheet) */
+    #addRowBtn{
+      background:#f0b400!important;
+      background-color:#f0b400!important;
+      background-image:none!important;
+      color:#102238!important;
+      border:1px solid rgba(16,34,56,.12)!important;
+    }
+    #addRowBtn:hover,
+    #addRowBtn:focus-visible{
+      filter:brightness(0.97);
+      border-color:rgba(16,34,56,.2)!important;
+    }
+    #addRowBtn:focus-visible{outline:2px solid rgba(11,42,91,.35);outline-offset:2px}
+    #removeRowBtn{
+      background:#e4edf8!important;
+      background-color:#e4edf8!important;
+      background-image:none!important;
+      color:#0b2a5b!important;
+      border:1px solid #b0c7e2!important;
+    }
+    #removeRowBtn:hover,
+    #removeRowBtn:focus-visible{
+      background:#0b2a5b!important;
+      background-color:#0b2a5b!important;
+      background-image:none!important;
+      color:#fff!important;
+      border-color:#0b2a5b!important;
+    }
+    #removeRowBtn:focus-visible{outline:2px solid rgba(11,42,91,.35);outline-offset:2px}
+    #removeRowBtn:active{
+      background:#0b2a5b!important;
+      background-color:#0b2a5b!important;
+      color:#fff!important;
+      border-color:#0b2a5b!important;
+    }
+    .total{display:flex;gap:10px;justify-content:flex-end;font-weight:700}
+    .hidden{display:none}
+    @media (max-width:760px){.grid{grid-template-columns:1fr}}
+    *,*::before,*::after{box-sizing:border-box}
+    html,body{overflow-x:hidden}
+    .wrap{min-width:0;max-width:100%}
+    .body{padding-bottom:max(16px, env(safe-area-inset-bottom, 0px))}
+    .table-wrap{-webkit-overflow-scrolling:touch;max-width:100%;min-width:0}
+    table{min-width:420px;max-width:none}
+    td,th{min-width:0;overflow-wrap:break-word;word-break:normal}
+    .btn{min-height:44px;touch-action:manipulation}
+    @media (max-width:560px){
+      .body{padding:8px;padding-bottom:max(14px, env(safe-area-inset-bottom, 0px))}
+      .wrap{border-radius:12px}
+      fieldset{padding:10px}
+      .autofill-line{font-size:14px}
+      .table-wrap{padding:6px 4px 8px}
+      table{width:100%;min-width:0;max-width:none;table-layout:fixed}
+      th,td{padding:5px 3px;font-size:11px;line-height:1.25;vertical-align:middle}
+      col.ex-col-desc{width:38%;min-width:0}
+      col.ex-col-amt{width:20%;min-width:0}
+      col.ex-col-rcpt{width:42%;min-width:0}
+      thead th{
+        --th-head-fs:clamp(10.5px, 3.1vw, 12px);
+        font-size:var(--th-head-fs);
+        line-height:1.2;
+        text-align:center;
+        vertical-align:middle;
+        padding:8px 3px;
+        hyphens:none;
+        word-break:normal;
+        overflow-wrap:normal;
+        white-space:normal;
+      }
+      thead th.th-compact{
+        font-size:var(--th-head-fs);
+        line-height:1.2;
+        text-align:center;
+        vertical-align:middle;
+        padding:8px 2px;
+        white-space:normal;
+        overflow-wrap:normal;
+        word-break:normal;
+      }
+      .th-desk{display:none}
+      .th-mob{
+        display:inline;
+        white-space:normal;
+        text-align:center;
+        max-width:100%;
+      }
+      .toolbar{flex-direction:column;align-items:stretch;gap:10px}
+      .toolbar .total{justify-content:flex-start}
+      .ctl{font-size:16px;min-width:0}
+      input[type="file"].ctl{
+        padding:6px 4px;
+        font-size:clamp(10px, 2.85vw, 12px);
+        max-width:100%;
+        width:100%;
+        box-sizing:border-box;
+      }
+      input[type="file"].ctl::file-selector-button{
+        font:inherit;
+        font-weight:700;
+        font-size:clamp(9px, 2.65vw, 11px);
+        padding:6px 8px;
+        margin-right:6px;
+        border-radius:8px;
+        border:1px solid #b0c7e2;
+        background:#e4edf8;
+        color:#0b2a5b;
+        white-space:nowrap;
+      }
+      input[type="file"].ctl::-webkit-file-upload-button{
+        font:inherit;
+        font-weight:700;
+        font-size:clamp(9px, 2.65vw, 11px);
+        padding:6px 8px;
+        margin-right:6px;
+        border-radius:8px;
+        border:1px solid #b0c7e2;
+        background:#e4edf8;
+        color:#0b2a5b;
+        white-space:nowrap;
+      }
+    }
+    </style>
+  <script src="https://www.clubsensational.org/wp-content/uploads/2026/05/portal_return_and_shell.js?v=20260510-portal-admin"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js?v=20260423-1"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js?v=20260419-99"></script>
+</head>
+<body>
+  <form id="expenseForm" novalidate>
+    <div class="wrap">
+      <div class="body">
+        <fieldset>
+          <legend>Expense Claim</legend>
+          <div class="autofill-block" aria-label="Month, employee, and role">
+            <p class="autofill-line"><strong>Month:</strong> <span id="monthName">-</span></p>
+            <p class="autofill-line"><strong>Employee:</strong> <span id="employeeName">-</span></p>
+            <p class="autofill-line"><strong>Role:</strong> <span id="roleName">-</span></p>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <colgroup>
+                <col class="ex-col-desc" />
+                <col class="ex-col-amt" />
+                <col class="ex-col-rcpt" />
+              </colgroup>
+              <thead><tr>
+                <th><span class="th-desk">Description</span><span class="th-mob">Details</span></th>
+                <th class="num th-compact" title="Amount (GBP)"><span class="th-desk">Amount (GBP)</span><span class="th-mob">Amount</span></th>
+                <th class="th-compact" title="Receipt (photo shows date)"><span class="th-desk">Upload Receipt Photo</span><span class="th-mob">Receipt</span></th>
+              </tr></thead>
+              <tbody id="expenseBody"></tbody>
+            </table>
+          </div>
+          <div class="toolbar" style="margin-top:10px">
+            <div>
+              <button type="button" class="btn btn-alt" id="addRowBtn">+ Add row</button>
+              <button type="button" class="btn btn-ghost" id="removeRowBtn">Remove last row</button>
+            </div>
+            <div class="total"><span>Total: <strong id="grandTotal">0.00</strong></span></div>
+          </div>
+        </fieldset>
+        <div class="toolbar">
+          <button id="submitBtn" type="submit" class="btn btn-main">Submit expenses</button>
+      </div>
+      </div>
+    </div>
+  </form>
+
+  <section id="pdfTemplate" style="display:none"></section>
+
+  <script type="module">
+    async function portalImportDocumentsModule(tag) {
+      const v = "20260423-13";
+      const custom =
+        typeof window !== "undefined" && window.PORTAL_WP_UPLOADS_BASE
+          ? String(window.PORTAL_WP_UPLOADS_BASE).trim().replace(/\/$/, "")
+          : "";
+      const origin = typeof location !== "undefined" ? String(location.origin || "").trim() : "";
+      const bases = [
+        custom,
+        origin ? `${origin}/wp-content/uploads/2026/05` : "",
+        "https://www.clubsensational.org/wp-content/uploads/2026/05",
+        "https://clubsensational.org/wp-content/uploads/2026/05"
+      ].filter(Boolean);
+      const uniq = [...new Set(bases)];
+      for (const base of uniq) {
+        const url = `${base}/portal_documents.js?v=${v}`;
+        try {
+          return await import(url);
+        } catch (e) {
+          console.warn("[portal]", tag, "import failed", url, e);
+        }
+      }
+      throw new Error(
+        "Could not load portal_documents.js (404 in Network). Upload portal_documents.js to your uploads folder, or set window.PORTAL_WP_UPLOADS_BASE in Elementor to that folder URL (no trailing slash)."
+      );
+    }
+    const { portalUploadPdfAndCreateDocument, portalRequireUser } = await portalImportDocumentsModule("expenses");
+
+    const MAX_ROWS = 12;
+    const STAFF_CODE_FALLBACK = {
+      stf001: { name: "Sandra", role: "Fitness Instructor 1" },
+      stf002: { name: "Roberto", role: "Swimming Instructor 2" },
+      stf003: { name: "Dan", role: "Swimming Instructor 3" },
+      stf004: { name: "Angel", role: "Swimming Instructor 3" },
+      stf005: { name: "Youssef", role: "Swimming Instructor 1" },
+      stf006: { name: "John", role: "Service Lead" },
+      stf007: { name: "Bismark", role: "Support Worker 3" },
+      stf008: { name: "Giuseppe", role: "Support Worker 2" },
+      stf009: { name: "Godsway", role: "Support Worker 1" },
+      stf010: { name: "Javier", role: "Swimming Instructor 3" },
+      stf011: { name: "Aurora", role: "Swimming Instructor 3" },
+      stf012: { name: "Berta", role: "Service Lead" },
+      stf013: { name: "Victor", role: "Manager" },
+      stf014: { name: "Carlos", role: "Climbing Instructor 3" },
+      stf015: { name: "Alex", role: "Climbing Instructor 3" },
+      stf017: { name: "Javi", role: "Manager" },
+      stf018: { name: "Raul", role: "Manager" },
+      stf019: { name: "Sevitha", role: "Admin" },
+      stf020: { name: "Demo", role: "Staff" }
+    };
+        const form = document.getElementById("expenseForm");
+    const bodyEl = document.getElementById("expenseBody");
+    const totalEl = document.getElementById("grandTotal");
+        const submitBtn = document.getElementById("submitBtn");
+
+    function money(v) { return (Math.round((Number(v) + Number.EPSILON) * 100) / 100).toFixed(2); }
+    function esc(value) { return String(value || "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
+    function rows() { return Array.from(bodyEl.querySelectorAll("tr")); }
+    function monthLabelFromNow() {
+      const d = new Date();
+      return d.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+    }
+    function firstNonEmpty(values, fallback = "") {
+      for (let i = 0; i < values.length; i++) {
+        const v = String(values[i] || "").trim();
+        if (v) return v;
+      }
+      return fallback;
+    }
+
+    function addRow() {
+      if (rows().length >= MAX_ROWS) return;
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><input class="ctl ex-desc" type="text" placeholder="Merchant / purpose" required></td>
+        <td class="num"><input class="ctl ex-amount" type="number" min="0" step="0.01" placeholder="0.00" required></td>
+        <td><input class="ctl ex-receipt" type="file" accept="image/*,application/pdf"></td>
+      `;
+      bodyEl.appendChild(tr);
+    }
+
+    function removeRow() {
+      if (rows().length > 1) bodyEl.lastElementChild.remove();
+      recalc();
+    }
+
+    function collect() {
+      return rows().map((r) => {
+        const desc = r.querySelector(".ex-desc")?.value || "";
+        const amount = Number(r.querySelector(".ex-amount")?.value || 0);
+        const receipt = r.querySelector(".ex-receipt")?.files?.[0] || null;
+        return { desc, amount: Number.isFinite(amount) ? amount : 0, receiptName: receipt ? receipt.name : "", receiptFile: receipt };
+      }).filter((x) => x.desc || x.amount > 0);
+    }
+
+    function recalc() {
+      const total = collect().reduce((sum, row) => sum + row.amount, 0);
+      totalEl.textContent = money(total);
+      return Number(money(total));
+    }
+
+    async function hydrateEmployee() {
+      try {
+        const { user, supabase } = await portalRequireUser();
+        const { data } = await supabase
+          .from("staff_profiles")
+          .select("full_name, username, role_track, role, app_role")
+          .eq("id", user.id)
+          .maybeSingle();
+        const { data: rateData } = await supabase
+          .from("staff_pay_rates")
+          .select("role_label")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        const profile = data || {};
+        const meta = (user && user.user_metadata) || {};
+        const emailLocal = String((user && user.email) || "").split("@")[0].trim().toLowerCase();
+        const codeFallback = STAFF_CODE_FALLBACK[emailLocal] || null;
+        const nameResolved = firstNonEmpty([
+          profile.full_name,
+          profile.username,
+          meta.full_name,
+          meta.name,
+          meta.preferred_username,
+          codeFallback && codeFallback.name
+        ], "Staff");
+        const roleResolved = firstNonEmpty([
+          profile.role_track,
+          profile.role,
+          profile.app_role,
+          rateData && rateData.role_label,
+          codeFallback && codeFallback.role
+        ], "Staff");
+        document.getElementById("employeeName").textContent = nameResolved;
+        document.getElementById("roleName").textContent = roleResolved;
+        document.getElementById("monthName").textContent = monthLabelFromNow();
+      } catch (_) {}
+    }
+
+    function readFileAsDataURL(file) {
+      return new Promise((resolve) => {
+        try {
+          if (!file || !(file instanceof File)) { resolve(""); return; }
+            const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result || ""));
+          reader.onerror = () => resolve("");
+            reader.readAsDataURL(file);
+        } catch (_) {
+          resolve("");
+        }
+      });
+    }
+
+    async function readImageUrlAsDataUrl(url) {
+      try {
+        const res = await fetch(url, { mode: "cors" });
+        if (!res.ok) return "";
+        const blob = await res.blob();
+        return await new Promise((resolve) => {
+          const r = new FileReader();
+          r.onload = () => resolve(String(r.result || ""));
+          r.onerror = () => resolve("");
+          r.readAsDataURL(blob);
+        });
+      } catch (_) {
+        return "";
+      }
+    }
+
+    /** Igual que timesheet: `logoPDF.png` local → WP → CDN F-02-1.png */
+    async function readPdfLogoDataUrl() {
+      const list = [];
+      try {
+        const base = document.baseURI || (typeof location !== "undefined" ? location.href : "");
+        if (base) list.push(new URL("logoPDF.png", base).href);
+      } catch (_) {}
+      const origin = typeof location !== "undefined" ? String(location.origin || "").trim() : "";
+      if (origin) list.push(`${origin}/wp-content/uploads/2026/05/F-02-1.png`);
+      list.push("https://www.clubsensational.org/wp-content/uploads/2026/05/F-02-1.png");
+      const seen = new Set();
+      for (let i = 0; i < list.length; i++) {
+        const url = list[i];
+        if (!url || seen.has(url)) continue;
+        seen.add(url);
+        const data = await readImageUrlAsDataUrl(url);
+        if (data) return data;
+      }
+      return "";
+    }
+
+    /** Misma lógica que timesheet: PNG pesado → JPEG pequeño en el PDF. */
+    async function shrinkDataUrlAsJpegForPdf(dataUrl, maxEdgePx, quality) {
+      if (!dataUrl || !String(dataUrl).startsWith("data:")) return "";
+      const maxE = maxEdgePx > 0 ? maxEdgePx : 380;
+      const q = typeof quality === "number" ? quality : 0.8;
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+          try {
+            const w = img.naturalWidth || img.width || 1;
+            const h = img.naturalHeight || img.height || 1;
+            const scale = Math.min(1, maxE / Math.max(w, h));
+            const cw = Math.max(1, Math.round(w * scale));
+            const ch = Math.max(1, Math.round(h * scale));
+            const canvas = document.createElement("canvas");
+            canvas.width = cw;
+            canvas.height = ch;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) {
+              resolve("");
+              return;
+            }
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, cw, ch);
+            ctx.drawImage(img, 0, 0, cw, ch);
+            resolve(canvas.toDataURL("image/jpeg", q));
+          } catch (_) {
+            resolve("");
+          }
+        };
+        img.onerror = () => resolve("");
+        img.src = dataUrl;
+      });
+    }
+
+    async function generatePdfBlob(payload) {
+      const JsPDFCtor = window.jspdf && window.jspdf.jsPDF ? window.jspdf.jsPDF : null;
+      if (!JsPDFCtor) throw new Error("jsPDF is not available.");
+      const doc = new JsPDFCtor({ unit: "mm", format: "a4", orientation: "portrait" });
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+      const tableW = 184;
+      const left = (pageW - tableW) / 2;
+      const right = left + tableW;
+      const colWDesc = 92;
+      const colWAmt = 32;
+      const colX = [left, left + colWDesc, left + colWDesc + colWAmt, right];
+      let y = 12;
+
+      function labeledLine(label, value, size = 11) {
+        const labelTxt = `${label}: `;
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(size);
+        doc.text(labelTxt, left, y);
+        const x = left + doc.getTextWidth(labelTxt);
+        doc.setFont("helvetica", "normal");
+        doc.text(String(value || "-"), x, y);
+        y += size * 0.42 + 2;
+      }
+
+      function ensureRoom(h) {
+        if (y + h > pageH - 10) {
+          doc.addPage();
+          y = 12;
+        }
+      }
+
+      const logoRaw = await readPdfLogoDataUrl();
+      let logoData = logoRaw;
+      if (logoRaw) {
+        const compact = await shrinkDataUrlAsJpegForPdf(logoRaw, 380, 0.8);
+        if (compact) logoData = compact;
+      }
+      if (logoData) {
+        const logoW = 28;
+        const logoH = 28;
+        const logoX = (pageW - logoW) / 2;
+        const logoFmt = /^data:image\/jpe?g/i.test(logoData) ? "JPEG" : "PNG";
+        doc.addImage(logoData, logoFmt, logoX, y, logoW, logoH);
+        y += logoH + 5;
+      }
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(15);
+      doc.text("EXPENSE CLAIM", pageW / 2, y, { align: "center" });
+      y += 8;
+      labeledLine("Employee", payload.employeeName || "-", 11);
+      labeledLine("Role", payload.roleName || "-", 11);
+      labeledLine("Month", payload.monthName || "-", 11);
+      labeledLine("Submitted", payload.submittedDate || "-", 11);
+      y += 1;
+
+      doc.setFillColor(248, 251, 255);
+      doc.setDrawColor(217, 227, 239);
+      const headH = 8;
+      doc.rect(colX[0], y, colX[3] - colX[0], headH, "FD");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.text("Description", (colX[0] + colX[1]) / 2, y + 5.2, { align: "center" });
+      doc.text("Amount (GBP)", (colX[1] + colX[2]) / 2, y + 5.2, { align: "center" });
+      doc.text("Receipt", (colX[2] + colX[3]) / 2, y + 5.2, { align: "center" });
+      y += headH;
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(16, 34, 56);
+      for (let i = 0; i < payload.items.length; i++) {
+        const item = payload.items[i];
+        const hasImage = item.receiptFile && String(item.receiptFile.type || "").toLowerCase().startsWith("image/");
+        const descW = Math.max(12, colX[1] - colX[0] - 3);
+        const descLines = doc.splitTextToSize(String(item.desc || "-"), descW);
+        const textBlockH = 5 + Math.max(1, descLines.length) * 4.35;
+        const rTxt = hasImage ? String(item.receiptName || "") : String(item.receiptName || "-");
+        const rLines = doc.splitTextToSize(rTxt, colX[3] - colX[2] - 3);
+        const receiptW = colX[3] - colX[2] - 3;
+        const receiptImgW = Math.min(34, Math.max(24, receiptW - 1));
+        const receiptHNoImg = 6 + rLines.length * 4.35 + 2;
+        const receiptHImg = 1.5 + receiptImgW + 4 + rLines.length * 3.5 + 2;
+        const rowH = hasImage
+          ? Math.max(receiptHImg, textBlockH + 4, 36)
+          : Math.max(11, textBlockH, receiptHNoImg);
+        ensureRoom(rowH + 1);
+        doc.rect(colX[0], y, colX[3] - colX[0], rowH, "S");
+        doc.line(colX[1], y, colX[1], y + rowH);
+        doc.line(colX[2], y, colX[2], y + rowH);
+        doc.text(descLines, colX[0] + 1.5, y + 6);
+        doc.text(money(item.amount || 0), (colX[1] + colX[2]) / 2, y + 6, { align: "center" });
+        if (hasImage) {
+          const dataUrl = await readFileAsDataURL(item.receiptFile);
+          if (dataUrl) {
+            const type = dataUrl.indexOf("data:image/png") === 0 ? "PNG" : "JPEG";
+            try { doc.addImage(dataUrl, type, colX[2] + 1.5, y + 1.5, receiptImgW, receiptImgW); } catch (_) {}
+          }
+          doc.setFontSize(8);
+          doc.text(rLines, colX[2] + 1.5, y + 1.5 + receiptImgW + 4);
+          doc.setFontSize(10);
+        } else {
+          doc.text(rLines, colX[2] + 1.5, y + 6);
+        }
+        y += rowH;
+      }
+
+      ensureRoom(12);
+      const totH = 10;
+      doc.rect(colX[0], y, colX[3] - colX[0], totH, "S");
+      doc.line(colX[1], y, colX[1], y + totH);
+      doc.line(colX[2], y, colX[2], y + totH);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.text("Total", colX[0] + 1.5, y + 6.5);
+      doc.text(money(payload.total || 0), (colX[1] + colX[2]) / 2, y + 6.5, { align: "center" });
+
+      const pdfBytes = doc.output("arraybuffer");
+      return new Blob([pdfBytes], { type: "application/pdf" });
+    }
+
+    function closeOrReturn() {
+      try {
+        if (typeof window.portalGetPortalReturnUrl === "function") {
+          const ret = window.portalGetPortalReturnUrl();
+          if (ret) { window.location.replace(ret); return; }
+        }
+      } catch (_) {}
+      try {
+        window.close();
+        setTimeout(() => { window.location.href = "/p1/"; }, 180);
+      } catch (_) {
+        window.location.href = "/p1/";
+      }
+    }
+
+    document.getElementById("addRowBtn").addEventListener("click", () => addRow());
+    document.getElementById("removeRowBtn").addEventListener("click", removeRow);
+    bodyEl.addEventListener("input", recalc);
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!form.reportValidity()) return;
+      const items = collect();
+      if (!items.length) { alert("Please add at least one expense row."); return; }
+
+      submitBtn.disabled = true;
+      try {
+        const currentMonth = document.getElementById("monthName").textContent || monthLabelFromNow();
+        const payload = {
+          employeeName: document.getElementById("employeeName").textContent,
+          roleName: document.getElementById("roleName").textContent,
+          monthName: currentMonth,
+          submittedDate: new Date().toLocaleDateString("en-GB"),
+          items,
+          total: recalc()
+        };
+        const [pdfBlob, auth] = await Promise.all([generatePdfBlob(payload), portalRequireUser()]);
+        const relatedDate = new Date().toISOString().slice(0, 10);
+        await portalUploadPdfAndCreateDocument({
+          blob: pdfBlob,
+          document_type: "expense",
+          category: "finance",
+          title: `${currentMonth.split(" ")[0]}'s Expenses`,
+          related_date: relatedDate,
+          source_page: "expenses",
+          reuseAuth: auth
+        });
+        alert("Expenses submitted successfully");
+        closeOrReturn();
+      } catch (_) {
+        const msg = _ && _.message ? String(_.message) : "Unknown error";
+        console.error("[expenses] submit failed:", _);
+        alert("Expenses submission failed. " + msg);
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+
+    addRow();
+    recalc();
+    hydrateEmployee();
+    </script>
+</body>
+</html>
+  

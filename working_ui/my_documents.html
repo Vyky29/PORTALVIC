@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>My Documents</title>
+  <script>
+    (function () { try { document.documentElement.classList.add("portal-app-shell"); } catch (_) {} })();
+  </script>
+  <style id="portal-hide-wp-chrome">
+    html.portal-app-shell body.admin-bar{padding-top:0!important;margin-top:0!important}
+    html.portal-app-shell #wpadminbar,html.portal-app-shell #masthead,html.portal-app-shell header#masthead,html.portal-app-shell .site-header,html.portal-app-shell #site-header,html.portal-app-shell .ast-primary-header-bar,html.portal-app-shell .ast-above-header,html.portal-app-shell .elementor-location-header,html.portal-app-shell .elementor-location-footer,html.portal-app-shell #colophon,html.portal-app-shell footer.site-footer,html.portal-app-shell .site-footer,html.portal-app-shell #footer,html.portal-app-shell .site-bottom-footer-inner-wrap,html.portal-app-shell .footer-widget-area{display:none!important;visibility:hidden!important;height:0!important;overflow:hidden!important;pointer-events:none!important}
+    html.portal-app-shell .site-content,html.portal-app-shell #content,html.portal-app-shell .site-main,html.portal-app-shell #primary{margin-top:0!important;padding-top:0!important}
+    html.portal-app-shell #page,html.portal-app-shell .site{margin-top:0!important;padding-top:0!important}
+    body{font-family:Open Sans,Arial,sans-serif;background:#fff;color:#102238}
+    .page{max-width:980px;margin:0 auto;padding:14px}
+    .card{border:1px solid #e6ecf4;border-radius:14px;box-shadow:0 8px 24px rgba(17,24,39,.06);background:#fff}
+    .head{padding:14px 16px;border-bottom:1px solid #e6ecf4}
+    .head h1{margin:0;color:#0b2a5b;font-size:22px}
+    .group{padding:14px 16px}
+    .group h2{margin:0 0 8px;font-size:14px;text-transform:uppercase;letter-spacing:.04em;color:#62758a}
+    .row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;border:1px solid #e6ecf4;border-radius:12px;padding:10px;margin-bottom:8px}
+    .row-main{display:flex;gap:10px;align-items:flex-start;min-width:0}
+    .row-text{min-width:0;flex:1}
+    .doc-icon{
+      display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:10px;flex-shrink:0;
+      border:1px solid rgba(17,42,91,.12);
+    }
+    .doc-icon svg{display:block;width:22px;height:22px}
+    .doc-icon--timesheet{background:#e8f1fb;color:#114f78;border-color:rgba(17,79,120,.2)}
+    .doc-icon--expense{background:#fff7ed;color:#c2410c;border-color:rgba(194,65,12,.18)}
+    .doc-icon--report{background:#ecfdf5;color:#047857;border-color:rgba(4,120,87,.2)}
+    .doc-icon--training{background:#f5f3ff;color:#5b21b6;border-color:rgba(91,33,182,.18)}
+    .doc-icon--file{background:#f4f7fb;color:#475569;border-color:rgba(71,85,105,.15)}
+    .title{font-weight:700;color:#102238}
+    .meta{font-size:12px;color:#62758a}
+    .docs-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;justify-content:flex-end;min-width:0;max-width:100%}
+    .btn-label-mob{display:none}
+    .btn{border:0;border-radius:10px;padding:9px 12px;font-weight:700;cursor:pointer;font:inherit}
+    /* Mismo criterio que timesheet Submit / Back (tema tiñe <button> en rosa) */
+    .btn-outline{
+      background:#e4edf8!important;
+      background-color:#e4edf8!important;
+      background-image:none!important;
+      color:#0b2a5b!important;
+      border:1px solid #b0c7e2!important;
+      min-width:0;
+    }
+    .btn-outline:hover,.btn-outline:focus-visible{
+      background:#0b2a5b!important;
+      background-color:#0b2a5b!important;
+      color:#fff!important;
+      border-color:#0b2a5b!important;
+    }
+    .btn-outline:focus-visible{outline:2px solid rgba(11,42,91,.35);outline-offset:2px}
+    .docs-actions .btn-outline{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+    }
+    .empty{padding:16px;color:#62758a}
+    *,*::before,*::after{box-sizing:border-box}
+    html,body{overflow-x:hidden}
+    .page{min-width:0;max-width:100%;padding-bottom:max(14px, env(safe-area-inset-bottom, 0px))}
+    .card{min-width:0;max-width:100%}
+    .row{min-width:0}
+    .minw0{min-width:0}
+    .title,.meta{min-width:0;overflow-wrap:break-word}
+    .btn{min-height:44px;touch-action:manipulation}
+    .doc-download-toast{
+      display:none;
+      margin:10px 16px 0;
+      padding:10px 12px;
+      border-radius:10px;
+      border:1px solid rgba(11,42,91,.14);
+      background:#f0f7fc;
+      color:#0b2a5b;
+      font-size:13px;
+      line-height:1.35;
+      box-sizing:border-box;
+      max-width:100%;
+      min-width:0;
+      overflow-wrap:break-word;
+    }
+    .doc-download-toast.is-visible{display:block}
+    .doc-download-toast strong{display:block;font-size:13px;font-weight:700;margin:0 0 2px}
+    .doc-download-toast-sub{display:block;font-size:12px;font-weight:600;color:#62758a;margin:0 0 4px}
+    .doc-download-toast-hint{display:block;font-size:12px;color:#62758a;font-weight:400}
+    .btn-label-mob .btn-mob-row2{font-size:11px;font-weight:700;opacity:0.95;min-height:1.2em;line-height:1.2}
+    @media (max-width:560px){
+      .doc-download-toast{margin:8px 12px 0}
+      .page{padding:10px}
+      .head h1{font-size:19px}
+      .group{padding:12px 14px}
+      .row{grid-template-columns:1fr;gap:12px;padding:12px}
+      .docs-actions{width:100%;justify-content:stretch;min-width:0}
+      .docs-actions .btn-outline{
+        flex:1;
+        min-width:0;
+        max-width:100%;
+        white-space:normal;
+        overflow:hidden;
+        text-overflow:clip;
+        padding:9px 8px;
+        line-height:1.15;
+      }
+      .btn-label-desk{display:none}
+      .btn-label-mob{
+        display:inline-flex;
+        flex-direction:column;
+        align-items:center;
+        justify-content:center;
+        gap:2px;
+        min-width:0;
+        max-width:100%;
+        text-align:center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <article class="card">
+      <header class="head"><h1>My Documents</h1></header>
+      <div id="docDownloadToast" class="doc-download-toast" role="status" aria-live="polite" aria-atomic="true">
+        <strong>Download</strong>
+        <span class="doc-download-toast-sub">In progress</span>
+        <span class="doc-download-toast-hint">Your PDF may take a moment. You can stay on this page.</span>
+      </div>
+      <section id="docsRoot"></section>
+    </article>
+  </main>
+
+  <script type="module">
+    async function portalImportDocumentsModule(tag) {
+      const v = "20260423-13";
+      const custom =
+        typeof window !== "undefined" && window.PORTAL_WP_UPLOADS_BASE
+          ? String(window.PORTAL_WP_UPLOADS_BASE).trim().replace(/\/$/, "")
+          : "";
+      const origin = typeof location !== "undefined" ? String(location.origin || "").trim() : "";
+      const bases = [
+        custom,
+        origin ? `${origin}/wp-content/uploads/2026/05` : "",
+        "https://www.clubsensational.org/wp-content/uploads/2026/05",
+        "https://clubsensational.org/wp-content/uploads/2026/05"
+      ].filter(Boolean);
+      const uniq = [...new Set(bases)];
+      for (const base of uniq) {
+        const url = `${base}/portal_documents.js?v=${v}`;
+        try {
+          return await import(url);
+        } catch (e) {
+          console.warn("[portal]", tag, "import failed", url, e);
+        }
+      }
+      throw new Error(
+        "Could not load portal_documents.js (404 in Network). Upload portal_documents.js to your uploads folder, or set window.PORTAL_WP_UPLOADS_BASE in Elementor to that folder URL (no trailing slash)."
+      );
+    }
+    const { portalListMyDocuments, portalCreateDocumentSignedUrl, portalHideMyDocumentFromList } =
+      await portalImportDocumentsModule("my_documents");
+
+    const GROUPS = [
+      { key: "finance", label: "Finance" },
+      { key: "reports", label: "Reports" },
+      { key: "training", label: "Training" }
+    ];
+
+    function esc(value) {
+      return String(value || "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+    }
+
+    function prettyDate(iso) {
+      if (!iso) return "-";
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return "-";
+      return d.toLocaleDateString("en-GB");
+    }
+    function prettyDateTime(iso) {
+      if (!iso) return "-";
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return "-";
+      const day = d.toLocaleDateString("en-GB");
+      const time = d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false });
+      return `${day} - ${time}`;
+    }
+    function displayTitle(doc) {
+      const type = String((doc && doc.document_type) || "").toLowerCase();
+      if (type === "timesheet") {
+        const base = doc.related_date || doc.created_at;
+        const d = base ? new Date(base) : null;
+        if (d && !Number.isNaN(d.getTime())) {
+          const month = d.toLocaleDateString("en-GB", { month: "long" });
+          return `${month}'s Timesheet`;
+        }
+        return "Timesheet";
+      }
+      if (type === "expense") {
+        const base = doc.related_date || doc.created_at;
+        const d = base ? new Date(base) : null;
+        if (d && !Number.isNaN(d.getTime())) {
+          const month = d.toLocaleDateString("en-GB", { month: "long" });
+          return `${month}'s Expenses`;
+        }
+        return "Expenses";
+      }
+      if (type === "staff_policy_ack") {
+        const t = String((doc && doc.title) || "").trim();
+        if (t) return t.replace(/^Signed:\s*/i, "").trim() || t;
+        return "Policy acknowledgment";
+      }
+      return String((doc && doc.title) || "Document");
+    }
+    function displayMeta(doc) {
+      const type = String((doc && doc.document_type) || "").toLowerCase();
+      if (type === "timesheet" || type === "expense" || type === "swim_term_review" || type === "staff_policy_ack") {
+        return prettyDateTime(doc.created_at);
+      }
+      return `${String(doc.document_type || "").toLowerCase()} • ${prettyDate(doc.related_date || doc.created_at)}`;
+    }
+
+    function docIconKind(doc) {
+      const t = String((doc && doc.document_type) || "").toLowerCase();
+      if (t === "timesheet") return "timesheet";
+      if (t === "expense") return "expense";
+      if (t === "staff_policy_ack") return "training";
+      if (t === "swim_term_review") return "report";
+      if (t.includes("report")) return "report";
+      if (t.includes("train") || t.includes("induction") || t.includes("safeguard")) return "training";
+      const c = String((doc && doc.category) || "").toLowerCase();
+      if (c === "reports") return "report";
+      if (c === "training") return "training";
+      return "file";
+    }
+
+    const DOC_ICON_LABEL = {
+      timesheet: "Timesheet",
+      expense: "Expenses",
+      report: "Report",
+      training: "Training",
+      file: "Document"
+    };
+
+    function docIconBlock(kind) {
+      const k = DOC_ICON_LABEL[kind] ? kind : "file";
+      const label = DOC_ICON_LABEL[k] || "Document";
+      const svgs = {
+        timesheet:
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+        expense:
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9h5M7 13h10"/><circle cx="15.5" cy="9.5" r="1.25" fill="currentColor" stroke="none"/></svg>',
+        report:
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M4 20V10M12 20V4M20 20v-8"/></svg>',
+        training:
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 2 3 3 6 3s6-1 6-3v-5"/></svg>',
+        file:
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>'
+      };
+      const svg = svgs[k] || svgs.file;
+      return `<span class="doc-icon doc-icon--${esc(k)}" role="img" aria-label="${esc(label)}">${svg}</span>`;
+    }
+
+    function sanitizeDownloadBasename(name) {
+      let s = String(name || "document")
+        .replace(/[<>:"/\\|?*]+/g, "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 80);
+      if (!s) s = "document";
+      if (/\.pdf$/i.test(s)) s = s.slice(0, -4);
+      return s || "document";
+    }
+
+    function isMobileMyDocumentsLayout() {
+      return (
+        typeof window !== "undefined" &&
+        window.matchMedia &&
+        window.matchMedia("(max-width:560px)").matches
+      );
+    }
+
+    function showDocDownloadToast() {
+      const el = document.getElementById("docDownloadToast");
+      if (el) el.classList.add("is-visible");
+    }
+    function hideDocDownloadToast() {
+      const el = document.getElementById("docDownloadToast");
+      if (el) el.classList.remove("is-visible");
+    }
+
+    function fetchPdfBlobViaXHR(url, onProgress) {
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("GET", url, true);
+        xhr.responseType = "blob";
+        xhr.withCredentials = false;
+        xhr.onprogress = (e) => {
+          if (typeof onProgress !== "function") return;
+          if (e.lengthComputable && e.total > 0) {
+            onProgress(Math.min(99, Math.round((100 * e.loaded) / e.total)));
+          } else {
+            onProgress(-1);
+          }
+        };
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) resolve(xhr.response);
+          else reject(new Error(String(xhr.status)));
+        };
+        xhr.onerror = () => reject(new Error("Network error"));
+        xhr.send();
+      });
+    }
+
+    /** Escritorio: nueva pestaña. Móvil: XHR + blob + download (progreso en el botón; fallback: pestaña). */
+    async function openOrDownloadDocument(fileUrl, downloadName, btn) {
+      const mobLab = btn && btn.querySelector ? btn.querySelector(".btn-label-mob") : null;
+      const mobRow2 = btn && btn.querySelector ? btn.querySelector(".btn-mob-row2") : null;
+      const deskLab = btn && btn.querySelector ? btn.querySelector(".btn-label-desk") : null;
+      const origDesk = deskLab ? deskLab.textContent : "";
+      const setDeskBusy = (t) => {
+        if (deskLab) deskLab.textContent = t;
+      };
+      const setMobProgressLine = (line2) => {
+        if (mobRow2) mobRow2.textContent = line2;
+        else if (mobLab) mobLab.textContent = line2;
+      };
+      const restoreLabels = () => {
+        const r2 = btn && btn.querySelector ? btn.querySelector(".btn-mob-row2") : null;
+        if (r2) r2.textContent = "";
+        const r1 = btn && btn.querySelector ? btn.querySelector(".btn-mob-row1") : null;
+        if (r1) r1.textContent = "Download";
+        else if (mobLab) mobLab.textContent = "Download";
+        if (deskLab) deskLab.textContent = origDesk || "View / Download";
+      };
+      try {
+        const signed = await portalCreateDocumentSignedUrl(fileUrl, 3600);
+        if (!signed) throw new Error("No URL");
+        if (!isMobileMyDocumentsLayout()) {
+          window.open(signed, "_blank", "noopener");
+          return;
+        }
+        if (btn) btn.disabled = true;
+        setDeskBusy("Downloading…");
+        setMobProgressLine("In progress");
+        showDocDownloadToast();
+        const base = sanitizeDownloadBasename(downloadName);
+        try {
+          let blob = await fetchPdfBlobViaXHR(signed, (pct) => {
+            if (pct >= 0) {
+              setDeskBusy(`Downloading ${pct}%`);
+              setMobProgressLine(`${pct}%`);
+            } else {
+              setDeskBusy("Downloading…");
+              setMobProgressLine("In progress");
+            }
+          });
+          if (!blob.type || blob.type === "application/octet-stream") {
+            blob = new Blob([blob], { type: "application/pdf" });
+          }
+          const objUrl = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = objUrl;
+          a.download = `${base}.pdf`;
+          a.rel = "noopener";
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(() => URL.revokeObjectURL(objUrl), 90_000);
+        } catch (err) {
+          console.warn("[my_documents] blob download failed, opening in browser", err);
+          window.open(signed, "_blank", "noopener");
+        }
+      } catch (_) {
+        alert("Could not open this document right now.");
+      } finally {
+        if (btn) {
+          restoreLabels();
+          btn.disabled = false;
+        }
+        setTimeout(() => hideDocDownloadToast(), 450);
+      }
+    }
+
+    function renderGroups(list) {
+      const root = document.getElementById("docsRoot");
+      if (!root) return;
+      const grouped = { finance: [], reports: [], training: [] };
+      (list || []).forEach((doc) => {
+        const cat = String(doc.category || "").toLowerCase();
+        if (!grouped[cat]) grouped[cat] = [];
+        grouped[cat].push(doc);
+      });
+
+      let html = "";
+      GROUPS.forEach((group) => {
+        const items = grouped[group.key] || [];
+        html += `<section class="group"><h2>${esc(group.label)}</h2>`;
+        if (!items.length) {
+          html += `<div class="empty">No documents yet.</div></section>`;
+          return;
+        }
+        items.forEach((doc) => {
+          const docId = esc(doc.id || "");
+          const iconKind = docIconKind(doc);
+          html += `
+            <div class="row">
+              <div class="row-main minw0">
+                ${docIconBlock(iconKind)}
+                <div class="row-text minw0">
+                  <div class="title">${esc(displayTitle(doc))}</div>
+                  <div class="meta">${esc(displayMeta(doc))}</div>
+                </div>
+              </div>
+              <div class="docs-actions">
+                <button type="button" class="btn btn-outline" data-file-url="${esc(doc.file_url)}" data-download-name="${esc(displayTitle(doc))}">
+                  <span class="btn-label-desk">View / Download</span><span class="btn-label-mob"><span class="btn-mob-row1">Download</span><span class="btn-mob-row2" aria-live="polite"></span></span>
+                </button>
+                <button type="button" class="btn btn-outline" data-doc-id="${docId}">Delete</button>
+              </div>
+            </div>
+          `;
+        });
+        html += `</section>`;
+      });
+      root.innerHTML = html;
+      root.querySelectorAll("button[data-file-url]").forEach((btn) => {
+        btn.addEventListener("click", () =>
+          openOrDownloadDocument(
+            btn.getAttribute("data-file-url") || "",
+            btn.getAttribute("data-download-name") || "document",
+            btn
+          )
+        );
+      });
+      root.querySelectorAll("button[data-doc-id]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const id = btn.getAttribute("data-doc-id") || "";
+          if (!id) return;
+          if (
+            !confirm(
+              "Remove this document from your list? It will stay on file for records but will no longer appear here."
+            )
+          ) {
+            return;
+          }
+          btn.disabled = true;
+          try {
+            await portalHideMyDocumentFromList(id);
+            const docs = await portalListMyDocuments();
+            renderGroups(docs);
+          } catch (err) {
+            console.error("[my_documents] hide failed:", err);
+            const msg = err && err.message ? String(err.message) : "Unknown error";
+            alert("Could not remove this document. " + msg);
+            btn.disabled = false;
+          }
+        });
+      });
+    }
+
+    (async function init() {
+      const root = document.getElementById("docsRoot");
+      if (root) root.innerHTML = `<div class="empty">Loading your documents...</div>`;
+      try {
+        const docs = await portalListMyDocuments();
+        renderGroups(docs);
+      } catch (_) {
+        if (root) root.innerHTML = `<div class="empty">Could not load documents. Please sign in again.</div>`;
+      }
+    })();
+  </script>
+</body>
+</html>

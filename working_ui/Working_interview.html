@@ -1,0 +1,3616 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>clubSENsational Interview and Onboarding Portal</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
+
+    *, *::before, *::after{ box-sizing:border-box; }
+
+    :root{
+      --blue:#2d84b3;
+      --blueSoft:#eaf5fb;
+      --gold:#cc952b;
+      --goldSoft:#fff4df;
+      --ink:#173247;
+      --text:#314555;
+      --muted:#728290;
+      --line:rgba(23,50,71,.12);
+      --white:#ffffff;
+      --bg:#f4f8fb;
+      --successBg:#e8f7ef;
+      --successText:#157347;
+      --successStrong:#0f6a40;
+      --dangerBg:#fff1f1;
+      --dangerText:#b42318;
+      --dangerStrong:#9f1f15;
+      --violetBg:#f3ecff;
+      --violetText:#6b46c1;
+      --shadow:0 18px 50px rgba(23,50,71,.08);
+      --radius:22px;
+    }
+
+    *{
+      box-sizing:border-box;
+    }
+
+    html{
+      scroll-behavior:smooth;
+    }
+
+    body{
+      margin:0;
+      font-family:'Montserrat', sans-serif;
+      background:linear-gradient(180deg,#f6fbfe 0%, #f3f7fa 100%);
+      color:var(--text);
+    }
+
+    .page{
+      width:min(1720px, calc(100% - 32px));
+      margin:0 auto;
+      padding:18px 0 40px;
+    }
+
+    .topbar{
+      position:relative;
+      background:rgba(244,248,251,.96);
+      border:1px solid var(--line);
+      border-radius:26px;
+      box-shadow:var(--shadow);
+      padding:18px 20px;
+      margin-bottom:18px;
+    }
+
+    .topbar-grid{
+      display:grid;
+      grid-template-columns:minmax(260px, 420px) minmax(0, 1fr);
+      gap:18px;
+      align-items:end;
+    }
+
+    .brand h1{
+      margin:0 0 6px;
+      font-size:clamp(24px, 2.8vw, 38px);
+      line-height:1.06;
+      color:var(--ink);
+      font-weight:800;
+    }
+
+    .brand p{
+      margin:0;
+      font-size:14px;
+      line-height:1.6;
+      color:var(--muted);
+      max-width:620px;
+    }
+
+    .search-panel{
+      display:grid;
+      grid-template-columns:minmax(260px, 1fr) auto auto;
+      gap:12px;
+      align-items:end;
+    }
+
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+
+    .field label{
+      font-size:12px;
+      font-weight:700;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      color:var(--muted);
+    }
+
+    .input,
+    .textarea,
+    .select{
+      width:100%;
+      border:1px solid rgba(23,50,71,.12);
+      background:#fff;
+      border-radius:14px;
+      padding:14px 14px;
+      font-family:inherit;
+      font-size:14px;
+      color:var(--text);
+      transition:.2s ease;
+      outline:none;
+    }
+
+    .textarea{
+      min-height:140px;
+      resize:vertical;
+    }
+
+    .textarea-call-info{
+      font-size:17px;
+      line-height:1.6;
+      min-height:120px;
+      padding:16px;
+    }
+
+    .input:focus,
+    .textarea:focus,
+    .select:focus{
+      border-color:var(--blue);
+      box-shadow:0 0 0 4px rgba(45,132,179,.12);
+    }
+
+    .btn{
+      appearance:none;
+      border:none;
+      border-radius:999px;
+      padding:14px 18px;
+      min-height:50px;
+      font-family:inherit;
+      font-size:14px;
+      font-weight:800;
+      cursor:pointer;
+      transition:.2s ease;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      white-space:nowrap;
+      text-decoration:none;
+    }
+
+    .btn-primary{
+      background:var(--blue);
+      color:#fff;
+    }
+
+    .btn-primary:hover{
+      background:#246d93;
+      transform:translateY(-1px);
+    }
+
+    .btn-gold{
+      background:var(--gold);
+      color:#fff;
+    }
+
+    .btn-gold:hover{
+      background:#b58326;
+      transform:translateY(-1px);
+    }
+
+    .btn-secondary{
+      background:#fff;
+      color:var(--ink);
+      border:1px solid var(--line);
+    }
+
+    .btn-secondary:hover{
+      border-color:var(--gold);
+      color:var(--gold);
+      transform:translateY(-1px);
+    }
+
+    .btn-danger{
+      background:#fff;
+      color:var(--dangerText);
+      border:1px solid rgba(180,35,24,.18);
+    }
+
+    .btn-danger:hover{
+      background:var(--dangerBg);
+      color:#000;
+    }
+
+    .results-wrap{
+      margin-bottom:18px;
+    }
+
+    .panel{
+      background:var(--white);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+
+    .panel-head{
+      padding:20px 22px 14px;
+      border-bottom:1px solid var(--line);
+      background:linear-gradient(180deg,#ffffff 0%, #fbfdff 100%);
+    }
+
+    .panel-title{
+      margin:0;
+      font-size:18px;
+      color:var(--ink);
+      font-weight:800;
+    }
+
+    .panel-subtitle{
+      margin:6px 0 0;
+      font-size:13px;
+      line-height:1.6;
+      color:var(--muted);
+    }
+
+    .panel-body{
+      padding:20px 22px 24px;
+    }
+
+    .result-list{
+      display:grid;
+      grid-template-columns:repeat(auto-fit, minmax(285px, 1fr));
+      gap:12px;
+    }
+
+    .candidate-card{
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:14px;
+      background:#fff;
+      transition:.2s ease;
+      cursor:pointer;
+      min-height:166px;
+    }
+
+    .candidate-card:hover{
+      border-color:rgba(45,132,179,.28);
+      box-shadow:0 10px 22px rgba(23,50,71,.06);
+      transform:translateY(-1px);
+    }
+
+    .candidate-card.active{
+      border-color:var(--gold);
+      background:var(--goldSoft);
+    }
+
+    .candidate-top{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:flex-start;
+      margin-bottom:10px;
+    }
+
+    .candidate-name{
+      margin:0;
+      font-size:16px;
+      font-weight:800;
+      color:var(--ink);
+      line-height:1.3;
+    }
+
+    .candidate-meta{
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.5;
+    }
+
+    .status-pill{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:800;
+      text-transform:uppercase;
+      letter-spacing:.06em;
+      white-space:nowrap;
+    }
+
+    .status-new{
+      background:#eef4f8;
+      color:var(--muted);
+    }
+
+    .status-call{
+      background:var(--blueSoft);
+      color:var(--blue);
+    }
+
+    .status-success{
+      background:var(--successBg);
+      color:var(--successText);
+    }
+
+    .status-unsuccess{
+      background:var(--dangerBg);
+      color:var(--dangerText);
+    }
+
+    .status-onboarding{
+      background:var(--violetBg);
+      color:var(--violetText);
+    }
+
+    .status-onboarding-in-progress{
+      background:rgba(255,165,0,.2);
+      color:#b86a00;
+      border:1px solid rgba(200,120,0,.25);
+    }
+
+    .status-ready{
+      background:var(--successBg);
+      color:var(--successText);
+      border:1px solid rgba(21,115,71,.12);
+    }
+
+    .form-panel{
+      width:100%;
+    }
+
+    .form-shell{
+      width:100%;
+      display:flex;
+      justify-content:center;
+    }
+
+    .form-wrap{
+      width:min(1360px, 100%);
+    }
+
+    .empty-box{
+      border:1px dashed rgba(23,50,71,.18);
+      border-radius:18px;
+      padding:28px;
+      background:#fbfdff;
+      color:var(--muted);
+      font-size:15px;
+      line-height:1.7;
+      text-align:center;
+    }
+
+    .content-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:18px;
+      flex-wrap:wrap;
+      margin-bottom:20px;
+    }
+
+    .candidate-summary h2{
+      margin:0;
+      font-size:34px;
+      color:var(--ink);
+      line-height:1.05;
+    }
+
+    .candidate-summary p{
+      margin:8px 0 0;
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.6;
+      max-width:780px;
+    }
+
+    .summary-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .mini-meta{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:12px;
+      margin-top:10px;
+      margin-bottom:18px;
+    }
+
+    .mini-card{
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:14px;
+      background:#fff;
+    }
+
+    .mini-card .k{
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      font-weight:800;
+      color:var(--muted);
+      margin-bottom:8px;
+    }
+
+    .mini-card .v{
+      font-size:14px;
+      font-weight:700;
+      color:var(--ink);
+      line-height:1.5;
+      word-break:break-word;
+    }
+
+    .stage-bar{
+      display:grid;
+      grid-template-columns:1fr 1fr 1fr;
+      gap:12px;
+      margin-bottom:18px;
+    }
+
+    .stage-chip{
+      border:1px solid var(--line);
+      border-radius:18px;
+      background:#fff;
+      padding:14px 16px;
+      transition:.2s ease;
+    }
+
+    .stage-chip .k{
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      font-weight:800;
+      color:var(--muted);
+      margin-bottom:8px;
+    }
+
+    .stage-chip .v{
+      font-size:15px;
+      font-weight:800;
+      color:var(--ink);
+      line-height:1.4;
+    }
+
+    .stage-chip.active{
+      border-color:rgba(45,132,179,.2);
+      background:var(--blueSoft);
+      box-shadow:0 8px 20px rgba(45,132,179,.08);
+    }
+
+    .stage-chip.complete{
+      border-color:rgba(21,115,71,.28);
+      background:var(--successBg);
+      color:var(--successStrong);
+    }
+    .stage-chip.complete .v{
+      color:var(--successStrong);
+    }
+
+    .stage-chip.locked{
+      opacity:.58;
+    }
+
+    .stage-chip.alert{
+      border-color:rgba(180,35,24,.16);
+      background:var(--dangerBg);
+    }
+
+    .stage-chip.in-progress{
+      border-color:rgba(200,120,0,.28);
+      background:rgba(255,165,0,.12);
+    }
+    .stage-chip.in-progress .k,
+    .stage-chip.in-progress .v{
+      color:#b86a00;
+    }
+
+    .section-grid{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:18px;
+    }
+
+    .section-card{
+      border:1px solid var(--line);
+      border-radius:20px;
+      background:linear-gradient(180deg,#fff 0%, #fbfdff 100%);
+      overflow:hidden;
+    }
+
+    .section-head{
+      padding:18px 20px;
+      border-bottom:1px solid var(--line);
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:14px;
+      flex-wrap:wrap;
+    }
+
+    .section-head h3{
+      margin:0;
+      font-size:18px;
+      color:var(--ink);
+      font-weight:800;
+    }
+
+    .section-head p{
+      margin:6px 0 0;
+      font-size:13px;
+      color:var(--muted);
+      line-height:1.6;
+      max-width:780px;
+    }
+
+    .section-body{
+      padding:20px;
+    }
+
+    .info-grid{
+      display:grid;
+      grid-template-columns:repeat(2, minmax(0,1fr));
+      gap:14px;
+    }
+
+    .full{
+      grid-column:1 / -1;
+    }
+
+    .toggle-group{
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      margin-top:4px;
+    }
+
+    .toggle{
+      flex:1 1 260px;
+      min-width:0;
+      max-width:100%;
+      border-radius:18px;
+      padding:14px 16px;
+      cursor:pointer;
+      transition:.2s ease;
+      text-align:left;
+      font-family:inherit;
+      border:2px solid transparent;
+      overflow:hidden;
+      white-space:normal;
+      overflow-wrap:anywhere;
+      word-break:break-word;
+    }
+
+    .toggle strong{
+      display:block;
+      font-size:15px;
+      margin-bottom:4px;
+      font-weight:800;
+      white-space:normal;
+      overflow-wrap:break-word;
+      word-break:break-word;
+    }
+
+    .toggle span{
+      display:block;
+      font-size:12px;
+      line-height:1.45;
+      opacity:.92;
+      white-space:normal;
+      overflow-wrap:break-word;
+      word-break:break-word;
+    }
+
+    .toggle:hover{
+      transform:translateY(-1px);
+    }
+
+    .toggle.success{
+      background:var(--successBg);
+      color:var(--successStrong);
+      border-color:rgba(21,115,71,.15);
+    }
+
+    .toggle.success.active-success{
+      background:var(--successText);
+      color:#fff;
+      border-color:var(--successText);
+      box-shadow:0 10px 24px rgba(21,115,71,.16);
+    }
+
+    .toggle.hold{
+      background:var(--goldSoft);
+      color:#8a641c;
+      border-color:rgba(204,149,43,.2);
+    }
+
+    .toggle.hold.active-hold{
+      background:var(--gold);
+      color:#fff;
+      border-color:var(--gold);
+      box-shadow:0 10px 24px rgba(204,149,43,.2);
+    }
+
+    .toggle.fail{
+      background:var(--dangerBg);
+      color:var(--dangerStrong);
+      border-color:rgba(180,35,24,.14);
+    }
+
+    .toggle.fail.active-unsuccess{
+      background:var(--dangerText);
+      color:#fff;
+      border-color:var(--dangerText);
+      box-shadow:0 10px 24px rgba(180,35,24,.16);
+    }
+
+    .check-grid{
+      display:grid;
+      grid-template-columns:repeat(2, minmax(0,1fr));
+      gap:12px;
+      margin-top:6px;
+    }
+
+    .check-card{
+      display:flex;
+      flex-direction:row;
+      align-items:center;
+      gap:10px;
+      padding:14px;
+      border:1px solid var(--line);
+      border-radius:16px;
+      background:#fff;
+    }
+    .check-card:has(.question-controls),
+    .check-card:has(.question-row),
+    .check-card:has(.question-notes),
+    .check-card:has(.question-audio){
+      flex-direction:column;
+      align-items:stretch;
+    }
+
+    .check-card .question-label{
+      width:100%;
+      margin-bottom:8px;
+    }
+    .check-card .question-label label{
+      margin:0;
+      font-size:14px;
+      line-height:1.55;
+      color:var(--text);
+      font-weight:600;
+      cursor:default;
+    }
+    .check-card .question-label .question-helper{
+      margin:6px 0 0;
+      font-size:13px;
+      line-height:1.55;
+      color:var(--muted);
+      font-weight:400;
+    }
+    .check-card .question-controls{
+      display:flex;
+      flex-direction:row;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:10px;
+    }
+    .check-card .question-controls .rating-stars{
+      flex:0 0 auto;
+    }
+    .check-card .question-controls .btn-record{
+      flex:0 0 auto;
+    }
+
+    .check-card input[type="checkbox"]{
+      width:18px;
+      height:18px;
+      margin:0;
+      accent-color:var(--blue);
+      flex:0 0 auto;
+    }
+
+    .check-card label{
+      margin:0;
+      font-size:14px;
+      line-height:1.55;
+      color:var(--text);
+      text-transform:none;
+      letter-spacing:0;
+      font-weight:600;
+      cursor:pointer;
+      flex:1;
+      min-width:0;
+    }
+
+    .check-card .card-note{
+      font-size:12px;
+      color:var(--muted);
+      margin-top:8px;
+      line-height:1.5;
+      font-weight:400;
+    }
+
+    .check-card .card-note ul{
+      margin:6px 0 0;
+      padding-left:18px;
+    }
+
+    .check-card .question-row{
+      display:flex;
+      flex-direction:row;
+      align-items:center;
+      gap:10px;
+      flex-wrap:nowrap;
+      min-width:0;
+    }
+    .check-card .question-row label{
+      flex:1 1 auto;
+      min-width:0;
+      margin:0;
+    }
+    .check-card .question-row .rating-stars{
+      flex:0 0 auto;
+    }
+    .btn-record{
+      flex:0 0 auto;
+      width:40px;
+      height:40px;
+      border-radius:50%;
+      border:2px solid var(--line);
+      background:#fff;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:var(--muted);
+      transition:border-color .2s, background .2s, color .2s;
+    }
+    .btn-record:hover{
+      border-color:var(--blue);
+      color:var(--blue);
+    }
+    .btn-record.recording{
+      border-color:#c00;
+      background:rgba(200,0,0,.12);
+      color:#c00;
+      animation: pulse-record 1.2s ease-in-out infinite;
+    }
+    @keyframes pulse-record{
+      0%,100%{ opacity:1; }
+      50%{ opacity:.75; }
+    }
+    .recording-indicator{
+      position:fixed;
+      right:18px;
+      bottom:18px;
+      z-index:9999;
+      display:none;
+      align-items:center;
+      gap:8px;
+      padding:10px 14px;
+      border-radius:999px;
+      background:rgba(20,24,30,.94);
+      color:#fff;
+      font-size:12px;
+      font-weight:700;
+      letter-spacing:.03em;
+      box-shadow:0 10px 26px rgba(0,0,0,.28);
+      pointer-events:none;
+    }
+    .recording-indicator.active{
+      display:inline-flex;
+    }
+    .recording-indicator .dot{
+      width:9px;
+      height:9px;
+      border-radius:50%;
+      background:#ff3b30;
+      animation:pulse-record 1.1s ease-in-out infinite;
+    }
+    .check-card .question-notes,
+    .check-card .question-audio{
+      width:100%;
+      flex:0 0 auto;
+    }
+    .check-card .question-notes .textarea{
+      min-height:72px;
+      font-size:13px;
+      width:100%;
+      box-sizing:border-box;
+    }
+    .question-audio .audio-placeholder{
+      display:inline-block;
+      font-size:13px;
+      color:var(--muted);
+      font-style:italic;
+    }
+    .question-audio .audio-wrap{
+      display:flex;
+      flex-wrap:wrap;
+      align-items:center;
+      gap:10px 12px;
+      position:relative;
+    }
+    .question-audio .audio-controls-row{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex:1 1 100%;
+      min-width:0;
+    }
+    .question-audio .audio-progress-wrap{
+      flex:1 1 120px;
+      min-width:0;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .question-audio .audio-seek{
+      flex:1;
+      min-width:0;
+      max-width:100%;
+      height:6px;
+      accent-color:var(--blue);
+    }
+    .question-audio .audio-time{
+      font-size:12px;
+      color:var(--muted);
+      white-space:nowrap;
+    }
+    .question-audio audio{
+      position:absolute;
+      width:0;
+      height:0;
+      opacity:0;
+      pointer-events:none;
+    }
+    .question-audio .audio-play-pause{
+      padding:8px 14px;
+      font-size:14px;
+      border:1px solid var(--line);
+      border-radius:8px;
+      background:#fff;
+      cursor:pointer;
+      line-height:1;
+    }
+    .question-audio .audio-play-pause:hover{
+      border-color:var(--blue);
+      color:var(--blue);
+    }
+    .question-audio .audio-speed{
+      display:flex;
+      gap:6px;
+    }
+    .question-audio .audio-speed button{
+      padding:6px 10px;
+      font-size:12px;
+      border:1px solid var(--line);
+      border-radius:8px;
+      background:#fff;
+      cursor:pointer;
+      font-weight:600;
+    }
+    .question-audio .audio-speed button:hover{
+      border-color:var(--blue);
+      color:var(--blue);
+    }
+
+    .subsection{
+      margin-top:16px;
+      padding-top:16px;
+      border-top:1px solid var(--line);
+    }
+
+    .subsection:first-child{
+      margin-top:0;
+      padding-top:0;
+      border-top:none;
+    }
+
+    .subsection-title{
+      margin:0 0 10px;
+      font-size:14px;
+      font-weight:800;
+      color:var(--ink);
+    }
+
+    .notice{
+      border-radius:16px;
+      padding:14px 16px;
+      font-size:13px;
+      line-height:1.6;
+      margin-top:16px;
+    }
+
+    .notice.warning{
+      background:var(--goldSoft);
+      color:#7c5b14;
+    }
+
+    .notice.success{
+      background:var(--successBg);
+      color:var(--successText);
+    }
+
+    .role-cert-box{
+      border:1px solid var(--line);
+      border-radius:18px;
+      background:#fff;
+      padding:16px;
+      margin-top:10px;
+    }
+
+    .role-cert-title{
+      margin:0 0 10px;
+      font-size:14px;
+      font-weight:800;
+      color:var(--ink);
+    }
+
+    .role-cert-list{
+      margin:0;
+      padding-left:18px;
+      color:var(--text);
+      font-size:14px;
+      line-height:1.7;
+    }
+
+    .history-list{
+      display:grid;
+      gap:10px;
+    }
+
+    .history-item{
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:#fff;
+      padding:14px;
+    }
+
+    .history-top{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:flex-start;
+      margin-bottom:8px;
+      flex-wrap:wrap;
+    }
+
+    .history-title{
+      font-size:14px;
+      font-weight:800;
+      color:var(--ink);
+      margin:0;
+    }
+
+    .history-time{
+      font-size:12px;
+      color:var(--muted);
+    }
+
+    .history-text{
+      font-size:13px;
+      line-height:1.65;
+      color:var(--text);
+      margin:0;
+    }
+
+    .hidden{
+      display:none !important;
+    }
+
+    .phase-block{
+      border-radius:18px;
+      padding:16px 16px 18px;
+      margin-top:16px;
+    }
+
+    .phase-block--org{
+      background:var(--blueSoft);
+    }
+
+    .phase-block--exp{
+      background:rgba(204,149,43,.08);
+    }
+
+    .phase-block--scen{
+      background:rgba(45,132,179,.08);
+    }
+
+    .phase-block--collab{
+      background:rgba(204,149,43,.1);
+    }
+
+    .phase-block--prob{
+      background:rgba(23,50,71,.04);
+    }
+
+    .phase-block--obs{
+      background:rgba(45,132,179,.06);
+    }
+
+    .phase-block--shad{
+      background:rgba(204,149,43,.12);
+    }
+
+    .phase-block--final{
+      background:rgba(21,115,71,.04);
+    }
+
+    .phase-block .check-grid{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+
+    .rating-stars{
+      display:inline-flex;
+      gap:4px;
+      margin-top:6px;
+    }
+
+    .rating-star{
+      border:none;
+      background:transparent;
+      box-shadow:none;
+      padding:0;
+      cursor:pointer;
+      font-size:24px;
+      line-height:1;
+      color:#d4dde5;
+      transition:.15s ease;
+    }
+
+    .rating-star.active{
+      color:var(--gold);
+      transform:translateY(-1px);
+    }
+
+    .rating-star:focus-visible{
+      outline:2px solid var(--blue);
+      outline-offset:2px;
+    }
+
+    .footer-note{
+      margin-top:14px;
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.7;
+    }
+
+    @media (max-width: 1200px){
+      .topbar-grid{
+        grid-template-columns:1fr;
+        align-items:start;
+      }
+
+      .search-panel{
+        grid-template-columns:1fr 1fr;
+      }
+
+      .search-panel .field{
+        grid-column:1 / -1;
+      }
+
+      .form-wrap{
+        width:100%;
+      }
+
+      .stage-bar{
+        grid-template-columns:1fr 1fr;
+      }
+
+      .mini-meta{
+        grid-template-columns:1fr 1fr;
+      }
+    }
+
+    @media (max-width: 768px){
+      .page{
+        width:100%;
+        max-width:100%;
+        padding:10px 12px 24px;
+        box-sizing:border-box;
+        overflow-x:hidden;
+      }
+
+      .topbar{
+        padding:14px;
+        border-radius:18px;
+      }
+
+      .search-panel{
+        grid-template-columns:1fr;
+      }
+
+      .panel-head,
+      .panel-body,
+      .section-head,
+      .section-body{
+        padding-left:14px;
+        padding-right:14px;
+      }
+
+      .result-list{
+        grid-template-columns:1fr;
+      }
+
+      .content-header{
+        flex-direction:column;
+        gap:12px;
+      }
+
+      .candidate-summary h2{
+        font-size:22px;
+      }
+
+      .summary-actions{
+        width:100%;
+        flex-direction:column;
+      }
+
+      .summary-actions .btn{
+        width:100%;
+      }
+
+      .info-grid,
+      .mini-meta,
+      .stage-bar,
+      .check-grid{
+        grid-template-columns:1fr;
+      }
+
+      .info-grid .field{
+        min-width:0;
+        width:100%;
+        max-width:100%;
+        grid-column:1;
+      }
+
+      .mini-meta .mini-card,
+      .stage-bar .stage-chip{
+        min-width:0;
+      }
+
+      .field.full,
+      .field .input,
+      .field .select,
+      .field .textarea{
+        max-width:100%;
+        box-sizing:border-box;
+      }
+
+      .field input[type=date],
+      .field input[type=time]{
+        width:100%;
+        max-width:100%;
+        min-width:0;
+        box-sizing:border-box;
+        text-align:left;
+        display:block;
+      }
+
+      .btn{
+        width:100%;
+      }
+
+      .toggle{
+        min-width:100%;
+      }
+
+      .toggle span{
+        display:none;
+      }
+
+      .toggle strong{
+        margin-bottom:0;
+      }
+
+      .check-card{
+        min-width:0;
+      }
+
+      .check-card:has(> div:not(.question-row):not(.question-notes):not(.question-audio):not(.audio-wrap):not(.question-label):not(.question-controls)){
+        flex-direction:column;
+        align-items:stretch;
+      }
+
+      .section-card{
+        border-radius:16px;
+      }
+
+      .phase-block{
+        padding:12px 14px;
+      }
+
+      .question-audio .audio-wrap{
+        flex-direction:column;
+        align-items:stretch;
+      }
+
+      .question-audio .audio-controls-row{
+        flex-wrap:wrap;
+      }
+
+      .question-audio .audio-progress-wrap{
+        flex:1 1 100%;
+        min-width:0;
+      }
+
+      .question-audio audio{
+        max-width:100%;
+      }
+    }
+
+    html, body{
+      overflow-x:hidden;
+      max-width:100vw;
+    }
+
+    .auth-strip{
+      background:linear-gradient(135deg, var(--ink) 0%, #1e3a52 100%);
+      border-radius:18px;
+      padding:14px 20px;
+      margin-bottom:18px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      gap:12px;
+    }
+    .auth-strip.hidden{ display:none !important; }
+    .auth-strip .auth-user{ color:rgba(255,255,255,.9); font-size:14px; font-weight:600; }
+    .auth-strip .btn-logout{ background:rgba(255,255,255,.2); color:#fff; border:1px solid rgba(255,255,255,.3); }
+    .auth-strip .btn-logout:hover{ background:rgba(255,255,255,.3); }
+    .auth-login-form{ display:flex; flex-wrap:wrap; align-items:flex-end; gap:10px; }
+    .auth-login-form .field{ margin:0; }
+    .auth-login-form .field label{ color:rgba(255,255,255,.85); }
+    .auth-login-form .input{ max-width:220px; }
+    .auth-msg{ color:#fff; font-size:14px; margin:0; }
+    .auth-error{ color:#ffb3b3; font-size:13px; margin-top:6px; }
+    .auth-set-password{ display:flex; flex-wrap:wrap; align-items:flex-end; gap:10px; }
+    .auth-set-password .field{ margin:0; }
+    .auth-set-password .field label{ color:rgba(255,255,255,.85); }
+    .auth-set-password .input{ max-width:200px; }
+    .auth-set-password-title{ color:#fff; font-size:15px; font-weight:700; margin:0 0 8px; width:100%; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2?v=20260419-99"></script>
+  <script>
+    (function () {
+      var w = typeof window !== "undefined" ? window : null;
+      if (!w) return;
+      if (typeof w.PORTAL_ONBOARDING_SUPABASE_URL !== "string") w.PORTAL_ONBOARDING_SUPABASE_URL = "";
+      if (typeof w.PORTAL_ONBOARDING_SUPABASE_ANON_KEY !== "string") w.PORTAL_ONBOARDING_SUPABASE_ANON_KEY = "";
+    })();
+  </script>
+  <script src="onboarding_portal_config.js?v=20260419-99"></script>
+</head>
+<body>
+  <div id="recordingIndicator" class="recording-indicator" aria-live="polite" aria-atomic="true">
+    <span class="dot"></span>
+    <span>Recording in progress...</span>
+  </div>
+  <div class="page">
+
+    <div id="mainPortal">
+    <section class="topbar">
+      <div class="topbar-grid">
+        <div class="brand">
+          <h1>Interview and Onboarding Portal</h1>
+          <p>Search candidates, create records, continue interview stages, complete onboarding, and review a saved history log from the same page.</p>
+          <p id="portalOnboardingSupabaseHint" class="hidden" style="margin-top:10px;font-size:13px;line-height:1.5;color:var(--muted);max-width:720px;">
+            Browser-only mode: sign in with your staff portal account (same site as the dashboards), or add <code style="font-size:12px;color:var(--text);">onboarding_portal_config.js</code> for local Supabase (see <code style="font-size:12px;color:var(--text);">onboarding_portal_config.example.js</code>). Shared data requires login; do not commit config files with real keys.
+          </p>
+        </div>
+
+        <div class="search-panel">
+          <div class="field">
+            <label for="searchInput">Candidate name</label>
+            <input id="searchInput" class="input" type="text" placeholder="e.g. Laura Smith" />
+          </div>
+          <button class="btn btn-gold" id="addCandidateBtn">Add New Candidate</button>
+          <button class="btn btn-primary" id="searchBtn">Search Candidate</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="results-wrap panel">
+      <div class="panel-head">
+        <h2 class="panel-title">Candidate Results</h2>
+        <p class="panel-subtitle">Open a saved candidate record or continue the next stage.</p>
+      </div>
+      <div class="panel-body">
+        <div id="searchResults" class="result-list"></div>
+        <div class="footer-note">
+          Search by name above. Select a candidate card to open the full record below.
+        </div>
+      </div>
+    </section>
+
+    <section class="form-panel panel">
+      <div class="panel-body">
+        <div class="form-shell">
+          <div class="form-wrap" id="mainContent">
+            <div class="empty-box">
+              Search for a candidate or create a new one to begin the interview and onboarding record.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    </div>
+
+  </div>
+
+  <script>
+    const STORAGE_KEY = "clubsensational_interview_onboarding_portal_v4";
+    const STORAGE_KEYS_FALLBACK = [
+      "clubsensational_interview_onboarding_portal_v4",
+      "clubsensational_interview_onboarding_portal_v3",
+      "clubsensational_interview_onboarding_portal_v2",
+      "clubsensational_interview_onboarding_portal_v1",
+      "clubsensational_interview_onboarding_portal"
+    ];
+
+    /** Populated only from onboarding_portal_config.js (not from this file). */
+    function readPortalOnboardingSupabaseConfig() {
+      const w = typeof window !== "undefined" ? window : null;
+      const url = w && typeof w.PORTAL_ONBOARDING_SUPABASE_URL === "string" ? w.PORTAL_ONBOARDING_SUPABASE_URL.trim() : "";
+      const anonKey = w && typeof w.PORTAL_ONBOARDING_SUPABASE_ANON_KEY === "string" ? w.PORTAL_ONBOARDING_SUPABASE_ANON_KEY.trim() : "";
+      return { url, anonKey };
+    }
+    /** Same ESM bundle as timesheet / dashboards (Supabase session + staff profile). */
+    const PORTAL_ONBOARDING_AUTH_MODULE =
+      "https://www.clubsensational.org/wp-content/uploads/2026/05/auth-handler.js?v=20260506-portal-interactions";
+
+    let portalUseSupabase = false;
+    let supabaseClient = null;
+    let candidates = [];
+    let currentCandidateId = null;
+    let sharedRefreshTimer = null;
+    let sharedRealtimeChannel = null;
+
+    function syncPortalOnboardingHintVisibility() {
+      const hint = document.getElementById("portalOnboardingSupabaseHint");
+      if (!hint) return;
+      if (portalUseSupabase) hint.classList.add("hidden");
+      else hint.classList.remove("hidden");
+    }
+
+    async function bootstrapPortalOnboardingSupabase() {
+      portalUseSupabase = false;
+      supabaseClient = null;
+      try {
+        const mod = await import(PORTAL_ONBOARDING_AUTH_MODULE);
+        if (mod && typeof mod.getSupabaseClient === "function") {
+          const c = mod.getSupabaseClient();
+          if (c && c.auth) {
+            const { data: authData } = await c.auth.getUser();
+            if (authData && authData.user) {
+              supabaseClient = c;
+              portalUseSupabase = true;
+              return;
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("[onboarding portal] auth-handler not available (open from staff portal host or use local config)", e);
+      }
+      const cfg = readPortalOnboardingSupabaseConfig();
+      if (cfg.url && cfg.anonKey && window.supabase && typeof window.supabase.createClient === "function") {
+        supabaseClient = window.supabase.createClient(cfg.url, cfg.anonKey, {
+          auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+        });
+        portalUseSupabase = true;
+      }
+    }
+
+    function getSupabase() {
+      if (!portalUseSupabase || !supabaseClient) return null;
+      return supabaseClient;
+    }
+
+    function loadCandidatesFromStorage() {
+      try {
+        for (const key of STORAGE_KEYS_FALLBACK) {
+          const raw = localStorage.getItem(key);
+          if (!raw) continue;
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length) return parsed;
+        }
+        const currentRaw = localStorage.getItem(STORAGE_KEY);
+        if (!currentRaw) return [];
+        const currentParsed = JSON.parse(currentRaw);
+        return Array.isArray(currentParsed) ? currentParsed : [];
+      } catch (e) { return []; }
+    }
+
+    async function loadCandidatesFromSupabase() {
+      const sb = getSupabase();
+      if (!sb) return [];
+      const { data, error } = await sb.from("onboarding_candidates").select("id, data").order("updated_at", { ascending: false });
+      if (error) {
+        console.error("Supabase load error", error);
+        throw error;
+      }
+      const remoteCandidates = (data || []).map(row => ensureCandidateShape({ ...row.data, id: row.id }));
+      candidates = remoteCandidates;
+      return candidates;
+    }
+
+    async function refreshSharedCandidates(showError) {
+      if (!portalUseSupabase) return;
+      try {
+        await loadCandidatesFromSupabase();
+        renderSearchResults(filterCandidates(searchInput.value.trim()));
+      } catch (error) {
+        const fallbackLocal = loadCandidatesFromStorage().map(ensureCandidateShape);
+        if (fallbackLocal.length) {
+          candidates = fallbackLocal;
+          renderSearchResults(filterCandidates(searchInput.value.trim()));
+          if (showError && mainContent) {
+            mainContent.innerHTML = `
+              <div class="empty-box">
+                Live shared sync is temporarily unavailable. Showing local saved candidates.
+              </div>
+            `;
+          }
+          return;
+        }
+        if (showError) {
+          if (mainContent) {
+            mainContent.innerHTML = `
+              <div class="empty-box">
+                Could not load shared candidates from Supabase. Please check your network or Supabase availability.
+              </div>
+            `;
+          }
+        }
+      }
+    }
+
+    async function saveCandidateToSupabase(candidate) {
+      const sb = getSupabase();
+      if (!sb) return;
+      const c = candidate;
+      const { id, ...rest } = c;
+      const { error } = await sb.from("onboarding_candidates").upsert({
+        id: c.id,
+        updated_at: c.updatedAt || new Date().toISOString(),
+        data: { ...rest, id: c.id }
+      }, { onConflict: "id" });
+      if (error) {
+        console.error("Supabase save error for", c.id, error);
+        throw error;
+      }
+    }
+
+    async function saveCandidates(candidateId) {
+      if (!portalUseSupabase) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(candidates));
+        return;
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(candidates));
+      if (candidateId) {
+        const target = candidates.find(c => c.id === candidateId);
+        if (target) await saveCandidateToSupabase(target);
+        return;
+      }
+      for (const c of candidates) {
+        await saveCandidateToSupabase(c);
+      }
+    }
+
+    function startSharedRealtimeSync() {
+      if (!portalUseSupabase) return;
+      const sb = getSupabase();
+      if (!sb) return;
+      if (sharedRealtimeChannel) {
+        try { sb.removeChannel(sharedRealtimeChannel); } catch (e) {}
+      }
+      sharedRealtimeChannel = sb
+        .channel("shared-candidates-live")
+        .on("postgres_changes", { event: "*", schema: "public", table: "onboarding_candidates" }, () => {
+          refreshSharedCandidates(false);
+        })
+        .subscribe();
+    }
+
+    const searchInput = document.getElementById("searchInput");
+    const searchBtn = document.getElementById("searchBtn");
+    const addCandidateBtn = document.getElementById("addCandidateBtn");
+    const searchResults = document.getElementById("searchResults");
+    const mainContent = document.getElementById("mainContent");
+
+    const roleCertificateMap = {
+      "Swimming Instructor": [
+        "STA Level 1",
+        "STA Level 2",
+        "Safety Award Training"
+      ],
+      "Climbing Instructor": [
+        "Competent Climber Certificate or CWI",
+        "First Aid Level 3"
+      ],
+      "Fitness Instructor": [
+        "CIMSPA Level 2 Gym Instructor or Level 3 Personal Trainer",
+        "First Aid Training"
+      ],
+      "Support Worker": [
+        "First Aid Training"
+      ],
+      "Swimming Teacher": [
+        "STA Level 1",
+        "STA Level 2",
+        "Safety Award Training"
+      ],
+      "Climbing Teacher": [
+        "Competent Climber Certificate or CWI",
+        "First Aid Level 3"
+      ]
+    };
+
+    function getDefaultCallInterview() {
+      return {
+        interviewerName: "",
+        date: "",
+        time: "",
+        comments: "",
+        status: "",
+        unsuccessfulReason: "",
+        previousExperience: false,
+        previousCompany: "",
+        sendExperience: false,
+        availabilityText: "",
+        roleInterest: false,
+        communicationSkills: false,
+        safeguardingAwareness: false,
+        motivation: false,
+        locationTravel: false,
+        roleScales: false,
+        shadowingProcessRate: false,
+        faceToFaceSessionWet: false,
+        generalNotes: "",
+        callNotesAudio: "",
+        callNotesAudioMime: "",
+        uploadedAudioName: "",
+        uploadedAudioDataUrl: "",
+        uploadedAudioMime: "",
+        uploadedTextName: "",
+        uploadedTextDataUrl: "",
+        uploadedTextMime: ""
+      };
+    }
+
+    function getDefaultFaceToFace() {
+      return {
+        interviewerName: "",
+        date: "",
+        time: "",
+        comments: "",
+        status: "",
+        unsuccessfulReason: "",
+        successfulHoldReason: "",
+        readyOnboardingNotes: "",
+        phase1Date: "",
+        phase1Impressions: "",
+        orgQ1: 0,
+        orgQ2: 0,
+        orgQ1Notes: "",
+        orgQ2Notes: "",
+        orgQ1Audio: "",
+        orgQ2Audio: "",
+        expQ1: 0,
+        expQ2: 0,
+        expQ3: 0,
+        expQ4: 0,
+        expQ1Notes: "",
+        expQ2Notes: "",
+        expQ1Audio: "",
+        expQ2Audio: "",
+        expQ3Audio: "",
+        expQ4Audio: "",
+        scenQ1: 0,
+        scenQ2: 0,
+        scenQ3: 0,
+        scenQ4: 0,
+        scenQ1Notes: "",
+        scenQ2Notes: "",
+        scenQ3Notes: "",
+        scenQ4Notes: "",
+        scenQ1Audio: "",
+        scenQ2Audio: "",
+        scenQ3Audio: "",
+        scenQ4Audio: "",
+        collabQ1: 0,
+        collabQ2: 0,
+        collabQ1Notes: "",
+        collabQ2Notes: "",
+        collabQ1Audio: "",
+        collabQ2Audio: "",
+        probQ1: 0,
+        probQ2: 0,
+        probQ1Notes: "",
+        probQ2Notes: "",
+        probQ1Audio: "",
+        probQ2Audio: "",
+        obsQ1: 0,
+        obsQ2: 0,
+        obsQ1Notes: "",
+        obsQ2Notes: "",
+        obsQ1Audio: "",
+        obsQ2Audio: "",
+        shadQ1: 0,
+        shadQ2: 0,
+        shadQ3: 0,
+        shadQ1Notes: "",
+        shadQ2Notes: "",
+        shadQ3Notes: "",
+        shadQ1Audio: "",
+        shadQ2Audio: "",
+        shadQ3Audio: "",
+        finalKnowledge: 0,
+        finalAttitude: 0,
+        finalKnowledgeNotes: "",
+        finalAttitudeNotes: "",
+        finalKnowledgeAudio: "",
+        finalAttitudeAudio: "",
+        followUpNotes: "",
+        outcomeCompletedAt: ""
+      };
+    }
+
+    function getDefaultOnboarding() {
+      return {
+        role: "",
+        welcomeEmailSent: false,
+        folderCreated: false,
+        healthQuestionnaireSent: false,
+        healthQuestionnaireReceived: false,
+        referencesRequested: false,
+        referenceOneReceived: false,
+        referenceOneInfo: "",
+        referenceTwoReceived: false,
+        referenceTwoInfo: "",
+        referencesChecked: false,
+        referencesCheckedInfo: "",
+        dbsRequested: false,
+        dbsEmailToEmployee: false,
+        dbsVerified: false,
+        dbsDateEnVigor: "",
+        dbsCompleted: false,
+        passportReceived: false,
+        passportAttachment: "",
+        passportAttachmentName: "",
+        britishStatus: "",
+        rightToWorkCode: "",
+        rightToWorkVerifiedDate: "",
+        rightToWorkCodeReceived: false,
+        rightToWorkVerified: false,
+        certificate1Received: false,
+        certificate2Received: false,
+        certificate2Date: "",
+        safetyAwardTrainingDate: "",
+        starterChecklistCompleted: false,
+        onboardingCompleted: false,
+        readyToStart: false,
+        onboardingNotes: ""
+      };
+    }
+
+    function getDefaultHistory() {
+      return [];
+    }
+
+    function loadCandidates() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function createCandidate(name) {
+      return {
+        id: "cand_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8),
+        name: name.trim(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        callInterview: getDefaultCallInterview(),
+        faceToFaceInterview: getDefaultFaceToFace(),
+        onboarding: getDefaultOnboarding(),
+        historyLog: getDefaultHistory()
+      };
+    }
+
+    function ensureCandidateShape(candidate) {
+      const nowIso = new Date().toISOString();
+      candidate.callInterview = { ...getDefaultCallInterview(), ...(candidate.callInterview || {}) };
+      candidate.faceToFaceInterview = { ...getDefaultFaceToFace(), ...(candidate.faceToFaceInterview || {}) };
+      candidate.onboarding = { ...getDefaultOnboarding(), ...(candidate.onboarding || {}) };
+      candidate.historyLog = Array.isArray(candidate.historyLog) ? candidate.historyLog : getDefaultHistory();
+      candidate.createdAt = candidate.createdAt || candidate.updatedAt || nowIso;
+      candidate.updatedAt = candidate.updatedAt || candidate.createdAt || nowIso;
+      return candidate;
+    }
+
+    function formatDateTime(iso) {
+      if (!iso) return "Not yet saved";
+      const date = new Date(iso);
+      if (isNaN(date.getTime())) return "Not yet saved";
+      return date.toLocaleString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
+
+    function isOnboardingStarted(onboarding) {
+      if (!onboarding) return false;
+      return !!(onboarding.role ||
+        onboarding.welcomeEmailSent ||
+        onboarding.folderCreated ||
+        onboarding.referenceOneInfo ||
+        onboarding.referenceTwoInfo ||
+        onboarding.referencesChecked ||
+        onboarding.dbsRequested ||
+        onboarding.dbsVerified ||
+        (onboarding.dbsDateEnVigor && onboarding.dbsDateEnVigor.trim()) ||
+        onboarding.passportReceived ||
+        (onboarding.rightToWorkCode && onboarding.rightToWorkCode.trim()) ||
+        (onboarding.rightToWorkVerifiedDate && onboarding.rightToWorkVerifiedDate.trim()) ||
+        onboarding.rightToWorkVerified ||
+        onboarding.certificate1Received ||
+        onboarding.certificate2Received ||
+        (onboarding.certificate2Date && onboarding.certificate2Date.trim()) ||
+        (onboarding.safetyAwardTrainingDate && onboarding.safetyAwardTrainingDate.trim()) ||
+        onboarding.starterChecklistCompleted ||
+        (onboarding.onboardingNotes && onboarding.onboardingNotes.trim()));
+    }
+
+    function getCurrentPhase(candidate) {
+      ensureCandidateShape(candidate);
+
+      if (candidate.onboarding.readyToStart || candidate.onboarding.onboardingCompleted) return "ready";
+      if (candidate.faceToFaceInterview.status === "successful-ready" || candidate.faceToFaceInterview.status === "successful") return "onboarding";
+      if (candidate.faceToFaceInterview.status === "successful-hold") return "face-successful-hold";
+      if (candidate.faceToFaceInterview.status === "unsuccessful") return "face-unsuccessful";
+      if (candidate.callInterview.status === "successful") return "face-to-face";
+      if (candidate.callInterview.status === "unsuccessful") return "call-unsuccessful";
+      if (candidate.callInterview.date || candidate.callInterview.time || candidate.callInterview.comments || candidate.callInterview.generalNotes || (candidate.callInterview.callNotesAudio && candidate.callInterview.callNotesAudio.length > 0)) return "call-interview";
+      return "new";
+    }
+
+    function getPhaseLabel(phase) {
+      switch (phase) {
+        case "ready": return "Ready for onboarding";
+        case "onboarding": return "Onboarding";
+        case "face-to-face": return "Face to Face";
+        case "face-unsuccessful": return "Face to Face Unsuccessful";
+        case "call-unsuccessful": return "Call Unsuccessful";
+        case "call-interview": return "Call Interview";
+        default: return "New / In Progress";
+      }
+    }
+
+    function getStatusLabel(candidate) {
+      const phase = getCurrentPhase(candidate);
+      if (phase === "ready") return { text: "Ready for onboarding", cls: "status-ready" };
+      if (phase === "onboarding") return { text: "Onboarding", cls: isOnboardingStarted(candidate.onboarding) ? "status-onboarding-in-progress" : "status-onboarding" };
+      if (phase === "face-successful-hold") return { text: "Successful (On hold)", cls: "status-onboarding" };
+      if (phase === "face-to-face") return { text: "Face to Face", cls: "status-call" };
+      if (phase === "face-unsuccessful") return { text: "Face to Face Unsuccessful", cls: "status-unsuccess" };
+      if (phase === "call-unsuccessful") return { text: "Call Unsuccessful", cls: "status-unsuccess" };
+      if (phase === "call-interview") return { text: "Call Interview", cls: "status-call" };
+      return { text: "New / In Progress", cls: "status-new" };
+    }
+
+    function hasOnboardingProgress(onboarding) {
+      return !!(
+        onboarding.role ||
+        onboarding.welcomeEmailSent ||
+        onboarding.folderCreated ||
+        onboarding.healthQuestionnaireSent ||
+        onboarding.healthQuestionnaireReceived ||
+        onboarding.referencesRequested ||
+        onboarding.referenceOneReceived ||
+        onboarding.referenceOneInfo ||
+        onboarding.referenceTwoReceived ||
+        onboarding.referenceTwoInfo ||
+        onboarding.referencesChecked ||
+        onboarding.referencesCheckedInfo ||
+        onboarding.dbsRequested ||
+        onboarding.dbsEmailToEmployee ||
+        onboarding.dbsVerified ||
+        onboarding.dbsDateEnVigor ||
+        onboarding.dbsCompleted ||
+        onboarding.passportReceived ||
+        onboarding.passportAttachment ||
+        onboarding.rightToWorkCode ||
+        onboarding.rightToWorkVerifiedDate ||
+        onboarding.britishStatus ||
+        onboarding.rightToWorkCodeReceived ||
+        onboarding.rightToWorkVerified ||
+        onboarding.certificate1Received ||
+        onboarding.certificate2Received ||
+        onboarding.certificate2Date ||
+        onboarding.safetyAwardTrainingDate ||
+        onboarding.starterChecklistCompleted ||
+        onboarding.onboardingCompleted ||
+        onboarding.readyToStart ||
+        onboarding.onboardingNotes
+      );
+    }
+
+    function escapeHtml(str) {
+      return (str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function getAudioMime(face, questionId) {
+      const m = (face && face[questionId + "AudioMime"]) ? face[questionId + "AudioMime"] : "";
+      return m || "audio/webm";
+    }
+
+    function renderQuestionAudio(face, questionId) {
+      const audio = (face && face[questionId + "Audio"]) ? face[questionId + "Audio"] : "";
+      const mime = getAudioMime(face, questionId);
+      const wrapId = "wrap-" + questionId;
+      if (!audio) {
+        return `<div class="question-audio" id="${escapeHtml(wrapId)}"><span class="audio-placeholder">No recording</span></div>`;
+      }
+      return `<div class="question-audio" id="${escapeHtml(wrapId)}">
+        <div class="audio-wrap">
+          <audio preload="metadata" data-question="${escapeHtml(questionId)}" src="data:${escapeHtml(mime)};base64,${audio}"></audio>
+          <div class="audio-controls-row">
+            <button type="button" class="audio-play-pause" title="Play / Pause">▶</button>
+            <div class="audio-progress-wrap">
+              <input type="range" class="audio-seek" min="0" max="100" value="0" title="Seek" />
+              <span class="audio-time">0:00 / 0:00</span>
+            </div>
+            <span class="audio-speed">
+              <button type="button" data-speed="1">1×</button>
+              <button type="button" data-speed="1.5">1.5×</button>
+              <button type="button" data-speed="2">2×</button>
+            </span>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    function renderCallNotesAudio(call) {
+      const audio = (call && call.callNotesAudio) ? call.callNotesAudio : "";
+      const mime = (call && call.callNotesAudioMime) ? call.callNotesAudioMime : "audio/webm";
+      const wrapId = "wrap-callNotes";
+      if (!audio) {
+        return `<div class="question-audio" id="${wrapId}"><span class="audio-placeholder">No recording</span></div>`;
+      }
+      return `<div class="question-audio" id="${wrapId}">
+        <div class="audio-wrap">
+          <audio preload="metadata" data-question="callNotes" src="data:${escapeHtml(mime)};base64,${audio}"></audio>
+          <div class="audio-controls-row">
+            <button type="button" class="audio-play-pause" title="Play / Pause">▶</button>
+            <div class="audio-progress-wrap">
+              <input type="range" class="audio-seek" min="0" max="100" value="0" title="Seek" />
+              <span class="audio-time">0:00 / 0:00</span>
+            </div>
+            <span class="audio-speed">
+              <button type="button" data-speed="1">1×</button>
+              <button type="button" data-speed="1.5">1.5×</button>
+              <button type="button" data-speed="2">2×</button>
+            </span>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    function renderUploadedDocPreview(dataUrl, fileName, label) {
+      if (!dataUrl) {
+        return `<span class="audio-placeholder">No ${escapeHtml(label)} uploaded</span>`;
+      }
+      const safeName = fileName || (label + ".file");
+      return `<div class="audio-wrap">
+        <span style="font-size:13px; color:var(--text); font-weight:600;">${escapeHtml(safeName)}</span>
+        <a class="btn btn-secondary" style="margin-top:8px; width:max-content;" href="${escapeHtml(dataUrl)}" download="${escapeHtml(safeName)}">Download</a>
+      </div>`;
+    }
+
+    function filterCandidates(query) {
+      const q = query.trim().toLowerCase();
+      if (!q) return candidates;
+      return candidates.filter(c => c.name.toLowerCase().includes(q));
+    }
+
+    function renderSearchResults(list = candidates) {
+      searchResults.innerHTML = "";
+
+      if (!list.length) {
+        searchResults.innerHTML = `
+          <div class="empty-box">
+            No candidates found yet. Create a new candidate above to start.
+          </div>
+        `;
+        return;
+      }
+
+      list
+        .map(ensureCandidateShape)
+        .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+        .forEach(candidate => {
+          const status = getStatusLabel(candidate);
+          const card = document.createElement("div");
+          card.className = "candidate-card" + (candidate.id === currentCandidateId ? " active" : "");
+          card.innerHTML = `
+            <div class="candidate-top">
+              <div>
+                <h3 class="candidate-name">${escapeHtml(candidate.name)}</h3>
+                <div class="candidate-meta">Last updated: ${formatDateTime(candidate.updatedAt)}</div>
+              </div>
+              <span class="status-pill ${status.cls}">${status.text}</span>
+            </div>
+            <div class="candidate-meta">Call interview: ${candidate.callInterview.date ? escapeHtml(candidate.callInterview.date) : "Not completed"}</div>
+            <div class="candidate-meta">Face to Face: ${candidate.faceToFaceInterview.date ? escapeHtml(candidate.faceToFaceInterview.date) : "Not completed"}</div>
+            <div class="candidate-meta">Ready for onboarding: ${candidate.onboarding.readyToStart ? "Yes" : "No"}</div>
+          `;
+          card.addEventListener("click", () => {
+            currentCandidateId = candidate.id;
+            renderSearchResults(filterCandidates(searchInput.value.trim()));
+            renderCandidateDetail(candidate.id);
+          });
+          searchResults.appendChild(card);
+        });
+    }
+
+    function findCandidateById(id) {
+      return candidates.find(c => c.id === id);
+    }
+
+    function addHistoryEntry(candidate, summary) {
+      candidate.historyLog.unshift({
+        timestamp: new Date().toISOString(),
+        phase: getPhaseLabel(getCurrentPhase(candidate)),
+        summary
+      });
+      candidate.historyLog = candidate.historyLog.slice(0, 30);
+    }
+
+    function buildHistorySummary(candidate) {
+      const parts = [];
+      const phase = getPhaseLabel(getCurrentPhase(candidate));
+      parts.push(`Phase: ${phase}`);
+
+      if (candidate.callInterview.status) {
+        parts.push(`Call: ${candidate.callInterview.status}`);
+      }
+
+      if (candidate.faceToFaceInterview.status) {
+        parts.push(`Face to Face: ${candidate.faceToFaceInterview.status}`);
+      }
+
+      if (candidate.onboarding.role) {
+        parts.push(`Role: ${candidate.onboarding.role}`);
+      }
+
+      if (candidate.onboarding.readyToStart) {
+        parts.push(`Ready for onboarding marked`);
+      } else if (candidate.onboarding.onboardingCompleted) {
+        parts.push(`Onboarding completed`);
+      }
+
+      return parts.join(" | ");
+    }
+
+    function addNewCandidateFromInput() {
+      const name = searchInput.value.trim();
+
+      if (!name) {
+        alert("Please enter the candidate name first.");
+        searchInput.focus();
+        return;
+      }
+
+      const existingExact = candidates.find(c => c.name.trim().toLowerCase() === name.toLowerCase());
+
+      if (existingExact) {
+        currentCandidateId = existingExact.id;
+        renderSearchResults(filterCandidates(searchInput.value.trim()));
+        renderCandidateDetail(existingExact.id);
+        alert("This candidate already exists. Their record has been opened.");
+        return;
+      }
+
+      const candidate = createCandidate(name);
+      addHistoryEntry(candidate, "Candidate profile created.");
+      candidates.push(candidate);
+      saveCandidates(candidate.id).catch(e => console.error("Save error", e));
+      currentCandidateId = candidate.id;
+      renderSearchResults(filterCandidates(searchInput.value.trim()));
+      renderCandidateDetail(candidate.id);
+    }
+
+    async function deleteCurrentCandidate() {
+      if (!currentCandidateId) return;
+
+      const candidate = findCandidateById(currentCandidateId);
+      if (!candidate) return;
+
+      const confirmed = confirm(`Delete ${candidate.name} and all saved information?`);
+      if (!confirmed) return;
+
+      const deletedId = currentCandidateId;
+      candidates = candidates.filter(c => c.id !== deletedId);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(candidates));
+      if (portalUseSupabase && getSupabase()) {
+        try { await getSupabase().from("onboarding_candidates").delete().eq("id", deletedId); } catch (e) { console.error(e); }
+      }
+      currentCandidateId = null;
+      renderSearchResults(filterCandidates(searchInput.value.trim()));
+      mainContent.innerHTML = `
+        <div class="empty-box">
+          Candidate deleted. Search for another candidate or create a new one.
+        </div>
+      `;
+    }
+
+    function resetCurrentForm() {
+      if (!currentCandidateId) return;
+      renderCandidateDetail(currentCandidateId);
+    }
+
+    async function saveAndShowFeedback() {
+      if (currentCandidateId) updateCandidateFromForm(true);
+      try {
+        await saveCandidates();
+        alert("Saved.");
+      } catch (err) {
+        alert("Save failed: " + (err && err.message ? err.message : "Check connection."));
+      }
+    }
+
+    function getCheckboxValue(id) {
+      const el = document.getElementById(id);
+      return el ? el.checked : false;
+    }
+
+    function debounce(fn, ms) {
+      let t;
+      return function() {
+        clearTimeout(t);
+        t = setTimeout(fn, ms);
+      };
+    }
+
+    function updateCandidateFromForm(silent) {
+      if (!currentCandidateId) return;
+
+      const candidate = findCandidateById(currentCandidateId);
+      if (!candidate) return;
+      ensureCandidateShape(candidate);
+
+      const candidateName = document.getElementById("candidateName");
+
+      const callInterviewerName = document.getElementById("callInterviewerName");
+      const callDate = document.getElementById("callDate");
+      const callTime = document.getElementById("callTime");
+      const callComments = document.getElementById("callComments");
+      const callGeneralNotes = document.getElementById("callGeneralNotes");
+      const callStatus = document.getElementById("callStatusValue");
+      const callUnsuccessfulReason = document.getElementById("callUnsuccessfulReason");
+
+      const faceInterviewerName = document.getElementById("faceInterviewerName");
+      const faceDate = document.getElementById("faceDate");
+      const faceTime = document.getElementById("faceTime");
+      const faceComments = document.getElementById("faceComments");
+      const faceStatus = document.getElementById("faceStatusValue");
+      const faceUnsuccessfulReason = document.getElementById("faceUnsuccessfulReason");
+      const faceSuccessfulHoldReason = document.getElementById("faceSuccessfulHoldReason");
+      const faceReadyOnboardingNotes = document.getElementById("faceReadyOnboardingNotes");
+      const faceFollowUpNotes = document.getElementById("faceFollowUpNotes");
+      const phase1Date = document.getElementById("phase1Date");
+      const phase1Impressions = document.getElementById("phase1Impressions");
+      const orgQ1 = document.getElementById("orgQ1");
+      const orgQ2 = document.getElementById("orgQ2");
+      const expQ1 = document.getElementById("expQ1");
+      const expQ2 = document.getElementById("expQ2");
+      const expQ3 = document.getElementById("expQ3");
+      const expQ4 = document.getElementById("expQ4");
+      const scenQ1 = document.getElementById("scenQ1");
+      const scenQ2 = document.getElementById("scenQ2");
+      const scenQ3 = document.getElementById("scenQ3");
+      const scenQ4 = document.getElementById("scenQ4");
+      const collabQ1 = document.getElementById("collabQ1");
+      const collabQ2 = document.getElementById("collabQ2");
+      const probQ1 = document.getElementById("probQ1");
+      const probQ2 = document.getElementById("probQ2");
+      const obsQ1 = document.getElementById("obsQ1");
+      const obsQ2 = document.getElementById("obsQ2");
+      const shadQ1 = document.getElementById("shadQ1");
+      const shadQ2 = document.getElementById("shadQ2");
+      const shadQ3 = document.getElementById("shadQ3");
+      const finalKnowledge = document.getElementById("finalKnowledge");
+      const finalAttitude = document.getElementById("finalAttitude");
+      const onboardingRole = document.getElementById("onboardingRole");
+      const britishStatus = document.getElementById("britishStatus");
+      const onboardingNotes = document.getElementById("onboardingNotes");
+      const safetyAwardTrainingDateEl = document.getElementById("safetyAwardTrainingDate");
+      const certificate2DateEl = document.getElementById("certificate2Date");
+      const referenceOneInfo = document.getElementById("referenceOneInfo");
+      const referenceTwoInfo = document.getElementById("referenceTwoInfo");
+      const referencesCheckedInfo = document.getElementById("referencesCheckedInfo");
+      const rightToWorkCodeEl = document.getElementById("rightToWorkCode");
+      const rightToWorkVerifiedDateEl = document.getElementById("rightToWorkVerifiedDate");
+
+      const name = candidateName.value.trim();
+      if (!silent) {
+        if (!name) {
+          alert("Candidate name cannot be empty.");
+          candidateName.focus();
+          return;
+        }
+        if (!callStatus.value) {
+          alert("Please select the call interview outcome.");
+          return;
+        }
+        if (callStatus.value === "unsuccessful" && !callUnsuccessfulReason.value.trim()) {
+          alert("Please add the reason why the candidate was unsuccessful in the call interview.");
+          callUnsuccessfulReason.focus();
+          return;
+        }
+        if (callStatus.value === "successful" && faceStatus.value === "unsuccessful" && !faceUnsuccessfulReason.value.trim()) {
+          alert("Please add the reason why the candidate was unsuccessful in the Face to Face interview.");
+          faceUnsuccessfulReason.focus();
+          return;
+        }
+        if (callStatus.value === "successful" && faceStatus.value === "successful-hold" && !(faceSuccessfulHoldReason && faceSuccessfulHoldReason.value.trim())) {
+          alert("Please add a note explaining why the candidate is successful but on hold.");
+          faceSuccessfulHoldReason.focus();
+          return;
+        }
+        if ((faceStatus.value === "successful" || faceStatus.value === "successful-ready") && britishStatus && britishStatus.value === "No" && !(rightToWorkCodeEl && rightToWorkCodeEl.value.trim())) {
+          alert("Please confirm when the Right to Work code has been received for a non British candidate.");
+          return;
+        }
+      }
+      candidate.name = name;
+
+      candidate.callInterview.interviewerName = callInterviewerName ? callInterviewerName.value.trim() : "";
+      candidate.callInterview.date = callDate.value;
+      candidate.callInterview.time = callTime.value;
+      candidate.callInterview.comments = callComments.value.trim();
+      candidate.callInterview.generalNotes = callGeneralNotes ? callGeneralNotes.value.trim() : "";
+      candidate.callInterview.status = callStatus.value;
+      candidate.callInterview.unsuccessfulReason = callStatus.value === "unsuccessful" ? callUnsuccessfulReason.value.trim() : "";
+      candidate.callInterview.previousExperience = getCheckboxValue("callPreviousExperience");
+      candidate.callInterview.sendExperience = getCheckboxValue("callSendExperience");
+      candidate.callInterview.roleInterest = getCheckboxValue("callRoleInterest");
+      candidate.callInterview.communicationSkills = getCheckboxValue("callCommunicationSkills");
+      candidate.callInterview.safeguardingAwareness = getCheckboxValue("callSafeguardingAwareness");
+      candidate.callInterview.motivation = getCheckboxValue("callMotivation");
+      candidate.callInterview.locationTravel = getCheckboxValue("callLocationTravel");
+      candidate.callInterview.roleScales = getCheckboxValue("callRoleScales");
+      candidate.callInterview.shadowingProcessRate = getCheckboxValue("callShadowingProcessRate");
+      candidate.callInterview.faceToFaceSessionWet = getCheckboxValue("callFaceToFaceSessionWet");
+
+      candidate.faceToFaceInterview.interviewerName = callStatus.value === "successful" && faceInterviewerName ? faceInterviewerName.value.trim() : "";
+      candidate.faceToFaceInterview.date = callStatus.value === "successful" ? faceDate.value : "";
+      candidate.faceToFaceInterview.time = callStatus.value === "successful" ? faceTime.value : "";
+      candidate.faceToFaceInterview.comments = callStatus.value === "successful" && faceComments ? faceComments.value.trim() : "";
+      candidate.faceToFaceInterview.status = callStatus.value === "successful" ? faceStatus.value : "";
+      candidate.faceToFaceInterview.unsuccessfulReason = (callStatus.value === "successful" && faceStatus.value === "unsuccessful") ? faceUnsuccessfulReason.value.trim() : "";
+      candidate.faceToFaceInterview.successfulHoldReason = (callStatus.value === "successful" && faceStatus.value === "successful-hold" && faceSuccessfulHoldReason) ? faceSuccessfulHoldReason.value.trim() : "";
+      candidate.faceToFaceInterview.readyOnboardingNotes = (callStatus.value === "successful" && (faceStatus.value === "successful-ready" || faceStatus.value === "successful") && faceReadyOnboardingNotes) ? faceReadyOnboardingNotes.value.trim() : "";
+      candidate.faceToFaceInterview.phase1Date = callStatus.value === "successful" && phase1Date ? phase1Date.value : "";
+      candidate.faceToFaceInterview.phase1Impressions = callStatus.value === "successful" && phase1Impressions ? phase1Impressions.value.trim() : "";
+      candidate.faceToFaceInterview.orgQ1 = callStatus.value === "successful" && orgQ1 ? Number(orgQ1.value || 0) : 0;
+      candidate.faceToFaceInterview.orgQ2 = callStatus.value === "successful" && orgQ2 ? Number(orgQ2.value || 0) : 0;
+      candidate.faceToFaceInterview.expQ1 = callStatus.value === "successful" && expQ1 ? Number(expQ1.value || 0) : 0;
+      candidate.faceToFaceInterview.expQ2 = callStatus.value === "successful" && expQ2 ? Number(expQ2.value || 0) : 0;
+      candidate.faceToFaceInterview.expQ3 = callStatus.value === "successful" && expQ3 ? Number(expQ3.value || 0) : 0;
+      candidate.faceToFaceInterview.expQ4 = callStatus.value === "successful" && expQ4 ? Number(expQ4.value || 0) : 0;
+      candidate.faceToFaceInterview.scenQ1 = callStatus.value === "successful" && scenQ1 ? Number(scenQ1.value || 0) : 0;
+      candidate.faceToFaceInterview.scenQ2 = callStatus.value === "successful" && scenQ2 ? Number(scenQ2.value || 0) : 0;
+      candidate.faceToFaceInterview.scenQ3 = callStatus.value === "successful" && scenQ3 ? Number(scenQ3.value || 0) : 0;
+      candidate.faceToFaceInterview.scenQ4 = callStatus.value === "successful" && scenQ4 ? Number(scenQ4.value || 0) : 0;
+      candidate.faceToFaceInterview.collabQ1 = callStatus.value === "successful" && collabQ1 ? Number(collabQ1.value || 0) : 0;
+      candidate.faceToFaceInterview.collabQ2 = callStatus.value === "successful" && collabQ2 ? Number(collabQ2.value || 0) : 0;
+      candidate.faceToFaceInterview.probQ1 = callStatus.value === "successful" && probQ1 ? Number(probQ1.value || 0) : 0;
+      candidate.faceToFaceInterview.probQ2 = callStatus.value === "successful" && probQ2 ? Number(probQ2.value || 0) : 0;
+      candidate.faceToFaceInterview.obsQ1 = callStatus.value === "successful" && obsQ1 ? Number(obsQ1.value || 0) : 0;
+      candidate.faceToFaceInterview.obsQ2 = callStatus.value === "successful" && obsQ2 ? Number(obsQ2.value || 0) : 0;
+      candidate.faceToFaceInterview.shadQ1 = callStatus.value === "successful" && shadQ1 ? Number(shadQ1.value || 0) : 0;
+      candidate.faceToFaceInterview.shadQ2 = callStatus.value === "successful" && shadQ2 ? Number(shadQ2.value || 0) : 0;
+      candidate.faceToFaceInterview.shadQ3 = callStatus.value === "successful" && shadQ3 ? Number(shadQ3.value || 0) : 0;
+      candidate.faceToFaceInterview.finalKnowledge = callStatus.value === "successful" && finalKnowledge ? Number(finalKnowledge.value || 0) : 0;
+      candidate.faceToFaceInterview.finalAttitude = callStatus.value === "successful" && finalAttitude ? Number(finalAttitude.value || 0) : 0;
+      candidate.faceToFaceInterview.followUpNotes = callStatus.value === "successful" && faceFollowUpNotes ? faceFollowUpNotes.value.trim() : "";
+
+      const selectedOnboardingRole = onboardingRole ? onboardingRole.value : "";
+      if (candidate.faceToFaceInterview.status === "successful-ready" || candidate.faceToFaceInterview.status === "successful") {
+        candidate.onboarding.role = selectedOnboardingRole;
+        candidate.onboarding.welcomeEmailSent = getCheckboxValue("welcomeEmailSent");
+        candidate.onboarding.folderCreated = getCheckboxValue("folderCreated");
+        candidate.onboarding.healthQuestionnaireSent = getCheckboxValue("healthQuestionnaireSent");
+        candidate.onboarding.healthQuestionnaireReceived = getCheckboxValue("healthQuestionnaireReceived");
+        candidate.onboarding.referencesRequested = getCheckboxValue("referencesRequested");
+        candidate.onboarding.referenceOneInfo = referenceOneInfo ? referenceOneInfo.value.trim() : "";
+        candidate.onboarding.referenceOneReceived = !!candidate.onboarding.referenceOneInfo;
+        candidate.onboarding.referenceTwoInfo = referenceTwoInfo ? referenceTwoInfo.value.trim() : "";
+        candidate.onboarding.referenceTwoReceived = !!candidate.onboarding.referenceTwoInfo;
+        candidate.onboarding.referencesChecked = getCheckboxValue("referencesChecked");
+        candidate.onboarding.referencesCheckedInfo = referencesCheckedInfo ? referencesCheckedInfo.value.trim() : "";
+        candidate.onboarding.dbsRequested = getCheckboxValue("dbsRequested");
+        candidate.onboarding.dbsEmailToEmployee = getCheckboxValue("dbsEmailToEmployee");
+        candidate.onboarding.dbsVerified = getCheckboxValue("dbsVerified");
+        candidate.onboarding.dbsCompleted = getCheckboxValue("dbsCompleted");
+        candidate.onboarding.passportReceived = getCheckboxValue("passportReceived");
+        candidate.onboarding.britishStatus = britishStatus ? britishStatus.value : "";
+        candidate.onboarding.rightToWorkCode = rightToWorkCodeEl ? rightToWorkCodeEl.value.trim() : "";
+        candidate.onboarding.rightToWorkVerifiedDate = rightToWorkVerifiedDateEl ? rightToWorkVerifiedDateEl.value : "";
+        candidate.onboarding.rightToWorkVerified = getCheckboxValue("rightToWorkVerified");
+        candidate.onboarding.certificate1Received = getCheckboxValue("certificate1Received");
+        candidate.onboarding.certificate2Received = getCheckboxValue("certificate2Received");
+        candidate.onboarding.certificate2Date = certificate2DateEl ? certificate2DateEl.value : "";
+        candidate.onboarding.safetyAwardTrainingDate = safetyAwardTrainingDateEl ? safetyAwardTrainingDateEl.value : "";
+        candidate.onboarding.starterChecklistCompleted = getCheckboxValue("starterChecklistCompleted");
+        candidate.onboarding.readyToStart = getCheckboxValue("readyToStart");
+        candidate.onboarding.onboardingNotes = onboardingNotes ? onboardingNotes.value.trim() : "";
+      } else {
+        candidate.onboarding = getDefaultOnboarding();
+        candidate.onboarding.role = selectedOnboardingRole;
+      }
+
+      candidate.updatedAt = new Date().toISOString();
+      if (!silent) addHistoryEntry(candidate, buildHistorySummary(candidate));
+      saveCandidates(candidate.id).catch(e => console.error("Save error", e));
+
+      if (silent) {
+        renderSearchResults(filterCandidates(searchInput.value.trim()));
+      } else {
+        renderSearchResults(filterCandidates(candidate.name));
+        renderCandidateDetail(candidate.id);
+        alert("Candidate record saved successfully.");
+      }
+    }
+
+    function setCallStatus(status) {
+      const statusInput = document.getElementById("callStatusValue");
+      const successBtn = document.getElementById("btnCallSuccessful");
+      const unsuccessBtn = document.getElementById("btnCallUnsuccessful");
+      const callUnsuccessfulWrap = document.getElementById("callUnsuccessfulWrap");
+      const faceSectionWrap = document.getElementById("faceSectionWrap");
+      const faceLockedNotice = document.getElementById("faceLockedNotice");
+      const stage2Chip = document.getElementById("stage2Chip");
+      const stage3Chip = document.getElementById("stage3Chip");
+      const onboardingSectionWrap = document.getElementById("onboardingSectionWrap");
+      const onboardingLockedNotice = document.getElementById("onboardingLockedNotice");
+
+      statusInput.value = status;
+      successBtn.classList.remove("active-success");
+      unsuccessBtn.classList.remove("active-unsuccess");
+
+      if (status === "successful") {
+        successBtn.classList.add("active-success");
+        callUnsuccessfulWrap.classList.add("hidden");
+        faceSectionWrap.classList.remove("hidden");
+        faceLockedNotice.classList.add("hidden");
+        stage2Chip.classList.add("active");
+        stage2Chip.classList.remove("locked", "alert");
+      } else if (status === "unsuccessful") {
+        unsuccessBtn.classList.add("active-unsuccess");
+        callUnsuccessfulWrap.classList.remove("hidden");
+        faceSectionWrap.classList.add("hidden");
+        faceLockedNotice.classList.remove("hidden");
+        stage2Chip.classList.add("alert");
+        stage2Chip.classList.remove("active");
+        stage3Chip.classList.remove("active", "complete", "alert");
+        stage3Chip.classList.add("locked");
+        if (onboardingSectionWrap) onboardingSectionWrap.classList.add("hidden");
+        if (onboardingLockedNotice) onboardingLockedNotice.classList.remove("hidden");
+        resetFaceStatus();
+      } else {
+        callUnsuccessfulWrap.classList.add("hidden");
+        faceSectionWrap.classList.add("hidden");
+        faceLockedNotice.classList.remove("hidden");
+        stage2Chip.classList.remove("active", "complete", "alert");
+        stage2Chip.classList.add("locked");
+        stage3Chip.classList.remove("active", "complete", "alert");
+        stage3Chip.classList.add("locked");
+        if (onboardingSectionWrap) onboardingSectionWrap.classList.add("hidden");
+        if (onboardingLockedNotice) onboardingLockedNotice.classList.remove("hidden");
+        resetFaceStatus();
+      }
+      updateCandidateFromForm(true);
+    }
+
+    function resetFaceStatus() {
+      const faceStatusInput = document.getElementById("faceStatusValue");
+      const faceHoldBtn = document.getElementById("btnFaceSuccessfulHold");
+      const faceReadyBtn = document.getElementById("btnFaceSuccessfulReady");
+      const faceUnsuccessBtn = document.getElementById("btnFaceUnsuccessful");
+      const faceUnsuccessfulWrap = document.getElementById("faceUnsuccessfulWrap");
+      const faceSuccessfulHoldWrap = document.getElementById("faceSuccessfulHoldWrap");
+      const faceReadyOnboardingWrap = document.getElementById("faceReadyOnboardingWrap");
+      if (!faceStatusInput) return;
+      faceStatusInput.value = "";
+      faceHoldBtn.classList.remove("active-hold");
+      faceReadyBtn.classList.remove("active-success");
+      faceUnsuccessBtn.classList.remove("active-unsuccess");
+      faceUnsuccessfulWrap.classList.add("hidden");
+      if (faceSuccessfulHoldWrap) faceSuccessfulHoldWrap.classList.add("hidden");
+      if (faceReadyOnboardingWrap) faceReadyOnboardingWrap.classList.add("hidden");
+    }
+
+    function setFaceStatus(status) {
+      const statusInput = document.getElementById("faceStatusValue");
+      const holdBtn = document.getElementById("btnFaceSuccessfulHold");
+      const readyBtn = document.getElementById("btnFaceSuccessfulReady");
+      const unsuccessBtn = document.getElementById("btnFaceUnsuccessful");
+      const faceUnsuccessfulWrap = document.getElementById("faceUnsuccessfulWrap");
+      const faceSuccessfulHoldWrap = document.getElementById("faceSuccessfulHoldWrap");
+      const faceReadyOnboardingWrap = document.getElementById("faceReadyOnboardingWrap");
+      const onboardingSectionWrap = document.getElementById("onboardingSectionWrap");
+      const onboardingLockedNotice = document.getElementById("onboardingLockedNotice");
+      const stage3Chip = document.getElementById("stage3Chip");
+
+      statusInput.value = status;
+      holdBtn.classList.remove("active-hold");
+      readyBtn.classList.remove("active-success");
+      unsuccessBtn.classList.remove("active-unsuccess");
+
+      if (status === "successful-ready" || status === "successful") {
+        readyBtn.classList.add("active-success");
+        faceUnsuccessfulWrap.classList.add("hidden");
+        if (faceSuccessfulHoldWrap) faceSuccessfulHoldWrap.classList.add("hidden");
+        if (faceReadyOnboardingWrap) faceReadyOnboardingWrap.classList.remove("hidden");
+        if (onboardingSectionWrap) onboardingSectionWrap.classList.remove("hidden");
+        if (onboardingLockedNotice) onboardingLockedNotice.classList.add("hidden");
+        stage3Chip.classList.add("alert");
+        stage3Chip.classList.remove("locked", "complete");
+      } else if (status === "successful-hold") {
+        holdBtn.classList.add("active-hold");
+        faceUnsuccessfulWrap.classList.add("hidden");
+        if (faceSuccessfulHoldWrap) faceSuccessfulHoldWrap.classList.remove("hidden");
+        if (faceReadyOnboardingWrap) faceReadyOnboardingWrap.classList.add("hidden");
+        if (onboardingSectionWrap) onboardingSectionWrap.classList.add("hidden");
+        if (onboardingLockedNotice) onboardingLockedNotice.classList.remove("hidden");
+        stage3Chip.classList.add("alert");
+        stage3Chip.classList.remove("active", "complete");
+      } else if (status === "unsuccessful") {
+        unsuccessBtn.classList.add("active-unsuccess");
+        faceUnsuccessfulWrap.classList.remove("hidden");
+        if (faceSuccessfulHoldWrap) faceSuccessfulHoldWrap.classList.add("hidden");
+        if (faceReadyOnboardingWrap) faceReadyOnboardingWrap.classList.add("hidden");
+        if (onboardingSectionWrap) onboardingSectionWrap.classList.add("hidden");
+        if (onboardingLockedNotice) onboardingLockedNotice.classList.remove("hidden");
+        stage3Chip.classList.add("alert");
+        stage3Chip.classList.remove("active", "complete");
+      } else {
+        faceUnsuccessfulWrap.classList.add("hidden");
+        if (faceSuccessfulHoldWrap) faceSuccessfulHoldWrap.classList.add("hidden");
+        if (faceReadyOnboardingWrap) faceReadyOnboardingWrap.classList.add("hidden");
+        if (onboardingSectionWrap) onboardingSectionWrap.classList.add("hidden");
+        if (onboardingLockedNotice) onboardingLockedNotice.classList.remove("hidden");
+        stage3Chip.classList.remove("active", "complete", "alert");
+        stage3Chip.classList.add("locked");
+      }
+      updateCandidateFromForm(true);
+    }
+
+    function triggerReadyForOnboardingNotification(candidate) {
+      // Placeholder hook: email/app notification workflow can be connected here later.
+      console.log("Ready for onboarding notification trigger:", candidate.id);
+    }
+
+    function completeFaceOutcome() {
+      if (!currentCandidateId) return;
+      const statusEl = document.getElementById("faceStatusValue");
+      const unsuccessfulReasonEl = document.getElementById("faceUnsuccessfulReason");
+      const holdReasonEl = document.getElementById("faceSuccessfulHoldReason");
+      const readyNotesEl = document.getElementById("faceReadyOnboardingNotes");
+      if (!statusEl || !statusEl.value) {
+        alert("Please select an outcome first.");
+        return;
+      }
+      const status = statusEl.value;
+      if (status === "unsuccessful" && (!unsuccessfulReasonEl || !unsuccessfulReasonEl.value.trim())) {
+        alert("Please add notes for Unsuccessful before completing.");
+        if (unsuccessfulReasonEl) unsuccessfulReasonEl.focus();
+        return;
+      }
+      if (status === "successful-hold" && (!holdReasonEl || !holdReasonEl.value.trim())) {
+        alert("Please add notes for Successful (on hold) before completing.");
+        if (holdReasonEl) holdReasonEl.focus();
+        return;
+      }
+      if ((status === "successful-ready" || status === "successful") && (!readyNotesEl || !readyNotesEl.value.trim())) {
+        alert("Please add notes for Ready for onboarding before completing.");
+        if (readyNotesEl) readyNotesEl.focus();
+        return;
+      }
+
+      updateCandidateFromForm(true);
+      const candidate = findCandidateById(currentCandidateId);
+      if (!candidate) return;
+      ensureCandidateShape(candidate);
+
+      candidate.faceToFaceInterview.outcomeCompletedAt = new Date().toISOString();
+      if (status === "successful-ready" || status === "successful") {
+        candidate.onboarding.readyToStart = true;
+        triggerReadyForOnboardingNotification(candidate);
+      } else {
+        candidate.onboarding.readyToStart = false;
+      }
+
+      addHistoryEntry(candidate, `Face to Face outcome completed: ${status}`);
+      candidate.updatedAt = new Date().toISOString();
+      saveCandidates(candidate.id).catch(e => console.error("Save error", e));
+      renderSearchResults(filterCandidates(searchInput.value.trim()));
+      renderCandidateDetail(candidate.id);
+      alert("Outcome completed and saved.");
+    }
+
+    function renderRoleCertificates(role) {
+      const box = document.getElementById("roleCertificateBox");
+      const cert1Label = document.getElementById("certificate1Label");
+      const cert2Wrap = document.getElementById("certificate2Wrap");
+      const cert2Label = document.getElementById("certificate2Label");
+      const certificate2DateWrap = document.getElementById("certificate2DateWrap");
+      const certificate2DateLabel = document.getElementById("certificate2DateLabel");
+      const safetyAwardWrap = document.getElementById("safetyAwardWrap");
+      const safetyAwardLabel = document.getElementById("safetyAwardLabel");
+      const list = roleCertificateMap[role] || [];
+
+      if (!box || !cert1Label || !cert2Wrap || !cert2Label) return;
+
+      if (!role || !list.length) {
+        box.innerHTML = `
+          <p class="role-cert-title">Required certificates for the selected role will appear here.</p>
+        `;
+        cert1Label.textContent = "Certificate 1 received";
+        cert2Label.textContent = "Certificate 2 received";
+        cert2Wrap.classList.remove("hidden");
+        if (certificate2DateWrap) certificate2DateWrap.classList.add("hidden");
+        if (safetyAwardWrap) safetyAwardWrap.classList.add("hidden");
+        return;
+      }
+
+      if (role === "Fitness Instructor") {
+        cert1Label.textContent = list[0] || "Certificate 1";
+        cert2Wrap.classList.add("hidden");
+        if (certificate2DateWrap) certificate2DateWrap.classList.remove("hidden");
+        if (certificate2DateLabel) certificate2DateLabel.textContent = list[1] || "First Aid Training";
+      } else {
+        cert1Label.textContent = list[0] ? `${list[0]} received` : "Certificate 1 received";
+        if (certificate2DateWrap) certificate2DateWrap.classList.add("hidden");
+        if (list[1]) {
+          cert2Label.textContent = `${list[1]} received`;
+          cert2Wrap.classList.remove("hidden");
+        } else {
+          cert2Label.textContent = "Certificate 2 received";
+          cert2Wrap.classList.add("hidden");
+          const cert2Box = document.getElementById("certificate2Received");
+          if (cert2Box) cert2Box.checked = false;
+        }
+      }
+
+      if (role === "Swimming Instructor" && list[2]) {
+        if (safetyAwardWrap) safetyAwardWrap.classList.remove("hidden");
+        if (safetyAwardLabel) safetyAwardLabel.textContent = list[2];
+      } else {
+        if (safetyAwardWrap) safetyAwardWrap.classList.add("hidden");
+      }
+
+      box.innerHTML = `
+        <p class="role-cert-title">Required certificates for ${escapeHtml(role)}</p>
+        <ul class="role-cert-list">
+          ${list.map(item => `<li>${escapeHtml(item)}</li>`).join("")}
+        </ul>
+      `;
+    }
+
+    function toggleRightToWorkBox() {
+      const britishStatus = document.getElementById("britishStatus");
+      const wrap = document.getElementById("rightToWorkWrap");
+      if (!britishStatus || !wrap) return;
+      if (britishStatus.value === "No") {
+        wrap.classList.remove("hidden");
+      } else {
+        wrap.classList.add("hidden");
+        const verifiedBox = document.getElementById("rightToWorkVerified");
+        if (verifiedBox) verifiedBox.checked = false;
+      }
+    }
+
+    function syncReadyStageVisual() {
+      const readyToStart = document.getElementById("readyToStart");
+      const stage3Chip = document.getElementById("stage3Chip");
+
+      if (!stage3Chip || !readyToStart) return;
+
+      stage3Chip.classList.remove("active", "complete", "alert", "locked");
+
+      if (readyToStart.checked) {
+        stage3Chip.classList.add("complete");
+      } else {
+        stage3Chip.classList.add("alert");
+      }
+    }
+
+    function renderHistory(historyLog) {
+      if (!historyLog || !historyLog.length) {
+        return `
+          <div class="empty-box">No history entries yet. A new entry will be created each time someone saves the record.</div>
+        `;
+      }
+
+      return `
+        <div class="history-list">
+          ${historyLog.map(item => `
+            <div class="history-item">
+              <div class="history-top">
+                <p class="history-title">${escapeHtml(item.phase || "Update")}</p>
+                <div class="history-time">${formatDateTime(item.timestamp)}</div>
+              </div>
+              <p class="history-text">${escapeHtml(item.summary || "")}</p>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function summarizeCallNotes(text) {
+      const raw = (text || "").trim();
+      if (!raw) return "";
+      return raw.replace(/\s+/g, " ").trim();
+    }
+
+    function initRatingStars() {
+      const groups = document.querySelectorAll(".rating-stars");
+      groups.forEach(group => {
+        const targetId = group.getAttribute("data-target");
+        const max = Number(group.getAttribute("data-max") || "4");
+        const hidden = document.getElementById(targetId);
+        if (!hidden) return;
+
+        const stars = Array.from(group.querySelectorAll(".rating-star"));
+        function render(val){
+          stars.forEach(star => {
+            const v = Number(star.getAttribute("data-value"));
+            if (!isNaN(v)) {
+              star.classList.toggle("active", v <= val);
+            }
+          });
+        }
+
+        const initial = Number(hidden.value || "0");
+        render(initial);
+
+        stars.forEach(star => {
+          star.addEventListener("click", () => {
+            const v = Number(star.getAttribute("data-value") || "0");
+            if (isNaN(v)) return;
+            const current = Number(hidden.value || "0");
+            const next = v === current ? 0 : v;
+            hidden.value = String(next);
+            render(next);
+          });
+        });
+      });
+    }
+
+    let recordState = { stream: null, recorder: null, btn: null, questionId: null, candidateId: null };
+
+    function updateRecordingIndicator(isRecording) {
+      const indicator = document.getElementById("recordingIndicator");
+      if (!indicator) return;
+      indicator.classList.toggle("active", !!isRecording);
+    }
+
+    function stopCurrentRecording() {
+      if (recordState.recorder && recordState.recorder.state !== "inactive") {
+        try { recordState.recorder.stop(); } catch (e) {}
+      }
+      if (recordState.stream) {
+        recordState.stream.getTracks().forEach(t => t.stop());
+      }
+      if (recordState.btn) recordState.btn.classList.remove("recording");
+      recordState.stream = null;
+      recordState.recorder = null;
+      recordState.btn = null;
+      updateRecordingIndicator(false);
+      /* do not clear questionId here – onstop needs it to update the correct wrap */
+    }
+
+    function updateAudioWrap(questionId, base64, mimeType, targetCandidateId) {
+      const candidateId = targetCandidateId || currentCandidateId;
+      const candidate = findCandidateById(candidateId);
+      if (!candidate) return;
+      const wrapId = questionId === "callNotes" ? "wrap-callNotes" : "wrap-" + questionId;
+      const wrap = currentCandidateId === candidateId ? document.getElementById(wrapId) : null;
+      if (questionId === "callNotes") {
+        candidate.callInterview = candidate.callInterview || {};
+        candidate.callInterview.callNotesAudio = base64 || "";
+        candidate.callInterview.callNotesAudioMime = mimeType || "audio/webm";
+        const call = candidate.callInterview;
+        const audio = (call && call.callNotesAudio) ? call.callNotesAudio : "";
+        const mime = (call && call.callNotesAudioMime) ? call.callNotesAudioMime : "audio/webm";
+        if (!wrap) return;
+        if (!audio) {
+          wrap.innerHTML = '<span class="audio-placeholder">No recording</span>';
+          return;
+        }
+        wrap.innerHTML = `<div class="audio-wrap">
+          <audio preload="metadata" data-question="callNotes" src="data:${escapeHtml(mime)};base64,${audio}"></audio>
+          <div class="audio-controls-row">
+            <button type="button" class="audio-play-pause" title="Play / Pause">▶</button>
+            <div class="audio-progress-wrap">
+              <input type="range" class="audio-seek" min="0" max="100" value="0" title="Seek" />
+              <span class="audio-time">0:00 / 0:00</span>
+            </div>
+            <span class="audio-speed">
+              <button type="button" data-speed="1">1×</button>
+              <button type="button" data-speed="1.5">1.5×</button>
+              <button type="button" data-speed="2">2×</button>
+            </span>
+          </div>
+        </div>`;
+        initAudioSpeedInWrap(wrap);
+        return;
+      }
+      if (!candidate.faceToFaceInterview) return;
+      candidate.faceToFaceInterview[questionId + "Audio"] = base64 || "";
+      candidate.faceToFaceInterview[questionId + "AudioMime"] = mimeType || "audio/webm";
+      const face = candidate.faceToFaceInterview;
+      const audio = (face && face[questionId + "Audio"]) ? face[questionId + "Audio"] : "";
+      const mime = getAudioMime(face, questionId);
+      if (!wrap) return;
+      if (!audio) {
+        wrap.innerHTML = '<span class="audio-placeholder">No recording</span>';
+        return;
+      }
+      wrap.innerHTML = `<div class="audio-wrap">
+        <audio preload="metadata" data-question="${escapeHtml(questionId)}" src="data:${escapeHtml(mime)};base64,${audio}"></audio>
+        <div class="audio-controls-row">
+          <button type="button" class="audio-play-pause" title="Play / Pause">▶</button>
+          <div class="audio-progress-wrap">
+            <input type="range" class="audio-seek" min="0" max="100" value="0" title="Seek" />
+            <span class="audio-time">0:00 / 0:00</span>
+          </div>
+          <span class="audio-speed">
+            <button type="button" data-speed="1">1×</button>
+            <button type="button" data-speed="1.5">1.5×</button>
+            <button type="button" data-speed="2">2×</button>
+          </span>
+        </div>
+      </div>`;
+      initAudioSpeedInWrap(wrap);
+    }
+
+    function formatAudioTime(sec) {
+      if (!isFinite(sec) || isNaN(sec)) return "0:00";
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      return m + ":" + (s < 10 ? "0" : "") + s;
+    }
+
+    function initAudioSpeedInWrap(wrap) {
+      const audio = wrap.querySelector("audio");
+      const playBtn = wrap.querySelector(".audio-play-pause");
+      const seekEl = wrap.querySelector(".audio-seek");
+      const timeEl = wrap.querySelector(".audio-time");
+      if (playBtn && audio) {
+        playBtn.addEventListener("click", () => {
+          if (audio.paused) {
+            audio.play();
+            playBtn.textContent = "❚❚";
+          } else {
+            audio.pause();
+            playBtn.textContent = "▶";
+          }
+        });
+        audio.addEventListener("play", () => { playBtn.textContent = "❚❚"; });
+        audio.addEventListener("pause", () => { playBtn.textContent = "▶"; });
+        audio.addEventListener("ended", () => { playBtn.textContent = "▶"; });
+      }
+      if (audio && seekEl && timeEl) {
+        audio.addEventListener("loadedmetadata", () => {
+          seekEl.max = 100;
+          timeEl.textContent = formatAudioTime(0) + " / " + formatAudioTime(audio.duration);
+        });
+        audio.addEventListener("timeupdate", () => {
+          const p = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
+          seekEl.value = String(p);
+          timeEl.textContent = formatAudioTime(audio.currentTime) + " / " + formatAudioTime(audio.duration);
+        });
+        seekEl.addEventListener("input", () => {
+          const p = Number(seekEl.value) / 100;
+          if (audio.duration) audio.currentTime = p * audio.duration;
+        });
+      }
+      wrap.querySelectorAll(".audio-speed button").forEach(btn => {
+        btn.addEventListener("click", () => {
+          if (audio) audio.playbackRate = Number(btn.getAttribute("data-speed") || 1);
+        });
+      });
+    }
+
+    function initAudioSpeedButtons() {
+      document.querySelectorAll(".question-audio .audio-wrap").forEach(wrap => initAudioSpeedInWrap(wrap));
+    }
+
+    function persistCandidateAfterRecording(candidateId) {
+      const candidate = findCandidateById(candidateId);
+      if (!candidate) return;
+      candidate.updatedAt = new Date().toISOString();
+      saveCandidates(candidate.id).catch(e => console.error("Save error", e));
+      if (currentCandidateId === candidateId) {
+        renderSearchResults(filterCandidates(searchInput.value.trim()));
+      }
+    }
+
+    function bindCallUploadHandlers() {
+      const audioInput = document.getElementById("callUploadAudioFile");
+      const textInput = document.getElementById("callUploadTextFile");
+      const audioPreview = document.getElementById("callUploadAudioPreview");
+      const textPreview = document.getElementById("callUploadTextPreview");
+      if (!audioInput || !textInput) return;
+
+      const saveUploadedFile = (file, kind) => {
+        if (!file || !currentCandidateId) return;
+        const candidate = findCandidateById(currentCandidateId);
+        if (!candidate) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          const dataUrl = typeof reader.result === "string" ? reader.result : "";
+          candidate.callInterview = candidate.callInterview || getDefaultCallInterview();
+          if (kind === "audio") {
+            candidate.callInterview.uploadedAudioName = file.name || "";
+            candidate.callInterview.uploadedAudioMime = file.type || "audio/webm";
+            candidate.callInterview.uploadedAudioDataUrl = dataUrl;
+            if (audioPreview) audioPreview.innerHTML = renderUploadedDocPreview(dataUrl, file.name || "", "audio file");
+          } else {
+            candidate.callInterview.uploadedTextName = file.name || "";
+            candidate.callInterview.uploadedTextMime = file.type || "text/plain";
+            candidate.callInterview.uploadedTextDataUrl = dataUrl;
+            if (textPreview) textPreview.innerHTML = renderUploadedDocPreview(dataUrl, file.name || "", "text file");
+          }
+          candidate.updatedAt = new Date().toISOString();
+          saveCandidates(candidate.id).catch(e => console.error("Save error", e));
+          renderSearchResults(filterCandidates(searchInput.value.trim()));
+        };
+        reader.readAsDataURL(file);
+      };
+
+      audioInput.addEventListener("change", function() {
+        const file = this.files && this.files[0] ? this.files[0] : null;
+        saveUploadedFile(file, "audio");
+      });
+
+      textInput.addEventListener("change", function() {
+        const file = this.files && this.files[0] ? this.files[0] : null;
+        saveUploadedFile(file, "text");
+      });
+    }
+
+    function applyMobileDateTimeInputs() {
+      const isMobile = window.matchMedia("(max-width: 768px)").matches;
+      document.querySelectorAll('input[data-input-type="date"]').forEach(inp => {
+        const originalType = inp.getAttribute("data-input-type") || "date";
+        if (isMobile) {
+          inp.type = "text";
+          inp.placeholder = "YYYY-MM-DD";
+        } else {
+          inp.type = originalType;
+          inp.placeholder = "";
+        }
+      });
+      document.querySelectorAll('input[data-input-type="time"]').forEach(inp => {
+        const originalType = inp.getAttribute("data-input-type") || "time";
+        if (isMobile) {
+          inp.type = "text";
+          inp.placeholder = "HH:MM";
+        } else {
+          inp.type = originalType;
+          inp.placeholder = "";
+        }
+      });
+    }
+
+    function initRecordButtons() {
+      document.querySelectorAll(".btn-record").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const questionId = btn.getAttribute("data-question");
+          if (btn.classList.contains("recording")) {
+            if (recordState.recorder && recordState.recorder.state === "recording") {
+              try { recordState.recorder.requestData(); } catch (e) {}
+              try { recordState.recorder.stop(); } catch (e) {}
+            } else {
+              stopCurrentRecording();
+            }
+            return;
+          }
+          if (recordState.btn && recordState.btn !== btn) stopCurrentRecording();
+          if (typeof MediaRecorder === "undefined") {
+            alert("Recording is not supported in this browser. Try Chrome or Edge on desktop.");
+            return;
+          }
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const mimeTypes = ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus", "audio/mp4", "audio/ogg"];
+            let chosenMime = "";
+            for (const m of mimeTypes) {
+              if (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m)) {
+                chosenMime = m;
+                break;
+              }
+            }
+            const opts = chosenMime ? { mimeType: chosenMime } : {};
+            const recorder = new MediaRecorder(stream, opts);
+            const chunks = [];
+            recorder.ondataavailable = e => { if (e.data && e.data.size > 0) chunks.push(e.data); };
+            recorder.onstop = () => {
+              const usedMime = (recorder.mimeType || chosenMime || "audio/webm").split(";")[0];
+              stream.getTracks().forEach(t => t.stop());
+              if (recordState.btn) recordState.btn.classList.remove("recording");
+              recordState.stream = null;
+              recordState.recorder = null;
+              recordState.btn = null;
+              updateRecordingIndicator(false);
+              const qid = recordState.questionId;
+              const recordingCandidateId = recordState.candidateId;
+              recordState.questionId = null;
+              recordState.candidateId = null;
+              if (qid) {
+                if (chunks.length > 0) {
+                  const blob = new Blob(chunks, { type: recorder.mimeType || chosenMime || "audio/webm" });
+                  const reader = new FileReader();
+                  reader.onload = () => {
+                    const dataUrl = reader.result;
+                    const base64 = (dataUrl && typeof dataUrl === "string" && dataUrl.indexOf("base64,") >= 0) ? dataUrl.split("base64,")[1] : "";
+                    if (base64) updateAudioWrap(qid, base64, usedMime, recordingCandidateId);
+                    else updateAudioWrap(qid, "", usedMime, recordingCandidateId);
+                    persistCandidateAfterRecording(recordingCandidateId);
+                  };
+                  reader.readAsDataURL(blob);
+                } else {
+                  updateAudioWrap(qid, "", usedMime, recordingCandidateId);
+                  persistCandidateAfterRecording(recordingCandidateId);
+                }
+              }
+            };
+            recorder.start(200);
+            recordState.stream = stream;
+            recordState.recorder = recorder;
+            recordState.btn = btn;
+            recordState.questionId = questionId;
+            recordState.candidateId = currentCandidateId;
+            btn.classList.add("recording");
+            updateRecordingIndicator(true);
+          } catch (err) {
+            alert("Se necesita acceso al micrófono para grabar.");
+          }
+        });
+      });
+    }
+
+    function renderCandidateDetail(id) {
+      const candidate = ensureCandidateShape(findCandidateById(id));
+
+      if (!candidate) {
+        mainContent.innerHTML = `
+          <div class="empty-box">
+            Candidate record could not be found.
+          </div>
+        `;
+        return;
+      }
+
+      const status = getStatusLabel(candidate);
+      const callSuccessful = candidate.callInterview.status === "successful";
+      const callUnsuccessful = candidate.callInterview.status === "unsuccessful";
+      const faceSuccessfulReady = candidate.faceToFaceInterview.status === "successful-ready" || candidate.faceToFaceInterview.status === "successful";
+      const faceSuccessfulHold = candidate.faceToFaceInterview.status === "successful-hold";
+      const faceUnsuccessful = candidate.faceToFaceInterview.status === "unsuccessful";
+      const onboarding = candidate.onboarding;
+      const selectedRole = onboarding.role || "";
+      const callNotesSummary = summarizeCallNotes(candidate.callInterview.generalNotes);
+      const onboardingStarted = isOnboardingStarted(onboarding);
+      const readyForOnboarding = !!onboarding.readyToStart;
+
+      mainContent.innerHTML = `
+        <div class="content-header">
+          <div class="candidate-summary">
+            <h2>${escapeHtml(candidate.name)}</h2>
+            <p>Open, update, and continue this recruitment and onboarding record at any time from the same page. The stage tracker below lights up so different team members can immediately see where the candidate currently is.</p>
+          </div>
+          <div class="summary-actions">
+            <button class="btn btn-danger" id="deleteCandidateBtn">Delete Candidate</button>
+          </div>
+        </div>
+
+        <div class="mini-meta">
+          <div class="mini-card">
+            <div class="k">Current status</div>
+            <div class="v"><span class="status-pill ${status.cls}">${status.text}</span></div>
+          </div>
+          <div class="mini-card">
+            <div class="k">Created</div>
+            <div class="v">${formatDateTime(candidate.createdAt)}</div>
+          </div>
+          <div class="mini-card">
+            <div class="k">Last updated</div>
+            <div class="v">${formatDateTime(candidate.updatedAt)}</div>
+          </div>
+        </div>
+
+        <div class="stage-bar">
+          <div class="stage-chip ${callSuccessful || callUnsuccessful ? "complete" : "active"}" id="stage1Chip">
+            <div class="k">Stage 1</div>
+            <div class="v">Call Interview</div>
+          </div>
+
+          <div class="stage-chip ${faceSuccessfulReady || faceSuccessfulHold || faceUnsuccessful ? "complete" : callSuccessful ? "active" : callUnsuccessful ? "alert" : "locked"}" id="stage2Chip">
+            <div class="k">Stage 2</div>
+            <div class="v">Face to Face Interview</div>
+          </div>
+
+          <div class="stage-chip ${readyForOnboarding ? "complete" : faceSuccessfulReady ? "alert" : faceSuccessfulHold ? "alert" : faceUnsuccessful ? "alert" : "locked"}" id="stage3Chip">
+            <div class="k">Stage 3</div>
+            <div class="v">Ready for onboarding</div>
+          </div>
+        </div>
+
+        <div class="section-grid">
+
+          <section class="section-card">
+            <div class="section-head">
+              <div>
+                <h3>Candidate Details</h3>
+                <p>Update the candidate name if needed.</p>
+              </div>
+            </div>
+            <div class="section-body">
+              <div class="info-grid">
+                <div class="field full">
+                  <label for="candidateName">Candidate name</label>
+                  <input id="candidateName" class="input" type="text" value="${escapeHtml(candidate.name)}" />
+                </div>
+
+                <div class="field full">
+                  <label for="onboardingRole">Role</label>
+                  <select id="onboardingRole" class="select">
+                    <option value="">Select role</option>
+                    <option value="Swimming Instructor" ${(selectedRole === "Swimming Instructor" || selectedRole === "Swimming Teacher") ? "selected" : ""}>Swimming Instructor</option>
+                    <option value="Climbing Instructor" ${(selectedRole === "Climbing Instructor" || selectedRole === "Climbing Teacher") ? "selected" : ""}>Climbing Instructor</option>
+                    <option value="Fitness Instructor" ${selectedRole === "Fitness Instructor" ? "selected" : ""}>Fitness Instructor</option>
+                    <option value="Support Worker" ${selectedRole === "Support Worker" ? "selected" : ""}>Support Worker</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="section-card">
+            <div class="section-head">
+              <div>
+                <h3>Stage 1 · Call Interview</h3>
+                <p>Use this section for the first screening call. Topics covered are now integrated inside the main summary section.</p>
+              </div>
+            </div>
+            <div class="section-body">
+              <div class="info-grid">
+                <div class="field full">
+                  <label for="callInterviewerName">Interviewer name</label>
+                  <input id="callInterviewerName" class="input" type="text" placeholder="e.g. Jane Smith" value="${escapeHtml(candidate.callInterview.interviewerName || "")}" />
+                </div>
+
+                <div class="field full">
+                  <label for="callDate">Day of interview</label>
+                  <input id="callDate" class="input" type="date" data-input-type="date" value="${escapeHtml(candidate.callInterview.date)}" />
+                </div>
+
+                <div class="field full">
+                  <label for="callTime">Time</label>
+                  <input id="callTime" class="input" type="time" data-input-type="time" value="${escapeHtml(candidate.callInterview.time)}" />
+                </div>
+
+                <div class="field full hidden">
+                  <label for="callComments">Main call summary</label>
+                  <textarea id="callComments" class="textarea" placeholder="Add your summary from the call interview...">${escapeHtml(candidate.callInterview.comments)}</textarea>
+                </div>
+
+                <div class="field full">
+                  <label>Topics covered inside call summary</label>
+                  <div class="check-grid">
+                    <div class="check-card">
+                      <input type="checkbox" id="callPreviousExperience" ${candidate.callInterview.previousExperience ? "checked" : ""}>
+                      <label for="callPreviousExperience">Previous experience</label>
+                    </div>
+
+                    <div class="check-card">
+                      <input type="checkbox" id="callSendExperience" ${candidate.callInterview.sendExperience ? "checked" : ""}>
+                      <label for="callSendExperience">SEN experience</label>
+                    </div>
+
+                    <div class="check-card">
+                      <input type="checkbox" id="callMotivation" ${candidate.callInterview.motivation ? "checked" : ""}>
+                      <label for="callMotivation">Why joining clubSENsational</label>
+                    </div>
+
+                    <div class="check-card">
+                      <input type="checkbox" id="callLocationTravel" ${candidate.callInterview.locationTravel ? "checked" : ""}>
+                      <label for="callLocationTravel">Location and travel</label>
+                    </div>
+
+                    <div class="check-card">
+                      <input type="checkbox" id="callRoleScales" ${candidate.callInterview.roleScales ? "checked" : ""}>
+                      <label for="callRoleScales">Role scales</label>
+                    </div>
+
+                    <div class="check-card">
+                      <input type="checkbox" id="callShadowingProcessRate" ${candidate.callInterview.shadowingProcessRate ? "checked" : ""}>
+                      <label for="callShadowingProcessRate">Shadowing process and rate</label>
+                    </div>
+
+                    <div class="check-card">
+                      <input type="checkbox" id="callFaceToFaceSessionWet" ${candidate.callInterview.faceToFaceSessionWet ? "checked" : ""}>
+                      <label for="callFaceToFaceSessionWet">Face to Face Interview (Dry & Wet)</label>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="field full">
+                  <label>Call interview notes (audio)</label>
+                  <div class="question-controls" style="margin-bottom: 8px;">
+                    <button type="button" class="btn-record" title="Record" data-question="callNotes" aria-label="Record">⏺</button>
+                  </div>
+                  ${renderCallNotesAudio(candidate.callInterview)}
+                </div>
+
+                <div class="field full">
+                  <label for="callGeneralNotes">Call interview notes (written)</label>
+                  <textarea id="callGeneralNotes" class="textarea" placeholder="Write additional notes from the call interview...">${escapeHtml(candidate.callInterview.generalNotes || "")}</textarea>
+                </div>
+
+                <div class="field full">
+                  <label>Outcome</label>
+                  <input type="hidden" id="callStatusValue" value="${escapeHtml(candidate.callInterview.status)}" />
+                  <div class="toggle-group">
+                    <button type="button" class="toggle success ${callSuccessful ? "active-success" : ""}" id="btnCallSuccessful">
+                      <strong>Successful</strong>
+                      <span>Candidate moves forward to the Face to Face interview.</span>
+                    </button>
+
+                    <button type="button" class="toggle fail ${callUnsuccessful ? "active-unsuccess" : ""}" id="btnCallUnsuccessful">
+                      <strong>Unsuccessful</strong>
+                      <span>Candidate did not progress. A reason will be required.</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="field full ${callUnsuccessful ? "" : "hidden"}" id="callUnsuccessfulWrap">
+                  <label for="callUnsuccessfulReason">Reason for unsuccessful call interview</label>
+                  <textarea id="callUnsuccessfulReason" class="textarea" placeholder="Explain why the candidate was unsuccessful...">${escapeHtml(candidate.callInterview.unsuccessfulReason)}</textarea>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="section-card">
+            <div class="section-head">
+              <div>
+                <h3>Stage 2 · Face to Face Interview</h3>
+                <p>This stage becomes active when the call interview is marked as successful. Use the structured questions below to guide the Face to Face conversation and score responses consistently.</p>
+              </div>
+            </div>
+            <div class="section-body">
+              <div id="faceSectionWrap" class="${callSuccessful ? "" : "hidden"}">
+                <div class="info-grid">
+                  <div class="field full">
+                    <label for="faceInterviewerName">Interviewer name</label>
+                    <input id="faceInterviewerName" class="input" type="text" placeholder="e.g. Jane Smith" value="${escapeHtml(candidate.faceToFaceInterview.interviewerName || "")}" />
+                  </div>
+
+                  <div class="field full">
+                    <label for="faceDate">Day of interview</label>
+                    <input id="faceDate" class="input" type="date" data-input-type="date" value="${escapeHtml(candidate.faceToFaceInterview.date)}" />
+                  </div>
+
+                  <div class="field full">
+                    <label for="faceTime">Time</label>
+                    <input id="faceTime" class="input" type="time" data-input-type="time" value="${escapeHtml(candidate.faceToFaceInterview.time)}" />
+                  </div>
+
+                  <div class="field full phase-block phase-block--org">
+                    <label>Understanding Our Organisation</label>
+                    <div class="check-grid">
+                      <div class="check-card">
+<div class="question-label"><label for="orgQ1">1. What do you know about our company and the work we do with people with autism and learning disabilities?</label></div>
+                        <div class="question-controls">
+                          <div class="rating-stars" data-target="orgQ1" data-max="4">
+                            <button type="button" class="rating-star" data-value="1">★</button>
+                            <button type="button" class="rating-star" data-value="2">★</button>
+                            <button type="button" class="rating-star" data-value="3">★</button>
+                            <button type="button" class="rating-star" data-value="4">★</button>
+                          </div>
+                          <button type="button" class="btn-record" title="Record" data-question="orgQ1" aria-label="Record">⏺</button>
+                        </div>
+                        ${renderQuestionAudio(candidate.faceToFaceInterview, "orgQ1")}
+                        <input type="hidden" id="orgQ1" value="${candidate.faceToFaceInterview.orgQ1 || 0}" />
+                      </div>
+
+                      <div class="check-card">
+<div class="question-label"><label for="orgQ2">2. Why do you want to work with us? What makes you interested in this role?</label></div>
+                        <div class="question-controls">
+                          <div class="rating-stars" data-target="orgQ2" data-max="4">
+                            <button type="button" class="rating-star" data-value="1">★</button>
+                            <button type="button" class="rating-star" data-value="2">★</button>
+                            <button type="button" class="rating-star" data-value="3">★</button>
+                            <button type="button" class="rating-star" data-value="4">★</button>
+                          </div>
+                          <button type="button" class="btn-record" title="Record" data-question="orgQ2" aria-label="Record">⏺</button>
+                        </div>
+                        ${renderQuestionAudio(candidate.faceToFaceInterview, "orgQ2")}
+                        <input type="hidden" id="orgQ2" value="${candidate.faceToFaceInterview.orgQ2 || 0}" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="field full phase-block phase-block--exp">
+                    <label>About Your Experience and Knowledge</label>
+                    <div class="check-grid">
+                      <div class="check-card">
+<div class="question-label"><label for="expQ1">1. How would you describe your experience working with individuals with autism or learning disabilities?</label><p class="question-helper">(Please include whether this has been in group settings, 1:1, or both, and the type of support you have provided.)</p></div>
+                        <div class="question-controls">
+                          <div class="rating-stars" data-target="expQ1" data-max="4">
+                            <button type="button" class="rating-star" data-value="1">★</button>
+                            <button type="button" class="rating-star" data-value="2">★</button>
+                            <button type="button" class="rating-star" data-value="3">★</button>
+                            <button type="button" class="rating-star" data-value="4">★</button>
+                          </div>
+                          <button type="button" class="btn-record" title="Record" data-question="expQ1" aria-label="Record">⏺</button>
+                        </div>
+                        ${renderQuestionAudio(candidate.faceToFaceInterview, "expQ1")}
+                        <input type="hidden" id="expQ1" value="${candidate.faceToFaceInterview.expQ1 || 0}" />
+                      </div>
+
+                      <div class="check-card">
+<div class="question-label"><label for="expQ2">2. How do you ensure that your sessions feel inclusive, safe, and comfortable for every individual, regardless of age or ability?</label><p class="question-helper">(We are particularly interested in how you adapt your approach to meet different needs.)</p></div>
+                        <div class="question-controls">
+                          <div class="rating-stars" data-target="expQ2" data-max="4">
+                            <button type="button" class="rating-star" data-value="1">★</button>
+                            <button type="button" class="rating-star" data-value="2">★</button>
+                            <button type="button" class="rating-star" data-value="3">★</button>
+                            <button type="button" class="rating-star" data-value="4">★</button>
+                          </div>
+                          <button type="button" class="btn-record" title="Record" data-question="expQ2" aria-label="Record">⏺</button>
+                        </div>
+                        ${renderQuestionAudio(candidate.faceToFaceInterview, "expQ2")}
+                        <input type="hidden" id="expQ2" value="${candidate.faceToFaceInterview.expQ2 || 0}" />
+                      </div>
+
+                      <div class="check-card">
+<div class="question-label"><label for="expQ3">3. How would you describe yourself as a practitioner when delivering sessions?</label><p class="question-helper">(For example: your approach, communication style, energy, and how you build connection with participants.)</p></div>
+                        <div class="question-controls">
+                          <div class="rating-stars" data-target="expQ3" data-max="4">
+                            <button type="button" class="rating-star" data-value="1">★</button>
+                            <button type="button" class="rating-star" data-value="2">★</button>
+                            <button type="button" class="rating-star" data-value="3">★</button>
+                            <button type="button" class="rating-star" data-value="4">★</button>
+                          </div>
+                          <button type="button" class="btn-record" title="Record" data-question="expQ3" aria-label="Record">⏺</button>
+                        </div>
+                        ${renderQuestionAudio(candidate.faceToFaceInterview, "expQ3")}
+                        <input type="hidden" id="expQ3" value="${candidate.faceToFaceInterview.expQ3 || 0}" />
+                      </div>
+
+                      <div class="check-card">
+<div class="question-label"><label for="expQ4">4. What is one weakness you are currently working to improve?</label><p class="question-helper">(Example: "I am improving my confidence when providing feedback to parents.")</p></div>
+                        <div class="question-controls">
+                          <div class="rating-stars" data-target="expQ4" data-max="4">
+                            <button type="button" class="rating-star" data-value="1">★</button>
+                            <button type="button" class="rating-star" data-value="2">★</button>
+                            <button type="button" class="rating-star" data-value="3">★</button>
+                            <button type="button" class="rating-star" data-value="4">★</button>
+                          </div>
+                          <button type="button" class="btn-record" title="Record" data-question="expQ4" aria-label="Record">⏺</button>
+                        </div>
+                        ${renderQuestionAudio(candidate.faceToFaceInterview, "expQ4")}
+                        <input type="hidden" id="expQ4" value="${candidate.faceToFaceInterview.expQ4 || 0}" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="field full phase-block phase-block--scen">
+                    <label>Scenario-Based Questions</label>
+                    <div class="check-grid">
+                      <div class="check-card">
+<div class="question-label"><label for="scenQ1">1. How would you respond if a participant refuses to take part and does not want to access the session?</label><p class="question-helper">(Please explain the steps you would take to engage them safely and positively.)</p></div>
+                        <div class="question-controls">
+                          <div class="rating-stars" data-target="scenQ1" data-max="4">
+                            <button type="button" class="rating-star" data-value="1">★</button>
+                            <button type="button" class="rating-star" data-value="2">★</button>
+                            <button type="button" class="rating-star" data-value="3">★</button>
+                            <button type="button" class="rating-star" data-value="4">★</button>
+                          </div>
+                          <button type="button" class="btn-record" title="Record" data-question="scenQ1" aria-label="Record">⏺</button>
+                        </div>
+                        ${renderQuestionAudio(candidate.faceToFaceInterview, "scenQ1")}
+                        <input type="hidden" id="scenQ1" value="${candidate.faceToFaceInterview.scenQ1 || 0}" />
+                      </div>
+
+                      <div class="check-card">
+<div class="question-label"><label for="scenQ2">2. How would you manage the situation if a participant becomes upset or dysregulated and tries to hit or bite?</label><p class="question-helper">(We want to hear how you would keep everyone safe while supporting regulation.)</p></div>
+                        <div class="question-controls">
+                          <div class="rating-stars" data-target="scenQ2" data-max="4">
+                            <button type="button" class="rating-star" data-value="1">★</button>
+                            <button type="button" class="rating-star" data-value="2">★</button>
+                            <button type="button" class="rating-star" data-value="3">★</button>
+                            <button type="button" class="rating-star" data-value="4">★</button>
+                          </div>
+                          <button type="button" class="btn-record" title="Record" data-question="scenQ2" aria-label="Record">⏺</button>
+                        </div>
+                        ${renderQuestionAudio(candidate.faceToFaceInterview, "scenQ2")}
+                        <input type="hidden" id="scenQ2" value="${candidate.faceToFaceInterview.scenQ2 || 0}" />
+                      </div>
+
+                      <div class="check-card">
+<div class="question-label"><label for="scenQ3">3. How would you keep participants with short attention spans engaged throughout the session?</label><p class="question-helper">(Please give practical examples of strategies or adaptations you would use.)</p></div>
+                        <div class="question-controls">
+                          <div class="rating-stars" data-target="scenQ3" data-max="4">
+                            <button type="button" class="rating-star" data-value="1">★</button>
+                            <button type="button" class="rating-star" data-value="2">★</button>
+                            <button type="button" class="rating-star" data-value="3">★</button>
+                            <button type="button" class="rating-star" data-value="4">★</button>
+                          </div>
+                          <button type="button" class="btn-record" title="Record" data-question="scenQ3" aria-label="Record">⏺</button>
+                        </div>
+                        ${renderQuestionAudio(candidate.faceToFaceInterview, "scenQ3")}
+                        <input type="hidden" id="scenQ3" value="${candidate.faceToFaceInterview.scenQ3 || 0}" />
+                      </div>
+
+                      <div class="check-card">
+<div class="question-label"><label for="scenQ4">4. How would you react if a participant starts throwing, breaking, or biting resources during the session?</label><p class="question-helper">(Please explain what you would do immediately and how you would follow up.)</p></div>
+                        <div class="question-controls">
+                          <div class="rating-stars" data-target="scenQ4" data-max="4">
+                            <button type="button" class="rating-star" data-value="1">★</button>
+                            <button type="button" class="rating-star" data-value="2">★</button>
+                            <button type="button" class="rating-star" data-value="3">★</button>
+                            <button type="button" class="rating-star" data-value="4">★</button>
+                          </div>
+                          <button type="button" class="btn-record" title="Record" data-question="scenQ4" aria-label="Record">⏺</button>
+                        </div>
+                        ${renderQuestionAudio(candidate.faceToFaceInterview, "scenQ4")}
+                        <input type="hidden" id="scenQ4" value="${candidate.faceToFaceInterview.scenQ4 || 0}" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="field full phase-block phase-block--collab">
+                    <label>Collaboration and Communication</label>
+                    <div class="check-grid">
+                      <div class="check-card">
+<div class="question-label"><label for="collabQ1">1. Communication skills with parents/carers about progress and challenges.</label></div>
+                        <div class="question-controls">
+                          <div class="rating-stars" data-target="collabQ1" data-max="4">
+                            <button type="button" class="rating-star" data-value="1">★</button>
+                            <button type="button" class="rating-star" data-value="2">★</button>
+                            <button type="button" class="rating-star" data-value="3">★</button>
+                            <button type="button" class="rating-star" data-value="4">★</button>
+                          </div>
+                          <button type="button" class="btn-record" title="Record" data-question="collabQ1" aria-label="Record">⏺</button>
+                        </div>
+                        ${renderQuestionAudio(candidate.faceToFaceInterview, "collabQ1")}
+                        <input type="hidden" id="collabQ1" value="${candidate.faceToFaceInterview.collabQ1 || 0}" />
+                      </div>
+
+                      <div class="check-card">
+<div class="question-label"><label for="collabQ2">2. Collaboration with colleagues and openness to feedback.</label></div>
+                        <div class="question-controls">
+                          <div class="rating-stars" data-target="collabQ2" data-max="4">
+                            <button type="button" class="rating-star" data-value="1">★</button>
+                            <button type="button" class="rating-star" data-value="2">★</button>
+                            <button type="button" class="rating-star" data-value="3">★</button>
+                            <button type="button" class="rating-star" data-value="4">★</button>
+                          </div>
+                          <button type="button" class="btn-record" title="Record" data-question="collabQ2" aria-label="Record">⏺</button>
+                        </div>
+                        ${renderQuestionAudio(candidate.faceToFaceInterview, "collabQ2")}
+                        <input type="hidden" id="collabQ2" value="${candidate.faceToFaceInterview.collabQ2 || 0}" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="field full phase-block phase-block--prob">
+                    <label>Problem-Solving and Professional Growth</label>
+                    <div class="check-grid">
+                      <div class="check-card">
+<div class="question-label"><label for="probQ1">1. Can you share a real situation where you had a challenge with a participant or group, and explain how you handled it?</label><p class="question-helper">(Example: a participant became dysregulated, refused to participate, or disrupted the session. We want to hear what you did, why you chose that approach, and the outcome.)</p></div>
+                        <div class="question-controls">
+                          <div class="rating-stars" data-target="probQ1" data-max="4">
+                            <button type="button" class="rating-star" data-value="1">★</button>
+                            <button type="button" class="rating-star" data-value="2">★</button>
+                            <button type="button" class="rating-star" data-value="3">★</button>
+                            <button type="button" class="rating-star" data-value="4">★</button>
+                          </div>
+                          <button type="button" class="btn-record" title="Record" data-question="probQ1" aria-label="Record">⏺</button>
+                        </div>
+                        ${renderQuestionAudio(candidate.faceToFaceInterview, "probQ1")}
+                        <input type="hidden" id="probQ1" value="${candidate.faceToFaceInterview.probQ1 || 0}" />
+                      </div>
+
+                      <div class="check-card">
+<div class="question-label"><label for="probQ2">2. What motivates you to keep developing professionally in this field?</label><p class="question-helper">(Please share what drives your professional growth, such as improving outcomes for participants, gaining new skills, taking on more responsibility, or staying up to date with best practice.)</p></div>
+                        <div class="question-controls">
+                          <div class="rating-stars" data-target="probQ2" data-max="4">
+                            <button type="button" class="rating-star" data-value="1">★</button>
+                            <button type="button" class="rating-star" data-value="2">★</button>
+                            <button type="button" class="rating-star" data-value="3">★</button>
+                            <button type="button" class="rating-star" data-value="4">★</button>
+                          </div>
+                          <button type="button" class="btn-record" title="Record" data-question="probQ2" aria-label="Record">⏺</button>
+                        </div>
+                        ${renderQuestionAudio(candidate.faceToFaceInterview, "probQ2")}
+                        <input type="hidden" id="probQ2" value="${candidate.faceToFaceInterview.probQ2 || 0}" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="field full phase-block phase-block--shad">
+                    <label>Shadowing (15 min)</label>
+                    <div class="check-grid">
+                      <div class="check-card">
+<div class="question-label"><label for="shadQ1">1. How effectively did the candidate engage participants during the shadowing session?</label><p class="question-helper">(Focus on attention, participation, and how they kept the session active.)</p></div>
+                        <div class="question-controls">
+                          <div class="rating-stars" data-target="shadQ1" data-max="4">
+                            <button type="button" class="rating-star" data-value="1">★</button>
+                            <button type="button" class="rating-star" data-value="2">★</button>
+                            <button type="button" class="rating-star" data-value="3">★</button>
+                            <button type="button" class="rating-star" data-value="4">★</button>
+                          </div>
+                        </div>
+                        <input type="hidden" id="shadQ1" value="${candidate.faceToFaceInterview.shadQ1 || 0}" />
+                      </div>
+
+                      <div class="check-card">
+<div class="question-label"><label for="shadQ2">2. Did the candidate show a proactive attitude during the shadowing/interview session?</label><p class="question-helper">(For example: taking initiative, anticipating needs, and supporting without being prompted.)</p></div>
+                        <div class="question-controls">
+                          <div class="rating-stars" data-target="shadQ2" data-max="4">
+                            <button type="button" class="rating-star" data-value="1">★</button>
+                            <button type="button" class="rating-star" data-value="2">★</button>
+                            <button type="button" class="rating-star" data-value="3">★</button>
+                            <button type="button" class="rating-star" data-value="4">★</button>
+                          </div>
+                        </div>
+                        <input type="hidden" id="shadQ2" value="${candidate.faceToFaceInterview.shadQ2 || 0}" />
+                      </div>
+
+                      <div class="check-card">
+<div class="question-label"><label for="shadQ3">3. How appropriate was the candidate's interaction with the participant(s)?</label><p class="question-helper">(Consider whether they tried to build trust/rapport first, and whether they avoided placing demands before understanding the participant.)</p></div>
+                        <div class="question-controls">
+                          <div class="rating-stars" data-target="shadQ3" data-max="4">
+                            <button type="button" class="rating-star" data-value="1">★</button>
+                            <button type="button" class="rating-star" data-value="2">★</button>
+                            <button type="button" class="rating-star" data-value="3">★</button>
+                            <button type="button" class="rating-star" data-value="4">★</button>
+                          </div>
+                        </div>
+                        <input type="hidden" id="shadQ3" value="${candidate.faceToFaceInterview.shadQ3 || 0}" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="field full phase-block phase-block--final">
+                    <label>Final Evaluation</label>
+                    <div class="check-grid">
+                      <div class="check-card">
+<div class="question-label"><label for="finalKnowledge">A. Knowledge &amp; Practical Skills</label></div>
+                        <div class="question-controls">
+                          <div class="rating-stars" data-target="finalKnowledge" data-max="4">
+                            <button type="button" class="rating-star" data-value="1">★</button>
+                            <button type="button" class="rating-star" data-value="2">★</button>
+                            <button type="button" class="rating-star" data-value="3">★</button>
+                            <button type="button" class="rating-star" data-value="4">★</button>
+                          </div>
+                        </div>
+                        <input type="hidden" id="finalKnowledge" value="${candidate.faceToFaceInterview.finalKnowledge || 0}" />
+                      </div>
+
+                      <div class="check-card">
+<div class="question-label"><label for="finalAttitude">B. Attitude &amp; Commitment</label></div>
+                        <div class="question-controls">
+                          <div class="rating-stars" data-target="finalAttitude" data-max="4">
+                            <button type="button" class="rating-star" data-value="1">★</button>
+                            <button type="button" class="rating-star" data-value="2">★</button>
+                            <button type="button" class="rating-star" data-value="3">★</button>
+                            <button type="button" class="rating-star" data-value="4">★</button>
+                          </div>
+                        </div>
+                        <input type="hidden" id="finalAttitude" value="${candidate.faceToFaceInterview.finalAttitude || 0}" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="field full">
+                    <label>Outcome</label>
+                    <input type="hidden" id="faceStatusValue" value="${escapeHtml(candidate.faceToFaceInterview.status)}" />
+                    <div class="toggle-group">
+                      <button type="button" class="toggle fail ${faceUnsuccessful ? "active-unsuccess" : ""}" id="btnFaceUnsuccessful">
+                        <strong>Unsuccessful</strong>
+                        <span>Candidate does not move into onboarding. A reason will be required.</span>
+                      </button>
+
+                      <button type="button" class="toggle hold ${faceSuccessfulHold ? "active-hold" : ""}" id="btnFaceSuccessfulHold">
+                        <strong>Successful</strong>
+                        <span>Good interview result, but not ready for onboarding yet.</span>
+                      </button>
+
+                      <button type="button" class="toggle success ${faceSuccessfulReady ? "active-success" : ""}" id="btnFaceSuccessfulReady">
+                        <strong>Successful (Ready for onboarding)</strong>
+                        <span>Candidate can move into onboarding and receive next steps.</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="field full ${faceUnsuccessful ? "" : "hidden"}" id="faceUnsuccessfulWrap">
+                    <label for="faceUnsuccessfulReason">Reason for unsuccessful Face to Face interview</label>
+                    <textarea id="faceUnsuccessfulReason" class="textarea" placeholder="Explain why the candidate was unsuccessful...">${escapeHtml(candidate.faceToFaceInterview.unsuccessfulReason)}</textarea>
+                  </div>
+
+                  <div class="field full ${faceSuccessfulHold ? "" : "hidden"}" id="faceSuccessfulHoldWrap">
+                    <label for="faceSuccessfulHoldReason">Reason for successful but not progressing now</label>
+                    <textarea id="faceSuccessfulHoldReason" class="textarea" placeholder="Explain why candidate is successful but currently on hold (e.g. availability mismatch, schedule, etc.)...">${escapeHtml(candidate.faceToFaceInterview.successfulHoldReason || "")}</textarea>
+                  </div>
+
+                  <div class="field full ${faceSuccessfulReady ? "" : "hidden"}" id="faceReadyOnboardingWrap">
+                    <div class="notice success" style="margin-bottom:10px;">
+                      Reminder: New instructor must complete a minimum of 8 hours of shadowing sessions.
+                    </div>
+                    <label for="faceReadyOnboardingNotes">Ready for onboarding notes</label>
+                    <textarea id="faceReadyOnboardingNotes" class="textarea" placeholder="Add notes for next steps before onboarding starts...">${escapeHtml(candidate.faceToFaceInterview.readyOnboardingNotes || "")}</textarea>
+                  </div>
+
+                  <div class="field full">
+                    <button type="button" class="btn btn-primary" id="btnFaceOutcomeCompleted">Completed</button>
+                  </div>
+                </div>
+              </div>
+
+              <div id="faceLockedNotice" class="notice warning ${callSuccessful ? "hidden" : ""}">
+                This section is locked until the call interview is marked as successful.
+              </div>
+            </div>
+          </section>
+
+          <section class="section-card">
+            <div class="section-head">
+              <div>
+                <h3>History Log</h3>
+                <p>Automatic log of saved changes for this candidate.</p>
+              </div>
+            </div>
+            <div class="section-body">
+              ${renderHistory(candidate.historyLog)}
+            </div>
+          </section>
+
+        </div>
+      `;
+
+      let autoSaveTimer = null;
+      function scheduleAutoSave() {
+        if (autoSaveTimer) clearInterval(autoSaveTimer);
+        autoSaveTimer = setInterval(() => {
+          if (currentCandidateId) updateCandidateFromForm(true);
+        }, 5000);
+      }
+      scheduleAutoSave();
+      document.getElementById("deleteCandidateBtn").addEventListener("click", deleteCurrentCandidate);
+
+      document.getElementById("btnCallSuccessful").addEventListener("click", () => {
+        setCallStatus("successful");
+      });
+
+      document.getElementById("btnCallUnsuccessful").addEventListener("click", () => {
+        setCallStatus("unsuccessful");
+      });
+
+      document.getElementById("btnFaceSuccessfulHold").addEventListener("click", () => {
+        setFaceStatus("successful-hold");
+      });
+
+      document.getElementById("btnFaceSuccessfulReady").addEventListener("click", () => {
+        setFaceStatus("successful-ready");
+      });
+
+      document.getElementById("btnFaceUnsuccessful").addEventListener("click", () => {
+        setFaceStatus("unsuccessful");
+      });
+
+      document.getElementById("btnFaceOutcomeCompleted").addEventListener("click", () => {
+        completeFaceOutcome();
+      });
+
+      const onboardingRoleEl = document.getElementById("onboardingRole");
+      const britishStatusEl = document.getElementById("britishStatus");
+      const readyToStartEl = document.getElementById("readyToStart");
+
+      if (onboardingRoleEl) {
+        onboardingRoleEl.addEventListener("change", () => {
+          renderRoleCertificates(onboardingRoleEl.value);
+        });
+      }
+
+      if (britishStatusEl) {
+        britishStatusEl.addEventListener("change", toggleRightToWorkBox);
+      }
+
+      if (readyToStartEl) {
+        readyToStartEl.addEventListener("change", syncReadyStageVisual);
+      }
+
+      const debouncedSave = debounce(() => updateCandidateFromForm(true), 900);
+      mainContent.addEventListener("input", function(e) {
+        if (e.target.matches("input:not([type=hidden]):not([type=button]):not([type=submit]), textarea, select")) debouncedSave();
+      });
+      mainContent.addEventListener("change", function(e) {
+        if (e.target.matches("input[type=checkbox], input[type=radio], select")) updateCandidateFromForm(true);
+      });
+
+      renderRoleCertificates(selectedRole);
+      toggleRightToWorkBox();
+      syncReadyStageVisual();
+      initRatingStars();
+      initRecordButtons();
+      bindCallUploadHandlers();
+      initAudioSpeedButtons();
+      applyMobileDateTimeInputs();
+      if (!window._mobileDateTimeResizeBound) {
+        window._mobileDateTimeResizeBound = true;
+        window.addEventListener("resize", applyMobileDateTimeInputs);
+      }
+    }
+
+    (async function portalOnboardingEntry() {
+      await bootstrapPortalOnboardingSupabase();
+      syncPortalOnboardingHintVisibility();
+      if (!portalUseSupabase) {
+        candidates = loadCandidatesFromStorage().map(ensureCandidateShape);
+      }
+      if (portalUseSupabase) {
+        const initialLocal = loadCandidatesFromStorage().map(ensureCandidateShape);
+        if (initialLocal.length) {
+          candidates = initialLocal;
+          renderSearchResults(candidates);
+        }
+        await refreshSharedCandidates(true);
+        if (sharedRefreshTimer) clearInterval(sharedRefreshTimer);
+        sharedRefreshTimer = setInterval(() => { refreshSharedCandidates(false); }, 15000);
+        startSharedRealtimeSync();
+      } else {
+        renderSearchResults(candidates);
+      }
+
+      searchBtn.addEventListener("click", () => {
+        const filtered = filterCandidates(searchInput.value);
+        renderSearchResults(filtered);
+
+        if (filtered.length === 1) {
+          currentCandidateId = filtered[0].id;
+          renderSearchResults(filtered);
+          renderCandidateDetail(filtered[0].id);
+        } else if (!filtered.length) {
+          mainContent.innerHTML = `
+          <div class="empty-box">
+            No matching candidate found. You can create a new candidate using the same name above.
+          </div>
+        `;
+        }
+      });
+
+      addCandidateBtn.addEventListener("click", addNewCandidateFromInput);
+
+      searchInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          searchBtn.click();
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

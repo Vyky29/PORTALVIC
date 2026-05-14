@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+  (function () {
+    try { document.documentElement.classList.add("portal-app-shell"); } catch (e) {}
+  })();
+</script>
+<style id="portal-hide-wp-chrome">
+  html.portal-app-shell body.admin-bar{padding-top:0!important;margin-top:0!important}
+  html.portal-app-shell #wpadminbar,html.portal-app-shell #masthead,html.portal-app-shell header#masthead,html.portal-app-shell .site-header,html.portal-app-shell #site-header,html.portal-app-shell .ast-primary-header-bar,html.portal-app-shell .ast-above-header,html.portal-app-shell .elementor-location-header,html.portal-app-shell .elementor-location-footer,html.portal-app-shell #colophon,html.portal-app-shell footer.site-footer,html.portal-app-shell .site-footer,html.portal-app-shell #footer,html.portal-app-shell .site-bottom-footer-inner-wrap,html.portal-app-shell .footer-widget-area{display:none!important;visibility:hidden!important;height:0!important;overflow:hidden!important;pointer-events:none!important}
+  html.portal-app-shell .site-content,html.portal-app-shell #content,html.portal-app-shell .site-main,html.portal-app-shell #primary{margin-top:0!important;padding-top:0!important}
+  html.portal-app-shell #page,html.portal-app-shell .site{margin-top:0!important;padding-top:0!important}
+</style>
+<script src="https://www.clubsensational.org/wp-content/uploads/2026/05/portal_return_and_shell.js?v=20260510-portal-admin"></script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Cancellation Report</title>
+<style>
+:root{
+  --purple:#7b5aa6;
+  --line:rgba(11,18,32,0.14);
+  --fieldBg:#f5f0fa;
+  --text:#0b1220;
+  --muted:#5b6473;
+  --radius:18px;
+  --focus:0 0 0 4px rgba(123,90,166,0.18);
+}
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
+/* Hide WordPress theme chrome on this embedded portal page */
+header,
+footer,
+#masthead,
+#colophon,
+.site-header,
+.site-footer,
+.entry-header,
+.entry-footer,
+.post-navigation,
+.comments-area{
+  display:none !important;
+}
+body.page,
+body.single,
+body.post-type-page{
+  margin:0 !important;
+  padding:0 !important;
+}
+.site,
+#page,
+.site-content,
+#content,
+.entry-content{
+  margin:0 !important;
+  padding:0 !important;
+  max-width:none !important;
+}
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  color:var(--text);
+  background:
+    radial-gradient(900px 350px at 20% -10%, #efe7f8, transparent 60%),
+    radial-gradient(700px 300px at 85% 0%, rgba(123,90,166,0.12), transparent 55%),
+    #fff;
+  padding:24px;
+}
+.wrap{ max-width:920px; margin:0 auto; width:100%; }
+.card{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  box-shadow:0 10px 30px rgba(11,18,32,0.08);
+  overflow:hidden;
+}
+form{ padding:20px; }
+.grid{ display:grid; gap:14px; grid-template-columns:1fr; }
+.field{
+  border:1px solid rgba(11,18,32,0.12);
+  border-radius:14px;
+  padding:12px;
+  background:var(--fieldBg);
+}
+.field > label:first-child,
+.fieldLabel{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:12px;
+  font-weight:900;
+  margin:0 0 8px;
+  line-height:1.2;
+}
+.sym{
+  width:22px;
+  height:22px;
+  display:inline-grid;
+  place-items:center;
+  border-radius:8px;
+  background:rgba(123,90,166,0.12);
+  border:1px solid rgba(123,90,166,0.22);
+  color:var(--purple);
+  font-size:13px;
+  flex:0 0 22px;
+}
+input,select,textarea{
+  width:100%;
+  border:1px solid rgba(11,18,32,0.14);
+  border-radius:10px;
+  padding:10px 12px;
+  font-size:16px;
+  background:#fff;
+}
+textarea{ min-height:110px; resize:vertical; }
+input:focus,select:focus,textarea:focus{
+  outline:none;
+  border-color:rgba(123,90,166,0.55);
+  box-shadow:var(--focus);
+}
+.report-summary{
+  margin:0;
+  padding:0 0 8px;
+  font-size:15px;
+  line-height:1.55;
+  color:var(--text);
+}
+.report-summary__line{ margin:0 0 6px; }
+.report-summary__line:last-child{ margin-bottom:0; }
+.actions{
+  margin-top:18px;
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+  border-top:1px solid rgba(11,18,32,0.10);
+  padding-top:16px;
+}
+button{
+  padding:12px 16px;
+  border-radius:12px;
+  border:none;
+  font-weight:900;
+  font-size:14px;
+  cursor:pointer;
+}
+.btnPrimary{
+  background:var(--purple);
+  color:#fff;
+  box-shadow:0 10px 22px rgba(123,90,166,0.22);
+}
+.btnGhost{
+  background:rgba(11,18,32,0.04);
+  border:1px solid rgba(11,18,32,0.10);
+}
+.req{ color:#b91c1c; font-weight:900; margin-left:4px; }
+@media (max-width:720px){
+  body{ padding:14px; }
+  form{ padding:16px; }
+  .actions{ flex-wrap:wrap; }
+  .actions button{ flex:1 1 160px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <form id="cancellationForm" novalidate>
+      <div class="grid">
+        <div class="field">
+          <div id="cancellationContextSummary" class="report-summary" aria-live="polite"></div>
+        </div>
+
+        <div class="field">
+          <label for="cancellationTiming"><span class="sym">⏰</span> Time of cancellation <span class="req">*</span></label>
+          <select id="cancellationTiming" name="cancellationTiming" required>
+            <option value="">Select one</option>
+            <option>Before the session started</option>
+            <option>During the session</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="reasonCategory"><span class="sym">📋</span> Reason category <span class="req">*</span></label>
+          <select id="reasonCategory" name="reasonCategory" required>
+            <option value="">Select one</option>
+            <option>Illness: Fever</option>
+            <option>Illness: Diarrhoea</option>
+            <option>Illness: Vomiting</option>
+            <option>Illness: Seizure</option>
+            <option>Illness: Cold/Flu</option>
+            <option>Unforeseen circumstances: Venue incident</option>
+            <option>Unforeseen circumstances: Fire alarm / Fire drill</option>
+            <option>Unforeseen circumstances: Power cuts / Flooding</option>
+          </select>
+        </div>
+
+        <div class="actions">
+          <button type="button" class="btnGhost" id="clearBtn">Clear</button>
+          <button type="submit" class="btnPrimary" id="submitBtn">Submit</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+(function(){
+  const PORTAL_AUTH_MODULE = "https://www.clubsensational.org/wp-content/uploads/2026/05/auth-handler.js?v=20260506-portal-interactions";
+  const PORTAL_CLIENTS_INFO_SCRIPT = "https://www.clubsensational.org/wp-content/uploads/2026/05/clients_info_embed.js?v=20260506-portal-interactions";
+  const PORTAL_SPREADSHEET_BUNDLE_SCRIPT = "https://www.clubsensational.org/wp-content/uploads/2026/05/staff_dashboard_spreadsheet_bundle.js?v=20260506-portal-interactions";
+  const PORTAL_SESSION_REVIEW_MAP_STORAGE = "portalSessionReviewMap_v1";
+
+  const qs = new URLSearchParams(location.search || "");
+  const form = document.getElementById("cancellationForm");
+  const clearBtn = document.getElementById("clearBtn");
+  const submitBtn = document.getElementById("submitBtn");
+  const summaryEl = document.getElementById("cancellationContextSummary");
+
+  const context = {
+    portalSessionKey: "",
+    sessionDate: "",
+    sessionTime: "",
+    clientId: "",
+    clientName: "",
+    service: "",
+    submittedByUserId: "",
+    submittedByName: "",
+    origin: "dashboard"
+  };
+
+  function clean(v){ return String(v || "").replace(/\s+/g, " ").trim(); }
+  function slugify(v){ return clean(v).toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, ""); }
+  function decodeSessionKeyB64Url(raw){
+    const token = clean(raw).replace(/-/g, "+").replace(/_/g, "/");
+    if(!token) return "";
+    try{
+      const pad = token.length % 4 ? "=".repeat(4 - (token.length % 4)) : "";
+      return decodeURIComponent(escape(atob(token + pad)));
+    }catch(_){
+      return "";
+    }
+  }
+  function parseSessionKey(sk){
+    const parts = clean(sk).split("|");
+    const d = clean(parts[0] || "");
+    return {
+      session_date: /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : "",
+      session_time: clean(parts[1] || ""),
+      client_id: clean(parts[2] || "")
+    };
+  }
+  function parseIsoToWeekday(iso){
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(String(iso || ""))) return "";
+    const p = String(iso).split("-").map(Number);
+    const d = new Date(p[0], p[1] - 1, p[2]);
+    return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("en-GB", { weekday: "long" });
+  }
+  function parseHm(token){
+    const t = clean(token);
+    const parts = t.split(".");
+    const h = parseInt(parts[0], 10) || 0;
+    const m = parts.length > 1 ? (parseInt(parts[1], 10) || 0) : 0;
+    return { h: h, m: m };
+  }
+  function hourTo24(hour, day){
+    if(day !== "Sunday" && hour < 8) return hour + 12;
+    if(day === "Sunday" && hour >= 1 && hour <= 3) return hour + 12;
+    return hour;
+  }
+  function parseTimeSlot(timeSlot, day){
+    const normalized = String(timeSlot || "").replace(/\s*-\s*/g, " to ").replace(/\s+/g, " ").trim();
+    const parts = normalized.split(/\s+to\s+/i);
+    if(parts.length < 2) return { start: "00:00", end: "00:30" };
+    const a = parseHm(parts[0]);
+    const b = parseHm(parts[1]);
+    const start = String(hourTo24(a.h, day)).padStart(2, "0") + ":" + String(a.m).padStart(2, "0");
+    const end = String(hourTo24(b.h, day)).padStart(2, "0") + ":" + String(b.m).padStart(2, "0");
+    return { start: start, end: end };
+  }
+  function sessionDateDisplay(iso){
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(String(iso || ""))) return "";
+    const p = String(iso).split("-").map(Number);
+    const d = new Date(p[0], p[1] - 1, p[2]);
+    if(Number.isNaN(d.getTime())) return "";
+    return d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  }
+  function inferOrigin(){
+    let origin = clean(qs.get("origin") || "dashboard");
+    if(origin !== "this_week" && origin !== "term" && origin !== "dashboard") origin = "dashboard";
+    context.origin = origin;
+  }
+  function loadPortalScriptOnce(src){
+    return new Promise(function(resolve, reject){
+      const scripts = document.getElementsByTagName("script");
+      for(let i = 0; i < scripts.length; i++){
+        if(scripts[i].src === src){ resolve(); return; }
+      }
+      const s = document.createElement("script");
+      s.src = src;
+      s.async = true;
+      s.onload = function(){ resolve(); };
+      s.onerror = function(){ reject(new Error("load failed: " + src)); };
+      document.head.appendChild(s);
+    });
+  }
+  function displayContext(){
+    if(!summaryEl) return;
+    summaryEl.replaceChildren();
+    function add(label, value){
+      const v = clean(value);
+      if(!v) return;
+      const row = document.createElement("div");
+      row.className = "report-summary__line";
+      const lab = document.createElement("strong");
+      lab.textContent = label + ":";
+      row.appendChild(lab);
+      row.appendChild(document.createTextNode(" " + v));
+      summaryEl.appendChild(row);
+    }
+    add("Participant", context.clientName);
+    add("Service", context.service);
+    add("Date", sessionDateDisplay(context.sessionDate));
+    add("Instructor", context.submittedByName);
+    if(summaryEl.childElementCount === 0){
+      const row = document.createElement("div");
+      row.className = "report-summary__line";
+      row.textContent = "No session context detected yet.";
+      summaryEl.appendChild(row);
+    }
+  }
+
+  async function enrichContextFromScripts(){
+    const fromKey = parseSessionKey(context.portalSessionKey);
+    if(!context.sessionDate) context.sessionDate = fromKey.session_date;
+    if(!context.sessionTime) context.sessionTime = fromKey.session_time;
+    if(!context.clientId) context.clientId = fromKey.client_id;
+
+    if(!clean(context.clientName) && clean(context.clientId) && context.clientId !== "available" && context.clientId !== "closed"){
+      try{
+        if(!Array.isArray(window.PORTAL_CLIENTS_INFO_ROWS)) await loadPortalScriptOnce(PORTAL_CLIENTS_INFO_SCRIPT);
+        const rows = window.PORTAL_CLIENTS_INFO_ROWS || [];
+        const want = slugify(context.clientId);
+        for(let i = 0; i < rows.length; i++){
+          const nm = clean(rows[i] && rows[i].client_name);
+          if(nm && slugify(nm) === want){
+            context.clientName = nm;
+            break;
+          }
+        }
+      }catch(_){}
+    }
+
+    if(!clean(context.service) && clean(context.clientId)){
+      try{
+        if(!window.STAFF_DASHBOARD_SOURCE || !Array.isArray(window.STAFF_DASHBOARD_SOURCE.rows)){
+          await loadPortalScriptOnce(PORTAL_SPREADSHEET_BUNDLE_SCRIPT);
+        }
+        const rows = (window.STAFF_DASHBOARD_SOURCE && window.STAFF_DASHBOARD_SOURCE.rows) || [];
+        const wd = parseIsoToWeekday(context.sessionDate);
+        const cidSlug = slugify(context.clientId);
+        for(let i = 0; i < rows.length; i++){
+          const r = rows[i] || {};
+          const rowClient = clean(r.client_name);
+          if(!rowClient || slugify(rowClient) !== cidSlug) continue;
+          if(wd && clean(r.day) !== wd) continue;
+          if(clean(context.sessionTime)){
+            const t = parseTimeSlot(r.time_slot, clean(r.day));
+            if(t.start !== clean(context.sessionTime)) continue;
+          }
+          context.service = clean(r.service);
+          if(!clean(context.clientName)) context.clientName = rowClient;
+          break;
+        }
+      }catch(_){}
+    }
+  }
+
+  async function hydrateAuthContext(){
+    const { getSupabaseClient } = await import(PORTAL_AUTH_MODULE);
+    const supabase = getSupabaseClient();
+    const { data: authData, error: authErr } = await supabase.auth.getUser();
+    if(authErr) throw authErr;
+    const authUser = authData && authData.user;
+    const uid = authUser && authUser.id ? clean(authUser.id) : "";
+    if(!uid) throw new Error("User not authenticated");
+
+    const { data: profileRow, error: profileErr } = await supabase
+      .from("staff_profiles")
+      .select("app_role, full_name, username")
+      .eq("id", uid)
+      .maybeSingle();
+    if(profileErr) throw profileErr;
+    if(!profileRow) throw new Error("No staff profile found for this account");
+
+    context.submittedByUserId = uid;
+    context.submittedByName = clean(profileRow && (profileRow.full_name || profileRow.username));
+    if(!context.submittedByName) throw new Error("Staff profile missing display name");
+    return { supabase: supabase };
+  }
+
+  function validateContext(){
+    const missing = [];
+    if(!clean(context.portalSessionKey)) missing.push("sessionKey");
+    if(!clean(context.sessionDate)) missing.push("session date");
+    if(!clean(context.clientName)) missing.push("participant name");
+    if(!clean(context.service)) missing.push("service");
+    if(!clean(context.submittedByUserId)) missing.push("authenticated staff user");
+    if(!clean(context.submittedByName)) missing.push("instructor");
+    return missing;
+  }
+
+  function persistCancelledReviewLocally(){
+    const sk = clean(context.portalSessionKey);
+    if(!sk) return;
+    try{
+      const raw = localStorage.getItem(PORTAL_SESSION_REVIEW_MAP_STORAGE) || "{}";
+      const o = JSON.parse(raw);
+      const base = o && typeof o === "object" ? o : {};
+      const prev = base[sk] && typeof base[sk] === "object" ? base[sk] : {};
+      base[sk] = {
+        feedbackDone: !!prev.feedbackDone,
+        incident: !!prev.incident,
+        absent: false,
+        cancelled: true
+      };
+      localStorage.setItem(PORTAL_SESSION_REVIEW_MAP_STORAGE, JSON.stringify(base));
+    }catch(_){}
+  }
+
+  function redirectAfterSubmit(){
+    try{
+      if(typeof portalGetPortalReturnUrl === "function" && typeof portalRedirectToPortalReturn === "function"){
+        if(portalGetPortalReturnUrl()){
+          portalRedirectToPortalReturn();
+          return;
+        }
+      }
+    }catch(_){}
+    let baseTarget = clean(qs.get("return")) || clean(qs.get("rp")) || "/p1/";
+    let target = baseTarget;
+    try{
+      const u = new URL(baseTarget, location.href);
+      u.searchParams.delete("portalPostIncident");
+      u.searchParams.delete("portalReviewDay");
+      u.searchParams.delete("portalReviewDate");
+      u.searchParams.delete("portalAfterFeedback");
+      u.searchParams.set("portalAfterFeedback", "1");
+      u.searchParams.set("portalReviewOrigin", context.origin);
+      const rd = clean(qs.get("rd") || "");
+      const rday = clean(qs.get("rday") || "");
+      if(rd) u.searchParams.set("portalReviewDate", rd);
+      if(rday) u.searchParams.set("portalReviewDay", rday);
+      target = u.href;
+    }catch(_){}
+    location.href = target;
+  }
+
+  clearBtn.addEventListener("click", function(){ form.reset(); });
+
+  form.addEventListener("submit", async function(e){
+    e.preventDefault();
+    if(!form.checkValidity()){
+      form.reportValidity();
+      return;
+    }
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Submitting";
+    try{
+      const auth = await hydrateAuthContext();
+      await enrichContextFromScripts();
+      const missing = validateContext();
+      if(missing.length){
+        alert("Cannot submit cancellation report yet. Missing:\n• " + missing.join("\n• "));
+        return;
+      }
+
+      const fd = new FormData(form);
+      const row = {
+        submitted_by_user_id: context.submittedByUserId,
+        submitted_by_name: context.submittedByName,
+        client_id: clean(context.clientId) || null,
+        client_name: clean(context.clientName),
+        session_date: clean(context.sessionDate),
+        session_time: clean(context.sessionTime) || null,
+        cancellation_timing: clean(fd.get("cancellationTiming")),
+        service: clean(context.service),
+        reason_category: clean(fd.get("reasonCategory")),
+        portal_session_key: clean(context.portalSessionKey) || null,
+        origin: context.origin
+      };
+      const { error: insertErr } = await auth.supabase.from("cancellation_reports").insert([row]);
+      if(insertErr) throw insertErr;
+      persistCancelledReviewLocally();
+      redirectAfterSubmit();
+    }catch(err){
+      console.error(err);
+      const msg = err && err.message ? String(err.message) : "";
+      alert("Submission failed. Please try again." + (msg ? "\n" + msg : ""));
+    }finally{
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Submit";
+    }
+  });
+
+  (async function init(){
+    try{
+      const decodedSk = decodeSessionKeyB64Url(qs.get("sk") || "");
+      context.portalSessionKey = clean(decodedSk || qs.get("sessionKey") || "");
+      context.sessionDate = clean(qs.get("date") || "");
+      context.sessionTime = clean(qs.get("time") || qs.get("sessionTime") || "");
+      context.clientId = clean(qs.get("clientId") || "");
+      context.clientName = clean(qs.get("name") || qs.get("clientName") || qs.get("client") || "");
+      context.service = clean(qs.get("service") || "");
+      inferOrigin();
+      await hydrateAuthContext();
+      await enrichContextFromScripts();
+      displayContext();
+    }catch(err){
+      console.error(err);
+      displayContext();
+    }
+  })();
+})();
+</script>
+</body>
+</html>

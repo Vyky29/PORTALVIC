@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Admin portal · embed (use in Elementor)</title>
+  <script>
+    try { document.documentElement.classList.add('portal-app-shell'); } catch (e) {}
+  </script>
+  <style id="portal-hide-wp-chrome">
+    html.portal-app-shell body.admin-bar { padding-top: 0 !important; margin-top: 0 !important; }
+    html.portal-app-shell #wpadminbar,
+    html.portal-app-shell #masthead,
+    html.portal-app-shell header#masthead,
+    html.portal-app-shell .site-header,
+    html.portal-app-shell #site-header,
+    html.portal-app-shell .ast-primary-header-bar,
+    html.portal-app-shell .elementor-location-header,
+    html.portal-app-shell .elementor-location-footer,
+    html.portal-app-shell #colophon,
+    html.portal-app-shell footer.site-footer,
+    html.portal-app-shell .site-footer,
+    html.portal-app-shell #footer {
+      display: none !important;
+      visibility: hidden !important;
+      height: 0 !important;
+      overflow: hidden !important;
+      pointer-events: none !important;
+    }
+    html.portal-app-shell, html.portal-app-shell body { margin: 0; height: 100%; overflow: hidden; max-width: 100vw; }
+    #portalAdminEmbedFrame { border: 0; width: 100%; height: 100vh; min-height: 100dvh; display: block; }
+  </style>
+</head>
+<body>
+  <!--
+    Flujo recomendado en producción: página WordPress /operations-admin/ con shortcode [cs_portal_admin] (ver portal_admin_wordpress_shortcode.php).
+    Esta plantilla es un iframe directo al mismo destino que el shortcode: admin_embed.html en Medios + admin_dashboard.app_.js.
+    Ajusta ?v= al mismo valor que PORTAL_ADMIN_MEDIOS_V en working_ui/scripts/portal_admin_medios.mjs al resubir.
+    No pegues admin_dashboard.html entero en Elementor (POST/WAF).
+  -->
+  <iframe
+    id="portalAdminEmbedFrame"
+    title="clubSENsational Admin"
+    src="https://www.clubsensational.org/wp-content/uploads/2026/05/admin_embed.html?v=20260510-portal-admin"
+    loading="eager"
+    referrerpolicy="strict-origin-when-cross-origin"
+  ></iframe>
+</body>
+</html>

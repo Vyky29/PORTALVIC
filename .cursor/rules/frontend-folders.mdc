@@ -1,0 +1,26 @@
+---
+description: backup_ui read-only; working_ui only editable frontend; Supabase/JS in working_ui only
+alwaysApply: true
+---
+
+# Frontend folders (PORTAL)
+
+## `backup_ui/`
+
+- **Read-only source of truth.** Do not create, edit, delete, or move any file under `backup_ui/`.
+- Use it only to read reference markup/scripts or to **restore** a broken `working_ui` copy.
+
+## `working_ui/`
+
+- **Only editable frontend folder** for HTML/CSS/JS that ships or is iterated on.
+- **All new Supabase client code, auth wiring, and browser JS integration** must live under `working_ui/` (not under `backup_ui/`).
+- Prefer mirroring names/paths from `backup_ui/` when a “working” twin exists (e.g. restore then edit the `working_ui` copy).
+
+## If `working_ui` breaks
+
+1. Identify the matching file in `backup_ui/` (same relative name/path pattern where applicable).
+2. Restore by copying from `backup_ui` → `working_ui` (overwrite the broken `working_ui` file), then re-apply only intentional changes in `working_ui/`.
+
+## Non-frontend code
+
+- Rules above are about **frontend** assets. Backend/config outside these folders may still exist; **browser-facing Supabase/JS** still belongs in `working_ui/` per this project.

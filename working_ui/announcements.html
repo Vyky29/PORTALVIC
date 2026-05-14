@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <script>
+    (function () {
+      try {
+        document.documentElement.classList.add("portal-app-shell");
+      } catch (e) {}
+    })();
+  </script>
+  <style id="portal-hide-wp-chrome">
+    html.portal-app-shell body.admin-bar {
+      padding-top: 0 !important;
+      margin-top: 0 !important;
+    }
+    html.portal-app-shell #wpadminbar,
+    html.portal-app-shell #masthead,
+    html.portal-app-shell header#masthead,
+    html.portal-app-shell .site-header,
+    html.portal-app-shell #site-header,
+    html.portal-app-shell .ast-primary-header-bar,
+    html.portal-app-shell .ast-above-header,
+    html.portal-app-shell .elementor-location-header,
+    html.portal-app-shell .elementor-location-footer,
+    html.portal-app-shell #colophon,
+    html.portal-app-shell footer.site-footer,
+    html.portal-app-shell .site-footer,
+    html.portal-app-shell #footer,
+    html.portal-app-shell .site-bottom-footer-inner-wrap,
+    html.portal-app-shell .footer-widget-area {
+      display: none !important;
+      visibility: hidden !important;
+      height: 0 !important;
+      overflow: hidden !important;
+      pointer-events: none !important;
+    }
+    html.portal-app-shell .site-content,
+    html.portal-app-shell #content,
+    html.portal-app-shell .site-main,
+    html.portal-app-shell #primary {
+      margin-top: 0 !important;
+      padding-top: 0 !important;
+    }
+  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Announcements · clubSENsational</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      background: #f4f8fb;
+      color: #173247;
+      min-height: 100vh;
+      padding: 20px 14px 32px;
+    }
+    .page {
+      width: min(920px, 100%);
+      margin: 0 auto;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid rgba(23, 50, 71, 0.12);
+      border-radius: 20px;
+      box-shadow: 0 18px 50px rgba(23, 50, 71, 0.08);
+      overflow: hidden;
+    }
+    .card-head {
+      padding: 16px 18px;
+      border-bottom: 1px solid rgba(23, 50, 71, 0.1);
+      background: linear-gradient(180deg, #fff, #fafcff);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .kicker {
+      margin: 0;
+      font-size: 11px;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      font-weight: 800;
+      color: #5b6473;
+    }
+    .posted {
+      margin: 0;
+      font-size: 13px;
+      color: #5b6473;
+      font-weight: 600;
+    }
+    .card-body { padding: 18px; }
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(26px, 4.8vw, 42px);
+      line-height: 1.15;
+      color: #0b1220;
+      font-weight: 900;
+    }
+    p {
+      margin: 0 0 12px;
+      font-size: 18px;
+      line-height: 1.25;
+      color: #1f2a3a;
+    }
+    .highlight {
+      margin-top: 6px;
+      padding: 12px 14px;
+      border: 1px solid rgba(45,132,179,.25);
+      border-radius: 12px;
+      background: #f3f9fd;
+      font-size: 17px;
+      line-height: 1.35;
+    }
+    .note {
+      margin-top: 14px;
+      color: #5b6473;
+      font-size: 14px;
+    }
+    .actions {
+      margin-top: 16px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      border: 1px solid rgba(23, 50, 71, 0.2);
+      border-radius: 12px;
+      background: #fff;
+      color: #173247;
+      padding: 10px 14px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .btn-primary {
+      background: #173247;
+      color: #fff;
+      border-color: #173247;
+    }
+  </style>
+</head>
+<body>
+  <main class="page" id="main">
+    <article class="card" aria-labelledby="ann-title">
+      <header class="card-head">
+        <p class="kicker">Announcements</p>
+        <p class="posted">Posted Monday 11th April 2026</p>
+      </header>
+      <div class="card-body">
+        <h1 id="ann-title">Pool timetable update — Acton</h1>
+        <p>
+          We’ve adjusted a few <strong>Acton pool</strong> slots from <strong>Monday 14th April 2026</strong> so sessions line up with the new lane bookings. Your personal schedule in the staff app already reflects these times.
+        </p>
+        <p>
+          If a client asks, let them know the <strong>main pool</strong> is unchanged for public swim; only our <strong>1:1 and small-group</strong> blocks have moved slightly. Lead on duty has the printed grid at reception.
+        </p>
+        <div class="highlight">
+          <strong>Action:</strong> Check <strong>Today</strong> on your dashboard before the first session — times shown there are the source of truth for this week.
+        </div>
+        <p class="note">Sample copy for layout testing only. Admin-created announcements will replace this later.</p>
+        <div class="actions">
+          <a class="btn btn-primary" id="annBackToDashboard" href="staff_dashboard.html">Back to dashboard</a>
+        </div>
+      </div>
+    </article>
+  </main>
+
+  <script>
+    (function () {
+      try {
+        var p = new URLSearchParams(location.search);
+        var s = String(p.get("source") || "").toLowerCase();
+        var a = document.getElementById("annBackToDashboard");
+        if (!a) return;
+        if (s === "lead") a.setAttribute("href", "lead_dashboard.html");
+        else a.setAttribute("href", "staff_dashboard.html");
+      } catch (e) {}
+    })();
+  </script>
+</body>
+</html>

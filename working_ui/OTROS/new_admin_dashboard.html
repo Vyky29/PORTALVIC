@@ -1,0 +1,2091 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>clubSENsational · Operator control centre (Prototype v2)</title>
+  <style>
+    :root {
+      --blue: #2d84b3;
+      --blueSoft: #eaf5fb;
+      --gold: #f4b740;
+      --sen-gold: #f9bf2e;
+      --goldSoft: #fff4df;
+      --ink: #0f172a;
+      --text: #334155;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --white: #fff;
+      --bg: #f1f5f9;
+      --surface: #ffffff;
+      --sidebar: #0f172a;
+      --sidebarHover: #1e293b;
+      --sidebarText: #94a3b8;
+      --sidebarActive: #38bdf8;
+      --danger: #dc2626;
+      --dangerSoft: #fef2f2;
+      --success: #15803d;
+      --successSoft: #f0fdf4;
+      --warn: #d97706;
+      --warnSoft: #fffbeb;
+      --pink: #ec4899;
+      --pinkSoft: #fdf2f8;
+      --radius: 12px;
+      --radiusLg: 16px;
+      --shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.06);
+      --sidebarW: 260px;
+      --topH: 56px;
+      --font: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html {
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      -webkit-text-size-adjust: 100%;
+    }
+    body {
+      margin: 0;
+      width: 100%;
+      max-width: 100%;
+      min-height: 100%;
+      min-height: 100dvh;
+      min-height: -webkit-fill-available;
+      font-family: var(--font);
+      font-size: 14px;
+      color: var(--text);
+      background: var(--bg);
+      overflow: hidden;
+    }
+    /* Fills the browser tab / PWA window; admin is desktop + iPad landscape only */
+    .admin-shell {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      display: flex;
+      min-width: 0;
+      width: 100%;
+      height: 100%;
+      min-height: 100dvh;
+      min-height: -webkit-fill-available;
+      max-height: none;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+    .admin-sidebar {
+      width: var(--sidebarW);
+      min-width: var(--sidebarW);
+      background: var(--sidebar);
+      color: #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      border-right: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .admin-sidebar-brand {
+      padding: 18px 16px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      text-align: center;
+    }
+    .admin-brand-brief {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 10px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--sen-gold), var(--blue));
+      display: grid;
+      place-items: center;
+      font-size: 22px;
+    }
+    .admin-sidebar-brand strong { display: block; font-size: 15px; font-weight: 700; color: #fff; }
+    .admin-sidebar-brand span { font-size: 11px; color: var(--sidebarText); margin-top: 4px; display: block; }
+    .admin-nav { flex: 1; overflow-y: auto; padding: 8px; -webkit-overflow-scrolling: touch; }
+    .admin-nav button {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      margin: 2px 0;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--sidebarText);
+      font: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      text-align: left;
+      cursor: pointer;
+      min-width: 0;
+    }
+    .admin-nav button:hover { background: var(--sidebarHover); color: #e2e8f0; }
+    .admin-nav button.is-active { background: rgba(56, 189, 248, 0.12); color: var(--sidebarActive); font-weight: 600; }
+    .admin-nav-ico { width: 18px; height: 18px; flex-shrink: 0; text-align: center; opacity: 0.9; }
+    .admin-nav-ico, .admin-nav button span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .admin-sidebar-foot { padding: 12px; border-top: 1px solid rgba(255, 255, 255, 0.08); font-size: 11px; color: var(--sidebarText); line-height: 1.4; }
+    .admin-main { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
+    .admin-topbar {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+      box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+    }
+    .admin-demo-ribbon {
+      text-align: center;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 6px 14px;
+      background: linear-gradient(90deg, var(--goldSoft), #fff, var(--blueSoft));
+      color: var(--ink);
+      border-bottom: 1px solid var(--line);
+    }
+    .admin-topbar-row {
+      min-height: var(--topH);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 20px;
+    }
+    .admin-topbar h1 { margin: 0; font-size: 17px; font-weight: 700; color: var(--ink); }
+    .admin-breadcrumb { font-size: 12px; color: var(--muted); }
+    .admin-date { margin-left: auto; font-size: 12px; font-weight: 600; color: var(--muted); }
+    .admin-workspace { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 22px 24px 32px; -webkit-overflow-scrolling: touch; }
+    .view-panel { display: none; }
+    .view-panel.is-visible { display: block; }
+    .page-title { margin: 0 0 4px; font-size: 22px; font-weight: 700; letter-spacing: -0.03em; color: var(--ink); }
+    .page-desc { margin: 0 0 18px; font-size: 13px; color: var(--muted); max-width: 720px; line-height: 1.5; }
+    .section { margin-bottom: 20px; }
+    .section-h { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+    .section-h h2 { margin: 0; font-size: 15px; font-weight: 700; color: var(--ink); }
+    .section-h p { margin: 4px 0 0; font-size: 12px; color: var(--muted); max-width: 560px; }
+    .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radiusLg); box-shadow: var(--shadow); overflow: hidden; min-width: 0; }
+    .card-pad { padding: 16px 18px; }
+    .card-h { padding: 12px 18px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    .card-h h3 { margin: 0; font-size: 14px; font-weight: 700; color: var(--ink); min-width: 0; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+    @media (max-width: 1200px) { .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 900px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
+    .grid-kpi { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+    @media (max-width: 800px) { .grid-kpi { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    .grid-kpi--6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+    @media (max-width: 1200px) { .grid-kpi--6 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    @media (max-width: 800px) { .grid-kpi--6 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    .kpi { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radiusLg); padding: 14px 16px; box-shadow: var(--shadow); }
+    .kpi--alert { border-color: #fecaca; background: linear-gradient(180deg, #fff, #fef2f2); }
+    .kpi-l { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+    .kpi-v { font-size: 22px; font-weight: 700; color: var(--ink); margin-top: 4px; }
+    .kpi-s { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .tbl th, .tbl td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: middle; }
+    .tbl th { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); background: #f8fafc; }
+    .tbl tr:hover td { background: #fafbfc; }
+    .tbl--compact th, .tbl--compact td { padding: 8px 10px; font-size: 12px; }
+    .chip { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 99px; font-size: 11px; font-weight: 600; }
+    .chip--ok { background: var(--successSoft); color: var(--success); }
+    .chip--pend { background: var(--warnSoft); color: var(--warn); }
+    .chip--urg { background: var(--dangerSoft); color: var(--danger); }
+    .chip--info { background: var(--blueSoft); color: var(--blue); }
+    .chip--pink { background: var(--pinkSoft); color: #be185d; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 4px; padding: 7px 12px; border-radius: 10px; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid transparent; }
+    .btn--pri { background: var(--blue); color: #fff; border-color: var(--blue); }
+    .btn--sec { background: var(--surface); color: var(--ink); border-color: var(--line); }
+    .btn--ghost { background: transparent; color: var(--muted); }
+    .btn--sm { padding: 5px 9px; font-size: 11px; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .muted { color: var(--muted); }
+    .inp, .sel { max-width: 100%; min-width: 0; border: 1px solid var(--line); border-radius: 10px; padding: 7px 10px; font: inherit; font-size: 13px; background: #fff; }
+    .inp:focus, .sel:focus { outline: 2px solid rgba(45, 132, 179, 0.2); border-color: var(--blue); }
+    .session-card {
+      border-radius: var(--radiusLg);
+      border: 1px solid var(--line);
+      padding: 14px 16px;
+      background: var(--surface);
+      min-width: 0;
+    }
+    .session-card--normal { border-left: 4px solid var(--blue); background: linear-gradient(180deg, #fff, var(--blueSoft)); }
+    .session-card--absent { border-left: 4px solid var(--success); background: linear-gradient(180deg, #fff, var(--successSoft)); }
+    .session-card--makeup { border-left: 4px solid var(--pink); background: linear-gradient(180deg, #fff, var(--pinkSoft)); }
+    .session-card--closed { border-left: 4px solid var(--danger); background: linear-gradient(180deg, #fff, var(--dangerSoft)); }
+    .session-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+    .session-meta { display: grid; grid-template-columns: 1fr; gap: 4px; font-size: 13px; min-width: 0; }
+    .session-meta strong { color: var(--ink); overflow-wrap: break-word; word-break: break-word; }
+    .grid-sessions { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+    .inbox-card { border: 1px solid var(--line); border-radius: var(--radiusLg); padding: 14px 16px; background: var(--surface); min-width: 0; }
+    .inbox-card--lead { box-shadow: 0 0 0 1px rgba(45, 132, 179, 0.15); }
+    .inbox-title { font-weight: 700; color: var(--ink); font-size: 14px; margin-bottom: 4px; overflow-wrap: break-word; }
+    .inbox-ctx { font-size: 12px; color: var(--muted); line-height: 1.45; margin-bottom: 10px; overflow-wrap: break-word; }
+    .sched-placeholder { border: 2px dashed var(--line); border-radius: var(--radiusLg); padding: 28px 20px; text-align: center; background: #f8fafc; }
+    .sched-placeholder strong { color: var(--ink); }
+    .split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 14px; }
+    @media (max-width: 1000px) { .split { grid-template-columns: 1fr; } }
+    .row-click { cursor: pointer; }
+    .row-click.is-selected { background: var(--blueSoft) !important; }
+    .subtabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+    .subtab-btn { border: 1px solid var(--line); background: #fff; color: var(--text); border-radius: 10px; padding: 6px 11px; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .subtab-btn.is-active { border-color: var(--blue); background: var(--blueSoft); color: var(--blue); }
+    .subtab-panel { display: none; }
+    .subtab-panel.is-active { display: block; }
+    .slot-grid { display: grid; grid-template-columns: 100px repeat(5, minmax(0, 1fr)); gap: 0; font-size: 12px; border: 1px solid var(--line); border-radius: var(--radius); overflow: auto; }
+    .slot-grid-h { background: #f8fafc; padding: 8px; font-weight: 700; text-align: center; border-bottom: 1px solid var(--line); min-width: 0; }
+    .slot-grid-h:first-child { text-align: left; }
+    .slot-cell { padding: 8px; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); min-width: 0; }
+    .slot-pill { font-size: 10px; color: var(--muted); }
+    .kanban { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; -webkit-overflow-scrolling: touch; }
+    .kanban-col { flex: 0 0 220px; min-width: 200px; background: #f1f5f9; border-radius: var(--radiusLg); border: 1px solid var(--line); }
+    .kanban-col-h { padding: 10px 12px; font-weight: 700; font-size: 12px; border-bottom: 1px solid var(--line); }
+    .kanban-card { margin: 8px; padding: 10px; background: #fff; border-radius: 10px; border: 1px solid var(--line); min-width: 0; }
+    .kanban-card strong { display: block; font-size: 13px; overflow-wrap: break-word; }
+    .list-row { font-size: 12px; color: var(--muted); }
+    .doc-list { list-style: none; margin: 0; padding: 0; }
+    .doc-list li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); min-width: 0; }
+    .doc-list li:last-child { border-bottom: none; }
+    .compliance-item { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+    .compliance-item:last-child { border-bottom: none; }
+    .staff-profile-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    @media (max-width: 600px) { .staff-profile-grid { grid-template-columns: 1fr; } }
+    .card--premium { box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 12px 40px rgba(15, 23, 42, 0.08); border-color: #e8ecf1; }
+    .exec-grid { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 14px; min-width: 0; }
+    @media (max-width: 1100px) { .exec-grid { grid-template-columns: 1fr; } }
+    .exec-row2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 14px; }
+    @media (max-width: 800px) { .exec-row2 { grid-template-columns: 1fr; } }
+    .exec-triple { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+    @media (max-width: 1000px) { .exec-triple { grid-template-columns: 1fr; } }
+    .tbl--dense th, .tbl--dense td { padding: 7px 8px; font-size: 12px; }
+    .tbl--dense td { vertical-align: top; }
+    .pr-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+    .pr-dot--p0 { background: #dc2626; } .pr-dot--p1 { background: #d97706; } .pr-dot--p2 { background: #2d84b3; }
+    .chip--pri { background: #fef3c7; color: #b45309; }
+    .chip--blk { background: #e0f2fe; color: #0369a1; }
+    .report-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    @media (max-width: 1100px) { .report-grid { grid-template-columns: 1fr; } }
+    .report-card { border: 1px solid var(--line); border-radius: var(--radiusLg); background: #fff; padding: 14px; min-width: 0; box-shadow: var(--shadow); }
+    .report-card h4 { margin: 0 0 6px; font-size: 13px; color: var(--ink); }
+    .report-card .list-row { margin: 0 0 6px; }
+    .insight-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    @media (max-width: 800px) { .insight-tiles { grid-template-columns: 1fr; } }
+    .insight-tile { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: linear-gradient(180deg, #fff, #f8fafc); min-width: 0; }
+    .insight-tile h4 { margin: 0 0 8px; font-size: 12px; font-weight: 700; color: var(--ink); text-transform: uppercase; letter-spacing: 0.04em; }
+    .insight-tile ol { margin: 0; padding-left: 18px; font-size: 12px; color: var(--text); line-height: 1.5; }
+    .cap-hero { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+    .cap-bar { height: 8px; border-radius: 99px; background: #e2e8f0; overflow: hidden; display: flex; min-width: 60px; flex: 1; }
+    .cap-bar > span { background: var(--blue); } .cap-bar > span + span { background: #14b8a6; } .cap-bar .open { background: #cbd5e1; flex: 1; }
+    .comms-cat { margin-bottom: 16px; }
+    .comms-cat h4 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+    .template-row { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--line); min-width: 0; }
+    .template-row:last-child { border-bottom: 0; }
+    .template-row p { margin: 0; font-size: 12px; color: var(--muted); line-height: 1.45; flex: 1; min-width: 0; overflow-wrap: break-word; }
+    .subtabs--scroll { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; -webkit-overflow-scrolling: touch; }
+    .row-click:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+    @media (max-width: 700px) {
+      .tbl--inbox-ops th:nth-child(3),
+      .tbl--inbox-ops td:nth-child(3),
+      .tbl--inbox-ops th:nth-child(5),
+      .tbl--inbox-ops td:nth-child(5) { display: none; }
+    }
+    @media (max-width: 640px) {
+      .tbl--finance-ops th:nth-child(4),
+      .tbl--finance-ops td:nth-child(4) { display: none; }
+    }
+    .app-toast {
+      position: fixed;
+      left: 50%;
+      bottom: max(24px, env(safe-area-inset-bottom, 0px));
+      transform: translateX(-50%) translateY(120%);
+      z-index: 1000;
+      padding: 10px 16px;
+      border-radius: 10px;
+      background: var(--ink);
+      color: #f8fafc;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.25);
+      pointer-events: none;
+      opacity: 0;
+      transition: transform 0.25s ease, opacity 0.2s ease;
+    }
+    .app-toast.is-on { transform: translateX(-50%) translateY(0); opacity: 1; }
+    @media (prefers-reduced-motion: reduce) {
+      .app-toast { transition: none; }
+    }
+    .drawer-back {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.4);
+      z-index: 400;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+    .drawer-back.is-open { opacity: 1; pointer-events: auto; }
+    .app-drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: min(100%, 440px);
+      max-width: 100%;
+      min-height: 100dvh;
+      min-height: -webkit-fill-available;
+      height: 100dvh;
+      box-sizing: border-box;
+      padding-top: env(safe-area-inset-top, 0);
+      padding-bottom: env(safe-area-inset-bottom, 0);
+      z-index: 410;
+      background: var(--surface);
+      box-shadow: -8px 0 40px rgba(15, 23, 42, 0.12);
+      transform: translateX(100%);
+      transition: transform 0.28s ease;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .app-drawer.is-open { transform: translateX(0); }
+    @media (prefers-reduced-motion: reduce) {
+      .app-drawer { transition: none; }
+    }
+    .app-drawer-h { padding: 16px 18px; border-bottom: 1px solid var(--line); display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; flex-shrink: 0; }
+    .app-drawer-h h2 { margin: 0; font-size: 16px; font-weight: 700; color: var(--ink); }
+    .app-drawer-body { flex: 1; overflow-y: auto; padding: 16px 18px; -webkit-overflow-scrolling: touch; min-height: 0; }
+    .app-drawer-foot { padding: 12px 18px; border-top: 1px solid var(--line); background: #f8fafc; flex-shrink: 0; }
+    .decision-block { font-size: 13px; line-height: 1.5; }
+    .decision-block dt { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 700; margin-top: 12px; }
+    .decision-block dt:first-of-type { margin-top: 0; }
+    .decision-block dd { margin: 4px 0 0; color: var(--text); }
+    .esc-badges { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 10px 0; }
+    .chip--esc-yes { background: #fef2f2; color: #b91c1c; }
+    .chip--esc-no { background: #f0fdf4; color: #15803d; }
+    .chip--dir-proceed { background: var(--blueSoft); color: #0369a1; }
+    .chip--dir-need { background: var(--goldSoft); color: #b45309; }
+    .chip--dir-block { background: #fef2f2; color: #b91c1c; }
+    .btn--mock-logged, .btn--mock-sent, .btn--mock-gen { background: #ecfdf5 !important; color: #047857 !important; border-color: #a7f3d0 !important; cursor: default; }
+    .btn.is-disabled, .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+    .cap-map { font-size: 12px; min-width: 960px; }
+    .cap-map th, .cap-map td { font-size: 11px; padding: 6px 8px; }
+    .quick-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; align-items: center; }
+    @media (max-width: 900px) {
+      .cap-map th:nth-child(4),
+      .cap-map td:nth-child(4) { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar" aria-label="Main navigation">
+      <div class="admin-sidebar-brand">
+        <div class="admin-brand-brief" aria-hidden="true">⭐</div>
+        <strong>clubSENsational</strong>
+        <span>Control Centre · Prototype</span>
+      </div>
+      <nav class="admin-nav" id="mainNav">
+        <button type="button" class="is-active" data-panel="operator" data-title="Operator Home"><span class="admin-nav-ico">◎</span><span>Operator Home</span></button>
+        <button type="button" data-panel="inbox" data-title="Operations tasks"><span class="admin-nav-ico">📥</span><span>Operations tasks</span></button>
+        <button type="button" data-panel="scheduling" data-title="Scheduling &amp; Cover"><span class="admin-nav-ico">📅</span><span>Scheduling &amp; Cover</span></button>
+        <button type="button" data-panel="clients" data-title="Clients"><span class="admin-nav-ico">👤</span><span>Clients</span></button>
+        <button type="button" data-panel="leads" data-title="Leads &amp; Intake"><span class="admin-nav-ico">🧭</span><span>Leads &amp; Intake</span></button>
+        <button type="button" data-panel="reports" data-title="Client reports"><span class="admin-nav-ico">📄</span><span>Client reports</span></button>
+        <button type="button" data-panel="services" data-title="Services &amp; capacity"><span class="admin-nav-ico">🧩</span><span>Services &amp; capacity</span></button>
+        <button type="button" data-panel="bookings" data-title="Bookings &amp; wait list"><span class="admin-nav-ico">🗓</span><span>Bookings &amp; wait list</span></button>
+        <button type="button" data-panel="staff" data-title="Staff operations"><span class="admin-nav-ico">👥</span><span>Staff operations</span></button>
+        <button type="button" data-panel="recruitment" data-title="Recruitment"><span class="admin-nav-ico">📋</span><span>Recruitment</span></button>
+        <button type="button" data-panel="finance" data-title="Finance operations"><span class="admin-nav-ico">💷</span><span>Finance operations</span></button>
+        <button type="button" data-panel="comms" data-title="Communications hub"><span class="admin-nav-ico">💬</span><span>Communications hub</span></button>
+        <button type="button" data-panel="documents" data-title="Documents"><span class="admin-nav-ico">📁</span><span>Documents</span></button>
+        <button type="button" data-panel="compliance" data-title="Compliance"><span class="admin-nav-ico">✅</span><span>Compliance</span></button>
+        <button type="button" data-panel="insights" data-title="Operator insights"><span class="admin-nav-ico">📈</span><span>Operator insights</span></button>
+      </nav>
+      <div class="admin-sidebar-foot">Mock / offline · not wired to Supabase · <code style="font-size:10px">v3</code></div>
+    </aside>
+
+    <div class="admin-main">
+      <header class="admin-topbar">
+        <div class="admin-demo-ribbon" id="demoRibbon" role="status" aria-live="polite" lang="en">Demo view — fictitious data — not live · <span lang="es">Vista demo — sin datos reales</span></div>
+        <div class="admin-topbar-row">
+          <div>
+            <h1 id="viewTitle">Operator Home</h1>
+            <div class="admin-breadcrumb" id="viewBreadcrumb">Command centre — run daily ops without waiting on direction (mock)</div>
+          </div>
+          <div class="admin-date" id="viewDate"></div>
+        </div>
+      </header>
+      <main class="admin-workspace" id="workspace">
+
+        <section class="view-panel is-visible" id="panel-operator" data-breadcrumb="Command centre — sessions, actions, and risk (mock)">
+          <h2 class="page-title">Operator home</h2>
+          <p class="page-desc">Single place to run the day: sessions, urgent work, parent touchpoints, money, people, and reports. Mock data; wire later to live tables.</p>
+          <div class="grid-kpi grid-kpi--6">
+            <div class="kpi card--premium"><div class="kpi-l">Open actions</div><div class="kpi-v">19</div><div class="kpi-s muted">across teams</div></div>
+            <div class="kpi card--premium"><div class="kpi-l">Parents waiting</div><div class="kpi-v">6</div><div class="kpi-s muted">&lt;4h reply SLA</div></div>
+            <div class="kpi card--premium kpi--alert" style="border-color:#fecaca"><div class="kpi-l">Payment at risk</div><div class="kpi-v" style="color:var(--danger)">£1.1k</div><div class="kpi-s muted">3 families</div></div>
+            <div class="kpi card--premium"><div class="kpi-l">Covers / risks</div><div class="kpi-v">2</div><div class="kpi-s muted">staff or slot</div></div>
+            <div class="kpi card--premium"><div class="kpi-l">Reports due</div><div class="kpi-v">4</div><div class="kpi-s muted">this week</div></div>
+            <div class="kpi card--premium"><div class="kpi-l">Fillable slots</div><div class="kpi-v">11</div><div class="kpi-s muted">match wait list</div></div>
+          </div>
+          <div class="card card--premium" style="margin-bottom:14px">
+            <div class="card-h"><h3>Report quick actions (mock)</h3><span class="chip chip--info">no PDF yet</span></div>
+            <div class="card-pad" style="padding:12px 16px">
+              <p class="muted" style="margin:0 0 8px;font-size:12px">Start a report pack from the home row — same flow as <strong>Client reports</strong> and client profile.</p>
+              <div class="quick-row">
+                <button type="button" class="btn btn--pri btn--sm js-open-report" data-report="leila">Parent progress — Leila H.</button>
+                <button type="button" class="btn btn--sec btn--sm js-open-report" data-report="oliver">Attendance pack — O. R. (LA)</button>
+                <button type="button" class="btn btn--sec btn--sm js-open-report" data-report="cohort">DC term review (cohort)</button>
+                <button type="button" class="btn btn--ghost btn--sm js-mock-goto" data-goto="reports">All report types</button>
+              </div>
+            </div>
+          </div>
+          <div class="section">
+            <div class="section-h"><h2>Decision queue</h2><p>Structured path: situation → data you have → suggested next step. Escalation and director rules are mock only.</p></div>
+            <div class="grid-2" style="grid-template-columns:repeat(2,minmax(0,1fr));margin-bottom:12px;gap:12px">
+              <div class="card card--premium" style="margin:0">
+                <div class="card-h" style="padding:10px 14px"><h3 style="font-size:13px">Parent report request</h3><span class="chip chip--dir-proceed" title="operator can act">operator ok</span></div>
+                <div class="card-pad" style="font-size:12px;padding:10px 14px">
+                  <p style="margin:0"><strong>Situation:</strong> Hana needs PDF before school review 4 May.</p>
+                  <p class="muted" style="margin:6px 0 0">Data: sessions + OT notes 8w · <strong>Escalate?</strong> <span class="chip chip--esc-no">No</span></p>
+                  <div class="toolbar" style="margin-top:8px">
+                    <button type="button" class="btn btn--pri btn--sm js-open-decision" data-d="report">Open decision</button>
+                    <button type="button" class="btn btn--sec btn--sm js-open-report" data-report="leila">Preview report</button>
+                  </div>
+                </div>
+              </div>
+              <div class="card card--premium" style="margin:0">
+                <div class="card-h" style="padding:10px 14px"><h3 style="font-size:13px">New lead under review</h3><span class="chip chip--dir-need" title="route to director or senior">director if accept</span></div>
+                <div class="card-pad" style="font-size:12px;padding:10px 14px">
+                  <p style="margin:0"><strong>Situation:</strong> Day centre 1:1 ask — needs triage and EP.</p>
+                  <p class="muted" style="margin:6px 0 0">Data: WA thread + partial form · <strong>Escalate?</strong> <span class="chip chip--esc-yes">if offer place</span></p>
+                  <div class="toolbar" style="margin-top:8px">
+                    <button type="button" class="btn btn--pri btn--sm js-open-decision" data-d="lead">Open decision</button>
+                    <button type="button" class="btn btn--sec btn--sm js-mock-goto" data-goto="leads">Open leads</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="grid-2" style="grid-template-columns:repeat(2,minmax(0,1fr));gap:12px">
+              <div class="card card--premium" style="margin:0">
+                <div class="card-h" style="padding:10px 14px"><h3 style="font-size:13px">Payment pending</h3><span class="chip chip--dir-proceed">operator ok</span></div>
+                <div class="card-pad" style="font-size:12px;padding:10px 14px">
+                  <p style="margin:0"><strong>Situation:</strong> Maya T. taster not cleared; slot was soft-held.</p>
+                  <p class="muted" style="margin:6px 0 0"><strong>Escalate?</strong> <span class="chip chip--esc-no">No</span> · <strong>Escalate if &gt;£1k</strong> would flag director in prod</p>
+                  <div class="toolbar" style="margin-top:8px">
+                    <button type="button" class="btn btn--pri btn--sm js-open-decision" data-d="pay">Open decision</button>
+                    <button type="button" class="btn btn--sec btn--sm js-mock-goto" data-goto="finance">Open finance</button>
+                  </div>
+                </div>
+              </div>
+              <div class="card card--premium" style="margin:0">
+                <div class="card-h" style="padding:10px 14px"><h3 style="font-size:13px">No free slot (wait match)</h3><span class="chip chip--dir-need">ratio / offer</span></div>
+                <div class="card-pad" style="font-size:12px;padding:10px 14px">
+                  <p style="margin:0"><strong>Situation:</strong> Sasha 1:1 pool — no Thu line until cover.</p>
+                  <p class="muted" style="margin:6px 0 0">Data: capacity map + wait 1 · <strong>Escalate?</strong> <span class="chip chip--esc-yes">if split cohort</span></p>
+                  <div class="toolbar" style="margin-top:8px">
+                    <button type="button" class="btn btn--pri btn--sm js-open-decision" data-d="slot">Open decision</button>
+                    <button type="button" class="btn btn--sec btn--sm js-mock-goto" data-goto="bookings">Booking flow</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="grid-2" style="grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px">
+              <div class="card card--premium" style="margin:0">
+                <div class="card-h" style="padding:10px 14px"><h3 style="font-size:13px">Staff cert missing (blocks swim)</h3><span class="chip chip--dir-need" title="cannot run pool line">cannot proceed (pool)</span></div>
+                <div class="card-pad" style="font-size:12px;padding:10px 14px">
+                  <p style="margin:0"><strong>Situation:</strong> J. Poole needs pool rescue upload before assign.</p>
+                  <p class="muted" style="margin:6px 0 0"><strong>Escalate?</strong> <span class="chip chip--esc-yes">Ops lead</span></p>
+                  <div class="toolbar" style="margin-top:8px">
+                    <button type="button" class="btn btn--pri btn--sm js-open-decision" data-d="cert">Open decision</button>
+                    <button type="button" class="btn btn--sec btn--sm js-mock-goto" data-goto="staff">Staff</button>
+                  </div>
+                </div>
+              </div>
+              <div class="card card--premium" style="margin:0">
+                <div class="card-h" style="padding:10px 14px"><h3 style="font-size:13px">High support ratio 2:1 (EHCP ask)</h3><span class="chip chip--dir-need" title="director signs offer">director approval</span></div>
+                <div class="card-pad" style="font-size:12px;padding:10px 14px">
+                  <p style="margin:0"><strong>Situation:</strong> New CYP needs 2:1 for climb — policy says director signs fee + risk.</p>
+                  <p class="muted" style="margin:6px 0 0"><strong>Escalate?</strong> <span class="chip chip--esc-yes">Yes</span></p>
+                  <div class="toolbar" style="margin-top:8px">
+                    <button type="button" class="btn btn--pri btn--sm js-open-decision" data-d="ratio">Open decision</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="card card--premium" style="margin-top:14px">
+              <div class="card-h" style="padding:10px 14px"><h3 style="font-size:13px">Director &amp; safeguarding escalation (examples)</h3><span class="chip chip--urg">mock</span></div>
+              <div class="card-pad" style="font-size:12px;padding:10px 14px">
+                <ul class="muted" style="margin:0;padding-left:20px;line-height:1.55">
+                  <li><strong>Cannot meet needs / placement dispute</strong> — operator: log, pause offers · <em>director: decision + LA comms</em></li>
+                  <li><strong>Funding band dispute (large invoice)</strong> — operator: line items + history · <em>director: sign-off before chase</em></li>
+                  <li><strong>Safeguarding concern (open)</strong> — operator: <span class="chip chip--dir-block" style="margin:0 4px">no unsupervised contact</span> follow DSL flow · <em>director: ICP</em> (fictional)</li>
+                </ul>
+                <button type="button" class="btn btn--sec btn--sm" style="margin-top:8px" id="openEscalationMock">View escalation checklist (drawer, mock)</button>
+              </div>
+            </div>
+          </div>
+          <div class="exec-grid">
+            <div>
+              <div class="section">
+                <div class="section-h"><h2>Today’s sessions</h2><span class="chip chip--info">27 Apr 2026</span></div>
+                <div class="grid-sessions">
+                  <article class="session-card session-card--absent">
+                    <div class="session-card-top">
+                      <span class="chip" style="background:var(--successSoft);color:var(--success)">Absent</span>
+                      <span class="list-row">Yusuf · 09:00</span>
+                    </div>
+                    <div class="session-meta">
+                      <strong>Swimming · Riverside pool</strong>
+                      <span class="muted">Instructor: Alex M.</span>
+                    </div>
+                    <div class="toolbar" style="margin-top:8px">
+                      <button type="button" class="btn btn--sec btn--sm">Mark absent</button>
+                      <button type="button" class="btn btn--sec btn--sm">Replace</button>
+                      <button type="button" class="btn btn--pri btn--sm">Call</button>
+                      <button type="button" class="btn btn--sec btn--sm">Assign cover</button>
+                    </div>
+                  </article>
+                  <article class="session-card session-card--makeup">
+                    <div class="session-card-top">
+                      <span class="chip chip--pink">Make up</span>
+                      <span class="list-row">Leila H. · 10:15</span>
+                    </div>
+                    <div class="session-meta">
+                      <strong>Climbing · wall B</strong>
+                      <span class="muted">Instructor: Sam K.</span>
+                    </div>
+                    <div class="toolbar" style="margin-top:8px">
+                      <button type="button" class="btn btn--sec btn--sm">Mark absent</button>
+                      <button type="button" class="btn btn--sec btn--sm">Replace</button>
+                      <button type="button" class="btn btn--pri btn--sm">Call</button>
+                      <button type="button" class="btn btn--sec btn--sm">Assign cover</button>
+                    </div>
+                  </article>
+                  <article class="session-card session-card--normal">
+                    <div class="session-card-top">
+                      <span class="chip chip--info">Normal</span>
+                      <span class="list-row">Noah C. · 11:00</span>
+                    </div>
+                    <div class="session-meta">
+                      <strong>1:1 OT · hub room 2</strong>
+                      <span class="muted">Instructor: Priya S.</span>
+                    </div>
+                    <div class="toolbar" style="margin-top:8px">
+                      <button type="button" class="btn btn--sec btn--sm">Mark absent</button>
+                      <button type="button" class="btn btn--sec btn--sm">Replace</button>
+                      <button type="button" class="btn btn--pri btn--sm">Call</button>
+                      <button type="button" class="btn btn--sec btn--sm">Assign cover</button>
+                    </div>
+                  </article>
+                  <article class="session-card session-card--closed">
+                    <div class="session-card-top">
+                      <span class="chip chip--urg">Closed</span>
+                      <span class="list-row">Group SEN swim · 13:00</span>
+                    </div>
+                    <div class="session-meta">
+                      <strong>Maintenance hold</strong>
+                      <span class="muted">Instructor: —</span>
+                    </div>
+                    <div class="toolbar" style="margin-top:8px">
+                      <button type="button" class="btn btn--pri btn--sm">Notify families</button>
+                    </div>
+                  </article>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="card card--premium" style="margin-bottom:12px">
+                <div class="card-h"><h3>Urgent actions</h3><span class="chip chip--urg">4 now</span></div>
+                <div class="card-pad" style="padding:0;max-height:220px;overflow:auto">
+                  <table class="tbl tbl--dense">
+                    <thead><tr><th>What</th><th>Owner</th><th></th></tr></thead>
+                    <tbody>
+                      <tr><td>LA case worker chasing EHCP update (Oliver R.)</td><td>Admin</td><td><button type="button" class="btn btn--pri btn--sm">Reply</button></td></tr>
+                      <tr><td>Pool cover gap 15:30 — no cert-cleared staff</td><td>Ops</td><td><button type="button" class="btn btn--sec btn--sm">Cover</button></td></tr>
+                      <tr><td>Overdue invoice 7d+ (Maya T.)</td><td>Finance</td><td><button type="button" class="btn btn--pri btn--sm">Chase</button></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="card card--premium">
+                <div class="card-h"><h3>Pending parent requests</h3></div>
+                <div class="card-pad" style="padding:0;max-height:200px;overflow:auto">
+                  <table class="tbl tbl--dense">
+                    <thead><tr><th>Parent</th><th>Ask</th><th>Since</th><th></th></tr></thead>
+                    <tbody>
+                      <tr><td>Ms N. (Leila)</td><td>Progress report before review</td><td>1d</td><td><button type="button" class="btn btn--pri btn--sm">Draft</button></td></tr>
+                      <tr><td>Mr T. (Mariam)</td><td>Change swim to Tue pm</td><td>3h</td><td><button type="button" class="btn btn--sec btn--sm">Match slots</button></td></tr>
+                      <tr><td>Whatsapp lead</td><td>Day centre trial + form</td><td>6h</td><td><button type="button" class="btn btn--sec btn--sm">Book</button></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="exec-triple">
+            <div class="card card--premium">
+              <div class="card-h"><h3>Missing session feedback</h3><span class="chip chip--pend">5</span></div>
+              <div class="card-pad" style="padding:0;overflow:auto;max-height:180px">
+                <table class="tbl tbl--dense">
+                  <thead><tr><th>Session</th><th>Staff</th><th>Due</th></tr></thead>
+                  <tbody>
+                    <tr><td>Wed OT · Noah C.</td><td>Priya S.</td><td>Today</td></tr>
+                    <tr><td>Group swim · 18 Apr</td><td>Alex M.</td><td>+2d</td></tr>
+                    <tr><td>Climb 1:1</td><td>Sam K.</td><td>Today</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="card card--premium">
+              <div class="card-h"><h3>Absences &amp; make ups</h3></div>
+              <div class="card-pad" style="padding:0;overflow:auto;max-height:180px">
+                <table class="tbl tbl--dense">
+                  <thead><tr><th>Type</th><th>Client</th><th>When</th><th></th></tr></thead>
+                  <tbody>
+                    <tr><td>Absent (marked)</td><td>Yusuf A.</td><td>27 Apr 09:00</td><td><button type="button" class="btn btn--sec btn--sm">Reschedule</button></td></tr>
+                    <tr><td>Make up booked</td><td>Leila H.</td><td>30 Apr 10:15</td><td><button type="button" class="btn btn--ghost btn--sm">View</button></td></tr>
+                    <tr><td>Planned leave</td><td>Amber J.</td><td>2 May (staff)</td><td><button type="button" class="btn btn--sec btn--sm">Reroster</button></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="card card--premium">
+              <div class="card-h"><h3>Payment &amp; staff follow-up</h3></div>
+              <div class="card-pad" style="font-size:12px;line-height:1.5;color:var(--text)">
+                <p style="margin:0 0 6px"><strong>Payments</strong> — 3 chases: Maya T. (£360), O. R. balance (£40), taster dep. (£25).</p>
+                <p style="margin:0 0 6px"><strong>Staff</strong> — J. Poole pool cert overdue; S. Nkrumah requested Fri off (clash with DC ratio).</p>
+                <p style="margin:0"><strong>Report requests</strong> — 2 parent PDFs, 1 LA update, 1 MDT prep for term review (see Client reports).</p>
+                <div class="toolbar" style="margin-top:10px">
+                  <button type="button" class="btn btn--sec btn--sm">Open tasks</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view-panel" id="panel-inbox" data-breadcrumb="Prioritised tasks — status, link, next step (mock)">
+          <h2 class="page-title">Operations tasks</h2>
+          <p class="page-desc">Open the <strong>Task drawer</strong> for a structured decision card (same pattern as home). In production this would be one task type with JSON payload. Mock only.</p>
+          <div class="card card--premium">
+            <div class="card-pad" style="padding:0;overflow:auto">
+              <table class="tbl tbl--dense tbl--inbox-ops" style="min-width:920px">
+                <thead>
+                  <tr>
+                    <th>Task</th>
+                    <th>Status</th>
+                    <th>P</th>
+                    <th>Linked</th>
+                    <th>Recommended next</th>
+                    <th>Quick</th>
+                    <th>Decision</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Parent requests progress report (LA review in 1 week)</td>
+                    <td><span class="chip chip--pend">Open</span></td>
+                    <td><span class="pr-dot pr-dot--p0" title="P0"></span> P0</td>
+                    <td>Leila H. · Hana (parent)</td>
+                    <td>Generate report → send to parent, copy LA draft</td>
+                    <td><div class="toolbar"><button type="button" class="btn btn--pri btn--sm">Report</button><button type="button" class="btn btn--sec btn--sm">WhatsApp</button></div></td>
+                    <td><button type="button" class="btn btn--pri btn--sm js-open-inbox" data-t="report">Open</button></td>
+                  </tr>
+                  <tr>
+                    <td>Client absent tomorrow — pool block</td>
+                    <td><span class="chip chip--info">Scheduled</span></td>
+                    <td><span class="pr-dot pr-dot--p1"></span> P1</td>
+                    <td>Yusuf A. / Alex M.</td>
+                    <td>Send absence ack · offer make-up · adjust ratio</td>
+                    <td><div class="toolbar"><button type="button" class="btn btn--sec btn--sm">Message</button><button type="button" class="btn btn--pri btn--sm">Slot</button></div></td>
+                    <td><button type="button" class="btn btn--sec btn--sm js-open-inbox" data-t="absent">Open</button></td>
+                  </tr>
+                  <tr>
+                    <td>LA asks for attendance &amp; support update</td>
+                    <td><span class="chip chip--pend">Open</span></td>
+                    <td><span class="pr-dot pr-dot--p0"></span> P0</td>
+                    <td>Oliver R. · SEN 45</td>
+                    <td>Export attendance slice · add OT notes summary</td>
+                    <td><div class="toolbar"><button type="button" class="btn btn--pri btn--sm">Pack</button><button type="button" class="btn btn--sec btn--sm">Email</button></div></td>
+                    <td><button type="button" class="btn btn--pri btn--sm js-open-inbox" data-t="la">Open</button></td>
+                  </tr>
+                  <tr>
+                    <td>Payment pending — taster not cleared</td>
+                    <td><span class="chip chip--urg">Overdue</span></td>
+                    <td><span class="pr-dot pr-dot--p1"></span> P1</td>
+                    <td>Maya T. / INV-2018</td>
+                    <td>Re-send link · mark on statement · flag DC slot</td>
+                    <td><div class="toolbar"><button type="button" class="btn btn--pri btn--sm">Paid</button><button type="button" class="btn btn--sec btn--sm">Remind</button></div></td>
+                    <td><button type="button" class="btn btn--pri btn--sm js-open-inbox" data-t="pay">Open</button></td>
+                  </tr>
+                  <tr>
+                    <td>Lead instructor unavailable — Fri DC</td>
+                    <td><span class="chip chip--info">Triage</span></td>
+                    <td><span class="pr-dot pr-dot--p0"></span> P0</td>
+                    <td>Mei L. · Day centre A</td>
+                    <td>Request cover from relief bank · or narrow cohort</td>
+                    <td><div class="toolbar"><button type="button" class="btn btn--pri btn--sm">Cover</button><button type="button" class="btn btn--sec btn--sm">Call</button></div></td>
+                    <td><button type="button" class="btn btn--sec btn--sm js-open-inbox" data-t="cover">Open</button></td>
+                  </tr>
+                  <tr>
+                    <td>New lead — MDT + assessment before slot</td>
+                    <td><span class="chip chip--pend">Open</span></td>
+                    <td><span class="pr-dot pr-dot--p2"></span> P2</td>
+                    <td>Waitlist: Ryan K.</td>
+                    <td>Book TCES call · upload EP · propose trial window</td>
+                    <td><div class="toolbar"><button type="button" class="btn btn--sec btn--sm">Form</button><button type="button" class="btn btn--pri btn--sm">Assess</button></div></td>
+                    <td><button type="button" class="btn btn--pri btn--sm js-open-inbox" data-t="leadw">Open</button></td>
+                  </tr>
+                  <tr>
+                    <td>Trial request — waiting for pool slot (1:1)</td>
+                    <td><span class="chip chip--pend">Blocked</span></td>
+                    <td><span class="pr-dot pr-dot--p1"></span> P1</td>
+                    <td>Sasha B. · M</td>
+                    <td>Match to Thu 17:00 opening · 1:4 ratio check</td>
+                    <td><div class="toolbar"><button type="button" class="btn btn--pri btn--sm">Offer</button><button type="button" class="btn btn--sec btn--sm">Edit</button></div></td>
+                    <td><button type="button" class="btn btn--pri btn--sm js-open-inbox" data-t="slot">Open</button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="view-panel" id="panel-scheduling" data-breadcrumb="Placeholder (production logic unchanged)">
+          <h2 class="page-title">Scheduling &amp; Cover</h2>
+          <p class="page-desc">This section connects to the current Scheduling &amp; Cover logic. The prototype does not rebuild or rewire the backend.</p>
+          <div class="sched-placeholder">
+            <strong>Your existing Scheduling &amp; Cover system stays in place</strong>
+            <p class="muted" style="max-width:520px;margin:10px auto 0;line-height:1.5">
+              In production, open the live admin dashboard to manage roster, overrides, absences, and change log.
+              <br /><br />
+              <span style="color:var(--ink);font-weight:600">This section is a visual bridge only</span> — it represents where advanced scheduling will surface in the future operational shell, without duplicating or replacing current behaviour here.
+            </p>
+            <div class="toolbar" style="margin-top:16px;justify-content:center">
+              <a class="btn btn--pri" href="admin_dashboard.html">Open current admin (Scheduling &amp; Cover)</a>
+            </div>
+          </div>
+        </section>
+
+        <section class="view-panel" id="panel-clients" data-breadcrumb="Deep client record (mock)">
+          <h2 class="page-title">Clients</h2>
+          <p class="page-desc">360° view: current services, history, attendance, communications, money, documents, and assigned team. Prototype; bind later to <code>clients</code> / <code>bookings</code> / <code>communications</code> style tables.</p>
+          <div class="split">
+            <div class="card card--premium">
+              <div class="card-h"><h3>Directory</h3><input class="inp" type="search" placeholder="Search name, ID, carer…" style="max-width:200px" readonly /></div>
+              <div class="card-pad" style="padding:0;overflow:auto;max-height:min(68vh,620px)">
+                <table class="tbl tbl--compact">
+                  <thead><tr><th>Name</th><th>Services</th><th>Funding</th><th>Pay</th><th>Flag</th></tr></thead>
+                  <tbody>
+                    <tr class="row-click" data-c="1" role="button" tabindex="0">
+                      <td>Leila H.</td>
+                      <td>Climb + OT</td>
+                      <td>Private + top-up</td>
+                      <td><span class="chip chip--ok">OK</span></td>
+                      <td>—</td>
+                    </tr>
+                    <tr class="row-click" data-c="2" role="button" tabindex="0">
+                      <td>Oliver R.</td>
+                      <td>Day centre</td>
+                      <td>LA + direct</td>
+                      <td><span class="chip chip--pend">Part</span></td>
+                      <td><span class="chip chip--info">LA</span></td>
+                    </tr>
+                    <tr class="row-click" data-c="3" role="button" tabindex="0">
+                      <td>Mariam S.</td>
+                      <td>Swim 1:1</td>
+                      <td>Private + NHS CCG</td>
+                      <td><span class="chip chip--ok">OK</span></td>
+                      <td>—</td>
+                    </tr>
+                    <tr class="row-click" data-c="4" role="button" tabindex="0">
+                      <td>Noah C.</td>
+                      <td>OT + Climb taster</td>
+                      <td>EHCP band</td>
+                      <td><span class="chip chip--pend">Query</span></td>
+                      <td><span class="chip chip--urg">2 inc.</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="card card--premium" id="clientProfile">
+              <div class="card-h">
+                <h3 id="cpName">Leila H.</h3>
+                <div class="toolbar" style="flex:1;justify-content:flex-end;flex-wrap:wrap">
+                  <span class="chip chip--info" id="cpPay">OK</span>
+                  <span class="chip chip--blk" id="cpFund" style="margin-left:6px">ID mock-1041</span>
+                  <button type="button" class="btn btn--pri btn--sm js-open-client-d" title="Client summary (mock)">Client drawer</button>
+                  <button type="button" class="btn btn--sec btn--sm js-open-report" data-report="leila">Report preview</button>
+                </div>
+              </div>
+              <div class="card-pad" style="padding-top:8px">
+                <p class="list-row" style="margin:0 0 10px"><span id="cpMeta">Age 9 · Carer: Hana H. · 07700 900123</span></p>
+                <div class="subtabs subtabs--scroll" id="clientTabs" role="tablist" aria-label="Client profile sections">
+                  <button type="button" class="subtab-btn is-active" id="ctab-ov" role="tab" data-csub="ov" aria-selected="true" aria-controls="clientTabPanel" tabindex="0">Overview</button>
+                  <button type="button" class="subtab-btn" id="ctab-ser" role="tab" data-csub="ser" aria-selected="false" aria-controls="clientTabPanel" tabindex="-1">Services</button>
+                  <button type="button" class="subtab-btn" id="ctab-sa" role="tab" data-csub="sa" aria-selected="false" aria-controls="clientTabPanel" tabindex="-1">Sessions &amp; att.</button>
+                  <button type="button" class="subtab-btn" id="ctab-nci" role="tab" data-csub="nci" aria-selected="false" aria-controls="clientTabPanel" tabindex="-1">Notes &amp; inc.</button>
+                  <button type="button" class="subtab-btn" id="ctab-can" role="tab" data-csub="can" aria-selected="false" aria-controls="clientTabPanel" tabindex="-1">Cancels</button>
+                  <button type="button" class="subtab-btn" id="ctab-pcom" role="tab" data-csub="pcom" aria-selected="false" aria-controls="clientTabPanel" tabindex="-1">Comms</button>
+                  <button type="button" class="subtab-btn" id="ctab-payd" role="tab" data-csub="payd" aria-selected="false" aria-controls="clientTabPanel" tabindex="-1">Pay &amp; docs</button>
+                  <button type="button" class="subtab-btn" id="ctab-asst" role="tab" data-csub="asst" aria-selected="false" aria-controls="clientTabPanel" tabindex="-1">Assess. &amp; SEN</button>
+                  <button type="button" class="subtab-btn" id="ctab-team" role="tab" data-csub="team" aria-selected="false" aria-controls="clientTabPanel" tabindex="-1">Team</button>
+                </div>
+                <div id="clientTabPanel" class="csubBox" style="margin-top:6px;min-height:200px;overflow:auto;max-height:min(50vh,420px)" role="tabpanel" aria-labelledby="ctab-ov" tabindex="0"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view-panel" id="panel-leads" data-breadcrumb="Leads &amp; Intake (not clients, mock)">
+          <h2 class="page-title">Leads &amp; Intake</h2>
+          <p class="page-desc">Pipelines for <strong>prospective</strong> families and referrals — separate from active client records. <strong>Indeed is recruitment only</strong> (use Recruitment) — it does not create client leads here. Mock only.</p>
+          <div class="filter-row" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;align-items:center">
+            <input class="inp" type="search" placeholder="Search name, phone, ref…" style="max-width:220px" title="read-only in prototype" readonly />
+            <span class="chip chip--info">7 open</span>
+            <span class="muted" style="font-size:12px">Sources below are the standard intake map for this build.</span>
+          </div>
+          <div class="card card--premium" style="margin-bottom:12px">
+            <div class="card-pad" style="padding:0;overflow:auto">
+              <table class="tbl tbl--dense" style="min-width:1000px">
+                <thead>
+                  <tr>
+                    <th>Child / carer</th>
+                    <th>Status</th>
+                    <th>Source</th>
+                    <th>Since</th>
+                    <th>Next</th>
+                    <th><span class="muted" style="font-size:10px">Director</span></th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>R. Kumar (Asha, 6)</td>
+                    <td><span class="chip chip--info">New lead</span></td>
+                    <td><span class="chip chip--pri">WhatsApp</span></td>
+                    <td>26 Apr</td>
+                    <td>Initial call</td>
+                    <td><span class="chip chip--dir-proceed">op ok</span></td>
+                    <td><div class="toolbar"><button type="button" class="btn btn--pri btn--sm js-open-decision" data-d="newlead1">Triage</button><button type="button" class="btn btn--sec btn--sm js-open-lead" data-l="1">Detail</button></div></td>
+                  </tr>
+                  <tr>
+                    <td>F. Nwosu family</td>
+                    <td><span class="chip chip--info">Contacted</span></td>
+                    <td>Parent email</td>
+                    <td>25 Apr</td>
+                    <td>Send reg pack</td>
+                    <td><span class="chip chip--dir-proceed">op ok</span></td>
+                    <td><div class="toolbar"><button type="button" class="btn btn--sec btn--sm">Log call</button></div></td>
+                  </tr>
+                  <tr>
+                    <td>SEN team ref #442</td>
+                    <td><span class="chip chip--pend">Awaiting registration</span></td>
+                    <td>LA email</td>
+                    <td>22 Apr</td>
+                    <td>Chase form</td>
+                    <td><span class="chip chip--dir-proceed">op ok</span></td>
+                    <td><div class="toolbar"><button type="button" class="btn btn--pri btn--sm">Send form</button></div></td>
+                  </tr>
+                  <tr>
+                    <td>Northshire physio</td>
+                    <td><span class="chip chip--pend">Under review</span></td>
+                    <td>NHS email</td>
+                    <td>20 Apr</td>
+                    <td>OT triage + ratio</td>
+                    <td><span class="chip chip--dir-need">if 2:1</span></td>
+                    <td><div class="toolbar"><button type="button" class="btn btn--pri btn--sm">Open MDT</button></div></td>
+                  </tr>
+                  <tr>
+                    <td>Website — “SEN swim”</td>
+                    <td><span class="chip chip--info">Ready to book</span></td>
+                    <td>Website enquiry</td>
+                    <td>19 Apr</td>
+                    <td>Pick slot</td>
+                    <td><span class="chip chip--dir-proceed">op ok</span></td>
+                    <td><div class="toolbar"><button type="button" class="btn btn--pri btn--sm js-mock-goto" data-goto="bookings">Book</button></div></td>
+                  </tr>
+                  <tr>
+                    <td>CFK taster (hold)</td>
+                    <td><span class="chip chip--urg">Waiting for slot</span></td>
+                    <td>ClassForKids (unpaid)</td>
+                    <td>18 Apr</td>
+                    <td>Payment or release</td>
+                    <td><span class="chip chip--dir-proceed">chase</span></td>
+                    <td><div class="toolbar"><button type="button" class="btn btn--pri btn--sm">Chase pay</button></div></td>
+                  </tr>
+                  <tr>
+                    <td>B. Hamed</td>
+                    <td><span class="chip" style="background:#f1f5f9">Dropped</span></td>
+                    <td>WhatsApp</td>
+                    <td>10 Apr</td>
+                    <td>Chose other provider (mock)</td>
+                    <td>—</td>
+                    <td><span class="muted" style="font-size:12px">closed</span></td>
+                  </tr>
+                  <tr>
+                    <td>Complex DC + 2:1 + hoist</td>
+                    <td><span class="chip chip--urg">Cannot serve</span></td>
+                    <td>LA email</td>
+                    <td>5 Apr</td>
+                    <td>Refer out / letter</td>
+                    <td><span class="chip chip--dir-block">director</span></td>
+                    <td><div class="toolbar"><button type="button" class="btn btn--sec btn--sm">View letter</button></div></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="card-pad" style="border-top:1px solid var(--line);font-size:12px;color:var(--muted)">
+              <strong>Statuses used here:</strong> New lead → Contacted → Awaiting registration form → Under review → Ready to book → Waiting for slot → Dropped or Cannot serve. <strong>Recruitment (Indeed, etc.):</strong> go to <button type="button" class="btn btn--ghost btn--sm js-mock-goto" data-goto="recruitment" style="padding:2px 6px">Recruitment</button>, not this table.
+            </div>
+          </div>
+        </section>
+
+        <section class="view-panel" id="panel-reports" data-breadcrumb="One-click report pack (mock)">
+          <h2 class="page-title">Client report generator</h2>
+          <p class="page-desc">Instantly assemble parent- and professional-facing documents from attendance, session notes, incidents, and term plans. Buttons are UI-only; generation would call edge functions and template merge.</p>
+          <div class="report-grid">
+            <div class="report-card card--premium">
+              <h4>Parent progress report</h4>
+              <p class="list-row">Client: <strong>Leila H.</strong></p>
+              <p class="list-row">Range: <strong>01 Mar – 27 Apr 2026</strong></p>
+              <p class="list-row">Sources: session notes, OT goal sheet, att. export</p>
+              <div class="toolbar" style="margin-top:10px">
+                <button type="button" class="btn btn--pri btn--sm js-gen-rep" data-rep="leila">Generate report</button>
+                <button type="button" class="btn btn--sec btn--sm js-open-report" data-report="leila">Preview</button>
+                <button type="button" class="btn btn--sec btn--sm mock-send">Send to parent</button>
+              </div>
+            </div>
+            <div class="report-card card--premium">
+              <h4>Attendance summary</h4>
+              <p class="list-row">Client: <strong>Oliver R.</strong></p>
+              <p class="list-row">Range: <strong>term to date (Spring)</strong></p>
+              <p class="list-row">Sources: registers, excused absences, late marks</p>
+              <div class="toolbar" style="margin-top:10px">
+                <button type="button" class="btn btn--pri btn--sm js-gen-rep" data-rep="oliver">Generate report</button>
+                <button type="button" class="btn btn--sec btn--sm js-open-report" data-report="oliver">Preview</button>
+                <button type="button" class="btn btn--sec btn--sm mock-send">Send to parent</button>
+              </div>
+            </div>
+            <div class="report-card card--premium">
+              <h4>Session feedback summary</h4>
+              <p class="list-row">Cohort: <strong>Climbing Wed block</strong></p>
+              <p class="list-row">Range: <strong>last 6 sessions</strong></p>
+              <p class="list-row">Sources: staff feedback, Safeguarding flags=0</p>
+              <div class="toolbar" style="margin-top:10px">
+                <button type="button" class="btn btn--pri btn--sm js-gen-rep" data-rep="cohort">Generate report</button>
+                <button type="button" class="btn btn--sec btn--sm js-open-report" data-report="cohort">Preview</button>
+                <button type="button" class="btn btn--sec btn--sm mock-send">Send to parent</button>
+              </div>
+            </div>
+            <div class="report-card card--premium">
+              <h4>Incident summary</h4>
+              <p class="list-row">Client: <strong>Noah C.</strong></p>
+              <p class="list-row">Range: <strong>YTD</strong></p>
+              <p class="list-row">Sources: INC-09, first aid, parents notified</p>
+              <div class="toolbar" style="margin-top:10px">
+                <button type="button" class="btn btn--pri btn--sm js-gen-rep" data-rep="noah">Generate report</button>
+                <button type="button" class="btn btn--sec btn--sm js-open-report" data-report="noah">Preview</button>
+                <button type="button" class="btn btn--sec btn--sm mock-send">Send to parent</button>
+              </div>
+            </div>
+            <div class="report-card card--premium">
+              <h4>Term review summary</h4>
+              <p class="list-row">Service: <strong>Day centre · Team A</strong></p>
+              <p class="list-row">Range: <strong>Spring 2026</strong></p>
+              <p class="list-row">Sources: ILP targets, SLT notes, MDT</p>
+              <div class="toolbar" style="margin-top:10px">
+                <button type="button" class="btn btn--pri btn--sm js-gen-rep" data-rep="dcterm">Generate report</button>
+                <button type="button" class="btn btn--sec btn--sm js-open-report" data-report="cohort">Preview</button>
+                <button type="button" class="btn btn--sec btn--sm mock-send">Send to parent</button>
+              </div>
+            </div>
+            <div class="report-card card--premium">
+              <h4>Multidisciplinary report draft</h4>
+              <p class="list-row">Client: <strong>Mariam S.</strong></p>
+              <p class="list-row">Range: <strong>admission → now</strong></p>
+              <p class="list-row">Sources: OT, swim lead, SENCO comms, NHS CCG</p>
+              <div class="toolbar" style="margin-top:10px">
+                <button type="button" class="btn btn--pri btn--sm js-gen-rep" data-rep="mariam">Generate report</button>
+                <button type="button" class="btn btn--sec btn--sm js-open-report" data-report="mariam">Preview</button>
+                <button type="button" class="btn btn--sec btn--sm mock-send">Send to parent</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view-panel" id="panel-services" data-breadcrumb="Capacity map (mock)">
+          <h2 class="page-title">Services &amp; capacity</h2>
+          <p class="page-desc">Row = one <strong>schedulable block</strong> (service, venue, day, time) — so operators see where ratio, free seats, and wait-list pressure intersect. Prototype; map to <code>service_slots</code> + <code>shifts</code> + <code>waitlist</code>.</p>
+          <div class="filter-row" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;align-items:center">
+            <label class="muted" style="font-size:12px">Venue</label>
+            <select class="sel" style="max-width:200px"><option>All sites (mock)</option><option>Riverside pool</option><option>Wall B / hub</option><option>Day centre A</option></select>
+            <span class="chip chip--ok">3 lines offerable</span>
+            <span class="chip chip--pend">1 line ratio risk (Fri)</span>
+          </div>
+          <div class="card card--premium" style="overflow:auto">
+            <div class="card-pad" style="padding:0">
+              <table class="tbl tbl--dense cap-map" aria-label="Operations capacity map">
+                <thead>
+                  <tr>
+                    <th>Service</th>
+                    <th>Venue</th>
+                    <th>Day</th>
+                    <th>Time</th>
+                    <th>Capacity</th>
+                    <th>Ratio (avail)</th>
+                    <th>Open</th>
+                    <th>Wait match</th>
+                    <th>Quick</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Swim 1:1</td>
+                    <td>Riverside pool</td>
+                    <td>Mon</td>
+                    <td>16:00–16:40</td>
+                    <td>3 lanes · 6 pax max</td>
+                    <td>1:3 / <span class="chip chip--ok">+1 SEN</span></td>
+                    <td>2</td>
+                    <td>2 (Ryan K. score 0.9)</td>
+                    <td><div class="toolbar cap-act"><button type="button" class="btn btn--pri btn--sm">Offer</button><button type="button" class="btn btn--sec btn--sm">Assign</button><button type="button" class="btn btn--sec btn--sm">No pax</button><button type="button" class="btn btn--ghost btn--sm">Cover</button></div></td>
+                  </tr>
+                  <tr>
+                    <td>Swim 1:1</td>
+                    <td>Riverside pool</td>
+                    <td>Thu</td>
+                    <td>17:00–17:40</td>
+                    <td>1 lane in-water</td>
+                    <td>1:1 / <span class="chip chip--urg">in-water</span></td>
+                    <td>1</td>
+                    <td>1 (Sasha B. trial)</td>
+                    <td><div class="toolbar cap-act"><button type="button" class="btn btn--pri btn--sm">Offer</button><button type="button" class="btn btn--sec btn--sm">Assign</button><button type="button" class="btn btn--sec btn--sm">No pax</button><button type="button" class="btn btn--ghost btn--sm">Cover</button></div></td>
+                  </tr>
+                  <tr>
+                    <td>Climb block</td>
+                    <td>Wall B / hub</td>
+                    <td>Wed</td>
+                    <td>16:00–17:00</td>
+                    <td>3 / 3</td>
+                    <td>1:3 <span class="chip chip--ok">OK</span></td>
+                    <td>0</td>
+                    <td>2 queued (wait)</td>
+                    <td><div class="toolbar cap-act"><button type="button" class="btn btn--pri btn--sm" disabled>Offer</button><button type="button" class="btn btn--sec btn--sm">Move / wait</button><button type="button" class="btn btn--ghost btn--sm">Cover</button></div></td>
+                  </tr>
+                  <tr>
+                    <td>DC am</td>
+                    <td>DC A</td>
+                    <td>Fri</td>
+                    <td>09:00–12:00</td>
+                    <td>10 / 15</td>
+                    <td>1:5 <span class="chip chip--pend">-1 staff</span></td>
+                    <td>5</td>
+                    <td>4 (complex)</td>
+                    <td><div class="toolbar cap-act"><button type="button" class="btn btn--pri btn--sm">Offer</button><button type="button" class="btn btn--sec btn--sm">Request cover</button><button type="button" class="btn btn--sec btn--sm">No pax</button></div></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="view-panel" id="panel-bookings" data-breadcrumb="Slot → wait → offer → book (mock)">
+          <h2 class="page-title">Bookings &amp; waiting list</h2>
+          <p class="page-desc">Slot-first operations: <strong>no participant</strong>, <strong>assign new</strong>, <strong>move</strong>, <strong>trial</strong> vs <strong>term</strong> blocks, and <strong>match from wait</strong> — with a visible mock “happy path” below. Does not call backend.</p>
+          <div class="card card--premium" style="margin-bottom:14px">
+            <div class="card-h"><h3>Mock path: free slot → wait list → offer → book</h3><span class="chip chip--ok">dry run</span></div>
+            <div class="card-pad" style="font-size:13px">
+              <ol style="margin:0;padding-left:20px;line-height:1.55;color:var(--text)">
+                <li><strong>Select slot</strong> — e.g. Thu 17:00 pool 1:1 (1 open).</li>
+                <li><strong>Match wait client</strong> — Sasha B. (trial, in-water) · score 0.94.</li>
+                <li><strong>Offer slot</strong> — message template sent; parent has 24h in demo.</li>
+                <li><strong>On accept</strong> — switch booking type: <em>trial (single)</em> or <em>term block (x8)</em>, then <strong>assign</strong> (creates participant on roster).</li>
+              </ol>
+              <div class="toolbar" style="margin-top:10px">
+                <button type="button" class="btn btn--pri btn--sm" id="mockPathStep">Simulate next step</button>
+                <span class="muted" id="mockPathState" style="font-size:12px">State: <strong>1 — slot picked</strong></span>
+              </div>
+            </div>
+          </div>
+          <div class="grid-2" style="margin-bottom:12px">
+            <div class="card card--premium">
+              <div class="card-h"><h3>No participant / held slot</h3></div>
+              <div class="card-pad">
+                <label class="muted" style="display:block;font-size:12px">Slot (empty or hold)</label>
+                <select class="sel" style="width:100%;max-width:none" id="bkSlot">
+                  <option>Thu 17:00 · Pool 1:1 · Riverside (1 free)</option>
+                  <option>Mon 16:00 · Climb B · 2 free</option>
+                </select>
+                <div class="toolbar" style="margin-top:8px">
+                  <button type="button" class="btn btn--sec btn--sm">Mark no participant</button>
+                  <button type="button" class="btn btn--sec btn--sm">Hold for LA</button>
+                </div>
+              </div>
+            </div>
+            <div class="card card--premium">
+              <div class="card-h"><h3>Assign or trial / term</h3></div>
+              <div class="card-pad">
+                <label class="muted" style="font-size:12px">From wait or active</label>
+                <select class="sel" style="width:100%;margin-bottom:8px" id="bkPax">
+                  <option>Wait: Sasha B. (trial)</option>
+                  <option>Wait: Ryan K. (climb)</option>
+                  <option>Active: Leila H. (new block)</option>
+                </select>
+                <label class="muted" style="font-size:12px">Booking type</label>
+                <select class="sel" style="width:100%;max-width:none" id="bkType">
+                  <option value="trial">Trial (single / short series)</option>
+                  <option value="term">Term block (billed xN)</option>
+                </select>
+                <div class="toolbar" style="margin-top:8px">
+                  <button type="button" class="btn btn--pri">Assign participant</button>
+                  <button type="button" class="btn btn--sec">Offer slot first</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card card--premium" style="margin-bottom:12px">
+            <div class="card-h"><h3>Waiting list by service (match to slot)</h3><span class="chip chip--pend">6 active</span></div>
+            <div class="card-pad" style="padding:0;overflow:auto">
+              <table class="tbl tbl--dense" style="min-width:900px">
+                <thead>
+                  <tr>
+                    <th>Service</th>
+                    <th>Participant</th>
+                    <th>Preferred</th>
+                    <th>Support ratio</th>
+                    <th>Best open slot</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Climbing · 1:3</td>
+                    <td>Ryan K. (referral 12 Apr)</td>
+                    <td>Mon / Wed pm</td>
+                    <td>1:3 SEN, ear defenders</td>
+                    <td>Mon 16:00 wall B (2 spaces)</td>
+                    <td><div class="toolbar"><button type="button" class="btn btn--pri btn--sm">Offer</button><button type="button" class="btn btn--sec btn--sm">Assign</button><button type="button" class="btn btn--ghost btn--sm">Move</button></div></td>
+                  </tr>
+                  <tr>
+                    <td>Pool · 1:1</td>
+                    <td>Sasha B. (trial)</td>
+                    <td>Thu eve or Fri</td>
+                    <td>1:1 in-water</td>
+                    <td>Thu 17:00 (match)</td>
+                    <td><div class="toolbar"><button type="button" class="btn btn--pri btn--sm">Offer</button><button type="button" class="btn btn--sec btn--sm">Assign as trial</button></div></td>
+                  </tr>
+                  <tr>
+                    <td>Day centre A</td>
+                    <td>Kemi O.</td>
+                    <td>Tue–Thu</td>
+                    <td>1:4 complex</td>
+                    <td>Tue 09:30 3/15</td>
+                    <td><div class="toolbar"><button type="button" class="btn btn--pri btn--sm">Assign (term)</button><button type="button" class="btn btn--sec btn--sm">Move from wait</button></div></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="card card--premium">
+              <div class="card-h"><h3>Move active participant</h3></div>
+              <div class="card-pad">
+                <div class="grid-2">
+                  <div>
+                    <label class="muted" style="font-size:12px">From</label>
+                    <select class="sel" style="width:100%;max-width:none"><option>Wed 16:00 · Climb</option></select>
+                  </div>
+                  <div>
+                    <label class="muted" style="font-size:12px">To</label>
+                    <select class="sel" style="width:100%;max-width:none"><option>Thu 10:00 · Climb</option></select>
+                  </div>
+                </div>
+                <p class="muted" style="margin:8px 0 0;font-size:12px">Leila H. · term block · pro-rata mock</p>
+                <div class="toolbar" style="margin-top:8px">
+                  <button type="button" class="btn btn--pri">Move participant</button>
+                  <button type="button" class="btn btn--sec">Preview</button>
+                </div>
+              </div>
+            </div>
+            <div class="card card--premium" style="border:1px dashed var(--line)">
+              <div class="card-h" style="background:#f8fafc"><h3>Waiting list match (rule hint)</h3><span class="chip chip--info">mock</span></div>
+              <div class="card-pad" style="font-size:12px;line-height:1.5;color:var(--muted)">
+                Offer uses first slot where: ratio not exceeded, staff cert OK, and preference window overlaps. <strong>Director approval</strong> is required in this prototype for <strong>2:1 or cannot-serve</strong> paths — use Decision queue.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view-panel" id="panel-staff" data-breadcrumb="People operations (mock)">
+          <h2 class="page-title">Staff operations</h2>
+          <p class="page-desc">Availability, rosters, compliance, performance signals, and recruitment hand-off — same place cover gets assigned. Prototype; later joins <code>staff</code> / <code>documents</code> / <code>shifts</code> / <code>hr_events</code>.</p>
+          <div class="split">
+            <div class="card card--premium">
+              <div class="card-h"><h3>Directory</h3><span class="chip chip--ok">3 on floor now</span></div>
+              <div class="card-pad" style="padding:0;overflow:auto;max-height:min(56vh,520px)">
+                <table class="tbl tbl--compact">
+                  <thead><tr><th>Name</th><th>Role</th><th>Site today</th><th>State</th></tr></thead>
+                  <tbody>
+                    <tr class="row-click" data-s="1" role="button" tabindex="0">
+                      <td>Jordan P.</td>
+                      <td>Instructor</td>
+                      <td>—</td>
+                      <td><span class="chip chip--urg">Block swim</span></td>
+                    </tr>
+                    <tr class="row-click" data-s="2" role="button" tabindex="0">
+                      <td>Mei L.</td>
+                      <td>Lead + DSL</td>
+                      <td>DC A</td>
+                      <td><span class="chip chip--ok">OK</span></td>
+                    </tr>
+                    <tr class="row-click" data-s="3" role="button" tabindex="0">
+                      <td>Chris A.</td>
+                      <td>Relief</td>
+                      <td>Climb</td>
+                      <td><span class="chip chip--ok">OK</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="card card--premium" id="staffProfile">
+              <div class="card-h">
+                <h3 id="spName">Jordan P.</h3>
+                <div class="toolbar" style="flex:1;justify-content:flex-end">
+                  <span class="chip chip--pend" id="spState">Certificate due</span>
+                </div>
+              </div>
+              <div class="card-pad" id="spBody" style="font-size:13px;line-height:1.5">
+                <div class="grid-2" style="margin-bottom:10px">
+                  <div>
+                    <div class="kpi-l">Availability (next 2 wk)</div>
+                    <p class="muted" id="spAvail" style="margin:4px 0 0">Mon, Wed, Fri am · <strong>no pool</strong> until cert cleared</p>
+                  </div>
+                  <div>
+                    <div class="kpi-l">Shifts (mock roster)</div>
+                    <p class="muted" id="spShifts" style="margin:4px 0 0">Tue 09:00 Climb / Thu 10:00 Climb</p>
+                  </div>
+                </div>
+                <div class="staff-profile-grid">
+                  <div>
+                    <div class="kpi-l">Documents</div>
+                    <ul class="muted" style="margin:4px 0 0;padding-left:18px" id="spDocs">
+                      <li>ID, DBS, contract — OK</li>
+                    </ul>
+                    <p class="muted" id="spMissing" style="margin:6px 0 0"><strong>Missing</strong> pool rescue refresh</p>
+                  </div>
+                  <div>
+                    <div class="kpi-l">Training due</div>
+                    <ul class="muted" style="margin:4px 0 0;padding-left:18px" id="spCert">
+                      <li>Pool rescue: <span style="color:var(--danger)">overdue (mock)</span></li>
+                      <li>Safe guarding L2: current</li>
+                    </ul>
+                  </div>
+                </div>
+                <div class="kpi-l" style="margin-top:12px">Performance &amp; obs.</div>
+                <p class="muted" id="spPerf" style="margin:4px 0 0">Q1 rating: on track · last obs. 2 Apr — positive engagement</p>
+                <div class="kpi-l" style="margin-top:10px">Onboarding / interviews</div>
+                <p class="muted" id="spOnboard" style="margin:4px 0 0">Mentor: Mei L. · 2 reviews logged</p>
+                <div class="toolbar" style="margin-top:12px">
+                  <button type="button" class="btn btn--pri btn--sm" id="spActCover">Assign cover</button>
+                  <button type="button" class="btn btn--sec btn--sm" id="spActDoc">Request document</button>
+                  <button type="button" class="btn btn--sec btn--sm" id="spActInt">Schedule interview</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view-panel" id="panel-recruitment" data-breadcrumb="Pipeline (mock)">
+          <h2 class="page-title">Recruitment</h2>
+          <p class="page-desc">Kanban-style pipeline. Example: candidate in interview (demo).</p>
+          <div class="kanban">
+            <div class="kanban-col">
+              <div class="kanban-col-h">Applied (2)</div>
+              <div class="kanban-card">
+                <strong>Tomás V.</strong>
+                <p class="list-row" style="margin:4px 0 0">Relief · climbing</p>
+              </div>
+              <div class="kanban-card">
+                <strong>Amber J.</strong>
+                <p class="list-row" style="margin:4px 0 0">Support · day centre</p>
+              </div>
+            </div>
+            <div class="kanban-col">
+              <div class="kanban-col-h">Interview (1)</div>
+              <div class="kanban-card" style="box-shadow:0 0 0 2px rgba(45,132,179,.2)">
+                <strong>Ellis F.</strong>
+                <p class="list-row" style="margin:4px 0 0">Pool / multi-site · <span style="color:var(--ink);font-weight:600">Fri 14:30 panel</span></p>
+                <div class="toolbar" style="margin-top:6px">
+                  <button type="button" class="btn btn--sec btn--sm">Reschedule</button>
+                  <button type="button" class="btn btn--pri btn--sm">Open pack</button>
+                </div>
+              </div>
+            </div>
+            <div class="kanban-col">
+              <div class="kanban-col-h">Hired (0)</div>
+              <p class="muted" style="padding:12px;font-size:12px">Empty this week (mock)</p>
+            </div>
+            <div class="kanban-col">
+              <div class="kanban-col-h">Rejected (1)</div>
+              <div class="kanban-card" style="opacity:0.85">
+                <strong>Casey D.</strong>
+                <p class="list-row" style="margin:4px 0 0">Role not aligned · on talent pool</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view-panel" id="panel-finance" data-breadcrumb="Invoices, funding, and cash (mock)">
+          <h2 class="page-title">Finance operations</h2>
+          <p class="page-desc">Chase money, match bank, and send paperwork. Map to <code>invoices</code> / <code>payments</code> / <code>funding_sources</code> and statement lines.</p>
+          <div class="grid-2" style="margin-bottom:12px">
+            <div class="kpi card--premium" style="margin:0">
+              <div class="kpi-l">Unpaid (30d)</div>
+              <div class="kpi-v" style="color:var(--danger)">£780</div>
+            </div>
+            <div class="kpi card--premium" style="margin:0">
+              <div class="kpi-l">Bank match queue</div>
+              <div class="kpi-v">4</div>
+            </div>
+            <div class="kpi card--premium" style="margin:0">
+              <div class="kpi-l">Receipts to send</div>
+              <div class="kpi-v">6</div>
+            </div>
+            <div class="kpi card--premium" style="margin:0">
+              <div class="kpi-l">Client + / − balance</div>
+              <div class="kpi-v" style="font-size:16px">−£120 net owe</div>
+            </div>
+          </div>
+          <div class="card card--premium">
+            <div class="card-pad" style="padding:0;overflow:auto">
+              <table class="tbl tbl--dense tbl--finance-ops" style="min-width:800px">
+                <thead>
+                  <tr>
+                    <th>Client / ref</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Funding</th>
+                    <th>Next step</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>O. R. · #INV-2104</td>
+                    <td>£220.00</td>
+                    <td><span class="chip chip--pend">Unpaid</span></td>
+                    <td><span class="chip chip--info">LA + parent</span></td>
+                    <td>Chase top-up 40%</td>
+                    <td><div class="toolbar"><button type="button" class="btn btn--pri btn--sm">Mark paid</button><button type="button" class="btn btn--sec btn--sm">Receipt</button><button type="button" class="btn btn--ghost btn--sm">Inv.</button></div></td>
+                  </tr>
+                  <tr>
+                    <td>Maya T. · #INV-2018</td>
+                    <td>£360.00</td>
+                    <td><span class="chip chip--urg">7d+ overdue</span></td>
+                    <td>Private / card</td>
+                    <td>Re-send + fee note</td>
+                    <td><div class="toolbar"><button type="button" class="btn btn--pri btn--sm">Mark paid</button><button type="button" class="btn btn--sec btn--sm">Receipt</button><button type="button" class="btn btn--sec btn--sm">Confirm bank</button></div></td>
+                  </tr>
+                  <tr>
+                    <td>M. S. · CCG + parent</td>
+                    <td>£180.00 (inst.)</td>
+                    <td><span class="chip chip--ok">CCG paid</span></td>
+                    <td><span class="chip chip--blk">NHS CCG + priv.</span></td>
+                    <td>Send parent part receipt</td>
+                    <td><div class="toolbar"><button type="button" class="btn btn--sec btn--sm" disabled>Mark paid</button><button type="button" class="btn btn--pri btn--sm">Send receipt</button><button type="button" class="btn btn--ghost btn--sm">Inv.</button></div></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="card-pad" style="border-top:1px solid var(--line);background:#f8fafc">
+              <div class="toolbar">
+                <button type="button" class="btn btn--pri">Generate invoice</button>
+                <span class="muted" style="font-size:12px">Wizard: client → lines → fund split → review (mock)</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view-panel" id="panel-comms" data-breadcrumb="Templates + log (mock)">
+          <h2 class="page-title">Communications hub</h2>
+          <p class="page-desc">WhatsApp- and email-ready copy blocks for the common operational loops. In production, merge tokens from the DB and post via your provider. Log stays append-only.</p>
+          <div class="grid-2" style="align-items:stretch">
+            <div class="card card--premium">
+              <div class="card-h"><h3>Templates</h3><span class="chip chip--info">merge fields</span></div>
+              <div class="card-pad" style="max-height:min(50vh,440px);overflow-y:auto;overflow-x:hidden">
+                <div class="comms-cat">
+                  <h4>WhatsApp (parents)</h4>
+                  <div class="template-row">
+                    <p>Hi {{parent}}, we have a {{slot_name}} on {{date}}. Reply YES to hold or call {{desk}}. — ClubSENsational</p>
+                    <div class="toolbar"><button type="button" class="btn btn--pri btn--sm js-copy-tpl" aria-label="Copy template to clipboard">Copy</button><button type="button" class="btn btn--sec btn--sm">Log send</button></div>
+                  </div>
+                  <div class="template-row">
+                    <p>We’re still waiting for taster payment ref {{ref}}. Link: {{url}}. Any issues just reply here.</p>
+                    <div class="toolbar"><button type="button" class="btn btn--pri btn--sm js-copy-tpl" aria-label="Copy template to clipboard">Copy</button></div>
+                  </div>
+                </div>
+                <div class="comms-cat">
+                  <h4>Email — LA / NHS / social</h4>
+                  <div class="template-row">
+                    <p>Re: {{child_name}} (DoB) — update on attendance for period {{from}} – {{to}}. Summary attached. Contact {{named_contact}}. Professional tone.</p>
+                    <div class="toolbar"><button type="button" class="btn btn--pri btn--sm js-copy-tpl" aria-label="Copy template to clipboard">Copy</button><button type="button" class="btn btn--sec btn--sm">Export PDF</button></div>
+                  </div>
+                  <div class="template-row">
+                    <p>We confirm {{session_date}} was cancelled. Policy applied: {{policy}}. Offered make-up: {{slot}}.</p>
+                    <div class="toolbar"><button type="button" class="btn btn--pri btn--sm js-copy-tpl" aria-label="Copy template to clipboard">Copy</button></div>
+                  </div>
+                </div>
+                <div class="comms-cat">
+                  <h4>Absence, reports, slots</h4>
+                  <div class="template-row">
+                    <p>Thanks for your message — we’ve recorded absence for {{name}}. Next session: {{date}}. Safeguarding sign-off: {{on_call}} (mock)</p>
+                    <div class="toolbar"><button type="button" class="btn btn--pri btn--sm js-copy-tpl" aria-label="Copy template to clipboard">Copy</button></div>
+                  </div>
+                  <div class="template-row">
+                    <p>Your requested report is ready: {{link}}. Let us know if the LA also needs a copy. {{signature}}</p>
+                    <div class="toolbar"><button type="button" class="btn btn--pri btn--sm js-copy-tpl" aria-label="Copy template to clipboard">Copy</button><button type="button" class="btn btn--sec btn--sm">Slot offer</button></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="card card--premium">
+              <div class="card-h"><h3>Thread log (recent)</h3></div>
+              <div class="card-pad" style="padding:0;overflow:auto;max-height:min(50vh,440px)">
+                <table class="tbl tbl--dense">
+                  <thead>
+                    <tr><th>Contact</th><th>Excerpt</th><th>When</th><th>Channel</th><th></th></tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Leila parent</td>
+                      <td>Running 10m late, parking</td>
+                      <td>27 Apr 14:20</td>
+                      <td>WA</td>
+                      <td><div class="toolbar"><button type="button" class="btn btn--pri btn--sm">Reminder</button><button type="button" class="btn btn--sec btn--sm">Conf.</button></div></td>
+                    </tr>
+                    <tr>
+                      <td>LA (SEN 45)</td>
+                      <td>Request weekly update (O. R.)</td>
+                      <td>27 Apr 09:40</td>
+                      <td>email</td>
+                      <td><div class="toolbar"><button type="button" class="btn btn--pri btn--sm">Reply</button></div></td>
+                    </tr>
+                    <tr>
+                      <td>Whatsapp lead</td>
+                      <td>DC brochure + taster</td>
+                      <td>27 Apr 10:01</td>
+                      <td>WA</td>
+                      <td><div class="toolbar"><button type="button" class="btn btn--pri btn--sm">Slot offer</button></div></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view-panel" id="panel-documents" data-breadcrumb="File centre (mock)">
+          <h2 class="page-title">Documents</h2>
+          <p class="page-desc">Central list of report types. Files are labels only in this build.</p>
+          <div class="card">
+            <div class="card-pad">
+              <ul class="doc-list">
+                <li><span>Timesheets · week ending 20 Apr (PDF, mock)</span><button type="button" class="btn btn--sec btn--sm">Open</button></li>
+                <li><span>Incident report draft · ref INC-12 (mock)</span><button type="button" class="btn btn--sec btn--sm">Open</button></li>
+                <li><span>Invoices export · Q1 (CSV, mock)</span><button type="button" class="btn btn--sec btn--sm">Open</button></li>
+                <li><span>Certificates hold · pool team (zip, mock)</span><button type="button" class="btn btn--pri btn--sm">Review</button></li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="view-panel" id="panel-compliance" data-breadcrumb="Checks (mock)">
+          <h2 class="page-title">Compliance</h2>
+          <p class="page-desc">Checklist: missing documents, training gaps, and safeguarding follow-ups. Mock data.</p>
+          <div class="card">
+            <div class="card-pad">
+              <div class="compliance-item">
+                <div>
+                  <strong>Staff missing documents</strong>
+                  <p class="muted" style="margin:4px 0 0;font-size:13px">Jordan P. · pool rescue cert</p>
+                </div>
+                <button type="button" class="btn btn--pri btn--sm">Chase</button>
+              </div>
+              <div class="compliance-item">
+                <div>
+                  <strong>Training incomplete</strong>
+                  <p class="muted" style="margin:4px 0 0;font-size:13px">Relief bank · 2/8 annual modules remaining (mock)</p>
+                </div>
+                <button type="button" class="btn btn--sec btn--sm">Assign</button>
+              </div>
+              <div class="compliance-item">
+                <div>
+                  <strong>Safeguarding items</strong>
+                  <p class="muted" style="margin:4px 0 0;font-size:13px">LADO referral ack outstanding on case 2026-04-03 (fictional)</p>
+                </div>
+                <button type="button" class="btn btn--pri btn--sm">Review</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view-panel" id="panel-insights" data-breadcrumb="Aggregated “what’s stuck” (mock)">
+          <h2 class="page-title">Operator insights</h2>
+          <p class="page-desc">Cross-check layer only — it does <strong>not</strong> replace Operator Home. Use for patterns (SLA, cash, cert blocks) the home view doesn’t list as one thread. In production, feed from a materialised view or nightly job in Supabase.</p>
+          <div class="insight-tiles">
+            <div class="insight-tile card--premium">
+              <h4>Stuck or ageing cases</h4>
+              <ol>
+                <li>Oldest: Noah C. incidents (parent debrief &gt;10d, mock)</li>
+                <li>LA comms: O. R. thread 2d without team reply (mock)</li>
+                <li>Trial: Sasha B. offer not accepted — nudge (mock)</li>
+              </ol>
+            </div>
+            <div class="insight-tile card--premium">
+              <h4>Comms queue health (SLA)</h4>
+              <ol>
+                <li>WA: 3 in green zone (&lt;2h)</li>
+                <li>Email: 1 at-risk (&gt;24h) — report to family (mock)</li>
+                <li>Call queue: empty in prototype</li>
+              </ol>
+            </div>
+            <div class="insight-tile card--premium">
+              <h4>Document / report pressure</h4>
+              <ol>
+                <li>External deadlines: 2 LA, 1 CCG this fortnight (mock)</li>
+                <li>Internal: term summary (DC) blocks funding convo (mock)</li>
+                <li>None auto-started — needs owner pick-up</li>
+              </ol>
+            </div>
+            <div class="insight-tile card--premium">
+              <h4>Capacity: opportunities vs blockers</h4>
+              <ol>
+                <li>2 wait-list &lt;1 match score high (Sasha, Ryan) (mock)</li>
+                <li>1 block: DC Fri — ratio, not “no people” (mock)</li>
+                <li>Pool grid: 1 line blocked by cert, not by demand (mock)</li>
+              </ol>
+            </div>
+            <div class="insight-tile card--premium">
+              <h4>People risk (7-day)</h4>
+              <ol>
+                <li>1 cert gating service line (swim) — J. Poole (mock)</li>
+                <li>Relief e-learning: not blocking this week in demo</li>
+                <li>DBS renewals: none in 30d (mock)</li>
+              </ol>
+            </div>
+            <div class="insight-tile card--premium">
+              <h4>Money / admin backlogs</h4>
+              <ol>
+                <li>3 bank feed lines stale &gt;5d (mock match queue)</li>
+                <li>4 receipts to issue after paid (queue)</li>
+                <li>1 safeguarding admin ack (fictional) — not same as “open actions” in home</li>
+              </ol>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+  <div class="drawer-back" id="drawerBack" aria-hidden="true"></div>
+  <aside class="app-drawer" id="appDrawer" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="drawerTitle" tabindex="-1">
+    <div class="app-drawer-h">
+      <h2 id="drawerTitle">—</h2>
+      <button type="button" class="btn btn--ghost btn--sm" id="drawerClose" aria-label="Close panel">✕</button>
+    </div>
+    <div class="app-drawer-body" id="drawerBody"></div>
+    <div class="app-drawer-foot" id="drawerFoot"></div>
+  </aside>
+  <div class="app-toast" id="appToast" role="status" aria-live="polite" aria-atomic="true" lang="en"></div>
+
+  <script>
+  (function () {
+    var nav = document.getElementById("mainNav");
+    var viewTitle = document.getElementById("viewTitle");
+    var viewBreadcrumb = document.getElementById("viewBreadcrumb");
+    var viewDate = document.getElementById("viewDate");
+    if (viewDate) {
+      try {
+        viewDate.textContent = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+      } catch (e) {
+        viewDate.textContent = "";
+      }
+    }
+    var panels = document.querySelectorAll(".view-panel");
+    var buttons = nav ? nav.querySelectorAll("button[data-panel]") : [];
+
+    function setPanel(id) {
+      var key = "panel-" + id;
+      buttons.forEach(function (b) {
+        var on = b.getAttribute("data-panel") === id;
+        b.classList.toggle("is-active", on);
+        if (on) b.setAttribute("aria-current", "page");
+        else b.removeAttribute("aria-current");
+      });
+      panels.forEach(function (p) { p.classList.toggle("is-visible", p.id === key); });
+      if (nav && viewTitle) {
+        var btn = nav.querySelector('button[data-panel="' + id + '"]');
+        if (btn) viewTitle.textContent = btn.getAttribute("data-title") || id;
+      }
+      var el = document.getElementById(key);
+      if (el && el.dataset.breadcrumb && viewBreadcrumb) viewBreadcrumb.textContent = el.dataset.breadcrumb;
+    }
+
+    if (buttons.length) {
+      buttons.forEach(function (b) {
+        b.addEventListener("click", function () { setPanel(b.getAttribute("data-panel")); });
+      });
+    }
+
+    var appToast = document.getElementById("appToast");
+    var toastTimer;
+    function showToast(msg) {
+      if (!appToast) return;
+      appToast.textContent = msg;
+      appToast.classList.add("is-on");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () { appToast.classList.remove("is-on"); }, 2200);
+    }
+    document.addEventListener("click", function (e) {
+      var t = e.target;
+      if (!t || !t.classList || !t.classList.contains("js-copy-tpl")) return;
+      var row = t.closest(".template-row");
+      var p = row && row.querySelector("p");
+      var txt = p ? p.textContent.replace(/\s+/g, " ").trim() : "";
+      if (!txt) { showToast("No text to copy"); return; }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(txt).then(
+          function () { showToast("Copied to clipboard (demo)"); },
+          function () { showToast("Copy failed — check browser permissions"); }
+        );
+      } else {
+        showToast("Clipboard not available in this context");
+      }
+    });
+
+    var CDEEP = {
+      "1": {
+        n: "Leila H.",
+        meta: "Age 9 · Carer: Hana H. · 07700 900123",
+        payClass: "chip--ok",
+        payLabel: "OK",
+        fund: "Private + top-up",
+        tabs: {
+          ov: "<p class=\"muted\" style=\"line-height:1.5;margin:0\">Active since Jan 2025. Primary goals: core strength + confidence. Named link worker on file (mock). Rolling risk: <strong>low</strong> · epilepsy plan not required.</p><p class=\"muted\" style=\"margin:8px 0 0\">Flags: <span class=\"chip chip--ok\">allergies (nuts)</span></p>",
+          ser: "<p class=\"kpi-l\">Current</p><ul class=\"muted\" style=\"margin:4px 0 0;padding-left:18px\"><li>Climbing tier 2 (Wed 16:00) · 1:3</li><li>OT ad-hoc — quarterly (next 14 May)</li></ul><p class=\"kpi-l\" style=\"margin-top:10px\">Taster history</p><p class=\"muted\" style=\"margin:4px 0 0\">Climb taster 12 Mar — converted</p>",
+          sa: "<table class=\"tbl tbl--compact\"><thead><tr><th>Date</th><th>Session</th><th>Att</th><th>Notes</th></tr></thead><tbody><tr><td>25 Apr</td><td>Climb block</td><td>100%</td><td>OT goal tick</td></tr><tr><td>18 Apr</td><td>Make up</td><td>✓</td><td>Shorter block</td></tr></tbody></table><p class=\"muted\" style=\"margin:8px 0 0\">8-week attendance <strong>92%</strong> · 1 late (weather)</p>",
+          nci: "<p class=\"kpi-l\">Progress notes (snippet)</p><p class=\"muted\" style=\"margin:4px 0 0\">19 Apr: Voluntary overhangs improving; used visual timer.</p><p class=\"kpi-l\" style=\"margin-top:10px\">Incidents</p><p class=\"muted\" style=\"margin:4px 0 0\">None in 12 months (mock)</p>",
+          can: "<table class=\"tbl tbl--compact\"><thead><tr><th>When</th><th>Session</th><th>Policy</th><th>Make-up</th></tr></thead><tbody><tr><td>11 Apr</td><td>Climb</td><td>illness</td><td>30 Apr 10:15</td></tr></tbody></table>",
+          pcom: "<table class=\"tbl tbl--compact\"><thead><tr><th>When</th><th>Ch</th><th>Excerpt</th><th>Owner</th></tr></thead><tbody><tr><td>25 Apr 14:20</td><td>WA</td><td>Running late</td><td>Front desk</td></tr><tr><td>22 Apr 09:10</td><td>email</td><td>Report before review</td><td>Admin</td></tr></tbody></table>",
+          payd: "<p class=\"muted\">Plan x8 to 01 Jun · <strong>paid in full</strong> · SEN travel claim pending (CCG) — mock</p><p class=\"kpi-l\" style=\"margin-top:10px\">Documents</p><ul class=\"muted\" style=\"margin:4px 0 0;padding-left:18px\"><li>Consent pack v3</li><li>OT shared goals PDF</li><li>Climb risk agreement</li></ul>",
+          asst: "<p class=\"muted\">EHCP copy on file. OT targets aligned to climb progression. SEN support profile: <strong>moderate</strong> (mock). MDT last touch: 08 Apr (phone).</p><p class=\"muted\" style=\"margin:8px 0 0\">SEN code: SLC + motor · aids: ear defenders + timer</p>",
+          team: "<table class=\"tbl tbl--compact\"><thead><tr><th>Role</th><th>Name</th><th>Notes</th></tr></thead><tbody><tr><td>Climb lead</td><td>Sam K.</td><td>Primary</td></tr><tr><td>OT</td><td>Ext. SLT</td><td>qtr.</td></tr><tr><td>Key link</td><td>Mei L.</td><td>oversight</td></tr></tbody></table>"
+        }
+      },
+      "2": {
+        n: "Oliver R.",
+        meta: "Age 11 · Carer: Richard R. · 07700 200456",
+        payClass: "chip--pend",
+        payLabel: "Part",
+        fund: "LA SEN 45 + parent",
+        tabs: {
+          ov: "<p class=\"muted\" style=\"margin:0\">Day centre Mon–Fri am · transport LA-funded (mock). DSL flags: 0 open.</p><p class=\"muted\" style=\"margin:8px 0 0\">Next LA review: <strong>4 May 2026</strong></p>",
+          ser: "<ul class=\"muted\" style=\"margin:0;padding-left:18px\"><li>DC A cohort · 1:4 ratio</li><li>Swim alt weeks — paused (LA ask)</li></ul>",
+          sa: "<p class=\"muted\">Attendance term-to-date: <strong>86%</strong> (mock) · 4 auth. absences</p><table class=\"tbl tbl--compact\" style=\"margin-top:6px\"><thead><tr><th>Week</th><th>Days</th><th>Status</th></tr></thead><tbody><tr><td>w/c 14 Apr</td><td>4.5/5</td><td>OK</td></tr><tr><td>w/c 7 Apr</td><td>3/5</td><td>illness</td></tr></tbody></table>",
+          nci: "<p class=\"kpi-l\">Notes</p><p class=\"muted\">Sensory break after lunch — positive response.</p><p class=\"kpi-l\" style=\"margin-top:8px\">Incidents</p><p class=\"muted\">INC-04 Jan — closed · RIDDOR n/a (mock)</p>",
+          can: "<p class=\"muted\">1 cancel 18 Apr — illness — credit note (mock)</p>",
+          pcom: "<p class=\"muted\">LA case worker: K. Naylor · last outbound 25 Apr 09:40 (update email)</p>",
+          payd: "<p class=\"muted\">Outstanding: <strong>£40</strong> top-up (LA delay on schedule)</p><ul class=\"muted\" style=\"padding-left:18px\"><li>Invoice #2104</li><li>Split 60% LA / 40% parent</li></ul>",
+          asst: "<p class=\"muted\">EHCP annual in autumn · provision mapping matches DC offer (mock).</p><p class=\"muted\" style=\"margin-top:6px\">PBS plan review due June.</p>",
+          team: "<table class=\"tbl tbl--compact\"><tbody><tr><th>Key worker</th><td>Mei L.</td></tr><tr><th>OT</th><td>Priya S.</td></tr><tr><th>Pool</th><td>On pause</td></tr></tbody></table>"
+        }
+      },
+      "3": {
+        n: "Mariam S.",
+        meta: "Age 8 · Carer: Sara S. · 07700 300999",
+        payClass: "chip--ok",
+        payLabel: "OK",
+        fund: "NHS CCG + private",
+        tabs: {
+          ov: "<p class=\"muted\" style=\"margin:0\">1:1 pool programme · 2 blocks per year (mock). Named nurse liaison on CCG file.</p>",
+          ser: "<ul class=\"muted\" style=\"padding-left:18px;margin:0\"><li>Pool 1:1 — Thu 17:00 (when open)</li><li>Aqua physio (external) — quarterly</li></ul>",
+          sa: "<p class=\"muted\">Attendance to blocks: <strong>94%</strong> · 1 session lost (pool closure)</p>",
+          nci: "<p class=\"muted\">In-water notes: stamina ↑ · exit routine improving.</p><p class=\"muted\" style=\"margin-top:6px\">Incidents: 0 in pool</p>",
+          can: "<p class=\"muted\">13 Mar — pool close — rebooked auto</p>",
+          pcom: "<p class=\"muted\">Sara prefers WhatsApp · CCG copy on email (mock)</p>",
+          payd: "<p class=\"muted\">Current instalment CCG cleared · parent co-pay due <strong>£45</strong> 02 May (mock)</p><ul class=\"muted\" style=\"padding-left:18px\"><li>CCG attestation on file</li><li>Receipt batch Q1 sent</li></ul>",
+          asst: "<p class=\"muted\">Hydro goals from NHS letter dated Jan 26 (mock) · SEN: motor + social communication.</p>",
+          team: "<p class=\"muted\">Alex M. (pool) · SENCO handoff Mei L. · CCG: Northshire ICB (mock)</p>"
+        }
+      },
+      "4": {
+        n: "Noah C.",
+        meta: "Age 7 · Carer: Lin C. · 07700 100888",
+        payClass: "chip--pend",
+        payLabel: "Query",
+        fund: "EHCP direct banding",
+        tabs: {
+          ov: "<p class=\"muted\" style=\"margin:0\">OT 1:1 + climb taster pathway. <span class=\"chip chip--urg\">2 open inc.</span> from March — parent debrief not signed.</p>",
+          ser: "<ul class=\"muted\" style=\"padding-left:18px\"><li>OT hub Tue 10:00</li><li>Climb taster (fortnightly)</li></ul>",
+          sa: "<p class=\"muted\">Attendance mixed — 78% (mock) around medical appts</p>",
+          nci: "<p class=\"muted\" style=\"color:var(--danger)\">Inc INC-12 under review (mock) — first aid attended</p><p class=\"muted\" style=\"margin-top:6px\">Notes: sensory overload on loud days — use quiet corner first</p>",
+          can: "<p class=\"muted\">2 cancels (48h) — make-up in progress</p>",
+          pcom: "<p class=\"muted\">3 WA threads awaiting closure</p>",
+          payd: "<p class=\"muted\">Invoice query on banding top-up (mock) — with finance</p>",
+          asst: "<p class=\"muted\">OT block goals + EHCP D outcome alignment (mock)</p>",
+          team: "<p class=\"muted\">Priya S. OT · Sam K. climb intro · link Mei L.</p>"
+        }
+      }
+    };
+    var curC = "1";
+    var curCtab = "ov";
+    var clientTabPanel = document.getElementById("clientTabPanel");
+    var cpName = document.getElementById("cpName");
+    var cpMeta = document.getElementById("cpMeta");
+    var cpPay = document.getElementById("cpPay");
+    var cpFund = document.getElementById("cpFund");
+    var clientRows = document.querySelectorAll("tr.row-click[data-c]");
+
+    /* Prototype: tab HTML is static and trusted. With Supabase, build from JSON and set text or use a sanitizer — avoid raw untrusted innerHTML. */
+    function renderClientTab() {
+      var c = CDEEP[curC];
+      if (!c || !clientTabPanel) return;
+      var h = c.tabs && c.tabs[curCtab];
+      clientTabPanel.innerHTML = h || "<p class=\"muted\">—</p>";
+    }
+    var ctabBtns = document.querySelectorAll("#clientTabs .subtab-btn");
+    function syncClientTabAria() {
+      ctabBtns.forEach(function (b) {
+        var on = b.getAttribute("data-csub") === curCtab;
+        b.classList.toggle("is-active", on);
+        b.setAttribute("aria-selected", on ? "true" : "false");
+        b.setAttribute("tabindex", on ? "0" : "-1");
+      });
+      if (clientTabPanel) clientTabPanel.setAttribute("aria-labelledby", "ctab-" + curCtab);
+    }
+    function setClientTab(k) {
+      curCtab = k || "ov";
+      syncClientTabAria();
+      renderClientTab();
+    }
+    function selectClientRow(id) {
+      curC = id;
+      var c = CDEEP[curC];
+      if (c) {
+        if (cpName) cpName.textContent = c.n;
+        if (cpMeta) cpMeta.textContent = c.meta;
+        if (cpPay) { cpPay.className = "chip " + (c.payClass || "chip--ok"); cpPay.textContent = c.payLabel || "—"; }
+        if (cpFund) cpFund.textContent = c.fund || "—";
+      }
+      setClientTab("ov");
+    }
+    clientRows.forEach(function (r) {
+      r.addEventListener("click", function () {
+        clientRows.forEach(function (x) { x.classList.remove("is-selected"); });
+        r.classList.add("is-selected");
+        selectClientRow(r.getAttribute("data-c"));
+      });
+      r.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); r.click(); }
+      });
+    });
+    if (clientRows[0]) { clientRows[0].classList.add("is-selected"); selectClientRow("1"); }
+
+    ctabBtns.forEach(function (b, i, arr) {
+      b.addEventListener("click", function () { setClientTab(b.getAttribute("data-csub") || "ov"); });
+      b.addEventListener("keydown", function (e) {
+        var list = arr;
+        if (e.key === "ArrowRight") {
+          e.preventDefault();
+          if (list[i + 1]) { list[i + 1].click(); list[i + 1].focus(); }
+        } else if (e.key === "ArrowLeft") {
+          e.preventDefault();
+          if (list[i - 1]) { list[i - 1].click(); list[i - 1].focus(); }
+        }
+      });
+    });
+
+    var staffRows = document.querySelectorAll("tr.row-click[data-s]");
+    var spName = document.getElementById("spName");
+    var spState = document.getElementById("spState");
+    var spCert = document.getElementById("spCert");
+    var spAvail = document.getElementById("spAvail");
+    var spShifts = document.getElementById("spShifts");
+    var spDocs = document.getElementById("spDocs");
+    var spMissing = document.getElementById("spMissing");
+    var spPerf = document.getElementById("spPerf");
+    var spOnboard = document.getElementById("spOnboard");
+    var mockS = {
+      "1": {
+        n: "Jordan P.",
+        st: "Certificate due",
+        pool: true,
+        avail: "Mon, Wed, Fri am — no pool until cert cleared",
+        shifts: "Tue 09:00 Climb · Thu 10:00 Climb (mock)",
+        docs: "<li>ID, DBS, contract — on file</li>",
+        miss: "Pool rescue refresh (blocks swim cover)",
+        perf: "Q1: on track · last obs. 2 Apr",
+        onboard: "Mentor: Mei L. — 2 check-ins"
+      },
+      "2": {
+        n: "Mei L.",
+        st: "Compliant",
+        pool: false,
+        avail: "Tue–Fri core site · on-call DSL Wed",
+        shifts: "Mon–Fri 08:30–16:00 DC A (mock)",
+        docs: "<li>All compliance green</li>",
+        miss: "—",
+        perf: "Exceeds on leadership proxy (mock)",
+        onboard: "Interview panel Fri — Ellis F."
+      },
+      "3": {
+        n: "Chris A.",
+        st: "Compliant",
+        pool: false,
+        avail: "Relief 48h notice",
+        shifts: "Ad-hoc — this week: Wed climb",
+        docs: "<li>Relief pack complete</li>",
+        miss: "e-learning 2/8 to finish",
+        perf: "Solid (mock)",
+        onboard: "N/A"
+      }
+    };
+    function paintStaff(s) {
+      if (spName) spName.textContent = s.n;
+      if (spState) { spState.className = "chip " + (s.pool ? "chip--urg" : "chip--ok"); spState.textContent = s.st; }
+      if (spAvail) spAvail.textContent = s.avail;
+      if (spShifts) spShifts.textContent = s.shifts;
+      if (spDocs) spDocs.innerHTML = s.docs;
+      if (spMissing) {
+        if (!s.miss || s.miss === "—") { spMissing.textContent = "All critical docs current (mock)."; } else { spMissing.innerHTML = "<strong>Missing / risk</strong> " + s.miss; }
+      }
+      if (spPerf) spPerf.textContent = s.perf;
+      if (spOnboard) spOnboard.textContent = s.onboard;
+      if (spCert) {
+        spCert.innerHTML = s.pool
+          ? "<li>Pool rescue: <span style='color:var(--danger)'>overdue (mock)</span></li><li>Safe guarding L2: current</li>"
+          : "<li>Pool rescue: n/a (role)</li><li>Statutory training: current</li>";
+      }
+    }
+    staffRows.forEach(function (r) {
+      r.addEventListener("click", function () {
+        staffRows.forEach(function (x) { x.classList.remove("is-selected"); });
+        r.classList.add("is-selected");
+        var s = mockS[r.getAttribute("data-s")];
+        if (s) paintStaff(s);
+      });
+      r.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); r.click(); }
+      });
+    });
+    if (mockS["1"]) paintStaff(mockS["1"]);
+    if (staffRows[0]) staffRows[0].classList.add("is-selected");
+
+    var drawerBack = document.getElementById("drawerBack");
+    var appDrawer = document.getElementById("appDrawer");
+    var drawerTitle = document.getElementById("drawerTitle");
+    var drawerBody = document.getElementById("drawerBody");
+    var drawerFoot = document.getElementById("drawerFoot");
+    var drawerClose = document.getElementById("drawerClose");
+
+    function openDrawer() {
+      if (drawerBack) drawerBack.classList.add("is-open");
+      if (appDrawer) { appDrawer.classList.add("is-open"); appDrawer.setAttribute("aria-hidden", "false"); }
+      document.body.style.overflow = "hidden";
+    }
+    function closeDrawer() {
+      if (drawerBack) drawerBack.classList.remove("is-open");
+      if (appDrawer) { appDrawer.classList.remove("is-open"); appDrawer.setAttribute("aria-hidden", "true"); }
+      document.body.style.overflow = "";
+    }
+    if (drawerBack) drawerBack.addEventListener("click", closeDrawer);
+    if (drawerClose) drawerClose.addEventListener("click", closeDrawer);
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && appDrawer && appDrawer.classList.contains("is-open")) closeDrawer();
+    });
+
+    function dec(sit, data, sug, escYes, dirChip, dirText, extraBtns) {
+      var esc = escYes
+        ? "<span class=\"chip chip--esc-yes\">Yes</span>"
+        : "<span class=\"chip chip--esc-no\">No</span>";
+      return (
+        "<dl class=\"decision-block\">" +
+        "<dt>Situation</dt><dd>" + sit + "</dd>" +
+        "<dt>Data available</dt><dd>" + data + "</dd>" +
+        "<dt>Suggested action</dt><dd><strong>" + sug + "</strong></dd></dl>" +
+        "<p class=\"muted\" style=\"font-size:12px;margin:8px 0 0\">Escalation needed: " + esc + " <span class=\"chip " + dirChip + "\">" + dirText + "</span></p>" +
+        "<div class=\"toolbar\" style=\"margin-top:12px\">" +
+        (extraBtns || "") +
+        "<button type=\"button\" class=\"btn btn--pri btn--sm mock-act\" data-act=\"log\">Log decision</button>" +
+        "<button type=\"button\" class=\"btn btn--sec btn--sm mock-act\" data-act=\"escalate\">Escalate to director</button>" +
+        "</div>"
+      );
+    }
+
+    var DEC = {
+      report: dec(
+        "Parent / LA needs a written progress pack before 4 May review (Leila H.).",
+        "8-week attendance 92%, OT goals on file, 6 climb sessions logged, 0 open incidents.",
+        "Generate parent progress report → internal QA → send to Hana with LA copy link.",
+        false, "chip--dir-proceed", "operator can proceed",
+        "<button type=\"button\" class=\"btn btn--sec btn--sm\" id=\"drepFromDec\">Open report preview</button> "
+      ),
+      lead: dec(
+        "Day centre enquiry with 1:1 shadow ask — family expecting call back within 24h.",
+        "WhatsApp thread (mock), partial EP summary in email, no reg form yet.",
+        "Log call outcome → send full registration pack → set status Awaiting form → book TCES if complex.",
+        true, "chip--dir-need", "director if offering 2:1",
+        "<button type=\"button\" class=\"btn btn--sec btn--sm mock-act\" data-act=\"goto\" data-goto=\"leads\">Leads &amp; Intake</button> "
+      ),
+      pay: dec(
+        "Maya T. taster / block payment not cleared; soft-hold on DC slot at risk.",
+        "Invoice #INV-2018 £360, 0 bank match, last reminder 3d ago (mock).",
+        "Re-send payment link with fee schedule → if no pay in 48h release hold → flag sales.",
+        false, "chip--dir-proceed", "operator can chase",
+        "<button type=\"button\" class=\"btn btn--sec btn--sm mock-act\" data-act=\"goto\" data-goto=\"finance\">Open finance</button> "
+      ),
+      slot: dec(
+        "Sasha B. pool 1:1 trial — no line until Thu 17:00 if cover for cert block clears.",
+        "Capacity map: 1 open Thu 17:00; wait score 0.94; ratio 1:1 in-water approved (mock).",
+        "Send slot offer (WhatsApp) → on yes assign as trial (single) → pre-brief Alex.",
+        true, "chip--dir-need", "director if splitting cohort",
+        "<button type=\"button\" class=\"btn btn--sec btn--sm mock-act\" data-act=\"goto\" data-goto=\"bookings\">Booking flow</button> "
+      ),
+      cert: dec(
+        "Jordan P. cannot be rostered to swim until pool rescue is uploaded and verified.",
+        "HR: overdue flag, 2 swim sessions this week re-assigned (mock).",
+        "Chase upload → temp cover from relief bank for swim lines → do not self-approve cert.",
+        true, "chip--dir-block", "operator cannot run swim (cert)",
+        "<button type=\"button\" class=\"btn btn--sec btn--sm mock-act\" data-act=\"goto\" data-goto=\"staff\">Staff</button> "
+      ),
+      ratio: dec(
+        "Request for 2:1 climb for new CYP; EHCP recommends intensive block — fee and risk not standard.",
+        "Clinical letter summary (mock), no existing 2:1 in that slot, director policy §4.2.",
+        "Do not accept fees without director sign-off; book discovery call; provisional hold only.",
+        true, "chip--dir-need", "director approval required",
+        ""
+      ),
+      newlead1: dec(
+        "Asha (6) — new WhatsApp lead, carer available evenings only.",
+        "2 messages, no form; referral from friend (word of mouth) (mock).",
+        "Triage: needs vs offer → if ok send reg → else Cannot serve with letter template.",
+        false, "chip--dir-proceed", "operator can triage",
+        "<button type=\"button\" class=\"btn btn--sec btn--sm mock-act\" data-act=\"goto\" data-goto=\"leads\">Pipeline</button> "
+      )
+    };
+    var INBOX = {
+      report: DEC.report,
+      absent: dec("Yusuf pool block tomorrow; parent has not reconfirmed (mock).", "Roster, absence policy, make-up credit on file (mock).", "Send standard absence ack, offer 2 make-up options, no charge.", false, "chip--dir-proceed", "operator can proceed", "<button type=\"button\" class=\"btn btn--sec btn--sm mock-act\" data-act=\"goto\" data-goto=\"comms\">Templates</button> "),
+      la: dec("LA (SEN 45) needs attendance + support narrative for O. R..", "Register export, OT note summary, DSL review flag clear (mock).", "Assemble pack → DSL once-over → send to named officer.", true, "chip--dir-need", "may need director on dispute", ""),
+      pay: DEC.pay,
+      cover: dec("Fri DC short one lead: Mei L. unavailable; ratio would drop to 1:6.1 vs 1:5 policy (mock).", "Relief list 2 names free; cohort size 10.", "Request relief shift OR reduce cohort to 2 sessions AM only OR cancel low-priority activity.", true, "chip--dir-need", "director for cohort cancel", ""),
+      leadw: dec("Ryan K. needs MDT before pool slot; EP incomplete.", "NHS + parent emails on file, partial OT report (mock).", "Do not book swim until MDT sign-off; schedule TCES in 5 working days (mock).", true, "chip--dir-need", "MDT gating", ""),
+      slot: DEC.slot
+    };
+
+    var REPORT_PREV = {
+      leila: { t: "Parent progress — Leila H.", src: "Climb session notes, OT Q2 goals, attendance 8w export (mock).", body: "Summary: Leila is progressing on three of four agreed motor goals. She attended 11/12 sessions with one weather-related late. She used the visual timer independently on 19 Apr. OT recommends continuing climb tier 2 through summer block." },
+      oliver: { t: "Attendance — Oliver R. (LA pack)", src: "DC registers, excused absences, transport log (mock).", body: "Term-to-date attendance 86% with 4 medical absences documented. No unexplained absences. Next review: tie to EHCP D outcomes in June." },
+      cohort: { t: "Term review — Day centre Team A (cohort)", src: "ILP targets, SLT, general feedback forms (mock).", body: "Cohort of 12: 9 on track, 2 intensive reviews scheduled, 1 leaver. Funding conversation should reference attachment B (mock)." },
+      noah: { t: "Incident summary — Noah C. (YTD)", src: "INC-12, first aid, parent notifications, follow-ups (mock).", body: "Two incidents in period; both closed with learning actions. No repeat triggers in last 4 sessions. RIDDOR: n/a in demo." },
+      dcterm: { t: "Term review (cohort)", src: "ILP, SLT, general feedback (mock).", body: "Cohort outcomes for spring; link to funding narrative if disputing (mock)." },
+      mariam: { t: "MDT report draft — Mariam S.", src: "OT, swim, SENCO, CCG attestation (mock).", body: "Multidisciplinary view of progress against NHS letter goals; CCG and parent co-pay position summarised. Not for external send without sign-off (mock)." }
+    };
+
+    function setDrawer(tit, bodyHtml, footHtml) {
+      if (drawerTitle) drawerTitle.textContent = tit;
+      if (drawerBody) drawerBody.innerHTML = bodyHtml;
+      if (drawerFoot) {
+        if (footHtml) { drawerFoot.style.display = "block"; drawerFoot.innerHTML = footHtml; } else { drawerFoot.style.display = "none"; drawerFoot.innerHTML = ""; }
+      }
+      openDrawer();
+    }
+    function openReportPreview(k) {
+      var r = REPORT_PREV[k] || { t: "Report", src: "—", body: "—" };
+      var foot =
+        "<div class=\"toolbar\">" +
+        "<button type=\"button\" class=\"btn btn--pri btn--sm mock-act\" data-act=\"copyrep\">Copy</button>" +
+        "<button type=\"button\" class=\"btn btn--sec btn--sm mock-act\" data-act=\"pdf\">Download PDF (mock)</button>" +
+        "<button type=\"button\" class=\"btn btn--sec btn--sm mock-act\" data-act=\"sendparent\">Send to parent (mock)</button></div>";
+      setDrawer((r.t || "Report") + " — preview (mock)", "<p class=\"muted\" style=\"font-size:12px\">Data sources</p><p style=\"margin:0 0 8px\">" + r.src + "</p><p class=\"kpi-l\">Generated summary</p><p style=\"margin:0;color:var(--text);line-height:1.5\">" + r.body + "</p>", foot);
+    }
+    function openClientDrawer() {
+      var c = CDEEP[curC];
+      if (!c) return;
+      var html = "<p><strong>" + c.n + "</strong> · " + c.meta + "</p><p class=\"muted\" style=\"font-size:12px\">Funding: " + (c.fund || "—") + " · " + c.payLabel + "</p><p class=\"kpi-l\" style=\"margin-top:10px\">Quick</p><div class=\"toolbar\"><button type=\"button\" class=\"btn btn--pri btn--sm\" id=\"drFromClientRep\">Open report preview</button><button type=\"button\" class=\"btn btn--sec btn--sm mock-act\" data-act=\"goto\" data-goto=\"inbox\">Tasks</button></div>";
+      setDrawer("Client snapshot (mock)", html, null);
+    }
+
+    document.addEventListener("click", function (e) {
+      var t = e.target;
+      if (t.id === "drepFromDec") { e.preventDefault(); openReportPreview("leila"); return; }
+      if (t.id === "drFromClientRep") { e.preventDefault(); openReportPreview(curC === "1" ? "leila" : curC === "2" ? "oliver" : "mariam"); return; }
+    });
+
+    document.addEventListener("click", function (e) {
+      var act = e.target.closest(".mock-act");
+      if (!act) return;
+      var a = act.getAttribute("data-act");
+      if (a === "log") { act.classList.add("btn--mock-logged"); act.textContent = "Logged"; act.disabled = true; showToast("Decision logged (mock)"); return; }
+      if (a === "escalate") { showToast("Escalation to director (mock)"); return; }
+      if (a === "goto") { var g = act.getAttribute("data-goto"); if (g) setPanel(g); closeDrawer(); return; }
+      if (a === "copyrep") { showToast("Summary copied (mock)"); return; }
+      if (a === "pdf") { act.classList.add("btn--mock-gen"); act.textContent = "Downloaded"; showToast("PDF would download in production (mock)"); return; }
+      if (a === "sendparent") { act.classList.add("btn--mock-sent"); act.textContent = "Sent"; showToast("Marked sent to parent (mock)"); return; }
+    });
+
+    document.addEventListener("click", function (e) {
+      var d = e.target.closest(".js-open-decision");
+      if (d) {
+        var k = d.getAttribute("data-d");
+        var h2 = (DEC[k] != null) ? DEC[k] : (INBOX[k] != null ? INBOX[k] : null);
+        if (h2) setDrawer("Decision — " + (k === "report" ? "parent report" : k.replace(/[^a-z0-9]/gi, " ")), h2, null);
+        return;
+      }
+      var r = e.target.closest(".js-open-report");
+      if (r) { openReportPreview(r.getAttribute("data-report") || "leila"); return; }
+      if (e.target.closest(".js-open-client-d")) { openClientDrawer(); return; }
+      var inb = e.target.closest(".js-open-inbox");
+      if (inb) {
+        var it = inb.getAttribute("data-t");
+        var ih = INBOX[it];
+        if (ih) setDrawer("Task — " + it, ih, null);
+        return;
+      }
+      var l = e.target.closest(".js-open-lead");
+      if (l) { setDrawer("Lead detail (mock)", "<p><strong>Asha (6)</strong> · R. Kumar</p><p class=\"muted\">Status: new lead · WhatsApp. Next: triage call, send form, or mark dropped.</p><p class=\"kpi-l\" style=\"margin-top:8px\">Director</p><p class=\"muted\">Only if 2:1 or cannot serve.</p>", null); return; }
+      var g = e.target.closest(".js-mock-goto");
+      if (g) { var id = g.getAttribute("data-goto"); if (id) { setPanel(id); showToast("Navigated (mock)"); } return; }
+      var g2 = e.target.closest(".js-gen-rep");
+      if (g2) { g2.classList.add("btn--mock-gen"); g2.textContent = "Generated"; showToast("Report generated (mock)"); return; }
+      var ms = e.target.closest(".mock-send");
+      if (ms) { ms.classList.add("btn--mock-sent"); ms.textContent = "Sent (mock)"; showToast("Send queued (mock)"); return; }
+    });
+
+    document.addEventListener("click", function (e) {
+      if (e.target.closest("#panel-services .cap-act .btn")) { showToast("Action recorded (mock) — no server"); return; }
+      if (e.target.closest("#panel-bookings .btn") && !e.target.closest("#mockPathStep")) { showToast("Booking action (mock)"); return; }
+    });
+
+    var escB = document.getElementById("openEscalationMock");
+    if (escB) {
+      escB.addEventListener("click", function () {
+        setDrawer("Escalation checklist (mock)", "<ol style=\"font-size:13px;line-height:1.5;color:var(--text);padding-left:20px\">" + "<li><strong>2:1 or cannot meet needs</strong> — pause offers, log on DSL sheet, director signs letter.</li>" + "<li><strong>Funding / invoice &gt; threshold</strong> — finance + director approval before final chase (mock band £500+).</li>" + "<li><strong>Safeguarding</strong> — operator: no new unsupervised contact; follow DSL protocol; director notified automatically in prod.</li></ol><p class=\"muted\" style=\"font-size:12px\">This is a mock checklist only.</p>", null);
+      });
+    }
+    var mockPathN = 1;
+    var mockPathEl = document.getElementById("mockPathState");
+    var mockPathBtn = document.getElementById("mockPathStep");
+    if (mockPathBtn && mockPathEl) {
+      var steps = [ "1 — slot selected", "2 — wait client matched (Sasha)", "3 — offer message sent (mock)", "4 — assign as trial" ];
+      mockPathBtn.addEventListener("click", function () {
+        if (mockPathN < 4) mockPathN++;
+        mockPathEl.innerHTML = "State: <strong>" + steps[mockPathN - 1] + "</strong>";
+        showToast("Path step " + mockPathN + " (mock)");
+        if (mockPathN === 4) { mockPathBtn.classList.add("btn--mock-gen"); mockPathBtn.textContent = "Path complete"; mockPathBtn.disabled = true; }
+      });
+    }
+
+    setPanel("operator");
+  })();
+  </script>
+</body>
+</html>

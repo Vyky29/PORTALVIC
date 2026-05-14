@@ -1,0 +1,11 @@
+{
+  "name": "clubSENsational Staff",
+  "short_name": "Staff",
+  "id": "clubsensational-staff-dashboard",
+  "start_url": "https://www.clubsensational.org/p1/",
+  "scope": "https://www.clubsensational.org/",
+  "display": "standalone",
+  "background_color": "#f4f8fb",
+  "theme_color": "#edf4fb",
+  "description": "Staff schedule, participants, and quick menu."
+}

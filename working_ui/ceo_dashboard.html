@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <!-- CEO portal · www.clubsensational.org/ce/ · auth-handler uploads/2026/05/ -->
+  <script>
+    (function () {
+      try {
+        document.documentElement.classList.add("portal-app-shell");
+      } catch (e) {}
+    })();
+  </script>
+  <style id="portal-hide-wp-chrome">
+    html.portal-app-shell body.admin-bar {
+      padding-top: 0 !important;
+      margin-top: 0 !important;
+    }
+    html.portal-app-shell #wpadminbar,
+    html.portal-app-shell #masthead,
+    html.portal-app-shell header#masthead,
+    html.portal-app-shell .site-header,
+    html.portal-app-shell #site-header,
+    html.portal-app-shell .ast-primary-header-bar,
+    html.portal-app-shell .ast-above-header,
+    html.portal-app-shell .elementor-location-header,
+    html.portal-app-shell .elementor-location-footer,
+    html.portal-app-shell #colophon,
+    html.portal-app-shell footer.site-footer,
+    html.portal-app-shell .site-footer,
+    html.portal-app-shell #footer,
+    html.portal-app-shell .site-bottom-footer-inner-wrap,
+    html.portal-app-shell .footer-widget-area {
+      display: none !important;
+      visibility: hidden !important;
+      height: 0 !important;
+      overflow: hidden !important;
+      pointer-events: none !important;
+    }
+    html.portal-app-shell .site-content,
+    html.portal-app-shell #content,
+    html.portal-app-shell .site-main,
+    html.portal-app-shell #primary {
+      margin-top: 0 !important;
+      padding-top: 0 !important;
+    }
+    html.portal-app-shell #page,
+    html.portal-app-shell .site {
+      margin-top: 0 !important;
+      padding-top: 0 !important;
+    }
+    html.portal-app-shell,
+    html.portal-app-shell body {
+      max-width: 100vw !important;
+      overflow-x: hidden !important;
+    }
+    html.portal-app-shell #page,
+    html.portal-app-shell .site,
+    html.portal-app-shell .site-content,
+    html.portal-app-shell #content,
+    html.portal-app-shell #primary,
+    html.portal-app-shell .site-main {
+      max-width: 100vw !important;
+      overflow-x: hidden !important;
+    }
+  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <title>clubSENsational Portal — CEO</title>
+  <style>
+    :root {
+      --blue: #2d84b3;
+      --blueSoft: #eaf5fb;
+      --ink: #0f172a;
+      --text: #334155;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --white: #ffffff;
+      --shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.06);
+      --radius: 12px;
+      --radiusLg: 16px;
+      --bg: #f1f5f9;
+      --sidebar: #0f172a;
+      --sidebarHover: #1e293b;
+      --sidebarText: #94a3b8;
+      --sidebarActive: #38bdf8;
+      --sidebarW: 260px;
+      --topH: 52px;
+      --font: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      --surface: #ffffff;
+    }
+    html {
+      scroll-behavior: smooth;
+    }
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      height: 100dvh;
+      max-width: 100%;
+      overflow: hidden;
+      font-family: var(--font);
+      font-size: 14px;
+      color: var(--text);
+      -webkit-text-size-adjust: 100%;
+      overscroll-behavior-x: none;
+    }
+    body {
+      background: var(--bg);
+    }
+    .ceo-shell {
+      display: flex;
+      height: 100dvh;
+      max-height: 100dvh;
+      width: 100%;
+      min-width: 0;
+      position: relative;
+      z-index: 1000;
+    }
+    .ceo-sidebar-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      z-index: 11000;
+    }
+    body.ceo-sidebar-open .ceo-sidebar-backdrop {
+      display: block;
+    }
+    body.ceo-sidebar-open .ceo-sidebar {
+      transform: translateX(0);
+    }
+    .ceo-sidebar {
+      width: var(--sidebarW);
+      min-width: var(--sidebarW);
+      background: var(--sidebar);
+      color: #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      border-right: 1px solid rgba(255, 255, 255, 0.06);
+      transition: transform 0.22s ease;
+      overflow: hidden;
+      z-index: 12001;
+    }
+    .ceo-sidebar-brand {
+      flex-shrink: 0;
+      padding: 16px 14px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      text-align: center;
+      min-width: 0;
+    }
+    .ceo-sidebar-brand-mark {
+      width: 72px;
+      height: 72px;
+      margin: 0 auto 10px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: var(--white);
+      display: grid;
+      place-items: center;
+      box-shadow: 0 0 0 2px rgba(249, 191, 46, 0.45), 0 4px 14px rgba(15, 23, 42, 0.25);
+    }
+    .ceo-sidebar-brand-mark img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    .ceo-sidebar-brand strong {
+      display: block;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #fff;
+    }
+    .ceo-sidebar-brand span {
+      font-size: 12px;
+      color: var(--sidebarText);
+      margin-top: 4px;
+      display: block;
+      line-height: 1.35;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .ceo-sidebar-body {
+      flex: 1;
+      min-height: 0;
+      overflow-x: hidden;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 12px 10px 14px;
+      scrollbar-width: thin;
+    }
+    .ceo-nav-kicker {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(148, 163, 184, 0.85);
+      margin: 4px 8px 10px;
+      min-width: 0;
+    }
+    .ceo-dash-switch {
+      display: flex;
+      margin: 0 6px 16px;
+      padding: 4px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      gap: 4px;
+      min-width: 0;
+    }
+    .ceo-dash-switch__opt {
+      flex: 1;
+      min-width: 0;
+      text-align: center;
+      padding: 10px 10px;
+      border-radius: 999px;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--sidebarText);
+      overflow-wrap: break-word;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .ceo-dash-switch__opt:hover {
+      color: #f1f5f9;
+      background: rgba(255, 255, 255, 0.06);
+    }
+    .ceo-dash-switch__opt:focus-visible {
+      outline: 2px solid rgba(125, 211, 252, 0.5);
+      outline-offset: 2px;
+    }
+    .ceo-nav-aux {
+      margin: 0 6px 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding-top: 14px;
+    }
+    .ceo-nav-aux a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 10px 12px;
+      margin: 2px 0;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--sidebarText);
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .ceo-nav-aux a:hover {
+      background: var(--sidebarHover);
+      color: #e2e8f0;
+    }
+    .ceo-sidebar-foot {
+      flex-shrink: 0;
+      padding: 12px 12px 14px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .ceo-sidebar-foot button {
+      width: 100%;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.04);
+      color: #cbd5e1;
+      cursor: pointer;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .ceo-sidebar-foot button:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+    .ceo-main {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--bg);
+    }
+    .ceo-topbar {
+      flex-shrink: 0;
+      height: var(--topH);
+      min-height: var(--topH);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px));
+      padding-top: max(0px, env(safe-area-inset-top, 0px));
+      background: var(--surface, #fff);
+      border-bottom: 1px solid var(--line);
+      box-shadow: var(--shadow);
+    }
+    .ceo-menu-mob {
+      display: none;
+      flex-shrink: 0;
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: #fff;
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      color: var(--ink);
+    }
+    .ceo-topbar-titles {
+      min-width: 0;
+      flex: 1;
+    }
+    .ceo-topbar-titles h1 {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--ink);
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .ceo-topbar-titles p {
+      margin: 2px 0 0;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.35;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .ceo-workspace {
+      flex: 1;
+      min-height: 0;
+      overflow-x: hidden;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: max(16px, env(safe-area-inset-top, 0px)) max(18px, env(safe-area-inset-right, 0px))
+        max(20px, env(safe-area-inset-bottom, 0px)) max(18px, env(safe-area-inset-left, 0px));
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-width: 1100px;
+      width: 100%;
+      margin: 0 auto;
+      box-sizing: border-box;
+    }
+    .ceo-panel {
+      background: var(--white);
+      border-radius: var(--radiusLg);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--line);
+      padding: 20px 18px 18px;
+      text-align: left;
+      min-width: 0;
+    }
+    .ceo-panel__title {
+      margin: 0 0 8px;
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--ink);
+      letter-spacing: -0.02em;
+    }
+    .ceo-panel__lead {
+      margin: 0 0 14px;
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.45;
+      max-width: 62ch;
+    }
+    .ceo-panel__lead a {
+      color: var(--blue);
+      font-weight: 600;
+      overflow-wrap: break-word;
+    }
+    .ceo-panel__hint {
+      margin: 12px 0 0;
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.45;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .ceo-panel__hint a {
+      color: var(--blue);
+      font-weight: 600;
+    }
+    .ceo-ops-team-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+      padding: 12px 18px;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      text-align: center;
+      border-radius: 10px;
+      cursor: pointer;
+      overflow-wrap: break-word;
+      color: var(--white);
+      background: linear-gradient(180deg, var(--blue) 0%, #256d96 100%);
+      border: 1px solid rgba(45, 132, 179, 0.35);
+      box-shadow: 0 2px 8px rgba(45, 132, 179, 0.22);
+      transition: filter 0.15s ease, transform 0.12s ease;
+    }
+    .ceo-ops-team-btn:hover {
+      filter: brightness(1.04);
+    }
+    .ceo-ops-team-btn:active {
+      transform: scale(0.99);
+    }
+    .ceo-insights-embed-wrap {
+      margin-top: 12px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      overflow: hidden;
+      background: #f8fafc;
+      min-height: 320px;
+      max-height: min(68vh, 720px);
+      min-width: 0;
+    }
+    .ceo-insights-embed-wrap iframe {
+      display: block;
+      width: 100%;
+      height: min(68vh, 720px);
+      min-height: 320px;
+      border: 0;
+      min-width: 0;
+    }
+    @media (max-width: 899px) {
+      .ceo-menu-mob {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .ceo-sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        height: 100dvh;
+        max-height: 100dvh;
+        transform: translateX(-100%);
+        box-shadow: 8px 0 32px rgba(15, 23, 42, 0.25);
+      }
+    }
+
+    .ceo-portal-dm-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 9998;
+      background: rgba(15, 23, 42, 0.45);
+      border: none;
+      padding: 0;
+      margin: 0;
+      cursor: pointer;
+    }
+    .ceo-portal-dm-backdrop[hidden],
+    .ceo-portal-dm-sheet[hidden] {
+      display: none !important;
+      pointer-events: none !important;
+    }
+    .ceo-portal-dm-sheet {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      right: auto;
+      bottom: auto;
+      z-index: 9999;
+      max-height: min(85dvh, 720px);
+      width: calc(100% - 28px);
+      max-width: 520px;
+      margin: 0;
+      box-sizing: border-box;
+      background: var(--white);
+      border-radius: 20px;
+      box-shadow: 0 18px 50px rgba(23, 50, 71, 0.2);
+      border: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .ceo-portal-dm-sheet-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 18px 12px;
+      border-bottom: 1px solid var(--line);
+      flex-shrink: 0;
+      min-width: 0;
+    }
+    .ceo-portal-dm-sheet-head h3 {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--ink);
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .ceo-portal-dm-sheet-head button {
+      flex-shrink: 0;
+      font: inherit;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--blue);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 4px 8px;
+    }
+    .ceo-portal-dm-sheet-body {
+      flex: 1;
+      min-height: 0;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 12px 18px 18px;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .ceo-portal-dm-sub {
+      margin: 0 0 10px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.45;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .ceo-portal-dm-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+      min-width: 0;
+    }
+    .ceo-portal-dm-toolbar button {
+      font: inherit;
+      font-size: 0.88rem;
+      font-weight: 600;
+      padding: 8px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: #f8fafc;
+      cursor: pointer;
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+    .ceo-portal-dm-toolbar .ceo-portal-dm-toolbar__pri {
+      background: var(--blue);
+      color: #fff;
+      border-color: transparent;
+    }
+    #ceoPortalDmMsgs {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      min-height: 0;
+      min-width: 0;
+    }
+    #ceoPortalDmMsgs .ceo-portal-dm-msg {
+      max-width: 92%;
+      padding: 10px 12px;
+      border-radius: 14px;
+      margin-bottom: 8px;
+      font-size: 14px;
+      line-height: 1.45;
+      min-width: 0;
+      overflow-wrap: break-word;
+      box-sizing: border-box;
+    }
+    #ceoPortalDmMsgs .ceo-portal-dm-msg--mine {
+      align-self: flex-end;
+      margin-left: auto;
+      background: var(--blue);
+      color: #fff;
+    }
+    #ceoPortalDmMsgs .ceo-portal-dm-msg--them {
+      align-self: flex-start;
+      margin-right: auto;
+      background: #f1f5f9;
+      color: var(--ink);
+    }
+    #ceoPortalDmMsgs .ceo-portal-dm-msg-by {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      margin: 0 0 6px;
+      min-width: 0;
+      overflow-wrap: break-word;
+      opacity: 0.88;
+    }
+    #ceoPortalDmMsgs .ceo-portal-dm-msg--mine .ceo-portal-dm-msg-by {
+      color: rgba(255, 255, 255, 0.92);
+      opacity: 1;
+    }
+    #ceoPortalDmMsgs .ceo-portal-dm-msg--them .ceo-portal-dm-msg-by {
+      color: var(--muted);
+    }
+    #ceoPortalDmMsgs .ceo-portal-dm-msg-time {
+      font-size: 11px;
+      margin-top: 6px;
+      opacity: 0.85;
+    }
+    #ceoPortalDmMsgs .ceo-portal-dm-msg--mine .ceo-portal-dm-msg-time {
+      color: rgba(255, 255, 255, 0.88);
+    }
+
+    .ceo-strategic {
+      margin-top: 0;
+      padding: 22px 18px 28px;
+      background: var(--white);
+      border-radius: var(--radiusLg);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--line);
+      text-align: left;
+      min-width: 0;
+    }
+    .ceo-strategic-head h2 {
+      margin: 0 0 6px;
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--ink);
+      letter-spacing: -0.02em;
+    }
+    .ceo-strategic-head p {
+      margin: 0 0 16px;
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.45;
+      max-width: 52em;
+    }
+    .ceo-snap-hero {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+      color: #e2e8f0;
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow);
+    }
+    .ceo-snap-hero .ceo-snap-eyebrow {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #94a3b8;
+    }
+    .ceo-snap-hero .ceo-snap-headline {
+      font-size: 16px;
+      font-weight: 600;
+      margin-top: 6px;
+      line-height: 1.35;
+    }
+    .ceo-snap-hero .ceo-snap-sub {
+      font-size: 12px;
+      color: #cbd5e1;
+      margin-top: 10px;
+      line-height: 1.4;
+    }
+    .ceo-snap-kpis {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .ceo-snap-kpi {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px 16px;
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+    .ceo-snap-kpi .ceo-snap-kpi-l {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .ceo-snap-kpi .ceo-snap-kpi-v {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--ink);
+      line-height: 1.1;
+    }
+    .ceo-snap-kpi .ceo-snap-kpi-s {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 6px;
+      line-height: 1.35;
+    }
+    .ceo-snap-card {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+    .ceo-snap-card-h {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--line);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .ceo-snap-card-p {
+      padding: 14px 16px;
+    }
+    .ceo-snap-grid2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+      align-items: start;
+    }
+    .ceo-snap-insight {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px 16px;
+      background: var(--white);
+      box-shadow: var(--shadow);
+      margin-bottom: 10px;
+      border-left: 4px solid var(--blue);
+    }
+    .ceo-snap-insight h4 {
+      margin: 0 0 6px;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .ceo-snap-line {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fafbfc;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+    .ceo-snap-line strong {
+      color: var(--ink);
+    }
+    .ceo-snap-muted {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+      margin: 0;
+    }
+    .ceo-snap-tbl {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .ceo-snap-tbl th,
+    .ceo-snap-tbl td {
+      padding: 8px 10px;
+      text-align: left;
+      border-bottom: 1px solid var(--line);
+    }
+    .ceo-snap-tbl th {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: #f8fafc;
+    }
+    .ceo-snap-chip {
+      display: inline-flex;
+      padding: 3px 8px;
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 600;
+      background: var(--blueSoft);
+      color: var(--blue);
+    }
+    .ceo-snap-fc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+    }
+    .ceo-snap-fc {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px 16px;
+      background: var(--white);
+    }
+    .ceo-snap-fc .ceo-snap-kpi-l {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .ceo-snap-fc .ceo-snap-kpi-v {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .ceo-snap-section-h {
+      margin: 18px 0 10px;
+    }
+    .ceo-snap-section-h h3 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .ceo-snap-section-h p {
+      margin: 4px 0 0;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    @media (max-width: 1024px) and (orientation: landscape) {
+      .ceo-snap-kpis {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+      }
+      .ceo-snap-grid2,
+      .ceo-snap-fc-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+  <script>
+    (function () {
+      try {
+        window.PORTAL_CEO_DASHBOARD_URL = "https://www.clubsensational.org/ce/";
+        window.PORTAL_ADMIN_DASHBOARD_URL = "https://www.clubsensational.org/operations-admin/";
+        window.PORTAL_STAFF_DASHBOARD_URL = "https://www.clubsensational.org/p1/";
+        window.PORTAL_LEAD_DASHBOARD_URL = "https://www.clubsensational.org/l1/";
+        window.PORTAL_COMPANY_INSIGHTS_URL = "https://www.clubsensational.org/Insights_portal/";
+      } catch (e) {}
+    })();
+  </script>
+  <div class="ceo-shell" id="ceoShell">
+    <div class="ceo-sidebar-backdrop" id="ceoSidebarBackdrop" aria-hidden="true"></div>
+    <aside class="ceo-sidebar" id="ceoSidebar" aria-label="CEO portal menu">
+      <div class="ceo-sidebar-brand">
+        <div class="ceo-sidebar-brand-mark">
+          <img
+            src="https://www.clubsensational.org/wp-content/uploads/2026/03/F-02-1.png"
+            alt="clubSENsational"
+            decoding="async"
+            referrerpolicy="no-referrer-when-downgrade"
+            onerror="this.onerror=null;this.src='F-02-1.png';"
+          />
+        </div>
+        <strong>CEO portal</strong>
+        <span>Strategic overview · same shell style as operations</span>
+      </div>
+      <div class="ceo-sidebar-body">
+        <p class="ceo-nav-kicker">Workspace</p>
+        <div class="ceo-dash-switch" role="group" aria-label="Open another dashboard">
+          <a class="ceo-dash-switch__opt" id="portalCeoNavAdmin" href="https://www.clubsensational.org/operations-admin/">Admin</a>
+          <a class="ceo-dash-switch__opt" id="portalCeoNavStaff" href="https://www.clubsensational.org/p1/">Staff</a>
+        </div>
+        <div class="ceo-nav-aux">
+          <a href="#ceo-insights">Jump to company insights</a>
+        </div>
+      </div>
+      <div class="ceo-sidebar-foot">
+        <button type="button" id="ceoLogout">Log out</button>
+      </div>
+    </aside>
+
+    <div class="ceo-main">
+      <header class="ceo-topbar">
+        <button type="button" class="ceo-menu-mob" id="ceoBtnMenuMob" aria-label="Open menu" aria-controls="ceoSidebar" aria-expanded="false">
+          ☰
+        </button>
+        <div class="ceo-topbar-titles">
+          <h1>CEO dashboard</h1>
+          <p class="ceo-greet" id="ceoGreet">Signed in — snapshot and insights scroll below; use the left menu to switch workspace.</p>
+        </div>
+      </header>
+      <main class="ceo-workspace">
+        <section class="ceo-panel ceo-panel--chat" aria-labelledby="ceoChatPanelTitle">
+          <h2 id="ceoChatPanelTitle" class="ceo-panel__title">Messages</h2>
+          <p class="ceo-panel__lead">
+            One lane to the operations team (admin-side directory). For rota, covers, and the full internal inbox, open <strong>Admin</strong> in the menu on the left.
+          </p>
+          <button type="button" class="ceo-ops-team-btn" id="ceoPortalDmBtnExec">Message operations team</button>
+          <p class="ceo-panel__hint">Opens the same direct-message sheet used elsewhere in the portal.</p>
+        </section>
+
+        <section id="ceo-strategic" class="ceo-strategic" aria-labelledby="ceoStrategicTitle">
+          <div class="ceo-strategic-head">
+            <h2 id="ceoStrategicTitle">Strategic snapshot (demo)</h2>
+            <p>Illustrative figures for orientation — not a separate live dataset. Finance detail stays on this page only.</p>
+          </div>
+          <div id="ceoStrategicMount"></div>
+        </section>
+
+        <section id="ceo-insights" class="ceo-panel ceo-panel--insights" aria-labelledby="ceoInsightsTitle">
+          <h2 id="ceoInsightsTitle" class="ceo-panel__title">Company insights</h2>
+          <p class="ceo-panel__lead">
+            Embedded view of the company insights map. If the frame is blank (browser or site security), open the full page from the link below.
+          </p>
+          <div class="ceo-insights-embed-wrap">
+            <iframe id="ceoInsightsFrame" title="Company insights" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+          </div>
+          <p class="ceo-panel__hint" style="margin-top: 12px">
+            <a id="portalCeoNavInsights" href="https://www.clubsensational.org/Insights_portal/">Open company insights in a full tab</a>
+          </p>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div class="ceo-portal-dm-backdrop" id="ceoPortalDmBackdrop" hidden aria-hidden="true"></div>
+  <section
+    class="ceo-portal-dm-sheet"
+    id="ceoPortalDmSheet"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="ceoPortalDmTitle"
+    hidden
+  >
+    <div class="ceo-portal-dm-sheet-head">
+      <h3 id="ceoPortalDmTitle">Chat</h3>
+      <button type="button" id="ceoPortalDmClose">Close</button>
+    </div>
+    <div class="ceo-portal-dm-sheet-body">
+      <p class="ceo-portal-dm-sub" id="ceoPortalDmSub"></p>
+      <p id="ceoPortalDmTopErr" style="margin:0 0 8px;font-size:13px;color:#b91c1c;min-height:0;min-width:0;overflow-wrap:break-word"></p>
+
+      <div id="ceoPortalDmListPanel">
+        <div class="ceo-portal-dm-toolbar">
+          <button type="button" class="ceo-portal-dm-toolbar__pri" id="ceoPortalDmNewBtn">New message</button>
+        </div>
+        <div id="ceoPortalDmListHost" style="min-width:0"></div>
+      </div>
+
+      <div id="ceoPortalDmComposePanel" hidden>
+        <div class="ceo-portal-dm-toolbar">
+          <button type="button" id="ceoPortalDmComposeBack">Back</button>
+        </div>
+        <div id="ceoPortalDmPeerPickWrap">
+          <label for="ceoPortalDmPeerSelect" style="display:block;font-size:0.82rem;font-weight:600;color:var(--ink);margin:0 0 6px">Recipient</label>
+          <select id="ceoPortalDmPeerSelect" style="width:100%;max-width:100%;box-sizing:border-box;font:inherit;padding:10px 12px;border-radius:10px;border:1px solid var(--line);margin-bottom:12px;min-width:0"></select>
+        </div>
+        <p
+          id="ceoPortalDmPeerStatic"
+          hidden
+          style="margin:0 0 12px;font-size:0.9rem;font-weight:700;color:var(--ink);line-height:1.45;min-width:0;overflow-wrap:break-word"
+        ></p>
+        <label for="ceoPortalDmFirstBody" style="display:block;font-size:0.82rem;font-weight:600;color:var(--ink);margin:0 0 6px">Message</label>
+        <textarea
+          id="ceoPortalDmFirstBody"
+          maxlength="8000"
+          style="width:100%;max-width:100%;box-sizing:border-box;min-height:88px;min-width:0;font:inherit;padding:10px 12px;border-radius:10px;border:1px solid var(--line);resize:vertical"
+          placeholder="Write your first message…"
+        ></textarea>
+        <p id="ceoPortalDmComposeErr" style="margin:8px 0 0;font-size:13px;color:#b91c1c;min-height:1.2em;min-width:0;overflow-wrap:break-word"></p>
+        <button type="button" class="ceo-portal-dm-toolbar__pri" id="ceoPortalDmComposeSend" style="width:100%;max-width:100%;box-sizing:border-box;margin-top:12px;padding:12px;border-radius:12px;border:none;font:inherit;font-weight:700;cursor:pointer">
+          Send
+        </button>
+      </div>
+
+      <div id="ceoPortalDmThreadPanel" hidden>
+        <div class="ceo-portal-dm-toolbar">
+          <button type="button" id="ceoPortalDmThreadBack">Back to list</button>
+        </div>
+        <p id="ceoPortalDmThreadPeer" style="margin:0 0 8px;font-size:0.9rem;font-weight:700;color:var(--ink);min-width:0;overflow-wrap:break-word"></p>
+        <div
+          id="ceoPortalDmMsgs"
+          style="flex:1;min-height:180px;max-height:42vh;overflow:auto;border:1px solid var(--line);border-radius:12px;padding:10px;background:#fafbfc;margin-bottom:10px"
+        ></div>
+        <label for="ceoPortalDmReplyBody" class="topbar-sr-only" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0">Your message</label>
+        <textarea
+          id="ceoPortalDmReplyBody"
+          maxlength="8000"
+          style="width:100%;max-width:100%;box-sizing:border-box;min-height:72px;min-width:0;font:inherit;padding:10px 12px;border-radius:10px;border:1px solid var(--line);resize:vertical"
+          placeholder="Reply…"
+        ></textarea>
+        <p id="ceoPortalDmThreadErr" style="margin:6px 0 0;font-size:13px;color:#b91c1c;min-height:1.2em;min-width:0;overflow-wrap:break-word"></p>
+        <button type="button" id="ceoPortalDmThreadSend" style="width:100%;max-width:100%;box-sizing:border-box;margin-top:10px;padding:12px;border-radius:12px;border:none;background:var(--blue);color:#fff;font:inherit;font-weight:700;cursor:pointer">
+          Send
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    (function () {
+      var path = (typeof location !== "undefined" && location.pathname) ? String(location.pathname).toLowerCase() : "";
+      var isWorkingUi = path.indexOf("/working_ui/") !== -1;
+      var adminUrl = String((typeof window !== "undefined" && window.PORTAL_ADMIN_DASHBOARD_URL) || "").trim();
+      if (!adminUrl) adminUrl = "https://www.clubsensational.org/operations-admin/";
+      if (adminUrl.charAt(adminUrl.length - 1) !== "/") adminUrl += "/";
+      var insightsUrl = String((typeof window !== "undefined" && window.PORTAL_COMPANY_INSIGHTS_URL) || "").trim();
+      if (!insightsUrl) insightsUrl = "https://www.clubsensational.org/Insights_portal/";
+      var staff = document.getElementById("portalCeoNavStaff");
+      var adm = document.getElementById("portalCeoNavAdmin");
+      var ins = document.getElementById("portalCeoNavInsights");
+      var frm = document.getElementById("ceoInsightsFrame");
+      if (isWorkingUi) {
+        if (staff) staff.href = "staff_dashboard.html";
+        if (adm) adm.href = "admin_dashboard.html";
+        if (ins) ins.href = "company_insights.html";
+        if (frm) frm.src = "company_insights.html";
+      } else {
+        if (adm) adm.href = adminUrl;
+        if (ins) ins.href = insightsUrl;
+        if (frm) frm.src = insightsUrl;
+      }
+    })();
+  </script>
+  <script>
+    (function () {
+      var mob = document.getElementById("ceoBtnMenuMob");
+      var bd = document.getElementById("ceoSidebarBackdrop");
+      function setOpen(open) {
+        document.body.classList.toggle("ceo-sidebar-open", open);
+        if (mob) mob.setAttribute("aria-expanded", open ? "true" : "false");
+      }
+      function close() {
+        setOpen(false);
+      }
+      if (mob) {
+        mob.addEventListener("click", function () {
+          setOpen(!document.body.classList.contains("ceo-sidebar-open"));
+        });
+      }
+      if (bd) bd.addEventListener("click", close);
+      var sb = document.getElementById("ceoSidebar");
+      if (sb) {
+        sb.addEventListener("click", function (e) {
+          if (!e.target || !e.target.closest) return;
+          if (e.target.closest("a.ceo-dash-switch__opt") || e.target.closest(".ceo-nav-aux a")) close();
+        });
+      }
+    })();
+  </script>
+  <script>
+    (function () {
+      function esc(s) {
+        if (s == null) return "";
+        return String(s)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/"/g, "&quot;");
+      }
+      function money(n) {
+        try {
+          return new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", maximumFractionDigits: n % 1 ? 2 : 0 }).format(n);
+        } catch (e) {
+          return "£" + n;
+        }
+      }
+      var CEO_DEMO = {
+        headline: "Spring term on track · outreach up 12% YoY",
+        businessOverview: [
+          { label: "Active participants (term)", value: "86", sub: "74 swim · 38 climb · 14 overlap" },
+          { label: "Billable sessions (MTD)", value: "312", sub: "vs target 298" },
+          { label: "Staff utilisation", value: "78%", sub: "leaves + gaps within tolerance" },
+          { label: "Outstanding invoices", value: "£4.2k", sub: "3 families · <30 days" }
+        ],
+        financialSummary: { income: 137280, payroll: 52340, venue: 5150, other: 8900, marginPct: 54, ytdSessions: 312, ar: 4200 },
+        clientIntel: [
+          { title: "Attendance concentration", detail: "6 participants below 75% this term — 4 have transport notes; 2 on trial pathway." },
+          { title: "Engagement highlights", detail: "Group L2 climb retention 96%; paired swim pilot (Eddie + cohort) starts May." },
+          { title: "Risk / welfare", detail: "2 open incidents; one awaiting admin sign-off. No open safeguarding escalations beyond standard workflow." }
+        ],
+        operationalInsights: [
+          { title: "Capacity", detail: "Thu PM Climb Hub is binding constraint — 3 waitlist names; consider float lead or split group." },
+          { title: "Compliance", detail: "Safeguarding module 87% complete across leads; chase 4 names before 30 Apr." },
+          { title: "Contracts", detail: "St Mary's outreach renewal draft with council — decision expected pre May half-term." }
+        ],
+        referrals: [
+          { source: "Acton pediatric OT", client: "Riley B.", stage: "Active trial", value: "£1.8k term est.", since: "Mar 2026" },
+          { source: "Ealing SENDIAS", client: "Eddie L.", stage: "Enrolled", value: "Ongoing", since: "Jan 2026" },
+          { source: "School nurse cluster", client: "Sam K.", stage: "Sibling enquiry", value: "£640 / block", since: "Apr 2026" },
+          { source: "Self / web", client: "Ava T.", stage: "Camp upsell", value: "£220 camp", since: "Apr 2026" },
+          { source: "Climb centre partner", client: "Joel R.", stage: "Maintenance", value: "—", since: "2025" }
+        ],
+        forecasts: [
+          { label: "Summer block (Jul–Aug)", scenario: "Base", value: "+£38k", note: "Assumes 85% rebook + 12 new trial conversions" },
+          { label: "September term", scenario: "Stretch", value: "+14 participants", note: "Pipeline: 7 active referrals + 4 school meetings booked" },
+          { label: "Cost pressure", scenario: "Watch", value: "+4% venue", note: "Pool hire indexation letters received — model in finance pack" }
+        ]
+      };
+
+      function buildStrategicHtml() {
+        var c = CEO_DEMO;
+        var f = c.financialSummary;
+        var ov = c.businessOverview
+          .map(function (x) {
+            return (
+              '<div class="ceo-snap-kpi"><div class="ceo-snap-kpi-l">' +
+              esc(x.label) +
+              '</div><div class="ceo-snap-kpi-v">' +
+              esc(x.value) +
+              '</div><div class="ceo-snap-kpi-s">' +
+              esc(x.sub) +
+              "</div></div>"
+            );
+          })
+          .join("");
+        var ci = c.clientIntel
+          .map(function (x) {
+            return (
+              '<div class="ceo-snap-insight"><h4>' +
+              esc(x.title) +
+              '</h4><p class="ceo-snap-muted">' +
+              esc(x.detail) +
+              "</p></div>"
+            );
+          })
+          .join("");
+        var op = c.operationalInsights
+          .map(function (x) {
+            return (
+              '<div class="ceo-snap-line"><strong>' +
+              esc(x.title) +
+              '</strong><span class="ceo-snap-muted">' +
+              esc(x.detail) +
+              "</span></div>"
+            );
+          })
+          .join("");
+        var ref = c.referrals
+          .map(function (r) {
+            return (
+              "<tr><td><strong>" +
+              esc(r.source) +
+              "</strong></td><td>" +
+              esc(r.client) +
+              '</td><td><span class="ceo-snap-chip">' +
+              esc(r.stage) +
+              "</span></td><td>" +
+              esc(r.value) +
+              '</td><td class="ceo-snap-muted">' +
+              esc(r.since) +
+              "</td></tr>"
+            );
+          })
+          .join("");
+        var fc = c.forecasts
+          .map(function (x) {
+            return (
+              '<div class="ceo-snap-fc"><div class="ceo-snap-kpi-l">' +
+              esc(x.label) +
+              " · " +
+              esc(x.scenario) +
+              '</div><div class="ceo-snap-kpi-v">' +
+              esc(x.value) +
+              '</div><p class="ceo-snap-muted" style="margin:8px 0 0">' +
+              esc(x.note) +
+              "</p></div>"
+            );
+          })
+          .join("");
+
+        return (
+          '<div class="ceo-snap-hero"><div class="ceo-snap-eyebrow">Spring term pulse</div><div class="ceo-snap-headline">' +
+          esc(c.headline) +
+          '</div><div class="ceo-snap-sub">Term dates · clubSENsational · continuous SEN swim &amp; climb</div></div>' +
+          '<div class="ceo-snap-kpis">' +
+          ov +
+          '</div><div class="ceo-snap-card"><div class="ceo-snap-card-h">Financial summary (demo period)</div><div class="ceo-snap-card-p">' +
+          '<div class="ceo-snap-grid2"><div><p class="ceo-snap-muted" style="margin:0 0 6px">Session income (billable)</p><p style="margin:0;font-size:22px;font-weight:700;color:var(--ink)">' +
+          money(f.income) +
+          '</p></div><div><p class="ceo-snap-muted" style="margin:0 0 6px">Payroll + venue + other</p><p style="margin:0;font-size:22px;font-weight:700;color:var(--ink)">' +
+          money(f.payroll + f.venue + f.other) +
+          '</p></div></div><p class="ceo-snap-muted" style="margin:14px 0 0">Modelled margin ~<strong style="color:var(--ink)">' +
+          f.marginPct +
+          "%</strong> · AR outstanding " +
+          money(f.ar) +
+          " · Sessions YTD " +
+          f.ytdSessions +
+          "</p></div></div>" +
+          '<div class="ceo-snap-grid2" style="margin-bottom:14px"><div><div class="ceo-snap-section-h"><h3>Participant intelligence</h3><p>Aggregated from live caseload mock.</p></div>' +
+          ci +
+          '</div><div class="ceo-snap-card"><div class="ceo-snap-card-h">Operational insights</div><div class="ceo-snap-card-p">' +
+          op +
+          '</div></div></div><div class="ceo-snap-card" style="margin-bottom:14px"><div class="ceo-snap-card-h">Leads &amp; referrals</div><div class="ceo-snap-card-p" style="overflow:auto"><table class="ceo-snap-tbl"><thead><tr><th>Source</th><th>Participant / deal</th><th>Stage</th><th>Value</th><th>Since</th></tr></thead><tbody>' +
+          ref +
+          '</tbody></table></div></div><div class="ceo-snap-section-h"><h3>Forecast &amp; growth</h3><p>Scenarios for summer block and September term.</p></div><div class="ceo-snap-fc-grid">' +
+          fc +
+          "</div>"
+        );
+      }
+
+      var mount = document.getElementById("ceoStrategicMount");
+      if (mount) mount.innerHTML = buildStrategicHtml();
+    })();
+  </script>
+  <script>
+    (function () {
+      var isElementorPreview =
+        window.location.search.indexOf("elementor-preview=") !== -1 ||
+        window.location.search.indexOf("preview=true") !== -1 ||
+        document.documentElement.classList.contains("elementor-editor-active");
+      if (isElementorPreview) return;
+
+      var path = (typeof location !== "undefined" && location.pathname) ? String(location.pathname).toLowerCase() : "";
+      var isWorkingUi = path.indexOf("/working_ui/") !== -1;
+      var portalCeoLogoutUrl = isWorkingUi ? "login.html" : "https://www.clubsensational.org/l0/";
+
+      var portalJsVer = "20260513-ceo-dm-author-chips";
+      var portalJsBase = "https://www.clubsensational.org/wp-content/uploads/2026/05/";
+      var ceoDmImportBase = isWorkingUi ? "./ELEMENTOR/MEDIOS/" : portalJsBase;
+      var s = document.createElement("script");
+      s.type = "module";
+      s.textContent =
+        "import { portalLogout, bootstrapDashboardSupabase } from \"" +
+        portalJsBase +
+        "auth-handler.js?v=" +
+        portalJsVer +
+        "\";\n" +
+        "import { mountPortalCeoDm } from \"" +
+        ceoDmImportBase +
+        "portal_ceo_dm.mjs?v=" +
+        portalJsVer +
+        "\";\n" +
+        "await bootstrapDashboardSupabase({ page: \"ceo\" });\n" +
+        "const p = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;\n" +
+        "const greet = document.getElementById(\"ceoGreet\");\n" +
+        "if (greet && p) {\n" +
+        "  const n = String(p.full_name || p.username || \"\").trim();\n" +
+        "  if (n) greet.textContent = \"Hello, \" + n + \" — snapshot below; workspace switches on the left.\";\n" +
+        "}\n" +
+        "document.getElementById(\"ceoLogout\")?.addEventListener(\"click\", async () => {\n" +
+        "  try { await portalLogout(); } catch (e) {}\n" +
+        "  window.location.href = \"" +
+        portalCeoLogoutUrl.replace(/\\/g, "\\\\").replace(/"/g, '\\"') +
+        "\";\n" +
+        "});\n" +
+        "mountPortalCeoDm();\n";
+      document.body.appendChild(s);
+    })();
+  </script>
+</body>
+</html>
