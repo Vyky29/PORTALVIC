@@ -1,3 +1,4 @@
 {
-  "outputDirectory": "working_ui"
+  "outputDirectory": "working_ui",
+  "rewrites": [{ "source": "/", "destination": "/login.html" }]
 }
