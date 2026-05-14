@@ -519,7 +519,14 @@
       window.PORTAL_ADMIN_DASHBOARD_URL = "https://www.clubsensational.org/operations-admin/";
       window.PORTAL_LEAD_DASHBOARD_URL = "https://www.clubsensational.org/l1/";
       var portalJsVer = "20260511-l0-auth";
-      var portalJsBase = "https://www.clubsensational.org/wp-content/uploads/2026/05/";
+      /* ES modules are fetched with CORS. Loading auth-handler from WordPress from another
+         origin (e.g. *.vercel.app) fails if uploads do not send ACAO. Same-origin: use MEDIOS
+         path next to this HTML when not served from the club WordPress host. */
+      var portalHost = (window.location.hostname || "").toLowerCase();
+      var portalJsBase =
+        portalHost === "www.clubsensational.org" || portalHost === "clubsensational.org"
+          ? "https://www.clubsensational.org/wp-content/uploads/2026/05/"
+          : new URL("ELEMENTOR/MEDIOS/", window.location.href).href;
       var s = document.createElement("script");
       s.type = "module";
       s.src = portalJsBase + "auth-handler.js?v=" + portalJsVer;
