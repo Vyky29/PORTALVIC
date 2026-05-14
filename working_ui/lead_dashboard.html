@@ -6091,7 +6091,7 @@
           <div class="avatar-wrap" id="avatarWrap">
             <div class="avatar-aura" aria-hidden="true"></div>
             <div class="avatar avatar--brand-default" id="avatar">
-              <img src="ELEMENTOR/MEDIOS/F-06-1.png" alt="" loading="eager" decoding="async" referrerpolicy="no-referrer-when-downgrade" />
+              <img src="logoazul.png" alt="" loading="eager" decoding="async" referrerpolicy="no-referrer-when-downgrade" onerror="this.onerror=null;this.src='ELEMENTOR/MEDIOS/F-06-1.png'" />
               <span class="avatar-initials" id="avatarInitials" hidden aria-hidden="true"></span>
             </div>
             <div class="avatar-orbit" aria-hidden="true">
@@ -11854,10 +11854,15 @@
     try{ window.buildTodayFromLauraModel = buildTodayFromLauraModel; }catch(_){}
     try{ window.buildSelectedDayViewFromLauraModel = buildSelectedDayViewFromLauraModel; }catch(_){}
 
-    /** Topbar logos: default F-06; avisos/recordatorios usan marca `F-02-1.png` en MEDIOS, con `portal_crest.svg` como respaldo en repo. */
-    const PORTAL_DEFAULT_TOPBAR_AVATAR_URL = 'ELEMENTOR/MEDIOS/F-06-1.png';
-    const PORTAL_ANNOUNCEMENT_TOPBAR_AVATAR_URL = 'ELEMENTOR/MEDIOS/F-02-1.png';
-    const PORTAL_REMINDER_TOPBAR_AVATAR_URL = 'ELEMENTOR/MEDIOS/F-02-1.png';
+    /** Staff/lead topbar brand orbits: `logoamarillo.png` while identity loads or when both announcement+reminder; `ANNOUNCEMENTES_LOGO.png` announcements only; `logoNaranja.png` reminders only; `logoazul.png` when clear. Dock centre stays `ELEMENTOR/MEDIOS/F-02-1.png`. */
+    const PORTAL_STAFF_TOPBAR_LOGO_IDLE_URL = 'logoamarillo.png';
+    const PORTAL_STAFF_TOPBAR_LOGO_CLEAR_URL = 'logoazul.png';
+    const PORTAL_STAFF_TOPBAR_LOGO_REMINDER_URL = 'logoNaranja.png';
+    const PORTAL_STAFF_TOPBAR_LOGO_ANNOUNCEMENT_URL = 'ANNOUNCEMENTES_LOGO.png';
+    const PORTAL_STAFF_TOPBAR_LOGO_BOTH_URL = 'logoamarillo.png';
+    const PORTAL_DEFAULT_TOPBAR_AVATAR_URL = PORTAL_STAFF_TOPBAR_LOGO_CLEAR_URL;
+    const PORTAL_ANNOUNCEMENT_TOPBAR_AVATAR_URL = PORTAL_STAFF_TOPBAR_LOGO_ANNOUNCEMENT_URL;
+    const PORTAL_REMINDER_TOPBAR_AVATAR_URL = PORTAL_STAFF_TOPBAR_LOGO_REMINDER_URL;
     try{ window.__PORTAL_DEFAULT_TOPBAR_AVATAR__ = PORTAL_DEFAULT_TOPBAR_AVATAR_URL; }catch(_){}
     try{ window.__PORTAL_ANNOUNCEMENT_TOPBAR_AVATAR__ = PORTAL_ANNOUNCEMENT_TOPBAR_AVATAR_URL; }catch(_){}
     try{ window.__PORTAL_REMINDER_TOPBAR_AVATAR__ = PORTAL_REMINDER_TOPBAR_AVATAR_URL; }catch(_){}
@@ -12281,26 +12286,17 @@
       if(/F-07-1\.png(\?|#|$)/i.test(s)) return true;
       return false;
     }
-    function portalTopbarAvatarReminderNeedActive(st){
-      try{
-        const state = st || (typeof portalReminderState === 'function' ? portalReminderState() : null);
-        return !!(state && (state.sessionFeedbackNeed || state.venueOpenNeed || state.venueCloseNeed || state.setupPending || state.rosterOverrideNeed));
-      }catch(_){
-        return false;
-      }
-    }
-    /** Pending announcement → red logo; otherwise orange logo if feedback, venue, induction, or upcoming schedule overrides (local window, same bucket as Reminders); when clear → blue logo and orbit. */
+    /** Topbar image tracks alert mode: yellow idle/both, red announcement, orange reminder, blue clear (PNGs in `working_ui/`). */
     function portalTopbarAvatarDisplayUrl(st){
       try{
-        if(dashboardData && !dashboardData.portalIdentityResolved) return PORTAL_DEFAULT_TOPBAR_AVATAR_URL;
+        if(dashboardData && !dashboardData.portalIdentityResolved) return PORTAL_STAFF_TOPBAR_LOGO_IDLE_URL;
       }catch(_){ /* ignore */ }
-      try{
-        if(typeof portalActiveAnnouncementItems === 'function' && portalActiveAnnouncementItems().length > 0){
-          return PORTAL_ANNOUNCEMENT_TOPBAR_AVATAR_URL;
-        }
-      }catch(_){ /* ignore */ }
-      if(portalTopbarAvatarReminderNeedActive(st)) return PORTAL_REMINDER_TOPBAR_AVATAR_URL;
-      return PORTAL_DEFAULT_TOPBAR_AVATAR_URL;
+      var mode = 'none';
+      try{ mode = portalNotificationAlertState(st); }catch(_){ mode = 'none'; }
+      if(mode === 'both') return PORTAL_STAFF_TOPBAR_LOGO_BOTH_URL;
+      if(mode === 'announcement') return PORTAL_STAFF_TOPBAR_LOGO_ANNOUNCEMENT_URL;
+      if(mode === 'reminder') return PORTAL_STAFF_TOPBAR_LOGO_REMINDER_URL;
+      return PORTAL_STAFF_TOPBAR_LOGO_CLEAR_URL;
     }
     function syncPortalHeaderAlertChrome(st){
       const wrap = document.getElementById('avatarWrap');
@@ -12310,7 +12306,7 @@
         const avEarly = document.getElementById('avatar');
         const avImgEarly = avEarly && avEarly.querySelector('img');
         if(avEarly && avImgEarly){
-          avImgEarly.src = PORTAL_DEFAULT_TOPBAR_AVATAR_URL;
+          avImgEarly.src = PORTAL_STAFF_TOPBAR_LOGO_IDLE_URL;
           avEarly.classList.add('avatar--brand-default');
         }
         return;
