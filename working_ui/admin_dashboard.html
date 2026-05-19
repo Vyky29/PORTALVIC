@@ -3904,11 +3904,55 @@
   </aside>
   <div id="opwfToast" class="opwf-toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
-  <script src="portal/term_from_timetable.js?v=20260429-portal"></script>
-  <!-- Roster: `staff_dashboard_spreadsheet_bundle.js` next to this page under portal/ (Vercel/repo). Sync export → deploy. -->
-  <script src="portal/staff_dashboard_spreadsheet_bundle.js?v=20260430-portal"></script>
-  <script src="portal/clients_info_embed.js?v=20260429-portal"></script>
-  <script src="portal/staff_dashboard_spreadsheet_adapter.js?v=20260430-portal"></script>
+  <script>
+  (function(){
+    window.portalStaticUrl = function portalStaticUrl(file){
+      var f = String(file || '').replace(/^\//, '');
+      if(/^portal\//i.test(f)) f = f.replace(/^portal\//i, '');
+      return '/portal/' + f;
+    };
+  })();
+  </script>
+  <script src="/portal/term_from_timetable.js?v=20260519-portal-roster"></script>
+  <!-- Roster: absolute /portal/ paths (works from admin_dashboard.html and portal/admin_embed.html on Vercel). -->
+  <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260519-portal-roster"></script>
+  <script src="/portal/clients_info_embed.js?v=20260519-portal-roster"></script>
+  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260519-portal-roster"></script>
+  <script>
+  (function portalRosterBundleBootstrap(){
+    var v = '20260519-portal-roster';
+    function rosterRows(){
+      var s = window.STAFF_DASHBOARD_SOURCE;
+      return s && Array.isArray(s.rows) ? s.rows.length : 0;
+    }
+    function execJs(text){
+      if(!text) return;
+      try{
+        var el = document.createElement('script');
+        el.textContent = text;
+        (document.head || document.documentElement).appendChild(el);
+        el.parentNode.removeChild(el);
+      }catch(e1){
+        try{ (0, eval)(text); }catch(e2){ window.__PORTAL_ROSTER_PAYLOAD_ERROR = String(e2 && e2.message ? e2.message : e2); }
+      }
+    }
+    function syncGet(url){
+      try{
+        var x = new XMLHttpRequest();
+        x.open('GET', url, false);
+        x.send(null);
+        if(x.status === 200 && x.responseText) return x.responseText;
+      }catch(_e){}
+      return '';
+    }
+    if(!rosterRows()){
+      execJs(syncGet('/portal/staff_dashboard_spreadsheet_bundle.js?v=' + encodeURIComponent(v)));
+    }
+    if(typeof window.StaffDashboardSpreadsheetAdapter === 'undefined'){
+      execJs(syncGet('/portal/staff_dashboard_spreadsheet_adapter.js?v=' + encodeURIComponent(v)));
+    }
+  })();
+  </script>
   <!-- Session feedback export: `session_feedback_portal_data.js` in portal/. Bump data-portal-session-feedback-v after export. -->
   <script src="portal/session_feedback_portal_data.js?v=20260507-portalfix"></script>
   <script>
@@ -7143,6 +7187,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var rosterArea = row.area !== undefined && row.area !== null ? String(row.area).trim() : '';
         var venue = String(row.venue || '').trim();
         var day = String(row.day || '').trim();
+        var sessionDate = String(row.session_date || row.date || '').trim().slice(0, 10);
         if(!timeSlotLabel && !nameRaw && !rosterService && !rosterArea) continue;
         var t = adminRosterParseTimeSlot(row.time_slot, row.day);
         for(var ti = 0; ti < tokens.length; ti++){
@@ -7157,6 +7202,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             rosterArea: rosterArea,
             timeSlotLabel: timeSlotLabel
           };
+          if(sessionDate && /^\d{4}-\d{2}-\d{2}$/.test(sessionDate)) baseSession.session_date = sessionDate;
           var sObj;
           if(isClosed){
             sObj = Object.assign({}, baseSession, { clientId: 'closed', activity: '', status: 'closed' });
@@ -7343,15 +7389,34 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(s.length>=5) return s.slice(0,5);
       return s;
     }
+    function adminNormIsoDate(raw){
+      var s = String(raw || '').trim();
+      var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      return m ? (m[1] + '-' + m[2] + '-' + m[3]) : '';
+    }
+    function adminRosterHasDatedSessionsForIso(iso, sessions){
+      var want = adminNormIsoDate(iso);
+      if(!want) return false;
+      for(var di = 0; di < (sessions || []).length; di++){
+        if(adminNormIsoDate(sessions[di].session_date || sessions[di].sessionDate) === want) return true;
+      }
+      return false;
+    }
+    function adminSessionMatchesCalendarIso(s, iso, weekdayLong, sessions){
+      var wantIso = adminNormIsoDate(iso);
+      var rowIso = adminNormIsoDate(s.session_date || s.sessionDate);
+      if(rowIso) return rowIso === wantIso;
+      if(adminRosterHasDatedSessionsForIso(wantIso, sessions)) return false;
+      return normDayLabel(s.day) === normDayLabel(weekdayLong);
+    }
     function slotsForSelectedDate(iso){
       var pack = adminMergeSpreadsheetSessions();
       var wd = portalWeekdayLongFromIsoDate(iso);
-      var want = normDayLabel(wd);
       sched.slotsById = {};
       var out = [];
       for(var i=0;i<pack.sessions.length;i++){
         var s = pack.sessions[i];
-        if(normDayLabel(s.day) !== want) continue;
+        if(!adminSessionMatchesCalendarIso(s, iso, wd, pack.sessions)) continue;
         var slot = mapSpreadsheetSessionToSchedSlot(s, iso, pack.notes);
         try{
           var O = typeof window !== 'undefined' ? window.__PORTAL_DAYOPS_ROSTER_ASSIGNMENTS__ : null;
@@ -7407,14 +7472,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function bookingRosterStatsForIsoCalendarDay(iso){
       var pack = adminMergeSpreadsheetSessions();
       var wd = portalWeekdayLongFromIsoDate(iso);
-      var want = normDayLabel(wd);
       var total = 0, booked = 0, open = 0, closed = 0;
       var uniqClients = {};
       var serviceKeys = 0;
       var svcSeen = {};
       for(var i = 0; i < pack.sessions.length; i++){
         var s = pack.sessions[i];
-        if(normDayLabel(s.day) !== want) continue;
+        if(!adminSessionMatchesCalendarIso(s, iso, wd, pack.sessions)) continue;
         total++;
         var cid = String(s.clientId || '').trim().toLowerCase();
         if(cid === 'closed'){
@@ -13540,7 +13604,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(tbody){
         tbody.innerHTML = slots.length
           ? renderSchedBaseRows(slots)
-          : '<tr><td colspan="6" class="muted">No sessions for this calendar day’s weekday. Pick a date whose weekday matches your roster sheet, or confirm <code>staff_dashboard_spreadsheet_bundle.js</code> loaded and <code>STAFF_DASHBOARD_SOURCE.rows</code> is populated.</td></tr>';
+          : '<tr><td colspan="6" class="muted">No sessions for this date. If you imported a dated week CSV, confirm <code>/portal/staff_dashboard_spreadsheet_bundle.js</code> is deployed and includes <code>session_date</code> rows for this day.</td></tr>';
       }
       fillSchedFilterSelects(slots);
       var logBody = document.querySelector('#schedLogTable tbody');
@@ -13591,7 +13655,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     /** Shared markup: Scheduling &amp; Cover (standalone view and any future embeds). */
     function schedulingModuleInnerHtml(){
       var today = isoDateLocal(new Date());
-      return '<div class="sched-banner" role="status"><strong>Base schedule:</strong> anchors from <code>STAFF_DASHBOARD_SOURCE</code> + <code>StaffDashboardSpreadsheetAdapter.bootstrap</code> (same bundle as <code>staff_dashboard.html</code>), filtered by the <strong>weekday</strong> of the selected date. <strong>Instructor</strong> and <strong>Participant</strong> dropdowns list only people on rows for that weekday (narrowed to the selected <strong>venue</strong> when a venue is chosen). Extra context opens in the row drawer.</div>'+
+      return '<div class="sched-banner" role="status"><strong>Base schedule:</strong> anchors from <code>STAFF_DASHBOARD_SOURCE</code> (same bundle as staff dashboard). Rows with <code>session_date</code> apply only on that calendar day; other rows follow the weekday template. <strong>Instructor</strong> and <strong>Participant</strong> filters use the sessions shown for the selected date.</div>'+
         '<div class="filter-row" style="align-items:center;margin-bottom:14px;flex-wrap:wrap">'+
         '<label class="muted" for="schedDate">Date</label> '+
         '<input type="date" id="schedDate" class="inp" style="max-width:180px" value="'+esc(today)+'" />'+
@@ -14673,10 +14737,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       for(var di = 0; di < days.length; di++){
         var calIso = days[di];
         var wd = portalWeekdayLongFromIsoDate(calIso);
-        var wantDay = normDayLabel(wd);
         for(var si = 0; si < sessions.length; si++){
           var s = sessions[si];
-          if(normDayLabel(s.day) !== wantDay) continue;
+          if(!adminSessionMatchesCalendarIso(s, calIso, wd, sessions)) continue;
           var p = String(portalDisplayProgrammeFromSheet(String(s.rosterService || s.activity || '')).trim() || 'Session');
           if(p !== wantProg) continue;
           var v = String(s.venue || '').trim() || '—';

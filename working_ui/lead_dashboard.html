@@ -6143,10 +6143,7 @@
       <div class="today-grid" id="todayGrid" aria-live="polite">
         <div class="today-grid-fallback" id="todayGridFallback" hidden aria-hidden="true">
           <div class="today-grid-rows" role="list">
-            <div class="session-card session-card--closed" role="presentation" style="pointer-events:none;cursor:default"><div class="session-card-body"><div class="session-line session-line--time session-line--time-stack"><span class="session-slot-time">4 to 4.30 pm</span><span class="session-line-venue">Acton</span></div><div class="session-line session-line--name"><span class="session-meta-name">Closed</span></div><div class="session-line session-line--symbol"><span class="session-pool-na" aria-hidden="true">—</span></div></div></div>
-            <div class="session-card" role="presentation" style="pointer-events:none;cursor:default"><div class="session-card-body"><div class="session-line session-line--time session-line--time-stack"><span class="session-slot-time">4.30 to 5 pm</span><span class="session-line-venue">Acton</span></div><div class="session-line session-line--name"><span class="session-meta-name">Eddie</span></div><div class="session-line session-line--symbol"><span class="session-pool-label" aria-label="Teaching Pool"><span class="session-pool-label__ln1">Teaching</span><span class="session-pool-label__ln2">Pool</span></span></div></div></div>
-            <div class="session-card" role="presentation" style="pointer-events:none;cursor:default"><div class="session-card-body"><div class="session-line session-line--time session-line--time-stack"><span class="session-slot-time">5 to 5.30 pm</span><span class="session-line-venue">Acton</span></div><div class="session-line session-line--name"><span class="session-meta-name">Joel</span></div><div class="session-line session-line--symbol"><span class="session-pool-label" aria-label="Teaching Pool"><span class="session-pool-label__ln1">Teaching</span><span class="session-pool-label__ln2">Pool</span></span></div></div></div>
-            <div class="session-card" role="presentation" style="pointer-events:none;cursor:default"><div class="session-card-body"><div class="session-line session-line--time session-line--time-stack"><span class="session-slot-time">5.30 to 6.30 pm</span><span class="session-line-venue">Acton</span></div><div class="session-line session-line--name"><span class="session-meta-name">Abodi P</span></div><div class="session-line session-line--symbol"><span class="session-pool-label" aria-label="Lane (SE)"><span class="session-pool-label__ln1">Lane</span><span class="session-pool-label__ln2">(SE)</span></span></div></div></div>
+            <div class="session-card session-card--empty" role="status" style="pointer-events:none;cursor:default"><div class="session-card-body"><div class="session-cell session-cell--client session-cell--empty-msg">Loading your schedule…</div></div></div>
           </div>
         </div>
       </div>
@@ -6639,12 +6636,11 @@
       portalStartTopbarLiveClock();
     }
     let DEMO_VIEW_DAY = portalWeekdayLongEnGB(new Date());
+    /** Optional local preview only: `?portalPreview=demo` (not used on Vercel production). */
     function portalStaffDashIsEditorPreviewMode(){
       try{
         if(typeof window === 'undefined' || !window.location) return false;
-        if(String(window.location.search || '').indexOf('elementor-preview=') !== -1) return true;
-        if(String(window.location.search || '').indexOf('preview=true') !== -1) return true;
-        if(document.documentElement && document.documentElement.classList.contains('elementor-editor-active')) return true;
+        return /(?:^|[?&])portalPreview=demo(?:&|$)/i.test(String(window.location.search || ''));
       }catch(_){}
       return false;
     }
@@ -10162,12 +10158,21 @@
       const pad = function(n){ return String(n).padStart(2, '0'); };
       return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
     }
+    function portalRosterHasDatedRowsForIso(isoYmd){
+      const iso = normaliseIsoDate(isoYmd);
+      if(!iso) return false;
+      const model = (typeof sessionsModel !== 'undefined' && Array.isArray(sessionsModel)) ? sessionsModel : [];
+      return model.some(function(row){
+        return normaliseIsoDate(row && (row.session_date || row.sessionDate)) === iso;
+      });
+    }
     /** Roster row vs calendar day: dated rows match YYYY-MM-DD; recurring rows match weekday (en-GB long). */
     function portalSessionSpreadsheetRowMatchesCalendarDate(s, isoYmd, weekdayLong){
       if(!s) return false;
       const iso = normaliseIsoDate(isoYmd);
       const rowIso = normaliseIsoDate(s.session_date || s.sessionDate);
       if(rowIso) return rowIso === iso;
+      if(portalRosterHasDatedRowsForIso(iso)) return false;
       return String(s.day || '').trim() === String(weekdayLong || '').trim();
     }
     function portalScheduleOverrideFetchIsoList(){
@@ -11877,7 +11882,7 @@
      * When true, each load clears the sample “new” announcement ack so it stays unsigned (walkthrough).
      * Only runs if PORTAL_STAFF_INCLUDE_NEW_ANNOUNCEMENT_IN_NOTICES is true.
      */
-    const PORTAL_STAFF_ANNOUNCEMENT_DEMO_RESET_EVERY_LOAD = true;
+    const PORTAL_STAFF_ANNOUNCEMENT_DEMO_RESET_EVERY_LOAD = false;
     /**
      * Set true to push PORTAL_STAFF_DEMO_NEW_ANNOUNCEMENT into dashboardData.notices as a pending item.
      * Keep false to preview only signed rows in Alerts/Notifications (quick menu + sheet).
@@ -11886,7 +11891,7 @@
     /**
      * When true, seeds PORTAL_STAFF_DEMO_ARCHIVE_SIGNED_ANNOUNCEMENTS into the signed log (localStorage) if missing.
      */
-    const PORTAL_STAFF_SEED_SIGNED_ARCHIVE_ANNOUNCEMENTS = true;
+    const PORTAL_STAFF_SEED_SIGNED_ARCHIVE_ANNOUNCEMENTS = false;
     /** Template for a future “new” notice from your CMS/API — same shape as production items. */
     const PORTAL_STAFF_DEMO_NEW_ANNOUNCEMENT = {
       type: 'announcement',
@@ -11925,23 +11930,10 @@
       afternoon: { venue: 'Acton', time: '4.30 to 6.30 pm' },
       notices: PORTAL_DEMO_ANNOUNCEMENTS.concat([{ type: 'training', title: 'Reminders', opensSetup: true }]),
       portalRemindersFromAdmin: [],
-      today: buildSelectedDayViewFromLauraModel(),
-      tomorrow: [
-        { time: '9 to 10 am', name: 'Roberto', venue: 'Westway' },
-        { time: '10.30 to 11.30 am', name: 'Leo', venue: 'Westway' },
-        { time: '2 to 3 pm', name: 'Roberto', venue: 'Acton' },
-        { time: '3 to 3.30 pm', name: 'Nina', venue: 'Acton' }
-      ],
+      today: [],
+      tomorrow: [],
       nextSessionCalendarDate: null,
-      week: [
-        { day: 'Monday', segments: [{ count: 4, venue: 'Acton', unit: 'slots' }] },
-        { day: 'Tuesday', segments: [{ count: 3, venue: 'Acton' }] },
-        { day: 'Wednesday', segments: [{ count: 0 }] },
-        { day: 'Thursday', segments: [{ count: 3, venue: 'Acton' }, { count: 2, venue: 'Westway' }] },
-        { day: 'Friday', segments: [{ count: 4, venue: 'Acton' }] },
-        { day: 'Saturday', segments: [{ count: 4, venue: 'Acton' }] },
-        { day: 'Sunday', segments: [{ count: 2, venue: 'Westway' }] }
-      ],
+      week: [],
       /** Term grid: months/range filled from term_from_timetable.js; sample feedback only for demo usernames (see portalApplyTermCalendarForStaff). */
       termName: 'Summer Term 2026',
       termCalendarYear: 2026,
@@ -11957,10 +11949,8 @@
     window.dashboardData = dashboardData;
     (function portalIdentityResolveInEditorPreview(){
       try{
-        var isPreview = window.location.search.indexOf("elementor-preview=") !== -1
-          || window.location.search.indexOf("preview=true") !== -1
-          || document.documentElement.classList.contains("elementor-editor-active");
-        if(!isPreview || !window.dashboardData) return;
+        if(typeof portalStaffDashIsEditorPreviewMode !== 'function' || !portalStaffDashIsEditorPreviewMode()) return;
+        if(!window.dashboardData) return;
         var nm = (__spreadsheetBoot && __spreadsheetBoot.staffName) ? String(__spreadsheetBoot.staffName).trim() : "";
         window.dashboardData.staffName = nm || "\u2026";
         window.dashboardData.portalIdentityResolved = true;
@@ -13050,7 +13040,10 @@
         empty.style.pointerEvents = 'none';
         empty.style.cursor = 'default';
         const dayWord = String(DEMO_VIEW_DAY || '').trim() || new Date().toLocaleDateString('en-GB', { weekday: 'long' });
-        empty.innerHTML = `<div class="session-cell session-cell--client session-cell--empty-msg">No participants — ${escapeHtml(dayWord)}</div>`;
+        const loading = !!(dashboardData && dashboardData.portalIdentityResolved === false);
+        empty.innerHTML = loading
+          ? '<div class="session-cell session-cell--client session-cell--empty-msg">Loading your schedule…</div>'
+          : `<div class="session-cell session-cell--client session-cell--empty-msg">No participants — ${escapeHtml(dayWord)}</div>`;
         grid.appendChild(empty);
         if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
         return;
@@ -15421,12 +15414,6 @@
 </script>
   <script>
     (function () {
-      var isElementorPreview =
-        window.location.search.indexOf("elementor-preview=") !== -1 ||
-        window.location.search.indexOf("preview=true") !== -1 ||
-        document.documentElement.classList.contains("elementor-editor-active");
-      if (isElementorPreview) return;
-
       var s = document.createElement("script");
       s.type = "module";
       s.textContent = `
@@ -15462,12 +15449,6 @@
   </script>
   <script>
     (function () {
-      var isElementorPreview =
-        window.location.search.indexOf("elementor-preview=") !== -1 ||
-        window.location.search.indexOf("preview=true") !== -1 ||
-        document.documentElement.classList.contains("elementor-editor-active");
-      if (isElementorPreview) return;
-
       var DAY_NAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
       var WEEK_ORDER_MON_SUN = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
       function dayNameFromDate(d){ return DAY_NAMES[d.getDay()]; }

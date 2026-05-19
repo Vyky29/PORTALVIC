@@ -506,11 +506,6 @@
   </script>
   <script>
     (function () {
-      var isElementorPreview =
-        window.location.search.indexOf("elementor-preview=") !== -1 ||
-        window.location.search.indexOf("preview=true") !== -1 ||
-        document.documentElement.classList.contains("elementor-editor-active");
-      if (isElementorPreview) return;
       window.PORTAL_CEO_DASHBOARD_URL = "ceo_dashboard.html";
       /* After Supabase sign-in, redirects use the PORTAL_*_URL values above (same-origin HTML on Vercel/static). */
       window.PORTAL_STAFF_DASHBOARD_URL = "staff_dashboard.html";

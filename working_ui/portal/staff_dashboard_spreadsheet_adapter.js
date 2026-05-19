@@ -154,6 +154,7 @@
         row.area !== undefined && row.area !== null ? String(row.area).trim() : "";
       const venue = String(row.venue || "").trim();
       const day = String(row.day || "").trim();
+      const sessionDate = String(row.session_date || row.date || "").trim().slice(0, 10);
 
       const selfKey =
         targets.find((k) => normalizePersonId(k) === wanted) ||
@@ -174,6 +175,9 @@
         rosterArea,
         timeSlotLabel,
       };
+      if (sessionDate && /^\d{4}-\d{2}-\d{2}$/.test(sessionDate)) {
+        baseSession.session_date = sessionDate;
+      }
 
       if (isClosed) {
         sessionsModel.push(

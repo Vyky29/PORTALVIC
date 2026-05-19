@@ -399,9 +399,11 @@ def copy_term_to_working_ui():
 def copy_spreadsheet_js_to_working_ui():
     for name in ("staff_dashboard_spreadsheet_adapter.js", "staff_dashboard_spreadsheet_bundle.js"):
         src = OUT / name
-        dst = ROOT / "working_ui" / name
-        if src.exists():
-            dst.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+        if not src.exists():
+            continue
+        text = src.read_text(encoding="utf-8")
+        (ROOT / "working_ui" / name).write_text(text, encoding="utf-8")
+        (ROOT / "working_ui" / "portal" / name).write_text(text, encoding="utf-8")
 
 
 def patch_bundle_rows_from_json():
@@ -443,6 +445,14 @@ if __name__ == "__main__":
     patch_staff_timetable_swimfarm()
     timetable_records = build_staff_timetable()
     build_staff_clients()
+    try:
+        from import_roster_week_csv import import_all_roster_weeks
+
+        n_week = import_all_roster_weeks()
+        if n_week:
+            print(f"Merged {n_week} dated rows from database/roster_weeks/ (+ portal week CSV)")
+    except Exception as exc:
+        print("import_roster_week_csv:", exc)
     roster_path = OUT / "staff_clients_machine.json"
     roster_rows = (
         json.loads(roster_path.read_text(encoding="utf-8"))
