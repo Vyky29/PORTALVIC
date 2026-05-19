@@ -1,5 +1,5 @@
 /**
- * Embedded portal pages (e.g. WordPress): hide theme chrome and validate `portalReturn` redirects.
+ * Embedded portal pages: hide host chrome and validate `portalReturn` redirects.
  */
 (function (global) {
   "use strict";

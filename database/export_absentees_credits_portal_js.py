@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-"""Read working_ui/Absentees & Credits (PORTAL).xlsx and emit working_ui/ELEMENTOR/MEDIOS/absentees_credits_portal_data.js"""
+"""Read working_ui/Absentees & Credits (PORTAL).xlsx and emit working_ui/portal/absentees_credits_portal_data.js"""
 import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 XLSX = ROOT / "working_ui" / "Absentees & Credits (PORTAL).xlsx"
-OUT = ROOT / "working_ui" / "ELEMENTOR" / "MEDIOS" / "absentees_credits_portal_data.js"
+OUT = ROOT / "working_ui" / "portal" / "absentees_credits_portal_data.js"
 
 
 def norm_str(v):

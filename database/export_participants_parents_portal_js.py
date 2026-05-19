@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Read working_ui/Participants_Parents info (PORTAL).xlsx and emit working_ui/ELEMENTOR/MEDIOS/participants_parents_portal_data.js.
+"""Read working_ui/Participants_Parents info (PORTAL).xlsx and emit working_ui/portal/participants_parents_portal_data.js.
 
 Sheet is typically a ClassForKids contacts export (CSV column names). Used for admin participant
 overview (parent / address / DOB / booking dates). Registration-form Q&A can be wired separately
@@ -11,7 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 XLSX = ROOT / "working_ui" / "Participants_Parents info (PORTAL).xlsx"
-OUT = ROOT / "working_ui" / "ELEMENTOR" / "MEDIOS" / "participants_parents_portal_data.js"
+OUT = ROOT / "working_ui" / "portal" / "participants_parents_portal_data.js"
 
 
 def norm_str(v):

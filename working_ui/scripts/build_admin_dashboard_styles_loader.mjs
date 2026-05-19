@@ -1,18 +1,18 @@
 /**
- * Genera ELEMENTOR/MEDIOS/admin_dashboard.styles.loader.js (CSS minificado en base64).
+ * Genera portal/admin_dashboard.styles.loader.js (CSS minificado en base64).
  * Actualiza ?v= del script en admin_dashboard.html (no toca el resto del HTML).
  */
 import fs from "fs";
 import path from "path";
-import { PORTAL_ADMIN_MEDIOS_BASE, PORTAL_ADMIN_MEDIOS_V } from "./portal_admin_medios.mjs";
-import { ELEMENTOR_MEDIOS_DIR, WORKING_UI_DIR } from "./elementor_medios_paths.mjs";
-import { syncElementorMediosDatabaseAssets } from "./sync_elementor_medios_database_assets.mjs";
+import { PORTAL_STATIC_V } from "./portal_static.mjs";
+import { PORTAL_DIR, WORKING_UI_DIR } from "./portal_paths.mjs";
+import { syncPortalAssets } from "./sync_portal_assets.mjs";
 
 const root = WORKING_UI_DIR;
 
-await syncElementorMediosDatabaseAssets();
+await syncPortalAssets();
 const cssPath = path.join(root, "css", "admin_dashboard.css");
-const jsOut = path.join(ELEMENTOR_MEDIOS_DIR, "admin_dashboard.styles.loader.js");
+const jsOut = path.join(PORTAL_DIR, "admin_dashboard.styles.loader.js");
 const htmlPath = path.join(root, "admin_dashboard.html");
 
 function minifyCssForAdminInline(source) {
@@ -58,17 +58,17 @@ fs.writeFileSync(jsOut, body, "utf8");
 
 let html = fs.readFileSync(htmlPath, "utf8");
 const loaderRe = new RegExp(
-  `(${PORTAL_ADMIN_MEDIOS_BASE.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/admin_dashboard\\.styles\\.loader\\.js\\?)v=[^"]+`,
+  `(portal/admin_dashboard\\.styles\\.loader\\.js\\?)v=[^"]+`,
   "g"
 );
 const hadLoader = html.includes("admin_dashboard.styles.loader.js");
 if (hadLoader) {
   loaderRe.lastIndex = 0;
-  html = html.replace(loaderRe, `$1v=${PORTAL_ADMIN_MEDIOS_V}`);
+  html = html.replace(loaderRe, `$1v=${PORTAL_STATIC_V}`);
   fs.writeFileSync(htmlPath, html, "utf8");
 } else {
   console.warn("No admin_dashboard.styles.loader.js src found in admin_dashboard.html — only wrote JS file.");
 }
 
 console.log("Wrote", jsOut, { jsBytes: Buffer.byteLength(body, "utf8"), b64Len: b64.length, chunks: chunks.length });
-if (hadLoader) console.log("Updated styles loader ?v= in admin_dashboard.html", { v: PORTAL_ADMIN_MEDIOS_V });
+if (hadLoader) console.log("Updated styles loader ?v= in admin_dashboard.html", { v: PORTAL_STATIC_V });

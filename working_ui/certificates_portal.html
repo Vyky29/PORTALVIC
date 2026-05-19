@@ -26,10 +26,10 @@
       } catch (e) {}
       try {
         if (typeof location !== "undefined" && location.href) {
-          bases.push(String(new URL("ELEMENTOR/MEDIOS/", location.href).href).replace(/\/$/, ""));
+          bases.push(String(new URL("portal/", location.href).href).replace(/\/$/, ""));
         }
       } catch (e2) {}
-      bases.push("ELEMENTOR/MEDIOS");
+      bases.push("portal");
       var seen = {};
       bases = bases.filter(function (b) {
         if (!b || seen[b]) return false;

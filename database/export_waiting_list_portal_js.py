@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Read working_ui/Watiting List (Portal).xlsx → working_ui/ELEMENTOR/MEDIOS/waiting_list_portal_data.js.
+"""Read working_ui/Watiting List (Portal).xlsx → working_ui/portal/waiting_list_portal_data.js.
 
 Expected export shape matches ClassForKids-style columns (row 1 = headers). The current sheet
 lists children and parents; add two columns for the admin grid when you have them:
@@ -18,7 +18,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 _DEFAULT_XLSX = ROOT / "working_ui" / "Watiting List (Portal).xlsx"
 XLSX = Path(os.environ.get("WAITING_LIST_PORTAL_XLSX", str(_DEFAULT_XLSX)))
-OUT = ROOT / "working_ui" / "ELEMENTOR" / "MEDIOS" / "waiting_list_portal_data.js"
+OUT = ROOT / "working_ui" / "portal" / "waiting_list_portal_data.js"
 
 UK_MONTHS = [
     "Jan",

@@ -5,7 +5,7 @@
  */
 
 const PORTAL_AUTH_MODULE =
-  "ELEMENTOR/MEDIOS/auth-handler.js?v=20260419-99";
+  "portal/auth-handler.js?v=20260419-99";
 
 const qs = new URLSearchParams(typeof location !== "undefined" ? location.search || "" : "");
 

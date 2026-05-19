@@ -596,7 +596,7 @@ const LEVEL_DATA = {
     /* =========================
        1. Details — lectura (fecha / término / nombre) + participante con autocompletado (clients_info)
        ========================= */
-    const PORTAL_CLIENTS_INFO_SCRIPT = "ELEMENTOR/MEDIOS/clients_info_embed.js?v=20260419-99";
+    const PORTAL_CLIENTS_INFO_SCRIPT = "portal/clients_info_embed.js?v=20260419-99";
     const PORTAL_AUTH_HANDLER_FILE = "auth-handler.js?v=20260419-99";
     const PORTAL_DOCUMENTS_MODULE_V = "20260423-13";
 
@@ -617,7 +617,7 @@ const LEVEL_DATA = {
           lastErr = e;
         }
       }
-      throw lastErr || new Error("Could not load portal_documents.js. Add ELEMENTOR/MEDIOS/portal_documents.js on this origin (Vercel/repo), or set window.PORTAL_WP_UPLOADS_BASE.");
+      throw lastErr || new Error("Could not load portal_documents.js. Add portal/portal_documents.js on this origin (Vercel/repo), or set window.PORTAL_WP_UPLOADS_BASE.");
     }
 
     function closeOrReturnSwterm(){
@@ -770,10 +770,10 @@ const LEVEL_DATA = {
       }catch(_){}
       try{
         if(typeof location !== "undefined" && location.href){
-          bases.push(new URL("ELEMENTOR/MEDIOS/", location.href).href.replace(/\/$/, ""));
+          bases.push(new URL("portal/", location.href).href.replace(/\/$/, ""));
         }
       }catch(_){}
-      bases.push("ELEMENTOR/MEDIOS");
+      bases.push("portal");
       const seen = {};
       return bases.filter(b => {
         if(!b || seen[b]) return false;
@@ -1225,11 +1225,11 @@ const LEVEL_DATA = {
       out.innerHTML = renderTermReportHtml(lastTermSummarySections);
     }
 
-    const PDF_HEADER_LOGO_URL = "ELEMENTOR/MEDIOS/Logo-CS-azul.png";
+    const PDF_HEADER_LOGO_URL = "portal/Logo-CS-azul.png";
     /** Landscape “Three stages · six levels” graphic for PDF under section 2 (no rotation). */
-    const PDF_PROGRAMME_SW_URL_WWW = "ELEMENTOR/MEDIOS/SWProgramme.png";
-    const PDF_PROGRAMME_SW_URL_APEX = "ELEMENTOR/MEDIOS/SWProgramme.png";
-    const PDF_PROGRAMME_LEGACY_URL = "ELEMENTOR/MEDIOS/Programme.png";
+    const PDF_PROGRAMME_SW_URL_WWW = "portal/SWProgramme.png";
+    const PDF_PROGRAMME_SW_URL_APEX = "portal/SWProgramme.png";
+    const PDF_PROGRAMME_LEGACY_URL = "portal/Programme.png";
 
     function fetchLogoAsDataUrl(url){
       return fetch(url)
@@ -1294,16 +1294,16 @@ const LEVEL_DATA = {
       }catch(_){}
       try{
         if(typeof location !== "undefined" && location.href){
-          list.push(new URL("ELEMENTOR/MEDIOS/F-02-1.png", location.href).href);
+          list.push(new URL("portal/F-02-1.png", location.href).href);
         }
       }catch(_){}
       try{
         if(typeof location !== "undefined" && location.href){
-          list.push(new URL("ELEMENTOR/MEDIOS/portal_crest.svg", location.href).href);
+          list.push(new URL("portal/portal_crest.svg", location.href).href);
         }
       }catch(_){}
-      list.push("ELEMENTOR/MEDIOS/F-02-1.png");
-      list.push("ELEMENTOR/MEDIOS/portal_crest.svg");
+      list.push("portal/F-02-1.png");
+      list.push("portal/portal_crest.svg");
       const seen = new Set();
       for(let i = 0; i < list.length; i++){
         const url = list[i];

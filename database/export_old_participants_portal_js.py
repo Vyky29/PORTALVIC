@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Read working_ui/Old Participants (PORTAL).xlsx → working_ui/ELEMENTOR/MEDIOS/old_participants_portal_data.js.
+"""Read working_ui/Old Participants (PORTAL).xlsx → working_ui/portal/old_participants_portal_data.js.
 
 The active sheet uses **named ClassForKids-style headers** (e.g. childFirstName, parentLastName).
 This differs from Participants_Parents export layout: there is typically **no inClass** column;
@@ -12,7 +12,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 XLSX = ROOT / "working_ui" / "Old Participants (PORTAL).xlsx"
-OUT = ROOT / "working_ui" / "ELEMENTOR" / "MEDIOS" / "old_participants_portal_data.js"
+OUT = ROOT / "working_ui" / "portal" / "old_participants_portal_data.js"
 
 
 def norm_str(v):

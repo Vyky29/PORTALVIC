@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en-GB" data-portal-session-feedback-v="20260507-portalfix" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
 <head>
-  <!-- Admin portal · repo `working_ui/admin_dashboard.html` + `ELEMENTOR/MEDIOS/` (embed vía admin_embed si aplica). -->
-  <!-- Optional: hide parent site chrome when this HTML is embedded (WordPress or any wrapper). If a map/widget paints on top, lower its z-index — .admin-shell is z-index:1000. -->
+  <!-- Admin portal · repo `working_ui/admin_dashboard.html` + `portal/` (embed vía admin_embed si aplica). -->
+  <!-- Optional: hide parent site chrome when embedded in another shell. If a map/widget paints on top, lower its z-index — .admin-shell is z-index:1000. -->
   <script>
     (function () {
       try {
@@ -327,7 +327,7 @@
     .novo-page--shell > .page-intro{max-width:min(65ch,100%)}
     .novo-subnav{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 18px}
     .novo-subnav .btn{min-width:0}
-    /* Host / WordPress themes often paint button.is-active vivid pink — force portal sidebar palette. */
+    /* Host themes often paint button.is-active vivid pink — force portal sidebar palette. */
     .admin-sidebar #adminNav .admin-nav button,
     .admin-sidebar #adminNav .admin-nav a.admin-nav-external{
       background:transparent !important;
@@ -3772,7 +3772,7 @@
     }
     body.admin-touch-compact .dayops-screen-nav__desc{font-size:11px !important}
 
-    /* WordPress admin bar offset */
+    /* Host admin bar offset (embedded shells) */
     body.admin-bar .admin-shell{top:32px;height:calc(100dvh - 32px);max-height:calc(100dvh - 32px)}
     @media screen and (max-width:782px){
       body.admin-bar .admin-shell{top:46px;height:calc(100dvh - 46px);max-height:calc(100dvh - 46px)}
@@ -3798,7 +3798,7 @@
         <div class="admin-sidebar-logo" aria-label="clubSENsational logo">
           <div class="admin-brand-wrap">
             <div class="admin-brand-mark">
-              <img src="ELEMENTOR/MEDIOS/F-02-1.png" alt="clubSENsational - Autism Consultancy Services" decoding="async" referrerpolicy="no-referrer-when-downgrade" onerror="(function(img){var t=Number(img.dataset.logoTier||0);img.dataset.logoTier=String(t+1);if(t===0){img.src='ELEMENTOR/MEDIOS/portal_crest.svg';return;}img.onerror=null;img.src='data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20200%20200%27%3E%3Crect%20fill%3D%27%23ffffff%27%20width%3D%27200%27%20height%3D%27200%27%2F%3E%3Ctext%20x%3D%27100%27%20y%3D%2778%27%20text-anchor%3D%27middle%27%20font-family%3D%27system-ui%2Csans-serif%27%20font-size%3D%2722%27%20font-weight%3D%27800%27%20fill%3D%27%230f172a%27%3Eclub%3C%2Ftext%3E%3Ctext%20x%3D%27100%27%20y%3D%27120%27%20text-anchor%3D%27middle%27%20font-family%3D%27system-ui%2Csans-serif%27%20font-size%3D%2740%27%20font-weight%3D%27800%27%20fill%3D%27%23b45309%27%3ESEN%3C%2Ftext%3E%3Ctext%20x%3D%27100%27%20y%3D%27152%27%20text-anchor%3D%27middle%27%20font-family%3D%27system-ui%2Csans-serif%27%20font-size%3D%2716%27%20font-weight%3D%27700%27%20fill%3D%27%23334155%27%3Esational%3C%2Ftext%3E%3C%2Fsvg%3E';})(this);" />
+              <img src="portal/F-02-1.png" alt="clubSENsational - Autism Consultancy Services" decoding="async" referrerpolicy="no-referrer-when-downgrade" onerror="(function(img){var t=Number(img.dataset.logoTier||0);img.dataset.logoTier=String(t+1);if(t===0){img.src='portal/portal_crest.svg';return;}img.onerror=null;img.src='data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20200%20200%27%3E%3Crect%20fill%3D%27%23ffffff%27%20width%3D%27200%27%20height%3D%27200%27%2F%3E%3Ctext%20x%3D%27100%27%20y%3D%2778%27%20text-anchor%3D%27middle%27%20font-family%3D%27system-ui%2Csans-serif%27%20font-size%3D%2722%27%20font-weight%3D%27800%27%20fill%3D%27%230f172a%27%3Eclub%3C%2Ftext%3E%3Ctext%20x%3D%27100%27%20y%3D%27120%27%20text-anchor%3D%27middle%27%20font-family%3D%27system-ui%2Csans-serif%27%20font-size%3D%2740%27%20font-weight%3D%27800%27%20fill%3D%27%23b45309%27%3ESEN%3C%2Ftext%3E%3Ctext%20x%3D%27100%27%20y%3D%27152%27%20text-anchor%3D%27middle%27%20font-family%3D%27system-ui%2Csans-serif%27%20font-size%3D%2716%27%20font-weight%3D%27700%27%20fill%3D%27%23334155%27%3Esational%3C%2Ftext%3E%3C%2Fsvg%3E';})(this);" />
             </div>
             <div class="admin-brand-orbit" aria-hidden="true">
               <svg class="admin-brand-orbit-svg" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
@@ -3904,17 +3904,17 @@
   </aside>
   <div id="opwfToast" class="opwf-toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
-  <script src="ELEMENTOR/MEDIOS/term_from_timetable.js?v=20260429-portal"></script>
-  <!-- Roster: `staff_dashboard_spreadsheet_bundle.js` next to this page under ELEMENTOR/MEDIOS/ (Vercel/repo). Sync export → deploy. -->
-  <script src="ELEMENTOR/MEDIOS/staff_dashboard_spreadsheet_bundle.js?v=20260430-portal"></script>
-  <script src="ELEMENTOR/MEDIOS/clients_info_embed.js?v=20260429-portal"></script>
-  <script src="ELEMENTOR/MEDIOS/staff_dashboard_spreadsheet_adapter.js?v=20260430-portal"></script>
-  <!-- Session feedback export: `session_feedback_portal_data.js` in ELEMENTOR/MEDIOS/. Bump data-portal-session-feedback-v after export. -->
-  <script src="ELEMENTOR/MEDIOS/session_feedback_portal_data.js?v=20260507-portalfix"></script>
+  <script src="portal/term_from_timetable.js?v=20260429-portal"></script>
+  <!-- Roster: `staff_dashboard_spreadsheet_bundle.js` next to this page under portal/ (Vercel/repo). Sync export → deploy. -->
+  <script src="portal/staff_dashboard_spreadsheet_bundle.js?v=20260430-portal"></script>
+  <script src="portal/clients_info_embed.js?v=20260429-portal"></script>
+  <script src="portal/staff_dashboard_spreadsheet_adapter.js?v=20260430-portal"></script>
+  <!-- Session feedback export: `session_feedback_portal_data.js` in portal/. Bump data-portal-session-feedback-v after export. -->
+  <script src="portal/session_feedback_portal_data.js?v=20260507-portalfix"></script>
   <script>
   (function portalSessionFeedbackBootstrap(){
     var v = (document.documentElement.getAttribute('data-portal-session-feedback-v') || document.documentElement.getAttribute('data-portal-uploads-js-v') || '20260507-portalfix').trim();
-    var cdnWww = 'ELEMENTOR/MEDIOS/session_feedback_portal_data.js?v=' + encodeURIComponent(v);
+    var cdnWww = 'portal/session_feedback_portal_data.js?v=' + encodeURIComponent(v);
     function portalSfRowCount(){
       var s = typeof window !== 'undefined' ? window.SESSION_FEEDBACK_PORTAL_SOURCE : null;
       return s && Array.isArray(s.rows) ? s.rows.length : 0;
@@ -3939,14 +3939,14 @@
     }catch(_e){}
   })();
   </script>
-  <!-- Clients Payments: JS in ELEMENTOR/MEDIOS/. Export → Clients Payments (PORTAL).xlsx → regenerate JS. -->
-  <script src="ELEMENTOR/MEDIOS/clients_payments_portal_data.js?v=20260507-portalfix"></script>
-  <!-- Absentees & Credits: same pattern — JS in ELEMENTOR/MEDIOS/. Bump data-portal-absentees-credits-v after export. -->
-  <script src="ELEMENTOR/MEDIOS/absentees_credits_portal_data.js?v=20260530-abs"></script>
+  <!-- Clients Payments: JS in portal/. Export → Clients Payments (PORTAL).xlsx → regenerate JS. -->
+  <script src="portal/clients_payments_portal_data.js?v=20260507-portalfix"></script>
+  <!-- Absentees & Credits: same pattern — JS in portal/. Bump data-portal-absentees-credits-v after export. -->
+  <script src="portal/absentees_credits_portal_data.js?v=20260530-abs"></script>
   <script>
   (function portalAbsenteesCreditsBootstrap(){
     var v = (document.documentElement.getAttribute('data-portal-absentees-credits-v') || document.documentElement.getAttribute('data-portal-uploads-js-v') || '20260530-abs').trim();
-    var cdn = 'ELEMENTOR/MEDIOS/absentees_credits_portal_data.js?v=' + encodeURIComponent(v);
+    var cdn = 'portal/absentees_credits_portal_data.js?v=' + encodeURIComponent(v);
     function portalAbsCreditsRowCount(){
       var s = typeof window !== 'undefined' ? window.ABSENTEES_CREDITS_PORTAL_SOURCE : null;
       return s && Array.isArray(s.rows) ? s.rows.length : 0;
@@ -3971,12 +3971,12 @@
     }catch(_e){}
   })();
   </script>
-  <!-- Participants / parents: JS in ELEMENTOR/MEDIOS/. Export → Participants_Parents info (PORTAL).xlsx → regenerate JS. -->
-  <script src="ELEMENTOR/MEDIOS/participants_parents_portal_data.js?v=20260430-pp"></script>
+  <!-- Participants / parents: JS in portal/. Export → Participants_Parents info (PORTAL).xlsx → regenerate JS. -->
+  <script src="portal/participants_parents_portal_data.js?v=20260430-pp"></script>
   <script>
   (function portalParticipantsParentsBootstrap(){
     var v = (document.documentElement.getAttribute('data-portal-participants-parents-v') || document.documentElement.getAttribute('data-portal-uploads-js-v') || '20260430-pp').trim();
-    var cdn = 'ELEMENTOR/MEDIOS/participants_parents_portal_data.js?v=' + encodeURIComponent(v);
+    var cdn = 'portal/participants_parents_portal_data.js?v=' + encodeURIComponent(v);
     function portalPpRowCount(){
       var s = typeof window !== 'undefined' ? window.PARTICIPANTS_PARENTS_PORTAL_SOURCE : null;
       return s && Array.isArray(s.rows) ? s.rows.length : 0;
@@ -4001,11 +4001,11 @@
     }catch(_e){}
   })();
   </script>
-  <script src="ELEMENTOR/MEDIOS/old_participants_portal_data.js?v=20260430-oldpax-export"></script>
+  <script src="portal/old_participants_portal_data.js?v=20260430-oldpax-export"></script>
   <script>
   (function portalOldParticipantsBootstrap(){
     var v = (document.documentElement.getAttribute('data-portal-old-participants-v') || document.documentElement.getAttribute('data-portal-uploads-js-v') || '20260430-oldpax-export').trim();
-    var cdn = 'ELEMENTOR/MEDIOS/old_participants_portal_data.js?v=' + encodeURIComponent(v);
+    var cdn = 'portal/old_participants_portal_data.js?v=' + encodeURIComponent(v);
     function portalOldOk(){
       var s = typeof window !== 'undefined' ? window.OLD_PARTICIPANTS_PORTAL_SOURCE : null;
       return s && Array.isArray(s.rows);
@@ -4033,7 +4033,7 @@
   <script>
   (function portalClientsPaymentsBootstrap(){
     var v = (document.documentElement.getAttribute('data-portal-clients-payments-v') || document.documentElement.getAttribute('data-portal-uploads-js-v') || '20260507-portalfix').trim();
-    var cdn = 'ELEMENTOR/MEDIOS/clients_payments_portal_data.js?v=' + encodeURIComponent(v);
+    var cdn = 'portal/clients_payments_portal_data.js?v=' + encodeURIComponent(v);
     function portalPayRowCount(){
       var s = typeof window !== 'undefined' ? window.CLIENTS_PAYMENTS_PORTAL_SOURCE : null;
       return s && Array.isArray(s.rows) ? s.rows.length : 0;
@@ -4059,11 +4059,11 @@
   })();
   </script>
   <!-- Waiting list: Watiting List (Portal).xlsx → waiting_list_portal_data.js. Add desiredService + slotTime columns in the sheet; bump data-portal-waiting-list-v after export. -->
-  <script src="ELEMENTOR/MEDIOS/waiting_list_portal_data.js?v=20260430-waitlist"></script>
+  <script src="portal/waiting_list_portal_data.js?v=20260430-waitlist"></script>
   <script>
   (function portalWaitingListBootstrap(){
     var v = (document.documentElement.getAttribute('data-portal-waiting-list-v') || document.documentElement.getAttribute('data-portal-uploads-js-v') || '20260430-waitlist').trim();
-    var cdn = 'ELEMENTOR/MEDIOS/waiting_list_portal_data.js?v=' + encodeURIComponent(v);
+    var cdn = 'portal/waiting_list_portal_data.js?v=' + encodeURIComponent(v);
     function portalWlRowCount(){
       var s = typeof window !== 'undefined' ? window.WAITING_LIST_PORTAL_SOURCE : null;
       return s && Array.isArray(s.rows) ? s.rows.length : 0;
@@ -4101,11 +4101,11 @@
       var pp = n(window.PARTICIPANTS_PARENTS_PORTAL_SOURCE);
       var ac = n(window.ABSENTEES_CREDITS_PORTAL_SOURCE);
       var parts = [];
-      if(sf < 1) parts.push('Session feedback: <strong>0</strong> rows — sube <code>session_feedback_portal_data.js</code> a <code>ELEMENTOR/MEDIOS/</code> (debe devolver JS, no una página HTML).');
+      if(sf < 1) parts.push('Session feedback: <strong>0</strong> rows — sube <code>session_feedback_portal_data.js</code> a <code>portal/</code> (debe devolver JS, no una página HTML).');
       if(pay < 1) parts.push('Payments: <strong>0</strong> rows — sube <code>clients_payments_portal_data.js</code> al mismo sitio.');
       if(roster < 1) parts.push('Roster: vacío — sube <code>staff_dashboard_spreadsheet_bundle.js</code> + adapter + <code>clients_info_embed.js</code>.');
-      if(ac < 1 && sf > 0 && pay > 0 && roster > 0) parts.push('Absentees &amp; credits: <strong>0</strong> rows — sube <code>absentees_credits_portal_data.js</code> (export <code>database/export_absentees_credits_portal_js.py</code>) a <code>ELEMENTOR/MEDIOS/</code> si esa cola debe salir del libro.');
-      if(pp < 1) parts.push('Participants: <strong>0</strong> filas en <code>participants_parents_portal_data.js</code> — la pestaña <strong>Participants</strong> usará la lista demo hasta que el JS cargue desde <code>ELEMENTOR/MEDIOS/</code> (export <code>database/export_participants_parents_portal_js.py</code>).');
+      if(ac < 1 && sf > 0 && pay > 0 && roster > 0) parts.push('Absentees &amp; credits: <strong>0</strong> rows — sube <code>absentees_credits_portal_data.js</code> (export <code>database/export_absentees_credits_portal_js.py</code>) a <code>portal/</code> si esa cola debe salir del libro.');
+      if(pp < 1) parts.push('Participants: <strong>0</strong> filas en <code>participants_parents_portal_data.js</code> — la pestaña <strong>Participants</strong> usará la lista demo hasta que el JS cargue desde <code>portal/</code> (export <code>database/export_participants_parents_portal_js.py</code>).');
       if(wl < 1 && sf > 0 && pay > 0 && roster > 0) parts.push('Waiting list: <strong>0</strong> rows — opcional: sube <code>waiting_list_portal_data.js</code> (export <code>database/export_waiting_list_portal_js.py</code> · hoja <code>Watiting List (Portal).xlsx</code>; columnas <code>desiredService</code> y <code>slotTime</code> para servicio y franja).');
       if(!parts.length) return;
       var er = [];
@@ -4122,7 +4122,7 @@
       var vpp = (root.getAttribute('data-portal-participants-parents-v') || '20260430-pp').trim();
       var vold = (root.getAttribute('data-portal-old-participants-v') || '20260430-oldpax-export').trim();
       var vabs = (root.getAttribute('data-portal-absentees-credits-v') || '20260530-abs').trim();
-      var U = 'ELEMENTOR/MEDIOS/';
+      var U = 'portal/';
       var probe = [
         ['session_feedback_portal_data.js', 'Session feedback', vsf],
         ['clients_payments_portal_data.js', 'Clients payments', vpay],
@@ -4160,7 +4160,7 @@
         parts.map(function(p){ return '<div style="margin:6px 0;max-width:56rem;overflow-wrap:break-word">' + p + '</div>'; }).join('') +
         (er.length ? '<div style="margin-top:10px;color:#fecaca;max-width:56rem;overflow-wrap:break-word">' + er.join('<br>') + '</div>' : '') +
         probeHtml +
-        '<div style="margin-top:10px;opacity:.88;max-width:56rem;overflow-wrap:break-word">Asegura que el JS esté en <code>ELEMENTOR/MEDIOS/</code> en el deploy (Vercel/repo). Algunos hosts renombran archivos (<code>…-scaled</code>, <code>…-1.js</code>): el nombre debe coincidir con el que referencia <code>admin_dashboard.html</code>. Si más tarde usas WordPress Medios, sube una copia con el mismo nombre y vacía caché si aplica.</div>' +
+        '<div style="margin-top:10px;opacity:.88;max-width:56rem;overflow-wrap:break-word">Asegura que el JS esté en <code>portal/</code> en el deploy (Vercel/repo). Algunos hosts renombran archivos (<code>…-scaled</code>, <code>…-1.js</code>): el nombre debe coincidir con el que referencia <code>admin_dashboard.html</code>. Regenera exports con los scripts en database/ si cambias los xlsx.</div>' +
         '<div style="margin-top:8px;opacity:.88;max-width:56rem;overflow-wrap:break-word">Si Elementor elimina <code>&lt;script&gt;</code> del HTML, carga estos JS con «Insert Headers and Footers» o <code>functions.php</code>.</div>';
       document.body.appendChild(div);
     }catch(_e){}
@@ -15924,7 +15924,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             '<div class="sched-banner" role="status" style="margin:0 0 12px;max-width:52rem;min-width:0;overflow-wrap:break-word;font-size:13px;line-height:1.45">' +
             '<strong>Workbook not loaded on this URL.</strong> You are seeing <strong>embedded demo</strong> table rows (not your v1 export). ' +
             'On disk the file <code>session_feedback_portal_data.js</code> loads next to the HTML; on the web it must exist under ' +
-            '<code>ELEMENTOR/MEDIOS/session_feedback_portal_data.js</code> (same folder as <code>clients_payments_portal_data.js</code>). ' +
+            '<code>portal/session_feedback_portal_data.js</code> (same folder as <code>clients_payments_portal_data.js</code>). ' +
             'Bump <code>data-portal-session-feedback-v</code> / <code>data-portal-clients-payments-v</code> on <code>&lt;html&gt;</code> after exports, then Ctrl+F5.' +
             '</div>'
           )
@@ -16937,7 +16937,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       refreshKpisFromDemo();
       var k = MOCK.kpi;
       return '<h1 class="page-title">Settings &amp; demo tools</h1><p class="page-intro">Session, connections, and demo snapshot controls for this admin build.</p>'+
-        '<div class="grid-2"><div class="card card-pad"><h3 style="margin:0 0 10px;font-size:14px">Connections</h3><p class="muted" style="margin:0 0 8px">Primary admin UI: open <code>admin_dashboard.html</code> (or <code>admin_embed.html</code>) from the same origin as <code>ELEMENTOR/MEDIOS/</code> — e.g. Vercel static deploy. Optional later: WordPress shortcode <code>[cs_portal_admin]</code> can iframe the same embed. Login redirect: <code>PORTAL_ADMIN_DASHBOARD_URL</code> in <code>login.html</code> / <code>auth-handler.js</code>.</p><p class="muted" style="margin:0">Supabase: active after sign-in inside the embed; this card does not probe live connection state.</p></div>'+
+        '<div class="grid-2"><div class="card card-pad"><h3 style="margin:0 0 10px;font-size:14px">Connections</h3><p class="muted" style="margin:0 0 8px">Primary admin UI: open <code>admin_dashboard.html</code> (or <code>admin_embed.html</code>) from the same origin as <code>portal/</code> — e.g. Vercel static deploy. Login redirect: <code>PORTAL_ADMIN_DASHBOARD_URL</code> in <code>login.html</code> / <code>auth-handler.js</code>.</p><p class="muted" style="margin:0">Supabase: active after sign-in inside the embed; this card does not probe live connection state.</p></div>'+
         '<div class="card card-pad"><h3 style="margin:0 0 10px;font-size:14px">Operational snapshot (demo)</h3><p class="muted" style="margin:0">Open incidents: <strong style="color:var(--ink)">'+k.incidentsOpen+'</strong></p><p class="muted" style="margin:8px 0 0">Absents / credits pending: <strong style="color:var(--ink)">'+k.cancellationsOpen+'</strong></p><p class="muted" style="margin:8px 0 0">Reports in flight: <strong style="color:var(--ink)">'+k.reportsPending+'</strong> · Onboarding tasks: <strong style="color:var(--ink)">'+k.onboardingPending+'</strong></p><p class="muted" style="margin:8px 0 0">Billable sessions in model: <strong style="color:var(--ink)">'+MOCK.sessionEconomics.billableSessionCount+'</strong></p></div></div>'+
         '<div class="card" style="margin-top:14px"><div class="card-pad"><div class="toolbar"><button type="button" class="btn btn--sec" data-open-report>Report generator</button> <button type="button" class="btn btn--ghost" data-portal-logout>Log out</button></div></div></div>';
     }
@@ -20555,7 +20555,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var s = document.createElement("script");
       s.type = "module";
       s.textContent = `
-        import { portalLogout, bootstrapDashboardSupabase } from "ELEMENTOR/MEDIOS/auth-handler.js?v=20260430-portalauth4";
+        import { portalLogout, bootstrapDashboardSupabase } from "portal/auth-handler.js?v=20260430-portalauth4";
         try { await bootstrapDashboardSupabase({ page: "admin" }); } catch {}
         const profile = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
         if (profile) {

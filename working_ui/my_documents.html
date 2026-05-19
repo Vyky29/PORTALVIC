@@ -142,9 +142,9 @@
       const bases = [
         custom,
         typeof location !== "undefined" && location.href
-          ? String(new URL("ELEMENTOR/MEDIOS/", location.href).href).replace(/\/$/, "")
+          ? String(new URL("portal/", location.href).href).replace(/\/$/, "")
           : "",
-        "ELEMENTOR/MEDIOS",
+        "portal",
       ].filter(Boolean);
       const uniq = [...new Set(bases)];
       for (const base of uniq) {
@@ -156,7 +156,7 @@
         }
       }
       throw new Error(
-        "Could not load portal_documents.js. Add working_ui/ELEMENTOR/MEDIOS/portal_documents.js to the deploy (same origin as this page). Optional later: window.PORTAL_WP_UPLOADS_BASE if you mirror files elsewhere."
+        "Could not load portal_documents.js. Add working_ui/portal/portal_documents.js to the deploy (same origin as this page). Optional later: window.PORTAL_WP_UPLOADS_BASE if you mirror files elsewhere."
       );
     }
     const { portalListMyDocuments, portalCreateDocumentSignedUrl, portalHideMyDocumentFromList } =

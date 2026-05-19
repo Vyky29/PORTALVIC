@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Read **only** SPREADSHEETS/v1SessionFeedback (PORTAL).xlsx → working_ui/ELEMENTOR/MEDIOS/session_feedback_portal_data.js.
+"""Read **only** SPREADSHEETS/v1SessionFeedback (PORTAL).xlsx → working_ui/portal/session_feedback_portal_data.js.
 
 The older working_ui/SessionFeedback (PORTAL).xlsx is **not** used. v1 coverage starts **2026-04-13** (rows
 before that date are skipped even if present in the file).
@@ -20,7 +20,7 @@ PORTAL_SESSION_FEEDBACK_FIRST_DATE_ISO = "2026-04-13"
 # **Only** this workbook feeds the admin portal session-feedback grid / Session Overview matching.
 _DEFAULT_XLSX = ROOT / "SPREADSHEETS" / "v1SessionFeedback (PORTAL).xlsx"
 XLSX = Path(os.environ.get("SESSION_FEEDBACK_PORTAL_XLSX", str(_DEFAULT_XLSX)))
-OUT = ROOT / "working_ui" / "ELEMENTOR" / "MEDIOS" / "session_feedback_portal_data.js"
+OUT = ROOT / "working_ui" / "portal" / "session_feedback_portal_data.js"
 
 
 def cell_date(v):

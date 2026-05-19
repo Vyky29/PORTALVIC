@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Read working_ui/Clients Payments (PORTAL).xlsx and emit working_ui/ELEMENTOR/MEDIOS/clients_payments_portal_data.js"""
+"""Read working_ui/Clients Payments (PORTAL).xlsx and emit working_ui/portal/clients_payments_portal_data.js"""
 import json
 import re
 from datetime import datetime, timezone
@@ -7,7 +7,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 XLSX = ROOT / "working_ui" / "Clients Payments (PORTAL).xlsx"
-OUT = ROOT / "working_ui" / "ELEMENTOR" / "MEDIOS" / "clients_payments_portal_data.js"
+OUT = ROOT / "working_ui" / "portal" / "clients_payments_portal_data.js"
 
 
 def norm_str(v):

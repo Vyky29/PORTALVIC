@@ -2,17 +2,17 @@
 <html lang="en-GB">
 <head>
   <!--
-    Deploy: Vercel/static desde `working_ui/` (mismo origen + `ELEMENTOR/MEDIOS/`). Si incrustáis en WordPress, el tema puede seguir envolviendo la página; `portal-app-shell` oculta header/footer.
+    Deploy: Vercel/static desde `working_ui/` (mismo origen + `portal/`). `portal-app-shell` oculta chrome del host si la página va embebida.
 
-    Tras login, redirecciones: `login.html` (PORTAL_*_DASHBOARD_URL) y `ELEMENTOR/MEDIOS/auth-handler.js`.
-    Logos del portal: PNG bajo `ELEMENTOR/MEDIOS/` (evitar CDN externo salvo que subáis allí los assets).
+    Tras login, redirecciones: `login.html` (PORTAL_*_DASHBOARD_URL) y `portal/auth-handler.js`.
+    Logos del portal: PNG bajo `portal/` (evitar CDN externo salvo que subáis allí los assets).
 
     Web Push: window.__PORTAL_VAPID_PUBLIC_KEY__ debe ser la MISMA cadena que el secret Supabase VAPID_PUBLIC_KEY (la privada solo en Edge Secrets).
     En Elementor: bloque «HTML personalizado» encima del iframe con <script>window.__PORTAL_VAPID_PUBLIC_KEY__="…";</script>
     Edge Functions: portal-push-subscribe · portal-push-dispatch-schedule-override · webhook DB en schedule_overrides + header x-portal-webhook-secret.
     Secret Edge PORTAL_PUSH_OPEN_URL: URL HTTPS pública de este dashboard (sin barra final), p. ej. …/lead_dashboard.html en producción.
   -->
-  <!-- Optional: hide parent site chrome when embedded (WordPress or any wrapper). -->
+  <!-- Optional: hide parent site chrome when embedded in another shell. -->
   <script>
     (function () {
       try {
@@ -5973,7 +5973,7 @@
 </head>
 <body>
   <script>
-  /* WordPress/Elementor: if only <body> is embedded, <head> (PWA metas) is missing and iOS keeps the Safari bar. Inject metas into document.head. */
+  /* Embedded shell: if only <body> is injected, <head> (PWA metas) is missing and iOS keeps the Safari bar. */
   (function(){
     function ensureMeta(name, content){
       if(document.querySelector('meta[name="'+name+'"]')) return;
@@ -6091,7 +6091,7 @@
           <div class="avatar-wrap" id="avatarWrap">
             <div class="avatar-aura" aria-hidden="true"></div>
             <div class="avatar avatar--brand-default" id="avatar">
-              <img src="logoazul.png" alt="" loading="eager" decoding="async" referrerpolicy="no-referrer-when-downgrade" onerror="this.onerror=null;this.src='ELEMENTOR/MEDIOS/F-06-1.png'" />
+              <img src="logoazul.png" alt="" loading="eager" decoding="async" referrerpolicy="no-referrer-when-downgrade" onerror="this.onerror=null;this.src='portal/F-06-1.png'" />
               <span class="avatar-initials" id="avatarInitials" hidden aria-hidden="true"></span>
             </div>
             <div class="avatar-orbit" aria-hidden="true">
@@ -6192,7 +6192,7 @@
         <span class="dock-nav-item__label">My participants</span>
       </button>
       <button type="button" class="dock-nav-item dock-nav-item--dashboard" id="dockDashboardTile" aria-label="Home — return to dashboard and close open panels">
-        <img class="dock-nav-item__logo" src="ELEMENTOR/MEDIOS/F-02-1.png" alt="clubSENsational" width="120" height="120" decoding="async" referrerpolicy="no-referrer-when-downgrade" onerror="this.onerror=null;this.src='ELEMENTOR/MEDIOS/portal_crest.svg'" />
+        <img class="dock-nav-item__logo" src="portal/F-02-1.png" alt="clubSENsational" width="120" height="120" decoding="async" referrerpolicy="no-referrer-when-downgrade" onerror="this.onerror=null;this.src='portal/portal_crest.svg'" />
       </button>
       <button type="button" class="dock-nav-item dock-nav-item--quick-menu" id="dockQuickMenuTile" aria-label="Open quick menu">
         <span class="dock-nav-item__icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1" fill="none"/><rect x="14" y="3" width="7" height="7" rx="1" fill="none"/><rect x="3" y="14" width="7" height="7" rx="1" fill="none"/><rect x="14" y="14" width="7" height="7" rx="1" fill="none"/></svg></span>
@@ -6579,10 +6579,10 @@
     </div>
   </section>
 
-  <script src="ELEMENTOR/MEDIOS/term_from_timetable.js?v=20260506-portal-interactions"></script>
-  <script src="ELEMENTOR/MEDIOS/staff_dashboard_spreadsheet_bundle.js?v=20260506-portal-interactions"></script>
-  <script src="ELEMENTOR/MEDIOS/clients_info_embed.js?v=20260506-portal-interactions"></script>
-  <script src="ELEMENTOR/MEDIOS/staff_dashboard_spreadsheet_adapter.js?v=20260506-portal-interactions"></script>
+  <script src="portal/term_from_timetable.js?v=20260506-portal-interactions"></script>
+  <script src="portal/staff_dashboard_spreadsheet_bundle.js?v=20260506-portal-interactions"></script>
+  <script src="portal/clients_info_embed.js?v=20260506-portal-interactions"></script>
+  <script src="portal/staff_dashboard_spreadsheet_adapter.js?v=20260506-portal-interactions"></script>
   <script>
     console.log("ABSENT FIX VERSION LOADED 20260425");
     /** Real calendar weekday for “Today” (en-GB), aligned with staff_clients_machine.xlsx */
@@ -6710,7 +6710,7 @@
     /** Persisted register/feedback flags so returning from session_feedback.html keeps row colours. */
     const PORTAL_SESSION_REVIEW_MAP_STORAGE = 'portalSessionReviewMap_v1';
     /** Same folder as auth-handler on the CDN; used to pull server-side review keys onto this device. */
-    const PORTAL_SUPABASE_CLIENT_MODULE = 'ELEMENTOR/MEDIOS/supabase-client.js?v=20260506-portal-interactions';
+    const PORTAL_SUPABASE_CLIENT_MODULE = 'portal/supabase-client.js?v=20260506-portal-interactions';
     /**
      * Web Push (app closed / phone locked): VAPID **public** key only — generate pair with `npx web-push generate-vapid-keys`,
      * put public key here (or `window.__PORTAL_VAPID_PUBLIC_KEY__` on the host page); private key lives in Supabase Edge secrets only.
@@ -8558,7 +8558,7 @@
         const now = Date.now();
         const escalated = level > (Number(last.level) || -1);
         if(!escalated && (now - (Number(last.t) || 0) < minGap) && String(last.body || '') === body) return;
-        const icon = 'ELEMENTOR/MEDIOS/F-02-1.png';
+        const icon = 'portal/F-02-1.png';
         try{
           const n = new Notification(title, {
             body: body,
@@ -10276,7 +10276,7 @@
         }catch(_){}
       }
       if(typeof Notification === 'undefined' || Notification.permission !== 'granted') return false;
-      var icon = 'ELEMENTOR/MEDIOS/F-02-1.png';
+      var icon = 'portal/F-02-1.png';
       try{
         var n = new Notification(String(title || 'clubSENsational'), {
           body: String(body || ''),
@@ -11854,7 +11854,7 @@
     try{ window.buildTodayFromLauraModel = buildTodayFromLauraModel; }catch(_){}
     try{ window.buildSelectedDayViewFromLauraModel = buildSelectedDayViewFromLauraModel; }catch(_){}
 
-    /** Staff/lead topbar brand orbits: `logoamarillo.png` while identity loads or when both announcement+reminder; `ANNOUNCEMENTES_LOGO.png` announcements only; `logoNaranja.png` reminders only; `logoazul.png` when clear. Dock centre stays `ELEMENTOR/MEDIOS/F-02-1.png`. */
+    /** Staff/lead topbar brand orbits: `logoamarillo.png` while identity loads or when both announcement+reminder; `ANNOUNCEMENTES_LOGO.png` announcements only; `logoNaranja.png` reminders only; `logoazul.png` when clear. Dock centre stays `portal/F-02-1.png`. */
     const PORTAL_STAFF_TOPBAR_LOGO_IDLE_URL = 'logoamarillo.png';
     const PORTAL_STAFF_TOPBAR_LOGO_CLEAR_URL = 'logoazul.png';
     const PORTAL_STAFF_TOPBAR_LOGO_REMINDER_URL = 'logoNaranja.png';
@@ -15430,7 +15430,7 @@
       var s = document.createElement("script");
       s.type = "module";
       s.textContent = `
-        import { portalLogout, bootstrapDashboardSupabase } from "ELEMENTOR/MEDIOS/auth-handler.js?v=20260506-portal-interactions";
+        import { portalLogout, bootstrapDashboardSupabase } from "portal/auth-handler.js?v=20260506-portal-interactions";
         try { await bootstrapDashboardSupabase({ page: "staff" }); } catch {}
         const profile = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
         const session = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session;

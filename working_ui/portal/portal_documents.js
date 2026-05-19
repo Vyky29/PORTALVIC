@@ -7,7 +7,7 @@ function portalAuthModuleUrl() {
       return new URL("./auth-handler.js?v=20260423-3", import.meta.url).href;
     }
   } catch (_) {}
-  return "ELEMENTOR/MEDIOS/auth-handler.js?v=20260423-3";
+  return "portal/auth-handler.js?v=20260423-3";
 }
 
 function portalIsLikelyNetworkError(err) {

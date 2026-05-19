@@ -2,7 +2,7 @@
  * Incrusta CSS en admin_dashboard.html (bloque <style>).
  * Si Elementor da 500 al guardar, usa en su lugar:
  *   node working_ui/scripts/build_admin_dashboard_styles_loader.mjs
- * (HTML pequeño + ELEMENTOR/MEDIOS/admin_dashboard.styles.loader.js en Medios).
+ * (HTML pequeño + portal/admin_dashboard.styles.loader.js en Medios).
  */
 import fs from "fs";
 import path from "path";
