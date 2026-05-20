@@ -1,0 +1,142 @@
+/* Portal 2026 day-ops tables + embed (scoped for admin_dashboard c4k sessions hub) */
+.portal-day-ops-embed .portal-forms-status {
+  min-height: 22px;
+  font-size: 13px;
+  margin: 0 0 14px;
+  color: var(--text, #1e293b);
+}
+.portal-day-ops-embed .portal-forms-status:empty {
+  display: none;
+  min-height: 0;
+  margin-bottom: 0;
+}
+.portal-day-ops-embed .portal-forms-status.is-error { color: #b91c1c; }
+.portal-day-ops-embed .portal-forms-heading {
+  font-size: 15px;
+  margin: 0 0 10px;
+  color: var(--navy, #16325c);
+  font-weight: 700;
+}
+.portal-day-ops-embed .files-table-wrap,
+.portal-day-ops-embed .portal-forms-table-wrap {
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+  margin-bottom: 0;
+}
+.portal-day-ops-embed .files-table,
+.portal-day-ops-embed .portal-forms-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+.portal-day-ops-embed .files-table thead th,
+.portal-day-ops-embed .portal-forms-table thead th {
+  background: var(--off-white, #f8fafc);
+  text-align: left;
+  padding: 12px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--navy, #16325c);
+  border-bottom: 1px solid var(--border, #e2e8f0);
+  white-space: nowrap;
+}
+.portal-day-ops-embed .files-table tbody td,
+.portal-day-ops-embed .portal-forms-table tbody td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+  vertical-align: middle;
+}
+.portal-day-ops-embed .files-table tbody tr:last-child td,
+.portal-day-ops-embed .portal-forms-table tbody tr:last-child td { border-bottom: none; }
+.portal-day-ops-embed .portal-forms-data-row { cursor: pointer; }
+.portal-day-ops-embed .portal-forms-data-row:hover td { background: #f0f7ff !important; }
+.portal-day-ops-embed .portal-forms-cell-main { font-weight: 600; font-size: 13px; }
+.portal-day-ops-embed .portal-forms-cell-sub { font-size: 12px; color: var(--muted, #64748b); margin-top: 2px; }
+.portal-day-ops-embed .portal-forms-table .cell-clip {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.portal-day-ops-embed .portal-forms-table--lead-reports th,
+.portal-day-ops-embed .portal-forms-table--lead-reports td {
+  text-align: center;
+  vertical-align: middle;
+}
+.portal-day-ops-embed .portal-forms-view-btn {
+  border: 1px solid var(--border, #e2e8f0);
+  background: #fff;
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+  color: var(--navy, #16325c);
+  cursor: pointer;
+}
+.portal-day-ops-embed .portal-forms-view-btn:hover { background: #f1f5fb; }
+.portal-day-ops-embed .portal-forms-pill {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.portal-day-ops-embed .portal-forms-pill--yes { background: #fee2e2; color: #991b1b; }
+.portal-day-ops-embed .portal-forms-pill--no { background: #ecfdf5; color: #047857; }
+.portal-day-ops-embed .submission-state {
+  padding: 28px 16px;
+  text-align: center;
+  font-size: 13.5px;
+  color: var(--muted, #64748b);
+}
+.portal-day-ops-embed .submission-state strong {
+  display: block;
+  font-size: 15px;
+  color: var(--text, #1e293b);
+  margin-bottom: 4px;
+}
+.portal-day-ops-embed #adminSessionsHubRoot,
+.portal-day-ops-embed #adminSessionFeedbacksRoot {
+  margin-top: 0;
+  min-width: 0;
+}
+.portal-day-ops-embed .c4k-sessions-hub-panel[hidden] { display: none !important; }
+
+/* Day-ops tab bar — align with Portal 2026 ash-tabs */
+.portal-day-ops-embed .c4k-sessions-hub-tabs { gap: 6px; margin-bottom: 16px; }
+.portal-day-ops-embed .c4k-sessions-hub-tab {
+  border: 1px solid var(--border, #d9e3ee);
+  background: #fff;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted, #627282);
+  box-shadow: none;
+}
+.portal-day-ops-embed .c4k-sessions-hub-tab:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: var(--navy, #16325c);
+}
+.portal-day-ops-embed .c4k-sessions-hub-tab.is-active {
+  background: var(--navy, #16325c);
+  border-color: var(--navy, #16325c);
+  color: #fff;
+  box-shadow: none;
+}
+.portal-day-ops-embed .c4k-sessions-hub-tab--dash {
+  background: linear-gradient(180deg, #fff7ed 0%, #ffedd5 100%);
+  border-color: #fdba74;
+  color: #9a3412;
+}
+.portal-day-ops-embed .c4k-sessions-hub-tab--dash.is-active {
+  background: linear-gradient(180deg, #ea580c 0%, #c2410c 100%);
+  border-color: #9a3412;
+  color: #fff;
+}

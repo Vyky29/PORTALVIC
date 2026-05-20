@@ -2,6 +2,8 @@
   "outputDirectory": "working_ui",
   "rewrites": [
     { "source": "/", "destination": "/login.html" },
+    { "source": "/adminportal", "destination": "/admin_dashboard.html" },
+    { "source": "/adminportal/", "destination": "/admin_dashboard.html" },
     { "source": "/operations-admin", "destination": "/admin_dashboard.html" },
     { "source": "/operations-admin/", "destination": "/admin_dashboard.html" },
     { "source": "/l0", "destination": "/login.html" },

@@ -1,9 +1,12 @@
 <!DOCTYPE html>
-<html lang="en-GB" data-portal-ui-build="20260519-sf-dash-ref" data-portal-session-feedback-v="20260507-portalfix" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
+<html lang="en-GB" data-portal-ui-build="20260520-portal2026-dayops" data-portal-session-feedback-v="20260507-portalfix" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
 <head>
   <!-- Admin portal · Vercel static deploy: working_ui/admin_dashboard.html + portal/ assets -->
   <meta charset="UTF-8" />
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
+  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260520-portal2026" />
+  <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260520-portal2026" />
+  <script src="/portal/admin-portal-day-ops.js?v=20260520-portal2026"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
   <title>clubSENsational · Operations + Operator workflow (merged)</title>
   <style>
@@ -16109,12 +16112,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     var C4K_SESSIONS_HUB_TABS = [
       { id:'overview', label:'Overview', mode:'panel' },
       { id:'feedback', label:'Feedback', mode:'panel' },
-      { id:'positive', label:'Positive', mode:'hubNotes', notesMode:'positive' },
-      { id:'relevant', label:'Relevant', mode:'hubNotes', notesMode:'relevant' },
-      { id:'incidents', label:'Incidents', mode:'sfSection', section:'incidents' },
-      { id:'cancellations', label:'Cancellations', mode:'hubCancellations' },
-      { id:'absents', label:'Absents', mode:'hubAbsents' },
-      { id:'lead', label:'Lead report', mode:'view', view:'c4k_reviews' },
+      { id:'positive', label:'Positive', mode:'panel' },
+      { id:'relevant', label:'Relevant', mode:'panel' },
+      { id:'incidents', label:'Incidents', mode:'panel' },
+      { id:'cancellations', label:'Cancellations', mode:'panel' },
+      { id:'absents', label:'Absents', mode:'panel' },
+      { id:'lead', label:'Lead report', mode:'panelLead' },
+      { id:'venue', label:'Venue', mode:'panelVenue' },
       { id:'dashboard', label:'Dashboard', mode:'view', view:'dashboard', dash:true }
     ];
     function sessionsHubEnsureState(){
@@ -16221,10 +16225,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
 
     function sessionsHubTabUsesWeekStrip(tab){
-      return tab === 'overview' || tab === 'positive' || tab === 'relevant' || tab === 'absents' || tab === 'cancellations';
+      return false;
     }
     function sessionsHubTabShowsRefresh(tab){
-      return tab === 'feedback' || tab === 'positive' || tab === 'relevant' || tab === 'absents' || tab === 'cancellations';
+      return tab !== 'dashboard';
+    }
+    function sessionsHubUsesTrackingHub(tab){
+      return tab === 'overview' || tab === 'incidents' || tab === 'absents' || tab === 'cancellations';
+    }
+    function sessionsHubUsesFeedbackHub(tab){
+      return tab === 'feedback' || tab === 'positive' || tab === 'relevant';
     }
     function adminHubFormatInstructorName(raw){
       var s = String(raw || '').trim();
@@ -16676,11 +16686,66 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '</div></div></div>'
         );
       }
+      if(tab === 'incidents'){
+        return (
+          '<div class="c4k-sessions-hub__head">' +
+          '<div class="c4k-sessions-hub__title-row">' +
+          '<span class="c4k-sessions-hub__ico" aria-hidden="true">⚠</span>' +
+          '<div style="min-width:0">' +
+          '<h1 class="c4k-sessions-hub__title">INCIDENT REPORTS</h1>' +
+          '<p class="c4k-sessions-hub__sub">Submitted incident reports with session and outcome detail.</p>' +
+          '</div></div></div>'
+        );
+      }
+      if(tab === 'lead'){
+        return (
+          '<div class="c4k-sessions-hub__head">' +
+          '<div class="c4k-sessions-hub__title-row">' +
+          '<span class="c4k-sessions-hub__ico" aria-hidden="true">📊</span>' +
+          '<div style="min-width:0">' +
+          '<h1 class="c4k-sessions-hub__title">LEAD REPORTS</h1>' +
+          '<p class="c4k-sessions-hub__sub">Lead session reports submitted from the field.</p>' +
+          '</div></div></div>'
+        );
+      }
+      if(tab === 'venue'){
+        return (
+          '<div class="c4k-sessions-hub__head">' +
+          '<div class="c4k-sessions-hub__title-row">' +
+          '<span class="c4k-sessions-hub__ico" aria-hidden="true">🏢</span>' +
+          '<div style="min-width:0">' +
+          '<h1 class="c4k-sessions-hub__title">VENUE REVIEWS</h1>' +
+          '<p class="c4k-sessions-hub__sub">Opening and closing venue checklist reviews.</p>' +
+          '</div></div></div>'
+        );
+      }
       return (
         '<div class="c4k-sessions-hub__head">' +
         '<h1 class="c4k-sessions-hub__title">SESSIONS OVERVIEW</h1>' +
         '<p class="c4k-sessions-hub__sub">Weekly roster, session status, and feedback by day.</p>' +
         '</div>'
+      );
+    }
+    function c4kHubLeadPanelInnerHtml(){
+      return (
+        '<h2 class="portal-forms-heading">Lead reports</h2>' +
+        '<div class="files-table-wrap portal-forms-table-wrap">' +
+        '<table class="files-table portal-forms-table portal-forms-table--lead-reports">' +
+        '<thead><tr><th class="col-date">When</th><th>Submitted by</th><th>Service</th><th>Activity</th>' +
+        '<th class="col-brief-desc">Brief description</th><th class="col-actions">View</th></tr></thead>' +
+        '<tbody id="portalFormsLeadTbody"><tr><td colspan="6"><div class="submission-state"><strong>Loading…</strong></div></td></tr></tbody>' +
+        '</table></div>'
+      );
+    }
+    function c4kHubVenuePanelInnerHtml(){
+      return (
+        '<h2 class="portal-forms-heading">Venue reviews</h2>' +
+        '<div class="files-table-wrap portal-forms-table-wrap">' +
+        '<table class="files-table portal-forms-table portal-forms-table--full-detail">' +
+        '<thead><tr><th class="col-venue-name">Venue</th><th>Review date</th><th>Time</th><th>Issues</th>' +
+        '<th class="col-issues-detail">Issue details</th><th>Submitted by</th></tr></thead>' +
+        '<tbody id="portalFormsVenueTbody"><tr><td colspan="6"><div class="submission-state"><strong>Loading…</strong></div></td></tr></tbody>' +
+        '</table></div>'
       );
     }
     function sessionsHubToolbarHtml(tab){
@@ -16718,95 +16783,143 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function sessionsHubRefreshActiveTab(){
       var h = sessionsHubEnsureState();
-      var stSf = sessionFeedbackEnsureState();
-      if((h.tab === 'feedback' || sessionsHubIsNotesTab(h.tab) || h.tab === 'absents' || h.tab === 'cancellations' || h.tab === 'incidents') && !h.selectedIso){
-        var rf = String(stSf.rangeFrom || '').trim();
-        var rt = String(stSf.rangeTo || '').trim();
-        if(!rf || !rt){
-          var todayIso = isoDateLocal(new Date());
-          var wkDays = bookingWeekIsoRangeMonSun(h.weekAnchorIso);
-          if(wkDays.indexOf(todayIso) >= 0){
-            h.selectedIso = todayIso;
-            stSf.selectedIso = todayIso;
-          }
-        }
-      }
+      var showTrack = sessionsHubUsesTrackingHub(h.tab);
+      var showFb = sessionsHubUsesFeedbackHub(h.tab);
+      var showLead = h.tab === 'lead';
+      var showVenue = h.tab === 'venue';
       var ov = $('c4kHubPanelOverview');
       var fb = $('c4kHubPanelFeedback');
-      var notes = $('c4kHubPanelNotes');
-      var abs = $('c4kHubPanelAbsents');
-      var can = $('c4kHubPanelCancellations');
-      var showOv = h.tab === 'overview';
-      var showFb = h.tab === 'feedback' || h.tab === 'incidents';
-      var showNotes = sessionsHubIsNotesTab(h.tab);
-      var showAbs = h.tab === 'absents';
-      var showCan = h.tab === 'cancellations';
-      if(ov) ov.hidden = !showOv;
+      var lead = $('c4kHubPanelLead');
+      var venue = $('c4kHubPanelVenue');
+      if(ov) ov.hidden = !showTrack;
       if(fb) fb.hidden = !showFb;
-      if(notes) notes.hidden = !showNotes;
-      if(abs) abs.hidden = !showAbs;
-      if(can) can.hidden = !showCan;
+      if(lead) lead.hidden = !showLead;
+      if(venue) venue.hidden = !showVenue;
       document.querySelectorAll('[data-sessions-hub-tab]').forEach(function(btn){
         btn.classList.toggle('is-active', btn.getAttribute('data-sessions-hub-tab') === h.tab);
       });
-      var wr = $('c4kHubWeekRange');
-      if(wr) wr.textContent = sessionsHubWeekRangeLabel(h.weekAnchorIso);
-      var fbr = $('c4kHubFbWeekRange');
-      if(fbr) fbr.textContent = sessionsHubWeekRangeLabel(h.weekAnchorIso);
       var wn = $('c4kHubWeekNavWrap');
-      if(wn) wn.hidden = !sessionsHubTabUsesWeekStrip(h.tab);
+      if(wn) wn.hidden = true;
       var head = document.querySelector('.c4k-sessions-hub__head');
       if(head) head.outerHTML = sessionsHubHeadHtml(h.tab);
       var hubActs = $('c4kHubToolbarActions');
       if(hubActs) hubActs.hidden = !sessionsHubTabShowsRefresh(h.tab);
-      var colLbl = $('c4kHubNotesColLabel');
-      if(colLbl) colLbl.textContent = h.tab === 'positive' ? 'Positive (opt.)' : 'Relevant (opt.)';
-      if(h.tab === 'overview'){
-        var cap = $('c4kSessionOverviewCapacity');
-        if(cap) cap.innerHTML = bookingWeekSessionsHubHtml(h.weekAnchorIso, { selectedIso: h.selectedIso || h.weekAnchorIso });
-        void refreshSessionOverviewTable(h.selectedIso || h.weekAnchorIso);
-      }else if(showNotes){
-        refreshSessionsHubPosRelGrid();
-      }else if(showAbs){
-        void adminFetchAbsentQuickMarksForHub().then(function(){ refreshSessionsHubAbsentsGrid(); });
-      }else if(showCan){
-        void adminFetchCancellationReportsForHub().then(function(){ refreshSessionsHubCancellationsGrid(); });
+      if(window.PortalDayOps && typeof window.PortalDayOps.refreshTab === 'function'){
+        void window.PortalDayOps.refreshTab(h.tab).then(function(){
+          var fh = window.PortalDayOps.getFeedbackHub && window.PortalDayOps.getFeedbackHub();
+          if(fh && String(h.clientQ || '').trim()) fh.clientSearch = String(h.clientQ).trim();
+          sessionsHubStampRefresh();
+        });
       }else{
         void refreshSessionFeedbackGrid();
       }
     }
+    function openSessionsHubTab(tabId){
+      sessionsHubEnsureState().tab = tabId || 'overview';
+      sessionsHubEnsureState().sfSection = 'main';
+      setView('c4k_sessions');
+    }
     function c4kSessionFeedbackPanelInnerHtml(){
-      var instOpts = adminListSessionFeedbackInstructors().map(function(n){
-        return '<option value="' + esc(n) + '">' + esc(n) + '</option>';
-      }).join('');
       return (
-        '<p class="page-intro" style="max-width:52rem;margin-top:0;min-width:0;overflow-wrap:break-word">Instructor notes for attended sessions.</p>' +
-        '<div id="c4kSfKpiSlab" class="c4k-sf-kpi-slab-host" style="margin-bottom:14px;min-width:0" aria-live="polite"></div>' +
-        '<h2 class="c4k-hub-fb-title">Feedback progress (<span id="c4kHubFbWeekRange">—</span>)</h2>' +
-        '<div id="c4kSfWeekShell" role="region" aria-label="Session feedback completion this week">' +
-        '<div id="c4kSfWeekInner"></div></div>' +
-        '<div class="card card-pad" style="margin-bottom:12px;min-width:0">' +
-        '<div class="filter-row" style="flex-wrap:wrap;gap:10px;align-items:flex-end">' +
-        '<div style="min-width:0;flex:1 1 220px">' +
-        '<label class="muted" for="c4kSfClientFilter" style="display:block;font-size:12px;margin-bottom:4px">Search client</label>' +
-        '<input type="search" id="c4kSfClientFilter" class="inp" placeholder="Name contains…" autocomplete="off" style="max-width:100%;width:100%;min-width:0" /></div>' +
-        '<div style="min-width:0;flex:1 1 180px">' +
-        '<label class="muted" for="c4kSfInstructorFilter" style="display:block;font-size:12px;margin-bottom:4px">Instructor</label>' +
-        '<select id="c4kSfInstructorFilter" class="inp" style="max-width:100%;width:100%"><option value="">All instructors</option>' + instOpts + '</select></div>' +
-        '<div><label class="muted" for="c4kSfDateFrom" style="display:block;font-size:12px;margin-bottom:4px">From</label>' +
-        '<input type="date" id="c4kSfDateFrom" class="inp" style="max-width:180px" value="" /></div>' +
-        '<div><label class="muted" for="c4kSfDateTo" style="display:block;font-size:12px;margin-bottom:4px">To</label>' +
-        '<input type="date" id="c4kSfDateTo" class="inp" style="max-width:180px" value="" /></div>' +
-        '<button type="button" class="btn btn--pri btn--sm" id="c4kSfApplyRange">Apply dates</button>' +
-        '</div>' +
-        '<p id="c4kSfFilterHint" class="muted" style="margin:10px 0 0;font-size:12px;line-height:1.45;max-width:52rem;min-width:0;overflow-wrap:break-word"></p>' +
-        '</div>' +
-        '<div class="card" id="c4kSfMainGridCard"><div class="card-pad c4k-sf-main-tbl-wrap" style="overflow-x:hidden;overflow-y:auto;padding:0;min-width:0;max-width:100%"><table class="tbl tbl--center c4k-sf-main-tbl">' + adminC4kSessionFeedbackMainTableHeadHtml() + '<tbody id="c4kSfFeedbackTbody"><tr><td colspan="8" class="muted">Loading…</td></tr></tbody></table></div></div>' +
-        '<div class="card c4k-sf-out-card" id="c4kSfOutcomeCard" style="margin-bottom:12px;min-width:0"><div class="card-h"><h3>Not attended / cancelled</h3></div><div class="card-pad" style="overflow:auto;padding:0"><table class="tbl tbl--center c4k-sf-out-tbl"><thead><tr><th>Participant</th><th>Date</th><th>Service</th><th>Outcome</th><th>Notify by</th><th>When</th></tr></thead><tbody id="c4kSfOutcomeTbody"><tr><td colspan="6" class="muted">Loading…</td></tr></tbody></table></div></div>' +
-        '<div class="card c4k-sf-out-card" id="c4kSfIncidentsCard" style="margin-bottom:12px;min-width:0"><div class="card-h"><h3>Incidents</h3></div><div class="card-pad" style="overflow:auto;padding:0"><table class="tbl tbl--center c4k-sf-inc-tbl"><thead><tr><th>Participant</th><th>Service</th><th>Day</th><th>Completed by</th></tr></thead><tbody id="c4kSfIncidentsTbody"><tr><td colspan="4" class="muted">Loading…</td></tr></tbody></table></div></div>'
+        '<div id="adminSessionFeedbacksRoot" class="admin-sessions-hub-root admin-session-feedbacks-root" role="region" aria-label="Session feedback analytics and table">' +
+        '<p class="muted" style="margin:0 0 12px;font-size:13px">Loading session feedback…</p></div>'
       );
     }
+    function portalDayOpsConfigureOnce(){
+      if(window.__portalDayOpsConfigured || !window.PortalDayOps) return;
+      window.__portalDayOpsConfigured = true;
+      window.PortalDayOps.configure({
+        esc: esc,
+        getClient: getSchedSupabaseClient,
+        getSupabaseUrl: function(){
+          var u = typeof window.SUPABASE_URL === 'string' ? window.SUPABASE_URL.trim() : '';
+          return u || 'https://cklpnwhlqsulpmkipmqb.supabase.co';
+        },
+        getAnonKey: function(){
+          return typeof window.SUPABASE_ANON_KEY === 'string' ? window.SUPABASE_ANON_KEY : '';
+        },
+        buildFeedbackFromPortal: function(){
+          return adminSessionFeedbackPortalRows().map(adminMapPortalRowToHubFeedback);
+        },
+        fetchCancellations: adminFetchCancellationReportsForHub,
+        fetchAbsents: adminFetchAbsentQuickMarksForHub,
+        formatDate: function(iso){
+          if(!iso) return '—';
+          try{
+            return adminFormatUkDateFromIso(String(iso).substring(0, 10) + 'T12:00:00') || '—';
+          }catch(_e){
+            return String(iso);
+          }
+        }
+      });
+    }
+    function adminMapPortalRowToHubFeedback(r){
+      var d = adminSfStr(r.date).substring(0, 10);
+      var eng = r.engagement;
+      return {
+        client_name: adminSfStr(r.clientName) || '—',
+        session_date: d,
+        service: portalDisplayProgrammeFromSheet(r.service) || '—',
+        attendance: r.attendance,
+        engagement_rating: eng != null && eng !== '' && !isNaN(Number(eng)) ? Number(eng) : null,
+        client_emotions: adminSfStr(r.emotions) || adminSfStr(r.emotionSummary) || '',
+        engagement_patterns: adminSfStr(r.independence) || null,
+        positive_feedback: adminSfStr(r.positive) || '',
+        relevant_information: adminSfStr(r.relevantParent) || '',
+        completed_by_name: adminSfStr(r.instructor) || adminSfStr(r.completedBy) || '—',
+        session_time: adminSfStr(r.sessionTime) || adminSfStr(r.time) || '',
+        portal_session_key: d ? d + '|' + adminSfStr(r.clientName) : ''
+      };
+    }
+    function adminBuildSessionsHubPayload(){
+      var rows = adminSessionFeedbackPortalRows().map(adminMapPortalRowToHubFeedback);
+      return {
+        counts: {},
+        session_feedback: rows,
+        session_feedback_total: rows.length,
+        incident_reports: [],
+        lead_session_reports: [],
+        venue_reviews: [],
+        cancellation_reports: [],
+        schedule_overrides: [],
+        session_quick_marks: []
+      };
+    }
+    function adminAshHubTabFromSessionsHub(tab){
+      if(tab === 'incidents') return 'incidents';
+      if(tab === 'positive') return 'positive';
+      if(tab === 'relevant') return 'relevant';
+      if(tab === 'absents') return 'absents';
+      if(tab === 'cancellations') return 'cancellations';
+      return 'feedback';
+    }
+    function adminEnsureAdminSessionsHubScript(){
+      return new Promise(function(resolve, reject){
+        if(window.AdminSessionsHub){ resolve(); return; }
+        var tagged = document.querySelector('script[data-admin-sessions-hub="1"]');
+        if(tagged){
+          if(window.AdminSessionsHub){ resolve(); return; }
+          tagged.addEventListener('load', function(){ window.AdminSessionsHub ? resolve() : reject(new Error('hub missing')); }, { once: true });
+          tagged.addEventListener('error', function(){ reject(new Error('hub load failed')); }, { once: true });
+          return;
+        }
+        var s = document.createElement('script');
+        s.src = ADMIN_SESSIONS_HUB_SRC;
+        s.dataset.adminSessionsHub = '1';
+        s.onload = function(){ window.AdminSessionsHub ? resolve() : reject(new Error('hub missing')); };
+        s.onerror = function(){ reject(new Error('hub load failed')); };
+        document.head.appendChild(s);
+      });
+    }
+    function adminInitSessionFeedbacksHub(tab){
+      portalDayOpsConfigureOnce();
+      if(window.PortalDayOps && typeof window.PortalDayOps.refreshTab === 'function'){
+        return window.PortalDayOps.refreshTab(tab || 'feedback');
+      }
+      return Promise.resolve(null);
+    }
     function bindSessionsHubModule(){
+      portalDayOpsConfigureOnce();
       var h = sessionsHubEnsureState();
       document.querySelectorAll('[data-sessions-hub-tab]').forEach(function(btn){
         btn.onclick = function(){
@@ -16814,18 +16927,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var tab = C4K_SESSIONS_HUB_TABS.filter(function(t){ return t.id === id; })[0];
           if(!tab) return;
           if(tab.mode === 'view' && tab.view){ setView(tab.view); return; }
-          if(tab.mode === 'hubNotes' || tab.mode === 'hubAbsents' || tab.mode === 'hubCancellations'){
-            h.tab = id;
-            h.sfSection = 'main';
-            sessionsHubRefreshActiveTab();
-            return;
-          }
-          if(tab.mode === 'sfSection'){
-            h.tab = id;
-            h.sfSection = tab.section;
-            sessionsHubRefreshActiveTab();
-            return;
-          }
           h.tab = id;
           h.sfSection = 'main';
           sessionsHubRefreshActiveTab();
@@ -16857,30 +16958,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         st.anchorIso = h.weekAnchorIso;
         sessionsHubRefreshActiveTab();
       }
-      var cap = $('c4kSessionOverviewCapacity');
-      var sfShell = $('c4kSfWeekShell');
-      if(cap){ cap.onclick = onWeekDayPick; cap.onkeydown = function(e){ if(e.key === 'Enter' || e.key === ' ') onWeekDayPick(e); }; }
-      if(sfShell){ sfShell.onclick = onWeekDayPick; sfShell.onkeydown = function(e){ if(e.key === 'Enter' || e.key === ' ') onWeekDayPick(e); }; }
-      var paxF = $('c4kSessionOverviewPaxFilter');
-      if(paxF){
-        paxF.value = h.clientQ || '';
-        paxF.oninput = function(){ h.clientQ = paxF.value || ''; sessionFeedbackEnsureState().clientQ = h.clientQ; applySessionOverviewPaxFilter(); if($('c4kSfClientFilter')) $('c4kSfClientFilter').value = h.clientQ; void refreshSessionFeedbackGrid(); };
-      }
       bindSessionFeedbackModule();
-      var instSel = $('c4kSfInstructorFilter');
-      if(instSel){
-        instSel.value = h.instructorQ || '';
-        instSel.onchange = function(){ h.instructorQ = instSel.value || ''; void refreshSessionFeedbackGrid(); };
-      }
       var hubRef = $('c4kHubRefresh');
       if(hubRef){
         hubRef.onclick = function(){
-          var ht = sessionsHubEnsureState().tab;
-          if(ht === 'positive' || ht === 'relevant') refreshSessionsHubPosRelGrid();
-          else if(ht === 'absents') void adminFetchAbsentQuickMarksForHub().then(function(){ refreshSessionsHubAbsentsGrid(); });
-          else if(ht === 'cancellations') void adminFetchCancellationReportsForHub().then(function(){ refreshSessionsHubCancellationsGrid(); });
-          else void refreshSessionFeedbackGrid();
-          sessionsHubStampRefresh();
+          if(window.PortalDayOps && typeof window.PortalDayOps.invalidatePayload === 'function'){
+            window.PortalDayOps.invalidatePayload();
+            window.__PORTAL_CANCELLATION_REPORTS__ = null;
+            window.__PORTAL_ABSENT_QUICK_MARKS__ = null;
+          }
+          void sessionsHubRefreshActiveTab();
         };
       }
       function bindHubClientFilter(inpId){
@@ -16910,6 +16997,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!window.__portalHubDataPrefetchBound){
         window.__portalHubDataPrefetchBound = true;
         window.addEventListener('portal:supabase-ready', function(){
+          portalDayOpsConfigureOnce();
+          if(window.PortalDayOps && typeof window.PortalDayOps.ensurePayload === 'function'){
+            void window.PortalDayOps.ensurePayload();
+          }
           void adminFetchCancellationReportsForHub();
           void adminFetchAbsentQuickMarksForHub();
         });
@@ -16920,29 +17011,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function viewC4kSessions(){
       var h = sessionsHubEnsureState();
       return (
-        '<div class="c4k-sessions-hub">' +
+        '<div class="c4k-sessions-hub portal-day-ops-embed">' +
         sessionsHubHeadHtml(h.tab) +
         sessionsHubToolbarHtml(h.tab) +
-        '<div id="c4kHubWeekNavWrap"' + (sessionsHubTabUsesWeekStrip(h.tab) ? '' : ' hidden') + '>' + sessionsHubWeekNavHtml(h.weekAnchorIso) + '</div>' +
-        '<div id="c4kHubPanelOverview" class="c4k-sessions-hub-panel">' +
-        '<div id="c4kSessionOverviewCapacity" style="margin-bottom:14px;min-width:0"></div>' +
-        '<div class="c4k-sess-overview-pax-filter">' +
-        '<label class="c4k-sess-overview-pax-filter__lbl" for="c4kSessionOverviewPaxFilter">Search client</label>' +
-        '<input type="search" class="inp" id="c4kSessionOverviewPaxFilter" placeholder="Name contains..." autocomplete="off" aria-label="Search client by name" />' +
-        '</div>' +
-        '<div class="card" style="margin-bottom:12px"><div class="card-h" style="align-items:flex-start;gap:10px"><h3 id="c4kSessionOverviewRosterTitle" class="c4k-sess-roster-h">Roster</h3>' +
-        (adminSpreadsheetAdapterAvailable() ? '<span class="chip chip--ok">Roster</span>' : '<span class="chip chip--pend">No sheet</span>') +
-        '</div><div class="card-pad" style="overflow:auto;padding:0;min-width:0"><table class="tbl tbl--center c4k-sess-overview-tbl"><thead><tr><th scope="col">Service</th><th>Instructor</th><th scope="col" class="c4k-sess-pax-th">Participant</th><th>Status</th><th>Override</th><th>Feedback</th>' +
-        '<th scope="col" class="c4k-sess-ico-th" title="Incidents">Inc.</th><th scope="col" class="c4k-sess-ico-th" title="Cancellations">Can.</th><th scope="col">Ops flag</th></tr></thead><tbody id="c4kSessionOverviewTbody">' +
-        '<tr><td colspan="9" class="muted">Loading…</td></tr></tbody></table></div></div>' +
-        '<div class="toolbar" style="margin-bottom:12px">' +
-        '<button type="button" class="btn btn--pri btn--sm" data-view-target="scheduling">Scheduling &amp; Cover</button>' +
-        '<button type="button" class="btn btn--sec btn--sm" data-view-target="bookings">Bookings</button>' +
-        '</div></div>' +
-        '<div id="c4kHubPanelFeedback" class="c4k-sessions-hub-panel" hidden>' + c4kSessionFeedbackPanelInnerHtml() + '</div>' +
-        '<div id="c4kHubPanelNotes" class="c4k-sessions-hub-panel" hidden>' + c4kHubPosRelPanelInnerHtml() + '</div>' +
-        '<div id="c4kHubPanelAbsents" class="c4k-sessions-hub-panel" hidden>' + c4kHubAbsentsPanelInnerHtml() + '</div>' +
-        '<div id="c4kHubPanelCancellations" class="c4k-sessions-hub-panel" hidden>' + c4kHubCancellationsPanelInnerHtml() + '</div>' +
+        '<div id="portalDayOpsStatus" class="portal-forms-status" aria-live="polite"></div>' +
+        '<div id="c4kHubPanelOverview" class="c4k-sessions-hub-panel"' + (sessionsHubUsesTrackingHub(h.tab) ? '' : ' hidden') + '>' +
+        '<div id="adminSessionsHubRoot" class="admin-sessions-hub-root"></div></div>' +
+        '<div id="c4kHubPanelFeedback" class="c4k-sessions-hub-panel"' + (sessionsHubUsesFeedbackHub(h.tab) ? '' : ' hidden') + '>' +
+        c4kSessionFeedbackPanelInnerHtml() + '</div>' +
+        '<div id="c4kHubPanelLead" class="c4k-sessions-hub-panel"' + (h.tab === 'lead' ? '' : ' hidden') + '>' +
+        c4kHubLeadPanelInnerHtml() + '</div>' +
+        '<div id="c4kHubPanelVenue" class="c4k-sessions-hub-panel"' + (h.tab === 'venue' ? '' : ' hidden') + '>' +
+        c4kHubVenuePanelInnerHtml() + '</div>' +
         '</div>'
       );
     }
@@ -17051,6 +17131,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return out;
     }
     function refreshSessionFeedbackGrid(){
+      portalDayOpsConfigureOnce();
+      if(window.PortalDayOps){
+        var h = sessionsHubEnsureState();
+        void window.PortalDayOps.refreshTab(h.tab).then(function(){ sessionsHubStampRefresh(); });
+        return;
+      }
       try{
         if(typeof adminMergeSpreadsheetSessionsForSlotLookup === 'function' && adminMergeSpreadsheetSessionsForSlotLookup.invalidate){
           adminMergeSpreadsheetSessionsForSlotLookup.invalidate();
@@ -17383,7 +17469,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(id==='c4k_sessions') return viewC4kSessions();
       if(id==='c4k_payments') return viewC4kPaymentsView();
       if(id==='c4k_waitlist') return viewC4kWaitlistView();
-      if(id==='c4k_registers') return viewC4kDailyRegistersView();
+      if(id==='c4k_registers'){
+        sessionsHubEnsureState().tab = 'feedback';
+        return viewC4kSessions();
+      }
       if(id==='c4k_reviews') return viewC4kInstructorReviews();
       if(id==='c4k_reports') return viewC4kGlobalReportsTracker();
       if(id==='staffhr') return viewStaffHR();
@@ -17970,8 +18059,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '<div class="dayops-screen-nav dayops-screen-nav--row4" role="group" aria-label="Sessions and absences">'+
           portalDayOpsShortcutHtml('c4k_sessions', '', 'c4k_sessions', 'Sessions overview', 'Live grid &amp; capacity', false, 'sessions')+
           portalDayOpsShortcutHtml('c4k_registers', '', 'c4k_registers', 'Sessions feedback', 'Registers &amp; session notes', false, 'feedback')+
-          portalDayOpsShortcutHtml('', 'reports', 'reports', 'Incidents', 'Safeguarding &amp; logs', false, 'analytics')+
-          portalDayOpsShortcutHtml('absents_refunds', '', 'absents_refunds', 'Absents', 'Absents, refunds &amp; credits', false, 'absents')+
+          portalDayOpsShortcutHtml('c4k_sessions', '', 'analytics', 'Incidents', 'Safeguarding &amp; logs', false, 'analytics', 'sessions_hub_incidents')+
+          portalDayOpsShortcutHtml('c4k_sessions', '', 'absents', 'Absents', 'Quick marks by day', false, 'absents', 'sessions_hub_absents')+
+          portalDayOpsShortcutHtml('c4k_sessions', '', 'c4k_registers', 'Lead report', 'Lead session reports', false, 'feedback', 'sessions_hub_lead')+
+          portalDayOpsShortcutHtml('c4k_sessions', '', 'c4k_services', 'Venue', 'Venue opening reviews', false, 'scheduling', 'sessions_hub_venue')+
           '</div>'+
           '<div class="dayops-screen-nav dayops-screen-nav--row4" role="group" aria-label="Bookings and progress">'+
           portalDayOpsShortcutHtml('bookings', '', 'bookings', 'Bookings/Orders', 'Bookings &amp; wait list', false, 'bookings')+
@@ -18366,6 +18457,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
 
     /** Day operations tile actions (called from bindView click handlers on each render). */
     function portalRunDayOpsAct(a){
+      if(a === 'sessions_hub_incidents'){ closeSidebarMob(); openSessionsHubTab('incidents'); return; }
+      if(a === 'sessions_hub_absents'){ closeSidebarMob(); openSessionsHubTab('absents'); return; }
+      if(a === 'sessions_hub_lead'){ closeSidebarMob(); openSessionsHubTab('lead'); return; }
+      if(a === 'sessions_hub_venue'){ closeSidebarMob(); openSessionsHubTab('venue'); return; }
       if(a === 'new_participant'){
         openDayOpsNewParticipantModal();
         closeSidebarMob();
@@ -20008,9 +20103,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         bindSessionsHubModule();
       }
       if(id==='c4k_registers'){
-        sessionsHubEnsureState().tab = 'feedback';
-        sessionsHubEnsureState().sfSection = 'main';
-        setView('c4k_sessions');
+        bindSessionsHubModule();
       }
       if(id==='c4k_services'){
         ensureC4kServicesFiltersDelegated();
@@ -20951,16 +21044,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         st.rangeTo = '';
         st.anchorIso = isoDateLocal(new Date());
         closeDrawer();
-        setView('c4k_registers');
-        requestAnimationFrame(function(){
-          requestAnimationFrame(function(){
-            var el = $('c4kSfClientFilter');
-            if(el){
-              el.focus();
-              try{ el.scrollIntoView({ behavior:'smooth', block:'center' }); }catch(_e){}
-            }
-          });
-        });
+        sessionsHubEnsureState().clientQ = nm;
+        sessionFeedbackEnsureState().clientQ = nm;
+        openSessionsHubTab('feedback');
       };
       $('drInc').onclick = function(){ closeDrawer(); setView('reports'); };
       $('drNote').onclick = function(){
@@ -21771,6 +21857,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(qp && (navIdIsRoutableView(qp) || qp === 'reports')) initial = qp;
       else if(hash && (navIdIsRoutableView(hash) || hash === 'reports')) initial = hash;
       if(qp === 'ceo' || hash === 'ceo') initial = 'dashboard';
+      var pathLower = String(location.pathname || '').toLowerCase();
+      if(pathLower.indexOf('/adminportal') >= 0 || pathLower.indexOf('/operations-admin') >= 0){
+        initial = 'c4k_sessions';
+        sessionsHubEnsureState().tab = 'feedback';
+        sessionsHubEnsureState().sfSection = 'main';
+      }
       setView(initial);
       bindNovoDashboardSchedule();
       portalBindWorkspaceDayopsComposeCapture();
