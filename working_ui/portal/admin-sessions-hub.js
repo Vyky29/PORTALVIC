@@ -2495,6 +2495,14 @@
 
   AdminSessionsHub.prototype.dayStats = function (iso) {
     var hub = this;
+    if (hub.opts && typeof hub.opts.getFeedbackDayStats === "function") {
+      var ext = hub.opts.getFeedbackDayStats(iso);
+      if (ext && typeof ext.required === "number") {
+        var doneExt =
+          typeof ext.completed === "number" ? ext.completed : 0;
+        return { total: ext.required, done: doneExt };
+      }
+    }
     var slots = this.expandSlotsForDate(iso).filter(function (s) {
       return !shouldOmitOverviewSlot(hub, s);
     });

@@ -23,7 +23,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var HUB_SRC = '/portal-shared-js/admin-sessions-hub.js?v=20260520-feedback-week';
+  var HUB_SRC = '/portal-shared-js/admin-sessions-hub.js?v=20260520-feedback-stats';
 
   function esc(s) {
     if (cfg.esc) return cfg.esc(s);
@@ -226,6 +226,17 @@
     });
   }
 
+  function hubMountOpts(extra) {
+    extra = extra || {};
+    return {
+      escapeHtml: esc,
+      mode: extra.mode || 'tracking',
+      externalTabs: true,
+      payload: payload,
+      getFeedbackDayStats: cfg.getFeedbackDayStats
+    };
+  }
+
   function applyPendingOverviewTab() {
     if (!pendingOverviewTab || !trackingHub) return;
     var nextTab = pendingOverviewTab;
@@ -277,12 +288,7 @@
       applyPendingOverviewTab();
       return trackingHub;
     }
-    trackingHub = await global.AdminSessionsHub.mount(root, {
-      payload: payload,
-      escapeHtml: esc,
-      mode: 'tracking',
-      externalTabs: true
-    });
+    trackingHub = await global.AdminSessionsHub.mount(root, hubMountOpts({ mode: 'tracking' }));
     applyPendingOverviewTab();
     return trackingHub;
   }
@@ -300,12 +306,7 @@
       feedbackHub.setPayload(payload);
       return feedbackHub;
     }
-    feedbackHub = await global.AdminSessionsHub.mount(root, {
-      escapeHtml: esc,
-      mode: 'feedback',
-      externalTabs: true,
-      payload: payload
-    });
+    feedbackHub = await global.AdminSessionsHub.mount(root, hubMountOpts({ mode: 'feedback' }));
     return feedbackHub;
   }
 
@@ -425,6 +426,8 @@
   global.PortalDayOps = {
     configure: function (c) {
       cfg = c || {};
+      if (trackingHub) trackingHub.opts.getFeedbackDayStats = cfg.getFeedbackDayStats;
+      if (feedbackHub) feedbackHub.opts.getFeedbackDayStats = cfg.getFeedbackDayStats;
     },
     getPayload: function () {
       return payload;
@@ -495,6 +498,11 @@
     },
     invalidatePayload: function () {
       loadInFlight = null;
+      try {
+        if (typeof window.portalInvalidateAdminFeedbackStatusCache === 'function') {
+          window.portalInvalidateAdminFeedbackStatusCache();
+        }
+      } catch (_e) {}
     }
   };
 })(typeof window !== 'undefined' ? window : globalThis);

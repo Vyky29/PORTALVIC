@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en-GB" data-portal-ui-build="20260520-feedback-week-strip" data-portal-session-feedback-v="20260507-portalfix" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
+<html lang="en-GB" data-portal-ui-build="20260520-feedback-stats" data-portal-session-feedback-v="20260507-portalfix" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
 <head>
   <!-- Admin portal · Vercel static deploy: working_ui/admin_dashboard.html + portal/ assets -->
   <meta charset="UTF-8" />
@@ -7991,6 +7991,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         pct: pct
       };
     }
+    /** Portal 2026 AdminSessionsHub week strip — same counts as booking capacity strip. */
+    window.portalBookingFeedbackStatsForIso = bookingFeedbackStatsForIsoCalendarDay;
+    window.portalInvalidateAdminFeedbackStatusCache = function(){
+      adminSessionFeedbackStatusByDate._m = null;
+    };
     /** ISO YYYY-MM-DD → DD/MM/YYYY for week capacity day cells. */
     function bookingFormatDdMmYyyy(iso){
       var p = String(iso || '').trim().split('-');
@@ -16843,6 +16848,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         },
         fetchCancellations: adminFetchCancellationReportsForHub,
         fetchAbsents: adminFetchAbsentQuickMarksForHub,
+        getFeedbackDayStats: function(iso){
+          if(typeof window.portalBookingFeedbackStatsForIso === 'function'){
+            return window.portalBookingFeedbackStatsForIso(iso);
+          }
+          return null;
+        },
         formatDate: function(iso){
           if(!iso) return '—';
           try{
