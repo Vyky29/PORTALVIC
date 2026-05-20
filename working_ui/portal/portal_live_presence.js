@@ -227,6 +227,7 @@ export function mountPortalLivePresenceBar(hostId = "portalLivePresenceBar") {
     };
     host.hidden = false;
     host.innerHTML =
+      '<div class="portal-live-presence__wrap">' +
       '<div class="portal-live-presence__inner">' +
       '<section class="portal-live-presence__col"><h2 class="portal-live-presence__lbl">ADMINS ONLINE</h2><div class="portal-live-presence__pills">' +
       presencePillsHtml(g.admins, "No admins online") +
@@ -237,7 +238,11 @@ export function mountPortalLivePresenceBar(hostId = "portalLivePresenceBar") {
       '<section class="portal-live-presence__col"><h2 class="portal-live-presence__lbl">ONBOARDING ONLINE</h2><div class="portal-live-presence__pills">' +
       presencePillsHtml(g.onboarding, "No one on onboarding") +
       "</div></section>" +
-      "</div>";
+      "</div>" +
+      '<div class="portal-live-presence__actions">' +
+      '<a class="btn btn--sec btn--sm portal-live-presence__guide" href="/OTROS/admin_architecture_guide.html" target="_blank" rel="noopener noreferrer">Admin guide</a>' +
+      '<button type="button" class="btn btn--sec btn--sm portal-live-presence__logout" data-portal-logout>Log out</button>' +
+      "</div></div>";
   }
 
   render(window.__PORTAL_PRESENCE_GROUPED__);
