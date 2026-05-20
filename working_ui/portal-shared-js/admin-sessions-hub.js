@@ -3173,7 +3173,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var fbs = this.payload.session_feedback || [];
     for (var i = 0; i < fbs.length; i++) {
       var fb = fbs[i];
-      if (feedbackSessionDate(fb) !== day) continue;
+      var fbDay = hub.feedbackRowDate(fb) || feedbackSessionDate(fb);
+      if (fbDay !== day) continue;
       if (isMislabeledRosterAreaClientName(fb.client_name)) continue;
       pushRow(fb);
     }

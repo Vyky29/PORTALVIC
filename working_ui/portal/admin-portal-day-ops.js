@@ -23,7 +23,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var HUB_SRC = '/portal-shared-js/admin-sessions-hub.js?v=20260520-feedback-stats';
+  var HUB_SRC = '/portal-shared-js/admin-sessions-hub.js?v=20260520-feedback-rows';
 
   function esc(s) {
     if (cfg.esc) return cfg.esc(s);
@@ -99,6 +99,16 @@
     payload.cancellation_reports = j.cancellation_reports || [];
     payload.schedule_overrides = j.schedule_overrides || [];
     payload.session_quick_marks = j.session_quick_marks || [];
+  }
+
+  /** Portal workbook export is authoritative for feedback rows; edge often returns []. */
+  function mergePortalFeedbackIntoPayload() {
+    if (!cfg.buildFeedbackFromPortal) return;
+    var portalRows = cfg.buildFeedbackFromPortal() || [];
+    if (!portalRows.length) return;
+    payload.session_feedback = portalRows;
+    payload.session_feedback_total = portalRows.length;
+    payload.session_feedback_loaded = portalRows.length;
   }
 
   async function fetchEdgePayload() {
@@ -444,6 +454,7 @@
         var edge = await fetchEdgePayload();
         if (edge && edge.data) {
           applyPayload(edge.data);
+          mergePortalFeedbackIntoPayload();
           setStatus('');
           return payload;
         }
@@ -464,6 +475,7 @@
         }
         var fb = await fetchFallbackSupabase();
         applyPayload(fb);
+        mergePortalFeedbackIntoPayload();
         return payload;
       })()
         .finally(function () {

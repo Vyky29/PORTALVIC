@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en-GB" data-portal-ui-build="20260520-feedback-stats" data-portal-session-feedback-v="20260507-portalfix" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
+<html lang="en-GB" data-portal-ui-build="20260520-feedback-rows" data-portal-session-feedback-v="20260507-portalfix" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
 <head>
   <!-- Admin portal · Vercel static deploy: working_ui/admin_dashboard.html + portal/ assets -->
   <meta charset="UTF-8" />
@@ -16865,7 +16865,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
     }
     function adminMapPortalRowToHubFeedback(r){
-      var d = adminSfStr(r.date).substring(0, 10);
+      var d = bookingFeedbackDateIsoForRow(r) || adminSfStr(r.date).substring(0, 10);
       var eng = r.engagement;
       return {
         client_name: adminSfStr(r.clientName) || '—',
