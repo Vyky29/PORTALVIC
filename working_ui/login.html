@@ -1,75 +1,16 @@
 <!DOCTYPE html>
 <html lang="en-GB">
 <head>
-  <!-- Optional: hide parent site chrome when embedded (WordPress or any wrapper). -->
-  <script>
-    (function () {
-      try {
-        document.documentElement.classList.add("portal-app-shell");
-      } catch (e) {}
-    })();
-  </script>
-  <style id="portal-hide-wp-chrome">
-    html.portal-app-shell body.admin-bar {
-      padding-top: 0 !important;
-      margin-top: 0 !important;
-    }
-    html.portal-app-shell #wpadminbar,
-    html.portal-app-shell #masthead,
-    html.portal-app-shell header#masthead,
-    html.portal-app-shell .site-header,
-    html.portal-app-shell #site-header,
-    html.portal-app-shell .ast-primary-header-bar,
-    html.portal-app-shell .ast-above-header,
-    html.portal-app-shell .elementor-location-header,
-    html.portal-app-shell .elementor-location-footer,
-    html.portal-app-shell #colophon,
-    html.portal-app-shell footer.site-footer,
-    html.portal-app-shell .site-footer,
-    html.portal-app-shell #footer,
-    html.portal-app-shell .site-bottom-footer-inner-wrap,
-    html.portal-app-shell .footer-widget-area {
-      display: none !important;
-      visibility: hidden !important;
-      height: 0 !important;
-      overflow: hidden !important;
-      pointer-events: none !important;
-    }
-    html.portal-app-shell .site-content,
-    html.portal-app-shell #content,
-    html.portal-app-shell .site-main,
-    html.portal-app-shell #primary {
-      margin-top: 0 !important;
-      padding-top: 0 !important;
-    }
-    html.portal-app-shell #page,
-    html.portal-app-shell .site {
-      margin-top: 0 !important;
-      padding-top: 0 !important;
-    }
-    html.portal-app-shell,
-    html.portal-app-shell body {
-      max-width: 100vw !important;
-      overflow-x: hidden !important;
-    }
-    html.portal-app-shell #page,
-    html.portal-app-shell .site,
-    html.portal-app-shell .site-content,
-    html.portal-app-shell #content,
-    html.portal-app-shell #primary,
-    html.portal-app-shell .site-main {
-      max-width: 100vw !important;
-      overflow-x: hidden !important;
-    }
-  </style>
+  <!-- PORTALVIC · Vercel static deploy (working_ui/) -->
   <meta charset="UTF-8" />
+  <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="Portal" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="theme-color" content="#f4f8fb" />
-  <!-- PWA · producción: login.html (login; admin /operations-admin/ · staff /p1/ · CEO /ce/) -->
+  <!-- PWA · login.html · dashboards: admin_dashboard, staff_dashboard, lead_dashboard, ceo_dashboard -->
   <script>
   (function(){
     try {
@@ -98,7 +39,7 @@
     } catch (e) {}
   })();
   </script>
-  <!-- Producción: /l0 login · /p1 staff · /operations-admin admin (shortcode cs_portal_admin) · /l1 lead · /ce CEO. Si un permalink difiere, cambia PORTAL_*_DASHBOARD_URL en el script del final del body antes de subir a Medios. -->
+  <!-- Dashboard targets: PORTAL_*_DASHBOARD_URL at end of body (defaults: same-origin *.html on this deploy). -->
   <title>clubSENsational Portal — Sign in</title>
   <style>
     :root{
@@ -397,16 +338,15 @@
             </g>
           </svg>
           <div class="login-logo-shell">
-            <!-- Brand: repo `portal/F-02-1.png`; fallback `portal_crest.svg` then inline SVG. -->
             <img
               class="login-logo"
-              src="portal/F-02-1.png"
+              src="/portal/F-02-1.png"
               width="200"
               height="200"
               alt="clubSENsational - Autism Consultancy Services"
               decoding="async"
               referrerpolicy="no-referrer-when-downgrade"
-              onerror="(function(img){var t=Number(img.dataset.logoTier||0);img.dataset.logoTier=String(t+1);if(t===0){img.src='portal/portal_crest.svg';return;}img.onerror=null;img.src='data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20200%20200%27%3E%3Crect%20fill%3D%27%23ffffff%27%20width%3D%27200%27%20height%3D%27200%27%2F%3E%3Ctext%20x%3D%27100%27%20y%3D%2778%27%20text-anchor%3D%27middle%27%20font-family%3D%27system-ui%2Csans-serif%27%20font-size%3D%2722%27%20font-weight%3D%27800%27%20fill%3D%27%230f172a%27%3Eclub%3C%2Ftext%3E%3Ctext%20x%3D%27100%27%20y%3D%27120%27%20text-anchor%3D%27middle%27%20font-family%3D%27system-ui%2Csans-serif%27%20font-size%3D%2740%27%20font-weight%3D%27800%27%20fill%3D%27%23b45309%27%3ESEN%3C%2Ftext%3E%3Ctext%20x%3D%27100%27%20y%3D%27152%27%20text-anchor%3D%27middle%27%20font-family%3D%27system-ui%2Csans-serif%27%20font-size%3D%2716%27%20font-weight%3D%27700%27%20fill%3D%27%23334155%27%3Esational%3C%2Ftext%3E%3C%2Fsvg%3E';})(this);"
+              onerror="typeof portalBrandLogoOnError==='function'&&portalBrandLogoOnError(this)"
             />
           </div>
         </div>

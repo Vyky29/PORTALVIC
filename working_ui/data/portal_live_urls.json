@@ -1,32 +1,34 @@
 {
   "meta": {
-    "site_base": "https://www.clubsensational.org",
-    "updated": "2026-04-30",
-    "intent": "Canonical WordPress paths (slug after site base). Production: login /l0/ · admin /operations-admin/ (shortcode cs_portal_admin → Medios admin_embed) · staff /p1/ · CEO /ce/ (lead /l1/). Portal JS/CSS assets: wp-content/uploads/2026/05/.",
+    "site_base": "Vercel static (working_ui/)",
+    "updated": "2026-05-20",
+    "intent": "Canonical paths on the Git/Vercel deploy. Same-origin HTML next to portal/ assets. Override per environment via PORTAL_*_DASHBOARD_URL in login.html.",
     "notes": [
-      "Repo filename for observation is observation_portal.html (sheet may say observation.html)."
+      "Repo filename for observation is observation_portal.html.",
+      "Legacy WordPress slugs (/l0/, /operations-admin/) are not used; optional rewrites in vercel.json redirect old paths."
     ]
   },
   "by_filename": {
-    "login.html": "/l0/",
-    "staff_dashboard.html": "/p1/",
-    "lead_dashboard.html": "/l1/",
-    "admin_dashboard.html": "/operations-admin/",
-    "ceo_dashboard.html": "/ce/",
-    "company_insights.html": "/Insights_portal/",
-    "Working_interview.html": "/interviews_portal/",
-    "pickup.html": "/pickup_portal/",
-    "venue_review.html": "/venue_portal/",
-    "incident_report.html": "/incident_portal/",
-    "timesheet.html": "/timesheet_portal/",
-    "expenses.html": "/expenses_portal/",
-    "session_feedback.html": "/session_feedback_portal/",
-    "lead_feedback_report.html": "/lead_feedback_portal/",
-    "cancellation_report.html": "/cancellation_portal/",
-    "swtermreview.html": "/swclientreview_portal/",
-    "observation_portal.html": "/observation_portal/",
-    "termreview.html": "/termreview_portal/",
-    "performance.html": "/performance_portal/",
-    "announcements.html": "/announcements_portal/"
+    "login.html": "/login.html",
+    "staff_dashboard.html": "/staff_dashboard.html",
+    "lead_dashboard.html": "/lead_dashboard.html",
+    "admin_dashboard.html": "/admin_dashboard.html",
+    "ceo_dashboard.html": "/ceo_dashboard.html",
+    "company_insights.html": "/company_insights.html",
+    "Working_interview.html": "/Working_interview.html",
+    "pickup.html": "/pickup.html",
+    "venue_review.html": "/venue_review.html",
+    "incident_report.html": "/incident_report.html",
+    "timesheet.html": "/timesheet.html",
+    "expenses.html": "/expenses.html",
+    "session_feedback.html": "/session_feedback.html",
+    "lead_feedback_report.html": "/lead_feedback_report.html",
+    "cancellation_report.html": "/cancellation_report.html",
+    "swtermreview.html": "/swtermreview.html",
+    "observation_portal.html": "/observation_portal.html",
+    "termreview.html": "/termreview.html",
+    "performance.html": "/performance.html",
+    "announcements.html": "/announcements.html",
+    "staff_profile_update.html": "/staff_profile_update.html"
   }
 }

@@ -64,7 +64,7 @@ function extractStaffLoginEmailMap(body) {
 }
 
 /**
- * 1) window.PORTAL_STAFF_LOGIN_MAP from staff_login_map.js (WordPress-friendly; load before this module).
+ * 1) window.PORTAL_STAFF_LOGIN_MAP from staff_login_map.js (load before this module).
  * 2) Optional fetch staff_login_map.json same folder as this module (local / hosts that allow .json).
  */
 async function tryMergeStaffLoginMapFromSiblingJson() {
@@ -96,26 +96,29 @@ async function tryMergeStaffLoginMapFromSiblingJson() {
 }
 
 /** Published site dashboard URLs; override from login.html before loading this module. */
-function portalPublishedStaffUrl() {
+function portalPublishedPageUrl(filename, overrideKey) {
   if (typeof window !== "undefined") {
-    const w = String(window.PORTAL_STAFF_DASHBOARD_URL || "").trim();
+    const w = String(window[overrideKey] || "").trim();
     if (w) return w;
+    try {
+      return new URL(filename, window.location.href).href;
+    } catch {
+      /* fall through */
+    }
   }
-  return "https://www.clubsensational.org/p1/";
+  return filename;
+}
+function portalPublishedStaffUrl() {
+  return portalPublishedPageUrl("staff_dashboard.html", "PORTAL_STAFF_DASHBOARD_URL");
 }
 function portalPublishedAdminUrl() {
-  if (typeof window !== "undefined") {
-    const w = String(window.PORTAL_ADMIN_DASHBOARD_URL || "").trim();
-    if (w) return w;
-  }
-  return "https://www.clubsensational.org/operations-admin/";
+  return portalPublishedPageUrl("admin_dashboard.html", "PORTAL_ADMIN_DASHBOARD_URL");
 }
 function portalPublishedLeadUrl() {
-  if (typeof window !== "undefined") {
-    const w = String(window.PORTAL_LEAD_DASHBOARD_URL || "").trim();
-    if (w) return w;
-  }
-  return "https://www.clubsensational.org/l1/";
+  return portalPublishedPageUrl("lead_dashboard.html", "PORTAL_LEAD_DASHBOARD_URL");
+}
+function portalPublishedLoginUrl() {
+  return portalPublishedPageUrl("login.html", "PORTAL_LOGIN_REDIRECT_URL");
 }
 
 /** Same keys as login redirect; keeps staff off the Lead shell if they land on /l1/ by mistake. */
@@ -279,10 +282,7 @@ function bindLogin() {
       if (effectiveRole === "lead") return "lead_dashboard.html";
       return "staff_dashboard.html";
     }
-    const ceoUrl = String(
-      (typeof window !== "undefined" && window.PORTAL_CEO_DASHBOARD_URL) ||
-        "https://www.clubsensational.org/ce/"
-    ).trim();
+    const ceoUrl = portalPublishedPageUrl("ceo_dashboard.html", "PORTAL_CEO_DASHBOARD_URL");
     if (effectiveRole === "ceo") return ceoUrl;
     if (portalCanAccessAdminDashboard(profile, authEmail)) return portalPublishedAdminUrl();
     if (effectiveRole === "lead") return portalPublishedLeadUrl();
@@ -317,8 +317,7 @@ function bindLogin() {
     // - published web uses fixed public routes by role
     // This avoids stale/broken dashboard_route values in DB causing 404.
     let url = resolveDashboardRedirect(inferDashboardRoute(profile, authEmail));
-    // Never fall back to DB dashboard_route on the published WordPress site:
-    // those values are often legacy relative paths and resolve to 404.
+    // On published deploy, avoid stale DB dashboard_route paths that 404.
     if (!url && fromWorkingUi) {
       const profileRoute = String(profile.dashboard_route || "").trim();
       url = resolveDashboardRedirect(profileRoute);
@@ -410,7 +409,7 @@ function bindLogin() {
     el.addEventListener("input", hideError);
   });
 
-  // Elementor-safe default: stay on login unless explicitly enabled.
+  // Stay on login unless explicitly enabled.
   // To enable auto-redirect when a session exists, set:
   //   window.PORTAL_AUTO_REDIRECT_FROM_LOGIN = true
   if (window.PORTAL_AUTO_REDIRECT_FROM_LOGIN === true) {
@@ -424,10 +423,7 @@ function bindLogin() {
  */
 export async function bootstrapDashboardSupabase(_opts) {
   const page = String((_opts && _opts.page) || "").trim().toLowerCase();
-  const loginRedirect =
-    typeof window !== "undefined" && window.PORTAL_LOGIN_REDIRECT_URL
-      ? String(window.PORTAL_LOGIN_REDIRECT_URL).trim()
-      : "https://www.clubsensational.org/l0/";
+  const loginRedirect = portalPublishedLoginUrl();
 
   /** Only Admin + Lead shells enforce login + staff_profiles (Staff/CEO stay permissive like legacy demo: name + shared test password). */
   function portalDashboardRequiresStrictGate(page) {
@@ -528,10 +524,7 @@ export async function bootstrapDashboardSupabase(_opts) {
     if (page === "admin") {
       if (!portalCanAccessAdminDashboard(profile, authEmailGate)) {
         const eff = portalInferEffectiveRole(profile, authEmailGate);
-        const ceoUrl = String(
-          (typeof window !== "undefined" && window.PORTAL_CEO_DASHBOARD_URL) ||
-            "https://www.clubsensational.org/ce/"
-        ).trim();
+        const ceoUrl = portalPublishedPageUrl("ceo_dashboard.html", "PORTAL_CEO_DASHBOARD_URL");
         const dest =
           eff === "ceo"
             ? ceoUrl
@@ -565,28 +558,20 @@ export async function bootstrapDashboardSupabase(_opts) {
     }
 
     if (typeof window !== "undefined" && profile && page === "lead") {
-      const qs = String(window.location.search || "");
-      const inElementorPreview =
-        qs.indexOf("elementor-preview=") !== -1 ||
-        qs.indexOf("preview=true") !== -1 ||
-        (document.documentElement &&
-          document.documentElement.classList.contains("elementor-editor-active"));
-      if (!inElementorPreview) {
-        let authEmail = String(session.user?.email || "").trim();
-        if (!authEmail) {
-          try {
-            const { data: udata } = await supabase.auth.getUser();
-            authEmail = String(udata?.user?.email || "").trim();
-          } catch {
-            /* ignore */
-          }
+      let authEmail = String(session.user?.email || "").trim();
+      if (!authEmail) {
+        try {
+          const { data: udata } = await supabase.auth.getUser();
+          authEmail = String(udata?.user?.email || "").trim();
+        } catch {
+          /* ignore */
         }
-        const eff = portalInferEffectiveRole(profile, authEmail);
-        if (eff !== "lead" && eff !== "admin" && eff !== "ceo") {
-          const staffUrl = portalPublishedStaffUrl();
-          window.location.replace(staffUrl);
-          return;
-        }
+      }
+      const eff = portalInferEffectiveRole(profile, authEmail);
+      if (eff !== "lead" && eff !== "admin" && eff !== "ceo") {
+        const staffUrl = portalPublishedStaffUrl();
+        window.location.replace(staffUrl);
+        return;
       }
     }
 

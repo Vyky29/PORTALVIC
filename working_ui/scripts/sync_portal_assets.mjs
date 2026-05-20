@@ -26,6 +26,7 @@ const ROOT_JS_MOVE_TO_PORTAL = [
   "staff_performance_review_app.js",
   "portal_documents.js",
   "portal_return_and_shell.js",
+  "portal_brand.js",
   "announcements_scripts.js",
 ];
 

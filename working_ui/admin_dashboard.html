@@ -1,69 +1,9 @@
 <!DOCTYPE html>
-<html lang="en-GB" data-portal-session-feedback-v="20260507-portalfix" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
+<html lang="en-GB" data-portal-ui-build="20260520-vercel-brand" data-portal-session-feedback-v="20260507-portalfix" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
 <head>
-  <!-- Admin portal · repo `working_ui/admin_dashboard.html` + `portal/` (embed vía admin_embed si aplica). -->
-  <!-- Optional: hide parent site chrome when embedded in another shell. If a map/widget paints on top, lower its z-index — .admin-shell is z-index:1000. -->
-  <script>
-    (function () {
-      try {
-        document.documentElement.classList.add("portal-app-shell");
-      } catch (e) {}
-    })();
-  </script>
-  <style id="portal-hide-wp-chrome">
-    html.portal-app-shell body.admin-bar {
-      padding-top: 0 !important;
-      margin-top: 0 !important;
-    }
-    html.portal-app-shell #wpadminbar,
-    html.portal-app-shell #masthead,
-    html.portal-app-shell header#masthead,
-    html.portal-app-shell .site-header,
-    html.portal-app-shell #site-header,
-    html.portal-app-shell .ast-primary-header-bar,
-    html.portal-app-shell .ast-above-header,
-    html.portal-app-shell .elementor-location-header,
-    html.portal-app-shell .elementor-location-footer,
-    html.portal-app-shell #colophon,
-    html.portal-app-shell footer.site-footer,
-    html.portal-app-shell .site-footer,
-    html.portal-app-shell #footer,
-    html.portal-app-shell .site-bottom-footer-inner-wrap,
-    html.portal-app-shell .footer-widget-area {
-      display: none !important;
-      visibility: hidden !important;
-      height: 0 !important;
-      overflow: hidden !important;
-      pointer-events: none !important;
-    }
-    html.portal-app-shell .site-content,
-    html.portal-app-shell #content,
-    html.portal-app-shell .site-main,
-    html.portal-app-shell #primary {
-      margin-top: 0 !important;
-      padding-top: 0 !important;
-    }
-    html.portal-app-shell #page,
-    html.portal-app-shell .site {
-      margin-top: 0 !important;
-      padding-top: 0 !important;
-    }
-    html.portal-app-shell,
-    html.portal-app-shell body {
-      max-width: 100vw !important;
-      overflow-x: hidden !important;
-    }
-    html.portal-app-shell #page,
-    html.portal-app-shell .site,
-    html.portal-app-shell .site-content,
-    html.portal-app-shell #content,
-    html.portal-app-shell #primary,
-    html.portal-app-shell .site-main {
-      max-width: 100vw !important;
-      overflow-x: hidden !important;
-    }
-  </style>
+  <!-- Admin portal · Vercel static deploy: working_ui/admin_dashboard.html + portal/ assets -->
   <meta charset="UTF-8" />
+  <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
   <title>clubSENsational · Operations + Operator workflow (merged)</title>
   <style>
@@ -909,14 +849,14 @@
     .c4k-reg-kpi-row strong{flex:0 0 36px;text-align:right;font-size:13px;color:var(--ink)}
     .c4k-reg-kpi-cap{font-size:12px;line-height:1.45;max-width:100%;overflow-wrap:break-word}
     .c4k-reg-kpi-card-head{
-      text-align:center;min-width:0;padding:10px 12px 18px;margin:0 0 4px;border-bottom:1px solid var(--line);
+      text-align:center;min-width:0;padding:6px 6px 10px;margin:0 0 6px;border-bottom:1px solid var(--line);
       display:flex;flex-direction:column;align-items:center;justify-content:center;
     }
     .c4k-reg-kpi-card-head .c4k-reg-kpi-card-title{
-      margin:0;line-height:1.2;font-size:1.35rem;font-weight:800;color:var(--ink);letter-spacing:-0.02em;max-width:100%;overflow-wrap:break-word
+      margin:0;line-height:1.2;font-size:1.05rem;font-weight:800;color:var(--ink);letter-spacing:-0.02em;max-width:100%;overflow-wrap:break-word
     }
     .c4k-reg-kpi-card-head .c4k-reg-kpi-card-sub{
-      margin:8px 0 0;font-size:0.95rem;font-weight:500;color:var(--muted);line-height:1.35;max-width:100%;overflow-wrap:break-word
+      margin:4px 0 0;font-size:0.78rem;font-weight:500;color:var(--muted);line-height:1.3;max-width:100%;overflow-wrap:break-word
     }
     .c4k-reg-emo-list{display:flex;flex-direction:column;gap:8px;margin-top:6px;min-width:0}
     .c4k-reg-emo-row{display:flex;align-items:center;gap:10px;min-width:0}
@@ -924,15 +864,15 @@
     .c4k-reg-emo-bar{flex:1;min-width:0;height:22px;border-radius:8px;background:#f1f5f9;border:1px solid var(--line);overflow:hidden;position:relative}
     .c4k-reg-emo-bar > span{display:flex;align-items:center;justify-content:flex-end;padding:0 8px;height:100%;min-width:0;border-radius:7px;font-size:11px;font-weight:700;color:#0f172a;background:linear-gradient(90deg,#bfdbfe,#93c5fd);box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .c4k-sf-kpi-slab{
-      margin-bottom:16px;min-width:0;border-radius:var(--radiusLg);border:1px solid var(--line);
+      margin-bottom:12px;min-width:0;border-radius:var(--radiusLg);border:1px solid var(--line);
       background:linear-gradient(165deg,#f8fafc 0%,#f1f5f9 55%,#eef2f7 100%);
-      box-shadow:var(--shadow);padding:12px;
+      box-shadow:var(--shadow);padding:10px;
     }
     .c4k-sf-kpi-row{
-      display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:stretch;min-width:0;
+      display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:start;min-width:0;
     }
     .c4k-sf-kpi-row--tri{
-      grid-template-columns:minmax(0,0.95fr) minmax(0,2.35fr) minmax(0,0.95fr);
+      grid-template-columns:repeat(3,minmax(0,1fr));
     }
     .c4k-sf-kpi-row--pax{
       grid-template-columns:repeat(4,minmax(0,1fr));
@@ -951,9 +891,9 @@
     }
     .c4k-sf-kpi-panel{
       min-width:0;display:flex;flex-direction:column;background:var(--surface);border:1px solid rgba(15,23,42,.08);
-      border-radius:12px;padding:12px 14px 14px;box-shadow:0 1px 3px rgba(15,23,42,.06);
+      border-radius:12px;padding:10px 12px 12px;box-shadow:0 1px 3px rgba(15,23,42,.06);
     }
-    .c4k-sf-kpi-panel .c4k-reg-kpi-card-head{margin:0 0 2px;padding:8px 4px 14px;border-bottom:1px solid rgba(15,23,42,.08)}
+    .c4k-sf-kpi-panel .c4k-reg-kpi-card-head{margin:0 0 4px;padding:4px 2px 8px;border-bottom:1px solid rgba(15,23,42,.08)}
     .c4k-sf-out-card .card-h h3{margin:0;font-size:15px;font-weight:800;color:var(--ink)}
     .c4k-sf-out-tbl{min-width:min(920px,100%)}
     .tbl.c4k-sf-out-tbl th,.tbl.c4k-sf-out-tbl td{text-align:center;vertical-align:middle}
@@ -1138,56 +1078,64 @@
     .c4k-reg-eng-num{font-size:21px;font-weight:800;color:var(--ink);line-height:1}
     .c4k-reg-eng-den{font-size:14px;font-weight:800;color:var(--muted);margin:0 0 0 1px;line-height:1}
     .c4k-reg-eng-gauge{
-      display:flex;flex-direction:column;align-items:center;min-width:0;width:100%;padding:0 4px 4px;
+      display:flex;flex-direction:column;align-items:stretch;min-width:0;width:100%;gap:0;
+    }
+    .c4k-reg-eng-gauge__chart{
+      display:flex;justify-content:center;padding:2px 4px 0;min-width:0;
     }
     .c4k-reg-eng-gauge__svg{
-      display:block;width:min(100%,240px);height:auto;margin:4px auto 0;overflow:visible;
+      display:block;width:100%;max-width:188px;height:auto;margin:0 auto;overflow:visible;
     }
-    .c4k-reg-eng-gauge__seg{fill:none;stroke-width:16;stroke-linecap:butt}
-    .c4k-reg-eng-gauge__seg--r{stroke:#dc2626}
-    .c4k-reg-eng-gauge__seg--o{stroke:#ea580c}
-    .c4k-reg-eng-gauge__seg--y{stroke:#84cc16}
-    .c4k-reg-eng-gauge__seg--g{stroke:#166534}
-    .c4k-reg-eng-gauge__tick{font-size:9px;font-weight:600;fill:#94a3b8}
-    .c4k-reg-eng-gauge__needle{stroke:#1e3a5f;stroke-width:2.8;stroke-linecap:round}
-    .c4k-reg-eng-gauge__hub{fill:#fff;stroke:#1e3a5f;stroke-width:2.5}
-    .c4k-reg-eng-gauge__center{text-align:center;margin-top:2px;min-width:0;max-width:100%}
+    .c4k-reg-eng-gauge__seg{fill:none;stroke-width:11;stroke-linecap:round}
+    .c4k-reg-eng-gauge__seg--r{stroke:#ef4444}
+    .c4k-reg-eng-gauge__seg--o{stroke:#f97316}
+    .c4k-reg-eng-gauge__seg--y{stroke:#86efac}
+    .c4k-reg-eng-gauge__seg--g{stroke:#15803d}
+    .c4k-reg-eng-gauge__tick{font-size:8px;font-weight:600;fill:#94a3b8;font-family:inherit}
+    .c4k-reg-eng-gauge__needle{stroke:#1e293b;stroke-width:2.2;stroke-linecap:round}
+    .c4k-reg-eng-gauge__hub{fill:#fff;stroke:#1e293b;stroke-width:2}
+    .c4k-reg-eng-gauge__stats{
+      text-align:center;padding:8px 6px 2px;margin-top:2px;
+      border-top:1px solid rgba(15,23,42,.07);min-width:0;
+    }
+    .c4k-reg-eng-gauge__stat-main{display:flex;flex-direction:column;align-items:center;gap:1px;min-width:0}
     .c4k-reg-eng-gauge__pct{
-      display:block;font-size:26px;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums;
+      display:block;font-size:1.65rem;font-weight:800;line-height:1.05;font-variant-numeric:tabular-nums;
     }
     .c4k-reg-eng-gauge__pct--r{color:#dc2626}
     .c4k-reg-eng-gauge__pct--o{color:#ea580c}
     .c4k-reg-eng-gauge__pct--y{color:#65a30d}
-    .c4k-reg-eng-gauge__pct--g{color:#166534}
-    .c4k-reg-eng-gauge__avg{display:block;margin-top:4px;font-size:14px;font-weight:600;color:#64748b}
-    .c4k-reg-eng-gauge__foot{padding-top:6px;font-size:12px;line-height:1.35}
-    .c4k-sf-kpi-slab--embed .c4k-sf-kpi-panel--eng-sm .c4k-reg-eng-gauge__svg{width:min(100%,200px);margin-top:2px}
-    .c4k-sf-kpi-slab--embed .c4k-sf-kpi-panel--eng-sm .c4k-reg-eng-gauge__pct{font-size:22px}
+    .c4k-reg-eng-gauge__pct--g{color:#15803d}
+    .c4k-reg-eng-gauge__avg{display:block;font-size:12px;font-weight:600;color:#64748b;line-height:1.25}
+    .c4k-reg-eng-gauge__foot{margin:5px 0 0;padding:0;font-size:10px;line-height:1.3;color:var(--muted)}
+    .c4k-sf-kpi-panel--eng-sm .c4k-sf-kpi-col__body{justify-content:flex-start}
     .c4k-reg-ind-bars{
-      display:flex;align-items:flex-end;justify-content:center;gap:8px;
-      min-width:0;width:100%;padding:10px 6px 6px;min-height:132px;
+      display:flex;align-items:flex-end;justify-content:center;gap:6px;
+      min-width:0;width:100%;padding:2px 0 0;min-height:0;
     }
     .c4k-reg-ind-bar__item{
-      flex:1 1 0;min-width:0;max-width:76px;
-      display:flex;flex-direction:column;align-items:center;gap:6px;
+      flex:1 1 0;min-width:0;max-width:68px;
+      display:flex;flex-direction:column;align-items:center;gap:4px;
     }
     .c4k-reg-ind-bar__pct{
-      font-size:12px;font-weight:700;color:#6d28d9;line-height:1.2;
+      font-size:11px;font-weight:700;color:#6d28d9;line-height:1.15;
       text-align:center;min-width:0;overflow-wrap:break-word;
     }
     .c4k-reg-ind-bar__track{
-      width:100%;max-width:54px;height:88px;
+      width:100%;max-width:46px;height:68px;
       display:flex;align-items:flex-end;justify-content:stretch;
-      border-radius:14px 14px 10px 10px;background:rgba(109,40,217,.07);
+      border-radius:10px 10px 8px 8px;background:rgba(109,40,217,.08);
     }
     .c4k-reg-ind-bar__fill{
-      width:100%;min-height:6px;border-radius:14px 14px 10px 10px;
+      width:100%;min-height:5px;border-radius:10px 10px 8px 8px;
+      box-shadow:inset 0 -1px 0 rgba(255,255,255,.35);
     }
     .c4k-reg-ind-bar__lbl{
-      font-size:11px;font-weight:800;color:#6d28d9;text-align:center;
-      line-height:1.2;min-width:0;overflow-wrap:break-word;max-width:100%;
+      font-size:10px;font-weight:800;color:#5b21b6;text-align:center;
+      line-height:1.15;min-width:0;overflow-wrap:break-word;max-width:100%;
     }
-    .booking-capacity--sf-days-only .booking-capacity-bars{padding-top:10px;padding-bottom:12px}
+    .booking-capacity--sf-days-only .booking-capacity-bars{padding:8px 10px 10px}
+    .booking-capacity--sf-days-only{margin-bottom:10px}
     .c4k-reg-rel-donut-wrap{
       position:relative;width:96px;height:96px;margin:6px auto 12px;display:grid;place-items:center;border-radius:50%;
       box-shadow:0 6px 20px rgba(15,23,42,.1),0 0 0 1px rgba(15,23,42,.05);
@@ -1288,6 +1236,17 @@
     }
     .c4k-reg-emo-circ__lbl{margin-top:10px;font-size:10px;font-weight:700;color:var(--ink);text-align:center;line-height:1.25;max-width:100%;overflow-wrap:break-word;min-width:0}
     .c4k-reg-emo-circ__sub{margin-top:3px;font-size:9px;font-weight:600;color:var(--muted);text-align:center;line-height:1.2;max-width:100%;overflow-wrap:break-word;min-width:0}
+    .c4k-reg-emo-circ--sf-day{
+      display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px 4px;
+      margin-top:0;padding:0;align-items:start;width:100%;
+    }
+    .c4k-reg-emo-circ--sf-day .c4k-reg-emo-circ__item{flex:none;max-width:none;padding:0 2px}
+    .c4k-reg-emo-circ--sf-day .c4k-reg-emo-circ__ico{line-height:0;margin-bottom:2px}
+    .c4k-reg-emo-circ--sf-day .c4k-reg-emo-circ__ico svg{width:22px;height:22px}
+    .c4k-reg-emo-circ--sf-day .c4k-reg-emo-donut-wrap{width:100%;max-width:72px;height:72px;margin:0 auto 4px}
+    .c4k-reg-emo-circ--sf-day .c4k-reg-emo-donut__inner{width:46px;height:46px;font-size:11px}
+    .c4k-reg-emo-circ--sf-day .c4k-reg-emo-circ__lbl{margin-top:4px;font-size:9px;line-height:1.2}
+    .c4k-reg-emo-circ--sf-day .c4k-reg-emo-circ__sub{margin-top:2px;font-size:8px}
     .c4k-reg-split{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;min-width:0}
     .c4k-reg-split__box{border-radius:10px;padding:10px 12px;border:1px solid var(--line);min-width:0;overflow-wrap:break-word}
     .c4k-reg-split__box--fb{background:linear-gradient(145deg,#eff6ff,#dbeafe);border-color:rgba(37,99,235,.2)}
@@ -3975,7 +3934,7 @@
         <div class="admin-sidebar-logo" aria-label="clubSENsational logo">
           <div class="admin-brand-wrap">
             <div class="admin-brand-mark">
-              <img src="portal/F-02-1.png" alt="clubSENsational - Autism Consultancy Services" decoding="async" referrerpolicy="no-referrer-when-downgrade" onerror="(function(img){var t=Number(img.dataset.logoTier||0);img.dataset.logoTier=String(t+1);if(t===0){img.src='portal/portal_crest.svg';return;}img.onerror=null;img.src='data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20200%20200%27%3E%3Crect%20fill%3D%27%23ffffff%27%20width%3D%27200%27%20height%3D%27200%27%2F%3E%3Ctext%20x%3D%27100%27%20y%3D%2778%27%20text-anchor%3D%27middle%27%20font-family%3D%27system-ui%2Csans-serif%27%20font-size%3D%2722%27%20font-weight%3D%27800%27%20fill%3D%27%230f172a%27%3Eclub%3C%2Ftext%3E%3Ctext%20x%3D%27100%27%20y%3D%27120%27%20text-anchor%3D%27middle%27%20font-family%3D%27system-ui%2Csans-serif%27%20font-size%3D%2740%27%20font-weight%3D%27800%27%20fill%3D%27%23b45309%27%3ESEN%3C%2Ftext%3E%3Ctext%20x%3D%27100%27%20y%3D%27152%27%20text-anchor%3D%27middle%27%20font-family%3D%27system-ui%2Csans-serif%27%20font-size%3D%2716%27%20font-weight%3D%27700%27%20fill%3D%27%23334155%27%3Esational%3C%2Ftext%3E%3C%2Fsvg%3E';})(this);" />
+              <img src="/portal/F-02-1.png" alt="clubSENsational - Autism Consultancy Services" width="200" height="200" decoding="async" referrerpolicy="no-referrer-when-downgrade" onerror="typeof portalBrandLogoOnError==='function'&&portalBrandLogoOnError(this)" />
             </div>
             <div class="admin-brand-orbit" aria-hidden="true">
               <svg class="admin-brand-orbit-svg" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
@@ -4383,8 +4342,7 @@
         parts.map(function(p){ return '<div style="margin:6px 0;max-width:56rem;overflow-wrap:break-word">' + p + '</div>'; }).join('') +
         (er.length ? '<div style="margin-top:10px;color:#fecaca;max-width:56rem;overflow-wrap:break-word">' + er.join('<br>') + '</div>' : '') +
         probeHtml +
-        '<div style="margin-top:10px;opacity:.88;max-width:56rem;overflow-wrap:break-word">Asegura que el JS esté en <code>portal/</code> en el deploy (Vercel/repo). Algunos hosts renombran archivos (<code>…-scaled</code>, <code>…-1.js</code>): el nombre debe coincidir con el que referencia <code>admin_dashboard.html</code>. Regenera exports con los scripts en database/ si cambias los xlsx.</div>' +
-        '<div style="margin-top:8px;opacity:.88;max-width:56rem;overflow-wrap:break-word">Si Elementor elimina <code>&lt;script&gt;</code> del HTML, carga estos JS con «Insert Headers and Footers» o <code>functions.php</code>.</div>';
+        '<div style="margin-top:10px;opacity:.88;max-width:56rem;overflow-wrap:break-word">Asegura que el JS esté en <code>portal/</code> en el deploy Vercel (mismo origen que esta página). Regenera exports con los scripts en <code>database/</code> si cambias los xlsx.</div>';
       document.body.appendChild(div);
     }catch(_e){}
   })();
@@ -7069,32 +7027,34 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var avg = vals.reduce(function(a, b){ return a + b; }, 0) / vals.length;
       var pctInt = Math.min(100, Math.max(0, Math.round((avg / 5) * 100)));
       var ang = Math.PI - (pctInt / 100) * Math.PI;
-      var cx = 120, cy = 112, r = 88;
+      var cx = 100, cy = 94, r = 70;
       var nx = cx + r * Math.cos(ang);
       var ny = cy - r * Math.sin(ang);
       var pctTier = pctInt >= 75 ? 'g' : pctInt >= 50 ? 'y' : pctInt >= 25 ? 'o' : 'r';
       return (
         '<div class="c4k-reg-eng-gauge c4k-sf-kpi-col__body" style="min-width:0">' +
-        '<svg class="c4k-reg-eng-gauge__svg" viewBox="0 0 240 132" role="img" aria-label="Engagement ' + esc(String(pctInt)) + ' percent, average ' + avg.toFixed(1) + ' out of 5">' +
-        '<path class="c4k-reg-eng-gauge__seg c4k-reg-eng-gauge__seg--r" d="M 24 112 A 88 88 0 0 1 68.2 36.4" />' +
-        '<path class="c4k-reg-eng-gauge__seg c4k-reg-eng-gauge__seg--o" d="M 68.2 36.4 A 88 88 0 0 1 120 22" />' +
-        '<path class="c4k-reg-eng-gauge__seg c4k-reg-eng-gauge__seg--y" d="M 120 22 A 88 88 0 0 1 171.8 36.4" />' +
-        '<path class="c4k-reg-eng-gauge__seg c4k-reg-eng-gauge__seg--g" d="M 171.8 36.4 A 88 88 0 0 1 216 112" />' +
-        '<text class="c4k-reg-eng-gauge__tick" x="10" y="118">0%</text>' +
-        '<text class="c4k-reg-eng-gauge__tick" x="50" y="40">25%</text>' +
-        '<text class="c4k-reg-eng-gauge__tick" x="120" y="16" text-anchor="middle">50%</text>' +
-        '<text class="c4k-reg-eng-gauge__tick" x="182" y="40" text-anchor="end">75%</text>' +
-        '<text class="c4k-reg-eng-gauge__tick" x="228" y="118" text-anchor="end">100%</text>' +
+        '<div class="c4k-reg-eng-gauge__chart">' +
+        '<svg class="c4k-reg-eng-gauge__svg" viewBox="0 0 200 100" role="img" aria-label="Engagement ' + esc(String(pctInt)) + ' percent, average ' + avg.toFixed(1) + ' out of 5">' +
+        '<path class="c4k-reg-eng-gauge__seg c4k-reg-eng-gauge__seg--r" d="M 30 94 A 70 70 0 0 1 58.8 30.6" />' +
+        '<path class="c4k-reg-eng-gauge__seg c4k-reg-eng-gauge__seg--o" d="M 58.8 30.6 A 70 70 0 0 1 100 24" />' +
+        '<path class="c4k-reg-eng-gauge__seg c4k-reg-eng-gauge__seg--y" d="M 100 24 A 70 70 0 0 1 141.2 30.6" />' +
+        '<path class="c4k-reg-eng-gauge__seg c4k-reg-eng-gauge__seg--g" d="M 141.2 30.6 A 70 70 0 0 1 170 94" />' +
+        '<text class="c4k-reg-eng-gauge__tick" x="6" y="98">0%</text>' +
+        '<text class="c4k-reg-eng-gauge__tick" x="40" y="26">25%</text>' +
+        '<text class="c4k-reg-eng-gauge__tick" x="100" y="8" text-anchor="middle">50%</text>' +
+        '<text class="c4k-reg-eng-gauge__tick" x="160" y="26" text-anchor="end">75%</text>' +
+        '<text class="c4k-reg-eng-gauge__tick" x="194" y="98" text-anchor="end">100%</text>' +
         '<line class="c4k-reg-eng-gauge__needle" x1="' + cx + '" y1="' + cy + '" x2="' + nx.toFixed(1) + '" y2="' + ny.toFixed(1) + '" />' +
-        '<circle class="c4k-reg-eng-gauge__hub" cx="' + cx + '" cy="' + cy + '" r="6" />' +
-        '</svg>' +
-        '<div class="c4k-reg-eng-gauge__center">' +
+        '<circle class="c4k-reg-eng-gauge__hub" cx="' + cx + '" cy="' + cy + '" r="5" />' +
+        '</svg></div>' +
+        '<div class="c4k-reg-eng-gauge__stats">' +
+        '<div class="c4k-reg-eng-gauge__stat-main">' +
         '<span class="c4k-reg-eng-gauge__pct c4k-reg-eng-gauge__pct--' + pctTier + '">' + esc(String(pctInt)) + '%</span>' +
         '<span class="c4k-reg-eng-gauge__avg">' + esc(avg.toFixed(1)) + ' / 5 avg</span>' +
         '</div>' +
-        '<p class="muted c4k-reg-kpi-cap c4k-reg-eng-gauge__foot" style="margin:0;text-align:center">' +
+        '<p class="c4k-reg-eng-gauge__foot">' +
         esc(String(vals.length)) + ' session' + (vals.length === 1 ? '' : 's') + ' with scores</p>' +
-        '</div>'
+        '</div></div>'
       );
     }
     function adminC4kRegistersKpiMockEngagementGaugeHtml(){
@@ -18227,7 +18187,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       refreshKpisFromDemo();
       var k = MOCK.kpi;
       return '<h1 class="page-title">Settings &amp; demo tools</h1><p class="page-intro">Session, connections, and demo snapshot controls for this admin build.</p>'+
-        '<div class="grid-2"><div class="card card-pad"><h3 style="margin:0 0 10px;font-size:14px">Connections</h3><p class="muted" style="margin:0 0 8px">Primary admin UI: open <code>admin_dashboard.html</code> (or <code>admin_embed.html</code>) from the same origin as <code>portal/</code> — e.g. Vercel static deploy. Login redirect: <code>PORTAL_ADMIN_DASHBOARD_URL</code> in <code>login.html</code> / <code>auth-handler.js</code>.</p><p class="muted" style="margin:0">Supabase: active after sign-in inside the embed; this card does not probe live connection state.</p></div>'+
+        '<div class="grid-2"><div class="card card-pad"><h3 style="margin:0 0 10px;font-size:14px">Connections</h3><p class="muted" style="margin:0 0 8px">Admin UI: <code>/admin_dashboard.html</code> on the Vercel deploy (same origin as <code>/portal/</code>). Login sets <code>PORTAL_ADMIN_DASHBOARD_URL</code> in <code>login.html</code> / <code>auth-handler.js</code>.</p><p class="muted" style="margin:0">Supabase: active after sign-in; this card does not probe live connection state.</p></div>'+
         '<div class="card card-pad"><h3 style="margin:0 0 10px;font-size:14px">Operational snapshot (demo)</h3><p class="muted" style="margin:0">Open incidents: <strong style="color:var(--ink)">'+k.incidentsOpen+'</strong></p><p class="muted" style="margin:8px 0 0">Absents / credits pending: <strong style="color:var(--ink)">'+k.cancellationsOpen+'</strong></p><p class="muted" style="margin:8px 0 0">Reports in flight: <strong style="color:var(--ink)">'+k.reportsPending+'</strong> · Onboarding tasks: <strong style="color:var(--ink)">'+k.onboardingPending+'</strong></p><p class="muted" style="margin:8px 0 0">Billable sessions in model: <strong style="color:var(--ink)">'+MOCK.sessionEconomics.billableSessionCount+'</strong></p></div></div>'+
         '<div class="card" style="margin-top:14px"><div class="card-pad"><div class="toolbar"><button type="button" class="btn btn--sec" data-open-report>Report generator</button> <button type="button" class="btn btn--ghost" data-portal-logout>Log out</button></div></div></div>';
     }
@@ -21838,12 +21798,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
   </script>
   <script>
     (function () {
-      var isElementorPreview =
-        window.location.search.indexOf("elementor-preview=") !== -1 ||
-        window.location.search.indexOf("preview=true") !== -1 ||
-        document.documentElement.classList.contains("elementor-editor-active");
-      if (isElementorPreview) return;
-
       var s = document.createElement("script");
       s.type = "module";
       s.textContent = `

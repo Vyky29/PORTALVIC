@@ -1,4 +1,17 @@
 {
   "outputDirectory": "working_ui",
-  "rewrites": [{ "source": "/", "destination": "/login.html" }]
+  "rewrites": [
+    { "source": "/", "destination": "/login.html" },
+    { "source": "/operations-admin", "destination": "/admin_dashboard.html" },
+    { "source": "/operations-admin/", "destination": "/admin_dashboard.html" },
+    { "source": "/l0", "destination": "/login.html" },
+    { "source": "/l0/", "destination": "/login.html" },
+    { "source": "/p1", "destination": "/staff_dashboard.html" },
+    { "source": "/p1/", "destination": "/staff_dashboard.html" },
+    { "source": "/l1", "destination": "/lead_dashboard.html" },
+    { "source": "/l1/", "destination": "/lead_dashboard.html" },
+    { "source": "/ce", "destination": "/ceo_dashboard.html" },
+    { "source": "/ce/", "destination": "/ceo_dashboard.html" },
+    { "source": "/portal/admin_embed.html", "destination": "/admin_dashboard.html" }
+  ]
 }

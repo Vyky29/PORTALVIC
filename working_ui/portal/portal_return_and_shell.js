@@ -1,56 +1,9 @@
 /**
- * Embedded portal pages: hide host chrome and validate `portalReturn` redirects.
+ * Optional portalReturn redirect helper for satellite HTML pages.
+ * Vercel static deploy — no host CMS integration.
  */
 (function (global) {
   "use strict";
-
-  var CSS =
-    "html.portal-app-shell body.admin-bar{padding-top:0!important;margin-top:0!important}" +
-    "html.portal-app-shell #wpadminbar," +
-    "html.portal-app-shell #masthead," +
-    "html.portal-app-shell header#masthead," +
-    "html.portal-app-shell .site-header," +
-    "html.portal-app-shell #site-header," +
-    "html.portal-app-shell .ast-primary-header-bar," +
-    "html.portal-app-shell .ast-above-header," +
-    "html.portal-app-shell .elementor-location-header," +
-    "html.portal-app-shell .elementor-location-footer," +
-    "html.portal-app-shell #colophon," +
-    "html.portal-app-shell footer.site-footer," +
-    "html.portal-app-shell .site-footer," +
-    "html.portal-app-shell #footer," +
-    "html.portal-app-shell .site-bottom-footer-inner-wrap," +
-    "html.portal-app-shell .footer-widget-area{display:none!important;visibility:hidden!important;height:0!important;overflow:hidden!important;pointer-events:none!important}" +
-    "html.portal-app-shell .site-content," +
-    "html.portal-app-shell #content," +
-    "html.portal-app-shell .site-main," +
-    "html.portal-app-shell #primary{margin-top:0!important;padding-top:0!important}" +
-    "html.portal-app-shell #page," +
-    "html.portal-app-shell .site{margin-top:0!important;padding-top:0!important}" +
-    "html.portal-app-shell," +
-    "html.portal-app-shell body{max-width:100vw!important;overflow-x:hidden!important}" +
-    "html.portal-app-shell #page," +
-    "html.portal-app-shell .site," +
-    "html.portal-app-shell .site-content," +
-    "html.portal-app-shell #content," +
-    "html.portal-app-shell #primary," +
-    "html.portal-app-shell .site-main{max-width:100vw!important;overflow-x:hidden!important}";
-
-  function installWpChromeHide() {
-    try {
-      document.documentElement.classList.add("portal-app-shell");
-    } catch (e) {}
-    if (document.getElementById("portal-hide-wp-chrome")) return;
-    var st = document.createElement("style");
-    st.id = "portal-hide-wp-chrome";
-    st.textContent = CSS;
-    var head = document.head || document.getElementsByTagName("head")[0];
-    if (head && head.firstChild) head.insertBefore(st, head.firstChild);
-    else if (head) head.appendChild(st);
-    else try {
-      document.documentElement.appendChild(st);
-    } catch (e2) {}
-  }
 
   function portalReturnHostAllowed(hostname) {
     var h = String(hostname || "").toLowerCase();
@@ -61,6 +14,9 @@
     try {
       if (typeof location !== "undefined" && location.hostname && h === String(location.hostname).toLowerCase()) return true;
     } catch (e) {}
+    try {
+      if (typeof location !== "undefined" && /\.vercel\.app$/i.test(h)) return true;
+    } catch (e2) {}
     return false;
   }
 
@@ -102,8 +58,6 @@
       } catch (e2) {}
     }
   }
-
-  installWpChromeHide();
 
   global.portalGetPortalReturnUrl = portalGetPortalReturnUrl;
   global.portalRedirectToPortalReturn = portalRedirectToPortalReturn;
