@@ -27,6 +27,21 @@ V1_XLSX = ROOT / "SPREADSHEETS" / "v1SessionFeedback (PORTAL).xlsx"
 FIRST_DATE = "2026-04-13"
 JS_PREFIX = "window.SESSION_FEEDBACK_PORTAL_SOURCE = "
 
+# Roster uses full names (e.g. Adaam Ah); legacy feedback sheets often omit " Ah".
+CANONICAL_CLIENT_ALIASES = {
+    "aadam ah": "Aydaan Ah",
+    "aadam": "Aydaan Ah",
+    "adaam": "Adaam Ah",
+    "adaam ah": "Adaam Ah",
+}
+
+
+def canonical_participant_name(name: str) -> str:
+    n = re.sub(r"\s+", " ", str(name or "").strip())
+    if not n:
+        return n
+    return CANONICAL_CLIENT_ALIASES.get(n.lower(), n)
+
 
 def norm_header(h: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", (h or "").strip().lower()).strip("_")
@@ -90,9 +105,12 @@ def row_from_dict(raw: dict, source: str) -> dict | None:
         return None
 
     d_iso = cell_date(pick("date", "session_date"))
-    name = str(
-        pick("client_name", "client name", "client", "clients_name", "clients name") or ""
-    ).strip()
+    name = canonical_participant_name(
+        str(
+            pick("client_name", "client name", "client", "clients_name", "clients name")
+            or ""
+        ).strip()
+    )
     if not d_iso or not name or d_iso < FIRST_DATE:
         return None
     service_raw = str(pick("service", "programme") or "").strip()
