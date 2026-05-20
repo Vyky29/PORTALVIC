@@ -5891,8 +5891,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       var relevantP = adminSfStr(r.relevantParent) || adminSfStr(r.emotionSummary);
       var incidents = adminSfStr(r.incidentsNotes) || adminSfStr(r.notesOrIncidents);
-      var independence = adminSfStr(r.independence);
+      var independence =
+        adminSfStr(r.independence) || adminSfStr(r.engagementPatterns) || adminSfStr(r.engagement_patterns);
       var instructor = adminSfStr(r.instructor) || adminSfStr(r.completedBy) || '—';
+      var submittedAt = adminSfStr(r.submittedAt) || adminSfStr(r.createdAt) || adminSfStr(r.created_at);
       var client = adminSfStr(r.clientName) || '—';
       var dateIso = adminSfStr(r.date);
       var dateDisplay = adminFormatUkDateFromIso(dateIso);
@@ -5935,7 +5937,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         mrev: !!mrev,
         fu: mrev ? 'internal review' : 'none',
         _portal: true,
-        sessionTimeSlot: adminSfStr(r.sessionTimeSlot || r.timeSlot || r.slotTime || r.sessionSlot || r.slot || '')
+        sessionTimeSlot: adminSfStr(r.sessionTimeSlot || r.timeSlot || r.slotTime || r.sessionSlot || r.slot || ''),
+        submittedAt: submittedAt || ''
       };
     }
     /** Resolve `MOCK.clientsById` key from sheet / grid display name (opens participant drawer when matched). */
@@ -6151,14 +6154,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var m = head.match(/(\d{1,2}:\d{2})\s*$/);
       return m ? m[1] : '—';
     }
-    function adminC4kRegisterServiceCellHtml(d){
+    function adminC4kRegisterServiceCellHtml(d, opts){
+      opts = opts || {};
       var line1 = esc(d.service || '—');
-      var slot = esc(adminC4kRegisterSessionSlotForServiceCell(d));
+      var line2;
+      if(opts.feedbackDateLine){
+        var iso10 = adminC4kRegisterRowIso10(d) || String(d.sortIso || '').trim().substring(0, 10);
+        line2 = esc(iso10.length >= 10 ? bookingFormatDdMmYy(iso10) : '—');
+      }else{
+        line2 = esc(adminC4kRegisterSessionSlotForServiceCell(d));
+      }
       return (
         '<td class="c4k-sf-col-svc" style="min-width:0">' +
         '<div style="min-width:0">' +
         '<div style="overflow-wrap:break-word;word-break:normal">' + line1 + '</div>' +
-        '<div class="muted" style="font-size:11px;margin-top:3px;line-height:1.35;overflow-wrap:break-word">' + slot + '</div>' +
+        '<div class="muted" style="font-size:11px;margin-top:3px;line-height:1.35;overflow-wrap:break-word">' + line2 + '</div>' +
         '</div></td>'
       );
     }
@@ -6586,7 +6596,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return posTd + relTd;
     }
     function adminC4kDailyRegisterRowHtml(d){
-      var engCell = typeof d.eng === 'number' ? esc(d.eng) + ' / 5' : esc(d.eng);
+      var engCell;
+      if(d.engNum != null && !isNaN(d.engNum)){
+        var gn = Math.round(d.engNum * 10) / 10;
+        engCell = esc(gn % 1 === 0 ? String(Math.round(gn)) : String(gn));
+      }else if(typeof d.eng === 'number'){
+        engCell = esc(String(d.eng));
+      }else{
+        engCell = esc(d.eng);
+      }
       var pillTitle = esc(String(d.dateDisplay || '') + ' · ' + String(d.service || '—'));
       var cid = resolveAdminClientDrawerIdFromDisplayName(d.pax);
       var hasInc = adminC4kIncidentNotesArePresent(d.incidents);
@@ -6619,25 +6637,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         paxChip +
         '</div></td>';
       var posRelCells = adminC4kDailyRegisterPosRelTdPairHtml(d);
-      var instNm = String(d.instructor || '').trim();
-      var instDt = String(d.dateDisplay || '').trim();
-      var instrCell =
-        '<td class="muted c4k-sf-col-inst" style="min-width:0;vertical-align:top;overflow-wrap:break-word;word-break:break-word">' +
-        (instNm
-          ? '<div style="font-size:12px;line-height:1.35;font-weight:600;color:var(--ink);overflow-wrap:break-word">' + esc(instNm) + '</div>'
-          : '<div class="muted" style="font-size:12px">—</div>') +
-        (instDt
-          ? '<div class="muted" style="font-size:12px;margin-top:4px;line-height:1.35;overflow-wrap:break-word">' + esc(instDt) + '</div>'
-          : '') +
-        '</td>';
       return (
         '<tr>' + paxCell +
-        adminC4kRegisterServiceCellHtml(d) +
-        '<td style="min-width:0">' + engCell + '</td>' +
+        adminC4kRegisterServiceCellHtml(d, { feedbackDateLine: true }) +
+        '<td class="c4k-sf-col-eng" style="min-width:0;text-align:center;vertical-align:middle;font-weight:700">' + engCell + '</td>' +
         '<td class="muted c4k-sf-col-emo" style="min-width:0">' + adminC4kEmotionIconsCellHtml(d.emoLabel) + '</td>' +
         '<td class="muted c4k-sf-col-indep" style="min-width:0;overflow-wrap:break-word;word-break:normal;hyphens:none;vertical-align:top">' + esc(d.indep || '—') + '</td>' +
         posRelCells +
-        instrCell +
+        adminC4kRegisterReviewedByCellHtml(d) +
         '</tr>'
       );
     }
@@ -6811,6 +6818,65 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         adminC4kEmotionFaceSvgForCat('withdrawn') +
         adminC4kEmotionFaceSvgForCat('outcontrol') +
         '</span>';
+    }
+    function adminC4kSessionFeedbackEngagementHeaderHtml(){
+      return (
+        '<span class="c4k-sf-th-eng__ico" role="img" aria-label="Engagement score, 1 to 5">' +
+        '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false">' +
+        '<path fill="currentColor" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>' +
+        '</svg></span>'
+      );
+    }
+    function adminC4kSessionFeedbackMainTableHeadHtml(){
+      return (
+        '<thead><tr>' +
+        '<th scope="col">Participant</th>' +
+        '<th scope="col" class="c4k-sf-col-svc" title="Service (first line) and session date (second line)">Service</th>' +
+        '<th scope="col" class="c4k-sf-th-eng" title="Engagement (1–5)">' + adminC4kSessionFeedbackEngagementHeaderHtml() + '</th>' +
+        '<th scope="col" class="c4k-sf-col-emo" title="Regulation / emotions (icons)" aria-label="Regulation and emotions">' +
+        adminC4kEmotionHeaderLegendHtml() +
+        '</th>' +
+        '<th scope="col" class="c4k-sf-col-indep">Independence</th>' +
+        '<th scope="col" class="c4k-sf-col-pos" title="Positive feedback (optional)">Positive <span class="muted" style="font-weight:600">(opt.)</span></th>' +
+        '<th scope="col" class="c4k-sf-col-rel" title="Relevant information (optional)">Relevant <span class="muted" style="font-weight:600">(opt.)</span></th>' +
+        '<th scope="col" class="c4k-sf-col-inst" title="Staff who submitted feedback and when">Reviewed by</th>' +
+        '</tr></thead>'
+      );
+    }
+    function bookingFormatDdMmYy(iso){
+      var full = bookingFormatDdMmYyyy(iso);
+      if(full.length < 10) return full;
+      var parts = String(iso || '').trim().split('-');
+      if(parts.length !== 3) return full;
+      return parts[2] + '/' + parts[1] + '/' + String(parts[0]).slice(-2);
+    }
+    function adminC4kRegisterReviewedByCellHtml(d){
+      var instNm = String(d.instructor || '').trim();
+      var sub = String(d.submittedAt || '').trim();
+      var dateLine = String(d.dateDisplay || '').trim();
+      var timeLine = '';
+      if(sub){
+        try{
+          var dt = new Date(sub);
+          if(!isNaN(dt.getTime())){
+            timeLine = dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+            dateLine = dt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+          }
+        }catch(_dt){}
+      }
+      return (
+        '<td class="muted c4k-sf-col-inst" style="min-width:0;vertical-align:top;overflow-wrap:break-word;word-break:break-word">' +
+        (instNm
+          ? '<div style="font-size:12px;line-height:1.35;font-weight:700;color:var(--ink);overflow-wrap:break-word">' + esc(instNm) + '</div>'
+          : '<div class="muted" style="font-size:12px">—</div>') +
+        (dateLine
+          ? '<div class="muted" style="font-size:12px;margin-top:4px;line-height:1.35;overflow-wrap:break-word">' + esc(dateLine) + '</div>'
+          : '') +
+        (timeLine
+          ? '<div class="muted" style="font-size:11px;margin-top:2px;line-height:1.35">' + esc(timeLine) + '</div>'
+          : '') +
+        '</td>'
+      );
     }
     function adminC4kRegistersKpiEmotionsCirclesHtml(pack){
       var keys = pack.keys;
@@ -16221,7 +16287,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '</div>' +
         '<p id="c4kSfFilterHint" class="muted" style="margin:10px 0 0;font-size:12px;line-height:1.45;max-width:52rem;min-width:0;overflow-wrap:break-word"></p>' +
         '</div>' +
-        '<div class="card" id="c4kSfMainGridCard"><div class="card-pad c4k-sf-main-tbl-wrap" style="overflow-x:hidden;overflow-y:auto;padding:0;min-width:0;max-width:100%"><table class="tbl tbl--center c4k-sf-main-tbl"><thead><tr><th>Participant</th><th scope="col" class="c4k-sf-col-svc">Service</th><th scope="col" class="c4k-sf-th-eng">' + adminC4kEmotionHeaderLegendHtml() + '</th><th scope="col" class="c4k-sf-col-indep">Independence</th><th scope="col" class="c4k-sf-col-pos">Positive</th><th scope="col" class="c4k-sf-col-rel">Relevant</th><th scope="col" class="c4k-sf-col-inst">Instructor</th></tr></thead><tbody id="c4kSfFeedbackTbody"><tr><td colspan="8" class="muted">Loading…</td></tr></tbody></table></div></div>' +
+        '<div class="card" id="c4kSfMainGridCard"><div class="card-pad c4k-sf-main-tbl-wrap" style="overflow-x:hidden;overflow-y:auto;padding:0;min-width:0;max-width:100%"><table class="tbl tbl--center c4k-sf-main-tbl">' + adminC4kSessionFeedbackMainTableHeadHtml() + '<tbody id="c4kSfFeedbackTbody"><tr><td colspan="8" class="muted">Loading…</td></tr></tbody></table></div></div>' +
         '<div class="card c4k-sf-out-card" id="c4kSfOutcomeCard" style="margin-bottom:12px;min-width:0"><div class="card-h"><h3>Not attended / cancelled</h3></div><div class="card-pad" style="overflow:auto;padding:0"><table class="tbl tbl--center c4k-sf-out-tbl"><thead><tr><th>Participant</th><th>Date</th><th>Service</th><th>Outcome</th><th>Notify by</th><th>When</th></tr></thead><tbody id="c4kSfOutcomeTbody"><tr><td colspan="6" class="muted">Loading…</td></tr></tbody></table></div></div>' +
         '<div class="card c4k-sf-out-card" id="c4kSfIncidentsCard" style="margin-bottom:12px;min-width:0"><div class="card-h"><h3>Incidents</h3></div><div class="card-pad" style="overflow:auto;padding:0"><table class="tbl tbl--center c4k-sf-inc-tbl"><thead><tr><th>Participant</th><th>Service</th><th>Day</th><th>Completed by</th></tr></thead><tbody id="c4kSfIncidentsTbody"><tr><td colspan="4" class="muted">Loading…</td></tr></tbody></table></div></div>'
       );
@@ -16683,9 +16749,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '</div>'+
         '<p id="c4kSfFilterHint" class="muted" style="margin:10px 0 0;font-size:12px;line-height:1.45;max-width:52rem;min-width:0;overflow-wrap:break-word"></p>'+
         '</div>'+
-        '<div class="card"><div class="card-pad c4k-sf-main-tbl-wrap" style="overflow-x:hidden;overflow-y:auto;padding:0;min-width:0;max-width:100%"><table class="tbl tbl--center c4k-sf-main-tbl"><thead><tr><th>Participant</th><th scope="col" class="c4k-sf-col-svc" title="Service (first line) and session time slot (second line)">Service</th><th scope="col" class="c4k-sf-th-eng" title="Engagement (1–5)"><span class="c4k-sf-th-eng__ico" role="img" aria-label="Engagement score, 1 to 5"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></span></th>'+
-        '<th scope="col" class="c4k-sf-col-emo" title="Emotions / regulation: green happy/excited, yellow anxious, blue withdrawn, red out of control" aria-label="Emotions and regulation (icons: green happy or excited, yellow anxious, blue withdrawn, red out of control)">' + adminC4kEmotionHeaderLegendHtml() + '</th>'+
-        '<th scope="col" class="c4k-sf-col-indep">Independence</th><th scope="col" class="c4k-sf-col-pos" title="Click the cell when there is text to open review and notify">Positive <span class="muted" style="font-weight:600">(opt.)</span></th><th scope="col" class="c4k-sf-col-rel" title="Click the cell when there is text to open review actions">Relevant <span class="muted" style="font-weight:600">(opt.)</span></th><th scope="col" class="c4k-sf-col-inst" title="Instructor (sheet) and session date">Instructor</th></tr></thead><tbody id="c4kSfFeedbackTbody"><tr><td colspan="8" class="muted">Loading…</td></tr></tbody></table></div>'+foot+'</div>'+
+        '<div class="card"><div class="card-pad c4k-sf-main-tbl-wrap" style="overflow-x:hidden;overflow-y:auto;padding:0;min-width:0;max-width:100%"><table class="tbl tbl--center c4k-sf-main-tbl">' + adminC4kSessionFeedbackMainTableHeadHtml() + '<tbody id="c4kSfFeedbackTbody"><tr><td colspan="8" class="muted">Loading…</td></tr></tbody></table></div>'+foot+'</div>'+
         '<div class="card c4k-sf-out-card" style="margin-bottom:12px;min-width:0">'+
         '<div class="card-h" style="align-items:flex-start;gap:10px"><h3>Not attended / cancelled</h3>'+
         '<span class="chip chip--info">Same filters as above</span></div>'+

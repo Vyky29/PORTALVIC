@@ -142,7 +142,18 @@ def row_from_dict(raw: dict, source: str) -> dict | None:
             or ""
         ).strip()
         or None,
-        "independence": str(pick("independence") or "").strip() or None,
+        "independence": str(
+            pick("independence", "engagement_patterns", "engagement_patterns_optional")
+            or ""
+        ).strip()
+        or None,
+        "sessionTimeSlot": str(
+            pick("session_time", "session_time_slot", "time_slot", "slot")
+            or ""
+        ).strip()
+        or None,
+        "submittedAt": str(pick("created_at", "submitted_at", "exported_at") or "").strip()
+        or None,
         "_source": source,
     }
 
