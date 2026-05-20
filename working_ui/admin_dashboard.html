@@ -4081,7 +4081,7 @@
   })();
   </script>
   <!-- Session feedback + completion status (portal-import-bundle). Bump v after import_portal_bundle.py -->
-  <script src="/portal/session_feedback_status_portal_data.js?v=20260520-bundle"></script>
+  <script src="/portal/session_feedback_status_portal_data.js?v=20260520-roster-count"></script>
   <script src="/portal/session_feedback_portal_data.js?v=20260520-bundle"></script>
   <script>
   (function portalSessionFeedbackBootstrap(){
@@ -16136,11 +16136,32 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       state.sessionOverview.iso = h.weekAnchorIso;
       sessionsHubRefreshActiveTab();
     }
+    /** Booked roster rows for one calendar date (dated export in STAFF_DASHBOARD_SOURCE.rows). */
+    function adminDatedRosterBookedCountForIso(iso){
+      var want = String(iso || '').trim().substring(0, 10);
+      var src = window.STAFF_DASHBOARD_SOURCE;
+      if(!src || !Array.isArray(src.rows) || !src.rows.length) return 0;
+      var n = 0;
+      for(var i = 0; i < src.rows.length; i++){
+        var r = src.rows[i];
+        if(String(r.session_date || '').trim().substring(0, 10) !== want) continue;
+        var slug = adminRosterSlugify(String(r.client_name || '').trim());
+        if(!bookingIsBookedClientSlug(slug)) continue;
+        n++;
+      }
+      return n;
+    }
+    /**
+     * Sessions hub day tile: use dated roster for that ISO day when present.
+     * Do not fall back to weekday template (inflates Sundays to ~130+). Status CSV is fallback only.
+     */
     function bookingSessionsCountForIso(iso){
       var want = String(iso || '').trim().substring(0, 10);
+      var datedN = adminDatedRosterBookedCountForIso(iso);
+      if(datedN > 0) return datedN;
       var statusDay = adminSessionFeedbackStatusByDate()[want];
       if(statusDay && statusDay.length) return statusDay.length;
-      return bookingRosterStatsForIsoCalendarDay(iso).booked || bookingRosterStatsForIsoCalendarDay(iso).total;
+      return 0;
     }
     function bookingWeekSessionsHubHtml(anchorIso, opts){
       opts = opts || {};
