@@ -23,7 +23,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var HUB_SRC = '/portal-shared-js/admin-sessions-hub.js?v=20260524-engagement-gauge';
+  var HUB_SRC = '/portal-shared-js/admin-sessions-hub.js?v=20260520-feedback-week';
 
   function esc(s) {
     if (cfg.esc) return cfg.esc(s);
