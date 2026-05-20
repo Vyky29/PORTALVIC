@@ -280,13 +280,9 @@ def _collect_import_paths() -> tuple[list[Path], list[Path]]:
     if IMPORT_DIR.is_dir():
         csv_paths.extend(sorted(IMPORT_DIR.glob("*.csv")))
         xlsx_paths.extend(sorted(IMPORT_DIR.glob("*.xlsx")))
-    wui = ROOT / "working_ui"
-    csv_paths.extend(sorted(wui.glob("session-feedback*.csv")))
-    xlsx_paths.extend(sorted(wui.glob("*may*.xlsx")))
-    for p in sorted(wui.glob("*feedback*.xlsx")):
-        if p.name.lower().startswith("v1sessionfeedback"):
-            continue
-        xlsx_paths.append(p)
+    bundle_fb = ROOT / "database" / "portal_import_bundle" / "session-feedback.csv"
+    if bundle_fb.is_file():
+        csv_paths.append(bundle_fb)
 
     seen: set[str] = set()
     csv_out: list[Path] = []

@@ -3953,11 +3953,12 @@
     }
   })();
   </script>
-  <!-- Session feedback export: `session_feedback_portal_data.js` in portal/. Bump data-portal-session-feedback-v after export. -->
-  <script src="/portal/session_feedback_portal_data.js?v=20260520-feedback-merge"></script>
+  <!-- Session feedback + completion status (portal-import-bundle). Bump v after import_portal_bundle.py -->
+  <script src="/portal/session_feedback_status_portal_data.js?v=20260520-bundle"></script>
+  <script src="/portal/session_feedback_portal_data.js?v=20260520-bundle"></script>
   <script>
   (function portalSessionFeedbackBootstrap(){
-    var v = (document.documentElement.getAttribute('data-portal-session-feedback-v') || document.documentElement.getAttribute('data-portal-uploads-js-v') || '20260520-feedback-merge').trim();
+    var v = (document.documentElement.getAttribute('data-portal-session-feedback-v') || document.documentElement.getAttribute('data-portal-uploads-js-v') || '20260520-bundle').trim();
     var cdnWww = '/portal/session_feedback_portal_data.js?v=' + encodeURIComponent(v);
     function portalSfRowCount(){
       var s = typeof window !== 'undefined' ? window.SESSION_FEEDBACK_PORTAL_SOURCE : null;
@@ -5631,6 +5632,46 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var src = typeof window !== 'undefined' ? window.SESSION_FEEDBACK_PORTAL_SOURCE : null;
       if(!src || !Array.isArray(src.rows) || !src.rows.length) return [];
       return src.rows;
+    }
+    /** Precomputed overview status from portal-import-bundle (see FEEDBACK-COMPLETION-LOGIC.md). */
+    function adminSessionFeedbackStatusRows(){
+      var src = typeof window !== 'undefined' ? window.SESSION_FEEDBACK_STATUS_PORTAL_SOURCE : null;
+      if(!src || !Array.isArray(src.rows) || !src.rows.length) return [];
+      return src.rows;
+    }
+    function adminSessionFeedbackStatusByDate(){
+      if(adminSessionFeedbackStatusByDate._m) return adminSessionFeedbackStatusByDate._m;
+      var by = {};
+      adminSessionFeedbackStatusRows().forEach(function(r){
+        var d = String(r.date || '').trim().substring(0, 10);
+        if(!d) return;
+        if(!by[d]) by[d] = [];
+        by[d].push(r);
+      });
+      adminSessionFeedbackStatusByDate._m = by;
+      return by;
+    }
+    function adminSessionFeedbackStatusSlotMatch(iso, slot, stRow){
+      if(String(stRow.date || '').trim().substring(0, 10) !== String(iso || '').trim().substring(0, 10)) return false;
+      var pax = bookingEffectiveParticipantLabel(slot, null);
+      if(!sessionOverviewNameMatch(stRow.client, pax)) return false;
+      var slotTs = String(slot.timeSlotLabel || '').trim().toLowerCase();
+      var rowTs = String(stRow.timeSlot || '').trim().toLowerCase();
+      if(slotTs && rowTs && slotTs !== rowTs) return false;
+      return true;
+    }
+    function sessionOverviewFindStatusRow(iso, slot){
+      var list = adminSessionFeedbackStatusByDate()[String(iso || '').trim().substring(0, 10)] || [];
+      for(var i = 0; i < list.length; i++){
+        if(adminSessionFeedbackStatusSlotMatch(iso, slot, list[i])) return list[i];
+      }
+      return null;
+    }
+    /** Absent or feedback_complete per bundle logic (not per raw feedback row count). */
+    function adminSessionFeedbackStatusCountsDone(stRow){
+      if(!stRow) return false;
+      if(String(stRow.overviewStatus || '').trim() === 'absent') return true;
+      return !!stRow.feedbackComplete;
     }
     /** Must match `PORTAL_SESSION_FEEDBACK_FIRST_DATE_ISO` in `database/export_session_feedback_portal_js.py`. */
     var ADMIN_PORTAL_SESSION_FEEDBACK_FIRST_DATE_ISO = '2026-04-13';
@@ -7527,6 +7568,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
      */
     function bookingFeedbackStatsForIsoCalendarDay(iso){
       var want = String(iso || '').trim().substring(0, 10);
+      var statusDay = adminSessionFeedbackStatusByDate()[want];
+      if(statusDay && statusDay.length){
+        var required = statusDay.length;
+        var completed = 0;
+        for(var si = 0; si < statusDay.length; si++){
+          if(adminSessionFeedbackStatusCountsDone(statusDay[si])) completed++;
+        }
+        var pctS = required > 0 ? Math.min(100, Math.round((completed / required) * 1000) / 10) : (completed > 0 ? 100 : 0);
+        return { required: required, completed: completed, pending: Math.max(0, required - completed), pct: pctS };
+      }
       var required = 0;
       var slots = [];
       try{
@@ -7534,8 +7585,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }catch(_e){
         slots = [];
       }
-      for(var si = 0; si < slots.length; si++){
-        var slug = String(slots[si].clientSlug || '').trim().toLowerCase();
+      for(var sj = 0; sj < slots.length; sj++){
+        var slug = String(slots[sj].clientSlug || '').trim().toLowerCase();
         if(!bookingIsBookedClientSlug(slug)) continue;
         required++;
       }
@@ -8071,13 +8122,28 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!bookingIsBookedClientSlug(slug0)){
         return '<span class="muted" style="font-size:12px">—</span>';
       }
+      var stRow = sessionOverviewFindStatusRow(iso, slot);
+      if(stRow){
+        if(String(stRow.overviewStatus || '').trim() === 'absent'){
+          return '<span class="chip chip--info" title="Marked absent — no feedback required">Absent</span>';
+        }
+        if(stRow.feedbackComplete){
+          var row = sessionOverviewFindPortalFeedbackRow(iso, slot, ov);
+          var bits = [];
+          if(row && row.engagement) bits.push('Engagement: ' + String(row.engagement).trim());
+          var t = bits.join(' · ');
+          if(t.length > 220) t = t.slice(0, 217) + '…';
+          return '<span class="chip chip--ok" title="'+esc(t || 'Feedback submitted (portal-import-bundle status)')+'">Feedback saved</span>';
+        }
+        return '<span class="chip chip--pend" title="Overview status: awaiting feedback for this slot">Awaiting feedback</span>';
+      }
       var row = sessionOverviewFindPortalFeedbackRow(iso, slot, ov);
       if(row){
-        var bits = [];
-        if(row.engagement) bits.push('Engagement: ' + String(row.engagement).trim());
-        var t = bits.join(' · ');
-        if(t.length > 220) t = t.slice(0, 217) + '…';
-        return '<span class="chip chip--ok" title="'+esc(t || 'Session feedback workbook')+'">Feedback saved</span>';
+        var bits2 = [];
+        if(row.engagement) bits2.push('Engagement: ' + String(row.engagement).trim());
+        var t2 = bits2.join(' · ');
+        if(t2.length > 220) t2 = t2.slice(0, 217) + '…';
+        return '<span class="chip chip--ok" title="'+esc(t2 || 'Session feedback workbook')+'">Feedback saved</span>';
       }
       return '<span class="chip chip--pend" title="No matching row in session feedback export for this date, participant, and instructor">Awaiting feedback</span>';
     }
@@ -15673,7 +15739,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<th scope="col" title="Booking snapshot for this slot on the selected day: funding route, intake source, EHCP, social worker (from Service Booking Master meta). Lifecycle holds are appended when relevant.">Ops flag</th></tr></thead><tbody id="c4kSessionOverviewTbody">'+
         '<tr><td colspan="9" class="muted">Loading…</td></tr>'+
         '</tbody></table></div>'+
-        '<p class="muted card-pad" style="margin:0;border-top:1px solid var(--line);font-size:12px;max-width:52rem;min-width:0;overflow-wrap:break-word">The <strong>time</strong> under <strong>Service</strong> is the roster anchor window (sheet start/end, readable 12h). <strong>Venue</strong> and extra anchor context stay in the <strong>instructor</strong> drawer when you open their pill. <strong>Service</strong> uses portal names from the sheet (e.g. <strong>Swimming</strong> → Aquatic Activity, <strong>Climbing</strong> / climbing session → Climbing Activity, <strong>Fitness</strong> / FITNESS SESSIONS → Physical Activity, plus Multi-Activity and Bespoke Programme). <strong>Override</strong> shows the active <code>schedule_overrides</code> type for that roster anchor (same as <strong>Scheduling &amp; Cover</strong>); <span class="muted" style="font-weight:600">NONE</span> when no row matches. The <strong>week strip above</strong> counts <code>session_feedback_portal_data.js</code> rows vs roster slots with a participant for that calendar date. <strong>Feedback</strong> matches the same export (date + name + instructor); <strong>Feedback saved</strong> when a row exists, otherwise <strong>Awaiting feedback</strong>. Full notes stay in <strong>Daily registers</strong>. <strong>Ops flag</strong> is booking meta (funding, intake, EHCP, social worker; lifecycle holds when relevant). Overrides reload when you change the selected day or pick a day on the strip.</p></div>'+
+        '<p class="muted card-pad" style="margin:0;border-top:1px solid var(--line);font-size:12px;max-width:52rem;min-width:0;overflow-wrap:break-word">The <strong>time</strong> under <strong>Service</strong> is the roster anchor window (sheet start/end, readable 12h). <strong>Venue</strong> and extra anchor context stay in the <strong>instructor</strong> drawer when you open their pill. <strong>Service</strong> uses portal names from the sheet (e.g. <strong>Swimming</strong> → Aquatic Activity, <strong>Climbing</strong> / climbing session → Climbing Activity, <strong>Fitness</strong> / FITNESS SESSIONS → Physical Activity, plus Multi-Activity and Bespoke Programme). <strong>Override</strong> shows the active <code>schedule_overrides</code> type for that roster anchor (same as <strong>Scheduling &amp; Cover</strong>); <span class="muted" style="font-weight:600">NONE</span> when no row matches. The <strong>week strip above</strong> uses <code>session_feedback_status_portal_data.js</code> (portal-import-bundle): one count per overview slot; <strong>absent</strong> and shared feedback units count as done (see <code>FEEDBACK-COMPLETION-LOGIC.md</code>). <strong>Feedback</strong> column uses the same status file when loaded. Full notes stay in <strong>Daily registers</strong>. <strong>Ops flag</strong> is booking meta (funding, intake, EHCP, social worker; lifecycle holds when relevant). Overrides reload when you change the selected day or pick a day on the strip.</p></div>'+
         '<div class="card" style="margin-bottom:14px"><div class="card-h"><h3>Term visibility</h3></div><div class="card-pad"><p class="muted" style="margin:0;max-width:48rem;overflow-wrap:break-word">Term blocks follow the roster spreadsheet and <code>term_from_timetable.js</code> where wired.</p></div></div>'+
         '<div class="card c4k-bridgesched card-pad" id="c4kSchedBridge">'+
         '<h2 style="margin:0 0 8px;font-size:16px">Scheduling &amp; Cover (live tool)</h2>'+

@@ -1,0 +1,150 @@
+date,weekday,client,service,time_slot,instructor,venue,notes,session_key,feedback_unit_key,feedback_merge_group,overview_status,feedback_complete,matched_feedback_client,matched_feedback_by,matched_portal_session_key
+2026-05-13,Wednesday,Emmanuel,Day Centre,11 to 3,YOUSSEF,SwimFarm,Hub Room,2026-05-13|emmanuel|day_centre,2026-05-13|emmanuel|day_centre,,absent,no,,,
+2026-05-13,Wednesday,Ikram,Day Centre,11 to 4,"VICTOR, LULIA",SwimFarm,Hub Room,2026-05-13|ikram|day_centre,2026-05-13|ikram|day_centre,,feedback_submitted,yes,Ikram,Lulia Lulia,2026-05-13|ikram|day_centre
+2026-05-13,Wednesday,Q6 College,Aquatic Activity,11 to 12,ROBERTO,SwimFarm,Pools,2026-05-13|11:00|q6_college,2026-05-13|11:00|q6_college,,feedback_submitted,yes,Q6 College,Roberto Reali,2026-05-13||q6_college
+2026-05-13,Wednesday,Fadi,Day Centre,12.30 to 3,ROBERTO,SwimFarm,Hub Room,2026-05-13|fadi|day_centre,2026-05-13|fadi|day_centre,,feedback_submitted,yes,Fadi,Roberto Reali,2026-05-13|fadi|day_centre
+2026-05-13,Wednesday,Emmanuel,Day Centre,3 to 4,VICTOR,SwimFarm,Hub Room,2026-05-13|emmanuel|day_centre,2026-05-13|emmanuel|day_centre,,absent,no,,,
+2026-05-13,Wednesday,Adam Ab,Multi-Activity,4 to 5.15,BERTA,Acton,Room 2,2026-05-13|16:00|adam_ab|room_2,2026-05-13|adam_ab|16:00|multi-activity|room_2,,awaiting_feedback,no,,,
+2026-05-13,Wednesday,Cyrus,Multi-Activity,4 to 5.15,JAVIER,Acton,Teaching Pool,2026-05-13|16:00|cyrus|teaching_pool,2026-05-13|cyrus|16:00|multi-activity|teaching_pool,,feedback_submitted,yes,Cyrus,Javier Marquez,2026-05-13|16:00|cyrus|teaching_pool
+2026-05-13,Wednesday,Stephanie,Multi-Activity,4 to 5.15,BERTA,Acton,Room 2,2026-05-13|16:00|stephanie|room_2,2026-05-13|stephanie|16:00|multi-activity|room_2,,feedback_submitted,yes,Stephanie,Berta Trapero,2026-05-13|16:00|stephanie|hub_room
+2026-05-13,Wednesday,Cyrus,Multi-Activity,4.30 to 5.15,GIUSEPPE,Acton,Room 2,2026-05-13|16:30|cyrus|room_2,2026-05-13|cyrus|16:30|multi-activity|room_2,,feedback_submitted,yes,Cyrus,Giuseppe Morelli,2026-05-13|16:30|cyrus|hub_room
+2026-05-13,Wednesday,Scott,Multi-Activity,4.30 to 5.15,GIUSEPPE,Acton,Room 2,2026-05-13|16:30|scott|room_2,2026-05-13|scott|16:30|multi-activity|room_2,,feedback_submitted,yes,Scott,Giuseppe Morelli,2026-05-13|16:30|scott|hub_room
+2026-05-13,Wednesday,Stephanie,Multi-Activity,4.30 to 5.15,YOUSSEF,Acton,Teaching Pool,2026-05-13|16:30|stephanie|teaching_pool,2026-05-13|stephanie|16:30|multi-activity|teaching_pool,,feedback_submitted,yes,Stephanie,Youssef Moustafa,2026-05-13|16:30|stephanie|teaching_pool
+2026-05-13,Wednesday,Tinashe,Bespoke Programme,4.30 to 6,"JOHN, GODSWAY, BISMARK",SwimFarm,Hub Room,2026-05-13|16:30|tinashe|hub_room,2026-05-13|tinashe|16:30|bespoke programme|hub_room,,feedback_submitted,yes,Tinashe,Bismark Gyan,2026-05-13||tinashe
+2026-05-13,Wednesday,Tyson,Aquatic Activity,4.30 to 5,DAN,Northolt,Teaching Pool,2026-05-13|16:30|tyson,2026-05-13|16:30|tyson,,feedback_submitted,yes,Tyson,Dan Clarke,2026-05-13|16:30|tyson
+2026-05-13,Wednesday,Vithura,Aquatic Activity,4.30 to 5,ROBERTO,Northolt,Teaching Pool,2026-05-13|16:30|vithura,2026-05-13|16:30|vithura,,absent,no,,,
+2026-05-13,Wednesday,Amar Ra,Aquatic Activity,5 to 6,ROBERTO,Northolt,Teaching Pool,2026-05-13|17:00|amar_ra,2026-05-13|17:00|amar_ra,,absent,no,,,
+2026-05-13,Wednesday,Ruben,Aquatic Activity,5 to 5.30,DAN,Northolt,Teaching Pool,2026-05-13|17:00|ruben,2026-05-13|17:00|ruben,,absent,no,,,
+2026-05-13,Wednesday,Adam Ab,Multi-Activity,5.15 to 6,JAVIER,Acton,Teaching Pool,2026-05-13|17:15|adam_ab|teaching_pool,2026-05-13|adam_ab|17:15|multi-activity|teaching_pool,,feedback_submitted,yes,Adam Ab,Javier Arranz Escorial,2026-05-13|17:15|adam_ab|teaching_pool
+2026-05-13,Wednesday,Scott,Multi-Activity,5.15 to 6,YOUSSEF,Acton,Teaching Pool,2026-05-13|17:15|scott|teaching_pool,2026-05-13|scott|17:15|multi-activity|teaching_pool,,feedback_submitted,yes,Scott,Youssef Moustafa,2026-05-13|17:15|scott|teaching_pool
+2026-05-13,Wednesday,Mia,Aquatic Activity,5.30 to 6.30,DAN,Northolt,Teaching Pool,2026-05-13|17:30|mia,2026-05-13|17:30|mia,,feedback_submitted,yes,Mia,Dan Clarke,2026-05-13|17:30|mia
+2026-05-13,Wednesday,Amber,Aquatic Activity,6 to 6.30,ROBERTO,Northolt,Teaching Pool,2026-05-13|18:00|amber,2026-05-13|18:00|amber,,feedback_submitted,yes,Amber,Roberto Reali,2026-05-13|18:00|amber
+2026-05-13,Wednesday,Kayden,Aquatic Activity,6 to 6.30,JAVIER,Acton,Lane,2026-05-13|18:00|kayden,2026-05-13|18:00|kayden,,feedback_submitted,yes,Kayden,Javier Marquez,2026-05-13|18:00|kayden
+2026-05-14,Thursday,Fadi,Day Centre,12.30 to 3,ROBERTO,SwimFarm,Hub Room,2026-05-14|fadi|day_centre,2026-05-14|fadi|day_centre,,feedback_submitted,yes,Fadi,Roberto Reali,2026-05-15||fadi
+2026-05-14,Thursday,Cyrus,Bespoke Programme,3.30 to 5,VICTOR,SwimFarm,Hub Room,2026-05-14|15:30|cyrus|hub_room,2026-05-14|cyrus|15:30|bespoke programme|hub_room,,awaiting_feedback,no,,,
+2026-05-14,Thursday,Ayman,Aquatic Activity,4 to 5,JAVIER,Acton,Lane (SE),2026-05-14|16:00|ayman,2026-05-14|16:00|ayman,,awaiting_feedback,no,,,
+2026-05-14,Thursday,Elijah,Aquatic Activity,4 to 4.30,AURORA,Acton,Teaching Pool,2026-05-14|16:00|elijah,2026-05-14|16:00|elijah,,awaiting_feedback,no,,,
+2026-05-14,Thursday,Tom,Aquatic Activity,4 to 4.30,ROBERTO,Acton,Lane (SE),2026-05-14|16:00|tom,2026-05-14|16:00|tom,,feedback_submitted,yes,Tom,Roberto Reali,2026-05-14||tom
+2026-05-14,Thursday,Aqsa,Aquatic Activity,4.30 to 5.30,AURORA,Acton,Lane,2026-05-14|16:30|aqsa,2026-05-14|16:30|aqsa,,awaiting_feedback,no,,,
+2026-05-14,Thursday,Thushyan,Aquatic Activity,4.30 to 5,DAN,Acton,Lane,2026-05-14|16:30|thushyan,2026-05-14|16:30|thushyan,,feedback_submitted,yes,Thushyan,Simon Griffiths,2026-05-14||thushyan
+2026-05-14,Thursday,Yassir,Aquatic Activity,4.30 to 5,ROBERTO,Acton,Swallow End,2026-05-14|16:30|yassir,2026-05-14|16:30|yassir,,absent,no,,,
+2026-05-14,Thursday,Khalid Ab,Aquatic Activity,5 to 5.30,JAVIER,Acton,Lane (SE),2026-05-14|17:00|khalid_ab,2026-05-14|17:00|khalid_ab,,awaiting_feedback,no,,,
+2026-05-14,Thursday,Yossi,Aquatic Activity,5 to 5.30,ROBERTO,Acton,Lane,2026-05-14|17:00|yossi,2026-05-14|17:00|yossi,,absent,no,,,
+2026-05-14,Thursday,Yuri,Aquatic Activity,5 to 5.30,DAN,Acton,Lane (SE),2026-05-14|17:00|yuri,2026-05-14|17:00|yuri,,feedback_submitted,yes,Yuri,Simon Griffiths,2026-05-14||yuri
+2026-05-14,Thursday,Eiji,Aquatic Activity,5.30 to 6.30,DAN,Acton,Lane,2026-05-14|17:30|eiji,2026-05-14|17:30|eiji,,feedback_submitted,yes,Eiji,Simon Griffiths,2026-05-14||eiji
+2026-05-14,Thursday,Hazem,Aquatic Activity,5.30 to 6,AURORA,Acton,Teaching Pool,2026-05-14|17:30|hazem,2026-05-14|17:30|hazem,,awaiting_feedback,no,,,
+2026-05-14,Thursday,Karo,Aquatic Activity,5.30 to 6,JAVIER,Acton,Lane (SE),2026-05-14|17:30|karo,2026-05-14|17:30|karo,,awaiting_feedback,no,,,
+2026-05-14,Thursday,Mohammed,Aquatic Activity,5.30 to 6.30,ROBERTO,Acton,Lane,2026-05-14|17:30|mohammed,2026-05-14|17:30|mohammed,,feedback_submitted,yes,Mohammed,Roberto Reali,2026-05-14||mohammed
+2026-05-14,Thursday,Hazem,Aquatic Activity,6 to 6.30,JAVIER,Acton,Teaching Pool,2026-05-14|18:00|hazem,2026-05-14|18:00|hazem,,awaiting_feedback,no,,,
+2026-05-14,Thursday,Maiyar,Aquatic Activity,6 to 6.30,AURORA,Acton,Teaching Pool,2026-05-14|18:00|maiyar,2026-05-14|18:00|maiyar,,awaiting_feedback,no,,,
+2026-05-15,Friday,Emmanuel,Day Centre,11 to 3,YOUSSEF,SwimFarm,Hub Room,2026-05-15|emmanuel|day_centre,2026-05-15|emmanuel|day_centre,,absent,no,,,
+2026-05-15,Friday,Ikram,Day Centre,11 to 4,"VICTOR, LULIA",SwimFarm,Hub Room,2026-05-15|ikram|day_centre,2026-05-15|ikram|day_centre,,feedback_submitted,yes,Ikram,Lulia Lulia,2026-05-15|ikram|day_centre
+2026-05-15,Friday,Fadi,Day Centre,12.30 to 3,RAUL,SwimFarm,Hub Room,2026-05-15|fadi|day_centre,2026-05-15|fadi|day_centre,,feedback_submitted,yes,Fadi,Roberto Reali,2026-05-15||fadi
+2026-05-15,Friday,Timi,Day Centre,1 to 3,VICTOR,SwimFarm,Hub Room,2026-05-15|timi|day_centre,2026-05-15|timi|day_centre,,feedback_submitted,yes,Timi,Victor Matilla,2026-05-15|timi|day_centre
+2026-05-15,Friday,Emmanuel,Day Centre,3 to 4,VICTOR,SwimFarm,Hub Room,2026-05-15|emmanuel|day_centre,2026-05-15|emmanuel|day_centre,,absent,no,,,
+2026-05-15,Friday,Adam Pi,Aquatic Activity,4 to 5.30,ROBERTO,Acton,Teaching Pool,2026-05-15|16:00|adam_pi,2026-05-15|16:00|adam_pi,,feedback_submitted,yes,Adam Pi,Roberto Reali,2026-05-15||adam_pi
+2026-05-15,Friday,Tinashe,Bespoke Programme,4.30 to 6,"BISMARK, GIUSEPPE, JOHN",SwimFarm,Hub Room,2026-05-15|16:30|tinashe|hub_room,2026-05-15|tinashe|16:30|bespoke programme|hub_room,,absent,no,,,
+2026-05-15,Friday,Amaar Ah,Aquatic Activity,5.30 to 6,ROBERTO,Acton,Teaching Pool,2026-05-15|17:30|amaar_ah,2026-05-15|17:30|amaar_ah,,feedback_submitted,yes,Amaar Ah,Roberto Reali,2026-05-15||amaar_ah
+2026-05-16,Saturday,Emani,Aquatic Activity,10.30 to 11,ROBERTO,Acton,Teaching Pool,2026-05-16|10:30|emani,2026-05-16|10:30|emani,,absent,no,,,
+2026-05-16,Saturday,Matthias,Aquatic Activity,11 to 12,YOUSSEF,Acton,Teaching Pool,2026-05-16|11:00|matthias,2026-05-16|11:00|matthias,,feedback_submitted,yes,Matthias,Youssef Moustafa,2026-05-16||matthias
+2026-05-16,Saturday,Saaib,Aquatic Activity,12 to 12.30,YOUSSEF,Acton,Teaching Pool,2026-05-16|12:00|saaib,2026-05-16|12:00|saaib,,absent,no,,,
+2026-05-17,Sunday,Shire,Aquatic Activity,9 to 9.30,JAVIER,SwimFarm,Small Pool,2026-05-17|09:00|shire,2026-05-17|09:00|shire,,feedback_submitted,yes,Shire,Javier Marquez,2026-05-17||shire
+2026-05-17,Sunday,Simon,Aquatic Activity,9 to 9.30,AURORA,SwimFarm,Small Pool,2026-05-17|09:00|simon,2026-05-17|09:00|simon,,feedback_submitted,yes,Simon,Aurora Garcia,2026-05-17||simon
+2026-05-17,Sunday,Yusuf Ah,Aquatic Activity,9 to 9.30,ROBERTO,SwimFarm,Small Pool,2026-05-17|09:00|yusuf_ah,2026-05-17|09:00|yusuf_ah,yusuf_ah_roberto_9am,feedback_submitted,yes,,,
+2026-05-17,Sunday,Adam Ab,Multi-Activity,9.30 to 10.15,AURORA,SwimFarm,Big Pool,2026-05-17|09:30|adam_ab|big_pool,2026-05-17|adam_ab|09:30|multi-activity|big_pool,,feedback_submitted,yes,Adam Ab,Aurora Garcia,2026-05-17||adam_ab|big_pool
+2026-05-17,Sunday,Jack S,Multi-Activity,9.30 to 10.15,GODSWAY,SwimFarm,Hub Room,2026-05-17|09:30|jack_s|hub_room,2026-05-17|jack_s|09:30|multi-activity|hub_room,sunday_hub_team|bismark_godsway|jack_s,feedback_submitted,yes,Jack S,Godsway Yatofo,2026-05-17||jack_s
+2026-05-17,Sunday,Jack W,Multi-Activity,9.30 to 10.15,JOHN,SwimFarm,Hub Room,2026-05-17|09:30|jack_w|hub_room,2026-05-17|jack_w|09:30|multi-activity|hub_room,sunday_hub_team|john_berta|jack_w,feedback_submitted,yes,Jack W,John Kyei-Fram,2026-05-17||jack_w
+2026-05-17,Sunday,Samer,Multi-Activity,9.30 to 10.15,GIUSEPPE,SwimFarm,Hub Room,2026-05-17|09:30|samer|hub_room,2026-05-17|samer|09:30|multi-activity|hub_room,sunday_hub_team|giuseppe|samer,feedback_submitted,yes,Samer,Giuseppe Morelli,2026-05-17||samer
+2026-05-17,Sunday,Yusuf Ah,Multi-Activity,9.30 to 10.15,ROBERTO,SwimFarm,Big Pool,2026-05-17|09:30|yusuf_ah|big_pool,2026-05-17|yusuf_ah|09:30|multi-activity|big_pool,yusuf_ah_roberto_9am,feedback_submitted,yes,,,
+2026-05-17,Sunday,Zaid,Multi-Activity,9.30 to 10.15,JAVIER,SwimFarm,Big Pool,2026-05-17|09:30|zaid|big_pool,2026-05-17|zaid|09:30|multi-activity|big_pool,,awaiting_feedback,no,,,
+2026-05-17,Sunday,Eiji,Climbing Activity,10 to 11,BISMARK,Westway,Climbing Wall,2026-05-17|10:00|eiji,2026-05-17|10:00|eiji,,feedback_submitted,yes,Eiji,Bismark Gyan,2026-05-17||eiji
+2026-05-17,Sunday,Hazem,Climbing Activity,10 to 11,CARLOS,Westway,Climbing Wall,2026-05-17|10:00|hazem,2026-05-17|10:00|hazem,,feedback_submitted,yes,Hazem,Carlos Herrero,2026-05-17||hazem
+2026-05-17,Sunday,Adam Ab,Multi-Activity,10.15 to 11,JOHN,SwimFarm,Hub Room,2026-05-17|10:15|adam_ab|hub_room,2026-05-17|adam_ab|10:15|multi-activity|hub_room,sunday_hub_team|john_berta|adam_ab,feedback_submitted,yes,Adam Ab,John Kyei-Fram,2026-05-17||adam_ab
+2026-05-17,Sunday,Jack S,Multi-Activity,10.15 to 11,ROBERTO,SwimFarm,Big Pool,2026-05-17|10:15|jack_s|big_pool,2026-05-17|jack_s|10:15|multi-activity|big_pool,,feedback_submitted,yes,Jack S,Roberto Reali,2026-05-17||jack_s
+2026-05-17,Sunday,Jack W,Multi-Activity,10.15 to 11,AURORA,SwimFarm,Big Pool,2026-05-17|10:15|jack_w|big_pool,2026-05-17|jack_w|10:15|multi-activity|big_pool,,feedback_submitted,yes,Jack W,Aurora Garcia,2026-05-17||jack_w|big_pool
+2026-05-17,Sunday,Samer,Multi-Activity,10.15 to 11,JAVIER,SwimFarm,Big Pool,2026-05-17|10:15|samer|big_pool,2026-05-17|samer|10:15|multi-activity|big_pool,,awaiting_feedback,no,,,
+2026-05-17,Sunday,Yusuf Ah,Multi-Activity,10.15 to 11,GODSWAY,SwimFarm,Hub Room,2026-05-17|10:15|yusuf_ah|hub_room,2026-05-17|yusuf_ah|10:15|multi-activity|hub_room,yusuf_ah_godsway_hub,feedback_submitted,yes,Yusuf Ah,Godsway Yatofo,2026-05-17||yusuf_ah|hub_room
+2026-05-17,Sunday,Zaid,Multi-Activity,10.15 to 11,GIUSEPPE,SwimFarm,Hub Room,2026-05-17|10:15|zaid|hub_room,2026-05-17|zaid|10:15|multi-activity|hub_room,zaid_giuseppe_sunday_multi,feedback_submitted,yes,Zaid,Giuseppe Morelli,2026-05-17||zaid
+2026-05-17,Sunday,Arthur Ma,Multi-Activity,11 to 11.45,AURORA,SwimFarm,Big Pool,2026-05-17|11:00|arthur_ma|big_pool,2026-05-17|arthur_ma|11:00|multi-activity|big_pool,,feedback_submitted,yes,Arthur Ma,Aurora Garcia,2026-05-17||arthur_ma|big_pool
+2026-05-17,Sunday,Arthur Mo,Multi-Activity,11 to 11.45,GODSWAY,SwimFarm,Hub Room,2026-05-17|11:00|arthur_mo|hub_room,2026-05-17|arthur_mo|11:00|multi-activity|hub_room,sunday_hub_team|bismark_godsway|arthur_mo,feedback_submitted,yes,Arthur Mo,Godsway Yatofo,2026-05-17||arthur_mo
+2026-05-17,Sunday,Cyrus,Multi-Activity,11 to 11.45,JOHN,SwimFarm,Hub Room,2026-05-17|11:00|cyrus|hub_room,2026-05-17|cyrus|11:00|multi-activity|hub_room,sunday_hub_team|john_berta|cyrus,feedback_submitted,yes,Cyrus,John Kyei-Fram,2026-05-17||cyrus
+2026-05-17,Sunday,Eiji,Multi-Activity,11 to 11.45,GIUSEPPE,SwimFarm,Hub Room,2026-05-17|11:00|eiji|hub_room,2026-05-17|eiji|11:00|multi-activity|hub_room,sunday_hub_team|giuseppe|eiji,feedback_submitted,yes,Eiji,Giuseppe Morelli,2026-05-17||eiji
+2026-05-17,Sunday,Gabriel,Multi-Activity,11 to 11.45,ROBERTO,SwimFarm,Big Pool,2026-05-17|11:00|gabriel|big_pool,2026-05-17|gabriel|11:00|multi-activity|big_pool,,feedback_submitted,yes,Gabriel,Roberto Reali,2026-05-17||gabriel
+2026-05-17,Sunday,Hazem,Multi-Activity,11 to 11.45,JAVIER,SwimFarm,Big Pool,2026-05-17|11:00|hazem|big_pool,2026-05-17|hazem|11:00|multi-activity|big_pool,,feedback_submitted,yes,Hazem,Javier Marquez,2026-05-17||hazem
+2026-05-17,Sunday,Yusuf Ah,Climbing Activity,11 to 12,BISMARK,Westway,Climbing Wall,2026-05-17|11:00|yusuf_ah,2026-05-17|11:00|yusuf_ah,,feedback_submitted,yes,Yusuf Ah,Bismark Gyan,2026-05-17||yusuf_ah|climbing
+2026-05-17,Sunday,Zaid,Climbing Activity,11 to 12,CARLOS,Westway,Climbing Wall,2026-05-17|11:00|zaid,2026-05-17|11:00|zaid,,feedback_submitted,yes,Zaid,Carlos Herrero,2026-05-17||zaid
+2026-05-17,Sunday,Arthur Ma,Multi-Activity,11.45 to 12.30,JOHN,SwimFarm,Hub Room,2026-05-17|11:45|arthur_ma|hub_room,2026-05-17|arthur_ma|11:45|multi-activity|hub_room,sunday_hub_team|john_berta|arthur_ma,feedback_submitted,yes,Arthur Ma,John Kyei-Fram,2026-05-17||arthur_ma
+2026-05-17,Sunday,Arthur Mo,Multi-Activity,11.45 to 12.30,ROBERTO,SwimFarm,Big Pool,2026-05-17|11:45|arthur_mo|big_pool,2026-05-17|arthur_mo|11:45|multi-activity|big_pool,,feedback_submitted,yes,Arthur Mo,Roberto Reali,2026-05-17||arthur_mo
+2026-05-17,Sunday,Cyrus,Multi-Activity,11.45 to 12.30,AURORA,SwimFarm,Big Pool,2026-05-17|11:45|cyrus|big_pool,2026-05-17|cyrus|11:45|multi-activity|big_pool,,feedback_submitted,yes,Cyrus,Aurora Garcia,2026-05-17||cyrus|big_pool
+2026-05-17,Sunday,Eiji,Multi-Activity,11.45 to 12.30,JAVIER,SwimFarm,Big Pool,2026-05-17|11:45|eiji|big_pool,2026-05-17|eiji|11:45|multi-activity|big_pool,,feedback_submitted,yes,Eiji,Javier Marquez,2026-05-17||eiji
+2026-05-17,Sunday,Gabriel,Multi-Activity,11.45 to 12.30,GODSWAY,SwimFarm,Hub Room,2026-05-17|11:45|gabriel|hub_room,2026-05-17|gabriel|11:45|multi-activity|hub_room,sunday_hub_team|bismark_godsway|gabriel,feedback_submitted,yes,Gabriel,Godsway Yatofo,2026-05-17||gabriel
+2026-05-17,Sunday,Hazem,Multi-Activity,11.45 to 12.30,GIUSEPPE,SwimFarm,Hub Room,2026-05-17|11:45|hazem|hub_room,2026-05-17|hazem|11:45|multi-activity|hub_room,sunday_hub_team|giuseppe|hazem,feedback_submitted,yes,Hazem,Giuseppe Morelli,2026-05-17||hazem
+2026-05-17,Sunday,Scott,Climbing Activity,12 to 1,BISMARK,Westway,Climbing Wall,2026-05-17|12:00|scott,2026-05-17|12:00|scott,,feedback_submitted,yes,Scott,Bismark Gyan,2026-05-17|12:00|scott
+2026-05-17,Sunday,Serine,Climbing Activity,12 to 1,CARLOS,Westway,Climbing Wall,2026-05-17|12:00|serine,2026-05-17|12:00|serine,,feedback_submitted,yes,Serine,Carlos Herrero,2026-05-17||serine
+2026-05-17,Sunday,Adaam Ah,Multi-Activity,12.30 to 1.15,GODSWAY,SwimFarm,Hub Room,2026-05-17|12:30|adaam_ah|hub_room,2026-05-17|adaam_ah|12:30|multi-activity|hub_room,sunday_hub_team|bismark_godsway|adaam_ah,feedback_submitted,yes,Adaam Ah,Godsway Yatofo,2026-05-17||adaam_ah
+2026-05-17,Sunday,Amaar Ah,Multi-Activity,12.30 to 1.15,ROBERTO,SwimFarm,Big Pool,2026-05-17|12:30|amaar_ah|big_pool,2026-05-17|amaar_ah|12:30|multi-activity|big_pool,,feedback_submitted,yes,Amaar Ah,Roberto Reali,2026-05-17||amaar_ah
+2026-05-17,Sunday,Aydaan Ah,Multi-Activity,12.30 to 1.15,AURORA,SwimFarm,Big Pool,2026-05-17|12:30|aydaan_ah|big_pool,2026-05-17|aydaan_ah|12:30|multi-activity|big_pool,,feedback_submitted,yes,Aydaan Ah,Aurora Garcia,2026-05-17||aydaan_ah|big_pool
+2026-05-17,Sunday,Erik,Multi-Activity,12.30 to 1.15,JOHN,SwimFarm,Hub Room,2026-05-17|12:30|erik|hub_room,2026-05-17|erik|12:30|multi-activity|hub_room,sunday_hub_team|john_berta|erik,feedback_submitted,yes,Erik,John Kyei-Fram,2026-05-17||erik
+2026-05-17,Sunday,Haneef,Multi-Activity,12.30 to 1.15,GIUSEPPE,SwimFarm,Hub Room,2026-05-17|12:30|haneef|hub_room,2026-05-17|haneef|12:30|multi-activity|hub_room,sunday_hub_team|giuseppe|haneef,absent,no,,,
+2026-05-17,Sunday,Rayyan Fi,Multi-Activity,12.30 to 1.15,JAVIER,SwimFarm,Big Pool,2026-05-17|12:30|rayyan_fi|big_pool,2026-05-17|rayyan_fi|12:30|multi-activity|big_pool,,feedback_submitted,yes,Rayyan Fi,Javier Marquez,2026-05-17||rayyan_f
+2026-05-17,Sunday,Rodin,Climbing Activity,1 to 2,BISMARK,Westway,Climbing Wall,2026-05-17|13:00|rodin,2026-05-17|13:00|rodin,,feedback_submitted,yes,Rodin,Bismark Gyan,2026-05-17||rodin
+2026-05-17,Sunday,Zakariya,Climbing Activity,1 to 2,CARLOS,Westway,Climbing Wall,2026-05-17|13:00|zakariya,2026-05-17|13:00|zakariya,,feedback_submitted,yes,Zakariya,Carlos Herrero,2026-05-17||zakariya
+2026-05-17,Sunday,Adaam Ah,Multi-Activity,1.15 to 2,ROBERTO,SwimFarm,Big Pool,2026-05-17|13:15|adaam_ah|big_pool,2026-05-17|adaam_ah|13:15|multi-activity|big_pool,,feedback_submitted,yes,Adaam Ah,Roberto Reali,2026-05-17||adaam_ah
+2026-05-17,Sunday,Amaar Ah,Multi-Activity,1.15 to 2,GIUSEPPE,SwimFarm,Hub Room,2026-05-17|13:15|amaar_ah|hub_room,2026-05-17|amaar_ah|13:15|multi-activity|hub_room,sunday_hub_team|giuseppe|amaar_ah,feedback_submitted,yes,Amaar Ah,Godsway Yatofo,2026-05-17||amaar_ah
+2026-05-17,Sunday,Aydaan Ah,Multi-Activity,1.15 to 2,JOHN,SwimFarm,Hub Room,2026-05-17|13:15|aydaan_ah|hub_room,2026-05-17|aydaan_ah|13:15|multi-activity|hub_room,sunday_hub_team|john_berta|aydaan_ah,feedback_submitted,yes,Aydaan Ah,John Kyei-Fram,2026-05-17||aydaan_ah
+2026-05-17,Sunday,Erik,Multi-Activity,1.15 to 2,AURORA,SwimFarm,Big Pool,2026-05-17|13:15|erik|big_pool,2026-05-17|erik|13:15|multi-activity|big_pool,,feedback_submitted,yes,Erik,Aurora Garcia,2026-05-17||erik|big_pool
+2026-05-17,Sunday,Haneef,Multi-Activity,1.15 to 2,JAVIER,SwimFarm,Big Pool,2026-05-17|13:15|haneef|big_pool,2026-05-17|haneef|13:15|multi-activity|big_pool,,absent,no,,,
+2026-05-17,Sunday,Rayyan Fi,Multi-Activity,1.15 to 2,GIUSEPPE,SwimFarm,Hub Room,2026-05-17|13:15|rayyan_fi|hub_room,2026-05-17|rayyan_fi|13:15|multi-activity|hub_room,sunday_hub_team|giuseppe|rayyan_fi,feedback_submitted,yes,Rayyan Fi,Giuseppe Morelli,2026-05-17||rayyan_f
+2026-05-17,Sunday,Max,Aquatic Activity,2 to 2.30,JAVIER,SwimFarm,Big Pool,2026-05-17|14:00|max,2026-05-17|14:00|max,,feedback_submitted,yes,Max,Javier Marquez,2026-05-17||max
+2026-05-17,Sunday,Rodin,Aquatic Activity,2 to 2.30,ROBERTO,SwimFarm,Big Pool,2026-05-17|14:00|rodin,2026-05-17|14:00|rodin,,feedback_submitted,yes,Rodin,Roberto Reali,2026-05-17||rodin
+2026-05-17,Sunday,Zakariya,Aquatic Activity,2 to 2.30,AURORA,SwimFarm,Big Pool,2026-05-17|14:00|zakariya,2026-05-17|14:00|zakariya,,feedback_submitted,yes,Zakariya,Aurora Garcia,2026-05-17||zakariya
+2026-05-17,Sunday,Faris,Aquatic Activity,2.30 to 3,AURORA,SwimFarm,Big Pool,2026-05-17|14:30|faris,2026-05-17|14:30|faris,,feedback_submitted,yes,Faris,Aurora Garcia,2026-05-17||faris
+2026-05-17,Sunday,Shaan,Aquatic Activity,2.30 to 3,JAVIER,SwimFarm,Big Pool,2026-05-17|14:30|shaan,2026-05-17|14:30|shaan,,feedback_submitted,yes,Shaan,Javier Marquez,2026-05-17||shaan
+2026-05-17,Sunday,Yoan,Aquatic Activity,2.30 to 3,ROBERTO,SwimFarm,Big Pool,2026-05-17|14:30|yoan,2026-05-17|14:30|yoan,,feedback_submitted,yes,Yoan,Roberto Reali,2026-05-17||yoan
+2026-05-18,Monday,Emmanuel,Day Centre,11 to 3,YOUSSEF,SwimFarm,Hub Room,2026-05-18|emmanuel|day_centre,2026-05-18|emmanuel|day_centre,,feedback_submitted,yes,Emmanuel,Victor Matilla,2026-05-18|emmanuel|day_centre
+2026-05-18,Monday,Ikram,Day Centre,11 to 12,"RAUL, LULIA",SwimFarm,Hub Room,2026-05-18|ikram|day_centre,2026-05-18|ikram|day_centre,,feedback_submitted,yes,Ikram,Lulia Lulia,2026-05-18||ikram|hub_room
+2026-05-18,Monday,Ikram,Day Centre,12 to 12.30,"ROBERTO, LULIA, RAUL",SwimFarm,Hub Room,2026-05-18|ikram|day_centre,2026-05-18|ikram|day_centre,,feedback_submitted,yes,Ikram,Lulia Lulia,2026-05-18||ikram|hub_room
+2026-05-18,Monday,Fadi,Day Centre,12.30 to 3,"RAUL, VICTOR",SwimFarm,Hub Room,2026-05-18|fadi|day_centre,2026-05-18|fadi|day_centre,,feedback_submitted,yes,Fadi,Roberto Reali,2026-05-18|fadi|day_centre
+2026-05-18,Monday,Ikram,Day Centre,12.30 to 3,"ROBERTO, LULIA",SwimFarm,Hub Room,2026-05-18|ikram|day_centre,2026-05-18|ikram|day_centre,,feedback_submitted,yes,Ikram,Lulia Lulia,2026-05-18||ikram|hub_room
+2026-05-18,Monday,Timi,Day Centre,1 to 3,VICTOR,SwimFarm,Hub Room,2026-05-18|timi|day_centre,2026-05-18|timi|day_centre,,feedback_submitted,yes,Timi,Victor Matilla,2026-05-18|timi|day_centre
+2026-05-18,Monday,Emmanuel,Day Centre,3 to 4,VICTOR,SwimFarm,Hub Room,2026-05-18|emmanuel|day_centre,2026-05-18|emmanuel|day_centre,,feedback_submitted,yes,Emmanuel,Victor Matilla,2026-05-18|emmanuel|day_centre
+2026-05-18,Monday,Adam Pi,Aquatic Activity,4 to 5.30,ANGEL,Acton,Teaching Pool,2026-05-18|16:00|adam_pi,2026-05-18|16:00|adam_pi,,feedback_submitted,yes,Adam Pi,Angel Falceto,2026-05-18||adam_pi
+2026-05-18,Monday,Ayaan,Physical Activity,4 to 5,SANDRA,Westway,Gym,2026-05-18|16:00|ayaan,2026-05-18|16:00|ayaan,,feedback_submitted,yes,Ayaan,Sandra Bartolome,2026-05-18||ayaan
+2026-05-18,Monday,Eddie,Aquatic Activity,4.30 to 5,YOUSSEF,Acton,Teaching Pool,2026-05-18|16:30|eddie,2026-05-18|16:30|eddie,,feedback_submitted,yes,Eddie,Youssef Moustafa,2026-05-18||eddie
+2026-05-18,Monday,Kirushy,Aquatic Activity,4.30 to 5,DAN,Northolt,Teaching Pool,2026-05-18|16:30|kirushy,2026-05-18|16:30|kirushy,,absent,no,,,
+2026-05-18,Monday,Tinashe,Bespoke Programme,4.30 to 6,"BISMARK, GIUSEPPE, JOHN",SwimFarm,Hub Room,2026-05-18|16:30|tinashe|hub_room,2026-05-18|tinashe|16:30|bespoke programme|hub_room,,feedback_submitted,yes,Tinashe,Bismark Gyan,2026-05-18||tinashe|hub_room
+2026-05-18,Monday,Yunis,Aquatic Activity,4.30 to 5,ROBERTO,Northolt,Teaching Pool,2026-05-18|16:30|yunis,2026-05-18|16:30|yunis,,feedback_submitted,yes,Yunis,Roberto Reali,2026-05-18||yunis
+2026-05-18,Monday,Amar Ra,Aquatic Activity,5 to 6,ROBERTO,Northolt,Teaching Pool,2026-05-18|17:00|amar_ra,2026-05-18|17:00|amar_ra,,feedback_submitted,yes,Amar Ra,Roberto Reali,2026-05-18||amar_ra
+2026-05-18,Monday,Gemma,Aquatic Activity,5 to 5.30,DAN,Northolt,Teaching Pool,2026-05-18|17:00|gemma,2026-05-18|17:00|gemma,,feedback_submitted,yes,Gemma,Dan Clarke,2026-05-18||gemma
+2026-05-18,Monday,Joel,Aquatic Activity,5 to 5.30,YOUSSEF,Acton,Teaching Pool,2026-05-18|17:00|joel,2026-05-18|17:00|joel,,feedback_submitted,yes,Joel,Youssef Moustafa,2026-05-18||joel
+2026-05-18,Monday,Serine,Physical Activity,5 to 6,SANDRA,Westway,Gym,2026-05-18|17:00|serine,2026-05-18|17:00|serine,,feedback_submitted,yes,Serine,Sandra Bartolome,2026-05-18||serine
+2026-05-18,Monday,Abodi P,Aquatic Activity,5.30 to 6.30,YOUSSEF,Acton,Teaching Pool,2026-05-18|17:30|adam_ab,2026-05-18|17:30|adam_ab,,feedback_submitted,yes,Abodi P,Youssef Moustafa,2026-05-18||abodi_p
+2026-05-18,Monday,Steven Ce,Aquatic Activity,5.30 to 6,ANGEL,Acton,Teaching Pool,2026-05-18|17:30|steven_ce,2026-05-18|17:30|steven_ce,,feedback_submitted,yes,Steven Ce,Angel Falceto,2026-05-18||steven_ce
+2026-05-18,Monday,Zayana,Aquatic Activity,5.30 to 6,DAN,Northolt,Teaching Pool,2026-05-18|17:30|zayana,2026-05-18|17:30|zayana,,feedback_submitted,yes,Zayana,Dan Clarke,2026-05-18||zayana
+2026-05-18,Monday,Aadam Ah,Aquatic Activity,6 to 6.30,DAN,Northolt,Teaching Pool,2026-05-18|18:00|aadam_ah,2026-05-18|18:00|aadam_ah,,absent,no,,,
+2026-05-18,Monday,Mario,Aquatic Activity,6 to 6.30,ANGEL,Acton,Teaching Pool,2026-05-18|18:00|mario,2026-05-18|18:00|mario,,feedback_submitted,yes,Mario,Angel Falceto,2026-05-18||mario
+2026-05-18,Monday,Yamik (Trial 18/05),Aquatic Activity,6 to 6.30,ROBERTO,Northolt,Teaching Pool,2026-05-18|18:00|yamik_trial_18_05,2026-05-18|18:00|yamik_trial_18_05,,feedback_submitted,yes,Yamik (Trial 18/05),Roberto Reali,2026-05-18||yamik_trial_18_05
+2026-05-19,Tuesday,Ikram,Day Centre,11 to 3,"ROBERTO, LULIA",SwimFarm,Hub Room,2026-05-19|ikram|day_centre,2026-05-19|ikram|day_centre,,feedback_submitted,yes,Ikram,Victor Matilla,2026-05-19|ikram|day_centre
+2026-05-19,Tuesday,Fadi,Day Centre,12.30 to 3,"VICTOR, RAUL",SwimFarm,Hub Room,2026-05-19|fadi|day_centre,2026-05-19|fadi|day_centre,,feedback_submitted,yes,Fadi,Roberto Reali,2026-05-19|fadi|day_centre
+2026-05-19,Tuesday,Ikram,Day Centre,3 to 4,"VICTOR, LULIA, RAUL",SwimFarm,Hub Room,2026-05-19|ikram|day_centre,2026-05-19|ikram|day_centre,,feedback_submitted,yes,Ikram,Victor Matilla,2026-05-19|ikram|day_centre
+2026-05-19,Tuesday,Ayman,Aquatic Activity,4 to 4.30,JAVIER,Acton,Lane (SE),2026-05-19|16:00|ayman,2026-05-19|16:00|ayman,,absent,no,,,
+2026-05-19,Tuesday,Jad,Aquatic Activity,4 to 4.30,ROBERTO,Acton,Teaching Pool,2026-05-19|16:00|jad,2026-05-19|16:00|jad,,feedback_submitted,yes,Jad,Roberto Reali,2026-05-19||jad
+2026-05-19,Tuesday,Adam Me,Aquatic Activity,4.30 to 5,JAVIER,Acton,Teaching Pool,2026-05-19|16:30|adam_me,2026-05-19|16:30|adam_me,,absent,no,,,
+2026-05-19,Tuesday,Bediako,Aquatic Activity,4.30 to 5,AURORA,Acton,Lane (SE),2026-05-19|16:30|bediako,2026-05-19|16:30|bediako,,absent,no,,,
+2026-05-19,Tuesday,Cayra,Aquatic Activity,4.30 to 5,ANGEL,Acton,Lane (SE),2026-05-19|16:30|cayra,2026-05-19|16:30|cayra,,absent,no,,,
+2026-05-19,Tuesday,Serine,Aquatic Activity,4.30 to 5,ROBERTO,Acton,Lane (DE),2026-05-19|16:30|serine,2026-05-19|16:30|serine,,feedback_submitted,yes,Serine,Roberto Reali,2026-05-19||serine
+2026-05-19,Tuesday,Amir,Aquatic Activity,5 to 5.30,ANGEL,Acton,Teaching Pool,2026-05-19|17:00|amir,2026-05-19|17:00|amir,,feedback_submitted,yes,Amir,Angel Falceto,2026-05-19||amir
+2026-05-19,Tuesday,Junaid F,Aquatic Activity,5 to 5.30,AURORA,Acton,Teaching Pool,2026-05-19|17:00|junaid_f,2026-05-19|17:00|junaid_f,,feedback_submitted,yes,Junaid F,Aurora Garcia,2026-05-19||junaid_f
+2026-05-19,Tuesday,Linda,Aquatic Activity,5 to 5.30,JAVIER,Acton,Lane (SE),2026-05-19|17:00|linda,2026-05-19|17:00|linda,,feedback_submitted,yes,Linda,Javier Marquez,2026-05-19||linda
+2026-05-19,Tuesday,Logan,Aquatic Activity,5 to 5.30,YOUSSEF,Acton,Lane (DE),2026-05-19|17:00|logan,2026-05-19|17:00|logan,,feedback_submitted,yes,Logan,Youssef Moustafa,2026-05-19||logan
+2026-05-19,Tuesday,Serine,Aquatic Activity,5 to 5.30,ROBERTO,Acton,Lane (DE),2026-05-19|17:00|serine,2026-05-19|17:00|serine,,feedback_submitted,yes,Serine,Roberto Reali,2026-05-19||serine
+2026-05-19,Tuesday,Aydaan Ah,Aquatic Activity,5.30 to 6,AURORA,Acton,Lane (DE),2026-05-19|17:30|aydaan_ah,2026-05-19|17:30|aydaan_ah,,absent,no,,,
+2026-05-19,Tuesday,Eiji,Aquatic Activity,5.30 to 6,JAVIER,Acton,Lane,2026-05-19|17:30|eiji,2026-05-19|17:30|eiji,,absent,no,Eiji,Roberto Reali,2026-05-19||eiji
+2026-05-19,Tuesday,Hazem,Aquatic Activity,5.30 to 6,ANGEL,Acton,Teaching Pool,2026-05-19|17:30|hazem,2026-05-19|17:30|hazem,,feedback_submitted,yes,Hazem,Angel Falceto,2026-05-19||hazem
+2026-05-19,Tuesday,Rayan Ta,Aquatic Activity,5.30 to 6,ROBERTO,Acton,Teaching Pool,2026-05-19|17:30|rayan_ta,2026-05-19|17:30|rayan_ta,,feedback_submitted,yes,Rayan Ta,Roberto Reali,2026-05-19||rayan_ta
+2026-05-19,Tuesday,Rayyan Fi,Aquatic Activity,5.30 to 6,YOUSSEF,Acton,Lane (DE),2026-05-19|17:30|rayyan_fi,2026-05-19|17:30|rayyan_fi,,feedback_submitted,yes,Rayyan F,Youssef Moustafa,2026-05-19||rayyan_f
+2026-05-19,Tuesday,Eiji,Aquatic Activity,6 to 6.30,AURORA,Acton,Lane,2026-05-19|18:00|eiji,2026-05-19|18:00|eiji,,absent,no,Eiji,Roberto Reali,2026-05-19||eiji
+2026-05-19,Tuesday,Hazem,Aquatic Activity,6 to 6.30,ROBERTO,Acton,Teaching Pool,2026-05-19|18:00|hazem,2026-05-19|18:00|hazem,,feedback_submitted,yes,Hazem,Angel Falceto,2026-05-19||hazem
+2026-05-19,Tuesday,Kareena,Aquatic Activity,6 to 6.30,JAVIER,Acton,Lane (SE),2026-05-19|18:00|kareena,2026-05-19|18:00|kareena,,feedback_submitted,yes,Kareena,Javier Marquez,2026-05-19||kareena
+2026-05-19,Tuesday,Rayyan Fi,Aquatic Activity,6 to 6.30,YOUSSEF,Acton,Lane (DE),2026-05-19|18:00|rayyan_fi,2026-05-19|18:00|rayyan_fi,,feedback_submitted,yes,Rayyan F,Youssef Moustafa,2026-05-19||rayyan_f
+2026-05-19,Tuesday,Richard,Aquatic Activity,6 to 6.30,ANGEL,Acton,Lane (SE),2026-05-19|18:00|richard,2026-05-19|18:00|richard,,feedback_submitted,yes,Richard,Angel Falceto,2026-05-19||richard
