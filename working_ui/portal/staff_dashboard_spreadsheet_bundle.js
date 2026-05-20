@@ -1360,7 +1360,7 @@
     "session_date": "2026-05-18"
   },
   {
-    "client_name": "Aadam Ah",
+    "client_name": "Aydaan Ah",
     "day": "Monday",
     "instructors": "DAN",
     "service": "Aquatic Activity",
