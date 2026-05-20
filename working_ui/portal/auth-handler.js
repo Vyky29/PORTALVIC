@@ -609,6 +609,17 @@ export async function bootstrapDashboardSupabase(_opts) {
     window.dispatchEvent(
       new CustomEvent("portal:supabase-ready", { detail: window.__PORTAL_SUPABASE__ })
     );
+    try {
+      const { startPortalLivePresence, mountPortalLivePresenceBar } = await import(
+        "./portal_live_presence.js?v=20260520-presence"
+      );
+      await startPortalLivePresence({ page, profile, session });
+      if (document.getElementById("portalLivePresenceBar")) {
+        mountPortalLivePresenceBar("portalLivePresenceBar");
+      }
+    } catch (presenceErr) {
+      console.debug("[portal] live presence skipped:", presenceErr);
+    }
   } catch (e) {
     console.debug("[portal] Supabase dashboard bootstrap skipped:", e);
   }
