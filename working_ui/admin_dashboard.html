@@ -3954,11 +3954,11 @@
   })();
   </script>
   <!-- Session feedback export: `session_feedback_portal_data.js` in portal/. Bump data-portal-session-feedback-v after export. -->
-  <script src="portal/session_feedback_portal_data.js?v=20260507-portalfix"></script>
+  <script src="/portal/session_feedback_portal_data.js?v=20260520-feedback-merge"></script>
   <script>
   (function portalSessionFeedbackBootstrap(){
-    var v = (document.documentElement.getAttribute('data-portal-session-feedback-v') || document.documentElement.getAttribute('data-portal-uploads-js-v') || '20260507-portalfix').trim();
-    var cdnWww = 'portal/session_feedback_portal_data.js?v=' + encodeURIComponent(v);
+    var v = (document.documentElement.getAttribute('data-portal-session-feedback-v') || document.documentElement.getAttribute('data-portal-uploads-js-v') || '20260520-feedback-merge').trim();
+    var cdnWww = '/portal/session_feedback_portal_data.js?v=' + encodeURIComponent(v);
     function portalSfRowCount(){
       var s = typeof window !== 'undefined' ? window.SESSION_FEEDBACK_PORTAL_SOURCE : null;
       return s && Array.isArray(s.rows) ? s.rows.length : 0;

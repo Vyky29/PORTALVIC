@@ -115,14 +115,15 @@ def canonical_portal_service(raw):
     return t if len(t) <= 56 else t[:53] + "\u2026"
 
 
-def main():
+def read_workbook_rows(xlsx_path: Path) -> tuple[list[dict], str]:
     import openpyxl
 
-    if not XLSX.is_file():
-        raise SystemExit(f"Missing workbook: {XLSX}")
+    if not xlsx_path.is_file():
+        return [], ""
 
-    wb = openpyxl.load_workbook(str(XLSX), read_only=True, data_only=True)
+    wb = openpyxl.load_workbook(str(xlsx_path), read_only=True, data_only=True)
     ws = wb.active
+    sheet_title = ws.title
     rows_out = []
     for _i, row in enumerate(ws.iter_rows(min_row=2, values_only=True)):
         if not row or not any(x is not None and str(x).strip() for x in row[:4]):
@@ -154,11 +155,19 @@ def main():
                 "independence": norm_str(vals[7]),
             }
         )
+    wb.close()
+    return rows_out, sheet_title
 
+
+def main():
+    if not XLSX.is_file():
+        raise SystemExit(f"Missing workbook: {XLSX}")
+
+    rows_out, sheet_title = read_workbook_rows(XLSX)
     rows_out.sort(key=lambda r: (r["date"], r["clientName"] or ""), reverse=True)
     meta = {
         "sourceFile": str(XLSX.relative_to(ROOT)).replace("\\", "/"),
-        "sheet": ws.title,
+        "sheet": sheet_title,
         "exportedAt": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%MZ"),
         "rowCount": len(rows_out),
         "coverageFromIso": PORTAL_SESSION_FEEDBACK_FIRST_DATE_ISO,
