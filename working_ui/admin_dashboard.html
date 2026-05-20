@@ -1137,6 +1137,57 @@
     }
     .c4k-reg-eng-num{font-size:21px;font-weight:800;color:var(--ink);line-height:1}
     .c4k-reg-eng-den{font-size:14px;font-weight:800;color:var(--muted);margin:0 0 0 1px;line-height:1}
+    .c4k-reg-eng-gauge{
+      display:flex;flex-direction:column;align-items:center;min-width:0;width:100%;padding:0 4px 4px;
+    }
+    .c4k-reg-eng-gauge__svg{
+      display:block;width:min(100%,240px);height:auto;margin:4px auto 0;overflow:visible;
+    }
+    .c4k-reg-eng-gauge__seg{fill:none;stroke-width:16;stroke-linecap:butt}
+    .c4k-reg-eng-gauge__seg--r{stroke:#dc2626}
+    .c4k-reg-eng-gauge__seg--o{stroke:#ea580c}
+    .c4k-reg-eng-gauge__seg--y{stroke:#84cc16}
+    .c4k-reg-eng-gauge__seg--g{stroke:#166534}
+    .c4k-reg-eng-gauge__tick{font-size:9px;font-weight:600;fill:#94a3b8}
+    .c4k-reg-eng-gauge__needle{stroke:#1e3a5f;stroke-width:2.8;stroke-linecap:round}
+    .c4k-reg-eng-gauge__hub{fill:#fff;stroke:#1e3a5f;stroke-width:2.5}
+    .c4k-reg-eng-gauge__center{text-align:center;margin-top:2px;min-width:0;max-width:100%}
+    .c4k-reg-eng-gauge__pct{
+      display:block;font-size:26px;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums;
+    }
+    .c4k-reg-eng-gauge__pct--r{color:#dc2626}
+    .c4k-reg-eng-gauge__pct--o{color:#ea580c}
+    .c4k-reg-eng-gauge__pct--y{color:#65a30d}
+    .c4k-reg-eng-gauge__pct--g{color:#166534}
+    .c4k-reg-eng-gauge__avg{display:block;margin-top:4px;font-size:14px;font-weight:600;color:#64748b}
+    .c4k-reg-eng-gauge__foot{padding-top:6px;font-size:12px;line-height:1.35}
+    .c4k-sf-kpi-slab--embed .c4k-sf-kpi-panel--eng-sm .c4k-reg-eng-gauge__svg{width:min(100%,200px);margin-top:2px}
+    .c4k-sf-kpi-slab--embed .c4k-sf-kpi-panel--eng-sm .c4k-reg-eng-gauge__pct{font-size:22px}
+    .c4k-reg-ind-bars{
+      display:flex;align-items:flex-end;justify-content:center;gap:8px;
+      min-width:0;width:100%;padding:10px 6px 6px;min-height:132px;
+    }
+    .c4k-reg-ind-bar__item{
+      flex:1 1 0;min-width:0;max-width:76px;
+      display:flex;flex-direction:column;align-items:center;gap:6px;
+    }
+    .c4k-reg-ind-bar__pct{
+      font-size:12px;font-weight:700;color:#6d28d9;line-height:1.2;
+      text-align:center;min-width:0;overflow-wrap:break-word;
+    }
+    .c4k-reg-ind-bar__track{
+      width:100%;max-width:54px;height:88px;
+      display:flex;align-items:flex-end;justify-content:stretch;
+      border-radius:14px 14px 10px 10px;background:rgba(109,40,217,.07);
+    }
+    .c4k-reg-ind-bar__fill{
+      width:100%;min-height:6px;border-radius:14px 14px 10px 10px;
+    }
+    .c4k-reg-ind-bar__lbl{
+      font-size:11px;font-weight:800;color:#6d28d9;text-align:center;
+      line-height:1.2;min-width:0;overflow-wrap:break-word;max-width:100%;
+    }
+    .booking-capacity--sf-days-only .booking-capacity-bars{padding-top:10px;padding-bottom:12px}
     .c4k-reg-rel-donut-wrap{
       position:relative;width:96px;height:96px;margin:6px auto 12px;display:grid;place-items:center;border-radius:50%;
       box-shadow:0 6px 20px rgba(15,23,42,.1),0 0 0 1px rgba(15,23,42,.05);
@@ -6635,77 +6686,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return pairs;
     }
     function adminC4kRegistersKpiEngagementVisualHtml(list){
-      var pairs = adminC4kRegistersKpiEngagementPairsFromList(list);
-      if(!pairs.length){
-        return '<p class="muted c4k-reg-kpi-cap" style="margin:0">No numeric engagement scores (1–5) in the loaded rows for a trend chart.</p>';
-      }
-      var termStart = adminPortalFeedbackTermStartIso();
-      var termVals = [];
-      for(var ti = 0; ti < pairs.length; ti++){
-        if(pairs[ti].iso10 && pairs[ti].iso10 >= termStart) termVals.push(pairs[ti].v);
-      }
-      if(!termVals.length) termVals = pairs.map(function(p){ return p.v; });
-      var termAvg = termVals.reduce(function(a, b){ return a + b; }, 0) / termVals.length;
-      var deg = Math.min(359.98, Math.max(0, (termAvg / 5) * 360));
-      var ring =
-        'conic-gradient(from -90deg, #2563eb 0deg ' +
-        deg +
-        'deg, rgba(15,23,42,.1) ' +
-        deg +
-        'deg 360deg)';
-      var termFoot =
-        '<strong>' +
-        String(termVals.length) +
-        '</strong> session' +
-        (termVals.length === 1 ? '' : 's') +
-        ' with scores · from <strong>' +
-        esc(adminFormatUkDateFromIso(termStart + 'T12:00:00')) +
-        '</strong>';
-      return (
-        '<div class="c4k-reg-kpi-eng c4k-sf-kpi-col__body" style="min-width:0">' +
-        '<p class="muted" style="margin:0 0 6px;font-size:12px;font-weight:600;text-align:center">Term average</p>' +
-        '<div class="c4k-reg-eng-donut-wrap" role="img" aria-label="Engagement term average as ring">' +
-        '<div class="c4k-reg-eng-donut" style="background:' +
-        ring +
-        '"></div>' +
-        '<div class="c4k-reg-eng-donut__inner">' +
-        '<span class="c4k-reg-eng-line">' +
-        '<span class="c4k-reg-eng-num">' +
-        termAvg.toFixed(1) +
-        '</span>' +
-        '<span class="c4k-reg-eng-den">/5</span>' +
-        '</span></div></div>' +
-        '<p class="muted c4k-reg-kpi-cap" style="margin:0;font-size:11px;text-align:center;margin-top:auto;padding-top:10px">' +
-        termFoot +
-        '</p></div>'
-      );
+      return adminC4kRegistersKpiEngagementGaugeHtml(list);
     }
     function adminC4kRegistersKpiMockEngagementVisualHtml(){
-      var termAvg = 3.9;
-      var deg = Math.min(359.98, Math.max(0, (termAvg / 5) * 360));
-      var ring =
-        'conic-gradient(from -90deg, #2563eb 0deg ' +
-        deg +
-        'deg, rgba(15,23,42,.1) ' +
-        deg +
-        'deg 360deg)';
-      return (
-        '<div class="c4k-reg-kpi-eng c4k-sf-kpi-col__body" style="min-width:0;text-align:center" aria-hidden="true">' +
-        '<p class="muted" style="margin:0 0 6px;font-size:12px;font-weight:600">Term average (illustrative)</p>' +
-        '<div class="c4k-reg-eng-donut-wrap" role="img" aria-label="Engagement ring (mock)">' +
-        '<div class="c4k-reg-eng-donut" style="background:' +
-        ring +
-        '"></div>' +
-        '<div class="c4k-reg-eng-donut__inner">' +
-        '<span class="c4k-reg-eng-line">' +
-        '<span class="c4k-reg-eng-num">' +
-        termAvg.toFixed(1) +
-        '</span>' +
-        '<span class="c4k-reg-eng-den">/5</span>' +
-        '</span></div></div>' +
-        '<p class="muted c4k-reg-kpi-cap" style="margin:0;font-size:11px;padding-top:10px;margin-top:auto">Illustrative engagement data.</p>' +
-        '</div>'
-      );
+      return adminC4kRegistersKpiMockEngagementGaugeHtml();
     }
     function adminC4kRegistersKpiEmotionCounts(list, maxKeys){
       maxKeys = maxKeys == null ? 4 : Math.max(1, Number(maxKeys) || 4);
@@ -7085,28 +7069,30 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var avg = vals.reduce(function(a, b){ return a + b; }, 0) / vals.length;
       var pctInt = Math.min(100, Math.max(0, Math.round((avg / 5) * 100)));
       var ang = Math.PI - (pctInt / 100) * Math.PI;
-      var cx = 110, cy = 108, r = 88;
+      var cx = 120, cy = 112, r = 88;
       var nx = cx + r * Math.cos(ang);
       var ny = cy - r * Math.sin(ang);
-      var large = pctInt > 50 ? 1 : 0;
-      var valPath =
-        'M ' + cx + ' ' + cy + ' L 22 ' + cy + ' A ' + r + ' ' + r + ' 0 ' + large + ' 0 ' + nx.toFixed(1) + ' ' + ny.toFixed(1) + ' Z';
+      var pctTier = pctInt >= 75 ? 'g' : pctInt >= 50 ? 'y' : pctInt >= 25 ? 'o' : 'r';
       return (
         '<div class="c4k-reg-eng-gauge c4k-sf-kpi-col__body" style="min-width:0">' +
-        '<svg class="c4k-reg-eng-gauge__svg" viewBox="0 0 220 120" role="img" aria-label="Engagement ' + esc(String(pctInt)) + ' percent, average ' + avg.toFixed(1) + ' out of 5">' +
-        '<path class="c4k-reg-eng-gauge__seg c4k-reg-eng-gauge__seg--r" d="M 22 108 A 88 88 0 0 1 64.6 34.2" />' +
-        '<path class="c4k-reg-eng-gauge__seg c4k-reg-eng-gauge__seg--o" d="M 64.6 34.2 A 88 88 0 0 1 110 20" />' +
-        '<path class="c4k-reg-eng-gauge__seg c4k-reg-eng-gauge__seg--y" d="M 110 20 A 88 88 0 0 1 155.4 34.2" />' +
-        '<path class="c4k-reg-eng-gauge__seg c4k-reg-eng-gauge__seg--g" d="M 155.4 34.2 A 88 88 0 0 1 198 108" />' +
-        '<path class="c4k-reg-eng-gauge__val" d="' + valPath + '" />' +
+        '<svg class="c4k-reg-eng-gauge__svg" viewBox="0 0 240 132" role="img" aria-label="Engagement ' + esc(String(pctInt)) + ' percent, average ' + avg.toFixed(1) + ' out of 5">' +
+        '<path class="c4k-reg-eng-gauge__seg c4k-reg-eng-gauge__seg--r" d="M 24 112 A 88 88 0 0 1 68.2 36.4" />' +
+        '<path class="c4k-reg-eng-gauge__seg c4k-reg-eng-gauge__seg--o" d="M 68.2 36.4 A 88 88 0 0 1 120 22" />' +
+        '<path class="c4k-reg-eng-gauge__seg c4k-reg-eng-gauge__seg--y" d="M 120 22 A 88 88 0 0 1 171.8 36.4" />' +
+        '<path class="c4k-reg-eng-gauge__seg c4k-reg-eng-gauge__seg--g" d="M 171.8 36.4 A 88 88 0 0 1 216 112" />' +
+        '<text class="c4k-reg-eng-gauge__tick" x="10" y="118">0%</text>' +
+        '<text class="c4k-reg-eng-gauge__tick" x="50" y="40">25%</text>' +
+        '<text class="c4k-reg-eng-gauge__tick" x="120" y="16" text-anchor="middle">50%</text>' +
+        '<text class="c4k-reg-eng-gauge__tick" x="182" y="40" text-anchor="end">75%</text>' +
+        '<text class="c4k-reg-eng-gauge__tick" x="228" y="118" text-anchor="end">100%</text>' +
         '<line class="c4k-reg-eng-gauge__needle" x1="' + cx + '" y1="' + cy + '" x2="' + nx.toFixed(1) + '" y2="' + ny.toFixed(1) + '" />' +
-        '<circle class="c4k-reg-eng-gauge__hub" cx="' + cx + '" cy="' + cy + '" r="5" />' +
+        '<circle class="c4k-reg-eng-gauge__hub" cx="' + cx + '" cy="' + cy + '" r="6" />' +
         '</svg>' +
         '<div class="c4k-reg-eng-gauge__center">' +
-        '<span class="c4k-reg-eng-gauge__pct">' + esc(String(pctInt)) + '%</span>' +
+        '<span class="c4k-reg-eng-gauge__pct c4k-reg-eng-gauge__pct--' + pctTier + '">' + esc(String(pctInt)) + '%</span>' +
         '<span class="c4k-reg-eng-gauge__avg">' + esc(avg.toFixed(1)) + ' / 5 avg</span>' +
         '</div>' +
-        '<p class="muted c4k-reg-kpi-cap" style="margin:0;text-align:center;padding-top:4px">' +
+        '<p class="muted c4k-reg-kpi-cap c4k-reg-eng-gauge__foot" style="margin:0;text-align:center">' +
         esc(String(vals.length)) + ' session' + (vals.length === 1 ? '' : 's') + ' with scores</p>' +
         '</div>'
       );
@@ -7196,12 +7182,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         .map(function(o){
           var n = buckets[o.key] || 0;
           var pct = (n / total) * 100;
-          var h = Math.max(4, Math.round(pct));
+          var hPct = n > 0 ? Math.max(10, Math.round(pct)) : 0;
           return (
             '<div class="c4k-reg-ind-bar__item">' +
             '<span class="c4k-reg-ind-bar__pct">' + esc(adminC4kPctLabelUk(pct)) + '</span>' +
             '<div class="c4k-reg-ind-bar__track" title="' + esc(o.label + ': ' + String(n)) + '">' +
-            '<div class="c4k-reg-ind-bar__fill" style="height:' + String(h) + '%;background:' + o.color + '"></div></div>' +
+            '<div class="c4k-reg-ind-bar__fill" style="height:' + String(hPct) + '%;background:' + o.color + '"></div></div>' +
             '<span class="c4k-reg-ind-bar__lbl">' + esc(o.label) + '</span></div>'
           );
         })
@@ -7252,33 +7238,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
     }
     function adminC4kRegistersKpiIndependenceParticipantVisualHtml(list){
-      var termStart = adminPortalFeedbackTermStartIso();
-      var tot = 0;
-      var filled = 0;
-      for(var i = 0; i < list.length; i++){
-        var iso10 = adminC4kRegisterRowIso10(list[i]);
-        if(iso10 && iso10 < termStart) continue;
-        tot++;
-        var ind = adminSfStr(list[i].indep);
-        if(ind && ind !== '—' && ind.length > 2) filled++;
-      }
-      if(!tot){
-        return '<p class="muted c4k-reg-kpi-cap" style="margin:0">No term rows for independence.</p>';
-      }
-      var pct = Math.round((filled / tot) * 100);
-      return (
-        '<div class="c4k-sf-kpi-col__body" style="min-width:0;text-align:center">' +
-        '<p class="muted" style="margin:0 0 8px;font-size:12px;font-weight:600">Independence notes</p>' +
-        '<div style="font-size:1.85rem;font-weight:800;color:var(--ink);line-height:1.1">' +
-        esc(String(filled)) +
-        '<span class="muted" style="font-size:1rem;font-weight:600"> / ' +
-        String(tot) +
-        '</span></div>' +
-        '<p class="muted c4k-reg-kpi-cap" style="margin:10px 0 0">' +
-        esc(String(pct)) +
-        '% of attended rows carry text in <strong>Independence</strong> this term.</p>' +
-        '</div>'
-      );
+      return adminC4kRegistersKpiIndependenceBarsHtml(list);
     }
     function adminC4kRegistersKpiAttendanceParticipantVisualHtml(pname, attendedList){
       var portalP = adminPortalFeedbackPortalRowsForParticipantWorkspace(pname);
@@ -8113,6 +8073,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '</div>';
       var wrapExtra = embedWeekTile ? ' booking-capacity--sess' : '';
       var inlineKpiSf = String((opts && opts.sessionFeedbackInlineKpi) || '').trim();
+      if(embedWeekTile && !inlineKpiSf){
+        return (
+          '<div class="booking-capacity' + wrapExtra + ' booking-capacity--sf-days-only">' +
+            '<div class="booking-capacity-bars card-pad">' + bars.join('') + '</div>' +
+          '</div>'
+        );
+      }
       if(embedWeekTile && inlineKpiSf){
         return (
           '<div class="booking-capacity' + wrapExtra + '">' +
