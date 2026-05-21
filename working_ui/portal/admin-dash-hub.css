@@ -224,7 +224,44 @@
 body:has(#workspace .dash-hub) .admin-workspace{background:#f8fafc}
 body:has(#workspace .dash-hub) .admin-main{background:#f8fafc}
 
-/* Dashboard nav index — all categories visible, two per row */
+/* Dashboard nav index — 2 rows (3 + Finance|Recruitment), fit viewport */
+body:has(#workspace .dash-hub--nav-index) .admin-workspace{
+  overflow-y:hidden;
+  display:flex;
+  flex-direction:column;
+  padding:clamp(8px,1.4vh,16px) clamp(10px,1.8vw,20px) clamp(10px,1.4vh,14px);
+}
+.dash-hub--nav-index{
+  flex:1;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  padding:0 0 4px;
+}
+.dash-hub--nav-index > .page-title{
+  margin:0 0 4px;
+  font-size:clamp(18px,2.2vh,26px);
+  line-height:1.15;
+}
+.dash-hub--nav-index > .page-intro{
+  margin:0 0 clamp(6px,1vh,12px);
+  font-size:clamp(11px,1.4vh,13px);
+  line-height:1.35;
+}
+.dash-hub--nav-index .dash-hub-cat-grid{
+  flex:1;
+  min-height:0;
+  display:grid;
+  grid-template-columns:repeat(6,minmax(0,1fr));
+  grid-template-rows:minmax(0,1fr) minmax(0,1fr);
+  gap:clamp(8px,1.2vh,12px);
+  align-items:stretch;
+}
+.dash-hub--nav-index .dash-hub-cat:nth-child(-n+3){
+  grid-column:span 2;
+}
+.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_xero"]{grid-column:1/span 3}
+.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_indeed"]{grid-column:4/span 3}
 .dash-hub-cat-grid{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
@@ -232,8 +269,9 @@ body:has(#workspace .dash-hub) .admin-main{background:#f8fafc}
   min-width:0;
   align-items:stretch;
 }
-@media (max-width:960px){
-  .dash-hub-cat-grid{grid-template-columns:1fr}
+.dash-hub--nav-index .dash-hub-cat{
+  min-height:0;
+  border-radius:clamp(10px,1.2vw,14px);
 }
 .dash-hub-cat{
   min-width:0;
@@ -312,6 +350,70 @@ body:has(#workspace .dash-hub) .admin-main{background:#f8fafc}
   -webkit-box-orient:vertical;
   overflow:hidden;
   font-size:10px;
+}
+.dash-hub--nav-index .dash-hub-cat__head{
+  padding:clamp(6px,1vh,10px) clamp(8px,1.2vw,12px);
+  gap:8px;
+}
+.dash-hub--nav-index .dash-hub-cat__head .admin-nav-ico{
+  width:clamp(28px,4vh,34px);
+  height:clamp(28px,4vh,34px);
+}
+.dash-hub--nav-index .dash-hub-cat__head .admin-nav-ico svg{
+  width:clamp(16px,2.4vh,18px);
+  height:clamp(16px,2.4vh,18px);
+}
+.dash-hub--nav-index .dash-hub-cat__label{
+  font-size:clamp(11px,1.5vh,12.5px);
+}
+.dash-hub--nav-index .dash-hub-cat__body{
+  flex:1;
+  min-height:0;
+  overflow:hidden;
+  padding:clamp(6px,1vh,10px) clamp(8px,1.2vw,12px);
+}
+.dash-hub--nav-index .dash-hub-cat__body .dash-hub__grid--inline{
+  gap:clamp(6px,0.8vh,8px);
+  height:100%;
+  align-content:stretch;
+}
+.dash-hub--nav-index .dash-hub-cat__body .dash-hub__grid--inline .dash-hub__tile{
+  flex:1 1 clamp(72px,10vw,108px);
+  min-width:clamp(64px,9vw,96px);
+  max-width:none;
+  min-height:clamp(64px,11vh,92px);
+  padding:0 clamp(4px,0.6vw,8px) clamp(6px,0.8vh,8px);
+}
+.dash-hub--nav-index .dash-hub-cat__body .dash-hub__grid--inline .dash-hub__tile-band{
+  min-height:clamp(32px,5vh,40px);
+  padding:clamp(4px,0.6vh,6px) 4px 4px;
+}
+.dash-hub--nav-index .dash-hub-cat__body .dash-hub__grid--inline .dash-hub__tile-band .admin-nav-ico svg{
+  width:clamp(18px,2.6vh,22px);
+  height:clamp(18px,2.6vh,22px);
+}
+.dash-hub--nav-index .dash-hub-cat__body .dash-hub__grid--inline .dash-hub__tile-label{
+  font-size:clamp(10px,1.4vh,11.5px);
+  line-height:1.2;
+}
+.dash-hub--nav-index .dash-hub-cat__body .dash-hub__grid--inline .dash-hub__tile-desc{
+  -webkit-line-clamp:1;
+  font-size:clamp(9px,1.2vh,10px);
+}
+.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_xero"] .dash-hub__grid--inline,
+.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_indeed"] .dash-hub__grid--inline{
+  justify-content:flex-start;
+}
+.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_xero"] .dash-hub__tile,
+.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_indeed"] .dash-hub__tile{
+  flex:0 1 clamp(120px,18vw,200px);
+  max-width:min(220px,42%);
+}
+@media (max-width:720px){
+  body:has(#workspace .dash-hub--nav-index) .admin-workspace{
+    padding:8px 8px max(8px,env(safe-area-inset-bottom,0));
+  }
+  .dash-hub--nav-index > .page-intro{display:none}
 }
 .dash-hub-cat[data-hub-cat="g_operator"] .dash-hub-cat__head{background:rgba(129,140,248,.08)}
 .dash-hub-cat[data-hub-cat="g_c4k"] .dash-hub-cat__head{background:rgba(59,130,246,.08)}
