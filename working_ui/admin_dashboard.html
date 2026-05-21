@@ -6,7 +6,7 @@
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260520-portal2026" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260520-portal2026" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260521-nav-hub" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260521-nav-inline" />
   <script src="/portal/admin-portal-day-ops.js?v=20260520-portal2026"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
   <title>clubSENsational · Operations + Operator workflow (merged)</title>
@@ -18192,24 +18192,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(NAV_GROUPS[gi].id === gid){ group = NAV_GROUPS[gi]; break; }
         }
         if(!group) return '';
-        var parts = [];
-        var gridOpen = false;
+        var tiles = [];
         (group.children || []).forEach(function(cid){
-          var cs = String(cid);
-          if(cs.indexOf('__h:') === 0){
-            if(gridOpen){ parts.push('</div>'); gridOpen = false; }
-            parts.push('<p class="dash-hub__subhead">'+esc(cs.slice(4))+'</p>');
-            return;
-          }
+          if(String(cid).indexOf('__h:') === 0) return;
           var item = navGetItem(cid);
           if(!item) return;
-          if(!gridOpen){
-            parts.push('<div class="dash-hub__grid">');
-            gridOpen = true;
-          }
-          parts.push(dashHubNavTileHtml(item));
+          tiles.push(dashHubNavTileHtml(item));
         });
-        if(gridOpen) parts.push('</div>');
+        var body =
+          '<div class="dash-hub__grid dash-hub__grid--inline">' + tiles.join('') + '</div>';
         return (
           '<details class="dash-hub-acc" open>' +
           '<summary class="dash-hub-acc__sum">' +
@@ -18217,7 +18208,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '<span class="dash-hub-acc__label">'+esc(group.label)+'</span>' +
           '<span class="dash-hub-acc__caret" aria-hidden="true">▾</span>' +
           '</summary>' +
-          '<div class="dash-hub-acc__body">'+parts.join('')+'</div>' +
+          '<div class="dash-hub-acc__body">'+body+'</div>' +
           '</details>'
         );
       }).join('');

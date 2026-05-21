@@ -283,5 +283,30 @@ body:has(#workspace .dash-hub) .admin-main{background:#f8fafc}
   border-top:1px solid var(--dh-line);
   min-width:0;
 }
-.dash-hub-acc__body .dash-hub__subhead:first-child{margin-top:12px}
 .dash-hub-acc__body a.dash-hub__tile{text-decoration:none;color:inherit}
+.dash-hub-acc__body .dash-hub__grid--inline{
+  display:flex;
+  flex-direction:row;
+  flex-wrap:nowrap;
+  align-items:stretch;
+  gap:12px;
+  margin-top:12px;
+  min-width:0;
+  overflow-x:auto;
+  overflow-y:hidden;
+  padding-bottom:6px;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;
+}
+.dash-hub-acc__body .dash-hub__grid--inline .dash-hub__tile{
+  flex:0 0 auto;
+  width:148px;
+  min-width:148px;
+  min-height:118px;
+}
+.dash-hub-acc__body .dash-hub__grid--inline .dash-hub__tile-desc{
+  display:-webkit-box;
+  -webkit-line-clamp:3;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
