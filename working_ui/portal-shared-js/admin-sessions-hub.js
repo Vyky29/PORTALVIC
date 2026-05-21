@@ -1,5 +1,5 @@
 /**
- * Admin ù Sessions hub ù roster vs session feedback, submitted grid, schedule.
+ * Admin \u2014 Sessions hub \u2014 roster vs session feedback, submitted grid, schedule.
  * Mount with AdminSessionsHub.mount(root, { payload, escapeHtml, onRefresh }).
  */
 (function (global) {
@@ -29,9 +29,9 @@
 
   function truncateCellText(s, max) {
     var t = clean(s);
-    if (!t) return "ù";
+    if (!t) return "\u2014";
     if (t.length <= max) return t;
-    return t.slice(0, max - 1) + "ù";
+    return t.slice(0, max - 1) + "\u2014";
   }
 
   function htmlWeekDayCard(hub, iso, idx, esc) {
@@ -201,7 +201,7 @@
         "Staff"
       );
     }
-    return clean(r.client_name) || "ù";
+    return clean(r.client_name) || "\u2014";
   }
 
   function incidentSubjectSub(r) {
@@ -213,7 +213,7 @@
     else if (out === "minor") bits.push("minor");
     else if (out === "near_miss") bits.push("near miss");
     if (clean(r.client_name)) bits.push("participant: " + clean(r.client_name));
-    return bits.join(" ù ");
+    return bits.join(" \u2013 ");
   }
 
   function slugify(value) {
@@ -253,7 +253,7 @@
     );
   }
 
-  /** Session date for roster match ù never use created_at (late submit on another day). */
+  /** Session date for roster match \u2013 never use created_at (late submit on another day). */
   function feedbackSessionDate(fb) {
     var d = rowDateIso(fb && fb.session_date);
     if (d) return d;
@@ -459,7 +459,7 @@
 
   function formatFbDate(isoOrTs) {
     var s = String(isoOrTs || "").trim();
-    if (!s) return "ù";
+    if (!s) return "\u2014";
     var d = new Date(s);
     if (isNaN(d.getTime())) return s.slice(0, 10);
     return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
@@ -488,9 +488,9 @@
 
   function formatFbDateTime(isoOrTs) {
     var s = String(isoOrTs || "").trim();
-    if (!s) return "ù";
+    if (!s) return "\u2014";
     var d = new Date(s);
-    if (isNaN(d.getTime())) return "ù";
+    if (isNaN(d.getTime())) return "\u2014";
     var date = d.toLocaleDateString("en-GB", {
       day: "2-digit",
       month: "2-digit",
@@ -503,9 +503,9 @@
   /** When an absent mark was submitted (date row + time row in UI). */
   function absentMarkedWhenParts(isoOrTs) {
     var s = String(isoOrTs || "").trim();
-    if (!s) return { date: "ù", time: "" };
+    if (!s) return { date: "\u2014", time: "" };
     var d = new Date(s);
-    if (isNaN(d.getTime())) return { date: "ù", time: "" };
+    if (isNaN(d.getTime())) return { date: "\u2014", time: "" };
     return {
       date: d.toLocaleDateString("en-GB", {
         day: "2-digit",
@@ -520,7 +520,7 @@
     var esc = escFn || function (x) {
       return String(x == null ? "" : x);
     };
-    if (!dateStr || dateStr === "ù") return "ù";
+    if (!dateStr || dateStr === "\u2014") return "\u2014";
     return (
       '<span class="ash-when-stack">' +
       '<span class="ash-when-stack__date">' +
@@ -812,7 +812,7 @@
     return serviceKey(service).indexOf("climbing") !== -1;
   }
 
-  /** Monday SwimFarm ACAT block ù group feedback covers these roster names (slug keys). */
+  /** Monday SwimFarm ACAT block \u2013 group feedback covers these roster names (slug keys). */
   var ACAT_MEMBER_SLUGS = { jack_w: true, jack_s: true, kamy: true, kate: true };
 
   function isAcatMemberClient(name) {
@@ -1215,7 +1215,7 @@
 
   /**
    * Sunday SwimFarm multi: one submitted row for a client+area (pool vs hub) covers every
-   * roster block that day with the same area ù times often differ between form and roster.
+   * roster block that day with the same area \u2013 times often differ between form and roster.
    */
   function sundaySwimFarmMultiAreaDayCovers(fb, slot) {
     if (!fb || !slot) return false;
@@ -1232,7 +1232,7 @@
     return !!(slotKind && fbKind && slotKind === fbKind);
   }
 
-  /** Sunday Westway climb: Carlos (etc.) ù session time on form often ? roster block. */
+  /** Sunday Westway climb: Carlos (etc.) \u2013 session time on form often \u2260 roster block. */
   function sundayWestwayClimbDayCovers(fb, slot) {
     if (!fb || !slot) return false;
     if (weekdayLongFromIso(slot.session_date) !== "Sunday") return false;
@@ -1375,7 +1375,7 @@
     var p = fb.engagement_patterns;
     if (Array.isArray(p) && p.length) return p.join(", ");
     if (typeof p === "string" && clean(p)) return clean(p);
-    return "ù";
+    return "\u2014";
   }
 
   function independenceTokens(fb) {
@@ -1434,7 +1434,7 @@
     var bits = [];
     if (clean(fb.incidents)) bits.push(clean(fb.incidents));
     if (clean(fb.exceptional_challenges)) bits.push(clean(fb.exceptional_challenges));
-    return bits.length ? bits.join("\n\n") : "ù";
+    return bits.length ? bits.join("\n\n") : "\u2014";
   }
 
   function emotionFaceColor(cat) {
@@ -1447,7 +1447,7 @@
   function emotionFacesHtml(fb, escFn) {
     var tokens = emotionTokens(fb.client_emotions);
     if (!tokens.length && clean(fb.client_emotions)) tokens = [String(fb.client_emotions)];
-    if (!tokens.length) return "ù";
+    if (!tokens.length) return "\u2014";
     var out = [];
     var seen = {};
     for (var i = 0; i < tokens.length; i++) {
@@ -1470,7 +1470,7 @@
           "</span>"
       );
     }
-    return out.length ? '<span class="ash-regulation-group">' + out.join("") + "</span>" : "ù";
+    return out.length ? '<span class="ash-regulation-group">' + out.join("") + "</span>" : "\u2014";
   }
 
   function termLabelFromRange(fromIso) {
@@ -1520,7 +1520,7 @@
     return out;
   }
 
-  /** Group rows into terms ? weeks (MonùSun), newest first. */
+  /** Group rows into terms ? weeks (Mon\u2013Sun), newest first. */
   function groupByTermWeek(rows, getDateIso) {
     var byTerm = {};
     var termMeta = {};
@@ -1556,7 +1556,7 @@
         });
         return {
           weekStart: ws,
-          label: formatShortDate(ws) + " ù " + formatShortDate(addDaysIso(ws, 6)),
+          label: formatShortDate(ws) + " \u2013 " + formatShortDate(addDaysIso(ws, 6)),
           items: items,
         };
       });
@@ -1575,7 +1575,7 @@
     return (
       '<div class="ash-week-nav">' +
       '<button type="button" class="ash-btn ash-btn--ghost" data-ash-week-prev>' +
-      esc(short ? "? Prev" : "? Prev week") +
+      esc(short ? "\u2190 Prev" : "\u2190 Prev week") +
       "</button>" +
       '<button type="button" class="ash-btn ash-btn--ghost' +
       (isThisWeek ? " ash-btn--week-active" : "") +
@@ -1583,7 +1583,7 @@
       esc("This week") +
       "</button>" +
       '<button type="button" class="ash-btn ash-btn--ghost" data-ash-week-next>' +
-      esc(short ? "Next ?" : "Next week ?") +
+      esc(short ? "Next \u2192" : "Next week \u2192") +
       "</button></div>"
     );
   }
@@ -1612,10 +1612,10 @@
     var hint =
       opts.hint ||
       (weekJumpOnly
-      ? 'Past weeks (MonùSun). Click <strong>Show week ?</strong> to load that week above ù stats, day buttons, and feedback for the selected day.'
+      ? 'Past weeks (Mon\u2013Sun). Click <strong>Show week \u2192</strong> to load that week above \u2014 stats, day buttons, and feedback for the selected day.'
       : flatWeeks
-        ? 'Past weeks (MonùSun). Expand a week for the day strip and feedback table, or use <strong>Show week ?</strong> to jump to the sticky week picker above.'
-        : 'Grouped by term and week (MonùSun). Use <strong>Show week ?</strong> or a <strong>date</strong> to open that week in the day view above (week buttons stay sticky at the top).');
+        ? 'Past weeks (Mon\u2013Sun). Expand a week for the day strip and feedback table, or use <strong>Show week \u2192</strong> to jump to the sticky week picker above.'
+        : 'Grouped by term and week (Mon\u2013Sun). Use <strong>Show week \u2192</strong> or a <strong>date</strong> to open that week in the day view above (week buttons stay sticky at the top).');
     var out =
       '<section class="ash-activity-log">' +
       '<h3 class="ash-activity-log__title">' +
@@ -1634,7 +1634,7 @@
         '><summary class="ash-log-week__summary">' +
         '<button type="button" class="ash-btn ash-btn--ghost ash-log-jump" data-ash-log-jump-week="' +
         escFn(week.weekStart) +
-        '">Show week ?</button> ' +
+        '">Show week \u2192</button> ' +
         "Week " +
         escFn(week.label) +
         ' <span class="ash-log-count">(' +
@@ -1667,7 +1667,7 @@
             '<div class="ash-log-week ash-log-week--jump-only">' +
             '<button type="button" class="ash-btn ash-btn--ghost ash-log-jump" data-ash-log-jump-week="' +
             escFn(fWeek.weekStart) +
-            '">Show week ?</button> ' +
+            '">Show week \u2192</button> ' +
             "Week " +
             escFn(fWeek.label) +
             ' <span class="ash-log-count">(' +
@@ -1704,12 +1704,12 @@
   }
 
   function reviewKindForRow(fb) {
-    if (clean(fb.relevant_information)) return { kind: "relevant", title: "Relevant information ù review", field: "relevant_information" };
-    if (clean(fb.positive_feedback)) return { kind: "positive", title: "Positive feedback ù review", field: "positive_feedback" };
-    if (clean(fb.exceptional_challenges)) return { kind: "challenges", title: "Exceptional challenges ù review", field: "exceptional_challenges" };
-    if (fb.incident_notification_requested) return { kind: "notify", title: "Incident notification ù review", field: "incidents" };
-    if (fb.late_session_feedback) return { kind: "late", title: "Late session feedback ù review", field: "positive_feedback" };
-    return { kind: "general", title: "Session feedback ù review", field: "positive_feedback" };
+    if (clean(fb.relevant_information)) return { kind: "relevant", title: "Relevant information \u2013 review", field: "relevant_information" };
+    if (clean(fb.positive_feedback)) return { kind: "positive", title: "Positive feedback \u2013 review", field: "positive_feedback" };
+    if (clean(fb.exceptional_challenges)) return { kind: "challenges", title: "Exceptional challenges \u2013 review", field: "exceptional_challenges" };
+    if (fb.incident_notification_requested) return { kind: "notify", title: "Incident notification \u2013 review", field: "incidents" };
+    if (fb.late_session_feedback) return { kind: "late", title: "Late session feedback \u2013 review", field: "positive_feedback" };
+    return { kind: "general", title: "Session feedback \u2013 review", field: "positive_feedback" };
   }
 
   function AdminSessionsHub(root, opts) {
@@ -1884,12 +1884,12 @@
     this.syncWeekRange();
   };
 
-  /** Absents tab: default to calendar this week (MonùSun), not the latest absent mark. */
+  /** Absents tab: default to calendar this week (Mon\u2013Sun), not the latest absent mark. */
   AdminSessionsHub.prototype.syncAbsentsWeekToCurrentWeek = function () {
     this.syncWeekPickerToCurrentWeek();
   };
 
-  /** Week-picker tabs: default to this calendar week (MonùSun). */
+  /** Week-picker tabs: default to this calendar week (Mon\u2013Sun). */
   AdminSessionsHub.prototype.syncWeekPickerToCurrentWeek = function () {
     this.weekStart = mondayOfWeek(isoToday());
     this.selectedDay = isoToday();
@@ -2101,17 +2101,17 @@
   AdminSessionsHub.prototype.absentMarkDisplay = function (mark) {
     mark = enrichAbsentMark(mark);
     var slot = this.slotForAbsentMark(mark);
-    var client = slot ? slot.client_name : clean(mark.client_name) || "ù";
-    var service = "ù";
+    var client = slot ? slot.client_name : clean(mark.client_name) || "\u2014";
+    var service = "\u2014";
     if (slot) {
-      service = clean(slot.service) + (slot.time_slot ? " ù " + clean(slot.time_slot) : "");
+      service = clean(slot.service) + (slot.time_slot ? " \u2013 " + clean(slot.time_slot) : "");
     } else if (clean(mark.service)) {
       service =
         clean(mark.service) +
-        (clean(mark.session_time) ? " ù " + clean(mark.session_time) : "");
+        (clean(mark.session_time) ? " \u2013 " + clean(mark.session_time) : "");
     }
     var staff = clean(mark.staff_name) || "Staff";
-    var whenParts = mark.created_at ? absentMarkedWhenParts(mark.created_at) : { date: "ù", time: "" };
+    var whenParts = mark.created_at ? absentMarkedWhenParts(mark.created_at) : { date: "\u2014", time: "" };
     return {
       client: client,
       service: service,
@@ -2173,11 +2173,14 @@
   };
 
   AdminSessionsHub.prototype.feedbackCountForDate = function (iso) {
+    var hub = this;
     var list = this.payload.session_feedback || [];
     var n = 0;
     for (var i = 0; i < list.length; i++) {
-      if (feedbackSessionDate(list[i]) !== iso) continue;
-      if (list[i].attendance && String(list[i].attendance).toLowerCase().indexOf("no") === 0) continue;
+      var fb = list[i];
+      if (feedbackSessionDate(fb) !== iso) continue;
+      if (!hub.feedbackAllowedOnCalendarDay(fb)) continue;
+      if (fb.attendance && String(fb.attendance).toLowerCase().indexOf("no") === 0) continue;
       n++;
     }
     return n;
@@ -2543,7 +2546,7 @@
     if (this.mode !== "feedback") return termLabelFromRange(this.rangeFrom);
     if (this.feedbackMetricsDay) return formatLongDate(this.feedbackMetricsDay);
     var ws = this.weekStart;
-    return "Week average ù " + formatShortDate(ws) + " ù " + formatShortDate(addDaysIso(ws, 6));
+    return "Week average \u2013 " + formatShortDate(ws) + " \u2013 " + formatShortDate(addDaysIso(ws, 6));
   };
 
   AdminSessionsHub.prototype.feedbackRowsForMetrics = function () {
@@ -2596,7 +2599,7 @@
     var esc = this.escapeHtml;
     return (
       '<div class="ash-filter-row">' +
-      '<label class="ash-filter-label">Search client<input type="search" id="ashClientSearch" class="ash-input ash-input--grow" placeholder="Name containsù" value="' +
+      '<label class="ash-filter-label">Search client<input type="search" id="ashClientSearch" class="ash-input ash-input--grow" placeholder="Name contains\u2026" value="' +
       esc(this.clientSearch) +
       '"></label></div>'
     );
@@ -2606,7 +2609,7 @@
     var esc = this.escapeHtml;
     return (
       '<div class="ash-filter-row ash-filter-row--feedback">' +
-      '<label class="ash-filter-label">Search client<input type="search" id="ashClientSearch" class="ash-input ash-input--grow" placeholder="Name containsù" value="' +
+      '<label class="ash-filter-label">Search client<input type="search" id="ashClientSearch" class="ash-input ash-input--grow" placeholder="Name contains\u2026" value="' +
       esc(this.clientSearch) +
       '"></label>' +
       '<label class="ash-filter-label">Instructor<select id="ashInstructorFilter" class="ash-input ash-input--instructor">' +
@@ -2666,7 +2669,7 @@
           var reviewTime = formatFbTime(fb.created_at);
           var sessionDay = formatFbDateShort(fb.session_date);
           var reviewDate = formatFbDate(fb.created_at);
-          var svcLabel = hub.feedbackDisplayService(fb) || "ù";
+          var svcLabel = hub.feedbackDisplayService(fb) || "\u2014";
           var noteHtml = noteText
             ? noteText
                 .split(/\n+/)
@@ -2674,7 +2677,7 @@
                   return esc(line);
                 })
                 .join("<br>")
-            : "ù";
+            : "\u2014";
           return (
             '<tr class="ash-fb-row' +
             reviewCls +
@@ -2696,7 +2699,7 @@
             noteHtml +
             "</td>" +
             '<td class="ash-cell-instructor"><div class="ash-cell-main">' +
-            esc(fb.completed_by_name || "ù") +
+            esc(fb.completed_by_name || "\u2014") +
             '</div><div class="ash-cell-sub">' +
             esc(reviewDate) +
             (reviewTime ? '</div><div class="ash-cell-sub">' + esc(reviewTime) : "") +
@@ -2735,9 +2738,9 @@
           var svc =
             esc(slot.service) +
             (slot.time_slot ? '<div class="ash-cell-sub">' + esc(slot.time_slot) + "</div>" : "");
-          var inst = slot.instructors.map(formatInstructorPill).join(" ") || "ù";
-          var venue = clean(slot.venue) || "ù";
-          var notes = clean(slot.area) || "ù";
+          var inst = slot.instructors.map(formatInstructorPill).join(" ") || "\u2014";
+          var venue = clean(slot.venue) || "\u2014";
+          var notes = clean(slot.area) || "\u2014";
           return (
             "<tr>" +
             '<td class="ash-td-center">' +
@@ -2822,7 +2825,7 @@
       var iTokens = independenceTokens(fb);
       if (!iTokens.length) {
         var lbl = independenceLabel(fb);
-        if (lbl !== "ù") {
+        if (lbl !== "\u2014") {
           iTokens = lbl.split(/[;,]+/g).map(function (x) {
             return clean(x);
           }).filter(Boolean);
@@ -2837,7 +2840,7 @@
     var tagTotal = tags.happy + tags.anxious + tags.withdrawn + tags.out_of_control;
     var indepTotal = indep.independent + indep.prompts + indep.regular + indep.full;
     return {
-      avg: n ? (sum / n).toFixed(1) : "ù",
+      avg: n ? (sum / n).toFixed(1) : "\u2014",
       scored: n,
       tags: tags,
       tagTotal: tagTotal,
@@ -2985,9 +2988,9 @@
     var escFn = this.escapeHtml;
     var meta;
     if (forceField === "positive_feedback" && clean(fb.positive_feedback)) {
-      meta = { kind: "positive", title: "Positive feedback ù review", field: "positive_feedback" };
+      meta = { kind: "positive", title: "Positive feedback \u2013 review", field: "positive_feedback" };
     } else if (forceField === "relevant_information" && clean(fb.relevant_information)) {
-      meta = { kind: "relevant", title: "Relevant information ù review", field: "relevant_information" };
+      meta = { kind: "relevant", title: "Relevant information \u2013 review", field: "relevant_information" };
     } else {
       meta = reviewKindForRow(fb);
     }
@@ -2998,7 +3001,7 @@
           ? clean(fb.exceptional_challenges)
           : meta.field === "incidents"
             ? clean(fb.incidents)
-            : clean(fb.positive_feedback) || clean(fb.relevant_information) || clean(fb.exceptional_challenges) || "ù";
+            : clean(fb.positive_feedback) || clean(fb.relevant_information) || clean(fb.exceptional_challenges) || "\u2014";
     var label =
       meta.kind === "relevant"
         ? "RELEVANT INFORMATION"
@@ -3015,8 +3018,8 @@
     backdrop.innerHTML =
       '<div class="ash-modal" role="dialog" aria-modal="true" aria-labelledby="ashModalTitle">' +
       '<h3 id="ashModalTitle" class="ash-modal__title">' + escFn(meta.title) + "</h3>" +
-      '<p class="ash-modal__meta">' + escFn(fb.client_name) + " ù " + escFn(formatFbDate(fb.session_date)) + " ù " + escFn(fb.service || "ù") + "</p>" +
-      '<p class="ash-modal__meta ash-modal__meta--sub">Instructor: ' + escFn(fb.completed_by_name || "ù") + "</p>" +
+      '<p class="ash-modal__meta">' + escFn(fb.client_name) + " \u2013 " + escFn(formatFbDate(fb.session_date)) + " \u2013 " + escFn(fb.service || "\u2014") + "</p>" +
+      '<p class="ash-modal__meta ash-modal__meta--sub">Instructor: ' + escFn(fb.completed_by_name || "\u2014") + "</p>" +
       '<div class="ash-modal__box"><div class="ash-modal__box-label">' + escFn(label) + '</div><p class="ash-modal__box-text">' + escFn(bodyText) + "</p></div>" +
       '<button type="button" class="ash-modal-btn ash-modal-btn--primary" data-ash-modal-reviewed>Reviewed</button>' +
       '<button type="button" class="ash-modal-btn ash-modal-btn--ghost" data-ash-modal-action>Take action</button>' +
@@ -3036,7 +3039,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       " (" +
       (fb.service || "session") +
       "). " +
-      (clean(fb.positive_feedback) ? "Positive observations: " + clean(fb.positive_feedback).slice(0, 180) + "ù" : "");
+      (clean(fb.positive_feedback) ? "Positive observations: " + clean(fb.positive_feedback).slice(0, 180) + "\u2014" : "");
     hub._modalFb = fb;
     hub._modalStep = "notify";
     hub.closeModal();
@@ -3045,22 +3048,22 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     backdrop.innerHTML =
       '<div class="ash-modal ash-modal--wide" role="dialog" aria-modal="true">' +
       "<h3 class=\"ash-modal__title\">Notify stakeholders</h3>" +
-      '<p class="ash-modal__lead">Choose how to communicate the <strong>outcome</strong> of this feedback. Demo only ù no emails or chats are sent yet.</p>' +
+      '<p class="ash-modal__lead">Choose how to communicate the <strong>outcome</strong> of this feedback. Demo only \u2013 no emails or chats are sent yet.</p>' +
       '<div class="ash-modal__box ash-modal__box--context"><div class="ash-modal__box-label">CONTEXT</div><p class="ash-modal__box-text">' +
       escFn(fb.client_name) +
-      " ù " +
+      " \u2013 " +
       escFn(formatFbDate(fb.session_date)) +
-      " ù " +
-      escFn(fb.service || "ù") +
+      " \u2013 " +
+      escFn(fb.service || "\u2014") +
       "</p></div>" +
       '<label class="ash-modal__field-label">Outcome / summary for channels</label>' +
       '<textarea class="ash-modal__textarea" id="ashNotifySummary" rows="5">' +
       escFn(summary) +
       "</textarea>" +
       '<div class="ash-modal__channels"><div class="ash-modal__box-label">CHANNELS</div>' +
-      '<label class="ash-modal__check"><input type="checkbox" checked disabled> Parents ù email with the outcome summary above</label>' +
-      '<label class="ash-modal__check"><input type="checkbox" checked disabled> CEO ù internal notification</label>' +
-      '<label class="ash-modal__check"><input type="checkbox" checked disabled> Instructor ù internal message</label>' +
+      '<label class="ash-modal__check"><input type="checkbox" checked disabled> Parents \u2013 email with the outcome summary above</label>' +
+      '<label class="ash-modal__check"><input type="checkbox" checked disabled> CEO \u2013 internal notification</label>' +
+      '<label class="ash-modal__check"><input type="checkbox" checked disabled> Instructor \u2013 internal message</label>' +
       '<div class="ash-modal__delivery"><span>Delivery</span>' +
       '<label class="ash-modal__radio"><input type="radio" name="ashDelivery" value="team" checked> Team announcement</label>' +
       '<label class="ash-modal__radio"><input type="radio" name="ashDelivery" value="private"> Private chat</label></div></div>' +
@@ -3097,7 +3100,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           '">' +
           escFn(formatShortDate(sd)) +
           "</button>"
-        : "ù") +
+        : "\u2014") +
       "</td>" +
       '<td class="ash-td-center"><span class="ash-pill ash-pill--client">' +
       escFn(d.client) +
@@ -3142,6 +3145,25 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     '<th>Participant</th><th>Service</th><th class="ash-th-star" title="Engagement">?</th><th>Regulation</th><th>Independence</th>' +
     "<th>Positive (opt.)</th><th>Relevant (opt.)</th><th>Reviewed by:</th>";
 
+  /** Portal feedback row must match a roster slot on that calendar day (e.g. Tom Thu only, Gabriel Sun only). */
+  AdminSessionsHub.prototype.feedbackAllowedOnCalendarDay = function (fb) {
+    var hub = this;
+    var iso = hub.feedbackRowDate(fb) || feedbackSessionDate(fb);
+    if (!iso) return true;
+    var name = clean(fb && fb.client_name);
+    if (!name) return true;
+    if (!hub.rosterRows || !hub.rosterRows.length) return true;
+    var wd = weekdayLongFromIso(iso);
+    if (!clientAllowedOnWeekday(name, wd)) return false;
+    if (!clientAllowedOnDate(name, iso)) return false;
+    var cid = canonicalClientSlug(name);
+    var slots = hub.expandSlotsForDate(iso);
+    for (var i = 0; i < slots.length; i++) {
+      if (canonicalClientSlug(slots[i].client_name) === cid) return true;
+    }
+    return false;
+  };
+
   AdminSessionsHub.prototype.feedbackLogRowsForDay = function (iso) {
     var hub = this;
     var day = clean(iso);
@@ -3176,6 +3198,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       var fbDay = hub.feedbackRowDate(fb) || feedbackSessionDate(fb);
       if (fbDay !== day) continue;
       if (isMislabeledRosterAreaClientName(fb.client_name)) continue;
+      if (!hub.feedbackAllowedOnCalendarDay(fb)) continue;
       pushRow(fb);
     }
     var marks = this.absentMarksForDate(day);
@@ -3194,11 +3217,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       if (existing) continue;
       pushRow({
         client_name: cn,
-        service: clean(mk.service) || "ù",
+        service: clean(mk.service) || "\u2014",
         session_date: day,
         session_time: clean(mk.session_time),
         attendance: "No",
-        completed_by_name: clean(mk.staff_name) || "ù",
+        completed_by_name: clean(mk.staff_name) || "\u2014",
         created_at: mk.created_at || null,
         engagement_rating: null,
         client_emotions: null,
@@ -3266,7 +3289,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
 
     function cellNoteHtml(text) {
       var t = clean(text);
-      if (!t) return "ù";
+      if (!t) return "\u2014";
       return t
         .split(/\n+/)
         .map(function (line) {
@@ -3282,10 +3305,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var absent = isAbsentFeedbackRow(fb);
     var clientLabel =
       resolveRosterClientName(canonicalClientSlug(fb.client_name)) || clean(fb.client_name);
-    var svcLabel = hub.feedbackDisplayService(fb) || "ù";
+    var svcLabel = hub.feedbackDisplayService(fb) || "\u2014";
     var ind = absent ? "N/A" : independenceLabel(fb);
-    var pos = absent ? "N/A" : clean(fb.positive_feedback) || "ù";
-    var rel = absent ? "N/A" : clean(fb.relevant_information) || "ù";
+    var pos = absent ? "N/A" : clean(fb.positive_feedback) || "\u2014";
+    var rel = absent ? "N/A" : clean(fb.relevant_information) || "\u2014";
     var reviewCls =
       opts.clickable !== false && needsReviewRow(fb) && !hub._reviewedKeys[hub.fbRowKey(fb)]
         ? " ash-fb-row--needs-review"
@@ -3313,22 +3336,22 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       (sessionDay ? '<div class="ash-cell-sub">' + esc(sessionDay) + "</div>" : "") +
       "</td>" +
       "<td>" +
-      (absent ? cellNa() : fb.engagement_rating != null ? esc(fb.engagement_rating) : "ù") +
+      (absent ? cellNa() : fb.engagement_rating != null ? esc(fb.engagement_rating) : "\u2014") +
       "</td>" +
       "<td>" +
       (absent ? cellNa() : emotionFacesHtml(fb, esc)) +
       "</td>" +
       '<td class="ash-cell-note">' +
-      (absent ? cellNa() : cellNoteHtml(ind === "ù" ? "" : ind)) +
+      (absent ? cellNa() : cellNoteHtml(ind === "\u2014" ? "" : ind)) +
       "</td>" +
       '<td class="ash-cell-note">' +
-      (absent ? cellNa() : cellNoteHtml(pos === "ù" ? "" : pos)) +
+      (absent ? cellNa() : cellNoteHtml(pos === "\u2014" ? "" : pos)) +
       "</td>" +
       '<td class="ash-cell-note">' +
-      (absent ? cellNa() : cellNoteHtml(rel === "ù" ? "" : rel)) +
+      (absent ? cellNa() : cellNoteHtml(rel === "\u2014" ? "" : rel)) +
       "</td>" +
       '<td class="ash-cell-instructor"><div class="ash-cell-main">' +
-      esc(fb.completed_by_name || "ù") +
+      esc(fb.completed_by_name || "\u2014") +
       '</div><div class="ash-cell-sub">' +
       esc(reviewDate) +
       (reviewTime ? '</div><div class="ash-cell-sub">' + esc(reviewTime) : "") +
@@ -3374,7 +3397,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         '<details class="ash-feedback-log ash-feedback-log--day" open>' +
         "<summary>" +
         esc((opts && opts.title) || "Session feedback log") +
-        " ù " +
+        " \u2013 " +
         esc(formatLongDate(opts.filterDayIso)) +
         "</summary>" +
         '<p class="ash-feedback-log__note">Includes attended feedback and <strong>absents</strong> (N/A except Reviewed by). Absents also appear on the Absents tab. Incident and cancellation flags are on the roster table above.</p>' +
@@ -3410,16 +3433,16 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           escFn(formatShortDate(sd)) +
           "</td>" +
           '<td class="ash-td-center"><span class="ash-pill ash-pill--client">' +
-          escFn(fb.client_name || "ù") +
+          escFn(fb.client_name || "\u2014") +
           "</span></td>" +
           '<td class="ash-td-center">' +
-          escFn(fb.service || "ù") +
+          escFn(fb.service || "\u2014") +
           "</td>" +
           '<td class="ash-td-center">' +
           escFn(att) +
           "</td>" +
           '<td class="ash-td-center">' +
-          escFn(fb.completed_by_name || "ù") +
+          escFn(fb.completed_by_name || "\u2014") +
           "</td></tr>"
         );
       },
@@ -3490,7 +3513,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       flatWeeks: true,
       weekJumpOnly: true,
       hint:
-        'Past weeks (MonùSun). Click <strong>Show week ?</strong> to jump to that week at the top ù day buttons and roster for the selected day.',
+        'Past weeks (Mon\u2013Sun). Click <strong>Show week \u2192</strong> to jump to that week at the top \u2013 day buttons and roster for the selected day.',
     });
   };
 
@@ -3742,7 +3765,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var hub = this;
     var esc = this.escapeHtml;
     var weekRange =
-      formatShortDate(this.weekStart) + " ù " + formatShortDate(addDaysIso(this.weekStart, 6));
+      formatShortDate(this.weekStart) + " \u2013 " + formatShortDate(addDaysIso(this.weekStart, 6));
     var cards = this.weekDays()
       .map(function (iso, idx) {
         return htmlWeekDayCard(hub, iso, idx, esc);
@@ -3753,7 +3776,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       '<div class="ash-week-head">' +
       '<div class="ash-week-head__row">' +
       '<div class="ash-week-head__titles">' +
-      '<div class="ash-week-summary__label">Week (MonùSun)</div>' +
+      '<div class="ash-week-summary__label">Week (Mon\u2013Sun)</div>' +
       '<span class="ash-week-summary__range">' +
       esc(weekRange) +
       "</span></div>" +
@@ -3812,9 +3835,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var svc =
           esc(slot.service) +
           (slot.time_slot ? '<div class="ash-cell-sub">' + esc(slot.time_slot) + "</div>" : "");
-        var inst = slot.instructors.map(formatInstructorPill).join(" ") || "ù";
-        var venue = clean(slot.venue) || "ù";
-        var notes = clean(slot.area) || "ù";
+        var inst = slot.instructors.map(formatInstructorPill).join(" ") || "\u2014";
+        var venue = clean(slot.venue) || "\u2014";
+        var notes = clean(slot.area) || "\u2014";
         return (
           "<tr>" +
           '<td class="ash-td-center">' +
@@ -3857,7 +3880,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return (
       this.htmlFeedbackWeekDaysRow({ overviewPicker: true }) +
       '<div class="ash-filter-row">' +
-      '<label class="ash-filter-label">Search client<input type="search" id="ashClientSearch" class="ash-input" placeholder="Name containsù" value="' +
+      '<label class="ash-filter-label">Search client<input type="search" id="ashClientSearch" class="ash-input" placeholder="Name contains\u2026" value="' +
       esc(this.clientSearch) +
       '"></label>' +
       "</div>" +
@@ -3900,7 +3923,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var inst =
           slot.instructors && slot.instructors.length
             ? slot.instructors.map(formatInstructorPill).join(" ")
-            : esc(slot.instructor_label || "ù");
+            : esc(slot.instructor_label || "\u2014");
         return (
           "<tr>" +
           '<td class="ash-td-center"><span class="ash-pill ash-pill--client">' +
@@ -3923,10 +3946,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       '<details class="ash-roster-breakdown" open>' +
       "<summary>Roster sessions (" +
       esc(String(slots.length)) +
-      ") ù " +
+      ") \u2013 " +
       esc(formatLongDate(iso)) +
       "</summary>" +
-      '<p class="ash-roster-breakdown__hint">Session count = roster rows for this day (each block needing feedback). Sunday Multi-Activity: Big Pool (swimming instructor) and Hub Room (support) are separate rows ù typically 2 feedbacks per child per block pair. Aquatic and Climbing are separate rows. Some rows share one submitted form (e.g. Yusuf 9:00ù10:15 with Roberto).</p>' +
+      '<p class="ash-roster-breakdown__hint">Session count = roster rows for this day (each block needing feedback). Sunday Multi-Activity: Big Pool (swimming instructor) and Hub Room (support) are separate rows \u2013 typically 2 feedbacks per child per block pair. Aquatic and Climbing are separate rows. Some rows share one submitted form (e.g. Yusuf 9:00\u201310:15 with Roberto).</p>' +
       '<div class="ash-table-wrap"><table class="ash-table ash-table--compact"><thead><tr>' +
       "<th>Participant</th><th>Service</th><th>Instructor</th><th>Feedback</th>" +
       "</tr></thead><tbody>" +
@@ -4260,7 +4283,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var days = this.weekDays();
     var dayAttr = opts.overviewPicker ? "data-ash-day" : "data-ash-feedback-metric-day";
     var weekLabel =
-      formatShortDate(this.weekStart) + " ù " + formatShortDate(addDaysIso(this.weekStart, 6));
+      formatShortDate(this.weekStart) + " \u2013 " + formatShortDate(addDaysIso(this.weekStart, 6));
     var cards = days
       .map(function (iso, idx) {
         var ds = hub.dayStats(iso);
@@ -4400,7 +4423,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       '<div class="ash-feedback-week ash-feedback-week--log">' +
       '<p class="ash-feedback-week__sub">Week ' +
       escFn(formatShortDate(weekStart)) +
-      " ù " +
+      " \u2013 " +
       escFn(formatShortDate(weekEnd)) +
       "</p>" +
       '<div class="ash-day-row ash-day-row--feedback">' +
@@ -4439,7 +4462,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
 
     function cellNoteHtml(text) {
       var t = clean(text);
-      if (!t) return "ù";
+      if (!t) return "\u2014";
       return t
         .split(/\n+/)
         .map(function (line) {
@@ -4456,7 +4479,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var reviewTime = formatFbTime(fb.created_at);
         var sessionDay = formatFbDateShort(fb.session_date);
         var reviewDate = formatFbDate(fb.created_at);
-        var svcLabel = hub.feedbackDisplayService(fb) || "ù";
+        var svcLabel = hub.feedbackDisplayService(fb) || "\u2014";
         return (
           '<tr class="ash-fb-row' +
           reviewCls +
@@ -4478,7 +4501,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           cellNoteHtml(noteText) +
           "</td>" +
           '<td class="ash-cell-instructor"><div class="ash-cell-main">' +
-          esc(fb.completed_by_name || "ù") +
+          esc(fb.completed_by_name || "\u2014") +
           '</div><div class="ash-cell-sub">' +
           esc(reviewDate) +
           (reviewTime ? '</div><div class="ash-cell-sub">' + esc(reviewTime) : "") +
@@ -4551,7 +4574,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         esc(String(fbLoaded)) +
         "</strong> of <strong>" +
         esc(String(fbTotal)) +
-        "</strong> feedback rows ù older days may look incomplete until you refresh. If a day is still short, check Supabase directly.</p>";
+        "</strong> feedback rows \u2013 older days may look incomplete until you refresh. If a day is still short, check Supabase directly.</p>";
     }
 
     var noteFilterHtml = "";
@@ -4582,7 +4605,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         flatWeeks: true,
         weekJumpOnly: true,
         hint:
-          'Past weeks (MonùSun). Click <strong>Show week ?</strong> to jump to that week at the top ù day buttons and feedback for the selected day.',
+          'Past weeks (Mon\u2013Sun). Click <strong>Show week \u2192</strong> to jump to that week at the top \u2013 day buttons and feedback for the selected day.',
       })
     );
   };
@@ -4601,9 +4624,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           return Pfrm.incidentTableRowHtml(r, i, esc, formatFbDate);
         }
         var cat = r.incident_category || "";
-        var sessLine = [r.session_date, r.incident_time].filter(Boolean).join(" ù ");
-        var svc = clean(r.service) || "ù";
-        var inj = incidentSubjectSub(r) || "ù";
+        var sessLine = [r.session_date, r.incident_time].filter(Boolean).join(" \u2013 ");
+        var svc = clean(r.service) || "\u2014";
+        var inj = incidentSubjectSub(r) || "\u2014";
         return (
           '<tr class="portal-forms-data-row" data-portal-forms-kind="incident" data-portal-forms-idx="' +
           i +
@@ -4612,7 +4635,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           esc(formatFbDate(r.created_at)) +
           "</td>" +
           '<td class="ash-td-center"><div class="portal-forms-cell-main">' +
-          esc(r.submitted_by_name || "ù") +
+          esc(r.submitted_by_name || "\u2014") +
           '</div><div class="portal-forms-cell-sub">' +
           esc(incidentSubjectSub(r) || incidentSubjectMain(r)) +
           "</div></td>" +
@@ -4681,11 +4704,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           "</td><td>" +
           escFn(formatFbDate(r.created_at)) +
           "</td><td>" +
-          escFn(clean(r.submitted_by_name) || "ù") +
+          escFn(clean(r.submitted_by_name) || "\u2014") +
           "</td><td>" +
           escFn(incidentSubjectMain(r)) +
           "</td><td>" +
-          escFn(truncateCellText(r.incident_category || "ù", 40)) +
+          escFn(truncateCellText(r.incident_category || "\u2014", 40)) +
           "</td></tr>"
         );
       },
@@ -4701,7 +4724,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       .map(function (item) {
         var r = item.row;
         var i = item.idx;
-        var who = clean(r.submitted_by_name || r.instructor_name) || "ù";
+        var who = clean(r.submitted_by_name || r.instructor_name) || "\u2014";
         return (
           '<tr class="portal-forms-data-row" data-portal-forms-kind="cancellation" data-portal-forms-idx="' +
           i +
@@ -4713,22 +4736,22 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           esc(who) +
           "</div></td>" +
           '<td class="ash-td-center">' +
-          esc(clean(r.client_name) || "ù") +
+          esc(clean(r.client_name) || "\u2014") +
           "</td>" +
           '<td class="ash-td-center">' +
-          esc(clean(r.session_date) || "ù") +
+          esc(clean(r.session_date) || "\u2014") +
           "</td>" +
           '<td class="ash-td-center">' +
-          esc(clean(r.session_time) || "ù") +
+          esc(clean(r.session_time) || "\u2014") +
           "</td>" +
           '<td class="ash-td-center cell-wrap">' +
-          esc(clean(r.service) || "ù") +
+          esc(clean(r.service) || "\u2014") +
           "</td>" +
           '<td class="ash-td-center">' +
-          esc(clean(r.cancellation_timing) || "ù") +
+          esc(clean(r.cancellation_timing) || "\u2014") +
           "</td>" +
           '<td class="ash-td-center cell-wrap col-reason">' +
-          esc(clean(r.reason_category) || "ù") +
+          esc(clean(r.reason_category) || "\u2014") +
           "</td></tr>"
         );
       })
@@ -4779,13 +4802,13 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           "</td><td>" +
           escFn(formatFbDate(r.created_at)) +
           "</td><td>" +
-          escFn(clean(r.submitted_by_name || r.instructor_name) || "ù") +
+          escFn(clean(r.submitted_by_name || r.instructor_name) || "\u2014") +
           "</td><td>" +
-          escFn(clean(r.client_name) || "ù") +
+          escFn(clean(r.client_name) || "\u2014") +
           "</td><td>" +
-          escFn(truncateCellText(r.service || "ù", 32)) +
+          escFn(truncateCellText(r.service || "\u2014", 32)) +
           "</td><td>" +
-          escFn(truncateCellText(r.reason_category || "ù", 48)) +
+          escFn(truncateCellText(r.reason_category || "\u2014", 48)) +
           "</td></tr>"
         );
       },
@@ -4798,8 +4821,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var rows = slots
       .map(function (slot) {
         var ov = this.overrideForSlot(slot);
-        var ovLabel = ov ? esc(ov.override_type || "Override") : "ù";
-        var inst = slot.instructors.map(formatInstructorPill).join(" ") || "ù";
+        var ovLabel = ov ? esc(ov.override_type || "Override") : "\u2014";
+        var inst = slot.instructors.map(formatInstructorPill).join(" ") || "\u2014";
         var client = isRosterClient(slot.client_name)
           ? '<span class="ash-pill ash-pill--client">' + esc(slot.client_name) + "</span>"
           : '<span class="ash-muted">NO CLIENT</span>';
@@ -4819,13 +4842,13 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
 
     return (
       '<div class="ash-schedule-head">' +
-      "<h3>Sessions ù Schedule &amp; covers</h3>" +
+      "<h3>Sessions \u2013 Schedule &amp; covers</h3>" +
       "<p>Base schedule from the roster bundle (same data as staff feedback forms). Overrides shown when saved in Portal Supabase.</p>" +
       "</div>" +
       '<div class="ash-filter-row">' +
       '<label class="ash-filter-label">Date<input type="date" id="ashScheduleDate" class="ash-input" value="' + esc(iso) + '"></label>' +
       "</div>" +
-      '<h4 class="ash-table-title">' + esc(formatLongDate(iso)) + ' ù <span class="ash-badge ash-badge--booked">Base schedule</span></h4>' +
+      '<h4 class="ash-table-title">' + esc(formatLongDate(iso)) + ' \u2013 <span class="ash-badge ash-badge--booked">Base schedule</span></h4>' +
       '<div class="ash-table-wrap"><table class="ash-table"><thead><tr>' +
       "<th>Time</th><th>Venue</th><th>Instructor</th><th>Participant</th><th>Roster</th><th>Override</th>" +
       "</tr></thead><tbody>" + rows + "</tbody></table></div></div>"

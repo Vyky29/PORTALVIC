@@ -138,6 +138,10 @@
       "canViewAll": false
     }
   },
+  "clientWeekdaysOnly": {
+    "Tom": ["Thursday"],
+    "Gabriel": ["Sunday"]
+  },
   "rows": [
   {
     "client_name": "Q6 College",

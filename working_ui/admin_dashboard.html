@@ -4146,7 +4146,7 @@
   </script>
   <script src="/portal/term_from_timetable.js?v=20260519-portal-roster"></script>
   <!-- Roster: absolute /portal/ paths (works from admin_dashboard.html and portal/admin_embed.html on Vercel). -->
-  <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260519-portal-roster"></script>
+  <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260520-client-weekdays"></script>
   <script src="/portal/clients_info_embed.js?v=20260519-portal-roster"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260519-portal-roster"></script>
   <script>
@@ -7949,6 +7949,24 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return '';
     }
+    /** True when portal feedback date has a matching roster slot (drops mis-dated rows e.g. Tom on Fri, Gabriel on Sat). */
+    function adminPortalFeedbackRosterAlignedOnIso(iso, r){
+      var want = String(iso || '').trim().substring(0, 10);
+      if(!want || !r) return false;
+      var slots = [];
+      try{
+        slots = slotsForSelectedDate(want) || [];
+      }catch(_e){
+        slots = [];
+      }
+      if(!slots.length) return true;
+      var pax = adminSfStr(r.clientName);
+      if(!pax) return false;
+      for(var i = 0; i < slots.length; i++){
+        if(sessionOverviewNameMatch(pax, bookingEffectiveParticipantLabel(slots[i], null))) return true;
+      }
+      return false;
+    }
     /**
      * Session Overview: feedback completion for one calendar day.
      * <strong>Required</strong> = roster slots with a named participant that day (<code>slotsForSelectedDate</code>).
@@ -7982,6 +8000,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var portal = adminSessionFeedbackPortalRows();
       for(var pi = 0; pi < portal.length; pi++){
         if(bookingFeedbackDateIsoForRow(portal[pi]) !== want) continue;
+        if(!adminPortalFeedbackRosterAlignedOnIso(want, portal[pi])) continue;
         if(!adminPortalFeedbackRowIsAttendedFeedback(portal[pi])) continue;
         completed++;
       }
@@ -16848,7 +16867,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           return typeof window.SUPABASE_ANON_KEY === 'string' ? window.SUPABASE_ANON_KEY : '';
         },
         buildFeedbackFromPortal: function(){
-          return adminSessionFeedbackPortalRows().map(adminMapPortalRowToHubFeedback);
+          return adminSessionFeedbackPortalRows()
+            .filter(function(r){
+              var iso = bookingFeedbackDateIsoForRow(r);
+              return iso && adminPortalFeedbackRosterAlignedOnIso(iso, r);
+            })
+            .map(adminMapPortalRowToHubFeedback);
         },
         fetchCancellations: adminFetchCancellationReportsForHub,
         fetchAbsents: adminFetchAbsentQuickMarksForHub,
