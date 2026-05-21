@@ -681,6 +681,11 @@ button{
 
   /** Same rota key as dashboard `portalStaffKeyForRotaFromProfile` — used only to restore spreadsheet user after feedback return. */
   function portalStaffKeyForRotaFromProfileMirror(p){
+    var sess = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session;
+    var email = sess && sess.user && sess.user.email ? String(sess.user.email) : "";
+    if(typeof window.portalInferStaffKey === "function"){
+      return window.portalInferStaffKey(p, email);
+    }
     var raw = String((p && p.username) || "").trim();
     if(!raw) raw = String((p && p.full_name) || "").trim();
     if(!raw) return "";

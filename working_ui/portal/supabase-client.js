@@ -4,7 +4,7 @@
  * Optional: DEFAULT_* below if you cannot inject globals.
  */
 
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm?v=20260429-portal";
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
 const DEFAULT_SUPABASE_URL = "https://cklpnwhlqsulpmkipmqb.supabase.co";
 const DEFAULT_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrbHBud2hscXN1bHBta2lwbXFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyMDg4NzIsImV4cCI6MjA5MTc4NDg3Mn0.-T7rVyDHQbzMqEKOVz6fi3OlZdB_gPH2i5p-ZPveopE";
@@ -347,11 +347,18 @@ export function portalMergeReviewKeysIntoMemoryMap(memory, packs) {
  * @returns {() => void}
  */
 export function bindPortalRemoteLogoutOnStaleAuthGeneration(supabase, userId, opts = {}) {
-  const loginUrl = String(
+  let loginUrl = String(
     opts.loginUrl ||
       (typeof window !== "undefined" && window.PORTAL_LOGIN_REDIRECT_URL) ||
-      "https://www.clubsensational.org/l0/"
+      ""
   ).trim();
+  if (!loginUrl && typeof window !== "undefined" && window.location) {
+    try {
+      loginUrl = new URL("login.html", window.location.href).href;
+    } catch {
+      loginUrl = "login.html";
+    }
+  }
   let stopped = false;
   /** @type {ReturnType<typeof setInterval> | null} */
   let intervalId = null;

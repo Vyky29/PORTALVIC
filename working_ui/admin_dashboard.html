@@ -181,7 +181,12 @@
       border:1px solid rgba(255,255,255,.08);
       border-left:3px solid var(--nav-g-accent);
     }
-    .admin-nav-group[data-group-id="g_dashboard"]{--nav-g-accent:#6366f1;--nav-g-text:#e0e7ff;--nav-g-soft:rgba(99,102,241,.18)}
+    .admin-nav-direct[data-nav-top="nav_hub"]{--nav-g-accent:#6366f1;--nav-g-text:#e0e7ff;--nav-g-soft:rgba(99,102,241,.18)}
+    .admin-nav-direct{margin-bottom:6px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(255,255,255,.02);width:100%;justify-content:flex-start;font-weight:700;color:var(--nav-g-text,#e2e8f0);padding:9px 10px}
+    .admin-nav-direct .admin-nav-ico{color:var(--nav-g-accent);opacity:1}
+    .admin-nav-direct:hover{background:rgba(30,41,59,.4);color:#f1f5f9}
+    .admin-nav-direct.is-active{background:var(--nav-g-soft,rgba(99,102,241,.18)) !important;color:var(--nav-g-text,#e0e7ff) !important}
+    .admin-nav-direct.is-active .admin-nav-ico{color:var(--nav-g-accent);opacity:1}
     .admin-nav-group[data-group-id="g_operator"]{--nav-g-accent:#818cf8;--nav-g-text:#e0e7ff;--nav-g-soft:rgba(129,140,232,.16)}
     .admin-nav-group[data-group-id="g_reception"]{--nav-g-accent:#4ade80;--nav-g-text:#dcfce7;--nav-g-soft:rgba(74,222,128,.14)}
     .admin-nav-group[data-group-id="g_c4k"]{--nav-g-accent:#fbbf24;--nav-g-text:#fef3c7;--nav-g-soft:rgba(251,191,36,.14)}
@@ -290,12 +295,14 @@
       background:rgba(56,189,248,.14) !important;
       color:#7dd3fc !important;
     }
-    .admin-sidebar #adminNav .admin-nav-group-toggle{
+    .admin-sidebar #adminNav .admin-nav-group-toggle,
+    .admin-sidebar #adminNav .admin-nav-direct{
       background:transparent !important;
       background-image:none !important;
       box-shadow:none !important;
     }
-    .admin-sidebar #adminNav .admin-nav-group-toggle:hover{
+    .admin-sidebar #adminNav .admin-nav-group-toggle:hover,
+    .admin-sidebar #adminNav .admin-nav-direct:hover{
       background:rgba(30,41,59,.4) !important;
     }
     .admin-sidebar #adminNav .admin-nav button:focus-visible,
@@ -3848,7 +3855,8 @@
       body:not(.sidebar-desktop-pinned):not(.dev-mobile-preview) #adminSidebar:not(:hover):not(:focus-within) .admin-brand-mark{
         width:38px;height:38px;
       }
-      body:not(.sidebar-desktop-pinned):not(.dev-mobile-preview) #adminSidebar:not(:hover):not(:focus-within) .admin-nav-group-toggle{
+      body:not(.sidebar-desktop-pinned):not(.dev-mobile-preview) #adminSidebar:not(:hover):not(:focus-within) .admin-nav-group-toggle,
+      body:not(.sidebar-desktop-pinned):not(.dev-mobile-preview) #adminSidebar:not(:hover):not(:focus-within) .admin-nav-direct{
         justify-content:center;padding-left:8px;padding-right:8px;
       }
       body:not(.sidebar-desktop-pinned):not(.dev-mobile-preview) #adminSidebar:not(:hover):not(:focus-within) #adminNav button[data-view],
@@ -3883,7 +3891,8 @@
       body:not(.sidebar-desktop-pinned):not(.dev-mobile-preview) #adminSidebar.admin-sidebar--suppress-expand .admin-brand-mark{
         width:38px;height:38px;
       }
-      body:not(.sidebar-desktop-pinned):not(.dev-mobile-preview) #adminSidebar.admin-sidebar--suppress-expand .admin-nav-group-toggle{
+      body:not(.sidebar-desktop-pinned):not(.dev-mobile-preview) #adminSidebar.admin-sidebar--suppress-expand .admin-nav-group-toggle,
+      body:not(.sidebar-desktop-pinned):not(.dev-mobile-preview) #adminSidebar.admin-sidebar--suppress-expand .admin-nav-direct{
         justify-content:center;padding-left:8px;padding-right:8px;
       }
       body:not(.sidebar-desktop-pinned):not(.dev-mobile-preview) #adminSidebar.admin-sidebar--suppress-expand #adminNav button[data-view],
@@ -3933,7 +3942,8 @@
     }
     body.admin-touch-compact:not(.admin-fullnav-open) .admin-nav-novo-btn{justify-content:center;padding:8px 4px !important}
     body.admin-touch-compact:not(.admin-fullnav-open) .admin-nav-register-peek{display:none !important}
-    body.admin-touch-compact:not(.admin-fullnav-open) .admin-nav-group-toggle{justify-content:center;padding:8px 6px !important}
+    body.admin-touch-compact:not(.admin-fullnav-open) .admin-nav-group-toggle,
+    body.admin-touch-compact:not(.admin-fullnav-open) .admin-nav-direct{justify-content:center;padding:8px 6px !important}
     body.admin-touch-compact:not(.admin-fullnav-open) .admin-nav-toggle-inner{justify-content:center;flex:0 0 auto}
     body.admin-touch-compact:not(.admin-fullnav-open) #adminNav button[data-view],
     body.admin-touch-compact:not(.admin-fullnav-open) #adminNav a.admin-nav-external{justify-content:center;padding:8px 6px !important}
@@ -4486,8 +4496,10 @@
       { id:'portal_nav_admin', label:'Operations admin', externalUrl:'admin_dashboard.html', skipBottomNav:true },
       { id:'portal_nav_logout', label:'Log out', navAction:'logout', skipBottomNav:true }
     ];
+    var NAV_TOP = [
+      { id:'nav_hub', label:'Dashboard' }
+    ];
     var NAV_GROUPS = [
-      { id:'g_dashboard', label:'Dashboard', children:['nav_hub'] },
       { id:'g_operator', label:'Operator', children:['dashboard','operations_admin','operator'] },
       { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','__h:Participants','clients','__h:Orders','orders_all','orders_outstanding','__h:Communications','comms_ops'] },
       { id:'g_zoho', label:'H&R (ZohoPeople)', children:['staffhr','onboarding'] },
@@ -4528,8 +4540,7 @@
       reports:'<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
       policies:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>',
       settings:'<line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>',
-      g_dashboard:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>',
-      nav_hub:'<path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M9 22V12h6v10"/>',
+      nav_hub:'<rect x="3" y="3" width="8" height="10" rx="1"/><rect x="13" y="3" width="8" height="5" rx="1"/><rect x="13" y="10" width="8" height="11" rx="1"/><rect x="3" y="15" width="8" height="6" rx="1"/>',
       g_operator:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>',
       g_reception:'<path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>',
       g_c4k:'<path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>',
@@ -5122,7 +5133,7 @@
       }
     };
 
-    var state = { view:'nav_hub', drawerClient:null, drawerStaff:null, drawerIsSynthetic:false, reportTargetClient:null, search:'', shiftModalCtx:null, pendingBookingsScroll:null, pendingBookingsSlotFocus:null, commsOrderDetailKey:'', sessionOverview:{ iso:'', overrides:[] }, sessionFeedback:{ anchorIso:'', selectedIso:null, rangeFrom:'', rangeTo:'', clientQ:'' }, navGroupsOpen:{ g_dashboard:true, g_operator:false, g_c4k:false, g_zoho:false, g_supabase:false, g_xero:false, g_indeed:false, g_settings_portal:false }, c4kServicesRegisterOpen:false, registerSessionSlot:null, scrollToCapacityEmbed:false };
+    var state = { view:'nav_hub', drawerClient:null, drawerStaff:null, drawerIsSynthetic:false, reportTargetClient:null, search:'', shiftModalCtx:null, pendingBookingsScroll:null, pendingBookingsSlotFocus:null, commsOrderDetailKey:'', sessionOverview:{ iso:'', overrides:[] }, sessionFeedback:{ anchorIso:'', selectedIso:null, rangeFrom:'', rangeTo:'', clientQ:'' }, navGroupsOpen:{ g_operator:false, g_c4k:false, g_zoho:false, g_supabase:false, g_xero:false, g_indeed:false, g_settings_portal:false }, c4kServicesRegisterOpen:false, registerSessionSlot:null, scrollToCapacityEmbed:false };
     var sched = { slotsById:{}, overrides:[], activeSlot:null, lastMsg:'', waitingSupabaseRetryBound:false };
     var booking = { slotsById:{}, overrides:[], waitingSupabaseRetryBound:false, selectedDate:'', metaById:{}, financeById:{}, activeTab:'master', ordersScope:'all', ordersTimePreset:'today', ordersClientFilter:'', portalOrdersPage:1, portalOrdersRows:[] };
     var invoices = { lines:[{ description:'', quantity:1, unitPrice:0, taxType:'vat20' }] };
@@ -14553,6 +14564,123 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return false;
     }
+    function adminPortalIsoToUkDisplay(iso){
+      var s = String(iso || '').trim().slice(0, 10);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(s)) return '—';
+      var p = s.split('-');
+      return p[2] + '/' + p[3] + '/' + p[0];
+    }
+    /** Overview reference week (11–17 May) + roster/client-info merge — no MOCK.c4kPaxList. */
+    function adminPortalParticipantsCatalogRows(){
+      var refStart = '2026-05-11';
+      var refEnd = '2026-05-17';
+      var statusSrc = typeof window !== 'undefined' ? window.SESSION_FEEDBACK_STATUS_PORTAL_SOURCE : null;
+      var statusRows = statusSrc && Array.isArray(statusSrc.rows) ? statusSrc.rows : [];
+      var byNorm = Object.create(null);
+
+      function touchClient(displayName, sessionIso){
+        var cn = String(displayName || '').trim();
+        if(!cn || cn.toLowerCase() === 'closed') return;
+        var norm = adminPortalNormalizedPersonName(cn);
+        if(!norm) return;
+        var iso = String(sessionIso || '').trim().slice(0, 10);
+        var ent = byNorm[norm];
+        if(!ent){
+          ent = { displayName: cn, firstIso: iso, lastIso: iso, sessions: 0 };
+          byNorm[norm] = ent;
+          return;
+        }
+        if(iso){
+          if(!ent.firstIso || iso < ent.firstIso) ent.firstIso = iso;
+          if(!ent.lastIso || iso > ent.lastIso) ent.lastIso = iso;
+        }
+        ent.sessions += 1;
+      }
+
+      var i, r, iso;
+      for(i = 0; i < statusRows.length; i++){
+        r = statusRows[i];
+        iso = String(r.date || '').trim().slice(0, 10);
+        if(!iso || iso < refStart || iso > refEnd) continue;
+        touchClient(r.client, iso);
+      }
+      if(!Object.keys(byNorm).length){
+        for(i = 0; i < statusRows.length; i++){
+          r = statusRows[i];
+          touchClient(r.client, String(r.date || '').trim().slice(0, 10));
+        }
+      }
+      var rosterSrc = typeof window !== 'undefined' ? window.STAFF_DASHBOARD_SOURCE : null;
+      var rosterRows = rosterSrc && Array.isArray(rosterSrc.rows) ? rosterSrc.rows : [];
+      for(i = 0; i < rosterRows.length; i++){
+        r = rosterRows[i];
+        var rn = String(r.client_name || '').trim();
+        if(!rn || rn.toLowerCase() === 'closed') continue;
+        var nk = adminPortalNormalizedPersonName(rn);
+        if(byNorm[nk]) continue;
+        touchClient(rn, String(r.session_date || '').trim().slice(0, 10));
+      }
+
+      function rowForEntry(ent){
+        var nm = ent.displayName;
+        var hit = adminParticipantsParentsRowForClientDisplayName(nm);
+        if(hit){
+          var out = Object.assign({}, hit);
+          if(ent.firstIso){
+            if(!out.firstBookingIso) out.firstBookingIso = ent.firstIso;
+            if(!out.firstBookingDisplay) out.firstBookingDisplay = adminPortalIsoToUkDisplay(ent.firstIso);
+          }
+          if(ent.lastIso){
+            if(!out.lastBookingIso) out.lastBookingIso = ent.lastIso;
+            if(!out.lastBookingDisplay) out.lastBookingDisplay = adminPortalIsoToUkDisplay(ent.lastIso);
+          }
+          return out;
+        }
+        return {
+          contactId: 'ov-' + adminPortalNormalizedPersonName(nm).slice(0, 32),
+          childDisplay: nm,
+          parentDisplay: '—',
+          mobile: '—',
+          username: '—',
+          inClass: 'Yes',
+          firstBookingIso: ent.firstIso || '',
+          firstBookingDisplay: adminPortalIsoToUkDisplay(ent.firstIso),
+          lastBookingIso: ent.lastIso || '',
+          lastBookingDisplay: adminPortalIsoToUkDisplay(ent.lastIso)
+        };
+      }
+
+      var catalog = [];
+      var norms = Object.keys(byNorm).sort(function(a, b){
+        return String(byNorm[a].displayName).localeCompare(String(byNorm[b].displayName), undefined, { sensitivity: 'base' });
+      });
+      for(i = 0; i < norms.length; i++){
+        catalog.push(rowForEntry(byNorm[norms[i]]));
+      }
+
+      var parents = adminParticipantsParentsPortalRows();
+      var seen = Object.create(null);
+      for(i = 0; i < catalog.length; i++){
+        seen[adminPortalNormalizedPersonName(adminParticipantsParentsChildDisplayName(catalog[i]))] = true;
+      }
+      for(i = 0; i < parents.length; i++){
+        r = parents[i];
+        var pn = adminPortalNormalizedPersonName(adminParticipantsParentsChildDisplayName(r));
+        if(!pn || seen[pn]) continue;
+        var inCls = String(r.inClass || '').trim().toLowerCase();
+        if(inCls && inCls !== 'yes' && inCls !== 'y') continue;
+        catalog.push(r);
+        seen[pn] = true;
+      }
+      catalog.sort(function(a, b){
+        return String(adminParticipantsParentsChildDisplayName(a)).localeCompare(
+          String(adminParticipantsParentsChildDisplayName(b)),
+          undefined,
+          { sensitivity: 'base' }
+        );
+      });
+      return catalog;
+    }
     function paxContactsWaitlistRowToPax(w, idx){
       var id = 'wl-' + String(w.id != null ? w.id : idx);
       var paxRaw = String(w.pax || '').trim() || '—';
@@ -14616,36 +14744,46 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return out;
     }
     function paxContactsUnifiedList(){
-      var portal = adminParticipantsParentsPortalRows();
+      var catalog = adminPortalParticipantsCatalogRows();
       var out = [];
-      if(portal.length){
-        for(var i = 0; i < portal.length; i++){
-          var px = paxContactsPortalRowToPax(portal[i], i, null);
-          var m = paxContactsMockMatchForName(px.name);
-          if(m) px = paxContactsMergeMockIntoPortalPax(px, m);
-          out.push(px);
+      var i;
+      if(catalog.length){
+        for(i = 0; i < catalog.length; i++){
+          out.push(paxContactsPortalRowToPax(catalog[i], i, 'programme_in'));
         }
-        var wlOnly = paxContactsWaitlistOnlyRows();
-        for(var w = 0; w < wlOnly.length; w++) out.push(wlOnly[w]);
       } else {
-        out = (MOCK.c4kPaxList || []).slice();
-        var wlDemo = paxContactsWaitlistOnlyRows();
-        for(var wd = 0; wd < wlDemo.length; wd++) out.push(wlDemo[wd]);
+        var portal = adminParticipantsParentsPortalRows();
+        for(i = 0; i < portal.length; i++){
+          out.push(paxContactsPortalRowToPax(portal[i], i, null));
+        }
       }
+      var wlOnly = paxContactsWaitlistOnlyRows();
+      for(var w = 0; w < wlOnly.length; w++) out.push(wlOnly[w]);
       var oldR = adminOldParticipantsPortalRows();
       for(var j = 0; j < oldR.length; j++){
         var op = paxContactsPortalRowToPax(oldR[j], j, 'old_participants');
         op.id = 'old-' + String(oldR[j].contactId != null ? oldR[j].contactId : j);
-        var m2 = paxContactsMockMatchForName(op.name);
-        if(m2) op = paxContactsMergeMockIntoPortalPax(op, m2);
         out.push(op);
       }
       return out;
     }
     function paxContactsOutstandingCellHtml(p){
-      if(!p) return '<span class="muted">—</span>';
-      if(participantOutstandingPounds(p) != null) return participantOutstandingCellHtml(p);
-      if(p.name) return registerDemoOweChipHtml(p.name);
+      if(!p || !String(p.name || '').trim()) return '<span class="muted">—</span>';
+      if(p._portalPayOwe != null && Number.isFinite(Number(p._portalPayOwe))){
+        var n0 = Number(p._portalPayOwe);
+        var cls0 = 'pax-owe ' + (n0 > 0.02 ? 'pax-owe--due' : 'pax-owe--zero');
+        return '<span class="'+cls0+'">£'+esc(n0.toFixed(2))+'</span>';
+      }
+      var synPp = {
+        childDisplay: String(p.name || '').trim(),
+        parentDisplay: String(p.parentDisplay || (p.reg && p.reg.carer) || '').trim()
+      };
+      var payHits = typeof ordersPortalMatchedPayRows === 'function' ? ordersPortalMatchedPayRows(synPp) : [];
+      if(payHits && payHits.length){
+        var owe = typeof ordersPortalOutstandingAggregate === 'function' ? ordersPortalOutstandingAggregate(payHits) : 0;
+        var cls = 'pax-owe ' + (owe > 0.02 ? 'pax-owe--due' : 'pax-owe--zero');
+        return '<span class="'+cls+'">£'+esc(owe.toFixed(2))+'</span>';
+      }
       return '<span class="muted">—</span>';
     }
     /** Raw matched roster segments for this portal participant (before merging parallel instructors). */
@@ -15094,7 +15232,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return (
         '<div class="pax-contacts-toolbar"><h1 class="page-title">Participants</h1>'+
         '<button type="button" class="btn btn--pri" id="paxContactsAddBtn"><span aria-hidden="true">+ </span>Add new contact</button></div>'+
-        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">Unified contact list for families on your programmes — search, filter, and drill into a record.</p>'+
+        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">Families from the <strong>overview / feedback</strong> export (reference week 11–17 May), matched to <strong>Participants &amp; parents</strong> and <strong>Clients Info</strong> — same names as staff <strong>My clients</strong> / <strong>All clients</strong>.</p>'+
         '<div class="pax-contacts-filters">'+
         '<div class="pax-contacts-fld"><label for="paxContactsSearch">Search</label><input class="inp" id="paxContactsSearch" type="search" placeholder="Search for a contact" autocomplete="off" /></div>'+
         '<div class="pax-contacts-fld"><label for="paxContactsBookingStatus">Booking status</label><select class="sel" id="paxContactsBookingStatus">'+paxContactsBookingStatusOptionsHtml()+'</select></div>'+
@@ -21612,7 +21750,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
 
     function renderNav(){
-      var navHtml = NAV_GROUPS.map(function(group){
+      var topHtml = (NAV_TOP || []).map(function(item){
+        return '<button type="button" class="admin-nav-direct" data-nav-top="'+esc(item.id)+'" data-view="'+esc(item.id)+'">'+adminNavIconHtml(item.id)+'<span class="admin-nav-label">'+esc(item.label)+'</span></button>';
+      }).join('');
+      var navHtml = topHtml + NAV_GROUPS.map(function(group){
         var childHtml = (group.children || []).map(function(cid){
           var cs = String(cid);
           if(cs.indexOf('__h:') === 0){

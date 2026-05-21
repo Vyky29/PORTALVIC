@@ -1,0 +1,212 @@
+/**
+ * Builds STAFF_DASHBOARD_SOURCE.rows from admin portal overview/status data
+ * (SESSION_FEEDBACK_STATUS_PORTAL_SOURCE), not legacy spreadsheet exports.
+ *
+ * Reference week: 2026-05-11 … 2026-05-17.
+ * Summer term 2 deltas: dated rows from 2026-05-18 onward.
+ * Break: 2026-05-24 (Sat) … 2026-05-31 (Sun); resume 2026-06-01; term ends 2026-07-17.
+ */
+(function () {
+  var REF_START = "2026-05-11";
+  var REF_END = "2026-05-17";
+  var SUMMER2_START = "2026-05-18";
+  var TERM_END = "2026-07-17";
+  var BREAK_FROM = "2026-05-24";
+  var BREAK_TO = "2026-05-31";
+
+  function normIso(v) {
+    var s = String(v || "").trim().slice(0, 10);
+    return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : "";
+  }
+
+  function parseIsoLocal(iso) {
+    var p = String(iso || "").split("-");
+    if (p.length !== 3) return null;
+    var y = parseInt(p[0], 10);
+    var m = parseInt(p[1], 10) - 1;
+    var d = parseInt(p[2], 10);
+    var dt = new Date(y, m, d);
+    if (isNaN(dt.getTime())) return null;
+    return dt;
+  }
+
+  function isoFromDate(dt) {
+    if (!dt || isNaN(dt.getTime())) return "";
+    return (
+      dt.getFullYear() +
+      "-" +
+      String(dt.getMonth() + 1).padStart(2, "0") +
+      "-" +
+      String(dt.getDate()).padStart(2, "0")
+    );
+  }
+
+  function isoAddDays(iso, days) {
+    var dt = parseIsoLocal(iso);
+    if (!dt) return "";
+    dt.setDate(dt.getDate() + days);
+    return isoFromDate(dt);
+  }
+
+  function weekdayLongFromIso(iso) {
+    var dt = parseIsoLocal(iso);
+    if (!dt) return "";
+    return dt.toLocaleDateString("en-GB", { weekday: "long" });
+  }
+
+  function termBreakRange() {
+    var t = typeof window !== "undefined" ? window.PORTAL_TERM_FROM_TIMETABLE : null;
+    if (!t) return { from: BREAK_FROM, to: BREAK_TO };
+    return {
+      from: normIso(t.termBreakFrom) || BREAK_FROM,
+      to: normIso(t.termBreakTo) || BREAK_TO,
+    };
+  }
+
+  function isoIsTermBreak(iso) {
+    var br = termBreakRange();
+    return !!(iso && br.from && br.to && iso >= br.from && iso <= br.to);
+  }
+
+  function statusRowToAdapterRow(r) {
+    return {
+      client_name: String(r.client || "").trim(),
+      day: String(r.weekday || weekdayLongFromIso(r.date) || "").trim(),
+      instructors: String(r.instructor || "").trim(),
+      service: String(r.service || "").trim(),
+      area: String(r.notes || "").trim(),
+      time_slot: String(r.timeSlot || "").trim(),
+      venue: String(r.venue || "").trim(),
+      session_date: normIso(r.date),
+    };
+  }
+
+  function datedRowKey(row) {
+    return [
+      row.session_date,
+      String(row.client_name || "").toLowerCase(),
+      String(row.time_slot || "").toLowerCase(),
+      String(row.instructors || "").toLowerCase(),
+    ].join("|");
+  }
+
+  function datedSlotKey(row) {
+    return [
+      row.session_date,
+      String(row.client_name || "").toLowerCase(),
+      String(row.time_slot || "").toLowerCase(),
+    ].join("|");
+  }
+
+  function templateKey(row) {
+    return [
+      String(row.day || "").toLowerCase(),
+      String(row.client_name || "").toLowerCase(),
+      String(row.time_slot || "").toLowerCase(),
+    ].join("|");
+  }
+
+  function projectThroughIso() {
+    var t =
+      typeof window !== "undefined" ? window.PORTAL_TERM_FROM_TIMETABLE : null;
+    return (t && normIso(t.lastDate)) || TERM_END;
+  }
+
+  function buildRowsFromPortalStatus() {
+    var status =
+      typeof window !== "undefined" &&
+      window.SESSION_FEEDBACK_STATUS_PORTAL_SOURCE;
+    var list = status && Array.isArray(status.rows) ? status.rows : [];
+    if (!list.length) return [];
+
+    var datedByKey = Object.create(null);
+    var datedSlotTaken = Object.create(null);
+    var templates = Object.create(null);
+
+    list.forEach(function (raw) {
+      var row = statusRowToAdapterRow(raw);
+      if (!row.client_name || !row.day) return;
+      var iso = row.session_date;
+      if (!iso) return;
+
+      datedByKey[datedRowKey(row)] = row;
+      datedSlotTaken[datedSlotKey(row)] = true;
+
+      if (iso >= REF_START && iso <= REF_END) {
+        templates[templateKey(row)] = Object.assign({}, row);
+      }
+      if (iso >= SUMMER2_START) {
+        var tpl = Object.assign({}, row);
+        delete tpl.session_date;
+        templates[templateKey(row)] = tpl;
+      }
+    });
+
+    var lastIso = projectThroughIso();
+    var cur = REF_START;
+    while (cur && cur <= lastIso) {
+      if (!isoIsTermBreak(cur)) {
+        var dow = weekdayLongFromIso(cur);
+        if (dow !== "Sunday") {
+          Object.keys(templates).forEach(function (tk) {
+            var t = templates[tk];
+            if (String(t.day || "") !== dow) return;
+            var projected = Object.assign({}, t, { session_date: cur, day: dow });
+            var sk = datedSlotKey(projected);
+            if (datedSlotTaken[sk]) return;
+            var dk = datedRowKey(projected);
+            if (!datedByKey[dk]) datedByKey[dk] = projected;
+          });
+        }
+      }
+      cur = isoAddDays(cur, 1);
+    }
+
+    return Object.keys(datedByKey)
+      .map(function (k) {
+        return datedByKey[k];
+      })
+      .sort(function (a, b) {
+        var c = String(a.session_date || "").localeCompare(
+          String(b.session_date || "")
+        );
+        if (c) return c;
+        c = String(a.day || "").localeCompare(String(b.day || ""));
+        if (c) return c;
+        return String(a.time_slot || "").localeCompare(String(b.time_slot || ""));
+      });
+  }
+
+  function resolveStaffDashboardSource() {
+    var base =
+      (typeof window !== "undefined" && window.STAFF_DASHBOARD_SOURCE) || {};
+    var portalRows = buildRowsFromPortalStatus();
+    if (!portalRows.length) return base;
+
+    return Object.assign({}, base, {
+      rows: portalRows,
+      rosterSourceNote:
+        "portal status data; ref " +
+        REF_START +
+        "–" +
+        REF_END +
+        "; break " +
+        BREAK_FROM +
+        "–" +
+        BREAK_TO +
+        "; term ends " +
+        TERM_END,
+    });
+  }
+
+  window.portalResolveStaffDashboardSource = resolveStaffDashboardSource;
+
+  function refreshStaffDashboardSourceFromPortal() {
+    if (typeof window === "undefined" || !window.STAFF_DASHBOARD_SOURCE) return;
+    window.STAFF_DASHBOARD_SOURCE = resolveStaffDashboardSource();
+  }
+
+  window.portalRefreshStaffDashboardSourceFromPortal = refreshStaffDashboardSourceFromPortal;
+
+  refreshStaffDashboardSourceFromPortal();
+})();

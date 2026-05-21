@@ -19,7 +19,7 @@ import {
   portalGetCachedAuthSessionGeneration,
   portalSetCachedAuthSessionGeneration,
   bindPortalRemoteLogoutOnStaleAuthGeneration,
-} from "./supabase-client.js?v=20260506-portal-interactions";
+} from "./supabase-client.js";
 import {
   resolveDemoEmail,
   resolveStaffKeyFromAuthEmail,
@@ -34,7 +34,7 @@ export {
   clearPortalStaffContext,
   portalFetchSubmittedReviewSessionKeys,
   portalMergeReviewKeysIntoMemoryMap,
-} from "./supabase-client.js?v=20260506-portal-interactions";
+} from "./supabase-client.js";
 
 let staffLoginMapSiblingFetched = false;
 
@@ -121,7 +121,7 @@ function portalPublishedLoginUrl() {
   return portalPublishedPageUrl("login.html", "PORTAL_LOGIN_REDIRECT_URL");
 }
 
-/** Same keys as login redirect; keeps staff off the Lead shell if they land on /l1/ by mistake. */
+/** Username → effective role for post-login routing. */
 const PORTAL_USERNAME_ROLE_OVERRIDES = {
   sevitha: "admin",
   berta: "lead",
@@ -140,7 +140,7 @@ function portalNormalizeStaffKey(value) {
     .replace(/[^a-z0-9]+/g, "");
 }
 
-function portalInferStaffKey(profile, authEmail) {
+export function portalInferStaffKey(profile, authEmail) {
   const u = portalNormalizeStaffKey(profile?.username);
   if (u) return u;
   const rawName = String(profile?.full_name || "").trim();
@@ -183,16 +183,14 @@ export function portalCanAccessAdminDashboard(profile, authEmail) {
 }
 
 function portalOriginBase(host) {
-  const h = String(host || "")
+  return String(host || "")
     .toLowerCase()
     .replace(/^www\./, "");
-  return h === "clubsensational.org" ? "clubsensational.org" : h;
 }
 
 /**
  * Optional `next` / `return` query on the login page: after a successful sign-in,
  * redirect there instead of the role dashboard (same site only; blocks login loops).
- * Treats `www.clubsensational.org` and `clubsensational.org` as the same site.
  * @returns {string | null}
  */
 function readSafePostLoginRedirect() {
@@ -212,7 +210,7 @@ function readSafePostLoginRedirect() {
     const there = portalOriginBase(target.hostname);
     if (here !== there || !/^https?:$/i.test(target.protocol)) return null;
     const path = target.pathname.toLowerCase();
-    if (path.endsWith("/login") || path.endsWith("login.html") || path.endsWith("/l0") || path.endsWith("/l0/")) {
+    if (path.endsWith("/login") || path.endsWith("login.html")) {
       return null;
     }
     return target.href;
@@ -596,7 +594,7 @@ export async function bootstrapDashboardSupabase(_opts) {
     );
     try {
       const { startPortalLivePresence, mountPortalLivePresenceBar } = await import(
-        "./portal_live_presence.js?v=20260519-sf-dash"
+        "./portal_live_presence.js"
       );
       await startPortalLivePresence({ page, profile, session });
       if (document.getElementById("portalLivePresenceBar")) {

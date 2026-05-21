@@ -401,7 +401,7 @@ def copy_spreadsheet_js_to_working_ui():
         src = OUT / name
         if not src.exists():
             continue
-        text = src.read_text(encoding="utf-8")
+        text = normalize_bundle_portal_asset_urls(src.read_text(encoding="utf-8"))
         (ROOT / "working_ui" / name).write_text(text, encoding="utf-8")
         (ROOT / "working_ui" / "portal" / name).write_text(text, encoding="utf-8")
 
@@ -438,7 +438,16 @@ def patch_bundle_rows_from_json():
         return
     new_rows = json.dumps(rows, ensure_ascii=True, indent=2)
     new_src = src[:j] + new_rows + src[end:]
+    new_src = normalize_bundle_portal_asset_urls(new_src)
     bundle_path.write_text(new_src, encoding="utf-8")
+
+
+def normalize_bundle_portal_asset_urls(text: str) -> str:
+    """Same-origin relative paths for Vercel/static deploy (not clubsensational.org CDN)."""
+    return text.replace(
+        "https://www.clubsensational.org/portal/staff_photos/",
+        "portal/staff_photos/",
+    )
 
 
 if __name__ == "__main__":
