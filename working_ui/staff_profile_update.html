@@ -5,170 +5,19 @@
     clubSENsational Portal — Staff Profile Update (mobile-first)
     -------------------------------------------------------------
     Self-service flow for staff to confirm/update their personal details.
-    Serve this file from the same origin as the rest of the portal (Vercel `working_ui/` deploy).
+    Deploy with the rest of the portal (same origin as staff / lead / admin).
 
-    Flow (default when already signed in on the same origin, e.g. after login on this host → this page):
-      Portal session — Supabase Auth access_token → Edge Function staff-profile-session-from-portal
-      → same 30-min profile session token as OTP path → profile update screens.
+    Flow (either path):
+      A) Portal password: Supabase Auth session → staff-profile-session-from-portal → short-lived
+         profile session token.
+      B) Staff / Lead PIN hub: same browser has clubsens_*_session_v2 (or URL ?full_name=…) →
+         staff-profile-portal-bridge (STAFF_PROFILE_PORTAL_BRIDGE_SECRET, injected at deploy) →
+         same session token shape.
+      Then staff-profile-update-load / staff-profile-update-save use x-staff-profile-session.
 
-    Fallback (no portal session, or ?portalUseOtp=1):
-      Step 1: Identification — Full Name + Mobile Number
-      Step 2: OTP — code sent via WhatsApp / SMS
-      Step 3: Profile update — 7 sections, per-block Edit/Confirm
-
-    Backend (Supabase Edge Functions):
-      staff-profile-session-from-portal — mint session from logged-in portal user
-      staff-profile-otp-request         — generic success, no enumeration
-      staff-profile-otp-verify          — issues a 30-min session token
-      staff-profile-update-load         — fetch the staff_profile row
-      staff-profile-update-save         — partial update + per-field change log
-
-    The page never reads from any other table directly. All access is gated by
-    the session token returned from staff-profile-otp-verify or staff-profile-session-from-portal.
+    Optional: REFERENCE_STAFF_ALLOWLIST in the script (normalised names). Empty = any name that
+    matches staff_profiles via the bridge.
   -->
-  <script>
-    (function () {
-      try {
-        document.documentElement.classList.add("portal-app-shell");
-      } catch (e) {}
-    })();
-  </script>
-  <style id="portal-hide-wp-chrome">
-    /* WP admin bar (logged-in users) */
-    html.portal-app-shell body.admin-bar { padding-top: 0 !important; margin-top: 0 !important; }
-    html.portal-app-shell #wpadminbar { display: none !important; visibility: hidden !important; height: 0 !important; }
-
-    /* HEADER — selectores agresivos para cualquier tema (Astra, Hello, Twenty*, Avada, Divi, GeneratePress, OceanWP, Kadence, Storefront…) */
-    html.portal-app-shell #masthead,
-    html.portal-app-shell header#masthead,
-    html.portal-app-shell header.site-header,
-    html.portal-app-shell .site-header,
-    html.portal-app-shell #site-header,
-    html.portal-app-shell .global-header,
-    html.portal-app-shell .header-main,
-    html.portal-app-shell .main-header,
-    html.portal-app-shell #header,
-    html.portal-app-shell .ast-primary-header-bar,
-    html.portal-app-shell .ast-above-header,
-    html.portal-app-shell .ast-below-header,
-    html.portal-app-shell .ast-header-break-point,
-    html.portal-app-shell #ast-mobile-header,
-    html.portal-app-shell .elementor-location-header,
-    html.portal-app-shell [data-elementor-type="header"],
-    html.portal-app-shell .elementor-section-stretched.elementor-section-header,
-    html.portal-app-shell .header,
-    html.portal-app-shell .top-header,
-    html.portal-app-shell .header-bar,
-    html.portal-app-shell .menu-bar,
-    html.portal-app-shell #navigation,
-    html.portal-app-shell nav.main-navigation,
-    html.portal-app-shell #site-navigation,
-    html.portal-app-shell .breadcrumbs,
-    html.portal-app-shell .breadcrumb,
-    html.portal-app-shell .yoast-breadcrumbs,
-    /* FOOTER */
-    html.portal-app-shell footer#colophon,
-    html.portal-app-shell #colophon,
-    html.portal-app-shell footer.site-footer,
-    html.portal-app-shell .site-footer,
-    html.portal-app-shell .footer,
-    html.portal-app-shell #footer,
-    html.portal-app-shell .footer-widget-area,
-    html.portal-app-shell .footer-widgets,
-    html.portal-app-shell .site-bottom-footer-inner-wrap,
-    html.portal-app-shell .ast-small-footer,
-    html.portal-app-shell .footer-bar,
-    html.portal-app-shell .site-info,
-    html.portal-app-shell .copyright,
-    html.portal-app-shell .elementor-location-footer,
-    html.portal-app-shell [data-elementor-type="footer"],
-    /* SIDEBARS */
-    html.portal-app-shell #secondary,
-    html.portal-app-shell aside.widget-area,
-    html.portal-app-shell .widget-area,
-    html.portal-app-shell .sidebar {
-      display: none !important;
-      visibility: hidden !important;
-      height: 0 !important;
-      max-height: 0 !important;
-      min-height: 0 !important;
-      overflow: hidden !important;
-      pointer-events: none !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      border: 0 !important;
-    }
-
-    /* Quitar el espacio que dejan los wrappers del tema */
-    html.portal-app-shell .site-content,
-    html.portal-app-shell #content,
-    html.portal-app-shell .site-main,
-    html.portal-app-shell main.site-main,
-    html.portal-app-shell #primary,
-    html.portal-app-shell #page,
-    html.portal-app-shell .site,
-    html.portal-app-shell .ast-container,
-    html.portal-app-shell .container,
-    html.portal-app-shell article,
-    html.portal-app-shell .entry-content,
-    html.portal-app-shell .entry-header,
-    html.portal-app-shell .post-thumbnail,
-    html.portal-app-shell .elementor-section-wrap {
-      margin: 0 !important;
-      padding: 0 !important;
-      max-width: 100% !important;
-      width: 100% !important;
-      background: transparent !important;
-    }
-    html.portal-app-shell .entry-title,
-    html.portal-app-shell .page-title,
-    html.portal-app-shell .post-title { display: none !important; }
-
-    html.portal-app-shell,
-    html.portal-app-shell body {
-      max-width: 100vw !important;
-      overflow-x: hidden !important;
-      background: #f4f8fb !important;
-    }
-  </style>
-  <script>
-    /* Fallback runtime: si el tema mete algo nuevo (sticky bar, popup, etc.)
-       que tape la app, lo escondemos al cargar y al cambiar el DOM. */
-    (function () {
-      try {
-        var SEL = [
-          '#wpadminbar', '#masthead', 'header#masthead', '.site-header', '#site-header',
-          '.ast-primary-header-bar', '.ast-above-header', '.ast-below-header', '#ast-mobile-header',
-          '.elementor-location-header', '[data-elementor-type="header"]',
-          '.global-header', '.header-main', '.main-header', '#header', '.top-header', '.header-bar',
-          '#colophon', 'footer#colophon', 'footer.site-footer', '.site-footer', '#footer', '.footer',
-          '.footer-widget-area', '.footer-widgets', '.elementor-location-footer',
-          '[data-elementor-type="footer"]', '.site-bottom-footer-inner-wrap', '.ast-small-footer',
-          '.copyright', '.site-info'
-        ].join(',');
-        function nuke() {
-          try {
-            document.querySelectorAll(SEL).forEach(function (el) {
-              el.style.setProperty('display', 'none', 'important');
-            });
-            document.body && document.body.classList.remove('admin-bar');
-          } catch (e) {}
-        }
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', nuke, { once: true });
-        } else {
-          nuke();
-        }
-        window.addEventListener('load', nuke);
-        if (typeof MutationObserver === 'function') {
-          var mo = new MutationObserver(nuke);
-          mo.observe(document.documentElement, { childList: true, subtree: true });
-          /* corta a los 5s para no quedar observando para siempre */
-          setTimeout(function () { try { mo.disconnect(); } catch (e) {} }, 5000);
-        }
-      } catch (e) {}
-    })();
-  </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
   <meta name="mobile-web-app-capable" content="yes" />
@@ -587,21 +436,50 @@
       filter: grayscale(.3);
     }
 
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    html, body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .btn--edit {
+      background: #fef2f2;
+      color: #9f1239;
+      border: 1px solid #fecdd3;
+      box-shadow: none;
+    }
+    .btn--edit:hover { background: #ffe4e6; filter: none; }
+
+    .btn--confirm {
+      background: linear-gradient(180deg, #34d399 0%, #16a34a 100%);
+      color: #fff;
+      border: none;
+      box-shadow: 0 6px 16px rgba(22, 163, 74, .28);
+    }
+    .btn--confirm:hover { filter: brightness(1.05); }
+
+    .btn--save {
+      background: linear-gradient(180deg, var(--blue) 0%, var(--blueDeep) 100%);
+      color: #fff;
+      border: none;
+      box-shadow: 0 6px 16px rgba(45, 132, 179, .28);
+    }
+
+    .btn--cancel,
     .btn--ghost {
-      background: var(--white);
+      background: #fff;
       color: var(--ink);
       border: 1px solid var(--lineStrong);
       box-shadow: none;
     }
-
+    .btn--cancel:hover,
     .btn--ghost:hover {
-      background: var(--blueSoft);
-    }
-
-    .btn--gold {
-      background: linear-gradient(180deg, var(--sen-gold) 0%, var(--gold) 100%);
-      color: var(--ink);
-      box-shadow: 0 8px 22px rgba(244, 183, 64, .35);
+      background: #f8fafc;
+      filter: none;
     }
 
     .btn-row {
@@ -655,6 +533,11 @@
       border: 1px solid rgba(217, 83, 79, .28);
     }
 
+    /* [hidden] must win over .notice { display:flex } or the error strip stays visible with no text */
+    .notice[hidden] {
+      display: none !important;
+    }
+
     .notice-icon {
       flex: 0 0 auto;
       width: 18px;
@@ -666,71 +549,6 @@
       flex: 1 1 auto;
       min-width: 0;
       overflow-wrap: break-word;
-    }
-
-    /* -------------------------------------------------------------- OTP inputs */
-    .otp-inputs {
-      display: grid;
-      grid-template-columns: repeat(6, minmax(0, 1fr));
-      gap: 8px;
-      direction: ltr;
-    }
-
-    .otp-inputs input {
-      width: 100%;
-      min-width: 0;
-      aspect-ratio: 1 / 1.18;
-      max-height: 64px;
-      text-align: center;
-      font-size: clamp(1.1rem, 5vw, 1.5rem);
-      font-weight: 700;
-      color: var(--ink);
-      letter-spacing: .02em;
-      padding: 0;
-      border-radius: 14px;
-      border: 1px solid var(--lineStrong);
-      background: var(--white);
-      caret-color: var(--blue);
-      transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
-    }
-
-    .otp-inputs input:focus {
-      outline: none;
-      border-color: var(--blue);
-      box-shadow: 0 0 0 4px rgba(45, 132, 179, .15);
-    }
-
-    .otp-inputs.has-error input {
-      border-color: rgba(217, 83, 79, .6);
-      box-shadow: 0 0 0 3px rgba(217, 83, 79, .12);
-    }
-
-    .otp-meta {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      font-size: .82rem;
-      color: var(--muted);
-      min-width: 0;
-    }
-
-    .otp-meta .otp-resend {
-      background: none;
-      border: none;
-      color: var(--blueDeep);
-      font-weight: 600;
-      font-size: .82rem;
-      cursor: pointer;
-      padding: 6px 0;
-      min-height: 32px;
-      font-family: inherit;
-    }
-
-    .otp-meta .otp-resend:disabled {
-      color: var(--mutedSoft);
-      cursor: not-allowed;
     }
 
     /* -------------------------------------------------------------- profile sections */
@@ -961,19 +779,18 @@
 
     .ps-actions {
       display: flex;
-      flex-direction: column;
+      flex-wrap: wrap;
       gap: 8px;
       padding-top: 4px;
     }
 
-    @media (min-width: 380px) {
-      .ps-actions {
-        flex-direction: row;
-        gap: 10px;
-      }
-      .ps-actions .btn {
-        flex: 1 1 0;
-      }
+    .ps-actions .btn {
+      flex: 1 1 calc(50% - 4px);
+      width: auto;
+      min-width: 0;
+      min-height: 42px;
+      padding: 10px 12px;
+      font-size: .88rem;
     }
 
     .ps-edit-form {
@@ -984,8 +801,13 @@
     }
 
     .profile-section.is-editing .ps-edit-form { display: flex; }
-    .profile-section.is-editing .ps-readonly,
-    .profile-section.is-editing .ps-actions { display: none; }
+    .profile-section.is-editing .ps-readonly { display: none; }
+    .profile-section.is-editing .ps-actions {
+      display: flex;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+      margin-top: 4px;
+    }
 
     /* -------------------------------------------------------------- radio groups */
     .radio-stack {
@@ -1097,6 +919,47 @@
       overflow-wrap: break-word;
     }
 
+    .profile-load-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 120;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      box-sizing: border-box;
+      background: rgba(244, 248, 251, 0.94);
+      backdrop-filter: blur(6px);
+    }
+
+    .profile-load-overlay.is-visible {
+      display: flex;
+    }
+
+    .profile-load-card {
+      max-width: 360px;
+      padding: 22px 24px;
+      border-radius: 16px;
+      background: #fff;
+      border: 1px solid rgba(45, 132, 179, 0.22);
+      box-shadow: 0 12px 40px rgba(15, 23, 42, 0.08);
+      text-align: center;
+    }
+
+    .profile-load-title {
+      margin: 0 0 8px;
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--ink);
+    }
+
+    .profile-load-sub {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--inkSoft);
+      line-height: 1.45;
+    }
+
     /* -------------------------------------------------------------- screens */
     .screen {
       display: none;
@@ -1116,38 +979,6 @@
       color: var(--mutedSoft);
       line-height: 1.4;
       padding: 6px 8px 0;
-      overflow-wrap: break-word;
-    }
-
-    .session-bar {
-      display: none;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 12px;
-      background: var(--blueSoft);
-      border: 1px solid rgba(45, 132, 179, .25);
-      border-radius: 12px;
-      font-size: .78rem;
-      color: var(--inkSoft);
-      min-width: 0;
-    }
-
-    .session-bar.is-visible {
-      display: flex;
-    }
-
-    .session-bar-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--success);
-      flex: 0 0 auto;
-      box-shadow: 0 0 0 4px rgba(21, 115, 71, .15);
-    }
-
-    .session-bar-text {
-      flex: 1 1 auto;
-      min-width: 0;
       overflow-wrap: break-word;
     }
 
@@ -1247,159 +1078,31 @@
         <div class="brand-logo-shell">
           <img
             class="brand-logo"
-            src="/portal/F-02-1.png"
+            src="ELEMENTOR/MEDIOS/F-02-1.png"
             width="200"
             height="200"
             alt="clubSENsational - Autism Consultancy Services"
             decoding="async"
             referrerpolicy="no-referrer-when-downgrade"
-            onerror="(function(img){var t=Number(img.dataset.logoTier||0);img.dataset.logoTier=String(t+1);if(t===0){img.src='portal/portal_crest.svg';return;}img.onerror=null;img.src='data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20200%20200%27%3E%3Crect%20fill%3D%27%23ffffff%27%20width%3D%27200%27%20height%3D%27200%27%2F%3E%3Ctext%20x%3D%27100%27%20y%3D%2778%27%20text-anchor%3D%27middle%27%20font-family%3D%27system-ui%2Csans-serif%27%20font-size%3D%2722%27%20font-weight%3D%27800%27%20fill%3D%27%230f172a%27%3Eclub%3C%2Ftext%3E%3Ctext%20x%3D%27100%27%20y%3D%27120%27%20text-anchor%3D%27middle%27%20font-family%3D%27system-ui%2Csans-serif%27%20font-size%3D%2740%27%20font-weight%3D%27800%27%20fill%3D%27%23b45309%27%3ESEN%3C%2Ftext%3E%3Ctext%20x%3D%27100%27%20y%3D%27152%27%20text-anchor%3D%27middle%27%20font-family%3D%27system-ui%2Csans-serif%27%20font-size%3D%2716%27%20font-weight%3D%27700%27%20fill%3D%27%23334155%27%3Esational%3C%2Ftext%3E%3C%2Fsvg%3E';})(this);"
+            onerror="(function(img){var t=Number(img.dataset.logoTier||0);img.dataset.logoTier=String(t+1);if(t===0){img.src='ELEMENTOR/MEDIOS/portal_crest.svg';return;}img.onerror=null;img.src='data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20200%20200%27%3E%3Crect%20fill%3D%27%23ffffff%27%20width%3D%27200%27%20height%3D%27200%27%2F%3E%3Ctext%20x%3D%27100%27%20y%3D%2778%27%20text-anchor%3D%27middle%27%20font-family%3D%27system-ui%2Csans-serif%27%20font-size%3D%2722%27%20font-weight%3D%27800%27%20fill%3D%27%230f172a%27%3Eclub%3C%2Ftext%3E%3Ctext%20x%3D%27100%27%20y%3D%27120%27%20text-anchor%3D%27middle%27%20font-family%3D%27system-ui%2Csans-serif%27%20font-size%3D%2740%27%20font-weight%3D%27800%27%20fill%3D%27%23b45309%27%3ESEN%3C%2Ftext%3E%3Ctext%20x%3D%27100%27%20y%3D%27152%27%20text-anchor%3D%27middle%27%20font-family%3D%27system-ui%2Csans-serif%27%20font-size%3D%2716%27%20font-weight%3D%27700%27%20fill%3D%27%23334155%27%3Esational%3C%2Ftext%3E%3C%2Fsvg%3E';})(this);"
           />
         </div>
       </div>
     </div>
 
-    <div class="step-meter" role="progressbar" aria-label="Profile update progress" aria-valuemin="1" aria-valuemax="3" aria-valuenow="1" id="stepMeter" hidden>
+    <div class="step-meter" role="progressbar" aria-label="Profile update progress" aria-valuemin="1" aria-valuemax="1" aria-valuenow="1" id="stepMeter" hidden>
       <span class="step-meter-dot is-active" data-step="1"></span>
-      <span class="step-meter-dot" data-step="2"></span>
-      <span class="step-meter-dot" data-step="3"></span>
     </div>
 
-    <div class="session-bar" id="sessionBar" role="status" aria-live="polite">
-      <span class="session-bar-dot" aria-hidden="true"></span>
-      <span class="session-bar-text" id="sessionBarText">Secure session active.</span>
+    <div id="profileLoadOverlay" class="profile-load-overlay is-visible" role="status" aria-live="polite" aria-busy="true">
+      <div class="profile-load-card">
+        <p class="profile-load-title">Loading your profile…</p>
+        <p class="profile-load-sub">If this takes more than a few seconds, open <strong>Annual profile</strong> again from the Staff or Lead hub after signing in with your PIN.</p>
+      </div>
     </div>
 
-    <!-- Shown first while checking Supabase Auth on the same origin (hides when OTP path is used). -->
-    <section class="screen is-active" id="screenPortalBoot" aria-labelledby="screenPortalBootTitle">
-      <div class="card">
-        <div class="card-head">
-          <span class="card-head-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
-          </span>
-          <div class="card-head-text">
-            <h2 class="card-head-title" id="screenPortalBootTitle">Opening your profile</h2>
-            <p class="card-head-sub">Checking your portal sign-in…</p>
-          </div>
-        </div>
-        <p class="card-help" style="min-width:0;overflow-wrap:break-word;">
-          If you already used the portal login on this site, we skip the text code step. Otherwise we will ask for your name and mobile next.
-        </p>
-      </div>
-    </section>
-
-    <!-- =========================================================== STEP 1 -->
-    <section class="screen" id="screenIdentify" aria-labelledby="screenIdentifyTitle">
-      <div class="card">
-        <div class="card-head">
-          <span class="card-head-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          </span>
-          <div class="card-head-text">
-            <h2 class="card-head-title" id="screenIdentifyTitle">Identify yourself</h2>
-            <p class="card-head-sub">We'll send a one-time code to your number on file.</p>
-          </div>
-        </div>
-
-        <p class="card-help">
-          Enter your <strong>full name</strong> and the <strong>mobile number</strong> we already have for you.
-        </p>
-
-        <form id="identifyForm" novalidate>
-          <div class="field-grid">
-            <div class="field" id="identifyNameField">
-              <label for="identifyName">Full name</label>
-              <input
-                id="identifyName"
-                name="full_name"
-                type="text"
-                autocomplete="name"
-                inputmode="text"
-                placeholder="e.g. Jane Smith"
-                required
-                maxlength="120"
-              />
-              <span class="field-error">Please enter your full name.</span>
-            </div>
-            <div class="field" id="identifyPhoneField">
-              <label for="identifyPhone">Mobile number</label>
-              <input
-                id="identifyPhone"
-                name="phone_number"
-                type="tel"
-                autocomplete="tel"
-                inputmode="tel"
-                placeholder="e.g. 07700 900 123"
-                required
-                maxlength="24"
-              />
-              <span class="field-hint">Use the number ClubSENsational has for you (with or without country code).</span>
-              <span class="field-error">Please enter a valid mobile number.</span>
-            </div>
-          </div>
-
-          <div class="btn-row" style="margin-top:14px;">
-            <button type="submit" class="btn" id="identifySubmit">
-              <span class="btn-label">Send verification code</span>
-            </button>
-          </div>
-        </form>
-
-        <div class="notice notice--info" id="identifyNotice" hidden>
-          <svg class="notice-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-          <span class="notice-body" id="identifyNoticeText"></span>
-        </div>
-      </div>
-    </section>
-
-    <!-- =========================================================== STEP 2 -->
-    <section class="screen" id="screenOtp" aria-labelledby="screenOtpTitle">
-      <div class="card">
-        <div class="card-head">
-          <span class="card-head-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          </span>
-          <div class="card-head-text">
-            <h2 class="card-head-title" id="screenOtpTitle">Enter verification code</h2>
-            <p class="card-head-sub">If your details matched, a 6-digit code has been sent.</p>
-          </div>
-        </div>
-
-        <p class="card-help" id="otpDestinationHint">
-          Check your WhatsApp first. If you don't see it, check your text messages.
-        </p>
-
-        <form id="otpForm" novalidate>
-          <div class="otp-inputs" id="otpInputs" role="group" aria-label="Six-digit verification code">
-            <input type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="one-time-code" aria-label="Digit 1" />
-            <input type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="1" aria-label="Digit 2" />
-            <input type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="1" aria-label="Digit 3" />
-            <input type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="1" aria-label="Digit 4" />
-            <input type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="1" aria-label="Digit 5" />
-            <input type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="1" aria-label="Digit 6" />
-          </div>
-          <div class="otp-meta" style="margin-top:10px;">
-            <span id="otpTimer" aria-live="polite">Code expires in 10:00</span>
-            <button type="button" class="otp-resend" id="otpResend" disabled>Resend code</button>
-          </div>
-
-          <div class="btn-row" style="margin-top:14px;">
-            <button type="submit" class="btn" id="otpSubmit">
-              <span class="btn-label">Verify and continue</span>
-            </button>
-            <button type="button" class="btn btn--ghost" id="otpBack">Use a different number</button>
-          </div>
-        </form>
-
-        <div class="notice notice--error" id="otpNotice" hidden>
-          <svg class="notice-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          <span class="notice-body" id="otpNoticeText"></span>
-        </div>
-      </div>
-    </section>
-
-    <!-- =========================================================== STEP 3 -->
-    <section class="screen" id="screenProfile" aria-labelledby="screenProfileTitle">
+    <!-- =========================================================== Profile -->
+    <section class="screen is-active" id="screenProfile" aria-labelledby="screenProfileTitle">
       <div class="card" style="background:linear-gradient(180deg,#ffffff 0%,#f7fbff 100%);">
         <div class="card-head">
           <span class="card-head-icon" aria-hidden="true">
@@ -1415,6 +1118,11 @@
         <p class="card-help">
           Only one section is editable at a time. Your changes are saved when you tap <strong>Submit updates</strong> at the bottom.
         </p>
+      </div>
+
+      <div class="notice" id="profileNotice" hidden>
+        <svg class="notice-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span class="notice-body" id="profileNoticeText"></span>
       </div>
 
       <div class="profile-stack" id="profileStack">
@@ -1436,7 +1144,6 @@
                 <li class="readonly-row"><span class="readonly-label">Full name</span><span class="readonly-value" data-readonly="full_name">—</span></li>
                 <li class="readonly-row"><span class="readonly-label">Role</span><span class="readonly-value" data-readonly="staff_role">—</span></li>
                 <li class="readonly-row"><span class="readonly-label">Email</span><span class="readonly-value" data-readonly="email_personal">—</span></li>
-                <li class="readonly-row"><span class="readonly-label">Mobile</span><span class="readonly-value" data-readonly="phone_e164">—</span></li>
               </ul>
               <p class="field-hint">
                 Full name and role are managed by the office. Contact them if these need to change.
@@ -1458,18 +1165,12 @@
                 <input id="editEmail" type="email" inputmode="email" autocomplete="email" maxlength="254" data-edit-input="email_personal" placeholder="you@example.com" />
                 <span class="field-error">Please enter a valid email address.</span>
               </div>
-              <div class="field" data-edit-field="phone_e164">
-                <label for="editPhone">Mobile number</label>
-                <input id="editPhone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" data-edit-input="phone_e164" placeholder="+44 7700 900123" />
-                <span class="field-hint">Used for verification and urgent contact.</span>
-                <span class="field-error">Please enter a valid mobile number.</span>
-              </div>
             </form>
             <div class="ps-actions">
-              <button type="button" class="btn btn--ghost" data-action="edit">Edit</button>
-              <button type="button" class="btn btn--gold" data-action="confirm">Confirm</button>
-              <button type="button" class="btn" data-action="save-edit" hidden>Save changes</button>
-              <button type="button" class="btn btn--ghost" data-action="cancel-edit" hidden>Cancel</button>
+              <button type="button" class="btn btn--edit btn--inline" data-action="edit">Edit</button>
+              <button type="button" class="btn btn--confirm btn--inline" data-action="confirm">Confirm</button>
+              <button type="button" class="btn btn--save btn--inline" data-action="save-edit" hidden>Save changes</button>
+              <button type="button" class="btn btn--cancel btn--inline" data-action="cancel-edit" hidden>Cancel</button>
             </div>
           </div>
         </section>
@@ -1520,10 +1221,10 @@
               </div>
             </form>
             <div class="ps-actions">
-              <button type="button" class="btn btn--ghost" data-action="edit">Edit</button>
-              <button type="button" class="btn btn--gold" data-action="confirm">Confirm</button>
-              <button type="button" class="btn" data-action="save-edit" hidden>Save changes</button>
-              <button type="button" class="btn btn--ghost" data-action="cancel-edit" hidden>Cancel</button>
+              <button type="button" class="btn btn--edit btn--inline" data-action="edit">Edit</button>
+              <button type="button" class="btn btn--confirm btn--inline" data-action="confirm">Confirm</button>
+              <button type="button" class="btn btn--save btn--inline" data-action="save-edit" hidden>Save changes</button>
+              <button type="button" class="btn btn--cancel btn--inline" data-action="cancel-edit" hidden>Cancel</button>
             </div>
           </div>
         </section>
@@ -1566,10 +1267,10 @@
               <div class="field"><label for="editECPhone">Phone number</label><input id="editECPhone" type="tel" inputmode="tel" maxlength="20" data-edit-input="emergency_contact_phone" placeholder="+44 7700 900456" /></div>
             </form>
             <div class="ps-actions">
-              <button type="button" class="btn btn--ghost" data-action="edit">Edit</button>
-              <button type="button" class="btn btn--gold" data-action="confirm">Confirm</button>
-              <button type="button" class="btn" data-action="save-edit" hidden>Save changes</button>
-              <button type="button" class="btn btn--ghost" data-action="cancel-edit" hidden>Cancel</button>
+              <button type="button" class="btn btn--edit btn--inline" data-action="edit">Edit</button>
+              <button type="button" class="btn btn--confirm btn--inline" data-action="confirm">Confirm</button>
+              <button type="button" class="btn btn--save btn--inline" data-action="save-edit" hidden>Save changes</button>
+              <button type="button" class="btn btn--cancel btn--inline" data-action="cancel-edit" hidden>Cancel</button>
             </div>
           </div>
         </section>
@@ -1634,10 +1335,10 @@
               </div>
             </form>
             <div class="ps-actions">
-              <button type="button" class="btn btn--ghost" data-action="edit">Edit</button>
-              <button type="button" class="btn btn--gold" data-action="confirm">Confirm</button>
-              <button type="button" class="btn" data-action="save-edit" hidden>Save changes</button>
-              <button type="button" class="btn btn--ghost" data-action="cancel-edit" hidden>Cancel</button>
+              <button type="button" class="btn btn--edit btn--inline" data-action="edit">Edit</button>
+              <button type="button" class="btn btn--confirm btn--inline" data-action="confirm">Confirm</button>
+              <button type="button" class="btn btn--save btn--inline" data-action="save-edit" hidden>Save changes</button>
+              <button type="button" class="btn btn--cancel btn--inline" data-action="cancel-edit" hidden>Cancel</button>
             </div>
           </div>
         </section>
@@ -1701,10 +1402,10 @@
               </div>
             </form>
             <div class="ps-actions">
-              <button type="button" class="btn btn--ghost" data-action="edit">Edit</button>
-              <button type="button" class="btn btn--gold" data-action="confirm">Confirm</button>
-              <button type="button" class="btn" data-action="save-edit" hidden>Save changes</button>
-              <button type="button" class="btn btn--ghost" data-action="cancel-edit" hidden>Cancel</button>
+              <button type="button" class="btn btn--edit btn--inline" data-action="edit">Edit</button>
+              <button type="button" class="btn btn--confirm btn--inline" data-action="confirm">Confirm</button>
+              <button type="button" class="btn btn--save btn--inline" data-action="save-edit" hidden>Save changes</button>
+              <button type="button" class="btn btn--cancel btn--inline" data-action="cancel-edit" hidden>Cancel</button>
             </div>
           </div>
         </section>
@@ -1736,10 +1437,10 @@
               </div>
             </form>
             <div class="ps-actions">
-              <button type="button" class="btn btn--ghost" data-action="edit">Edit</button>
-              <button type="button" class="btn btn--gold" data-action="confirm">Confirm</button>
-              <button type="button" class="btn" data-action="save-edit" hidden>Save changes</button>
-              <button type="button" class="btn btn--ghost" data-action="cancel-edit" hidden>Cancel</button>
+              <button type="button" class="btn btn--edit btn--inline" data-action="edit">Edit</button>
+              <button type="button" class="btn btn--confirm btn--inline" data-action="confirm">Confirm</button>
+              <button type="button" class="btn btn--save btn--inline" data-action="save-edit" hidden>Save changes</button>
+              <button type="button" class="btn btn--cancel btn--inline" data-action="cancel-edit" hidden>Cancel</button>
             </div>
           </div>
         </section>
@@ -1765,10 +1466,6 @@
         <button type="button" class="btn" id="submitUpdates" disabled>
           <span class="btn-label">Submit updates</span>
         </button>
-        <div class="notice notice--error" id="profileNotice" hidden>
-          <svg class="notice-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          <span class="notice-body" id="profileNoticeText"></span>
-        </div>
       </div>
     </section>
 
@@ -1810,19 +1507,146 @@
 
     const FN = (name) => `${SUPABASE_URL}/functions/v1/${name}`;
 
+    /** Injected by scripts/inject-portal-env.mjs (same secret as staff.html / lead.html). */
+    var STAFF_PROFILE_PORTAL_BRIDGE_SECRET = "%%PB6%%";
+
+    /**
+     * Optional extra gate: paste display names (any casing), one string per entry.
+     * Leave empty [] so anyone who matches staff_profiles can use the PIN bridge.
+     * Example: const REFERENCE_STAFF_ALLOWLIST = ["Alex Stone", "Berta Trapero Casado"];
+     */
+    const REFERENCE_STAFF_ALLOWLIST = [];
+
+    /**
+     * Annual profile — emergency contact defaults when staff_profiles has no value yet.
+     * Matched by normalised full_name (and aliases). Email is reference-only (not stored in this form).
+     */
+    const EMERGENCY_CONTACT_DEFAULTS = [
+      { keys: ["Dan Clarke"], name: "Tom Townsend", phone: "7840160597", email: "ttownsend@gmail.com", relationship: "Partner / spouse" },
+      { keys: ["John Kyei Fram", "John Kyei-Fram"], name: "Israel Kyei-Fram", phone: "7920636967", email: "kyeiframisrael@gmail.com", relationship: "Sibling" },
+      { keys: ["Javier Arranz"], name: "Berta Trapero Casado", phone: "7523492621", relationship: "Partner / spouse" },
+      { keys: ["Javier Marquez"], name: "Paloma Rosado de caso", phone: "7754051930", email: "Palomarosado@hotmail.com", relationship: "Partner / spouse" },
+      { keys: ["Victor Matilla"], name: "Michelle Caleb", phone: "7715445168", email: "michelle@youtimecounselling.com", relationship: "Partner / spouse" },
+      { keys: ["Sandra Bartolome"], name: "Raul Salvador", phone: "7516121702", email: "raulsalvadorg@gmail.com" },
+      { keys: ["Berta Trapero"], name: "Javier Arranz Escorial", phone: "7523494240", email: "j.arranzescorial@gmail.com", relationship: "Partner / spouse" },
+      { keys: ["Aurora", "Aurora Garcia"], name: "Berta Trapero Casado", phone: "7523492621", relationship: "Friend" },
+      { keys: ["Giuseppe", "Giuseppe Morelli"], name: "Giuseppina Grioli", phone: "7542002955", relationship: "Sibling" },
+      { keys: ["Angel Falceto"], name: "Raul Salvador", phone: "7516121702", email: "raulsalvadorg@gmail.com", relationship: "Friend" },
+      { keys: ["Bismark Gyan"], name: "Mavis Agyarkoaa", phone: "07949332598", email: "agyarkoaabaapa@gmail.com", relationship: "Partner / spouse" },
+      { keys: ["Roberto Reali"], name: "Adele", phone: "39 370 324 0791", email: "adelecolantoni65@gmail.com", relationship: "Parent" },
+      { keys: ["Simon Griffiths"], name: "Tracy Kynoch", phone: "07876395181", email: "tracykynoch@gmail.com" },
+      { keys: ["Youssef Moustafa"], name: "Maria Jose Lopez Carillo", phone: "7570870026", email: "loumari200@gmail.com", relationship: "Partner / spouse" },
+    ];
+
+    function profileFieldEmpty(value) {
+      return !String(value ?? "").replace(/\s+/g, " ").trim();
+    }
+
+    function mapEmergencyRelationshipLabel(raw) {
+      const r = String(raw || "").trim().toLowerCase();
+      if (!r) return null;
+      if (r === "partner" || r === "spouse") return "Partner / spouse";
+      if (r === "parent") return "Parent";
+      if (r === "brother" || r === "sister" || r === "sibling") return "Sibling";
+      if (r === "friend") return "Friend";
+      return String(raw).trim();
+    }
+
+    function lookupEmergencyContactDefault(fullName) {
+      const k = normalizeProfileNameKey(fullName);
+      if (!k) return null;
+      for (const row of EMERGENCY_CONTACT_DEFAULTS) {
+        const keys = Array.isArray(row.keys) ? row.keys : [row.keys];
+        for (const key of keys) {
+          const kk = normalizeProfileNameKey(key);
+          if (!kk) continue;
+          if (k === kk || k.startsWith(kk + " ") || kk.startsWith(k + " ")) return row;
+        }
+      }
+      return null;
+    }
+
+    function mergeEmergencyContactDefaults(profile) {
+      if (!profile) return;
+      const ref = lookupEmergencyContactDefault(profile.full_name);
+      if (!ref) return;
+      if (!profile.emergency_contact || typeof profile.emergency_contact !== "object") {
+        profile.emergency_contact = { name: null, relationship: null, phone: null };
+      }
+      const ec = profile.emergency_contact;
+      if (profileFieldEmpty(ec.name) && ref.name) ec.name = String(ref.name).trim();
+      if (profileFieldEmpty(ec.phone) && ref.phone) ec.phone = String(ref.phone).replace(/\s+/g, " ").trim();
+      if (profileFieldEmpty(ec.relationship) && ref.relationship) {
+        ec.relationship = mapEmergencyRelationshipLabel(ref.relationship) || String(ref.relationship).trim();
+      }
+    }
+
+    function normalizeProfileNameKey(value) {
+      return String(value || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9\s]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function readBridgeSecretFromWindowOrHash() {
+      try {
+        const s = String(STAFF_PROFILE_PORTAL_BRIDGE_SECRET || "").trim();
+        if (s && s !== "%%PB6%%" && s.length >= 16) return s;
+      } catch (_) {}
+      try {
+        const raw = String(window.location.hash || "").replace(/^#/, "");
+        if (!raw) return "";
+        const sp = new URLSearchParams(raw.includes("=") ? raw : `portal_bridge=${raw}`);
+        return String(sp.get("portal_bridge") || "").trim();
+      } catch (_) {
+        return "";
+      }
+    }
+
+    function readPortalPinIdentityName() {
+      try {
+        const u = new URL(window.location.href);
+        const sp = u.searchParams;
+        const fromUrl = String(
+          sp.get("full_name") || sp.get("reporter") || sp.get("staff") || sp.get("name") || "",
+        )
+          .replace(/\s+/g, " ")
+          .trim();
+        if (fromUrl) return fromUrl;
+      } catch (_) {}
+      const STAFF_SESSION_KEY = "clubsens_staff_session_v2";
+      const LEAD_SESSION_KEY = "clubsens_lead_session_v2";
+      for (const key of [STAFF_SESSION_KEY, LEAD_SESSION_KEY]) {
+        try {
+          const raw = localStorage.getItem(key);
+          if (!raw) continue;
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed.displayName === "string" && parsed.displayName.trim()) {
+            return parsed.displayName.trim();
+          }
+        } catch (_) {}
+      }
+      return "";
+    }
+
+    function identityPassesAllowlist(name) {
+      const list = REFERENCE_STAFF_ALLOWLIST;
+      if (!list || !list.length) return true;
+      const k = normalizeProfileNameKey(name);
+      return list.some((entry) => normalizeProfileNameKey(entry) === k);
+    }
+
     const state = {
-      identity: { full_name: "", phone_number: "" },
       session: { token: "", expiresAt: 0 },
-      usedPortalSession: false,
-      otpExpiresAt: 0,
-      otpTimerId: null,
-      resendTimerId: null,
-      resendUnlockAt: 0,
+      sessionTimerId: null,
       idleTimerId: null,
       profile: null,
-      pristine: null,           // server-side snapshot for diffing
-      pendingEdits: {},         // unsaved per-section edits
-      sectionState: {},         // sectionId -> 'pending' | 'confirmed' | 'edited'
+      pristine: null,
+      pendingEdits: {},
+      sectionState: {},
       currentlyEditing: null,
     };
 
@@ -1834,12 +1658,8 @@
       "sectionOtherWork",
       "sectionWellbeing",
     ];
-    // Wellbeing is optional — count it once interacted-with too.
     const REQUIRED_SECTIONS = SECTIONS.filter((id) => id !== "sectionWellbeing");
 
-    // -----------------------------------------------------------------
-    // Helpers
-    // -----------------------------------------------------------------
     const $ = (id) => document.getElementById(id);
     const escapeHtml = (s) =>
       String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({
@@ -1860,303 +1680,66 @@
       notice.hidden = true;
     }
 
+    function resolvePortalLoginUrl() {
+      try {
+        const r = typeof window !== "undefined" && window.PORTAL_LOGIN_REDIRECT_URL;
+        if (r && String(r).trim()) return String(r).trim();
+      } catch (_) {}
+      try {
+        const u = typeof window !== "undefined" && window.PORTAL_LOGIN_URL;
+        if (u && String(u).trim()) return String(u).trim();
+      } catch (_) {}
+      try {
+        return new URL("/", location.origin).href;
+      } catch (_) {}
+      return "/";
+    }
+
+    function resolveStaffOrLeadHubUrl() {
+      try {
+        const fp = new URLSearchParams(window.location.search).get("from_portal");
+        if (fp === "lead") return new URL("/leadportal", location.origin).href;
+      } catch (_) {}
+      return new URL("/staffportal", location.origin).href;
+    }
+
     function activateScreen(id) {
-      ["screenPortalBoot", "screenIdentify", "screenOtp", "screenProfile", "screenDone"].forEach((sid) => {
+      ["screenProfile", "screenDone"].forEach((sid) => {
         const el = $(sid);
         if (!el) return;
         el.classList.toggle("is-active", sid === id);
       });
-      const stepIndex =
-        id === "screenIdentify" ? 1 : id === "screenOtp" ? 2 : id === "screenPortalBoot" ? 0 : 3;
       const meter = $("stepMeter");
-      if (meter) {
-        const hideMeter =
-          id === "screenPortalBoot" ||
-          (state.usedPortalSession && (id === "screenProfile" || id === "screenDone"));
-        meter.hidden = hideMeter;
-        if (!hideMeter) {
-          meter.setAttribute("aria-valuenow", String(Math.max(1, stepIndex)));
-          meter.querySelectorAll(".step-meter-dot").forEach((dot) => {
-            const n = Number(dot.dataset.step || "0");
-            dot.classList.toggle("is-active", n === stepIndex);
-            dot.classList.toggle("is-done", n < stepIndex);
-          });
-        }
-      }
-      const sessionBar = $("sessionBar");
-      sessionBar.classList.toggle("is-visible", id === "screenProfile");
+      if (meter) meter.hidden = true;
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
-    function pad2(n) {
-      return String(Math.max(0, Math.floor(n))).padStart(2, "0");
+    function showProfileLoading(visible) {
+      const el = $("profileLoadOverlay");
+      if (!el) return;
+      el.classList.toggle("is-visible", !!visible);
+      el.setAttribute("aria-busy", visible ? "true" : "false");
     }
 
-    function fmtMS(secsTotal) {
-      const m = Math.floor(secsTotal / 60);
-      const s = secsTotal - m * 60;
-      return `${m}:${pad2(s)}`;
+    function showBootSigningIn() {
+      hide(profileNotice);
+      activateScreen("screenProfile");
+      showProfileLoading(true);
     }
 
-    // -----------------------------------------------------------------
-    // Step 1 — Identification
-    // -----------------------------------------------------------------
-    const identifyForm = $("identifyForm");
-    const identifyName = $("identifyName");
-    const identifyPhone = $("identifyPhone");
-    const identifyNotice = $("identifyNotice");
-    const identifySubmit = $("identifySubmit");
-
-    function validIdentify() {
-      let ok = true;
-      const name = identifyName.value.trim();
-      const phone = identifyPhone.value.trim().replace(/[^\d+]/g, "");
-      const nameField = $("identifyNameField");
-      const phoneField = $("identifyPhoneField");
-      if (name.length < 2 || !/[a-z]/i.test(name)) {
-        nameField.classList.add("has-error");
-        ok = false;
-      } else {
-        nameField.classList.remove("has-error");
-      }
-      if (phone.replace(/\D/g, "").length < 7) {
-        phoneField.classList.add("has-error");
-        ok = false;
-      } else {
-        phoneField.classList.remove("has-error");
-      }
-      return ok ? { name, phone } : null;
+    function showBootSignedOut(message) {
+      showProfileLoading(false);
+      activateScreen("screenProfile");
+      if (message) show($("profileNotice"), "error", message);
+      else hide($("profileNotice"));
     }
 
-    [identifyName, identifyPhone].forEach((el) => {
-      el.addEventListener("input", () => {
-        hide(identifyNotice);
-        $("identifyNameField").classList.remove("has-error");
-        $("identifyPhoneField").classList.remove("has-error");
-      });
-    });
-
-    identifyForm.addEventListener("submit", async (ev) => {
-      ev.preventDefault();
-      const ok = validIdentify();
-      if (!ok) return;
-
-      identifySubmit.setAttribute("aria-busy", "true");
-      identifySubmit.disabled = true;
-      const labelEl = identifySubmit.querySelector(".btn-label");
-      const oldLabel = labelEl.textContent;
-      labelEl.textContent = "Sending…";
-
-      state.identity = { full_name: ok.name, phone_number: ok.phone };
-
-      try {
-        await fetch(FN("staff-profile-otp-request"), {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            apikey: SUPABASE_ANON_KEY,
-            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify({
-            full_name: state.identity.full_name,
-            phone_number: state.identity.phone_number,
-          }),
-        });
-      } catch (err) {
-        // Even on a network error we keep the generic UX, but inform the user
-        // they should try again.
-        console.warn("[profile] otp request failed", err);
-      }
-
-      labelEl.textContent = oldLabel;
-      identifySubmit.removeAttribute("aria-busy");
-      identifySubmit.disabled = false;
-
-      // Generic message — never reveal match outcome.
-      show(identifyNotice, "info",
-        "If the information matches our records, a verification code will be sent.");
-
-      startOtpScreen();
-    });
-
-    // -----------------------------------------------------------------
-    // Step 2 — OTP
-    // -----------------------------------------------------------------
-    const otpInputs = Array.from(document.querySelectorAll("#otpInputs input"));
-    const otpForm = $("otpForm");
-    const otpSubmit = $("otpSubmit");
-    const otpBack = $("otpBack");
-    const otpResend = $("otpResend");
-    const otpTimer = $("otpTimer");
-    const otpNotice = $("otpNotice");
-
-    function startOtpScreen() {
-      activateScreen("screenOtp");
-      otpInputs.forEach((el) => (el.value = ""));
-      hide(otpNotice);
-      $("otpInputs").classList.remove("has-error");
-      state.otpExpiresAt = Date.now() + 10 * 60 * 1000;
-      state.resendUnlockAt = Date.now() + 30 * 1000;
-      tickOtp();
-      if (state.otpTimerId) clearInterval(state.otpTimerId);
-      state.otpTimerId = setInterval(tickOtp, 1000);
-      setTimeout(() => otpInputs[0]?.focus(), 80);
-    }
-
-    function tickOtp() {
-      const now = Date.now();
-      const remaining = Math.max(0, state.otpExpiresAt - now);
-      const secs = Math.floor(remaining / 1000);
-      otpTimer.textContent = remaining > 0 ? `Code expires in ${fmtMS(secs)}` : "Code expired";
-      if (remaining <= 0) {
-        otpResend.disabled = false;
-        if (state.otpTimerId) {
-          clearInterval(state.otpTimerId);
-          state.otpTimerId = null;
-        }
-        return;
-      }
-      const canResendIn = Math.max(0, state.resendUnlockAt - now);
-      if (canResendIn <= 0) {
-        otpResend.disabled = false;
-        otpResend.textContent = "Resend code";
-      } else {
-        otpResend.disabled = true;
-        otpResend.textContent = `Resend in ${Math.ceil(canResendIn / 1000)}s`;
-      }
-    }
-
-    otpInputs.forEach((input, idx) => {
-      input.addEventListener("input", (e) => {
-        const v = (e.target.value || "").replace(/\D/g, "");
-        e.target.value = v.slice(-1);
-        if (v && idx < otpInputs.length - 1) otpInputs[idx + 1].focus();
-        $("otpInputs").classList.remove("has-error");
-        hide(otpNotice);
-      });
-      input.addEventListener("keydown", (e) => {
-        if (e.key === "Backspace" && !input.value && idx > 0) {
-          otpInputs[idx - 1].focus();
-        } else if (e.key === "ArrowLeft" && idx > 0) {
-          otpInputs[idx - 1].focus();
-        } else if (e.key === "ArrowRight" && idx < otpInputs.length - 1) {
-          otpInputs[idx + 1].focus();
-        }
-      });
-      input.addEventListener("paste", (e) => {
-        const text = (e.clipboardData?.getData("text") || "").replace(/\D/g, "");
-        if (!text) return;
-        e.preventDefault();
-        text.split("").slice(0, otpInputs.length).forEach((ch, i) => {
-          otpInputs[i].value = ch;
-        });
-        const last = Math.min(text.length, otpInputs.length) - 1;
-        if (last >= 0) otpInputs[Math.min(last + 1, otpInputs.length - 1)].focus();
-      });
-    });
-
-    otpResend.addEventListener("click", async () => {
-      otpResend.disabled = true;
-      try {
-        await fetch(FN("staff-profile-otp-request"), {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            apikey: SUPABASE_ANON_KEY,
-            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify({
-            full_name: state.identity.full_name,
-            phone_number: state.identity.phone_number,
-          }),
-        });
-      } catch (e) {
-        console.warn("[profile] resend failed", e);
-      }
-      state.otpExpiresAt = Date.now() + 10 * 60 * 1000;
-      state.resendUnlockAt = Date.now() + 30 * 1000;
-      if (state.otpTimerId) clearInterval(state.otpTimerId);
-      state.otpTimerId = setInterval(tickOtp, 1000);
-      tickOtp();
-      show(otpNotice, "info",
-        "If the information matches our records, a new code has been sent.");
-    });
-
-    otpBack.addEventListener("click", () => {
-      if (state.otpTimerId) clearInterval(state.otpTimerId);
-      state.otpTimerId = null;
-      activateScreen("screenIdentify");
-    });
-
-    otpForm.addEventListener("submit", async (ev) => {
-      ev.preventDefault();
-      const code = otpInputs.map((i) => i.value).join("");
-      if (!/^\d{6}$/.test(code)) {
-        $("otpInputs").classList.add("has-error");
-        show(otpNotice, "error", "Enter the 6-digit code we sent you.");
-        return;
-      }
-
-      otpSubmit.setAttribute("aria-busy", "true");
-      otpSubmit.disabled = true;
-      const labelEl = otpSubmit.querySelector(".btn-label");
-      const oldLabel = labelEl.textContent;
-      labelEl.textContent = "Verifying…";
-      hide(otpNotice);
-
-      let res;
-      try {
-        res = await fetch(FN("staff-profile-otp-verify"), {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            apikey: SUPABASE_ANON_KEY,
-            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify({
-            full_name: state.identity.full_name,
-            phone_number: state.identity.phone_number,
-            code,
-          }),
-        });
-      } catch (e) {
-        labelEl.textContent = oldLabel;
-        otpSubmit.removeAttribute("aria-busy");
-        otpSubmit.disabled = false;
-        show(otpNotice, "error", "Network error — please try again.");
-        return;
-      }
-
-      labelEl.textContent = oldLabel;
-      otpSubmit.removeAttribute("aria-busy");
-      otpSubmit.disabled = false;
-
-      let body = null;
-      try { body = await res.json(); } catch {}
-
-      if (!res.ok || !body?.ok) {
-        $("otpInputs").classList.add("has-error");
-        show(otpNotice, "error", "That code didn't match, expired, or you've reached the maximum tries. Try again or send a new code.");
-        return;
-      }
-
-      state.session.token = String(body.session_token || "");
-      state.session.expiresAt = new Date(body.expires_at || 0).getTime();
-      if (state.otpTimerId) clearInterval(state.otpTimerId);
-      state.otpTimerId = null;
-      await loadProfileAndShow();
-    });
-
-    // -----------------------------------------------------------------
-    // Step 3 — Profile
-    // -----------------------------------------------------------------
     const profileNotice = $("profileNotice");
     const finalCheckbox = $("finalConfirmCheckbox");
     const submitUpdatesBtn = $("submitUpdates");
     const confirmedSummary = $("confirmedSummary");
 
-    async function loadProfileAndShow(opts = {}) {
-      const fromPortal = opts.fromPortal === true;
+    async function loadProfileAndShow() {
       try {
         const res = await fetch(FN("staff-profile-update-load"), {
           method: "POST",
@@ -2170,44 +1753,104 @@
         });
         const body = await res.json().catch(() => ({}));
         if (!res.ok || !body?.ok) {
-          if (fromPortal) {
-            show(
-              identifyNotice,
-              "error",
-              "Could not open your profile with your portal sign-in. Use name and mobile below, or sign in again from the portal.",
-            );
-            activateScreen("screenIdentify");
-          } else {
-            show(otpNotice, "error", "Could not open your profile. Please verify again.");
-            activateScreen("screenOtp");
-          }
+          const err = String(body?.error || "");
+          const msg =
+            err === "invalid_session" || err === "expired_session"
+              ? "Your secure session expired or is invalid. Open the Staff or Lead hub (PIN) or portal login, then open Annual profile again."
+              : "Could not open your profile. Open the Staff or Lead hub with your PIN, then open Annual profile again.";
+          showBootSignedOut(msg);
+          state.session.token = "";
+          state.session.expiresAt = 0;
           return false;
         }
         state.profile = body.staff;
+        mergeEmergencyContactDefaults(state.profile);
         state.pristine = JSON.parse(JSON.stringify(body.staff));
         renderProfile();
+        showProfileLoading(false);
         activateScreen("screenProfile");
         startSessionBar();
         startIdleTimer();
         return true;
       } catch (err) {
         console.error("[profile] load failed", err);
-        if (fromPortal) {
-          show(identifyNotice, "error", "Could not open your profile. Use verification below or try again later.");
-          activateScreen("screenIdentify");
-        } else {
-          show(otpNotice, "error", "Could not open your profile. Please verify again.");
-          activateScreen("screenOtp");
-        }
+        showBootSignedOut("Could not open your profile. Check your connection and try again.");
+        state.session.token = "";
+        state.session.expiresAt = 0;
         return false;
       }
     }
 
-    async function tryPortalBootstrap() {
+    async function bootstrapFromPortalBridge(identityName) {
+      const secret = readBridgeSecretFromWindowOrHash();
+      if (!secret || secret.length < 16) {
+        showBootSignedOut(
+          "Could not start a secure session from this link (missing portal bridge on this deploy, or open Annual profile from the Staff/Lead hub after signing in). Use Staff or Lead on this site, sign in, then open Annual profile from the menu — not from an old bookmark alone.",
+        );
+        return false;
+      }
+      if (!identityName || identityName.length < 2) {
+        showBootSignedOut(
+          "We could not detect who you are. Open the Staff or Lead hub on this site, sign in with your PIN, then open Annual profile again.",
+        );
+        return false;
+      }
+      if (!identityPassesAllowlist(identityName)) {
+        showBootSignedOut(
+          "Your name is not on the access list for this Annual profile page. If this is wrong, contact your service lead.",
+        );
+        return false;
+      }
+      showBootSigningIn();
       try {
-        const forceOtp = new URLSearchParams(window.location.search).get("portalUseOtp") === "1";
-        if (forceOtp) return false;
+        const res = await fetch(FN("staff-profile-portal-bridge"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            full_name: identityName,
+            portal_bridge_secret: secret,
+          }),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok || !body?.ok || !body.session_token) {
+          const err = String(body?.error || "");
+          const detail =
+            err === "unknown"
+              ? "We could not match that name to a staff profile. Use the same spelling as in the Staff hub, or ask an admin to check staff_profiles."
+              : err === "ambiguous"
+                ? "More than one staff profile matched that name. Ask an admin to fix duplicates or use portal password login."
+                : err === "invalid_bridge_secret"
+                  ? "Annual profile bridge secret does not match the server. Ask an admin."
+                  : err === "bridge_not_configured"
+                    ? "The server is missing STAFF_PROFILE_PORTAL_BRIDGE_SECRET. Ask an admin."
+                    : "Could not start your profile session. Try again or use portal password login.";
+          showBootSignedOut(detail);
+          return false;
+        }
+        state.session.token = String(body.session_token || "");
+        state.session.expiresAt = new Date(body.expires_at || 0).getTime();
+        const loaded = await loadProfileAndShow();
+        if (!loaded) {
+          state.session.token = "";
+          state.session.expiresAt = 0;
+        }
+        return loaded;
+      } catch (e) {
+        console.warn("[profile] portal bridge bootstrap", e);
+        showBootSignedOut(
+          "Could not open Annual profile via your hub session. Check your connection and try again.",
+        );
+        return false;
+      }
+    }
 
+    async function bootstrapFromPortalAuth() {
+      showBootSigningIn();
+      try {
         const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.49.1");
         const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
           auth: {
@@ -2216,52 +1859,58 @@
             detectSessionInUrl: true,
           },
         });
-        const {
+        let {
           data: { session },
         } = await supabase.auth.getSession();
-        if (!session?.access_token) return false;
-
-        const res = await fetch(FN("staff-profile-session-from-portal"), {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            apikey: SUPABASE_ANON_KEY,
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: "{}",
-        });
-        const body = await res.json().catch(() => ({}));
-        if (!res.ok || !body?.ok || !body.session_token) return false;
-
-        state.session.token = String(body.session_token || "");
-        state.session.expiresAt = new Date(body.expires_at || 0).getTime();
-        state.usedPortalSession = true;
-
-        const loaded = await loadProfileAndShow({ fromPortal: true });
-        if (!loaded) {
-          state.usedPortalSession = false;
-          state.session.token = "";
-          state.session.expiresAt = 0;
+        if (!session?.access_token) {
+          try {
+            await supabase.auth.refreshSession();
+          } catch (_) {
+            /* ignore */
+          }
+          const {
+            data: { session: sR },
+          } = await supabase.auth.getSession();
+          if (sR?.access_token) session = sR;
         }
-        return loaded;
+        if (!session?.access_token) {
+          const { data: ud, error: guErr } = await supabase.auth.getUser();
+          if (!guErr && ud?.user?.id) {
+            const {
+              data: { session: s2 },
+            } = await supabase.auth.getSession();
+            session = s2;
+          }
+        }
+        if (session?.access_token) {
+          const res = await fetch(FN("staff-profile-session-from-portal"), {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              apikey: SUPABASE_ANON_KEY,
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            body: "{}",
+          });
+          const body = await res.json().catch(() => ({}));
+          if (res.ok && body?.ok && body.session_token) {
+            state.session.token = String(body.session_token || "");
+            state.session.expiresAt = new Date(body.expires_at || 0).getTime();
+            const loaded = await loadProfileAndShow();
+            if (!loaded) {
+              state.session.token = "";
+              state.session.expiresAt = 0;
+            } else {
+              return true;
+            }
+          }
+        }
       } catch (e) {
-        console.warn("[profile] portal bootstrap", e);
-        return false;
+        console.warn("[profile] portal password bootstrap", e);
       }
-    }
 
-    function resolvePortalLoginUrl() {
-      try {
-        const w = typeof window !== "undefined" && window.PORTAL_LOGIN_URL;
-        if (w && String(w).trim()) return String(w).trim();
-      } catch (_) {}
-      try {
-        const h = (typeof location !== "undefined" && location.hostname) || "";
-        if (/vercel\.app$/i.test(h) || h === "localhost" || h === "127.0.0.1") {
-          return new URL("login.html", location.href).href;
-        }
-      } catch (_) {}
-      return "login.html";
+      const pinName = readPortalPinIdentityName();
+      return bootstrapFromPortalBridge(pinName);
     }
 
     function setReadonlyValue(key, value, opts = {}) {
@@ -2330,11 +1979,9 @@
       setReadonlyValue("full_name", p.full_name);
       setReadonlyValue("staff_role", fmtRoleLabel(p.staff_role, p));
       setReadonlyValue("email_personal", p.email_personal, { empty: "Not provided" });
-      setReadonlyValue("phone_e164", p.phone_e164, { empty: "Not provided" });
       setEditValue("full_name", p.full_name);
       setEditValue("staff_role", fmtRoleLabel(p.staff_role, p));
       setEditValue("email_personal", p.email_personal);
-      setEditValue("phone_e164", p.phone_e164);
 
       // Section 2: address
       const fullAddr = fmtAddress(p);
@@ -2501,7 +2148,6 @@
       const p = state.profile;
       if (id === 'sectionStaffDetails') {
         if ('email_personal' in edits) p.email_personal = edits.email_personal || null;
-        if ('phone_e164' in edits) p.phone_e164 = edits.phone_e164 || null;
       } else if (id === 'sectionAddress') {
         // Use addressChange radio
         const changed = sec.querySelector('input[name="addressChange"]:checked')?.value;
@@ -2543,7 +2189,6 @@
       const p = state.profile;
       if (id === 'sectionStaffDetails') {
         setReadonlyValue('email_personal', p.email_personal, { empty: 'Not provided' });
-        setReadonlyValue('phone_e164', p.phone_e164, { empty: 'Not provided' });
       } else if (id === 'sectionAddress') {
         setReadonlyValue('address_full', fmtAddress(p), { empty: 'No address on file' });
       } else if (id === 'sectionEmergency') {
@@ -2574,15 +2219,9 @@
       let ok = true;
       if (sec.id === 'sectionStaffDetails') {
         const emailField = sec.querySelector('[data-edit-field="email_personal"]');
-        const phoneField = sec.querySelector('[data-edit-field="phone_e164"]');
         const email = (edits.email_personal || '').trim();
         if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
           emailField.classList.add('has-error');
-          ok = false;
-        }
-        const digits = (edits.phone_e164 || '').replace(/\D/g, '');
-        if (digits && digits.length < 7) {
-          phoneField.classList.add('has-error');
           ok = false;
         }
       }
@@ -2624,7 +2263,6 @@
           const p = state.profile;
           if (sec.id === 'sectionStaffDetails') {
             setEditValue('email_personal', p.email_personal);
-            setEditValue('phone_e164', p.phone_e164);
           } else if (sec.id === 'sectionAddress') {
             setEditValue('address_line1', p.address?.line1);
             setEditValue('address_line2', p.address?.line2);
@@ -2697,14 +2335,10 @@
           if (err.startsWith('invalid_field')) {
             show(profileNotice, 'error', `One of the fields is invalid: ${err.split(':')[1] || ''}. Please review and try again.`);
           } else if (err === 'invalid_session' || err === 'expired_session') {
-            show(profileNotice, 'error', 'Your secure session has expired. Please verify again.');
-            if (state.usedPortalSession) {
-              setTimeout(() => {
-                window.location.replace(resolvePortalLoginUrl());
-              }, 1200);
-            } else {
-              setTimeout(() => activateScreen('screenIdentify'), 1400);
-            }
+            show(profileNotice, 'error', 'Your secure session has expired. Open the Staff or Lead hub (PIN) or portal login, then open Annual profile again.');
+            setTimeout(() => {
+              window.location.replace(resolvePortalLoginUrl());
+            }, 1200);
           } else {
             show(profileNotice, 'error', 'Could not save your updates. Please try again.');
           }
@@ -2721,6 +2355,22 @@
         try {
           localStorage.setItem('portalvic_annual_profile_checkin_v1', '1');
         } catch (_) {}
+        try {
+          const doneName = String(
+            state.profile?.full_name || readPortalPinIdentityName() || '',
+          ).trim();
+          if (doneName) {
+            const doneKey =
+              'clubsens_annual_review_done_v1::' +
+              String(doneName)
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9]+/g, ' ')
+                .trim();
+            localStorage.setItem(doneKey, '1');
+          }
+        } catch (_) {}
         activateScreen('screenDone');
       } catch (err) {
         console.error('[profile] save failed', err);
@@ -2734,7 +2384,6 @@
     function diffProfile(pristine, current) {
       const out = {};
       const set = (k, prev, next) => { if ((prev ?? null) !== (next ?? null)) out[k] = next ?? null; };
-      set('phone_e164', pristine.phone_e164, current.phone_e164);
       set('email_personal', pristine.email_personal, current.email_personal);
       set('address_line1', pristine.address?.line1, current.address?.line1);
       set('address_line2', pristine.address?.line2, current.address?.line2);
@@ -2754,10 +2403,8 @@
     }
 
     // -----------------------------------------------------------------
-    // Session bar + idle timeout
+    // Session expiry tick + idle timeout (no on-page “secure session” banner)
     // -----------------------------------------------------------------
-    const sessionBarText = $('sessionBarText');
-
     function startSessionBar() {
       tickSessionBar();
       if (state.sessionTimerId) clearInterval(state.sessionTimerId);
@@ -2766,13 +2413,8 @@
 
     function tickSessionBar() {
       const remaining = Math.max(0, state.session.expiresAt - Date.now());
-      const mins = Math.ceil(remaining / 60000);
-      sessionBarText.textContent =
-        remaining > 0
-          ? `Secure session active — ${mins} min${mins === 1 ? '' : 's'} remaining.`
-          : 'Secure session has expired.';
       if (remaining <= 0) {
-        sessionExpired('Your secure session has expired for safety. Please verify again.');
+        sessionExpired();
       }
     }
 
@@ -2781,7 +2423,7 @@
       const reset = () => {
         if (state.idleTimerId) clearTimeout(state.idleTimerId);
         state.idleTimerId = setTimeout(
-          () => sessionExpired('You were inactive for a while. Please verify again to continue.'),
+          () => sessionExpired(),
           5 * 60 * 1000,
         );
       };
@@ -2799,106 +2441,46 @@
       state.sessionTimerId = null;
     }
 
-    function sessionExpired(message) {
+    function sessionExpired() {
       stopIdleTimer();
-      state.session.token = '';
+      state.session.token = "";
       state.profile = null;
       state.pristine = null;
-      if (state.usedPortalSession) {
-        state.usedPortalSession = false;
-        window.location.replace(resolvePortalLoginUrl());
-        return;
-      }
-      show(otpNotice, 'warn', message);
-      activateScreen('screenIdentify');
-      show(identifyNotice, 'warn', message);
+      window.location.replace(resolveStaffOrLeadHubUrl());
     }
 
-    // -----------------------------------------------------------------
-    // "Back to start"
-    // -----------------------------------------------------------------
     $('doneBack').addEventListener('click', () => {
       stopIdleTimer();
       state.session.token = '';
       state.profile = null;
       state.pristine = null;
-      identifyForm.reset();
-      hide(identifyNotice);
-      if (state.usedPortalSession) {
-        let dest = "";
+      let dest = '';
+      try {
+        dest = (new URLSearchParams(window.location.search).get('portalReturn') || '').trim();
+      } catch (_) {}
+      if (dest) {
         try {
-          dest = (new URLSearchParams(window.location.search).get("portalReturn") || "").trim();
+          const u = new URL(dest, window.location.href);
+          if (u.protocol === 'http:' || u.protocol === 'https:') {
+            window.location.replace(u.href);
+            return;
+          }
         } catch (_) {}
-        if (dest) {
-          try {
-            const u = new URL(dest, window.location.href);
-            if (u.protocol === "http:" || u.protocol === "https:") {
-              window.location.replace(u.href);
-              return;
-            }
-          } catch (_) {}
-        }
-        window.location.replace(resolvePortalLoginUrl());
-        return;
       }
-      activateScreen('screenIdentify');
+      window.location.replace(resolvePortalLoginUrl());
     });
 
-    // -----------------------------------------------------------------
-    // Pre-fill from URL query params
-    // Accepted aliases:
-    //   ?staff=… | ?name=… | ?full_name=…   → Full name
-    //   ?phone=… | ?mobile=… | ?tel=…       → Mobile number
-    //   ?portalUseOtp=1                     → skip portal session bootstrap (force OTP path)
-    // Example: …/profile_update/?staff=Victor&phone=07715444979
-    // -----------------------------------------------------------------
-    function prefillFromQuery() {
-      try {
-        const params = new URLSearchParams(window.location.search);
-        const nameParam = (
-          params.get("staff") ||
-          params.get("name") ||
-          params.get("full_name") ||
-          ""
-        ).trim();
-        const phoneParam = (
-          params.get("phone") ||
-          params.get("mobile") ||
-          params.get("tel") ||
-          ""
-        ).trim();
-        if (nameParam && identifyName) {
-          identifyName.value = nameParam.slice(0, 120);
+    void (async function profileBootstrapEntry() {
+      const ok = await bootstrapFromPortalAuth();
+      if (!ok) {
+        const n = $("profileNotice");
+        if (n && n.hidden) {
+          showBootSignedOut(
+            "Your profile could not be loaded. Open the Staff or Lead hub on this website, sign in with your account or PIN, then open Annual profile from there.",
+          );
         }
-        if (phoneParam && identifyPhone) {
-          identifyPhone.value = phoneParam.slice(0, 24);
-        }
-      } catch (e) {
-        /* ignore */
       }
-    }
-
-    async function bootstrapEntry() {
-      const ok = await tryPortalBootstrap();
-      if (ok) return;
-      activateScreen("screenIdentify");
-      prefillFromQuery();
-      setTimeout(() => {
-        try {
-          if (identifyName?.value && !identifyPhone?.value) {
-            identifyPhone?.focus();
-          } else if (identifyName?.value && identifyPhone?.value) {
-            identifySubmit?.focus();
-          } else {
-            identifyName?.focus();
-          }
-        } catch (e) {
-          identifyName?.focus();
-        }
-      }, 120);
-    }
-
-    void bootstrapEntry();
+    })();
   </script>
 </body>
 </html>
