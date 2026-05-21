@@ -21,6 +21,7 @@ That removes legacy feedback/overview CSVs and deploys JS under `working_ui/port
 | `incidents.csv` | Incident reports |
 | `cancellations.csv` | Cancellations |
 | `absents.csv` | Absent quick marks |
+| `venue-reviews.csv` | Venue opening/closing reviews (optional overrides; roster-derived rows generated if missing) |
 
 ## Join keys
 

@@ -111,6 +111,48 @@
     payload.session_feedback_loaded = portalRows.length;
   }
 
+  function venueReviewMergeKey(r) {
+    return (
+      String((r && r.review_date) || '').trim().substring(0, 10) +
+      '|' +
+      String((r && r.venue) || '')
+        .trim()
+        .toLowerCase() +
+      '|' +
+      String((r && r.opening_or_closing) || '').trim()
+    );
+  }
+
+  /** Static portal export supplements Supabase venue_reviews (same pattern as session feedback). */
+  function mergePortalVenueIntoPayload() {
+    if (!cfg.buildVenueFromPortal) return;
+    var portalRows = cfg.buildVenueFromPortal() || [];
+    if (!portalRows.length) return;
+    var byKey = {};
+    var out = [];
+    portalRows.forEach(function (r) {
+      var k = venueReviewMergeKey(r);
+      if (!k || byKey[k]) return;
+      byKey[k] = true;
+      out.push(r);
+    });
+    (payload.venue_reviews || []).forEach(function (r) {
+      var k = venueReviewMergeKey(r);
+      if (!k || byKey[k]) return;
+      byKey[k] = true;
+      out.push(r);
+    });
+    out.sort(function (a, b) {
+      var da = String(a.review_date || '');
+      var db = String(b.review_date || '');
+      if (da !== db) return db.localeCompare(da);
+      var va = String(a.venue || '').localeCompare(String(b.venue || ''));
+      if (va) return va;
+      return String(a.opening_or_closing || '').localeCompare(String(b.opening_or_closing || ''));
+    });
+    payload.venue_reviews = out;
+  }
+
   async function fetchEdgePayload() {
     var client = cfg.getClient && cfg.getClient();
     if (!client || !client.auth) return null;
@@ -455,6 +497,7 @@
         if (edge && edge.data) {
           applyPayload(edge.data);
           mergePortalFeedbackIntoPayload();
+          mergePortalVenueIntoPayload();
           setStatus('');
           return payload;
         }
@@ -476,6 +519,7 @@
         var fb = await fetchFallbackSupabase();
         applyPayload(fb);
         mergePortalFeedbackIntoPayload();
+        mergePortalVenueIntoPayload();
         return payload;
       })()
         .finally(function () {

@@ -206,6 +206,9 @@ def main() -> None:
     copy_overview_to_roster_weeks(bundle)
     import_feedback_js(bundle)
     export_status_js(bundle)
+    from export_venue_reviews_portal_js import export_venue_reviews_js
+
+    export_venue_reviews_js()
     import_roster_and_bundle()
     print("Done. Deploy working_ui/portal/*.js and refresh admin with cache-bust query.")
 

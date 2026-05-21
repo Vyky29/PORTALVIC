@@ -4187,6 +4187,7 @@
   <!-- Session feedback + completion status (portal-import-bundle). Bump v after import_portal_bundle.py -->
   <script src="/portal/session_feedback_status_portal_data.js?v=20260520-adaam-ah"></script>
   <script src="/portal/session_feedback_portal_data.js?v=20260520-adaam-ah"></script>
+  <script src="/portal/venue_reviews_portal_data.js?v=20260521-venue-reviews"></script>
   <script>
   (function portalSessionFeedbackBootstrap(){
     var v = (document.documentElement.getAttribute('data-portal-session-feedback-v') || document.documentElement.getAttribute('data-portal-uploads-js-v') || '20260520-bundle').trim();
@@ -5865,6 +5866,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var src = typeof window !== 'undefined' ? window.SESSION_FEEDBACK_PORTAL_SOURCE : null;
       if(!src || !Array.isArray(src.rows) || !src.rows.length) return [];
       return src.rows;
+    }
+    function adminVenueReviewPortalRows(){
+      var src = typeof window !== 'undefined' ? window.VENUE_REVIEWS_PORTAL_SOURCE : null;
+      if(!src || !Array.isArray(src.rows) || !src.rows.length) return [];
+      return src.rows;
+    }
+    function adminMapPortalRowToHubVenueReview(r){
+      return {
+        review_date: adminSfStr(r.review_date).substring(0, 10),
+        venue: adminSfStr(r.venue) || '—',
+        review_time: adminSfStr(r.review_time) || '—',
+        has_issues: adminSfStr(r.has_issues) || 'No',
+        issues_reported: r.issues_reported != null ? String(r.issues_reported) : null,
+        submitted_by_name: adminSfStr(r.submitted_by_name) || '—',
+        created_at: adminSfStr(r.created_at) || null
+      };
     }
     /** Precomputed overview status from portal-import-bundle (see FEEDBACK-COMPLETION-LOGIC.md). */
     function adminSessionFeedbackStatusRows(){
@@ -16873,6 +16890,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               return iso && adminPortalFeedbackRosterAlignedOnIso(iso, r);
             })
             .map(adminMapPortalRowToHubFeedback);
+        },
+        buildVenueFromPortal: function(){
+          return adminVenueReviewPortalRows().map(adminMapPortalRowToHubVenueReview);
         },
         fetchCancellations: adminFetchCancellationReportsForHub,
         fetchAbsents: adminFetchAbsentQuickMarksForHub,
