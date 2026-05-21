@@ -6,8 +6,9 @@
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260520-portal2026" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260520-portal2026" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260521-hub-center" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260521-supabase-row" />
   <script src="/portal/admin-portal-day-ops.js?v=20260520-portal2026"></script>
+  <script src="/portal/admin-portal-documents.js?v=20260521-supabase-docs"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
   <title>clubSENsational · Operations + Operator workflow (merged)</title>
   <style>
@@ -186,6 +187,7 @@
     .admin-nav-group[data-group-id="g_c4k"]{--nav-g-accent:#fbbf24;--nav-g-text:#fef3c7;--nav-g-soft:rgba(251,191,36,.14)}
     .admin-nav-group[data-group-id="g_zoho"]{--nav-g-accent:#a78bfa;--nav-g-text:#ede9fe;--nav-g-soft:rgba(167,139,250,.16)}
     .admin-nav-group[data-group-id="g_xero"]{--nav-g-accent:#2dd4bf;--nav-g-text:#ccfbf1;--nav-g-soft:rgba(45,212,191,.14)}
+    .admin-nav-group[data-group-id="g_supabase"]{--nav-g-accent:#0ea5e9;--nav-g-text:#e0f2fe;--nav-g-soft:rgba(14,165,233,.16)}
     .admin-nav-group[data-group-id="g_indeed"]{--nav-g-accent:#2563eb;--nav-g-text:#dbeafe;--nav-g-soft:rgba(37,99,235,.16)}
     .admin-nav-group[data-group-id="g_settings_portal"]{--nav-g-accent:#94a3b8;--nav-g-text:#e2e8f0;--nav-g-soft:rgba(148,163,184,.18)}
     .admin-nav-group[data-group-id] .admin-nav-group-toggle{color:var(--nav-g-text)}
@@ -4473,8 +4475,9 @@
       { id:'staffhr', label:'Staff & HR' },
       { id:'onboarding', label:'Onboarding' },
       { id:'invoices', label:'Xero / finance' },
-      { id:'recruitment', label:'Recruitment (Indeed/Web)' },
+      { id:'recruitment', label:'Recruitment' },
       { id:'interviews', label:'Interviews', externalUrl:'Working_interview.html' },
+      { id:'portal_documents', label:'Documents', hubLabel:'Documents' },
       { id:'policies', label:'Documents & compliance' },
       { id:'settings', label:'System settings' },
       { id:'portal_nav_alerts', label:'Alerts inbox', navAction:'alerts', skipBottomNav:true },
@@ -4487,9 +4490,10 @@
       { id:'g_dashboard', label:'Dashboard', children:['nav_hub'] },
       { id:'g_operator', label:'Operator', children:['dashboard','operations_admin','operator'] },
       { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','__h:Participants','clients','__h:Orders','orders_all','orders_outstanding','__h:Communications','comms_ops'] },
-      { id:'g_zoho', label:'H&R (ZohoPeople)', children:['staffhr','policies'] },
+      { id:'g_zoho', label:'H&R (ZohoPeople)', children:['staffhr','onboarding'] },
+      { id:'g_supabase', label:'Supabase', children:['portal_documents'] },
       { id:'g_xero', label:'Finance (Xero)', children:['c4k_payments','invoices'] },
-      { id:'g_indeed', label:'Recruitment (Indeed/Web)', children:['interviews','onboarding'] },
+      { id:'g_indeed', label:'Recruitment', children:['interviews'] },
       { id:'g_settings_portal', label:'Settings & dashboards', children:['__h:This app','settings','portal_nav_alerts','__h:Other portals','portal_nav_staff','portal_nav_ceo','portal_nav_admin','__h:Session','portal_nav_logout'] }
     ];
     /* Stroke SVGs (outline), inherit sidebar text colour — replaces emoji glyphs */
@@ -4531,6 +4535,8 @@
       g_c4k:'<path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>',
       g_zoho:'<path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>',
       g_xero:'<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/>',
+      g_supabase:'<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>',
+      portal_documents:'<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>',
       g_indeed:'<rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><path d="M12 11v6"/><path d="M9 14h6"/>',
       g_settings_portal:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82-.33A1.65 1.65 0 009 3.09V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>',
       portal_nav_alerts:'<path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/>',
@@ -5116,7 +5122,7 @@
       }
     };
 
-    var state = { view:'nav_hub', drawerClient:null, drawerStaff:null, drawerIsSynthetic:false, reportTargetClient:null, search:'', shiftModalCtx:null, pendingBookingsScroll:null, pendingBookingsSlotFocus:null, commsOrderDetailKey:'', sessionOverview:{ iso:'', overrides:[] }, sessionFeedback:{ anchorIso:'', selectedIso:null, rangeFrom:'', rangeTo:'', clientQ:'' }, navGroupsOpen:{ g_dashboard:true, g_operator:false, g_c4k:false, g_zoho:false, g_xero:false, g_indeed:false, g_settings_portal:false }, c4kServicesRegisterOpen:false, registerSessionSlot:null, scrollToCapacityEmbed:false };
+    var state = { view:'nav_hub', drawerClient:null, drawerStaff:null, drawerIsSynthetic:false, reportTargetClient:null, search:'', shiftModalCtx:null, pendingBookingsScroll:null, pendingBookingsSlotFocus:null, commsOrderDetailKey:'', sessionOverview:{ iso:'', overrides:[] }, sessionFeedback:{ anchorIso:'', selectedIso:null, rangeFrom:'', rangeTo:'', clientQ:'' }, navGroupsOpen:{ g_dashboard:true, g_operator:false, g_c4k:false, g_zoho:false, g_supabase:false, g_xero:false, g_indeed:false, g_settings_portal:false }, c4kServicesRegisterOpen:false, registerSessionSlot:null, scrollToCapacityEmbed:false };
     var sched = { slotsById:{}, overrides:[], activeSlot:null, lastMsg:'', waitingSupabaseRetryBound:false };
     var booking = { slotsById:{}, overrides:[], waitingSupabaseRetryBound:false, selectedDate:'', metaById:{}, financeById:{}, activeTab:'master', ordersScope:'all', ordersTimePreset:'today', ordersClientFilter:'', portalOrdersPage:1, portalOrdersRows:[] };
     var invoices = { lines:[{ description:'', quantity:1, unitPrice:0, taxType:'vat20' }] };
@@ -17548,6 +17554,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(id==='invoices') return viewInvoices();
       if(id==='scheduling') return viewScheduling();
       if(id==='absents_refunds') return viewAbsentsRefundsCredits();
+      if(id==='portal_documents') return viewPortalDocuments();
       if(id==='policies') return viewPoliciesSignoffs();
       if(id==='onboarding') return viewOnboarding();
       if(id==='reports') return viewReports();
@@ -18145,7 +18152,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!n) return false;
       return n === 'victor' || n === 'raul' || n === 'javi';
     }
-    var DASH_HUB_NAV_GROUPS = ['g_operator','g_c4k','g_zoho','g_xero','g_indeed'];
+    var DASH_HUB_NAV_GROUPS = ['g_operator','g_c4k','g_zoho','g_supabase','g_xero','g_indeed'];
     function dashHubItemDesc(item){
       var id = item && item.id;
       var map = {
@@ -18159,6 +18166,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         comms_ops:'Programme comms · CEO chat · internal messages',
         staffhr:'Staff records · availability · HR notes',
         onboarding:'Onboarding pipeline · worker progress',
+        portal_documents:'Timesheets · expenses · onboarding uploads',
         policies:'Documents · sign-offs · compliance',
         invoices:'Build draft lines · export CSV to Xero',
         c4k_payments:'All generated invoices · programme finance grid',
@@ -18200,7 +18208,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var tiles = [];
         var hubChildIds = (group.children || []).slice();
         if(gid === 'g_zoho'){
-          hubChildIds = ['staffhr','onboarding','policies'];
+          hubChildIds = ['staffhr','onboarding'];
         }
         hubChildIds.forEach(function(cid){
           if(String(cid).indexOf('__h:') === 0) return;
@@ -18333,6 +18341,31 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="card"><div class="card-pad" style="overflow:auto"><table class="tbl tbl--center" id="tblClients"><thead><tr><th>Participant</th><th>Programme</th><th>Sessions (YTD)</th><th>Attendance %</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';
     }
 
+    function portalDocumentsConfigureOnce(){
+      if(window.__portalDocumentsConfigured || !window.PortalDocuments) return;
+      window.__portalDocumentsConfigured = true;
+      window.PortalDocuments.configure({
+        esc: esc,
+        getClient: getSchedSupabaseClient,
+        getSupabaseUrl: function(){
+          var u = typeof window.SUPABASE_URL === 'string' ? window.SUPABASE_URL.trim() : '';
+          return u || 'https://cklpnwhlqsulpmkipmqb.supabase.co';
+        },
+        getAnonKey: function(){
+          return typeof window.SUPABASE_ANON_KEY === 'string' ? window.SUPABASE_ANON_KEY : '';
+        }
+      });
+    }
+    function viewPortalDocuments(){
+      portalDocumentsConfigureOnce();
+      return window.PortalDocuments ? window.PortalDocuments.viewHtml() : '<p class="page-intro">Documents module failed to load.</p>';
+    }
+    function bindPortalDocumentsModule(){
+      portalDocumentsConfigureOnce();
+      if(window.PortalDocuments && typeof window.PortalDocuments.bindModule === 'function'){
+        window.PortalDocuments.bindModule();
+      }
+    }
     function viewPoliciesSignoffs(){
       var cols = MOCK.mandatoryPolicyIds || [];
       var byStaff = MOCK.policySignoffDemoByStaff || {};
@@ -20017,7 +20050,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       root.querySelectorAll('[data-act]').forEach(function(b){
         b.addEventListener('click', function(){
           var v = b.getAttribute('data-act');
-          if(v==='dashboard'||v==='operations'||v==='operations_admin'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='c4k_registers'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='scheduling'||v==='absents_refunds'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings') setView(v);
+          if(v==='dashboard'||v==='operations'||v==='operations_admin'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='c4k_registers'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='scheduling'||v==='absents_refunds'||v==='portal_documents'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings') setView(v);
           closeSidebarMob();
         });
       });
@@ -20192,6 +20225,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         bindSchedulingModule();
       }
       if(id==='invoices') bindInvoicesModule();
+      if(id==='portal_documents') bindPortalDocumentsModule();
       if(id==='clients'){
         var root2 = $('workspace');
         function paxContactsFindById(pid){

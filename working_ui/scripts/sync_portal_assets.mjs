@@ -18,6 +18,7 @@ const DATABASE_JS = [
 ];
 
 const ROOT_JS_MOVE_TO_PORTAL = [
+  "admin-portal-documents.js",
   "venue_review_app.js",
   "lead_feedback_report_app.js",
   "termreview_app.js",

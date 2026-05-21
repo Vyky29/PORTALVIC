@@ -252,7 +252,7 @@ body:has(#workspace .dash-hub--nav-index) .admin-workspace{
 }
 .dash-hub--nav-index .dash-hub-cat:nth-child(1){grid-column:span 4}
 .dash-hub--nav-index .dash-hub-cat:nth-child(2){grid-column:span 8}
-.dash-hub--nav-index .dash-hub-cat:nth-child(n+3){grid-column:span 4}
+.dash-hub--nav-index .dash-hub-cat:nth-child(n+3){grid-column:span 3}
 @media (max-width:960px){
   .dash-hub-cat-grid{grid-template-columns:1fr}
   .dash-hub--nav-index .dash-hub-cat-grid{
@@ -355,13 +355,12 @@ body:has(#workspace .dash-hub--nav-index) .admin-workspace{
 }
 .dash-hub--nav-index .dash-hub-cat__body .dash-hub__grid--inline{
   flex:0 1 auto;
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(var(--dh-nav-tile-w),var(--dh-nav-tile-w)));
-  grid-auto-rows:var(--dh-nav-tile-h);
-  gap:clamp(10px,1.2vh,14px);
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
   align-content:center;
   justify-content:center;
-  justify-items:center;
+  gap:clamp(10px,1.2vh,14px);
   width:100%;
   max-width:100%;
   min-height:0;
@@ -406,16 +405,20 @@ body:has(#workspace .dash-hub--nav-index) .admin-workspace{
 .dash-hub--nav-index .dash-hub-cat__body .dash-hub__grid--inline .dash-hub__tile-desc{
   font-size:clamp(10px,1.2vh,11px);
 }
+.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_supabase"] .dash-hub__grid--inline{
+  justify-content:center;
+}
 @media (max-width:1100px){
   .dash-hub--nav-index .dash-hub-cat-grid{
     grid-template-columns:repeat(6,minmax(0,1fr));
   }
   .dash-hub--nav-index .dash-hub-cat:nth-child(1){grid-column:span 2}
   .dash-hub--nav-index .dash-hub-cat:nth-child(2){grid-column:span 4}
-  .dash-hub--nav-index .dash-hub-cat:nth-child(n+3){grid-column:span 2}
+  .dash-hub--nav-index .dash-hub-cat:nth-child(n+3){grid-column:span 3}
 }
 .dash-hub-cat[data-hub-cat="g_operator"] .dash-hub-cat__head{background:rgba(129,140,248,.08)}
 .dash-hub-cat[data-hub-cat="g_c4k"] .dash-hub-cat__head{background:rgba(59,130,246,.08)}
 .dash-hub-cat[data-hub-cat="g_zoho"] .dash-hub-cat__head{background:rgba(16,185,129,.08)}
 .dash-hub-cat[data-hub-cat="g_xero"] .dash-hub-cat__head{background:rgba(245,158,11,.08)}
+.dash-hub-cat[data-hub-cat="g_supabase"] .dash-hub-cat__head{background:rgba(14,165,233,.1)}
 .dash-hub-cat[data-hub-cat="g_indeed"] .dash-hub-cat__head{background:rgba(236,72,153,.08)}
