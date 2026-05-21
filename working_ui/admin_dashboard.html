@@ -7,6 +7,8 @@
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260520-portal2026" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260520-portal2026" />
   <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260521-hub-one-row" />
+  <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260521-embed" />
+  <script src="/portal/hr-contract-embed-html.js?v=20260521-embed"></script>
   <script src="/portal/admin-portal-day-ops.js?v=20260520-portal2026"></script>
   <script src="/portal/admin-portal-documents.js?v=20260521-supabase-docs"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
@@ -4484,6 +4486,7 @@
       { id:'servicecap', label:'Services & capacity (full page)' },
       { id:'staffhr', label:'Staff & HR' },
       { id:'onboarding', label:'Onboarding' },
+      { id:'staffhr_contracts', label:'Employment contracts', hubLabel:'CONTRACTS' },
       { id:'invoices', label:'Xero / finance' },
       { id:'recruitment', label:'Recruitment' },
       { id:'interviews', label:'Interviews', externalUrl:'Working_interview.html' },
@@ -4502,7 +4505,7 @@
     var NAV_GROUPS = [
       { id:'g_operator', label:'Operator', children:['dashboard','operations_admin','operator'] },
       { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','__h:Participants','clients','__h:Orders','orders_all','orders_outstanding','__h:Communications','comms_ops'] },
-      { id:'g_zoho', label:'H&R (ZohoPeople)', children:['staffhr','onboarding'] },
+      { id:'g_zoho', label:'H&R (ZohoPeople)', children:['staffhr','onboarding','staffhr_contracts'] },
       { id:'g_supabase', label:'Supabase', children:['portal_documents'] },
       { id:'g_xero', label:'Finance (Xero)', children:['c4k_payments','invoices'] },
       { id:'g_indeed', label:'Recruitment', children:['interviews'] },
@@ -4534,6 +4537,7 @@
       comms_ops:'<path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>',
       staffhr:'<path d="M9 5H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="15" y2="16"/><line x1="9" y1="20" x2="13" y2="20"/>',
       onboarding:'<path d="M2 3h6a4 4 0 014 4v14a4 4 0 00-4-4H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a4 4 0 014-4h6z"/>',
+      staffhr_contracts:'<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>',
       invoices:'<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/>',
       recruitment:'<rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><path d="M12 11v6"/><path d="M9 14h6"/>',
       interviews:'<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>',
@@ -17688,6 +17692,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(id==='c4k_reviews') return viewC4kInstructorReviews();
       if(id==='c4k_reports') return viewC4kGlobalReportsTracker();
       if(id==='staffhr') return viewStaffHR();
+      if(id==='staffhr_contracts') return viewStaffHRContracts();
       if(id==='bookings' || id==='orders_all' || id==='orders_outstanding') return viewBookings();
       if(id==='invoices') return viewInvoices();
       if(id==='scheduling') return viewScheduling();
@@ -18304,6 +18309,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         comms_ops:'Programme comms · CEO chat · internal messages',
         staffhr:'Staff records · availability · HR notes',
         onboarding:'Onboarding pipeline · worker progress',
+        staffhr_contracts:'Zero-hours contracts · send to staff dashboard',
         portal_documents:'Timesheets · expenses · onboarding uploads',
         policies:'Documents · sign-offs · compliance',
         invoices:'Build draft lines · export CSV to Xero',
@@ -18346,7 +18352,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var tiles = [];
         var hubChildIds = (group.children || []).slice();
         if(gid === 'g_zoho'){
-          hubChildIds = ['staffhr','onboarding'];
+          hubChildIds = ['staffhr','onboarding','staffhr_contracts'];
         }
         hubChildIds.forEach(function(cid){
           if(String(cid).indexOf('__h:') === 0) return;
@@ -18544,9 +18550,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return '<tr><td>'+esc(i.name)+'</td><td class="muted">'+esc(i.role)+'</td><td><span class="chip chip--pend">'+esc(i.status)+'</span></td></tr>';
       }).join('');
       var obSummary = MOCK.onboardingSteps.map(function(o){ return o.label+' '+o.pct+'%'; }).join(' · ');
-      return '<h1 class="page-title">Staff &amp; HR</h1><p class="page-intro">Roster, shifts, interviews, and employment contracts on this Portal.</p>'+
+      return '<h1 class="page-title">Staff &amp; HR</h1><p class="page-intro">Roster, shifts, interviews, and HR notes. Create employment contracts from <button type="button" class="btn btn--ghost btn--sm" data-view-target="staffhr_contracts" style="vertical-align:baseline;padding:0 4px;font-size:inherit">Contracts</button> in H&amp;R.</p>'+
         '<div class="toolbar" style="margin-bottom:14px;flex-wrap:wrap;gap:8px">'+
-        '<a class="btn btn--pri" href="hr_contract.html">+ New employment contract</a>'+
+        '<button type="button" class="btn btn--pri" data-view-target="staffhr_contracts">+ New employment contract</button>'+
         '<button type="button" class="btn btn--sec" data-open-compose data-preset="announcement">Compose announcement</button></div>'+
         '<div class="filter-row"><input class="inp" id="filStaff" placeholder="Filter staff…" /><select class="sel" id="filStaffSite"><option value="">All sites</option><option>Acton</option><option>Ealing</option><option>All</option></select></div>'+
         '<div class="card" style="margin-bottom:14px"><div class="card-h"><h3>Staff</h3></div><div class="card-pad" style="overflow:auto"><table class="tbl tbl--center" id="tblStaff"><thead><tr><th>Name</th><th>Role</th><th>Site</th><th>Availability</th><th>Status</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div></div>'+
@@ -18554,6 +18560,54 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="grid-2"><div class="card"><div class="card-h"><h3>Interviews (summary)</h3></div><div class="card-pad" style="overflow:auto"><table class="tbl tbl--center"><thead><tr><th>Candidate</th><th>Role</th><th>Status</th></tr></thead><tbody>'+intRows+'</tbody></table></div></div>'+
         '<div class="card"><div class="card-h"><h3>Onboarding (summary)</h3></div><div class="card-pad"><p class="muted" style="margin:0;font-size:13px;line-height:1.5">'+esc(obSummary)+'</p><div class="toolbar" style="margin-top:12px"><button type="button" class="btn btn--sec btn--sm" data-open-compose data-preset="reminder">Send reminder</button></div></div></div></div>'+
         '<div class="card" style="margin-top:14px"><div class="card-h"><h3>Internal HR notes</h3></div><div class="card-pad"><p class="muted" style="margin:0;white-space:pre-wrap;font-size:13px;line-height:1.5">'+esc(MOCK.hrNotesInternal)+'</p></div></div>';
+    }
+
+    function viewStaffHRContracts(){
+      var embed = (typeof window.HRContractEmbedHtml === 'function')
+        ? window.HRContractEmbedHtml()
+        : '<div id="hrContractEmbed" class="hr-contract-embed"><p class="muted">Loading contract wizard…</p></div>';
+      return (
+        '<h1 class="page-title">Employment contracts</h1>'+
+        '<p class="page-intro">Create zero-hours contracts and send them to staff. They sign on their <strong>Portal dashboard</strong> (like an announcement); the signed PDF is saved under <strong>My Documents</strong>.</p>'+
+        '<div class="toolbar" style="margin-bottom:14px;flex-wrap:wrap;gap:8px">'+
+        '<button type="button" class="btn btn--sec btn--sm" data-view-target="staffhr">Staff &amp; HR</button>'+
+        '<button type="button" class="btn btn--sec btn--sm" data-view-target="onboarding">Onboarding</button></div>'+
+        embed
+      );
+    }
+
+    var _hrContractScriptsReady = false;
+    function ensureHRContractScripts(done){
+      function finish(){
+        _hrContractScriptsReady = true;
+        if(typeof done === 'function') done();
+      }
+      if(_hrContractScriptsReady && window.ContractCore && window.HRContractApp){
+        finish();
+        return;
+      }
+      function loadScript(src, next){
+        var existing = document.querySelector('script[data-hr-contract-src="'+src+'"]');
+        if(existing){
+          if(existing.getAttribute('data-hr-contract-loaded') === '1'){ next(); return; }
+          existing.addEventListener('load', next);
+          existing.addEventListener('error', next);
+          return;
+        }
+        var s = document.createElement('script');
+        s.src = src;
+        s.setAttribute('data-hr-contract-src', src);
+        s.onload = function(){ s.setAttribute('data-hr-contract-loaded','1'); next(); };
+        s.onerror = next;
+        document.body.appendChild(s);
+      }
+      window.__HR_CONTRACT_DEFER_INIT__ = true;
+      loadScript('portal/contract-core.js?v=20260521-embed', function(){
+        loadScript('portal/hr-contract-app.js?v=20260521-embed', function(){
+          delete window.__HR_CONTRACT_DEFER_INIT__;
+          finish();
+        });
+      });
     }
 
     function viewOnboarding(){
@@ -20191,7 +20245,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       root.querySelectorAll('[data-act]').forEach(function(b){
         b.addEventListener('click', function(){
           var v = b.getAttribute('data-act');
-          if(v==='dashboard'||v==='operations'||v==='operations_admin'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='c4k_registers'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='scheduling'||v==='absents_refunds'||v==='portal_documents'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings') setView(v);
+          if(v==='dashboard'||v==='operations'||v==='operations_admin'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='c4k_registers'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='staffhr_contracts'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='scheduling'||v==='absents_refunds'||v==='portal_documents'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings') setView(v);
           closeSidebarMob();
         });
       });
@@ -20343,6 +20397,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var fs = $('filStaff'), fss = $('filStaffSite');
         if(fs) fs.addEventListener('input', filterStaffTable);
         if(fss) fss.addEventListener('change', filterStaffTable);
+      }
+      if(id==='staffhr_contracts'){
+        ensureHRContractScripts(function(){
+          if(window.HRContractApp && typeof window.HRContractApp.init === 'function'){
+            window.HRContractApp.init();
+          }
+        });
       }
       if(id==='c4k_waitlist'){
         refreshBookingWaitlistPipelineTable();

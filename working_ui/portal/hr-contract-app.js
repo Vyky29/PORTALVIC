@@ -399,14 +399,43 @@
     });
     $("sendContractBtn").addEventListener("click", sendContractToEmployee);
     $("copyUrlBtn").addEventListener("click", copySigningUrl);
-    $("newContractBtn").addEventListener("click", () => location.reload());
+    $("newContractBtn").addEventListener("click", () => {
+      if (document.getElementById("hrContractEmbed") && window.HRContractApp && window.HRContractApp.reset) {
+        window.HRContractApp.reset();
+      } else {
+        location.reload();
+      }
+    });
     window.addEventListener("resize", () => {
       if (directorPadReady && directorPadApi) directorPadApi.resize();
     });
   }
 
-  function init() {
+  function reset() {
+    directorSignatureDataUrl = "";
+    directorPadReady = false;
+    directorPadApi = null;
+    Object.keys(venueHoursStore).forEach((k) => delete venueHoursStore[k]);
+    const form = $("contractForm");
+    if (form) form.reset();
+    const sendOk = $("sendSuccess");
+    if (sendOk) sendOk.classList.remove("visible");
+    const sendErr = $("sendError");
+    if (sendErr) sendErr.style.display = "none";
+    const sendBtn = $("sendContractBtn");
+    if (sendBtn) sendBtn.disabled = true;
     contractReference = C.generateReference("");
+    $("badgeReference").textContent = "Contract Reference: " + contractReference;
+    $("directorSignatureDate").value = C.formatUKDate(new Date().toISOString().slice(0, 10));
+    setStep(1);
+    updatePreview();
+    loadRecentFromSupabase();
+  }
+
+  function init() {
+    if (!$("contractForm")) return;
+    contractReference = C.generateReference("");
+    $("badgeReference").textContent = "Contract Reference: " + contractReference;
     $("directorSignatureDate").value = C.formatUKDate(new Date().toISOString().slice(0, 10));
     bindEvents();
     setStep(1);
@@ -417,6 +446,12 @@
     });
   }
 
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
-  else init();
+  window.HRContractApp = { init: init, reset: reset };
+
+  function boot() {
+    if (window.__HR_CONTRACT_DEFER_INIT__) return;
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+    else init();
+  }
+  boot();
 })();
