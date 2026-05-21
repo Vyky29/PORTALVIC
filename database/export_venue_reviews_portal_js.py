@@ -195,13 +195,19 @@ def _write_csv(rows: list[dict], path: Path) -> None:
 def export_venue_reviews_js() -> int:
     bundle = _bundle_dir()
     by_key: dict[tuple, dict] = {}
-
-    for row in _build_from_status_csvs(bundle):
-        by_key[_dedupe_key(row)] = row
-
     csv_path = bundle / "venue-reviews.csv"
+    source_note = "portal-import-bundle/venue-reviews.csv"
+
     for row in _load_csv_rows(csv_path):
         by_key[_dedupe_key(row)] = row
+
+    if not by_key:
+        for row in _build_from_status_csvs(bundle):
+            by_key[_dedupe_key(row)] = row
+        source_note = (
+            "Roster-derived Opening/Closing per venue-day (no venue-reviews.csv rows); "
+            "drop a CSV export into portal-import-bundle to replace"
+        )
 
     rows = sorted(
         by_key.values(),
@@ -223,7 +229,7 @@ def export_venue_reviews_js() -> int:
         "rowCount": len(rows),
         "coverageFromIso": DATE_FROM,
         "coverageThroughIso": DATE_TO,
-        "sourceNote": "CSV overrides roster-derived Opening/Closing rows per venue-day (last two May 2026 weeks)",
+        "sourceNote": source_note,
     }
     payload = {"meta": meta, "rows": rows}
     OUT_JS.parent.mkdir(parents=True, exist_ok=True)

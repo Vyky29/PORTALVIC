@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en-GB" data-portal-ui-build="20260520-dash-hub" data-portal-session-feedback-v="20260507-portalfix" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
+<html lang="en-GB" data-portal-ui-build="20260521-portal-bundle" data-portal-session-feedback-v="20260521-portal-bundle" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
 <head>
   <!-- Admin portal · Vercel static deploy: working_ui/admin_dashboard.html + portal/ assets -->
   <meta charset="UTF-8" />
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260520-portal2026" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260520-portal2026" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260520-dash-hub" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260521-nav-hub" />
   <script src="/portal/admin-portal-day-ops.js?v=20260520-portal2026"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
   <title>clubSENsational · Operations + Operator workflow (merged)</title>
@@ -180,6 +180,7 @@
       border:1px solid rgba(255,255,255,.08);
       border-left:3px solid var(--nav-g-accent);
     }
+    .admin-nav-group[data-group-id="g_dashboard"]{--nav-g-accent:#6366f1;--nav-g-text:#e0e7ff;--nav-g-soft:rgba(99,102,241,.18)}
     .admin-nav-group[data-group-id="g_operator"]{--nav-g-accent:#818cf8;--nav-g-text:#e0e7ff;--nav-g-soft:rgba(129,140,232,.16)}
     .admin-nav-group[data-group-id="g_reception"]{--nav-g-accent:#4ade80;--nav-g-text:#dcfce7;--nav-g-soft:rgba(74,222,128,.14)}
     .admin-nav-group[data-group-id="g_c4k"]{--nav-g-accent:#fbbf24;--nav-g-text:#fef3c7;--nav-g-soft:rgba(251,191,36,.14)}
@@ -4185,9 +4186,9 @@
   })();
   </script>
   <!-- Session feedback + completion status (portal-import-bundle). Bump v after import_portal_bundle.py -->
-  <script src="/portal/session_feedback_status_portal_data.js?v=20260520-adaam-ah"></script>
-  <script src="/portal/session_feedback_portal_data.js?v=20260520-adaam-ah"></script>
-  <script src="/portal/venue_reviews_portal_data.js?v=20260521-venue-reviews"></script>
+  <script src="/portal/session_feedback_status_portal_data.js?v=20260521-portal-bundle"></script>
+  <script src="/portal/session_feedback_portal_data.js?v=20260521-portal-bundle"></script>
+  <script src="/portal/venue_reviews_portal_data.js?v=20260521-portal-bundle"></script>
   <script>
   (function portalSessionFeedbackBootstrap(){
     var v = (document.documentElement.getAttribute('data-portal-session-feedback-v') || document.documentElement.getAttribute('data-portal-uploads-js-v') || '20260520-bundle').trim();
@@ -4448,6 +4449,7 @@
     'use strict';
 
     var NAV = [
+      { id:'nav_hub', label:'Dashboard' },
       { id:'dashboard', label:'Day operations' },
       { id:'operations_admin', label:'Operations admin' },
       { id:'operator', label:'Control centre' },
@@ -4481,6 +4483,7 @@
       { id:'portal_nav_logout', label:'Log out', navAction:'logout', skipBottomNav:true }
     ];
     var NAV_GROUPS = [
+      { id:'g_dashboard', label:'Dashboard', children:['nav_hub'] },
       { id:'g_operator', label:'Operator', children:['dashboard','operations_admin','operator'] },
       { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','__h:Participants','clients','__h:Orders','orders_all','orders_outstanding','__h:Communications','comms_ops'] },
       { id:'g_zoho', label:'H&R (ZohoPeople)', children:['staffhr','onboarding','policies'] },
@@ -4519,6 +4522,8 @@
       reports:'<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
       policies:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>',
       settings:'<line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>',
+      g_dashboard:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>',
+      nav_hub:'<path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M9 22V12h6v10"/>',
       g_operator:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>',
       g_reception:'<path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>',
       g_c4k:'<path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>',
@@ -5109,7 +5114,7 @@
       }
     };
 
-    var state = { view:'dashboard', drawerClient:null, drawerStaff:null, drawerIsSynthetic:false, reportTargetClient:null, search:'', shiftModalCtx:null, pendingBookingsScroll:null, pendingBookingsSlotFocus:null, commsOrderDetailKey:'', sessionOverview:{ iso:'', overrides:[] }, sessionFeedback:{ anchorIso:'', selectedIso:null, rangeFrom:'', rangeTo:'', clientQ:'' }, navGroupsOpen:{ g_operator:false, g_c4k:false, g_zoho:false, g_xero:false, g_indeed:false, g_settings_portal:false }, c4kServicesRegisterOpen:false, registerSessionSlot:null, scrollToCapacityEmbed:false };
+    var state = { view:'nav_hub', drawerClient:null, drawerStaff:null, drawerIsSynthetic:false, reportTargetClient:null, search:'', shiftModalCtx:null, pendingBookingsScroll:null, pendingBookingsSlotFocus:null, commsOrderDetailKey:'', sessionOverview:{ iso:'', overrides:[] }, sessionFeedback:{ anchorIso:'', selectedIso:null, rangeFrom:'', rangeTo:'', clientQ:'' }, navGroupsOpen:{ g_dashboard:true, g_operator:false, g_c4k:false, g_zoho:false, g_xero:false, g_indeed:false, g_settings_portal:false }, c4kServicesRegisterOpen:false, registerSessionSlot:null, scrollToCapacityEmbed:false };
     var sched = { slotsById:{}, overrides:[], activeSlot:null, lastMsg:'', waitingSupabaseRetryBound:false };
     var booking = { slotsById:{}, overrides:[], waitingSupabaseRetryBound:false, selectedDate:'', metaById:{}, financeById:{}, activeTab:'master', ordersScope:'all', ordersTimePreset:'today', ordersClientFilter:'', portalOrdersPage:1, portalOrdersRows:[] };
     var invoices = { lines:[{ description:'', quantity:1, unitPrice:0, taxType:'vat20' }] };
@@ -17522,6 +17527,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
 
     function renderView(id){
+      if(id==='nav_hub') return viewNavHubDashboard();
       if(id==='operations_admin') return viewOperationsAdmin();
       if(id==='dashboard' || id==='operations') return viewOperations();
       if(id==='clients') return viewC4kParticipants();
@@ -18136,6 +18142,92 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var n = normTok(first);
       if(!n) return false;
       return n === 'victor' || n === 'raul' || n === 'javi';
+    }
+    var DASH_HUB_NAV_GROUPS = ['g_operator','g_c4k','g_zoho','g_xero','g_indeed','g_settings_portal'];
+    function dashHubItemDesc(item){
+      var id = item && item.id;
+      var map = {
+        dashboard:'Team on site · sessions · feedback · incidents · venue',
+        operations_admin:'Bookings · payments · progress · reports · directory',
+        operator:'Control centre · KPIs · suggestions · new leads',
+        c4k_services:'Services overview · weekly capacity · registers',
+        clients:'Participant profiles · activity · reports',
+        orders_all:'All orders · slot state · funding',
+        orders_outstanding:'Outstanding orders · holds · make-up',
+        comms_ops:'Programme comms · CEO chat · internal messages',
+        staffhr:'Staff records · availability · HR notes',
+        onboarding:'New hire onboarding pipeline',
+        policies:'Documents · sign-offs · compliance',
+        invoices:'Xero · finance · invoices',
+        recruitment:'Indeed / web recruitment queue',
+        settings:'This app · preferences',
+        portal_nav_alerts:'Unread venue / ops alerts',
+        portal_nav_staff:'Open staff dashboard',
+        portal_nav_ceo:'Open CEO dashboard',
+        portal_nav_logout:'Sign out of Portal'
+      };
+      return map[id] || '';
+    }
+    function dashHubNavTileHtml(item){
+      if(!item) return '';
+      var desc = dashHubItemDesc(item);
+      var descHtml = desc ? ('<span class="dash-hub__tile-desc">'+esc(desc)+'</span>') : '';
+      var band = '<span class="dash-hub__tile-band" aria-hidden="true">'+adminNavIconHtml(item.id)+'</span>';
+      var label = '<span class="dash-hub__tile-label">'+esc(item.label)+'</span>';
+      if(item.externalUrl){
+        return '<a class="dash-hub__tile" href="'+esc(String(item.externalUrl))+'">'+band+label+descHtml+'</a>';
+      }
+      if(item.navAction === 'logout'){
+        return '<button type="button" class="dash-hub__tile" data-portal-logout="1">'+band+label+descHtml+'</button>';
+      }
+      if(item.navAction === 'alerts'){
+        return '<button type="button" class="dash-hub__tile" data-admin-nav-action="alerts">'+band+label+descHtml+'</button>';
+      }
+      return '<button type="button" class="dash-hub__tile" data-view-target="'+esc(item.id)+'">'+band+label+descHtml+'</button>';
+    }
+    function viewNavHubDashboard(){
+      var acc = DASH_HUB_NAV_GROUPS.map(function(gid){
+        var group = null;
+        for(var gi = 0; gi < NAV_GROUPS.length; gi++){
+          if(NAV_GROUPS[gi].id === gid){ group = NAV_GROUPS[gi]; break; }
+        }
+        if(!group) return '';
+        var parts = [];
+        var gridOpen = false;
+        (group.children || []).forEach(function(cid){
+          var cs = String(cid);
+          if(cs.indexOf('__h:') === 0){
+            if(gridOpen){ parts.push('</div>'); gridOpen = false; }
+            parts.push('<p class="dash-hub__subhead">'+esc(cs.slice(4))+'</p>');
+            return;
+          }
+          var item = navGetItem(cid);
+          if(!item) return;
+          if(!gridOpen){
+            parts.push('<div class="dash-hub__grid">');
+            gridOpen = true;
+          }
+          parts.push(dashHubNavTileHtml(item));
+        });
+        if(gridOpen) parts.push('</div>');
+        return (
+          '<details class="dash-hub-acc" open>' +
+          '<summary class="dash-hub-acc__sum">' +
+          adminNavIconHtml(group.id) +
+          '<span class="dash-hub-acc__label">'+esc(group.label)+'</span>' +
+          '<span class="dash-hub-acc__caret" aria-hidden="true">▾</span>' +
+          '</summary>' +
+          '<div class="dash-hub-acc__body">'+parts.join('')+'</div>' +
+          '</details>'
+        );
+      }).join('');
+      return (
+        '<div class="dash-hub dash-hub--nav-index">' +
+        '<h2 class="page-title">Dashboard</h2>' +
+        '<p class="page-intro">All admin areas in one place — expand a category, then open the screen you need.</p>' +
+        '<div class="dash-hub-acc__stack">'+acc+'</div>' +
+        '</div>'
+      );
     }
     function viewOperations(){
       var sessionsTiles =

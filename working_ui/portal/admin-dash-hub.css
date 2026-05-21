@@ -223,3 +223,65 @@
 .dash-hub__panel--leads .dash-hub__panel-ico{background:#fef3c7;color:#b45309}
 body:has(#workspace .dash-hub) .admin-workspace{background:#f8fafc}
 body:has(#workspace .dash-hub) .admin-main{background:#f8fafc}
+
+/* Dashboard nav index — accordion categories */
+.dash-hub--nav-index .dash-hub-acc__stack{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  min-width:0;
+}
+.dash-hub-acc{
+  min-width:0;
+  border:1px solid var(--dh-line);
+  border-radius:var(--dh-radius);
+  background:var(--dh-panel);
+  box-shadow:var(--dh-shadow);
+  overflow:hidden;
+}
+.dash-hub-acc__sum{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:14px 16px;
+  cursor:pointer;
+  list-style:none;
+  font-weight:700;
+  color:var(--dh-ink);
+  min-width:0;
+}
+.dash-hub-acc__sum::-webkit-details-marker{display:none}
+.dash-hub-acc__sum::marker{content:''}
+.dash-hub-acc__sum .admin-nav-ico{
+  flex-shrink:0;
+  width:40px;
+  height:40px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:10px;
+  background:#eef2ff;
+  color:#4f46e5;
+}
+.dash-hub-acc__sum .admin-nav-ico svg{width:22px;height:22px;display:block}
+.dash-hub-acc__label{
+  flex:1;
+  min-width:0;
+  font-size:14px;
+  letter-spacing:.02em;
+  overflow-wrap:break-word;
+}
+.dash-hub-acc__caret{
+  flex-shrink:0;
+  font-size:12px;
+  color:var(--dh-muted);
+  transition:transform .15s ease;
+}
+.dash-hub-acc[open] .dash-hub-acc__caret{transform:rotate(180deg)}
+.dash-hub-acc__body{
+  padding:0 16px 16px;
+  border-top:1px solid var(--dh-line);
+  min-width:0;
+}
+.dash-hub-acc__body .dash-hub__subhead:first-child{margin-top:12px}
+.dash-hub-acc__body a.dash-hub__tile{text-decoration:none;color:inherit}
