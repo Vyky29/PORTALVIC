@@ -6481,7 +6481,8 @@
 
   <script src="/portal/term_from_timetable.js"></script>
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js"></script>
-  <script src="/portal/session_feedback_status_portal_data.js?v=20260519-status-submit"></script>
+  <script src="/portal/session_feedback_portal_data.js?v=20260519-client-slug"></script>
+  <script src="/portal/session_feedback_status_portal_data.js?v=20260519-client-slug"></script>
   <script src="/portal/staff_dashboard_portal_roster_source.js"></script>
   <script src="/portal/clients_info_embed.js"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js"></script>
@@ -6734,11 +6735,27 @@
       return portalStaffMatchesStatusInstructor(staffId, st.instructor)
         || portalStaffMatchesStatusInstructor(staffId, st.matchedFeedbackBy);
     }
+    function portalSlugifyClientKey(value){
+      return String(value || '').toLowerCase().trim()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '');
+    }
+    function portalRosterClientLabelForMatch(s){
+      const cid = String(s && s.clientId || '').trim().toLowerCase();
+      if(!cid || cid === 'closed' || cid === 'available') return '';
+      try{
+        const notes = typeof clientNotesById !== 'undefined' ? clientNotesById[cid] : null;
+        const name = notes && String(notes.name || '').trim();
+        if(name) return portalSlugifyClientKey(name);
+      }catch(_){}
+      return portalSlugifyClientKey(cid);
+    }
     function portalStatusRowMatchesRosterClient(st, s){
-      const clientLabel = String(s && (s.clientName || s.clientId) || '').trim().toLowerCase();
-      const c = String(st && st.client || '').trim().toLowerCase();
-      if(!c || !clientLabel) return false;
-      return c === clientLabel || clientLabel.indexOf(c) >= 0 || c.indexOf(clientLabel) >= 0;
+      const rosterKey = portalRosterClientLabelForMatch(s);
+      const statusKey = portalSlugifyClientKey(st && (st.client || st.clientName));
+      if(!rosterKey || !statusKey) return false;
+      if(rosterKey === statusKey) return true;
+      return rosterKey.indexOf(statusKey) >= 0 || statusKey.indexOf(rosterKey) >= 0;
     }
     function portalStatusRowIsDoneForCalendar(st){
       return st && (st.overviewStatus === 'absent' || st.feedbackComplete === true
@@ -6809,16 +6826,13 @@
               ? portalSessionReviewKeyForModelRow(s, dayWord, iso)
               : '';
             if(!sk) return;
-            const clientLabel = String(s.clientName || s.clientId || '').trim().toLowerCase();
             const hit = byDate[iso].some(function(st){
-              const c = String(st.client || '').trim().toLowerCase();
-              return c && clientLabel && (c === clientLabel || clientLabel.indexOf(c) >= 0 || c.indexOf(clientLabel) >= 0);
+              return portalStatusRowMatchesRosterClient(st, s);
             });
             if(!hit) return;
             const prev = sessionReviewMapMemory[sk] || { feedbackDone: false, incident: false, absent: false, cancelled: false };
             const stRow = byDate[iso].find(function(st){
-              const c = String(st.client || '').trim().toLowerCase();
-              return c && clientLabel && (c === clientLabel || clientLabel.indexOf(c) >= 0 || c.indexOf(clientLabel) >= 0);
+              return portalStatusRowMatchesRosterClient(st, s);
             });
             const next = {
               feedbackDone: stRow && stRow.overviewStatus !== 'absent',
@@ -6839,6 +6853,64 @@
         return false;
       }
     }
+    /** Pre-fill from submitted session feedback export (covers 11–12 May and rows missing from status bundle). */
+    function portalSeedReviewDoneFromSubmittedFeedbackPortal(){
+      try{
+        const src = typeof window !== 'undefined' ? window.SESSION_FEEDBACK_PORTAL_SOURCE : null;
+        if(!src || !Array.isArray(src.rows) || !src.rows.length) return false;
+        const staffId = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
+        if(!staffId) return false;
+        let changed = false;
+        src.rows.forEach(function(row){
+          const iso = String(row.date || '').trim().substring(0, 10);
+          if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
+          if(!portalStaffMatchesStatusInstructor(staffId, row.instructor)) return;
+          const dayWord = new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
+          const rel = typeof portalTermFeedbackSessionsForDate === 'function'
+            ? portalTermFeedbackSessionsForDate(dayWord, iso, staffId, function(s){
+                const st = String(s.status || '').toLowerCase();
+                if(st === 'closed' || st === 'available') return false;
+                return Boolean(String(s.clientId || '').trim());
+              })
+            : [];
+          rel.forEach(function(s){
+            if(!portalStatusRowMatchesRosterClient({ clientName: row.clientName }, s)) return;
+            const sk = typeof portalSessionReviewKeyForModelRow === 'function'
+              ? portalSessionReviewKeyForModelRow(s, dayWord, iso)
+              : '';
+            if(!sk) return;
+            const att = String(row.attendance != null ? row.attendance : '').trim().toLowerCase();
+            const isAbsent = att === 'no' || att === 'n' || att === '0' || att === 'false';
+            const prev = sessionReviewMapMemory[sk] || { feedbackDone: false, incident: false, absent: false, cancelled: false };
+            const next = {
+              feedbackDone: !isAbsent,
+              incident: !!prev.incident,
+              absent: isAbsent,
+              cancelled: !!prev.cancelled
+            };
+            if(next.feedbackDone !== prev.feedbackDone || next.absent !== prev.absent){
+              sessionReviewMapMemory[sk] = next;
+              changed = true;
+            }
+          });
+        });
+        if(changed) persistSessionReviewMap();
+        return changed;
+      }catch(e){
+        console.warn('[portal] submitted feedback seed skipped', e);
+        return false;
+      }
+    }
+    function portalSeedAllReviewDoneFromPortalExports(){
+      let changed = false;
+      if(typeof portalSeedReviewDoneFromFeedbackStatusBundle === 'function'){
+        if(portalSeedReviewDoneFromFeedbackStatusBundle()) changed = true;
+      }
+      if(typeof portalSeedReviewDoneFromSubmittedFeedbackPortal === 'function'){
+        if(portalSeedReviewDoneFromSubmittedFeedbackPortal()) changed = true;
+      }
+      return changed;
+    }
     /** Merge feedback / incident / cancellation rows from Supabase so a second device shows the same greens as the first. */
     async function portalMergeServerReviewStateForDashboard(){
       try{
@@ -6847,8 +6919,8 @@
         if(!box || !box.client || !uid) return;
         const mod = await import(PORTAL_SUPABASE_CLIENT_MODULE);
         if(!mod.portalFetchSubmittedReviewSessionKeys || !mod.portalMergeReviewKeysIntoMemoryMap) return;
-        const seeded = typeof portalSeedReviewDoneFromFeedbackStatusBundle === 'function'
-          ? portalSeedReviewDoneFromFeedbackStatusBundle()
+        const seeded = typeof portalSeedAllReviewDoneFromPortalExports === 'function'
+          ? portalSeedAllReviewDoneFromPortalExports()
           : false;
         const rosterKeys = typeof portalCollectRosterSessionKeysForReviewSync === 'function' ? portalCollectRosterSessionKeysForReviewSync() : [];
         const keys = await mod.portalFetchSubmittedReviewSessionKeys(box.client, uid, { rosterSessionKeys: rosterKeys });
@@ -15524,7 +15596,7 @@
           var d = document.createElement('div');
           d.id = 'portalP1DeployFingerprint';
           d.setAttribute('aria-hidden', 'true');
-          d.textContent = 'P1 BUILD 20260519 STATUS-SUBMIT';
+          d.textContent = 'P1 BUILD 20260519 CLIENT-SLUG';
           d.style.cssText = 'position:fixed;bottom:8px;right:8px;z-index:2147483647;margin:0;padding:4px 6px;font:10px/1.2 ui-monospace,Menlo,Consolas,monospace;color:#0c1b2e;background:rgba(255,255,255,.92);border:1px solid rgba(12,27,46,.2);pointer-events:none;';
           (document.body || document.documentElement).appendChild(d);
         }
@@ -15827,8 +15899,8 @@
           dashboardData.dateTopbar = weekdayTop + "\n" + pad(now.getDate()) + "/" + pad(now.getMonth() + 1) + "/" + now.getFullYear();
         }
         if(typeof hydrateSessionReviewMapFromStorage === "function") hydrateSessionReviewMapFromStorage();
-        if(typeof portalSeedReviewDoneFromFeedbackStatusBundle === "function"){
-          portalSeedReviewDoneFromFeedbackStatusBundle();
+        if(typeof portalSeedAllReviewDoneFromPortalExports === "function"){
+          portalSeedAllReviewDoneFromPortalExports();
         }
         if(typeof rebuildTermShiftAndFeedbackFromSessionModel === "function"){
           rebuildTermShiftAndFeedbackFromSessionModel();
