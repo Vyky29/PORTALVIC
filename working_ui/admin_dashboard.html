@@ -6,7 +6,7 @@
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260520-portal2026" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260520-portal2026" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260521-nav-inline" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260521-cat-grid" />
   <script src="/portal/admin-portal-day-ops.js?v=20260520-portal2026"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
   <title>clubSENsational · Operations + Operator workflow (merged)</title>
@@ -18143,7 +18143,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!n) return false;
       return n === 'victor' || n === 'raul' || n === 'javi';
     }
-    var DASH_HUB_NAV_GROUPS = ['g_operator','g_c4k','g_zoho','g_xero','g_indeed','g_settings_portal'];
+    var DASH_HUB_NAV_GROUPS = ['g_operator','g_c4k','g_zoho','g_xero','g_indeed'];
     function dashHubItemDesc(item){
       var id = item && item.id;
       var map = {
@@ -18186,7 +18186,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return '<button type="button" class="dash-hub__tile" data-view-target="'+esc(item.id)+'">'+band+label+descHtml+'</button>';
     }
     function viewNavHubDashboard(){
-      var acc = DASH_HUB_NAV_GROUPS.map(function(gid){
+      var panels = DASH_HUB_NAV_GROUPS.map(function(gid){
         var group = null;
         for(var gi = 0; gi < NAV_GROUPS.length; gi++){
           if(NAV_GROUPS[gi].id === gid){ group = NAV_GROUPS[gi]; break; }
@@ -18199,24 +18199,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(!item) return;
           tiles.push(dashHubNavTileHtml(item));
         });
-        var body =
-          '<div class="dash-hub__grid dash-hub__grid--inline">' + tiles.join('') + '</div>';
         return (
-          '<details class="dash-hub-acc" open>' +
-          '<summary class="dash-hub-acc__sum">' +
+          '<section class="dash-hub-cat" data-hub-cat="'+esc(group.id)+'">' +
+          '<header class="dash-hub-cat__head">' +
           adminNavIconHtml(group.id) +
-          '<span class="dash-hub-acc__label">'+esc(group.label)+'</span>' +
-          '<span class="dash-hub-acc__caret" aria-hidden="true">▾</span>' +
-          '</summary>' +
-          '<div class="dash-hub-acc__body">'+body+'</div>' +
-          '</details>'
+          '<span class="dash-hub-cat__label">'+esc(group.label)+'</span>' +
+          '</header>' +
+          '<div class="dash-hub-cat__body">' +
+          '<div class="dash-hub__grid dash-hub__grid--inline">' + tiles.join('') + '</div>' +
+          '</div></section>'
         );
       }).join('');
       return (
         '<div class="dash-hub dash-hub--nav-index">' +
         '<h2 class="page-title">Dashboard</h2>' +
-        '<p class="page-intro">All admin areas in one place — expand a category, then open the screen you need.</p>' +
-        '<div class="dash-hub-acc__stack">'+acc+'</div>' +
+        '<p class="page-intro">All admin areas at a glance — pick a shortcut below.</p>' +
+        '<div class="dash-hub-cat-grid">'+panels+'</div>' +
         '</div>'
       );
     }
