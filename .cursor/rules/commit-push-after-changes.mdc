@@ -1,0 +1,14 @@
+---
+description: After making repo changes, commit and push to origin unless the user opts out.
+alwaysApply: true
+---
+
+# Commit and push by default
+
+When you finish implementing or fixing something in this repo:
+
+1. **Commit and push** to the tracked remote branch (usually `main`) so Vercel/GitHub stay in sync.
+2. **Do not** commit secrets (`.env`, keys), temp files (`.tmp_*`, `supabase/.temp/`), or local-only uploads (e.g. stray `.xlsx`) unless the user explicitly asks.
+3. **Skip** commit/push only when the user clearly says not to (e.g. "don't push", "local only", "no commit").
+
+After push, tell the user briefly that deploy will follow via their usual pipeline (e.g. Vercel from GitHub).
