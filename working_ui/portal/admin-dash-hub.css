@@ -224,7 +224,7 @@
 body:has(#workspace .dash-hub) .admin-workspace{background:#f8fafc}
 body:has(#workspace .dash-hub) .admin-main{background:#f8fafc}
 
-/* Dashboard nav index — all categories visible, two per row */
+/* Dashboard nav index — row1: 2 cats; row2: H&R · Finance · Recruitment */
 .dash-hub-cat-grid{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
@@ -232,8 +232,15 @@ body:has(#workspace .dash-hub) .admin-main{background:#f8fafc}
   min-width:0;
   align-items:stretch;
 }
+.dash-hub--nav-index .dash-hub-cat-grid{
+  grid-template-columns:repeat(6,minmax(0,1fr));
+}
+.dash-hub--nav-index .dash-hub-cat:nth-child(-n+2){grid-column:span 3}
+.dash-hub--nav-index .dash-hub-cat:nth-child(n+3){grid-column:span 2}
 @media (max-width:960px){
   .dash-hub-cat-grid{grid-template-columns:1fr}
+  .dash-hub--nav-index .dash-hub-cat-grid{grid-template-columns:1fr}
+  .dash-hub--nav-index .dash-hub-cat{grid-column:auto}
 }
 .dash-hub-cat{
   min-width:0;

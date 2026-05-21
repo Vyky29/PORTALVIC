@@ -6,7 +6,7 @@
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260520-portal2026" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260520-portal2026" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260521-cat-grid" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260521-row2-triple" />
   <script src="/portal/admin-portal-day-ops.js?v=20260520-portal2026"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
   <title>clubSENsational · Operations + Operator workflow (merged)</title>
@@ -4474,6 +4474,7 @@
       { id:'onboarding', label:'Onboarding' },
       { id:'invoices', label:'Xero / finance' },
       { id:'recruitment', label:'Recruitment (Indeed/Web)' },
+      { id:'interviews', label:'Interviews', externalUrl:'Working_interview.html' },
       { id:'policies', label:'Documents & compliance' },
       { id:'settings', label:'System settings' },
       { id:'portal_nav_alerts', label:'Alerts inbox', navAction:'alerts', skipBottomNav:true },
@@ -4488,7 +4489,7 @@
       { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','__h:Participants','clients','__h:Orders','orders_all','orders_outstanding','__h:Communications','comms_ops'] },
       { id:'g_zoho', label:'H&R (ZohoPeople)', children:['staffhr','onboarding','policies'] },
       { id:'g_xero', label:'Finance (Xero)', children:['invoices'] },
-      { id:'g_indeed', label:'Recruitment (Indeed/Web)', children:['recruitment'] },
+      { id:'g_indeed', label:'Recruitment (Indeed/Web)', children:['interviews'] },
       { id:'g_settings_portal', label:'Settings & dashboards', children:['__h:This app','settings','portal_nav_alerts','__h:Other portals','portal_nav_staff','portal_nav_ceo','portal_nav_admin','__h:Session','portal_nav_logout'] }
     ];
     /* Stroke SVGs (outline), inherit sidebar text colour — replaces emoji glyphs */
@@ -4519,6 +4520,7 @@
       onboarding:'<path d="M2 3h6a4 4 0 014 4v14a4 4 0 00-4-4H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a4 4 0 014-4h6z"/>',
       invoices:'<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/>',
       recruitment:'<rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><path d="M12 11v6"/><path d="M9 14h6"/>',
+      interviews:'<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>',
       reports:'<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
       policies:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>',
       settings:'<line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>',
@@ -18143,7 +18145,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!n) return false;
       return n === 'victor' || n === 'raul' || n === 'javi';
     }
-    var DASH_HUB_NAV_GROUPS = ['g_operator','g_c4k','g_zoho','g_xero'];
+    var DASH_HUB_NAV_GROUPS = ['g_operator','g_c4k','g_zoho','g_xero','g_indeed'];
     function dashHubItemDesc(item){
       var id = item && item.id;
       var map = {
@@ -18160,6 +18162,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         policies:'Documents · sign-offs · compliance',
         invoices:'Xero · finance · invoices',
         recruitment:'Indeed / web recruitment queue',
+        interviews:'Call & face-to-face · onboarding stages',
         settings:'This app · preferences',
         portal_nav_alerts:'Unread venue / ops alerts',
         portal_nav_staff:'Open staff dashboard',
@@ -18199,10 +18202,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(!item) return;
           tiles.push(dashHubNavTileHtml(item));
         });
-        if(gid === 'g_xero'){
-          var recruitItem = navGetItem('recruitment');
-          if(recruitItem) tiles.push(dashHubNavTileHtml(recruitItem));
-        }
         return (
           '<section class="dash-hub-cat" data-hub-cat="'+esc(group.id)+'">' +
           '<header class="dash-hub-cat__head">' +
