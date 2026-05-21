@@ -355,40 +355,42 @@ body:has(#workspace .dash-hub--nav-index) .admin-workspace{
 }
 .dash-hub--nav-index .dash-hub-cat__body .dash-hub__grid--inline{
   flex:0 1 auto;
-  display:flex;
-  flex-wrap:wrap;
-  align-items:center;
-  align-content:center;
-  justify-content:center;
-  gap:clamp(10px,1.2vh,14px);
+  display:grid;
   width:100%;
   max-width:100%;
   min-height:0;
   margin:auto;
+  gap:clamp(8px,1vw,12px);
+  align-content:center;
+  justify-content:center;
+  grid-auto-rows:var(--dh-nav-tile-h);
 }
-.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_zoho"] .dash-hub__grid--inline{
-  grid-template-columns:repeat(3,var(--dh-nav-tile-w));
+.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_operator"] .dash-hub__grid--inline,
+.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_zoho"] .dash-hub__grid--inline,
+.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_xero"] .dash-hub__grid--inline{
+  grid-template-columns:repeat(2,minmax(0,1fr));
 }
-.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_xero"] .dash-hub__grid--inline,
+.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_supabase"] .dash-hub__grid--inline,
 .dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_indeed"] .dash-hub__grid--inline{
-  grid-template-columns:repeat(2,var(--dh-nav-tile-w));
+  grid-template-columns:minmax(0,1fr);
+  max-width:min(var(--dh-nav-tile-w),100%);
 }
-.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_operator"] .dash-hub__grid--inline{
-  grid-template-columns:repeat(2,var(--dh-nav-tile-w));
+.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_c4k"] .dash-hub__grid--inline{
+  grid-template-columns:repeat(5,minmax(0,1fr));
 }
-@media (max-width:720px){
-  .dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_zoho"] .dash-hub__grid--inline{
-    grid-template-columns:repeat(auto-fill,minmax(var(--dh-nav-tile-w),var(--dh-nav-tile-w)));
+@media (max-width:1280px){
+  .dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_c4k"] .dash-hub__grid--inline{
+    grid-template-columns:repeat(3,minmax(0,1fr));
   }
 }
 .dash-hub--nav-index .dash-hub-cat__body .dash-hub__grid--inline .dash-hub__tile{
   flex:none;
   width:100%;
   min-width:0;
-  max-width:var(--dh-nav-tile-w);
+  max-width:none;
   min-height:var(--dh-nav-tile-h);
-  height:var(--dh-nav-tile-h);
-  padding:0 clamp(8px,1vw,12px) clamp(10px,1.2vh,14px);
+  height:100%;
+  padding:0 clamp(6px,0.8vw,10px) clamp(8px,1vh,12px);
   box-sizing:border-box;
 }
 .dash-hub--nav-index .dash-hub-cat__body .dash-hub__grid--inline .dash-hub__tile-band{
@@ -404,9 +406,6 @@ body:has(#workspace .dash-hub--nav-index) .admin-workspace{
 }
 .dash-hub--nav-index .dash-hub-cat__body .dash-hub__grid--inline .dash-hub__tile-desc{
   font-size:clamp(10px,1.2vh,11px);
-}
-.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_supabase"] .dash-hub__grid--inline{
-  justify-content:center;
 }
 @media (max-width:1100px){
   .dash-hub--nav-index .dash-hub-cat-grid{
