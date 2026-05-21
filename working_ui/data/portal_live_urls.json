@@ -5,7 +5,7 @@
     "intent": "Canonical paths on the Git/Vercel deploy. Same-origin HTML next to portal/ assets. Override per environment via PORTAL_*_DASHBOARD_URL in login.html.",
     "notes": [
       "Repo filename for observation is observation_portal.html.",
-      "Legacy WordPress slugs (/l0/, /operations-admin/) are not used; optional rewrites in vercel.json redirect old paths."
+      "Use only same-origin HTML paths on the Vercel deploy (no legacy /p1, /l0, /l1 short links)."
     ]
   },
   "by_filename": {

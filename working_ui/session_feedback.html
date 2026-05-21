@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<!-- Staff session feedback · vuelve a /p1 · auth-handler y JS Medios ?v=20260429-portal -->
+<!-- Staff session feedback · returns to staff_dashboard.html on same Vercel origin -->
 <script>
   (function () {
     try { document.documentElement.classList.add("portal-app-shell"); } catch (e) {}
@@ -654,7 +654,7 @@ button{
     const params = new URLSearchParams(window.location.search);
     const returnUrl = params.get("return");
     const storedReturn = sessionStorage.getItem("__portal_feedback_return_v1");
-    const baseTarget = returnUrl || storedReturn || "/p1/";
+    const baseTarget = returnUrl || storedReturn || (typeof portalStaffDashboardUrl === "function" ? portalStaffDashboardUrl() : new URL("staff_dashboard.html", location.href).href);
     let origin = "dashboard";
     try{
       const probe = new URL(baseTarget, window.location.href);

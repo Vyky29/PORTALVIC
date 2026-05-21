@@ -91,7 +91,7 @@ where (sp.username in ('Raul', 'Sevitha') or sp.full_name in ('Raul', 'Sevitha')
 -- =============================================================================
 
 insert into public.staff_profiles (id, full_name, username, app_role, staff_role, dashboard_route, is_active)
-select au.id, 'Raul', 'Raul', 'ceo', 'manager', '/ce/', true
+select au.id, 'Raul', 'Raul', 'ceo', 'manager', 'ceo_dashboard.html', true
 from auth.users au
 where lower(au.email) = lower('stf018@staff.import.pending')
 on conflict (id) do update

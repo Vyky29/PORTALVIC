@@ -458,7 +458,7 @@ button{
     const returnUrl = clean(qs.get("return")) || "";
     const returnPath = clean(qs.get("rp")) || "";
     let baseTarget = returnUrl || returnPath || "";
-    if(!baseTarget) baseTarget = "/p1/";
+    if(!baseTarget) baseTarget = typeof portalStaffDashboardUrl === "function" ? portalStaffDashboardUrl() : new URL("staff_dashboard.html", location.href).href;
 
     let target = baseTarget;
     try{

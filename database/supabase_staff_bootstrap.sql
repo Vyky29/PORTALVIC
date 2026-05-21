@@ -73,25 +73,25 @@ begin;
 
 with map(username, auth_email, dashboard_route, app_role, staff_role) as (
   values
-    ('Sandra','stf001@staff.import.pending','/p1/','staff','fitness'),
-    ('Roberto','stf002@staff.import.pending','/p1/','staff','swimming'),
-    ('Dan','stf003@staff.import.pending','/p1/','staff','swimming'),
-    ('Angel','stf004@staff.import.pending','/p1/','staff','swimming'),
-    ('Youssef','stf005@staff.import.pending','/p1/','staff','swimming'),
-    ('John','stf006@staff.import.pending','/l1/','lead','support'),
-    ('Bismark','stf007@staff.import.pending','/p1/','staff','support'),
-    ('Giuseppe','stf008@staff.import.pending','/p1/','staff','support'),
-    ('Godsway','stf009@staff.import.pending','/p1/','staff','support'),
-    ('Javier','stf010@staff.import.pending','/p1/','staff','swimming'),
-    ('Aurora','stf011@staff.import.pending','/p1/','staff','swimming'),
-    ('Berta','stf012@staff.import.pending','/l1/','lead','support'),
-    ('Victor','stf013@staff.import.pending','/ce/','ceo','manager'),
-    ('Carlos','stf014@staff.import.pending','/p1/','staff','climbing'),
-    ('Alex','stf015@staff.import.pending','/p1/','staff','climbing'),
-    ('Javi','stf017@staff.import.pending','/ce/','ceo','manager'),
-    ('Raul','stf018@staff.import.pending','/ce/','ceo','manager'),
+    ('Sandra','stf001@staff.import.pending','staff_dashboard.html','staff','fitness'),
+    ('Roberto','stf002@staff.import.pending','staff_dashboard.html','staff','swimming'),
+    ('Dan','stf003@staff.import.pending','staff_dashboard.html','staff','swimming'),
+    ('Angel','stf004@staff.import.pending','staff_dashboard.html','staff','swimming'),
+    ('Youssef','stf005@staff.import.pending','staff_dashboard.html','staff','swimming'),
+    ('John','stf006@staff.import.pending','lead_dashboard.html','lead','support'),
+    ('Bismark','stf007@staff.import.pending','staff_dashboard.html','staff','support'),
+    ('Giuseppe','stf008@staff.import.pending','staff_dashboard.html','staff','support'),
+    ('Godsway','stf009@staff.import.pending','staff_dashboard.html','staff','support'),
+    ('Javier','stf010@staff.import.pending','staff_dashboard.html','staff','swimming'),
+    ('Aurora','stf011@staff.import.pending','staff_dashboard.html','staff','swimming'),
+    ('Berta','stf012@staff.import.pending','lead_dashboard.html','lead','support'),
+    ('Victor','stf013@staff.import.pending','ceo_dashboard.html','ceo','manager'),
+    ('Carlos','stf014@staff.import.pending','staff_dashboard.html','staff','climbing'),
+    ('Alex','stf015@staff.import.pending','staff_dashboard.html','staff','climbing'),
+    ('Javi','stf017@staff.import.pending','ceo_dashboard.html','ceo','manager'),
+    ('Raul','stf018@staff.import.pending','ceo_dashboard.html','ceo','manager'),
     ('Sevitha','stf019@staff.import.pending','/operations-admin/','admin','admin'),
-    ('demo','stf020@staff.import.pending','/p1/','staff','swimming')
+    ('demo','stf020@staff.import.pending','staff_dashboard.html','staff','swimming')
 )
 update public.staff_profiles sp
 set

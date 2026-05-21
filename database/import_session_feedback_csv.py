@@ -274,6 +274,17 @@ def read_xlsx_rows(path: Path) -> list[dict]:
     return out
 
 
+def read_csv_dicts(path: Path) -> list[dict]:
+    for enc in ("utf-8-sig", "utf-16", "utf-16-le", "cp1252"):
+        try:
+            text = path.read_text(encoding=enc)
+            return list(csv.DictReader(text.splitlines()))
+        except UnicodeDecodeError:
+            continue
+    text = path.read_text(encoding="utf-8", errors="replace")
+    return list(csv.DictReader(text.splitlines()))
+
+
 def dedupe_key(r: dict) -> tuple:
     return (
         r.get("date"),
@@ -344,9 +355,7 @@ def import_csv_files() -> int:
             by_key[dedupe_key(row)] = row
 
     for path in csv_paths:
-        text = path.read_text(encoding="utf-8-sig")
-        reader = csv.DictReader(text.splitlines())
-        for raw in reader:
+        for raw in read_csv_dicts(path):
             row = row_from_dict(raw, path.name)
             if not row:
                 continue

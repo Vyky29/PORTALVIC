@@ -6481,7 +6481,7 @@
 
   <script src="/portal/term_from_timetable.js"></script>
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js"></script>
-  <script src="/portal/session_feedback_status_portal_data.js"></script>
+  <script src="/portal/session_feedback_status_portal_data.js?v=20260519-feedback-keys"></script>
   <script src="/portal/staff_dashboard_portal_roster_source.js"></script>
   <script src="/portal/clients_info_embed.js"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js"></script>
@@ -6615,7 +6615,7 @@
     /** Persisted register/feedback flags so returning from session_feedback.html keeps row colours. */
     const PORTAL_SESSION_REVIEW_MAP_STORAGE = 'portalSessionReviewMap_v1';
     /** Same folder as auth-handler on the CDN; used to pull server-side review keys onto this device. */
-    const PORTAL_SUPABASE_CLIENT_MODULE = 'portal/supabase-client.js';
+    const PORTAL_SUPABASE_CLIENT_MODULE = 'portal/supabase-client.js?v=20260519-feedback-keys';
     /**
      * Web Push (app closed / phone locked): VAPID **public** key only — generate pair with `npx web-push generate-vapid-keys`,
      * put public key here (or `window.__PORTAL_VAPID_PUBLIC_KEY__` on the host page); private key lives in Supabase Edge secrets only.
@@ -6661,7 +6661,7 @@
         localStorage.setItem(PORTAL_SESSION_REVIEW_MAP_STORAGE, JSON.stringify(sessionReviewMapMemory));
       }catch(e){}
     }
-    /** `portal_session_key` for client sessions on the current view weekday (same key for every co-instructor on that slot). */
+    /** Roster review keys for Supabase sync (today list + full term window for this staff). */
     function portalCollectRosterSessionKeysForReviewSync(){
       const keys = new Set();
       try{
@@ -6673,31 +6673,123 @@
           const sk = String(it.sessionKey || '').trim();
           if(sk) keys.add(sk);
         }
-        const viewDay = String(typeof DEMO_VIEW_DAY !== 'undefined' ? DEMO_VIEW_DAY : '').trim();
         const staffId = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
-        if(viewDay && staffId && Array.isArray(sessionsModel)){
+        if(!staffId || !Array.isArray(sessionsModel)) return [...keys].slice(0, 400);
+        const baseReal = typeof window.__portalIsRealClientSession === 'function' ? window.__portalIsRealClientSession : null;
+        const isReal = function(s, iso){
+          if(baseReal) return baseReal(s, iso);
+          const st = String(s.status || '').toLowerCase();
+          if(st === 'closed' || st === 'available') return false;
+          const cid = String(s.clientId || '').toLowerCase();
+          return Boolean(cid && cid !== 'closed' && cid !== 'available');
+        };
+        const addDay = function(dayWord, sessionDateKey){
+          const rel = typeof portalTermFeedbackSessionsForDate === 'function'
+            ? portalTermFeedbackSessionsForDate(dayWord, sessionDateKey, staffId, isReal)
+            : [];
+          for(let j = 0; j < rel.length; j++){
+            const s = rel[j];
+            const rk = typeof portalSessionReviewKeyForModelRow === 'function'
+              ? portalSessionReviewKeyForModelRow(s, dayWord, sessionDateKey)
+              : `${sessionDateKey}|${s.start}|${s.clientId}`;
+            if(rk) keys.add(rk);
+          }
+        };
+        const viewDay = String(typeof DEMO_VIEW_DAY !== 'undefined' ? DEMO_VIEW_DAY : '').trim();
+        if(viewDay){
           const anchor = typeof getViewAnchorCalendarDate === 'function' ? getViewAnchorCalendarDate(viewDay) : null;
           if(anchor && !isNaN(anchor.getTime())){
-            const y = anchor.getFullYear();
-            const mo = anchor.getMonth();
-            const da = anchor.getDate();
-            const sessionDateKey = `${y}-${String(mo + 1).padStart(2, '0')}-${String(da).padStart(2, '0')}`;
-            for(let j = 0; j < sessionsModel.length; j++){
-              const s = sessionsModel[j];
-              if(!s || String(s.staffId || '').trim().toLowerCase() !== staffId) continue;
-              if(String(s.day || '').trim() !== viewDay) continue;
-              const st = typeof sessionModelStatus === 'function' ? sessionModelStatus(s) : '';
-              if(st === 'Closed' || st === 'Available') continue;
-              if(!s.clientId) continue;
-              const rk = typeof portalSessionReviewKeyForModelRow === 'function'
-                ? portalSessionReviewKeyForModelRow(s, viewDay, sessionDateKey)
-                : `${sessionDateKey}|${s.start}|${s.clientId}`;
-              if(rk) keys.add(rk);
+            const sessionDateKey = `${anchor.getFullYear()}-${String(anchor.getMonth() + 1).padStart(2, '0')}-${String(anchor.getDate()).padStart(2, '0')}`;
+            addDay(viewDay, sessionDateKey);
+          }
+        }
+        const t = window.PORTAL_TERM_FROM_TIMETABLE;
+        if(t && t.firstDate && t.lastDate){
+          const cur = new Date(String(t.firstDate) + 'T12:00:00');
+          const last = new Date(String(t.lastDate) + 'T12:00:00');
+          const todayIso = portalTermLocalYmdFromMs(termCalendarNowMs());
+          while(cur.getTime() <= last.getTime()){
+            const sessionDateKey = termCalendarDateKey(cur.getFullYear(), cur.getMonth(), cur.getDate());
+            if(sessionDateKey <= todayIso){
+              const dayWord = cur.toLocaleDateString('en-GB', { weekday: 'long' });
+              addDay(dayWord, sessionDateKey);
             }
+            cur.setDate(cur.getDate() + 1);
           }
         }
       }catch(_){}
-      return [...keys].slice(0, 250);
+      return [...keys].slice(0, 400);
+    }
+    function portalStaffMatchesStatusInstructor(staffId, instructor){
+      const sid = String(staffId || '').trim().toLowerCase();
+      const ins = String(instructor || '').trim().toLowerCase();
+      if(!sid || !ins) return false;
+      if(ins === sid) return true;
+      if(ins.indexOf(sid) >= 0) return true;
+      return false;
+    }
+    /** Pre-fill review map from portal-import-bundle status (admin overview parity on My Term). */
+    function portalSeedReviewDoneFromFeedbackStatusBundle(){
+      try{
+        const src = typeof window !== 'undefined' ? window.SESSION_FEEDBACK_STATUS_PORTAL_SOURCE : null;
+        if(!src || !Array.isArray(src.rows) || !src.rows.length) return false;
+        const staffId = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
+        if(!staffId) return false;
+        let changed = false;
+        const byDate = Object.create(null);
+        src.rows.forEach(function(st){
+          if(!st || !st.date) return;
+          const iso = String(st.date).trim().substring(0, 10);
+          if(!portalStaffMatchesStatusInstructor(staffId, st.instructor)) return;
+          const done = st.overviewStatus === 'absent' || st.feedbackComplete === true
+            || String(st.overviewStatus || '').trim() === 'feedback_submitted';
+          if(!done) return;
+          if(!byDate[iso]) byDate[iso] = [];
+          byDate[iso].push(st);
+        });
+        Object.keys(byDate).forEach(function(iso){
+          const dayWord = new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
+          const rel = typeof portalTermFeedbackSessionsForDate === 'function'
+            ? portalTermFeedbackSessionsForDate(dayWord, iso, staffId, function(s){
+                const st = String(s.status || '').toLowerCase();
+                if(st === 'closed' || st === 'available') return false;
+                return Boolean(String(s.clientId || '').trim());
+              })
+            : [];
+          rel.forEach(function(s){
+            const sk = typeof portalSessionReviewKeyForModelRow === 'function'
+              ? portalSessionReviewKeyForModelRow(s, dayWord, iso)
+              : '';
+            if(!sk) return;
+            const clientLabel = String(s.clientName || s.clientId || '').trim().toLowerCase();
+            const hit = byDate[iso].some(function(st){
+              const c = String(st.client || '').trim().toLowerCase();
+              return c && clientLabel && (c === clientLabel || clientLabel.indexOf(c) >= 0 || c.indexOf(clientLabel) >= 0);
+            });
+            if(!hit) return;
+            const prev = sessionReviewMapMemory[sk] || { feedbackDone: false, incident: false, absent: false, cancelled: false };
+            const stRow = byDate[iso].find(function(st){
+              const c = String(st.client || '').trim().toLowerCase();
+              return c && clientLabel && (c === clientLabel || clientLabel.indexOf(c) >= 0 || c.indexOf(clientLabel) >= 0);
+            });
+            const next = {
+              feedbackDone: stRow && stRow.overviewStatus !== 'absent',
+              incident: !!prev.incident,
+              absent: !!(stRow && stRow.overviewStatus === 'absent'),
+              cancelled: !!prev.cancelled
+            };
+            if(next.feedbackDone !== prev.feedbackDone || next.absent !== prev.absent){
+              sessionReviewMapMemory[sk] = next;
+              changed = true;
+            }
+          });
+        });
+        if(changed) persistSessionReviewMap();
+        return changed;
+      }catch(e){
+        console.warn('[portal] feedback status seed skipped', e);
+        return false;
+      }
     }
     /** Merge feedback / incident / cancellation rows from Supabase so a second device shows the same greens as the first. */
     async function portalMergeServerReviewStateForDashboard(){
@@ -6707,10 +6799,14 @@
         if(!box || !box.client || !uid) return;
         const mod = await import(PORTAL_SUPABASE_CLIENT_MODULE);
         if(!mod.portalFetchSubmittedReviewSessionKeys || !mod.portalMergeReviewKeysIntoMemoryMap) return;
+        if(typeof portalSeedReviewDoneFromFeedbackStatusBundle === 'function'){
+          portalSeedReviewDoneFromFeedbackStatusBundle();
+        }
         const rosterKeys = typeof portalCollectRosterSessionKeysForReviewSync === 'function' ? portalCollectRosterSessionKeysForReviewSync() : [];
         const keys = await mod.portalFetchSubmittedReviewSessionKeys(box.client, uid, { rosterSessionKeys: rosterKeys });
-        if(mod.portalMergeReviewKeysIntoMemoryMap(sessionReviewMapMemory, keys)){
+        if(mod.portalMergeReviewKeysIntoMemoryMap(sessionReviewMapMemory, keys, { rosterSessionKeys: rosterKeys })){
           persistSessionReviewMap();
+          if(typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function') rebuildTermShiftAndFeedbackFromSessionModel();
           if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
           if(typeof renderTermCalendarGrid === 'function') renderTermCalendarGrid();
         }
@@ -15369,7 +15465,7 @@
           var d = document.createElement('div');
           d.id = 'portalP1DeployFingerprint';
           d.setAttribute('aria-hidden', 'true');
-          d.textContent = 'P1 BUILD 20260521 ROSTER-DATE';
+          d.textContent = 'P1 BUILD 20260519 FEEDBACK-KEYS';
           d.style.cssText = 'position:fixed;bottom:8px;right:8px;z-index:2147483647;margin:0;padding:4px 6px;font:10px/1.2 ui-monospace,Menlo,Consolas,monospace;color:#0c1b2e;background:rgba(255,255,255,.92);border:1px solid rgba(12,27,46,.2);pointer-events:none;';
           (document.body || document.documentElement).appendChild(d);
         }

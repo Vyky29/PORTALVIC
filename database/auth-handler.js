@@ -96,29 +96,32 @@ async function tryMergeStaffLoginMapFromSiblingJson() {
 }
 
 /** Published site dashboard URLs; override from login.html before loading this module. */
-function portalPublishedStaffUrl() {
+function portalPublishedPageUrl(filename, overrideKey) {
   if (typeof window !== "undefined") {
-    const w = String(window.PORTAL_STAFF_DASHBOARD_URL || "").trim();
+    const w = String(window[overrideKey] || "").trim();
     if (w) return w;
+    try {
+      return new URL(filename, window.location.href).href;
+    } catch {
+      /* fall through */
+    }
   }
-  return "https://www.clubsensational.org/p1/";
+  return filename;
+}
+function portalPublishedStaffUrl() {
+  return portalPublishedPageUrl("staff_dashboard.html", "PORTAL_STAFF_DASHBOARD_URL");
 }
 function portalPublishedAdminUrl() {
-  if (typeof window !== "undefined") {
-    const w = String(window.PORTAL_ADMIN_DASHBOARD_URL || "").trim();
-    if (w) return w;
-  }
-  return "https://www.clubsensational.org/operations-admin/";
+  return portalPublishedPageUrl("admin_dashboard.html", "PORTAL_ADMIN_DASHBOARD_URL");
 }
 function portalPublishedLeadUrl() {
-  if (typeof window !== "undefined") {
-    const w = String(window.PORTAL_LEAD_DASHBOARD_URL || "").trim();
-    if (w) return w;
-  }
-  return "https://www.clubsensational.org/l1/";
+  return portalPublishedPageUrl("lead_dashboard.html", "PORTAL_LEAD_DASHBOARD_URL");
+}
+function portalPublishedLoginUrl() {
+  return portalPublishedPageUrl("login.html", "PORTAL_LOGIN_REDIRECT_URL");
 }
 
-/** Same keys as login redirect; keeps staff off the Lead shell if they land on /l1/ by mistake. */
+/** Same keys as login redirect; keeps staff off the Lead shell if they land on the wrong dashboard by mistake. */
 const PORTAL_USERNAME_ROLE_OVERRIDES = {
   sevitha: "admin",
   berta: "lead",
@@ -180,16 +183,14 @@ export function portalCanAccessAdminDashboard(profile, authEmail) {
 }
 
 function portalOriginBase(host) {
-  const h = String(host || "")
+  return String(host || "")
     .toLowerCase()
     .replace(/^www\./, "");
-  return h === "clubsensational.org" ? "clubsensational.org" : h;
 }
 
 /**
  * Optional `next` / `return` query on the login page: after a successful sign-in,
  * redirect there instead of the role dashboard (same site only; blocks login loops).
- * Treats `www.clubsensational.org` and `clubsensational.org` as the same site.
  * @returns {string | null}
  */
 function readSafePostLoginRedirect() {
@@ -209,7 +210,7 @@ function readSafePostLoginRedirect() {
     const there = portalOriginBase(target.hostname);
     if (here !== there || !/^https?:$/i.test(target.protocol)) return null;
     const path = target.pathname.toLowerCase();
-    if (path.endsWith("/login") || path.endsWith("login.html") || path.endsWith("/l0") || path.endsWith("/l0/")) {
+    if (path.endsWith("/login") || path.endsWith("login.html")) {
       return null;
     }
     return target.href;
@@ -279,10 +280,7 @@ function bindLogin() {
       if (effectiveRole === "lead") return "lead_dashboard.html";
       return "staff_dashboard.html";
     }
-    const ceoUrl = String(
-      (typeof window !== "undefined" && window.PORTAL_CEO_DASHBOARD_URL) ||
-        "https://www.clubsensational.org/ce/"
-    ).trim();
+    const ceoUrl = portalPublishedPageUrl("ceo_dashboard.html", "PORTAL_CEO_DASHBOARD_URL");
     if (effectiveRole === "ceo") return ceoUrl;
     if (portalCanAccessAdminDashboard(profile, authEmail)) return portalPublishedAdminUrl();
     if (effectiveRole === "lead") return portalPublishedLeadUrl();
@@ -424,10 +422,7 @@ function bindLogin() {
  */
 export async function bootstrapDashboardSupabase(_opts) {
   const page = String((_opts && _opts.page) || "").trim().toLowerCase();
-  const loginRedirect =
-    typeof window !== "undefined" && window.PORTAL_LOGIN_REDIRECT_URL
-      ? String(window.PORTAL_LOGIN_REDIRECT_URL).trim()
-      : "https://www.clubsensational.org/l0/";
+  const loginRedirect = portalPublishedLoginUrl();
 
   /** Only Admin + Lead shells enforce login + staff_profiles (Staff/CEO stay permissive like legacy demo: name + shared test password). */
   function portalDashboardRequiresStrictGate(page) {
@@ -528,10 +523,7 @@ export async function bootstrapDashboardSupabase(_opts) {
     if (page === "admin") {
       if (!portalCanAccessAdminDashboard(profile, authEmailGate)) {
         const eff = portalInferEffectiveRole(profile, authEmailGate);
-        const ceoUrl = String(
-          (typeof window !== "undefined" && window.PORTAL_CEO_DASHBOARD_URL) ||
-            "https://www.clubsensational.org/ce/"
-        ).trim();
+        const ceoUrl = portalPublishedPageUrl("ceo_dashboard.html", "PORTAL_CEO_DASHBOARD_URL");
         const dest =
           eff === "ceo"
             ? ceoUrl

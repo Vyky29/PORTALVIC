@@ -25,7 +25,6 @@ FEEDBACK_IMPORTS = ROOT / "database" / "feedback_imports"
 
 # Drop legacy per-tramo CSVs; bundle replaces them.
 LEGACY_FEEDBACK_CSV = [
-    FEEDBACK_IMPORTS / "feedback-2026-05-11_to_2026-05-19.csv",
     ROOT / "working_ui" / "session-feedback-from-2026-05-11.csv",
 ]
 LEGACY_OVERVIEW_CSV = list(ROSTER_WEEKS.glob("sessions-overview-*.csv")) if ROSTER_WEEKS.is_dir() else []
@@ -204,7 +203,15 @@ def main() -> None:
     remove_legacy_csvs()
     bundle = sync_bundle_to_canon()
     copy_overview_to_roster_weeks(bundle)
-    import_feedback_js(bundle)
+    # Full merge (v1 + feedback_imports + bundle CSV) — same output as import_session_feedback_csv.py
+    from import_session_feedback_csv import import_csv_files
+
+    import_csv_files()
+    from reconcile_feedback_status_bundle import reconcile_bundle
+
+    reconcile_bundle(bundle)
+    for status_csv in bundle.glob("sessions-with-feedback-status-*.csv"):
+        shutil.copy2(status_csv, BUNDLE_SRC / status_csv.name)
     export_status_js(bundle)
     from export_venue_reviews_portal_js import export_venue_reviews_js
 

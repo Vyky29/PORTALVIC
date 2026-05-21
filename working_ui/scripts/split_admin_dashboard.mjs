@@ -11,7 +11,7 @@ let i = 0;
 
 while (i < lines.length) {
   if (i === 12 && lines[i].includes("portal-hide-wp-chrome")) {
-    out.push('  <link rel="stylesheet" href="https://www.clubsensational.org/wp-content/uploads/2026/05/admin_dashboard.css?v=20260506-portal-interactions" />');
+    out.push('  <link rel="stylesheet" href="admin_dashboard.css" />');
     while (i < lines.length && !/^\s*<\/style>\s*$/.test(lines[i])) i++;
     if (i < lines.length) i++;
     continue;
@@ -22,7 +22,7 @@ while (i < lines.length) {
     continue;
   }
   if (i === 3664 && /^\s*<script>\s*$/.test(lines[i])) {
-    out.push('  <script src="https://www.clubsensational.org/wp-content/uploads/2026/05/admin_dashboard.app_.js?v=20260506-portal-interactions"></script>');
+    out.push('  <script src="portal/admin_dashboard.app_.js"></script>');
     i++;
     while (i < lines.length && !/^\s*<\/script>\s*$/.test(lines[i])) i++;
     if (i < lines.length) i++;

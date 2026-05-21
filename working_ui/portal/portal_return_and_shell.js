@@ -1,22 +1,27 @@
 /**
- * Optional portalReturn redirect helper for satellite HTML pages.
- * Vercel static deploy — no host CMS integration.
+ * Portal return URLs and same-origin navigation (Vercel static deploy only).
  */
 (function (global) {
   "use strict";
+
+  function portalSameOriginPageUrl(filename) {
+    try {
+      return new URL(String(filename || ""), global.location.href).href;
+    } catch (e) {
+      return String(filename || "login.html");
+    }
+  }
 
   function portalReturnHostAllowed(hostname) {
     var h = String(hostname || "").toLowerCase();
     if (!h) return false;
     if (h === "localhost" || h === "127.0.0.1") return true;
-    if (h === "www.clubsensational.org" || h === "clubsensational.org") return true;
-    if (/(^|\.)clubsensational\.org$/i.test(h)) return true;
+    if (/\.vercel\.app$/i.test(h)) return true;
     try {
-      if (typeof location !== "undefined" && location.hostname && h === String(location.hostname).toLowerCase()) return true;
+      if (typeof location !== "undefined" && location.hostname) {
+        if (h === String(location.hostname).toLowerCase()) return true;
+      }
     } catch (e) {}
-    try {
-      if (typeof location !== "undefined" && /\.vercel\.app$/i.test(h)) return true;
-    } catch (e2) {}
     return false;
   }
 
@@ -59,6 +64,16 @@
     }
   }
 
+  global.portalSameOriginPageUrl = portalSameOriginPageUrl;
+  global.portalStaffDashboardUrl = function () {
+    return portalSameOriginPageUrl("staff_dashboard.html");
+  };
+  global.portalLeadDashboardUrl = function () {
+    return portalSameOriginPageUrl("lead_dashboard.html");
+  };
+  global.portalLoginUrl = function () {
+    return portalSameOriginPageUrl("login.html");
+  };
   global.portalGetPortalReturnUrl = portalGetPortalReturnUrl;
   global.portalRedirectToPortalReturn = portalRedirectToPortalReturn;
 })(typeof window !== "undefined" ? window : this);

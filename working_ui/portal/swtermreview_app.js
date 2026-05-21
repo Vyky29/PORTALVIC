@@ -638,9 +638,9 @@ const LEVEL_DATA = {
       }catch(_){}
       try{
         window.close();
-        setTimeout(() => { window.location.href = "/p1/"; }, 180);
+        setTimeout(() => { window.location.href = typeof portalStaffDashboardUrl === "function" ? portalStaffDashboardUrl() : new URL("staff_dashboard.html", window.location.href).href; }, 180);
       }catch(_){
-        window.location.href = "/p1/";
+        window.location.href = typeof portalStaffDashboardUrl === "function" ? portalStaffDashboardUrl() : new URL("staff_dashboard.html", window.location.href).href;
       }
     }
 

@@ -436,7 +436,7 @@ button{
         }
       }
     }catch(_){}
-    let baseTarget = clean(qs.get("return")) || clean(qs.get("rp")) || "/p1/";
+    let baseTarget = clean(qs.get("return")) || clean(qs.get("rp")) || (typeof portalStaffDashboardUrl === "function" ? portalStaffDashboardUrl() : new URL("staff_dashboard.html", location.href).href);
     let target = baseTarget;
     try{
       const u = new URL(baseTarget, location.href);

@@ -292,11 +292,44 @@ export async function portalUpsertStaffSessionQuickMark(supabase, row) {
 }
 
 /**
- * Merge server truth into the dashboard's in-memory review map (same object as localStorage mirror).
- * @param {Record<string, { feedbackDone?: boolean, incident?: boolean, absent?: boolean, cancelled?: boolean }>} memory
- * @param {{ feedbackKeys: string[], incidentKeys: string[], cancellationKeys: string[], absentKeys?: string[], quickFeedbackDoneKeys?: string[] }} packs
+ * Roster keys use `YYYY-MM-DD|HH:mm|client_id`; Supabase often stores `YYYY-MM-DD||client_slug`.
  */
-export function portalMergeReviewKeysIntoMemoryMap(memory, packs) {
+export function portalFeedbackSubmittedKeyMatchesRosterKey(submittedKey, rosterKey) {
+  const s = String(submittedKey || "").trim();
+  const r = String(rosterKey || "").trim();
+  if (!s || !r) return false;
+  if (s === r) return true;
+  const rParts = r.split("|");
+  const sParts = s.split("|");
+  const rDate = rParts[0];
+  const sDate = sParts[0];
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(rDate) || !/^\d{4}-\d{2}-\d{2}$/.test(sDate)) return false;
+  if (sDate !== rDate) {
+    try {
+      const rd = new Date(`${rDate}T12:00:00`).getTime();
+      const sd = new Date(`${sDate}T12:00:00`).getTime();
+      if (!Number.isFinite(rd) || !Number.isFinite(sd) || sd - rd !== 86400000) return false;
+    } catch {
+      return false;
+    }
+  }
+  const rClient = String(rParts[2] || rParts[1] || "")
+    .trim()
+    .toLowerCase();
+  const sClient = String(sParts[sParts.length - 1] || sParts[1] || "")
+    .trim()
+    .toLowerCase();
+  if (!rClient || !sClient) return false;
+  return rClient === sClient || rClient.includes(sClient) || sClient.includes(rClient);
+}
+
+/**
+ * Map submitted portal_session_key values onto roster session review keys in memory.
+ * @param {Record<string, { feedbackDone?: boolean, incident?: boolean, absent?: boolean, cancelled?: boolean }>} memory
+ * @param {string[]} submittedKeys
+ * @param {string[]} rosterKeys
+ */
+export function portalFanOutFeedbackKeysOntoRosterMemory(memory, submittedKeys, rosterKeys) {
   const base = () => ({
     feedbackDone: false,
     incident: false,
@@ -304,14 +337,40 @@ export function portalMergeReviewKeysIntoMemoryMap(memory, packs) {
     cancelled: false,
   });
   let changed = false;
-  for (const k of packs.feedbackKeys || []) {
-    const prev = memory[k] || base();
-    if (!prev.feedbackDone) {
-      memory[k] = { ...prev, feedbackDone: true };
-      changed = true;
+  for (const rk of rosterKeys || []) {
+    const rosterKey = String(rk || "").trim();
+    if (!rosterKey) continue;
+    for (const fk of submittedKeys || []) {
+      if (!portalFeedbackSubmittedKeyMatchesRosterKey(fk, rosterKey)) continue;
+      const prev = memory[rosterKey] || base();
+      if (!prev.feedbackDone) {
+        memory[rosterKey] = { ...prev, feedbackDone: true };
+        changed = true;
+      }
+      break;
     }
   }
-  for (const k of packs.quickFeedbackDoneKeys || []) {
+  return changed;
+}
+
+/**
+ * Merge server truth into the dashboard's in-memory review map (same object as localStorage mirror).
+ * @param {Record<string, { feedbackDone?: boolean, incident?: boolean, absent?: boolean, cancelled?: boolean }>} memory
+ * @param {{ feedbackKeys: string[], incidentKeys: string[], cancellationKeys: string[], absentKeys?: string[], quickFeedbackDoneKeys?: string[] }} packs
+ * @param {{ rosterSessionKeys?: string[] }} [opts]
+ */
+export function portalMergeReviewKeysIntoMemoryMap(memory, packs, opts = {}) {
+  const base = () => ({
+    feedbackDone: false,
+    incident: false,
+    absent: false,
+    cancelled: false,
+  });
+  let changed = false;
+  const submittedFb = [
+    ...new Set([...(packs.feedbackKeys || []), ...(packs.quickFeedbackDoneKeys || [])]),
+  ];
+  for (const k of submittedFb) {
     const prev = memory[k] || base();
     if (!prev.feedbackDone) {
       memory[k] = { ...prev, feedbackDone: true };
@@ -336,6 +395,12 @@ export function portalMergeReviewKeysIntoMemoryMap(memory, packs) {
     const prev = memory[k] || base();
     if (!prev.absent) {
       memory[k] = { ...prev, absent: true, feedbackDone: false };
+      changed = true;
+    }
+  }
+  const rosterKeys = Array.isArray(opts.rosterSessionKeys) ? opts.rosterSessionKeys : [];
+  if (rosterKeys.length && submittedFb.length) {
+    if (portalFanOutFeedbackKeysOntoRosterMemory(memory, submittedFb, rosterKeys)) {
       changed = true;
     }
   }

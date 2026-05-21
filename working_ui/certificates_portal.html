@@ -217,7 +217,7 @@
         try {
           window.close();
         } catch (e3) {}
-        window.location.href = "/p1/";
+        window.location.href = typeof portalStaffDashboardUrl === "function" ? portalStaffDashboardUrl() : new URL("staff_dashboard.html", location.href).href;
       }
       document.getElementById("certDemoBack")?.addEventListener("click", goBack);
     })();

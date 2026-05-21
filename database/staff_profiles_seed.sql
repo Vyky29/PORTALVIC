@@ -3,7 +3,7 @@
 -- See supabase_portal_all_staff_login.sql for the checklist and diagnostic query.
 -- id: deterministic placeholder (UUID v5). After creating auth users, set each id to that user’s auth.users.id.
 -- STAFF.email was empty: create auth users separately; align emails with onboarding_auth_email in CSV or replace.
--- dashboard_route: staff /p1/, lead /l1/, CEOs /ce/ (prod: clubsensational.org/ce/), admin /operations-admin/
+-- dashboard_route: staff staff_dashboard.html, lead lead_dashboard.html, CEO ceo_dashboard.html, admin admin_dashboard.html
 -- (prod admin shell is WordPress /operations-admin/, not /admin/). adjust if your deployed URLs differ.
 -- Portal roles: CEO = Javi, Raul, Victor | Admin = Sevitha + CEOs | Leads = John, Berta | Staff = rest (CEOs also cover shifts).
 -- Job roles (staff_role): swimming | fitness | climbing | support | manager | admin
@@ -85,25 +85,25 @@ alter table public.staff_profiles
 
 with map(username, full_name, auth_email, app_role, staff_role, dashboard_route, is_active) as (
   values
-    ('Sandra','Sandra','stf001@staff.import.pending','staff','fitness','/p1/',true),
-    ('Roberto','Roberto','stf002@staff.import.pending','staff','swimming','/p1/',true),
-    ('Dan','Dan','stf003@staff.import.pending','staff','swimming','/p1/',true),
-    ('Angel','Angel','stf004@staff.import.pending','staff','swimming','/p1/',true),
-    ('Youssef','Youssef Moustafa','stf005@staff.import.pending','staff','swimming','/p1/',true),
-    ('John','John','stf006@staff.import.pending','lead','support','/l1/',true),
-    ('Bismark','Bismark','stf007@staff.import.pending','staff','support','/p1/',true),
-    ('Giuseppe','Giuseppe','stf008@staff.import.pending','staff','support','/p1/',true),
-    ('Godsway','Godsway','stf009@staff.import.pending','staff','support','/p1/',true),
-    ('Javier','Javier Marquez','stf010@staff.import.pending','staff','swimming','/p1/',true),
-    ('Aurora','Aurora','stf011@staff.import.pending','staff','swimming','/p1/',true),
-    ('Berta','Berta','stf012@staff.import.pending','lead','support','/l1/',true),
-    ('Victor','Victor','stf013@staff.import.pending','ceo','manager','/ce/',true),
-    ('Carlos','Carlos','stf014@staff.import.pending','staff','climbing','/p1/',true),
-    ('Alex','Alex','stf015@staff.import.pending','staff','climbing','/p1/',true),
-    ('Javi','Javi Arranz Escorial','stf017@staff.import.pending','ceo','manager','/ce/',true),
-    ('Raul','Raul','stf018@staff.import.pending','ceo','manager','/ce/',true),
+    ('Sandra','Sandra','stf001@staff.import.pending','staff','fitness','staff_dashboard.html',true),
+    ('Roberto','Roberto','stf002@staff.import.pending','staff','swimming','staff_dashboard.html',true),
+    ('Dan','Dan','stf003@staff.import.pending','staff','swimming','staff_dashboard.html',true),
+    ('Angel','Angel','stf004@staff.import.pending','staff','swimming','staff_dashboard.html',true),
+    ('Youssef','Youssef Moustafa','stf005@staff.import.pending','staff','swimming','staff_dashboard.html',true),
+    ('John','John','stf006@staff.import.pending','lead','support','lead_dashboard.html',true),
+    ('Bismark','Bismark','stf007@staff.import.pending','staff','support','staff_dashboard.html',true),
+    ('Giuseppe','Giuseppe','stf008@staff.import.pending','staff','support','staff_dashboard.html',true),
+    ('Godsway','Godsway','stf009@staff.import.pending','staff','support','staff_dashboard.html',true),
+    ('Javier','Javier Marquez','stf010@staff.import.pending','staff','swimming','staff_dashboard.html',true),
+    ('Aurora','Aurora','stf011@staff.import.pending','staff','swimming','staff_dashboard.html',true),
+    ('Berta','Berta','stf012@staff.import.pending','lead','support','lead_dashboard.html',true),
+    ('Victor','Victor','stf013@staff.import.pending','ceo','manager','ceo_dashboard.html',true),
+    ('Carlos','Carlos','stf014@staff.import.pending','staff','climbing','staff_dashboard.html',true),
+    ('Alex','Alex','stf015@staff.import.pending','staff','climbing','staff_dashboard.html',true),
+    ('Javi','Javi Arranz Escorial','stf017@staff.import.pending','ceo','manager','ceo_dashboard.html',true),
+    ('Raul','Raul','stf018@staff.import.pending','ceo','manager','ceo_dashboard.html',true),
     ('Sevitha','Sevitha','stf019@staff.import.pending','admin','admin','/operations-admin/',true),
-    ('demo','Demo','stf020@staff.import.pending','staff','swimming','/p1/',true)
+    ('demo','Demo','stf020@staff.import.pending','staff','swimming','staff_dashboard.html',true)
 ),
 auth_map as (
   select m.*, au.id as auth_user_id

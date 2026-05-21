@@ -10006,7 +10006,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         : '<p class="muted" style="margin:0">No emergency contacts on file.</p>';
       var regPanel =
         '<div class="card card-pad"><h3 style="margin:0 0 10px">Registration</h3>'+
-        '<p class="muted" style="margin:0 0 12px;font-size:12px;max-width:48rem;overflow-wrap:break-word">Core household and billing contact data. Answers from the online <a href="https://clubsensational.org/registration" target="_blank" rel="noopener noreferrer">registration form</a> (stored in <strong>Clients Info (PORTAL).xlsx</strong>) — questionnaire fields are parsed on the <strong>Assessment</strong> tab into the same columns as <strong>Clients Info (PORTAL) - structured.xlsx</strong>.</p>'+
+        '<p class="muted" style="margin:0 0 12px;font-size:12px;max-width:48rem;overflow-wrap:break-word">Core household and billing contact data. Answers from the online registration form (stored in <strong>Clients Info (PORTAL).xlsx</strong>) — questionnaire fields are parsed on the <strong>Assessment</strong> tab into the same columns as <strong>Clients Info (PORTAL) - structured.xlsx</strong>.</p>'+
         '<div class="c4k-abc"><section>'+adminPaxWsSectionH4('\ud83d\udc76', 'Child')+
         adminPaxWsKvIcoRowPlain('\ud83d\udc64', 'Name', esc(P.name||'—'))+
         adminPaxWsKvIcoRowPlain('\ud83d\udcc5', 'Date of birth', esc(P.dobDisplay||'—'))+
