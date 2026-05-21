@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html lang="en-GB" data-portal-ui-build="20260520-feedback-rows" data-portal-session-feedback-v="20260507-portalfix" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
+<html lang="en-GB" data-portal-ui-build="20260520-dash-hub" data-portal-session-feedback-v="20260507-portalfix" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
 <head>
   <!-- Admin portal · Vercel static deploy: working_ui/admin_dashboard.html + portal/ assets -->
   <meta charset="UTF-8" />
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260520-portal2026" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260520-portal2026" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260520-dash-hub" />
   <script src="/portal/admin-portal-day-ops.js?v=20260520-portal2026"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
   <title>clubSENsational · Operations + Operator workflow (merged)</title>
@@ -4447,6 +4448,7 @@
 
     var NAV = [
       { id:'dashboard', label:'Day operations' },
+      { id:'operations_admin', label:'Operations admin' },
       { id:'operator', label:'Control centre' },
       { id:'scheduling', label:'Schedule & Covers' },
       { id:'absents_refunds', label:'Absents, refunds & credits' },
@@ -4478,7 +4480,7 @@
       { id:'portal_nav_logout', label:'Log out', navAction:'logout', skipBottomNav:true }
     ];
     var NAV_GROUPS = [
-      { id:'g_operator', label:'Operator', children:['dashboard','operator'] },
+      { id:'g_operator', label:'Operator', children:['dashboard','operations_admin','operator'] },
       { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','__h:Participants','clients','__h:Orders','orders_all','orders_outstanding','__h:Communications','comms_ops'] },
       { id:'g_zoho', label:'H&R (ZohoPeople)', children:['staffhr','onboarding','policies'] },
       { id:'g_xero', label:'Finance (Xero)', children:['invoices'] },
@@ -4488,6 +4490,7 @@
     /* Stroke SVGs (outline), inherit sidebar text colour — replaces emoji glyphs */
     var NAV_ICON_SVGS = {
       dashboard:'<path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M9 22V12h6v10"/>',
+      operations_admin:'<path d="M16.5 9.4l-9-5.19"/><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>',
       operator:'<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
       operations:'<path d="M16.5 9.4l-9-5.19"/><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>',
       receptionist:'<path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>',
@@ -5788,6 +5791,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(id === 'c4k_home') id = 'c4k_services';
       if(id === 'c4k_service_register') id = 'c4k_services';
       if(id === 'operations') id = 'dashboard';
+      if(id === 'operations-admin') id = 'operations_admin';
       if(id === 'orders_all') booking.ordersScope = 'all';
       if(id === 'orders_outstanding') booking.ordersScope = 'outstanding';
       var _hadRegisterPeek = !!(id !== 'c4k_services' && state.c4kServicesRegisterOpen);
@@ -17474,6 +17478,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
 
     function renderView(id){
+      if(id==='operations_admin') return viewOperationsAdmin();
       if(id==='dashboard' || id==='operations') return viewOperations();
       if(id==='clients') return viewC4kParticipants();
       if(id==='c4k_services') return viewC4kServices();
@@ -17969,6 +17974,53 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '</p>';
     }
 
+    /** KPI-style hub tile (Day operations / Operations admin / Operator). Same routing attrs as legacy dayops tiles. */
+    function portalDashTileHtml(viewId, act, iconId, eyebrow, titleHtml, focus, tone, dayopsAct){
+      var id = String(iconId || viewId || act || '').trim();
+      var mod = focus ? ' dash-hub__tile--focus' : '';
+      var toneKey = String(tone || '').trim();
+      var toneAttr = toneKey ? (' data-dayops-tone="'+esc(toneKey)+'"') : '';
+      var da = String(dayopsAct || '').trim();
+      var attr = da
+        ? (' data-dayops-act="'+esc(da)+'"')
+        : (act
+          ? (' data-act="'+esc(act)+'"')
+          : (' data-view-target="'+esc(viewId)+'"'));
+      return (
+        '<button type="button" class="dash-hub__tile'+mod+'"'+toneAttr+attr+'>'+
+        '<span class="dash-hub__tile-band" aria-hidden="true">'+adminNavIconHtml(id)+'</span>'+
+        '<span class="dash-hub__tile-label">'+esc(eyebrow)+'</span>'+
+        '<span class="dash-hub__tile-desc">'+titleHtml+'</span>'+
+        '</button>'
+      );
+    }
+    function portalDashPanel(opts){
+      opts = opts || {};
+      var gridCls = 'dash-hub__grid'+(opts.gridClass ? (' '+String(opts.gridClass).trim()) : '');
+      var head = '';
+      if(opts.linkView){
+        head =
+          '<div class="dash-hub__panel-head dash-hub__panel-head--link">'+
+          '<button type="button" class="dash-hub__panel-jump" data-view-target="'+esc(opts.linkView)+'" title="'+esc(opts.jumpTitle || ('Open '+opts.title))+'">'+
+          '<span class="dash-hub__panel-ico" aria-hidden="true">'+adminNavIconHtml(opts.linkIconId || opts.linkView)+'</span>'+
+          '<div class="dash-hub__panel-titles"><h2 class="dash-hub__panel-title">'+esc(opts.title)+'</h2>'+
+          (opts.subtitle ? '<p class="dash-hub__panel-desc">'+opts.subtitle+'</p>' : '')+
+          '</div></button></div>';
+      }else{
+        head =
+          '<div class="dash-hub__panel-head">'+
+          (opts.iconId ? '<span class="dash-hub__panel-ico" aria-hidden="true">'+adminNavIconHtml(opts.iconId)+'</span>' : '')+
+          '<div class="dash-hub__panel-titles"><h2 class="dash-hub__panel-title">'+esc(opts.title)+'</h2>'+
+          (opts.subtitle ? '<p class="dash-hub__panel-desc">'+opts.subtitle+'</p>' : '')+
+          '</div></div>';
+      }
+      var body = String(opts.bodyHtml || '');
+      if(opts.tiles){
+        body += '<div class="'+gridCls+'">'+opts.tiles+'</div>';
+      }
+      var panelCls = 'dash-hub__panel'+(opts.panelClass ? (' '+String(opts.panelClass).trim()) : '');
+      return '<section class="'+panelCls+'" aria-label="'+esc(opts.ariaLabel || opts.title)+'">'+head+body+'</section>';
+    }
     /** Day operations shortcut tile: icon on top, uppercase label (larger), subtitle (smaller), all centred. Optional `tone` sets icon chip colours (data-dayops-tone). Optional `dayopsAct` → `data-dayops-act` (handled in bindView). */
     function portalDayOpsShortcutHtml(viewId, act, iconId, eyebrow, titleHtml, focus, tone, dayopsAct){
       var id = String(iconId || viewId || act || '').trim();
@@ -18042,52 +18094,91 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return n === 'victor' || n === 'raul' || n === 'javi';
     }
     function viewOperations(){
-      return '<div class="dayops-ops-fold">'+
+      var sessionsTiles =
+        portalDashTileHtml('c4k_sessions', '', 'c4k_sessions', 'Sessions overview', 'Live grid &amp; capacity', false, 'sessions')+
+        portalDashTileHtml('c4k_registers', '', 'c4k_registers', 'Session feedback', 'Registers &amp; session notes', false, 'feedback')+
+        portalDashTileHtml('c4k_sessions', '', 'analytics', 'Incidents', 'Safeguarding &amp; logs', false, 'analytics', 'sessions_hub_incidents')+
+        portalDashTileHtml('c4k_sessions', '', 'absents', 'Absents', 'Quick marks by day', false, 'absents', 'sessions_hub_absents')+
+        portalDashTileHtml('c4k_sessions', '', 'c4k_registers', 'Lead report', 'Lead session reports', false, 'feedback', 'sessions_hub_lead')+
+        portalDashTileHtml('c4k_sessions', '', 'c4k_services', 'Venue review', 'Venue opening reviews', false, 'scheduling', 'sessions_hub_venue');
+      var teamTiles =
+        portalDashTileHtml('scheduling', '', 'scheduling', 'Schedule &amp; covers', 'Weekly anchors &amp; swap cover', true, 'scheduling')+
+        portalDashTileHtml('', '', 'announcements', 'Announcements', 'Staff &amp; site notices', false, 'scheduling', 'announcements')+
+        portalDashTileHtml('', '', 'reminders', 'Reminders', 'Follow-ups &amp; due tasks', false, 'scheduling', 'reminders')+
+        portalDashTileHtml('', '', 'comms_ops', 'CEO\'s chat', 'DMs + CEO groups', false, 'scheduling', 'ceo_exec_dm')+
+        portalDashTileHtml('', '', 'comms_ops', 'Internal chat', 'Staff &amp; leads only', false, 'notify', 'team_dm');
+      return (
+        '<div class="dash-hub">'+
         '<h1 class="page-title">Day operations</h1>'+
-        '<p class="page-intro">Jump to the tools you use every day — intake, rota, participants, bookings, and payments.</p>'+
-        '<div class="dayops-board" role="presentation">'+
-        portalDayOpsBoardSection('New Participants','dayops-sec-newparticipants',
-          portalDayOpsShortcutHtml('', '', 'new_participant', 'New participant', 'Add to clients &amp; open roster row', false, 'new_participant', 'new_participant')+
-          portalDayOpsShortcutHtml('c4k_waitlist', '', 'c4k_waitlist', 'Waiting list', 'Offers &amp; matching queue', false, 'waitlist')+
-          portalDayOpsShortcutHtml('leads', '', 'leads', 'Enquiries & intake', 'New families, triage &amp; intake capture', false, 'leads')+
-          portalDayOpsShortcutHtml('servicecap', '', 'servicecap', 'Capacity', 'Mon–Sun snapshot &amp; detail tables', false, 'servicecap'),
-          'dayops-screen-nav--row4',
-          'newparticipants',
-          { omitTitle: true, sectionAriaLabel: 'New Participants', navAriaLabel: 'New Participants' }
-        )+
-        portalDayOpsBoardSection('Team','dayops-sec-team',
-          portalDayOpsShortcutHtml('scheduling', '', 'scheduling', 'Schedule & covers', 'Weekly anchors &amp; swap cover', true, 'scheduling')+
-          portalDayOpsShortcutHtml('', '', 'announcements', 'Announcements', 'Staff &amp; site notices', false, 'announcements', 'announcements')+
-          portalDayOpsShortcutHtml('', '', 'reminders', 'Reminders', 'Follow-ups &amp; due tasks', false, 'reminders', 'reminders')+
-          portalDayOpsShortcutHtml('', '', 'comms_ops', 'CEO\'s Chat', 'DMs + CEO groups', false, 'scheduling', 'ceo_exec_dm')+
-          portalDayOpsShortcutHtml('', '', 'comms_ops', 'Internal chat', 'Staff &amp; leads only', false, 'notify', 'team_dm'),
-          'dayops-screen-nav--row5',
-          'team',
-          { linkedView: 'staffhr', linkedIconId: 'staffhr', jumpTitle: 'Staff & HR', navAriaLabel: 'Team' }
-        )+
-        portalDayOpsBoardSection('Participants','dayops-sec-participants',
-          '<div class="dayops-participant-nav-stack">'+
-          '<div class="dayops-screen-nav dayops-screen-nav--row4" role="group" aria-label="Sessions and absences">'+
-          portalDayOpsShortcutHtml('c4k_sessions', '', 'c4k_sessions', 'Sessions overview', 'Live grid &amp; capacity', false, 'sessions')+
-          portalDayOpsShortcutHtml('c4k_registers', '', 'c4k_registers', 'Sessions feedback', 'Registers &amp; session notes', false, 'feedback')+
-          portalDayOpsShortcutHtml('c4k_sessions', '', 'analytics', 'Incidents', 'Safeguarding &amp; logs', false, 'analytics', 'sessions_hub_incidents')+
-          portalDayOpsShortcutHtml('c4k_sessions', '', 'absents', 'Absents', 'Quick marks by day', false, 'absents', 'sessions_hub_absents')+
-          portalDayOpsShortcutHtml('c4k_sessions', '', 'c4k_registers', 'Lead report', 'Lead session reports', false, 'feedback', 'sessions_hub_lead')+
-          portalDayOpsShortcutHtml('c4k_sessions', '', 'c4k_services', 'Venue', 'Venue opening reviews', false, 'scheduling', 'sessions_hub_venue')+
-          '</div>'+
-          '<div class="dayops-screen-nav dayops-screen-nav--row4" role="group" aria-label="Bookings and progress">'+
-          portalDayOpsShortcutHtml('bookings', '', 'bookings', 'Bookings/Orders', 'Bookings &amp; wait list', false, 'bookings')+
-          portalDayOpsShortcutHtml('c4k_payments', '', 'c4k_payments', 'Payments', 'Programme payments', false, 'payments')+
-          portalDayOpsShortcutHtml('c4k_reviews', '', 'c4k_reviews', 'Progress', 'Term reviews &amp; goals', false, 'reviews')+
-          portalDayOpsShortcutHtml('c4k_reports', '', 'c4k_reports', 'Reports', 'Request packs &amp; LA delivery', false, 'reports_q')+
-          '</div>'+
-          '</div>',
-          'dayops-board-nav--stack',
-          'participants',
-          { linkedView: 'clients', linkedIconId: 'clients', jumpTitle: 'Participants directory', navAriaLabel: 'Participants' }
-        )+
-        '</div>'+
-        '</div>';
+        '<p class="page-intro">Live sessions with participants — rota, on-site feedback, incidents, and venue checks. For bookings, payments, and formal reports, use <button type="button" class="btn btn--ghost btn--sm" data-view-target="operations_admin" style="vertical-align:baseline;padding:0 4px;font-size:inherit">Operations admin</button>.</p>'+
+        '<div class="dash-hub__stack">'+
+        portalDashPanel({
+          title:'Team',
+          subtitle:'Roster, covers, announcements, and internal comms',
+          linkView:'staffhr',
+          linkIconId:'staffhr',
+          jumpTitle:'Staff & HR',
+          tiles: teamTiles,
+          gridClass:'dash-hub__grid--5'
+        })+
+        portalDashPanel({
+          title:'Participants',
+          subtitle:'Session-day tools while participants are on site',
+          linkView:'clients',
+          linkIconId:'clients',
+          jumpTitle:'Participants directory',
+          bodyHtml:
+            '<h3 class="dash-hub__subhead">Sessions</h3>'+
+            '<div class="dash-hub__grid dash-hub__grid--6">'+sessionsTiles+'</div>',
+          ariaLabel:'Participants — sessions'
+        })+
+        '</div></div>'
+      );
+    }
+    function viewOperationsAdmin(){
+      var adminTiles =
+        portalDashTileHtml('bookings', '', 'bookings', 'Bookings / orders', 'Bookings &amp; wait list', false, 'bookings')+
+        portalDashTileHtml('c4k_payments', '', 'c4k_payments', 'Payments', 'Programme payments', false, 'payments')+
+        portalDashTileHtml('c4k_reviews', '', 'c4k_reviews', 'Progress', 'Term reviews &amp; goals', false, 'reviews')+
+        portalDashTileHtml('c4k_reports', '', 'c4k_reports', 'Reports', 'Request packs &amp; LA delivery', false, 'reports_q')+
+        portalDashTileHtml('absents_refunds', '', 'absents_refunds', 'Absents &amp; credit', 'Refunds, credits, missed sessions', false, 'absents')+
+        portalDashTileHtml('clients', '', 'clients', 'Directory', 'Search profiles &amp; activity', false, 'sessions');
+      return (
+        '<div class="dash-hub">'+
+        '<h1 class="page-title">Operations admin</h1>'+
+        '<p class="page-intro">Participant administration outside the live session window — orders, finance, progress reviews, and report packs. For on-site session tools, use <button type="button" class="btn btn--ghost btn--sm" data-view-target="dashboard" style="vertical-align:baseline;padding:0 4px;font-size:inherit">Day operations</button>.</p>'+
+        '<div class="dash-hub__stack">'+
+        portalDashPanel({
+          title:'Participants',
+          subtitle:'Bookings, payments, reviews, and reporting',
+          linkView:'clients',
+          linkIconId:'clients',
+          jumpTitle:'Participants directory',
+          tiles: adminTiles,
+          gridClass:'dash-hub__grid--4'
+        })+
+        '</div></div>'
+      );
+    }
+    function portalOperatorNewLeadsHubHtml(){
+      var tiles =
+        portalDashTileHtml('', '', 'new_participant', 'New participant', 'Add to clients &amp; roster row', false, 'new_participant', 'new_participant')+
+        portalDashTileHtml('c4k_waitlist', '', 'c4k_waitlist', 'Waiting list', 'Offers &amp; matching queue', false, 'waitlist')+
+        portalDashTileHtml('leads', '', 'leads', 'Enquiries &amp; intake', 'New families &amp; triage', false, 'leads')+
+        portalDashTileHtml('servicecap', '', 'servicecap', 'Capacity', 'Mon–Sun snapshot &amp; tables', false, 'servicecap');
+      return (
+        '<div class="dash-hub dash-hub--embed">'+
+        portalDashPanel({
+          title:'New leads',
+          subtitle:'Intake and capacity before sessions are booked',
+          iconId:'leads',
+          panelClass:'dash-hub__panel--leads',
+          tiles: tiles,
+          gridClass:'dash-hub__grid--4',
+          ariaLabel:'New leads'
+        })+
+        '</div>'
+      );
     }
 
     function kpiCard(l,v,s,alert){
@@ -18436,7 +18527,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function viewOperator(){
       var core = (typeof __OPWF_HTML!=='undefined' && __OPWF_HTML.opHome) ? __OPWF_HTML.opHome : '<p class="page-intro">Workflow block loading…</p>';
       core = String(core).replace(/^\s*<h[12][^>]*class="[^"]*page-title[^"]*"[^>]*>[\s\S]*?<\/h[12]>\s*(?:<p class="page-(?:desc|intro)"[^>]*>[\s\S]*?<\/p>\s*)?/i,'');
-      return '<h1 class="page-title">Control centre</h1><p class="page-intro">Illustrative KPIs and queues — not live data.</p>'+core+viewOperatorHTMLAddon();
+      return portalOperatorNewLeadsHubHtml()+
+        '<h1 class="page-title">Control centre</h1>'+
+        '<p class="page-intro">Illustrative KPIs and queues — not live data. New intake shortcuts are under <strong>New leads</strong> above.</p>'+
+        core+
+        viewOperatorHTMLAddon();
     }
 
     function bindOperatorLight(){
@@ -19787,7 +19882,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       root.querySelectorAll('[data-act]').forEach(function(b){
         b.addEventListener('click', function(){
           var v = b.getAttribute('data-act');
-          if(v==='dashboard'||v==='operations'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='c4k_registers'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='scheduling'||v==='absents_refunds'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings') setView(v);
+          if(v==='dashboard'||v==='operations'||v==='operations_admin'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='c4k_registers'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='scheduling'||v==='absents_refunds'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings') setView(v);
           closeSidebarMob();
         });
       });

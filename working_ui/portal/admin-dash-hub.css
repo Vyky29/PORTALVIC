@@ -1,0 +1,225 @@
+/* Admin dashboard hub — Day operations / Operations admin (Portal 2026 KPI-style) */
+.dash-hub{
+  --dh-bg:#f1f5f9;
+  --dh-panel:#fff;
+  --dh-ink:#0f172a;
+  --dh-muted:#64748b;
+  --dh-line:#e2e8f0;
+  --dh-radius:16px;
+  --dh-shadow:0 1px 2px rgba(15,23,42,.06),0 8px 24px rgba(15,23,42,.06);
+  min-width:0;
+  max-width:100%;
+  box-sizing:border-box;
+  padding:4px 2px 20px;
+}
+.dash-hub--embed{margin-top:0;margin-bottom:22px}
+.dash-hub > .page-title{
+  margin:0 0 6px;
+  font-size:clamp(22px,1.2vw + 0.5rem,28px);
+  font-weight:700;
+  letter-spacing:-0.02em;
+  color:var(--dh-ink);
+}
+.dash-hub > .page-intro{
+  margin:0 0 clamp(18px,2.2vh,28px);
+  max-width:42rem;
+  font-size:14px;
+  line-height:1.5;
+  color:var(--dh-muted);
+}
+.dash-hub__stack{
+  display:flex;
+  flex-direction:column;
+  gap:clamp(16px,2vh,24px);
+  min-width:0;
+}
+.dash-hub__panel{
+  min-width:0;
+  background:var(--dh-panel);
+  border:1px solid var(--dh-line);
+  border-radius:var(--dh-radius);
+  box-shadow:var(--dh-shadow);
+  padding:clamp(14px,1.6vw,20px);
+}
+.dash-hub__panel-head{
+  display:flex;
+  align-items:flex-start;
+  gap:12px;
+  margin:0 0 14px;
+  padding-bottom:12px;
+  border-bottom:1px solid var(--dh-line);
+  min-width:0;
+}
+.dash-hub__panel-head--link{
+  border-bottom:0;
+  padding-bottom:0;
+  margin-bottom:12px;
+}
+.dash-hub__panel-jump{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  width:100%;
+  min-width:0;
+  margin:0;
+  padding:0;
+  border:0;
+  background:transparent;
+  font:inherit;
+  text-align:left;
+  cursor:pointer;
+  color:inherit;
+  border-radius:12px;
+}
+.dash-hub__panel-jump:hover,
+.dash-hub__panel-jump:focus-visible{
+  background:#f8fafc;
+  outline:none;
+  box-shadow:0 0 0 2px rgba(99,102,241,.25);
+}
+.dash-hub__panel-ico{
+  flex-shrink:0;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:44px;
+  height:44px;
+  border-radius:12px;
+  background:#eef2ff;
+  color:#4f46e5;
+}
+.dash-hub__panel-ico .admin-nav-ico svg{
+  width:24px;
+  height:24px;
+  display:block;
+}
+.dash-hub__panel-titles{min-width:0;flex:1}
+.dash-hub__panel-title{
+  margin:0;
+  font-size:13px;
+  font-weight:800;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  color:var(--dh-ink);
+  overflow-wrap:break-word;
+}
+.dash-hub__panel-desc{
+  margin:4px 0 0;
+  font-size:12.5px;
+  line-height:1.4;
+  color:var(--dh-muted);
+  overflow-wrap:break-word;
+}
+.dash-hub__subhead{
+  margin:0 0 10px;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--dh-muted);
+}
+.dash-hub__subhead + .dash-hub__grid{margin-bottom:14px}
+.dash-hub__subhead:last-of-type{margin-bottom:10px}
+.dash-hub__grid{
+  display:grid;
+  gap:12px;
+  min-width:0;
+  grid-template-columns:repeat(auto-fill,minmax(min(100%,148px),1fr));
+}
+.dash-hub__grid--5{grid-template-columns:repeat(auto-fill,minmax(min(100%,130px),1fr))}
+@media (min-width:900px){
+  .dash-hub__grid--4{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .dash-hub__grid--5{grid-template-columns:repeat(5,minmax(0,1fr))}
+  .dash-hub__grid--6{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media (min-width:1200px){
+  .dash-hub__grid--6{grid-template-columns:repeat(6,minmax(0,1fr))}
+}
+.dash-hub__tile{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-start;
+  gap:8px;
+  min-width:0;
+  width:100%;
+  min-height:132px;
+  padding:0 10px 12px;
+  border:1px solid var(--dh-line);
+  border-radius:14px;
+  background:#fff;
+  box-shadow:0 1px 2px rgba(15,23,42,.04);
+  cursor:pointer;
+  font:inherit;
+  text-align:center;
+  color:var(--dh-ink);
+  transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease;
+  -webkit-appearance:none;
+  appearance:none;
+}
+.dash-hub__tile:hover,
+.dash-hub__tile:focus-visible{
+  transform:translateY(-2px);
+  border-color:#cbd5e1;
+  box-shadow:0 6px 18px rgba(15,23,42,.1);
+  outline:none;
+}
+.dash-hub__tile--focus{
+  border-color:#6366f1;
+  box-shadow:0 0 0 2px rgba(99,102,241,.2),0 6px 18px rgba(15,23,42,.08);
+}
+.dash-hub__tile-band{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:100%;
+  min-height:52px;
+  margin:0 -10px;
+  padding:10px 8px 8px;
+  border-radius:13px 13px 0 0;
+  background:var(--dh-tile-bg,#eef2ff);
+  color:var(--dh-tile-fg,#4f46e5);
+}
+.dash-hub__tile-band .admin-nav-ico svg{
+  width:26px;
+  height:26px;
+  display:block;
+  stroke:currentColor;
+}
+.dash-hub__tile-label{
+  display:block;
+  min-width:0;
+  width:100%;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+  line-height:1.25;
+  overflow-wrap:break-word;
+}
+.dash-hub__tile-desc{
+  display:block;
+  min-width:0;
+  width:100%;
+  font-size:11px;
+  line-height:1.35;
+  color:var(--dh-muted);
+  overflow-wrap:break-word;
+}
+.dash-hub__tile[data-dayops-tone="sessions"]{--dh-tile-bg:#ede9fe;--dh-tile-fg:#6d28d9}
+.dash-hub__tile[data-dayops-tone="feedback"]{--dh-tile-bg:#dcfce7;--dh-tile-fg:#15803d}
+.dash-hub__tile[data-dayops-tone="analytics"]{--dh-tile-bg:#fee2e2;--dh-tile-fg:#b91c1c}
+.dash-hub__tile[data-dayops-tone="absents"]{--dh-tile-bg:#fef9c3;--dh-tile-fg:#a16207}
+.dash-hub__tile[data-dayops-tone="scheduling"]{--dh-tile-bg:#e0f2fe;--dh-tile-fg:#0369a1}
+.dash-hub__tile[data-dayops-tone="notify"]{--dh-tile-bg:#e0f2fe;--dh-tile-fg:#0369a1}
+.dash-hub__tile[data-dayops-tone="payments"]{--dh-tile-bg:#fce7f3;--dh-tile-fg:#be185d}
+.dash-hub__tile[data-dayops-tone="bookings"]{--dh-tile-bg:#ffedd5;--dh-tile-fg:#c2410c}
+.dash-hub__tile[data-dayops-tone="reviews"]{--dh-tile-bg:#ccfbf1;--dh-tile-fg:#0f766e}
+.dash-hub__tile[data-dayops-tone="reports_q"]{--dh-tile-bg:#f1f5f9;--dh-tile-fg:#334155}
+.dash-hub__tile[data-dayops-tone="new_participant"]{--dh-tile-bg:#fef3c7;--dh-tile-fg:#b45309}
+.dash-hub__tile[data-dayops-tone="waitlist"]{--dh-tile-bg:#fef3c7;--dh-tile-fg:#b45309}
+.dash-hub__tile[data-dayops-tone="leads"]{--dh-tile-bg:#dbeafe;--dh-tile-fg:#1d4ed8}
+.dash-hub__tile[data-dayops-tone="servicecap"]{--dh-tile-bg:#e0e7ff;--dh-tile-fg:#4338ca}
+.dash-hub__panel--leads .dash-hub__panel-ico{background:#fef3c7;color:#b45309}
+body:has(#workspace .dash-hub) .admin-workspace{background:#f8fafc}
+body:has(#workspace .dash-hub) .admin-main{background:#f8fafc}
