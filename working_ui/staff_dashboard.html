@@ -6485,6 +6485,7 @@
   <script src="portal/staff_dashboard_portal_roster_source.js"></script>
   <script src="portal/clients_info_embed.js"></script>
   <script src="portal/staff_dashboard_spreadsheet_adapter.js"></script>
+  <script src="portal/staff_roster_resolve.js"></script>
   <script>
     console.log("ABSENT FIX VERSION LOADED 20260425");
     /** Real calendar weekday for “Today” (en-GB), aligned with staff_clients_machine.xlsx */
@@ -15430,37 +15431,29 @@
 
       function portalStaffKeyForRotaFromProfile(p){
         var sess = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session;
-        var email = sess && sess.user && sess.user.email ? String(sess.user.email) : "";
+        var user = sess && sess.user ? sess.user : null;
+        if (typeof window.portalBootstrapStaffRosterFromProfile === "function") {
+          var hit = window.portalBootstrapStaffRosterFromProfile(p || {}, user);
+          return hit && hit.staffId ? hit.staffId : "";
+        }
+        var email = user && user.email ? String(user.email) : "";
         if (typeof window.portalInferStaffKey === "function") {
           return window.portalInferStaffKey(p, email);
         }
-        var raw = String((p && p.username) || "").trim();
-        if (!raw) raw = String((p && p.full_name) || "").trim();
-        if (!raw) return "";
-        var first = (raw.split(/\s+/).filter(Boolean)[0] || raw);
-        return String(first)
-          .toLowerCase()
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .replace(/[^a-z0-9]+/g, "");
+        return "";
       }
       async function rehydrateFromProfile(){
         var p = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
         var session = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session;
-        if (!p) {
-          if (session && session.user && typeof window.dashboardData !== "undefined" && window.dashboardData) {
-            var onlyName = typeof window.portalTopbarDisplayNameFromAuth === "function"
-              ? window.portalTopbarDisplayNameFromAuth(null, session)
-              : "";
-            if (onlyName) window.dashboardData.staffName = onlyName;
-            if (typeof renderHeader === "function") renderHeader();
-            if (typeof renderToday === "function") renderToday();
-          }
-          return;
+        var user = session && session.user ? session.user : null;
+        var profileForRoster = p || {};
+        if (!p && user) {
+          profileForRoster = {
+            username: String(user.email || "").split("@")[0],
+            full_name: String((user.user_metadata && (user.user_metadata.full_name || user.user_metadata.name)) || "").trim(),
+          };
         }
-        var staffId = portalStaffKeyForRotaFromProfile(p);
-        if (!staffId) {
-          console.warn("staff_dashboard: could not map staff_profiles to rota key", p && p.username, p && p.full_name);
+        if (!user) {
           if (typeof window.dashboardData !== "undefined" && window.dashboardData) {
             window.dashboardData.portalIdentityResolved = true;
             if (typeof renderHeader === "function") renderHeader();
@@ -15468,13 +15461,22 @@
           }
           return;
         }
-        if (typeof StaffDashboardSpreadsheetAdapter === "undefined") return;
-        var _src = typeof window.portalResolveStaffDashboardSource === "function"
-          ? window.portalResolveStaffDashboardSource()
-          : window.STAFF_DASHBOARD_SOURCE;
-        if (!_src) return;
-        var boot = StaffDashboardSpreadsheetAdapter.bootstrap({ source: _src, staffId: staffId });
-        if (!boot) return;
+        if (typeof window.portalBootstrapStaffRosterFromProfile !== "function") {
+          console.warn("staff_dashboard: staff_roster_resolve.js not loaded");
+          return;
+        }
+        var rosterHit = window.portalBootstrapStaffRosterFromProfile(profileForRoster, user);
+        if (!rosterHit || !rosterHit.boot) {
+          console.warn("staff_dashboard: roster bootstrap failed", profileForRoster && profileForRoster.username, profileForRoster && profileForRoster.full_name);
+          if (typeof window.dashboardData !== "undefined" && window.dashboardData) {
+            window.dashboardData.portalIdentityResolved = true;
+            if (typeof renderHeader === "function") renderHeader();
+            if (typeof renderToday === "function") renderToday();
+          }
+          return;
+        }
+        var staffId = rosterHit.staffId;
+        var boot = rosterHit.boot;
 
         __spreadsheetBoot = boot;
         STAFF_DASHBOARD_ID = staffId;
@@ -15687,22 +15689,22 @@
         if(typeof window.portalStaffDmSyncUnreadChrome === "function"){
           void window.portalStaffDmSyncUnreadChrome();
         }
-        if(typeof portalMergeServerReviewStateForDashboard === "function"){
-          if(typeof portalRefreshScheduleOverridesCache === "function"){
-            void portalRefreshScheduleOverridesCache().then(function(){
+        _finishStaffRehydrateUi();
+        void (async function portalStaffBackgroundRosterRefresh(){
+          try{
+            if(typeof portalRefreshScheduleOverridesCache === "function"){
+              await portalRefreshScheduleOverridesCache();
               _portalStaffRebuildAfterOverridesFetch(staffId);
-              return portalMergeServerReviewStateForDashboard();
-            }).then(_finishStaffRehydrateUi, _finishStaffRehydrateUi);
-          }else{
-            void portalMergeServerReviewStateForDashboard().then(_finishStaffRehydrateUi, _finishStaffRehydrateUi);
+            }
+            if(typeof portalMergeServerReviewStateForDashboard === "function"){
+              await portalMergeServerReviewStateForDashboard();
+            }
+            _finishStaffRehydrateUi();
+          }catch(e){
+            console.warn("[portal] staff background roster refresh", e);
+            _finishStaffRehydrateUi();
           }
-        }else if(typeof portalRefreshScheduleOverridesCache === "function"){
-          void portalRefreshScheduleOverridesCache().then(function(){
-            _portalStaffRebuildAfterOverridesFetch(staffId);
-          }).then(_finishStaffRehydrateUi, _finishStaffRehydrateUi);
-        }else{
-          _finishStaffRehydrateUi();
-        }
+        })();
       }
 
       window.addEventListener("portal:supabase-ready", rehydrateFromProfile);
