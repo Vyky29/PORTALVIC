@@ -12406,7 +12406,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return '<tr><td>'+esc(i.name)+'</td><td class="muted">'+esc(i.role)+'</td><td><span class="chip chip--pend">'+esc(i.status)+'</span></td></tr>';
       }).join('');
       var obSummary = MOCK.onboardingSteps.map(function(o){ return o.label+' '+o.pct+'%'; }).join(' · ');
-      return '<h1 class="page-title">Staff &amp; HR</h1><p class="page-intro">Roster, shifts, interviews, and internal HR notes in one place.</p>'+
+      return '<h1 class="page-title">Staff &amp; HR</h1><p class="page-intro">Roster, shifts, interviews, and employment contracts. Prepare contracts in the HR portal; sending publishes a dashboard notice for the employee (same flow as announcements).</p>'+
+        '<div class="toolbar" style="margin-bottom:14px;flex-wrap:wrap;gap:8px">'+
+        '<a class="btn btn--pri" href="hr_contract.html">+ New employment contract</a>'+
+        '<button type="button" class="btn btn--sec" data-open-compose data-preset="announcement">Compose announcement</button>'+
+        '<button type="button" class="btn btn--ghost btn--sm" id="btnPortalContractsHelp">How contracts reach staff</button></div>'+
         '<div class="filter-row"><input class="inp" id="filStaff" placeholder="Filter staff…" /><select class="sel" id="filStaffSite"><option value="">All sites</option><option>Acton</option><option>Ealing</option><option>All</option></select></div>'+
         '<div class="card" style="margin-bottom:14px"><div class="card-h"><h3>Staff</h3></div><div class="card-pad" style="overflow:auto"><table class="tbl tbl--center" id="tblStaff"><thead><tr><th>Name</th><th>Role</th><th>Site</th><th>Availability</th><th>Status</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div></div>'+
         '<div class="card" style="margin-bottom:14px"><div class="card-h"><h3>Shifts (roster)</h3></div><div class="card-pad" style="overflow:auto"><table class="tbl tbl--center"><thead><tr><th>Staff</th><th>When</th><th>Venue</th><th>Status</th><th></th></tr></thead><tbody>'+shifts+'</tbody></table></div></div>'+
@@ -13070,6 +13074,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var fs = $('filStaff'), fss = $('filStaffSite');
         if(fs) fs.addEventListener('input', filterStaffTable);
         if(fss) fss.addEventListener('change', filterStaffTable);
+        var btnHc = $('btnPortalContractsHelp');
+        if(btnHc) btnHc.onclick = function(){
+          alert('1) Open HR Contract Portal and complete Steps 1–3 (director signature).\n2) Step 4 Send to employee — publishes a contract notice on their Portal dashboard (same as announcements).\n3) Staff signs on contract_sign; PDF goes to My Documents; notice disappears from dashboard.');
+        };
       }
       if(id==='c4k_waitlist'){
         refreshBookingWaitlistPipelineTable();

@@ -14,6 +14,9 @@
     { "source": "/l1/", "destination": "/lead_dashboard.html" },
     { "source": "/ce", "destination": "/ceo_dashboard.html" },
     { "source": "/ce/", "destination": "/ceo_dashboard.html" },
-    { "source": "/portal/admin_embed.html", "destination": "/admin_dashboard.html" }
+    { "source": "/portal/admin_embed.html", "destination": "/admin_dashboard.html" },
+    { "source": "/contract-sign", "destination": "/contract_sign.html" },
+    { "source": "/contract-sign/:id", "destination": "/contract_sign.html?contract_id=:id" },
+    { "source": "/hr-contract", "destination": "/hr_contract.html" }
   ]
 }

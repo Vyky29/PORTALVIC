@@ -11885,6 +11885,7 @@
     }
     function portalAnnouncementSignatureKey(item){
       if(!item || typeof item !== 'object') return '';
+      if(item.portalContractId) return 'portal-ann:contract:' + String(item.portalContractId);
       if(item.portalAnnouncementId) return 'portal-ann:' + String(item.portalAnnouncementId);
       const t = String(item.title || '').trim().toLowerCase();
       const x = String(item.text || '').trim().toLowerCase();
@@ -11940,6 +11941,24 @@
               title: String(row.title || 'Reminder').trim() || 'Reminder',
               body: String(row.body || '').trim(),
               created_at: row.created_at
+            });
+            return;
+          }
+          if(typ === 'contract_signing'){
+            if(existing[id]) return;
+            existing[id] = true;
+            var contractId = '';
+            try{
+              var parsed = JSON.parse(String(row.body || '{}'));
+              contractId = String(parsed.contract_id || parsed.contractId || '').trim();
+            }catch(_c){}
+            annInjected.push({
+              type: 'contract',
+              title: String(row.title || 'Sign employment contract').trim() || 'Sign employment contract',
+              text: 'Review and sign your employment contract. Your signed PDF will be saved in My Documents.',
+              href: 'contract_sign.html?contract_id=' + encodeURIComponent(contractId),
+              portalAnnouncementId: id,
+              portalContractId: contractId
             });
             return;
           }
@@ -12033,7 +12052,7 @@
       return raw.filter(function(n){
         if(!n || typeof n !== 'object') return false;
         const typ = String(n.type || 'announcement').trim() || 'announcement';
-        return typ === 'announcement';
+        return typ === 'announcement' || typ === 'contract';
       });
     }
     function portalActiveAnnouncementItems(){
@@ -12117,6 +12136,17 @@
         portalAnnouncementLockRequired = true;
         const t = String(pending.title || 'Announcement').trim() || 'Announcement';
         const txt = String(pending.text || '').trim() || 'Please read this update carefully.';
+        if(String(pending.type || '') === 'contract' && pending.portalContractId){
+          const signHref = 'contract_sign.html?contract_id=' + encodeURIComponent(String(pending.portalContractId));
+          hostPending.innerHTML =
+            '<article class="announcement-lock-card">' +
+              '<div class="announcement-lock-head"><strong>' + escapeHtml(t) + '</strong></div>' +
+              '<p class="announcement-lock-copy">' + escapeHtml(txt) + '</p>' +
+              '<div class="announcement-lock-actions">' +
+                '<a href="' + signHref + '" class="announcement-sign-btn" style="display:inline-block;text-align:center;text-decoration:none;line-height:1.2;padding:12px 16px;">Open contract to sign</a>' +
+              '</div>' +
+            '</article>';
+        }else{
         hostPending.innerHTML =
           '<article class="announcement-lock-card">' +
             '<div class="announcement-lock-head"><strong>' + escapeHtml(t) + '</strong></div>' +
@@ -12126,6 +12156,7 @@
               '<button type="button" class="announcement-sign-btn" id="announcementSignBtn" disabled data-announcement-sign-key="' + escapeHtml(portalAnnouncementSignatureKey(pending)) + '">Sign and submit</button>' +
             '</div>' +
           '</article>';
+        }
         hostHistory.innerHTML = '';
         hostHistory.hidden = true;
         hostHistory.setAttribute('aria-hidden', 'true');

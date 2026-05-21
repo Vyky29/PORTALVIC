@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Employment contracts | Portal Vic</title>
+  <style>
+    :root {
+      --navy: #0f2744;
+      --navy-light: #1a3a5c;
+      --soft-blue: #4a7c9b;
+      --soft-blue-light: #e8f0f6;
+      --gold: #c9a227;
+      --gold-light: #f5ecd4;
+      --white: #ffffff;
+      --grey-100: #f7f9fb;
+      --grey-200: #e2e8f0;
+      --grey-500: #64748b;
+      --grey-700: #334155;
+      --error: #b91c1c;
+      --success: #166534;
+      --radius: 8px;
+      --shadow: 0 2px 8px rgba(15, 39, 68, 0.08);
+      --shadow-lg: 0 4px 20px rgba(15, 39, 68, 0.12);
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+      color: var(--grey-700);
+      background: var(--grey-100);
+    }
+    .header {
+      background: var(--white);
+      color: var(--navy);
+      border-bottom: 4px solid var(--gold);
+      box-shadow: var(--shadow);
+    }
+    .header-logo-band {
+      background: var(--white);
+      padding: 1.25rem 2rem 0.75rem;
+      text-align: center;
+      border-bottom: 1px solid var(--grey-200);
+    }
+    .header-logo {
+      width: 280px;
+      max-width: min(280px, 85vw);
+      height: auto;
+      display: block;
+      margin: 0 auto;
+      image-rendering: auto;
+    }
+    .header-content {
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+      color: var(--white);
+      padding: 1.1rem 2rem 1.35rem;
+      text-align: center;
+    }
+    .header-content h1 { margin: 0 0 0.25rem; font-size: 1.5rem; font-weight: 600; }
+    .header-content p { margin: 0; opacity: 0.92; font-size: 0.95rem; }
+    .container { max-width: 1400px; margin: 0 auto; padding: 1.5rem 2rem 3rem; }
+    .portal-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding: 0.65rem 1rem;
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      font-size: 0.9rem;
+    }
+    .portal-toolbar a {
+      color: var(--navy);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .portal-toolbar a:hover { text-decoration: underline; }
+    #authGate {
+      padding: 2rem;
+      text-align: center;
+      background: var(--white);
+      border-radius: var(--radius);
+      margin: 2rem auto;
+      max-width: 480px;
+    }
+    .alert-locked {
+      background: var(--gold-light);
+      border: 1px solid var(--gold);
+      border-radius: var(--radius);
+      padding: 0.75rem 1rem;
+      margin-bottom: 1.5rem;
+      font-size: 0.9rem;
+      color: var(--navy);
+    }
+    .contract-types { display: grid; grid-template-columns: 1fr; gap: 0.75rem; margin-bottom: 1.5rem; }
+    .type-card {
+      background: var(--white);
+      border: 2px solid var(--grey-200);
+      border-radius: var(--radius);
+      padding: 1rem;
+      cursor: pointer;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .type-card:focus { outline: 2px solid var(--soft-blue); outline-offset: 2px; }
+    .type-card.active { border-color: var(--navy); box-shadow: var(--shadow); }
+    .type-card.disabled { opacity: 0.6; cursor: not-allowed; pointer-events: none; }
+    .type-card h3 { margin: 0 0 0.25rem; font-size: 1rem; color: var(--navy); }
+    .type-card .badge { display: inline-block; font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 4px; margin-top: 0.5rem; }
+    .badge-active { background: var(--navy); color: var(--white); }
+    .badge-soon { background: var(--grey-200); color: var(--grey-500); }
+    .progress-bar { display: flex; gap: 0.25rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+    .progress-step {
+      flex: 1;
+      min-width: 100px;
+      text-align: center;
+      padding: 0.5rem;
+      font-size: 0.8rem;
+      background: var(--white);
+      border: 1px solid var(--grey-200);
+      border-radius: var(--radius);
+      color: var(--grey-500);
+    }
+    .progress-step.active { background: var(--navy); color: var(--white); border-color: var(--navy); }
+    .progress-step.done { background: var(--soft-blue-light); color: var(--navy); border-color: var(--soft-blue); }
+    .main-grid { display: grid; grid-template-columns: 1fr; gap: 1.25rem; align-items: start; }
+    .panel {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.5rem;
+    }
+    .panel h2 { margin: 0 0 1rem; font-size: 1.15rem; color: var(--navy); border-bottom: 2px solid var(--soft-blue-light); padding-bottom: 0.5rem; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; font-weight: 500; margin-bottom: 0.35rem; color: var(--navy); font-size: 0.9rem; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      border: 1px solid var(--grey-200);
+      border-radius: var(--radius);
+      font-size: 1rem;
+      font-family: inherit;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      outline: none;
+      border-color: var(--soft-blue);
+      box-shadow: 0 0 0 3px rgba(74, 124, 155, 0.25);
+    }
+    .form-group .error-msg { color: var(--error); font-size: 0.85rem; margin-top: 0.25rem; display: none; }
+    .form-group.invalid input, .form-group.invalid select, .form-group.invalid textarea { border-color: var(--error); }
+    .form-group.invalid .error-msg { display: block; }
+    .form-group input[type="checkbox"],
+    .form-group input[type="radio"] {
+      width: 1.125rem;
+      height: 1.125rem;
+      min-width: 1.125rem;
+      margin: 0;
+      flex-shrink: 0;
+      accent-color: var(--navy);
+      cursor: pointer;
+    }
+    .checkbox-group {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.5rem;
+      margin-top: 0.25rem;
+    }
+    .checkbox-group .place-option {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      font-weight: 400;
+      cursor: pointer;
+      padding: 0.5rem 0.65rem;
+      border: 1px solid var(--grey-200);
+      border-radius: var(--radius);
+      background: var(--white);
+      line-height: 1.35;
+      margin: 0;
+    }
+    .checkbox-group .place-option:hover { border-color: var(--soft-blue); background: var(--soft-blue-light); }
+    .checkbox-group .place-option:has(input:checked) {
+      border-color: var(--navy);
+      background: var(--soft-blue-light);
+    }
+    .checkbox-group .place-option input[type="checkbox"] { margin-top: 0.2rem; }
+    .form-group .ack-label {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      font-weight: 400;
+      cursor: pointer;
+      line-height: 1.45;
+    }
+    .form-group .ack-label input[type="checkbox"] { margin-top: 0.2rem; }
+    .signature-section {
+      margin-top: 1.5rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--grey-200);
+    }
+    .signature-section h3 {
+      margin: 0 0 1rem;
+      font-size: 1rem;
+      color: var(--navy);
+    }
+    .rate-display {
+      background: var(--soft-blue-light);
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius);
+      border-left: 4px solid var(--gold);
+      font-size: 0.95rem;
+    }
+    .ref-badges { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+    .ref-badge {
+      font-size: 0.8rem;
+      padding: 0.35rem 0.75rem;
+      background: var(--navy);
+      color: var(--white);
+      border-radius: 4px;
+    }
+    .ref-badge.gold { background: var(--gold); color: var(--navy); }
+    .step-panel { display: none; }
+    .step-panel.active { display: block; }
+    .btn-row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1.5rem; }
+    button, .btn {
+      padding: 0.65rem 1.25rem;
+      font-size: 1rem;
+      font-family: inherit;
+      border-radius: var(--radius);
+      cursor: pointer;
+      border: none;
+      font-weight: 500;
+      transition: background 0.2s, opacity 0.2s;
+    }
+    button:focus-visible, .btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+    .btn-primary { background: var(--navy); color: var(--white); }
+    .btn-primary:hover:not(:disabled) { background: var(--navy-light); }
+    .btn-secondary { background: var(--white); color: var(--navy); border: 1px solid var(--navy); }
+    .btn-secondary:hover:not(:disabled) { background: var(--soft-blue-light); }
+    .btn-gold { background: var(--gold); color: var(--navy); }
+    .btn-gold:hover:not(:disabled) { filter: brightness(1.05); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .preview-doc {
+      background: var(--white);
+      border: 1px solid var(--grey-200);
+      border-radius: var(--radius);
+      padding: 0;
+      max-height: 70vh;
+      overflow-y: auto;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: #1a1a1a;
+      box-shadow: var(--shadow-lg);
+    }
+    .contract-document { font-family: Georgia, 'Times New Roman', serif; }
+    .contract-letterhead {
+      background: var(--white);
+      padding: 1.5rem 1.75rem 1rem;
+      text-align: center;
+      border-bottom: 3px solid var(--gold);
+    }
+    .contract-logo {
+      width: 260px;
+      max-width: min(260px, 90%);
+      height: auto;
+      display: block;
+      margin: 0 auto;
+      image-rendering: auto;
+    }
+    .letterhead-legal {
+      margin-top: 0.65rem;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--navy);
+    }
+    .contract-body { padding: 1.5rem 1.75rem 1rem; }
+    .contract-doc-title {
+      text-align: center;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--navy);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin: 0 0 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 2px solid var(--gold);
+    }
+    .contract-opening {
+      text-align: center;
+      font-weight: 600;
+      color: var(--navy);
+      margin: 0 0 1.25rem;
+      font-size: 0.9rem;
+    }
+    .contract-section h3 {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--navy);
+      margin: 1.35rem 0 0.5rem;
+      padding-bottom: 0.35rem;
+      border-bottom: 1px solid var(--gold);
+    }
+    .contract-section p { margin: 0 0 0.65rem; text-align: justify; }
+    .contract-parties {
+      background: var(--soft-blue-light);
+      border: 1px solid rgba(74, 124, 155, 0.25);
+      border-left: 4px solid var(--navy);
+      padding: 0.85rem 1rem;
+      margin: 0.75rem 0 1rem;
+      font-size: 0.82rem;
+    }
+    .contract-parties strong {
+      display: block;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--navy);
+      margin-bottom: 0.4rem;
+    }
+    .contract-footer {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 0.68rem;
+      color: var(--grey-500);
+      text-align: center;
+      padding: 0.75rem 1.5rem 1.25rem;
+      border-top: 1px solid var(--grey-200);
+      background: var(--grey-100);
+    }
+    .contract-signature-block {
+      margin-top: 0.5rem;
+      padding: 0.75rem 0;
+      border-top: 1px dashed var(--grey-200);
+    }
+    .signature-pad-wrap { border: 2px solid var(--grey-200); border-radius: var(--radius); background: var(--white); margin: 0.5rem 0; }
+    .signature-pad-wrap canvas {
+      display: block;
+      width: 100%;
+      height: 150px;
+      cursor: crosshair;
+      touch-action: none;
+    }
+    .warning-box {
+      background: #fef3c7;
+      border: 1px solid #d97706;
+      border-radius: var(--radius);
+      padding: 0.75rem 1rem;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+    }
+    .success-box {
+      background: #dcfce7;
+      border: 1px solid var(--success);
+      border-radius: var(--radius);
+      padding: 1rem;
+      margin: 1rem 0;
+      display: none;
+    }
+    .success-box.visible { display: block; }
+    .recent-section { margin-top: 2rem; }
+    .recent-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    .recent-table th, .recent-table td { padding: 0.6rem; text-align: left; border-bottom: 1px solid var(--grey-200); }
+    .recent-table th { background: var(--navy); color: var(--white); }
+    .recent-table tr:hover { background: var(--soft-blue-light); }
+    .hr-notes { border-left: 3px solid var(--soft-blue); }
+    #pdfSource { position: absolute; left: -9999px; width: 210mm; padding: 20mm; font-size: 11pt; line-height: 1.5; }
+    .hidden { display: none !important; }
+    #otherLocationWrap { margin-top: 0.5rem; }
+    .venue-hours-container {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: var(--soft-blue-light);
+      border: 1px solid rgba(74, 124, 155, 0.25);
+      border-radius: var(--radius);
+      border-left: 4px solid var(--navy);
+    }
+    .venue-hours-container.hidden { display: none; }
+    .venue-hours-intro {
+      margin: 0 0 0.75rem;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--navy);
+    }
+    .venue-hours-row {
+      margin-bottom: 0.75rem;
+    }
+    .venue-hours-row:last-child { margin-bottom: 0; }
+    .venue-hours-row label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 0.35rem;
+    }
+    .venue-hours-row input {
+      width: 100%;
+      padding: 0.55rem 0.75rem;
+      border: 1px solid var(--grey-200);
+      border-radius: var(--radius);
+      font-size: 0.95rem;
+      font-family: inherit;
+    }
+    .venue-hours-row input:focus {
+      outline: none;
+      border-color: var(--soft-blue);
+      box-shadow: 0 0 0 3px rgba(74, 124, 155, 0.25);
+    }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+    #fgPlace fieldset { border: none; padding: 0; margin: 0; }
+    #fgPlace.invalid .error-msg { display: block; }
+    #fgDirectorSignature.invalid .error-msg { display: block; }
+    #directorSigError { display: none; }
+    #fgDirectorSignature.invalid #directorSigError { display: block; }
+    .table-scroll {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: var(--radius);
+      border: 1px solid var(--grey-200);
+    }
+    .table-scroll .recent-table { margin: 0; min-width: 560px; }
+    .preview-panel { min-width: 0; }
+
+    /* Tablet: 640px+ */
+    @media (min-width: 640px) {
+      .container { padding: 1.5rem 1.75rem 2.5rem; }
+      .contract-types { grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+      .checkbox-group { grid-template-columns: 1fr 1fr; }
+      .progress-bar { flex-wrap: wrap; }
+      .progress-step { flex: 1 1 calc(33.333% - 0.25rem); min-width: 120px; }
+      .panel { padding: 1.35rem 1.5rem; }
+      .preview-doc { max-height: 65vh; }
+    }
+
+    /* Tablet landscape / small desktop: 768px+ */
+    @media (min-width: 768px) {
+      .header-logo { width: 260px; max-width: 260px; }
+      .progress-step { flex: 1 1 auto; min-width: 100px; font-size: 0.78rem; }
+      .contract-body { padding: 1.35rem 1.5rem 1rem; }
+      .contract-letterhead { padding: 1.25rem 1.5rem 0.85rem; }
+    }
+
+    /* Desktop: 1024px+ ? form + preview side by side */
+    @media (min-width: 1024px) {
+      .container { padding: 1.75rem 2rem 3rem; }
+      .main-grid {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 1.75rem;
+      }
+      .preview-doc { max-height: calc(100vh - 220px); min-height: 480px; }
+      .progress-step { font-size: 0.8rem; }
+    }
+
+    /* Large desktop: 1280px+ */
+    @media (min-width: 1280px) {
+      .header-logo { width: 280px; max-width: 280px; }
+      .main-grid { gap: 2rem; }
+      .panel { padding: 1.5rem; }
+    }
+
+    /* Mobile: up to 639px */
+    @media (max-width: 639px) {
+      body { font-size: 15px; }
+      .header-logo-band { padding: 1rem 1rem 0.65rem; }
+      .header-logo {
+        width: auto;
+        max-width: min(240px, 88vw);
+        height: auto;
+      }
+      .header-content { padding: 1rem 1.25rem 1.15rem; }
+      .header-content h1 { font-size: 1.25rem; }
+      .header-content p { font-size: 0.88rem; }
+      .container { padding: 1rem 1rem 2rem; }
+      .alert-locked { font-size: 0.85rem; padding: 0.65rem 0.85rem; }
+      .ref-badges { flex-direction: column; }
+      .ref-badge { width: 100%; text-align: center; }
+      .progress-bar {
+        flex-direction: column;
+        gap: 0.35rem;
+      }
+      .progress-step {
+        flex: none;
+        width: 100%;
+        min-width: 0;
+        text-align: left;
+        padding: 0.6rem 0.85rem;
+        font-size: 0.82rem;
+      }
+      .panel { padding: 1.1rem 1rem; }
+      .panel h2 { font-size: 1.05rem; }
+      .form-group input, .form-group select, .form-group textarea {
+        font-size: 16px;
+        padding: 0.7rem 0.75rem;
+      }
+      .checkbox-group { grid-template-columns: 1fr; }
+      .btn-row { flex-direction: column; }
+      .btn-row button { width: 100%; min-height: 44px; }
+      #sendContractBtn { width: 100%; min-height: 48px; }
+    .send-link-box {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: var(--soft-blue-light);
+      border: 1px solid var(--soft-blue);
+      border-radius: var(--radius);
+    }
+    .send-link-box input {
+      width: 100%;
+      font-size: 0.85rem;
+      padding: 0.5rem;
+      margin: 0.5rem 0;
+      border: 1px solid var(--grey-200);
+      border-radius: var(--radius);
+    }
+    .send-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
+      .preview-doc {
+        max-height: 55vh;
+        font-size: 0.8rem;
+      }
+      .contract-body { padding: 1rem 1rem 0.85rem; }
+      .contract-letterhead { padding: 1rem 1rem 0.75rem; }
+      .contract-logo {
+        width: auto;
+        max-width: min(220px, 85vw);
+      }
+      .contract-doc-title { font-size: 0.92rem; }
+      .signature-pad-wrap canvas { height: 130px; }
+      .rate-display { font-size: 0.88rem; }
+      .recent-section.panel { padding: 1rem; overflow: hidden; }
+    }
+
+    /* Narrow mobile */
+    @media (max-width: 380px) {
+      .header-content h1 { font-size: 1.1rem; }
+      .type-card h3 { font-size: 0.92rem; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { scroll-behavior: auto !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-logo-band">
+      <img src="assets/clubsensational-logo.png?v=2" srcset="assets/clubsensational-logo.png?v=2 1x, assets/clubsensational-logo@2x.png?v=2 2x" alt="clubSENsational" class="header-logo" width="280" height="203" decoding="async">
+    </div>
+    <div class="header-content">
+      <h1>Employment contracts</h1>
+      <p>Create and send zero-hours contracts ? staff sign on their Portal dashboard.</p>
+    </div>
+  </header>
+
+  <div id="authGate">
+    <p>Checking admin access?</p>
+  </div>
+
+  <div class="container hidden" id="appRoot">
+    <nav class="portal-toolbar" aria-label="Portal navigation">
+      <a href="admin_dashboard.html">? Admin dashboard</a>
+      <span style="color:var(--grey-500)">|</span>
+      <span>Staff &amp; HR ? <strong>New contract</strong></span>
+    </nav>
+    <div class="alert-locked" role="alert">
+      <strong>Legal wording is locked.</strong> Only authorised fields can be changed. HR notes are internal only and do not appear in the final contract.
+    </div>
+
+    <div class="contract-types" role="group" aria-label="Contract type">
+      <div class="type-card active" id="typeZero" tabindex="0" aria-pressed="true">
+        <h3>Zero Hours Contract</h3>
+        <p style="margin:0;font-size:0.85rem;color:var(--grey-500);">Variable schedule employment</p>
+        <span class="badge badge-active">Active</span>
+      </div>
+      <div class="type-card disabled" aria-disabled="true">
+        <h3>Part Time Contract</h3>
+        <p style="margin:0;font-size:0.85rem;color:var(--grey-500);">Fixed part-time hours</p>
+        <span class="badge badge-soon">Coming soon</span>
+      </div>
+      <div class="type-card disabled" aria-disabled="true">
+        <h3>Full Time Contract</h3>
+        <p style="margin:0;font-size:0.85rem;color:var(--grey-500);">Full-time employment</p>
+        <span class="badge badge-soon">Coming soon</span>
+      </div>
+    </div>
+
+    <div class="ref-badges">
+      <span class="ref-badge gold" id="badgeVersion">Contract Version: 1.0</span>
+      <span class="ref-badge" id="badgeReference">Contract Reference: ?</span>
+    </div>
+
+    <nav class="progress-bar" aria-label="Progress">
+      <div class="progress-step active" data-step="1">1. Employee Details</div>
+      <div class="progress-step" data-step="2">2. Contract Setup</div>
+      <div class="progress-step" data-step="3">3. Review Contract</div>
+      <div class="progress-step" data-step="4">4. Send to Employee</div>
+    </nav>
+
+    <div class="main-grid">
+      <div class="panel">
+        <form id="contractForm" novalidate>
+          <div class="step-panel active" data-step="1">
+            <h2>Step 1: Employee Details</h2>
+            <div class="form-group" id="fgName">
+              <label for="employeeName">Employee full name <span aria-hidden="true">*</span></label>
+              <input type="text" id="employeeName" name="employeeName" required autocomplete="name">
+              <span class="error-msg">Employee full name is required.</span>
+            </div>
+            <div class="form-group" id="fgAddress">
+              <label for="employeeAddress">Employee address <span aria-hidden="true">*</span></label>
+              <textarea id="employeeAddress" name="employeeAddress" rows="3" required></textarea>
+              <span class="error-msg">Employee address is required.</span>
+            </div>
+            <div class="form-group" id="fgEmail">
+              <label for="employeeEmail">Employee email <span aria-hidden="true">*</span></label>
+              <input type="email" id="employeeEmail" name="employeeEmail" required autocomplete="email">
+              <span class="error-msg">Valid employee email is required.</span>
+            </div>
+          </div>
+
+          <div class="step-panel" data-step="2">
+            <h2>Step 2: Contract Setup</h2>
+            <div class="form-group" id="fgContractDate">
+              <label for="contractDate">Contract date <span aria-hidden="true">*</span></label>
+              <input type="date" id="contractDate" name="contractDate" required>
+              <span class="error-msg">Contract date is required.</span>
+            </div>
+            <div class="form-group" id="fgCommencement">
+              <label for="commencementDate">Commencement date <span aria-hidden="true">*</span></label>
+              <input type="date" id="commencementDate" name="commencementDate" required>
+              <span class="error-msg">Commencement date is required.</span>
+            </div>
+            <div class="form-group" id="fgRole">
+              <label for="role">Role <span aria-hidden="true">*</span></label>
+              <select id="role" name="role" required>
+                <option value="">Select role</option>
+                <option value="Support Worker">Support Worker</option>
+                <option value="Climbing Instructor">Climbing Instructor</option>
+                <option value="Fitness Instructor">Fitness Instructor</option>
+                <option value="Swimming Instructor">Swimming Instructor</option>
+              </select>
+              <span class="error-msg">Role is required.</span>
+            </div>
+            <div class="form-group" id="fgScale">
+              <label for="scale">Scale <span aria-hidden="true">*</span></label>
+              <select id="scale" name="scale" required disabled>
+                <option value="">Select scale</option>
+                <option value="Scale 1">Scale 1</option>
+                <option value="Scale 2">Scale 2</option>
+                <option value="Scale 3">Scale 3</option>
+              </select>
+              <span class="error-msg">Scale is required.</span>
+            </div>
+            <div class="rate-display" id="rateDisplay" aria-live="polite">Select role and scale to view hourly rate.</div>
+            <div class="form-group" id="fgPlace" style="margin-bottom:1rem;">
+              <fieldset>
+                <legend style="font-weight:500;margin-bottom:0.35rem;color:var(--navy);font-size:0.9rem;">Place of work <span aria-hidden="true">*</span></legend>
+                <div class="checkbox-group" id="placeCheckboxes">
+                  <label class="place-option"><input type="checkbox" name="place" value="Acton Centre (W3 6LE)"><span>Acton Centre (W3 6LE)</span></label>
+                  <label class="place-option"><input type="checkbox" name="place" value="SwimFarm Centre (W10 6RP)"><span>SwimFarm Centre (W10 6RP)</span></label>
+                  <label class="place-option"><input type="checkbox" name="place" value="Westway Sports Centre (W10 6RP)"><span>Westway Sports Centre (W10 6RP)</span></label>
+                  <label class="place-option"><input type="checkbox" name="place" value="Northolt Centre (UB5 4AB)"><span>Northolt Centre (UB5 4AB)</span></label>
+                  <label class="place-option"><input type="checkbox" name="place" id="placeOther" value="Other"><span>Other</span></label>
+                </div>
+                <div id="otherLocationWrap" class="hidden">
+                  <label for="otherLocation" class="sr-only">Other location</label>
+                  <input type="text" id="otherLocation" placeholder="Specify other location">
+                </div>
+                <span class="error-msg" id="placeError">At least one place of work is required.</span>
+              </fieldset>
+              <div id="venueHoursContainer" class="venue-hours-container hidden" aria-live="polite"></div>
+            </div>
+            <div class="form-group" id="fgDirector">
+              <label for="directorName">Director name <span aria-hidden="true">*</span></label>
+              <input type="text" id="directorName" name="directorName" required>
+              <span class="error-msg">Director name is required.</span>
+            </div>
+            <div class="form-group" id="fgDirectorSignature">
+              <label for="directorSignatureCanvas">Director signature <span aria-hidden="true">*</span></label>
+              <p style="margin:0 0 0.5rem;font-size:0.85rem;color:var(--grey-500);">Sign here as director. This signature will appear on the contract.</p>
+              <div class="signature-pad-wrap">
+                <canvas id="directorSignatureCanvas" width="500" height="150" aria-label="Director signature pad"></canvas>
+              </div>
+              <button type="button" class="btn-secondary" id="clearDirectorSignature">Clear Director Signature</button>
+              <span class="error-msg" id="directorSigError">Director signature is required.</span>
+            </div>
+            <div class="form-group">
+              <label for="directorSignatureDate">Director signature date</label>
+              <input type="text" id="directorSignatureDate" readonly>
+            </div>
+            <div class="form-group hr-notes">
+              <label for="hrNotes">Internal HR notes</label>
+              <textarea id="hrNotes" name="hrNotes" rows="3" placeholder="Internal use only ? not included in contract"></textarea>
+            </div>
+          </div>
+
+          <div class="step-panel" data-step="3">
+            <h2>Step 3: Review Contract</h2>
+            <p>Review the live preview on the right. Confirm all details are correct before proceeding to signature.</p>
+            <div class="rate-display" id="reviewSummary"></div>
+          </div>
+
+          <div class="step-panel" data-step="4">
+            <h2>Step 4: Send to Employee</h2>
+            <p>The director signature is already on the contract. The employee will see it on their <strong>Portal dashboard</strong> (like an announcement), sign there, and the PDF will be saved under <strong>My Documents</strong>.</p>
+            <div class="rate-display" id="sendSummary" aria-live="polite"></div>
+            <div class="warning-box" id="sendWarning">Complete Steps 1?2 (including director signature) before sending.</div>
+            <div class="error-msg" id="sendError" style="display:none;margin-bottom:1rem;padding:0.75rem;background:#fef2f2;border-radius:var(--radius);"></div>
+            <button type="button" class="btn-gold" id="sendContractBtn" disabled>Send contract to employee</button>
+            <div class="success-box" id="sendSuccess" role="status">
+              <strong>Contract sent for employee signature.</strong>
+              <p id="sendEmailNote" style="margin:0.5rem 0 0;"></p>
+              <div class="send-link-box">
+                <label for="signingUrlInput">Employee signing link (valid 14 days)</label>
+                <input type="text" id="signingUrlInput" readonly>
+                <div class="send-actions">
+                  <button type="button" class="btn-secondary" id="copyUrlBtn">Copy link</button>
+                  <button type="button" class="btn-primary" id="newContractBtn">Start new contract</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="btn-row">
+            <button type="button" class="btn-secondary" id="btnPrev" disabled>Previous</button>
+            <button type="button" class="btn-primary" id="btnNext">Next</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="panel preview-panel">
+        <h2>Live Contract Preview</h2>
+        <div class="preview-doc" id="livePreview" aria-live="polite"></div>
+      </div>
+    </div>
+
+    <section class="recent-section panel">
+      <h2>Recent Contracts</h2>
+      <div class="table-scroll">
+        <table class="recent-table" id="recentTable">
+          <thead>
+            <tr>
+              <th>Reference</th>
+              <th>Employee</th>
+              <th>Role</th>
+              <th>Scale</th>
+              <th>Generated date</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="recentBody"></tbody>
+        </table>
+      </div>
+      <p id="noRecent" style="color:var(--grey-500);">No contracts generated yet.</p>
+    </section>
+  </div>
+
+  <script src="portal/contract-core.js?v=20260521-2"></script>
+  <script type="module">
+    import { bootstrapDashboardSupabase } from "./portal/auth-handler.js?v=20260521-2";
+    const gate = document.getElementById("authGate");
+    const root = document.getElementById("appRoot");
+    async function gateAdmin() {
+      gate.classList.remove("hidden");
+      root.classList.add("hidden");
+      gate.innerHTML = "<p>Checking admin access?</p>";
+      try {
+        await bootstrapDashboardSupabase({ page: "admin" });
+        const box = window.__PORTAL_SUPABASE__;
+        const prof = box && box.staff_profile;
+        const role = String((prof && prof.app_role) || "").toLowerCase();
+        if (!box || !box.session || (role !== "admin" && role !== "ceo")) {
+          gate.innerHTML =
+            '<p><strong>Admin or CEO access required.</strong></p><p><a href="login.html">Sign in</a></p>';
+          return;
+        }
+        gate.classList.add("hidden");
+        root.classList.remove("hidden");
+        const s = document.createElement("script");
+        s.src = "portal/hr-contract-app.js?v=20260521-2";
+        document.body.appendChild(s);
+      } catch (e) {
+        gate.innerHTML =
+          "<p>Could not verify access. <a href=\"login.html\">Sign in</a> as admin.</p><p class=\"muted\">" +
+          String(e && e.message ? e.message : e) +
+          "</p>";
+      }
+    }
+    gateAdmin();
+  </script>
+</body>
+</html>
