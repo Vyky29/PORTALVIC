@@ -6,7 +6,7 @@
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260520-portal2026" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260520-portal2026" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260521-row2-triple" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260521-hub-tiles" />
   <script src="/portal/admin-portal-day-ops.js?v=20260520-portal2026"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
   <title>clubSENsational · Operations + Operator workflow (merged)</title>
@@ -18198,6 +18198,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var tiles = [];
         (group.children || []).forEach(function(cid){
           if(String(cid).indexOf('__h:') === 0) return;
+          if(gid === 'g_operator' && cid === 'operator') return;
           var item = navGetItem(cid);
           if(!item) return;
           tiles.push(dashHubNavTileHtml(item));
