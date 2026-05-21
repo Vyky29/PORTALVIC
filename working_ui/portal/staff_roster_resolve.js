@@ -33,12 +33,24 @@
       .trim();
   }
 
+  /** stf002@staff.import.pending → roberto (same map as portal/auth-map.js login emails). */
+  function portalRosterKeyFromAuthEmail(authEmail) {
+    var local = String(authEmail || "")
+      .trim()
+      .toLowerCase()
+      .split("@")[0];
+    if (!local) return "";
+    var alias = PORTAL_STAFF_CODE_TO_ROSTER_KEY[local];
+    return alias || local;
+  }
+
   function portalStaffRosterKeyCandidates(profile, authUser) {
     var p = profile || {};
     var user = authUser || null;
     var meta = (user && user.user_metadata) || {};
     var email = user && user.email ? String(user.email) : "";
     var emailLocal = email.split("@")[0] || "";
+    var fromEmail = portalRosterKeyFromAuthEmail(email);
     var raw = [
       p.username,
       p.full_name,
@@ -48,6 +60,7 @@
       meta.name,
       meta.full_name,
       emailLocal,
+      fromEmail,
     ];
     if (typeof window.portalInferStaffKey === "function") {
       var inferred = window.portalInferStaffKey(p, email);
@@ -103,4 +116,5 @@
 
   window.portalStaffRosterKeyCandidates = portalStaffRosterKeyCandidates;
   window.portalBootstrapStaffRosterFromProfile = portalBootstrapStaffRosterFromProfile;
+  window.portalRosterKeyFromAuthEmail = portalRosterKeyFromAuthEmail;
 })();

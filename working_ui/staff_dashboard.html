@@ -15383,7 +15383,9 @@
         import { portalLogout, bootstrapDashboardSupabase, portalInferStaffKey } from "portal/auth-handler.js";
         window.__PORTAL_LOGOUT_FN__ = portalLogout;
         window.portalInferStaffKey = portalInferStaffKey;
-        try { await bootstrapDashboardSupabase({ page: "staff" }); } catch {}
+        try { await bootstrapDashboardSupabase({ page: "staff" }); } catch (e) {
+          console.warn("staff_dashboard: Supabase bootstrap", e);
+        }
         const profile = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
         const session = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session;
         if (window.dashboardData) {
@@ -15391,9 +15393,15 @@
             ? window.portalTopbarDisplayNameFromAuth(profile, session)
             : (profile ? String(profile.full_name || profile.username || "").trim() : "");
           if (displayName) window.dashboardData.staffName = displayName;
-          window.dashboardData.portalIdentityResolved = false;
+          if (!String(window.STAFF_DASHBOARD_ID || "").trim()) {
+            window.dashboardData.portalIdentityResolved = false;
+          }
         }
-        if (typeof window.renderHeader === "function") {
+        if (typeof window.__PORTAL_STAFF_REHYDRATE__ === "function") {
+          try { await window.__PORTAL_STAFF_REHYDRATE__(); } catch (e2) {
+            console.warn("staff_dashboard: roster rehydrate after auth", e2);
+          }
+        } else if (typeof window.renderHeader === "function") {
           window.renderHeader();
         }
         if (typeof window.__PORTAL_LOGOUT_FN__ !== "function") {
@@ -15473,7 +15481,74 @@
         }
         return "";
       }
+      function portalStaffBootstrapRosterFromSession(profileForRoster, user) {
+        if (typeof window.portalBootstrapStaffRosterFromProfile === "function") {
+          return window.portalBootstrapStaffRosterFromProfile(profileForRoster, user);
+        }
+        var Adapter = typeof StaffDashboardSpreadsheetAdapter !== "undefined" ? StaffDashboardSpreadsheetAdapter : null;
+        var source =
+          typeof window.portalResolveStaffDashboardSource === "function"
+            ? window.portalResolveStaffDashboardSource()
+            : window.STAFF_DASHBOARD_SOURCE;
+        if (!Adapter || !source || !user) return null;
+        var email = String(user.email || "");
+        var keys = [];
+        var seen = Object.create(null);
+        function pushKey(v) {
+          var k = String(v || "")
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "")
+            .trim();
+          if (!k || seen[k]) return;
+          seen[k] = true;
+          keys.push(k);
+          if (/^stf\d{3}$/.test(k)) {
+            var map = {
+              stf001: "sandra", stf002: "roberto", stf003: "dan", stf004: "angel",
+              stf005: "youssef", stf006: "john", stf007: "bismark", stf008: "giuseppe",
+              stf009: "godsway", stf010: "javier", stf011: "aurora", stf012: "berta",
+              stf013: "victor", stf014: "carlos", stf015: "alex", stf017: "javi",
+              stf018: "raul", stf019: "sevitha", stf020: "demo",
+            };
+            if (map[k] && !seen[map[k]]) { seen[map[k]] = true; keys.push(map[k]); }
+          }
+        }
+        pushKey(profileForRoster && profileForRoster.username);
+        pushKey(profileForRoster && profileForRoster.full_name);
+        pushKey(String((profileForRoster && profileForRoster.full_name) || "").split(/\s+/)[0]);
+        pushKey(email.split("@")[0]);
+        if (typeof window.portalInferStaffKey === "function") pushKey(window.portalInferStaffKey(profileForRoster, email));
+        var i;
+        for (i = 0; i < keys.length; i++) {
+          var boot = Adapter.bootstrap({ source: source, staffId: keys[i] });
+          if (boot && Array.isArray(boot.sessionsModel) && boot.sessionsModel.length) {
+            return { staffId: keys[i], boot: boot };
+          }
+        }
+        if (!keys[0]) return null;
+        var boot0 = Adapter.bootstrap({ source: source, staffId: keys[0] });
+        return boot0 ? { staffId: keys[0], boot: boot0 } : null;
+      }
+      function portalStaffFinishIdentityUi(profileForRoster, p, session) {
+        if (!dashboardData) return;
+        dashboardData.staffName =
+          typeof window.portalTopbarDisplayNameFromAuth === "function"
+            ? window.portalTopbarDisplayNameFromAuth(p || profileForRoster, session)
+            : String(
+                (profileForRoster && (profileForRoster.full_name || profileForRoster.username)) ||
+                  (p && (p.full_name || p.username)) ||
+                  ""
+              ).trim();
+        dashboardData.portalIdentityResolved = true;
+        if (typeof renderHeader === "function") renderHeader();
+        if (typeof renderToday === "function") renderToday();
+        if (typeof renderMiniCounts === "function") renderMiniCounts();
+        if (typeof renderLists === "function") renderLists();
+      }
       async function rehydrateFromProfile(){
+        try {
         var p = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
         var session = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session;
         var user = session && session.user ? session.user : null;
@@ -15485,25 +15560,18 @@
           };
         }
         if (!user) {
-          if (typeof window.dashboardData !== "undefined" && window.dashboardData) {
-            window.dashboardData.portalIdentityResolved = true;
-            if (typeof renderHeader === "function") renderHeader();
-            if (typeof renderToday === "function") renderToday();
-          }
+          portalStaffFinishIdentityUi(profileForRoster, p, session);
           return;
         }
-        if (typeof window.portalBootstrapStaffRosterFromProfile !== "function") {
-          console.warn("staff_dashboard: staff_roster_resolve.js not loaded");
-          return;
-        }
-        var rosterHit = window.portalBootstrapStaffRosterFromProfile(profileForRoster, user);
+        var rosterHit = portalStaffBootstrapRosterFromSession(profileForRoster, user);
         if (!rosterHit || !rosterHit.boot) {
-          console.warn("staff_dashboard: roster bootstrap failed", profileForRoster && profileForRoster.username, profileForRoster && profileForRoster.full_name);
-          if (typeof window.dashboardData !== "undefined" && window.dashboardData) {
-            window.dashboardData.portalIdentityResolved = true;
-            if (typeof renderHeader === "function") renderHeader();
-            if (typeof renderToday === "function") renderToday();
-          }
+          console.warn(
+            "staff_dashboard: roster bootstrap failed",
+            profileForRoster && profileForRoster.username,
+            profileForRoster && profileForRoster.full_name,
+            user && user.email
+          );
+          portalStaffFinishIdentityUi(profileForRoster, p, session);
           return;
         }
         var staffId = rosterHit.staffId;
@@ -15511,6 +15579,7 @@
 
         __spreadsheetBoot = boot;
         STAFF_DASHBOARD_ID = staffId;
+        try { window.STAFF_DASHBOARD_ID = staffId; } catch (_) {}
         sessionsModel = boot.sessionsModel || [];
         clientNotesById = boot.clientNotesById || {};
         var postFbDay = "";
@@ -15546,11 +15615,6 @@
             : dayNameFromDate(new Date());
         }
 
-        var _sess = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session;
-        dashboardData.staffName = typeof window.portalTopbarDisplayNameFromAuth === "function"
-          ? window.portalTopbarDisplayNameFromAuth(p, _sess)
-          : String(p.full_name || p.username || "").trim();
-        dashboardData.portalIdentityResolved = true;
         if(typeof portalHydrateAnnouncementsFromSupabase === 'function'){
           void portalHydrateAnnouncementsFromSupabase().then(function(){
             if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
@@ -15569,13 +15633,21 @@
           var weekdayTop = now.toLocaleDateString("en-GB", { weekday: "long" });
           dashboardData.dateTopbar = weekdayTop + "\n" + pad(now.getDate()) + "/" + pad(now.getMonth() + 1) + "/" + now.getFullYear();
         }
+        if(typeof hydrateSessionReviewMapFromStorage === "function") hydrateSessionReviewMapFromStorage();
+        dashboardData.today = buildSelectedDayViewFromLauraModel(sessionsModel);
+        if (typeof window.__portalSyncNextSessionFromModel === "function") window.__portalSyncNextSessionFromModel();
+        dashboardData.week = buildWeekRows(staffId);
+        (function(){
+          var dw = String(DEMO_VIEW_DAY || "").trim() || new Date().toLocaleDateString("en-GB", { weekday: "long" });
+          dashboardData.venueMeta = dashboardData.today.length ? (dashboardData.today.length + " sessions") : ("No participants — " + dw);
+        })();
+        portalStaffFinishIdentityUi(profileForRoster, p, session);
         if(typeof window.portalApplyScheduleOverridesToSessionsModelSafe === "function"){
           try{
             sessionsModel = await window.portalApplyScheduleOverridesToSessionsModelSafe();
           }catch(_e){}
         }
         console.log("TODAY USING MODEL", sessionsModel);
-        if(typeof hydrateSessionReviewMapFromStorage === "function") hydrateSessionReviewMapFromStorage();
         dashboardData.today = buildSelectedDayViewFromLauraModel(sessionsModel);
         console.log("TODAY DATA FINAL", dashboardData.today);
         if (typeof window.__portalSyncNextSessionFromModel === "function") window.__portalSyncNextSessionFromModel();
@@ -15736,8 +15808,19 @@
             _finishStaffRehydrateUi();
           }
         })();
+        } catch (reErr) {
+          console.warn("staff_dashboard: rehydrateFromProfile", reErr);
+          try {
+            portalStaffFinishIdentityUi(
+              (window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile) || {},
+              window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile,
+              window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session
+            );
+          } catch (_) {}
+        }
       }
 
+      window.__PORTAL_STAFF_REHYDRATE__ = rehydrateFromProfile;
       window.addEventListener("portal:supabase-ready", rehydrateFromProfile);
       setTimeout(rehydrateFromProfile, 200);
       setTimeout(rehydrateFromProfile, 1200);
