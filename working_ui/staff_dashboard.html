@@ -6479,13 +6479,13 @@
     </div>
   </section>
 
-  <script src="portal/term_from_timetable.js"></script>
-  <script src="portal/staff_dashboard_spreadsheet_bundle.js"></script>
-  <script src="portal/session_feedback_status_portal_data.js"></script>
-  <script src="portal/staff_dashboard_portal_roster_source.js"></script>
-  <script src="portal/clients_info_embed.js"></script>
-  <script src="portal/staff_dashboard_spreadsheet_adapter.js"></script>
-  <script src="portal/staff_roster_resolve.js"></script>
+  <script src="/portal/term_from_timetable.js"></script>
+  <script src="/portal/staff_dashboard_spreadsheet_bundle.js"></script>
+  <script src="/portal/session_feedback_status_portal_data.js"></script>
+  <script src="/portal/staff_dashboard_portal_roster_source.js"></script>
+  <script src="/portal/clients_info_embed.js"></script>
+  <script src="/portal/staff_dashboard_spreadsheet_adapter.js"></script>
+  <script src="/portal/staff_roster_resolve.js"></script>
   <script>
     console.log("ABSENT FIX VERSION LOADED 20260425");
     /** Real calendar weekday for “Today” (en-GB), aligned with staff_clients_machine.xlsx */
@@ -10079,12 +10079,40 @@
         return normaliseIsoDate(row && (row.session_date || row.sessionDate)) === iso;
       });
     }
-    /** Roster row vs calendar day: dated rows match YYYY-MM-DD; recurring rows match weekday (en-GB long). */
+    /** Nearest roster YYYY-MM-DD for this staff on a weekday (Summer term dated rows). */
+    function portalBestStaffRosterIsoForWeekday(model, staffId, weekdayLong, anchorDate){
+      const sid = String(staffId || '').trim().toLowerCase();
+      const w = String(weekdayLong || '').trim();
+      if(!sid || !w || !Array.isArray(model)) return '';
+      const anchorMs = anchorDate instanceof Date && !isNaN(anchorDate.getTime()) ? anchorDate.getTime() : Date.now();
+      const seen = Object.create(null);
+      const isos = [];
+      model.forEach(function(s){
+        if(String(s.staffId || '').toLowerCase() !== sid) return;
+        if(String(s.day || '').trim() !== w) return;
+        const ri = normaliseIsoDate(s.session_date || s.sessionDate);
+        if(!ri || seen[ri]) return;
+        seen[ri] = true;
+        isos.push(ri);
+      });
+      if(!isos.length) return '';
+      let best = isos[0];
+      let bestDiff = Infinity;
+      isos.forEach(function(ri){
+        const p = String(ri).split('-');
+        const d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+        if(isNaN(d.getTime())) return;
+        const diff = Math.abs(d.getTime() - anchorMs);
+        if(diff < bestDiff){ bestDiff = diff; best = ri; }
+      });
+      return best;
+    }
+    /** Roster row vs calendar day: dated rows match YYYY-MM-DD; undated rows match weekday (en-GB long). */
     function portalSessionSpreadsheetRowMatchesCalendarDate(s, isoYmd, weekdayLong){
       if(!s) return false;
       const iso = normaliseIsoDate(isoYmd);
       const rowIso = normaliseIsoDate(s.session_date || s.sessionDate);
-      if(rowIso) return rowIso === iso;
+      if(rowIso) return !!(iso && rowIso === iso);
       if(portalRosterHasDatedRowsForIso(iso)) return false;
       return String(s.day || '').trim() === String(weekdayLong || '').trim();
     }
@@ -11226,7 +11254,7 @@
       const _rtPool = String(staffRoleTrackForTodayBuild() || 'swimming').toLowerCase().replace(/[\s_-]+/g,'');
       const supportHidePoolNote = _rtPool === 'support' || _rtPool === 'supportlead';
       const anchor = getViewAnchorCalendarDate(viewDay);
-      const sessionDateKey = typeof portalIsoYmdFromDate === 'function'
+      let sessionDateKey = typeof portalIsoYmdFromDate === 'function'
         ? portalIsoYmdFromDate(anchor)
         : `${anchor.getFullYear()}-${String(anchor.getMonth() + 1).padStart(2, '0')}-${String(anchor.getDate()).padStart(2, '0')}`;
       const anchorDayWord = anchor && !isNaN(anchor.getTime())
@@ -11235,6 +11263,16 @@
       const baseModel = (Array.isArray(modelOverride) && modelOverride.length)
         ? modelOverride
         : (Array.isArray(sessionsModel) ? sessionsModel : []);
+      if(staffId && baseModel.length){
+        const hasStaffOnIso = baseModel.some(function(s){
+          return String(s.staffId || '').toLowerCase() === staffId
+            && normaliseIsoDate(s.session_date || s.sessionDate) === sessionDateKey;
+        });
+        if(!hasStaffOnIso && typeof portalBestStaffRosterIsoForWeekday === 'function'){
+          const altIso = portalBestStaffRosterIsoForWeekday(baseModel, staffId, anchorDayWord, anchor);
+          if(altIso) sessionDateKey = altIso;
+        }
+      }
       const todaySessionsAfterFilter = baseModel.filter(function(s){
         return String(s.staffId || '').toLowerCase() === staffId
           && typeof portalSessionSpreadsheetRowMatchesCalendarDate === 'function'
@@ -15331,7 +15369,7 @@
           var d = document.createElement('div');
           d.id = 'portalP1DeployFingerprint';
           d.setAttribute('aria-hidden', 'true');
-          d.textContent = 'P1 BUILD 20260429 PORTAL';
+          d.textContent = 'P1 BUILD 20260521 ROSTER-DATE';
           d.style.cssText = 'position:fixed;bottom:8px;right:8px;z-index:2147483647;margin:0;padding:4px 6px;font:10px/1.2 ui-monospace,Menlo,Consolas,monospace;color:#0c1b2e;background:rgba(255,255,255,.92);border:1px solid rgba(12,27,46,.2);pointer-events:none;';
           (document.body || document.documentElement).appendChild(d);
         }
@@ -15374,13 +15412,13 @@
       };
     })();
 </script>
-  <script src="portal/portal-logout-bind.js"></script>
+  <script src="/portal/portal-logout-bind.js"></script>
   <script>
     (function () {
       var s = document.createElement("script");
       s.type = "module";
       s.textContent = `
-        import { portalLogout, bootstrapDashboardSupabase, portalInferStaffKey } from "portal/auth-handler.js";
+        import { portalLogout, bootstrapDashboardSupabase, portalInferStaffKey } from "/portal/auth-handler.js";
         window.__PORTAL_LOGOUT_FN__ = portalLogout;
         window.portalInferStaffKey = portalInferStaffKey;
         try { await bootstrapDashboardSupabase({ page: "staff" }); } catch (e) {
