@@ -6,7 +6,7 @@
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260520-portal2026" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260520-portal2026" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260521-hub-2rows" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260521-cat-grid" />
   <script src="/portal/admin-portal-day-ops.js?v=20260520-portal2026"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
   <title>clubSENsational · Operations + Operator workflow (merged)</title>
@@ -18143,7 +18143,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!n) return false;
       return n === 'victor' || n === 'raul' || n === 'javi';
     }
-    var DASH_HUB_NAV_GROUPS = ['g_operator','g_c4k','g_zoho','g_xero','g_indeed'];
+    var DASH_HUB_NAV_GROUPS = ['g_operator','g_c4k','g_zoho','g_xero'];
     function dashHubItemDesc(item){
       var id = item && item.id;
       var map = {
@@ -18199,6 +18199,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(!item) return;
           tiles.push(dashHubNavTileHtml(item));
         });
+        if(gid === 'g_xero'){
+          var recruitItem = navGetItem('recruitment');
+          if(recruitItem) tiles.push(dashHubNavTileHtml(recruitItem));
+        }
         return (
           '<section class="dash-hub-cat" data-hub-cat="'+esc(group.id)+'">' +
           '<header class="dash-hub-cat__head">' +
