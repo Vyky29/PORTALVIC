@@ -237,7 +237,7 @@ body:has(#workspace .dash-hub) .admin-main{background:#f8fafc}
   border-radius:var(--dh-radius);
   background:var(--dh-panel);
   box-shadow:var(--dh-shadow);
-  overflow:hidden;
+  overflow:visible;
 }
 .dash-hub-acc__sum{
   display:flex;
