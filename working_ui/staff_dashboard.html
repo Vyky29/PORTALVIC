@@ -6491,9 +6491,9 @@
 
   <script src="/portal/term_from_timetable.js"></script>
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js"></script>
-  <script src="/portal/session_feedback_portal_data.js?v=20260519-portal-day"></script>
-  <script src="/portal/session_feedback_status_portal_data.js?v=20260519-portal-day"></script>
-  <script src="/portal/staff_portal_feedback_bridge.js?v=20260519-portal-day"></script>
+  <script src="/portal/session_feedback_portal_data.js?v=20260519-portal-sync"></script>
+  <script src="/portal/session_feedback_status_portal_data.js?v=20260519-portal-sync"></script>
+  <script src="/portal/staff_portal_feedback_bridge.js?v=20260519-portal-sync"></script>
   <script src="/portal/staff_dashboard_portal_roster_source.js"></script>
   <script src="/portal/clients_info_embed.js"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js"></script>
@@ -7804,7 +7804,7 @@
         if(staffIdPortal && typeof window !== 'undefined' && window.PortalStaffFeedbackBridge
           && typeof window.PortalStaffFeedbackBridge.dayFeedbackCountsFromPortalExports === 'function'){
           const portalCounts = window.PortalStaffFeedbackBridge.dayFeedbackCountsFromPortalExports(iso, staffIdPortal);
-          if(portalCounts) return Math.max(0, Number(portalCounts.unresolved) || 0);
+          if(portalCounts && portalCounts.unresolved === 0) return 0;
         }
         if(typeof buildSelectedDayViewFromLauraModel !== 'function' || typeof isSessionEndedForFeedback !== 'function') return 0;
         const prevDateLock = String(typeof __PORTAL_REVIEW_DATE_URL_LOCK !== 'undefined' ? __PORTAL_REVIEW_DATE_URL_LOCK : (typeof window !== 'undefined' && window.__PORTAL_REVIEW_DATE_URL_LOCK) || '');
@@ -13474,7 +13474,7 @@
       if(staffIdWeek && typeof window !== 'undefined' && window.PortalStaffFeedbackBridge
         && typeof window.PortalStaffFeedbackBridge.dayFeedbackCountsFromPortalExports === 'function'){
         const portalCounts = window.PortalStaffFeedbackBridge.dayFeedbackCountsFromPortalExports(sessionDateIso, staffIdWeek);
-        if(portalCounts) return portalCounts.applicable > 0 && portalCounts.unresolved > 0;
+        if(portalCounts && portalCounts.unresolved === 0) return false;
       }
       if(typeof portalCountPendingSessionReviewsForCalendarDay === 'function'){
         try{
@@ -15679,7 +15679,7 @@
           var d = document.createElement('div');
           d.id = 'portalP1DeployFingerprint';
           d.setAttribute('aria-hidden', 'true');
-          d.textContent = 'P1 BUILD 20260519 PORTAL-WEEK';
+          d.textContent = 'P1 BUILD 20260519 PORTAL-SYNC';
           d.style.cssText = 'position:fixed;bottom:8px;right:8px;z-index:2147483647;margin:0;padding:4px 6px;font:10px/1.2 ui-monospace,Menlo,Consolas,monospace;color:#0c1b2e;background:rgba(255,255,255,.92);border:1px solid rgba(12,27,46,.2);pointer-events:none;';
           (document.body || document.documentElement).appendChild(d);
         }

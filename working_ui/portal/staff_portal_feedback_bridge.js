@@ -89,6 +89,40 @@
     return true;
   }
 
+  function statusClientSlug(st) {
+    return slug(st && (st.client || st.clientName));
+  }
+
+  /** Same client/day as admin overview — any instructor's submitted row can complete a slot. */
+  function submittedRowMatchesStatusClient(r, st) {
+    const stKey = statusClientSlug(st);
+    const rKey = slug(r && r.clientName);
+    if (!stKey || !rKey) return false;
+    if (stKey === rKey) return true;
+    return stKey.indexOf(rKey) >= 0 || rKey.indexOf(stKey) >= 0;
+  }
+
+  function anySubmittedCoversStatusRow(iso, st) {
+    const src =
+      typeof window !== "undefined" && window.SESSION_FEEDBACK_PORTAL_SOURCE;
+    if (!src || !Array.isArray(src.rows)) return false;
+    const day = String(iso || "").trim().substring(0, 10);
+    return src.rows.some(function (r) {
+      return (
+        String(r.date || "").trim().substring(0, 10) === day &&
+        submittedRowMatchesStatusClient(r, st)
+      );
+    });
+  }
+
+  function feedbackCoverageThroughIso() {
+    const meta =
+      typeof window !== "undefined" &&
+      window.SESSION_FEEDBACK_PORTAL_SOURCE &&
+      window.SESSION_FEEDBACK_PORTAL_SOURCE.meta;
+    return meta ? String(meta.coverageThroughIso || "").trim() : "";
+  }
+
   /**
    * Sessions that count for term feedback on this calendar day (staff-scoped from portal exports).
    */
@@ -125,14 +159,24 @@
    */
   function dayFeedbackCountsFromPortalExports(iso, staffId) {
     const status = statusRowsForStaffDate(iso, staffId);
+    const sub = submittedRowsForStaffDate(iso, staffId);
+    const thru = feedbackCoverageThroughIso();
     if (status.length) {
       let unresolved = 0;
       status.forEach(function (st) {
-        if (!statusRowDone(st)) unresolved++;
+        if (statusRowDone(st)) return;
+        if (sub.some(function (r) { return submittedRowMatchesStatusClient(r, st); })) {
+          return;
+        }
+        if (anySubmittedCoversStatusRow(iso, st)) return;
+        unresolved++;
       });
+      if (unresolved > 0 && thru && iso > thru) {
+        if (sub.length) return { applicable: Math.max(status.length, sub.length), unresolved: 0 };
+        return null;
+      }
       return { applicable: status.length, unresolved: unresolved };
     }
-    const sub = submittedRowsForStaffDate(iso, staffId);
     if (sub.length) {
       return { applicable: sub.length, unresolved: 0 };
     }
