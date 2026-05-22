@@ -6491,9 +6491,9 @@
 
   <script src="/portal/term_from_timetable.js"></script>
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js"></script>
-  <script src="/portal/session_feedback_portal_data.js?v=20260520"></script>
-  <script src="/portal/session_feedback_status_portal_data.js?v=20260520"></script>
-  <script src="/portal/staff_portal_feedback_bridge.js?v=20260520"></script>
+  <script src="/portal/session_feedback_portal_data.js?v=20260521"></script>
+  <script src="/portal/session_feedback_status_portal_data.js?v=20260521"></script>
+  <script src="/portal/staff_portal_feedback_bridge.js?v=20260521"></script>
   <script src="/portal/staff_dashboard_portal_roster_source.js"></script>
   <script src="/portal/clients_info_embed.js"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js"></script>
@@ -13866,14 +13866,34 @@
      * orange (late) once at least one such session has ended and something is still incomplete;
      * green only when every required session for that day is done (or absent/cancelled as handled in rebuild).
      */
+    function portalTermCurrentWeekMondayIso(){
+      const mon = mondayStartOfWeekLocal(new Date(termCalendarNowMs()));
+      return portalTermLocalYmdFromDate(mon);
+    }
+    function portalTermLocalYmdFromDate(d){
+      const pad = n => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    }
+    function portalTermIsBeforeCurrentWeek(iso){
+      const key = String(iso || '').trim();
+      const mon = portalTermCurrentWeekMondayIso();
+      return /^\d{4}-\d{2}-\d{2}$/.test(key) && /^\d{4}-\d{2}-\d{2}$/.test(mon) && key < mon;
+    }
     function getTermFeedbackStateForDay(year, monthIndex, day){
       const key = termCalendarDateKey(year, monthIndex, day);
-      if(key > portalTermLocalYmdFromMs(termCalendarNowMs())) return 'pending';
+      const todayKey = portalTermLocalYmdFromMs(termCalendarNowMs());
+      if(key > todayKey) return 'pending';
       const map = dashboardData.termFeedbackByDate;
       const explicit = map && map[key];
       if(explicit === 'complete') return 'complete';
       if(explicit === 'cancelled') return 'cancelled';
       if(explicit === 'late') return 'late';
+      const staffId = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
+      if(staffId && portalTermIsBeforeCurrentWeek(key)
+        && typeof portalTermExportMarksDayComplete === 'function'
+        && portalTermExportMarksDayComplete(key, staffId)){
+        return 'complete';
+      }
       if(explicit === 'pending') return 'pending';
       return 'pending';
     }
@@ -13900,6 +13920,20 @@
         }
       }catch(_){}
       return false;
+    }
+    /** Before this calendar week: green when export or in-day sessions say done (not orange/blue for old work). */
+    function portalTermApplyHistoricalDayGreen(iso, staffId, dayWord, key, relAll, relFb, cur, fbMap){
+      if(!portalTermIsBeforeCurrentWeek(iso)) return;
+      if(typeof portalTermExportMarksDayComplete === 'function'
+        && portalTermExportMarksDayComplete(iso, staffId)){
+        fbMap[key] = 'complete';
+        return;
+      }
+      const rel = relFb.length ? relFb : relAll;
+      if(rel.length && typeof portalTermDayAllSessionsComplete === 'function'
+        && portalTermDayAllSessionsComplete(dayWord, key, staffId, rel, cur)){
+        fbMap[key] = 'complete';
+      }
     }
     /** Same rules as inside the day sheet: all countable sessions done → term cell green. */
     function portalTermDayAllSessionsComplete(dayWord, isoKey, staffId, sessions, curDate){
@@ -13969,6 +14003,7 @@
           ? portalTermFeedbackSessionsForDate(dayWord, key, staffId, isReal)
           : relAll;
         const todayKey = portalTermLocalYmdFromMs(termCalendarNowMs());
+        const inCurrentWeek = key >= portalTermCurrentWeekMondayIso() && key <= todayKey;
         if(key > todayKey){
           if(relAll.length){
             let maxEndFut = 0;
@@ -14007,13 +14042,25 @@
         if(portalDayCounts){
           if(portalDayCounts.applicable > 0 && portalDayCounts.unresolved === 0){
             fbMap[key] = 'complete';
-          } else {
+          } else if(portalTermIsBeforeCurrentWeek(key)
+            && typeof portalTermExportMarksDayComplete === 'function'
+            && portalTermExportMarksDayComplete(key, staffId)){
+            fbMap[key] = 'complete';
+          } else if(inCurrentWeek){
             fbMap[key] = portalDayCounts.applicable === 0
               ? 'pending'
               : (termCalendarNowMs() > maxEnd ? 'late' : 'pending');
+          } else {
+            fbMap[key] = portalDayCounts.applicable === 0 ? 'pending' : 'late';
           }
         } else if(!relFb.length){
-          fbMap[key] = termCalendarNowMs() > maxEnd ? 'late' : 'pending';
+          if(portalTermIsBeforeCurrentWeek(key)
+            && typeof portalTermExportMarksDayComplete === 'function'
+            && portalTermExportMarksDayComplete(key, staffId)){
+            fbMap[key] = 'complete';
+          } else {
+            fbMap[key] = inCurrentWeek && termCalendarNowMs() > maxEnd ? 'late' : 'pending';
+          }
         } else {
           if(key === todayKey){
             let minStart = Infinity;
@@ -14112,6 +14159,14 @@
         if(fbMap[key] !== 'cancelled' && key <= todayKey && relReconcile.length
           && typeof portalTermDayAllSessionsComplete === 'function'
           && portalTermDayAllSessionsComplete(dayWord, key, staffId, relReconcile, cur)){
+          fbMap[key] = 'complete';
+        }
+        if(typeof portalTermApplyHistoricalDayGreen === 'function'){
+          portalTermApplyHistoricalDayGreen(key, staffId, dayWord, key, relAll, relFb, cur, fbMap);
+        }
+        if(inCurrentWeek && fbMap[key] !== 'cancelled' && fbMap[key] !== 'complete'
+          && typeof portalTermExportMarksDayComplete === 'function'
+          && portalTermExportMarksDayComplete(key, staffId)){
           fbMap[key] = 'complete';
         }
         cur.setDate(cur.getDate() + 1);
@@ -15829,7 +15884,7 @@
           var d = document.createElement('div');
           d.id = 'portalP1DeployFingerprint';
           d.setAttribute('aria-hidden', 'true');
-          d.textContent = 'P1 BUILD 20260520';
+          d.textContent = 'P1 BUILD 20260521 TERM-WEEK';
           d.style.cssText = 'position:fixed;bottom:8px;right:8px;z-index:2147483647;margin:0;padding:4px 6px;font:10px/1.2 ui-monospace,Menlo,Consolas,monospace;color:#0c1b2e;background:rgba(255,255,255,.92);border:1px solid rgba(12,27,46,.2);pointer-events:none;';
           (document.body || document.documentElement).appendChild(d);
         }
