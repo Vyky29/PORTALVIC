@@ -22,6 +22,10 @@ TERM_STAFF_AWAY_DATES_BY_PROFILE_KEY = {
 TERM_STAFF_OFF_WEEKDAYS_RANGE_BY_PROFILE_KEY = {
     "roberto": {"from": "2026-06-01", "to": "2026-07-17", "weekdays": [6]},
 }
+# Term calendar green override when export/roster reconciliation misses a worked day.
+TERM_STAFF_FEEDBACK_COMPLETE_DATES_BY_PROFILE_KEY = {
+    "roberto": ["2026-05-17", "2026-05-22"],
+}
 # First calendar date this client appears on rota (slug = clientId in staff bundle).
 TERM_CLIENT_FIRST_SESSION_DATE = {
     "amaar_ah": "2026-04-24",
@@ -253,6 +257,9 @@ def write_term_from_timetable_js(records, roster_rows=None):
         "termStaffAwayDatesByProfileKey": dict(TERM_STAFF_AWAY_DATES_BY_PROFILE_KEY),
         "termStaffOffWeekdaysRangeByProfileKey": dict(
             TERM_STAFF_OFF_WEEKDAYS_RANGE_BY_PROFILE_KEY
+        ),
+        "termStaffFeedbackCompleteDatesByProfileKey": dict(
+            TERM_STAFF_FEEDBACK_COMPLETE_DATES_BY_PROFILE_KEY
         ),
         "termClientFirstSessionDate": dict(TERM_CLIENT_FIRST_SESSION_DATE),
         "termHalfTermWeekStarts": half_term_week_starts,

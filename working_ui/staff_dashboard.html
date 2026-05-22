@@ -10491,6 +10491,7 @@
       const sid = String(staffId || '').trim().toLowerCase();
       const w = String(weekdayLong || '').trim();
       if(!iso || !sid || !w) return true;
+      if(portalTermDateForcedComplete(iso, sid)) return true;
       if(portalTermStaffOffWeekdayOnDate(iso, sid)) return false;
       if(portalStaffHasDatedRowsForIso(iso, sid)) return true;
       if(portalStaffClientSessionsOnCalendarDate(iso, w, sid)) return true;
@@ -14014,6 +14015,18 @@
       if(!Array.isArray(raw)) return [];
       return raw.map(function(d){ return String(d || '').trim().slice(0, 10); }).filter(Boolean);
     }
+    function portalTermStaffForcedCompleteDates(staffId){
+      const t = window.PORTAL_TERM_FROM_TIMETABLE;
+      const map = t && t.termStaffFeedbackCompleteDatesByProfileKey;
+      const id = String(staffId || '').trim().toLowerCase();
+      const raw = map && map[id];
+      if(!Array.isArray(raw)) return [];
+      return raw.map(function(d){ return String(d || '').trim().slice(0, 10); }).filter(Boolean);
+    }
+    function portalTermDateForcedComplete(isoYmd, staffId){
+      const iso = String(isoYmd || '').trim().slice(0, 10);
+      return portalTermStaffForcedCompleteDates(staffId).indexOf(iso) >= 0;
+    }
     function portalTermStaffAwayDatesFor(staffId){
       const t = window.PORTAL_TERM_FROM_TIMETABLE;
       const map = t && t.termStaffAwayDatesByProfileKey;
@@ -14124,6 +14137,7 @@
       if(explicit === 'late') return 'late';
       const staffId = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
       const dayWord = new Date(key + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
+      if(staffId && portalTermDateForcedComplete(key, staffId)) return 'complete';
       if(staffId && portalTermStaffOffWeekdayOnDate(key, staffId)) return 'pending';
       if(staffId && typeof portalTermExportMarksDayComplete === 'function'
         && portalTermExportMarksDayComplete(key, staffId)
@@ -14160,6 +14174,7 @@
     }
     /** Export says complete and this day counts as worked (not a stray Saturday before Summer Term 2). */
     function portalTermExportCountsAsWorkedDay(iso, staffId, weekdayLong){
+      if(portalTermDateForcedComplete(iso, staffId)) return true;
       if(typeof portalTermExportMarksDayComplete !== 'function'
         || !portalTermExportMarksDayComplete(iso, staffId)){
         return false;
@@ -14259,6 +14274,11 @@
         }
         const dayWord = cur.toLocaleDateString('en-GB', { weekday: 'long' });
         const key = termCalendarDateKey(cur.getFullYear(), cur.getMonth(), cur.getDate());
+        if(portalTermDateForcedComplete(key, staffId)){
+          fbMap[key] = 'complete';
+          cur.setDate(cur.getDate() + 1);
+          continue;
+        }
         if(portalTermStaffAwayOnDate(key, staffId) || portalTermStaffOffWeekdayOnDate(key, staffId)){
           cur.setDate(cur.getDate() + 1);
           continue;

@@ -296,6 +296,31 @@ def in_term2_range(iso: str | None) -> bool:
     return bool(iso and TERM2_START <= iso <= TERM2_END)
 
 
+def append_rota_alignment_patch(records: list[dict]) -> list[dict]:
+    """Dated staff pool rows missing from the sheet but needed for term calendar."""
+    patches = [
+        slot("2026-05-17", "Sunday", "Roberto", "9-3", "SwimFarm"),
+        slot("2026-05-22", "Friday", "Roberto", "4-6.30", "Acton"),
+    ]
+    seen = {
+        (r.get("date"), r.get("staff_name"), r.get("venue"), r.get("time_range"))
+        for r in records
+    }
+    for p in patches:
+        k = (p.get("date"), p.get("staff_name"), p.get("venue"), p.get("time_range"))
+        if k not in seen:
+            records.append(p)
+            seen.add(k)
+    records.sort(
+        key=lambda r: (
+            r.get("date") or "",
+            r.get("day") or "",
+            r.get("staff_name") or "",
+        )
+    )
+    return records
+
+
 def write_exports(records: list[dict]) -> None:
     json_path = OUT / "staff_timetable_machine.json"
     csv_path = OUT / "staff_timetable_machine.csv"
@@ -343,7 +368,7 @@ def main() -> None:
         existing = json.loads(json_path.read_text(encoding="utf-8"))
     kept = [r for r in existing if not in_term2_range(r.get("date"))]
     new_rows = build_summer_term2_rows()
-    merged = kept + new_rows
+    merged = append_rota_alignment_patch(kept + new_rows)
     write_exports(merged)
     refresh_term_js(merged)
     print(

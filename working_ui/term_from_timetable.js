@@ -35,6 +35,12 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       ]
     }
   },
+  "termStaffFeedbackCompleteDatesByProfileKey": {
+    "roberto": [
+      "2026-05-17",
+      "2026-05-22"
+    ]
+  },
   "termClientFirstSessionDate": {
     "amaar_ah": "2026-04-24"
   },
