@@ -6491,9 +6491,9 @@
 
   <script src="/portal/term_from_timetable.js"></script>
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js"></script>
-  <script src="/portal/session_feedback_portal_data.js?v=20260519-portal-shared"></script>
-  <script src="/portal/session_feedback_status_portal_data.js?v=20260519-portal-shared"></script>
-  <script src="/portal/staff_portal_feedback_bridge.js?v=20260519-portal-term"></script>
+  <script src="/portal/session_feedback_portal_data.js?v=20260520-portal-all"></script>
+  <script src="/portal/session_feedback_status_portal_data.js?v=20260520-portal-all"></script>
+  <script src="/portal/staff_portal_feedback_bridge.js?v=20260520-portal-all"></script>
   <script src="/portal/staff_dashboard_portal_roster_source.js"></script>
   <script src="/portal/clients_info_embed.js"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js"></script>
@@ -6627,7 +6627,7 @@
     /** Persisted register/feedback flags so returning from session_feedback.html keeps row colours. */
     const PORTAL_SESSION_REVIEW_MAP_STORAGE = 'portalSessionReviewMap_v1';
     /** Same folder as auth-handler on the CDN; used to pull server-side review keys onto this device. */
-    const PORTAL_SUPABASE_CLIENT_MODULE = 'portal/supabase-client.js?v=20260519-feedback-keys';
+    const PORTAL_SUPABASE_CLIENT_MODULE = 'portal/supabase-client.js?v=20260520-portal-all';
     /**
      * Web Push (app closed / phone locked): VAPID **public** key only — generate pair with `npx web-push generate-vapid-keys`,
      * put public key here (or `window.__PORTAL_VAPID_PUBLIC_KEY__` on the host page); private key lives in Supabase Edge secrets only.
@@ -15801,7 +15801,7 @@
           var d = document.createElement('div');
           d.id = 'portalP1DeployFingerprint';
           d.setAttribute('aria-hidden', 'true');
-          d.textContent = 'P1 BUILD 20260519 PORTAL-TERM';
+          d.textContent = 'P1 BUILD 20260520 PORTAL-ALL';
           d.style.cssText = 'position:fixed;bottom:8px;right:8px;z-index:2147483647;margin:0;padding:4px 6px;font:10px/1.2 ui-monospace,Menlo,Consolas,monospace;color:#0c1b2e;background:rgba(255,255,255,.92);border:1px solid rgba(12,27,46,.2);pointer-events:none;';
           (document.body || document.documentElement).appendChild(d);
         }
