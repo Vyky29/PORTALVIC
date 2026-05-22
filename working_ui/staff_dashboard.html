@@ -14166,10 +14166,8 @@
       }
       if(portalStaffClientSessionsOnCalendarDate(iso, weekdayLong, staffId)) return true;
       if(portalStaffHasDatedRowsForIso(iso, staffId)) return true;
-      const wd = new Date(String(iso).slice(0, 10) + 'T12:00:00').getDay();
-      const t = window.PORTAL_TERM_FROM_TIMETABLE;
-      const resume = normaliseIsoDate(t && t.termResumeDate) || '2026-06-01';
-      if(wd === 6 && String(iso).slice(0, 10) < resume) return false;
+      /* Only Summer Term 2 off-Saturdays (1 Jun–17 Jul) skip export-only; May Saturdays keep green. */
+      if(portalTermStaffOffWeekdayOnDate(iso, staffId)) return false;
       return true;
     }
     /** Export-only: day green when portal feedback/status says done (even if roster row missing for that date). */
