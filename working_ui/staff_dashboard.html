@@ -7800,6 +7800,12 @@
         const iso = String(isoYmd || '').trim();
         const dw = String(dayWord || '').trim();
         if(!/^\d{4}-\d{2}-\d{2}$/.test(iso) || !PORTAL_WEEK_REVIEW_VALID_DAYS.has(dw)) return 0;
+        const staffIdPortal = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
+        if(staffIdPortal && typeof window !== 'undefined' && window.PortalStaffFeedbackBridge
+          && typeof window.PortalStaffFeedbackBridge.dayFeedbackCountsFromPortalExports === 'function'){
+          const portalCounts = window.PortalStaffFeedbackBridge.dayFeedbackCountsFromPortalExports(iso, staffIdPortal);
+          if(portalCounts) return Math.max(0, Number(portalCounts.unresolved) || 0);
+        }
         if(typeof buildSelectedDayViewFromLauraModel !== 'function' || typeof isSessionEndedForFeedback !== 'function') return 0;
         const prevDateLock = String(typeof __PORTAL_REVIEW_DATE_URL_LOCK !== 'undefined' ? __PORTAL_REVIEW_DATE_URL_LOCK : (typeof window !== 'undefined' && window.__PORTAL_REVIEW_DATE_URL_LOCK) || '');
         const prevDayLock = String(typeof __PORTAL_REVIEW_DAY_URL_LOCK !== 'undefined' ? __PORTAL_REVIEW_DAY_URL_LOCK : (typeof window !== 'undefined' && window.__PORTAL_REVIEW_DAY_URL_LOCK) || '');
@@ -13464,6 +13470,12 @@
       if(weekListDayRelationToToday(dayName) === 'future') return false;
       const sessionDateIso = portalIsoYmdFromDate(cell);
       const d = String(dayName || '').trim();
+      const staffIdWeek = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
+      if(staffIdWeek && typeof window !== 'undefined' && window.PortalStaffFeedbackBridge
+        && typeof window.PortalStaffFeedbackBridge.dayFeedbackCountsFromPortalExports === 'function'){
+        const portalCounts = window.PortalStaffFeedbackBridge.dayFeedbackCountsFromPortalExports(sessionDateIso, staffIdWeek);
+        if(portalCounts) return portalCounts.applicable > 0 && portalCounts.unresolved > 0;
+      }
       if(typeof portalCountPendingSessionReviewsForCalendarDay === 'function'){
         try{
           return portalCountPendingSessionReviewsForCalendarDay(sessionDateIso, d) > 0;
@@ -15667,7 +15679,7 @@
           var d = document.createElement('div');
           d.id = 'portalP1DeployFingerprint';
           d.setAttribute('aria-hidden', 'true');
-          d.textContent = 'P1 BUILD 20260519 PORTAL-DAY';
+          d.textContent = 'P1 BUILD 20260519 PORTAL-WEEK';
           d.style.cssText = 'position:fixed;bottom:8px;right:8px;z-index:2147483647;margin:0;padding:4px 6px;font:10px/1.2 ui-monospace,Menlo,Consolas,monospace;color:#0c1b2e;background:rgba(255,255,255,.92);border:1px solid rgba(12,27,46,.2);pointer-events:none;';
           (document.body || document.documentElement).appendChild(d);
         }
