@@ -10443,6 +10443,46 @@
           && normaliseIsoDate(row && (row.session_date || row.sessionDate)) === iso;
       });
     }
+    function portalStaffHasDatedWeekdaySnapshots(staffId, weekdayLong){
+      const sid = String(staffId || '').trim().toLowerCase();
+      const w = String(weekdayLong || '').trim();
+      if(!sid || !w) return false;
+      const model = (typeof sessionsModel !== 'undefined' && Array.isArray(sessionsModel)) ? sessionsModel : [];
+      return model.some(function(row){
+        return String(row.staffId || '').toLowerCase() === sid
+          && String(row.day || '').trim() === w
+          && !!normaliseIsoDate(row && (row.session_date || row.sessionDate));
+      });
+    }
+    /** Match dated roster snapshot when calendar day has no rows (same rule as day sheet). */
+    function portalStaffRosterMatchIsoForCalendar(isoYmd, weekdayLong, staffId){
+      const iso = normaliseIsoDate(isoYmd);
+      const sid = String(staffId || '').trim().toLowerCase();
+      const w = String(weekdayLong || '').trim();
+      if(!iso || !sid || !w) return iso;
+      if(portalStaffHasDatedRowsForIso(iso, sid)) return iso;
+      if(portalStaffHasDatedWeekdaySnapshots(sid, w)){
+        const anchor = new Date(iso + 'T12:00:00');
+        const model = (typeof sessionsModel !== 'undefined' && Array.isArray(sessionsModel)) ? sessionsModel : [];
+        return portalBestStaffRosterIsoForWeekday(model, sid, w, anchor) || iso;
+      }
+      return iso;
+    }
+    function portalClientFirstSessionDateIso(clientKey){
+      const t = window.PORTAL_TERM_FROM_TIMETABLE;
+      const map = t && t.termClientFirstSessionDate;
+      if(!map || typeof map !== 'object') return '';
+      const k = String(clientKey || '').trim().toLowerCase();
+      return String(map[k] || '').trim().slice(0, 10);
+    }
+    function portalSessionClientActiveOnDate(s, isoYmd){
+      const iso = normaliseIsoDate(isoYmd);
+      if(!iso) return true;
+      const cid = String(s && s.clientId || '').trim().toLowerCase();
+      const first = portalClientFirstSessionDateIso(cid);
+      if(first && iso < first) return false;
+      return true;
+    }
     /** Nearest roster YYYY-MM-DD for this staff on a weekday (Summer term dated rows). */
     function portalBestStaffRosterIsoForWeekday(model, staffId, weekdayLong, anchorDate){
       const sid = String(staffId || '').trim().toLowerCase();
@@ -10474,12 +10514,18 @@
     /** Roster row vs calendar day: dated rows match YYYY-MM-DD; undated rows match weekday (en-GB long). */
     function portalSessionSpreadsheetRowMatchesCalendarDate(s, isoYmd, weekdayLong){
       if(!s) return false;
+      if(!portalSessionClientActiveOnDate(s, isoYmd)) return false;
       const iso = normaliseIsoDate(isoYmd);
       const rowIso = normaliseIsoDate(s.session_date || s.sessionDate);
-      if(rowIso) return !!(iso && rowIso === iso);
       const sid = String(s.staffId || '').trim().toLowerCase();
+      const w = String(weekdayLong || '').trim();
+      if(rowIso){
+        const matchIso = portalStaffRosterMatchIsoForCalendar(iso, w, sid);
+        return !!(iso && matchIso && rowIso === matchIso);
+      }
       if(portalStaffHasDatedRowsForIso(iso, sid)) return false;
-      return String(s.day || '').trim() === String(weekdayLong || '').trim();
+      if(portalStaffHasDatedWeekdaySnapshots(sid, w)) return false;
+      return w === String(s.day || '').trim();
     }
     function portalScheduleOverrideFetchIsoList(){
       const out = [];
@@ -14000,6 +14046,31 @@
         && typeof portalTermExportMarksDayComplete === 'function'
         && portalTermExportMarksDayComplete(key, staffId)){
         return 'complete';
+      }
+      if(staffId && portalTermIsBeforeCurrentWeek(key) && key <= todayKey){
+        const dayWord = new Date(key + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
+        const cur = new Date(key + 'T12:00:00');
+        const isReal = function(sess){
+          const st = String(sess.status || '').toLowerCase();
+          if(st === 'closed' || st === 'available') return false;
+          const cid = String(sess.clientId || '').toLowerCase();
+          return Boolean(cid && cid !== 'closed' && cid !== 'available');
+        };
+        const relAll = typeof portalBaseClientSessionsForCalendarDate === 'function'
+          ? portalBaseClientSessionsForCalendarDate(dayWord, key, staffId, isReal)
+          : [];
+        const relFb = typeof portalTermFeedbackSessionsForDate === 'function'
+          ? portalTermFeedbackSessionsForDate(dayWord, key, staffId, isReal)
+          : relAll;
+        const rel = relFb.length ? relFb : relAll;
+        if(rel.length && typeof portalTermDayAllSessionsComplete === 'function'
+          && portalTermDayAllSessionsComplete(dayWord, key, staffId, rel, cur)){
+          return 'complete';
+        }
+        if(!rel.length && typeof portalTermExportMarksDayComplete === 'function'
+          && portalTermExportMarksDayComplete(key, staffId)){
+          return 'complete';
+        }
       }
       if(explicit === 'pending') return 'pending';
       return 'pending';

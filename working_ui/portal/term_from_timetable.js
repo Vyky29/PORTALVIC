@@ -26,6 +26,9 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-05-07"
     ]
   },
+  "termClientFirstSessionDate": {
+    "amaar_ah": "2026-04-24"
+  },
   "termHalfTermWeekStarts": [],
   "termStaffWeekdayIndicesByProfileKey": {
     "angel": [

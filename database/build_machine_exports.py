@@ -18,6 +18,10 @@ TERM_CLOSED_DATES = ["2026-05-04"]
 TERM_STAFF_AWAY_DATES_BY_PROFILE_KEY = {
     "roberto": ["2026-05-07"],
 }
+# First calendar date this client appears on rota (slug = clientId in staff bundle).
+TERM_CLIENT_FIRST_SESSION_DATE = {
+    "amaar_ah": "2026-04-24",
+}
 
 
 def norm_text(v):
@@ -243,6 +247,7 @@ def write_term_from_timetable_js(records, roster_rows=None):
         "termResumeDate": TERM_RESUME_DATE,
         "termClosedDates": list(TERM_CLOSED_DATES),
         "termStaffAwayDatesByProfileKey": dict(TERM_STAFF_AWAY_DATES_BY_PROFILE_KEY),
+        "termClientFirstSessionDate": dict(TERM_CLIENT_FIRST_SESSION_DATE),
         "termHalfTermWeekStarts": half_term_week_starts,
         "termStaffWeekdayIndicesByProfileKey": staff_wd,
     }
