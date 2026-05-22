@@ -10454,6 +10454,18 @@
           && !!normaliseIsoDate(row && (row.session_date || row.sessionDate));
       });
     }
+    /** True when this calendar day should use roster/feedback colours (not grey “not confirmed”). */
+    function portalStaffRosterAppliesOnCalendarDate(isoYmd, weekdayLong, staffId){
+      const iso = normaliseIsoDate(isoYmd);
+      const sid = String(staffId || '').trim().toLowerCase();
+      const w = String(weekdayLong || '').trim();
+      if(!iso || !sid || !w) return true;
+      if(portalStaffHasDatedRowsForIso(iso, sid)) return true;
+      if(!portalStaffHasDatedWeekdaySnapshots(sid, w)) return true;
+      const anchor = new Date(iso + 'T12:00:00');
+      const model = (typeof sessionsModel !== 'undefined' && Array.isArray(sessionsModel)) ? sessionsModel : [];
+      return !!portalBestStaffRosterIsoForWeekday(model, sid, w, anchor);
+    }
     /** Match dated roster snapshot when calendar day has no rows (same rule as day sheet). */
     function portalStaffRosterMatchIsoForCalendar(isoYmd, weekdayLong, staffId){
       const iso = normaliseIsoDate(isoYmd);
@@ -10464,7 +10476,7 @@
       if(portalStaffHasDatedWeekdaySnapshots(sid, w)){
         const anchor = new Date(iso + 'T12:00:00');
         const model = (typeof sessionsModel !== 'undefined' && Array.isArray(sessionsModel)) ? sessionsModel : [];
-        return portalBestStaffRosterIsoForWeekday(model, sid, w, anchor) || iso;
+        return portalBestStaffRosterIsoForWeekday(model, sid, w, anchor) || '';
       }
       return iso;
     }
@@ -10500,9 +10512,13 @@
         isos.push(ri);
       });
       if(!isos.length) return '';
-      let best = isos[0];
+      const anchorIso = typeof portalIsoYmdFromDate === 'function'
+        ? portalIsoYmdFromDate(anchorDate)
+        : '';
+      let best = '';
       let bestDiff = Infinity;
       isos.forEach(function(ri){
+        if(anchorIso && String(ri) > anchorIso) return;
         const p = String(ri).split('-');
         const d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
         if(isNaN(d.getTime())) return;
@@ -13582,6 +13598,22 @@
       cell.setHours(0, 0, 0, 0);
       return cell;
     }
+    /** Break / bank holiday / staff away — same red days as My Term grid; week strip shows Off. */
+    function portalWeekListDayIsOff(dayName, staffId){
+      const cell = calendarDateForWeekListDay(dayName);
+      if(!cell) return true;
+      const sid = String(staffId || '').trim().toLowerCase();
+      const iso = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(cell) : '';
+      const halfWeeks = Array.isArray(dashboardData.termHalfTermWeekStarts) ? dashboardData.termHalfTermWeekStarts : [];
+      if(typeof portalTermCalendarDayIsRed === 'function'
+        && portalTermCalendarDayIsRed(cell.getFullYear(), cell.getMonth(), cell.getDate(), sid, halfWeeks)){
+        return true;
+      }
+      if(iso && sid && typeof portalTermStaffAwayOnDate === 'function' && portalTermStaffAwayOnDate(iso, sid)){
+        return true;
+      }
+      return false;
+    }
     function weekListDayRelationToToday(dayName){
       const cell = calendarDateForWeekListDay(dayName);
       if(!cell) return 'future';
@@ -13595,6 +13627,7 @@
     function weekListClientSessionsForDay(dayName){
       const staffId = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
       const d = String(dayName || '').trim();
+      if(typeof portalWeekListDayIsOff === 'function' && portalWeekListDayIsOff(d, staffId)) return [];
       const cell = calendarDateForWeekListDay(dayName);
       if(!cell) return [];
       const pad = n => String(n).padStart(2, '0');
@@ -13784,7 +13817,7 @@
       const cell = calendarDateForWeekListDay(item.day);
       const iso = cell ? portalIsoYmdFromDate(cell) : '';
       const sid = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
-      if(iso && sid && typeof portalTermStaffAwayOnDate === 'function' && portalTermStaffAwayOnDate(iso, sid)){
+      if(typeof portalWeekListDayIsOff === 'function' && portalWeekListDayIsOff(item.day, sid)){
         return 'off';
       }
       if(weekRowTotalClients(item) <= 0) return 'off';
@@ -13835,8 +13868,8 @@
       segments.forEach((seg, i) => {
         if(seg.count <= 0){
           if(i === 0 && segments.length === 1){
-            parts.push('<span class="week-venue-seg week-venue-seg--empty">Off work</span>');
-            ariaBits.push('off work');
+            parts.push('<span class="week-venue-seg week-venue-seg--empty">Off</span>');
+            ariaBits.push('off');
           }
           return;
         }
@@ -13851,8 +13884,8 @@
         ariaBits.push(`${seg.count} ${ariaPhrase} ${ariaVenue}`);
       });
       if(!parts.length){
-        parts.push('<span class="week-venue-seg week-venue-seg--empty">Off work</span>');
-        ariaBits.push('off work');
+        parts.push('<span class="week-venue-seg week-venue-seg--empty">Off</span>');
+        ariaBits.push('off');
       }
       const tone = weekRowVisualKind(item);
       if(dayFlags.hasMakeUp || dayFlags.hasAbsentAnnounced || dayFlags.hasCancelled){
@@ -13905,6 +13938,20 @@
     function renderTomorrowSheetTitle(){
       const h = document.getElementById('tomorrowSheetTitle');
       if(h) h.textContent = formatNextSessionSheetTitle();
+    }
+    function formatWeekCommencingTitle(){
+      const mon = mondayStartOfWeekLocal(new Date());
+      const d = mon.getDate();
+      const m = mon.getMonth() + 1;
+      const y = String(mon.getFullYear()).slice(-2);
+      return `Week (${d}/${m}/${y})`;
+    }
+    function renderWeekSheetTitle(){
+      const caption = formatWeekCommencingTitle();
+      const h = document.querySelector('#weekSheet h3');
+      if(h) h.textContent = caption;
+      const mini = document.querySelector('.mini-card[data-open="weekSheet"] .title');
+      if(mini) mini.textContent = caption;
     }
 
     function formatTermMonthCaption(year, monthIndex){
@@ -14042,6 +14089,10 @@
       if(explicit === 'cancelled') return 'cancelled';
       if(explicit === 'late') return 'late';
       const staffId = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
+      const dayWordEarly = new Date(key + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
+      const rosterApplies = !staffId || typeof portalStaffRosterAppliesOnCalendarDate !== 'function'
+        || portalStaffRosterAppliesOnCalendarDate(key, dayWordEarly, staffId);
+      if(!rosterApplies) return 'pending';
       if(staffId && portalTermIsBeforeCurrentWeek(key)
         && typeof portalTermExportMarksDayComplete === 'function'
         && portalTermExportMarksDayComplete(key, staffId)){
@@ -14102,6 +14153,8 @@
     /** Before this calendar week: green when export or in-day sessions say done (not orange/blue for old work). */
     function portalTermApplyHistoricalDayGreen(iso, staffId, dayWord, key, relAll, relFb, cur, fbMap){
       if(!portalTermIsBeforeCurrentWeek(iso)) return;
+      if(typeof portalStaffRosterAppliesOnCalendarDate === 'function'
+        && !portalStaffRosterAppliesOnCalendarDate(iso, dayWord, staffId)) return;
       if(typeof portalTermExportMarksDayComplete === 'function'
         && portalTermExportMarksDayComplete(iso, staffId)){
         fbMap[key] = 'complete';
@@ -14167,6 +14220,11 @@
           cur.setDate(cur.getDate() + 1);
           continue;
         }
+        if(typeof portalStaffRosterAppliesOnCalendarDate === 'function'
+          && !portalStaffRosterAppliesOnCalendarDate(key, dayWord, staffId)){
+          cur.setDate(cur.getDate() + 1);
+          continue;
+        }
         const isReal = function(s){
           if(baseRealTerm) return baseRealTerm(s, key);
           const st = String(s.status || '').toLowerCase();
@@ -14202,10 +14260,6 @@
           continue;
         }
         if(!relAll.length){
-          if(typeof portalTermExportMarksDayComplete === 'function'
-            && portalTermExportMarksDayComplete(key, staffId)){
-            fbMap[key] = 'complete';
-          }
           cur.setDate(cur.getDate() + 1);
           continue;
         }
@@ -14485,7 +14539,10 @@
           const half = typeof portalTermCalendarDayIsRed === 'function'
             ? portalTermCalendarDayIsRed(y, monthIndex, day, termStaffId, halfWeeks)
             : (isHalfTermDay(y, monthIndex, day, halfWeeks) || staffAway);
-          const isWorked = worked.includes(w);
+          const dayWordRoster = dt.toLocaleDateString('en-GB', { weekday: 'long' });
+          const rosterApplies = !termStaffId || typeof portalStaffRosterAppliesOnCalendarDate !== 'function'
+            || portalStaffRosterAppliesOnCalendarDate(isoKey, dayWordRoster, termStaffId);
+          const isWorked = worked.includes(w) && rosterApplies;
           let cls = 'term-cal-day';
           let label;
           if(half){
@@ -14579,6 +14636,7 @@
 
     function renderLists(){
       renderTomorrowSheetTitle();
+      renderWeekSheetTitle();
       const tl = document.getElementById('tomorrowList');
       const wl = document.getElementById('weekList');
       if(tl){
@@ -16194,6 +16252,9 @@
         var sid = String(staffId || "").trim().toLowerCase();
         var baseReal = typeof window.__portalIsRealClientSession === "function" ? window.__portalIsRealClientSession : null;
         return WEEK_ORDER_MON_SUN.map(function (day) {
+          if (typeof portalWeekListDayIsOff === "function" && portalWeekListDayIsOff(day, sid)) {
+            return { day: day, segments: [{ count: 0, venue: "", serviceLabel: "" }] };
+          }
           var bucket = {};
           var cell = typeof calendarDateForWeekListDay === "function" ? calendarDateForWeekListDay(day) : null;
           var iso = cell && typeof portalIsoYmdFromDate === "function" ? portalIsoYmdFromDate(cell) : "";

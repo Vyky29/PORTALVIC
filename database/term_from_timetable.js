@@ -15,10 +15,27 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
   },
   "firstDate": "2026-04-13",
   "lastDate": "2026-07-17",
+  "termBreakFrom": "2026-05-23",
+  "termBreakTo": "2026-05-31",
+  "termResumeDate": "2026-06-01",
+  "termClosedDates": [
+    "2026-05-04"
+  ],
+  "termStaffAwayDatesByProfileKey": {
+    "roberto": [
+      "2026-05-07"
+    ]
+  },
+  "termClientFirstSessionDate": {
+    "amaar_ah": "2026-04-24"
+  },
   "termHalfTermWeekStarts": [
     "2026-05-25"
   ],
   "termStaffWeekdayIndicesByProfileKey": {
+    "alex": [
+      0
+    ],
     "angel": [
       1,
       2
@@ -39,7 +56,10 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       5
     ],
     "carlos": [
-      0
+      0,
+      1,
+      3,
+      5
     ],
     "dan": [
       0,
@@ -53,6 +73,14 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       3,
       5
     ],
+    "godsway": [
+      0,
+      3
+    ],
+    "javi": [
+      0,
+      4
+    ],
     "javier": [
       0,
       2,
@@ -62,13 +90,32 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     "john": [
       0,
       1,
+      3,
       5
     ],
-    "new": [
-      4
+    "lulia": [
+      1,
+      2,
+      3,
+      5
+    ],
+    "luliya": [
+      1,
+      2,
+      3,
+      5
+    ],
+    "michelle": [
+      1,
+      2,
+      3,
+      5
     ],
     "raul": [
+      1,
+      2,
       3,
+      4,
       5
     ],
     "roberto": [
@@ -83,6 +130,9 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     "sandra": [
       1
     ],
+    "simon": [
+      4
+    ],
     "victor": [
       1,
       2,
@@ -95,6 +145,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       1,
       2,
       3,
+      5,
       6
     ]
   }
