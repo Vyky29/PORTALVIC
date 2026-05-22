@@ -1,15 +1,16 @@
 {
-  "generated_at": "2026-05-20T08:58:40.236Z",
+  "generated_at": "2026-05-22T21:28:07.329Z",
   "feedback_from": "2026-05-11",
   "files": {
-    "session-feedback.csv": 172,
+    "session-feedback.csv": 210,
     "incidents.csv": 2,
-    "cancellations.csv": 2,
-    "absents.csv": 8,
+    "cancellations.csv": 7,
+    "absents.csv": 14,
     "sessions-overview-2026-05-13_19.csv": 149,
     "sessions-overview-2026-05-18_22.csv": 93,
     "sessions-with-feedback-status-2026-05-13_19.csv": 149,
     "sessions-with-feedback-status-2026-05-18_22.csv": 93,
     "venue-reviews.csv": 46
-  }
+  },
+  "merged_from_admin_export": true
 }

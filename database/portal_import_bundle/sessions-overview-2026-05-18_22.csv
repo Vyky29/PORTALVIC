@@ -1,9 +1,9 @@
 date,weekday,client,service,time_slot,instructor,venue,notes,session_key,feedback_unit_key
 2026-05-18,Monday,Emmanuel,Day Centre,11 to 3,YOUSSEF,SwimFarm,Hub Room,2026-05-18|emmanuel|day_centre,2026-05-18|emmanuel|day_centre
-2026-05-18,Monday,Ikram,Day Centre,11 to 12,"RAUL, LULIA",SwimFarm,Hub Room,2026-05-18|ikram|day_centre,2026-05-18|ikram|day_centre
-2026-05-18,Monday,Ikram,Day Centre,12 to 12.30,"ROBERTO, LULIA, RAUL",SwimFarm,Hub Room,2026-05-18|ikram|day_centre,2026-05-18|ikram|day_centre
+2026-05-18,Monday,Ikram,Day Centre,11 to 12,"RAUL, LULIYA",SwimFarm,Hub Room,2026-05-18|ikram|day_centre,2026-05-18|ikram|day_centre
+2026-05-18,Monday,Ikram,Day Centre,12 to 12.30,"ROBERTO, LULIYA, RAUL",SwimFarm,Hub Room,2026-05-18|ikram|day_centre,2026-05-18|ikram|day_centre
 2026-05-18,Monday,Fadi,Day Centre,12.30 to 3,"RAUL, VICTOR",SwimFarm,Hub Room,2026-05-18|fadi|day_centre,2026-05-18|fadi|day_centre
-2026-05-18,Monday,Ikram,Day Centre,12.30 to 3,"ROBERTO, LULIA",SwimFarm,Hub Room,2026-05-18|ikram|day_centre,2026-05-18|ikram|day_centre
+2026-05-18,Monday,Ikram,Day Centre,12.30 to 3,"ROBERTO, LULIYA",SwimFarm,Hub Room,2026-05-18|ikram|day_centre,2026-05-18|ikram|day_centre
 2026-05-18,Monday,Timi,Day Centre,1 to 3,VICTOR,SwimFarm,Hub Room,2026-05-18|timi|day_centre,2026-05-18|timi|day_centre
 2026-05-18,Monday,Emmanuel,Day Centre,3 to 4,VICTOR,SwimFarm,Hub Room,2026-05-18|emmanuel|day_centre,2026-05-18|emmanuel|day_centre
 2026-05-18,Monday,Adam Pi,Aquatic Activity,4 to 5.30,ANGEL,Acton,Teaching Pool,2026-05-18|16:00|adam_pi,2026-05-18|16:00|adam_pi
@@ -19,12 +19,12 @@ date,weekday,client,service,time_slot,instructor,venue,notes,session_key,feedbac
 2026-05-18,Monday,Abodi P,Aquatic Activity,5.30 to 6.30,YOUSSEF,Acton,Teaching Pool,2026-05-18|17:30|adam_ab,2026-05-18|17:30|adam_ab
 2026-05-18,Monday,Steven Ce,Aquatic Activity,5.30 to 6,ANGEL,Acton,Teaching Pool,2026-05-18|17:30|steven_ce,2026-05-18|17:30|steven_ce
 2026-05-18,Monday,Zayana,Aquatic Activity,5.30 to 6,DAN,Northolt,Teaching Pool,2026-05-18|17:30|zayana,2026-05-18|17:30|zayana
-2026-05-18,Monday,Aydaan Ah,Aquatic Activity,6 to 6.30,DAN,Northolt,Teaching Pool,2026-05-18|18:00|aydaan_ah,2026-05-18|18:00|aydaan_ah
+2026-05-18,Monday,Aadam Ah,Aquatic Activity,6 to 6.30,DAN,Northolt,Teaching Pool,2026-05-18|18:00|aadam_ah,2026-05-18|18:00|aadam_ah
 2026-05-18,Monday,Mario,Aquatic Activity,6 to 6.30,ANGEL,Acton,Teaching Pool,2026-05-18|18:00|mario,2026-05-18|18:00|mario
 2026-05-18,Monday,Yamik (Trial 18/05),Aquatic Activity,6 to 6.30,ROBERTO,Northolt,Teaching Pool,2026-05-18|18:00|yamik_trial_18_05,2026-05-18|18:00|yamik_trial_18_05
-2026-05-19,Tuesday,Ikram,Day Centre,11 to 3,"ROBERTO, LULIA",SwimFarm,Hub Room,2026-05-19|ikram|day_centre,2026-05-19|ikram|day_centre
+2026-05-19,Tuesday,Ikram,Day Centre,11 to 3,"ROBERTO, LULIYA",SwimFarm,Hub Room,2026-05-19|ikram|day_centre,2026-05-19|ikram|day_centre
 2026-05-19,Tuesday,Fadi,Day Centre,12.30 to 3,"VICTOR, RAUL",SwimFarm,Hub Room,2026-05-19|fadi|day_centre,2026-05-19|fadi|day_centre
-2026-05-19,Tuesday,Ikram,Day Centre,3 to 4,"VICTOR, LULIA, RAUL",SwimFarm,Hub Room,2026-05-19|ikram|day_centre,2026-05-19|ikram|day_centre
+2026-05-19,Tuesday,Ikram,Day Centre,3 to 4,"VICTOR, LULIYA, RAUL",SwimFarm,Hub Room,2026-05-19|ikram|day_centre,2026-05-19|ikram|day_centre
 2026-05-19,Tuesday,Ayman,Aquatic Activity,4 to 4.30,JAVIER,Acton,Lane (SE),2026-05-19|16:00|ayman,2026-05-19|16:00|ayman
 2026-05-19,Tuesday,Jad,Aquatic Activity,4 to 4.30,ROBERTO,Acton,Teaching Pool,2026-05-19|16:00|jad,2026-05-19|16:00|jad
 2026-05-19,Tuesday,Adam Me,Aquatic Activity,4.30 to 5,JAVIER,Acton,Teaching Pool,2026-05-19|16:30|adam_me,2026-05-19|16:30|adam_me
@@ -41,20 +41,18 @@ date,weekday,client,service,time_slot,instructor,venue,notes,session_key,feedbac
 2026-05-19,Tuesday,Hazem,Aquatic Activity,5.30 to 6,ANGEL,Acton,Teaching Pool,2026-05-19|17:30|hazem,2026-05-19|17:30|hazem
 2026-05-19,Tuesday,Rayan Ta,Aquatic Activity,5.30 to 6,ROBERTO,Acton,Teaching Pool,2026-05-19|17:30|rayan_ta,2026-05-19|17:30|rayan_ta
 2026-05-19,Tuesday,Rayyan Fi,Aquatic Activity,5.30 to 6,YOUSSEF,Acton,Lane (DE),2026-05-19|17:30|rayyan_fi,2026-05-19|17:30|rayyan_fi
-2026-05-19,Tuesday,Eiji,Aquatic Activity,6 to 6.30,AURORA,Acton,Lane,2026-05-19|18:00|eiji,2026-05-19|18:00|eiji
-2026-05-19,Tuesday,Hazem,Aquatic Activity,6 to 6.30,ROBERTO,Acton,Teaching Pool,2026-05-19|18:00|hazem,2026-05-19|18:00|hazem
+2026-05-19,Tuesday,Eiji,Aquatic Activity,6 to 6.30,ROBERTO,Acton,Lane,2026-05-19|18:00|eiji,2026-05-19|18:00|eiji
+2026-05-19,Tuesday,Hazem,Aquatic Activity,6 to 6.30,AURORA,Acton,Teaching Pool,2026-05-19|18:00|hazem,2026-05-19|18:00|hazem
 2026-05-19,Tuesday,Kareena,Aquatic Activity,6 to 6.30,JAVIER,Acton,Lane (SE),2026-05-19|18:00|kareena,2026-05-19|18:00|kareena
 2026-05-19,Tuesday,Rayyan Fi,Aquatic Activity,6 to 6.30,YOUSSEF,Acton,Lane (DE),2026-05-19|18:00|rayyan_fi,2026-05-19|18:00|rayyan_fi
 2026-05-19,Tuesday,Richard,Aquatic Activity,6 to 6.30,ANGEL,Acton,Lane (SE),2026-05-19|18:00|richard,2026-05-19|18:00|richard
 2026-05-20,Wednesday,Emmanuel,Day Centre,11 to 3,YOUSSEF,SwimFarm,Hub Room,2026-05-20|emmanuel|day_centre,2026-05-20|emmanuel|day_centre
-2026-05-20,Wednesday,Ikram,Day Centre,11 to 4,"VICTOR, LULIA",SwimFarm,Hub Room,2026-05-20|ikram|day_centre,2026-05-20|ikram|day_centre
+2026-05-20,Wednesday,Ikram,Day Centre,11 to 4,"RAUL, LULIYA",SwimFarm,Hub Room,2026-05-20|ikram|day_centre,2026-05-20|ikram|day_centre
 2026-05-20,Wednesday,Q6 College,Aquatic Activity,11 to 12,ROBERTO,SwimFarm,Pools,2026-05-20|11:00|q6_college,2026-05-20|11:00|q6_college
 2026-05-20,Wednesday,Fadi,Day Centre,12.30 to 3,ROBERTO,SwimFarm,Hub Room,2026-05-20|fadi|day_centre,2026-05-20|fadi|day_centre
 2026-05-20,Wednesday,Emmanuel,Day Centre,3 to 4,VICTOR,SwimFarm,Hub Room,2026-05-20|emmanuel|day_centre,2026-05-20|emmanuel|day_centre
-2026-05-20,Wednesday,Adam Ab,Multi-Activity,4 to 5.15,BERTA,Acton,Room 2,2026-05-20|16:00|adam_ab|room_2,2026-05-20|adam_ab|16:00|multi-activity|room_2
 2026-05-20,Wednesday,Cyrus,Multi-Activity,4 to 5.15,JAVIER,Acton,Teaching Pool,2026-05-20|16:00|cyrus|teaching_pool,2026-05-20|cyrus|16:00|multi-activity|teaching_pool
-2026-05-20,Wednesday,Stephanie,Multi-Activity,4 to 5.15,BERTA,Acton,Room 2,2026-05-20|16:00|stephanie|room_2,2026-05-20|stephanie|16:00|multi-activity|room_2
-2026-05-20,Wednesday,Cyrus,Multi-Activity,4.30 to 5.15,GIUSEPPE,Acton,Room 2,2026-05-20|16:30|cyrus|room_2,2026-05-20|cyrus|16:30|multi-activity|room_2
+2026-05-20,Wednesday,Adam Ab,Multi-Activity,4.30 to 5.15,BERTA,Acton,Room 2,2026-05-20|16:30|adam_ab|room_2,2026-05-20|adam_ab|16:30|multi-activity|room_2
 2026-05-20,Wednesday,Scott,Multi-Activity,4.30 to 5.15,GIUSEPPE,Acton,Room 2,2026-05-20|16:30|scott|room_2,2026-05-20|scott|16:30|multi-activity|room_2
 2026-05-20,Wednesday,Stephanie,Multi-Activity,4.30 to 5.15,YOUSSEF,Acton,Teaching Pool,2026-05-20|16:30|stephanie|teaching_pool,2026-05-20|stephanie|16:30|multi-activity|teaching_pool
 2026-05-20,Wednesday,Tinashe,Bespoke Programme,4.30 to 6,"JOHN, GODSWAY, BISMARK",SwimFarm,Hub Room,2026-05-20|16:30|tinashe|hub_room,2026-05-20|tinashe|16:30|bespoke programme|hub_room
@@ -63,29 +61,31 @@ date,weekday,client,service,time_slot,instructor,venue,notes,session_key,feedbac
 2026-05-20,Wednesday,Amar Ra,Aquatic Activity,5 to 6,ROBERTO,Northolt,Teaching Pool,2026-05-20|17:00|amar_ra,2026-05-20|17:00|amar_ra
 2026-05-20,Wednesday,Ruben,Aquatic Activity,5 to 5.30,DAN,Northolt,Teaching Pool,2026-05-20|17:00|ruben,2026-05-20|17:00|ruben
 2026-05-20,Wednesday,Adam Ab,Multi-Activity,5.15 to 6,JAVIER,Acton,Teaching Pool,2026-05-20|17:15|adam_ab|teaching_pool,2026-05-20|adam_ab|17:15|multi-activity|teaching_pool
+2026-05-20,Wednesday,Cyrus,Multi-Activity,5.15 to 6,GIUSEPPE,Acton,Room 2,2026-05-20|17:15|cyrus|room_2,2026-05-20|cyrus|17:15|multi-activity|room_2
 2026-05-20,Wednesday,Scott,Multi-Activity,5.15 to 6,YOUSSEF,Acton,Teaching Pool,2026-05-20|17:15|scott|teaching_pool,2026-05-20|scott|17:15|multi-activity|teaching_pool
+2026-05-20,Wednesday,Stephanie,Multi-Activity,5.15 to 6,BERTA,Acton,Room 2,2026-05-20|17:15|stephanie|room_2,2026-05-20|stephanie|17:15|multi-activity|room_2
 2026-05-20,Wednesday,Mia,Aquatic Activity,5.30 to 6.30,DAN,Northolt,Teaching Pool,2026-05-20|17:30|mia,2026-05-20|17:30|mia
 2026-05-20,Wednesday,Amber,Aquatic Activity,6 to 6.30,ROBERTO,Northolt,Teaching Pool,2026-05-20|18:00|amber,2026-05-20|18:00|amber
 2026-05-20,Wednesday,Kayden,Aquatic Activity,6 to 6.30,JAVIER,Acton,Lane,2026-05-20|18:00|kayden,2026-05-20|18:00|kayden
 2026-05-21,Thursday,Fadi,Day Centre,12.30 to 3,ROBERTO,SwimFarm,Hub Room,2026-05-21|fadi|day_centre,2026-05-21|fadi|day_centre
 2026-05-21,Thursday,Cyrus,Bespoke Programme,3.30 to 5,VICTOR,SwimFarm,Hub Room,2026-05-21|15:30|cyrus|hub_room,2026-05-21|cyrus|15:30|bespoke programme|hub_room
-2026-05-21,Thursday,Ayman,Aquatic Activity,4 to 5,JAVIER,Acton,Lane (SE),2026-05-21|16:00|ayman,2026-05-21|16:00|ayman
+2026-05-21,Thursday,Ayman,Aquatic Activity,4 to 5,JAVI,Acton,Lane (SE),2026-05-21|16:00|ayman,2026-05-21|16:00|ayman
 2026-05-21,Thursday,Elijah,Aquatic Activity,4 to 4.30,AURORA,Acton,Teaching Pool,2026-05-21|16:00|elijah,2026-05-21|16:00|elijah
 2026-05-21,Thursday,Tom,Aquatic Activity,4 to 4.30,ROBERTO,Acton,Lane (SE),2026-05-21|16:00|tom,2026-05-21|16:00|tom
 2026-05-21,Thursday,Aqsa,Aquatic Activity,4.30 to 5.30,AURORA,Acton,Lane,2026-05-21|16:30|aqsa,2026-05-21|16:30|aqsa
 2026-05-21,Thursday,Thushyan,Aquatic Activity,4.30 to 5,DAN,Acton,Lane,2026-05-21|16:30|thushyan,2026-05-21|16:30|thushyan
 2026-05-21,Thursday,Yassir,Aquatic Activity,4.30 to 5,ROBERTO,Acton,Swallow End,2026-05-21|16:30|yassir,2026-05-21|16:30|yassir
-2026-05-21,Thursday,Khalid Ab,Aquatic Activity,5 to 5.30,JAVIER,Acton,Lane (SE),2026-05-21|17:00|khalid_ab,2026-05-21|17:00|khalid_ab
+2026-05-21,Thursday,Khalid Ab,Aquatic Activity,5 to 5.30,JAVI,Acton,Lane (SE),2026-05-21|17:00|khalid_ab,2026-05-21|17:00|khalid_ab
 2026-05-21,Thursday,Yossi,Aquatic Activity,5 to 5.30,ROBERTO,Acton,Lane,2026-05-21|17:00|yossi,2026-05-21|17:00|yossi
 2026-05-21,Thursday,Yuri,Aquatic Activity,5 to 5.30,DAN,Acton,Lane (SE),2026-05-21|17:00|yuri,2026-05-21|17:00|yuri
 2026-05-21,Thursday,Eiji,Aquatic Activity,5.30 to 6.30,DAN,Acton,Lane,2026-05-21|17:30|eiji,2026-05-21|17:30|eiji
 2026-05-21,Thursday,Hazem,Aquatic Activity,5.30 to 6,AURORA,Acton,Teaching Pool,2026-05-21|17:30|hazem,2026-05-21|17:30|hazem
-2026-05-21,Thursday,Karo,Aquatic Activity,5.30 to 6,JAVIER,Acton,Lane (SE),2026-05-21|17:30|karo,2026-05-21|17:30|karo
+2026-05-21,Thursday,Karo,Aquatic Activity,5.30 to 6,JAVI,Acton,Lane (SE),2026-05-21|17:30|karo,2026-05-21|17:30|karo
 2026-05-21,Thursday,Mohammed,Aquatic Activity,5.30 to 6.30,ROBERTO,Acton,Lane,2026-05-21|17:30|mohammed,2026-05-21|17:30|mohammed
-2026-05-21,Thursday,Hazem,Aquatic Activity,6 to 6.30,JAVIER,Acton,Teaching Pool,2026-05-21|18:00|hazem,2026-05-21|18:00|hazem
+2026-05-21,Thursday,Hazem,Aquatic Activity,6 to 6.30,JAVI,Acton,Teaching Pool,2026-05-21|18:00|hazem,2026-05-21|18:00|hazem
 2026-05-21,Thursday,Maiyar,Aquatic Activity,6 to 6.30,AURORA,Acton,Teaching Pool,2026-05-21|18:00|maiyar,2026-05-21|18:00|maiyar
 2026-05-22,Friday,Emmanuel,Day Centre,11 to 3,YOUSSEF,SwimFarm,Hub Room,2026-05-22|emmanuel|day_centre,2026-05-22|emmanuel|day_centre
-2026-05-22,Friday,Ikram,Day Centre,11 to 4,"VICTOR, LULIA",SwimFarm,Hub Room,2026-05-22|ikram|day_centre,2026-05-22|ikram|day_centre
+2026-05-22,Friday,Ikram,Day Centre,11 to 4,"RAUL, LULIYA",SwimFarm,Hub Room,2026-05-22|ikram|day_centre,2026-05-22|ikram|day_centre
 2026-05-22,Friday,Fadi,Day Centre,12.30 to 3,RAUL,SwimFarm,Hub Room,2026-05-22|fadi|day_centre,2026-05-22|fadi|day_centre
 2026-05-22,Friday,Timi,Day Centre,1 to 3,VICTOR,SwimFarm,Hub Room,2026-05-22|timi|day_centre,2026-05-22|timi|day_centre
 2026-05-22,Friday,Emmanuel,Day Centre,3 to 4,VICTOR,SwimFarm,Hub Room,2026-05-22|emmanuel|day_centre,2026-05-22|emmanuel|day_centre
