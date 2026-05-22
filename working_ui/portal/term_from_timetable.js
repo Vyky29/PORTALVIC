@@ -15,9 +15,17 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
   },
   "firstDate": "2026-04-13",
   "lastDate": "2026-07-17",
-  "termBreakFrom": "2026-05-24",
+  "termBreakFrom": "2026-05-23",
   "termBreakTo": "2026-05-31",
   "termResumeDate": "2026-06-01",
+  "termClosedDates": [
+    "2026-05-04"
+  ],
+  "termStaffAwayDatesByProfileKey": {
+    "roberto": [
+      "2026-05-07"
+    ]
+  },
   "termHalfTermWeekStarts": [],
   "termStaffWeekdayIndicesByProfileKey": {
     "angel": [

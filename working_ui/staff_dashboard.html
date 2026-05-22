@@ -12739,10 +12739,15 @@
           ? model
           : (Array.isArray(typeof sessionsModel !== 'undefined' ? sessionsModel : null) ? sessionsModel : []);
         var start = new Date(fromNow.getFullYear(), fromNow.getMonth(), fromNow.getDate());
-        for(var i = 1; i <= 21; i++){
+        for(var i = 1; i <= 45; i++){
           var d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
           var wname = d.toLocaleDateString('en-GB', { weekday: 'long' });
           var iso = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(d) : '';
+          if(iso && typeof isHalfTermDay === 'function'){
+            var ht = isHalfTermDay(d.getFullYear(), d.getMonth(), d.getDate(), (typeof dashboardData !== 'undefined' && dashboardData.termHalfTermWeekStarts) || []);
+            if(ht) continue;
+          }
+          if(iso && typeof portalTermStaffAwayOnDate === 'function' && portalTermStaffAwayOnDate(iso, id)) continue;
           var has = modelSrc.some(function(s){
             if(String(s.staffId || '').toLowerCase() !== id) return false;
             if(!portalIsRealClientSession(s, iso)) return false;
@@ -13729,11 +13734,14 @@
       return null;
     }
     function weekRowVisualKind(item){
-      if(weekRowTotalClients(item) <= 0) return 'off';
       const rel = weekListDayRelationToToday(item.day);
       const cell = calendarDateForWeekListDay(item.day);
       const iso = cell ? portalIsoYmdFromDate(cell) : '';
       const sid = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
+      if(iso && sid && typeof portalTermStaffAwayOnDate === 'function' && portalTermStaffAwayOnDate(iso, sid)){
+        return 'off';
+      }
+      if(weekRowTotalClients(item) <= 0) return 'off';
       if(iso && sid && typeof portalTermExportMarksDayComplete === 'function'
         && portalTermExportMarksDayComplete(iso, sid)){
         return 'work-done';
@@ -13870,12 +13878,64 @@
     }
     function portalTermBreakIsoRange(){
       const t = window.PORTAL_TERM_FROM_TIMETABLE;
-      const from = String((t && t.termBreakFrom) || '2026-05-24').trim().slice(0, 10);
+      const from = String((t && t.termBreakFrom) || '2026-05-23').trim().slice(0, 10);
       const to = String((t && t.termBreakTo) || '2026-05-31').trim().slice(0, 10);
       return { from, to };
     }
+    function portalTermClosedDates(){
+      const t = window.PORTAL_TERM_FROM_TIMETABLE;
+      const raw = t && t.termClosedDates;
+      if(!Array.isArray(raw)) return [];
+      return raw.map(function(d){ return String(d || '').trim().slice(0, 10); }).filter(Boolean);
+    }
+    function portalTermStaffAwayDatesFor(staffId){
+      const t = window.PORTAL_TERM_FROM_TIMETABLE;
+      const map = t && t.termStaffAwayDatesByProfileKey;
+      if(!map || typeof map !== 'object') return [];
+      const id = String(staffId || '').trim().toLowerCase();
+      const raw = map[id];
+      if(!Array.isArray(raw)) return [];
+      return raw.map(function(d){ return String(d || '').trim().slice(0, 10); }).filter(Boolean);
+    }
+    /** Term grid red (half-term style): bank holiday / vacation break / staff off with cover. */
+    function portalTermCalendarDayIsRed(year, monthIndex, day, staffId, weekStartStrings){
+      if(isHalfTermDay(year, monthIndex, day, weekStartStrings)) return true;
+      const iso = termCalendarDateKey(year, monthIndex, day);
+      return Boolean(staffId && portalTermStaffAwayOnDate(iso, staffId));
+    }
+    function portalTermStaffAwayOnDate(iso, staffId){
+      const key = String(iso || '').trim().slice(0, 10);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(key)) return false;
+      if(portalTermStaffAwayDatesFor(staffId).indexOf(key) !== -1) return true;
+      const sid = String(staffId || '').trim().toLowerCase();
+      const dayWord = new Date(key + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
+      const isReal = function(s){
+        const st = String(s.status || '').toLowerCase();
+        if(st === 'closed' || st === 'available') return false;
+        const cid = String(s.clientId || '').toLowerCase();
+        return Boolean(cid && cid !== 'closed' && cid !== 'available');
+      };
+      const modelRows = (sessionsModel || []).filter(function(s){
+        if(String(s.staffId || '').toLowerCase() !== sid) return false;
+        if(String(s.day || '').trim() !== dayWord) return false;
+        if(!isReal(s)) return false;
+        return typeof portalSessionSpreadsheetRowMatchesCalendarDate !== 'function'
+          || portalSessionSpreadsheetRowMatchesCalendarDate(s, key, dayWord);
+      });
+      if(!modelRows.length) return false;
+      return modelRows.every(function(s){
+        const ov = typeof portalTodayScheduleOverrideForSession === 'function'
+          ? portalTodayScheduleOverrideForSession(s, key)
+          : null;
+        const cov = ov && ov.override_type === 'instructor_reassign'
+          ? String(ov.payload && ov.payload.covering_staff_id || '').trim().toLowerCase()
+          : '';
+        return Boolean(cov && cov !== sid);
+      });
+    }
     function isHalfTermDay(year, monthIndex, day, weekStartStrings){
       const iso = termCalendarDateKey(year, monthIndex, day);
+      if(portalTermClosedDates().indexOf(iso) !== -1) return true;
       const br = portalTermBreakIsoRange();
       if(br.from && br.to && iso >= br.from && iso <= br.to) return true;
       if(!Array.isArray(weekStartStrings) || !weekStartStrings.length) return false;
@@ -14032,6 +14092,10 @@
         }
         const dayWord = cur.toLocaleDateString('en-GB', { weekday: 'long' });
         const key = termCalendarDateKey(cur.getFullYear(), cur.getMonth(), cur.getDate());
+        if(portalTermStaffAwayOnDate(key, staffId)){
+          cur.setDate(cur.getDate() + 1);
+          continue;
+        }
         const isReal = function(s){
           if(baseRealTerm) return baseRealTerm(s, key);
           const st = String(s.status || '').toLowerCase();
@@ -14039,13 +14103,15 @@
           const cid = String(s.clientId || '').toLowerCase();
           return Boolean(cid && cid !== 'closed' && cid !== 'available');
         };
-        const relAll = (sessionsModel || []).filter(s =>
-          String(s.staffId || '').toLowerCase() === staffId &&
-          String(s.day || '').trim() === dayWord &&
-          isReal(s) &&
-          (typeof portalSessionSpreadsheetRowMatchesCalendarDate !== 'function'
-            || portalSessionSpreadsheetRowMatchesCalendarDate(s, key, dayWord))
-        );
+        const relAll = typeof portalBaseClientSessionsForCalendarDate === 'function'
+          ? portalBaseClientSessionsForCalendarDate(dayWord, key, staffId, isReal)
+          : (sessionsModel || []).filter(s =>
+            String(s.staffId || '').toLowerCase() === staffId &&
+            String(s.day || '').trim() === dayWord &&
+            isReal(s) &&
+            (typeof portalSessionSpreadsheetRowMatchesCalendarDate !== 'function'
+              || portalSessionSpreadsheetRowMatchesCalendarDate(s, key, dayWord))
+          );
         const relFb = typeof portalTermFeedbackSessionsForDate === 'function'
           ? portalTermFeedbackSessionsForDate(dayWord, key, staffId, isReal)
           : relAll;
@@ -14227,9 +14293,11 @@
       }catch(e){}
       const map = dashboardData.termFeedbackByDate;
       const keys = [];
+      const sid = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
       if(map && typeof map === 'object'){
         Object.keys(map).forEach(function(k){
           const v = map[k];
+          if(sid && typeof portalTermStaffAwayOnDate === 'function' && portalTermStaffAwayOnDate(k, sid)) return;
           if(v === 'pending' || v === 'late') keys.push(String(k || '').trim());
         });
       }
@@ -14294,6 +14362,7 @@
         worked = [1, 2, 4, 5];
       }
       const halfWeeks = Array.isArray(dashboardData.termHalfTermWeekStarts) ? dashboardData.termHalfTermWeekStarts : [];
+      const termStaffId = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
       const dows = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
       const dowLate = [false, false, false, false, false, false, false];
       months.forEach(monthIndex => {
@@ -14307,9 +14376,11 @@
         for(let day = firstDom; day <= lastDay; day++){
           const dt = new Date(y, monthIndex, day);
           const w = dt.getDay();
-          const half = isHalfTermDay(y, monthIndex, day, halfWeeks);
+          const red = typeof portalTermCalendarDayIsRed === 'function'
+            ? portalTermCalendarDayIsRed(y, monthIndex, day, termStaffId, halfWeeks)
+            : isHalfTermDay(y, monthIndex, day, halfWeeks);
           const isWorked = worked.includes(w);
-          if(half || !isWorked) continue;
+          if(red || !isWorked) continue;
           const fb = getTermFeedbackStateForDay(y, monthIndex, day);
           if(fb === 'late') dowLate[(w + 6) % 7] = true;
         }
@@ -14337,15 +14408,19 @@
         for(let day = firstDom; day <= lastDay; day++){
           const dt = new Date(y, monthIndex, day);
           const w = dt.getDay();
-          const half = isHalfTermDay(y, monthIndex, day, halfWeeks);
+          const isoKey = termCalendarDateKey(y, monthIndex, day);
+          const staffAway = termStaffId && typeof portalTermStaffAwayOnDate === 'function'
+            && portalTermStaffAwayOnDate(isoKey, termStaffId);
+          const half = typeof portalTermCalendarDayIsRed === 'function'
+            ? portalTermCalendarDayIsRed(y, monthIndex, day, termStaffId, halfWeeks)
+            : (isHalfTermDay(y, monthIndex, day, halfWeeks) || staffAway);
           const isWorked = worked.includes(w);
           let cls = 'term-cal-day';
           let label;
           if(half){
             cls += ' half-term';
-            label = `${day}, half term`;
+            label = staffAway ? `${day}, not on duty` : `${day}, half term`;
           } else if(isWorked){
-            const isoKey = termCalendarDateKey(y, monthIndex, day);
             const dayWord = dt.toLocaleDateString('en-GB', { weekday: 'long' });
             const dayFlags = portalDayOverrideBadgeFlags(dayWord, isoKey);
             const flagCount = (dayFlags.hasMakeUp ? 1 : 0) + (dayFlags.hasAbsentAnnounced ? 1 : 0) + (dayFlags.hasCancelled ? 1 : 0);

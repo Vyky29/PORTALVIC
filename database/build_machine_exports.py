@@ -10,6 +10,15 @@ ROOT = Path(r"c:\Users\info\PORTAL")
 SPREAD = ROOT / "SPREADSHEETS"
 OUT = ROOT / "database"
 
+# Term calendar closures (bank holidays / vacation) — not inferred from the timetable sheet.
+TERM_BREAK_FROM = "2026-05-23"
+TERM_BREAK_TO = "2026-05-31"
+TERM_RESUME_DATE = "2026-06-01"
+TERM_CLOSED_DATES = ["2026-05-04"]
+TERM_STAFF_AWAY_DATES_BY_PROFILE_KEY = {
+    "roberto": ["2026-05-07"],
+}
+
 
 def norm_text(v):
     if v is None:
@@ -229,6 +238,11 @@ def write_term_from_timetable_js(records, roster_rows=None):
         "termCalendarFirstDom": first_dom_map,
         "firstDate": first_s,
         "lastDate": last_s,
+        "termBreakFrom": TERM_BREAK_FROM,
+        "termBreakTo": TERM_BREAK_TO,
+        "termResumeDate": TERM_RESUME_DATE,
+        "termClosedDates": list(TERM_CLOSED_DATES),
+        "termStaffAwayDatesByProfileKey": dict(TERM_STAFF_AWAY_DATES_BY_PROFILE_KEY),
         "termHalfTermWeekStarts": half_term_week_starts,
         "termStaffWeekdayIndicesByProfileKey": staff_wd,
     }
@@ -391,9 +405,11 @@ def write_clients_info_embed_js():
 
 def copy_term_to_working_ui():
     src = OUT / "term_from_timetable.js"
-    dst = ROOT / "working_ui" / "term_from_timetable.js"
-    if src.exists():
-        dst.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+    if not src.exists():
+        return
+    text = src.read_text(encoding="utf-8")
+    for rel in ("term_from_timetable.js", "portal/term_from_timetable.js"):
+        (ROOT / "working_ui" / rel).write_text(text, encoding="utf-8")
 
 
 def copy_spreadsheet_js_to_working_ui():
