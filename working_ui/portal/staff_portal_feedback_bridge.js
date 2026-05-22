@@ -72,6 +72,43 @@
     });
   }
 
+  /** All submitted feedback on a date (any instructor) — Day Centre / shared slots. */
+  function submittedRowsForDateAll(iso) {
+    const src =
+      typeof window !== "undefined" && window.SESSION_FEEDBACK_PORTAL_SOURCE;
+    if (!src || !Array.isArray(src.rows)) return [];
+    const day = String(iso || "").trim().substring(0, 10);
+    return src.rows.filter(function (r) {
+      return String(r.date || "").trim().substring(0, 10) === day;
+    });
+  }
+
+  function isDayCentreServiceLabel(label) {
+    const k = String(label || "")
+      .toLowerCase()
+      .replace(/[\s_-]+/g, " ");
+    return (
+      k.indexOf("day centre") >= 0 ||
+      k.indexOf("day centre") >= 0 ||
+      k.indexOf("daycentre") >= 0
+    );
+  }
+
+  function isDayCentreStatusRow(st) {
+    if (!st) return false;
+    const u = String(st.feedbackUnitKey || "");
+    if (u.indexOf("day_centre") >= 0) return true;
+    return isDayCentreServiceLabel(st.service);
+  }
+
+  function isDayCentreRosterSession(s) {
+    if (!s) return false;
+    const blob = String(
+      (s.rosterService || s.activity || s.service || "") + " " + (s.clientId || "")
+    );
+    return isDayCentreServiceLabel(blob) || /day_centre|day_centre/i.test(blob);
+  }
+
   function statusRowDone(st) {
     return (
       st &&
@@ -103,15 +140,63 @@
   }
 
   function anySubmittedCoversStatusRow(iso, st) {
-    const src =
-      typeof window !== "undefined" && window.SESSION_FEEDBACK_PORTAL_SOURCE;
-    if (!src || !Array.isArray(src.rows)) return false;
+    return submittedRowsForDateAll(iso).some(function (r) {
+      return submittedRowMatchesStatusClient(r, st);
+    });
+  }
+
+  /** Status row done in overview OR covered by anyone's submitted feedback (admin parity). */
+  function statusSlotResolved(iso, st) {
+    if (!st) return false;
+    if (statusRowDone(st)) return true;
+    if (anySubmittedCoversStatusRow(iso, st)) return true;
+    const by = String(st.matchedFeedbackBy || "").trim();
+    if (by && anySubmittedCoversStatusRow(iso, { client: st.client, clientName: st.client })) {
+      return true;
+    }
+    return false;
+  }
+
+  function anySubmittedCoversRosterSession(iso, s, clientNotesById) {
     const day = String(iso || "").trim().substring(0, 10);
-    return src.rows.some(function (r) {
-      return (
-        String(r.date || "").trim().substring(0, 10) === day &&
-        submittedRowMatchesStatusClient(r, st)
-      );
+    const rosterKey = rosterKeyForSession(s, clientNotesById);
+    if (!rosterKey) return false;
+    return submittedRowsForDateAll(day).some(function (r) {
+      const rKey = slug(r.clientName);
+      if (!rKey) return false;
+      if (rosterKey === rKey) return true;
+      return rosterKey.indexOf(rKey) >= 0 || rKey.indexOf(rosterKey) >= 0;
+    });
+  }
+
+  function mergeGroupResolved(iso, staffId, groupKey) {
+    const g = String(groupKey || "").trim();
+    if (!g) return false;
+    const status = statusRowsForStaffDate(iso, staffId);
+    const inGroup = status.filter(function (st) {
+      return String(st.feedbackMergeGroup || "").trim() === g;
+    });
+    if (!inGroup.length) return false;
+    return inGroup.some(function (st) {
+      return statusSlotResolved(iso, st);
+    });
+  }
+
+  function dayCentreClientResolved(iso, staffId, clientSlug) {
+    const key = String(clientSlug || "").trim();
+    if (!key) return false;
+    const status = statusRowsForStaffDate(iso, staffId);
+    const hits = status.filter(function (st) {
+      return isDayCentreStatusRow(st) && statusClientSlug(st) === key;
+    });
+    if (hits.some(function (st) {
+      return statusSlotResolved(iso, st);
+    })) {
+      return true;
+    }
+    return submittedRowsForDateAll(iso).some(function (r) {
+      const rKey = slug(r.clientName);
+      return rKey === key || rKey.indexOf(key) >= 0 || key.indexOf(rKey) >= 0;
     });
   }
 
@@ -142,10 +227,10 @@
         });
       });
     }
-    const sub = submittedRowsForStaffDate(iso, staffId);
-    if (sub.length) {
+    const subAll = submittedRowsForDateAll(iso);
+    if (subAll.length) {
       return roster.filter(function (s) {
-        return sub.some(function (r) {
+        return subAll.some(function (r) {
           return clientMatch({ clientName: r.clientName }, s, clientNotesById);
         });
       });
@@ -162,13 +247,27 @@
     const sub = submittedRowsForStaffDate(iso, staffId);
     const thru = feedbackCoverageThroughIso();
     if (status.length) {
+      const dayCentreDone = Object.create(null);
+      const mergeDone = Object.create(null);
       let unresolved = 0;
       status.forEach(function (st) {
-        if (statusRowDone(st)) return;
-        if (sub.some(function (r) { return submittedRowMatchesStatusClient(r, st); })) {
-          return;
+        if (statusSlotResolved(iso, st)) return;
+        const mg = String(st.feedbackMergeGroup || "").trim();
+        if (mg) {
+          if (mergeDone[mg]) return;
+          if (mergeGroupResolved(iso, staffId, mg)) {
+            mergeDone[mg] = true;
+            return;
+          }
         }
-        if (anySubmittedCoversStatusRow(iso, st)) return;
+        if (isDayCentreStatusRow(st)) {
+          const ck = statusClientSlug(st);
+          if (ck && dayCentreDone[ck]) return;
+          if (ck && dayCentreClientResolved(iso, staffId, ck)) {
+            dayCentreDone[ck] = true;
+            return;
+          }
+        }
         unresolved++;
       });
       if (unresolved > 0 && thru && iso > thru) {
@@ -186,15 +285,28 @@
   function sessionComplete(iso, staffId, s, clientNotesById, mergedRec) {
     const rec = mergedRec || {};
     if (rec.feedbackDone || rec.absent || rec.cancelled) return true;
+    if (anySubmittedCoversRosterSession(iso, s, clientNotesById)) return true;
+    const clientKey = rosterKeyForSession(s, clientNotesById);
+    if (isDayCentreRosterSession(s) && clientKey && dayCentreClientResolved(iso, staffId, clientKey)) {
+      return true;
+    }
     const status = statusRowsForStaffDate(iso, staffId);
-    const stHit = status.find(function (st) {
-      return (
-        staffOwnsStatusRow(staffId, st) &&
-        clientMatch(st, s, clientNotesById) &&
-        statusRowDone(st)
-      );
+    const matching = status.filter(function (st) {
+      return staffOwnsStatusRow(staffId, st) && clientMatch(st, s, clientNotesById);
     });
-    if (stHit) return true;
+    if (
+      matching.some(function (st) {
+        return statusSlotResolved(iso, st);
+      })
+    ) {
+      return true;
+    }
+    const mg = matching
+      .map(function (st) {
+        return String(st.feedbackMergeGroup || "").trim();
+      })
+      .find(Boolean);
+    if (mg && mergeGroupResolved(iso, staffId, mg)) return true;
     const sub = submittedRowsForStaffDate(iso, staffId);
     const fbHit = sub.find(function (r) {
       return clientMatch({ clientName: r.clientName }, s, clientNotesById);
@@ -265,6 +377,11 @@
     clientMatch: clientMatch,
     statusRowsForStaffDate: statusRowsForStaffDate,
     submittedRowsForStaffDate: submittedRowsForStaffDate,
+    submittedRowsForDateAll: submittedRowsForDateAll,
+    statusSlotResolved: statusSlotResolved,
+    anySubmittedCoversRosterSession: anySubmittedCoversRosterSession,
+    dayCentreClientResolved: dayCentreClientResolved,
+    mergeGroupResolved: mergeGroupResolved,
     termSessionsForDate: termSessionsForDate,
     dayFeedbackCountsFromPortalExports: dayFeedbackCountsFromPortalExports,
     sessionComplete: sessionComplete,
