@@ -3345,6 +3345,16 @@
       color:var(--ink);
       line-height:1.25;
     }
+    .clients-grid-stat{
+      display:block;
+      margin-top:3px;
+      font-size:11px;
+      font-weight:600;
+      line-height:1.3;
+      color:var(--muted);
+      overflow-wrap:break-word;
+      min-width:0;
+    }
     .clients-grid-med-slot{
       width:26px;
       flex-shrink:0;
@@ -6481,8 +6491,9 @@
 
   <script src="/portal/term_from_timetable.js"></script>
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js"></script>
-  <script src="/portal/session_feedback_portal_data.js?v=20260519-client-slug"></script>
-  <script src="/portal/session_feedback_status_portal_data.js?v=20260519-client-slug"></script>
+  <script src="/portal/session_feedback_portal_data.js?v=20260519-portal-fb"></script>
+  <script src="/portal/session_feedback_status_portal_data.js?v=20260519-portal-fb"></script>
+  <script src="/portal/staff_portal_feedback_bridge.js?v=20260519-portal-fb"></script>
   <script src="/portal/staff_dashboard_portal_roster_source.js"></script>
   <script src="/portal/clients_info_embed.js"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js"></script>
@@ -6927,9 +6938,15 @@
         const merged = mod.portalMergeReviewKeysIntoMemoryMap(sessionReviewMapMemory, keys, { rosterSessionKeys: rosterKeys });
         if(seeded || merged){
           persistSessionReviewMap();
+          if(typeof portalEnrichClientNotesFromPortalFeedback === 'function') portalEnrichClientNotesFromPortalFeedback();
           if(typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function') rebuildTermShiftAndFeedbackFromSessionModel();
           if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
           if(typeof renderTermCalendarGrid === 'function') renderTermCalendarGrid();
+          if(typeof renderClientsSheetList === 'function'){
+            const myBtn = document.getElementById('clientsTabMy');
+            const mode = myBtn && myBtn.classList.contains('is-active') ? 'my' : 'all';
+            renderClientsSheetList(mode, mode === 'all' ? getClientsDirectoryQuery() : '');
+          }
         }
       }catch(e){
         console.warn('[portal] server review merge skipped', e);
@@ -9307,10 +9324,18 @@
         const gAttr = clientGenderDataAttr(c);
         const med = c.hasMedicalAlert ? clientsGridMedicalIconSvg() : '';
         const medSr = c.hasMedicalAlert ? '<span class="topbar-sr-only">Medical information on file.</span>' : '';
+        let statLine = '';
+        if(c.portalAttendancePct != null || c.portalEngagementAvg != null){
+          const bits = [];
+          if(c.portalAttendancePct != null) bits.push(c.portalAttendancePct + '% attend');
+          if(c.portalEngagementAvg != null) bits.push('eng ' + c.portalEngagementAvg);
+          statLine = `<span class="clients-grid-stat">${escapeHtml(bits.join(' · '))}</span>`;
+        }
         return `<button type="button" class="clients-grid-card" data-client-id="${escapeHtml(clientId)}" data-list-mode="${isAll ? 'all' : 'my'}"${gAttr}>
       <span class="clients-grid-avatar" aria-hidden="true">${initials}</span>
       <span class="clients-grid-text">
         <span class="clients-grid-name">${name}</span>
+        ${statLine}
       </span>
       ${medSr}
       <span class="clients-grid-med-slot" aria-hidden="true">${med}</span>
@@ -11471,7 +11496,37 @@
       return acc;
     }
     function portalTermFeedbackSessionsForDate(dayWord, sessionDateIso, staffId, isRealFn){
-      return portalBaseClientSessionsForCalendarDate(dayWord, sessionDateIso, staffId, isRealFn);
+      const base = portalBaseClientSessionsForCalendarDate(dayWord, sessionDateIso, staffId, isRealFn);
+      const bridge = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
+      if(bridge && typeof bridge.termSessionsForDate === 'function'){
+        return bridge.termSessionsForDate(dayWord, sessionDateIso, staffId, base, clientNotesById);
+      }
+      return base;
+    }
+    function portalRosterSessionFeedbackCompleteForTerm(s, dayWord, sessionDateIso, staffId){
+      const rec = typeof portalGetMergedSessionReviewRecordForRoster === 'function'
+        ? portalGetMergedSessionReviewRecordForRoster(s, dayWord, sessionDateIso)
+        : {};
+      const bridge = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
+      if(bridge && typeof bridge.sessionComplete === 'function'){
+        return bridge.sessionComplete(sessionDateIso, staffId, s, clientNotesById, rec);
+      }
+      return !!(rec.feedbackDone || rec.absent || rec.cancelled);
+    }
+    function portalEnrichClientNotesFromPortalFeedback(){
+      const bridge = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
+      if(!bridge || typeof bridge.metricsForClient !== 'function') return;
+      const staffId = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
+      const ids = typeof getAssignedClientIdsForStaff === 'function' ? getAssignedClientIdsForStaff() : [];
+      ids.forEach(function(cid){
+        const c = clientNotesById[cid];
+        if(!c || !c.name) return;
+        const m = bridge.metricsForClient(c.name, { staffId: staffId });
+        if(!m || !m.n) return;
+        c.portalFeedbackSessions = m.n;
+        if(m.attPct != null) c.portalAttendancePct = m.attPct;
+        if(m.engagementAvg != null) c.portalEngagementAvg = m.engagementAvg;
+      });
     }
 
     /** Selected-day session list (overview “Today” block): anchor = `getViewAnchorCalendarDate(DEMO_VIEW_DAY)` — live calendar or Week/Term URL date lock. */
@@ -13841,6 +13896,8 @@
                 : `${key}|${s.start}|${s.clientId}`;
               if(!sk) return;
               applicable++;
+              if(typeof portalRosterSessionFeedbackCompleteForTerm === 'function'
+                && portalRosterSessionFeedbackCompleteForTerm(s, dayWord, key, staffId)) return;
               const rec = typeof portalGetMergedSessionReviewRecordForRoster === 'function'
                 ? portalGetMergedSessionReviewRecordForRoster(s, dayWord, key)
                 : (getSessionReviewRecord({ sessionKey: sk }) || {});
@@ -13870,6 +13927,8 @@
                   ? portalSessionReviewKeyForModelRow(s, dayWord, key)
                   : `${key}|${s.start}|${s.clientId}`;
                 if(!sk) return;
+                if(typeof portalRosterSessionFeedbackCompleteForTerm === 'function'
+                  && portalRosterSessionFeedbackCompleteForTerm(s, dayWord, key, staffId)) return;
                 const rec = typeof portalGetMergedSessionReviewRecordForRoster === 'function'
                   ? portalGetMergedSessionReviewRecordForRoster(s, dayWord, key)
                   : (getSessionReviewRecord({ sessionKey: sk }) || {});
@@ -15596,7 +15655,7 @@
           var d = document.createElement('div');
           d.id = 'portalP1DeployFingerprint';
           d.setAttribute('aria-hidden', 'true');
-          d.textContent = 'P1 BUILD 20260519 CLIENT-SLUG';
+          d.textContent = 'P1 BUILD 20260519 PORTAL-FB';
           d.style.cssText = 'position:fixed;bottom:8px;right:8px;z-index:2147483647;margin:0;padding:4px 6px;font:10px/1.2 ui-monospace,Menlo,Consolas,monospace;color:#0c1b2e;background:rgba(255,255,255,.92);border:1px solid rgba(12,27,46,.2);pointer-events:none;';
           (document.body || document.documentElement).appendChild(d);
         }
@@ -15901,6 +15960,9 @@
         if(typeof hydrateSessionReviewMapFromStorage === "function") hydrateSessionReviewMapFromStorage();
         if(typeof portalSeedAllReviewDoneFromPortalExports === "function"){
           portalSeedAllReviewDoneFromPortalExports();
+        }
+        if(typeof portalEnrichClientNotesFromPortalFeedback === "function"){
+          portalEnrichClientNotesFromPortalFeedback();
         }
         if(typeof rebuildTermShiftAndFeedbackFromSessionModel === "function"){
           rebuildTermShiftAndFeedbackFromSessionModel();
