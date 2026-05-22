@@ -13,10 +13,22 @@
 
   function staffOwnsInstructor(staffId, instructor) {
     const sid = String(staffId || "").trim().toLowerCase();
-    const ins = String(instructor || "").trim().toLowerCase();
-    if (!sid || !ins) return false;
-    if (ins === sid) return true;
-    return ins.indexOf(sid) >= 0;
+    const blob = String(instructor || "").trim();
+    if (!sid || !blob) return false;
+    const parts = blob.split(/[,/&]+|\s+and\s+/gi);
+    for (let i = 0; i < parts.length; i++) {
+      const p = String(parts[i] || "").trim().toLowerCase();
+      if (!p) continue;
+      const first = (p.split(/\s+/)[0] || "").trim();
+      if (p === sid || first === sid) return true;
+      if (
+        sid === "youssef" &&
+        (first === "yousef" || first === "yusef" || first === "yousseff")
+      ) {
+        return true;
+      }
+    }
+    return false;
   }
 
   function rosterKeyForSession(s, clientNotesById) {

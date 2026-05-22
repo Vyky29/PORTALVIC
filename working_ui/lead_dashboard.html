@@ -10176,13 +10176,24 @@
         return normaliseIsoDate(row && (row.session_date || row.sessionDate)) === iso;
       });
     }
+    function portalStaffHasDatedRowsForIso(isoYmd, staffId){
+      const iso = normaliseIsoDate(isoYmd);
+      const sid = String(staffId || '').trim().toLowerCase();
+      if(!iso || !sid) return false;
+      const model = (typeof sessionsModel !== 'undefined' && Array.isArray(sessionsModel)) ? sessionsModel : [];
+      return model.some(function(row){
+        return String(row.staffId || '').toLowerCase() === sid
+          && normaliseIsoDate(row && (row.session_date || row.sessionDate)) === iso;
+      });
+    }
     /** Roster row vs calendar day: dated rows match YYYY-MM-DD; recurring rows match weekday (en-GB long). */
     function portalSessionSpreadsheetRowMatchesCalendarDate(s, isoYmd, weekdayLong){
       if(!s) return false;
       const iso = normaliseIsoDate(isoYmd);
       const rowIso = normaliseIsoDate(s.session_date || s.sessionDate);
       if(rowIso) return rowIso === iso;
-      if(portalRosterHasDatedRowsForIso(iso)) return false;
+      const sid = String(s.staffId || '').trim().toLowerCase();
+      if(portalStaffHasDatedRowsForIso(iso, sid)) return false;
       return String(s.day || '').trim() === String(weekdayLong || '').trim();
     }
     function portalScheduleOverrideFetchIsoList(){

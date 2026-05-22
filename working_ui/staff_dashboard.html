@@ -6493,7 +6493,7 @@
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js"></script>
   <script src="/portal/session_feedback_portal_data.js?v=20260521"></script>
   <script src="/portal/session_feedback_status_portal_data.js?v=20260521"></script>
-  <script src="/portal/staff_portal_feedback_bridge.js?v=20260521"></script>
+  <script src="/portal/staff_portal_feedback_bridge.js?v=20260521-week-staff"></script>
   <script src="/portal/staff_dashboard_portal_roster_source.js"></script>
   <script src="/portal/clients_info_embed.js"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js"></script>
@@ -6733,11 +6733,21 @@
       return [...keys].slice(0, 400);
     }
     function portalStaffMatchesStatusInstructor(staffId, instructor){
+      const bridge = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
+      if(bridge && typeof bridge.staffOwnsInstructor === 'function'){
+        return bridge.staffOwnsInstructor(staffId, instructor);
+      }
       const sid = String(staffId || '').trim().toLowerCase();
-      const ins = String(instructor || '').trim().toLowerCase();
-      if(!sid || !ins) return false;
-      if(ins === sid) return true;
-      if(ins.indexOf(sid) >= 0) return true;
+      const blob = String(instructor || '').trim();
+      if(!sid || !blob) return false;
+      const parts = blob.split(/[,/&]+|\s+and\s+/gi);
+      for(let i = 0; i < parts.length; i++){
+        const p = String(parts[i] || '').trim().toLowerCase();
+        if(!p) continue;
+        const first = (p.split(/\s+/)[0] || '').trim();
+        if(p === sid || first === sid) return true;
+        if(sid === 'youssef' && (first === 'yousef' || first === 'yusef' || first === 'yousseff')) return true;
+      }
       return false;
     }
     /** Roster instructor column or whoever submitted feedback (matchedFeedbackBy). */
@@ -10422,6 +10432,17 @@
         return normaliseIsoDate(row && (row.session_date || row.sessionDate)) === iso;
       });
     }
+    /** This staff has at least one roster row keyed to this calendar date (not other instructors). */
+    function portalStaffHasDatedRowsForIso(isoYmd, staffId){
+      const iso = normaliseIsoDate(isoYmd);
+      const sid = String(staffId || '').trim().toLowerCase();
+      if(!iso || !sid) return false;
+      const model = (typeof sessionsModel !== 'undefined' && Array.isArray(sessionsModel)) ? sessionsModel : [];
+      return model.some(function(row){
+        return String(row.staffId || '').toLowerCase() === sid
+          && normaliseIsoDate(row && (row.session_date || row.sessionDate)) === iso;
+      });
+    }
     /** Nearest roster YYYY-MM-DD for this staff on a weekday (Summer term dated rows). */
     function portalBestStaffRosterIsoForWeekday(model, staffId, weekdayLong, anchorDate){
       const sid = String(staffId || '').trim().toLowerCase();
@@ -10456,7 +10477,8 @@
       const iso = normaliseIsoDate(isoYmd);
       const rowIso = normaliseIsoDate(s.session_date || s.sessionDate);
       if(rowIso) return !!(iso && rowIso === iso);
-      if(portalRosterHasDatedRowsForIso(iso)) return false;
+      const sid = String(s.staffId || '').trim().toLowerCase();
+      if(portalStaffHasDatedRowsForIso(iso, sid)) return false;
       return String(s.day || '').trim() === String(weekdayLong || '').trim();
     }
     function portalScheduleOverrideFetchIsoList(){
@@ -11504,12 +11526,14 @@
     window.portalWeekStripSessionShouldCount = function(s, dayName, staffId){
       const sid = String(staffId || '').trim().toLowerCase();
       if(String(s.staffId || '').toLowerCase() !== sid) return false;
-      if(String(s.day || '') !== dayName) return false;
+      if(String(s.day || '').trim() !== String(dayName || '').trim()) return false;
       const st = sessionModelStatus(s);
       if(st === 'Available') return false;
       const cell = typeof calendarDateForWeekListDay === 'function' ? calendarDateForWeekListDay(dayName) : null;
       if(!cell) return false;
       const iso = portalIsoYmdFromDate(cell);
+      if(typeof portalSessionSpreadsheetRowMatchesCalendarDate === 'function'
+        && !portalSessionSpreadsheetRowMatchesCalendarDate(s, iso, dayName)) return false;
       const openedClosed = typeof portalSessionHasSlotOpenOverride === 'function' && portalSessionHasSlotOpenOverride(s, iso);
       if(st === 'Closed' && !openedClosed) return false;
       const ov = portalTodayScheduleOverrideForSession(s, iso);
@@ -13556,6 +13580,17 @@
       const sessionDateIso = portalIsoYmdFromDate(cell);
       const d = String(dayName || '').trim();
       const staffIdWeek = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
+      if(staffIdWeek && typeof portalCountPendingSessionReviewsForCalendarDay === 'function'){
+        try{
+          if(portalCountPendingSessionReviewsForCalendarDay(sessionDateIso, d) === 0) return false;
+        }catch(_){ /* fall back */ }
+      }
+      if(staffIdWeek && typeof portalTermDayAllSessionsComplete === 'function'){
+        const sessionsDone = weekListClientSessionsForDay(dayName);
+        if(sessionsDone.length && portalTermDayAllSessionsComplete(d, sessionDateIso, staffIdWeek, sessionsDone, cell)){
+          return false;
+        }
+      }
       if(staffIdWeek && typeof window !== 'undefined' && window.PortalStaffFeedbackBridge
         && typeof window.PortalStaffFeedbackBridge.dayFeedbackCountsFromPortalExports === 'function'){
         const portalCounts = window.PortalStaffFeedbackBridge.dayFeedbackCountsFromPortalExports(sessionDateIso, staffIdWeek);
@@ -13696,6 +13731,18 @@
     function weekRowVisualKind(item){
       if(weekRowTotalClients(item) <= 0) return 'off';
       const rel = weekListDayRelationToToday(item.day);
+      const cell = calendarDateForWeekListDay(item.day);
+      const iso = cell ? portalIsoYmdFromDate(cell) : '';
+      const sid = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
+      if(iso && sid && typeof portalTermExportMarksDayComplete === 'function'
+        && portalTermExportMarksDayComplete(iso, sid)){
+        return 'work-done';
+      }
+      if(!weekListHasPendingFeedbackForDay(item.day)){
+        if(rel === 'past') return 'work-done';
+        const sessions = weekListClientSessionsForDay(item.day);
+        if(sessions.length && !weekListHasNotEndedClientSession(item.day)) return 'work-done';
+      }
       if(weekListHasPendingFeedbackForDay(item.day)) return 'work-feedback';
       if(rel === 'past') return 'work-done';
       if(weekListClientSessionsForDay(item.day).length === 0) return 'work';
@@ -15884,7 +15931,7 @@
           var d = document.createElement('div');
           d.id = 'portalP1DeployFingerprint';
           d.setAttribute('aria-hidden', 'true');
-          d.textContent = 'P1 BUILD 20260521 TERM-WEEK';
+          d.textContent = 'P1 BUILD 20260521 WEEK-STAFF';
           d.style.cssText = 'position:fixed;bottom:8px;right:8px;z-index:2147483647;margin:0;padding:4px 6px;font:10px/1.2 ui-monospace,Menlo,Consolas,monospace;color:#0c1b2e;background:rgba(255,255,255,.92);border:1px solid rgba(12,27,46,.2);pointer-events:none;';
           (document.body || document.documentElement).appendChild(d);
         }
@@ -15998,14 +16045,25 @@
         return t.replace(/\s+session(s)?\s*$/i, "").trim() || "Session";
       }
       function buildWeekRows(staffId){
+        var sid = String(staffId || "").trim().toLowerCase();
+        var baseReal = typeof window.__portalIsRealClientSession === "function" ? window.__portalIsRealClientSession : null;
         return WEEK_ORDER_MON_SUN.map(function (day) {
           var bucket = {};
-          (sessionsModel || []).forEach(function (s) {
-            if (String(s.staffId || "").toLowerCase() !== staffId) return;
-            if (String(s.day || "") !== day) return;
-            if (typeof window.portalWeekStripSessionShouldCount === "function" && !window.portalWeekStripSessionShouldCount(s, day, staffId)) return;
-            var st = sessionModelStatus(s);
-            if (st === "Closed" || st === "Available") return;
+          var cell = typeof calendarDateForWeekListDay === "function" ? calendarDateForWeekListDay(day) : null;
+          var iso = cell && typeof portalIsoYmdFromDate === "function" ? portalIsoYmdFromDate(cell) : "";
+          var isReal = function (s) {
+            if (baseReal) return baseReal(s, iso);
+            var st = String(s.status || "").toLowerCase();
+            if (st === "closed" || st === "available") return false;
+            var cid = String(s.clientId || "").toLowerCase();
+            return Boolean(cid && cid !== "closed" && cid !== "available");
+          };
+          var sessions =
+            typeof portalBaseClientSessionsForCalendarDate === "function" && iso
+              ? portalBaseClientSessionsForCalendarDate(day, iso, sid, isReal)
+              : [];
+          sessions.forEach(function (s) {
+            if (typeof window.portalWeekStripSessionShouldCount === "function" && !window.portalWeekStripSessionShouldCount(s, day, sid)) return;
             var venue = String(s.venue || "—");
             var lab = weekServiceCat(s);
             var key = venue + "\0" + lab;
@@ -16013,7 +16071,7 @@
             bucket[key].count += 1;
           });
           if (typeof window.portalWeekStripAddSyntheticCoverCounts === "function") {
-            window.portalWeekStripAddSyntheticCoverCounts(day, staffId, bucket, weekServiceCat);
+            window.portalWeekStripAddSyntheticCoverCounts(day, sid, bucket, weekServiceCat);
           }
           var segments = Object.keys(bucket).map(function (k) { return bucket[k]; });
           if (!segments.length) segments = [{ count: 0, venue: "", serviceLabel: "" }];
