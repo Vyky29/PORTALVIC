@@ -272,6 +272,13 @@
       });
       if (unresolved > 0 && thru && iso > thru) {
         if (sub.length) return { applicable: Math.max(status.length, sub.length), unresolved: 0 };
+        let unresolvedShared = 0;
+        status.forEach(function (st) {
+          if (!statusSlotResolved(iso, st)) unresolvedShared++;
+        });
+        if (unresolvedShared === 0) {
+          return { applicable: status.length, unresolved: 0 };
+        }
         return null;
       }
       return { applicable: status.length, unresolved: unresolved };

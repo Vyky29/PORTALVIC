@@ -6491,9 +6491,9 @@
 
   <script src="/portal/term_from_timetable.js"></script>
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js"></script>
-  <script src="/portal/session_feedback_portal_data.js?v=20260520-portal-all"></script>
-  <script src="/portal/session_feedback_status_portal_data.js?v=20260520-portal-all"></script>
-  <script src="/portal/staff_portal_feedback_bridge.js?v=20260520-portal-all"></script>
+  <script src="/portal/session_feedback_portal_data.js?v=20260520"></script>
+  <script src="/portal/session_feedback_status_portal_data.js?v=20260520"></script>
+  <script src="/portal/staff_portal_feedback_bridge.js?v=20260520"></script>
   <script src="/portal/staff_dashboard_portal_roster_source.js"></script>
   <script src="/portal/clients_info_embed.js"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js"></script>
@@ -13877,6 +13877,30 @@
       if(explicit === 'pending') return 'pending';
       return 'pending';
     }
+    /** Export-only: day green when portal feedback/status says done (even if roster row missing for that date). */
+    function portalTermExportMarksDayComplete(iso, staffId){
+      try{
+        const bridge = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
+        if(!bridge || typeof bridge.dayFeedbackCountsFromPortalExports !== 'function') return false;
+        const c = bridge.dayFeedbackCountsFromPortalExports(iso, staffId);
+        if(c && c.applicable > 0 && c.unresolved === 0) return true;
+        if(c === null && typeof bridge.submittedRowsForStaffDate === 'function'){
+          const sub = bridge.submittedRowsForStaffDate(iso, staffId);
+          if(sub.length > 0) return true;
+        }
+        const src = typeof window !== 'undefined' ? window.SESSION_FEEDBACK_STATUS_PORTAL_SOURCE : null;
+        if(src && Array.isArray(src.rows) && bridge.statusSlotResolved){
+          const day = String(iso || '').trim().substring(0, 10);
+          const owned = src.rows.filter(function(st){
+            return String(st.date || '').trim().substring(0, 10) === day
+              && typeof portalStaffOwnsFeedbackStatusRow === 'function'
+              && portalStaffOwnsFeedbackStatusRow(staffId, st);
+          });
+          if(owned.length && owned.every(function(st){ return bridge.statusSlotResolved(iso, st); })) return true;
+        }
+      }catch(_){}
+      return false;
+    }
     /** Same rules as inside the day sheet: all countable sessions done → term cell green. */
     function portalTermDayAllSessionsComplete(dayWord, isoKey, staffId, sessions, curDate){
       const list = Array.isArray(sessions) ? sessions : [];
@@ -13959,6 +13983,10 @@
           continue;
         }
         if(!relAll.length){
+          if(typeof portalTermExportMarksDayComplete === 'function'
+            && portalTermExportMarksDayComplete(key, staffId)){
+            fbMap[key] = 'complete';
+          }
           cur.setDate(cur.getDate() + 1);
           continue;
         }
@@ -15801,7 +15829,7 @@
           var d = document.createElement('div');
           d.id = 'portalP1DeployFingerprint';
           d.setAttribute('aria-hidden', 'true');
-          d.textContent = 'P1 BUILD 20260520 PORTAL-ALL';
+          d.textContent = 'P1 BUILD 20260520';
           d.style.cssText = 'position:fixed;bottom:8px;right:8px;z-index:2147483647;margin:0;padding:4px 6px;font:10px/1.2 ui-monospace,Menlo,Consolas,monospace;color:#0c1b2e;background:rgba(255,255,255,.92);border:1px solid rgba(12,27,46,.2);pointer-events:none;';
           (document.body || document.documentElement).appendChild(d);
         }
