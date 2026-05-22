@@ -10454,13 +10454,46 @@
           && !!normaliseIsoDate(row && (row.session_date || row.sessionDate));
       });
     }
-    /** True when this calendar day should use roster/feedback colours (not grey “not confirmed”). */
+    /** Summer Term 2+: weekdays off pool rota (e.g. Roberto no Saturdays from 1 Jun). */
+    function portalTermStaffOffWeekdayOnDate(isoYmd, staffId){
+      const iso = normaliseIsoDate(isoYmd);
+      const sid = String(staffId || '').trim().toLowerCase();
+      if(!iso || !sid) return false;
+      const t = window.PORTAL_TERM_FROM_TIMETABLE;
+      const map = t && t.termStaffOffWeekdaysRangeByProfileKey;
+      const cfg = map && map[sid];
+      if(!cfg || typeof cfg !== 'object') return false;
+      const from = normaliseIsoDate(cfg.from);
+      const to = normaliseIsoDate(cfg.to);
+      if(from && iso < from) return false;
+      if(to && iso > to) return false;
+      const wd = new Date(iso + 'T12:00:00').getDay();
+      const drop = Array.isArray(cfg.weekdays) ? cfg.weekdays.map(Number) : [];
+      return drop.indexOf(wd) >= 0;
+    }
+    /** Client sessions assigned to this staff on this calendar day. */
+    function portalStaffClientSessionsOnCalendarDate(isoYmd, weekdayLong, staffId){
+      const iso = normaliseIsoDate(isoYmd);
+      const sid = String(staffId || '').trim().toLowerCase();
+      const w = String(weekdayLong || '').trim();
+      if(!iso || !sid || !w) return false;
+      const model = (typeof sessionsModel !== 'undefined' && Array.isArray(sessionsModel)) ? sessionsModel : [];
+      return model.some(function(s){
+        if(String(s.staffId || '').toLowerCase() !== sid) return false;
+        if(!portalSessionClientActiveOnDate(s, iso)) return false;
+        return typeof portalSessionSpreadsheetRowMatchesCalendarDate === 'function'
+          && portalSessionSpreadsheetRowMatchesCalendarDate(s, iso, w);
+      });
+    }
+    /** Worked day for term colours: clients that day, export done, or dated roster snap (not pool-only). */
     function portalStaffRosterAppliesOnCalendarDate(isoYmd, weekdayLong, staffId){
       const iso = normaliseIsoDate(isoYmd);
       const sid = String(staffId || '').trim().toLowerCase();
       const w = String(weekdayLong || '').trim();
       if(!iso || !sid || !w) return true;
+      if(portalTermStaffOffWeekdayOnDate(iso, sid)) return false;
       if(portalStaffHasDatedRowsForIso(iso, sid)) return true;
+      if(portalStaffClientSessionsOnCalendarDate(iso, w, sid)) return true;
       if(!portalStaffHasDatedWeekdaySnapshots(sid, w)) return true;
       const anchor = new Date(iso + 'T12:00:00');
       const model = (typeof sessionsModel !== 'undefined' && Array.isArray(sessionsModel)) ? sessionsModel : [];
@@ -13994,6 +14027,7 @@
     function portalTermCalendarDayIsRed(year, monthIndex, day, staffId, weekStartStrings){
       if(isHalfTermDay(year, monthIndex, day, weekStartStrings)) return true;
       const iso = termCalendarDateKey(year, monthIndex, day);
+      if(staffId && portalTermStaffOffWeekdayOnDate(iso, staffId)) return true;
       return Boolean(staffId && portalTermStaffAwayOnDate(iso, staffId));
     }
     function portalTermStaffAwayOnDate(iso, staffId){
@@ -14089,17 +14123,15 @@
       if(explicit === 'cancelled') return 'cancelled';
       if(explicit === 'late') return 'late';
       const staffId = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
-      const dayWordEarly = new Date(key + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
-      const rosterApplies = !staffId || typeof portalStaffRosterAppliesOnCalendarDate !== 'function'
-        || portalStaffRosterAppliesOnCalendarDate(key, dayWordEarly, staffId);
-      if(!rosterApplies) return 'pending';
-      if(staffId && portalTermIsBeforeCurrentWeek(key)
-        && typeof portalTermExportMarksDayComplete === 'function'
-        && portalTermExportMarksDayComplete(key, staffId)){
+      const dayWord = new Date(key + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
+      if(staffId && portalTermStaffOffWeekdayOnDate(key, staffId)) return 'pending';
+      if(staffId && typeof portalTermExportMarksDayComplete === 'function'
+        && portalTermExportMarksDayComplete(key, staffId)
+        && typeof portalTermExportCountsAsWorkedDay === 'function'
+        && portalTermExportCountsAsWorkedDay(key, staffId, dayWord)){
         return 'complete';
       }
       if(staffId && portalTermIsBeforeCurrentWeek(key) && key <= todayKey){
-        const dayWord = new Date(key + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
         const cur = new Date(key + 'T12:00:00');
         const isReal = function(sess){
           const st = String(sess.status || '').toLowerCase();
@@ -14125,6 +14157,20 @@
       }
       if(explicit === 'pending') return 'pending';
       return 'pending';
+    }
+    /** Export says complete and this day counts as worked (not a stray Saturday before Summer Term 2). */
+    function portalTermExportCountsAsWorkedDay(iso, staffId, weekdayLong){
+      if(typeof portalTermExportMarksDayComplete !== 'function'
+        || !portalTermExportMarksDayComplete(iso, staffId)){
+        return false;
+      }
+      if(portalStaffClientSessionsOnCalendarDate(iso, weekdayLong, staffId)) return true;
+      if(portalStaffHasDatedRowsForIso(iso, staffId)) return true;
+      const wd = new Date(String(iso).slice(0, 10) + 'T12:00:00').getDay();
+      const t = window.PORTAL_TERM_FROM_TIMETABLE;
+      const resume = normaliseIsoDate(t && t.termResumeDate) || '2026-06-01';
+      if(wd === 6 && String(iso).slice(0, 10) < resume) return false;
+      return true;
     }
     /** Export-only: day green when portal feedback/status says done (even if roster row missing for that date). */
     function portalTermExportMarksDayComplete(iso, staffId){
@@ -14153,8 +14199,7 @@
     /** Before this calendar week: green when export or in-day sessions say done (not orange/blue for old work). */
     function portalTermApplyHistoricalDayGreen(iso, staffId, dayWord, key, relAll, relFb, cur, fbMap){
       if(!portalTermIsBeforeCurrentWeek(iso)) return;
-      if(typeof portalStaffRosterAppliesOnCalendarDate === 'function'
-        && !portalStaffRosterAppliesOnCalendarDate(iso, dayWord, staffId)) return;
+      if(portalTermStaffOffWeekdayOnDate(iso, staffId)) return;
       if(typeof portalTermExportMarksDayComplete === 'function'
         && portalTermExportMarksDayComplete(iso, staffId)){
         fbMap[key] = 'complete';
@@ -14216,12 +14261,7 @@
         }
         const dayWord = cur.toLocaleDateString('en-GB', { weekday: 'long' });
         const key = termCalendarDateKey(cur.getFullYear(), cur.getMonth(), cur.getDate());
-        if(portalTermStaffAwayOnDate(key, staffId)){
-          cur.setDate(cur.getDate() + 1);
-          continue;
-        }
-        if(typeof portalStaffRosterAppliesOnCalendarDate === 'function'
-          && !portalStaffRosterAppliesOnCalendarDate(key, dayWord, staffId)){
+        if(portalTermStaffAwayOnDate(key, staffId) || portalTermStaffOffWeekdayOnDate(key, staffId)){
           cur.setDate(cur.getDate() + 1);
           continue;
         }
@@ -14260,6 +14300,10 @@
           continue;
         }
         if(!relAll.length){
+          if(key <= todayKey && typeof portalTermExportCountsAsWorkedDay === 'function'
+            && portalTermExportCountsAsWorkedDay(key, staffId, dayWord)){
+            fbMap[key] = 'complete';
+          }
           cur.setDate(cur.getDate() + 1);
           continue;
         }
@@ -14542,12 +14586,17 @@
           const dayWordRoster = dt.toLocaleDateString('en-GB', { weekday: 'long' });
           const rosterApplies = !termStaffId || typeof portalStaffRosterAppliesOnCalendarDate !== 'function'
             || portalStaffRosterAppliesOnCalendarDate(isoKey, dayWordRoster, termStaffId);
-          const isWorked = worked.includes(w) && rosterApplies;
+          const todayKeyGrid = portalTermLocalYmdFromMs(termCalendarNowMs());
+          const exportWorked = termStaffId && isoKey <= todayKeyGrid
+            && typeof portalTermExportCountsAsWorkedDay === 'function'
+            && portalTermExportCountsAsWorkedDay(isoKey, termStaffId, dayWordRoster);
+          const isWorked = worked.includes(w) && (rosterApplies || exportWorked);
           let cls = 'term-cal-day';
           let label;
           if(half){
             cls += ' half-term';
-            label = staffAway ? `${day}, not on duty` : `${day}, half term`;
+            const offWd = termStaffId && portalTermStaffOffWeekdayOnDate(isoKey, termStaffId);
+            label = offWd ? `${day}, not scheduled this term` : (staffAway ? `${day}, not on duty` : `${day}, half term`);
           } else if(isWorked){
             const dayWord = dt.toLocaleDateString('en-GB', { weekday: 'long' });
             const dayFlags = portalDayOverrideBadgeFlags(dayWord, isoKey);
