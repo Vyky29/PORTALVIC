@@ -38,6 +38,14 @@
     return rosterKey.indexOf(statusKey) >= 0 || statusKey.indexOf(rosterKey) >= 0;
   }
 
+  function staffOwnsStatusRow(staffId, st) {
+    if (!st) return false;
+    return (
+      staffOwnsInstructor(staffId, st.instructor) ||
+      staffOwnsInstructor(staffId, st.matchedFeedbackBy)
+    );
+  }
+
   function statusRowsForStaffDate(iso, staffId) {
     const src =
       typeof window !== "undefined" && window.SESSION_FEEDBACK_STATUS_PORTAL_SOURCE;
@@ -46,7 +54,7 @@
     return src.rows.filter(function (st) {
       return (
         String(st.date || "").trim().substring(0, 10) === day &&
-        staffOwnsInstructor(staffId, st.instructor)
+        staffOwnsStatusRow(staffId, st)
       );
     });
   }
@@ -111,12 +119,36 @@
     return roster;
   }
 
+  /**
+   * Day-level completion from portal exports only (ignores roster client-id matching).
+   * @returns {{ applicable: number, unresolved: number } | null} null = no export rows for this day
+   */
+  function dayFeedbackCountsFromPortalExports(iso, staffId) {
+    const status = statusRowsForStaffDate(iso, staffId);
+    if (status.length) {
+      let unresolved = 0;
+      status.forEach(function (st) {
+        if (!statusRowDone(st)) unresolved++;
+      });
+      return { applicable: status.length, unresolved: unresolved };
+    }
+    const sub = submittedRowsForStaffDate(iso, staffId);
+    if (sub.length) {
+      return { applicable: sub.length, unresolved: 0 };
+    }
+    return null;
+  }
+
   function sessionComplete(iso, staffId, s, clientNotesById, mergedRec) {
     const rec = mergedRec || {};
     if (rec.feedbackDone || rec.absent || rec.cancelled) return true;
     const status = statusRowsForStaffDate(iso, staffId);
     const stHit = status.find(function (st) {
-      return clientMatch(st, s, clientNotesById) && statusRowDone(st);
+      return (
+        staffOwnsStatusRow(staffId, st) &&
+        clientMatch(st, s, clientNotesById) &&
+        statusRowDone(st)
+      );
     });
     if (stHit) return true;
     const sub = submittedRowsForStaffDate(iso, staffId);
@@ -190,6 +222,7 @@
     statusRowsForStaffDate: statusRowsForStaffDate,
     submittedRowsForStaffDate: submittedRowsForStaffDate,
     termSessionsForDate: termSessionsForDate,
+    dayFeedbackCountsFromPortalExports: dayFeedbackCountsFromPortalExports,
     sessionComplete: sessionComplete,
     metricsForClient: metricsForClient,
     portalFeedbackRowsForClientName: portalFeedbackRowsForClientName,

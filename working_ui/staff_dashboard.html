@@ -6491,9 +6491,9 @@
 
   <script src="/portal/term_from_timetable.js"></script>
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js"></script>
-  <script src="/portal/session_feedback_portal_data.js?v=20260519-portal-fb"></script>
-  <script src="/portal/session_feedback_status_portal_data.js?v=20260519-portal-fb"></script>
-  <script src="/portal/staff_portal_feedback_bridge.js?v=20260519-portal-fb"></script>
+  <script src="/portal/session_feedback_portal_data.js?v=20260519-portal-day"></script>
+  <script src="/portal/session_feedback_status_portal_data.js?v=20260519-portal-day"></script>
+  <script src="/portal/staff_portal_feedback_bridge.js?v=20260519-portal-day"></script>
   <script src="/portal/staff_dashboard_portal_roster_source.js"></script>
   <script src="/portal/clients_info_embed.js"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js"></script>
@@ -13844,7 +13844,19 @@
           continue;
         }
         endMap[key] = new Date(maxEnd).toISOString();
-        if(!relFb.length){
+        const portalDayCounts = (typeof window !== 'undefined' && window.PortalStaffFeedbackBridge
+          && typeof window.PortalStaffFeedbackBridge.dayFeedbackCountsFromPortalExports === 'function')
+          ? window.PortalStaffFeedbackBridge.dayFeedbackCountsFromPortalExports(key, staffId)
+          : null;
+        if(portalDayCounts){
+          if(portalDayCounts.applicable === 0){
+            fbMap[key] = 'pending';
+          } else if(portalDayCounts.unresolved === 0){
+            fbMap[key] = 'complete';
+          } else {
+            fbMap[key] = termCalendarNowMs() > maxEnd ? 'late' : 'pending';
+          }
+        } else if(!relFb.length){
           fbMap[key] = termCalendarNowMs() > maxEnd ? 'late' : 'pending';
         } else {
           if(key === todayKey){
@@ -15655,7 +15667,7 @@
           var d = document.createElement('div');
           d.id = 'portalP1DeployFingerprint';
           d.setAttribute('aria-hidden', 'true');
-          d.textContent = 'P1 BUILD 20260519 PORTAL-FB';
+          d.textContent = 'P1 BUILD 20260519 PORTAL-DAY';
           d.style.cssText = 'position:fixed;bottom:8px;right:8px;z-index:2147483647;margin:0;padding:4px 6px;font:10px/1.2 ui-monospace,Menlo,Consolas,monospace;color:#0c1b2e;background:rgba(255,255,255,.92);border:1px solid rgba(12,27,46,.2);pointer-events:none;';
           (document.body || document.documentElement).appendChild(d);
         }
