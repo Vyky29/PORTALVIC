@@ -6523,6 +6523,13 @@
       const pad = n => String(n).padStart(2, '0');
       return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
     }
+    /** DD/MM/YYYY — same numeric style as the live topbar date pill (`topbarDateLineYmd`). */
+    function portalFormatPortalDateDdMmYyyy(dateObj){
+      return typeof portalFormatTopbarDateNumericFromDate === 'function'
+        ? portalFormatTopbarDateNumericFromDate(dateObj)
+        : '';
+    }
+    try{ window.portalFormatPortalDateDdMmYyyy = portalFormatPortalDateDdMmYyyy; }catch(_){}
     function portalFormatTopbarTimeFromDate(dateObj){
       const d = dateObj instanceof Date ? dateObj : new Date();
       const pad = n => String(n).padStart(2, '0');
@@ -7561,10 +7568,11 @@
       }catch(_){ return null; }
     }
     function portalFormatTodaySectionCompactDate(d){
-      const pad = n => String(n).padStart(2, '0');
       const wk = d.toLocaleDateString('en-GB', { weekday: 'long' });
-      const yy = pad(d.getFullYear() % 100);
-      return `${wk} ${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${yy}`;
+      const num = typeof portalFormatPortalDateDdMmYyyy === 'function'
+        ? portalFormatPortalDateDdMmYyyy(d)
+        : '';
+      return num ? `${wk} ${num}` : wk;
     }
     function portalFormatHistoricalReviewDayHeading(){
       return portalTodaySectionTitleText();
@@ -7618,8 +7626,8 @@
       if(!raw) return 'No upcoming sessions';
       const dt = raw instanceof Date ? raw : new Date(raw);
       const w = dt.toLocaleDateString('en-GB', { weekday: 'long' });
-      const rest = dt.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-      return `${w}, ${rest}`;
+      const num = typeof portalFormatPortalDateDdMmYyyy === 'function' ? portalFormatPortalDateDdMmYyyy(dt) : '';
+      return num ? `${w} ${num}` : w;
     }
 
     /* Sessions + clients: staff_dashboard_spreadsheet_bundle.js (export of machine-readable xlsx). */
@@ -11769,23 +11777,31 @@
       });
     }
 
-    /** Selected-day session list (overview “Today” block): anchor = `getViewAnchorCalendarDate(DEMO_VIEW_DAY)` — live calendar or Week/Term URL date lock. */
-    function buildSelectedDayViewFromLauraModel(modelOverride){
+    /** Selected-day session list (overview “Today” block): anchor = `getViewAnchorCalendarDate(DEMO_VIEW_DAY)` — live calendar or Week/Term URL date lock. Optional `calendarIsoOverride` (YYYY-MM-DD) pins an exact day (next-session preview). */
+    function buildSelectedDayViewFromLauraModel(modelOverride, calendarIsoOverride){
       const viewDay = String(DEMO_VIEW_DAY).trim();
       const staffId = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
       const _rtPool = String(staffRoleTrackForTodayBuild() || 'swimming').toLowerCase().replace(/[\s_-]+/g,'');
       const supportHidePoolNote = _rtPool === 'support' || _rtPool === 'supportlead';
-      const anchor = getViewAnchorCalendarDate(viewDay);
-      let sessionDateKey = typeof portalIsoYmdFromDate === 'function'
-        ? portalIsoYmdFromDate(anchor)
-        : `${anchor.getFullYear()}-${String(anchor.getMonth() + 1).padStart(2, '0')}-${String(anchor.getDate()).padStart(2, '0')}`;
+      const isoPin = String(calendarIsoOverride || '').trim().slice(0, 10);
+      const useIsoPin = /^\d{4}-\d{2}-\d{2}$/.test(isoPin);
+      let anchor = null;
+      if(useIsoPin && typeof portalParseIsoDateLocal === 'function'){
+        anchor = portalParseIsoDateLocal(isoPin);
+      }
+      if(!anchor || isNaN(anchor.getTime())) anchor = getViewAnchorCalendarDate(viewDay);
+      let sessionDateKey = useIsoPin
+        ? isoPin
+        : (typeof portalIsoYmdFromDate === 'function'
+          ? portalIsoYmdFromDate(anchor)
+          : `${anchor.getFullYear()}-${String(anchor.getMonth() + 1).padStart(2, '0')}-${String(anchor.getDate()).padStart(2, '0')}`);
       const anchorDayWord = anchor && !isNaN(anchor.getTime())
         ? anchor.toLocaleDateString('en-GB', { weekday: 'long' })
         : viewDay;
       const baseModel = (Array.isArray(modelOverride) && modelOverride.length)
         ? modelOverride
         : (Array.isArray(sessionsModel) ? sessionsModel : []);
-      if(staffId && baseModel.length){
+      if(staffId && baseModel.length && !useIsoPin){
         const hasStaffOnIso = baseModel.some(function(s){
           return String(s.staffId || '').toLowerCase() === staffId
             && normaliseIsoDate(s.session_date || s.sessionDate) === sessionDateKey;
@@ -12337,10 +12353,8 @@
     function portalFormatNextSessionSectionHeading(sessionDate){
       const d = sessionDate instanceof Date && !isNaN(sessionDate.getTime()) ? sessionDate : null;
       if(!d) return 'NEXT SESSION';
-      const dd = d.getDate();
-      const mm = d.getMonth() + 1;
-      const yy = String(d.getFullYear() % 100);
-      return `NEXT SESSION ${dd}/${mm}/${yy}`;
+      const num = typeof portalFormatPortalDateDdMmYyyy === 'function' ? portalFormatPortalDateDdMmYyyy(d) : '';
+      return num ? `NEXT SESSION ${num}` : 'NEXT SESSION';
     }
     function portalIsViewingLiveCalendarToday(){
       if(typeof portalStaffIsHistoricalReviewDayMode === 'function' && portalStaffIsHistoricalReviewDayMode()) return false;
@@ -12374,37 +12388,9 @@
     function portalBuildTodayRowsForIso(isoYmd){
       const iso = String(isoYmd || '').trim().slice(0, 10);
       if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return [];
-      const dt = typeof portalParseIsoDateLocal === 'function' ? portalParseIsoDateLocal(iso) : null;
-      if(!dt || isNaN(dt.getTime())) return [];
-      const dayWord = dt.toLocaleDateString('en-GB', { weekday: 'long' });
-      const prevDay = DEMO_VIEW_DAY;
-      const prevIso = String(typeof __PORTAL_REVIEW_DATE_URL_LOCK !== 'undefined' ? __PORTAL_REVIEW_DATE_URL_LOCK : (typeof window !== 'undefined' && window.__PORTAL_REVIEW_DATE_URL_LOCK) || '').trim();
-      DEMO_VIEW_DAY = dayWord;
-      try{ window.DEMO_VIEW_DAY = dayWord; }catch(_){}
-      if(typeof portalSetReviewDateUrlLock === 'function') portalSetReviewDateUrlLock(iso);
-      else{
-        __PORTAL_REVIEW_DATE_URL_LOCK = iso;
-        try{ window.__PORTAL_REVIEW_DATE_URL_LOCK = iso; }catch(_){}
-      }
-      let rows = [];
       try{
-        rows = buildSelectedDayViewFromLauraModel() || [];
-      }finally{
-        DEMO_VIEW_DAY = prevDay;
-        try{ window.DEMO_VIEW_DAY = prevDay; }catch(_){}
-        if(prevIso){
-          if(typeof portalSetReviewDateUrlLock === 'function') portalSetReviewDateUrlLock(prevIso);
-          else{
-            __PORTAL_REVIEW_DATE_URL_LOCK = prevIso;
-            try{ window.__PORTAL_REVIEW_DATE_URL_LOCK = prevIso; }catch(_){}
-          }
-        }else if(typeof portalClearReviewDateUrlLock === 'function') portalClearReviewDateUrlLock();
-        else{
-          __PORTAL_REVIEW_DATE_URL_LOCK = '';
-          try{ window.__PORTAL_REVIEW_DATE_URL_LOCK = ''; }catch(_){}
-        }
-      }
-      return rows;
+        return buildSelectedDayViewFromLauraModel(null, iso) || [];
+      }catch(_){ return []; }
     }
     function portalSyncTodaySectionDisplay(modelOverride){
       const id = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
@@ -14103,10 +14089,8 @@
     }
     function formatWeekCommencingTitle(){
       const mon = mondayStartOfWeekLocal(new Date());
-      const d = mon.getDate();
-      const m = mon.getMonth() + 1;
-      const y = String(mon.getFullYear()).slice(-2);
-      return `Week (${d}/${m}/${y})`;
+      const num = typeof portalFormatPortalDateDdMmYyyy === 'function' ? portalFormatPortalDateDdMmYyyy(mon) : '';
+      return num ? `Week (${num})` : 'This week';
     }
     function renderWeekSheetTitle(){
       const caption = formatWeekCommencingTitle();
