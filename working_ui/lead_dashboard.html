@@ -6593,6 +6593,7 @@
       return new Date(d).toLocaleDateString('en-GB', { weekday: 'long' });
     }
     window.portalWeekdayLongEnGB = portalWeekdayLongEnGB;
+    var portalQuickMenuEntryMode = 'full';
     /** Weekday name for the real local calendar “today” — used for the top header only (not DEMO_VIEW_DAY / historical review). */
     function portalLiveHeaderWeekday(){
       return typeof portalWeekdayLongEnGB === 'function' ? portalWeekdayLongEnGB(new Date()) : 'Monday';
@@ -12752,7 +12753,6 @@
       }
     };
     window.portalApplyTermCalendarForStaff(STAFF_DASHBOARD_ID);
-    if(typeof window.__portalSyncNextSessionFromModel === 'function') window.__portalSyncNextSessionFromModel();
 
     (function(){
       const dw = String(DEMO_VIEW_DAY || '').trim() || new Date().toLocaleDateString('en-GB', { weekday: 'long' });
@@ -13048,7 +13048,6 @@
       wrap.hidden = true;
     }
 
-    let portalQuickMenuEntryMode = 'full'; // 'full' (dock quick menu) | 'logo-lite' (top logo)
     function portalApplyQuickMenuEntryMode(){
       const menu = document.getElementById('menuSheet');
       if(!menu) return;

@@ -6506,6 +6506,7 @@
       return new Date(d).toLocaleDateString('en-GB', { weekday: 'long' });
     }
     window.portalWeekdayLongEnGB = portalWeekdayLongEnGB;
+    var portalQuickMenuEntryMode = 'full';
     /** Weekday name for the real local calendar “today” — used for the top header only (not DEMO_VIEW_DAY / historical review). */
     function portalLiveHeaderWeekday(){
       return typeof portalWeekdayLongEnGB === 'function' ? portalWeekdayLongEnGB(new Date()) : 'Monday';
@@ -10477,6 +10478,23 @@
       const drop = Array.isArray(cfg.weekdays) ? cfg.weekdays.map(Number) : [];
       return drop.indexOf(wd) >= 0;
     }
+    const CALENDAR_WEEK_ORDER = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+    function mondayStartOfWeekLocal(d){
+      const t = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      const offsetFromMon = (t.getDay() + 6) % 7;
+      t.setDate(t.getDate() - offsetFromMon);
+      t.setHours(0, 0, 0, 0);
+      return t;
+    }
+    /** Local midnight for this weekday within the current Mon–Sun week. */
+    function calendarDateForWeekListDay(dayName){
+      const ix = CALENDAR_WEEK_ORDER.indexOf(String(dayName || '').trim());
+      if(ix < 0) return null;
+      const mon = mondayStartOfWeekLocal(new Date());
+      const cell = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + ix);
+      cell.setHours(0, 0, 0, 0);
+      return cell;
+    }
     /** Client sessions assigned to this staff on this calendar day. */
     function portalStaffClientSessionsOnCalendarDate(isoYmd, weekdayLong, staffId){
       const iso = normaliseIsoDate(isoYmd);
@@ -13182,9 +13200,6 @@
       }
     };
     window.portalApplyTermCalendarForStaff(STAFF_DASHBOARD_ID);
-    if(typeof window.__portalSyncNextSessionFromModel === 'function') window.__portalSyncNextSessionFromModel();
-
-    if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay();
 
     /** Model sessions for the demo view day and staff (same source as Today). */
     function getSessionsModelRowsForViewDay(){
@@ -13473,7 +13488,6 @@
       wrap.hidden = true;
     }
 
-    let portalQuickMenuEntryMode = 'full'; // 'full' (dock quick menu) | 'logo-lite' (top logo)
     function portalApplyQuickMenuEntryMode(){
       const menu = document.getElementById('menuSheet');
       if(!menu) return;
@@ -13736,14 +13750,6 @@
       return normalizeWeekRowSegments(item).reduce((a, s) => a + s.count, 0);
     }
 
-    const CALENDAR_WEEK_ORDER = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-    function mondayStartOfWeekLocal(d){
-      const t = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-      const offsetFromMon = (t.getDay() + 6) % 7;
-      t.setDate(t.getDate() - offsetFromMon);
-      t.setHours(0, 0, 0, 0);
-      return t;
-    }
     function isWeekListDayFinished(dayName){
       const ix = CALENDAR_WEEK_ORDER.indexOf(String(dayName || '').trim());
       if(ix < 0) return false;
@@ -13753,15 +13759,6 @@
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       return cell.getTime() < today.getTime();
-    }
-    /** Local midnight for this weekday within the current Mon–Sun week. */
-    function calendarDateForWeekListDay(dayName){
-      const ix = CALENDAR_WEEK_ORDER.indexOf(String(dayName || '').trim());
-      if(ix < 0) return null;
-      const mon = mondayStartOfWeekLocal(new Date());
-      const cell = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + ix);
-      cell.setHours(0, 0, 0, 0);
-      return cell;
     }
     /** Break / bank holiday / staff away — same red days as My Term grid; week strip shows Off. */
     function portalWeekListDayIsOff(dayName, staffId){
