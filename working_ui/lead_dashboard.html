@@ -11395,8 +11395,9 @@
         ? modelOverride
         : (Array.isArray(sessionsModel) ? sessionsModel : []);
       const todaySessionsAfterFilter = baseModel.filter(function(s){
-        return String(s.staffId || '').toLowerCase() === staffId
-          && typeof portalSessionSpreadsheetRowMatchesCalendarDate === 'function'
+        if(String(s.staffId || '').toLowerCase() !== staffId) return false;
+        if(useIsoPin) return normaliseIsoDate(s.session_date || s.sessionDate) === isoPin;
+        return typeof portalSessionSpreadsheetRowMatchesCalendarDate === 'function'
           && portalSessionSpreadsheetRowMatchesCalendarDate(s, sessionDateKey, anchorDayWord);
       });
       const primary = todaySessionsAfterFilter

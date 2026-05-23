@@ -68,6 +68,34 @@
     return !!(iso && br.from && br.to && iso >= br.from && iso <= br.to);
   }
 
+  /** From this ISO, roster rows come from the machine bundle (dated summer export), not portal status projection. */
+  function machineRosterFloorIso() {
+    var t = typeof window !== "undefined" ? window.PORTAL_TERM_FROM_TIMETABLE : null;
+    if (t) {
+      var v = normIso(t.termResumeDate) || normIso(t.termDashboardCalendarFrom);
+      if (v) return v;
+    }
+    return "2026-06-01";
+  }
+
+  function snapshotMachineRows() {
+    if (typeof window === "undefined") return [];
+    if (
+      Array.isArray(window.__STAFF_DASHBOARD_MACHINE_ROWS__) &&
+      window.__STAFF_DASHBOARD_MACHINE_ROWS__.length
+    ) {
+      return window.__STAFF_DASHBOARD_MACHINE_ROWS__;
+    }
+    var src = window.STAFF_DASHBOARD_SOURCE;
+    if (src && Array.isArray(src.rows) && src.rows.length) {
+      window.__STAFF_DASHBOARD_MACHINE_ROWS__ = src.rows.slice();
+      return window.__STAFF_DASHBOARD_MACHINE_ROWS__;
+    }
+    return [];
+  }
+
+  snapshotMachineRows();
+
   function statusRowToAdapterRow(r) {
     return {
       client_name: String(r.client || "").trim(),
@@ -143,8 +171,13 @@
     });
 
     var lastIso = projectThroughIso();
+    var rosterFloor = machineRosterFloorIso();
     var cur = REF_START;
     while (cur && cur <= lastIso) {
+      if (rosterFloor && cur >= rosterFloor) {
+        cur = isoAddDays(cur, 1);
+        continue;
+      }
       if (!isoIsTermBreak(cur)) {
         var dow = weekdayLongFromIso(cur);
         if (dow !== "Sunday") {
@@ -180,13 +213,27 @@
   function resolveStaffDashboardSource() {
     var base =
       (typeof window !== "undefined" && window.STAFF_DASHBOARD_SOURCE) || {};
+    var machineRows = snapshotMachineRows();
     var portalRows = buildRowsFromPortalStatus();
+    var floor = machineRosterFloorIso();
     if (!portalRows.length) return base;
 
+    var fromMachine = machineRows.filter(function (r) {
+      return normIso(r.session_date) >= floor;
+    });
+    var fromPortal = portalRows.filter(function (r) {
+      var iso = normIso(r.session_date);
+      return !iso || iso < floor;
+    });
+
     return Object.assign({}, base, {
-      rows: portalRows,
+      rows: fromPortal.concat(fromMachine),
       rosterSourceNote:
-        "portal status data; ref " +
+        "portal status before " +
+        floor +
+        "; machine roster from " +
+        floor +
+        "; ref " +
         REF_START +
         "–" +
         REF_END +
