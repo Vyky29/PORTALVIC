@@ -51,7 +51,6 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-07-01,Wednesday,Emmanuel,Day Centre,11 to 3,VICTOR,SwimFarm,Hub Room
 2026-07-01,Wednesday,Ikram,Day Centre,11 to 4,"LULIA, MICHELLE",SwimFarm,Hub Room
 2026-07-01,Wednesday,Fadi,Day Centre,12.30 to 3,"ROBERTO, YOUSSEF",SwimFarm,Hub Room
-2026-07-01,Wednesday,Fadi,Day Centre,12.30 to 3,ROBERTO,SwimFarm,Hub Room
 2026-07-01,Wednesday,Cyrus,Multi-Activity,4 to 4.30,JAVIER,Acton,Teaching Pool
 2026-07-01,Wednesday,NO CLIENT,Multi-Activity,4 to 4.30,YOUSSEF,Acton,Room 2
 2026-07-01,Wednesday,Tinashe,Bespoke Programme,4.15 to 6.15,"BISMARK, GIUSEPPE, JOHN",SwimFarm,Pools
@@ -94,7 +93,6 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-07-03,Friday,Emmanuel,Day Centre,11 to 3,VICTOR,SwimFarm,Hub Room
 2026-07-03,Friday,Ikram,Day Centre,11 to 4,"LULIA, MICHELLE",SwimFarm,Hub Room
 2026-07-03,Friday,Fadi,Day Centre,12.30 to 3,"ROBERTO, YOUSSEF",SwimFarm,Hub Room
-2026-07-03,Friday,Fadi,Day Centre,12.30 to 3,ROBERTO,SwimFarm,Hub Room
 2026-07-03,Friday,Adam Pi,Aquatic Activity,4 to 5.30,ROBERTO,Acton,Teaching Pool
 2026-07-03,Friday,Tinashe,Bespoke Programme,4.15 to 6.15,"BISMARK, GIUSEPPE, JOHN",SwimFarm,Pools
 2026-07-03,Friday,Amaar Ah,Aquatic Activity,5.30 to 6,ROBERTO,Acton,Teaching Pool

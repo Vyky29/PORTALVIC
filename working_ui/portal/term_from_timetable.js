@@ -13,6 +13,14 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
   "termCalendarFirstDom": {
     "3": 13
   },
+  "termDashboardCalendarYear": 2026,
+  "termDashboardCalendarMonths": [
+    5,
+    6
+  ],
+  "termDashboardCalendarFirstDom": {},
+  "termDashboardCalendarFrom": "2026-06-01",
+  "termDashboardCalendarTo": "2026-07-17",
   "firstDate": "2026-04-13",
   "lastDate": "2026-07-17",
   "termBreakFrom": "2026-05-23",
@@ -164,14 +172,6 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       6
     ]
   },
-  "termDashboardCalendarYear": 2026,
-  "termDashboardCalendarMonths": [
-    5,
-    6
-  ],
-  "termDashboardCalendarFirstDom": {},
-  "termDashboardCalendarFrom": "2026-06-01",
-  "termDashboardCalendarTo": "2026-07-17",
   "termStaffWeekdayIndicesDashboardByProfileKey": {
     "alex": [
       0

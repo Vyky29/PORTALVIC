@@ -69,7 +69,8 @@ def morning_day_centre() -> list[dict]:
         r("ACAT", "Monday", "ROBERTO", "11 to 12", service=dc, area=hub, venue=sf)
     )
 
-    for day in ("Tuesday", "Wednesday", "Thursday", "Friday"):
+    # Fadi always 12.30–15:00; Roberto every day + Youssef (Mon/Wed/Fri), Victor (Tue), Raul (Thu).
+    for day in ("Tuesday", "Thursday"):
         rows.append(
             r("Fadi", day, "ROBERTO", "12.30 to 3", service=dc, area=hub, venue=sf)
         )

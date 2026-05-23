@@ -2631,16 +2631,6 @@
     "session_date": "2026-06-03"
   },
   {
-    "client_name": "Fadi",
-    "day": "Wednesday",
-    "instructors": "ROBERTO",
-    "service": "Day Centre",
-    "area": "Hub Room",
-    "time_slot": "12.30 to 3",
-    "venue": "SwimFarm",
-    "session_date": "2026-06-03"
-  },
-  {
     "client_name": "Cyrus",
     "day": "Wednesday",
     "instructors": "JAVIER",
@@ -3054,16 +3044,6 @@
     "client_name": "Fadi",
     "day": "Friday",
     "instructors": "ROBERTO, YOUSSEF",
-    "service": "Day Centre",
-    "area": "Hub Room",
-    "time_slot": "12.30 to 3",
-    "venue": "SwimFarm",
-    "session_date": "2026-06-05"
-  },
-  {
-    "client_name": "Fadi",
-    "day": "Friday",
-    "instructors": "ROBERTO",
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "12.30 to 3",
@@ -4221,16 +4201,6 @@
     "session_date": "2026-06-10"
   },
   {
-    "client_name": "Fadi",
-    "day": "Wednesday",
-    "instructors": "ROBERTO",
-    "service": "Day Centre",
-    "area": "Hub Room",
-    "time_slot": "12.30 to 3",
-    "venue": "SwimFarm",
-    "session_date": "2026-06-10"
-  },
-  {
     "client_name": "Cyrus",
     "day": "Wednesday",
     "instructors": "JAVIER",
@@ -4644,16 +4614,6 @@
     "client_name": "Fadi",
     "day": "Friday",
     "instructors": "ROBERTO, YOUSSEF",
-    "service": "Day Centre",
-    "area": "Hub Room",
-    "time_slot": "12.30 to 3",
-    "venue": "SwimFarm",
-    "session_date": "2026-06-12"
-  },
-  {
-    "client_name": "Fadi",
-    "day": "Friday",
-    "instructors": "ROBERTO",
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "12.30 to 3",
@@ -5811,16 +5771,6 @@
     "session_date": "2026-06-17"
   },
   {
-    "client_name": "Fadi",
-    "day": "Wednesday",
-    "instructors": "ROBERTO",
-    "service": "Day Centre",
-    "area": "Hub Room",
-    "time_slot": "12.30 to 3",
-    "venue": "SwimFarm",
-    "session_date": "2026-06-17"
-  },
-  {
     "client_name": "Cyrus",
     "day": "Wednesday",
     "instructors": "JAVIER",
@@ -6234,16 +6184,6 @@
     "client_name": "Fadi",
     "day": "Friday",
     "instructors": "ROBERTO, YOUSSEF",
-    "service": "Day Centre",
-    "area": "Hub Room",
-    "time_slot": "12.30 to 3",
-    "venue": "SwimFarm",
-    "session_date": "2026-06-19"
-  },
-  {
-    "client_name": "Fadi",
-    "day": "Friday",
-    "instructors": "ROBERTO",
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "12.30 to 3",
@@ -7401,16 +7341,6 @@
     "session_date": "2026-06-24"
   },
   {
-    "client_name": "Fadi",
-    "day": "Wednesday",
-    "instructors": "ROBERTO",
-    "service": "Day Centre",
-    "area": "Hub Room",
-    "time_slot": "12.30 to 3",
-    "venue": "SwimFarm",
-    "session_date": "2026-06-24"
-  },
-  {
     "client_name": "Cyrus",
     "day": "Wednesday",
     "instructors": "JAVIER",
@@ -7824,16 +7754,6 @@
     "client_name": "Fadi",
     "day": "Friday",
     "instructors": "ROBERTO, YOUSSEF",
-    "service": "Day Centre",
-    "area": "Hub Room",
-    "time_slot": "12.30 to 3",
-    "venue": "SwimFarm",
-    "session_date": "2026-06-26"
-  },
-  {
-    "client_name": "Fadi",
-    "day": "Friday",
-    "instructors": "ROBERTO",
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "12.30 to 3",
@@ -8991,16 +8911,6 @@
     "session_date": "2026-07-01"
   },
   {
-    "client_name": "Fadi",
-    "day": "Wednesday",
-    "instructors": "ROBERTO",
-    "service": "Day Centre",
-    "area": "Hub Room",
-    "time_slot": "12.30 to 3",
-    "venue": "SwimFarm",
-    "session_date": "2026-07-01"
-  },
-  {
     "client_name": "Cyrus",
     "day": "Wednesday",
     "instructors": "JAVIER",
@@ -9414,16 +9324,6 @@
     "client_name": "Fadi",
     "day": "Friday",
     "instructors": "ROBERTO, YOUSSEF",
-    "service": "Day Centre",
-    "area": "Hub Room",
-    "time_slot": "12.30 to 3",
-    "venue": "SwimFarm",
-    "session_date": "2026-07-03"
-  },
-  {
-    "client_name": "Fadi",
-    "day": "Friday",
-    "instructors": "ROBERTO",
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "12.30 to 3",
@@ -10581,16 +10481,6 @@
     "session_date": "2026-07-08"
   },
   {
-    "client_name": "Fadi",
-    "day": "Wednesday",
-    "instructors": "ROBERTO",
-    "service": "Day Centre",
-    "area": "Hub Room",
-    "time_slot": "12.30 to 3",
-    "venue": "SwimFarm",
-    "session_date": "2026-07-08"
-  },
-  {
     "client_name": "Cyrus",
     "day": "Wednesday",
     "instructors": "JAVIER",
@@ -11004,16 +10894,6 @@
     "client_name": "Fadi",
     "day": "Friday",
     "instructors": "ROBERTO, YOUSSEF",
-    "service": "Day Centre",
-    "area": "Hub Room",
-    "time_slot": "12.30 to 3",
-    "venue": "SwimFarm",
-    "session_date": "2026-07-10"
-  },
-  {
-    "client_name": "Fadi",
-    "day": "Friday",
-    "instructors": "ROBERTO",
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "12.30 to 3",
@@ -12164,16 +12044,6 @@
     "client_name": "Fadi",
     "day": "Wednesday",
     "instructors": "ROBERTO, YOUSSEF",
-    "service": "Day Centre",
-    "area": "Hub Room",
-    "time_slot": "12.30 to 3",
-    "venue": "SwimFarm",
-    "session_date": "2026-07-15"
-  },
-  {
-    "client_name": "Fadi",
-    "day": "Wednesday",
-    "instructors": "ROBERTO",
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "12.30 to 3",
@@ -12594,16 +12464,6 @@
     "client_name": "Fadi",
     "day": "Friday",
     "instructors": "ROBERTO, YOUSSEF",
-    "service": "Day Centre",
-    "area": "Hub Room",
-    "time_slot": "12.30 to 3",
-    "venue": "SwimFarm",
-    "session_date": "2026-07-17"
-  },
-  {
-    "client_name": "Fadi",
-    "day": "Friday",
-    "instructors": "ROBERTO",
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "12.30 to 3",
@@ -12671,15 +12531,6 @@
     "client_name": "Fadi",
     "day": "Friday",
     "instructors": "ROBERTO, YOUSSEF",
-    "service": "Day Centre",
-    "area": "Hub Room",
-    "time_slot": "12.30 to 3",
-    "venue": "SwimFarm"
-  },
-  {
-    "client_name": "Fadi",
-    "day": "Friday",
-    "instructors": "ROBERTO",
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "12.30 to 3",
@@ -13886,15 +13737,6 @@
     "client_name": "Fadi",
     "day": "Wednesday",
     "instructors": "ROBERTO, YOUSSEF",
-    "service": "Day Centre",
-    "area": "Hub Room",
-    "time_slot": "12.30 to 3",
-    "venue": "SwimFarm"
-  },
-  {
-    "client_name": "Fadi",
-    "day": "Wednesday",
-    "instructors": "ROBERTO",
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "12.30 to 3",
