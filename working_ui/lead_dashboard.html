@@ -11933,6 +11933,25 @@
       const d0 = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
       return d0 === t0;
     }
+    function portalStaffTodayBlockIsOff(staffId){
+      try{
+        const sid = String(staffId || '').trim().toLowerCase();
+        if(!sid) return false;
+        if(typeof portalIsViewingLiveCalendarToday !== 'function' || !portalIsViewingLiveCalendarToday()) return false;
+        const anchor = typeof portalResolveTodaySectionCalendarDate === 'function'
+          ? portalResolveTodaySectionCalendarDate()
+          : null;
+        if(!anchor || isNaN(anchor.getTime())) return false;
+        const dayName = anchor.toLocaleDateString('en-GB', { weekday: 'long' });
+        const dd = (typeof dashboardData !== 'undefined' && dashboardData) ? dashboardData : null;
+        const halfWeeks = dd && Array.isArray(dd.termHalfTermWeekStarts) ? dd.termHalfTermWeekStarts : [];
+        if(typeof isHalfTermDay === 'function' && isHalfTermDay(anchor.getFullYear(), anchor.getMonth(), anchor.getDate(), halfWeeks)) return true;
+        const iso = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(anchor) : '';
+        if(iso && typeof portalTermStaffOffWeekdayOnDate === 'function' && portalTermStaffOffWeekdayOnDate(iso, sid)) return true;
+        if(typeof portalWeekListDayIsOff === 'function' && portalWeekListDayIsOff(dayName, sid)) return true;
+        return false;
+      }catch(_){ return false; }
+    }
     function portalBuildTodayRowsForIso(isoYmd){
       const iso = String(isoYmd || '').trim().slice(0, 10);
       if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return [];
@@ -11969,21 +11988,32 @@
       return rows;
     }
     function portalSyncTodaySectionDisplay(modelOverride){
-      const rows = typeof buildSelectedDayViewFromLauraModel === 'function'
-        ? buildSelectedDayViewFromLauraModel(modelOverride)
-        : [];
+      const id = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
+      let rows = [];
+      try{
+        rows = typeof buildSelectedDayViewFromLauraModel === 'function'
+          ? buildSelectedDayViewFromLauraModel(modelOverride)
+          : [];
+      }catch(_){ rows = []; }
       dashboardData.portalTodaySectionHeading = '';
       dashboardData.portalTodaySectionMode = 'today';
-      if(!rows.length
+      const todayOff = id && typeof portalIsViewingLiveCalendarToday === 'function' && portalIsViewingLiveCalendarToday()
+        && typeof portalStaffTodayBlockIsOff === 'function'
+        && portalStaffTodayBlockIsOff(id);
+      if(todayOff) rows = [];
+      if((!rows.length || todayOff)
         && dashboardData.portalIdentityResolved !== false
+        && typeof portalIsViewingLiveCalendarToday === 'function'
         && portalIsViewingLiveCalendarToday()){
-        const id = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
         const info = typeof window.portalFindNextSessionCalendarInfo === 'function'
           ? window.portalFindNextSessionCalendarInfo(id, new Date(), sessionsModel)
           : null;
         if(info && info.date){
           const iso = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(info.date) : '';
-          const nextRows = iso ? portalBuildTodayRowsForIso(iso) : [];
+          let nextRows = [];
+          try{
+            nextRows = iso ? portalBuildTodayRowsForIso(iso) : [];
+          }catch(_){ nextRows = []; }
           if(nextRows.length){
             dashboardData.today = nextRows;
             dashboardData.portalTodaySectionHeading = portalFormatNextSessionSectionHeading(info.date);
