@@ -7353,14 +7353,8 @@
       if(typeof getDemoDateLabel === 'function') dashboardData.dateLabel = getDemoDateLabel(DEMO_VIEW_DAY);
       if(typeof getDemoDateTopbar === 'function') dashboardData.dateTopbar = getDemoDateTopbar(DEMO_VIEW_DAY);
       hydrateSessionReviewMapFromStorage();
-      dashboardData.today = buildSelectedDayViewFromLauraModel();
+      portalSyncTodaySectionDisplay();
       if(typeof window.__portalSyncNextSessionFromModel === 'function') window.__portalSyncNextSessionFromModel();
-      (function(){
-        const dw = String(DEMO_VIEW_DAY || '').trim() || new Date().toLocaleDateString('en-GB', { weekday: 'long' });
-        dashboardData.venueMeta = dashboardData.today.length
-          ? `${dashboardData.today.length} sessions`
-          : ('No participants — ' + dw);
-      })();
       renderHeader();
       renderToday();
       renderMiniCounts();
@@ -7459,7 +7453,7 @@
         closeSheet();
         closeClientGeneralSheet();
         hydrateSessionReviewMapFromStorage();
-        dashboardData.today = buildSelectedDayViewFromLauraModel();
+        portalSyncTodaySectionDisplay();
         if(typeof window.__portalSyncNextSessionFromModel === 'function') window.__portalSyncNextSessionFromModel();
         (function(){
           const dw = String(DEMO_VIEW_DAY || '').trim() || new Date().toLocaleDateString('en-GB', { weekday: 'long' });
@@ -7593,12 +7587,9 @@
         const dd = window.dashboardData;
         dd.dateLabel = typeof getDemoDateLabel === 'function' ? getDemoDateLabel(liveHdrExit) : dd.dateLabel;
         dd.dateTopbar = typeof portalFormatTopbarDateFromDate === 'function' ? portalFormatTopbarDateFromDate(new Date()) : dd.dateTopbar;
-        dd.today = typeof buildSelectedDayViewFromLauraModel === 'function' ? buildSelectedDayViewFromLauraModel() : dd.today;
+        if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay();
+        else dd.today = typeof buildSelectedDayViewFromLauraModel === 'function' ? buildSelectedDayViewFromLauraModel() : dd.today;
         if(typeof window.__portalSyncNextSessionFromModel === 'function') window.__portalSyncNextSessionFromModel();
-        (function(){
-          const dw = String(DEMO_VIEW_DAY || '').trim() || new Date().toLocaleDateString('en-GB', { weekday: 'long' });
-          dd.venueMeta = dd.today && dd.today.length ? `${dd.today.length} sessions` : ('No participants — ' + dw);
-        })();
         const staffIdEx = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
         if(staffIdEx && typeof buildWeekRows === 'function') dd.week = buildWeekRows(staffIdEx);
       }
@@ -7609,6 +7600,8 @@
       return true;
     }
     function portalTodaySectionTitleText(){
+      const custom = dashboardData && dashboardData.portalTodaySectionHeading;
+      if(custom) return String(custom);
       const d = portalResolveTodaySectionCalendarDate();
       if(!d) return 'Today';
       const now = new Date();
@@ -8029,7 +8022,7 @@
       dashboardData.dateLabel = getDemoDateLabel(DEMO_VIEW_DAY);
       dashboardData.dateTopbar = getDemoDateTopbar(DEMO_VIEW_DAY);
       hydrateSessionReviewMapFromStorage();
-      dashboardData.today = buildSelectedDayViewFromLauraModel();
+      portalSyncTodaySectionDisplay();
       if(typeof window.__portalSyncNextSessionFromModel === 'function') window.__portalSyncNextSessionFromModel();
       (function(){
         const dw = String(DEMO_VIEW_DAY || '').trim() || new Date().toLocaleDateString('en-GB', { weekday: 'long' });
@@ -8100,7 +8093,8 @@
               const dd = window.dashboardData;
               if(typeof getDemoDateLabel === 'function') dd.dateLabel = getDemoDateLabel(reviewDayParam);
               if(typeof getDemoDateTopbar === 'function') dd.dateTopbar = getDemoDateTopbar(reviewDayParam);
-              if(typeof buildSelectedDayViewFromLauraModel === 'function') dd.today = buildSelectedDayViewFromLauraModel();
+              if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay();
+              else if(typeof buildSelectedDayViewFromLauraModel === 'function') dd.today = buildSelectedDayViewFromLauraModel();
               if(typeof window.__portalSyncNextSessionFromModel === 'function') window.__portalSyncNextSessionFromModel();
               (function(){
                 const dw = String(DEMO_VIEW_DAY || '').trim() || new Date().toLocaleDateString('en-GB', { weekday: 'long' });
@@ -8160,7 +8154,8 @@
           const liveHdr = typeof portalLiveHeaderWeekday === 'function' ? portalLiveHeaderWeekday() : todayWord;
           dd.dateLabel = typeof getDemoDateLabel === 'function' ? getDemoDateLabel(liveHdr) : dd.dateLabel;
           dd.dateTopbar = typeof portalFormatTopbarDateFromDate === 'function' ? portalFormatTopbarDateFromDate(new Date()) : dd.dateTopbar;
-          dd.today = typeof buildSelectedDayViewFromLauraModel === 'function' ? buildSelectedDayViewFromLauraModel() : dd.today;
+          if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay();
+          else dd.today = typeof buildSelectedDayViewFromLauraModel === 'function' ? buildSelectedDayViewFromLauraModel() : dd.today;
           if(typeof window.__portalSyncNextSessionFromModel === 'function') window.__portalSyncNextSessionFromModel();
           (function(){
             const dw = String(DEMO_VIEW_DAY || '').trim() || new Date().toLocaleDateString('en-GB', { weekday: 'long' });
@@ -12321,6 +12316,92 @@
     try{ window.buildTodayFromLauraModel = buildTodayFromLauraModel; }catch(_){}
     try{ window.buildSelectedDayViewFromLauraModel = buildSelectedDayViewFromLauraModel; }catch(_){}
 
+    function portalFormatNextSessionSectionHeading(sessionDate){
+      const d = sessionDate instanceof Date && !isNaN(sessionDate.getTime()) ? sessionDate : null;
+      if(!d) return 'NEXT SESSION';
+      const dd = d.getDate();
+      const mm = d.getMonth() + 1;
+      const yy = String(d.getFullYear() % 100);
+      return `NEXT SESSION ${dd}/${mm}/${yy}`;
+    }
+    function portalIsViewingLiveCalendarToday(){
+      if(typeof portalStaffIsHistoricalReviewDayMode === 'function' && portalStaffIsHistoricalReviewDayMode()) return false;
+      const d = typeof portalResolveTodaySectionCalendarDate === 'function' ? portalResolveTodaySectionCalendarDate() : null;
+      if(!d || isNaN(d.getTime())) return false;
+      const now = new Date();
+      const t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      const d0 = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+      return d0 === t0;
+    }
+    function portalBuildTodayRowsForIso(isoYmd){
+      const iso = String(isoYmd || '').trim().slice(0, 10);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return [];
+      const dt = typeof portalParseIsoDateLocal === 'function' ? portalParseIsoDateLocal(iso) : null;
+      if(!dt || isNaN(dt.getTime())) return [];
+      const dayWord = dt.toLocaleDateString('en-GB', { weekday: 'long' });
+      const prevDay = DEMO_VIEW_DAY;
+      const prevIso = String(typeof __PORTAL_REVIEW_DATE_URL_LOCK !== 'undefined' ? __PORTAL_REVIEW_DATE_URL_LOCK : (typeof window !== 'undefined' && window.__PORTAL_REVIEW_DATE_URL_LOCK) || '').trim();
+      DEMO_VIEW_DAY = dayWord;
+      try{ window.DEMO_VIEW_DAY = dayWord; }catch(_){}
+      if(typeof portalSetReviewDateUrlLock === 'function') portalSetReviewDateUrlLock(iso);
+      else{
+        __PORTAL_REVIEW_DATE_URL_LOCK = iso;
+        try{ window.__PORTAL_REVIEW_DATE_URL_LOCK = iso; }catch(_){}
+      }
+      let rows = [];
+      try{
+        rows = buildSelectedDayViewFromLauraModel() || [];
+      }finally{
+        DEMO_VIEW_DAY = prevDay;
+        try{ window.DEMO_VIEW_DAY = prevDay; }catch(_){}
+        if(prevIso){
+          if(typeof portalSetReviewDateUrlLock === 'function') portalSetReviewDateUrlLock(prevIso);
+          else{
+            __PORTAL_REVIEW_DATE_URL_LOCK = prevIso;
+            try{ window.__PORTAL_REVIEW_DATE_URL_LOCK = prevIso; }catch(_){}
+          }
+        }else if(typeof portalClearReviewDateUrlLock === 'function') portalClearReviewDateUrlLock();
+        else{
+          __PORTAL_REVIEW_DATE_URL_LOCK = '';
+          try{ window.__PORTAL_REVIEW_DATE_URL_LOCK = ''; }catch(_){}
+        }
+      }
+      return rows;
+    }
+    function portalSyncTodaySectionDisplay(modelOverride){
+      const rows = typeof buildSelectedDayViewFromLauraModel === 'function'
+        ? buildSelectedDayViewFromLauraModel(modelOverride)
+        : [];
+      dashboardData.portalTodaySectionHeading = '';
+      dashboardData.portalTodaySectionMode = 'today';
+      if(!rows.length
+        && dashboardData.portalIdentityResolved !== false
+        && portalIsViewingLiveCalendarToday()){
+        const id = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
+        const info = typeof window.portalFindNextSessionCalendarInfo === 'function'
+          ? window.portalFindNextSessionCalendarInfo(id, new Date(), sessionsModel)
+          : null;
+        if(info && info.date){
+          const iso = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(info.date) : '';
+          const nextRows = iso ? portalBuildTodayRowsForIso(iso) : [];
+          if(nextRows.length){
+            dashboardData.today = nextRows;
+            dashboardData.portalTodaySectionHeading = portalFormatNextSessionSectionHeading(info.date);
+            dashboardData.portalTodaySectionMode = 'next_session';
+            dashboardData.venueMeta = nextRows.length === 1 ? '1 participant' : (nextRows.length + ' participants');
+            return nextRows;
+          }
+        }
+      }
+      dashboardData.today = rows;
+      const dw = String(DEMO_VIEW_DAY || '').trim() || new Date().toLocaleDateString('en-GB', { weekday: 'long' });
+      dashboardData.venueMeta = rows.length
+        ? (rows.length === 1 ? '1 participant' : (rows.length + ' participants'))
+        : ('No participants — ' + dw);
+      return rows;
+    }
+    try{ window.portalSyncTodaySectionDisplay = portalSyncTodaySectionDisplay; }catch(_){}
+
     /** Staff/lead topbar brand orbits: `logoamarillo.png` while identity loads or when both announcement+reminder; `ANNOUNCEMENTES_LOGO.png` announcements only; `logoNaranja.png` reminders only; `logoazul.png` when clear. Dock centre stays `portal/F-02-1.png`. */
     const PORTAL_STAFF_TOPBAR_LOGO_IDLE_URL = '/portal/F-02-1.png';
     const PORTAL_STAFF_TOPBAR_LOGO_CLEAR_URL = '/portal/F-02-1.png';
@@ -12395,6 +12476,8 @@
       today: [],
       tomorrow: [],
       nextSessionCalendarDate: null,
+      portalTodaySectionHeading: '',
+      portalTodaySectionMode: 'today',
       week: [],
       /** Term grid: months/range filled from term_from_timetable.js; sample feedback only for demo usernames (see portalApplyTermCalendarForStaff). */
       termName: 'Summer Term 2026',
@@ -12862,6 +12945,7 @@
             if(ht) continue;
           }
           if(iso && typeof portalTermStaffAwayOnDate === 'function' && portalTermStaffAwayOnDate(iso, id)) continue;
+          if(iso && typeof portalWeekListDayIsOff === 'function' && portalWeekListDayIsOff(wname, id)) continue;
           var has = modelSrc.some(function(s){
             if(String(s.staffId || '').toLowerCase() !== id) return false;
             if(!portalIsRealClientSession(s, iso)) return false;
@@ -12993,6 +13077,7 @@
         dashboardData.tomorrow = portalBuildNextSessionRows(id, new Date(), sessionsModel, clientNotesById);
       };
       window.__portalIsRealClientSession = portalIsRealClientSession;
+      window.portalFindNextSessionCalendarInfo = portalFindNextSessionCalendarInfo;
     })();
 
     /** Usernames that see sample term colours / demo TERM state (`demo` only; everyone else uses rota + timetable). */
@@ -13068,12 +13153,7 @@
     window.portalApplyTermCalendarForStaff(STAFF_DASHBOARD_ID);
     if(typeof window.__portalSyncNextSessionFromModel === 'function') window.__portalSyncNextSessionFromModel();
 
-    (function(){
-      const dw = String(DEMO_VIEW_DAY || '').trim() || new Date().toLocaleDateString('en-GB', { weekday: 'long' });
-      dashboardData.venueMeta = dashboardData.today.length
-        ? `${dashboardData.today.length} sessions`
-        : ('No participants — ' + dw);
-    })();
+    if(typeof portalSyncTodaySectionDisplay === 'function') portalSyncTodaySectionDisplay();
 
     /** Model sessions for the demo view day and staff (same source as Today). */
     function getSessionsModelRowsForViewDay(){
@@ -16052,14 +16132,8 @@
       dashboardData.week = [];
       dashboardData.venueMeta = '';
     }else{
-      dashboardData.today = buildSelectedDayViewFromLauraModel();
+      portalSyncTodaySectionDisplay();
       if(typeof window.__portalSyncNextSessionFromModel === 'function') window.__portalSyncNextSessionFromModel();
-      (function(){
-        const dw = String(DEMO_VIEW_DAY || '').trim() || new Date().toLocaleDateString('en-GB', { weekday: 'long' });
-        dashboardData.venueMeta = dashboardData.today.length
-          ? `${dashboardData.today.length} sessions`
-          : ('No participants — ' + dw);
-      })();
       /* Pending counts need the real staff id from Supabase rehydrate; skip until then when landing from session feedback. */
       if(!(__postFbLand && __postFbLand.appliedReviewDay)){
         var _portalSkipPendingDayReset = false;
@@ -16555,7 +16629,7 @@
         if(typeof rebuildTermShiftAndFeedbackFromSessionModel === "function"){
           rebuildTermShiftAndFeedbackFromSessionModel();
         }
-        dashboardData.today = buildSelectedDayViewFromLauraModel(sessionsModel);
+        portalSyncTodaySectionDisplay(sessionsModel);
         if (typeof window.__portalSyncNextSessionFromModel === "function") window.__portalSyncNextSessionFromModel();
         dashboardData.week = buildWeekRows(staffId);
         (function(){
@@ -16569,7 +16643,7 @@
           }catch(_e){}
         }
         console.log("TODAY USING MODEL", sessionsModel);
-        dashboardData.today = buildSelectedDayViewFromLauraModel(sessionsModel);
+        portalSyncTodaySectionDisplay(sessionsModel);
         console.log("TODAY DATA FINAL", dashboardData.today);
         if (typeof window.__portalSyncNextSessionFromModel === "function") window.__portalSyncNextSessionFromModel();
         dashboardData.week = buildWeekRows(staffId);
@@ -16596,7 +16670,7 @@
               dashboardData.dateLabel = getDemoDateLabel(DEMO_VIEW_DAY);
               dashboardData.dateTopbar = getDemoDateTopbar(DEMO_VIEW_DAY);
             }
-            dashboardData.today = buildSelectedDayViewFromLauraModel();
+            portalSyncTodaySectionDisplay();
             if (typeof window.__portalSyncNextSessionFromModel === "function") window.__portalSyncNextSessionFromModel();
             dashboardData.week = buildWeekRows(staffId);
             (function(){
@@ -16627,13 +16701,9 @@
         }
         function _portalStaffRebuildAfterOverridesFetch(staffId){
           if(typeof buildSelectedDayViewFromLauraModel !== "function") return;
-          dashboardData.today = buildSelectedDayViewFromLauraModel();
+          portalSyncTodaySectionDisplay();
           if (typeof window.__portalSyncNextSessionFromModel === "function") window.__portalSyncNextSessionFromModel();
           dashboardData.week = buildWeekRows(staffId);
-          (function(){
-            var dw = String(DEMO_VIEW_DAY || "").trim() || new Date().toLocaleDateString("en-GB", { weekday: "long" });
-            dashboardData.venueMeta = dashboardData.today.length ? (dashboardData.today.length + " sessions") : ("No participants — " + dw);
-          })();
           if (typeof window.portalApplyTermCalendarForStaff === "function") window.portalApplyTermCalendarForStaff(staffId);
           try{
             var lockDay3 = String(window.__PORTAL_REVIEW_DAY_URL_LOCK || '').trim();
@@ -16644,7 +16714,7 @@
                 dashboardData.dateLabel = getDemoDateLabel(DEMO_VIEW_DAY);
                 dashboardData.dateTopbar = getDemoDateTopbar(DEMO_VIEW_DAY);
               }
-              dashboardData.today = buildSelectedDayViewFromLauraModel();
+              portalSyncTodaySectionDisplay();
               if (typeof window.__portalSyncNextSessionFromModel === "function") window.__portalSyncNextSessionFromModel();
               dashboardData.week = buildWeekRows(staffId);
               (function(){
