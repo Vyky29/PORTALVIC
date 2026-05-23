@@ -163,5 +163,126 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       5,
       6
     ]
+  },
+  "termDashboardCalendarYear": 2026,
+  "termDashboardCalendarMonths": [
+    5,
+    6
+  ],
+  "termDashboardCalendarFirstDom": {},
+  "termDashboardCalendarFrom": "2026-06-01",
+  "termDashboardCalendarTo": "2026-07-17",
+  "termStaffWeekdayIndicesDashboardByProfileKey": {
+    "alex": [
+      0
+    ],
+    "angel": [
+      1,
+      2
+    ],
+    "aurora": [
+      0,
+      2,
+      4
+    ],
+    "berta": [
+      0,
+      3
+    ],
+    "bismark": [
+      0,
+      1,
+      3,
+      5
+    ],
+    "carlos": [
+      0,
+      1,
+      3,
+      5
+    ],
+    "dan": [
+      0,
+      1,
+      3,
+      4
+    ],
+    "giuseppe": [
+      0,
+      1,
+      3,
+      5
+    ],
+    "godsway": [
+      0,
+      3
+    ],
+    "javi": [
+      0
+    ],
+    "javier": [
+      0,
+      2,
+      3,
+      4
+    ],
+    "john": [
+      0,
+      1,
+      3,
+      5
+    ],
+    "lulia": [
+      1,
+      2,
+      3,
+      5
+    ],
+    "luliya": [
+      1,
+      2,
+      3,
+      5
+    ],
+    "michelle": [
+      1,
+      2,
+      3,
+      5
+    ],
+    "raul": [
+      1,
+      3,
+      4,
+      5
+    ],
+    "roberto": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "sandra": [
+      1
+    ],
+    "simon": [
+      4
+    ],
+    "victor": [
+      1,
+      2,
+      3,
+      5
+    ],
+    "youssef": [
+      0,
+      1,
+      2,
+      3,
+      5,
+      6
+    ]
   }
 };

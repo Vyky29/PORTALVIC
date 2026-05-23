@@ -6490,6 +6490,7 @@
   </section>
 
   <script src="/portal/term_from_timetable.js"></script>
+  <script src="/portal/term_calendar_dashboard_shared.js"></script>
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js"></script>
   <script src="/portal/session_feedback_portal_data.js?v=20260522"></script>
   <script src="/portal/session_feedback_status_portal_data.js?v=20260522"></script>
@@ -13001,27 +13002,24 @@
     window.portalApplyTermCalendarForStaff = function(staffId){
       const id = String(staffId || '').trim().toLowerCase();
       const t = window.PORTAL_TERM_FROM_TIMETABLE;
-      if(t && typeof t === 'object'){
+      const ptd = window.PortalTermCalendarDashboard;
+      if(ptd && typeof ptd.applyView === 'function'){
+        ptd.applyView(dashboardData);
+      } else if(t && typeof t === 'object'){
         if(t.termName) dashboardData.termName = t.termName;
-        if(t.termCalendarYear != null) dashboardData.termCalendarYear = Number(t.termCalendarYear);
-        if(Array.isArray(t.termCalendarMonths) && t.termCalendarMonths.length){
-          dashboardData.termCalendarMonths = t.termCalendarMonths.map(Number);
-        }
-        if(t.termCalendarFirstDom && typeof t.termCalendarFirstDom === 'object'){
-          const fd = {};
-          Object.keys(t.termCalendarFirstDom).forEach(k => { fd[k] = Number(t.termCalendarFirstDom[k]); });
-          dashboardData.termCalendarFirstDom = fd;
-        }
-        if(Array.isArray(t.termHalfTermWeekStarts) && t.termHalfTermWeekStarts.length){
-          dashboardData.termHalfTermWeekStarts = t.termHalfTermWeekStarts.map(String);
-        } else {
-          dashboardData.termHalfTermWeekStarts = [];
-        }
+        dashboardData.termCalendarYear = 2026;
+        dashboardData.termCalendarMonths = [5, 6];
+        dashboardData.termCalendarFirstDom = {};
+        dashboardData.termDashboardCalendarFrom = '2026-06-01';
+        dashboardData.termDashboardCalendarTo = '2026-07-17';
+        dashboardData.termHalfTermWeekStarts = [];
       } else {
         dashboardData.termName = 'Summer Term 2026';
         dashboardData.termCalendarYear = 2026;
-        dashboardData.termCalendarMonths = [3, 4, 5, 6];
-        dashboardData.termCalendarFirstDom = { 3: 13 };
+        dashboardData.termCalendarMonths = [5, 6];
+        dashboardData.termCalendarFirstDom = {};
+        dashboardData.termDashboardCalendarFrom = '2026-06-01';
+        dashboardData.termDashboardCalendarTo = '2026-07-17';
         dashboardData.termHalfTermWeekStarts = [];
       }
       const demoList = window.PORTAL_TERM_UI_DEMO_USERNAMES || [];
@@ -13033,13 +13031,18 @@
         dashboardData.termFeedbackByDate = Object.assign({}, PORTAL_TERM_DEMO_FEEDBACK_BY_DATE);
         dashboardData.termDemoNow = '2026-06-08T20:00:00';
       } else {
-        const tMap = t && t.termStaffWeekdayIndicesByProfileKey;
-        const fromTimetable = tMap && typeof tMap === 'object' && Array.isArray(tMap[id]) && tMap[id].length;
-        if(fromTimetable){
-          dashboardData.termWorkedWeekdays = tMap[id].slice().sort(function(a, b){ return a - b; });
+        let worked = [];
+        if(ptd && typeof ptd.workedWeekdaysForStaff === 'function'){
+          worked = ptd.workedWeekdaysForStaff(id);
         } else {
-          dashboardData.termWorkedWeekdays = portalWorkedWeekdaysFromSessions(typeof sessionsModel !== 'undefined' ? sessionsModel : [], id);
+          const tMap = t && t.termStaffWeekdayIndicesByProfileKey;
+          if(tMap && Array.isArray(tMap[id]) && tMap[id].length){
+            worked = tMap[id].slice();
+          } else {
+            worked = portalWorkedWeekdaysFromSessions(typeof sessionsModel !== 'undefined' ? sessionsModel : [], id);
+          }
         }
+        dashboardData.termWorkedWeekdays = worked.sort(function(a, b){ return a - b; });
         dashboardData.termFeedbackByDate = {};
         dashboardData.termShiftEndByDate = {};
         dashboardData.termDemoNow = null;
@@ -14264,8 +14267,14 @@
       const baseRealTerm = typeof window.__portalIsRealClientSession === 'function' ? window.__portalIsRealClientSession : null;
       const endMap = {};
       const fbMap = {};
-      const cur = new Date(String(t.firstDate) + 'T12:00:00');
-      const last = new Date(String(t.lastDate) + 'T12:00:00');
+      const viewFrom = dashboardData.termDashboardCalendarFrom
+        || (window.PortalTermCalendarDashboard && PortalTermCalendarDashboard.fromIso())
+        || String(t.termResumeDate || '2026-06-01').slice(0, 10);
+      const viewTo = dashboardData.termDashboardCalendarTo
+        || (window.PortalTermCalendarDashboard && PortalTermCalendarDashboard.toIso())
+        || String(t.lastDate || '2026-07-17').slice(0, 10);
+      const cur = new Date(String(viewFrom) + 'T12:00:00');
+      const last = new Date(String(viewTo) + 'T12:00:00');
       while(cur.getTime() <= last.getTime()){
         const w = cur.getDay();
         if(!worked.includes(w)){
@@ -14648,7 +14657,8 @@
               continue;
             }
           } else {
-            label = `${day}, not confirmed`;
+            cls += ' half-term';
+            label = `${day}, not on your rota`;
           }
           parts.push(`<div class="${cls}" role="gridcell" aria-label="${label}"><span class="term-cal-day-num">${day}</span></div>`);
         }

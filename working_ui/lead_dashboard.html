@@ -6577,8 +6577,11 @@
   </section>
 
   <script src="portal/term_from_timetable.js"></script>
+  <script src="portal/term_calendar_dashboard_shared.js"></script>
   <script src="portal/staff_dashboard_spreadsheet_bundle.js"></script>
+  <script src="portal/session_feedback_portal_data.js?v=20260522"></script>
   <script src="portal/session_feedback_status_portal_data.js"></script>
+  <script src="portal/staff_portal_feedback_bridge.js?v=20260522-week-staff"></script>
   <script src="portal/staff_dashboard_portal_roster_source.js"></script>
   <script src="portal/clients_info_embed.js"></script>
   <script src="portal/staff_dashboard_spreadsheet_adapter.js"></script>
@@ -10196,6 +10199,37 @@
       if(portalStaffHasDatedRowsForIso(iso, sid)) return false;
       return String(s.day || '').trim() === String(weekdayLong || '').trim();
     }
+    /** Summer Term 2+: weekdays off pool rota (e.g. Roberto no Saturdays from 1 Jun). */
+    function portalTermStaffOffWeekdayOnDate(isoYmd, staffId){
+      const iso = normaliseIsoDate(isoYmd);
+      const sid = String(staffId || '').trim().toLowerCase();
+      if(!iso || !sid) return false;
+      const t = window.PORTAL_TERM_FROM_TIMETABLE;
+      const map = t && t.termStaffOffWeekdaysRangeByProfileKey;
+      const cfg = map && map[sid];
+      if(!cfg || typeof cfg !== 'object') return false;
+      const from = normaliseIsoDate(cfg.from);
+      const to = normaliseIsoDate(cfg.to);
+      if(from && iso < from) return false;
+      if(to && iso > to) return false;
+      const wd = new Date(iso + 'T12:00:00').getDay();
+      const drop = Array.isArray(cfg.weekdays) ? cfg.weekdays.map(Number) : [];
+      return drop.indexOf(wd) >= 0;
+    }
+    /** Client sessions assigned to this staff on this calendar day. */
+    function portalStaffClientSessionsOnCalendarDate(isoYmd, weekdayLong, staffId){
+      const iso = normaliseIsoDate(isoYmd);
+      const sid = String(staffId || '').trim().toLowerCase();
+      const w = String(weekdayLong || '').trim();
+      if(!iso || !sid || !w) return false;
+      const model = (typeof sessionsModel !== 'undefined' && Array.isArray(sessionsModel)) ? sessionsModel : [];
+      return model.some(function(s){
+        if(String(s.staffId || '').toLowerCase() !== sid) return false;
+        if(typeof portalSessionClientActiveOnDate === 'function' && !portalSessionClientActiveOnDate(s, iso)) return false;
+        return typeof portalSessionSpreadsheetRowMatchesCalendarDate === 'function'
+          && portalSessionSpreadsheetRowMatchesCalendarDate(s, iso, w);
+      });
+    }
     function portalScheduleOverrideFetchIsoList(){
       const out = [];
       const add = function(iso){
@@ -12542,27 +12576,24 @@
     window.portalApplyTermCalendarForStaff = function(staffId){
       const id = String(staffId || '').trim().toLowerCase();
       const t = window.PORTAL_TERM_FROM_TIMETABLE;
-      if(t && typeof t === 'object'){
+      const ptd = window.PortalTermCalendarDashboard;
+      if(ptd && typeof ptd.applyView === 'function'){
+        ptd.applyView(dashboardData);
+      } else if(t && typeof t === 'object'){
         if(t.termName) dashboardData.termName = t.termName;
-        if(t.termCalendarYear != null) dashboardData.termCalendarYear = Number(t.termCalendarYear);
-        if(Array.isArray(t.termCalendarMonths) && t.termCalendarMonths.length){
-          dashboardData.termCalendarMonths = t.termCalendarMonths.map(Number);
-        }
-        if(t.termCalendarFirstDom && typeof t.termCalendarFirstDom === 'object'){
-          const fd = {};
-          Object.keys(t.termCalendarFirstDom).forEach(k => { fd[k] = Number(t.termCalendarFirstDom[k]); });
-          dashboardData.termCalendarFirstDom = fd;
-        }
-        if(Array.isArray(t.termHalfTermWeekStarts) && t.termHalfTermWeekStarts.length){
-          dashboardData.termHalfTermWeekStarts = t.termHalfTermWeekStarts.map(String);
-        } else {
-          dashboardData.termHalfTermWeekStarts = [];
-        }
+        dashboardData.termCalendarYear = 2026;
+        dashboardData.termCalendarMonths = [5, 6];
+        dashboardData.termCalendarFirstDom = {};
+        dashboardData.termDashboardCalendarFrom = '2026-06-01';
+        dashboardData.termDashboardCalendarTo = '2026-07-17';
+        dashboardData.termHalfTermWeekStarts = [];
       } else {
         dashboardData.termName = 'Summer Term 2026';
         dashboardData.termCalendarYear = 2026;
-        dashboardData.termCalendarMonths = [3, 4, 5, 6];
-        dashboardData.termCalendarFirstDom = { 3: 13 };
+        dashboardData.termCalendarMonths = [5, 6];
+        dashboardData.termCalendarFirstDom = {};
+        dashboardData.termDashboardCalendarFrom = '2026-06-01';
+        dashboardData.termDashboardCalendarTo = '2026-07-17';
         dashboardData.termHalfTermWeekStarts = [];
       }
       const demoList = window.PORTAL_TERM_UI_DEMO_USERNAMES || [];
@@ -12574,13 +12605,21 @@
         dashboardData.termFeedbackByDate = Object.assign({}, PORTAL_TERM_DEMO_FEEDBACK_BY_DATE);
         dashboardData.termDemoNow = '2026-06-08T20:00:00';
       } else {
-        const tMap = t && t.termStaffWeekdayIndicesByProfileKey;
-        const fromTimetable = tMap && typeof tMap === 'object' && Array.isArray(tMap[id]) && tMap[id].length;
-        if(fromTimetable){
-          dashboardData.termWorkedWeekdays = tMap[id].slice().sort(function(a, b){ return a - b; });
+        let worked = [];
+        if(ptd && typeof ptd.workedWeekdaysForStaff === 'function'){
+          worked = ptd.workedWeekdaysForStaff(id);
         } else {
-          dashboardData.termWorkedWeekdays = portalWorkedWeekdaysFromSessions(typeof sessionsModel !== 'undefined' ? sessionsModel : [], id);
+          const dashMap = t && t.termStaffWeekdayIndicesDashboardByProfileKey;
+          const tMap = t && t.termStaffWeekdayIndicesByProfileKey;
+          if(dashMap && Array.isArray(dashMap[id]) && dashMap[id].length){
+            worked = dashMap[id].slice();
+          } else if(tMap && Array.isArray(tMap[id]) && tMap[id].length){
+            worked = tMap[id].slice();
+          } else {
+            worked = portalWorkedWeekdaysFromSessions(typeof sessionsModel !== 'undefined' ? sessionsModel : [], id);
+          }
         }
+        dashboardData.termWorkedWeekdays = worked.sort(function(a, b){ return a - b; });
         dashboardData.termFeedbackByDate = {};
         dashboardData.termShiftEndByDate = {};
         dashboardData.termDemoNow = null;
@@ -13483,12 +13522,77 @@
     }
     function portalTermBreakIsoRange(){
       const t = window.PORTAL_TERM_FROM_TIMETABLE;
-      const from = String((t && t.termBreakFrom) || '2026-05-24').trim().slice(0, 10);
+      const from = String((t && t.termBreakFrom) || '2026-05-23').trim().slice(0, 10);
       const to = String((t && t.termBreakTo) || '2026-05-31').trim().slice(0, 10);
       return { from, to };
     }
+    function portalTermClosedDates(){
+      const t = window.PORTAL_TERM_FROM_TIMETABLE;
+      const raw = t && t.termClosedDates;
+      if(!Array.isArray(raw)) return [];
+      return raw.map(function(d){ return String(d || '').trim().slice(0, 10); }).filter(Boolean);
+    }
+    function portalTermStaffForcedCompleteDates(staffId){
+      const t = window.PORTAL_TERM_FROM_TIMETABLE;
+      const map = t && t.termStaffFeedbackCompleteDatesByProfileKey;
+      const id = String(staffId || '').trim().toLowerCase();
+      const raw = map && map[id];
+      if(!Array.isArray(raw)) return [];
+      return raw.map(function(d){ return String(d || '').trim().slice(0, 10); }).filter(Boolean);
+    }
+    function portalTermDateForcedComplete(isoYmd, staffId){
+      const iso = String(isoYmd || '').trim().slice(0, 10);
+      return portalTermStaffForcedCompleteDates(staffId).indexOf(iso) >= 0;
+    }
+    function portalTermStaffAwayDatesFor(staffId){
+      const t = window.PORTAL_TERM_FROM_TIMETABLE;
+      const map = t && t.termStaffAwayDatesByProfileKey;
+      if(!map || typeof map !== 'object') return [];
+      const id = String(staffId || '').trim().toLowerCase();
+      const raw = map[id];
+      if(!Array.isArray(raw)) return [];
+      return raw.map(function(d){ return String(d || '').trim().slice(0, 10); }).filter(Boolean);
+    }
+    /** Term grid red (half-term style): bank holiday / vacation break / staff off with cover. */
+    function portalTermCalendarDayIsRed(year, monthIndex, day, staffId, weekStartStrings){
+      if(isHalfTermDay(year, monthIndex, day, weekStartStrings)) return true;
+      const iso = termCalendarDateKey(year, monthIndex, day);
+      if(staffId && portalTermStaffOffWeekdayOnDate(iso, staffId)) return true;
+      return Boolean(staffId && portalTermStaffAwayOnDate(iso, staffId));
+    }
+    function portalTermStaffAwayOnDate(iso, staffId){
+      const key = String(iso || '').trim().slice(0, 10);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(key)) return false;
+      if(portalTermStaffAwayDatesFor(staffId).indexOf(key) !== -1) return true;
+      const sid = String(staffId || '').trim().toLowerCase();
+      const dayWord = new Date(key + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
+      const isReal = function(s){
+        const st = String(s.status || '').toLowerCase();
+        if(st === 'closed' || st === 'available') return false;
+        const cid = String(s.clientId || '').toLowerCase();
+        return Boolean(cid && cid !== 'closed' && cid !== 'available');
+      };
+      const modelRows = (sessionsModel || []).filter(function(s){
+        if(String(s.staffId || '').toLowerCase() !== sid) return false;
+        if(String(s.day || '').trim() !== dayWord) return false;
+        if(!isReal(s)) return false;
+        return typeof portalSessionSpreadsheetRowMatchesCalendarDate !== 'function'
+          || portalSessionSpreadsheetRowMatchesCalendarDate(s, key, dayWord);
+      });
+      if(!modelRows.length) return false;
+      return modelRows.every(function(s){
+        const ov = typeof portalTodayScheduleOverrideForSession === 'function'
+          ? portalTodayScheduleOverrideForSession(s, key)
+          : null;
+        const cov = ov && ov.override_type === 'instructor_reassign'
+          ? String(ov.payload && ov.payload.covering_staff_id || '').trim().toLowerCase()
+          : '';
+        return Boolean(cov && cov !== sid);
+      });
+    }
     function isHalfTermDay(year, monthIndex, day, weekStartStrings){
       const iso = termCalendarDateKey(year, monthIndex, day);
+      if(portalTermClosedDates().indexOf(iso) !== -1) return true;
       const br = portalTermBreakIsoRange();
       if(br.from && br.to && iso >= br.from && iso <= br.to) return true;
       if(!Array.isArray(weekStartStrings) || !weekStartStrings.length) return false;
@@ -13526,16 +13630,147 @@
      * orange (late) once at least one such session has ended and something is still incomplete;
      * green only when every required session for that day is done (or absent/cancelled as handled in rebuild).
      */
+    function portalTermCurrentWeekMondayIso(){
+      const mon = mondayStartOfWeekLocal(new Date(termCalendarNowMs()));
+      return portalTermLocalYmdFromDate(mon);
+    }
+    function portalTermLocalYmdFromDate(d){
+      const pad = n => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    }
+    function portalTermIsBeforeCurrentWeek(iso){
+      const key = String(iso || '').trim();
+      const mon = portalTermCurrentWeekMondayIso();
+      return /^\d{4}-\d{2}-\d{2}$/.test(key) && /^\d{4}-\d{2}-\d{2}$/.test(mon) && key < mon;
+    }
     function getTermFeedbackStateForDay(year, monthIndex, day){
       const key = termCalendarDateKey(year, monthIndex, day);
-      if(key > portalTermLocalYmdFromMs(termCalendarNowMs())) return 'pending';
+      const todayKey = portalTermLocalYmdFromMs(termCalendarNowMs());
+      if(key > todayKey) return 'pending';
       const map = dashboardData.termFeedbackByDate;
       const explicit = map && map[key];
       if(explicit === 'complete') return 'complete';
       if(explicit === 'cancelled') return 'cancelled';
       if(explicit === 'late') return 'late';
+      const staffId = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
+      const dayWord = new Date(key + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
+      if(staffId && portalTermDateForcedComplete(key, staffId)) return 'complete';
+      if(staffId && portalTermStaffOffWeekdayOnDate(key, staffId)) return 'pending';
+      if(staffId && typeof portalTermExportMarksDayComplete === 'function'
+        && portalTermExportMarksDayComplete(key, staffId)
+        && typeof portalTermExportCountsAsWorkedDay === 'function'
+        && portalTermExportCountsAsWorkedDay(key, staffId, dayWord)){
+        return 'complete';
+      }
+      if(staffId && portalTermIsBeforeCurrentWeek(key) && key <= todayKey){
+        const cur = new Date(key + 'T12:00:00');
+        const isReal = function(sess){
+          const st = String(sess.status || '').toLowerCase();
+          if(st === 'closed' || st === 'available') return false;
+          const cid = String(sess.clientId || '').toLowerCase();
+          return Boolean(cid && cid !== 'closed' && cid !== 'available');
+        };
+        const relAll = typeof portalBaseClientSessionsForCalendarDate === 'function'
+          ? portalBaseClientSessionsForCalendarDate(dayWord, key, staffId, isReal)
+          : [];
+        const relFb = typeof portalTermFeedbackSessionsForDate === 'function'
+          ? portalTermFeedbackSessionsForDate(dayWord, key, staffId, isReal)
+          : relAll;
+        const rel = relFb.length ? relFb : relAll;
+        if(rel.length && typeof portalTermDayAllSessionsComplete === 'function'
+          && portalTermDayAllSessionsComplete(dayWord, key, staffId, rel, cur)){
+          return 'complete';
+        }
+        if(!rel.length && typeof portalTermExportMarksDayComplete === 'function'
+          && portalTermExportMarksDayComplete(key, staffId)){
+          return 'complete';
+        }
+      }
       if(explicit === 'pending') return 'pending';
       return 'pending';
+    }
+    /** Export says complete and this day counts as worked (not a stray Saturday before Summer Term 2). */
+    function portalTermExportCountsAsWorkedDay(iso, staffId, weekdayLong){
+      if(portalTermDateForcedComplete(iso, staffId)) return true;
+      if(typeof portalTermExportMarksDayComplete !== 'function'
+        || !portalTermExportMarksDayComplete(iso, staffId)){
+        return false;
+      }
+      if(portalStaffClientSessionsOnCalendarDate(iso, weekdayLong, staffId)) return true;
+      if(portalStaffHasDatedRowsForIso(iso, staffId)) return true;
+      /* Only Summer Term 2 off-Saturdays (1 Jun–17 Jul) skip export-only; May Saturdays keep green. */
+      if(portalTermStaffOffWeekdayOnDate(iso, staffId)) return false;
+      return true;
+    }
+    /** Export-only: day green when portal feedback/status says done (even if roster row missing for that date). */
+    function portalTermExportMarksDayComplete(iso, staffId){
+      try{
+        const bridge = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
+        if(!bridge || typeof bridge.dayFeedbackCountsFromPortalExports !== 'function') return false;
+        const c = bridge.dayFeedbackCountsFromPortalExports(iso, staffId);
+        if(c && c.applicable > 0 && c.unresolved === 0) return true;
+        if(c === null && typeof bridge.submittedRowsForStaffDate === 'function'){
+          const sub = bridge.submittedRowsForStaffDate(iso, staffId);
+          if(sub.length > 0) return true;
+        }
+        const src = typeof window !== 'undefined' ? window.SESSION_FEEDBACK_STATUS_PORTAL_SOURCE : null;
+        if(src && Array.isArray(src.rows) && bridge.statusSlotResolved){
+          const day = String(iso || '').trim().substring(0, 10);
+          const owned = src.rows.filter(function(st){
+            return String(st.date || '').trim().substring(0, 10) === day
+              && typeof portalStaffOwnsFeedbackStatusRow === 'function'
+              && portalStaffOwnsFeedbackStatusRow(staffId, st);
+          });
+          if(owned.length && owned.every(function(st){ return bridge.statusSlotResolved(iso, st); })) return true;
+        }
+      }catch(_){}
+      return false;
+    }
+    /** Before this calendar week: green when export or in-day sessions say done (not orange/blue for old work). */
+    function portalTermApplyHistoricalDayGreen(iso, staffId, dayWord, key, relAll, relFb, cur, fbMap){
+      if(!portalTermIsBeforeCurrentWeek(iso)) return;
+      if(portalTermStaffOffWeekdayOnDate(iso, staffId)) return;
+      if(typeof portalTermExportMarksDayComplete === 'function'
+        && portalTermExportMarksDayComplete(iso, staffId)){
+        fbMap[key] = 'complete';
+        return;
+      }
+      const rel = relFb.length ? relFb : relAll;
+      if(rel.length && typeof portalTermDayAllSessionsComplete === 'function'
+        && portalTermDayAllSessionsComplete(dayWord, key, staffId, rel, cur)){
+        fbMap[key] = 'complete';
+      }
+    }
+    /** Same rules as inside the day sheet: all countable sessions done → term cell green. */
+    function portalTermDayAllSessionsComplete(dayWord, isoKey, staffId, sessions, curDate){
+      const list = Array.isArray(sessions) ? sessions : [];
+      if(!list.length) return false;
+      let applicable = 0;
+      const y = curDate.getFullYear();
+      const mo = curDate.getMonth();
+      const da = curDate.getDate();
+      for(let i = 0; i < list.length; i++){
+        const s = list[i];
+        const manualOv = String(s && s.override || '').trim().toUpperCase();
+        if(manualOv === 'ABSENT') continue;
+        const ovS = typeof portalTodayScheduleOverrideForSession === 'function'
+          ? portalTodayScheduleOverrideForSession(s, isoKey)
+          : null;
+        if(ovS && String(ovS.override_type || '').trim() === 'client_absence_announced') continue;
+        const sk = typeof portalSessionReviewKeyForModelRow === 'function'
+          ? portalSessionReviewKeyForModelRow(s, dayWord, isoKey)
+          : `${isoKey}|${s.start}|${s.clientId}`;
+        if(!sk) continue;
+        applicable++;
+        if(typeof portalRosterSessionFeedbackCompleteForTerm === 'function'
+          && portalRosterSessionFeedbackCompleteForTerm(s, dayWord, isoKey, staffId)) continue;
+        const rec = typeof portalGetMergedSessionReviewRecordForRoster === 'function'
+          ? portalGetMergedSessionReviewRecordForRoster(s, dayWord, isoKey)
+          : (getSessionReviewRecord({ sessionKey: sk }) || {});
+        if(rec.feedbackDone || rec.absent || rec.cancelled) continue;
+        return false;
+      }
+      return applicable > 0;
     }
     function rebuildTermShiftAndFeedbackFromSessionModel(){
       const t = window.PORTAL_TERM_FROM_TIMETABLE;
@@ -13546,8 +13781,14 @@
       const baseRealTerm = typeof window.__portalIsRealClientSession === 'function' ? window.__portalIsRealClientSession : null;
       const endMap = {};
       const fbMap = {};
-      const cur = new Date(String(t.firstDate) + 'T12:00:00');
-      const last = new Date(String(t.lastDate) + 'T12:00:00');
+      const viewFrom = dashboardData.termDashboardCalendarFrom
+        || (window.PortalTermCalendarDashboard && PortalTermCalendarDashboard.fromIso())
+        || String(t.termResumeDate || '2026-06-01').slice(0, 10);
+      const viewTo = dashboardData.termDashboardCalendarTo
+        || (window.PortalTermCalendarDashboard && PortalTermCalendarDashboard.toIso())
+        || String(t.lastDate || '2026-07-17').slice(0, 10);
+      const cur = new Date(String(viewFrom) + 'T12:00:00');
+      const last = new Date(String(viewTo) + 'T12:00:00');
       while(cur.getTime() <= last.getTime()){
         const w = cur.getDay();
         if(!worked.includes(w)){
@@ -13556,6 +13797,15 @@
         }
         const dayWord = cur.toLocaleDateString('en-GB', { weekday: 'long' });
         const key = termCalendarDateKey(cur.getFullYear(), cur.getMonth(), cur.getDate());
+        if(portalTermDateForcedComplete(key, staffId)){
+          fbMap[key] = 'complete';
+          cur.setDate(cur.getDate() + 1);
+          continue;
+        }
+        if(portalTermStaffAwayOnDate(key, staffId) || portalTermStaffOffWeekdayOnDate(key, staffId)){
+          cur.setDate(cur.getDate() + 1);
+          continue;
+        }
         const isReal = function(s){
           if(baseRealTerm) return baseRealTerm(s, key);
           const st = String(s.status || '').toLowerCase();
@@ -13563,17 +13813,20 @@
           const cid = String(s.clientId || '').toLowerCase();
           return Boolean(cid && cid !== 'closed' && cid !== 'available');
         };
-        const relAll = (sessionsModel || []).filter(s =>
-          String(s.staffId || '').toLowerCase() === staffId &&
-          String(s.day || '').trim() === dayWord &&
-          isReal(s) &&
-          (typeof portalSessionSpreadsheetRowMatchesCalendarDate !== 'function'
-            || portalSessionSpreadsheetRowMatchesCalendarDate(s, key, dayWord))
-        );
+        const relAll = typeof portalBaseClientSessionsForCalendarDate === 'function'
+          ? portalBaseClientSessionsForCalendarDate(dayWord, key, staffId, isReal)
+          : (sessionsModel || []).filter(s =>
+            String(s.staffId || '').toLowerCase() === staffId &&
+            String(s.day || '').trim() === dayWord &&
+            isReal(s) &&
+            (typeof portalSessionSpreadsheetRowMatchesCalendarDate !== 'function'
+              || portalSessionSpreadsheetRowMatchesCalendarDate(s, key, dayWord))
+          );
         const relFb = typeof portalTermFeedbackSessionsForDate === 'function'
           ? portalTermFeedbackSessionsForDate(dayWord, key, staffId, isReal)
           : relAll;
         const todayKey = portalTermLocalYmdFromMs(termCalendarNowMs());
+        const inCurrentWeek = key >= portalTermCurrentWeekMondayIso() && key <= todayKey;
         if(key > todayKey){
           if(relAll.length){
             let maxEndFut = 0;
@@ -13588,6 +13841,10 @@
           continue;
         }
         if(!relAll.length){
+          if(key <= todayKey && typeof portalTermExportCountsAsWorkedDay === 'function'
+            && portalTermExportCountsAsWorkedDay(key, staffId, dayWord)){
+            fbMap[key] = 'complete';
+          }
           cur.setDate(cur.getDate() + 1);
           continue;
         }
@@ -13601,8 +13858,32 @@
           continue;
         }
         endMap[key] = new Date(maxEnd).toISOString();
-        if(!relFb.length){
-          fbMap[key] = termCalendarNowMs() > maxEnd ? 'late' : 'pending';
+        const portalDayCounts = (typeof window !== 'undefined' && window.PortalStaffFeedbackBridge
+          && typeof window.PortalStaffFeedbackBridge.dayFeedbackCountsFromPortalExports === 'function')
+          ? window.PortalStaffFeedbackBridge.dayFeedbackCountsFromPortalExports(key, staffId)
+          : null;
+        if(portalDayCounts){
+          if(portalDayCounts.applicable > 0 && portalDayCounts.unresolved === 0){
+            fbMap[key] = 'complete';
+          } else if(portalTermIsBeforeCurrentWeek(key)
+            && typeof portalTermExportMarksDayComplete === 'function'
+            && portalTermExportMarksDayComplete(key, staffId)){
+            fbMap[key] = 'complete';
+          } else if(inCurrentWeek){
+            fbMap[key] = portalDayCounts.applicable === 0
+              ? 'pending'
+              : (termCalendarNowMs() > maxEnd ? 'late' : 'pending');
+          } else {
+            fbMap[key] = portalDayCounts.applicable === 0 ? 'pending' : 'late';
+          }
+        } else if(!relFb.length){
+          if(portalTermIsBeforeCurrentWeek(key)
+            && typeof portalTermExportMarksDayComplete === 'function'
+            && portalTermExportMarksDayComplete(key, staffId)){
+            fbMap[key] = 'complete';
+          } else {
+            fbMap[key] = inCurrentWeek && termCalendarNowMs() > maxEnd ? 'late' : 'pending';
+          }
         } else {
           if(key === todayKey){
             let minStart = Infinity;
@@ -13653,6 +13934,8 @@
                 : `${key}|${s.start}|${s.clientId}`;
               if(!sk) return;
               applicable++;
+              if(typeof portalRosterSessionFeedbackCompleteForTerm === 'function'
+                && portalRosterSessionFeedbackCompleteForTerm(s, dayWord, key, staffId)) return;
               const rec = typeof portalGetMergedSessionReviewRecordForRoster === 'function'
                 ? portalGetMergedSessionReviewRecordForRoster(s, dayWord, key)
                 : (getSessionReviewRecord({ sessionKey: sk }) || {});
@@ -13682,6 +13965,8 @@
                   ? portalSessionReviewKeyForModelRow(s, dayWord, key)
                   : `${key}|${s.start}|${s.clientId}`;
                 if(!sk) return;
+                if(typeof portalRosterSessionFeedbackCompleteForTerm === 'function'
+                  && portalRosterSessionFeedbackCompleteForTerm(s, dayWord, key, staffId)) return;
                 const rec = typeof portalGetMergedSessionReviewRecordForRoster === 'function'
                   ? portalGetMergedSessionReviewRecordForRoster(s, dayWord, key)
                   : (getSessionReviewRecord({ sessionKey: sk }) || {});
@@ -13692,6 +13977,20 @@
               fbMap[key] = anyEndedIncomplete ? 'late' : 'pending';
             }
           }
+        }
+        const relReconcile = relFb.length ? relFb : relAll;
+        if(fbMap[key] !== 'cancelled' && key <= todayKey && relReconcile.length
+          && typeof portalTermDayAllSessionsComplete === 'function'
+          && portalTermDayAllSessionsComplete(dayWord, key, staffId, relReconcile, cur)){
+          fbMap[key] = 'complete';
+        }
+        if(typeof portalTermApplyHistoricalDayGreen === 'function'){
+          portalTermApplyHistoricalDayGreen(key, staffId, dayWord, key, relAll, relFb, cur, fbMap);
+        }
+        if(inCurrentWeek && fbMap[key] !== 'cancelled' && fbMap[key] !== 'complete'
+          && typeof portalTermExportMarksDayComplete === 'function'
+          && portalTermExportMarksDayComplete(key, staffId)){
+          fbMap[key] = 'complete';
         }
         cur.setDate(cur.getDate() + 1);
       }
@@ -13704,9 +14003,11 @@
       }catch(e){}
       const map = dashboardData.termFeedbackByDate;
       const keys = [];
+      const sid = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
       if(map && typeof map === 'object'){
         Object.keys(map).forEach(function(k){
           const v = map[k];
+          if(sid && typeof portalTermStaffAwayOnDate === 'function' && portalTermStaffAwayOnDate(k, sid)) return;
           if(v === 'pending' || v === 'late') keys.push(String(k || '').trim());
         });
       }
@@ -13771,6 +14072,7 @@
         worked = [1, 2, 4, 5];
       }
       const halfWeeks = Array.isArray(dashboardData.termHalfTermWeekStarts) ? dashboardData.termHalfTermWeekStarts : [];
+      const termStaffId = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
       const dows = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
       const dowLate = [false, false, false, false, false, false, false];
       months.forEach(monthIndex => {
@@ -13784,9 +14086,11 @@
         for(let day = firstDom; day <= lastDay; day++){
           const dt = new Date(y, monthIndex, day);
           const w = dt.getDay();
-          const half = isHalfTermDay(y, monthIndex, day, halfWeeks);
+          const red = typeof portalTermCalendarDayIsRed === 'function'
+            ? portalTermCalendarDayIsRed(y, monthIndex, day, termStaffId, halfWeeks)
+            : isHalfTermDay(y, monthIndex, day, halfWeeks);
           const isWorked = worked.includes(w);
-          if(half || !isWorked) continue;
+          if(red || !isWorked) continue;
           const fb = getTermFeedbackStateForDay(y, monthIndex, day);
           if(fb === 'late') dowLate[(w + 6) % 7] = true;
         }
@@ -13814,15 +14118,27 @@
         for(let day = firstDom; day <= lastDay; day++){
           const dt = new Date(y, monthIndex, day);
           const w = dt.getDay();
-          const half = isHalfTermDay(y, monthIndex, day, halfWeeks);
-          const isWorked = worked.includes(w);
+          const isoKey = termCalendarDateKey(y, monthIndex, day);
+          const staffAway = termStaffId && typeof portalTermStaffAwayOnDate === 'function'
+            && portalTermStaffAwayOnDate(isoKey, termStaffId);
+          const half = typeof portalTermCalendarDayIsRed === 'function'
+            ? portalTermCalendarDayIsRed(y, monthIndex, day, termStaffId, halfWeeks)
+            : (isHalfTermDay(y, monthIndex, day, halfWeeks) || staffAway);
+          const dayWordRoster = dt.toLocaleDateString('en-GB', { weekday: 'long' });
+          const rosterApplies = !termStaffId || typeof portalStaffRosterAppliesOnCalendarDate !== 'function'
+            || portalStaffRosterAppliesOnCalendarDate(isoKey, dayWordRoster, termStaffId);
+          const todayKeyGrid = portalTermLocalYmdFromMs(termCalendarNowMs());
+          const exportWorked = termStaffId && isoKey <= todayKeyGrid
+            && typeof portalTermExportCountsAsWorkedDay === 'function'
+            && portalTermExportCountsAsWorkedDay(isoKey, termStaffId, dayWordRoster);
+          const isWorked = worked.includes(w) && (rosterApplies || exportWorked);
           let cls = 'term-cal-day';
           let label;
           if(half){
             cls += ' half-term';
-            label = `${day}, half term`;
+            const offWd = termStaffId && portalTermStaffOffWeekdayOnDate(isoKey, termStaffId);
+            label = offWd ? `${day}, not scheduled this term` : (staffAway ? `${day}, not on duty` : `${day}, half term`);
           } else if(isWorked){
-            const isoKey = termCalendarDateKey(y, monthIndex, day);
             const dayWord = dt.toLocaleDateString('en-GB', { weekday: 'long' });
             const dayFlags = portalDayOverrideBadgeFlags(dayWord, isoKey);
             const flagCount = (dayFlags.hasMakeUp ? 1 : 0) + (dayFlags.hasAbsentAnnounced ? 1 : 0) + (dayFlags.hasCancelled ? 1 : 0);
@@ -13855,7 +14171,8 @@
               continue;
             }
           } else {
-            label = `${day}, not confirmed`;
+            cls += ' half-term';
+            label = `${day}, not on your rota`;
           }
           parts.push(`<div class="${cls}" role="gridcell" aria-label="${label}"><span class="term-cal-day-num">${day}</span></div>`);
         }

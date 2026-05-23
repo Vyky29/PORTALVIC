@@ -26,6 +26,21 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-05-07"
     ]
   },
+  "termStaffOffWeekdaysRangeByProfileKey": {
+    "roberto": {
+      "from": "2026-06-01",
+      "to": "2026-07-17",
+      "weekdays": [
+        6
+      ]
+    }
+  },
+  "termStaffFeedbackCompleteDatesByProfileKey": {
+    "roberto": [
+      "2026-05-17",
+      "2026-05-22"
+    ]
+  },
   "termClientFirstSessionDate": {
     "amaar_ah": "2026-04-24"
   },
