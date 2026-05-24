@@ -605,6 +605,39 @@ export async function bootstrapDashboardSupabase(_opts) {
     }
   } catch (e) {
     console.debug("[portal] Supabase dashboard bootstrap skipped:", e);
+    if (typeof window !== "undefined" && portalDashboardRequiresStrictGate(page)) {
+      try {
+        const supabase = getSupabaseClient();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (session?.user?.id && !(window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client)) {
+          let profile = null;
+          try {
+            const { data } = await supabase
+              .from("staff_profiles")
+              .select(
+                "id, username, full_name, app_role, staff_role, dashboard_route, auth_session_generation"
+              )
+              .eq("id", session.user.id)
+              .maybeSingle();
+            profile = data || null;
+          } catch {
+            /* profile optional in recovery path */
+          }
+          window.__PORTAL_SUPABASE__ = {
+            client: supabase,
+            session,
+            staff_profile: profile,
+          };
+          window.dispatchEvent(
+            new CustomEvent("portal:supabase-ready", { detail: window.__PORTAL_SUPABASE__ })
+          );
+        }
+      } catch {
+        /* ignore */
+      }
+    }
   }
 }
 

@@ -26,11 +26,55 @@
     return null;
   }
 
+  var _bootstrapTried = false;
+
+  async function tryBootstrapPortal() {
+    if (client()) return true;
+    if (_bootstrapTried) return !!client();
+    _bootstrapTried = true;
+    try {
+      var mod = await import(
+        "/portal/auth-handler.js?v=20260430-portalauth5"
+      );
+      if (mod && typeof mod.bootstrapDashboardSupabase === "function") {
+        await mod.bootstrapDashboardSupabase({ page: "admin" });
+      }
+      if (client()) return true;
+      if (mod && typeof mod.getSupabaseClient === "function") {
+        var sb = mod.getSupabaseClient();
+        var sessRes = await sb.auth.getSession();
+        var session =
+          sessRes && sessRes.data && sessRes.data.session
+            ? sessRes.data.session
+            : null;
+        if (session && session.user && session.user.id) {
+          window.__PORTAL_SUPABASE__ = window.__PORTAL_SUPABASE__ || {};
+          window.__PORTAL_SUPABASE__.client = sb;
+          window.__PORTAL_SUPABASE__.session = session;
+          try {
+            window.dispatchEvent(
+              new CustomEvent("portal:supabase-ready", {
+                detail: window.__PORTAL_SUPABASE__,
+              })
+            );
+          } catch (_) {}
+          return true;
+        }
+      }
+    } catch (err) {
+      console.debug("[late-admin] bootstrap:", err);
+    }
+    return !!client();
+  }
+
   function waitForClient(maxMs) {
     var c = client();
     if (c) return Promise.resolve(c);
-    var limit = typeof maxMs === "number" ? maxMs : 20000;
-    return new Promise(function (resolve) {
+    var limit = typeof maxMs === "number" ? maxMs : 45000;
+    return tryBootstrapPortal().then(function () {
+      c = client();
+      if (c) return c;
+      return new Promise(function (resolve) {
       var done = false;
       function tryFinish() {
         if (done) return;
@@ -51,6 +95,7 @@
           if (!done) resolve(null);
         }
       }, 250);
+      });
     });
   }
 
@@ -176,7 +221,8 @@
       if (!c) {
         return {
           ok: false,
-          error: "Portal sign-in is still loading. Wait a moment and tap Refresh.",
+          error:
+            'Not signed in to Portal. Open login.html, sign in as admin, open Admin again, then tap Refresh. (Or check the browser console for "[portal]" errors.)',
           rows: [],
         };
       }
