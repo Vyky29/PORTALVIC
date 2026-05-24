@@ -126,6 +126,27 @@
     return out;
   }
 
+  function setStatus(text, isError) {
+    var el = document.getElementById("portalLateAdminStatus");
+    if (!el) return;
+    el.textContent = String(text || "");
+    el.classList.toggle("is-error", !!isError);
+  }
+
+  function roleHint() {
+    try {
+      var p =
+        window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
+      if (!p) return "";
+      var name = String(p.full_name || p.username || "").trim() || "Admin";
+      var role = String(p.app_role || "").trim();
+      var staff = String(p.staff_role || "").trim();
+      return name + (role ? " · " + role : "") + (staff ? " / " + staff : "");
+    } catch (_) {
+      return "";
+    }
+  }
+
   window.PortalAdminLateSubmissions = {
     configure: function (opts) {
       opts = opts || {};
@@ -232,9 +253,9 @@
     renderRowsHtml: function (rows) {
       if (!rows || !rows.length) {
         return (
-          '<div class="submission-state" style="padding:16px 0">' +
-          "<strong>No requests</strong>" +
-          '<p class="muted" style="margin:8px 0 0">Nothing in this filter.</p></div>'
+          '<div class="portal-late-admin-msg">' +
+          "<strong>No requests in this filter</strong>" +
+          '<p style="margin:8px 0 0">Change <strong>Show</strong> to <em>All</em>, or confirm rows exist in Supabase → <code>portal_late_submission_requests</code>.</p></div>'
         );
       }
       var body = rows
@@ -308,16 +329,30 @@
 
       async function reload() {
         root.innerHTML =
-          '<div class="submission-state"><strong>Loading…</strong></div>';
+          '<div class="portal-late-admin-msg"><strong>Loading…</strong></div>';
+        setStatus("Loading requests…", false);
         var filter = filterEl ? filterEl.value : "pending";
         var res = await self.fetchRequests(filter);
         if (!res.ok) {
           root.innerHTML =
-            '<div class="submission-state"><strong>Could not load</strong><p class="muted" style="margin:8px 0 0">' +
+            '<div class="portal-late-admin-msg is-error"><strong>Could not load</strong><p style="margin:8px 0 0">' +
             _esc(res.error || "error") +
             "</p></div>";
+          setStatus(_esc(res.error || "error"), true);
           return;
         }
+        var n = (res.rows && res.rows.length) || 0;
+        var hint = roleHint();
+        setStatus(
+          (hint ? hint + " — " : "") +
+            n +
+            " request" +
+            (n === 1 ? "" : "s") +
+            ' (filter: "' +
+            filter +
+            '"). Try Show → All if you expect older rows.',
+          false
+        );
         root.innerHTML = self.renderRowsHtml(res.rows);
         if (typeof opts.onLoaded === "function") {
           try {
@@ -376,24 +411,20 @@
       }
       if (!client()) {
         root.innerHTML =
-          '<div class="submission-state"><strong>Connecting to Portal…</strong><p class="muted" style="margin:8px 0 0">Loading your admin session.</p></div>';
+          '<div class="portal-late-admin-msg"><strong>Connecting to Portal…</strong><p style="margin:8px 0 0">Loading your admin session.</p></div>';
+        setStatus("Waiting for Portal sign-in…", false);
         waitForClient().then(function (cx) {
           if (cx && root.isConnected) startReload();
           else if (root.isConnected) {
             root.innerHTML =
-              '<div class="submission-state"><strong>Could not connect</strong><p class="muted" style="margin:8px 0 0">Open this page from <code>login.html</code> as admin or CEO, then tap Refresh.</p></div>';
+              '<div class="portal-late-admin-msg is-error"><strong>Could not connect</strong><p style="margin:8px 0 0">Open from <code>login.html</code> as admin or CEO, then tap Refresh.</p></div>';
+            setStatus("Not signed in to Portal.", true);
           }
         });
-        if (!window.__portalLateAdminSupabaseRetryBound) {
-          window.__portalLateAdminSupabaseRetryBound = true;
-          window.addEventListener("portal:supabase-ready", function () {
-            var list = document.getElementById("portalLateAdminList");
-            if (list && list.isConnected) startReload();
-          });
-        }
         return startReload;
       }
-      return startReload();
+      void startReload();
+      return startReload;
     },
   };
 
