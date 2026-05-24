@@ -67,11 +67,43 @@
     return !!client();
   }
 
-  function waitForClient(maxMs) {
+  function waitForClientQuick(maxMs) {
     var c = client();
     if (c) return Promise.resolve(c);
-    var limit = typeof maxMs === "number" ? maxMs : 45000;
-    return tryBootstrapPortal().then(function () {
+    var limit = typeof maxMs === "number" ? maxMs : 3500;
+    return new Promise(function (resolve) {
+      var done = false;
+      function tryFinish() {
+        if (done) return;
+        var cx = client();
+        if (cx) {
+          done = true;
+          resolve(cx);
+        }
+      }
+      try {
+        window.addEventListener("portal:supabase-ready", tryFinish, { once: true });
+      } catch (_) {}
+      var t0 = Date.now();
+      var iv = setInterval(function () {
+        tryFinish();
+        if (done || Date.now() - t0 >= limit) {
+          clearInterval(iv);
+          if (!done) resolve(null);
+        }
+      }, 200);
+    });
+  }
+
+  function waitForClient(maxMs, opts) {
+    opts = opts || {};
+    var c = client();
+    if (c) return Promise.resolve(c);
+    var limit = typeof maxMs === "number" ? maxMs : 18000;
+    var boot = opts.tryBootstrap === true
+      ? tryBootstrapPortal()
+      : Promise.resolve();
+    return boot.then(function () {
       c = client();
       if (c) return c;
       return new Promise(function (resolve) {
@@ -202,7 +234,7 @@
     },
 
     fetchPendingCount: async function () {
-      var c = await waitForClient();
+      var c = client() || (await waitForClientQuick(2500));
       if (!c) return 0;
       try {
         var res = await c
@@ -262,7 +294,7 @@
     },
 
     reviewRequest: async function (id, status, adminNote) {
-      var c = await waitForClient();
+      var c = client() || (await waitForClient(8000, { tryBootstrap: true }));
       var uid = authUid();
       if (!c || !uid) {
         return {
