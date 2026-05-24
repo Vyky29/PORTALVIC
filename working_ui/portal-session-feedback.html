@@ -1,0 +1,2694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="/portal-static-bootstrap.js?v=20260519-submit-return"></script>
+<!-- Session feedback: Supabase when signed in; optional webhook: window.PORTAL_SESSION_FEEDBACK_WEBHOOK_URL -->
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Session Feedback (Staff)</title>
+<link rel="stylesheet" href="/portal-shared-js/portal_page_logo.css?v=20260517-portal-logos" />
+<link rel="stylesheet" href="/portal-shared-js/portal_page_logo_themes.css?v=20260517-portal-logos" />
+<style>
+:root{
+  /* Corporate gold — warmer yellow field tints (logo pulse / #ffcc33 family) */
+  --purple:#e8a820;
+  --purple-deep:#6b4a18;
+  --accent:#f0c14d;
+  --accent-soft:#f9f7f3;
+  --fieldBg:#f7f5f1;
+  --fieldBgDeep:#f0ebe3;
+  --inputBg:#fff;
+  --goldLine:rgba(180, 145, 90, 0.28);
+  --goldGlow:rgba(220, 185, 120, 0.18);
+  --text:#0b1220;
+  --muted:#5b6473;
+  --line:rgba(200, 155, 70, 0.28);
+  --radius:18px;
+  --focus:0 0 0 3px rgba(220, 180, 90, 0.22);
+  --engBlueBg: rgba(255, 193, 7, 0.28);
+  --engBlueBd: rgba(217, 130, 0, 0.62);
+  --engBlueTx: #7a4a00;
+  --engYellowBg: rgba(255, 200, 40, 0.32);
+  --engYellowBd: rgba(230, 150, 0, 0.72);
+  --engYellowTx: #6b3d00;
+  --engGreenBg: rgba(34,197,94,0.18);
+  --engGreenBd: rgba(34,197,94,0.55);
+  --engGreenTx: #0f5a2a;
+  --engGreen2Bg: rgba(16,185,129,0.18);
+  --engGreen2Bd: rgba(16,185,129,0.55);
+  --engGreen2Tx: #065f46;
+}
+*{ box-sizing:border-box; }
+html, body{ height:100%; }
+body{
+  margin:0;
+  min-height:100vh;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  color:var(--text);
+  background:#f5f4f2;
+  padding:24px;
+}
+.wrap{ max-width:760px; margin:0 auto; width:100%; }
+.title-row{ margin-bottom:14px; text-align:center; }
+.title-row h1{
+  margin:0 0 4px;
+  font-size:22px;
+  letter-spacing:-0.01em;
+  color:var(--purple-deep);
+}
+.title-row p{ margin:0; color:var(--muted); font-size:13.5px; line-height:1.5; }
+@media (prefers-reduced-motion: reduce){
+  .pill{ transition:none !important; }
+}
+.field.field--session-details{
+  padding:16px 14px;
+  background:linear-gradient(180deg, #faf9f6 0%, #f5f2ec 100%);
+  border-color:var(--goldLine);
+  box-shadow:inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+.field.field--session-details > label{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:14px;
+  font-weight:700;
+  margin:0 0 12px;
+  color:rgba(11,18,32,0.92);
+  line-height:1.25;
+}
+.field.field--session-details > label ~ label{
+  margin-top:26px;
+}
+.field.field--session-details > input,
+.field.field--session-details > select{
+  font-weight:500;
+  background:var(--inputBg);
+  border-color:rgba(200, 155, 70, 0.38);
+}
+.field.field--session-details > input:focus,
+.field.field--session-details > select:focus{
+  background:#fff;
+  border-color:rgba(190, 155, 85, 0.55);
+}
+.field.field--session-details > select{
+  font-size:12px;
+  text-align:center;
+  text-align-last:center;
+}
+.field.field--session-details > input#fbParticipantName{
+  font-size:14px;
+  text-align:left;
+}
+.field.field--session-details > input#fbParticipantName::placeholder{
+  font-size:12px;
+  font-weight:400;
+  text-align:left;
+}
+.field.field--session-details > input{
+  margin:0;
+}
+.session-date-field{ margin-top:0; margin-bottom:4px; }
+.field.field--session-details > .session-date-field ~ label{ margin-top:22px; }
+.field.field--session-details > select,
+.field.field--session-details > .options--attended{ margin-top:14px; }
+.field--session-details-shell{
+  animation:sessionFieldsIn 0.45s ease-out both;
+}
+@keyframes sessionFieldsIn{
+  from{ opacity:0; transform:translateY(8px); }
+  to{ opacity:1; transform:translateY(0); }
+}
+@media (prefers-reduced-motion: reduce){
+  .field--session-details-shell{ animation:none; }
+}
+.session-date-label-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:14px;
+  font-weight:700;
+  margin:0 0 12px;
+  color:rgba(11,18,32,0.92);
+}
+.session-date-display-row{
+  margin-bottom:4px;
+}
+.session-date-display{
+  width:100%;
+  min-height:44px;
+  box-sizing:border-box;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:2px;
+  padding:10px 12px;
+  border-radius:10px;
+  border:1px solid rgba(180, 145, 90, 0.32);
+  background:#fff;
+  font-size:14px;
+  font-weight:500;
+  color:var(--text);
+  letter-spacing:0.01em;
+  text-align:center;
+  line-height:1.35;
+  cursor:pointer;
+  user-select:none;
+  -webkit-tap-highlight-color:transparent;
+  transition:border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.session-date-display:hover{
+  border-color:rgba(190, 155, 85, 0.5);
+}
+.session-date-display:focus{
+  outline:none;
+  border-color:rgba(190, 155, 85, 0.65);
+  box-shadow:var(--focus);
+  background:#fff;
+}
+.session-date-display__hint{
+  display:block;
+  margin-top:6px;
+  font-size:11px;
+  font-weight:600;
+  color:var(--muted);
+  line-height:1.3;
+}
+.session-date-display__weekday,
+.session-date-display__day{
+  width:100%;
+  text-align:center;
+}
+.session-date-display__weekday{
+  font-size:12px;
+  font-weight:700;
+  color:var(--text);
+}
+.session-date-display__day{
+  font-size:12px;
+  font-weight:600;
+  color:var(--muted);
+}
+.participant-field-wrap{
+  position:relative;
+}
+.portal-name-suggest{
+  position:absolute;
+  left:0;
+  right:0;
+  top:calc(100% + 4px);
+  z-index:40;
+  max-height:220px;
+  overflow-y:auto;
+  margin:0;
+  padding:6px 0;
+  list-style:none;
+  border-radius:10px;
+  border:1px solid rgba(11,18,32,0.12);
+  background:#fff;
+  box-shadow:0 10px 28px rgba(15, 20, 30, 0.14);
+}
+.portal-name-suggest[hidden]{
+  display:none !important;
+}
+.portal-name-suggest__item{
+  display:block;
+  width:100%;
+  margin:0;
+  padding:10px 12px;
+  border:none;
+  background:transparent;
+  font:inherit;
+  font-size:14px;
+  font-weight:600;
+  text-align:left;
+  color:var(--text);
+  cursor:pointer;
+}
+.portal-name-suggest__item:hover,
+.portal-name-suggest__item:focus{
+  outline:none;
+  background:rgba(190, 155, 85, 0.14);
+}
+.session-date-edit-panel{
+  margin-top:14px;
+  padding:14px 14px 16px;
+  border-radius:12px;
+  border:1px solid rgba(185, 28, 28, 0.28);
+  background:rgba(254, 242, 242, 0.65);
+}
+.session-date-edit-warning{
+  margin:0 0 12px;
+  font-size:12.5px;
+  line-height:1.45;
+  color:rgba(11,18,32,0.9);
+}
+.session-date-deadline-em{
+  color:#b91c1c;
+  font-weight:800;
+  letter-spacing:0.04em;
+}
+.session-date-picker-row{
+  display:flex;
+  justify-content:center;
+  margin:0 auto 12px;
+  max-width:100%;
+}
+.session-date-picker-input{
+  width:100% !important;
+  max-width:280px;
+  margin:0 auto;
+  padding:10px 12px !important;
+  text-align:center !important;
+  font-size:14px !important;
+  font-weight:600 !important;
+  cursor:pointer;
+  box-sizing:border-box !important;
+}
+.session-date-edit-actions{
+  display:flex;
+  flex-wrap:nowrap;
+  gap:10px;
+  justify-content:stretch;
+}
+.session-date-edit-actions .btnGhost{
+  flex:1 1 0;
+  min-width:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:12px !important;
+  padding:9px 16px !important;
+  text-align:center !important;
+}
+.card{
+  background:#fff;
+  border:1px solid rgba(150, 140, 120, 0.18);
+  border-radius:var(--radius);
+  overflow:hidden;
+  box-shadow:0 8px 24px rgba(15, 20, 30, 0.06);
+}
+form{ padding:20px; }
+.grid{ display:grid; grid-template-columns:1fr; gap:24px; }
+#feedbackExtendedSection:not([hidden]){
+  display:flex;
+  flex-direction:column;
+  gap:22px;
+}
+.field{
+  border:1px solid rgba(200, 155, 70, 0.24);
+  border-radius:14px;
+  padding:12px;
+  background:linear-gradient(180deg, var(--fieldBg) 0%, var(--accent-soft) 100%);
+}
+.field > label:first-child,
+.field .fieldLabel{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:14px;
+  font-weight:700;
+  margin:0 0 10px;
+  color:rgba(11,18,32,0.92);
+  line-height:1.25;
+}
+.field-icon{
+  width:22px;
+  height:22px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:8px;
+  flex:0 0 22px;
+  background:rgba(245, 235, 215, 0.65);
+  border:1px solid rgba(190, 155, 85, 0.32);
+  color:var(--purple-deep);
+  box-shadow:none;
+}
+.field.field--session-details .field-icon{
+  background:rgba(245, 238, 225, 0.9);
+  border-color:rgba(190, 155, 85, 0.35);
+}
+.field-icon svg{
+  width:14px;
+  height:14px;
+  display:block;
+  flex-shrink:0;
+}
+input, select, textarea{
+  width:100%;
+  border:1px solid rgba(11,18,32,0.14);
+  border-radius:10px;
+  padding:10px 12px;
+  font-size:16px;
+  background:#fff;
+  font-family:inherit;
+  color:var(--text);
+}
+.field textarea,
+.field input[type="text"]{
+  font-size:12px;
+  line-height:1.4;
+}
+.field textarea::placeholder{
+  font-size:12px;
+  line-height:1.4;
+  color:var(--muted);
+  opacity:1;
+}
+textarea{ min-height:100px; resize:vertical; }
+input:focus, select:focus, textarea:focus{
+  outline:none;
+  border-color:rgba(190, 155, 85, 0.75);
+  box-shadow:var(--focus);
+}
+
+.options{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  align-items:stretch;
+  gap:14px 18px;
+  overflow-x:auto;
+  padding:10px 6px 14px;
+  -webkit-overflow-scrolling:touch;
+}
+
+.pill{
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:0;
+  padding:12px 16px;
+  border-radius:999px;
+  border:1px solid rgba(11,18,32,0.16);
+  background:#fff;
+  font-size:12px;
+  font-weight:500;
+  cursor:pointer;
+  user-select:none;
+  min-width:0;
+  white-space:normal;
+  overflow-wrap:break-word;
+  flex:0 0 auto;
+  margin:2px;
+  text-align:center;
+  line-height:1.35;
+  transition:background .15s ease,border-color .15s ease,box-shadow .2s ease,transform .15s ease,color .15s ease;
+}
+
+.options--independence{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px 14px;
+  width:100%;
+  padding:4px 2px 8px;
+  overflow:visible;
+}
+.options--independence .pill{
+  margin:0;
+  flex:none;
+}
+.options--emotions{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px 14px;
+  width:100%;
+  padding:4px 2px 8px;
+  overflow:visible;
+}
+.options--emotions .pill.emotion{
+  width:100%;
+  min-width:0;
+  margin:0;
+  flex:none;
+}
+.options--engagement{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  flex-wrap:nowrap;
+  gap:0;
+  padding:6px 4px 10px;
+  overflow:visible;
+}
+.engagement-star-row{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+}
+.engagement-star.pill.rate{
+  min-width:0;
+  padding:4px;
+  margin:0;
+  border:none;
+  background:transparent;
+  border-radius:10px;
+  box-shadow:none;
+}
+.engagement-star.pill.rate:hover{
+  border-color:transparent;
+  background:rgba(255, 248, 220, 0.55);
+}
+.engagement-star.pill.rate.isSelected{
+  background:rgba(255, 248, 220, 0.72);
+  border:none;
+  box-shadow:none;
+}
+.engagement-star__glyph{
+  position:relative;
+  z-index:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  line-height:0;
+}
+.engagement-star__glyph svg{
+  width:34px;
+  height:34px;
+  display:block;
+  color:#fbbf24;
+  opacity:0.38;
+  transition:opacity .15s ease, transform .12s ease, filter .15s ease;
+}
+.engagement-star.pill.rate.isFilled .engagement-star__glyph svg{
+  opacity:1;
+  color:#ca8a04;
+}
+.engagement-star.pill.rate.isFilled .engagement-star__glyph svg path{
+  fill:#fde047;
+  stroke:#b45309;
+  stroke-width:1.85;
+}
+.engagement-star.pill.rate.isFilled .engagement-star__glyph svg{
+  filter:
+    drop-shadow(0 0 1px rgba(255, 255, 255, 1))
+    drop-shadow(0 0 4px rgba(253, 224, 71, 0.9))
+    drop-shadow(0 0 8px rgba(250, 204, 21, 0.55));
+}
+.engagement-star.pill.rate.isSelected .engagement-star__glyph svg{
+  transform:scale(1.06);
+}
+.options--attended{
+  display:flex;
+  flex-wrap:wrap;
+  gap:14px;
+  width:100%;
+  padding:4px 2px 8px;
+}
+.options--attended .pill{
+  flex:1 1 120px;
+  justify-content:center;
+  text-align:center;
+  background:var(--inputBg);
+  border-color:rgba(200, 155, 70, 0.35);
+}
+.options--attended .pill:hover{
+  border-color:rgba(190, 155, 85, 0.45);
+  background:#faf8f4;
+}
+.options--attended .pill.isSelected{
+  background:#f5f0e6;
+  border-color:rgba(190, 155, 85, 0.55);
+  color:var(--purple-deep);
+  font-weight:700;
+  box-shadow:inset 0 0 0 1px rgba(190, 155, 85, 0.2);
+}
+#feedbackExtendedSection[hidden]{
+  display:none !important;
+}
+.pill.independence{
+  width:100%;
+  min-width:0;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:12px 10px 14px;
+  border-radius:16px;
+  min-height:92px;
+}
+.pill-independence-inner{
+  position:relative;
+  z-index:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  text-align:center;
+  pointer-events:none;
+}
+.pill-independence-icon{
+  flex-shrink:0;
+  width:30px;
+  height:30px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  background:rgba(255,255,255,0.88);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,0.06);
+}
+.pill-independence-icon svg{
+  width:18px;
+  height:18px;
+  display:block;
+}
+.pill.independence .pill-independence-icon{
+  color:rgba(11, 18, 32, 0.45);
+}
+.pill-independence-title{
+  display:block;
+  font-size:13px;
+  font-weight:700;
+  line-height:1.2;
+  color:var(--text);
+}
+.pill-independence-sub{
+  display:block;
+  margin-top:3px;
+  font-size:10px;
+  font-weight:500;
+  line-height:1.25;
+  color:var(--muted);
+}
+.pill.independence.isSelected{
+  background:rgba(255, 224, 130, 0.78);
+  border-color:rgba(199, 125, 0, 0.95);
+  color:var(--purple-deep);
+  box-shadow:
+    inset 0 0 0 1px rgba(245, 176, 20, 0.42),
+    0 3px 12px rgba(245, 160, 15, 0.28);
+}
+.pill.independence.isSelected .pill-independence-icon{
+  color:#b45309;
+  background:#fff;
+  box-shadow:inset 0 0 0 1px rgba(199, 125, 0, 0.22);
+}
+.pill.independence.isSelected .pill-independence-title{
+  color:var(--purple-deep);
+}
+.pill.independence.isSelected .pill-independence-sub{
+  color:rgba(15, 35, 65, 0.72);
+}
+
+/* Native control invisible but fills pill — whole chip is the hit target. */
+.pill > input[type="radio"],
+.pill > input[type="checkbox"]{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  margin:0;
+  padding:0;
+  border:0;
+  border-radius:inherit;
+  opacity:0;
+  cursor:pointer;
+  z-index:1;
+  appearance:none;
+  -webkit-appearance:none;
+}
+.pill > input[type="radio"]:focus,
+.pill > input[type="checkbox"]:focus{
+  outline:none;
+}
+
+.pill:hover{ border-color:rgba(200, 170, 110, 0.55); }
+
+.pill.rate{
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  min-width:56px;
+  padding:10px 12px 8px;
+  gap:0;
+  background:#fff;
+  border-color:rgba(230, 210, 175, 0.45);
+}
+.pill-rate-inner{
+  position:relative;
+  z-index:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:5px;
+}
+.pill-rate-num{
+  font-size:12px;
+  font-weight:700;
+  line-height:1;
+  letter-spacing:-0.02em;
+}
+.pill-rate-stars{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:1px;
+  line-height:0;
+}
+.pill-rate-star{
+  width:10px;
+  height:10px;
+  display:block;
+  flex-shrink:0;
+  color:inherit;
+  opacity:0.88;
+}
+.pill.rate:not(.isSelected) .pill-rate-star{
+  opacity:0.88;
+  color:#fbbf24;
+}
+.pill.rate:not(.isSelected) .pill-rate-star path{
+  fill:none;
+  stroke:currentColor;
+  stroke-width:2;
+}
+
+.pill.emotion{
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  padding:12px 14px 14px;
+  flex-direction:column;
+}
+.pill-emotion-inner{
+  position:relative;
+  z-index:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  text-align:center;
+}
+.pill-emotion-face{
+  flex-shrink:0;
+  width:28px;
+  height:28px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  background:rgba(255,255,255,0.72);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,0.05);
+}
+.pill-emotion-face svg{
+  width:22px;
+  height:22px;
+  display:block;
+}
+.pill.emotion[data-value="Withdrawn"] .pill-emotion-face{ color:#2563eb; }
+.pill.emotion[data-value="Happy/Excited"] .pill-emotion-face{ color:#16a34a; }
+.pill.emotion[data-value="Anxious"] .pill-emotion-face{ color:#ca8a04; }
+.pill.emotion[data-value="Out of control"] .pill-emotion-face{ color:#dc2626; }
+.pill.emotion.isSelected .pill-emotion-face{
+  background:rgba(255,255,255,0.88);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,0.06);
+}
+.pill-emotion-label{
+  font-weight:500;
+}
+
+.pill:focus-within{
+  outline:2px solid rgba(190, 155, 95, 0.65);
+  outline-offset:-2px;
+}
+
+/* Emotions: selected chip uses a light tint of that face color (not gold). */
+.pill.emotion[data-value="Withdrawn"].isSelected{
+  background:rgba(37, 99, 235, 0.14);
+  border-color:rgba(37, 99, 235, 0.42);
+  color:#0f172a;
+  box-shadow:
+    inset 0 0 0 1px rgba(37, 99, 235, 0.2),
+    0 2px 10px rgba(37, 99, 235, 0.12);
+}
+.pill.emotion[data-value="Happy/Excited"].isSelected{
+  background:rgba(22, 163, 74, 0.16);
+  border-color:rgba(22, 163, 74, 0.4);
+  color:#0f172a;
+  box-shadow:
+    inset 0 0 0 1px rgba(22, 163, 74, 0.22),
+    0 2px 10px rgba(22, 163, 74, 0.12);
+}
+.pill.emotion[data-value="Anxious"].isSelected{
+  background:rgba(202, 138, 4, 0.18);
+  border-color:rgba(180, 120, 0, 0.48);
+  color:#0f172a;
+  box-shadow:
+    inset 0 0 0 1px rgba(202, 138, 4, 0.24),
+    0 2px 10px rgba(202, 138, 4, 0.1);
+}
+.pill.emotion[data-value="Out of control"].isSelected{
+  background:rgba(220, 38, 38, 0.12);
+  border-color:rgba(220, 38, 38, 0.42);
+  color:#0f172a;
+  box-shadow:
+    inset 0 0 0 1px rgba(220, 38, 38, 0.2),
+    0 2px 10px rgba(220, 38, 38, 0.1);
+}
+
+/* Engagement: white chip; selected ring in gold; yellow stars with glow */
+.pill.rate.isSelected{
+  background:#fff;
+  border-color:rgba(234, 179, 8, 0.65);
+  color:var(--text);
+  box-shadow:
+    inset 0 0 0 1px rgba(253, 224, 71, 0.35),
+    0 2px 14px rgba(250, 204, 21, 0.35);
+}
+.pill.rate.isSelected .pill-rate-num{
+  color:var(--purple-deep);
+}
+.pill.rate.isSelected .pill-rate-star{
+  opacity:1;
+  color:#ca8a04;
+}
+.pill.rate.isSelected .pill-rate-star path{
+  fill:#fde047;
+  stroke:#b45309;
+  stroke-width:1.85;
+}
+.pill.rate.isSelected .pill-rate-stars{
+  filter:
+    drop-shadow(0 0 1px rgba(255, 255, 255, 1))
+    drop-shadow(0 0 4px rgba(253, 224, 71, 0.95))
+    drop-shadow(0 0 10px rgba(250, 204, 21, 0.65));
+}
+
+.patternGrid{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+}
+
+.patternGrid .pill{
+  white-space:normal;
+  flex:1 1 calc(50% - 6px);
+  min-width:140px;
+}
+
+.patternGrid .pill.isSelected{
+  background:rgba(255, 214, 102, 0.58);
+  border-color:rgba(217, 140, 0, 0.88);
+  color:var(--purple-deep);
+  box-shadow:
+    inset 0 0 0 1px rgba(217, 140, 0, 0.28),
+    0 2px 8px rgba(245, 176, 20, 0.22);
+}
+
+.note{
+  margin-top:10px;
+  padding:12px 14px;
+  border-radius:14px;
+  border:1px solid rgba(200, 185, 150, 0.45);
+  background:rgba(252, 248, 236, 0.9);
+  color:rgba(11,18,32,0.88);
+  font-size:13px;
+  line-height:1.4;
+  display:none;
+}
+
+.actions{
+  margin-top:18px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  border-top:1px solid rgba(150, 140, 120, 0.16);
+  padding-top:16px;
+  flex-wrap:wrap;
+}
+.actions-right{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+button{
+  padding:12px 18px;
+  border-radius:12px;
+  border:none;
+  font-weight:800;
+  font-size:14px;
+  cursor:pointer;
+  font-family:inherit;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+}
+.btnBack{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:12px 18px;
+  border-radius:12px;
+  border:1px solid rgba(11,18,32,0.10);
+  background:rgba(11,18,32,0.04);
+  color:var(--text);
+  text-decoration:none;
+  font-weight:800;
+  font-size:14px;
+}
+.btnBack:hover{ background:rgba(11,18,32,0.08); }
+.btnPrimary{
+  background:linear-gradient(135deg,#f0c04a,#d69820);
+  color:#1a1004;
+  box-shadow:0 8px 20px rgba(200, 145, 40, 0.32);
+}
+.btnPrimary:hover{ transform:translateY(-1px); }
+.btnPrimary:disabled{ opacity:0.6; cursor:not-allowed; transform:none; }
+
+.btnGhost{
+  background:rgba(11,18,32,0.04);
+  border:1px solid rgba(11,18,32,0.10);
+  color:var(--text);
+}
+.btnGhost:hover{ background:rgba(11,18,32,0.08); }
+
+.small{
+  font-size:12px;
+  color:var(--muted);
+  line-height:1.4;
+  margin-top:6px;
+}
+.field-note{
+  margin:8px 0 0;
+  font-size:11.5px;
+  line-height:1.35;
+}
+
+.req{ color:#b91c1c; font-weight:900; margin-left:4px; }
+
+@media (max-width:720px){
+  body{ padding:14px; }
+  form{ padding:16px; }
+  .actions{ flex-wrap:wrap; gap:8px; }
+  .actions-right{ flex:1 1 100%; justify-content:flex-end; }
+  .actions button{ justify-content:center; }
+}
+
+@media (max-width:520px){
+  .options{
+    flex-wrap:wrap;
+    overflow-x:visible;
+    padding-bottom:0;
+  }
+  .pill{ flex:1 1 calc(50% - 12px); margin:3px 2px; }
+  .options:not(.options--independence):not(.options--emotions):not(.options--engagement) .pill{ justify-content:center; }
+  .options--engagement .pill{ flex:0 0 auto; margin:0; }
+  .options--emotions{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .options--emotions .pill{ flex:none; margin:0; }
+  .patternGrid .pill{ flex:1 1 100%; }
+  .options--independence{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .options--independence .pill{ flex:none; margin:0; }
+}
+</style>
+</head>
+
+<body class="portal-logo-feedback">
+<div class="wrap">
+  <div class="cancel-logo-wrap-outer">
+    <div class="cancel-logo-wrap">
+      <div class="cancel-logo-pulse" aria-hidden="true"></div>
+      <svg class="cancel-logo-orbits" viewBox="0 0 240 240" aria-hidden="true">
+        <g class="cancel-orbit-layer cancel-orbit-layer-a">
+          <circle cx="212" cy="120" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.95"></circle>
+          <circle cx="148.43" cy="207.50" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.95"></circle>
+          <circle cx="45.57" cy="174.04" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.95"></circle>
+          <circle cx="45.57" cy="65.96" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.95"></circle>
+          <circle cx="148.43" cy="32.50" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.95"></circle>
+        </g>
+        <g class="cancel-orbit-layer cancel-orbit-layer-b">
+          <circle cx="213.53" cy="174" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
+          <circle cx="120" cy="228" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
+          <circle cx="26.47" cy="174" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
+          <circle cx="26.47" cy="66" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
+          <circle cx="120" cy="12" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
+          <circle cx="213.53" cy="66" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
+        </g>
+      </svg>
+      <img class="cancel-login-logo" src="assets/logo-clubsensational.png" alt="clubSENsational" />
+    </div>
+  </div>
+
+  <div class="title-row">
+    <h1>Session feedback</h1>
+    <p>Choose whether the participant attended. If <strong>No</strong>, submit only the session details — they will appear in admin <strong>Absents</strong>. If <strong>Yes</strong>, complete the full feedback below.</p>
+  </div>
+
+  <div class="card">
+    <!-- Submit writes to Supabase when the staff session is signed in; optional JSON webhook if configured. -->
+    <form id="feedbackForm" novalidate>
+      <div class="grid">
+
+        <div class="field field--session-details field--session-details-shell">
+          <div class="session-date-field" role="group" aria-labelledby="fbSessionDateLabelText">
+            <div class="session-date-label-row" id="fbSessionDateLabelRow">
+              <span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
+              <span id="fbSessionDateLabelText">Session date <span class="req">*</span></span>
+            </div>
+            <div class="session-date-display-row">
+              <div
+                id="fbSessionDateDisplay"
+                class="session-date-display"
+                tabindex="0"
+                role="button"
+                aria-live="polite"
+                aria-label="Session date. Double-tap to change the day."
+              >—</div>
+              <span class="session-date-display__hint">Double-tap the date to change the day only</span>
+            </div>
+            <input type="hidden" id="fbSessionDate" name="fbSessionDate" value="" required />
+            <div id="fbSessionDateEditPanel" class="session-date-edit-panel" hidden>
+              <p class="session-date-edit-warning" id="fbSessionDateEditWarning"><strong>Attention:</strong> An earlier day counts as late feedback. Submit on the same day after your shift — <span class="session-date-deadline-em">latest 9pm</span>.</p>
+              <div class="session-date-picker-row" role="group" aria-label="Pick session day">
+                <input type="date" id="fbSessionDatePicker" class="session-date-picker-input" autocomplete="off" />
+              </div>
+              <div class="session-date-edit-actions">
+                <button type="button" class="btnGhost" id="fbSessionDateApplyBtn">Apply</button>
+                <button type="button" class="btnGhost" id="fbSessionDateCancelBtn">Cancel</button>
+              </div>
+            </div>
+          </div>
+          <label for="fbParticipantName"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span> Participant name <span class="req">*</span></label>
+          <div class="participant-field-wrap">
+            <input id="fbParticipantName" name="fbParticipantName" type="text" maxlength="200" required autocomplete="off" spellcheck="false" placeholder="Type the first letters — only names starting with that text appear" aria-autocomplete="list" aria-controls="fbParticipantSuggest" aria-expanded="false" />
+            <div id="fbParticipantSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Matching participants"></div>
+          </div>
+          <label for="fbService"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span> Service <span class="req">*</span></label>
+          <select id="fbService" name="fbService" required>
+            <option value="">Select a service</option>
+          </select>
+          <label><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span> Attended? <span class="req">*</span></label>
+          <div class="options options--attended" role="radiogroup" aria-label="Did the participant attend this session?">
+            <label class="pill" data-kind="attended" data-value="Yes"><input type="radio" name="sessionAttended" value="Yes" required> Yes</label>
+            <label class="pill" data-kind="attended" data-value="No"><input type="radio" name="sessionAttended" value="No"> No</label>
+          </div>
+        </div>
+
+        <div id="feedbackExtendedSection" hidden>
+        <div class="field">
+          <label><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span> Engagement <span class="req">*</span></label>
+          <div class="options options--engagement" role="radiogroup" aria-label="Engagement rating">
+            <div class="engagement-star-row">
+              <label class="engagement-star pill rate" data-kind="rating" data-value="1" aria-label="Engagement 1 star"><input type="radio" name="engagementRating" value="1" required><span class="engagement-star__glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span></label>
+              <label class="engagement-star pill rate" data-kind="rating" data-value="2" aria-label="Engagement 2 stars"><input type="radio" name="engagementRating" value="2"><span class="engagement-star__glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span></label>
+              <label class="engagement-star pill rate" data-kind="rating" data-value="3" aria-label="Engagement 3 stars"><input type="radio" name="engagementRating" value="3"><span class="engagement-star__glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span></label>
+              <label class="engagement-star pill rate" data-kind="rating" data-value="4" aria-label="Engagement 4 stars"><input type="radio" name="engagementRating" value="4"><span class="engagement-star__glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span></label>
+              <label class="engagement-star pill rate" data-kind="rating" data-value="5" aria-label="Engagement 5 stars"><input type="radio" name="engagementRating" value="5"><span class="engagement-star__glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span></label>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><circle cx="9" cy="9" r="1.25"/><circle cx="15" cy="9" r="1.25"/></svg></span> Participant Emotions / Regulation <span class="req">*</span></label>
+          <p class="small" style="margin:0 0 8px;font-weight:600;color:var(--muted)">Select all that apply.</p>
+          <div class="options options--emotions" role="group" aria-label="Participant emotions and regulation (multiple selection)">
+            <label class="pill emotion" data-kind="emotion" data-value="Withdrawn"><input type="checkbox" name="clientEmotions" value="Withdrawn"><span class="pill-emotion-inner"><span class="pill-emotion-face" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75"/><circle cx="9" cy="10" r="1.25" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1.25" fill="currentColor" stroke="none"/><path d="M8 15.5Q12 12.7 16 15.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" fill="none"/></svg></span><span class="pill-emotion-label">Withdrawn</span></span></label>
+            <label class="pill emotion" data-kind="emotion" data-value="Happy/Excited"><input type="checkbox" name="clientEmotions" value="Happy/Excited"><span class="pill-emotion-inner"><span class="pill-emotion-face" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75"/><circle cx="9" cy="10" r="1.25" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1.25" fill="currentColor" stroke="none"/><path d="M8 14Q12 17.2 16 14" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" fill="none"/></svg></span><span class="pill-emotion-label">Happy/Excited</span></span></label>
+            <label class="pill emotion" data-kind="emotion" data-value="Anxious"><input type="checkbox" name="clientEmotions" value="Anxious"><span class="pill-emotion-inner"><span class="pill-emotion-face" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75"/><path d="M8 8.5l2 1.5M16 8.5l-2 1.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/><path d="M8.5 14.5h7" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/><path d="M17.2 6.3c.9.6.8 1.8 0 2.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg></span><span class="pill-emotion-label">Anxious</span></span></label>
+            <label class="pill emotion" data-kind="emotion" data-value="Out of control"><input type="checkbox" name="clientEmotions" value="Out of control"><span class="pill-emotion-inner"><span class="pill-emotion-face" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75"/><path d="M8 8.5l3 2M16 8.5l-3 2" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/><path d="M9 15h6" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg></span><span class="pill-emotion-label">Out of control</span></span></label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg></span> Independence <span class="req">*</span></label>
+          <p class="small" style="margin:0 0 8px;font-weight:600;color:var(--muted)">Pick the level that fits this session.</p>
+          <div class="options options--independence" role="radiogroup" aria-label="Independence level">
+            <label class="pill independence" data-kind="independence" data-value="Independent"><input type="radio" name="independenceLevel" value="Independent" required><span class="pill-independence-inner"><span class="pill-independence-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span><span class="pill-independence-text"><span class="pill-independence-title">Independent</span><span class="pill-independence-sub">On their own</span></span></span></label>
+            <label class="pill independence" data-kind="independence" data-value="Independent with prompts"><input type="radio" name="independenceLevel" value="Independent with prompts"><span class="pill-independence-inner"><span class="pill-independence-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="9" y1="10" x2="15" y2="10"/></svg></span><span class="pill-independence-text"><span class="pill-independence-title">With prompts</span><span class="pill-independence-sub">Occasional reminders</span></span></span></label>
+            <label class="pill independence" data-kind="independence" data-value="Required regular support"><input type="radio" name="independenceLevel" value="Required regular support"><span class="pill-independence-inner"><span class="pill-independence-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="pill-independence-text"><span class="pill-independence-title">Regular support</span><span class="pill-independence-sub">Frequent help</span></span></span></label>
+            <label class="pill independence" data-kind="independence" data-value="Required full support"><input type="radio" name="independenceLevel" value="Required full support"><span class="pill-independence-inner"><span class="pill-independence-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span><span class="pill-independence-text"><span class="pill-independence-title">Full support</span><span class="pill-independence-sub">Throughout the session</span></span></span></label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="fbPositiveFeedback"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></span> Positive feedback <span class="req">*</span></label>
+          <textarea id="fbPositiveFeedback" name="positiveFeedback" placeholder="e.g. Practised turn-taking; stayed with the activity longer than last week" required></textarea>
+          <p class="small field-note">Shared with parents after we review.</p>
+        </div>
+
+        <div class="field">
+          <label for="fbRelevantInformation"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span> Relevant information <span class="req">*</span></label>
+          <textarea id="fbRelevantInformation" name="relevantInformation" placeholder="e.g. Session notes, follow-up, anything parents should or shouldn't hear" required></textarea>
+          <p class="small field-note">We filter what is shared with parents.</p>
+        </div>
+
+        </div>
+
+        <div class="actions">
+          <a href="/staff.html" class="btnBack" id="feedbackBackLink" aria-label="Back to portal">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            Back
+          </a>
+          <div class="actions-right">
+            <button type="button" class="btnGhost" id="clearBtn">Clear</button>
+            <button type="submit" class="btnPrimary" id="submitBtn">Submit</button>
+          </div>
+        </div>
+
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+(function(){
+  function __portalSharedBase() {
+    var b =
+      typeof window !== "undefined" && window.PORTAL_SHARED_JS_BASE
+        ? String(window.PORTAL_SHARED_JS_BASE).replace(/\/$/, "")
+        : "";
+    return b || (typeof location !== "undefined" ? location.origin : "") + "/portal-shared-js";
+  }
+  function __portalJs(file) {
+    return __portalSharedBase() + "/" + file;
+  }
+  const PORTAL_AUTH_MODULE = __portalJs("auth-handler.js?v=20260515-participant-service-filter");
+  const PORTAL_SUPABASE_MODULE = __portalJs("supabase-client.js?v=20260519-absent-feedback");
+  /** Injected by scripts/inject-portal-env.mjs (same secret as staff.html / lead.html). */
+  var STAFF_PROFILE_PORTAL_BRIDGE_SECRET = "%%PB6%%";
+  const PORTAL_SESSION_REVIEW_MAP_STORAGE = "portalSessionReviewMap_v1";
+  const PORTAL_CLIENTS_INFO_SCRIPT = __portalJs("clients_info_embed.js?v=20260517-roster-clients");
+  const PORTAL_SPREADSHEET_BUNDLE_SCRIPT = __portalJs("staff_dashboard_spreadsheet_bundle.js?v=20260520-hazem-angel-aurora");
+  const PORTAL_PARTICIPANT_SERVICES_SCRIPT = __portalJs("participant_services.js?v=20260520-acat-feedback-picker");
+
+  const qs = new URLSearchParams(typeof window !== "undefined" && window.location ? window.location.search : "");
+  /** Set when opening from the staff dashboard row (YYYY-MM-DD|time|client_id). Hub "Feedback" link often has no key — see effectiveFeedbackSessionKey(). */
+  const portalSessionKeyFromUrl = (qs.get("sessionKey") || "").trim();
+  /** Participant prefill: explicit client params only — not generic `name` (often the instructor on portal links). */
+  let portalName = (qs.get("clientName") || qs.get("client") || "").trim();
+  try{
+    if(portalName.indexOf("%") !== -1) portalName = decodeURIComponent(portalName);
+  }catch(_){}
+  portalName = clean(portalName.replace(/\+/g, " "));
+  /** Only prefill the participant field when the URL explicitly names a client (not after roster enrichment). */
+  const portalParticipantQueryPrefill = portalName;
+  let portalDate = (qs.get("date") || "").trim();
+  try{
+    if(portalDate.indexOf("%") !== -1) portalDate = decodeURIComponent(portalDate);
+  }catch(_){}
+  let portalService = (qs.get("service") || "").trim();
+  let portalTime = (qs.get("time") || qs.get("sessionTime") || "").trim();
+  let portalClientId = (qs.get("clientId") || "").trim();
+  try{
+    if(portalService.indexOf("%") !== -1) portalService = decodeURIComponent(portalService);
+  }catch(_){}
+  try{
+    if(portalTime.indexOf("%") !== -1) portalTime = decodeURIComponent(portalTime);
+  }catch(_){}
+  try{
+    if(portalClientId.indexOf("%") !== -1) portalClientId = decodeURIComponent(portalClientId);
+  }catch(_){}
+
+  const form = document.getElementById("feedbackForm");
+  const clearBtn = document.getElementById("clearBtn");
+  const submitBtn = document.getElementById("submitBtn");
+  const feedbackBackLink = document.getElementById("feedbackBackLink");
+  const feedbackExtendedSection = document.getElementById("feedbackExtendedSection");
+
+  wireSessionDateEditUi();
+
+  function getSessionAttended(){
+    const picked = form.querySelector('input[name="sessionAttended"]:checked');
+    return picked ? String(picked.value || "").trim() : "";
+  }
+
+  function setExtendedFieldsRequired(isRequired){
+    if(!feedbackExtendedSection) return;
+    feedbackExtendedSection.querySelectorAll('input[name="engagementRating"]').forEach(function(inp, idx){
+      if(isRequired && idx === 0) inp.setAttribute("required", "");
+      else inp.removeAttribute("required");
+    });
+    feedbackExtendedSection.querySelectorAll('input[name="independenceLevel"]').forEach(function(inp, idx){
+      if(isRequired && idx === 0) inp.setAttribute("required", "");
+      else inp.removeAttribute("required");
+    });
+    const pos = document.getElementById("fbPositiveFeedback");
+    const rel = document.getElementById("fbRelevantInformation");
+    if(pos){
+      if(isRequired) pos.setAttribute("required", "");
+      else pos.removeAttribute("required");
+    }
+    if(rel){
+      if(isRequired) rel.setAttribute("required", "");
+      else rel.removeAttribute("required");
+    }
+  }
+
+  function clearExtendedFeedbackFields(){
+    clearPhase2RadiosOnly();
+    const pos = form.querySelector('textarea[name="positiveFeedback"]');
+    const rel = form.querySelector('textarea[name="relevantInformation"]');
+    if(pos) pos.value = "";
+    if(rel) rel.value = "";
+  }
+
+  function syncAttendedVisibility(){
+    const attended = getSessionAttended();
+    if(!feedbackExtendedSection) return;
+    if(attended === "Yes"){
+      feedbackExtendedSection.hidden = false;
+      setExtendedFieldsRequired(true);
+    } else {
+      feedbackExtendedSection.hidden = true;
+      setExtendedFieldsRequired(false);
+      if(attended === "No") clearExtendedFeedbackFields();
+    }
+    syncPillSelection();
+  }
+
+  function clearPhase2RadiosOnly(){
+    form.querySelectorAll('input[name="engagementRating"]').forEach(function(inp){ inp.checked = false; });
+    form.querySelectorAll('input[name="clientEmotions"]').forEach(function(inp){ inp.checked = false; });
+    form.querySelectorAll('input[name="independenceLevel"]').forEach(function(inp){ inp.checked = false; });
+  }
+
+  function loadPortalScriptOnce(src){
+    return new Promise(function(resolve, reject){
+      const nodes = document.getElementsByTagName("script");
+      for(let i = 0; i < nodes.length; i++){
+        if(nodes[i].src === src){ resolve(); return; }
+      }
+      const s = document.createElement("script");
+      s.src = src;
+      s.async = true;
+      s.onload = function(){ resolve(); };
+      s.onerror = function(){ reject(new Error("load failed: " + src)); };
+      document.head.appendChild(s);
+    });
+  }
+
+  function slugifyPortal(value){
+    return String(value || "")
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+  }
+
+  function parseHmPortal(token){
+    const t = String(token || "").trim();
+    const parts = t.split(".");
+    const h = parseInt(parts[0], 10) || 0;
+    const m = parts.length > 1 ? (parseInt(parts[1], 10) || 0) : 0;
+    return { h: h, m: m };
+  }
+
+  function hourTo24Portal(hour, day){
+    if(day !== "Sunday" && hour < 8) return hour + 12;
+    if(day === "Sunday" && hour >= 1 && hour <= 3) return hour + 12;
+    return hour;
+  }
+
+  function parseTimeSlotPortal(timeSlot, day){
+    const normalized = String(timeSlot || "")
+      .replace(/\s*-\s*/g, " to ")
+      .replace(/\s+/g, " ")
+      .trim();
+    const parts = normalized.split(/\s+to\s+/i);
+    if(parts.length < 2){
+      return { start: "16:00", end: "16:30" };
+    }
+    const a = parseHmPortal(parts[0]);
+    const b = parseHmPortal(parts[1]);
+    const ah = hourTo24Portal(a.h, day);
+    const bh = hourTo24Portal(b.h, day);
+    const start = String(ah).padStart(2, "0") + ":" + String(a.m).padStart(2, "0");
+    const end = String(bh).padStart(2, "0") + ":" + String(b.m).padStart(2, "0");
+    return { start: start, end: end };
+  }
+
+  function weekdayLongFromIso(iso){
+    const s = String(iso || "").trim();
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(s)) return "";
+    const p = s.split("-").map(Number);
+    const d = new Date(p[0], p[1] - 1, p[2]);
+    if(Number.isNaN(d.getTime())) return "";
+    return d.toLocaleDateString("en-GB", { weekday: "long" });
+  }
+
+  async function ensurePortalRosterScriptsLoaded(){
+    try{
+      if(!Array.isArray(window.PORTAL_CLIENTS_INFO_ROWS)) await loadPortalScriptOnce(PORTAL_CLIENTS_INFO_SCRIPT);
+    }catch(_){}
+    try{
+      if(!window.STAFF_DASHBOARD_SOURCE || !Array.isArray(window.STAFF_DASHBOARD_SOURCE.rows)){
+        await loadPortalScriptOnce(PORTAL_SPREADSHEET_BUNDLE_SCRIPT);
+      }
+    }catch(_){}
+    try{
+      if(typeof window.portalCollectServicesForParticipantName !== "function"){
+        await loadPortalScriptOnce(PORTAL_PARTICIPANT_SERVICES_SCRIPT);
+      }
+    }catch(_){}
+  }
+
+  function collectUniqueParticipantNames(){
+    if(typeof window.portalCollectUniqueParticipantNames === "function"){
+      return window.portalCollectUniqueParticipantNames();
+    }
+    const set = new Set();
+    function addOne(nm){
+      const t = clean(String(nm || ""));
+      if(!t) return;
+      const low = t.toLowerCase();
+      if(low === "closed" || low === "available" || low === "no client") return;
+      set.add(t);
+    }
+    try{
+      const rows = window.PORTAL_CLIENTS_INFO_ROWS;
+      if(Array.isArray(rows)){
+        for(let i = 0; i < rows.length; i++) addOne(rows[i] && rows[i].client_name);
+      }
+    }catch(_){}
+    try{
+      const src = window.STAFF_DASHBOARD_SOURCE;
+      const rows = src && Array.isArray(src.rows) ? src.rows : [];
+      for(let i = 0; i < rows.length; i++) addOne(rows[i] && rows[i].client_name);
+    }catch(_){}
+    return Array.from(set).sort(function(a, b){ return a.localeCompare(b, "en", { sensitivity: "base" }); });
+  }
+
+  function stripDiacriticsPortal(s){
+    const t = String(s || "");
+    try{
+      return t.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    }catch(_){
+      return t;
+    }
+  }
+
+  function participantNameStartsWithPortal(name, prefixRaw){
+    if(typeof window.portalParticipantNameStartsWith === "function"){
+      return window.portalParticipantNameStartsWith(name, prefixRaw);
+    }
+    const pref = clean(String(prefixRaw || ""));
+    if(!pref) return false;
+    const a = stripDiacriticsPortal(name).toLowerCase();
+    const b = stripDiacriticsPortal(pref).toLowerCase();
+    return a.indexOf(b) === 0;
+  }
+
+  function collectServicesForParticipantName(participantRaw){
+    if(typeof window.portalCollectServicesForParticipantName === "function"){
+      return window.portalCollectServicesForParticipantName(participantRaw);
+    }
+    const target = clean(participantRaw);
+    if(!target) return [];
+    const set = new Set();
+    const want = stripDiacriticsPortal(target).toLowerCase();
+    try{
+      const src = window.STAFF_DASHBOARD_SOURCE;
+      const rows = src && Array.isArray(src.rows) ? src.rows : [];
+      for(let i = 0; i < rows.length; i++){
+        const r = rows[i] || {};
+        const nm = clean(r.client_name);
+        if(!nm) continue;
+        if(stripDiacriticsPortal(nm).toLowerCase() !== want) continue;
+        const s = clean(r.service);
+        if(s) set.add(s);
+      }
+    }catch(_){}
+    return Array.from(set).sort(function(a, b){ return a.localeCompare(b, "en", { sensitivity: "base" }); });
+  }
+
+  const PARTICIPANT_SUGGEST_MAX = 14;
+
+  function rebuildParticipantSuggestList(suggestId, prefixRaw){
+    const box = document.getElementById(suggestId);
+    if(!box) return [];
+    box.replaceChildren();
+    const pref = clean(String(prefixRaw || ""));
+    if(!pref){
+      box.hidden = true;
+      return [];
+    }
+    const names = collectUniqueParticipantNames();
+    const matches = [];
+    for(let i = 0; i < names.length; i++){
+      const nm = names[i];
+      if(!participantNameStartsWithPortal(nm, pref)) continue;
+      matches.push(nm);
+      if(matches.length >= PARTICIPANT_SUGGEST_MAX) break;
+    }
+    for(let j = 0; j < matches.length; j++){
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "portal-name-suggest__item";
+      btn.setAttribute("role", "option");
+      btn.textContent = matches[j];
+      btn.dataset.name = matches[j];
+      box.appendChild(btn);
+    }
+    box.hidden = matches.length === 0;
+    return matches;
+  }
+
+  function syncParticipantSuggestForInput(inputId, suggestId){
+    const inp = document.getElementById(inputId);
+    if(!inp) return [];
+    const matches = rebuildParticipantSuggestList(suggestId, inp.value);
+    inp.setAttribute("aria-expanded", matches.length ? "true" : "false");
+    return matches;
+  }
+
+  function hideParticipantSuggest(suggestId){
+    const box = document.getElementById(suggestId);
+    if(box) box.hidden = true;
+    const inp = document.getElementById("fbParticipantName");
+    if(inp) inp.setAttribute("aria-expanded", "false");
+  }
+
+  function commitFeedbackParticipantPick(rawName){
+    const el = document.getElementById("fbParticipantName");
+    if(!el) return;
+    const resolved = typeof window.portalResolveParticipantCanonicalName === "function"
+      ? window.portalResolveParticipantCanonicalName(rawName)
+      : clean(rawName);
+    const name = resolved || clean(rawName);
+    if(!name) return;
+    el.value = name;
+    hideParticipantSuggest("fbParticipantSuggest");
+    rebuildServiceSelectForParticipant("fbService", name, "");
+    const svc = document.getElementById("fbService");
+    if(svc){
+      try{ svc.focus(); }catch(_){}
+    }
+  }
+
+  function rebuildServiceSelectForParticipant(selectId, participantName, preferredService){
+    const sel = document.getElementById(selectId);
+    if(!sel || sel.tagName !== "SELECT") return;
+    const pref = clean(preferredService != null ? preferredService : sel.value);
+    const part = clean(participantName);
+    sel.textContent = "";
+    const ph = document.createElement("option");
+    ph.value = "";
+    ph.textContent = "Select a service";
+    sel.appendChild(ph);
+    const list = part ? collectServicesForParticipantName(part) : [];
+    for(let i = 0; i < list.length; i++){
+      const o = document.createElement("option");
+      o.value = list[i];
+      o.textContent = list[i];
+      sel.appendChild(o);
+    }
+    let chosen = "";
+    if(list.length === 1) chosen = list[0];
+    else if(pref && list.indexOf(pref) !== -1) chosen = pref;
+    if(chosen){
+      sel.value = chosen;
+      return;
+    }
+    if(pref && !list.length){
+      const o = document.createElement("option");
+      o.value = pref;
+      o.textContent = pref;
+      sel.appendChild(o);
+      sel.value = pref;
+      return;
+    }
+    if(pref && list.indexOf(pref) === -1){
+      const o = document.createElement("option");
+      o.value = pref;
+      o.textContent = pref;
+      sel.appendChild(o);
+      sel.value = pref;
+    }
+  }
+
+  async function refreshFeedbackParticipantAndServicePickers(){
+    await ensurePortalRosterScriptsLoaded();
+    syncParticipantSuggestForInput("fbParticipantName", "fbParticipantSuggest");
+    const fbPn = document.getElementById("fbParticipantName");
+    const pnm = fbPn ? clean(fbPn.value) : "";
+    rebuildServiceSelectForParticipant("fbService", pnm, portalService.trim());
+  }
+
+  function aquaticRosterMatchesForClient(sessionDate, clientSlug, svcLow, startKey, completedByName){
+    const wd = weekdayLongFromIso(sessionDate);
+    const rows = window.STAFF_DASHBOARD_SOURCE && Array.isArray(window.STAFF_DASHBOARD_SOURCE.rows)
+      ? window.STAFF_DASHBOARD_SOURCE.rows
+      : [];
+    const matches = [];
+    for(let i = 0; i < rows.length; i++){
+      const r = rows[i];
+      const nameRaw = String(r.client_name || "").trim();
+      const nameLower = nameRaw.toLowerCase();
+      if(!nameRaw || nameLower === "closed" || nameLower === "available" || nameLower === "no client") continue;
+      if(slugifyPortal(nameRaw) !== clientSlug) continue;
+      if(wd && String(r.day || "").trim() !== wd) continue;
+      if(String(r.service || "").trim().toLowerCase() !== svcLow) continue;
+      if(startKey){
+        const t = parseTimeSlotPortal(r.time_slot, String(r.day || "").trim());
+        if(t.start !== normalizeSessionTimeForKey(startKey, sessionDate)) continue;
+      }
+      matches.push(r);
+    }
+    if(matches.length <= 1) return matches[0] || null;
+    const by = clean(completedByName).toLowerCase();
+    if(by){
+      for(let j = 0; j < matches.length; j++){
+        const inst = clean(matches[j].instructors).toLowerCase();
+        if(inst && (by === inst || by.indexOf(inst) >= 0 || inst.indexOf(by) >= 0)){
+          return matches[j];
+        }
+      }
+    }
+    return matches[0] || null;
+  }
+
+  function resolveAquaticSessionTimeFromRoster(ctx, completedByName){
+    const svc = clean(ctx.service).toLowerCase();
+    if(svc.indexOf("aquatic") === -1 && svc.indexOf("swimming") === -1) return "";
+    const d = String(ctx.session_date || "").trim();
+    const nm = clean(ctx.client_name);
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(d) || !nm) return "";
+    const slug = slugifyPortal(nm);
+    const row = aquaticRosterMatchesForClient(d, slug, svc, "", completedByName);
+    if(!row || !row.time_slot) return "";
+    const wd = weekdayLongFromIso(d);
+    return parseTimeSlotPortal(row.time_slot, wd).start || "";
+  }
+
+  async function enrichPortalSessionContext(){
+    const fromKey = parseSessionKey(portalSessionKeyFromUrl);
+    const cid = String(portalClientId || fromKey.client_id || "").trim();
+    if(!cid || cid === "available" || cid === "closed") return;
+    const sessionDate = portalDate && /^\d{4}-\d{2}-\d{2}$/.test(portalDate) ? portalDate : fromKey.session_date;
+    const startKey = String(fromKey.session_time || "").trim();
+    const wd = weekdayLongFromIso(sessionDate);
+    const submitterHint =
+      readPinIdentityName() || clean(instructorDisplayName) || "";
+
+    if(!portalName.replace(/\+/g, " ").trim()){
+      try{
+        if(!Array.isArray(window.PORTAL_CLIENTS_INFO_ROWS)){
+          await loadPortalScriptOnce(PORTAL_CLIENTS_INFO_SCRIPT);
+        }
+        const rows = window.PORTAL_CLIENTS_INFO_ROWS;
+        if(Array.isArray(rows)){
+          for(let i = 0; i < rows.length; i++){
+            const r = rows[i];
+            const nm = String(r && r.client_name != null ? r.client_name : "").trim();
+            if(nm && slugifyPortal(nm) === cid){
+              portalName = nm;
+              break;
+            }
+          }
+        }
+      }catch(_){}
+    }
+
+    const needService = !portalService.trim();
+    const needTime = !portalTime.trim();
+    if(needService || needTime){
+      try{
+        if(!window.STAFF_DASHBOARD_SOURCE || !Array.isArray(window.STAFF_DASHBOARD_SOURCE.rows)){
+          await loadPortalScriptOnce(PORTAL_SPREADSHEET_BUNDLE_SCRIPT);
+        }
+        const svcLow = (portalService.trim() || "aquatic activity").toLowerCase();
+        const picked = aquaticRosterMatchesForClient(
+          sessionDate,
+          cid,
+          svcLow,
+          startKey,
+          submitterHint
+        );
+        if(picked){
+          if(needService && picked.service) portalService = String(picked.service).trim();
+          if(needTime && picked.time_slot) portalTime = String(picked.time_slot).trim();
+          if(!portalName.replace(/\+/g, " ").trim()) portalName = String(picked.client_name || "").trim();
+        }
+      }catch(_){}
+    }
+  }
+
+  function parseSessionKey(sk){
+    const raw = String(sk || "").trim();
+    const parts = raw.split("|");
+    const d0 = (parts[0] || "").trim();
+    return {
+      session_date: /^\d{4}-\d{2}-\d{2}$/.test(d0) ? d0 : "",
+      session_time: (parts[1] || "").trim(),
+      client_id: (parts[2] || "").trim()
+    };
+  }
+
+  /** True when opened from Staff/Lead hub link, trusted PIN context, or an active staff/lead portal session in this browser. */
+  function portalOpenedFromStaffHub(){
+    try{
+      const fp = (qs.get("from_portal") || "").trim().toLowerCase();
+      if(fp === "staff" || fp === "lead") return true;
+    }catch(_){}
+    try{
+      const pin = window.__PORTAL_PIN_IDENTITY__;
+      if(pin && pin.trusted && clean(pin.displayName)) return true;
+    }catch(_){}
+    try{
+      const keys = ["clubsens_staff_session_v2", "clubsens_lead_session_v2"];
+      for(let i = 0; i < keys.length; i++){
+        const raw = localStorage.getItem(keys[i]);
+        if(!raw) continue;
+        const o = JSON.parse(raw);
+        if(o && clean(o.displayName)) return true;
+      }
+    }catch(_){}
+    return false;
+  }
+
+  /**
+   * Same pipe shape as dashboard keys so parseSessionKey / rota logic stay compatible.
+   * Used when staff completes feedback from the hub link without a dashboard sessionKey.
+   */
+  function normalizeSessionTimeForKey(raw, sessionDate){
+    const s = String(raw || "").trim();
+    if(!s) return "";
+    const hm = s.match(/^(\d{1,2}):(\d{2})/);
+    if(hm){
+      return String(parseInt(hm[1], 10)).padStart(2, "0") + ":" + String(parseInt(hm[2], 10) || 0).padStart(2, "0");
+    }
+    const wd = weekdayLongFromIso(sessionDate);
+    return parseTimeSlotPortal(s, wd).start || s;
+  }
+
+  function rosterRowMatchesContext(r, wd, want, svcLow, t){
+    if(wd && String(r.day || "").trim() !== wd) return false;
+    if(slugifyPortal(String(r.client_name || "")) !== want) return false;
+    if(String(r.service || "").trim().toLowerCase() !== svcLow) return false;
+    const slot = parseTimeSlotPortal(r.time_slot, wd);
+    if(t && slot.start && slot.start !== t) return false;
+    return true;
+  }
+
+  function pickRosterAreaForFeedback(matches, completedByName){
+    if(!matches || !matches.length) return "";
+    if(matches.length === 1){
+      return String(matches[0].area || "").trim();
+    }
+    const by = clean(completedByName).toLowerCase();
+    if(by){
+      for(let i = 0; i < matches.length; i++){
+        const inst = clean(matches[i].instructors);
+        if(inst && (by === inst.toLowerCase() || by.indexOf(inst.toLowerCase()) >= 0 || inst.toLowerCase().indexOf(by) >= 0)){
+          return String(matches[i].area || "").trim();
+        }
+      }
+      if(/godsway|giuseppe|bismark|john|berta/.test(by)){
+        for(let j = 0; j < matches.length; j++){
+          if(slugifyPortal(String(matches[j].area || "")) === "hub_room") return String(matches[j].area || "").trim();
+        }
+      }
+      if(/aurora|javier|roberto|dan|youssef/.test(by)){
+        for(let k = 0; k < matches.length; k++){
+          if(slugifyPortal(String(matches[k].area || "")) === "big_pool") return String(matches[k].area || "").trim();
+        }
+      }
+    }
+    return String(matches[0].area || "").trim();
+  }
+
+  function deriveAdHocSessionKeyFromContext(ctx, completedByName){
+    const d = String(ctx.session_date || "").trim();
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(d)) return "";
+    const svc = clean(ctx.service);
+    const nm = clean(ctx.client_name);
+    if(!svc || !nm) return "";
+    let t = normalizeSessionTimeForKey(ctx.session_time, d);
+    if(!t){
+      t = resolveAquaticSessionTimeFromRoster(ctx, completedByName);
+    }
+    const idPart = clean(ctx.client_id) || slugifyPortal(nm) || "participant";
+    let key = d + "|" + t + "|" + idPart;
+    const svcLow = svc.toLowerCase();
+    if(svcLow.indexOf("day centre") !== -1){
+      return d + "|" + idPart + "|day_centre";
+    }
+    if(svcLow.indexOf("multi-activity") !== -1 || svcLow.indexOf("bespoke") !== -1){
+      try{
+        const rows = window.STAFF_DASHBOARD_SOURCE && Array.isArray(window.STAFF_DASHBOARD_SOURCE.rows)
+          ? window.STAFF_DASHBOARD_SOURCE.rows
+          : [];
+        const wd = weekdayLongFromIso(d);
+        const want = slugifyPortal(nm);
+        const matches = [];
+        for(let i = 0; i < rows.length; i++){
+          const r = rows[i] || {};
+          if(!rosterRowMatchesContext(r, wd, want, svcLow, t)) continue;
+          matches.push(r);
+        }
+        const area = pickRosterAreaForFeedback(matches, completedByName);
+        if(area){
+          key += "|" + slugifyPortal(area);
+        }
+      }catch(_){}
+    }
+    return key;
+  }
+
+  function effectiveFeedbackSessionKey(ctx, completedByName){
+    const fromUrl = clean(portalSessionKeyFromUrl);
+    if(fromUrl){
+      const parsed = parseSessionKey(fromUrl);
+      const hasTime = !!normalizeSessionTimeForKey(parsed.session_time, parsed.session_date || ctx.session_date);
+      if(hasTime) return fromUrl;
+    }
+    const derived = deriveAdHocSessionKeyFromContext(ctx, completedByName);
+    if(derived && derived.indexOf("||") === -1) return derived;
+    return derived;
+  }
+
+  function todayIsoPortal(){
+    const d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+
+  function computeLateSessionFeedback(sessionIso){
+    const s = String(sessionIso || "").trim();
+    const t = todayIsoPortal();
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+    return s < t;
+  }
+
+  /** When editing session day, month/year are fixed to the current session date (prevents jumping to another month). */
+  let sessionDateEditLockYear = null;
+  let sessionDateEditLockMonth = null;
+
+  function formatLockedMonthYearEnGB(year, month1to12){
+    const dt = new Date(year, month1to12 - 1, 1);
+    return dt.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+  }
+
+  function daysInMonth(year, month1to12){
+    return new Date(year, month1to12, 0).getDate();
+  }
+
+  function parseIsoToYearMonthDay(iso){
+    const s = String(iso || "").trim();
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
+    const p = s.split("-").map(Number);
+    return { y: p[0], m: p[1], d: p[2] };
+  }
+
+  function syncSessionDatePickerBounds(){
+    const picker = document.getElementById("fbSessionDatePicker");
+    const y = sessionDateEditLockYear;
+    const m = sessionDateEditLockMonth;
+    if(!picker || y == null || m == null) return;
+    const mm = String(m).padStart(2, "0");
+    const maxD = daysInMonth(y, m);
+    picker.min = y + "-" + mm + "-01";
+    picker.max = y + "-" + mm + "-" + String(maxD).padStart(2, "0");
+  }
+
+  let instructorDisplayName = "";
+  let instructorAppRole = "";
+
+  /** Optional webhook (e.g. Make.com): set before this script on the host page, e.g. window.PORTAL_SESSION_FEEDBACK_WEBHOOK_URL = "https://hook...". */
+  function sessionFeedbackWebhookUrl(){
+    try{
+      if(typeof window !== "undefined" && window.PORTAL_SESSION_FEEDBACK_WEBHOOK_URL){
+        const u = String(window.PORTAL_SESSION_FEEDBACK_WEBHOOK_URL).trim();
+        if(/^https?:\/\//i.test(u)) return u;
+      }
+    }catch(_){}
+    return "";
+  }
+
+  function postSessionFeedbackWebhook(payload){
+    const url = sessionFeedbackWebhookUrl();
+    if(!url) return Promise.resolve();
+    return fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      mode: "cors",
+      keepalive: true,
+    }).catch(function(err){
+      console.warn("[session-feedback] webhook failed", err);
+    });
+  }
+
+  /** Fallback instructor name from URL only if signed-in profile did not supply one. */
+  function resolveInstructorFromUrl(){
+    if(clean(instructorDisplayName)) return;
+    const candidates = [
+      qs.get("full_name"),
+      qs.get("staff"),
+      qs.get("reporter"),
+      qs.get("instructor"),
+      qs.get("completedBy"),
+    ];
+    for(let i = 0; i < candidates.length; i++){
+      let t = String(candidates[i] || "").trim();
+      try{
+        if(t.indexOf("%") !== -1) t = decodeURIComponent(t);
+      }catch(_){}
+      t = clean(t.replace(/\+/g, " "));
+      if(t){
+        instructorDisplayName = t;
+        return;
+      }
+    }
+  }
+
+  async function loadInstructorDisplayName(){
+    try{
+      const { getSupabaseClient } = await import(PORTAL_AUTH_MODULE);
+      const supabase = getSupabaseClient();
+      const { data: authData, error: authErr } = await supabase.auth.getUser();
+      if(authErr || !authData || !authData.user) return;
+      const prof = await lookupStaffProfileForAuth(supabase, authData.user);
+      const n = clean(prof && (prof.full_name || prof.username));
+      if(n) instructorDisplayName = n;
+      const ar = clean(prof && prof.app_role);
+      if(ar){
+        instructorAppRole = ar.charAt(0).toUpperCase() + ar.slice(1).toLowerCase();
+      }
+    }catch(_){}
+    if(clean(instructorDisplayName)) return;
+    try{
+      const pin = window.__PORTAL_PIN_IDENTITY__;
+      if(pin && pin.trusted && clean(pin.displayName)){
+        instructorDisplayName = clean(pin.displayName);
+        return;
+      }
+    }catch(_){}
+    const keys = ["clubsens_staff_session_v2", "clubsens_lead_session_v2"];
+    for(let k = 0; k < keys.length; k++){
+      try{
+        const raw = localStorage.getItem(keys[k]);
+        if(!raw) continue;
+        const o = JSON.parse(raw);
+        if(o && clean(o.displayName)){
+          instructorDisplayName = clean(o.displayName);
+          return;
+        }
+      }catch(_){}
+    }
+  }
+
+  function syncFeedbackManualFields(){
+    const fbPn = document.getElementById("fbParticipantName");
+    const fbSv = document.getElementById("fbService");
+    const fbDt = document.getElementById("fbSessionDate");
+    const fromKey = parseSessionKey(portalSessionKeyFromUrl);
+    if(fbPn && !clean(fbPn.value) && portalParticipantQueryPrefill){
+      fbPn.value = portalParticipantQueryPrefill;
+    }
+    const pnm = fbPn ? clean(fbPn.value) : "";
+    const wantSvc = (fbSv && clean(fbSv.value)) || portalService.trim();
+    rebuildServiceSelectForParticipant("fbService", pnm, wantSvc);
+    if(fbDt && !clean(fbDt.value)){
+      let iso = portalDate && /^\d{4}-\d{2}-\d{2}$/.test(portalDate) ? portalDate : (fromKey.session_date || "");
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) iso = todayIsoPortal();
+      fbDt.value = iso;
+    }
+    syncParticipantSuggestForInput("fbParticipantName", "fbParticipantSuggest");
+    updateSessionDateDisplayFromIso();
+  }
+
+  function buildResolvedContext(){
+    const fromKey = parseSessionKey(portalSessionKeyFromUrl);
+    const fbPn = document.getElementById("fbParticipantName");
+    const fbSv = document.getElementById("fbService");
+    const fbDt = document.getElementById("fbSessionDate");
+    let session_date = fbDt && clean(fbDt.value) ? clean(fbDt.value) : "";
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(session_date)){
+      session_date = portalDate && /^\d{4}-\d{2}-\d{2}$/.test(portalDate) ? portalDate : fromKey.session_date;
+    }
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(session_date)){
+      session_date = todayIsoPortal();
+    }
+    const session_time = (portalTime || fromKey.session_time || "").trim() || null;
+    const client_id = (portalClientId || fromKey.client_id || "").trim() || null;
+    const client_name = (fbPn && clean(fbPn.value)) || portalParticipantQueryPrefill;
+    const service = (fbSv && clean(fbSv.value)) || portalService.trim();
+    return { session_date, session_time, client_id, client_name, service };
+  }
+
+  function validateContextForSubmit(ctx, completedByName){
+    const missing = [];
+    if(!ctx.session_date || !/^\d{4}-\d{2}-\d{2}$/.test(ctx.session_date)) missing.push("session date");
+    if(!clean(ctx.service)) missing.push("service");
+    if(!clean(ctx.client_name)) missing.push("participant name");
+    const clientLow = clean(ctx.client_name).toLowerCase();
+    if(clientLow === "day centre"){
+      missing.push("participant name (select a client, not the service name)");
+    }
+    const svcLow = clean(ctx.service).toLowerCase();
+    if(svcLow.indexOf("aquatic") !== -1 || svcLow.indexOf("swimming") !== -1){
+      const t =
+        normalizeSessionTimeForKey(ctx.session_time, ctx.session_date) ||
+        resolveAquaticSessionTimeFromRoster(ctx, completedByName);
+      if(!t){
+        missing.push(
+          "session time (this participant has two pool blocks today — open feedback from your roster row or add ?time=17:30 to the link)"
+        );
+      }
+    }
+    return missing;
+  }
+
+  function parseIsoToLocalDate(iso){
+    const s = String(iso || "").trim();
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
+    const p = s.split("-").map(Number);
+    const d = new Date(p[0], p[1] - 1, p[2]);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+
+  function formatSessionDateWeekday(iso){
+    const d = parseIsoToLocalDate(iso);
+    if(!d) return "";
+    return d.toLocaleDateString("en-GB", { weekday: "long" });
+  }
+
+  function formatSessionDateLong(iso){
+    const d = parseIsoToLocalDate(iso);
+    if(!d) return "";
+    return d.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+  }
+
+  function updateSessionDateDisplayFromIso(){
+    const hid = document.getElementById("fbSessionDate");
+    const disp = document.getElementById("fbSessionDateDisplay");
+    if(!hid || !disp) return;
+    const iso = clean(hid.value);
+    if(/^\d{4}-\d{2}-\d{2}$/.test(iso)){
+      const weekday = formatSessionDateWeekday(iso);
+      const long = formatSessionDateLong(iso);
+      disp.replaceChildren();
+      const w = document.createElement("span");
+      w.className = "session-date-display__weekday";
+      w.textContent = weekday;
+      const day = document.createElement("span");
+      day.className = "session-date-display__day";
+      day.textContent = long;
+      disp.appendChild(w);
+      disp.appendChild(day);
+    }else{
+      disp.replaceChildren();
+      disp.textContent = "—";
+    }
+  }
+
+  function closeSessionDateEditPanel(){
+    const panel = document.getElementById("fbSessionDateEditPanel");
+    const picker = document.getElementById("fbSessionDatePicker");
+    if(panel) panel.hidden = true;
+    if(picker) picker.value = "";
+    sessionDateEditLockYear = null;
+    sessionDateEditLockMonth = null;
+  }
+
+  function openSessionDateEditPanel(){
+    const panel = document.getElementById("fbSessionDateEditPanel");
+    const picker = document.getElementById("fbSessionDatePicker");
+    const hid = document.getElementById("fbSessionDate");
+    if(!panel || !picker || !hid) return;
+    let iso = clean(hid.value);
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) iso = todayIsoPortal();
+    const parts = parseIsoToYearMonthDay(iso);
+    if(!parts) return;
+    sessionDateEditLockYear = parts.y;
+    sessionDateEditLockMonth = parts.m;
+    syncSessionDatePickerBounds();
+    picker.value = iso;
+    panel.hidden = false;
+    try{
+      picker.focus();
+      if(typeof picker.showPicker === "function") picker.showPicker();
+    }catch(_){}
+  }
+
+  function wireSessionDateEditUi(){
+    const applyBtn = document.getElementById("fbSessionDateApplyBtn");
+    const cancelBtn = document.getElementById("fbSessionDateCancelBtn");
+    const picker = document.getElementById("fbSessionDatePicker");
+    const hid = document.getElementById("fbSessionDate");
+    const display = document.getElementById("fbSessionDateDisplay");
+    if(!applyBtn || !cancelBtn || !picker || !hid || !display) return;
+    let lastTapMs = 0;
+    function openFromDisplay(){
+      openSessionDateEditPanel();
+    }
+    display.addEventListener("dblclick", openFromDisplay);
+    display.addEventListener("click", function(){
+      const now = Date.now();
+      if(now - lastTapMs < 400){
+        lastTapMs = 0;
+        openFromDisplay();
+        return;
+      }
+      lastTapMs = now;
+    });
+    display.addEventListener("keydown", function(ev){
+      if(ev.key === "Enter" || ev.key === " "){
+        ev.preventDefault();
+        openFromDisplay();
+      }
+    });
+    cancelBtn.addEventListener("click", function(){
+      closeSessionDateEditPanel();
+    });
+    applyBtn.addEventListener("click", function(){
+      const y = sessionDateEditLockYear;
+      const m = sessionDateEditLockMonth;
+      if(y == null || m == null || m < 1 || m > 12){
+        alert("Session month could not be determined. Reload the page and try again.");
+        return;
+      }
+      const iso = clean(picker.value);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)){
+        alert("Pick a date from the calendar.");
+        return;
+      }
+      const parts = parseIsoToYearMonthDay(iso);
+      if(!parts || parts.y !== y || parts.m !== m){
+        alert("Pick a day in " + formatLockedMonthYearEnGB(y, m) + ".");
+        return;
+      }
+      hid.value = iso;
+      closeSessionDateEditPanel();
+      updateSessionDateDisplayFromIso();
+    });
+  }
+
+  function persistPortalSessionReviewState(sessionKey, attendanceVal){
+    const sk = String(sessionKey || "").trim();
+    if(!sk) return;
+    const attendedNo = String(attendanceVal || "").trim().toLowerCase() === "no";
+    try{
+      const raw = localStorage.getItem(PORTAL_SESSION_REVIEW_MAP_STORAGE) || "{}";
+      const o = JSON.parse(raw);
+      const base = o && typeof o === "object" ? o : {};
+      const prev = base[sk] && typeof base[sk] === "object" ? base[sk] : {};
+      base[sk] = {
+        feedbackDone: !attendedNo,
+        incident: !!prev.incident,
+        absent: attendedNo,
+        cancelled: !!prev.cancelled,
+      };
+      localStorage.setItem(PORTAL_SESSION_REVIEW_MAP_STORAGE, JSON.stringify(base));
+    }catch(_){}
+  }
+
+  async function syncAbsentQuickMarkAfterFeedback(supabase, row){
+    const staffId = String(row && row.submitted_by_user_id ? row.submitted_by_user_id : "").trim();
+    const sessionKey = String(row && row.portal_session_key ? row.portal_session_key : "").trim();
+    const sessionDate = String(row && row.session_date ? row.session_date : "").trim();
+    if(!staffId || staffId === "pin-bridge" || !sessionKey || !sessionDate) return;
+    const attendedNo = String(row.attendance || "").trim().toLowerCase() === "no";
+    const mod = await import(PORTAL_SUPABASE_MODULE);
+    if(attendedNo){
+      if(typeof mod.portalUpsertStaffSessionQuickMark === "function"){
+        await mod.portalUpsertStaffSessionQuickMark(supabase, {
+          staff_user_id: staffId,
+          portal_session_key: sessionKey,
+          session_date: sessionDate,
+          mark_type: "absent",
+        });
+      }
+    } else if(typeof mod.portalDeleteStaffSessionQuickMark === "function"){
+      await mod.portalDeleteStaffSessionQuickMark(supabase, {
+        staff_user_id: staffId,
+        portal_session_key: sessionKey,
+        mark_type: "absent",
+      });
+    }
+  }
+
+  function portalRedirectAfterFeedbackSubmit(){
+    try{
+      if(typeof portalGetPortalReturnUrl === "function" && typeof portalRedirectToPortalReturn === "function"){
+        if(portalGetPortalReturnUrl()){
+          portalRedirectToPortalReturn();
+          return;
+        }
+      }
+    }catch(_){}
+    const params = new URLSearchParams(window.location.search);
+    const returnUrl = params.get("return");
+    const storedReturn = sessionStorage.getItem("__portal_feedback_return_v1");
+    const fromPortal = (params.get("from_portal") || "").trim().toLowerCase();
+    const hubFallback =
+      typeof portalResolveHubUrl === "function"
+        ? portalResolveHubUrl(fromPortal)
+        : (fromPortal === "lead" ? "/leadportal" : "/staffportal");
+    const baseTarget = returnUrl || storedReturn || hubFallback;
+    let origin = "dashboard";
+    try{
+      const probe = new URL(baseTarget, window.location.href);
+      origin = probe.searchParams.get("portalReviewOrigin") || sessionStorage.getItem("__portal_feedback_origin_v1") || "dashboard";
+    }catch(_){
+      origin = sessionStorage.getItem("__portal_feedback_origin_v1") || "dashboard";
+    }
+    try{ sessionStorage.removeItem("__portal_feedback_origin_v1"); }catch(_){}
+    if(origin !== "this_week" && origin !== "term" && origin !== "dashboard") origin = "dashboard";
+    let target = baseTarget;
+    try{
+      const u = new URL(baseTarget, window.location.href);
+      u.searchParams.delete("portalPostFeedback");
+      u.searchParams.delete("portalReviewDay");
+      u.searchParams.delete("portalReviewDate");
+      u.searchParams.set("portalAfterFeedback", "1");
+      u.searchParams.set("portalReviewOrigin", origin);
+      target = u.href;
+    }catch(_){}
+    window.location.href = target;
+  }
+
+  function clean(t){ return (t || "").replace(/\s+/g, " ").trim(); }
+
+  /** Same rota key as dashboard `portalStaffKeyForRotaFromProfile` — restore spreadsheet user after feedback return. */
+  function portalStaffKeyForRotaFromProfileMirror(p){
+    var raw = String((p && p.username) || "").trim();
+    if(!raw) raw = String((p && p.full_name) || "").trim();
+    if(!raw) return "";
+    var first = (raw.split(/\s+/).filter(Boolean)[0] || raw);
+    return String(first)
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "");
+  }
+
+  function feedbackRoleFromProfile(appRole){
+    const role = String(appRole || "").toLowerCase();
+    if (role === "lead") return "lead";
+    if (role === "ceo" || role === "admin" || role === "manager") {
+      const fp = (qs.get("from_portal") || "").trim().toLowerCase();
+      return fp === "staff" ? "staff" : "lead";
+    }
+    return "staff";
+  }
+
+  function profileMatchesPortalName(profileRow, submittedName) {
+    const sub = clean(submittedName).toLowerCase().replace(/\s+/g, " ").trim();
+    if (!sub || !profileRow) return false;
+    const n = clean(profileRow.full_name).toLowerCase().replace(/\s+/g, " ").trim();
+    const u = clean(profileRow.username).toLowerCase().replace(/\s+/g, " ").trim();
+    if (sub.indexOf("marquez") !== -1 && n.indexOf("marquez") === -1) return false;
+    if (
+      (sub.indexOf("arranz") !== -1 || sub.indexOf("escorial") !== -1) &&
+      n.indexOf("arranz") === -1 &&
+      u !== "arranz"
+    ) {
+      return false;
+    }
+    if (sub === n || sub === u) return true;
+    const subTokens = sub.split(" ").filter(Boolean).length;
+    const first = sub.split(" ")[0] || "";
+    if (subTokens === 1 && first.length >= 2 && (first === u || first === n)) return true;
+    if (n && (sub.indexOf(n + " ") === 0 || n.indexOf(sub + " ") === 0)) return true;
+    return false;
+  }
+
+  async function lookupStaffProfileForAuth(supabase, authUser) {
+    const profileResp = await supabase
+      .from("staff_profiles")
+      .select("id, app_role, full_name, username")
+      .eq("id", authUser.id)
+      .maybeSingle();
+    if (profileResp.error) throw profileResp.error;
+    if (profileResp.data && profileResp.data.id) return profileResp.data;
+
+    const guess =
+      readPinIdentityName() ||
+      clean(instructorDisplayName) ||
+      clean((authUser.email || "").split("@")[0]);
+    if (!guess) return null;
+
+    const token = (guess.split(" ")[0] || guess).replace(/,/g, "");
+    const alt = await supabase
+      .from("staff_profiles")
+      .select("id, app_role, full_name, username, is_active")
+      .eq("is_active", true)
+      .or("username.ilike." + token + ",full_name.ilike.%" + token + "%")
+      .limit(12);
+    if (alt.error) throw alt.error;
+    const rows = (alt.data || []).filter(function (r) {
+      return r && r.is_active !== false && !String(r.username || "").toLowerCase().endsWith("_legacy");
+    });
+    const exact = [];
+    for (let i = 0; i < rows.length; i++) {
+      if (profileMatchesPortalName(rows[i], guess)) exact.push(rows[i]);
+    }
+    if (exact.length === 1) return exact[0];
+    const guessFp = guess.toLowerCase().replace(/\s+/g, " ").trim();
+    for (let j = 0; j < exact.length; j++) {
+      const fn = clean(exact[j].full_name).toLowerCase().replace(/\s+/g, " ").trim();
+      if (fn === guessFp) return exact[j];
+    }
+    return exact.length ? exact[0] : null;
+  }
+
+  function readBridgeSecretFromWindowOrHash(){
+    try{
+      if(typeof window.portalReadBridgeSecret === "function"){
+        const shared = window.portalReadBridgeSecret();
+        if(shared) return shared;
+      }
+    }catch(_){}
+    try{
+      const s = String(STAFF_PROFILE_PORTAL_BRIDGE_SECRET || "").trim();
+      if(s && s !== "%%PB6%%" && s.length >= 16) return s;
+    }catch(_){}
+    try{
+      const raw = String(window.location.hash || "").replace(/^#/, "");
+      if(!raw) return "";
+      const sp = new URLSearchParams(raw.includes("=") ? raw : `portal_bridge=${raw}`);
+      const fromHash = String(sp.get("portal_bridge") || "").trim();
+      if(fromHash && fromHash !== "%%PB6%%" && fromHash.length >= 16) return fromHash;
+    }catch(_){}
+    try{
+      const stored = sessionStorage.getItem("clubsens_portal_bridge_v1") || localStorage.getItem("clubsens_portal_bridge_v1") || "";
+      const t = String(stored).trim();
+      if(t && t !== "%%PB6%%" && t.length >= 16) return t;
+    }catch(_){}
+    return "";
+  }
+
+  function readPinIdentityName(){
+    try{
+      if(typeof window.portalReadPinDisplayName === "function"){
+        const pn = clean(window.portalReadPinDisplayName());
+        if(pn) return pn;
+      }
+      const pin = window.__PORTAL_PIN_IDENTITY__;
+      if(pin && clean(pin.displayName)) return clean(pin.displayName);
+    }catch(_){}
+    const keys = ["clubsens_staff_session_v2", "clubsens_lead_session_v2"];
+    for(let k = 0; k < keys.length; k++){
+      try{
+        const raw = localStorage.getItem(keys[k]);
+        if(!raw) continue;
+        const o = JSON.parse(raw);
+        if(o && clean(o.displayName)) return clean(o.displayName);
+      }catch(_){}
+    }
+    const candidates = [
+      qs.get("full_name"),
+      qs.get("staff"),
+      qs.get("reporter"),
+      qs.get("instructor"),
+    ];
+    for(let i = 0; i < candidates.length; i++){
+      let t = String(candidates[i] || "").trim();
+      try{
+        if(t.indexOf("%") !== -1) t = decodeURIComponent(t);
+      }catch(_){}
+      t = clean(t.replace(/\+/g, " "));
+      if(t) return t;
+    }
+    return "";
+  }
+
+  function buildFeedbackRow(submittedByUserId, feedbackRole, completedByName, sessionKeyForSubmit, ctx, fields){
+    return {
+      submitted_by_user_id: submittedByUserId,
+      feedback_role: feedbackRole,
+      portal_session_key: sessionKeyForSubmit || null,
+      client_id: ctx.client_id,
+      client_name:
+        typeof window.portalFeedbackSubmitClientName === "function"
+          ? window.portalFeedbackSubmitClientName(ctx.client_name)
+          : ctx.client_name,
+      session_date: ctx.session_date,
+      session_time: ctx.session_time,
+      service: ctx.service,
+      attendance: fields.attendanceVal,
+      engagement_rating: fields.engagementRating,
+      engagement_patterns: Array.isArray(fields.independenceLevels) ? fields.independenceLevels : [],
+      positive_feedback: fields.positiveFeedback || null,
+      client_emotions: fields.clientEmotionsVal || null,
+      relevant_information: fields.relevantInformation || null,
+      exceptional_challenges: null,
+      incidents: null,
+      completed_by_name: completedByName,
+      has_positive_feedback: fields.hasPositiveFeedback,
+      has_relevant_information: fields.hasRelevantInformation,
+      has_exceptional_challenges: false,
+      incident_notification_requested: fields.notifyFlag,
+      incident_notification_notes: fields.notifyNotes,
+      late_session_feedback: fields.lateSessionFeedback === true,
+    };
+  }
+
+  async function insertFeedbackViaSupabase(supabase, row){
+    let insertErr = null;
+    let payload = row;
+    ({ error: insertErr } = await supabase.from("session_feedback").insert([payload]));
+    if(insertErr && String(insertErr.message || "").toLowerCase().includes("incident_notification")){
+      payload = Object.assign({}, payload);
+      delete payload.incident_notification_requested;
+      delete payload.incident_notification_notes;
+      ({ error: insertErr } = await supabase.from("session_feedback").insert([payload]));
+    }
+    if(insertErr && String(insertErr.message || "").toLowerCase().includes("late_session")){
+      payload = Object.assign({}, payload);
+      delete payload.late_session_feedback;
+      ({ error: insertErr } = await supabase.from("session_feedback").insert([payload]));
+    }
+    if(insertErr) throw insertErr;
+  }
+
+  async function submitFeedbackViaPinBridge(fullName, feedbackPayload){
+    const secret = readBridgeSecretFromWindowOrHash();
+    if(!secret || secret.length < 16){
+      throw new Error("portal_bridge_missing");
+    }
+    const { getSupabaseFunctionUrl, getSupabaseAnonKey } = await import(PORTAL_SUPABASE_MODULE);
+    const endpoint = getSupabaseFunctionUrl("portal-session-feedback-submit");
+    const anonKey = getSupabaseAnonKey();
+    if(!endpoint || !anonKey) throw new Error("supabase_not_configured");
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: anonKey,
+        Authorization: `Bearer ${anonKey}`,
+      },
+      body: JSON.stringify({
+        full_name: fullName,
+        portal_bridge_secret: secret,
+        from_portal: (qs.get("from_portal") || "").trim().toLowerCase(),
+        feedback: feedbackPayload,
+      }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if(!res.ok || !body || !body.ok){
+      const err = String((body && body.error) || "");
+      if(err === "unknown_staff"){
+        throw new Error("Your name is not linked in staff_profiles yet. Ask an admin to add your profile, then try again.");
+      }
+      if(err === "ambiguous_staff"){
+        throw new Error("More than one staff profile matches your name. Use the dashboard session link or contact support.");
+      }
+      if(err === "invalid_bridge_secret" || err === "bridge_not_configured"){
+        throw new Error("portal_bridge_missing");
+      }
+      throw new Error(err || "pin_submit_failed");
+    }
+    return body;
+  }
+
+  function feedbackPayloadFromRow(row){
+    return {
+      portal_session_key: row.portal_session_key,
+      client_id: row.client_id,
+      client_name: row.client_name,
+      session_date: row.session_date,
+      session_time: row.session_time,
+      service: row.service,
+      attendance: row.attendance,
+      engagement_rating: row.engagement_rating,
+      engagement_patterns: row.engagement_patterns,
+      positive_feedback: row.positive_feedback,
+      client_emotions: row.client_emotions,
+      relevant_information: row.relevant_information,
+      exceptional_challenges: row.exceptional_challenges,
+      incidents: row.incidents,
+      completed_by_name: row.completed_by_name,
+      has_positive_feedback: row.has_positive_feedback,
+      has_relevant_information: row.has_relevant_information,
+      has_exceptional_challenges: row.has_exceptional_challenges,
+      incident_notification_requested: row.incident_notification_requested,
+      incident_notification_notes: row.incident_notification_notes,
+      late_session_feedback: row.late_session_feedback === true,
+    };
+  }
+
+  function syncPillSelection(){
+    const fd = new FormData(form);
+    const selected = (fd.get("engagementRating") || "").toString();
+    const selectedNum = parseInt(selected, 10);
+    form.querySelectorAll('.pill[data-kind="rating"]').forEach(p => {
+      const val = p.getAttribute("data-value") || "";
+      const v = parseInt(val, 10);
+      p.classList.toggle("isSelected", val === selected);
+      p.classList.toggle("isFilled", Number.isFinite(selectedNum) && v >= 1 && v <= selectedNum);
+    });
+    form.querySelectorAll('.pill[data-kind="independence"]').forEach(p => {
+      const inp = p.querySelector('input[type="radio"][name="independenceLevel"]');
+      p.classList.toggle("isSelected", !!(inp && inp.checked));
+    });
+    form.querySelectorAll('.pill[data-kind="emotion"]').forEach(p => {
+      const inp = p.querySelector('input[type="checkbox"][name="clientEmotions"]');
+      p.classList.toggle("isSelected", !!(inp && inp.checked));
+    });
+    form.querySelectorAll('.pill[data-kind="attended"]').forEach(p => {
+      const val = p.getAttribute("data-value") || "";
+      const selected = getSessionAttended();
+      p.classList.toggle("isSelected", val === selected);
+    });
+  }
+
+  form.addEventListener("change", (ev) => {
+    if(ev.target && ev.target.matches('input[name="sessionAttended"]')){
+      syncAttendedVisibility();
+      return;
+    }
+    syncPillSelection();
+  });
+
+  form.addEventListener("input", () => {
+    syncPillSelection();
+  });
+
+  clearBtn.addEventListener("click", () => {
+    form.reset();
+    clearPhase2RadiosOnly();
+    syncAttendedVisibility();
+    syncPillSelection();
+    closeSessionDateEditPanel();
+    syncFeedbackManualFields();
+  });
+
+  setExtendedFieldsRequired(false);
+  syncAttendedVisibility();
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    try{
+      await enrichPortalSessionContext();
+    }catch(_){}
+    syncFeedbackManualFields();
+
+    const ctx = buildResolvedContext();
+    const submitterHintPre =
+      readPinIdentityName() || clean(instructorDisplayName) || "";
+    if(!normalizeSessionTimeForKey(ctx.session_time, ctx.session_date)){
+      const rosterT = resolveAquaticSessionTimeFromRoster(ctx, submitterHintPre);
+      if(rosterT) portalTime = rosterT;
+    }
+    const ctx2 = buildResolvedContext();
+    const missingCtx = validateContextForSubmit(ctx2, submitterHintPre);
+    if(missingCtx.length){
+      alert("Cannot submit feedback yet. Missing or unresolved:\n• " + missingCtx.join("\n• "));
+      return;
+    }
+
+    const attended = getSessionAttended();
+    if(!attended){
+      alert("Please select whether the participant attended (Yes or No).");
+      return;
+    }
+
+    resolveInstructorFromUrl();
+    const submitterHint =
+      readPinIdentityName() || clean(instructorDisplayName) || "";
+    let sessionKeyForSubmit = effectiveFeedbackSessionKey(ctx2, submitterHint);
+    const data = new FormData(form);
+    const attendanceVal = attended === "No" ? "No" : "Yes";
+
+    let positiveFeedback = "";
+    let relevantInformation = "";
+    let engagementRating = null;
+    let clientEmotionsVal = "";
+    let independenceLevels = [];
+    let notifyFlag = false;
+
+    if(attendanceVal === "Yes"){
+      const emotionChecked = Array.from(form.querySelectorAll('input[name="clientEmotions"]:checked'));
+      if(!emotionChecked.length){
+        alert("Please select at least one option under Participant Emotions / Regulation.");
+        return;
+      }
+      positiveFeedback = (data.get("positiveFeedback") || "").toString();
+      relevantInformation = (data.get("relevantInformation") || "").toString();
+      if(!clean(positiveFeedback)){
+        alert("Please complete Positive feedback (what went well).");
+        return;
+      }
+      if(!clean(relevantInformation)){
+        alert("Please complete Relevant information.");
+        return;
+      }
+      const engagementRatingRaw = (data.get("engagementRating") || "").toString();
+      const engagementRatingParsed = parseInt(engagementRatingRaw, 10);
+      if(!engagementRatingRaw || !Number.isFinite(engagementRatingParsed)){
+        alert("Please select an Engagement rating.");
+        return;
+      }
+      engagementRating = engagementRatingParsed;
+      clientEmotionsVal = emotionChecked.map(function(inp){ return String(inp.value || "").trim(); }).filter(Boolean).join("; ");
+      const independenceChecked = Array.from(form.querySelectorAll('input[name="independenceLevel"]:checked'));
+      independenceLevels = independenceChecked.map(function(inp){ return String(inp.value || "").trim(); }).filter(Boolean);
+      if(!independenceLevels.length){
+        alert("Please pick an independence level for this session.");
+        return;
+      }
+    }
+
+    const hasPositiveFeedback = clean(positiveFeedback).length > 0;
+    const hasRelevantInformation = clean(relevantInformation).length > 0;
+    const notifyNotes = null;
+
+    const formFields = {
+      positiveFeedback,
+      relevantInformation,
+      hasPositiveFeedback,
+      hasRelevantInformation,
+      attendanceVal,
+      engagementRating,
+      clientEmotionsVal,
+      independenceLevels,
+      notifyFlag,
+      notifyNotes,
+      lateSessionFeedback: computeLateSessionFeedback(ctx2.session_date),
+    };
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Submitting";
+
+    try{
+      resolveInstructorFromUrl();
+      const { getSupabaseClient } = await import(PORTAL_AUTH_MODULE);
+      const supabase = getSupabaseClient();
+      let authUser = null;
+      const {
+        data: { session: sess0 },
+      } = await supabase.auth.getSession();
+      if (sess0 && sess0.user && sess0.user.id) {
+        authUser = sess0.user;
+      } else {
+        try {
+          await supabase.auth.refreshSession();
+        } catch (_) {
+          /* ignore */
+        }
+        const {
+          data: { session: sess1 },
+        } = await supabase.auth.getSession();
+        if (sess1 && sess1.user && sess1.user.id) {
+          authUser = sess1.user;
+        }
+      }
+      if (!authUser) {
+        const { data: authData, error: authUserErr } = await supabase.auth.getUser();
+        if (!authUserErr && authData && authData.user) {
+          authUser = authData.user;
+        }
+      }
+
+      let row = null;
+      let profileRow = null;
+
+      if (authUser && authUser.id) {
+        profileRow = await lookupStaffProfileForAuth(supabase, authUser);
+        if (!profileRow || !profileRow.id) {
+          alert(
+            "Your portal login is not linked to a staff profile yet. Open Feedback from the Staff hub after PIN login, or ask admin to link your email to staff_profiles.",
+          );
+          return;
+        }
+        if (String(profileRow.id) !== String(authUser.id)) {
+          alert(
+            "Your login email and staff profile are not linked yet. Ask admin to link " +
+              (authUser.email || "your account") +
+              " to staff_profiles, then sign out and back in.",
+          );
+          return;
+        }
+        const submittedByUserId = String(profileRow.id).trim();
+        const appRole = profileRow.app_role ? String(profileRow.app_role) : "";
+        const feedbackRole = feedbackRoleFromProfile(appRole);
+        let completedByName = clean(
+          profileRow.full_name || profileRow.username
+            ? String(profileRow.full_name || profileRow.username)
+            : "",
+        );
+        if(!completedByName) completedByName = clean(instructorDisplayName) || "Staff";
+        if(!completedByName){
+          alert("Your staff profile is missing a display name. Ask an admin to set full_name on your profile, then try again.");
+          return;
+        }
+        sessionKeyForSubmit = effectiveFeedbackSessionKey(ctx2, completedByName);
+        row = buildFeedbackRow(submittedByUserId, feedbackRole, completedByName, sessionKeyForSubmit, ctx2, formFields);
+        await insertFeedbackViaSupabase(supabase, row);
+      } else if (portalOpenedFromStaffHub()) {
+        const pinName = readPinIdentityName() || clean(instructorDisplayName);
+        if(!pinName){
+          alert(
+            "Open Session Feedback from the Staff or Lead hub after signing in with your PIN on this site (same browser), then try again.\n\n" +
+              "Bookmarks without the hub session will not save feedback.",
+          );
+          return;
+        }
+        let completedByName = clean(instructorDisplayName) || pinName;
+        sessionKeyForSubmit = effectiveFeedbackSessionKey(ctx2, completedByName);
+        row = buildFeedbackRow("pin-bridge", "staff", completedByName, sessionKeyForSubmit, ctx2, formFields);
+        const pinResult = await submitFeedbackViaPinBridge(pinName, feedbackPayloadFromRow(row));
+        if(pinResult && pinResult.completed_by_name){
+          row.completed_by_name = String(pinResult.completed_by_name);
+        }
+        if(pinResult && pinResult.submitted_by_user_id){
+          row.submitted_by_user_id = String(pinResult.submitted_by_user_id);
+        }
+        if(pinResult && pinResult.feedback_role){
+          row.feedback_role = String(pinResult.feedback_role);
+        }
+        profileRow = {
+          full_name: row.completed_by_name,
+          username: pinName,
+        };
+      } else {
+        alert(
+          "Open Session Feedback from the Staff or Lead hub after signing in with your PIN on this site (same browser), then try again.\n\n" +
+            "Or sign in with your portal password if your account has one.",
+        );
+        return;
+      }
+
+      const webhookPayload = Object.assign(
+        {
+          source: "portal-session-feedback",
+          saved_at: new Date().toISOString(),
+        },
+        row,
+      );
+      await postSessionFeedbackWebhook(webhookPayload);
+
+      try{
+        var _rotaReturn = portalStaffKeyForRotaFromProfileMirror(profileRow);
+        if(_rotaReturn) sessionStorage.setItem("__portal_feedback_staff_rota_key_v1", _rotaReturn);
+      }catch(_){}
+
+      persistPortalSessionReviewState(sessionKeyForSubmit, attendanceVal);
+      if (typeof portalRedirectAfterSubmitSuccess === "function") {
+        portalRedirectAfterSubmitSuccess(
+          "Session feedback submitted successfully.",
+          1000,
+          portalRedirectAfterFeedbackSubmit
+        );
+        return;
+      }
+      portalRedirectAfterFeedbackSubmit();
+      return;
+    }catch(err){
+      console.error(err);
+      const msg = err && err.message ? String(err.message) : "";
+      if(msg === "portal_bridge_missing"){
+        alert(
+          "Could not verify this link for PIN submit (portal bridge not configured on this deploy). Open Feedback again from the Staff or Lead hub after PIN login.",
+        );
+        return;
+      }
+      const hint = err && err.code ? " (" + err.code + ")" : "";
+      alert("Submission failed. Please try again." + (msg ? "\n" + msg + hint : ""));
+    }finally{
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Submit";
+    }
+  });
+
+  Promise.all([
+    enrichPortalSessionContext().catch(function(){}),
+    loadInstructorDisplayName().catch(function(){}),
+  ]).then(function(){
+    return refreshFeedbackParticipantAndServicePickers().catch(function(){});
+  }).then(function(){
+    resolveInstructorFromUrl();
+    syncFeedbackManualFields();
+  });
+
+  resolveInstructorFromUrl();
+  syncFeedbackManualFields();
+  refreshFeedbackParticipantAndServicePickers().catch(function(){}).then(function(){
+    syncFeedbackManualFields();
+  });
+
+  (function wireFeedbackReturnNav(){
+    try{
+      var hub =
+        typeof portalResolveHubUrl === "function"
+          ? portalResolveHubUrl((qs.get("from_portal") || "").trim())
+          : ((qs.get("from_portal") || "").trim().toLowerCase() === "lead" ? "/leadportal" : "/staffportal");
+      var pr = typeof portalGetPortalReturnUrl === "function" ? portalGetPortalReturnUrl() : "";
+      if(pr){
+        try{ sessionStorage.setItem("__portal_feedback_return_v1", pr); }catch(_){}
+        if(feedbackBackLink) feedbackBackLink.href = pr;
+      } else {
+        try{ sessionStorage.setItem("__portal_feedback_return_v1", hub); }catch(_){}
+        if(feedbackBackLink) feedbackBackLink.href = hub;
+      }
+    }catch(_){}
+  })();
+
+  ["fbService", "fbSessionDate"].forEach(function(id){
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.addEventListener("input", function(){
+      if(id === "fbSessionDate") updateSessionDateDisplayFromIso();
+    });
+    el.addEventListener("change", function(){
+      if(id === "fbSessionDate") updateSessionDateDisplayFromIso();
+    });
+  });
+  (function wireParticipantSuggest(){
+    const el = document.getElementById("fbParticipantName");
+    const suggest = document.getElementById("fbParticipantSuggest");
+    if(!el || !suggest) return;
+    let hideTimer = null;
+    function onPartTyping(){
+      if(hideTimer){ clearTimeout(hideTimer); hideTimer = null; }
+      syncParticipantSuggestForInput("fbParticipantName", "fbParticipantSuggest");
+      const resolved = typeof window.portalResolveParticipantCanonicalName === "function"
+        ? window.portalResolveParticipantCanonicalName(el.value)
+        : clean(el.value);
+      if(resolved && resolved !== clean(el.value)) el.value = resolved;
+      rebuildServiceSelectForParticipant("fbService", resolved || clean(el.value), "");
+    }
+    el.addEventListener("input", onPartTyping);
+    el.addEventListener("focus", onPartTyping);
+    el.addEventListener("blur", function(){
+      hideTimer = setTimeout(function(){
+        hideParticipantSuggest("fbParticipantSuggest");
+      }, 160);
+    });
+    suggest.addEventListener("mousedown", function(ev){
+      const btn = ev.target && ev.target.closest ? ev.target.closest(".portal-name-suggest__item") : null;
+      if(!btn) return;
+      ev.preventDefault();
+      if(hideTimer){ clearTimeout(hideTimer); hideTimer = null; }
+      commitFeedbackParticipantPick(btn.dataset.name || btn.textContent);
+    });
+    el.addEventListener("keydown", function(ev){
+      if(ev.key !== "Enter") return;
+      const matches = syncParticipantSuggestForInput("fbParticipantName", "fbParticipantSuggest");
+      if(matches.length === 1){
+        ev.preventDefault();
+        commitFeedbackParticipantPick(matches[0]);
+      }
+    });
+  })();
+
+  syncPillSelection();
+})();
+</script>
+
+</body>
+</html>

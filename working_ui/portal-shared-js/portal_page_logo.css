@@ -1,0 +1,14 @@
+/* Logo block on portal forms — full theme lives in the other project’s portal-shared-js copy. */
+.portal-page-logo-wrap {
+  text-align: center;
+  margin: 0 auto 12px;
+  max-width: 200px;
+}
+.portal-page-logo-wrap img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 120px;
+  object-fit: contain;
+  margin: 0 auto;
+}

@@ -1,0 +1,1819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="/portal-static-bootstrap.js?v=20260519-submit-return"></script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Incident Report</title>
+<link rel="stylesheet" href="/portal-shared-js/portal_page_logo.css?v=20260517-portal-logos" />
+<link rel="stylesheet" href="/portal-shared-js/portal_page_logo_themes.css?v=20260517-portal-logos" />
+<style>
+:root{
+  /* Red theme — misma estructura que session feedback (acento + profundo + fondos suaves) */
+  --brand:#ef4444;
+  --brand-mid:#dc2626;
+  --brand-deep:#7f1d1d;
+  --accent-soft:#fff1f2;
+  --line:rgba(160, 90, 90, 0.22);
+  --fieldBg:#fff5f5;
+  --text:#0b1220;
+  --muted:#5b6473;
+  --radius:18px;
+  --focus:0 0 0 3px rgba(220, 80, 80, 0.28);
+}
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
+body{
+  margin:0;
+  min-height:100vh;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  color:var(--text);
+  background:#faf6f6;
+  padding:24px;
+}
+.wrap{ max-width:760px; margin:0 auto; width:100%; }
+.title-row{ margin-bottom:14px; text-align:center; }
+.title-row h1{
+  margin:0 0 4px;
+  font-size:22px;
+  letter-spacing:-0.01em;
+  color:var(--brand-deep);
+}
+.title-row p{ margin:0; color:var(--muted); font-size:13.5px; line-height:1.5; }
+@media (prefers-reduced-motion: reduce){
+  button, .btnBack, .btnPrimary, .btnGhost{ transition:none !important; }
+  .btnBack:hover, .btnPrimary:hover, .btnGhost:hover, .btnPrimary:active, .btnBack:active, .btnGhost:active{ transform:none !important; }
+}
+.field.field--session-details{
+  padding:16px 14px;
+}
+.field.field--session-details > label{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:12px;
+  font-weight:900;
+  margin:0 0 10px;
+  color:rgba(11,18,32,0.92);
+  line-height:1.2;
+}
+.field.field--session-details > label ~ label{
+  margin-top:24px;
+}
+.field.field--session-details > datalist + label{
+  margin-top:24px;
+}
+.field.field--session-details > input{
+  margin:0;
+}
+.field.field--session-details > .session-date-field ~ label{ margin-top:22px; }
+.field--incident-session-shell{
+  margin-bottom:16px;
+}
+.field.field--session-details > input,
+.field.field--session-details > select{
+  margin-bottom:2px;
+}
+.incident-same-day-note{
+  margin:0 0 14px;
+  font-size:12.5px;
+  line-height:1.45;
+  color:var(--muted);
+  text-align:center;
+}
+.session-date-field{ margin-top:0; margin-bottom:4px; }
+.session-date-label-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:12px;
+  font-weight:900;
+  margin:0 0 10px;
+  color:rgba(11,18,32,0.92);
+}
+.session-date-display-row{ margin-bottom:4px; }
+.session-date-display{
+  width:100%;
+  min-height:44px;
+  box-sizing:border-box;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:2px;
+  padding:10px 12px;
+  border-radius:10px;
+  border:1px solid rgba(150, 100, 100, 0.32);
+  background:#fff;
+  font-size:14px;
+  font-weight:500;
+  color:var(--text);
+  text-align:center;
+  line-height:1.35;
+  cursor:pointer;
+  user-select:none;
+  -webkit-tap-highlight-color:transparent;
+  transition:border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.session-date-display:hover{ border-color:rgba(185, 28, 28, 0.4); }
+.session-date-display:focus{
+  outline:none;
+  border-color:rgba(220, 90, 90, 0.65);
+  box-shadow:var(--focus);
+}
+.session-date-display__hint{
+  display:block;
+  margin-top:6px;
+  font-size:11px;
+  font-weight:600;
+  color:var(--muted);
+  line-height:1.3;
+  text-align:center;
+}
+.session-date-display__weekday,
+.session-date-display__day{ width:100%; text-align:center; }
+.session-date-display__weekday{ font-size:12px; font-weight:800; color:var(--brand-deep); }
+.session-date-display__day{ font-size:12px; font-weight:600; color:var(--muted); }
+.session-date-edit-panel{
+  margin-top:14px;
+  padding:14px;
+  border-radius:12px;
+  border:1px solid rgba(185, 28, 28, 0.28);
+  background:rgba(254, 242, 242, 0.65);
+}
+.session-date-edit-warning{
+  margin:0 0 12px;
+  font-size:12.5px;
+  line-height:1.45;
+  color:rgba(11,18,32,0.9);
+}
+.session-date-picker-row{ display:flex; justify-content:center; margin:0 auto 12px; }
+.session-date-picker-input{
+  width:100% !important;
+  max-width:280px;
+  margin:0 auto;
+  padding:10px 12px !important;
+  text-align:center !important;
+  font-size:14px !important;
+  font-weight:600 !important;
+  cursor:pointer;
+}
+.session-date-edit-actions{ display:flex; gap:10px; }
+.session-date-edit-actions .btnGhost{ flex:1 1 0; min-width:0; justify-content:center; font-size:12px !important; padding:9px 16px !important; }
+.incident-time-input{
+  max-width:120px;
+  margin:0 auto;
+  display:block;
+  text-align:center;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:0.06em;
+  font-weight:700;
+}
+.card{
+  background:#fff;
+  border:1px solid rgba(150, 100, 100, 0.18);
+  border-radius:var(--radius);
+  box-shadow:0 8px 24px rgba(15, 20, 30, 0.06);
+  overflow:hidden;
+}
+form{ padding:20px; }
+.grid{ display:grid; gap:14px; grid-template-columns:1fr; }
+#incidentParticipantFields .grid{ gap:16px; }
+.field{
+  border:1px solid rgba(150, 100, 100, 0.2);
+  border-radius:14px;
+  padding:12px;
+  background:var(--fieldBg);
+}
+.field > label:first-child,
+.fieldLabel{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:12px;
+  font-weight:900;
+  margin:0 0 8px;
+  line-height:1.2;
+}
+.field-icon{
+  width:22px;
+  height:22px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:8px;
+  flex:0 0 22px;
+  background:rgba(254, 202, 202, 0.45);
+  border:1px solid rgba(220, 100, 100, 0.35);
+  color:var(--brand-deep);
+}
+.field-icon svg{
+  width:14px;
+  height:14px;
+  display:block;
+  flex-shrink:0;
+}
+input,select,textarea{
+  width:100%;
+  border:1px solid rgba(11,18,32,0.14);
+  border-radius:10px;
+  padding:10px 12px;
+  font-size:16px;
+  background:#fff;
+  font-family:inherit;
+  color:var(--text);
+}
+textarea{ min-height:110px; resize:vertical; }
+input:focus,select:focus,textarea:focus{
+  outline:none;
+  border-color:rgba(220, 90, 90, 0.65);
+  box-shadow:var(--focus);
+}
+.actions{
+  margin-top:18px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  border-top:1px solid rgba(150, 100, 100, 0.16);
+  padding-top:16px;
+  flex-wrap:wrap;
+}
+.actions-right{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+button{
+  padding:12px 18px;
+  border-radius:12px;
+  border:none;
+  font-weight:800;
+  font-size:14px;
+  cursor:pointer;
+  font-family:inherit;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  transition:transform 0.18s ease, box-shadow 0.22s ease, background 0.2s ease, border-color 0.2s ease, filter 0.2s ease, opacity 0.2s ease;
+}
+.btnBack{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:12px 18px;
+  border-radius:12px;
+  border:1px solid rgba(11,18,32,0.10);
+  background:rgba(11,18,32,0.04);
+  color:var(--text);
+  text-decoration:none;
+  font-weight:800;
+  font-size:14px;
+  transition:transform 0.18s ease, box-shadow 0.22s ease, background 0.2s ease, border-color 0.2s ease;
+}
+.btnBack:hover{
+  background:rgba(239, 68, 68, 0.08);
+  border-color:rgba(185, 28, 28, 0.22);
+  transform:translateY(-2px);
+  box-shadow:0 6px 16px rgba(15, 23, 42, 0.08);
+}
+.btnBack:active{ transform:translateY(0); box-shadow:none; }
+.btnBack:focus-visible{
+  outline:2px solid var(--brand-mid);
+  outline-offset:3px;
+}
+.btnPrimary{
+  background:linear-gradient(135deg, #f87171, var(--brand-mid) 45%, var(--brand-deep));
+  color:#fff;
+  box-shadow:0 8px 22px rgba(185, 28, 28, 0.38);
+}
+.btnPrimary:hover{
+  transform:translateY(-2px);
+  box-shadow:0 12px 28px rgba(185, 28, 28, 0.45);
+  filter:brightness(1.04);
+}
+.btnPrimary:active{
+  transform:translateY(0);
+  box-shadow:0 4px 14px rgba(127, 29, 29, 0.35);
+  filter:brightness(0.98);
+}
+.btnPrimary:disabled{ opacity:0.6; cursor:not-allowed; transform:none; filter:none; box-shadow:none; }
+.btnPrimary:focus-visible{
+  outline:2px solid #fff;
+  outline-offset:3px;
+  box-shadow:0 0 0 3px rgba(220, 38, 38, 0.45), 0 8px 22px rgba(185, 28, 28, 0.38);
+}
+.btnGhost{
+  background:rgba(11,18,32,0.04);
+  border:1px solid rgba(11,18,32,0.10);
+  color:var(--text);
+}
+.btnGhost:hover{
+  background:rgba(239, 68, 68, 0.1);
+  border-color:rgba(185, 28, 28, 0.2);
+  transform:translateY(-2px);
+  box-shadow:0 6px 16px rgba(15, 23, 42, 0.07);
+}
+.btnGhost:active{ transform:translateY(0); box-shadow:none; }
+.btnGhost:focus-visible{
+  outline:2px solid var(--brand-mid);
+  outline-offset:3px;
+}
+.small{
+  font-size:12px;
+  color:var(--muted);
+  line-height:1.4;
+  margin-top:6px;
+}
+.req{ color:#b91c1c; font-weight:900; margin-left:4px; }
+.incident-step{ display:none; }
+.incident-step.is-active{ display:block; }
+.incident-step--choose{ padding:22px 20px 20px; }
+.incident-choose-heading{
+  margin:0 0 16px;
+  text-align:center;
+  font-size:15px;
+  font-weight:800;
+  color:var(--brand-deep);
+  line-height:1.35;
+}
+.incident-choose-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+.incident-choose-card{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  min-height:118px;
+  padding:14px 10px;
+  margin:0;
+  border-radius:14px;
+  border:1px solid rgba(150, 100, 100, 0.28);
+  background:#fff;
+  cursor:pointer;
+  font-family:inherit;
+  color:var(--text);
+  transition:border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+.incident-choose-card:hover{
+  border-color:rgba(185, 28, 28, 0.4);
+  background:rgba(254, 242, 242, 0.65);
+  transform:translateY(-1px);
+  box-shadow:0 6px 16px rgba(15, 23, 42, 0.06);
+}
+.incident-choose-card:focus-visible{
+  outline:2px solid var(--brand-mid);
+  outline-offset:3px;
+}
+.incident-choose-card__title{
+  display:block;
+  font-size:14px;
+  font-weight:800;
+  line-height:1.25;
+  color:var(--brand-deep);
+}
+.incident-choose-card__desc{
+  display:block;
+  margin-top:6px;
+  font-size:12px;
+  font-weight:600;
+  line-height:1.35;
+  color:var(--muted);
+  max-width:22ch;
+}
+.incident-step-actions{
+  margin-top:18px;
+  display:flex;
+  justify-content:flex-start;
+  border-top:1px solid rgba(150, 100, 100, 0.16);
+  padding-top:16px;
+}
+.incident-form-panel[hidden]{ display:none !important; }
+.incident-myself-note{
+  font-size:12px;
+  color:var(--muted);
+  line-height:1.4;
+  margin:0 0 4px;
+  text-align:center;
+}
+.check-row{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  font-size:13px;
+  font-weight:700;
+  line-height:1.4;
+}
+.check-row input{ width:auto; margin-top:3px; flex:0 0 auto; }
+
+@media (max-width:720px){
+  body{ padding:14px; }
+  form{ padding:16px; }
+  .incident-step--choose{ padding:16px 14px 14px; }
+  .incident-choose-grid{ grid-template-columns:1fr; }
+  .incident-choose-card{ min-height:104px; }
+  .actions{ flex-wrap:wrap; gap:8px; }
+  .actions-right{ flex:1 1 100%; justify-content:flex-end; }
+  .actions button{ justify-content:center; }
+}
+</style>
+</head>
+<body class="portal-logo-incident">
+<div class="wrap">
+  <div class="cancel-logo-wrap-outer">
+    <div class="cancel-logo-wrap">
+      <div class="cancel-logo-pulse" aria-hidden="true"></div>
+      <svg class="cancel-logo-orbits" viewBox="0 0 240 240" aria-hidden="true">
+        <g class="cancel-orbit-layer cancel-orbit-layer-a">
+          <circle cx="212" cy="120" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.95"></circle>
+          <circle cx="148.43" cy="207.50" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.95"></circle>
+          <circle cx="45.57" cy="174.04" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.95"></circle>
+          <circle cx="45.57" cy="65.96" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.95"></circle>
+          <circle cx="148.43" cy="32.50" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.95"></circle>
+        </g>
+        <g class="cancel-orbit-layer cancel-orbit-layer-b">
+          <circle cx="213.53" cy="174" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
+          <circle cx="120" cy="228" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
+          <circle cx="26.47" cy="174" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
+          <circle cx="26.47" cy="66" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
+          <circle cx="120" cy="12" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
+          <circle cx="213.53" cy="66" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
+        </g>
+      </svg>
+      <img class="cancel-login-logo" src="assets/logo-clubsensational.png" alt="clubSENsational" />
+    </div>
+  </div>
+
+  <div class="title-row" id="incidentTitleRow">
+    <h1 id="incidentTitleMain">Incident report</h1>
+    <p id="incidentTitleSub">Choose who this incident is about.</p>
+  </div>
+
+  <div class="card">
+    <div id="incidentStepChoose" class="incident-step incident-step--choose is-active" role="region" aria-label="Who is this incident about?">
+      <p class="incident-choose-heading">Who is this incident about?</p>
+      <div class="incident-choose-grid" role="group" aria-label="Incident subject">
+        <button type="button" class="incident-choose-card" id="incidentChooseParticipant" data-subject="participant">
+          <span class="incident-choose-card__title">About a participant</span>
+          <span class="incident-choose-card__desc">Client injury, behaviour<br />or safeguarding</span>
+        </button>
+        <button type="button" class="incident-choose-card" id="incidentChooseMyself" data-subject="staff">
+          <span class="incident-choose-card__title">Myself</span>
+          <span class="incident-choose-card__desc">Something that happened to me</span>
+        </button>
+      </div>
+      <div class="incident-step-actions">
+        <a href="/staff.html" class="btnBack" id="incidentChooseBackLink" aria-label="Back to portal">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          Back
+        </a>
+      </div>
+    </div>
+
+    <form id="incidentForm" class="incident-step" novalidate hidden>
+      <input type="hidden" name="subjectType" id="subjectTypeHidden" value="" />
+
+      <input type="hidden" id="serviceManualHidden" value="" aria-hidden="true" />
+
+      <div class="field field--session-details field--incident-session-shell">
+        <p class="incident-same-day-note">Report incidents on the day they happen so we can match your shift.</p>
+        <div class="session-date-field" role="group" aria-labelledby="incSessionDateLabelText">
+          <div class="session-date-label-row" id="incSessionDateLabelRow">
+            <span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
+            <span id="incSessionDateLabelText">Incident date <span class="req">*</span></span>
+          </div>
+          <div class="session-date-display-row">
+            <div
+              id="incSessionDateDisplay"
+              class="session-date-display"
+              tabindex="0"
+              role="button"
+              aria-live="polite"
+              aria-label="Incident date. Double-tap to change the day."
+            >—</div>
+            <span class="session-date-display__hint">Double-tap the date to change the day only</span>
+          </div>
+          <input type="hidden" id="incSessionDate" name="sessionDateManual" value="" required />
+          <div id="incSessionDateEditPanel" class="session-date-edit-panel" hidden>
+            <p class="session-date-edit-warning" id="incSessionDateEditWarning"><strong>Note:</strong> Incidents should be logged on the day they happen. Another day may need a manager check.</p>
+            <div class="session-date-picker-row" role="group" aria-label="Pick incident day">
+              <input type="date" id="incSessionDatePicker" class="session-date-picker-input" autocomplete="off" />
+            </div>
+            <div class="session-date-edit-actions">
+              <button type="button" class="btnGhost" id="incSessionDateApplyBtn">Apply</button>
+              <button type="button" class="btnGhost" id="incSessionDateCancelBtn">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <div id="incidentParticipantFields" class="incident-form-panel">
+      <div class="grid">
+
+        <div class="field field--session-details">
+
+          <label for="participantManual" id="participantManualLabel"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span> <span id="participantManualLabelText">Participant name</span> <span class="req">*</span></label>
+          <input id="participantManual" name="participantManual" type="text" maxlength="200" required autocomplete="off" spellcheck="false" list="participantManualNameList" placeholder="Type the first letters — only names starting with that text appear" />
+          <datalist id="participantManualNameList"></datalist>
+          <label for="serviceManual"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span> Service <span class="req">*</span></label>
+          <select id="serviceManual" name="serviceManual" required>
+            <option value="">Select a service</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="incidentTime"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span> Time of incident <span class="req">*</span></label>
+          <input id="incidentTime" name="incidentTime" type="text" class="incident-time-input" inputmode="numeric" maxlength="5" placeholder="HH:MM" autocomplete="off" required aria-label="Time of incident, format HH colon MM" />
+        </div>
+
+        <div class="field">
+          <label for="incidentLocation"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span> Location of incident</label>
+          <input id="incidentLocation" name="incidentLocation" type="text" maxlength="200" placeholder="Where the incident happened" />
+        </div>
+
+        <div class="field">
+          <label for="incidentCategory"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span> Incident Category <span class="req">*</span></label>
+          <select id="incidentCategory" name="incidentCategory" required>
+            <option value="">Select category</option>
+            <option>Safeguarding Concern</option>
+            <option>Personal Injury</option>
+            <option>Client Injury</option>
+            <option>Property Damage</option>
+            <option>Dangerous occurrence</option>
+            <option>Fire incident</option>
+            <option>Fire drill</option>
+            <option>Security incident</option>
+            <option>Environmental incident</option>
+            <option>Near miss</option>
+            <option class="staff-category-opt" hidden>Staff assault / physical contact</option>
+            <option class="staff-category-opt" hidden>Staff injury at work</option>
+            <option class="staff-category-opt" hidden>Near miss (staff)</option>
+            <option class="staff-category-opt" hidden>Staff incident — no injury (tracking)</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="staffInvolved"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> Staff involved</label>
+          <input id="staffInvolved" name="staffInvolved" type="text" maxlength="300" placeholder="Names of staff involved" />
+        </div>
+
+        <div class="field">
+          <label for="witness"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span> Witness</label>
+          <input id="witness" name="witness" type="text" maxlength="300" placeholder="Witness name(s)" />
+        </div>
+
+        <div class="field">
+          <label for="statementBefore"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg></span> Statement BEFORE incident</label>
+          <textarea id="statementBefore" name="statementBefore" placeholder="What happened before the incident"></textarea>
+        </div>
+
+        <div class="field">
+          <label for="statementDuring"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg></span> Statement DURING incident</label>
+          <textarea id="statementDuring" name="statementDuring" placeholder="What happened during the incident"></textarea>
+        </div>
+
+        <div class="field">
+          <label for="statementAfter"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg></span> Statement AFTER incident</label>
+          <textarea id="statementAfter" name="statementAfter" placeholder="What happened after the incident"></textarea>
+        </div>
+
+        <div class="field">
+          <label for="injuriesClient"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span> Injuries (client)</label>
+          <textarea id="injuriesClient" name="injuriesClient" placeholder="Client injury details"></textarea>
+        </div>
+
+        <div class="field">
+          <label for="injuriesStaff"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span> Injuries (staff)</label>
+          <textarea id="injuriesStaff" name="injuriesStaff" placeholder="Staff injury details"></textarea>
+        </div>
+
+
+      </div>
+    </div>
+      <div id="incidentMyselfFields" class="incident-form-panel" hidden>
+        <p class="incident-myself-note">A short log for your records — even if you were not hurt.</p>
+        <div class="grid">
+<div class="field">
+            <label for="myselfIncidentTime"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span> Time of incident <span class="req">*</span></label>
+            <input id="myselfIncidentTime" name="incidentTime" type="text" class="incident-time-input" inputmode="numeric" maxlength="5" placeholder="HH:MM" autocomplete="off" required aria-label="Time of incident, format HH colon MM" />
+          </div>
+          <div class="field">
+            <label for="myselfParticipant"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span> Participant involved (optional)</label>
+            <input id="myselfParticipant" name="participantManual" type="text" maxlength="200" autocomplete="off" spellcheck="false" list="participantManualNameList" placeholder="Type the first letters — only names starting with that text appear" />
+          </div>
+          <div class="field">
+            <label for="myselfWhatHappened"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg></span> What happened? <span class="req">*</span></label>
+            <textarea id="myselfWhatHappened" name="statementDuring" required placeholder="Briefly describe what happened" rows="4" style="min-height:88px"></textarea>
+          </div>
+          <div class="field">
+            <label class="check-row" for="noInjuryTracking">
+              <input type="checkbox" id="noInjuryTracking" name="noInjuryTracking" />
+              <span>No injury — record for tracking only</span>
+            </label>
+          </div>
+          <div class="field" id="myselfInjuryField">
+            <label for="myselfInjuries"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span> Injury details (optional)</label>
+            <textarea id="myselfInjuries" name="injuriesStaff" placeholder="Only if you were hurt" rows="3" style="min-height:72px"></textarea>
+          </div>
+        </div>
+      </div>
+
+        <div class="actions">
+          <button type="button" class="btnBack" id="incidentFormBackBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg> Back</button>
+          <div class="actions-right">
+            <button type="button" class="btnGhost" id="clearBtn">Clear</button>
+            <button type="submit" class="btnPrimary" id="submitBtn">Submit</button>
+          </div>
+        </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  var STAFF_PROFILE_PORTAL_BRIDGE_SECRET = "%%PB6%%";
+</script>
+<script>
+(function(){
+  function __portalSharedBase() {
+    var b =
+      typeof window !== "undefined" && window.PORTAL_SHARED_JS_BASE
+        ? String(window.PORTAL_SHARED_JS_BASE).replace(/\/$/, "")
+        : "";
+    return b || (typeof location !== "undefined" ? location.origin : "") + "/portal-shared-js";
+  }
+  function __portalJs(file) {
+    return __portalSharedBase() + "/" + file;
+  }
+  const PORTAL_AUTH_MODULE = __portalJs("auth-handler.js?v=20260515-participant-service-filter");
+  const PORTAL_SUPABASE_MODULE = __portalJs("supabase-client.js?v=20260517-incident");
+  const PORTAL_CLIENTS_INFO_SCRIPT = __portalJs("clients_info_embed.js?v=20260517-roster-clients");
+  const PORTAL_SPREADSHEET_BUNDLE_SCRIPT = __portalJs("staff_dashboard_spreadsheet_bundle.js?v=20260518-roster-fix");
+  const PORTAL_PARTICIPANT_SERVICES_SCRIPT = __portalJs("participant_services.js?v=20260520-acat-feedback-picker");
+  const PORTAL_SESSION_REVIEW_MAP_STORAGE = "portalSessionReviewMap_v1";
+
+  const qs = new URLSearchParams(location.search || "");
+  const form = document.getElementById("incidentForm");
+  const clearBtn = document.getElementById("clearBtn");
+  const submitBtn = document.getElementById("submitBtn");
+  const incidentCategoryEl = document.getElementById("incidentCategory");
+  const noInjuryTrackingEl = document.getElementById("noInjuryTracking");
+  const incidentStepChoose = document.getElementById("incidentStepChoose");
+  const subjectTypeHidden = document.getElementById("subjectTypeHidden");
+  const incidentParticipantPanel = document.getElementById("incidentParticipantFields");
+  const incidentMyselfPanel = document.getElementById("incidentMyselfFields");
+  const incidentTitleSub = document.getElementById("incidentTitleSub");
+  const incidentChooseParticipant = document.getElementById("incidentChooseParticipant");
+  const incidentChooseMyself = document.getElementById("incidentChooseMyself");
+  const incidentFormBackBtn = document.getElementById("incidentFormBackBtn");
+  const myselfInjuryField = document.getElementById("myselfInjuryField");
+
+  function getIncidentSubjectType(){
+    const hidden = subjectTypeHidden ? clean(subjectTypeHidden.value).toLowerCase() : "";
+    return hidden === "staff" ? "staff" : "participant";
+  }
+  function setFormControlsDisabled(container, disabled){
+    if(!container) return;
+    const fields = container.querySelectorAll("input, select, textarea");
+    for(let i = 0; i < fields.length; i++) fields[i].disabled = !!disabled;
+  }
+  function showIncidentStep(step){
+    const isChoose = step === "choose";
+    if(incidentStepChoose){
+      incidentStepChoose.classList.toggle("is-active", isChoose);
+      incidentStepChoose.hidden = !isChoose;
+    }
+    if(form){
+      form.classList.toggle("is-active", !isChoose);
+      form.hidden = isChoose;
+    }
+    if(incidentTitleSub){
+      incidentTitleSub.textContent = isChoose
+        ? "Choose who this incident is about."
+        : (getIncidentSubjectType() === "staff"
+          ? "Short log — what happened to you."
+          : "Report about a participant.");
+    }
+  }
+  function syncMyselfInjuryUi(){
+    if(!myselfInjuryField || !noInjuryTrackingEl) return;
+    myselfInjuryField.hidden = !!noInjuryTrackingEl.checked;
+    const ta = document.getElementById("myselfInjuries");
+    if(ta && noInjuryTrackingEl.checked) ta.value = "";
+  }
+  let incidentSessionDateEditLockYear = null;
+  let incidentSessionDateEditLockMonth = null;
+  function incidentSessionDateIso(){
+    const hid = document.getElementById("incSessionDate");
+    const iso = hid ? clean(hid.value) : "";
+    return /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso : "";
+  }
+  function parseIsoToYearMonthDay(iso){
+    const s = String(iso || "").trim();
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
+    const p = s.split("-").map(Number);
+    return { y: p[0], m: p[1], d: p[2] };
+  }
+  function parseIsoToLocalDate(iso){
+    const parts = parseIsoToYearMonthDay(iso);
+    if(!parts) return null;
+    const d = new Date(parts.y, parts.m - 1, parts.d);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  function formatIncidentSessionDateWeekday(iso){
+    const d = parseIsoToLocalDate(iso);
+    return d ? d.toLocaleDateString("en-GB", { weekday: "long" }) : "";
+  }
+  function formatIncidentSessionDateLong(iso){
+    const d = parseIsoToLocalDate(iso);
+    return d ? d.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) : "";
+  }
+  function formatLockedMonthYearEnGB(year, month1to12){
+    return new Date(year, month1to12 - 1, 1).toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+  }
+  function daysInMonth(year, month1to12){
+    return new Date(year, month1to12, 0).getDate();
+  }
+  function syncIncidentSessionDatePickerBounds(){
+    const picker = document.getElementById("incSessionDatePicker");
+    const y = incidentSessionDateEditLockYear;
+    const m = incidentSessionDateEditLockMonth;
+    if(!picker || y == null || m == null) return;
+    const mm = String(m).padStart(2, "0");
+    const maxD = daysInMonth(y, m);
+    picker.min = y + "-" + mm + "-01";
+    picker.max = y + "-" + mm + "-" + String(maxD).padStart(2, "0");
+  }
+  function updateIncidentSessionDateDisplay(){
+    const hid = document.getElementById("incSessionDate");
+    const disp = document.getElementById("incSessionDateDisplay");
+    if(!hid || !disp) return;
+    const iso = clean(hid.value);
+    if(/^\d{4}-\d{2}-\d{2}$/.test(iso)){
+      disp.replaceChildren();
+      const w = document.createElement("span");
+      w.className = "session-date-display__weekday";
+      w.textContent = formatIncidentSessionDateWeekday(iso);
+      const day = document.createElement("span");
+      day.className = "session-date-display__day";
+      day.textContent = formatIncidentSessionDateLong(iso);
+      disp.appendChild(w);
+      disp.appendChild(day);
+    }else{
+      disp.replaceChildren();
+      disp.textContent = "—";
+    }
+  }
+  function closeIncidentSessionDateEditPanel(){
+    const panel = document.getElementById("incSessionDateEditPanel");
+    const picker = document.getElementById("incSessionDatePicker");
+    if(panel) panel.hidden = true;
+    if(picker) picker.value = "";
+    incidentSessionDateEditLockYear = null;
+    incidentSessionDateEditLockMonth = null;
+  }
+  function openIncidentSessionDateEditPanel(){
+    const panel = document.getElementById("incSessionDateEditPanel");
+    const picker = document.getElementById("incSessionDatePicker");
+    const hid = document.getElementById("incSessionDate");
+    if(!panel || !picker || !hid) return;
+    let iso = clean(hid.value);
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) iso = todayIsoLocal();
+    const parts = parseIsoToYearMonthDay(iso);
+    if(!parts) return;
+    incidentSessionDateEditLockYear = parts.y;
+    incidentSessionDateEditLockMonth = parts.m;
+    syncIncidentSessionDatePickerBounds();
+    picker.value = iso;
+    panel.hidden = false;
+    try{
+      picker.focus();
+      if(typeof picker.showPicker === "function") picker.showPicker();
+    }catch(_){}
+  }
+  function wireIncidentSessionDateUi(){
+    const applyBtn = document.getElementById("incSessionDateApplyBtn");
+    const cancelBtn = document.getElementById("incSessionDateCancelBtn");
+    const picker = document.getElementById("incSessionDatePicker");
+    const hid = document.getElementById("incSessionDate");
+    const display = document.getElementById("incSessionDateDisplay");
+    if(!applyBtn || !cancelBtn || !picker || !hid || !display) return;
+    let lastTapMs = 0;
+    function openFromDisplay(){ openIncidentSessionDateEditPanel(); }
+    display.addEventListener("dblclick", openFromDisplay);
+    display.addEventListener("click", function(){
+      const now = Date.now();
+      if(now - lastTapMs < 400){ lastTapMs = 0; openFromDisplay(); return; }
+      lastTapMs = now;
+    });
+    display.addEventListener("keydown", function(ev){
+      if(ev.key === "Enter" || ev.key === " "){ ev.preventDefault(); openFromDisplay(); }
+    });
+    cancelBtn.addEventListener("click", closeIncidentSessionDateEditPanel);
+    applyBtn.addEventListener("click", function(){
+      const y = incidentSessionDateEditLockYear;
+      const m = incidentSessionDateEditLockMonth;
+      if(y == null || m == null){ alert("Could not determine the month. Reload and try again."); return; }
+      const iso = clean(picker.value);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)){ alert("Pick a date from the calendar."); return; }
+      const parts = parseIsoToYearMonthDay(iso);
+      if(!parts || parts.y !== y || parts.m !== m){
+        alert("Pick a day in " + formatLockedMonthYearEnGB(y, m) + ".");
+        return;
+      }
+      hid.value = iso;
+      context.sessionDate = iso;
+      closeIncidentSessionDateEditPanel();
+      updateIncidentSessionDateDisplay();
+      syncIncidentServiceHidden();
+      if(getIncidentSubjectType() !== "staff") syncIncidentParticipantServiceSelect();
+    });
+  }
+  function staffNameMatchesInstructors(staffName, instructorsRaw){
+    const want = stripDiacriticsPortal(clean(staffName)).toLowerCase();
+    if(!want) return false;
+    const bits = String(instructorsRaw || "").split(/[,;]+/);
+    for(let i = 0; i < bits.length; i++){
+      const n = stripDiacriticsPortal(clean(bits[i])).toLowerCase();
+      if(!n) continue;
+      if(n === want || n.indexOf(want) !== -1 || want.indexOf(n) !== -1) return true;
+    }
+    return false;
+  }
+  function collectServicesForStaffOnDate(staffName, sessionIso){
+    const wd = parseIsoToWeekday(sessionIso);
+    const set = new Set();
+    try{
+      const rows = (window.STAFF_DASHBOARD_SOURCE && window.STAFF_DASHBOARD_SOURCE.rows) || [];
+      for(let i = 0; i < rows.length; i++){
+        const r = rows[i] || {};
+        if(wd && clean(r.day) !== wd) continue;
+        if(!staffNameMatchesInstructors(staffName, r.instructors)) continue;
+        const s = clean(r.service);
+        if(s) set.add(s);
+      }
+    }catch(_){}
+    return Array.from(set).sort(function(a, b){ return a.localeCompare(b, "en", { sensitivity: "base" }); });
+  }
+  function resolveIncidentService(fd){
+    const isStaff = getIncidentSubjectType() === "staff";
+    if(!isStaff){
+      if(fd && clean(fd.get("serviceManual"))) return clean(fd.get("serviceManual"));
+      const sel = document.getElementById("serviceManual");
+      if(sel && clean(sel.value)) return clean(sel.value);
+    }
+    if(clean(context.service)) return clean(context.service);
+    const sessionIso = incidentSessionDateIso() || (fd ? clean(fd.get("sessionDateManual")) : "");
+    if(isStaff){
+      const staffList = collectServicesForStaffOnDate(clean(context.submittedByName), sessionIso);
+      if(staffList.length) return staffList[0];
+    }
+    const pnm = fd ? clean(fd.get("participantManual")) : "";
+    const partList = collectServicesForParticipantName(pnm);
+    if(partList.length === 1) return partList[0];
+    const hid = document.getElementById("serviceManualHidden");
+    return hid ? clean(hid.value) : "";
+  }
+  function syncIncidentServiceHidden(fd){
+    const svc = resolveIncidentService(fd);
+    const hid = document.getElementById("serviceManualHidden");
+    if(hid) hid.value = svc || "";
+    if(svc) context.service = svc;
+  }
+  function syncIncidentSessionDate(opts){
+    const hid = document.getElementById("incSessionDate");
+    if(!hid) return;
+    const force = opts && opts.force;
+    if(!force && clean(hid.value)){
+      updateIncidentSessionDateDisplay();
+      syncIncidentServiceHidden();
+      return;
+    }
+    const fromKey = parseSessionKey(context.portalSessionKey);
+    let iso = clean(context.sessionDate);
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) iso = clean(fromKey.session_date);
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) iso = todayIsoLocal();
+    hid.value = iso;
+    context.sessionDate = iso;
+    updateIncidentSessionDateDisplay();
+    syncIncidentServiceHidden();
+  }
+  function syncIncidentMyselfFields(){
+    const it = document.getElementById("myselfIncidentTime");
+    if(it && !clean(it.value)){
+      const t = normalizeIncidentTimeForSubmit(context.sessionTime) || normalizeIncidentTimeForSubmit(context.sessionTime.slice(0, 5));
+      if(t) it.value = t;
+    }
+    const mp = document.getElementById("myselfParticipant");
+    if(mp && !clean(mp.value) && clean(context.clientName)) mp.value = clean(context.clientName);
+    syncParticipantDatalistForInput("myselfParticipant", "participantManualNameList");
+    syncIncidentSessionDate();
+    syncMyselfInjuryUi();
+  }
+  function openIncidentSubject(type){
+    const t = clean(type).toLowerCase() === "staff" ? "staff" : "participant";
+    if(subjectTypeHidden) subjectTypeHidden.value = t;
+    showIncidentStep("form");
+    syncIncidentSubjectUi();
+    const done = function(){
+      if(t === "staff") syncIncidentMyselfFields();
+      else syncIncidentManualFields();
+    };
+    ensurePortalRosterScriptsLoaded().then(done).catch(done);
+  }
+  function initIncidentCategoryGroups(){
+    if(!incidentCategoryEl || incidentCategoryEl.dataset.categoryGrouped) return;
+    incidentCategoryEl.dataset.categoryGrouped = "1";
+    const opts = incidentCategoryEl.querySelectorAll("option");
+    for(let i = 0; i < opts.length; i++){
+      const o = opts[i];
+      if(!clean(o.value) || o.classList.contains("staff-category-opt")) continue;
+      o.classList.add("participant-category-opt");
+    }
+  }
+  function syncIncidentCategoryOptions(){
+    if(!incidentCategoryEl) return;
+    const isStaff = getIncidentSubjectType() === "staff";
+    const parts = incidentCategoryEl.querySelectorAll(".participant-category-opt");
+    const staffOpts = incidentCategoryEl.querySelectorAll(".staff-category-opt");
+    for(let i = 0; i < parts.length; i++) parts[i].hidden = isStaff;
+    for(let j = 0; j < staffOpts.length; j++) staffOpts[j].hidden = !isStaff;
+    const sel = incidentCategoryEl.selectedOptions && incidentCategoryEl.selectedOptions[0];
+    if(sel && sel.hidden) incidentCategoryEl.value = "";
+    if(isStaff && noInjuryTrackingEl && noInjuryTrackingEl.checked){
+      incidentCategoryEl.value = "Staff incident — no injury (tracking)";
+    }
+  }
+  function syncIncidentSubjectUi(){
+    const isStaff = getIncidentSubjectType() === "staff";
+    document.body.classList.toggle("incident-subject-staff", isStaff);
+    if(incidentParticipantPanel) incidentParticipantPanel.hidden = isStaff;
+    if(incidentMyselfPanel) incidentMyselfPanel.hidden = !isStaff;
+    setFormControlsDisabled(incidentParticipantPanel, isStaff);
+    setFormControlsDisabled(incidentMyselfPanel, !isStaff);
+    const svcSel = document.getElementById("serviceManual");
+    if(svcSel) svcSel.required = !isStaff;
+    syncIncidentCategoryOptions();
+    syncMyselfInjuryUi();
+    if(isStaff) syncIncidentServiceHidden();
+    else syncIncidentParticipantServiceSelect();
+  }
+  function syncIncidentParticipantServiceSelect(){
+    const pm = document.getElementById("participantManual");
+    const pnm = pm ? clean(pm.value) : "";
+    const wantSvc = clean(context.service);
+    rebuildServiceSelectForParticipant("serviceManual", pnm, wantSvc);
+  }
+  function staffIncidentCategoryFromForm(fd){
+    if(noInjuryTrackingEl && noInjuryTrackingEl.checked){
+      return "Staff incident — no injury (tracking)";
+    }
+    if(clean(fd.get("injuriesStaff"))) return "Staff injury at work";
+    return "Near miss (staff)";
+  }
+  function readIncidentOutcome(fd){
+    if(getIncidentSubjectType() !== "staff") return null;
+    if(noInjuryTrackingEl && noInjuryTrackingEl.checked) return "none_reported";
+    if(clean(fd.get("injuriesStaff"))) return "injury";
+    return null;
+  }
+  initIncidentCategoryGroups();
+  wireIncidentSessionDateUi();
+  wireIncidentTimeInputs();
+  showIncidentStep("choose");
+  if(incidentChooseParticipant){
+    incidentChooseParticipant.addEventListener("click", function(){ openIncidentSubject("participant"); });
+  }
+  if(incidentChooseMyself){
+    incidentChooseMyself.addEventListener("click", function(){ openIncidentSubject("staff"); });
+  }
+  if(incidentFormBackBtn){
+    incidentFormBackBtn.addEventListener("click", function(){
+      if(subjectTypeHidden) subjectTypeHidden.value = "";
+      showIncidentStep("choose");
+    });
+  }
+  if(form){
+    form.addEventListener("change", function(ev){
+      const t = ev.target;
+      if(!t) return;
+      if(t.id === "noInjuryTracking") syncIncidentSubjectUi();
+    });
+  }
+  if(noInjuryTrackingEl){
+    noInjuryTrackingEl.addEventListener("change", syncMyselfInjuryUi);
+  }
+
+  const context = {
+    portalSessionKey: "",
+    sessionDate: String(qs.get("date") || "").trim(),
+    sessionTime: String(qs.get("time") || qs.get("sessionTime") || "").trim(),
+    clientId: String(qs.get("clientId") || "").trim(),
+    /** Participant only: explicit client params or roster — not generic `name` (often instructor on portal links). */
+    clientName: String(qs.get("clientName") || qs.get("client") || "").trim(),
+    service: String(qs.get("service") || "").trim(),
+    location: String(qs.get("location") || "").trim(),
+    submittedByUserId: "",
+    submittedByName: "",
+    submittedByAppRole: "",
+    origin: "dashboard"
+  };
+
+  function clean(v){ return String(v || "").replace(/\s+/g, " ").trim(); }
+  function formatIncidentTimeDigits(digits){
+    const d = String(digits || "").replace(/\D/g, "").slice(0, 4);
+    if(d.length <= 2) return d;
+    return d.slice(0, 2) + ":" + d.slice(2);
+  }
+  function normalizeIncidentTimeForSubmit(raw){
+    const t = clean(raw);
+    const m = t.match(/^(\d{1,2}):(\d{2})$/);
+    if(!m) return "";
+    let h = parseInt(m[1], 10);
+    let min = parseInt(m[2], 10);
+    if(Number.isNaN(h) || Number.isNaN(min)) return "";
+    if(h > 23) h = 23;
+    if(min > 59) min = 59;
+    return String(h).padStart(2, "0") + ":" + String(min).padStart(2, "0");
+  }
+  function wireIncidentTimeInput(el){
+    if(!el || el.dataset.timeMaskWired) return;
+    el.dataset.timeMaskWired = "1";
+    el.addEventListener("input", function(){
+      const pos = el.selectionStart;
+      const before = el.value;
+      el.value = formatIncidentTimeDigits(el.value);
+      if(pos != null && before.length < el.value.length && el.value.charAt(pos - 1) === ":"){
+        try{ el.setSelectionRange(pos + 1, pos + 1); }catch(_){}
+      }
+    });
+    el.addEventListener("blur", function(){
+      const norm = normalizeIncidentTimeForSubmit(el.value);
+      if(norm) el.value = norm;
+    });
+  }
+  function wireIncidentTimeInputs(){
+    wireIncidentTimeInput(document.getElementById("incidentTime"));
+    wireIncidentTimeInput(document.getElementById("myselfIncidentTime"));
+  }
+  /** Prefer storage session — same idea as auth-handler after navigation; getUser() alone can fail spuriously. */
+  async function portalResolveAuthUserFromClient(supabase){
+    let authUser = null;
+    const { data: wrap0 } = await supabase.auth.getSession();
+    const s0 = wrap0 && wrap0.session;
+    if(s0 && s0.user && s0.user.id) authUser = s0.user;
+    else{
+      try{ await supabase.auth.refreshSession(); }catch(_e){}
+      const { data: wrap1 } = await supabase.auth.getSession();
+      const s1 = wrap1 && wrap1.session;
+      if(s1 && s1.user && s1.user.id) authUser = s1.user;
+    }
+    if(!authUser){
+      const { data: authData, error: authErr } = await supabase.auth.getUser();
+      if(authErr) return { user: null, error: authErr };
+      authUser = authData && authData.user;
+    }
+    return { user: authUser, error: null };
+  }
+  function slugify(v){
+    return clean(v).toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+  }
+  function parseSessionKey(sk){
+    const parts = String(sk || "").trim().split("|");
+    const d = clean(parts[0] || "");
+    return {
+      session_date: /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : "",
+      session_time: clean(parts[1] || ""),
+      client_id: clean(parts[2] || "")
+    };
+  }
+  function parseIsoToWeekday(iso){
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(String(iso || ""))) return "";
+    const p = String(iso).split("-").map(Number);
+    const d = new Date(p[0], p[1] - 1, p[2]);
+    return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("en-GB", { weekday: "long" });
+  }
+  function parseHm(token){
+    const t = clean(token);
+    const parts = t.split(".");
+    const h = parseInt(parts[0], 10) || 0;
+    const m = parts.length > 1 ? (parseInt(parts[1], 10) || 0) : 0;
+    return { h: h, m: m };
+  }
+  function hourTo24(hour, day){
+    if(day !== "Sunday" && hour < 8) return hour + 12;
+    if(day === "Sunday" && hour >= 1 && hour <= 3) return hour + 12;
+    return hour;
+  }
+  function parseTimeSlot(timeSlot, day){
+    const normalized = String(timeSlot || "").replace(/\s*-\s*/g, " to ").replace(/\s+/g, " ").trim();
+    const parts = normalized.split(/\s+to\s+/i);
+    if(parts.length < 2) return { start: "00:00", end: "00:30" };
+    const a = parseHm(parts[0]);
+    const b = parseHm(parts[1]);
+    const start = String(hourTo24(a.h, day)).padStart(2, "0") + ":" + String(a.m).padStart(2, "0");
+    const end = String(hourTo24(b.h, day)).padStart(2, "0") + ":" + String(b.m).padStart(2, "0");
+    return { start: start, end: end };
+  }
+  function loadPortalScriptOnce(src){
+    return new Promise(function(resolve, reject){
+      const scripts = document.getElementsByTagName("script");
+      for(let i = 0; i < scripts.length; i++){
+        if(scripts[i].src === src){ resolve(); return; }
+      }
+      const s = document.createElement("script");
+      s.src = src;
+      s.async = true;
+      s.onload = function(){ resolve(); };
+      s.onerror = function(){ reject(new Error("load failed: " + src)); };
+      document.head.appendChild(s);
+    });
+  }
+  function decodeSessionKeyB64Url(raw){
+    const token = clean(raw).replace(/-/g, "+").replace(/_/g, "/");
+    if(!token) return "";
+    try{
+      const pad = token.length % 4 ? "=".repeat(4 - (token.length % 4)) : "";
+      return decodeURIComponent(escape(atob(token + pad)));
+    }catch(_){
+      return "";
+    }
+  }
+  function todayIsoLocal(){
+    const d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+  async function ensurePortalRosterScriptsLoaded(){
+    try{
+      if(!Array.isArray(window.PORTAL_CLIENTS_INFO_ROWS)) await loadPortalScriptOnce(PORTAL_CLIENTS_INFO_SCRIPT);
+    }catch(_){}
+    try{
+      if(!window.STAFF_DASHBOARD_SOURCE || !Array.isArray(window.STAFF_DASHBOARD_SOURCE.rows)){
+        await loadPortalScriptOnce(PORTAL_SPREADSHEET_BUNDLE_SCRIPT);
+      }
+    }catch(_){}
+    try{
+      if(typeof window.portalCollectServicesForParticipantName !== "function"){
+        await loadPortalScriptOnce(PORTAL_PARTICIPANT_SERVICES_SCRIPT);
+      }
+    }catch(_){}
+  }
+
+  function collectUniqueParticipantNames(){
+    if(typeof window.portalCollectUniqueParticipantNames === "function"){
+      return window.portalCollectUniqueParticipantNames();
+    }
+    const set = new Set();
+    function addOne(nm){
+      const t = clean(String(nm || ""));
+      if(!t) return;
+      const low = t.toLowerCase();
+      if(low === "closed" || low === "available" || low === "no client") return;
+      set.add(t);
+    }
+    try{
+      const rows = window.PORTAL_CLIENTS_INFO_ROWS;
+      if(Array.isArray(rows)){
+        for(let i = 0; i < rows.length; i++) addOne(rows[i] && rows[i].client_name);
+      }
+    }catch(_){}
+    try{
+      const src = window.STAFF_DASHBOARD_SOURCE;
+      const rows = src && Array.isArray(src.rows) ? src.rows : [];
+      for(let i = 0; i < rows.length; i++) addOne(rows[i] && rows[i].client_name);
+    }catch(_){}
+    return Array.from(set).sort(function(a, b){ return a.localeCompare(b, "en", { sensitivity: "base" }); });
+  }
+
+  function stripDiacriticsPortal(s){
+    const t = String(s || "");
+    try{
+      return t.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    }catch(_){
+      return t;
+    }
+  }
+
+  function participantNameStartsWithPortal(name, prefixRaw){
+    if(typeof window.portalParticipantNameStartsWith === "function"){
+      return window.portalParticipantNameStartsWith(name, prefixRaw);
+    }
+    const pref = clean(String(prefixRaw || ""));
+    if(!pref) return false;
+    const a = stripDiacriticsPortal(name).toLowerCase();
+    const b = stripDiacriticsPortal(pref).toLowerCase();
+    return a.indexOf(b) === 0;
+  }
+
+  /** Services for this participant (roster + optional service on clients_info rows). */
+  function collectServicesForParticipantName(participantRaw){
+    if(typeof window.portalCollectServicesForParticipantName === "function"){
+      return window.portalCollectServicesForParticipantName(participantRaw);
+    }
+    const target = clean(participantRaw);
+    if(!target) return [];
+    const set = new Set();
+    const want = stripDiacriticsPortal(target).toLowerCase();
+    try{
+      const src = window.STAFF_DASHBOARD_SOURCE;
+      const rows = src && Array.isArray(src.rows) ? src.rows : [];
+      for(let i = 0; i < rows.length; i++){
+        const r = rows[i] || {};
+        const nm = clean(r.client_name);
+        if(!nm) continue;
+        if(stripDiacriticsPortal(nm).toLowerCase() !== want) continue;
+        const s = clean(r.service);
+        if(s) set.add(s);
+      }
+    }catch(_){}
+    return Array.from(set).sort(function(a, b){ return a.localeCompare(b, "en", { sensitivity: "base" }); });
+  }
+
+  function rebuildParticipantDatalistById(datalistId, prefixRaw){
+    const dl = document.getElementById(datalistId);
+    if(!dl) return;
+    dl.textContent = "";
+    const pref = clean(String(prefixRaw || ""));
+    if(!pref) return;
+    const names = collectUniqueParticipantNames();
+    for(let i = 0; i < names.length; i++){
+      const nm = names[i];
+      if(!participantNameStartsWithPortal(nm, pref)) continue;
+      const o = document.createElement("option");
+      o.value = nm;
+      dl.appendChild(o);
+    }
+  }
+
+  function syncParticipantDatalistForInput(inputId, datalistId){
+    const inp = document.getElementById(inputId);
+    if(!inp) return;
+    rebuildParticipantDatalistById(datalistId, inp.value);
+  }
+
+  function rebuildServiceSelectForParticipant(selectId, participantName, preferredService){
+    const sel = document.getElementById(selectId);
+    if(!sel || sel.tagName !== "SELECT") return;
+    const pref = clean(preferredService != null ? preferredService : sel.value);
+    const part = clean(participantName);
+    sel.textContent = "";
+    const ph = document.createElement("option");
+    ph.value = "";
+    ph.textContent = "Select a service";
+    sel.appendChild(ph);
+    const list = part ? collectServicesForParticipantName(part) : [];
+    for(let i = 0; i < list.length; i++){
+      const o = document.createElement("option");
+      o.value = list[i];
+      o.textContent = list[i];
+      sel.appendChild(o);
+    }
+    let chosen = "";
+    if(list.length === 1) chosen = list[0];
+    else if(pref && list.indexOf(pref) !== -1) chosen = pref;
+    if(chosen){
+      sel.value = chosen;
+      return;
+    }
+    if(pref && !list.length){
+      const o = document.createElement("option");
+      o.value = pref;
+      o.textContent = pref;
+      sel.appendChild(o);
+      sel.value = pref;
+      return;
+    }
+    if(pref && list.indexOf(pref) === -1){
+      const o = document.createElement("option");
+      o.value = pref;
+      o.textContent = pref;
+      sel.appendChild(o);
+      sel.value = pref;
+    }
+  }
+
+  async function refreshIncidentParticipantAndServicePickers(){
+    await ensurePortalRosterScriptsLoaded();
+    syncParticipantDatalistForInput("participantManual", "participantManualNameList");
+    syncParticipantDatalistForInput("myselfParticipant", "participantManualNameList");
+    syncIncidentParticipantServiceSelect();
+    syncIncidentSessionDate();
+  }
+
+  function syncIncidentManualFields(){
+    const pm = document.getElementById("participantManual");
+    if(pm && !clean(pm.value)) pm.value = clean(context.clientName);
+    syncParticipantDatalistForInput("participantManual", "participantManualNameList");
+    syncIncidentParticipantServiceSelect();
+    syncIncidentSessionDate();
+  }
+  function inferOriginFromReturn(baseTarget){
+    let origin = "dashboard";
+    const direct = clean(qs.get("origin") || "");
+    if(direct) origin = direct;
+    try{
+      const u = new URL(baseTarget, location.href);
+      origin = u.searchParams.get("portalReviewOrigin") || "dashboard";
+    }catch(_){}
+    origin = clean(origin);
+    if(origin !== "this_week" && origin !== "term" && origin !== "dashboard") origin = "dashboard";
+    context.origin = origin;
+  }
+
+  async function enrichContextFromScripts(){
+    const fromKey = parseSessionKey(context.portalSessionKey);
+    if(!context.sessionDate) context.sessionDate = fromKey.session_date;
+    if(!context.sessionTime) context.sessionTime = fromKey.session_time;
+    if(!context.clientId) context.clientId = fromKey.client_id;
+
+    if(!clean(context.clientName) && clean(context.clientId) && context.clientId !== "available" && context.clientId !== "closed"){
+      try{
+        if(!Array.isArray(window.PORTAL_CLIENTS_INFO_ROWS)) await loadPortalScriptOnce(PORTAL_CLIENTS_INFO_SCRIPT);
+        const rows = window.PORTAL_CLIENTS_INFO_ROWS || [];
+        const want = slugify(context.clientId);
+        for(let i = 0; i < rows.length; i++){
+          const nm = clean(rows[i] && rows[i].client_name);
+          if(nm && slugify(nm) === want){
+            context.clientName = nm;
+            break;
+          }
+        }
+      }catch(_){}
+    }
+
+    if((!clean(context.service) || !clean(context.location) || !clean(context.sessionTime)) && clean(context.clientId)){
+      try{
+        if(!window.STAFF_DASHBOARD_SOURCE || !Array.isArray(window.STAFF_DASHBOARD_SOURCE.rows)){
+          await loadPortalScriptOnce(PORTAL_SPREADSHEET_BUNDLE_SCRIPT);
+        }
+        const rows = (window.STAFF_DASHBOARD_SOURCE && window.STAFF_DASHBOARD_SOURCE.rows) || [];
+        const wd = parseIsoToWeekday(context.sessionDate);
+        const cidSlug = slugify(context.clientId);
+        for(let i = 0; i < rows.length; i++){
+          const r = rows[i] || {};
+          const rowClient = clean(r.client_name);
+          if(!rowClient || slugify(rowClient) !== cidSlug) continue;
+          if(wd && clean(r.day) !== wd) continue;
+          if(clean(context.sessionTime)){
+            const t = parseTimeSlot(r.time_slot, clean(r.day));
+            if(t.start !== clean(context.sessionTime)) continue;
+          }
+          if(!clean(context.service)) context.service = clean(r.service);
+          if(!clean(context.location)) context.location = clean(r.roster_area || r.area || r.venue);
+          if(!clean(context.sessionTime)) context.sessionTime = clean(r.time_slot);
+          if(!clean(context.clientName)) context.clientName = rowClient;
+          break;
+        }
+      }catch(_){}
+    }
+  }
+
+  async function softLoadIncidentAuthDisplay(){
+    context.submittedByUserId = "";
+    context.submittedByName = "";
+    context.submittedByAppRole = "";
+    try{
+      const { getSupabaseClient } = await import(PORTAL_AUTH_MODULE);
+      const supabase = getSupabaseClient();
+      const { user: authUser, error: authErr } = await portalResolveAuthUserFromClient(supabase);
+      if(!authErr && authUser && authUser.id){
+        const { data: profileRow, error: profileErr } = await supabase
+          .from("staff_profiles")
+          .select("app_role, full_name, username")
+          .eq("id", authUser.id)
+          .maybeSingle();
+        if(profileErr) throw profileErr;
+        const role = clean(profileRow && profileRow.app_role).toLowerCase();
+        if(role === "staff" || role === "lead"){
+          context.submittedByUserId = clean(authUser.id);
+          context.submittedByName = clean(profileRow && (profileRow.full_name || profileRow.username));
+          const ar = clean(profileRow && profileRow.app_role);
+          context.submittedByAppRole = ar ? ar.charAt(0).toUpperCase() + ar.slice(1).toLowerCase() : "";
+        }
+      }
+    }catch(_){}
+    if(clean(context.submittedByName)) return;
+    const candidates = [
+      qs.get("full_name"),
+      qs.get("staff"),
+      qs.get("reporter"),
+      qs.get("instructor"),
+      qs.get("completedBy"),
+      qs.get("name"),
+    ];
+    for(let i = 0; i < candidates.length; i++){
+      let t = String(candidates[i] || "").trim();
+      try{
+        if(t.indexOf("%") !== -1) t = decodeURIComponent(t);
+      }catch(_){}
+      t = clean(t.replace(/\+/g, " "));
+      if(t){
+        context.submittedByName = t;
+        return;
+      }
+    }
+    try{
+      if(typeof window.portalReadPinDisplayName === "function"){
+        const pn = clean(window.portalReadPinDisplayName());
+        if(pn){ context.submittedByName = pn; return; }
+      }
+      const pin = window.__PORTAL_PIN_IDENTITY__;
+      if(pin && clean(pin.displayName)){
+        context.submittedByName = clean(pin.displayName);
+        return;
+      }
+    }catch(_){}
+    const keys = ["clubsens_staff_session_v2", "clubsens_lead_session_v2"];
+    for(let k = 0; k < keys.length; k++){
+      try{
+        const raw = localStorage.getItem(keys[k]);
+        if(!raw) continue;
+        const o = JSON.parse(raw);
+        if(o && clean(o.displayName)){
+          context.submittedByName = clean(o.displayName);
+          return;
+        }
+      }catch(_){}
+    }
+  }
+
+  async function hydrateAuthContext(){
+    const { getSupabaseClient } = await import(PORTAL_AUTH_MODULE);
+    const supabase = getSupabaseClient();
+
+    const { user: authUser, error: authErr } = await portalResolveAuthUserFromClient(supabase);
+    if(authErr) throw authErr;
+    const submittedByUserId = authUser && authUser.id ? clean(authUser.id) : "";
+    if(!submittedByUserId) throw new Error("User not authenticated");
+
+    const { data: profileRow, error: profileErr } = await supabase
+      .from("staff_profiles")
+      .select("app_role, full_name, username")
+      .eq("id", submittedByUserId)
+      .maybeSingle();
+    if(profileErr) throw profileErr;
+
+    const role = clean(profileRow && profileRow.app_role).toLowerCase();
+    if(role !== "staff" && role !== "lead") throw new Error("Only staff/lead can submit incident reports");
+
+    const submittedByName = clean(profileRow && (profileRow.full_name || profileRow.username));
+    if(!submittedByName) throw new Error("Staff profile missing display name");
+
+    context.submittedByUserId = submittedByUserId;
+    context.submittedByName = submittedByName;
+    const ar = clean(profileRow && profileRow.app_role);
+    context.submittedByAppRole = ar ? ar.charAt(0).toUpperCase() + ar.slice(1).toLowerCase() : "";
+    return { supabase: supabase };
+  }
+
+  function readBridgeSecretFromWindowOrHash(){
+    try{
+      if(typeof window.portalReadBridgeSecret === "function"){
+        const shared = window.portalReadBridgeSecret();
+        if(shared) return shared;
+      }
+    }catch(_){}
+    try{
+      const s = String(STAFF_PROFILE_PORTAL_BRIDGE_SECRET || "").trim();
+      if(s && s !== "a0c9a04ec9f8fc78536f5b8f4f2d0ba4734d56c6489b47e97cddc58ee64a2e20" && s.length >= 16) return s;
+    }catch(_){}
+    try{
+      const raw = String(window.location.hash || "").replace(/^#/, "");
+      if(!raw) return "";
+      const sp = new URLSearchParams(raw.includes("=") ? raw : `portal_bridge=${raw}`);
+      const fromHash = String(sp.get("portal_bridge") || "").trim();
+      if(fromHash && fromHash !== "%%PB6%%" && fromHash.length >= 16) return fromHash;
+    }catch(_){}
+    try{
+      const stored = sessionStorage.getItem("clubsens_portal_bridge_v1") || localStorage.getItem("clubsens_portal_bridge_v1") || "";
+      const t = String(stored).trim();
+      if(t && t !== "%%PB6%%" && t.length >= 16) return t;
+    }catch(_){}
+    return "";
+  }
+
+  function readPinNameForIncident(){
+    try{
+      if(typeof window.portalReadPinDisplayName === "function"){
+        const pn = clean(window.portalReadPinDisplayName());
+        if(pn) return pn;
+      }
+    }catch(_){}
+    try{
+      const pin = window.__PORTAL_PIN_IDENTITY__;
+      if(pin && clean(pin.displayName)) return clean(pin.displayName);
+    }catch(_){}
+    const keys = ["clubsens_staff_session_v2", "clubsens_lead_session_v2"];
+    for(let k = 0; k < keys.length; k++){
+      try{
+        const raw = localStorage.getItem(keys[k]);
+        if(!raw) continue;
+        const o = JSON.parse(raw);
+        if(o && clean(o.displayName)) return clean(o.displayName);
+      }catch(_){}
+    }
+    return clean(context.submittedByName);
+  }
+
+  async function submitIncidentViaPinBridge(fullName, incidentPayload){
+    const secret = readBridgeSecretFromWindowOrHash();
+    if(!secret || secret.length < 16) throw new Error("portal_bridge_missing");
+    const { getSupabaseFunctionUrl, getSupabaseAnonKey } = await import(PORTAL_SUPABASE_MODULE);
+    const endpoint = getSupabaseFunctionUrl("portal-incident-submit");
+    const anonKey = getSupabaseAnonKey();
+    if(!endpoint || !anonKey) throw new Error("supabase_not_configured");
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: anonKey,
+        Authorization: `Bearer ${anonKey}`,
+      },
+      body: JSON.stringify({
+        full_name: fullName,
+        portal_bridge_secret: secret,
+        incident: incidentPayload,
+      }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if(!res.ok || !body || !body.ok){
+      const err = String((body && body.error) || "");
+      if(err === "unknown_staff"){
+        throw new Error("Your name is not linked in staff_profiles yet. Ask an admin to add your profile, then try again.");
+      }
+      if(err === "invalid_bridge_secret" || err === "bridge_not_configured"){
+        throw new Error("portal_bridge_missing");
+      }
+      throw new Error(err || "pin_submit_failed");
+    }
+    return body;
+  }
+
+  function validateIncidentSubmit(fd, opts){
+    const allowPin = opts && opts.allowPinBridge;
+    const isStaff = getIncidentSubjectType() === "staff";
+    const missing = [];
+    if(!isStaff && !clean(context.portalSessionKey)) missing.push("sessionKey");
+    if(!resolveIncidentService(fd)) missing.push("service");
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(clean(fd.get("sessionDateManual")))) missing.push("session date");
+    if(!normalizeIncidentTimeForSubmit(fd.get("incidentTime"))) missing.push("time of incident (HH:MM)");
+    if(isStaff){
+      if(!clean(fd.get("statementDuring"))) missing.push("what happened");
+    }else{
+      if(!clean(fd.get("participantManual"))) missing.push("participant name");
+      if(!clean(fd.get("incidentCategory"))) missing.push("incident category");
+    }
+    if(!allowPin && !clean(context.submittedByUserId)) missing.push("authenticated staff user");
+    if(!clean(context.submittedByName) && !(allowPin && readPinNameForIncident())){
+      missing.push("instructor / submitted-by name");
+    }
+    return missing;
+  }
+
+  function redirectAfterSubmit(){
+    try{
+      if(typeof portalGetPortalReturnUrl === "function" && typeof portalRedirectToPortalReturn === "function"){
+        if(portalGetPortalReturnUrl()){
+          portalRedirectToPortalReturn();
+          return;
+        }
+      }
+    }catch(_){}
+    const returnUrl = clean(qs.get("return")) || "";
+    const returnPath = clean(qs.get("rp")) || "";
+    let baseTarget = returnUrl || returnPath || "";
+    if(!baseTarget) baseTarget = "/staffportal";
+
+    let target = baseTarget;
+    try{
+      const u = new URL(baseTarget, location.href);
+      u.searchParams.delete("portalPostIncident");
+      u.searchParams.delete("portalReviewDay");
+      u.searchParams.delete("portalReviewDate");
+      u.searchParams.delete("portalAfterFeedback");
+      u.searchParams.set("portalAfterIncident", "1");
+      u.searchParams.set("portalReviewOrigin", context.origin);
+      if(clean(context.portalSessionKey)) u.searchParams.set("sessionKey", clean(context.portalSessionKey));
+      const rd = clean(qs.get("rd") || "");
+      const rday = clean(qs.get("rday") || "");
+      if(rd) u.searchParams.set("portalReviewDate", rd);
+      if(rday) u.searchParams.set("portalReviewDay", rday);
+      target = u.href;
+    }catch(_){}
+    location.href = target;
+  }
+  function persistPortalIncidentDone(){
+    const sk = clean(context.portalSessionKey);
+    if(!sk) return;
+    try{
+      const raw = localStorage.getItem(PORTAL_SESSION_REVIEW_MAP_STORAGE) || "{}";
+      const o = JSON.parse(raw);
+      const base = o && typeof o === "object" ? o : {};
+      const prev = base[sk] && typeof base[sk] === "object" ? base[sk] : {};
+      base[sk] = {
+        feedbackDone: !!prev.feedbackDone,
+        incident: true,
+        absent: !!prev.absent,
+        cancelled: !!prev.cancelled
+      };
+      localStorage.setItem(PORTAL_SESSION_REVIEW_MAP_STORAGE, JSON.stringify(base));
+    }catch(_){}
+  }
+
+  clearBtn.addEventListener("click", function(){
+    form.reset();
+    if(subjectTypeHidden) subjectTypeHidden.value = "";
+    closeIncidentSessionDateEditPanel();
+    syncIncidentSessionDate({ force: true });
+    syncIncidentManualFields();
+    syncIncidentMyselfFields();
+    showIncidentStep("choose");
+  });
+
+  function wireParticipantNameSuggest(inputId, datalistId, afterResolve){
+    const inp = document.getElementById(inputId);
+    if(!inp || inp.dataset.nameSuggestWired) return;
+    inp.dataset.nameSuggestWired = "1";
+    function onInput(){
+      syncParticipantDatalistForInput(inputId, datalistId);
+      const resolved = typeof window.portalResolveParticipantCanonicalName === "function"
+        ? window.portalResolveParticipantCanonicalName(inp.value)
+        : clean(inp.value);
+      if(resolved && resolved !== clean(inp.value)) inp.value = resolved;
+      if(typeof afterResolve === "function") afterResolve();
+    }
+    inp.addEventListener("input", onInput);
+    inp.addEventListener("change", onInput);
+    inp.addEventListener("focus", onInput);
+  }
+  wireParticipantNameSuggest("participantManual", "participantManualNameList", syncIncidentParticipantServiceSelect);
+  wireParticipantNameSuggest("myselfParticipant", "participantManualNameList");
+
+  form.addEventListener("submit", async function(e){
+    e.preventDefault();
+    const activeTimeEl = getIncidentSubjectType() === "staff"
+      ? document.getElementById("myselfIncidentTime")
+      : document.getElementById("incidentTime");
+    if(activeTimeEl){
+      const normT = normalizeIncidentTimeForSubmit(activeTimeEl.value);
+      if(!normT){
+        activeTimeEl.setCustomValidity("Enter time as HH:MM (e.g. 14:30)");
+        activeTimeEl.reportValidity();
+        return;
+      }
+      activeTimeEl.value = normT;
+      activeTimeEl.setCustomValidity("");
+    }
+    if(!form.checkValidity()){
+      form.reportValidity();
+      return;
+    }
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Submitting";
+
+    try{
+      const fd = new FormData(form);
+      await enrichContextFromScripts();
+      syncIncidentManualFields();
+      syncIncidentMyselfFields();
+      await softLoadIncidentAuthDisplay();
+      syncIncidentServiceHidden(fd);
+      const pinName = readPinNameForIncident();
+      const bridgeSecret = readBridgeSecretFromWindowOrHash();
+      const usePinBridge = !!(pinName && bridgeSecret);
+      const missing = validateIncidentSubmit(fd, { allowPinBridge: usePinBridge });
+      if(missing.length){
+        alert("Cannot submit incident report yet. Missing:\n• " + missing.join("\n• "));
+        return;
+      }
+
+      const isStaffSubject = getIncidentSubjectType() === "staff";
+      const clientName = clean(fd.get("participantManual")) || null;
+      const service = resolveIncidentService(fd);
+      const sessionDate = clean(fd.get("sessionDateManual"));
+      const notifyFlag = false;
+      const notifyNotes = null;
+      const incidentPayload = {
+        subject_type: isStaffSubject ? "staff" : "participant",
+        affected_staff_user_id: isStaffSubject ? (clean(context.submittedByUserId) || null) : null,
+        affected_staff_name: isStaffSubject ? (clean(context.submittedByName) || null) : null,
+        incident_outcome: readIncidentOutcome(fd),
+        client_id: clean(context.clientId) || null,
+        client_name: isStaffSubject ? clientName : (clientName || ""),
+        session_date: sessionDate,
+        session_time: clean(context.sessionTime) || null,
+        incident_time: normalizeIncidentTimeForSubmit(fd.get("incidentTime")),
+        service: service,
+        location: clean(fd.get("incidentLocation")) || null,
+        portal_session_key: clean(context.portalSessionKey) || null,
+        incident_category: isStaffSubject ? staffIncidentCategoryFromForm(fd) : clean(fd.get("incidentCategory")),
+        staff_involved: clean(fd.get("staffInvolved")) || null,
+        witness: clean(fd.get("witness")) || null,
+        statement_before: clean(fd.get("statementBefore")) || null,
+        statement_during: clean(fd.get("statementDuring")) || null,
+        statement_after: clean(fd.get("statementAfter")) || null,
+        injuries_client: clean(fd.get("injuriesClient")) || null,
+        injuries_staff: clean(fd.get("injuriesStaff")) || null,
+        origin: context.origin,
+        incident_notification_requested: notifyFlag,
+        incident_notification_notes: notifyNotes,
+      };
+
+      if(usePinBridge){
+        await submitIncidentViaPinBridge(pinName, incidentPayload);
+      }else{
+        const auth = await hydrateAuthContext();
+        const row = Object.assign({
+          submitted_by_user_id: context.submittedByUserId,
+          submitted_by_name: context.submittedByName,
+        }, incidentPayload);
+        let insertErr = null;
+        ({ error: insertErr } = await auth.supabase.from("incident_reports").insert([row]));
+        if(insertErr && String(insertErr.message || "").toLowerCase().includes("incident_notification")){
+          const rowLite = Object.assign({}, row);
+          delete rowLite.incident_notification_requested;
+          delete rowLite.incident_notification_notes;
+          ({ error: insertErr } = await auth.supabase.from("incident_reports").insert([rowLite]));
+        }
+        if(insertErr && /subject_type|affected_staff|incident_outcome/i.test(String(insertErr.message || ""))){
+          const rowLite = Object.assign({}, row);
+          delete rowLite.subject_type;
+          delete rowLite.affected_staff_user_id;
+          delete rowLite.affected_staff_name;
+          delete rowLite.incident_outcome;
+          if(isStaffSubject && !rowLite.client_name){
+            rowLite.client_name = clean(context.submittedByName) || "Staff incident";
+          }
+          ({ error: insertErr } = await auth.supabase.from("incident_reports").insert([rowLite]));
+        }
+        if(insertErr) throw insertErr;
+      }
+      persistPortalIncidentDone();
+      if (typeof window.portalRedirectAfterSubmitSuccess === "function") {
+        window.portalRedirectAfterSubmitSuccess("Incident report submitted successfully.");
+        return;
+      }
+      redirectAfterSubmit();
+    }catch(err){
+      console.error(err);
+      const msg = err && err.message ? String(err.message) : "";
+      if(msg === "portal_bridge_missing"){
+        alert("Could not verify this link for PIN submit. Open Incident again from the Staff or Lead hub after PIN login.");
+        return;
+      }
+      if(msg === "insert_failed"){
+        alert("Submission failed. If this was a staff (Myself) report, try again — a category setting was updated on the server.");
+        return;
+      }
+      alert("Submission failed. Please try again." + (msg ? "\n" + msg : ""));
+    }finally{
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Submit";
+    }
+  });
+
+  (async function init(){
+    try{
+      const decodedSk = decodeSessionKeyB64Url(qs.get("sk") || "");
+      context.portalSessionKey = clean(decodedSk || qs.get("sessionKey") || "");
+      context.sessionDate = clean(qs.get("date") || "");
+      context.sessionTime = clean(qs.get("time") || qs.get("sessionTime") || "");
+      context.clientId = clean(qs.get("clientId") || "");
+      context.clientName = clean(qs.get("clientName") || qs.get("client") || "");
+      try{
+        if(context.clientName.indexOf("%") !== -1) context.clientName = decodeURIComponent(context.clientName);
+      }catch(_){}
+      context.clientName = clean(String(context.clientName || "").replace(/\+/g, " "));
+      context.service = clean(qs.get("service") || "");
+      context.location = clean(qs.get("location") || "");
+      const parsed = parseSessionKey(context.portalSessionKey);
+      if(!context.sessionDate) context.sessionDate = parsed.session_date;
+      if(!context.sessionTime) context.sessionTime = parsed.session_time;
+      if(!context.clientId) context.clientId = parsed.client_id;
+      inferOriginFromReturn(qs.get("return") || qs.get("rp") || "");
+      try{
+        const chooseBack = document.getElementById("incidentChooseBackLink");
+        if(chooseBack && typeof portalGetPortalReturnUrl === "function"){
+          const u = portalGetPortalReturnUrl();
+          if(u) chooseBack.href = u;
+        }
+      }catch(_){}
+      await softLoadIncidentAuthDisplay();
+      await enrichContextFromScripts();
+      await refreshIncidentParticipantAndServicePickers().catch(function(){});
+      syncIncidentSessionDate({ force: true });
+      syncIncidentManualFields();
+      syncIncidentMyselfFields();
+      if(clean(qs.get("subject")).toLowerCase() === "staff"){
+        openIncidentSubject("staff");
+      }else{
+        showIncidentStep("choose");
+      }
+    }catch(err){
+      console.error(err);
+    }
+  })();
+})();
+</script>
+</body>
+</html>

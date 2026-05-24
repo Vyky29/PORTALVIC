@@ -1,42 +1,34 @@
 <!doctype html>
 <html lang="en-GB">
 <head>
-  <script>
-    (function () {
-      try { document.documentElement.classList.add("portal-app-shell"); } catch (e) {}
-    })();
-  </script>
-  <style id="portal-hide-wp-chrome">
-    html.portal-app-shell body.admin-bar{padding-top:0!important;margin-top:0!important}
-    html.portal-app-shell #wpadminbar,html.portal-app-shell #masthead,html.portal-app-shell header#masthead,html.portal-app-shell .site-header,html.portal-app-shell #site-header,html.portal-app-shell .ast-primary-header-bar,html.portal-app-shell .ast-above-header,html.portal-app-shell .elementor-location-header,html.portal-app-shell .elementor-location-footer,html.portal-app-shell #colophon,html.portal-app-shell footer.site-footer,html.portal-app-shell .site-footer,html.portal-app-shell #footer,html.portal-app-shell .site-bottom-footer-inner-wrap,html.portal-app-shell .footer-widget-area{display:none!important;visibility:hidden!important;height:0!important;overflow:hidden!important;pointer-events:none!important}
-    html.portal-app-shell .site-content,html.portal-app-shell #content,html.portal-app-shell .site-main,html.portal-app-shell #primary{margin-top:0!important;padding-top:0!important}
-    html.portal-app-shell #page,html.portal-app-shell .site{margin-top:0!important;padding-top:0!important}
-  </style>
-  <script src="portal/portal_return_and_shell.js?v=20260510-portal-admin"></script>
+  <script src="/portal-static-bootstrap.js?v=20260519-submit-return"></script>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>clubSENsational Drop Off - Pick Up Portal</title>
+  <link rel="stylesheet" href="/portal-shared-js/portal_page_logo.css?v=20260517-portal-logos" />
+  <link rel="stylesheet" href="/portal-shared-js/portal_page_logo_themes.css?v=20260517-portal-logos" />
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
 
     *, *::before, *::after { box-sizing: border-box; }
 
     :root{
-      --blue:#2d84b3;
-      --blueSoft:#eaf5fb;
-      --gold:#cc952b;
-      --goldSoft:#fff4df;
+      --blue:#8b5cf6;
+      --blueSoft:#f3effe;
+      --gold:#7c3aed;
+      --goldSoft:#ede9fe;
       --ink:#173247;
       --text:#314555;
       --muted:#728290;
-      --line:rgba(23,50,71,.12);
+      --line:rgba(91,33,182,.14);
       --white:#ffffff;
-      --shadow:0 18px 50px rgba(23,50,71,.08);
+      --shadow:0 18px 50px rgba(91,33,182,.1);
       --radius:22px;
-      /* Misma lógica que timesheet (outline + navy seleccionado / primario) */
-      --portalNavy:#0b2a5b;
-      --portalOutlineFill:#e4edf8;
-      --portalOutlineBorder:#b0c7e2;
+      --pickupPrimary:#5b21b6;
+      --pickupPrimaryLight:#8b5cf6;
+      --portalNavy:#5b21b6;
+      --portalOutlineFill:#f3effe;
+      --portalOutlineBorder:#c4b5fd;
     }
 
     html { scroll-behavior: smooth; }
@@ -44,10 +36,87 @@
     body{
       margin:0;
       font-family:'Montserrat',sans-serif;
-      background:linear-gradient(180deg,#f6fbfe 0%,#f3f7fa 100%);
+      background:linear-gradient(180deg,#f8f5ff 0%,#f3f0fa 100%);
       color:var(--text);
     }
 
+    .portal-pickup-logo-bar{
+      width:min(1720px,calc(100% - 32px));
+      margin:0 auto 10px;
+      text-align:center;
+    }
+
+    .pickup-wrap{
+      width:min(760px,calc(100% - 24px));
+      margin:0 auto;
+      padding:0 0 40px;
+    }
+    .title-row{
+      margin-bottom:14px;
+      text-align:center;
+    }
+    .title-row h1{
+      margin:0 0 6px;
+      font-size:clamp(22px,5vw,28px);
+      line-height:1.1;
+      color:var(--ink);
+      font-weight:800;
+    }
+    .title-row p{
+      margin:0;
+      font-size:14px;
+      line-height:1.55;
+      color:var(--muted);
+    }
+    .field-icon-pickup{
+      width:22px;
+      height:22px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:8px;
+      flex:0 0 22px;
+      background:rgba(243,239,254,.95);
+      border:1px solid rgba(139,92,246,.35);
+      color:var(--pickupPrimary);
+      vertical-align:middle;
+      margin-right:6px;
+    }
+    .field-icon-pickup svg{width:14px;height:14px;display:block;}
+    .participant-field label{
+      display:flex;
+      align-items:center;
+      font-size:13px;
+      font-weight:700;
+      color:var(--ink);
+      text-transform:none;
+      letter-spacing:normal;
+      margin-bottom:8px;
+    }
+    .participant-row{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto;
+      gap:8px;
+      align-items:center;
+    }
+    .btn-pickup-new{
+      background:linear-gradient(135deg,var(--pickupPrimaryLight) 0%,var(--pickupPrimary) 100%)!important;
+      color:#fff!important;
+      border-color:transparent!important;
+      min-height:50px;
+      padding:12px 16px!important;
+    }
+    .pickup-results{margin:12px 0 0;}
+    .datetime-readonly-row{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+    .datetime-readonly-row .input[readonly]{
+      background:#fafafa;
+      color:#5b6473;
+      cursor:default;
+    }
     .page{
       width:min(1720px,calc(100% - 32px));
       margin:0 auto;
@@ -178,6 +247,15 @@
 
     .results-wrap{ margin-bottom:18px; }
 
+    .pickup-form-block{
+      margin-top:14px;
+    }
+    .pickup-form-block > .panel-body{
+      padding:0;
+    }
+    .pickup-main > .panel-body{
+      padding-bottom:8px;
+    }
     .panel{
       background:var(--white);
       border:1px solid var(--line);
@@ -444,10 +522,12 @@
     }
 
     .role-btn.active{
-      background:var(--portalNavy)!important;
-      background-color:var(--portalNavy)!important;
-      border-color:var(--portalNavy)!important;
+      background:linear-gradient(135deg,var(--pickupPrimaryLight) 0%,var(--pickupPrimary) 100%)!important;
+      background-color:var(--pickupPrimary)!important;
+      border-color:var(--pickupPrimary)!important;
       color:#fff!important;
+      box-shadow:0 0 0 3px rgba(139,92,246,.38),0 4px 12px rgba(91,33,182,.28)!important;
+      transform:translateY(-1px);
     }
 
     .is-hidden{ display:none !important; }
@@ -476,10 +556,10 @@
     }
 
     .form-inner .row button.primary{
-      background:var(--portalNavy)!important;
-      background-color:var(--portalNavy)!important;
+      background:linear-gradient(135deg,var(--pickupPrimaryLight) 0%,var(--pickupPrimary) 100%)!important;
+      background-color:var(--pickupPrimary)!important;
       color:#fff!important;
-      border-color:var(--portalNavy)!important;
+      border-color:var(--pickupPrimary)!important;
     }
     .form-inner .row button.primary:hover,
     .form-inner .row button.primary:focus-visible{
@@ -802,7 +882,32 @@
     }
   </style>
 </head>
-<body>
+<body class="portal-logo-pickup">
+  <div class="portal-pickup-logo-bar">
+    <div class="cancel-logo-wrap-outer">
+      <div class="cancel-logo-wrap">
+        <div class="cancel-logo-pulse" aria-hidden="true"></div>
+        <svg class="cancel-logo-orbits" viewBox="0 0 240 240" aria-hidden="true">
+          <g class="cancel-orbit-layer cancel-orbit-layer-a">
+            <circle cx="212" cy="120" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.95"></circle>
+            <circle cx="148.43" cy="207.50" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.95"></circle>
+            <circle cx="45.57" cy="174.04" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.95"></circle>
+            <circle cx="45.57" cy="65.96" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.95"></circle>
+            <circle cx="148.43" cy="32.50" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.95"></circle>
+          </g>
+          <g class="cancel-orbit-layer cancel-orbit-layer-b">
+            <circle cx="213.53" cy="174" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
+            <circle cx="120" cy="228" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
+            <circle cx="26.47" cy="174" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
+            <circle cx="26.47" cy="66" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
+            <circle cx="120" cy="12" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
+            <circle cx="213.53" cy="66" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
+          </g>
+        </svg>
+        <img class="cancel-login-logo" src="/assets/logo-clubsensational.png" alt="clubSENsational" />
+      </div>
+    </div>
+  </div>
   <script>
     (function(){
       var s = location.search || '';
@@ -814,44 +919,35 @@
     ?solo=1 or ?clean=1 — hide participant list & search; only the handover form (clean screen).
     Completed handovers are hidden from the list (data stays in Supabase); the form clears when a record becomes complete.
   -->
-  <div class="page">
-    <section class="topbar">
-      <div class="topbar-grid">
-        <div class="brand">
-          <h1>Drop Off & Pick Up</h1>
-        </div>
-        <div class="search-panel">
-          <div class="field">
-            <label for="searchInput">Participant name</label>
-            <input id="searchInput" class="input" type="text" placeholder="e.g. Alex Johnson" autocomplete="name" />
+  <div class="pickup-wrap">
+    <div class="title-row">
+      <h1>Drop Off &amp; Pick Up</h1>
+      <p>Record when a participant arrives and when they are collected. Type a name to open today’s handover, or tap New for someone not listed yet.</p>
+    </div>
+
+    <section class="panel pickup-main">
+      <div class="panel-body">
+        <div class="field participant-field">
+          <label for="searchInput"><span class="field-icon-pickup" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>Participant name</label>
+          <div class="participant-row">
+            <input id="searchInput" class="input" type="text" placeholder="Start typing a name…" list="pickupParticipantList" autocomplete="off" spellcheck="false" />
+            <datalist id="pickupParticipantList"></datalist>
+            <button type="button" class="btn btn-pickup-new" id="addParticipantBtn">New</button>
           </div>
-          <button type="button" class="btn btn-gold" id="addParticipantBtn">Add New Participant</button>
-          <button type="button" class="btn btn-primary" id="searchBtn">Search Participant</button>
         </div>
-      </div>
-    </section>
+        <div id="searchResults" class="result-list pickup-results"></div>
 
-    <section class="results-wrap panel">
-      <div class="panel-head">
-        <h2 class="panel-title">Participant Results</h2>
-      </div>
-      <div class="panel-body">
-        <div id="searchResults" class="result-list"></div>
-      </div>
-    </section>
-
-    <section class="form-panel panel">
-      <div class="panel-body">
+        <div class="pickup-form-block">
+      <div class="panel-body pickup-form-body">
         <div class="form-shell">
           <div class="form-wrap" id="mainContent">
             <div id="emptyState" class="empty-box">
-              Search for a participant or create a new one to begin the drop off and pick up record.
+              Type a participant name above, choose someone from the list, or tap New to start a handover.
             </div>
 
             <div id="formSection" class="hidden form-inner">
               <div class="form-inner-header">
                 <h2>Handover record</h2>
-                <button type="button" class="btn btn-new" id="newBtn">New</button>
               </div>
 
               <form id="f" class="grid">
@@ -866,18 +962,20 @@
                     <div class="grid">
                       <div class="full dropoff-line">
                         <label for="participantName">Name of participant</label>
-                        <input id="participantName" class="input" required>
+                        <input id="participantName" class="input" required spellcheck="false">
                       </div>
                       <div class="full dropoff-line">
                         <span class="field-label-block">Date and time</span>
-                        <div class="date-time-row">
+                        <input type="hidden" id="sessionDate" />
+                        <input type="hidden" id="arrivalTime" />
+                        <div class="datetime-readonly-row">
                           <div>
-                            <label class="subl" for="sessionDate">Date</label>
-                            <input id="sessionDate" type="date" class="input" required>
+                            <label class="subl" for="sessionDateDisplay">Date</label>
+                            <input id="sessionDateDisplay" type="text" class="input" readonly tabindex="-1" aria-readonly="true" />
                           </div>
                           <div>
-                            <label class="subl" for="arrivalTime">Time</label>
-                            <input id="arrivalTime" type="time" class="input">
+                            <label class="subl" for="arrivalTimeDisplay">Time</label>
+                            <input id="arrivalTimeDisplay" type="text" class="input" readonly tabindex="-1" aria-readonly="true" />
                           </div>
                         </div>
                       </div>
@@ -958,6 +1056,8 @@
           </div>
         </div>
       </div>
+        </div>
+      </div>
     </section>
 
     <div class="pickup-dash-back" role="navigation" aria-label="Return to dashboard">
@@ -997,14 +1097,21 @@
           }
         }catch(_){}
         try{
+          if(typeof window.portalResolveHubUrl === 'function'){
+            window.location.replace(window.portalResolveHubUrl());
+            return;
+          }
+        }catch(_){}
+        try{
           const sp = new URLSearchParams(String(location.search || '').replace(/^\?/, ''));
-          const src = String(sp.get('source') || '').toLowerCase();
+          const fp = String(sp.get('from_portal') || '').toLowerCase();
+          const src = String(sp.get('source') || fp || '').toLowerCase();
           if(src === 'lead'){
-            window.location.replace('lead_dashboard.html');
+            window.location.replace('/leadportal');
             return;
           }
           if(src === 'staff'){
-            window.location.replace('staff_dashboard.html');
+            window.location.replace('/staffportal');
             return;
           }
         }catch(_){}
@@ -1019,49 +1126,25 @@
           }
         }catch(_){}
         try{
-          window.location.href = 'staff_dashboard.html';
+          window.location.href = '/staff.html';
         }catch(_){
-          window.location.href = typeof portalStaffDashboardUrl === "function" ? portalStaffDashboardUrl() : new URL("staff_dashboard.html", location.href).href;
+          window.location.href = '/staffportal';
         }
       }
 
-      function showPickupDropOffSavedModal(){
-        const prev = document.getElementById('pickupDropOffSavedModal');
-        if(prev){
-          try{ prev.remove(); }catch(_){}
+      function showPickupDropOffSavedToast(){
+        if(typeof window.portalShowSubmitSuccessBanner === 'function'){
+          window.portalShowSubmitSuccessBanner('Drop off has been saved successfully.');
+          setTimeout(function(){
+            try{
+              const el = document.getElementById('portalSubmitSuccessBanner');
+              if(el && el.parentNode) el.parentNode.removeChild(el);
+            }catch(_){}
+          }, 2200);
+          return;
         }
-        const wrap = document.createElement('div');
-        wrap.id = 'pickupDropOffSavedModal';
-        wrap.setAttribute('role', 'dialog');
-        wrap.setAttribute('aria-modal', 'true');
-        wrap.style.cssText =
-          'position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(23,50,71,.48);';
-        function closeAll(){
-          try{ wrap.remove(); }catch(_){}
-          navigatePickupToDashboard();
-        }
-        wrap.addEventListener('click', function(ev){
-          if(ev.target === wrap) closeAll();
-        });
-        const box = document.createElement('div');
-        box.style.cssText =
-          'max-width:420px;width:100%;background:#fff;border-radius:18px;padding:22px 20px 18px;box-shadow:0 20px 50px rgba(0,0,0,.22);text-align:center;';
-        box.addEventListener('click', function(ev){ ev.stopPropagation(); });
-        const p = document.createElement('p');
-        p.style.cssText =
-          'margin:0 0 18px;font-size:15px;line-height:1.45;color:#314555;font-weight:600;font-family:inherit;';
-        p.textContent = 'Drop off has been saved successfully.';
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'btn btn-primary';
-        btn.textContent = 'Close';
-        btn.style.minWidth = '160px';
-        btn.addEventListener('click', closeAll);
-        box.appendChild(p);
-        box.appendChild(btn);
-        wrap.appendChild(box);
-        document.body.appendChild(wrap);
-        try{ btn.focus(); }catch(_){}
+        const statusEl = document.getElementById('status');
+        if(statusEl) statusEl.textContent = 'Drop off has been saved successfully.';
       }
 
       (function bindPickupDashboardBack(){
@@ -1411,6 +1494,47 @@
         return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
       }
 
+      function formatPickupDisplayDate(iso){
+        if(!iso || !/^\d{4}-\d{2}-\d{2}$/.test(String(iso))) return '';
+        const p = String(iso).split('-').map(Number);
+        const d = new Date(p[0], p[1] - 1, p[2]);
+        if(Number.isNaN(d.getTime())) return '';
+        return d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      }
+
+      function formatPickupDisplayTime(hhmm){
+        if(!hhmm) return '';
+        const parts = String(hhmm).trim().split(':');
+        const h = Number(parts[0]);
+        const m = Number(parts[1] || 0);
+        if(Number.isNaN(h)) return '';
+        const d = new Date();
+        d.setHours(h, m, 0, 0);
+        return d.toLocaleTimeString('en-GB', { hour: 'numeric', minute: '2-digit' });
+      }
+
+      function setSessionDateTime(isoDate, hhmm){
+        const sd = isoDate || nowDate();
+        const st = hhmm || nowTime();
+        get('sessionDate').value = sd;
+        get('arrivalTime').value = st;
+        const dispDate = get('sessionDateDisplay');
+        const dispTime = get('arrivalTimeDisplay');
+        if(dispDate) dispDate.value = formatPickupDisplayDate(sd);
+        if(dispTime) dispTime.value = formatPickupDisplayTime(st);
+      }
+
+      function refreshParticipantDatalist(){
+        const dl = document.getElementById('pickupParticipantList');
+        if(!dl) return;
+        dl.innerHTML = '';
+        filterParticipants('').forEach(function(r){
+          const opt = document.createElement('option');
+          opt.value = r.participantName || '';
+          dl.appendChild(opt);
+        });
+      }
+
       /** Compare session dates as YYYY-MM-DD (handles "2025-03-20" and ISO timestamps from DB). */
       function sessionDayKey(d){
         if(d == null || d === '') return '';
@@ -1451,6 +1575,7 @@
         renderRoleButtons('pickupRole');
         syncNameRules();
         refreshHandoverSections(o);
+        setSessionDateTime(get('sessionDate').value || nowDate(), get('arrivalTime').value || nowTime());
       }
 
       function recId(o){
@@ -1778,6 +1903,7 @@
           `;
           searchResults.appendChild(card);
         });
+        refreshParticipantDatalist();
       }
 
       function escapeHtml(s){
@@ -1856,7 +1982,7 @@
         renderSearchResults(filterParticipants(searchInput.value));
         if(row.locked){
           form.reset();
-          get('sessionDate').value = nowDate();
+          setSessionDateTime(nowDate(), nowTime());
           clearSignaturePad();
           clearPickupSignaturePad();
           currentId = '';
@@ -1873,10 +1999,14 @@
             hideForm();
             status.textContent = 'Completed and saved — this participant no longer appears in the active list.';
           }
-          alert('Handover completed (drop off + pick up). Saved to the database; removed from the active list on this page.');
-          try{
-            if(typeof portalRedirectToPortalReturn === 'function') portalRedirectToPortalReturn();
-          }catch(_e){}
+          if(typeof window.portalRedirectAfterSubmitSuccess === 'function'){
+            window.portalRedirectAfterSubmitSuccess('Handover completed successfully.');
+          } else {
+            try{
+              if(typeof portalRedirectToPortalReturn === 'function') portalRedirectToPortalReturn();
+              else navigatePickupToDashboard();
+            }catch(_e){}
+          }
           pickupOnlyView = false;
           refreshHandoverSections();
         } else {
@@ -1891,10 +2021,12 @@
             } else {
               refreshHandoverSections();
             }
-            showPickupDropOffSavedModal();
+            showPickupDropOffSavedToast();
           } else {
             refreshHandoverSections();
-            alert('Saved.');
+            if(typeof window.portalShowSubmitSuccessBanner === 'function'){
+              window.portalShowSubmitSuccessBanner('Saved.');
+            }
           }
         }
         return true;
@@ -1937,7 +2069,7 @@
         if(currentId === id || openFormMatches){
           hideForm();
           form.reset();
-          get('sessionDate').value = nowDate();
+          setSessionDateTime(nowDate(), nowTime());
           clearSignaturePad();
           clearPickupSignaturePad();
         }
@@ -1954,8 +2086,11 @@
         pickupOnlyView = false;
         form.reset();
         currentId = '';
-        ids.forEach(function(id){ if(id !== 'sessionDate') get(id).value = ''; });
-        get('sessionDate').value = nowDate();
+        ids.forEach(function(id){
+          if(id === 'sessionDate' || id === 'arrivalTime') return;
+          get(id).value = '';
+        });
+        setSessionDateTime(nowDate(), nowTime());
         searchInput.value = '';
         renderRoleButtons('emotionalState');
         renderRoleButtons('dropRole');
@@ -2029,8 +2164,6 @@
         upsertSupabaseRow(row);
         pickupOnlyView = false;
         apply(values);
-        get('sessionDate').value = today;
-        get('arrivalTime').value = tArrive;
         showForm();
         renderSearchResults(filterParticipants(searchInput.value.trim()));
         status.textContent = `Created: ${name}`;
@@ -2061,7 +2194,7 @@
           if(currentId === id){
             hideForm();
             form.reset();
-            get('sessionDate').value = nowDate();
+            setSessionDateTime(nowDate(), nowTime());
             clearSignaturePad();
             clearPickupSignaturePad();
             pickupOnlyView = false;
@@ -2101,16 +2234,28 @@
       });
 
       document.getElementById('saveBtn').addEventListener('click', function(){ save(); });
-      document.getElementById('newBtn').addEventListener('click', newRecord);
       document.getElementById('delBtn').addEventListener('click', delCurrent);
 
       document.getElementById('addParticipantBtn').addEventListener('click', addNewParticipantFromInput);
-      document.getElementById('searchBtn').addEventListener('click', runSearch);
-      searchInput.addEventListener('keydown', function(e){
-        if(e.key === 'Enter'){
-          e.preventDefault();
-          document.getElementById('searchBtn').click();
+      searchInput.addEventListener('input', function(){
+        const q = searchInput.value.trim();
+        const filtered = filterParticipants(q);
+        renderSearchResults(filtered);
+        if(q.length >= 2){
+          const exact = filtered.find(function(r){
+            return (r.participantName || '').trim().toLowerCase() === q.toLowerCase();
+          });
+          if(exact) loadById(exact.id);
         }
+      });
+      searchInput.addEventListener('change', function(){
+        const q = searchInput.value.trim();
+        if(!q) return;
+        const filtered = filterParticipants(q);
+        const exact = filtered.find(function(r){
+          return (r.participantName || '').trim().toLowerCase() === q.toLowerCase();
+        });
+        if(exact) loadById(exact.id);
       });
 
       write(readLocal());
@@ -2120,7 +2265,7 @@
       setTimeout(function(){ pullTodayFromSupabase(); }, 1000);
       setTimeout(function(){ pullTodayFromSupabase(); }, 3500);
       startRealtimeSync();
-      get('sessionDate').value = nowDate();
+      setSessionDateTime(nowDate(), nowTime());
       if(SOLO_MODE){
         emptyState.classList.add('hidden');
         formSection.classList.remove('hidden');

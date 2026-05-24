@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="/portal-static-bootstrap.js?v=20260519-submit-return"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="portal-production-url" content="venue_review.html" />
+  <title>Venue Opening/Closing</title>
+  <link rel="stylesheet" href="/portal-shared-js/portal_page_logo.css?v=20260517-portal-logos" />
+  <link rel="stylesheet" href="/portal-shared-js/portal_page_logo_themes.css?v=20260517-portal-logos" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: linear-gradient(180deg, #f4fdf7 0%, #eef8f2 100%);
+      color: #333;
+    }
+
+    .wrap {
+      max-width: 760px;
+      margin: 0 auto;
+      width: 100%;
+      padding: 0 12px 32px;
+    }
+
+    .portal-venue-logo-bar {
+      margin: 0 auto 12px;
+    }
+
+    .title-row {
+      margin-bottom: 14px;
+      text-align: center;
+    }
+    .title-row h1 {
+      margin: 0 0 4px;
+      font-size: 22px;
+      letter-spacing: -0.01em;
+      color: #173247;
+      font-weight: 700;
+    }
+    .title-row p {
+      margin: 0;
+      color: #5b6473;
+      font-size: 13.5px;
+      line-height: 1.5;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid rgba(23, 50, 71, 0.12);
+      border-radius: 18px;
+      box-shadow: 0 10px 30px rgba(11, 18, 32, 0.08);
+      overflow: hidden;
+    }
+
+    #form {
+      padding: 20px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: 1fr 1fr;
+    }
+    .field.full {
+      grid-column: 1 / -1;
+    }
+    @media (max-width: 640px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .field {
+      border: 1px solid rgba(11, 18, 32, 0.12);
+      border-radius: 14px;
+      padding: 12px;
+      background: #f4f6f8;
+    }
+    .field > label:first-child,
+    .field-label-row,
+    .issues-question {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      margin: 0 0 10px;
+      line-height: 1.25;
+      color: #173247;
+    }
+    .issues-question {
+      margin-top: 0;
+      margin-bottom: 10px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid rgba(11, 18, 32, 0.14);
+      border-radius: 10px;
+      font-size: 16px;
+      font-family: inherit;
+      color: #0b1220;
+      transition: 0.2s ease;
+      outline: none;
+      background: #fff;
+    }
+    input[readonly] {
+      background: #fafafa;
+      color: #5b6473;
+      cursor: default;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: #2d84b3;
+      box-shadow: 0 0 0 4px rgba(45, 132, 179, 0.12);
+    }
+    textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+    .field-icon {
+      width: 22px;
+      height: 22px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      flex: 0 0 22px;
+      background: rgba(232, 248, 238, 0.95);
+      border: 1px solid rgba(52, 192, 113, 0.35);
+      color: #1c8044;
+    }
+    .field-icon svg {
+      width: 14px;
+      height: 14px;
+      display: block;
+    }
+    .req {
+      color: #b91c1c;
+      font-weight: 900;
+      margin-left: 2px;
+    }
+    .venue-issue-group {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 4px;
+      width: 100%;
+    }
+    .venue-issue-pill {
+      margin: 0;
+      padding: 10px 8px;
+      min-height: 52px;
+      width: 100%;
+      border: 1px solid rgba(11, 18, 32, 0.14);
+      border-radius: 14px;
+      background: #fff;
+      cursor: pointer;
+      font-family: inherit;
+      transition: border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease,
+        transform 0.12s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .venue-issue-pill-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-align: center;
+    }
+    .venue-issue-pill-icon {
+      width: 30px;
+      height: 30px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.88);
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+    }
+    .venue-issue-pill-icon svg {
+      width: 20px;
+      height: 20px;
+      display: block;
+    }
+    .venue-issue-pill-label {
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+    .venue-issue-pill.no {
+      border-color: rgba(22, 163, 74, 0.42);
+      color: #14532d;
+      background: rgba(22, 163, 74, 0.06);
+    }
+    .venue-issue-pill.no .venue-issue-pill-icon {
+      color: #16a34a;
+    }
+    .venue-issue-pill.no:hover {
+      border-color: rgba(22, 163, 74, 0.55);
+      background: rgba(22, 163, 74, 0.12);
+    }
+    .venue-issue-pill.no.selected {
+      background: rgba(22, 163, 74, 0.42);
+      border-color: #15803d;
+      color: #052e16;
+      box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.45), 0 4px 14px rgba(22, 163, 74, 0.28),
+        inset 0 0 0 2px rgba(255, 255, 255, 0.5);
+      transform: translateY(-1px);
+    }
+    .venue-issue-pill.no.selected .venue-issue-pill-icon {
+      background: rgba(255, 255, 255, 0.95);
+      color: #15803d;
+    }
+    .venue-issue-pill.yes {
+      border-color: rgba(220, 38, 38, 0.42);
+      color: #7f1d1d;
+      background: rgba(220, 38, 38, 0.06);
+    }
+    .venue-issue-pill.yes .venue-issue-pill-icon {
+      color: #dc2626;
+    }
+    .venue-issue-pill.yes:hover {
+      border-color: rgba(220, 38, 38, 0.55);
+      background: rgba(220, 38, 38, 0.1);
+    }
+    .venue-issue-pill.yes.selected {
+      background: rgba(220, 38, 38, 0.4);
+      border-color: #b91c1c;
+      color: #450a0a;
+      box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.42), 0 4px 14px rgba(220, 38, 38, 0.25),
+        inset 0 0 0 2px rgba(255, 255, 255, 0.45);
+      transform: translateY(-1px);
+    }
+    .venue-issue-pill.yes.selected .venue-issue-pill-icon {
+      background: rgba(255, 255, 255, 0.95);
+      color: #b91c1c;
+    }
+    .venue-issue-pill:focus-visible {
+      outline: 2px solid rgba(52, 192, 113, 0.65);
+      outline-offset: 2px;
+    }
+    .issues-cell {
+      margin-top: 0.75rem;
+      display: none;
+    }
+    .issues-cell.visible {
+      display: block;
+    }
+    .venue-notes-panel {
+      margin-top: 0.5rem;
+      padding: 0 16px;
+      border: 1px solid rgba(23, 50, 71, 0.14);
+      border-radius: 14px;
+      background: #fafbff;
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      pointer-events: none;
+      transition: max-height 0.38s ease, opacity 0.28s ease, padding 0.28s ease,
+        border-color 0.2s ease, background 0.2s ease;
+    }
+    .issues-cell.visible .venue-notes-panel {
+      padding: 14px 16px 16px;
+      max-height: 520px;
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .venue-notes-panel.venue-notes-panel--yes {
+      border-color: rgba(192, 0, 0, 0.28);
+      background: #fff8f8;
+    }
+    .field--venue select {
+      margin-top: 0;
+    }
+    .field-category {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      margin: 0 0 10px;
+      color: #173247;
+    }
+    .venue-meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .venue-meta-grid .field {
+      padding: 10px;
+      margin: 0;
+    }
+    .venue-meta-grid label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      margin: 0 0 6px;
+      color: #173247;
+    }
+    @media (max-width: 480px) {
+      .venue-meta-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    .issues-field {
+      border: none;
+      padding: 0;
+      background: transparent;
+    }
+    .venue-notes-panel label {
+      margin-top: 0;
+    }
+    .venue-notes-panel textarea {
+      min-height: 120px;
+    }
+    .issues-section {
+      margin-top: 0.25rem;
+    }
+
+    .venue-review-intro {
+      margin-bottom: 1.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid rgba(23, 50, 71, 0.12);
+    }
+    .venue-review-intro h2 {
+      margin: 0 0 0.75rem;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #173247;
+    }
+    .venue-review-intro h3 {
+      margin: 1rem 0 0.5rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #314555;
+    }
+    .venue-review-intro p {
+      margin: 0 0 0.75rem;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #314555;
+    }
+    .venue-review-intro p:last-child {
+      margin-bottom: 0;
+    }
+    .venue-review-intro-note {
+      margin-top: 1.25rem !important;
+    }
+    .venue-review-intro ul {
+      margin: 0 0 0.75rem;
+      padding-left: 1.25rem;
+      font-size: 14px;
+      line-height: 1.5;
+      color: #314555;
+    }
+    .venue-review-intro ul:last-of-type {
+      margin-bottom: 0;
+    }
+    .submit-btn {
+      margin-top: 1.5rem;
+      width: 100%;
+      padding: 14px 24px;
+      min-height: 50px;
+      background: linear-gradient(135deg, #34c071 0%, #1c8044 100%);
+      color: #fff;
+      border: none;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+    .submit-btn:hover {
+      filter: brightness(1.06);
+      transform: translateY(-1px);
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 14px 0;
+      }
+      #form {
+        padding: 16px;
+      }
+      .venue-issue-group {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .submit-btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body class="portal-logo-venue">
+  <div class="portal-venue-logo-bar">
+    <div class="cancel-logo-wrap-outer">
+      <div class="cancel-logo-wrap">
+        <div class="cancel-logo-pulse" aria-hidden="true"></div>
+        <svg class="cancel-logo-orbits" viewBox="0 0 240 240" aria-hidden="true">
+          <g class="cancel-orbit-layer cancel-orbit-layer-a">
+            <circle cx="212" cy="120" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.95"></circle>
+            <circle cx="148.43" cy="207.50" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.95"></circle>
+            <circle cx="45.57" cy="174.04" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.95"></circle>
+            <circle cx="45.57" cy="65.96" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.95"></circle>
+            <circle cx="148.43" cy="32.50" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.95"></circle>
+          </g>
+          <g class="cancel-orbit-layer cancel-orbit-layer-b">
+            <circle cx="213.53" cy="174" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
+            <circle cx="120" cy="228" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
+            <circle cx="26.47" cy="174" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
+            <circle cx="26.47" cy="66" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
+            <circle cx="120" cy="12" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
+            <circle cx="213.53" cy="66" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
+          </g>
+        </svg>
+        <img class="cancel-login-logo" src="/assets/logo-clubsensational.png" alt="clubSENsational" />
+      </div>
+    </div>
+  </div>
+  <!--
+    PORTAL_VENUE_REVIEW_ONBOARDING_DRAFT — reserved for future in-app assistant / section guide.
+    Previously visible block (Opening & Closing intro) lives here verbatim for copy-restore:
+
+    <section class="venue-review-intro">
+      <h2>Opening &amp; Closing </h2>
+      <p>This review helps ensure that the venue is maintained in a safe, clean, and organised condition throughout the day.</p>
+      <p>When completing this review, staff members must carefully observe the condition of the venue and confirm that all areas meet the expected standards.</p>
+      <ul>
+        <li>Check that the venue is clean, tidy, and safe for use</li>
+        <li>Confirm that equipment and materials are stored correctly</li>
+        <li>Ensure that all spaces are left ready for the next activity or for the following day</li>
+        <li>Report any unexpected issues or concerns when they occur</li>
+      </ul>
+      <p class="venue-review-intro-note">The purpose of this review is to maintain a consistent standard across all venues and ensure that any problems are identified and reported promptly.</p>
+    </section>
+  -->
+  <div class="wrap">
+    <div class="title-row">
+      <h1>Venue Review</h1>
+      <p>Record the opening or closing check for your venue. Choose the venue, confirm today’s date and time, then say if anything needs reporting.</p>
+    </div>
+
+    <div class="card">
+      <form id="form">
+        <input type="hidden" id="time" name="time" />
+
+        <div class="field field--venue full">
+          <p class="field-category">
+            <span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg></span>
+            <span>Venue <span class="req">*</span></span>
+          </p>
+          <label class="visually-hidden" id="venueFieldLabel" for="venueSelect">Venue</label>
+          <select id="venueSelect" name="venue" required aria-describedby="venueSelectHint">
+            <option value="">Select venue</option>
+          </select>
+          <p id="venueSelectHint" class="field-hint" style="margin:6px 0 0;font-size:13px;color:#5b6473;" hidden></p>
+          <div class="venue-meta-grid">
+            <div class="field">
+              <label for="venueReviewDate"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span> Date</label>
+              <input type="text" id="venueReviewDate" name="venueReviewDate" readonly tabindex="-1" aria-readonly="true" />
+            </div>
+            <div class="field">
+              <label for="venueReviewTime"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span> Time</label>
+              <input type="text" id="venueReviewTime" name="venueReviewTime" readonly tabindex="-1" aria-readonly="true" />
+            </div>
+          </div>
+        </div>
+
+        <div class="field full issues-field" id="issuesSection">
+      <p class="issues-question">
+        <span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+        <span>Any issues, damages or incidents to report? <span class="req">*</span></span>
+      </p>
+      <div class="venue-issue-group" role="group" aria-label="Issues to report">
+        <button type="button" class="venue-issue-pill no" id="btnNoReady" data-value="no" aria-pressed="false">
+          <span class="venue-issue-pill-inner">
+            <span class="venue-issue-pill-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25"><path d="M20 6L9 17l-5-5"/></svg></span>
+            <span class="venue-issue-pill-label">No</span>
+          </span>
+        </button>
+        <button type="button" class="venue-issue-pill yes" id="btnYesIssues" data-value="yes" aria-pressed="false">
+          <span class="venue-issue-pill-inner">
+            <span class="venue-issue-pill-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+            <span class="venue-issue-pill-label">Yes</span>
+          </span>
+        </button>
+      </div>
+
+      <div class="issues-cell" id="issuesCell">
+        <div
+          class="venue-notes-panel"
+          id="venueNotesPanel"
+          aria-hidden="true"
+        >
+          <label for="issues" id="issuesLabel">Notes (optional)</label>
+          <textarea
+            id="issues"
+            name="issues"
+            rows="4"
+            placeholder="Add any notes if you wish…"
+          ></textarea>
+        </div>
+      </div>
+        </div>
+
+        <button type="submit" class="submit-btn">Submit</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    var STAFF_PROFILE_PORTAL_BRIDGE_SECRET = "%%PB6%%";
+  </script>
+  <!-- Front-end + Supabase insert: portal-shared-js/venue_review_app.js -->
+  <script type="module" src="/portal-shared-js/venue_review_app.js?v=20260524-date-short"></script>
+</body>
+</html>

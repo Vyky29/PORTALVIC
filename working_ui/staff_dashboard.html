@@ -6165,11 +6165,11 @@
         <div class="menu-group">
           <div class="menu-group-title">Work</div>
           <div class="menu-grid">
-            <button type="button" class="menu-btn menu-btn--work-venue" id="quickMenuWorkVenue" data-portal-external-url="venue_review.html">
+            <button type="button" class="menu-btn menu-btn--work-venue" id="quickMenuWorkVenue" data-portal-external-url="portal-venue-review.html">
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V10l8-4 8 4v12"/><path d="M9 22v-6h6v6"/><path d="M8 6h8"/><path d="M10 10h4"/></svg></div>
               <div class="menu-btn-copy"><strong>Venue Report</strong><span class="menu-btn-sub">Opening and closing checks</span></div>
             </button>
-            <button type="button" class="menu-btn menu-btn--work-dropoff" id="quickMenuDropoffPickup" data-portal-external-url="pickup.html">
+            <button type="button" class="menu-btn menu-btn--work-dropoff" id="quickMenuDropoffPickup" data-portal-external-url="portal-pickup.html">
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h11l4 4v6a2 2 0 0 1-2 2h-1"/><path d="M4 7v12a2 2 0 0 0 2 2h3"/><circle cx="8.5" cy="18.5" r="2.5"/><circle cx="15.5" cy="18.5" r="2.5"/><path d="M15 7v4h4"/></svg></div>
               <div class="menu-btn-copy"><strong>Pickup</strong><span class="menu-btn-sub">Open handover panel</span></div>
             </button>
@@ -6199,7 +6199,7 @@
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
               <div class="menu-btn-copy"><strong>Timesheets</strong><span class="menu-btn-sub">Log your hours</span></div>
             </button>
-            <button type="button" class="menu-btn menu-btn--work-expenses" id="quickMenuWorkExpenses" data-portal-external-url="expenses.html">
+            <button type="button" class="menu-btn menu-btn--work-expenses" id="quickMenuWorkExpenses" data-portal-external-url="portal-expenses.html">
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div>
               <div class="menu-btn-copy"><strong>Expenses</strong><span class="menu-btn-sub">Submit receipts and claims</span></div>
             </button>
@@ -7066,13 +7066,13 @@
      * Session feedback page (query: sessionKey, name, date, time, service, clientId).
      * Session feedback target: PORTAL_SESSION_FEEDBACK_PAGE_URL if set; otherwise `session_feedback.html` next to this dashboard.
      */
-    const PORTAL_SESSION_FEEDBACK_PAGE_URL = '';
+    const PORTAL_SESSION_FEEDBACK_PAGE_URL = 'portal-session-feedback.html';
     function portalSessionFeedbackPageBase(){
       const u = typeof PORTAL_SESSION_FEEDBACK_PAGE_URL === 'string' ? PORTAL_SESSION_FEEDBACK_PAGE_URL.trim() : '';
-      return u || 'session_feedback.html';
+      return u || 'portal-session-feedback.html';
     }
-    const PORTAL_INCIDENT_REPORT_PAGE_URL = 'incident_report.html';
-    const PORTAL_CANCELLATION_REPORT_PAGE_URL = 'cancellation_report.html';
+    const PORTAL_INCIDENT_REPORT_PAGE_URL = 'portal-incident.html';
+    const PORTAL_CANCELLATION_REPORT_PAGE_URL = 'cancellation.html';
     function portalIncidentReportPageBase(){
       const u = typeof PORTAL_INCIDENT_REPORT_PAGE_URL === 'string' ? PORTAL_INCIDENT_REPORT_PAGE_URL.trim() : '';
       if(/^https?:\/\//i.test(u)) return u;
@@ -7080,7 +7080,7 @@
       try{
         return new URL(rel, (location && location.origin) ? location.origin : ((typeof window !== 'undefined' && window.location && window.location.origin) || '')).href;
       }catch(_){
-        return 'incident_report.html';
+        return 'portal-incident.html';
       }
     }
     function portalCancellationReportPageBase(){
@@ -7090,7 +7090,7 @@
       try{
         return new URL(rel, (location && location.origin) ? location.origin : ((typeof window !== 'undefined' && window.location && window.location.origin) || '')).href;
       }catch(_){
-        return 'cancellation_report.html';
+        return 'cancellation.html';
       }
     }
     function portalQuickMenuPortalReturnBaseUrl(){
@@ -7388,11 +7388,12 @@
     };
     function buildSessionFeedbackPageUrl(item){
       const base = portalSessionFeedbackPageBase();
-      if(!item || !item.sessionKey) return base.split('?')[0].split('#')[0] || 'session_feedback.html';
+      if(!item || !item.sessionKey) return base.split('?')[0].split('#')[0] || 'portal-session-feedback.html';
       const sk = encodeURIComponent(String(item.sessionKey));
       const nm = encodeURIComponent(String(item.name || '').trim());
       const sep = base.indexOf('?') >= 0 ? '&' : '?';
-      const parts = ['sessionKey=' + sk, 'name=' + nm];
+      const parts = ['sessionKey=' + sk];
+      if(nm) parts.push('clientName=' + nm);
       const skRaw = String(item.sessionKey || '');
       const dateFromKey = (skRaw.split('|')[0] || '').trim();
       if(/^\d{4}-\d{2}-\d{2}$/.test(dateFromKey)) parts.push('date=' + encodeURIComponent(dateFromKey));
@@ -7408,7 +7409,7 @@
     }
     function buildIncidentReportPageUrl(item){
       const base = portalIncidentReportPageBase();
-      if(!item || !item.sessionKey) return base.split('?')[0].split('#')[0] || 'incident_report.html';
+      if(!item || !item.sessionKey) return base.split('?')[0].split('#')[0] || 'portal-incident.html';
       let skEncoded = '';
       try{
         skEncoded = btoa(unescape(encodeURIComponent(String(item.sessionKey || ''))))
@@ -7419,16 +7420,26 @@
       const reviewDay = portalWeekdayLongFromSessionDateKey(item.sessionKey) || String(DEMO_VIEW_DAY || '').trim();
       const parts = [];
       if(skEncoded) parts.push('sk=' + encodeURIComponent(skEncoded));
+      parts.push('sessionKey=' + encodeURIComponent(String(item.sessionKey || '')));
+      const nmInc = encodeURIComponent(String(item.name || '').trim());
+      if(nmInc) parts.push('clientName=' + nmInc);
       parts.push('origin=' + encodeURIComponent(portalGetReviewFlowOrigin()));
       parts.push('rp=' + encodeURIComponent(String(location.pathname || 'staff_dashboard.html')));
       if(reviewDay) parts.push('rday=' + encodeURIComponent(reviewDay));
       if(/^\d{4}-\d{2}-\d{2}$/.test(dateFromKey)) parts.push('rd=' + encodeURIComponent(dateFromKey));
+      const svcInc = portalFeedbackFormServiceLabel(item.activity)
+        || portalFeedbackFormServiceLabel(item && item.__portalBaseSession && item.__portalBaseSession.activity);
+      if(svcInc) parts.push('service=' + encodeURIComponent(String(svcInc).trim()));
+      const cidInc = String(item.clientId || '').trim();
+      if(cidInc && cidInc !== 'available' && cidInc !== 'closed') parts.push('clientId=' + encodeURIComponent(cidInc));
+      const tlabInc = String(item.time || '').trim();
+      if(tlabInc) parts.push('time=' + encodeURIComponent(tlabInc));
       const sep = base.indexOf('?') >= 0 ? '&' : '?';
       return base.split('#')[0] + sep + parts.join('&');
     }
     function buildCancellationReportPageUrl(item){
       const base = portalCancellationReportPageBase();
-      if(!item || !item.sessionKey) return base.split('?')[0].split('#')[0] || 'cancellation_report.html';
+      if(!item || !item.sessionKey) return base.split('?')[0].split('#')[0] || 'cancellation.html';
       let skEncoded = '';
       try{
         skEncoded = btoa(unescape(encodeURIComponent(String(item.sessionKey || ''))))
@@ -7439,10 +7450,20 @@
       const reviewDay = portalWeekdayLongFromSessionDateKey(item.sessionKey) || String(DEMO_VIEW_DAY || '').trim();
       const parts = [];
       if(skEncoded) parts.push('sk=' + encodeURIComponent(skEncoded));
+      parts.push('sessionKey=' + encodeURIComponent(String(item.sessionKey || '')));
+      const nmCx = encodeURIComponent(String(item.name || '').trim());
+      if(nmCx) parts.push('clientName=' + nmCx);
       parts.push('origin=' + encodeURIComponent(portalGetReviewFlowOrigin()));
       parts.push('rp=' + encodeURIComponent(String(location.pathname || 'staff_dashboard.html')));
       if(reviewDay) parts.push('rday=' + encodeURIComponent(reviewDay));
       if(/^\d{4}-\d{2}-\d{2}$/.test(dateFromKey)) parts.push('rd=' + encodeURIComponent(dateFromKey));
+      const svcCx = portalFeedbackFormServiceLabel(item.activity)
+        || portalFeedbackFormServiceLabel(item && item.__portalBaseSession && item.__portalBaseSession.activity);
+      if(svcCx) parts.push('service=' + encodeURIComponent(String(svcCx).trim()));
+      const cidCx = String(item.clientId || '').trim();
+      if(cidCx && cidCx !== 'available' && cidCx !== 'closed') parts.push('clientId=' + encodeURIComponent(cidCx));
+      const tlabCx = String(item.time || '').trim();
+      if(tlabCx) parts.push('time=' + encodeURIComponent(tlabCx));
       const sep = base.indexOf('?') >= 0 ? '&' : '?';
       return base.split('#')[0] + sep + parts.join('&');
     }
@@ -15385,7 +15406,7 @@
       try{
         finalUrl = new URL(base, window.location.href).href;
       }catch(_){
-        finalUrl = 'incident_report.html';
+        finalUrl = 'portal-incident.html';
       }
       window.location.assign(finalUrl);
     }
@@ -15412,7 +15433,7 @@
       try{
         finalUrl = new URL(base, window.location.href).href;
       }catch(_){
-        finalUrl = 'cancellation_report.html';
+        finalUrl = 'cancellation.html';
       }
       window.location.assign(finalUrl);
     }

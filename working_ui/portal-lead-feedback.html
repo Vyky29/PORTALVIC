@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src="/portal-static-bootstrap.js?v=20260519-submit-return"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Lead session report</title>
+  <link rel="stylesheet" href="/portal-shared-js/portal_page_logo.css?v=20260517-portal-logos" />
+  <link rel="stylesheet" href="/portal-shared-js/portal_page_logo_themes.css?v=20260517-portal-logos" />
+  <link rel="stylesheet" href="/portal-shared-js/portal_form_feedback_skin.css?v=20260524-lead-ios-layout" />
+  <link rel="stylesheet" href="/portal-shared-js/portal_lead_feedback_theme.css?v=20260524-iphone-grid" />
+  <style id="portal-lead-feedback-layout">
+    html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      overflow-x: hidden;
+      -webkit-text-size-adjust: 100%;
+    }
+    /* iOS Safari: grid + justify-self center (flex + align-items:center pins content left) */
+    body.portal-lead-feedback-page {
+      margin: 0 !important;
+      width: 100% !important;
+      min-height: 100vh;
+      min-height: 100dvh;
+      box-sizing: border-box;
+      overflow-x: hidden;
+      display: grid !important;
+      grid-template-columns: minmax(0, 1fr) !important;
+      justify-items: center !important;
+      padding-top: 24px;
+      padding-bottom: 24px;
+      padding-left: max(16px, env(safe-area-inset-left, 0px));
+      padding-right: max(16px, env(safe-area-inset-right, 0px));
+    }
+    body.portal-lead-feedback-page #portalPinIdentityBar {
+      justify-self: stretch !important;
+      width: 100% !important;
+      max-width: none !important;
+      margin: 0 0 12px !important;
+      box-sizing: border-box;
+    }
+    body.portal-lead-feedback-page > .wrap {
+      justify-self: stretch !important;
+      width: 100% !important;
+      max-width: 760px !important;
+      min-width: 0 !important;
+      margin: 0 !important;
+      box-sizing: border-box;
+      overflow-x: hidden;
+    }
+    body.portal-lead-feedback-page .card,
+    body.portal-lead-feedback-page .field,
+    body.portal-lead-feedback-page .grid,
+    body.portal-lead-feedback-page input,
+    body.portal-lead-feedback-page select,
+    body.portal-lead-feedback-page textarea,
+    body.portal-lead-feedback-page .options {
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+    }
+    body.portal-lead-feedback-page .cancel-logo-wrap-outer,
+    body.portal-lead-feedback-page .title-row {
+      width: 100%;
+      max-width: 100%;
+    }
+    @media (max-width: 720px) {
+      body.portal-lead-feedback-page {
+        padding-top: 14px;
+        padding-bottom: 14px;
+        padding-left: max(12px, env(safe-area-inset-left, 0px));
+        padding-right: max(12px, env(safe-area-inset-right, 0px));
+      }
+      body.portal-lead-feedback-page > .wrap {
+        max-width: 100% !important;
+        width: 100% !important;
+      }
+    }
+  </style>
+  <script>
+    var STAFF_PROFILE_PORTAL_BRIDGE_SECRET = "%%PB6%%";
+  </script>
+</head>
+<body class="portal-lead-feedback-page portal-logo-lead">
+  <div class="wrap">
+    <div class="cancel-logo-wrap-outer">
+      <div class="cancel-logo-wrap">
+        <div class="cancel-logo-pulse" aria-hidden="true"></div>
+        <svg class="login-orbits cancel-logo-orbits" viewBox="0 0 240 240" aria-hidden="true">
+          <g class="login-orbit-layer login-orbit-layer-a">
+            <circle cx="212" cy="120" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.92"></circle>
+            <circle cx="148.43" cy="207.50" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.92"></circle>
+            <circle cx="45.57" cy="174.04" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.92"></circle>
+            <circle cx="45.57" cy="65.96" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.92"></circle>
+            <circle cx="148.43" cy="32.50" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.92"></circle>
+          </g>
+          <g class="login-orbit-layer login-orbit-layer-b">
+            <circle cx="213.53" cy="174" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
+            <circle cx="120" cy="228" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
+            <circle cx="26.47" cy="174" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
+            <circle cx="26.47" cy="66" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
+            <circle cx="120" cy="12" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
+            <circle cx="213.53" cy="66" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
+          </g>
+        </svg>
+        <img class="cancel-login-logo" src="/assets/logo-clubsensational.png" alt="clubSENsational" />
+      </div>
+    </div>
+    <div class="title-row">
+      <h1>Lead session report</h1>
+      <p>Choose the service first. Participant names appear for Bespoke Programme and Day Centre. Multi-Activity, Aquatic Group Activity and Parents &amp; Babys use a shorter group summary; Bespoke Programme uses the detailed feedback style.</p>
+    </div>
+    <div class="card">
+      <form id="lrFeedbackForm" novalidate>
+        <div class="grid">
+          <div class="field field--session-details">
+            <input type="hidden" id="lrPortalSessionKey" name="lrPortalSessionKey" value="" />
+            <input type="hidden" id="lrClientId" name="lrClientId" value="" />
+
+            <label for="lrService"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span> Service <span class="req">*</span></label>
+            <select id="lrService" name="lrService" required>
+              <option value="">Select a service</option>
+            </select>
+
+            <div id="lrParticipantSingleWrap" hidden>
+              <label for="lrParticipantName"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span> Participant name <span class="req">*</span></label>
+              <div class="participant-field-wrap">
+                <input id="lrParticipantName" name="lrParticipantName" type="text" maxlength="200" autocomplete="off" spellcheck="false" placeholder="Type the first letters — names starting with that text appear" aria-autocomplete="list" aria-controls="lrParticipantSuggest" />
+                <div id="lrParticipantSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Matching participants"></div>
+              </div>
+            </div>
+
+            <div id="lrDayCentreParticipantsWrap" hidden>
+              <p class="fieldLabel"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> Day Centre participants <span class="req">*</span></p>
+              <p class="hint">Add up to 5 participants (at least one required).</p>
+              <div class="lr-day-centre-grid">
+                <div class="participant-field-wrap"><input class="lr-day-centre-participant" id="lrDayCentreParticipant1" type="text" maxlength="200" autocomplete="off" placeholder="Participant 1" /><div id="lrDayCentreSuggest1" class="portal-name-suggest" role="listbox" hidden></div></div>
+                <div class="participant-field-wrap"><input class="lr-day-centre-participant" id="lrDayCentreParticipant2" type="text" maxlength="200" autocomplete="off" placeholder="Participant 2 (optional)" /><div id="lrDayCentreSuggest2" class="portal-name-suggest" role="listbox" hidden></div></div>
+                <div class="participant-field-wrap"><input class="lr-day-centre-participant" id="lrDayCentreParticipant3" type="text" maxlength="200" autocomplete="off" placeholder="Participant 3 (optional)" /><div id="lrDayCentreSuggest3" class="portal-name-suggest" role="listbox" hidden></div></div>
+                <div class="participant-field-wrap"><input class="lr-day-centre-participant" id="lrDayCentreParticipant4" type="text" maxlength="200" autocomplete="off" placeholder="Participant 4 (optional)" /><div id="lrDayCentreSuggest4" class="portal-name-suggest" role="listbox" hidden></div></div>
+                <div class="participant-field-wrap"><input class="lr-day-centre-participant" id="lrDayCentreParticipant5" type="text" maxlength="200" autocomplete="off" placeholder="Participant 5 (optional)" /><div id="lrDayCentreSuggest5" class="portal-name-suggest" role="listbox" hidden></div></div>
+              </div>
+            </div>
+
+            <div id="lrVenueFieldWrap">
+            <label for="lrVenue"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span> Venue <span class="req">*</span></label>
+            <input id="lrVenue" name="lrVenue" type="text" maxlength="120" required list="lrVenueList" autocomplete="off" spellcheck="false" placeholder="Venue for this service" />
+            <datalist id="lrVenueList"></datalist>
+            </div>
+
+            <div class="session-date-field" role="group">
+              <label><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span> Session date <span class="req">*</span></label>
+              <div id="lrSessionDateDisplay" class="session-date-display" tabindex="0" role="button" aria-label="Session date. Double-tap to change.">—</div>
+              <span class="session-date-display__hint">Double-tap the date to change the day</span>
+              <input type="hidden" id="lrSessionDate" name="lrSessionDate" value="" required />
+              <div id="lrSessionDateEditPanel" class="session-date-edit-panel" hidden>
+                <input type="date" id="lrSessionDatePicker" class="session-date-picker-input" />
+                <div class="session-date-edit-actions">
+                  <button type="button" class="btnGhost" id="lrSessionDateApplyBtn">Apply</button>
+                  <button type="button" class="btnGhost" id="lrSessionDateCancelBtn">Cancel</button>
+                </div>
+              </div>
+            </div>
+
+            <label for="lrSessionTime"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span> Session time</label>
+            <input id="lrSessionTime" name="lrSessionTime" type="text" maxlength="80" placeholder="e.g. 4 to 5.30" />
+            <div id="lrTimeSlotWrap" class="lr-time-slot-wrap" hidden>
+              <p class="small">Usual slots — tap to fill session time</p>
+              <div id="lrTimeSlotOptions" class="options options--time-slots" role="group"></div>
+            </div>
+
+            <div class="lr-incidents-field">
+              <label class="lr-incidents-label" id="lrIncidentsLabel">
+                <span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+                <span>Incidents <span class="req">*</span></span>
+              </label>
+              <div class="options options--incidents" role="radiogroup" aria-labelledby="lrIncidentsLabel">
+                <label class="pill lr-incident-pill lr-incident-pill--no"><input type="radio" name="lrIncidents" value="No" required /><span class="lr-incident-pill-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25"><path d="M20 6L9 17l-5-5"/></svg></span><span>No</span></label>
+                <label class="pill lr-incident-pill lr-incident-pill--yes"><input type="radio" name="lrIncidents" value="Yes" /><span class="lr-incident-pill-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span><span>Yes</span></label>
+              </div>
+            </div>
+          </div>
+
+          <div id="lrDetailedSection" hidden>
+            <div class="field">
+              <label><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span> Engagement <span class="req">*</span></label>
+              <div class="options options--engagement" role="radiogroup">
+                <div class="engagement-star-row">
+                  <label class="engagement-star pill rate"><input type="radio" name="lrEngagementRating" value="1" /><span class="engagement-star__glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span></label>
+                  <label class="engagement-star pill rate"><input type="radio" name="lrEngagementRating" value="2" /><span class="engagement-star__glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span></label>
+                  <label class="engagement-star pill rate"><input type="radio" name="lrEngagementRating" value="3" /><span class="engagement-star__glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span></label>
+                  <label class="engagement-star pill rate"><input type="radio" name="lrEngagementRating" value="4" /><span class="engagement-star__glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span></label>
+                  <label class="engagement-star pill rate"><input type="radio" name="lrEngagementRating" value="5" /><span class="engagement-star__glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span></label>
+                </div>
+              </div>
+            </div>
+            <div class="field">
+              <label>Participant emotions / regulation <span class="req">*</span></label>
+              <p class="small">Select all that apply.</p>
+              <div class="options options--emotions" role="group">
+                <label class="pill emotion"><input type="checkbox" name="lrClientEmotions" value="Withdrawn" /><span class="pill-emotion-label">Withdrawn</span></label>
+                <label class="pill emotion"><input type="checkbox" name="lrClientEmotions" value="Happy/Excited" /><span class="pill-emotion-label">Happy / Excited</span></label>
+                <label class="pill emotion"><input type="checkbox" name="lrClientEmotions" value="Anxious" /><span class="pill-emotion-label">Anxious</span></label>
+                <label class="pill emotion"><input type="checkbox" name="lrClientEmotions" value="Out of control" /><span class="pill-emotion-label">Out of control</span></label>
+              </div>
+            </div>
+            <div class="field">
+              <label>Independence <span class="req">*</span></label>
+              <p class="small">Pick the level that fits this session.</p>
+              <div class="options options--independence" role="radiogroup">
+                <label class="pill independence"><input type="radio" name="lrIndependenceLevel" value="Independent" /><span class="pill-independence-inner"><span class="pill-independence-title">Independent</span><span class="pill-independence-sub">On their own</span></span></label>
+                <label class="pill independence"><input type="radio" name="lrIndependenceLevel" value="Independent with prompts" /><span class="pill-independence-inner"><span class="pill-independence-title">With prompts</span><span class="pill-independence-sub">Occasional reminders</span></span></label>
+                <label class="pill independence"><input type="radio" name="lrIndependenceLevel" value="Required regular support" /><span class="pill-independence-inner"><span class="pill-independence-title">Regular support</span><span class="pill-independence-sub">Frequent help</span></span></label>
+                <label class="pill independence"><input type="radio" name="lrIndependenceLevel" value="Required full support" /><span class="pill-independence-inner"><span class="pill-independence-title">Full support</span><span class="pill-independence-sub">Throughout session</span></span></label>
+              </div>
+            </div>
+            <div class="field">
+              <label for="lrPositiveFeedback">Positive feedback <span class="req">*</span></label>
+              <textarea id="lrPositiveFeedback" name="lrPositiveFeedback" placeholder="What went well in the session"></textarea>
+            </div>
+            <div class="field">
+              <label for="lrRelevantInformation">Relevant information <span class="req">*</span></label>
+              <textarea id="lrRelevantInformation" name="lrRelevantInformation" placeholder="Follow-up, safeguarding notes, or write None"></textarea>
+            </div>
+          </div>
+
+          <div id="lrGeneralSection" hidden>
+            <p class="lr-general-intro hint">Group session summary for leads. Instructors still submit individual participant feedback separately.</p>
+
+            <div class="field">
+              <label><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> Overall group engagement <span class="req">*</span></label>
+              <p class="small">Tap the level that fits the group today.</p>
+              <div class="options options--group-engagement" role="radiogroup">
+                <label class="pill group-engagement"><input type="radio" name="lrGroupEngagement" value="Very low" /><span class="pill-group-engagement-inner"><span class="pill-group-engagement-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg></span><span class="pill-group-engagement-title">Very low</span></span></label>
+                <label class="pill group-engagement"><input type="radio" name="lrGroupEngagement" value="Mixed" /><span class="pill-group-engagement-inner"><span class="pill-group-engagement-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 14h6l2-4 4 8 2-4h2"/></svg></span><span class="pill-group-engagement-title">Mixed</span></span></label>
+                <label class="pill group-engagement"><input type="radio" name="lrGroupEngagement" value="Good" /><span class="pill-group-engagement-inner"><span class="pill-group-engagement-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H9a2 2 0 0 1-2-2v-6.28"/></svg></span><span class="pill-group-engagement-title">Good</span></span></label>
+                <label class="pill group-engagement"><input type="radio" name="lrGroupEngagement" value="Excellent" /><span class="pill-group-engagement-inner"><span class="pill-group-engagement-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span><span class="pill-group-engagement-title">Excellent</span></span></label>
+              </div>
+            </div>
+
+            <div id="lrActivityFieldWrap" class="field" hidden>
+              <label for="lrActivityName"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span> Activity delivered <span class="req" id="lrActivityReq">*</span></label>
+              <p class="hint" id="lrActivityHint">What did you run today? e.g. team games, sensory circuit, swim skills.</p>
+              <input id="lrActivityName" name="lrActivityName" type="text" maxlength="200" placeholder="Name of the activity" />
+            </div>
+
+            <div class="field">
+              <label for="lrSessionSummary"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span> How did the session go? <span class="req">*</span></label>
+              <p class="small">Short summary — what you did and how the group responded.</p>
+              <textarea id="lrSessionSummary" name="lrSessionSummary" placeholder="e.g. Ran parachute games; most joined in after warm-up. One participant needed extra regulation time."></textarea>
+            </div>
+
+            <div class="field" data-optional-always>
+              <label for="lrOtherOptional">Anything else for the team (optional)</label>
+              <textarea id="lrOtherOptional" name="lrOtherOptional" placeholder="Follow-up only if needed, or leave blank"></textarea>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button type="button" class="btnGhost" id="lrClearBtn">Clear</button>
+            <button type="submit" class="btnPrimary" id="lrSubmitBtn">Submit</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  <script type="module">
+    import { bootPortalLeadFeedback } from "/portal-shared-js/portal_lead_feedback_app.js?v=20260524-emotion-multiselect";
+    bootPortalLeadFeedback().catch(function (e) {
+      console.error(e);
+      alert("Could not load lead report. Refresh the page.");
+    });
+  </script>
+</body>
+</html>
