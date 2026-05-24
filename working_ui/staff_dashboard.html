@@ -7764,6 +7764,29 @@
       d.setHours(H, M, 0, 0);
       return d.getTime();
     }
+    /** Session start/end on the row's calendar day (sessionDateKey), not DEMO_VIEW_DAY alone — fixes next-session preview orange. */
+    function portalSessionRowTimestamps(sessionDateIso, startHm, endHm, fallbackAnchor){
+      const iso = String(sessionDateIso || '').trim().slice(0, 10);
+      let d = null;
+      if(/^\d{4}-\d{2}-\d{2}$/.test(iso) && typeof portalParseIsoDateLocal === 'function'){
+        d = portalParseIsoDateLocal(iso);
+      }
+      if((!d || isNaN(d.getTime())) && fallbackAnchor && !isNaN(fallbackAnchor.getTime())) d = fallbackAnchor;
+      if(!d || isNaN(d.getTime())){
+        const vw = String(typeof DEMO_VIEW_DAY !== 'undefined' ? DEMO_VIEW_DAY : '').trim();
+        return {
+          sessionStartTs: buildSessionEndMs(vw, startHm),
+          sessionEndTs: buildSessionEndMs(vw, endHm)
+        };
+      }
+      const y = d.getFullYear();
+      const mo = d.getMonth();
+      const da = d.getDate();
+      return {
+        sessionStartTs: buildSessionStartMsForCalendarDate(y, mo, da, startHm),
+        sessionEndTs: buildSessionEndMsForCalendarDate(y, mo, da, endHm)
+      };
+    }
 
     function getSessionReviewRecord(item){
       if(!item || !item.sessionKey) return null;
@@ -11885,8 +11908,9 @@
           let st = sessionModelStatus(s);
           const time = rosterSlotTimeLabel(s);
           const activity = (s.activity || 'Swimming').trim();
-          const sessionStartTs = buildSessionEndMs(viewDay, s.start);
-          const sessionEndTs = buildSessionEndMs(viewDay, s.end);
+          const _rowTs = portalSessionRowTimestamps(sessionDateKey, s.start, s.end, anchor);
+          const sessionStartTs = _rowTs.sessionStartTs;
+          const sessionEndTs = _rowTs.sessionEndTs;
           if(portalSessionHasSlotOpenOverride(s, sessionDateKey) && portalSpreadsheetSlotClosedLike(s)){
             const slotOp = typeof portalFindSlotOpenOverrideForSession === 'function' ? portalFindSlotOpenOverrideForSession(s, sessionDateKey) : null;
             const disp = String(s.clientDisplay || s.clientName || '').trim();
@@ -12246,8 +12270,7 @@
               specialty: showSpecCan ? pickSpecialtyBody(cCan, activityCan) : '',
               openSheet: true,
               sessionKey: `${sessionDateKey}|${s.start}|${String(base.clientId || '').toLowerCase()}`,
-              sessionStartTs: buildSessionEndMs(viewDay, s.start),
-              sessionEndTs: buildSessionEndMs(viewDay, s.end),
+              ...portalSessionRowTimestamps(sessionDateKey, s.start, s.end, anchor),
               noSessionFeedbackRequired: true,
               actionsDisabled: true,
               detailsOpenAllowed: true,
@@ -12280,8 +12303,7 @@
             specialty: !isBespokeActivity(activity0) ? pickSpecialtyBody(c0, activity0) : '',
             openSheet: false,
             sessionKey: `${sessionDateKey}|${s.start}|${String(base.clientId || '').toLowerCase()}`,
-            sessionStartTs: buildSessionEndMs(viewDay, s.start),
-            sessionEndTs: buildSessionEndMs(viewDay, s.end),
+            ...portalSessionRowTimestamps(sessionDateKey, s.start, s.end, anchor),
             noSessionFeedbackRequired: true,
             portalOverrideSuppressReviewOrange: true,
             portalOverrideCardTone: 'green',
@@ -12319,8 +12341,7 @@
             specialty: showSpec ? pickSpecialtyBody(cAbs, activityA) : '',
             openSheet: true,
             sessionKey: `${sessionDateKey}|${s.start}|${String(base.clientId || '').toLowerCase()}`,
-            sessionStartTs: buildSessionEndMs(viewDay, s.start),
-            sessionEndTs: buildSessionEndMs(viewDay, s.end),
+            ...portalSessionRowTimestamps(sessionDateKey, s.start, s.end, anchor),
             noSessionFeedbackRequired: true,
             actionsDisabled: true,
             detailsOpenAllowed: true,
@@ -12351,8 +12372,8 @@
         const showPoolSymbol = !!(poolLocationLabel || areaLabel);
         const showSpec = !isBespokeActivity(activity);
         const hasReplaceCoverOv = !!(slotOv && slotOv.override_type === 'client_replace_in_slot');
-        const coverEndTs = buildSessionEndMs(viewDay, s.end);
-        const coverItemProbe = { sessionEndTs: coverEndTs, sessionKey };
+        const coverTs = portalSessionRowTimestamps(sessionDateKey, s.start, s.end, anchor);
+        const coverItemProbe = { sessionEndTs: coverTs.sessionEndTs, sessionKey };
         const makeUpPinkCover = hasReplaceCoverOv && !isSessionEndedForFeedback(coverItemProbe);
         extra.push({
           time,
@@ -12370,8 +12391,8 @@
           specialty: showSpec ? pickSpecialtyBody(c, activity) : '',
           openSheet: true,
           sessionKey,
-          sessionStartTs: buildSessionEndMs(viewDay, s.start),
-          sessionEndTs: coverEndTs,
+          sessionStartTs: coverTs.sessionStartTs,
+          sessionEndTs: coverTs.sessionEndTs,
           scheduleAdminAdjusted: true,
           portalOverrideMakeUpTag: hasReplaceCoverOv,
           portalOverrideCardTone: makeUpPinkCover ? 'pink' : '',
