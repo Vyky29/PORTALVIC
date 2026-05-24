@@ -4210,7 +4210,7 @@
   <script src="/portal/session_feedback_status_portal_data.js?v=20260522"></script>
   <script src="/portal/session_feedback_portal_data.js?v=20260522"></script>
   <script src="/portal/venue_reviews_portal_data.js?v=20260520"></script>
-  <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260520"></script>
+  <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260521-late-wait"></script>
   <script>
   (function portalSessionFeedbackBootstrap(){
     var v = (document.documentElement.getAttribute('data-portal-session-feedback-v') || document.documentElement.getAttribute('data-portal-uploads-js-v') || '20260520-bundle').trim();
@@ -13571,11 +13571,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!window.PortalAdminLateSubmissions) return;
       var list = $('portalLateAdminList');
       if(!list) return;
-      void window.PortalAdminLateSubmissions.bindPanel(list, {
+      var reloadFn = window.PortalAdminLateSubmissions.bindPanel(list, {
         onReviewed: function(){
           void portalLateAdminRefreshNavBadge();
         }
       });
+      if(!window.__portalLateAdminViewSupabaseBound){
+        window.__portalLateAdminViewSupabaseBound = true;
+        window.addEventListener('portal:supabase-ready', function(){
+          if(state.view !== 'c4k_late_submissions') return;
+          try{
+            if(typeof reloadFn === 'function') void reloadFn();
+            else portalLateAdminBindView();
+          }catch(_e){}
+        });
+      }
     }
 
     function portalAdminToast(msg){

@@ -14,9 +14,44 @@
 
   function client() {
     try {
-      if (typeof _getClient === "function") return _getClient();
+      if (typeof _getClient === "function") {
+        var c = _getClient();
+        if (c) return c;
+      }
+    } catch (_) {}
+    try {
+      var box = window.__PORTAL_SUPABASE__;
+      if (box && box.client) return box.client;
     } catch (_) {}
     return null;
+  }
+
+  function waitForClient(maxMs) {
+    var c = client();
+    if (c) return Promise.resolve(c);
+    var limit = typeof maxMs === "number" ? maxMs : 20000;
+    return new Promise(function (resolve) {
+      var done = false;
+      function tryFinish() {
+        if (done) return;
+        var cx = client();
+        if (cx) {
+          done = true;
+          resolve(cx);
+        }
+      }
+      try {
+        window.addEventListener("portal:supabase-ready", tryFinish, { once: true });
+      } catch (_) {}
+      var t0 = Date.now();
+      var iv = setInterval(function () {
+        tryFinish();
+        if (done || Date.now() - t0 >= limit) {
+          clearInterval(iv);
+          if (!done) resolve(null);
+        }
+      }, 250);
+    });
   }
 
   function authUid() {
@@ -101,7 +136,7 @@
     },
 
     fetchPendingCount: async function () {
-      var c = client();
+      var c = await waitForClient();
       if (!c) return 0;
       try {
         var res = await c
@@ -116,8 +151,14 @@
     },
 
     fetchRequests: async function (statusFilter) {
-      var c = client();
-      if (!c) return { ok: false, error: "not_connected", rows: [] };
+      var c = await waitForClient();
+      if (!c) {
+        return {
+          ok: false,
+          error: "Portal sign-in is still loading. Wait a moment and tap Refresh.",
+          rows: [],
+        };
+      }
       var filter = String(statusFilter || "pending").toLowerCase();
       try {
         var q = c
@@ -154,9 +195,14 @@
     },
 
     reviewRequest: async function (id, status, adminNote) {
-      var c = client();
+      var c = await waitForClient();
       var uid = authUid();
-      if (!c || !uid) return { ok: false, error: "not_signed_in" };
+      if (!c || !uid) {
+        return {
+          ok: false,
+          error: "Portal sign-in is still loading. Try again in a moment.",
+        };
+      }
       var st = String(status || "").toLowerCase();
       if (st !== "approved" && st !== "rejected") {
         return { ok: false, error: "bad_status" };
@@ -325,7 +371,29 @@
           await reload();
         });
       }
-      return reload();
+      function startReload() {
+        return reload();
+      }
+      if (!client()) {
+        root.innerHTML =
+          '<div class="submission-state"><strong>Connecting to Portal…</strong><p class="muted" style="margin:8px 0 0">Loading your admin session.</p></div>';
+        waitForClient().then(function (cx) {
+          if (cx && root.isConnected) startReload();
+          else if (root.isConnected) {
+            root.innerHTML =
+              '<div class="submission-state"><strong>Could not connect</strong><p class="muted" style="margin:8px 0 0">Open this page from <code>login.html</code> as admin or CEO, then tap Refresh.</p></div>';
+          }
+        });
+        if (!window.__portalLateAdminSupabaseRetryBound) {
+          window.__portalLateAdminSupabaseRetryBound = true;
+          window.addEventListener("portal:supabase-ready", function () {
+            var list = document.getElementById("portalLateAdminList");
+            if (list && list.isConnected) startReload();
+          });
+        }
+        return startReload;
+      }
+      return startReload();
     },
   };
 
