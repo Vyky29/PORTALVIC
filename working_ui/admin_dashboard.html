@@ -4171,261 +4171,9 @@
     };
   })();
   </script>
-  <script src="/portal/term_from_timetable.js?v=20260519-portal-roster"></script>
-  <!-- Roster: absolute /portal/ paths (works from admin_dashboard.html and portal/admin_embed.html on Vercel). -->
-  <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260520-client-weekdays"></script>
-  <script src="/portal/clients_info_embed.js?v=20260519-portal-roster"></script>
-  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260519-portal-roster"></script>
-  <script>
-  /* Roster loads via <script src> above only — synchronous XHR + eval here froze the admin tab. */
-  </script>
-  <!-- Session feedback + completion status (portal-import-bundle). Bump v after import_portal_bundle.py -->
-  <script src="/portal/session_feedback_status_portal_data.js?v=20260522"></script>
-  <script src="/portal/session_feedback_portal_data.js?v=20260522"></script>
-  <script src="/portal/venue_reviews_portal_data.js?v=20260520"></script>
+  <!-- Large portal datasets load on demand (portalAdminLoadScriptSet) so Day operations opens without freezing. -->
+  <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260521"></script>
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260521-late-perf"></script>
-  <script>
-  (function portalSessionFeedbackBootstrap(){
-    var v = (document.documentElement.getAttribute('data-portal-session-feedback-v') || document.documentElement.getAttribute('data-portal-uploads-js-v') || '20260520-bundle').trim();
-    var cdnWww = '/portal/session_feedback_portal_data.js?v=' + encodeURIComponent(v);
-    function portalSfRowCount(){
-      var s = typeof window !== 'undefined' ? window.SESSION_FEEDBACK_PORTAL_SOURCE : null;
-      return s && Array.isArray(s.rows) ? s.rows.length : 0;
-    }
-    if(portalSfRowCount()) return;
-    function portalExecJsPayload(text){
-      if(!text || text.indexOf('SESSION_FEEDBACK_PORTAL_SOURCE') < 0) return;
-      try{
-        var s = document.createElement('script');
-        s.textContent = text;
-        (document.head || document.documentElement).appendChild(s);
-        s.parentNode.removeChild(s);
-      }catch(e1){
-        try{ (0, eval)(text); }catch(e2){ window.__PORTAL_SF_PAYLOAD_ERROR = String(e2 && e2.message ? e2.message : e2); }
-      }
-    }
-    setTimeout(function(){
-      if(portalSfRowCount()) return;
-      fetch(cdnWww, { cache: 'force-cache' }).then(function(r){ return r.ok ? r.text() : ''; }).then(portalExecJsPayload).catch(function(){});
-    }, 50);
-  })();
-  </script>
-  <!-- Clients Payments: JS in portal/. Export → Clients Payments (PORTAL).xlsx → regenerate JS. -->
-  <script src="portal/clients_payments_portal_data.js?v=20260507-portalfix"></script>
-  <!-- Absentees & Credits: same pattern — JS in portal/. Bump data-portal-absentees-credits-v after export. -->
-  <script src="portal/absentees_credits_portal_data.js?v=20260530-abs"></script>
-  <script>
-  (function portalAbsenteesCreditsBootstrap(){
-    var v = (document.documentElement.getAttribute('data-portal-absentees-credits-v') || document.documentElement.getAttribute('data-portal-uploads-js-v') || '20260530-abs').trim();
-    var cdn = 'portal/absentees_credits_portal_data.js?v=' + encodeURIComponent(v);
-    function portalAbsCreditsRowCount(){
-      var s = typeof window !== 'undefined' ? window.ABSENTEES_CREDITS_PORTAL_SOURCE : null;
-      return s && Array.isArray(s.rows) ? s.rows.length : 0;
-    }
-    if(portalAbsCreditsRowCount()) return;
-    function portalExecAbsCreditsPayload(text){
-      if(!text || text.indexOf('ABSENTEES_CREDITS_PORTAL_SOURCE') < 0) return;
-      try{
-        var s = document.createElement('script');
-        s.textContent = text;
-        (document.head || document.documentElement).appendChild(s);
-        s.parentNode.removeChild(s);
-      }catch(e1){
-        try{ (0, eval)(text); }catch(e2){ window.__PORTAL_ABS_CREDITS_PAYLOAD_ERROR = String(e2 && e2.message ? e2.message : e2); }
-      }
-    }
-    setTimeout(function(){
-      if(portalAbsCreditsRowCount()) return;
-      fetch(cdn, { cache: 'force-cache' }).then(function(r){ return r.ok ? r.text() : ''; }).then(portalExecAbsCreditsPayload).catch(function(){});
-    }, 80);
-  })();
-  </script>
-  <!-- Participants / parents: JS in portal/. Export → Participants_Parents info (PORTAL).xlsx → regenerate JS. -->
-  <script src="portal/participants_parents_portal_data.js?v=20260430-pp"></script>
-  <script>
-  (function portalParticipantsParentsBootstrap(){
-    var v = (document.documentElement.getAttribute('data-portal-participants-parents-v') || document.documentElement.getAttribute('data-portal-uploads-js-v') || '20260430-pp').trim();
-    var cdn = 'portal/participants_parents_portal_data.js?v=' + encodeURIComponent(v);
-    function portalPpRowCount(){
-      var s = typeof window !== 'undefined' ? window.PARTICIPANTS_PARENTS_PORTAL_SOURCE : null;
-      return s && Array.isArray(s.rows) ? s.rows.length : 0;
-    }
-    if(portalPpRowCount()) return;
-    function portalExecPpPayload(text){
-      if(!text || text.indexOf('PARTICIPANTS_PARENTS_PORTAL_SOURCE') < 0) return;
-      try{
-        var s = document.createElement('script');
-        s.textContent = text;
-        (document.head || document.documentElement).appendChild(s);
-        s.parentNode.removeChild(s);
-      }catch(e1){
-        try{ (0, eval)(text); }catch(e2){ window.__PORTAL_PP_PAYLOAD_ERROR = String(e2 && e2.message ? e2.message : e2); }
-      }
-    }
-    setTimeout(function(){
-      if(portalPpRowCount()) return;
-      fetch(cdn, { cache: 'force-cache' }).then(function(r){ return r.ok ? r.text() : ''; }).then(portalExecPpPayload).catch(function(){});
-    }, 120);
-  })();
-  </script>
-  <script src="portal/old_participants_portal_data.js?v=20260430-oldpax-export"></script>
-  <script>
-  (function portalOldParticipantsBootstrap(){
-    var v = (document.documentElement.getAttribute('data-portal-old-participants-v') || document.documentElement.getAttribute('data-portal-uploads-js-v') || '20260430-oldpax-export').trim();
-    var cdn = 'portal/old_participants_portal_data.js?v=' + encodeURIComponent(v);
-    function portalOldOk(){
-      var s = typeof window !== 'undefined' ? window.OLD_PARTICIPANTS_PORTAL_SOURCE : null;
-      return s && Array.isArray(s.rows);
-    }
-    if(portalOldOk()) return;
-    function portalExecOldPayload(text){
-      if(!text || text.indexOf('OLD_PARTICIPANTS_PORTAL_SOURCE') < 0) return;
-      try{
-        var s = document.createElement('script');
-        s.textContent = text;
-        (document.head || document.documentElement).appendChild(s);
-        s.parentNode.removeChild(s);
-      }catch(e1){
-        try{ (0, eval)(text); }catch(e2){ window.__PORTAL_OLD_PAX_PAYLOAD_ERROR = String(e2 && e2.message ? e2.message : e2); }
-      }
-    }
-    setTimeout(function(){
-      if(portalOldOk()) return;
-      fetch(cdn, { cache: 'force-cache' }).then(function(r){ return r.ok ? r.text() : ''; }).then(portalExecOldPayload).catch(function(){});
-    }, 160);
-  })();
-  </script>
-  <script>
-  (function portalClientsPaymentsBootstrap(){
-    var v = (document.documentElement.getAttribute('data-portal-clients-payments-v') || document.documentElement.getAttribute('data-portal-uploads-js-v') || '20260507-portalfix').trim();
-    var cdn = 'portal/clients_payments_portal_data.js?v=' + encodeURIComponent(v);
-    function portalPayRowCount(){
-      var s = typeof window !== 'undefined' ? window.CLIENTS_PAYMENTS_PORTAL_SOURCE : null;
-      return s && Array.isArray(s.rows) ? s.rows.length : 0;
-    }
-    if(portalPayRowCount()) return;
-    function portalExecPayPayload(text){
-      if(!text || text.indexOf('CLIENTS_PAYMENTS_PORTAL_SOURCE') < 0) return;
-      try{
-        var s = document.createElement('script');
-        s.textContent = text;
-        (document.head || document.documentElement).appendChild(s);
-        s.parentNode.removeChild(s);
-      }catch(e1){
-        try{ (0, eval)(text); }catch(e2){ window.__PORTAL_PAY_PAYLOAD_ERROR = String(e2 && e2.message ? e2.message : e2); }
-      }
-    }
-    setTimeout(function(){
-      if(portalPayRowCount()) return;
-      fetch(cdn, { cache: 'force-cache' }).then(function(r){ return r.ok ? r.text() : ''; }).then(portalExecPayPayload).catch(function(){});
-    }, 200);
-  })();
-  </script>
-  <!-- Waiting list: Watiting List (Portal).xlsx → waiting_list_portal_data.js. Add desiredService + slotTime columns in the sheet; bump data-portal-waiting-list-v after export. -->
-  <script src="portal/waiting_list_portal_data.js?v=20260430-waitlist"></script>
-  <script>
-  (function portalWaitingListBootstrap(){
-    var v = (document.documentElement.getAttribute('data-portal-waiting-list-v') || document.documentElement.getAttribute('data-portal-uploads-js-v') || '20260430-waitlist').trim();
-    var cdn = 'portal/waiting_list_portal_data.js?v=' + encodeURIComponent(v);
-    function portalWlRowCount(){
-      var s = typeof window !== 'undefined' ? window.WAITING_LIST_PORTAL_SOURCE : null;
-      return s && Array.isArray(s.rows) ? s.rows.length : 0;
-    }
-    if(portalWlRowCount()) return;
-    function portalExecWlPayload(text){
-      if(!text || text.indexOf('WAITING_LIST_PORTAL_SOURCE') < 0) return;
-      try{
-        var s = document.createElement('script');
-        s.textContent = text;
-        (document.head || document.documentElement).appendChild(s);
-        s.parentNode.removeChild(s);
-      }catch(e1){
-        try{ (0, eval)(text); }catch(e2){ window.__PORTAL_WL_PAYLOAD_ERROR = String(e2 && e2.message ? e2.message : e2); }
-      }
-    }
-    setTimeout(function(){
-      if(portalWlRowCount()) return;
-      fetch(cdn, { cache: 'force-cache' }).then(function(r){ return r.ok ? r.text() : ''; }).then(portalExecWlPayload).catch(function(){});
-    }, 240);
-  })();
-  </script>
-  <script>
-  (function portalSpreadsheetDataRibbon(){
-    try{
-      var h = (location.hostname || '').toLowerCase();
-      if(h !== 'localhost' && h.indexOf('127.0.0.1') !== 0 && h.indexOf('.vercel.app') < 0) return;
-      var n = function(o){ return o && Array.isArray(o.rows) ? o.rows.length : 0; };
-      var sf = n(window.SESSION_FEEDBACK_PORTAL_SOURCE);
-      var pay = n(window.CLIENTS_PAYMENTS_PORTAL_SOURCE);
-      var roster = n(window.STAFF_DASHBOARD_SOURCE);
-      var wl = n(window.WAITING_LIST_PORTAL_SOURCE);
-      var pp = n(window.PARTICIPANTS_PARENTS_PORTAL_SOURCE);
-      var ac = n(window.ABSENTEES_CREDITS_PORTAL_SOURCE);
-      var parts = [];
-      if(sf < 1) parts.push('Session feedback: <strong>0</strong> rows — sube <code>session_feedback_portal_data.js</code> a <code>portal/</code> (debe devolver JS, no una página HTML).');
-      if(pay < 1) parts.push('Payments: <strong>0</strong> rows — sube <code>clients_payments_portal_data.js</code> al mismo sitio.');
-      if(roster < 1) parts.push('Roster: vacío — sube <code>staff_dashboard_spreadsheet_bundle.js</code> + adapter + <code>clients_info_embed.js</code>.');
-      if(ac < 1 && sf > 0 && pay > 0 && roster > 0) parts.push('Absentees &amp; credits: <strong>0</strong> rows — sube <code>absentees_credits_portal_data.js</code> (export <code>database/export_absentees_credits_portal_js.py</code>) a <code>portal/</code> si esa cola debe salir del libro.');
-      if(pp < 1) parts.push('Participants: <strong>0</strong> filas en <code>participants_parents_portal_data.js</code> — la pestaña <strong>Participants</strong> usará la lista demo hasta que el JS cargue desde <code>portal/</code> (export <code>database/export_participants_parents_portal_js.py</code>).');
-      if(wl < 1 && sf > 0 && pay > 0 && roster > 0) parts.push('Waiting list: <strong>0</strong> rows — opcional: sube <code>waiting_list_portal_data.js</code> (export <code>database/export_waiting_list_portal_js.py</code> · hoja <code>Watiting List (Portal).xlsx</code>; columnas <code>desiredService</code> y <code>slotTime</code> para servicio y franja).');
-      if(!parts.length) return;
-      var er = [];
-      if(window.__PORTAL_SF_PAYLOAD_ERROR) er.push('SF payload: ' + String(window.__PORTAL_SF_PAYLOAD_ERROR));
-      if(window.__PORTAL_PAY_PAYLOAD_ERROR) er.push('Pay payload: ' + String(window.__PORTAL_PAY_PAYLOAD_ERROR));
-      if(window.__PORTAL_WL_PAYLOAD_ERROR) er.push('Wait list payload: ' + String(window.__PORTAL_WL_PAYLOAD_ERROR));
-      if(window.__PORTAL_PP_PAYLOAD_ERROR) er.push('Participants/parents payload: ' + String(window.__PORTAL_PP_PAYLOAD_ERROR));
-      if(window.__PORTAL_OLD_PAX_PAYLOAD_ERROR) er.push('Old participants payload: ' + String(window.__PORTAL_OLD_PAX_PAYLOAD_ERROR));
-      if(window.__PORTAL_ABS_CREDITS_PAYLOAD_ERROR) er.push('Absentees/credits payload: ' + String(window.__PORTAL_ABS_CREDITS_PAYLOAD_ERROR));
-      var root = document.documentElement;
-      var vsf = (root.getAttribute('data-portal-session-feedback-v') || '20260507-portalfix').trim();
-      var vpay = (root.getAttribute('data-portal-clients-payments-v') || vsf).trim();
-      var vwl = (root.getAttribute('data-portal-waiting-list-v') || '20260430-waitlist').trim();
-      var vpp = (root.getAttribute('data-portal-participants-parents-v') || '20260430-pp').trim();
-      var vold = (root.getAttribute('data-portal-old-participants-v') || '20260430-oldpax-export').trim();
-      var vabs = (root.getAttribute('data-portal-absentees-credits-v') || '20260530-abs').trim();
-      var U = 'portal/';
-      var probe = [
-        ['session_feedback_portal_data.js', 'Session feedback', vsf],
-        ['clients_payments_portal_data.js', 'Clients payments', vpay],
-        ['absentees_credits_portal_data.js', 'Absentees & credits', vabs],
-        ['participants_parents_portal_data.js', 'Participants & parents', vpp],
-        ['old_participants_portal_data.js', 'Old participants (archive)', vold],
-        ['waiting_list_portal_data.js', 'Waiting list', vwl],
-        ['staff_dashboard_spreadsheet_bundle.js', 'Roster bundle', '20260430-portal'],
-        ['staff_dashboard_spreadsheet_adapter.js', 'Spreadsheet adapter', '20260430-portal'],
-        ['clients_info_embed.js', 'Clients info embed', '20260429-portal'],
-        ['term_from_timetable.js', 'Term timetable', '20260429-portal']
-      ];
-      var probeHtml =
-        '<div style="margin-top:12px;padding-top:10px;border-top:1px solid #334155"><strong>Comprobar URLs (404 = falta subir o nombre distinto)</strong> — clic abre en pestaña nueva:</div>' +
-        probe
-          .map(function(x){
-            var href = U + x[0] + '?v=' + encodeURIComponent(x[2]);
-            return (
-              '<div style="margin:5px 0;max-width:56rem;overflow-wrap:break-word">' +
-              '<a href="' +
-              href +
-              '" target="_blank" rel="noopener" style="color:#7dd3fc;text-decoration:underline;font-weight:600">' +
-              x[1] +
-              '</a> <span style="opacity:.85;font-size:12px">→ ' +
-              href +
-              '</span></div>'
-            );
-          })
-          .join('');
-      var div = document.createElement('div');
-      div.setAttribute('role', 'status');
-      div.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:999999;background:#0f172a;color:#f1f5f9;padding:12px 16px;font:13px/1.45 system-ui,Segoe UI,sans-serif;box-shadow:0 -4px 24px rgba(0,0,0,.35);max-height:45vh;overflow:auto';
-      div.innerHTML =
-        '<strong style="display:block;margin-bottom:8px">Datos de hojas (diagnóstico)</strong>' +
-        parts.map(function(p){ return '<div style="margin:6px 0;max-width:56rem;overflow-wrap:break-word">' + p + '</div>'; }).join('') +
-        (er.length ? '<div style="margin-top:10px;color:#fecaca;max-width:56rem;overflow-wrap:break-word">' + er.join('<br>') + '</div>' : '') +
-        probeHtml +
-        '<div style="margin-top:10px;opacity:.88;max-width:56rem;overflow-wrap:break-word">Asegura que el JS esté en <code>portal/</code> en el deploy Vercel (mismo origen que esta página). Regenera exports con los scripts en <code>database/</code> si cambias los xlsx.</div>';
-      document.body.appendChild(div);
-    }catch(_e){}
-  })();
-  </script>
 
   <script>
   (function(){
@@ -13496,16 +13244,45 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }catch(_2){}
       return null;
     }
+    function portalAdminEnsureScriptsForView(viewId){
+      if(!window.portalAdminLoadScriptSet) return;
+      var id = String(viewId || '');
+      if(id === 'c4k_sessions' || id === 'c4k_registers' || id === 'c4k_late_submissions'){
+        void window.portalAdminLoadHeavyScripts(['roster', 'feedback']);
+        return;
+      }
+      if(id === 'scheduling' || id === 'c4k_services' || id === 'servicecap' || id === 'absents_refunds'){
+        void window.portalAdminLoadScriptSet('roster');
+        return;
+      }
+      if(id === 'bookings' || id === 'orders_all' || id === 'orders_outstanding' || id === 'c4k_payments' || id === 'invoices'){
+        void window.portalAdminLoadScriptSet('roster');
+        void window.portalAdminLoadScriptSet('payments');
+        return;
+      }
+      if(id === 'clients'){
+        void window.portalAdminLoadScriptSet('roster');
+        void window.portalAdminLoadScriptSet('participants');
+        void window.portalAdminLoadScriptSet('oldpax');
+        return;
+      }
+      if(id === 'c4k_waitlist') void window.portalAdminLoadScriptSet('waitlist');
+    }
     function portalSessionsHubLazyLoad(){
       portalDayOpsConfigureOnce();
-      setTimeout(function(){
+      var run = function(){
         if(state.view !== 'c4k_sessions' && state.view !== 'c4k_registers') return;
         if(window.PortalDayOps && typeof window.PortalDayOps.ensurePayload === 'function'){
           void window.PortalDayOps.ensurePayload();
         }
         void adminFetchCancellationReportsForHub();
         void adminFetchAbsentQuickMarksForHub();
-      }, 0);
+      };
+      if(window.portalAdminLoadHeavyScripts){
+        void window.portalAdminLoadHeavyScripts(['roster', 'feedback']).then(run);
+      }else{
+        setTimeout(run, 0);
+      }
     }
     function portalLateAdminEnsureConfigured(){
       if(!window.PortalAdminLateSubmissions || window.__portalLateAdminConfigured) return;
@@ -20277,6 +20054,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
     }
     function bindView(id){
+      portalAdminEnsureScriptsForView(id);
       var root = $('workspace');
       root.querySelectorAll('[data-client]').forEach(function(b){
         b.addEventListener('click', function(){ openClientDrawer(b.getAttribute('data-client')); });
@@ -22455,9 +22233,27 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         sessionsHubEnsureState().tab = 'feedback';
         sessionsHubEnsureState().sfSection = 'main';
       }
-      setView(initial);
-      bindNovoDashboardSchedule();
-      portalBindWorkspaceDayopsComposeCapture();
+      function portalAdminOpenInitialView(){
+        var needsData = initial === 'c4k_sessions' || initial === 'c4k_registers' || initial === 'c4k_late_submissions';
+        if(needsData && window.portalAdminLoadHeavyScripts){
+          var ws = $('workspace');
+          if(ws) ws.innerHTML = '<div class="card card-pad"><p class="muted" style="margin:0">Loading session data…</p></div>';
+          void window.portalAdminLoadHeavyScripts(['roster','feedback']).then(function(){
+            setView(initial);
+            if(initial === 'c4k_sessions' || initial === 'c4k_registers') portalSessionsHubLazyLoad();
+          });
+        }else{
+          setView(initial);
+        }
+        if(window.portalAdminLoadAllDataScriptsIdle) window.portalAdminLoadAllDataScriptsIdle();
+      }
+      var portalAdminBoot = function(){
+        portalAdminOpenInitialView();
+        bindNovoDashboardSchedule();
+        portalBindWorkspaceDayopsComposeCapture();
+      };
+      if(typeof requestIdleCallback === 'function') requestIdleCallback(portalAdminBoot, { timeout: 800 });
+      else setTimeout(portalAdminBoot, 0);
       if(!window.__portalAdminProfileRefreshBound){
         window.__portalAdminProfileRefreshBound = true;
         window.addEventListener('portal:supabase-ready', function(){
