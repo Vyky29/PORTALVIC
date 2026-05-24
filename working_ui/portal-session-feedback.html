@@ -926,21 +926,23 @@ button{
           <circle cx="213.53" cy="66" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
         </g>
       </svg>
-      <img class="cancel-login-logo" src="assets/logo-clubsensational.png" alt="clubSENsational" />
+      <img class="cancel-login-logo" src="/portal/F-02-1.png" alt="clubSENsational" width="200" height="200" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='/portal/portal_crest.svg'" />
     </div>
   </div>
 
   <div class="title-row">
     <h1>Session feedback</h1>
-    <p>Choose whether the participant attended. If <strong>No</strong>, submit only the session details — they will appear in admin <strong>Absents</strong>. If <strong>Yes</strong>, complete the full feedback below.</p>
+    <p id="feedbackIntroText">Record how the session went. If the participant did not attend, use <strong>Absent</strong> on your dashboard instead of this form.</p>
   </div>
+
+  <div id="portalSessionContextCard" class="portal-session-context" hidden aria-live="polite"></div>
 
   <div class="card">
     <!-- Submit writes to Supabase when the staff session is signed in; optional JSON webhook if configured. -->
     <form id="feedbackForm" novalidate>
       <div class="grid">
 
-        <div class="field field--session-details field--session-details-shell">
+        <div id="sessionDetailsEditable" class="field field--session-details field--session-details-shell">
           <div class="session-date-field" role="group" aria-labelledby="fbSessionDateLabelText">
             <div class="session-date-label-row" id="fbSessionDateLabelRow">
               <span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
@@ -978,14 +980,11 @@ button{
           <select id="fbService" name="fbService" required>
             <option value="">Select a service</option>
           </select>
-          <label><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span> Attended? <span class="req">*</span></label>
-          <div class="options options--attended" role="radiogroup" aria-label="Did the participant attend this session?">
-            <label class="pill" data-kind="attended" data-value="Yes"><input type="radio" name="sessionAttended" value="Yes" required> Yes</label>
-            <label class="pill" data-kind="attended" data-value="No"><input type="radio" name="sessionAttended" value="No"> No</label>
-          </div>
         </div>
 
-        <div id="feedbackExtendedSection" hidden>
+        <input type="hidden" name="sessionAttended" value="Yes" />
+
+        <div id="feedbackExtendedSection">
         <div class="field">
           <label><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span> Engagement <span class="req">*</span></label>
           <div class="options options--engagement" role="radiogroup" aria-label="Engagement rating">
@@ -1036,7 +1035,7 @@ button{
         </div>
 
         <div class="actions">
-          <a href="/staff.html" class="btnBack" id="feedbackBackLink" aria-label="Back to portal">
+          <a href="staff_dashboard.html" class="btnBack" id="feedbackBackLink" aria-label="Back to dashboard">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
             Back
           </a>
@@ -1077,6 +1076,13 @@ button{
   const portalSessionKeyFromUrl = (qs.get("sessionKey") || "").trim();
   /** Participant prefill: explicit client params only — not generic `name` (often the instructor on portal links). */
   let portalName = (qs.get("clientName") || qs.get("client") || "").trim();
+  if(!portalName && portalSessionKeyFromUrl){
+    const legacyClient = (qs.get("name") || "").trim();
+    try{
+      if(legacyClient.indexOf("%") !== -1) portalName = decodeURIComponent(legacyClient);
+      else portalName = legacyClient;
+    }catch(_){ portalName = legacyClient; }
+  }
   try{
     if(portalName.indexOf("%") !== -1) portalName = decodeURIComponent(portalName);
   }catch(_){}
@@ -1105,12 +1111,13 @@ button{
   const submitBtn = document.getElementById("submitBtn");
   const feedbackBackLink = document.getElementById("feedbackBackLink");
   const feedbackExtendedSection = document.getElementById("feedbackExtendedSection");
+  const sessionDetailsEditable = document.getElementById("sessionDetailsEditable");
+  const portalSessionContextCard = document.getElementById("portalSessionContextCard");
 
   wireSessionDateEditUi();
 
   function getSessionAttended(){
-    const picked = form.querySelector('input[name="sessionAttended"]:checked');
-    return picked ? String(picked.value || "").trim() : "";
+    return "Yes";
   }
 
   function setExtendedFieldsRequired(isRequired){
@@ -1143,16 +1150,67 @@ button{
     if(rel) rel.value = "";
   }
 
-  function syncAttendedVisibility(){
-    const attended = getSessionAttended();
-    if(!feedbackExtendedSection) return;
-    if(attended === "Yes"){
+  function formatSessionTimeLabel(raw){
+    const t = clean(raw);
+    if(!t) return "";
+    if(/^\d{1,2}:\d{2}$/.test(t)) return t;
+    return t;
+  }
+
+  function renderPortalSessionContextCard(ctx){
+    if(!portalSessionContextCard) return;
+    const name = clean(ctx && ctx.client_name);
+    const svc = clean(ctx && ctx.service);
+    const iso = clean(ctx && ctx.session_date);
+    const time = formatSessionTimeLabel(ctx && ctx.session_time) || formatSessionTimeLabel(portalTime);
+    if(!name || !svc || !iso){
+      portalSessionContextCard.hidden = true;
+      portalSessionContextCard.replaceChildren();
+      return;
+    }
+    portalSessionContextCard.hidden = false;
+    portalSessionContextCard.replaceChildren();
+    const title = document.createElement("p");
+    title.className = "portal-session-context__title";
+    title.textContent = "Session";
+    portalSessionContextCard.appendChild(title);
+    const grid = document.createElement("div");
+    grid.className = "portal-session-context__grid";
+    function row(label, value){
+      const r = document.createElement("div");
+      r.className = "portal-session-context__row";
+      const l = document.createElement("span");
+      l.className = "portal-session-context__label";
+      l.textContent = label;
+      const v = document.createElement("span");
+      v.className = "portal-session-context__value";
+      v.textContent = value;
+      r.appendChild(l);
+      r.appendChild(v);
+      grid.appendChild(r);
+    }
+    row("Participant", name);
+    row("Service", svc);
+    row("Date", formatSessionDateLong(iso) || iso);
+    if(time) row("Time", time);
+    portalSessionContextCard.appendChild(grid);
+  }
+
+  function feedbackContextLockedFromDashboard(){
+    if(!portalSessionKeyFromUrl && !portalParticipantQueryPrefill && !(qs.get("clientName") || qs.get("client"))) return false;
+    const ctx = buildResolvedContext();
+    return !!(ctx.client_name && ctx.service && ctx.session_date);
+  }
+
+  function applyFeedbackSessionContextUi(){
+    syncFeedbackManualFields();
+    const ctx = buildResolvedContext();
+    renderPortalSessionContextCard(ctx);
+    const locked = feedbackContextLockedFromDashboard();
+    if(sessionDetailsEditable) sessionDetailsEditable.hidden = !!locked;
+    if(feedbackExtendedSection){
       feedbackExtendedSection.hidden = false;
       setExtendedFieldsRequired(true);
-    } else {
-      feedbackExtendedSection.hidden = true;
-      setExtendedFieldsRequired(false);
-      if(attended === "No") clearExtendedFeedbackFields();
     }
     syncPillSelection();
   }
@@ -1474,7 +1532,7 @@ button{
   async function enrichPortalSessionContext(){
     const fromKey = parseSessionKey(portalSessionKeyFromUrl);
     const cid = String(portalClientId || fromKey.client_id || "").trim();
-    if(!cid || cid === "available" || cid === "closed") return;
+    if((!cid || cid === "available" || cid === "closed") && !clean(portalName)) return;
     const sessionDate = portalDate && /^\d{4}-\d{2}-\d{2}$/.test(portalDate) ? portalDate : fromKey.session_date;
     const startKey = String(fromKey.session_time || "").trim();
     const wd = weekdayLongFromIso(sessionDate);
@@ -1822,7 +1880,7 @@ button{
     }
     const session_time = (portalTime || fromKey.session_time || "").trim() || null;
     const client_id = (portalClientId || fromKey.client_id || "").trim() || null;
-    const client_name = (fbPn && clean(fbPn.value)) || portalParticipantQueryPrefill;
+    const client_name = (fbPn && clean(fbPn.value)) || clean(portalName) || portalParticipantQueryPrefill;
     const service = (fbSv && clean(fbSv.value)) || portalService.trim();
     return { session_date, session_time, client_id, client_name, service };
   }
@@ -2035,7 +2093,7 @@ button{
     const hubFallback =
       typeof portalResolveHubUrl === "function"
         ? portalResolveHubUrl(fromPortal)
-        : (fromPortal === "lead" ? "/leadportal" : "/staffportal");
+        : (fromPortal === "lead" ? "lead_dashboard.html" : "staff_dashboard.html");
     const baseTarget = returnUrl || storedReturn || hubFallback;
     let origin = "dashboard";
     try{
@@ -2338,18 +2396,9 @@ button{
       const inp = p.querySelector('input[type="checkbox"][name="clientEmotions"]');
       p.classList.toggle("isSelected", !!(inp && inp.checked));
     });
-    form.querySelectorAll('.pill[data-kind="attended"]').forEach(p => {
-      const val = p.getAttribute("data-value") || "";
-      const selected = getSessionAttended();
-      p.classList.toggle("isSelected", val === selected);
-    });
   }
 
-  form.addEventListener("change", (ev) => {
-    if(ev.target && ev.target.matches('input[name="sessionAttended"]')){
-      syncAttendedVisibility();
-      return;
-    }
+  form.addEventListener("change", () => {
     syncPillSelection();
   });
 
@@ -2360,14 +2409,13 @@ button{
   clearBtn.addEventListener("click", () => {
     form.reset();
     clearPhase2RadiosOnly();
-    syncAttendedVisibility();
-    syncPillSelection();
+    applyFeedbackSessionContextUi();
     closeSessionDateEditPanel();
     syncFeedbackManualFields();
   });
 
-  setExtendedFieldsRequired(false);
-  syncAttendedVisibility();
+  setExtendedFieldsRequired(true);
+  if(feedbackExtendedSection) feedbackExtendedSection.hidden = false;
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -2391,57 +2439,43 @@ button{
       return;
     }
 
-    const attended = getSessionAttended();
-    if(!attended){
-      alert("Please select whether the participant attended (Yes or No).");
-      return;
-    }
-
     resolveInstructorFromUrl();
     const submitterHint =
       readPinIdentityName() || clean(instructorDisplayName) || "";
     let sessionKeyForSubmit = effectiveFeedbackSessionKey(ctx2, submitterHint);
     const data = new FormData(form);
-    const attendanceVal = attended === "No" ? "No" : "Yes";
+    const attendanceVal = "Yes";
 
-    let positiveFeedback = "";
-    let relevantInformation = "";
-    let engagementRating = null;
-    let clientEmotionsVal = "";
-    let independenceLevels = [];
-    let notifyFlag = false;
-
-    if(attendanceVal === "Yes"){
-      const emotionChecked = Array.from(form.querySelectorAll('input[name="clientEmotions"]:checked'));
-      if(!emotionChecked.length){
-        alert("Please select at least one option under Participant Emotions / Regulation.");
-        return;
-      }
-      positiveFeedback = (data.get("positiveFeedback") || "").toString();
-      relevantInformation = (data.get("relevantInformation") || "").toString();
-      if(!clean(positiveFeedback)){
-        alert("Please complete Positive feedback (what went well).");
-        return;
-      }
-      if(!clean(relevantInformation)){
-        alert("Please complete Relevant information.");
-        return;
-      }
-      const engagementRatingRaw = (data.get("engagementRating") || "").toString();
-      const engagementRatingParsed = parseInt(engagementRatingRaw, 10);
-      if(!engagementRatingRaw || !Number.isFinite(engagementRatingParsed)){
-        alert("Please select an Engagement rating.");
-        return;
-      }
-      engagementRating = engagementRatingParsed;
-      clientEmotionsVal = emotionChecked.map(function(inp){ return String(inp.value || "").trim(); }).filter(Boolean).join("; ");
-      const independenceChecked = Array.from(form.querySelectorAll('input[name="independenceLevel"]:checked'));
-      independenceLevels = independenceChecked.map(function(inp){ return String(inp.value || "").trim(); }).filter(Boolean);
-      if(!independenceLevels.length){
-        alert("Please pick an independence level for this session.");
-        return;
-      }
+    const emotionChecked = Array.from(form.querySelectorAll('input[name="clientEmotions"]:checked'));
+    if(!emotionChecked.length){
+      alert("Please select at least one option under Participant Emotions / Regulation.");
+      return;
     }
+    let positiveFeedback = (data.get("positiveFeedback") || "").toString();
+    let relevantInformation = (data.get("relevantInformation") || "").toString();
+    if(!clean(positiveFeedback)){
+      alert("Please complete Positive feedback (what went well).");
+      return;
+    }
+    if(!clean(relevantInformation)){
+      alert("Please complete Relevant information.");
+      return;
+    }
+    const engagementRatingRaw = (data.get("engagementRating") || "").toString();
+    const engagementRatingParsed = parseInt(engagementRatingRaw, 10);
+    if(!engagementRatingRaw || !Number.isFinite(engagementRatingParsed)){
+      alert("Please select an Engagement rating.");
+      return;
+    }
+    const engagementRating = engagementRatingParsed;
+    const clientEmotionsVal = emotionChecked.map(function(inp){ return String(inp.value || "").trim(); }).filter(Boolean).join("; ");
+    const independenceChecked = Array.from(form.querySelectorAll('input[name="independenceLevel"]:checked'));
+    const independenceLevels = independenceChecked.map(function(inp){ return String(inp.value || "").trim(); }).filter(Boolean);
+    if(!independenceLevels.length){
+      alert("Please pick an independence level for this session.");
+      return;
+    }
+    const notifyFlag = false;
 
     const hasPositiveFeedback = clean(positiveFeedback).length > 0;
     const hasRelevantInformation = clean(relevantInformation).length > 0;
@@ -2612,13 +2646,13 @@ button{
     return refreshFeedbackParticipantAndServicePickers().catch(function(){});
   }).then(function(){
     resolveInstructorFromUrl();
-    syncFeedbackManualFields();
+    applyFeedbackSessionContextUi();
   });
 
   resolveInstructorFromUrl();
-  syncFeedbackManualFields();
+  applyFeedbackSessionContextUi();
   refreshFeedbackParticipantAndServicePickers().catch(function(){}).then(function(){
-    syncFeedbackManualFields();
+    applyFeedbackSessionContextUi();
   });
 
   (function wireFeedbackReturnNav(){
@@ -2626,7 +2660,9 @@ button{
       var hub =
         typeof portalResolveHubUrl === "function"
           ? portalResolveHubUrl((qs.get("from_portal") || "").trim())
-          : ((qs.get("from_portal") || "").trim().toLowerCase() === "lead" ? "/leadportal" : "/staffportal");
+          : (typeof portalResolveHubUrl === "function"
+            ? portalResolveHubUrl((qs.get("from_portal") || "").trim())
+            : ((qs.get("from_portal") || "").trim().toLowerCase() === "lead" ? "lead_dashboard.html" : "staff_dashboard.html"));
       var pr = typeof portalGetPortalReturnUrl === "function" ? portalGetPortalReturnUrl() : "";
       if(pr){
         try{ sessionStorage.setItem("__portal_feedback_return_v1", pr); }catch(_){}

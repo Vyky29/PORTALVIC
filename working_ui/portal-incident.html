@@ -440,7 +440,7 @@ button{
           <circle cx="213.53" cy="66" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
         </g>
       </svg>
-      <img class="cancel-login-logo" src="assets/logo-clubsensational.png" alt="clubSENsational" />
+      <img class="cancel-login-logo" src="/portal/F-02-1.png" alt="clubSENsational" width="200" height="200" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='/portal/portal_crest.svg'" />
     </div>
   </div>
 
@@ -463,7 +463,7 @@ button{
         </button>
       </div>
       <div class="incident-step-actions">
-        <a href="/staff.html" class="btnBack" id="incidentChooseBackLink" aria-label="Back to portal">
+        <a href="staff_dashboard.html" class="btnBack" id="incidentChooseBackLink" aria-label="Back to dashboard">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
           Back
         </a>
@@ -509,8 +509,10 @@ button{
 
 
       <div id="incidentParticipantFields" class="incident-form-panel">
+      <div id="portalSessionContextCard" class="portal-session-context" hidden aria-live="polite"></div>
       <div class="grid">
 
+        <div id="incidentDetailsEditable">
         <div class="field field--session-details">
 
           <label for="participantManual" id="participantManualLabel"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span> <span id="participantManualLabelText">Participant name</span> <span class="req">*</span></label>
@@ -520,6 +522,7 @@ button{
           <select id="serviceManual" name="serviceManual" required>
             <option value="">Select a service</option>
           </select>
+        </div>
         </div>
 
         <div class="field">
@@ -1300,12 +1303,62 @@ button{
     syncIncidentSessionDate();
   }
 
+  function renderIncidentContextCard(){
+    const card = document.getElementById("portalSessionContextCard");
+    const editable = document.getElementById("incidentDetailsEditable");
+    if(!card) return;
+    const name = clean(context.clientName);
+    const svc = clean(context.service);
+    const iso = clean(context.sessionDate);
+    const time = clean(context.sessionTime);
+    if(!name || !svc || !/^\d{4}-\d{2}-\d{2}$/.test(iso)){
+      card.hidden = true;
+      card.replaceChildren();
+      if(editable) editable.hidden = false;
+      return;
+    }
+    card.hidden = false;
+    card.replaceChildren();
+    const title = document.createElement("p");
+    title.className = "portal-session-context__title";
+    title.textContent = "Session";
+    card.appendChild(title);
+    const grid = document.createElement("div");
+    grid.className = "portal-session-context__grid";
+    function row(label, value){
+      const r = document.createElement("div");
+      r.className = "portal-session-context__row";
+      const l = document.createElement("span");
+      l.className = "portal-session-context__label";
+      l.textContent = label;
+      const v = document.createElement("span");
+      v.className = "portal-session-context__value";
+      v.textContent = value;
+      r.appendChild(l);
+      r.appendChild(v);
+      grid.appendChild(r);
+    }
+    row("Participant", name);
+    row("Service", svc);
+    row("Date", formatIncidentSessionDateLong(iso) || iso);
+    if(time) row("Session time", time);
+    card.appendChild(grid);
+    if(editable) editable.hidden = true;
+  }
+
   function syncIncidentManualFields(){
     const pm = document.getElementById("participantManual");
     if(pm && !clean(pm.value)) pm.value = clean(context.clientName);
     syncParticipantDatalistForInput("participantManual", "participantManualNameList");
     syncIncidentParticipantServiceSelect();
     syncIncidentSessionDate();
+    const it = document.getElementById("incidentTime");
+    if(it && !clean(it.value)){
+      const norm = normalizeIncidentTimeForSubmit(context.sessionTime);
+      if(norm) it.value = norm;
+      else if(clean(context.sessionTime)) it.value = clean(context.sessionTime);
+    }
+    renderIncidentContextCard();
   }
   function inferOriginFromReturn(baseTarget){
     let origin = "dashboard";
@@ -1582,7 +1635,13 @@ button{
     const returnUrl = clean(qs.get("return")) || "";
     const returnPath = clean(qs.get("rp")) || "";
     let baseTarget = returnUrl || returnPath || "";
-    if(!baseTarget) baseTarget = "/staffportal";
+    if(!baseTarget){
+      const fp = (qs.get("from_portal") || "").trim().toLowerCase();
+      const originLead = String(context.origin || "").trim().toLowerCase() === "lead";
+      baseTarget = typeof portalResolveHubUrl === "function"
+        ? portalResolveHubUrl(fp || (originLead ? "lead" : ""))
+        : (fp === "lead" || originLead ? "lead_dashboard.html" : "staff_dashboard.html");
+    }
 
     let target = baseTarget;
     try{
@@ -1776,7 +1835,7 @@ button{
     try{
       const decodedSk = decodeSessionKeyB64Url(qs.get("sk") || "");
       context.portalSessionKey = clean(decodedSk || qs.get("sessionKey") || "");
-      context.sessionDate = clean(qs.get("date") || "");
+      context.sessionDate = clean(qs.get("date") || qs.get("rd") || "");
       context.sessionTime = clean(qs.get("time") || qs.get("sessionTime") || "");
       context.clientId = clean(qs.get("clientId") || "");
       context.clientName = clean(qs.get("clientName") || qs.get("client") || "");
@@ -1793,9 +1852,14 @@ button{
       inferOriginFromReturn(qs.get("return") || qs.get("rp") || "");
       try{
         const chooseBack = document.getElementById("incidentChooseBackLink");
-        if(chooseBack && typeof portalGetPortalReturnUrl === "function"){
-          const u = portalGetPortalReturnUrl();
-          if(u) chooseBack.href = u;
+        if(chooseBack){
+          let backHref = "";
+          if(typeof portalGetPortalReturnUrl === "function") backHref = portalGetPortalReturnUrl() || "";
+          if(!backHref && typeof portalResolveHubUrl === "function"){
+            const fp = (qs.get("from_portal") || "").trim().toLowerCase();
+            backHref = portalResolveHubUrl(fp || (String(context.origin || "").toLowerCase() === "lead" ? "lead" : ""));
+          }
+          if(backHref) chooseBack.href = backHref;
         }
       }catch(_){}
       await softLoadIncidentAuthDisplay();

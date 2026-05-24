@@ -36,4 +36,28 @@
   try {
     document.documentElement.classList.add("portal-app-shell");
   } catch (_) {}
+
+  /** Dashboard HTML for staff vs lead (forms + quick links). */
+  window.portalResolveHubUrl = function portalResolveHubUrl(fromPortal) {
+    var fp = String(fromPortal || "").trim().toLowerCase();
+    if (fp === "lead") return "lead_dashboard.html";
+    if (fp === "staff") return "staff_dashboard.html";
+    try {
+      var p = String(
+        (typeof location !== "undefined" && location.pathname) || ""
+      ).toLowerCase();
+      if (p.indexOf("lead_dashboard") >= 0) return "lead_dashboard.html";
+    } catch (_) {}
+    return "staff_dashboard.html";
+  };
+
+  window.portalFormRoleFromPath = function portalFormRoleFromPath() {
+    try {
+      var p = String(
+        (typeof location !== "undefined" && location.pathname) || ""
+      ).toLowerCase();
+      if (p.indexOf("lead_dashboard") >= 0) return "lead";
+    } catch (_) {}
+    return "staff";
+  };
 })();

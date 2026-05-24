@@ -1107,11 +1107,11 @@
           const fp = String(sp.get('from_portal') || '').toLowerCase();
           const src = String(sp.get('source') || fp || '').toLowerCase();
           if(src === 'lead'){
-            window.location.replace('/leadportal');
+            window.location.replace(typeof portalResolveHubUrl === 'function' ? portalResolveHubUrl('lead') : 'lead_dashboard.html');
             return;
           }
           if(src === 'staff'){
-            window.location.replace('/staffportal');
+            window.location.replace(typeof portalResolveHubUrl === 'function' ? portalResolveHubUrl('staff') : 'staff_dashboard.html');
             return;
           }
         }catch(_){}
@@ -1128,7 +1128,7 @@
         try{
           window.location.href = '/staff.html';
         }catch(_){
-          window.location.href = '/staffportal';
+          window.location.href = typeof portalResolveHubUrl === 'function' ? portalResolveHubUrl('staff') : 'staff_dashboard.html';
         }
       }
 

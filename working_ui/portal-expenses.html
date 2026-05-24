@@ -438,7 +438,7 @@
       const hub =
         typeof window.portalResolveHubUrl === "function"
           ? window.portalResolveHubUrl()
-          : "/staffportal";
+          : (typeof portalResolveHubUrl === "function" ? portalResolveHubUrl() : "staff_dashboard.html");
       try {
         window.location.replace(hub);
       } catch (_) {

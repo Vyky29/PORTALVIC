@@ -326,18 +326,21 @@ button{
           <circle cx="213.53" cy="66" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
         </g>
       </svg>
-      <img class="cancel-login-logo" src="assets/logo-clubsensational.png" alt="clubSENsational" />
+      <img class="cancel-login-logo" src="/portal/F-02-1.png" alt="clubSENsational" width="200" height="200" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='/portal/portal_crest.svg'" />
     </div>
   </div>
 
   <div class="title-row">
     <h1>Cancellation Report</h1>
-    <p>Use this form to report a session that was cancelled. Today's date is shown by default — double-tap the date to change the day if needed.</p>
+    <p id="cancellationIntroText">Use this form to report a session that was cancelled. Session details from your roster are shown when you open this page from a client row.</p>
   </div>
+
+  <div id="portalSessionContextCard" class="portal-session-context" hidden aria-live="polite"></div>
 
   <div class="card">
     <form id="cancellationForm" novalidate>
       <div class="grid">
+        <div id="cancellationDetailsEditable">
         <div class="field full">
           <label for="clientName"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span> Client name <span class="req">*</span></label>
           <input type="text" id="clientName" name="clientName" list="cancellationClientNameList" placeholder="Type the first letters — only names starting with that text appear" autocomplete="off" spellcheck="false" required />
@@ -379,6 +382,7 @@ button{
           </div>
         </div>
 
+        </div>
         <div class="field">
           <label for="cancellationTiming"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span> Time of cancellation <span class="req">*</span></label>
           <select id="cancellationTiming" name="cancellationTiming" required>
@@ -411,7 +415,7 @@ button{
       </div>
 
       <div class="actions">
-        <a href="/staff.html" id="cancelBackLink" class="btnBack" aria-label="Back to portal">
+        <a href="staff_dashboard.html" id="cancelBackLink" class="btnBack" aria-label="Back to dashboard">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
           Back
         </a>
@@ -472,12 +476,43 @@ button{
   }
 
   var qs = new URLSearchParams(location.search || '');
+  function decodeSessionKeyB64Url(raw){
+    var s = String(raw || '').trim();
+    if (!s) return '';
+    try {
+      var b64 = s.replace(/-/g, '+').replace(/_/g, '/');
+      while (b64.length % 4) b64 += '=';
+      return decodeURIComponent(escape(atob(b64)));
+    } catch (e) { return ''; }
+  }
+  function slugifyClient(v){
+    return String(v || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  }
+  function parseSessionKeyCx(sk){
+    var parts = String(sk || '').trim().split('|');
+    var d0 = (parts[0] || '').trim();
+    return {
+      session_date: /^\d{4}-\d{2}-\d{2}$/.test(d0) ? d0 : '',
+      session_time: (parts[1] || '').trim(),
+      client_id: (parts[2] || '').trim()
+    };
+  }
+  var decodedSk = decodeSessionKeyB64Url(qs.get('sk') || '');
   var context = {
-    portalSessionKey: String(qs.get('sessionKey') || qs.get('sk') || '').trim(),
-    sessionDate: String(qs.get('date') || '').trim(),
+    portalSessionKey: clean(decodedSk || qs.get('sessionKey') || qs.get('sk') || ''),
+    sessionDate: String(qs.get('date') || qs.get('rd') || '').trim(),
     sessionTime: String(qs.get('time') || qs.get('sessionTime') || '').trim(),
-    clientId: String(qs.get('clientId') || '').trim()
+    clientId: String(qs.get('clientId') || '').trim(),
+    clientName: readClientFromUrlParams(),
+    service: clean(String(qs.get('service') || '').replace(/\+/g, ' '))
   };
+  try {
+    if (context.service.indexOf('%') !== -1) context.service = decodeURIComponent(context.service);
+  } catch (e) {}
+  var parsedSkCx = parseSessionKeyCx(context.portalSessionKey);
+  if (!context.sessionDate) context.sessionDate = parsedSkCx.session_date;
+  if (!context.sessionTime) context.sessionTime = parsedSkCx.session_time;
+  if (!context.clientId) context.clientId = parsedSkCx.client_id;
 
   // Session keys used by staff.html / lead.html to remember who is logged in.
   var STAFF_SESSION_KEY = 'clubsens_staff_session_v2';
@@ -954,12 +989,117 @@ button{
   }
 
   function readServiceFromUrlParams(){
+    var s = clean(context.service);
+    if (s) return s;
     try {
       var u = new URL(window.location.href);
-      var s = clean(u.searchParams.get('service') || '');
+      s = clean(u.searchParams.get('service') || '');
       try { if (s.indexOf('%') !== -1) s = decodeURIComponent(s); } catch (e) {}
       return clean(String(s || '').replace(/\+/g, ' '));
     } catch (e2) { return ''; }
+  }
+
+  function weekdayFromIsoCx(iso){
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(iso || ''))) return '';
+    var p = String(iso).split('-').map(Number);
+    var d = new Date(p[0], p[1] - 1, p[2]);
+    if (Number.isNaN(d.getTime())) return '';
+    return d.toLocaleDateString('en-GB', { weekday: 'long' });
+  }
+
+  function renderCancellationContextCard(){
+    var card = document.getElementById('portalSessionContextCard');
+    var editable = document.getElementById('cancellationDetailsEditable');
+    if (!card) return;
+    var name = clean(context.clientName);
+    var svc = clean(context.service) || readServiceFromUrlParams();
+    var iso = /^\d{4}-\d{2}-\d{2}$/.test(clean(context.sessionDate)) ? clean(context.sessionDate) : '';
+    var time = clean(context.sessionTime);
+    if (!name || !svc || !iso) {
+      card.hidden = true;
+      card.replaceChildren();
+      if (editable) editable.hidden = false;
+      return;
+    }
+    card.hidden = false;
+    card.replaceChildren();
+    var title = document.createElement('p');
+    title.className = 'portal-session-context__title';
+    title.textContent = 'Session';
+    card.appendChild(title);
+    var grid = document.createElement('div');
+    grid.className = 'portal-session-context__grid';
+    function row(label, value){
+      var r = document.createElement('div');
+      r.className = 'portal-session-context__row';
+      var l = document.createElement('span');
+      l.className = 'portal-session-context__label';
+      l.textContent = label;
+      var v = document.createElement('span');
+      v.className = 'portal-session-context__value';
+      v.textContent = value;
+      r.appendChild(l);
+      r.appendChild(v);
+      grid.appendChild(r);
+    }
+    row('Client', name);
+    row('Service', svc);
+    row('Date', formatDisplayFromIso(iso));
+    if (time) row('Time', time);
+    card.appendChild(grid);
+    if (editable) editable.hidden = true;
+  }
+
+  async function enrichCancellationContext(){
+    var cid = clean(context.clientId);
+    if ((!cid || cid === 'available' || cid === 'closed') && !clean(context.clientName)) return;
+    try {
+      if (!Array.isArray(window.PORTAL_CLIENTS_INFO_ROWS)) {
+        await loadPortalScriptOnceCx(__portalJsCx('clients_info_embed.js?v=20260517-roster-clients'));
+      }
+      if (cid && !clean(context.clientName)) {
+        var rows = window.PORTAL_CLIENTS_INFO_ROWS || [];
+        for (var i = 0; i < rows.length; i++) {
+          var nm = clean(rows[i] && rows[i].client_name);
+          if (nm && slugifyClient(nm) === slugifyClient(cid)) {
+            context.clientName = nm;
+            break;
+          }
+        }
+      }
+      if (!window.STAFF_DASHBOARD_SOURCE || !Array.isArray(window.STAFF_DASHBOARD_SOURCE.rows)) {
+        await loadPortalScriptOnceCx(__portalJsCx('staff_dashboard_spreadsheet_bundle.js?v=20260518-roster-fix'));
+      }
+      var wd = weekdayFromIsoCx(context.sessionDate);
+      var want = slugifyClient(cid || context.clientName);
+      var roster = (window.STAFF_DASHBOARD_SOURCE && window.STAFF_DASHBOARD_SOURCE.rows) || [];
+      for (var j = 0; j < roster.length; j++) {
+        var r = roster[j] || {};
+        var rowClient = clean(r.client_name);
+        if (!rowClient || slugifyClient(rowClient) !== want) continue;
+        if (wd && clean(r.day) !== wd) continue;
+        if (!clean(context.service)) context.service = clean(r.service);
+        if (!clean(context.sessionTime)) context.sessionTime = clean(r.time_slot);
+        if (!clean(context.clientName)) context.clientName = rowClient;
+        break;
+      }
+    } catch (e) {}
+  }
+
+  function applyCancellationContextUi(){
+    if (context.clientName && clientNameEl && !clean(clientNameEl.value)) {
+      clientNameEl.value = context.clientName;
+    }
+    var iso = /^\d{4}-\d{2}-\d{2}$/.test(clean(context.sessionDate)) ? clean(context.sessionDate) : todayIso();
+    setCancelSessionDateIso(iso);
+    if (cancellationServiceEl) {
+      rebuildServiceSelectForParticipantCx(
+        cancellationServiceEl,
+        clientNameEl ? clean(clientNameEl.value) || clean(context.clientName) : clean(context.clientName),
+        clean(context.service) || readServiceFromUrlParams()
+      );
+    }
+    renderCancellationContextCard();
   }
 
   function refreshCancellationFromClientField(){
@@ -1059,7 +1199,9 @@ button{
   }
 
   function portalHubBackHref(){
-    return inferOrigin() === 'lead' ? '/lead.html' : '/staff.html';
+    var role = inferOrigin() === 'lead' ? 'lead' : (inferOrigin() === 'staff' ? 'staff' : '');
+    if (typeof portalResolveHubUrl === 'function') return portalResolveHubUrl(role);
+    return inferOrigin() === 'lead' ? 'lead_dashboard.html' : 'staff_dashboard.html';
   }
   if (cancelBackLink) cancelBackLink.href = portalHubBackHref();
 
@@ -1214,7 +1356,10 @@ button{
     .catch(function(){})
     .then(function(){ return loadPortalScriptOnceCx(__portalJsCx('participant_services.js?v=20260520-acat-feedback-picker')); })
     .catch(function(){})
+    .then(function(){ return enrichCancellationContext(); })
+    .catch(function(){})
     .then(function(){
+      applyCancellationContextUi();
       refreshCancellationFromClientField();
     })
     .catch(function(e){ console.warn('[cancellation] roster load', e); });
