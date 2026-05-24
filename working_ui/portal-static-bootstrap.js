@@ -60,4 +60,52 @@
     } catch (_) {}
     return "staff";
   };
+
+  window.PORTAL_CONTEXT_ROW_ICONS = {
+    participant:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+    service:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
+    date:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+    time:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+  };
+
+  window.portalRenderSessionContextCard = function portalRenderSessionContextCard(
+    cardEl,
+    rows
+  ) {
+    if (!cardEl) return;
+    cardEl.replaceChildren();
+    var grid = document.createElement("div");
+    grid.className = "portal-session-context__grid";
+    var icons = window.PORTAL_CONTEXT_ROW_ICONS || {};
+    (rows || []).forEach(function (item) {
+      if (!item || !item.value) return;
+      var r = document.createElement("div");
+      r.className = "portal-session-context__row";
+      var l = document.createElement("span");
+      l.className = "portal-session-context__label";
+      var iconKey = item.icon || "";
+      if (iconKey && icons[iconKey]) {
+        var ic = document.createElement("span");
+        ic.className = "portal-session-context__icon";
+        ic.setAttribute("aria-hidden", "true");
+        ic.innerHTML = icons[iconKey];
+        l.appendChild(ic);
+      }
+      var lt = document.createElement("span");
+      lt.className = "portal-session-context__label-text";
+      lt.textContent = String(item.label || "");
+      l.appendChild(lt);
+      var v = document.createElement("span");
+      v.className = "portal-session-context__value";
+      v.textContent = String(item.value || "");
+      r.appendChild(l);
+      r.appendChild(v);
+      grid.appendChild(r);
+    });
+    cardEl.appendChild(grid);
+  };
 })();

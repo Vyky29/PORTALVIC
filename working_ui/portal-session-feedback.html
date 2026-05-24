@@ -6,8 +6,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Session Feedback (Staff)</title>
-<link rel="stylesheet" href="/portal-shared-js/portal_page_logo.css?v=20260517-portal-logos" />
-<link rel="stylesheet" href="/portal-shared-js/portal_page_logo_themes.css?v=20260517-portal-logos" />
+<link rel="stylesheet" href="/portal-shared-js/portal_page_logo.css?v=20260519-form-context" />
+<link rel="stylesheet" href="/portal-shared-js/portal_page_logo_themes.css?v=20260519-form-context" />
 <style>
 :root{
   /* Corporate gold — warmer yellow field tints (logo pulse / #ffcc33 family) */
@@ -904,7 +904,7 @@ button{
 </style>
 </head>
 
-<body class="portal-logo-feedback">
+<body class="portal-logo-feedback portal-form-no-logo">
 <div class="wrap">
   <div class="cancel-logo-wrap-outer">
     <div class="cancel-logo-wrap">
@@ -937,40 +937,43 @@ button{
 
   <div id="portalSessionContextCard" class="portal-session-context" hidden aria-live="polite"></div>
 
+  <div id="feedbackSessionDateShell" class="field field--session-details field--session-details-shell portal-session-date-after-context">
+    <div class="session-date-field" role="group" aria-labelledby="fbSessionDateLabelText">
+      <div class="session-date-label-row" id="fbSessionDateLabelRow">
+        <span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
+        <span id="fbSessionDateLabelText">Session date <span class="req">*</span></span>
+      </div>
+      <div class="session-date-display-row">
+        <div
+          id="fbSessionDateDisplay"
+          class="session-date-display"
+          tabindex="0"
+          role="button"
+          aria-live="polite"
+          aria-label="Session date. Double-tap to change the day."
+        >—</div>
+        <span class="session-date-display__hint">Double-tap the date to change the day only</span>
+      </div>
+      <input type="hidden" id="fbSessionDate" name="fbSessionDate" value="" required />
+      <div id="fbSessionDateEditPanel" class="session-date-edit-panel" hidden>
+        <p class="session-date-edit-warning" id="fbSessionDateEditWarning"><strong>Attention:</strong> An earlier day counts as late feedback. Submit on the same day after your shift — <span class="session-date-deadline-em">latest 9pm</span>.</p>
+        <div class="session-date-picker-row" role="group" aria-label="Pick session day">
+          <input type="date" id="fbSessionDatePicker" class="session-date-picker-input" autocomplete="off" />
+        </div>
+        <div class="session-date-edit-actions">
+          <button type="button" class="btnGhost" id="fbSessionDateApplyBtn">Apply</button>
+          <button type="button" class="btnGhost" id="fbSessionDateCancelBtn">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="card">
     <!-- Submit writes to Supabase when the staff session is signed in; optional JSON webhook if configured. -->
     <form id="feedbackForm" novalidate>
       <div class="grid">
 
         <div id="sessionDetailsEditable" class="field field--session-details field--session-details-shell">
-          <div class="session-date-field" role="group" aria-labelledby="fbSessionDateLabelText">
-            <div class="session-date-label-row" id="fbSessionDateLabelRow">
-              <span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
-              <span id="fbSessionDateLabelText">Session date <span class="req">*</span></span>
-            </div>
-            <div class="session-date-display-row">
-              <div
-                id="fbSessionDateDisplay"
-                class="session-date-display"
-                tabindex="0"
-                role="button"
-                aria-live="polite"
-                aria-label="Session date. Double-tap to change the day."
-              >—</div>
-              <span class="session-date-display__hint">Double-tap the date to change the day only</span>
-            </div>
-            <input type="hidden" id="fbSessionDate" name="fbSessionDate" value="" required />
-            <div id="fbSessionDateEditPanel" class="session-date-edit-panel" hidden>
-              <p class="session-date-edit-warning" id="fbSessionDateEditWarning"><strong>Attention:</strong> An earlier day counts as late feedback. Submit on the same day after your shift — <span class="session-date-deadline-em">latest 9pm</span>.</p>
-              <div class="session-date-picker-row" role="group" aria-label="Pick session day">
-                <input type="date" id="fbSessionDatePicker" class="session-date-picker-input" autocomplete="off" />
-              </div>
-              <div class="session-date-edit-actions">
-                <button type="button" class="btnGhost" id="fbSessionDateApplyBtn">Apply</button>
-                <button type="button" class="btnGhost" id="fbSessionDateCancelBtn">Cancel</button>
-              </div>
-            </div>
-          </div>
           <label for="fbParticipantName"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span> Participant name <span class="req">*</span></label>
           <div class="participant-field-wrap">
             <input id="fbParticipantName" name="fbParticipantName" type="text" maxlength="200" required autocomplete="off" spellcheck="false" placeholder="Type the first letters — only names starting with that text appear" aria-autocomplete="list" aria-controls="fbParticipantSuggest" aria-expanded="false" />
@@ -1169,31 +1172,15 @@ button{
       return;
     }
     portalSessionContextCard.hidden = false;
-    portalSessionContextCard.replaceChildren();
-    const title = document.createElement("p");
-    title.className = "portal-session-context__title";
-    title.textContent = "Session";
-    portalSessionContextCard.appendChild(title);
-    const grid = document.createElement("div");
-    grid.className = "portal-session-context__grid";
-    function row(label, value){
-      const r = document.createElement("div");
-      r.className = "portal-session-context__row";
-      const l = document.createElement("span");
-      l.className = "portal-session-context__label";
-      l.textContent = label;
-      const v = document.createElement("span");
-      v.className = "portal-session-context__value";
-      v.textContent = value;
-      r.appendChild(l);
-      r.appendChild(v);
-      grid.appendChild(r);
+    const rows = [
+      { label: "Participant", value: name, icon: "participant" },
+      { label: "Service", value: svc, icon: "service" },
+      { label: "Date", value: formatSessionDateLong(iso) || iso, icon: "date" },
+    ];
+    if (time) rows.push({ label: "Time", value: time, icon: "time" });
+    if (typeof portalRenderSessionContextCard === "function") {
+      portalRenderSessionContextCard(portalSessionContextCard, rows);
     }
-    row("Participant", name);
-    row("Service", svc);
-    row("Date", formatSessionDateLong(iso) || iso);
-    if(time) row("Time", time);
-    portalSessionContextCard.appendChild(grid);
   }
 
   function feedbackContextLockedFromDashboard(){

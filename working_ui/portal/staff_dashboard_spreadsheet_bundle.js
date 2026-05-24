@@ -13912,7 +13912,17 @@
     "area": "Teaching Pool",
     "time_slot": "6 to 6.30",
     "venue": "Acton"
-  }
+  },
+  {"client_name": "Tevlon", "day": "Monday", "instructors": "VICTOR", "service": "Bespoke Programme", "area": "Hub Room", "time_slot": "10 to 11", "venue": "SwimFarm", "session_date": "2026-05-11"},
+  {"client_name": "Tevlon", "day": "Tuesday", "instructors": "VICTOR", "service": "Bespoke Programme", "area": "Hub Room", "time_slot": "10 to 11", "venue": "SwimFarm", "session_date": "2026-05-12"},
+  {"client_name": "Tevlon", "day": "Wednesday", "instructors": "VICTOR", "service": "Bespoke Programme", "area": "Hub Room", "time_slot": "10 to 11", "venue": "SwimFarm", "session_date": "2026-05-13"},
+  {"client_name": "Tevlon", "day": "Thursday", "instructors": "VICTOR", "service": "Bespoke Programme", "area": "Hub Room", "time_slot": "10 to 11", "venue": "SwimFarm", "session_date": "2026-05-14"},
+  {"client_name": "Tevlon", "day": "Friday", "instructors": "VICTOR", "service": "Bespoke Programme", "area": "Hub Room", "time_slot": "10 to 11", "venue": "SwimFarm", "session_date": "2026-05-15"},
+  {"client_name": "Tevlon", "day": "Monday", "instructors": "VICTOR", "service": "Bespoke Programme", "area": "Hub Room", "time_slot": "10 to 11", "venue": "SwimFarm", "session_date": "2026-05-18"},
+  {"client_name": "Tevlon", "day": "Tuesday", "instructors": "VICTOR", "service": "Bespoke Programme", "area": "Hub Room", "time_slot": "10 to 11", "venue": "SwimFarm", "session_date": "2026-05-19"},
+  {"client_name": "Tevlon", "day": "Wednesday", "instructors": "VICTOR", "service": "Bespoke Programme", "area": "Hub Room", "time_slot": "10 to 11", "venue": "SwimFarm", "session_date": "2026-05-20"},
+  {"client_name": "Tevlon", "day": "Thursday", "instructors": "VICTOR", "service": "Bespoke Programme", "area": "Hub Room", "time_slot": "10 to 11", "venue": "SwimFarm", "session_date": "2026-05-21"},
+  {"client_name": "Tevlon", "day": "Friday", "instructors": "VICTOR", "service": "Bespoke Programme", "area": "Hub Room", "time_slot": "10 to 11", "venue": "SwimFarm", "session_date": "2026-05-22"}
 ]
 };
 })();

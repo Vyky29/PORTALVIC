@@ -5,8 +5,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Incident Report</title>
-<link rel="stylesheet" href="/portal-shared-js/portal_page_logo.css?v=20260517-portal-logos" />
-<link rel="stylesheet" href="/portal-shared-js/portal_page_logo_themes.css?v=20260517-portal-logos" />
+<link rel="stylesheet" href="/portal-shared-js/portal_page_logo.css?v=20260519-form-context" />
+<link rel="stylesheet" href="/portal-shared-js/portal_page_logo_themes.css?v=20260519-form-context" />
 <style>
 :root{
   /* Red theme — misma estructura que session feedback (acento + profundo + fondos suaves) */
@@ -418,7 +418,7 @@ button{
 }
 </style>
 </head>
-<body class="portal-logo-incident">
+<body class="portal-logo-incident portal-form-no-logo">
 <div class="wrap">
   <div class="cancel-logo-wrap-outer">
     <div class="cancel-logo-wrap">
@@ -475,7 +475,10 @@ button{
 
       <input type="hidden" id="serviceManualHidden" value="" aria-hidden="true" />
 
-      <div class="field field--session-details field--incident-session-shell">
+      <div id="incidentParticipantFields" class="incident-form-panel">
+      <div id="portalSessionContextCard" class="portal-session-context" hidden aria-live="polite"></div>
+
+      <div class="field field--session-details field--incident-session-shell portal-session-date-after-context" id="incidentSessionDateShell">
         <p class="incident-same-day-note">Report incidents on the day they happen so we can match your shift.</p>
         <div class="session-date-field" role="group" aria-labelledby="incSessionDateLabelText">
           <div class="session-date-label-row" id="incSessionDateLabelRow">
@@ -506,10 +509,6 @@ button{
           </div>
         </div>
       </div>
-
-
-      <div id="incidentParticipantFields" class="incident-form-panel">
-      <div id="portalSessionContextCard" class="portal-session-context" hidden aria-live="polite"></div>
       <div class="grid">
 
         <div id="incidentDetailsEditable">
@@ -1318,31 +1317,15 @@ button{
       return;
     }
     card.hidden = false;
-    card.replaceChildren();
-    const title = document.createElement("p");
-    title.className = "portal-session-context__title";
-    title.textContent = "Session";
-    card.appendChild(title);
-    const grid = document.createElement("div");
-    grid.className = "portal-session-context__grid";
-    function row(label, value){
-      const r = document.createElement("div");
-      r.className = "portal-session-context__row";
-      const l = document.createElement("span");
-      l.className = "portal-session-context__label";
-      l.textContent = label;
-      const v = document.createElement("span");
-      v.className = "portal-session-context__value";
-      v.textContent = value;
-      r.appendChild(l);
-      r.appendChild(v);
-      grid.appendChild(r);
+    const rows = [
+      { label: "Participant", value: name, icon: "participant" },
+      { label: "Service", value: svc, icon: "service" },
+      { label: "Date", value: formatIncidentSessionDateLong(iso) || iso, icon: "date" },
+    ];
+    if (time) rows.push({ label: "Session time", value: time, icon: "time" });
+    if (typeof portalRenderSessionContextCard === "function") {
+      portalRenderSessionContextCard(card, rows);
     }
-    row("Participant", name);
-    row("Service", svc);
-    row("Date", formatIncidentSessionDateLong(iso) || iso);
-    if(time) row("Session time", time);
-    card.appendChild(grid);
     if(editable) editable.hidden = true;
   }
 

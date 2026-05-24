@@ -8,8 +8,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Cancellation Report - clubSENsational</title>
-<link rel="stylesheet" href="/portal-shared-js/portal_page_logo.css?v=20260517-portal-logos" />
-<link rel="stylesheet" href="/portal-shared-js/portal_page_logo_themes.css?v=20260517-portal-logos" />
+<link rel="stylesheet" href="/portal-shared-js/portal_page_logo.css?v=20260519-form-context" />
+<link rel="stylesheet" href="/portal-shared-js/portal_page_logo_themes.css?v=20260519-form-context" />
 <style>
 :root{
   --slate:#64748b;
@@ -304,7 +304,7 @@ button{
 }
 </style>
 </head>
-<body class="portal-logo-cancellation">
+<body class="portal-logo-cancellation portal-form-no-logo">
 <div class="wrap">
   <div class="cancel-logo-wrap-outer">
     <div class="cancel-logo-wrap">
@@ -337,6 +337,34 @@ button{
 
   <div id="portalSessionContextCard" class="portal-session-context" hidden aria-live="polite"></div>
 
+  <div id="cancellationSessionDateShell" class="field portal-session-date-after-context">
+    <div class="session-date-label-row">
+      <span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
+      <span>Session date</span>
+    </div>
+    <div class="session-date-display-row">
+      <div
+        class="session-date-display"
+        id="cancelSessionDateDisplay"
+        tabindex="0"
+        role="button"
+        aria-label="Session date. Double-tap to change the day."
+      ></div>
+      <span class="session-date-display__hint">Double-tap the date to change the day only</span>
+    </div>
+    <input type="hidden" id="cancelSessionDateIso" value="" />
+    <div id="cancelSessionDateEditPanel" class="session-date-edit-panel" hidden>
+      <p class="session-date-edit-warning" id="cancelSessionDateEditWarning"><strong>Attention:</strong> Cancellations should be reported on the <strong>same day</strong> when possible. Picking an earlier day in this month counts as a late report — <span class="session-date-deadline-em">submit today after your shift</span>.</p>
+      <div class="session-date-picker-row">
+        <input type="date" id="cancelSessionDatePicker" class="session-date-picker-input" autocomplete="off" />
+      </div>
+      <div class="session-date-edit-actions">
+        <button type="button" class="btnGhost" id="cancelSessionDateApplyBtn">Apply</button>
+        <button type="button" class="btnGhost" id="cancelSessionDateCancelBtn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <div class="card">
     <form id="cancellationForm" novalidate>
       <div class="grid">
@@ -352,34 +380,6 @@ button{
           <select id="cancellationService" name="cancellationService" required>
             <option value="">Select a service</option>
           </select>
-        </div>
-
-        <div class="field">
-          <div class="session-date-label-row">
-            <span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
-            <span>Session date</span>
-          </div>
-          <div class="session-date-display-row">
-            <div
-              class="session-date-display"
-              id="cancelSessionDateDisplay"
-              tabindex="0"
-              role="button"
-              aria-label="Session date. Double-tap to change the day."
-            ></div>
-            <span class="session-date-display__hint">Double-tap the date to change the day only</span>
-          </div>
-          <input type="hidden" id="cancelSessionDateIso" value="" />
-          <div id="cancelSessionDateEditPanel" class="session-date-edit-panel" hidden>
-            <p class="session-date-edit-warning" id="cancelSessionDateEditWarning"><strong>Attention:</strong> Cancellations should be reported on the <strong>same day</strong> when possible. Picking an earlier day in this month counts as a late report — <span class="session-date-deadline-em">submit today after your shift</span>.</p>
-            <div class="session-date-picker-row">
-              <input type="date" id="cancelSessionDatePicker" class="session-date-picker-input" autocomplete="off" />
-            </div>
-            <div class="session-date-edit-actions">
-              <button type="button" class="btnGhost" id="cancelSessionDateApplyBtn">Apply</button>
-              <button type="button" class="btnGhost" id="cancelSessionDateCancelBtn">Cancel</button>
-            </div>
-          </div>
         </div>
 
         </div>
@@ -1022,31 +1022,15 @@ button{
       return;
     }
     card.hidden = false;
-    card.replaceChildren();
-    var title = document.createElement('p');
-    title.className = 'portal-session-context__title';
-    title.textContent = 'Session';
-    card.appendChild(title);
-    var grid = document.createElement('div');
-    grid.className = 'portal-session-context__grid';
-    function row(label, value){
-      var r = document.createElement('div');
-      r.className = 'portal-session-context__row';
-      var l = document.createElement('span');
-      l.className = 'portal-session-context__label';
-      l.textContent = label;
-      var v = document.createElement('span');
-      v.className = 'portal-session-context__value';
-      v.textContent = value;
-      r.appendChild(l);
-      r.appendChild(v);
-      grid.appendChild(r);
+    var rows = [
+      { label: 'Client', value: name, icon: 'participant' },
+      { label: 'Service', value: svc, icon: 'service' },
+      { label: 'Date', value: formatDisplayFromIso(iso), icon: 'date' }
+    ];
+    if (time) rows.push({ label: 'Time', value: time, icon: 'time' });
+    if (typeof portalRenderSessionContextCard === 'function') {
+      portalRenderSessionContextCard(card, rows);
     }
-    row('Client', name);
-    row('Service', svc);
-    row('Date', formatDisplayFromIso(iso));
-    if (time) row('Time', time);
-    card.appendChild(grid);
     if (editable) editable.hidden = true;
   }
 
