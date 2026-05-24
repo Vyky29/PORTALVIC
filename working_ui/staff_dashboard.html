@@ -6495,6 +6495,7 @@
   <script src="/portal/session_feedback_portal_data.js?v=20260522"></script>
   <script src="/portal/session_feedback_status_portal_data.js?v=20260522"></script>
   <script src="/portal/staff_portal_feedback_bridge.js?v=20260522-week-staff"></script>
+  <script src="/portal-shared-js/portal_late_submission.js?v=20260520"></script>
   <script src="/portal/staff_dashboard_portal_roster_source.js"></script>
   <script src="/portal/clients_info_embed.js"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js"></script>
@@ -15347,13 +15348,17 @@
       closeSheet();
       renderToday();
     }
-    function handleClientQuickFeedback(){
+    async function handleClientQuickFeedback(){
       const item = currentOpenClientItem;
       if(!item || !item.sessionKey) return;
       if(typeof portalTermSessionJudgementAllowed === 'function' && !portalTermSessionJudgementAllowed()) return;
       if(item.actionsDisabled) return;
       const rec = getSessionReviewRecord(item) || {};
       if(rec.feedbackDone || rec.absent || rec.cancelled) return;
+      if(typeof portalEnsureLateSubmissionAllowed === 'function'){
+        const gate = await portalEnsureLateSubmissionAllowed(item, 'feedback');
+        if(!gate.allowed) return;
+      }
       var feedbackReturnHref = '';
       try{
         const ret = new URL(portalFeedbackDashboardReturnUrl());
@@ -15393,6 +15398,9 @@
       if(tlabFb) params.set('time', tlabFb);
       params.set('from_portal', portalFormFromPortalParam());
       params.set('origin', portalGetReviewFlowOrigin());
+      if(typeof portalIsPastSessionDateIso === 'function' && portalIsPastSessionDateIso(skRawFbNav)){
+        params.set('lateApproved', '1');
+      }
       if(feedbackReturnHref) params.set('return', feedbackReturnHref);
       const finalUrl = base.split('#')[0].split('?')[0] + '?' + params.toString();
       window.location.assign(finalUrl);
@@ -15425,17 +15433,25 @@
       runAfterDemoQuickGate(executeClientQuickAbsence);
     }
 
-    function executeClientQuickIncident(){
+    async function executeClientQuickIncident(){
       const item = currentOpenClientItem;
       if(!item || !item.sessionKey) return;
       if(item.actionsDisabled) return;
       const rec = getSessionReviewRecord(item) || {};
       if(rec.absent || rec.cancelled) return;
       if(!portalStaffIsDemoAccount() && !isSessionEndedForFeedback(item)) return;
+      if(typeof portalEnsureLateSubmissionAllowed === 'function'){
+        const gate = await portalEnsureLateSubmissionAllowed(item, 'incident');
+        if(!gate.allowed) return;
+      }
       const base = buildIncidentReportPageUrl(item);
       let finalUrl = base;
       try{
-        finalUrl = new URL(base, window.location.href).href;
+        const u = new URL(base, window.location.href);
+        if(typeof portalIsPastSessionDateIso === 'function' && portalIsPastSessionDateIso(portalSessionIsoFromKey(item.sessionKey))){
+          u.searchParams.set('lateApproved', '1');
+        }
+        finalUrl = u.href;
       }catch(_){
         finalUrl = 'portal-incident.html';
       }
@@ -15451,7 +15467,7 @@
       runAfterDemoQuickGate(executeClientQuickIncident);
     }
 
-    function executeClientQuickCancellation(itemOverride){
+    async function executeClientQuickCancellation(itemOverride){
       const item = itemOverride || currentOpenClientItem;
       if(!item || !item.sessionKey) return;
       if(item.actionsDisabled) return;
@@ -15459,10 +15475,18 @@
       const rec = getSessionReviewRecord(item) || {};
       if(rec.absent || rec.cancelled) return;
       if(!portalStaffIsDemoAccount() && !isSessionEndedForFeedback(item)) return;
+      if(typeof portalEnsureLateSubmissionAllowed === 'function'){
+        const gate = await portalEnsureLateSubmissionAllowed(item, 'cancellation');
+        if(!gate.allowed) return;
+      }
       const base = buildCancellationReportPageUrl(item);
       let finalUrl = base;
       try{
-        finalUrl = new URL(base, window.location.href).href;
+        const u = new URL(base, window.location.href);
+        if(typeof portalIsPastSessionDateIso === 'function' && portalIsPastSessionDateIso(portalSessionIsoFromKey(item.sessionKey))){
+          u.searchParams.set('lateApproved', '1');
+        }
+        finalUrl = u.href;
       }catch(_){
         finalUrl = 'cancellation.html';
       }

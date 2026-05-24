@@ -4,7 +4,8 @@
 <!--
   cancellation.html — Cancellation report (staff/lead portal session + Supabase).
 -->
-<script src="/portal-static-bootstrap.js?v=20260522-cancellation-date"></script>
+<script src="/portal-static-bootstrap.js?v=20260520-late-context"></script>
+<script src="/portal-shared-js/portal_late_submission.js?v=20260520"></script>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Cancellation Report - clubSENsational</title>
@@ -336,6 +337,7 @@ button{
   </div>
 
   <div id="portalSessionContextCard" class="portal-session-context" hidden aria-live="polite"></div>
+  <div id="portalLateApprovalBanner" class="portal-late-approval-banner" hidden aria-live="polite"></div>
 
   <div id="cancellationSessionDateShell" class="field portal-session-date-after-context">
     <div class="session-date-label-row">
@@ -1023,7 +1025,7 @@ button{
     }
     card.hidden = false;
     var rows = [
-      { label: 'Client', value: name, icon: 'participant' },
+      { label: 'Participant', value: name, icon: 'participant' },
       { label: 'Service', value: svc, icon: 'service' },
       { label: 'Date', value: formatDisplayFromIso(iso), icon: 'date' }
     ];
@@ -1032,6 +1034,27 @@ button{
       portalRenderSessionContextCard(card, rows);
     }
     if (editable) editable.hidden = true;
+    var dateShell = document.getElementById('cancellationSessionDateShell');
+    if (dateShell) dateShell.hidden = !!(name && svc && iso);
+    syncCancellationLateApprovalBanner(iso);
+  }
+
+  async function syncCancellationLateApprovalBanner(iso){
+    var banner = document.getElementById('portalLateApprovalBanner');
+    if (!banner || typeof portalIsPastSessionDateIso !== 'function') return;
+    if (!portalIsPastSessionDateIso(iso)) {
+      banner.hidden = true;
+      banner.textContent = '';
+      return;
+    }
+    var sk = clean(context.portalSessionKey);
+    var approved = typeof portalFormLateSubmissionApproved === 'function'
+      ? await portalFormLateSubmissionApproved(sk, 'cancellation')
+      : false;
+    banner.hidden = false;
+    banner.textContent = approved
+      ? 'Admin approved late cancellation for this session. The report will use the original session date (' + (formatDisplayFromIso(iso) || iso) + '), not today.'
+      : 'This session is from a previous day. You need admin approval before you can submit a late cancellation. Request it from your dashboard first.';
   }
 
   async function enrichCancellationContext(){
@@ -1213,6 +1236,16 @@ button{
       form.reportValidity();
       return;
     }
+    var submitIso = /^\d{4}-\d{2}-\d{2}$/.test(clean(context.sessionDate)) ? clean(context.sessionDate) : sessionDateIsoForSubmit();
+    if (typeof portalIsPastSessionDateIso === 'function' && portalIsPastSessionDateIso(submitIso)) {
+      var okLate = typeof portalFormLateSubmissionApproved === 'function'
+        ? await portalFormLateSubmissionApproved(clean(context.portalSessionKey), 'cancellation')
+        : false;
+      if (!okLate) {
+        alert('Admin approval is required for late cancellation on this session date. Request it from your dashboard first.');
+        return;
+      }
+    }
     submitBtn.disabled = true;
     btnLabel.innerHTML = '<span class="spinner"></span> Submitting...';
     setMessage('', '');
@@ -1228,7 +1261,7 @@ button{
       var row = {
         client_id: clean(context.clientId) || slugifyClient(clientName) || null,
         client_name: clientName,
-        session_date: sessionDateIsoForSubmit(),
+        session_date: submitIso,
         session_time: clean(context.sessionTime) || null,
         cancellation_timing: clean(fd.get('cancellationTiming')),
         service: serviceVal,

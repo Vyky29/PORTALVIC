@@ -85,25 +85,25 @@
       if (!item || !item.value) return;
       var r = document.createElement("div");
       r.className = "portal-session-context__row";
-      var l = document.createElement("span");
-      l.className = "portal-session-context__label";
+      var line = document.createElement("p");
+      line.className = "portal-session-context__line";
       var iconKey = item.icon || "";
       if (iconKey && icons[iconKey]) {
         var ic = document.createElement("span");
         ic.className = "portal-session-context__icon";
         ic.setAttribute("aria-hidden", "true");
         ic.innerHTML = icons[iconKey];
-        l.appendChild(ic);
+        line.appendChild(ic);
       }
       var lt = document.createElement("span");
       lt.className = "portal-session-context__label-text";
-      lt.textContent = String(item.label || "");
-      l.appendChild(lt);
+      lt.textContent = String(item.label || "").replace(/\s*$/,"") + ": ";
+      line.appendChild(lt);
       var v = document.createElement("span");
       v.className = "portal-session-context__value";
       v.textContent = String(item.value || "");
-      r.appendChild(l);
-      r.appendChild(v);
+      line.appendChild(v);
+      r.appendChild(line);
       grid.appendChild(r);
     });
     cardEl.appendChild(grid);

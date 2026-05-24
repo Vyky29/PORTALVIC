@@ -63,12 +63,17 @@ body.portal-form-no-logo .title-row {
   gap: 8px;
 }
 .portal-session-context__row {
-  display: grid;
-  grid-template-columns: minmax(72px, 28%) 1fr;
-  gap: 8px 12px;
-  align-items: start;
+  margin: 0;
+  min-width: 0;
+}
+.portal-session-context__line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 6px;
+  margin: 0;
   font-size: 14px;
-  line-height: 1.45;
+  line-height: 1.5;
   min-width: 0;
 }
 .portal-session-context__value {
@@ -78,9 +83,13 @@ body.portal-form-no-logo .title-row {
   word-break: break-word;
   min-width: 0;
 }
-@media (max-width: 520px) {
-  .portal-session-context__row {
-    grid-template-columns: 1fr;
-    gap: 2px;
-  }
+.portal-late-approval-banner {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(139, 21, 56, 0.25);
+  background: #fff8f9;
+  color: #4a2030;
+  font-size: 13px;
+  line-height: 1.45;
 }
