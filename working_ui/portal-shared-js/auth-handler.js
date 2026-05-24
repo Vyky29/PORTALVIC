@@ -120,6 +120,9 @@ function portalPublishedLeadUrl() {
 function portalPublishedLoginUrl() {
   return portalPublishedPageUrl("login.html", "PORTAL_LOGIN_REDIRECT_URL");
 }
+function portalPublishedChooseUrl() {
+  return portalPublishedPageUrl("portal_choose.html", "PORTAL_CHOOSE_URL");
+}
 
 /** Username → effective role for post-login routing. */
 const PORTAL_USERNAME_ROLE_OVERRIDES = {
@@ -182,6 +185,21 @@ export function portalCanAccessAdminDashboard(profile, authEmail) {
   return false;
 }
 
+/**
+ * Admin / CEO / manager: pick Staff, Lead, or Admin after sign-in.
+ * @param {Record<string, unknown> | null | undefined} profile
+ * @param {string} authEmail
+ */
+export function portalShouldShowPortalChooser(profile, authEmail) {
+  if (!profile) return false;
+  const eff = portalInferEffectiveRole(profile, authEmail);
+  const staff = String(profile.staff_role || "").toLowerCase();
+  if (portalCanAccessAdminDashboard(profile, authEmail)) return true;
+  if (eff === "ceo" || eff === "admin") return true;
+  if (staff === "manager" || staff === "admin") return true;
+  return false;
+}
+
 function portalOriginBase(host) {
   return String(host || "")
     .toLowerCase()
@@ -223,6 +241,36 @@ function isLoginPage() {
   return Boolean(document.getElementById("login-form"));
 }
 
+function resolveDashboardRedirect(route) {
+  if (!route || typeof route !== "string") return null;
+  const t = route.trim();
+  if (!t) return null;
+  if (/^https?:\/\//i.test(t)) return t;
+  try {
+    return new URL(t, window.location.href).href;
+  } catch {
+    return t;
+  }
+}
+
+function inferDashboardRoute(profile, authEmail) {
+  const effectiveRole = portalInferEffectiveRole(profile, authEmail);
+  const fromWorkingUi =
+    typeof window !== "undefined" &&
+    window.location.pathname.toLowerCase().includes("/working_ui/");
+  if (fromWorkingUi) {
+    if (effectiveRole === "ceo") return "ceo_dashboard.html";
+    if (portalCanAccessAdminDashboard(profile, authEmail)) return "admin_dashboard.html";
+    if (effectiveRole === "lead") return "lead_dashboard.html";
+    return "staff_dashboard.html";
+  }
+  const ceoUrl = portalPublishedPageUrl("ceo_dashboard.html", "PORTAL_CEO_DASHBOARD_URL");
+  if (effectiveRole === "ceo") return ceoUrl;
+  if (portalCanAccessAdminDashboard(profile, authEmail)) return portalPublishedAdminUrl();
+  if (effectiveRole === "lead") return portalPublishedLeadUrl();
+  return portalPublishedStaffUrl();
+}
+
 function bindLogin() {
   if (!isSupabaseConfigured()) return;
 
@@ -259,34 +307,6 @@ function bindLogin() {
     return fallback;
   }
 
-  function resolveDashboardRedirect(route) {
-    if (!route || typeof route !== "string") return null;
-    const t = route.trim();
-    if (!t) return null;
-    if (/^https?:\/\//i.test(t)) return t;
-    try {
-      return new URL(t, window.location.href).href;
-    } catch {
-      return t;
-    }
-  }
-
-  function inferDashboardRoute(profile, authEmail) {
-    const effectiveRole = portalInferEffectiveRole(profile, authEmail);
-    const fromWorkingUi = window.location.pathname.toLowerCase().includes("/working_ui/");
-    if (fromWorkingUi) {
-      if (effectiveRole === "ceo") return "ceo_dashboard.html";
-      if (portalCanAccessAdminDashboard(profile, authEmail)) return "admin_dashboard.html";
-      if (effectiveRole === "lead") return "lead_dashboard.html";
-      return "staff_dashboard.html";
-    }
-    const ceoUrl = portalPublishedPageUrl("ceo_dashboard.html", "PORTAL_CEO_DASHBOARD_URL");
-    if (effectiveRole === "ceo") return ceoUrl;
-    if (portalCanAccessAdminDashboard(profile, authEmail)) return portalPublishedAdminUrl();
-    if (effectiveRole === "lead") return portalPublishedLeadUrl();
-    return portalPublishedStaffUrl();
-  }
-
   async function fetchStaffProfile(supabase, userId) {
     const selectCols =
       "id, username, full_name, app_role, staff_role, dashboard_route, auth_session_generation";
@@ -314,7 +334,12 @@ function bindLogin() {
     // - local working_ui uses local html routes
     // - published web uses fixed public routes by role
     // This avoids stale/broken dashboard_route values in DB causing 404.
-    let url = resolveDashboardRedirect(inferDashboardRoute(profile, authEmail));
+    const nextUrl = readSafePostLoginRedirect();
+    let url = nextUrl
+      ? nextUrl
+      : portalShouldShowPortalChooser(profile, authEmail)
+        ? portalPublishedChooseUrl()
+        : resolveDashboardRedirect(inferDashboardRoute(profile, authEmail));
     // On published deploy, avoid stale DB dashboard_route paths that 404.
     if (!url && fromWorkingUi) {
       const profileRoute = String(profile.dashboard_route || "").trim();
@@ -423,9 +448,9 @@ export async function bootstrapDashboardSupabase(_opts) {
   const page = String((_opts && _opts.page) || "").trim().toLowerCase();
   const loginRedirect = portalPublishedLoginUrl();
 
-  /** Only Admin + Lead shells enforce login + staff_profiles (Staff/CEO stay permissive like legacy demo: name + shared test password). */
+  /** Only Admin + Lead + portal chooser enforce login + staff_profiles. */
   function portalDashboardRequiresStrictGate(page) {
-    return page === "admin" || page === "lead";
+    return page === "admin" || page === "lead" || page === "choose";
   }
 
   if (!isSupabaseConfigured()) {
@@ -529,6 +554,18 @@ export async function bootstrapDashboardSupabase(_opts) {
             : eff === "lead"
               ? portalPublishedLeadUrl()
               : portalPublishedStaffUrl();
+        try {
+          window.location.replace(dest);
+        } catch {
+          window.location.href = dest;
+        }
+        return;
+      }
+    }
+
+    if (page === "choose") {
+      if (!portalShouldShowPortalChooser(profile, authEmailGate)) {
+        const dest = resolveDashboardRedirect(inferDashboardRoute(profile, authEmailGate));
         try {
           window.location.replace(dest);
         } catch {

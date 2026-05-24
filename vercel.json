@@ -2,6 +2,7 @@
   "outputDirectory": "working_ui",
   "rewrites": [
     { "source": "/", "destination": "/login.html" },
+    { "source": "/portal-choose", "destination": "/portal_choose.html" },
     { "source": "/session_feedback.html", "destination": "/portal-session-feedback.html" },
     { "source": "/incident_report.html", "destination": "/portal-incident.html" },
     { "source": "/cancellation_report.html", "destination": "/cancellation.html" },

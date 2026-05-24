@@ -352,12 +352,12 @@
         </div>
         <h1 class="login-portal-text">Portal</h1>
       </header>
-      <p class="login-sub">Sign in to continue</p>
+      <p class="login-sub">Sign in to continue. Staff use your first name; admins and CEOs use your <strong>email</strong>.</p>
 
       <form id="login-form" novalidate method="post" action="">
         <div class="field">
-          <label for="name">Name</label>
-          <input id="name" name="name" type="text" autocomplete="username" placeholder="Your name" />
+          <label for="name">Name or email</label>
+          <input id="name" name="name" type="text" autocomplete="username" placeholder="Victor or victor@clubsensational.org" />
         </div>
         <div class="field">
           <label for="password">Password</label>
@@ -451,7 +451,9 @@
       window.PORTAL_STAFF_DASHBOARD_URL = "staff_dashboard.html";
       window.PORTAL_ADMIN_DASHBOARD_URL = "admin_dashboard.html";
       window.PORTAL_LEAD_DASHBOARD_URL = "lead_dashboard.html";
-      var portalJsVer = "20260511-l0-auth";
+      window.PORTAL_CHOOSE_URL = "portal_choose.html";
+      window.PORTAL_AUTO_REDIRECT_FROM_LOGIN = true;
+      var portalJsVer = "20260522-portal-choose";
       /* Auth ES module: load from portal next to this page (same origin avoids CORS issues). */
       var portalJsBase = new URL("portal/", window.location.href).href;
       var s = document.createElement("script");
