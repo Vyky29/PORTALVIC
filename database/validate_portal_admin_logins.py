@@ -24,10 +24,7 @@ DEFAULT_EMAILS = [
     "javier@clubsensational.org",
     "javier@clbusensational.org",
     "sevitha@clubsensational.org",
-    "stf013@staff.import.pending",
-    "stf018@staff.import.pending",
-    "stf017@staff.import.pending",
-    "stf019@staff.import.pending",
+    "info@clubsensational.org",
 ]
 
 

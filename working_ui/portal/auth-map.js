@@ -1,8 +1,7 @@
 /**
  * Username → email for Supabase signInWithPassword (resolveDemoEmail for auth-handler).
  *
- * Source: SPREADSHEETS/Staff Timetable (PORTAL).xlsx + generated machine exports in database/.
- * Optional overlay: staff_login_map.json next to auth-handler.js (merged on first login; see mergeStaffLoginEmailMap).
+ * CEOs / admin use @clubsensational.org only (no stf013/017/018/019 placeholders).
  */
 
 /** @type {Record<string, string>} */
@@ -20,20 +19,21 @@ export const STAFF_USERNAME_TO_EMAIL = {
   Javier: "stf010@staff.import.pending",
   Aurora: "stf011@staff.import.pending",
   Berta: "stf012@staff.import.pending",
-  Victor: "stf013@staff.import.pending",
+  Victor: "victor@clubsensational.org",
   Carlos: "stf014@staff.import.pending",
   Alex: "stf015@staff.import.pending",
-  Javi: "stf017@staff.import.pending",
-  Raul: "stf018@staff.import.pending",
-  Sevitha: "stf019@staff.import.pending",
+  Javi: "javier@clubsensational.org",
+  Raul: "raul@clubsensational.org",
+  Sevitha: "sevitha@clubsensational.org",
   Demo: "stf020@staff.import.pending",
   demo: "stf020@staff.import.pending",
   "victor@clubsensational.org": "victor@clubsensational.org",
   "raul@clubsensational.org": "raul@clubsensational.org",
   "javier@clubsensational.org": "javier@clubsensational.org",
   "javi@clubsensational.org": "javi@clubsensational.org",
-  "javier@clbusensational.org": "javier@clbusensational.org",
+  "javier@clbusensational.org": "javier@clubsensational.org",
   "sevitha@clubsensational.org": "sevitha@clubsensational.org",
+  "info@clubsensational.org": "info@clubsensational.org",
 };
 
 /** Corporate login emails → staff key (redirects / role overrides). */
@@ -44,7 +44,16 @@ export const PORTAL_CORPORATE_AUTH_EMAIL_TO_STAFF_KEY = {
   "javi@clubsensational.org": "javi",
   "javier@clbusensational.org": "javi",
   "sevitha@clubsensational.org": "sevitha",
+  "info@clubsensational.org": "sevitha",
 };
+
+/** Placeholder emails retired for these four — do not use for sign-in. */
+export const PORTAL_RETIRED_PLACEHOLDER_EMAILS = new Set([
+  "stf013@staff.import.pending",
+  "stf017@staff.import.pending",
+  "stf018@staff.import.pending",
+  "stf019@staff.import.pending",
+]);
 
 function normalizeMatchKey(value) {
   return String(value || "")
@@ -83,16 +92,8 @@ export function mergeStaffLoginEmailMap(extra) {
 /** Shown when the name field does not match any staff in STAFF_USERNAME_TO_EMAIL. */
 export const PORTAL_LOGIN_UNKNOWN_NAME_HELP =
   "Name or email not recognised. Staff: use your first name as on the timetable. " +
-  "Admins and CEOs: use your full email (e.g. victor@clubsensational.org). " +
-  "Examples: Sandra, Roberto, Victor, Javi, Raul, Sevitha, Demo.";
+  "Victor, Javi, Raúl: your @clubsensational.org email. Sevitha: sevitha@ or info@clubsensational.org.";
 
-/**
- * Login field = staff first name only OR full name (Nombre Apellido…).
- * Password is always the Supabase password for the mapped email.
- *
- * @param {string} rawUsername
- * @returns {string | null}
- */
 function isPlausibleLoginEmail(value) {
   const s = String(value || "").trim();
   if (!s.includes("@")) return false;
@@ -105,6 +106,7 @@ export function resolveDemoEmail(rawUsername) {
 
   const lower = trimmed.toLowerCase();
   if (isPlausibleLoginEmail(trimmed)) {
+    if (PORTAL_RETIRED_PLACEHOLDER_EMAILS.has(lower)) return null;
     if (STAFF_USERNAME_TO_EMAIL[trimmed]) return STAFF_USERNAME_TO_EMAIL[trimmed];
     if (STAFF_USERNAME_TO_EMAIL[lower]) return STAFF_USERNAME_TO_EMAIL[lower];
     if (PORTAL_CORPORATE_AUTH_EMAIL_TO_STAFF_KEY[lower]) return lower;
@@ -115,6 +117,7 @@ export function resolveDemoEmail(rawUsername) {
   }
 
   if (/^stf\d{3}@staff\.import\.pending$/.test(lower)) {
+    if (PORTAL_RETIRED_PLACEHOLDER_EMAILS.has(lower)) return null;
     for (const email of Object.values(STAFF_USERNAME_TO_EMAIL)) {
       if (String(email).toLowerCase() === lower) return lower;
     }
@@ -142,8 +145,7 @@ export function resolveDemoEmail(rawUsername) {
 }
 
 /**
- * Maps auth.users.email (e.g. stf012@…) to a stable staff key for redirects (berta, roberto, …).
- * Use when staff_profiles.username/full_name do not match our override keys.
+ * Maps auth.users.email to a stable staff key for redirects.
  *
  * @param {string | null | undefined} authEmail
  * @returns {string}

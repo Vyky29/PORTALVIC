@@ -3,7 +3,7 @@
 -- Sign-in uses auth.users.email. The browser maps victor@clubsensational.org etc. in auth-map.js;
 -- each address must exist in Authentication with the password you set there.
 --
--- Placeholder staff emails (stf013@…) still work until you switch the Auth user email below.
+-- Executives use @clubsensational.org only; run 20260522140000_portal_corporate_email_only_executives.sql to remove stf013/017/018/019.
 
 -- -----------------------------------------------------------------------------
 -- A) Status: corporate email vs placeholder vs profile link
