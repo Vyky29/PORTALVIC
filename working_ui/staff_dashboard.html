@@ -823,8 +823,8 @@
     .portal-dm-thread-meta{font-size:12px;color:var(--muted)}
     #internalChatMessages.portal-dm-msgs-col,
     #internalChatSheet .portal-dm-msgs-scroll.portal-dm-msgs-col{
-      display:flex;flex-direction:column;gap:4px;align-items:stretch;width:100%;min-width:0;
-      background:#e5e7eb;
+      display:flex;flex-direction:column;gap:6px;align-items:stretch;width:100%;min-width:0;
+      background:linear-gradient(180deg,var(--blueSoft) 0%,#f4f8fb 100%);
     }
     .portal-dm-msg-row{display:flex;width:100%;min-width:0;padding:2px 6px;box-sizing:border-box}
     .portal-dm-msg-row--mine{justify-content:flex-end}
@@ -834,22 +834,25 @@
       font-size:14px;line-height:1.45;overflow-wrap:break-word;word-break:break-word;
     }
     .portal-dm-msg--mine{
-      background:#d9fdd3;color:#111b21;border-radius:18px 18px 4px 18px;
-      box-shadow:0 1px 1px rgba(11,20,26,.08);
+      background:linear-gradient(180deg,var(--blue) 0%,#2676a0 100%);
+      color:#fff;border-radius:14px 14px 4px 14px;border:1px solid rgba(45,132,179,.35);
+      box-shadow:0 2px 8px rgba(45,132,179,.22);
     }
     .portal-dm-msg--them,
     .portal-dm-msg--them-read{
-      background:#fff;color:#111b21;border-radius:18px 18px 18px 4px;border:0;
-      box-shadow:0 1px 1px rgba(11,20,26,.1);
+      background:linear-gradient(180deg,#fff4df 0%,var(--goldSoft) 100%);
+      color:var(--ink);border-radius:14px 14px 14px 4px;border:1px solid rgba(244,183,64,.45);
+      box-shadow:0 2px 6px rgba(249,191,46,.18);
     }
     .portal-dm-msg--them-unread{
-      background:linear-gradient(180deg,var(--blue) 0%,#2676a0 100%);
-      color:#fff;border-radius:18px 18px 18px 4px;border:0;
-      box-shadow:0 2px 8px rgba(45,132,179,.35);
+      background:linear-gradient(180deg,var(--sen-gold) 0%,var(--gold) 100%);
+      color:var(--ink);border-radius:14px 14px 14px 4px;border:1px solid rgba(217,119,6,.35);
+      box-shadow:0 2px 10px rgba(249,191,46,.32);
     }
-    .portal-dm-msg--them-unread .portal-dm-msg-by{color:rgba(255,255,255,.88)}
-    .portal-dm-msg--them-unread .portal-dm-msg-time{color:rgba(255,255,255,.72)}
-    .portal-dm-msg--mine .portal-dm-msg-time{color:rgba(17,27,33,.55);text-align:right}
+    .portal-dm-msg--them-unread .portal-dm-msg-by{color:rgba(23,50,71,.82)}
+    .portal-dm-msg--them-unread .portal-dm-msg-time{color:rgba(23,50,71,.62)}
+    .portal-dm-msg--mine .portal-dm-msg-by{color:rgba(255,255,255,.88)}
+    .portal-dm-msg--mine .portal-dm-msg-time{color:rgba(255,255,255,.72);text-align:right}
     .portal-dm-msg-time{font-size:11px;color:var(--muted);margin-top:4px;display:block}
     .portal-dm-msg-by{font-size:11px;font-weight:600;line-height:1.2;margin:0 0 4px;min-width:0;overflow-wrap:break-word;color:#667781}
     .portal-dm-msg--them .portal-dm-msg-by{color:#667781}
@@ -1465,8 +1468,33 @@
       margin-top:14px;margin-bottom:14px;padding:12px 14px;border:1px solid rgba(0,0,0,.1);border-radius:12px;background:var(--surface);min-width:0;
     }
     .portal-dm-office-compose-host .sel,.portal-dm-office-compose-host .txa{max-width:100%;min-width:0;box-sizing:border-box}
-    /* Internal chat: messages scroll above in-flow compose; reserve dock height on thread column */
-    #internalChatSheet.sheet--fullscreen.sheet--mobile-frame{
+    /* Internal chat: full-screen immersive — no dock; corporate blue/gold bubbles */
+    body.portal-internal-chat-open .dock-bar{display:none !important}
+    body.portal-internal-chat-open{--fab-reserved-bottom:max(8px, env(safe-area-inset-bottom, 0px))}
+    #internalChatSheet.sheet--portal-chat-immersive{
+      z-index:140;
+      inset:0;
+      max-height:100dvh;
+      max-height:100vh;
+      height:100dvh;
+      height:100vh;
+      border-radius:0;
+      padding-bottom:0;
+    }
+    #internalChatSheet.sheet--portal-chat-immersive .sheet-handle{display:none}
+    #internalChatSheet.sheet--portal-chat-immersive .portal-dm-sheet-head{
+      display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:8px;
+      padding-right:max(12px, env(safe-area-inset-right, 0px));
+    }
+    #internalChatSheet.sheet--portal-chat-immersive .portal-dm-sheet-head h3{flex:1;min-width:0;margin:0}
+    #internalChatSheet.sheet--portal-chat-immersive .portal-dm-sheet-head .portal-dm-close-btn{
+      flex-shrink:0;width:auto;max-width:100%;padding:10px 16px;margin:0;
+    }
+    #internalChatSheet.sheet--portal-chat-immersive .portal-dm-sheet-head p{
+      flex:1 1 100%;min-width:0;margin:0;
+    }
+    #internalChatSheet.sheet--fullscreen.sheet--mobile-frame,
+    #internalChatSheet.sheet--portal-chat-immersive.sheet--fullscreen.sheet--mobile-frame{
       max-height:100dvh;
       max-height:100vh;
       padding-bottom:0;
@@ -1493,7 +1521,7 @@
       flex-direction:column;
       overflow:hidden;
       gap:8px;
-      padding-bottom:var(--fab-reserved-bottom);
+      padding-bottom:max(8px, env(safe-area-inset-bottom, 0px));
       box-sizing:border-box;
     }
     #internalChatSheet .portal-dm-msgs-scroll{
@@ -1507,7 +1535,7 @@
       padding:6px 2px 20px;
       margin-bottom:0;
       scroll-padding-bottom:20px;
-      background:#e5e7eb;
+      background:linear-gradient(180deg,var(--blueSoft) 0%,#f4f8fb 100%);
     }
     #internalChatSheet .portal-dm-compose-bar{
       position:relative;
@@ -6653,10 +6681,11 @@
     </div>
   </section>
 
-  <section class="sheet sheet--fullscreen sheet--mobile-frame" id="internalChatSheet" aria-labelledby="internalChatTitle">
-    <div class="sheet-head">
+  <section class="sheet sheet--fullscreen sheet--mobile-frame sheet--portal-chat-immersive" id="internalChatSheet" aria-labelledby="internalChatTitle">
+    <div class="sheet-head portal-dm-sheet-head">
       <div class="sheet-handle"></div>
       <h3 id="internalChatTitle">Internal chat</h3>
+      <button type="button" class="portal-dm-btn portal-dm-btn--ghost portal-dm-close-btn" id="internalChatCloseBtn">Close</button>
       <p id="internalChatSheetSub" style="min-width:0;overflow-wrap:break-word;margin:0">Private messages with people you have a thread with.</p>
     </div>
     <div class="sheet-body portal-dm-wrap portal-dm-sheet-body" style="min-width:0">
@@ -11274,6 +11303,36 @@
     function portalInternalChatOfficeRestricted(){
       return portalStaffActsAsWorkerMessenger();
     }
+    function syncPortalInternalChatImmersive(){
+      var sh = document.getElementById('internalChatSheet');
+      var open = !!(sh && sh.classList.contains('open'));
+      document.body.classList.toggle('portal-internal-chat-open', open);
+      if(sh) sh.classList.toggle('sheet--portal-chat-immersive', open);
+    }
+    function portalCloseInternalChatReturnToAlertsMenu(){
+      try{
+        window.__PORTAL_INTERNAL_CHAT_UI = window.__PORTAL_INTERNAL_CHAT_UI || {};
+        window.__PORTAL_INTERNAL_CHAT_UI.threadId = null;
+        window.__PORTAL_INTERNAL_CHAT_UI.skipResetThreadOnNextSheetOpen = false;
+      }catch(_ui){}
+      portalQuickMenuEntryMode = 'logo-lite';
+      if(typeof portalApplyQuickMenuEntryMode === 'function') portalApplyQuickMenuEntryMode();
+      if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
+      setTimeout(function(){
+        if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
+        else if(typeof renderNotices === 'function') renderNotices();
+        if(typeof openSheet === 'function') openSheet('menuSheet');
+      }, 0);
+    }
+    function portalBindInternalChatCloseControls(){
+      var closeBtn = document.getElementById('internalChatCloseBtn');
+      if(closeBtn && !closeBtn.dataset.portalDmBound){
+        closeBtn.dataset.portalDmBound = '1';
+        closeBtn.addEventListener('click', function(){
+          portalCloseInternalChatReturnToAlertsMenu();
+        });
+      }
+    }
     function portalDmPeerDisplayLabel(peerId, profRow){
       var pid = String(peerId || '').trim();
       var row = profRow || {};
@@ -11438,6 +11497,8 @@
       }
     }
     window.portalOpenInternalChatFromHeaderQuickMenu = function portalOpenInternalChatFromHeaderQuickMenu(){
+      portalQuickMenuEntryMode = 'logo-lite';
+      if(typeof portalApplyQuickMenuEntryMode === 'function') portalApplyQuickMenuEntryMode();
       try{
         if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
       }catch(_cl){}
@@ -11658,6 +11719,7 @@
       return a === me ? b : a;
     }
     window.portalRenderInternalChatSheet = async function portalRenderInternalChatSheet(){
+      portalBindInternalChatCloseControls();
       var listHost = document.getElementById("internalChatListWrap");
       var threadWrap = document.getElementById("internalChatThreadWrap");
       var errTop = document.getElementById("internalChatTopErr");
@@ -11888,12 +11950,7 @@
           backBtn.dataset.portalDmBound = "1";
           backBtn.addEventListener("click", function(){
             if(portalInternalChatOfficeRestricted()){
-              try{
-                if(typeof closeSheet === "function") closeSheet({ bypassAnnouncementLock: true });
-              }catch(_c){}
-              setTimeout(function(){
-                if(typeof openSheet === "function") openSheet("alertsNotificationsSheet");
-              }, 0);
+              portalCloseInternalChatReturnToAlertsMenu();
               return;
             }
             window.__PORTAL_INTERNAL_CHAT_UI.threadId = null;
@@ -11901,7 +11958,8 @@
             void window.portalRenderInternalChatSheet();
           });
         }
-        backBtn.textContent = portalInternalChatOfficeRestricted() ? "Close chat" : "Back to threads";
+        backBtn.textContent = portalInternalChatOfficeRestricted() ? "Close" : "Back to threads";
+        backBtn.hidden = !!portalInternalChatOfficeRestricted();
       }
       var sendBtn = document.getElementById("internalChatSendBtn");
       if(sendBtn && !sendBtn.dataset.portalDmBound){
@@ -15678,10 +15736,12 @@
           }
           window.__PORTAL_INTERNAL_CHAT_UI.skipResetThreadOnNextSheetOpen = false;
         }catch(_icc){}
+        portalBindInternalChatCloseControls();
         if(typeof window.portalRenderInternalChatSheet === 'function'){
           void window.portalRenderInternalChatSheet();
         }
       }
+      syncPortalInternalChatImmersive();
       syncDockNavContext();
       if(typeof syncPortalIosAlertPreviewStack === 'function') syncPortalIosAlertPreviewStack();
     }
@@ -15712,6 +15772,7 @@
       currentSheet = null;
       const tn = document.getElementById('trainingNotice');
       if(tn) tn.classList.remove('notice--selected');
+      syncPortalInternalChatImmersive();
       syncDockNavContext();
       if(typeof syncPortalIosAlertPreviewStack === 'function') syncPortalIosAlertPreviewStack();
       return true;
@@ -16173,6 +16234,9 @@
     if(clientQuickCancellation) clientQuickCancellation.addEventListener('click', handleClientQuickCancellation);
 
     function handleDashboardDockClick(){
+      if(document.getElementById('internalChatSheet')?.classList.contains('open')){
+        return;
+      }
       const demoOv = document.getElementById('demoQuickActionOverlay');
       if(demoOv && !demoOv.hidden){
         hideDemoQuickOverlay();
@@ -16219,6 +16283,10 @@
       }
     }
     function handleQuickMenuDockClick(mode){
+      if(document.getElementById('internalChatSheet')?.classList.contains('open')){
+        portalCloseInternalChatReturnToAlertsMenu();
+        return;
+      }
       portalQuickMenuEntryMode = (mode === 'logo-lite') ? 'logo-lite' : 'full';
       const demoOv = document.getElementById('demoQuickActionOverlay');
       if(demoOv && !demoOv.hidden){
@@ -16306,6 +16374,9 @@
     }, true);
 
     function onBackdropPointerClose(){
+      if(document.getElementById('internalChatSheet')?.classList.contains('open')){
+        return;
+      }
       if(typeof portalAnnouncementLockActive === 'function' && portalAnnouncementLockActive()){
         if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
         return;
@@ -16320,6 +16391,10 @@
     if(backdropEl) backdropEl.addEventListener('click', onBackdropPointerClose);
     document.addEventListener('keydown', e => {
       if(e.key !== 'Escape') return;
+      if(document.getElementById('internalChatSheet')?.classList.contains('open')){
+        e.preventDefault();
+        return;
+      }
       if(typeof portalAnnouncementLockActive === 'function' && portalAnnouncementLockActive()){
         e.preventDefault();
         if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
