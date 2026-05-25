@@ -596,6 +596,34 @@
     }
     .avatar-wrap.avatar-wrap--portal-alert-both .avatar-orbit-layer circle:nth-child(2n+1){fill:#dc2626 !important}
     .avatar-wrap.avatar-wrap--portal-alert-both .avatar-orbit-layer circle:nth-child(2n){fill:#f97316 !important}
+    .avatar-wrap.avatar-wrap--portal-orbit-idle .avatar-orbit{opacity:0;visibility:hidden}
+    .avatar-wrap.avatar-wrap--portal-orbit-idle .avatar-aura{opacity:.55}
+    .avatar-wrap.avatar-wrap--portal-alert-chat .avatar{
+      animation:avatar-outline-alert-blue 1.12s ease-in-out infinite;
+    }
+    .avatar-wrap.avatar-wrap--portal-alert-chat .avatar-orbit-layer circle{fill:var(--blue) !important}
+    .avatar-wrap.avatar-wrap--portal-alert-chat .avatar-orbit-layer circle:nth-child(2n){fill:#4f8fca !important}
+    .avatar-wrap.avatar-wrap--portal-alert-chat .avatar-orbit-layer circle:nth-child(3n){fill:#1d4f8f !important}
+    @keyframes avatar-outline-alert-blue{
+      0%,100%{box-shadow:0 0 0 1px rgba(45,132,179,.38),0 12px 30px rgba(45,132,179,.34)}
+      50%{box-shadow:0 0 0 2px rgba(45,132,179,.68),0 16px 38px rgba(45,132,179,.48)}
+    }
+    .avatar-wrap.avatar-wrap--portal-alert-chat-ann .avatar-orbit-layer circle:nth-child(2n+1){fill:#dc2626 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-chat-ann .avatar-orbit-layer circle:nth-child(2n){fill:var(--blue) !important}
+    .avatar-wrap.avatar-wrap--portal-alert-chat-ann .avatar{animation:avatar-outline-alert-mix 1.15s ease-in-out infinite}
+    .avatar-wrap.avatar-wrap--portal-alert-chat-fb .avatar-orbit-layer circle:nth-child(2n+1){fill:var(--blue) !important}
+    .avatar-wrap.avatar-wrap--portal-alert-chat-fb .avatar-orbit-layer circle:nth-child(2n){fill:#f97316 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-chat-fb .avatar{animation:avatar-outline-alert-blue 1.12s ease-in-out infinite}
+    .avatar-wrap.avatar-wrap--portal-alert-triple .avatar-orbit-layer circle:nth-child(3n+1){fill:var(--blue) !important}
+    .avatar-wrap.avatar-wrap--portal-alert-triple .avatar-orbit-layer circle:nth-child(3n+2){fill:#dc2626 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-triple .avatar-orbit-layer circle:nth-child(3n){fill:#f97316 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-triple .avatar{animation:avatar-outline-alert-triple 1.35s ease-in-out infinite}
+    @keyframes avatar-outline-alert-triple{
+      0%{box-shadow:0 0 0 1px rgba(45,132,179,.42),0 12px 30px rgba(45,132,179,.32)}
+      33%{box-shadow:0 0 0 2px rgba(220,38,38,.58),0 16px 36px rgba(220,38,38,.4)}
+      66%{box-shadow:0 0 0 2px rgba(249,115,22,.58),0 16px 36px rgba(249,115,22,.38)}
+      100%{box-shadow:0 0 0 1px rgba(45,132,179,.42),0 12px 30px rgba(45,132,179,.32)}
+    }
 
     .avatar img{width:100%;height:100%;object-fit:cover;display:block}
     .avatar-initials{
@@ -804,10 +832,18 @@
       background:#d9fdd3;color:#111b21;border-radius:18px 18px 4px 18px;
       box-shadow:0 1px 1px rgba(11,20,26,.08);
     }
-    .portal-dm-msg--them{
+    .portal-dm-msg--them,
+    .portal-dm-msg--them-read{
       background:#fff;color:#111b21;border-radius:18px 18px 18px 4px;border:0;
       box-shadow:0 1px 1px rgba(11,20,26,.1);
     }
+    .portal-dm-msg--them-unread{
+      background:linear-gradient(180deg,var(--blue) 0%,#2676a0 100%);
+      color:#fff;border-radius:18px 18px 18px 4px;border:0;
+      box-shadow:0 2px 8px rgba(45,132,179,.35);
+    }
+    .portal-dm-msg--them-unread .portal-dm-msg-by{color:rgba(255,255,255,.88)}
+    .portal-dm-msg--them-unread .portal-dm-msg-time{color:rgba(255,255,255,.72)}
     .portal-dm-msg--mine .portal-dm-msg-time{color:rgba(17,27,33,.55);text-align:right}
     .portal-dm-msg-time{font-size:11px;color:var(--muted);margin-top:4px;display:block}
     .portal-dm-msg-by{font-size:11px;font-weight:600;line-height:1.2;margin:0 0 4px;min-width:0;overflow-wrap:break-word;color:#667781}
@@ -1452,8 +1488,8 @@
       flex-direction:column;
       overflow:hidden;
       gap:8px;
-      --portal-dm-compose-reserve:min(200px, 38vh);
-      padding-bottom:0;
+      padding-bottom:var(--fab-reserved-bottom);
+      box-sizing:border-box;
     }
     #internalChatSheet .portal-dm-msgs-scroll{
       flex:1;
@@ -1463,27 +1499,28 @@
       -webkit-overflow-scrolling:touch;
       border:1px solid rgba(0,0,0,.08);
       border-radius:12px;
-      padding:6px 2px;
-      padding-bottom:12px;
-      margin-bottom:var(--portal-dm-compose-reserve);
+      padding:6px 2px 20px;
+      margin-bottom:0;
+      scroll-padding-bottom:20px;
       background:#e5e7eb;
     }
     #internalChatSheet .portal-dm-compose-bar{
-      position:fixed;
-      left:max(12px, env(safe-area-inset-left, 0px));
-      right:max(12px, env(safe-area-inset-right, 0px));
-      width:auto;
-      max-width:none;
+      position:relative;
+      left:auto;
+      right:auto;
+      width:100%;
+      max-width:100%;
       transform:none;
-      bottom:var(--fab-reserved-bottom);
+      bottom:auto;
+      flex-shrink:0;
       box-sizing:border-box;
-      z-index:110;
+      z-index:1;
       display:flex;
       flex-direction:column;
       align-items:stretch;
       gap:8px;
       margin:0;
-      padding:10px 0 8px;
+      padding:10px 0 6px;
       background:#fff;
       border-top:1px solid rgba(0,0,0,.08);
       box-shadow:0 -4px 14px rgba(11,18,32,.06);
@@ -5895,7 +5932,45 @@
       background-color:#fff !important;
       background-image:none !important;
     }
+    .dock-nav-item--dashboard .dock-logo-stage{
+      position:relative;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      width:100%;
+      min-width:0;
+      min-height:0;
+    }
+    .dock-nav-item--dashboard .dock-logo-orbit{
+      position:absolute;
+      inset:-10px -6px;
+      pointer-events:none;
+      opacity:0;
+      visibility:hidden;
+      transition:opacity .2s ease;
+    }
+    .dock-nav-item--dashboard.dock-nav-item--portal-attention .dock-logo-orbit{
+      opacity:1;
+      visibility:visible;
+    }
+    .dock-nav-item--dashboard .dock-logo-orbit-svg{
+      width:100%;
+      height:100%;
+      display:block;
+      overflow:visible;
+    }
+    .dock-nav-item--dashboard .dock-logo-orbit-layer{
+      transform-box:fill-box;
+      transform-origin:50% 50%;
+      animation:dock-logo-orbit-cw 16s linear infinite;
+    }
+    @keyframes dock-logo-orbit-cw{
+      from{transform:rotate(0deg)}
+      to{transform:rotate(360deg)}
+    }
     .dock-nav-item--dashboard .dock-nav-item__logo{
+      position:relative;
+      z-index:1;
       display:block;
       width:auto;
       max-width:100%;
@@ -5907,6 +5982,58 @@
       pointer-events:none;
       background:#fff;
       border-radius:10px;
+    }
+    .dock-nav-item--dashboard.dock-nav-item--portal-attention-chat .dock-logo-orbit-layer circle{fill:var(--blue) !important}
+    .dock-nav-item--dashboard.dock-nav-item--portal-attention-chat .dock-logo-orbit-layer circle:nth-child(2n){fill:#4f8fca !important}
+    .dock-nav-item--dashboard.dock-nav-item--portal-attention-announcement .dock-logo-orbit-layer circle{fill:#dc2626 !important}
+    .dock-nav-item--dashboard.dock-nav-item--portal-attention-announcement .dock-logo-orbit-layer circle:nth-child(2n){fill:#ef4444 !important}
+    .dock-nav-item--dashboard.dock-nav-item--portal-attention-feedback .dock-logo-orbit-layer circle{fill:#f97316 !important}
+    .dock-nav-item--dashboard.dock-nav-item--portal-attention-feedback .dock-logo-orbit-layer circle:nth-child(2n){fill:#ea580c !important}
+    .dock-nav-item--dashboard.dock-nav-item--portal-attention-chat-ann .dock-logo-orbit-layer circle:nth-child(2n+1){fill:var(--blue) !important}
+    .dock-nav-item--dashboard.dock-nav-item--portal-attention-chat-ann .dock-logo-orbit-layer circle:nth-child(2n){fill:#dc2626 !important}
+    .dock-nav-item--dashboard.dock-nav-item--portal-attention-chat-fb .dock-logo-orbit-layer circle:nth-child(2n+1){fill:var(--blue) !important}
+    .dock-nav-item--dashboard.dock-nav-item--portal-attention-chat-fb .dock-logo-orbit-layer circle:nth-child(2n){fill:#f97316 !important}
+    .dock-nav-item--dashboard.dock-nav-item--portal-attention-ann-fb .dock-logo-orbit-layer circle:nth-child(2n+1){fill:#dc2626 !important}
+    .dock-nav-item--dashboard.dock-nav-item--portal-attention-ann-fb .dock-logo-orbit-layer circle:nth-child(2n){fill:#f97316 !important}
+    .dock-nav-item--dashboard.dock-nav-item--portal-attention-triple .dock-logo-orbit-layer circle:nth-child(3n+1){fill:var(--blue) !important}
+    .dock-nav-item--dashboard.dock-nav-item--portal-attention-triple .dock-logo-orbit-layer circle:nth-child(3n+2){fill:#dc2626 !important}
+    .dock-nav-item--dashboard.dock-nav-item--portal-attention-triple .dock-logo-orbit-layer circle:nth-child(3n){fill:#f97316 !important}
+    .dock-nav-item--dashboard.dock-nav-item--portal-attention-chat .dock-nav-item__logo,
+    .dock-nav-item--dashboard.dock-nav-item--portal-attention-chat-ann .dock-nav-item__logo,
+    .dock-nav-item--dashboard.dock-nav-item--portal-attention-chat-fb .dock-nav-item__logo,
+    .dock-nav-item--dashboard.dock-nav-item--portal-attention-triple .dock-nav-item__logo{
+      animation:dock-logo-pulse-blue 1.12s ease-in-out infinite;
+    }
+    .dock-nav-item--dashboard.dock-nav-item--portal-attention-announcement .dock-nav-item__logo,
+    .dock-nav-item--dashboard.dock-nav-item--portal-attention-ann-fb .dock-nav-item__logo{
+      animation:dock-logo-pulse-red 1.1s ease-in-out infinite;
+    }
+    .dock-nav-item--dashboard.dock-nav-item--portal-attention-feedback .dock-nav-item__logo{
+      animation:dock-logo-pulse-orange 1.12s ease-in-out infinite;
+    }
+    .dock-nav-item--dashboard.dock-nav-item--portal-attention-triple .dock-nav-item__logo{
+      animation:dock-logo-pulse-triple 1.35s ease-in-out infinite;
+    }
+    @keyframes dock-logo-pulse-blue{
+      0%,100%{filter:drop-shadow(0 0 0 rgba(45,132,179,0))}
+      50%{filter:drop-shadow(0 0 10px rgba(45,132,179,.55))}
+    }
+    @keyframes dock-logo-pulse-red{
+      0%,100%{filter:drop-shadow(0 0 0 rgba(220,38,38,0))}
+      50%{filter:drop-shadow(0 0 10px rgba(220,38,38,.5))}
+    }
+    @keyframes dock-logo-pulse-orange{
+      0%,100%{filter:drop-shadow(0 0 0 rgba(249,115,22,0))}
+      50%{filter:drop-shadow(0 0 10px rgba(249,115,22,.5))}
+    }
+    @keyframes dock-logo-pulse-triple{
+      0%,100%{filter:drop-shadow(0 0 8px rgba(45,132,179,.35))}
+      33%{filter:drop-shadow(0 0 10px rgba(220,38,38,.45))}
+      66%{filter:drop-shadow(0 0 10px rgba(249,115,22,.45))}
+    }
+    @media (prefers-reduced-motion: reduce){
+      .dock-nav-item--dashboard .dock-logo-orbit-layer{animation:none}
+      .dock-nav-item--dashboard[class*="portal-attention"] .dock-nav-item__logo{animation:none}
     }
     /* My clients + Quick menu: icon and title always visible (column) */
     .dock-nav-item--clients{
@@ -6199,7 +6326,7 @@
           </button>
         </div>
         <div class="topbar-center">
-          <div class="avatar-wrap" id="avatarWrap">
+          <div class="avatar-wrap avatar-wrap--portal-orbit-idle" id="avatarWrap">
             <div class="avatar-aura" aria-hidden="true"></div>
             <div class="avatar avatar--brand-default" id="avatar">
               <img src="/portal/F-02-1.png" alt="" loading="eager" decoding="async" referrerpolicy="no-referrer-when-downgrade" onerror="typeof portalBrandLogoOnError==='function'?portalBrandLogoOnError(this):(this.onerror=null,this.src='/portal/portal_crest.svg')" />
@@ -6300,7 +6427,23 @@
         <span class="dock-nav-item__label">My participants</span>
       </button>
       <button type="button" class="dock-nav-item dock-nav-item--dashboard" id="dockDashboardTile" aria-label="Home — return to dashboard and close open panels">
-        <img class="dock-nav-item__logo" src="/FOOTERLOGO.png?v=20260523" alt="clubSENsational" width="120" height="48" decoding="async" referrerpolicy="no-referrer-when-downgrade" onerror="this.onerror=null;this.src='/portal/F-02-1.png'" />
+        <span class="dock-logo-stage">
+          <span class="dock-logo-orbit" aria-hidden="true">
+            <svg class="dock-logo-orbit-svg" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
+              <g transform="translate(100,100)">
+                <g class="dock-logo-orbit-layer">
+                  <circle cx="0" cy="-72" r="7" fill="var(--blue)"/>
+                  <circle cx="62.35" cy="-36" r="6" fill="#2d84b3"/>
+                  <circle cx="62.35" cy="36" r="6" fill="#4f8fca"/>
+                  <circle cx="0" cy="72" r="7" fill="#1d4f8f"/>
+                  <circle cx="-62.35" cy="36" r="6" fill="#7fb3dc"/>
+                  <circle cx="-62.35" cy="-36" r="6" fill="#123b70"/>
+                </g>
+              </g>
+            </svg>
+          </span>
+          <img class="dock-nav-item__logo" src="/FOOTERLOGO.png?v=20260523" alt="clubSENsational" width="120" height="48" decoding="async" referrerpolicy="no-referrer-when-downgrade" onerror="this.onerror=null;this.src='/portal/F-02-1.png'" />
+        </span>
       </button>
       <button type="button" class="dock-nav-item dock-nav-item--quick-menu" id="dockQuickMenuTile" aria-label="Open quick menu">
         <span class="dock-nav-item__icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1" fill="none"/><rect x="14" y="3" width="7" height="7" rx="1" fill="none"/><rect x="3" y="14" width="7" height="7" rx="1" fill="none"/><rect x="14" y="14" width="7" height="7" rx="1" fill="none"/></svg></span>
@@ -10777,12 +10920,22 @@
       }
       if(!client || !me){
         btn.classList.remove('menu-btn--portal-ic--unread');
+        window.__PORTAL_STAFF_DM_HAS_UNREAD__ = false;
+        if(typeof syncPortalHeaderAlertChrome === 'function'){
+          syncPortalHeaderAlertChrome(typeof portalReminderState === 'function' ? portalReminderState() : null);
+        }
+        if(typeof syncDockQuickMenuAttention === 'function') syncDockQuickMenuAttention();
         return;
       }
       try{
         var tr = await client.from('portal_staff_dm_threads').select('id,participant_a,participant_b').or('participant_a.eq.' + me + ',participant_b.eq.' + me).limit(120);
         if(tr.error || !tr.data || !tr.data.length){
           btn.classList.remove('menu-btn--portal-ic--unread');
+          window.__PORTAL_STAFF_DM_HAS_UNREAD__ = false;
+          if(typeof syncPortalHeaderAlertChrome === 'function'){
+            syncPortalHeaderAlertChrome(typeof portalReminderState === 'function' ? portalReminderState() : null);
+          }
+          if(typeof syncDockQuickMenuAttention === 'function') syncDockQuickMenuAttention();
           return;
         }
         var trows = tr.data || [];
@@ -10815,6 +10968,11 @@
           .filter(Boolean);
         if(!ids.length){
           btn.classList.remove('menu-btn--portal-ic--unread');
+          window.__PORTAL_STAFF_DM_HAS_UNREAD__ = false;
+          if(typeof syncPortalHeaderAlertChrome === 'function'){
+            syncPortalHeaderAlertChrome(typeof portalReminderState === 'function' ? portalReminderState() : null);
+          }
+          if(typeof syncDockQuickMenuAttention === 'function') syncDockQuickMenuAttention();
           return;
         }
         var msgRes = await client.from('portal_staff_dm_messages').select('thread_id,author_id,created_at').in('thread_id', ids).order('created_at', { ascending: false }).limit(500);
@@ -10843,7 +11001,13 @@
           }
         });
         btn.classList.toggle('menu-btn--portal-ic--unread', any);
+        window.__PORTAL_STAFF_DM_HAS_UNREAD__ = any;
+        if(typeof syncPortalHeaderAlertChrome === 'function'){
+          syncPortalHeaderAlertChrome(typeof portalReminderState === 'function' ? portalReminderState() : null);
+        }
+        if(typeof syncDockQuickMenuAttention === 'function') syncDockQuickMenuAttention();
       }catch(_e){
+        window.__PORTAL_STAFF_DM_HAS_UNREAD__ = false;
       }
     };
     function portalRenderQuickMenuInternalChatTile(){
@@ -11249,6 +11413,7 @@
       var errB = document.getElementById("internalChatErr");
       if(errB) errB.textContent = "";
       if(msgsBox) msgsBox.innerHTML = "<p class=\"muted\" style=\"margin:0\">Loading…</p>";
+      var seenAtOpen = portalStaffDmGetSeenIso(tid);
       var mres = await client.from("portal_staff_dm_messages").select("id,author_id,body,created_at").eq("thread_id", tid).order("created_at", { ascending: true });
       if(mres.error){
         if(msgsBox) msgsBox.innerHTML = "<p class=\"muted\" style=\"color:var(--danger);min-width:0;overflow-wrap:break-word\">"+escapeHtml(String(mres.error.message || mres.error))+"</p>";
@@ -11257,6 +11422,11 @@
       if(!msgsBox) return;
       msgsBox.innerHTML = "";
       var arr = mres.data || [];
+      function portalDmIncomingIsUnread(m){
+        if(!m || String(m.author_id || "").toLowerCase() === String(me || "").toLowerCase()) return false;
+        if(!seenAtOpen) return true;
+        try{ return new Date(m.created_at) > new Date(seenAtOpen); }catch(_d){ return true; }
+      }
       if(!arr.length){
         var ph = document.createElement("p");
         ph.className = "muted";
@@ -11285,7 +11455,8 @@
           var row = document.createElement("div");
           row.className = "portal-dm-msg-row " + (mine ? "portal-dm-msg-row--mine" : "portal-dm-msg-row--them");
           var div = document.createElement("div");
-          div.className = "portal-dm-msg " + (mine ? "portal-dm-msg--mine" : "portal-dm-msg--them");
+          var themUnread = !mine && portalDmIncomingIsUnread(m);
+          div.className = "portal-dm-msg " + (mine ? "portal-dm-msg--mine" : (themUnread ? "portal-dm-msg--them portal-dm-msg--them-unread" : "portal-dm-msg--them portal-dm-msg--them-read"));
           var tline = "";
           try{ if(m.created_at) tline = new Date(m.created_at).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }); }catch(_t){}
           var chip = portalDmInternalMsgAuthorChip(mine, authorBy[aid] || {});
@@ -11296,7 +11467,13 @@
           msgsBox.appendChild(row);
         });
       }
-      msgsBox.scrollTop = msgsBox.scrollHeight;
+      requestAnimationFrame(function(){
+        msgsBox.scrollTop = msgsBox.scrollHeight;
+        var lastRow = msgsBox.querySelector(".portal-dm-msg-row:last-child");
+        if(lastRow && typeof lastRow.scrollIntoView === "function"){
+          try{ lastRow.scrollIntoView({ block: "end", behavior: "auto" }); }catch(_si){}
+        }
+      });
       portalStaffDmMarkThreadSeenNow(tid);
       if(typeof window.portalStaffDmSyncUnreadChrome === "function"){
         void window.portalStaffDmSyncUnreadChrome();
@@ -12688,15 +12865,76 @@
       if(typeof syncDockNavContext === 'function') syncDockNavContext();
     }
 
-    function portalNotificationAlertState(st){
+    function portalNotificationAlertFlags(st){
       const state = st || (typeof portalReminderState === 'function' ? portalReminderState() : null);
-      const hasAnnouncement = portalActiveAnnouncementItems().length > 0;
-      /* Overrides (rosterOverrideNeed) count as reminders → orange header mode, not announcement. */
-      const hasReminder = !!(state && (state.sessionFeedbackNeed || state.venueOpenNeed || state.venueCloseNeed || state.setupPending || state.rosterOverrideNeed));
-      if(hasAnnouncement && hasReminder) return 'both';
-      if(hasAnnouncement) return 'announcement';
-      if(hasReminder) return 'reminder';
+      const hasFeedback = !!(state && state.sessionFeedbackNeed);
+      const hasReminderOther = !!(state && (state.venueOpenNeed || state.venueCloseNeed || state.setupPending || state.rosterOverrideNeed));
+      return {
+        chat: !!window.__PORTAL_STAFF_DM_HAS_UNREAD__,
+        announcement: portalActiveAnnouncementItems().length > 0,
+        feedback: hasFeedback || hasReminderOther
+      };
+    }
+    function portalNotificationAlertState(st){
+      const f = portalNotificationAlertFlags(st);
+      const orange = f.feedback;
+      if(f.chat && f.announcement && orange) return 'triple';
+      if(f.chat && f.announcement) return 'chat-ann';
+      if(f.chat && orange) return 'chat-fb';
+      if(f.announcement && orange) return 'both';
+      if(f.chat) return 'chat';
+      if(f.announcement) return 'announcement';
+      if(orange) return 'reminder';
       return 'none';
+    }
+    function portalApplyPortalOrbitAlertClasses(el, st){
+      if(!el) return;
+      const f = portalNotificationAlertFlags(st);
+      const orange = f.feedback;
+      const active = !!(f.chat || f.announcement || orange);
+      const orbitClasses = [
+        'avatar-wrap--portal-orbit-idle',
+        'avatar-wrap--portal-alert',
+        'avatar-wrap--portal-alert-reminder',
+        'avatar-wrap--portal-alert-both',
+        'avatar-wrap--portal-alert-chat',
+        'avatar-wrap--portal-alert-chat-ann',
+        'avatar-wrap--portal-alert-chat-fb',
+        'avatar-wrap--portal-alert-triple'
+      ];
+      const dockClasses = [
+        'dock-nav-item--portal-attention',
+        'dock-nav-item--portal-attention-chat',
+        'dock-nav-item--portal-attention-announcement',
+        'dock-nav-item--portal-attention-feedback',
+        'dock-nav-item--portal-attention-chat-ann',
+        'dock-nav-item--portal-attention-chat-fb',
+        'dock-nav-item--portal-attention-ann-fb',
+        'dock-nav-item--portal-attention-triple'
+      ];
+      const isDock = el.classList && el.classList.contains('dock-nav-item--dashboard');
+      (isDock ? dockClasses : orbitClasses).forEach(function(c){ el.classList.remove(c); });
+      if(isDock){
+        if(!active) return;
+        el.classList.add('dock-nav-item--portal-attention');
+        if(f.chat && f.announcement && orange) el.classList.add('dock-nav-item--portal-attention-triple');
+        else if(f.chat && f.announcement) el.classList.add('dock-nav-item--portal-attention-chat-ann');
+        else if(f.chat && orange) el.classList.add('dock-nav-item--portal-attention-chat-fb');
+        else if(f.announcement && orange) el.classList.add('dock-nav-item--portal-attention-ann-fb');
+        else if(f.chat) el.classList.add('dock-nav-item--portal-attention-chat');
+        else if(f.announcement) el.classList.add('dock-nav-item--portal-attention-announcement');
+        else if(orange) el.classList.add('dock-nav-item--portal-attention-feedback');
+        return;
+      }
+      el.classList.toggle('avatar-wrap--portal-orbit-idle', !active);
+      if(!active) return;
+      if(f.chat && f.announcement && orange) el.classList.add('avatar-wrap--portal-alert-triple');
+      else if(f.chat && f.announcement) el.classList.add('avatar-wrap--portal-alert-chat-ann');
+      else if(f.chat && orange) el.classList.add('avatar-wrap--portal-alert-chat-fb');
+      else if(f.announcement && orange) el.classList.add('avatar-wrap--portal-alert-both');
+      else if(f.chat) el.classList.add('avatar-wrap--portal-alert-chat');
+      else if(f.announcement) el.classList.add('avatar-wrap--portal-alert');
+      else if(orange) el.classList.add('avatar-wrap--portal-alert-reminder');
     }
     function portalHasActiveAnnouncementOrReminder(st){
       return portalNotificationAlertState(st) !== 'none';
@@ -12724,8 +12962,9 @@
       }catch(_){ /* ignore */ }
       var mode = 'none';
       try{ mode = portalNotificationAlertState(st); }catch(_){ mode = 'none'; }
-      if(mode === 'both') return PORTAL_STAFF_TOPBAR_LOGO_BOTH_URL;
+      if(mode === 'triple' || mode === 'chat-ann' || mode === 'chat-fb' || mode === 'both') return PORTAL_STAFF_TOPBAR_LOGO_BOTH_URL;
       if(mode === 'announcement') return PORTAL_STAFF_TOPBAR_LOGO_ANNOUNCEMENT_URL;
+      if(mode === 'chat') return PORTAL_STAFF_TOPBAR_LOGO_CLEAR_URL;
       if(mode === 'reminder') return PORTAL_STAFF_TOPBAR_LOGO_REMINDER_URL;
       return PORTAL_STAFF_TOPBAR_LOGO_CLEAR_URL;
     }
@@ -12733,7 +12972,7 @@
       const wrap = document.getElementById('avatarWrap');
       if(!wrap) return;
       if(dashboardData && !dashboardData.portalIdentityResolved){
-        wrap.classList.remove('avatar-wrap--portal-alert', 'avatar-wrap--portal-alert-reminder', 'avatar-wrap--portal-alert-both');
+        portalApplyPortalOrbitAlertClasses(wrap, st);
         const avEarly = document.getElementById('avatar');
         const avImgEarly = avEarly && avEarly.querySelector('img');
         if(avEarly && avImgEarly){
@@ -12742,10 +12981,7 @@
         }
         return;
       }
-      const mode = portalNotificationAlertState(st);
-      wrap.classList.toggle('avatar-wrap--portal-alert', mode === 'announcement');
-      wrap.classList.toggle('avatar-wrap--portal-alert-reminder', mode === 'reminder');
-      wrap.classList.toggle('avatar-wrap--portal-alert-both', mode === 'both');
+      portalApplyPortalOrbitAlertClasses(wrap, st);
       const av = document.getElementById('avatar');
       const avImg = av && av.querySelector('img');
       const targetSrc = typeof portalTopbarAvatarDisplayUrl === 'function' ? portalTopbarAvatarDisplayUrl(st) : PORTAL_DEFAULT_TOPBAR_AVATAR_URL;
@@ -13351,9 +13587,10 @@
     }
 
     function syncDockQuickMenuAttention(){
-      const dock = document.getElementById('dockQuickMenuTile');
-      if(!dock) return;
-      dock.classList.remove('dock-nav-item--portal-attention');
+      const dockHome = document.getElementById('dockDashboardTile');
+      if(dockHome && typeof portalApplyPortalOrbitAlertClasses === 'function'){
+        portalApplyPortalOrbitAlertClasses(dockHome, typeof portalReminderState === 'function' ? portalReminderState() : null);
+      }
     }
 
     function renderNotices(){
