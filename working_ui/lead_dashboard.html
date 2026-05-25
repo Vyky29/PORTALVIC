@@ -1408,10 +1408,11 @@
       margin-top:14px;margin-bottom:14px;padding:12px 14px;border:1px solid rgba(0,0,0,.1);border-radius:12px;background:var(--surface);min-width:0;
     }
     .portal-dm-office-compose-host .sel,.portal-dm-office-compose-host .txa{max-width:100%;min-width:0;box-sizing:border-box}
-    /* Internal chat: messages scroll; compose + Send pinned above dock */
+    /* Internal chat: compose fixed flush above dock (z 125); messages fill space above */
     #internalChatSheet.sheet--fullscreen.sheet--mobile-frame{
       max-height:100dvh;
       max-height:100vh;
+      padding-bottom:0;
     }
     #internalChatSheet.sheet--fullscreen.sheet--mobile-frame .sheet-body.portal-dm-sheet-body{
       flex:1;
@@ -1419,13 +1420,14 @@
       overflow:hidden;
       display:flex;
       flex-direction:column;
-      padding-bottom:calc(var(--fab-reserved-bottom, 62px) + 4px);
+      padding-bottom:0;
     }
     #internalChatSheet #internalChatListWrap{
       flex:1;
       min-height:0;
       overflow:auto;
       -webkit-overflow-scrolling:touch;
+      padding-bottom:var(--fab-reserved-bottom);
     }
     #internalChatSheet #internalChatThreadWrap.portal-dm-thread-view{
       flex:1;
@@ -1434,6 +1436,8 @@
       flex-direction:column;
       overflow:hidden;
       gap:8px;
+      --portal-dm-compose-reserve:min(200px, 38vh);
+      padding-bottom:0;
     }
     #internalChatSheet .portal-dm-msgs-scroll{
       flex:1;
@@ -1444,28 +1448,48 @@
       border:1px solid rgba(0,0,0,.1);
       border-radius:12px;
       padding:10px;
+      padding-bottom:12px;
+      margin-bottom:var(--portal-dm-compose-reserve);
       background:var(--surface);
     }
     #internalChatSheet .portal-dm-compose-bar{
-      flex-shrink:0;
+      position:fixed;
+      left:50%;
+      transform:translateX(-50%);
+      width:min(calc(100vw - 24px), calc(var(--layout-max-mobile) - 24px));
+      max-width:calc(var(--layout-max-mobile) - 24px);
+      bottom:var(--fab-reserved-bottom);
+      box-sizing:border-box;
+      z-index:110;
       display:flex;
       flex-direction:column;
-      gap:8px;
-      margin-top:0;
-      padding-top:6px;
-      background:linear-gradient(180deg, rgba(255,255,255,0) 0%, #fff 12px);
+      gap:6px;
+      margin:0;
+      padding:6px 12px 4px;
+      background:#fff;
+      border-top:1px solid rgba(0,0,0,.08);
+      box-shadow:0 -4px 14px rgba(11,18,32,.06);
+    }
+    @media (min-width:721px){
+      body:not(.dev-mobile-preview) #internalChatSheet .portal-dm-compose-bar{
+        width:min(calc(100vw - 24px), calc(var(--layout-max-desktop) - 24px));
+        max-width:calc(var(--layout-max-desktop) - 24px);
+      }
     }
     #internalChatSheet .portal-dm-compose-bar .txa{
-      min-height:72px;
-      max-height:112px;
+      min-height:64px;
+      max-height:96px;
       resize:vertical;
+      max-width:100%;
+      min-width:0;
+      box-sizing:border-box;
     }
     #internalChatSheet #internalChatSendBtn{
       width:100%;
       max-width:100%;
       box-sizing:border-box;
       justify-content:center;
-      margin-bottom:0;
+      margin:0;
     }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuNoticesGrid #announcementSignedLog.menu-btn.menu-btn--announcement-signed:hover{
       background:linear-gradient(180deg,#f7eef2 0%,#eedfe6 100%);
