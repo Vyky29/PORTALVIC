@@ -16,6 +16,7 @@
     { "source": "/hr_contract", "destination": "/hr_contract.html" },
     { "source": "/hr_contract/", "destination": "/hr_contract.html" },
     { "source": "/portal-guide", "destination": "/portal_guide.html" },
-    { "source": "/guide", "destination": "/portal_guide.html" }
+    { "source": "/guide", "destination": "/portal_guide.html" },
+    { "source": "/timesheet", "destination": "/timesheet.html" }
   ]
 }
