@@ -21816,6 +21816,45 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(wrapRole) wrapRole.hidden = val !== 'specific_roles';
       if(val === 'single_user') void portalLoadComposerStaffPicker();
     }
+    function portalComposeHideAfterAckHtml(forAnnouncement){
+      if(!forAnnouncement) return '';
+      return '<div id="cmpHideAfterAckBlock" style="margin-top:12px;min-width:0">'+
+        '<label class="muted" style="display:block;margin:0 0 6px">After worker signs (optional)</label>'+
+        '<p class="muted" style="margin:0 0 8px;font-size:12px;line-height:1.45;min-width:0;overflow-wrap:break-word">Hide from their dashboard after they sign. Choose how long it stays in the signed log.</p>'+
+        '<label class="op-check" style="border:none;padding:0;margin:0 0 8px;display:flex;align-items:flex-start;gap:8px;min-width:0">'+
+        '<input type="checkbox" id="cmpHideAfterAckEnable" style="margin-top:3px;flex-shrink:0"/>'+
+        '<span style="min-width:0;overflow-wrap:break-word">Auto-hide after sign</span></label>'+
+        '<div id="cmpHideAfterAckWrap" hidden style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;min-width:0">'+
+        '<input type="number" class="inp" id="cmpHideAfterAckAmount" min="1" max="9999" value="1" style="width:5rem;max-width:40%;min-width:0;box-sizing:border-box"/>'+
+        '<select class="sel" id="cmpHideAfterAckUnit" style="flex:1 1 120px;max-width:100%;min-width:0;box-sizing:border-box">'+
+        '<option value="minutes">minutes after sign</option>'+
+        '<option value="hours">hours after sign</option>'+
+        '<option value="days" selected>days after sign</option>'+
+        '</select></div></div>';
+    }
+    function portalWireComposeHideAfterAckControls(){
+      var en = $('cmpHideAfterAckEnable');
+      var wrap = $('cmpHideAfterAckWrap');
+      if(!en || !wrap) return;
+      function sync(){
+        wrap.hidden = !en.checked;
+      }
+      if(!en.dataset.portalHideAckBound){
+        en.dataset.portalHideAckBound = '1';
+        en.addEventListener('change', sync);
+      }
+      sync();
+    }
+    function portalReadHideAfterAckFromComposer(){
+      var en = $('cmpHideAfterAckEnable');
+      if(!en || !en.checked) return { amount: null, unit: null };
+      var amt = parseInt(String($('cmpHideAfterAckAmount') && $('cmpHideAfterAckAmount').value || ''), 10);
+      var unit = String($('cmpHideAfterAckUnit') && $('cmpHideAfterAckUnit').value || '').trim().toLowerCase();
+      if(!amt || amt < 1 || ['minutes','hours','days'].indexOf(unit) === -1){
+        return { ok:false, message:'Choose a valid hide timeframe (1+ minutes, hours, or days).' };
+      }
+      return { ok:true, amount:amt, unit:unit };
+    }
     function portalComposeToSelectHtml(){
       var toOpts = [
         { v:'all_everyone', l:'all staff' },
@@ -21873,6 +21912,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var remCat = String($('cmpRemCat') && $('cmpRemCat').value || 'notes').trim().toLowerCase();
           if(['training','timesheet','notes'].indexOf(remCat) === -1) remCat = 'notes';
           row.reminder_category = remCat;
+        }else if(typ === 'announcement'){
+          var hideCfg = portalReadHideAfterAckFromComposer();
+          if(hideCfg && hideCfg.ok === false) return Promise.resolve({ ok:false, skip:false, message:hideCfg.message || 'Invalid hide timeframe' });
+          if(hideCfg && hideCfg.ok && hideCfg.amount){
+            row.hide_after_ack_amount = hideCfg.amount;
+            row.hide_after_ack_unit = hideCfg.unit;
+          }
         }
       }else{
         var lines = body.split('\n').map(function(x){ return String(x || '').trim(); }).filter(Boolean);
@@ -21882,6 +21928,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         pri = portalMapComposePriorityToDb($('cmpPri') && $('cmpPri').value);
         exp = String($('cmpExp') && $('cmpExp').value || '').trim();
         if(exp) row.ends_at = exp + 'T23:59:59.999Z';
+        if(typ === 'announcement'){
+          var hideCfg2 = portalReadHideAfterAckFromComposer();
+          if(hideCfg2 && hideCfg2.ok === false) return Promise.resolve({ ok:false, skip:false, message:hideCfg2.message || 'Invalid hide timeframe' });
+          if(hideCfg2 && hideCfg2.ok && hideCfg2.amount){
+            row.hide_after_ack_amount = hideCfg2.amount;
+            row.hide_after_ack_unit = hideCfg2.unit;
+          }
+        }
       }
       row.title = title;
       row.message_type = typ;
@@ -21968,10 +22022,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         remCatHtml+
         '<label class="muted" style="display:block;margin-top:12px">To</label>'+
         portalComposeToSelectHtml()+
+        (kind === 'announcement' ? portalComposeHideAfterAckHtml(true) : '')+
         '</div>'+
         '<div class="modal-f"><button type="button" class="btn btn--ghost" id="btnCmpX">Cancel</button><button type="button" class="btn btn--pri" id="btnCmpSend">Queue message</button></div>'
       );
       portalWireComposeToControls();
+      if(kind === 'announcement') portalWireComposeHideAfterAckControls();
       portalBindComposeSendHandler({ needTitle:true, typ:kind });
     }
     function openComposeModal(preset){
@@ -21990,7 +22046,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '</div>'+
         '<label class="muted" style="display:block;margin-top:12px">To</label>'+
         portalComposeToSelectHtml()+
-        '<label class="muted" style="display:block;margin-top:10px">Expiry (optional)</label><input type="date" class="inp" id="cmpExp" style="max-width:100%;box-sizing:border-box"/></div>'+
+        portalComposeHideAfterAckHtml(true)+
+        '<label class="muted" style="display:block;margin-top:10px">Calendar expiry (optional)</label>'+
+        '<p class="muted" style="margin:0 0 6px;font-size:12px">Hide from everyone on this date, even if unsigned.</p>'+
+        '<input type="date" class="inp" id="cmpExp" style="max-width:100%;box-sizing:border-box"/></div>'+
         '<div class="modal-f"><button type="button" class="btn btn--ghost" id="btnCmpX">Cancel</button><button type="button" class="btn btn--pri" id="btnCmpSend">Queue message</button></div>'
       );
       if(preset){
@@ -21999,6 +22058,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var sel = $('cmpType'); if(sel) for(var i=0;i<sel.options.length;i++) if(sel.options[i].value===v){ sel.selectedIndex=i; break; }
       }
       portalWireComposeToControls();
+      portalWireComposeHideAfterAckControls();
       portalBindComposeSendHandler({ needTitle:false });
     }
 

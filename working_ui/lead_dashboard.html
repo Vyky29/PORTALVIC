@@ -11270,7 +11270,7 @@
           div.className = "portal-dm-msg " + (mine ? "portal-dm-msg--mine" : "portal-dm-msg--them");
           var tline = "";
           try{ if(m.created_at) tline = new Date(m.created_at).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }); }catch(_t){}
-          var chip = portalDmInternalMsgAuthorChip(viewerRole, mine, authorBy[aid] || {});
+          var chip = portalDmInternalMsgAuthorChip(mine, authorBy[aid] || {});
           var chipHtml = chip ? "<div class=\"portal-dm-msg-by\">" + escapeHtml(chip) + "</div>" : "";
           div.innerHTML = chipHtml + "<div style=\"white-space:pre-wrap;min-width:0;overflow-wrap:break-word\">"+escapeHtml(String(m.body || ""))+"</div>"+
             (tline ? "<div class=\"portal-dm-msg-time\">"+escapeHtml(tline)+"</div>" : "");
@@ -12329,14 +12329,45 @@
       const h = String(item.href || '').trim().toLowerCase();
       return [t, x, h].join('||');
     }
+    function portalAnnouncementHideDelayMs(src){
+      if(!src || typeof src !== 'object') return null;
+      var amt = parseInt(String(src.hideAfterAckAmount != null ? src.hideAfterAckAmount : src.hide_after_ack_amount || ''), 10);
+      var unit = String(src.hideAfterAckUnit || src.hide_after_ack_unit || '').trim().toLowerCase();
+      if(!amt || amt < 1) return null;
+      if(unit === 'minutes') return amt * 60 * 1000;
+      if(unit === 'hours') return amt * 60 * 60 * 1000;
+      if(unit === 'days') return amt * 24 * 60 * 60 * 1000;
+      return null;
+    }
+    function portalAnnouncementAckPastHideWindow(ackRec){
+      var delay = portalAnnouncementHideDelayMs(ackRec);
+      if(!delay) return false;
+      var signedAt = Number(ackRec && ackRec.signedAt || 0);
+      if(!signedAt) return false;
+      return Date.now() >= signedAt + delay;
+    }
+    function portalPruneExpiredAnnouncementAcks(){
+      try{
+        var ack = portalAnnouncementAckMapLoad();
+        var changed = false;
+        Object.keys(ack).forEach(function(k){
+          if(portalAnnouncementAckPastHideWindow(ack[k])){
+            delete ack[k];
+            changed = true;
+          }
+        });
+        if(changed) portalAnnouncementAckMapSave(ack);
+      }catch(_){}
+    }
     async function portalHydrateAnnouncementsFromSupabase(){
       try{
+        portalPruneExpiredAnnouncementAcks();
         const box = typeof window !== 'undefined' ? window.__PORTAL_SUPABASE__ : null;
         const client = box && box.client;
         if(!client || !dashboardData || !Array.isArray(dashboardData.notices)) return;
         const res = await client
           .from('portal_staff_announcements')
-          .select('id,title,body,message_type,priority,audience_scope,created_at,ends_at,reminder_category')
+          .select('id,title,body,message_type,priority,audience_scope,created_at,ends_at,reminder_category,hide_after_ack_amount,hide_after_ack_unit')
           .order('created_at', { ascending: false })
           .limit(50);
         if(res.error){
@@ -12388,7 +12419,9 @@
             title: String(row.title || 'Announcement').trim() || 'Announcement',
             text: String(row.body || '').trim(),
             href: '#portal-ann-' + id,
-            portalAnnouncementId: id
+            portalAnnouncementId: id,
+            hideAfterAckAmount: row.hide_after_ack_amount,
+            hideAfterAckUnit: row.hide_after_ack_unit
           });
         });
         if(!Array.isArray(dashboardData.portalRemindersFromAdmin)) dashboardData.portalRemindersFromAdmin = [];
@@ -12511,6 +12544,7 @@
     }
     function portalActiveAnnouncementItems(){
       if(dashboardData && !dashboardData.portalIdentityResolved) return [];
+      portalPruneExpiredAnnouncementAcks();
       const ack = portalAnnouncementAckMapLoad();
       return portalAnnouncementItemsFromNotices().filter(function(n){
         const k = portalAnnouncementSignatureKey(n);
@@ -12526,11 +12560,13 @@
       return !!(portalAnnouncementLockRequired && annOpen && portalAnnouncementPendingItem());
     }
     function portalAnnouncementHistoryRows(){
+      portalPruneExpiredAnnouncementAcks();
       const ack = portalAnnouncementAckMapLoad();
       const out = [];
       Object.keys(ack).forEach(function(k){
         const rec = ack[k];
         if(!rec || typeof rec !== 'object') return;
+        if(portalAnnouncementAckPastHideWindow(rec)) return;
         out.push({
           key: k,
           title: String(rec.title || 'Announcement').trim() || 'Announcement',
@@ -15600,13 +15636,25 @@
           title: pending.title || 'Announcement',
           text: pending.text || '',
           href: pending.href || '',
-          signedAt: Date.now()
+          signedAt: Date.now(),
+          hideAfterAckAmount: pending.hideAfterAckAmount,
+          hideAfterAckUnit: pending.hideAfterAckUnit,
+          portalAnnouncementId: pending.portalAnnouncementId || ''
         };
         portalAnnouncementAckMapSave(ack);
         portalAnnouncementLockRequired = false;
         renderAnnouncementsSheetContent();
         if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
         if(typeof renderHeader === 'function') renderHeader();
+        var hideMs = portalAnnouncementHideDelayMs(pending);
+        if(hideMs && hideMs > 0 && hideMs < 7 * 24 * 60 * 60 * 1000){
+          setTimeout(function(){
+            portalPruneExpiredAnnouncementAcks();
+            if(typeof renderAnnouncementsSheetContent === 'function') renderAnnouncementsSheetContent();
+            if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
+            if(typeof renderHeader === 'function') renderHeader();
+          }, hideMs + 80);
+        }
         return;
       }
       const tog = e.target && e.target.closest ? e.target.closest('[data-announcement-toggle]') : null;
