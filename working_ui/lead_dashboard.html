@@ -13710,11 +13710,36 @@
       return raw.map(function(d){ return String(d || '').trim().slice(0, 10); }).filter(Boolean);
     }
     /** Term grid red (half-term style): bank holiday / vacation break / staff off with cover. */
+    function portalTermCalendarToIso(){
+      const ptd = window.PortalTermCalendarDashboard;
+      return String(
+        (dashboardData && dashboardData.termDashboardCalendarTo)
+          || (ptd && typeof ptd.toIso === 'function' && ptd.toIso())
+          || (window.PORTAL_TERM_FROM_TIMETABLE && window.PORTAL_TERM_FROM_TIMETABLE.termDashboardCalendarTo)
+          || '2026-07-17'
+      ).trim().slice(0, 10);
+    }
     function portalTermCalendarDayIsRed(year, monthIndex, day, staffId, weekStartStrings){
-      if(isHalfTermDay(year, monthIndex, day, weekStartStrings)) return true;
       const iso = termCalendarDateKey(year, monthIndex, day);
-      if(staffId && portalTermStaffOffWeekdayOnDate(iso, staffId)) return true;
-      return Boolean(staffId && portalTermStaffAwayOnDate(iso, staffId));
+      const extraRed = isHalfTermDay(year, monthIndex, day, weekStartStrings)
+        || Boolean(staffId && portalTermStaffOffWeekdayOnDate(iso, staffId))
+        || Boolean(staffId && portalTermStaffAwayOnDate(iso, staffId));
+      const ptd = window.PortalTermCalendarDashboard;
+      if(ptd && typeof ptd.dayIsRed === 'function'){
+        const dt = new Date(year, monthIndex, day);
+        let worked = [];
+        if(Array.isArray(dashboardData.termWorkedWeekdays)){
+          worked = dashboardData.termWorkedWeekdays.length
+            ? dashboardData.termWorkedWeekdays.map(Number)
+            : [];
+        } else {
+          worked = [1, 2, 4, 5];
+        }
+        return ptd.dayIsRed(iso, dt.getDay(), staffId, worked, extraRed);
+      }
+      const toIso = portalTermCalendarToIso();
+      if(toIso && iso > toIso) return true;
+      return extraRed;
     }
     function portalTermStaffAwayOnDate(iso, staffId){
       const key = String(iso || '').trim().slice(0, 10);
@@ -14293,7 +14318,10 @@
           if(half){
             cls += ' half-term';
             const offWd = termStaffId && portalTermStaffOffWeekdayOnDate(isoKey, termStaffId);
-            label = offWd ? `${day}, not scheduled this term` : (staffAway ? `${day}, not on duty` : `${day}, half term`);
+            const afterTermEnd = (typeof portalTermCalendarToIso === 'function' ? portalTermCalendarToIso() : '') && isoKey > portalTermCalendarToIso();
+            label = afterTermEnd
+              ? `${day}, term ended`
+              : (offWd ? `${day}, not scheduled this term` : (staffAway ? `${day}, not on duty` : `${day}, half term`));
           } else if(isWorked){
             const dayWord = dt.toLocaleDateString('en-GB', { weekday: 'long' });
             const dayFlags = portalDayOverrideBadgeFlags(dayWord, isoKey);
