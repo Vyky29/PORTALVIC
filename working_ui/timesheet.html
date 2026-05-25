@@ -226,6 +226,23 @@
       stf019: "sevitha",
       stf020: "demo"
     };
+    /** Fallback when `staff_pay_rates` has no row for this auth user (seed names in DB migration). */
+    const PAY_RATE_BY_ROSTER_KEY = {
+      youssef: { hourly_rate: 22, role_label: "Swimming Instructor 1" },
+      roberto: { hourly_rate: 24, role_label: "Swimming Instructor 2" },
+      aurora: { hourly_rate: 28, role_label: "Swimming Instructor 3" },
+      angel: { hourly_rate: 28, role_label: "Swimming Instructor 3" },
+      dan: { hourly_rate: 28, role_label: "Swimming Instructor 3" },
+      javier: { hourly_rate: 28, role_label: "Swimming Instructor 3" },
+      alex: { hourly_rate: 30, role_label: "Climbing Instructor 3" },
+      carlos: { hourly_rate: 30, role_label: "Climbing Instructor 3" },
+      sandra: { hourly_rate: 28, role_label: "Fitness Instructor 1" },
+      godsway: { hourly_rate: 18, role_label: "Support Worker 1" },
+      giuseppe: { hourly_rate: 20, role_label: "Support Worker 2" },
+      bismark: { hourly_rate: 23, role_label: "Support Worker 3" },
+      john: { hourly_rate: 30, role_label: "Service Lead" },
+      berta: { hourly_rate: 30, role_label: "Service Lead" }
+    };
     const state = {
       userId: "",
       employeeName: "",
@@ -401,17 +418,25 @@
       }
     }
 
+    function sessionsForCalendarDate(sessions, dateObj) {
+      const dateKey = isoDate(dateObj);
+      const dayName = WEEKDAY[dateObj.getDay()];
+      const list = sessions || [];
+      const dated = list.filter((s) => String(s.session_date || "").trim().slice(0, 10) === dateKey);
+      if (dated.length) return dated;
+      const rosterUsesDates = list.some((s) => /^\d{4}-\d{2}-\d{2}$/.test(String(s.session_date || "").trim().slice(0, 10)));
+      if (rosterUsesDates) return [];
+      return list.filter((s) => String(s.day || "").trim() === dayName);
+    }
+
     function collectRosterSessionKeysForPeriod(sessionsModel, dates) {
       const keys = new Set();
       for (const dateObj of dates || []) {
-        const dayName = WEEKDAY[dateObj.getDay()];
         const dateKey = isoDate(dateObj);
-        const rows = (sessionsModel || [])
-          .filter((s) => String(s.day || "").trim() === dayName)
-          .filter((s) => {
-            const st = String(s.status || "").toLowerCase();
-            return st !== "closed" && st !== "available";
-          });
+        const rows = sessionsForCalendarDate(sessionsModel, dateObj).filter((s) => {
+          const st = String(s.status || "").toLowerCase();
+          return st !== "closed" && st !== "available";
+        });
         rows.forEach((s) => {
           const start = String(s.start || "").trim();
           const sk = `${dateKey}|${start}|${String(s.clientId || "").trim()}`;
@@ -440,34 +465,60 @@
       return !!(r.feedbackDone || r.absent || r.cancelled);
     }
 
+    function hmToMinutes(hm) {
+      const p = String(hm || "").split(":");
+      return Number(p[0] || 0) * 60 + Number(p[1] || 0);
+    }
+
+    /** One paid shift per calendar day: span from earliest start to latest end (not per client row). */
     function dailyHoursFromSessions(sessions, dateObj, reviewMap) {
       const dayName = WEEKDAY[dateObj.getDay()];
       const dateKey = isoDate(dateObj);
-      const rows = (sessions || [])
-        .filter((s) => String(s.day || "").trim() === dayName)
-        .filter((s) => {
-          const st = String(s.status || "").toLowerCase();
-          return st !== "closed" && st !== "available";
-        });
+      const rows = sessionsForCalendarDate(sessions, dateObj).filter((s) => {
+        const st = String(s.status || "").toLowerCase();
+        return st !== "closed" && st !== "available";
+      });
       if (!rows.length) return null;
-      let mins = 0;
+      let minStart = Infinity;
+      let maxEnd = -Infinity;
       let completedAll = true;
       rows.forEach((s) => {
         const start = String(s.start || "").trim();
         const end = String(s.end || "").trim();
-        const a = Number(start.split(":")[0] || 0) * 60 + Number(start.split(":")[1] || 0);
-        let b = Number(end.split(":")[0] || 0) * 60 + Number(end.split(":")[1] || 0);
+        const a = hmToMinutes(start);
+        let b = hmToMinutes(end);
         if (b < a) b += 24 * 60;
-        mins += Math.max(0, b - a);
+        if (a < minStart) minStart = a;
+        if (b > maxEnd) maxEnd = b;
         const sk = `${dateKey}|${start}|${String(s.clientId || "").trim()}`;
         if (!sessionIsCompleted(reviewMap[sk])) completedAll = false;
       });
+      const mins = Math.max(0, maxEnd - minStart);
       return {
         date: dateKey,
         day: dayName,
         hours: Number((mins / 60).toFixed(2)),
         completed: completedAll
       };
+    }
+
+    function applyPayRateFromProfile(rateRow, profile, rosterKey) {
+      let hourly = Number(rateRow && rateRow.hourly_rate != null ? rateRow.hourly_rate : 0);
+      let role = String((rateRow && rateRow.role_label) || "").trim();
+      if (hourly > 0 && role) return { hourly_rate: hourly, role_label: role };
+      const fb =
+        (rosterKey && PAY_RATE_BY_ROSTER_KEY[rosterKey]) ||
+        PAY_RATE_BY_ROSTER_KEY[profileKey(profile && profile.username)] ||
+        PAY_RATE_BY_ROSTER_KEY[profileKey(profile && profile.full_name)] ||
+        null;
+      if (fb) {
+        if (!hourly) hourly = Number(fb.hourly_rate || 0);
+        if (!role) role = String(fb.role_label || "").trim();
+      }
+      if (!role) {
+        role = String(profile.role_track || profile.role || profile.app_role || "").trim();
+      }
+      return { hourly_rate: hourly, role_label: role };
     }
 
     function resolveRosterSessions(profile, user) {
@@ -512,27 +563,6 @@
         }
       }
       return [];
-    }
-
-    function isDateInsideConfiguredTerm(dateObj) {
-      const src = window.STAFF_DASHBOARD_SOURCE || {};
-      const t = src.termCalendar || {};
-      const year = Number(t.termCalendarYear != null ? t.termCalendarYear : 2026);
-      const months = Array.isArray(t.termCalendarMonths) && t.termCalendarMonths.length
-        ? t.termCalendarMonths.map(Number)
-        : [3, 4, 5, 6];
-      const firstDom = t.termCalendarFirstDom && typeof t.termCalendarFirstDom === "object"
-        ? t.termCalendarFirstDom
-        : { 3: 13 };
-      if (dateObj.getFullYear() !== year) return false;
-      const mo = dateObj.getMonth();
-      if (!months.includes(mo)) return false;
-      const firstMonth = Math.min.apply(null, months);
-      if (mo === firstMonth) {
-        const minDom = Number(firstDom[String(firstMonth)] || 1);
-        if (dateObj.getDate() < minDom) return false;
-      }
-      return true;
     }
 
     function renderTable() {
@@ -593,9 +623,6 @@
         meta.preferred_username ||
         emailLocal
       ).trim();
-      state.roleLabel = String(rateRow.role_label || profile.role_track || profile.role || profile.app_role || "").trim();
-      state.hourlyRate = Number(rateRow.hourly_rate || 0);
-
       const sessionsModel = resolveRosterSessions(profile, user);
       try {
         const sp = (window.STAFF_DASHBOARD_SOURCE && window.STAFF_DASHBOARD_SOURCE.staffProfiles) || {};
@@ -603,10 +630,13 @@
         const rosterName = rosterProfile && rosterProfile.staffName ? String(rosterProfile.staffName).trim() : "";
         if (rosterName) state.employeeName = rosterName;
       } catch (_) {}
+      const pay = applyPayRateFromProfile(rateRow, profile, state.staffRosterKey);
+      state.roleLabel = pay.role_label;
+      state.hourlyRate = Number(pay.hourly_rate || 0);
+
       const dates = eachDateInclusive(parseIsoDate(state.periodStart), parseIsoDate(state.periodEnd));
       const reviewMap = await buildReviewMap(supabase, state.userId, sessionsModel, dates);
       state.entries = dates
-        .filter((d) => isDateInsideConfiguredTerm(d))
         .map((d) => dailyHoursFromSessions(sessionsModel, d, reviewMap))
         .filter(Boolean);
       state.payableEntries = state.entries.filter((e) => e.completed);
