@@ -12567,15 +12567,27 @@
           ? model
           : (Array.isArray(typeof sessionsModel !== 'undefined' ? sessionsModel : null) ? sessionsModel : []);
         var start = new Date(fromNow.getFullYear(), fromNow.getMonth(), fromNow.getDate());
+        var viewFrom = '';
+        var viewTo = '';
+        try{
+          viewFrom = String(
+            (typeof dashboardData !== 'undefined' && dashboardData.termDashboardCalendarFrom)
+              || (window.PortalTermCalendarDashboard && PortalTermCalendarDashboard.fromIso && PortalTermCalendarDashboard.fromIso())
+              || (typeof portalTermSummerRosterFromIso === 'function' ? portalTermSummerRosterFromIso() : '')
+          ).trim().slice(0, 10);
+          viewTo = String(
+            (typeof dashboardData !== 'undefined' && dashboardData.termDashboardCalendarTo)
+              || (window.PortalTermCalendarDashboard && PortalTermCalendarDashboard.toIso && PortalTermCalendarDashboard.toIso())
+              || '2026-07-17'
+          ).trim().slice(0, 10);
+        }catch(_){}
         for(var i = 1; i <= 45; i++){
           var d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
           var wname = d.toLocaleDateString('en-GB', { weekday: 'long' });
           var iso = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(d) : '';
-          if(iso && typeof isHalfTermDay === 'function'){
-            var ht = isHalfTermDay(d.getFullYear(), d.getMonth(), d.getDate(), (typeof dashboardData !== 'undefined' && dashboardData.termHalfTermWeekStarts) || []);
-            if(ht) continue;
-          }
-          if(iso && typeof portalTermStaffAwayOnDate === 'function' && portalTermStaffAwayOnDate(iso, id)) continue;
+          if(viewFrom && iso && iso < viewFrom) continue;
+          if(viewTo && iso && iso > viewTo) continue;
+          if(iso && typeof portalTermDayIsOffForStaffOnIso === 'function' && portalTermDayIsOffForStaffOnIso(iso, id)) continue;
           var has = modelSrc.some(function(s){
             if(String(s.staffId || '').toLowerCase() !== id) return false;
             if(!portalIsRealClientSession(s, iso)) return false;
@@ -13708,6 +13720,20 @@
       const raw = map[id];
       if(!Array.isArray(raw)) return [];
       return raw.map(function(d){ return String(d || '').trim().slice(0, 10); }).filter(Boolean);
+    }
+    function portalTermDayIsOffForStaffOnIso(isoYmd, staffId){
+      const iso = normaliseIsoDate(isoYmd);
+      const sid = String(staffId || '').trim().toLowerCase();
+      if(!iso || !sid || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return true;
+      const d = new Date(iso + 'T12:00:00');
+      if(isNaN(d.getTime())) return true;
+      const halfWeeks = Array.isArray(dashboardData.termHalfTermWeekStarts) ? dashboardData.termHalfTermWeekStarts : [];
+      if(typeof isHalfTermDay === 'function' && isHalfTermDay(d.getFullYear(), d.getMonth(), d.getDate(), halfWeeks)) return true;
+      if(typeof portalTermCalendarDayIsRed === 'function'
+        && portalTermCalendarDayIsRed(d.getFullYear(), d.getMonth(), d.getDate(), sid, halfWeeks)) return true;
+      if(typeof portalTermStaffOffWeekdayOnDate === 'function' && portalTermStaffOffWeekdayOnDate(iso, sid)) return true;
+      if(typeof portalTermStaffAwayOnDate === 'function' && portalTermStaffAwayOnDate(iso, sid)) return true;
+      return false;
     }
     /** Term grid red (half-term style): bank holiday / vacation break / staff off with cover. */
     function portalTermCalendarToIso(){
