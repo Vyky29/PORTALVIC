@@ -5,18 +5,38 @@
 (function () {
   function loginHref() {
     try {
-      if (
+      var base =
         typeof window.PORTAL_LOGIN_REDIRECT_URL === "string" &&
         window.PORTAL_LOGIN_REDIRECT_URL.trim()
-      ) {
-        return window.PORTAL_LOGIN_REDIRECT_URL.trim();
-      }
-      return new URL("login.html", location.href).href;
+          ? window.PORTAL_LOGIN_REDIRECT_URL.trim()
+          : new URL("login.html", location.href).href;
+      var u = new URL(base, location.href);
+      u.searchParams.set("portal_logout", "1");
+      return u.href;
     } catch (_) {}
-    return "login.html";
+    return "login.html?portal_logout=1";
+  }
+
+  function clearSupabaseAuthStorage() {
+    try {
+      var keys = [];
+      var i;
+      for (i = 0; i < localStorage.length; i++) {
+        var lk = localStorage.key(i);
+        if (lk && /^sb-.*-auth-token/i.test(lk)) keys.push(lk);
+      }
+      for (i = 0; i < keys.length; i++) localStorage.removeItem(keys[i]);
+      keys.length = 0;
+      for (i = 0; i < sessionStorage.length; i++) {
+        var sk = sessionStorage.key(i);
+        if (sk && /^sb-.*-auth-token/i.test(sk)) keys.push(sk);
+      }
+      for (i = 0; i < keys.length; i++) sessionStorage.removeItem(keys[i]);
+    } catch (_) {}
   }
 
   function clearLocalPortalSession() {
+    clearSupabaseAuthStorage();
     try {
       localStorage.removeItem("portalStaffContext");
       localStorage.removeItem("portalAuthSessionGeneration");

@@ -15,6 +15,7 @@ import {
   setPortalStaffContext,
   clearPortalStaffContext,
   portalLogout,
+  portalClearPersistedSupabaseAuth,
   portalBumpAuthSessionGeneration,
   portalGetCachedAuthSessionGeneration,
   portalSetCachedAuthSessionGeneration,
@@ -349,8 +350,38 @@ function bindLogin() {
     return url;
   }
 
+  async function tryForceLogoutFromUrl() {
+    if (typeof window === "undefined") return;
+    try {
+      const u = new URL(window.location.href);
+      if (u.searchParams.get("portal_logout") !== "1" && u.searchParams.get("logout") !== "1") {
+        return;
+      }
+      let supabase;
+      try {
+        supabase = getSupabaseClient();
+      } catch {
+        portalClearPersistedSupabaseAuth();
+        return;
+      }
+      try {
+        await portalLogout();
+      } catch {
+        portalClearPersistedSupabaseAuth();
+      }
+      u.searchParams.delete("portal_logout");
+      u.searchParams.delete("logout");
+      const qs = u.searchParams.toString();
+      const clean = u.pathname + (qs ? "?" + qs : "") + u.hash;
+      window.history.replaceState({}, "", clean);
+    } catch {
+      /* ignore */
+    }
+  }
+
   async function tryRedirectIfSession() {
     hideError();
+    await tryForceLogoutFromUrl();
     let supabase;
     try {
       supabase = getSupabaseClient();

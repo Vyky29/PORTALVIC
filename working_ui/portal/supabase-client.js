@@ -471,6 +471,27 @@ export function bindPortalRemoteLogoutOnStaleAuthGeneration(supabase, userId, op
  * Logout: Supabase signOut + clear cached staff context.
  * @returns {Promise<{ error: import("@supabase/supabase-js").AuthError | null }>}
  */
+/** Remove Supabase Auth tokens from browser storage (same-origin). */
+export function portalClearPersistedSupabaseAuth() {
+  const drop = (store) => {
+    try {
+      const keys = [];
+      for (let i = 0; i < store.length; i++) {
+        const k = store.key(i);
+        if (k && /^sb-.*-auth-token/i.test(k)) keys.push(k);
+      }
+      keys.forEach((k) => store.removeItem(k));
+    } catch {
+      /* ignore */
+    }
+  };
+  if (typeof window !== "undefined") {
+    drop(localStorage);
+    drop(sessionStorage);
+  }
+  _client = null;
+}
+
 export async function portalLogout() {
   if (typeof window !== "undefined" && typeof window.__PORTAL_AUTH_GEN_DISPOSE__ === "function") {
     try {
@@ -488,9 +509,11 @@ export async function portalLogout() {
   portalClearCachedAuthSessionGeneration();
   try {
     const supabase = getSupabaseClient();
-    const { error } = await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut({ scope: "local" });
+    portalClearPersistedSupabaseAuth();
     return { error };
   } catch {
+    portalClearPersistedSupabaseAuth();
     /* Missing config, offline, or SDK error — local session already cleared above */
     return { error: null };
   }

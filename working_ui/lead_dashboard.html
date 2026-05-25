@@ -16194,34 +16194,6 @@
   <script src="portal/portal-logout-bind.js"></script>
   <script>
     (function () {
-      var s = document.createElement("script");
-      s.type = "module";
-      s.textContent = `
-        import { portalLogout, bootstrapDashboardSupabase, portalInferStaffKey } from "portal/auth-handler.js";
-        window.__PORTAL_LOGOUT_FN__ = portalLogout;
-        window.portalInferStaffKey = portalInferStaffKey;
-        try { await bootstrapDashboardSupabase({ page: "lead" }); } catch {}
-        const profile = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
-        const session = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session;
-        if (window.dashboardData) {
-          const displayName = typeof window.portalTopbarDisplayNameFromAuth === "function"
-            ? window.portalTopbarDisplayNameFromAuth(profile, session)
-            : (profile ? String(profile.full_name || profile.username || "").trim() : "");
-          if (displayName) window.dashboardData.staffName = displayName;
-          window.dashboardData.portalIdentityResolved = false;
-        }
-        if (typeof window.renderHeader === "function") {
-          window.renderHeader();
-        }
-        if (typeof window.__PORTAL_LOGOUT_FN__ !== "function") {
-          window.__PORTAL_LOGOUT_FN__ = portalLogout;
-        }
-      `;
-      document.body.appendChild(s);
-    })();
-  </script>
-  <script>
-    (function () {
       var DAY_NAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
       var WEEK_ORDER_MON_SUN = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
       function dayNameFromDate(d){ return DAY_NAMES[d.getDay()]; }
@@ -16547,9 +16519,46 @@
         })();
       }
 
+      window.__PORTAL_LEAD_REHYDRATE__ = rehydrateFromProfile;
       window.addEventListener("portal:supabase-ready", rehydrateFromProfile);
       setTimeout(rehydrateFromProfile, 200);
       setTimeout(rehydrateFromProfile, 1200);
+    })();
+  </script>
+  <script>
+    (function () {
+      var s = document.createElement("script");
+      s.type = "module";
+      s.textContent = `
+        import { portalLogout, bootstrapDashboardSupabase, portalInferStaffKey } from "portal/auth-handler.js";
+        window.__PORTAL_LOGOUT_FN__ = portalLogout;
+        window.portalInferStaffKey = portalInferStaffKey;
+        try { await bootstrapDashboardSupabase({ page: "lead" }); } catch (e) {
+          console.warn("lead_dashboard: Supabase bootstrap", e);
+        }
+        const profile = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
+        const session = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session;
+        if (window.dashboardData) {
+          const displayName = typeof window.portalTopbarDisplayNameFromAuth === "function"
+            ? window.portalTopbarDisplayNameFromAuth(profile, session)
+            : (profile ? String(profile.full_name || profile.username || "").trim() : "");
+          if (displayName) window.dashboardData.staffName = displayName;
+          if (!String(window.STAFF_DASHBOARD_ID || "").trim()) {
+            window.dashboardData.portalIdentityResolved = false;
+          }
+        }
+        if (typeof window.__PORTAL_LEAD_REHYDRATE__ === "function") {
+          try { await window.__PORTAL_LEAD_REHYDRATE__(); } catch (e2) {
+            console.warn("lead_dashboard: roster rehydrate after auth", e2);
+          }
+        } else if (typeof window.renderHeader === "function") {
+          window.renderHeader();
+        }
+        if (typeof window.__PORTAL_LOGOUT_FN__ !== "function") {
+          window.__PORTAL_LOGOUT_FN__ = portalLogout;
+        }
+      `;
+      document.body.appendChild(s);
     })();
   </script>
   <script>
