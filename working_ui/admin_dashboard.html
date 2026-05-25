@@ -11,7 +11,7 @@
   <script src="/portal/hr-contract-embed-html.js?v=20260521-embed"></script>
   <script src="/portal/admin-portal-day-ops.js?v=20260520-portal2026"></script>
   <script src="/portal/admin-portal-documents.js?v=20260521-supabase-docs"></script>
-  <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir"></script>
+  <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
   <title>clubSENsational · Operations + Operator workflow (merged)</title>
   <style>
@@ -18958,14 +18958,39 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function portalAdminDmChannel(){
       return String(window.__PORTAL_ADMIN_DM_CHANNEL || 'staff_lead').trim() === 'ceo_exec' ? 'ceo_exec' : 'staff_lead';
     }
+    function portalAdminDmIsWorkerRecipient(row){
+      if(typeof window.portalInternalDmIsWorkerRecipient === 'function'){
+        return window.portalInternalDmIsWorkerRecipient(row);
+      }
+      if(!row || row.is_active === false) return false;
+      var app = String(row.app_role || '').toLowerCase();
+      if(app === 'admin' || app === 'ceo') return false;
+      var sr = String(row.staff_role || '').toLowerCase();
+      if(sr === 'manager' || sr === 'admin') return false;
+      return !!(row.full_name || row.username);
+    }
+    function portalAdminDmFinishPeerDirectoryLoad(search){
+      if(!search) return;
+      var n = (window.__PORTAL_ADMIN_DM_PEER_ROWS || []).length;
+      if(n > 0){
+        search.placeholder = 'Search ' + n + ' people by name…';
+        return;
+      }
+      var prof = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
+      var myApp = String((prof && prof.app_role) || '').toLowerCase();
+      var myStaff = String((prof && prof.staff_role) || '').toLowerCase();
+      if(myApp !== 'admin' && myApp !== 'ceo' && myStaff !== 'manager' && myStaff !== 'admin'){
+        search.placeholder = 'Directory blocked — your profile needs app_role admin/ceo or staff_role manager in Supabase';
+      }else{
+        search.placeholder = 'No staff found — run migration 20260523150000 in Supabase SQL Editor';
+      }
+    }
     /** Internal chat (admin): threads with staff or leads only — not admin↔admin (those live under CEO's Chat). CEO's Chat: CEOs and other admins. */
     function portalAdminDmProfileMatchesChannel(profileRow){
       var ch = portalAdminDmChannel();
       var role = String(profileRow && profileRow.app_role || '').toLowerCase();
       if(ch === 'staff_lead'){
-        return typeof window.portalInternalDmIsWorkerRecipient === 'function'
-          ? window.portalInternalDmIsWorkerRecipient(profileRow)
-          : (role === 'staff' || role === 'lead');
+        return portalAdminDmIsWorkerRecipient(profileRow);
       }
       return role === 'ceo' || role === 'admin';
     }
@@ -19718,6 +19743,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         renderSuggest(search.value);
       });
       search.addEventListener('focus', function(){
+        if(!(window.__PORTAL_ADMIN_DM_PEER_ROWS || []).length){
+          void portalLoadDmPeerUserSelect().then(function(){
+            renderSuggest(search.value);
+          });
+          return;
+        }
         renderSuggest(search.value);
       });
       search.addEventListener('blur', function(){
@@ -19773,10 +19804,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var id0 = String(row.id || '');
         if(!id0 || id0 === me) return;
         if(ch === 'staff_lead'){
-          var isWorker = typeof window.portalInternalDmIsWorkerRecipient === 'function'
-            ? window.portalInternalDmIsWorkerRecipient(row)
-            : (role === 'staff' || role === 'lead');
-          if(!isWorker) return;
+          if(!portalAdminDmIsWorkerRecipient(row)) return;
         }else{
           if(myRole === 'ceo'){
             if(role !== 'admin' && role !== 'ceo') return;
@@ -19793,16 +19821,25 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       var chunk = 800;
       var from = 0;
+      var selectCols = 'id,full_name,username,app_role,staff_role,dashboard_route,is_active';
       function pullPage(){
         var to = from + chunk - 1;
         return client
           .from('staff_profiles')
-          .select('id,full_name,username,app_role,staff_role,dashboard_route,is_active')
+          .select(selectCols)
           .order('full_name', { ascending: true })
           .range(from, to)
           .then(function(res){
             if(res.error){
-              if(search) search.placeholder = String(res.error.message || res.error || 'Load failed');
+              var errMsg = String(res.error.message || res.error || 'Load failed');
+              if(selectCols.indexOf('dashboard_route') !== -1 && /dashboard_route/i.test(errMsg)){
+                selectCols = 'id,full_name,username,app_role,staff_role,is_active';
+                from = 0;
+                window.__PORTAL_ADMIN_DM_PEER_ROWS = [];
+                seen = {};
+                return pullPage();
+              }
+              if(search) search.placeholder = errMsg;
               return;
             }
             var batch = res.data || [];
@@ -19812,6 +19849,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 return String(a.label || '').localeCompare(String(b.label || ''), undefined, { sensitivity: 'base' });
               });
               portalWireAdminDmPeerAutocomplete();
+              portalAdminDmFinishPeerDirectoryLoad(search);
               return;
             }
             from += chunk;
@@ -19840,6 +19878,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       portalAdminDmApplyTeamTileUnreadClass();
       portalInitAdminDmRealtime();
+      if(channel === 'staff_lead') void portalLoadDmPeerUserSelect();
       var title = channel === 'ceo_exec' ? 'CEO\'s Chat' : 'Internal chat';
       var listBlurb = channel === 'ceo_exec'
         ? ('CEOs and ops admins. <strong>CEO group</strong> opens your shared thread (liaison for most admins; internal CEO circle for CEOs and Victor/Raul/Javi — each role only sees the groups that apply). For <strong>staff and leads only</strong>, use <strong>Internal chat</strong> in Team.')
@@ -19923,7 +19962,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(bn) bn.onclick = function(){
         portalAdminDmTogglePanels('compose');
         portalResetAdminDmPeerPick();
-        void portalLoadDmPeerUserSelect();
+        void portalLoadDmPeerUserSelect().then(function(){
+          var s = $('admDmPeerSearch');
+          if(s){
+            try{ s.focus(); }catch(_f){}
+          }
+        });
       };
       var bb = $('admDmComposeBack');
       if(bb) bb.onclick = function(){
@@ -20022,10 +20066,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(pr.error || !pr.data) throw new Error('Recipient not found.');
           var role = String(pr.data.app_role || '').toLowerCase();
           if(ch === 'staff_lead'){
-            var okWorker = typeof window.portalInternalDmIsWorkerRecipient === 'function'
-              ? window.portalInternalDmIsWorkerRecipient(pr.data)
-              : (role === 'staff' || role === 'lead');
-            if(!okWorker) throw new Error('Internal chat: choose a staff member or session lead. Use CEO\'s Chat for admins or CEOs.');
+            if(!portalAdminDmIsWorkerRecipient(pr.data)) throw new Error('Internal chat: choose a staff member or session lead. Use CEO\'s Chat for admins or CEOs.');
           }else{
             var myRole = String((window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile && window.__PORTAL_SUPABASE__.staff_profile.app_role) || '').toLowerCase();
             if(myRole === 'ceo'){

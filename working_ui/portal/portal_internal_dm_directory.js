@@ -43,6 +43,9 @@
     if (!app && (row.full_name || row.username)) {
       if (!dr || (dr.indexOf("admin") === -1 && dr.indexOf("ceo") === -1)) return true;
     }
+    if (row.full_name || row.username) {
+      if (!EXEC_APP[app] && !EXEC_STAFF_ROLE[sr]) return true;
+    }
     return false;
   }
 
