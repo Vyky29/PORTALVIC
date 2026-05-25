@@ -30,6 +30,22 @@
     return true;
   }
 
+  /** Summer Term 2 feedback reminders only from term resume (e.g. 2026-06-01), not April/May roster. */
+  function feedbackReminderFromIso() {
+    return fromIso();
+  }
+
+  /** True when a calendar day may count toward incomplete-feedback reminders (in term window and not future). */
+  function feedbackReminderDayInScope(iso, todayIso) {
+    var key = normIso(iso);
+    if (!key) return false;
+    var from = feedbackReminderFromIso();
+    var today = normIso(todayIso);
+    if (from && key < from) return false;
+    if (today && key > today) return false;
+    return true;
+  }
+
   function applyView(dashboardData) {
     var t = termCfg();
     if (!dashboardData || typeof dashboardData !== "object") return;
@@ -101,6 +117,8 @@
     fromIso: fromIso,
     toIso: toIso,
     inView: inView,
+    feedbackReminderFromIso: feedbackReminderFromIso,
+    feedbackReminderDayInScope: feedbackReminderDayInScope,
     applyView: applyView,
     workedWeekdaysForStaff: workedWeekdaysForStaff,
     staffOffWeekdayOnDate: staffOffWeekdayOnDate,

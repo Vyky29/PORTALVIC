@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <script src="/portal-static-bootstrap.js?v=20260523-portal-guide"></script>
+  <script src="/portal-shared-js/portal-hub-auth.js?v=20260523-portal-guide"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Portal guide</title>
+  <link rel="stylesheet" href="/portal-shared-js/portal_page_logo.css?v=20260517-portal-logos" />
+  <link rel="stylesheet" href="/portal-shared-js/portal_page_logo_themes.css?v=20260517-portal-logos" />
+  <style>
+    :root{
+      --navy:#0a3d62;
+      --panel-border:#d9e4ef;
+      --text-main:#1d2b3a;
+      --text-soft:#5f7185;
+      --shadow-soft:0 20px 50px rgba(10,61,98,0.10);
+      --app-bg:linear-gradient(180deg,#f4f8fc 0%,#eaf1f8 100%);
+    }
+    body{
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,"Open Sans",Arial,sans-serif;
+      background:var(--app-bg);
+      color:var(--text-main);
+      margin:0;
+      min-height:100vh;
+      padding:18px;
+    }
+    .pg-shell{max-width:720px;margin:0 auto;width:100%;min-width:0}
+    .pg-logo-wrap-outer{text-align:center;margin-bottom:8px}
+    .pg-page-title{
+      margin:0 0 16px;
+      text-align:center;
+      font-size:clamp(26px,4vw,34px);
+      font-weight:800;
+      letter-spacing:-0.03em;
+      color:var(--navy);
+    }
+    .pg-card{
+      border:1px solid var(--panel-border);
+      border-radius:22px;
+      box-shadow:var(--shadow-soft);
+      background:rgba(255,255,255,0.96);
+      padding:20px 18px;
+      min-width:0;
+    }
+    .pg-card p,.pg-card li{
+      line-height:1.55;
+      font-size:15px;
+      color:var(--text-main);
+      overflow-wrap:break-word;
+    }
+    .pg-card p{color:var(--text-soft)}
+    .pg-card h2{
+      margin:0 0 10px;
+      font-size:18px;
+      color:var(--navy);
+      overflow-wrap:break-word;
+    }
+    .pg-note{
+      margin:14px 0 0;
+      padding:12px 14px;
+      border-radius:12px;
+      background:#f0f7ff;
+      border:1px solid #c5d9ef;
+      color:var(--text-main);
+      font-size:14px;
+    }
+    .pg-toolbar{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top:18px;
+      justify-content:center;
+    }
+    .pg-btn{
+      border:0;
+      border-radius:10px;
+      padding:12px 18px;
+      font-weight:700;
+      font-size:15px;
+      cursor:pointer;
+      text-decoration:none;
+      display:inline-block;
+      text-align:center;
+      min-width:0;
+    }
+    .pg-btn-main{background:#0b2a5b;color:#fff}
+    .pg-btn-ghost{background:#e8f1fa;color:#0b2a5b;border:1px solid #b0c7e2}
+  </style>
+</head>
+<body>
+  <div class="pg-shell">
+    <div class="pg-logo-wrap-outer" id="portalPageLogoHost"></div>
+    <h1 class="pg-page-title">Portal guide</h1>
+    <article class="pg-card">
+      <h2>Welcome</h2>
+      <p>
+        This page will walk you through the new Club Sensational staff portal — dashboard, sessions,
+        feedback, venue checks, timesheets, announcements, and the Quick menu.
+      </p>
+      <p class="pg-note" role="status">
+        The full step-by-step guide is being prepared. For now, explore the Quick menu on your dashboard
+        and sign any announcements that need your confirmation. If you are unsure where something lives,
+        open Quick menu → Guide again (at the top during your first month, then under Settings).
+      </p>
+      <div class="pg-toolbar">
+        <a class="pg-btn pg-btn-main" id="pgBackDashboard" href="staff_dashboard.html">Back to dashboard</a>
+        <button type="button" class="pg-btn pg-btn-ghost" id="pgBackHistory">Go back</button>
+      </div>
+    </article>
+  </div>
+  <script>
+    (function () {
+      try {
+        var role = '';
+        try {
+          role = String(sessionStorage.getItem('portalRole') || localStorage.getItem('portalRole') || '').toLowerCase();
+        } catch (_) {}
+        var back = document.getElementById('pgBackDashboard');
+        if (back) {
+          if (role === 'lead') back.setAttribute('href', 'lead_dashboard.html');
+          else if (role === 'admin' || role === 'ceo' || role === 'manager') back.setAttribute('href', 'admin_dashboard.html');
+          else back.setAttribute('href', 'staff_dashboard.html');
+        }
+      } catch (_) {}
+      var histBtn = document.getElementById('pgBackHistory');
+      if (histBtn) {
+        histBtn.addEventListener('click', function () {
+          if (history.length > 1) history.back();
+          else window.location.href = document.getElementById('pgBackDashboard').getAttribute('href') || 'staff_dashboard.html';
+        });
+      }
+      if (typeof portalRenderPageLogo === 'function') portalRenderPageLogo('portalPageLogoHost');
+    })();
+  </script>
+</body>
+</html>

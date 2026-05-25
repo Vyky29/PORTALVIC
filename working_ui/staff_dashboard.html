@@ -1500,7 +1500,12 @@
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuRemindersHeading{
       margin-top:18px;
     }
-    #menuSheet.menu-sheet--logo-lite .menu-sheet-main > .menu-group:not(#portalQuickMenuNotificationsGroup){display:none}
+    #menuSheet.menu-sheet--logo-lite .menu-sheet-main > .menu-group:not(#portalQuickMenuNotificationsGroup):not(#portalQuickMenuGuideGroup){display:none}
+    #menuSheet .menu-btn.menu-btn--portal-guide-promo{
+      border-color:rgba(10,61,98,.32);
+      background:linear-gradient(180deg,#f0f7ff 0%,#e8f1fa 100%);
+    }
+    #menuSheet .menu-btn.menu-btn--portal-guide-promo .menu-btn-copy strong{color:var(--navy,#0a3d62)}
     #menuSheet.menu-sheet--full #portalQuickMenuNotificationsGroup{display:none !important}
     #portalQuickMenuNoticesGrid.menu-grid--portal-notices{
       display:grid;
@@ -6143,6 +6148,15 @@
     </div>
     <div class="sheet-body menu-sheet-body">
       <div class="menu-sheet-main">
+        <div class="menu-group" id="portalQuickMenuGuideGroup" hidden>
+          <div class="menu-group-title">Getting started</div>
+          <div class="menu-grid">
+            <button type="button" class="menu-btn menu-btn--portal-guide menu-btn--portal-guide-promo" id="quickMenuPortalGuideTop" data-portal-external-url="portal_guide.html" aria-label="Portal guide — how to use the app">
+              <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div>
+              <div class="menu-btn-copy"><strong>Guide</strong><span class="menu-btn-sub">How to use the new portal</span></div>
+            </button>
+          </div>
+        </div>
         <div class="menu-group" id="portalQuickMenuNotificationsGroup" hidden>
           <div class="menu-group-title portal-quickmenu-internal-chat-heading" id="portalQuickMenuInternalChatHeading">Internal chat</div>
           <div class="menu-grid menu-grid--portal-internal-chat" id="portalQuickMenuInternalChatSlot"></div>
@@ -6238,6 +6252,10 @@
         <div class="menu-group">
           <div class="menu-group-title">Settings</div>
           <div class="menu-grid" id="quickMenuSettingsGrid">
+            <button type="button" class="menu-btn menu-btn--portal-guide" id="quickMenuPortalGuideSettings" data-portal-external-url="portal_guide.html" hidden aria-label="Portal guide — how to use the app">
+              <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div>
+              <div class="menu-btn-copy"><strong>Guide</strong><span class="menu-btn-sub">How to use the portal</span></div>
+            </button>
             <button type="button" class="menu-btn menu-btn--settings-alerts" data-open="alertsNotificationsSheet" id="quickMenuAlerts">
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
               <div class="menu-btn-copy"><strong>Alerts and Notifications</strong><span class="menu-btn-sub">What we can notify you about on your phone</span></div>
@@ -6490,7 +6508,7 @@
   </section>
 
   <script src="/portal/term_from_timetable.js"></script>
-  <script src="/portal/term_calendar_dashboard_shared.js"></script>
+  <script src="/portal/term_calendar_dashboard_shared.js?v=20260523-feedback-window"></script>
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js"></script>
   <script src="/portal/session_feedback_portal_data.js?v=20260522"></script>
   <script src="/portal/session_feedback_status_portal_data.js?v=20260522"></script>
@@ -6500,6 +6518,7 @@
   <script src="/portal/clients_info_embed.js"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js"></script>
   <script src="/portal/staff_roster_resolve.js"></script>
+  <script src="/portal/portal_guide_menu.js?v=20260523"></script>
   <script>
     console.log("ABSENT FIX VERSION LOADED 20260425");
     /** Real calendar weekday for “Today” (en-GB), aligned with staff_clients_machine.xlsx */
@@ -8641,6 +8660,22 @@
       const em = es.getHours() * 60 + es.getMinutes();
       return sm >= 13 * 60 + 45 && em <= 14 * 60 + 45;
     }
+    function portalFeedbackReminderDayInScope(isoYmd){
+      try{
+        const ptd = window.PortalTermCalendarDashboard;
+        const todayKey = portalTermLocalYmdFromMs(termCalendarNowMs());
+        if(ptd && typeof ptd.feedbackReminderDayInScope === 'function'){
+          return ptd.feedbackReminderDayInScope(isoYmd, todayKey);
+        }
+      }catch(_){}
+      const key = String(isoYmd || '').trim().slice(0, 10);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(key)) return false;
+      const fromIso = (window.PortalTermCalendarDashboard && typeof window.PortalTermCalendarDashboard.feedbackReminderFromIso === 'function')
+        ? window.PortalTermCalendarDashboard.feedbackReminderFromIso()
+        : '2026-06-01';
+      const todayKey = portalTermLocalYmdFromMs(termCalendarNowMs());
+      return key >= fromIso && key <= todayKey;
+    }
     function portalOutstandingSessionFeedbackCountAcrossTerm(){
       try{
         const t = window.PORTAL_TERM_FROM_TIMETABLE;
@@ -8649,8 +8684,13 @@
         if(!t || !t.firstDate || !t.lastDate || !staffId || !worked.length) return 0;
         const baseRealFb = typeof window.__portalIsRealClientSession === 'function' ? window.__portalIsRealClientSession : null;
         const nowMs = termCalendarNowMs();
+        const todayKey = portalTermLocalYmdFromMs(nowMs);
+        const fromIso = (window.PortalTermCalendarDashboard && typeof window.PortalTermCalendarDashboard.feedbackReminderFromIso === 'function')
+          ? window.PortalTermCalendarDashboard.feedbackReminderFromIso()
+          : String(dashboardData.termDashboardCalendarFrom || t.termResumeDate || '2026-06-01').slice(0, 10);
         let count = 0;
-        const cur = new Date(String(t.firstDate) + 'T12:00:00');
+        const loopStart = (fromIso && fromIso > String(t.firstDate || '').slice(0, 10)) ? fromIso : String(t.firstDate).slice(0, 10);
+        const cur = new Date(String(loopStart) + 'T12:00:00');
         const last = new Date(String(t.lastDate) + 'T12:00:00');
         while(cur.getTime() <= last.getTime()){
           const w = cur.getDay();
@@ -8660,6 +8700,10 @@
           }
           const dayWord = cur.toLocaleDateString('en-GB', { weekday: 'long' });
           const key = termCalendarDateKey(cur.getFullYear(), cur.getMonth(), cur.getDate());
+          if(!portalFeedbackReminderDayInScope(key)){
+            cur.setDate(cur.getDate() + 1);
+            continue;
+          }
           const isReal = function(s){
             if(baseRealFb) return baseRealFb(s, key);
             const st = String(s.status || '').toLowerCase();
@@ -8730,7 +8774,9 @@
       if(fbMap && typeof fbMap === 'object'){
         const keys = Object.keys(fbMap);
         for(let i = 0; i < keys.length; i++){
-          const v = fbMap[keys[i]];
+          const k = keys[i];
+          if(typeof portalFeedbackReminderDayInScope === 'function' && !portalFeedbackReminderDayInScope(k)) continue;
+          const v = fbMap[k];
           if(v === 'late' || v === 'pending'){
             termIncomplete = true;
             if(v === 'late') termLate = true;
@@ -12758,6 +12804,41 @@
         if(changed) portalAnnouncementAckMapSave(ack);
       }catch(_){}
     }
+    /** Removes test / demo signed announcements from local ack (pool safety, bank holiday, ase, etc.). */
+    function portalPruneTestAnnouncementAckKeys(){
+      try{
+        const ack = portalAnnouncementAckMapLoad();
+        let changed = false;
+        const titleNeedles = ['pool safety', 'bank holiday', 'spring checklist', 'revised hours'];
+        Object.keys(ack).forEach(function(k){
+          const rec = ack[k];
+          if(!rec || typeof rec !== 'object') return;
+          const title = String(rec.title || '').trim().toLowerCase();
+          const href = String(rec.href || '').trim().toLowerCase();
+          const keyLow = String(k || '').toLowerCase();
+          if(title === 'ase'){
+            delete ack[k];
+            changed = true;
+            return;
+          }
+          if(titleNeedles.some(function(n){ return title.indexOf(n) !== -1; })){
+            delete ack[k];
+            changed = true;
+            return;
+          }
+          if(
+            href.indexOf('portal-announcement-signed-pool') !== -1 ||
+            href.indexOf('portal-announcement-signed-holiday') !== -1 ||
+            keyLow.indexOf('portal-announcement-signed-pool') !== -1 ||
+            keyLow.indexOf('portal-announcement-signed-holiday') !== -1
+          ){
+            delete ack[k];
+            changed = true;
+          }
+        });
+        if(changed) portalAnnouncementAckMapSave(ack);
+      }catch(_){}
+    }
     /** Ensures sample signed announcements exist in the signed map (idempotent). */
     function portalSeedDemoSignedAnnouncementArchivesIfNeeded(){
       try{
@@ -13675,6 +13756,7 @@
       }catch(_){}
     }
     function portalSyncAnnouncementsAndRemindersUi(){
+      if(typeof portalPruneTestAnnouncementAckKeys === 'function') portalPruneTestAnnouncementAckKeys();
       if(typeof portalPruneLegacyStaffDemoAnnouncementAckKeys === 'function') portalPruneLegacyStaffDemoAnnouncementAckKeys();
       if(typeof portalResetStaffDemoAnnouncementAckIfFlagged === 'function') portalResetStaffDemoAnnouncementAckIfFlagged();
       if(typeof portalSeedDemoSignedAnnouncementArchivesIfNeeded === 'function') portalSeedDemoSignedAnnouncementArchivesIfNeeded();
@@ -13684,6 +13766,7 @@
       if(typeof renderAnnouncementsSheetContent === 'function') renderAnnouncementsSheetContent();
       if(typeof syncSessionReviewReminderBanner === 'function') syncSessionReviewReminderBanner();
       if(typeof portalMaybeNotifyUnsignedAnnouncementPending === 'function') portalMaybeNotifyUnsignedAnnouncementPending();
+      if(typeof portalSyncQuickMenuGuidePlacement === 'function') portalSyncQuickMenuGuidePlacement();
     }
 
     function applyTodayGridSizing(grid, count){
@@ -14549,7 +14632,7 @@
             });
             if(maxEndFut > 0) endMap[key] = new Date(maxEndFut).toISOString();
           }
-          fbMap[key] = 'pending';
+          fbMap[key] = 'future';
           cur.setDate(cur.getDate() + 1);
           continue;
         }
@@ -14721,6 +14804,7 @@
         Object.keys(map).forEach(function(k){
           const v = map[k];
           if(sid && typeof portalTermStaffAwayOnDate === 'function' && portalTermStaffAwayOnDate(k, sid)) return;
+          if(typeof portalFeedbackReminderDayInScope === 'function' && !portalFeedbackReminderDayInScope(k)) return;
           if(v === 'pending' || v === 'late') keys.push(String(k || '').trim());
         });
       }
@@ -14731,7 +14815,7 @@
         const first = stats.pending && stats.pending[0];
         if(first && first.sessionKey){
           const d = String(first.sessionKey).split('|')[0].trim();
-          if(/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
+          if(/^\d{4}-\d{2}-\d{2}$/.test(d) && portalFeedbackReminderDayInScope(d)) return d;
         }
       }
       return '';
@@ -15164,6 +15248,7 @@
       }
       if(id === 'menuSheet'){
         if(typeof portalApplyQuickMenuEntryMode === 'function') portalApplyQuickMenuEntryMode();
+        if(typeof portalSyncQuickMenuGuidePlacement === 'function') portalSyncQuickMenuGuidePlacement();
       }
       if(id === 'setupReminderSheet' && backdropEl){
         backdropEl.classList.add('sheet-backdrop--focus');
@@ -16181,6 +16266,8 @@
         const fbGo = e.target.closest('[data-action="open-pending-feedback"]');
         if(fbGo){
           e.preventDefault();
+          const fbSt = typeof portalReminderState === 'function' ? portalReminderState() : null;
+          if(!fbSt || !fbSt.sessionFeedbackNeed) return;
           if(typeof portalSetReviewFlowOrigin === 'function') portalSetReviewFlowOrigin('term');
           if(typeof window.portalOpenTermSheetAndFocusOldestFeedbackDay === 'function'){
             window.portalOpenTermSheetAndFocusOldestFeedbackDay();
@@ -16256,6 +16343,8 @@
       if(!hit) return;
       e.preventDefault();
       e.stopPropagation();
+      const fbSt = typeof portalReminderState === 'function' ? portalReminderState() : null;
+      if(!fbSt || !fbSt.sessionFeedbackNeed) return;
       if(typeof portalSetReviewFlowOrigin === 'function') portalSetReviewFlowOrigin('term');
       if(typeof window.portalOpenTermSheetAndFocusOldestFeedbackDay === 'function'){
         window.portalOpenTermSheetAndFocusOldestFeedbackDay();
