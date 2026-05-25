@@ -21594,58 +21594,277 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       $('modalBackdrop').onclick = function(e){ if(e.target=== $('modalBackdrop')) closeModal(); };
     }
 
-    function openComposeModal(preset){
-      var p0 = String(preset || '').trim().toLowerCase();
-      if(p0 === 'announcement' || p0 === 'reminder'){
-        var isRem = p0 === 'reminder';
-        var kind = isRem ? 'reminder' : 'announcement';
-        var aud = ['all staff','leads','new staff','specific roles','individual users'];
-        var remCatHtml = isRem
-          ? ('<label class="muted" style="display:block;margin-top:12px">Reminder category</label>'+
-            '<select class="sel" id="cmpRemCat" style="max-width:100%;min-width:0;box-sizing:border-box">'+
-            '<option value="training">Training</option><option value="timesheet">Timesheet</option><option value="notes">Notes</option></select>')
-          : '';
-        openModal(
-          '<div class="modal-h"><h2 id="modalTitle">'+(isRem ? 'Compose reminder' : 'Compose announcement')+'</h2></div><div class="modal-b" style="min-width:0">'+
-          '<input type="hidden" id="cmpComposeKind" value="'+esc(kind)+'"/>'+
-          '<label class="muted">Title</label><input type="text" class="inp" id="cmpTitle" maxlength="200" placeholder="'+(isRem ? 'Reminder title…' : 'Announcement title…')+'" style="max-width:100%;min-width:0;box-sizing:border-box"/>'+
-          '<label class="muted" style="display:block;margin-top:12px">Message</label><textarea class="txa" id="cmpBody" placeholder="Internal message…" style="max-width:100%;min-width:0;box-sizing:border-box;min-height:120px"></textarea>'+
-          remCatHtml+
-          '<label class="muted" style="display:block;margin-top:12px">To</label>'+
-          '<select class="sel" id="cmpAud" style="max-width:100%;min-width:0;box-sizing:border-box">'+aud.map(function(t){ return '<option value="'+esc(t)+'">'+esc(t)+'</option>'; }).join('')+'</select></div>'+
-          '<div class="modal-f"><button type="button" class="btn btn--ghost" id="btnCmpX">Cancel</button><button type="button" class="btn btn--pri" id="btnCmpSend">Queue message</button></div>'
-        );
-        $('btnCmpX').onclick = closeModal;
-        $('btnCmpSend').onclick = function(){
-          var title = ($('cmpTitle') && $('cmpTitle').value || '').trim();
-          if(!title){ alert('Add a title.'); return; }
-          var body = ($('cmpBody').value || '').trim()||'(empty)';
-          var typ = kind;
+    function portalMapComposePriorityToDb(priRaw){
+      var p = String(priRaw || '').trim().toLowerCase();
+      if(p === 'urgent') return 'urgent';
+      if(p === 'high') return 'high';
+      return 'normal';
+    }
+    function portalNormalizeComposeToValue(raw){
+      var to = String(raw || '').trim();
+      if(to.indexOf('role:') === 0 || to === 'single_user' || to === 'specific_roles' || to === 'all_everyone' || to === 'leads_everyone' || to === 'new_staff_everyone') return to;
+      var map = {
+        'all staff':'all_everyone',
+        'leads':'leads_everyone',
+        'new staff':'new_staff_everyone',
+        'specific roles':'specific_roles',
+        'individual users':'single_user'
+      };
+      return map[to] || to;
+    }
+    function portalBuildAnnouncementTargetsFromComposer(){
+      var to = portalNormalizeComposeToValue($('cmpTo') && $('cmpTo').value);
+      if(to === 'leads_everyone'){
+        return { ok:true, audience_scope:'leads', delivery_scope:'everyone', target_staff_role:null, target_user_id:null };
+      }
+      if(to === 'specific_roles'){
+        var role = String($('cmpTargetRole') && $('cmpTargetRole').value || '').trim();
+        if(!role) return { ok:false, message:'Choose a role under specific roles.' };
+        return { ok:true, audience_scope:'all_staff', delivery_scope:'staff_role', target_staff_role:role, target_user_id:null };
+      }
+      if(to.indexOf('role:') === 0){
+        var role2 = to.slice(5).trim();
+        if(!role2) return { ok:false, message:'Invalid role target.' };
+        return { ok:true, audience_scope:'all_staff', delivery_scope:'staff_role', target_staff_role:role2, target_user_id:null };
+      }
+      if(to === 'single_user'){
+        var uid = String($('cmpTargetUser') && $('cmpTargetUser').value || '').trim();
+        if(!uid) return { ok:false, message:'Choose a worker for individual users.' };
+        return { ok:true, audience_scope:'all_staff', delivery_scope:'single_user', target_staff_role:null, target_user_id:uid };
+      }
+      return { ok:true, audience_scope:'all_staff', delivery_scope:'everyone', target_staff_role:null, target_user_id:null };
+    }
+    function portalComposeToLabel(){
+      var el = $('cmpTo');
+      if(!el || el.selectedIndex < 0) return '';
+      var o = el.options[el.selectedIndex];
+      var base = o ? String(o.textContent || o.value || '') : '';
+      if(portalNormalizeComposeToValue(el.value) === 'single_user'){
+        var pu = $('cmpTargetUser');
+        if(pu && pu.selectedIndex > 0 && pu.options[pu.selectedIndex]){
+          return base + ' · ' + String(pu.options[pu.selectedIndex].textContent || '').trim();
+        }
+      }
+      if(portalNormalizeComposeToValue(el.value) === 'specific_roles'){
+        var pr = $('cmpTargetRole');
+        if(pr && pr.value) return base + ' · ' + String(pr.value);
+      }
+      return base;
+    }
+    function portalLoadComposerStaffPicker(){
+      var sel = $('cmpTargetUser');
+      if(!sel) return Promise.resolve();
+      var client = getSchedSupabaseClient();
+      sel.innerHTML = '<option value="">Loading…</option>';
+      if(!client){
+        sel.innerHTML = '<option value="">Sign in to Supabase to load staff</option>';
+        return Promise.resolve();
+      }
+      return client.from('staff_profiles').select('id,full_name,username,app_role,staff_role,is_active').order('full_name', { ascending:true }).then(function(res){
+        sel.innerHTML = '<option value="">Choose worker…</option>';
+        if(res.error){
+          sel.innerHTML = '<option value="">'+esc(String(res.error.message || res.error))+'</option>';
+          return;
+        }
+        (res.data || []).forEach(function(row){
+          if(row.is_active === false) return;
+          var label = (row.full_name || row.username || '').trim() || String(row.id || '').slice(0, 8);
+          var bits = [];
+          if(row.app_role) bits.push(row.app_role);
+          if(row.staff_role) bits.push(row.staff_role);
+          var suffix = bits.length ? ' — ' + bits.join(' · ') : '';
+          var opt = document.createElement('option');
+          opt.value = row.id;
+          opt.textContent = label + suffix;
+          sel.appendChild(opt);
+        });
+      });
+    }
+    function portalOnComposeToChange(){
+      var toEl = $('cmpTo');
+      var wrapUser = $('cmpUserWrap');
+      var wrapRole = $('cmpRoleWrap');
+      if(!toEl) return;
+      var val = portalNormalizeComposeToValue(toEl.value);
+      if(wrapUser) wrapUser.hidden = val !== 'single_user';
+      if(wrapRole) wrapRole.hidden = val !== 'specific_roles';
+      if(val === 'single_user') void portalLoadComposerStaffPicker();
+    }
+    function portalComposeToSelectHtml(){
+      var toOpts = [
+        { v:'all_everyone', l:'all staff' },
+        { v:'leads_everyone', l:'leads' },
+        { v:'new_staff_everyone', l:'new staff' },
+        { v:'specific_roles', l:'specific roles' },
+        { v:'single_user', l:'individual users' }
+      ];
+      var roles = ['swimming','fitness','climbing','support','manager','admin'];
+      return '<select class="sel" id="cmpTo" style="max-width:100%;min-width:0;box-sizing:border-box">'+toOpts.map(function(o){
+        return '<option value="'+esc(o.v)+'">'+esc(o.l)+'</option>';
+      }).join('')+'</select>'+
+        '<div id="cmpRoleWrap" hidden style="margin-top:10px;min-width:0">'+
+        '<label class="muted">Role</label>'+
+        '<select class="sel" id="cmpTargetRole" style="max-width:100%;min-width:0;box-sizing:border-box">'+roles.map(function(r){
+          return '<option value="'+esc(r)+'">'+esc(r)+'</option>';
+        }).join('')+'</select></div>'+
+        '<div id="cmpUserWrap" hidden style="margin-top:10px;min-width:0">'+
+        '<label class="muted">Worker</label>'+
+        '<select class="sel" id="cmpTargetUser" style="max-width:100%;min-width:0;box-sizing:border-box"></select></div>';
+    }
+    function portalWireComposeToControls(){
+      var cmpTo = $('cmpTo');
+      if(cmpTo && !cmpTo.dataset.portalCmpToBound){
+        cmpTo.dataset.portalCmpToBound = '1';
+        cmpTo.addEventListener('change', portalOnComposeToChange);
+      }
+      portalOnComposeToChange();
+    }
+    function portalTryInsertStaffAnnouncementFromComposer(){
+      var client = getSchedSupabaseClient();
+      if(!client) return Promise.resolve({ ok:false, skip:true, message:'no supabase' });
+      var body = ($('cmpBody') && $('cmpBody').value || '').trim() || '(empty)';
+      var composeKind = String($('cmpComposeKind') && $('cmpComposeKind').value || '').trim().toLowerCase();
+      var title;
+      var typ;
+      var pri;
+      var exp = '';
+      var tgt = portalBuildAnnouncementTargetsFromComposer();
+      if(!tgt.ok) return Promise.resolve({ ok:false, skip:false, message:tgt.message || 'Invalid audience' });
+      var row = {
+        body:body,
+        audience_scope:tgt.audience_scope,
+        delivery_scope:tgt.delivery_scope,
+        target_staff_role:tgt.target_staff_role,
+        target_user_id:tgt.target_user_id
+      };
+      if(composeKind === 'announcement' || composeKind === 'reminder'){
+        title = String($('cmpTitle') && $('cmpTitle').value || '').trim();
+        if(!title) return Promise.resolve({ ok:false, skip:false, message:'Title required' });
+        title = title.length > 200 ? title.slice(0, 197) + '…' : title;
+        typ = composeKind === 'reminder' ? 'reminder' : 'announcement';
+        pri = 'normal';
+        if(typ === 'reminder'){
+          var remCat = String($('cmpRemCat') && $('cmpRemCat').value || 'notes').trim().toLowerCase();
+          if(['training','timesheet','notes'].indexOf(remCat) === -1) remCat = 'notes';
+          row.reminder_category = remCat;
+        }
+      }else{
+        var lines = body.split('\n').map(function(x){ return String(x || '').trim(); }).filter(Boolean);
+        var firstLine = lines.length ? lines[0] : body;
+        title = firstLine.length > 200 ? firstLine.slice(0, 197) + '…' : firstLine;
+        typ = String($('cmpType') && $('cmpType').value || 'announcement').trim().slice(0, 120);
+        pri = portalMapComposePriorityToDb($('cmpPri') && $('cmpPri').value);
+        exp = String($('cmpExp') && $('cmpExp').value || '').trim();
+        if(exp) row.ends_at = exp + 'T23:59:59.999Z';
+      }
+      row.title = title;
+      row.message_type = typ;
+      row.priority = pri;
+      return client.from('portal_staff_announcements').insert([row]).select('id').then(function(res){
+        if(res.error) return { ok:false, skip:false, message:String(res.error.message || res.error) };
+        var row0 = Array.isArray(res.data) && res.data[0] ? res.data[0] : null;
+        return { ok:true, id:row0 && row0.id ? row0.id : null };
+      });
+    }
+    function portalBindComposeSendHandler(opts){
+      opts = opts || {};
+      var needTitle = !!opts.needTitle;
+      var fixedTyp = opts.typ || '';
+      $('btnCmpX').onclick = closeModal;
+      $('btnCmpSend').onclick = function(){
+        var title = needTitle ? String($('cmpTitle') && $('cmpTitle').value || '').trim() : '';
+        if(needTitle && !title){ alert('Add a title.'); return; }
+        var body = ($('cmpBody') && $('cmpBody').value || '').trim() || '(empty)';
+        var typ = fixedTyp || String($('cmpType') && $('cmpType').value || 'announcement');
+        var audLabel = portalComposeToLabel();
+        var btn = $('btnCmpSend');
+        function finishLocal(msg){
           MOCK.internalFeed.unshift({
-            type:typ, audience:$('cmpAud').value, pri:'normal',
-            body:body, exp:'', at:new Date().toISOString(), source:'Composer'
+            type:typ, audience:audLabel, pri:opts.pri || ($('cmpPri') && $('cmpPri').value) || 'normal',
+            body:body, exp:opts.exp || ($('cmpExp') && $('cmpExp').value) || '', at:new Date().toISOString(), source:'Composer'
           });
-          var histLine = (title + ' — ' + body);
+          var histLine = needTitle ? (title + ' — ' + body) : body;
           pushCommsHistory(typ, histLine.slice(0, 100) + (histLine.length > 100 ? '…' : ''));
           logAction('manual', 'Notification queued · '+typ, MOCK.profile.name);
           closeModal();
           if(state.view==='communications' || state.view==='comms_ops') setView('comms_ops');
           else if(state.view==='comms_bookings') setView('comms_bookings');
-          alert('Demo: message queued in outbox and appended to history.');
-        };
-        $('modalBackdrop').onclick = function(e){ if(e.target=== $('modalBackdrop')) closeModal(); };
+          alert(msg);
+        }
+        if(!getSchedSupabaseClient()){
+          finishLocal('Demo: queued locally only. Sign in to Supabase as admin/CEO to publish to portal_staff_announcements.');
+          return;
+        }
+        var pre = portalBuildAnnouncementTargetsFromComposer();
+        if(!pre.ok){
+          alert(pre.message || 'Check audience / recipient.');
+          return;
+        }
+        if(btn) btn.disabled = true;
+        portalTryInsertStaffAnnouncementFromComposer().then(function(ins){
+          if(btn) btn.disabled = false;
+          if(ins && ins.ok){
+            finishLocal('Published to staff portal. Workers see it after refresh or realtime.');
+            return;
+          }
+          if(ins && ins.skip){
+            finishLocal('Demo: queued locally (Supabase client not ready).');
+            return;
+          }
+          MOCK.internalFeed.unshift({
+            type:typ, audience:audLabel, pri:opts.pri || ($('cmpPri') && $('cmpPri').value) || 'normal',
+            body:body, exp:opts.exp || ($('cmpExp') && $('cmpExp').value) || '', at:new Date().toISOString(), source:'Composer'
+          });
+          pushCommsHistory(typ, (needTitle ? title + ' — ' : '') + body.slice(0, 100));
+          alert('Could not publish to Supabase: '+(ins && ins.message ? ins.message : 'unknown')+'\n\nQueued in local demo feed only.');
+          closeModal();
+          if(state.view==='communications' || state.view==='comms_ops') setView('comms_ops');
+          else if(state.view==='comms_bookings') setView('comms_bookings');
+        }).catch(function(e){
+          if(btn) btn.disabled = false;
+          alert('Publish error: '+(e && e.message ? e.message : String(e)));
+        });
+      };
+      $('modalBackdrop').onclick = function(e){ if(e.target=== $('modalBackdrop')) closeModal(); };
+    }
+    function openComposeModalAnnouncementOrReminder(isReminder){
+      var kind = isReminder ? 'reminder' : 'announcement';
+      var remCatHtml = isReminder
+        ? ('<label class="muted" style="display:block;margin-top:12px">Reminder category</label>'+
+          '<select class="sel" id="cmpRemCat" style="max-width:100%;min-width:0;box-sizing:border-box">'+
+          '<option value="training">Training</option><option value="timesheet">Timesheet</option><option value="notes">Notes</option></select>')
+        : '';
+      openModal(
+        '<div class="modal-h"><h2 id="modalTitle">'+(isReminder ? 'Compose reminder' : 'Compose announcement')+'</h2></div><div class="modal-b" style="min-width:0">'+
+        '<input type="hidden" id="cmpComposeKind" value="'+esc(kind)+'"/>'+
+        '<label class="muted">Title</label><input type="text" class="inp" id="cmpTitle" maxlength="200" placeholder="'+(isReminder ? 'Reminder title…' : 'Announcement title…')+'" style="max-width:100%;min-width:0;box-sizing:border-box"/>'+
+        '<label class="muted" style="display:block;margin-top:12px">Message</label><textarea class="txa" id="cmpBody" placeholder="Internal message…" style="max-width:100%;min-width:0;box-sizing:border-box;min-height:120px"></textarea>'+
+        remCatHtml+
+        '<label class="muted" style="display:block;margin-top:12px">To</label>'+
+        portalComposeToSelectHtml()+
+        '</div>'+
+        '<div class="modal-f"><button type="button" class="btn btn--ghost" id="btnCmpX">Cancel</button><button type="button" class="btn btn--pri" id="btnCmpSend">Queue message</button></div>'
+      );
+      portalWireComposeToControls();
+      portalBindComposeSendHandler({ needTitle:true, typ:kind });
+    }
+    function openComposeModal(preset){
+      var p0 = String(preset || '').trim().toLowerCase();
+      if(p0 === 'announcement' || p0 === 'reminder'){
+        openComposeModalAnnouncementOrReminder(p0 === 'reminder');
         return;
       }
       var types = ['announcement','reminder','urgent','shift change','session change','admin note'];
-      var aud = ['all staff','leads','new staff','specific roles','individual users'];
       openModal(
-        '<div class="modal-h"><h2 id="modalTitle">Compose notification</h2></div><div class="modal-b">'+
-        '<label class="muted">Message</label><textarea class="txa" id="cmpBody" placeholder="Internal message…"></textarea>'+
-        '<div class="filter-row" style="margin-top:12px">'+
-        '<select class="sel" id="cmpType" style="max-width:180px">'+types.map(function(t){ return '<option value="'+esc(t)+'">'+esc(t)+'</option>'; }).join('')+'</select>'+
-        '<select class="sel" id="cmpAud" style="max-width:200px">'+aud.map(function(t){ return '<option value="'+esc(t)+'">'+esc(t)+'</option>'; }).join('')+'</select>'+
-        '<select class="sel" id="cmpPri" style="max-width:140px"><option>normal</option><option>high</option><option>urgent</option></select>'+
-        '</div><label class="muted" style="display:block;margin-top:10px">Expiry (optional)</label><input type="date" class="inp" id="cmpExp" style="max-width:200px"/></div>'+
+        '<div class="modal-h"><h2 id="modalTitle">Compose notification</h2></div><div class="modal-b" style="min-width:0">'+
+        '<label class="muted">Message</label><textarea class="txa" id="cmpBody" placeholder="Internal message…" style="max-width:100%;min-width:0;box-sizing:border-box"></textarea>'+
+        '<div class="filter-row" style="margin-top:12px;min-width:0;flex-wrap:wrap;gap:8px">'+
+        '<select class="sel" id="cmpType" style="max-width:100%;min-width:0;flex:1 1 160px">'+types.map(function(t){ return '<option value="'+esc(t)+'">'+esc(t)+'</option>'; }).join('')+'</select>'+
+        '<select class="sel" id="cmpPri" style="max-width:100%;min-width:0;flex:0 1 120px"><option>normal</option><option>high</option><option>urgent</option></select>'+
+        '</div>'+
+        '<label class="muted" style="display:block;margin-top:12px">To</label>'+
+        portalComposeToSelectHtml()+
+        '<label class="muted" style="display:block;margin-top:10px">Expiry (optional)</label><input type="date" class="inp" id="cmpExp" style="max-width:100%;box-sizing:border-box"/></div>'+
         '<div class="modal-f"><button type="button" class="btn btn--ghost" id="btnCmpX">Cancel</button><button type="button" class="btn btn--pri" id="btnCmpSend">Queue message</button></div>'
       );
       if(preset){
@@ -21653,21 +21872,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var v = map[preset] || preset;
         var sel = $('cmpType'); if(sel) for(var i=0;i<sel.options.length;i++) if(sel.options[i].value===v){ sel.selectedIndex=i; break; }
       }
-      $('btnCmpX').onclick = closeModal;
-      $('btnCmpSend').onclick = function(){
-        var body = $('cmpBody').value.trim()||'(empty)';
-        MOCK.internalFeed.unshift({
-          type:$('cmpType').value, audience:$('cmpAud').value, pri:$('cmpPri').value,
-          body:body, exp:$('cmpExp').value, at:new Date().toISOString(), source:'Composer'
-        });
-        pushCommsHistory($('cmpType').value, body.slice(0,100)+(body.length>100?'…':''));
-        logAction('manual', 'Notification queued · '+$('cmpType').value, MOCK.profile.name);
-        closeModal();
-        if(state.view==='communications' || state.view==='comms_ops') setView('comms_ops');
-        else if(state.view==='comms_bookings') setView('comms_bookings');
-        alert('Demo: message queued in outbox and appended to history.');
-      };
-      $('modalBackdrop').onclick = function(e){ if(e.target=== $('modalBackdrop')) closeModal(); };
+      portalWireComposeToControls();
+      portalBindComposeSendHandler({ needTitle:false });
     }
 
     function openShiftModal(prefSessionId){

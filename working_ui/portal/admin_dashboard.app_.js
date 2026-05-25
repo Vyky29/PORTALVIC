@@ -14345,10 +14345,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return 'normal';
     }
     /** Build audience_scope + delivery_scope + targets from composer "To" control (matches portal_staff_announcements RLS). */
+    function portalNormalizeComposeToValue(raw){
+      var to = String(raw || '').trim();
+      if(to.indexOf('role:') === 0 || to === 'single_user' || to === 'specific_roles' || to === 'all_everyone' || to === 'leads_everyone' || to === 'new_staff_everyone') return to;
+      var map = { 'all staff':'all_everyone', 'leads':'leads_everyone', 'new staff':'new_staff_everyone', 'specific roles':'specific_roles', 'individual users':'single_user' };
+      return map[to] || to;
+    }
     function portalBuildAnnouncementTargetsFromComposer(){
-      var to = String($('cmpTo') && $('cmpTo').value || 'all_everyone').trim();
+      var to = portalNormalizeComposeToValue($('cmpTo') && $('cmpTo').value);
       if(to === 'leads_everyone'){
         return { ok:true, audience_scope:'leads', delivery_scope:'everyone', target_staff_role:null, target_user_id:null };
+      }
+      if(to === 'specific_roles'){
+        var role0 = String($('cmpTargetRole') && $('cmpTargetRole').value || '').trim();
+        if(!role0) return { ok:false, message:'Choose a role under specific roles.' };
+        return { ok:true, audience_scope:'all_staff', delivery_scope:'staff_role', target_staff_role:role0, target_user_id:null };
       }
       if(to.indexOf('role:') === 0){
         var role = to.slice(5).trim();
