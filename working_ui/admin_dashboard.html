@@ -4195,11 +4195,8 @@
       { id:'comms_bookings', label:'Staff & shift notices' },
       { id:'comms_ops', label:'Ops comms & log' },
       { id:'clients', label:'Participants' },
-      { id:'c4k_sessions', label:'Sessions Overview' },
       { id:'c4k_payments', label:'Programme payments', hubLabel:'Invoices' },
       { id:'c4k_waitlist', label:'Waiting list' },
-      { id:'c4k_registers', label:'Session Feedback' },
-      { id:'c4k_late_submissions', label:'Late submissions' },
       { id:'c4k_reviews', label:'Reviews' },
       { id:'c4k_reports', label:'Report requests' },
       { id:'servicecap', label:'Services & capacity (full page)' },
@@ -4223,7 +4220,7 @@
     ];
     var NAV_GROUPS = [
       { id:'g_operator', label:'Operator', children:['dashboard','operations_admin','operator'] },
-      { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','c4k_sessions','c4k_registers','c4k_late_submissions','__h:Participants','clients','__h:Orders','orders_all','orders_outstanding','__h:Communications','comms_ops'] },
+      { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','__h:Participants','clients','__h:Orders','orders_all','orders_outstanding','__h:Communications','comms_ops'] },
       { id:'g_zoho', label:'H&R (ZohoPeople)', children:['staffhr','onboarding','staffhr_contracts'] },
       { id:'g_supabase', label:'Supabase', children:['portal_documents'] },
       { id:'g_xero', label:'Finance (Xero)', children:['c4k_payments','invoices'] },
