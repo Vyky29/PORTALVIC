@@ -788,15 +788,31 @@
     .portal-dm-thread-item:active{opacity:.92}
     .portal-dm-thread-peer{font-weight:700;font-size:15px;min-width:0;overflow-wrap:break-word}
     .portal-dm-thread-meta{font-size:12px;color:var(--muted)}
-    #internalChatMessages.portal-dm-msgs-col{display:flex;flex-direction:column;gap:10px;align-items:stretch}
-    .portal-dm-msg{box-sizing:border-box;width:fit-content;max-width:min(92%,320px);min-width:0;padding:10px 14px;border-radius:14px;font-size:14px;line-height:1.45;overflow-wrap:break-word}
-    .portal-dm-msg--mine{align-self:flex-end;margin-left:auto;margin-right:0;background:var(--blue);color:#fff;border:0;box-shadow:0 2px 8px rgba(45,132,179,.25)}
-    .portal-dm-msg--them{align-self:flex-start;margin-right:auto;background:rgba(0,0,0,.05);border:1px solid rgba(0,0,0,.1);color:var(--ink)}
-    .portal-dm-msg--mine .portal-dm-msg-time{color:rgba(255,255,255,.85)}
-    .portal-dm-msg-time{font-size:10px;color:var(--muted);margin-top:4px}
-    .portal-dm-msg-by{font-size:11px;font-weight:700;line-height:1.2;letter-spacing:0.03em;text-transform:uppercase;margin:0 0 6px;min-width:0;overflow-wrap:break-word}
-    .portal-dm-msg--them .portal-dm-msg-by{color:var(--muted,#64748b)}
-    .portal-dm-msg--mine .portal-dm-msg-by{color:rgba(255,255,255,.92)}
+    #internalChatMessages.portal-dm-msgs-col,
+    #internalChatSheet .portal-dm-msgs-scroll.portal-dm-msgs-col{
+      display:flex;flex-direction:column;gap:4px;align-items:stretch;width:100%;min-width:0;
+      background:#e5e7eb;
+    }
+    .portal-dm-msg-row{display:flex;width:100%;min-width:0;padding:2px 6px;box-sizing:border-box}
+    .portal-dm-msg-row--mine{justify-content:flex-end}
+    .portal-dm-msg-row--them{justify-content:flex-start}
+    .portal-dm-msg{
+      box-sizing:border-box;max-width:min(82%,280px);min-width:0;padding:8px 11px 6px;
+      font-size:14px;line-height:1.45;overflow-wrap:break-word;word-break:break-word;
+    }
+    .portal-dm-msg--mine{
+      background:#d9fdd3;color:#111b21;border-radius:18px 18px 4px 18px;
+      box-shadow:0 1px 1px rgba(11,20,26,.08);
+    }
+    .portal-dm-msg--them{
+      background:#fff;color:#111b21;border-radius:18px 18px 18px 4px;border:0;
+      box-shadow:0 1px 1px rgba(11,20,26,.1);
+    }
+    .portal-dm-msg--mine .portal-dm-msg-time{color:rgba(17,27,33,.55);text-align:right}
+    .portal-dm-msg-time{font-size:11px;color:var(--muted);margin-top:4px;display:block}
+    .portal-dm-msg-by{font-size:11px;font-weight:600;line-height:1.2;margin:0 0 4px;min-width:0;overflow-wrap:break-word;color:#667781}
+    .portal-dm-msg--them .portal-dm-msg-by{color:#667781}
+    .portal-dm-msg--mine .portal-dm-msg-by{color:#667781}
     /* Internal chat sheet: corporate buttons (avoid theme pink on .btn--pri / .btn--sec) */
     #internalChatSheet .portal-dm-btn{
       display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;max-width:100%;box-sizing:border-box;
@@ -1445,12 +1461,12 @@
       min-width:0;
       overflow:auto;
       -webkit-overflow-scrolling:touch;
-      border:1px solid rgba(0,0,0,.1);
+      border:1px solid rgba(0,0,0,.08);
       border-radius:12px;
-      padding:10px;
+      padding:6px 2px;
       padding-bottom:12px;
       margin-bottom:var(--portal-dm-compose-reserve);
-      background:var(--surface);
+      background:#e5e7eb;
     }
     #internalChatSheet .portal-dm-compose-bar{
       position:fixed;
@@ -11264,8 +11280,10 @@
           }
         }
         arr.forEach(function(m){
-          var mine = String(m.author_id || "") === me;
+          var mine = String(m.author_id || "").toLowerCase() === String(me || "").toLowerCase();
           var aid = String(m.author_id || "").trim();
+          var row = document.createElement("div");
+          row.className = "portal-dm-msg-row " + (mine ? "portal-dm-msg-row--mine" : "portal-dm-msg-row--them");
           var div = document.createElement("div");
           div.className = "portal-dm-msg " + (mine ? "portal-dm-msg--mine" : "portal-dm-msg--them");
           var tline = "";
@@ -11274,7 +11292,8 @@
           var chipHtml = chip ? "<div class=\"portal-dm-msg-by\">" + escapeHtml(chip) + "</div>" : "";
           div.innerHTML = chipHtml + "<div style=\"white-space:pre-wrap;min-width:0;overflow-wrap:break-word\">"+escapeHtml(String(m.body || ""))+"</div>"+
             (tline ? "<div class=\"portal-dm-msg-time\">"+escapeHtml(tline)+"</div>" : "");
-          msgsBox.appendChild(div);
+          row.appendChild(div);
+          msgsBox.appendChild(row);
         });
       }
       msgsBox.scrollTop = msgsBox.scrollHeight;

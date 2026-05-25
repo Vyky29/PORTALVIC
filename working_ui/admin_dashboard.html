@@ -19656,9 +19656,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         msgsBox.appendChild(ph);
       }else{
         arr.forEach(function(m){
-          var mine = String(m.author_id || '') === me;
+          var mine = String(m.author_id || '').toLowerCase() === String(me || '').toLowerCase();
           var aid = String(m.author_id || '').trim();
           var arow = authorBy[aid] || {};
+          var row = document.createElement('div');
+          row.className = 'portal-dm-msg-row ' + (mine ? 'portal-dm-msg-row--mine' : 'portal-dm-msg-row--them');
           var div = document.createElement('div');
           div.className = 'portal-dm-msg ' + (mine ? 'portal-dm-msg--mine' : 'portal-dm-msg--them');
           var tline = '';
@@ -19673,7 +19675,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var chipHtml = chip ? '<div class="portal-dm-msg-by">'+esc(chip)+'</div>' : '';
           div.innerHTML = chipHtml+'<div style="white-space:pre-wrap;min-width:0;overflow-wrap:break-word">'+esc(String(m.body || ''))+'</div>'+
             (tline ? '<div class="portal-dm-msg-time">'+esc(tline)+'</div>' : '');
-          msgsBox.appendChild(div);
+          row.appendChild(div);
+          msgsBox.appendChild(row);
         });
       }
       msgsBox.scrollTop = msgsBox.scrollHeight;
@@ -20011,14 +20014,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '#admDmListHost .portal-dm-thread-item:active{opacity:.92}'+
         '#admDmListHost .portal-dm-thread-peer{font-weight:700;font-size:15px;min-width:0;overflow-wrap:break-word}'+
         '#admDmListHost .portal-dm-thread-meta{font-size:12px;color:var(--muted,#64748b)}'+
-        '#admDmMsgs{display:flex;flex-direction:column;gap:10px;align-items:stretch;min-width:0;min-height:140px;max-height:46vh;overflow:auto;padding:12px;border:1px solid rgba(0,0,0,.1);border-radius:12px;background:var(--surface,#f8fafc)}'+
-        '#admDmMsgs .portal-dm-msg{box-sizing:border-box;width:fit-content;max-width:min(92%,320px);min-width:0;padding:10px 14px;border-radius:14px;font-size:14px;line-height:1.45;overflow-wrap:break-word}'+
-        '#admDmMsgs .portal-dm-msg--mine{align-self:flex-end;margin-left:auto;margin-right:0;background:var(--blue,#2d84b3);color:#fff;border:0;box-shadow:0 2px 8px rgba(45,132,179,.25)}'+
-        '#admDmMsgs .portal-dm-msg--them{align-self:flex-start;margin-right:auto;background:rgba(0,0,0,.05);border:1px solid rgba(0,0,0,.1)}'+
-        '#admDmMsgs .portal-dm-msg--mine .portal-dm-msg-time{color:rgba(255,255,255,.85)}'+
-        '#admDmMsgs .portal-dm-msg-time{font-size:10px;color:var(--muted);margin-top:4px}'+
-        '#admDmMsgs .portal-dm-msg-by{font-size:11px;font-weight:700;line-height:1.2;letter-spacing:.03em;text-transform:uppercase;margin:0 0 6px;min-width:0;overflow-wrap:break-word;color:var(--muted,#64748b)}'+
-        '#admDmMsgs .portal-dm-msg--mine .portal-dm-msg-by{color:rgba(255,255,255,.92)}'+
+        '#admDmMsgs{display:flex;flex-direction:column;gap:4px;align-items:stretch;min-width:0;min-height:140px;max-height:46vh;overflow:auto;padding:6px 2px;border:1px solid rgba(0,0,0,.08);border-radius:12px;background:#e5e7eb}'+
+        '#admDmMsgs .portal-dm-msg-row{display:flex;width:100%;min-width:0;padding:2px 6px;box-sizing:border-box}'+
+        '#admDmMsgs .portal-dm-msg-row--mine{justify-content:flex-end}'+
+        '#admDmMsgs .portal-dm-msg-row--them{justify-content:flex-start}'+
+        '#admDmMsgs .portal-dm-msg{box-sizing:border-box;max-width:min(82%,320px);min-width:0;padding:8px 11px 6px;font-size:14px;line-height:1.45;overflow-wrap:break-word;word-break:break-word}'+
+        '#admDmMsgs .portal-dm-msg--mine{background:#d9fdd3;color:#111b21;border-radius:18px 18px 4px 18px;box-shadow:0 1px 1px rgba(11,20,26,.08)}'+
+        '#admDmMsgs .portal-dm-msg--them{background:#fff;color:#111b21;border-radius:18px 18px 18px 4px;border:0;box-shadow:0 1px 1px rgba(11,20,26,.1)}'+
+        '#admDmMsgs .portal-dm-msg--mine .portal-dm-msg-time{color:rgba(17,27,33,.55);text-align:right}'+
+        '#admDmMsgs .portal-dm-msg-time{font-size:11px;color:var(--muted);margin-top:4px;display:block}'+
+        '#admDmMsgs .portal-dm-msg-by{font-size:11px;font-weight:600;line-height:1.2;margin:0 0 4px;min-width:0;overflow-wrap:break-word;color:#667781}'+
+        '#admDmMsgs .portal-dm-msg--mine .portal-dm-msg-by,#admDmMsgs .portal-dm-msg--them .portal-dm-msg-by{color:#667781}'+
         '#admDmPeerPickWrap{position:relative;margin:6px 0 10px;min-width:0}'+
         '#admDmPeerSearch{width:100%;max-width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid rgba(0,0,0,.14);font:inherit;font-size:14px;min-width:0}'+
         '#admDmPeerSuggest{position:absolute;left:0;right:0;top:100%;z-index:50;margin-top:4px;max-height:min(40vh,260px);overflow:auto;padding:6px;border-radius:12px;border:1px solid rgba(0,0,0,.1);background:var(--surface,#fff);box-shadow:0 12px 40px rgba(15,23,42,.15)}'+
