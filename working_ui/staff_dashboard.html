@@ -1408,6 +1408,65 @@
       margin-top:14px;margin-bottom:14px;padding:12px 14px;border:1px solid rgba(0,0,0,.1);border-radius:12px;background:var(--surface);min-width:0;
     }
     .portal-dm-office-compose-host .sel,.portal-dm-office-compose-host .txa{max-width:100%;min-width:0;box-sizing:border-box}
+    /* Internal chat: messages scroll; compose + Send pinned above dock */
+    #internalChatSheet.sheet--fullscreen.sheet--mobile-frame{
+      max-height:100dvh;
+      max-height:100vh;
+    }
+    #internalChatSheet.sheet--fullscreen.sheet--mobile-frame .sheet-body.portal-dm-sheet-body{
+      flex:1;
+      min-height:0;
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      padding-bottom:calc(var(--fab-reserved-bottom, 62px) + 4px);
+    }
+    #internalChatSheet #internalChatListWrap{
+      flex:1;
+      min-height:0;
+      overflow:auto;
+      -webkit-overflow-scrolling:touch;
+    }
+    #internalChatSheet #internalChatThreadWrap.portal-dm-thread-view{
+      flex:1;
+      min-height:0;
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+      gap:8px;
+    }
+    #internalChatSheet .portal-dm-msgs-scroll{
+      flex:1;
+      min-height:0;
+      min-width:0;
+      overflow:auto;
+      -webkit-overflow-scrolling:touch;
+      border:1px solid rgba(0,0,0,.1);
+      border-radius:12px;
+      padding:10px;
+      background:var(--surface);
+    }
+    #internalChatSheet .portal-dm-compose-bar{
+      flex-shrink:0;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      margin-top:0;
+      padding-top:6px;
+      background:linear-gradient(180deg, rgba(255,255,255,0) 0%, #fff 12px);
+    }
+    #internalChatSheet .portal-dm-compose-bar .txa{
+      min-height:72px;
+      max-height:112px;
+      resize:vertical;
+    }
+    #internalChatSheet #internalChatSendBtn{
+      width:100%;
+      max-width:100%;
+      box-sizing:border-box;
+      justify-content:center;
+      margin-bottom:0;
+    }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuNoticesGrid #announcementSignedLog.menu-btn.menu-btn--announcement-signed:hover{
       background:linear-gradient(180deg,#f7eef2 0%,#eedfe6 100%);
       border-color:rgba(131,24,67,.3);
@@ -6405,18 +6464,20 @@
       <h3 id="internalChatTitle">Internal chat</h3>
       <p id="internalChatSheetSub" style="min-width:0;overflow-wrap:break-word;margin:0">Private messages with people you have a thread with.</p>
     </div>
-    <div class="sheet-body portal-dm-wrap" style="min-width:0">
+    <div class="sheet-body portal-dm-wrap portal-dm-sheet-body" style="min-width:0">
       <p id="internalChatTopErr" class="muted" style="margin:0;font-size:13px;color:var(--danger);min-height:0"></p>
       <div id="internalChatListWrap"></div>
       <div id="internalChatOfficeComposeHost" class="portal-dm-office-compose-host" hidden></div>
-      <div id="internalChatThreadWrap" class="portal-dm-wrap" hidden>
+      <div id="internalChatThreadWrap" class="portal-dm-wrap portal-dm-thread-view" hidden>
         <button type="button" class="portal-dm-btn portal-dm-btn--ghost" id="internalChatBackBtn" style="align-self:flex-start;width:auto;max-width:100%">Back to threads</button>
         <p id="internalChatPeerLabel" class="muted" style="margin:0;font-size:14px;font-weight:700;min-width:0;overflow-wrap:break-word"></p>
-        <div id="internalChatMessages" class="portal-dm-msgs-col" style="flex:1;min-height:200px;max-height:50vh;overflow:auto;border:1px solid rgba(0,0,0,.1);border-radius:12px;padding:10px;background:var(--surface);min-width:0"></div>
-        <label class="topbar-sr-only" for="internalChatInput">Your message</label>
-        <textarea id="internalChatInput" class="txa" style="min-height:88px;max-width:100%;min-width:0;box-sizing:border-box" placeholder="Write a message…" maxlength="8000"></textarea>
-        <p id="internalChatErr" class="muted" style="margin:0;font-size:13px;color:var(--danger);min-height:1.2em"></p>
-        <button type="button" class="portal-dm-btn portal-dm-btn--primary" id="internalChatSendBtn" style="width:100%;max-width:100%;box-sizing:border-box;justify-content:center">Send</button>
+        <div id="internalChatMessages" class="portal-dm-msgs-col portal-dm-msgs-scroll"></div>
+        <div class="portal-dm-compose-bar">
+          <label class="topbar-sr-only" for="internalChatInput">Your message</label>
+          <textarea id="internalChatInput" class="txa" placeholder="Write a message…" maxlength="8000"></textarea>
+          <p id="internalChatErr" class="muted" style="margin:0;font-size:13px;color:var(--danger);min-height:1.2em"></p>
+          <button type="button" class="portal-dm-btn portal-dm-btn--primary" id="internalChatSendBtn">Send</button>
+        </div>
       </div>
     </div>
   </section>
