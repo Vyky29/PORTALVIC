@@ -15248,7 +15248,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var id0 = String(row.id || '');
         if(!id0 || id0 === me) return;
         if(ch === 'staff_lead'){
-          if(role !== 'staff' && role !== 'lead') return;
+          var isWorker = typeof window.portalInternalDmIsWorkerRecipient === 'function'
+            ? window.portalInternalDmIsWorkerRecipient(row)
+            : (role === 'staff' || role === 'lead');
+          if(!isWorker) return;
         }else{
           if(myRole === 'ceo'){
             if(role !== 'admin' && role !== 'ceo') return;
