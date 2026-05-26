@@ -17,7 +17,7 @@ const JOHN_SCOPES = [
     id: "sunday-ma-swimfarm",
     label: "Sunday — Multi-Activity (SwimFarm, with Berta)",
     weekdays: ["Sunday"],
-    serviceKeys: ["multi"],
+    serviceKeys: ["multi", "aquatic"],
     venues: ["swimfarm"],
   },
 ];
@@ -34,7 +34,7 @@ const BERTA_SCOPES = [
     id: "sunday-ma-swimfarm",
     label: "Sunday — Multi-Activity (SwimFarm, with John)",
     weekdays: ["Sunday"],
-    serviceKeys: ["multi"],
+    serviceKeys: ["multi", "aquatic"],
     venues: ["swimfarm"],
   },
 ];
@@ -153,4 +153,88 @@ export function portalLeadSessionScopeFilterFns(scopes) {
       return portalLeadFeedbackInScope(fb, scopes);
     },
   };
+}
+
+function statusRowInScope(st, scopes) {
+  if (!st || !scopes || !scopes.length) return false;
+  const iso = String(st.date || "").trim().slice(0, 10);
+  return scopesMatchRow(scopes, iso, st.service, st.venue);
+}
+
+function statusRowUnitKey(st) {
+  const u = String(st.feedbackUnitKey || "").trim();
+  if (u) return u;
+  const iso = String(st.date || "").trim().slice(0, 10);
+  const client = normKey(st.client || st.clientName || "");
+  const slot = normKey(st.timeSlot || st.time_slot || "");
+  return iso + "|" + client + "|" + slot;
+}
+
+function statusRowDone(st) {
+  if (!st) return false;
+  if (String(st.overviewStatus || "").trim().toLowerCase() === "absent") return true;
+  if (st.feedbackComplete === true) return true;
+  if (String(st.overviewStatus || "").trim().toLowerCase() === "feedback_submitted") {
+    return true;
+  }
+  return false;
+}
+
+function feedbackRowsForLeadDay(iso, scopes, mapRow) {
+  const src =
+    typeof window !== "undefined" ? window.SESSION_FEEDBACK_PORTAL_SOURCE : null;
+  if (!src || !Array.isArray(src.rows) || typeof mapRow !== "function") return [];
+  const day = String(iso || "").trim().slice(0, 10);
+  const out = [];
+  src.rows.forEach(function (r) {
+    const row = mapRow(r, scopes);
+    if (!row) return;
+    const d = String(row.session_date || row.date || "").trim().slice(0, 10);
+    if (d === day) out.push(row);
+  });
+  return out;
+}
+
+/** Programme-lead overview: status bundle units in scope, else submitted feedback rows that day. */
+export function portalLeadProgrammeDayStats(iso, scopes, mapPortalRow) {
+  const day = String(iso || "").trim().slice(0, 10);
+  const src =
+    typeof window !== "undefined" ? window.SESSION_FEEDBACK_STATUS_PORTAL_SOURCE : null;
+  if (src && Array.isArray(src.rows)) {
+    const units = {};
+    src.rows.forEach(function (st) {
+      if (String(st.date || "").trim().slice(0, 10) !== day) return;
+      if (!statusRowInScope(st, scopes)) return;
+      const key = statusRowUnitKey(st);
+      if (!key) return;
+      if (!units[key]) units[key] = false;
+      if (statusRowDone(st)) units[key] = true;
+    });
+    const keys = Object.keys(units);
+    if (keys.length) {
+      const done = keys.filter(function (k) {
+        return units[k];
+      }).length;
+      return { total: keys.length, done: done };
+    }
+  }
+  if (typeof mapPortalRow === "function") {
+    const fb = feedbackRowsForLeadDay(iso, scopes, mapPortalRow);
+    if (fb.length) {
+      const seen = new Set();
+      fb.forEach(function (row) {
+        const key =
+          String(row.portal_session_key || "").trim() ||
+          String(row.session_date || "") +
+            "|" +
+            String(row.client_name || "").trim() +
+            "|" +
+            String(row.session_time || "").trim();
+        seen.add(key);
+      });
+      const n = seen.size;
+      return { total: n, done: n };
+    }
+  }
+  return null;
 }

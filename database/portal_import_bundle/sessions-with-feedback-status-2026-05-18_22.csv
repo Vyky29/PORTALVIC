@@ -47,7 +47,7 @@ date,weekday,client,service,time_slot,instructor,venue,notes,session_key,feedbac
 2026-05-19,Tuesday,Rayyan Fi,Aquatic Activity,6 to 6.30,YOUSSEF,Acton,Lane (DE),2026-05-19|18:00|rayyan_fi,2026-05-19|18:00|rayyan_fi,,feedback_submitted,yes,Rayyan F,Youssef Moustafa,2026-05-19||rayyan_f
 2026-05-19,Tuesday,Richard,Aquatic Activity,6 to 6.30,ANGEL,Acton,Lane (SE),2026-05-19|18:00|richard,2026-05-19|18:00|richard,,feedback_submitted,yes,Richard,Angel Falceto,2026-05-19||richard
 2026-05-20,Wednesday,Emmanuel,Day Centre,11 to 3,YOUSSEF,SwimFarm,Hub Room,2026-05-20|emmanuel|day_centre,2026-05-20|emmanuel|day_centre,,absent,no,,,
-2026-05-20,Wednesday,Ikram,Day Centre,11 to 4,"RAUL, LULIYA",SwimFarm,Hub Room,2026-05-20|ikram|day_centre,2026-05-20|ikram|day_centre,,awaiting_feedback,no,,,
+2026-05-20,Wednesday,Ikram,Day Centre,11 to 4,"RAUL, LULIYA",SwimFarm,Hub Room,2026-05-20|ikram|day_centre,2026-05-20|ikram|day_centre,,feedback_submitted,yes,,,
 2026-05-20,Wednesday,Q6 College,Aquatic Activity,11 to 12,ROBERTO,SwimFarm,Pools,2026-05-20|11:00|q6_college,2026-05-20|11:00|q6_college,,feedback_submitted,yes,Q6 College,Roberto Reali,2026-05-20|11:00|q6_college
 2026-05-20,Wednesday,Fadi,Day Centre,12.30 to 3,ROBERTO,SwimFarm,Hub Room,2026-05-20|fadi|day_centre,2026-05-20|fadi|day_centre,,feedback_submitted,yes,Fadi,Roberto Reali,2026-05-20|fadi|day_centre
 2026-05-20,Wednesday,Emmanuel,Day Centre,3 to 4,VICTOR,SwimFarm,Hub Room,2026-05-20|emmanuel|day_centre,2026-05-20|emmanuel|day_centre,,absent,no,,,
@@ -66,7 +66,7 @@ date,weekday,client,service,time_slot,instructor,venue,notes,session_key,feedbac
 2026-05-20,Wednesday,Stephanie,Multi-Activity,5.15 to 6,BERTA,Acton,Room 2,2026-05-20|17:15|stephanie|room_2,2026-05-20|stephanie|17:15|multi-activity|room_2,,feedback_submitted,yes,Stephanie,Youssef Moustafa,2026-05-20||stephanie|teaching_pool
 2026-05-20,Wednesday,Mia,Aquatic Activity,5.30 to 6.30,DAN,Northolt,Teaching Pool,2026-05-20|17:30|mia,2026-05-20|17:30|mia,,feedback_submitted,yes,Mia,Dan Clarke,2026-05-20|17:30|mia
 2026-05-20,Wednesday,Amber,Aquatic Activity,6 to 6.30,ROBERTO,Northolt,Teaching Pool,2026-05-20|18:00|amber,2026-05-20|18:00|amber,,feedback_submitted,yes,Amber,Roberto Reali,2026-05-20|18:00|amber
-2026-05-20,Wednesday,Kayden,Aquatic Activity,6 to 6.30,JAVIER,Acton,Lane,2026-05-20|18:00|kayden,2026-05-20|18:00|kayden,,awaiting_feedback,no,,,
+2026-05-20,Wednesday,Kayden,Aquatic Activity,6 to 6.30,JAVIER,Acton,Lane,2026-05-20|18:00|kayden,2026-05-20|18:00|kayden,,feedback_submitted,yes,,,
 2026-05-21,Thursday,Fadi,Day Centre,12.30 to 3,ROBERTO,SwimFarm,Hub Room,2026-05-21|fadi|day_centre,2026-05-21|fadi|day_centre,,feedback_submitted,yes,Fadi,Roberto Reali,2026-05-21|fadi|day_centre
 2026-05-21,Thursday,Cyrus,Bespoke Programme,3.30 to 5,VICTOR,SwimFarm,Hub Room,2026-05-21|15:30|cyrus|hub_room,2026-05-21|cyrus|15:30|bespoke programme|hub_room,,feedback_submitted,yes,,,
 2026-05-21,Thursday,Ayman,Aquatic Activity,4 to 5,JAVI,Acton,Lane (SE),2026-05-21|16:00|ayman,2026-05-21|16:00|ayman,,absent,no,,,

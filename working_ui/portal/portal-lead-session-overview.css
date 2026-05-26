@@ -140,3 +140,8 @@ body.portal-lead-session-overview-page {
 .c4k-sessions-hub-panel[hidden] {
   display: none !important;
 }
+.ash-day-card--readonly {
+  cursor: default;
+  pointer-events: none;
+  opacity: 0.98;
+}

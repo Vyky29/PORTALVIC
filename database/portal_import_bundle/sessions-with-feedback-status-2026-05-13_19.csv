@@ -21,22 +21,22 @@ date,weekday,client,service,time_slot,instructor,venue,notes,session_key,feedbac
 2026-05-13,Wednesday,Amber,Aquatic Activity,6 to 6.30,ROBERTO,Northolt,Teaching Pool,2026-05-13|18:00|amber,2026-05-13|18:00|amber,,feedback_submitted,yes,Amber,Roberto Reali,2026-05-13|18:00|amber
 2026-05-13,Wednesday,Kayden,Aquatic Activity,6 to 6.30,JAVIER,Acton,Lane,2026-05-13|18:00|kayden,2026-05-13|18:00|kayden,,feedback_submitted,yes,Kayden,Javier Marquez,2026-05-13|18:00|kayden
 2026-05-14,Thursday,Fadi,Day Centre,12.30 to 3,ROBERTO,SwimFarm,Hub Room,2026-05-14|fadi|day_centre,2026-05-14|fadi|day_centre,,feedback_submitted,yes,Fadi,Roberto Reali,2026-05-15||fadi
-2026-05-14,Thursday,Cyrus,Bespoke Programme,3.30 to 5,VICTOR,SwimFarm,Hub Room,2026-05-14|15:30|cyrus|hub_room,2026-05-14|cyrus|15:30|bespoke programme|hub_room,,awaiting_feedback,no,,,
-2026-05-14,Thursday,Ayman,Aquatic Activity,4 to 5,JAVI,Acton,Lane (SE),2026-05-14|16:00|ayman,2026-05-14|16:00|ayman,,awaiting_feedback,no,,,
-2026-05-14,Thursday,Elijah,Aquatic Activity,4 to 4.30,AURORA,Acton,Teaching Pool,2026-05-14|16:00|elijah,2026-05-14|16:00|elijah,,awaiting_feedback,no,,,
+2026-05-14,Thursday,Cyrus,Bespoke Programme,3.30 to 5,VICTOR,SwimFarm,Hub Room,2026-05-14|15:30|cyrus|hub_room,2026-05-14|cyrus|15:30|bespoke programme|hub_room,,feedback_submitted,yes,,,
+2026-05-14,Thursday,Ayman,Aquatic Activity,4 to 5,JAVI,Acton,Lane (SE),2026-05-14|16:00|ayman,2026-05-14|16:00|ayman,,feedback_submitted,yes,,,
+2026-05-14,Thursday,Elijah,Aquatic Activity,4 to 4.30,AURORA,Acton,Teaching Pool,2026-05-14|16:00|elijah,2026-05-14|16:00|elijah,,feedback_submitted,yes,,,
 2026-05-14,Thursday,Tom,Aquatic Activity,4 to 4.30,ROBERTO,Acton,Lane (SE),2026-05-14|16:00|tom,2026-05-14|16:00|tom,,feedback_submitted,yes,Tom,Roberto Reali,2026-05-14||tom
-2026-05-14,Thursday,Aqsa,Aquatic Activity,4.30 to 5.30,AURORA,Acton,Lane,2026-05-14|16:30|aqsa,2026-05-14|16:30|aqsa,,awaiting_feedback,no,,,
+2026-05-14,Thursday,Aqsa,Aquatic Activity,4.30 to 5.30,AURORA,Acton,Lane,2026-05-14|16:30|aqsa,2026-05-14|16:30|aqsa,,feedback_submitted,yes,,,
 2026-05-14,Thursday,Thushyan,Aquatic Activity,4.30 to 5,DAN,Acton,Lane,2026-05-14|16:30|thushyan,2026-05-14|16:30|thushyan,,feedback_submitted,yes,Thushyan,Simon Griffiths,2026-05-14||thushyan
 2026-05-14,Thursday,Yassir,Aquatic Activity,4.30 to 5,ROBERTO,Acton,Swallow End,2026-05-14|16:30|yassir,2026-05-14|16:30|yassir,,absent,no,,,
-2026-05-14,Thursday,Khalid Ab,Aquatic Activity,5 to 5.30,JAVI,Acton,Lane (SE),2026-05-14|17:00|khalid_ab,2026-05-14|17:00|khalid_ab,,awaiting_feedback,no,,,
+2026-05-14,Thursday,Khalid Ab,Aquatic Activity,5 to 5.30,JAVI,Acton,Lane (SE),2026-05-14|17:00|khalid_ab,2026-05-14|17:00|khalid_ab,,feedback_submitted,yes,,,
 2026-05-14,Thursday,Yossi,Aquatic Activity,5 to 5.30,ROBERTO,Acton,Lane,2026-05-14|17:00|yossi,2026-05-14|17:00|yossi,,absent,no,,,
 2026-05-14,Thursday,Yuri,Aquatic Activity,5 to 5.30,DAN,Acton,Lane (SE),2026-05-14|17:00|yuri,2026-05-14|17:00|yuri,,feedback_submitted,yes,Yuri,Simon Griffiths,2026-05-14||yuri
 2026-05-14,Thursday,Eiji,Aquatic Activity,5.30 to 6.30,DAN,Acton,Lane,2026-05-14|17:30|eiji,2026-05-14|17:30|eiji,,feedback_submitted,yes,Eiji,Simon Griffiths,2026-05-14||eiji
 2026-05-14,Thursday,Hazem,Aquatic Activity,5.30 to 6,AURORA,Acton,Teaching Pool,2026-05-14|17:30|hazem,2026-05-14|17:30|hazem,,feedback_submitted,yes,Hazem,Aurora Garcia,2026-05-14|17:30|hazem
-2026-05-14,Thursday,Karo,Aquatic Activity,5.30 to 6,JAVI,Acton,Lane (SE),2026-05-14|17:30|karo,2026-05-14|17:30|karo,,awaiting_feedback,no,,,
+2026-05-14,Thursday,Karo,Aquatic Activity,5.30 to 6,JAVI,Acton,Lane (SE),2026-05-14|17:30|karo,2026-05-14|17:30|karo,,feedback_submitted,yes,,,
 2026-05-14,Thursday,Mohammed,Aquatic Activity,5.30 to 6.30,ROBERTO,Acton,Lane,2026-05-14|17:30|mohammed,2026-05-14|17:30|mohammed,,feedback_submitted,yes,Mohammed,Roberto Reali,2026-05-14||mohammed
-2026-05-14,Thursday,Hazem,Aquatic Activity,6 to 6.30,JAVI,Acton,Teaching Pool,2026-05-14|18:00|hazem,2026-05-14|18:00|hazem,,awaiting_feedback,no,,,
-2026-05-14,Thursday,Maiyar,Aquatic Activity,6 to 6.30,AURORA,Acton,Teaching Pool,2026-05-14|18:00|maiyar,2026-05-14|18:00|maiyar,,awaiting_feedback,no,,,
+2026-05-14,Thursday,Hazem,Aquatic Activity,6 to 6.30,JAVI,Acton,Teaching Pool,2026-05-14|18:00|hazem,2026-05-14|18:00|hazem,,feedback_submitted,yes,,,
+2026-05-14,Thursday,Maiyar,Aquatic Activity,6 to 6.30,AURORA,Acton,Teaching Pool,2026-05-14|18:00|maiyar,2026-05-14|18:00|maiyar,,feedback_submitted,yes,,,
 2026-05-15,Friday,Emmanuel,Day Centre,11 to 3,YOUSSEF,SwimFarm,Hub Room,2026-05-15|emmanuel|day_centre,2026-05-15|emmanuel|day_centre,,absent,no,,,
 2026-05-15,Friday,Ikram,Day Centre,11 to 4,"RAUL, LULIYA",SwimFarm,Hub Room,2026-05-15|ikram|day_centre,2026-05-15|ikram|day_centre,,feedback_submitted,yes,Ikram,Luliya,2026-05-15|ikram|day_centre
 2026-05-15,Friday,Fadi,Day Centre,12.30 to 3,RAUL,SwimFarm,Hub Room,2026-05-15|fadi|day_centre,2026-05-15|fadi|day_centre,,feedback_submitted,yes,Fadi,Roberto Reali,2026-05-15||fadi

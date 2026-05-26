@@ -9,9 +9,10 @@ import {
   portalLeadSessionScopeLabels,
   portalLeadReportInScope,
   portalLeadFeedbackInScope,
+  portalLeadProgrammeDayStats,
 } from "./portal_lead_session_scope.js";
 
-const HUB_SRC = "/portal/admin-sessions-hub.js?v=20260526-lead-overview";
+const HUB_SRC = "/portal/admin-sessions-hub.js?v=20260526-lead-overview2";
 const LEAD_URL = "lead_dashboard.html";
 
 const state = { tab: "overview", scopes: [] };
@@ -32,6 +33,19 @@ function isoToday() {
   const d = new Date();
   const p = (n) => String(n).padStart(2, "0");
   return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
+}
+
+function mondayOfWeekIso(iso) {
+  const s = String(iso || "").trim().slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return isoToday();
+  const p = s.split("-").map(Number);
+  const d = new Date(p[0], p[1] - 1, p[2]);
+  if (isNaN(d.getTime())) return isoToday();
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  const pad = (n) => String(n).padStart(2, "0");
+  return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
 }
 
 function portalFeedbackRows() {
@@ -201,6 +215,13 @@ function configureDayOps(scopes) {
     getSupabaseUrl: () =>
       String(window.SUPABASE_URL || "https://cklpnwhlqsulpmkipmqb.supabase.co").trim(),
     getAnonKey: () => String(window.SUPABASE_ANON_KEY || "").trim(),
+    getFeedbackDayStats: (iso) => {
+      const st = portalLeadProgrammeDayStats(iso, scopes, mapPortalRowToHubFeedback);
+      if (st && typeof st.total === "number") {
+        return { required: st.total, completed: st.done };
+      }
+      return null;
+    },
     buildFeedbackFromPortal: () => {
       const out = [];
       portalFeedbackRows().forEach((r) => {
@@ -248,9 +269,7 @@ async function initHubs(scopes) {
     if (window.__plsoTrackingHub) {
       window.__plsoTrackingHub.tab = "tracking";
       window.__plsoTrackingHub.selectedDay = isoToday();
-      window.__plsoTrackingHub.weekStart = window.__plsoTrackingHub.mondayOfWeek
-        ? window.__plsoTrackingHub.mondayOfWeek(isoToday())
-        : isoToday();
+      window.__plsoTrackingHub.weekStart = mondayOfWeekIso(isoToday());
     }
   }
 

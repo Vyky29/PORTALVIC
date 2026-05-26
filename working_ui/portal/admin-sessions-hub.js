@@ -2016,7 +2016,7 @@
     opts = opts || {};
     if (!weekStartIso || !/^\d{4}-\d{2}-\d{2}$/.test(weekStartIso)) return;
     if (this.mode === "feedback") this._feedbackRangeCustom = false;
-    this.weekStart = weekStartIso;
+    this.weekStart = mondayOfWeek(weekStartIso);
     if (this.mode === "feedback") {
       this.selectedDay = opts.dayIso || this.preferredFeedbackDayInWeek(0);
       this.feedbackMetricsDay = this.selectedDay;
@@ -3591,6 +3591,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       }
       var fbMetricDay = t.closest("[data-ash-feedback-metric-day]");
       if (fbMetricDay && hub.mode === "feedback") {
+        if (hub.opts && hub.opts.readOnlyOverview) {
+          ev.preventDefault();
+          return;
+        }
         hub.feedbackMetricsDay = fbMetricDay.getAttribute("data-ash-feedback-metric-day");
         hub.selectedDay = hub.feedbackMetricsDay;
         hub.renderPanels();
@@ -3618,6 +3622,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       }
       var dayBtn = t.closest("[data-ash-day]");
       if (dayBtn) {
+        if (hub.opts && hub.opts.readOnlyOverview) {
+          ev.preventDefault();
+          return;
+        }
         hub.selectedDay = dayBtn.getAttribute("data-ash-day");
         if (hub.mode === "feedback") hub.feedbackMetricsDay = hub.selectedDay;
         if (hub.opts && hub.opts.externalTabs) hub.renderPanels();
@@ -4308,15 +4316,22 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         if (ds.total && ds.done === 0) stateCls = " ash-day-card--none";
         else if (ds.total && ds.done < ds.total) stateCls = " ash-day-card--partial";
         else if (ds.total && ds.done >= ds.total) stateCls = " ash-day-card--complete";
+        var ro = hub.opts && hub.opts.readOnlyOverview;
+        var tag = ro ? "div" : "button";
+        var tagType = ro ? "" : ' type="button"';
+        var roCls = ro ? " ash-day-card--readonly" : "";
+        var roAttr = ro ? "" : " " + dayAttr + '="' + esc(iso) + '"';
         return (
-          '<button type="button" class="ash-day-card ash-day-card--feedback' +
+          "<" +
+          tag +
+          tagType +
+          ' class="ash-day-card ash-day-card--feedback' +
           metricSel +
           stateCls +
-          '" ' +
-          dayAttr +
-          '="' +
-          esc(iso) +
-          '" style="--ash-day-col:' +
+          roCls +
+          '"' +
+          roAttr +
+          ' style="--ash-day-col:' +
           col +
           ";--ash-day-bg:" +
           tint +
@@ -4342,7 +4357,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           ds.done +
           "/" +
           ds.total +
-          "</span></span></button>"
+          "</span></span></" +
+          tag +
+          ">"
         );
       })
       .join("");
