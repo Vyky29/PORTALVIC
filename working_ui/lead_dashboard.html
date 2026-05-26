@@ -5959,36 +5959,36 @@
       outline:2px solid var(--ink);
       outline-offset:2px;
     }
-    /* Centre (logo): match dock strip — no extra white tile behind PNG */
+    /* Centre (logo): white button matches FOOTERLOGO.png background */
     .dock-nav-item--dashboard{
       padding:6px 4px;
-      border-color:transparent;
-      background:transparent !important;
-      background-color:transparent !important;
+      border-color:rgba(23,50,71,.12);
+      background:#fff !important;
+      background-color:#fff !important;
       background-image:none !important;
-      box-shadow:none;
+      box-shadow:0 2px 10px rgba(23,50,71,.06);
       -webkit-tap-highlight-color:transparent;
     }
     .dock-nav-item--dashboard:hover{
       transform:translateY(-1px);
-      background:rgba(255,255,255,.55) !important;
-      background-color:rgba(255,255,255,.55) !important;
+      background:#fff !important;
+      background-color:#fff !important;
       background-image:none !important;
-      border-color:rgba(23,50,71,.1);
-      box-shadow:0 4px 14px rgba(23,50,71,.06);
+      border-color:rgba(23,50,71,.14);
+      box-shadow:0 6px 20px rgba(23,50,71,.08);
     }
     .dock-nav-item--dashboard:active{
       transform:translateY(0);
-      background:rgba(255,255,255,.4) !important;
-      background-color:rgba(255,255,255,.4) !important;
+      background:#fff !important;
+      background-color:#fff !important;
       background-image:none !important;
-      box-shadow:none;
+      box-shadow:0 2px 10px rgba(23,50,71,.06);
     }
     .dock-nav-item.dock-nav-item--dashboard:focus-visible{
       outline:2px solid var(--ink);
       outline-offset:2px;
-      background:rgba(255,255,255,.5) !important;
-      background-color:rgba(255,255,255,.5) !important;
+      background:#fff !important;
+      background-color:#fff !important;
       background-image:none !important;
     }
     body.dock-context-menu .dock-nav-item--dashboard,
@@ -5997,8 +5997,8 @@
     body.dock-context-clients .dock-nav-item--dashboard,
     body.dock-context-clients .dock-nav-item--dashboard:hover,
     body.dock-context-clients .dock-nav-item--dashboard:active{
-      background:transparent !important;
-      background-color:transparent !important;
+      background:#fff !important;
+      background-color:#fff !important;
       background-image:none !important;
     }
     .dock-nav-item--dashboard .dock-logo-stage{
@@ -6049,8 +6049,8 @@
       object-fit:contain;
       object-position:center;
       pointer-events:none;
-      background:transparent;
-      border-radius:0;
+      background:#fff;
+      border-radius:10px;
     }
     .dock-nav-item--dashboard .dock-logo-orbit{
       display:none !important;
@@ -11084,21 +11084,100 @@
         localStorage.setItem(key, iso);
       }catch(_e2){}
     }
+    function portalStaffDmForceMarkThreadSeen(tid){
+      try{
+        localStorage.setItem(portalStaffDmSeenStorageKey(tid), new Date().toISOString());
+      }catch(_e3){}
+    }
+    function portalStaffDmMsgsByThread(rows){
+      var out = {};
+      (rows || []).forEach(function(m){
+        var t = m && m.thread_id ? String(m.thread_id) : '';
+        if(!t) return;
+        if(!out[t]) out[t] = [];
+        out[t].push(m);
+      });
+      return out;
+    }
     function portalStaffDmIsUnreadOfficeMessage(m, authorProf, me){
       if(!m) return false;
       if(String(m.author_id || '').toLowerCase() === String(me || '').toLowerCase()) return false;
       return portalStaffProfileIsOfficePeer(authorProf || {});
     }
-    function portalStaffDmThreadUnreadFromOffice(threadId, lastMsg, authorProf, me){
-      if(!portalStaffDmIsUnreadOfficeMessage(lastMsg, authorProf, me)) return false;
+    function portalStaffDmLastOfficeMessage(msgsByThread, threadId, authorProfBy, me){
+      var list = msgsByThread[threadId] || [];
+      for(var i = 0; i < list.length; i++){
+        var m = list[i];
+        var prof = authorProfBy[String(m && m.author_id || '')] || {};
+        if(portalStaffDmIsUnreadOfficeMessage(m, prof, me)) return m;
+      }
+      return null;
+    }
+    function portalStaffDmThreadUnreadFromOffice(threadId, officeMsg, authorProf, me){
+      if(!portalStaffDmIsUnreadOfficeMessage(officeMsg, authorProf, me)) return false;
       var seen = portalStaffDmGetSeenIso(threadId);
       if(!seen) return true;
       try{
-        return new Date(lastMsg.created_at).getTime() > new Date(seen).getTime() + 1500;
+        return new Date(officeMsg.created_at).getTime() > new Date(seen).getTime() + 800;
       }catch(_d){
         return false;
       }
     }
+    function portalStaffDmClearUnreadChromeLocally(){
+      window.__PORTAL_STAFF_DM_HAS_UNREAD__ = false;
+      var btn = document.getElementById('portalQuickMenuInternalChatBtn');
+      if(btn) btn.classList.remove('menu-btn--portal-ic--unread');
+      if(typeof syncPortalHeaderAlertChrome === 'function'){
+        syncPortalHeaderAlertChrome(typeof portalReminderState === 'function' ? portalReminderState() : null);
+      }
+      if(typeof syncDockQuickMenuAttention === 'function') syncDockQuickMenuAttention();
+    }
+    window.portalStaffDmAckInboxOpened = async function portalStaffDmAckInboxOpened(){
+      var box = window.__PORTAL_SUPABASE__;
+      var client = box && box.client;
+      var me = String((box && box.staff_profile && box.staff_profile.id) || (box && box.session && box.session.user && box.session.user.id) || '').trim();
+      if(!client || !me){
+        portalStaffDmClearUnreadChromeLocally();
+        return;
+      }
+      try{
+        var tr = await client.from('portal_staff_dm_threads').select('id,participant_a,participant_b').or('participant_a.eq.' + me + ',participant_b.eq.' + me).limit(120);
+        if(tr.error || !tr.data || !tr.data.length){
+          portalStaffDmClearUnreadChromeLocally();
+          return;
+        }
+        var trows = tr.data || [];
+        var peerIdsU = [];
+        if(portalStaffActsAsWorkerMessenger(box && box.staff_profile)){
+          peerIdsU = trows.map(function(r){
+            var a = String(r && r.participant_a || '');
+            var b = String(r && r.participant_b || '');
+            return a === me ? b : a;
+          }).filter(Boolean);
+        }
+        var profU = {};
+        if(peerIdsU.length){
+          var pru = await client.from('staff_profiles').select('id,app_role,staff_role').in('id', peerIdsU);
+          if(!pru.error && Array.isArray(pru.data)){
+            pru.data.forEach(function(p){
+              if(p && p.id) profU[String(p.id)] = p;
+            });
+          }
+        }
+        var ids = trows
+          .filter(function(r){
+            if(!portalStaffActsAsWorkerMessenger(box && box.staff_profile)) return true;
+            var a = String(r && r.participant_a || '');
+            var b = String(r && r.participant_b || '');
+            var peer = a === me ? b : a;
+            return portalStaffProfileIsOfficePeer(profU[peer] || {});
+          })
+          .map(function(r){ return r && r.id ? String(r.id) : ''; })
+          .filter(Boolean);
+        ids.forEach(function(tid){ portalStaffDmForceMarkThreadSeen(tid); });
+      }catch(_ack){}
+      portalStaffDmClearUnreadChromeLocally();
+    };
     window.portalStaffDmSyncUnreadChrome = async function portalStaffDmSyncUnreadChrome(){
       var btn = document.getElementById('portalQuickMenuInternalChatBtn');
       var box = window.__PORTAL_SUPABASE__;
@@ -11107,6 +11186,10 @@
       window.__PORTAL_STAFF_DM_HAS_UNREAD__ = false;
       if(btn) btn.classList.remove('menu-btn--portal-ic--unread');
       if(!btn){
+        if(typeof syncPortalHeaderAlertChrome === 'function'){
+          syncPortalHeaderAlertChrome(typeof portalReminderState === 'function' ? portalReminderState() : null);
+        }
+        if(typeof syncDockQuickMenuAttention === 'function') syncDockQuickMenuAttention();
         return;
       }
       if(!client || !me){
@@ -11176,15 +11259,9 @@
           if(typeof syncDockQuickMenuAttention === 'function') syncDockQuickMenuAttention();
           return;
         }
-        var lastBy = {};
-        (msgRes.data || []).forEach(function(m){
-          var t = m && m.thread_id ? String(m.thread_id) : '';
-          if(!t || lastBy[t]) return;
-          lastBy[t] = m;
-        });
+        var msgsByThread = portalStaffDmMsgsByThread(msgRes.data || []);
         var authorIds = [];
-        Object.keys(lastBy).forEach(function(threadId){
-          var m = lastBy[threadId];
+        (msgRes.data || []).forEach(function(m){
           var aid = m && m.author_id ? String(m.author_id) : '';
           if(aid && authorIds.indexOf(aid) === -1) authorIds.push(aid);
         });
@@ -11198,16 +11275,17 @@
           }
         }
         var chatSh = document.getElementById('internalChatSheet');
-        var chatUi = window.__PORTAL_INTERNAL_CHAT_UI || {};
-        var openTid = (chatSh && chatSh.classList.contains('open') && chatUi.threadId) ? String(chatUi.threadId).trim() : '';
-        if(openTid && lastBy[openTid]){
-          portalStaffDmMarkThreadSeenNow(openTid, lastBy[openTid].created_at);
+        if(chatSh && chatSh.classList.contains('open')){
+          ids.forEach(function(tid){ portalStaffDmForceMarkThreadSeen(tid); });
+          portalStaffDmClearUnreadChromeLocally();
+          return;
         }
         var any = false;
-        Object.keys(lastBy).forEach(function(threadId){
-          var m = lastBy[threadId];
-          var prof = authorProfBy[String(m && m.author_id || '')] || {};
-          if(portalStaffDmThreadUnreadFromOffice(threadId, m, prof, me)) any = true;
+        ids.forEach(function(threadId){
+          var officeMsg = portalStaffDmLastOfficeMessage(msgsByThread, threadId, authorProfBy, me);
+          if(!officeMsg) return;
+          var prof = authorProfBy[String(officeMsg.author_id || '')] || {};
+          if(portalStaffDmThreadUnreadFromOffice(threadId, officeMsg, prof, me)) any = true;
         });
         btn.classList.toggle('menu-btn--portal-ic--unread', any);
         window.__PORTAL_STAFF_DM_HAS_UNREAD__ = any;
@@ -11269,15 +11347,19 @@
             window.__PORTAL_INTERNAL_CHAT_UI.threadId = null;
             window.__PORTAL_INTERNAL_CHAT_UI.skipResetThreadOnNextSheetOpen = false;
           }
-          setTimeout(function(){
-            if(typeof openSheet === 'function') openSheet('internalChatSheet');
-          }, 0);
+          if(typeof window.portalStaffDmAckInboxOpened === 'function'){
+            await window.portalStaffDmAckInboxOpened();
+          }
+          if(typeof openSheet === 'function') openSheet('internalChatSheet');
         })();
       }else{
         window.__PORTAL_INTERNAL_CHAT_UI.threadId = null;
-        setTimeout(function(){
+        void (async function(){
+          if(typeof window.portalStaffDmAckInboxOpened === 'function'){
+            await window.portalStaffDmAckInboxOpened();
+          }
           if(typeof openSheet === 'function') openSheet('internalChatSheet');
-        }, 0);
+        })();
       }
     };
     window.portalStaffResolveOfficeDefaultPeerId = async function portalStaffResolveOfficeDefaultPeerId(){
@@ -11549,22 +11631,16 @@
           return;
         }
         var rowIds = rows.map(function(r){ return String(r.id || ""); }).filter(Boolean);
-        var lastBy = {};
+        var msgRows = [];
         if(rowIds.length){
           var msgRes = await client.from("portal_staff_dm_messages").select("thread_id,author_id,created_at").in("thread_id", rowIds).order("created_at", { ascending: false }).limit(600);
-          if(!msgRes.error && Array.isArray(msgRes.data)){
-            msgRes.data.forEach(function(m){
-              var t = m && m.thread_id ? String(m.thread_id) : "";
-              if(!t || lastBy[t]) return;
-              lastBy[t] = m;
-            });
-          }
+          if(!msgRes.error && Array.isArray(msgRes.data)) msgRows = msgRes.data;
         }
+        var msgsByThread = portalStaffDmMsgsByThread(msgRows);
         var lastAuthorProfBy = {};
         var lastAuthorIds = [];
-        Object.keys(lastBy).forEach(function(tid){
-          var lm = lastBy[tid];
-          var aid = lm && lm.author_id ? String(lm.author_id) : '';
+        msgRows.forEach(function(m){
+          var aid = m && m.author_id ? String(m.author_id) : '';
           if(aid && lastAuthorIds.indexOf(aid) === -1) lastAuthorIds.push(aid);
         });
         if(lastAuthorIds.length){
@@ -11584,9 +11660,9 @@
           try{
             if(r.updated_at) when = new Date(r.updated_at).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
           }catch(_d){}
-          var last = lastBy[id];
-          var lastAuthorProf = last && last.author_id ? (lastAuthorProfBy[String(last.author_id)] || {}) : {};
-          var unread = portalStaffDmThreadUnreadFromOffice(id, last, lastAuthorProf, me);
+          var officeMsg = portalStaffDmLastOfficeMessage(msgsByThread, id, lastAuthorProfBy, me);
+          var officeProf = officeMsg && officeMsg.author_id ? (lastAuthorProfBy[String(officeMsg.author_id)] || {}) : {};
+          var unread = !!(officeMsg && portalStaffDmThreadUnreadFromOffice(id, officeMsg, officeProf, me));
           var btn = document.createElement("button");
           btn.type = "button";
           btn.className = "portal-dm-thread-item" + (unread ? " portal-dm-thread-item--unread" : "");
@@ -11697,12 +11773,7 @@
           try{ lastRow.scrollIntoView({ block: "end", behavior: "auto" }); }catch(_si){}
         }
       });
-      var lastMsgAt = '';
-      if(arr.length){
-        var lastM = arr[arr.length - 1];
-        if(lastM && lastM.created_at) lastMsgAt = String(lastM.created_at);
-      }
-      portalStaffDmMarkThreadSeenNow(tid, lastMsgAt);
+      portalStaffDmForceMarkThreadSeen(tid);
       if(typeof window.portalStaffDmSyncUnreadChrome === "function"){
         void window.portalStaffDmSyncUnreadChrome();
       }
@@ -15394,9 +15465,14 @@
           window.__PORTAL_INTERNAL_CHAT_UI.skipResetThreadOnNextSheetOpen = false;
         }catch(_icc){}
         portalBindInternalChatCloseControls();
-        if(typeof window.portalRenderInternalChatSheet === 'function'){
-          void window.portalRenderInternalChatSheet();
-        }
+        void (async function(){
+          if(typeof window.portalStaffDmAckInboxOpened === 'function'){
+            await window.portalStaffDmAckInboxOpened();
+          }
+          if(typeof window.portalRenderInternalChatSheet === 'function'){
+            await window.portalRenderInternalChatSheet();
+          }
+        })();
       }
       syncPortalInternalChatImmersive();
       syncDockNavContext();
