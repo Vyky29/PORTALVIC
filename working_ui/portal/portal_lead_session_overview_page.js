@@ -9,10 +9,9 @@ import {
   portalLeadSessionScopeLabels,
   portalLeadReportInScope,
   portalLeadFeedbackInScope,
-  portalLeadProgrammeDayStats,
 } from "./portal_lead_session_scope.js";
 
-const HUB_SRC = "/portal/admin-sessions-hub.js?v=20260526-lead-overview2";
+const HUB_SRC = "/portal/admin-sessions-hub.js?v=20260526-lead-overview3";
 const LEAD_URL = "lead_dashboard.html";
 
 const state = { tab: "overview", scopes: [] };
@@ -215,13 +214,6 @@ function configureDayOps(scopes) {
     getSupabaseUrl: () =>
       String(window.SUPABASE_URL || "https://cklpnwhlqsulpmkipmqb.supabase.co").trim(),
     getAnonKey: () => String(window.SUPABASE_ANON_KEY || "").trim(),
-    getFeedbackDayStats: (iso) => {
-      const st = portalLeadProgrammeDayStats(iso, scopes, mapPortalRowToHubFeedback);
-      if (st && typeof st.total === "number") {
-        return { required: st.total, completed: st.done };
-      }
-      return null;
-    },
     buildFeedbackFromPortal: () => {
       const out = [];
       portalFeedbackRows().forEach((r) => {
@@ -258,6 +250,8 @@ async function initHubs(scopes) {
     payload: window.PortalDayOps.getPayload(),
     slotScopeFilter: filters.slotScopeFilter,
     feedbackRowScopeFilter: filters.feedbackRowScopeFilter,
+    hideEmptyWeekDays: true,
+    readOnlyOverview: true,
   };
 
   const trackRoot = $("adminSessionsHubRoot");
@@ -268,8 +262,13 @@ async function initHubs(scopes) {
     });
     if (window.__plsoTrackingHub) {
       window.__plsoTrackingHub.tab = "tracking";
-      window.__plsoTrackingHub.selectedDay = isoToday();
       window.__plsoTrackingHub.weekStart = mondayOfWeekIso(isoToday());
+      const showDays =
+        typeof window.__plsoTrackingHub.weekDaysForDisplay === "function"
+          ? window.__plsoTrackingHub.weekDaysForDisplay()
+          : window.__plsoTrackingHub.weekDays();
+      window.__plsoTrackingHub.selectedDay =
+        showDays.length > 0 ? showDays[0] : isoToday();
     }
   }
 
@@ -279,6 +278,14 @@ async function initHubs(scopes) {
       ...hubOpts,
       mode: "feedback",
     });
+    if (window.__plsoFeedbackHub) {
+      window.__plsoFeedbackHub.weekStart = mondayOfWeekIso(isoToday());
+      const fbDays =
+        typeof window.__plsoFeedbackHub.weekDaysForDisplay === "function"
+          ? window.__plsoFeedbackHub.weekDaysForDisplay()
+          : window.__plsoFeedbackHub.weekDays();
+      if (fbDays.length > 0) window.__plsoFeedbackHub.selectedDay = fbDays[0];
+    }
   }
 }
 

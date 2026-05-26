@@ -2483,6 +2483,17 @@
     return days;
   };
 
+  /** When opts.hideEmptyWeekDays, only Mon–Sun dates with roster sessions in scope. */
+  AdminSessionsHub.prototype.weekDaysForDisplay = function () {
+    var hub = this;
+    var days = this.weekDays();
+    if (!hub.opts || !hub.opts.hideEmptyWeekDays) return days;
+    return days.filter(function (iso) {
+      var st = hub.dayStats(iso);
+      return st.total > 0;
+    });
+  };
+
   AdminSessionsHub.prototype.selectedDayOffsetInWeek = function () {
     var days = this.weekDays();
     var i;
@@ -2509,10 +2520,22 @@
     var slots = this.expandSlotsForDate(iso).filter(function (s) {
       return !shouldOmitOverviewSlot(hub, s);
     });
-    var total = slots.length;
+    var units = this.getFeedbackUnitsForDate(iso)
+      .map(function (u) {
+        return {
+          key: u.key,
+          slots: u.slots.filter(function (s) {
+            return !shouldOmitOverviewSlot(hub, s);
+          }),
+        };
+      })
+      .filter(function (u) {
+        return u.slots.length > 0;
+      });
+    var total = units.length;
     var rosterDone = 0;
-    for (var i = 0; i < slots.length; i++) {
-      if (hub.slotFeedbackComplete(slots[i]) || hub.slotIsAbsent(slots[i])) rosterDone++;
+    for (var i = 0; i < units.length; i++) {
+      if (hub.feedbackUnitComplete(units[i]) || hub.feedbackUnitAbsent(units[i])) rosterDone++;
     }
     if (this.mode === "feedback") {
       if (total > 0) return { total: total, done: rosterDone };
@@ -3766,7 +3789,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var esc = this.escapeHtml;
     var weekRange =
       formatShortDate(this.weekStart) + " \u2013 " + formatShortDate(addDaysIso(this.weekStart, 6));
-    var cards = this.weekDays()
+    var cards = this.weekDaysForDisplay()
       .map(function (iso, idx) {
         return htmlWeekDayCard(hub, iso, idx, esc);
       })
@@ -4280,7 +4303,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     opts = opts || {};
     var hub = this;
     var esc = this.escapeHtml;
-    var days = this.weekDays();
+    var days = this.weekDaysForDisplay();
     var dayAttr = opts.overviewPicker ? "data-ash-day" : "data-ash-feedback-metric-day";
     var weekLabel =
       formatShortDate(this.weekStart) + " \u2013 " + formatShortDate(addDaysIso(this.weekStart, 6));

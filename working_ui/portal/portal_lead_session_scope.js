@@ -94,7 +94,7 @@ function serviceMatches(serviceRaw, scope) {
 function venueMatches(venueRaw, scope) {
   if (!scope.venues || !scope.venues.length) return true;
   const v = normVenue(venueRaw);
-  if (!v) return true;
+  if (!v) return false;
   return scope.venues.some((want) => v.indexOf(normVenue(want)) >= 0 || normVenue(want).indexOf(v) >= 0);
 }
 
