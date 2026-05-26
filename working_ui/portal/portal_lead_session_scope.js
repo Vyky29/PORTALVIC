@@ -42,6 +42,7 @@ const JOHN_SCOPES = [
     weekdays: ["Sunday"],
     serviceKeys: ["multi"],
     venues: ["swimfarm"],
+    programmeWideRoster: true,
   },
 ];
 
@@ -52,6 +53,7 @@ const BERTA_SCOPES = [
     weekdays: ["Wednesday"],
     serviceKeys: ["multi"],
     venues: ["acton"],
+    programmeWideRoster: true,
   },
   {
     id: "sunday-ma-swimfarm",
@@ -59,6 +61,7 @@ const BERTA_SCOPES = [
     weekdays: ["Sunday"],
     serviceKeys: ["multi"],
     venues: ["swimfarm"],
+    programmeWideRoster: true,
   },
 ];
 
@@ -204,8 +207,8 @@ export function portalLeadSlotInScope(slot, scopes) {
 }
 
 export function portalLeadSlotInScopeForLead(slot, scopes, leadProfileKey) {
-  if (!portalLeadSlotInScope(slot, scopes)) return false;
-  return portalLeadSlotHasLeadInstructor(slot, leadProfileKey);
+  const iso = String(slot.iso || slot.session_date || "").slice(0, 10);
+  return portalLeadSlotInScopeForDay(slot, scopes, leadProfileKey, iso);
 }
 
 export function portalLeadFeedbackInScope(fb, scopes) {
@@ -252,6 +255,24 @@ function activeScopesForWeekday(scopes, iso) {
   return scopes.filter((sc) => sc.weekdays.indexOf(wd) >= 0);
 }
 
+/** Wed/Sun MA: all roster rows + all staff feedback for that programme day (not lead-instructor only). */
+export function portalLeadDayUsesProgrammeWideRoster(scopes, iso) {
+  const active = activeScopesForWeekday(scopes, iso);
+  return (
+    active.length > 0 &&
+    active.every((sc) => sc.programmeWideRoster === true)
+  );
+}
+
+function portalLeadSlotInScopeForDay(slot, scopes, leadProfileKey, iso) {
+  if (!portalLeadSlotInScope(slot, scopes)) return false;
+  const day = String(iso || slot.iso || slot.session_date || "")
+    .trim()
+    .slice(0, 10);
+  if (portalLeadDayUsesProgrammeWideRoster(scopes, day)) return true;
+  return portalLeadSlotHasLeadInstructor(slot, leadProfileKey);
+}
+
 function isBespokeLeadDay(scopes, iso) {
   const active = activeScopesForWeekday(scopes, iso);
   return (
@@ -269,7 +290,7 @@ export function portalLeadDayFeedbackStats(iso, scopes, leadProfileKey, hub) {
   if (!hub || typeof hub.expandSlotsForDate !== "function") return null;
   const day = String(iso || "").trim().slice(0, 10);
   const slots = hub.expandSlotsForDate(day).filter((s) =>
-    portalLeadSlotInScopeForLead(s, scopes, leadProfileKey)
+    portalLeadSlotInScopeForDay(s, scopes, leadProfileKey, day)
   );
   if (!slots.length) return { total: 0, done: 0 };
 
@@ -280,7 +301,7 @@ export function portalLeadDayFeedbackStats(iso, scopes, leadProfileKey, hub) {
           .map((u) => ({
             key: u.key,
             slots: u.slots.filter((s) =>
-              portalLeadSlotInScopeForLead(s, scopes, leadProfileKey)
+              portalLeadSlotInScopeForDay(s, scopes, leadProfileKey, day)
             ),
           }))
           .filter((u) => u.slots.length > 0)

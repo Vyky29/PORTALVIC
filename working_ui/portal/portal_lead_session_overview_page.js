@@ -380,12 +380,16 @@ async function initHubs(scopes, leadKey) {
     if (window.__plsoTrackingHub) {
       window.__plsoTrackingHub.tab = "tracking";
       window.__plsoTrackingHub.weekStart = mondayOfWeekIso(isoToday());
-      const showDays =
-        typeof window.__plsoTrackingHub.weekDaysForDisplay === "function"
-          ? window.__plsoTrackingHub.weekDaysForDisplay()
-          : window.__plsoTrackingHub.weekDays();
-      window.__plsoTrackingHub.selectedDay =
-        showDays.length > 0 ? showDays[0] : isoToday();
+      if (typeof window.__plsoTrackingHub.snapSelectedDayToDisplayWeek === "function") {
+        window.__plsoTrackingHub.snapSelectedDayToDisplayWeek();
+      } else {
+        const showDays =
+          typeof window.__plsoTrackingHub.weekDaysForDisplay === "function"
+            ? window.__plsoTrackingHub.weekDaysForDisplay()
+            : window.__plsoTrackingHub.weekDays();
+        window.__plsoTrackingHub.selectedDay =
+          showDays.length > 0 ? showDays[0] : isoToday();
+      }
     }
   }
 
@@ -397,11 +401,15 @@ async function initHubs(scopes, leadKey) {
     });
     if (window.__plsoFeedbackHub) {
       window.__plsoFeedbackHub.weekStart = mondayOfWeekIso(isoToday());
-      const fbDays =
-        typeof window.__plsoFeedbackHub.weekDaysForDisplay === "function"
-          ? window.__plsoFeedbackHub.weekDaysForDisplay()
-          : window.__plsoFeedbackHub.weekDays();
-      if (fbDays.length > 0) window.__plsoFeedbackHub.selectedDay = fbDays[0];
+      if (typeof window.__plsoFeedbackHub.snapSelectedDayToDisplayWeek === "function") {
+        window.__plsoFeedbackHub.snapSelectedDayToDisplayWeek();
+      } else {
+        const fbDays =
+          typeof window.__plsoFeedbackHub.weekDaysForDisplay === "function"
+            ? window.__plsoFeedbackHub.weekDaysForDisplay()
+            : window.__plsoFeedbackHub.weekDays();
+        if (fbDays.length > 0) window.__plsoFeedbackHub.selectedDay = fbDays[0];
+      }
     }
   }
 }

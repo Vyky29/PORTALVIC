@@ -1844,16 +1844,31 @@
   };
 
   AdminSessionsHub.prototype.preferredFeedbackDayInWeek = function (offset) {
-    var days = this.weekDays();
+    var days =
+      this.opts && this.opts.hideEmptyWeekDays
+        ? this.weekDaysForDisplay()
+        : this.weekDays();
+    if (!days.length) days = this.weekDays();
     var off =
       typeof offset === "number" && offset >= 0 && offset < days.length
         ? offset
-        : this.selectedDayOffsetInWeek();
+        : Math.max(0, days.indexOf(this.selectedDay));
+    if (off < 0) off = 0;
     if (this.feedbackCountForDate(days[off]) > 0) return days[off];
     for (var i = 0; i < days.length; i++) {
       if (this.feedbackCountForDate(days[i]) > 0) return days[i];
     }
     return days[off] || days[0];
+  };
+
+  /** After week change with hideEmptyWeekDays, keep selectedDay on a visible programme day. */
+  AdminSessionsHub.prototype.snapSelectedDayToDisplayWeek = function () {
+    if (!this.opts || !this.opts.hideEmptyWeekDays) return;
+    var days = this.weekDaysForDisplay();
+    if (!days.length) return;
+    if (days.indexOf(this.selectedDay) >= 0) return;
+    this.selectedDay = this.preferredFeedbackDayInWeek(0);
+    if (this.mode === "feedback") this.feedbackMetricsDay = this.selectedDay;
   };
 
   /** Pick a day in the current week that has absents (keeps weekday offset when possible). */
@@ -1970,6 +1985,9 @@
         return hub.feedbackNotesCountForDate(d, noteTab);
       });
     }
+    if (this.mode === "feedback" || (this.opts && this.opts.hideEmptyWeekDays)) {
+      return this.preferredFeedbackDayInWeek(offset);
+    }
     return addDaysIso(this.weekStart, offset);
   };
 
@@ -2048,6 +2066,7 @@
       this.selectedDay = opts.dayIso || addDaysIso(weekStartIso, 0);
     }
     this.syncWeekRange();
+    this.snapSelectedDayToDisplayWeek();
     if (this.opts && this.opts.externalTabs) this.renderPanels();
     else this.render();
     this.scrollToWeekPicker();
@@ -3614,10 +3633,6 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       }
       var fbMetricDay = t.closest("[data-ash-feedback-metric-day]");
       if (fbMetricDay && hub.mode === "feedback") {
-        if (hub.opts && hub.opts.readOnlyOverview) {
-          ev.preventDefault();
-          return;
-        }
         hub.feedbackMetricsDay = fbMetricDay.getAttribute("data-ash-feedback-metric-day");
         hub.selectedDay = hub.feedbackMetricsDay;
         hub.renderPanels();
@@ -3645,10 +3660,6 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       }
       var dayBtn = t.closest("[data-ash-day]");
       if (dayBtn) {
-        if (hub.opts && hub.opts.readOnlyOverview) {
-          ev.preventDefault();
-          return;
-        }
         hub.selectedDay = dayBtn.getAttribute("data-ash-day");
         if (hub.mode === "feedback") hub.feedbackMetricsDay = hub.selectedDay;
         if (hub.opts && hub.opts.externalTabs) hub.renderPanels();
@@ -3666,6 +3677,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           hub._feedbackRangeCustom = false;
         }
         hub.syncWeekRange();
+        hub.snapSelectedDayToDisplayWeek();
         if (hub.opts && hub.opts.externalTabs) hub.renderPanels();
         else hub.render();
         return;
@@ -3680,6 +3692,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           hub._feedbackRangeCustom = false;
         }
         hub.syncWeekRange();
+        hub.snapSelectedDayToDisplayWeek();
         if (hub.opts && hub.opts.externalTabs) hub.renderPanels();
         else hub.render();
         return;
@@ -4340,10 +4353,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         else if (ds.total && ds.done < ds.total) stateCls = " ash-day-card--partial";
         else if (ds.total && ds.done >= ds.total) stateCls = " ash-day-card--complete";
         var ro = hub.opts && hub.opts.readOnlyOverview;
-        var tag = ro ? "div" : "button";
-        var tagType = ro ? "" : ' type="button"';
+        var tag = "button";
+        var tagType = ' type="button"';
         var roCls = ro ? " ash-day-card--readonly" : "";
-        var roAttr = ro ? "" : " " + dayAttr + '="' + esc(iso) + '"';
+        var roAttr = " " + dayAttr + '="' + esc(iso) + '"';
         return (
           "<" +
           tag +
