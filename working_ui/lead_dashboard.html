@@ -750,6 +750,24 @@
     /* Mobile/desktop simulator: Quick menu → Settings → View (toggle) */
     body.staff-dashboard-ready .menu-btn--settings-view{display:none !important}
 
+    #menuSheet .portal-exec-workspace-switch-slot{display:contents}
+    #menuSheet .portal-exec-workspace-switch-slot:empty{display:none}
+    #menuSheet .menu-btn.menu-btn--exec-workspace-staff .menu-btn-icon{
+      background:linear-gradient(180deg,#eef6fb,#e2f0f8);
+      color:#256f9a;
+      border-color:rgba(37,111,154,.2);
+    }
+    #menuSheet .menu-btn.menu-btn--exec-workspace-lead .menu-btn-icon{
+      background:linear-gradient(180deg,#fff6e8,#ffecd0);
+      color:#9a5b10;
+      border-color:rgba(154,91,16,.22);
+    }
+    #menuSheet .menu-btn.menu-btn--exec-workspace-admin .menu-btn-icon{
+      background:linear-gradient(180deg,#edf7f1,#dff0e6);
+      color:#1a6b45;
+      border-color:rgba(26,107,69,.22);
+    }
+
     #menuSheet .menu-btn.menu-btn--settings-alerts .menu-btn-icon{
       background:linear-gradient(180deg,#f0f4ff,#e4ebfc);
       color:#4a5bb5;
@@ -6804,6 +6822,7 @@
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
               <div class="menu-btn-copy"><strong>Alerts and Notifications</strong><span class="menu-btn-sub">What we can notify you about on your phone</span></div>
             </button>
+            <div id="portalExecWorkspaceSwitchSlot" class="portal-exec-workspace-switch-slot" hidden aria-hidden="true"></div>
             <div class="menu-btn menu-btn--settings-view" id="quickMenuViewRow">
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
               <div class="menu-btn-copy">
@@ -17431,11 +17450,13 @@
       s.type = "module";
       s.textContent = `
         import { portalLogout, bootstrapDashboardSupabase, portalInferStaffKey } from "portal/auth-handler.js";
+        import { portalSyncExecWorkspaceSwitchSlot } from "portal/portal_exec_workspace_switch.js?v=20260526-exec-modes";
         window.__PORTAL_LOGOUT_FN__ = portalLogout;
         window.portalInferStaffKey = portalInferStaffKey;
         try { await bootstrapDashboardSupabase({ page: "lead" }); } catch (e) {
           console.warn("lead_dashboard: Supabase bootstrap", e);
         }
+        portalSyncExecWorkspaceSwitchSlot("lead");
         const profile = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
         const session = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session;
         if (window.dashboardData) {
