@@ -3304,19 +3304,7 @@
     }
     .section-card--today .session-card.session-card--available .session-cell--client{color:#000}
 
-    /* Overview: Tomorrow / Week / Term — below Today; larger icons and text */
-    .section-card--overview .overview-section-head{
-      padding:5px 10px 2px;
-      border-bottom:1px solid rgba(23,50,71,.06);
-    }
-    .section-card--overview .overview-section-title{
-      margin:0;
-      font-size:13px;
-      font-weight:800;
-      letter-spacing:.04em;
-      text-transform:uppercase;
-      color:var(--muted);
-    }
+    /* Overview: Next session / Week / Term — buttons only, vertically centered in card */
     .section-card.section-card--overview{
       margin-top:0;
       margin-bottom:4px;
@@ -3328,17 +3316,20 @@
       align-items:stretch;
       justify-content:center;
       flex-shrink:0;
+      min-height:5.25rem;
     }
     .section-card--overview .extra-grid{
       display:grid;
       grid-template-columns:repeat(3,minmax(0,1fr));
       grid-template-rows:auto;
       flex:0 0 auto;
-      gap:3px;
-      padding:2px 4px 3px;
+      gap:6px;
+      padding:10px 6px;
       width:100%;
       box-sizing:border-box;
       align-items:stretch;
+      align-content:center;
+      margin:auto 0;
     }
     .section-card--overview .mini-card{
       flex-direction:column;
@@ -5914,7 +5905,7 @@
       margin:0 auto;
       display:flex;
       flex-direction:row;
-      align-items:stretch;
+      align-items:center;
       justify-content:stretch;
       min-height:calc(var(--dock-strip-height) + env(safe-area-inset-bottom, 0px));
       padding:2px max(6px, env(safe-area-inset-left)) calc(4px + env(safe-area-inset-bottom, 0px)) max(6px, env(safe-area-inset-right));
@@ -6462,10 +6453,7 @@
     <div class="portal-dashboard-dock-adjacent">
     <div class="session-review-reminder-host" id="sessionReviewReminderHost" aria-live="polite"></div>
 
-    <section class="section-card section-card--overview" aria-labelledby="overviewHeading">
-      <div class="overview-section-head">
-        <h2 class="overview-section-title" id="overviewHeading">Overview</h2>
-      </div>
+    <section class="section-card section-card--overview" aria-label="Next session, week, and term">
       <div class="extra-grid">
         <div class="mini-card" data-open="tomorrowSheet" role="button" tabindex="0" aria-label="Open next session list">
           <span class="mini-card-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2"/><path d="M9 3h6M12 3v2"/></svg></span>
