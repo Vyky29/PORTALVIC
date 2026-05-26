@@ -6107,6 +6107,18 @@
       33%{filter:drop-shadow(0 0 10px rgba(220,38,38,.45))}
       66%{filter:drop-shadow(0 0 10px rgba(249,115,22,.45))}
     }
+    /* Footer centre logo: always static white — orbits/pulse live on header avatar only */
+    .dock-nav-item--dashboard .dock-nav-item__logo,
+    .dock-nav-item--dashboard[class*="dock-nav-item--portal-attention"] .dock-nav-item__logo{
+      animation:none !important;
+      filter:none !important;
+    }
+    .dock-nav-item--dashboard .dock-logo-orbit,
+    .dock-nav-item--dashboard.dock-nav-item--portal-attention .dock-logo-orbit{
+      display:none !important;
+      opacity:0 !important;
+      visibility:hidden !important;
+    }
     @media (prefers-reduced-motion: reduce){
       .dock-nav-item--dashboard .dock-logo-orbit-layer{animation:none}
       .dock-nav-item--dashboard[class*="portal-attention"] .dock-nav-item__logo{animation:none}
@@ -13816,18 +13828,8 @@
       ];
       const isDock = el.classList && el.classList.contains('dock-nav-item--dashboard');
       (isDock ? dockClasses : orbitClasses).forEach(function(c){ el.classList.remove(c); });
-      if(isDock){
-        if(!active) return;
-        el.classList.add('dock-nav-item--portal-attention');
-        if(f.chat && f.announcement && orange) el.classList.add('dock-nav-item--portal-attention-triple');
-        else if(f.chat && f.announcement) el.classList.add('dock-nav-item--portal-attention-chat-ann');
-        else if(f.chat && orange) el.classList.add('dock-nav-item--portal-attention-chat-fb');
-        else if(f.announcement && orange) el.classList.add('dock-nav-item--portal-attention-ann-fb');
-        else if(f.chat) el.classList.add('dock-nav-item--portal-attention-chat');
-        else if(f.announcement) el.classList.add('dock-nav-item--portal-attention-announcement');
-        else if(orange) el.classList.add('dock-nav-item--portal-attention-feedback');
-        return;
-      }
+      /* Footer centre logo stays static (white); alert orbits/pulse are header-only. */
+      if(isDock) return;
       el.classList.toggle('avatar-wrap--portal-orbit-idle', !active);
       if(!active) return;
       if(f.chat && f.announcement && orange) el.classList.add('avatar-wrap--portal-alert-triple');
@@ -14483,9 +14485,8 @@
     function syncDockQuickMenuAttention(){
       const dockHome = document.getElementById('dockDashboardTile');
       if(!dockHome) return;
-      const st = typeof portalReminderState === 'function' ? portalReminderState() : null;
       if(typeof portalApplyPortalOrbitAlertClasses === 'function'){
-        portalApplyPortalOrbitAlertClasses(dockHome, st);
+        portalApplyPortalOrbitAlertClasses(dockHome, null);
       }
     }
 
