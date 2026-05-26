@@ -1391,6 +1391,17 @@
       color:#fff;
       border:2px solid rgba(255,255,255,.45);
     }
+    /* Fixed safeguarding policy: same orange stack as feedback reminders */
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-safeguarding-feedback-policy{
+      cursor:default;
+      pointer-events:none;
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-safeguarding-feedback-policy .menu-btn-sub{
+      white-space:normal;
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-safeguarding-feedback-policy.menu-btn--portal-pulse:not(:active){
+      animation:portal-reminder-feedback-throb 2.1s ease-in-out infinite;
+    }
     /* Signed announcement tile: soft rose, no bright red block */
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuNoticesGrid #announcementSignedLog.menu-btn.menu-btn--announcement-signed{
       background:linear-gradient(180deg,#fff5f5 0%,#ffe4e6 100%);
@@ -9111,6 +9122,7 @@
           sessionFeedbackNeed: false,
           sessionFeedbackCount: 0,
           sessionFeedbackTodayNeed: false,
+          safeguardingFeedbackPolicyActive: false,
           termIncomplete: false,
           termLate: false,
           venueOpenNeed: false,
@@ -9170,6 +9182,7 @@
         sessionFeedbackNeed,
         sessionFeedbackCount,
         sessionFeedbackTodayNeed: sessionFeedbackTodayNeed,
+        safeguardingFeedbackPolicyActive: true,
         termIncomplete,
         termLate,
         venueOpenNeed,
@@ -9399,7 +9412,15 @@
       return '<section class="portal-qm-chunk portal-qm-chunk--admin-reminders" aria-label="Team reminders">' +
         '<h4 class="portal-qm-chunk-title">Team reminders</h4>' + inner + '</section>';
     }
-    /** Logo-lite Reminders: session dates + override tiles, then Feedbacks (incomplete + venue). */
+    /** Always-on safeguarding copy for logo-lite Feedbacks (not tied to incomplete count). */
+    function portalBuildSafeguardingFeedbackPolicyReminderHtml(){
+      const shieldIcon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
+      return '<div class="menu-btn notice menu-btn--qm-tile menu-btn--qm-reminder-feedback menu-btn--qm-safeguarding-feedback-policy menu-btn--portal-readonly menu-btn--portal-pulse" role="note" aria-label="Same-day session feedback is mandatory for safeguarding">' +
+        '<div class="menu-btn-icon" aria-hidden="true">' + shieldIcon + '</div>' +
+        '<div class="menu-btn-copy"><strong>Same-day session feedback</strong><span class="menu-btn-sub">Mandatory for safeguarding — complete register and feedback on the day of each session.</span></div>' +
+        '</div>';
+    }
+    /** Logo-lite Reminders: session dates + override tiles, then Feedbacks (policy + outstanding + venue). */
     function buildPortalQuickMenuLogoLiteRemindersHtml(st){
       if(!st) return '';
       const ovStack = typeof portalBuildQuickMenuOverrideStackHtml === 'function' ? portalBuildQuickMenuOverrideStackHtml(st) : '';
@@ -9483,7 +9504,7 @@
         const tn = document.getElementById('trainingNotice');
       if(tn){
           /* Pulse only for feedback / venue / induction — overrides use colour in the quick menu; this row is not animated for overrides. */
-          const pulse = !!(st.sessionFeedbackNeed || st.venueOpenNeed || st.venueCloseNeed || st.setupPending);
+          const pulse = !!(st.safeguardingFeedbackPolicyActive || st.sessionFeedbackNeed || st.venueOpenNeed || st.venueCloseNeed || st.setupPending);
           const urg = typeof portalReminderUrgencyLevel === 'function' ? portalReminderUrgencyLevel(st) : 0;
         tn.classList.toggle('notice--reminder-pulse', pulse);
         tn.classList.toggle('notice--reminder-urgent', pulse && urg >= 1);
@@ -9499,6 +9520,8 @@
               sub = (Number(st.sessionFeedbackCount) || 0) <= 1
               ? 'Complete your Session Feedback'
               : 'Complete your Session Feedbacks';
+            }else if(st.safeguardingFeedbackPolicyActive){
+              sub = 'Same-day session feedback — mandatory safeguarding';
             }else if(st.rosterOverrideNeed){
               sub = 'Upcoming schedule changes — open the quick menu';
             }else if(st.venueOpenNeed || st.venueCloseNeed){
@@ -9540,15 +9563,19 @@
       return { title, sub: '', displayTier };
     }
     function buildPortalQuickMenuReminderCardsHtml(st){
+      if(!st) st = {};
       const parts = [];
+      if(typeof portalBuildSafeguardingFeedbackPolicyReminderHtml === 'function'){
+        parts.push(portalBuildSafeguardingFeedbackPolicyReminderHtml());
+      }
       const fbIcon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 12h6M9 16h6"/></svg>';
       const venIcon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22V10l8-4 8 4v12"/><path d="M9 22v-6h6v6"/></svg>';
       if(st.sessionFeedbackNeed){
         const n = Math.max(0, Number(st.sessionFeedbackCount) || 0);
         parts.push(
-          '<button type="button" class="menu-btn notice menu-btn--qm-tile menu-btn--qm-reminder-feedback" data-action="open-pending-feedback" aria-label="Incomplete sessions, ' + n + ' remaining">' +
+          '<button type="button" class="menu-btn notice menu-btn--qm-tile menu-btn--qm-reminder-feedback menu-btn--qm-reminder-feedback-outstanding menu-btn--portal-pulse" data-action="open-pending-feedback" aria-label="Outstanding feedback — incomplete sessions, ' + n + ' remaining">' +
           '<div class="menu-btn-icon" aria-hidden="true">' + fbIcon + '</div>' +
-          '<div class="menu-btn-copy"><strong>Incomplete sessions (x' + String(n) + ')</strong><span class="menu-btn-sub">Tap to open</span></div>' +
+          '<div class="menu-btn-copy"><strong>Incomplete sessions (x' + String(n) + ')</strong><span class="menu-btn-sub">Outstanding — tap to open your sessions</span></div>' +
           '<span class="menu-btn-chev" aria-hidden="true">›</span></button>'
         );
       }
@@ -13647,7 +13674,7 @@
 
     function portalNotificationAlertFlags(st){
       const state = st || (typeof portalReminderState === 'function' ? portalReminderState() : null);
-      const hasFeedback = !!(state && state.sessionFeedbackNeed);
+      const hasFeedback = !!(state && (state.sessionFeedbackNeed || state.safeguardingFeedbackPolicyActive));
       const hasReminderOther = !!(state && (state.venueOpenNeed || state.venueCloseNeed || state.setupPending || state.rosterOverrideNeed));
       return {
         chat: !!window.__PORTAL_STAFF_DM_HAS_UNREAD__,
@@ -14359,17 +14386,10 @@
     function syncDockQuickMenuAttention(){
       const dockHome = document.getElementById('dockDashboardTile');
       if(!dockHome) return;
-      const dockClasses = [
-        'dock-nav-item--portal-attention',
-        'dock-nav-item--portal-attention-chat',
-        'dock-nav-item--portal-attention-announcement',
-        'dock-nav-item--portal-attention-feedback',
-        'dock-nav-item--portal-attention-chat-ann',
-        'dock-nav-item--portal-attention-chat-fb',
-        'dock-nav-item--portal-attention-ann-fb',
-        'dock-nav-item--portal-attention-triple'
-      ];
-      dockClasses.forEach(function(c){ dockHome.classList.remove(c); });
+      const st = typeof portalReminderState === 'function' ? portalReminderState() : null;
+      if(typeof portalApplyPortalOrbitAlertClasses === 'function'){
+        portalApplyPortalOrbitAlertClasses(dockHome, st);
+      }
     }
 
     function renderNotices(){
