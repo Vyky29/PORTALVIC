@@ -11134,15 +11134,19 @@
           && normaliseIsoDate(row && (row.session_date || row.sessionDate)) === iso;
       });
     }
-    function portalStaffHasDatedWeekdaySnapshots(staffId, weekdayLong){
+    function portalStaffHasDatedWeekdaySnapshots(staffId, weekdayLong, minSessionDateIso){
       const sid = String(staffId || '').trim().toLowerCase();
       const w = String(weekdayLong || '').trim();
       if(!sid || !w) return false;
+      const floor = minSessionDateIso ? normaliseIsoDate(minSessionDateIso) : '';
       const model = (typeof sessionsModel !== 'undefined' && Array.isArray(sessionsModel)) ? sessionsModel : [];
       return model.some(function(row){
-        return String(row.staffId || '').toLowerCase() === sid
-          && String(row.day || '').trim() === w
-          && !!normaliseIsoDate(row && (row.session_date || row.sessionDate));
+        if(String(row.staffId || '').toLowerCase() !== sid) return false;
+        if(String(row.day || '').trim() !== w) return false;
+        const ri = normaliseIsoDate(row && (row.session_date || row.sessionDate));
+        if(!ri) return false;
+        if(floor && ri < floor) return false;
+        return true;
       });
     }
     /** From Summer Term 2 (1 Jun): roster rows must match that calendar date — no May weekday snap. */
@@ -11213,10 +11217,16 @@
       if(portalTermStaffOffWeekdayOnDate(iso, sid)) return false;
       if(portalStaffHasDatedRowsForIso(iso, sid)) return true;
       if(portalStaffClientSessionsOnCalendarDate(iso, w, sid)) return true;
-      if(!portalStaffHasDatedWeekdaySnapshots(sid, w)) return true;
+      const snapFloor = portalCalendarIsoUsesSummerDatedRosterOnly(iso) ? portalTermSummerRosterFromIso() : '';
+      if(!portalStaffHasDatedWeekdaySnapshots(sid, w, snapFloor)) return true;
       const anchor = new Date(iso + 'T12:00:00');
       const model = (typeof sessionsModel !== 'undefined' && Array.isArray(sessionsModel)) ? sessionsModel : [];
-      return !!portalBestStaffRosterIsoForWeekday(model, sid, w, anchor);
+      if(!!portalBestStaffRosterIsoForWeekday(model, sid, w, anchor)) return true;
+      const worked = Array.isArray(dashboardData.termWorkedWeekdays)
+        ? dashboardData.termWorkedWeekdays.map(Number)
+        : [];
+      const wd = anchor.getDay();
+      return worked.indexOf(wd) >= 0;
     }
     /** Match dated roster snapshot when calendar day has no rows (same rule as day sheet). */
     function portalStaffRosterMatchIsoForCalendar(isoYmd, weekdayLong, staffId){
@@ -11226,7 +11236,8 @@
       if(!iso || !sid || !w) return iso;
       if(portalCalendarIsoUsesSummerDatedRosterOnly(iso)) return iso;
       if(portalStaffHasDatedRowsForIso(iso, sid)) return iso;
-      if(portalStaffHasDatedWeekdaySnapshots(sid, w)){
+      const snapFloor = portalCalendarIsoUsesSummerDatedRosterOnly(iso) ? portalTermSummerRosterFromIso() : '';
+      if(portalStaffHasDatedWeekdaySnapshots(sid, w, snapFloor)){
         const anchor = new Date(iso + 'T12:00:00');
         const model = (typeof sessionsModel !== 'undefined' && Array.isArray(sessionsModel)) ? sessionsModel : [];
         return portalBestStaffRosterIsoForWeekday(model, sid, w, anchor) || '';
@@ -11297,7 +11308,8 @@
         return !!(iso && matchIso && rowIso === matchIso);
       }
       if(portalStaffHasDatedRowsForIso(iso, sid)) return false;
-      if(portalStaffHasDatedWeekdaySnapshots(sid, w)) return false;
+      const snapFloor = portalCalendarIsoUsesSummerDatedRosterOnly(iso) ? portalTermSummerRosterFromIso() : '';
+      if(portalStaffHasDatedWeekdaySnapshots(sid, w, snapFloor)) return false;
       return w === String(s.day || '').trim();
     }
     function portalScheduleOverrideFetchIsoList(){

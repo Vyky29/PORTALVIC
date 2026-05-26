@@ -479,7 +479,11 @@ def copy_term_to_working_ui():
     if not src.exists():
         return
     text = src.read_text(encoding="utf-8")
-    for rel in ("term_from_timetable.js", "portal/term_from_timetable.js"):
+    for rel in (
+        "term_from_timetable.js",
+        "portal/term_from_timetable.js",
+        "portal-shared-js/term_from_timetable.js",
+    ):
         (ROOT / "working_ui" / rel).write_text(text, encoding="utf-8")
 
 

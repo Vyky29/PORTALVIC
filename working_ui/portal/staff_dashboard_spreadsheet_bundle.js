@@ -2841,6 +2841,16 @@
     "session_date": "2026-06-04"
   },
   {
+    "client_name": "Cyrus",
+    "day": "Thursday",
+    "instructors": "VICTOR",
+    "service": "Bespoke Programme",
+    "area": "Hub Room",
+    "time_slot": "3.30 to 5",
+    "venue": "SwimFarm",
+    "session_date": "2026-06-04"
+  },
+  {
     "client_name": "Ayman",
     "day": "Thursday",
     "instructors": "JAVIER",
@@ -4407,6 +4417,16 @@
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "12.30 to 3",
+    "venue": "SwimFarm",
+    "session_date": "2026-06-11"
+  },
+  {
+    "client_name": "Cyrus",
+    "day": "Thursday",
+    "instructors": "VICTOR",
+    "service": "Bespoke Programme",
+    "area": "Hub Room",
+    "time_slot": "3.30 to 5",
     "venue": "SwimFarm",
     "session_date": "2026-06-11"
   },
@@ -5981,6 +6001,16 @@
     "session_date": "2026-06-18"
   },
   {
+    "client_name": "Cyrus",
+    "day": "Thursday",
+    "instructors": "VICTOR",
+    "service": "Bespoke Programme",
+    "area": "Hub Room",
+    "time_slot": "3.30 to 5",
+    "venue": "SwimFarm",
+    "session_date": "2026-06-18"
+  },
+  {
     "client_name": "Ayman",
     "day": "Thursday",
     "instructors": "JAVIER",
@@ -7551,6 +7581,16 @@
     "session_date": "2026-06-25"
   },
   {
+    "client_name": "Cyrus",
+    "day": "Thursday",
+    "instructors": "VICTOR",
+    "service": "Bespoke Programme",
+    "area": "Hub Room",
+    "time_slot": "3.30 to 5",
+    "venue": "SwimFarm",
+    "session_date": "2026-06-25"
+  },
+  {
     "client_name": "Ayman",
     "day": "Thursday",
     "instructors": "JAVIER",
@@ -9121,6 +9161,16 @@
     "session_date": "2026-07-02"
   },
   {
+    "client_name": "Cyrus",
+    "day": "Thursday",
+    "instructors": "VICTOR",
+    "service": "Bespoke Programme",
+    "area": "Hub Room",
+    "time_slot": "3.30 to 5",
+    "venue": "SwimFarm",
+    "session_date": "2026-07-02"
+  },
+  {
     "client_name": "Ayman",
     "day": "Thursday",
     "instructors": "JAVIER",
@@ -10691,6 +10741,16 @@
     "session_date": "2026-07-09"
   },
   {
+    "client_name": "Cyrus",
+    "day": "Thursday",
+    "instructors": "VICTOR",
+    "service": "Bespoke Programme",
+    "area": "Hub Room",
+    "time_slot": "3.30 to 5",
+    "venue": "SwimFarm",
+    "session_date": "2026-07-09"
+  },
+  {
     "client_name": "Ayman",
     "day": "Thursday",
     "instructors": "JAVIER",
@@ -12261,6 +12321,16 @@
     "session_date": "2026-07-16"
   },
   {
+    "client_name": "Cyrus",
+    "day": "Thursday",
+    "instructors": "VICTOR",
+    "service": "Bespoke Programme",
+    "area": "Hub Room",
+    "time_slot": "3.30 to 5",
+    "venue": "SwimFarm",
+    "session_date": "2026-07-16"
+  },
+  {
     "client_name": "Ayman",
     "day": "Thursday",
     "instructors": "JAVIER",
@@ -13320,6 +13390,15 @@
     "venue": "SwimFarm"
   },
   {
+    "client_name": "Cyrus",
+    "day": "Thursday",
+    "instructors": "VICTOR",
+    "service": "Bespoke Programme",
+    "area": "Hub Room",
+    "time_slot": "3.30 to 5",
+    "venue": "SwimFarm"
+  },
+  {
     "client_name": "Ayman",
     "day": "Thursday",
     "instructors": "JAVIER",
@@ -13912,17 +13991,7 @@
     "area": "Teaching Pool",
     "time_slot": "6 to 6.30",
     "venue": "Acton"
-  },
-  {"client_name": "Tevlon", "day": "Monday", "instructors": "VICTOR", "service": "Bespoke Programme", "area": "Hub Room", "time_slot": "10 to 11", "venue": "SwimFarm", "session_date": "2026-05-11"},
-  {"client_name": "Tevlon", "day": "Tuesday", "instructors": "VICTOR", "service": "Bespoke Programme", "area": "Hub Room", "time_slot": "10 to 11", "venue": "SwimFarm", "session_date": "2026-05-12"},
-  {"client_name": "Tevlon", "day": "Wednesday", "instructors": "VICTOR", "service": "Bespoke Programme", "area": "Hub Room", "time_slot": "10 to 11", "venue": "SwimFarm", "session_date": "2026-05-13"},
-  {"client_name": "Tevlon", "day": "Thursday", "instructors": "VICTOR", "service": "Bespoke Programme", "area": "Hub Room", "time_slot": "10 to 11", "venue": "SwimFarm", "session_date": "2026-05-14"},
-  {"client_name": "Tevlon", "day": "Friday", "instructors": "VICTOR", "service": "Bespoke Programme", "area": "Hub Room", "time_slot": "10 to 11", "venue": "SwimFarm", "session_date": "2026-05-15"},
-  {"client_name": "Tevlon", "day": "Monday", "instructors": "VICTOR", "service": "Bespoke Programme", "area": "Hub Room", "time_slot": "10 to 11", "venue": "SwimFarm", "session_date": "2026-05-18"},
-  {"client_name": "Tevlon", "day": "Tuesday", "instructors": "VICTOR", "service": "Bespoke Programme", "area": "Hub Room", "time_slot": "10 to 11", "venue": "SwimFarm", "session_date": "2026-05-19"},
-  {"client_name": "Tevlon", "day": "Wednesday", "instructors": "VICTOR", "service": "Bespoke Programme", "area": "Hub Room", "time_slot": "10 to 11", "venue": "SwimFarm", "session_date": "2026-05-20"},
-  {"client_name": "Tevlon", "day": "Thursday", "instructors": "VICTOR", "service": "Bespoke Programme", "area": "Hub Room", "time_slot": "10 to 11", "venue": "SwimFarm", "session_date": "2026-05-21"},
-  {"client_name": "Tevlon", "day": "Friday", "instructors": "VICTOR", "service": "Bespoke Programme", "area": "Hub Room", "time_slot": "10 to 11", "venue": "SwimFarm", "session_date": "2026-05-22"}
+  }
 ]
 };
 })();
