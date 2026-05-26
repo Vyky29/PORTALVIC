@@ -9,9 +9,11 @@ import {
   portalLeadSessionScopeLabels,
   portalLeadReportInScope,
   portalLeadFeedbackInScope,
+  portalLeadDayFeedbackStats,
 } from "./portal_lead_session_scope.js";
+import { portalInferStaffKey } from "./auth-handler.js";
 
-const HUB_SRC = "/portal/admin-sessions-hub.js?v=20260526-lead-overview3";
+const HUB_SRC = "/portal/admin-sessions-hub.js?v=20260526-lead-overview4";
 const LEAD_URL = "lead_dashboard.html";
 
 const state = { tab: "overview", scopes: [] };
@@ -202,10 +204,26 @@ function applyScopedPayload(scopes) {
   return p;
 }
 
-function configureDayOps(scopes) {
-  if (!window.PortalDayOps || window.__plsoDayOpsConfigured) return;
+function makeLeadFeedbackDayStats(scopes, leadKey) {
+  return function (iso) {
+    const hub = window.__plsoTrackingHub || window.__plsoFeedbackHub;
+    if (!hub) return { required: 0, completed: 0 };
+    const st = portalLeadDayFeedbackStats(iso, scopes, leadKey, hub);
+    if (!st) return { required: 0, completed: 0 };
+    return { required: st.total, completed: st.done };
+  };
+}
+
+function configureDayOps(scopes, leadKey) {
+  const statsFn = makeLeadFeedbackDayStats(scopes, leadKey);
+  if (window.PortalDayOps && window.__plsoDayOpsConfigured) {
+    window.PortalDayOps.configure({ getFeedbackDayStats: statsFn });
+    return;
+  }
+  if (!window.PortalDayOps) return;
   window.__plsoDayOpsConfigured = true;
   window.PortalDayOps.configure({
+    getFeedbackDayStats: statsFn,
     esc,
     getClient: () =>
       window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client
@@ -241,9 +259,10 @@ function configureDayOps(scopes) {
   });
 }
 
-async function initHubs(scopes) {
+async function initHubs(scopes, leadKey) {
   await ensureHubScript();
-  const filters = portalLeadSessionScopeFilterFns(scopes);
+  const filters = portalLeadSessionScopeFilterFns(scopes, leadKey);
+  const statsFn = makeLeadFeedbackDayStats(scopes, leadKey);
   const hubOpts = {
     escapeHtml: esc,
     externalTabs: true,
@@ -252,6 +271,7 @@ async function initHubs(scopes) {
     feedbackRowScopeFilter: filters.feedbackRowScopeFilter,
     hideEmptyWeekDays: true,
     readOnlyOverview: true,
+    getFeedbackDayStats: statsFn,
   };
 
   const trackRoot = $("adminSessionsHubRoot");
@@ -356,6 +376,7 @@ export async function portalInitLeadSessionOverviewPage() {
     return;
   }
   const scopes = portalLeadSessionScopesForProfile(profile, email);
+  const leadKey = portalInferStaffKey(profile, email);
   state.scopes = scopes;
   const hint = $("plsoScopeHint");
   if (hint) {
@@ -369,7 +390,7 @@ export async function portalInitLeadSessionOverviewPage() {
     }
   }
 
-  configureDayOps(scopes);
+  configureDayOps(scopes, leadKey);
   if (statusEl) statusEl.textContent = "Loading session data…";
 
   if (window.PortalDayOps && typeof window.PortalDayOps.ensurePayload === "function") {
@@ -389,7 +410,7 @@ export async function portalInitLeadSessionOverviewPage() {
   payload.lead_session_reports = mergedLead;
   applyScopedPayload(scopes);
 
-  await initHubs(scopes);
+  await initHubs(scopes, leadKey);
   bindTabs();
   if (statusEl) statusEl.textContent = "";
   await refreshTab("overview");

@@ -17,7 +17,7 @@ const JOHN_SCOPES = [
     id: "sunday-ma-swimfarm",
     label: "Sunday — Multi-Activity (SwimFarm, with Berta)",
     weekdays: ["Sunday"],
-    serviceKeys: ["multi", "aquatic"],
+    serviceKeys: ["multi"],
     venues: ["swimfarm"],
   },
 ];
@@ -34,7 +34,7 @@ const BERTA_SCOPES = [
     id: "sunday-ma-swimfarm",
     label: "Sunday — Multi-Activity (SwimFarm, with John)",
     weekdays: ["Sunday"],
-    serviceKeys: ["multi", "aquatic"],
+    serviceKeys: ["multi"],
     venues: ["swimfarm"],
   },
 ];
@@ -53,7 +53,13 @@ function normService(v) {
   if (s.indexOf("bespoke") >= 0) return "bespoke";
   if (s.indexOf("multi") >= 0) return "multi";
   if (s.indexOf("aquatic") >= 0) return "aquatic";
+  if (s.indexOf("climb") >= 0) return "climbing";
   return s;
+}
+
+function serviceExcludedForLeadOverview(serviceRaw) {
+  const sk = normService(serviceRaw);
+  return sk === "climbing" || sk === "aquatic";
 }
 
 function normVenue(v) {
@@ -119,11 +125,46 @@ function scopesMatchRow(scopes, iso, serviceRaw, venueRaw) {
   return false;
 }
 
+function normInstructorKey(name) {
+  return normKey(name);
+}
+
+function slotInstructorsNorm(slot) {
+  const out = [];
+  const add = (n) => {
+    const k = normInstructorKey(n);
+    if (k && out.indexOf(k) < 0) out.push(k);
+  };
+  if (Array.isArray(slot.instructors)) {
+    slot.instructors.forEach(add);
+  }
+  const raw = String(
+    slot.instructor_label || slot.instructors_raw || slot.instructors || ""
+  ).trim();
+  if (raw && !Array.isArray(slot.instructors)) {
+    raw.split(/,|\/|&|\band\b/gi).forEach(add);
+  }
+  return out;
+}
+
+/** Lead only sees slots they lead (name on the roster row), not co-staff on the same programme. */
+export function portalLeadSlotHasLeadInstructor(slot, leadProfileKey) {
+  const lead = normInstructorKey(leadProfileKey);
+  if (!lead) return false;
+  return slotInstructorsNorm(slot).indexOf(lead) >= 0;
+}
+
 /** Roster slot object from AdminSessionsHub.expandSlotsForDate */
 export function portalLeadSlotInScope(slot, scopes) {
   if (!slot || !scopes || !scopes.length) return false;
+  if (serviceExcludedForLeadOverview(slot.service)) return false;
   const iso = String(slot.iso || slot.session_date || "").slice(0, 10);
   return scopesMatchRow(scopes, iso, slot.service, slot.venue);
+}
+
+export function portalLeadSlotInScopeForLead(slot, scopes, leadProfileKey) {
+  if (!portalLeadSlotInScope(slot, scopes)) return false;
+  return portalLeadSlotHasLeadInstructor(slot, leadProfileKey);
 }
 
 export function portalLeadFeedbackInScope(fb, scopes) {
@@ -144,15 +185,87 @@ export function portalLeadReportInScope(report, scopes) {
   return scopesMatchRow(scopes, iso, service, venue);
 }
 
-export function portalLeadSessionScopeFilterFns(scopes) {
+export function portalLeadSessionScopeFilterFns(scopes, leadProfileKey) {
+  const leadKey = normInstructorKey(leadProfileKey);
   return {
     slotScopeFilter: function (slot) {
-      return portalLeadSlotInScope(slot, scopes);
+      return portalLeadSlotInScopeForLead(slot, scopes, leadKey);
     },
     feedbackRowScopeFilter: function (fb) {
+      if (serviceExcludedForLeadOverview(fb.service)) return false;
       return portalLeadFeedbackInScope(fb, scopes);
     },
   };
+}
+
+function clientSlugFromSlot(slot) {
+  const raw = String(slot.client_name || slot.clientDisplay || "").trim();
+  const k = normKey(raw);
+  if (!k || k === "closed" || k === "available") return "";
+  return k;
+}
+
+function activeScopesForWeekday(scopes, iso) {
+  const wd = weekdayFromIso(iso);
+  return scopes.filter((sc) => sc.weekdays.indexOf(wd) >= 0);
+}
+
+function isBespokeLeadDay(scopes, iso) {
+  const active = activeScopesForWeekday(scopes, iso);
+  return (
+    active.length > 0 &&
+    active.every((sc) => sc.serviceKeys.indexOf("bespoke") >= 0) &&
+    active.every((sc) => sc.serviceKeys.indexOf("multi") < 0)
+  );
+}
+
+/**
+ * Programme-lead feedback totals: bespoke M/W/F = 1 per day; MA = 2 per participant.
+ * Uses hub roster + feedback unit completion when mounted.
+ */
+export function portalLeadDayFeedbackStats(iso, scopes, leadProfileKey, hub) {
+  if (!hub || typeof hub.expandSlotsForDate !== "function") return null;
+  const day = String(iso || "").trim().slice(0, 10);
+  const slots = hub.expandSlotsForDate(day).filter((s) =>
+    portalLeadSlotInScopeForLead(s, scopes, leadProfileKey)
+  );
+  if (!slots.length) return { total: 0, done: 0 };
+
+  const units =
+    typeof hub.getFeedbackUnitsForDate === "function"
+      ? hub
+          .getFeedbackUnitsForDate(day)
+          .map((u) => ({
+            key: u.key,
+            slots: u.slots.filter((s) =>
+              portalLeadSlotInScopeForLead(s, scopes, leadProfileKey)
+            ),
+          }))
+          .filter((u) => u.slots.length > 0)
+      : [];
+
+  const unitDone = (u) =>
+    (typeof hub.feedbackUnitComplete === "function" && hub.feedbackUnitComplete(u)) ||
+    (typeof hub.feedbackUnitAbsent === "function" && hub.feedbackUnitAbsent(u));
+
+  if (isBespokeLeadDay(scopes, day)) {
+    const done =
+      units.length > 0 && units.every(unitDone) ? 1 : 0;
+    return { total: 1, done };
+  }
+
+  const clients = new Set();
+  slots.forEach((s) => {
+    const slug = clientSlugFromSlot(s);
+    if (slug) clients.add(slug);
+  });
+  const total = clients.size * 2;
+  let done = 0;
+  units.forEach((u) => {
+    if (unitDone(u)) done += 1;
+  });
+  if (total > 0) done = Math.min(done, total);
+  return { total, done };
 }
 
 function statusRowInScope(st, scopes) {

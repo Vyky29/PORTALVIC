@@ -137,6 +137,29 @@ body.portal-lead-session-overview-page {
   border-color: #1e3a8a;
   color: #fff;
 }
+/* Programme-lead week strip: only working days, centred cards (not 7-column stretch). */
+.plso-shell .ash-day-row--week,
+.plso-shell .ash-day-row--feedback {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: stretch;
+  gap: 10px;
+  grid-template-columns: unset;
+}
+.plso-shell .ash-day-row--week .ash-day-card,
+.plso-shell .ash-day-row--feedback .ash-day-card {
+  width: auto;
+  min-width: 118px;
+  max-width: 152px;
+  flex: 0 1 140px;
+}
+@media (max-width: 900px) {
+  .plso-shell .ash-day-row--week,
+  .plso-shell .ash-day-row--feedback {
+    grid-template-columns: unset;
+  }
+}
 .c4k-sessions-hub-panel[hidden] {
   display: none !important;
 }
