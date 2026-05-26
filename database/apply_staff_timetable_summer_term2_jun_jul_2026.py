@@ -81,6 +81,16 @@ SUNDAYS = [
     "2026-07-12",
 ]
 
+# Sunday Multi-Activity SwimFarm lead on duty (pool 9.15–2.15 slot).
+SUNDAY_LEAD_ON_DUTY: dict[str, str] = {
+    "2026-06-07": "John",
+    "2026-06-14": "Berta",
+    "2026-06-21": "John",
+    "2026-06-28": "John",
+    "2026-07-05": "John",
+    "2026-07-12": "Berta",
+}
+
 
 def slot(date: str, day: str, staff: str, time_range: str, venue: str) -> dict:
     raw = f"{staff} {time_range}".strip()
@@ -220,7 +230,7 @@ def sunday_assignments() -> list[dict]:
             ("Alex", "10-3", "Westway"),
         ],
         "2026-06-14": [
-            ("John", "9.15-2.15", "SwimFarm"),
+            ("Berta", "9.15-2.15", "SwimFarm"),
             ("Godsway", "9.15-2.15", "SwimFarm"),
             ("Bismark", "9.15-2.15", "SwimFarm"),
             ("Dan", "9-3", "SwimFarm"),
@@ -240,7 +250,7 @@ def sunday_assignments() -> list[dict]:
             ("Javi", "10-2", "Westway"),
         ],
         "2026-06-28": [
-            ("Berta", "9.15-2.15", "SwimFarm"),
+            ("John", "9.15-2.15", "SwimFarm"),
             ("Giuseppe", "9.15-2.15", "SwimFarm"),
             ("Bismark", "9.15-2.15", "SwimFarm"),
             ("Youssef", "9-3", "SwimFarm"),
@@ -250,7 +260,7 @@ def sunday_assignments() -> list[dict]:
             ("Alex", "10-3", "Westway"),
         ],
         "2026-07-05": [
-            ("Berta", "9.15-2.15", "SwimFarm"),
+            ("John", "9.15-2.15", "SwimFarm"),
             ("Giuseppe", "9.15-2.15", "SwimFarm"),
             ("Godsway", "9.15-2.15", "SwimFarm"),
             ("Aurora", "9-3", "SwimFarm"),
@@ -361,6 +371,100 @@ def refresh_term_js(records: list[dict]) -> None:
     copy_term_to_working_ui()
 
 
+def patch_roster_week_sunday_ma_leads() -> int:
+    """Set Sunday SwimFarm Multi-Activity lead column to the on-duty lead only."""
+    weeks_dir = OUT / "roster_weeks"
+    if not weeks_dir.is_dir():
+        return 0
+    changed = 0
+    for path in sorted(weeks_dir.glob("*.csv")):
+        text = path.read_text(encoding="utf-8-sig")
+        if not text.strip():
+            continue
+        rows_in: list[dict[str, str]] = list(csv.DictReader(text.splitlines()))
+        if not rows_in:
+            continue
+        fieldnames = list(rows_in[0].keys())
+        file_changed = False
+        for row in rows_in:
+            iso = (row.get("date") or row.get("session_date") or "").strip()
+            lead = SUNDAY_LEAD_ON_DUTY.get(iso)
+            if not lead:
+                continue
+            day = (row.get("weekday") or row.get("day") or "").strip()
+            service = (row.get("service") or "").strip()
+            venue = (row.get("venue") or "").strip()
+            instr_key = "instructor" if "instructor" in row else "instructors"
+            instr = (row.get(instr_key) or "").strip()
+            if (
+                day == "Sunday"
+                and service == "Multi-Activity"
+                and venue == "SwimFarm"
+                and instr.upper() == "JOHN, BERTA"
+            ):
+                row[instr_key] = lead.upper()
+                file_changed = True
+        if not file_changed:
+            continue
+        with path.open("w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
+            w.writeheader()
+            w.writerows(rows_in)
+        changed += 1
+    return changed
+
+
+def patch_bundle_sunday_lead_overrides() -> None:
+    sys.path.insert(0, str(OUT.parent))
+    from build_machine_exports import (  # noqa: E402
+        copy_spreadsheet_js_to_working_ui,
+        normalize_bundle_portal_asset_urls,
+        patch_bundle_rows_from_json,
+    )
+
+    overrides = {
+        iso: {
+            "leadOnDuty": lead,
+            "replaceInstructor": {"JOHN, BERTA": lead.upper()},
+        }
+        for iso, lead in SUNDAY_LEAD_ON_DUTY.items()
+    }
+    bundle_path = OUT / "staff_dashboard_spreadsheet_bundle.js"
+    if not bundle_path.exists():
+        return
+    src = bundle_path.read_text(encoding="utf-8")
+    payload = json.dumps(overrides, ensure_ascii=True, indent=2)
+    key = '"sundayDateOverrides":'
+    if key in src:
+        i = src.find(key)
+        j = src.find("{", i)
+        depth = 0
+        k = j
+        end = -1
+        while k < len(src):
+            c = src[k]
+            if c == "{":
+                depth += 1
+            elif c == "}":
+                depth -= 1
+                if depth == 0:
+                    end = k + 1
+                    break
+            k += 1
+        if end > j:
+            src = src[:j] + payload + src[end:]
+    else:
+        anchor = '"staffProfiles":'
+        i = src.find(anchor)
+        if i < 0:
+            return
+        src = src[:i] + f'"sundayDateOverrides": {payload},\n  ' + src[i:]
+    src = normalize_bundle_portal_asset_urls(src)
+    bundle_path.write_text(src, encoding="utf-8")
+    patch_bundle_rows_from_json()
+    copy_spreadsheet_js_to_working_ui()
+
+
 def main() -> None:
     json_path = OUT / "staff_timetable_machine.json"
     existing: list[dict] = []
@@ -370,11 +474,21 @@ def main() -> None:
     new_rows = build_summer_term2_rows()
     merged = append_rota_alignment_patch(kept + new_rows)
     write_exports(merged)
+    n_weeks = patch_roster_week_sunday_ma_leads()
     refresh_term_js(merged)
+    try:
+        from import_roster_week_csv import import_all_roster_weeks  # noqa: E402
+
+        n_roster = import_all_roster_weeks()
+    except Exception as exc:
+        n_roster = 0
+        print("import_roster_week_csv:", exc)
+    patch_bundle_sunday_lead_overrides()
     print(
         f"Summer Term 2 staff timetable: {len(new_rows)} rows "
         f"({TERM2_START}..{TERM2_END}); kept {len(kept)} outside range; total {len(merged)}"
     )
+    print(f"Sunday MA lead roster weeks patched: {n_weeks}; dated roster rows merged: {n_roster}")
 
 
 if __name__ == "__main__":

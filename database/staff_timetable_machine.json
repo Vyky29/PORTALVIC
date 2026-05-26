@@ -1731,6 +1731,14 @@
     "date": "2026-06-14",
     "day": "Sunday",
     "venue": "SwimFarm",
+    "staff_name": "Berta",
+    "time_range": "9.15-2.15",
+    "raw_assignment": "Berta 9.15-2.15"
+  },
+  {
+    "date": "2026-06-14",
+    "day": "Sunday",
+    "venue": "SwimFarm",
     "staff_name": "Bismark",
     "time_range": "9.15-2.15",
     "raw_assignment": "Bismark 9.15-2.15"
@@ -1766,14 +1774,6 @@
     "staff_name": "Javier",
     "time_range": "9-3",
     "raw_assignment": "Javier 9-3"
-  },
-  {
-    "date": "2026-06-14",
-    "day": "Sunday",
-    "venue": "SwimFarm",
-    "staff_name": "John",
-    "time_range": "9.15-2.15",
-    "raw_assignment": "John 9.15-2.15"
   },
   {
     "date": "2026-06-14",
@@ -2739,14 +2739,6 @@
     "date": "2026-06-28",
     "day": "Sunday",
     "venue": "SwimFarm",
-    "staff_name": "Berta",
-    "time_range": "9.15-2.15",
-    "raw_assignment": "Berta 9.15-2.15"
-  },
-  {
-    "date": "2026-06-28",
-    "day": "Sunday",
-    "venue": "SwimFarm",
     "staff_name": "Bismark",
     "time_range": "9.15-2.15",
     "raw_assignment": "Bismark 9.15-2.15"
@@ -2774,6 +2766,14 @@
     "staff_name": "Javi",
     "time_range": "9-3",
     "raw_assignment": "Javi 9-3"
+  },
+  {
+    "date": "2026-06-28",
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "staff_name": "John",
+    "time_range": "9.15-2.15",
+    "raw_assignment": "John 9.15-2.15"
   },
   {
     "date": "2026-06-28",
@@ -3250,14 +3250,6 @@
   {
     "date": "2026-07-05",
     "day": "Sunday",
-    "venue": "SwimFarm",
-    "staff_name": "Berta",
-    "time_range": "9.15-2.15",
-    "raw_assignment": "Berta 9.15-2.15"
-  },
-  {
-    "date": "2026-07-05",
-    "day": "Sunday",
     "venue": "Westway",
     "staff_name": "Bismark",
     "time_range": "10-3",
@@ -3286,6 +3278,14 @@
     "staff_name": "Javier",
     "time_range": "9-3",
     "raw_assignment": "Javier 9-3"
+  },
+  {
+    "date": "2026-07-05",
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "staff_name": "John",
+    "time_range": "9.15-2.15",
+    "raw_assignment": "John 9.15-2.15"
   },
   {
     "date": "2026-07-05",

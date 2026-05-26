@@ -3,6 +3,44 @@
   window.STAFF_DASHBOARD_SOURCE = {
   "staffPhotosBaseUrl": "portal/staff_photos/",
   "staffPhotoExtension": "jpg",
+  "sundayDateOverrides": {
+  "2026-06-07": {
+    "leadOnDuty": "John",
+    "replaceInstructor": {
+      "JOHN, BERTA": "JOHN"
+    }
+  },
+  "2026-06-14": {
+    "leadOnDuty": "Berta",
+    "replaceInstructor": {
+      "JOHN, BERTA": "BERTA"
+    }
+  },
+  "2026-06-21": {
+    "leadOnDuty": "John",
+    "replaceInstructor": {
+      "JOHN, BERTA": "JOHN"
+    }
+  },
+  "2026-06-28": {
+    "leadOnDuty": "John",
+    "replaceInstructor": {
+      "JOHN, BERTA": "JOHN"
+    }
+  },
+  "2026-07-05": {
+    "leadOnDuty": "John",
+    "replaceInstructor": {
+      "JOHN, BERTA": "JOHN"
+    }
+  },
+  "2026-07-12": {
+    "leadOnDuty": "Berta",
+    "replaceInstructor": {
+      "JOHN, BERTA": "BERTA"
+    }
+  }
+},
   "staffProfiles": {
     "sandra": {
       "staffId": "sandra",
@@ -1401,7 +1439,7 @@
     "session_date": "2026-05-18"
   },
   {
-    "client_name": "Yamik",
+    "client_name": "Yamik (Trial 18/05)",
     "day": "Monday",
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",
@@ -3193,7 +3231,7 @@
   {
     "client_name": "Aydaan Ah",
     "day": "Sunday",
-    "instructors": "JOHN, BERTA",
+    "instructors": "JOHN",
     "service": "Multi-Activity",
     "area": "Room 2",
     "time_slot": "1.15 to 2",
@@ -3253,7 +3291,7 @@
   {
     "client_name": "Adam Ab",
     "day": "Sunday",
-    "instructors": "JOHN, BERTA",
+    "instructors": "JOHN",
     "service": "Multi-Activity",
     "area": "Room 2",
     "time_slot": "10.15 to 11",
@@ -3333,7 +3371,7 @@
   {
     "client_name": "Cyrus",
     "day": "Sunday",
-    "instructors": "JOHN, BERTA",
+    "instructors": "JOHN",
     "service": "Multi-Activity",
     "area": "Room 2",
     "time_slot": "11 to 11.45",
@@ -3393,7 +3431,7 @@
   {
     "client_name": "Arthur Ma",
     "day": "Sunday",
-    "instructors": "JOHN, BERTA",
+    "instructors": "JOHN",
     "service": "Multi-Activity",
     "area": "Room 2",
     "time_slot": "11.45 to 12.30",
@@ -3503,7 +3541,7 @@
   {
     "client_name": "Erik",
     "day": "Sunday",
-    "instructors": "JOHN, BERTA",
+    "instructors": "JOHN",
     "service": "Multi-Activity",
     "area": "Room 2",
     "time_slot": "12.30 to 1.15",
@@ -3663,7 +3701,7 @@
   {
     "client_name": "Jack W",
     "day": "Sunday",
-    "instructors": "JOHN, BERTA",
+    "instructors": "JOHN",
     "service": "Multi-Activity",
     "area": "Room 2",
     "time_slot": "9.30 to 10.15",
@@ -4773,7 +4811,7 @@
   {
     "client_name": "Aydaan Ah",
     "day": "Sunday",
-    "instructors": "JOHN, BERTA",
+    "instructors": "BERTA",
     "service": "Multi-Activity",
     "area": "Room 2",
     "time_slot": "1.15 to 2",
@@ -4833,7 +4871,7 @@
   {
     "client_name": "Adam Ab",
     "day": "Sunday",
-    "instructors": "JOHN, BERTA",
+    "instructors": "BERTA",
     "service": "Multi-Activity",
     "area": "Room 2",
     "time_slot": "10.15 to 11",
@@ -4913,7 +4951,7 @@
   {
     "client_name": "Cyrus",
     "day": "Sunday",
-    "instructors": "JOHN, BERTA",
+    "instructors": "BERTA",
     "service": "Multi-Activity",
     "area": "Room 2",
     "time_slot": "11 to 11.45",
@@ -4973,7 +5011,7 @@
   {
     "client_name": "Arthur Ma",
     "day": "Sunday",
-    "instructors": "JOHN, BERTA",
+    "instructors": "BERTA",
     "service": "Multi-Activity",
     "area": "Room 2",
     "time_slot": "11.45 to 12.30",
@@ -5083,7 +5121,7 @@
   {
     "client_name": "Erik",
     "day": "Sunday",
-    "instructors": "JOHN, BERTA",
+    "instructors": "BERTA",
     "service": "Multi-Activity",
     "area": "Room 2",
     "time_slot": "12.30 to 1.15",
@@ -5243,7 +5281,7 @@
   {
     "client_name": "Jack W",
     "day": "Sunday",
-    "instructors": "JOHN, BERTA",
+    "instructors": "BERTA",
     "service": "Multi-Activity",
     "area": "Room 2",
     "time_slot": "9.30 to 10.15",
@@ -6353,7 +6391,7 @@
   {
     "client_name": "Aydaan Ah",
     "day": "Sunday",
-    "instructors": "JOHN, BERTA",
+    "instructors": "JOHN",
     "service": "Multi-Activity",
     "area": "Room 2",
     "time_slot": "1.15 to 2",
@@ -6413,7 +6451,7 @@
   {
     "client_name": "Adam Ab",
     "day": "Sunday",
-    "instructors": "JOHN, BERTA",
+    "instructors": "JOHN",
     "service": "Multi-Activity",
     "area": "Room 2",
     "time_slot": "10.15 to 11",
@@ -6493,7 +6531,7 @@
   {
     "client_name": "Cyrus",
     "day": "Sunday",
-    "instructors": "JOHN, BERTA",
+    "instructors": "JOHN",
     "service": "Multi-Activity",
     "area": "Room 2",
     "time_slot": "11 to 11.45",
@@ -6553,7 +6591,7 @@
   {
     "client_name": "Arthur Ma",
     "day": "Sunday",
-    "instructors": "JOHN, BERTA",
+    "instructors": "JOHN",
     "service": "Multi-Activity",
     "area": "Room 2",
     "time_slot": "11.45 to 12.30",
@@ -6663,7 +6701,7 @@
   {
     "client_name": "Erik",
     "day": "Sunday",
-    "instructors": "JOHN, BERTA",
+    "instructors": "JOHN",
     "service": "Multi-Activity",
     "area": "Room 2",
     "time_slot": "12.30 to 1.15",
@@ -6823,7 +6861,7 @@
   {
     "client_name": "Jack W",
     "day": "Sunday",
-    "instructors": "JOHN, BERTA",
+    "instructors": "JOHN",
     "service": "Multi-Activity",
     "area": "Room 2",
     "time_slot": "9.30 to 10.15",
@@ -7933,7 +7971,7 @@
   {
     "client_name": "Aydaan Ah",
     "day": "Sunday",
-    "instructors": "JOHN, BERTA",
+    "instructors": "JOHN",
     "service": "Multi-Activity",
     "area": "Room 2",
     "time_slot": "1.15 to 2",
@@ -7993,7 +8031,7 @@
   {
     "client_name": "Adam Ab",
     "day": "Sunday",
-    "instructors": "JOHN, BERTA",
+    "instructors": "JOHN",
     "service": "Multi-Activity",
     "area": "Room 2",
     "time_slot": "10.15 to 11",
@@ -8073,7 +8111,7 @@
   {
     "client_name": "Cyrus",
     "day": "Sunday",
-    "instructors": "JOHN, BERTA",
+    "instructors": "JOHN",
     "service": "Multi-Activity",
     "area": "Room 2",
     "time_slot": "11 to 11.45",
@@ -8133,7 +8171,7 @@
   {
     "client_name": "Arthur Ma",
     "day": "Sunday",
-    "instructors": "JOHN, BERTA",
+    "instructors": "JOHN",
     "service": "Multi-Activity",
     "area": "Room 2",
     "time_slot": "11.45 to 12.30",
@@ -8243,7 +8281,7 @@
   {
     "client_name": "Erik",
     "day": "Sunday",
-    "instructors": "JOHN, BERTA",
+    "instructors": "JOHN",
     "service": "Multi-Activity",
     "area": "Room 2",
     "time_slot": "12.30 to 1.15",
@@ -8403,7 +8441,7 @@
   {
     "client_name": "Jack W",
     "day": "Sunday",
-    "instructors": "JOHN, BERTA",
+    "instructors": "JOHN",
     "service": "Multi-Activity",
     "area": "Room 2",
     "time_slot": "9.30 to 10.15",
@@ -9513,7 +9551,7 @@
   {
     "client_name": "Aydaan Ah",
     "day": "Sunday",
-    "instructors": "JOHN, BERTA",
+    "instructors": "JOHN",
     "service": "Multi-Activity",
     "area": "Room 2",
     "time_slot": "1.15 to 2",
@@ -9573,7 +9611,7 @@
   {
     "client_name": "Adam Ab",
     "day": "Sunday",
-    "instructors": "JOHN, BERTA",
+    "instructors": "JOHN",
     "service": "Multi-Activity",
     "area": "Room 2",
     "time_slot": "10.15 to 11",
@@ -9653,7 +9691,7 @@
   {
     "client_name": "Cyrus",
     "day": "Sunday",
-    "instructors": "JOHN, BERTA",
+    "instructors": "JOHN",
     "service": "Multi-Activity",
     "area": "Room 2",
     "time_slot": "11 to 11.45",
@@ -9713,7 +9751,7 @@
   {
     "client_name": "Arthur Ma",
     "day": "Sunday",
-    "instructors": "JOHN, BERTA",
+    "instructors": "JOHN",
     "service": "Multi-Activity",
     "area": "Room 2",
     "time_slot": "11.45 to 12.30",
@@ -9823,7 +9861,7 @@
   {
     "client_name": "Erik",
     "day": "Sunday",
-    "instructors": "JOHN, BERTA",
+    "instructors": "JOHN",
     "service": "Multi-Activity",
     "area": "Room 2",
     "time_slot": "12.30 to 1.15",
@@ -9983,7 +10021,7 @@
   {
     "client_name": "Jack W",
     "day": "Sunday",
-    "instructors": "JOHN, BERTA",
+    "instructors": "JOHN",
     "service": "Multi-Activity",
     "area": "Room 2",
     "time_slot": "9.30 to 10.15",
@@ -11093,7 +11131,7 @@
   {
     "client_name": "Aydaan Ah",
     "day": "Sunday",
-    "instructors": "JOHN, BERTA",
+    "instructors": "BERTA",
     "service": "Multi-Activity",
     "area": "Room 2",
     "time_slot": "1.15 to 2",
@@ -11153,7 +11191,7 @@
   {
     "client_name": "Adam Ab",
     "day": "Sunday",
-    "instructors": "JOHN, BERTA",
+    "instructors": "BERTA",
     "service": "Multi-Activity",
     "area": "Room 2",
     "time_slot": "10.15 to 11",
@@ -11233,7 +11271,7 @@
   {
     "client_name": "Cyrus",
     "day": "Sunday",
-    "instructors": "JOHN, BERTA",
+    "instructors": "BERTA",
     "service": "Multi-Activity",
     "area": "Room 2",
     "time_slot": "11 to 11.45",
@@ -11293,7 +11331,7 @@
   {
     "client_name": "Arthur Ma",
     "day": "Sunday",
-    "instructors": "JOHN, BERTA",
+    "instructors": "BERTA",
     "service": "Multi-Activity",
     "area": "Room 2",
     "time_slot": "11.45 to 12.30",
@@ -11403,7 +11441,7 @@
   {
     "client_name": "Erik",
     "day": "Sunday",
-    "instructors": "JOHN, BERTA",
+    "instructors": "BERTA",
     "service": "Multi-Activity",
     "area": "Room 2",
     "time_slot": "12.30 to 1.15",
@@ -11563,7 +11601,7 @@
   {
     "client_name": "Jack W",
     "day": "Sunday",
-    "instructors": "JOHN, BERTA",
+    "instructors": "BERTA",
     "service": "Multi-Activity",
     "area": "Room 2",
     "time_slot": "9.30 to 10.15",
