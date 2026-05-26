@@ -18251,14 +18251,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       );
     }
     function viewOperations(){
-      var sessionsTiles =
-        portalDashTileHtml('c4k_sessions', '', 'c4k_sessions', 'Sessions overview', 'Live grid &amp; capacity', false, 'sessions')+
-        portalDashTileHtml('c4k_registers', '', 'c4k_registers', 'Session feedback', 'Registers &amp; session notes', false, 'feedback')+
-        portalDashTileHtml('c4k_late_submissions', '', 'c4k_late_submissions', 'Late submissions', 'Approve past-session forms', state.portalLatePendingCount > 0, 'feedback')+
+      var sessionsRow1 =
+        portalDashTileHtml('c4k_sessions', '', 'c4k_sessions', 'Overview', 'Live grid &amp; capacity', false, 'sessions', 'sessions_hub_overview')+
+        portalDashTileHtml('c4k_sessions', '', 'c4k_registers', 'Feedbacks', 'Registers &amp; session notes', false, 'feedback', 'sessions_hub_feedback')+
         portalDashTileHtml('c4k_sessions', '', 'analytics', 'Incidents', 'Safeguarding &amp; logs', false, 'analytics', 'sessions_hub_incidents')+
         portalDashTileHtml('c4k_sessions', '', 'absents', 'Absents', 'Quick marks by day', false, 'absents', 'sessions_hub_absents')+
-        portalDashTileHtml('c4k_sessions', '', 'c4k_registers', 'Lead report', 'Lead session reports', false, 'feedback', 'sessions_hub_lead')+
-        portalDashTileHtml('c4k_sessions', '', 'c4k_services', 'Venue review', 'Venue opening reviews', false, 'scheduling', 'sessions_hub_venue');
+        portalDashTileHtml('c4k_sessions', '', 'absents_refunds', 'Cancellations', '&nbsp;', false, 'absents', 'sessions_hub_cancellations');
+      var sessionsRow2 =
+        portalDashTileHtml('c4k_late_submissions', '', 'c4k_late_submissions', 'Late submissions', 'Approve past-session forms', state.portalLatePendingCount > 0, 'feedback')+
+        portalDashTileHtml('c4k_sessions', '', 'c4k_services', 'Venue review', 'Venue opening reviews', false, 'scheduling', 'sessions_hub_venue')+
+        portalDashTileHtml('c4k_sessions', '', 'scheduling', 'Pick up / drop off', 'Drop off &amp; pick up portal', false, 'scheduling', 'sessions_hub_pickup')+
+        portalDashTileHtml('c4k_sessions', '', 'c4k_reviews', 'Positive info', 'Positive feedback to review', false, 'feedback', 'sessions_hub_positive')+
+        portalDashTileHtml('c4k_sessions', '', 'c4k_reports', 'Relevant info', 'Relevant notes to review', false, 'reports_q', 'sessions_hub_relevant')+
+        portalDashTileHtml('c4k_sessions', '', 'c4k_registers', 'Lead report', 'Lead session reports', false, 'feedback', 'sessions_hub_lead');
       var teamTiles =
         portalDashTileHtml('scheduling', '', 'scheduling', 'Schedule &amp; covers', 'Weekly anchors &amp; swap cover', true, 'scheduling')+
         portalDashTileHtml('', '', 'announcements', 'Announcements', 'Staff &amp; site notices', false, 'scheduling', 'announcements')+
@@ -18285,7 +18290,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           linkView:'c4k_services',
           linkIconId:'c4k_services',
           jumpTitle:'Services overview',
-          bodyHtml:'<div class="dash-hub__grid dash-hub__grid--6">'+sessionsTiles+'</div>',
+          bodyHtml:
+            '<div class="dash-hub__grid dash-hub__grid--5">'+sessionsRow1+'</div>'+
+            '<div class="dash-hub__grid dash-hub__grid--6" style="margin-top:12px">'+sessionsRow2+'</div>',
           ariaLabel:'Sessions'
         })+
         '</div></div>'
@@ -18795,10 +18802,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
 
     /** Day operations tile actions (called from bindView click handlers on each render). */
     function portalRunDayOpsAct(a){
+      if(a === 'sessions_hub_overview'){ closeSidebarMob(); openSessionsHubTab('overview'); return; }
+      if(a === 'sessions_hub_feedback'){ closeSidebarMob(); openSessionsHubTab('feedback'); return; }
+      if(a === 'sessions_hub_positive'){ closeSidebarMob(); openSessionsHubTab('positive'); return; }
+      if(a === 'sessions_hub_relevant'){ closeSidebarMob(); openSessionsHubTab('relevant'); return; }
+      if(a === 'sessions_hub_cancellations'){ closeSidebarMob(); openSessionsHubTab('cancellations'); return; }
       if(a === 'sessions_hub_incidents'){ closeSidebarMob(); openSessionsHubTab('incidents'); return; }
       if(a === 'sessions_hub_absents'){ closeSidebarMob(); openSessionsHubTab('absents'); return; }
       if(a === 'sessions_hub_lead'){ closeSidebarMob(); openSessionsHubTab('lead'); return; }
       if(a === 'sessions_hub_venue'){ closeSidebarMob(); openSessionsHubTab('venue'); return; }
+      if(a === 'sessions_hub_pickup'){ closeSidebarMob(); window.location.href = 'portal-pickup.html'; return; }
       if(a === 'new_participant'){
         openDayOpsNewParticipantModal();
         closeSidebarMob();
