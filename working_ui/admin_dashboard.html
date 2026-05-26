@@ -21865,13 +21865,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalReadHideAfterAckFromComposer(){
       var en = $('cmpHideAfterAckEnable');
-      if(!en || !en.checked) return { amount: null, unit: null };
+      if(!en || !en.checked) return { ok:true, amount:null, unit:null };
       var amt = parseInt(String($('cmpHideAfterAckAmount') && $('cmpHideAfterAckAmount').value || ''), 10);
       var unit = String($('cmpHideAfterAckUnit') && $('cmpHideAfterAckUnit').value || '').trim().toLowerCase();
       if(!amt || amt < 1 || ['minutes','hours','days'].indexOf(unit) === -1){
         return { ok:false, message:'Choose a valid hide timeframe (1+ minutes, hours, or days).' };
       }
       return { ok:true, amount:amt, unit:unit };
+    }
+    function portalApplyHideAfterAckToAnnouncementRow(row){
+      var hideCfg = portalReadHideAfterAckFromComposer();
+      if(hideCfg && hideCfg.ok === false) return hideCfg;
+      if(hideCfg && hideCfg.ok && hideCfg.amount && hideCfg.unit){
+        row.hide_after_ack_amount = hideCfg.amount;
+        row.hide_after_ack_unit = hideCfg.unit;
+      }
+      return { ok:true };
     }
     function portalComposeToSelectHtml(){
       var toOpts = [
@@ -21931,12 +21940,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(['training','timesheet','notes'].indexOf(remCat) === -1) remCat = 'notes';
           row.reminder_category = remCat;
         }else if(typ === 'announcement'){
-          var hideCfg = portalReadHideAfterAckFromComposer();
-          if(hideCfg && hideCfg.ok === false) return Promise.resolve({ ok:false, skip:false, message:hideCfg.message || 'Invalid hide timeframe' });
-          if(hideCfg && hideCfg.ok && hideCfg.amount){
-            row.hide_after_ack_amount = hideCfg.amount;
-            row.hide_after_ack_unit = hideCfg.unit;
-          }
+          var hideApply = portalApplyHideAfterAckToAnnouncementRow(row);
+          if(hideApply && hideApply.ok === false) return Promise.resolve({ ok:false, skip:false, message:hideApply.message || 'Invalid hide timeframe' });
         }
       }else{
         var lines = body.split('\n').map(function(x){ return String(x || '').trim(); }).filter(Boolean);
@@ -21947,22 +21952,28 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         exp = String($('cmpExp') && $('cmpExp').value || '').trim();
         if(exp) row.ends_at = exp + 'T23:59:59.999Z';
         if(typ === 'announcement'){
-          var hideCfg2 = portalReadHideAfterAckFromComposer();
-          if(hideCfg2 && hideCfg2.ok === false) return Promise.resolve({ ok:false, skip:false, message:hideCfg2.message || 'Invalid hide timeframe' });
-          if(hideCfg2 && hideCfg2.ok && hideCfg2.amount){
-            row.hide_after_ack_amount = hideCfg2.amount;
-            row.hide_after_ack_unit = hideCfg2.unit;
-          }
+          var hideApply2 = portalApplyHideAfterAckToAnnouncementRow(row);
+          if(hideApply2 && hideApply2.ok === false) return Promise.resolve({ ok:false, skip:false, message:hideApply2.message || 'Invalid hide timeframe' });
         }
       }
       row.title = title;
       row.message_type = typ;
       row.priority = pri;
-      return client.from('portal_staff_announcements').insert([row]).select('id').then(function(res){
-        if(res.error) return { ok:false, skip:false, message:String(res.error.message || res.error) };
-        var row0 = Array.isArray(res.data) && res.data[0] ? res.data[0] : null;
-        return { ok:true, id:row0 && row0.id ? row0.id : null };
-      });
+      if(row.target_staff_role === undefined || row.target_staff_role === '') row.target_staff_role = null;
+      if(row.target_user_id === undefined || row.target_user_id === '') row.target_user_id = null;
+      function publishRow(uid){
+        if(uid) row.created_by = uid;
+        return client.from('portal_staff_announcements').insert([row]).select('id').then(function(res){
+          if(res.error) return { ok:false, skip:false, message:String(res.error.message || res.error) };
+          var row0 = Array.isArray(res.data) && res.data[0] ? res.data[0] : null;
+          return { ok:true, id:row0 && row0.id ? row0.id : null };
+        });
+      }
+      if(!client.auth || !client.auth.getSession) return publishRow(null);
+      return client.auth.getSession().then(function(sess){
+        var uid = sess && sess.data && sess.data.session && sess.data.session.user ? sess.data.session.user.id : null;
+        return publishRow(uid);
+      }).catch(function(){ return publishRow(null); });
     }
     function portalBindComposeSendHandler(opts){
       opts = opts || {};
