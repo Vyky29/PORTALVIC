@@ -7,9 +7,9 @@
   <title>Session overview · Programme lead</title>
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260526-lead-overview" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260526-lead-overview" />
-  <link rel="stylesheet" href="/portal/portal-lead-session-overview.css?v=20260527-lead-overview9" />
-  <script src="/portal/admin-portal-day-ops.js?v=20260527-lead-overview7"></script>
-  <script src="/portal/admin-sessions-hub.js?v=20260527-lead-overview9"></script>
+  <link rel="stylesheet" href="/portal/portal-lead-session-overview.css?v=20260527-lead-overview10" />
+  <script src="/portal/admin-portal-day-ops.js?v=20260527-lead-overview8"></script>
+  <script src="/portal/admin-sessions-hub.js?v=20260527-lead-overview10"></script>
   <script src="portal/session_feedback_portal_data.js?v=20260526-lead-overview5"></script>
   <script src="portal/session_feedback_status_portal_data.js?v=20260526-all-complete"></script>
 </head>
@@ -21,20 +21,23 @@
   <p class="plso-scope-hint" id="plsoScopeHint" hidden></p>
   <main class="plso-shell">
     <div class="c4k-sessions-hub portal-day-ops-embed">
-      <div class="c4k-sessions-hub__head">
-        <h1 class="c4k-sessions-hub__title">SESSIONS OVERVIEW</h1>
-        <p class="c4k-sessions-hub__sub">Weekly roster, session status, and feedback for your programmes.</p>
+      <div class="c4k-sessions-hub__head" id="plsoHubHead">
+        <div class="c4k-sessions-hub__title-row">
+          <span class="c4k-sessions-hub__ico" aria-hidden="true">📋</span>
+          <div style="min-width:0">
+            <h1 class="c4k-sessions-hub__title">SESSION FEEDBACKS</h1>
+            <p class="c4k-sessions-hub__sub">Staff feedback and awaiting sessions for your programme days.</p>
+          </div>
+        </div>
       </div>
       <div class="c4k-sessions-hub-tabs" role="tablist" aria-label="Session overview">
-        <button type="button" class="c4k-sessions-hub-tab is-active" data-plso-tab="overview">Overview</button>
-        <button type="button" class="c4k-sessions-hub-tab" data-plso-tab="feedback">Feedbacks</button>
+        <button type="button" class="c4k-sessions-hub-tab is-active" data-plso-tab="feedback">Feedbacks</button>
+        <button type="button" class="c4k-sessions-hub-tab" data-plso-tab="absents">Absents</button>
+        <button type="button" class="c4k-sessions-hub-tab" data-plso-tab="incidents">Incidents</button>
         <button type="button" class="c4k-sessions-hub-tab" data-plso-tab="lead">Lead reports</button>
       </div>
       <div id="portalDayOpsStatus" class="portal-forms-status" aria-live="polite"></div>
-      <div id="c4kHubPanelOverview" class="c4k-sessions-hub-panel">
-        <div id="adminSessionsHubRoot" class="admin-sessions-hub-root"></div>
-      </div>
-      <div id="c4kHubPanelFeedback" class="c4k-sessions-hub-panel" hidden>
+      <div id="c4kHubPanelFeedback" class="c4k-sessions-hub-panel">
         <div
           id="adminSessionFeedbacksRoot"
           class="admin-sessions-hub-root admin-session-feedbacks-root"
@@ -43,6 +46,22 @@
         >
           <p class="muted" style="margin:0 0 12px;font-size:13px">Loading session feedback…</p>
         </div>
+      </div>
+      <div id="c4kHubPanelAbsents" class="c4k-sessions-hub-panel" hidden>
+        <div
+          id="adminSessionsAbsentsRoot"
+          class="admin-sessions-hub-root admin-sessions-absents-root"
+          role="region"
+          aria-label="Session absents"
+        ></div>
+      </div>
+      <div id="c4kHubPanelIncidents" class="c4k-sessions-hub-panel" hidden>
+        <div
+          id="adminSessionsIncidentsRoot"
+          class="admin-sessions-hub-root admin-sessions-incidents-root"
+          role="region"
+          aria-label="Session incidents"
+        ></div>
       </div>
       <div id="c4kHubPanelLead" class="c4k-sessions-hub-panel" hidden>
         <h2 class="portal-forms-heading">Lead reports</h2>
@@ -69,7 +88,7 @@
     </div>
   </main>
   <script type="module">
-    import { portalInitLeadSessionOverviewPage } from "/portal/portal_lead_session_overview_page.js?v=20260527-lead-overview8";
+    import { portalInitLeadSessionOverviewPage } from "/portal/portal_lead_session_overview_page.js?v=20260527-lead-overview10";
     portalInitLeadSessionOverviewPage().catch(function (e) {
       console.error(e);
       alert("Could not load session overview. Try again or return to the lead dashboard.");

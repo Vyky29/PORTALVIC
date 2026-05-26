@@ -243,6 +243,24 @@ export function portalLeadReportInScope(report, scopes) {
   return scopesMatchRow(scopes, iso, service, venue);
 }
 
+/** Quick absent marks — same weekday/service/venue rules as feedback rows. */
+export function portalLeadAbsentMarkInScope(mark, scopes) {
+  if (!mark || !scopes || !scopes.length) return false;
+  if (serviceExcludedForLeadOverview(mark.service)) return false;
+  const iso = String(mark.session_date || "")
+    .trim()
+    .slice(0, 10);
+  if (!iso) return false;
+  const row = {
+    session_date: iso,
+    service: mark.service,
+    venue: mark.venue || "",
+    portal_session_key: mark.portal_session_key,
+  };
+  row.venue = portalLeadInferFeedbackVenue(row);
+  return scopesMatchRow(scopes, iso, mark.service, row.venue, { allowEmptyVenue: true });
+}
+
 export function portalLeadSessionScopeFilterFns(scopes, leadProfileKey) {
   const leadKey = normInstructorKey(leadProfileKey);
   return {
@@ -252,6 +270,12 @@ export function portalLeadSessionScopeFilterFns(scopes, leadProfileKey) {
     feedbackRowScopeFilter: function (fb) {
       if (serviceExcludedForLeadOverview(fb.service)) return false;
       return portalLeadFeedbackInScope(fb, scopes);
+    },
+    absentMarkScopeFilter: function (mark) {
+      return portalLeadAbsentMarkInScope(mark, scopes);
+    },
+    incidentScopeFilter: function (report) {
+      return portalLeadReportInScope(report, scopes);
     },
   };
 }

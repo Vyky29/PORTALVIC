@@ -64,8 +64,16 @@ body.portal-lead-session-overview-page {
   min-width: 0;
 }
 .plso-shell .admin-sessions-hub-root,
-.plso-shell .admin-session-feedbacks-root {
+.plso-shell .admin-session-feedbacks-root,
+.plso-shell .admin-sessions-absents-root,
+.plso-shell .admin-sessions-incidents-root {
   min-width: min(100%, 1200px);
+}
+.plso-shell .ash-fb-row--awaiting {
+  background: #fffbeb;
+}
+.plso-shell .ash-fb-row--awaiting td {
+  vertical-align: middle;
 }
 .plso-shell .ash-table-wrap {
   -webkit-overflow-scrolling: touch;

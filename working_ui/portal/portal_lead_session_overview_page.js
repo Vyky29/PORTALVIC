@@ -8,6 +8,7 @@ import {
   portalLeadSessionScopesForProfile,
   portalLeadSessionScopeLabels,
   portalLeadReportInScope,
+  portalLeadAbsentMarkInScope,
   portalLeadFeedbackInScope,
   portalLeadInferFeedbackVenue,
   portalLeadDayFeedbackStats,
@@ -15,10 +16,10 @@ import {
   portalLeadDayIsClubClosed,
 } from "./portal_lead_session_scope.js";
 
-const HUB_SRC = "/portal/admin-sessions-hub.js?v=20260526-lead-overview5";
+const HUB_SRC = "/portal/admin-sessions-hub.js?v=20260527-lead-overview10";
 const LEAD_URL = "lead_dashboard.html";
 
-const state = { tab: "overview", scopes: [] };
+const state = { tab: "feedback", scopes: [] };
 
 function $(id) {
   return document.getElementById(id);
@@ -181,7 +182,7 @@ function headHtml(tab) {
       '<span class="c4k-sessions-hub__ico" aria-hidden="true">📋</span>' +
       '<div style="min-width:0">' +
       "<h1 class=\"c4k-sessions-hub__title\">SESSION FEEDBACKS</h1>" +
-      '<p class="c4k-sessions-hub__sub">Staff feedback on sessions in your programmes (same view as admin).</p>' +
+      '<p class="c4k-sessions-hub__sub">Submitted feedback plus sessions still awaiting feedback on your programme days.</p>' +
       "</div></div></div>"
     );
   }
@@ -196,6 +197,28 @@ function headHtml(tab) {
       "</div></div></div>"
     );
   }
+  if (tab === "absents") {
+    return (
+      '<div class="c4k-sessions-hub__head">' +
+      '<div class="c4k-sessions-hub__title-row">' +
+      '<span class="c4k-sessions-hub__ico" aria-hidden="true">🚫</span>' +
+      '<div style="min-width:0">' +
+      "<h1 class=\"c4k-sessions-hub__title\">SESSION ABSENTS</h1>" +
+      '<p class="c4k-sessions-hub__sub">Absent marks on your programme days (same view as admin).</p>' +
+      "</div></div></div>"
+    );
+  }
+  if (tab === "incidents") {
+    return (
+      '<div class="c4k-sessions-hub__head">' +
+      '<div class="c4k-sessions-hub__title-row">' +
+      '<span class="c4k-sessions-hub__ico" aria-hidden="true">⚠️</span>' +
+      '<div style="min-width:0">' +
+      "<h1 class=\"c4k-sessions-hub__title\">INCIDENTS</h1>" +
+      '<p class="c4k-sessions-hub__sub">Incident reports on your programme days (same view as admin).</p>' +
+      "</div></div></div>"
+    );
+  }
   return (
     '<div class="c4k-sessions-hub__head">' +
     "<h1 class=\"c4k-sessions-hub__title\">SESSIONS OVERVIEW</h1>" +
@@ -204,23 +227,30 @@ function headHtml(tab) {
   );
 }
 
-function usesTrackingHub(tab) {
-  return tab === "overview";
-}
-
 function usesFeedbackHub(tab) {
   return tab === "feedback";
 }
 
+function usesAbsentsHub(tab) {
+  return tab === "absents";
+}
+
+function usesIncidentsHub(tab) {
+  return tab === "incidents";
+}
+
 function refreshPanels() {
-  const showTrack = usesTrackingHub(state.tab);
   const showFb = usesFeedbackHub(state.tab);
+  const showAbs = usesAbsentsHub(state.tab);
+  const showInc = usesIncidentsHub(state.tab);
   const showLead = state.tab === "lead";
-  const ov = $("c4kHubPanelOverview");
   const fb = $("c4kHubPanelFeedback");
+  const abs = $("c4kHubPanelAbsents");
+  const inc = $("c4kHubPanelIncidents");
   const lead = $("c4kHubPanelLead");
-  if (ov) ov.hidden = !showTrack;
   if (fb) fb.hidden = !showFb;
+  if (abs) abs.hidden = !showAbs;
+  if (inc) inc.hidden = !showInc;
   if (lead) lead.hidden = !showLead;
   document.querySelectorAll("[data-plso-tab]").forEach((btn) => {
     btn.classList.toggle("is-active", btn.getAttribute("data-plso-tab") === state.tab);
@@ -271,12 +301,18 @@ function applyScopedPayload(scopes) {
   p.lead_session_reports = (p.lead_session_reports || []).filter((r) =>
     portalLeadReportInScope(r, scopes)
   );
+  p.session_quick_marks = (p.session_quick_marks || []).filter((m) =>
+    portalLeadAbsentMarkInScope(m, scopes)
+  );
+  p.incident_reports = (p.incident_reports || []).filter((r) =>
+    portalLeadReportInScope(r, scopes)
+  );
   return p;
 }
 
 function makeLeadFeedbackDayStats(scopes, leadKey) {
   return function (iso) {
-    const hub = window.__plsoTrackingHub || window.__plsoFeedbackHub;
+    const hub = window.__plsoFeedbackHub;
     if (!hub) return { required: 0, completed: 0 };
     const st = portalLeadDayFeedbackStats(iso, scopes, leadKey, hub);
     if (!st) return { required: 0, completed: 0 };
@@ -371,32 +407,25 @@ async function initHubs(scopes, leadKey) {
     payload: window.PortalDayOps.getPayload(),
     slotScopeFilter: filters.slotScopeFilter,
     feedbackRowScopeFilter: filters.feedbackRowScopeFilter,
+    absentMarkScopeFilter: filters.absentMarkScopeFilter,
+    incidentScopeFilter: filters.incidentScopeFilter,
+    feedbackMixAwaitingSlots: true,
     hideEmptyWeekDays: true,
     readOnlyOverview: true,
     isClubClosedDay: portalLeadDayIsClubClosed,
     getFeedbackDayStats: statsFn,
   };
 
-  const trackRoot = $("adminSessionsHubRoot");
-  if (trackRoot) {
-    window.__plsoTrackingHub = await window.AdminSessionsHub.mount(trackRoot, {
-      ...hubOpts,
-      mode: "tracking",
-    });
-    if (window.__plsoTrackingHub) {
-      window.__plsoTrackingHub.tab = "tracking";
-      window.__plsoTrackingHub.weekStart = mondayOfWeekIso(isoToday());
-      if (typeof window.__plsoTrackingHub.snapSelectedDayToDisplayWeek === "function") {
-        window.__plsoTrackingHub.snapSelectedDayToDisplayWeek();
-      } else {
-        const showDays =
-          typeof window.__plsoTrackingHub.weekDaysForDisplay === "function"
-            ? window.__plsoTrackingHub.weekDaysForDisplay()
-            : window.__plsoTrackingHub.weekDays();
-        window.__plsoTrackingHub.selectedDay =
-          showDays.length > 0 ? showDays[0] : isoToday();
-      }
+  function snapHubWeek(hub) {
+    if (!hub) return;
+    hub.weekStart = mondayOfWeekIso(isoToday());
+    if (typeof hub.snapSelectedDayToDisplayWeek === "function") {
+      hub.snapSelectedDayToDisplayWeek();
+      return;
     }
+    const showDays =
+      typeof hub.weekDaysForDisplay === "function" ? hub.weekDaysForDisplay() : hub.weekDays();
+    hub.selectedDay = showDays.length > 0 ? showDays[0] : isoToday();
   }
 
   const fbRoot = $("adminSessionFeedbacksRoot");
@@ -405,18 +434,27 @@ async function initHubs(scopes, leadKey) {
       ...hubOpts,
       mode: "feedback",
     });
-    if (window.__plsoFeedbackHub) {
-      window.__plsoFeedbackHub.weekStart = mondayOfWeekIso(isoToday());
-      if (typeof window.__plsoFeedbackHub.snapSelectedDayToDisplayWeek === "function") {
-        window.__plsoFeedbackHub.snapSelectedDayToDisplayWeek();
-      } else {
-        const fbDays =
-          typeof window.__plsoFeedbackHub.weekDaysForDisplay === "function"
-            ? window.__plsoFeedbackHub.weekDaysForDisplay()
-            : window.__plsoFeedbackHub.weekDays();
-        if (fbDays.length > 0) window.__plsoFeedbackHub.selectedDay = fbDays[0];
-      }
-    }
+    snapHubWeek(window.__plsoFeedbackHub);
+  }
+
+  const absRoot = $("adminSessionsAbsentsRoot");
+  if (absRoot) {
+    window.__plsoAbsentsHub = await window.AdminSessionsHub.mount(absRoot, {
+      ...hubOpts,
+      mode: "full",
+      tab: "absents",
+    });
+    snapHubWeek(window.__plsoAbsentsHub);
+  }
+
+  const incRoot = $("adminSessionsIncidentsRoot");
+  if (incRoot) {
+    window.__plsoIncidentsHub = await window.AdminSessionsHub.mount(incRoot, {
+      ...hubOpts,
+      mode: "full",
+      tab: "incidents",
+    });
+    snapHubWeek(window.__plsoIncidentsHub);
   }
 }
 
@@ -435,8 +473,15 @@ async function mergeLeadReportsFromDb(scopes) {
   p.lead_session_reports = merged;
 }
 
+function renderLeadHub(hub, payload) {
+  if (!hub) return;
+  hub.setPayload(payload);
+  if (typeof hub.renderPanels === "function") hub.renderPanels();
+  else if (typeof hub.render === "function") hub.render();
+}
+
 async function refreshTab(tab) {
-  state.tab = tab || "overview";
+  state.tab = tab || "feedback";
   const scopes = state.scopes;
   refreshPanels();
   if (window.PortalDayOps && typeof window.PortalDayOps.ensurePayload === "function") {
@@ -445,20 +490,9 @@ async function refreshTab(tab) {
     applyScopedPayload(scopes);
   }
   const payload = window.PortalDayOps.getPayload();
-  if (usesTrackingHub(state.tab) && window.__plsoTrackingHub) {
-    window.__plsoTrackingHub.setPayload(payload);
-    if (typeof window.__plsoTrackingHub.renderPanels === "function") {
-      window.__plsoTrackingHub.renderPanels();
-    }
-  }
-  if (usesFeedbackHub(state.tab) && window.__plsoFeedbackHub) {
-    window.__plsoFeedbackHub.setPayload(payload);
-    if (typeof window.__plsoFeedbackHub.renderPanels === "function") {
-      window.__plsoFeedbackHub.renderPanels();
-    } else if (typeof window.__plsoFeedbackHub.render === "function") {
-      window.__plsoFeedbackHub.render();
-    }
-  }
+  if (usesFeedbackHub(state.tab)) renderLeadHub(window.__plsoFeedbackHub, payload);
+  if (usesAbsentsHub(state.tab)) renderLeadHub(window.__plsoAbsentsHub, payload);
+  if (usesIncidentsHub(state.tab)) renderLeadHub(window.__plsoIncidentsHub, payload);
   if (state.tab === "lead" && window.PortalDayOps && typeof window.PortalDayOps.refreshTab === "function") {
     await window.PortalDayOps.refreshTab("lead");
   }
@@ -467,7 +501,7 @@ async function refreshTab(tab) {
 function bindTabs() {
   document.querySelectorAll("[data-plso-tab]").forEach((btn) => {
     btn.addEventListener("click", () => {
-      void refreshTab(btn.getAttribute("data-plso-tab") || "overview");
+      void refreshTab(btn.getAttribute("data-plso-tab") || "feedback");
     });
   });
 }
@@ -544,7 +578,7 @@ export async function portalInitLeadSessionOverviewPage() {
         : "No programme feedback loaded for your days yet — check you are on the latest deploy or contact admin.";
     statusEl.className = "portal-forms-status" + (fbCount > 0 ? "" : " is-error");
   }
-  await refreshTab("overview");
+  await refreshTab("feedback");
 }
 
 export function portalSyncLeadSessionOverviewButton() {

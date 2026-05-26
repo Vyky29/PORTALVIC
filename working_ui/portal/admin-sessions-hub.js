@@ -1749,7 +1749,9 @@
     this.opts = opts || {};
     this.escapeHtml = opts.escapeHtml || esc;
     this.mode = (opts && opts.mode) || "full";
-    this.tab = this.mode === "feedback" ? "feedback" : "tracking";
+    this.tab =
+      (opts && opts.tab) ||
+      (this.mode === "feedback" ? "feedback" : "tracking");
     this._modalFb = null;
     this._modalStep = null;
     this._reviewedKeys = {};
@@ -1964,6 +1966,11 @@
     out.sort(function (a, b) {
       return String(b.row.created_at || "").localeCompare(String(a.row.created_at || ""));
     });
+    if (this.opts && typeof this.opts.incidentScopeFilter === "function") {
+      out = out.filter(function (item) {
+        return this.incidentScopeFilter(item.row);
+      }, this);
+    }
     return out;
   };
 
@@ -2121,6 +2128,9 @@
     out.sort(function (a, b) {
       return String(b.created_at || "").localeCompare(String(a.created_at || ""));
     });
+    if (this.opts && typeof this.opts.absentMarkScopeFilter === "function") {
+      out = out.filter(this.opts.absentMarkScopeFilter);
+    }
     return out;
   };
 
@@ -3341,18 +3351,117 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return out;
   };
 
+  /** Feedback tab: submitted rows plus roster slots still awaiting feedback (lead overview). */
+  AdminSessionsHub.prototype.feedbackMixRowsForDay = function (day) {
+    var hub = this;
+    day = clean(day || hub.selectedDay);
+    var submitted = hub.feedbackLogRowsForDay(day);
+    if (!hub.opts || !hub.opts.feedbackMixAwaitingSlots) return submitted;
+    if (hubDayIsClubClosed(hub, day)) return submitted;
+
+    var used = {};
+    function markUsed(fb) {
+      if (!fb || fb._ashAwaitingSlot) return;
+      used[hub.fbRowKey(fb)] = true;
+    }
+    function isUsed(fb) {
+      return fb && !fb._ashAwaitingSlot && used[hub.fbRowKey(fb)];
+    }
+
+    var slots = hub.expandSlotsForDate(day);
+    var units = hub.getFeedbackUnitsForDate(day);
+    var unitComplete = {};
+    var unitAbsent = {};
+    for (var u = 0; u < units.length; u++) {
+      unitComplete[units[u].key] = hub.feedbackUnitComplete(units[u]);
+      unitAbsent[units[u].key] = hub.feedbackUnitAbsent(units[u]);
+    }
+    var displaySlots = hub.sortOverviewSlotsForDisplay(
+      slots.filter(function (s) {
+        if (shouldOmitOverviewSlot(hub, s)) return false;
+        if (hub.opts.slotScopeFilter && !hub.opts.slotScopeFilter(s)) return false;
+        return true;
+      }),
+      unitComplete,
+      unitAbsent
+    );
+
+    var out = [];
+    for (var i = 0; i < displaySlots.length; i++) {
+      var slot = displaySlots[i];
+      var ukey = slot.feedback_unit_key || feedbackUnitKey(slot);
+      var isAbsent = unitAbsent[ukey] || hub.slotIsAbsent(slot);
+      if (isAbsent) {
+        var afb = hub.findAbsentFeedbackForSlot(slot);
+        if (!afb) {
+          for (var si = 0; si < submitted.length; si++) {
+            if (
+              isAbsentFeedbackRow(submitted[si]) &&
+              canonicalClientSlug(submitted[si].client_name) === canonicalClientSlug(slot.client_name)
+            ) {
+              afb = submitted[si];
+              break;
+            }
+          }
+        }
+        if (afb && !isUsed(afb)) {
+          out.push(afb);
+          markUsed(afb);
+        }
+        continue;
+      }
+      if (hub.slotFeedbackComplete(slot)) {
+        var fb = hub.findFeedbackForSlot(slot);
+        if (fb && !isUsed(fb)) {
+          out.push(fb);
+          markUsed(fb);
+        }
+        continue;
+      }
+      out.push({ _ashAwaitingSlot: true, slot: slot });
+    }
+    for (var j = 0; j < submitted.length; j++) {
+      if (!isUsed(submitted[j])) {
+        out.push(submitted[j]);
+        markUsed(submitted[j]);
+      }
+    }
+    return out;
+  };
+
   /** Feedback tab: all rows (incl. absents) for the selected calendar day + search/note filters. */
   AdminSessionsHub.prototype.feedbackRowsForSelectedDay = function () {
     var hub = this;
     var day = clean(this.selectedDay);
     if (!day) return [];
-    var rows = this.feedbackLogRowsForDay(day);
+    var rows =
+      hub.opts && hub.opts.feedbackMixAwaitingSlots
+        ? this.feedbackMixRowsForDay(day)
+        : this.feedbackLogRowsForDay(day);
     var q = clean(this.clientSearch).toLowerCase();
     var inst = clean(this.instructorFilter);
     if (!q && !inst && !this.feedbackNoteFilter) return rows;
     return rows.filter(function (fb) {
-      if (q && clean(fb.client_name).toLowerCase().indexOf(q) === -1) return false;
-      if (inst && !completedByMatchesInstructor(fb.completed_by_name, inst)) return false;
+      var clientName = fb._ashAwaitingSlot && fb.slot ? fb.slot.client_name : fb.client_name;
+      if (q && clean(clientName).toLowerCase().indexOf(q) === -1) return false;
+      if (inst && fb._ashAwaitingSlot && fb.slot) {
+        var labels = (fb.slot.instructors || [])
+          .concat(String(fb.slot.instructor_label || "").split(/,|\/|&|\band\b/gi))
+          .map(function (x) {
+            return clean(x);
+          })
+          .filter(Boolean);
+        var hit = false;
+        for (var li = 0; li < labels.length; li++) {
+          if (completedByMatchesInstructor(labels[li], inst)) {
+            hit = true;
+            break;
+          }
+        }
+        if (!hit) return false;
+      } else if (inst && !completedByMatchesInstructor(fb.completed_by_name, inst)) {
+        return false;
+      }
       if (hub.feedbackNoteFilter === "positive" && !clean(fb.positive_feedback)) return false;
       if (hub.feedbackNoteFilter === "relevant" && !clean(fb.relevant_information)) return false;
       return true;
@@ -3377,6 +3486,35 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var hub = this;
     opts = opts || {};
     var esc = escFn || this.escapeHtml;
+
+    if (fb && fb._ashAwaitingSlot && fb.slot) {
+      var awaitSlot = fb.slot;
+      var awaitSvc = clean(awaitSlot.service) || "\u2014";
+      var awaitTime = awaitSlot.time_slot
+        ? '<div class="ash-cell-sub">' + esc(awaitSlot.time_slot) + "</div>"
+        : "";
+      var awaitInst =
+        awaitSlot.instructors && awaitSlot.instructors.length
+          ? awaitSlot.instructors.map(formatInstructorPill).join(" ")
+          : esc(awaitSlot.instructor_label || "\u2014");
+      return (
+        '<tr class="ash-fb-row ash-fb-row--awaiting">' +
+        '<td><span class="ash-pill ash-pill--client">' +
+        esc(awaitSlot.client_name) +
+        "</span></td>" +
+        "<td>" +
+        esc(awaitSvc) +
+        awaitTime +
+        "</td>" +
+        '<td colspan="5" class="ash-td-center">' +
+        rosterFeedbackStatusHtml(false, false) +
+        "</td>" +
+        '<td class="ash-cell-instructor"><div class="ash-cell-main">' +
+        awaitInst +
+        "</div></td>" +
+        "</tr>"
+      );
+    }
 
     function cellNoteHtml(text) {
       var t = clean(text);
@@ -4684,7 +4822,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
 
     var tableRows = rows
       .map(function (fb, rowIdx) {
-        return hub.htmlFeedbackTableRow(fb, esc, { rowIdx: rowIdx, clickable: true });
+        var awaiting = fb && fb._ashAwaitingSlot;
+        return hub.htmlFeedbackTableRow(fb, esc, {
+          rowIdx: awaiting ? null : rowIdx,
+          clickable: !awaiting,
+        });
       })
       .join("");
 
@@ -5124,12 +5266,14 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     if (root._ashHubInstance) {
       var existing = root._ashHubInstance;
       if (opts && opts.mode) existing.mode = opts.mode;
+      if (opts && opts.tab) existing.tab = opts.tab;
       if (opts && opts.payload) existing.setPayload(opts.payload);
       return existing;
     }
     var hub = new AdminSessionsHub(root, opts || {});
     root._ashHubInstance = hub;
     if (opts && opts.mode) hub.mode = opts.mode;
+    if (opts && opts.tab) hub.tab = opts.tab;
     hub.bindEvents();
     if (opts && opts.payload) {
       hub.payload = opts.payload;
