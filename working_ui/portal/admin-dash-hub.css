@@ -416,9 +416,10 @@ body:has(#workspace .dash-hub--nav-index) .admin-main{
   max-width:100%;
   min-height:0;
   height:100%;
-  padding:0 clamp(8px,1vw,12px) clamp(10px,1.2vh,12px);
+  padding:0 0 clamp(10px,1.2vh,12px);
   box-sizing:border-box;
   overflow:hidden;
+  text-align:center;
   border-color:var(--hub-tile-border, var(--dh-line));
   background:var(--hub-tile-bg, #fff);
 }
@@ -427,26 +428,44 @@ body:has(#workspace .dash-hub--nav-index) .admin-main{
   display:flex;
   align-items:center;
   justify-content:center;
+  align-self:stretch;
+  width:100%;
   flex:none;
   min-height:clamp(50px,8.5vh,64px);
   max-height:clamp(50px,8.5vh,64px);
-  margin:0 -2px;
+  margin:0;
   padding:clamp(8px,1.2vh,12px) 8px;
+  box-sizing:border-box;
+  border-radius:13px 13px 0 0;
   background:var(--hub-band-bg, var(--dh-tile-bg, #eef2ff));
   color:var(--hub-accent, #4f46e5);
 }
+.dash-hub--nav-index .dash-hub-cat__body .dash-hub__grid--inline .dash-hub__tile-band .admin-nav-ico{
+  flex-shrink:0;
+  width:36px;
+  height:36px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  margin:0 auto;
+}
 .dash-hub--nav-index .dash-hub-cat__body .dash-hub__grid--inline .dash-hub__tile-band .admin-nav-ico svg{
-  width:clamp(24px,3.2vh,34px);
-  height:clamp(24px,3.2vh,34px);
+  width:20px;
+  height:20px;
+  display:block;
+  margin:0 auto;
 }
 .dash-hub--nav-index .dash-hub-cat__body .dash-hub__grid--inline .dash-hub__tile-label{
   grid-area:label;
   flex-shrink:0;
+  width:100%;
   margin:0;
-  padding:8px 2px 0;
+  padding:8px clamp(8px,1vw,12px) 0;
+  box-sizing:border-box;
   font-size:clamp(11px,1.4vh,13px);
   line-height:1.25;
   color:var(--dh-ink);
+  text-align:center;
   display:-webkit-box;
   -webkit-box-orient:vertical;
   -webkit-line-clamp:2;
@@ -457,11 +476,14 @@ body:has(#workspace .dash-hub--nav-index) .admin-main{
 .dash-hub--nav-index .dash-hub-cat__body .dash-hub__grid--inline .dash-hub__tile-desc{
   grid-area:desc;
   align-self:stretch;
+  width:100%;
   margin:0;
-  padding:6px 2px 4px;
+  padding:6px clamp(8px,1vw,12px) 4px;
+  box-sizing:border-box;
   font-size:clamp(10px,1.2vh,12px);
   line-height:1.4;
   color:var(--dh-muted);
+  text-align:center;
   display:-webkit-box;
   -webkit-box-orient:vertical;
   -webkit-line-clamp:5;
@@ -521,12 +543,12 @@ body:has(#workspace .dash-hub--nav-index) .admin-main{
   --hub-glow:rgba(251,191,36,.2);
 }
 .dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_zoho"]{
-  --hub-accent:#a78bfa;
-  --hub-soft:rgba(167,139,250,.16);
-  --hub-band-bg:rgba(167,139,250,.24);
-  --hub-tile-bg:linear-gradient(180deg,rgba(167,139,250,.14) 0%,#fff 48%);
-  --hub-tile-border:rgba(139,92,246,.32);
-  --hub-glow:rgba(167,139,250,.18);
+  --hub-accent:#ef4444;
+  --hub-soft:rgba(239,68,68,.14);
+  --hub-band-bg:rgba(239,68,68,.22);
+  --hub-tile-bg:linear-gradient(180deg,rgba(239,68,68,.12) 0%,#fff 48%);
+  --hub-tile-border:rgba(220,38,38,.32);
+  --hub-glow:rgba(239,68,68,.18);
 }
 .dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_supabase"]{
   --hub-accent:#0ea5e9;
