@@ -1471,20 +1471,23 @@
       top:0;
       left:0;
       right:0;
-      bottom:0;
+      bottom:auto;
       width:100%;
       max-width:100%;
       margin:0;
       height:100dvh;
-      height:100vh;
-      min-height:100dvh;
-      min-height:100vh;
-      max-height:none;
+      min-height:0;
+      max-height:100dvh;
       border-radius:0;
       border-left:none;
       border-right:none;
       box-shadow:none;
+      padding-top:max(0px, env(safe-area-inset-top, 0px));
       padding-bottom:0;
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+      box-sizing:border-box;
       transform:translateY(105%);
     }
     #internalChatSheet.sheet--portal-chat-immersive.sheet--fullscreen.sheet--mobile-frame.open{
@@ -1506,16 +1509,25 @@
     }
     #internalChatSheet.sheet--portal-chat-immersive .sheet-handle{display:none}
     #internalChatSheet.sheet--portal-chat-immersive .portal-dm-sheet-head{
-      display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:8px;
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto;
+      grid-template-areas:"title close" "sub sub";
+      align-items:center;
+      gap:6px 10px;
+      flex-shrink:0;
+      padding-left:max(12px, env(safe-area-inset-left, 0px));
       padding-right:max(12px, env(safe-area-inset-right, 0px));
     }
-    #internalChatSheet.sheet--portal-chat-immersive .portal-dm-sheet-head h3{flex:1;min-width:0;margin:0}
+    #internalChatSheet.sheet--portal-chat-immersive .portal-dm-sheet-head h3{
+      grid-area:title;min-width:0;margin:0;text-align:left;
+    }
     #internalChatSheet.sheet--portal-chat-immersive .portal-dm-sheet-head .portal-dm-close-btn{
-      flex-shrink:0;width:auto;max-width:100%;padding:10px 16px;margin:0;
+      grid-area:close;flex-shrink:0;width:auto;max-width:100%;padding:10px 16px;margin:0;justify-self:end;
     }
     #internalChatSheet.sheet--portal-chat-immersive .portal-dm-sheet-head p{
-      flex:1 1 100%;min-width:0;margin:0;
+      grid-area:sub;min-width:0;margin:0;text-align:left;font-size:13px;
     }
+    #internalChatSheet #internalChatBackBtn.portal-dm-back-hidden{display:none !important}
     #internalChatSheet.sheet--portal-chat-immersive.sheet--fullscreen.sheet--mobile-frame .sheet-head{
       text-align:center;
     }
@@ -1540,9 +1552,12 @@
       display:flex;
       flex-direction:column;
       overflow:hidden;
-      gap:8px;
-      padding-bottom:var(--fab-reserved-bottom);
+      gap:6px;
+      padding-bottom:0;
       box-sizing:border-box;
+    }
+    #internalChatSheet #internalChatPeerLabel{
+      flex-shrink:0;margin:0 !important;
     }
     #internalChatSheet .portal-dm-msgs-scroll{
       flex:1;
@@ -1567,13 +1582,13 @@
       bottom:auto;
       flex-shrink:0;
       box-sizing:border-box;
-      z-index:1;
+      z-index:2;
       display:flex;
       flex-direction:column;
       align-items:stretch;
       gap:8px;
       margin:0;
-      padding:10px 0 6px;
+      padding:10px 0 max(10px, env(safe-area-inset-bottom, 0px));
       background:#fff;
       border-top:1px solid rgba(0,0,0,.08);
       box-shadow:0 -4px 14px rgba(11,18,32,.06);
@@ -10926,11 +10941,60 @@
     function portalInternalChatOfficeRestricted(){
       return portalStaffActsAsWorkerMessenger();
     }
+    function portalSyncInternalChatMobileViewport(){
+      var sh = document.getElementById('internalChatSheet');
+      if(!sh){
+        return;
+      }
+      var open = sh.classList.contains('open') && document.body.classList.contains('portal-internal-chat-open');
+      if(!open){
+        sh.style.removeProperty('top');
+        sh.style.removeProperty('height');
+        sh.style.removeProperty('max-height');
+        return;
+      }
+      var vv = window.visualViewport;
+      if(vv){
+        sh.style.top = Math.max(0, vv.offsetTop) + 'px';
+        sh.style.height = vv.height + 'px';
+        sh.style.maxHeight = vv.height + 'px';
+      }else{
+        sh.style.top = '0';
+        sh.style.height = '100dvh';
+        sh.style.maxHeight = '100dvh';
+      }
+    }
+    function portalBindInternalChatMobileViewport(){
+      if(window.__PORTAL_INTERNAL_CHAT_VV_BOUND) return;
+      window.__PORTAL_INTERNAL_CHAT_VV_BOUND = 1;
+      var run = function(){ portalSyncInternalChatMobileViewport(); };
+      if(window.visualViewport){
+        window.visualViewport.addEventListener('resize', run);
+        window.visualViewport.addEventListener('scroll', run);
+      }
+      window.addEventListener('resize', run);
+      window.addEventListener('orientationchange', function(){
+        setTimeout(run, 80);
+      });
+    }
+    function portalScrollInternalChatComposeIntoView(){
+      var inp = document.getElementById('internalChatInput');
+      var bar = inp && inp.closest ? inp.closest('.portal-dm-compose-bar') : null;
+      var target = bar || inp;
+      if(!target || typeof target.scrollIntoView !== 'function') return;
+      try{
+        target.scrollIntoView({ block: 'end', behavior: 'smooth' });
+      }catch(_si){
+        try{ target.scrollIntoView(false); }catch(_si2){}
+      }
+    }
     function syncPortalInternalChatImmersive(){
       var sh = document.getElementById('internalChatSheet');
       var open = !!(sh && sh.classList.contains('open'));
       document.body.classList.toggle('portal-internal-chat-open', open);
       if(sh) sh.classList.toggle('sheet--portal-chat-immersive', open);
+      portalBindInternalChatMobileViewport();
+      portalSyncInternalChatMobileViewport();
     }
     function portalCloseInternalChatReturnToAlertsMenu(){
       try{
@@ -10953,6 +11017,15 @@
         closeBtn.dataset.portalDmBound = '1';
         closeBtn.addEventListener('click', function(){
           portalCloseInternalChatReturnToAlertsMenu();
+        });
+      }
+      var inp = document.getElementById('internalChatInput');
+      if(inp && !inp.dataset.portalDmViewportBound){
+        inp.dataset.portalDmViewportBound = '1';
+        inp.addEventListener('focus', function(){
+          portalSyncInternalChatMobileViewport();
+          setTimeout(portalScrollInternalChatComposeIntoView, 60);
+          setTimeout(portalScrollInternalChatComposeIntoView, 280);
         });
       }
     }
@@ -11579,14 +11652,16 @@
             void window.portalRenderInternalChatSheet();
           });
         }
-        backBtn.textContent = portalInternalChatOfficeRestricted() ? "Close" : "Back to threads";
-        backBtn.hidden = !!portalInternalChatOfficeRestricted();
+        backBtn.textContent = "Back to threads";
+        backBtn.classList.toggle("portal-dm-back-hidden", !!portalInternalChatOfficeRestricted());
+        backBtn.hidden = false;
       }
       var sendBtn = document.getElementById("internalChatSendBtn");
       if(sendBtn && !sendBtn.dataset.portalDmBound){
         sendBtn.dataset.portalDmBound = "1";
         sendBtn.addEventListener("click", function(){ void window.portalInternalChatSendMessage(); });
       }
+      portalSyncInternalChatMobileViewport();
     };
     window.portalInternalChatSendMessage = async function portalInternalChatSendMessage(){
       var box = window.__PORTAL_SUPABASE__;

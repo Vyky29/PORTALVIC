@@ -4221,10 +4221,9 @@
     var NAV_GROUPS = [
       { id:'g_operator', label:'Operator', children:['dashboard','operations_admin','operator'] },
       { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','__h:Participants','clients','__h:Orders','orders_all','orders_outstanding','__h:Communications','comms_ops'] },
-      { id:'g_zoho', label:'H&R (ZohoPeople)', children:['staffhr','onboarding','staffhr_contracts'] },
+      { id:'g_zoho', label:'H&R (ZohoPeople)', children:['staffhr','onboarding','staffhr_contracts','interviews'] },
       { id:'g_supabase', label:'Supabase', children:['portal_documents'] },
       { id:'g_xero', label:'Finance (Xero)', children:['c4k_payments','invoices'] },
-      { id:'g_indeed', label:'Recruitment', children:['interviews'] },
       { id:'g_settings_portal', label:'Settings & dashboards', children:['__h:This app','settings','portal_nav_alerts','__h:Other portals','portal_nav_staff','portal_nav_ceo','portal_nav_admin','__h:Session','portal_nav_logout'] }
     ];
     /* Stroke SVGs (outline), inherit sidebar text colour — replaces emoji glyphs */
@@ -18169,7 +18168,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!n) return false;
       return n === 'victor' || n === 'raul' || n === 'javi';
     }
-    var DASH_HUB_NAV_GROUPS = ['g_operator','g_c4k','g_zoho','g_supabase','g_xero','g_indeed'];
+    var DASH_HUB_NAV_GROUPS = ['g_operator','g_c4k','g_zoho','g_supabase','g_xero'];
     function dashHubItemDesc(item){
       var id = item && item.id;
       var map = {
@@ -18225,9 +18224,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(!group) return '';
         var tiles = [];
         var hubChildIds = (group.children || []).slice();
-        if(gid === 'g_zoho'){
-          hubChildIds = ['staffhr','onboarding','staffhr_contracts'];
-        }
         hubChildIds.forEach(function(cid){
           if(String(cid).indexOf('__h:') === 0) return;
           if(gid === 'g_operator' && cid === 'operator') return;
