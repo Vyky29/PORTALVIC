@@ -411,6 +411,7 @@ body:has(#workspace .dash-hub--nav-index) .admin-main{
   display:grid;
   grid-template-rows:auto auto minmax(0,1fr);
   grid-template-areas:"band" "label" "desc";
+  flex:none;
   width:100%;
   min-width:0;
   max-width:100%;
@@ -420,6 +421,10 @@ body:has(#workspace .dash-hub--nav-index) .admin-main{
   box-sizing:border-box;
   overflow:hidden;
   text-align:center;
+  align-items:stretch;
+  justify-items:stretch;
+  justify-self:stretch;
+  align-self:stretch;
   border-color:var(--hub-tile-border, var(--dh-line));
   background:var(--hub-tile-bg, #fff);
 }
@@ -429,7 +434,10 @@ body:has(#workspace .dash-hub--nav-index) .admin-main{
   align-items:center;
   justify-content:center;
   align-self:stretch;
+  justify-self:stretch;
   width:100%;
+  min-width:0;
+  max-width:none;
   flex:none;
   min-height:clamp(50px,8.5vh,64px);
   max-height:clamp(50px,8.5vh,64px);
@@ -457,6 +465,8 @@ body:has(#workspace .dash-hub--nav-index) .admin-main{
 }
 .dash-hub--nav-index .dash-hub-cat__body .dash-hub__grid--inline .dash-hub__tile-label{
   grid-area:label;
+  justify-self:stretch;
+  align-self:start;
   flex-shrink:0;
   width:100%;
   margin:0;
@@ -466,15 +476,15 @@ body:has(#workspace .dash-hub--nav-index) .admin-main{
   line-height:1.25;
   color:var(--dh-ink);
   text-align:center;
-  display:-webkit-box;
-  -webkit-box-orient:vertical;
-  -webkit-line-clamp:2;
+  display:block;
+  max-height:2.6em;
   overflow:hidden;
   overflow-wrap:break-word;
   word-break:break-word;
 }
 .dash-hub--nav-index .dash-hub-cat__body .dash-hub__grid--inline .dash-hub__tile-desc{
   grid-area:desc;
+  justify-self:stretch;
   align-self:stretch;
   width:100%;
   margin:0;
@@ -484,9 +494,8 @@ body:has(#workspace .dash-hub--nav-index) .admin-main{
   line-height:1.4;
   color:var(--dh-muted);
   text-align:center;
-  display:-webkit-box;
-  -webkit-box-orient:vertical;
-  -webkit-line-clamp:5;
+  display:block;
+  max-height:calc(1.4em * 5);
   overflow:hidden;
   overflow-wrap:break-word;
   word-break:break-word;
