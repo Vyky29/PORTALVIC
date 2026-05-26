@@ -245,6 +245,7 @@
       display:grid;
       grid-template-columns:minmax(0,1fr);
       grid-template-rows:auto minmax(0,1fr) auto;
+      row-gap:10px;
       align-content:stretch;
       overflow-x:hidden;
       overflow-y:hidden;
@@ -259,7 +260,7 @@
       min-width:0;
       width:100%;
       padding-bottom:0;
-      margin-bottom:0;
+      margin-bottom:6px;
     }
     .portal-dashboard-dock-adjacent .section-card.section-card--overview{
       margin-bottom:0;
@@ -3314,10 +3315,10 @@
     }
     .section-card--today .session-card.session-card--available .session-cell--client{color:#000}
 
-    /* Overview: Next session / Week / Term — buttons only, vertically centered in card */
+    /* Overview: compact shell; button sizes unchanged — air via main row-gap */
     .section-card.section-card--overview{
       margin-top:0;
-      margin-bottom:4px;
+      margin-bottom:0;
       overflow:visible;
       position:relative;
       z-index:1;
@@ -3326,7 +3327,8 @@
       align-items:stretch;
       justify-content:center;
       flex-shrink:0;
-      min-height:5.25rem;
+      min-height:0;
+      border-radius:16px;
     }
     .section-card--overview .extra-grid{
       display:grid;
@@ -3334,12 +3336,12 @@
       grid-template-rows:auto;
       flex:0 0 auto;
       gap:6px;
-      padding:10px 6px;
+      padding:4px 6px;
       width:100%;
       box-sizing:border-box;
       align-items:stretch;
       align-content:center;
-      margin:auto 0;
+      margin:0;
     }
     .section-card--overview .mini-card{
       flex-direction:column;
