@@ -6,7 +6,7 @@
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260520-portal2026" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260520-portal2026" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260525-hub-fill-screen" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260525-hub-finance-3" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260521-embed" />
   <script src="/portal/hr-contract-embed-html.js?v=20260521-embed"></script>
   <script src="/portal/admin-portal-day-ops.js?v=20260520-portal2026"></script>
@@ -4195,7 +4195,8 @@
       { id:'comms_bookings', label:'Staff & shift notices' },
       { id:'comms_ops', label:'Ops comms & log' },
       { id:'clients', label:'Participants' },
-      { id:'c4k_payments', label:'Programme payments', hubLabel:'Invoices' },
+      { id:'c4k_payments', label:'Programme payments', hubLabel:'Payments' },
+      { id:'invoices', label:'Xero / finance' },
       { id:'c4k_waitlist', label:'Waiting list' },
       { id:'c4k_reviews', label:'Reviews' },
       { id:'c4k_reports', label:'Report requests' },
@@ -4203,7 +4204,6 @@
       { id:'staffhr', label:'Staff & HR' },
       { id:'onboarding', label:'Onboarding' },
       { id:'staffhr_contracts', label:'Employment contracts', hubLabel:'CONTRACTS' },
-      { id:'invoices', label:'Xero / finance' },
       { id:'recruitment', label:'Recruitment' },
       { id:'interviews', label:'Interviews', externalUrl:'Working_interview.html' },
       { id:'portal_documents', label:'Documents', hubLabel:'Documents' },
@@ -18185,8 +18185,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         staffhr_contracts:'Zero-hours contracts · send to staff dashboard',
         portal_documents:'Timesheets · expenses · onboarding uploads',
         policies:'Documents · sign-offs · compliance',
-        invoices:'Build draft lines · export CSV to Xero',
-        c4k_payments:'All generated invoices · programme finance grid',
+        invoices:'Draft lines · export CSV to Xero',
+        c4k_payments:'Term fees · families · programme finance grid',
+        bookings:'All orders · slot state · funding',
+        absents_refunds:'Refunds · credits · missed sessions',
         recruitment:'Indeed / web recruitment queue',
         interviews:'Call & face-to-face · onboarding stages',
         settings:'This app · preferences',
@@ -18226,6 +18228,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var hubChildIds = (group.children || []).slice();
         if(gid === 'g_c4k'){
           hubChildIds = ['c4k_services','clients','orders_all'];
+        }
+        if(gid === 'g_xero'){
+          hubChildIds = ['c4k_payments','invoices','absents_refunds'];
         }
         hubChildIds.forEach(function(cid){
           if(String(cid).indexOf('__h:') === 0) return;
