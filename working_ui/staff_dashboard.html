@@ -1471,15 +1471,43 @@
     /* Internal chat: full-screen immersive — no dock; corporate blue/gold bubbles */
     body.portal-internal-chat-open .dock-bar{display:none !important}
     body.portal-internal-chat-open{--fab-reserved-bottom:max(8px, env(safe-area-inset-bottom, 0px))}
-    #internalChatSheet.sheet--portal-chat-immersive{
+    #internalChatSheet.sheet--portal-chat-immersive.sheet--fullscreen.sheet--mobile-frame{
       z-index:140;
-      inset:0;
-      max-height:100dvh;
-      max-height:100vh;
+      top:0;
+      left:0;
+      right:0;
+      bottom:0;
+      width:100%;
+      max-width:100%;
+      margin:0;
       height:100dvh;
       height:100vh;
+      min-height:100dvh;
+      min-height:100vh;
+      max-height:none;
       border-radius:0;
+      border-left:none;
+      border-right:none;
+      box-shadow:none;
       padding-bottom:0;
+      transform:translateY(105%);
+    }
+    #internalChatSheet.sheet--portal-chat-immersive.sheet--fullscreen.sheet--mobile-frame.open{
+      transform:translateY(0);
+    }
+    @media (min-width:721px){
+      body:not(.dev-mobile-preview) #internalChatSheet.sheet--portal-chat-immersive.sheet--fullscreen.sheet--mobile-frame{
+        left:0;
+        right:0;
+        width:100%;
+        max-width:var(--layout-max-desktop);
+        margin-left:auto;
+        margin-right:auto;
+        transform:translateY(105%);
+      }
+      body:not(.dev-mobile-preview) #internalChatSheet.sheet--portal-chat-immersive.sheet--fullscreen.sheet--mobile-frame.open{
+        transform:translateY(0);
+      }
     }
     #internalChatSheet.sheet--portal-chat-immersive .sheet-handle{display:none}
     #internalChatSheet.sheet--portal-chat-immersive .portal-dm-sheet-head{
@@ -1493,11 +1521,8 @@
     #internalChatSheet.sheet--portal-chat-immersive .portal-dm-sheet-head p{
       flex:1 1 100%;min-width:0;margin:0;
     }
-    #internalChatSheet.sheet--fullscreen.sheet--mobile-frame,
-    #internalChatSheet.sheet--portal-chat-immersive.sheet--fullscreen.sheet--mobile-frame{
-      max-height:100dvh;
-      max-height:100vh;
-      padding-bottom:0;
+    #internalChatSheet.sheet--portal-chat-immersive.sheet--fullscreen.sheet--mobile-frame .sheet-head{
+      text-align:center;
     }
     #internalChatSheet.sheet--fullscreen.sheet--mobile-frame .sheet-body.portal-dm-sheet-body{
       flex:1;
