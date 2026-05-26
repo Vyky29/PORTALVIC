@@ -1400,18 +1400,18 @@
       color:#9d174d;
       border:1px solid rgba(131,24,67,.2);
     }
-    /* Internal chat tile: corporate blue like My Participants (quick menu context) */
+    /* Internal chat tile: neutral until unread admin/office message */
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuInternalChatSlot #portalQuickMenuInternalChatBtn.menu-btn--portal-ic{
       border-radius:var(--radiusLg,14px);
-      background:linear-gradient(180deg,#e9f0f8 0%,#dde8f4 100%);
-      border:1px solid rgba(45,90,130,.22);
+      background:#fff;
+      border:1px solid rgba(15,23,42,.1);
       color:var(--ink);
-      box-shadow:0 2px 10px rgba(23,50,71,.1);
+      box-shadow:0 2px 10px rgba(15,23,42,.06);
     }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuInternalChatSlot #portalQuickMenuInternalChatBtn.menu-btn--portal-ic:hover{
-      background:linear-gradient(180deg,#e2ebf6 0%,#d4e2f0 100%);
-      border-color:rgba(45,90,130,.3);
-      box-shadow:0 5px 16px rgba(23,50,71,.12);
+      background:#f8fafc;
+      border-color:rgba(15,23,42,.16);
+      box-shadow:0 4px 14px rgba(15,23,42,.08);
     }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuInternalChatSlot #portalQuickMenuInternalChatBtn.menu-btn--portal-ic .menu-btn-copy strong,
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuInternalChatSlot #portalQuickMenuInternalChatBtn.menu-btn--portal-ic .announcement-title-line--quick-menu-only{
@@ -1420,11 +1420,11 @@
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuInternalChatSlot #portalQuickMenuInternalChatBtn.menu-btn--portal-ic .menu-btn-sub{color:var(--muted);}
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuInternalChatSlot #portalQuickMenuInternalChatBtn.menu-btn--portal-ic .menu-btn-chev{color:rgba(23,50,71,.38);}
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuInternalChatSlot #portalQuickMenuInternalChatBtn.menu-btn--portal-ic .menu-btn-icon{
-      background:rgba(45,132,179,.14);
-      border:1px solid rgba(45,132,179,.22);
+      background:rgba(100,116,139,.12);
+      border:1px solid rgba(71,85,105,.18);
       color:var(--ink);
     }
-    /* Unread: strong dock-style blue + pulse */
+    /* Unread admin/office message: blue tile + pulse */
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuInternalChatSlot #portalQuickMenuInternalChatBtn.menu-btn--portal-ic.menu-btn--portal-ic--unread{
       background:var(--ink);
       border-color:rgba(255,255,255,.22);
@@ -11067,6 +11067,21 @@
         localStorage.setItem(portalStaffDmSeenStorageKey(tid), new Date().toISOString());
       }catch(_e2){}
     }
+    function portalStaffDmIsUnreadOfficeMessage(m, authorProf, me){
+      if(!m) return false;
+      if(String(m.author_id || '').toLowerCase() === String(me || '').toLowerCase()) return false;
+      return portalStaffProfileIsOfficePeer(authorProf || {});
+    }
+    function portalStaffDmThreadUnreadFromOffice(threadId, lastMsg, authorProf, me){
+      if(!portalStaffDmIsUnreadOfficeMessage(lastMsg, authorProf, me)) return false;
+      var seen = portalStaffDmGetSeenIso(threadId);
+      if(!seen) return true;
+      try{
+        return new Date(lastMsg.created_at) > new Date(seen);
+      }catch(_d){
+        return true;
+      }
+    }
     window.portalStaffDmSyncUnreadChrome = async function portalStaffDmSyncUnreadChrome(){
       var btn = document.getElementById('portalQuickMenuInternalChatBtn');
       var box = window.__PORTAL_SUPABASE__;
@@ -11142,20 +11157,26 @@
           if(!t || lastBy[t]) return;
           lastBy[t] = m;
         });
+        var authorIds = [];
+        Object.keys(lastBy).forEach(function(threadId){
+          var m = lastBy[threadId];
+          var aid = m && m.author_id ? String(m.author_id) : '';
+          if(aid && authorIds.indexOf(aid) === -1) authorIds.push(aid);
+        });
+        var authorProfBy = {};
+        if(authorIds.length){
+          var ar = await client.from('staff_profiles').select('id,app_role,staff_role,is_active').in('id', authorIds);
+          if(!ar.error && Array.isArray(ar.data)){
+            ar.data.forEach(function(p){
+              if(p && p.id) authorProfBy[String(p.id)] = p;
+            });
+          }
+        }
         var any = false;
         Object.keys(lastBy).forEach(function(threadId){
           var m = lastBy[threadId];
-          if(!m || String(m.author_id || '') === me) return;
-          var seen = portalStaffDmGetSeenIso(threadId);
-          if(!seen){
-            any = true;
-            return;
-          }
-          try{
-            if(new Date(m.created_at) > new Date(seen)) any = true;
-          }catch(_d){
-            any = true;
-          }
+          var prof = authorProfBy[String(m && m.author_id || '')] || {};
+          if(portalStaffDmThreadUnreadFromOffice(threadId, m, prof, me)) any = true;
         });
         btn.classList.toggle('menu-btn--portal-ic--unread', any);
         window.__PORTAL_STAFF_DM_HAS_UNREAD__ = any;
@@ -11503,6 +11524,21 @@
             });
           }
         }
+        var lastAuthorProfBy = {};
+        var lastAuthorIds = [];
+        Object.keys(lastBy).forEach(function(tid){
+          var lm = lastBy[tid];
+          var aid = lm && lm.author_id ? String(lm.author_id) : '';
+          if(aid && lastAuthorIds.indexOf(aid) === -1) lastAuthorIds.push(aid);
+        });
+        if(lastAuthorIds.length){
+          var lap = await client.from('staff_profiles').select('id,app_role,staff_role,is_active').in('id', lastAuthorIds);
+          if(!lap.error && Array.isArray(lap.data)){
+            lap.data.forEach(function(p){
+              if(p && p.id) lastAuthorProfBy[String(p.id)] = p;
+            });
+          }
+        }
         listHost.innerHTML = "";
         rows.forEach(function(r){
           var id = String(r.id || "");
@@ -11513,19 +11549,8 @@
             if(r.updated_at) when = new Date(r.updated_at).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
           }catch(_d){}
           var last = lastBy[id];
-          var unread = false;
-          if(last && String(last.author_id || "") !== me){
-            var seenIso = portalStaffDmGetSeenIso(id);
-            if(!seenIso){
-              unread = true;
-            }else{
-              try{
-                unread = new Date(last.created_at) > new Date(seenIso);
-              }catch(_cmp){
-                unread = true;
-              }
-            }
-          }
+          var lastAuthorProf = last && last.author_id ? (lastAuthorProfBy[String(last.author_id)] || {}) : {};
+          var unread = portalStaffDmThreadUnreadFromOffice(id, last, lastAuthorProf, me);
           var btn = document.createElement("button");
           btn.type = "button";
           btn.className = "portal-dm-thread-item" + (unread ? " portal-dm-thread-item--unread" : "");
@@ -11584,6 +11609,8 @@
       var arr = mres.data || [];
       function portalDmIncomingIsUnread(m){
         if(!m || String(m.author_id || "").toLowerCase() === String(me || "").toLowerCase()) return false;
+        var aid = String(m.author_id || "").trim();
+        if(!portalStaffProfileIsOfficePeer(authorBy[aid] || {})) return false;
         if(!seenAtOpen) return true;
         try{ return new Date(m.created_at) > new Date(seenAtOpen); }catch(_d){ return true; }
       }
