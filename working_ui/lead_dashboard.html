@@ -9297,10 +9297,10 @@
       const n = need ? Math.max(0, Number(st.sessionFeedbackCount) || 0) : 0;
       const fbIcon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 12h6M9 16h6"/></svg>';
       const tone = need ? ' menu-btn--qm-outstanding-feedback--need menu-btn--portal-pulse' : ' menu-btn--qm-outstanding-feedback--complete';
-      const title = need ? 'Outstanding feedbacks (x' + String(n) + ')' : 'Outstanding feedbacks';
+      const title = need ? 'Outstanding feedbacks x' + String(n) : 'Outstanding feedbacks = 0';
       const aria = need
         ? 'Outstanding feedback — ' + n + ' incomplete sessions, tap to open'
-        : 'All session feedback complete through today — tap to review sessions';
+        : 'Outstanding feedbacks — none pending through today, tap to review sessions';
       return '<button type="button" class="menu-btn notice menu-btn--qm-tile menu-btn--qm-outstanding-feedback' + tone + '" id="portalOutstandingFeedbackBtn" data-action="open-pending-feedback" aria-label="' + escapeHtml(aria) + '">' +
         '<div class="menu-btn-icon" aria-hidden="true">' + fbIcon + '</div>' +
         '<div class="menu-btn-copy"><strong>' + escapeHtml(title) + '</strong></div>' +
@@ -13402,7 +13402,7 @@
 
     function portalNotificationAlertFlags(st){
       const state = st || (typeof portalReminderState === 'function' ? portalReminderState() : null);
-      const hasFeedback = !!(state && (state.sessionFeedbackNeed || state.safeguardingFeedbackPolicyUnread));
+      const hasFeedback = !!(state && state.sessionFeedbackNeed);
       const hasReminderOther = !!(state && (state.venueOpenNeed || state.venueCloseNeed || state.setupPending || state.rosterOverrideNeed));
       return {
         chat: !!window.__PORTAL_STAFF_DM_HAS_UNREAD__,
@@ -14100,6 +14100,7 @@
       const grid = document.getElementById('portalQuickMenuNoticesGrid');
       const qg = document.getElementById('portalQuickMenuReminderGroup');
       const policySlot = document.getElementById('portalQuickMenuSafeguardingPolicySlot');
+      const outstandingSlot = document.getElementById('portalQuickMenuOutstandingFeedbackSlot');
       const slotIc = document.getElementById('portalQuickMenuInternalChatSlot');
       if(!grp) return;
       if(portalQuickMenuEntryMode !== 'logo-lite'){
@@ -14107,7 +14108,8 @@
         return;
       }
       const hasPolicy = !!(policySlot && !policySlot.hidden);
-      const hasBanner = hasPolicy || !!(qg && !qg.hidden);
+      const hasOutstanding = !!(outstandingSlot && !outstandingSlot.hidden);
+      const hasBanner = hasPolicy || hasOutstanding || !!(qg && !qg.hidden);
       const hasNotices = !!(grid && grid.childElementCount > 0);
       const hasInternalChat = !!(slotIc && slotIc.childElementCount > 0);
       grp.hidden = !hasBanner && !hasNotices && !hasInternalChat;

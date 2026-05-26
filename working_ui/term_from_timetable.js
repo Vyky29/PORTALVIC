@@ -274,6 +274,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       1,
       2,
       3,
+      4,
       5
     ],
     "youssef": [

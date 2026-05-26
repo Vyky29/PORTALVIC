@@ -207,7 +207,18 @@ def wednesday_afternoon() -> list[dict]:
 def thursday_afternoon() -> list[dict]:
     aa = "Aquatic Activity"
     tp = "Teaching Pool"
+    hub = "Hub Room"
+    sf = "SwimFarm"
     return [
+        r(
+            "Cyrus",
+            "Thursday",
+            "VICTOR",
+            "3.30 to 5",
+            service="Bespoke Programme",
+            area=hub,
+            venue=sf,
+        ),
         r("Ayman", "Thursday", "JAVIER", "4 to 4.30", service=aa, area=tp, venue="Acton"),
         r("Ayman", "Thursday", "JAVIER", "4.30 to 5", service=aa, area=tp, venue="Acton"),
         r("Khalid Ab", "Thursday", "JAVIER", "5 to 5.30", service=aa, area=tp, venue="Acton"),

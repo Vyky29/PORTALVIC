@@ -267,7 +267,8 @@ def write_term_from_timetable_js(records, roster_rows=None):
     roster_summer = [
         r
         for r in roster_rows or []
-        if str(r.get("session_date") or "")[:10] >= view_from
+        if not norm_text(r.get("session_date"))
+        or str(r.get("session_date") or "")[:10] >= view_from
     ]
     wd_tt_summer = term_staff_weekday_indices_from_timetable_records(tt_summer)
     wd_roster_summer = term_staff_weekday_indices_from_roster_machine_rows(roster_summer)

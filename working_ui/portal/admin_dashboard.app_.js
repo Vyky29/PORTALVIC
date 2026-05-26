@@ -14411,13 +14411,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function portalOnComposeToChange(){
       var toEl = $('cmpTo');
       var wrap = $('cmpUserWrap');
-      if(!toEl || !wrap) return;
-      if(String(toEl.value || '') === 'single_user'){
-        wrap.style.display = '';
-        portalLoadComposerStaffPicker();
-      } else {
-        wrap.style.display = 'none';
-      }
+      var wrapRole = $('cmpRoleWrap');
+      if(!toEl) return;
+      var val = portalNormalizeComposeToValue(toEl.value);
+      if(wrap) wrap.hidden = val !== 'single_user';
+      if(wrapRole) wrapRole.hidden = val !== 'specific_roles';
+      if(val === 'single_user') void portalLoadComposerStaffPicker();
     }
     /** First guess for (participant_a, participant_b); PostgreSQL `uuid` order can differ from JS string order. */
     function portalDmCanonThreadParticipantsGuess(me, peer){
