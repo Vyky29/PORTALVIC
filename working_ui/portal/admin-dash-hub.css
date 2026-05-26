@@ -256,7 +256,10 @@ body:has(#workspace .dash-hub--nav-index) .admin-workspace{
 }
 .dash-hub--nav-index .dash-hub-cat:nth-child(1){grid-column:span 4}
 .dash-hub--nav-index .dash-hub-cat:nth-child(2){grid-column:span 8}
-.dash-hub--nav-index .dash-hub-cat:nth-child(n+3){grid-column:span 3}
+/* Row 2: wide H&R · compact Supabase · Finance on the right */
+.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_zoho"]{grid-column:span 7}
+.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_supabase"]{grid-column:span 2}
+.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_xero"]{grid-column:span 3}
 @media (max-width:960px){
   .dash-hub-cat-grid{grid-template-columns:1fr}
   .dash-hub--nav-index .dash-hub-cat-grid{
@@ -386,10 +389,29 @@ body:has(#workspace .dash-hub--nav-index) .admin-workspace{
     grid-template-columns:var(--dh-nav-tile-w);
   }
 }
+.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_supabase"] .dash-hub-cat__body,
+.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_indeed"] .dash-hub-cat__body{
+  padding:clamp(8px,1vh,12px) 8px;
+}
 .dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_supabase"] .dash-hub__grid--inline,
 .dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_indeed"] .dash-hub__grid--inline{
   grid-template-columns:var(--dh-nav-tile-w);
-  max-width:min(var(--dh-nav-tile-w),100%);
+  width:auto;
+  max-width:100%;
+  justify-self:center;
+}
+.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_zoho"] .dash-hub-cat__body{
+  align-items:stretch;
+  justify-content:center;
+  overflow-x:auto;
+  overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;
+}
+.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_zoho"] .dash-hub__grid--inline{
+  justify-content:flex-start;
+  width:max-content;
+  max-width:100%;
+  margin:0 auto;
 }
 .dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_c4k"] .dash-hub__grid--inline{
   grid-template-columns:repeat(3,var(--dh-nav-tile-w));
@@ -434,7 +456,9 @@ body:has(#workspace .dash-hub--nav-index) .admin-workspace{
   }
   .dash-hub--nav-index .dash-hub-cat:nth-child(1){grid-column:span 2}
   .dash-hub--nav-index .dash-hub-cat:nth-child(2){grid-column:span 4}
-  .dash-hub--nav-index .dash-hub-cat:nth-child(n+3){grid-column:span 3}
+  .dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_zoho"]{grid-column:span 6}
+  .dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_supabase"]{grid-column:span 2}
+  .dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_xero"]{grid-column:span 4}
 }
 .dash-hub-cat[data-hub-cat="g_operator"] .dash-hub-cat__head{background:rgba(129,140,248,.08)}
 .dash-hub-cat[data-hub-cat="g_c4k"] .dash-hub-cat__head{background:rgba(59,130,246,.08)}
