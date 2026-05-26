@@ -6,7 +6,7 @@
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260520-portal2026" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260520-portal2026" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260525-hub-finance-3" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260525-hub-tiles-uniform" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260521-embed" />
   <script src="/portal/hr-contract-embed-html.js?v=20260521-embed"></script>
   <script src="/portal/admin-portal-day-ops.js?v=20260520-portal2026"></script>
@@ -4196,7 +4196,7 @@
       { id:'comms_ops', label:'Ops comms & log' },
       { id:'clients', label:'Participants' },
       { id:'c4k_payments', label:'Programme payments', hubLabel:'Payments' },
-      { id:'invoices', label:'Xero / finance' },
+      { id:'invoices', label:'Xero / finance', hubLabel:'Create invoice' },
       { id:'c4k_waitlist', label:'Waiting list' },
       { id:'c4k_reviews', label:'Reviews' },
       { id:'c4k_reports', label:'Report requests' },
@@ -18172,25 +18172,25 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function dashHubItemDesc(item){
       var id = item && item.id;
       var map = {
-        dashboard:'Team on site · sessions · feedback · incidents · venue',
-        operations_admin:'Bookings · payments · progress · reports · directory',
+        dashboard:'Live sessions on site — feedback, incidents, venue checks and day tools for staff on the rota.',
+        operations_admin:'Bookings, programme payments, progress reviews, report packs and the participant directory.',
         operator:'Control centre · KPIs · suggestions · new leads',
-        c4k_services:'Services overview · weekly capacity · registers',
-        clients:'Participant profiles · activity · reports',
-        orders_all:'All orders · slot state · funding',
+        c4k_services:'Weekly capacity snapshot, service registers and rota-linked session overview.',
+        clients:'Search participant profiles, attendance history, activity and report requests.',
+        orders_all:'Every booking and order — slot state, funding route and waiting-list links.',
         orders_outstanding:'Outstanding orders · holds · make-up',
         comms_ops:'Programme comms · CEO chat · internal messages',
-        staffhr:'Staff records · availability · HR notes',
-        onboarding:'Onboarding pipeline · worker progress',
-        staffhr_contracts:'Zero-hours contracts · send to staff dashboard',
-        portal_documents:'Timesheets · expenses · onboarding uploads',
+        staffhr:'Staff records, availability, HR notes and ZohoPeople-linked profile data.',
+        onboarding:'New-hire onboarding pipeline — forms, tasks and worker progress.',
+        staffhr_contracts:'Zero-hours employment contracts — create, send and track staff signatures.',
+        portal_documents:'Timesheets, expense claims, onboarding uploads and files in Supabase storage.',
         policies:'Documents · sign-offs · compliance',
-        invoices:'Draft lines · export CSV to Xero',
-        c4k_payments:'Term fees · families · programme finance grid',
+        invoices:'Build draft invoice lines here, then export a CSV ready to import into Xero.',
+        c4k_payments:'Term fees and balances owed — programme finance grid with one row per family and carer.',
         bookings:'All orders · slot state · funding',
-        absents_refunds:'Refunds · credits · missed sessions',
+        absents_refunds:'Refunds, session credits and missed-session queues — approve or resolve family credits.',
         recruitment:'Indeed / web recruitment queue',
-        interviews:'Call & face-to-face · onboarding stages',
+        interviews:'Call and face-to-face interview stages — link to onboarding when ready.',
         settings:'This app · preferences',
         portal_nav_alerts:'Unread venue / ops alerts',
         portal_nav_staff:'Open staff dashboard',
@@ -18201,8 +18201,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function dashHubNavTileHtml(item){
       if(!item) return '';
-      var desc = dashHubItemDesc(item);
-      var descHtml = desc ? ('<span class="dash-hub__tile-desc">'+esc(desc)+'</span>') : '';
+      var desc = dashHubItemDesc(item) || 'Open this area in the admin portal.';
+      var descHtml = '<span class="dash-hub__tile-desc">'+esc(desc)+'</span>';
       var band = '<span class="dash-hub__tile-band" aria-hidden="true">'+adminNavIconHtml(item.id)+'</span>';
       var tileLabel = item.hubLabel || item.label;
       var label = '<span class="dash-hub__tile-label">'+esc(tileLabel)+'</span>';
@@ -18230,7 +18230,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           hubChildIds = ['c4k_services','clients','orders_all'];
         }
         if(gid === 'g_xero'){
-          hubChildIds = ['c4k_payments','invoices','absents_refunds'];
+          hubChildIds = ['invoices','absents_refunds','c4k_payments'];
         }
         hubChildIds.forEach(function(cid){
           if(String(cid).indexOf('__h:') === 0) return;
