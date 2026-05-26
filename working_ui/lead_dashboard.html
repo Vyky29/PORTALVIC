@@ -1386,16 +1386,29 @@
       color:#fff;
       border:2px solid rgba(255,255,255,.45);
     }
-    /* Fixed safeguarding policy: same orange stack as feedback reminders */
-    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-safeguarding-feedback-policy{
-      cursor:default;
-      pointer-events:none;
-    }
-    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-safeguarding-feedback-policy .menu-btn-sub{
-      white-space:normal;
+    /* Safeguarding policy reminder: compact title; unread = bright orange + pulse; read = soft peach */
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-safeguarding-feedback-policy .menu-btn-copy strong{
+      font-size:13px;
+      font-weight:700;
+      letter-spacing:.01em;
+      line-height:1.3;
     }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-safeguarding-feedback-policy.menu-btn--portal-pulse:not(:active){
       animation:portal-reminder-feedback-throb 2.1s ease-in-out infinite;
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-safeguarding-feedback-policy--read{
+      background:linear-gradient(180deg,#fff7ed 0%,#ffedd5 100%);
+      border:1px solid rgba(234,88,12,.28);
+      color:var(--ink);
+      box-shadow:0 3px 12px rgba(234,88,12,.1);
+      animation:none;
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-safeguarding-feedback-policy--read .menu-btn-copy strong{color:#9a3412}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-safeguarding-feedback-policy--read .menu-btn-chev{color:rgba(154,52,18,.42)}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-safeguarding-feedback-policy--read .menu-btn-icon{
+      background:rgba(249,115,22,.12);
+      color:#c2410c;
+      border:1px solid rgba(234,88,12,.22);
     }
     /* Signed announcement tile: soft rose, no bright red block */
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuNoticesGrid #announcementSignedLog.menu-btn.menu-btn--announcement-signed{
@@ -1723,6 +1736,7 @@
     }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup > .menu-grid,
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup > .menu-grid,
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup > #portalQuickMenuSafeguardingPolicySlot,
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup > #portalQuickMenuReminderGroup{
       margin:0 0 14px;
     }
@@ -6600,6 +6614,7 @@
           <div class="menu-group-title" id="portalQuickMenuAnnouncementsHeading">Announcements</div>
           <div class="menu-grid menu-grid--portal-notices" id="portalQuickMenuNoticesGrid"></div>
           <div class="menu-group-title menu-group-title--portal-reminders" id="portalQuickMenuRemindersHeading">Reminders</div>
+          <div class="menu-grid menu-grid--portal-safeguarding-policy" id="portalQuickMenuSafeguardingPolicySlot" hidden></div>
           <div class="menu-grid menu-grid--portal-reminder-single" id="portalQuickMenuReminderGroup" hidden>
             <div id="portalQuickMenuReminderBannerHost"></div>
           </div>
@@ -6834,6 +6849,15 @@
         <button type="button" id="portalNotifyTestBtn" hidden>Send test notification</button>
       </div>
     </div>
+  </section>
+
+  <section class="sheet sheet--fullscreen sheet--mobile-frame" id="safeguardingFeedbackPolicySheet" aria-labelledby="safeguardingFeedbackPolicyTitle">
+    <div class="sheet-head">
+      <div class="sheet-handle"></div>
+      <h3 id="safeguardingFeedbackPolicyTitle">Same-day session feedback</h3>
+      <p>Mandatory safeguarding requirement</p>
+    </div>
+    <div class="sheet-body" id="safeguardingFeedbackPolicySheetBody"></div>
   </section>
 
   <section class="sheet sheet--fullscreen sheet--mobile-frame" id="announcementsSheet" aria-labelledby="announcementsTitle">
@@ -8856,6 +8880,7 @@
           sessionFeedbackCount: 0,
           sessionFeedbackTodayNeed: false,
           safeguardingFeedbackPolicyActive: false,
+          safeguardingFeedbackPolicyUnread: false,
           termIncomplete: false,
           termLate: false,
           venueOpenNeed: false,
@@ -8916,6 +8941,7 @@
         sessionFeedbackCount,
         sessionFeedbackTodayNeed: sessionFeedbackTodayNeed,
         safeguardingFeedbackPolicyActive: true,
+        safeguardingFeedbackPolicyUnread: typeof portalSafeguardingFeedbackPolicyIsRead === 'function' ? !portalSafeguardingFeedbackPolicyIsRead() : true,
         termIncomplete,
         termLate,
         venueOpenNeed,
@@ -9145,13 +9171,69 @@
       return '<section class="portal-qm-chunk portal-qm-chunk--admin-reminders" aria-label="Team reminders">' +
         '<h4 class="portal-qm-chunk-title">Team reminders</h4>' + inner + '</section>';
     }
-    /** Always-on safeguarding copy for logo-lite Feedbacks (not tied to incomplete count). */
+    const PORTAL_SAFEGUARDING_FEEDBACK_POLICY_READ_KEY = 'portalSafeguardingFeedbackPolicyRead_v1';
+    function portalSafeguardingFeedbackPolicyIsRead(){
+      try{ return !!localStorage.getItem(PORTAL_SAFEGUARDING_FEEDBACK_POLICY_READ_KEY); }catch(_){ return false; }
+    }
+    function portalMarkSafeguardingFeedbackPolicyRead(){
+      try{ localStorage.setItem(PORTAL_SAFEGUARDING_FEEDBACK_POLICY_READ_KEY, String(Date.now())); }catch(_){}
+      if(typeof syncPortalSafeguardingFeedbackPolicySlot === 'function') syncPortalSafeguardingFeedbackPolicySlot();
+      if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
+    }
     function portalBuildSafeguardingFeedbackPolicyReminderHtml(){
+      if(!dashboardData || !dashboardData.portalIdentityResolved) return '';
+      const read = typeof portalSafeguardingFeedbackPolicyIsRead === 'function' && portalSafeguardingFeedbackPolicyIsRead();
       const shieldIcon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
-      return '<div class="menu-btn notice menu-btn--qm-tile menu-btn--qm-reminder-feedback menu-btn--qm-safeguarding-feedback-policy menu-btn--portal-readonly menu-btn--portal-pulse" role="note" aria-label="Same-day session feedback is mandatory for safeguarding">' +
+      const tone = read
+        ? ' menu-btn--qm-safeguarding-feedback-policy--read'
+        : ' menu-btn--qm-reminder-feedback menu-btn--portal-pulse';
+      return '<button type="button" class="menu-btn notice menu-btn--qm-tile menu-btn--qm-safeguarding-feedback-policy' + tone + '" id="portalSafeguardingFeedbackPolicyBtn" data-action="open-safeguarding-feedback-policy" aria-label="Same-day session feedback — open to read">' +
         '<div class="menu-btn-icon" aria-hidden="true">' + shieldIcon + '</div>' +
-        '<div class="menu-btn-copy"><strong>Same-day session feedback</strong><span class="menu-btn-sub">Mandatory for safeguarding — complete register and feedback on the day of each session.</span></div>' +
-        '</div>';
+        '<div class="menu-btn-copy"><strong>Same-day session feedback</strong></div>' +
+        '<span class="menu-btn-chev" aria-hidden="true">›</span></button>';
+    }
+    function syncPortalSafeguardingFeedbackPolicySlot(){
+      const slot = document.getElementById('portalQuickMenuSafeguardingPolicySlot');
+      if(!slot) return false;
+      if(portalQuickMenuEntryMode !== 'logo-lite'){
+        slot.innerHTML = '';
+        slot.hidden = true;
+        return false;
+      }
+      const html = typeof portalBuildSafeguardingFeedbackPolicyReminderHtml === 'function' ? portalBuildSafeguardingFeedbackPolicyReminderHtml() : '';
+      if(html){
+        slot.innerHTML = html;
+        slot.hidden = false;
+        return true;
+      }
+      slot.innerHTML = '';
+      slot.hidden = true;
+      return false;
+    }
+    function renderSafeguardingFeedbackPolicySheet(){
+      const host = document.getElementById('safeguardingFeedbackPolicySheetBody');
+      if(!host) return;
+      const read = typeof portalSafeguardingFeedbackPolicyIsRead === 'function' && portalSafeguardingFeedbackPolicyIsRead();
+      const bodyCopy =
+        '<p>Session register and session feedback are <strong>mandatory for safeguarding</strong>. You must complete both on the <strong>same day</strong> as each session you deliver.</p>' +
+        '<p>This applies to every client session on your timetable, including when a participant is absent or a session is shortened. Late completion may be flagged for follow-up.</p>' +
+        '<p>If you have outstanding sessions, use <strong>Incomplete sessions</strong> under Feedbacks to open them from your dashboard.</p>';
+      if(read){
+        host.innerHTML =
+          '<article class="announcement-lock-card">' +
+            '<p class="announcement-lock-copy" style="margin:0 0 12px">' + bodyCopy + '</p>' +
+            '<p class="muted" style="margin:0;font-size:13px">You confirmed you read this reminder.</p>' +
+          '</article>';
+        return;
+      }
+      host.innerHTML =
+        '<article class="announcement-lock-card">' +
+          '<p class="announcement-lock-copy" style="margin:0 0 16px">' + bodyCopy + '</p>' +
+          '<div class="announcement-lock-actions">' +
+            '<label class="announcement-lock-check"><input type="checkbox" id="safeguardingPolicyReadConfirm"> I have read and understood this reminder.</label>' +
+            '<button type="button" class="announcement-sign-btn" id="portalSafeguardingPolicyAckBtn" disabled>I understand</button>' +
+          '</div>' +
+        '</article>';
     }
     /** Logo-lite Reminders: session dates + override tiles, then Feedbacks (policy + outstanding + venue). */
     function buildPortalQuickMenuLogoLiteRemindersHtml(st){
@@ -9219,6 +9301,7 @@
           opHost.innerHTML = opHtml;
           opHost.hidden = !opHtml;
         }
+        if(typeof syncPortalSafeguardingFeedbackPolicySlot === 'function') syncPortalSafeguardingFeedbackPolicySlot();
         const qg = document.getElementById('portalQuickMenuReminderGroup');
         const qh = document.getElementById('portalQuickMenuReminderBannerHost');
         if(logoLite && qg && qh){
@@ -9237,7 +9320,7 @@
         const tn = document.getElementById('trainingNotice');
       if(tn){
           /* Pulse only for feedback / venue / induction — overrides use colour in the quick menu; this row is not animated for overrides. */
-          const pulse = !!(st.safeguardingFeedbackPolicyActive || st.sessionFeedbackNeed || st.venueOpenNeed || st.venueCloseNeed || st.setupPending);
+          const pulse = !!(st.safeguardingFeedbackPolicyUnread || st.sessionFeedbackNeed || st.venueOpenNeed || st.venueCloseNeed || st.setupPending);
           const urg = typeof portalReminderUrgencyLevel === 'function' ? portalReminderUrgencyLevel(st) : 0;
         tn.classList.toggle('notice--reminder-pulse', pulse);
         tn.classList.toggle('notice--reminder-urgent', pulse && urg >= 1);
@@ -9253,8 +9336,8 @@
               sub = (Number(st.sessionFeedbackCount) || 0) <= 1
               ? 'Complete your Session Feedback'
               : 'Complete your Session Feedbacks';
-            }else if(st.safeguardingFeedbackPolicyActive){
-              sub = 'Same-day session feedback — mandatory safeguarding';
+            }else if(st.safeguardingFeedbackPolicyUnread){
+              sub = 'Same-day session feedback — tap to read';
             }else if(st.rosterOverrideNeed){
               sub = 'Upcoming schedule changes — open the quick menu';
             }else if(st.venueOpenNeed || st.venueCloseNeed){
@@ -9298,9 +9381,6 @@
     function buildPortalQuickMenuReminderCardsHtml(st){
       if(!st) st = {};
       const parts = [];
-      if(typeof portalBuildSafeguardingFeedbackPolicyReminderHtml === 'function'){
-        parts.push(portalBuildSafeguardingFeedbackPolicyReminderHtml());
-      }
       const fbIcon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 12h6M9 16h6"/></svg>';
       const venIcon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22V10l8-4 8 4v12"/><path d="M9 22v-6h6v6"/></svg>';
       if(st.sessionFeedbackNeed){
@@ -13215,7 +13295,7 @@
 
     function portalNotificationAlertFlags(st){
       const state = st || (typeof portalReminderState === 'function' ? portalReminderState() : null);
-      const hasFeedback = !!(state && (state.sessionFeedbackNeed || state.safeguardingFeedbackPolicyActive));
+      const hasFeedback = !!(state && (state.sessionFeedbackNeed || state.safeguardingFeedbackPolicyUnread));
       const hasReminderOther = !!(state && (state.venueOpenNeed || state.venueCloseNeed || state.setupPending || state.rosterOverrideNeed));
       return {
         chat: !!window.__PORTAL_STAFF_DM_HAS_UNREAD__,
@@ -13922,13 +14002,15 @@
       const grp = document.getElementById('portalQuickMenuNotificationsGroup');
       const grid = document.getElementById('portalQuickMenuNoticesGrid');
       const qg = document.getElementById('portalQuickMenuReminderGroup');
+      const policySlot = document.getElementById('portalQuickMenuSafeguardingPolicySlot');
       const slotIc = document.getElementById('portalQuickMenuInternalChatSlot');
       if(!grp) return;
       if(portalQuickMenuEntryMode !== 'logo-lite'){
         grp.hidden = true;
         return;
       }
-      const hasBanner = !!(qg && !qg.hidden);
+      const hasPolicy = !!(policySlot && !policySlot.hidden);
+      const hasBanner = hasPolicy || !!(qg && !qg.hidden);
       const hasNotices = !!(grid && grid.childElementCount > 0);
       const hasInternalChat = !!(slotIc && slotIc.childElementCount > 0);
       grp.hidden = !hasBanner && !hasNotices && !hasInternalChat;
@@ -15479,6 +15561,9 @@
       if(id === 'announcementsSheet' && typeof renderAnnouncementsSheetContent === 'function'){
         renderAnnouncementsSheetContent();
       }
+      if(id === 'safeguardingFeedbackPolicySheet' && typeof renderSafeguardingFeedbackPolicySheet === 'function'){
+        renderSafeguardingFeedbackPolicySheet();
+      }
       if(id === 'menuSheet'){
         if(typeof portalApplyQuickMenuEntryMode === 'function') portalApplyQuickMenuEntryMode();
         if(typeof portalSyncQuickMenuGuidePlacement === 'function') portalSyncQuickMenuGuidePlacement();
@@ -16225,7 +16310,27 @@
         openId();
       });
     });
+    document.addEventListener('change', function(e){
+      const chk = e.target && e.target.id === 'safeguardingPolicyReadConfirm' ? e.target : null;
+      if(!chk) return;
+      const btn = document.getElementById('portalSafeguardingPolicyAckBtn');
+      if(btn) btn.disabled = !chk.checked;
+    });
     document.addEventListener('click', function(e){
+      const pol = e.target.closest('[data-action="open-safeguarding-feedback-policy"]');
+      if(pol){
+        e.preventDefault();
+        e.stopPropagation();
+        openSheet('safeguardingFeedbackPolicySheet');
+        return;
+      }
+      const polAck = e.target && e.target.closest ? e.target.closest('#portalSafeguardingPolicyAckBtn') : null;
+      if(polAck){
+        if(typeof portalMarkSafeguardingFeedbackPolicyRead === 'function') portalMarkSafeguardingFeedbackPolicyRead();
+        if(typeof renderSafeguardingFeedbackPolicySheet === 'function') renderSafeguardingFeedbackPolicySheet();
+        if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
+        return;
+      }
       const ann = e.target.closest('#announcementNewNotice, #announcementSignedLog');
       if(ann){
         e.preventDefault();
@@ -16243,6 +16348,12 @@
 
     document.addEventListener('keydown', function(e){
       if(e.key !== 'Enter' && e.key !== ' ') return;
+      const pol = e.target.closest('[data-action="open-safeguarding-feedback-policy"]');
+      if(pol){
+        e.preventDefault();
+        openSheet('safeguardingFeedbackPolicySheet');
+        return;
+      }
       const ann = e.target.closest('#announcementNewNotice, #announcementSignedLog');
       if(ann){
         e.preventDefault();
