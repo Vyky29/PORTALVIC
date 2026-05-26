@@ -107,6 +107,18 @@ export function portalLeadDayIsClubClosed(iso) {
   return false;
 }
 
+/** True when this calendar day is a weekday the lead works (any programme scope). */
+export function portalLeadDayIsProgrammeWorkDay(iso, scopes) {
+  if (!scopes || !scopes.length) return false;
+  if (portalLeadDayIsClubClosed(iso)) return false;
+  const wd = weekdayFromIso(iso);
+  if (!wd) return false;
+  for (let i = 0; i < scopes.length; i++) {
+    if (scopes[i].weekdays.indexOf(wd) >= 0) return true;
+  }
+  return false;
+}
+
 export function portalCanAccessLeadSessionOverview(profile, authEmail) {
   return !!portalLeadProgrammeKey(profile, authEmail);
 }

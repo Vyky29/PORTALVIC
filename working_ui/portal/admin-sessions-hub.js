@@ -43,17 +43,79 @@
     );
   }
 
+  function hubDayIsProgrammeInactive(hub, iso) {
+    return !!(
+      hub &&
+      hub.opts &&
+      typeof hub.opts.isProgrammeWorkDay === "function" &&
+      !hub.opts.isProgrammeWorkDay(iso) &&
+      !hubDayIsClubClosed(hub, iso)
+    );
+  }
+
   function htmlClosedDayCardInlineStyle() {
     return "--ash-day-col:#dc2626;--ash-day-bg:rgba(220,38,38,0.2);--ash-col:#dc2626";
   }
 
+  function htmlWeekDayCardInactive(iso, esc, kind) {
+    var label = kind === "closed" ? "closed" : "not scheduled";
+    return (
+      '<div class="ash-day-card ash-day-card--week ash-day-card--inactive ash-day-card--closed" aria-disabled="true" style="' +
+      htmlClosedDayCardInlineStyle() +
+      '">' +
+      htmlWeekdayLabel(iso, esc) +
+      '<span class="ash-day-card__dt">' +
+      esc(formatShortDate(iso)) +
+      '</span><span class="ash-day-card__bar" style="--ash-pct:0" role="presentation"></span>' +
+      '<span class="ash-day-card__sessions" aria-hidden="false"><strong>\u2014</strong><small>' +
+      esc(label) +
+      "</small></span></div>"
+    );
+  }
+
+  function htmlWeekDayCardClosed(iso, esc, sel, clickable) {
+    var inner =
+      htmlWeekdayLabel(iso, esc) +
+      '<span class="ash-day-card__dt">' +
+      esc(formatShortDate(iso)) +
+      '</span><span class="ash-day-card__bar" style="--ash-pct:0" role="presentation"></span>' +
+      '<span class="ash-day-card__sessions"><strong>\u2014</strong><small>closed</small></span>';
+    if (clickable) {
+      return (
+        '<button type="button" class="ash-day-card ash-day-card--week ash-day-card--closed' +
+        sel +
+        '" data-ash-day="' +
+        esc(iso) +
+        '" style="' +
+        htmlClosedDayCardInlineStyle() +
+        '">' +
+        inner +
+        "</button>"
+      );
+    }
+    return (
+      '<div class="ash-day-card ash-day-card--week ash-day-card--closed" aria-disabled="true" style="' +
+      htmlClosedDayCardInlineStyle() +
+      '">' +
+      inner +
+      "</div>"
+    );
+  }
+
   function htmlWeekDayCard(hub, iso, idx, esc) {
     var sel = iso === hub.selectedDay ? " ash-day-card--sel" : "";
+    if (hubDayIsClubClosed(hub, iso)) {
+      return htmlWeekDayCardClosed(iso, esc, sel, true);
+    }
+    if (hubDayIsProgrammeInactive(hub, iso)) {
+      return htmlWeekDayCardInactive(iso, esc, "off");
+    }
     var col = DAY_COLORS[idx % DAY_COLORS.length];
     var tint = DAY_BG_TINTS[idx % DAY_BG_TINTS.length];
     var innerPct = 0;
     var countLabel;
     var countStrong;
+    var stateCls = "";
     if (hub.tab === "absents") {
       var absentN = hub.absentCountForDate(iso);
       countStrong = String(absentN);
@@ -74,26 +136,18 @@
       countStrong = String(noteN);
       countLabel = noteN === 1 ? "note" : "notes";
       if (noteN > 0) innerPct = 100;
-    } else if (hub.tab === "tracking") {
-      if (hubDayIsClubClosed(hub, iso)) {
-        return (
-          '<button type="button" class="ash-day-card ash-day-card--feedback ash-day-card--closed' +
-          sel +
-          '" data-ash-day="' +
-          esc(iso) +
-          '" style="' +
-          htmlClosedDayCardInlineStyle() +
-          '">' +
-          '<div class="ash-day-card__top">' +
-          htmlWeekdayLabel(iso, esc) +
-          '<span class="ash-day-card__dt">' +
-          esc(formatShortDate(iso)) +
-          '</span></div>' +
-          '<div class="ash-day-card__bar" style="--ash-pct:0;--ash-col:#dc2626"></div>' +
-          '<span class="ash-day-card__count"><span class="ash-day-card__count-full">Closed</span>' +
-          '<span class="ash-day-card__count-short" aria-hidden="true">Closed</span></span></button>'
-        );
+    } else if (hub.tab === "feedback" || hub.mode === "feedback") {
+      var dsFb = hub.dayStats(iso);
+      if (dsFb.total) {
+        innerPct = Math.round((100 * dsFb.done) / dsFb.total);
+        if (dsFb.done > 0 && innerPct < 8) innerPct = 8;
       }
+      countStrong = dsFb.total ? dsFb.done + "/" + dsFb.total : "0";
+      countLabel = "feedbacks";
+      if (dsFb.total && dsFb.done === 0) stateCls = " ash-day-card--none";
+      else if (dsFb.total && dsFb.done < dsFb.total) stateCls = " ash-day-card--partial";
+      else if (dsFb.total && dsFb.done >= dsFb.total) stateCls = " ash-day-card--complete";
+    } else if (hub.tab === "tracking") {
       var dsTrack = hub.dayStats(iso);
       if (dsTrack.total) {
         innerPct = Math.round((100 * dsTrack.done) / dsTrack.total);
@@ -149,6 +203,7 @@
     return (
       '<button type="button" class="ash-day-card ash-day-card--week' +
       sel +
+      stateCls +
       '" data-ash-day="' +
       esc(iso) +
       '" style="--ash-day-col:' +
@@ -1878,18 +1933,21 @@
   };
 
   AdminSessionsHub.prototype.preferredFeedbackDayInWeek = function (offset) {
+    var hub = this;
     var days =
-      this.opts && this.opts.hideEmptyWeekDays
-        ? this.weekDaysForDisplay()
-        : this.weekDays();
-    if (!days.length) days = this.weekDays();
+      hub.opts && hub.opts.showFullWeekDayStrip
+        ? hub.weekDays()
+        : hub.opts && hub.opts.hideEmptyWeekDays
+          ? hub.weekDaysForDisplay()
+          : hub.weekDays();
+    if (!days.length) days = hub.weekDays();
     var off =
       typeof offset === "number" && offset >= 0 && offset < days.length
         ? offset
         : Math.max(0, days.indexOf(this.selectedDay));
     if (off < 0) off = 0;
-    var hub = this;
     function openDay(iso) {
+      if (hubDayIsProgrammeInactive(hub, iso)) return false;
       return !hubDayIsClubClosed(hub, iso);
     }
     if (openDay(days[off]) && this.feedbackCountForDate(days[off]) > 0) return days[off];
@@ -1902,14 +1960,19 @@
     return days[off] || days[0];
   };
 
-  /** After week change with hideEmptyWeekDays, keep selectedDay on a visible programme day. */
+  /** After week change, keep selectedDay on a navigable programme day. */
   AdminSessionsHub.prototype.snapSelectedDayToDisplayWeek = function () {
-    if (!this.opts || !this.opts.hideEmptyWeekDays) return;
-    var days = this.weekDaysForDisplay();
+    var hub = this;
+    if (!hub.opts || (!hub.opts.hideEmptyWeekDays && !hub.opts.showFullWeekDayStrip)) return;
+    var days = hub.weekDaysForDisplay();
     if (!days.length) return;
-    if (days.indexOf(this.selectedDay) >= 0) return;
-    this.selectedDay = this.preferredFeedbackDayInWeek(0);
-    if (this.mode === "feedback") this.feedbackMetricsDay = this.selectedDay;
+    function selectable(iso) {
+      if (hubDayIsProgrammeInactive(hub, iso)) return false;
+      return days.indexOf(iso) >= 0;
+    }
+    if (selectable(hub.selectedDay)) return;
+    hub.selectedDay = hub.preferredFeedbackDayInWeek(0);
+    if (hub.mode === "feedback") hub.feedbackMetricsDay = hub.selectedDay;
   };
 
   /** Pick a day in the current week that has absents (keeps weekday offset when possible). */
@@ -2031,7 +2094,10 @@
         return hub.feedbackNotesCountForDate(d, noteTab);
       });
     }
-    if (this.mode === "feedback" || (this.opts && this.opts.hideEmptyWeekDays)) {
+    if (
+      this.mode === "feedback" ||
+      (this.opts && (this.opts.hideEmptyWeekDays || this.opts.showFullWeekDayStrip))
+    ) {
       return this.preferredFeedbackDayInWeek(offset);
     }
     return addDaysIso(this.weekStart, offset);
@@ -2554,10 +2620,11 @@
     return days;
   };
 
-  /** When opts.hideEmptyWeekDays, only Mon–Sun dates with roster sessions in scope. */
+  /** Full Mon–Sun strip, or only days with roster / club closed when hideEmptyWeekDays. */
   AdminSessionsHub.prototype.weekDaysForDisplay = function () {
     var hub = this;
     var days = this.weekDays();
+    if (hub.opts && hub.opts.showFullWeekDayStrip) return days;
     if (!hub.opts || !hub.opts.hideEmptyWeekDays) return days;
     return days.filter(function (iso) {
       if (hubDayIsClubClosed(hub, iso)) return true;
@@ -4207,6 +4274,18 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var esc = this.escapeHtml;
     var hub = this;
     var iso = this.selectedDay;
+    if (hubDayIsProgrammeInactive(hub, iso)) {
+      return (
+        this.htmlWeekHeader() +
+        '<h3 class="ash-table-title">' +
+        esc(formatLongDate(iso)) +
+        ' <span class="ash-badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca">Not scheduled</span></h3>' +
+        '<div class="ash-table-wrap"><table class="ash-table ash-table--overview"><tbody><tr><td colspan="4">' +
+        '<div class="ash-empty">Not a programme day for you \u2014 pick a highlighted day above.</div>' +
+        "</td></tr></tbody></table></div>" +
+        this.htmlAbsentsTermWeekLog()
+      );
+    }
     var marks = this.absentMarksForDate(iso);
     var rows = marks
       .map(function (mark) {
@@ -4830,12 +4909,18 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       })
       .join("");
 
-    if (!tableRows) {
+    if (hubDayIsProgrammeInactive(hub, this.selectedDay)) {
+      tableRows =
+        '<tr><td colspan="8"><div class="ash-empty">Not a programme day for you \u2014 pick a highlighted day above.</div></td></tr>';
+    } else if (!tableRows) {
       tableRows =
         '<tr><td colspan="8"><div class="ash-empty">No feedback for this day.</div></td></tr>';
     }
 
-    var weekBlock = this.htmlFeedbackWeekDaysRow();
+    var weekBlock =
+      hub.opts && hub.opts.showFullWeekDayStrip
+        ? this.htmlWeekHeader()
+        : this.htmlFeedbackWeekDaysRow();
 
     var truncateHtml = "";
     var fbTotal = this.payload.session_feedback_total;
@@ -4871,7 +4956,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       "</tr></thead><tbody data-ash-client-filter-tbody>" +
       tableRows +
       "</tbody></table></div>" +
-      '<p class="ash-metric-foot ash-metric-foot--center">Absents show as <strong>Submitted (Absent)</strong> with N/A (except Reviewed by). Use <strong>Overview</strong> for the roster table.</p>' +
+      (hub.opts && hub.opts.showFullWeekDayStrip
+        ? ""
+        : '<p class="ash-metric-foot ash-metric-foot--center">Absents show as <strong>Submitted (Absent)</strong> with N/A (except Reviewed by). Use <strong>Overview</strong> for the roster table.</p>') +
       this.htmlFeedbackTermWeekLog({
         title: "Session feedback log",
         flatWeeks: true,
@@ -4886,6 +4973,18 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var esc = this.escapeHtml;
     var hub = this;
     var iso = this.selectedDay;
+    if (hubDayIsProgrammeInactive(hub, iso)) {
+      return (
+        this.htmlWeekHeader() +
+        '<h3 class="ash-table-title">' +
+        esc(formatLongDate(iso)) +
+        ' <span class="ash-badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca">Not scheduled</span></h3>' +
+        '<div class="ash-table-wrap"><table class="ash-table ash-table--overview"><tbody><tr><td colspan="6">' +
+        '<div class="ash-empty">Not a programme day for you \u2014 pick a highlighted day above.</div>' +
+        "</td></tr></tbody></table></div>" +
+        this.htmlIncidentsTermWeekLog()
+      );
+    }
     var items = this.incidentsForDate(iso);
     var Pfrm = global.PortalFormRecordModal;
     var rows = items
