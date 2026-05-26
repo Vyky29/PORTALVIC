@@ -126,7 +126,11 @@
   min-width:0;
   grid-template-columns:repeat(auto-fill,minmax(min(100%,148px),1fr));
 }
+.dash-hub__grid--3{grid-template-columns:repeat(auto-fill,minmax(min(100%,160px),1fr))}
 .dash-hub__grid--5{grid-template-columns:repeat(auto-fill,minmax(min(100%,130px),1fr))}
+@media (min-width:720px){
+  .dash-hub__grid--3{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
 @media (min-width:900px){
   .dash-hub__grid--4{grid-template-columns:repeat(4,minmax(0,1fr))}
   .dash-hub__grid--5{grid-template-columns:repeat(5,minmax(0,1fr))}

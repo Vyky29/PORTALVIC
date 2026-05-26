@@ -4189,8 +4189,8 @@
       { id:'absents_refunds', label:'Absents, refunds & credits' },
       { id:'receptionist', label:'Receptionist hub' },
       { id:'leads', label:'Enquiries & intake' },
-      { id:'c4k_services', label:'Overview' },
-      { id:'orders_all', label:'All' },
+      { id:'c4k_services', label:'Overview', hubLabel:'Services' },
+      { id:'orders_all', label:'All', hubLabel:'Bookings' },
       { id:'orders_outstanding', label:'Outstanding' },
       { id:'comms_bookings', label:'Staff & shift notices' },
       { id:'comms_ops', label:'Ops comms & log' },
@@ -18224,6 +18224,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(!group) return '';
         var tiles = [];
         var hubChildIds = (group.children || []).slice();
+        if(gid === 'g_c4k'){
+          hubChildIds = ['c4k_services','clients','orders_all'];
+        }
         hubChildIds.forEach(function(cid){
           if(String(cid).indexOf('__h:') === 0) return;
           if(gid === 'g_operator' && cid === 'operator') return;
@@ -18238,7 +18241,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '<span class="dash-hub-cat__label">'+esc(group.label)+'</span>' +
           '</header>' +
           '<div class="dash-hub-cat__body">' +
-          '<div class="dash-hub__grid dash-hub__grid--inline">' + tiles.join('') + '</div>' +
+          '<div class="dash-hub__grid dash-hub__grid--inline'+(gid === 'g_c4k' ? ' dash-hub__grid--3' : '')+'">' + tiles.join('') + '</div>' +
           '</div></section>'
         );
       }).join('');
