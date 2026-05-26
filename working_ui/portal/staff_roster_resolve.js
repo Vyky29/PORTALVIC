@@ -33,15 +33,22 @@
       .trim();
   }
 
-  /** stf002@staff.import.pending → roberto (same map as portal/auth-map.js login emails). */
+  var PORTAL_AUTH_EMAIL_TO_ROSTER_KEY = {
+    "b.traperocasado@gmail.com": "berta",
+    "johnnyosti37@gmail.com": "john",
+    "stf012@staff.import.pending": "berta",
+    "stf006@staff.import.pending": "john",
+  };
+
+  /** Auth email → roster key (berta, john); stf00x local part via staff code map. */
   function portalRosterKeyFromAuthEmail(authEmail) {
-    var local = String(authEmail || "")
-      .trim()
-      .toLowerCase()
-      .split("@")[0];
+    var em = String(authEmail || "").trim().toLowerCase();
+    if (!em) return "";
+    if (PORTAL_AUTH_EMAIL_TO_ROSTER_KEY[em]) return PORTAL_AUTH_EMAIL_TO_ROSTER_KEY[em];
+    var local = em.split("@")[0] || "";
     if (!local) return "";
     var alias = PORTAL_STAFF_CODE_TO_ROSTER_KEY[local];
-    return alias || local;
+    return alias || "";
   }
 
   function portalStaffRosterKeyCandidates(profile, authUser) {
@@ -51,7 +58,9 @@
     var email = user && user.email ? String(user.email) : "";
     var emailLocal = email.split("@")[0] || "";
     var fromEmail = portalRosterKeyFromAuthEmail(email);
-    var raw = [
+    var raw = [];
+    if (fromEmail) raw.push(fromEmail);
+    raw.push(
       p.username,
       p.full_name,
       String(p.full_name || "").split(/\s+/).filter(Boolean)[0],
@@ -59,9 +68,8 @@
       meta.username,
       meta.name,
       meta.full_name,
-      emailLocal,
-      fromEmail,
-    ];
+      emailLocal
+    );
     if (typeof window.portalInferStaffKey === "function") {
       var inferred = window.portalInferStaffKey(p, email);
       if (inferred) raw.push(inferred);

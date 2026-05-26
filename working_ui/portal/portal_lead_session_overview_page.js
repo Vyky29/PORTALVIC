@@ -11,8 +11,8 @@ import {
   portalLeadFeedbackInScope,
   portalLeadInferFeedbackVenue,
   portalLeadDayFeedbackStats,
+  portalLeadProgrammeKey,
 } from "./portal_lead_session_scope.js";
-import { portalInferStaffKey } from "./auth-handler.js";
 
 const HUB_SRC = "/portal/admin-sessions-hub.js?v=20260526-lead-overview5";
 const LEAD_URL = "lead_dashboard.html";
@@ -466,13 +466,21 @@ export async function portalInitLeadSessionOverviewPage() {
   }
   const ctx = window.__PORTAL_SUPABASE__ || {};
   const profile = ctx.staff_profile;
-  const email = String((ctx.session && ctx.session.user && ctx.session.user.email) || "").trim();
+  let email = String((ctx.session && ctx.session.user && ctx.session.user.email) || "").trim();
+  if (!email && ctx.client) {
+    try {
+      const { data: ud } = await ctx.client.auth.getUser();
+      email = String(ud?.user?.email || "").trim();
+    } catch {
+      /* ignore */
+    }
+  }
   if (!portalCanAccessLeadSessionOverview(profile, email)) {
     window.location.replace(LEAD_URL);
     return;
   }
   const scopes = portalLeadSessionScopesForProfile(profile, email);
-  const leadKey = portalInferStaffKey(profile, email);
+  const leadKey = portalLeadProgrammeKey(profile, email);
   state.scopes = scopes;
   const hint = $("plsoScopeHint");
   if (hint) {

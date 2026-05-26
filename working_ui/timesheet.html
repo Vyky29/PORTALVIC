@@ -226,6 +226,13 @@
       stf019: "sevitha",
       stf020: "demo"
     };
+    /** Personal / placeholder Auth emails → spreadsheet roster id (berta, john, …). */
+    const AUTH_EMAIL_TO_ROSTER_KEY = {
+      "b.traperocasado@gmail.com": "berta",
+      "johnnyosti37@gmail.com": "john",
+      "stf012@staff.import.pending": "berta",
+      "stf006@staff.import.pending": "john"
+    };
     /** Fallback when `staff_pay_rates` has no row for this auth user (seed names in DB migration). */
     const PAY_RATE_BY_ROSTER_KEY = {
       youssef: { hourly_rate: 22, role_label: "Swimming Instructor 1" },
@@ -376,6 +383,61 @@
         .replace(/[^a-z0-9]+/g, "")
         .trim();
     }
+    function rosterKeyFromAuthEmail(email) {
+      const em = String(email || "").trim().toLowerCase();
+      if (!em) return "";
+      if (AUTH_EMAIL_TO_ROSTER_KEY[em]) return AUTH_EMAIL_TO_ROSTER_KEY[em];
+      const local = em.split("@")[0] || "";
+      if (STAFF_CODE_TO_ROSTER_KEY[local]) return STAFF_CODE_TO_ROSTER_KEY[local];
+      return "";
+    }
+    function pushRosterCandidate(list, seen, key) {
+      const k = profileKey(key);
+      if (!k || seen.has(k)) return;
+      seen.add(k);
+      list.push(k);
+      if (/^stf\d{3}$/.test(k)) {
+        const alias = STAFF_CODE_TO_ROSTER_KEY[k];
+        if (alias && !seen.has(alias)) {
+          seen.add(alias);
+          list.push(alias);
+        }
+      }
+    }
+    function resolveEmployeeDisplayName(profile, user, rosterKey) {
+      const p = profile || {};
+      const meta = (user && user.user_metadata) || {};
+      const emailLocal = String((user && user.email) || "").split("@")[0] || "";
+      const emailLocalKey = profileKey(emailLocal);
+      try {
+        const sp = (window.STAFF_DASHBOARD_SOURCE && window.STAFF_DASHBOARD_SOURCE.staffProfiles) || {};
+        const rp = rosterKey ? sp[rosterKey] : null;
+        const rosterName = rp && rp.staffName ? String(rp.staffName).trim() : "";
+        if (rosterName) return rosterName;
+      } catch (_) {}
+      const candidates = [
+        p.full_name,
+        p.username,
+        String(p.full_name || "").split(/\s+/).filter(Boolean)[0],
+        meta.full_name,
+        meta.name,
+        meta.preferred_username
+      ];
+      for (let i = 0; i < candidates.length; i++) {
+        const raw = String(candidates[i] || "").trim();
+        if (!raw) continue;
+        const k = profileKey(raw);
+        if (rosterKey && k && k !== rosterKey) continue;
+        if (k && emailLocalKey && k === emailLocalKey) continue;
+        if (raw.includes("@")) continue;
+        return raw;
+      }
+      if (rosterKey) {
+        const label = rosterKey.charAt(0).toUpperCase() + rosterKey.slice(1);
+        return label;
+      }
+      return emailLocal || "-";
+    }
     function payrollMonthLabel(periodEndIso) {
       const d = parseIsoDate(periodEndIso);
       if (!d) return "";
@@ -525,33 +587,21 @@
       if (typeof window.StaffDashboardSpreadsheetAdapter === "undefined" || !window.STAFF_DASHBOARD_SOURCE) {
         throw new Error("Spreadsheet roster source is unavailable.");
       }
-      const emailLocal = String((user && user.email) || "").split("@")[0] || "";
       const meta = (user && user.user_metadata) || {};
-      const candidates = [
-        profileKey(profile.username),
-        profileKey(profile.full_name),
-        profileKey(String(profile.full_name || "").split(" ")[0]),
-        profileKey(meta.preferred_username),
-        profileKey(meta.username),
-        profileKey(meta.name),
-        profileKey(meta.full_name),
-        profileKey(emailLocal)
-      ].filter(Boolean);
+      const authEmail = String((user && user.email) || "").trim();
+      const emailLocal = authEmail.split("@")[0] || "";
       const seen = new Set();
-      const dedup = candidates.filter((c) => {
-        if (seen.has(c)) return false;
-        seen.add(c);
-        return true;
-      });
-      dedup.forEach((k) => {
-        if (/^stf\d{3}$/i.test(k)) {
-          const alias = STAFF_CODE_TO_ROSTER_KEY[k.toLowerCase()];
-          if (alias && !seen.has(alias)) {
-            seen.add(alias);
-            dedup.push(alias);
-          }
-        }
-      });
+      const dedup = [];
+      const fromAuth = rosterKeyFromAuthEmail(authEmail);
+      if (fromAuth) pushRosterCandidate(dedup, seen, fromAuth);
+      pushRosterCandidate(dedup, seen, profile.username);
+      pushRosterCandidate(dedup, seen, profile.full_name);
+      pushRosterCandidate(dedup, seen, String(profile.full_name || "").split(" ")[0]);
+      pushRosterCandidate(dedup, seen, meta.preferred_username);
+      pushRosterCandidate(dedup, seen, meta.username);
+      pushRosterCandidate(dedup, seen, meta.name);
+      pushRosterCandidate(dedup, seen, meta.full_name);
+      pushRosterCandidate(dedup, seen, emailLocal);
       for (let i = 0; i < dedup.length; i++) {
         const boot = window.StaffDashboardSpreadsheetAdapter.bootstrap({
           source: window.STAFF_DASHBOARD_SOURCE,
@@ -559,6 +609,16 @@
         });
         if (boot && Array.isArray(boot.sessionsModel) && boot.sessionsModel.length) {
           state.staffRosterKey = dedup[i];
+          return boot.sessionsModel;
+        }
+      }
+      if (fromAuth) {
+        const boot = window.StaffDashboardSpreadsheetAdapter.bootstrap({
+          source: window.STAFF_DASHBOARD_SOURCE,
+          staffId: fromAuth
+        });
+        if (boot && Array.isArray(boot.sessionsModel)) {
+          state.staffRosterKey = fromAuth;
           return boot.sessionsModel;
         }
       }
@@ -613,23 +673,8 @@
 
       const profile = profileRes.data || {};
       const rateRow = rateRes.data || {};
-      const meta = user.user_metadata || {};
-      const emailLocal = String(user.email || "").split("@")[0] || "";
-      state.employeeName = String(
-        profile.full_name ||
-        profile.username ||
-        meta.full_name ||
-        meta.name ||
-        meta.preferred_username ||
-        emailLocal
-      ).trim();
       const sessionsModel = resolveRosterSessions(profile, user);
-      try {
-        const sp = (window.STAFF_DASHBOARD_SOURCE && window.STAFF_DASHBOARD_SOURCE.staffProfiles) || {};
-        const rosterProfile = state.staffRosterKey ? sp[state.staffRosterKey] : null;
-        const rosterName = rosterProfile && rosterProfile.staffName ? String(rosterProfile.staffName).trim() : "";
-        if (rosterName) state.employeeName = rosterName;
-      } catch (_) {}
+      state.employeeName = resolveEmployeeDisplayName(profile, user, state.staffRosterKey);
       const pay = applyPayRateFromProfile(rateRow, profile, state.staffRosterKey);
       state.roleLabel = pay.role_label;
       state.hourlyRate = Number(pay.hourly_rate || 0);

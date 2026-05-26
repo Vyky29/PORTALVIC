@@ -5,6 +5,29 @@ import { portalInferStaffKey } from "./auth-handler.js";
 
 const LEAD_OVERVIEW_KEYS = new Set(["berta", "john"]);
 
+/** Auth email → programme lead key (wins over staff_profiles.username e.g. stf012). */
+const LEAD_PROGRAMME_EMAIL_TO_KEY = {
+  "johnnyosti37@gmail.com": "john",
+  "b.traperocasado@gmail.com": "berta",
+  "stf006@staff.import.pending": "john",
+  "stf012@staff.import.pending": "berta",
+};
+
+/**
+ * Programme lead key for John/Berta session overview (not generic portalInferStaffKey).
+ * @param {Record<string, unknown> | null | undefined} profile
+ * @param {string} authEmail
+ * @returns {"john"|"berta"|""}
+ */
+export function portalLeadProgrammeKey(profile, authEmail) {
+  const em = String(authEmail || "")
+    .trim()
+    .toLowerCase();
+  if (em && LEAD_PROGRAMME_EMAIL_TO_KEY[em]) return LEAD_PROGRAMME_EMAIL_TO_KEY[em];
+  const inferred = portalInferStaffKey(profile, authEmail);
+  return LEAD_OVERVIEW_KEYS.has(inferred) ? inferred : "";
+}
+
 const JOHN_SCOPES = [
   {
     id: "bespoke-mwf",
@@ -69,11 +92,11 @@ function normVenue(v) {
 const DOW = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 export function portalCanAccessLeadSessionOverview(profile, authEmail) {
-  return LEAD_OVERVIEW_KEYS.has(portalInferStaffKey(profile, authEmail));
+  return !!portalLeadProgrammeKey(profile, authEmail);
 }
 
 export function portalLeadSessionScopesForProfile(profile, authEmail) {
-  const key = portalInferStaffKey(profile, authEmail);
+  const key = portalLeadProgrammeKey(profile, authEmail);
   if (key === "john") return JOHN_SCOPES.slice();
   if (key === "berta") return BERTA_SCOPES.slice();
   return [];
