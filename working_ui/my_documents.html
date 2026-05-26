@@ -16,7 +16,13 @@
     .page{max-width:980px;margin:0 auto;padding:14px}
     .card{border:1px solid #e6ecf4;border-radius:14px;box-shadow:0 8px 24px rgba(17,24,39,.06);background:#fff}
     .head{padding:14px 16px;border-bottom:1px solid #e6ecf4}
+    .head-back{
+      display:inline-flex;align-items:center;gap:6px;margin:0 0 10px;padding:0;
+      border:0;background:none;color:#2d84b3;font-size:14px;font-weight:700;cursor:pointer;font:inherit;text-decoration:none;
+    }
+    .head-back:hover,.head-back:focus-visible{text-decoration:underline}
     .head h1{margin:0;color:#0b2a5b;font-size:22px}
+    .head-intro{margin:8px 0 0;font-size:13px;line-height:1.45;color:#62758a;max-width:40rem;overflow-wrap:break-word}
     .group{padding:14px 16px}
     .group h2{margin:0 0 8px;font-size:14px;text-transform:uppercase;letter-spacing:.04em;color:#62758a}
     .row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;border:1px solid #e6ecf4;border-radius:12px;padding:10px;margin-bottom:8px}
@@ -122,7 +128,11 @@
 <body>
   <main class="page">
     <article class="card">
-      <header class="head"><h1>My Documents</h1></header>
+      <header class="head">
+        <a class="head-back" id="docsBackLink" href="staff_dashboard.html">← Back to dashboard</a>
+        <h1 id="docsPageTitle">My Documents</h1>
+        <p class="head-intro" id="docsPageIntro" hidden></p>
+      </header>
       <div id="docDownloadToast" class="doc-download-toast" role="status" aria-live="polite" aria-atomic="true">
         <strong>Download</strong>
         <span class="doc-download-toast-sub">In progress</span>
@@ -163,10 +173,63 @@
       await portalImportDocumentsModule("my_documents");
 
     const GROUPS = [
-      { key: "finance", label: "Finance" },
-      { key: "reports", label: "Reports" },
-      { key: "training", label: "Training" }
+      {
+        key: "finance",
+        label: "Finance",
+        intro: "Timesheet and expense PDFs generated when you submit in the portal."
+      },
+      {
+        key: "reports",
+        label: "Reports",
+        intro: "Review reports you complete in the app (for example swimming term reviews)."
+      },
+      {
+        key: "training",
+        label: "Training",
+        intro: "Certificates and records from internal training, safeguarding, and other completed modules."
+      }
     ];
+
+    function parseCategoryFilter() {
+      try {
+        const c = String(new URLSearchParams(location.search).get("category") || "")
+          .trim()
+          .toLowerCase();
+        if (c === "finance" || c === "reports" || c === "training") return c;
+      } catch (_) {}
+      return "";
+    }
+
+    function parseDashboardReturn() {
+      try {
+        const from = String(new URLSearchParams(location.search).get("from") || "")
+          .trim()
+          .toLowerCase();
+        if (from === "lead") return "lead_dashboard.html";
+      } catch (_) {}
+      return "staff_dashboard.html";
+    }
+
+    function applyPageChrome() {
+      const cat = parseCategoryFilter();
+      const group = GROUPS.find((g) => g.key === cat);
+      const back = document.getElementById("docsBackLink");
+      const title = document.getElementById("docsPageTitle");
+      const intro = document.getElementById("docsPageIntro");
+      if (back) back.setAttribute("href", parseDashboardReturn());
+      if (group && title) {
+        document.title = group.label + " · My documents";
+        title.textContent = group.label;
+        if (intro) {
+          intro.textContent = group.intro;
+          intro.hidden = false;
+        }
+      } else if (title) {
+        document.title = "My Documents";
+        title.textContent = "My Documents";
+        if (intro) intro.hidden = true;
+      }
+    }
 
     function esc(value) {
       return String(value || "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
@@ -383,22 +446,65 @@
       }
     }
 
+    function docMatchesCategory(doc, categoryKey) {
+      const cat = String((doc && doc.category) || "").toLowerCase();
+      if (cat === categoryKey) return true;
+      const t = String((doc && doc.document_type) || "").toLowerCase();
+      if (categoryKey === "finance" && (t === "timesheet" || t === "expense")) return true;
+      if (categoryKey === "reports" && (t === "swim_term_review" || t.includes("report"))) return true;
+      if (
+        categoryKey === "training" &&
+        (t === "staff_policy_ack" || t.includes("train") || t.includes("induction") || t.includes("safeguard"))
+      ) {
+        return true;
+      }
+      return false;
+    }
+
+    function emptyCopyForCategory(key) {
+      if (key === "finance") {
+        return "No finance documents yet. Submit a timesheet or expense claim to generate a PDF here.";
+      }
+      if (key === "reports") {
+        return "No reports yet. Completed review reports (for example swimming term reviews) will appear here.";
+      }
+      if (key === "training") {
+        return "No training documents yet. Certificates and completed training records will appear here.";
+      }
+      return "No documents yet.";
+    }
+
     function renderGroups(list) {
       const root = document.getElementById("docsRoot");
       if (!root) return;
+      const filterCat = parseCategoryFilter();
       const grouped = { finance: [], reports: [], training: [] };
       (list || []).forEach((doc) => {
         const cat = String(doc.category || "").toLowerCase();
-        if (!grouped[cat]) grouped[cat] = [];
-        grouped[cat].push(doc);
+        if (grouped[cat]) {
+          grouped[cat].push(doc);
+          return;
+        }
+        for (let i = 0; i < GROUPS.length; i++) {
+          if (docMatchesCategory(doc, GROUPS[i].key)) {
+            grouped[GROUPS[i].key].push(doc);
+            break;
+          }
+        }
       });
 
+      const groupsToRender = filterCat
+        ? GROUPS.filter((g) => g.key === filterCat)
+        : GROUPS;
+
       let html = "";
-      GROUPS.forEach((group) => {
+      groupsToRender.forEach((group) => {
         const items = grouped[group.key] || [];
-        html += `<section class="group"><h2>${esc(group.label)}</h2>`;
+        const showHeading = !filterCat;
+        html += `<section class="group">`;
+        if (showHeading) html += `<h2>${esc(group.label)}</h2>`;
         if (!items.length) {
-          html += `<div class="empty">No documents yet.</div></section>`;
+          html += `<div class="empty">${esc(emptyCopyForCategory(group.key))}</div></section>`;
           return;
         }
         items.forEach((doc) => {
@@ -461,6 +567,7 @@
     }
 
     (async function init() {
+      applyPageChrome();
       const root = document.getElementById("docsRoot");
       if (root) root.innerHTML = `<div class="empty">Loading your documents...</div>`;
       try {

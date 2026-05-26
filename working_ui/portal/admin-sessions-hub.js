@@ -2474,6 +2474,9 @@
     out.sort(function (a, b) {
       return a.time_start.localeCompare(b.time_start) || a.client_name.localeCompare(b.client_name);
     });
+    if (this.opts && typeof this.opts.slotScopeFilter === "function") {
+      out = out.filter(this.opts.slotScopeFilter);
+    }
     return out;
   };
 
@@ -2789,6 +2792,9 @@
     var hub = this;
     return (this.payload.session_feedback || []).filter(function (fb) {
       if (hub.isFeedbackAbsent(fb)) return false;
+      if (hub.opts && typeof hub.opts.feedbackRowScopeFilter === "function") {
+        if (!hub.opts.feedbackRowScopeFilter(fb)) return false;
+      }
       var d = hub.feedbackRowDate(fb);
       if (!d) return true;
       if (d < from || d > to) return false;
@@ -3186,6 +3192,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
 
     function pushRow(row) {
       if (isMislabeledRosterAreaClientName(row.client_name)) return;
+      if (hub.opts && typeof hub.opts.feedbackRowScopeFilter === "function") {
+        if (!hub.opts.feedbackRowScopeFilter(row)) return;
+      }
       var k = feedbackLogDedupeKey(row);
       if (byKey[k]) return;
       byKey[k] = true;

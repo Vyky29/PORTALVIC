@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <script src="/portal-static-bootstrap.js?v=20260526-lead-overview"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Session overview · Programme lead</title>
+  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260526-lead-overview" />
+  <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260526-lead-overview" />
+  <link rel="stylesheet" href="/portal/portal-lead-session-overview.css?v=20260526-lead-overview" />
+  <script src="/portal/admin-portal-day-ops.js?v=20260526-lead-overview"></script>
+  <script src="portal/session_feedback_portal_data.js?v=20260526-lead-overview"></script>
+</head>
+<body class="portal-lead-session-overview-page">
+  <header class="plso-topbar">
+    <a class="plso-back" href="lead_dashboard.html">← Lead dashboard</a>
+    <h1>Session overview</h1>
+  </header>
+  <p class="plso-scope-hint" id="plsoScopeHint" hidden></p>
+  <main class="plso-shell">
+    <div class="c4k-sessions-hub portal-day-ops-embed">
+      <div class="c4k-sessions-hub__head">
+        <h1 class="c4k-sessions-hub__title">SESSIONS OVERVIEW</h1>
+        <p class="c4k-sessions-hub__sub">Weekly roster, session status, and feedback for your programmes.</p>
+      </div>
+      <div class="c4k-sessions-hub-tabs" role="tablist" aria-label="Session overview">
+        <button type="button" class="c4k-sessions-hub-tab is-active" data-plso-tab="overview">Overview</button>
+        <button type="button" class="c4k-sessions-hub-tab" data-plso-tab="feedback">Feedbacks</button>
+        <button type="button" class="c4k-sessions-hub-tab" data-plso-tab="lead">Lead reports</button>
+      </div>
+      <div id="portalDayOpsStatus" class="portal-forms-status" aria-live="polite"></div>
+      <div id="c4kHubPanelOverview" class="c4k-sessions-hub-panel">
+        <div id="adminSessionsHubRoot" class="admin-sessions-hub-root"></div>
+      </div>
+      <div id="c4kHubPanelFeedback" class="c4k-sessions-hub-panel" hidden>
+        <div
+          id="adminSessionFeedbacksRoot"
+          class="admin-sessions-hub-root admin-session-feedbacks-root"
+          role="region"
+          aria-label="Session feedback"
+        >
+          <p class="muted" style="margin:0 0 12px;font-size:13px">Loading session feedback…</p>
+        </div>
+      </div>
+      <div id="c4kHubPanelLead" class="c4k-sessions-hub-panel" hidden>
+        <h2 class="portal-forms-heading">Lead reports</h2>
+        <div class="files-table-wrap portal-forms-table-wrap">
+          <table class="files-table portal-forms-table portal-forms-table--lead-reports">
+            <thead>
+              <tr>
+                <th class="col-date">When</th>
+                <th>Submitted by</th>
+                <th>Service</th>
+                <th>Activity</th>
+                <th class="col-brief-desc">Brief description</th>
+                <th class="col-actions">View</th>
+              </tr>
+            </thead>
+            <tbody id="portalFormsLeadTbody">
+              <tr>
+                <td colspan="6"><div class="submission-state"><strong>Loading…</strong></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+  <script type="module">
+    import { portalInitLeadSessionOverviewPage } from "/portal/portal_lead_session_overview_page.js?v=20260526-lead-overview";
+    portalInitLeadSessionOverviewPage().catch(function (e) {
+      console.error(e);
+      alert("Could not load session overview. Try again or return to the lead dashboard.");
+    });
+  </script>
+</body>
+</html>
