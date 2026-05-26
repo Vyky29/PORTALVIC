@@ -9,11 +9,12 @@ import {
   portalLeadSessionScopeLabels,
   portalLeadReportInScope,
   portalLeadFeedbackInScope,
+  portalLeadInferFeedbackVenue,
   portalLeadDayFeedbackStats,
 } from "./portal_lead_session_scope.js";
 import { portalInferStaffKey } from "./auth-handler.js";
 
-const HUB_SRC = "/portal/admin-sessions-hub.js?v=20260526-lead-overview4";
+const HUB_SRC = "/portal/admin-sessions-hub.js?v=20260526-lead-overview5";
 const LEAD_URL = "lead_dashboard.html";
 
 const state = { tab: "overview", scopes: [] };
@@ -64,26 +65,86 @@ function feedbackDateIso(r) {
   return "";
 }
 
+function feedbackRowMergeKey(row) {
+  const pk = String(row.portal_session_key || "").trim();
+  if (pk) return pk;
+  return [
+    String(row.session_date || "").slice(0, 10),
+    String(row.client_name || "").trim().toLowerCase(),
+    String(row.session_time || "").trim(),
+    String(row.completed_by_name || "").trim().toLowerCase(),
+  ].join("|");
+}
+
+function mergeScopedFeedbackLists(scopes, lists) {
+  const byKey = new Map();
+  lists.forEach((list) => {
+    (list || []).forEach((row) => {
+      if (!row) return;
+      const k = feedbackRowMergeKey(row);
+      if (!k || byKey.has(k)) return;
+      byKey.set(k, row);
+    });
+  });
+  return Array.from(byKey.values());
+}
+
 function mapPortalRowToHubFeedback(r, scopes) {
   const d = feedbackDateIso(r);
   const eng = r.engagement;
   const row = {
-    client_name: String(r.clientName || r.client || "").trim() || "—",
+    client_name: String(r.clientName || r.client || r.client_name || "").trim() || "—",
     session_date: d,
     service: String(r.service || "").trim() || "—",
     attendance: r.attendance,
     engagement_rating: eng != null && eng !== "" && !isNaN(Number(eng)) ? Number(eng) : null,
-    client_emotions: String(r.emotions || r.emotionSummary || "").trim(),
-    engagement_patterns: String(r.independence || "").trim() || null,
-    positive_feedback: String(r.positive || r.positiveFeedback || "").trim(),
-    relevant_information: String(r.relevantParent || r.relevant || "").trim(),
-    completed_by_name: String(r.instructor || r.completedBy || "").trim() || "—",
-    session_time: String(r.sessionTime || r.time || "").trim(),
-    portal_session_key: d ? d + "|" + String(r.clientName || "").trim() : "",
+    client_emotions: String(r.emotions || r.emotionSummary || r.client_emotions || "").trim(),
+    engagement_patterns:
+      String(r.independence || r.engagement_patterns || "").trim() || null,
+    positive_feedback: String(r.positive || r.positiveFeedback || r.positive_feedback || "").trim(),
+    relevant_information: String(
+      r.relevantParent || r.relevant || r.relevant_information || ""
+    ).trim(),
+    completed_by_name:
+      String(r.instructor || r.completedBy || r.completed_by_name || "").trim() || "—",
+    session_time: String(r.sessionTime || r.time || r.session_time || "").trim(),
+    portal_session_key: String(r.portal_session_key || r.portalSessionKey || "").trim(),
     venue: String(r.venue || "").trim(),
   };
+  if (!row.portal_session_key && d) {
+    row.portal_session_key = d + "|" + String(r.clientName || r.client || "").trim();
+  }
+  row.venue = portalLeadInferFeedbackVenue(row);
   if (!portalLeadFeedbackInScope(row, scopes)) return null;
   return row;
+}
+
+function mapDbSessionFeedbackToHub(row, scopes) {
+  const d = String(row.session_date || "").trim().slice(0, 10);
+  const patterns = row.engagement_patterns;
+  const hub = {
+    client_name: String(row.client_name || "").trim() || "—",
+    session_date: d,
+    service: String(row.service || "").trim() || "—",
+    attendance: row.attendance,
+    engagement_rating:
+      row.engagement_rating != null && !isNaN(Number(row.engagement_rating))
+        ? Number(row.engagement_rating)
+        : null,
+    client_emotions: String(row.client_emotions || "").trim(),
+    engagement_patterns: Array.isArray(patterns)
+      ? patterns.join(", ")
+      : String(patterns || "").trim() || null,
+    positive_feedback: String(row.positive_feedback || "").trim(),
+    relevant_information: String(row.relevant_information || "").trim(),
+    completed_by_name: String(row.completed_by_name || "").trim() || "—",
+    session_time: String(row.session_time || "").trim(),
+    portal_session_key: String(row.portal_session_key || "").trim(),
+    venue: "",
+  };
+  hub.venue = portalLeadInferFeedbackVenue(hub);
+  if (!portalLeadFeedbackInScope(hub, scopes)) return null;
+  return hub;
 }
 
 function ensureHubScript() {
@@ -190,14 +251,22 @@ async function fetchLeadReports(client) {
 function applyScopedPayload(scopes) {
   const p = window.PortalDayOps && window.PortalDayOps.getPayload();
   if (!p) return p;
-  const portalFb = portalFeedbackRows()
+  const fromPortal = portalFeedbackRows()
     .map((r) => mapPortalRowToHubFeedback(r, scopes))
     .filter(Boolean);
-  if (portalFb.length) {
-    p.session_feedback = portalFb;
-    p.session_feedback_total = portalFb.length;
-    p.session_feedback_loaded = portalFb.length;
-  }
+  const fromPayload = (p.session_feedback || [])
+    .map((r) => {
+      if (!r) return null;
+      const row = Object.assign({}, r, {
+        venue: portalLeadInferFeedbackVenue(r) || String(r.venue || "").trim(),
+      });
+      return portalLeadFeedbackInScope(row, scopes) ? row : null;
+    })
+    .filter(Boolean);
+  const merged = mergeScopedFeedbackLists(scopes, [fromPayload, fromPortal]);
+  p.session_feedback = merged;
+  p.session_feedback_total = merged.length;
+  p.session_feedback_loaded = merged.length;
   p.lead_session_reports = (p.lead_session_reports || []).filter((r) =>
     portalLeadReportInScope(r, scopes)
   );
@@ -239,6 +308,33 @@ function configureDayOps(scopes, leadKey) {
         if (row) out.push(row);
       });
       return out;
+    },
+    fetchSessionFeedback: async () => {
+      const client =
+        window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client
+          ? window.__PORTAL_SUPABASE__.client
+          : null;
+      if (!client) return [];
+      const since = new Date();
+      since.setDate(since.getDate() - 150);
+      const sinceIso = since.toISOString().slice(0, 10);
+      try {
+        const { data, error } = await client
+          .from("session_feedback")
+          .select(
+            "client_name,session_date,service,attendance,engagement_rating,engagement_patterns,client_emotions,positive_feedback,relevant_information,completed_by_name,portal_session_key,created_at"
+          )
+          .gte("session_date", sinceIso)
+          .order("session_date", { ascending: false })
+          .limit(2500);
+        if (error) throw error;
+        return (data || [])
+          .map((row) => mapDbSessionFeedbackToHub(row, scopes))
+          .filter(Boolean);
+      } catch (e) {
+        console.warn("lead session_feedback fetch", e);
+        return [];
+      }
     },
     formatDate: (iso) => {
       if (!iso) return "—";
@@ -412,7 +508,19 @@ export async function portalInitLeadSessionOverviewPage() {
 
   await initHubs(scopes, leadKey);
   bindTabs();
-  if (statusEl) statusEl.textContent = "";
+  const fbCount =
+    window.PortalDayOps &&
+    window.PortalDayOps.getPayload() &&
+    Array.isArray(window.PortalDayOps.getPayload().session_feedback)
+      ? window.PortalDayOps.getPayload().session_feedback.length
+      : 0;
+  if (statusEl) {
+    statusEl.textContent =
+      fbCount > 0
+        ? ""
+        : "No programme feedback loaded for your days yet — check you are on the latest deploy or contact admin.";
+    statusEl.className = "portal-forms-status" + (fbCount > 0 ? "" : " is-error");
+  }
   await refreshTab("overview");
 }
 

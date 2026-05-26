@@ -97,10 +97,10 @@ function serviceMatches(serviceRaw, scope) {
   return scope.serviceKeys.indexOf(sk) >= 0;
 }
 
-function venueMatches(venueRaw, scope) {
+function venueMatches(venueRaw, scope, opts) {
   if (!scope.venues || !scope.venues.length) return true;
   const v = normVenue(venueRaw);
-  if (!v) return false;
+  if (!v) return !!(opts && opts.allowEmptyVenue);
   return scope.venues.some((want) => v.indexOf(normVenue(want)) >= 0 || normVenue(want).indexOf(v) >= 0);
 }
 
@@ -113,16 +113,34 @@ function weekdayMatches(isoOrWeekday, scope) {
   return scope.weekdays.indexOf(wd) >= 0;
 }
 
-function scopesMatchRow(scopes, iso, serviceRaw, venueRaw) {
+function scopesMatchRow(scopes, iso, serviceRaw, venueRaw, opts) {
   if (!scopes.length) return false;
   for (let i = 0; i < scopes.length; i++) {
     const scope = scopes[i];
     if (!weekdayMatches(iso, scope)) continue;
     if (!serviceMatches(serviceRaw, scope)) continue;
-    if (!venueMatches(venueRaw, scope)) continue;
+    if (!venueMatches(venueRaw, scope, opts)) continue;
     return true;
   }
   return false;
+}
+
+/** Portal/DB feedback rows often lack venue; infer from weekday + service + session key tail. */
+export function portalLeadInferFeedbackVenue(row) {
+  const direct = String((row && (row.venue || row.venue_name)) || "").trim();
+  if (direct) return direct;
+  const iso = String((row && (row.session_date || row.date)) || "")
+    .trim()
+    .slice(0, 10);
+  const wd = weekdayFromIso(iso);
+  const sk = normKey(row && (row.portal_session_key || row.portalSessionKey));
+  const svc = normService(row && row.service);
+  if (wd === "Wednesday" && svc === "multi") return "Acton";
+  if (wd === "Sunday" && svc === "multi") return "SwimFarm";
+  if (svc === "bespoke") return "SwimFarm";
+  if (/room|hubroom|acton/.test(sk)) return "Acton";
+  if (/pool|swimfarm|bigpool|teachingpool|fish|shark|dolphin/.test(sk)) return "SwimFarm";
+  return "";
 }
 
 function normInstructorKey(name) {
@@ -169,9 +187,10 @@ export function portalLeadSlotInScopeForLead(slot, scopes, leadProfileKey) {
 
 export function portalLeadFeedbackInScope(fb, scopes) {
   if (!fb || !scopes || !scopes.length) return false;
+  if (serviceExcludedForLeadOverview(fb.service)) return false;
   const iso = String(fb.session_date || fb.date || "").trim().slice(0, 10);
-  const venue = fb.venue || fb.venue_name || "";
-  return scopesMatchRow(scopes, iso, fb.service, venue);
+  const venue = portalLeadInferFeedbackVenue(fb);
+  return scopesMatchRow(scopes, iso, fb.service, venue, { allowEmptyVenue: true });
 }
 
 export function portalLeadReportInScope(report, scopes) {

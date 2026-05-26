@@ -101,14 +101,46 @@
     payload.session_quick_marks = j.session_quick_marks || [];
   }
 
+  function feedbackRowMergeKey(row) {
+    var pk = String((row && row.portal_session_key) || '').trim();
+    if (pk) return 'pk:' + pk;
+    return (
+      'd:' +
+      String((row && row.session_date) || '').trim().slice(0, 10) +
+      '|' +
+      String((row && row.client_name) || '')
+        .trim()
+        .toLowerCase() +
+      '|' +
+      String((row && row.session_time) || '').trim() +
+      '|' +
+      String((row && row.completed_by_name) || '')
+        .trim()
+        .toLowerCase()
+    );
+  }
+
+  function mergeFeedbackRowLists(a, b) {
+    var byKey = {};
+    var out = [];
+    (a || []).concat(b || []).forEach(function (row) {
+      if (!row) return;
+      var k = feedbackRowMergeKey(row);
+      if (!k || byKey[k]) return;
+      byKey[k] = true;
+      out.push(row);
+    });
+    return out;
+  }
+
   /** Portal workbook export is authoritative for feedback rows; edge often returns []. */
   function mergePortalFeedbackIntoPayload() {
     if (!cfg.buildFeedbackFromPortal) return;
     var portalRows = cfg.buildFeedbackFromPortal() || [];
     if (!portalRows.length) return;
-    payload.session_feedback = portalRows;
-    payload.session_feedback_total = portalRows.length;
-    payload.session_feedback_loaded = portalRows.length;
+    payload.session_feedback = mergeFeedbackRowLists(payload.session_feedback || [], portalRows);
+    payload.session_feedback_total = payload.session_feedback.length;
+    payload.session_feedback_loaded = payload.session_feedback.length;
   }
 
   function venueReviewMergeKey(r) {
@@ -197,6 +229,15 @@
       try {
         out.session_quick_marks = await cfg.fetchAbsents();
       } catch (e2) {}
+    }
+    if (cfg.fetchSessionFeedback) {
+      try {
+        var dbFb = await cfg.fetchSessionFeedback();
+        if (dbFb && dbFb.length) {
+          out.session_feedback = mergeFeedbackRowLists(out.session_feedback || [], dbFb);
+          out.session_feedback_total = out.session_feedback.length;
+        }
+      } catch (eFb) {}
     }
     var since = new Date();
     since.setDate(since.getDate() - 120);
