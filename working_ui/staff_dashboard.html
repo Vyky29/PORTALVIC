@@ -1700,15 +1700,17 @@
       color:#334155;
       border-color:rgba(71,85,105,.25);
     }
-    /* Logo-lite: show section titles (Internal chat / Announcements / Reminders) for scanability */
-    #menuSheet #portalQuickMenuNotificationsGroup > .menu-group-title{
-      font-size:15px;
-      font-weight:800;
-      letter-spacing:.04em;
+    /* Logo-lite (Alerts/Notifications): section headers 12px */
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup > .menu-group-title,
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup > .menu-group-title{
+      font-family:Arial, Helvetica, sans-serif;
+      font-size:12px;
+      font-weight:700;
+      letter-spacing:.08em;
       text-transform:uppercase;
       color:var(--muted);
-      margin:0 0 14px 4px;
-      line-height:1.15;
+      margin:0 0 10px 4px;
+      line-height:1.25;
     }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuAnnouncementsHeading{
       margin-top:18px;
@@ -1749,16 +1751,19 @@
     }
     #portalQuickMenuNoticesGrid .portal-quickmenu-announcement-subtitle{
       margin:0 0 4px 2px;
+      font-family:Arial, Helvetica, sans-serif;
       font-size:10px;
       font-weight:700;
       letter-spacing:.08em;
       text-transform:uppercase;
       color:var(--muted);
+      line-height:1.25;
     }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuNoticesGrid .portal-quickmenu-announcement-subtitle{
-      font-size:12px;
+      font-family:Arial, Helvetica, sans-serif;
+      font-size:10px;
       font-weight:700;
-      letter-spacing:.06em;
+      letter-spacing:.08em;
       margin:0 0 6px 2px;
     }
     #menuSheet #portalQuickMenuNoticesGrid .menu-btn.notice .menu-btn-chev{
