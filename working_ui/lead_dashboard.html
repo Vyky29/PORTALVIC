@@ -7277,7 +7277,7 @@
     /** Persisted register/feedback flags so returning from session_feedback.html keeps row colours. */
     const PORTAL_SESSION_REVIEW_MAP_STORAGE = 'portalSessionReviewMap_v1';
     /** Same folder as auth-handler on the CDN; used to pull server-side review keys onto this device. */
-    const PORTAL_SUPABASE_CLIENT_MODULE = 'portal/supabase-client.js';
+    const PORTAL_SUPABASE_CLIENT_MODULE = 'portal/supabase-client.js?v=20260526-lead-dashboard';
     /**
      * Web Push (app closed / phone locked): VAPID **public** key only — generate pair with `npx web-push generate-vapid-keys`,
      * put public key here (or `window.__PORTAL_VAPID_PUBLIC_KEY__` on the host page); private key lives in Supabase Edge secrets only.
@@ -8098,6 +8098,29 @@
       const M = Number(parts[1] || 0);
       d.setHours(H, M, 0, 0);
       return d.getTime();
+    }
+    /** Session start/end on the row calendar day (fixes next-session preview showing orange). */
+    function portalSessionRowTimestamps(sessionDateIso, startHm, endHm, fallbackAnchor){
+      const iso = String(sessionDateIso || '').trim().slice(0, 10);
+      let d = null;
+      if(/^\d{4}-\d{2}-\d{2}$/.test(iso) && typeof portalParseIsoDateLocal === 'function'){
+        d = portalParseIsoDateLocal(iso);
+      }
+      if((!d || isNaN(d.getTime())) && fallbackAnchor && !isNaN(fallbackAnchor.getTime())) d = fallbackAnchor;
+      if(!d || isNaN(d.getTime())){
+        const vw = String(typeof DEMO_VIEW_DAY !== 'undefined' ? DEMO_VIEW_DAY : '').trim();
+        return {
+          sessionStartTs: buildSessionEndMs(vw, startHm),
+          sessionEndTs: buildSessionEndMs(vw, endHm)
+        };
+      }
+      const y = d.getFullYear();
+      const mo = d.getMonth();
+      const da = d.getDate();
+      return {
+        sessionStartTs: buildSessionStartMsForCalendarDate(y, mo, da, startHm),
+        sessionEndTs: buildSessionEndMsForCalendarDate(y, mo, da, endHm)
+      };
     }
 
     function getSessionReviewRecord(item){
@@ -9594,6 +9617,10 @@
       if(!item || item.kind !== 'client' || !item.sessionKey) return '';
       if(item.noSessionFeedbackRequired) return '';
       if(item.portalOverrideSuppressReviewOrange) return '';
+      try{
+        const dd = typeof dashboardData !== 'undefined' ? dashboardData : null;
+        if(dd && dd.portalTodaySectionMode === 'next_session') return '';
+      }catch(_){}
       const r = getSessionReviewRecord(item) || {};
       if(r.absent) return 'session-card--review-done';
       if(r.cancelled) return 'session-card--review-cancelled';
@@ -10072,6 +10099,10 @@
       if(!s) return { line1: '', line2: '' };
       const laneM = s.match(/^Lane\s*\(\s*(SE|DE)\s*\)$/i);
       if(laneM) return { line1: 'Lane', line2: '(' + laneM[1].toUpperCase() + ')' };
+      const roomM = s.match(/^Room\s+(.+)$/i);
+      if(roomM) return { line1: 'Room', line2: String(roomM[1] || '').trim() };
+      const hubRoomM = s.match(/^Hub\s+Room$/i);
+      if(hubRoomM) return { line1: 'Hub', line2: 'Room' };
       const idx = s.toLowerCase().lastIndexOf(' pool');
       if(idx > 0) return { line1: s.slice(0, idx).trim(), line2: 'Pool' };
       return { line1: s, line2: '' };
@@ -12499,7 +12530,11 @@
       const viewDay = String(DEMO_VIEW_DAY).trim();
       const staffId = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
       const _rtPool = String(staffRoleTrackForTodayBuild() || 'swimming').toLowerCase().replace(/[\s_-]+/g,'');
-      const supportHidePoolNote = _rtPool === 'support' || _rtPool === 'supportlead';
+      /* Programme leads (e.g. Berta support_lead) still need Room / pool notes on the lead dashboard. */
+      const supportHidePoolNote = false;
+      function rowTsForSession(sess){
+        return portalSessionRowTimestamps(sessionDateKey, sess && sess.start, sess && sess.end, anchor);
+      }
       const isoPin = String(calendarIsoOverride || '').trim().slice(0, 10);
       const useIsoPin = /^\d{4}-\d{2}-\d{2}$/.test(isoPin);
       let anchor = null;
@@ -12557,8 +12592,9 @@
           let st = sessionModelStatus(s);
           const time = rosterSlotTimeLabel(s);
           const activity = (s.activity || 'Swimming').trim();
-          const sessionStartTs = buildSessionEndMs(viewDay, s.start);
-          const sessionEndTs = buildSessionEndMs(viewDay, s.end);
+          const _rowTs = rowTsForSession(s);
+          const sessionStartTs = _rowTs.sessionStartTs;
+          const sessionEndTs = _rowTs.sessionEndTs;
           if(portalSessionHasSlotOpenOverride(s, sessionDateKey) && portalSpreadsheetSlotClosedLike(s)){
             const slotOp = typeof portalFindSlotOpenOverrideForSession === 'function' ? portalFindSlotOpenOverrideForSession(s, sessionDateKey) : null;
             const disp = String(s.clientDisplay || s.clientName || '').trim();
@@ -12918,8 +12954,7 @@
               specialty: showSpecCan ? pickSpecialtyBody(cCan, activityCan) : '',
               openSheet: true,
               sessionKey: `${sessionDateKey}|${s.start}|${String(base.clientId || '').toLowerCase()}`,
-              sessionStartTs: buildSessionEndMs(viewDay, s.start),
-              sessionEndTs: buildSessionEndMs(viewDay, s.end),
+              ...rowTsForSession(s),
               noSessionFeedbackRequired: true,
               actionsDisabled: true,
               detailsOpenAllowed: true,
@@ -12952,8 +12987,7 @@
             specialty: !isBespokeActivity(activity0) ? pickSpecialtyBody(c0, activity0) : '',
             openSheet: false,
             sessionKey: `${sessionDateKey}|${s.start}|${String(base.clientId || '').toLowerCase()}`,
-            sessionStartTs: buildSessionEndMs(viewDay, s.start),
-            sessionEndTs: buildSessionEndMs(viewDay, s.end),
+            ...rowTsForSession(s),
             noSessionFeedbackRequired: true,
             portalOverrideSuppressReviewOrange: true,
             portalOverrideCardTone: 'green',
@@ -12991,8 +13025,7 @@
             specialty: showSpec ? pickSpecialtyBody(cAbs, activityA) : '',
             openSheet: true,
             sessionKey: `${sessionDateKey}|${s.start}|${String(base.clientId || '').toLowerCase()}`,
-            sessionStartTs: buildSessionEndMs(viewDay, s.start),
-            sessionEndTs: buildSessionEndMs(viewDay, s.end),
+            ...rowTsForSession(s),
             noSessionFeedbackRequired: true,
             actionsDisabled: true,
             detailsOpenAllowed: true,
@@ -13023,7 +13056,8 @@
         const showPoolSymbol = !!(poolLocationLabel || areaLabel);
         const showSpec = !isBespokeActivity(activity);
         const hasReplaceCoverOv = !!(slotOv && slotOv.override_type === 'client_replace_in_slot');
-        const coverEndTs = buildSessionEndMs(viewDay, s.end);
+        const coverTs = rowTsForSession(s);
+        const coverEndTs = coverTs.sessionEndTs;
         const coverItemProbe = { sessionEndTs: coverEndTs, sessionKey };
         const makeUpPinkCover = hasReplaceCoverOv && !isSessionEndedForFeedback(coverItemProbe);
         extra.push({
@@ -13042,7 +13076,7 @@
           specialty: showSpec ? pickSpecialtyBody(c, activity) : '',
           openSheet: true,
           sessionKey,
-          sessionStartTs: buildSessionEndMs(viewDay, s.start),
+          sessionStartTs: coverTs.sessionStartTs,
           sessionEndTs: coverEndTs,
           scheduleAdminAdjusted: true,
           portalOverrideMakeUpTag: hasReplaceCoverOv,
