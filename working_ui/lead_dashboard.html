@@ -5959,35 +5959,36 @@
       outline:2px solid var(--ink);
       outline-offset:2px;
     }
-    /* Centre (logo): always white; !important beats theme/Elementor that sometimes tints <button> */
+    /* Centre (logo): match dock strip — no extra white tile behind PNG */
     .dock-nav-item--dashboard{
       padding:6px 4px;
-      border-color:rgba(23,50,71,.12);
-      background:#fff !important;
-      background-color:#fff !important;
+      border-color:transparent;
+      background:transparent !important;
+      background-color:transparent !important;
       background-image:none !important;
+      box-shadow:none;
       -webkit-tap-highlight-color:transparent;
     }
     .dock-nav-item--dashboard:hover{
       transform:translateY(-1px);
-      background:#fff !important;
-      background-color:#fff !important;
+      background:rgba(255,255,255,.55) !important;
+      background-color:rgba(255,255,255,.55) !important;
       background-image:none !important;
-      border-color:rgba(23,50,71,.14);
-      box-shadow:0 6px 20px rgba(23,50,71,.08);
+      border-color:rgba(23,50,71,.1);
+      box-shadow:0 4px 14px rgba(23,50,71,.06);
     }
     .dock-nav-item--dashboard:active{
       transform:translateY(0);
-      background:#fff !important;
-      background-color:#fff !important;
+      background:rgba(255,255,255,.4) !important;
+      background-color:rgba(255,255,255,.4) !important;
       background-image:none !important;
-      box-shadow:0 2px 10px rgba(23,50,71,.06);
+      box-shadow:none;
     }
     .dock-nav-item.dock-nav-item--dashboard:focus-visible{
       outline:2px solid var(--ink);
       outline-offset:2px;
-      background:#fff !important;
-      background-color:#fff !important;
+      background:rgba(255,255,255,.5) !important;
+      background-color:rgba(255,255,255,.5) !important;
       background-image:none !important;
     }
     body.dock-context-menu .dock-nav-item--dashboard,
@@ -5996,8 +5997,8 @@
     body.dock-context-clients .dock-nav-item--dashboard,
     body.dock-context-clients .dock-nav-item--dashboard:hover,
     body.dock-context-clients .dock-nav-item--dashboard:active{
-      background:#fff !important;
-      background-color:#fff !important;
+      background:transparent !important;
+      background-color:transparent !important;
       background-image:none !important;
     }
     .dock-nav-item--dashboard .dock-logo-stage{
@@ -6048,8 +6049,11 @@
       object-fit:contain;
       object-position:center;
       pointer-events:none;
-      background:#fff;
-      border-radius:10px;
+      background:transparent;
+      border-radius:0;
+    }
+    .dock-nav-item--dashboard .dock-logo-orbit{
+      display:none !important;
     }
     .dock-nav-item--dashboard.dock-nav-item--portal-attention-chat .dock-logo-orbit-layer circle{fill:var(--blue) !important}
     .dock-nav-item--dashboard.dock-nav-item--portal-attention-chat .dock-logo-orbit-layer circle:nth-child(2n){fill:#4f8fca !important}
@@ -10999,6 +11003,10 @@
     function portalCloseInternalChatReturnToAlertsMenu(){
       try{
         window.__PORTAL_INTERNAL_CHAT_UI = window.__PORTAL_INTERNAL_CHAT_UI || {};
+        var closingTid = window.__PORTAL_INTERNAL_CHAT_UI.threadId ? String(window.__PORTAL_INTERNAL_CHAT_UI.threadId).trim() : '';
+        if(closingTid && typeof portalStaffDmMarkThreadSeenNow === 'function'){
+          portalStaffDmMarkThreadSeenNow(closingTid);
+        }
         window.__PORTAL_INTERNAL_CHAT_UI.threadId = null;
         window.__PORTAL_INTERNAL_CHAT_UI.skipResetThreadOnNextSheetOpen = false;
       }catch(_ui){}
@@ -11062,9 +11070,18 @@
         return '';
       }
     }
-    function portalStaffDmMarkThreadSeenNow(tid){
+    function portalStaffDmMarkThreadSeenNow(tid, atIso){
       try{
-        localStorage.setItem(portalStaffDmSeenStorageKey(tid), new Date().toISOString());
+        var iso = String(atIso || '').trim();
+        if(!iso) iso = new Date().toISOString();
+        var key = portalStaffDmSeenStorageKey(tid);
+        var prev = portalStaffDmGetSeenIso(tid);
+        if(prev){
+          try{
+            if(new Date(iso) <= new Date(prev)) return;
+          }catch(_p){}
+        }
+        localStorage.setItem(key, iso);
       }catch(_e2){}
     }
     function portalStaffDmIsUnreadOfficeMessage(m, authorProf, me){
@@ -11077,9 +11094,9 @@
       var seen = portalStaffDmGetSeenIso(threadId);
       if(!seen) return true;
       try{
-        return new Date(lastMsg.created_at) > new Date(seen);
+        return new Date(lastMsg.created_at).getTime() > new Date(seen).getTime() + 1500;
       }catch(_d){
-        return true;
+        return false;
       }
     }
     window.portalStaffDmSyncUnreadChrome = async function portalStaffDmSyncUnreadChrome(){
@@ -11087,6 +11104,8 @@
       var box = window.__PORTAL_SUPABASE__;
       var client = box && box.client;
       var me = String((box && box.staff_profile && box.staff_profile.id) || (box && box.session && box.session.user && box.session.user.id) || '').trim();
+      window.__PORTAL_STAFF_DM_HAS_UNREAD__ = false;
+      if(btn) btn.classList.remove('menu-btn--portal-ic--unread');
       if(!btn){
         return;
       }
@@ -11149,6 +11168,12 @@
         }
         var msgRes = await client.from('portal_staff_dm_messages').select('thread_id,author_id,created_at').in('thread_id', ids).order('created_at', { ascending: false }).limit(500);
         if(msgRes.error){
+          btn.classList.remove('menu-btn--portal-ic--unread');
+          window.__PORTAL_STAFF_DM_HAS_UNREAD__ = false;
+          if(typeof syncPortalHeaderAlertChrome === 'function'){
+            syncPortalHeaderAlertChrome(typeof portalReminderState === 'function' ? portalReminderState() : null);
+          }
+          if(typeof syncDockQuickMenuAttention === 'function') syncDockQuickMenuAttention();
           return;
         }
         var lastBy = {};
@@ -11172,6 +11197,12 @@
             });
           }
         }
+        var chatSh = document.getElementById('internalChatSheet');
+        var chatUi = window.__PORTAL_INTERNAL_CHAT_UI || {};
+        var openTid = (chatSh && chatSh.classList.contains('open') && chatUi.threadId) ? String(chatUi.threadId).trim() : '';
+        if(openTid && lastBy[openTid]){
+          portalStaffDmMarkThreadSeenNow(openTid, lastBy[openTid].created_at);
+        }
         var any = false;
         Object.keys(lastBy).forEach(function(threadId){
           var m = lastBy[threadId];
@@ -11186,6 +11217,11 @@
         if(typeof syncDockQuickMenuAttention === 'function') syncDockQuickMenuAttention();
       }catch(_e){
         window.__PORTAL_STAFF_DM_HAS_UNREAD__ = false;
+        if(btn) btn.classList.remove('menu-btn--portal-ic--unread');
+        if(typeof syncPortalHeaderAlertChrome === 'function'){
+          syncPortalHeaderAlertChrome(typeof portalReminderState === 'function' ? portalReminderState() : null);
+        }
+        if(typeof syncDockQuickMenuAttention === 'function') syncDockQuickMenuAttention();
       }
     };
     function portalRenderQuickMenuInternalChatTile(){
@@ -11661,7 +11697,12 @@
           try{ lastRow.scrollIntoView({ block: "end", behavior: "auto" }); }catch(_si){}
         }
       });
-      portalStaffDmMarkThreadSeenNow(tid);
+      var lastMsgAt = '';
+      if(arr.length){
+        var lastM = arr[arr.length - 1];
+        if(lastM && lastM.created_at) lastMsgAt = String(lastM.created_at);
+      }
+      portalStaffDmMarkThreadSeenNow(tid, lastMsgAt);
       if(typeof window.portalStaffDmSyncUnreadChrome === "function"){
         void window.portalStaffDmSyncUnreadChrome();
       }
@@ -11744,6 +11785,13 @@
                 var row = payload && (payload.new || payload.record);
                 var changedTid = row && row.thread_id ? String(row.thread_id) : "";
                 if(tid && changedTid && tid !== changedTid) return;
+                if(tid && changedTid && tid === changedTid && row && typeof portalStaffDmMarkThreadSeenNow === "function"){
+                  var boxRt = window.__PORTAL_SUPABASE__;
+                  var meRt = String((boxRt && boxRt.staff_profile && boxRt.staff_profile.id) || (boxRt && boxRt.session && boxRt.session.user && boxRt.session.user.id) || "").trim();
+                  if(meRt && String(row.author_id || "").toLowerCase() !== meRt.toLowerCase() && row.created_at){
+                    portalStaffDmMarkThreadSeenNow(tid, row.created_at);
+                  }
+                }
                 void window.portalRenderInternalChatSheet();
               }, 350);
             }
@@ -12728,21 +12776,10 @@
       return Date.now() >= signedAt + delay;
     }
     function portalPruneExpiredAnnouncementAcks(){
-      try{
-        var ack = portalAnnouncementAckMapLoad();
-        var changed = false;
-        Object.keys(ack).forEach(function(k){
-          if(portalAnnouncementAckPastHideWindow(ack[k])){
-            delete ack[k];
-            changed = true;
-          }
-        });
-        if(changed) portalAnnouncementAckMapSave(ack);
-      }catch(_){}
+      /* Keep ack rows permanently so a signed announcement never returns as unsigned. */
     }
     async function portalHydrateAnnouncementsFromSupabase(){
       try{
-        portalPruneExpiredAnnouncementAcks();
         const box = typeof window !== 'undefined' ? window.__PORTAL_SUPABASE__ : null;
         const client = box && box.client;
         if(!client || !dashboardData || !Array.isArray(dashboardData.notices)) return;
@@ -12925,7 +12962,6 @@
     }
     function portalActiveAnnouncementItems(){
       if(dashboardData && !dashboardData.portalIdentityResolved) return [];
-      portalPruneExpiredAnnouncementAcks();
       const ack = portalAnnouncementAckMapLoad();
       return portalAnnouncementItemsFromNotices().filter(function(n){
         const k = portalAnnouncementSignatureKey(n);
@@ -12941,7 +12977,6 @@
       return !!(portalAnnouncementLockRequired && annOpen && portalAnnouncementPendingItem());
     }
     function portalAnnouncementHistoryRows(){
-      portalPruneExpiredAnnouncementAcks();
       const ack = portalAnnouncementAckMapLoad();
       const out = [];
       Object.keys(ack).forEach(function(k){
@@ -13773,9 +13808,18 @@
 
     function syncDockQuickMenuAttention(){
       const dockHome = document.getElementById('dockDashboardTile');
-      if(dockHome && typeof portalApplyPortalOrbitAlertClasses === 'function'){
-        portalApplyPortalOrbitAlertClasses(dockHome, typeof portalReminderState === 'function' ? portalReminderState() : null);
-      }
+      if(!dockHome) return;
+      const dockClasses = [
+        'dock-nav-item--portal-attention',
+        'dock-nav-item--portal-attention-chat',
+        'dock-nav-item--portal-attention-announcement',
+        'dock-nav-item--portal-attention-feedback',
+        'dock-nav-item--portal-attention-chat-ann',
+        'dock-nav-item--portal-attention-chat-fb',
+        'dock-nav-item--portal-attention-ann-fb',
+        'dock-nav-item--portal-attention-triple'
+      ];
+      dockClasses.forEach(function(c){ dockHome.classList.remove(c); });
     }
 
     function renderNotices(){
@@ -15848,7 +15892,17 @@
 
     function handleDashboardDockClick(){
       if(document.getElementById('internalChatSheet')?.classList.contains('open')){
-        return;
+        try{
+          window.__PORTAL_INTERNAL_CHAT_UI = window.__PORTAL_INTERNAL_CHAT_UI || {};
+          var dmTid = window.__PORTAL_INTERNAL_CHAT_UI.threadId ? String(window.__PORTAL_INTERNAL_CHAT_UI.threadId).trim() : '';
+          if(dmTid && typeof portalStaffDmMarkThreadSeenNow === 'function') portalStaffDmMarkThreadSeenNow(dmTid);
+          window.__PORTAL_INTERNAL_CHAT_UI.threadId = null;
+          window.__PORTAL_INTERNAL_CHAT_UI.skipResetThreadOnNextSheetOpen = false;
+        }catch(_dm){}
+        portalQuickMenuEntryMode = 'full';
+        if(typeof portalApplyQuickMenuEntryMode === 'function') portalApplyQuickMenuEntryMode();
+        if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
+        if(typeof window.portalStaffDmSyncUnreadChrome === 'function') void window.portalStaffDmSyncUnreadChrome();
       }
       const demoOv = document.getElementById('demoQuickActionOverlay');
       if(demoOv && !demoOv.hidden){
@@ -16107,7 +16161,6 @@
         var hideMs = portalAnnouncementHideDelayMs(pending);
         if(hideMs && hideMs > 0 && hideMs < 7 * 24 * 60 * 60 * 1000){
           setTimeout(function(){
-            portalPruneExpiredAnnouncementAcks();
             if(typeof renderAnnouncementsSheetContent === 'function') renderAnnouncementsSheetContent();
             if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
             if(typeof renderHeader === 'function') renderHeader();
