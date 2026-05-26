@@ -163,8 +163,24 @@ body.portal-lead-session-overview-page {
 .c4k-sessions-hub-panel[hidden] {
   display: none !important;
 }
-.ash-day-card--readonly {
-  cursor: default;
-  pointer-events: none;
-  opacity: 0.98;
+/* Lead overview: day cards stay clickable (navigation only). */
+.plso-shell .ash-day-card--readonly {
+  cursor: pointer;
+  pointer-events: auto;
+}
+.plso-shell .ash-day-card--closed {
+  --ash-day-col: #dc2626;
+  --ash-day-bg: rgba(220, 38, 38, 0.2);
+  --ash-col: #dc2626;
+  border-color: #f87171 !important;
+  box-shadow: inset 0 0 0 1px rgba(220, 38, 38, 0.25);
+}
+.plso-shell .ash-day-card--closed .ash-day-card__wd,
+.plso-shell .ash-day-card--closed .ash-day-card__dt,
+.plso-shell .ash-day-card--closed .ash-day-card__count {
+  color: #991b1b;
+}
+.plso-shell .ash-day-card--closed .ash-day-card__bar::after {
+  background: #dc2626 !important;
+  width: 0 !important;
 }

@@ -94,6 +94,19 @@ function normVenue(v) {
 
 const DOW = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
+/** Club closed (no sessions) — show on lead week picker in red. */
+const PORTAL_LEAD_CLOSED_RANGES = [{ from: "2026-05-23", to: "2026-05-31" }];
+
+export function portalLeadDayIsClubClosed(iso) {
+  const d = String(iso || "").trim().slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return false;
+  for (let i = 0; i < PORTAL_LEAD_CLOSED_RANGES.length; i++) {
+    const r = PORTAL_LEAD_CLOSED_RANGES[i];
+    if (d >= r.from && d <= r.to) return true;
+  }
+  return false;
+}
+
 export function portalCanAccessLeadSessionOverview(profile, authEmail) {
   return !!portalLeadProgrammeKey(profile, authEmail);
 }

@@ -34,6 +34,19 @@
     return t.slice(0, max - 1) + "\u2014";
   }
 
+  function hubDayIsClubClosed(hub, iso) {
+    return !!(
+      hub &&
+      hub.opts &&
+      typeof hub.opts.isClubClosedDay === "function" &&
+      hub.opts.isClubClosedDay(iso)
+    );
+  }
+
+  function htmlClosedDayCardInlineStyle() {
+    return "--ash-day-col:#dc2626;--ash-day-bg:rgba(220,38,38,0.2);--ash-col:#dc2626";
+  }
+
   function htmlWeekDayCard(hub, iso, idx, esc) {
     var sel = iso === hub.selectedDay ? " ash-day-card--sel" : "";
     var col = DAY_COLORS[idx % DAY_COLORS.length];
@@ -62,6 +75,25 @@
       countLabel = noteN === 1 ? "note" : "notes";
       if (noteN > 0) innerPct = 100;
     } else if (hub.tab === "tracking") {
+      if (hubDayIsClubClosed(hub, iso)) {
+        return (
+          '<button type="button" class="ash-day-card ash-day-card--feedback ash-day-card--closed' +
+          sel +
+          '" data-ash-day="' +
+          esc(iso) +
+          '" style="' +
+          htmlClosedDayCardInlineStyle() +
+          '">' +
+          '<div class="ash-day-card__top">' +
+          htmlWeekdayLabel(iso, esc) +
+          '<span class="ash-day-card__dt">' +
+          esc(formatShortDate(iso)) +
+          '</span></div>' +
+          '<div class="ash-day-card__bar" style="--ash-pct:0;--ash-col:#dc2626"></div>' +
+          '<span class="ash-day-card__count"><span class="ash-day-card__count-full">Closed</span>' +
+          '<span class="ash-day-card__count-short" aria-hidden="true">Closed</span></span></button>'
+        );
+      }
       var dsTrack = hub.dayStats(iso);
       if (dsTrack.total) {
         innerPct = Math.round((100 * dsTrack.done) / dsTrack.total);
@@ -1854,9 +1886,16 @@
         ? offset
         : Math.max(0, days.indexOf(this.selectedDay));
     if (off < 0) off = 0;
-    if (this.feedbackCountForDate(days[off]) > 0) return days[off];
+    var hub = this;
+    function openDay(iso) {
+      return !hubDayIsClubClosed(hub, iso);
+    }
+    if (openDay(days[off]) && this.feedbackCountForDate(days[off]) > 0) return days[off];
     for (var i = 0; i < days.length; i++) {
-      if (this.feedbackCountForDate(days[i]) > 0) return days[i];
+      if (openDay(days[i]) && this.feedbackCountForDate(days[i]) > 0) return days[i];
+    }
+    for (var j = 0; j < days.length; j++) {
+      if (openDay(days[j])) return days[j];
     }
     return days[off] || days[0];
   };
@@ -2511,6 +2550,7 @@
     var days = this.weekDays();
     if (!hub.opts || !hub.opts.hideEmptyWeekDays) return days;
     return days.filter(function (iso) {
+      if (hubDayIsClubClosed(hub, iso)) return true;
       var st = hub.dayStats(iso);
       return st.total > 0;
     });
@@ -3862,6 +3902,20 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
   AdminSessionsHub.prototype.htmlTracking = function () {
     var esc = this.escapeHtml;
     var hub = this;
+    if (hubDayIsClubClosed(hub, this.selectedDay)) {
+      return (
+        this.htmlFeedbackWeekDaysRow({ overviewPicker: true }) +
+        '<div class="ash-filter-row">' +
+        '<label class="ash-filter-label">Search client<input type="search" id="ashClientSearch" class="ash-input" placeholder="Name contains\u2026" value="' +
+        esc(this.clientSearch) +
+        '"></label></div>' +
+        '<h3 class="ash-table-title">' +
+        esc(formatLongDate(this.selectedDay)) +
+        ' <span class="ash-badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca">Closed</span></h3>' +
+        '<div class="ash-table-wrap"><table class="ash-table ash-table--overview"><tbody><tr><td colspan="9">' +
+        '<div class="ash-empty">Club closed \u2014 no sessions on this date.</div></td></tr></tbody></table></div>'
+      );
+    }
     var slots = this.expandSlotsForDate(this.selectedDay);
     var units = this.getFeedbackUnitsForDate(this.selectedDay);
     var unitComplete = {};
@@ -4339,6 +4393,28 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       formatShortDate(this.weekStart) + " \u2013 " + formatShortDate(addDaysIso(this.weekStart, 6));
     var cards = days
       .map(function (iso, idx) {
+        var metricSel = hub.selectedDay === iso ? " ash-day-card--sel" : "";
+        if (hubDayIsClubClosed(hub, iso)) {
+          return (
+            "<button type=\"button\" class=\"ash-day-card ash-day-card--feedback ash-day-card--closed" +
+            metricSel +
+            '" ' +
+            dayAttr +
+            '="' +
+            esc(iso) +
+            '" style="' +
+            htmlClosedDayCardInlineStyle() +
+            '">' +
+            '<div class="ash-day-card__top">' +
+            htmlWeekdayLabel(iso, esc) +
+            '<span class="ash-day-card__dt">' +
+            esc(formatShortDate(iso)) +
+            '</span></div>' +
+            '<div class="ash-day-card__bar" style="--ash-pct:0;--ash-col:#dc2626"></div>' +
+            '<span class="ash-day-card__count"><span class="ash-day-card__count-full">Closed</span>' +
+            '<span class="ash-day-card__count-short" aria-hidden="true">Closed</span></span></button>'
+          );
+        }
         var ds = hub.dayStats(iso);
         var col = DAY_COLORS[idx % DAY_COLORS.length];
         var tint = DAY_BG_TINTS[idx % DAY_BG_TINTS.length];
@@ -4347,27 +4423,21 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           innerPct = Math.round((100 * ds.done) / ds.total);
           if (ds.done > 0 && innerPct < 12) innerPct = 12;
         }
-        var metricSel = hub.selectedDay === iso ? " ash-day-card--sel" : "";
         var stateCls = "";
         if (ds.total && ds.done === 0) stateCls = " ash-day-card--none";
         else if (ds.total && ds.done < ds.total) stateCls = " ash-day-card--partial";
         else if (ds.total && ds.done >= ds.total) stateCls = " ash-day-card--complete";
-        var ro = hub.opts && hub.opts.readOnlyOverview;
-        var tag = "button";
-        var tagType = ' type="button"';
-        var roCls = ro ? " ash-day-card--readonly" : "";
-        var roAttr = " " + dayAttr + '="' + esc(iso) + '"';
+        var roCls = hub.opts && hub.opts.readOnlyOverview ? " ash-day-card--readonly" : "";
         return (
-          "<" +
-          tag +
-          tagType +
-          ' class="ash-day-card ash-day-card--feedback' +
+          '<button type="button" class="ash-day-card ash-day-card--feedback' +
           metricSel +
           stateCls +
           roCls +
-          '"' +
-          roAttr +
-          ' style="--ash-day-col:' +
+          '" ' +
+          dayAttr +
+          '="' +
+          esc(iso) +
+          '" style="--ash-day-col:' +
           col +
           ";--ash-day-bg:" +
           tint +
@@ -4393,9 +4463,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           ds.done +
           "/" +
           ds.total +
-          "</span></span></" +
-          tag +
-          ">"
+          "</span></span></button>"
         );
       })
       .join("");

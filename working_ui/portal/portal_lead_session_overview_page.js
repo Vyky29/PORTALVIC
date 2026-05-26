@@ -12,6 +12,7 @@ import {
   portalLeadInferFeedbackVenue,
   portalLeadDayFeedbackStats,
   portalLeadProgrammeKey,
+  portalLeadDayIsClubClosed,
 } from "./portal_lead_session_scope.js";
 
 const HUB_SRC = "/portal/admin-sessions-hub.js?v=20260526-lead-overview5";
@@ -286,7 +287,11 @@ function makeLeadFeedbackDayStats(scopes, leadKey) {
 function configureDayOps(scopes, leadKey) {
   const statsFn = makeLeadFeedbackDayStats(scopes, leadKey);
   if (window.PortalDayOps && window.__plsoDayOpsConfigured) {
-    window.PortalDayOps.configure({ getFeedbackDayStats: statsFn, skipAdminFormsEdge: true });
+    window.PortalDayOps.configure({
+      getFeedbackDayStats: statsFn,
+      skipAdminFormsEdge: true,
+      isClubClosedDay: portalLeadDayIsClubClosed,
+    });
     return;
   }
   if (!window.PortalDayOps) return;
@@ -368,6 +373,7 @@ async function initHubs(scopes, leadKey) {
     feedbackRowScopeFilter: filters.feedbackRowScopeFilter,
     hideEmptyWeekDays: true,
     readOnlyOverview: true,
+    isClubClosedDay: portalLeadDayIsClubClosed,
     getFeedbackDayStats: statsFn,
   };
 
