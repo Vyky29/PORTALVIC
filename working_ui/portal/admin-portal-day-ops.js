@@ -518,7 +518,7 @@
 
   global.PortalDayOps = {
     configure: function (c) {
-      cfg = c || {};
+      cfg = Object.assign({}, cfg, c || {});
       if (trackingHub) trackingHub.opts.getFeedbackDayStats = cfg.getFeedbackDayStats;
       if (feedbackHub) feedbackHub.opts.getFeedbackDayStats = cfg.getFeedbackDayStats;
     },
@@ -534,33 +534,38 @@
     ensurePayload: function () {
       if (loadInFlight) return loadInFlight;
       loadInFlight = (async function () {
-        var edge = await fetchEdgePayload();
-        if (edge && edge.data) {
-          applyPayload(edge.data);
-          mergePortalFeedbackIntoPayload();
-          mergePortalVenueIntoPayload();
-          setStatus('');
-          return payload;
-        }
-        if (edge && edge.error === 'not_allowed') {
-          setStatus(
-            '<strong>Not allowed</strong> Set <code>PORTAL_ADMIN_FORMS_EMAILS</code> on Portal Supabase for your email.',
-            true
-          );
-        } else if (edge && edge.error === 'session_expired') {
-          setStatus('<strong>Session expired</strong> Sign in again.', true);
-        } else if (edge && edge.error) {
-          setStatus(
-            '<strong>Live load failed</strong> ' +
-              esc(String(edge.error)) +
-              ' — showing roster/export data where available.',
-            false
-          );
+        var skipEdge = !!(cfg && cfg.skipAdminFormsEdge);
+        var edge = null;
+        if (!skipEdge) {
+          edge = await fetchEdgePayload();
+          if (edge && edge.data) {
+            applyPayload(edge.data);
+            mergePortalFeedbackIntoPayload();
+            mergePortalVenueIntoPayload();
+            setStatus('');
+            return payload;
+          }
+          if (edge && edge.error === 'not_allowed') {
+            setStatus(
+              '<strong>Not allowed</strong> Set <code>PORTAL_ADMIN_FORMS_EMAILS</code> on Portal Supabase for your email.',
+              true
+            );
+          } else if (edge && edge.error === 'session_expired') {
+            setStatus('<strong>Session expired</strong> Sign in again.', true);
+          } else if (edge && edge.error) {
+            setStatus(
+              '<strong>Live load failed</strong> ' +
+                esc(String(edge.error)) +
+                ' — showing roster/export data where available.',
+              false
+            );
+          }
         }
         var fb = await fetchFallbackSupabase();
         applyPayload(fb);
         mergePortalFeedbackIntoPayload();
         mergePortalVenueIntoPayload();
+        if (skipEdge) setStatus('');
         return payload;
       })()
         .finally(function () {

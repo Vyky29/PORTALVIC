@@ -286,12 +286,13 @@ function makeLeadFeedbackDayStats(scopes, leadKey) {
 function configureDayOps(scopes, leadKey) {
   const statsFn = makeLeadFeedbackDayStats(scopes, leadKey);
   if (window.PortalDayOps && window.__plsoDayOpsConfigured) {
-    window.PortalDayOps.configure({ getFeedbackDayStats: statsFn });
+    window.PortalDayOps.configure({ getFeedbackDayStats: statsFn, skipAdminFormsEdge: true });
     return;
   }
   if (!window.PortalDayOps) return;
   window.__plsoDayOpsConfigured = true;
   window.PortalDayOps.configure({
+    skipAdminFormsEdge: true,
     getFeedbackDayStats: statsFn,
     esc,
     getClient: () =>
