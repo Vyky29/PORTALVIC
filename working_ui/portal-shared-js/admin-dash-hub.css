@@ -473,8 +473,10 @@ body:has(#workspace .dash-hub--nav-index) .admin-main{
   margin:clamp(46px,7.2vh,56px) 0 0;
   padding:6px clamp(8px,1vw,10px) 0;
   box-sizing:border-box;
-  font-size:clamp(11px,1.35vh,12px);
-  line-height:1.25;
+  font-size:clamp(13px,1.55vh,15px);
+  font-weight:800;
+  letter-spacing:.03em;
+  line-height:1.3;
   color:var(--dh-ink);
   text-align:center;
   display:block;
@@ -489,8 +491,8 @@ body:has(#workspace .dash-hub--nav-index) .admin-main{
   margin:0;
   padding:4px clamp(8px,1vw,10px) 2px;
   box-sizing:border-box;
-  font-size:clamp(9px,1.1vh,11px);
-  line-height:1.35;
+  font-size:clamp(11px,1.4vh,13px);
+  line-height:1.45;
   color:var(--dh-muted);
   text-align:center;
   display:block;
