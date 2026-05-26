@@ -1385,7 +1385,9 @@
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuInternalChatSlot .menu-btn.menu-btn--qm-tile .menu-btn-copy strong,
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuInternalChatSlot .menu-btn.menu-btn--qm-tile .announcement-title-line--quick-menu-only,
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuSafeguardingPolicySlot .menu-btn.menu-btn--qm-tile .menu-btn-copy strong,
-    #menuSheet.menu-sheet--logo-lite #portalQuickMenuSafeguardingPolicySlot .menu-btn.menu-btn--qm-tile .announcement-title-line--quick-menu-only{
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuSafeguardingPolicySlot .menu-btn.menu-btn--qm-tile .announcement-title-line--quick-menu-only,
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuOutstandingFeedbackSlot .menu-btn.menu-btn--qm-tile .menu-btn-copy strong,
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuOutstandingFeedbackSlot .menu-btn.menu-btn--qm-tile .announcement-title-line--quick-menu-only{
       font-size:14px;
       font-weight:700;
       letter-spacing:0;
@@ -1401,43 +1403,83 @@
       display:block;
     }
     .portal-qm-reminder-stack{display:flex;flex-direction:column;gap:12px;width:100%;min-width:0}
-    /* Reminders: unified orange */
-    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-reminder-feedback,
+    @keyframes portal-reminder-corporate-yellow-throb{
+      0%,100%{
+        background:linear-gradient(180deg,#ffe9a8 0%,var(--sen-gold) 100%);
+        border-color:rgba(255,255,255,.5);
+        box-shadow:0 6px 20px rgba(220,160,30,.32);
+      }
+      50%{
+        background:linear-gradient(180deg,#ffc94a 0%,#f0b32a 100%);
+        border-color:#fff;
+        box-shadow:0 10px 28px rgba(200,145,25,.45),0 0 0 4px rgba(255,228,150,.45);
+      }
+    }
+    /* Same-day safeguarding reminder: corporate yellow */
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-safeguarding-feedback-policy--unread{
+      background:linear-gradient(180deg,#ffe9a8 0%,var(--sen-gold) 100%);
+      border:2px solid rgba(255,255,255,.42);
+      color:#fff;
+      box-shadow:0 6px 20px rgba(220,160,30,.32);
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-safeguarding-feedback-policy--unread .menu-btn-copy strong{color:#fff}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-safeguarding-feedback-policy--unread .menu-btn-chev{color:rgba(255,255,255,.88)}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-safeguarding-feedback-policy--unread .menu-btn-icon{
+      background:rgba(255,255,255,.24);
+      color:#fff;
+      border:2px solid rgba(255,255,255,.4);
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-safeguarding-feedback-policy--unread.menu-btn--portal-pulse:not(:active){
+      animation:portal-reminder-corporate-yellow-throb 2.1s ease-in-out infinite;
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-safeguarding-feedback-policy--read{
+      background:linear-gradient(180deg,#fff4df 0%,var(--goldSoft) 100%);
+      border:1px solid rgba(244,183,64,.32);
+      color:var(--ink);
+      box-shadow:0 3px 12px rgba(220,160,30,.12);
+      animation:none;
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-safeguarding-feedback-policy--read .menu-btn-copy strong{color:#78350f}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-safeguarding-feedback-policy--read .menu-btn-chev{color:rgba(120,53,15,.4)}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-safeguarding-feedback-policy--read .menu-btn-icon{
+      background:rgba(244,183,64,.18);
+      color:#b45309;
+      border:1px solid rgba(180,120,20,.22);
+    }
+    /* Outstanding feedbacks: soft green when complete, corporate orange when pending */
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-outstanding-feedback--complete{
+      background:linear-gradient(180deg,#e8faf0 0%,#d4f5e3 100%);
+      border:1px solid rgba(21,115,71,.32);
+      color:var(--ink);
+      box-shadow:0 3px 12px rgba(21,115,71,.1);
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-outstanding-feedback--complete .menu-btn-copy strong{color:#126b42}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-outstanding-feedback--complete .menu-btn-chev{color:rgba(18,100,60,.4)}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-outstanding-feedback--complete .menu-btn-icon{
+      background:var(--successSoft);
+      color:var(--success);
+      border:1px solid rgba(21,115,71,.22);
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-outstanding-feedback--need,
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-reminder-venue{
       background:#f97316;
       border:2px solid #ffedd5;
       color:#fff;
       box-shadow:0 6px 22px rgba(234,88,12,.42);
     }
-    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-reminder-feedback .menu-btn-copy strong,
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-outstanding-feedback--need .menu-btn-copy strong,
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-reminder-venue .menu-btn-copy strong{color:#fff}
-    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-reminder-feedback .menu-btn-sub,
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-reminder-venue .menu-btn-sub{color:rgba(255,255,255,.92)}
-    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-reminder-feedback .menu-btn-chev,
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-outstanding-feedback--need .menu-btn-chev,
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-reminder-venue .menu-btn-chev{color:rgba(255,255,255,.92)}
-    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-reminder-feedback .menu-btn-icon,
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-outstanding-feedback--need .menu-btn-icon,
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-reminder-venue .menu-btn-icon{
       background:rgba(255,255,255,.22);
       color:#fff;
       border:2px solid rgba(255,255,255,.45);
     }
-    /* Safeguarding policy reminder: title matches other Alerts tiles (15px); unread = orange + pulse */
-    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-safeguarding-feedback-policy.menu-btn--portal-pulse:not(:active){
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-outstanding-feedback--need.menu-btn--portal-pulse:not(:active){
       animation:portal-reminder-feedback-throb 2.1s ease-in-out infinite;
-    }
-    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-safeguarding-feedback-policy--read{
-      background:linear-gradient(180deg,#fff7ed 0%,#ffedd5 100%);
-      border:1px solid rgba(234,88,12,.28);
-      color:var(--ink);
-      box-shadow:0 3px 12px rgba(234,88,12,.1);
-      animation:none;
-    }
-    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-safeguarding-feedback-policy--read .menu-btn-copy strong{color:#9a3412}
-    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-safeguarding-feedback-policy--read .menu-btn-chev{color:rgba(154,52,18,.42)}
-    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-safeguarding-feedback-policy--read .menu-btn-icon{
-      background:rgba(249,115,22,.12);
-      color:#c2410c;
-      border:1px solid rgba(234,88,12,.22);
     }
     /* Signed announcement tile: soft rose, no bright red block */
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuNoticesGrid #announcementSignedLog.menu-btn.menu-btn--announcement-signed{
@@ -1766,6 +1808,7 @@
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup > .menu-grid,
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup > .menu-grid,
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup > #portalQuickMenuSafeguardingPolicySlot,
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup > #portalQuickMenuOutstandingFeedbackSlot,
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup > #portalQuickMenuReminderGroup{
       margin:0 0 14px;
     }
@@ -2233,7 +2276,7 @@
       color:rgba(23,50,71,.62);margin:6px 0 0 2px;
     }
     .portal-qm-override-day .menu-btn{min-width:0}
-    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-reminder-feedback:hover,
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-outstanding-feedback--need:hover,
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-reminder-venue:hover{
       background:#ea580c;
       border-color:#fff;
@@ -6581,6 +6624,7 @@
           <div class="menu-grid menu-grid--portal-notices" id="portalQuickMenuNoticesGrid"></div>
           <div class="menu-group-title menu-group-title--portal-reminders" id="portalQuickMenuRemindersHeading">Reminders</div>
           <div class="menu-grid menu-grid--portal-safeguarding-policy" id="portalQuickMenuSafeguardingPolicySlot" hidden></div>
+          <div class="menu-grid menu-grid--portal-outstanding-feedback" id="portalQuickMenuOutstandingFeedbackSlot" hidden></div>
           <div class="menu-grid menu-grid--portal-reminder-single" id="portalQuickMenuReminderGroup" hidden>
             <div id="portalQuickMenuReminderBannerHost"></div>
           </div>
@@ -9489,7 +9533,7 @@
       const shieldIcon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
       const tone = read
         ? ' menu-btn--qm-safeguarding-feedback-policy--read'
-        : ' menu-btn--qm-reminder-feedback menu-btn--portal-pulse';
+        : ' menu-btn--qm-safeguarding-feedback-policy--unread menu-btn--portal-pulse';
       return '<button type="button" class="menu-btn notice menu-btn--qm-tile menu-btn--qm-safeguarding-feedback-policy' + tone + '" id="portalSafeguardingFeedbackPolicyBtn" data-action="open-safeguarding-feedback-policy" aria-label="Same-day session feedback — open to read">' +
         '<div class="menu-btn-icon" aria-hidden="true">' + shieldIcon + '</div>' +
         '<div class="menu-btn-copy"><strong>Same-day session feedback</strong></div>' +
@@ -9513,6 +9557,41 @@
       slot.hidden = true;
       return false;
     }
+    function portalBuildOutstandingFeedbackQuickMenuHtml(st){
+      if(!dashboardData || !dashboardData.portalIdentityResolved) return '';
+      if(!st) st = typeof portalReminderState === 'function' ? portalReminderState() : {};
+      const need = !!(st.sessionFeedbackNeed);
+      const n = need ? Math.max(0, Number(st.sessionFeedbackCount) || 0) : 0;
+      const fbIcon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 12h6M9 16h6"/></svg>';
+      const tone = need ? ' menu-btn--qm-outstanding-feedback--need menu-btn--portal-pulse' : ' menu-btn--qm-outstanding-feedback--complete';
+      const title = need ? 'Outstanding feedbacks (x' + String(n) + ')' : 'Outstanding feedbacks';
+      const aria = need
+        ? 'Outstanding feedback — ' + n + ' incomplete sessions, tap to open'
+        : 'All session feedback complete through today — tap to review sessions';
+      return '<button type="button" class="menu-btn notice menu-btn--qm-tile menu-btn--qm-outstanding-feedback' + tone + '" id="portalOutstandingFeedbackBtn" data-action="open-pending-feedback" aria-label="' + escapeHtml(aria) + '">' +
+        '<div class="menu-btn-icon" aria-hidden="true">' + fbIcon + '</div>' +
+        '<div class="menu-btn-copy"><strong>' + escapeHtml(title) + '</strong></div>' +
+        '<span class="menu-btn-chev" aria-hidden="true">›</span></button>';
+    }
+    function syncPortalOutstandingFeedbackSlot(){
+      const slot = document.getElementById('portalQuickMenuOutstandingFeedbackSlot');
+      if(!slot) return false;
+      if(portalQuickMenuEntryMode !== 'logo-lite'){
+        slot.innerHTML = '';
+        slot.hidden = true;
+        return false;
+      }
+      const st = typeof portalReminderState === 'function' ? portalReminderState() : {};
+      const html = typeof portalBuildOutstandingFeedbackQuickMenuHtml === 'function' ? portalBuildOutstandingFeedbackQuickMenuHtml(st) : '';
+      if(html){
+        slot.innerHTML = html;
+        slot.hidden = false;
+        return true;
+      }
+      slot.innerHTML = '';
+      slot.hidden = true;
+      return false;
+    }
     function renderSafeguardingFeedbackPolicySheet(){
       const host = document.getElementById('safeguardingFeedbackPolicySheetBody');
       if(!host) return;
@@ -9520,7 +9599,7 @@
       const bodyCopy =
         '<p>Session register and session feedback are <strong>mandatory for safeguarding</strong>. You must complete both on the <strong>same day</strong> as each session you deliver.</p>' +
         '<p>This applies to every client session on your timetable, including when a participant is absent or a session is shortened. Late completion may be flagged for follow-up.</p>' +
-        '<p>If you have outstanding sessions, use <strong>Incomplete sessions</strong> under Feedbacks to open them from your dashboard.</p>';
+        '<p>If you have outstanding sessions, tap <strong>Outstanding feedbacks</strong> under Reminders to open them from your dashboard.</p>';
       if(read){
         host.innerHTML =
           '<article class="announcement-lock-card">' +
@@ -9605,6 +9684,7 @@
           opHost.hidden = !opHtml;
         }
         if(typeof syncPortalSafeguardingFeedbackPolicySlot === 'function') syncPortalSafeguardingFeedbackPolicySlot();
+        if(typeof syncPortalOutstandingFeedbackSlot === 'function') syncPortalOutstandingFeedbackSlot();
         const qg = document.getElementById('portalQuickMenuReminderGroup');
         const qh = document.getElementById('portalQuickMenuReminderBannerHost');
         if(logoLite && qg && qh){
@@ -9686,15 +9766,6 @@
       const parts = [];
       const fbIcon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 12h6M9 16h6"/></svg>';
       const venIcon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22V10l8-4 8 4v12"/><path d="M9 22v-6h6v6"/></svg>';
-      if(st.sessionFeedbackNeed){
-        const n = Math.max(0, Number(st.sessionFeedbackCount) || 0);
-        parts.push(
-          '<button type="button" class="menu-btn notice menu-btn--qm-tile menu-btn--qm-reminder-feedback menu-btn--qm-reminder-feedback-outstanding menu-btn--portal-pulse" data-action="open-pending-feedback" aria-label="Outstanding feedback — incomplete sessions, ' + n + ' remaining">' +
-          '<div class="menu-btn-icon" aria-hidden="true">' + fbIcon + '</div>' +
-          '<div class="menu-btn-copy"><strong>Incomplete sessions (x' + String(n) + ')</strong><span class="menu-btn-sub">Outstanding — tap to open your sessions</span></div>' +
-          '<span class="menu-btn-chev" aria-hidden="true">›</span></button>'
-        );
-      }
       if(st.venueOpenNeed){
         parts.push(
           '<button type="button" class="menu-btn notice menu-btn--qm-tile menu-btn--qm-reminder-venue" data-action="open-setup-reminder-sheet" aria-label="Venue opening check incomplete">' +
@@ -13790,7 +13861,7 @@
 
     function portalNotificationAlertFlags(st){
       const state = st || (typeof portalReminderState === 'function' ? portalReminderState() : null);
-      const hasFeedback = !!(state && (state.sessionFeedbackNeed || state.safeguardingFeedbackPolicyUnread));
+      const hasFeedback = !!(state && state.sessionFeedbackNeed);
       const hasReminderOther = !!(state && (state.venueOpenNeed || state.venueCloseNeed || state.setupPending || state.rosterOverrideNeed));
       return {
         chat: !!window.__PORTAL_STAFF_DM_HAS_UNREAD__,
@@ -14478,6 +14549,7 @@
       const grid = document.getElementById('portalQuickMenuNoticesGrid');
       const qg = document.getElementById('portalQuickMenuReminderGroup');
       const policySlot = document.getElementById('portalQuickMenuSafeguardingPolicySlot');
+      const outstandingSlot = document.getElementById('portalQuickMenuOutstandingFeedbackSlot');
       const slotIc = document.getElementById('portalQuickMenuInternalChatSlot');
       if(!grp) return;
       if(portalQuickMenuEntryMode !== 'logo-lite'){
@@ -14485,7 +14557,8 @@
         return;
       }
       const hasPolicy = !!(policySlot && !policySlot.hidden);
-      const hasBanner = hasPolicy || !!(qg && !qg.hidden);
+      const hasOutstanding = !!(outstandingSlot && !outstandingSlot.hidden);
+      const hasBanner = hasPolicy || hasOutstanding || !!(qg && !qg.hidden);
       const hasNotices = !!(grid && grid.childElementCount > 0);
       const hasInternalChat = !!(slotIc && slotIc.childElementCount > 0);
       grp.hidden = !hasBanner && !hasNotices && !hasInternalChat;
