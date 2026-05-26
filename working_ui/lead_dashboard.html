@@ -5950,14 +5950,17 @@
       outline:2px solid var(--ink);
       outline-offset:2px;
     }
-    /* Centre (logo): white button matches FOOTERLOGO.png background */
+    /* Centre (logo): white fill matches PNG; border/shadow match side dock tiles */
     .dock-nav-item--dashboard{
-      padding:6px 4px;
-      border-color:rgba(23,50,71,.12);
+      position:relative;
+      gap:4px;
+      padding:5px 4px 6px;
+      border:1px solid rgba(23,50,71,.14);
+      border-color:rgba(23,50,71,.14);
       background:#fff !important;
       background-color:#fff !important;
       background-image:none !important;
-      box-shadow:0 2px 10px rgba(23,50,71,.06);
+      box-shadow:0 2px 14px rgba(23,50,71,.28);
       -webkit-tap-highlight-color:transparent;
     }
     .dock-nav-item--dashboard:hover{
@@ -5965,15 +5968,15 @@
       background:#fff !important;
       background-color:#fff !important;
       background-image:none !important;
-      border-color:rgba(23,50,71,.14);
-      box-shadow:0 6px 20px rgba(23,50,71,.08);
+      border-color:rgba(23,50,71,.22);
+      box-shadow:0 6px 22px rgba(11,24,38,.4);
     }
     .dock-nav-item--dashboard:active{
       transform:translateY(0);
       background:#fff !important;
       background-color:#fff !important;
       background-image:none !important;
-      box-shadow:0 2px 10px rgba(23,50,71,.06);
+      box-shadow:0 2px 14px rgba(23,50,71,.28);
     }
     .dock-nav-item.dock-nav-item--dashboard:focus-visible{
       outline:2px solid var(--ink);
@@ -5991,6 +5994,13 @@
       background:#fff !important;
       background-color:#fff !important;
       background-image:none !important;
+      border-color:rgba(23,50,71,.14);
+      box-shadow:0 2px 14px rgba(23,50,71,.28);
+    }
+    body.dock-context-menu .dock-nav-item--dashboard:hover,
+    body.dock-context-clients .dock-nav-item--dashboard:hover{
+      border-color:rgba(23,50,71,.22);
+      box-shadow:0 6px 22px rgba(11,24,38,.4);
     }
     .dock-nav-item--dashboard .dock-logo-stage{
       position:relative;
