@@ -1401,29 +1401,29 @@
       color:#9d174d;
       border:1px solid rgba(131,24,67,.2);
     }
-    /* Internal chat tile: neutral until unread admin/office message */
+    /* Internal chat tile: corporate blue (unread state overrides below) */
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuInternalChatSlot #portalQuickMenuInternalChatBtn.menu-btn--portal-ic{
       border-radius:var(--radiusLg,14px);
-      background:#fff;
-      border:1px solid rgba(15,23,42,.1);
+      border:1px solid rgba(10,61,98,.32);
+      background:linear-gradient(180deg,#f0f7ff 0%,#e8f1fa 100%);
       color:var(--ink);
-      box-shadow:0 2px 10px rgba(15,23,42,.06);
+      box-shadow:0 2px 10px rgba(23,50,71,.08);
     }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuInternalChatSlot #portalQuickMenuInternalChatBtn.menu-btn--portal-ic:hover{
-      background:#f8fafc;
-      border-color:rgba(15,23,42,.16);
-      box-shadow:0 4px 14px rgba(15,23,42,.08);
+      background:linear-gradient(180deg,#e8f1fa 0%,#dce9f6 100%);
+      border-color:rgba(10,61,98,.4);
+      box-shadow:0 4px 14px rgba(23,50,71,.12);
     }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuInternalChatSlot #portalQuickMenuInternalChatBtn.menu-btn--portal-ic .menu-btn-copy strong,
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuInternalChatSlot #portalQuickMenuInternalChatBtn.menu-btn--portal-ic .announcement-title-line--quick-menu-only{
-      color:var(--ink);
+      color:var(--navy,#0a3d62);
     }
-    #menuSheet.menu-sheet--logo-lite #portalQuickMenuInternalChatSlot #portalQuickMenuInternalChatBtn.menu-btn--portal-ic .menu-btn-sub{color:var(--muted);}
-    #menuSheet.menu-sheet--logo-lite #portalQuickMenuInternalChatSlot #portalQuickMenuInternalChatBtn.menu-btn--portal-ic .menu-btn-chev{color:rgba(23,50,71,.38);}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuInternalChatSlot #portalQuickMenuInternalChatBtn.menu-btn--portal-ic .menu-btn-sub{color:rgba(10,61,98,.72);}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuInternalChatSlot #portalQuickMenuInternalChatBtn.menu-btn--portal-ic .menu-btn-chev{color:rgba(10,61,98,.45);}
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuInternalChatSlot #portalQuickMenuInternalChatBtn.menu-btn--portal-ic .menu-btn-icon{
-      background:rgba(100,116,139,.12);
-      border:1px solid rgba(71,85,105,.18);
-      color:var(--ink);
+      background:rgba(45,132,179,.14);
+      border:1px solid rgba(45,132,179,.28);
+      color:var(--blue);
     }
     /* Unread admin/office message: blue tile + pulse */
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuInternalChatSlot #portalQuickMenuInternalChatBtn.menu-btn--portal-ic.menu-btn--portal-ic--unread{
@@ -1452,9 +1452,6 @@
     @keyframes portalStaffDmQuickMenuUnreadPulse{
       0%,100%{ box-shadow:0 0 0 0 rgba(45,132,179,.35); }
       50%{ box-shadow:0 0 0 7px rgba(45,132,179,.12); }
-    }
-    #menuSheet.menu-sheet--logo-lite #portalQuickMenuInternalChatHeading{
-      margin-top:0;
     }
     #menuSheet.menu-sheet--full .portal-quickmenu-internal-chat-heading,
     #menuSheet.menu-sheet--full #portalQuickMenuInternalChatSlot{
@@ -3310,10 +3307,10 @@
     }
     .section-card--today .session-card.session-card--available .session-cell--client{color:#000}
 
-    /* Overview: Next session / Week / Term — buttons only, vertically centered in card */
+    /* Overview: compact shell; button sizes unchanged — air via main row-gap */
     .section-card.section-card--overview{
       margin-top:0;
-      margin-bottom:4px;
+      margin-bottom:0;
       overflow:visible;
       position:relative;
       z-index:1;
@@ -3322,7 +3319,8 @@
       align-items:stretch;
       justify-content:center;
       flex-shrink:0;
-      min-height:5.25rem;
+      min-height:0;
+      border-radius:16px;
     }
     .section-card--overview .extra-grid{
       display:grid;
@@ -3330,12 +3328,12 @@
       grid-template-rows:auto;
       flex:0 0 auto;
       gap:6px;
-      padding:10px 6px;
+      padding:4px 6px;
       width:100%;
       box-sizing:border-box;
       align-items:stretch;
       align-content:center;
-      margin:auto 0;
+      margin:0;
     }
     .section-card--overview .mini-card{
       flex-direction:column;
