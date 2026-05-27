@@ -12,8 +12,8 @@
       "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260519-portal-roster",
     ],
     feedback: [
-      "/portal/session_feedback_status_portal_data.js?v=20260527-apr22",
-      "/portal/session_feedback_portal_data.js?v=20260527-apr22",
+      "/portal/session_feedback_status_portal_data.js?v=20260527-ma-apr-may",
+      "/portal/session_feedback_portal_data.js?v=20260527-ma-apr-may",
       "/portal/venue_reviews_portal_data.js?v=20260520",
     ],
     payments: ["/portal/clients_payments_portal_data.js?v=20260507-portalfix"],
