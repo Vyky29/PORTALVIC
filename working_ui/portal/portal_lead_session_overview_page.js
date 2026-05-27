@@ -117,6 +117,7 @@ function mapPortalRowToHubFeedback(r, scopes) {
     completed_by_name:
       String(r.instructor || r.completedBy || r.completed_by_name || "").trim() || "—",
     session_time: String(r.sessionTime || r.time || r.session_time || "").trim(),
+    created_at: String(r.submittedAt || r.created_at || "").trim() || null,
     portal_session_key: String(r.portal_session_key || r.portalSessionKey || "").trim(),
     venue: String(r.venue || "").trim(),
   };
@@ -149,6 +150,7 @@ function mapDbSessionFeedbackToHub(row, scopes) {
     relevant_information: String(row.relevant_information || "").trim(),
     completed_by_name: String(row.completed_by_name || "").trim() || "—",
     session_time: String(row.session_time || "").trim(),
+    created_at: row.created_at || null,
     portal_session_key: String(row.portal_session_key || "").trim(),
     venue: "",
   };

@@ -119,7 +119,13 @@
 
   function feedbackRowMergeKey(row) {
     var pk = String((row && row.portal_session_key) || '').trim();
-    if (pk) return 'pk:' + pk;
+    if (pk) {
+      var by = String((row && row.completed_by_name) || '')
+        .trim()
+        .toLowerCase();
+      if (pk.indexOf('||') >= 0 || !by) return 'pk:' + pk;
+      return 'pk:' + pk + '|' + by;
+    }
     return (
       'd:' +
       String((row && row.session_date) || '').trim().slice(0, 10) +
@@ -136,16 +142,29 @@
     );
   }
 
+  function feedbackRowSubmittedAt(row) {
+    return String(
+      (row && (row.created_at || row.submittedAt || row.submitted_at || row.updated_at)) || ""
+    ).trim();
+  }
+
   function mergeFeedbackRowLists(a, b) {
     var byKey = {};
     var out = [];
-    (a || []).concat(b || []).forEach(function (row) {
+    function addRow(row) {
       if (!row) return;
       var k = feedbackRowMergeKey(row);
-      if (!k || byKey[k]) return;
-      byKey[k] = true;
+      if (!k) return;
+      if (byKey[k] !== undefined) {
+        var prev = out[byKey[k]];
+        if (!feedbackRowSubmittedAt(prev) && feedbackRowSubmittedAt(row)) out[byKey[k]] = row;
+        return;
+      }
+      byKey[k] = out.length;
       out.push(row);
-    });
+    }
+    (a || []).forEach(addRow);
+    (b || []).forEach(addRow);
     return out;
   }
 
@@ -154,7 +173,7 @@
     if (!cfg.buildFeedbackFromPortal) return;
     var portalRows = cfg.buildFeedbackFromPortal() || [];
     if (!portalRows.length) return;
-    payload.session_feedback = mergeFeedbackRowLists(payload.session_feedback || [], portalRows);
+    payload.session_feedback = mergeFeedbackRowLists(portalRows, payload.session_feedback || []);
     payload.session_feedback_total = payload.session_feedback.length;
     payload.session_feedback_loaded = payload.session_feedback.length;
   }

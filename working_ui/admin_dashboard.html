@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260526-hub-tile-text" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260521-embed" />
   <script src="/portal/hr-contract-embed-html.js?v=20260521-embed"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260527-closed-days"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260528-fb-submitted-at"></script>
   <script src="/portal/admin-portal-documents.js?v=20260521-supabase-docs"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
@@ -4173,7 +4173,7 @@
   })();
   </script>
   <!-- Large portal datasets load on demand (portalAdminLoadScriptSet) so Day operations opens without freezing. -->
-  <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260527-ma-apr-may"></script>
+  <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260528-fb-submitted-at"></script>
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260521-late-perf"></script>
 
   <script>
@@ -16848,7 +16848,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
     var ADMIN_SESSIONS_HUB_SRC =
-      '/portal/admin-sessions-hub.js?v=20260527-closed-days';
+      '/portal/admin-sessions-hub.js?v=20260528-fb-submitted-at';
 
     /** Club closed — half-term 23–31 May 2026, bank holiday 4 May (see PORTAL_TERM_FROM_TIMETABLE). */
     function portalAdminDayIsClubClosed(iso){
@@ -16981,7 +16981,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         relevant_information: adminSfStr(r.relevantParent) || '',
         completed_by_name: adminSfStr(r.instructor) || adminSfStr(r.completedBy) || '—',
         session_time: adminSfStr(r.sessionTime) || adminSfStr(r.time) || '',
-        portal_session_key: d ? d + '|' + adminSfStr(r.clientName) : ''
+        created_at: adminSfStr(r.submittedAt) || adminSfStr(r.created_at) || null,
+        portal_session_key:
+          adminSfStr(r.portalSessionKey) ||
+          adminSfStr(r.portal_session_key) ||
+          (d && adminSfStr(r.clientName)
+            ? d + '||' + adminSfStr(r.clientName).toLowerCase().replace(/[^a-z0-9]+/g, '_')
+            : '')
       };
     }
     function adminBuildSessionsHubPayload(){

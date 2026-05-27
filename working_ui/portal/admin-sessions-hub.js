@@ -581,6 +581,17 @@
     return d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
   }
 
+  function feedbackSubmittedAt(fb) {
+    if (!fb) return "";
+    return (
+      fb.created_at ||
+      fb.submittedAt ||
+      fb.submitted_at ||
+      fb.updated_at ||
+      ""
+    );
+  }
+
   function formatFbDateTime(isoOrTs) {
     var s = String(isoOrTs || "").trim();
     if (!s) return "\u2014";
@@ -2836,9 +2847,10 @@
             kind === "relevant" ? clean(fb.relevant_information) : clean(fb.positive_feedback);
           var reviewCls =
             noteText && !hub._reviewedKeys[hub.fbRowKey(fb)] ? " ash-fb-row--needs-review" : "";
-          var reviewTime = formatFbTime(fb.created_at);
+          var submittedAt = feedbackSubmittedAt(fb);
+          var reviewTime = formatFbTime(submittedAt);
           var sessionDay = formatFbDateShort(fb.session_date);
-          var reviewDate = formatFbDate(fb.created_at);
+          var reviewDate = formatFbDate(submittedAt);
           var svcLabel = hub.feedbackDisplayService(fb) || "\u2014";
           var noteHtml = noteText
             ? noteText
@@ -3704,9 +3716,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       opts.clickable !== false && needsReviewRow(fb) && !hub._reviewedKeys[hub.fbRowKey(fb)]
         ? " ash-fb-row--needs-review"
         : "";
-    var reviewTime = formatFbTime(fb.created_at);
+    var submittedAt = feedbackSubmittedAt(fb);
+    var reviewTime = formatFbTime(submittedAt);
     var sessionDay = formatFbDateShort(fb.session_date) || formatFbDateShort(hub.feedbackRowDate(fb));
-    var reviewDate = formatFbDate(fb.created_at);
+    var reviewDate = formatFbDate(submittedAt);
     var rowIdx = opts.rowIdx;
     var rowAttr =
       opts.clickable !== false && rowIdx != null && !isNaN(rowIdx)
@@ -4919,9 +4932,10 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var noteText = kind === "relevant" ? clean(fb.relevant_information) : clean(fb.positive_feedback);
         var reviewCls =
           noteText && !hub._reviewedKeys[hub.fbRowKey(fb)] ? " ash-fb-row--needs-review" : "";
-        var reviewTime = formatFbTime(fb.created_at);
+        var submittedAt = feedbackSubmittedAt(fb);
+        var reviewTime = formatFbTime(submittedAt);
         var sessionDay = formatFbDateShort(fb.session_date);
-        var reviewDate = formatFbDate(fb.created_at);
+        var reviewDate = formatFbDate(submittedAt);
         var svcLabel = hub.feedbackDisplayService(fb) || "\u2014";
         return (
           '<tr class="ash-fb-row' +
