@@ -23,7 +23,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var HUB_SRC = '/portal/admin-sessions-hub.js?v=20260527-closed-days';
+  var HUB_SRC = '/portal/admin-sessions-hub.js?v=20260531-override-sync';
   var EDGE_FETCH_MS = 12000;
 
   function fetchWithTimeout(url, options, ms) {
@@ -268,6 +268,27 @@
       try {
         out.session_quick_marks = await cfg.fetchAbsents();
       } catch (e2) {}
+    }
+    if (cfg.fetchScheduleOverrides) {
+      try {
+        out.schedule_overrides = await cfg.fetchScheduleOverrides();
+      } catch (eOv) {}
+    } else {
+      var sinceOv = new Date();
+      sinceOv.setDate(sinceOv.getDate() - 120);
+      var sinceOvIso = sinceOv.toISOString().slice(0, 10);
+      try {
+        var ovRes = await client
+          .from('schedule_overrides')
+          .select(
+            'id,created_at,created_by,session_date,anchor_start,anchor_end,anchor_staff_id,anchor_venue,anchor_client_id,override_type,reason,status,payload'
+          )
+          .gte('session_date', sinceOvIso)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .limit(600);
+        if (!ovRes.error) out.schedule_overrides = ovRes.data || [];
+      } catch (eOv2) {}
     }
     if (cfg.fetchSessionFeedback) {
       try {

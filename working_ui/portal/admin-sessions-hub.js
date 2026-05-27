@@ -265,9 +265,10 @@
   }
 
   /** Overview roster table: awaiting feedback first, then submitted, then absent. */
-  function overviewSlotFeedbackRank(isAbsent, fbDone) {
-    if (!isAbsent && !fbDone) return 0;
-    if (fbDone && !isAbsent) return 1;
+  function overviewSlotFeedbackRank(isAbsent, fbDone, isCancelled) {
+    if (isCancelled && !isAbsent) return 2;
+    if (!isAbsent && !fbDone && !isCancelled) return 0;
+    if (fbDone && !isAbsent && !isCancelled) return 1;
     if (isAbsent) return 2;
     return 3;
   }
@@ -736,6 +737,90 @@
       m = Object.assign({}, m, { session_time: parsed.time });
     }
     return m;
+  }
+
+  function normTimeShort(v) {
+    var s = String(v == null ? "" : v).trim();
+    if (!s) return "";
+    var m = s.match(/(\d{1,2}):(\d{2})/);
+    if (!m) return s.length >= 5 ? s.slice(0, 5) : s;
+    return String(parseInt(m[1], 10)).padStart(2, "0") + ":" + m[2];
+  }
+
+  function overridePayloadObj(ov) {
+    var p = ov && ov.payload;
+    if (p && typeof p === "string") {
+      try {
+        p = JSON.parse(p);
+      } catch (e) {
+        p = {};
+      }
+    }
+    return p && typeof p === "object" ? p : {};
+  }
+
+  function overrideIsAbsentType(ov) {
+    return (
+      String(ov && ov.override_type || "").trim() === "client_absence_announced" &&
+      String(ov && ov.status || "active").trim() === "active"
+    );
+  }
+
+  function overrideIsCancelledType(ov) {
+    var p = overridePayloadObj(ov);
+    return (
+      String(ov && ov.override_type || "").trim() === "slot_clear_client" &&
+      !!p.cancelled_by_admin &&
+      String(ov && ov.status || "active").trim() === "active"
+    );
+  }
+
+  function overrideClientName(ov) {
+    var slug = clean(ov && ov.anchor_client_id);
+    return resolveRosterClientName(slug) || slug.replace(/_/g, " ");
+  }
+
+  function overrideToAbsentMark(ov) {
+    if (!ov || !overrideIsAbsentType(ov)) return null;
+    var sd = clean(ov.session_date);
+    var slug = canonicalClientSlug(ov.anchor_client_id);
+    if (!sd || !slug) return null;
+    var st = normTimeShort(ov.anchor_start);
+    return {
+      portal_session_key: st ? sd + "||" + st + "||" + slug : sd + "||" + slug,
+      session_date: sd,
+      session_time: st,
+      client_name: overrideClientName(ov),
+      service: "\u2014",
+      staff_user_id: "",
+      staff_name: clean(ov.reason) ? "Schedule override \u2014 " + clean(ov.reason) : "Schedule override",
+      created_at: ov.created_at || null,
+      mark_type: "absent",
+      source: "schedule_override",
+    };
+  }
+
+  function overrideToCancellationRow(ov) {
+    if (!ov || !overrideIsCancelledType(ov)) return null;
+    var sd = clean(ov.session_date);
+    var slug = canonicalClientSlug(ov.anchor_client_id);
+    if (!sd || !slug) return null;
+    var reason = clean(ov.reason) || "Admin cancellation (schedule override)";
+    return {
+      id: "schedule_override:" + String(ov.id || ""),
+      created_at: ov.created_at || null,
+      session_date: sd,
+      session_time: normTimeShort(ov.anchor_start),
+      client_name: overrideClientName(ov),
+      service: "\u2014",
+      cancellation_timing: "Schedule override",
+      reason_category: reason,
+      submitted_by_name: "Schedule override",
+      portal_session_key: normTimeShort(ov.anchor_start)
+        ? sd + "||" + normTimeShort(ov.anchor_start) + "||" + slug
+        : sd + "||" + slug,
+      _fromScheduleOverride: true,
+    };
   }
 
   /** Always HH:MM (zero-padded) so roster keys match submitted portal_session_key variants. */
@@ -2052,6 +2137,15 @@
       var dk = absentDedupeKey(list[i]);
       if (dk) seen[dk] = true;
     }
+    var ovs = this.payload.schedule_overrides || [];
+    for (var oi = 0; oi < ovs.length; oi++) {
+      var ovMark = overrideToAbsentMark(ovs[oi]);
+      if (!ovMark) continue;
+      var ovDk = absentDedupeKey(ovMark);
+      if (ovDk && seen[ovDk]) continue;
+      if (ovDk) seen[ovDk] = true;
+      list.push(ovMark);
+    }
     var fbs = this.payload.session_feedback || [];
     for (var j = 0; j < fbs.length; j++) {
       var fb = fbs[j];
@@ -2221,9 +2315,33 @@
   AdminSessionsHub.prototype.cancellationsForDate = function (iso) {
     var list = this.payload.cancellation_reports || [];
     var out = [];
+    var seen = {};
+    function cancelDedupeKey(row) {
+      return (
+        String(row.portal_session_key || "")
+          .trim()
+          .toLowerCase() ||
+        String(row.session_date || "").trim() +
+          "|" +
+          canonicalClientSlug(row.client_name) +
+          "|" +
+          normTimeShort(row.session_time)
+      );
+    }
     for (var i = 0; i < list.length; i++) {
       if (this.portalReportDateIso(list[i]) !== iso) continue;
+      var k0 = cancelDedupeKey(list[i]);
+      if (k0) seen[k0] = true;
       out.push({ row: list[i], idx: i });
+    }
+    var ovs = this.payload.schedule_overrides || [];
+    for (var oi = 0; oi < ovs.length; oi++) {
+      var ovRow = overrideToCancellationRow(ovs[oi]);
+      if (!ovRow || clean(ovRow.session_date) !== iso) continue;
+      var k1 = cancelDedupeKey(ovRow);
+      if (k1 && seen[k1]) continue;
+      if (k1) seen[k1] = true;
+      out.push({ row: ovRow, idx: "ov-" + String(ovs[oi].id || oi) });
     }
     out.sort(function (a, b) {
       return String(b.row.created_at || "").localeCompare(String(a.row.created_at || ""));
@@ -2576,6 +2694,15 @@
       var ck = csd + "|" + canonicalClientSlug(c.client_name);
       if (ck.length > 11) can[ck] = true;
     }
+    var listOv = this.payload.schedule_overrides || [];
+    for (var k = 0; k < listOv.length; k++) {
+      var ovCan = overrideToCancellationRow(listOv[k]);
+      if (!ovCan) continue;
+      var csdOv = rowDateIso(ovCan.session_date);
+      if (!csdOv) continue;
+      var ckOv = csdOv + "|" + canonicalClientSlug(ovCan.client_name);
+      if (ckOv.length > 11) can[ckOv] = true;
+    }
     this._incidentByDateClient = inc;
     this._cancelByDateClient = can;
   };
@@ -2586,6 +2713,8 @@
   };
 
   AdminSessionsHub.prototype.slotHasCancellation = function (slot) {
+    var ov = this.overrideForSlot(slot);
+    if (ov && overrideIsCancelledType(ov)) return true;
     var k = slot.session_date + "|" + canonicalClientSlug(slot.client_name);
     return !!(this._cancelByDateClient && this._cancelByDateClient[k]);
   };
@@ -2727,6 +2856,8 @@
 
   AdminSessionsHub.prototype.slotIsAbsent = function (slot) {
     if (!slot) return false;
+    var ov = this.overrideForSlot(slot);
+    if (ov && overrideIsAbsentType(ov)) return true;
     var cid = canonicalClientSlug(slot.client_name);
     var absentMap = this._absentFbByDateClient || {};
     var dk = slot.session_date + "|" + cid;
@@ -3200,17 +3331,36 @@
     };
   };
 
+  AdminSessionsHub.prototype.overrideMatchesSlot = function (slot, ov) {
+    if (!slot || !ov) return false;
+    if (clean(ov.session_date) !== slot.session_date) return false;
+    if (String(ov.status || "active").trim() !== "active") return false;
+    var oCid = canonicalClientSlug(ov.anchor_client_id);
+    var sCid = canonicalClientSlug(slot.client_name);
+    if (oCid && sCid && oCid !== sCid) return false;
+    var oVen = clean(ov.anchor_venue).toLowerCase();
+    var sVen = clean(slot.venue).toLowerCase();
+    if (oVen && sVen && oVen !== sVen) return false;
+    var oStart = normTimeShort(ov.anchor_start);
+    var sStart = normTimeShort(slot.time_start || slot.time_slot);
+    if (oStart && sStart && oStart !== sStart) return false;
+    return true;
+  };
+
   AdminSessionsHub.prototype.overrideForSlot = function (slot) {
     var ovs = this.payload.schedule_overrides || [];
-    var cid = slugify(slot.client_name);
+    var best = null;
     for (var i = 0; i < ovs.length; i++) {
-      var o = ovs[i];
-      if (clean(o.session_date) !== slot.session_date) continue;
-      if (clean(o.anchor_client_id) && clean(o.anchor_client_id) !== cid) continue;
-      if (clean(o.anchor_venue) && clean(o.anchor_venue).toLowerCase() !== clean(slot.venue).toLowerCase()) continue;
-      return o;
+      if (!this.overrideMatchesSlot(slot, ovs[i])) continue;
+      if (
+        !best ||
+        (ovs[i].created_at &&
+          (!best.created_at || String(ovs[i].created_at) > String(best.created_at)))
+      ) {
+        best = ovs[i];
+      }
     }
-    return null;
+    return best;
   };
 
   AdminSessionsHub.prototype.fbRowKey = function (fb) {
@@ -3761,7 +3911,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       var slot = displaySlots[i];
       var ukey = slot.feedback_unit_key || feedbackUnitKey(slot);
       var isAbsent = unitAbsent[ukey] || hub.slotIsAbsent(slot);
-      if (isAbsent) {
+      var isCancelled = hub.slotHasCancellation(slot);
+      if (isAbsent || isCancelled) {
         var afb = hub.findAbsentFeedbackForSlot(slot);
         if (!afb) {
           for (var si = 0; si < submitted.length; si++) {
@@ -3770,6 +3921,17 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
               canonicalClientSlug(submitted[si].client_name) === canonicalClientSlug(slot.client_name)
             ) {
               afb = submitted[si];
+              break;
+            }
+          }
+        }
+        if (!afb && isCancelled) {
+          for (var sc = 0; sc < submitted.length; sc++) {
+            if (
+              isCancellationFeedbackRow(submitted[sc]) &&
+              canonicalClientSlug(submitted[sc].client_name) === canonicalClientSlug(slot.client_name)
+            ) {
+              afb = submitted[sc];
               break;
             }
           }
@@ -4412,10 +4574,12 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       var ukeyB = b.feedback_unit_key || feedbackUnitKey(b);
       var absentA = unitAbsent[ukeyA] || hub.slotIsAbsent(a);
       var absentB = unitAbsent[ukeyB] || hub.slotIsAbsent(b);
+      var cancelledA = hub.slotHasCancellation(a);
+      var cancelledB = hub.slotHasCancellation(b);
       var doneA = unitComplete[ukeyA] || hub.slotFeedbackComplete(a);
       var doneB = unitComplete[ukeyB] || hub.slotFeedbackComplete(b);
-      var rankA = overviewSlotFeedbackRank(absentA, doneA);
-      var rankB = overviewSlotFeedbackRank(absentB, doneB);
+      var rankA = overviewSlotFeedbackRank(absentA, doneA, cancelledA);
+      var rankB = overviewSlotFeedbackRank(absentB, doneB, cancelledB);
       if (rankA !== rankB) return rankA - rankB;
       return a.time_start.localeCompare(b.time_start) || a.client_name.localeCompare(b.client_name);
     });
@@ -4464,7 +4628,20 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         var ukey = slot.feedback_unit_key || feedbackUnitKey(slot);
         var fbDone = unitComplete[ukey] || hub.slotFeedbackComplete(slot);
         var isAbsent = unitAbsent[ukey] || hub.slotIsAbsent(slot);
-        var fbCell = rosterFeedbackStatusHtml(isAbsent, fbDone);
+        var isCancelled = hub.slotHasCancellation(slot);
+        var fbCell;
+        if (isAbsent) {
+          fbCell = rosterFeedbackStatusHtml(true, fbDone);
+        } else if (isCancelled) {
+          fbCell = '<span class="ash-status ash-status--absent">Cancelled</span>';
+        } else {
+          fbCell = rosterFeedbackStatusHtml(false, fbDone);
+        }
+        var statusCell = isCancelled
+          ? '<span class="ash-badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca">Cancelled</span>'
+          : isAbsent
+            ? '<span class="ash-badge" style="background:#fff7ed;color:#c2410c;border:1px solid rgba(234,88,12,.35)">Absent</span>'
+            : '<span class="ash-badge ash-badge--booked">Booked</span>';
         var svc =
           esc(slot.service) +
           (slot.time_slot ? '<div class="ash-cell-sub">' + esc(slot.time_slot) + "</div>" : "");
@@ -4488,7 +4665,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           '<td class="ash-td-center ash-cell-muted">' +
           esc(notes) +
           "</td>" +
-          '<td class="ash-td-center"><span class="ash-badge ash-badge--booked">Booked</span></td>' +
+          '<td class="ash-td-center">' +
+          statusCell +
+          "</td>" +
           '<td class="ash-td-center">' +
           fbCell +
           "</td>" +
@@ -4496,7 +4675,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           yesNoCell(hub.slotHasIncident(slot)) +
           "</td>" +
           '<td class="ash-td-center">' +
-          yesNoCell(hub.slotHasCancellation(slot)) +
+          yesNoCell(isCancelled) +
           "</td>" +
           "</tr>"
         );

@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260531-dayops-fill" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260521-embed" />
   <script src="/portal/hr-contract-embed-html.js?v=20260521-embed"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260528-fb-submitted-at"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260531-override-sync"></script>
   <script src="/portal/admin-portal-documents.js?v=20260521-supabase-docs"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
   <script src="/portal/portal_dm_voice.js?v=20260531-dm-voice"></script>
@@ -13406,6 +13406,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }else{
         sched.lastMsg = 'Change undone for this slot.';
       }
+      adminInvalidateSessionsHubLiveCaches();
       var demoId = slot && slot.demoId;
       await refreshSchedulingModule();
       var slot2 = demoId ? sched.slotsById[demoId] : null;
@@ -13537,7 +13538,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       closeSchedDrawer();
       sched.lastMsg = 'Override saved.';
+      adminInvalidateSessionsHubLiveCaches();
       await refreshSchedulingModule();
+      if(state.view === 'c4k_sessions'){
+        try{ void sessionsHubRefreshActiveTab(); }catch(_hub){}
+      }
     }
     /** Map roster spreadsheet ids to admin drawer keys (MOCK.clientsById / MOCK.staff). */
     function resolveAdminClientDrawerId(slug){
@@ -17285,6 +17290,37 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return window.__PORTAL_CANCELLATION_REPORTS__;
     }
+    function adminInvalidateSessionsHubLiveCaches(){
+      window.__PORTAL_CANCELLATION_REPORTS__ = null;
+      window.__PORTAL_ABSENT_QUICK_MARKS__ = null;
+      window.__PORTAL_SCHEDULE_OVERRIDES__ = null;
+      if(window.PortalDayOps && typeof window.PortalDayOps.invalidatePayload === 'function'){
+        window.PortalDayOps.invalidatePayload();
+      }
+    }
+    async function adminFetchScheduleOverridesForHub(){
+      if(window.__PORTAL_SCHEDULE_OVERRIDES__) return window.__PORTAL_SCHEDULE_OVERRIDES__;
+      var client = getSchedSupabaseClient();
+      if(!client){
+        window.__PORTAL_SCHEDULE_OVERRIDES__ = [];
+        return [];
+      }
+      try{
+        var since = new Date();
+        since.setDate(since.getDate() - 120);
+        var res = await client
+          .from('schedule_overrides')
+          .select('id,created_at,created_by,session_date,anchor_start,anchor_end,anchor_staff_id,anchor_venue,anchor_client_id,override_type,reason,status,payload')
+          .gte('session_date', since.toISOString().slice(0, 10))
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .limit(600);
+        window.__PORTAL_SCHEDULE_OVERRIDES__ = res.error ? [] : (res.data || []);
+      }catch(_e){
+        window.__PORTAL_SCHEDULE_OVERRIDES__ = [];
+      }
+      return window.__PORTAL_SCHEDULE_OVERRIDES__;
+    }
     async function adminFetchAbsentQuickMarksForHub(){
       if(window.__PORTAL_ABSENT_QUICK_MARKS__) return window.__PORTAL_ABSENT_QUICK_MARKS__;
       var client = getSchedSupabaseClient();
@@ -17630,7 +17666,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
     var ADMIN_SESSIONS_HUB_SRC =
-      '/portal/admin-sessions-hub.js?v=20260528-aquatic-units';
+      '/portal/admin-sessions-hub.js?v=20260531-override-sync';
 
     /** Club closed — half-term 23–31 May 2026, bank holiday 4 May (see PORTAL_TERM_FROM_TIMETABLE). */
     function portalAdminDayIsClubClosed(iso){
@@ -17732,6 +17768,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         },
         fetchCancellations: adminFetchCancellationReportsForHub,
         fetchAbsents: adminFetchAbsentQuickMarksForHub,
+        fetchScheduleOverrides: adminFetchScheduleOverridesForHub,
         getFeedbackDayStats: function(iso){
           if(typeof window.portalBookingFeedbackStatsForIso === 'function'){
             return window.portalBookingFeedbackStatsForIso(iso);
@@ -17863,11 +17900,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var hubRef = $('c4kHubRefresh');
       if(hubRef){
         hubRef.onclick = function(){
-          if(window.PortalDayOps && typeof window.PortalDayOps.invalidatePayload === 'function'){
-            window.PortalDayOps.invalidatePayload();
-            window.__PORTAL_CANCELLATION_REPORTS__ = null;
-            window.__PORTAL_ABSENT_QUICK_MARKS__ = null;
-          }
+          adminInvalidateSessionsHubLiveCaches();
           void sessionsHubRefreshActiveTab();
         };
       }
