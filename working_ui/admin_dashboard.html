@@ -629,10 +629,37 @@
     .c4k-sessions-hub__title-row{display:flex;align-items:flex-start;gap:12px;min-width:0}
     .c4k-sessions-hub__ico{
       flex-shrink:0;width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;
-      background:linear-gradient(180deg,#dcfce7 0%,#bbf7d0 100%);border:1px solid #86efac;font-size:22px;line-height:1
+      background:#eef2ff;border:1px solid rgba(99,102,241,.22);color:#4f46e5;line-height:1
     }
-    .c4k-sessions-hub__title{margin:0;font-size:22px;font-weight:800;color:#1e3a5f;letter-spacing:.02em}
+    .c4k-sessions-hub__ico .admin-nav-ico{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px}
+    .c4k-sessions-hub__ico .admin-nav-ico svg{width:22px;height:22px;display:block}
+    .c4k-sessions-hub__ico--sessions{background:#ede9fe;border-color:rgba(109,40,217,.22);color:#6d28d9}
+    .c4k-sessions-hub__ico--feedback{background:#dcfce7;border-color:rgba(21,128,61,.22);color:#15803d}
+    .c4k-sessions-hub__ico--positive{background:#dcfce7;border-color:rgba(21,128,61,.28);color:#166534}
+    .c4k-sessions-hub__ico--relevant{background:#fee2e2;border-color:rgba(185,28,28,.22);color:#b91c1c}
+    .c4k-sessions-hub__ico--incidents{background:#fee2e2;border-color:rgba(185,28,28,.28);color:#b91c1c}
+    .c4k-sessions-hub__ico--cancellations{background:#fef9c3;border-color:rgba(161,98,7,.28);color:#a16207}
+    .c4k-sessions-hub__ico--absents{background:#fff7ed;border-color:rgba(234,88,12,.28);color:#c2410c}
+    .c4k-sessions-hub__ico--lead{background:#dbeafe;border-color:rgba(29,78,216,.24);color:#1d4ed8}
+    .c4k-sessions-hub__ico--venue{background:#e0f2fe;border-color:rgba(3,105,161,.22);color:#0369a1}
+    .c4k-sessions-hub__title-block{flex:1;min-width:0}
+    .c4k-sessions-hub__title-line{
+      display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 16px;min-width:0
+    }
+    .c4k-sessions-hub__title{margin:0;font-size:22px;font-weight:800;color:#1e3a5f;letter-spacing:.02em;min-width:0}
     .c4k-sessions-hub__sub{margin:6px 0 0;font-size:13px;color:var(--muted);max-width:40rem;overflow-wrap:break-word}
+    .c4k-sessions-hub__dash-jump{
+      display:inline-flex;align-items:center;gap:8px;flex-shrink:0;
+      padding:8px 12px;border-radius:10px;border:1px solid #fdba74;
+      background:linear-gradient(180deg,#fff7ed 0%,#ffedd5 100%);
+      color:#9a3412;font:inherit;font-size:13px;font-weight:700;cursor:pointer;
+      box-shadow:0 1px 2px rgba(154,52,18,.08);white-space:nowrap
+    }
+    .c4k-sessions-hub__dash-jump:hover{border-color:#f97316;background:linear-gradient(180deg,#ffedd5 0%,#fed7aa 100%)}
+    .c4k-sessions-hub__dash-jump:focus-visible{outline:none;box-shadow:0 0 0 2px rgba(249,115,22,.35)}
+    .c4k-sessions-hub__dash-jump .admin-nav-ico{display:inline-flex;width:20px;height:20px;color:#c2410c}
+    .c4k-sessions-hub__dash-jump .admin-nav-ico svg{width:18px;height:18px;display:block}
+    .c4k-sessions-hub__dash-jump-label{line-height:1.2}
     .c4k-sessions-hub__toolbar{
       display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;
       margin:0 0 12px;min-width:0
@@ -656,8 +683,14 @@
       background:linear-gradient(180deg,#1e40af 0%,#1d4ed8 100%);
       border-color:#1e3a8a;color:#fff;box-shadow:0 2px 8px rgba(30,64,175,.25)
     }
-    .c4k-sessions-hub-tab--dash{background:linear-gradient(180deg,#fff7ed 0%,#ffedd5 100%);border-color:#fdba74}
-    .c4k-sessions-hub-tab--dash.is-active{background:linear-gradient(180deg,#ea580c 0%,#c2410c 100%);border-color:#9a3412;color:#fff}
+    .c4k-sessions-hub-tab.is-active .c4k-sessions-hub-tab__ico{color:#fff}
+    .c4k-sessions-hub-tab__ico{
+      display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;
+      width:20px;height:20px;color:#64748b
+    }
+    .c4k-sessions-hub-tab__ico .admin-nav-ico{display:inline-flex;width:20px;height:20px}
+    .c4k-sessions-hub-tab__ico .admin-nav-ico svg{width:16px;height:16px;display:block}
+    .c4k-sessions-hub-tab__label{min-width:0;line-height:1.25}
     .c4k-hub-week-host{margin-bottom:14px;min-width:0}
     .c4k-hub-day-strip{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;min-width:0}
     @media (max-width:900px){
@@ -16917,17 +16950,36 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
 
     var C4K_SESSIONS_HUB_TABS = [
-      { id:'overview', label:'Overview', mode:'panel' },
-      { id:'feedback', label:'Feedback', mode:'panel' },
-      { id:'positive', label:'Positive', mode:'panel' },
-      { id:'relevant', label:'Relevant', mode:'panel' },
-      { id:'incidents', label:'Incidents', mode:'panel' },
-      { id:'cancellations', label:'Cancellations', mode:'panel' },
-      { id:'absents', label:'Absents', mode:'panel' },
-      { id:'lead', label:'Lead report', mode:'panelLead' },
-      { id:'venue', label:'Venue', mode:'panelVenue' },
-      { id:'dashboard', label:'Dashboard', mode:'view', view:'dashboard', dash:true }
+      { id:'overview', label:'Overview', iconId:'c4k_sessions', mode:'panel' },
+      { id:'feedback', label:'Feedback', iconId:'c4k_registers', mode:'panel' },
+      { id:'positive', label:'Positive', iconId:'c4k_reviews', mode:'panel' },
+      { id:'relevant', label:'Relevant', iconId:'c4k_relevant', mode:'panel' },
+      { id:'incidents', label:'Incidents', iconId:'analytics', mode:'panel' },
+      { id:'cancellations', label:'Cancellations', iconId:'absents_refunds', mode:'panel' },
+      { id:'absents', label:'Absents', iconId:'absents', mode:'panel' },
+      { id:'lead', label:'Lead report', iconId:'portal_nav_lead', mode:'panelLead' },
+      { id:'venue', label:'Venue', iconId:'c4k_services', mode:'panelVenue' }
     ];
+    var SESSIONS_HUB_HEAD_META = {
+      overview:{ iconId:'c4k_sessions', tone:'sessions', title:'SESSIONS OVERVIEW', sub:'Weekly roster, session status, and feedback by day.' },
+      feedback:{ iconId:'c4k_registers', tone:'feedback', title:'SESSION FEEDBACKS', sub:'All instructor session feedback, ratings, and notes.' },
+      positive:{ iconId:'c4k_reviews', tone:'positive', title:'POSITIVE FEEDBACK', sub:'Highlights and strengths recorded for attended sessions.' },
+      relevant:{ iconId:'c4k_relevant', tone:'relevant', title:'RELEVANT INFORMATION', sub:'Important context and relevant notes to review.' },
+      absents:{ iconId:'absents', tone:'absents', title:'ABSENTS', sub:'Clients marked absent by staff for the selected day.' },
+      cancellations:{ iconId:'absents_refunds', tone:'cancellations', title:'CANCELLATIONS', sub:'Cancellation reports by session week and day.' },
+      incidents:{ iconId:'analytics', tone:'incidents', title:'INCIDENT REPORTS', sub:'Submitted incident reports with session and outcome detail.' },
+      lead:{ iconId:'portal_nav_lead', tone:'lead', title:'LEAD REPORTS', sub:'Lead session reports submitted from the field.' },
+      venue:{ iconId:'c4k_services', tone:'venue', title:'VENUE REVIEWS', sub:'Opening and closing venue checklist reviews.' }
+    };
+    function sessionsHubHeadIconHtml(iconId, tone){
+      return '<span class="c4k-sessions-hub__ico c4k-sessions-hub__ico--' + esc(tone || 'sessions') + '" aria-hidden="true">' +
+        adminNavIconHtml(iconId || 'c4k_sessions') + '</span>';
+    }
+    function sessionsHubDashJumpHtml(){
+      return '<button type="button" class="c4k-sessions-hub__dash-jump" data-view-target="dashboard" title="Back to Day operations hub">' +
+        adminNavIconHtml('dashboard') +
+        '<span class="c4k-sessions-hub__dash-jump-label">Dashboard</span></button>';
+    }
     function sessionsHubEnsureState(){
       state.sessionsHub = state.sessionsHub || {};
       var h = state.sessionsHub;
@@ -17527,8 +17579,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function sessionsHubTabsHtml(activeTab){
       return C4K_SESSIONS_HUB_TABS.map(function(t){
         var on = t.id === activeTab;
-        var cls = 'c4k-sessions-hub-tab' + (on ? ' is-active' : '') + (t.dash ? ' c4k-sessions-hub-tab--dash' : '');
-        return '<button type="button" class="' + cls + '" data-sessions-hub-tab="' + esc(t.id) + '">' + esc(t.label) + '</button>';
+        var cls = 'c4k-sessions-hub-tab' + (on ? ' is-active' : '');
+        var ico = adminNavIconHtml(t.iconId || t.id);
+        return (
+          '<button type="button" class="' + cls + '" data-sessions-hub-tab="' + esc(t.id) + '">' +
+          '<span class="c4k-sessions-hub-tab__ico" aria-hidden="true">' + ico + '</span>' +
+          '<span class="c4k-sessions-hub-tab__label">' + esc(t.label) + '</span>' +
+          '</button>'
+        );
       }).join('');
     }
     function sessionsHubIsFeedbackTab(tab){
@@ -17538,99 +17596,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return tab === 'positive' || tab === 'relevant';
     }
     function sessionsHubHeadHtml(tab){
-      if(tab === 'feedback'){
-        return (
-          '<div class="c4k-sessions-hub__head">' +
-          '<div class="c4k-sessions-hub__title-row">' +
-          '<span class="c4k-sessions-hub__ico" aria-hidden="true">📋</span>' +
-          '<div style="min-width:0">' +
-          '<h1 class="c4k-sessions-hub__title">SESSION FEEDBACKS</h1>' +
-          '<p class="c4k-sessions-hub__sub">All instructor session feedback, ratings, and notes.</p>' +
-          '</div></div></div>'
-        );
-      }
-      if(tab === 'positive'){
-        return (
-          '<div class="c4k-sessions-hub__head">' +
-          '<div class="c4k-sessions-hub__title-row">' +
-          '<span class="c4k-sessions-hub__ico" aria-hidden="true">⭐</span>' +
-          '<div style="min-width:0">' +
-          '<h1 class="c4k-sessions-hub__title">POSITIVE FEEDBACK</h1>' +
-          '<p class="c4k-sessions-hub__sub">Highlights and strengths recorded for attended sessions.</p>' +
-          '</div></div></div>'
-        );
-      }
-      if(tab === 'relevant'){
-        return (
-          '<div class="c4k-sessions-hub__head">' +
-          '<div class="c4k-sessions-hub__title-row">' +
-          '<span class="c4k-sessions-hub__ico" aria-hidden="true">👁</span>' +
-          '<div style="min-width:0">' +
-          '<h1 class="c4k-sessions-hub__title">RELEVANT INFORMATION</h1>' +
-          '<p class="c4k-sessions-hub__sub">Important context and relevant notes to review.</p>' +
-          '</div></div></div>'
-        );
-      }
-      if(tab === 'absents'){
-        return (
-          '<div class="c4k-sessions-hub__head">' +
-          '<div class="c4k-sessions-hub__title-row">' +
-          '<span class="c4k-sessions-hub__ico" aria-hidden="true">🚫</span>' +
-          '<div style="min-width:0">' +
-          '<h1 class="c4k-sessions-hub__title">ABSENTS</h1>' +
-          '<p class="c4k-sessions-hub__sub">Clients marked absent by staff for the selected day.</p>' +
-          '</div></div></div>'
-        );
-      }
-      if(tab === 'cancellations'){
-        return (
-          '<div class="c4k-sessions-hub__head">' +
-          '<div class="c4k-sessions-hub__title-row">' +
-          '<span class="c4k-sessions-hub__ico" aria-hidden="true">✕</span>' +
-          '<div style="min-width:0">' +
-          '<h1 class="c4k-sessions-hub__title">CANCELLATIONS</h1>' +
-          '<p class="c4k-sessions-hub__sub">Cancellation reports by session week and day.</p>' +
-          '</div></div></div>'
-        );
-      }
-      if(tab === 'incidents'){
-        return (
-          '<div class="c4k-sessions-hub__head">' +
-          '<div class="c4k-sessions-hub__title-row">' +
-          '<span class="c4k-sessions-hub__ico" aria-hidden="true">⚠</span>' +
-          '<div style="min-width:0">' +
-          '<h1 class="c4k-sessions-hub__title">INCIDENT REPORTS</h1>' +
-          '<p class="c4k-sessions-hub__sub">Submitted incident reports with session and outcome detail.</p>' +
-          '</div></div></div>'
-        );
-      }
-      if(tab === 'lead'){
-        return (
-          '<div class="c4k-sessions-hub__head">' +
-          '<div class="c4k-sessions-hub__title-row">' +
-          '<span class="c4k-sessions-hub__ico" aria-hidden="true">📊</span>' +
-          '<div style="min-width:0">' +
-          '<h1 class="c4k-sessions-hub__title">LEAD REPORTS</h1>' +
-          '<p class="c4k-sessions-hub__sub">Lead session reports submitted from the field.</p>' +
-          '</div></div></div>'
-        );
-      }
-      if(tab === 'venue'){
-        return (
-          '<div class="c4k-sessions-hub__head">' +
-          '<div class="c4k-sessions-hub__title-row">' +
-          '<span class="c4k-sessions-hub__ico" aria-hidden="true">🏢</span>' +
-          '<div style="min-width:0">' +
-          '<h1 class="c4k-sessions-hub__title">VENUE REVIEWS</h1>' +
-          '<p class="c4k-sessions-hub__sub">Opening and closing venue checklist reviews.</p>' +
-          '</div></div></div>'
-        );
-      }
+      var meta = SESSIONS_HUB_HEAD_META[tab] || SESSIONS_HUB_HEAD_META.overview;
       return (
         '<div class="c4k-sessions-hub__head">' +
-        '<h1 class="c4k-sessions-hub__title">SESSIONS OVERVIEW</h1>' +
-        '<p class="c4k-sessions-hub__sub">Weekly roster, session status, and feedback by day.</p>' +
-        '</div>'
+        '<div class="c4k-sessions-hub__title-row">' +
+        sessionsHubHeadIconHtml(meta.iconId, meta.tone) +
+        '<div class="c4k-sessions-hub__title-block">' +
+        '<div class="c4k-sessions-hub__title-line">' +
+        '<h1 class="c4k-sessions-hub__title">' + esc(meta.title) + '</h1>' +
+        sessionsHubDashJumpHtml() +
+        '</div>' +
+        '<p class="c4k-sessions-hub__sub">' + esc(meta.sub) + '</p>' +
+        '</div></div></div>'
       );
     }
     function c4kHubLeadPanelInnerHtml(){
