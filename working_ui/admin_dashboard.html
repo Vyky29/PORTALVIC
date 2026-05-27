@@ -3105,6 +3105,9 @@
     .sched-banner{border:1px dashed rgba(45,132,179,.45);border-radius:var(--radiusLg);padding:12px 14px;margin-bottom:14px;background:#f8fafc;font-size:13px;color:var(--text);line-height:1.5;min-width:0;overflow-wrap:break-word}
     .sched-tbl th,.sched-tbl td{min-width:0;overflow-wrap:break-word;word-break:normal;text-align:center}
     .sched-tbl th:last-child,.sched-tbl td:last-child{white-space:nowrap;width:1%}
+    .sched-tbl .chip.chip--ok{background:var(--successSoft);color:var(--success);border:1px solid rgba(21,128,61,.22)}
+    .sched-tbl .chip.chip--urg{background:var(--dangerSoft);color:var(--danger);border:1px solid rgba(220,38,38,.22)}
+    .sched-tbl .chip.chip--info{background:var(--blueSoft);color:var(--blue);border:1px solid rgba(45,132,179,.28)}
     /* Day operations — staff with multiple venues: stacked halves (venue ↔ blocks aligned). */
     .dayops-split-pair{display:flex;flex-direction:column;min-width:0;width:100%}
     .dayops-split-pair__half{min-width:0;padding:8px 10px;overflow-wrap:break-word;text-align:center;line-height:1.35;font-size:13px;display:flex;align-items:center;justify-content:center}
@@ -13130,13 +13133,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(t === 'client_absence_announced') return { label: 'Cancelled', cls: 'chip--urg' };
       if(t === 'client_cancelled') return { label: 'Cancelled', cls: 'chip--urg' };
       if(t === 'slot_clear_client' && payload && payload.cancelled_by_admin) return { label: 'Cancelled', cls: 'chip--urg' };
-      if(t === 'client_replace_in_slot') return { label: 'New', cls: 'chip--makeup' };
+      if(t === 'client_replace_in_slot') return { label: 'New', cls: 'chip--info' };
       if(t === 'slot_close') return { label: 'Closed', cls: 'chip--urg' };
-      if(t === 'slot_open') return { label: 'Open slot', cls: 'chip--ok' };
+      if(t === 'slot_open') return { label: 'Open slot', cls: 'chip--info' };
       if(t === 'slot_clear_client') return { label: 'No Participant', cls: 'chip--pend' };
       var base = String(slot.rosterSheetLabel || 'Booked').trim();
       if(!base || base === '—') base = 'Booked';
-      return { label: base, cls: 'chip--info' };
+      return { label: base, cls: 'chip--ok' };
     }
     function schedOverrideLabelForRow(ov){
       if(!ov) return '';
