@@ -217,3 +217,11 @@ session_date,weekday,client_name,service,session_time,attendance,engagement_rati
 2026-04-15,Wednesday,Adam Ab,Multi-Activity,5.15 to 6,Yes,4,,Happy/Excited,,,,Javier Marquez,staff,2026-04-15||adam_ab|teaching_pool,no,no,no,no,2026-04-15T18:30:00+00:00
 2026-04-15,Wednesday,Scott,Multi-Activity,5.15 to 6,Yes,4,,Happy/Excited,,,,Victor Matilla,staff,2026-04-15||scott|teaching_pool,no,no,no,no,2026-04-15T18:30:00+00:00
 2026-04-15,Wednesday,Adam Ab,Multi-Activity,4.30 to 5.15,Yes,4,,Happy/Excited,,,,Victor Matilla,staff,2026-04-15||adam_ab|hub_room,no,no,no,no,2026-04-15T18:30:00+00:00
+2026-04-22,Wednesday,Cyrus,Multi-Activity,5.15 to 6,Yes,5,,Happy/Excited,,,,Javier Marquez,staff,2026-04-22||cyrus|room_2,no,no,no,no,2026-04-22T18:30:00+00:00
+2026-04-22,Wednesday,Adam Ab,Multi-Activity,5.15 to 6,Yes,5,,Happy/Excited,,,,Javier Marquez,staff,2026-04-22||adam_ab|teaching_pool,no,no,no,no,2026-04-22T18:30:00+00:00
+2026-04-22,Wednesday,Stephanie,Multi-Activity,4.30 to 5.15,Yes,5,,Happy/Excited,"Great session, Stephanie practiced kicking and was laughing a lot and enjoying.",,,Youssef Moustafa,staff,2026-04-22||stephanie|teaching_pool,no,yes,no,no,2026-04-22T18:30:00+00:00
+2026-04-22,Wednesday,Scott,Multi-Activity,5.15 to 6,Yes,3,,Happy/Excited,Scott enjoyed and when focused done good work.,,,Youssef Moustafa,staff,2026-04-22||scott|teaching_pool,no,yes,no,no,2026-04-22T18:30:00+00:00
+2026-04-22,Wednesday,Cyrus,Multi-Activity,4 to 5.15,Yes,5,,Happy/Excited,,,,Giuseppe Morelli,staff,2026-04-22||cyrus|teaching_pool,no,no,no,no,2026-04-22T18:30:00+00:00
+2026-04-22,Wednesday,Adam Ab,Multi-Activity,4.30 to 5.15,Yes,5,,Happy/Excited,,,,Giuseppe Morelli,staff,2026-04-22||adam_ab|room_2,no,no,no,no,2026-04-22T18:30:00+00:00
+2026-04-22,Wednesday,Stephanie,Multi-Activity,5.15 to 6,Yes,5,,Happy/Excited,,,,Berta Trapero,lead,2026-04-22||stephanie|room_2,no,no,no,no,2026-04-22T18:30:00+00:00
+2026-04-22,Wednesday,Scott,Multi-Activity,4.30 to 5.15,Yes,3,,Happy/Excited,,,,Berta Trapero,lead,2026-04-22||scott|room_2,no,no,no,no,2026-04-22T18:30:00+00:00
