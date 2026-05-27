@@ -14315,11 +14315,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           paxSlug2 = String(ov.payload && (ov.payload.to_client_id || ov.payload.replacement_client_id) || '').trim().toLowerCase();
         }
         var staffKey = String(slot.staffRosterId || '').trim().toLowerCase();
+        var serviceCell = esc(String(slot.programme || '—').trim() || '—');
+        var notesRaw = String(slot.notesPreview || slot.rosterArea || '').trim();
+        var notesCell = notesRaw
+          ? '<span style="font-size:12px;color:var(--text);overflow-wrap:break-word;display:block;max-width:240px;margin:0 auto;text-align:center">'+esc(notesRaw)+'</span>'
+          : '<span class="muted">—</span>';
         return '<tr class="sched-slot-row" data-sched-demo-id="'+esc(slot.demoId)+'" data-venue="'+esc(slot.venue)+'" data-staff="'+esc(staffKey)+'" data-pax-slug="'+esc(paxSlug)+'"'+(paxSlug2 ? ' data-pax-slug2="'+esc(paxSlug2)+'"' : '')+' data-has-ov="'+(hasOv?'1':'0')+'">'+
+          '<td style="min-width:0">'+clientCellHtml+'</td>'+
+          '<td style="min-width:0">'+serviceCell+'</td>'+
           '<td style="white-space:nowrap">'+esc(slot.anchorTimeLabel||normTimeShort(slot.anchorStart))+'</td>'+
+          '<td style="min-width:0">'+notesCell+'</td>'+
           '<td style="min-width:0">'+esc(slot.venue)+'</td>'+
           '<td style="min-width:0">'+staffCell+'</td>'+
-          '<td style="min-width:0">'+clientCellHtml+'</td>'+
           '<td>'+statusCell+'</td>'+
           '<td class="ash-td-center">'+ovChip+'</td>'+
           '<td class="ash-td-center"><button type="button" class="btn btn--sec btn--sm" data-sched-change="'+esc(slot.demoId)+'" style="max-width:100%">Change</button></td></tr>';
@@ -14436,7 +14443,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(tbody){
         tbody.innerHTML = slots.length
           ? renderSchedBaseRows(slots)
-          : '<tr><td colspan="7" class="muted">No sessions for this date. If you imported a dated week CSV, confirm <code>/portal/staff_dashboard_spreadsheet_bundle.js</code> is deployed and includes <code>session_date</code> rows for this day.</td></tr>';
+          : '<tr><td colspan="9" class="muted">No sessions for this date. If you imported a dated week CSV, confirm <code>/portal/staff_dashboard_spreadsheet_bundle.js</code> is deployed and includes <code>session_date</code> rows for this day.</td></tr>';
       }
       fillSchedFilterSelects(slots);
       var logBody = document.querySelector('#schedLogTable tbody');
