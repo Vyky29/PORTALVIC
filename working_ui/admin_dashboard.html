@@ -3715,6 +3715,7 @@
     .sched-pax-pill--booked{background:#ecfdf5;color:#15803d;border-color:rgba(21,128,61,.28)}
     .sched-pax-pill--out{background:#fef2f2;color:#b91c1c;border-color:rgba(220,38,38,.24)}
     .sched-pax-pill--in{background:#dcfce7;color:#166534;border-color:rgba(22,101,52,.3)}
+    .sched-notes-cell{font-size:12px;color:var(--text);overflow-wrap:break-word;display:block;max-width:200px;margin:0 auto;text-align:center;line-height:1.35}
     .dash-link-card{
       text-align:left;cursor:pointer;border:1px solid var(--btnSecBorder);width:100%;
       background:var(--btnSecBg);color:var(--ink);border-radius:var(--radiusLg);
@@ -7640,6 +7641,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         staffName: staffName,
         clientSlug: String(s.clientId||'').toLowerCase(),
         clientDisplay: clientName,
+        rosterService: String(s.rosterService || s.activity || '').trim(),
         programme: portalDisplayProgrammeFromSheet(String(s.rosterService || s.activity || '')),
         status: String(s.status||''),
         rosterSheetLabel: schedRosterSheetLabelFromSession(s),
@@ -14279,6 +14281,33 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         pSel.value = pVal && seenP[pVal] ? pVal : '';
       }
     }
+    var SCHED_BASE_TABLE_HEAD_HTML =
+      '<tr><th>Participant</th><th>Service</th><th>Time</th><th>Notes</th><th>Venue</th><th>Instructor</th><th>Roster</th><th>Override</th><th>Action</th></tr>';
+    function schedEnsureBaseTableHead(){
+      var tbl = $('schedBaseTable');
+      if(!tbl) return;
+      var thead = tbl.querySelector('thead');
+      if(!thead){
+        thead = document.createElement('thead');
+        var body = tbl.querySelector('tbody');
+        tbl.insertBefore(thead, body || null);
+      }
+      if(thead.innerHTML.replace(/\s+/g, ' ').trim() !== SCHED_BASE_TABLE_HEAD_HTML.replace(/\s+/g, ' ').trim()){
+        thead.innerHTML = SCHED_BASE_TABLE_HEAD_HTML;
+      }
+    }
+    /** Service column: short roster label (e.g. Day Centre), not client medical notes. */
+    function schedServiceLabelForSlot(slot){
+      var raw = String(slot && slot.rosterService || '').trim();
+      if(raw){
+        if(raw.length <= 56 && !/\d+\.\s*(age|medical)\b/i.test(raw) && raw.indexOf(' · ') < 0){
+          return raw.replace(/\bcentre\b/gi, 'Centre');
+        }
+      }
+      var prog = String(slot && slot.programme || '').trim();
+      if(prog === 'Day centre') return 'Day Centre';
+      return prog || '—';
+    }
     function schedParticipantPillHtml(label, clientId, tone){
       var lab = esc(String(label || '').trim() || '—');
       var toneCls = tone === 'out' ? 'sched-pax-pill--out' : (tone === 'in' ? 'sched-pax-pill--in' : 'sched-pax-pill--booked');
@@ -14327,10 +14356,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           paxSlug2 = String(ov.payload && (ov.payload.to_client_id || ov.payload.replacement_client_id) || '').trim().toLowerCase();
         }
         var staffKey = String(slot.staffRosterId || '').trim().toLowerCase();
-        var serviceCell = esc(String(slot.programme || '—').trim() || '—');
-        var notesRaw = String(slot.notesPreview || slot.rosterArea || '').trim();
+        var serviceCell = esc(schedServiceLabelForSlot(slot));
+        var notesRaw = String(slot.rosterArea || '').trim();
         var notesCell = notesRaw
-          ? '<span style="font-size:12px;color:var(--text);overflow-wrap:break-word;display:block;max-width:240px;margin:0 auto;text-align:center">'+esc(notesRaw)+'</span>'
+          ? '<span class="sched-notes-cell">'+esc(notesRaw)+'</span>'
           : '<span class="muted">—</span>';
         return '<tr class="sched-slot-row" data-sched-demo-id="'+esc(slot.demoId)+'" data-venue="'+esc(slot.venue)+'" data-staff="'+esc(staffKey)+'" data-pax-slug="'+esc(paxSlug)+'"'+(paxSlug2 ? ' data-pax-slug2="'+esc(paxSlug2)+'"' : '')+' data-has-ov="'+(hasOv?'1':'0')+'">'+
           '<td style="min-width:0">'+clientCellHtml+'</td>'+
@@ -14452,6 +14481,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(sched.lastMsg && msg){ msg.textContent = sched.lastMsg; msg.style.color = 'var(--success)'; sched.lastMsg = ''; }
         }
       }
+      schedEnsureBaseTableHead();
       if(tbody){
         tbody.innerHTML = slots.length
           ? renderSchedBaseRows(slots)
@@ -14468,6 +14498,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       portalApplyPendingBookingsSlotFocusAfterSchedRefresh();
     }
     function bindSchedulingModule(){
+      schedEnsureBaseTableHead();
       var pbf1 = state.pendingBookingsSlotFocus;
       if(pbf1 && pbf1.iso){
         var sd0 = $('schedDate');
@@ -14502,7 +14533,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             if(slotCh) openSchedSlotDrawer(slotCh);
             return;
           }
-          if(e.target && e.target.closest && e.target.closest('button[data-client],button[data-staff],button[data-staff-roster],a[href]')) return;
+          if(e.target && e.target.closest && e.target.closest('button[data-client],button[data-staff],button[data-staff-roster],button.sched-pax-pill,a[href]')) return;
           var tr = e.target && e.target.closest ? e.target.closest('tr[data-sched-demo-id]') : null;
           if(!tr) return;
           var id = tr.getAttribute('data-sched-demo-id');
