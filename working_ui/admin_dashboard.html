@@ -5669,6 +5669,60 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(String(stRow.overviewStatus || '').trim() === 'absent') return true;
       return !!stRow.feedbackComplete;
     }
+    /**
+     * Week-strip counts: one slot per feedback_unit_key (Day Centre blocks share a unit).
+     * Denominator = attended sessions only; absent marks are not counted as a "session".
+     * Attended feedback on the portal without an overview row (e.g. Tom Fri 15 May) still counts.
+     */
+    function adminFeedbackDayStatsFromStatusAndPortal(iso){
+      var want = String(iso || '').trim().substring(0, 10);
+      var statusDay = adminSessionFeedbackStatusByDate()[want] || [];
+      var byUnit = {};
+      var attendedClients = {};
+      var si;
+      for(si = 0; si < statusDay.length; si++){
+        var st = statusDay[si];
+        var ukey = String(st.feedbackUnitKey || st.sessionKey || '').trim().toLowerCase();
+        if(!ukey) ukey = want + '||' + adminRosterSlugify(st.client);
+        var absent = String(st.overviewStatus || '').trim() === 'absent';
+        var done = adminSessionFeedbackStatusCountsDone(st);
+        if(!byUnit[ukey]) byUnit[ukey] = { absent: absent, done: done };
+        else{
+          if(done) byUnit[ukey].done = true;
+          if(!absent) byUnit[ukey].absent = false;
+        }
+        if(!absent) attendedClients[adminRosterSlugify(st.client)] = true;
+      }
+      var required = 0;
+      var completed = 0;
+      var uk;
+      for(uk in byUnit){
+        if(!Object.prototype.hasOwnProperty.call(byUnit, uk)) continue;
+        var unit = byUnit[uk];
+        if(unit.absent) continue;
+        required++;
+        if(unit.done) completed++;
+      }
+      var portal = adminSessionFeedbackPortalRows();
+      var pi;
+      for(pi = 0; pi < portal.length; pi++){
+        var row = portal[pi];
+        if(bookingFeedbackDateIsoForRow(row) !== want) continue;
+        if(!adminPortalFeedbackRowIsAttendedFeedback(row)) continue;
+        var slug = adminRosterSlugify(row.clientName);
+        if(attendedClients[slug]) continue;
+        attendedClients[slug] = true;
+        required++;
+        completed++;
+      }
+      var pct = required > 0 ? Math.min(100, Math.round((completed / required) * 1000) / 10) : (completed > 0 ? 100 : 0);
+      return {
+        required: required,
+        completed: completed,
+        pending: Math.max(0, required - completed),
+        pct: pct
+      };
+    }
     /** Must match `PORTAL_SESSION_FEEDBACK_FIRST_DATE_ISO` in `database/export_session_feedback_portal_js.py`. */
     var ADMIN_PORTAL_SESSION_FEEDBACK_FIRST_DATE_ISO = '2026-04-13';
     var ADMIN_PORTAL_SESSION_FEEDBACK_TERM_TITLE = 'Summer Term 2026';
@@ -7740,8 +7794,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     /**
      * Session Overview: feedback completion for one calendar day.
-     * <strong>Required</strong> = roster slots with a named participant that day (<code>slotsForSelectedDate</code>).
-     * <strong>Completed</strong> = rows in <code>SESSION_FEEDBACK_PORTAL_SOURCE</code> for that same calendar date.
+     * <strong>Required</strong> = attended sessions that day (one per <code>feedback_unit_key</code>; absents excluded).
+     * <strong>Completed</strong> = those units with feedback submitted (portal export + overview status).
      */
     function bookingFeedbackStatsForIsoCalendarDay(iso){
       var want = String(iso || '').trim().substring(0, 10);
@@ -7755,13 +7809,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       var statusDay = adminSessionFeedbackStatusByDate()[want];
       if(statusDay && statusDay.length){
-        var required = statusDay.length;
-        var completed = 0;
-        for(var si = 0; si < statusDay.length; si++){
-          if(adminSessionFeedbackStatusCountsDone(statusDay[si])) completed++;
-        }
-        var pctS = required > 0 ? Math.min(100, Math.round((completed / required) * 1000) / 10) : (completed > 0 ? 100 : 0);
-        var outS = { required: required, completed: completed, pending: Math.max(0, required - completed), pct: pctS };
+        var outS = adminFeedbackDayStatsFromStatusAndPortal(want);
         bookingFeedbackStatsForIsoCalendarDay._cache[want] = outS;
         return outS;
       }
