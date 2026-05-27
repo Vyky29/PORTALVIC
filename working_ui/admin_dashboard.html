@@ -5670,15 +5670,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return !!stRow.feedbackComplete;
     }
     /**
-     * Week-strip counts: one slot per feedback_unit_key (Day Centre blocks share a unit).
-     * Denominator = attended sessions only; absent marks are not counted as a "session".
-     * Attended feedback on the portal without an overview row (e.g. Tom Fri 15 May) still counts.
+     * Week-strip counts: one expected slot per feedback_unit_key (Day Centre blocks share a unit).
+     * Includes attended, absent, and cancellation-style overview rows — same total as the roster expects.
+     * Portal feedback without a matching overview unit (e.g. extra session) still counts once.
      */
     function adminFeedbackDayStatsFromStatusAndPortal(iso){
       var want = String(iso || '').trim().substring(0, 10);
       var statusDay = adminSessionFeedbackStatusByDate()[want] || [];
       var byUnit = {};
-      var attendedClients = {};
+      var clientsInUnits = {};
       var si;
       for(si = 0; si < statusDay.length; si++){
         var st = statusDay[si];
@@ -5691,7 +5691,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(done) byUnit[ukey].done = true;
           if(!absent) byUnit[ukey].absent = false;
         }
-        if(!absent) attendedClients[adminRosterSlugify(st.client)] = true;
+        clientsInUnits[adminRosterSlugify(st.client)] = true;
       }
       var required = 0;
       var completed = 0;
@@ -5699,7 +5699,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       for(uk in byUnit){
         if(!Object.prototype.hasOwnProperty.call(byUnit, uk)) continue;
         var unit = byUnit[uk];
-        if(unit.absent) continue;
         required++;
         if(unit.done) completed++;
       }
@@ -5708,10 +5707,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       for(pi = 0; pi < portal.length; pi++){
         var row = portal[pi];
         if(bookingFeedbackDateIsoForRow(row) !== want) continue;
-        if(!adminPortalFeedbackRowIsAttendedFeedback(row)) continue;
         var slug = adminRosterSlugify(row.clientName);
-        if(attendedClients[slug]) continue;
-        attendedClients[slug] = true;
+        if(clientsInUnits[slug]) continue;
+        clientsInUnits[slug] = true;
         required++;
         completed++;
       }
@@ -7794,8 +7792,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     /**
      * Session Overview: feedback completion for one calendar day.
-     * <strong>Required</strong> = attended sessions that day (one per <code>feedback_unit_key</code>; absents excluded).
-     * <strong>Completed</strong> = those units with feedback submitted (portal export + overview status).
+     * <strong>Required</strong> = expected feedback units that day (one per <code>feedback_unit_key</code>; includes absents).
+     * <strong>Completed</strong> = units with feedback or absent mark submitted (portal export + overview status).
      */
     function bookingFeedbackStatsForIsoCalendarDay(iso){
       var want = String(iso || '').trim().substring(0, 10);
