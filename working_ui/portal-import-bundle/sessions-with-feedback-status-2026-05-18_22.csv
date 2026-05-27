@@ -68,7 +68,7 @@ date,weekday,client,service,time_slot,instructor,venue,notes,session_key,feedbac
 2026-05-20,Wednesday,Amber,Aquatic Activity,6 to 6.30,ROBERTO,Northolt,Teaching Pool,2026-05-20|18:00|amber,2026-05-20|18:00|amber,,feedback_submitted,yes,Amber,Roberto Reali,2026-05-20|18:00|amber
 2026-05-20,Wednesday,Kayden,Aquatic Activity,6 to 6.30,JAVIER,Acton,Lane,2026-05-20|18:00|kayden,2026-05-20|18:00|kayden,,feedback_submitted,yes,,,
 2026-05-21,Thursday,Fadi,Day Centre,12.30 to 3,ROBERTO,SwimFarm,Hub Room,2026-05-21|fadi|day_centre,2026-05-21|fadi|day_centre,,feedback_submitted,yes,Fadi,Roberto Reali,2026-05-21|fadi|day_centre
-2026-05-21,Thursday,Cyrus,Bespoke Programme,3.30 to 5,VICTOR,SwimFarm,Hub Room,2026-05-21|15:30|cyrus|hub_room,2026-05-21|cyrus|15:30|bespoke programme|hub_room,,feedback_submitted,yes,,,
+2026-05-21,Thursday,Cyrus,Bespoke Programme,3.30 to 5,VICTOR,SwimFarm,Hub Room,2026-05-21|15:30|cyrus|hub_room,2026-05-21|cyrus|15:30|bespoke programme|hub_room,,cancelled,yes,Cyrus,Victor Matilla,2026-05-21|15:30|cyrus|hub_room
 2026-05-21,Thursday,Ayman,Aquatic Activity,4 to 5,JAVI,Acton,Lane (SE),2026-05-21|16:00|ayman,2026-05-21|16:00|ayman,,absent,no,,,
 2026-05-21,Thursday,Elijah,Aquatic Activity,4 to 4.30,AURORA,Acton,Teaching Pool,2026-05-21|16:00|elijah,2026-05-21|16:00|elijah,,feedback_submitted,yes,Elijah,Aurora Garcia,2026-05-21|16:00|elijah
 2026-05-21,Thursday,Tom,Aquatic Activity,4 to 4.30,ROBERTO,Acton,Lane (SE),2026-05-21|16:00|tom,2026-05-21|16:00|tom,,feedback_submitted,yes,Tom,Roberto Reali,2026-05-21|16:00|tom
@@ -87,7 +87,7 @@ date,weekday,client,service,time_slot,instructor,venue,notes,session_key,feedbac
 2026-05-22,Friday,Emmanuel,Day Centre,11 to 3,YOUSSEF,SwimFarm,Hub Room,2026-05-22|emmanuel|day_centre,2026-05-22|emmanuel|day_centre,,absent,no,,,
 2026-05-22,Friday,Ikram,Day Centre,11 to 4,"RAUL, LULIYA",SwimFarm,Hub Room,2026-05-22|ikram|day_centre,2026-05-22|ikram|day_centre,,feedback_submitted,yes,Ikram,Victor Matilla,2026-05-22|ikram|day_centre
 2026-05-22,Friday,Fadi,Day Centre,12.30 to 3,RAUL,SwimFarm,Hub Room,2026-05-22|fadi|day_centre,2026-05-22|fadi|day_centre,,feedback_submitted,yes,Fadi,Roberto Reali,2026-05-22|fadi|day_centre
-2026-05-22,Friday,Timi,Day Centre,1 to 3,VICTOR,SwimFarm,Hub Room,2026-05-22|timi|day_centre,2026-05-22|timi|day_centre,,feedback_submitted,yes,,,
+2026-05-22,Friday,Timi,Day Centre,1 to 3,VICTOR,SwimFarm,Hub Room,2026-05-22|timi|day_centre,2026-05-22|timi|day_centre,,cancelled,yes,Timi,Victor Matilla,2026-05-22|timi|day_centre
 2026-05-22,Friday,Emmanuel,Day Centre,3 to 4,VICTOR,SwimFarm,Hub Room,2026-05-22|emmanuel|day_centre,2026-05-22|emmanuel|day_centre,,absent,no,,,
 2026-05-22,Friday,Adam Pi,Aquatic Activity,4 to 5.30,ROBERTO,Acton,Teaching Pool,2026-05-22|16:00|adam_pi,2026-05-22|16:00|adam_pi,,feedback_submitted,yes,Adam Pi,Roberto Reali,2026-05-22|16:00|adam_pi
 2026-05-22,Friday,Tinashe,Bespoke Programme,4.30 to 6,"BISMARK, GIUSEPPE, JOHN",SwimFarm,Hub Room,2026-05-22|16:30|tinashe|hub_room,2026-05-22|tinashe|16:30|bespoke programme|hub_room,,feedback_submitted,yes,Tinashe,Giuseppe Morelli,2026-05-22||tinashe|hub_room

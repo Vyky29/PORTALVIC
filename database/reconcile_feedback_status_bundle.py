@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 BUNDLE_DEFAULT = ROOT / "working_ui" / "portal-import-bundle"
 FEEDBACK_JS = ROOT / "working_ui" / "portal" / "session_feedback_portal_data.js"
 FIRST_DATE = "2026-04-13"
-THROUGH_DEFAULT = "2026-05-19"
+THROUGH_DEFAULT = "2026-05-22"
 
 STATUS_FIELDS = [
     "date",
@@ -159,10 +159,59 @@ def write_status_csv(path: Path, rows: list[dict]) -> None:
             w.writerow({k: row.get(k, "") for k in STATUS_FIELDS})
 
 
+def _is_test_client(name: str) -> bool:
+    return bool(re.match(r"^test\s*client$", str(name or "").strip(), re.I))
+
+
+def apply_cancellations_from_csv(bundle: Path, through_iso: str) -> int:
+    """Mark overview slots cancelled when portal-import cancellations.csv has a row."""
+    can_path = bundle / "cancellations.csv"
+    if not can_path.is_file():
+        return 0
+    can_by_client_day: dict[tuple[str, str], dict] = {}
+    for raw in csv.DictReader(can_path.read_text(encoding="utf-8-sig").splitlines()):
+        date_iso = str(raw.get("session_date") or "")[:10]
+        if not date_iso or date_iso < FIRST_DATE or date_iso > through_iso:
+            continue
+        name = str(raw.get("client_name") or "").strip()
+        if not name or _is_test_client(name):
+            continue
+        can_by_client_day[(date_iso, client_slug(name))] = raw
+
+    updated = 0
+    for path in sorted(bundle.glob("sessions-with-feedback-status-*.csv")):
+        rows = read_status_csv(path)
+        changed_file = False
+        for row in rows:
+            date_iso = str(row.get("date") or "")[:10]
+            if not date_iso or date_iso < FIRST_DATE or date_iso > through_iso:
+                continue
+            key = (date_iso, client_slug(row.get("client") or ""))
+            can = can_by_client_day.get(key)
+            if not can:
+                continue
+            if str(row.get("overview_status") or "").strip() == "cancelled":
+                continue
+            row["overview_status"] = "cancelled"
+            row["feedback_complete"] = "yes"
+            row["matched_feedback_client"] = str(can.get("client_name") or row.get("client") or "").strip()
+            row["matched_feedback_by"] = str(can.get("submitted_by_name") or "").strip()
+            row["matched_portal_session_key"] = str(
+                can.get("portal_session_key") or row.get("session_key") or ""
+            ).strip()
+            updated += 1
+            changed_file = True
+        if changed_file:
+            write_status_csv(path, rows)
+            print(f"Cancellation status {path.relative_to(ROOT)}")
+    return updated
+
+
 def reconcile_bundle(
     bundle_dir: Path | None = None, through_iso: str = THROUGH_DEFAULT
 ) -> tuple[int, int]:
     bundle = Path(bundle_dir) if bundle_dir else BUNDLE_DEFAULT
+    apply_cancellations_from_csv(bundle, through_iso)
     fb_rows = load_feedback_rows(bundle / "session-feedback.csv")
     fb_keys, absent_keys, by_day_client = feedback_lookup(fb_rows)
     updated = 0
@@ -180,7 +229,7 @@ def reconcile_bundle(
         g = str(row.get("feedback_merge_group") or "").strip()
         if not g:
             continue
-        if str(row.get("overview_status") or "") in ("feedback_submitted", "absent"):
+        if str(row.get("overview_status") or "") in ("feedback_submitted", "absent", "cancelled"):
             done_groups.add(g)
 
     for path in sorted(bundle.glob("sessions-with-feedback-status-*.csv")):
@@ -191,7 +240,7 @@ def reconcile_bundle(
             if not date_iso or date_iso < FIRST_DATE or date_iso > through_iso:
                 continue
             status = str(row.get("overview_status") or "").strip()
-            if status == "absent":
+            if status in ("absent", "cancelled"):
                 continue
             if status == "feedback_submitted":
                 g = str(row.get("feedback_merge_group") or "").strip()

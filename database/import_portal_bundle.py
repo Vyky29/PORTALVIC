@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import csv
 import json
+import re
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
@@ -21,6 +22,7 @@ ROSTER_WEEKS = ROOT / "database" / "roster_weeks"
 PORTAL = ROOT / "working_ui" / "portal"
 FEEDBACK_JS = PORTAL / "session_feedback_portal_data.js"
 STATUS_JS = PORTAL / "session_feedback_status_portal_data.js"
+CANCELLATIONS_JS = PORTAL / "cancellations_portal_data.js"
 FEEDBACK_IMPORTS = ROOT / "database" / "feedback_imports"
 
 # Drop legacy per-tramo CSVs; bundle replaces them.
@@ -136,6 +138,46 @@ def _status_row_key(raw: dict) -> tuple:
     )
 
 
+def export_cancellations_js(bundle: Path) -> int:
+    path = bundle / "cancellations.csv"
+    rows_out: list[dict] = []
+    if path.is_file():
+        for raw in csv.DictReader(path.read_text(encoding="utf-8-sig").splitlines()):
+            name = str(raw.get("client_name") or "").strip()
+            if not name or re.match(r"^test\s*client$", name, re.I):
+                continue
+            rows_out.append(
+                {
+                    "session_date": str(raw.get("session_date") or "")[:10],
+                    "client_name": name,
+                    "service": str(raw.get("service") or "").strip(),
+                    "session_time": str(raw.get("session_time") or "").strip(),
+                    "cancellation_timing": str(raw.get("cancellation_timing") or "").strip(),
+                    "reason_category": str(raw.get("reason_category") or "").strip(),
+                    "submitted_by_name": str(raw.get("submitted_by_name") or "").strip(),
+                    "portal_session_key": str(raw.get("portal_session_key") or "").strip(),
+                    "created_at": str(raw.get("created_at") or "").strip(),
+                }
+            )
+    rows_out.sort(
+        key=lambda r: (r["session_date"], r.get("client_name") or ""),
+        reverse=True,
+    )
+    meta = {
+        "sourceFile": "portal-import-bundle/cancellations.csv",
+        "exportedAt": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%MZ"),
+        "rowCount": len(rows_out),
+    }
+    payload = {"meta": meta, "rows": rows_out}
+    CANCELLATIONS_JS.parent.mkdir(parents=True, exist_ok=True)
+    with CANCELLATIONS_JS.open("w", encoding="utf-8") as f:
+        f.write("window.CANCELLATIONS_PORTAL_SOURCE = ")
+        json.dump(payload, f, ensure_ascii=False, separators=(",", ":"))
+        f.write(";\n")
+    print(f"Wrote {CANCELLATIONS_JS.relative_to(ROOT)} rows={len(rows_out)}")
+    return len(rows_out)
+
+
 def export_status_js(bundle: Path) -> int:
     by_key: dict[tuple, dict] = {}
     sources: list[str] = []
@@ -212,6 +254,7 @@ def main() -> None:
     for status_csv in bundle.glob("sessions-with-feedback-status-*.csv"):
         shutil.copy2(status_csv, BUNDLE_SRC / status_csv.name)
     export_status_js(bundle)
+    export_cancellations_js(bundle)
     from export_venue_reviews_portal_js import export_venue_reviews_js
 
     export_venue_reviews_js()

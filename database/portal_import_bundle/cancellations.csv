@@ -2,7 +2,4 @@ session_date,weekday,client_name,service,session_time,cancellation_timing,reason
 2026-05-16,Saturday,Amaar Ah,Multi-Activity,,Before the session started,Unforeseen circumstances: Fire alarm / Fire drill,Alex Stone,,2026-05-16T11:45:51.216138+00:00
 2026-05-16,Saturday,Kamy,Aquatic Activity,,Before the session started,Illness: Diarrhoea,Alex Stone,,2026-05-16T11:54:46.707817+00:00
 2026-05-21,Thursday,Cyrus,Bespoke Programme,,Before the session started,Unforeseen circumstances: Venue incident,Victor Matilla,,2026-05-22T10:36:42.728508+00:00
-2026-05-22,Friday,Test Client,Aquatic Activity,,Before the session started,Other,Victor Matilla,,2026-05-22T19:57:32.556062+00:00
-2026-05-22,Friday,Test Client,Aquatic Activity,,Before the session started,Other,Victor Matilla,,2026-05-22T19:58:22.750045+00:00
-2026-05-22,Friday,Test Client,Aquatic Activity,,Before the session started,Other — Notes: Smoke test notes field,Victor Matilla,,2026-05-22T20:00:10.246353+00:00
-2026-05-22,Friday,Timi,Day Centre,,Before the session started,Other — Notes: Stuck in traffic,Victor Matilla,,2026-05-22T20:19:30.131449+00:00
+2026-05-22,Friday,Timi,Day Centre,,Before the session started,Other — Notes: Stuck in traffic,Victor Matilla,2026-05-22|timi|day_centre,2026-05-22T20:19:30.131449+00:00

@@ -1287,6 +1287,18 @@
     return !!(fb && fb.attendance && String(fb.attendance).toLowerCase().indexOf("no") === 0);
   }
 
+  function isCancellationFeedbackRow(fb) {
+    return !!(fb && fb._ashCancellationMark);
+  }
+
+  function isTerminalFeedbackRow(fb) {
+    return isAbsentFeedbackRow(fb) || isCancellationFeedbackRow(fb);
+  }
+
+  function isPortalTestClientName(name) {
+    return /^test\s*client$/i.test(String(name || "").trim());
+  }
+
   /** One submitted row covers every slot in a sundayFeedbackMerges group (e.g. Yusuf 9:00 + 9:30 with Roberto). */
   function feedbackCoversMergeGroup(fb, slots) {
     if (!fb || !slots.length) return false;
@@ -3366,7 +3378,12 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     }
 
     function feedbackLogDedupeKey(row) {
-      return feedbackLogSlotKey(row) + "|" + (isAbsentFeedbackRow(row) ? "absent" : "attended");
+      var kind = isCancellationFeedbackRow(row)
+        ? "cancelled"
+        : isAbsentFeedbackRow(row)
+          ? "absent"
+          : "attended";
+      return feedbackLogSlotKey(row) + "|" + kind;
     }
 
     function pushRow(row) {
@@ -3419,6 +3436,42 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         _ashAbsentMark: true,
       });
     }
+    var cancels = hub.cancellationsForDate(day);
+    for (var cj = 0; cj < cancels.length; cj++) {
+      var can = cancels[cj].row;
+      var cn = clean(can.client_name);
+      if (!cn || isPortalTestClientName(cn)) continue;
+      var cslug = canonicalClientSlug(cn);
+      for (var rm = out.length - 1; rm >= 0; rm--) {
+        if (
+          canonicalClientSlug(out[rm].client_name) === cslug &&
+          !isAbsentFeedbackRow(out[rm]) &&
+          !isCancellationFeedbackRow(out[rm])
+        ) {
+          delete byKey[feedbackLogDedupeKey(out[rm])];
+          out.splice(rm, 1);
+        }
+      }
+      var reason = clean(can.reason_category) || "\u2014";
+      var timing = clean(can.cancellation_timing);
+      if (timing && reason !== "\u2014") reason = timing + " \u2014 " + reason;
+      else if (timing) reason = timing;
+      pushRow({
+        client_name: cn,
+        service: clean(can.service) || "\u2014",
+        session_date: day,
+        session_time: clean(can.session_time),
+        attendance: "No",
+        completed_by_name: clean(can.submitted_by_name) || "\u2014",
+        created_at: can.created_at || null,
+        engagement_rating: null,
+        client_emotions: null,
+        engagement_patterns: null,
+        positive_feedback: null,
+        relevant_information: reason,
+        _ashCancellationMark: true,
+      });
+    }
     var bySlot = {};
     for (var d = 0; d < out.length; d++) {
       var row = out[d];
@@ -3427,7 +3480,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         bySlot[slotKey] = row;
         continue;
       }
-      if (isAbsentFeedbackRow(row) && !isAbsentFeedbackRow(bySlot[slotKey])) {
+      if (isCancellationFeedbackRow(row) && !isCancellationFeedbackRow(bySlot[slotKey])) {
+        bySlot[slotKey] = row;
+      } else if (isAbsentFeedbackRow(row) && !isTerminalFeedbackRow(bySlot[slotKey])) {
         bySlot[slotKey] = row;
       }
     }
@@ -3697,6 +3752,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     }
 
     var absent = isAbsentFeedbackRow(fb);
+    var cancelled = isCancellationFeedbackRow(fb);
+    var terminal = isTerminalFeedbackRow(fb);
     var displaySlot = fb._ashDisplaySlot || null;
     var clientLabel =
       resolveRosterClientName(canonicalClientSlug(fb.client_name)) ||
@@ -3709,9 +3766,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       displaySlot && displaySlot.time_slot
         ? '<div class="ash-cell-sub">' + esc(displaySlot.time_slot) + "</div>"
         : "";
-    var ind = absent ? "N/A" : independenceLabel(fb);
-    var pos = absent ? "N/A" : clean(fb.positive_feedback) || "\u2014";
-    var rel = absent ? "N/A" : clean(fb.relevant_information) || "\u2014";
+    var ind = terminal ? "N/A" : independenceLabel(fb);
+    var pos = terminal ? "N/A" : clean(fb.positive_feedback) || "\u2014";
+    var rel = terminal ? "N/A" : clean(fb.relevant_information) || "\u2014";
     var reviewCls =
       opts.clickable !== false && needsReviewRow(fb) && !hub._reviewedKeys[hub.fbRowKey(fb)]
         ? " ash-fb-row--needs-review"
@@ -3731,9 +3788,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       '<td><span class="ash-link">' +
       esc(clientLabel) +
       "</span>" +
-      (absent
-        ? '<div class="ash-cell-sub"><span class="ash-status ash-status--absent">Submitted (Absent)</span></div>'
-        : "") +
+      (cancelled
+        ? '<div class="ash-cell-sub"><span class="ash-status ash-status--cancelled">Submitted (Cancelled)</span></div>'
+        : absent
+          ? '<div class="ash-cell-sub"><span class="ash-status ash-status--absent">Submitted (Absent)</span></div>'
+          : "") +
       "</td>" +
       "<td>" +
       esc(svcLabel) +
@@ -3741,19 +3800,19 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       (sessionDay && !svcTimeSub ? '<div class="ash-cell-sub">' + esc(sessionDay) + "</div>" : "") +
       "</td>" +
       "<td>" +
-      (absent ? cellNa() : fb.engagement_rating != null ? esc(fb.engagement_rating) : "\u2014") +
+      (terminal ? cellNa() : fb.engagement_rating != null ? esc(fb.engagement_rating) : "\u2014") +
       "</td>" +
       "<td>" +
-      (absent ? cellNa() : emotionFacesHtml(fb, esc)) +
+      (terminal ? cellNa() : emotionFacesHtml(fb, esc)) +
       "</td>" +
       '<td class="ash-cell-note">' +
-      (absent ? cellNa() : cellNoteHtml(ind === "\u2014" ? "" : ind)) +
+      (terminal ? cellNa() : cellNoteHtml(ind === "\u2014" ? "" : ind)) +
       "</td>" +
       '<td class="ash-cell-note">' +
-      (absent ? cellNa() : cellNoteHtml(pos === "\u2014" ? "" : pos)) +
+      (terminal ? cellNa() : cellNoteHtml(pos === "\u2014" ? "" : pos)) +
       "</td>" +
       '<td class="ash-cell-note">' +
-      (absent ? cellNa() : cellNoteHtml(rel === "\u2014" ? "" : rel)) +
+      (terminal ? cellNa() : cellNoteHtml(rel === "\u2014" ? "" : rel)) +
       "</td>" +
       '<td class="ash-cell-instructor"><div class="ash-cell-main">' +
       esc(fb.completed_by_name || "\u2014") +
@@ -3805,7 +3864,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         " \u2013 " +
         esc(formatLongDate(opts.filterDayIso)) +
         "</summary>" +
-        '<p class="ash-feedback-log__note">Includes attended feedback and <strong>absents</strong> (N/A except Reviewed by). Absents also appear on the Absents tab. Incident and cancellation flags are on the roster table above.</p>' +
+        '<p class="ash-feedback-log__note">Includes attended feedback, <strong>absents</strong>, and <strong>cancellations</strong> (N/A except Reviewed by / reason). See also Absents and Cancellations tabs.</p>' +
         '<div class="ash-table-wrap"><table class="ash-table ash-table--feedback"><thead><tr>' +
         AdminSessionsHub.FEEDBACK_TABLE_HEAD +
         "</tr></thead><tbody>" +

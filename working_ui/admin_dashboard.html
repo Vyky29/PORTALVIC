@@ -4,7 +4,7 @@
   <!-- Admin portal · Vercel static deploy: working_ui/admin_dashboard.html + portal/ assets -->
   <meta charset="UTF-8" />
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
-  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260527-closed-days" />
+  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260528-timi-cancel" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260520-portal2026" />
   <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260526-hub-tile-text" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260521-embed" />
@@ -4173,7 +4173,7 @@
   })();
   </script>
   <!-- Large portal datasets load on demand (portalAdminLoadScriptSet) so Day operations opens without freezing. -->
-  <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260528-tom-fri-fix"></script>
+  <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260528-timi-cancel"></script>
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260521-late-perf"></script>
 
   <script>
@@ -5666,8 +5666,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     /** Absent or feedback_complete per bundle logic (not per raw feedback row count). */
     function adminSessionFeedbackStatusCountsDone(stRow){
       if(!stRow) return false;
-      if(String(stRow.overviewStatus || '').trim() === 'absent') return true;
+      var st = String(stRow.overviewStatus || '').trim();
+      if(st === 'absent' || st === 'cancelled') return true;
       return !!stRow.feedbackComplete;
+    }
+    function adminCancellationPortalRows(){
+      var src = typeof window !== 'undefined' ? window.CANCELLATIONS_PORTAL_SOURCE : null;
+      if(!src || !Array.isArray(src.rows) || !src.rows.length) return [];
+      return src.rows;
+    }
+    function adminIsPortalTestClientName(name){
+      return /^test\s*client$/i.test(String(name || '').trim());
     }
     /**
      * Week-strip counts: one expected slot per feedback_unit_key (Day Centre blocks share a unit).
@@ -16532,22 +16541,68 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminHubQuickMarksBySessionKey._m = m;
       return m;
     }
+    function adminMapPortalCancellationRow(r){
+      return {
+        id: adminSfStr(r.id) || null,
+        created_at: adminSfStr(r.created_at) || adminSfStr(r.createdAt) || null,
+        session_date: adminSfStr(r.session_date || r.sessionDate).substring(0, 10),
+        session_time: adminSfStr(r.session_time || r.sessionTime) || '',
+        client_name: adminSfStr(r.client_name || r.clientName) || '—',
+        service: adminSfStr(r.service) || '—',
+        cancellation_timing: adminSfStr(r.cancellation_timing || r.cancellationTiming) || '',
+        reason_category: adminSfStr(r.reason_category || r.reasonCategory) || '',
+        submitted_by_name: adminSfStr(r.submitted_by_name || r.submittedByName) || '—',
+        portal_session_key: adminSfStr(r.portal_session_key || r.portalSessionKey) || ''
+      };
+    }
+    function adminMergeCancellationReports(dbRows, portalRows){
+      var byKey = {};
+      var out = [];
+      function add(row){
+        if(!row || adminIsPortalTestClientName(row.client_name)) return;
+        var k =
+          String(row.portal_session_key || '').trim().toLowerCase() ||
+          String(row.session_date || '').trim() +
+            '|' +
+            adminRosterSlugify(row.client_name) +
+            '|' +
+            String(row.created_at || '').trim();
+        if(byKey[k]) return;
+        byKey[k] = true;
+        out.push(row);
+      }
+      (portalRows || []).forEach(function(r){ add(adminMapPortalCancellationRow(r)); });
+      (dbRows || []).forEach(function(r){
+        if(adminIsPortalTestClientName(r.client_name)) return;
+        add(r);
+      });
+      out.sort(function(a, b){
+        return String(b.session_date || '').localeCompare(String(a.session_date || '')) ||
+          String(b.created_at || '').localeCompare(String(a.created_at || ''));
+      });
+      return out;
+    }
     async function adminFetchCancellationReportsForHub(){
       if(window.__PORTAL_CANCELLATION_REPORTS__) return window.__PORTAL_CANCELLATION_REPORTS__;
+      var portalRows = adminCancellationPortalRows().map(adminMapPortalCancellationRow);
       var client = getSchedSupabaseClient();
-      if(!client){ window.__PORTAL_CANCELLATION_REPORTS__ = []; return []; }
+      if(!client){
+        window.__PORTAL_CANCELLATION_REPORTS__ = adminMergeCancellationReports([], portalRows);
+        return window.__PORTAL_CANCELLATION_REPORTS__;
+      }
       try{
         var since = new Date();
         since.setDate(since.getDate() - 120);
         var res = await client
           .from('cancellation_reports')
-          .select('id,created_at,session_date,session_time,client_name,service,cancellation_timing,reason_category,submitted_by_name')
+          .select('id,created_at,session_date,session_time,client_name,service,cancellation_timing,reason_category,submitted_by_name,portal_session_key')
           .gte('session_date', since.toISOString().slice(0, 10))
           .order('session_date', { ascending: false })
           .limit(400);
-        window.__PORTAL_CANCELLATION_REPORTS__ = res.error ? [] : (res.data || []);
+        var dbRows = res.error ? [] : (res.data || []);
+        window.__PORTAL_CANCELLATION_REPORTS__ = adminMergeCancellationReports(dbRows, portalRows);
       }catch(_e){
-        window.__PORTAL_CANCELLATION_REPORTS__ = [];
+        window.__PORTAL_CANCELLATION_REPORTS__ = adminMergeCancellationReports([], portalRows);
       }
       return window.__PORTAL_CANCELLATION_REPORTS__;
     }
@@ -16896,7 +16951,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
     var ADMIN_SESSIONS_HUB_SRC =
-      '/portal/admin-sessions-hub.js?v=20260528-fb-submitted-at';
+      '/portal/admin-sessions-hub.js?v=20260528-timi-cancel';
 
     /** Club closed — half-term 23–31 May 2026, bank holiday 4 May (see PORTAL_TERM_FROM_TIMETABLE). */
     function portalAdminDayIsClubClosed(iso){

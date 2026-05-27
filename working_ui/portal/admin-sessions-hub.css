@@ -920,6 +920,7 @@
     .ash-status--wait { color: #c2410c; font-weight: 700; font-size: 12px; }
     .ash-status--done { color: #166534; font-weight: 700; font-size: 12px; }
     .ash-status--absent { color: #b91c1c; font-weight: 700; font-size: 12px; }
+    .ash-status--cancelled { color: #c2410c; font-weight: 700; font-size: 12px; }
     .ash-cell-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
     .ash-cell-main { font-weight: 600; }
     .ash-cell-clip { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
