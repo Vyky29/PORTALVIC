@@ -7147,6 +7147,7 @@
   <script src="portal/staff_dashboard_spreadsheet_adapter.js"></script>
   <script src="portal/staff_roster_resolve.js"></script>
   <script src="/portal/portal_guide_menu.js?v=20260523"></script>
+  <script src="/portal/portal_dm_voice.js?v=20260531-dm-voice"></script>
   <script>
     console.log("ABSENT FIX VERSION LOADED 20260425");
     /** Real calendar weekday for “Today” (en-GB), aligned with staff_clients_machine.xlsx */
@@ -12004,7 +12005,7 @@
       try{
         var threadId = typeof window.portalStaffEnsureDmThreadBetween === 'function' ? await window.portalStaffEnsureDmThreadBetween(me, peer) : '';
         if(!threadId) throw new Error('Could not start thread.');
-        var msg = await client.from('portal_staff_dm_messages').insert([{ thread_id: threadId, body: body }]).select('id');
+        var msg = await client.from('portal_staff_dm_messages').insert([{ thread_id: threadId, body: body, message_type: 'text' }]).select('id');
         if(msg.error) throw msg.error;
         window.__PORTAL_INTERNAL_CHAT_UI = window.__PORTAL_INTERNAL_CHAT_UI || {};
         window.__PORTAL_INTERNAL_CHAT_UI.threadId = threadId;
@@ -12180,7 +12181,8 @@
       if(errB) errB.textContent = "";
       if(msgsBox) msgsBox.innerHTML = "<p class=\"muted\" style=\"margin:0\">Loading…</p>";
       var seenAtOpen = portalStaffDmGetSeenIso(tid);
-      var mres = await client.from("portal_staff_dm_messages").select("id,author_id,body,created_at").eq("thread_id", tid).order("created_at", { ascending: true });
+      var dmMsgFields = window.portalDmVoice ? window.portalDmVoice.MSG_FIELDS : "id,author_id,body,created_at,message_type,audio_storage_path,audio_mime,duration_ms";
+      var mres = await client.from("portal_staff_dm_messages").select(dmMsgFields).eq("thread_id", tid).order("created_at", { ascending: true });
       if(mres.error){
         if(msgsBox) msgsBox.innerHTML = "<p class=\"muted\" style=\"color:var(--danger);min-width:0;overflow-wrap:break-word\">"+escapeHtml(String(mres.error.message || mres.error))+"</p>";
         return;
@@ -12217,7 +12219,8 @@
             });
           }
         }
-        arr.forEach(function(m){
+        for(var mxi = 0; mxi < arr.length; mxi++){
+          var m = arr[mxi];
           var mine = String(m.author_id || "").toLowerCase() === String(me || "").toLowerCase();
           var aid = String(m.author_id || "").trim();
           var row = document.createElement("div");
@@ -12228,12 +12231,34 @@
           var tline = "";
           try{ if(m.created_at) tline = new Date(m.created_at).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }); }catch(_t){}
           var chip = portalDmInternalMsgAuthorChip(mine, authorBy[aid] || {});
-          var chipHtml = chip ? "<div class=\"portal-dm-msg-by\">" + escapeHtml(chip) + "</div>" : "";
-          div.innerHTML = chipHtml + "<div style=\"white-space:pre-wrap;min-width:0;overflow-wrap:break-word\">"+escapeHtml(String(m.body || ""))+"</div>"+
-            (tline ? "<div class=\"portal-dm-msg-time\">"+escapeHtml(tline)+"</div>" : "");
+          if(chip){
+            var chipEl = document.createElement("div");
+            chipEl.className = "portal-dm-msg-by";
+            chipEl.textContent = chip;
+            div.appendChild(chipEl);
+          }
+          var bodyHost = document.createElement("div");
+          bodyHost.className = "portal-dm-msg-body";
+          bodyHost.style.minWidth = "0";
+          if(window.portalDmVoice && window.portalDmVoice.fillMessageBody){
+            await window.portalDmVoice.fillMessageBody(bodyHost, m, client, escapeHtml);
+          }else{
+            var textEl = document.createElement("div");
+            textEl.style.whiteSpace = "pre-wrap";
+            textEl.style.overflowWrap = "break-word";
+            textEl.textContent = String(m.body || "");
+            bodyHost.appendChild(textEl);
+          }
+          div.appendChild(bodyHost);
+          if(tline){
+            var timeEl = document.createElement("div");
+            timeEl.className = "portal-dm-msg-time";
+            timeEl.textContent = tline;
+            div.appendChild(timeEl);
+          }
           row.appendChild(div);
           msgsBox.appendChild(row);
-        });
+        }
       }
       requestAnimationFrame(function(){
         msgsBox.scrollTop = msgsBox.scrollHeight;
@@ -12269,6 +12294,32 @@
         sendBtn.dataset.portalDmBound = "1";
         sendBtn.addEventListener("click", function(){ void window.portalInternalChatSendMessage(); });
       }
+      if(window.portalDmVoice && inp){
+        window.portalDmVoice.ensureMicButtonBefore(inp, "internalChatVoiceBtn");
+        if(!window.__PORTAL_LEAD_DM_VOICE_BOUND){
+          window.__PORTAL_LEAD_DM_VOICE_BOUND = true;
+          window.portalDmVoice.attachVoiceButton({
+            buttonId: "internalChatVoiceBtn",
+            textareaId: "internalChatInput",
+            hintId: "internalChatVoiceBtnHint",
+            getContext: function(){
+              var box = window.__PORTAL_SUPABASE__;
+              var ui = window.__PORTAL_INTERNAL_CHAT_UI || {};
+              return {
+                client: box && box.client,
+                threadId: String(ui.threadId || "").trim(),
+                groupId: "",
+                authorId: String((box && box.staff_profile && box.staff_profile.id) || (box && box.session && box.session.user && box.session.user.id) || "").trim()
+              };
+            },
+            onSent: function(){ return window.portalRenderInternalChatSheet(); },
+            onError: function(msg){
+              var errB = document.getElementById("internalChatErr");
+              if(errB) errB.textContent = msg;
+            }
+          });
+        }
+      }
       portalSyncInternalChatMobileViewport();
     };
     window.portalInternalChatSendMessage = async function portalInternalChatSendMessage(){
@@ -12291,7 +12342,7 @@
       }
       if(sendBtn) sendBtn.disabled = true;
       try{
-        var ins = await client.from("portal_staff_dm_messages").insert([{ thread_id: tid, body: body }]).select("id");
+        var ins = await client.from("portal_staff_dm_messages").insert([{ thread_id: tid, body: body, message_type: "text" }]).select("id");
         if(ins.error) throw ins.error;
         if(inp) inp.value = "";
         await window.portalRenderInternalChatSheet();

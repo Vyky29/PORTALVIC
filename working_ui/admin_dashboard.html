@@ -12,6 +12,7 @@
   <script src="/portal/admin-portal-day-ops.js?v=20260528-fb-submitted-at"></script>
   <script src="/portal/admin-portal-documents.js?v=20260521-supabase-docs"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
+  <script src="/portal/portal_dm_voice.js?v=20260531-dm-voice"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
   <title>clubSENsational · Operations + Operator workflow (merged)</title>
   <style>
@@ -20448,7 +20449,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var arr = [];
       var mres;
       if(gid){
-        mres = await client.from('portal_ceo_group_message').select('id,author_id,body,created_at').eq('group_id', gid).order('created_at', { ascending: true });
+        mres = await client.from('portal_ceo_group_message').select(window.portalDmVoice ? window.portalDmVoice.MSG_FIELDS : 'id,author_id,body,created_at,message_type,audio_storage_path,audio_mime,duration_ms').eq('group_id', gid).order('created_at', { ascending: true });
         if(mres.error){
           msgsBox.innerHTML = '<p class="muted" style="margin:0;color:var(--danger);min-width:0;overflow-wrap:break-word">'+esc(String(mres.error.message || mres.error))+'</p>';
           return;
@@ -20459,7 +20460,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(msgsBox) msgsBox.innerHTML = '<p class="muted" style="margin:0">Not available.</p>';
           return;
         }
-        mres = await client.from('portal_staff_dm_messages').select('id,author_id,body,created_at').eq('thread_id', tid).order('created_at', { ascending: true });
+        mres = await client.from('portal_staff_dm_messages').select(window.portalDmVoice ? window.portalDmVoice.MSG_FIELDS : 'id,author_id,body,created_at,message_type,audio_storage_path,audio_mime,duration_ms').eq('thread_id', tid).order('created_at', { ascending: true });
         if(mres.error){
           msgsBox.innerHTML = '<p class="muted" style="margin:0;color:var(--danger);min-width:0;overflow-wrap:break-word">'+esc(String(mres.error.message || mres.error))+'</p>';
           return;
@@ -20511,7 +20512,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         ph.textContent = 'No messages yet.';
         msgsBox.appendChild(ph);
       }else{
-        arr.forEach(function(m){
+        for(var mi = 0; mi < arr.length; mi++){
+          var m = arr[mi];
           var mine = String(m.author_id || '').toLowerCase() === String(me || '').toLowerCase();
           var aid = String(m.author_id || '').trim();
           var arow = authorBy[aid] || {};
@@ -20528,14 +20530,60 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             authorRole: String(arow.app_role || '').toLowerCase(),
             authorRow: arow
           });
-          var chipHtml = chip ? '<div class="portal-dm-msg-by">'+esc(chip)+'</div>' : '';
-          div.innerHTML = chipHtml+'<div style="white-space:pre-wrap;min-width:0;overflow-wrap:break-word">'+esc(String(m.body || ''))+'</div>'+
-            (tline ? '<div class="portal-dm-msg-time">'+esc(tline)+'</div>' : '');
+          if(chip){
+            var chipEl = document.createElement('div');
+            chipEl.className = 'portal-dm-msg-by';
+            chipEl.textContent = chip;
+            div.appendChild(chipEl);
+          }
+          var bodyHost = document.createElement('div');
+          bodyHost.className = 'portal-dm-msg-body';
+          bodyHost.style.minWidth = '0';
+          if(window.portalDmVoice && window.portalDmVoice.fillMessageBody){
+            await window.portalDmVoice.fillMessageBody(bodyHost, m, client, esc);
+          }else{
+            bodyHost.style.whiteSpace = 'pre-wrap';
+            bodyHost.style.overflowWrap = 'break-word';
+            bodyHost.textContent = String(m.body || '');
+          }
+          div.appendChild(bodyHost);
+          if(tline){
+            var timeEl = document.createElement('div');
+            timeEl.className = 'portal-dm-msg-time';
+            timeEl.textContent = tline;
+            div.appendChild(timeEl);
+          }
           row.appendChild(div);
           msgsBox.appendChild(row);
-        });
+        }
       }
       msgsBox.scrollTop = msgsBox.scrollHeight;
+    }
+    function portalAdminDmBindVoiceControls(){
+      var pv = window.portalDmVoice;
+      if(!pv) return;
+      var replyTa = $('admDmReplyBody');
+      if(!replyTa) return;
+      pv.ensureMicButtonBefore(replyTa, 'admDmVoiceBtn');
+      pv.attachVoiceButton({
+        buttonId: 'admDmVoiceBtn',
+        textareaId: 'admDmReplyBody',
+        hintId: 'admDmVoiceBtnHint',
+        getContext: function(){
+          var ui = window.__PORTAL_ADMIN_DM_UI || {};
+          return {
+            client: getSchedSupabaseClient(),
+            threadId: String(ui.threadId || '').trim(),
+            groupId: String(ui.groupId || '').trim(),
+            authorId: portalAdminDmMe()
+          };
+        },
+        onSent: function(){ return portalAdminDmLoadMessages(); },
+        onError: function(msg){
+          var errB = $('admDmThreadErr');
+          if(errB) errB.textContent = msg;
+        }
+      });
     }
     async function portalAdminDmSendReply(){
       var client = getSchedSupabaseClient();
@@ -20559,10 +20607,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(sendBtn) sendBtn.disabled = true;
       try{
         if(gid){
-          var insG = await client.from('portal_ceo_group_message').insert([{ group_id: gid, author_id: me, body: body }]).select('id');
+          var insG = await client.from('portal_ceo_group_message').insert([{ group_id: gid, author_id: me, body: body, message_type: 'text' }]).select('id');
           if(insG.error) throw insG.error;
         }else{
-          var ins = await client.from('portal_staff_dm_messages').insert([{ thread_id: tid, body: body }]).select('id');
+          var ins = await client.from('portal_staff_dm_messages').insert([{ thread_id: tid, body: body, message_type: 'text' }]).select('id');
           if(ins.error) throw ins.error;
         }
         if(inp) inp.value = '';
@@ -20969,6 +21017,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(cs) cs.onclick = function(){ void portalSendInternalDmFirstMessage(); };
       var ts = $('admDmThreadSend');
       if(ts) ts.onclick = function(){ void portalAdminDmSendReply(); };
+      portalAdminDmBindVoiceControls();
       void portalAdminDmRenderList();
       var wrapQ = $('admDmCeoQuickWrap');
       if(wrapQ) wrapQ.hidden = channel !== 'ceo_exec';
@@ -21045,7 +21094,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             if(!threadId && ins.error) throw ins.error;
           }
           if(!threadId) throw new Error('Could not resolve thread.');
-          var msg = await client.from('portal_staff_dm_messages').insert([{ thread_id: threadId, body: body }]).select('id');
+          var msg = await client.from('portal_staff_dm_messages').insert([{ thread_id: threadId, body: body, message_type: 'text' }]).select('id');
           if(msg.error) throw msg.error;
           return threadId;
         }
@@ -21075,7 +21124,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             gidG = await portalAdminDmResolveQuickCeoGroupId(client);
           }
           if(!gidG) throw new Error('CEO group is not set up. Apply Supabase migrations (portal_ceo_group_chat + ceo_liaison row).');
-          var insG = await client.from('portal_ceo_group_message').insert([{ group_id: gidG, author_id: me, body: body }]).select('id');
+          var insG = await client.from('portal_ceo_group_message').insert([{ group_id: gidG, author_id: me, body: body, message_type: 'text' }]).select('id');
           if(insG.error) throw insG.error;
           var fb = $('admDmFirstBody');
           if(fb) fb.value = '';

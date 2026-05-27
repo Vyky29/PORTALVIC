@@ -299,9 +299,13 @@ async function ceoDmLoadMessages() {
     return;
   }
   msgsBox.innerHTML = '<p style="margin:0;font-size:13px;color:var(--muted)">Loading…</p>';
+  const msgFields =
+    window.portalDmVoice && window.portalDmVoice.MSG_FIELDS
+      ? window.portalDmVoice.MSG_FIELDS
+      : "id,author_id,body,created_at,message_type,audio_storage_path,audio_mime,duration_ms";
   const mres = await client
     .from("portal_staff_dm_messages")
-    .select("id,author_id,body,created_at")
+    .select(msgFields)
     .eq("thread_id", tid)
     .order("created_at", { ascending: true });
   if (mres.error) {
@@ -345,7 +349,8 @@ async function ceoDmLoadMessages() {
     ph.textContent = "No messages yet.";
     msgsBox.appendChild(ph);
   } else {
-    arr.forEach((m) => {
+    for (let i = 0; i < arr.length; i++) {
+      const m = arr[i];
       const mine = String(m.author_id || "") === me;
       const aid = String(m.author_id || "").trim();
       const arow = authorBy[aid] || {};
@@ -362,17 +367,62 @@ async function ceoDmLoadMessages() {
             minute: "2-digit",
           });
       } catch (_t) {}
-      const chipHtml = chip ? `<div class="ceo-portal-dm-msg-by">${esc(chip)}</div>` : "";
-      div.innerHTML =
-        chipHtml +
-        '<div style="white-space:pre-wrap;min-width:0;overflow-wrap:break-word">' +
-        esc(String(m.body || "")) +
-        "</div>" +
-        (tline ? '<div class="ceo-portal-dm-msg-time">' + esc(tline) + "</div>" : "");
+      if (chip) {
+        const chipEl = document.createElement("div");
+        chipEl.className = "ceo-portal-dm-msg-by";
+        chipEl.textContent = chip;
+        div.appendChild(chipEl);
+      }
+      const bodyHost = document.createElement("div");
+      bodyHost.className = "portal-dm-msg-body";
+      bodyHost.style.minWidth = "0";
+      if (window.portalDmVoice && window.portalDmVoice.fillMessageBody) {
+        await window.portalDmVoice.fillMessageBody(bodyHost, m, client, esc);
+      } else {
+        const text = document.createElement("div");
+        text.style.whiteSpace = "pre-wrap";
+        text.style.overflowWrap = "break-word";
+        text.textContent = String(m.body || "");
+        bodyHost.appendChild(text);
+      }
+      div.appendChild(bodyHost);
+      if (tline) {
+        const timeEl = document.createElement("div");
+        timeEl.className = "ceo-portal-dm-msg-time";
+        timeEl.textContent = tline;
+        div.appendChild(timeEl);
+      }
       msgsBox.appendChild(div);
-    });
+    }
   }
   msgsBox.scrollTop = msgsBox.scrollHeight;
+}
+
+function ceoDmBindVoiceControls() {
+  const pv = window.portalDmVoice;
+  if (!pv) return;
+  const replyTa = $("ceoPortalDmReplyBody");
+  if (!replyTa) return;
+  pv.ensureMicButtonBefore(replyTa, "ceoPortalDmVoiceBtn");
+  pv.attachVoiceButton({
+    buttonId: "ceoPortalDmVoiceBtn",
+    textareaId: "ceoPortalDmReplyBody",
+    hintId: "ceoPortalDmVoiceBtnHint",
+    getContext: () => {
+      const box = window.__PORTAL_SUPABASE__;
+      return {
+        client: box && box.client,
+        threadId: String(ceoDmUi().threadId || "").trim(),
+        groupId: "",
+        authorId: ceoDmMe(),
+      };
+    },
+    onSent: () => ceoDmLoadMessages(),
+    onError: (msg) => {
+      const errB = $("ceoPortalDmThreadErr");
+      if (errB) errB.textContent = msg;
+    },
+  });
 }
 
 async function ceoDmSendReply() {
@@ -393,7 +443,10 @@ async function ceoDmSendReply() {
   }
   if (sendBtn) sendBtn.disabled = true;
   try {
-    const ins = await client.from("portal_staff_dm_messages").insert([{ thread_id: tid, body }]).select("id");
+    const ins = await client
+      .from("portal_staff_dm_messages")
+      .insert([{ thread_id: tid, body, message_type: "text" }])
+      .select("id");
     if (ins.error) throw ins.error;
     if (inp) inp.value = "";
     await ceoDmLoadMessages();
@@ -525,7 +578,10 @@ async function ceoDmSendFirstMessage() {
         if (!threadId && ins.error) throw ins.error;
       }
       if (!threadId) throw new Error("Could not resolve thread.");
-      const msg = await client.from("portal_staff_dm_messages").insert([{ thread_id: threadId, body }]).select("id");
+      const msg = await client
+        .from("portal_staff_dm_messages")
+        .insert([{ thread_id: threadId, body, message_type: "text" }])
+        .select("id");
       if (msg.error) throw msg.error;
       return threadId;
     }
@@ -674,4 +730,5 @@ export function mountPortalCeoDm() {
   }
   const threadSend = $("ceoPortalDmThreadSend");
   if (threadSend) threadSend.addEventListener("click", () => void ceoDmSendReply());
+  ceoDmBindVoiceControls();
 }
