@@ -71,22 +71,24 @@ def copy_overview_to_roster_weeks(bundle: Path) -> list[Path]:
 def import_feedback_js(bundle: Path) -> int:
     from import_session_feedback_csv import (
         FIRST_DATE,
+        _dates_in_bundle_feedback,
         dedupe_key,
         load_baseline_rows,
         read_xlsx_rows,
         row_from_dict,
     )
 
+    fb_csv = bundle / "session-feedback.csv"
+    bundle_dates = _dates_in_bundle_feedback(fb_csv) if fb_csv.is_file() else set()
+
     by_key: dict[tuple, dict] = {}
-    baseline, baseline_src = load_baseline_rows()
+    baseline, baseline_src = load_baseline_rows(allow_existing_js=False)
     for row in baseline:
-        if str(row.get("date") or "") < FIRST_DATE:
-            continue
-        if str(row.get("date") or "") >= "2026-05-11":
+        d = str(row.get("date") or "")
+        if d < FIRST_DATE or d >= "2026-05-11" or d in bundle_dates:
             continue
         by_key[dedupe_key(row)] = row
 
-    fb_csv = bundle / "session-feedback.csv"
     if fb_csv.is_file():
         reader = csv.DictReader(fb_csv.read_text(encoding="utf-8-sig").splitlines())
         for raw in reader:
@@ -99,7 +101,7 @@ def import_feedback_js(bundle: Path) -> int:
     for xlsx in sorted(FEEDBACK_IMPORTS.glob("*.xlsx")):
         for row in read_xlsx_rows(xlsx):
             d = str(row.get("date") or "")
-            if d < "2026-04-30" or d > "2026-05-10":
+            if d < "2026-04-30" or d > "2026-05-10" or d in bundle_dates:
                 continue
             by_key[dedupe_key(row)] = row
 
@@ -203,10 +205,7 @@ def main() -> None:
     remove_legacy_csvs()
     bundle = sync_bundle_to_canon()
     copy_overview_to_roster_weeks(bundle)
-    # Full merge (v1 + feedback_imports + bundle CSV) — same output as import_session_feedback_csv.py
-    from import_session_feedback_csv import import_csv_files
-
-    import_csv_files()
+    import_feedback_js(bundle)
     from reconcile_feedback_status_bundle import reconcile_bundle
 
     reconcile_bundle(bundle)

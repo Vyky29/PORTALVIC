@@ -36,6 +36,10 @@ CANONICAL_CLIENT_ALIASES = {
 }
 
 
+def norm_instructor(name: str) -> str:
+    return re.sub(r"\s+", " ", str(name or "").strip()).lower()
+
+
 def canonical_participant_name(name: str) -> str:
     n = re.sub(r"\s+", " ", str(name or "").strip())
     if not n:
@@ -170,6 +174,11 @@ def row_from_dict(raw: dict, source: str) -> dict | None:
             or ""
         ).strip()
         or None,
+        "portalSessionKey": str(
+            pick("portal_session_key", "portal session key", "matched_portal_session_key")
+            or ""
+        ).strip()
+        or None,
         "submittedAt": str(pick("created_at", "submitted_at", "exported_at") or "").strip()
         or None,
         "_source": source,
@@ -286,16 +295,25 @@ def read_csv_dicts(path: Path) -> list[dict]:
 
 
 def dedupe_key(r: dict) -> tuple:
+    psk = str(r.get("portalSessionKey") or "").strip()
+    if psk:
+        return (
+            "psk",
+            r.get("date"),
+            psk.lower(),
+            norm_instructor(r.get("instructor")),
+        )
     return (
+        "legacy",
         r.get("date"),
         str(r.get("clientName") or "").lower(),
-        str(r.get("instructor") or "").lower(),
+        norm_instructor(r.get("instructor")),
         str(r.get("service") or "").lower(),
         str(r.get("attendance") or "").lower(),
     )
 
 
-def load_baseline_rows() -> tuple[list[dict], str]:
+def load_baseline_rows(*, allow_existing_js: bool = True) -> tuple[list[dict], str]:
     """v1 workbook if on disk; otherwise rows already deployed in session_feedback_portal_data.js."""
     if V1_XLSX.is_file():
         from export_session_feedback_portal_js import read_workbook_rows
@@ -303,7 +321,7 @@ def load_baseline_rows() -> tuple[list[dict], str]:
         rows, _sheet = read_workbook_rows(V1_XLSX)
         return rows, str(V1_XLSX.relative_to(ROOT)).replace("\\", "/")
 
-    if OUT.is_file():
+    if allow_existing_js and OUT.is_file():
         text = OUT.read_text(encoding="utf-8")
         if JS_PREFIX in text:
             payload = json.loads(text.split(JS_PREFIX, 1)[1].strip().rstrip(";"))
@@ -312,6 +330,25 @@ def load_baseline_rows() -> tuple[list[dict], str]:
             return list(rows), src
 
     return [], "none"
+
+
+def _bundle_feedback_csv() -> Path | None:
+    p = ROOT / "database" / "portal_import_bundle" / "session-feedback.csv"
+    if p.is_file():
+        return p
+    p2 = ROOT / "working_ui" / "portal-import-bundle" / "session-feedback.csv"
+    return p2 if p2.is_file() else None
+
+
+def _dates_in_bundle_feedback(path: Path) -> set[str]:
+    dates: set[str] = set()
+    for raw in read_csv_dicts(path):
+        keys = {norm_header(k): v for k, v in raw.items()}
+        d_raw = keys.get("session_date") or keys.get("date")
+        d_iso = cell_date(d_raw)
+        if d_iso:
+            dates.add(d_iso)
+    return dates
 
 
 def _collect_import_paths() -> tuple[list[Path], list[Path]]:
@@ -341,20 +378,37 @@ def _collect_import_paths() -> tuple[list[Path], list[Path]]:
 
 def import_csv_files() -> int:
     csv_paths, xlsx_paths = _collect_import_paths()
-    baseline, baseline_src = load_baseline_rows()
+    bundle_fb = _bundle_feedback_csv()
+    allow_js = bundle_fb is None
+    baseline, baseline_src = load_baseline_rows(allow_existing_js=allow_js)
+    bundle_dates = _dates_in_bundle_feedback(bundle_fb) if bundle_fb else set()
     if not baseline and not csv_paths and not xlsx_paths:
         print("No baseline (v1 xlsx or existing JS) and no imports in feedback_imports/ or working_ui/.")
         return 0
 
     by_key: dict[tuple, dict] = {}
     for row in baseline:
+        if str(row.get("date") or "") in bundle_dates:
+            continue
         by_key[dedupe_key(row)] = {k: v for k, v in row.items() if k != "_source"}
 
     for path in xlsx_paths:
         for row in read_xlsx_rows(path):
+            if str(row.get("date") or "") in bundle_dates:
+                continue
             by_key[dedupe_key(row)] = row
 
-    for path in csv_paths:
+    bundle_csv_paths = [p for p in csv_paths if p.name == "session-feedback.csv"]
+    other_csv_paths = [p for p in csv_paths if p.name != "session-feedback.csv"]
+    for path in other_csv_paths:
+        for raw in read_csv_dicts(path):
+            row = row_from_dict(raw, path.name)
+            if not row:
+                continue
+            row.pop("_source", None)
+            by_key[dedupe_key(row)] = row
+
+    for path in bundle_csv_paths:
         for raw in read_csv_dicts(path):
             row = row_from_dict(raw, path.name)
             if not row:
