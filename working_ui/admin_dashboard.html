@@ -4262,7 +4262,6 @@
       { id:'leads', label:'Enquiries & intake' },
       { id:'c4k_services', label:'Overview', hubLabel:'Services' },
       { id:'orders_all', label:'All', hubLabel:'Bookings' },
-      { id:'orders_outstanding', label:'Outstanding' },
       { id:'comms_bookings', label:'Staff & shift notices' },
       { id:'comms_ops', label:'Ops comms & log' },
       { id:'clients', label:'Participants' },
@@ -4292,7 +4291,7 @@
     ];
     var NAV_GROUPS = [
       { id:'g_operator', label:'Operator', children:['dashboard','operations_admin','operator'] },
-      { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','__h:Participants','clients','__h:Orders','orders_all','orders_outstanding','__h:Communications','comms_ops'] },
+      { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','__h:Participants','clients','__h:Orders','orders_all','__h:Communications','comms_ops'] },
       { id:'g_zoho', label:'H&R (ZohoPeople)', children:['staffhr','onboarding','staffhr_contracts','interviews'] },
       { id:'g_supabase', label:'Supabase', children:['portal_documents'] },
       { id:'g_xero', label:'Finance (Xero)', children:['c4k_payments','invoices'] },
@@ -5630,8 +5629,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(id === 'c4k_service_register') id = 'c4k_services';
       if(id === 'operations') id = 'dashboard';
       if(id === 'operations-admin') id = 'operations_admin';
-      if(id === 'orders_all') booking.ordersScope = 'all';
-      if(id === 'orders_outstanding') booking.ordersScope = 'outstanding';
+      if(id === 'orders_outstanding'){
+        booking.ordersScope = 'outstanding';
+        id = 'orders_all';
+      }else if(id === 'orders_all'){
+        booking.ordersScope = 'all';
+      }
       var _hadRegisterPeek = !!(id !== 'c4k_services' && state.c4kServicesRegisterOpen);
       if(id !== 'c4k_services'){
         state.registerSessionSlot = null;
@@ -5639,7 +5642,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       document.documentElement.classList.remove('pax-contacts-detail-open');
       document.body.classList.remove('pax-contacts-detail-open');
-      state.pendingBookingsScroll = ((id === 'orders_all' || id === 'orders_outstanding') ? (bookingsScroll || null) : null);
+      state.pendingBookingsScroll = (id === 'orders_all' ? (bookingsScroll || null) : null);
       state.view = id;
       var g = navGroupForView(id);
       if(g){
@@ -9538,7 +9541,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     /** After scheduling table refresh: scroll to slot row, highlight, open drawer (set from Nuevo dashboard rows). */
     function portalApplyPendingBookingsSlotFocusAfterSchedRefresh(){
       var fs = state.pendingBookingsSlotFocus;
-      if(!fs || !fs.demoId || (state.view !== 'bookings' && state.view !== 'orders_all' && state.view !== 'orders_outstanding' && state.view !== 'scheduling')) return;
+      if(!fs || !fs.demoId || (state.view !== 'bookings' && state.view !== 'orders_all' && state.view !== 'scheduling')) return;
       var demoId = String(fs.demoId || '').trim();
       var venueWant = String(fs.venue || '').trim();
       state.pendingBookingsSlotFocus = null;
@@ -11946,7 +11949,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           parentEmail: (($('pnParentEmail') && $('pnParentEmail').value) || '').trim(),
           parentWhatsapp: (($('pnParentWa') && $('pnParentWa').value) || '').trim()
         });
-        if((state.view === 'bookings' || state.view === 'orders_all' || state.view === 'orders_outstanding' || state.view === 'c4k_payments') && $('bookingDate') && $('bookingDate').value === dateIso) void refreshBookingModule();
+        if((state.view === 'bookings' || state.view === 'orders_all' || state.view === 'c4k_payments') && $('bookingDate') && $('bookingDate').value === dateIso) void refreshBookingModule();
       }
       openModal(
         '<div class="modal-h"><h2 id="modalTitle">Message for parent</h2></div><div class="modal-b">'+
@@ -12760,7 +12763,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           booking.waitingSupabaseRetryBound = true;
           window.addEventListener('portal:supabase-ready', function(){
             booking.waitingSupabaseRetryBound = false;
-            if(state.view === 'bookings' || state.view === 'orders_all' || state.view === 'orders_outstanding' || state.view === 'c4k_payments') void refreshBookingModule();
+            if(state.view === 'bookings' || state.view === 'orders_all' || state.view === 'c4k_payments') void refreshBookingModule();
           }, { once: true });
         }
       }else{
@@ -12788,7 +12791,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var bd0 = $('bookingDate');
         if(bd0) bd0.value = String(pbf0.iso).trim();
         booking.selectedDate = String(pbf0.iso).trim();
-      }else if(state.view === 'orders_all' || state.view === 'orders_outstanding'){
+      }else if(state.view === 'orders_all'){
         bookingSyncDateInputFromOrdersPreset();
       }
       var dateEl = $('bookingDate');
@@ -13791,7 +13794,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         });
         return;
       }
-      if(id === 'bookings' || id === 'orders_all' || id === 'orders_outstanding' || id === 'c4k_payments' || id === 'invoices'){
+      if(id === 'bookings' || id === 'orders_all' || id === 'c4k_payments' || id === 'invoices'){
         void window.portalAdminLoadScriptSet('roster');
         void window.portalAdminLoadScriptSet('payments');
         return;
@@ -14906,7 +14909,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<option value="all"'+(preset==='all'?' selected':'')+'>All orders</option>'+
         '</select> '+
         '<label class="muted" for="bookingOrdersClientFilter" style="white-space:nowrap">Client:</label> '+
-        '<select class="sel" id="bookingOrdersClientFilter" style="max-width:280px" aria-label="Filter by participant">'+clientSel+'</select></div>'+
+        '<select class="sel" id="bookingOrdersClientFilter" style="max-width:280px" aria-label="Filter by participant">'+clientSel+'</select> '+
+        '<label class="booking-orders-outstanding-toggle" for="bookingOrdersOutstandingOnly" style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap;cursor:pointer;margin:0;min-width:0">'+
+        '<input type="checkbox" id="bookingOrdersOutstandingOnly"'+(booking.ordersScope==='outstanding'?' checked':'')+' aria-label="Show outstanding orders only" />'+
+        '<span class="muted">Outstanding only</span></label></div>'+
         '<p id="bookingConnMsg" class="muted" style="margin:0 0 12px;min-height:1.25em;max-width:900px;overflow-wrap:break-word"></p>'+
         '<div class="section" style="min-width:0"><div class="section-h"><h2>Orders catalogue</h2></div>'+
         '<div class="filter-row" style="align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;min-width:0">'+
@@ -18615,7 +18621,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="grid-2" style="align-items:stretch;gap:14px">'+
         '<button type="button" class="card card-pad dash-link-card" data-view-target="comms_ops" style="text-align:left;cursor:pointer;border:1px solid var(--line)"><div class="dash-link-row"><span class="dash-link-ico" aria-hidden="true">✉</span><div class="dash-link-meta" style="min-width:0"><strong>Ops comms &amp; log</strong><p class="muted" style="margin:0;overflow-wrap:break-word">Programme email log, internal outbox, and comms history — under Services &amp; Participants in the sidebar.</p></div></div></button>'+
         '<button type="button" class="card card-pad dash-link-card" data-view-target="leads" style="text-align:left;cursor:pointer;border:1px solid var(--line)"><div class="dash-link-row"><span class="dash-link-ico" aria-hidden="true">🧭</span><div class="dash-link-meta" style="min-width:0"><strong>Enquiries &amp; intake</strong><p class="muted" style="margin:0;overflow-wrap:break-word">New families, triage, programme intake capture.</p></div></div></button>'+
-        '<button type="button" class="card card-pad dash-link-card" data-view-target="orders_all" style="text-align:left;cursor:pointer;border:1px solid var(--line)"><div class="dash-link-row"><span class="dash-link-ico" aria-hidden="true">◈</span><div class="dash-link-meta" style="min-width:0"><strong>Orders</strong><p class="muted" style="margin:0;overflow-wrap:break-word">All / outstanding — slot state, funding, make-up and holds.</p></div></div></button>'+
+        '<button type="button" class="card card-pad dash-link-card" data-view-target="orders_all" style="text-align:left;cursor:pointer;border:1px solid var(--line)"><div class="dash-link-row"><span class="dash-link-ico" aria-hidden="true">◈</span><div class="dash-link-meta" style="min-width:0"><strong>Orders</strong><p class="muted" style="margin:0;overflow-wrap:break-word">All orders — filter outstanding balances on the page.</p></div></div></button>'+
         '<button type="button" class="card card-pad dash-link-card" data-view-target="dashboard" style="text-align:left;cursor:pointer;border:1px solid var(--line)"><div class="dash-link-row"><span class="dash-link-ico" aria-hidden="true">▤</span><div class="dash-link-meta" style="min-width:0"><strong>Day operations</strong><p class="muted" style="margin:0;overflow-wrap:break-word">Today’s staff and participants on site. Absents and roster: Bookings.</p></div></div></button>'+
         '<button type="button" class="card card-pad dash-link-card" data-view-target="absents_refunds" style="text-align:left;cursor:pointer;border:1px solid var(--line)"><div class="dash-link-row"><span class="dash-link-ico" aria-hidden="true">£</span><div class="dash-link-meta" style="min-width:0"><strong>Absents &amp; credits</strong><p class="muted" style="margin:0;overflow-wrap:break-word">Refund and credit work queue.</p></div></div></button>'+
         '</div>'+
@@ -18645,7 +18651,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(id==='c4k_reports') return viewC4kGlobalReportsTracker();
       if(id==='staffhr') return viewStaffHR();
       if(id==='staffhr_contracts') return viewStaffHRContracts();
-      if(id==='bookings' || id==='orders_all' || id==='orders_outstanding') return viewBookings();
+      if(id==='bookings' || id==='orders_all') return viewBookings();
       if(id==='invoices') return viewInvoices();
       if(id==='scheduling') return viewScheduling();
       if(id==='absents_refunds') return viewAbsentsRefundsCredits();
@@ -19256,8 +19262,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         operator:'Control centre · KPIs · suggestions · new leads',
         c4k_services:'Weekly capacity snapshot, service registers and rota-linked session overview.',
         clients:'Search participant profiles, attendance history, activity and report requests.',
-        orders_all:'Every booking and order — slot state, funding route and waiting-list links.',
-        orders_outstanding:'Outstanding orders · holds · make-up',
+        orders_all:'Every booking and order — slot state, funding route and waiting-list links. Use Outstanding only on the Orders page to filter balances.',
         comms_ops:'Programme comms · CEO chat · internal messages',
         staffhr:'Staff records, availability, HR notes and ZohoPeople-linked profile data.',
         onboarding:'New-hire onboarding pipeline — forms, tasks and worker progress.',
@@ -21616,9 +21621,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(id==='c4k_waitlist'){
         refreshBookingWaitlistPipelineTable();
       }
-      if(id==='bookings' || id==='orders_all' || id==='orders_outstanding' || id==='c4k_payments'){
+      if(id==='bookings' || id==='orders_all' || id==='c4k_payments'){
         bindBookingModule();
-        if(id==='bookings' || id==='orders_all' || id==='orders_outstanding'){
+        if(id==='bookings' || id==='orders_all'){
           var scrollBk = state.pendingBookingsScroll;
           state.pendingBookingsScroll = null;
           if(scrollBk){
