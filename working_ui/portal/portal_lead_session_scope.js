@@ -94,8 +94,31 @@ function normVenue(v) {
 
 const DOW = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
+/** Summer term — lead overview only shows data from this date (Mon 13 Apr 2026). */
+export const PORTAL_LEAD_SUMMER_TERM_START = "2026-04-13";
+
 /** Club closed (no sessions) — show on lead week picker in red. */
 const PORTAL_LEAD_CLOSED_RANGES = [{ from: "2026-05-23", to: "2026-05-31" }];
+
+export function portalLeadOnOrAfterSummerTerm(iso) {
+  const d = String(iso || "")
+    .trim()
+    .slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(d) && d >= PORTAL_LEAD_SUMMER_TERM_START;
+}
+
+export function portalLeadSummerTermWeekStart() {
+  const s = PORTAL_LEAD_SUMMER_TERM_START;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  const p = s.split("-").map(Number);
+  const d = new Date(p[0], p[1] - 1, p[2]);
+  if (isNaN(d.getTime())) return s;
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  const pad = (n) => String(n).padStart(2, "0");
+  return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+}
 
 export function portalLeadDayIsClubClosed(iso) {
   const d = String(iso || "").trim().slice(0, 10);
@@ -372,6 +395,24 @@ export function portalLeadDayFeedbackStats(iso, scopes, leadProfileKey, hub) {
     if (slug) clients.add(slug);
   });
   const total = clients.size * 2;
+  if (portalLeadDayUsesProgrammeWideRoster(scopes, day)) {
+    let done = 0;
+    if (typeof hub.feedbackLogRowsForDay === "function") {
+      const rows = hub.feedbackLogRowsForDay(day) || [];
+      done = rows.filter(function (fb) {
+        if (!fb || fb._ashAwaitingSlot) return false;
+        if (fb._ashAbsentMark) return false;
+        const att = String(fb.attendance || "").toLowerCase();
+        if (att.indexOf("no") === 0) return false;
+        return true;
+      }).length;
+    } else {
+      units.forEach((u) => {
+        if (unitDone(u)) done += 1;
+      });
+    }
+    return { total, done: Math.min(done, total) };
+  }
   let done = 0;
   units.forEach((u) => {
     if (unitDone(u)) done += 1;
@@ -415,7 +456,7 @@ function feedbackRowsForLeadDay(iso, scopes, mapRow) {
     const row = mapRow(r, scopes);
     if (!row) return;
     const d = String(row.session_date || row.date || "").trim().slice(0, 10);
-    if (d === day) out.push(row);
+    if (d === day && portalLeadOnOrAfterSummerTerm(d)) out.push(row);
   });
   return out;
 }
@@ -429,6 +470,7 @@ export function portalLeadProgrammeDayStats(iso, scopes, mapPortalRow) {
     const units = {};
     src.rows.forEach(function (st) {
       if (String(st.date || "").trim().slice(0, 10) !== day) return;
+      if (!portalLeadOnOrAfterSummerTerm(day)) return;
       if (!statusRowInScope(st, scopes)) return;
       const key = statusRowUnitKey(st);
       if (!key) return;

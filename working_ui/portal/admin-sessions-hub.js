@@ -53,6 +53,14 @@
     );
   }
 
+  function clampHubWeekStart(hub, weekStartIso) {
+    var ws = mondayOfWeek(weekStartIso || isoToday());
+    var min = hub && hub.opts && hub.opts.minSessionDate;
+    if (!min || !/^\d{4}-\d{2}-\d{2}$/.test(min)) return ws;
+    var minMon = mondayOfWeek(min);
+    return ws < minMon ? minMon : ws;
+  }
+
   function htmlClosedDayCardInlineStyle() {
     return "--ash-day-col:#dc2626;--ash-day-bg:rgba(220,38,38,0.2);--ash-col:#dc2626";
   }
@@ -2130,7 +2138,7 @@
   AdminSessionsHub.prototype.goToCalendarDay = function (iso, opts) {
     opts = opts || {};
     if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
-    this.weekStart = mondayOfWeek(iso);
+    this.weekStart = clampHubWeekStart(this, iso);
     this.selectedDay = iso;
     if (this.mode === "feedback") {
       this.feedbackMetricsDay = iso;
@@ -2146,7 +2154,7 @@
     opts = opts || {};
     if (!weekStartIso || !/^\d{4}-\d{2}-\d{2}$/.test(weekStartIso)) return;
     if (this.mode === "feedback") this._feedbackRangeCustom = false;
-    this.weekStart = mondayOfWeek(weekStartIso);
+    this.weekStart = clampHubWeekStart(this, weekStartIso);
     if (this.mode === "feedback") {
       this.selectedDay = opts.dayIso || this.preferredFeedbackDayInWeek(0);
       this.feedbackMetricsDay = this.selectedDay;
@@ -3425,14 +3433,13 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return row;
   };
 
-  /** Lead MA: one table row per feedback unit (matches 8/8 counter); same fb may show twice for two halves. */
-  AdminSessionsHub.prototype.feedbackMixRowsByUnitForDay = function (day) {
+  /** Lead MA: each submitted feedback once + awaiting rows (no merge duplicates). */
+  AdminSessionsHub.prototype.feedbackMixRowsLeadUniqueDay = function (day) {
     var hub = this;
     day = clean(day || hub.selectedDay);
     var submitted = hub.feedbackLogRowsForDay(day);
     var units = hub.getFeedbackUnitsForDate(day);
-    var out = [];
-    var usedSubmitted = {};
+    var out = submitted.slice();
 
     function scopedSlots(unit) {
       return unit.slots.filter(function (s) {
@@ -3442,34 +3449,15 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       });
     }
 
-    function hitsForUnit(unit) {
+    function unitHasSubmittedFeedback(unit) {
       var slots = scopedSlots(unit);
-      if (!slots.length) return [];
-      var hits = [];
-      var seenFb = {};
-      var si;
-      var fj;
-      for (si = 0; si < slots.length; si++) {
-        for (fj = 0; fj < submitted.length; fj++) {
-          var fb = submitted[fj];
-          if (!feedbackFitsSlot(fb, slots[si])) continue;
-          var k = hub.fbRowKey(fb) + "|" + (unit.key || feedbackUnitKey(slots[si]));
-          if (seenFb[k]) continue;
-          seenFb[k] = true;
-          hits.push({ fb: fb, slot: slots[si] });
+      if (!slots.length) return false;
+      for (var si = 0; si < slots.length; si++) {
+        for (var fi = 0; fi < submitted.length; fi++) {
+          if (feedbackFitsSlot(submitted[fi], slots[si])) return true;
         }
       }
-      if (!hits.length && hub.feedbackUnitComplete(unit)) {
-        for (si = 0; si < slots.length; si++) {
-          var fbMerge = hub.findFeedbackForSlot(slots[si]);
-          if (!fbMerge) continue;
-          var k2 = hub.fbRowKey(fbMerge) + "|" + (unit.key || feedbackUnitKey(slots[si]));
-          if (seenFb[k2]) continue;
-          seenFb[k2] = true;
-          hits.push({ fb: fbMerge, slot: slots[si] });
-        }
-      }
-      return hits;
+      return false;
     }
 
     for (var u = 0; u < units.length; u++) {
@@ -3483,37 +3471,35 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           for (var ai = 0; ai < submitted.length; ai++) {
             if (
               isAbsentFeedbackRow(submitted[ai]) &&
-              canonicalClientSlug(submitted[ai].client_name) === canonicalClientSlug(rep.client_name)
+              canonicalClientSlug(submitted[ai].client_name) ===
+                canonicalClientSlug(rep.client_name)
             ) {
               afb = submitted[ai];
               break;
             }
           }
         }
-        if (afb) {
-          out.push(hub.feedbackRowWithDisplaySlot(afb, rep));
-          usedSubmitted[hub.fbRowKey(afb)] = true;
-        }
+        if (afb && out.indexOf(afb) < 0) out.push(afb);
         continue;
       }
-      var unitHits = hitsForUnit(unit);
-      if (unitHits.length) {
-        for (var hi = 0; hi < unitHits.length; hi++) {
-          out.push(hub.feedbackRowWithDisplaySlot(unitHits[hi].fb, unitHits[hi].slot));
-          usedSubmitted[hub.fbRowKey(unitHits[hi].fb)] = true;
-        }
-        continue;
-      }
-      if (!hub.feedbackUnitComplete(unit)) {
+      if (!unitHasSubmittedFeedback(unit) && !hub.feedbackUnitComplete(unit)) {
         out.push({ _ashAwaitingSlot: true, slot: rep });
       }
     }
 
-    for (var j = 0; j < submitted.length; j++) {
-      if (!usedSubmitted[hub.fbRowKey(submitted[j])]) {
-        out.push(submitted[j]);
-      }
-    }
+    out.sort(function (a, b) {
+      var rankA = a && a._ashAwaitingSlot ? 0 : 1;
+      var rankB = b && b._ashAwaitingSlot ? 0 : 1;
+      if (rankA !== rankB) return rankA - rankB;
+      var ca = canonicalClientSlug(
+        (a && a._ashAwaitingSlot && a.slot ? a.slot.client_name : a.client_name) || ""
+      );
+      var cb = canonicalClientSlug(
+        (b && b._ashAwaitingSlot && b.slot ? b.slot.client_name : b.client_name) || ""
+      );
+      if (ca !== cb) return ca.localeCompare(cb);
+      return String(a.completed_by_name || "").localeCompare(String(b.completed_by_name || ""));
+    });
     return out;
   };
 
@@ -3524,7 +3510,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var submitted = hub.feedbackLogRowsForDay(day);
     if (!hub.opts || !hub.opts.feedbackMixAwaitingSlots) return submitted;
     if (hubDayIsClubClosed(hub, day)) return submitted;
-    if (hub.opts.feedbackMixByUnit) return hub.feedbackMixRowsByUnitForDay(day);
+    if (hub.opts.feedbackMixLeadUnique) return hub.feedbackMixRowsLeadUniqueDay(day);
 
     var used = {};
     function markUsed(fb) {
@@ -4025,7 +4011,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       if (t.closest("[data-ash-week-prev]")) {
         ev.preventDefault();
         var offPrev = hub.selectedDayOffsetInWeek();
-        hub.weekStart = addDaysIso(hub.weekStart, -7);
+        hub.weekStart = clampHubWeekStart(hub, addDaysIso(hub.weekStart, -7));
         hub.selectedDay = hub.preferredDayAfterWeekShift(offPrev);
         if (hub.mode === "feedback") {
           hub.feedbackMetricsDay = hub.selectedDay;
@@ -4040,7 +4026,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       if (t.closest("[data-ash-week-next]")) {
         ev.preventDefault();
         var offNext = hub.selectedDayOffsetInWeek();
-        hub.weekStart = addDaysIso(hub.weekStart, 7);
+        hub.weekStart = clampHubWeekStart(hub, addDaysIso(hub.weekStart, 7));
         hub.selectedDay = hub.preferredDayAfterWeekShift(offNext);
         if (hub.mode === "feedback") {
           hub.feedbackMetricsDay = hub.selectedDay;

@@ -15,9 +15,12 @@ import {
   portalLeadProgrammeKey,
   portalLeadDayIsClubClosed,
   portalLeadDayIsProgrammeWorkDay,
+  portalLeadOnOrAfterSummerTerm,
+  portalLeadSummerTermWeekStart,
+  PORTAL_LEAD_SUMMER_TERM_START,
 } from "./portal_lead_session_scope.js";
 
-const HUB_SRC = "/portal/admin-sessions-hub.js?v=20260527-lead-overview12";
+const HUB_SRC = "/portal/admin-sessions-hub.js?v=20260527-lead-overview13";
 const LEAD_URL = "lead_dashboard.html";
 
 const state = { tab: "feedback", scopes: [] };
@@ -70,12 +73,15 @@ function feedbackDateIso(r) {
 
 function feedbackRowMergeKey(row) {
   const pk = String(row.portal_session_key || "").trim();
-  if (pk) return pk;
+  const by = String(row.completed_by_name || "")
+    .trim()
+    .toLowerCase();
+  if (pk) return pk + "|" + by;
   return [
     String(row.session_date || "").slice(0, 10),
     String(row.client_name || "").trim().toLowerCase(),
     String(row.session_time || "").trim(),
-    String(row.completed_by_name || "").trim().toLowerCase(),
+    by,
   ].join("|");
 }
 
@@ -118,6 +124,7 @@ function mapPortalRowToHubFeedback(r, scopes) {
     row.portal_session_key = d + "|" + String(r.clientName || r.client || "").trim();
   }
   row.venue = portalLeadInferFeedbackVenue(row);
+  if (!portalLeadOnOrAfterSummerTerm(d)) return null;
   if (!portalLeadFeedbackInScope(row, scopes)) return null;
   return row;
 }
@@ -146,6 +153,7 @@ function mapDbSessionFeedbackToHub(row, scopes) {
     venue: "",
   };
   hub.venue = portalLeadInferFeedbackVenue(hub);
+  if (!portalLeadOnOrAfterSummerTerm(d)) return null;
   if (!portalLeadFeedbackInScope(hub, scopes)) return null;
   return hub;
 }
@@ -295,18 +303,24 @@ function applyScopedPayload(scopes) {
       return portalLeadFeedbackInScope(row, scopes) ? row : null;
     })
     .filter(Boolean);
-  const merged = mergeScopedFeedbackLists(scopes, [fromPayload, fromPortal]);
+  const merged = mergeScopedFeedbackLists(scopes, [fromPayload, fromPortal]).filter((r) =>
+    portalLeadOnOrAfterSummerTerm(r.session_date)
+  );
   p.session_feedback = merged;
   p.session_feedback_total = merged.length;
   p.session_feedback_loaded = merged.length;
-  p.lead_session_reports = (p.lead_session_reports || []).filter((r) =>
-    portalLeadReportInScope(r, scopes)
+  p.lead_session_reports = (p.lead_session_reports || []).filter(
+    (r) =>
+      portalLeadOnOrAfterSummerTerm(r.session_date) && portalLeadReportInScope(r, scopes)
   );
-  p.session_quick_marks = (p.session_quick_marks || []).filter((m) =>
-    portalLeadAbsentMarkInScope(m, scopes)
+  p.session_quick_marks = (p.session_quick_marks || []).filter(
+    (m) =>
+      portalLeadOnOrAfterSummerTerm(m.session_date) &&
+      portalLeadAbsentMarkInScope(m, scopes)
   );
-  p.incident_reports = (p.incident_reports || []).filter((r) =>
-    portalLeadReportInScope(r, scopes)
+  p.incident_reports = (p.incident_reports || []).filter(
+    (r) =>
+      portalLeadOnOrAfterSummerTerm(r.session_date) && portalLeadReportInScope(r, scopes)
   );
   return p;
 }
@@ -411,8 +425,9 @@ async function initHubs(scopes, leadKey) {
     absentMarkScopeFilter: filters.absentMarkScopeFilter,
     incidentScopeFilter: filters.incidentScopeFilter,
     feedbackMixAwaitingSlots: true,
-    feedbackMixByUnit: true,
+    feedbackMixLeadUnique: true,
     showFullWeekDayStrip: true,
+    minSessionDate: PORTAL_LEAD_SUMMER_TERM_START,
     readOnlyOverview: true,
     isClubClosedDay: portalLeadDayIsClubClosed,
     isProgrammeWorkDay: function (iso) {
@@ -423,7 +438,9 @@ async function initHubs(scopes, leadKey) {
 
   function snapHubWeek(hub) {
     if (!hub) return;
+    const minWeek = portalLeadSummerTermWeekStart();
     hub.weekStart = mondayOfWeekIso(isoToday());
+    if (hub.weekStart < minWeek) hub.weekStart = minWeek;
     if (typeof hub.snapSelectedDayToDisplayWeek === "function") {
       hub.snapSelectedDayToDisplayWeek();
       return;
