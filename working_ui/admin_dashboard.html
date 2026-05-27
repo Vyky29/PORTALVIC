@@ -5,11 +5,11 @@
   <meta charset="UTF-8" />
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260528-aquatic-units" />
-  <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260520-portal2026" />
+  <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260527-lead-log" />
   <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260531-dayops-fill" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260521-embed" />
   <script src="/portal/hr-contract-embed-html.js?v=20260521-embed"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260531-lead-reports"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260527-lead-log"></script>
   <script src="/portal/admin-portal-documents.js?v=20260521-supabase-docs"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
   <script src="/portal/portal_dm_voice.js?v=20260531-dm-voice"></script>
@@ -16958,7 +16958,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       { id:'cancellations', label:'Cancellations', iconId:'absents_refunds', mode:'panel' },
       { id:'absents', label:'Absents', iconId:'absents', mode:'panel' },
       { id:'lead', label:'Lead report', iconId:'portal_nav_lead', mode:'panelLead' },
-      { id:'venue', label:'Venue', iconId:'c4k_services', mode:'panelVenue' }
+      { id:'venue', label:'Venue', iconId:'c4k_services', mode:'panelVenue' },
+      { id:'pickup', label:'Pick up', iconId:'scheduling', mode:'panelPickup' }
     ];
     var SESSIONS_HUB_HEAD_META = {
       overview:{ iconId:'c4k_sessions', tone:'sessions', title:'SESSIONS OVERVIEW', sub:'Weekly roster, session status, and feedback by day.' },
@@ -16969,7 +16970,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       cancellations:{ iconId:'absents_refunds', tone:'cancellations', title:'CANCELLATIONS', sub:'Cancellation reports by session week and day.' },
       incidents:{ iconId:'analytics', tone:'incidents', title:'INCIDENT REPORTS', sub:'Submitted incident reports with session and outcome detail.' },
       lead:{ iconId:'portal_nav_lead', tone:'lead', title:'LEAD REPORTS', sub:'Lead session reports submitted from the field.' },
-      venue:{ iconId:'c4k_services', tone:'venue', title:'VENUE REVIEWS', sub:'Opening and closing venue checklist reviews.' }
+      venue:{ iconId:'c4k_services', tone:'venue', title:'VENUE REVIEWS', sub:'Opening and closing venue checklist reviews.' },
+      pickup:{ iconId:'scheduling', tone:'pickup', title:'PICK UP / DROP OFF', sub:'Live list: participants signed in today (drop off saved, awaiting collection). Log: completed handovers with pick up saved.' }
     };
     function sessionsHubHeadIconHtml(iconId, tone){
       return '<span class="c4k-sessions-hub__ico c4k-sessions-hub__ico--' + esc(tone || 'sessions') + '" aria-hidden="true">' +
@@ -17618,7 +17620,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<thead><tr><th class="col-date">When</th><th>Submitted by</th><th>Service</th><th>Activity</th>' +
         '<th class="col-brief-desc">Brief description</th><th class="col-actions">View</th></tr></thead>' +
         '<tbody id="portalFormsLeadTbody"><tr><td colspan="6"><div class="submission-state"><strong>Loading…</strong></div></td></tr></tbody>' +
-        '</table></div>'
+        '</table></div>' +
+        '<div id="portalFormsLeadLog" class="portal-forms-activity-log-mount" aria-live="polite"></div>'
       );
     }
     function c4kHubVenuePanelInnerHtml(){
@@ -17631,6 +17634,173 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<tbody id="portalFormsVenueTbody"><tr><td colspan="6"><div class="submission-state"><strong>Loading…</strong></div></td></tr></tbody>' +
         '</table></div>'
       );
+    }
+    function c4kHubPickupPanelInnerHtml(){
+      return (
+        '<div class="pickup-admin-toolbar">' +
+        '<h2 class="portal-forms-heading">Pick up / Drop off</h2>' +
+        '<a href="portal-pickup.html" class="pickup-admin-open-form" target="_blank" rel="noopener noreferrer">Open handover form</a>' +
+        '</div>' +
+        '<p class="pickup-admin-lead">Live list: participants signed in today (drop off saved, awaiting collection). Log: completed handovers with pick up saved.</p>' +
+        '<div class="pickup-admin-block">' +
+        '<h3 class="pickup-admin-subhead">Live now</h3>' +
+        '<div class="files-table-wrap portal-forms-table-wrap">' +
+        '<table class="files-table portal-forms-table">' +
+        '<thead><tr><th>Participant</th><th>Arrived</th><th>Drop off by</th><th>Mood</th><th>Status</th></tr></thead>' +
+        '<tbody id="pickupLiveTbody"><tr><td colspan="5"><div class="submission-state"><strong>Loading…</strong></div></td></tr></tbody>' +
+        '</table></div></div>' +
+        '<div class="pickup-admin-block">' +
+        '<h3 class="pickup-admin-subhead">Completed today</h3>' +
+        '<div class="files-table-wrap portal-forms-table-wrap">' +
+        '<table class="files-table portal-forms-table">' +
+        '<thead><tr><th>Participant</th><th>Arrived</th><th>Pick up time</th><th>Collected by</th><th>Status</th></tr></thead>' +
+        '<tbody id="pickupLogTbody"><tr><td colspan="5"><div class="submission-state"><strong>Loading…</strong></div></td></tr></tbody>' +
+        '</table></div></div>' +
+        '<p class="portal-forms-last-refresh pickup-admin-last-refresh" id="pickupHandoverRefreshLine" aria-live="polite"></p>'
+      );
+    }
+    function adminHandoverValsFromRow(r){
+      var vals = r && r.values;
+      if(typeof vals === 'string'){
+        try{ vals = JSON.parse(vals); }catch(_){ vals = {}; }
+      }
+      if(!vals || typeof vals !== 'object') vals = {};
+      return vals;
+    }
+    function adminHandoverDropSaved(vals){
+      if(!vals || typeof vals !== 'object') return false;
+      if(Object.prototype.hasOwnProperty.call(vals, 'dropOffSaved')){
+        var v = vals.dropOffSaved;
+        return v === true || v === 'true' || v === '1' || v === 1;
+      }
+      return !!(vals.participantName && vals.sessionDate && String(vals.dropName || '').trim());
+    }
+    function adminMapHandoverRemoteRow(r){
+      var vals = adminHandoverValsFromRow(r);
+      return {
+        id: r.id,
+        participantName: String(r.participant_name || vals.participantName || '—').trim() || '—',
+        sessionDate: String(r.session_date || vals.sessionDate || '').slice(0, 10),
+        updatedAt: r.updated_at,
+        locked: !!r.locked,
+        values: vals
+      };
+    }
+    function adminFormatHandoverClock(t){
+      if(t == null || t === '') return '—';
+      var s = String(t).trim();
+      var m = s.match(/^(\d{1,2}):(\d{2})/);
+      if(m) return String(m[1]).padStart(2, '0') + ':' + m[2];
+      if(/^\d{4}-\d{2}-\d{2}T/.test(s)){
+        try{
+          var dt = new Date(s);
+          if(Number.isFinite(dt.getTime())){
+            return dt.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit', hour12:false });
+          }
+        }catch(_){}
+      }
+      return s.length > 14 ? '—' : s;
+    }
+    function adminHandoverPersonCell(name, role){
+      var n = String(name || '').trim();
+      var r = String(role || '').trim();
+      if(!n && !r) return '<span class="muted">—</span>';
+      var html = '<div class="portal-forms-cell-main" style="min-width:0;overflow-wrap:break-word">' + esc(n || r) + '</div>';
+      if(n && r){
+        html += '<div class="portal-forms-cell-sub" style="min-width:0;overflow-wrap:break-word">' + esc(r) + '</div>';
+      }
+      return html;
+    }
+    async function adminFetchTodayHandovers(){
+      var client = getSchedSupabaseClient();
+      if(!client) return { rows: [], error: 'Supabase not connected' };
+      var today = isoDateLocal(new Date());
+      try{
+        var res = await client
+          .from('daily_handover_logs')
+          .select('*')
+          .eq('session_date', today)
+          .order('updated_at', { ascending: false })
+          .limit(500);
+        if(res.error) return { rows: [], error: res.error.message || String(res.error) };
+        return { rows: (res.data || []).map(adminMapHandoverRemoteRow), error: null };
+      }catch(e){
+        return { rows: [], error: String((e && e.message) || e) };
+      }
+    }
+    function adminRenderPickupHandoverTables(rows){
+      var liveTb = $('pickupLiveTbody');
+      var logTb = $('pickupLogTbody');
+      if(!liveTb && !logTb) return;
+      var today = isoDateLocal(new Date());
+      var live = [], done = [];
+      (rows || []).forEach(function(row){
+        if(String(row.sessionDate || '').slice(0, 10) !== today) return;
+        var vals = row.values || {};
+        if(row.locked) done.push(row);
+        else if(adminHandoverDropSaved(vals)) live.push(row);
+      });
+      function liveRow(row){
+        var vals = row.values || {};
+        return (
+          '<tr>' +
+          '<td style="min-width:0;max-width:220px;overflow-wrap:break-word"><div class="portal-forms-cell-main">' +
+          esc(row.participantName) + '</div></td>' +
+          '<td style="white-space:nowrap">' + esc(adminFormatHandoverClock(vals.arrivalTime)) + '</td>' +
+          '<td style="min-width:0;max-width:200px">' + adminHandoverPersonCell(vals.dropName, vals.dropRole) + '</td>' +
+          '<td style="min-width:0;max-width:160px;overflow-wrap:break-word">' + esc(String(vals.emotionalState || '').trim() || '—') + '</td>' +
+          '<td><span class="pickup-pill pickup-pill--live">Awaiting pick up</span></td>' +
+          '</tr>'
+        );
+      }
+      function doneRow(row){
+        var vals = row.values || {};
+        return (
+          '<tr>' +
+          '<td style="min-width:0;max-width:220px;overflow-wrap:break-word"><div class="portal-forms-cell-main">' +
+          esc(row.participantName) + '</div></td>' +
+          '<td style="white-space:nowrap">' + esc(adminFormatHandoverClock(vals.arrivalTime)) + '</td>' +
+          '<td style="white-space:nowrap">' + esc(adminFormatHandoverClock(vals.pickupTime)) + '</td>' +
+          '<td style="min-width:0;max-width:200px">' + adminHandoverPersonCell(vals.pickupName, vals.pickupRole) + '</td>' +
+          '<td><span class="pickup-pill pickup-pill--done">Completed</span></td>' +
+          '</tr>'
+        );
+      }
+      if(liveTb){
+        liveTb.innerHTML = live.length
+          ? live.map(liveRow).join('')
+          : '<tr><td colspan="5"><div class="submission-state">No one signed in and waiting for pick up right now.</div></td></tr>';
+      }
+      if(logTb){
+        logTb.innerHTML = done.length
+          ? done.map(doneRow).join('')
+          : '<tr><td colspan="5"><div class="submission-state">No completed handovers for today yet.</div></td></tr>';
+      }
+      var refreshLine = $('pickupHandoverRefreshLine');
+      if(refreshLine){
+        refreshLine.textContent = 'Last updated ' + new Date().toLocaleString('en-GB', {
+          day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'
+        });
+      }
+    }
+    async function adminRefreshPickupHandoverMonitor(){
+      var liveTb = $('pickupLiveTbody');
+      var logTb = $('pickupLogTbody');
+      if(!liveTb && !logTb) return;
+      var loading =
+        '<tr><td colspan="5"><div class="submission-state"><strong>Loading…</strong></div></td></tr>';
+      if(liveTb) liveTb.innerHTML = loading;
+      if(logTb) logTb.innerHTML = loading;
+      var result = await adminFetchTodayHandovers();
+      if(result.error){
+        var errRow =
+          '<tr><td colspan="5"><div class="submission-state is-error"><strong>Could not load handovers.</strong> ' +
+          esc(result.error) + '</div></td></tr>';
+        if(liveTb) liveTb.innerHTML = errRow;
+        if(logTb) logTb.innerHTML = errRow;
+        throw new Error(result.error);
+      }
+      adminRenderPickupHandoverTables(result.rows);
     }
     function sessionsHubToolbarHtml(tab){
       return (
@@ -17689,14 +17859,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var showFb = sessionsHubUsesFeedbackHub(h.tab);
       var showLead = h.tab === 'lead';
       var showVenue = h.tab === 'venue';
+      var showPickup = h.tab === 'pickup';
       var ov = $('c4kHubPanelOverview');
       var fb = $('c4kHubPanelFeedback');
       var lead = $('c4kHubPanelLead');
       var venue = $('c4kHubPanelVenue');
+      var pickup = $('c4kHubPanelPickup');
       if(ov) ov.hidden = !showTrack;
       if(fb) fb.hidden = !showFb;
       if(lead) lead.hidden = !showLead;
       if(venue) venue.hidden = !showVenue;
+      if(pickup) pickup.hidden = !showPickup;
       document.querySelectorAll('[data-sessions-hub-tab]').forEach(function(btn){
         btn.classList.toggle('is-active', btn.getAttribute('data-sessions-hub-tab') === h.tab);
       });
@@ -17720,7 +17893,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             ' Try <strong>Refresh</strong> or reload the page.</p>';
         }
       }
+      function onPickupRefreshFail(err){
+        var msg = esc(String((err && err.message) || err));
+        var errRow =
+          '<tr><td colspan="5"><div class="submission-state is-error"><strong>Could not load handovers.</strong> ' +
+          msg + '</div></td></tr>';
+        var liveTb = $('pickupLiveTbody');
+        var logTb = $('pickupLogTbody');
+        if(liveTb) liveTb.innerHTML = errRow;
+        if(logTb) logTb.innerHTML = errRow;
+      }
       function runHubRefresh(){
+        if(showPickup){
+          void adminRefreshPickupHandoverMonitor().then(onHubRefreshDone).catch(onPickupRefreshFail);
+          return;
+        }
         if(window.PortalDayOps && typeof window.PortalDayOps.refreshTab === 'function'){
           void window.PortalDayOps.refreshTab(h.tab).then(onHubRefreshDone).catch(onHubRefreshFail);
         }else{
@@ -17770,6 +17957,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         fetchAbsents: adminFetchAbsentQuickMarksForHub,
         fetchScheduleOverrides: adminFetchScheduleOverridesForHub,
         fetchLeadReports: adminFetchLeadSessionReportsForHub,
+        onLogJumpWeek: function(weekStart){
+          var iso = String(weekStart || '').trim().substring(0, 10);
+          if(!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
+          var h = sessionsHubEnsureState();
+          var week = bookingWeekIsoRangeMonSun(iso);
+          h.tab = 'overview';
+          h.weekAnchorIso = week[0] || iso;
+          h.selectedIso = iso;
+          state.sessionOverview.iso = iso;
+          openSessionsHubTab('overview');
+        },
         getFeedbackDayStats: function(iso){
           if(typeof window.portalBookingFeedbackStatsForIso === 'function'){
             return window.portalBookingFeedbackStatsForIso(iso);
@@ -17988,6 +18186,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         c4kHubLeadPanelInnerHtml() + '</div>' +
         '<div id="c4kHubPanelVenue" class="c4k-sessions-hub-panel"' + (h.tab === 'venue' ? '' : ' hidden') + '>' +
         c4kHubVenuePanelInnerHtml() + '</div>' +
+        '<div id="c4kHubPanelPickup" class="c4k-sessions-hub-panel"' + (h.tab === 'pickup' ? '' : ' hidden') + '>' +
+        c4kHubPickupPanelInnerHtml() + '</div>' +
         '</div>'
       );
     }
@@ -19705,7 +19905,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(a === 'sessions_hub_absents'){ closeSidebarMob(); openSessionsHubTab('absents'); return; }
       if(a === 'sessions_hub_lead'){ closeSidebarMob(); openSessionsHubTab('lead'); return; }
       if(a === 'sessions_hub_venue'){ closeSidebarMob(); openSessionsHubTab('venue'); return; }
-      if(a === 'sessions_hub_pickup'){ closeSidebarMob(); window.location.href = 'portal-pickup.html'; return; }
+      if(a === 'sessions_hub_pickup'){ closeSidebarMob(); openSessionsHubTab('pickup'); return; }
       if(a === 'new_participant'){
         openDayOpsNewParticipantModal();
         closeSidebarMob();

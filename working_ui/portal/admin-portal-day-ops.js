@@ -493,12 +493,157 @@
     return esc(String(val));
   }
 
-  function renderLeadVenueTables() {
+  function formatDateOnly(iso) {
+    if (!iso) return '—';
+    try {
+      var d = new Date(iso);
+      if (isNaN(d.getTime())) return '—';
+      return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    } catch (e) {
+      return '—';
+    }
+  }
+
+  function formatTimeOnly(iso) {
+    if (!iso) return '';
+    try {
+      var d = new Date(iso);
+      if (isNaN(d.getTime())) return '';
+      return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function portalFormsWhenStackHtml(iso, escFn) {
+    var date = formatDateOnly(iso);
+    var time = formatTimeOnly(iso);
+    if (date === '—') return '—';
+    return (
+      '<span class="portal-forms-when-stack">' +
+      '<span class="portal-forms-when-stack__date">' +
+      escFn(date) +
+      '</span><span class="portal-forms-when-stack__time">' +
+      escFn(time) +
+      '</span></span>'
+    );
+  }
+
+  function portalFormsLeadServiceSubLine(r) {
+    var svc = String((r && r.service) || '').trim();
+    var low = svc.toLowerCase();
+    if (low === 'multi-activity' || low.indexOf('multi-activity') !== -1) return 'Group Session';
+    if ((r && r.is_bespoke_programme) || low.indexOf('bespoke') !== -1) {
+      return String((r && r.client_name) || '').trim();
+    }
+    return '';
+  }
+
+  function portalFormsLeadServiceHtml(r, escFn) {
+    var svc = String((r && r.service) || '').trim() || '—';
+    var sub = portalFormsLeadServiceSubLine(r);
+    if (!sub) {
+      return escFn(truncate(svc, 36));
+    }
+    return (
+      '<span class="portal-forms-svc-stack">' +
+      '<span class="portal-forms-cell-main">' +
+      escFn(truncate(svc, 36)) +
+      '</span><span class="portal-forms-cell-sub">' +
+      escFn(truncate(sub, 36)) +
+      '</span></span>'
+    );
+  }
+
+  function leadReportActivity(r) {
+    var P = global.PortalFormRecordModal;
+    if (P && typeof P.leadReportActivity === 'function') return P.leadReportActivity(r);
+    return String(r.brief_description || r.other_information || r.activity || '').trim();
+  }
+
+  function leadReportBriefBody(r) {
+    var P = global.PortalFormRecordModal;
+    if (P && typeof P.leadReportBriefBody === 'function') return P.leadReportBriefBody(r);
+    return String(r.brief_description || r.summary_text || '').trim();
+  }
+
+  function leadLogOpenContext() {
+    var now = new Date();
+    var d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var day = d.getDay();
+    var diff = day === 0 ? 6 : day - 1;
+    d.setDate(d.getDate() - diff);
+    var weekStart =
+      d.getFullYear() +
+      '-' +
+      String(d.getMonth() + 1).padStart(2, '0') +
+      '-' +
+      String(d.getDate()).padStart(2, '0');
+    return { openTermLabel: '', openWeekStart: weekStart };
+  }
+
+  function renderLeadTermWeekLog(Hub, lead) {
+    var leadLogEl = document.getElementById('portalFormsLeadLog');
+    if (!leadLogEl || !Hub || typeof Hub.renderTermWeekLogHtml !== 'function') return;
+    var ctx = leadLogOpenContext();
+    var rowDateIso = Hub.rowDateIso || function (v) {
+      return String(v || '').slice(0, 10);
+    };
+    leadLogEl.innerHTML = Hub.renderTermWeekLogHtml({
+      escapeHtml: esc,
+      title: 'Lead reports log',
+      emptyMsg: 'No lead reports in loaded data.',
+      rows: lead,
+      getDateIso: function (r) {
+        return rowDateIso(r.session_date) || rowDateIso(r.created_at);
+      },
+      openTermLabel: ctx.openTermLabel,
+      openWeekStart: ctx.openWeekStart,
+      tableClass: ' ash-table--overview portal-forms-table--lead-reports',
+      headHtml:
+        '<th class="ash-td-center">Session date</th><th class="ash-td-center">Recorded</th><th class="ash-td-center">Submitted by</th><th class="ash-td-center">Service</th><th class="ash-td-center">Activity</th>',
+      rowHtml: function (r, escFn) {
+        var sd = rowDateIso(r.session_date) || rowDateIso(r.created_at);
+        var activity = leadReportActivity(r);
+        var svcSub = portalFormsLeadServiceSubLine(r);
+        var svcTitle = String(r.service || '') + (svcSub ? ' · ' + svcSub : '');
+        return (
+          '<tr>' +
+          '<td class="ash-td-center">' +
+          escFn(formatDateOnly(sd || r.session_date)) +
+          '</td><td class="ash-td-center">' +
+          portalFormsWhenStackHtml(r.created_at, escFn) +
+          '</td><td class="ash-td-center"><div class="portal-forms-cell-main">' +
+          escFn(cellText(r.submitted_by_name)) +
+          '</div></td><td class="ash-td-center cell-clip" title="' +
+          escFn(svcTitle) +
+          '">' +
+          portalFormsLeadServiceHtml(r, escFn) +
+          '</td><td class="ash-td-center cell-clip" title="' +
+          escFn(activity) +
+          '">' +
+          escFn(truncate(activity || '—', 40)) +
+          '</td></tr>'
+        );
+      }
+    });
+  }
+
+  async function renderLeadVenueTables() {
     var leadTbody = document.getElementById('portalFormsLeadTbody');
     var venueTbody = document.getElementById('portalFormsVenueTbody');
     if (!leadTbody && !venueTbody) return;
     var lead = payload.lead_session_reports || [];
     var venue = payload.venue_reviews || [];
+    var Hub = null;
+    if (leadTbody || document.getElementById('portalFormsLeadLog')) {
+      try {
+        await ensureHubScript();
+        Hub = global.AdminSessionsHub;
+      } catch (eHub) {
+        console.debug('[PortalDayOps] hub for lead log', eHub);
+      }
+    }
     if (leadTbody) {
       if (!lead.length) {
         leadTbody.innerHTML =
@@ -507,27 +652,34 @@
         leadTbody.innerHTML = lead
           .map(function (r, i) {
             var who = esc(cellText(r.submitted_by_name));
-            var svc = esc(cellText(r.service));
-            var act = esc(truncate(r.activity || r.session_activity || r.engagement || '—', 28));
-            var brief = esc(truncate(r.brief_description || r.description || '—', 120));
+            var activity = leadReportActivity(r);
+            var briefBody = leadReportBriefBody(r);
+            var svcSub = portalFormsLeadServiceSubLine(r);
+            var svcTitle = String(r.service || '') + (svcSub ? ' · ' + svcSub : '');
             return (
               '<tr class="portal-forms-data-row" data-portal-forms-kind="lead" data-portal-forms-idx="' +
               i +
-              '">' +
+              '" title="Double-click to view">' +
               '<td class="col-date">' +
-              esc(formatDate(r.created_at)) +
+              portalFormsWhenStackHtml(r.created_at, esc) +
               '</td>' +
               '<td><div class="portal-forms-cell-main">' +
               who +
               '</div></td>' +
-              '<td class="cell-clip">' +
-              svc +
+              '<td class="cell-clip" title="' +
+              esc(svcTitle) +
+              '">' +
+              portalFormsLeadServiceHtml(r, esc) +
               '</td>' +
-              '<td class="cell-clip">' +
-              act +
+              '<td class="cell-clip" title="' +
+              esc(activity) +
+              '">' +
+              esc(truncate(activity || '—', 28)) +
               '</td>' +
-              '<td class="cell-clip col-brief-desc">' +
-              brief +
+              '<td class="cell-clip col-brief-desc" title="' +
+              esc(briefBody) +
+              '">' +
+              esc(truncate(briefBody || '—', 120)) +
               '</td>' +
               '<td class="col-actions"><button type="button" class="portal-forms-view-btn" data-portal-forms-kind="lead" data-portal-forms-idx="' +
               i +
@@ -537,6 +689,18 @@
           })
           .join('');
       }
+    }
+    var leadLogMount = document.getElementById('portalFormsLeadLog');
+    if (leadLogMount) {
+      if (!Hub) {
+        try {
+          await ensureHubScript();
+          Hub = global.AdminSessionsHub;
+        } catch (eHub2) {
+          console.debug('[PortalDayOps] hub for lead log mount', eHub2);
+        }
+      }
+      renderLeadTermWeekLog(Hub, lead);
     }
     if (venueTbody) {
       if (!venue.length) {
@@ -579,6 +743,12 @@
     if (!shell || shell._portalFormsBound) return;
     shell._portalFormsBound = true;
     shell.addEventListener('click', function (ev) {
+      var wkBtn = ev.target && ev.target.closest ? ev.target.closest('[data-ash-log-jump-week]') : null;
+      if (wkBtn && cfg.onLogJumpWeek) {
+        ev.preventDefault();
+        cfg.onLogJumpWeek(wkBtn.getAttribute('data-ash-log-jump-week'));
+        return;
+      }
       var btn = ev.target && ev.target.closest ? ev.target.closest('[data-portal-forms-kind]') : null;
       if (!btn) return;
       var kind = btn.getAttribute('data-portal-forms-kind');
@@ -587,6 +757,29 @@
       var arr =
         kind === 'lead' ? payload.lead_session_reports : kind === 'venue' ? payload.venue_reviews : null;
       if (!arr || !arr[idx]) return;
+      if (global.PortalFormRecordModal && typeof global.PortalFormRecordModal.open === 'function') {
+        global.PortalFormRecordModal.open(kind, idx);
+        return;
+      }
+      try {
+        alert(JSON.stringify(arr[idx], null, 2));
+      } catch (e) {
+        alert(String(arr[idx]));
+      }
+    });
+    shell.addEventListener('dblclick', function (ev) {
+      var row = ev.target && ev.target.closest ? ev.target.closest('.portal-forms-data-row[data-portal-forms-kind]') : null;
+      if (!row) return;
+      var kind = row.getAttribute('data-portal-forms-kind');
+      var idx = parseInt(row.getAttribute('data-portal-forms-idx'), 10);
+      if (isNaN(idx)) return;
+      var arr =
+        kind === 'lead' ? payload.lead_session_reports : kind === 'venue' ? payload.venue_reviews : null;
+      if (!arr || !arr[idx]) return;
+      if (global.PortalFormRecordModal && typeof global.PortalFormRecordModal.open === 'function') {
+        global.PortalFormRecordModal.open(kind, idx);
+        return;
+      }
       try {
         alert(JSON.stringify(arr[idx], null, 2));
       } catch (e) {
@@ -719,7 +912,7 @@
               console.debug('[PortalDayOps] fetchLeadReports', eLeadTab);
             }
           }
-          renderLeadVenueTables();
+          await renderLeadVenueTables();
           return null;
         }
         return null;

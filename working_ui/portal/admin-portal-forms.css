@@ -67,6 +67,48 @@
   text-align: center;
   vertical-align: middle;
 }
+.portal-day-ops-embed .portal-forms-table--lead-reports .portal-forms-cell-main,
+.portal-day-ops-embed .portal-forms-table--lead-reports .portal-forms-cell-sub {
+  text-align: center;
+}
+.portal-day-ops-embed .portal-forms-table--lead-reports .portal-forms-when-stack,
+.portal-day-ops-embed .portal-forms-table--lead-reports .portal-forms-svc-stack,
+.portal-day-ops-embed .ash-table--lead-reports .portal-forms-when-stack,
+.portal-day-ops-embed .ash-table--lead-reports .portal-forms-svc-stack {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  line-height: 1.25;
+  text-align: center;
+  min-width: 0;
+}
+.portal-day-ops-embed .portal-forms-table--lead-reports .portal-forms-when-stack__date,
+.portal-day-ops-embed .ash-table--lead-reports .portal-forms-when-stack__date {
+  font-weight: 600;
+}
+.portal-day-ops-embed .portal-forms-table--lead-reports .portal-forms-when-stack__time,
+.portal-day-ops-embed .ash-table--lead-reports .portal-forms-when-stack__time {
+  font-size: 12px;
+  color: var(--muted, #64748b);
+}
+.portal-day-ops-embed .portal-forms-table--lead-reports .cell-clip,
+.portal-day-ops-embed .ash-table.portal-forms-table--lead-reports .cell-clip {
+  white-space: normal;
+  text-align: center;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+.portal-day-ops-embed .portal-forms-table--lead-reports .col-brief-desc {
+  text-align: center;
+}
+.portal-day-ops-embed .portal-forms-activity-log-mount {
+  min-width: 0;
+}
+.portal-day-ops-embed .portal-forms-activity-log-mount .ash-activity-log {
+  margin-top: 24px;
+}
 .portal-day-ops-embed .portal-forms-view-btn {
   border: 1px solid var(--border, #e2e8f0);
   background: #fff;
@@ -106,6 +148,89 @@
   min-width: 0;
 }
 .portal-day-ops-embed .c4k-sessions-hub-panel[hidden] { display: none !important; }
+
+.portal-day-ops-embed .pickup-admin-lead {
+  margin: 0 0 14px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--muted, #64748b);
+  max-width: 52rem;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+.portal-day-ops-embed .pickup-admin-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+  min-width: 0;
+}
+.portal-day-ops-embed .pickup-admin-toolbar .portal-forms-heading {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+.portal-day-ops-embed .pickup-admin-open-form {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid #c4b5fd;
+  background: #f5f3ff;
+  color: #5b21b6;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+.portal-day-ops-embed .pickup-admin-open-form:hover {
+  background: #ede9fe;
+  border-color: #8b5cf6;
+}
+.portal-day-ops-embed .pickup-admin-subhead {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--navy, #16325c);
+}
+.portal-day-ops-embed .pickup-admin-block {
+  margin-bottom: 24px;
+}
+.portal-day-ops-embed .pickup-admin-block:last-of-type {
+  margin-bottom: 0;
+}
+.portal-day-ops-embed .pickup-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.portal-day-ops-embed .pickup-pill--live {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+.portal-day-ops-embed .pickup-pill--done {
+  background: #d1fae5;
+  color: #065f46;
+}
+.portal-day-ops-embed .pickup-admin-last-refresh,
+.portal-day-ops-embed .portal-forms-last-refresh {
+  margin: 14px 0 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted, #64748b);
+  text-align: right;
+  line-height: 1.35;
+}
+.portal-day-ops-embed .submission-state.is-error {
+  color: #b91c1c;
+}
 
 /* Day-ops tab bar — align with Portal 2026 ash-tabs */
 .portal-day-ops-embed .c4k-sessions-hub-tabs { gap: 6px; margin-bottom: 16px; }
