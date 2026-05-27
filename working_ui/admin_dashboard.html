@@ -3104,6 +3104,7 @@
     .demo-strip{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--blue);background:var(--blueSoft);border:1px solid rgba(45,132,179,.25);border-radius:10px;padding:8px 12px;margin-bottom:16px}
     .sched-banner{border:1px dashed rgba(45,132,179,.45);border-radius:var(--radiusLg);padding:12px 14px;margin-bottom:14px;background:#f8fafc;font-size:13px;color:var(--text);line-height:1.5;min-width:0;overflow-wrap:break-word}
     .sched-tbl th,.sched-tbl td{min-width:0;overflow-wrap:break-word;word-break:normal;text-align:center}
+    .sched-tbl th:last-child,.sched-tbl td:last-child{white-space:nowrap;width:1%}
     /* Day operations — staff with multiple venues: stacked halves (venue ↔ blocks aligned). */
     .dayops-split-pair{display:flex;flex-direction:column;min-width:0;width:100%}
     .dayops-split-pair__half{min-width:0;padding:8px 10px;overflow-wrap:break-word;text-align:center;line-height:1.35;font-size:13px;display:flex;align-items:center;justify-content:center}
@@ -13112,6 +13113,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var k = String(key == null ? '' : key).trim();
       var map = {
         client_absence_announced: 'Absent',
+        client_cancelled: 'Cancelled',
         slot_clear_client: 'No Participant',
         client_replace_in_slot: 'MakeUp',
         instructor_reassign: 'Change Instructor',
@@ -13120,6 +13122,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         override_void: 'Void'
       };
       return map[k] || k;
+    }
+    /** Roster column: operational booking state (Booked / Cancelled / New). */
+    function schedEffectiveRosterMeta(slot, ov){
+      var t = String(ov && ov.override_type || '').trim();
+      var payload = ov && ov.payload ? ov.payload : {};
+      if(t === 'client_absence_announced') return { label: 'Cancelled', cls: 'chip--urg' };
+      if(t === 'client_cancelled') return { label: 'Cancelled', cls: 'chip--urg' };
+      if(t === 'slot_clear_client' && payload && payload.cancelled_by_admin) return { label: 'Cancelled', cls: 'chip--urg' };
+      if(t === 'client_replace_in_slot') return { label: 'New', cls: 'chip--makeup' };
+      if(t === 'slot_close') return { label: 'Closed', cls: 'chip--urg' };
+      if(t === 'slot_open') return { label: 'Open slot', cls: 'chip--ok' };
+      if(t === 'slot_clear_client') return { label: 'No Participant', cls: 'chip--pend' };
+      var base = String(slot.rosterSheetLabel || 'Booked').trim();
+      if(!base || base === '—') base = 'Booked';
+      return { label: base, cls: 'chip--info' };
     }
     function schedOverrideLabelForRow(ov){
       if(!ov) return '';
@@ -13130,6 +13147,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function schedOverrideTypeClass(key){
       var k = String(key == null ? '' : key).trim();
       if(k === 'client_absence_announced') return 'override--absent';
+      if(k === 'client_cancelled') return 'override--closed';
       if(k === 'slot_close') return 'override--closed';
       if(k === 'slot_open') return 'override--slot-open';
       if(k === 'client_replace_in_slot' || k === 'replace_participant') return 'override--replace';
@@ -14225,7 +14243,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var replName = String(ov.payload && (ov.payload.to_client_name || ov.payload.replacement_client_name) || '').trim();
         var replSlug = String(ov.payload && (ov.payload.to_client_id || ov.payload.replacement_client_id) || '').trim().toLowerCase();
         var repl = replName || replSlug || 'replacement';
-        return original + ' / ' + repl;
+        return original + '/' + repl;
       }
       function schedClientCellHtml(slot, ov){
         var plain = schedClientDisplayWithOverride(slot, ov);
@@ -14238,7 +14256,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var lab1 = esc(replName || replSlug || 'replacement');
           var a = cid0 ? '<button type="button" class="btn btn--ghost btn--sm" data-client="'+esc(cid0)+'" style="max-width:100%;text-align:left;overflow-wrap:break-word">'+lab0+'</button>' : lab0;
           var b = cid1 ? '<button type="button" class="btn btn--ghost btn--sm" data-client="'+esc(cid1)+'" style="max-width:100%;text-align:left;overflow-wrap:break-word">'+lab1+'</button>' : lab1;
-          return a+' <span class="muted">/</span> '+b;
+          return a+'<span class="muted">/</span>'+b;
         }
         var cid = resolveAdminClientDrawerId(slot.clientSlug);
         var lab = esc(String(slot.clientDisplay || '').trim() || slot.clientSlug);
@@ -14250,19 +14268,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var ovChip = hasOv
           ? '<span class="override-chip ' + esc(schedOverrideTypeClass(ov.override_type)) + '">' + esc(schedOverrideLabelForRow(ov)) + '</span>'
           : '<span class="muted" style="font-size:12px;font-weight:600;letter-spacing:.03em">NONE</span>';
-        var ovCell =
-          '<div style="display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;max-width:100%">' +
-          ovChip +
-          '<button type="button" class="btn btn--sec btn--sm" data-sched-change="' +
-          esc(slot.demoId) +
-          '" style="max-width:100%">Change</button></div>';
+        var rosterMeta = schedEffectiveRosterMeta(slot, ov);
         var clientCellHtml = schedClientCellHtml(slot, ov);
         var staffKeyForBtn = String(slot.staffRosterId || '').trim().toLowerCase();
         var staffDispBtn = String(slot.staffName || '').trim() || staffKeyForBtn || '—';
         var staffCell = staffKeyForBtn
           ? '<button type="button" class="btn btn--ghost btn--sm" data-staff-roster="'+esc(staffKeyForBtn)+'" data-staff-session-iso="'+esc(schedIso)+'" data-staff-label="'+esc(staffDispBtn)+'" style="max-width:100%;text-align:left;overflow-wrap:break-word">'+esc(slot.staffName||staffKeyForBtn)+'</button>'
           : esc(slot.staffName||'');
-        var statusCell = '<span class="chip chip--info" style="max-width:100%">'+esc(String(slot.rosterSheetLabel || '—'))+'</span>';
+        var statusCell = '<span class="chip '+esc(rosterMeta.cls)+'" style="max-width:100%">'+esc(rosterMeta.label)+'</span>';
         var paxSlug = String(slot.clientSlug || '').trim().toLowerCase();
         var paxSlug2 = '';
         if(ov && String(ov.override_type || '').trim() === 'client_replace_in_slot'){
@@ -14275,7 +14288,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '<td style="min-width:0">'+staffCell+'</td>'+
           '<td style="min-width:0">'+clientCellHtml+'</td>'+
           '<td>'+statusCell+'</td>'+
-          '<td class="ash-td-center">'+ovCell+'</td></tr>';
+          '<td class="ash-td-center">'+ovChip+'</td>'+
+          '<td class="ash-td-center"><button type="button" class="btn btn--sec btn--sm" data-sched-change="'+esc(slot.demoId)+'" style="max-width:100%">Change</button></td></tr>';
       }).join('');
     }
     function renderSchedLogRows(){
@@ -14388,7 +14402,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(tbody){
         tbody.innerHTML = slots.length
           ? renderSchedBaseRows(slots)
-          : '<tr><td colspan="6" class="muted">No sessions for this date. If you imported a dated week CSV, confirm <code>/portal/staff_dashboard_spreadsheet_bundle.js</code> is deployed and includes <code>session_date</code> rows for this day.</td></tr>';
+          : '<tr><td colspan="7" class="muted">No sessions for this date. If you imported a dated week CSV, confirm <code>/portal/staff_dashboard_spreadsheet_bundle.js</code> is deployed and includes <code>session_date</code> rows for this day.</td></tr>';
       }
       fillSchedFilterSelects(slots);
       var logBody = document.querySelector('#schedLogTable tbody');
@@ -14495,7 +14509,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<button type="button" class="btn btn--sec btn--sm" id="schedRefreshBtn">Refresh</button></div>'+
         '<p id="schedConnMsg" class="muted" style="margin:0 0 12px;min-height:1.25em;max-width:900px;overflow-wrap:break-word"></p>'+
         '<div class="section"><div class="section-h"><h2>Base schedule</h2><p>Click a row for full context and to add or review an override. Instructor and participant names open profiles when linked in admin mock data.</p></div>'+
-        '<div class="card"><div class="card-pad" style="overflow:auto;padding:0"><table class="tbl sched-tbl" id="schedBaseTable"><thead><tr><th>Time</th><th>Venue</th><th>Instructor</th><th>Participant</th><th>Roster</th><th>Override</th></tr></thead><tbody></tbody></table></div></div></div>'+
+        '<div class="card"><div class="card-pad" style="overflow:auto;padding:0"><table class="tbl sched-tbl" id="schedBaseTable"><thead><tr><th>Time</th><th>Venue</th><th>Instructor</th><th>Participant</th><th>Roster</th><th>Override</th><th>Action</th></tr></thead><tbody></tbody></table></div></div></div>'+
         '<div class="section" style="margin-top:22px"><div class="section-h"><h2>Change log</h2><p>Overrides stored for the selected date (Supabase).</p></div>'+
         '<div class="card"><div class="card-pad" style="overflow:auto;padding:0"><table class="tbl sched-tbl" id="schedLogTable"><thead><tr><th>Time</th><th>Type</th><th>Participant</th><th>Instructor</th><th>Reason</th><th>Created by</th><th>Created</th></tr></thead><tbody></tbody></table></div></div></div>';
     }
