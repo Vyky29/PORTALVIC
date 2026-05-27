@@ -7422,7 +7422,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return out;
     }
     function adminSessionDedupeKey(s){
-      return normDayLabel(s.day) + '|' + String(s.start || '') + '|' + String(s.end || '')
+      var sd = adminNormIsoDate(s.session_date || s.sessionDate);
+      return (sd ? sd + '|' : '')
+        + normDayLabel(s.day) + '|' + String(s.start || '') + '|' + String(s.end || '')
         + '|' + String(s.venue || '').trim().toLowerCase()
         + '|' + String(s.clientId || '').toLowerCase()
         + '|' + String(s.staffId || '').toLowerCase();
@@ -7655,6 +7657,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function adminRosterHasDatedSessionsForIso(iso, sessions){
       var want = adminNormIsoDate(iso);
       if(!want) return false;
+      var src = window.STAFF_DASHBOARD_SOURCE;
+      var rows = src && Array.isArray(src.rows) ? src.rows : [];
+      for(var ri = 0; ri < rows.length; ri++){
+        if(adminNormIsoDate(rows[ri].session_date || rows[ri].date) === want) return true;
+      }
       for(var di = 0; di < (sessions || []).length; di++){
         if(adminNormIsoDate(sessions[di].session_date || sessions[di].sessionDate) === want) return true;
       }
@@ -7900,11 +7907,34 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return '<div class="c4k-hub-day-strip" role="region" aria-label="Week days" style="margin-bottom:14px">' + cards.join('') + '</div>';
     }
+    function adminSchedSlotsFromRosterRows(iso, notesById){
+      var want = String(iso || '').trim().substring(0, 10);
+      if(!want || !adminSpreadsheetAdapterAvailable()) return [];
+      var src = window.STAFF_DASHBOARD_SOURCE;
+      var wd = portalWeekdayLongFromIsoDate(iso);
+      var merged = [];
+      var notes = notesById || {};
+      adminAppendSessionsFromRowsAllInstructors(merged, notes, src);
+      var out = [];
+      for(var i = 0; i < merged.length; i++){
+        var s = merged[i];
+        if(!adminSessionMatchesCalendarIso(s, iso, wd, merged)) continue;
+        out.push(mapSpreadsheetSessionToSchedSlot(s, iso, notes));
+      }
+      out.sort(function(a, b){
+        return (a.anchorStart || '').localeCompare(b.anchorStart || '') || (a.venue || '').localeCompare(b.venue || '') || (a.staffRosterId || '').localeCompare(b.staffRosterId || '');
+      });
+      return out;
+    }
     function slotsForSelectedDate(iso){
       var want = String(iso || '').trim().substring(0, 10);
       if(!want) return [];
       if(!slotsForSelectedDate._byIso) slotsForSelectedDate._byIso = {};
       if(slotsForSelectedDate._byIso[want]) return slotsForSelectedDate._byIso[want];
+      if(!adminSpreadsheetAdapterAvailable()){
+        slotsForSelectedDate._byIso[want] = [];
+        return [];
+      }
       var pack = adminMergeSpreadsheetSessions();
       var wd = portalWeekdayLongFromIsoDate(iso);
       sched.slotsById = {};
@@ -7926,6 +7956,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }catch(_ov){}
         sched.slotsById[slot.demoId] = slot;
         out.push(slot);
+      }
+      if(!out.length){
+        out = adminSchedSlotsFromRosterRows(iso, pack.notes);
+        for(var fi = 0; fi < out.length; fi++) sched.slotsById[out[fi].demoId] = out[fi];
       }
       out.sort(function(a,b){
         return (a.anchorStart||'').localeCompare(b.anchorStart||'') || (a.venue||'').localeCompare(b.venue||'') || (a.staffRosterId||'').localeCompare(b.staffRosterId||'');
@@ -14260,6 +14294,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
     }
     async function refreshSchedulingModule(){
+      if(window.portalAdminLoadScriptSet && !adminSpreadsheetAdapterAvailable()){
+        try{
+          await window.portalAdminLoadScriptSet('roster');
+        }catch(_schedLoad){}
+        portalInvalidateAdminSlotsCache();
+      }
       schedEnsureState();
       var dateEl = $('schedDate');
       var iso = schedClampIsoToTerm(dateEl && dateEl.value ? dateEl.value : isoDateLocal(new Date()));
@@ -14406,7 +14446,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         stripEl.onclick = onSchedWeekDayPick;
         stripEl.onkeydown = function(e){ if(e.key === 'Enter' || e.key === ' ') onSchedWeekDayPick(e); };
       }
-      void refreshSchedulingModule();
+      void (window.portalAdminLoadScriptSet ? window.portalAdminLoadScriptSet('roster') : Promise.resolve()).then(function(){
+        portalInvalidateAdminSlotsCache();
+        void refreshSchedulingModule();
+      });
     }
     /** Shared markup: Scheduling &amp; Cover (standalone view and any future embeds). */
     function schedulingModuleInnerHtml(){
