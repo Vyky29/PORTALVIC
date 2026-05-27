@@ -187,6 +187,20 @@ export function portalCanAccessAdminDashboard(profile, authEmail) {
 }
 
 /**
+ * Schedule & Covers writes (schedule_overrides RLS): admin/ceo in staff_profiles,
+ * or portal username overrides (Victor/Javi/Raúl → ceo, Sevitha → admin).
+ * @param {Record<string, unknown> | null | undefined} profile
+ * @param {string} authEmail
+ */
+export function portalCanWriteScheduleOverrides(profile, authEmail) {
+  if (!profile) return false;
+  const app = String(profile.app_role || "").toLowerCase();
+  if (app === "admin" || app === "ceo") return true;
+  const eff = portalInferEffectiveRole(profile, authEmail);
+  return eff === "admin" || eff === "ceo";
+}
+
+/**
  * Admin / CEO / manager: pick Staff, Lead, or Admin after sign-in.
  * @param {Record<string, unknown> | null | undefined} profile
  * @param {string} authEmail
