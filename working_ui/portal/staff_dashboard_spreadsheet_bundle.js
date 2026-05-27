@@ -197,6 +197,11 @@
       "canViewAll": false
     }
   },
+  "expectedSessionsByWeekday": {
+    "Monday": { "morning": 4, "afternoon": 16, "total": 20 },
+    "Tuesday": { "morning": 2, "afternoon": 18, "total": 20 },
+    "Wednesday": { "morning": 5, "afternoon": 16, "total": 21 }
+  },
   "rows": [
   {
     "client_name": "Q6 College",
@@ -1689,11 +1694,21 @@
     "session_date": "2026-05-19"
   },
   {
-    "client_name": "Q6 College",
+    "client_name": "Timi",
+    "day": "Wednesday",
+    "instructors": "RAUL, CARLOS",
+    "service": "Day Centre",
+    "area": "Hub Room",
+    "time_slot": "1 to 3",
+    "venue": "SwimFarm",
+    "session_date": "2026-05-20"
+  },
+  {
+    "client_name": "ACAT",
     "day": "Wednesday",
     "instructors": "ROBERTO",
-    "service": "Aquatic Activity",
-    "area": "Pools",
+    "service": "Day Centre",
+    "area": "Both Pools",
     "time_slot": "11 to 12",
     "venue": "SwimFarm",
     "session_date": "2026-05-20"
@@ -2163,7 +2178,7 @@
     "day": "Monday",
     "instructors": "ROBERTO",
     "service": "Day Centre",
-    "area": "Hub Room",
+    "area": "Both Pools",
     "time_slot": "11 to 12",
     "venue": "SwimFarm",
     "session_date": "2026-06-01"
@@ -3743,7 +3758,7 @@
     "day": "Monday",
     "instructors": "ROBERTO",
     "service": "Day Centre",
-    "area": "Hub Room",
+    "area": "Both Pools",
     "time_slot": "11 to 12",
     "venue": "SwimFarm",
     "session_date": "2026-06-08"
@@ -5323,7 +5338,7 @@
     "day": "Monday",
     "instructors": "ROBERTO",
     "service": "Day Centre",
-    "area": "Hub Room",
+    "area": "Both Pools",
     "time_slot": "11 to 12",
     "venue": "SwimFarm",
     "session_date": "2026-06-15"
@@ -6903,7 +6918,7 @@
     "day": "Monday",
     "instructors": "ROBERTO",
     "service": "Day Centre",
-    "area": "Hub Room",
+    "area": "Both Pools",
     "time_slot": "11 to 12",
     "venue": "SwimFarm",
     "session_date": "2026-06-22"
@@ -8483,7 +8498,7 @@
     "day": "Monday",
     "instructors": "ROBERTO",
     "service": "Day Centre",
-    "area": "Hub Room",
+    "area": "Both Pools",
     "time_slot": "11 to 12",
     "venue": "SwimFarm",
     "session_date": "2026-06-29"
@@ -10063,7 +10078,7 @@
     "day": "Monday",
     "instructors": "ROBERTO",
     "service": "Day Centre",
-    "area": "Hub Room",
+    "area": "Both Pools",
     "time_slot": "11 to 12",
     "venue": "SwimFarm",
     "session_date": "2026-07-06"
@@ -11643,7 +11658,7 @@
     "day": "Monday",
     "instructors": "ROBERTO",
     "service": "Day Centre",
-    "area": "Hub Room",
+    "area": "Both Pools",
     "time_slot": "11 to 12",
     "venue": "SwimFarm",
     "session_date": "2026-07-13"
@@ -12685,7 +12700,7 @@
     "day": "Monday",
     "instructors": "ROBERTO",
     "service": "Day Centre",
-    "area": "Hub Room",
+    "area": "Both Pools",
     "time_slot": "11 to 12",
     "venue": "SwimFarm"
   },

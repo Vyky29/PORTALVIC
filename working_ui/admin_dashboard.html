@@ -4,7 +4,7 @@
   <!-- Admin portal · Vercel static deploy: working_ui/admin_dashboard.html + portal/ assets -->
   <meta charset="UTF-8" />
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
-  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260528-timi-cancel" />
+  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260528-aquatic-units" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260520-portal2026" />
   <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260526-hub-tile-text" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260521-embed" />
@@ -4173,7 +4173,7 @@
   })();
   </script>
   <!-- Large portal datasets load on demand (portalAdminLoadScriptSet) so Day operations opens without freezing. -->
-  <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260528-timi-cancel"></script>
+  <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260528-aquatic-units"></script>
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260521-late-perf"></script>
 
   <script>
@@ -4856,7 +4856,10 @@
     };
 
     var state = { view:'nav_hub', drawerClient:null, drawerStaff:null, drawerIsSynthetic:false, reportTargetClient:null, search:'', shiftModalCtx:null, pendingBookingsScroll:null, pendingBookingsSlotFocus:null, commsOrderDetailKey:'', sessionOverview:{ iso:'', overrides:[] }, sessionFeedback:{ anchorIso:'', selectedIso:null, rangeFrom:'', rangeTo:'', clientQ:'' }, navGroupsOpen:{ g_operator:false, g_c4k:false, g_zoho:false, g_supabase:false, g_xero:false, g_indeed:false, g_settings_portal:false }, c4kServicesRegisterOpen:false, registerSessionSlot:null, scrollToCapacityEmbed:false, portalLatePendingCount:0 };
-    var sched = { slotsById:{}, overrides:[], activeSlot:null, lastMsg:'', waitingSupabaseRetryBound:false };
+    var sched = { slotsById:{}, overrides:[], activeSlot:null, lastMsg:'', waitingSupabaseRetryBound:false, weekAnchorIso:'' };
+    /** Schedule &amp; Covers: summer term 2 roster window (dated rows in spreadsheet bundle). */
+    var SCHED_COVER_TERM_START = '2026-06-01';
+    var SCHED_COVER_TERM_END = '2026-07-17';
     var booking = { slotsById:{}, overrides:[], waitingSupabaseRetryBound:false, selectedDate:'', metaById:{}, financeById:{}, activeTab:'master', ordersScope:'all', ordersTimePreset:'today', ordersClientFilter:'', portalOrdersPage:1, portalOrdersRows:[] };
     var invoices = { lines:[{ description:'', quantity:1, unitPrice:0, taxType:'vat20' }] };
     var KEY_MOBILE = 'adminDashDevMobilePreview';
@@ -7657,12 +7660,245 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return false;
     }
+    function adminClientHasDatedRosterInWeek(iso, clientSlug){
+      var cid = adminRosterSlugify(clientSlug);
+      if(!cid) return false;
+      var src = window.STAFF_DASHBOARD_SOURCE;
+      if(!src || !Array.isArray(src.rows)) return false;
+      var days = bookingWeekIsoRangeMonSun(iso);
+      if(!days.length) return false;
+      var ws = days[0];
+      var we = days[6];
+      for(var ri = 0; ri < src.rows.length; ri++){
+        var r = src.rows[ri];
+        var sd = String(r.session_date || r.date || '').trim().substring(0, 10);
+        if(!sd || sd < ws || sd > we) continue;
+        if(adminRosterSlugify(r.client_name) === cid) return true;
+      }
+      return false;
+    }
     function adminSessionMatchesCalendarIso(s, iso, weekdayLong, sessions){
       var wantIso = adminNormIsoDate(iso);
       var rowIso = adminNormIsoDate(s.session_date || s.sessionDate);
       if(rowIso) return rowIso === wantIso;
       if(adminRosterHasDatedSessionsForIso(wantIso, sessions)) return false;
+      if(adminClientHasDatedRosterInWeek(wantIso, s.clientId)) return false;
       return normDayLabel(s.day) === normDayLabel(weekdayLong);
+    }
+    function schedClampIsoToTerm(iso){
+      var s = String(iso || '').trim().substring(0, 10);
+      if(!s || s < SCHED_COVER_TERM_START) return SCHED_COVER_TERM_START;
+      if(s > SCHED_COVER_TERM_END) return SCHED_COVER_TERM_END;
+      return s;
+    }
+    function schedEnsureState(){
+      if(!sched.weekAnchorIso) sched.weekAnchorIso = schedClampIsoToTerm(isoDateLocal(new Date()));
+      sched.weekAnchorIso = schedMondayOfWeekIso(sched.weekAnchorIso);
+      return sched;
+    }
+    function schedMondayOfWeekIso(iso){
+      var days = bookingWeekIsoRangeMonSun(iso);
+      return days.length ? days[0] : schedClampIsoToTerm(iso);
+    }
+    function schedWeekRangeLabel(anchorIso){
+      var days = bookingWeekIsoRangeMonSun(anchorIso);
+      if(!days.length) return '—';
+      var a = schedClampIsoToTerm(days[0]);
+      var b = schedClampIsoToTerm(days[6]);
+      return bookingFormatDdMmYyyy(a) + ' – ' + bookingFormatDdMmYyyy(b);
+    }
+    function schedCanShiftWeek(deltaWeeks){
+      var days = bookingWeekIsoRangeMonSun(sched.weekAnchorIso);
+      if(!days.length) return false;
+      var targetMon = bookingIsoAddDays(days[0], deltaWeeks * 7);
+      var targetSun = bookingIsoAddDays(targetMon, 6);
+      if(deltaWeeks < 0) return targetMon >= SCHED_COVER_TERM_START;
+      return targetSun <= SCHED_COVER_TERM_END;
+    }
+    function schedShiftWeek(deltaWeeks){
+      schedEnsureState();
+      var days = bookingWeekIsoRangeMonSun(sched.weekAnchorIso);
+      if(!days.length) return;
+      var d = bookingParseIsoLocal(days[0]);
+      if(!d) return;
+      d.setDate(d.getDate() + deltaWeeks * 7);
+      sched.weekAnchorIso = schedMondayOfWeekIso(schedClampIsoToTerm(isoDateLocal(d)));
+      var weekDays = bookingWeekIsoRangeMonSun(sched.weekAnchorIso);
+      var pick = weekDays[0];
+      var today = schedClampIsoToTerm(isoDateLocal(new Date()));
+      for(var wi = 0; wi < weekDays.length; wi++){
+        if(weekDays[wi] === today){ pick = today; break; }
+      }
+      var dateEl = $('schedDate');
+      if(dateEl) dateEl.value = pick;
+      portalInvalidateAdminSlotsCache();
+      void refreshSchedulingModule();
+    }
+    function adminSchedIsAquaticProgramme(programme){
+      var p = String(programme || '').toLowerCase();
+      return p.indexOf('aquatic') >= 0 || p.indexOf('swim') >= 0 || p.indexOf('pool') >= 0;
+    }
+    function adminSchedAquaticSlotCountOnDate(iso, clientSlug){
+      var cid = adminRosterSlugify(clientSlug);
+      if(!iso || !cid) return 0;
+      var src = window.STAFF_DASHBOARD_SOURCE;
+      if(!src || !Array.isArray(src.rows)) return 0;
+      var wd = weekdayLongFromIso(iso);
+      var n = 0;
+      for(var ri = 0; ri < src.rows.length; ri++){
+        var r = src.rows[ri];
+        if(!adminSessionMatchesCalendarIso(r, iso, wd, src.rows)) continue;
+        if(adminRosterSlugify(r.client_name) !== cid) continue;
+        if(!adminSchedIsAquaticProgramme(portalDisplayProgrammeFromSheet(String(r.service || '')))) continue;
+        n++;
+      }
+      return n;
+    }
+    function adminSchedAquaticSameInstructorOnDate(iso, clientSlug){
+      var cid = adminRosterSlugify(clientSlug);
+      if(!iso || !cid) return false;
+      var src = window.STAFF_DASHBOARD_SOURCE;
+      if(!src || !Array.isArray(src.rows)) return false;
+      var wd = weekdayLongFromIso(iso);
+      var lead = '';
+      var n = 0;
+      for(var ri = 0; ri < src.rows.length; ri++){
+        var r = src.rows[ri];
+        if(!adminSessionMatchesCalendarIso(r, iso, wd, src.rows)) continue;
+        if(adminRosterSlugify(r.client_name) !== cid) continue;
+        if(!adminSchedIsAquaticProgramme(portalDisplayProgrammeFromSheet(String(r.service || '')))) continue;
+        n++;
+        var inst = String(r.instructors || '').trim().toUpperCase();
+        if(!inst) continue;
+        if(!lead) lead = inst;
+        else if(lead !== inst) return false;
+      }
+      return n > 1 && !!lead;
+    }
+    function adminSchedNeedsPerSlotAquaticFeedback(slot){
+      if(!slot || !adminSchedIsAquaticProgramme(slot.programme)) return false;
+      var iso = String(slot.sessionDate || '').trim().substring(0, 10);
+      if(adminSchedAquaticSlotCountOnDate(iso, slot.clientSlug) <= 1) return false;
+      return !adminSchedAquaticSameInstructorOnDate(iso, slot.clientSlug);
+    }
+    function adminSchedFeedbackUnitKey(slot){
+      var iso = String(slot.sessionDate || '').trim().substring(0, 10);
+      var cid = String(slot.clientSlug || '').trim().toLowerCase();
+      if(!iso || !cid) return String(slot.demoId || '');
+      var prog = String(slot.programme || '').toLowerCase();
+      if(prog.indexOf('day centre') >= 0) return iso + '|' + cid + '|day_centre';
+      if(adminSchedIsAquaticProgramme(slot.programme)){
+        if(adminSchedNeedsPerSlotAquaticFeedback(slot)){
+          return iso + '|' + cid + '|' + String(slot.anchorStart || '').slice(0, 8) + '|aquatic';
+        }
+        return iso + '|' + cid + '|aquatic';
+      }
+      var area = String(slot.rosterArea || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '_');
+      return iso + '|' + cid + '|' + String(slot.anchorStart || '').slice(0, 8) + '|' + prog + '|' + area;
+    }
+    function adminPickRepresentativeSchedSlot(unit){
+      var slots = unit.slots || [];
+      if(!slots.length) return null;
+      var rep = slots[0];
+      var si;
+      for(si = 1; si < slots.length; si++){
+        if(String(slots[si].anchorStart || '') < String(rep.anchorStart || '')) rep = slots[si];
+      }
+      if(slots.length === 1 || String(rep.programme || '').toLowerCase().indexOf('day centre') < 0) return rep;
+      var last = rep;
+      for(si = 0; si < slots.length; si++){
+        if(String(slots[si].anchorStart || '') >= String(last.anchorStart || '')) last = slots[si];
+      }
+      if(last === rep) return rep;
+      var merged = Object.assign({}, rep);
+      var a = String(rep.anchorTimeLabel || '').trim();
+      var b = String(last.anchorTimeLabel || '').trim();
+      if(a && b && a !== b){
+        var startPart = a.indexOf(' to ') >= 0 ? a.split(' to ')[0] : a;
+        var endPart = b.indexOf(' to ') >= 0 ? b.split(' to ').pop() : b;
+        merged.anchorTimeLabel = startPart + ' to ' + endPart;
+        merged.whenLabel = String(rep.sheetDay || rep.day || '') + ' · ' + merged.anchorTimeLabel;
+      }
+      return merged;
+    }
+    function adminCollapseSchedSlotsToUnits(slots){
+      var map = {};
+      var order = [];
+      var i;
+      for(i = 0; i < (slots || []).length; i++){
+        var slot = slots[i];
+        var cid = String(slot.clientSlug || '').trim().toLowerCase();
+        if(!cid || cid === 'closed' || cid === 'available' || cid === 'noclient' || cid === 'no client') continue;
+        var key = adminSchedFeedbackUnitKey(slot);
+        if(!map[key]){
+          map[key] = { key: key, slots: [] };
+          order.push(map[key]);
+        }
+        map[key].slots.push(slot);
+      }
+      var out = [];
+      for(i = 0; i < order.length; i++){
+        var rep = adminPickRepresentativeSchedSlot(order[i]);
+        if(rep) out.push(rep);
+      }
+      out.sort(function(a, b){
+        return String(a.anchorStart || '').localeCompare(String(b.anchorStart || '')) ||
+          String(a.clientDisplay || '').localeCompare(String(b.clientDisplay || ''));
+      });
+      return out;
+    }
+    function schedSessionsUnitCountForIso(iso){
+      try{
+        return adminCollapseSchedSlotsToUnits(slotsForSelectedDate(iso) || []).length;
+      }catch(_e){
+        return 0;
+      }
+    }
+    function schedWeekNavHtml(anchorIso){
+      var canPrev = schedCanShiftWeek(-1);
+      var canNext = schedCanShiftWeek(1);
+      return (
+        '<div class="c4k-hub-weekbar card-pad" style="margin-bottom:12px">' +
+          '<div class="c4k-hub-weekbar__left">' +
+            '<span class="c4k-hub-weekbar__lbl">WEEK (MON–SUN)</span>' +
+            '<span class="c4k-hub-weekbar__range" id="schedWeekRange">' + esc(schedWeekRangeLabel(anchorIso)) + '</span>' +
+            '<span class="muted" style="display:block;font-size:11px;margin-top:4px">Summer term 2 · ' + esc(bookingFormatDdMmYyyy(SCHED_COVER_TERM_START)) + ' – ' + esc(bookingFormatDdMmYyyy(SCHED_COVER_TERM_END)) + '</span>' +
+          '</div>' +
+          '<div class="c4k-hub-weekbar__btns">' +
+            '<button type="button" class="btn btn--ghost btn--sm" id="schedWeekPrev"' + (canPrev ? '' : ' disabled') + '>← Past week</button>' +
+            '<button type="button" class="btn btn--sec btn--sm" id="schedWeekThis">This week</button>' +
+            '<button type="button" class="btn btn--ghost btn--sm" id="schedWeekNext"' + (canNext ? '' : ' disabled') + '>Next week →</button>' +
+          '</div>' +
+        '</div>'
+      );
+    }
+    function schedWeekDayStripHtml(anchorIso, selectedIso){
+      var sel = schedClampIsoToTerm(selectedIso || anchorIso);
+      var days = bookingWeekIsoRangeMonSun(anchorIso);
+      if(!days.length) return '<p class="muted" style="margin:0">Pick a valid date.</p>';
+      var cards = [];
+      var di;
+      for(di = 0; di < days.length; di++){
+        var dIso = String(days[di] || '').trim().substring(0, 10);
+        var outOfTerm = dIso < SCHED_COVER_TERM_START || dIso > SCHED_COVER_TERM_END;
+        var pal = BOOKING_WEEK_CAP_PALETTE[di] || BOOKING_WEEK_CAP_PALETTE[0];
+        var dParse = bookingParseIsoLocal(dIso);
+        var dayLong = dParse ? dParse.toLocaleDateString('en-GB', { weekday: 'long' }) : '—';
+        var n = outOfTerm ? 0 : schedSessionsUnitCountForIso(dIso);
+        var isSel = !outOfTerm && dIso === sel;
+        cards.push(
+          '<div class="c4k-hub-day-card' + (isSel ? ' is-selected' : '') + (outOfTerm ? ' is-disabled' : '') + '"' +
+            (outOfTerm ? '' : ' data-sched-week-day="' + esc(dIso) + '" role="button" tabindex="0"') +
+            ' style="--cap-soft:' + pal.soft + ';border-color:' + (isSel ? pal.lo : 'var(--line)') + ';' + (outOfTerm ? 'opacity:.45;pointer-events:none' : '') + '">' +
+            '<div class="c4k-hub-day-card__day" style="color:' + pal.lo + '">' + esc(dayLong) + '</div>' +
+            '<div class="c4k-hub-day-card__date">' + esc(bookingFormatDdMmYyyy(dIso)) + '</div>' +
+            '<div class="c4k-hub-day-card__rule" style="background:' + pal.lo + '"></div>' +
+            '<div class="c4k-hub-day-card__count">' + esc(String(n)) + '</div>' +
+            '<div class="c4k-hub-day-card__lbl">SESSIONS</div>' +
+          '</div>'
+        );
+      }
+      return '<div class="c4k-hub-day-strip" role="region" aria-label="Week days" style="margin-bottom:14px">' + cards.join('') + '</div>';
     }
     function slotsForSelectedDate(iso){
       var want = String(iso || '').trim().substring(0, 10);
@@ -13330,7 +13566,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return;
       }
       if(id === 'scheduling' || id === 'c4k_services' || id === 'servicecap' || id === 'absents_refunds'){
-        void window.portalAdminLoadScriptSet('roster');
+        void window.portalAdminLoadScriptSet('roster').then(function(){
+          portalInvalidateAdminSlotsCache();
+          if(state.view === 'scheduling'){
+            schedEnsureState();
+            void refreshSchedulingModule();
+          }
+        });
         return;
       }
       if(id === 'bookings' || id === 'orders_all' || id === 'orders_outstanding' || id === 'c4k_payments' || id === 'invoices'){
@@ -13947,7 +14189,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var hasOv = !!ov;
         var ovChip = hasOv
           ? '<span class="override-chip ' + esc(schedOverrideTypeClass(ov.override_type)) + '">' + esc(schedOverrideLabelForRow(ov)) + '</span>'
-          : '<span class="chip chip--ok">—</span>';
+          : '<span class="muted" style="font-size:12px;font-weight:600;letter-spacing:.03em">NONE</span>';
+        var ovCell =
+          '<div style="display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;max-width:100%">' +
+          ovChip +
+          '<button type="button" class="btn btn--sec btn--sm" data-sched-change="' +
+          esc(slot.demoId) +
+          '" style="max-width:100%">Change</button></div>';
         var clientCellHtml = schedClientCellHtml(slot, ov);
         var staffKeyForBtn = String(slot.staffRosterId || '').trim().toLowerCase();
         var staffDispBtn = String(slot.staffName || '').trim() || staffKeyForBtn || '—';
@@ -13967,7 +14215,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '<td style="min-width:0">'+staffCell+'</td>'+
           '<td style="min-width:0">'+clientCellHtml+'</td>'+
           '<td>'+statusCell+'</td>'+
-          '<td>'+ovChip+'</td></tr>';
+          '<td class="ash-td-center">'+ovCell+'</td></tr>';
       }).join('');
     }
     function renderSchedLogRows(){
@@ -14012,16 +14260,33 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
     }
     async function refreshSchedulingModule(){
+      schedEnsureState();
       var dateEl = $('schedDate');
-      var iso = dateEl && dateEl.value ? dateEl.value : isoDateLocal(new Date());
-      if(dateEl && !dateEl.value) dateEl.value = iso;
+      var iso = schedClampIsoToTerm(dateEl && dateEl.value ? dateEl.value : isoDateLocal(new Date()));
+      if(dateEl){
+        dateEl.value = iso;
+        dateEl.min = SCHED_COVER_TERM_START;
+        dateEl.max = SCHED_COVER_TERM_END;
+      }
+      sched.weekAnchorIso = schedMondayOfWeekIso(iso);
+      var weekRangeEl = $('schedWeekRange');
+      if(weekRangeEl) weekRangeEl.textContent = schedWeekRangeLabel(sched.weekAnchorIso);
+      var prevBtn = $('schedWeekPrev');
+      var nextBtn = $('schedWeekNext');
+      if(prevBtn) prevBtn.disabled = !schedCanShiftWeek(-1);
+      if(nextBtn) nextBtn.disabled = !schedCanShiftWeek(1);
+      var stripHost = $('schedWeekDayStrip');
+      if(stripHost) stripHost.innerHTML = schedWeekDayStripHtml(sched.weekAnchorIso, iso);
       var msg = $('schedConnMsg');
       if(msg){
         msg.textContent = '';
         msg.style.color = '';
       }
-      var slots = slotsForSelectedDate(iso);
+      var rawSlots = slotsForSelectedDate(iso);
+      var slots = adminCollapseSchedSlotsToUnits(rawSlots);
       sched.cachedDaySlots = slots;
+      sched.slotsById = {};
+      for(var sxi = 0; sxi < slots.length; sxi++) sched.slotsById[slots[sxi].demoId] = slots[sxi];
       if(msg && !adminSpreadsheetAdapterAvailable()){
         msg.textContent = 'Spreadsheet bundle not loaded or empty — check the same script URLs as staff dashboard (<code>staff_dashboard_spreadsheet_bundle.js</code> + adapter + <code>clients_info_embed.js</code>).';
         msg.style.color = 'var(--warn)';
@@ -14095,6 +14360,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var tbl = $('schedBaseTable');
       if(tbl){
         tbl.onclick = function(e){
+          var ch = e.target && e.target.closest ? e.target.closest('button[data-sched-change]') : null;
+          if(ch){
+            e.preventDefault();
+            e.stopPropagation();
+            var sid = ch.getAttribute('data-sched-change');
+            var slotCh = sid && sched.slotsById ? sched.slotsById[sid] : null;
+            if(slotCh) openSchedSlotDrawer(slotCh);
+            return;
+          }
           if(e.target && e.target.closest && e.target.closest('button[data-client],button[data-staff],button[data-staff-roster],a[href]')) return;
           var tr = e.target && e.target.closest ? e.target.closest('tr[data-sched-demo-id]') : null;
           if(!tr) return;
@@ -14103,15 +14377,48 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(slot) openSchedSlotDrawer(slot);
         };
       }
+      var schedPrev = $('schedWeekPrev');
+      var schedThis = $('schedWeekThis');
+      var schedNext = $('schedWeekNext');
+      if(schedPrev) schedPrev.onclick = function(){ if(schedCanShiftWeek(-1)) schedShiftWeek(-1); };
+      if(schedNext) schedNext.onclick = function(){ if(schedCanShiftWeek(1)) schedShiftWeek(1); };
+      if(schedThis) schedThis.onclick = function(){
+        var t = schedClampIsoToTerm(isoDateLocal(new Date()));
+        sched.weekAnchorIso = schedMondayOfWeekIso(t);
+        if($('schedDate')) $('schedDate').value = t;
+        portalInvalidateAdminSlotsCache();
+        void refreshSchedulingModule();
+      };
+      function onSchedWeekDayPick(e){
+        var col = e.target && e.target.closest ? e.target.closest('[data-sched-week-day]') : null;
+        if(!col) return;
+        e.preventDefault();
+        var nextIso = col.getAttribute('data-sched-week-day');
+        if(!nextIso) return;
+        nextIso = schedClampIsoToTerm(nextIso);
+        sched.weekAnchorIso = schedMondayOfWeekIso(nextIso);
+        if($('schedDate')) $('schedDate').value = nextIso;
+        portalInvalidateAdminSlotsCache();
+        void refreshSchedulingModule();
+      }
+      var stripEl = $('schedWeekDayStrip');
+      if(stripEl){
+        stripEl.onclick = onSchedWeekDayPick;
+        stripEl.onkeydown = function(e){ if(e.key === 'Enter' || e.key === ' ') onSchedWeekDayPick(e); };
+      }
       void refreshSchedulingModule();
     }
     /** Shared markup: Scheduling &amp; Cover (standalone view and any future embeds). */
     function schedulingModuleInnerHtml(){
-      var today = isoDateLocal(new Date());
-      return '<div class="sched-banner" role="status"><strong>Base schedule:</strong> anchors from <code>STAFF_DASHBOARD_SOURCE</code> (same bundle as staff dashboard). Rows with <code>session_date</code> apply only on that calendar day; other rows follow the weekday template. <strong>Instructor</strong> and <strong>Participant</strong> filters use the sessions shown for the selected date.</div>'+
+      schedEnsureState();
+      var today = schedClampIsoToTerm(isoDateLocal(new Date()));
+      var anchor = sched.weekAnchorIso || schedMondayOfWeekIso(today);
+      return '<div class="sched-banner" role="status"><strong>Base schedule:</strong> same roster rules as <strong>Sessions overview</strong> (<code>session_date</code> rows only on that day; summer term 2 · 1 Jun – 17 Jul 2026). Overrides save to <code>schedule_overrides</code> and appear on staff / lead dashboards (Absent, Cancelled, MakeUp chips).</div>'+
+        schedWeekNavHtml(anchor)+
+        '<div id="schedWeekDayStrip">'+schedWeekDayStripHtml(anchor, today)+'</div>'+
         '<div class="filter-row" style="align-items:center;margin-bottom:14px;flex-wrap:wrap">'+
         '<label class="muted" for="schedDate">Date</label> '+
-        '<input type="date" id="schedDate" class="inp" style="max-width:180px" value="'+esc(today)+'" />'+
+        '<input type="date" id="schedDate" class="inp" style="max-width:180px" min="'+esc(SCHED_COVER_TERM_START)+'" max="'+esc(SCHED_COVER_TERM_END)+'" value="'+esc(today)+'" />'+
         '<select class="sel" id="schedVenueFilter" style="max-width:200px" aria-label="Venue filter"><option value="">All venues</option></select>'+
         '<select class="sel" id="schedStaffFilter" style="max-width:220px" aria-label="Instructor filter"><option value="">All instructors</option></select>'+
         '<select class="sel" id="schedParticipantFilter" style="max-width:220px" aria-label="Participant filter"><option value="">All participants</option></select>'+
@@ -16951,7 +17258,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
     var ADMIN_SESSIONS_HUB_SRC =
-      '/portal/admin-sessions-hub.js?v=20260528-timi-cancel';
+      '/portal/admin-sessions-hub.js?v=20260528-aquatic-units';
 
     /** Club closed — half-term 23–31 May 2026, bank holiday 4 May (see PORTAL_TERM_FROM_TIMETABLE). */
     function portalAdminDayIsClubClosed(iso){

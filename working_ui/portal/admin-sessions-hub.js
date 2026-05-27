@@ -5,7 +5,7 @@
 (function (global) {
   "use strict";
 
-  var BUNDLE_SRC = "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260520-portal2026";
+  var BUNDLE_SRC = "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260528-aquatic-units";
   var DAY_COLORS = ["#3b82f6", "#8b5cf6", "#06b6d4", "#10b981", "#f59e0b", "#ec4899", "#6366f1"];
   var DAY_BG_TINTS = [
     "rgba(59, 130, 246, 0.13)",
@@ -542,6 +542,46 @@
     return isoFromDate(d);
   }
 
+  function rosterRowSessionDate(r) {
+    var sd = clean(r && (r.session_date || r.date));
+    return /^\d{4}-\d{2}-\d{2}$/.test(sd) ? sd : "";
+  }
+
+  /** True when this client has any dated roster row in the ISO week containing isoDate. */
+  function clientHasDatedRosterInWeek(rosterRows, clientName, isoDate) {
+    var cid = canonicalClientSlug(clientName);
+    if (!cid || !rosterRows || !rosterRows.length) return false;
+    var ws = mondayOfWeek(isoDate);
+    var we = addDaysIso(ws, 6);
+    for (var i = 0; i < rosterRows.length; i++) {
+      var o = rosterRows[i];
+      var sd = rosterRowSessionDate(o);
+      if (!sd || sd < ws || sd > we) continue;
+      if (canonicalClientSlug(o.client_name) === cid) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Dated week rows only on their calendar day; undated templates only when this client has
+   * no dated rows that week and no dated row on this weekday (matches roster week CSV import).
+   */
+  function rosterRowAppliesOnDate(rosterRows, r, isoDate, wd) {
+    if (clean(r.day) !== wd) return false;
+    var sd = rosterRowSessionDate(r);
+    if (sd) return sd === isoDate;
+    var cid = canonicalClientSlug(r.client_name);
+    if (!cid) return true;
+    if (clientHasDatedRosterInWeek(rosterRows, r.client_name, isoDate)) return false;
+    for (var i = 0; i < rosterRows.length; i++) {
+      var o = rosterRows[i];
+      if (rosterRowSessionDate(o) !== isoDate) continue;
+      if (clean(o.day) !== wd) continue;
+      if (canonicalClientSlug(o.client_name) === cid) return false;
+    }
+    return true;
+  }
+
   function formatShortDate(iso) {
     var d = parseIso(iso);
     return d.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
@@ -748,6 +788,11 @@
         keys.push(base + "|" + serviceKey(slot.service));
         keys.push(base + "|" + serviceKey(slot.service) + "|" + area);
       }
+    }
+    if (isAquaticService(slot.service)) {
+      keys.push(feedbackUnitKey(slot));
+      keys.push(slot.session_date + "|" + cid + "|aquatic");
+      if (!clientNeedsPerSlotAquaticFeedback(slot)) keys.push(base);
     }
     return keys;
   }
@@ -1152,7 +1197,7 @@
     return false;
   }
 
-  /** Acton aquatic: same client twice same day (e.g. Eiji 17:30 + 18:00) needs two feedbacks, not one broad key. */
+  /** Acton aquatic: same client twice same day (e.g. Eiji 17:30 + 18:00) needs two feedbacks when instructors differ. */
   function aquaticSlotCountForClientOnDate(iso, clientName) {
     var cid = canonicalClientSlug(clientName);
     if (!iso || !cid) return 0;
@@ -1162,7 +1207,7 @@
     var n = 0;
     for (var i = 0; i < rows.length; i++) {
       var r = rows[i];
-      if (clean(r.day) !== wd) continue;
+      if (!rosterRowAppliesOnDate(rows, r, iso, wd)) continue;
       if (canonicalClientSlug(r.client_name) !== cid) continue;
       if (!isAquaticService(r.service)) continue;
       if (!isRosterClient(r.client_name)) continue;
@@ -1171,7 +1216,7 @@
     return n;
   }
 
-  /** True when the client has 2+ aquatic blocks that day with different instructors (e.g. Eiji Javier then Roberto). */
+  /** True when the client has 2+ aquatic blocks that day with the same instructor (e.g. Serine both with Roberto). */
   function aquaticSameInstructorAllSlotsOnDate(iso, clientName) {
     var cid = canonicalClientSlug(clientName);
     if (!iso || !cid) return false;
@@ -1182,7 +1227,7 @@
     var n = 0;
     for (var i = 0; i < rows.length; i++) {
       var r = rows[i];
-      if (clean(r.day) !== wd) continue;
+      if (!rosterRowAppliesOnDate(rows, r, iso, wd)) continue;
       if (canonicalClientSlug(r.client_name) !== cid) continue;
       if (!isAquaticService(r.service)) continue;
       if (!isRosterClient(r.client_name)) continue;
@@ -1422,6 +1467,12 @@
         sessionAreaKey(slot.area)
       );
     }
+    if (isAquaticService(slot.service)) {
+      if (clientNeedsPerSlotAquaticFeedback(slot)) {
+        return slot.session_date + "|" + cid + "|" + t + "|aquatic";
+      }
+      return slot.session_date + "|" + cid + "|aquatic";
+    }
     return slot.session_key || slot.session_date + "|" + cid + "|" + t;
   }
 
@@ -1442,6 +1493,105 @@
       map[key].slots.push(slot);
     }
     return order;
+  }
+
+  function slotIsAfternoonSession(slot) {
+    var st = slot.time_start || normTimeKey(slot.time_slot);
+    return !!(st && st >= "16:00");
+  }
+
+  /** One overview row per feedback unit (Day Centre blocks collapse to one row per client). */
+  function pickRepresentativeSlotForUnit(unit) {
+    var slots = unit.slots;
+    if (!slots || !slots.length) return null;
+    var rep = slots[0];
+    var si;
+    for (si = 1; si < slots.length; si++) {
+      if ((slots[si].time_start || "") < (rep.time_start || "")) rep = slots[si];
+    }
+    if (slots.length === 1 || !isDayCentreService(rep.service)) return rep;
+    var last = rep;
+    for (si = 0; si < slots.length; si++) {
+      if ((slots[si].time_start || "") >= (last.time_start || "")) last = slots[si];
+    }
+    if (last === rep) return rep;
+    var merged = Object.assign({}, rep);
+    var a = clean(rep.time_slot);
+    var b = clean(last.time_slot);
+    if (a && b && a !== b) {
+      var startPart = a.indexOf(" to ") >= 0 ? a.split(" to ")[0] : a;
+      var endPart = b.indexOf(" to ") >= 0 ? b.split(" to ").pop() : b;
+      merged.time_slot = startPart + " to " + endPart;
+      var pt = parseTimeSlot(merged.time_slot, rep.day);
+      merged.time_start = pt.start;
+    }
+    return merged;
+  }
+
+  function overviewDisplaySlotsFromUnits(hub, slots) {
+    var units = groupSlotsForFeedback(slots);
+    var out = [];
+    for (var i = 0; i < units.length; i++) {
+      var rep = pickRepresentativeSlotForUnit(units[i]);
+      if (!rep || shouldOmitOverviewSlot(hub, rep)) continue;
+      out.push(rep);
+    }
+    return out;
+  }
+
+  function expectedSessionsByWeekdayConfig() {
+    var src = global.STAFF_DASHBOARD_SOURCE;
+    return src && src.expectedSessionsByWeekday ? src.expectedSessionsByWeekday : null;
+  }
+
+  function countOverviewSessionBands(slots) {
+    var am = 0;
+    var pm = 0;
+    for (var i = 0; i < slots.length; i++) {
+      if (slotIsAfternoonSession(slots[i])) pm++;
+      else am++;
+    }
+    return { morning: am, afternoon: pm, total: slots.length };
+  }
+
+  function htmlOverviewSessionCountHint(hub, iso, displaySlots, esc) {
+    var bands = countOverviewSessionBands(displaySlots);
+    var wd = weekdayLongFromIso(iso);
+    var expected = expectedSessionsByWeekdayConfig();
+    var exp = expected && expected[wd];
+    var label =
+      bands.morning +
+      " morning + " +
+      bands.afternoon +
+      " afternoon = " +
+      bands.total +
+      " sessions";
+    if (!exp) {
+      return (
+        '<span class="ash-badge ash-badge--muted" style="margin-left:0.5rem">' +
+        esc(label) +
+        "</span>"
+      );
+    }
+    var mismatch =
+      bands.total !== exp.total ||
+      bands.morning !== exp.morning ||
+      bands.afternoon !== exp.afternoon;
+    var detail =
+      " (expected " +
+      exp.total +
+      ": " +
+      exp.morning +
+      " AM + " +
+      exp.afternoon +
+      " PM)";
+    return (
+      '<span class="ash-badge' +
+      (mismatch ? '" style="margin-left:0.5rem;background:#fef2f2;color:#b91c1c;border:1px solid #fecaca"' : ' ash-badge--muted" style="margin-left:0.5rem"') +
+      ">" +
+      esc(label + detail) +
+      "</span>"
+    );
   }
 
   function formatInstructorPill(name) {
@@ -2621,7 +2771,7 @@
     var out = [];
     for (var i = 0; i < this.rosterRows.length; i++) {
       var r = this.rosterRows[i];
-      if (clean(r.day) !== wd) continue;
+      if (!rosterRowAppliesOnDate(this.rosterRows, r, isoDate, wd)) continue;
       if (!isRosterClient(r.client_name)) continue;
       if (!clientAllowedOnWeekday(r.client_name, wd)) continue;
       if (!clientAllowedOnDate(r.client_name, isoDate)) continue;
@@ -4285,6 +4435,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         '<h3 class="ash-table-title">' +
         esc(formatLongDate(this.selectedDay)) +
         ' <span class="ash-badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca">Closed</span></h3>' +
+        /* closed day — no count hint */
         '<div class="ash-table-wrap"><table class="ash-table ash-table--overview"><tbody><tr><td colspan="9">' +
         '<div class="ash-empty">Club closed \u2014 no sessions on this date.</div></td></tr></tbody></table></div>'
       );
@@ -4298,9 +4449,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       unitAbsent[units[u].key] = hub.feedbackUnitAbsent(units[u]);
     }
     var q = this.clientSearch.toLowerCase();
+    var scopedSlots = slots.filter(function (s) {
+      return !shouldOmitOverviewSlot(hub, s);
+    });
     var displaySlots = hub.sortOverviewSlotsForDisplay(
-      slots.filter(function (s) {
-        if (shouldOmitOverviewSlot(hub, s)) return false;
+      overviewDisplaySlotsFromUnits(hub, scopedSlots).filter(function (s) {
         return !q || s.client_name.toLowerCase().indexOf(q) !== -1;
       }),
       unitComplete,
@@ -4366,7 +4519,9 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       "</div>" +
       '<h3 class="ash-table-title">' +
       esc(formatLongDate(this.selectedDay)) +
-      ' <span class="ash-badge ash-badge--booked">Roster</span></h3>' +
+      ' <span class="ash-badge ash-badge--booked">Roster</span>' +
+      htmlOverviewSessionCountHint(hub, this.selectedDay, displaySlots, esc) +
+      "</h3>" +
       '<div class="ash-table-wrap"><table class="ash-table ash-table--overview"><thead><tr>' +
       '<th class="ash-td-center">Service</th><th class="ash-td-center">Instructor</th><th class="ash-td-center">Participant</th><th class="ash-td-center">Venue</th><th class="ash-td-center">Notes</th><th class="ash-td-center">Status</th><th class="ash-td-center">Feedback</th>' +
       TH_ICON_INCIDENT +
