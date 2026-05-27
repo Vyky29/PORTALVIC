@@ -14384,13 +14384,86 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(n) return n;
       return String(hint || '').trim() || s;
     }
-    function schedParticipantPillHtml(label, clientId, tone){
+    function schedParticipantPillHtml(label, openKey, tone, openKind){
       var lab = esc(String(label || '').trim() || '—');
       var toneCls = schedNamePillToneClass(tone);
-      if(clientId){
-        return '<button type="button" class="sched-pax-pill '+toneCls+'" data-client="'+esc(clientId)+'">'+lab+'</button>';
+      var kind = openKind === 'slug' ? 'slug' : 'demo';
+      var key = String(openKey || '').trim();
+      if(key){
+        var attr = kind === 'slug'
+          ? ' data-sched-pax-slug="'+esc(key.toLowerCase())+'" data-sched-pax-label="'+lab+'"'
+          : ' data-sched-pax-demo="'+esc(key)+'"';
+        return '<button type="button" class="sched-pax-pill '+toneCls+'"'+attr+'>'+lab+'</button>';
       }
       return '<span class="sched-pax-pill '+toneCls+'">'+lab+'</span>';
+    }
+    function schedParticipantDrawerStatsHtml(displayName){
+      var pname = String(displayName || '').trim();
+      var drf = pname ? adminC4kDailyRegistersListForParticipantWorkspace(pname) : [];
+      var termSub = esc(ADMIN_PORTAL_SESSION_FEEDBACK_TERM_TITLE);
+      var attBody = adminC4kRegistersKpiAttendanceParticipantVisualHtml(pname, drf);
+      var emoBody = adminSessionFeedbackPortalRows().length
+        ? adminC4kRegistersKpiEmotionsVisualHtml(drf)
+        : adminC4kRegistersKpiMockEmotionsVisualHtml();
+      var indBody = adminC4kRegistersKpiIndependenceParticipantVisualHtml(drf);
+      return (
+        '<div class="c4k-sf-kpi-slab c4k-sf-kpi-slab--embed sched-pax-drawer-stats" style="margin-bottom:14px">' +
+        '<p class="muted" style="margin:0 0 10px;font-size:12px;line-height:1.45;max-width:52rem;overflow-wrap:break-word">Session feedback stats for <strong>'+esc(pname || 'participant')+'</strong> ('+termSub+').</p>' +
+        '<div class="c4k-sf-kpi-row c4k-sf-kpi-row--pax" style="grid-template-columns:repeat(3,minmax(0,1fr))">' +
+        '<div class="c4k-sf-kpi-panel"><div class="c4k-reg-kpi-card-head"><h3 class="c4k-reg-kpi-card-title">Attendance</h3><p class="c4k-reg-kpi-card-sub">('+termSub+')</p></div>'+attBody+'</div>' +
+        '<div class="c4k-sf-kpi-panel"><div class="c4k-reg-kpi-card-head"><h3 class="c4k-reg-kpi-card-title">Regulation</h3><p class="c4k-reg-kpi-card-sub">('+termSub+')</p></div>'+emoBody+'</div>' +
+        '<div class="c4k-sf-kpi-panel"><div class="c4k-reg-kpi-card-head"><h3 class="c4k-reg-kpi-card-title">Independence</h3><p class="c4k-reg-kpi-card-sub">('+termSub+')</p></div>'+indBody+'</div>' +
+        '</div></div>'
+      );
+    }
+    function openSchedParticipantProfile(opts){
+      opts = opts || {};
+      var slot = null;
+      var demoId = String(opts.demoId || '').trim();
+      if(demoId && sched.slotsById && sched.slotsById[demoId]) slot = sched.slotsById[demoId];
+      if(!slot && opts.slug){
+        var wantSlug = String(opts.slug || '').trim().toLowerCase();
+        var list = sched.cachedDaySlots || [];
+        for(var si = 0; si < list.length; si++){
+          if(String(list[si].clientSlug || '').trim().toLowerCase() === wantSlug){ slot = list[si]; break; }
+        }
+      }
+      var disp = String((slot && slot.clientDisplay) || opts.label || opts.slug || '').trim();
+      if(!disp) return;
+      var drawerOpts = { fromSchedule: true, slot: slot };
+      var cidHit = slot ? resolveAdminClientDrawerFromRosterSlot(slot) : resolveAdminClientDrawerIdFromDisplayName(disp);
+      if(cidHit && MOCK.clientsById && MOCK.clientsById[cidHit]){
+        state.drawerIsSynthetic = false;
+        openClientDrawerBody(MOCK.clientsById[cidHit], cidHit, drawerOpts);
+        return;
+      }
+      var syn = slot ? buildSyntheticClientFromPortalRosterSlot(disp, slot) : null;
+      if(!syn && disp){
+        syn = {
+          name: disp,
+          sub: 'Roster participant',
+          sessionsAttended: 0,
+          attendancePct: 0,
+          cancellations: 0,
+          incidents: 0,
+          emotional: [],
+          engagement: [],
+          positives: [],
+          notes: [],
+          pattern: '',
+          attendanceTerm: { booked: 0, attended: 0, late: 0, cancelled: 0 },
+          recentSessions: [],
+          activitiesWorked: [],
+          lastEngagementLabel: '',
+          lastEmotionalLabel: '',
+          incidentHistory: [],
+          recommendedNext: ''
+        };
+      }
+      if(syn){
+        state.drawerIsSynthetic = true;
+        openClientDrawerBody(syn, null, drawerOpts);
+      }
     }
     function schedStaffPillHtml(label, rosterKey, schedIso, tone){
       var lab = esc(String(label || '').trim() || '—');
@@ -14431,14 +14504,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var replLab = replName || replSlug || 'replacement';
         return (
           '<div class="sched-pax-pill-row">' +
-          schedParticipantPillHtml(origLab, resolveAdminClientDrawerId(slot.clientSlug), 'out') +
+          schedParticipantPillHtml(origLab, slot.demoId, 'out', 'demo') +
           '<span class="sched-pax-pill-sep">/</span>' +
-          schedParticipantPillHtml(replLab, resolveAdminClientDrawerId(replSlug), 'in') +
+          schedParticipantPillHtml(replLab, replSlug, 'in', 'slug') +
           '</div>'
         );
       }
       var lab = String(slot.clientDisplay || '').trim() || String(slot.clientSlug || '').trim();
-      return schedParticipantPillHtml(lab, resolveAdminClientDrawerId(slot.clientSlug), 'booked');
+      return schedParticipantPillHtml(lab, slot.demoId, 'booked', 'demo');
     }
     function renderSchedBaseRows(slots){
       var dateEl0 = $('schedDate');
@@ -14636,7 +14709,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             if(slotCh) openSchedSlotDrawer(slotCh);
             return;
           }
-          if(e.target && e.target.closest && e.target.closest('button[data-client],button[data-staff],button[data-staff-roster],button.sched-pax-pill,a[href],.sched-pax-pill-row button')) return;
+          var paxPill = e.target && e.target.closest ? e.target.closest('[data-sched-pax-demo],[data-sched-pax-slug]') : null;
+          if(paxPill){
+            e.preventDefault();
+            e.stopPropagation();
+            openSchedParticipantProfile({
+              demoId: paxPill.getAttribute('data-sched-pax-demo') || '',
+              slug: paxPill.getAttribute('data-sched-pax-slug') || '',
+              label: paxPill.getAttribute('data-sched-pax-label') || ''
+            });
+            return;
+          }
+          if(e.target && e.target.closest && e.target.closest('button[data-staff],button[data-staff-roster],a[href]')) return;
           var tr = e.target && e.target.closest ? e.target.closest('tr[data-sched-demo-id]') : null;
           if(!tr) return;
           var id = tr.getAttribute('data-sched-demo-id');
@@ -22001,7 +22085,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
 
     /** Full participant sheet: <code>linkedCid</code> is MOCK key, or <code>null</code> for export-only synthetic rows. */
-    function openClientDrawerBody(c, linkedCid){
+    function openClientDrawerBody(c, linkedCid, drawerOpts){
+      drawerOpts = drawerOpts || {};
+      var fromSchedule = !!drawerOpts.fromSchedule;
       state.drawerStaff = null;
       state.drawerClient = linkedCid || null;
       var aug = linkedCid ? (portalParticipantAugment(linkedCid) || {}) : {};
@@ -22048,7 +22134,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       canc = Number.isFinite(Number(canc)) ? Number(canc) : 0;
       incN = Number.isFinite(Number(incN)) ? Number(incN) : 0;
       $('drawerClientName').textContent = c.name;
-      $('drawerClientSub').textContent = sub;
+      $('drawerClientSub').textContent = fromSchedule
+        ? ('Participant profile · Schedule & Covers · '+sub)
+        : sub;
       var sessRows;
       var recentSessTitle = 'Recent sessions';
       if(usePortal){
@@ -22231,49 +22319,63 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<button type="button" class="btn btn--ghost btn--sm pax-sheet-quick__btn" data-pax-jump="pax-drawer-incidents">Incidents ('+esc(String(incN))+')</button>'+
         '<button type="button" class="btn btn--ghost btn--sm pax-sheet-quick__btn" data-pax-jump="pax-drawer-cancellations">Cancellations ('+esc(String(canc))+')</button>'+
         '</div>';
+      var scheduleAdminNote = fromSchedule
+        ? '<p class="muted" style="margin:0 0 12px;font-size:12px;line-height:1.45;max-width:52rem;overflow-wrap:break-word">Staff and leads see <strong>Clients Info</strong> (parent assessment). Admin also has <strong>booking</strong> and <strong>parent contact</strong> fields from the ClassForKids export below.</p>'
+        : '';
+      var statsBlock = fromSchedule
+        ? schedParticipantDrawerStatsHtml(c.name)
+        : (
+          '<div class="pax-sheet-statgrid">'+
+          '<div class="card card-pad pax-sheet-stat">'+
+          '<span class="pax-sheet-stat-lbl">Sessions (YTD)</span>'+
+          '<div class="pax-sheet-stat-mid pax-sheet-stat-mid--simple">'+
+          '<span class="pax-sheet-stat-val">'+esc(String(ytd))+'</span>'+ytdFoot+
+          '</div></div>'+
+          '<div class="card card-pad pax-sheet-stat">'+
+          '<span class="pax-sheet-stat-lbl">Attendance</span>'+
+          '<div class="pax-sheet-stat-mid pax-sheet-stat-mid--simple">'+
+          '<span class="pax-sheet-stat-val">'+esc(String(attPct))+'%</span>'+
+          '</div></div>'+
+          '<div class="card card-pad pax-sheet-stat pax-sheet-stat--ring">'+
+          '<span class="pax-sheet-stat-lbl">Engagement</span>'+
+          '<div class="pax-sheet-stat-mid">'+
+          engRingHtml+
+          (engTileFoot ? '<span class="muted pax-sheet-stat-foot">'+esc(engTileFoot)+'</span>' : '')+
+          engExtraStat+
+          '</div></div>'+
+          '<div class="card card-pad pax-sheet-stat pax-sheet-stat--ring">'+
+          '<span class="pax-sheet-stat-lbl">Emotions</span>'+
+          '<div class="pax-sheet-stat-mid">'+
+          emoRingHtml+
+          '<div class="pax-sheet-stat-icons">'+emoDisplay+'</div>'+
+          '</div></div>'+
+          '</div>'
+        );
       var body =
-        '<div class="pax-sheet-statgrid">'+
-        '<div class="card card-pad pax-sheet-stat">'+
-        '<span class="pax-sheet-stat-lbl">Sessions (YTD)</span>'+
-        '<div class="pax-sheet-stat-mid pax-sheet-stat-mid--simple">'+
-        '<span class="pax-sheet-stat-val">'+esc(String(ytd))+'</span>'+ytdFoot+
-        '</div></div>'+
-        '<div class="card card-pad pax-sheet-stat">'+
-        '<span class="pax-sheet-stat-lbl">Attendance</span>'+
-        '<div class="pax-sheet-stat-mid pax-sheet-stat-mid--simple">'+
-        '<span class="pax-sheet-stat-val">'+esc(String(attPct))+'%</span>'+
-        '</div></div>'+
-        '<div class="card card-pad pax-sheet-stat pax-sheet-stat--ring">'+
-        '<span class="pax-sheet-stat-lbl">Engagement</span>'+
-        '<div class="pax-sheet-stat-mid">'+
-        engRingHtml+
-        (engTileFoot ? '<span class="muted pax-sheet-stat-foot">'+esc(engTileFoot)+'</span>' : '')+
-        engExtraStat+
-        '</div></div>'+
-        '<div class="card card-pad pax-sheet-stat pax-sheet-stat--ring">'+
-        '<span class="pax-sheet-stat-lbl">Emotions</span>'+
-        '<div class="pax-sheet-stat-mid">'+
-        emoRingHtml+
-        '<div class="pax-sheet-stat-icons">'+emoDisplay+'</div>'+
-        '</div></div>'+
-        '</div>'+
-        quickNav+
-        srcP+
-        attTerm+
+        statsBlock+
+        (fromSchedule ? '' : quickNav)+
+        (fromSchedule ? '' : srcP)+
+        (fromSchedule ? '' : attTerm)+
+        scheduleAdminNote+
         ciCard+
         ciMissingBanner+
         ppCard+
         ppMissingBanner+
-        fbFeedHtml+
-        incidentsDetailBlock+
-        cancellationsDetailBlock+
-        '<div class="card pax-sheet-sessions" style="margin-top:14px;min-width:0;overflow:hidden">'+
-        '<div class="card-h" style="min-width:0">'+
-        paxDrawerSectionCardHeaderHtml('<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01"/>', recentSessTitle, 'h3')+
-        '</div>'+
-        '<div class="card-pad" style="overflow:auto;padding:0;min-width:0">'+
-        '<table class="tbl tbl--center pax-sheet-tbl" style="min-width:0;width:100%"><thead><tr><th>Date</th><th>Programme</th><th>Attendance</th></tr></thead><tbody>'+sessRows+'</tbody></table></div></div>'+
-        earlierFeedbackBlock;
+        (fromSchedule ? '' : fbFeedHtml)+
+        (fromSchedule ? '' : incidentsDetailBlock)+
+        (fromSchedule ? '' : cancellationsDetailBlock)+
+        (fromSchedule ? '' : (
+          '<div class="card pax-sheet-sessions" style="margin-top:14px;min-width:0;overflow:hidden">'+
+          '<div class="card-h" style="min-width:0">'+
+          paxDrawerSectionCardHeaderHtml('<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01"/>', recentSessTitle, 'h3')+
+          '</div>'+
+          '<div class="card-pad" style="overflow:auto;padding:0;min-width:0">'+
+          '<table class="tbl tbl--center pax-sheet-tbl" style="min-width:0;width:100%"><thead><tr><th>Date</th><th>Programme</th><th>Attendance</th></tr></thead><tbody>'+sessRows+'</tbody></table></div></div>'+
+          earlierFeedbackBlock
+        ));
+      if(fromSchedule){
+        body = body.replace(/<details class="pax-fam-details"/g, '<details class="pax-fam-details" open');
+      }
       $('drawerBody').innerHTML = body;
       (function bindPaxDrawerQuickJump(){
         var root = $('drawerBody');
@@ -22292,14 +22394,47 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           });
         }
       })();
-      $('drawerActions').innerHTML =
-        '<button type="button" class="btn btn--pri" id="drOpwfPrev">Report preview (mock)</button>'+
-        '<button type="button" class="btn btn--pri" id="drGenRep">Prepare report</button>'+
-        '<button type="button" class="btn btn--pri" id="drParent">Parent summary</button>'+
-        '<button type="button" class="btn btn--sec" id="drFb">Review feedback</button>'+
-        '<button type="button" class="btn btn--sec" id="drInc">Review incidents</button>'+
-        '<button type="button" class="btn btn--sec" id="drComms">Communications</button>'+
-        '<button type="button" class="btn btn--ghost" id="drNote">Add admin note</button>';
+      if(fromSchedule){
+        $('drawerActions').innerHTML =
+          '<button type="button" class="btn btn--sec" id="drSchedFullPax">Open full participant record</button>'+
+          '<button type="button" class="btn btn--ghost" id="drSchedClose">Close</button>';
+        var drSchedClose = $('drSchedClose');
+        if(drSchedClose) drSchedClose.onclick = closeDrawer;
+        var drFull = $('drSchedFullPax');
+        if(drFull){
+          drFull.onclick = function(){
+            var nm = String((c && c.name) || '').trim();
+            closeDrawer();
+            if(linkedCid){
+              setView('clients');
+              setTimeout(function(){ openClientDrawer(linkedCid); }, 0);
+            }else if(nm){
+              setView('clients');
+              setTimeout(function(){ openClientDrawerSynthetic({ name: nm }); }, 0);
+            }
+          };
+        }
+      }else{
+        $('drawerActions').innerHTML =
+          '<button type="button" class="btn btn--pri" id="drOpwfPrev">Report preview (mock)</button>'+
+          '<button type="button" class="btn btn--pri" id="drGenRep">Prepare report</button>'+
+          '<button type="button" class="btn btn--pri" id="drParent">Parent summary</button>'+
+          '<button type="button" class="btn btn--sec" id="drFb">Review feedback</button>'+
+          '<button type="button" class="btn btn--sec" id="drInc">Review incidents</button>'+
+          '<button type="button" class="btn btn--sec" id="drComms">Communications</button>'+
+          '<button type="button" class="btn btn--ghost" id="drNote">Add admin note</button>';
+      }
+      if(fromSchedule){
+        var dbbSched = $('drawerBackdrop');
+        if(dbbSched){
+          dbbSched.classList.add('drawer-backdrop--slice');
+          dbbSched.classList.add('open');
+        }
+        $('clientDrawer').classList.add('drawer--participant-sheet');
+        $('clientDrawer').classList.add('open');
+        $('clientDrawer').setAttribute('aria-hidden','false');
+        return;
+      }
       var drOp = $('drOpwfPrev');
       if(drOp) drOp.onclick = function(){
         if(!linkedCid){
