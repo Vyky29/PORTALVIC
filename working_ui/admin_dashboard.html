@@ -6,7 +6,7 @@
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260528-aquatic-units" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260520-portal2026" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260526-hub-tile-text" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260531-dayops-hub" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260521-embed" />
   <script src="/portal/hr-contract-embed-html.js?v=20260521-embed"></script>
   <script src="/portal/admin-portal-day-ops.js?v=20260528-fb-submitted-at"></script>
@@ -2377,6 +2377,26 @@
     .pax-sheet-source{font-size:11px;margin:0 0 14px;line-height:1.45;color:var(--muted);max-width:48rem;overflow-wrap:break-word}
     .pax-sheet-statgrid{
       display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:14px;
+    }
+    .pax-sheet-statgrid--profile{min-width:0}
+    .pax-sheet-stat--span2{grid-column:1 / -1}
+    .pax-sheet-stat--emo .pax-sheet-stat-mid--fill{align-items:stretch;justify-content:flex-start;min-height:0;padding-top:4px}
+    .pax-sheet-stat--eng-split .pax-sheet-stat-mid--fill{min-height:0;padding-top:6px}
+    .pax-sheet-stat-eng-split{
+      display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;width:100%;min-width:0;align-items:stretch;
+    }
+    .pax-sheet-stat-eng-col{
+      min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:6px;
+      padding:10px 8px;border-radius:12px;background:#f8fafc;border:1px solid var(--line);
+    }
+    .pax-sheet-stat-sublbl{
+      font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);
+      text-align:center;overflow-wrap:break-word;
+    }
+    .pax-sheet-stat-eng-col .c4k-reg-eng-gauge,.pax-sheet-stat-eng-col .c4k-reg-ind-bars{margin:0 auto}
+    .pax-sheet-stat--emo .c4k-reg-emo-circ--sf-row{justify-content:center}
+    @media (max-width:520px){
+      .pax-sheet-stat-eng-split{grid-template-columns:minmax(0,1fr)}
     }
     .pax-sheet-stat.card-pad{
       padding:14px 16px;min-width:0;display:flex;flex-direction:column;align-items:stretch;text-align:center;
@@ -5045,6 +5065,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return null;
     }
+    /** Accordion block for Participants_Parents export (Parents info / Booking info). */
+    function adminParticipantParentsFamAccordionHtml(title, summaryIconPaths, introHtml, dlInner){
+      return (
+        '<details class="pax-fam-details" style="margin-bottom:12px">'+
+        '<summary>'+
+        '<span class="pax-fam-details__ico" aria-hidden="true">'+
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">'+summaryIconPaths+'</svg></span>'+
+        '<span class="pax-fam-details__sumtxt">'+esc(title)+'</span>'+
+        '<span class="pax-fam-details__chev" aria-hidden="true">›</span>'+
+        '</summary>'+
+        '<div class="card-pad" style="padding-top:4px;min-width:0">'+
+        (introHtml || '')+
+        '<dl class="pax-fam-dl">'+dlInner+'</dl></div></details>'
+      );
+    }
     /** ClassForKids-style address / parent / booking fields from <code>Participants_Parents info (PORTAL).xlsx</code>. */
     function adminParticipantParentsCfContactsCardHtml(row){
       if(!row) return '';
@@ -5069,24 +5104,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var iIn = fi('<path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>');
       var iGift = fi('<polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5" rx="1"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7h0a4 4 0 014-4 2 2 0 012 2 4 4 0 01-4 4"/><path d="M12 7h0a4 4 0 00-4-4 2 2 0 00-2 2 4 4 0 004 4"/>');
       var iFile = fi('<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/>');
-      return (
-        '<details class="pax-fam-details">'+
-        '<summary>'+
-        '<span class="pax-fam-details__ico" aria-hidden="true">'+
-        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">'+
-        '<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>'+
-        '</svg></span>'+
-        '<span class="pax-fam-details__sumtxt">Family Details</span>'+
-        '<span class="pax-fam-details__chev" aria-hidden="true">›</span>'+
-        '</summary>'+
-        '<div class="card-pad" style="padding-top:4px;min-width:0">'+
-        '<p class="muted" style="margin:0 0 10px;font-size:11px;line-height:1.45;max-width:48rem;overflow-wrap:break-word">From <strong>Participants_Parents info (PORTAL).xlsx</strong> (export → <code style="font-size:11px">participants_parents_portal_data.js</code>). Registration-form answers from <strong>Clients Info</strong> appear on the participant workspace <strong>Assessment</strong> tab when the name matches.</p>'+
-        '<dl class="pax-fam-dl">'+
-        line(iUser, 'Child on sheet', esc(adminParticipantsParentsChildDisplayName(row) || '—'))+
+      var exportNote =
+        '<p class="muted" style="margin:0 0 10px;font-size:11px;line-height:1.45;max-width:48rem;overflow-wrap:break-word">From <strong>Participants_Parents info (PORTAL).xlsx</strong> (export → <code style="font-size:11px">participants_parents_portal_data.js</code>). Registration-form answers from <strong>Clients Info</strong> appear in <strong>Registration (Clients Info)</strong> above when the name matches.</p>';
+      var parentsDl =
         line(iUsers, 'Parent / carer', esc(String(row.parentDisplay || '—')))+
         line(iPin, 'Address', esc(String(row.addressLine1 || '—')) + addr2 + '<span class="muted"> · </span>' + esc(String(row.city || '—')) + '<span class="muted"> · </span>' + esc(String(row.postcode || '—')))+
         line(iPhone, 'Mobile', esc(String(row.mobile || '—')))+
-        line(iMail, 'Account email', esc(String(row.username || '—')))+
+        line(iMail, 'Account email', esc(String(row.username || '—')));
+      var bookingDl =
+        line(iUser, 'Child on sheet', esc(adminParticipantsParentsChildDisplayName(row) || '—'))+
         line(iCal, 'DOB', esc(String(row.dobDisplay || row.dobIso || '—')))+
         line(iHash, 'Gender', esc(String(row.gender || '—')))+
         line(iUsers, 'In class', esc(String(row.inClass || '—')))+
@@ -5094,8 +5120,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         line(iIn, 'First booking', esc(String(row.firstBookingDisplay || row.firstBookingIso || '—')))+
         line(iCal, 'Last booking', esc(String(row.lastBookingDisplay || row.lastBookingIso || '—')))+
         line(iGift, 'Next birthday', esc(String(row.nextBirthdayDisplay || row.nextBirthdayIso || '—')))+
-        line(iFile, 'Record created', esc(String(row.createdDisplay || row.createdIso || '—')))+
-        '</dl></div></details>'
+        line(iFile, 'Record created', esc(String(row.createdDisplay || row.createdIso || '—')));
+      var icoParents =
+        '<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>';
+      var icoBooking =
+        '<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01"/>';
+      return (
+        adminParticipantParentsFamAccordionHtml('Parents Info', icoParents, exportNote, parentsDl)+
+        adminParticipantParentsFamAccordionHtml('Booking Info', icoBooking,
+          '<p class="muted" style="margin:0 0 10px;font-size:11px;line-height:1.45;max-width:48rem;overflow-wrap:break-word">ClassForKids enrolment and booking dates for this child (same export).</p>',
+          bookingDl)
       );
     }
     /** Labels aligned with <code>Clients Info (PORTAL) - structured.xlsx</code> / <code>build_clients_info_structured_xlsx.py</code>. */
@@ -14397,25 +14431,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return '<span class="sched-pax-pill '+toneCls+'">'+lab+'</span>';
     }
-    function schedParticipantDrawerStatsHtml(displayName){
-      var pname = String(displayName || '').trim();
-      var drf = pname ? adminC4kDailyRegistersListForParticipantWorkspace(pname) : [];
-      var termSub = esc(ADMIN_PORTAL_SESSION_FEEDBACK_TERM_TITLE);
-      var attBody = adminC4kRegistersKpiAttendanceParticipantVisualHtml(pname, drf);
-      var emoBody = adminSessionFeedbackPortalRows().length
-        ? adminC4kRegistersKpiEmotionsVisualHtml(drf)
-        : adminC4kRegistersKpiMockEmotionsVisualHtml();
-      var indBody = adminC4kRegistersKpiIndependenceParticipantVisualHtml(drf);
-      return (
-        '<div class="c4k-sf-kpi-slab c4k-sf-kpi-slab--embed sched-pax-drawer-stats" style="margin-bottom:14px">' +
-        '<p class="muted" style="margin:0 0 10px;font-size:12px;line-height:1.45;max-width:52rem;overflow-wrap:break-word">Session feedback stats for <strong>'+esc(pname || 'participant')+'</strong> ('+termSub+').</p>' +
-        '<div class="c4k-sf-kpi-row c4k-sf-kpi-row--pax" style="grid-template-columns:repeat(3,minmax(0,1fr))">' +
-        '<div class="c4k-sf-kpi-panel"><div class="c4k-reg-kpi-card-head"><h3 class="c4k-reg-kpi-card-title">Attendance</h3><p class="c4k-reg-kpi-card-sub">('+termSub+')</p></div>'+attBody+'</div>' +
-        '<div class="c4k-sf-kpi-panel"><div class="c4k-reg-kpi-card-head"><h3 class="c4k-reg-kpi-card-title">Regulation</h3><p class="c4k-reg-kpi-card-sub">('+termSub+')</p></div>'+emoBody+'</div>' +
-        '<div class="c4k-sf-kpi-panel"><div class="c4k-reg-kpi-card-head"><h3 class="c4k-reg-kpi-card-title">Independence</h3><p class="c4k-reg-kpi-card-sub">('+termSub+')</p></div>'+indBody+'</div>' +
-        '</div></div>'
-      );
-    }
     function openSchedParticipantProfile(opts){
       opts = opts || {};
       var slot = null;
@@ -19087,28 +19102,30 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function viewOperations(){
       var sessionsRow1 =
-        portalDashTileHtml('c4k_sessions', '', 'c4k_sessions', 'Overview', 'Live grid &amp; capacity', false, 'sessions', 'sessions_hub_overview')+
-        portalDashTileHtml('c4k_sessions', '', 'c4k_registers', 'Feedbacks', 'Registers &amp; session notes', false, 'feedback', 'sessions_hub_feedback')+
-        portalDashTileHtml('c4k_sessions', '', 'analytics', 'Incidents', 'Safeguarding &amp; logs', false, 'analytics', 'sessions_hub_incidents')+
+        portalDashTileHtml('c4k_sessions', '', 'c4k_sessions', 'Overview', 'Live grid & capacity', false, 'sessions', 'sessions_hub_overview')+
+        portalDashTileHtml('c4k_sessions', '', 'c4k_registers', 'Feedbacks', 'Registers & session notes', false, 'feedback', 'sessions_hub_feedback')+
+        portalDashTileHtml('c4k_sessions', '', 'analytics', 'Incidents', 'Safeguarding & logs', false, 'analytics', 'sessions_hub_incidents')+
         portalDashTileHtml('c4k_sessions', '', 'absents', 'Absents', 'Quick marks by day', false, 'absents', 'sessions_hub_absents')+
         portalDashTileHtml('c4k_sessions', '', 'absents_refunds', 'Cancellations', '&nbsp;', false, 'absents', 'sessions_hub_cancellations');
       var sessionsRow2 =
         portalDashTileHtml('c4k_late_submissions', '', 'c4k_late_submissions', 'Late submissions', 'Approve past-session forms', state.portalLatePendingCount > 0, 'feedback')+
         portalDashTileHtml('c4k_sessions', '', 'c4k_services', 'Venue review', 'Venue opening reviews', false, 'scheduling', 'sessions_hub_venue')+
-        portalDashTileHtml('c4k_sessions', '', 'scheduling', 'Pick up / drop off', 'Drop off &amp; pick up portal', false, 'scheduling', 'sessions_hub_pickup')+
+        portalDashTileHtml('c4k_sessions', '', 'scheduling', 'Pick up / drop off', 'Drop off & pick up portal', false, 'scheduling', 'sessions_hub_pickup')+
         portalDashTileHtml('c4k_sessions', '', 'c4k_reviews', 'Positive info', 'Positive feedback to review', false, 'feedback', 'sessions_hub_positive')+
         portalDashTileHtml('c4k_sessions', '', 'c4k_reports', 'Relevant info', 'Relevant notes to review', false, 'reports_q', 'sessions_hub_relevant')+
         portalDashTileHtml('c4k_sessions', '', 'c4k_registers', 'Lead report', 'Lead session reports', false, 'feedback', 'sessions_hub_lead');
       var teamTiles =
-        portalDashTileHtml('scheduling', '', 'scheduling', 'Schedule &amp; covers', 'Weekly anchors &amp; swap cover', true, 'scheduling')+
-        portalDashTileHtml('', '', 'announcements', 'Announcements', 'Staff &amp; site notices', false, 'scheduling', 'announcements')+
-        portalDashTileHtml('', '', 'reminders', 'Reminders', 'Follow-ups &amp; due tasks', false, 'scheduling', 'reminders')+
+        portalDashTileHtml('scheduling', '', 'scheduling', 'Schedule & Covers', 'Weekly anchors & swap cover', true, 'scheduling')+
+        portalDashTileHtml('', '', 'announcements', 'Announcements', 'Staff & site notices', false, 'scheduling', 'announcements')+
+        portalDashTileHtml('', '', 'reminders', 'Reminders', 'Follow-ups & due tasks', false, 'scheduling', 'reminders')+
         portalDashTileHtml('', '', 'comms_ops', 'CEO\'s chat', 'DMs + CEO groups', false, 'scheduling', 'ceo_exec_dm')+
-        portalDashTileHtml('', '', 'comms_ops', 'Internal chat', 'Staff &amp; leads only', false, 'notify', 'team_dm');
+        portalDashTileHtml('', '', 'comms_ops', 'Internal chat', 'Staff & leads only', false, 'notify', 'team_dm');
       return (
         '<div class="dash-hub">'+
+        '<div class="dash-hub__intro-row">'+
         '<h1 class="page-title">Day operations</h1>'+
         '<p class="page-intro">Live sessions with participants — rota, on-site feedback, incidents, and venue checks. For bookings, payments, and formal reports, use <button type="button" class="btn btn--ghost btn--sm" data-view-target="operations_admin" style="vertical-align:baseline;padding:0 4px;font-size:inherit">Operations admin</button>.</p>'+
+        '</div>'+
         '<div class="dash-hub__stack">'+
         portalDashPanel({
           title:'Team',
@@ -19127,7 +19144,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           jumpTitle:'Services overview',
           bodyHtml:
             '<div class="dash-hub__grid dash-hub__grid--5">'+sessionsRow1+'</div>'+
-            '<div class="dash-hub__grid dash-hub__grid--6" style="margin-top:12px">'+sessionsRow2+'</div>',
+            '<div class="dash-hub__grid dash-hub__grid--6 dash-hub__grid--sessions-row2">'+sessionsRow2+'</div>',
           ariaLabel:'Sessions'
         })+
         '</div></div>'
@@ -21878,6 +21895,107 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return Math.round((m / 5) * 100);
     }
     /** Parse strings like "4.5 / 5" → percent of scale. */
+    /** Participant drawer — unified KPI grid (sessions, attendance, absents, incidents, emotions ×4, engagement + independence). */
+    function paxDrawerParticipantStatsHtml(opts){
+      opts = opts || {};
+      var c = opts.client || {};
+      var displayName = String(c.name || '').trim();
+      var usePortal = !!opts.usePortal;
+      var ytd = Number(opts.ytd);
+      if(!Number.isFinite(ytd)) ytd = 0;
+      var attPct = Number(opts.attPct);
+      if(!Number.isFinite(attPct)) attPct = 0;
+      var incN = Number(opts.incN);
+      if(!Number.isFinite(incN)) incN = 0;
+      var canc = Number(opts.canc);
+      if(!Number.isFinite(canc)) canc = 0;
+      var portalM = opts.portalM;
+      var portalSorted = opts.portalSorted || [];
+      var ytdFoot = String(opts.ytdFoot || '');
+      var engTileFoot = String(opts.engTileFoot || '');
+      var engExtraStat = String(opts.engExtraStat || '');
+      var drf = displayName ? adminC4kDailyRegistersListForParticipantWorkspace(displayName) : [];
+      var portalP = displayName ? adminPortalFeedbackPortalRowsForParticipantWorkspace(displayName) : [];
+      var kpiRows = portalP.length
+        ? portalP.map(function(r){ return adminPortalFeedbackRowToRegister(r); })
+        : drf;
+      var absN = 0;
+      if(usePortal && portalM) absN = Number(portalM.missed) || 0;
+      else if(portalP.length){
+        for(var ai = 0; ai < portalP.length; ai++){
+          if(!adminPortalFeedbackRowIsAttendedFeedback(portalP[ai]) && adminPortalFeedbackRowIsOutcomeEligible(portalP[ai])) absN++;
+        }
+      }
+      var attFoot = '';
+      if(usePortal && portalM){
+        attFoot =
+          '<span class="muted pax-sheet-stat-foot">Present <strong>'+esc(String(portalM.attended))+
+          '</strong> · Not present <strong>'+esc(String(portalM.missed))+'</strong></span>';
+      }
+      var incFoot = '';
+      if(usePortal && portalSorted.length){
+        var termStart = adminPortalFeedbackTermStartIso();
+        var sheetInc = 0;
+        for(var ii = 0; ii < portalSorted.length; ii++){
+          var iso10 = adminSfStr(portalSorted[ii].date).substring(0, 10);
+          if(iso10.length >= 10 && iso10 < termStart) continue;
+          if(adminC4kIncidentNotesArePresent(portalSorted[ii].incidents)) sheetInc++;
+        }
+        if(sheetInc) incFoot = '<span class="muted pax-sheet-stat-foot">'+esc(String(sheetInc))+' flagged in session notes</span>';
+      }
+      var usingPortalKpi = adminSessionFeedbackPortalRows().length > 0;
+      var emoBody = usingPortalKpi && kpiRows.length
+        ? adminC4kRegistersKpiEmotionsVisualHtml(kpiRows)
+        : adminC4kRegistersKpiMockEmotionsVisualHtml();
+      var engBody = usingPortalKpi && kpiRows.length
+        ? adminC4kRegistersKpiEngagementGaugeHtml(kpiRows)
+        : adminC4kRegistersKpiMockEngagementGaugeHtml();
+      var indBody = adminC4kRegistersKpiIndependenceBarsHtml(kpiRows);
+      var engFoot = (engTileFoot || engExtraStat)
+        ? '<div style="margin-top:6px;text-align:center;min-width:0">'+engTileFoot+engExtraStat+'</div>'
+        : '';
+      var absFoot = canc > 0
+        ? '<span class="muted pax-sheet-stat-foot">Cancellations (demo): <strong>'+esc(String(canc))+'</strong></span>'
+        : '';
+      return (
+        '<div class="pax-sheet-statgrid pax-sheet-statgrid--profile">'+
+        '<div class="card card-pad pax-sheet-stat">'+
+        '<span class="pax-sheet-stat-lbl">Sessions (YTD)</span>'+
+        '<div class="pax-sheet-stat-mid pax-sheet-stat-mid--simple">'+
+        '<span class="pax-sheet-stat-val">'+esc(String(ytd))+'</span>'+ytdFoot+
+        '</div></div>'+
+        '<div class="card card-pad pax-sheet-stat">'+
+        '<span class="pax-sheet-stat-lbl">Attendance</span>'+
+        '<div class="pax-sheet-stat-mid pax-sheet-stat-mid--simple">'+
+        '<span class="pax-sheet-stat-val">'+esc(String(attPct))+'%</span>'+attFoot+
+        '</div></div>'+
+        '<div class="card card-pad pax-sheet-stat pax-sheet-stat--ico">'+
+        '<span class="pax-sheet-stat-lbl">Absents</span>'+
+        '<div class="pax-sheet-stat-mid pax-sheet-stat-mid--simple">'+
+        '<span class="pax-sheet-stat-val">'+esc(String(absN))+'</span>'+absFoot+
+        '</div></div>'+
+        '<div class="card card-pad pax-sheet-stat pax-sheet-stat--ico">'+
+        '<span class="pax-sheet-stat-lbl">Incidents</span>'+
+        '<div class="pax-sheet-stat-mid pax-sheet-stat-mid--simple">'+
+        (incN > 0 ? '<span class="pax-sheet-stat-ico-wrap" aria-hidden="true">'+paxSheetStatSvgAlarm()+'</span>' : '')+
+        '<span class="pax-sheet-stat-val">'+esc(String(incN))+'</span>'+incFoot+
+        '</div></div>'+
+        '<div class="card card-pad pax-sheet-stat pax-sheet-stat--span2 pax-sheet-stat--emo">'+
+        '<span class="pax-sheet-stat-lbl">Emotions ('+esc(ADMIN_PORTAL_SESSION_FEEDBACK_TERM_TITLE)+')</span>'+
+        '<div class="pax-sheet-stat-mid pax-sheet-stat-mid--fill">'+emoBody+'</div></div>'+
+        '<div class="card card-pad pax-sheet-stat pax-sheet-stat--span2 pax-sheet-stat--eng-split">'+
+        '<span class="pax-sheet-stat-lbl">Engagement ('+esc(ADMIN_PORTAL_SESSION_FEEDBACK_TERM_TITLE)+')</span>'+
+        '<div class="pax-sheet-stat-mid pax-sheet-stat-mid--fill">'+
+        '<div class="pax-sheet-stat-eng-split">'+
+        '<div class="pax-sheet-stat-eng-col">'+
+        '<span class="pax-sheet-stat-sublbl">Engagement gauge</span>'+engBody+engFoot+
+        '</div>'+
+        '<div class="pax-sheet-stat-eng-col">'+
+        '<span class="pax-sheet-stat-sublbl">Independence</span>'+indBody+
+        '</div></div></div></div>'+
+        '</div>'
+      );
+    }
     function paxSheetSlash5Pct(s){
       var m = String(s == null ? '' : s).match(/(\d+(?:\.\d+)?)\s*\/\s*5\b/);
       if(!m) return null;
@@ -22196,36 +22314,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           engExtraStat = '<span class="muted pax-sheet-stat-foot">'+esc(exParts.join(' · '))+'</span>';
         }
       }
-      var emoRawLabel = String(c.lastEmotionalLabel || '');
-      var emoInner = adminC4kEmotionIconsCellHtml(emoRawLabel);
-      if(usePortal && portalSorted.length){
-        var latestEmoRow = portalTermSorted.length ? portalTermSorted[0] : portalSorted[0];
-        var prEm = adminPortalFeedbackRowToRegister(latestEmoRow);
-        emoRawLabel = String(prEm.emoLabel || '');
-        if(prEm.emoLabel && prEm.emoLabel !== '—') emoInner = adminC4kEmotionIconsCellHtml(prEm.emoLabel);
-      }
-      var emoDisplay = (emoInner && String(emoInner).replace(/\s/g, '').length) ? emoInner : '<span class="muted">—</span>';
-      var engPct = null;
-      if(usePortal && stTermE && stTermE.n > 0 && typeof stTermE.mean === 'number'){
-        engPct = Math.round((stTermE.mean / 5) * 100);
-      }else if(prLatestForEng && prLatestForEng.engNum != null && !isNaN(Number(prLatestForEng.engNum))){
-        engPct = Math.round((Number(prLatestForEng.engNum) / 5) * 100);
-      }else if(c.engagement && Array.isArray(c.engagement)){
-        engPct = paxSheetNumericSeriesMeanPct(c.engagement);
-      }
-      if(engPct == null) engPct = paxSheetSlash5Pct(engTileMain);
-      var emoPct = paxSheetNumericSeriesMeanPct(c.emotional);
-      if(emoPct == null) emoPct = paxSheetEmotionWellbeingPctFromRaw(emoRawLabel);
-      var engRingHtml = paxSheetStatRingHtml(engPct, {
-        aria: engPct != null ? ('Engagement about ' + engPct + ' percent of maximum') : 'Engagement not scored on a numeric scale',
-        hi: '#2563eb',
-        track: 'rgba(15,23,42,.1)'
-      });
-      var emoRingHtml = paxSheetStatRingHtml(emoPct, {
-        aria: emoPct != null ? ('Regulation / emotions index about ' + emoPct + ' percent') : 'No emotion tags to score',
-        hi: '#16a34a',
-        track: 'rgba(22,101,52,.14)'
-      });
       var showPaxAlarm = (incN > 0) || !!(c.incidentHistory && c.incidentHistory.length);
       if(usePortal && portalSorted.length){
         var pr0 = adminPortalFeedbackRowToRegister(portalTermSorted.length ? portalTermSorted[0] : portalSorted[0]);
@@ -22249,32 +22337,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       var dAlW = $('drawerClientAlarmWrap');
       if(dAlW) dAlW.style.display = showPaxAlarm ? 'flex' : 'none';
-      var attTerm;
-      if(usePortal && portalM){
-        var latePortal = 0;
-        for(var li = 0; li < portalSorted.length; li++){
-          var ra = adminSfStr(portalSorted[li].attendance).toLowerCase();
-          var alab = adminPortalAttendanceLabelForDrawerRow(portalSorted[li]).toLowerCase();
-          if(ra.indexOf('late') >= 0 || alab.indexOf('late') >= 0) latePortal++;
-        }
-        attTerm =
-          '<div class="card card-pad pax-sheet-att"><p class="pax-sheet-att-lbl">Attendance (session feedback export)</p><p class="pax-sheet-att-line">Sessions <strong>'+
-          esc(String(portalM.n))+'</strong> · Present <strong>'+esc(String(portalM.attended))+'</strong> · Not present <strong>'+
-          esc(String(portalM.missed))+'</strong> · Late <strong>'+esc(String(latePortal))+'</strong> · Unclassified <strong>'+
-          esc(String(portalM.unknown))+'</strong></p></div>';
-      }else if(c.attendanceTerm){
-        attTerm =
-          '<div class="card card-pad pax-sheet-att"><p class="pax-sheet-att-lbl">Attendance (term record)</p><p class="pax-sheet-att-line">Booked <strong>'+
-          esc(String(c.attendanceTerm.booked))+'</strong> · Attended <strong>'+esc(String(c.attendanceTerm.attended))+'</strong> · Late <strong>'+
-          esc(String(c.attendanceTerm.late))+'</strong> · Cancelled <strong>'+esc(String(c.attendanceTerm.cancelled))+'</strong></p></div>';
-      }else attTerm = '';
       var srcP;
       if(usePortal && !linkedCid){
         srcP =
           '<p class="pax-sheet-source">Matched from <strong>session feedback export</strong> by participant name (this roster row has no linked CRM / mock id yet). <strong>Sessions</strong>, <strong>Attendance</strong>, <strong>Engagement</strong>, and <strong>Recent sessions</strong> follow portal rows. <strong>Prepare report</strong> / admin note need a participant id — add them under <strong>Participants</strong> when ready.</p>';
       }else if(usePortal){
         srcP =
-          '<p class="pax-sheet-source">Top tiles and <strong>Recent sessions</strong> use <code>SESSION_FEEDBACK_PORTAL_SOURCE</code> matched on participant name. <strong>Registration</strong> comes from Clients Info; <strong>Family Details</strong> from Participants_Parents. Quick links jump to incidents and cancellations.</p>';
+          '<p class="pax-sheet-source">Top tiles and <strong>Recent sessions</strong> use <code>SESSION_FEEDBACK_PORTAL_SOURCE</code> matched on participant name. <strong>Registration</strong> comes from Clients Info; <strong>Parents Info</strong> and <strong>Booking Info</strong> from Participants_Parents. Quick links jump to incidents and cancellations.</p>';
       }else{
         srcP =
           '<p class="pax-sheet-source">Top tiles and <strong>Recent sessions</strong> use <strong>MOCK.clientsById</strong> until the export matches this participant — then session rows sync from <code>SESSION_FEEDBACK_PORTAL_SOURCE</code>. Override slices with <code>window.PORTAL_CLIENT_DETAIL_BY_ID</code>.</p>';
@@ -22314,65 +22383,39 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<p class="muted" style="margin:6px 0 0;font-size:13px;line-height:1.5;overflow-wrap:break-word">Recorded in demo / supplement data: <strong>'+esc(String(canc))+'</strong></p>'+
         (c.attendanceTerm ? '<p class="muted" style="margin:8px 0 0;font-size:13px;line-height:1.45;overflow-wrap:break-word">Term-style record — cancelled <strong>'+esc(String(c.attendanceTerm.cancelled))+'</strong> of <strong>'+esc(String(c.attendanceTerm.booked))+'</strong> booked.</p>' : '')+
         '</div>';
-      var quickNav =
-        '<div class="pax-sheet-quick" role="toolbar" aria-label="Jump to participant sections">'+
-        '<button type="button" class="btn btn--ghost btn--sm pax-sheet-quick__btn" data-pax-jump="pax-drawer-incidents">Incidents ('+esc(String(incN))+')</button>'+
-        '<button type="button" class="btn btn--ghost btn--sm pax-sheet-quick__btn" data-pax-jump="pax-drawer-cancellations">Cancellations ('+esc(String(canc))+')</button>'+
-        '</div>';
       var scheduleAdminNote = fromSchedule
-        ? '<p class="muted" style="margin:0 0 12px;font-size:12px;line-height:1.45;max-width:52rem;overflow-wrap:break-word">Staff and leads see <strong>Clients Info</strong> (parent assessment). Admin also has <strong>booking</strong> and <strong>parent contact</strong> fields from the ClassForKids export below.</p>'
+        ? '<p class="muted" style="margin:0 0 12px;font-size:12px;line-height:1.45;max-width:52rem;overflow-wrap:break-word">Staff and leads see <strong>Clients Info</strong> (parent assessment). Admin also has separate <strong>Parents Info</strong> and <strong>Booking Info</strong> blocks from the ClassForKids export below.</p>'
         : '';
-      var statsBlock = fromSchedule
-        ? schedParticipantDrawerStatsHtml(c.name)
-        : (
-          '<div class="pax-sheet-statgrid">'+
-          '<div class="card card-pad pax-sheet-stat">'+
-          '<span class="pax-sheet-stat-lbl">Sessions (YTD)</span>'+
-          '<div class="pax-sheet-stat-mid pax-sheet-stat-mid--simple">'+
-          '<span class="pax-sheet-stat-val">'+esc(String(ytd))+'</span>'+ytdFoot+
-          '</div></div>'+
-          '<div class="card card-pad pax-sheet-stat">'+
-          '<span class="pax-sheet-stat-lbl">Attendance</span>'+
-          '<div class="pax-sheet-stat-mid pax-sheet-stat-mid--simple">'+
-          '<span class="pax-sheet-stat-val">'+esc(String(attPct))+'%</span>'+
-          '</div></div>'+
-          '<div class="card card-pad pax-sheet-stat pax-sheet-stat--ring">'+
-          '<span class="pax-sheet-stat-lbl">Engagement</span>'+
-          '<div class="pax-sheet-stat-mid">'+
-          engRingHtml+
-          (engTileFoot ? '<span class="muted pax-sheet-stat-foot">'+esc(engTileFoot)+'</span>' : '')+
-          engExtraStat+
-          '</div></div>'+
-          '<div class="card card-pad pax-sheet-stat pax-sheet-stat--ring">'+
-          '<span class="pax-sheet-stat-lbl">Emotions</span>'+
-          '<div class="pax-sheet-stat-mid">'+
-          emoRingHtml+
-          '<div class="pax-sheet-stat-icons">'+emoDisplay+'</div>'+
-          '</div></div>'+
-          '</div>'
-        );
+      var statsBlock = paxDrawerParticipantStatsHtml({
+        client: c,
+        usePortal: usePortal,
+        ytd: ytd,
+        attPct: attPct,
+        incN: incN,
+        canc: canc,
+        portalM: portalM,
+        portalSorted: portalSorted,
+        ytdFoot: ytdFoot,
+        engTileFoot: engTileFoot ? '<span class="muted pax-sheet-stat-foot">'+esc(engTileFoot)+'</span>' : '',
+        engExtraStat: engExtraStat
+      });
       var body =
         statsBlock+
-        (fromSchedule ? '' : quickNav)+
-        (fromSchedule ? '' : srcP)+
-        (fromSchedule ? '' : attTerm)+
-        scheduleAdminNote+
+        (fromSchedule ? scheduleAdminNote : srcP)+
         ciCard+
         ciMissingBanner+
         ppCard+
         ppMissingBanner+
-        (fromSchedule ? '' : fbFeedHtml)+
-        (fromSchedule ? '' : incidentsDetailBlock)+
-        (fromSchedule ? '' : cancellationsDetailBlock)+
-        (fromSchedule ? '' : (
-          '<div class="card pax-sheet-sessions" style="margin-top:14px;min-width:0;overflow:hidden">'+
-          '<div class="card-h" style="min-width:0">'+
-          paxDrawerSectionCardHeaderHtml('<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01"/>', recentSessTitle, 'h3')+
-          '</div>'+
-          '<div class="card-pad" style="overflow:auto;padding:0;min-width:0">'+
-          '<table class="tbl tbl--center pax-sheet-tbl" style="min-width:0;width:100%"><thead><tr><th>Date</th><th>Programme</th><th>Attendance</th></tr></thead><tbody>'+sessRows+'</tbody></table></div></div>'+
-          earlierFeedbackBlock
-        ));
+        fbFeedHtml+
+        incidentsDetailBlock+
+        cancellationsDetailBlock+
+        '<div class="card pax-sheet-sessions" style="margin-top:14px;min-width:0;overflow:hidden">'+
+        '<div class="card-h" style="min-width:0">'+
+        paxDrawerSectionCardHeaderHtml('<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01"/>', recentSessTitle, 'h3')+
+        '</div>'+
+        '<div class="card-pad" style="overflow:auto;padding:0;min-width:0">'+
+        '<table class="tbl tbl--center pax-sheet-tbl" style="min-width:0;width:100%"><thead><tr><th>Date</th><th>Programme</th><th>Attendance</th></tr></thead><tbody>'+sessRows+'</tbody></table></div></div>'+
+        earlierFeedbackBlock;
       if(fromSchedule){
         body = body.replace(/<details class="pax-fam-details"/g, '<details class="pax-fam-details" open');
       }
