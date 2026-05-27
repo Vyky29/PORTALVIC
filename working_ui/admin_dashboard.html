@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260526-hub-tile-text" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260521-embed" />
   <script src="/portal/hr-contract-embed-html.js?v=20260521-embed"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260520-portal2026"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260527-load-fix"></script>
   <script src="/portal/admin-portal-documents.js?v=20260521-supabase-docs"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
@@ -16825,6 +16825,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       adminSessionFeedbackPortalRows().forEach(function(r){ add(r.instructor); });
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
+    var ADMIN_SESSIONS_HUB_SRC =
+      '/portal-shared-js/admin-sessions-hub.js?v=20260527-ma-apr-may';
+
     function sessionsHubRefreshActiveTab(){
       var h = sessionsHubEnsureState();
       var showTrack = sessionsHubUsesTrackingHub(h.tab);
@@ -16848,14 +16851,31 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(head) head.outerHTML = sessionsHubHeadHtml(h.tab);
       var hubActs = $('c4kHubToolbarActions');
       if(hubActs) hubActs.hidden = !sessionsHubTabShowsRefresh(h.tab);
-      if(window.PortalDayOps && typeof window.PortalDayOps.refreshTab === 'function'){
-        void window.PortalDayOps.refreshTab(h.tab).then(function(){
-          var fh = window.PortalDayOps.getFeedbackHub && window.PortalDayOps.getFeedbackHub();
-          if(fh && String(h.clientQ || '').trim()) fh.clientSearch = String(h.clientQ).trim();
-          sessionsHubStampRefresh();
-        });
+      function onHubRefreshDone(){
+        var fh = window.PortalDayOps && window.PortalDayOps.getFeedbackHub && window.PortalDayOps.getFeedbackHub();
+        if(fh && String(h.clientQ || '').trim()) fh.clientSearch = String(h.clientQ).trim();
+        sessionsHubStampRefresh();
+      }
+      function onHubRefreshFail(err){
+        var root = $('adminSessionFeedbacksRoot');
+        if(root && showFb){
+          root.innerHTML =
+            '<p class="submission-state is-error" style="margin:0"><strong>Could not load session feedback.</strong> ' +
+            esc(String((err && err.message) || err)) +
+            ' Try <strong>Refresh</strong> or reload the page.</p>';
+        }
+      }
+      function runHubRefresh(){
+        if(window.PortalDayOps && typeof window.PortalDayOps.refreshTab === 'function'){
+          void window.PortalDayOps.refreshTab(h.tab).then(onHubRefreshDone).catch(onHubRefreshFail);
+        }else{
+          void refreshSessionFeedbackGrid();
+        }
+      }
+      if((showFb || showTrack) && window.portalAdminLoadHeavyScripts){
+        void window.portalAdminLoadHeavyScripts(['roster', 'feedback']).then(runHubRefresh).catch(onHubRefreshFail);
       }else{
-        void refreshSessionFeedbackGrid();
+        runHubRefresh();
       }
     }
     function openSessionsHubTab(tabId){
@@ -16874,6 +16894,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       window.__portalDayOpsConfigured = true;
       window.PortalDayOps.configure({
         esc: esc,
+        skipAdminFormsEdge: true,
         getClient: getSchedSupabaseClient,
         getSupabaseUrl: function(){
           var u = typeof window.SUPABASE_URL === 'string' ? window.SUPABASE_URL.trim() : '';

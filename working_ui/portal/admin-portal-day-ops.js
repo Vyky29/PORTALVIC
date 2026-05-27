@@ -23,7 +23,23 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var HUB_SRC = '/portal-shared-js/admin-sessions-hub.js?v=20260520-encoding-fix';
+  var HUB_SRC = '/portal-shared-js/admin-sessions-hub.js?v=20260527-ma-apr-may';
+  var EDGE_FETCH_MS = 12000;
+
+  function fetchWithTimeout(url, options, ms) {
+    ms = ms || EDGE_FETCH_MS;
+    if (typeof AbortController === 'undefined') {
+      return fetch(url, options);
+    }
+    var ctrl = new AbortController();
+    var timer = setTimeout(function () {
+      ctrl.abort();
+    }, ms);
+    var opts = Object.assign({}, options || {}, { signal: ctrl.signal });
+    return fetch(url, opts).finally(function () {
+      clearTimeout(timer);
+    });
+  }
 
   function esc(s) {
     if (cfg.esc) return cfg.esc(s);
@@ -192,15 +208,19 @@
     var session = sessResp && sessResp.data && sessResp.data.session;
     var at = session && session.access_token;
     if (!at) return { error: 'session_expired' };
-    var res = await fetch(supabaseBase() + '/functions/v1/portal-admin-forms-list', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: 'Bearer ' + at,
-        apikey: supabaseAnon()
+    var res = await fetchWithTimeout(
+      supabaseBase() + '/functions/v1/portal-admin-forms-list',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + at,
+          apikey: supabaseAnon()
+        },
+        body: '{}'
       },
-      body: '{}'
-    });
+      EDGE_FETCH_MS
+    );
     var j = null;
     try {
       j = await res.json();
@@ -574,29 +594,48 @@
       return loadInFlight;
     },
     refreshTab: async function (tabId) {
-      await global.PortalDayOps.ensurePayload();
-      if (tabId === 'overview' || tabId === 'incidents' || tabId === 'absents' || tabId === 'cancellations') {
-        pendingOverviewTab = overviewTabForC4k(tabId);
-        var th = await initTrackingHub();
-        if (th) applyPendingOverviewTab();
-        return th;
-      }
-      if (tabId === 'feedback' || tabId === 'positive' || tabId === 'relevant') {
-        var fs = feedbackSetupForC4k(tabId);
-        pendingFeedbackNoteFilter = fs.filter;
-        var fh = await initFeedbackHub();
-        if (fh) {
-          fh.tab = fs.tab;
-          fh.feedbackNoteFilter = fs.filter;
-          applyPendingFeedbackNav(fh);
+      try {
+        await global.PortalDayOps.ensurePayload();
+        if (tabId === 'overview' || tabId === 'incidents' || tabId === 'absents' || tabId === 'cancellations') {
+          pendingOverviewTab = overviewTabForC4k(tabId);
+          var th = await initTrackingHub();
+          if (th) applyPendingOverviewTab();
+          return th;
         }
-        return fh;
-      }
-      if (tabId === 'lead' || tabId === 'venue') {
-        renderLeadVenueTables();
+        if (tabId === 'feedback' || tabId === 'positive' || tabId === 'relevant') {
+          var fs = feedbackSetupForC4k(tabId);
+          pendingFeedbackNoteFilter = fs.filter;
+          var fh = await initFeedbackHub();
+          if (fh) {
+            fh.tab = fs.tab;
+            fh.feedbackNoteFilter = fs.filter;
+            applyPendingFeedbackNav(fh);
+          }
+          return fh;
+        }
+        if (tabId === 'lead' || tabId === 'venue') {
+          renderLeadVenueTables();
+          return null;
+        }
+        return null;
+      } catch (err) {
+        console.error('[PortalDayOps] refreshTab', err);
+        var fbRoot = document.getElementById('adminSessionFeedbacksRoot');
+        if (fbRoot) {
+          fbRoot.innerHTML =
+            '<p class="submission-state is-error" style="margin:0"><strong>Could not load session feedback.</strong> ' +
+            esc(String((err && err.message) || err)) +
+            ' Try <strong>Refresh</strong> or reload the page.</p>';
+        }
+        var trackRoot = document.getElementById('adminSessionsHubRoot');
+        if (trackRoot && !trackRoot.querySelector('.ash-panels')) {
+          trackRoot.innerHTML =
+            '<p class="submission-state is-error" style="margin:0"><strong>Could not load session overview.</strong> ' +
+            esc(String((err && err.message) || err)) +
+            '</p>';
+        }
         return null;
       }
-      return null;
     },
     invalidatePayload: function () {
       loadInFlight = null;
