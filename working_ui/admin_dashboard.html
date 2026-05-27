@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260531-dayops-fill" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260521-embed" />
   <script src="/portal/hr-contract-embed-html.js?v=20260521-embed"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260531-override-sync"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260531-lead-reports"></script>
   <script src="/portal/admin-portal-documents.js?v=20260521-supabase-docs"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
   <script src="/portal/portal_dm_voice.js?v=20260531-dm-voice"></script>
@@ -17294,6 +17294,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       window.__PORTAL_CANCELLATION_REPORTS__ = null;
       window.__PORTAL_ABSENT_QUICK_MARKS__ = null;
       window.__PORTAL_SCHEDULE_OVERRIDES__ = null;
+      window.__PORTAL_LEAD_SESSION_REPORTS__ = null;
       if(window.PortalDayOps && typeof window.PortalDayOps.invalidatePayload === 'function'){
         window.PortalDayOps.invalidatePayload();
       }
@@ -17320,6 +17321,28 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         window.__PORTAL_SCHEDULE_OVERRIDES__ = [];
       }
       return window.__PORTAL_SCHEDULE_OVERRIDES__;
+    }
+    async function adminFetchLeadSessionReportsForHub(){
+      if(window.__PORTAL_LEAD_SESSION_REPORTS__) return window.__PORTAL_LEAD_SESSION_REPORTS__;
+      var client = getSchedSupabaseClient();
+      if(!client){
+        window.__PORTAL_LEAD_SESSION_REPORTS__ = [];
+        return [];
+      }
+      try{
+        var since = new Date();
+        since.setDate(since.getDate() - 120);
+        var res = await client
+          .from('lead_session_reports')
+          .select('*')
+          .gte('session_date', since.toISOString().slice(0, 10))
+          .order('session_date', { ascending: false })
+          .limit(500);
+        window.__PORTAL_LEAD_SESSION_REPORTS__ = res.error ? [] : (res.data || []);
+      }catch(_e){
+        window.__PORTAL_LEAD_SESSION_REPORTS__ = [];
+      }
+      return window.__PORTAL_LEAD_SESSION_REPORTS__;
     }
     async function adminFetchAbsentQuickMarksForHub(){
       if(window.__PORTAL_ABSENT_QUICK_MARKS__) return window.__PORTAL_ABSENT_QUICK_MARKS__;
@@ -17769,6 +17792,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         fetchCancellations: adminFetchCancellationReportsForHub,
         fetchAbsents: adminFetchAbsentQuickMarksForHub,
         fetchScheduleOverrides: adminFetchScheduleOverridesForHub,
+        fetchLeadReports: adminFetchLeadSessionReportsForHub,
         getFeedbackDayStats: function(iso){
           if(typeof window.portalBookingFeedbackStatsForIso === 'function'){
             return window.portalBookingFeedbackStatsForIso(iso);

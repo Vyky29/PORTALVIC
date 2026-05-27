@@ -311,15 +311,21 @@
         .limit(400);
       if (!inc.error) out.incident_reports = inc.data || [];
     } catch (e3) {}
-    try {
-      var lead = await client
-        .from('lead_session_reports')
-        .select('*')
-        .gte('created_at', sinceIso)
-        .order('created_at', { ascending: false })
-        .limit(400);
-      if (!lead.error) out.lead_session_reports = lead.data || [];
-    } catch (e4) {}
+    if (cfg.fetchLeadReports) {
+      try {
+        out.lead_session_reports = await cfg.fetchLeadReports();
+      } catch (eLeadCfg) {}
+    } else {
+      try {
+        var lead = await client
+          .from('lead_session_reports')
+          .select('*')
+          .gte('session_date', sinceIso)
+          .order('session_date', { ascending: false })
+          .limit(500);
+        if (!lead.error) out.lead_session_reports = lead.data || [];
+      } catch (e4) {}
+    }
     try {
       var ven = await client
         .from('venue_reviews')
@@ -502,7 +508,7 @@
           .map(function (r, i) {
             var who = esc(cellText(r.submitted_by_name));
             var svc = esc(cellText(r.service));
-            var act = esc(truncate(r.activity || r.session_activity || '—', 28));
+            var act = esc(truncate(r.activity || r.session_activity || r.engagement || '—', 28));
             var brief = esc(truncate(r.brief_description || r.description || '—', 120));
             return (
               '<tr class="portal-forms-data-row" data-portal-forms-kind="lead" data-portal-forms-idx="' +
@@ -660,6 +666,7 @@
                 trackingHub.setPayload(payload);
                 if (typeof trackingHub.renderPanels === 'function') trackingHub.renderPanels();
               }
+              renderLeadVenueTables();
             } catch (bgErr) {
               console.debug('[PortalDayOps] background enrich', bgErr);
             }
@@ -698,6 +705,20 @@
           return fh;
         }
         if (tabId === 'lead' || tabId === 'venue') {
+          if (loadInFlight) {
+            try {
+              await loadInFlight;
+            } catch (eWait) {
+              console.debug('[PortalDayOps] lead tab wait payload', eWait);
+            }
+          }
+          if (tabId === 'lead' && cfg.fetchLeadReports) {
+            try {
+              payload.lead_session_reports = (await cfg.fetchLeadReports()) || [];
+            } catch (eLeadTab) {
+              console.debug('[PortalDayOps] fetchLeadReports', eLeadTab);
+            }
+          }
           renderLeadVenueTables();
           return null;
         }
