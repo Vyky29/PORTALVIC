@@ -7750,7 +7750,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!iso || !cid) return 0;
       var src = window.STAFF_DASHBOARD_SOURCE;
       if(!src || !Array.isArray(src.rows)) return 0;
-      var wd = weekdayLongFromIso(iso);
+      var wd = portalWeekdayLongFromIsoDate(iso);
       var n = 0;
       for(var ri = 0; ri < src.rows.length; ri++){
         var r = src.rows[ri];
@@ -7766,7 +7766,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!iso || !cid) return false;
       var src = window.STAFF_DASHBOARD_SOURCE;
       if(!src || !Array.isArray(src.rows)) return false;
-      var wd = weekdayLongFromIso(iso);
+      var wd = portalWeekdayLongFromIsoDate(iso);
       var lead = '';
       var n = 0;
       for(var ri = 0; ri < src.rows.length; ri++){
