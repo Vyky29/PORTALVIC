@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260526-hub-tile-text" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260521-embed" />
   <script src="/portal/hr-contract-embed-html.js?v=20260521-embed"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260527-load-fix"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260527-perf-fix"></script>
   <script src="/portal/admin-portal-documents.js?v=20260521-supabase-docs"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
@@ -7602,6 +7602,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return normDayLabel(s.day) === normDayLabel(weekdayLong);
     }
     function slotsForSelectedDate(iso){
+      var want = String(iso || '').trim().substring(0, 10);
+      if(!want) return [];
+      if(!slotsForSelectedDate._byIso) slotsForSelectedDate._byIso = {};
+      if(slotsForSelectedDate._byIso[want]) return slotsForSelectedDate._byIso[want];
       var pack = adminMergeSpreadsheetSessions();
       var wd = portalWeekdayLongFromIsoDate(iso);
       sched.slotsById = {};
@@ -7627,7 +7631,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       out.sort(function(a,b){
         return (a.anchorStart||'').localeCompare(b.anchorStart||'') || (a.venue||'').localeCompare(b.venue||'') || (a.staffRosterId||'').localeCompare(b.staffRosterId||'');
       });
+      slotsForSelectedDate._byIso[want] = out;
       return out;
+    }
+    function portalInvalidateAdminSlotsCache(){
+      slotsForSelectedDate._byIso = null;
     }
     /** Parse YYYY-MM-DD to local noon Date (stable weekday vs UTC shift). */
     function bookingParseIsoLocal(iso){
@@ -7737,6 +7745,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
      */
     function bookingFeedbackStatsForIsoCalendarDay(iso){
       var want = String(iso || '').trim().substring(0, 10);
+      if(!want) return { required: 0, completed: 0, pending: 0, pct: 0 };
+      if(!bookingFeedbackStatsForIsoCalendarDay._cache) bookingFeedbackStatsForIsoCalendarDay._cache = {};
+      if(bookingFeedbackStatsForIsoCalendarDay._cache[want]) return bookingFeedbackStatsForIsoCalendarDay._cache[want];
       var statusDay = adminSessionFeedbackStatusByDate()[want];
       if(statusDay && statusDay.length){
         var required = statusDay.length;
@@ -7745,7 +7756,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(adminSessionFeedbackStatusCountsDone(statusDay[si])) completed++;
         }
         var pctS = required > 0 ? Math.min(100, Math.round((completed / required) * 1000) / 10) : (completed > 0 ? 100 : 0);
-        return { required: required, completed: completed, pending: Math.max(0, required - completed), pct: pctS };
+        var outS = { required: required, completed: completed, pending: Math.max(0, required - completed), pct: pctS };
+        bookingFeedbackStatsForIsoCalendarDay._cache[want] = outS;
+        return outS;
       }
       var required = 0;
       var slots = [];
@@ -7770,17 +7783,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var pct = 0;
       if(required > 0) pct = Math.min(100, Math.round((completed / required) * 1000) / 10);
       else if(completed > 0) pct = 100;
-      return {
+      var out = {
         required: required,
         completed: completed,
         pending: Math.max(0, required - completed),
         pct: pct
       };
+      bookingFeedbackStatsForIsoCalendarDay._cache[want] = out;
+      return out;
     }
     /** Portal 2026 AdminSessionsHub week strip — same counts as booking capacity strip. */
     window.portalBookingFeedbackStatsForIso = bookingFeedbackStatsForIsoCalendarDay;
     window.portalInvalidateAdminFeedbackStatusCache = function(){
       adminSessionFeedbackStatusByDate._m = null;
+      bookingFeedbackStatsForIsoCalendarDay._cache = null;
+      portalInvalidateAdminSlotsCache();
     };
     /** ISO YYYY-MM-DD → DD/MM/YYYY for week capacity day cells. */
     function bookingFormatDdMmYyyy(iso){
@@ -16904,12 +16921,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           return typeof window.SUPABASE_ANON_KEY === 'string' ? window.SUPABASE_ANON_KEY : '';
         },
         buildFeedbackFromPortal: function(){
-          return adminSessionFeedbackPortalRows()
-            .filter(function(r){
-              var iso = bookingFeedbackDateIsoForRow(r);
-              return iso && adminPortalFeedbackRosterAlignedOnIso(iso, r);
-            })
-            .map(adminMapPortalRowToHubFeedback);
+          return adminSessionFeedbackPortalRows().map(adminMapPortalRowToHubFeedback);
         },
         buildVenueFromPortal: function(){
           return adminVenueReviewPortalRows().map(adminMapPortalRowToHubVenueReview);

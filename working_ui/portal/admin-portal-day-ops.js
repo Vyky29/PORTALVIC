@@ -417,6 +417,17 @@
     }
     if (feedbackHub && feedbackHub.root === root) {
       feedbackHub.setPayload(payload);
+      if (typeof feedbackHub.render === 'function') {
+        if (typeof requestAnimationFrame === 'function') {
+          requestAnimationFrame(function () {
+            feedbackHub.render();
+          });
+        } else {
+          setTimeout(function () {
+            feedbackHub.render();
+          }, 0);
+        }
+      }
       return feedbackHub;
     }
     feedbackHub = await global.AdminSessionsHub.mount(root, hubMountOpts({ mode: 'feedback' }));
@@ -581,11 +592,42 @@
             );
           }
         }
+        if (skipEdge) {
+          var quick = emptyPayload();
+          if (cfg.buildFeedbackFromPortal) {
+            quick.session_feedback = cfg.buildFeedbackFromPortal() || [];
+            quick.session_feedback_total = quick.session_feedback.length;
+            quick.session_feedback_loaded = quick.session_feedback.length;
+          }
+          if (cfg.buildVenueFromPortal) {
+            quick.venue_reviews = cfg.buildVenueFromPortal() || [];
+          }
+          applyPayload(quick);
+          setStatus('');
+          void (async function () {
+            try {
+              var fb = await fetchFallbackSupabase();
+              applyPayload(fb);
+              mergePortalFeedbackIntoPayload();
+              mergePortalVenueIntoPayload();
+              if (feedbackHub && typeof feedbackHub.setPayload === 'function') {
+                feedbackHub.setPayload(payload);
+                if (typeof feedbackHub.render === 'function') feedbackHub.render();
+              }
+              if (trackingHub && typeof trackingHub.setPayload === 'function') {
+                trackingHub.setPayload(payload);
+                if (typeof trackingHub.renderPanels === 'function') trackingHub.renderPanels();
+              }
+            } catch (bgErr) {
+              console.debug('[PortalDayOps] background enrich', bgErr);
+            }
+          })();
+          return payload;
+        }
         var fb = await fetchFallbackSupabase();
         applyPayload(fb);
         mergePortalFeedbackIntoPayload();
         mergePortalVenueIntoPayload();
-        if (skipEdge) setStatus('');
         return payload;
       })()
         .finally(function () {

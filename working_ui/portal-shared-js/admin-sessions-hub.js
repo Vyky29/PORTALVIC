@@ -5030,7 +5030,22 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       if (hub.mode === "feedback") hub.initFeedbackDateRange();
     }
     if (hub.mode === "feedback") {
-      hub.render();
+      hub.root.innerHTML =
+        '<p class="muted" style="margin:0 0 12px;font-size:13px">Loading session feedback…</p>';
+      var paintFeedback = function () {
+        try {
+          hub.render();
+        } catch (renderErr) {
+          console.error("[AdminSessionsHub] feedback render", renderErr);
+          hub.root.innerHTML =
+            '<p class="submission-state is-error" style="margin:0"><strong>Could not render feedback.</strong> Reload the page.</p>';
+        }
+      };
+      if (typeof requestAnimationFrame === "function") {
+        requestAnimationFrame(paintFeedback);
+      } else {
+        setTimeout(paintFeedback, 0);
+      }
       hub.loadBundle().catch(function () {});
       return hub;
     }
