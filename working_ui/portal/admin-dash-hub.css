@@ -240,6 +240,26 @@
   .dash-hub__grid--5{grid-template-columns:repeat(5,minmax(0,1fr))}
   .dash-hub__grid--6{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
+/* Operations admin — Participants panel: 4 tiles, then 2 wide */
+.dash-hub--ops-admin .dash-hub__participants-grids{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  min-width:0;
+}
+.dash-hub--ops-admin .dash-hub__grid--participants-row2{
+  margin-top:0;
+}
+@media (min-width:900px){
+  .dash-hub--ops-admin .dash-hub__grid--participants-row2 .dash-hub__tile--span-2{
+    grid-column:span 2;
+  }
+}
+@media (max-width:899px){
+  .dash-hub--ops-admin .dash-hub__grid--participants-row2 .dash-hub__tile--span-2{
+    grid-column:span 1;
+  }
+}
 @media (min-width:1200px){
   .dash-hub__grid--6{grid-template-columns:repeat(6,minmax(0,1fr))}
 }
