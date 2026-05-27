@@ -99,6 +99,7 @@ export const PORTAL_LEAD_SUMMER_TERM_START = "2026-04-13";
 
 /** Club closed (no sessions) — show on lead week picker in red. */
 const PORTAL_LEAD_CLOSED_RANGES = [{ from: "2026-05-23", to: "2026-05-31" }];
+const PORTAL_LEAD_CLOSED_SINGLE_DATES = ["2026-05-04"];
 
 export function portalLeadOnOrAfterSummerTerm(iso) {
   const d = String(iso || "")
@@ -126,6 +127,17 @@ export function portalLeadDayIsClubClosed(iso) {
   for (let i = 0; i < PORTAL_LEAD_CLOSED_RANGES.length; i++) {
     const r = PORTAL_LEAD_CLOSED_RANGES[i];
     if (d >= r.from && d <= r.to) return true;
+  }
+  for (let j = 0; j < PORTAL_LEAD_CLOSED_SINGLE_DATES.length; j++) {
+    if (d === PORTAL_LEAD_CLOSED_SINGLE_DATES[j]) return true;
+  }
+  const t =
+    typeof globalThis !== "undefined" && globalThis.PORTAL_TERM_FROM_TIMETABLE
+      ? globalThis.PORTAL_TERM_FROM_TIMETABLE
+      : null;
+  const singles = t && Array.isArray(t.termClosedDates) ? t.termClosedDates : [];
+  for (let k = 0; k < singles.length; k++) {
+    if (String(singles[k] || "").slice(0, 10) === d) return true;
   }
   return false;
 }

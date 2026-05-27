@@ -4,12 +4,12 @@
   <!-- Admin portal · Vercel static deploy: working_ui/admin_dashboard.html + portal/ assets -->
   <meta charset="UTF-8" />
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
-  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260520-portal2026" />
+  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260527-closed-days" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260520-portal2026" />
   <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260526-hub-tile-text" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260521-embed" />
   <script src="/portal/hr-contract-embed-html.js?v=20260521-embed"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260527-perf-fix"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260527-closed-days"></script>
   <script src="/portal/admin-portal-documents.js?v=20260521-supabase-docs"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
@@ -7748,6 +7748,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!want) return { required: 0, completed: 0, pending: 0, pct: 0 };
       if(!bookingFeedbackStatsForIsoCalendarDay._cache) bookingFeedbackStatsForIsoCalendarDay._cache = {};
       if(bookingFeedbackStatsForIsoCalendarDay._cache[want]) return bookingFeedbackStatsForIsoCalendarDay._cache[want];
+      if(portalAdminDayIsClubClosed(want)){
+        var closedOut = { required: 0, completed: 0, pending: 0, pct: 0 };
+        bookingFeedbackStatsForIsoCalendarDay._cache[want] = closedOut;
+        return closedOut;
+      }
       var statusDay = adminSessionFeedbackStatusByDate()[want];
       if(statusDay && statusDay.length){
         var required = statusDay.length;
@@ -16843,7 +16848,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
     var ADMIN_SESSIONS_HUB_SRC =
-      '/portal-shared-js/admin-sessions-hub.js?v=20260527-ma-apr-may';
+      '/portal/admin-sessions-hub.js?v=20260527-closed-days';
+
+    /** Club closed — half-term 23–31 May 2026, bank holiday 4 May (see PORTAL_TERM_FROM_TIMETABLE). */
+    function portalAdminDayIsClubClosed(iso){
+      var d = String(iso || '').trim().substring(0, 10);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(d)) return false;
+      var t = window.PORTAL_TERM_FROM_TIMETABLE || {};
+      var from = String(t.termBreakFrom || '2026-05-23').trim().substring(0, 10);
+      var to = String(t.termBreakTo || '2026-05-31').trim().substring(0, 10);
+      if(from && to && d >= from && d <= to) return true;
+      var singles = Array.isArray(t.termClosedDates) ? t.termClosedDates : ['2026-05-04'];
+      for(var i = 0; i < singles.length; i++){
+        if(String(singles[i] || '').trim().substring(0, 10) === d) return true;
+      }
+      return false;
+    }
 
     function sessionsHubRefreshActiveTab(){
       var h = sessionsHubEnsureState();
@@ -16912,6 +16932,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       window.PortalDayOps.configure({
         esc: esc,
         skipAdminFormsEdge: true,
+        isClubClosedDay: portalAdminDayIsClubClosed,
+        showFullWeekDayStrip: true,
         getClient: getSchedSupabaseClient,
         getSupabaseUrl: function(){
           var u = typeof window.SUPABASE_URL === 'string' ? window.SUPABASE_URL.trim() : '';

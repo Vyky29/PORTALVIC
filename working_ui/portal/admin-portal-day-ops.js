@@ -23,7 +23,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var HUB_SRC = '/portal-shared-js/admin-sessions-hub.js?v=20260527-ma-apr-may';
+  var HUB_SRC = '/portal/admin-sessions-hub.js?v=20260527-closed-days';
   var EDGE_FETCH_MS = 12000;
 
   function fetchWithTimeout(url, options, ms) {
@@ -346,7 +346,9 @@
       mode: extra.mode || 'tracking',
       externalTabs: true,
       payload: payload,
-      getFeedbackDayStats: cfg.getFeedbackDayStats
+      getFeedbackDayStats: cfg.getFeedbackDayStats,
+      isClubClosedDay: cfg.isClubClosedDay,
+      showFullWeekDayStrip: cfg.showFullWeekDayStrip
     };
   }
 
