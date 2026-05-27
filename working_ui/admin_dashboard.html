@@ -7642,7 +7642,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         clientSlug: String(s.clientId||'').toLowerCase(),
         clientDisplay: clientName,
         rosterService: String(s.rosterService || s.activity || '').trim(),
-        programme: portalDisplayProgrammeFromSheet(String(s.rosterService || s.activity || '')),
+        programme: schedEffectiveProgrammeForSlot({
+          rosterService: String(s.rosterService || s.activity || ''),
+          rosterArea: String(s.rosterArea || ''),
+          clientSlug: String(s.clientId || '').toLowerCase()
+        }),
         status: String(s.status||''),
         rosterSheetLabel: schedRosterSheetLabelFromSession(s),
         notesPreview: schedNotesPreviewOneLine(nid, notesById),
@@ -14307,17 +14311,67 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         thead.innerHTML = SCHED_BASE_TABLE_HEAD_HTML;
       }
     }
-    /** Service column: short roster label (e.g. Day Centre), not client medical notes. */
-    function schedServiceLabelForSlot(slot){
-      var raw = String(slot && slot.rosterService || '').trim();
-      if(raw){
-        if(raw.length <= 56 && !/\d+\.\s*(age|medical)\b/i.test(raw) && raw.indexOf(' · ') < 0){
-          return raw.replace(/\bcentre\b/gi, 'Centre');
-        }
+    function schedIsHubRoomArea(area){
+      return /^hub\s*room$/i.test(String(area || '').trim());
+    }
+    /** Day Centre sheet rows in pool/gym areas are the booked programme (e.g. ACAT → aquatic in Both Pools). */
+    function schedEffectiveProgrammeForSlot(slot){
+      var rawSvc = String(slot && slot.rosterService || '').trim();
+      var base = portalDisplayProgrammeFromSheet(rawSvc);
+      var pl = String(base || '').toLowerCase();
+      var area = String(slot && slot.rosterArea || '').trim();
+      if(pl.indexOf('day centre') >= 0 && area && !schedIsHubRoomArea(area)){
+        if(/pool/i.test(area)) return 'Aquatic Activity';
+        if(/\bgym\b/i.test(area)) return 'Physical Activity';
       }
-      var prog = String(slot && slot.programme || '').trim();
-      if(prog === 'Day centre') return 'Day Centre';
-      return prog || '—';
+      return base || 'Session';
+    }
+    function schedSlotDurationMinutes(slot){
+      var a = adminServiceMinutesFromAnchor(slot && slot.anchorStart);
+      var b = adminServiceMinutesFromAnchor(slot && slot.anchorEnd);
+      if(Number.isFinite(a) && Number.isFinite(b) && b > a) return b - a;
+      var parsed = adminRosterParseTimeSlot(slot && slot.anchorTimeLabel, slot && slot.sheetDay);
+      var pa = adminServiceMinutesFromAnchor(parsed.start + ':00');
+      var pb = adminServiceMinutesFromAnchor(parsed.end + ':00');
+      if(Number.isFinite(pa) && Number.isFinite(pb) && pb > pa) return pb - pa;
+      return 0;
+    }
+    /** Minutes prefix for Service column (Day Centre has no prefix — times vary per client). */
+    function schedServiceDurationPrefixMinutes(slot, programme){
+      var prog = String(programme || '').trim();
+      if(prog.toLowerCase().indexOf('day centre') >= 0) return 0;
+      var k = adminServiceProgrammeNormKey(prog);
+      if(k === 'multi' || k === 'bespoke') return 90;
+      var wall = schedSlotDurationMinutes(slot);
+      if(k === 'aquatic'){
+        if(wall >= 75) return 90;
+        if(wall >= 45) return 60;
+        return 30;
+      }
+      if(wall >= 75) return 90;
+      if(wall >= 45) return 60;
+      return wall > 0 ? 30 : 60;
+    }
+    function schedServiceDisplayTitle(programme){
+      var p = String(programme || '').trim();
+      if(p.toLowerCase() === 'day centre') return 'Day Centre';
+      return p || 'Session';
+    }
+    /** Service column: duration + programme (e.g. 60' Aquatic Activity); Day Centre without duration prefix. */
+    function schedServiceLabelForSlot(slot){
+      var prog = schedEffectiveProgrammeForSlot(slot);
+      var title = schedServiceDisplayTitle(prog);
+      var mins = schedServiceDurationPrefixMinutes(slot, prog);
+      return mins > 0 ? (String(mins) + "' " + title) : title;
+    }
+    function schedNotesAreaLabel(slot){
+      var area = String(slot && slot.rosterArea || '').trim();
+      if(!area) return '';
+      if(/^pools$/i.test(area) && adminServiceProgrammeNormKey(schedEffectiveProgrammeForSlot(slot)) === 'bespoke'){
+        return 'Hub Room';
+      }
+      if(/^hub\s*room$/i.test(area)) return 'Hub Room';
+      return area;
     }
     function schedNamePillToneClass(tone){
       return tone === 'out' ? 'sched-pax-pill--out' : (tone === 'in' ? 'sched-pax-pill--in' : 'sched-pax-pill--booked');
@@ -14406,7 +14460,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
         var staffKey = String(slot.staffRosterId || '').trim().toLowerCase();
         var serviceCell = esc(schedServiceLabelForSlot(slot));
-        var notesRaw = String(slot.rosterArea || '').trim();
+        var notesRaw = schedNotesAreaLabel(slot);
         var notesCell = notesRaw
           ? '<span class="sched-notes-cell">'+esc(notesRaw)+'</span>'
           : '<span class="muted">—</span>';
