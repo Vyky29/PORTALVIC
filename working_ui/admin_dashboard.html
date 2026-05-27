@@ -13442,6 +13442,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(coverSlug){
         covering_staff_id = normalizeSchedAnchorStaffId(coverSlug);
         payload.covering_staff_id = covering_staff_id;
+        var coverList = schedBuildInstructorPickList();
+        var coverName = '';
+        var ci;
+        for(ci = 0; ci < coverList.length; ci++){
+          if(coverList[ci].slug === covering_staff_id || coverList[ci].slug === coverSlug){
+            coverName = coverList[ci].display;
+            break;
+          }
+        }
+        if(!coverName) coverName = coverTyped;
+        if(coverName) payload.covering_staff_name = coverName;
       }
       var row = {
         session_date: slot.sessionDate,
@@ -14308,13 +14319,55 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(prog === 'Day centre') return 'Day Centre';
       return prog || '—';
     }
+    function schedNamePillToneClass(tone){
+      return tone === 'out' ? 'sched-pax-pill--out' : (tone === 'in' ? 'sched-pax-pill--in' : 'sched-pax-pill--booked');
+    }
+    function schedStaffDisplayName(slug, hint){
+      var s = normalizeSchedAnchorStaffId(slug) || String(slug || '').trim().toLowerCase();
+      if(!s) return String(hint || '').trim() || '—';
+      var prof = portalStaffProfileByRosterId(s);
+      var n = String(prof.staffName || '').trim();
+      if(n) return n;
+      return String(hint || '').trim() || s;
+    }
     function schedParticipantPillHtml(label, clientId, tone){
       var lab = esc(String(label || '').trim() || '—');
-      var toneCls = tone === 'out' ? 'sched-pax-pill--out' : (tone === 'in' ? 'sched-pax-pill--in' : 'sched-pax-pill--booked');
+      var toneCls = schedNamePillToneClass(tone);
       if(clientId){
         return '<button type="button" class="sched-pax-pill '+toneCls+'" data-client="'+esc(clientId)+'">'+lab+'</button>';
       }
       return '<span class="sched-pax-pill '+toneCls+'">'+lab+'</span>';
+    }
+    function schedStaffPillHtml(label, rosterKey, schedIso, tone){
+      var lab = esc(String(label || '').trim() || '—');
+      var toneCls = schedNamePillToneClass(tone);
+      var key = normalizeSchedAnchorStaffId(rosterKey) || String(rosterKey || '').trim().toLowerCase();
+      if(key){
+        var disp = esc(String(label || '').trim() || key);
+        var attrs = 'data-staff-roster="'+esc(key)+'" data-staff-session-iso="'+esc(schedIso)+'" data-staff-label="'+disp+'"';
+        var drawerId = resolveAdminStaffDrawerId(key);
+        if(drawerId) attrs += ' data-staff="'+esc(drawerId)+'"';
+        return '<button type="button" class="sched-pax-pill '+toneCls+'" '+attrs+'>'+lab+'</button>';
+      }
+      return '<span class="sched-pax-pill '+toneCls+'">'+lab+'</span>';
+    }
+    function schedInstructorCellHtml(slot, ov, schedIso){
+      if(ov && String(ov.override_type || '').trim() === 'instructor_reassign'){
+        var coverSlug = normalizeSchedAnchorStaffId(ov.payload && ov.payload.covering_staff_id) ||
+          String(ov.payload && ov.payload.covering_staff_id || '').trim().toLowerCase();
+        var coverName = String(ov.payload && (ov.payload.covering_staff_name || ov.payload.to_staff_name) || '').trim();
+        var origLab = String(slot.staffName || '').trim() || schedStaffDisplayName(slot.staffRosterId, slot.staffRosterId);
+        var replLab = coverName || schedStaffDisplayName(coverSlug, coverSlug);
+        return (
+          '<div class="sched-pax-pill-row">' +
+          schedStaffPillHtml(origLab, slot.staffRosterId, schedIso, 'out') +
+          '<span class="sched-pax-pill-sep">/</span>' +
+          schedStaffPillHtml(replLab, coverSlug, schedIso, 'in') +
+          '</div>'
+        );
+      }
+      var lab = String(slot.staffName || '').trim() || schedStaffDisplayName(slot.staffRosterId, '—');
+      return schedStaffPillHtml(lab, slot.staffRosterId, schedIso, 'booked');
     }
     function schedParticipantCellHtml(slot, ov){
       if(ov && String(ov.override_type || '').trim() === 'client_replace_in_slot'){
@@ -14344,11 +14397,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           : '<span class="muted" style="font-size:12px;font-weight:600;letter-spacing:.03em">NONE</span>';
         var rosterCell = schedRosterCellHtml(slot, ov);
         var clientCellHtml = schedParticipantCellHtml(slot, ov);
-        var staffKeyForBtn = String(slot.staffRosterId || '').trim().toLowerCase();
-        var staffDispBtn = String(slot.staffName || '').trim() || staffKeyForBtn || '—';
-        var staffCell = staffKeyForBtn
-          ? '<button type="button" class="btn btn--ghost btn--sm" data-staff-roster="'+esc(staffKeyForBtn)+'" data-staff-session-iso="'+esc(schedIso)+'" data-staff-label="'+esc(staffDispBtn)+'" style="max-width:100%;text-align:left;overflow-wrap:break-word">'+esc(slot.staffName||staffKeyForBtn)+'</button>'
-          : esc(slot.staffName||'');
+        var staffCell = schedInstructorCellHtml(slot, ov, schedIso);
         var statusCell = rosterCell;
         var paxSlug = String(slot.clientSlug || '').trim().toLowerCase();
         var paxSlug2 = '';
@@ -14533,7 +14582,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             if(slotCh) openSchedSlotDrawer(slotCh);
             return;
           }
-          if(e.target && e.target.closest && e.target.closest('button[data-client],button[data-staff],button[data-staff-roster],button.sched-pax-pill,a[href]')) return;
+          if(e.target && e.target.closest && e.target.closest('button[data-client],button[data-staff],button[data-staff-roster],button.sched-pax-pill,a[href],.sched-pax-pill-row button')) return;
           var tr = e.target && e.target.closest ? e.target.closest('tr[data-sched-demo-id]') : null;
           if(!tr) return;
           var id = tr.getAttribute('data-sched-demo-id');
