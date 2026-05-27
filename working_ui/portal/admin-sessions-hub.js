@@ -3418,6 +3418,105 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     return out;
   };
 
+  AdminSessionsHub.prototype.feedbackRowWithDisplaySlot = function (fb, slot) {
+    if (!fb || fb._ashAwaitingSlot) return fb;
+    var row = Object.assign({}, fb);
+    row._ashDisplaySlot = slot;
+    return row;
+  };
+
+  /** Lead MA: one table row per feedback unit (matches 8/8 counter); same fb may show twice for two halves. */
+  AdminSessionsHub.prototype.feedbackMixRowsByUnitForDay = function (day) {
+    var hub = this;
+    day = clean(day || hub.selectedDay);
+    var submitted = hub.feedbackLogRowsForDay(day);
+    var units = hub.getFeedbackUnitsForDate(day);
+    var out = [];
+    var usedSubmitted = {};
+
+    function scopedSlots(unit) {
+      return unit.slots.filter(function (s) {
+        if (shouldOmitOverviewSlot(hub, s)) return false;
+        if (hub.opts.slotScopeFilter && !hub.opts.slotScopeFilter(s)) return false;
+        return true;
+      });
+    }
+
+    function hitsForUnit(unit) {
+      var slots = scopedSlots(unit);
+      if (!slots.length) return [];
+      var hits = [];
+      var seenFb = {};
+      var si;
+      var fj;
+      for (si = 0; si < slots.length; si++) {
+        for (fj = 0; fj < submitted.length; fj++) {
+          var fb = submitted[fj];
+          if (!feedbackFitsSlot(fb, slots[si])) continue;
+          var k = hub.fbRowKey(fb) + "|" + (unit.key || feedbackUnitKey(slots[si]));
+          if (seenFb[k]) continue;
+          seenFb[k] = true;
+          hits.push({ fb: fb, slot: slots[si] });
+        }
+      }
+      if (!hits.length && hub.feedbackUnitComplete(unit)) {
+        for (si = 0; si < slots.length; si++) {
+          var fbMerge = hub.findFeedbackForSlot(slots[si]);
+          if (!fbMerge) continue;
+          var k2 = hub.fbRowKey(fbMerge) + "|" + (unit.key || feedbackUnitKey(slots[si]));
+          if (seenFb[k2]) continue;
+          seenFb[k2] = true;
+          hits.push({ fb: fbMerge, slot: slots[si] });
+        }
+      }
+      return hits;
+    }
+
+    for (var u = 0; u < units.length; u++) {
+      var unit = units[u];
+      var slots = scopedSlots(unit);
+      if (!slots.length) continue;
+      var rep = slots[0];
+      if (hub.feedbackUnitAbsent(unit)) {
+        var afb = hub.findAbsentFeedbackForSlot(rep);
+        if (!afb) {
+          for (var ai = 0; ai < submitted.length; ai++) {
+            if (
+              isAbsentFeedbackRow(submitted[ai]) &&
+              canonicalClientSlug(submitted[ai].client_name) === canonicalClientSlug(rep.client_name)
+            ) {
+              afb = submitted[ai];
+              break;
+            }
+          }
+        }
+        if (afb) {
+          out.push(hub.feedbackRowWithDisplaySlot(afb, rep));
+          usedSubmitted[hub.fbRowKey(afb)] = true;
+        }
+        continue;
+      }
+      var unitHits = hitsForUnit(unit);
+      if (unitHits.length) {
+        for (var hi = 0; hi < unitHits.length; hi++) {
+          out.push(hub.feedbackRowWithDisplaySlot(unitHits[hi].fb, unitHits[hi].slot));
+          usedSubmitted[hub.fbRowKey(unitHits[hi].fb)] = true;
+        }
+        continue;
+      }
+      if (!hub.feedbackUnitComplete(unit)) {
+        out.push({ _ashAwaitingSlot: true, slot: rep });
+      }
+    }
+
+    for (var j = 0; j < submitted.length; j++) {
+      if (!usedSubmitted[hub.fbRowKey(submitted[j])]) {
+        out.push(submitted[j]);
+      }
+    }
+    return out;
+  };
+
   /** Feedback tab: submitted rows plus roster slots still awaiting feedback (lead overview). */
   AdminSessionsHub.prototype.feedbackMixRowsForDay = function (day) {
     var hub = this;
@@ -3425,6 +3524,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var submitted = hub.feedbackLogRowsForDay(day);
     if (!hub.opts || !hub.opts.feedbackMixAwaitingSlots) return submitted;
     if (hubDayIsClubClosed(hub, day)) return submitted;
+    if (hub.opts.feedbackMixByUnit) return hub.feedbackMixRowsByUnitForDay(day);
 
     var used = {};
     function markUsed(fb) {
@@ -3599,9 +3699,18 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     }
 
     var absent = isAbsentFeedbackRow(fb);
+    var displaySlot = fb._ashDisplaySlot || null;
     var clientLabel =
-      resolveRosterClientName(canonicalClientSlug(fb.client_name)) || clean(fb.client_name);
-    var svcLabel = hub.feedbackDisplayService(fb) || "\u2014";
+      resolveRosterClientName(canonicalClientSlug(fb.client_name)) ||
+      clean((displaySlot && displaySlot.client_name) || fb.client_name);
+    var svcLabel =
+      (displaySlot && clean(displaySlot.service)) ||
+      hub.feedbackDisplayService(fb) ||
+      "\u2014";
+    var svcTimeSub =
+      displaySlot && displaySlot.time_slot
+        ? '<div class="ash-cell-sub">' + esc(displaySlot.time_slot) + "</div>"
+        : "";
     var ind = absent ? "N/A" : independenceLabel(fb);
     var pos = absent ? "N/A" : clean(fb.positive_feedback) || "\u2014";
     var rel = absent ? "N/A" : clean(fb.relevant_information) || "\u2014";
@@ -3629,7 +3738,8 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       "</td>" +
       "<td>" +
       esc(svcLabel) +
-      (sessionDay ? '<div class="ash-cell-sub">' + esc(sessionDay) + "</div>" : "") +
+      svcTimeSub +
+      (sessionDay && !svcTimeSub ? '<div class="ash-cell-sub">' + esc(sessionDay) + "</div>" : "") +
       "</td>" +
       "<td>" +
       (absent ? cellNa() : fb.engagement_rating != null ? esc(fb.engagement_rating) : "\u2014") +

@@ -17,7 +17,7 @@ import {
   portalLeadDayIsProgrammeWorkDay,
 } from "./portal_lead_session_scope.js";
 
-const HUB_SRC = "/portal/admin-sessions-hub.js?v=20260527-lead-overview11";
+const HUB_SRC = "/portal/admin-sessions-hub.js?v=20260527-lead-overview12";
 const LEAD_URL = "lead_dashboard.html";
 
 const state = { tab: "feedback", scopes: [] };
@@ -411,6 +411,7 @@ async function initHubs(scopes, leadKey) {
     absentMarkScopeFilter: filters.absentMarkScopeFilter,
     incidentScopeFilter: filters.incidentScopeFilter,
     feedbackMixAwaitingSlots: true,
+    feedbackMixByUnit: true,
     showFullWeekDayStrip: true,
     readOnlyOverview: true,
     isClubClosedDay: portalLeadDayIsClubClosed,
