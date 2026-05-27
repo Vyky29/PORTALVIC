@@ -731,3 +731,138 @@ body:has(#workspace .dash-hub--nav-index) .admin-main{
   }
 }
 .dash-hub-cat[data-hub-cat="g_indeed"] .dash-hub-cat__head{background:rgba(37,99,235,.1)}
+
+/* Day operations hub — fill viewport; stretch tile rows (no scroll on desktop) */
+body:has(#workspace .dash-hub--dayops) .admin-workspace{
+  display:flex;
+  flex-direction:column;
+  min-height:calc(100dvh - var(--topH, 56px));
+  overflow:hidden;
+  padding-bottom:10px;
+}
+body:has(#workspace .dash-hub--dayops) .admin-main{
+  min-height:0;
+}
+.dash-hub--dayops{
+  flex:1;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  padding-bottom:0;
+}
+.dash-hub--dayops > .dash-hub__intro-row{
+  flex-shrink:0;
+  margin-bottom:8px;
+}
+.dash-hub--dayops .dash-hub__stack{
+  flex:1;
+  min-height:0;
+  gap:clamp(8px,1vh,12px);
+}
+.dash-hub--dayops .dash-hub__panel{
+  display:flex;
+  flex-direction:column;
+  min-height:0;
+  padding:clamp(10px,1.2vh,14px) clamp(12px,1.4vw,16px);
+}
+.dash-hub--dayops .dash-hub__panel-head{
+  flex-shrink:0;
+  margin-bottom:clamp(6px,0.9vh,10px);
+  padding-bottom:clamp(6px,0.9vh,10px);
+}
+.dash-hub--dayops .dash-hub__panel--team{
+  flex:0 1 34%;
+  max-height:42%;
+}
+.dash-hub--dayops .dash-hub__panel--sessions{
+  flex:1 1 0;
+  min-height:0;
+}
+.dash-hub--dayops .dash-hub__panel--team > .dash-hub__grid,
+.dash-hub--dayops .dash-hub__sessions-grids{
+  flex:1;
+  min-height:0;
+}
+.dash-hub--dayops .dash-hub__sessions-grids{
+  display:flex;
+  flex-direction:column;
+  gap:clamp(8px,1vh,12px);
+}
+.dash-hub--dayops .dash-hub__panel--team > .dash-hub__grid,
+.dash-hub--dayops .dash-hub__sessions-grids > .dash-hub__grid{
+  display:grid;
+  align-content:stretch;
+  align-items:stretch;
+  grid-auto-rows:1fr;
+  gap:clamp(10px,1.2vh,14px);
+  min-height:0;
+}
+.dash-hub--dayops .dash-hub__sessions-grids > .dash-hub__grid{
+  flex:1;
+}
+.dash-hub--dayops .dash-hub__panel--team > .dash-hub__grid--5,
+.dash-hub--dayops .dash-hub__sessions-grids > .dash-hub__grid--5{
+  grid-template-columns:repeat(5,minmax(0,1fr));
+}
+.dash-hub--dayops .dash-hub__sessions-grids > .dash-hub__grid--6{
+  grid-template-columns:repeat(6,minmax(0,1fr));
+}
+.dash-hub--dayops .dash-hub__grid--sessions-row2{
+  margin-top:0;
+}
+.dash-hub.dash-hub--dayops:not(.dash-hub--nav-index) .dash-hub__tile{
+  min-height:0;
+  height:100%;
+  align-self:stretch;
+}
+.dash-hub.dash-hub--dayops:not(.dash-hub--nav-index) .dash-hub__tile-band{
+  min-height:clamp(54px,8vh,68px);
+  max-height:clamp(54px,8vh,68px);
+  padding:clamp(8px,1vh,10px);
+}
+.dash-hub.dash-hub--dayops:not(.dash-hub--nav-index) .dash-hub__tile-band .admin-nav-ico{
+  width:clamp(34px,4.5vh,40px);
+  height:clamp(34px,4.5vh,40px);
+}
+.dash-hub.dash-hub--dayops:not(.dash-hub--nav-index) .dash-hub__tile-band .admin-nav-ico svg{
+  width:clamp(24px,3.2vh,28px);
+  height:clamp(24px,3.2vh,28px);
+}
+.dash-hub.dash-hub--dayops:not(.dash-hub--nav-index) .dash-hub__tile-label{
+  margin-top:clamp(54px,8vh,68px);
+  padding:clamp(6px,0.8vh,8px) clamp(8px,1vw,10px) 0;
+  font-size:clamp(12.5px,1.45vh,14px);
+  line-height:1.3;
+}
+.dash-hub.dash-hub--dayops:not(.dash-hub--nav-index) .dash-hub__tile-desc{
+  padding:clamp(4px,0.6vh,6px) clamp(8px,1vw,10px) clamp(6px,0.8vh,8px);
+  font-size:clamp(12px,1.35vh,13.5px);
+  line-height:1.4;
+}
+@media (max-width:900px){
+  .dash-hub--dayops .dash-hub__sessions-grids > .dash-hub__grid--6{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+  .dash-hub--dayops .dash-hub__panel--team{
+    flex:0 1 auto;
+    max-height:none;
+  }
+}
+@media (max-width:640px){
+  body:has(#workspace .dash-hub--dayops) .admin-workspace{
+    overflow-y:auto;
+    min-height:0;
+  }
+  .dash-hub--dayops{
+    overflow:visible;
+  }
+  .dash-hub--dayops .dash-hub__panel--team > .dash-hub__grid,
+  .dash-hub--dayops .dash-hub__sessions-grids > .dash-hub__grid{
+    grid-auto-rows:auto;
+  }
+  .dash-hub--dayops .dash-hub__tile{
+    min-height:clamp(108px,24vw,132px);
+    height:auto;
+  }
+}
