@@ -685,6 +685,12 @@ export async function bootstrapDashboardSupabase(_opts) {
     } catch (presenceErr) {
       console.debug("[portal] live presence skipped:", presenceErr);
     }
+    try {
+      const { startPortalVisitTracker } = await import("./portal_visit_tracker.js");
+      await startPortalVisitTracker({ page, profile, session });
+    } catch (visitErr) {
+      console.debug("[portal] visit tracker skipped:", visitErr);
+    }
   } catch (e) {
     console.debug("[portal] Supabase dashboard bootstrap skipped:", e);
     if (typeof window !== "undefined" && portalDashboardRequiresStrictGate(page)) {

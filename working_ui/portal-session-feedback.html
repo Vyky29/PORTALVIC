@@ -9,6 +9,8 @@
 <title>Session Feedback (Staff)</title>
 <link rel="stylesheet" href="/portal-shared-js/portal_page_logo.css?v=20260519-form-context" />
 <link rel="stylesheet" href="/portal-shared-js/portal_page_logo_themes.css?v=20260519-form-context" />
+<link rel="stylesheet" href="/portal/portal_achievements.css?v=20260531-achievements" />
+<script src="/portal/portal_participant_achievements.js?v=20260531-achievements"></script>
 <style>
 :root{
   /* Corporate gold — warmer yellow field tints (logo pulse / #ffcc33 family) */
@@ -1038,6 +1040,8 @@ button{
         </div>
 
         </div>
+
+        <div id="portalFeedbackAchievementsPanel" class="portal-feedback-achievements" hidden></div>
 
         <div class="actions">
           <a href="staff_dashboard.html" class="btnBack" id="feedbackBackLink" aria-label="Back to dashboard">
@@ -2311,19 +2315,65 @@ button{
   async function insertFeedbackViaSupabase(supabase, row){
     let insertErr = null;
     let payload = row;
-    ({ error: insertErr } = await supabase.from("session_feedback").insert([payload]));
+    let data = null;
+    ({ data, error: insertErr } = await supabase.from("session_feedback").insert([payload]).select("id").maybeSingle());
     if(insertErr && String(insertErr.message || "").toLowerCase().includes("incident_notification")){
       payload = Object.assign({}, payload);
       delete payload.incident_notification_requested;
       delete payload.incident_notification_notes;
-      ({ error: insertErr } = await supabase.from("session_feedback").insert([payload]));
+      ({ data, error: insertErr } = await supabase.from("session_feedback").insert([payload]).select("id").maybeSingle());
     }
     if(insertErr && String(insertErr.message || "").toLowerCase().includes("late_session")){
       payload = Object.assign({}, payload);
       delete payload.late_session_feedback;
-      ({ error: insertErr } = await supabase.from("session_feedback").insert([payload]));
+      ({ data, error: insertErr } = await supabase.from("session_feedback").insert([payload]).select("id").maybeSingle());
     }
     if(insertErr) throw insertErr;
+    return data && data.id ? String(data.id) : null;
+  }
+
+  async function portalConfigureAchievementsModule(){
+    if(!window.PortalParticipantAchievements) return;
+    try{
+      const { getSupabaseClient } = await import(PORTAL_AUTH_MODULE);
+      window.PortalParticipantAchievements.configure({
+        esc: function(s){
+          return String(s == null ? "" : s)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+        },
+        getClient: function(){ return getSupabaseClient(); },
+      });
+    }catch(_){}
+  }
+
+  async function portalSyncFeedbackAchievementsPicker(){
+    const panel = document.getElementById("portalFeedbackAchievementsPanel");
+    if(!panel || !window.PortalParticipantAchievements) return;
+    await portalConfigureAchievementsModule();
+    const ctx = buildResolvedContext();
+    const cid = String(ctx.client_id || "").trim();
+    const sd = String(ctx.session_date || "").trim().slice(0, 10);
+    if(!cid || !/^\d{4}-\d{2}-\d{2}$/.test(sd)){
+      panel.hidden = true;
+      panel.innerHTML = "";
+      return;
+    }
+    await window.PortalParticipantAchievements.renderFeedbackAttachPanel(cid, sd);
+  }
+
+  async function portalFinalizeAchievementPhotosAfterSubmit(opts){
+    if(!window.PortalParticipantAchievements) return;
+    await portalConfigureAchievementsModule();
+    const ids = window.PortalParticipantAchievements.getSelectedFeedbackPhotoIds();
+    await window.PortalParticipantAchievements.finalizeOnFeedbackSubmit({
+      feedbackId: opts && opts.feedbackId ? opts.feedbackId : null,
+      clientId: opts && opts.clientId ? opts.clientId : null,
+      sessionDate: opts && opts.sessionDate ? opts.sessionDate : null,
+      attachedIds: ids,
+    });
   }
 
   async function submitFeedbackViaPinBridge(fullName, feedbackPayload){
@@ -2586,7 +2636,12 @@ button{
         }
         sessionKeyForSubmit = effectiveFeedbackSessionKey(ctx2, completedByName);
         row = buildFeedbackRow(submittedByUserId, feedbackRole, completedByName, sessionKeyForSubmit, ctx2, formFields);
-        await insertFeedbackViaSupabase(supabase, row);
+        var feedbackId = await insertFeedbackViaSupabase(supabase, row);
+        await portalFinalizeAchievementPhotosAfterSubmit({
+          feedbackId: feedbackId,
+          clientId: ctx2.client_id,
+          sessionDate: ctx2.session_date,
+        });
       } else if (portalOpenedFromStaffHub()) {
         const pinName = readPinIdentityName() || clean(instructorDisplayName);
         if(!pinName){
@@ -2613,6 +2668,11 @@ button{
           full_name: row.completed_by_name,
           username: pinName,
         };
+        await portalFinalizeAchievementPhotosAfterSubmit({
+          feedbackId: pinResult && pinResult.feedback_id ? String(pinResult.feedback_id) : null,
+          clientId: ctx2.client_id,
+          sessionDate: ctx2.session_date,
+        });
       } else {
         alert(
           "Open Session Feedback from the Staff or Lead hub after signing in with your PIN on this site (same browser), then try again.\n\n" +
@@ -2671,12 +2731,14 @@ button{
   }).then(function(){
     resolveInstructorFromUrl();
     applyFeedbackSessionContextUi();
+    return portalSyncFeedbackAchievementsPicker().catch(function(){});
   });
 
   resolveInstructorFromUrl();
   applyFeedbackSessionContextUi();
   refreshFeedbackParticipantAndServicePickers().catch(function(){}).then(function(){
     applyFeedbackSessionContextUi();
+    return portalSyncFeedbackAchievementsPicker().catch(function(){});
   });
 
   (function wireFeedbackReturnNav(){

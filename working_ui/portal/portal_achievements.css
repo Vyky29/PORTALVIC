@@ -1,0 +1,217 @@
+.portal-achievement-capture-guard {
+  position: fixed;
+  inset: 0;
+  z-index: 200000;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.05s ease;
+}
+
+.portal-achievement-capture-guard.is-active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.portal-achievements-sheet-body {
+  min-width: 0;
+}
+
+.portal-achievements-note {
+  margin: 0 0 12px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--muted, #64748b);
+  overflow-wrap: break-word;
+}
+
+.portal-achievements-status {
+  margin: 0 0 10px;
+  font-size: 13px;
+  min-width: 0;
+}
+
+.portal-achievements-status.is-error {
+  color: var(--danger, #dc2626);
+}
+
+.portal-achievements-step-title {
+  margin: 0 0 10px;
+  font-weight: 600;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+.portal-achievements-participant-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.portal-achievements-participant {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 12px 14px;
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 12px;
+  background: var(--surface, #fff);
+  cursor: pointer;
+  min-width: 0;
+}
+
+.portal-achievements-participant.is-selected {
+  border-color: var(--blue, #2d84b3);
+  box-shadow: 0 0 0 2px rgba(45, 132, 179, 0.2);
+}
+
+.portal-achievements-participant__name {
+  font-weight: 600;
+  overflow-wrap: break-word;
+}
+
+.portal-achievements-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.portal-achievements-camera {
+  margin: 12px 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+}
+
+.portal-achievements-camera video {
+  width: 100%;
+  max-height: 55vh;
+  display: block;
+  object-fit: contain;
+}
+
+.portal-achievements-camera-bar {
+  display: flex;
+  gap: 8px;
+  padding: 10px;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.85);
+}
+
+.portal-achievements-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+
+.portal-achievements-thumb {
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--line, #e2e8f0);
+  aspect-ratio: 4 / 3;
+  background: #0f172a;
+}
+
+.portal-achievements-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.portal-achievements-empty {
+  margin: 0;
+  padding: 12px 0;
+}
+
+.portal-achievements-feedback-label {
+  margin: 0 0 8px;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.portal-achievements-feedback-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.portal-achievements-feedback-pick {
+  display: block;
+  position: relative;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.portal-achievements-feedback-pick input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.portal-achievements-feedback-pick input:checked + .portal-achievements-feedback-thumb {
+  outline: 3px solid var(--blue, #2d84b3);
+  outline-offset: 2px;
+}
+
+.portal-achievements-feedback-thumb {
+  display: block;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #0f172a;
+}
+
+.portal-achievements-feedback-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+#menuSheet .menu-btn.menu-btn--work-achievements .menu-btn-icon {
+  background: rgba(236, 72, 153, 0.12);
+  color: #db2777;
+}
+
+.portal-admin-achievements-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.portal-admin-achievement-card {
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 12px;
+  background: var(--surface, #fff);
+  min-width: 0;
+}
+
+.portal-admin-achievement-card summary {
+  padding: 12px 14px;
+  cursor: pointer;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+.portal-admin-achievement-card__body {
+  padding: 0 14px 14px;
+  min-width: 0;
+}
+
+.portal-admin-achievement-card__body img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  display: block;
+}

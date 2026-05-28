@@ -6733,6 +6733,7 @@
     </div>
   </div>
 
+  <div id="portalAchievementsSheetMount"></div>
   <section class="sheet sheet--fullscreen sheet--mobile-frame menu-sheet--layout" id="menuSheet">
     <div class="sheet-head">
       <div class="sheet-handle"></div>
@@ -6773,6 +6774,10 @@
         <div class="menu-group">
           <div class="menu-group-title">Work</div>
           <div class="menu-grid">
+            <button type="button" class="menu-btn menu-btn--work-achievements" id="quickMenuParticipantAchievements">
+              <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+              <div class="menu-btn-copy"><strong>Participant achievements</strong><span class="menu-btn-sub">Session photos (in-app only)</span></div>
+            </button>
             <button type="button" class="menu-btn menu-btn--work-venue" id="quickMenuWorkVenue" data-portal-external-url="portal-venue-review.html">
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V10l8-4 8 4v12"/><path d="M9 22v-6h6v6"/><path d="M8 6h8"/><path d="M10 10h4"/></svg></div>
               <div class="menu-btn-copy"><strong>Venue Report</strong><span class="menu-btn-sub">Opening and closing checks</span></div>
@@ -7146,6 +7151,8 @@
   <script src="portal/clients_info_embed.js"></script>
   <script src="portal/staff_dashboard_spreadsheet_adapter.js"></script>
   <script src="portal/staff_roster_resolve.js"></script>
+  <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260531-achievements" />
+  <script src="/portal/portal_participant_achievements.js?v=20260531-achievements"></script>
   <script src="/portal/portal_guide_menu.js?v=20260523"></script>
   <script src="/portal/portal_dm_voice.js?v=20260531-dm-voice"></script>
   <script>
@@ -11007,6 +11014,40 @@
       const drop = Array.isArray(cfg.weekdays) ? cfg.weekdays.map(Number) : [];
       return drop.indexOf(wd) >= 0;
     }
+    function portalAchievementsListTodayParticipants(){
+      const staffId = String(window.STAFF_DASHBOARD_ID || '').trim().toLowerCase();
+      if(!staffId) return [];
+      const viewDay = String(typeof DEMO_VIEW_DAY !== 'undefined' ? DEMO_VIEW_DAY : '').trim();
+      const anchor = typeof getViewAnchorCalendarDate === 'function' ? getViewAnchorCalendarDate(viewDay) : new Date();
+      let sessionDateKey = typeof normaliseIsoDate === 'function' ? normaliseIsoDate(anchor) : '';
+      if(typeof portalStaffRosterMatchIsoForCalendar === 'function'){
+        sessionDateKey = portalStaffRosterMatchIsoForCalendar(sessionDateKey, viewDay, staffId) || sessionDateKey;
+      }
+      const model = (typeof sessionsModel !== 'undefined' && Array.isArray(sessionsModel)) ? sessionsModel : [];
+      const out = [];
+      const seen = Object.create(null);
+      model.forEach(function(s){
+        if(String(s.staffId || '').toLowerCase() !== staffId) return;
+        if(typeof portalSessionSpreadsheetRowMatchesCalendarDate === 'function'
+          && !portalSessionSpreadsheetRowMatchesCalendarDate(s, sessionDateKey, viewDay)) return;
+        if(typeof portalSpreadsheetSlotClosedLike === 'function' && portalSpreadsheetSlotClosedLike(s)
+          && typeof portalSessionHasSlotOpenOverride === 'function'
+          && !portalSessionHasSlotOpenOverride(s, sessionDateKey)) return;
+        const cid = String(s.clientId || '').trim().toLowerCase();
+        if(!cid || cid === 'closed' || seen[cid]) return;
+        seen[cid] = true;
+        const notes = (typeof clientNotesById !== 'undefined' && clientNotesById[cid]) ? clientNotesById[cid] : {};
+        const nm = String(notes.name || s.clientDisplay || s.clientName || cid).trim();
+        out.push({
+          clientId: cid,
+          clientName: nm,
+          portalSessionKey: sessionDateKey + '|' + String(s.start || '') + '|' + cid
+        });
+      });
+      return out;
+    }
+    try{ window.portalAchievementsListTodayParticipants = portalAchievementsListTodayParticipants; }catch(_){}
+
     /** Client sessions assigned to this staff on this calendar day. */
     function portalStaffClientSessionsOnCalendarDate(isoYmd, weekdayLong, staffId){
       const iso = normaliseIsoDate(isoYmd);
@@ -15968,6 +16009,11 @@
       if(id === 'safeguardingFeedbackPolicySheet' && typeof renderSafeguardingFeedbackPolicySheet === 'function'){
         renderSafeguardingFeedbackPolicySheet();
       }
+      if(id === 'achievementsSheet'){
+        if(window.PortalParticipantAchievements && typeof window.PortalParticipantAchievements.openSheet === 'function'){
+          window.PortalParticipantAchievements.openSheet();
+        }
+      }
       if(id === 'menuSheet'){
         if(typeof portalApplyQuickMenuEntryMode === 'function') portalApplyQuickMenuEntryMode();
         if(typeof portalSyncQuickMenuGuidePlacement === 'function') portalSyncQuickMenuGuidePlacement();
@@ -17808,6 +17854,61 @@
           }
         }
       } catch (_) {}
+    })();
+  </script>
+  <script>
+    (function portalAchievementsBootstrap(){
+      function mountSheet(){
+        var mount = document.getElementById('portalAchievementsSheetMount');
+        if(!mount || !window.PortalParticipantAchievements) return;
+        if(document.getElementById('achievementsSheet')) return;
+        mount.insertAdjacentHTML('beforeend', window.PortalParticipantAchievements.sheetHtml());
+        var closeBtn = document.getElementById('achievementsSheetClose');
+        if(closeBtn){
+          closeBtn.addEventListener('click', function(){
+            if(window.PortalParticipantAchievements && typeof window.PortalParticipantAchievements.stopCamera === 'function'){
+              window.PortalParticipantAchievements.stopCamera();
+            }
+            if(typeof closeSheet === 'function') closeSheet();
+          });
+        }
+        window.PortalParticipantAchievements.bindSheet();
+      }
+      function configure(){
+        if(!window.PortalParticipantAchievements) return;
+        window.PortalParticipantAchievements.configure({
+          esc: function(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); },
+          getClient: function(){ return window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client; },
+          getTodayParticipants: function(){
+            return typeof window.portalAchievementsListTodayParticipants === 'function'
+              ? window.portalAchievementsListTodayParticipants()
+              : [];
+          },
+          getWorkingDateIso: function(){
+            try{
+              var viewDay = String(typeof DEMO_VIEW_DAY !== 'undefined' ? DEMO_VIEW_DAY : '').trim();
+              var anchor = typeof getViewAnchorCalendarDate === 'function' ? getViewAnchorCalendarDate(viewDay) : new Date();
+              return typeof normaliseIsoDate === 'function' ? normaliseIsoDate(anchor) : new Date().toISOString().slice(0,10);
+            }catch(_){ return new Date().toISOString().slice(0,10); }
+          }
+        });
+      }
+      function bindQuickMenu(){
+        var btn = document.getElementById('quickMenuParticipantAchievements');
+        if(!btn || btn.getAttribute('data-achievements-bound') === '1') return;
+        btn.setAttribute('data-achievements-bound','1');
+        btn.addEventListener('click', function(){
+          mountSheet();
+          configure();
+          if(typeof openSheet === 'function') openSheet('achievementsSheet');
+        });
+      }
+      if(document.readyState === 'loading'){
+        document.addEventListener('DOMContentLoaded', function(){ mountSheet(); configure(); bindQuickMenu(); });
+      }else{
+        mountSheet(); configure(); bindQuickMenu();
+      }
+      window.addEventListener('portal:supabase-ready', function(){ configure(); });
     })();
   </script>
 </body>
