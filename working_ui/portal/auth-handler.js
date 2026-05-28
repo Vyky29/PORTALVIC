@@ -691,6 +691,12 @@ export async function bootstrapDashboardSupabase(_opts) {
     } catch (visitErr) {
       console.debug("[portal] visit tracker skipped:", visitErr);
     }
+    try {
+      const { startPortalLocationTracker } = await import("./portal_location_tracker.js");
+      await startPortalLocationTracker({ page, profile, session });
+    } catch (locErr) {
+      console.debug("[portal] location tracker skipped:", locErr);
+    }
   } catch (e) {
     console.debug("[portal] Supabase dashboard bootstrap skipped:", e);
     if (typeof window !== "undefined" && portalDashboardRequiresStrictGate(page)) {

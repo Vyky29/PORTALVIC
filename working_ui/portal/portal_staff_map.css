@@ -1,0 +1,52 @@
+.portal-staff-map-embed {
+  min-width: 0;
+  max-width: 56rem;
+}
+
+.portal-staff-map-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.portal-staff-map-status {
+  margin: 0 0 10px;
+  font-size: 13px;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+.portal-staff-map-canvas {
+  width: 100%;
+  height: min(52vh, 420px);
+  min-height: 280px;
+  border-radius: 12px;
+  border: 1px solid var(--line, #e2e8f0);
+  margin-bottom: 14px;
+  z-index: 0;
+}
+
+.portal-staff-map-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.portal-staff-map-list-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 10px;
+  background: var(--surface, #fff);
+  cursor: pointer;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+.portal-staff-map-list-item:hover {
+  border-color: var(--blue, #2d84b3);
+}
