@@ -1,6 +1,8 @@
 .portal-staff-map-embed {
   min-width: 0;
-  max-width: 56rem;
+  width: 100%;
+  max-width: 72rem;
+  margin: 0 auto;
 }
 
 .portal-staff-map-toolbar {
@@ -11,38 +13,47 @@
 }
 
 .portal-staff-map-status {
-  margin: 0 0 10px;
+  margin: 0 0 12px;
   font-size: 13px;
   min-width: 0;
   overflow-wrap: break-word;
 }
 
+.portal-staff-map-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
+  gap: 16px;
+  align-items: stretch;
+  min-height: min(72vh, 760px);
+  min-width: 0;
+}
+
+.portal-staff-map-layout__map {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .portal-staff-map-canvas {
+  flex: 1;
   width: 100%;
-  height: min(52vh, 420px);
-  min-height: 280px;
+  min-height: min(68vh, 700px);
+  height: 100%;
   border-radius: 12px;
   border: 1px solid var(--line, #e2e8f0);
-  margin-bottom: 14px;
   z-index: 0;
 }
 
-.portal-staff-map-list {
+.portal-staff-map-layout__side {
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  min-width: 0;
-}
-
-.portal-staff-map-list-section {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0;
+  gap: 8px;
 }
 
 .portal-staff-map-list-heading {
-  margin: 0;
+  margin: 0 0 6px;
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
@@ -50,29 +61,58 @@
   color: var(--muted, #64748b);
 }
 
-.portal-staff-map-list-item--online-only {
-  cursor: default;
-  background: #fffbeb;
-  border-color: #fcd34d;
-}
-
-.portal-staff-map-list-item--online-only:hover {
-  border-color: #fcd34d;
+.portal-staff-map-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+  overflow-y: auto;
+  max-height: min(68vh, 700px);
+  padding-right: 2px;
 }
 
 .portal-staff-map-list-item {
   display: block;
   width: 100%;
   text-align: left;
-  padding: 10px 12px;
+  padding: 12px 14px;
   border: 1px solid var(--line, #e2e8f0);
   border-radius: 10px;
   background: var(--surface, #fff);
   cursor: pointer;
   min-width: 0;
   overflow-wrap: break-word;
+  font: inherit;
+  color: inherit;
+}
+
+.portal-staff-map-list-item strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 15px;
+}
+
+.portal-staff-map-list-item .muted {
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 .portal-staff-map-list-item:hover {
   border-color: var(--blue, #2d84b3);
+}
+
+@media (max-width: 900px) {
+  .portal-staff-map-layout {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .portal-staff-map-canvas {
+    min-height: min(52vh, 480px);
+  }
+
+  .portal-staff-map-list {
+    max-height: none;
+  }
 }

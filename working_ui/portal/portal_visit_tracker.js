@@ -1,8 +1,8 @@
 /**
  * Records staff/lead/admin portal visit sessions into public.portal_staff_visit_sessions.
  */
-import { getSupabaseClient } from "./supabase-client.js?v=20260531-visit-track";
-import { portalPresenceSurface } from "./portal_live_presence.js?v=20260531-visit-track";
+import { getSharedSupabaseClient } from "./supabase-client.js";
+import { portalPresenceSurface } from "./portal_live_presence.js";
 
 const STORAGE_KEY = "portalVisitSessionId_v1";
 const HEARTBEAT_MS = 12000;
@@ -238,7 +238,7 @@ async function closeSession() {
 export async function startPortalVisitTracker(opts = {}) {
   if (typeof window === "undefined") return;
   try {
-    _client = getSupabaseClient();
+    _client = getSharedSupabaseClient();
   } catch (_) {
     return;
   }

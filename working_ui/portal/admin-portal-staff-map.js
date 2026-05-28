@@ -24,6 +24,8 @@
   var _markers = {};
   /** @type {ReturnType<typeof setInterval> | null} */
   var _pollTimer = null;
+  var _mapFitOnce = false;
+  var _lastMarkerCount = 0;
 
   function esc(s) {
     return cfg.esc(s);
@@ -88,6 +90,15 @@
   async function fetchLocations() {
     var client = cfg.getClient();
     if (!client) return [];
+
+    var rpc = await client.rpc("portal_admin_fetch_staff_live_locations", {
+      p_stale_minutes: STALE_MINUTES,
+    });
+    if (!rpc.error && rpc.data != null) {
+      if (Array.isArray(rpc.data)) return rpc.data;
+      return [];
+    }
+
     var res = await client
       .from("portal_staff_live_locations")
       .select(
@@ -99,7 +110,7 @@
     if (res.error) {
       if (/permission denied|403|42501/i.test(String(res.error.message || res.error))) {
         var err403 = new Error(
-          "Map access denied (403). Run migration 20260601120000_portal_staff_live_map_admin_select.sql on Portal Supabase, then sign out and back in."
+          "Map access denied (403). Run migrations 20260601120000 and 20260602120000 on Portal Supabase, then sign out and back in."
         );
         err403.code = "MAP_FORBIDDEN";
         throw err403;
@@ -117,7 +128,9 @@
         '<p class="muted">No staff sharing location right now. They must have the portal open on their phone and allow location when prompted.</p>';
       return;
     }
-    host.innerHTML = rows
+    host.innerHTML =
+      '<p class="portal-staff-map-list-heading">On map</p>' +
+      rows
       .map(function (r) {
         return (
           '<button type="button" class="portal-staff-map-list-item" data-map-focus="' +
@@ -302,6 +315,8 @@
       _map = null;
     }
     _markers = {};
+    _mapFitOnce = false;
+    _lastMarkerCount = 0;
   }
 
   function viewHtml() {
@@ -314,9 +329,13 @@
       '<button type="button" class="btn btn--ghost btn--sm" data-view-target="dashboard">Day operations</button>' +
       "</div>" +
       '<p id="portalStaffMapStatus" class="portal-staff-map-status muted">Loading…</p>' +
+      '<div class="portal-staff-map-layout">' +
+      '<div class="portal-staff-map-layout__map">' +
       '<div id="portalStaffMapCanvas" class="portal-staff-map-canvas" aria-label="Map"></div>' +
+      "</div>" +
+      '<aside class="portal-staff-map-layout__side" aria-label="Staff on map">' +
       '<div id="portalStaffMapList" class="portal-staff-map-list"></div>' +
-      "</div>"
+      "</aside></div></div>"
     );
   }
 

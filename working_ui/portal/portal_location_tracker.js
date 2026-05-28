@@ -1,8 +1,8 @@
 /**
  * Shares staff/lead GPS with portal_staff_live_locations while the app tab is visible.
  */
-import { getSupabaseClient } from "./supabase-client.js?v=20260601-locfix";
-import { portalPresenceSurface } from "./portal_live_presence.js?v=20260601-locfix";
+import { getSharedSupabaseClient } from "./supabase-client.js";
+import { portalPresenceSurface } from "./portal_live_presence.js";
 import {
   markLocationGranted,
   markLocationDenied,
@@ -243,7 +243,7 @@ export async function startPortalLocationTracker(opts = {}) {
     "Staff";
 
   try {
-    _client = getSupabaseClient();
+    _client = getSharedSupabaseClient();
   } catch (_) {
     return;
   }
@@ -323,7 +323,7 @@ export async function uploadLocationFromPosition(pos) {
       email.split("@")[0] ||
       "Staff";
     try {
-      _client = getSupabaseClient();
+      _client = getSharedSupabaseClient();
     } catch (_) {
       return false;
     }

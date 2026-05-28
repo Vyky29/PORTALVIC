@@ -2,7 +2,7 @@
  * Supabase Realtime Presence — who is online on admin / staff / lead / onboarding shells.
  * Admin mounts `#portalLivePresenceBar`; other dashboards only publish presence.
  */
-import { getSupabaseClient } from "./supabase-client.js?v=20260506-portal-interactions";
+import { getSharedSupabaseClient } from "./supabase-client.js";
 
 const CHANNEL_NAME = "portal-live-presence-v1";
 const HEARTBEAT_MS = 28000;
@@ -125,7 +125,7 @@ export async function startPortalLivePresence(opts = {}) {
 
   let supabase;
   try {
-    supabase = getSupabaseClient();
+    supabase = getSharedSupabaseClient();
   } catch {
     return;
   }

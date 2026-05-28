@@ -71,6 +71,17 @@ export function getSupabaseClient() {
 }
 
 /**
+ * Prefer the dashboard singleton from auth bootstrap (avoids duplicate GoTrueClient).
+ * @returns {import("@supabase/supabase-js").SupabaseClient}
+ */
+export function getSharedSupabaseClient() {
+  const w = typeof window !== "undefined" ? window : undefined;
+  const shared = w && w.__PORTAL_SUPABASE__ && w.__PORTAL_SUPABASE__.client;
+  if (shared) return shared;
+  return getSupabaseClient();
+}
+
+/**
  * @param {{ app_role?: string | null, staff_role?: string | null }} profileRow
  * @param {string} userId
  */
