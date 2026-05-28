@@ -151,9 +151,10 @@
 }
 
 .portal-achievements-icon-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
   margin: 14px 0;
   min-width: 0;
 }
@@ -164,8 +165,9 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 96px;
-  padding: 14px 10px;
+  width: min(100%, 260px);
+  min-height: 88px;
+  padding: 14px 16px;
   border: 1px solid var(--line, #e2e8f0);
   border-radius: 14px;
   background: var(--surface, #fff);
@@ -227,7 +229,8 @@ body.portal-achievements-viewer-open .dock-bar {
 }
 
 #portalAchievementsStepPick[hidden],
-#portalAchievementsStepCapture[hidden] {
+#portalAchievementsStepCapture[hidden],
+#portalAchievementsGalleryPanel[hidden] {
   display: none !important;
 }
 
@@ -304,26 +307,33 @@ body.portal-achievements-viewer-open .dock-bar {
 }
 
 .portal-achievements-camera-fs__footer {
-  padding: 2px 8px 4px;
+  position: relative;
+  padding: 50px 10px 4px;
   min-width: 0;
 }
 
 .portal-achievements-camera-fs__shutter-wrap {
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 2px 0 6px;
+  pointer-events: none;
 }
 
 .portal-achievements-camera-fs__shutter {
-  width: 62px;
-  height: 62px;
+  width: 68px;
+  height: 68px;
   border-radius: 50%;
   border: 3px solid #fff;
   background: transparent;
   padding: 3px;
   cursor: pointer;
   flex-shrink: 0;
+  pointer-events: auto;
 }
 
 .portal-achievements-camera-fs__shutter-inner {
@@ -339,11 +349,27 @@ body.portal-achievements-viewer-open .dock-bar {
 }
 
 .portal-achievements-camera-fs__bar {
-  display: grid;
-  grid-template-columns: 40px minmax(0, 1fr) minmax(0, 1fr) 34px;
-  align-items: center;
-  gap: 6px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
   min-width: 0;
+}
+
+.portal-ach-cam-bar__side {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+.portal-ach-cam-bar__side--left {
+  justify-content: flex-start;
+}
+
+.portal-ach-cam-bar__side--right {
+  justify-content: flex-end;
 }
 
 .portal-ach-cam-gallery {
@@ -387,21 +413,51 @@ body.portal-achievements-viewer-open .dock-bar {
   display: block;
 }
 
-.portal-ach-cam-chip {
+.portal-ach-cam-mode {
   border: 0;
-  border-radius: 999px;
-  padding: 6px 8px;
-  font-size: 11px;
-  font-weight: 700;
-  font-family: inherit;
-  background: rgba(255, 255, 255, 0.14);
+  background: transparent;
   color: rgba(255, 255, 255, 0.55);
   cursor: pointer;
   min-width: 0;
-  text-align: center;
+  padding: 0 2px 2px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  font-family: inherit;
 }
 
-.portal-ach-cam-chip.is-active {
+.portal-ach-cam-mode__ico {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.portal-ach-cam-mode__ico svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.portal-ach-cam-mode__label {
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.1;
+  text-align: center;
+  min-width: 0;
+}
+
+.portal-ach-cam-mode.is-active {
+  color: #facc15;
+}
+
+.portal-ach-cam-mode.is-active .portal-ach-cam-mode__ico {
   background: rgba(255, 255, 255, 0.92);
   color: #000;
 }
@@ -537,7 +593,7 @@ body.portal-achievements-viewer-open .dock-bar {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 48px;
+  gap: 28px;
   padding: 12px 16px max(20px, env(safe-area-inset-bottom));
   min-width: 0;
 }
@@ -560,6 +616,15 @@ body.portal-achievements-viewer-open .dock-bar {
 .portal-achievements-viewer__nav-btn:disabled {
   opacity: 0.28;
   cursor: default;
+}
+
+.portal-achievements-viewer__nav-btn--delete {
+  background: rgba(220, 38, 38, 0.45);
+  color: #fff;
+}
+
+.portal-achievements-viewer__nav-btn--delete:disabled {
+  opacity: 0.4;
 }
 
 .portal-achievements-viewer__nav-btn svg {

@@ -35,6 +35,10 @@
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>';
   var ICON_NEXT =
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>';
+  var ICON_VIDEO =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>';
+  var ICON_TRASH =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>';
 
   var state = {
     participant: null,
@@ -352,7 +356,7 @@
     } catch (err) {
       console.error(err);
       closeCameraFullscreen();
-      setCaptureMode("gallery");
+      setCaptureMode("hub");
       setStatus("Could not open camera. Check browser permissions.", true);
     }
   }
@@ -584,25 +588,26 @@
         signedUrlCache = Object.create(null);
         closeGalleryViewer();
         closeCameraFullscreen();
-        state.captureMode = "gallery";
         showStep("capture");
-        setCaptureMode("gallery");
+        setCaptureMode("hub");
         void refreshGallery();
       });
     });
   }
 
   function setCaptureMode(mode) {
-    state.captureMode = mode === "camera" ? "camera" : "gallery";
+    var isCamera = mode === "camera";
+    var isGallery = mode === "gallery";
+    state.captureMode = isCamera ? "camera" : isGallery ? "gallery" : "hub";
     var galPanel = document.getElementById("portalAchievementsGalleryPanel");
     var camBtn = document.getElementById("portalAchievementsOpenCamera");
     var galBtn = document.getElementById("portalAchievementsShowGallery");
-    if (mode !== "camera") {
+    if (!isCamera) {
       closeCameraFullscreen();
     }
-    if (galPanel) galPanel.hidden = false;
-    if (camBtn) camBtn.classList.toggle("is-active", mode === "camera");
-    if (galBtn) galBtn.classList.toggle("is-active", mode !== "camera");
+    if (galPanel) galPanel.hidden = !isGallery;
+    if (camBtn) camBtn.classList.toggle("is-active", isCamera);
+    if (galBtn) galBtn.classList.toggle("is-active", isGallery);
   }
 
   function showStep(step) {
@@ -668,10 +673,51 @@
     void openGalleryViewer(next);
   }
 
+  async function deleteViewerPhoto() {
+    if (state.viewerIndex < 0 || !state.photos.length) return;
+    var row = state.photos[state.viewerIndex];
+    if (!row || !row.id) return;
+    var client = cfg.getClient();
+    if (!client) {
+      setStatus("Sign in required.", true);
+      return;
+    }
+    var delBtn = document.getElementById("portalAchievementsViewerDelete");
+    if (delBtn) delBtn.disabled = true;
+    try {
+      setStatus("Deleting…");
+      if (row.storage_path) {
+        await client.storage.from(BUCKET).remove([row.storage_path]);
+      }
+      var del = await client.from("portal_participant_achievement_photos").delete().eq("id", row.id);
+      if (del.error) throw del.error;
+      delete signedUrlCache[row.storage_path];
+      var removedIdx = state.viewerIndex;
+      state.viewerIndex = -1;
+      await refreshGallery();
+      setStatus("");
+      if (!state.photos.length) {
+        closeGalleryViewer();
+        return;
+      }
+      var nextIdx = Math.min(removedIdx, state.photos.length - 1);
+      void openGalleryViewer(nextIdx);
+    } catch (e) {
+      console.error(e);
+      setStatus(esc(e.message || "Could not delete photo"), true);
+    } finally {
+      if (delBtn) delBtn.disabled = false;
+    }
+  }
+
   async function renderGallery() {
     var host = document.getElementById("portalAchievementsGallery");
     if (!host) return;
     showStep(state.participant ? "capture" : "pick");
+    if (state.captureMode !== "gallery") {
+      host.innerHTML = "";
+      return;
+    }
     if (!state.photos.length) {
       closeGalleryViewer();
       host.innerHTML = '<p class="muted portal-achievements-empty">No photos yet for this participant.</p>';
@@ -726,6 +772,7 @@
     var camBtn = document.getElementById("portalAchievementsOpenCamera");
     if (camBtn) {
       camBtn.addEventListener("click", function () {
+        setCaptureMode("camera");
         void captureFromCamera();
       });
     }
@@ -783,6 +830,13 @@
       });
     }
 
+    var viewerDelete = document.getElementById("portalAchievementsViewerDelete");
+    if (viewerDelete) {
+      viewerDelete.addEventListener("click", function () {
+        void deleteViewerPhoto();
+      });
+    }
+
     var fsFlip = document.getElementById("portalAchievementsFsFlip");
     if (fsFlip) {
       fsFlip.addEventListener("click", function () {
@@ -814,14 +868,14 @@
     closeCameraFullscreen();
     state.participant = null;
     state.photos = [];
-    state.captureMode = "gallery";
+    state.captureMode = "hub";
     state.cameraMode = "photo";
     signedUrlCache = Object.create(null);
     stopCamera();
     renderParticipantPicker();
     showStep("pick");
     setStatus("");
-    setCaptureMode("gallery");
+    setCaptureMode("hub");
     var cap = document.getElementById("portalAchievementsStepCapture");
     if (cap) cap.hidden = true;
     var pick = document.getElementById("portalAchievementsStepPick");
@@ -854,7 +908,7 @@
       ICON_CAMERA +
       "</span>" +
       '<span class="portal-achievements-icon-btn__label">Take photo</span></button>' +
-      '<button type="button" class="portal-achievements-icon-btn is-active" id="portalAchievementsShowGallery" aria-label="Gallery of the day">' +
+      '<button type="button" class="portal-achievements-icon-btn" id="portalAchievementsShowGallery" aria-label="Gallery of the day">' +
       '<span class="portal-achievements-icon-btn__ico" aria-hidden="true">' +
       ICON_GALLERY +
       "</span>" +
@@ -871,6 +925,9 @@
       '<div class="portal-achievements-viewer__nav" role="group" aria-label="Photo navigation">' +
       '<button type="button" class="portal-achievements-viewer__nav-btn" id="portalAchievementsViewerPrev" aria-label="Previous photo">' +
       ICON_PREV +
+      "</button>" +
+      '<button type="button" class="portal-achievements-viewer__nav-btn portal-achievements-viewer__nav-btn--delete" id="portalAchievementsViewerDelete" aria-label="Delete photo">' +
+      ICON_TRASH +
       "</button>" +
       '<button type="button" class="portal-achievements-viewer__nav-btn" id="portalAchievementsViewerNext" aria-label="Next photo">' +
       ICON_NEXT +
@@ -889,16 +946,23 @@
       '<button type="button" class="portal-achievements-camera-fs__shutter" id="portalAchievementsSnap" aria-label="Take photo"><span class="portal-achievements-camera-fs__shutter-inner"></span></button>' +
       "</div>" +
       '<div class="portal-achievements-camera-fs__bar">' +
+      '<div class="portal-ach-cam-bar__side portal-ach-cam-bar__side--left">' +
       '<button type="button" class="portal-ach-cam-gallery" id="portalAchievementsFsGallery" aria-label="Gallery">' +
       '<span class="portal-ach-cam-gallery__placeholder" aria-hidden="true">' +
       ICON_GALLERY +
       "</span></button>" +
-      '<button type="button" class="portal-ach-cam-chip is-active" id="portalAchievementsFsPhoto" aria-label="Photo mode" aria-pressed="true">Photo</button>' +
-      '<button type="button" class="portal-ach-cam-chip" id="portalAchievementsFsVideo" aria-label="Video mode" aria-pressed="false">Video</button>' +
+      '<button type="button" class="portal-ach-cam-mode is-active" id="portalAchievementsFsPhoto" aria-label="Photo mode" aria-pressed="true">' +
+      '<span class="portal-ach-cam-mode__ico" aria-hidden="true">' +
+      ICON_CAMERA +
+      '</span><span class="portal-ach-cam-mode__label">Photo</span></button></div>' +
+      '<div class="portal-ach-cam-bar__side portal-ach-cam-bar__side--right">' +
+      '<button type="button" class="portal-ach-cam-mode" id="portalAchievementsFsVideo" aria-label="Video mode" aria-pressed="false">' +
+      '<span class="portal-ach-cam-mode__ico" aria-hidden="true">' +
+      ICON_VIDEO +
+      '</span><span class="portal-ach-cam-mode__label">Video</span></button>' +
       '<button type="button" class="portal-ach-cam-flip" id="portalAchievementsFsFlip" aria-label="Rotate camera">' +
       ICON_FLIP +
-      "</button>" +
-      "</div></div></div></section>"
+      "</button></div></div></div></section>"
     );
   }
 
