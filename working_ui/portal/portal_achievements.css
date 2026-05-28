@@ -42,40 +42,107 @@
   overflow-wrap: break-word;
 }
 
+.portal-achievements-pick-hint {
+  margin: 0 0 12px;
+  font-size: 12px;
+  min-width: 0;
+}
+
 .portal-achievements-participant-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   min-width: 0;
 }
 
 .portal-achievements-participant {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   width: 100%;
   text-align: left;
-  padding: 12px 14px;
+  padding: 14px 16px;
   border: 1px solid var(--line, #e2e8f0);
-  border-radius: 12px;
+  border-radius: 14px;
   background: var(--surface, #fff);
   cursor: pointer;
   min-width: 0;
+  font: inherit;
+  color: inherit;
 }
 
-.portal-achievements-participant.is-selected {
-  border-color: var(--blue, #2d84b3);
-  box-shadow: 0 0 0 2px rgba(45, 132, 179, 0.2);
+.portal-achievements-participant:active {
+  background: var(--hoverUnifiedBg, #dbeeff);
 }
 
 .portal-achievements-participant__name {
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 15px;
+  flex: 1;
+  min-width: 0;
   overflow-wrap: break-word;
 }
 
-.portal-achievements-actions {
+.portal-achievements-participant__chev {
+  flex-shrink: 0;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--muted, #64748b);
+}
+
+.portal-achievements-icon-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 14px 0;
+  min-width: 0;
+}
+
+.portal-achievements-icon-btn {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 8px;
-  margin: 12px 0;
+  min-height: 96px;
+  padding: 14px 10px;
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 14px;
+  background: var(--surface, #fff);
+  cursor: pointer;
+  min-width: 0;
+  font: inherit;
+  color: var(--ink, #0f172a);
+}
+
+.portal-achievements-icon-btn.is-active {
+  border-color: var(--blue, #2d84b3);
+  background: rgba(45, 132, 179, 0.08);
+  box-shadow: 0 0 0 2px rgba(45, 132, 179, 0.18);
+}
+
+.portal-achievements-icon-btn__ico {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--blue, #2d84b3);
+}
+
+.portal-achievements-icon-btn__ico svg {
+  width: 32px;
+  height: 32px;
+  display: block;
+}
+
+.portal-achievements-icon-btn__label {
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  min-width: 0;
+  overflow-wrap: break-word;
 }
 
 .portal-achievements-camera {

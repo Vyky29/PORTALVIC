@@ -7079,8 +7079,8 @@
   <script src="/portal/clients_info_embed.js"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js"></script>
   <script src="/portal/staff_roster_resolve.js"></script>
-  <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260531-achievements" />
-  <script src="/portal/portal_participant_achievements.js?v=20260531-achievements"></script>
+  <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260531-achievements-today" />
+  <script src="/portal/portal_participant_achievements.js?v=20260531-achievements-today"></script>
   <script src="/portal/portal_guide_menu.js?v=20260523"></script>
   <script src="/portal/portal_dm_voice.js?v=20260531-dm-voice"></script>
   <script>
@@ -11285,36 +11285,32 @@
       return cell;
     }
     /** Client sessions assigned to this staff on this calendar day. */
-    /** Participants on roster for achievements (working calendar day). */
+    /** Same participant rows as Today on the dashboard (that calendar day only). */
     function portalAchievementsListTodayParticipants(){
-      const staffId = String(window.STAFF_DASHBOARD_ID || '').trim().toLowerCase();
-      if(!staffId) return [];
-      const viewDay = String(typeof DEMO_VIEW_DAY !== 'undefined' ? DEMO_VIEW_DAY : '').trim();
-      const anchor = typeof getViewAnchorCalendarDate === 'function' ? getViewAnchorCalendarDate(viewDay) : new Date();
-      let sessionDateKey = typeof normaliseIsoDate === 'function' ? normaliseIsoDate(anchor) : '';
-      if(typeof portalStaffRosterMatchIsoForCalendar === 'function'){
-        sessionDateKey = portalStaffRosterMatchIsoForCalendar(sessionDateKey, viewDay, staffId) || sessionDateKey;
+      var today = [];
+      if(typeof dashboardData !== 'undefined' && dashboardData && Array.isArray(dashboardData.today)){
+        today = dashboardData.today;
+      } else if(typeof buildSelectedDayViewFromLauraModel === 'function'){
+        today = buildSelectedDayViewFromLauraModel() || [];
       }
-      const model = (typeof sessionsModel !== 'undefined' && Array.isArray(sessionsModel)) ? sessionsModel : [];
-      const out = [];
-      const seen = Object.create(null);
-      model.forEach(function(s){
-        if(String(s.staffId || '').toLowerCase() !== staffId) return;
-        if(typeof portalSessionSpreadsheetRowMatchesCalendarDate === 'function'
-          && !portalSessionSpreadsheetRowMatchesCalendarDate(s, sessionDateKey, viewDay)) return;
-        if(typeof portalSpreadsheetSlotClosedLike === 'function' && portalSpreadsheetSlotClosedLike(s)
-          && typeof portalSessionHasSlotOpenOverride === 'function'
-          && !portalSessionHasSlotOpenOverride(s, sessionDateKey)) return;
-        const cid = String(s.clientId || '').trim().toLowerCase();
-        if(!cid || cid === 'closed' || seen[cid]) return;
+      var seen = Object.create(null);
+      var out = [];
+      today.forEach(function(item){
+        if(!item || String(item.kind || '') !== 'client') return;
+        if(item.openSheet === false) return;
+        var cid = String(item.clientId || '').trim().toLowerCase();
+        if(!cid || cid === 'closed' || cid === 'available' || seen[cid]) return;
+        var nm = String(item.name || '').trim();
+        if(!nm) return;
         seen[cid] = true;
-        const notes = (typeof clientNotesById !== 'undefined' && clientNotesById[cid]) ? clientNotesById[cid] : {};
-        const nm = String(notes.name || s.clientDisplay || s.clientName || cid).trim();
         out.push({
           clientId: cid,
           clientName: nm,
-          portalSessionKey: sessionDateKey + '|' + String(s.start || '') + '|' + cid
+          portalSessionKey: item.sessionKey || null
         });
+      });
+      out.sort(function(a, b){
+        return a.clientName.localeCompare(b.clientName, 'en', { sensitivity: 'base' });
       });
       return out;
     }
@@ -18292,6 +18288,12 @@
           },
           getWorkingDateIso: function(){
             try{
+              if(typeof portalResolveTodaySectionCalendarDate === 'function'){
+                var td = portalResolveTodaySectionCalendarDate();
+                if(td && !isNaN(td.getTime()) && typeof portalIsoYmdFromDate === 'function'){
+                  return portalIsoYmdFromDate(td);
+                }
+              }
               var viewDay = String(typeof DEMO_VIEW_DAY !== 'undefined' ? DEMO_VIEW_DAY : '').trim();
               var anchor = typeof getViewAnchorCalendarDate === 'function' ? getViewAnchorCalendarDate(viewDay) : new Date();
               return typeof normaliseIsoDate === 'function' ? normaliseIsoDate(anchor) : new Date().toISOString().slice(0,10);

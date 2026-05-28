@@ -25,11 +25,17 @@
     },
   };
 
+  var ICON_CAMERA =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>';
+  var ICON_GALLERY =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>';
+
   var state = {
     participant: null,
     photos: [],
     stream: null,
     guardBound: false,
+    captureMode: "gallery",
   };
 
   var signedUrlCache = Object.create(null);
@@ -201,6 +207,7 @@
       });
       video.srcObject = state.stream;
       wrap.hidden = false;
+      setCaptureMode("camera");
       setStatus("Camera ready — tap Capture.");
     } catch (err) {
       console.error(err);
@@ -337,9 +344,22 @@
     renderGallery();
   }
 
-  function renderParticipantPicker() {
-    var host = document.getElementById("portalAchievementsParticipantList");
-    if (!host) return;
+  function formatWorkingDayLabel() {
+    var iso = londonTodayIso();
+    try {
+      var d = new Date(iso + "T12:00:00");
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleDateString("en-GB", {
+          weekday: "long",
+          day: "numeric",
+          month: "short",
+        });
+      }
+    } catch (_e) {}
+    return iso;
+  }
+
+  function getTodayParticipantList() {
     var list = [];
     try {
       list = cfg.getTodayParticipants() || [];
@@ -358,19 +378,29 @@
         portalSessionKey: p.portalSessionKey || p.sessionKey || null,
       });
     });
+    uniq.sort(function (a, b) {
+      return a.clientName.localeCompare(b.clientName, "en", { sensitivity: "base" });
+    });
+    return uniq;
+  }
+
+  function renderParticipantPicker() {
+    var host = document.getElementById("portalAchievementsParticipantList");
+    var dayEl = document.getElementById("portalAchievementsDayLabel");
+    if (dayEl) {
+      dayEl.textContent = formatWorkingDayLabel();
+    }
+    if (!host) return;
+    var uniq = getTodayParticipantList();
     if (!uniq.length) {
       host.innerHTML =
-        '<p class="muted portal-achievements-empty">No participants on your roster for today.</p>';
+        '<p class="muted portal-achievements-empty">No participants on your <strong>Today</strong> list for this day. Open the dashboard for that day first, or check your rota.</p>';
       return;
     }
     host.innerHTML = uniq
       .map(function (p) {
-        var sel =
-          state.participant && normalizeClientId(state.participant.clientId) === p.clientId;
         return (
-          '<button type="button" class="portal-achievements-participant' +
-          (sel ? " is-selected" : "") +
-          '" data-ach-client="' +
+          '<button type="button" class="portal-achievements-participant" data-ach-client="' +
           esc(p.clientId) +
           '" data-ach-name="' +
           esc(p.clientName) +
@@ -378,7 +408,7 @@
           esc(p.portalSessionKey || "") +
           '"><span class="portal-achievements-participant__name">' +
           esc(p.clientName) +
-          "</span></button>"
+          '</span><span class="portal-achievements-participant__chev" aria-hidden="true">›</span></button>'
         );
       })
       .join("");
@@ -390,11 +420,29 @@
           portalSessionKey: btn.getAttribute("data-ach-key") || null,
         };
         signedUrlCache = Object.create(null);
-        renderParticipantPicker();
+        state.captureMode = "gallery";
         showStep("capture");
+        setCaptureMode("gallery");
         void refreshGallery();
       });
     });
+  }
+
+  function setCaptureMode(mode) {
+    state.captureMode = mode === "camera" ? "camera" : "gallery";
+    var camWrap = document.getElementById("portalAchievementsCameraWrap");
+    var galPanel = document.getElementById("portalAchievementsGalleryPanel");
+    var camBtn = document.getElementById("portalAchievementsOpenCamera");
+    var galBtn = document.getElementById("portalAchievementsShowGallery");
+    if (mode === "camera") {
+      if (galPanel) galPanel.hidden = true;
+    } else {
+      stopCamera();
+      if (camWrap) camWrap.hidden = true;
+      if (galPanel) galPanel.hidden = false;
+    }
+    if (camBtn) camBtn.classList.toggle("is-active", mode === "camera");
+    if (galBtn) galBtn.classList.toggle("is-active", mode === "gallery");
   }
 
   function showStep(step) {
@@ -449,30 +497,38 @@
         stopCamera();
         state.participant = null;
         state.photos = [];
+        state.captureMode = "gallery";
         showStep("pick");
         renderParticipantPicker();
       });
     }
 
     var camBtn = document.getElementById("portalAchievementsOpenCamera");
-    if (camBtn) camBtn.addEventListener("click", function () {
-      void captureFromCamera();
-    });
+    if (camBtn) {
+      camBtn.addEventListener("click", function () {
+        void captureFromCamera();
+      });
+    }
 
     var snapBtn = document.getElementById("portalAchievementsSnap");
-    if (snapBtn) snapBtn.addEventListener("click", function () {
-      void snapPhoto();
-    });
+    if (snapBtn) {
+      snapBtn.addEventListener("click", function () {
+        void snapPhoto();
+      });
+    }
 
     var cancelCam = document.getElementById("portalAchievementsCancelCamera");
-    if (cancelCam) cancelCam.addEventListener("click", stopCamera);
+    if (cancelCam) {
+      cancelCam.addEventListener("click", function () {
+        setCaptureMode("gallery");
+        void refreshGallery();
+      });
+    }
 
     var galBtn = document.getElementById("portalAchievementsShowGallery");
     if (galBtn) {
       galBtn.addEventListener("click", function () {
-        stopCamera();
-        var panel = document.getElementById("portalAchievementsGalleryPanel");
-        if (panel) panel.hidden = !panel.hidden;
+        setCaptureMode("gallery");
         void refreshGallery();
       });
     }
@@ -482,13 +538,13 @@
     bindSheet();
     state.participant = null;
     state.photos = [];
+    state.captureMode = "gallery";
     signedUrlCache = Object.create(null);
     stopCamera();
     renderParticipantPicker();
     showStep("pick");
     setStatus("");
-    var panel = document.getElementById("portalAchievementsGalleryPanel");
-    if (panel) panel.hidden = false;
+    setCaptureMode("gallery");
   }
 
   function sheetHtml() {
@@ -502,16 +558,25 @@
       '<p class="portal-achievements-note">Photos stay in the portal only (not your phone gallery). Screenshots are blocked while you view them here.</p>' +
       '<div id="portalAchievementsStatus" class="portal-achievements-status" role="status"></div>' +
       '<div id="portalAchievementsStepPick">' +
-      '<p class="portal-achievements-step-title">Choose participant</p>' +
+      '<p class="portal-achievements-step-title">Today — <span id="portalAchievementsDayLabel"></span></p>' +
+      '<p class="muted portal-achievements-pick-hint">Same participants as your Today list (A–Z).</p>' +
       '<div id="portalAchievementsParticipantList" class="portal-achievements-participant-list"></div>' +
       "</div>" +
       '<div id="portalAchievementsStepCapture" hidden>' +
       '<button type="button" class="btn btn--ghost btn--sm" id="portalAchievementsBackParticipants">← Participants</button>' +
-      '<p class="portal-achievements-step-title">Photos for <strong id="portalAchievementsSelectedName"></strong></p>' +
+      '<p class="portal-achievements-step-title"><strong id="portalAchievementsSelectedName"></strong></p>' +
       '<p class="muted" id="portalAchievementsCount"></p>' +
-      '<div class="portal-achievements-actions">' +
-      '<button type="button" class="btn btn--pri" id="portalAchievementsOpenCamera">Take photo</button>' +
-      '<button type="button" class="btn btn--sec" id="portalAchievementsShowGallery">Gallery of the day</button>' +
+      '<div class="portal-achievements-icon-actions">' +
+      '<button type="button" class="portal-achievements-icon-btn" id="portalAchievementsOpenCamera" aria-label="Take photo">' +
+      '<span class="portal-achievements-icon-btn__ico" aria-hidden="true">' +
+      ICON_CAMERA +
+      "</span>" +
+      '<span class="portal-achievements-icon-btn__label">Take photo</span></button>' +
+      '<button type="button" class="portal-achievements-icon-btn is-active" id="portalAchievementsShowGallery" aria-label="Gallery of the day">' +
+      '<span class="portal-achievements-icon-btn__ico" aria-hidden="true">' +
+      ICON_GALLERY +
+      "</span>" +
+      '<span class="portal-achievements-icon-btn__label">Gallery</span></button>' +
       "</div>" +
       '<div id="portalAchievementsCameraWrap" class="portal-achievements-camera" hidden>' +
       '<video id="portalAchievementsCameraVideo" playsinline autoplay muted class="portal-achievement-protected"></video>' +
