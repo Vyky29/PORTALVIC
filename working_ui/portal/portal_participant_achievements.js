@@ -29,6 +29,8 @@
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>';
   var ICON_GALLERY =
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>';
+  var ICON_FLIP =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/><path d="M13 5h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-5"/><path d="M15 2l3 3-3 3"/><path d="M9 22l-3-3 3-3"/></svg>';
 
   var state = {
     participant: null,
@@ -38,6 +40,8 @@
     captureMode: "gallery",
     pendingPreviewUrl: null,
     pendingPreviewBlob: null,
+    facingMode: "environment",
+    zoomScale: 1,
   };
 
   var signedUrlCache = Object.create(null);
@@ -154,22 +158,65 @@
     return document.getElementById("portalAchievementsCameraFullscreen");
   }
 
+  function applyVideoZoom() {
+    var video = document.getElementById("portalAchievementsCameraVideo");
+    var z = Number(state.zoomScale) || 1;
+    if (video) {
+      video.style.transform = "scale(" + z + ")";
+      video.style.transformOrigin = "center center";
+    }
+  }
+
+  function setZoomUi() {
+    var z = Number(state.zoomScale) || 1;
+    document.querySelectorAll("[data-portal-ach-zoom]").forEach(function (btn) {
+      var v = Number(btn.getAttribute("data-portal-ach-zoom"));
+      btn.classList.toggle("is-active", v === z);
+      btn.setAttribute("aria-pressed", v === z ? "true" : "false");
+    });
+    applyVideoZoom();
+  }
+
+  function setCameraFooterMode(mode) {
+    var isPreview = mode === "preview";
+    var shutterWrap = document.getElementById("portalAchievementsCameraShutterWrap");
+    var snap = document.getElementById("portalAchievementsSnap");
+    var saveBtn = document.getElementById("portalAchievementsFsSave");
+    var photoBtn = document.getElementById("portalAchievementsFsPhoto");
+    var zoom = document.getElementById("portalAchievementsCameraZoom");
+    var flip = document.getElementById("portalAchievementsFsFlip");
+    if (shutterWrap) shutterWrap.hidden = isPreview;
+    if (snap) snap.disabled = isPreview;
+    if (saveBtn) {
+      saveBtn.disabled = !isPreview;
+      saveBtn.classList.toggle("is-ready", isPreview);
+    }
+    if (photoBtn) {
+      photoBtn.classList.toggle("is-active", !isPreview);
+      photoBtn.setAttribute("aria-label", isPreview ? "Retake photo" : "Photo mode");
+    }
+    if (zoom) zoom.hidden = isPreview;
+    if (flip) flip.hidden = isPreview;
+  }
+
   function showCameraLiveUi() {
     var video = document.getElementById("portalAchievementsCameraVideo");
-    var liveBar = document.getElementById("portalAchievementsCameraFsControlsLive");
-    var previewBar = document.getElementById("portalAchievementsCameraFsControlsPreview");
+    var preview = document.getElementById("portalAchievementsCameraPreview");
+    var fs = getCameraFullscreenEl();
+    if (fs) fs.classList.remove("is-preview");
     if (video) video.hidden = false;
-    if (liveBar) liveBar.hidden = false;
-    if (previewBar) previewBar.hidden = true;
+    if (preview) preview.hidden = true;
     clearPendingPreview();
+    setCameraFooterMode("live");
+    setZoomUi();
   }
 
   function showCameraPreviewUi(blob) {
     stopCameraTracksOnly();
     var video = document.getElementById("portalAchievementsCameraVideo");
     var preview = document.getElementById("portalAchievementsCameraPreview");
-    var liveBar = document.getElementById("portalAchievementsCameraFsControlsLive");
-    var previewBar = document.getElementById("portalAchievementsCameraFsControlsPreview");
+    var fs = getCameraFullscreenEl();
+    if (fs) fs.classList.add("is-preview");
     if (video) video.hidden = true;
     clearPendingPreview();
     state.pendingPreviewBlob = blob;
@@ -178,8 +225,53 @@
       preview.src = state.pendingPreviewUrl;
       preview.hidden = false;
     }
-    if (liveBar) liveBar.hidden = true;
-    if (previewBar) previewBar.hidden = false;
+    setCameraFooterMode("preview");
+  }
+
+  async function updateFooterGalleryThumb() {
+    var btn = document.getElementById("portalAchievementsFsGallery");
+    if (!btn) return;
+    var last = state.photos.length ? state.photos[state.photos.length - 1] : null;
+    if (!last) {
+      btn.innerHTML =
+        '<span class="portal-ach-cam-gallery__placeholder" aria-hidden="true">' + ICON_GALLERY + "</span>";
+      btn.classList.remove("has-thumb");
+      return;
+    }
+    var url = await signedUrlFor(last.storage_path);
+    if (!url) {
+      btn.innerHTML =
+        '<span class="portal-ach-cam-gallery__placeholder" aria-hidden="true">' + ICON_GALLERY + "</span>";
+      btn.classList.remove("has-thumb");
+      return;
+    }
+    btn.classList.add("has-thumb");
+    btn.innerHTML =
+      '<img src="' + esc(url) + '" alt="" class="portal-ach-cam-gallery__thumb portal-achievement-protected" draggable="false" />';
+  }
+
+  async function flipCamera() {
+    state.facingMode = state.facingMode === "user" ? "environment" : "user";
+    if (state.pendingPreviewBlob) return;
+    var video = document.getElementById("portalAchievementsCameraVideo");
+    if (!video) return;
+    stopCameraTracksOnly();
+    try {
+      state.stream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: {
+          facingMode: { ideal: state.facingMode },
+          width: { ideal: 3840 },
+          height: { ideal: 2160 },
+        },
+      });
+      video.srcObject = state.stream;
+      video.hidden = false;
+      applyVideoZoom();
+    } catch (err) {
+      console.error(err);
+      setStatus("Could not switch camera.", true);
+    }
   }
 
   function stopCameraTracksOnly() {
@@ -281,16 +373,19 @@
     try {
       setStatus("");
       openCameraFullscreen();
+      showCameraLiveUi();
       state.stream = await navigator.mediaDevices.getUserMedia({
         audio: false,
         video: {
-          facingMode: { ideal: "environment" },
+          facingMode: { ideal: state.facingMode },
           width: { ideal: 3840 },
           height: { ideal: 2160 },
         },
       });
       video.srcObject = state.stream;
       video.hidden = false;
+      applyVideoZoom();
+      void updateFooterGalleryThumb();
     } catch (err) {
       console.error(err);
       closeCameraFullscreen();
@@ -343,13 +438,14 @@
       state.stream = await navigator.mediaDevices.getUserMedia({
         audio: false,
         video: {
-          facingMode: { ideal: "environment" },
+          facingMode: { ideal: state.facingMode },
           width: { ideal: 3840 },
           height: { ideal: 2160 },
         },
       });
       video.srcObject = state.stream;
       video.hidden = false;
+      applyVideoZoom();
     } catch (err) {
       console.error(err);
       closeCameraFullscreen();
@@ -630,33 +726,42 @@
       });
     }
 
-    var fsClose = document.getElementById("portalAchievementsFsClose");
-    if (fsClose) {
-      fsClose.addEventListener("click", function () {
+    var fsGallery = document.getElementById("portalAchievementsFsGallery");
+    if (fsGallery) {
+      fsGallery.addEventListener("click", function () {
         exitCameraToParticipant();
       });
     }
 
-    var previewSave = document.getElementById("portalAchievementsPreviewSave");
-    if (previewSave) {
-      previewSave.addEventListener("click", function () {
-        void savePendingPhoto();
+    var fsPhoto = document.getElementById("portalAchievementsFsPhoto");
+    if (fsPhoto) {
+      fsPhoto.addEventListener("click", function () {
+        if (state.pendingPreviewBlob) void retakePendingPhoto();
       });
     }
 
-    var previewRetake = document.getElementById("portalAchievementsPreviewRetake");
-    if (previewRetake) {
-      previewRetake.addEventListener("click", function () {
-        void retakePendingPhoto();
+    var fsSave = document.getElementById("portalAchievementsFsSave");
+    if (fsSave) {
+      fsSave.addEventListener("click", function () {
+        if (state.pendingPreviewBlob) void savePendingPhoto();
       });
     }
 
-    var previewClose = document.getElementById("portalAchievementsPreviewClose");
-    if (previewClose) {
-      previewClose.addEventListener("click", function () {
-        exitCameraToParticipant();
+    var fsFlip = document.getElementById("portalAchievementsFsFlip");
+    if (fsFlip) {
+      fsFlip.addEventListener("click", function () {
+        void flipCamera();
       });
     }
+
+    document.querySelectorAll("[data-portal-ach-zoom]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var v = Number(btn.getAttribute("data-portal-ach-zoom"));
+        if (!Number.isFinite(v) || v < 1) return;
+        state.zoomScale = v;
+        setZoomUi();
+      });
+    });
 
     var galBtn = document.getElementById("portalAchievementsShowGallery");
     if (galBtn) {
@@ -721,21 +826,30 @@
       '<div id="portalAchievementsGallery" class="portal-achievements-gallery portal-achievement-protected"></div>' +
       "</div></div></div>" +
       '<div id="portalAchievementsCameraFullscreen" class="portal-achievements-camera-fs" hidden aria-hidden="true">' +
-      '<div class="portal-achievements-camera-fs__media portal-achievement-protected">' +
+      '<div class="portal-achievements-camera-fs__viewport portal-achievement-protected">' +
       '<video id="portalAchievementsCameraVideo" playsinline autoplay muted class="portal-achievements-camera-fs__video"></video>' +
       '<img id="portalAchievementsCameraPreview" class="portal-achievements-camera-fs__preview" alt="" hidden draggable="false" />' +
       "</div>" +
-      '<div class="portal-achievements-camera-fs__top">' +
-      '<button type="button" class="portal-achievements-camera-fs__text-btn" id="portalAchievementsFsClose">Close</button>' +
+      '<div class="portal-achievements-camera-fs__chrome">' +
+      '<div class="portal-achievements-camera-fs__zoom" id="portalAchievementsCameraZoom" role="group" aria-label="Zoom">' +
+      '<button type="button" class="portal-ach-cam-zoom-btn is-active" data-portal-ach-zoom="1" aria-pressed="true">1×</button>' +
+      '<button type="button" class="portal-ach-cam-zoom-btn" data-portal-ach-zoom="1.5" aria-pressed="false">1.5×</button>' +
       "</div>" +
-      '<div class="portal-achievements-camera-fs__bottom" id="portalAchievementsCameraFsControlsLive">' +
+      '<div class="portal-achievements-camera-fs__footer">' +
+      '<div class="portal-achievements-camera-fs__shutter-wrap" id="portalAchievementsCameraShutterWrap">' +
       '<button type="button" class="portal-achievements-camera-fs__shutter" id="portalAchievementsSnap" aria-label="Take photo"><span class="portal-achievements-camera-fs__shutter-inner"></span></button>' +
       "</div>" +
-      '<div class="portal-achievements-camera-fs__bottom portal-achievements-camera-fs__bottom--preview" id="portalAchievementsCameraFsControlsPreview" hidden>' +
-      '<button type="button" class="btn btn--pri portal-achievements-camera-fs__action" id="portalAchievementsPreviewSave">Save</button>' +
-      '<button type="button" class="btn btn--ghost portal-achievements-camera-fs__action" id="portalAchievementsPreviewRetake">Take another</button>' +
-      '<button type="button" class="btn btn--ghost portal-achievements-camera-fs__action" id="portalAchievementsPreviewClose">Close</button>' +
-      "</div></div></section>"
+      '<div class="portal-achievements-camera-fs__bar">' +
+      '<button type="button" class="portal-ach-cam-gallery" id="portalAchievementsFsGallery" aria-label="Gallery">' +
+      '<span class="portal-ach-cam-gallery__placeholder" aria-hidden="true">' +
+      ICON_GALLERY +
+      "</span></button>" +
+      '<button type="button" class="portal-ach-cam-chip is-active" id="portalAchievementsFsPhoto" aria-label="Photo mode">Photo</button>' +
+      '<button type="button" class="portal-ach-cam-chip" id="portalAchievementsFsSave" disabled aria-label="Save photo">Save</button>' +
+      '<button type="button" class="portal-ach-cam-flip" id="portalAchievementsFsFlip" aria-label="Rotate camera">' +
+      ICON_FLIP +
+      "</button>" +
+      "</div></div></div></section>"
     );
   }
 

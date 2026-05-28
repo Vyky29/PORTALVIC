@@ -227,15 +227,18 @@ body.portal-achievements-camera-open {
   min-width: 0;
 }
 
-.portal-achievements-camera-fs__media {
-  position: absolute;
-  inset: 0;
-  min-width: 0;
+.portal-achievements-camera-fs__viewport {
+  flex: 1;
   min-height: 0;
+  position: relative;
+  overflow: hidden;
+  background: #000;
 }
 
 .portal-achievements-camera-fs__video,
 .portal-achievements-camera-fs__preview {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -245,49 +248,62 @@ body.portal-achievements-camera-open {
   -webkit-touch-callout: none;
 }
 
-.portal-achievements-camera-fs__top {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  justify-content: flex-end;
-  padding: max(12px, env(safe-area-inset-top)) 14px 8px;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.55), transparent);
+.portal-achievements-camera-fs__chrome {
+  flex-shrink: 0;
+  background: #000;
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
   min-width: 0;
 }
 
-.portal-achievements-camera-fs__text-btn {
-  border: 0;
-  background: rgba(255, 255, 255, 0.14);
-  color: #fff;
-  font-size: 15px;
-  font-weight: 600;
-  font-family: inherit;
-  padding: 10px 16px;
-  border-radius: 999px;
-  cursor: pointer;
-}
-
-.portal-achievements-camera-fs__bottom {
-  position: relative;
-  z-index: 2;
-  margin-top: auto;
+.portal-achievements-camera-fs__zoom {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px 16px max(24px, env(safe-area-inset-bottom));
-  background: linear-gradient(0deg, rgba(0, 0, 0, 0.65), transparent);
+  gap: 10px;
+  padding: 10px 16px 4px;
   min-width: 0;
 }
 
-.portal-achievements-camera-fs__bottom--preview {
-  flex-direction: column;
-  gap: 10px;
-  align-items: stretch;
+.portal-ach-cam-zoom-btn {
+  border: 0;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  padding: 8px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.portal-ach-cam-zoom-btn.is-active {
+  background: rgba(255, 255, 255, 0.92);
+  color: #000;
+}
+
+.portal-achievements-camera-fs.is-preview .portal-achievements-camera-fs__zoom {
+  visibility: hidden;
+  height: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.portal-achievements-camera-fs__footer {
+  padding: 4px 10px 8px;
+  min-width: 0;
+}
+
+.portal-achievements-camera-fs__shutter-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 4px 0 12px;
 }
 
 .portal-achievements-camera-fs__shutter {
-  width: 76px;
-  height: 76px;
+  width: 72px;
+  height: 72px;
   border-radius: 50%;
   border: 4px solid #fff;
   background: transparent;
@@ -304,10 +320,112 @@ body.portal-achievements-camera-open {
   background: #fff;
 }
 
-.portal-achievements-camera-fs__action {
-  width: 100%;
-  justify-content: center;
+.portal-achievements-camera-fs.is-preview .portal-achievements-camera-fs__shutter-wrap {
+  display: none;
+}
+
+.portal-achievements-camera-fs__bar {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: 8px;
   min-width: 0;
+}
+
+.portal-ach-cam-gallery {
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 0;
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.portal-ach-cam-gallery.has-thumb {
+  border-color: rgba(255, 255, 255, 0.55);
+}
+
+.portal-ach-cam-gallery__thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.portal-ach-cam-gallery__placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.portal-ach-cam-gallery__placeholder svg {
+  width: 26px;
+  height: 26px;
+  display: block;
+}
+
+.portal-ach-cam-chip {
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  background: rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+  min-width: 0;
+  text-align: center;
+}
+
+.portal-ach-cam-chip.is-active {
+  background: rgba(255, 255, 255, 0.92);
+  color: #000;
+}
+
+.portal-ach-cam-chip.is-ready:not(:disabled) {
+  background: #22c55e;
+  color: #fff;
+}
+
+.portal-ach-cam-chip:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.portal-ach-cam-flip {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 0;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.portal-ach-cam-flip svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+.portal-achievements-camera-fs.is-preview .portal-ach-cam-flip {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .portal-achievements-gallery-grid {
