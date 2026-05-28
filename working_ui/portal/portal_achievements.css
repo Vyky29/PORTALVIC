@@ -496,6 +496,7 @@ body.portal-achievements-viewer-open .dock-bar {
 }
 
 .portal-achievements-thumb {
+  position: relative;
   display: block;
   width: 100%;
   border-radius: 10px;
@@ -522,6 +523,25 @@ body.portal-achievements-viewer-open .dock-bar {
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
+}
+
+.portal-achievements-thumb__by {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 4px 6px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #fff;
+  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.72));
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  pointer-events: none;
 }
 
 .portal-achievements-empty {

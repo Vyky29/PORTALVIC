@@ -481,32 +481,54 @@
     return res.data.signedUrl;
   }
 
+  async function fetchDraftPhotosForParticipant(participant, sessionDate) {
+    var client = cfg.getClient();
+    if (!client || !participant) return [];
+    var cid = normalizeClientId(participant.clientId);
+    var day = String(sessionDate || londonTodayIso()).trim().slice(0, 10);
+    var sessionKey = participant.portalSessionKey
+      ? String(participant.portalSessionKey).trim()
+      : null;
+    var res = await client.rpc("portal_list_participant_achievement_drafts", {
+      p_client_id: cid,
+      p_session_date: day,
+      p_portal_session_key: sessionKey || null,
+    });
+    if (res.error) {
+      if (/does not exist|portal_list_participant_achievement_drafts/i.test(res.error.message || "")) {
+        var fallback = await client
+          .from("portal_participant_achievement_photos")
+          .select("id, storage_path, created_at, width, height, staff_user_id, staff_display_name")
+          .eq("session_date", day)
+          .eq("client_id", cid)
+          .eq("status", "draft")
+          .order("created_at", { ascending: true });
+        if (fallback.error) throw fallback.error;
+        return fallback.data || [];
+      }
+      throw res.error;
+    }
+    return res.data || [];
+  }
+
   async function refreshGallery() {
     if (!state.participant) {
       state.photos = [];
       renderGallery();
       return;
     }
-    var client = cfg.getClient();
-    if (!client) return;
-    var cid = normalizeClientId(state.participant.clientId);
-    var day = londonTodayIso();
-    var res = await client
-      .from("portal_participant_achievement_photos")
-      .select("id, storage_path, created_at, width, height")
-      .eq("session_date", day)
-      .eq("client_id", cid)
-      .eq("status", "draft")
-      .order("created_at", { ascending: true });
-    if (res.error) {
-      if (/does not exist|relation/i.test(res.error.message || "")) {
-        setStatus("Run database migration 20260531150000_portal_participant_achievement_photos.sql", true);
+    try {
+      state.photos = await fetchDraftPhotosForParticipant(state.participant, londonTodayIso());
+      setStatus("");
+    } catch (e) {
+      console.error(e);
+      state.photos = [];
+      if (/does not exist|relation/i.test(e.message || "")) {
+        setStatus("Run database migration 20260603160000_portal_achievement_photos_shared_drafts.sql", true);
       } else {
-        setStatus(esc(res.error.message), true);
+        setStatus(esc(e.message || "Could not load photos"), true);
       }
-      return;
     }
-    state.photos = res.data || [];
     renderGallery();
   }
 
@@ -733,11 +755,15 @@
       cell.type = "button";
       cell.className = "portal-achievements-thumb";
       cell.setAttribute("data-ach-photo-index", String(i));
+      var who = String(row.staff_display_name || "").trim();
       cell.setAttribute("aria-label", "View photo " + (i + 1) + " of " + state.photos.length);
       cell.innerHTML =
         '<img src="' +
         esc(url) +
-        '" alt="" draggable="false" class="portal-achievement-protected" />';
+        '" alt="" draggable="false" class="portal-achievement-protected" />' +
+        (who
+          ? '<span class="portal-achievements-thumb__by">' + esc(who) + "</span>"
+          : "");
       cell.addEventListener("click", function () {
         var idx = Number(cell.getAttribute("data-ach-photo-index"));
         if (!Number.isFinite(idx)) return;
@@ -967,28 +993,26 @@
   }
 
   /** Feedback form: load draft thumbnails for attach picker. */
-  async function listDraftsForFeedback(clientId, sessionDate) {
-    var client = cfg.getClient();
-    if (!client) return [];
-    var cid = normalizeClientId(clientId);
-    var day = String(sessionDate || "").trim().slice(0, 10);
-    if (!cid || !day) return [];
-    var res = await client
-      .from("portal_participant_achievement_photos")
-      .select("id, storage_path, created_at")
-      .eq("client_id", cid)
-      .eq("session_date", day)
-      .eq("status", "draft")
-      .order("created_at", { ascending: true });
-    if (res.error) return [];
-    return res.data || [];
+  async function listDraftsForFeedback(clientId, sessionDate, portalSessionKey) {
+    if (!clientId || !sessionDate) return [];
+    try {
+      return await fetchDraftPhotosForParticipant(
+        {
+          clientId: clientId,
+          portalSessionKey: portalSessionKey || null,
+        },
+        sessionDate
+      );
+    } catch (_e) {
+      return [];
+    }
   }
 
-  async function renderFeedbackAttachPanel(clientId, sessionDate) {
+  async function renderFeedbackAttachPanel(clientId, sessionDate, portalSessionKey) {
     var host = document.getElementById("portalFeedbackAchievementsPanel");
     if (!host) return [];
     host.hidden = false;
-    var rows = await listDraftsForFeedback(clientId, sessionDate);
+    var rows = await listDraftsForFeedback(clientId, sessionDate, portalSessionKey);
     if (!rows.length) {
       host.innerHTML =
         '<p class="muted" style="margin:0">No achievement photos for this participant. Add some from Quick menu → Participant achievements.</p>';

@@ -9,8 +9,8 @@
 <title>Session Feedback (Staff)</title>
 <link rel="stylesheet" href="/portal-shared-js/portal_page_logo.css?v=20260519-form-context" />
 <link rel="stylesheet" href="/portal-shared-js/portal_page_logo_themes.css?v=20260519-form-context" />
-<link rel="stylesheet" href="/portal/portal_achievements.css?v=20260603-achievements-layout" />
-<script src="/portal/portal_participant_achievements.js?v=20260603-achievements-layout"></script>
+<link rel="stylesheet" href="/portal/portal_achievements.css?v=20260603-achievements-shared" />
+<script src="/portal/portal_participant_achievements.js?v=20260603-achievements-shared"></script>
 <style>
 :root{
   /* Corporate gold — warmer yellow field tints (logo pulse / #ffcc33 family) */
@@ -2361,7 +2361,8 @@ button{
       panel.innerHTML = "";
       return;
     }
-    await window.PortalParticipantAchievements.renderFeedbackAttachPanel(cid, sd);
+    const sessionKey = String(ctx.portal_session_key || ctx.portalSessionKey || "").trim();
+    await window.PortalParticipantAchievements.renderFeedbackAttachPanel(cid, sd, sessionKey || null);
   }
 
   async function portalFinalizeAchievementPhotosAfterSubmit(opts){

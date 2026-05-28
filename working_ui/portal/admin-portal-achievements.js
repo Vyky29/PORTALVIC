@@ -64,7 +64,7 @@
         "id, staff_display_name, client_name, client_id, status, storage_path, session_feedback_id, created_at"
       )
       .eq("session_date", day)
-      .in("status", ["attached", "archived_unused"])
+      .in("status", ["draft", "attached", "archived_unused"])
       .order("created_at", { ascending: false });
     if (res.error) {
       if (status) {
@@ -76,11 +76,11 @@
     }
     var rows = res.data || [];
     if (status) {
-      status.textContent = rows.length + " photo(s) on " + day + " (staff no longer see these).";
+      status.textContent = rows.length + " photo(s) on " + day + ".";
       status.className = "portal-forms-status";
     }
     if (!rows.length) {
-      host.innerHTML = '<p class="muted">No archived or attached achievement photos for this day.</p>';
+      host.innerHTML = '<p class="muted">No achievement photos for this day.</p>';
       return;
     }
     host.innerHTML = "";
@@ -95,9 +95,15 @@
         "</strong> · " +
         esc(row.staff_display_name || "Staff") +
         ' <span class="chip chip--' +
-        (row.status === "attached" ? "ok" : "info") +
+        (row.status === "attached" ? "ok" : row.status === "draft" ? "warn" : "info") +
         '">' +
-        esc(row.status === "attached" ? "In feedback" : "Unused") +
+        esc(
+          row.status === "attached"
+            ? "In feedback"
+            : row.status === "draft"
+              ? "Draft"
+              : "Unused"
+        ) +
         "</span></summary>" +
         '<div class="portal-admin-achievement-card__body">' +
         (url
@@ -130,7 +136,7 @@
     return (
       '<div id="portalAdminAchievementsRoot" class="portal-day-ops-embed">' +
       '<h1 class="page-title">Participant achievements</h1>' +
-      '<p class="page-intro">Photos staff took in-app. After feedback submit, unused shots are archived here; attached shots link to session feedback.</p>' +
+      '<p class="page-intro">All in-app photos for this day — including drafts before feedback is submitted, then attached or unused after submit.</p>' +
       '<div class="portal-activity-toolbar">' +
       '<label><span class="muted">Day</span> <input type="date" class="inp" id="portalAdminAchievementsDay" /></label>' +
       '<button type="button" class="btn btn--sec btn--sm" id="portalAdminAchievementsRefresh">Refresh</button>' +
