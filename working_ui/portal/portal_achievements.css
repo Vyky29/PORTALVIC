@@ -206,6 +206,12 @@
 
 body.portal-achievements-camera-open {
   overflow: hidden;
+  --fab-reserved-bottom: max(8px, env(safe-area-inset-bottom, 0px));
+}
+
+/* Dock sits above fullscreen sheets (z 125); camera is inside transformed sheet — hide dock so shutter bar is usable */
+body.portal-achievements-camera-open .dock-bar {
+  display: none !important;
 }
 
 .portal-achievements-camera-fs[hidden] {

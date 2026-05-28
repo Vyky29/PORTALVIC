@@ -259,10 +259,7 @@
       var rows = await fetchLocations();
       if (status) {
         status.textContent =
-          rows.length +
-          " staff sharing location (updated in last " +
-          STALE_MINUTES +
-          " min). Circles show ~10 m when GPS is accurate.";
+          rows.length + " on map · updated in last " + STALE_MINUTES + " min";
       }
       renderList(rows);
       updateMap(rows, L);
@@ -319,16 +316,27 @@
     _lastMarkerCount = 0;
   }
 
+  var ICON_REFRESH =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"/><path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"/></svg>';
+  var ICON_DAY_OPS =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>';
+
   function viewHtml() {
     return (
       '<div id="portalStaffMapRoot" class="portal-staff-map-embed portal-day-ops-embed">' +
       '<div class="portal-staff-map-header">' +
+      '<div class="portal-staff-map-title-row">' +
       '<h1 class="page-title">Staff live map</h1>' +
-      '<p class="page-intro portal-staff-map-intro">Staff and leads who have the portal open and allowed location appear here (~10 m radius when GPS is good). Use this to find someone on site who cannot call.</p>' +
       '<div class="portal-staff-map-toolbar">' +
-      '<button type="button" class="btn btn--sec btn--sm" id="portalStaffMapRefresh">Refresh</button>' +
-      '<button type="button" class="btn btn--ghost btn--sm" data-view-target="dashboard">Day operations</button>' +
-      "</div>" +
+      '<button type="button" class="btn btn--sec btn--sm portal-staff-map-action-btn" id="portalStaffMapRefresh">' +
+      '<span class="portal-staff-map-action-btn__ico">' +
+      ICON_REFRESH +
+      "</span><span>Refresh</span></button>" +
+      '<button type="button" class="btn btn--ghost btn--sm portal-staff-map-action-btn" data-view-target="dashboard">' +
+      '<span class="portal-staff-map-action-btn__ico">' +
+      ICON_DAY_OPS +
+      "</span><span>Day operations</span></button>" +
+      "</div></div>" +
       '<p id="portalStaffMapStatus" class="portal-staff-map-status muted">Loading…</p>' +
       "</div>" +
       '<div class="portal-staff-map-layout">' +

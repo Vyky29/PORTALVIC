@@ -27,18 +27,19 @@ body:has(#portalStaffMapRoot) .admin-workspace {
   overflow: hidden;
 }
 
-.portal-staff-map-embed .page-title {
-  margin: 0 0 6px;
-  text-align: left;
+.portal-staff-map-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  min-width: 0;
 }
 
-.portal-staff-map-intro {
-  margin: 0 0 10px;
+.portal-staff-map-title-row .page-title {
+  margin: 0;
   text-align: left;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
+  flex: 1;
   min-width: 0;
 }
 
@@ -49,19 +50,39 @@ body:has(#portalStaffMapRoot) .admin-workspace {
 
 .portal-staff-map-toolbar {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
-  margin-bottom: 8px;
-  justify-content: flex-start;
+  margin: 0;
+  flex-shrink: 0;
+  justify-content: flex-end;
+}
+
+.portal-staff-map-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.portal-staff-map-action-btn__ico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+
+.portal-staff-map-action-btn__ico svg {
+  width: 16px;
+  height: 16px;
+  display: block;
 }
 
 .portal-staff-map-status {
   margin: 0;
   font-size: 13px;
   min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .portal-staff-map-layout {
@@ -164,8 +185,12 @@ body:has(#portalStaffMapRoot) .admin-workspace {
     max-height: 28vh;
   }
 
-  .portal-staff-map-intro {
-    white-space: normal;
-    overflow-wrap: break-word;
+  .portal-staff-map-title-row {
+    flex-wrap: wrap;
+  }
+
+  .portal-staff-map-toolbar {
+    width: 100%;
+    justify-content: flex-start;
   }
 }
