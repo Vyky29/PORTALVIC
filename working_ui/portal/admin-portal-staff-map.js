@@ -322,13 +322,15 @@
   function viewHtml() {
     return (
       '<div id="portalStaffMapRoot" class="portal-staff-map-embed portal-day-ops-embed">' +
+      '<div class="portal-staff-map-header">' +
       '<h1 class="page-title">Staff live map</h1>' +
-      '<p class="page-intro">Staff and leads who have the portal open and allowed location appear here (~10 m radius when GPS is good). Use this to find someone on site who cannot call.</p>' +
+      '<p class="page-intro portal-staff-map-intro">Staff and leads who have the portal open and allowed location appear here (~10 m radius when GPS is good). Use this to find someone on site who cannot call.</p>' +
       '<div class="portal-staff-map-toolbar">' +
       '<button type="button" class="btn btn--sec btn--sm" id="portalStaffMapRefresh">Refresh</button>' +
       '<button type="button" class="btn btn--ghost btn--sm" data-view-target="dashboard">Day operations</button>' +
       "</div>" +
       '<p id="portalStaffMapStatus" class="portal-staff-map-status muted">Loading…</p>' +
+      "</div>" +
       '<div class="portal-staff-map-layout">' +
       '<div class="portal-staff-map-layout__map">' +
       '<div id="portalStaffMapCanvas" class="portal-staff-map-canvas" aria-label="Map"></div>' +

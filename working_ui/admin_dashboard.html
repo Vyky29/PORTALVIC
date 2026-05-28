@@ -14,8 +14,8 @@
   <script src="/portal/admin-portal-documents.js?v=20260521-supabase-docs"></script>
   <script src="/portal/admin-portal-activity.js?v=20260531-portal-activity"></script>
   <script src="/portal/admin-portal-achievements.js?v=20260531-achievements"></script>
-  <link rel="stylesheet" href="/portal/portal_staff_map.css?v=20260602-staff-map-layout" />
-  <script src="/portal/admin-portal-staff-map.js?v=20260602-staff-map-layout"></script>
+  <link rel="stylesheet" href="/portal/portal_staff_map.css?v=20260602-staff-map-fit" />
+  <script src="/portal/admin-portal-staff-map.js?v=20260602-staff-map-fit"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
   <script src="/portal/portal_dm_voice.js?v=20260531-dm-voice"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
@@ -19374,7 +19374,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portalDashTileHtml('participant_achievements', '', 'clients', 'Achievement photos', 'Session photos after feedback', false, 'feedback')+
         portalDashTileHtml('c4k_sessions', '', 'c4k_registers', 'Feedbacks', 'Registers & session notes', false, 'feedback', 'sessions_hub_feedback')+
         portalDashTileHtml('c4k_late_submissions', '', 'c4k_late_submissions', 'Late submissions', 'Approve past-session forms', state.portalLatePendingCount > 0, 'feedback')+
-        portalDashTileHtml('c4k_sessions', '', 'c4k_reviews', 'Positive info', 'Positive feedback to review', false, 'feedback', 'sessions_hub_positive')+
         portalDashTileHtml('c4k_sessions', '', 'c4k_relevant', 'Relevant info', 'Relevant notes to review', false, 'analytics', 'sessions_hub_relevant');
       var sessionsRow2 =
         portalDashTileHtml('c4k_sessions', '', 'portal_nav_lead', 'Lead report', 'Lead session reports', false, 'feedback', 'sessions_hub_lead')+
@@ -19385,12 +19384,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portalDashTileHtml('c4k_sessions', '', 'scheduling', 'Pick up / drop off', 'Drop off & pick up portal', false, 'scheduling', 'sessions_hub_pickup');
       var teamTiles =
         portalDashTileHtml('scheduling', '', 'scheduling', 'Schedule & Covers', 'Weekly anchors & swap cover', true, 'scheduling')+
-        portalDashTileHtml('', '', 'comms_ops', 'CEO\'s chat', 'DMs + CEO groups', false, 'scheduling', 'ceo_exec_dm')+
-        portalDashTileHtml('', '', 'comms_ops', 'Internal chat', 'Staff & leads only', false, 'notify', 'team_dm')+
+        portalDashTileHtml('', '', 'comms_ops', 'Chat', 'Internal staff &amp; CEO / admin', false, 'notify', 'admin_chat_hub')+
         portalDashTileHtml('portal_activity', '', 'analytics', 'Portal activity', 'Login, pages &amp; time on app', false, 'analytics')+
         portalDashTileHtml('staff_live_map', '', 'clients', 'Staff live map', 'On-site locations (~10 m)', false, 'scheduling')+
-        portalDashTileHtml('', '', 'announcements', 'Announcements', 'Staff & site notices', false, 'scheduling', 'announcements')+
-        portalDashTileHtml('', '', 'reminders', 'Reminders', 'Follow-ups & due tasks', false, 'scheduling', 'reminders');
+        portalDashTileHtml('', '', 'announcements', 'Announcements', 'Notices &amp; reminders', false, 'announcements', 'announcements_comms');
       return (
         '<div class="dash-hub dash-hub--dayops">'+
         '<div class="dash-hub__intro-row">'+
@@ -19405,7 +19402,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           linkIconId:'staffhr',
           jumpTitle:'Staff & HR',
           tiles: teamTiles,
-          gridClass:'dash-hub__grid--6',
+          gridClass:'dash-hub__grid--5',
           panelClass:'dash-hub__panel--team'
         })+
         portalDashPanel({
@@ -20006,6 +20003,51 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(MOCK.actionLog.length>80) MOCK.actionLog.length=80;
     }
 
+    function openDayOpsAnnouncementsHubModal(){
+      closeSidebarMob();
+      openModal(
+        '<div class="modal-h"><h2 id="modalTitle">Announcements &amp; reminders</h2></div>'+
+        '<div class="modal-b" style="min-width:0">'+
+        '<p class="muted" style="margin:0 0 14px;font-size:13px;line-height:1.55;min-width:0;overflow-wrap:break-word">Send a site-wide <strong>announcement</strong> or a targeted <strong>reminder</strong> (training, timesheet, notes).</p>'+
+        '<div style="display:flex;flex-direction:column;gap:10px;min-width:0">'+
+        '<button type="button" class="btn btn--pri" id="dayopsAnnHubAnnounce">Announcement</button>'+
+        '<button type="button" class="btn btn--sec" id="dayopsAnnHubReminder">Reminder</button>'+
+        '</div></div>'+
+        '<div class="modal-f"><button type="button" class="btn btn--ghost" id="dayopsAnnHubClose">Cancel</button></div>'
+      );
+      var closeHub = function(){ closeModal(); };
+      var ann = $('dayopsAnnHubAnnounce');
+      if(ann) ann.onclick = function(){ closeHub(); openComposeModalAnnouncementOrReminder(false); };
+      var rem = $('dayopsAnnHubReminder');
+      if(rem) rem.onclick = function(){ closeHub(); openComposeModalAnnouncementOrReminder(true); };
+      var xc = $('dayopsAnnHubClose');
+      if(xc) xc.onclick = closeHub;
+      var bd = $('modalBackdrop');
+      if(bd) bd.onclick = function(e){ if(e.target === bd) closeHub(); };
+    }
+    function openDayOpsAdminChatHubModal(){
+      closeSidebarMob();
+      openModal(
+        '<div class="modal-h"><h2 id="modalTitle">Chat</h2></div>'+
+        '<div class="modal-b" style="min-width:0">'+
+        '<p class="muted" style="margin:0 0 14px;font-size:13px;line-height:1.55;min-width:0;overflow-wrap:break-word">Pick a channel. <strong>Internal</strong> is for staff and session leads. <strong>CEO\'s chat</strong> is for admins and CEOs (groups and DMs).</p>'+
+        '<div style="display:flex;flex-direction:column;gap:10px;min-width:0">'+
+        '<button type="button" class="btn btn--pri" id="dayopsChatHubInternal">Internal chat <span class="muted" style="font-weight:500">(staff &amp; leads)</span></button>'+
+        '<button type="button" class="btn btn--sec" id="dayopsChatHubCeo">CEO\'s chat <span class="muted" style="font-weight:500">(admin &amp; CEO)</span></button>'+
+        '</div></div>'+
+        '<div class="modal-f"><button type="button" class="btn btn--ghost" id="dayopsChatHubClose">Cancel</button></div>'
+      );
+      var closeHub = function(){ closeModal(); };
+      var intBtn = $('dayopsChatHubInternal');
+      if(intBtn) intBtn.onclick = function(){ closeHub(); openInternalDmChatModal(); };
+      var ceoBtn = $('dayopsChatHubCeo');
+      if(ceoBtn) ceoBtn.onclick = function(){ closeHub(); openCeoExecDmChatModal(); };
+      var xc = $('dayopsChatHubClose');
+      if(xc) xc.onclick = closeHub;
+      var bd = $('modalBackdrop');
+      if(bd) bd.onclick = function(e){ if(e.target === bd) closeHub(); };
+    }
+
     /** Day operations tile actions (called from bindView click handlers on each render). */
     function portalRunDayOpsAct(a){
       if(a === 'sessions_hub_overview'){ closeSidebarMob(); openSessionsHubTab('overview'); return; }
@@ -20021,6 +20063,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(a === 'new_participant'){
         openDayOpsNewParticipantModal();
         closeSidebarMob();
+        return;
+      }
+      if(a === 'announcements_comms'){
+        openDayOpsAnnouncementsHubModal();
+        return;
+      }
+      if(a === 'admin_chat_hub'){
+        openDayOpsAdminChatHubModal();
         return;
       }
       if(a === 'announcements'){
@@ -20285,10 +20335,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(T) T.hidden = panel !== 'thread';
     }
     function portalAdminDmApplyTeamTileUnreadClass(){
-      var on1 = !!window.__PORTAL_ADMIN_DM_UNREAD;
-      var b1 = document.querySelector('[data-dayops-act="team_dm"]');
-      if(b1) b1.classList.toggle('dayops-screen-nav__card--portal-dm-unread', on1);
+      var onStaff = !!window.__PORTAL_ADMIN_DM_UNREAD;
       var onCeo = !!(window.__PORTAL_ADMIN_CEO_DM_UNREAD || window.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD);
+      var hub = document.querySelector('[data-dayops-act="admin_chat_hub"]');
+      if(hub){
+        hub.classList.toggle('dayops-screen-nav__card--portal-dm-unread', onStaff);
+        hub.classList.toggle('dayops-screen-nav__card--portal-ceo-dm-unread', onCeo);
+      }
+      var b1 = document.querySelector('[data-dayops-act="team_dm"]');
+      if(b1) b1.classList.toggle('dayops-screen-nav__card--portal-dm-unread', onStaff);
       var b2 = document.querySelector('[data-dayops-act="ceo_exec_dm"]');
       if(b2) b2.classList.toggle('dayops-screen-nav__card--portal-ceo-dm-unread', onCeo);
       var b3 = document.querySelector('[data-dayops-act="ceo_all_group_dm"]');

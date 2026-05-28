@@ -1,31 +1,77 @@
+/* Staff live map — full viewport, left-aligned, no page scroll */
+body:has(#portalStaffMapRoot) .admin-workspace {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+#workspace:has(#portalStaffMapRoot) {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .portal-staff-map-embed {
   min-width: 0;
   width: 100%;
-  max-width: 72rem;
-  margin: 0 auto;
+  max-width: none;
+  margin: 0;
+  text-align: left;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.portal-staff-map-embed .page-title {
+  margin: 0 0 6px;
+  text-align: left;
+}
+
+.portal-staff-map-intro {
+  margin: 0 0 10px;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.portal-staff-map-header {
+  flex-shrink: 0;
+  min-width: 0;
 }
 
 .portal-staff-map-toolbar {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
+  justify-content: flex-start;
 }
 
 .portal-staff-map-status {
-  margin: 0 0 12px;
+  margin: 0;
   font-size: 13px;
   min-width: 0;
-  overflow-wrap: break-word;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .portal-staff-map-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
-  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
+  gap: 14px;
   align-items: stretch;
-  min-height: min(72vh, 760px);
-  min-width: 0;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .portal-staff-map-layout__map {
@@ -33,12 +79,13 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .portal-staff-map-canvas {
   flex: 1;
   width: 100%;
-  min-height: min(68vh, 700px);
+  min-height: 0;
   height: 100%;
   border-radius: 12px;
   border: 1px solid var(--line, #e2e8f0);
@@ -47,9 +94,11 @@
 
 .portal-staff-map-layout__side {
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  overflow: hidden;
 }
 
 .portal-staff-map-list-heading {
@@ -59,6 +108,7 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--muted, #64748b);
+  flex-shrink: 0;
 }
 
 .portal-staff-map-list {
@@ -66,9 +116,10 @@
   flex-direction: column;
   gap: 8px;
   min-width: 0;
+  min-height: 0;
   flex: 1;
   overflow-y: auto;
-  max-height: min(68vh, 700px);
+  overflow-x: hidden;
   padding-right: 2px;
 }
 
@@ -85,6 +136,7 @@
   overflow-wrap: break-word;
   font: inherit;
   color: inherit;
+  flex-shrink: 0;
 }
 
 .portal-staff-map-list-item strong {
@@ -105,14 +157,15 @@
 @media (max-width: 900px) {
   .portal-staff-map-layout {
     grid-template-columns: 1fr;
-    min-height: 0;
-  }
-
-  .portal-staff-map-canvas {
-    min-height: min(52vh, 480px);
+    grid-template-rows: minmax(0, 1fr) auto;
   }
 
   .portal-staff-map-list {
-    max-height: none;
+    max-height: 28vh;
+  }
+
+  .portal-staff-map-intro {
+    white-space: normal;
+    overflow-wrap: break-word;
   }
 }
