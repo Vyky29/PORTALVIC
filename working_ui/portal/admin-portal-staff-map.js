@@ -7,6 +7,7 @@
   var LEAFLET_CSS = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
   var LEAFLET_JS = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
   var STALE_MINUTES = 20;
+  var MAP_POLL_MS = 10000;
 
   var cfg = {
     esc: function (s) {
@@ -95,74 +96,46 @@
       .eq("is_sharing", true)
       .gte("updated_at", staleCutoffIso())
       .order("updated_at", { ascending: false });
-    if (res.error) throw res.error;
+    if (res.error) {
+      if (/permission denied|403|42501/i.test(String(res.error.message || res.error))) {
+        var err403 = new Error(
+          "Map access denied (403). Run migration 20260601120000_portal_staff_live_map_admin_select.sql on Portal Supabase, then sign out and back in."
+        );
+        err403.code = "MAP_FORBIDDEN";
+        throw err403;
+      }
+      throw res.error;
+    }
     return res.data || [];
   }
 
-  function presenceStaffOnline() {
-    try {
-      var g = global.__PORTAL_PRESENCE_GROUPED__;
-      if (g && Array.isArray(g.staffLeads)) return g.staffLeads;
-    } catch (_e) {}
-    return [];
-  }
-
-  function renderList(rows, onlineWithoutGps) {
+  function renderList(rows) {
     var host = document.getElementById("portalStaffMapList");
     if (!host) return;
-    var parts = [];
-    if (rows.length) {
-      parts.push('<div class="portal-staff-map-list-section"><p class="portal-staff-map-list-heading">On map</p>');
-      parts.push(
-        rows
-          .map(function (r) {
-            return (
-              '<button type="button" class="portal-staff-map-list-item" data-map-focus="' +
-              esc(r.staff_user_id) +
-              '">' +
-              "<strong>" +
-              esc(r.staff_display_name || "Staff") +
-              "</strong>" +
-              ' <span class="muted">(' +
-              esc(r.staff_surface || "staff") +
-              ") · " +
-              esc(formatAgo(r.updated_at)) +
-              " · ~" +
-              esc(String(Math.round(displayRadiusM(r.accuracy_m)))) +
-              " m</span></button>"
-            );
-          })
-          .join("")
-      );
-      parts.push("</div>");
-    }
-    if (onlineWithoutGps && onlineWithoutGps.length) {
-      parts.push(
-        '<div class="portal-staff-map-list-section"><p class="portal-staff-map-list-heading">Online — location not shared</p>'
-      );
-      parts.push(
-        onlineWithoutGps
-          .map(function (p) {
-            return (
-              '<p class="portal-staff-map-list-item portal-staff-map-list-item--online-only">' +
-              "<strong>" +
-              esc(p.name || p.email) +
-              "</strong>" +
-              ' <span class="muted">(' +
-              esc(p.email) +
-              ") · portal open · allow location in Alerts &amp; notifications</span></p>"
-            );
-          })
-          .join("")
-      );
-      parts.push("</div>");
-    }
-    if (!parts.length) {
+    if (!rows.length) {
       host.innerHTML =
-        '<p class="muted">No staff online right now. When someone opens the staff portal on their phone and allows location, they appear here.</p>';
+        '<p class="muted">No staff sharing location right now. They must have the portal open on their phone and allow location when prompted.</p>';
       return;
     }
-    host.innerHTML = parts.join("");
+    host.innerHTML = rows
+      .map(function (r) {
+        return (
+          '<button type="button" class="portal-staff-map-list-item" data-map-focus="' +
+          esc(r.staff_user_id) +
+          '">' +
+          "<strong>" +
+          esc(r.staff_display_name || "Staff") +
+          "</strong>" +
+          ' <span class="muted">(' +
+          esc(r.staff_surface || "staff") +
+          ") · " +
+          esc(formatAgo(r.updated_at)) +
+          " · ~" +
+          esc(String(Math.round(displayRadiusM(r.accuracy_m)))) +
+          " m</span></button>"
+        );
+      })
+      .join("");
     host.querySelectorAll("[data-map-focus]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var id = btn.getAttribute("data-map-focus");
@@ -172,14 +145,6 @@
         }
       });
     });
-  }
-
-  function onlineWithoutGps(rows) {
-    var online = presenceStaffOnline();
-    if (!online.length) return [];
-    if (!rows.length) return online;
-    if (online.length > rows.length) return online;
-    return [];
   }
 
   function updateMap(rows, L) {
@@ -251,28 +216,42 @@
     }, 120);
   }
 
-  async function refresh() {
+  function mapViewActive() {
+    var root = document.getElementById("portalStaffMapRoot");
+    return !!(root && root.isConnected && document.visibilityState === "visible");
+  }
+
+  function startMapPolling() {
+    if (_pollTimer) return;
+    _pollTimer = setInterval(function () {
+      if (!mapViewActive()) return;
+      void refresh({ quiet: true });
+    }, MAP_POLL_MS);
+  }
+
+  function stopMapPolling() {
+    if (_pollTimer) {
+      clearInterval(_pollTimer);
+      _pollTimer = null;
+    }
+  }
+
+  async function refresh(opts) {
+    opts = opts || {};
+    if (!mapViewActive() && opts.quiet) return;
     var status = document.getElementById("portalStaffMapStatus");
     try {
-      if (status) status.textContent = "Loading live locations…";
+      if (status && !opts.quiet) status.textContent = "Loading live locations…";
       var L = await loadLeaflet();
       var rows = await fetchLocations();
-      var onlineOnly = onlineWithoutGps(rows);
-      var onlineCount = presenceStaffOnline().length;
       if (status) {
-        var bits = [
+        status.textContent =
           rows.length +
-            " sharing location (last " +
-            STALE_MINUTES +
-            " min)",
-        ];
-        if (onlineCount) bits.push(onlineCount + " staff/lead online in portal");
-        if (onlineOnly.length) {
-          bits.push(onlineOnly.length + " online without GPS — need location allowed on device");
-        }
-        status.textContent = bits.join(" · ") + ".";
+          " staff sharing location (updated in last " +
+          STALE_MINUTES +
+          " min). Circles show ~10 m when GPS is accurate.";
       }
-      renderList(rows, onlineOnly);
+      renderList(rows);
       updateMap(rows, L);
     } catch (err) {
       console.error(err);
@@ -280,7 +259,9 @@
       if (/does not exist|relation/i.test(msg) && status) {
         status.textContent =
           "Run migration 20260531160000_portal_staff_live_locations.sql on Portal Supabase.";
-      } else if (status) {
+      } else if ((/MAP_FORBIDDEN|403|permission denied/i.test(msg) || err.code === "MAP_FORBIDDEN") && status) {
+        status.textContent = msg;
+      } else if (status && !opts.quiet) {
         status.textContent = "Error: " + msg;
       }
     }
@@ -298,23 +279,24 @@
       });
     }
 
-    if (_pollTimer) clearInterval(_pollTimer);
-    _pollTimer = setInterval(function () {
-      void refresh();
-    }, 30000);
-
-    global.addEventListener("portal:presence-sync", function () {
-      void refresh();
-    });
+    startMapPolling();
+    document.addEventListener("visibilitychange", onMapVisibilityChange);
 
     void refresh();
   }
 
-  function destroyModule() {
-    if (_pollTimer) {
-      clearInterval(_pollTimer);
-      _pollTimer = null;
+  function onMapVisibilityChange() {
+    if (!mapViewActive()) {
+      stopMapPolling();
+      return;
     }
+    startMapPolling();
+    void refresh({ quiet: true });
+  }
+
+  function destroyModule() {
+    document.removeEventListener("visibilitychange", onMapVisibilityChange);
+    stopMapPolling();
     if (_map) {
       _map.remove();
       _map = null;
@@ -343,6 +325,8 @@
     viewHtml: viewHtml,
     bindModule: bindModule,
     destroyModule: destroyModule,
+    startMapPolling: startMapPolling,
+    stopMapPolling: stopMapPolling,
     refresh: refresh,
   };
 })(typeof window !== "undefined" ? window : globalThis);

@@ -326,12 +326,6 @@ export function bindMandatoryAlertsSettingsResume() {
       if (typeof window.portalRefreshAlertsNotifyUi === "function") {
         window.portalRefreshAlertsNotifyUi();
       }
-      if (
-        portalLocationPermissionGranted() &&
-        typeof window.portalRestartLocationTracker === "function"
-      ) {
-        await window.portalRestartLocationTracker();
-      }
       if (!portalMandatoryAlertsSettingsComplete()) {
         void portalEnsureMandatoryAlertsSettings();
       }

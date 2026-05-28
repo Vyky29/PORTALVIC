@@ -9,16 +9,15 @@ import {
   portalLocationPermissionGranted,
   probeLocationPermissionState,
   tryProbeLocationGrantedViaGeolocation,
-} from "./portal_location_permission.js?v=20260602-locrpc";
+} from "./portal_location_permission.js?v=20260602-locpassive";
 
-const MIN_SEND_INTERVAL_MS = 25000;
-const MIN_MOVE_M = 8;
+const MIN_SEND_INTERVAL_MS = 120000;
+const MIN_MOVE_M = 25;
+const MAX_STALE_SEND_MS = 300000;
 const DISPLAY_ACCURACY_CAP_M = 10;
 
 /** @type {number | null} */
 let _watchId = null;
-/** @type {ReturnType<typeof setInterval> | null} */
-let _heartbeatTimer = null;
 /** @type {number | null} */
 let _lastSentAt = 0;
 /** @type {{ lat: number; lng: number } | null} */
@@ -45,15 +44,15 @@ function haversineM(lat1, lng1, lat2, lng2) {
 
 function shouldSend(lat, lng) {
   const now = Date.now();
-  if (now - _lastSentAt < MIN_SEND_INTERVAL_MS) {
-    if (_lastSentPos) {
-      const moved = haversineM(_lastSentPos.lat, _lastSentPos.lng, lat, lng);
-      if (moved < MIN_MOVE_M) return false;
-    } else {
-      return false;
-    }
+  const since = now - _lastSentAt;
+  if (_lastSentPos) {
+    const moved = haversineM(_lastSentPos.lat, _lastSentPos.lng, lat, lng);
+    if (moved >= MIN_MOVE_M) return true;
   }
-  return true;
+  if (!_lastSentAt) return true;
+  if (since >= MAX_STALE_SEND_MS) return true;
+  if (since >= MIN_SEND_INTERVAL_MS) return true;
+  return false;
 }
 
 function reportUploadResult(ok, message, lat, lng) {
@@ -184,10 +183,6 @@ function clearWatch() {
     navigator.geolocation.clearWatch(_watchId);
   }
   _watchId = null;
-  if (_heartbeatTimer) {
-    clearInterval(_heartbeatTimer);
-    _heartbeatTimer = null;
-  }
 }
 
 /** @type {((opts: Record<string, unknown>) => void) | null} */
@@ -255,16 +250,16 @@ export async function startPortalLocationTracker(opts = {}) {
 
   const geoOpts = {
     enableHighAccuracy: true,
-    maximumAge: 5000,
-    timeout: 20000,
+    maximumAge: 60000,
+    timeout: 25000,
   };
 
-  const pingLocationNow = () => {
+  const sendCurrentPositionOnce = (force) => {
     if (!portalLocationPermissionGranted() || !navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         markLocationGranted();
-        void upsertLocation(pos, { force: true });
+        void upsertLocation(pos, { force: !!force });
       },
       onPositionError,
       geoOpts
@@ -273,15 +268,13 @@ export async function startPortalLocationTracker(opts = {}) {
 
   const startWatch = () => {
     if (!portalLocationPermissionGranted()) return;
-    clearWatch();
     cancelStopSharing();
-    pingLocationNow();
-    _watchId = navigator.geolocation.watchPosition(onPosition, onPositionError, geoOpts);
-    if (_heartbeatTimer) clearInterval(_heartbeatTimer);
-    _heartbeatTimer = setInterval(function () {
-      if (document.visibilityState !== "visible") return;
-      pingLocationNow();
-    }, 60000);
+    if (_watchId == null) {
+      sendCurrentPositionOnce(true);
+      _watchId = navigator.geolocation.watchPosition(onPosition, onPositionError, geoOpts);
+      return;
+    }
+    sendCurrentPositionOnce(false);
   };
 
   document.addEventListener("visibilitychange", () => {
