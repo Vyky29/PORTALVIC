@@ -692,7 +692,7 @@ export async function bootstrapDashboardSupabase(_opts) {
       console.debug("[portal] visit tracker skipped:", visitErr);
     }
     try {
-      const perm = await import("./portal_location_permission.js?v=20260602-supabase-shared");
+      const perm = await import("./portal_location_permission.js?v=20260603-alerts-simple");
       window.portalLocationPermissionGranted = perm.portalLocationPermissionGranted;
       window.portalRequestLocationPermission = perm.requestLocationPermission;
       window.portalRefreshLocationUi = perm.portalRefreshLocationUi;

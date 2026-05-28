@@ -200,13 +200,13 @@ export function portalSyncAlertsSettingsChrome() {
   btn.classList.toggle("menu-btn--settings-alerts-incomplete", incomplete);
   if (!sub) return;
   if (!notifyOk && !locOk) {
-    sub.textContent = "Required: notifications and on-site location";
+    sub.textContent = "Turn on notifications and location";
   } else if (!notifyOk) {
-    sub.textContent = "Required: turn on browser notifications";
+    sub.textContent = "Turn on notifications";
   } else if (!locOk) {
-    sub.textContent = "Required: allow on-site location while using the app";
+    sub.textContent = "Allow location";
   } else {
-    sub.textContent = "Notifications and on-site location enabled";
+    sub.textContent = "Notifications and location on";
   }
 }
 
@@ -217,57 +217,40 @@ export function portalRefreshLocationUi() {
   const ctx = locationContextHint();
   const st = _state === "unknown" ? "prompt" : _state;
   if (st === "unsupported") {
-    statusEl.textContent = "This browser does not support location." + ctx;
+    statusEl.textContent = "Not supported on this browser." + ctx;
     if (btn) {
       btn.disabled = true;
-      btn.textContent = "Location not supported";
+      btn.textContent = "Not supported";
     }
   } else if (st === "insecure") {
-    statusEl.textContent =
-      "On-site location requires HTTPS. Open the portal over a secure link on your phone." + ctx;
+    statusEl.textContent = "Needs HTTPS on your phone." + ctx;
     if (btn) {
       btn.disabled = true;
-      btn.textContent = "HTTPS required for location";
+      btn.textContent = "HTTPS required";
     }
   } else if (st === "granted") {
     var upload = typeof window !== "undefined" ? window.__PORTAL_LOCATION_LAST_UPLOAD__ : null;
-    var base =
-      "Location is allowed. While this app is open, the office can see your position on the live staff map (~10 m when GPS is good; wider circle indoors or with weak signal). Location is not shared in the background.";
     if (upload && upload.ok) {
-      statusEl.textContent = base + " Last update sent to the office map just now.";
+      statusEl.textContent = "On — office can see you on the live map.";
     } else if (upload && upload.ok === false && upload.message) {
-      var hint = "";
-      if (/does not exist|portal_upsert_staff_live_location|relation/i.test(upload.message)) {
-        hint = " Ask ops to run migration 20260531170000_portal_staff_live_locations_rpc.sql on Portal Supabase.";
-      }
-      statusEl.textContent =
-        base +
-        " Could not send position to the map yet: " +
-        upload.message +
-        hint +
-        " Keep this app open on your phone, or tap Refresh location sharing below.";
+      statusEl.textContent = "On — could not send yet. Keep app open or tap Refresh.";
     } else {
-      statusEl.textContent =
-        base + " Waiting for GPS — keep the app open on your phone for a few seconds.";
+      statusEl.textContent = "On — getting GPS…";
     }
     if (btn) {
-      btn.textContent = upload && upload.ok ? "Location sharing active" : "Refresh location sharing";
+      btn.textContent = upload && upload.ok ? "Location on" : "Refresh location";
       btn.disabled = false;
     }
   } else if (st === "denied") {
-    statusEl.textContent =
-      "Location is blocked. Allow location for this site in your browser or phone settings so the office can find you on site when needed." +
-      ctx;
+    statusEl.textContent = "Blocked — allow location for this site in browser settings." + ctx;
     if (btn) {
-      btn.textContent = "Location blocked — change in browser settings";
+      btn.textContent = "Open browser settings";
       btn.disabled = false;
     }
   } else {
-    statusEl.textContent =
-      "Allow location while you use the portal so the office can find you on site if you cannot call. Only shared while the app is open (not in the background)." +
-      ctx;
+    statusEl.textContent = "Off — tap below. Only while the app is open." + ctx;
     if (btn) {
-      btn.textContent = "Allow on-site location";
+      btn.textContent = "Allow location";
       btn.disabled = false;
     }
   }

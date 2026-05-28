@@ -922,12 +922,14 @@
       0%,100%{ box-shadow:0 0 0 0 rgba(45,132,179,.28); }
       50%{ box-shadow:0 0 0 6px rgba(45,132,179,.1); }
     }
-    .portal-alerts-panel{margin:0;padding:0 0 16px;max-width:24rem}
-    .portal-alerts-intro{margin:0 0 14px;font-size:15px;line-height:1.48;color:var(--muted)}
-    .portal-alerts-note{margin:12px 0;font-size:13px;line-height:1.45;color:var(--muted)}
-    .portal-alerts-status{margin:8px 0 14px;font-size:14px;font-weight:700;color:var(--blue)}
-    .portal-alerts-section-title{margin:18px 0 10px;font-size:16px;font-weight:700;color:var(--ink)}
-    .portal-alerts-section-divider{border:0;border-top:1px solid var(--line,#e2e8f0);margin:18px 0}
+    .portal-alerts-panel{margin:0;padding:0 0 16px;max-width:24rem;min-width:0}
+    .portal-alerts-lead{margin:0 0 18px;font-size:14px;line-height:1.45;color:var(--muted);overflow-wrap:break-word}
+    .portal-alerts-block{margin:0 0 20px;min-width:0}
+    .portal-alerts-status{margin:0 0 10px;font-size:14px;font-weight:700;color:var(--blue);min-width:0;overflow-wrap:break-word}
+    .portal-alerts-section-title{margin:0 0 8px;font-size:15px;font-weight:700;color:var(--ink)}
+    .portal-alerts-action-btn{display:block;width:100%;max-width:20rem;margin:0 0 8px}
+    .portal-alerts-action-btn--ghost{font-weight:600}
+    .portal-alerts-footnote{margin:4px 0 0;font-size:12px;line-height:1.4;overflow-wrap:break-word}
     #portalNotifyEnableBtn,#portalNotifyTestBtn,#portalLocationEnableBtn{
       width:100%;
       justify-content:center;
@@ -6889,7 +6891,7 @@
             </button>
             <button type="button" class="menu-btn menu-btn--settings-alerts" data-open="alertsNotificationsSheet" id="quickMenuAlerts">
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
-              <div class="menu-btn-copy"><strong>Alerts and Notifications</strong><span class="menu-btn-sub">Required: notifications and on-site location</span></div>
+              <div class="menu-btn-copy"><strong>Alerts &amp; location</strong><span class="menu-btn-sub">Turn on notifications and location</span></div>
             </button>
             <div id="portalExecWorkspaceSwitchSlot" class="portal-exec-workspace-switch-slot" hidden aria-hidden="true"></div>
             <div class="menu-btn menu-btn--settings-view" id="quickMenuViewRow">
@@ -6999,24 +7001,24 @@
   <section class="sheet sheet--fullscreen sheet--mobile-frame" id="alertsNotificationsSheet" aria-labelledby="alertsNotificationsTitle">
     <div class="sheet-head">
       <div class="sheet-handle"></div>
-      <h3 id="alertsNotificationsTitle">Alerts, notifications &amp; location</h3>
-      <p>Required on this device: browser notifications and on-site location while you use the app.</p>
+      <h3 id="alertsNotificationsTitle">Alerts &amp; location</h3>
+      <p>Turn on both for this device.</p>
     </div>
     <div class="sheet-body">
       <div class="portal-alerts-panel">
-        <p class="portal-alerts-intro">Same-day session register and feedback stay <strong>mandatory</strong> for safeguarding; those show on the dashboard and quick menu, but <strong>this page does not send push alerts</strong> for incomplete feedback.</p>
-        <p class="portal-alerts-intro">Turn on <strong>browser notifications</strong> (and add to your <strong>home screen</strong> if you use the app that way). We then send <strong>vibration + notification</strong> only when there is a <strong>new announcement to sign</strong> or a roster override for <strong>make-up session</strong>, <strong>absent participant</strong>, or <strong>cancelled session</strong>. Vibration can still run without notification permission where the device allows it.</p>
-        <p class="portal-alerts-intro"><strong>Roster from ops:</strong> when Scheduling changes (cancel, replace participant, change instructor), your timetable <strong>refreshes automatically</strong> over the live link — no need to leave and re-open the app.</p>
-        <p class="portal-alerts-note"><strong>When the app is fully closed or the phone is locked:</strong> you still get a <strong>system notification</strong> if this page is saved to your home screen, you allowed notifications, and the club has enabled <strong>Web Push</strong> (VAPID keys + Supabase Edge Function + a database webhook on <code>schedule_overrides</code>). Tapping the notification opens your dashboard with alerts. This device registers automatically after you allow notifications, when a VAPID public key is configured on the host page.</p>
-        <h4 class="portal-alerts-section-title">Browser notifications</h4>
-        <p id="portalNotifyStatus" class="portal-alerts-status" aria-live="polite"></p>
-        <button type="button" id="portalNotifyEnableBtn">Turn on browser notifications</button>
-        <button type="button" id="portalNotifyTestBtn" hidden>Send test notification</button>
-        <hr class="portal-alerts-section-divider" aria-hidden="true" />
-        <h4 class="portal-alerts-section-title">On-site location (required)</h4>
-        <p class="portal-alerts-intro">While the portal is open, your position is shared with the office <strong>live staff map</strong> so they can find you on site if you cannot call. GPS needs <strong>HTTPS</strong> on your phone; indoors the map may show a wider circle than ~10 m. Location is <strong>not</strong> shared in the background (iOS/Android may pause GPS when the app is not active).</p>
-        <p id="portalLocationStatus" class="portal-alerts-status" aria-live="polite"></p>
-        <button type="button" id="portalLocationEnableBtn">Allow on-site location</button>
+        <p class="portal-alerts-lead">Register and feedback stay on your dashboard (not push alerts here). Turn on <strong>notifications</strong> for announcements and roster changes, and <strong>location</strong> for the live staff map while the app is open.</p>
+        <div class="portal-alerts-block">
+          <h4 class="portal-alerts-section-title">Notifications</h4>
+          <p id="portalNotifyStatus" class="portal-alerts-status" aria-live="polite"></p>
+          <button type="button" class="portal-alerts-action-btn" id="portalNotifyEnableBtn">Turn on notifications</button>
+          <button type="button" class="portal-alerts-action-btn portal-alerts-action-btn--ghost" id="portalNotifyTestBtn" hidden>Send test</button>
+        </div>
+        <div class="portal-alerts-block">
+          <h4 class="portal-alerts-section-title">Location</h4>
+          <p id="portalLocationStatus" class="portal-alerts-status" aria-live="polite"></p>
+          <button type="button" class="portal-alerts-action-btn" id="portalLocationEnableBtn">Allow location</button>
+        </div>
+        <p class="portal-alerts-footnote muted">Your timetable updates when ops change scheduling. Location stops when you close the app.</p>
       </div>
     </div>
   </section>
@@ -16956,11 +16958,11 @@
       function notifyContextHint(){
         try{
           if(typeof window !== 'undefined' && window.self !== window.top){
-            return ' If the prompt never appears, open this portal in a normal tab (not embedded in a frame).';
+            return ' Open the portal in a full browser tab.';
           }
         }catch(_){}
         if(typeof window !== 'undefined' && window.isSecureContext === false){
-          return ' Notifications need HTTPS (secure context).';
+          return ' Needs HTTPS.';
         }
         return '';
       }
@@ -16971,44 +16973,43 @@
         if(!statusEl) return;
         const ctx = notifyContextHint();
         if(typeof Notification === 'undefined'){
-          statusEl.textContent = 'This browser does not support notifications.' + ctx;
+          statusEl.textContent = 'Not supported on this browser.' + ctx;
           if(btn) btn.disabled = true;
           if(testBtn) testBtn.hidden = true;
           return;
         }
         const p = Notification.permission;
         if(p === 'granted'){
-          const baseGranted = 'Browser notifications are allowed. You will get system banners (when the browser allows) for new announcements to sign and for roster updates: make-up session, absent participant, or cancelled session. Vibration also runs for those events where the device supports it.';
-          statusEl.textContent = baseGranted;
+          statusEl.textContent = 'On — announcements and roster changes.';
           if(typeof window.portalEnsureWebPushSubscription === 'function'){
             window.portalEnsureWebPushSubscription().then(function(wp){
               if(wp && wp.ok){
-                statusEl.textContent = baseGranted + ' Background Web Push for roster changes is active on this device.';
+                statusEl.textContent = 'On — including alerts when the app is closed.';
               }else if(wp && wp.reason === 'no-vapid'){
-                statusEl.textContent = baseGranted + ' To get roster alerts when the app is fully closed, the site must set the VAPID public key (see ops).';
+                statusEl.textContent = 'On — alerts when app is closed need ops setup.';
               }else if(wp && wp.reason === 'no-sw'){
-                statusEl.textContent = baseGranted + ' This browser does not support service workers here — Web Push may be limited.';
+                statusEl.textContent = 'On — closed-app alerts may be limited here.';
               }else if(wp && wp.reason === 'no-session'){
-                statusEl.textContent = baseGranted + ' Sign in must finish before this device can register for background push.';
+                statusEl.textContent = 'On — finish sign-in to register this device.';
               }
             });
           }
           if(btn){
-            btn.textContent = 'Notifications enabled';
+            btn.textContent = 'Notifications on';
             btn.disabled = true;
           }
           if(testBtn) testBtn.hidden = false;
         } else if(p === 'denied'){
-          statusEl.textContent = 'Notifications are blocked. Turn them on in the browser site settings for this page if you want alerts here.' + ctx;
+          statusEl.textContent = 'Blocked — allow notifications for this site in browser settings.' + ctx;
           if(btn){
-            btn.textContent = 'Notifications blocked — change in browser settings';
+            btn.textContent = 'Open browser settings';
             btn.disabled = false;
           }
           if(testBtn) testBtn.hidden = true;
         } else {
-          statusEl.textContent = 'Tap the button below to allow browser notifications for announcements and roster overrides on this device.' + ctx;
+          statusEl.textContent = 'Off — tap below to allow.' + ctx;
           if(btn){
-            btn.textContent = 'Turn on browser notifications';
+            btn.textContent = 'Turn on notifications';
             btn.disabled = false;
           }
           if(testBtn) testBtn.hidden = true;
@@ -17028,8 +17029,8 @@
         Notification.requestPermission().then(function(r){
           if(r === 'granted'){
             try{
-              new Notification('Portal alerts enabled', {
-                body: 'You will get notifications for unsigned announcements and for roster changes: make-up session, absent participant, or cancelled session. Feedback reminders do not send alerts from this page.'
+              new Notification('Portal alerts on', {
+                body: 'Announcements and roster changes on this device.'
               });
             }catch(e){
               if(statusEl){
