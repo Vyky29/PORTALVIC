@@ -55,6 +55,39 @@ export function markLocationDenied() {
 /**
  * @returns {Promise<'granted' | 'denied' | 'prompt' | 'unsupported' | 'insecure'>}
  */
+/**
+ * Browsers without Permissions API (some iOS): detect grant via one geolocation read.
+ * @returns {Promise<boolean>}
+ */
+export function tryProbeLocationGrantedViaGeolocation() {
+  return new Promise((resolve) => {
+    if (portalLocationPermissionGranted()) {
+      resolve(true);
+      return;
+    }
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      resolve(false);
+      return;
+    }
+    if (
+      typeof location !== "undefined" &&
+      location.protocol !== "https:" &&
+      !isLocalDevHost()
+    ) {
+      resolve(false);
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      () => {
+        markLocationGranted();
+        resolve(true);
+      },
+      () => resolve(false),
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 120000 }
+    );
+  });
+}
+
 export async function probeLocationPermissionState() {
   if (typeof navigator === "undefined" || !navigator.geolocation) {
     _state = "unsupported";
@@ -291,10 +324,16 @@ export function bindPortalLocationPermissionUi() {
           : null;
       if (!t || !alertsSheet.contains(t)) return;
       e.preventDefault();
-      void requestLocationPermission().then(() => {
+      void requestLocationPermission().then(async () => {
         portalRefreshLocationUi();
         if (typeof window.portalRefreshAlertsNotifyUi === "function") {
           window.portalRefreshAlertsNotifyUi();
+        }
+        if (
+          portalLocationPermissionGranted() &&
+          typeof window.portalRestartLocationTracker === "function"
+        ) {
+          await window.portalRestartLocationTracker();
         }
       });
     },

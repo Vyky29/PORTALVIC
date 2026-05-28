@@ -30,8 +30,34 @@
 .portal-staff-map-list {
   display: flex;
   flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.portal-staff-map-list-section {
+  display: flex;
+  flex-direction: column;
   gap: 6px;
   min-width: 0;
+}
+
+.portal-staff-map-list-heading {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted, #64748b);
+}
+
+.portal-staff-map-list-item--online-only {
+  cursor: default;
+  background: #fffbeb;
+  border-color: #fcd34d;
+}
+
+.portal-staff-map-list-item--online-only:hover {
+  border-color: #fcd34d;
 }
 
 .portal-staff-map-list-item {

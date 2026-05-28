@@ -99,33 +99,70 @@
     return res.data || [];
   }
 
-  function renderList(rows) {
+  function presenceStaffOnline() {
+    try {
+      var g = global.__PORTAL_PRESENCE_GROUPED__;
+      if (g && Array.isArray(g.staffLeads)) return g.staffLeads;
+    } catch (_e) {}
+    return [];
+  }
+
+  function renderList(rows, onlineWithoutGps) {
     var host = document.getElementById("portalStaffMapList");
     if (!host) return;
-    if (!rows.length) {
+    var parts = [];
+    if (rows.length) {
+      parts.push('<div class="portal-staff-map-list-section"><p class="portal-staff-map-list-heading">On map</p>');
+      parts.push(
+        rows
+          .map(function (r) {
+            return (
+              '<button type="button" class="portal-staff-map-list-item" data-map-focus="' +
+              esc(r.staff_user_id) +
+              '">' +
+              "<strong>" +
+              esc(r.staff_display_name || "Staff") +
+              "</strong>" +
+              ' <span class="muted">(' +
+              esc(r.staff_surface || "staff") +
+              ") · " +
+              esc(formatAgo(r.updated_at)) +
+              " · ~" +
+              esc(String(Math.round(displayRadiusM(r.accuracy_m)))) +
+              " m</span></button>"
+            );
+          })
+          .join("")
+      );
+      parts.push("</div>");
+    }
+    if (onlineWithoutGps && onlineWithoutGps.length) {
+      parts.push(
+        '<div class="portal-staff-map-list-section"><p class="portal-staff-map-list-heading">Online — location not shared</p>'
+      );
+      parts.push(
+        onlineWithoutGps
+          .map(function (p) {
+            return (
+              '<p class="portal-staff-map-list-item portal-staff-map-list-item--online-only">' +
+              "<strong>" +
+              esc(p.name || p.email) +
+              "</strong>" +
+              ' <span class="muted">(' +
+              esc(p.email) +
+              ") · portal open · allow location in Alerts &amp; notifications</span></p>"
+            );
+          })
+          .join("")
+      );
+      parts.push("</div>");
+    }
+    if (!parts.length) {
       host.innerHTML =
-        '<p class="muted">No staff sharing location right now. They must have the portal open on their phone and allow location when prompted.</p>';
+        '<p class="muted">No staff online right now. When someone opens the staff portal on their phone and allows location, they appear here.</p>';
       return;
     }
-    host.innerHTML = rows
-      .map(function (r) {
-        return (
-          '<button type="button" class="portal-staff-map-list-item" data-map-focus="' +
-          esc(r.staff_user_id) +
-          '">' +
-          "<strong>" +
-          esc(r.staff_display_name || "Staff") +
-          "</strong>" +
-          ' <span class="muted">(' +
-          esc(r.staff_surface || "staff") +
-          ") · " +
-          esc(formatAgo(r.updated_at)) +
-          " · ~" +
-          esc(String(Math.round(displayRadiusM(r.accuracy_m)))) +
-          " m</span></button>"
-        );
-      })
-      .join("");
+    host.innerHTML = parts.join("");
     host.querySelectorAll("[data-map-focus]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var id = btn.getAttribute("data-map-focus");
@@ -135,6 +172,14 @@
         }
       });
     });
+  }
+
+  function onlineWithoutGps(rows) {
+    var online = presenceStaffOnline();
+    if (!online.length) return [];
+    if (!rows.length) return online;
+    if (online.length > rows.length) return online;
+    return [];
   }
 
   function updateMap(rows, L) {
@@ -212,14 +257,22 @@
       if (status) status.textContent = "Loading live locations…";
       var L = await loadLeaflet();
       var rows = await fetchLocations();
+      var onlineOnly = onlineWithoutGps(rows);
+      var onlineCount = presenceStaffOnline().length;
       if (status) {
-        status.textContent =
+        var bits = [
           rows.length +
-          " staff sharing location (updated in last " +
-          STALE_MINUTES +
-          " min). Circles show ~10 m when GPS is accurate.";
+            " sharing location (last " +
+            STALE_MINUTES +
+            " min)",
+        ];
+        if (onlineCount) bits.push(onlineCount + " staff/lead online in portal");
+        if (onlineOnly.length) {
+          bits.push(onlineOnly.length + " online without GPS — need location allowed on device");
+        }
+        status.textContent = bits.join(" · ") + ".";
       }
-      renderList(rows);
+      renderList(rows, onlineOnly);
       updateMap(rows, L);
     } catch (err) {
       console.error(err);
@@ -249,6 +302,10 @@
     _pollTimer = setInterval(function () {
       void refresh();
     }, 30000);
+
+    global.addEventListener("portal:presence-sync", function () {
+      void refresh();
+    });
 
     void refresh();
   }

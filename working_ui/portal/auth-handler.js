@@ -703,8 +703,11 @@ export async function bootstrapDashboardSupabase(_opts) {
       perm.bindMandatoryAlertsSettingsResume();
       await perm.probeLocationPermissionState();
       perm.portalSyncAlertsSettingsChrome();
-      const { startPortalLocationTracker } = await import("./portal_location_tracker.js");
-      await startPortalLocationTracker({ page, profile, session });
+      const loc = await import("./portal_location_tracker.js");
+      window.portalRestartLocationTracker = function () {
+        return loc.restartPortalLocationTracker({ page, profile, session });
+      };
+      await loc.startPortalLocationTracker({ page, profile, session });
       await perm.portalEnsureMandatoryAlertsSettings({ page });
     } catch (locErr) {
       console.debug("[portal] location tracker skipped:", locErr);

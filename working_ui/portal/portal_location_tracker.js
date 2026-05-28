@@ -8,6 +8,7 @@ import {
   markLocationDenied,
   portalLocationPermissionGranted,
   probeLocationPermissionState,
+  tryProbeLocationGrantedViaGeolocation,
 } from "./portal_location_permission.js?v=20260531-location";
 
 const MIN_SEND_INTERVAL_MS = 25000;
@@ -53,17 +54,17 @@ function shouldSend(lat, lng) {
   return true;
 }
 
-async function upsertLocation(pos) {
-  if (!_client || !_userId) return;
+async function upsertLocation(pos, opts = {}) {
+  if (!_client || !_userId) return false;
   const lat = Number(pos.coords.latitude);
   const lng = Number(pos.coords.longitude);
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
-  if (!shouldSend(lat, lng)) return;
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
+  if (!opts.force && !shouldSend(lat, lng)) return false;
 
   const accuracy = Number(pos.coords.accuracy);
   const accuracy_m = Number.isFinite(accuracy) ? Math.max(accuracy, 3) : 25;
 
-  await _client.from("portal_staff_live_locations").upsert(
+  const { error } = await _client.from("portal_staff_live_locations").upsert(
     {
       staff_user_id: _userId,
       staff_display_name: _displayName,
@@ -78,8 +79,14 @@ async function upsertLocation(pos) {
     { onConflict: "staff_user_id" }
   );
 
+  if (error) {
+    console.warn("[portal] live location upsert failed:", error.message || error);
+    return false;
+  }
+
   _lastSentAt = Date.now();
   _lastSentPos = { lat, lng };
+  return true;
 }
 
 async function stopSharing() {
@@ -148,6 +155,9 @@ export async function startPortalLocationTracker(opts = {}) {
   bindPermissionResume();
   await probeLocationPermissionState();
   if (!portalLocationPermissionGranted()) {
+    await tryProbeLocationGrantedViaGeolocation();
+  }
+  if (!portalLocationPermissionGranted()) {
     _pendingStartOpts = opts;
     return;
   }
@@ -170,9 +180,22 @@ export async function startPortalLocationTracker(opts = {}) {
     timeout: 20000,
   };
 
+  const pingLocationNow = () => {
+    if (!portalLocationPermissionGranted() || !navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        markLocationGranted();
+        void upsertLocation(pos, { force: true });
+      },
+      onPositionError,
+      geoOpts
+    );
+  };
+
   const startWatch = () => {
     if (!portalLocationPermissionGranted()) return;
     clearWatch();
+    pingLocationNow();
     _watchId = navigator.geolocation.watchPosition(onPosition, onPositionError, geoOpts);
   };
 
@@ -195,6 +218,17 @@ export async function startPortalLocationTracker(opts = {}) {
   if (document.visibilityState === "visible") {
     startWatch();
   }
+}
+
+/** Re-run tracker after the user grants location in settings. */
+export async function restartPortalLocationTracker(opts = {}) {
+  const page = String(opts.page || "").toLowerCase();
+  const session = opts.session || window.__PORTAL_SUPABASE__?.session;
+  const profile = opts.profile || window.__PORTAL_SUPABASE__?.staff_profile || null;
+  clearWatch();
+  _lastSentAt = 0;
+  _lastSentPos = null;
+  await startPortalLocationTracker({ page, profile, session });
 }
 
 export function portalLocationDisplayRadiusM(accuracy_m) {
