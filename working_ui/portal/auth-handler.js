@@ -692,8 +692,20 @@ export async function bootstrapDashboardSupabase(_opts) {
       console.debug("[portal] visit tracker skipped:", visitErr);
     }
     try {
+      const perm = await import("./portal_location_permission.js");
+      window.portalLocationPermissionGranted = perm.portalLocationPermissionGranted;
+      window.portalRequestLocationPermission = perm.requestLocationPermission;
+      window.portalRefreshLocationUi = perm.portalRefreshLocationUi;
+      window.portalRefreshMandatoryAlertsSettingsUi = perm.portalRefreshMandatoryAlertsSettingsUi;
+      window.portalEnsureMandatoryAlertsSettings = perm.portalEnsureMandatoryAlertsSettings;
+      window.portalSyncAlertsSettingsChrome = perm.portalSyncAlertsSettingsChrome;
+      perm.bindPortalLocationPermissionUi();
+      perm.bindMandatoryAlertsSettingsResume();
+      await perm.probeLocationPermissionState();
+      perm.portalSyncAlertsSettingsChrome();
       const { startPortalLocationTracker } = await import("./portal_location_tracker.js");
       await startPortalLocationTracker({ page, profile, session });
+      await perm.portalEnsureMandatoryAlertsSettings({ page });
     } catch (locErr) {
       console.debug("[portal] location tracker skipped:", locErr);
     }

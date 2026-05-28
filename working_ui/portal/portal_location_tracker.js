@@ -3,6 +3,12 @@
  */
 import { getSupabaseClient } from "./supabase-client.js?v=20260531-location";
 import { portalPresenceSurface } from "./portal_live_presence.js?v=20260531-location";
+import {
+  markLocationGranted,
+  markLocationDenied,
+  portalLocationPermissionGranted,
+  probeLocationPermissionState,
+} from "./portal_location_permission.js?v=20260531-location";
 
 const MIN_SEND_INTERVAL_MS = 25000;
 const MIN_MOVE_M = 8;
@@ -87,10 +93,12 @@ async function stopSharing() {
 }
 
 function onPosition(pos) {
+  markLocationGranted();
   void upsertLocation(pos);
 }
 
 function onPositionError(err) {
+  if (err && err.code === 1) markLocationDenied();
   console.debug("[portal] location", err && err.code);
 }
 
@@ -99,6 +107,23 @@ function clearWatch() {
     navigator.geolocation.clearWatch(_watchId);
   }
   _watchId = null;
+}
+
+/** @type {((opts: Record<string, unknown>) => void) | null} */
+let _pendingStartOpts = null;
+let _permissionListenerBound = false;
+
+function bindPermissionResume() {
+  if (_permissionListenerBound) return;
+  _permissionListenerBound = true;
+  document.addEventListener("portal:location-permission-change", (ev) => {
+    const st = ev && ev.detail ? ev.detail.state : "";
+    if (st === "granted" && _pendingStartOpts) {
+      const o = _pendingStartOpts;
+      _pendingStartOpts = null;
+      void startPortalLocationTracker(o);
+    }
+  });
 }
 
 /**
@@ -120,6 +145,14 @@ export async function startPortalLocationTracker(opts = {}) {
   _surface = portalPresenceSurface(page, profile, email);
   if (_surface === "admin" || _surface === "onboarding") return;
 
+  bindPermissionResume();
+  await probeLocationPermissionState();
+  if (!portalLocationPermissionGranted()) {
+    _pendingStartOpts = opts;
+    return;
+  }
+  _pendingStartOpts = null;
+
   _displayName =
     String(profile.full_name || profile.username || "").trim() ||
     email.split("@")[0] ||
@@ -138,13 +171,16 @@ export async function startPortalLocationTracker(opts = {}) {
   };
 
   const startWatch = () => {
+    if (!portalLocationPermissionGranted()) return;
     clearWatch();
     _watchId = navigator.geolocation.watchPosition(onPosition, onPositionError, geoOpts);
   };
 
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") {
-      startWatch();
+      void probeLocationPermissionState().then(() => {
+        if (portalLocationPermissionGranted()) startWatch();
+      });
     } else {
       clearWatch();
       void stopSharing();
