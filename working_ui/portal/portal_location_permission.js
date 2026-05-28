@@ -162,8 +162,14 @@ export function requestLocationPermission() {
       return;
     }
     navigator.geolocation.getCurrentPosition(
-      () => {
+      (pos) => {
         markLocationGranted();
+        if (pos && typeof window.portalUploadLocationFromPosition === "function") {
+          void window.portalUploadLocationFromPosition(pos);
+        }
+        if (typeof window.portalRestartLocationTracker === "function") {
+          void window.portalRestartLocationTracker();
+        }
         resolve("granted");
       },
       (err) => {
@@ -224,11 +230,24 @@ export function portalRefreshLocationUi() {
       btn.textContent = "HTTPS required for location";
     }
   } else if (st === "granted") {
-    statusEl.textContent =
+    var upload = typeof window !== "undefined" ? window.__PORTAL_LOCATION_LAST_UPLOAD__ : null;
+    var base =
       "Location is allowed. While this app is open, the office can see your position on the live staff map (~10 m when GPS is good; wider circle indoors or with weak signal). Location is not shared in the background.";
+    if (upload && upload.ok) {
+      statusEl.textContent = base + " Last update sent to the office map just now.";
+    } else if (upload && upload.ok === false && upload.message) {
+      statusEl.textContent =
+        base +
+        " Could not send position to the map yet: " +
+        upload.message +
+        " Keep this app open on your phone, or tap Allow again below.";
+    } else {
+      statusEl.textContent =
+        base + " Waiting for GPS — keep the app open on your phone for a few seconds.";
+    }
     if (btn) {
-      btn.textContent = "Location enabled";
-      btn.disabled = true;
+      btn.textContent = upload && upload.ok ? "Location sharing active" : "Refresh location sharing";
+      btn.disabled = false;
     }
   } else if (st === "denied") {
     statusEl.textContent =
@@ -297,15 +316,30 @@ export function bindMandatoryAlertsSettingsResume() {
   document.body.setAttribute("data-portal-alerts-resume-bound", "1");
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState !== "visible") return;
-    void probeLocationPermissionState().then(() => {
+    void probeLocationPermissionState().then(async () => {
       portalRefreshLocationUi();
       if (typeof window.portalRefreshAlertsNotifyUi === "function") {
         window.portalRefreshAlertsNotifyUi();
+      }
+      if (
+        portalLocationPermissionGranted() &&
+        typeof window.portalRestartLocationTracker === "function"
+      ) {
+        await window.portalRestartLocationTracker();
       }
       if (!portalMandatoryAlertsSettingsComplete()) {
         void portalEnsureMandatoryAlertsSettings();
       }
     });
+  });
+}
+
+export function bindPortalLocationUploadUiRefresh() {
+  if (typeof document === "undefined") return;
+  if (document.body.getAttribute("data-portal-location-upload-ui") === "1") return;
+  document.body.setAttribute("data-portal-location-upload-ui", "1");
+  document.addEventListener("portal:location-upload", () => {
+    portalRefreshLocationUi();
   });
 }
 
@@ -315,6 +349,7 @@ export function bindPortalLocationPermissionUi() {
     return;
   }
   alertsSheet.setAttribute("data-portal-location-ui-bound", "1");
+  bindPortalLocationUploadUiRefresh();
   alertsSheet.addEventListener(
     "click",
     (e) => {

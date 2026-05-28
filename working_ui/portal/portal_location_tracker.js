@@ -1,15 +1,15 @@
 /**
  * Shares staff/lead GPS with portal_staff_live_locations while the app tab is visible.
  */
-import { getSupabaseClient } from "./supabase-client.js?v=20260531-location";
-import { portalPresenceSurface } from "./portal_live_presence.js?v=20260531-location";
+import { getSupabaseClient } from "./supabase-client.js?v=20260601-locfix";
+import { portalPresenceSurface } from "./portal_live_presence.js?v=20260601-locfix";
 import {
   markLocationGranted,
   markLocationDenied,
   portalLocationPermissionGranted,
   probeLocationPermissionState,
   tryProbeLocationGrantedViaGeolocation,
-} from "./portal_location_permission.js?v=20260531-location";
+} from "./portal_location_permission.js?v=20260601-locfix";
 
 const MIN_SEND_INTERVAL_MS = 25000;
 const MIN_MOVE_M = 8;
@@ -80,12 +80,38 @@ async function upsertLocation(pos, opts = {}) {
   );
 
   if (error) {
-    console.warn("[portal] live location upsert failed:", error.message || error);
+    const msg = String(error.message || error);
+    console.warn("[portal] live location upsert failed:", msg);
+    if (typeof window !== "undefined") {
+      window.__PORTAL_LOCATION_LAST_UPLOAD__ = {
+        ok: false,
+        at: Date.now(),
+        message: msg,
+      };
+      window.dispatchEvent(
+        new CustomEvent("portal:location-upload", {
+          detail: window.__PORTAL_LOCATION_LAST_UPLOAD__,
+        })
+      );
+    }
     return false;
   }
 
   _lastSentAt = Date.now();
   _lastSentPos = { lat, lng };
+  if (typeof window !== "undefined") {
+    window.__PORTAL_LOCATION_LAST_UPLOAD__ = {
+      ok: true,
+      at: Date.now(),
+      lat,
+      lng,
+    };
+    window.dispatchEvent(
+      new CustomEvent("portal:location-upload", {
+        detail: window.__PORTAL_LOCATION_LAST_UPLOAD__,
+      })
+    );
+  }
   return true;
 }
 
@@ -125,10 +151,15 @@ function bindPermissionResume() {
   _permissionListenerBound = true;
   document.addEventListener("portal:location-permission-change", (ev) => {
     const st = ev && ev.detail ? ev.detail.state : "";
-    if (st === "granted" && _pendingStartOpts) {
+    if (st !== "granted") return;
+    if (_pendingStartOpts) {
       const o = _pendingStartOpts;
       _pendingStartOpts = null;
       void startPortalLocationTracker(o);
+      return;
+    }
+    if (typeof window.portalRestartLocationTracker === "function") {
+      void window.portalRestartLocationTracker();
     }
   });
 }
@@ -229,6 +260,27 @@ export async function restartPortalLocationTracker(opts = {}) {
   _lastSentAt = 0;
   _lastSentPos = null;
   await startPortalLocationTracker({ page, profile, session });
+}
+
+/** Immediate upload (e.g. right after user taps Allow). */
+export async function uploadLocationFromPosition(pos) {
+  if (!_client || !_userId) {
+    const session = window.__PORTAL_SUPABASE__?.session;
+    const profile = window.__PORTAL_SUPABASE__?.staff_profile || null;
+    _userId = String(session?.user?.id || "").trim();
+    if (!_userId) return false;
+    const email = String(session?.user?.email || "").trim();
+    _displayName =
+      String(profile?.full_name || profile?.username || "").trim() ||
+      email.split("@")[0] ||
+      "Staff";
+    try {
+      _client = getSupabaseClient();
+    } catch (_) {
+      return false;
+    }
+  }
+  return upsertLocation(pos, { force: true });
 }
 
 export function portalLocationDisplayRadiusM(accuracy_m) {
