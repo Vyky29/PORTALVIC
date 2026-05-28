@@ -725,6 +725,17 @@ body.portal-achievements-viewer-open .dock-bar {
   cursor: pointer;
   min-width: 0;
   overflow-wrap: break-word;
+  list-style: none;
+}
+
+.portal-admin-achievement-card__meta {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted, #64748b);
+  min-width: 0;
+  overflow-wrap: break-word;
 }
 
 .portal-admin-achievement-card__body {
@@ -732,9 +743,76 @@ body.portal-achievements-viewer-open .dock-bar {
   min-width: 0;
 }
 
-.portal-admin-achievement-card__body img {
-  max-width: 100%;
-  height: auto;
-  border-radius: 8px;
+.portal-admin-achievement-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+
+.portal-admin-achievement-thumb {
+  position: relative;
   display: block;
+  width: 100%;
+  padding: 0;
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 10px;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  background: #0f172a;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.portal-admin-achievement-thumb:focus-visible {
+  outline: 2px solid var(--blue, #2d84b3);
+  outline-offset: 2px;
+}
+
+.portal-admin-achievement-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.portal-admin-achievement-thumb__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 11px;
+  padding: 8px;
+  text-align: center;
+}
+
+.portal-admin-achievement-thumb__cap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 4px 6px 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.78));
+  pointer-events: none;
+  min-width: 0;
+}
+
+.portal-admin-achievement-thumb__cap .chip {
+  align-self: flex-start;
+  font-size: 9px;
+  padding: 2px 6px;
+}
+
+.portal-admin-achievement-thumb__who {
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }

@@ -50,11 +50,6 @@ as $$
     and p.session_date = p_session_date
     and p.client_id = public.portal_normalize_achievement_client_id(p_client_id)
     and public.portal_staff_is_staff_or_lead()
-    and (
-      nullif(trim(coalesce(p_portal_session_key, '')), '') is null
-      or p.portal_session_key is null
-      or p.portal_session_key = nullif(trim(p_portal_session_key), '')
-    )
   order by p.created_at asc;
 $$;
 
@@ -62,7 +57,7 @@ revoke all on function public.portal_list_participant_achievement_drafts(text, d
 grant execute on function public.portal_list_participant_achievement_drafts(text, date, text) to authenticated;
 
 comment on function public.portal_list_participant_achievement_drafts(text, date, text) is
-  'Draft achievement photos for client+day; optional portal_session_key limits to same roster slot (co-instructors).';
+  'Draft achievement photos for client+day from all staff (shared pool for co-instructors on same participant).';
 
 -- Staff may read storage for any draft row (paths only exposed via RPC / table policies).
 drop policy if exists portal_achievement_storage_select_staff_shared on storage.objects;
