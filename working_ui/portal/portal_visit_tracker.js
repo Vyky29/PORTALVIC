@@ -22,6 +22,21 @@ let _lastPageLabel = "";
 let _client = null;
 /** @type {string} */
 let _userId = "";
+/** @type {boolean} */
+let _listenersBound = false;
+
+const SHEET_VISIT_LABELS = {
+  menuSheet: "menu",
+  clientsSheet: "clients",
+  clientSheet: "client",
+  termSheet: "timetable",
+  announcementsSheet: "announcements",
+  achievementsSheet: "achievements",
+  alertsNotificationsSheet: "alerts",
+  internalChatSheet: "chat",
+  safeguardingFeedbackPolicySheet: "safeguarding policy",
+  setupReminderSheet: "setup reminder",
+};
 
 function londonDateIso(d) {
   const dt = d || new Date();
@@ -67,6 +82,13 @@ export function portalVisitPageLabelFromLocation(loc) {
   return file || "portal";
 }
 
+export function portalVisitLabelFromSheetId(sheetId) {
+  const id = String(sheetId || "").trim();
+  if (!id) return "";
+  if (SHEET_VISIT_LABELS[id]) return SHEET_VISIT_LABELS[id];
+  return id.replace(/Sheet$/i, "").replace(/([A-Z])/g, " $1").trim().toLowerCase();
+}
+
 function loadStoredSessionId() {
   try {
     return sessionStorage.getItem(STORAGE_KEY) || "";
@@ -88,6 +110,29 @@ function notePage(label) {
   _lastPageLabel = L;
 }
 
+function appendPageEvent(pages, label) {
+  const arr = Array.isArray(pages) ? pages.slice() : [];
+  const L = String(label || "").trim();
+  if (!L) return arr;
+  const last = arr.length ? arr[arr.length - 1] : null;
+  if (last && String(last.label) === L) return arr;
+  arr.push({ label: L, at: new Date().toISOString() });
+  return arr;
+}
+
+function appendFormSubmitEvent(submits, actionLabel, pageLabel) {
+  const arr = Array.isArray(submits) ? submits.slice() : [];
+  const action = String(actionLabel || "").trim();
+  if (!action) return arr;
+  arr.push({
+    label: action,
+    action,
+    page: String(pageLabel || _lastPageLabel || "").trim(),
+    at: new Date().toISOString(),
+  });
+  return arr;
+}
+
 async function flushPatch(extra) {
   if (!_client || !_sessionId || !_userId) return;
   const now = Date.now();
@@ -107,7 +152,13 @@ async function flushPatch(extra) {
   if (payload.total_ms == null) {
     payload.total_ms = payload.active_tab_ms;
   }
-  await _client.from("portal_staff_visit_sessions").update(payload).eq("id", _sessionId);
+  const { error } = await _client
+    .from("portal_staff_visit_sessions")
+    .update(payload)
+    .eq("id", _sessionId);
+  if (error) {
+    console.warn("[portal] visit session update", error.message || error);
+  }
 }
 
 async function ensureSession(opts) {
@@ -128,13 +179,14 @@ async function ensureSession(opts) {
   if (existingId) {
     const { data } = await _client
       .from("portal_staff_visit_sessions")
-      .select("id, session_date, still_open")
+      .select("id, session_date, still_open, pages")
       .eq("id", existingId)
       .eq("staff_user_id", _userId)
       .maybeSingle();
     if (data && data.still_open && String(data.session_date) === today) {
       _sessionId = data.id;
-      await flushPatch({ last_page_label: pageLabel });
+      const pagesPatch = appendPageEvent(data.pages, pageLabel);
+      await flushPatch({ last_page_label: pageLabel, pages: pagesPatch });
       return;
     }
     saveStoredSessionId("");
@@ -160,21 +212,11 @@ async function ensureSession(opts) {
     .select("id")
     .maybeSingle();
   if (error || !ins?.id) {
-    console.debug("[portal] visit session insert", error);
+    console.warn("[portal] visit session insert", error?.message || error);
     return;
   }
   _sessionId = ins.id;
   saveStoredSessionId(_sessionId);
-}
-
-function appendPageEvent(pages, label) {
-  const arr = Array.isArray(pages) ? pages.slice() : [];
-  const L = String(label || "").trim();
-  if (!L) return arr;
-  const last = arr.length ? arr[arr.length - 1] : null;
-  if (last && String(last.label) === L) return arr;
-  arr.push({ label: L, at: new Date().toISOString() });
-  return arr;
 }
 
 async function heartbeat() {
@@ -201,7 +243,7 @@ async function heartbeat() {
     _visibleSince = 0;
   }
   const active = Math.round(_activeTabAccumMs);
-  await _client
+  const { error } = await _client
     .from("portal_staff_visit_sessions")
     .update({
       last_seen_at: new Date().toISOString(),
@@ -212,6 +254,9 @@ async function heartbeat() {
       still_open: true,
     })
     .eq("id", _sessionId);
+  if (error) {
+    console.warn("[portal] visit session heartbeat", error.message || error);
+  }
 }
 
 async function closeSession() {
@@ -232,6 +277,101 @@ async function closeSession() {
   _sessionId = null;
 }
 
+export function mountPortalVisitActivityBridge() {
+  if (typeof window === "undefined") return;
+  window.portalRecordVisitPage = (label) => {
+    void recordPortalVisitPage(label);
+  };
+  window.portalRecordFormSubmit = (action, page) => {
+    void recordPortalFormSubmit(action, page);
+  };
+  window.portalEndVisitSession = () => {
+    void endPortalVisitSession();
+  };
+}
+
+export function installDashboardSheetHooks() {
+  if (typeof window === "undefined" || window.__PORTAL_VISIT_SHEET_HOOK__) return false;
+  const orig = window.openSheet;
+  if (typeof orig !== "function") return false;
+  window.__PORTAL_VISIT_SHEET_HOOK__ = true;
+  window.openSheet = function portalOpenSheetWithVisit(id) {
+    const result = orig.apply(this, arguments);
+    const sheetLabel = portalVisitLabelFromSheetId(id);
+    if (sheetLabel) {
+      const hub =
+        portalVisitPageLabelFromLocation(location).indexOf("hub") >= 0
+          ? portalVisitPageLabelFromLocation(location)
+          : "hub";
+      void recordPortalVisitPage(`${hub}: ${sheetLabel}`);
+    }
+    return result;
+  };
+  return true;
+}
+
+function installDashboardSheetHooksWithRetry() {
+  if (installDashboardSheetHooks()) return;
+  let tries = 0;
+  const timer = setInterval(() => {
+    tries += 1;
+    if (installDashboardSheetHooks() || tries >= 40) clearInterval(timer);
+  }, 500);
+}
+
+/**
+ * @param {string} label
+ */
+export async function recordPortalVisitPage(label) {
+  if (!_client || !_sessionId) return;
+  const L = String(label || "").trim();
+  if (!L) return;
+  notePage(L);
+  let pagesPatch;
+  try {
+    const { data } = await _client
+      .from("portal_staff_visit_sessions")
+      .select("pages")
+      .eq("id", _sessionId)
+      .maybeSingle();
+    pagesPatch = appendPageEvent(data?.pages, L);
+  } catch (_) {
+    pagesPatch = appendPageEvent([], L);
+  }
+  await flushPatch({ last_page_label: L, pages: pagesPatch });
+}
+
+/**
+ * @param {string} actionLabel
+ * @param {string} [pageLabel]
+ */
+export async function recordPortalFormSubmit(actionLabel, pageLabel) {
+  if (!_client || !_sessionId) return;
+  const action = String(actionLabel || "").trim();
+  if (!action) return;
+  const page = String(pageLabel || _lastPageLabel || portalVisitPageLabelFromLocation(location)).trim();
+  let submitsPatch;
+  try {
+    const { data } = await _client
+      .from("portal_staff_visit_sessions")
+      .select("form_submits")
+      .eq("id", _sessionId)
+      .maybeSingle();
+    submitsPatch = appendFormSubmitEvent(data?.form_submits, action, page);
+  } catch (_) {
+    submitsPatch = appendFormSubmitEvent([], action, page);
+  }
+  await flushPatch({ form_submits: submitsPatch, last_page_label: page || _lastPageLabel });
+}
+
+export async function endPortalVisitSession() {
+  if (_heartbeatTimer) {
+    clearInterval(_heartbeatTimer);
+    _heartbeatTimer = null;
+  }
+  await closeSession();
+}
+
 /**
  * @param {{ page?: string, profile?: Record<string, unknown> | null, session?: import("@supabase/supabase-js").Session | null }} opts
  */
@@ -248,6 +388,11 @@ export async function startPortalVisitTracker(opts = {}) {
 
   _visibleSince = document.visibilityState === "visible" ? Date.now() : 0;
   await ensureSession(opts);
+  mountPortalVisitActivityBridge();
+  installDashboardSheetHooksWithRetry();
+
+  if (_listenersBound) return;
+  _listenersBound = true;
 
   if (_heartbeatTimer) clearInterval(_heartbeatTimer);
   _heartbeatTimer = setInterval(() => {
@@ -267,7 +412,7 @@ export async function startPortalVisitTracker(opts = {}) {
   document.addEventListener("visibilitychange", onVis);
 
   window.addEventListener("pagehide", () => {
-    void closeSession();
+    void flushPatch();
   });
 
   setInterval(() => {

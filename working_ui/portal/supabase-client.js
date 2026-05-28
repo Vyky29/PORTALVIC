@@ -504,6 +504,14 @@ export function portalClearPersistedSupabaseAuth() {
 }
 
 export async function portalLogout() {
+  try {
+    const { endPortalVisitSession } = await import(
+      "./portal_visit_tracker.js?v=20260604-visit-activity"
+    );
+    await endPortalVisitSession();
+  } catch {
+    /* visit tracker optional */
+  }
   if (typeof window !== "undefined" && typeof window.__PORTAL_AUTH_GEN_DISPOSE__ === "function") {
     try {
       window.__PORTAL_AUTH_GEN_DISPOSE__();

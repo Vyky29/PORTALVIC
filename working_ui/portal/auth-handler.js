@@ -686,7 +686,9 @@ export async function bootstrapDashboardSupabase(_opts) {
       console.debug("[portal] live presence skipped:", presenceErr);
     }
     try {
-      const { startPortalVisitTracker } = await import("./portal_visit_tracker.js");
+      const { startPortalVisitTracker } = await import(
+        "./portal_visit_tracker.js?v=20260604-visit-activity"
+      );
       await startPortalVisitTracker({ page, profile, session });
     } catch (visitErr) {
       console.debug("[portal] visit tracker skipped:", visitErr);

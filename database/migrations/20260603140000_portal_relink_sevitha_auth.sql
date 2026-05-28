@@ -8,6 +8,7 @@ do $portal$
 declare
   v_new constant uuid := 'd365ab5c-e190-461a-a390-31e54b0b066f'::uuid;
   v_old uuid;
+  v_placeholder uuid;
 begin
   if not exists (select 1 from auth.users au where au.id = v_new) then
     raise exception 'auth.users % not found. Create Sevitha in Authentication first.', v_new;
@@ -22,6 +23,10 @@ begin
         or lower(trim(coalesce(sp.full_name, ''))) = 'sevitha'
       )
   loop
+    if to_regprocedure('public._portal_relink_auth_user_fks(uuid,uuid)') is not null then
+      perform public._portal_relink_auth_user_fks(v_old, v_new);
+    end if;
+
     update public.staff_profile_change_log
     set staff_id = v_new
     where staff_id = v_old;
@@ -63,6 +68,19 @@ begin
 
     delete from public.staff_profiles where id = v_old;
   end loop;
+
+  if to_regprocedure('public._portal_relink_auth_user_fks(uuid,uuid)') is not null then
+    select u.id
+    into v_placeholder
+    from auth.users u
+    where lower(u.email) = lower('stf019@staff.import.pending')
+      and u.id <> v_new
+    limit 1;
+
+    if v_placeholder is not null then
+      perform public._portal_relink_auth_user_fks(v_placeholder, v_new);
+    end if;
+  end if;
 end
 $portal$;
 

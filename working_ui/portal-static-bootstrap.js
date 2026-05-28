@@ -108,4 +108,32 @@
     });
     cardEl.appendChild(grid);
   };
+
+  /** Start visit tracking on standalone portal forms (feedback, cancellation, …). */
+  (function portalFormVisitBootstrap() {
+    try {
+      var path = String((location && location.pathname) || "").toLowerCase();
+      var formSlugs = [
+        "portal-session-feedback",
+        "cancellation",
+        "portal-expenses",
+        "portal-incident",
+        "portal-venue-review",
+        "portal-lead-feedback",
+        "portal-pickup",
+        "portal-timesheet",
+      ];
+      var isForm = formSlugs.some(function (slug) {
+        return path.indexOf(slug) >= 0;
+      });
+      if (!isForm) return;
+      var s = document.createElement("script");
+      s.type = "module";
+      s.textContent =
+        'import { bootstrapDashboardSupabase } from "/portal/auth-handler.js";\n' +
+        'const page = typeof window.portalFormRoleFromPath === "function" ? window.portalFormRoleFromPath() : "staff";\n' +
+        'try { await bootstrapDashboardSupabase({ page }); } catch (e) { console.warn("[portal] form visit bootstrap", e); }\n';
+      (document.head || document.documentElement).appendChild(s);
+    } catch (_) {}
+  })();
 })();

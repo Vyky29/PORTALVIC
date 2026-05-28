@@ -146,9 +146,11 @@
       '<ul class="portal-activity-pages">' +
       submits
         .map(function (s) {
+          var pageHint = s.page ? ' (' + esc(s.page) + ')' : '';
           return (
             '<li><span class="portal-activity-pages__label">' +
             esc(s.label || s.action || 'submit') +
+            pageHint +
             '</span> <span class="portal-activity-pages__at">' +
             esc(s.at ? formatLondon(s.at, true) : '') +
             '</span></li>'

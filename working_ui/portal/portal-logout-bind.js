@@ -53,6 +53,11 @@
   }
 
   async function runLogout() {
+    try {
+      if (typeof window.portalEndVisitSession === "function") {
+        await window.portalEndVisitSession();
+      }
+    } catch (_) {}
     clearLocalPortalSession();
     try {
       if (typeof window.portalLogoutRedirectToLogin === "function") {
