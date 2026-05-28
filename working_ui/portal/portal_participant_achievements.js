@@ -279,8 +279,6 @@
     if (!video) return;
 
     try {
-      closeCameraFullscreen();
-      setCaptureMode("camera");
       setStatus("");
       openCameraFullscreen();
       state.stream = await navigator.mediaDevices.getUserMedia({
@@ -536,6 +534,7 @@
           portalSessionKey: btn.getAttribute("data-ach-key") || null,
         };
         signedUrlCache = Object.create(null);
+        closeCameraFullscreen();
         state.captureMode = "gallery";
         showStep("capture");
         setCaptureMode("gallery");
@@ -551,12 +550,10 @@
     var galBtn = document.getElementById("portalAchievementsShowGallery");
     if (mode !== "camera") {
       closeCameraFullscreen();
-      if (galPanel) galPanel.hidden = false;
-    } else if (galPanel) {
-      galPanel.hidden = true;
     }
+    if (galPanel) galPanel.hidden = false;
     if (camBtn) camBtn.classList.toggle("is-active", mode === "camera");
-    if (galBtn) galBtn.classList.toggle("is-active", mode === "gallery");
+    if (galBtn) galBtn.classList.toggle("is-active", mode !== "camera");
   }
 
   function showStep(step) {
@@ -672,6 +669,7 @@
 
   function openSheet() {
     bindSheet();
+    closeCameraFullscreen();
     state.participant = null;
     state.photos = [];
     state.captureMode = "gallery";
@@ -681,6 +679,10 @@
     showStep("pick");
     setStatus("");
     setCaptureMode("gallery");
+    var cap = document.getElementById("portalAchievementsStepCapture");
+    if (cap) cap.hidden = true;
+    var pick = document.getElementById("portalAchievementsStepPick");
+    if (pick) pick.hidden = false;
   }
 
   function sheetHtml() {

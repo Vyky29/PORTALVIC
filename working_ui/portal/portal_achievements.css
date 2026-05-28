@@ -208,6 +208,15 @@ body.portal-achievements-camera-open {
   overflow: hidden;
 }
 
+.portal-achievements-camera-fs[hidden] {
+  display: none !important;
+}
+
+#portalAchievementsStepPick[hidden],
+#portalAchievementsStepCapture[hidden] {
+  display: none !important;
+}
+
 .portal-achievements-camera-fs {
   position: fixed;
   inset: 0;
