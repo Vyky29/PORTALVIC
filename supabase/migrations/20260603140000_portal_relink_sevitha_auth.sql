@@ -35,13 +35,30 @@ begin
     where staff_id = v_old;
 
     if to_regclass('public.portal_staff_dm_threads') is not null then
+      -- participant_a < participant_b (ordered UUID pair); swap columns when v_new breaks order
       update public.portal_staff_dm_threads
       set participant_a = v_new
-      where participant_a = v_old;
+      where participant_a = v_old
+        and v_new < participant_b;
+
+      update public.portal_staff_dm_threads
+      set
+        participant_a = participant_b,
+        participant_b = v_new
+      where participant_a = v_old
+        and v_new > participant_b;
 
       update public.portal_staff_dm_threads
       set participant_b = v_new
-      where participant_b = v_old;
+      where participant_b = v_old
+        and participant_a < v_new;
+
+      update public.portal_staff_dm_threads
+      set
+        participant_a = v_new,
+        participant_b = participant_a
+      where participant_b = v_old
+        and v_new < participant_a;
     end if;
 
     delete from public.staff_profiles where id = v_old;
