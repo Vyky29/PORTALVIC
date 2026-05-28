@@ -7092,8 +7092,8 @@
   <script src="/portal/clients_info_embed.js"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js"></script>
   <script src="/portal/staff_roster_resolve.js"></script>
-  <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260531-achievements-today" />
-  <script src="/portal/portal_participant_achievements.js?v=20260531-achievements-today"></script>
+  <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260531-achievements-camera" />
+  <script src="/portal/portal_participant_achievements.js?v=20260531-achievements-camera"></script>
   <script src="/portal/portal_guide_menu.js?v=20260523"></script>
   <script src="/portal/portal_dm_voice.js?v=20260531-dm-voice"></script>
   <script>
@@ -16420,6 +16420,11 @@
       if(bypass){
         try{ portalAnnouncementLockRequired = false; }catch(_){}
       }
+      try{
+        if(window.PortalParticipantAchievements && typeof window.PortalParticipantAchievements.stopCamera === 'function'){
+          window.PortalParticipantAchievements.stopCamera();
+        }
+      }catch(_achCam){}
       const hadClientOpen = $$('.sheet.open').some(s => s.id === 'clientSheet');
       $$('.sheet.open').forEach(s => s.classList.remove('open'));
       document.getElementById('clientGeneralSheet')?.setAttribute('aria-hidden', 'true');
@@ -18298,15 +18303,6 @@
         if(!mount || !window.PortalParticipantAchievements) return;
         if(document.getElementById('achievementsSheet')) return;
         mount.insertAdjacentHTML('beforeend', window.PortalParticipantAchievements.sheetHtml());
-        var closeBtn = document.getElementById('achievementsSheetClose');
-        if(closeBtn){
-          closeBtn.addEventListener('click', function(){
-            if(window.PortalParticipantAchievements && typeof window.PortalParticipantAchievements.stopCamera === 'function'){
-              window.PortalParticipantAchievements.stopCamera();
-            }
-            if(typeof closeSheet === 'function') closeSheet();
-          });
-        }
         window.PortalParticipantAchievements.bindSheet();
       }
       function configure(){

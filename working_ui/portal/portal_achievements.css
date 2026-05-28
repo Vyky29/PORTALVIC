@@ -35,11 +35,71 @@
   color: var(--danger, #dc2626);
 }
 
+.portal-achievements-sheet-head {
+  justify-content: center;
+  text-align: center;
+}
+
+.portal-achievements-sheet-head h3 {
+  margin: 0;
+  width: 100%;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
 .portal-achievements-step-title {
   margin: 0 0 10px;
   font-weight: 600;
   min-width: 0;
   overflow-wrap: break-word;
+}
+
+.portal-achievements-capture-head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  min-width: 0;
+  margin-bottom: 4px;
+}
+
+.portal-achievements-participants-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 0 14px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(45, 132, 179, 0.35);
+  background: linear-gradient(180deg, #eaf5fb, #fff);
+  color: var(--blue, #2d84b3);
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: break-word;
+}
+
+.portal-achievements-participants-chip:active {
+  background: var(--hoverUnifiedBg, #dbeeff);
+}
+
+.portal-achievements-selected-name {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--ink, #0f172a);
+  min-width: 0;
+  width: 100%;
+  overflow-wrap: break-word;
+}
+
+.portal-achievements-count {
+  margin: 0 0 12px;
+  min-width: 0;
 }
 
 .portal-achievements-pick-hint {
@@ -145,26 +205,101 @@
   overflow-wrap: break-word;
 }
 
-.portal-achievements-camera {
-  margin: 12px 0;
-  border-radius: 12px;
+body.portal-achievements-camera-open {
   overflow: hidden;
+}
+
+.portal-achievements-camera-fs {
+  position: fixed;
+  inset: 0;
+  z-index: 120000;
   background: #000;
-}
-
-.portal-achievements-camera video {
-  width: 100%;
-  max-height: 55vh;
-  display: block;
-  object-fit: contain;
-}
-
-.portal-achievements-camera-bar {
   display: flex;
-  gap: 8px;
-  padding: 10px;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.portal-achievements-camera-fs__media {
+  position: absolute;
+  inset: 0;
+  min-width: 0;
+  min-height: 0;
+}
+
+.portal-achievements-camera-fs__video,
+.portal-achievements-camera-fs__preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.portal-achievements-camera-fs__top {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: flex-end;
+  padding: max(12px, env(safe-area-inset-top)) 14px 8px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.55), transparent);
+  min-width: 0;
+}
+
+.portal-achievements-camera-fs__text-btn {
+  border: 0;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 10px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.portal-achievements-camera-fs__bottom {
+  position: relative;
+  z-index: 2;
+  margin-top: auto;
+  display: flex;
+  align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.85);
+  padding: 20px 16px max(24px, env(safe-area-inset-bottom));
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.65), transparent);
+  min-width: 0;
+}
+
+.portal-achievements-camera-fs__bottom--preview {
+  flex-direction: column;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.portal-achievements-camera-fs__shutter {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  border: 4px solid #fff;
+  background: transparent;
+  padding: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.portal-achievements-camera-fs__shutter-inner {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.portal-achievements-camera-fs__action {
+  width: 100%;
+  justify-content: center;
+  min-width: 0;
 }
 
 .portal-achievements-gallery-grid {
