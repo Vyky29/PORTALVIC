@@ -692,7 +692,7 @@ export async function bootstrapDashboardSupabase(_opts) {
       console.debug("[portal] visit tracker skipped:", visitErr);
     }
     try {
-      const perm = await import("./portal_location_permission.js?v=20260601-locfix");
+      const perm = await import("./portal_location_permission.js?v=20260602-locrpc");
       window.portalLocationPermissionGranted = perm.portalLocationPermissionGranted;
       window.portalRequestLocationPermission = perm.requestLocationPermission;
       window.portalRefreshLocationUi = perm.portalRefreshLocationUi;
@@ -703,7 +703,7 @@ export async function bootstrapDashboardSupabase(_opts) {
       perm.bindMandatoryAlertsSettingsResume();
       await perm.probeLocationPermissionState();
       perm.portalSyncAlertsSettingsChrome();
-      const loc = await import("./portal_location_tracker.js?v=20260601-locfix");
+      const loc = await import("./portal_location_tracker.js?v=20260602-locrpc");
       window.portalRestartLocationTracker = function () {
         return loc.restartPortalLocationTracker({ page, profile, session });
       };

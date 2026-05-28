@@ -236,11 +236,16 @@ export function portalRefreshLocationUi() {
     if (upload && upload.ok) {
       statusEl.textContent = base + " Last update sent to the office map just now.";
     } else if (upload && upload.ok === false && upload.message) {
+      var hint = "";
+      if (/does not exist|portal_upsert_staff_live_location|relation/i.test(upload.message)) {
+        hint = " Ask ops to run migration 20260531170000_portal_staff_live_locations_rpc.sql on Portal Supabase.";
+      }
       statusEl.textContent =
         base +
         " Could not send position to the map yet: " +
         upload.message +
-        " Keep this app open on your phone, or tap Allow again below.";
+        hint +
+        " Keep this app open on your phone, or tap Refresh location sharing below.";
     } else {
       statusEl.textContent =
         base + " Waiting for GPS — keep the app open on your phone for a few seconds.";

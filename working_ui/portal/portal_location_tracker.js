@@ -9,7 +9,7 @@ import {
   portalLocationPermissionGranted,
   probeLocationPermissionState,
   tryProbeLocationGrantedViaGeolocation,
-} from "./portal_location_permission.js?v=20260601-locfix";
+} from "./portal_location_permission.js?v=20260602-locrpc";
 
 const MIN_SEND_INTERVAL_MS = 25000;
 const MIN_MOVE_M = 8;
@@ -17,6 +17,8 @@ const DISPLAY_ACCURACY_CAP_M = 10;
 
 /** @type {number | null} */
 let _watchId = null;
+/** @type {ReturnType<typeof setInterval> | null} */
+let _heartbeatTimer = null;
 /** @type {number | null} */
 let _lastSentAt = 0;
 /** @type {{ lat: number; lng: number } | null} */
@@ -54,6 +56,18 @@ function shouldSend(lat, lng) {
   return true;
 }
 
+function reportUploadResult(ok, message, lat, lng) {
+  if (typeof window === "undefined") return;
+  window.__PORTAL_LOCATION_LAST_UPLOAD__ = ok
+    ? { ok: true, at: Date.now(), lat, lng }
+    : { ok: false, at: Date.now(), message: message || "upload_failed" };
+  window.dispatchEvent(
+    new CustomEvent("portal:location-upload", {
+      detail: window.__PORTAL_LOCATION_LAST_UPLOAD__,
+    })
+  );
+}
+
 async function upsertLocation(pos, opts = {}) {
   if (!_client || !_userId) return false;
   const lat = Number(pos.coords.latitude);
@@ -64,65 +78,85 @@ async function upsertLocation(pos, opts = {}) {
   const accuracy = Number(pos.coords.accuracy);
   const accuracy_m = Number.isFinite(accuracy) ? Math.max(accuracy, 3) : 25;
 
-  const { error } = await _client.from("portal_staff_live_locations").upsert(
-    {
-      staff_user_id: _userId,
-      staff_display_name: _displayName,
-      staff_surface: _surface,
-      latitude: lat,
-      longitude: lng,
-      accuracy_m,
-      heading: Number.isFinite(pos.coords.heading) ? pos.coords.heading : null,
-      updated_at: new Date().toISOString(),
-      is_sharing: true,
-    },
-    { onConflict: "staff_user_id" }
-  );
+  let ok = false;
+  let errMsg = "";
 
-  if (error) {
-    const msg = String(error.message || error);
-    console.warn("[portal] live location upsert failed:", msg);
-    if (typeof window !== "undefined") {
-      window.__PORTAL_LOCATION_LAST_UPLOAD__ = {
-        ok: false,
-        at: Date.now(),
-        message: msg,
-      };
-      window.dispatchEvent(
-        new CustomEvent("portal:location-upload", {
-          detail: window.__PORTAL_LOCATION_LAST_UPLOAD__,
-        })
+  const { data: rpcData, error: rpcError } = await _client.rpc("portal_upsert_staff_live_location", {
+    p_latitude: lat,
+    p_longitude: lng,
+    p_accuracy_m: accuracy_m,
+    p_staff_display_name: _displayName,
+    p_staff_surface: _surface,
+  });
+
+  if (rpcError) {
+    errMsg = String(rpcError.message || rpcError);
+    if (/does not exist|42883|portal_upsert_staff_live_location/i.test(errMsg)) {
+      const { error: tableError } = await _client.from("portal_staff_live_locations").upsert(
+        {
+          staff_user_id: _userId,
+          staff_display_name: _displayName,
+          staff_surface: _surface,
+          latitude: lat,
+          longitude: lng,
+          accuracy_m,
+          heading: Number.isFinite(pos.coords.heading) ? pos.coords.heading : null,
+          updated_at: new Date().toISOString(),
+          is_sharing: true,
+        },
+        { onConflict: "staff_user_id" }
       );
+      if (tableError) errMsg = String(tableError.message || tableError);
+      else ok = true;
     }
+  } else if (rpcData && rpcData.ok === false) {
+    errMsg = String(rpcData.error || "rpc_rejected");
+  } else {
+    ok = true;
+  }
+
+  if (!ok) {
+    console.warn("[portal] live location upload failed:", errMsg);
+    reportUploadResult(false, errMsg);
     return false;
   }
 
   _lastSentAt = Date.now();
   _lastSentPos = { lat, lng };
-  if (typeof window !== "undefined") {
-    window.__PORTAL_LOCATION_LAST_UPLOAD__ = {
-      ok: true,
-      at: Date.now(),
-      lat,
-      lng,
-    };
-    window.dispatchEvent(
-      new CustomEvent("portal:location-upload", {
-        detail: window.__PORTAL_LOCATION_LAST_UPLOAD__,
-      })
-    );
-  }
+  reportUploadResult(true, "", lat, lng);
   return true;
 }
+
+/** @type {ReturnType<typeof setTimeout> | null} */
+let _stopSharingTimer = null;
+const STOP_SHARING_DELAY_MS = 90000;
 
 async function stopSharing() {
   if (!_client || !_userId) return;
   try {
-    await _client
-      .from("portal_staff_live_locations")
-      .update({ is_sharing: false, updated_at: new Date().toISOString() })
-      .eq("staff_user_id", _userId);
+    const { error } = await _client.rpc("portal_stop_staff_live_location");
+    if (error) {
+      await _client
+        .from("portal_staff_live_locations")
+        .update({ is_sharing: false, updated_at: new Date().toISOString() })
+        .eq("staff_user_id", _userId);
+    }
   } catch (_) {}
+}
+
+function scheduleStopSharing() {
+  if (_stopSharingTimer) clearTimeout(_stopSharingTimer);
+  _stopSharingTimer = setTimeout(() => {
+    _stopSharingTimer = null;
+    if (document.visibilityState === "hidden") void stopSharing();
+  }, STOP_SHARING_DELAY_MS);
+}
+
+function cancelStopSharing() {
+  if (_stopSharingTimer) {
+    clearTimeout(_stopSharingTimer);
+    _stopSharingTimer = null;
+  }
 }
 
 function onPosition(pos) {
@@ -132,7 +166,17 @@ function onPosition(pos) {
 
 function onPositionError(err) {
   if (err && err.code === 1) markLocationDenied();
-  console.debug("[portal] location", err && err.code);
+  const code = err && err.code;
+  const msg =
+    code === 1
+      ? "Location blocked on this device."
+      : code === 2
+        ? "GPS unavailable — try moving near a window."
+        : code === 3
+          ? "GPS timed out — try again outdoors."
+          : "Could not read GPS.";
+  reportUploadResult(false, msg);
+  console.warn("[portal] location GPS error:", code, err && err.message);
 }
 
 function clearWatch() {
@@ -140,6 +184,10 @@ function clearWatch() {
     navigator.geolocation.clearWatch(_watchId);
   }
   _watchId = null;
+  if (_heartbeatTimer) {
+    clearInterval(_heartbeatTimer);
+    _heartbeatTimer = null;
+  }
 }
 
 /** @type {((opts: Record<string, unknown>) => void) | null} */
@@ -226,18 +274,25 @@ export async function startPortalLocationTracker(opts = {}) {
   const startWatch = () => {
     if (!portalLocationPermissionGranted()) return;
     clearWatch();
+    cancelStopSharing();
     pingLocationNow();
     _watchId = navigator.geolocation.watchPosition(onPosition, onPositionError, geoOpts);
+    if (_heartbeatTimer) clearInterval(_heartbeatTimer);
+    _heartbeatTimer = setInterval(function () {
+      if (document.visibilityState !== "visible") return;
+      pingLocationNow();
+    }, 60000);
   };
 
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") {
+      cancelStopSharing();
       void probeLocationPermissionState().then(() => {
         if (portalLocationPermissionGranted()) startWatch();
       });
     } else {
       clearWatch();
-      void stopSharing();
+      scheduleStopSharing();
     }
   });
 
