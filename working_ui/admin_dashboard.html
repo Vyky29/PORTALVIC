@@ -6,7 +6,7 @@
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260528-aquatic-units" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260527-lead-log" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260527-ops-participants" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260527-ops-staff-panel" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260521-embed" />
   <script src="/portal/hr-contract-embed-html.js?v=20260521-embed"></script>
   <script src="/portal/admin-portal-day-ops.js?v=20260527-lead-log"></script>
@@ -19135,24 +19135,31 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
 
     /** KPI-style hub tile (Day operations / Operations admin / Operator). Same routing attrs as legacy dayops tiles. */
-    function portalDashTileHtml(viewId, act, iconId, eyebrow, titleHtml, focus, tone, dayopsAct, tileMod){
+    function portalDashTileHtml(viewId, act, iconId, eyebrow, titleHtml, focus, tone, dayopsAct, tileMod, externalUrl){
       var id = String(iconId || viewId || act || '').trim();
       var mod = focus ? ' dash-hub__tile--focus' : '';
       var extra = tileMod ? (' '+String(tileMod).trim()) : '';
       var toneKey = String(tone || '').trim();
       var toneAttr = toneKey ? (' data-dayops-tone="'+esc(toneKey)+'"') : '';
       var da = String(dayopsAct || '').trim();
+      var ext = String(externalUrl || '').trim();
+      var inner =
+        '<span class="dash-hub__tile-band" aria-hidden="true">'+adminNavIconHtml(id)+'</span>'+
+        '<span class="dash-hub__tile-label">'+esc(eyebrow)+'</span>'+
+        '<span class="dash-hub__tile-desc">'+titleHtml+'</span>';
+      if(ext){
+        return (
+          '<a class="dash-hub__tile'+mod+extra+'"'+toneAttr+
+          ' href="'+esc(ext)+'" target="_blank" rel="noopener noreferrer">'+inner+'</a>'
+        );
+      }
       var attr = da
         ? (' data-dayops-act="'+esc(da)+'"')
         : (act
           ? (' data-act="'+esc(act)+'"')
           : (' data-view-target="'+esc(viewId)+'"'));
       return (
-        '<button type="button" class="dash-hub__tile'+mod+extra+'"'+toneAttr+attr+'>'+
-        '<span class="dash-hub__tile-band" aria-hidden="true">'+adminNavIconHtml(id)+'</span>'+
-        '<span class="dash-hub__tile-label">'+esc(eyebrow)+'</span>'+
-        '<span class="dash-hub__tile-desc">'+titleHtml+'</span>'+
-        '</button>'
+        '<button type="button" class="dash-hub__tile'+mod+extra+'"'+toneAttr+attr+'>'+inner+'</button>'
       );
     }
     function portalDashPanel(opts){
@@ -19259,7 +19266,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var id = item && item.id;
       var map = {
         dashboard:'Live sessions on site — feedback, incidents, venue checks and day tools for staff on the rota.',
-        operations_admin:'Bookings, programme payments, invoices, progress reviews, and report packs.',
+        operations_admin:'Participants (orders, finance, reports) and staff (HR, contracts, documents, onboarding).',
         operator:'Control centre · KPIs · suggestions · new leads',
         c4k_services:'Weekly capacity snapshot, service registers and rota-linked session overview.',
         clients:'Search participant profiles, attendance history, activity and report requests.',
@@ -19402,15 +19409,31 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var participantsRow1 =
         portalDashTileHtml('orders_all', '', 'bookings', 'Bookings / orders', 'Bookings &amp; wait list', false, 'bookings')+
         portalDashTileHtml('c4k_payments', '', 'c4k_payments', 'Payments', 'Programme payments', false, 'payments')+
-        portalDashTileHtml('invoices', '', 'invoices', 'Invoices', 'Xero draft &amp; export', false, 'payments')+
-        portalDashTileHtml('absents_refunds', '', 'absents_refunds', 'Absents &amp; credit', 'Refunds, credits, missed sessions', false, 'absents');
+        portalDashTileHtml('invoices', '', 'invoices', 'Invoices', 'Xero draft &amp; export', false, 'payments');
       var participantsRow2 =
-        portalDashTileHtml('c4k_reviews', '', 'c4k_reviews', 'Progress', 'Term reviews &amp; goals', false, 'reviews', '', 'dash-hub__tile--span-2')+
-        portalDashTileHtml('c4k_reports', '', 'c4k_reports', 'Reports', 'Request packs &amp; LA delivery', false, 'reports_q', '', 'dash-hub__tile--span-2');
+        portalDashTileHtml('absents_refunds', '', 'absents_refunds', 'Absents &amp; credits', 'Refunds, credits, missed sessions', false, 'absents')+
+        portalDashTileHtml('c4k_reviews', '', 'c4k_reviews', 'Progress', 'Term reviews &amp; goals', false, 'reviews')+
+        portalDashTileHtml('c4k_reports', '', 'c4k_reports', 'Reports', 'Request packs &amp; LA delivery', false, 'reports_q');
+      var staffRow1 =
+        portalDashTileHtml('staffhr', '', 'staffhr', 'Staff &amp; HR', 'Records, availability &amp; HR notes', false, 'sessions')+
+        portalDashTileHtml('staffhr_contracts', '', 'staffhr_contracts', 'Contracts', 'Employment contracts &amp; signatures', false, 'reviews')+
+        portalDashTileHtml('portal_documents', '', 'portal_documents', 'Documents', 'Timesheets, expenses &amp; uploads', false, 'scheduling');
+      var staffRow2 =
+        portalDashTileHtml('interviews', '', 'interviews', 'Interviews', 'Call &amp; face-to-face stages', false, 'leads', '', 'Working_interview.html')+
+        portalDashTileHtml('onboarding', '', 'onboarding', 'Onboarding', 'New-hire forms &amp; tasks', false, 'new_participant')+
+        portalDashTileHtml('settings', '', 'settings', 'Portal activity', 'Settings, alerts &amp; portal links', false, 'analytics');
+      function opsAdminGridHtml(row1, row2){
+        return (
+          '<div class="dash-hub__ops-admin-grids">'+
+          '<div class="dash-hub__grid dash-hub__grid--3">'+row1+'</div>'+
+          '<div class="dash-hub__grid dash-hub__grid--3">'+row2+'</div>'+
+          '</div>'
+        );
+      }
       return (
         '<div class="dash-hub dash-hub--ops-admin">'+
         '<h1 class="page-title">Operations admin</h1>'+
-        '<p class="page-intro">Participant administration outside the live session window — orders, finance, progress reviews, and report packs. For on-site session tools, use <button type="button" class="btn btn--ghost btn--sm" data-view-target="dashboard" style="vertical-align:baseline;padding:0 4px;font-size:inherit">Day operations</button>.</p>'+
+        '<p class="page-intro">Participant and staff administration outside the live session window — orders, finance, HR, contracts, and reporting. For on-site session tools, use <button type="button" class="btn btn--ghost btn--sm" data-view-target="dashboard" style="vertical-align:baseline;padding:0 4px;font-size:inherit">Day operations</button>.</p>'+
         '<div class="dash-hub__stack">'+
         portalDashPanel({
           title:'Participants',
@@ -19419,12 +19442,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           linkIconId:'clients',
           jumpTitle:'Participants directory',
           panelClass:'dash-hub__panel--participants',
-          bodyHtml:
-            '<div class="dash-hub__participants-grids">'+
-            '<div class="dash-hub__grid dash-hub__grid--4 dash-hub__grid--participants-row1">'+participantsRow1+'</div>'+
-            '<div class="dash-hub__grid dash-hub__grid--4 dash-hub__grid--participants-row2">'+participantsRow2+'</div>'+
-            '</div>',
+          bodyHtml: opsAdminGridHtml(participantsRow1, participantsRow2),
           ariaLabel:'Participants'
+        })+
+        portalDashPanel({
+          title:'Staff members',
+          subtitle:'HR, contracts, documents, interviews, and onboarding',
+          linkView:'staffhr',
+          linkIconId:'staffhr',
+          jumpTitle:'Staff &amp; HR',
+          panelClass:'dash-hub__panel--staff',
+          bodyHtml: opsAdminGridHtml(staffRow1, staffRow2),
+          ariaLabel:'Staff members'
         })+
         '</div></div>'
       );
