@@ -20072,9 +20072,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="modal-h"><h2 id="modalTitle">Announcements &amp; reminders</h2></div>'+
         '<div class="modal-b" style="min-width:0">'+
         '<p class="muted" style="margin:0 0 14px;font-size:13px;line-height:1.55;min-width:0;overflow-wrap:break-word">Send a site-wide <strong>announcement</strong> or a targeted <strong>reminder</strong> (training, timesheet, notes).</p>'+
-        '<div style="display:flex;flex-direction:column;gap:10px;min-width:0">'+
-        '<button type="button" class="btn btn--pri" id="dayopsAnnHubAnnounce">Announcement</button>'+
-        '<button type="button" class="btn btn--sec" id="dayopsAnnHubReminder">Reminder</button>'+
+        '<div style="display:flex;flex-direction:row;gap:10px;min-width:0">'+
+        '<button type="button" id="dayopsAnnHubAnnounce" class="card card-pad dash-link-card card--premium dayops-screen-nav__card" data-dayops-tone="announcements" style="flex:1;min-width:0">'+
+        '<div class="dash-link-row dayops-screen-nav__stack">'+
+        '<span class="dayops-screen-nav__ico-wrap" aria-hidden="true">'+adminNavIconHtml('announcements')+'</span>'+
+        '<div class="dash-link-meta dayops-screen-nav__meta" style="min-width:0">'+
+        '<span class="dayops-screen-nav__label">Announcement</span>'+
+        '<span class="dayops-screen-nav__desc">Site-wide</span>'+
+        '</div></div></button>'+
+        '<button type="button" id="dayopsAnnHubReminder" class="card card-pad dash-link-card card--premium dayops-screen-nav__card" data-dayops-tone="reminders" style="flex:1;min-width:0">'+
+        '<div class="dash-link-row dayops-screen-nav__stack">'+
+        '<span class="dayops-screen-nav__ico-wrap" aria-hidden="true">'+adminNavIconHtml('reminders')+'</span>'+
+        '<div class="dash-link-meta dayops-screen-nav__meta" style="min-width:0">'+
+        '<span class="dayops-screen-nav__label">Reminder</span>'+
+        '<span class="dayops-screen-nav__desc">Targeted</span>'+
+        '</div></div></button>'+
         '</div></div>'+
         '<div class="modal-f"><button type="button" class="btn btn--ghost" id="dayopsAnnHubClose">Cancel</button></div>'
       );
