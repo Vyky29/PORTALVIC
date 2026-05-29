@@ -86,13 +86,15 @@
 
   function normalizeExpenseRows(rows) {
     return (rows || []).map(function (r) {
+      var exName = r.title || r.name || 'Expense report';
+      var exPath = r.file_url || r.path || '';
       return {
         type: 'expense',
-        name: r.title || r.name || 'Expense report',
-        path: r.file_url || r.path || '',
+        name: exName,
+        path: exPath,
         storageBucket: 'documents',
         size: null,
-        created: r.created_at || null,
+        created: r.created_at || deriveCreatedFromName(exName, exPath),
         source: 'portal',
         details: r
       };
@@ -101,13 +103,15 @@
 
   function normalizeTimesheetRows(rows) {
     return (rows || []).map(function (r) {
+      var name = r.name || r.label || r.path || 'Timesheet';
+      var path = r.path || r.file_path || '';
       return {
         type: 'timesheet',
-        name: r.name || r.label || r.path || 'Timesheet',
-        path: r.path || r.file_path || '',
+        name: name,
+        path: path,
         storageBucket: r.bucket || r.storage_bucket || 'club-files',
         size: r.size || null,
-        created: r.created_at || r.uploaded_at || null,
+        created: r.created_at || r.uploaded_at || deriveCreatedFromName(name, path),
         source: r.source || 'portal',
         details: r
       };
@@ -119,13 +123,15 @@
       var type = r.type || 'other';
       var n = String(r.name || r.path || '').toLowerCase();
       if (type === 'certificate' && n.indexOf('firstaid-') >= 0) type = 'firstaid';
+      var obName = r.name || r.path || 'File';
+      var obPath = r.path || '';
       return {
         type: type,
-        name: r.name || r.path || 'File',
-        path: r.path || '',
+        name: obName,
+        path: obPath,
         storageBucket: r.storage_bucket || r.bucket || 'club-files',
         size: r.size || null,
-        created: r.created_at || r.uploaded_at || null,
+        created: r.created_at || r.uploaded_at || deriveCreatedFromName(obName, obPath),
         source: r.source || 'onboarding',
         details: r
       };
@@ -153,10 +159,33 @@
     return out;
   }
 
+  /**
+   * Many timesheet/expense files are stored with a Date.now() prefix in the
+   * filename (e.g. "1779813340877-Name_s_May_2026_Timesheet.pdf"). When the
+   * storage listing has no created_at, derive the submission time from that
+   * leading epoch (13 digits = ms, 10 digits = seconds).
+   */
+  function deriveCreatedFromName() {
+    for (var i = 0; i < arguments.length; i++) {
+      var s = String(arguments[i] == null ? '' : arguments[i]);
+      var base = s.split('/').pop();
+      var m = base.match(/^(\d{10,13})\D/);
+      if (!m) continue;
+      var num = Number(m[1]);
+      if (!Number.isFinite(num)) continue;
+      if (m[1].length <= 10) num *= 1000; // seconds -> ms
+      var d = new Date(num);
+      var yr = d.getFullYear();
+      if (yr >= 2020 && yr <= 2100) return d.toISOString();
+    }
+    return null;
+  }
+
   function formatDate(iso) {
     if (!iso) return '—';
     try {
       return new Date(iso).toLocaleString('en-GB', {
+        weekday: 'short',
         day: 'numeric',
         month: 'short',
         year: 'numeric',
@@ -388,7 +417,7 @@
       '</div>' +
       '<div class="portal-forms-table-wrap">' +
       '<table class="portal-forms-table portal-forms-table--full-detail">' +
-      '<thead><tr><th>Type</th><th>Name</th><th>Uploaded</th><th>Size</th><th></th></tr></thead>' +
+      '<thead><tr><th>Type</th><th>Name</th><th>Submitted</th><th>Size</th><th></th></tr></thead>' +
       '<tbody id="portalDocumentsTbody"><tr><td colspan="5" class="muted" style="padding:16px">Loading…</td></tr></tbody>' +
       '</table></div></div>'
     );
