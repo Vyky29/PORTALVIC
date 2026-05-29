@@ -292,6 +292,48 @@
       margin: 0 0 10px;
       color: #173247;
     }
+    .portal-form-no-logo .portal-venue-logo-bar,
+    .portal-form-no-logo .cancel-logo-wrap-outer,
+    .portal-form-no-logo .cancel-logo-orbits,
+    .portal-form-no-logo .cancel-login-logo { display: none !important; }
+    .venue-context {
+      display: grid;
+      gap: 2px;
+      margin: 0 0 18px;
+      padding: 14px 16px;
+      background: #f4f7fb;
+      border: 1px solid #e2e8f1;
+      border-radius: 16px;
+    }
+    .venue-context__row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 0;
+      padding: 8px 0;
+      border-bottom: 1px solid #e8eef5;
+      min-width: 0;
+    }
+    .venue-context__row:last-child { border-bottom: 0; }
+    .venue-context__label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #5b6473;
+      flex: 0 0 auto;
+    }
+    .venue-context__value {
+      font-size: 15px;
+      font-weight: 700;
+      color: #173247;
+      text-align: right;
+      min-width: 0;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
     .venue-meta-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -406,32 +448,7 @@
     }
   </style>
 </head>
-<body class="portal-logo-venue">
-  <div class="portal-venue-logo-bar">
-    <div class="cancel-logo-wrap-outer">
-      <div class="cancel-logo-wrap">
-        <div class="cancel-logo-pulse" aria-hidden="true"></div>
-        <svg class="cancel-logo-orbits" viewBox="0 0 240 240" aria-hidden="true">
-          <g class="cancel-orbit-layer cancel-orbit-layer-a">
-            <circle cx="212" cy="120" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.95"></circle>
-            <circle cx="148.43" cy="207.50" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.95"></circle>
-            <circle cx="45.57" cy="174.04" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.95"></circle>
-            <circle cx="45.57" cy="65.96" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.95"></circle>
-            <circle cx="148.43" cy="32.50" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.95"></circle>
-          </g>
-          <g class="cancel-orbit-layer cancel-orbit-layer-b">
-            <circle cx="213.53" cy="174" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
-            <circle cx="120" cy="228" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
-            <circle cx="26.47" cy="174" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
-            <circle cx="26.47" cy="66" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
-            <circle cx="120" cy="12" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
-            <circle cx="213.53" cy="66" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
-          </g>
-        </svg>
-        <img class="cancel-login-logo" src="/portal/F-02-1.png" alt="clubSENsational" width="200" height="200" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='/portal/portal_crest.svg'" />
-      </div>
-    </div>
-  </div>
+<body class="portal-logo-venue portal-form-no-logo">
   <!--
     PORTAL_VENUE_REVIEW_ONBOARDING_DRAFT — reserved for future in-app assistant / section guide.
     Previously visible block (Opening & Closing intro) lives here verbatim for copy-restore:
@@ -459,27 +476,28 @@
       <form id="form">
         <input type="hidden" id="time" name="time" />
 
-        <div class="field field--venue full">
-          <p class="field-category">
-            <span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg></span>
-            <span>Venue <span class="req">*</span></span>
+        <section class="venue-context" aria-label="Venue review details">
+          <p class="venue-context__row">
+            <span class="venue-context__label"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span> Completed by</span>
+            <span class="venue-context__value" id="venueContextCompletedBy">—</span>
           </p>
-          <label class="visually-hidden" id="venueFieldLabel" for="venueSelect">Venue</label>
-          <select id="venueSelect" name="venue" required aria-describedby="venueSelectHint">
-            <option value="">Select venue</option>
-          </select>
-          <p id="venueSelectHint" class="field-hint" style="margin:6px 0 0;font-size:13px;color:#5b6473;" hidden></p>
-          <div class="venue-meta-grid">
-            <div class="field">
-              <label for="venueReviewDate"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span> Date</label>
-              <input type="text" id="venueReviewDate" name="venueReviewDate" readonly tabindex="-1" aria-readonly="true" />
-            </div>
-            <div class="field">
-              <label for="venueReviewTime"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span> Time</label>
-              <input type="text" id="venueReviewTime" name="venueReviewTime" readonly tabindex="-1" aria-readonly="true" />
-            </div>
-          </div>
-        </div>
+          <p class="venue-context__row" id="venueContextServiceRow" hidden>
+            <span class="venue-context__label"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4L12 17l-6.3 4.4L8 14 2 9.4h7.6z"/></svg></span> Service</span>
+            <span class="venue-context__value" id="venueContextService">—</span>
+          </p>
+          <p class="venue-context__row">
+            <span class="venue-context__label"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg></span> Venue</span>
+            <span class="venue-context__value" id="venueContextVenue">—</span>
+          </p>
+          <p class="venue-context__row">
+            <span class="venue-context__label"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span> Date</span>
+            <span class="venue-context__value" id="venueContextDate">—</span>
+          </p>
+          <p class="venue-context__row">
+            <span class="venue-context__label"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span> Time</span>
+            <span class="venue-context__value" id="venueContextTime">—</span>
+          </p>
+        </section>
 
         <div class="field full issues-field" id="issuesSection">
       <p class="issues-question">
@@ -527,6 +545,6 @@
     var STAFF_PROFILE_PORTAL_BRIDGE_SECRET = "%%PB6%%";
   </script>
   <!-- Front-end + Supabase insert: portal-shared-js/venue_review_app.js -->
-  <script type="module" src="/portal-shared-js/venue_review_app.js?v=20260524-date-short"></script>
+  <script type="module" src="/portal-shared-js/venue_review_app.js?v=20260605-autofill-nologo"></script>
 </body>
 </html>

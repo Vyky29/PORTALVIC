@@ -29,6 +29,7 @@ function contextFromQuery() {
   return {
     date: clean(qs.get("date") || ""),
     venue: clean(qs.get("venue") || qs.get("location") || ""),
+    service: clean(qs.get("service") || qs.get("programme") || ""),
     openingClosing,
     portalSessionKey: clean(qs.get("sessionKey") || ""),
     origin,
@@ -228,6 +229,18 @@ async function renderVenueContextHeader(ctx) {
   completedByEl.textContent = fallbackName;
   venueEl.textContent = venue;
   dateEl.textContent = date;
+
+  const serviceRow = document.getElementById("venueContextServiceRow");
+  const serviceEl = document.getElementById("venueContextService");
+  const service = clean(ctx.service);
+  if (serviceRow && serviceEl) {
+    if (service) {
+      serviceEl.textContent = service;
+      serviceRow.hidden = false;
+    } else {
+      serviceRow.hidden = true;
+    }
+  }
 
   try {
     const submission = await resolveSubmissionContext(ctx);

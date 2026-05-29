@@ -40,11 +40,16 @@
       color:var(--text);
     }
 
+    .portal-form-no-logo .portal-pickup-logo-bar,
+    .portal-form-no-logo .cancel-logo-wrap-outer,
+    .portal-form-no-logo .cancel-logo-orbits,
+    .portal-form-no-logo .cancel-login-logo{ display:none !important; }
     .portal-pickup-logo-bar{
       width:min(1720px,calc(100% - 32px));
       margin:0 auto 10px;
       text-align:center;
     }
+    .portal-logo-pickup{ padding-top:18px; }
 
     .pickup-wrap{
       width:min(760px,calc(100% - 24px));
@@ -882,32 +887,7 @@
     }
   </style>
 </head>
-<body class="portal-logo-pickup">
-  <div class="portal-pickup-logo-bar">
-    <div class="cancel-logo-wrap-outer">
-      <div class="cancel-logo-wrap">
-        <div class="cancel-logo-pulse" aria-hidden="true"></div>
-        <svg class="cancel-logo-orbits" viewBox="0 0 240 240" aria-hidden="true">
-          <g class="cancel-orbit-layer cancel-orbit-layer-a">
-            <circle cx="212" cy="120" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.95"></circle>
-            <circle cx="148.43" cy="207.50" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.95"></circle>
-            <circle cx="45.57" cy="174.04" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.95"></circle>
-            <circle cx="45.57" cy="65.96" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.95"></circle>
-            <circle cx="148.43" cy="32.50" r="3.5" fill="var(--portal-logo-orbit-a)" opacity="0.95"></circle>
-          </g>
-          <g class="cancel-orbit-layer cancel-orbit-layer-b">
-            <circle cx="213.53" cy="174" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
-            <circle cx="120" cy="228" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
-            <circle cx="26.47" cy="174" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
-            <circle cx="26.47" cy="66" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
-            <circle cx="120" cy="12" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
-            <circle cx="213.53" cy="66" r="5.5" fill="var(--portal-logo-orbit-b)" opacity="0.95"></circle>
-          </g>
-        </svg>
-        <img class="cancel-login-logo" src="/assets/logo-clubsensational.png" alt="clubSENsational" />
-      </div>
-    </div>
-  </div>
+<body class="portal-logo-pickup portal-form-no-logo">
   <script>
     (function(){
       var s = location.search || '';

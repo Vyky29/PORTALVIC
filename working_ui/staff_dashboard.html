@@ -7757,6 +7757,17 @@
           venue = typeof formatTodayVenueOnlyLabel === 'function' ? String(formatTodayVenueOnlyLabel() || '').trim() : '';
         }catch(_){}
         if(venue && venue !== '—') u.searchParams.set('venue', venue);
+        try{
+          const nm = String((window.dashboardData && window.dashboardData.staffName) || '').trim();
+          if(nm) u.searchParams.set('completedBy', nm);
+        }catch(_){}
+        try{
+          let service = '';
+          if(window.dashboardData){
+            service = String(window.dashboardData.service || (window.dashboardData.morning && window.dashboardData.morning.service) || '').trim();
+          }
+          if(service && service !== '—') u.searchParams.set('service', service);
+        }catch(_){}
         return u.href;
       }catch(_){
         return base;
