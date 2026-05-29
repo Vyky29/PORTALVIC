@@ -6,10 +6,15 @@
 // late penalty, net, status) plus a "not submitted yet" list, and emails it to
 // the accountant + admin so they can process payslips.
 //
-// Payroll cycle is 25 -> 24. This report is meant to run on the 24th and covers
-// the month that is closing (period_month = first day of the current month).
-// Workers who submitted on time (by the 23rd) have penalty 0; late carry-overs
-// from the previous cycle appear here with a £5 penalty and status "Late".
+// Payroll cycle is 25 -> 24. This report is meant to run on the 24th at 00:00
+// (deadline cut-off) and covers the month that is closing (period_month = first
+// day of the current month). At that moment it is a clean snapshot:
+//   - "To process": timesheets already submitted for this month (on time, by the
+//     23rd). Late carry-overs from the previous cycle also show here with a £5
+//     penalty and status "Late" (they are paid this month).
+//   - "Not submitted": workers who missed the 24th 00:00 deadline. They are NOT
+//     processed this month; a £5 late penalty applies to their next timesheet
+//     (paid the following month).
 //
 // Trigger (POST) with header:  x-payroll-cron-secret: <PAYROLL_CRON_SECRET>
 // Optional JSON body / query:
@@ -269,7 +274,9 @@ async function buildPdf(targetMonthIso: string, data: Awaited<ReturnType<typeof 
     font,
     muted
   );
-  y -= 22;
+  y -= 8;
+  drawText("To process this month (submitted)", margin, y - 4, 11, bold, ink);
+  y -= 16;
 
   drawHeaderRow();
 
@@ -305,10 +312,20 @@ async function buildPdf(targetMonthIso: string, data: Awaited<ReturnType<typeof 
   y -= rowH + 10;
 
   // Not submitted
-  drawText("Not submitted yet", margin, y - 6, 12, bold, warn);
-  y -= 18;
+  ensureRoom(40);
+  drawText("Not submitted — do NOT process this month", margin, y - 6, 12, bold, warn);
+  y -= 16;
+  drawText(
+    "Missed the deadline (24th, 00:00). A £5 late penalty applies to their next timesheet (paid next month).",
+    margin,
+    y - 4,
+    8.5,
+    font,
+    muted
+  );
+  y -= 16;
   if (!data.notSubmitted.length) {
-    drawText("Everyone with a pay rate has submitted. ", margin, y - 4, 10, font, muted);
+    drawText("Everyone with a pay rate has submitted.", margin, y - 4, 10, font, muted);
     y -= 16;
   } else {
     for (const n of data.notSubmitted) {
@@ -434,7 +451,7 @@ Deno.serve(async (req: Request) => {
     `<p><strong>${data.workers.length}</strong> timesheet(s) submitted · Gross £${money(data.totals.gross)} · ` +
     `Penalties £${money(data.totals.penalty)} · Net £${money(data.totals.net)}.</p>` +
     (data.notSubmitted.length
-      ? `<p><strong>${data.notSubmitted.length}</strong> worker(s) have not submitted yet (listed in the PDF).</p>`
+      ? `<p><strong>${data.notSubmitted.length}</strong> worker(s) did NOT submit by the deadline (24th, 00:00) — please do not process them this month. They are listed in the PDF and a £5 late penalty applies to their next timesheet (paid next month).</p>`
       : `<p>All workers with a pay rate have submitted.</p>`) +
     `<p>Net = Gross minus any late penalty. Please apply tax/NI per each worker's HMRC code.</p>`;
 
