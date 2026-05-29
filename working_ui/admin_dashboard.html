@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260521-embed" />
   <script src="/portal/hr-contract-embed-html.js?v=20260521-embed"></script>
   <script src="/portal/admin-portal-day-ops.js?v=20260527-lead-log"></script>
-  <script src="/portal/admin-portal-documents.js?v=20260529-submitted-date"></script>
+  <script src="/portal/admin-portal-documents.js?v=20260529-docs-redesign"></script>
   <script src="/portal/admin-portal-activity.js?v=20260604-visit-activity"></script>
   <script src="/portal/admin-portal-achievements.js?v=20260604-ach-az-directory"></script>
   <link rel="stylesheet" href="/portal/portal_staff_map.css?v=20260602-staff-map-header" />
@@ -192,6 +192,13 @@
       { id:'recruitment', label:'Recruitment' },
       { id:'interviews', label:'Interviews', externalUrl:'/Working_interview.html' },
       { id:'portal_documents', label:'Documents', hubLabel:'Documents' },
+      { id:'portal_docs_timesheet', label:'Timesheets' },
+      { id:'portal_docs_expense', label:'Expenses' },
+      { id:'portal_docs_portalpin', label:'Portal PINs' },
+      { id:'portal_docs_certificate', label:'Certificates' },
+      { id:'portal_docs_passport', label:'Passports' },
+      { id:'portal_docs_checklist', label:'Checklists' },
+      { id:'portal_docs_firstaid', label:'First aids' },
       { id:'policies', label:'Documents & compliance' },
       { id:'settings', label:'System settings' },
       { id:'portal_nav_alerts', label:'Alerts inbox', navAction:'alerts', skipBottomNav:true },
@@ -208,7 +215,7 @@
       { id:'g_operator', label:'Operator', children:['dashboard','operations_admin','operator'] },
       { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','__h:Participants','clients','__h:Orders','orders_all','__h:Communications','comms_ops'] },
       { id:'g_zoho', label:'H&R (ZohoPeople)', children:['staffhr','onboarding','staffhr_contracts','interviews'] },
-      { id:'g_supabase', label:'Supabase', children:['portal_documents'] },
+      { id:'g_supabase', label:'Documents', children:['portal_docs_timesheet','portal_docs_expense','portal_docs_portalpin','portal_docs_certificate','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid'] },
       { id:'g_xero', label:'Finance (Xero)', children:['c4k_payments','invoices'] },
       { id:'g_settings_portal', label:'Settings & dashboards', children:['__h:This app','settings','portal_nav_alerts','__h:Other portals','portal_nav_staff','portal_nav_lead','portal_nav_ceo','portal_nav_admin','__h:Session','portal_nav_logout'] }
     ];
@@ -254,6 +261,13 @@
       g_xero:'<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/>',
       g_supabase:'<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>',
       portal_documents:'<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>',
+      portal_docs_timesheet:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="9 16 11 18 15 14"/>',
+      portal_docs_expense:'<text x="12" y="17" text-anchor="middle" font-size="15" font-weight="800" fill="currentColor" stroke="none" font-family="system-ui,Segoe UI,sans-serif">£</text>',
+      portal_docs_portalpin:'<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>',
+      portal_docs_certificate:'<circle cx="12" cy="8" r="6"/><path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12"/>',
+      portal_docs_passport:'<rect x="4" y="2" width="16" height="20" rx="2"/><circle cx="12" cy="10" r="3"/><line x1="9" y1="17" x2="15" y2="17"/>',
+      portal_docs_checklist:'<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>',
+      portal_docs_firstaid:'<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="12" y1="11" x2="12" y2="16"/><line x1="9.5" y1="13.5" x2="14.5" y2="13.5"/>',
       g_indeed:'<rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><path d="M12 11v6"/><path d="M9 14h6"/>',
       g_settings_portal:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82-.33A1.65 1.65 0 009 3.09V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>',
       portal_nav_alerts:'<path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/>',
@@ -14732,7 +14746,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(id==='invoices') return viewInvoices();
       if(id==='scheduling') return viewScheduling();
       if(id==='absents_refunds') return viewAbsentsRefundsCredits();
-      if(id==='portal_documents') return viewPortalDocuments();
+      if(id==='portal_documents'){
+        window.__portalDocsPresetFilter = 'all';
+        return viewPortalDocuments();
+      }
+      if(id.indexOf('portal_docs_')===0){
+        window.__portalDocsPresetFilter = id.slice('portal_docs_'.length);
+        return viewPortalDocuments();
+      }
       if(id==='portal_activity') return viewPortalActivity();
       if(id==='participant_achievements') return viewParticipantAchievements();
       if(id==='staff_live_map') return viewStaffLiveMap();
@@ -17893,7 +17914,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         bindSchedulingModule();
       }
       if(id==='invoices') bindInvoicesModule();
-      if(id==='portal_documents') bindPortalDocumentsModule();
+      if(id==='portal_documents' || id.indexOf('portal_docs_')===0) bindPortalDocumentsModule();
       if(id==='portal_activity') bindPortalActivityModule();
       if(id==='participant_achievements') bindParticipantAchievementsModule();
       if(id==='staff_live_map') bindStaffLiveMapModule();

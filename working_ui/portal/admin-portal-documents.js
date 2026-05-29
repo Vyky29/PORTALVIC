@@ -22,6 +22,7 @@
   var TYPE_LABELS = {
     timesheet: 'Timesheet',
     expense: 'Expense',
+    portalpin: 'Portal PIN',
     checklist: 'Checklist',
     passport: 'Passport',
     certificate: 'Certificate',
@@ -30,10 +31,22 @@
     other: 'Other'
   };
 
+  // Order + labels for the stat-card filters (mirrors the sidebar sub-menu).
+  var STAT_CARDS = [
+    { key: 'timesheet', label: 'Timesheets' },
+    { key: 'expense', label: 'Expenses' },
+    { key: 'portalpin', label: 'Portal PINs' },
+    { key: 'checklist', label: 'Checklists' },
+    { key: 'passport', label: 'Passports' },
+    { key: 'certificate', label: 'Certificates' },
+    { key: 'firstaid', label: 'First aids' }
+  ];
+
   var state = {
     filter: 'all',
     search: '',
-    items: []
+    items: [],
+    previewIdx: -1
   };
 
   function configure(options) {
@@ -244,6 +257,7 @@
     var map = {
       timesheet: countByType(items, 'timesheet'),
       expense: countByType(items, 'expense'),
+      portalpin: countByType(items, 'portalpin'),
       checklist: countByType(items, 'checklist'),
       passport: countByType(items, 'passport'),
       certificate: countByType(items, 'certificate'),
@@ -267,24 +281,76 @@
     }
   }
 
-  async function openSignedUrl(path, bucket, source) {
+  async function getSignedUrl(path, bucket, source) {
     var body = await edgePost('portal-admin-hr-file-signed-url', {
       path: path,
       bucket: bucket || 'club-files',
       source: source || 'portal'
     });
-    if (body.error || !body.data || !body.data.signed_url) {
-      try {
-        window.alert('Could not open file. Sign in again or check admin allow-list.');
-      } catch (_e) {}
+    if (body.error || !body.data || !body.data.signed_url) return null;
+    return body.data.signed_url;
+  }
+
+  async function openPreview(idx) {
+    var row = global._portalDocumentsCurrent && global._portalDocumentsCurrent[idx];
+    if (!row || !row.path) return;
+    state.previewIdx = idx;
+    var panel = document.getElementById('portalDocumentsPreview');
+    var frame = document.getElementById('portalDocumentsPreviewFrame');
+    var title = document.getElementById('portalDocumentsPreviewTitle');
+    var root = document.getElementById('portalDocumentsRoot');
+    if (root) root.classList.add('portal-documents--has-preview');
+    if (panel) panel.hidden = false;
+    if (title) title.textContent = row.name || 'Document';
+    if (frame) frame.removeAttribute('src');
+    setStatus('<strong>Opening…</strong> Generating a secure link.');
+    var url = await getSignedUrl(row.path, row.storageBucket, row.source);
+    setStatus('');
+    if (!url) {
+      try { window.alert('Could not open file. Sign in again or check admin allow-list.'); } catch (_e) {}
       return;
     }
-    window.open(body.data.signed_url, '_blank', 'noopener,noreferrer');
+    if (frame) frame.src = url;
+    var openBtn = document.getElementById('portalDocumentsPreviewOpen');
+    if (openBtn) openBtn.onclick = function () { window.open(url, '_blank', 'noopener,noreferrer'); };
+    var dlBtn = document.getElementById('portalDocumentsPreviewDownload');
+    if (dlBtn) dlBtn.onclick = function () {
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = row.name || 'document.pdf';
+      a.target = '_blank';
+      a.rel = 'noopener';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    };
+  }
+
+  function closePreview() {
+    state.previewIdx = -1;
+    var panel = document.getElementById('portalDocumentsPreview');
+    var frame = document.getElementById('portalDocumentsPreviewFrame');
+    var root = document.getElementById('portalDocumentsRoot');
+    if (frame) frame.removeAttribute('src');
+    if (panel) panel.hidden = true;
+    if (root) root.classList.remove('portal-documents--has-preview');
+  }
+
+  function rowMetaHtml(it) {
+    if (it.type === 'expense' && it.details) {
+      var ex = it.details;
+      return (
+        (ex.category ? 'Category: ' + esc(ex.category) + ' · ' : '') +
+        (ex.related_date ? 'Date: ' + esc(ex.related_date) : '')
+      );
+    }
+    return it.path ? esc(it.path) : '';
   }
 
   function renderTable(items) {
     var tbody = document.getElementById('portalDocumentsTbody');
     if (!tbody) return;
+    global._portalDocumentsCurrent = items;
     if (!items.length) {
       tbody.innerHTML =
         '<tr><td colspan="5" class="muted" style="padding:16px">No files match this filter.</td></tr>';
@@ -293,52 +359,19 @@
     tbody.innerHTML = items
       .map(function (it, idx) {
         var typeLabel = TYPE_LABELS[it.type] || it.type || 'Other';
-        var meta = '';
-        if (it.type === 'expense' && it.details) {
-          var ex = it.details;
-          meta =
-            (ex.category ? 'Category: ' + esc(ex.category) + ' · ' : '') +
-            (ex.related_date ? 'Date: ' + esc(ex.related_date) : '');
-        } else if (it.path) {
-          meta = esc(it.path);
-        }
         return (
-          '<tr class="portal-documents-data-row" data-portal-doc-idx="' +
-          idx +
-          '">' +
-          '<td><span class="portal-documents-type-pill portal-documents-type-pill--' +
-          esc(it.type) +
-          '">' +
-          esc(typeLabel) +
-          '</span></td>' +
-          '<td><div class="portal-forms-cell-main">' +
-          esc(it.name) +
-          '</div><div class="portal-forms-cell-sub">' +
-          meta +
-          '</div></td>' +
-          '<td style="white-space:nowrap">' +
-          esc(formatDate(it.created)) +
-          '</td>' +
-          '<td style="white-space:nowrap">' +
-          esc(formatBytes(it.size)) +
-          '</td>' +
-          '<td>' +
-          (it.path
-            ? '<button type="button" class="portal-forms-view-btn" data-portal-doc-view="' +
-              idx +
-              '">View</button>'
-            : '—') +
-          '</td></tr>'
+          '<tr class="portal-documents-data-row" data-portal-doc-idx="' + idx + '">' +
+          '<td><span class="portal-documents-type-pill portal-documents-type-pill--' + esc(it.type) + '">' + esc(typeLabel) + '</span></td>' +
+          '<td><div class="portal-forms-cell-main">' + esc(it.name) + '</div><div class="portal-forms-cell-sub">' + rowMetaHtml(it) + '</div></td>' +
+          '<td style="white-space:nowrap">' + esc(formatDate(it.created)) + '</td>' +
+          '<td style="white-space:nowrap">' + esc(formatBytes(it.size)) + '</td>' +
+          '<td>' + (it.path ? '<button type="button" class="portal-forms-view-btn" data-portal-doc-view="' + idx + '">View</button>' : '—') + '</td></tr>'
         );
       })
       .join('');
-    global._portalDocumentsCurrent = items;
     tbody.querySelectorAll('[data-portal-doc-view]').forEach(function (btn) {
       btn.addEventListener('click', function () {
-        var idx = Number(btn.getAttribute('data-portal-doc-view'));
-        var row = global._portalDocumentsCurrent && global._portalDocumentsCurrent[idx];
-        if (!row || !row.path) return;
-        void openSignedUrl(row.path, row.storageBucket, row.source);
+        void openPreview(Number(btn.getAttribute('data-portal-doc-view')));
       });
     });
   }
@@ -381,45 +414,100 @@
       });
     }
 
+    function applyActiveCard() {
+      root.querySelectorAll('[data-portal-doc-filter]').forEach(function (c) {
+        c.classList.toggle('is-active', c.getAttribute('data-portal-doc-filter') === state.filter);
+      });
+    }
+
     root.querySelectorAll('[data-portal-doc-filter]').forEach(function (chip) {
       chip.addEventListener('click', function () {
-        state.filter = chip.getAttribute('data-portal-doc-filter') || 'all';
-        root.querySelectorAll('[data-portal-doc-filter]').forEach(function (c) {
-          c.classList.toggle('is-active', c === chip);
-        });
+        var key = chip.getAttribute('data-portal-doc-filter') || 'all';
+        // Click the already-active card to clear back to all.
+        state.filter = (state.filter === key) ? 'all' : key;
+        applyActiveCard();
+        closePreview();
         renderTable(filteredItems());
       });
     });
 
+    var closeBtn = document.getElementById('portalDocumentsPreviewClose');
+    if (closeBtn) closeBtn.addEventListener('click', closePreview);
+
+    // Preset filter from the sidebar sub-menu (e.g. clicking "Expenses").
+    var preset = String(global.__portalDocsPresetFilter || '').trim();
+    if (preset && (preset === 'all' || TYPE_LABELS[preset])) {
+      state.filter = preset;
+    }
+    applyActiveCard();
+
     void refresh();
+  }
+
+  function statCardsHtml() {
+    return STAT_CARDS.map(function (c) {
+      return (
+        '<button type="button" class="portal-documents-statcard" data-portal-doc-filter="' + esc(c.key) + '">' +
+        '<span class="portal-documents-statcard-num" data-portal-doc-stat="' + esc(c.key) + '">0</span>' +
+        '<span class="portal-documents-statcard-label">' + esc(c.label) + '</span>' +
+        '</button>'
+      );
+    }).join('');
+  }
+
+  function styleHtml() {
+    return (
+      '<style>' +
+      '#portalDocumentsRoot .portal-documents-statrow{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 16px}' +
+      '#portalDocumentsRoot .portal-documents-statcard{flex:1 1 120px;min-width:110px;background:var(--card,#fff);border:1px solid var(--line,#e5e7eb);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;cursor:pointer;text-align:left;transition:border-color .12s,box-shadow .12s}' +
+      '#portalDocumentsRoot .portal-documents-statcard:hover{border-color:var(--brand,#2563eb)}' +
+      '#portalDocumentsRoot .portal-documents-statcard.is-active{border-color:var(--brand,#2563eb);box-shadow:0 0 0 2px rgba(37,99,235,.18)}' +
+      '#portalDocumentsRoot .portal-documents-statcard-num{font-size:22px;font-weight:800;color:var(--ink,#0f172a);line-height:1.1}' +
+      '#portalDocumentsRoot .portal-documents-statcard-label{font-size:12px;color:var(--muted,#64748b);text-transform:uppercase;letter-spacing:.03em}' +
+      '#portalDocumentsRoot .portal-documents-main{display:flex;gap:16px;align-items:flex-start;min-width:0}' +
+      '#portalDocumentsRoot .portal-documents-listcol{flex:1 1 auto;min-width:0}' +
+      '#portalDocumentsRoot .portal-documents-preview{flex:0 0 420px;max-width:46%;border:1px solid var(--line,#e5e7eb);border-radius:12px;background:var(--card,#fff);overflow:hidden;display:flex;flex-direction:column;min-height:440px}' +
+      '#portalDocumentsRoot.portal-documents--has-preview .portal-documents-listcol{flex:1 1 0}' +
+      '#portalDocumentsRoot .portal-documents-preview-head{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line,#e5e7eb)}' +
+      '#portalDocumentsRoot .portal-documents-preview-title{flex:1;min-width:0;font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
+      '#portalDocumentsRoot .portal-documents-preview-frame{flex:1;width:100%;border:0;min-height:380px;background:#f8fafc}' +
+      '#portalDocumentsRoot .portal-documents-preview-foot{display:flex;gap:8px;justify-content:flex-end;padding:10px 12px;border-top:1px solid var(--line,#e5e7eb)}' +
+      '@media(max-width:860px){#portalDocumentsRoot .portal-documents-main{flex-direction:column}#portalDocumentsRoot .portal-documents-preview{flex:1 1 auto;max-width:none;width:100%}}' +
+      '</style>'
+    );
   }
 
   function viewHtml() {
     return (
       '<div id="portalDocumentsRoot" class="portal-documents-embed portal-day-ops-embed" data-portal-documents-bound="0">' +
+      styleHtml() +
       '<h1 class="page-title">Documents</h1>' +
       '<p class="page-intro" id="portalDocumentsMeta">Timesheets, expenses, and onboarding uploads from Portal Supabase.</p>' +
       '<div id="portalDocumentsStatus" class="portal-forms-status" role="status"></div>' +
       '<div class="portal-documents-toolbar">' +
       '<input type="search" class="inp" id="portalDocumentsSearch" placeholder="Search files, names…" style="max-width:280px;min-width:0" />' +
       '<button type="button" class="btn btn--sec btn--sm" id="portalDocumentsRefresh">Refresh</button>' +
-      '<button type="button" class="btn btn--ghost btn--sm" data-view-target="policies">Policies &amp; compliance</button>' +
-      '<button type="button" class="btn btn--ghost btn--sm" data-view-target="onboarding">Onboarding progress</button>' +
       '</div>' +
-      '<div class="portal-documents-stats">' +
-      '<button type="button" class="portal-documents-stat is-active" data-portal-doc-filter="all">All</button>' +
-      '<button type="button" class="portal-documents-stat" data-portal-doc-filter="timesheet">Timesheets <span data-portal-doc-stat="timesheet">0</span></button>' +
-      '<button type="button" class="portal-documents-stat" data-portal-doc-filter="expense">Expenses <span data-portal-doc-stat="expense">0</span></button>' +
-      '<button type="button" class="portal-documents-stat" data-portal-doc-filter="checklist">Checklists <span data-portal-doc-stat="checklist">0</span></button>' +
-      '<button type="button" class="portal-documents-stat" data-portal-doc-filter="passport">Passports <span data-portal-doc-stat="passport">0</span></button>' +
-      '<button type="button" class="portal-documents-stat" data-portal-doc-filter="certificate">Certificates <span data-portal-doc-stat="certificate">0</span></button>' +
-      '<button type="button" class="portal-documents-stat" data-portal-doc-filter="firstaid">First aid <span data-portal-doc-stat="firstaid">0</span></button>' +
-      '</div>' +
+      '<div class="portal-documents-statrow">' + statCardsHtml() + '</div>' +
+      '<div class="portal-documents-main">' +
+      '<div class="portal-documents-listcol">' +
       '<div class="portal-forms-table-wrap">' +
       '<table class="portal-forms-table portal-forms-table--full-detail">' +
-      '<thead><tr><th>Type</th><th>Name</th><th>Submitted</th><th>Size</th><th></th></tr></thead>' +
+      '<thead><tr><th>Type</th><th>Name / details</th><th>Uploaded</th><th>Size</th><th>View</th></tr></thead>' +
       '<tbody id="portalDocumentsTbody"><tr><td colspan="5" class="muted" style="padding:16px">Loading…</td></tr></tbody>' +
-      '</table></div></div>'
+      '</table></div></div>' +
+      '<aside class="portal-documents-preview" id="portalDocumentsPreview" hidden>' +
+      '<div class="portal-documents-preview-head">' +
+      '<span class="portal-documents-preview-title" id="portalDocumentsPreviewTitle">Document</span>' +
+      '<button type="button" class="btn btn--ghost btn--sm" id="portalDocumentsPreviewClose" aria-label="Close preview">✕</button>' +
+      '</div>' +
+      '<iframe class="portal-documents-preview-frame" id="portalDocumentsPreviewFrame" title="Document preview"></iframe>' +
+      '<div class="portal-documents-preview-foot">' +
+      '<button type="button" class="btn btn--ghost btn--sm" id="portalDocumentsPreviewOpen">Open</button>' +
+      '<button type="button" class="btn btn--pri btn--sm" id="portalDocumentsPreviewDownload">Download</button>' +
+      '</div>' +
+      '</aside>' +
+      '</div></div>'
     );
   }
 
