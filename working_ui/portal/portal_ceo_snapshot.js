@@ -465,17 +465,30 @@
   }
 
   function boot() {
-    if (getClient()) {
+    var done = false;
+    function run() {
+      if (done) return;
+      done = true;
       void load();
-    } else {
-      window.addEventListener(
-        "portal:supabase-ready",
-        function () {
-          void load();
-        },
-        { once: true }
-      );
     }
+    if (getClient()) {
+      run();
+      return;
+    }
+    window.addEventListener("portal:supabase-ready", run, { once: true });
+    // Fallback: if the ready event was missed, poll briefly for the client.
+    var tries = 0;
+    var timer = setInterval(function () {
+      tries += 1;
+      if (done || tries > 30) {
+        clearInterval(timer);
+        return;
+      }
+      if (getClient()) {
+        clearInterval(timer);
+        run();
+      }
+    }, 400);
   }
 
   if (document.readyState === "loading") {

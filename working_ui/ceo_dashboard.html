@@ -857,16 +857,11 @@
         </section>
 
         <section id="ceo-insights" class="ceo-panel ceo-panel--insights" aria-labelledby="ceoInsightsTitle">
-          <h2 id="ceoInsightsTitle" class="ceo-panel__title">Company insights</h2>
+          <h2 id="ceoInsightsTitle" class="ceo-panel__title">Company insights registry</h2>
           <p class="ceo-panel__lead">
-            Embedded view of the company insights map. If the frame is blank (browser or site security), open the full page from the link below.
+            The full catalogue of portal forms and data sources (a wide reference table) opens in its own tab so it stays readable on any screen.
           </p>
-          <div class="ceo-insights-embed-wrap">
-            <iframe id="ceoInsightsFrame" title="Company insights" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-          </div>
-          <p class="ceo-panel__hint" style="margin-top: 12px">
-            <a id="portalCeoNavInsights" href="company_insights.html">Open company insights in a full tab</a>
-          </p>
+          <a class="ceo-ops-team-btn" id="portalCeoNavInsights" href="company_insights.html" target="_blank" rel="noopener">Open company insights registry</a>
         </section>
       </main>
     </div>
@@ -958,16 +953,13 @@
       var staff = document.getElementById("portalCeoNavStaff");
       var adm = document.getElementById("portalCeoNavAdmin");
       var ins = document.getElementById("portalCeoNavInsights");
-      var frm = document.getElementById("ceoInsightsFrame");
       if (isWorkingUi) {
         if (staff) staff.href = "staff_dashboard.html";
         if (adm) adm.href = "admin_dashboard.html";
         if (ins) ins.href = "company_insights.html";
-        if (frm) frm.src = "company_insights.html";
       } else {
         if (adm) adm.href = adminUrl;
         if (ins) ins.href = insightsUrl;
-        if (frm) frm.src = insightsUrl;
       }
     })();
   </script>
@@ -997,7 +989,7 @@
       }
     })();
   </script>
-  <script src="/portal/portal_ceo_snapshot.js?v=20260604-ceo-live-snapshot"></script>
+  <script src="portal/portal_ceo_snapshot.js?v=20260604b-ceo-live-snapshot"></script>
   <script>
     (function () {
       var isElementorPreview =
