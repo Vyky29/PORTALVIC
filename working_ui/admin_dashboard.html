@@ -8955,6 +8955,95 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function schedResolveInstructorSlugFromTyped(list, typed){
       return schedResolveReplacementSlugFromTyped(list, typed);
     }
+    /** Collapsible form to add a Training / Shadowing session (override_type='session_add'). */
+    function schedAddSessionFormHtml(){
+      var today = schedClampIsoToTerm(isoDateLocal(new Date()));
+      return '<details class="section" id="schedAddSessionWrap" style="margin:0 0 18px">'+
+        '<summary style="cursor:pointer;font-weight:600;color:var(--ink)">+ Add training / shadowing session</summary>'+
+        '<div class="card" style="margin-top:10px"><div class="card-pad">'+
+        '<p class="muted" style="margin:0 0 12px;font-size:12px;max-width:52rem;overflow-wrap:break-word">Adds an extra session (not on the roster) for one staff member. It shows on their dashboard and is paid at <strong>&pound;13.50/h</strong> on the timesheet.</p>'+
+        '<div class="filter-row" style="flex-wrap:wrap;gap:10px;align-items:flex-end">'+
+        '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text);min-width:0">Staff'+
+          '<select class="sel" id="schedAddStaff" style="max-width:220px"></select></label>'+
+        '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text);min-width:0">Type'+
+          '<select class="sel" id="schedAddKind" style="max-width:160px"><option value="training">Training</option><option value="shadowing">Shadowing</option></select></label>'+
+        '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text);min-width:0">Date'+
+          '<input type="date" id="schedAddDate" class="inp" style="max-width:170px" min="'+esc(SCHED_COVER_TERM_START)+'" max="'+esc(SCHED_COVER_TERM_END)+'" value="'+esc(today)+'" /></label>'+
+        '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text);min-width:0">Start'+
+          '<input type="time" id="schedAddStart" class="inp" style="max-width:120px" value="09:00" /></label>'+
+        '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text);min-width:0">End'+
+          '<input type="time" id="schedAddEnd" class="inp" style="max-width:120px" value="10:00" /></label>'+
+        '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text);min-width:0">Venue (optional)'+
+          '<input type="text" id="schedAddVenue" class="inp" style="max-width:160px" placeholder="e.g. Acton" /></label>'+
+        '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text);flex:1;min-width:160px">Note (optional)'+
+          '<input type="text" id="schedAddNote" class="inp" placeholder="What is it for" /></label>'+
+        '<button type="button" class="btn btn--pri btn--sm" id="schedAddSaveBtn">Add session</button>'+
+        '</div>'+
+        '<p id="schedAddMsg" class="muted" style="margin:10px 0 0;min-height:1.2em;overflow-wrap:break-word"></p>'+
+        '</div></div></details>';
+    }
+    function schedFillAddStaffSelect(){
+      var sel = $('schedAddStaff');
+      if(!sel) return;
+      var list = schedBuildInstructorPickList();
+      var cur = sel.value;
+      sel.innerHTML = '<option value="">Select staff...</option>' + list.map(function(it){
+        return '<option value="'+esc(it.slug)+'">'+esc(it.display)+'</option>';
+      }).join('');
+      if(cur) sel.value = cur;
+    }
+    async function saveSchedAddSession(){
+      var msg = $('schedAddMsg');
+      function showMsg(t, tone){ if(msg){ msg.textContent = t; msg.style.color = tone === 'err' ? 'var(--danger)' : (tone === 'ok' ? 'var(--success)' : ''); } }
+      var staffSlug = normalizeSchedAnchorStaffId((($('schedAddStaff')||{}).value) || '');
+      var kind = String((($('schedAddKind')||{}).value) || 'training').toLowerCase();
+      var dateIso = schedClampIsoToTerm(String((($('schedAddDate')||{}).value) || '').trim());
+      var start = String((($('schedAddStart')||{}).value) || '').trim();
+      var end = String((($('schedAddEnd')||{}).value) || '').trim();
+      var venue = String((($('schedAddVenue')||{}).value) || '').trim();
+      var note = String((($('schedAddNote')||{}).value) || '').trim();
+      if(!staffSlug){ showMsg('Pick a staff member.', 'err'); return; }
+      if(!dateIso){ showMsg('Pick a date.', 'err'); return; }
+      if(!start || !end){ showMsg('Set a start and end time.', 'err'); return; }
+      if(end <= start){ showMsg('End time must be after start time.', 'err'); return; }
+      var client = getSchedSupabaseClient();
+      if(!client){ showMsg('Supabase not connected yet - try again in a moment.', 'err'); return; }
+      var label = kind === 'shadowing' ? 'Shadowing' : 'Training';
+      var btn = $('schedAddSaveBtn');
+      if(btn) btn.disabled = true;
+      showMsg('Saving...');
+      try{
+        var row = {
+          session_date: dateIso,
+          anchor_staff_id: staffSlug,
+          anchor_start: toPgTime(start),
+          anchor_end: toPgTime(end),
+          anchor_venue: venue || null,
+          anchor_client_id: kind,
+          anchor_time_slot_label: start + ' to ' + end,
+          override_type: 'session_add',
+          payload: { kind: kind, label: label, note: note },
+          reason: note || (label + ' session'),
+          status: 'active',
+          superseded_by: null,
+          spreadsheet_revision: 'admin-dashboard:training-shadowing'
+        };
+        var ins = await client.from('schedule_overrides').insert([row]).select('id,created_at');
+        if(ins.error) throw ins.error;
+        showMsg(label + ' added for ' + dateIso + '.', 'ok');
+        var noteEl = $('schedAddNote'); if(noteEl) noteEl.value = '';
+        if(String(((($('schedDate')||{}).value)) || '') === dateIso){ void refreshSchedulingModule(); }
+      }catch(err){
+        showMsg('Could not save: ' + String((err && err.message) || err), 'err');
+      }finally{
+        if(btn) btn.disabled = false;
+      }
+    }
+    function bindSchedAddSessionForm(){
+      schedFillAddStaffSelect();
+      var btn = $('schedAddSaveBtn');
+      if(btn && !btn.__schedAddBound){ btn.__schedAddBound = true; btn.onclick = function(){ void saveSchedAddSession(); }; }
+    }
     function schedRepSuggestOutsideClick(ev){
       var wrap = $('schedRepComboWrap');
       var coverWrap = $('schedCoverComboWrap');
@@ -9177,7 +9266,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         instructor_reassign: 'Changed instructor',
         slot_close: 'Closed',
         slot_open: 'Open closed slot',
-        override_void: 'Void'
+        override_void: 'Void',
+        session_add: 'Training / Shadowing'
       };
       return map[k] || k;
     }
@@ -10687,6 +10777,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           : '<tr><td colspan="9" class="muted">No sessions for this date. If you imported a dated week CSV, confirm <code>/portal/staff_dashboard_spreadsheet_bundle.js</code> is deployed and includes <code>session_date</code> rows for this day.</td></tr>';
       }
       fillSchedFilterSelects(slots);
+      schedFillAddStaffSelect();
       var logBody = document.querySelector('#schedLogTable tbody');
       if(logBody){
         logBody.innerHTML = (sched.overrides && sched.overrides.length)
@@ -10709,6 +10800,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var btn = $('schedRefreshBtn');
       if(btn) btn.onclick = function(){ void refreshSchedulingModule(); };
       if(dateEl) dateEl.onchange = function(){ void refreshSchedulingModule(); };
+      bindSchedAddSessionForm();
       var vSel = $('schedVenueFilter');
       var sSel = $('schedStaffFilter');
       var pSel = $('schedParticipantFilter');
@@ -10801,6 +10893,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);min-width:0"><input type="checkbox" id="schedOnlyOverride" /> Overrides only</label>'+
         '<button type="button" class="btn btn--sec btn--sm" id="schedRefreshBtn">Refresh</button></div>'+
         '<p id="schedConnMsg" class="muted" style="margin:0 0 12px;min-height:1.25em;max-width:900px;overflow-wrap:break-word"></p>'+
+        schedAddSessionFormHtml()+
         '<div class="section"><div class="section-h"><h2>Base schedule</h2><p>Click a row for full context and to add or review an override. Instructor and participant names open profiles when linked in admin data.</p></div>'+
         '<div class="card"><div class="card-pad" style="overflow:auto;padding:0"><table class="tbl sched-tbl" id="schedBaseTable"><thead><tr><th>Participant</th><th>Service</th><th>Time</th><th>Notes</th><th>Venue</th><th>Instructor</th><th>Roster</th><th>Override</th><th>Action</th></tr></thead><tbody></tbody></table></div></div></div>'+
         '<div class="section" style="margin-top:22px"><div class="section-h"><h2>Change log</h2><p>Overrides stored for the selected date (Supabase).</p></div>'+

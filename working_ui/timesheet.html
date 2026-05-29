@@ -666,6 +666,54 @@
       return Number(state.hourlyRate || 0);
     }
 
+    /** Flat £13.50/h for Training / Shadowing, paid the same for everyone (mirror of portal_service_flat_rate). */
+    function serviceFlatRate(service){
+      const s = String(service || "").toLowerCase();
+      if (/shadow|training/.test(s)) return 13.5;
+      return null;
+    }
+
+    function overrideSessionHours(start, end, payload){
+      if (payload && Number(payload.hours) > 0) return Number(payload.hours);
+      const a = hmToMinutes(String(start || "").slice(0, 5));
+      let b = hmToMinutes(String(end || "").slice(0, 5));
+      if (!Number.isFinite(a) || !Number.isFinite(b)) return 0;
+      if (b < a) b += 24 * 60;
+      return Math.max(0, b - a) / 60;
+    }
+
+    /** Training/shadowing sessions an admin added via schedule_overrides (override_type='session_add'). */
+    async function fetchTrainingShadowingEntries(supabase, rosterKey, startIso, endIso){
+      const key = String(rosterKey || "").trim().toLowerCase();
+      if (!key) return [];
+      const { data, error } = await supabase
+        .from("schedule_overrides")
+        .select("session_date, anchor_start, anchor_end, anchor_staff_id, override_type, payload, status")
+        .eq("override_type", "session_add")
+        .eq("status", "active")
+        .gte("session_date", startIso)
+        .lte("session_date", endIso);
+      if (error || !data) return [];
+      return data
+        .filter((r) => String(r.anchor_staff_id || "").trim().toLowerCase() === key)
+        .map((r) => {
+          const kind = String((r.payload && r.payload.kind) || "").toLowerCase();
+          const label = kind === "shadowing" ? "Shadowing" : "Training";
+          const hours = overrideSessionHours(r.anchor_start, r.anchor_end, r.payload);
+          const dObj = parseIsoDate(r.session_date);
+          return {
+            date: r.session_date,
+            day: dObj ? WEEKDAY[dObj.getDay()] : "",
+            hours: Number(hours.toFixed(2)),
+            completed: true,
+            service: label,
+            role: label,
+            rate: 13.5
+          };
+        })
+        .filter((e) => e.hours > 0);
+    }
+
     /** One paid shift per calendar day: span from earliest start to latest end (not per client row).
      *  Also resolves the day's pay role from the service that covers the most minutes. */
     function dailyHoursFromSessions(sessions, dateObj, reviewMap) {
@@ -1013,7 +1061,14 @@
       state.entries = dates
         .map((d) => dailyHoursFromSessions(sessionsModel, d, reviewMap))
         .filter(Boolean);
-      state.entries.forEach((e) => { e.rate = rateForRole(e.role); });
+      const extraSessions = await fetchTrainingShadowingEntries(supabase, state.staffRosterKey, state.periodStart, state.periodEnd);
+      if (extraSessions.length) {
+        state.entries = state.entries.concat(extraSessions).sort((a, b) => String(a.date).localeCompare(String(b.date)));
+      }
+      state.entries.forEach((e) => {
+        const flat = serviceFlatRate(e.service || e.role);
+        e.rate = flat != null ? flat : rateForRole(e.role);
+      });
       state.payableEntries = state.entries.filter((e) => e.completed);
       state.pendingEntries = state.entries.filter((e) => !e.completed);
       state.totalHours = Number(state.payableEntries.reduce((acc, e) => acc + e.hours, 0).toFixed(2));
@@ -1115,8 +1170,11 @@
         const e = state.entries[i];
         const daily = money(e.hours * Number(e.rate != null ? e.rate : state.hourlyRate));
         doc.rect(colX[0], y, colX[5] - colX[0], rowH, "S");
-        const midCol = state.manual ? String(e.note || e.day || "").slice(0, 22) : e.day;
-        const statusTxt = state.manual ? "Manual" : (e.completed ? "Completed" : "Pending feedback");
+        const isFlat = serviceFlatRate(e.service || e.role) != null;
+        const midCol = state.manual
+          ? String(e.note || e.day || "").slice(0, 22)
+          : (isFlat ? String(e.role || "Training") : e.day);
+        const statusTxt = state.manual ? "Manual" : (isFlat ? "Completed" : (e.completed ? "Completed" : "Pending feedback"));
         doc.text(displayDateFancy(e.date), (colX[0] + colX[1]) / 2, y + 4.8, { align: "center" });
         doc.text(midCol, (colX[1] + colX[2]) / 2, y + 4.8, { align: "center" });
         doc.text(money(e.hours), (colX[2] + colX[3]) / 2, y + 4.8, { align: "center" });

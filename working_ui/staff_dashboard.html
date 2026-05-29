@@ -7186,6 +7186,49 @@
           __portalScheduleOverride: ov
         });
       });
+      // Admin-added Training / Shadowing sessions (override_type='session_add').
+      portalScheduleOverrideRowsAll().forEach(function(ov){
+        if(normaliseIsoDate(ov.session_date) !== normaliseIsoDate(sessionDateKey)) return;
+        if(String(ov.status || 'active') !== 'active') return;
+        if(ov.override_type !== 'session_add') return;
+        if(String(ov.anchor_staff_id || '').trim().toLowerCase() !== staffId) return;
+        const kind = String(ov.payload && ov.payload.kind || '').trim().toLowerCase();
+        const label = kind === 'shadowing' ? 'Shadowing' : 'Training';
+        const slug = kind === 'shadowing' ? 'shadowing' : 'training';
+        const stT = portalHmFromDbTime(ov.anchor_start) || '09:00';
+        const enT = portalHmFromDbTime(ov.anchor_end) || stT;
+        const sT = { start: stT, end: enT, venue: ov.anchor_venue || '' };
+        const note = String(ov.reason || (ov.payload && ov.payload.note) || '').trim();
+        const tts = portalSessionRowTimestamps(sessionDateKey, stT, enT, anchor);
+        extra.push({
+          time: rosterSlotTimeLabel(sT),
+          kind: 'client',
+          clientId: slug,
+          name: label,
+          activity: label,
+          areaLabel: String(ov.anchor_venue || '').trim(),
+          poolLocationLabel: null,
+          showPoolSymbol: false,
+          showSpecialty: false,
+          specialtyLabel: '',
+          general: note || (label + ' session (added by admin) — paid at £13.50/h.'),
+          specialty: '',
+          openSheet: false,
+          sessionKey: sessionDateKey + '|' + stT + '|' + slug,
+          sessionStartTs: tts.sessionStartTs,
+          sessionEndTs: tts.sessionEndTs,
+          noSessionFeedbackRequired: true,
+          actionsDisabled: true,
+          detailsOpenAllowed: true,
+          portalOverrideSuppressReviewOrange: true,
+          portalOverrideCardTone: 'blue',
+          portalOverrideSymbolText: label,
+          scheduleAdminAdjusted: true,
+          portalOverrideHideAdminBadge: true,
+          sessionVenue: String(ov.anchor_venue || '').trim() || '—',
+          __portalScheduleOverride: ov
+        });
+      });
       function portalTodayItemSortKey(it){
         const sk = String(it.sessionKey || '');
         const p = sk.split('|');
