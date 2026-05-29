@@ -7187,11 +7187,15 @@
         });
       });
       // Admin-added Training / Shadowing sessions (override_type='session_add').
+      // anchor_staff_id is stored alnum-only (normalizeSchedAnchorStaffId in admin),
+      // so normalise both sides the same way before matching.
+      const normStaffKey = function(v){ return String(v == null ? '' : v).trim().toLowerCase().replace(/[^a-z0-9]+/g, ''); };
+      const staffIdNorm = normStaffKey(staffId);
       portalScheduleOverrideRowsAll().forEach(function(ov){
         if(normaliseIsoDate(ov.session_date) !== normaliseIsoDate(sessionDateKey)) return;
         if(String(ov.status || 'active') !== 'active') return;
         if(ov.override_type !== 'session_add') return;
-        if(String(ov.anchor_staff_id || '').trim().toLowerCase() !== staffId) return;
+        if(normStaffKey(ov.anchor_staff_id) !== staffIdNorm) return;
         const kind = String(ov.payload && ov.payload.kind || '').trim().toLowerCase();
         const label = kind === 'shadowing' ? 'Shadowing' : 'Training';
         const slug = kind === 'shadowing' ? 'shadowing' : 'training';
