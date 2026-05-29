@@ -256,13 +256,25 @@ function isLoginPage() {
   return Boolean(document.getElementById("login-form"));
 }
 
+function portalNormalizeUrl(value) {
+  if (!value || typeof value !== "string") return value;
+  try {
+    const u = new URL(value, window.location.href);
+    // Collapse accidental duplicate slashes in the path (e.g. admin_dashboard.html//ceo...).
+    u.pathname = u.pathname.replace(/\/{2,}/g, "/");
+    return u.href;
+  } catch {
+    return value.replace(/([^:])\/{2,}/g, "$1/");
+  }
+}
+
 function resolveDashboardRedirect(route) {
   if (!route || typeof route !== "string") return null;
   const t = route.trim();
   if (!t) return null;
-  if (/^https?:\/\//i.test(t)) return t;
+  if (/^https?:\/\//i.test(t)) return portalNormalizeUrl(t);
   try {
-    return new URL(t, window.location.href).href;
+    return portalNormalizeUrl(new URL(t, window.location.href).href);
   } catch {
     return t;
   }
@@ -593,12 +605,13 @@ export async function bootstrapDashboardSupabase(_opts) {
       if (!portalCanAccessAdminDashboard(profile, authEmailGate)) {
         const eff = portalInferEffectiveRole(profile, authEmailGate);
         const ceoUrl = portalPublishedPageUrl("ceo_dashboard.html", "PORTAL_CEO_DASHBOARD_URL");
-        const dest =
+        const dest = portalNormalizeUrl(
           eff === "ceo"
             ? ceoUrl
             : eff === "lead"
               ? portalPublishedLeadUrl()
-              : portalPublishedStaffUrl();
+              : portalPublishedStaffUrl()
+        );
         try {
           window.location.replace(dest);
         } catch {
