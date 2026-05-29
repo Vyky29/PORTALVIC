@@ -7763,35 +7763,76 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
       return m ? (m[1] + '-' + m[2] + '-' + m[3]) : '';
     }
+    /**
+     * Dated-ISO index from STAFF_DASHBOARD_SOURCE.rows, cached on the source object.
+     * Avoids re-scanning every roster row on each calendar-match probe (was O(rows) per call,
+     * which made the Services overview O(days × sessions × rows) and froze the page).
+     */
+    function adminSourceDatedIsoSet(){
+      var src = window.STAFF_DASHBOARD_SOURCE;
+      if(!src || !Array.isArray(src.rows)) return null;
+      if(src.__datedIsoSet && src.__datedIsoSetLen === src.rows.length) return src.__datedIsoSet;
+      var set = Object.create(null);
+      for(var i = 0; i < src.rows.length; i++){
+        var iso = adminNormIsoDate(src.rows[i].session_date || src.rows[i].date);
+        if(iso) set[iso] = 1;
+      }
+      try{ src.__datedIsoSet = set; src.__datedIsoSetLen = src.rows.length; }catch(_e){}
+      return set;
+    }
+    var __adminSessionsDatedIsoCache = (typeof WeakMap !== 'undefined') ? new WeakMap() : null;
+    function adminSessionsDatedIsoSet(sessions){
+      if(!Array.isArray(sessions)) return null;
+      if(__adminSessionsDatedIsoCache && __adminSessionsDatedIsoCache.has(sessions)){
+        return __adminSessionsDatedIsoCache.get(sessions);
+      }
+      var set = Object.create(null);
+      for(var i = 0; i < sessions.length; i++){
+        var iso = adminNormIsoDate(sessions[i].session_date || sessions[i].sessionDate);
+        if(iso) set[iso] = 1;
+      }
+      if(__adminSessionsDatedIsoCache){ try{ __adminSessionsDatedIsoCache.set(sessions, set); }catch(_e){} }
+      return set;
+    }
+    /** weekMondayIso -> { clientSlug: 1 } index of dated source rows, cached on the source object. */
+    function adminSourceWeekClientIndex(){
+      var src = window.STAFF_DASHBOARD_SOURCE;
+      if(!src || !Array.isArray(src.rows)) return null;
+      if(src.__weekClientIdx && src.__weekClientIdxLen === src.rows.length) return src.__weekClientIdx;
+      var idx = Object.create(null);
+      for(var i = 0; i < src.rows.length; i++){
+        var r = src.rows[i];
+        var sd = String(r.session_date || r.date || '').trim().substring(0, 10);
+        if(!sd) continue;
+        var days = bookingWeekIsoRangeMonSun(sd);
+        if(!days.length) continue;
+        var slug = adminRosterSlugify(r.client_name);
+        if(!slug) continue;
+        var ws = days[0];
+        if(!idx[ws]) idx[ws] = Object.create(null);
+        idx[ws][slug] = 1;
+      }
+      try{ src.__weekClientIdx = idx; src.__weekClientIdxLen = src.rows.length; }catch(_e){}
+      return idx;
+    }
     function adminRosterHasDatedSessionsForIso(iso, sessions){
       var want = adminNormIsoDate(iso);
       if(!want) return false;
-      var src = window.STAFF_DASHBOARD_SOURCE;
-      var rows = src && Array.isArray(src.rows) ? src.rows : [];
-      for(var ri = 0; ri < rows.length; ri++){
-        if(adminNormIsoDate(rows[ri].session_date || rows[ri].date) === want) return true;
-      }
-      for(var di = 0; di < (sessions || []).length; di++){
-        if(adminNormIsoDate(sessions[di].session_date || sessions[di].sessionDate) === want) return true;
-      }
+      var srcSet = adminSourceDatedIsoSet();
+      if(srcSet && srcSet[want]) return true;
+      var sesSet = adminSessionsDatedIsoSet(sessions);
+      if(sesSet && sesSet[want]) return true;
       return false;
     }
     function adminClientHasDatedRosterInWeek(iso, clientSlug){
       var cid = adminRosterSlugify(clientSlug);
       if(!cid) return false;
-      var src = window.STAFF_DASHBOARD_SOURCE;
-      if(!src || !Array.isArray(src.rows)) return false;
+      var idx = adminSourceWeekClientIndex();
+      if(!idx) return false;
       var days = bookingWeekIsoRangeMonSun(iso);
       if(!days.length) return false;
-      var ws = days[0];
-      var we = days[6];
-      for(var ri = 0; ri < src.rows.length; ri++){
-        var r = src.rows[ri];
-        var sd = String(r.session_date || r.date || '').trim().substring(0, 10);
-        if(!sd || sd < ws || sd > we) continue;
-        if(adminRosterSlugify(r.client_name) === cid) return true;
-      }
-      return false;
+      var bucket = idx[days[0]];
+      return !!(bucket && bucket[cid]);
     }
     function adminSessionMatchesCalendarIso(s, iso, weekdayLong, sessions){
       var wantIso = adminNormIsoDate(iso);
@@ -16048,19 +16089,26 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var wantVen = String(venue || '').trim();
       var sessions = (pack && pack.sessions) || [];
       var notesBy = notes || (pack && pack.notes) || {};
+      var rel = [];
+      for(var ri = 0; ri < sessions.length; ri++){
+        var sr = sessions[ri];
+        var pr = String(portalDisplayProgrammeFromSheet(String(sr.rosterService || sr.activity || '')).trim() || 'Session');
+        if(pr !== wantProg) continue;
+        var vr = String(sr.venue || '').trim() || '—';
+        if(vr !== wantVen) continue;
+        rel.push(sr);
+      }
       var days = adminEnumerateIsosInclusive(startIso, endIso);
       var out = [];
-      for(var di = 0; di < days.length; di++){
-        var calIso = days[di];
-        var wd = portalWeekdayLongFromIsoDate(calIso);
-        for(var si = 0; si < sessions.length; si++){
-          var s = sessions[si];
-          if(!adminSessionMatchesCalendarIso(s, calIso, wd, sessions)) continue;
-          var p = String(portalDisplayProgrammeFromSheet(String(s.rosterService || s.activity || '')).trim() || 'Session');
-          if(p !== wantProg) continue;
-          var v = String(s.venue || '').trim() || '—';
-          if(v !== wantVen) continue;
-          out.push(mapSpreadsheetSessionToSchedSlot(s, calIso, notesBy));
+      if(rel.length){
+        for(var di = 0; di < days.length; di++){
+          var calIso = days[di];
+          var wd = portalWeekdayLongFromIsoDate(calIso);
+          for(var si = 0; si < rel.length; si++){
+            var s = rel[si];
+            if(!adminSessionMatchesCalendarIso(s, calIso, wd, sessions)) continue;
+            out.push(mapSpreadsheetSessionToSchedSlot(s, calIso, notesBy));
+          }
         }
       }
       out.sort(function(a, b){
