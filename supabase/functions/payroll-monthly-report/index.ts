@@ -145,7 +145,7 @@ function dedupeLatest(rows: any[]): any[] {
 }
 
 async function aggregate(supabase: any, targetMonthIso: string) {
-  const [{ data: tsRaw, error: tsErr }, { data: rates }, { data: profs }] = await Promise.all([
+  const [{ data: tsRaw, error: tsErr }, { data: rates }, { data: roleRates }, { data: profs }] = await Promise.all([
     supabase
       .from("staff_timesheets")
       .select(
@@ -154,6 +154,7 @@ async function aggregate(supabase: any, targetMonthIso: string) {
       .eq("period_month", targetMonthIso)
       .order("created_at", { ascending: true }),
     supabase.from("staff_pay_rates").select("user_id, role_label, hourly_rate"),
+    supabase.from("staff_role_rates").select("user_id, role, is_primary"),
     supabase.from("staff_profiles").select("id, full_name, username"),
   ]);
   if (tsErr) throw tsErr;
@@ -187,12 +188,26 @@ async function aggregate(supabase: any, targetMonthIso: string) {
     })
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  const notSubmitted = (rates || [])
-    .filter((r) => !submittedIds.has(String(r.user_id || "")))
-    .map((r) => ({
-      userId: String(r.user_id || ""),
-      name: nameById.get(String(r.user_id)) || String(r.user_id),
-      role: String(r.role_label || "").trim(),
+  // Expected-staff universe = everyone who has a pay rate (legacy single rate
+  // OR any multi-role rate). Prefer the multi-role primary role for the label.
+  const expected = new Map<string, string>();
+  for (const r of rates || []) {
+    const id = String(r.user_id || "");
+    if (id) expected.set(id, String(r.role_label || "").trim());
+  }
+  for (const rr of roleRates || []) {
+    const id = String(rr.user_id || "");
+    if (!id) continue;
+    if (!expected.has(id)) expected.set(id, "");
+    if (rr.is_primary) expected.set(id, String(rr.role || "").trim() || expected.get(id) || "");
+  }
+
+  const notSubmitted = [...expected.entries()]
+    .filter(([id]) => !submittedIds.has(id))
+    .map(([id, role]) => ({
+      userId: id,
+      name: nameById.get(id) || id,
+      role,
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 

@@ -630,7 +630,44 @@
       return Number(p[0] || 0) * 60 + Number(p[1] || 0);
     }
 
-    /** One paid shift per calendar day: span from earliest start to latest end (not per client row). */
+    /** Map a roster service string to the pay role (mirror of public.portal_service_to_role). */
+    function serviceToRole(service){
+      const s = String(service || "").toLowerCase();
+      if (!s) return "";
+      if (/climb/.test(s)) return "Climbing Instructor";
+      if (/swim|aquatic/.test(s)) return "Swimming Instructor";
+      if (/physical|fitness|gym/.test(s)) return "Fitness Instructor";
+      if (/multi|bespoke|day ?cent|support|hub/.test(s)) return "Support Worker";
+      return "";
+    }
+
+    /** Build state.roleRates (role -> £/h) + primary, from staff_role_rates rows. */
+    function buildRoleRateMap(rows){
+      state.roleRates = {};
+      state.primaryRole = "";
+      state.primaryRate = null;
+      (rows || []).forEach((r) => {
+        const rt = Number(r.hourly_rate);
+        if (!r.role || !Number.isFinite(rt)) return;
+        state.roleRates[r.role] = rt;
+        if (r.is_primary) { state.primaryRole = r.role; state.primaryRate = rt; }
+      });
+      if (state.primaryRate == null && (rows || []).length) {
+        const first = rows[0];
+        state.primaryRole = first.role || "";
+        state.primaryRate = Number(first.hourly_rate);
+      }
+    }
+
+    /** Rate for a given role: its own rate, else the worker's primary, else the single fallback. */
+    function rateForRole(role){
+      if (role && state.roleRates && state.roleRates[role] != null) return state.roleRates[role];
+      if (state.primaryRate != null) return state.primaryRate;
+      return Number(state.hourlyRate || 0);
+    }
+
+    /** One paid shift per calendar day: span from earliest start to latest end (not per client row).
+     *  Also resolves the day's pay role from the service that covers the most minutes. */
     function dailyHoursFromSessions(sessions, dateObj, reviewMap) {
       const dayName = WEEKDAY[dateObj.getDay()];
       const dateKey = isoDate(dateObj);
@@ -642,6 +679,10 @@
       let minStart = Infinity;
       let maxEnd = -Infinity;
       let completedAll = true;
+      const roleMinutes = {};
+      let dominantRole = "";
+      let dominantService = "";
+      let bestMin = -1;
       rows.forEach((s) => {
         const start = String(s.start || "").trim();
         const end = String(s.end || "").trim();
@@ -650,6 +691,15 @@
         if (b < a) b += 24 * 60;
         if (a < minStart) minStart = a;
         if (b > maxEnd) maxEnd = b;
+        const dur = Math.max(0, b - a);
+        const svc = String(s.rosterService || s.service || s.activity || "").trim();
+        const role = serviceToRole(svc);
+        if (role) {
+          roleMinutes[role] = (roleMinutes[role] || 0) + dur;
+          if (roleMinutes[role] > bestMin) { bestMin = roleMinutes[role]; dominantRole = role; dominantService = svc; }
+        } else if (!dominantService) {
+          dominantService = svc;
+        }
         const sk = `${dateKey}|${start}|${String(s.clientId || "").trim()}`;
         if (!sessionIsCompleted(reviewMap[sk])) completedAll = false;
       });
@@ -658,7 +708,9 @@
         date: dateKey,
         day: dayName,
         hours: Number((mins / 60).toFixed(2)),
-        completed: completedAll
+        completed: completedAll,
+        service: dominantService,
+        role: dominantRole || ""
       };
     }
 
@@ -759,11 +811,12 @@
         if (note) note.textContent = "No roster shifts detected for this period.";
       } else {
         body.innerHTML = state.entries.map((e) => {
-          const daily = e.hours * state.hourlyRate;
+          const daily = e.hours * Number(e.rate != null ? e.rate : state.hourlyRate);
           const cls = e.completed ? "day-row--paid" : "day-row--pending";
+          const roleTag = e.role ? ` · ${esc(e.role)}` : "";
           return `<tr class="${cls}">
             <td>${esc(displayDateFancy(e.date))}</td>
-            <td>${esc(e.day)}${e.completed ? " - completed" : " - pending feedback"}</td>
+            <td>${esc(e.day)}${roleTag}${e.completed ? " - completed" : " - pending feedback"}</td>
             <td class="num">${money(e.hours)}</td>
             <td class="num">${money(daily)}</td>
           </tr>`;
@@ -775,7 +828,7 @@
         }
       }
       document.getElementById("totalHours").textContent = money(state.totalHours);
-      document.getElementById("rateTop").textContent = `£${money(state.hourlyRate)}/h`;
+      document.getElementById("rateTop").textContent = `£${money(state.effectiveRate != null ? state.effectiveRate : state.hourlyRate)}/h`;
       document.getElementById("totalCost").textContent = money(state.totalCost);
       document.getElementById("pendingCost").textContent = money(state.pendingCost);
       document.getElementById("potentialCost").textContent = money(state.potentialCost);
@@ -790,7 +843,7 @@
     }
 
     function recomputeManualTotals() {
-      const rate = Number(state.hourlyRate || 0);
+      const rate = state.primaryRate != null ? Number(state.primaryRate) : Number(state.hourlyRate || 0);
       state.entries = state.manualEntries.map((e) => ({
         date: e.date,
         day: e.day,
@@ -798,7 +851,9 @@
         completed: true,
         note: e.note || "",
         start: e.start || "",
-        end: e.end || ""
+        end: e.end || "",
+        role: state.primaryRole || "",
+        rate: rate
       }));
       state.payableEntries = state.entries.slice();
       state.pendingEntries = [];
@@ -921,13 +976,15 @@
       document.getElementById("periodLabel").textContent = `Period: ${state.periodStart} to ${state.periodEnd} (25 -> 24)`;
       renderDeadlineBanner();
 
-      const [profileRes, rateRes] = await Promise.all([
+      const [profileRes, rateRes, roleRatesRes] = await Promise.all([
         supabase.from("staff_profiles").select("full_name, username, role_track, role, app_role").eq("id", state.userId).maybeSingle(),
-        supabase.from("staff_pay_rates").select("hourly_rate, role_label").eq("user_id", state.userId).maybeSingle()
+        supabase.from("staff_pay_rates").select("hourly_rate, role_label").eq("user_id", state.userId).maybeSingle(),
+        supabase.from("staff_role_rates").select("role, scale, hourly_rate, is_primary").eq("user_id", state.userId)
       ]);
 
       const profile = profileRes.data || {};
       const rateRow = rateRes.data || {};
+      buildRoleRateMap(roleRatesRes && roleRatesRes.data ? roleRatesRes.data : []);
 
       const manualKey = manualRosterKeyForUser(profile, user);
       if (manualKey) {
@@ -935,8 +992,9 @@
         state.staffRosterKey = manualKey;
         state.employeeName = resolveEmployeeDisplayName(profile, user, manualKey);
         const mpay = applyPayRateFromProfile(rateRow, profile, manualKey);
-        state.roleLabel = mpay.role_label;
-        state.hourlyRate = Number(mpay.hourly_rate || 0);
+        state.roleLabel = state.primaryRole || mpay.role_label;
+        state.hourlyRate = state.primaryRate != null ? state.primaryRate : Number(mpay.hourly_rate || 0);
+        state.effectiveRate = state.hourlyRate;
         document.getElementById("empName").textContent = state.employeeName || "-";
         document.getElementById("roleLabel").textContent = state.roleLabel || "-";
         document.getElementById("rateTop").textContent = `£${money(state.hourlyRate)}/h`;
@@ -955,13 +1013,18 @@
       state.entries = dates
         .map((d) => dailyHoursFromSessions(sessionsModel, d, reviewMap))
         .filter(Boolean);
+      state.entries.forEach((e) => { e.rate = rateForRole(e.role); });
       state.payableEntries = state.entries.filter((e) => e.completed);
       state.pendingEntries = state.entries.filter((e) => !e.completed);
       state.totalHours = Number(state.payableEntries.reduce((acc, e) => acc + e.hours, 0).toFixed(2));
       state.potentialHours = Number(state.entries.reduce((acc, e) => acc + e.hours, 0).toFixed(2));
-      state.totalCost = Number((state.totalHours * state.hourlyRate).toFixed(2));
-      state.potentialCost = Number((state.potentialHours * state.hourlyRate).toFixed(2));
+      state.totalCost = Number(state.payableEntries.reduce((acc, e) => acc + e.hours * Number(e.rate || 0), 0).toFixed(2));
+      state.potentialCost = Number(state.entries.reduce((acc, e) => acc + e.hours * Number(e.rate || 0), 0).toFixed(2));
       state.pendingCost = Number((state.potentialCost - state.totalCost).toFixed(2));
+      // Effective (blended) rate for display when the worker mixes roles.
+      state.effectiveRate = state.totalHours > 0
+        ? Number((state.totalCost / state.totalHours).toFixed(2))
+        : (state.primaryRate != null ? state.primaryRate : Number(state.hourlyRate || 0));
 
       document.getElementById("empName").textContent = state.employeeName || "-";
       document.getElementById("roleLabel").textContent = state.roleLabel || "-";
@@ -1050,7 +1113,7 @@
       for (let i = 0; i < state.entries.length; i++) {
         ensureRoom(rowH + 1);
         const e = state.entries[i];
-        const daily = money(e.hours * state.hourlyRate);
+        const daily = money(e.hours * Number(e.rate != null ? e.rate : state.hourlyRate));
         doc.rect(colX[0], y, colX[5] - colX[0], rowH, "S");
         const midCol = state.manual ? String(e.note || e.day || "").slice(0, 22) : e.day;
         const statusTxt = state.manual ? "Manual" : (e.completed ? "Completed" : "Pending feedback");
@@ -1066,12 +1129,12 @@
       const summaryRows = state.manual
         ? [
             { label: "Total hours", value: money(state.totalHours), tone: "neutral" },
-            { label: "Rate", value: `£${money(state.hourlyRate)}/h`, tone: "neutral" },
+            { label: "Rate", value: `£${money(state.effectiveRate != null ? state.effectiveRate : state.hourlyRate)}/h`, tone: "neutral" },
             { label: "Total to pay", value: `£${money(state.totalCost)}`, tone: "okStrong" }
           ]
         : [
             { label: "Hours ready to pay now (green)", value: money(state.totalHours), tone: "ok" },
-            { label: "Rate", value: `£${money(state.hourlyRate)}/h`, tone: "neutral" },
+            { label: "Rate (avg)", value: `£${money(state.effectiveRate != null ? state.effectiveRate : state.hourlyRate)}/h`, tone: "neutral" },
             { label: "Ready to pay now", value: `£${money(state.totalCost)}`, tone: "okStrong" },
             { label: "Pending until feedback is completed", value: `£${money(state.pendingCost)}`, tone: "warn" },
             { label: "Total if all feedback is completed", value: `£${money(state.potentialCost)}`, tone: "neutral" }
@@ -1150,7 +1213,9 @@
           hours: e.hours,
           completed: e.completed,
           note: e.note || "",
-          manual: !!state.manual
+          manual: !!state.manual,
+          service: e.service || "",
+          role: e.role || ""
         }))
       };
       const { error } = await supabase.from("staff_timesheets").insert([row]);
