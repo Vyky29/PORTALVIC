@@ -70,6 +70,11 @@
     #submitBtn:focus-visible{background:#0b2a5b;color:#fff;border-color:#0b2a5b;outline:2px solid rgba(11,42,91,.35);outline-offset:2px}
     #submitBtn:disabled{opacity:.55;cursor:not-allowed}
     .muted{color:#60758a}
+    .deadline-banner{margin:12px 16px 0;padding:12px 14px;border-radius:12px;font-size:13px;line-height:1.5;border:1px solid transparent}
+    .deadline-banner strong{font-weight:800}
+    .deadline-banner--ok{background:#eef9f1;border-color:#bfe6cc;color:#14532d}
+    .deadline-banner--late{background:#fdecec;border-color:#f3c2c2;color:#7f1d1d}
+    @media (max-width:560px){.deadline-banner{margin:10px 10px 0;padding:10px 12px;font-size:12px}}
     .status-note{padding:0 16px 12px;font-size:13px;color:#60758a}
     .legend{display:flex;flex-wrap:wrap;gap:10px 16px;padding:0 16px 10px;font-size:12px;color:#60758a}
     .legend span{display:inline-flex;align-items:center;gap:6px;min-width:0}
@@ -150,6 +155,7 @@
         <h1>Timesheet</h1>
         <div class="sub" id="periodLabel">Loading period...</div>
       </header>
+      <div class="deadline-banner" id="deadlineBanner" hidden></div>
       <section class="identity" id="identityBlock">
         <div><strong>Month:</strong> <span id="monthTop">-</span></div>
         <div><strong>Employee:</strong> <span id="empName">-</span></div>
@@ -278,6 +284,13 @@
      * hours by hand. Everyone else keeps the automatic (roster + feedback) sheet.
      */
     const MANUAL_TIMESHEET_ROSTER_KEYS = new Set(["roberto"]);
+    /**
+     * Payroll cycle is 25 -> 24. On-time deadline is the 23rd of the closing
+     * month; submitting on the 24th (last day of the cycle) is late: it rolls to
+     * next month's pay and a fixed penalty is deducted (HMRC late-reporting).
+     */
+    const ONTIME_DEADLINE_DAY = 23;
+    const LATE_PENALTY_GBP = 5;
     /** Personal / placeholder Auth emails → spreadsheet roster id (berta, john, …). */
     const AUTH_EMAIL_TO_ROSTER_KEY = {
       "b.traperocasado@gmail.com": "berta",
@@ -501,6 +514,36 @@
       const d = parseIsoDate(periodEndIso);
       if (!d) return "";
       return d.toLocaleDateString("en-GB", { month: "long" });
+    }
+    function nextPayrollMonthLabel(periodEndIso) {
+      const d = parseIsoDate(periodEndIso);
+      if (!d) return "";
+      const n = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+      return n.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+    }
+    /** Late if submitted on the 24th (deadline is the 23rd; the 25th starts a new cycle). */
+    function submissionLateStatus() {
+      const today = new Date();
+      const day = today.getDate();
+      const isLate = day > ONTIME_DEADLINE_DAY && day < 25;
+      const onTimeMonth = payrollMonthLabel(state.periodEnd);
+      const lateMonth = nextPayrollMonthLabel(state.periodEnd);
+      return { isLate, day, onTimeMonth, lateMonth, payMonth: isLate ? lateMonth : onTimeMonth };
+    }
+    function renderDeadlineBanner() {
+      const el = document.getElementById("deadlineBanner");
+      if (!el) return;
+      const s = submissionLateStatus();
+      el.hidden = false;
+      el.classList.toggle("deadline-banner--late", s.isLate);
+      el.classList.toggle("deadline-banner--ok", !s.isLate);
+      if (s.isLate) {
+        el.innerHTML =
+          `<strong>Late.</strong> The deadline was the 23rd. If you submit now, these hours move to <strong>${esc(s.lateMonth)}</strong>'s pay (not this month) and a <strong>£${money(LATE_PENALTY_GBP)} late penalty</strong> is deducted, because worked hours must be reported to HMRC on time.`;
+      } else {
+        el.innerHTML =
+          `<strong>On time.</strong> Submit by the <strong>23rd</strong>. This timesheet will be included in <strong>${esc(s.onTimeMonth)}</strong>'s pay. Submitting on the 24th or later moves it to the next month and adds a £${money(LATE_PENALTY_GBP)} penalty.`;
+      }
     }
 
     function computePayrollPeriod(anchor = new Date()) {
@@ -875,6 +918,7 @@
       const monthLabel = payrollMonthLabel(state.periodEnd);
       document.getElementById("monthTop").textContent = monthLabel || "-";
       document.getElementById("periodLabel").textContent = `Period: ${state.periodStart} to ${state.periodEnd} (25 -> 24)`;
+      renderDeadlineBanner();
 
       const [profileRes, rateRes] = await Promise.all([
         supabase.from("staff_profiles").select("full_name, username, role_track, role, app_role").eq("id", state.userId).maybeSingle(),
@@ -977,6 +1021,13 @@
       labeledLine("Employee", state.employeeName || "-", 11);
       labeledLine("Role", state.roleLabel || "-", 11);
       labeledLine("Period", `${formatIsoDmy(state.periodStart)} to ${formatIsoDmy(state.periodEnd)}`, 11);
+      const lpsHead = submissionLateStatus();
+      labeledLine("Submitted on", formatIsoDmy(isoDate(new Date())), 11);
+      labeledLine(
+        "Status",
+        lpsHead.isLate ? `Late - moved to ${lpsHead.lateMonth}` : `On time - ${lpsHead.onTimeMonth}`,
+        11
+      );
       y += 1;
 
       const colX = [left, left + 34, left + 64, left + 88, left + 122, right];
@@ -1024,6 +1075,19 @@
             { label: "Pending until feedback is completed", value: `£${money(state.pendingCost)}`, tone: "warn" },
             { label: "Total if all feedback is completed", value: `£${money(state.potentialCost)}`, tone: "neutral" }
           ];
+      const lpsSummary = submissionLateStatus();
+      if (lpsSummary.isLate) {
+        summaryRows.push({
+          label: "Late penalty (HMRC late reporting)",
+          value: `-£${money(LATE_PENALTY_GBP)}`,
+          tone: "warn"
+        });
+        summaryRows.push({
+          label: `Net to pay (moved to ${lpsSummary.lateMonth})`,
+          value: `£${money(Math.max(0, Number(state.totalCost || 0) - LATE_PENALTY_GBP))}`,
+          tone: "okStrong"
+        });
+      }
       const panelPad = 4;
       const rowHeight = 10;
       const panelHeight = panelPad * 2 + rowHeight * summaryRows.length;
@@ -1116,7 +1180,25 @@
         } catch (rowErr) {
           console.warn("[timesheet] My Documents OK; staff_timesheets insert failed:", rowErr);
         }
-        alert("Timesheet submitted successfully");
+        const s = submissionLateStatus();
+        const gross = Number(state.totalCost || 0);
+        if (s.isLate) {
+          const net = Math.max(0, gross - LATE_PENALTY_GBP);
+          alert(
+            "Timesheet submitted — LATE.\n\n" +
+              `These hours move to ${s.lateMonth}'s pay (not this month).\n` +
+              `A £${money(LATE_PENALTY_GBP)} late penalty is deducted (HMRC late reporting).\n\n` +
+              `Gross: £${money(gross)}\n` +
+              `Late penalty: -£${money(LATE_PENALTY_GBP)}\n` +
+              `Net to pay: £${money(net)}`
+          );
+        } else {
+          alert(
+            "Timesheet submitted on time.\n\n" +
+              `It will be included in ${s.onTimeMonth}'s pay.\n` +
+              `Total to pay: £${money(gross)}`
+          );
+        }
         closeOrReturn();
       } catch (_) {
         const msg = _ && _.message ? String(_.message) : "Unknown error";
