@@ -493,9 +493,9 @@ export async function bootstrapDashboardSupabase(_opts) {
   const page = String((_opts && _opts.page) || "").trim().toLowerCase();
   const loginRedirect = portalPublishedLoginUrl();
 
-  /** Only Admin + Lead + portal chooser enforce login + staff_profiles. */
+  /** Admin + Lead + CEO + portal chooser enforce login + staff_profiles. */
   function portalDashboardRequiresStrictGate(page) {
-    return page === "admin" || page === "lead" || page === "choose";
+    return page === "admin" || page === "lead" || page === "ceo" || page === "choose";
   }
 
   if (!isSupabaseConfigured()) {
@@ -599,6 +599,18 @@ export async function bootstrapDashboardSupabase(_opts) {
             : eff === "lead"
               ? portalPublishedLeadUrl()
               : portalPublishedStaffUrl();
+        try {
+          window.location.replace(dest);
+        } catch {
+          window.location.href = dest;
+        }
+        return;
+      }
+    }
+
+    if (page === "ceo") {
+      if (portalInferEffectiveRole(profile, authEmailGate) !== "ceo") {
+        const dest = resolveDashboardRedirect(inferDashboardRoute(profile, authEmailGate));
         try {
           window.location.replace(dest);
         } catch {
