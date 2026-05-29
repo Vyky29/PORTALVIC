@@ -61,6 +61,117 @@
     return "staff";
   };
 
+  /**
+   * Where a portal form should land after a successful submit.
+   * Prefers an explicit `return` URL (feedback), then a `rp` return path
+   * (cancellation / incident), then the staff/lead hub. Carries the session
+   * date context so the dashboard reopens the same review day and shows the
+   * freshly updated (green + chip) session card.
+   */
+  function portalFormComputeReturnTarget() {
+    var search = "";
+    try {
+      search = String((typeof location !== "undefined" && location.search) || "");
+    } catch (_) {}
+    var sp = new URLSearchParams(search.replace(/^\?/, ""));
+    var baseHref =
+      (typeof location !== "undefined" && location.href) || "staff_dashboard.html";
+
+    // 1) Explicit absolute return URL (feedback flow builds this).
+    var ret = sp.get("return");
+    if (ret) {
+      try {
+        var ru = new URL(ret, baseHref);
+        if (ru.protocol === "http:" || ru.protocol === "https:") return ru.href;
+      } catch (_) {}
+    }
+
+    // 2) Resolve the hub (from `rp` return path or by role).
+    var hub;
+    var rp = sp.get("rp");
+    try {
+      if (rp && /\.html(\?|$)/i.test(rp)) {
+        hub = new URL(rp, baseHref);
+      } else {
+        var role =
+          typeof window.portalFormRoleFromPath === "function"
+            ? window.portalFormRoleFromPath()
+            : "staff";
+        var hubName =
+          typeof window.portalResolveHubUrl === "function"
+            ? window.portalResolveHubUrl(role)
+            : role === "lead"
+              ? "lead_dashboard.html"
+              : "staff_dashboard.html";
+        hub = new URL(hubName, baseHref);
+      }
+    } catch (_) {
+      try {
+        hub = new URL("staff_dashboard.html", baseHref);
+      } catch (e2) {
+        return "staff_dashboard.html";
+      }
+    }
+
+    // 3) Carry day context so the dashboard reopens on the right day.
+    var iso = sp.get("rd") || sp.get("date");
+    if (iso && /^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+      hub.searchParams.set("portalReviewDate", iso);
+    } else {
+      var rday = sp.get("rday");
+      if (rday) hub.searchParams.set("portalReviewDay", rday);
+    }
+    var origin = sp.get("origin");
+    if (origin === "dashboard") hub.searchParams.set("portalReturnToToday", "1");
+    return hub.href;
+  }
+  window.portalFormComputeReturnTarget = portalFormComputeReturnTarget;
+
+  /**
+   * Shared success handler for portal forms. Signature is flexible:
+   *   portalRedirectAfterSubmitSuccess(message)
+   *   portalRedirectAfterSubmitSuccess(message, delayMs, doneFn)
+   * When `doneFn` is provided (feedback uses this) it owns the navigation.
+   */
+  window.portalRedirectAfterSubmitSuccess = function portalRedirectAfterSubmitSuccess(
+    message,
+    delayMs,
+    doneFn
+  ) {
+    var go = function () {
+      if (typeof doneFn === "function") {
+        try {
+          doneFn();
+          return;
+        } catch (_) {}
+      }
+      var target = "";
+      try {
+        if (typeof window.portalGetPortalReturnUrl === "function") {
+          target = window.portalGetPortalReturnUrl() || "";
+        }
+      } catch (_) {}
+      if (!target) target = portalFormComputeReturnTarget();
+      try {
+        window.location.assign(target);
+      } catch (e) {
+        try {
+          window.location.href = target;
+        } catch (e2) {}
+      }
+    };
+    var ms = typeof delayMs === "number" && delayMs >= 0 ? delayMs : 0;
+    if (ms > 0) {
+      try {
+        setTimeout(go, ms);
+      } catch (_) {
+        go();
+      }
+    } else {
+      go();
+    }
+  };
+
   window.PORTAL_CONTEXT_ROW_ICONS = {
     participant:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',

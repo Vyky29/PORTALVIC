@@ -8929,7 +8929,7 @@
     function portalApplyAfterInSheetQuickAbsence(item){
       try{
         if(!item || !item.sessionKey) return;
-        try{ if(typeof closeSheet === 'function') closeSheet(); }catch(_){}
+        try{ if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true }); }catch(_){}
         if(typeof hydrateSessionReviewMapFromStorage === 'function') hydrateSessionReviewMapFromStorage();
         const originRaw = typeof portalGetReviewFlowOrigin === 'function' ? portalGetReviewFlowOrigin() : 'dashboard';
         const origin = (originRaw === 'this_week' || originRaw === 'term') ? originRaw : 'dashboard';
@@ -9935,7 +9935,7 @@
       if(item.portalOverrideSuppressReviewOrange) return '';
       const r = getSessionReviewRecord(item) || {};
       if(r.absent) return 'session-card--review-done';
-      if(r.cancelled) return 'session-card--review-cancelled';
+      if(r.cancelled) return 'session-card--review-done';
       if(r.feedbackDone) return 'session-card--review-done';
       if(r.incident) return 'session-card--review-incident';
       if(isSessionEndedForFeedback(item)){
@@ -10610,6 +10610,15 @@
       if(!!item.portalOverrideMakeUpTag){
         return '<span class="portal-ov-alert-pill portal-ov-alert-pill--symbol portal-ov-alert-pill--makeup" aria-label="Make up"><span>MAKE UP</span></span>';
       }
+      if(!item.portalOverrideSuppressReviewOrange){
+        const rr = (typeof getSessionReviewRecord === 'function') ? (getSessionReviewRecord(item) || {}) : {};
+        if(rr.absent){
+          return '<span class="portal-ov-alert-pill portal-ov-alert-pill--symbol portal-ov-alert-pill--absent" aria-label="Absent"><span>ABSENT</span></span>';
+        }
+        if(rr.cancelled){
+          return '<span class="portal-ov-alert-pill portal-ov-alert-pill--symbol portal-ov-alert-pill--cancelled" aria-label="Cancelled"><span>CANCELLED</span></span>';
+        }
+      }
       return '<span class="session-pool-na" aria-hidden="true">—</span>';
     }
 
@@ -10652,6 +10661,10 @@
     /** True when pool/room note stacks under the name (centre) and the override pill/symbol occupies the right column (still 3 columns). */
     function portalTodaySessionOverrideMovesPoolToCenter(item){
       if(!item) return false;
+      if(!item.portalOverrideSuppressReviewOrange && typeof getSessionReviewRecord === 'function'){
+        const rr = getSessionReviewRecord(item) || {};
+        if(rr.absent || rr.cancelled) return true;
+      }
       if(String(item.portalOverrideAlertPill || '').trim()) return true;
       if(String(item.portalOverrideSymbolText || '').trim()) return true;
       if(item.portalOverrideMakeUpTag) return true;
