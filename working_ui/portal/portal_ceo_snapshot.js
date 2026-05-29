@@ -73,6 +73,107 @@
     }
   }
 
+  function fmtDayMonth(d) {
+    try {
+      return new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit" });
+    } catch (e) {
+      return "";
+    }
+  }
+
+  function startOfWeek(d) {
+    var x = new Date(d);
+    if (isNaN(x.getTime())) return null;
+    var day = (x.getDay() + 6) % 7; // Monday = 0
+    x.setHours(0, 0, 0, 0);
+    x.setDate(x.getDate() - day);
+    return x;
+  }
+
+  function weeklyTrend(feedback, weeks) {
+    weeks = weeks || 10;
+    var now = startOfWeek(new Date());
+    var buckets = [];
+    var index = {};
+    for (var i = weeks - 1; i >= 0; i--) {
+      var ws = new Date(now);
+      ws.setDate(ws.getDate() - i * 7);
+      var key = ws.toISOString().slice(0, 10);
+      var b = { key: key, label: fmtDayMonth(ws), count: 0 };
+      index[key] = b;
+      buckets.push(b);
+    }
+    feedback.forEach(function (f) {
+      if (!f.session_date) return;
+      var sw = startOfWeek(f.session_date);
+      if (!sw) return;
+      var k = sw.toISOString().slice(0, 10);
+      if (index[k]) index[k].count += 1;
+    });
+    return buckets;
+  }
+
+  function renderBars(items) {
+    if (!items || !items.length) {
+      return '<p class="ceo-snap-muted">No session feedback in window.</p>';
+    }
+    var max = items.reduce(function (m, s) {
+      return Math.max(m, s.count);
+    }, 0) || 1;
+    return (
+      '<div class="ceo-snap-bars">' +
+      items
+        .map(function (s) {
+          var w = Math.max(3, Math.round((s.count / max) * 100));
+          return (
+            '<div class="ceo-snap-bar-row"><span class="ceo-snap-bar-lab" title="' +
+            esc(s.label) +
+            '">' +
+            esc(s.label) +
+            '</span><span class="ceo-snap-bar-track"><span class="ceo-snap-bar-fill" style="width:' +
+            w +
+            '%"></span></span><span class="ceo-snap-bar-val">' +
+            esc(s.count) +
+            " · " +
+            esc(s.pct) +
+            "%</span></div>"
+          );
+        })
+        .join("") +
+      "</div>"
+    );
+  }
+
+  function renderTrend(trend) {
+    var total = trend.reduce(function (a, b) {
+      return a + b.count;
+    }, 0);
+    if (!total) {
+      return '<p class="ceo-snap-muted">No sessions logged in the trend window.</p>';
+    }
+    var max = trend.reduce(function (m, b) {
+      return Math.max(m, b.count);
+    }, 0) || 1;
+    return (
+      '<div class="ceo-snap-trend">' +
+      trend
+        .map(function (b) {
+          var h = b.count ? Math.max(4, Math.round((b.count / max) * 100)) : 0;
+          return (
+            '<div class="ceo-snap-trend-col"><span class="ceo-snap-trend-val">' +
+            (b.count ? esc(b.count) : "") +
+            '</span><span class="ceo-snap-trend-bar-wrap"><span class="ceo-snap-trend-bar" style="height:' +
+            h +
+            '%"></span></span><span class="ceo-snap-trend-lab">' +
+            esc(b.label) +
+            "</span></div>"
+          );
+        })
+        .join("") +
+      "</div>"
+    );
+  }
+
   function rows(res) {
     if (!res || res.status !== "fulfilled" || !res.value) return [];
     var data = res.value.data;
@@ -193,27 +294,19 @@
       esc(model.venueTotal) +
       " checklists</span></div>";
 
-    var servicesRows = model.services.length
-      ? model.services
-          .map(function (s) {
-            return (
-              "<tr><td><strong>" +
-              esc(s.label) +
-              "</strong></td><td>" +
-              esc(s.count) +
-              '</td><td class="ceo-snap-muted">' +
-              esc(s.pct) +
-              "%</td></tr>"
-            );
-          })
-          .join("")
-      : '<tr><td colspan="3" class="ceo-snap-muted">No session feedback in window.</td></tr>';
-
-    var services =
-      '<div class="ceo-snap-card" style="margin-bottom:14px"><div class="ceo-snap-card-h">Service mix (sessions logged)</div>' +
-      '<div class="ceo-snap-card-p" style="overflow:auto"><table class="ceo-snap-tbl"><thead><tr><th>Service</th><th>Sessions</th><th>Share</th></tr></thead><tbody>' +
-      servicesRows +
-      "</tbody></table></div></div>";
+    var charts =
+      '<div id="ceo-charts" class="ceo-snap-grid2" style="margin-bottom:14px">' +
+      '<div class="ceo-snap-card"><div class="ceo-snap-card-h">Weekly trend · sessions logged</div>' +
+      '<div class="ceo-snap-card-p">' +
+      renderTrend(model.trend) +
+      '<p class="ceo-snap-muted" style="margin-top:10px">Last ' +
+      model.trend.length +
+      " weeks (week beginning Monday).</p></div></div>" +
+      '<div class="ceo-snap-card"><div class="ceo-snap-card-h">Sessions per service</div>' +
+      '<div class="ceo-snap-card-p">' +
+      renderBars(model.services) +
+      "</div></div>" +
+      "</div>";
 
     var recentRows = model.recent.length
       ? model.recent
@@ -242,14 +335,12 @@
       "</tbody></table></div></div>";
 
     var welfare =
-      '<div class="ceo-snap-grid2" style="margin-bottom:14px"><div>' +
-      '<div class="ceo-snap-section-h"><h3>Welfare &amp; operations</h3><p>Incidents, cancellations and venue checks in window.</p></div>' +
+      '<div class="ceo-snap-card" style="margin-bottom:14px"><div class="ceo-snap-card-h">Welfare &amp; operations</div>' +
+      '<div class="ceo-snap-card-p">' +
       welfareLines +
-      "</div>" +
-      services +
-      "</div>";
+      "</div></div>";
 
-    return hero + kpis + finance + welfare + recent;
+    return hero + kpis + charts + finance + welfare + recent;
   }
 
   function buildModel(results) {
@@ -393,6 +484,7 @@
       venueIssues: venueIssues,
       venueTotal: venues.length,
       services: services,
+      trend: weeklyTrend(feedback, 10),
       recent: recent,
     };
   }
@@ -465,6 +557,9 @@
 
     try {
       mount.innerHTML = render(buildModel(results));
+      try {
+        window.dispatchEvent(new CustomEvent("portal:ceo-snapshot-rendered"));
+      } catch (e2) {}
     } catch (e) {
       mount.innerHTML =
         '<p class="ceo-snap-muted" style="padding:8px 2px">Could not build the snapshot. ' +

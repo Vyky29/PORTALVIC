@@ -293,9 +293,9 @@
       display: flex;
       flex-direction: column;
       gap: 16px;
-      max-width: 1100px;
+      max-width: none;
       width: 100%;
-      margin: 0 auto;
+      margin: 0;
       box-sizing: border-box;
     }
     .ceo-panel {
@@ -772,6 +772,126 @@
       font-size: 12px;
       color: var(--muted);
     }
+    .ceo-snap-bars {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 0;
+    }
+    .ceo-snap-bar-row {
+      display: grid;
+      grid-template-columns: minmax(80px, 30%) 1fr auto;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .ceo-snap-bar-lab {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink);
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .ceo-snap-bar-track {
+      height: 12px;
+      border-radius: 99px;
+      background: #eef2f7;
+      overflow: hidden;
+      min-width: 0;
+    }
+    .ceo-snap-bar-fill {
+      display: block;
+      height: 100%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, #2d84b3, #38bdf8);
+      min-width: 3px;
+    }
+    .ceo-snap-bar-val {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--ink);
+      white-space: nowrap;
+    }
+    .ceo-snap-trend {
+      display: flex;
+      align-items: flex-end;
+      gap: 6px;
+      height: 150px;
+      padding: 6px 2px 0;
+      min-width: 0;
+    }
+    .ceo-snap-trend-col {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 5px;
+      height: 100%;
+    }
+    .ceo-snap-trend-bar-wrap {
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .ceo-snap-trend-bar {
+      width: 72%;
+      max-width: 30px;
+      min-height: 3px;
+      border-radius: 6px 6px 0 0;
+      background: linear-gradient(180deg, #38bdf8, #2d84b3);
+    }
+    .ceo-snap-trend-lab {
+      font-size: 9px;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.15;
+      white-space: nowrap;
+    }
+    .ceo-snap-trend-val {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--ink);
+      min-height: 12px;
+    }
+    .ceo-nav-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 10px 12px;
+      margin: 2px 0;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--sidebarText);
+      min-width: 0;
+      overflow-wrap: break-word;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .ceo-nav-link .ceo-nav-ico {
+      flex-shrink: 0;
+      font-size: 15px;
+      line-height: 1;
+      width: 18px;
+      text-align: center;
+    }
+    .ceo-nav-link:hover {
+      background: var(--sidebarHover);
+      color: #e2e8f0;
+    }
+    .ceo-nav-link.is-active {
+      background: rgba(56, 189, 248, 0.14);
+      color: #e2e8f0;
+      box-shadow: inset 3px 0 0 var(--sidebarActive);
+    }
 
     @media (max-width: 1024px) and (orientation: landscape) {
       .ceo-snap-kpis {
@@ -816,13 +936,17 @@
         <span>Strategic overview · same shell style as operations</span>
       </div>
       <div class="ceo-sidebar-body">
-        <p class="ceo-nav-kicker">Workspace</p>
+        <p class="ceo-nav-kicker">This dashboard</p>
+        <nav class="ceo-nav-aux" aria-label="Sections on this page">
+          <a class="ceo-nav-link" href="#ceo-strategic" data-ceo-nav><span class="ceo-nav-ico" aria-hidden="true">📊</span>Strategic snapshot</a>
+          <a class="ceo-nav-link" href="#ceo-charts" data-ceo-nav><span class="ceo-nav-ico" aria-hidden="true">📈</span>Trends &amp; service mix</a>
+          <a class="ceo-nav-link" href="#ceo-messages" data-ceo-nav><span class="ceo-nav-ico" aria-hidden="true">✉️</span>Messages</a>
+          <a class="ceo-nav-link" href="#ceo-insights" data-ceo-nav><span class="ceo-nav-ico" aria-hidden="true">🗂️</span>Company insights</a>
+        </nav>
+        <p class="ceo-nav-kicker" style="margin-top:18px">Open workspace</p>
         <div class="ceo-dash-switch" role="group" aria-label="Open another dashboard">
           <a class="ceo-dash-switch__opt" id="portalCeoNavAdmin" href="admin_dashboard.html">Admin</a>
           <a class="ceo-dash-switch__opt" id="portalCeoNavStaff" href="staff_dashboard.html">Staff</a>
-        </div>
-        <div class="ceo-nav-aux">
-          <a href="#ceo-insights">Jump to company insights</a>
         </div>
       </div>
       <div class="ceo-sidebar-foot">
@@ -841,21 +965,21 @@
         </div>
       </header>
       <main class="ceo-workspace">
-        <section class="ceo-panel ceo-panel--chat" aria-labelledby="ceoChatPanelTitle">
-          <h2 id="ceoChatPanelTitle" class="ceo-panel__title">Messages</h2>
-          <p class="ceo-panel__lead">
-            One lane to the operations team (admin-side directory). For rota, covers, and the full internal inbox, open <strong>Admin</strong> in the menu on the left.
-          </p>
-          <button type="button" class="ceo-ops-team-btn" id="ceoPortalDmBtnExec">Message operations team</button>
-          <p class="ceo-panel__hint">Opens the same direct-message sheet used elsewhere in the portal.</p>
-        </section>
-
         <section id="ceo-strategic" class="ceo-strategic" aria-labelledby="ceoStrategicTitle">
           <div class="ceo-strategic-head">
             <h2 id="ceoStrategicTitle">Strategic snapshot</h2>
             <p>Live figures from the portal database — session feedback, welfare reports, staff and finance. Finance detail stays on this page only.</p>
           </div>
           <div id="ceoStrategicMount"></div>
+        </section>
+
+        <section id="ceo-messages" class="ceo-panel ceo-panel--chat" aria-labelledby="ceoChatPanelTitle">
+          <h2 id="ceoChatPanelTitle" class="ceo-panel__title">Messages</h2>
+          <p class="ceo-panel__lead">
+            One lane to the operations team (admin-side directory). For rota, covers, and the full internal inbox, open <strong>Admin</strong> in the menu on the left.
+          </p>
+          <button type="button" class="ceo-ops-team-btn" id="ceoPortalDmBtnExec">Message operations team</button>
+          <p class="ceo-panel__hint">Opens the same direct-message sheet used elsewhere in the portal.</p>
         </section>
 
         <section id="ceo-insights" class="ceo-panel ceo-panel--insights" aria-labelledby="ceoInsightsTitle">
@@ -989,9 +1113,53 @@
           if (e.target.closest("a.ceo-dash-switch__opt") || e.target.closest(".ceo-nav-aux a")) close();
         });
       }
+
+      // Scrollspy: highlight the in-page nav link for the section in view.
+      var navLinks = Array.prototype.slice.call(document.querySelectorAll("[data-ceo-nav]"));
+      var scroller = document.querySelector(".ceo-workspace");
+      if (navLinks.length && scroller && "IntersectionObserver" in window) {
+        function setActive(id) {
+          navLinks.forEach(function (a) {
+            var on = a.getAttribute("href") === "#" + id;
+            a.classList.toggle("is-active", on);
+          });
+        }
+        var seen = {};
+        var io = new IntersectionObserver(
+          function (entries) {
+            entries.forEach(function (en) {
+              seen[en.target.id] = en.isIntersecting ? en.intersectionRatio : 0;
+            });
+            var best = null;
+            var bestR = 0;
+            Object.keys(seen).forEach(function (id) {
+              if (seen[id] > bestR) {
+                bestR = seen[id];
+                best = id;
+              }
+            });
+            if (best) setActive(best);
+          },
+          { root: scroller, threshold: [0.15, 0.5, 0.85] }
+        );
+        // ceo-charts is rendered async by the snapshot; observe lazily.
+        function observeTargets() {
+          ["ceo-strategic", "ceo-charts", "ceo-messages", "ceo-insights"].forEach(function (id) {
+            var el = document.getElementById(id);
+            if (el && !el.dataset.ceoSpy) {
+              el.dataset.ceoSpy = "1";
+              io.observe(el);
+            }
+          });
+        }
+        observeTargets();
+        window.addEventListener("portal:ceo-snapshot-rendered", observeTargets);
+        setTimeout(observeTargets, 1500);
+        setTimeout(observeTargets, 4000);
+      }
     })();
   </script>
-  <script src="portal/portal_ceo_snapshot.js?v=20260604d-ceo-live-snapshot"></script>
+  <script src="portal/portal_ceo_snapshot.js?v=20260604e-ceo-charts"></script>
   <script>
     (function () {
       var isElementorPreview =
