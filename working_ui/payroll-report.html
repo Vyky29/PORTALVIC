@@ -80,8 +80,9 @@
                 <input type="month" id="month" />
               </label>
               <button type="button" class="btn btn--sec" id="refreshBtn" style="align-self:flex-end">Refresh preview</button>
+              <button type="button" class="btn btn--pri" id="downloadBtn" style="align-self:flex-end" disabled>Download PDF</button>
             </div>
-            <button type="button" class="btn btn--send" id="sendBtn" style="align-self:flex-end" disabled>Send to accountant now</button>
+            <button type="button" class="btn btn--send" id="sendBtn" style="align-self:flex-end" disabled hidden>Send to accountant now</button>
           </div>
         </div>
       </div>
@@ -119,6 +120,7 @@
     const app = document.getElementById("app");
     const monthInput = document.getElementById("month");
     const refreshBtn = document.getElementById("refreshBtn");
+    const downloadBtn = document.getElementById("downloadBtn");
     const sendBtn = document.getElementById("sendBtn");
     const statusNote = document.getElementById("statusNote");
     const statsEl = document.getElementById("stats");
@@ -217,9 +219,30 @@
       }
     }
 
+    function downloadPdf() {
+      if (!lastPreview?.pdfBase64) return;
+      try {
+        const bin = atob(lastPreview.pdfBase64);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        const blob = new Blob([bytes], { type: "application/pdf" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = lastPreview.filename || `payroll-${monthInput.value}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1500);
+      } catch (e) {
+        showNote("err", "Could not build the download: " + (e?.message || e));
+      }
+    }
+
     async function loadPreview() {
       clearNote();
       refreshBtn.disabled = true;
+      downloadBtn.disabled = true;
       sendBtn.disabled = true;
       const prevLabel = refreshBtn.textContent;
       refreshBtn.innerHTML = '<span class="spin"></span>Loading…';
@@ -229,6 +252,7 @@
         renderSummary(out);
         if (out.pdfBase64) {
           pdfFrame.src = "data:application/pdf;base64," + out.pdfBase64;
+          downloadBtn.disabled = false;
         }
         if (out.deadlinePassed === false) {
           showNote(
@@ -278,6 +302,7 @@
     async function boot() {
       monthInput.value = londonMonthValue();
       refreshBtn.addEventListener("click", loadPreview);
+      downloadBtn.addEventListener("click", downloadPdf);
       sendBtn.addEventListener("click", sendNow);
       monthInput.addEventListener("change", loadPreview);
 

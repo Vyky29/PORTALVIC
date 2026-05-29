@@ -24,6 +24,7 @@
 // Optional JSON body / query:
 //   month   "YYYY-MM"   -> override the payroll month (default: current month)
 //   mode    "preview"   -> build PDF and return it as base64 (NO email, NO penalties)
+//           "record"    -> record no-submission penalties only (NO email, NO PDF)
 //           "send"      -> email the PDF + record no-submission penalties (default)
 //   dryRun  true        -> return JSON summary only (no PDF, no email, no penalties)
 //
@@ -468,6 +469,7 @@ Deno.serve(async (req: Request) => {
     body.dryRun === true || ["1", "true", "yes"].includes(String(url.searchParams.get("dryRun") || "").toLowerCase());
   const mode = String(body.mode || url.searchParams.get("mode") || "").toLowerCase();
   const isPreview = mode === "preview";
+  const isRecord = mode === "record";
   const targetMonthIso = resolveTargetMonthIso(monthRaw);
 
   let data;
@@ -493,6 +495,33 @@ Deno.serve(async (req: Request) => {
       summary,
       workers: data.workers,
       missing: data.notSubmitted,
+    });
+  }
+
+  // Record-only: register no-submission penalties without building a PDF or
+  // emailing. Intended for a tiny cron at 00:00 on the 24th when email is sent
+  // manually (no Resend/DNS needed). Idempotent + deadline-guarded.
+  if (isRecord) {
+    let penaltiesRecorded = 0;
+    if (deadlinePassedForMonth(targetMonthIso) && data.notSubmitted.length) {
+      const penaltyRows = data.notSubmitted
+        .filter((n) => n.userId)
+        .map((n) => ({ user_id: n.userId, missed_month: targetMonthIso, amount: 5, reason: "no_timesheet" }));
+      if (penaltyRows.length) {
+        const { error: penErr } = await supabase
+          .from("staff_timesheet_penalties")
+          .upsert(penaltyRows, { onConflict: "user_id,missed_month", ignoreDuplicates: true });
+        if (penErr) return json(500, { ok: false, error: `Penalty upsert failed: ${penErr.message || penErr}`, summary });
+        penaltiesRecorded = penaltyRows.length;
+      }
+    }
+    return json(200, {
+      ok: true,
+      mode: "record",
+      authVia,
+      deadlinePassed: deadlinePassedForMonth(targetMonthIso),
+      penaltiesRecorded,
+      summary,
     });
   }
 
