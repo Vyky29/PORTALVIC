@@ -160,7 +160,7 @@ export function portalInferStaffKey(profile, authEmail) {
   return "";
 }
 
-function portalInferEffectiveRole(profile, authEmail) {
+export function portalInferEffectiveRole(profile, authEmail) {
   const appRole = String(profile?.app_role || "").toLowerCase();
   const staffRole = String(profile?.staff_role || "").toLowerCase();
   const staffKey = portalInferStaffKey(profile, authEmail);
