@@ -12,7 +12,7 @@
   <script src="/portal/hr-contract-embed-html.js?v=20260521-embed"></script>
   <script src="/portal/admin-portal-day-ops.js?v=20260527-lead-log"></script>
   <script src="/portal/admin-portal-documents.js?v=20260529-docs-redesign"></script>
-  <script src="/portal/admin-portal-pins.js?v=20260530-portal-pins"></script>
+  <script src="/portal/admin-portal-pins.js?v=20260530-portal-pins-db"></script>
   <script src="/portal/admin-portal-activity.js?v=20260604-visit-activity"></script>
   <script src="/portal/admin-portal-achievements.js?v=20260604-ach-az-directory"></script>
   <link rel="stylesheet" href="/portal/portal_staff_map.css?v=20260602-staff-map-header" />
@@ -15628,7 +15628,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function portalPinsConfigureOnce(){
       if(window.__portalPinsConfigured || !window.PortalPins) return;
       window.__portalPinsConfigured = true;
-      window.PortalPins.configure({ esc: esc });
+      window.PortalPins.configure({
+        esc: esc,
+        toast: portalAdminToast,
+        getClient: getSchedSupabaseClient,
+        getAuthUid: function(){
+          try{
+            var box = window.__PORTAL_SUPABASE__;
+            if(box && box.session && box.session.user && box.session.user.id) return box.session.user.id;
+          }catch(_e){}
+          return '';
+        }
+      });
     }
     function viewPortalPins(){
       portalPinsConfigureOnce();
