@@ -76,6 +76,23 @@
     .legend i{display:inline-block;width:12px;height:12px;border-radius:3px;border:1px solid rgba(11,42,91,.12);flex-shrink:0}
     .legend .swatch-paid{background:#eef9f1}
     .legend .swatch-pending{background:#fff5e8}
+    /* Manual (part-time / extra hours) entry */
+    .manual-entry{padding:4px 16px 14px}
+    .manual-entry__hint{margin:0 0 10px;color:#60758a;font-size:13px;line-height:1.45}
+    .manual-entry__grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px}
+    .manual-entry__grid label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700;color:#0b2a5b;min-width:0}
+    .manual-entry__grid .manual-entry__desc{grid-column:1 / -1}
+    .manual-entry__grid input{font:inherit;font-size:14px;padding:9px 10px;border:1px solid #b0c7e2;border-radius:10px;background:#fff;color:#102238;min-width:0;width:100%}
+    .manual-entry__grid input:focus-visible{outline:2px solid rgba(11,42,91,.35);outline-offset:1px;border-color:#0b2a5b}
+    #mAddBtn{background:#0b2a5b;color:#fff;border:1px solid #0b2a5b}
+    #mAddBtn:hover,#mAddBtn:focus-visible{background:#093b85;border-color:#093b85}
+    .manual-row-remove{border:1px solid #f1c4c4;background:#fdecec;color:#a01919;border-radius:8px;padding:5px 10px;font-weight:800;cursor:pointer;line-height:1}
+    .manual-row-remove:hover,.manual-row-remove:focus-visible{background:#f7d4d4}
+    .manual-empty td{color:#60758a}
+    @media (max-width:560px){
+      .manual-entry{padding:4px 10px 12px}
+      .manual-entry__grid{grid-template-columns:1fr 1fr;gap:8px}
+    }
     *,*::before,*::after{box-sizing:border-box}
     html,body{overflow-x:hidden}
     .page{min-width:0;max-width:100%;padding-bottom:max(14px, env(safe-area-inset-bottom, 0px))}
@@ -144,7 +161,37 @@
         <span><i class="swatch-pending" aria-hidden="true"></i> Orange — pending feedback (not in payable total yet)</span>
       </div>
       <div class="status-note" id="statusNote">Loading shifts...</div>
-      <div class="table-wrap">
+      <div class="manual-entry" id="manualForm" hidden>
+        <p class="manual-entry__hint">Add each block of extra hours you worked. Hours are worked out from the start and end time. Add as many rows as you need, then submit.</p>
+        <div class="manual-entry__grid">
+          <label>Date<input type="date" id="mDate"></label>
+          <label>Start<input type="time" id="mStart"></label>
+          <label>End<input type="time" id="mEnd"></label>
+          <label class="manual-entry__desc">Description (optional)<input type="text" id="mNote" placeholder="e.g. Extra swimming cover at Acton" maxlength="120"></label>
+        </div>
+        <button type="button" class="btn" id="mAddBtn">Add hours</button>
+      </div>
+      <div class="table-wrap" id="manualWrap" hidden>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Description</th>
+              <th class="num th-compact">Hours</th>
+              <th class="num th-compact" title="Daily Total (GBP)"><span class="th-desk">Daily Total (GBP)</span><span class="th-mob">Daily £</span></th>
+              <th class="th-compact">Remove</th>
+            </tr>
+          </thead>
+          <tbody id="manualBody">
+            <tr class="manual-empty"><td colspan="5" class="muted">No extra hours added yet. Use the form above to add your first block.</td></tr>
+          </tbody>
+          <tfoot>
+            <tr class="sum-row"><td colspan="2" class="sum-label">Total hours:</td><td class="num" id="mTotalHours">0.00</td><td colspan="2"></td></tr>
+            <tr class="sum-row"><td colspan="3" class="sum-label">Total to pay (GBP):</td><td class="num" id="mTotalCost" colspan="2">0.00</td></tr>
+          </tfoot>
+        </table>
+      </div>
+      <div class="table-wrap" id="autoWrap">
         <table>
           <thead>
             <tr>
@@ -226,6 +273,11 @@
       stf019: "sevitha",
       stf020: "demo"
     };
+    /**
+     * Part-time / manual-entry staff: no roster-driven timesheet. They log extra
+     * hours by hand. Everyone else keeps the automatic (roster + feedback) sheet.
+     */
+    const MANUAL_TIMESHEET_ROSTER_KEYS = new Set(["roberto"]);
     /** Personal / placeholder Auth emails → spreadsheet roster id (berta, john, …). */
     const AUTH_EMAIL_TO_ROSTER_KEY = {
       "b.traperocasado@gmail.com": "berta",
@@ -258,6 +310,8 @@
       hourlyRate: 0,
       periodStart: "",
       periodEnd: "",
+      manual: false,
+      manualEntries: [],
       entries: [],
       payableEntries: [],
       pendingEntries: [],
@@ -625,6 +679,33 @@
       return [];
     }
 
+    function rosterCandidatesForUser(profile, user) {
+      const p = profile || {};
+      const meta = (user && user.user_metadata) || {};
+      const authEmail = String((user && user.email) || "").trim();
+      const emailLocal = authEmail.split("@")[0] || "";
+      const seen = new Set();
+      const dedup = [];
+      const fromAuth = rosterKeyFromAuthEmail(authEmail);
+      if (fromAuth) pushRosterCandidate(dedup, seen, fromAuth);
+      pushRosterCandidate(dedup, seen, p.username);
+      pushRosterCandidate(dedup, seen, p.full_name);
+      pushRosterCandidate(dedup, seen, String(p.full_name || "").split(" ")[0]);
+      pushRosterCandidate(dedup, seen, meta.preferred_username);
+      pushRosterCandidate(dedup, seen, meta.username);
+      pushRosterCandidate(dedup, seen, meta.name);
+      pushRosterCandidate(dedup, seen, meta.full_name);
+      pushRosterCandidate(dedup, seen, emailLocal);
+      return dedup;
+    }
+    function manualRosterKeyForUser(profile, user) {
+      const cands = rosterCandidatesForUser(profile, user);
+      for (let i = 0; i < cands.length; i++) {
+        if (MANUAL_TIMESHEET_ROSTER_KEYS.has(cands[i])) return cands[i];
+      }
+      return "";
+    }
+
     function renderTable() {
       const body = document.getElementById("rowsBody");
       const note = document.getElementById("statusNote");
@@ -656,6 +737,135 @@
       document.getElementById("potentialCost").textContent = money(state.potentialCost);
     }
 
+    function manualClampDateToPeriod(iso) {
+      const s = String(iso || "").trim();
+      if (!s) return state.periodEnd || isoDate(new Date());
+      if (state.periodStart && s < state.periodStart) return state.periodStart;
+      if (state.periodEnd && s > state.periodEnd) return state.periodEnd;
+      return s;
+    }
+
+    function recomputeManualTotals() {
+      const rate = Number(state.hourlyRate || 0);
+      state.entries = state.manualEntries.map((e) => ({
+        date: e.date,
+        day: e.day,
+        hours: e.hours,
+        completed: true,
+        note: e.note || "",
+        start: e.start || "",
+        end: e.end || ""
+      }));
+      state.payableEntries = state.entries.slice();
+      state.pendingEntries = [];
+      state.totalHours = Number(state.entries.reduce((a, e) => a + e.hours, 0).toFixed(2));
+      state.potentialHours = state.totalHours;
+      state.totalCost = Number((state.totalHours * rate).toFixed(2));
+      state.potentialCost = state.totalCost;
+      state.pendingCost = 0;
+    }
+
+    function renderManualTable() {
+      const body = document.getElementById("manualBody");
+      if (!body) return;
+      if (!state.manualEntries.length) {
+        body.innerHTML =
+          `<tr class="manual-empty"><td colspan="5" class="muted">No extra hours added yet. Use the form above to add your first block.</td></tr>`;
+      } else {
+        body.innerHTML = state.manualEntries
+          .map((e, i) => {
+            const daily = e.hours * Number(state.hourlyRate || 0);
+            const desc = e.note
+              ? esc(e.note)
+              : `<span class="muted">${esc(e.day)}${e.start && e.end ? ` ${esc(e.start)}–${esc(e.end)}` : ""}</span>`;
+            return `<tr>
+              <td>${esc(displayDateFancy(e.date))}</td>
+              <td>${desc}</td>
+              <td class="num">${money(e.hours)}</td>
+              <td class="num">${money(daily)}</td>
+              <td><button type="button" class="manual-row-remove" data-idx="${i}" aria-label="Remove this row">✕</button></td>
+            </tr>`;
+          })
+          .join("");
+      }
+      document.getElementById("mTotalHours").textContent = money(state.totalHours);
+      document.getElementById("mTotalCost").textContent = money(state.totalCost);
+      const rateTop = document.getElementById("rateTop");
+      if (rateTop) rateTop.textContent = `£${money(state.hourlyRate)}/h`;
+    }
+
+    function addManualEntryFromForm() {
+      const dEl = document.getElementById("mDate");
+      const sEl = document.getElementById("mStart");
+      const eEl = document.getElementById("mEnd");
+      const nEl = document.getElementById("mNote");
+      const dateIso = manualClampDateToPeriod(String((dEl && dEl.value) || "").trim());
+      const start = String((sEl && sEl.value) || "").trim();
+      const end = String((eEl && eEl.value) || "").trim();
+      const note = String((nEl && nEl.value) || "").trim();
+      if (!dateIso) { alert("Please choose a date."); return; }
+      if (!start || !end) { alert("Please enter both a start and an end time."); return; }
+      let a = hmToMinutes(start);
+      let b = hmToMinutes(end);
+      if (b < a) b += 24 * 60;
+      const hours = Number(((b - a) / 60).toFixed(2));
+      if (!(hours > 0)) { alert("End time must be after start time."); return; }
+      const d = parseIsoDate(dateIso);
+      const day = d ? WEEKDAY[d.getDay()] : "";
+      state.manualEntries.push({ date: dateIso, day, start, end, hours, note });
+      state.manualEntries.sort(
+        (x, y) =>
+          String(x.date).localeCompare(String(y.date)) ||
+          hmToMinutes(x.start) - hmToMinutes(y.start)
+      );
+      if (sEl) sEl.value = "";
+      if (eEl) eEl.value = "";
+      if (nEl) nEl.value = "";
+      recomputeManualTotals();
+      renderManualTable();
+    }
+
+    function setupManualMode() {
+      state.manual = true;
+      const autoWrap = document.getElementById("autoWrap");
+      const legend = document.querySelector(".legend");
+      const manualForm = document.getElementById("manualForm");
+      const manualWrap = document.getElementById("manualWrap");
+      if (autoWrap) autoWrap.hidden = true;
+      if (legend) legend.style.display = "none";
+      if (manualForm) manualForm.hidden = false;
+      if (manualWrap) manualWrap.hidden = false;
+      const note = document.getElementById("statusNote");
+      if (note) {
+        note.textContent =
+          "Part-time / extra hours: add each block you worked by hand, then submit. Your hourly rate is applied automatically.";
+      }
+      const dEl = document.getElementById("mDate");
+      if (dEl) {
+        if (state.periodStart) dEl.min = state.periodStart;
+        if (state.periodEnd) dEl.max = state.periodEnd;
+        dEl.value = manualClampDateToPeriod(isoDate(new Date()));
+      }
+      const addBtn = document.getElementById("mAddBtn");
+      if (addBtn) addBtn.addEventListener("click", addManualEntryFromForm);
+      const body = document.getElementById("manualBody");
+      if (body) {
+        body.addEventListener("click", (ev) => {
+          const btn =
+            ev.target && ev.target.closest ? ev.target.closest(".manual-row-remove") : null;
+          if (!btn) return;
+          const idx = Number(btn.getAttribute("data-idx"));
+          if (Number.isInteger(idx)) {
+            state.manualEntries.splice(idx, 1);
+            recomputeManualTotals();
+            renderManualTable();
+          }
+        });
+      }
+      recomputeManualTotals();
+      renderManualTable();
+    }
+
     async function loadData() {
       const { user, supabase } = await portalRequireUser();
       state.userId = String(user.id || "").trim();
@@ -673,6 +883,22 @@
 
       const profile = profileRes.data || {};
       const rateRow = rateRes.data || {};
+
+      const manualKey = manualRosterKeyForUser(profile, user);
+      if (manualKey) {
+        state.manual = true;
+        state.staffRosterKey = manualKey;
+        state.employeeName = resolveEmployeeDisplayName(profile, user, manualKey);
+        const mpay = applyPayRateFromProfile(rateRow, profile, manualKey);
+        state.roleLabel = mpay.role_label;
+        state.hourlyRate = Number(mpay.hourly_rate || 0);
+        document.getElementById("empName").textContent = state.employeeName || "-";
+        document.getElementById("roleLabel").textContent = state.roleLabel || "-";
+        document.getElementById("rateTop").textContent = `£${money(state.hourlyRate)}/h`;
+        setupManualMode();
+        return;
+      }
+
       const sessionsModel = resolveRosterSessions(profile, user);
       state.employeeName = resolveEmployeeDisplayName(profile, user, state.staffRosterKey);
       const pay = applyPayRateFromProfile(rateRow, profile, state.staffRosterKey);
@@ -761,7 +987,7 @@
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
       doc.text("Date", (colX[0] + colX[1]) / 2, y + 4.8, { align: "center" });
-      doc.text("Day", (colX[1] + colX[2]) / 2, y + 4.8, { align: "center" });
+      doc.text(state.manual ? "Description" : "Day", (colX[1] + colX[2]) / 2, y + 4.8, { align: "center" });
       doc.text("Hours", (colX[2] + colX[3]) / 2, y + 4.8, { align: "center" });
       doc.text("Daily Total", (colX[3] + colX[4]) / 2, y + 4.8, { align: "center" });
       doc.text("Status", (colX[4] + colX[5]) / 2, y + 4.8, { align: "center" });
@@ -774,22 +1000,30 @@
         const e = state.entries[i];
         const daily = money(e.hours * state.hourlyRate);
         doc.rect(colX[0], y, colX[5] - colX[0], rowH, "S");
+        const midCol = state.manual ? String(e.note || e.day || "").slice(0, 22) : e.day;
+        const statusTxt = state.manual ? "Manual" : (e.completed ? "Completed" : "Pending feedback");
         doc.text(displayDateFancy(e.date), (colX[0] + colX[1]) / 2, y + 4.8, { align: "center" });
-        doc.text(e.day, (colX[1] + colX[2]) / 2, y + 4.8, { align: "center" });
+        doc.text(midCol, (colX[1] + colX[2]) / 2, y + 4.8, { align: "center" });
         doc.text(money(e.hours), (colX[2] + colX[3]) / 2, y + 4.8, { align: "center" });
         doc.text(daily, (colX[3] + colX[4]) / 2, y + 4.8, { align: "center" });
-        doc.text(e.completed ? "Completed" : "Pending feedback", (colX[4] + colX[5]) / 2, y + 4.8, { align: "center" });
+        doc.text(statusTxt, (colX[4] + colX[5]) / 2, y + 4.8, { align: "center" });
         y += rowH;
       }
 
       y += 10;
-      const summaryRows = [
-        { label: "Hours ready to pay now (green)", value: money(state.totalHours), tone: "ok" },
-        { label: "Rate", value: `£${money(state.hourlyRate)}/h`, tone: "neutral" },
-        { label: "Ready to pay now", value: `£${money(state.totalCost)}`, tone: "okStrong" },
-        { label: "Pending until feedback is completed", value: `£${money(state.pendingCost)}`, tone: "warn" },
-        { label: "Total if all feedback is completed", value: `£${money(state.potentialCost)}`, tone: "neutral" }
-      ];
+      const summaryRows = state.manual
+        ? [
+            { label: "Total hours", value: money(state.totalHours), tone: "neutral" },
+            { label: "Rate", value: `£${money(state.hourlyRate)}/h`, tone: "neutral" },
+            { label: "Total to pay", value: `£${money(state.totalCost)}`, tone: "okStrong" }
+          ]
+        : [
+            { label: "Hours ready to pay now (green)", value: money(state.totalHours), tone: "ok" },
+            { label: "Rate", value: `£${money(state.hourlyRate)}/h`, tone: "neutral" },
+            { label: "Ready to pay now", value: `£${money(state.totalCost)}`, tone: "okStrong" },
+            { label: "Pending until feedback is completed", value: `£${money(state.pendingCost)}`, tone: "warn" },
+            { label: "Total if all feedback is completed", value: `£${money(state.potentialCost)}`, tone: "neutral" }
+          ];
       const panelPad = 4;
       const rowHeight = 10;
       const panelHeight = panelPad * 2 + rowHeight * summaryRows.length;
@@ -845,7 +1079,14 @@
         period_month: periodMonth,
         role_label: state.roleLabel || "Staff",
         total_hours: state.totalHours,
-        entries: state.entries.map((e) => ({ date: e.date, day: e.day, hours: e.hours, completed: e.completed }))
+        entries: state.entries.map((e) => ({
+          date: e.date,
+          day: e.day,
+          hours: e.hours,
+          completed: e.completed,
+          note: e.note || "",
+          manual: !!state.manual
+        }))
       };
       const { error } = await supabase.from("staff_timesheets").insert([row]);
       if (error) throw error;
@@ -853,6 +1094,10 @@
 
     document.getElementById("submitBtn").addEventListener("click", async () => {
       const btn = document.getElementById("submitBtn");
+      if (state.manual && !state.manualEntries.length) {
+        alert("Add at least one block of hours before submitting.");
+        return;
+      }
       btn.disabled = true;
       try {
         const [pdfBlob, auth] = await Promise.all([generatePdfBlob(), portalRequireUser()]);
