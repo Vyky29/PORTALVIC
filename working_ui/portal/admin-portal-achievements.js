@@ -19,6 +19,7 @@
   };
 
   var viewerState = { photos: [], index: -1 };
+  var directoryState = { groups: [], byKey: Object.create(null) };
 
   function configure(options) {
     if (!options) return;
@@ -34,27 +35,6 @@
     return String(id || "")
       .trim()
       .toLowerCase();
-  }
-
-  function londonTodayIso() {
-    try {
-      var parts = new Intl.DateTimeFormat("en-CA", {
-        timeZone: "Europe/London",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      }).formatToParts(new Date());
-      var y = "";
-      var m = "";
-      var d = "";
-      parts.forEach(function (p) {
-        if (p.type === "year") y = p.value;
-        if (p.type === "month") m = p.value;
-        if (p.type === "day") d = p.value;
-      });
-      if (y && m && d) return y + "-" + m + "-" + d;
-    } catch (_e) {}
-    return new Date().toISOString().slice(0, 10);
   }
 
   function statusLabel(status) {
@@ -74,22 +54,82 @@
     return res.data && res.data.signedUrl ? res.data.signedUrl : "";
   }
 
-  async function fetchPhotosForDay(client, day) {
-    var res = await client.rpc("portal_admin_list_achievement_photos_for_day", {
-      p_session_date: day,
-    });
+  async function fetchAllPhotos(client) {
+    var res = await client.rpc("portal_admin_list_achievement_photos_all");
     if (!res.error) return res.data || [];
     var fallback = await client
       .from("portal_participant_achievement_photos")
       .select(
-        "id, staff_user_id, staff_display_name, client_name, client_id, status, storage_path, session_feedback_id, created_at, portal_session_key"
+        "id, staff_user_id, staff_display_name, client_name, client_id, status, storage_path, session_feedback_id, created_at, session_date, portal_session_key"
       )
-      .eq("session_date", day)
       .in("status", ["draft", "attached", "archived_unused"])
       .order("client_name", { ascending: true })
       .order("created_at", { ascending: true });
     if (fallback.error) throw fallback.error;
     return fallback.data || [];
+  }
+
+  /** Two-digit pad. */
+  function pad2(n) {
+    return (n < 10 ? "0" : "") + n;
+  }
+
+  /** Europe/London date+time parts for a timestamp. */
+  function londonParts(value) {
+    var d = value ? new Date(value) : null;
+    if (!d || isNaN(d.getTime())) return null;
+    try {
+      var fmt = new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Europe/London",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      });
+      var out = {};
+      fmt.formatToParts(d).forEach(function (p) {
+        if (p.type !== "literal") out[p.type] = p.value;
+      });
+      if (out.year && out.month && out.day) return out;
+    } catch (_e) {}
+    return {
+      year: String(d.getFullYear()),
+      month: pad2(d.getMonth() + 1),
+      day: pad2(d.getDate()),
+      hour: pad2(d.getHours()),
+      minute: pad2(d.getMinutes()),
+    };
+  }
+
+  /** Photo caption: DD/MM/YYYY-Photographer-HH:MM (e.g. 29/05/2026-Victor-09:31). */
+  function photoCaption(row) {
+    var who = String(row.staff_display_name || "Staff").trim() || "Staff";
+    var firstName = who.split(/\s+/)[0] || who;
+    var p = londonParts(row.created_at);
+    if (!p) return firstName;
+    return p.day + "/" + p.month + "/" + p.year + "-" + firstName + "-" + p.hour + ":" + p.minute;
+  }
+
+  /** Bucket participant groups by first letter (A–Z, else #); only letters present. */
+  function letterBuckets(groups) {
+    var map = Object.create(null);
+    groups.forEach(function (g) {
+      var ch = String(g.clientName || "").trim().charAt(0).toUpperCase();
+      if (!/[A-Z]/.test(ch)) ch = "#";
+      if (!map[ch]) map[ch] = [];
+      map[ch].push(g);
+    });
+    return Object.keys(map)
+      .sort(function (a, b) {
+        if (a === "#") return 1;
+        if (b === "#") return -1;
+        return a.localeCompare(b, "en");
+      })
+      .map(function (letter) {
+        return { letter: letter, participants: map[letter] };
+      });
   }
 
   function groupByParticipant(rows) {
@@ -176,39 +216,79 @@
     void openViewer(viewerState.photos, next);
   }
 
-  async function renderGroup(client, group) {
-    var card = document.createElement("details");
-    card.className = "portal-admin-achievement-card";
+  /** Alphabetical directory: letter boxes, each with small participant buttons (max 6 per row). */
+  function renderDirectory() {
+    var host = document.getElementById("portalAdminAchievementsList");
+    if (!host) return;
+    var buckets = letterBuckets(directoryState.groups);
+    if (!buckets.length) {
+      host.innerHTML = '<p class="muted">No achievement photos yet.</p>';
+      return;
+    }
+    var html = '<div class="portal-ach-dir">';
+    buckets.forEach(function (bucket) {
+      html += '<section class="portal-ach-letter">';
+      html += '<h2 class="portal-ach-letter__title">' + esc(bucket.letter) + "</h2>";
+      html += '<div class="portal-ach-letter__grid">';
+      bucket.participants.forEach(function (g) {
+        var n = g.photos.length;
+        html +=
+          '<button type="button" class="portal-ach-person" data-participant-key="' +
+          esc(g.key) +
+          '">' +
+          '<span class="portal-ach-person__name">' +
+          esc(g.clientName) +
+          "</span>" +
+          '<span class="portal-ach-person__count">' +
+          n +
+          " photo" +
+          (n === 1 ? "" : "s") +
+          "</span></button>";
+      });
+      html += "</div></section>";
+    });
+    html += "</div>";
+    host.innerHTML = html;
+  }
+
+  /** Drill-down: one participant's photos with caption DD/MM/YYYY-Photographer-HH:MM. */
+  async function renderParticipantDetail(key) {
+    var client = cfg.getClient();
+    var host = document.getElementById("portalAdminAchievementsList");
+    var group = directoryState.byKey[key];
+    if (!host || !group) {
+      renderDirectory();
+      return;
+    }
     var staffList = uniqueStaffNames(group.photos);
-    var draftCount = group.photos.filter(function (p) {
-      return p.status === "draft";
-    }).length;
-    card.innerHTML =
-      '<summary><strong>' +
+    var detail = document.createElement("div");
+    detail.className = "portal-ach-detail";
+    detail.innerHTML =
+      '<div class="portal-ach-detail__head">' +
+      '<button type="button" class="btn btn--sec btn--sm" data-ach-back="1">&larr; All participants</button>' +
+      '<div class="portal-ach-detail__titles">' +
+      '<h2 class="portal-ach-detail__name">' +
       esc(group.clientName) +
-      "</strong>" +
-      '<span class="portal-admin-achievement-card__meta">' +
+      "</h2>" +
+      '<p class="portal-ach-detail__meta muted">' +
       esc(group.photos.length) +
       " photo" +
       (group.photos.length === 1 ? "" : "s") +
       (staffList.length ? " · " + esc(staffList.join(", ")) : "") +
-      (draftCount ? ' · <span class="muted">' + draftCount + " draft</span>" : "") +
-      "</span></summary>" +
-      '<div class="portal-admin-achievement-card__body">' +
-      '<div class="portal-admin-achievement-gallery portal-achievement-protected"></div>' +
-      "</div>";
-    var grid = card.querySelector(".portal-admin-achievement-gallery");
+      ". Double-click a photo to view full screen.</p>" +
+      "</div></div>" +
+      '<div class="portal-admin-achievement-gallery portal-ach-detail__gallery portal-achievement-protected"></div>';
+    host.innerHTML = "";
+    host.appendChild(detail);
+    var grid = detail.querySelector(".portal-admin-achievement-gallery");
     for (var i = 0; i < group.photos.length; i++) {
       (function (row, photoIndex) {
-        var urlP = signedUrl(client, row.storage_path);
-        urlP.then(function (url) {
+        signedUrl(client, row.storage_path).then(function (url) {
+          var caption = photoCaption(row);
           var btn = document.createElement("button");
           btn.type = "button";
           btn.className = "portal-admin-achievement-thumb";
-          btn.setAttribute(
-            "aria-label",
-            esc(group.clientName) + " — " + esc(row.staff_display_name || "Staff") + " — " + statusLabel(row.status)
-          );
+          btn.setAttribute("aria-label", esc(group.clientName) + " — " + esc(caption));
           btn.innerHTML =
             (url
               ? '<img src="' + esc(url) + '" alt="" draggable="false" class="portal-achievement-protected" />'
@@ -219,8 +299,8 @@
             '">' +
             esc(statusLabel(row.status)) +
             "</span>" +
-            '<span class="portal-admin-achievement-thumb__who">' +
-            esc(row.staff_display_name || "Staff") +
+            '<span class="portal-admin-achievement-thumb__title">' +
+            esc(caption) +
             "</span></span>";
           btn.addEventListener("dblclick", function (e) {
             e.preventDefault();
@@ -230,22 +310,23 @@
         });
       })(group.photos[i], i);
     }
-    return card;
   }
 
   async function refresh() {
     var client = cfg.getClient();
-    var dayEl = document.getElementById("portalAdminAchievementsDay");
     var host = document.getElementById("portalAdminAchievementsList");
     var status = document.getElementById("portalAdminAchievementsStatus");
     if (!client || !host) return;
-    var day = dayEl && dayEl.value ? dayEl.value : londonTodayIso();
-    if (dayEl && !dayEl.value) dayEl.value = day;
     closeViewer();
     if (status) status.textContent = "Loading…";
     try {
-      var rows = await fetchPhotosForDay(client, day);
+      var rows = await fetchAllPhotos(client);
       var groups = groupByParticipant(rows);
+      directoryState.groups = groups;
+      directoryState.byKey = Object.create(null);
+      groups.forEach(function (g) {
+        directoryState.byKey[g.key] = g;
+      });
       if (status) {
         status.textContent =
           rows.length +
@@ -253,19 +334,10 @@
           groups.length +
           " participant" +
           (groups.length === 1 ? "" : "s") +
-          " on " +
-          day +
-          ". Double-click a photo to view full screen.";
+          ". Tap a participant to see their photos.";
         status.className = "portal-forms-status";
       }
-      if (!rows.length) {
-        host.innerHTML = '<p class="muted">No achievement photos for this day.</p>';
-        return;
-      }
-      host.innerHTML = "";
-      for (var g = 0; g < groups.length; g++) {
-        host.appendChild(await renderGroup(client, groups[g]));
-      }
+      renderDirectory();
     } catch (e) {
       console.error(e);
       if (status) {
@@ -294,17 +366,24 @@
     if (!root || root.getAttribute("data-bound") === "1") return;
     root.setAttribute("data-bound", "1");
     bindViewer();
-    var dayEl = document.getElementById("portalAdminAchievementsDay");
-    if (dayEl && !dayEl.value) dayEl.value = londonTodayIso();
     var btn = document.getElementById("portalAdminAchievementsRefresh");
     if (btn) {
       btn.addEventListener("click", function () {
         void refresh();
       });
     }
-    if (dayEl) {
-      dayEl.addEventListener("change", function () {
-        void refresh();
+    var host = document.getElementById("portalAdminAchievementsList");
+    if (host) {
+      host.addEventListener("click", function (e) {
+        var back = e.target && e.target.closest && e.target.closest("[data-ach-back]");
+        if (back) {
+          renderDirectory();
+          return;
+        }
+        var person = e.target && e.target.closest && e.target.closest("[data-participant-key]");
+        if (person) {
+          void renderParticipantDetail(person.getAttribute("data-participant-key"));
+        }
       });
     }
     void refresh();
@@ -314,9 +393,8 @@
     return (
       '<div id="portalAdminAchievementsRoot" class="portal-day-ops-embed">' +
       '<h1 class="page-title">Participant achievements</h1>' +
-      '<p class="page-intro">All in-app photos for this day, grouped by participant. Staff who share the same session see each other&apos;s shots in their gallery.</p>' +
+      '<p class="page-intro">All in-app photos, by participant (A–Z). Tap a participant to see their photos; each photo is titled date-photographer-time.</p>' +
       '<div class="portal-activity-toolbar">' +
-      '<label><span class="muted">Day</span> <input type="date" class="inp" id="portalAdminAchievementsDay" /></label>' +
       '<button type="button" class="btn btn--sec btn--sm" id="portalAdminAchievementsRefresh">Refresh</button>' +
       "</div>" +
       '<div id="portalAdminAchievementsStatus" class="portal-forms-status" role="status"></div>' +

@@ -816,3 +816,115 @@ body.portal-achievements-viewer-open .dock-bar {
   white-space: nowrap;
   min-width: 0;
 }
+.portal-admin-achievement-thumb__title {
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Participant directory (A–Z letter boxes, small participant buttons) */
+.portal-ach-dir {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.portal-ach-letter {
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 12px;
+  background: var(--surface, #fff);
+  padding: 12px 14px;
+  min-width: 0;
+}
+.portal-ach-letter__title {
+  margin: 0 0 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line, #e2e8f0);
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--navy, #0f172a);
+  line-height: 1;
+}
+.portal-ach-letter__grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+.portal-ach-person {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+  text-align: left;
+  padding: 8px 10px;
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 10px;
+  background: #f8fafc;
+  cursor: pointer;
+  font: inherit;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease, transform 0.12s ease;
+}
+.portal-ach-person:hover,
+.portal-ach-person:focus-visible {
+  border-color: var(--blue, #2d84b3);
+  box-shadow: 0 2px 8px rgba(45, 132, 179, 0.18);
+  transform: translateY(-1px);
+  outline: none;
+}
+.portal-ach-person__name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--navy, #0f172a);
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.portal-ach-person__count {
+  font-size: 11px;
+  color: var(--muted, #64748b);
+}
+@media (max-width: 1100px) {
+  .portal-ach-letter__grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (max-width: 760px) {
+  .portal-ach-letter__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 520px) {
+  .portal-ach-letter__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Participant detail (drill-down) */
+.portal-ach-detail__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+  min-width: 0;
+}
+.portal-ach-detail__titles {
+  min-width: 0;
+}
+.portal-ach-detail__name {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--navy, #0f172a);
+  overflow-wrap: break-word;
+}
+.portal-ach-detail__meta {
+  margin: 2px 0 0;
+  font-size: 13px;
+}
