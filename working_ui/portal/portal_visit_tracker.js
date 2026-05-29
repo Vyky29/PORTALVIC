@@ -206,16 +206,27 @@ async function ensureSession(opts) {
     active_tab_ms: 0,
     total_ms: 0,
   };
-  const { data: ins, error } = await _client
+  var insResult = await _client
     .from("portal_staff_visit_sessions")
     .insert([row])
     .select("id")
     .maybeSingle();
-  if (error || !ins?.id) {
-    console.warn("[portal] visit session insert", error?.message || error);
+  // A transient auth/token race can 403 the first insert; retry once after a short delay.
+  if (insResult.error) {
+    await new Promise(function (r) {
+      setTimeout(r, 1500);
+    });
+    insResult = await _client
+      .from("portal_staff_visit_sessions")
+      .insert([row])
+      .select("id")
+      .maybeSingle();
+  }
+  if (insResult.error || !insResult.data?.id) {
+    console.warn("[portal] visit session insert", insResult.error?.message || insResult.error);
     return;
   }
-  _sessionId = ins.id;
+  _sessionId = insResult.data.id;
   saveStoredSessionId(_sessionId);
 }
 

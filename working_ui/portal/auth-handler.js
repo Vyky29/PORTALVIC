@@ -699,7 +699,7 @@ export async function bootstrapDashboardSupabase(_opts) {
     }
     try {
       const { startPortalVisitTracker } = await import(
-        "./portal_visit_tracker.js?v=20260604-visit-activity"
+        "./portal_visit_tracker.js?v=20260604b-visit-activity"
       );
       await startPortalVisitTracker({ page, profile, session });
     } catch (visitErr) {
