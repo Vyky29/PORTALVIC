@@ -659,44 +659,16 @@ body.portal-achievements-viewer-open .dock-bar {
   font-size: 13px;
 }
 
-.portal-achievements-feedback-add {
-  margin: 0;
-}
-
-.portal-achievements-feedback-addbtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  width: 100%;
-  justify-content: center;
-  padding: 13px 16px;
-  border: 1.5px dashed #c2d2e3;
-  border-radius: 14px;
-  background: #f4f8fc;
-  color: #173247;
+.portal-achievements-feedback-count {
   font-weight: 700;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  color: #2d84b3;
+  margin-left: 6px;
+  font-size: 12px;
 }
 
-.portal-achievements-feedback-addbtn:hover {
-  background: #e8f1fa;
-  border-color: #2d84b3;
-}
-
-.portal-achievements-feedback-addbtn:disabled {
-  opacity: 0.6;
-  cursor: default;
-}
-
-.portal-achievements-feedback-addbtn__icon {
-  display: inline-flex;
-}
-
-.portal-achievements-feedback-addbtn__icon svg {
-  width: 20px;
-  height: 20px;
+.portal-achievements-feedback-pick.is-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .portal-achievements-feedback-grid {

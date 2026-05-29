@@ -417,7 +417,7 @@
     void refreshGallery();
   }
 
-  async function uploadPhotoBlob(blob, dayOverride, skipRefresh) {
+  async function uploadPhotoBlob(blob) {
     var client = cfg.getClient();
     if (!client) throw new Error("Sign in required.");
     var {
@@ -427,7 +427,7 @@
 
     var encoded = await resizeBlobToJpeg(blob);
     var p = state.participant;
-    var day = String(dayOverride || londonTodayIso()).trim().slice(0, 10);
+    var day = londonTodayIso();
     var cid = normalizeClientId(p.clientId);
     var photoId = global.crypto && crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
     var path =
@@ -468,54 +468,7 @@
     if (ins.error) throw ins.error;
 
     setStatus("");
-    if (!skipRefresh) await refreshGallery();
-  }
-
-  /**
-   * Headless upload used by the session-feedback "Add / take photos" button:
-   * uploads selected image files as drafts for a specific participant + session date,
-   * without needing the full capture sheet in the DOM. Returns number uploaded.
-   */
-  async function uploadFilesForParticipant(participant, files, sessionDateIso) {
-    var client = cfg.getClient();
-    if (!client) throw new Error("Sign in required.");
-    if (!participant || !participant.clientId) throw new Error("No participant selected.");
-    var list = Array.prototype.slice.call(files || []).filter(function (f) {
-      return f && /^image\//.test(String(f.type || ""));
-    });
-    if (!list.length) return 0;
-    var day = String(sessionDateIso || londonTodayIso()).trim().slice(0, 10);
-    var prevParticipant = state.participant;
-    var prevPhotos = state.photos;
-    var nextParticipant = {
-      clientId: participant.clientId,
-      clientName: participant.clientName || "",
-      portalSessionKey: participant.portalSessionKey || null,
-    };
-    state.participant = nextParticipant;
-    var existing = [];
-    try {
-      existing = await fetchDraftPhotosForParticipant(nextParticipant, day);
-    } catch (_e) {
-      existing = [];
-    }
-    var slots = Math.max(0, MAX_PHOTOS - existing.length);
-    if (slots <= 0) {
-      state.participant = prevParticipant;
-      state.photos = prevPhotos;
-      throw new Error("Maximum " + MAX_PHOTOS + " photos for this participant.");
-    }
-    var added = 0;
-    try {
-      for (var i = 0; i < list.length && added < slots; i++) {
-        await uploadPhotoBlob(list[i], day, true);
-        added++;
-      }
-    } finally {
-      state.participant = prevParticipant;
-      state.photos = prevPhotos;
-    }
-    return added;
+    await refreshGallery();
   }
 
   async function signedUrlFor(path) {
@@ -1055,86 +1008,56 @@
     }
   }
 
-  function feedbackAddPhotosControlHtml() {
-    return (
-      '<div class="portal-achievements-feedback-add">' +
-      '<button type="button" class="portal-achievements-feedback-addbtn" id="portalFeedbackAddPhotosBtn">' +
-      '<span class="portal-achievements-feedback-addbtn__icon" aria-hidden="true">' +
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>' +
-      "</span>" +
-      "<span>Add / take photos</span>" +
-      "</button>" +
-      '<input type="file" accept="image/*" capture="environment" multiple id="portalFeedbackAddPhotosInput" hidden />' +
-      "</div>"
+  /** Max achievement photos a worker can attach to one session feedback. */
+  var FEEDBACK_MAX_ATTACH = 3;
+
+  /** Enforce the attach cap: once FEEDBACK_MAX_ATTACH are ticked, disable the rest. */
+  function syncFeedbackPickLimit(host) {
+    if (!host) return;
+    var boxes = Array.prototype.slice.call(
+      host.querySelectorAll('input[name="achievementPhoto"]')
     );
+    var checked = boxes.filter(function (b) {
+      return b.checked;
+    }).length;
+    var atMax = checked >= FEEDBACK_MAX_ATTACH;
+    boxes.forEach(function (b) {
+      b.disabled = atMax && !b.checked;
+      var pick = b.closest(".portal-achievements-feedback-pick");
+      if (pick) pick.classList.toggle("is-disabled", b.disabled);
+    });
+    var note = host.querySelector(".portal-achievements-feedback-count");
+    if (note) {
+      note.textContent = checked + " / " + FEEDBACK_MAX_ATTACH + " selected";
+    }
   }
 
-  function bindFeedbackAddPhotos(participant, sessionDate) {
-    var btn = document.getElementById("portalFeedbackAddPhotosBtn");
-    var input = document.getElementById("portalFeedbackAddPhotosInput");
-    if (!btn || !input) return;
-    btn.addEventListener("click", function () {
-      try {
-        input.click();
-      } catch (_e) {}
-    });
-    input.addEventListener("change", async function () {
-      var files = input.files;
-      if (!files || !files.length) return;
-      btn.disabled = true;
-      var prevHtml = btn.innerHTML;
-      btn.textContent = "Uploading…";
-      try {
-        await uploadFilesForParticipant(participant, files, sessionDate);
-        await renderFeedbackAttachPanel(
-          participant.clientId,
-          sessionDate,
-          participant.portalSessionKey,
-          participant.clientName
-        );
-      } catch (e) {
-        console.error("[achievements] add from feedback", e);
-        btn.disabled = false;
-        btn.innerHTML = prevHtml;
-        try {
-          alert("Could not add photos. " + (e && e.message ? e.message : ""));
-        } catch (_e) {}
-      }
-      try {
-        input.value = "";
-      } catch (_e) {}
-    });
-  }
-
-  async function renderFeedbackAttachPanel(clientId, sessionDate, portalSessionKey, clientName) {
+  async function renderFeedbackAttachPanel(clientId, sessionDate, portalSessionKey) {
     var host = document.getElementById("portalFeedbackAchievementsPanel");
     if (!host) return [];
     host.hidden = false;
-    var participant = {
-      clientId: clientId,
-      clientName: clientName || "",
-      portalSessionKey: portalSessionKey || null,
-    };
     var rows = await listDraftsForFeedback(clientId, sessionDate, portalSessionKey);
-    var html = "";
     if (!rows.length) {
-      html =
-        '<p class="muted" style="margin:0 0 12px">No achievement photos yet for this participant. Use the button below to take or choose photos.</p>' +
-        feedbackAddPhotosControlHtml();
-    } else {
-      html =
-        '<p class="portal-achievements-feedback-label">Attach achievement photos (optional)</p>' +
-        '<div class="portal-achievements-feedback-grid portal-achievement-protected">';
-      rows.forEach(function (r) {
-        html +=
-          '<label class="portal-achievements-feedback-pick"><input type="checkbox" name="achievementPhoto" value="' +
-          esc(r.id) +
-          '" /><span class="portal-achievements-feedback-thumb" data-path="' +
-          esc(r.storage_path) +
-          '">…</span></label>';
-      });
-      html += "</div>" + feedbackAddPhotosControlHtml();
+      host.innerHTML =
+        '<p class="muted" style="margin:0">No achievement photos for this participant. Take them from Quick menu → Participant achievements, then come back to attach them.</p>';
+      return [];
     }
+    var html =
+      '<p class="portal-achievements-feedback-label">Attach achievement photos (optional) — up to ' +
+      FEEDBACK_MAX_ATTACH +
+      ' <span class="portal-achievements-feedback-count">0 / ' +
+      FEEDBACK_MAX_ATTACH +
+      " selected</span></p>" +
+      '<div class="portal-achievements-feedback-grid portal-achievement-protected">';
+    rows.forEach(function (r) {
+      html +=
+        '<label class="portal-achievements-feedback-pick"><input type="checkbox" name="achievementPhoto" value="' +
+        esc(r.id) +
+        '" /><span class="portal-achievements-feedback-thumb" data-path="' +
+        esc(r.storage_path) +
+        '">…</span></label>';
+    });
+    html += "</div>";
     host.innerHTML = html;
     var picks = host.querySelectorAll(".portal-achievements-feedback-thumb");
     for (var i = 0; i < picks.length; i++) {
@@ -1147,7 +1070,12 @@
         });
       })(picks[i], picks[i].getAttribute("data-path"));
     }
-    bindFeedbackAddPhotos(participant, sessionDate);
+    host.querySelectorAll('input[name="achievementPhoto"]').forEach(function (box) {
+      box.addEventListener("change", function () {
+        syncFeedbackPickLimit(host);
+      });
+    });
+    syncFeedbackPickLimit(host);
     ensureCaptureGuard();
     return rows;
   }
@@ -1155,9 +1083,11 @@
   function getSelectedFeedbackPhotoIds() {
     var host = document.getElementById("portalFeedbackAchievementsPanel");
     if (!host) return [];
-    return Array.from(host.querySelectorAll('input[name="achievementPhoto"]:checked')).map(function (inp) {
-      return inp.value;
-    });
+    return Array.from(host.querySelectorAll('input[name="achievementPhoto"]:checked'))
+      .slice(0, FEEDBACK_MAX_ATTACH)
+      .map(function (inp) {
+        return inp.value;
+      });
   }
 
   async function finalizeOnFeedbackSubmit(opts) {
@@ -1186,7 +1116,6 @@
     renderFeedbackAttachPanel: renderFeedbackAttachPanel,
     getSelectedFeedbackPhotoIds: getSelectedFeedbackPhotoIds,
     finalizeOnFeedbackSubmit: finalizeOnFeedbackSubmit,
-    uploadFilesForParticipant: uploadFilesForParticipant,
     MAX_PHOTOS: MAX_PHOTOS,
   };
 })(typeof window !== "undefined" ? window : globalThis);
