@@ -31,11 +31,10 @@
     other: 'Other'
   };
 
-  // Order + labels for the stat-card filters (mirrors the sidebar sub-menu).
+  // Stat-card filters for actual file types (Portal PINs is a separate screen).
   var STAT_CARDS = [
     { key: 'timesheet', label: 'Timesheets' },
     { key: 'expense', label: 'Expenses' },
-    { key: 'portalpin', label: 'Portal PINs' },
     { key: 'checklist', label: 'Checklists' },
     { key: 'passport', label: 'Passports' },
     { key: 'certificate', label: 'Certificates' },

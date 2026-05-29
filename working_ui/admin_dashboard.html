@@ -12,6 +12,7 @@
   <script src="/portal/hr-contract-embed-html.js?v=20260521-embed"></script>
   <script src="/portal/admin-portal-day-ops.js?v=20260527-lead-log"></script>
   <script src="/portal/admin-portal-documents.js?v=20260529-docs-redesign"></script>
+  <script src="/portal/admin-portal-pins.js?v=20260530-portal-pins"></script>
   <script src="/portal/admin-portal-activity.js?v=20260604-visit-activity"></script>
   <script src="/portal/admin-portal-achievements.js?v=20260604-ach-az-directory"></script>
   <link rel="stylesheet" href="/portal/portal_staff_map.css?v=20260602-staff-map-header" />
@@ -14750,6 +14751,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         window.__portalDocsPresetFilter = 'all';
         return viewPortalDocuments();
       }
+      if(id==='portal_docs_portalpin') return viewPortalPins();
       if(id.indexOf('portal_docs_')===0){
         window.__portalDocsPresetFilter = id.slice('portal_docs_'.length);
         return viewPortalDocuments();
@@ -15621,6 +15623,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       portalDocumentsConfigureOnce();
       if(window.PortalDocuments && typeof window.PortalDocuments.bindModule === 'function'){
         window.PortalDocuments.bindModule();
+      }
+    }
+    function portalPinsConfigureOnce(){
+      if(window.__portalPinsConfigured || !window.PortalPins) return;
+      window.__portalPinsConfigured = true;
+      window.PortalPins.configure({ esc: esc });
+    }
+    function viewPortalPins(){
+      portalPinsConfigureOnce();
+      return window.PortalPins ? window.PortalPins.viewHtml() : '<p class="page-intro">Portal PINs module failed to load.</p>';
+    }
+    function bindPortalPinsModule(){
+      portalPinsConfigureOnce();
+      if(window.PortalPins && typeof window.PortalPins.bindModule === 'function'){
+        window.PortalPins.bindModule();
       }
     }
     function portalActivityConfigureOnce(){
@@ -17914,7 +17931,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         bindSchedulingModule();
       }
       if(id==='invoices') bindInvoicesModule();
-      if(id==='portal_documents' || id.indexOf('portal_docs_')===0) bindPortalDocumentsModule();
+      if(id==='portal_docs_portalpin') bindPortalPinsModule();
+      else if(id==='portal_documents' || id.indexOf('portal_docs_')===0) bindPortalDocumentsModule();
       if(id==='portal_activity') bindPortalActivityModule();
       if(id==='participant_achievements') bindParticipantAchievementsModule();
       if(id==='staff_live_map') bindStaffLiveMapModule();
