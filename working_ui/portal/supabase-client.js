@@ -506,7 +506,7 @@ export function portalClearPersistedSupabaseAuth() {
 export async function portalLogout() {
   try {
     const { endPortalVisitSession } = await import(
-      "./portal_visit_tracker.js?v=20260604b-visit-activity"
+      "./portal_visit_tracker.js?v=20260605-demo-skip"
     );
     await endPortalVisitSession();
   } catch {

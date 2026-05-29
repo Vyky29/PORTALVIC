@@ -701,7 +701,7 @@ export async function bootstrapDashboardSupabase(_opts) {
     );
     try {
       const { startPortalLivePresence, mountPortalLivePresenceBar } = await import(
-        "./portal_live_presence.js?v=20260602-supabase-shared"
+        "./portal_live_presence.js?v=20260605-demo-skip"
       );
       await startPortalLivePresence({ page, profile, session });
       if (document.getElementById("portalLivePresenceBar")) {
@@ -712,7 +712,7 @@ export async function bootstrapDashboardSupabase(_opts) {
     }
     try {
       const { startPortalVisitTracker } = await import(
-        "./portal_visit_tracker.js?v=20260604b-visit-activity"
+        "./portal_visit_tracker.js?v=20260605-demo-skip"
       );
       await startPortalVisitTracker({ page, profile, session });
     } catch (visitErr) {

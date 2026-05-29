@@ -386,6 +386,15 @@ export async function endPortalVisitSession() {
 /**
  * @param {{ page?: string, profile?: Record<string, unknown> | null, session?: import("@supabase/supabase-js").Session | null }} opts
  */
+function portalVisitIsDemoAccount(profile, session) {
+  const p = profile || {};
+  const u = String(p.username || "").trim().toLowerCase();
+  const fn = String(p.full_name || "").trim().toLowerCase();
+  const email = String(session?.user?.email || "").trim().toLowerCase();
+  const local = email.split("@")[0] || "";
+  return u === "demo" || fn === "demo" || local === "demo" || local === "stf020";
+}
+
 export async function startPortalVisitTracker(opts = {}) {
   if (typeof window === "undefined") return;
   try {
@@ -396,6 +405,12 @@ export async function startPortalVisitTracker(opts = {}) {
   const session = opts.session;
   _userId = String(session?.user?.id || "").trim();
   if (!_userId) return;
+  // Demo account is a sandbox: never record visit sessions (kept out of
+  // admin Portal Activity, and avoids RLS 403s if the demo auth session
+  // is not a full Supabase JWT).
+  if (opts.isDemo === true || portalVisitIsDemoAccount(opts.profile, session)) {
+    return;
+  }
 
   _visibleSince = document.visibilityState === "visible" ? Date.now() : 0;
   await ensureSession(opts);

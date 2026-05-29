@@ -122,6 +122,16 @@ export async function startPortalLivePresence(opts = {}) {
   const session =
     opts.session || window.__PORTAL_SUPABASE__?.session || null;
   if (!session?.user?.id) return;
+  // Demo account is a sandbox: do not broadcast presence to real admins/CEOs.
+  {
+    const p = profile || {};
+    const u = String(p.username || "").trim().toLowerCase();
+    const fn = String(p.full_name || "").trim().toLowerCase();
+    const local = String(session.user.email || "").trim().toLowerCase().split("@")[0] || "";
+    if (opts.isDemo === true || u === "demo" || fn === "demo" || local === "demo" || local === "stf020") {
+      return;
+    }
+  }
 
   let supabase;
   try {
