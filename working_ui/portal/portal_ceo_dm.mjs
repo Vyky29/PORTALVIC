@@ -134,8 +134,239 @@ async function ceoDmPrepareOpsAdminCompose() {
 }
 
 function ceoDmUi() {
-  window.__PORTAL_CEO_DM_UI = window.__PORTAL_CEO_DM_UI || { panel: "list", threadId: "" };
+  window.__PORTAL_CEO_DM_UI = window.__PORTAL_CEO_DM_UI || { panel: "list", threadId: "", groupId: "" };
+  if (typeof window.__PORTAL_CEO_DM_UI.groupId === "undefined") window.__PORTAL_CEO_DM_UI.groupId = "";
   return window.__PORTAL_CEO_DM_UI;
+}
+
+/** Resolve the other CEOs (exclude me) and Sevitha (admin) for the direct buttons. */
+async function ceoDmResolveDirectory() {
+  const out = { ceos: [], sevitha: null };
+  const client = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client;
+  const me = ceoDmMe();
+  if (!client) return out;
+  const q = await client
+    .from("staff_profiles")
+    .select("id,full_name,username,app_role,is_active")
+    .in("app_role", ["ceo", "admin"])
+    .order("full_name", { ascending: true });
+  if (q.error || !Array.isArray(q.data)) return out;
+  q.data.forEach((row) => {
+    if (!row || row.is_active === false) return;
+    const id = String(row.id || "").trim();
+    if (!id) return;
+    const role = String(row.app_role || "").toLowerCase();
+    const key = (String(row.username || "") + " " + String(row.full_name || "")).toLowerCase();
+    if (role === "ceo" && id !== me) {
+      out.ceos.push(row);
+    }
+    if (!out.sevitha && key.indexOf("sevitha") !== -1 && id !== me) {
+      out.sevitha = row;
+    }
+  });
+  return out;
+}
+
+function ceoDmRenderDirectButtons(dir) {
+  const host = $("ceoDmDirectButtons");
+  if (!host) return;
+  host.innerHTML = "";
+  function make(label, kind, onClick) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "ceo-dm-direct__btn" + (kind ? " ceo-dm-direct__btn--" + kind : "");
+    b.textContent = label;
+    b.addEventListener("click", onClick);
+    host.appendChild(b);
+  }
+  (dir.ceos || []).forEach((c) => {
+    const full = (c.full_name || c.username || "").trim() || "CEO";
+    make(ceoDmShortName(c) || full, "ceo", () => void ceoDmOpenDirect(String(c.id), full));
+  });
+  if (dir.sevitha) {
+    const s = dir.sevitha;
+    const full = (s.full_name || s.username || "").trim() || "Sevitha";
+    make(ceoDmShortName(s) || full, "admin", () => void ceoDmOpenDirect(String(s.id), full));
+  }
+  make("Directors", "group", () => void ceoDmOpenGroup());
+  if (!(dir.ceos || []).length && !dir.sevitha) {
+    const p = document.createElement("p");
+    p.className = "ceo-dm-direct__empty";
+    p.textContent = "No other directors found in the directory.";
+    host.insertBefore(p, host.firstChild);
+  }
+}
+
+async function ceoDmEnsureThreadWithPeer(peerId) {
+  const client = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client;
+  const me = ceoDmMe();
+  if (!client || !me || !peerId) return "";
+  async function sel(pa, pb) {
+    const r = await client
+      .from("portal_staff_dm_threads")
+      .select("id")
+      .eq("participant_a", pa)
+      .eq("participant_b", pb)
+      .maybeSingle();
+    return r.data && r.data.id ? String(r.data.id) : "";
+  }
+  const guess = portalDmCanonThreadParticipantsGuess(me, peerId);
+  const a = guess.participant_a;
+  const b = guess.participant_b;
+  let tid = await sel(a, b);
+  if (tid) return tid;
+  tid = await sel(b, a);
+  if (tid) return tid;
+  let ins = await client.from("portal_staff_dm_threads").insert([{ participant_a: a, participant_b: b }]).select("id");
+  tid = ceoDmPickThreadIdFromRows(ins.data);
+  if (!tid && ins.error && portalDmIsCheckOrderedPairError(ins.error)) {
+    ins = await client.from("portal_staff_dm_threads").insert([{ participant_a: b, participant_b: a }]).select("id");
+    tid = ceoDmPickThreadIdFromRows(ins.data);
+  }
+  if (!tid) tid = (await sel(a, b)) || (await sel(b, a));
+  if (!tid && ins.error) throw ins.error;
+  return tid;
+}
+
+async function ceoDmOpenDirect(peerId, label) {
+  ceoDmUi().groupId = "";
+  window.__PORTAL_CEO_DM_CHANNEL = "directors";
+  const topErr = $("ceoPortalDmTopErr");
+  if (topErr) topErr.textContent = "";
+  const title = $("ceoPortalDmTitle");
+  const sub = $("ceoPortalDmSub");
+  if (title) title.textContent = label || "Direct message";
+  if (sub) sub.textContent = "Private 1:1 message.";
+  ceoDmSetOpen(true);
+  ceoDmTogglePanels("thread");
+  const msgs = $("ceoPortalDmMsgs");
+  const peerEl = $("ceoPortalDmThreadPeer");
+  if (peerEl) peerEl.textContent = label || "Conversation";
+  if (msgs) msgs.innerHTML = '<p style="margin:0;font-size:13px;color:var(--muted)">Opening…</p>';
+  try {
+    const tid = await ceoDmEnsureThreadWithPeer(peerId);
+    if (!tid) {
+      if (msgs) msgs.innerHTML = '<p style="margin:0;font-size:13px;color:#b91c1c">Could not open this conversation.</p>';
+      return;
+    }
+    await ceoDmOpenThread(tid);
+  } catch (e) {
+    if (msgs)
+      msgs.innerHTML =
+        '<p style="margin:0;font-size:13px;color:#b91c1c;overflow-wrap:break-word">' +
+        esc(String((e && e.message) || e)) +
+        "</p>";
+  }
+}
+
+async function ceoDmOpenGroup() {
+  const client = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client;
+  window.__PORTAL_CEO_DM_CHANNEL = "directors";
+  const topErr = $("ceoPortalDmTopErr");
+  if (topErr) topErr.textContent = "";
+  const title = $("ceoPortalDmTitle");
+  const sub = $("ceoPortalDmSub");
+  if (title) title.textContent = "Directors (group)";
+  if (sub) sub.textContent = "Group chat for CEOs and Sevitha.";
+  ceoDmSetOpen(true);
+  ceoDmTogglePanels("thread");
+  const peerEl = $("ceoPortalDmThreadPeer");
+  if (peerEl) peerEl.textContent = "Directors";
+  const inp = $("ceoPortalDmReplyBody");
+  if (inp) inp.value = "";
+  const errB = $("ceoPortalDmThreadErr");
+  if (errB) errB.textContent = "";
+  const msgs = $("ceoPortalDmMsgs");
+  if (msgs) msgs.innerHTML = '<p style="margin:0;font-size:13px;color:var(--muted)">Loading…</p>';
+  if (!client) return;
+  const g = await client.from("portal_ceo_group").select("id").eq("slug", "all_ceos").maybeSingle();
+  const gid = g.data && g.data.id ? String(g.data.id) : "";
+  if (!gid) {
+    if (msgs)
+      msgs.innerHTML =
+        '<p style="margin:0;font-size:13px;color:#b91c1c">Group not available. Run the CEO group chat migration.</p>';
+    return;
+  }
+  ceoDmUi().groupId = gid;
+  ceoDmUi().threadId = "";
+  await ceoDmLoadMessages();
+}
+
+async function ceoDmLoadGroupMessages() {
+  const msgsBox = $("ceoPortalDmMsgs");
+  const client = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client;
+  const me = ceoDmMe();
+  const gid = String(ceoDmUi().groupId || "").trim();
+  if (!msgsBox || !client || !gid) {
+    if (msgsBox) msgsBox.innerHTML = '<p style="margin:0;font-size:13px;color:var(--muted)">Not available.</p>';
+    return;
+  }
+  const mres = await client
+    .from("portal_ceo_group_message")
+    .select("id,author_id,body,created_at")
+    .eq("group_id", gid)
+    .order("created_at", { ascending: true });
+  if (mres.error) {
+    msgsBox.innerHTML =
+      '<p style="margin:0;font-size:13px;color:#b91c1c;overflow-wrap:break-word">' +
+      esc(String(mres.error.message || mres.error)) +
+      "</p>";
+    return;
+  }
+  const arr = mres.data || [];
+  const authorIds = [];
+  arr.forEach((m) => {
+    const x = String(m.author_id || "").trim();
+    if (x && authorIds.indexOf(x) === -1) authorIds.push(x);
+  });
+  const authorBy = {};
+  if (authorIds.length) {
+    const ap = await client.from("staff_profiles").select("id,full_name,username,app_role").in("id", authorIds);
+    if (!ap.error && Array.isArray(ap.data)) ap.data.forEach((p) => { if (p && p.id) authorBy[String(p.id)] = p; });
+  }
+  msgsBox.innerHTML = "";
+  if (!arr.length) {
+    const ph = document.createElement("p");
+    ph.style.cssText = "margin:0;font-size:13px;color:var(--muted)";
+    ph.textContent = "No messages yet. Say hello to the directors.";
+    msgsBox.appendChild(ph);
+    return;
+  }
+  arr.forEach((m) => {
+    const mine = String(m.author_id || "") === me;
+    const arow = authorBy[String(m.author_id || "").trim()] || {};
+    const div = document.createElement("div");
+    div.className = "ceo-portal-dm-msg " + (mine ? "ceo-portal-dm-msg--mine" : "ceo-portal-dm-msg--them");
+    if (!mine) {
+      const chip = ceoDmShortName(arow) || (String(arow.app_role || "").toLowerCase() === "admin" ? "Admin" : "Director");
+      const chipEl = document.createElement("div");
+      chipEl.className = "ceo-portal-dm-msg-by";
+      chipEl.textContent = chip;
+      div.appendChild(chipEl);
+    }
+    const body = document.createElement("div");
+    body.className = "portal-dm-msg-body";
+    body.style.minWidth = "0";
+    const text = document.createElement("div");
+    text.style.whiteSpace = "pre-wrap";
+    text.style.overflowWrap = "break-word";
+    text.textContent = String(m.body || "");
+    body.appendChild(text);
+    div.appendChild(body);
+    let tline = "";
+    try {
+      if (m.created_at)
+        tline = new Date(m.created_at).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+    } catch (_t) {}
+    if (tline) {
+      const timeEl = document.createElement("div");
+      timeEl.className = "ceo-portal-dm-msg-time";
+      timeEl.textContent = tline;
+      div.appendChild(timeEl);
+    }
+    msgsBox.appendChild(div);
+  });
+  msgsBox.scrollTop = msgsBox.scrollHeight;
 }
 
 function ceoDmTogglePanels(panel) {
@@ -290,6 +521,10 @@ async function ceoDmOpenThread(tid) {
 }
 
 async function ceoDmLoadMessages() {
+  if (String(ceoDmUi().groupId || "").trim()) {
+    await ceoDmLoadGroupMessages();
+    return;
+  }
   const msgsBox = $("ceoPortalDmMsgs");
   const client = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client;
   const me = ceoDmMe();
@@ -413,7 +648,7 @@ function ceoDmBindVoiceControls() {
       return {
         client: box && box.client,
         threadId: String(ceoDmUi().threadId || "").trim(),
-        groupId: "",
+        groupId: String(ceoDmUi().groupId || "").trim(),
         authorId: ceoDmMe(),
       };
     },
@@ -427,13 +662,14 @@ function ceoDmBindVoiceControls() {
 
 async function ceoDmSendReply() {
   const client = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client;
+  const gid = String(ceoDmUi().groupId || "").trim();
   const tid = String(ceoDmUi().threadId || "").trim();
   const inp = $("ceoPortalDmReplyBody");
   const errB = $("ceoPortalDmThreadErr");
   const sendBtn = $("ceoPortalDmThreadSend");
   const body = inp ? String(inp.value || "").trim() : "";
   if (errB) errB.textContent = "";
-  if (!client || !tid) {
+  if (!client || (!tid && !gid)) {
     if (errB) errB.textContent = "Not available.";
     return;
   }
@@ -443,6 +679,16 @@ async function ceoDmSendReply() {
   }
   if (sendBtn) sendBtn.disabled = true;
   try {
+    if (gid) {
+      const ins = await client
+        .from("portal_ceo_group_message")
+        .insert([{ group_id: gid, author_id: ceoDmMe(), body }])
+        .select("id");
+      if (ins.error) throw ins.error;
+      if (inp) inp.value = "";
+      await ceoDmLoadGroupMessages();
+      return;
+    }
     const ins = await client
       .from("portal_staff_dm_messages")
       .insert([{ thread_id: tid, body, message_type: "text" }])
@@ -639,8 +885,22 @@ function ceoDmInitRealtimeOnce() {
             const sh = $("ceoPortalDmSheet");
             if (!sh || sh.hidden) return;
             const ui = ceoDmUi();
+            if (ui.groupId) return;
             if (ui.panel === "thread") void ceoDmLoadMessages();
             else if (ui.panel === "list") void ceoDmRenderList();
+          }, 350);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "portal_ceo_group_message" },
+        () => {
+          if (window.__PORTAL_CEO_DM_RT_GDEB) clearTimeout(window.__PORTAL_CEO_DM_RT_GDEB);
+          window.__PORTAL_CEO_DM_RT_GDEB = setTimeout(() => {
+            window.__PORTAL_CEO_DM_RT_GDEB = null;
+            const sh = $("ceoPortalDmSheet");
+            if (!sh || sh.hidden) return;
+            if (String(ceoDmUi().groupId || "").trim()) void ceoDmLoadGroupMessages();
           }, 350);
         }
       )
@@ -674,6 +934,19 @@ export function mountPortalCeoDm() {
   }
 
   ceoDmInitRealtimeOnce();
+
+  // Direct buttons: other CEOs + Sevitha (1:1) and the Directors group.
+  void (async () => {
+    try {
+      const dir = await ceoDmResolveDirectory();
+      ceoDmRenderDirectButtons(dir);
+    } catch (e) {
+      const host = $("ceoDmDirectButtons");
+      if (host)
+        host.innerHTML =
+          '<p class="ceo-dm-direct__empty">Could not load directors. Refresh to try again.</p>';
+    }
+  })();
 
   const btnStaff = $("ceoPortalDmBtnStaffLead");
   const btnExec = $("ceoPortalDmBtnExec");
@@ -723,7 +996,15 @@ export function mountPortalCeoDm() {
   const threadBack = $("ceoPortalDmThreadBack");
   if (threadBack) {
     threadBack.addEventListener("click", () => {
-      ceoDmUi().threadId = "";
+      const ui = ceoDmUi();
+      // Direct buttons / group: there is no list to return to — close the sheet.
+      if (ui.groupId || String(window.__PORTAL_CEO_DM_CHANNEL || "") === "directors") {
+        ui.threadId = "";
+        ui.groupId = "";
+        ceoDmCloseSheet();
+        return;
+      }
+      ui.threadId = "";
       ceoDmTogglePanels("list");
       void ceoDmRenderList();
     });
