@@ -14458,10 +14458,22 @@
       const demo = Array.isArray(demoList) && demoList.indexOf(id) !== -1;
       window.__PORTAL_TERM_DEMO_VISUALS__ = demo;
       if(demo){
-        dashboardData.termWorkedWeekdays = [1, 2, 3, 4, 5, 6, 0];
+        // Demo only: follow Youssef's roster weekdays so every orange day has real sessions to open.
+        let demoWorked = portalWorkedWeekdaysFromSessions(typeof sessionsModel !== 'undefined' ? sessionsModel : [], id);
+        if(!demoWorked.length) demoWorked = [1, 2, 3, 4, 5];
+        dashboardData.termWorkedWeekdays = demoWorked;
         dashboardData.termHalfTermWeekStarts = [];
         dashboardData.termFeedbackByDate = Object.assign({}, PORTAL_TERM_DEMO_FEEDBACK_BY_DATE);
+        // Pretend "now" is 8 Jun 2026 so May worked days are in the past → orange (review needed).
         dashboardData.termDemoNow = '2026-06-08T20:00:00';
+        // Show the calendar from early May so there are several past review-needed (orange) days to test.
+        dashboardData.termCalendarMonths = [4, 5];
+        dashboardData.termDashboardCalendarFrom = '2026-05-04';
+        dashboardData.termDashboardCalendarTo = '2026-06-30';
+        // Recompute the orange/late map over the May→June range now that it is set.
+        if(typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function'){
+          try{ rebuildTermShiftAndFeedbackFromSessionModel(); }catch(_e){}
+        }
       } else {
         let worked = [];
         if(ptd && typeof ptd.workedWeekdaysForStaff === 'function'){
