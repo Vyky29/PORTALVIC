@@ -70,6 +70,28 @@ function monthLabelFromIso(iso: string): string {
   return d.toLocaleDateString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });
 }
 
+function londonParts(): { y: number; m: number; d: number } {
+  const f = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/London",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const parts = f.formatToParts(new Date());
+  const get = (t: string) => Number(parts.find((p) => p.type === t)?.value || 0);
+  return { y: get("year"), m: get("month"), d: get("day") };
+}
+
+/** True once the 24th (00:00 London) of the target month has arrived/passed. */
+function deadlinePassedForMonth(targetMonthIso: string): boolean {
+  const tY = Number(targetMonthIso.slice(0, 4));
+  const tM = Number(targetMonthIso.slice(5, 7));
+  const now = londonParts();
+  if (now.y !== tY) return now.y > tY;
+  if (now.m !== tM) return now.m > tM;
+  return now.d >= 24;
+}
+
 function resolveTargetMonthIso(raw: string): string {
   const s = String(raw || "").trim();
   if (/^\d{4}-\d{2}$/.test(s)) return `${s}-01`;
@@ -158,6 +180,7 @@ async function aggregate(supabase: any, targetMonthIso: string) {
   const notSubmitted = (rates || [])
     .filter((r) => !submittedIds.has(String(r.user_id || "")))
     .map((r) => ({
+      userId: String(r.user_id || ""),
       name: nameById.get(String(r.user_id)) || String(r.user_id),
       role: String(r.role_label || "").trim(),
     }))
@@ -421,7 +444,35 @@ Deno.serve(async (req: Request) => {
   };
 
   if (dryRun) {
-    return json(200, { ok: true, dryRun: true, summary, workers: data.workers, missing: data.notSubmitted });
+    return json(200, {
+      ok: true,
+      dryRun: true,
+      deadlinePassed: deadlinePassedForMonth(targetMonthIso),
+      summary,
+      workers: data.workers,
+      missing: data.notSubmitted,
+    });
+  }
+
+  // Record a pending £5 penalty for each worker who missed the deadline. Only
+  // once the 24th 00:00 (London) cut-off has passed, so an early/manual run
+  // never penalises anyone prematurely. Idempotent via the unique constraint.
+  let penaltiesRecorded = 0;
+  if (deadlinePassedForMonth(targetMonthIso) && data.notSubmitted.length) {
+    const penaltyRows = data.notSubmitted
+      .filter((n) => n.userId)
+      .map((n) => ({ user_id: n.userId, missed_month: targetMonthIso, amount: 5, reason: "no_timesheet" }));
+    if (penaltyRows.length) {
+      try {
+        const { error: penErr } = await supabase
+          .from("staff_timesheet_penalties")
+          .upsert(penaltyRows, { onConflict: "user_id,missed_month", ignoreDuplicates: true });
+        if (penErr) console.warn("[payroll] penalty ledger upsert failed:", penErr.message || penErr);
+        else penaltiesRecorded = penaltyRows.length;
+      } catch (e) {
+        console.warn("[payroll] penalty ledger upsert threw:", e?.message || e);
+      }
+    }
   }
 
   let pdfBytes: Uint8Array;
@@ -465,7 +516,7 @@ Deno.serve(async (req: Request) => {
       filename: `payroll-${targetMonthIso.slice(0, 7)}.pdf`,
       pdfBase64: toBase64(pdfBytes),
     });
-    return json(200, { ok: true, sent: true, to: toList, summary, providerResponse: result });
+    return json(200, { ok: true, sent: true, to: toList, summary, penaltiesRecorded, providerResponse: result });
   } catch (e) {
     return json(502, { ok: false, error: `Email send failed: ${e?.message || e}`, summary });
   }
