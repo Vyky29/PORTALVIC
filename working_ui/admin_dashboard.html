@@ -16407,8 +16407,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     /** Canonical programme label for “Physical Activity” cards (`portalDisplayProgrammeFromSheet`). */
     var C4K_PHYSICAL_ACTIVITY_PROGRAMME = 'Physical Activity';
     function adminAppendServiceCapacityBoardAfterPhysicalActivity(cardHtml, programme){
-      if(String(programme || '').trim() !== C4K_PHYSICAL_ACTIVITY_PROGRAMME) return cardHtml;
-      return cardHtml + adminServiceCapacityBoardEmbedHtml();
+      // Capacity board is appended once at the very end of the roster cards (see
+      // viewC4kRosterServicesFromSlotsHtml fallback) so the Day centre programme card
+      // sits directly below Physical Activity instead of below the capacity board.
+      return cardHtml;
     }
     /** Quick action pills — same mock handler as legacy `viewServiceCap` (`cap-act .btn`). */
     function adminCapacityQuickActionsTpl(){
