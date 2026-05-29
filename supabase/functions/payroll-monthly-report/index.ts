@@ -16,10 +16,19 @@
 //     processed this month; a £5 late penalty applies to their next timesheet
 //     (paid the following month).
 //
-// Trigger (POST) with header:  x-payroll-cron-secret: <PAYROLL_CRON_SECRET>
+// Auth (either one):
+//   - header  x-payroll-cron-secret: <PAYROLL_CRON_SECRET>   (pg_cron)
+//   - header  Authorization: Bearer <user JWT>               (signed-in admin/ceo,
+//     used by the "Payroll report" page so the secret never reaches the browser)
+//
 // Optional JSON body / query:
-//   month   "YYYY-MM"  -> override the payroll month (default: current month)
-//   dryRun  true       -> return JSON summary, do NOT send the email
+//   month   "YYYY-MM"   -> override the payroll month (default: current month)
+//   mode    "preview"   -> build PDF and return it as base64 (NO email, NO penalties)
+//           "send"      -> email the PDF + record no-submission penalties (default)
+//   dryRun  true        -> return JSON summary only (no PDF, no email, no penalties)
+//
+// Deploy with verify_jwt disabled (auth is enforced in-function):
+//   supabase functions deploy payroll-monthly-report --no-verify-jwt
 //
 // Required env vars:
 //   SUPABASE_URL                 (auto)
@@ -405,11 +414,47 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json(405, { ok: false, error: "Method not allowed" });
 
-  const secret = env("PAYROLL_CRON_SECRET");
-  if (!secret) return json(500, { ok: false, error: "PAYROLL_CRON_SECRET is not configured" });
-  if ((req.headers.get("x-payroll-cron-secret") || "") !== secret) {
-    return json(401, { ok: false, error: "Unauthorized" });
+  const supabaseUrl = env("SUPABASE_URL");
+  const serviceKey = env("SUPABASE_SERVICE_ROLE_KEY");
+  if (!supabaseUrl || !serviceKey) return json(500, { ok: false, error: "Supabase env not configured" });
+  const supabase = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
+
+  // Authorize either by the cron shared-secret OR by a signed-in admin/ceo (the
+  // admin dashboard button calls this with the staff member's Supabase JWT, so
+  // we never put the cron secret in the browser).
+  const cronSecret = env("PAYROLL_CRON_SECRET");
+  const providedSecret = req.headers.get("x-payroll-cron-secret") || "";
+  let authorized = false;
+  let authVia = "";
+  if (cronSecret && providedSecret && providedSecret === cronSecret) {
+    authorized = true;
+    authVia = "cron";
   }
+  if (!authorized) {
+    const authHeader = req.headers.get("Authorization") || "";
+    const token = authHeader.toLowerCase().startsWith("bearer ") ? authHeader.slice(7).trim() : "";
+    if (token) {
+      try {
+        const { data: userData, error: userErr } = await supabase.auth.getUser(token);
+        const uid = userData?.user?.id;
+        if (uid && !userErr) {
+          const { data: prof } = await supabase
+            .from("staff_profiles")
+            .select("app_role")
+            .eq("id", uid)
+            .maybeSingle();
+          const role = String(prof?.app_role || "").toLowerCase();
+          if (role === "admin" || role === "ceo") {
+            authorized = true;
+            authVia = "admin";
+          }
+        }
+      } catch (_) {
+        /* fall through to 401 */
+      }
+    }
+  }
+  if (!authorized) return json(401, { ok: false, error: "Unauthorized" });
 
   let body: Record<string, unknown> = {};
   try {
@@ -421,12 +466,9 @@ Deno.serve(async (req: Request) => {
   const monthRaw = String(body.month || url.searchParams.get("month") || "");
   const dryRun =
     body.dryRun === true || ["1", "true", "yes"].includes(String(url.searchParams.get("dryRun") || "").toLowerCase());
+  const mode = String(body.mode || url.searchParams.get("mode") || "").toLowerCase();
+  const isPreview = mode === "preview";
   const targetMonthIso = resolveTargetMonthIso(monthRaw);
-
-  const supabaseUrl = env("SUPABASE_URL");
-  const serviceKey = env("SUPABASE_SERVICE_ROLE_KEY");
-  if (!supabaseUrl || !serviceKey) return json(500, { ok: false, error: "Supabase env not configured" });
-  const supabase = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
 
   let data;
   try {
@@ -454,9 +496,32 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  // Record a pending £5 penalty for each worker who missed the deadline. Only
-  // once the 24th 00:00 (London) cut-off has passed, so an early/manual run
-  // never penalises anyone prematurely. Idempotent via the unique constraint.
+  // PDF is needed for both preview and send.
+  let pdfBytes: Uint8Array;
+  try {
+    pdfBytes = await buildPdf(targetMonthIso, data);
+  } catch (e) {
+    return json(500, { ok: false, error: `PDF failed: ${e?.message || e}` });
+  }
+
+  // Preview: hand the PDF back for on-screen review. No email, no penalties.
+  if (isPreview) {
+    return json(200, {
+      ok: true,
+      mode: "preview",
+      authVia,
+      deadlinePassed: deadlinePassedForMonth(targetMonthIso),
+      summary,
+      workers: data.workers,
+      missing: data.notSubmitted,
+      filename: `payroll-${targetMonthIso.slice(0, 7)}.pdf`,
+      pdfBase64: toBase64(pdfBytes),
+    });
+  }
+
+  // Send path: record a pending £5 penalty for each worker who missed the
+  // deadline. Only once the 24th 00:00 (London) cut-off has passed, so an early
+  // run never penalises anyone prematurely. Idempotent via the unique constraint.
   let penaltiesRecorded = 0;
   if (deadlinePassedForMonth(targetMonthIso) && data.notSubmitted.length) {
     const penaltyRows = data.notSubmitted
@@ -473,13 +538,6 @@ Deno.serve(async (req: Request) => {
         console.warn("[payroll] penalty ledger upsert threw:", e?.message || e);
       }
     }
-  }
-
-  let pdfBytes: Uint8Array;
-  try {
-    pdfBytes = await buildPdf(targetMonthIso, data);
-  } catch (e) {
-    return json(500, { ok: false, error: `PDF failed: ${e?.message || e}` });
   }
 
   const apiKey = env("RESEND_API_KEY");
@@ -516,7 +574,7 @@ Deno.serve(async (req: Request) => {
       filename: `payroll-${targetMonthIso.slice(0, 7)}.pdf`,
       pdfBase64: toBase64(pdfBytes),
     });
-    return json(200, { ok: true, sent: true, to: toList, summary, penaltiesRecorded, providerResponse: result });
+    return json(200, { ok: true, sent: true, authVia, to: toList, summary, penaltiesRecorded, providerResponse: result });
   } catch (e) {
     return json(502, { ok: false, error: `Email send failed: ${e?.message || e}`, summary });
   }

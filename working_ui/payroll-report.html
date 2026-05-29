@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <!-- Admin-only payroll report preview + manual send.
+       Static deploy from working_ui/ on Vercel (same origin as login.html / admin_dashboard.html).
+       Calls the payroll-monthly-report Edge Function with the signed-in admin/ceo JWT. -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Payroll report · clubSENsational</title>
+  <style>
+    :root{
+      --blue:#2d84b3;--blueDark:#256d96;--ink:#0f172a;--text:#334155;--muted:#64748b;
+      --line:#e2e8f0;--bg:#f1f5f9;--surface:#fff;--gold:#f4b740;
+      --danger:#dc2626;--dangerSoft:#fef2f2;--success:#15803d;--successSoft:#f0fdf4;
+      --warn:#b45309;--warnSoft:#fffbeb;--radius:14px;
+      --font:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    }
+    *,*::before,*::after{box-sizing:border-box}
+    html,body{margin:0;max-width:100%;overflow-x:hidden}
+    body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:15px;line-height:1.5}
+    .wrap{max-width:920px;margin:0 auto;padding:18px 16px 60px;min-width:0}
+    header.page{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:8px 0 18px;min-width:0}
+    header.page h1{font-size:20px;margin:0;color:var(--ink);min-width:0;overflow-wrap:break-word}
+    .back{font-size:13px;color:var(--blue);text-decoration:none;font-weight:600}
+    .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+      box-shadow:0 1px 3px rgba(15,23,42,.05),0 8px 24px rgba(15,23,42,.05);margin-bottom:16px;overflow:hidden}
+    .card-pad{padding:16px}
+    .muted{color:var(--muted)}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;min-width:0}
+    label.fld{font-size:13px;font-weight:600;color:var(--ink);display:flex;flex-direction:column;gap:4px;min-width:0}
+    input[type=month]{font:inherit;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
+    .btn{font:inherit;font-weight:700;border-radius:10px;padding:11px 16px;border:1px solid transparent;cursor:pointer;min-width:0}
+    .btn--pri{background:var(--blue);color:#fff}
+    .btn--pri:hover{background:var(--blueDark)}
+    .btn--sec{background:#fff;color:var(--ink);border-color:#c3d0e0}
+    .btn--send{background:var(--success);color:#fff}
+    .btn--send:hover{filter:brightness(.95)}
+    .btn[disabled]{opacity:.55;cursor:not-allowed}
+    .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-top:4px}
+    .stat{background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-width:0}
+    .stat b{display:block;font-size:18px;color:var(--ink)}
+    .stat span{font-size:12px;color:var(--muted);overflow-wrap:break-word}
+    .missing{margin:10px 0 0;padding:0;list-style:none}
+    .missing li{padding:6px 10px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px;background:var(--dangerSoft);
+      color:#7f1d1d;font-size:13px;overflow-wrap:break-word}
+    .pdf-frame{width:100%;height:70vh;min-height:420px;border:1px solid var(--line);border-radius:12px;background:#fff}
+    .note{border-radius:10px;padding:10px 12px;font-size:13px;margin:0 0 12px;overflow-wrap:break-word}
+    .note--warn{background:var(--warnSoft);border:1px solid #fde68a;color:var(--warn)}
+    .note--ok{background:var(--successSoft);border:1px solid #bbf7d0;color:var(--success)}
+    .note--err{background:var(--dangerSoft);border:1px solid #fecaca;color:#991b1b}
+    .gate{max-width:480px;margin:40px auto;text-align:center}
+    .hidden{display:none!important}
+    .spin{display:inline-block;width:16px;height:16px;border:2px solid #cbd5e1;border-top-color:var(--blue);
+      border-radius:50%;animation:spin .7s linear infinite;vertical-align:-3px;margin-right:6px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <!-- Auth gate -->
+    <div id="gate" class="gate">
+      <p class="muted"><span class="spin"></span>Checking access…</p>
+    </div>
+
+    <!-- App -->
+    <div id="app" class="hidden">
+      <header class="page">
+        <a class="back" href="/admin_dashboard.html">← Admin</a>
+        <h1>Monthly payroll report</h1>
+      </header>
+
+      <div class="card">
+        <div class="card-pad">
+          <p class="muted" style="margin:0 0 12px">
+            Preview the payroll PDF for the accountant, then send it. Cycle 25th → 24th; deadline is the 24th at 00:00 (London).
+          </p>
+          <div class="row" style="justify-content:space-between">
+            <div class="row">
+              <label class="fld">Pay month
+                <input type="month" id="month" />
+              </label>
+              <button type="button" class="btn btn--sec" id="refreshBtn" style="align-self:flex-end">Refresh preview</button>
+            </div>
+            <button type="button" class="btn btn--send" id="sendBtn" style="align-self:flex-end" disabled>Send to accountant now</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="statusNote" class="note hidden"></div>
+
+      <div class="card" id="summaryCard">
+        <div class="card-pad">
+          <div class="stat-grid" id="stats"></div>
+          <div id="missingWrap" class="hidden">
+            <p style="margin:14px 0 4px;font-weight:700;color:var(--ink)">Not submitted — do NOT process this month</p>
+            <p class="muted" style="margin:0;font-size:12px">A £5 late penalty applies to their next timesheet (paid next month).</p>
+            <ul class="missing" id="missingList"></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-pad">
+          <p style="margin:0 0 10px;font-weight:700;color:var(--ink)">Document preview</p>
+          <iframe id="pdfFrame" class="pdf-frame" title="Payroll report preview"></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import {
+      getSupabaseClient,
+      getSupabaseFunctionUrl,
+      getSupabaseAnonKey,
+    } from "/portal/supabase-client.js?v=20260605-payroll";
+
+    const gate = document.getElementById("gate");
+    const app = document.getElementById("app");
+    const monthInput = document.getElementById("month");
+    const refreshBtn = document.getElementById("refreshBtn");
+    const sendBtn = document.getElementById("sendBtn");
+    const statusNote = document.getElementById("statusNote");
+    const statsEl = document.getElementById("stats");
+    const missingWrap = document.getElementById("missingWrap");
+    const missingList = document.getElementById("missingList");
+    const pdfFrame = document.getElementById("pdfFrame");
+
+    const fnUrl = getSupabaseFunctionUrl("payroll-monthly-report");
+    const anon = getSupabaseAnonKey();
+    const supabase = getSupabaseClient();
+
+    let lastPreview = null;
+
+    function londonMonthValue() {
+      const f = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", year: "numeric", month: "2-digit" });
+      const p = f.formatToParts(new Date());
+      const y = p.find((x) => x.type === "year")?.value;
+      const m = p.find((x) => x.type === "month")?.value;
+      return `${y}-${m}`;
+    }
+
+    function money(n) {
+      const v = Number(n);
+      return Number.isFinite(v) ? v.toFixed(2) : "—";
+    }
+
+    function showNote(kind, text) {
+      statusNote.className = "note note--" + kind;
+      statusNote.textContent = text;
+      statusNote.classList.remove("hidden");
+    }
+    function clearNote() {
+      statusNote.classList.add("hidden");
+      statusNote.textContent = "";
+    }
+
+    async function getToken() {
+      const { data } = await supabase.auth.getSession();
+      return data?.session?.access_token || "";
+    }
+
+    async function callFn(payload) {
+      const token = await getToken();
+      if (!token) throw new Error("Your session expired — please sign in again.");
+      const res = await fetch(fnUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: anon,
+          Authorization: "Bearer " + token,
+        },
+        body: JSON.stringify(payload),
+      });
+      let body = {};
+      try { body = await res.json(); } catch (_) { body = {}; }
+      if (!res.ok || body.ok === false) {
+        throw new Error(body.error || `Request failed (HTTP ${res.status})`);
+      }
+      return body;
+    }
+
+    function renderSummary(out) {
+      const s = out.summary || {};
+      const t = s.totals || {};
+      statsEl.innerHTML = "";
+      const cells = [
+        [s.monthLabel || s.month || "—", "Pay month"],
+        [String(s.submitted ?? 0), "Submitted (to process)"],
+        [String(s.notSubmitted ?? 0), "Not submitted"],
+        ["£" + money(t.gross), "Gross"],
+        ["£" + money(t.penalty), "Penalties"],
+        ["£" + money(t.net), "Net to pay"],
+      ];
+      for (const [v, label] of cells) {
+        const d = document.createElement("div");
+        d.className = "stat";
+        const b = document.createElement("b");
+        b.textContent = v;
+        const sp = document.createElement("span");
+        sp.textContent = label;
+        d.appendChild(b);
+        d.appendChild(sp);
+        statsEl.appendChild(d);
+      }
+      const missing = Array.isArray(out.missing) ? out.missing : [];
+      if (missing.length) {
+        missingList.innerHTML = "";
+        for (const m of missing) {
+          const li = document.createElement("li");
+          li.textContent = m.role ? `${m.name} — ${m.role}` : m.name;
+          missingList.appendChild(li);
+        }
+        missingWrap.classList.remove("hidden");
+      } else {
+        missingWrap.classList.add("hidden");
+      }
+    }
+
+    async function loadPreview() {
+      clearNote();
+      refreshBtn.disabled = true;
+      sendBtn.disabled = true;
+      const prevLabel = refreshBtn.textContent;
+      refreshBtn.innerHTML = '<span class="spin"></span>Loading…';
+      try {
+        const out = await callFn({ mode: "preview", month: monthInput.value });
+        lastPreview = out;
+        renderSummary(out);
+        if (out.pdfBase64) {
+          pdfFrame.src = "data:application/pdf;base64," + out.pdfBase64;
+        }
+        if (out.deadlinePassed === false) {
+          showNote(
+            "warn",
+            "Before the 24th cut-off: this is a provisional preview. Sending now will email the report but will NOT record any £5 penalties (those are only recorded from the 24th)."
+          );
+        } else {
+          clearNote();
+        }
+        sendBtn.disabled = false;
+      } catch (e) {
+        showNote("err", e?.message || String(e));
+      } finally {
+        refreshBtn.disabled = false;
+        refreshBtn.textContent = prevLabel;
+      }
+    }
+
+    async function sendNow() {
+      const s = (lastPreview && lastPreview.summary) || {};
+      const msg =
+        `Send the payroll report for ${s.monthLabel || monthInput.value} to the accountant + admin now?` +
+        (Number(s.notSubmitted) > 0
+          ? `\n\n${s.notSubmitted} worker(s) did not submit — they will be recorded for a £5 penalty on their next timesheet.`
+          : "");
+      if (!window.confirm(msg)) return;
+      sendBtn.disabled = true;
+      refreshBtn.disabled = true;
+      const prev = sendBtn.textContent;
+      sendBtn.innerHTML = '<span class="spin"></span>Sending…';
+      try {
+        const out = await callFn({ mode: "send", month: monthInput.value });
+        const to = Array.isArray(out.to) ? out.to.join(", ") : "";
+        showNote(
+          "ok",
+          `Sent ✓  ${to ? "to " + to + ". " : ""}${out.penaltiesRecorded ? out.penaltiesRecorded + " penalty record(s) saved." : ""}`
+        );
+      } catch (e) {
+        showNote("err", e?.message || String(e));
+      } finally {
+        sendBtn.disabled = false;
+        refreshBtn.disabled = false;
+        sendBtn.textContent = prev;
+      }
+    }
+
+    async function boot() {
+      monthInput.value = londonMonthValue();
+      refreshBtn.addEventListener("click", loadPreview);
+      sendBtn.addEventListener("click", sendNow);
+      monthInput.addEventListener("change", loadPreview);
+
+      let session = null;
+      try {
+        const { data } = await supabase.auth.getSession();
+        session = data?.session || null;
+      } catch (_) { session = null; }
+
+      if (!session?.user?.id) {
+        gate.innerHTML =
+          '<h1 style="color:#0f172a">Sign in required</h1>' +
+          '<p class="muted">This page is for admins only.</p>' +
+          '<p><a class="btn btn--pri" href="/login.html" style="text-decoration:none">Go to login</a></p>';
+        return;
+      }
+
+      let role = "";
+      try {
+        const { data: prof } = await supabase
+          .from("staff_profiles")
+          .select("app_role")
+          .eq("id", session.user.id)
+          .maybeSingle();
+        role = String(prof?.app_role || "").toLowerCase();
+      } catch (_) { role = ""; }
+
+      if (role !== "admin" && role !== "ceo") {
+        gate.innerHTML =
+          '<h1 style="color:#0f172a">No access</h1>' +
+          '<p class="muted">This payroll report is restricted to admin / CEO accounts.</p>' +
+          '<p><a class="back" href="/admin_dashboard.html">← Back to admin</a></p>';
+        return;
+      }
+
+      gate.classList.add("hidden");
+      app.classList.remove("hidden");
+      loadPreview();
+    }
+
+    boot();
+  </script>
+</body>
+</html>
