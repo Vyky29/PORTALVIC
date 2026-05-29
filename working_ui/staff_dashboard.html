@@ -3955,6 +3955,30 @@
       color:#fff;
       box-shadow:0 0 0 1px rgba(130,30,30,.4),0 2px 10px rgba(184,50,50,.22);
     }
+    .calendar-day.calendar-day--week-row--closed{
+      background:linear-gradient(180deg,#fff1f1 0%,#ffdede 100%);
+      border:1px solid rgba(183,28,28,.32);
+      box-shadow:0 1px 5px rgba(160,30,30,.08);
+      cursor:default;
+    }
+    .calendar-day--week-row--closed .week-day-icon{
+      background:linear-gradient(180deg,#c0392b,#9b1f1f);
+      color:#fff;
+      box-shadow:0 0 0 1px rgba(120,20,20,.42),0 2px 10px rgba(155,31,31,.24);
+    }
+    .week-venue-seg--closed{
+      display:inline-flex;
+      align-items:center;
+      font-weight:800;
+      letter-spacing:.05em;
+      text-transform:uppercase;
+      font-size:13px;
+      color:#9b1f1f;
+      background:rgba(183,28,28,.12);
+      border:1px solid rgba(183,28,28,.3);
+      border-radius:999px;
+      padding:3px 12px;
+    }
     .calendar-day--week-row .week-row-detail{
       display:flex;
       flex-direction:column;
@@ -15243,7 +15267,18 @@
       }
       return null;
     }
+    /** Company-wide closed day (term break, bank holiday, half-term) — applies to everyone, not just one staff rota. */
+    function portalWeekDayCompanyClosed(dayName){
+      const cell = calendarDateForWeekListDay(dayName);
+      if(!cell) return false;
+      const halfWeeks = Array.isArray(dashboardData.termHalfTermWeekStarts) ? dashboardData.termHalfTermWeekStarts : [];
+      return typeof isHalfTermDay === 'function'
+        && isHalfTermDay(cell.getFullYear(), cell.getMonth(), cell.getDate(), halfWeeks);
+    }
     function weekRowVisualKind(item){
+      if(typeof portalWeekDayCompanyClosed === 'function' && portalWeekDayCompanyClosed(item.day)){
+        return 'closed';
+      }
       const rel = weekListDayRelationToToday(item.day);
       const cell = calendarDateForWeekListDay(item.day);
       const iso = cell ? portalIsoYmdFromDate(cell) : '';
@@ -15290,6 +15325,10 @@
     function renderWeekRowHtml(item){
       const day = String(item.day || '').trim() || '—';
       const abbr = escapeHtml(WEEK_DAY_ICON_ABBR[day] || day.slice(0, 2));
+      if(typeof portalWeekDayCompanyClosed === 'function' && portalWeekDayCompanyClosed(day)){
+        const ariaClosed = escapeHtml(`${day}: Closed — club closed for everyone`);
+        return `<div class="calendar-day calendar-day--week-row calendar-day--week-row--closed" aria-label="${ariaClosed}"><span class="week-day-icon" aria-hidden="true">${abbr}</span><div class="week-row-detail"><span class="week-venue-seg week-venue-seg--closed">Closed</span></div></div>`;
+      }
       const segments = normalizeWeekRowSegments(item);
       const parts = [];
       const ariaBits = [];

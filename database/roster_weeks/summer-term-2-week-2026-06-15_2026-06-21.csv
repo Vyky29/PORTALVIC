@@ -1,7 +1,6 @@
 date,weekday,client,service,time_slot,instructor,venue,notes
 2026-06-15,Monday,Timi,Day Centre,1 to 3,"RAUL, CARLOS",SwimFarm,Hub Room
 2026-06-15,Monday,ACAT,Day Centre,11 to 12,ROBERTO,SwimFarm,Both Pools
-2026-06-15,Monday,Emmanuel,Day Centre,11 to 3,VICTOR,SwimFarm,Hub Room
 2026-06-15,Monday,Ikram,Day Centre,11 to 4,"LULIA, MICHELLE",SwimFarm,Hub Room
 2026-06-15,Monday,Fadi,Day Centre,12.30 to 3,"ROBERTO, YOUSSEF",SwimFarm,Hub Room
 2026-06-15,Monday,CLOSED,Aquatic Activity,4 to 4.30,YOUSSEF,Acton,Teaching Pool
@@ -48,7 +47,6 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-06-16,Tuesday,Kareena,Aquatic Activity,6 to 6.30,JAVIER,Acton,Teaching Pool
 2026-06-16,Tuesday,Richard,Aquatic Activity,6 to 6.30,ANGEL,Acton,Teaching Pool
 2026-06-17,Wednesday,Timi,Day Centre,1 to 3,"RAUL, CARLOS",SwimFarm,Hub Room
-2026-06-17,Wednesday,Emmanuel,Day Centre,11 to 3,VICTOR,SwimFarm,Hub Room
 2026-06-17,Wednesday,Ikram,Day Centre,11 to 4,"LULIA, MICHELLE",SwimFarm,Hub Room
 2026-06-17,Wednesday,Fadi,Day Centre,12.30 to 3,"ROBERTO, YOUSSEF",SwimFarm,Hub Room
 2026-06-17,Wednesday,Cyrus,Multi-Activity,4 to 4.30,JAVIER,Acton,Teaching Pool
@@ -91,7 +89,6 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-06-18,Thursday,Hazem,Aquatic Activity,6 to 6.30,JAVIER,Acton,Teaching Pool
 2026-06-18,Thursday,Maiyar,Aquatic Activity,6 to 6.30,AURORA,Acton,Teaching Pool
 2026-06-19,Friday,Timi,Day Centre,1 to 3,"RAUL, CARLOS",SwimFarm,Hub Room
-2026-06-19,Friday,Emmanuel,Day Centre,11 to 3,VICTOR,SwimFarm,Hub Room
 2026-06-19,Friday,Ikram,Day Centre,11 to 4,"LULIA, MICHELLE",SwimFarm,Hub Room
 2026-06-19,Friday,Fadi,Day Centre,12.30 to 3,"ROBERTO, YOUSSEF",SwimFarm,Hub Room
 2026-06-19,Friday,Adam Pi,Aquatic Activity,4 to 5.30,ROBERTO,Acton,Teaching Pool
@@ -157,3 +154,8 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-06-21,Sunday,Jack W,Multi-Activity,9.30 to 10.15,JOHN,SwimFarm,Room 2
 2026-06-21,Sunday,Samer,Aquatic Activity,9.30 to 10.15,JAVIER,SwimFarm,Teaching Pool
 2026-06-21,Sunday,Samer,Multi-Activity,9.30 to 10.15,GIUSEPPE,SwimFarm,Room 2
+2026-06-15,Monday,Emmanuel,Day Centre,11 to 3,YOUSSEF,SwimFarm,Hub Room
+2026-06-15,Monday,Emmanuel,Day Centre,3 to 4,VICTOR,SwimFarm,Hub Room
+2026-06-17,Wednesday,Emmanuel,Day Centre,11 to 3,YOUSSEF,SwimFarm,Hub Room
+2026-06-17,Wednesday,Emmanuel,Day Centre,3 to 4,VICTOR,SwimFarm,Hub Room
+2026-06-19,Friday,Emmanuel,Day Centre,11 to 4,YOUSSEF,SwimFarm,Hub Room

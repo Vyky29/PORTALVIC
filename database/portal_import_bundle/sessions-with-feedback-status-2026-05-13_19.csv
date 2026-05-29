@@ -1,9 +1,7 @@
 date,weekday,client,service,time_slot,instructor,venue,notes,session_key,feedback_unit_key,feedback_merge_group,overview_status,feedback_complete,matched_feedback_client,matched_feedback_by,matched_portal_session_key
-2026-05-13,Wednesday,Emmanuel,Day Centre,11 to 3,YOUSSEF,SwimFarm,Hub Room,2026-05-13|emmanuel|day_centre,2026-05-13|emmanuel|day_centre,,absent,no,,,
 2026-05-13,Wednesday,Ikram,Day Centre,11 to 4,"RAUL, LULIYA",SwimFarm,Hub Room,2026-05-13|ikram|day_centre,2026-05-13|ikram|day_centre,,feedback_submitted,yes,Ikram,Luliya,2026-05-13|ikram|day_centre
 2026-05-13,Wednesday,Q6 College,Aquatic Activity,11 to 12,ROBERTO,SwimFarm,Pools,2026-05-13|11:00|q6_college,2026-05-13|11:00|q6_college,,feedback_submitted,yes,Q6 College,Roberto Reali,2026-05-13||q6_college
 2026-05-13,Wednesday,Fadi,Day Centre,12.30 to 3,ROBERTO,SwimFarm,Hub Room,2026-05-13|fadi|day_centre,2026-05-13|fadi|day_centre,,feedback_submitted,yes,Fadi,Roberto Reali,2026-05-13|fadi|day_centre
-2026-05-13,Wednesday,Emmanuel,Day Centre,3 to 4,VICTOR,SwimFarm,Hub Room,2026-05-13|emmanuel|day_centre,2026-05-13|emmanuel|day_centre,,absent,no,,,
 2026-05-13,Wednesday,Cyrus,Multi-Activity,4 to 5.15,JAVIER,Acton,Teaching Pool,2026-05-13|16:00|cyrus|teaching_pool,2026-05-13|cyrus|16:00|multi-activity|teaching_pool,,feedback_submitted,yes,Cyrus,Javier Marquez,2026-05-13||cyrus|teaching_pool
 2026-05-13,Wednesday,Adam Ab,Multi-Activity,4.30 to 5.15,GIUSEPPE,Acton,Room 2,2026-05-13|16:30|adam_ab|room_2,2026-05-13|adam_ab|16:30|multi-activity|room_2,,feedback_submitted,yes,Adam Ab,Giuseppe Morelli,2026-05-13||adam_ab|room_2
 2026-05-13,Wednesday,Scott,Multi-Activity,4.30 to 5.15,BERTA,Acton,Room 2,2026-05-13|16:30|scott|room_2,2026-05-13|scott|16:30|multi-activity|room_2,,feedback_submitted,yes,Scott,Berta Trapero,2026-05-13||scott|room_2
@@ -37,11 +35,9 @@ date,weekday,client,service,time_slot,instructor,venue,notes,session_key,feedbac
 2026-05-14,Thursday,Mohammed,Aquatic Activity,5.30 to 6.30,ROBERTO,Acton,Lane,2026-05-14|17:30|mohammed,2026-05-14|17:30|mohammed,,feedback_submitted,yes,Mohammed,Roberto Reali,2026-05-14||mohammed
 2026-05-14,Thursday,Hazem,Aquatic Activity,6 to 6.30,JAVI,Acton,Teaching Pool,2026-05-14|18:00|hazem,2026-05-14|18:00|hazem,,feedback_submitted,yes,,,
 2026-05-14,Thursday,Maiyar,Aquatic Activity,6 to 6.30,AURORA,Acton,Teaching Pool,2026-05-14|18:00|maiyar,2026-05-14|18:00|maiyar,,feedback_submitted,yes,,,
-2026-05-15,Friday,Emmanuel,Day Centre,11 to 3,YOUSSEF,SwimFarm,Hub Room,2026-05-15|emmanuel|day_centre,2026-05-15|emmanuel|day_centre,,absent,no,,,
 2026-05-15,Friday,Ikram,Day Centre,11 to 4,"RAUL, LULIYA",SwimFarm,Hub Room,2026-05-15|ikram|day_centre,2026-05-15|ikram|day_centre,,feedback_submitted,yes,Ikram,Luliya,2026-05-15|ikram|day_centre
 2026-05-15,Friday,Fadi,Day Centre,12.30 to 3,RAUL,SwimFarm,Hub Room,2026-05-15|fadi|day_centre,2026-05-15|fadi|day_centre,,feedback_submitted,yes,Fadi,Roberto Reali,2026-05-15||fadi
 2026-05-15,Friday,Timi,Day Centre,1 to 3,VICTOR,SwimFarm,Hub Room,2026-05-15|timi|day_centre,2026-05-15|timi|day_centre,,feedback_submitted,yes,Timi,Victor Matilla,2026-05-15|timi|day_centre
-2026-05-15,Friday,Emmanuel,Day Centre,3 to 4,VICTOR,SwimFarm,Hub Room,2026-05-15|emmanuel|day_centre,2026-05-15|emmanuel|day_centre,,absent,no,,,
 2026-05-15,Friday,Adam Pi,Aquatic Activity,4 to 5.30,ROBERTO,Acton,Teaching Pool,2026-05-15|16:00|adam_pi,2026-05-15|16:00|adam_pi,,feedback_submitted,yes,Adam Pi,Roberto Reali,2026-05-15||adam_pi
 2026-05-15,Friday,Tinashe,Bespoke Programme,4.30 to 6,"BISMARK, GIUSEPPE, JOHN",SwimFarm,Hub Room,2026-05-15|16:30|tinashe|hub_room,2026-05-15|tinashe|16:30|bespoke programme|hub_room,,absent,no,,,
 2026-05-15,Friday,Amaar Ah,Aquatic Activity,5.30 to 6,ROBERTO,Acton,Teaching Pool,2026-05-15|17:30|amaar_ah,2026-05-15|17:30|amaar_ah,,feedback_submitted,yes,Amaar Ah,Roberto Reali,2026-05-15||amaar_ah
@@ -101,13 +97,11 @@ date,weekday,client,service,time_slot,instructor,venue,notes,session_key,feedbac
 2026-05-17,Sunday,Faris,Aquatic Activity,2.30 to 3,AURORA,SwimFarm,Big Pool,2026-05-17|14:30|faris,2026-05-17|14:30|faris,,feedback_submitted,yes,Faris,Aurora Garcia,2026-05-17||faris
 2026-05-17,Sunday,Shaan,Aquatic Activity,2.30 to 3,JAVIER,SwimFarm,Big Pool,2026-05-17|14:30|shaan,2026-05-17|14:30|shaan,,feedback_submitted,yes,Shaan,Javier Marquez,2026-05-17||shaan
 2026-05-17,Sunday,Yoan,Aquatic Activity,2.30 to 3,ROBERTO,SwimFarm,Big Pool,2026-05-17|14:30|yoan,2026-05-17|14:30|yoan,,feedback_submitted,yes,Yoan,Roberto Reali,2026-05-17||yoan
-2026-05-18,Monday,Emmanuel,Day Centre,11 to 3,YOUSSEF,SwimFarm,Hub Room,2026-05-18|emmanuel|day_centre,2026-05-18|emmanuel|day_centre,,feedback_submitted,yes,Emmanuel,Victor Matilla,2026-05-18|emmanuel|day_centre
 2026-05-18,Monday,Ikram,Day Centre,11 to 12,"RAUL, LULIYA",SwimFarm,Hub Room,2026-05-18|ikram|day_centre,2026-05-18|ikram|day_centre,,feedback_submitted,yes,Ikram,Luliya,2026-05-18||ikram|hub_room
 2026-05-18,Monday,Ikram,Day Centre,12 to 12.30,"ROBERTO, LULIYA, RAUL",SwimFarm,Hub Room,2026-05-18|ikram|day_centre,2026-05-18|ikram|day_centre,,feedback_submitted,yes,Ikram,Luliya,2026-05-18||ikram|hub_room
 2026-05-18,Monday,Fadi,Day Centre,12.30 to 3,"RAUL, VICTOR",SwimFarm,Hub Room,2026-05-18|fadi|day_centre,2026-05-18|fadi|day_centre,,feedback_submitted,yes,Fadi,Roberto Reali,2026-05-18|fadi|day_centre
 2026-05-18,Monday,Ikram,Day Centre,12.30 to 3,"ROBERTO, LULIYA",SwimFarm,Hub Room,2026-05-18|ikram|day_centre,2026-05-18|ikram|day_centre,,feedback_submitted,yes,Ikram,Luliya,2026-05-18||ikram|hub_room
 2026-05-18,Monday,Timi,Day Centre,1 to 3,VICTOR,SwimFarm,Hub Room,2026-05-18|timi|day_centre,2026-05-18|timi|day_centre,,feedback_submitted,yes,Timi,Victor Matilla,2026-05-18|timi|day_centre
-2026-05-18,Monday,Emmanuel,Day Centre,3 to 4,VICTOR,SwimFarm,Hub Room,2026-05-18|emmanuel|day_centre,2026-05-18|emmanuel|day_centre,,feedback_submitted,yes,Emmanuel,Victor Matilla,2026-05-18|emmanuel|day_centre
 2026-05-18,Monday,Adam Pi,Aquatic Activity,4 to 5.30,ANGEL,Acton,Teaching Pool,2026-05-18|16:00|adam_pi,2026-05-18|16:00|adam_pi,,feedback_submitted,yes,Adam Pi,Angel Falceto,2026-05-18||adam_pi
 2026-05-18,Monday,Ayaan,Physical Activity,4 to 5,SANDRA,Westway,Gym,2026-05-18|16:00|ayaan,2026-05-18|16:00|ayaan,,feedback_submitted,yes,Ayaan,Sandra Bartolome,2026-05-18||ayaan
 2026-05-18,Monday,Eddie,Aquatic Activity,4.30 to 5,YOUSSEF,Acton,Teaching Pool,2026-05-18|16:30|eddie,2026-05-18|16:30|eddie,,feedback_submitted,yes,Eddie,Youssef Moustafa,2026-05-18||eddie

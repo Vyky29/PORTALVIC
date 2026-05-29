@@ -49,10 +49,10 @@ def morning_day_centre() -> list[dict]:
             r("Ikram", day, "LULIA, MICHELLE", "11 to 4", service=dc, area=hub, venue=sf)
         )
 
+    # Emmanuel is NOT a weekday template: he starts 2026-06-12 and is stored as dated
+    # session_date rows (Mon/Wed: YOUSSEF 11 to 3 + VICTOR 3 to 4; Fri: YOUSSEF 11 to 4)
+    # directly in staff_clients_machine.json. Do not regenerate him here.
     for day in ("Monday", "Wednesday", "Friday"):
-        rows.append(
-            r("Emmanuel", day, "VICTOR", "11 to 3", service=dc, area=hub, venue=sf)
-        )
         rows.append(
             r(
                 "Fadi",
