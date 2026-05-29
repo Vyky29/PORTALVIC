@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <!-- Admin-only pay rates manager (multi-role per worker).
+       Static deploy from working_ui/ on Vercel (same origin as login.html / admin_dashboard.html).
+       Reads/writes public.staff_role_rates directly with the signed-in admin/ceo JWT (RLS enforced). -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Pay rates · clubSENsational</title>
+  <style>
+    :root{
+      --blue:#2d84b3;--blueDark:#256d96;--ink:#0f172a;--text:#334155;--muted:#64748b;
+      --line:#e2e8f0;--bg:#f1f5f9;--surface:#fff;--gold:#f4b740;
+      --danger:#dc2626;--dangerSoft:#fef2f2;--success:#15803d;--successSoft:#f0fdf4;
+      --warn:#b45309;--warnSoft:#fffbeb;--radius:14px;
+      --font:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    }
+    *,*::before,*::after{box-sizing:border-box}
+    html,body{margin:0;max-width:100%;overflow-x:hidden}
+    body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:15px;line-height:1.5}
+    .wrap{max-width:920px;margin:0 auto;padding:18px 16px 60px;min-width:0}
+    header.page{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:8px 0 18px;min-width:0}
+    header.page h1{font-size:20px;margin:0;color:var(--ink);min-width:0;overflow-wrap:break-word}
+    .back{font-size:13px;color:var(--blue);text-decoration:none;font-weight:600}
+    .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+      box-shadow:0 1px 3px rgba(15,23,42,.05),0 8px 24px rgba(15,23,42,.05);margin-bottom:16px;overflow:hidden}
+    .card-pad{padding:16px}
+    .muted{color:var(--muted)}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;min-width:0}
+    input[type=search],input[type=number],select{font:inherit;padding:9px 10px;border:1px solid var(--line);
+      border-radius:10px;background:#fff;color:var(--ink);min-width:0}
+    input[type=number]{width:96px}
+    .btn{font:inherit;font-weight:700;border-radius:10px;padding:9px 14px;border:1px solid transparent;cursor:pointer;min-width:0}
+    .btn--pri{background:var(--blue);color:#fff}
+    .btn--pri:hover{background:var(--blueDark)}
+    .btn--sec{background:#fff;color:var(--ink);border-color:#c3d0e0}
+    .btn--sm{padding:6px 10px;font-size:13px}
+    .btn--danger{background:var(--dangerSoft);color:#991b1b;border-color:#fecaca}
+    .btn[disabled]{opacity:.55;cursor:not-allowed}
+    .staff{border:1px solid var(--line);border-radius:12px;margin-bottom:12px;overflow:hidden;background:#fff}
+    .staff__h{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+      padding:12px 14px;background:#f8fafc;border-bottom:1px solid var(--line);min-width:0}
+    .staff__name{font-weight:700;color:var(--ink);min-width:0;overflow-wrap:break-word}
+    .staff__name small{display:block;font-weight:500;color:var(--muted);font-size:12px}
+    .staff__body{padding:10px 14px}
+    .rrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 0;border-bottom:1px dashed var(--line);min-width:0}
+    .rrow:last-child{border-bottom:0}
+    .rrow__role{font-weight:600;color:var(--ink);min-width:0;overflow-wrap:break-word;flex:1 1 160px}
+    .pill{font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px;white-space:nowrap}
+    .pill--primary{background:#eef6fb;color:var(--blueDark);border:1px solid #cfe6f4}
+    .pill--scale{background:#f1f5f9;color:var(--muted);border:1px solid var(--line)}
+    .addbar{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);min-width:0}
+    label.fld{font-size:12px;font-weight:600;color:var(--ink);display:flex;flex-direction:column;gap:4px;min-width:0}
+    .note{border-radius:10px;padding:10px 12px;font-size:13px;margin:0 0 12px;overflow-wrap:break-word}
+    .note--warn{background:var(--warnSoft);border:1px solid #fde68a;color:var(--warn)}
+    .note--ok{background:var(--successSoft);border:1px solid #bbf7d0;color:var(--success)}
+    .note--err{background:var(--dangerSoft);border:1px solid #fecaca;color:#991b1b}
+    .gate{max-width:480px;margin:40px auto;text-align:center}
+    .hidden{display:none!important}
+    .spin{display:inline-block;width:16px;height:16px;border:2px solid #cbd5e1;border-top-color:var(--blue);
+      border-radius:50%;animation:spin .7s linear infinite;vertical-align:-3px;margin-right:6px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div id="gate" class="gate">
+      <p class="muted"><span class="spin"></span>Checking access…</p>
+    </div>
+
+    <div id="app" class="hidden">
+      <header class="page">
+        <a class="back" href="/admin_dashboard.html">← Admin</a>
+        <h1>Pay rates</h1>
+      </header>
+
+      <div class="card">
+        <div class="card-pad">
+          <p class="muted" style="margin:0 0 10px">
+            Each worker can hold several roles (e.g. Support Worker <em>and</em> Climbing Instructor) with different rates.
+            The payroll report picks the rate that matches the role of each session (detected from the roster service).
+            Rates default to the contract scale table but you can override them here.
+          </p>
+          <div class="row">
+            <input type="search" id="search" placeholder="Search staff…" style="flex:1 1 220px" />
+            <button type="button" class="btn btn--sec" id="reloadBtn">Reload</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="statusNote" class="note hidden"></div>
+
+      <div id="list"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { getSupabaseClient } from "/portal/supabase-client.js?v=20260606-payrates";
+
+    // Canonical role × scale → £/h (mirrors working_ui/portal/contract-core.js RATE_TABLE).
+    const RATE_TABLE = {
+      "Support Worker":      { "Scale 1": 18, "Scale 2": 20, "Scale 3": 23 },
+      "Climbing Instructor": { "Scale 1": 22, "Scale 2": 24, "Scale 3": 30 },
+      "Fitness Instructor":  { "Scale 1": 24, "Scale 2": 28, "Scale 3": 32 },
+      "Swimming Instructor": { "Scale 1": 22, "Scale 2": 24, "Scale 3": 28 },
+    };
+    const ROLES = ["Swimming Instructor", "Climbing Instructor", "Fitness Instructor", "Support Worker", "Service Lead"];
+    const SCALES = ["Scale 1", "Scale 2", "Scale 3"];
+
+    const supabase = getSupabaseClient();
+    const gate = document.getElementById("gate");
+    const app = document.getElementById("app");
+    const listEl = document.getElementById("list");
+    const searchEl = document.getElementById("search");
+    const reloadBtn = document.getElementById("reloadBtn");
+    const statusNote = document.getElementById("statusNote");
+
+    let staff = [];      // [{id, full_name, username, app_role}]
+    let ratesByUser = {}; // { user_id: [ {id, role, scale, hourly_rate, is_primary} ] }
+
+    function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
+    function money(n){ const v = Number(n); return Number.isFinite(v) ? v.toFixed(2) : "—"; }
+    function defaultRate(role, scale){ return (RATE_TABLE[role] && scale && RATE_TABLE[role][scale] != null) ? RATE_TABLE[role][scale] : ""; }
+
+    function showNote(kind, text){ statusNote.className = "note note--" + kind; statusNote.textContent = text; statusNote.classList.remove("hidden"); }
+    function clearNote(){ statusNote.classList.add("hidden"); statusNote.textContent = ""; }
+
+    async function loadAll(){
+      clearNote();
+      const [profRes, rateRes] = await Promise.all([
+        supabase.from("staff_profiles").select("id, full_name, username, app_role, is_active").order("full_name", { ascending: true }),
+        supabase.from("staff_role_rates").select("id, user_id, role, scale, hourly_rate, is_primary"),
+      ]);
+      if (profRes.error) throw profRes.error;
+      if (rateRes.error) throw rateRes.error;
+      staff = (profRes.data || []).filter((s) => s.is_active !== false);
+      ratesByUser = {};
+      for (const r of rateRes.data || []) {
+        (ratesByUser[r.user_id] = ratesByUser[r.user_id] || []).push(r);
+      }
+      render();
+    }
+
+    function staffMatches(s, q){
+      if (!q) return true;
+      const hay = (String(s.full_name || "") + " " + String(s.username || "")).toLowerCase();
+      return hay.includes(q.toLowerCase());
+    }
+
+    function render(){
+      const q = searchEl.value.trim();
+      const rows = staff.filter((s) => staffMatches(s, q));
+      if (!rows.length) { listEl.innerHTML = '<div class="card"><div class="card-pad muted">No staff match.</div></div>'; return; }
+      listEl.innerHTML = rows.map(staffCardHtml).join("");
+      bindCards();
+    }
+
+    function staffCardHtml(s){
+      const rates = (ratesByUser[s.id] || []).slice().sort((a, b) => (b.is_primary - a.is_primary) || String(a.role).localeCompare(String(b.role)));
+      const rateRows = rates.length
+        ? rates.map((r) => roleRowHtml(s, r)).join("")
+        : '<p class="muted" style="margin:6px 0">No roles yet — add one below.</p>';
+      const roleOpts = ROLES.map((r) => `<option value="${esc(r)}">${esc(r)}</option>`).join("");
+      const scaleOpts = '<option value="">N/A</option>' + SCALES.map((sc) => `<option value="${esc(sc)}">${esc(sc)}</option>`).join("");
+      const subtitle = [s.username ? "@" + s.username : "", s.app_role ? s.app_role : ""].filter(Boolean).join(" · ");
+      return `
+        <div class="staff" data-uid="${esc(s.id)}">
+          <div class="staff__h">
+            <div class="staff__name">${esc(s.full_name || s.username || "Staff")}<small>${esc(subtitle)}</small></div>
+          </div>
+          <div class="staff__body">
+            ${rateRows}
+            <div class="addbar">
+              <label class="fld">Role
+                <select data-add="role">${roleOpts}</select>
+              </label>
+              <label class="fld">Scale
+                <select data-add="scale">${scaleOpts}</select>
+              </label>
+              <label class="fld">£/h
+                <input type="number" step="0.01" min="0" data-add="rate" />
+              </label>
+              <label class="fld" style="flex-direction:row;align-items:center;gap:6px">
+                <input type="checkbox" data-add="primary" /> Primary
+              </label>
+              <button type="button" class="btn btn--pri btn--sm" data-act="add">Add role</button>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function roleRowHtml(s, r){
+      return `
+        <div class="rrow" data-rid="${esc(r.id)}">
+          <span class="rrow__role">${esc(r.role)}
+            ${r.scale ? `<span class="pill pill--scale">${esc(r.scale)}</span>` : ""}
+            ${r.is_primary ? '<span class="pill pill--primary">Primary</span>' : ""}
+          </span>
+          <label class="fld" style="flex-direction:row;align-items:center;gap:6px">£/h
+            <input type="number" step="0.01" min="0" data-edit="rate" value="${esc(money(r.hourly_rate))}" />
+          </label>
+          ${r.is_primary ? "" : '<button type="button" class="btn btn--sec btn--sm" data-act="make-primary">Make primary</button>'}
+          <button type="button" class="btn btn--sec btn--sm" data-act="save-rate">Save</button>
+          <button type="button" class="btn btn--danger btn--sm" data-act="delete">Delete</button>
+        </div>`;
+    }
+
+    function bindCards(){
+      listEl.querySelectorAll(".staff").forEach((card) => {
+        const uid = card.getAttribute("data-uid");
+        // Auto-fill default rate when role/scale change in the add bar.
+        const addRole = card.querySelector('[data-add="role"]');
+        const addScale = card.querySelector('[data-add="scale"]');
+        const addRate = card.querySelector('[data-add="rate"]');
+        const syncDefault = () => { const d = defaultRate(addRole.value, addScale.value); if (d !== "") addRate.value = d; };
+        addRole.addEventListener("change", syncDefault);
+        addScale.addEventListener("change", syncDefault);
+        syncDefault();
+
+        card.querySelector('[data-act="add"]').addEventListener("click", () => addRole2(uid, card));
+
+        card.querySelectorAll(".rrow").forEach((rrow) => {
+          const rid = rrow.getAttribute("data-rid");
+          const saveBtn = rrow.querySelector('[data-act="save-rate"]');
+          if (saveBtn) saveBtn.addEventListener("click", () => saveRate(rid, rrow));
+          const primBtn = rrow.querySelector('[data-act="make-primary"]');
+          if (primBtn) primBtn.addEventListener("click", () => makePrimary(uid, rid));
+          const delBtn = rrow.querySelector('[data-act="delete"]');
+          if (delBtn) delBtn.addEventListener("click", () => deleteRate(rid, rrow));
+        });
+      });
+    }
+
+    async function addRole2(uid, card){
+      const role = card.querySelector('[data-add="role"]').value;
+      const scale = card.querySelector('[data-add="scale"]').value || null;
+      const rate = Number(card.querySelector('[data-add="rate"]').value);
+      const primary = card.querySelector('[data-add="primary"]').checked;
+      if (!role) { showNote("err", "Pick a role."); return; }
+      if (!Number.isFinite(rate) || rate < 0) { showNote("err", "Enter a valid £/h."); return; }
+      try {
+        if (primary) await clearPrimary(uid);
+        const { error } = await supabase
+          .from("staff_role_rates")
+          .upsert({ user_id: uid, role, scale, hourly_rate: rate, is_primary: primary }, { onConflict: "user_id,role" });
+        if (error) throw error;
+        showNote("ok", "Role saved.");
+        await loadAll();
+      } catch (e) { showNote("err", e?.message || String(e)); }
+    }
+
+    async function saveRate(rid, rrow){
+      const rate = Number(rrow.querySelector('[data-edit="rate"]').value);
+      if (!Number.isFinite(rate) || rate < 0) { showNote("err", "Enter a valid £/h."); return; }
+      try {
+        const { error } = await supabase.from("staff_role_rates").update({ hourly_rate: rate }).eq("id", rid);
+        if (error) throw error;
+        showNote("ok", "Rate updated.");
+        await loadAll();
+      } catch (e) { showNote("err", e?.message || String(e)); }
+    }
+
+    async function clearPrimary(uid){
+      const { error } = await supabase.from("staff_role_rates").update({ is_primary: false }).eq("user_id", uid).eq("is_primary", true);
+      if (error) throw error;
+    }
+
+    async function makePrimary(uid, rid){
+      try {
+        await clearPrimary(uid);
+        const { error } = await supabase.from("staff_role_rates").update({ is_primary: true }).eq("id", rid);
+        if (error) throw error;
+        showNote("ok", "Primary role set.");
+        await loadAll();
+      } catch (e) { showNote("err", e?.message || String(e)); }
+    }
+
+    async function deleteRate(rid, rrow){
+      const role = rrow.querySelector(".rrow__role")?.textContent.trim() || "this role";
+      if (!window.confirm("Remove " + role + "?")) return;
+      try {
+        const { error } = await supabase.from("staff_role_rates").delete().eq("id", rid);
+        if (error) throw error;
+        showNote("ok", "Role removed.");
+        await loadAll();
+      } catch (e) { showNote("err", e?.message || String(e)); }
+    }
+
+    async function boot(){
+      searchEl.addEventListener("input", render);
+      reloadBtn.addEventListener("click", () => loadAll().catch((e) => showNote("err", e?.message || String(e))));
+
+      let session = null;
+      try { const { data } = await supabase.auth.getSession(); session = data?.session || null; } catch (_) { session = null; }
+      if (!session?.user?.id) {
+        gate.innerHTML = '<h1 style="color:#0f172a">Sign in required</h1><p class="muted">This page is for admins only.</p><p><a class="btn btn--pri" href="/login.html" style="text-decoration:none">Go to login</a></p>';
+        return;
+      }
+      let role = "";
+      try {
+        const { data: prof } = await supabase.from("staff_profiles").select("app_role").eq("id", session.user.id).maybeSingle();
+        role = String(prof?.app_role || "").toLowerCase();
+      } catch (_) { role = ""; }
+      if (role !== "admin" && role !== "ceo") {
+        gate.innerHTML = '<h1 style="color:#0f172a">No access</h1><p class="muted">Pay rates are restricted to admin / CEO accounts.</p><p><a class="back" href="/admin_dashboard.html">← Back to admin</a></p>';
+        return;
+      }
+      gate.classList.add("hidden");
+      app.classList.remove("hidden");
+      try { await loadAll(); } catch (e) { showNote("err", e?.message || String(e)); }
+    }
+
+    boot();
+  </script>
+</body>
+</html>
