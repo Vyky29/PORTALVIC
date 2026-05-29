@@ -7164,7 +7164,8 @@
   <script src="/portal-shared-js/portal_late_submission.js?v=20260520"></script>
   <script src="portal/staff_dashboard_portal_roster_source.js"></script>
   <script src="portal/clients_info_embed.js"></script>
-  <script src="portal/staff_dashboard_spreadsheet_adapter.js"></script>
+  <script src="portal/clients_gender_embed.js?v=20260605-gender"></script>
+  <script src="portal/staff_dashboard_spreadsheet_adapter.js?v=20260605-gender-medical"></script>
   <script src="portal/staff_roster_resolve.js"></script>
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260603-achievements-shared" />
   <script src="/portal/portal_participant_achievements.js?v=20260603-achievements-shared"></script>
@@ -9932,7 +9933,7 @@
     const CLIENT_DIRECTORY_PREP_LINE = 'Preparation view before session';
 
     function clientsGridMedicalIconSvg(){
-      return '<svg class="clients-grid-med-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>';
+      return '<svg class="clients-grid-med-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><title>Medical condition</title><path d="M9 2h6a1 1 0 0 1 1 1v5h5a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-5v5a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-5H3a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1h5V3a1 1 0 0 1 1-1z"/></svg>';
     }
 
     function renderClientsSheetList(mode, filterQuery){

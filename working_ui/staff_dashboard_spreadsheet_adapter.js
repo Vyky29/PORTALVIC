@@ -89,10 +89,82 @@
     goals: [],
     communication: "",
     medical: "",
+    gender: "",
+    hasMedicalAlert: false,
     sessionFocus: "",
     progressNotes: "",
     homePractice: "",
   };
+
+  /** Best-effort gender from the profile text (pronouns). Returns 'm', 'f' or ''. */
+  function deriveGenderFromInfo(text) {
+    const t = String(text || "").toLowerCase();
+    if (!t) return "";
+    const hits = function (re) {
+      const m = t.match(re);
+      return m ? m.length : 0;
+    };
+    const female =
+      hits(/\bshe\b/g) +
+      hits(/\bher\b/g) +
+      hits(/\bhers\b/g) +
+      hits(/\bherself\b/g) +
+      hits(/\bfemale\b/g) +
+      hits(/\bgirl\b/g) +
+      hits(/\bdaughter\b/g);
+    const male =
+      hits(/\bhe\b/g) +
+      hits(/\bhis\b/g) +
+      hits(/\bhim\b/g) +
+      hits(/\bhimself\b/g) +
+      hits(/\bmale\b/g) +
+      hits(/\bboy\b/g) +
+      hits(/\bson\b/g);
+    if (female > male && female > 0) return "f";
+    if (male > female && male > 0) return "m";
+    return "";
+  }
+
+  /** True when the profile text lists a real medical condition (not "none"). */
+  function deriveMedicalAlertFromInfo(text) {
+    const t = String(text || "");
+    if (!t) return false;
+    const m = t.match(/Medical\s*:?\s*([\s\S]*?)(?:\s*\d+\s*[.)]\s|$)/i);
+    if (!m) return false;
+    const seg = String(m[1] || "").trim().toLowerCase();
+    if (!seg) return false;
+    if (
+      /^(none|nil|n\/?a|no\b|not\s|unknown|no known|no medical|no current)/.test(
+        seg
+      )
+    ) {
+      return false;
+    }
+    return true;
+  }
+
+  function normGenderValue(v) {
+    v = String(v || "").trim().toLowerCase();
+    if (v === "m" || v === "male" || v === "boy") return "m";
+    if (v === "f" || v === "female" || v === "girl") return "f";
+    return "";
+  }
+
+  function genderOverrideFor(slug, name) {
+    try {
+      var map =
+        (typeof window !== "undefined" && window.PORTAL_CLIENT_GENDER_OVERRIDES) ||
+        {};
+      var nameLower = String(name || "").trim().toLowerCase();
+      var firstName = nameLower.split(/\s+/)[0] || "";
+      var hit =
+        normGenderValue(map[slug]) ||
+        normGenderValue(map[nameLower]) ||
+        normGenderValue(map[firstName]);
+      if (hit) return hit;
+    } catch (_) {}
+    return "";
+  }
 
   function mergeClientsInfoRows(clientNotesById, rows) {
     const list = Array.isArray(rows) ? rows : [];
@@ -104,8 +176,16 @@
     });
     Object.keys(clientNotesById).forEach((k) => {
       if (k === "available" || k === "closed") return;
+      const note = clientNotesById[k];
+      if (!note) return;
       const t = bySlug.get(k);
-      if (t) clientNotesById[k].generalInfoSheet = t;
+      if (t) note.generalInfoSheet = t;
+      const infoText = t || note.generalInfoSheet || "";
+      const ovGender = genderOverrideFor(k, note.name);
+      note.gender = ovGender || deriveGenderFromInfo(infoText) || note.gender || "";
+      if (!note.hasMedicalAlert) {
+        note.hasMedicalAlert = deriveMedicalAlertFromInfo(infoText);
+      }
     });
   }
 
