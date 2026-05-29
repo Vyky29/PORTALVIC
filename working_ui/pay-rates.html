@@ -43,8 +43,9 @@
     .staff__name{font-weight:700;color:var(--ink);min-width:0;overflow-wrap:break-word}
     .staff__name small{display:block;font-weight:500;color:var(--muted);font-size:12px}
     .staff__body{padding:10px 14px}
-    .rrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 0;border-bottom:1px dashed var(--line);min-width:0}
+    .rrow{display:flex;flex-direction:column;gap:6px;padding:8px 0;border-bottom:1px dashed var(--line);min-width:0}
     .rrow:last-child{border-bottom:0}
+    .rrow__view,.rrow__edit{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0}
     .rrow__role{font-weight:600;color:var(--ink);min-width:0;overflow-wrap:break-word;flex:1 1 160px}
     .pill{font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px;white-space:nowrap}
     .pill--primary{background:#eef6fb;color:var(--blueDark);border:1px solid #cfe6f4}
@@ -190,18 +191,28 @@
     }
 
     function roleRowHtml(s, r){
+      const roleOpts = ROLES.map((x) => `<option value="${esc(x)}"${x === r.role ? " selected" : ""}>${esc(x)}</option>`).join("");
+      const scaleOpts = `<option value=""${!r.scale ? " selected" : ""}>N/A</option>` +
+        SCALES.map((sc) => `<option value="${esc(sc)}"${sc === r.scale ? " selected" : ""}>${esc(sc)}</option>`).join("");
       return `
-        <div class="rrow" data-rid="${esc(r.id)}">
-          <span class="rrow__role">${esc(r.role)}
-            ${r.scale ? `<span class="pill pill--scale">${esc(r.scale)}</span>` : ""}
-            ${r.is_primary ? '<span class="pill pill--primary">Primary</span>' : ""}
-          </span>
-          <label class="fld" style="flex-direction:row;align-items:center;gap:6px">£/h
-            <input type="number" step="0.01" min="0" data-edit="rate" value="${esc(money(r.hourly_rate))}" />
-          </label>
-          ${r.is_primary ? "" : '<button type="button" class="btn btn--sec btn--sm" data-act="make-primary">Make primary</button>'}
-          <button type="button" class="btn btn--sec btn--sm" data-act="save-rate">Save</button>
-          <button type="button" class="btn btn--danger btn--sm" data-act="delete">Delete</button>
+        <div class="rrow" data-rid="${esc(r.id)}" data-role="${esc(r.role)}">
+          <div class="rrow__view">
+            <span class="rrow__role">${esc(r.role)}
+              ${r.scale ? `<span class="pill pill--scale">${esc(r.scale)}</span>` : ""}
+              <span class="pill pill--scale">£${esc(money(r.hourly_rate))}/h</span>
+              ${r.is_primary ? '<span class="pill pill--primary">Primary</span>' : ""}
+            </span>
+            <button type="button" class="btn btn--sec btn--sm" data-act="edit">Edit</button>
+            <button type="button" class="btn btn--danger btn--sm" data-act="delete">Delete</button>
+          </div>
+          <div class="rrow__edit hidden">
+            <label class="fld">Role<select data-edit="role">${roleOpts}</select></label>
+            <label class="fld">Scale<select data-edit="scale">${scaleOpts}</select></label>
+            <label class="fld">£/h<input type="number" step="0.01" min="0" data-edit="rate" value="${esc(money(r.hourly_rate))}" /></label>
+            <label class="fld" style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" data-edit="primary"${r.is_primary ? " checked" : ""} /> Primary</label>
+            <button type="button" class="btn btn--pri btn--sm" data-act="save-edit">Save</button>
+            <button type="button" class="btn btn--sec btn--sm" data-act="cancel-edit">Cancel</button>
+          </div>
         </div>`;
     }
 
@@ -212,21 +223,28 @@
         const addRole = card.querySelector('[data-add="role"]');
         const addScale = card.querySelector('[data-add="scale"]');
         const addRate = card.querySelector('[data-add="rate"]');
-        const syncDefault = () => { const d = defaultRate(addRole.value, addScale.value); if (d !== "") addRate.value = d; };
-        addRole.addEventListener("change", syncDefault);
-        addScale.addEventListener("change", syncDefault);
-        syncDefault();
-
+        const syncAdd = () => { const d = defaultRate(addRole.value, addScale.value); if (d !== "") addRate.value = d; };
+        addRole.addEventListener("change", syncAdd);
+        addScale.addEventListener("change", syncAdd);
+        syncAdd();
         card.querySelector('[data-act="add"]').addEventListener("click", () => addRole2(uid, card));
 
         card.querySelectorAll(".rrow").forEach((rrow) => {
           const rid = rrow.getAttribute("data-rid");
-          const saveBtn = rrow.querySelector('[data-act="save-rate"]');
-          if (saveBtn) saveBtn.addEventListener("click", () => saveRate(rid, rrow));
-          const primBtn = rrow.querySelector('[data-act="make-primary"]');
-          if (primBtn) primBtn.addEventListener("click", () => makePrimary(uid, rid));
-          const delBtn = rrow.querySelector('[data-act="delete"]');
-          if (delBtn) delBtn.addEventListener("click", () => deleteRate(rid, rrow));
+          const originalRole = rrow.getAttribute("data-role");
+          const view = rrow.querySelector(".rrow__view");
+          const edit = rrow.querySelector(".rrow__edit");
+          const eRole = rrow.querySelector('[data-edit="role"]');
+          const eScale = rrow.querySelector('[data-edit="scale"]');
+          const eRate = rrow.querySelector('[data-edit="rate"]');
+          const syncEdit = () => { const d = defaultRate(eRole.value, eScale.value); if (d !== "") eRate.value = d; };
+          eRole.addEventListener("change", syncEdit);
+          eScale.addEventListener("change", syncEdit);
+
+          rrow.querySelector('[data-act="edit"]').addEventListener("click", () => { view.classList.add("hidden"); edit.classList.remove("hidden"); });
+          rrow.querySelector('[data-act="cancel-edit"]').addEventListener("click", () => { edit.classList.add("hidden"); view.classList.remove("hidden"); });
+          rrow.querySelector('[data-act="save-edit"]').addEventListener("click", () => saveEdit(uid, rid, originalRole, rrow));
+          rrow.querySelector('[data-act="delete"]').addEventListener("click", () => deleteRate(rid, rrow));
         });
       });
     }
@@ -240,39 +258,50 @@
       if (!Number.isFinite(rate) || rate < 0) { showNote("err", "Enter a valid £/h."); return; }
       try {
         if (primary) await clearPrimary(uid);
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from("staff_role_rates")
-          .upsert({ user_id: uid, role, scale, hourly_rate: rate, is_primary: primary }, { onConflict: "user_id,role" });
+          .upsert({ user_id: uid, role, scale, hourly_rate: rate, is_primary: primary }, { onConflict: "user_id,role" })
+          .select();
         if (error) throw error;
+        if (!data || !data.length) { showNote("err", "Not saved — check you are signed in as admin/CEO (write blocked by RLS)."); return; }
         showNote("ok", "Role saved.");
         await loadAll();
-      } catch (e) { showNote("err", e?.message || String(e)); }
+      } catch (e) { showNote("err", writeErr(e)); }
     }
 
-    async function saveRate(rid, rrow){
+    async function saveEdit(uid, rid, originalRole, rrow){
+      const role = rrow.querySelector('[data-edit="role"]').value;
+      const scale = rrow.querySelector('[data-edit="scale"]').value || null;
       const rate = Number(rrow.querySelector('[data-edit="rate"]').value);
+      const primary = rrow.querySelector('[data-edit="primary"]').checked;
+      if (!role) { showNote("err", "Pick a role."); return; }
       if (!Number.isFinite(rate) || rate < 0) { showNote("err", "Enter a valid £/h."); return; }
       try {
-        const { error } = await supabase.from("staff_role_rates").update({ hourly_rate: rate }).eq("id", rid);
-        if (error) throw error;
-        showNote("ok", "Rate updated.");
+        if (primary) await clearPrimary(uid);
+        const up = await supabase
+          .from("staff_role_rates")
+          .upsert({ user_id: uid, role, scale, hourly_rate: rate, is_primary: primary }, { onConflict: "user_id,role" })
+          .select();
+        if (up.error) throw up.error;
+        if (!up.data || !up.data.length) { showNote("err", "Not saved — check you are signed in as admin/CEO (write blocked by RLS)."); return; }
+        if (role !== originalRole) {
+          const del = await supabase.from("staff_role_rates").delete().eq("id", rid).select();
+          if (del.error) throw del.error;
+        }
+        showNote("ok", "Saved.");
         await loadAll();
-      } catch (e) { showNote("err", e?.message || String(e)); }
+      } catch (e) { showNote("err", writeErr(e)); }
+    }
+
+    function writeErr(e){
+      const msg = e?.message || String(e);
+      const code = e?.code ? " (" + e.code + ")" : "";
+      return msg + code;
     }
 
     async function clearPrimary(uid){
       const { error } = await supabase.from("staff_role_rates").update({ is_primary: false }).eq("user_id", uid).eq("is_primary", true);
       if (error) throw error;
-    }
-
-    async function makePrimary(uid, rid){
-      try {
-        await clearPrimary(uid);
-        const { error } = await supabase.from("staff_role_rates").update({ is_primary: true }).eq("id", rid);
-        if (error) throw error;
-        showNote("ok", "Primary role set.");
-        await loadAll();
-      } catch (e) { showNote("err", e?.message || String(e)); }
     }
 
     async function deleteRate(rid, rrow){
