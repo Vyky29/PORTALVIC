@@ -297,7 +297,7 @@ async function buildPdf(targetMonthIso: string, data: Awaited<ReturnType<typeof 
   // Title block
   drawText("MONTHLY PAYROLL REPORT", margin, y - 6, 16, bold, ink);
   y -= 22;
-  drawText(`Pay month: ${monthLabelFromIso(targetMonthIso)}  (cycle 25th → 24th)`, margin, y - 4, 11, font, muted);
+  drawText(`Pay month: ${monthLabelFromIso(targetMonthIso)}  (cycle 25th -> 24th)`, margin, y - 4, 11, font, muted);
   y -= 16;
   drawText(
     `Generated: ${new Date().toLocaleString("en-GB", { timeZone: "Europe/London" })}`,
