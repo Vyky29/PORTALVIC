@@ -1002,9 +1002,9 @@
       var isWorkingUi = path.indexOf("/working_ui/") !== -1;
       var portalCeoLogoutUrl = isWorkingUi ? "login.html" : "login.html";
 
-      var portalJsVer = "20260604-ceo-access-gate";
-      var portalJsBase = "portal/";
-      var ceoDmImportBase = isWorkingUi ? "./portal/" : portalJsBase;
+      var portalJsVer = "20260604c-ceo-access-gate";
+      var portalJsBase = "./portal/";
+      var ceoDmImportBase = "./portal/";
       var s = document.createElement("script");
       s.type = "module";
       s.textContent =
