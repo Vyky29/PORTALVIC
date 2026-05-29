@@ -248,7 +248,11 @@ function setAutomaticTime() {
 }
 
 function updateNoButtonText(btnNo) {
-  if (btnNo) btnNo.textContent = "No";
+  if (!btnNo) return;
+  // Only update the text label so the pill icon (SVG) is preserved.
+  const label = btnNo.querySelector(".venue-issue-pill-label");
+  if (label) label.textContent = "No";
+  else btnNo.textContent = "No";
 }
 
 function initVenueReviewPage() {

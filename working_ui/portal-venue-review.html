@@ -307,9 +307,9 @@
     }
     .venue-context__row {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
       margin: 0;
       padding: 8px 0;
       border-bottom: 1px solid #e8eef5;
@@ -320,17 +320,21 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 700;
+      letter-spacing: .01em;
+      text-transform: uppercase;
       color: #5b6473;
       flex: 0 0 auto;
     }
     .venue-context__value {
-      font-size: 15px;
+      font-size: 16px;
       font-weight: 700;
       color: #173247;
-      text-align: right;
+      text-align: left;
+      width: 100%;
       min-width: 0;
+      padding-left: 26px;
       overflow-wrap: anywhere;
       word-break: break-word;
     }
@@ -481,10 +485,6 @@
             <span class="venue-context__label"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span> Completed by</span>
             <span class="venue-context__value" id="venueContextCompletedBy">—</span>
           </p>
-          <p class="venue-context__row" id="venueContextServiceRow" hidden>
-            <span class="venue-context__label"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4L12 17l-6.3 4.4L8 14 2 9.4h7.6z"/></svg></span> Service</span>
-            <span class="venue-context__value" id="venueContextService">—</span>
-          </p>
           <p class="venue-context__row">
             <span class="venue-context__label"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg></span> Venue</span>
             <span class="venue-context__value" id="venueContextVenue">—</span>
@@ -545,6 +545,6 @@
     var STAFF_PROFILE_PORTAL_BRIDGE_SECRET = "%%PB6%%";
   </script>
   <!-- Front-end + Supabase insert: portal-shared-js/venue_review_app.js -->
-  <script type="module" src="/portal-shared-js/venue_review_app.js?v=20260605-autofill-nologo"></script>
+  <script type="module" src="/portal-shared-js/venue_review_app.js?v=20260605-venue-fixes"></script>
 </body>
 </html>

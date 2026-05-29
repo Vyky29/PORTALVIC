@@ -230,18 +230,6 @@ async function renderVenueContextHeader(ctx) {
   venueEl.textContent = venue;
   dateEl.textContent = date;
 
-  const serviceRow = document.getElementById("venueContextServiceRow");
-  const serviceEl = document.getElementById("venueContextService");
-  const service = clean(ctx.service);
-  if (serviceRow && serviceEl) {
-    if (service) {
-      serviceEl.textContent = service;
-      serviceRow.hidden = false;
-    } else {
-      serviceRow.hidden = true;
-    }
-  }
-
   try {
     const submission = await resolveSubmissionContext(ctx);
     const resolvedName = clean(submission && submission.submittedByName);
@@ -261,7 +249,11 @@ function setAutomaticTime() {
 }
 
 function updateNoButtonText(btnNo) {
-  if (btnNo) btnNo.textContent = "No";
+  if (!btnNo) return;
+  // Only update the text label so the pill icon (SVG) is preserved.
+  const label = btnNo.querySelector(".venue-issue-pill-label");
+  if (label) label.textContent = "No";
+  else btnNo.textContent = "No";
 }
 
 function initVenueReviewPage() {

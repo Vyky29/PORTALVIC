@@ -14555,18 +14555,28 @@
 
         const now = new Date();
         const nowM = now.getHours() * 60 + now.getMinutes();
-        let lastPastVenue = '';
 
+        // 1) A session currently in progress wins outright.
         for(let i = 0; i < rows.length; i++){
           const r = rows[i];
           const endM = r.endM != null ? r.endM : (r.startM + 60);
           if(nowM >= r.startM && nowM <= endM) return r.venue;
-          if(nowM >= r.startM) lastPastVenue = r.venue;
-          if(nowM >= (r.startM - 60) && nowM < r.startM) return r.venue;
         }
 
-        if(lastPastVenue) return lastPastVenue;
-        return rows[0].venue || '';
+        // 2) Otherwise pick the session closest in time to "now" so the venue
+        //    always matches where the worker actually is/just was/heads next.
+        let best = null;
+        let bestDist = Infinity;
+        for(let i = 0; i < rows.length; i++){
+          const r = rows[i];
+          const endM = r.endM != null ? r.endM : (r.startM + 60);
+          const dist = nowM < r.startM ? (r.startM - nowM) : (nowM - endM);
+          if(dist < bestDist){
+            bestDist = dist;
+            best = r;
+          }
+        }
+        return (best && best.venue) || rows[0].venue || '';
       }catch(_){
         return '';
       }
