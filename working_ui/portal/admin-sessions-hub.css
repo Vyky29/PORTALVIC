@@ -127,11 +127,21 @@
       margin-bottom: 8px;
     }
     .ash-log-jump, .ash-log-day-link {
+      display: inline-block;
       font-size: 11px;
       font-weight: 700;
       padding: 4px 8px;
       margin-right: 8px;
       vertical-align: middle;
+    }
+    .ash-log-jump[role="button"] {
+      cursor: pointer;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    .ash-log-jump[role="button"]:focus-visible {
+      outline: 2px solid #2d84b3;
+      outline-offset: 1px;
     }
     .ash-log-day-link {
       border: none;

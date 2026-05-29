@@ -1985,9 +1985,9 @@
         '<details class="ash-log-week"' +
         weekOpenAttr +
         '><summary class="ash-log-week__summary">' +
-        '<button type="button" class="ash-btn ash-btn--ghost ash-log-jump" data-ash-log-jump-week="' +
+        '<span role="button" tabindex="0" class="ash-btn ash-btn--ghost ash-log-jump" data-ash-log-jump-week="' +
         escFn(week.weekStart) +
-        '">Show week \u2192</button> ' +
+        '">Show week \u2192</span> ' +
         "Week " +
         escFn(week.label) +
         ' <span class="ash-log-count">(' +
@@ -4502,6 +4502,12 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     });
     this.root.addEventListener("keydown", function (ev) {
       if (ev.key !== "Enter" && ev.key !== " ") return;
+      var jump = ev.target && ev.target.closest && ev.target.closest("[role='button'].ash-log-jump");
+      if (jump) {
+        ev.preventDefault();
+        jump.click();
+        return;
+      }
       var row = ev.target && ev.target.closest && ev.target.closest("[data-ash-fb-row]");
       if (!row || hub.mode !== "feedback") return;
       ev.preventDefault();
