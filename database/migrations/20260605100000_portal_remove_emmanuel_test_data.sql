@@ -16,8 +16,9 @@ delete from public.lead_session_reports
 where lower(trim(coalesce(client_name, ''))) = 'emmanuel'
    or lower(coalesce(portal_session_key, '')) like '%|emmanuel';
 
-delete from public.participant_achievement_photos
-where lower(trim(client_name)) = 'emmanuel';
+delete from public.portal_participant_achievement_photos
+where lower(trim(coalesce(client_name, ''))) = 'emmanuel'
+   or lower(coalesce(portal_session_key, '')) like '%|emmanuel';
 
 delete from public.portal_late_submission_requests
 where lower(trim(coalesce(client_name, ''))) = 'emmanuel'
