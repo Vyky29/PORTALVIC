@@ -16676,7 +16676,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<strong>Wait match</strong> shows heuristic links to the same queue as <button type="button" class="btn btn--ghost btn--sm" data-view-target="c4k_waitlist">Waiting list</button> (<code>WAITING_LIST_PORTAL_SOURCE</code> when loaded, else <code>MOCK.c4kWaitlist</code>) until a live matcher exists. '+
         'Data source: <strong>'+esc(srcLabel)+'</strong>. Ratio/capacity text is still indicative where not computed from ops.';
       var headBlock = '';
-      if(opts.omitHeader){
+      if(opts.bare){
+        headBlock = '';
+      }else if(opts.omitHeader){
         headBlock =
           '<h2 class="page-title" style="font-size:15px;margin:0 0 6px">Capacity detail</h2>'+
           '<p class="page-intro" style="margin:0 0 10px;max-width:52rem;min-width:0;overflow-wrap:break-word">Same grid as under <strong>Services overview</strong> (Physical Activity). Open counts are roster lines still available to assign.</p>';
@@ -16701,9 +16703,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       );
     }
     function adminServiceCapacityBoardEmbedHtml(){
-      var inner = adminServiceCapacityBoardInnerHtml();
+      var inner = adminServiceCapacityBoardInnerHtml({ bare: true });
       if(!inner) return '';
-      return '<section id="c4kServicesCapacityEmbed" class="c4k-svc-capmap-embed" aria-label="Services and capacity">'+inner+'</section>';
+      return '<section id="c4kServicesCapacityEmbed" class="c4k-svc-capmap-embed" aria-label="Services and capacity" style="margin-top:22px;scroll-margin-top:14px">'+
+        '<div class="c4k-svc-capmap-embed__head" style="border-top:1px solid var(--line,#e5e7eb);padding-top:16px;margin-bottom:10px">'+
+        '<h2 class="page-title" style="margin:0 0 4px">Services &amp; capacity</h2>'+
+        '<p class="page-intro" style="margin:0;max-width:52rem;min-width:0;overflow-wrap:break-word">Schedulable bands by service · venue · day · time. <strong>Open</strong> = roster lines free to assign; <strong>Wait match</strong> links to the Waiting list.</p>'+
+        '</div>'+
+        inner+'</section>';
     }
     /** Services page: roster by programme → venue accordion → weekday accordion → unique time-slot rows (week of selected date for Register). */
     function viewC4kRosterServicesFromSlotsHtml(dayIso, weekAnchorIso, filt){
@@ -16991,6 +16998,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return (
         '<h1 class="page-title">Services · overview</h1>'+
         '<p class="page-intro" style="margin-top:0;max-width:52rem;min-width:0;overflow-wrap:break-word">Programmes and time bands for this week — filter, open registers, and spot spare capacity.</p>'+
+        '<div class="c4k-svc-jumpbar" style="margin:0 0 12px">'+
+        '<button type="button" class="btn btn--sec btn--sm" id="c4kServicesJumpCapacity" title="Jump to the Services &amp; capacity board lower on this page">'+
+        '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" style="vertical-align:-2px;margin-right:6px"><path fill="currentColor" d="M12 16l-6-6 1.41-1.41L12 13.17l4.59-4.58L18 10z"/></svg>'+
+        'Go to Services &amp; capacity</button>'+
+        '</div>'+
         '<div id="c4kServicesRegisterHost" class="c4k-services-register-host" hidden></div>'+
         '<details class="c4k-svc-filters" id="c4kServicesFiltersPanel" open>'+
         '<summary class="c4k-svc-filters__sum"><span class="c4k-svc-filters__chev" aria-hidden="true"></span> Filter by day, time, venue, class or instructor</summary>'+
@@ -22037,6 +22049,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         refreshC4kServicesPartial();
         var btnSv = $('c4kServicesRefreshBtn');
         if(btnSv) btnSv.onclick = function(){ fillC4kServicesFilterSelects(); refreshC4kServicesPartial(); };
+        var btnJumpCap = $('c4kServicesJumpCapacity');
+        if(btnJumpCap) btnJumpCap.onclick = function(){
+          var capEl = $('c4kServicesCapacityEmbed');
+          if(capEl) capEl.scrollIntoView({ block:'start', behavior:'smooth' });
+        };
         if(state.scrollToCapacityEmbed){
           state.scrollToCapacityEmbed = false;
           setTimeout(function(){
