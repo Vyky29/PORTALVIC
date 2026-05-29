@@ -80,10 +80,12 @@
   }
 
   function isPresent(attendance) {
-    var a = String(attendance || "").toLowerCase();
+    var a = String(attendance || "").trim().toLowerCase();
     if (!a) return false;
-    if (/not\b|no[ -]?show|absent|cancel|did not/.test(a)) return false;
-    return /attend|present|late/.test(a);
+    // Session feedback stores attendance as "Yes"/"No" (absences go via the Absent quick mark).
+    if (a === "no" || /\bnot\b|no[ -]?show|absent|cancel|did not/.test(a)) return false;
+    if (a === "yes" || /attend|present|late|^y$/.test(a)) return true;
+    return false;
   }
 
   function topCounts(list, keyFn, limit) {
@@ -144,7 +146,11 @@
         model.attendanceRate != null ? model.attendanceRate + "%" : "—",
         "present vs logged"
       ) +
-      kpi("Portal active (7d)", model.portalActive7d, "staff used the app") +
+      kpi(
+        "Portal active (7d)",
+        model.portalAvailable ? model.portalActive7d : "—",
+        model.portalAvailable ? "staff used the app" : "run visit-sessions migration"
+      ) +
       "</div>";
 
     var finance =
@@ -328,6 +334,8 @@
     }, 0);
     var financeEmpty = timesheets.length === 0 && expenses.length === 0;
 
+    var portalAvailable =
+      results.visits && results.visits.status === "fulfilled" && !results.visits.value.error;
     var portalSet = {};
     visits.forEach(function (v) {
       var k = String(v.staff_user_id || "").trim();
@@ -371,6 +379,7 @@
       avgEngagement: avgEngagement,
       attendanceRate: attendanceRate,
       portalActive7d: Object.keys(portalSet).length,
+      portalAvailable: portalAvailable,
       payroll: timesheets.length ? money(payroll) : "—",
       expenses: expenses.length ? money(expenseTotal) : "—",
       hours: hours ? hours + "h" : "—",
