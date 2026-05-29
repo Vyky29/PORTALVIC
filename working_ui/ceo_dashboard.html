@@ -368,18 +368,19 @@
     }
     .ceo-dm-direct {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 10px;
       margin: 4px 0 0;
     }
     .ceo-dm-direct__btn {
-      display: inline-flex;
+      display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       gap: 8px;
       min-width: 0;
       box-sizing: border-box;
-      padding: 14px 14px;
+      padding: 14px 12px;
       font: inherit;
       font-size: 14px;
       font-weight: 700;
@@ -393,6 +394,25 @@
       box-shadow: 0 2px 8px rgba(45, 132, 179, 0.18);
       transition: filter 0.15s ease, transform 0.12s ease;
     }
+    .ceo-dm-direct__ico {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.16);
+    }
+    .ceo-dm-direct__ico svg {
+      width: 19px;
+      height: 19px;
+    }
+    .ceo-dm-direct__lbl {
+      min-width: 0;
+      max-width: 100%;
+      overflow-wrap: break-word;
+      line-height: 1.2;
+    }
     .ceo-dm-direct__btn:hover {
       filter: brightness(1.05);
     }
@@ -404,7 +424,6 @@
       border-color: rgba(109, 40, 217, 0.4);
     }
     .ceo-dm-direct__btn--group {
-      grid-column: 1 / -1;
       background: linear-gradient(180deg, #0f172a 0%, #1e3a5f 100%);
       border-color: rgba(15, 23, 42, 0.5);
     }
@@ -414,9 +433,9 @@
       font-size: 13px;
       color: var(--muted);
     }
-    @media (max-width: 520px) {
+    @media (max-width: 640px) {
       .ceo-dm-direct {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
     .ceo-insights-embed-wrap {
@@ -1227,7 +1246,7 @@
       var isWorkingUi = path.indexOf("/working_ui/") !== -1;
       var portalCeoLogoutUrl = isWorkingUi ? "login.html" : "login.html";
 
-      var portalJsVer = "20260604g-ceo-direct-dm";
+      var portalJsVer = "20260604h-ceo-dm-icons";
       var portalJsBase = "./portal/";
       var ceoDmImportBase = "./portal/";
       var s = document.createElement("script");

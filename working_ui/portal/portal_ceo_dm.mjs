@@ -171,24 +171,32 @@ function ceoDmRenderDirectButtons(dir) {
   const host = $("ceoDmDirectButtons");
   if (!host) return;
   host.innerHTML = "";
-  function make(label, kind, onClick) {
+  const ICON_PERSON =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+  const ICON_GROUP =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-3-3.87"/><path d="M7 21v-2a4 4 0 0 1 3-3.87"/><circle cx="12" cy="7" r="3.2"/><circle cx="5" cy="9" r="2.4"/><circle cx="19" cy="9" r="2.4"/><path d="M2.5 19v-1.2a3 3 0 0 1 2.5-2.6"/><path d="M21.5 19v-1.2a3 3 0 0 0-2.5-2.6"/></svg>';
+  function make(label, kind, iconSvg, onClick) {
     const b = document.createElement("button");
     b.type = "button";
     b.className = "ceo-dm-direct__btn" + (kind ? " ceo-dm-direct__btn--" + kind : "");
-    b.textContent = label;
+    b.innerHTML =
+      '<span class="ceo-dm-direct__ico">' + (iconSvg || ICON_PERSON) + "</span>" +
+      '<span class="ceo-dm-direct__lbl"></span>';
+    const lbl = b.querySelector(".ceo-dm-direct__lbl");
+    if (lbl) lbl.textContent = label;
     b.addEventListener("click", onClick);
     host.appendChild(b);
   }
   (dir.ceos || []).forEach((c) => {
     const full = (c.full_name || c.username || "").trim() || "CEO";
-    make(ceoDmShortName(c) || full, "ceo", () => void ceoDmOpenDirect(String(c.id), full));
+    make(ceoDmShortName(c) || full, "ceo", ICON_PERSON, () => void ceoDmOpenDirect(String(c.id), full));
   });
   if (dir.sevitha) {
     const s = dir.sevitha;
     const full = (s.full_name || s.username || "").trim() || "Sevitha";
-    make(ceoDmShortName(s) || full, "admin", () => void ceoDmOpenDirect(String(s.id), full));
+    make(ceoDmShortName(s) || full, "admin", ICON_PERSON, () => void ceoDmOpenDirect(String(s.id), full));
   }
-  make("Directors", "group", () => void ceoDmOpenGroup());
+  make("Directors", "group", ICON_GROUP, () => void ceoDmOpenGroup());
   if (!(dir.ceos || []).length && !dir.sevitha) {
     const p = document.createElement("p");
     p.className = "ceo-dm-direct__empty";
