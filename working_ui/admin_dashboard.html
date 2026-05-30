@@ -22,6 +22,7 @@
   <script src="/portal/portal_dm_voice.js?v=20260531-dm-voice"></script>
   <script src="/portal/admin-hr.js?v=20260530-hr-active-account"></script>
   <script src="/portal/admin-payments.js?v=20260530-payments"></script>
+  <script src="/portal/admin-onboarding.js?v=20260530-onboarding"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
   <title>clubSENsational · Operations + Operator workflow (merged)</title>
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
@@ -15904,17 +15905,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
 
     function viewOnboarding(){
-      var people = MOCK.onboardingPeople.map(function(p){
-        var steps = p.steps.map(function(st){
-          return '<div style="margin-bottom:8px"><div class="trend-row"><span>'+esc(st.label)+'</span><span>'+st.pct+'%</span></div><div class="progress-h"><i style="width:'+st.pct+'%"></i></div></div>';
-        }).join('');
-        return '<div class="card"><div class="card-h"><h3>'+esc(p.name)+'</h3><span class="chip chip--info">'+esc(p.role)+'</span></div><div class="card-pad">'+
-          '<p class="muted" style="margin:0 0 12px">Start: <strong style="color:var(--ink)">'+esc(p.startDate)+'</strong> · Buddy: '+esc(p.buddy)+'</p>'+steps+
-          '<div class="toolbar" style="margin-top:14px"><button type="button" class="btn btn--sec btn--sm" data-ob-nudge="'+esc(p.id)+'">Send nudge (demo)</button> <button type="button" class="btn btn--ghost btn--sm" data-open-compose data-preset="reminder">Comms</button></div></div></div>';
-      }).join('');
-      return '<h1 class="page-title">Onboarding</h1><p class="page-intro">Check each hire’s steps and send reminders from one board (demo nudges).</p>'+
-        '<div class="op-banner" style="margin-bottom:16px"><strong>Jordan P. blocks May start</strong><p>DBS and references are the critical path. Lee T. depends on Thursday practical.</p></div>'+
-        '<div class="stack">'+people+'</div>';
+      // Live applicant document tracker (powered by the Onboarding project Storage
+      // via portal-admin-onboarding-documents-list). Rendered by /portal/admin-onboarding.js
+      // into #onboardingModuleRoot (see bindView 'onboarding').
+      return '<h1 class="page-title">Onboarding</h1><p class="page-intro">One row per applicant session — job application and health draft status, uploaded documents, last online / last upload, and Job/Health CSV export. New uploads attach after the applicant logs in at the staff portal (PIN).</p>'+
+        '<div id="onboardingModuleRoot"></div>';
     }
 
     function viewReports(){
@@ -18029,6 +18024,23 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             closeModal: closeModal
           });
           window.AdminHR.mount($('hrModuleRoot'));
+        }
+      }
+      if(id==='onboarding'){
+        if(window.AdminOnboarding && $('onboardingModuleRoot')){
+          window.AdminOnboarding.configure({
+            getClient: getSchedSupabaseClient,
+            toast: portalAdminToast,
+            esc: esc,
+            getSupabaseUrl: function(){
+              var u = typeof window.SUPABASE_URL === 'string' ? window.SUPABASE_URL.trim() : '';
+              return u || 'https://cklpnwhlqsulpmkipmqb.supabase.co';
+            },
+            getAnonKey: function(){
+              return typeof window.SUPABASE_ANON_KEY === 'string' ? window.SUPABASE_ANON_KEY : '';
+            }
+          });
+          window.AdminOnboarding.mount($('onboardingModuleRoot'));
         }
       }
       if(id==='staffhr_contracts'){
