@@ -39,7 +39,7 @@
   var state = {
     rootEl: null,
     rows: [],
-    statusFilter: "all", // all | outstanding | paid | notreenrolled
+    statusFilter: "active", // active (re-enrolled) | all | outstanding | paid | notreenrolled
     sheetFilter: "",      // "" = all groups, else sheet name
     query: "",
   };
@@ -126,7 +126,19 @@
 
   function statusMatch(r) {
     if (state.statusFilter === "all") return true;
+    // "Active" = currently re-enrolled (everyone except the Not re-enrolled list).
+    if (state.statusFilter === "active") return category(r) !== "notreenrolled";
     return category(r) === state.statusFilter;
+  }
+
+  function serviceFor(r) {
+    var d = r.data || {};
+    var keys = ["Services", "Service", "Programme", "Programmes", "Activity"];
+    for (var i = 0; i < keys.length; i++) {
+      var v = d[keys[i]];
+      if (v != null && String(v).trim() && String(v).trim() !== "-") return String(v).trim();
+    }
+    return "—";
   }
 
   function render() {
@@ -162,7 +174,7 @@
     });
     html += '<div class="pay-bar">'
       + '<div class="pay-seg" role="group" aria-label="Status filter">'
-      + seg("all", "All") + seg("outstanding", "Outstanding (" + outN + ")") + seg("paid", "Paid (" + paidN + ")") + seg("notreenrolled", "Not re-enrolled")
+      + seg("active", "Active (" + (paidN + outN) + ")") + seg("outstanding", "Outstanding (" + outN + ")") + seg("paid", "Paid (" + paidN + ")") + seg("notreenrolled", "Not re-enrolled") + seg("all", "All")
       + '</div>'
       + '<select class="pay-sel" id="paySheet">' + sheetOpts + '</select>'
       + '<input type="search" class="pay-search" id="paySearch" placeholder="Search client, parent…" value="' + esc(state.query) + '" />'
@@ -170,9 +182,9 @@
 
     // Table
     html += '<div class="pay-card"><div class="pay-card-h"><h3>Clients</h3><span style="font-size:12px;color:#64748b">' + visible.length + ' shown</span></div>';
-    html += '<div class="pay-tbl-wrap"><table class="pay-tbl"><thead><tr><th>Client</th><th>Group</th><th>Parent / LA</th><th class="num">Total</th><th>Status</th></tr></thead><tbody>';
+    html += '<div class="pay-tbl-wrap"><table class="pay-tbl"><thead><tr><th>Client</th><th>Group</th><th>Service</th><th>Parent / LA</th><th class="num">Total</th><th>Status</th></tr></thead><tbody>';
     if (!visible.length) {
-      html += '<tr><td colspan="5" class="pay-empty">No clients match this filter.</td></tr>';
+      html += '<tr><td colspan="6" class="pay-empty">No clients match this filter.</td></tr>';
     } else {
       visible.sort(function (a, b) {
         var s = String(a.sheet).localeCompare(String(b.sheet));
@@ -183,6 +195,7 @@
         html += '<tr data-pay-id="' + esc(r.id) + '">'
           + '<td class="pay-name">' + esc(r.client_name || "—") + "</td>"
           + "<td>" + esc(labelFor(r.sheet)) + "</td>"
+          + "<td>" + esc(serviceFor(r)) + "</td>"
           + "<td>" + esc(r.parent_name || "") + "</td>"
           + '<td class="num">' + money(r.amount) + "</td>"
           + "<td>" + pillFor(r) + "</td></tr>";
