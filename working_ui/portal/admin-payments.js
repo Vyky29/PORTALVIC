@@ -322,9 +322,19 @@
     if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = "Saving…"; }
     if (msg) msg.textContent = "";
 
-    client.from("client_payments").update(patch).eq("id", r.id).then(function (res) {
+    // .select() returns the row(s) actually written. If RLS / the current session
+    // blocks the update, Supabase reports NO error but writes 0 rows — so we must
+    // check the returned rows rather than trusting a missing error.
+    client.from("client_payments").update(patch).eq("id", r.id).select().then(function (res) {
       if (res.error) throw res.error;
-      Object.keys(patch).forEach(function (k) { r[k] = patch[k]; });
+      var saved = (res.data && res.data.length) ? res.data[0] : null;
+      if (!saved) {
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = "Save changes"; }
+        if (msg) msg.textContent = "Not saved: no row was updated. You are likely not signed in as an admin (RLS blocks the change). Sign in to the admin dashboard and retry.";
+        return;
+      }
+      // Sync the in-memory row with exactly what the database stored.
+      Object.keys(saved).forEach(function (k) { r[k] = saved[k]; });
       deps.toast("Saved.");
       if (deps.closeModal) deps.closeModal();
       render();
