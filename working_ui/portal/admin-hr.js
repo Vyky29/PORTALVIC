@@ -55,6 +55,7 @@
     rows: [],
     people: [],
     linkedKeys: {}, // name_key -> true when the person has a login account
+    unavail: [],    // staff_unavailability rows
     activeFilter: "active", // active | inactive | all
     query: "",
   };
@@ -76,6 +77,9 @@
     chat: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
     field: '<rect x="3" y="4" width="18" height="6" rx="1"/><rect x="3" y="14" width="18" height="6" rx="1"/>',
     x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+    cal: '<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+    plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+    trash: '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
   };
   // Per-category icon for section headers / boxes.
   var SHEET_ICONS = {
@@ -158,6 +162,21 @@
       ".hr-field textarea{min-height:62px;resize:vertical}",
       ".hr-toggle{display:inline-flex;align-items:center;gap:8px;font-size:14px;color:#0f172a;font-weight:700}",
       ".hr-multi{font-size:11px;color:#64748b;margin:2px 0 0}",
+      /* Days off */
+      ".hr-off-chip{display:inline-flex;align-items:center;gap:5px;margin-left:6px;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;background:#fff7ed;color:#c2410c}",
+      ".hr-off-chip .hr-ico{width:12px;height:12px;color:#ea580c}",
+      ".hr-off-list{padding:14px 16px;display:flex;flex-direction:column;gap:8px}",
+      ".hr-off-row{display:flex;align-items:center;gap:10px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:9px 12px}",
+      ".hr-off-row .hr-ico{flex:0 0 auto;color:#ea580c}",
+      ".hr-off-row b{color:#9a3412;font-size:14px}",
+      ".hr-off-row .hr-off-reason{color:#9a6a4a;font-size:12px;min-width:0;overflow-wrap:break-word}",
+      ".hr-off-row .hr-off-del{margin-left:auto;flex:0 0 auto;border:1px solid #fecaca;background:#fff;color:#b91c1c;border-radius:8px;width:32px;height:32px;display:grid;place-items:center;cursor:pointer}",
+      ".hr-off-row .hr-off-del:hover{background:#fef2f2}",
+      ".hr-off-add{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:4px 16px 14px}",
+      ".hr-off-add input{font:inherit;font-size:14px;padding:8px 10px;border:1px solid #e2e8f0;border-radius:9px;background:#fff;color:#0f172a}",
+      ".hr-off-add input.hr-off-reason-in{flex:1;min-width:160px}",
+      ".hr-off-add .hr-off-addbtn{font:inherit;font-weight:700;font-size:13px;border:0;background:#2d84b3;color:#fff;border-radius:9px;padding:9px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}",
+      ".hr-off-empty{padding:0 16px 6px;color:#64748b;font-size:13px}",
     ].join("\n");
     var st = document.createElement("style");
     st.id = "adminHrStyle";
@@ -166,6 +185,28 @@
   }
 
   function nk(r) { return String(r.name_key || ""); }
+
+  // ---- Days off / unavailability -------------------------------------------
+  function offsFor(nameKey) {
+    return (state.unavail || [])
+      .filter(function (u) { return String(u.name_key || "") === String(nameKey || ""); })
+      .sort(function (a, b) { return String(a.off_date).localeCompare(String(b.off_date)); });
+  }
+  function todayIso() {
+    var d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+  function upcomingOffs(nameKey) {
+    var t = todayIso();
+    return offsFor(nameKey).filter(function (u) { return String(u.off_date) >= t; });
+  }
+  function fmtDate(iso) {
+    var s = String(iso || "");
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+    if (!m) return s;
+    var months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    return Number(m[3]) + " " + months[Number(m[2]) - 1] + " " + m[1];
+  }
 
   function rebuildDerived() {
     state.people = state.rows
@@ -246,11 +287,15 @@
         var pill = personActive(p)
           ? '<span class="hr-pill hr-pill--on">Active</span>'
           : '<span class="hr-pill hr-pill--off">Inactive</span>';
+        var up = upcomingOffs(nk(p));
+        var offChip = up.length
+          ? '<span class="hr-off-chip" title="' + esc(up.map(function (u) { return fmtDate(u.off_date); }).join(", ")) + '">' + icon("cal", 12) + up.length + ' day' + (up.length === 1 ? "" : "s") + ' off</span>'
+          : "";
         html += '<tr data-hr-person="' + esc(nk(p)) + '">'
           + '<td class="hr-name">' + esc(p.employee_name || "—") + '</td>'
           + '<td>' + esc(d.Role || d.role || "") + '</td>'
           + '<td>' + esc(d.Shifts || "") + '</td>'
-          + '<td>' + pill + '</td></tr>';
+          + '<td>' + pill + offChip + '</td></tr>';
       });
     }
     html += '</tbody></table></div></div>';
@@ -398,7 +443,7 @@
       return (a.row_index || 0) - (b.row_index || 0);
     });
 
-    var sections = "";
+    var sections = daysOffSectionHtml(nameKey);
     rows.forEach(function (r, idx) {
       var d = r.data || {};
       var keys = Object.keys(d);
@@ -438,6 +483,115 @@
     if (cancel) cancel.addEventListener("click", function () { closeScreen(); });
     var saveBtn = screen.querySelector("#hrPersonSave");
     if (saveBtn) saveBtn.addEventListener("click", function () { savePerson(nameKey, screen, saveBtn); });
+
+    bindDaysOff(screen, nameKey, displayName, personRow);
+  }
+
+  function daysOffSectionHtml(nameKey) {
+    var offs = offsFor(nameKey);
+    var listHtml;
+    if (offs.length) {
+      listHtml = '<div class="hr-off-list">' + offs.map(function (u) {
+        return '<div class="hr-off-row">' + icon("cal", 16)
+          + '<b>' + esc(fmtDate(u.off_date)) + '</b>'
+          + (u.reason ? '<span class="hr-off-reason">' + esc(u.reason) + '</span>' : "")
+          + '<button type="button" class="hr-off-del" data-off-del="' + esc(u.id) + '" title="Remove day off">' + icon("trash", 16) + '</button>'
+          + '</div>';
+      }).join("") + '</div>';
+    } else {
+      listHtml = '<p class="hr-off-empty">No days off recorded.</p>';
+    }
+    var addHtml = '<div class="hr-off-add">'
+      + '<input type="date" id="hrOffDate" aria-label="Day off date" />'
+      + '<input type="text" class="hr-off-reason-in" id="hrOffReason" placeholder="Reason (optional)" />'
+      + '<button type="button" class="hr-off-addbtn" id="hrOffAdd">' + icon("plus", 14) + 'Add day off</button>'
+      + '</div>';
+    var chev = '<svg class="hr-ico hr-sec__chev" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>';
+    return '<details class="hr-sec" open data-sec="daysoff">'
+      + '<summary>' + icon("cal", 17) + '<span>Days off / unavailability</span>' + chev + '</summary>'
+      + listHtml + addHtml + '</details>';
+  }
+
+  function bindDaysOff(screen, nameKey, displayName, personRow) {
+    var addBtn = screen.querySelector("#hrOffAdd");
+    if (addBtn) {
+      addBtn.addEventListener("click", function () {
+        var dateEl = screen.querySelector("#hrOffDate");
+        var reasonEl = screen.querySelector("#hrOffReason");
+        var dateStr = dateEl ? String(dateEl.value || "").trim() : "";
+        var reason = reasonEl ? String(reasonEl.value || "").trim() : "";
+        addOff(nameKey, displayName, personRow, dateStr, reason, screen);
+      });
+    }
+    screen.querySelectorAll("[data-off-del]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        removeOff(nameKey, displayName, b.getAttribute("data-off-del"), screen);
+      });
+    });
+  }
+
+  function setPersonMsg(screen, text) {
+    var msg = screen && screen.querySelector("#hrPersonMsg");
+    if (msg) msg.textContent = text || "";
+  }
+
+  function addOff(nameKey, displayName, personRow, dateStr, reason, screen) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) { setPersonMsg(screen, "Pick a valid date for the day off."); return; }
+    if (offsFor(nameKey).some(function (u) { return String(u.off_date) === dateStr; })) {
+      setPersonMsg(screen, "That date is already marked as a day off."); return;
+    }
+    var client = deps.getClient();
+    if (!client) { setPersonMsg(screen, "Supabase not connected yet — sign in as admin and retry."); return; }
+    var staffId = (personRow && personRow.staff_id) || null;
+    var row = { name_key: nameKey, staff_name: displayName, staff_id: staffId, off_date: dateStr, reason: reason || null };
+    setPersonMsg(screen, "Saving day off…");
+    client.from("staff_unavailability").insert(row).select().then(function (res) {
+      if (res.error) throw res.error;
+      if (!(res.data && res.data.length)) {
+        setPersonMsg(screen, "Not saved: no rows were inserted. You are likely not signed in as an admin (RLS). Sign in to the admin dashboard and retry.");
+        return;
+      }
+      state.unavail.push(res.data[0]);
+      if (global.PortalChangeLog) {
+        global.PortalChangeLog.record({
+          area: "Staff & HR", entity: displayName, action: "create",
+          summary: "Day off added: " + fmtDate(dateStr) + (reason ? " (" + reason + ")" : ""),
+          details: { off_date: dateStr, reason: reason || null }, source: "staffhr",
+        });
+      }
+      deps.toast("Day off added.");
+      render();
+      openPerson(nameKey);
+    }).catch(function (err) {
+      setPersonMsg(screen, "Could not save day off: " + ((err && err.message) || err));
+    });
+  }
+
+  function removeOff(nameKey, displayName, id, screen) {
+    var client = deps.getClient();
+    if (!client) { setPersonMsg(screen, "Supabase not connected yet — sign in as admin and retry."); return; }
+    var rec = (state.unavail || []).filter(function (u) { return String(u.id) === String(id); })[0];
+    setPersonMsg(screen, "Removing…");
+    client.from("staff_unavailability").delete().eq("id", id).select().then(function (res) {
+      if (res.error) throw res.error;
+      if (!(res.data && res.data.length)) {
+        setPersonMsg(screen, "Not removed: RLS blocked the change. Sign in as an admin and retry.");
+        return;
+      }
+      state.unavail = (state.unavail || []).filter(function (u) { return String(u.id) !== String(id); });
+      if (global.PortalChangeLog && rec) {
+        global.PortalChangeLog.record({
+          area: "Staff & HR", entity: displayName, action: "delete",
+          summary: "Day off removed: " + fmtDate(rec.off_date),
+          details: { off_date: rec.off_date }, source: "staffhr",
+        });
+      }
+      deps.toast("Day off removed.");
+      render();
+      openPerson(nameKey);
+    }).catch(function (err) {
+      setPersonMsg(screen, "Could not remove day off: " + ((err && err.message) || err));
+    });
   }
 
   function collectRowData(mr, rowId) {
@@ -538,10 +692,25 @@
         rootEl.innerHTML = '<p class="hr-empty">No HR data yet. Import the STAFF MATRIX (hr_records) in Supabase, then reopen this view.</p>';
         return;
       }
-      render();
+      return loadUnavail(client).then(function (offs) {
+        state.unavail = offs || [];
+        render();
+      });
     }).catch(function (err) {
       rootEl.innerHTML = '<p class="hr-empty">Could not load H&amp;R: ' + esc((err && err.message) || err) + "</p>";
     });
+  }
+
+  function loadUnavail(client) {
+    return client
+      .from("staff_unavailability")
+      .select("id, name_key, staff_name, staff_id, off_date, reason")
+      .order("off_date", { ascending: true })
+      .then(function (res) {
+        // Table may not exist yet (migration not run) — degrade gracefully.
+        if (res.error) { try { console.warn("[hr] staff_unavailability:", res.error.message); } catch (_) {} return []; }
+        return res.data || [];
+      });
   }
 
   function loadAll(client) {
