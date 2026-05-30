@@ -46,9 +46,9 @@
       color:#7f1d1d;font-size:13px;overflow-wrap:break-word}
     .tbl-wrap{overflow-x:auto;min-width:0}
     .ptbl{width:100%;border-collapse:collapse;font-size:13px;min-width:520px}
-    .ptbl th,.ptbl td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;overflow-wrap:break-word}
+    .ptbl th,.ptbl td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:center;overflow-wrap:break-word}
     .ptbl thead th{background:#f8fafc;color:var(--ink);font-size:11px;text-transform:uppercase;letter-spacing:.03em}
-    .ptbl td.num,.ptbl th.num{text-align:right;white-space:nowrap}
+    .ptbl td.num,.ptbl th.num{white-space:nowrap}
     .ptbl tfoot td{font-weight:700;border-top:2px solid #cbd5e1;border-bottom:0}
     .ptbl .late{color:var(--warn);font-weight:600}
     .pdf-frame{width:100%;height:70vh;min-height:420px;border:1px solid var(--line);border-radius:12px;background:#fff}
@@ -258,7 +258,8 @@
       const t = (out.summary && out.summary.totals) || {};
       const num = (v) => (v == null || v === "" || !Number.isFinite(Number(v)) ? "—" : money(v));
       if (workers.length) {
-        const rows = workers.map((w) => {
+        const ordered = workers.slice().sort((a, b) => (a.isLate ? 1 : 0) - (b.isLate ? 1 : 0));
+        const rows = ordered.map((w) => {
           const lateClass = w.isLate ? ' class="late"' : "";
           return (
             "<tr>" +
