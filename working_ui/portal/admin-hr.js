@@ -62,6 +62,41 @@
   function esc(s) { return deps.esc(s); }
   function labelFor(sheet) { return SHEET_LABELS[sheet] || sheet; }
 
+  var ICONS = {
+    staff: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+    user: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+    grid: '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>',
+    doc: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>',
+    phone: '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>',
+    shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+    award: '<circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>',
+    eye: '<path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/>',
+    heart: '<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>',
+    clipboard: '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>',
+    chat: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+    field: '<rect x="3" y="4" width="18" height="6" rx="1"/><rect x="3" y="14" width="18" height="6" rx="1"/>',
+    x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+  };
+  // Per-category icon for section headers / boxes.
+  var SHEET_ICONS = {
+    "Employees info": "user",
+    "Employee Docs": "doc",
+    "Emergency Contact Info": "phone",
+    "Induction & Safeguarding": "shield",
+    "Shadowings & Trainings": "award",
+    "Observations": "eye",
+    "Paid CoursesCertificatesFirst A": "award",
+    "Health Questionaire": "heart",
+    "Job application": "clipboard",
+    "Interviews": "chat",
+  };
+  function icon(name, px) {
+    var p = ICONS[name] || "";
+    var s = px || 18;
+    return '<svg class="hr-ico" viewBox="0 0 24 24" width="' + s + '" height="' + s + '" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + p + "</svg>";
+  }
+  function sheetIcon(sheet, px) { return icon(SHEET_ICONS[sheet] || "field", px); }
+
   function injectStyleOnce() {
     if (document.getElementById("adminHrStyle")) return;
     var css = [
@@ -73,7 +108,9 @@
       ".hr-search{flex:1;min-width:180px;font:inherit;padding:9px 12px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;color:#0f172a}",
       ".hr-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 1px 3px rgba(15,23,42,.05);margin-bottom:16px;overflow:hidden}",
       ".hr-card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:1px solid #eef2f7}",
-      ".hr-card-h h3{margin:0;font-size:15px;color:#0f172a}",
+      ".hr-card-h h3{margin:0;font-size:15px;color:#0f172a;display:flex;align-items:center;gap:8px}",
+      ".hr-card-h h3 .hr-ico{flex:0 0 auto;color:#2d84b3}",
+      ".hr-ico{display:block}",
       ".hr-tbl-wrap{overflow-x:auto;min-width:0}",
       ".hr-tbl{width:100%;border-collapse:collapse;font-size:14px}",
       ".hr-tbl th,.hr-tbl td{padding:10px 12px;border-bottom:1px solid #eef2f7;text-align:left;vertical-align:top;overflow-wrap:break-word;max-width:280px}",
@@ -87,17 +124,36 @@
       ".hr-boxes{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}",
       ".hr-box{display:flex;flex-direction:column;gap:4px;text-align:left;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px;cursor:pointer;font:inherit}",
       ".hr-box:hover{border-color:#2d84b3;background:#f0f7fb}",
-      ".hr-box b{color:#0f172a;font-size:14px}",
+      ".hr-box__top{display:flex;align-items:center;gap:8px}",
+      ".hr-box__ico{flex:0 0 auto;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:#eef4f9;color:#2d84b3}",
+      ".hr-box b{color:#0f172a;font-size:14px;overflow-wrap:break-word}",
       ".hr-box span{color:#64748b;font-size:12px}",
       ".hr-empty{color:#64748b;padding:18px;text-align:center;font-size:14px}",
-      /* Person card */
-      ".hr-person .hr-sec{border:1px solid #e2e8f0;border-radius:12px;margin:0 0 12px}",
-      ".hr-person .hr-sec>summary{cursor:pointer;list-style:none;padding:11px 14px;font-weight:700;color:#0f172a;display:flex;justify-content:space-between;align-items:center;gap:8px}",
-      ".hr-person .hr-sec>summary::-webkit-details-marker{display:none}",
-      ".hr-person .hr-sec[open]>summary{border-bottom:1px solid #eef2f7}",
-      ".hr-fields{padding:12px 14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}",
+      /* Full-screen person / category */
+      ".hr-screen{position:fixed;inset:0;z-index:2147483000;background:#f1f5f9;display:flex;flex-direction:column}",
+      ".hr-screen__head{flex:0 0 auto;display:flex;align-items:center;gap:12px;padding:16px 20px;background:#fff;border-bottom:1px solid #e2e8f0}",
+      ".hr-screen__ico{flex:0 0 auto;width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:#eff6ff;color:#2d84b3}",
+      ".hr-screen__ttl{min-width:0;flex:1}",
+      ".hr-screen__ttl h2{margin:0;font-size:20px;color:#0f172a;overflow-wrap:break-word}",
+      ".hr-screen__ttl .hr-screen__sub{display:flex;align-items:center;gap:8px;font-size:13px;color:#64748b;font-weight:700;margin-top:2px}",
+      ".hr-screen__x{flex:0 0 auto;width:40px;height:40px;border-radius:10px;border:1px solid #e2e8f0;background:#fff;color:#334155;cursor:pointer;display:grid;place-items:center}",
+      ".hr-screen__x:hover{background:#f1f5f9}",
+      ".hr-screen__body{flex:1 1 auto;overflow-y:auto;padding:20px;min-height:0}",
+      ".hr-screen__inner{max-width:1100px;margin:0 auto}",
+      ".hr-screen__foot{flex:0 0 auto;display:flex;justify-content:flex-end;align-items:center;gap:10px;padding:14px 20px;background:#fff;border-top:1px solid #e2e8f0}",
+      ".hr-screen__foot .hr-msg{flex:1;font-size:13px;color:#64748b;margin:0}",
+      /* Person card sections */
+      ".hr-sec{background:#fff;border:1px solid #e2e8f0;border-radius:14px;margin:0 0 14px;overflow:hidden}",
+      ".hr-sec>summary{cursor:pointer;list-style:none;padding:13px 16px;font-weight:800;color:#0f172a;display:flex;align-items:center;gap:9px}",
+      ".hr-sec>summary::-webkit-details-marker{display:none}",
+      ".hr-sec>summary .hr-ico{flex:0 0 auto;color:#2d84b3}",
+      ".hr-sec>summary .hr-sec__chev{margin-left:auto;color:#94a3b8;transition:transform .15s}",
+      ".hr-sec[open]>summary{border-bottom:1px solid #eef2f7}",
+      ".hr-sec[open]>summary .hr-sec__chev{transform:rotate(180deg)}",
+      ".hr-fields{padding:14px 16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}",
       ".hr-field{display:flex;flex-direction:column;gap:4px;min-width:0}",
-      ".hr-field label{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.03em}",
+      ".hr-field label{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.03em}",
+      ".hr-field label .hr-ico{flex:0 0 auto;color:#94a3b8}",
       ".hr-field input,.hr-field textarea{font:inherit;font-size:14px;padding:8px 10px;border:1px solid #e2e8f0;border-radius:9px;background:#fff;color:#0f172a;width:100%}",
       ".hr-field textarea{min-height:62px;resize:vertical}",
       ".hr-toggle{display:inline-flex;align-items:center;gap:8px;font-size:14px;color:#0f172a;font-weight:700}",
@@ -180,7 +236,7 @@
       + '</div>';
 
     // People table (basics)
-    html += '<div class="hr-card"><div class="hr-card-h"><h3>Staff</h3><span class="hr-multi">' + peopleRows.length + ' shown</span></div>';
+    html += '<div class="hr-card"><div class="hr-card-h"><h3>' + icon("staff", 17) + 'Staff</h3><span class="hr-multi">' + peopleRows.length + ' shown</span></div>';
     html += '<div class="hr-tbl-wrap"><table class="hr-tbl"><thead><tr><th>Name</th><th>Role</th><th>Shifts</th><th>Status</th></tr></thead><tbody>';
     if (!peopleRows.length) {
       html += '<tr><td colspan="4" class="hr-empty">No people match this filter.</td></tr>';
@@ -200,12 +256,12 @@
     html += '</tbody></table></div></div>';
 
     // Category boxes
-    html += '<div class="hr-card"><div class="hr-card-h"><h3>Categories</h3></div><div style="padding:14px"><div class="hr-boxes">';
+    html += '<div class="hr-card"><div class="hr-card-h"><h3>' + icon("grid", 17) + 'Categories</h3></div><div style="padding:14px"><div class="hr-boxes">';
     CATEGORY_ORDER.forEach(function (sheet) {
       var present = state.rows.some(function (r) { return r.sheet === sheet; });
       if (!present) return;
       html += '<button type="button" class="hr-box" data-hr-cat="' + esc(sheet) + '">'
-        + '<b>' + esc(labelFor(sheet)) + '</b>'
+        + '<span class="hr-box__top"><span class="hr-box__ico">' + sheetIcon(sheet, 16) + '</span><b>' + esc(labelFor(sheet)) + '</b></span>'
         + '<span>' + categoryCount(sheet) + ' record' + (categoryCount(sheet) === 1 ? "" : "s") + '</span>'
         + '</button>';
     });
@@ -242,8 +298,43 @@
     });
   }
 
+  function openScreen(opts) {
+    closeScreen();
+    var screen = document.createElement("div");
+    screen.id = "hrScreen";
+    screen.className = "hr-screen";
+    screen.setAttribute("role", "dialog");
+    screen.setAttribute("aria-modal", "true");
+    screen.innerHTML =
+      '<div class="hr-screen__head">'
+      + '<span class="hr-screen__ico">' + (opts.headIcon || icon("user", 22)) + '</span>'
+      + '<div class="hr-screen__ttl"><h2>' + esc(opts.title || "") + '</h2>'
+      + (opts.sub ? '<div class="hr-screen__sub">' + opts.sub + '</div>' : "")
+      + '</div>'
+      + '<button type="button" class="hr-screen__x" id="hrScreenX" aria-label="Close">' + icon("x", 20) + '</button>'
+      + '</div>'
+      + '<div class="hr-screen__body"><div class="hr-screen__inner">' + (opts.body || "") + '</div></div>'
+      + '<div class="hr-screen__foot">' + (opts.foot || '<button type="button" class="btn btn--ghost" id="hrScreenClose">Close</button>') + '</div>';
+    document.body.appendChild(screen);
+    state.prevHtmlOverflow = document.documentElement.style.overflow;
+    document.documentElement.style.overflow = "hidden";
+    state.escHandler = function (e) { if (e.key === "Escape") closeScreen(); };
+    document.addEventListener("keydown", state.escHandler);
+    var x = screen.querySelector("#hrScreenX");
+    if (x) x.addEventListener("click", function () { closeScreen(); });
+    var c = screen.querySelector("#hrScreenClose");
+    if (c) c.addEventListener("click", function () { closeScreen(); });
+    return screen;
+  }
+
+  function closeScreen() {
+    if (state.escHandler) { document.removeEventListener("keydown", state.escHandler); state.escHandler = null; }
+    var el = document.getElementById("hrScreen");
+    if (el && el.parentNode) el.parentNode.removeChild(el);
+    document.documentElement.style.overflow = state.prevHtmlOverflow || "";
+  }
+
   function openCategory(sheet) {
-    if (typeof deps.openModal !== "function") return;
     var rows = state.rows.filter(function (r) {
       return r.sheet === sheet && matchesFilter(r) && rowMatchesQuery(r);
     });
@@ -266,35 +357,37 @@
         body += '</tr>';
       });
     }
-    var html = '<div class="modal-h"><h2 id="modalTitle">' + esc(labelFor(sheet)) + '</h2></div>'
-      + '<div class="modal-b"><p class="muted" style="margin:0 0 10px;font-size:13px">Tap a row to open and edit that person.</p>'
-      + '<div class="hr-tbl-wrap"><table class="hr-tbl"><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table></div></div>'
-      + '<div class="modal-f"><button type="button" class="btn btn--ghost" id="hrCatClose">Close</button></div>';
-    deps.openModal(html);
-    var mr = document.getElementById("modalRoot") || document;
-    var cl = mr.querySelector("#hrCatClose");
-    if (cl) cl.addEventListener("click", function () { if (deps.closeModal) deps.closeModal(); });
-    mr.querySelectorAll("[data-hr-person]").forEach(function (tr) {
+    var bodyHtml = '<p class="muted" style="margin:0 0 12px;font-size:13px">Tap a row to open and edit that person.</p>'
+      + '<div class="hr-card"><div class="hr-tbl-wrap"><table class="hr-tbl"><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table></div></div>';
+    var screen = openScreen({
+      headIcon: sheetIcon(sheet, 22),
+      title: labelFor(sheet),
+      sub: icon("staff", 12) + " " + rows.length + " record" + (rows.length === 1 ? "" : "s"),
+      body: bodyHtml,
+    });
+    screen.querySelectorAll("[data-hr-person]").forEach(function (tr) {
       tr.addEventListener("click", function () { openPerson(tr.getAttribute("data-hr-person")); });
     });
   }
 
-  function fieldInput(rowId, key, value) {
+  function fieldInput(rowId, key, value, ico) {
     var v = value == null ? "" : String(value);
     var long = v.length > 48;
     var control = long
       ? '<textarea data-field="' + esc(key) + '">' + esc(v) + '</textarea>'
       : '<input type="text" data-field="' + esc(key) + '" value="' + esc(v) + '" />';
-    return '<div class="hr-field" data-row-id="' + esc(rowId) + '"><label>' + esc(key) + '</label>' + control + '</div>';
+    var lab = icon(ico || "field", 13) + "<span>" + esc(key) + "</span>";
+    return '<div class="hr-field" data-row-id="' + esc(rowId) + '"><label>' + lab + '</label>' + control + '</div>';
   }
 
   function openPerson(nameKey) {
-    if (typeof deps.openModal !== "function") return;
     var rows = state.rows.filter(function (r) { return nk(r) === nameKey; });
     if (!rows.length) return;
     var personRow = rows.filter(function (r) { return r.sheet === PEOPLE_SHEET; })[0] || rows[0];
     var displayName = personRow.employee_name || "Person";
     var linked = personActive(personRow);
+    var d0 = personRow.data || {};
+    var roleStr = d0.Role || d0.role || "";
 
     // Order: Employee info first, then the rest by CATEGORY_ORDER, then any others.
     var order = [PEOPLE_SHEET].concat(CATEGORY_ORDER);
@@ -314,35 +407,37 @@
         if (keys.indexOf("Role") < 0 && keys.indexOf("role") < 0) keys.push("Role");
         if (keys.indexOf("Shifts") < 0) keys.push("Shifts");
       }
-      var fields = keys.map(function (k) { return fieldInput(r.id, k, d[k]); }).join("");
+      var secIco = SHEET_ICONS[r.sheet] || "field";
+      var fields = keys.map(function (k) { return fieldInput(r.id, k, d[k], secIco); }).join("");
       if (!fields) fields = '<p class="muted" style="margin:0;font-size:13px">No fields.</p>';
       var openAttr = (r.sheet === PEOPLE_SHEET || idx === 0) ? " open" : "";
+      var chev = '<svg class="hr-ico hr-sec__chev" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>';
       sections += '<details class="hr-sec"' + openAttr + ' data-sheet-row="' + esc(r.id) + '">'
-        + '<summary>' + esc(labelFor(r.sheet)) + '</summary>'
+        + '<summary>' + sheetIcon(r.sheet, 17) + '<span>' + esc(labelFor(r.sheet)) + '</span>' + chev + '</summary>'
         + '<div class="hr-fields">' + fields + '</div></details>';
     });
 
-    var html = '<div class="modal-h"><h2 id="modalTitle">' + esc(displayName) + '</h2></div>'
-      + '<div class="modal-b hr-person">'
-      + '<p style="margin:0 0 12px;font-size:13px">Status: '
-      + (linked
-          ? '<span class="hr-pill hr-pill--on">Active</span> <span class="muted">has a login account</span>'
-          : '<span class="hr-pill hr-pill--off">Inactive</span> <span class="muted">no login account</span>')
-      + '</p>'
-      + sections
-      + '<p id="hrPersonMsg" class="muted" style="margin:8px 0 0;font-size:13px"></p>'
-      + '</div>'
-      + '<div class="modal-f">'
-      + '<button type="button" class="btn btn--ghost" id="hrPersonCancel">Close</button>'
-      + '<button type="button" class="btn btn--pri" id="hrPersonSave">Save changes</button>'
-      + '</div>';
-    deps.openModal(html);
+    var pill = linked
+      ? '<span class="hr-pill hr-pill--on">Active</span> <span class="muted" style="font-weight:600">has a login account</span>'
+      : '<span class="hr-pill hr-pill--off">Inactive</span> <span class="muted" style="font-weight:600">no login account</span>';
+    var sub = (roleStr ? '<span>' + esc(roleStr) + '</span> · ' : "") + pill;
 
-    var mr = document.getElementById("modalRoot") || document;
-    var cancel = mr.querySelector("#hrPersonCancel");
-    if (cancel) cancel.addEventListener("click", function () { if (deps.closeModal) deps.closeModal(); });
-    var saveBtn = mr.querySelector("#hrPersonSave");
-    if (saveBtn) saveBtn.addEventListener("click", function () { savePerson(nameKey, mr, saveBtn); });
+    var foot = '<p id="hrPersonMsg" class="hr-msg"></p>'
+      + '<button type="button" class="btn btn--ghost" id="hrPersonCancel">Close</button>'
+      + '<button type="button" class="btn btn--pri" id="hrPersonSave">Save changes</button>';
+
+    var screen = openScreen({
+      headIcon: icon("user", 22),
+      title: displayName,
+      sub: sub,
+      body: '<div class="hr-person">' + sections + '</div>',
+      foot: foot,
+    });
+
+    var cancel = screen.querySelector("#hrPersonCancel");
+    if (cancel) cancel.addEventListener("click", function () { closeScreen(); });
+    var saveBtn = screen.querySelector("#hrPersonSave");
+    if (saveBtn) saveBtn.addEventListener("click", function () { savePerson(nameKey, screen, saveBtn); });
   }
 
   function collectRowData(mr, rowId) {
@@ -370,17 +465,25 @@
 
     // We loaded every row, so `rows` already holds all rows for this person.
     // Active is derived from the login account, so we only persist field edits.
+    // .select() confirms the write actually landed (RLS blocks return 0 rows, no error).
+    var blocked = 0;
     var ops = rows.map(function (r) {
       var newData = collectRowData(mr, r.id);
-      return client.from("hr_records").update({ data: newData }).eq("id", r.id).then(function (res) {
+      return client.from("hr_records").update({ data: newData }).eq("id", r.id).select().then(function (res) {
         if (res.error) throw res.error;
+        if (!(res.data && res.data.length)) { blocked++; return; }
         r.data = newData;
       });
     });
 
     Promise.all(ops).then(function () {
+      if (blocked) {
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = "Save changes"; }
+        if (msg) msg.textContent = "Not saved: no rows were updated. You are likely not signed in as an admin (RLS blocks the change). Sign in to the admin dashboard and retry.";
+        return;
+      }
       deps.toast("Saved.");
-      if (deps.closeModal) deps.closeModal();
+      closeScreen();
       rebuildDerived();
       render();
     }).catch(function (err) {
