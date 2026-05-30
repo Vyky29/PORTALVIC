@@ -125,6 +125,16 @@
         </div>
       </div>
 
+      <div class="card hidden" id="grandCard">
+        <div class="card-pad" style="display:flex;justify-content:center;align-items:center;gap:14px;flex-wrap:wrap;text-align:center">
+          <div>
+            <p style="margin:0;font-weight:800;color:var(--ink);font-size:16px">Total this month (everyone)</p>
+            <p class="muted" style="margin:2px 0 0;font-size:12px">Timesheets + zero-hours + contract / invoice combined.</p>
+          </div>
+          <div style="font-size:24px;font-weight:800;color:var(--ink)" id="grandTotal">£0.00</div>
+        </div>
+      </div>
+
       <div class="card hidden" id="previewCard">
         <div class="card-pad">
           <p style="margin:0 0 10px;font-weight:700;color:var(--ink)">Document preview</p>
@@ -152,6 +162,8 @@
     const missingCard = document.getElementById("missingCard");
     const missingWrap = document.getElementById("missingWrap");
     const missingList = document.getElementById("missingList");
+    const grandCard = document.getElementById("grandCard");
+    const grandTotalEl = document.getElementById("grandTotal");
     const submittedCard = document.getElementById("submittedCard");
     const submittedTable = document.getElementById("submittedTable");
     const contractsWrap = document.getElementById("contractsWrap");
@@ -244,6 +256,10 @@
       }
 
       renderSubmittedTable(out);
+
+      const grand = (Number(t.gross) || 0) + (Number(s.contractTotal) || 0);
+      grandTotalEl.textContent = "£" + money(grand);
+      grandCard.classList.remove("hidden");
 
       const missing = Array.isArray(out.missing) ? out.missing : [];
       if (missing.length) {
