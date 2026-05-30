@@ -722,13 +722,18 @@
   }
 
   // Open the editable full-screen record for a single client_payments id.
+  // Inject the screen CSS first: when called from the Orders catalogue the
+  // module may not have been mounted yet, so the .pay-screen styles (position
+  // fixed + z-index) would otherwise be missing and the overlay renders behind.
   function openRecord(id) {
+    injectStyleOnce();
     ensureLoaded(function (ok) { if (ok) openDetail(id); });
   }
 
   // Open one editable record (1 id) or the intermediate list (several ids) for
   // a participant/family — used by the Orders catalogue "Edit" action.
   function openRecords(name, ids) {
+    injectStyleOnce();
     ids = (ids || []).filter(Boolean);
     if (!ids.length) return;
     ensureLoaded(function (ok) {
