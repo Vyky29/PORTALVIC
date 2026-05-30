@@ -902,9 +902,12 @@ body:has(#workspace .dash-hub--dayops) .admin-main{
 .dash-hub--dayops .dash-hub__panel--team > .dash-hub__grid,
 .dash-hub--dayops .dash-hub__sessions-grids > .dash-hub__grid{
   display:grid;
-  align-content:stretch;
+  /* Fixed, identical row height across Team + both Sessions rows so every tile
+     is exactly the same height (widths still vary per row). Rows are centred in
+     the panel so the spare vertical space stays balanced. */
+  align-content:center;
   align-items:stretch;
-  grid-auto-rows:1fr;
+  grid-auto-rows:clamp(118px,15.5vh,150px);
   gap:clamp(10px,1.2vh,14px);
   min-height:0;
 }
