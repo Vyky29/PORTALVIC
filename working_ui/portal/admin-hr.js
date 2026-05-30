@@ -122,6 +122,7 @@
       ".hr-tbl tbody tr{cursor:pointer}",
       ".hr-tbl tbody tr:hover{background:#f8fafc}",
       ".hr-name{font-weight:700;color:#0f172a;white-space:nowrap}",
+      ".hr-tbl--center th,.hr-tbl--center td{text-align:center;vertical-align:middle}",
       ".hr-pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;margin-left:6px}",
       ".hr-pill--on{background:#e7f6ee;color:#15803d}",
       ".hr-pill--off{background:#fef2f2;color:#b91c1c}",
@@ -225,6 +226,22 @@
 
   function personActive(r) { return !!state.linkedKeys[nk(r)]; }
 
+  // Read the first non-empty value among likely matrix keys (the workbook column
+  // names vary), so the staff table can surface fields without a fixed schema.
+  function pickData(d, keys) {
+    d = d || {};
+    for (var i = 0; i < keys.length; i++) {
+      var v = d[keys[i]];
+      if (v != null && String(v).trim() && String(v).trim() !== "-") return String(v).trim();
+    }
+    return "";
+  }
+  var STAFF_COL_KEYS = {
+    services: ["Services booked for", "Services booked", "Services", "Service", "Programmes", "Programme", "Activities", "Activity"],
+    venues: ["Venues", "Venue", "Sites", "Site", "Locations", "Location"],
+    rota: ["Days on rota", "Days on Rota", "Rota days", "Days", "Rota", "Working days", "Days working", "Availability"]
+  };
+
   function matchesFilter(r) {
     if (state.activeFilter === "all") return true;
     if (state.activeFilter === "inactive") return !personActive(r);
@@ -278,9 +295,9 @@
 
     // People table (basics)
     html += '<div class="hr-card"><div class="hr-card-h"><h3>' + icon("staff", 17) + 'Staff</h3><span class="hr-multi">' + peopleRows.length + ' shown</span></div>';
-    html += '<div class="hr-tbl-wrap"><table class="hr-tbl"><thead><tr><th>Name</th><th>Role</th><th>Shifts</th><th>Status</th></tr></thead><tbody>';
+    html += '<div class="hr-tbl-wrap"><table class="hr-tbl hr-tbl--center"><thead><tr><th>Name</th><th>Role</th><th>Shifts</th><th>Services booked for</th><th>Venues</th><th>Days on rota</th><th>Status</th></tr></thead><tbody>';
     if (!peopleRows.length) {
-      html += '<tr><td colspan="4" class="hr-empty">No people match this filter.</td></tr>';
+      html += '<tr><td colspan="7" class="hr-empty">No people match this filter.</td></tr>';
     } else {
       peopleRows.forEach(function (p) {
         var d = p.data || {};
@@ -291,10 +308,17 @@
         var offChip = up.length
           ? '<span class="hr-off-chip" title="' + esc(up.map(function (u) { return fmtDate(u.off_date); }).join(", ")) + '">' + icon("cal", 12) + up.length + ' day' + (up.length === 1 ? "" : "s") + ' off</span>'
           : "";
+        var dash = '<span class="muted">—</span>';
+        var svc = pickData(d, STAFF_COL_KEYS.services);
+        var ven = pickData(d, STAFF_COL_KEYS.venues);
+        var rota = pickData(d, STAFF_COL_KEYS.rota);
         html += '<tr data-hr-person="' + esc(nk(p)) + '">'
           + '<td class="hr-name">' + esc(p.employee_name || "—") + '</td>'
-          + '<td>' + esc(d.Role || d.role || "") + '</td>'
-          + '<td>' + esc(d.Shifts || "") + '</td>'
+          + '<td>' + (esc(d.Role || d.role || "") || dash) + '</td>'
+          + '<td>' + (esc(d.Shifts || "") || dash) + '</td>'
+          + '<td>' + (esc(svc) || dash) + '</td>'
+          + '<td>' + (esc(ven) || dash) + '</td>'
+          + '<td>' + (esc(rota) || dash) + '</td>'
           + '<td>' + pill + offChip + '</td></tr>';
       });
     }
