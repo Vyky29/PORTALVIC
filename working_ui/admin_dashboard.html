@@ -14767,7 +14767,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }).join('');
       return (
         '<h1 class="page-title">Reviews (instructor / lead)</h1>'+
-        '<p class="page-intro">Term-style progress summaries from instructors and leads (mock data).</p>'+
+        '<p class="page-intro">Term-style progress summaries from instructors and leads.</p>'+
         '<div class="card"><div class="card-pad" style="overflow:auto;padding:0"><table class="tbl tbl--center" style="min-width:900px"><thead><tr><th>Participant</th><th>By</th><th>Date</th><th>Level</th><th>Progress</th><th>Session quality</th><th>Engage</th><th>Skills</th><th>Support</th><th></th></tr></thead><tbody>'+rv+'</tbody></table></div></div>'
       );
     }
@@ -14802,7 +14802,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }).join('');
       return (
         '<h1 class="page-title">Report requests (global)</h1>'+
-        '<p class="page-intro">Who asked for which pack, status, and owner — the work queue only (mock).</p>'+
+        '<p class="page-intro">Who asked for which pack, status, and owner — the work queue only.</p>'+
         '<div class="card"><div class="card-pad" style="overflow:auto;padding:0"><table class="tbl tbl--center" style="min-width:1080px"><thead><tr><th>Participant</th><th>Report type</th><th>Requested by</th><th>Date requested</th><th>Deadline</th><th>Status</th><th>Assigned</th><th>Quick actions</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>'+
         '<div class="card card-pad" style="margin-top:12px"><p class="muted" style="margin:0;font-size:12px;max-width:52rem;overflow-wrap:break-word">Suggested statuses: <strong>requested</strong> · <strong>in progress</strong> · <strong>generated</strong> · <strong>sent</strong>. “Generate” opens composition in the participant profile in a live build.</p></div>'
       );
@@ -15828,7 +15828,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return '<tr><td style="white-space:nowrap"><strong>'+esc(s.name)+'</strong></td><td class="muted" style="white-space:nowrap">'+esc(s.role)+'</td><td style="text-align:center"><span class="chip '+(n>=100?'chip--ok':(n>=50?'chip--info':'chip--pend'))+'">'+n+'%</span></td>'+cells+'</tr>';
       }).join('');
       return '<h1 class="page-title">Documents &amp; compliance</h1>'+
-        '<p class="page-intro">Track who has acknowledged which policy (demo matrix until live).</p>'+
+        '<p class="page-intro">Track who has acknowledged which policy.</p>'+
         '<div class="card" style="margin-bottom:14px"><div class="card-h"><h3>Production wiring (short)</h3></div><div class="card-pad"><ul class="muted" style="margin:0;padding-left:18px;line-height:1.55;font-size:13px">'+
         '<li>Current staff portal can keep acknowledgments <strong>only in the browser</strong> (localStorage) with PDF download from the page; optional later: <code style="font-size:12px">document_type = staff_policy_ack</code> rows in <code style="font-size:12px">documents</code> for My Documents + admin queries.</li>'+
         '<li>RLS on <code style="font-size:12px">documents</code> only allows each user to read their own rows — add an admin policy, RPC, or Edge Function to list acknowledgments across staff.</li>'+
@@ -15842,14 +15842,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function viewReenrolPayments(){
       // Live, editable client re-enrolment payments (powered by public.client_payments).
       // Rendered by /portal/admin-payments.js into #payModuleRoot (see bindView).
-      return '<h1 class="page-title">Programme payments</h1><p class="page-intro">Client payments from the SUMMER re-enrolments workbook — totals, who is paid vs outstanding, by private (parents) and local-authority groups. Tap a client to open the full record and edit status, amount, service and any field.</p>'+
+      return '<h1 class="page-title" style="display:flex;align-items:center;gap:10px"><span aria-hidden="true" style="display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;background:#eff6ff;color:#2d84b3"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="none"><text x="12" y="17" text-anchor="middle" font-size="15" font-weight="800" fill="currentColor" font-family="system-ui,Segoe UI,sans-serif">\u00a3</text></svg></span><span>Programme payments</span></h1>'+
+        '<p class="page-intro">Track client payments — totals, who has paid vs outstanding, split by private (parents) and local-authority groups. Tap a client to open the full record and edit status, amount, service and any field.</p>'+
         '<div id="payModuleRoot"></div>';
     }
 
     function viewStaffHR(){
       // Live, editable Staff & HR (powered by public.hr_records). Rendered by
       // /portal/admin-hr.js into #hrModuleRoot (see bindView 'staffhr').
-      return '<h1 class="page-title">Staff &amp; HR</h1><p class="page-intro">Live staff &amp; HR from the STAFF MATRIX — filter by active, tap a person to open and edit every detail. Create employment contracts from <button type="button" class="btn btn--ghost btn--sm" data-view-target="staffhr_contracts" style="vertical-align:baseline;padding:0 4px;font-size:inherit">Contracts</button> in H&amp;R.</p>'+
+      return '<h1 class="page-title">Staff &amp; HR</h1><p class="page-intro">Live staff &amp; HR — filter by active, tap a person to open and edit every detail. Create employment contracts from <button type="button" class="btn btn--ghost btn--sm" data-view-target="staffhr_contracts" style="vertical-align:baseline;padding:0 4px;font-size:inherit">Contracts</button> in H&amp;R.</p>'+
         '<div class="toolbar" style="margin-bottom:14px;flex-wrap:wrap;gap:8px">'+
         '<button type="button" class="btn btn--pri" data-view-target="staffhr_contracts">+ New employment contract</button>'+
         '<button type="button" class="btn btn--sec" data-open-compose data-preset="announcement">Compose announcement</button></div>'+
@@ -16170,7 +16171,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function viewRecruitment(){
       return (
         '<h1 class="page-title">Recruitment (Indeed/Web)</h1>'+
-        '<p class="page-intro">Hiring pipeline for roles — separate from family intake (demo).</p>'+
+        '<p class="page-intro">Hiring pipeline for roles — separate from family intake.</p>'+
         '<div class="card"><div class="card-pad"><p class="muted" style="margin:0 0 12px">This board connects to the hiring you already track. Use <button type="button" class="btn btn--pri btn--sm" data-view-target="staffhr">Staff &amp; HR</button> for full roster, shifts, and interview list.</p>'+
         '<div class="op-banner" style="margin:0"><strong>Demo</strong> — shortlist: Ellis F. (relief) · review panel Fri.</div></div></div>'
       );
