@@ -39,6 +39,7 @@
   var state = {
     rootEl: null,
     rows: [],
+    mode: "payments",     // payments | orders | participants (same data, different framing)
     statusFilter: "active", // active (re-enrolled) | all | outstanding | paid | notreenrolled
     sheetFilter: "",      // "" = all groups, else sheet name
     query: "",
@@ -282,10 +283,13 @@
       + '</div>';
 
     // Income by funding type (private parents vs funded / local authority).
-    html += '<div class="pay-groups">'
-      + grpCard("priv", "pay-grp--priv", labelFor("PARENTS"), grp.PARENTS)
-      + grpCard("fund", "pay-grp--fund", labelFor("LA"), grp.LA)
-      + '</div>';
+    // Only on the dedicated payments screen; Participants/Orders stay leaner.
+    if (state.mode === "payments") {
+      html += '<div class="pay-groups">'
+        + grpCard("priv", "pay-grp--priv", labelFor("PARENTS"), grp.PARENTS)
+        + grpCard("fund", "pay-grp--fund", labelFor("LA"), grp.LA)
+        + '</div>';
+    }
 
     // Filter bar
     var sheetOpts = '<option value="">All groups</option>';
@@ -302,29 +306,36 @@
       + '<input type="search" class="pay-search" id="paySearch" placeholder="Search client, parent…" value="' + esc(state.query) + '" />'
       + '</div>';
 
-    // Table
-    html += '<div class="pay-card"><div class="pay-card-h"><h3>' + icon("clients", 17) + 'Participants</h3><span style="font-size:12px;color:#64748b">' + visible.length + ' shown</span></div>';
-    html += '<div class="pay-tbl-wrap"><table class="pay-tbl"><thead><tr><th>Client</th><th>Group</th><th>Service</th><th>Term</th><th>Parent / LA</th><th class="num">Total</th><th>Status</th></tr></thead><tbody>';
-    if (!visible.length) {
-      html += '<tr><td colspan="7" class="pay-empty">No clients match this filter.</td></tr>';
+    // Table — Participants roster (aggregated) for "participants" mode, otherwise
+    // one row per record (Orders / Payments). Same source, detail, edits + audit.
+    if (state.mode === "participants") {
+      html += participantsTableHtml(visible);
     } else {
-      visible.sort(function (a, b) {
-        var s = String(a.sheet).localeCompare(String(b.sheet));
-        if (s) return s;
-        return String(a.client_name || "").localeCompare(String(b.client_name || ""));
-      });
-      visible.forEach(function (r) {
-        html += '<tr data-pay-id="' + esc(r.id) + '">'
-          + '<td class="pay-name">' + esc(r.client_name || "—") + "</td>"
-          + "<td>" + esc(labelFor(r.sheet)) + "</td>"
-          + "<td>" + esc(serviceFor(r)) + "</td>"
-          + "<td>" + esc(termFor(r)) + "</td>"
-          + "<td>" + esc(r.parent_name || "") + "</td>"
-          + '<td class="num">' + money(r.amount) + "</td>"
-          + "<td>" + pillFor(r) + "</td></tr>";
-      });
+      var cardTitle = state.mode === "orders" ? "Orders" : "Participants";
+      html += '<div class="pay-card"><div class="pay-card-h"><h3>' + icon("clients", 17) + esc(cardTitle) + '</h3><span style="font-size:12px;color:#64748b">' + visible.length + ' shown</span></div>';
+      html += '<div class="pay-tbl-wrap"><table class="pay-tbl"><thead><tr><th>' + (state.mode === "orders" ? "Participant" : "Client") + '</th><th>Group</th><th>Service</th><th>Term</th><th>Parent / LA</th><th class="num">Total</th><th>Status</th></tr></thead><tbody>';
+      if (!visible.length) {
+        html += '<tr><td colspan="7" class="pay-empty">No records match this filter.</td></tr>';
+      } else {
+        visible.sort(function (a, b) {
+          var s = String(a.sheet).localeCompare(String(b.sheet));
+          if (s) return s;
+          return String(a.client_name || "").localeCompare(String(b.client_name || ""));
+        });
+        visible.forEach(function (r) {
+          html += '<tr data-pay-id="' + esc(r.id) + '">'
+            + '<td class="pay-name">' + esc(r.client_name || "—") + "</td>"
+            + "<td>" + esc(labelFor(r.sheet)) + "</td>"
+            + "<td>" + esc(serviceFor(r)) + "</td>"
+            + "<td>" + esc(termFor(r)) + "</td>"
+            + "<td>" + esc(r.parent_name || "") + "</td>"
+            + '<td class="num">' + money(r.amount) + "</td>"
+            + "<td>" + pillFor(r) + "</td></tr>";
+        });
+      }
+      html += "</tbody></table></div></div>";
     }
-    html += "</tbody></table></div></div></div>";
+    html += "</div>";
 
     root.innerHTML = html;
     bindRoot(root);
@@ -332,6 +343,52 @@
 
   function seg(id, label) {
     return '<button type="button" data-pay-status="' + id + '" aria-pressed="' + (state.statusFilter === id) + '">' + label + "</button>";
+  }
+
+  // Aggregate orders into one row per participant (used by Participants view).
+  function participantsTableHtml(rows) {
+    var byName = {};
+    var order = [];
+    rows.forEach(function (r) {
+      var key = String(r.client_name || "").toLowerCase().trim() || ("id:" + r.id);
+      if (!byName[key]) {
+        byName[key] = { name: r.client_name || "—", sheet: r.sheet, services: {}, orders: [], total: 0, anyOut: false };
+        order.push(key);
+      }
+      var g = byName[key];
+      g.orders.push(r);
+      var svc = serviceFor(r);
+      if (svc && svc !== "—") g.services[svc] = 1;
+      g.total += Number(r.amount) || 0;
+      if (category(r) === "outstanding") g.anyOut = true;
+    });
+    var people = order.map(function (k) { return byName[k]; }).sort(function (a, b) {
+      return String(a.name).localeCompare(String(b.name));
+    });
+
+    var html = '<div class="pay-card"><div class="pay-card-h"><h3>' + icon("clients", 17) + 'Participants</h3><span style="font-size:12px;color:#64748b">' + people.length + ' shown</span></div>';
+    html += '<div class="pay-tbl-wrap"><table class="pay-tbl"><thead><tr><th>Participant</th><th>Group</th><th>Service(s)</th><th class="num">Orders</th><th class="num">Total</th><th>Status</th></tr></thead><tbody>';
+    if (!people.length) {
+      html += '<tr><td colspan="6" class="pay-empty">No participants match this filter.</td></tr>';
+    } else {
+      people.forEach(function (g) {
+        var svcList = Object.keys(g.services);
+        var svcTxt = svcList.length ? svcList.join(" · ") : "—";
+        var pill = g.anyOut
+          ? '<span class="pay-pill pay-pill--out">Outstanding</span>'
+          : '<span class="pay-pill pay-pill--paid">Paid</span>';
+        // Click opens the first order's full record (all edits + audit shared).
+        html += '<tr data-pay-id="' + esc(g.orders[0].id) + '">'
+          + '<td class="pay-name">' + esc(g.name) + "</td>"
+          + "<td>" + esc(labelFor(g.sheet)) + "</td>"
+          + "<td>" + esc(svcTxt) + "</td>"
+          + '<td class="num">' + g.orders.length + "</td>"
+          + '<td class="num">' + money(g.total) + "</td>"
+          + "<td>" + pill + "</td></tr>";
+      });
+    }
+    html += "</tbody></table></div></div>";
+    return html;
   }
 
   function kpiCard(ico, cls, label, value) {
@@ -530,17 +587,20 @@
     });
   }
 
-  function mount(rootEl) {
+  function mount(rootEl, opts) {
     if (!rootEl) return;
     injectStyleOnce();
     state.rootEl = rootEl;
-    rootEl.innerHTML = '<p class="muted" style="padding:8px 0">Loading payments…</p>';
+    // mode: "payments" (default) | "orders" | "participants" — same data, same
+    // detail/edit/audit; only the framing of the list differs per related view.
+    state.mode = (opts && opts.mode) || "payments";
+    rootEl.innerHTML = '<p class="muted" style="padding:8px 0">Loading…</p>';
 
     var client = deps.getClient();
     if (!client) {
       rootEl.innerHTML = '<p class="muted" style="padding:8px 0">Connecting to Supabase… open this view again in a moment.</p>';
       global.addEventListener && global.addEventListener("portal:supabase-ready", function () {
-        if (state.rootEl === rootEl) mount(rootEl);
+        if (state.rootEl === rootEl) mount(rootEl, { mode: state.mode });
       }, { once: true });
       return;
     }

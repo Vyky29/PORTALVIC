@@ -22,7 +22,7 @@
   <script src="/portal/portal_dm_voice.js?v=20260531-dm-voice"></script>
   <script src="/portal/portal-change-log.js?v=20260530-changelog"></script>
   <script src="/portal/admin-hr.js?v=20260530-hr-changelog"></script>
-  <script src="/portal/admin-payments.js?v=20260530-pay-changelog"></script>
+  <script src="/portal/admin-payments.js?v=20260530-pay-modes-linked"></script>
   <script src="/portal/admin-onboarding.js?v=20260530-onboarding-clickdocs"></script>
   <script src="/portal/admin-logs.js?v=20260530-logs"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
@@ -11079,6 +11079,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var clientSel = ordersPortalClientFilterSelectHtml(booking.ordersClientFilter);
       return '<h1 class="page-title">Orders</h1>'+
         '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word;display:flex;flex-wrap:wrap;align-items:center;gap:8px">Bookings and orders for the range you pick. '+scopeChip+'</p>'+
+        '<section class="section" style="margin:0 0 18px"><div class="section-h"><h2>Orders · live</h2><p>The booked services and balances — same records as Programme payments, editable here and logged.</p></div><div id="payOrdersRoot"></div></section>'+
         '<div class="filter-row" style="align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;min-width:0;max-width:100%">'+
         '<label class="muted" for="bookingOrdersRange" style="white-space:nowrap">Show orders:</label> '+
         '<select class="sel" id="bookingOrdersRange" style="max-width:200px" aria-label="Orders time range">'+
@@ -12063,7 +12064,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return (
         '<div class="pax-contacts-toolbar"><h1 class="page-title">Participants</h1>'+
         '<button type="button" class="btn btn--pri" id="paxContactsAddBtn"><span aria-hidden="true">+ </span>Add new contact</button></div>'+
-        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">Families from the <strong>overview / feedback</strong> export (reference week 11–17 May), matched to <strong>Participants &amp; parents</strong> and <strong>Clients Info</strong> — same names as staff <strong>My clients</strong> / <strong>All clients</strong>.</p>'+
+        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">Participants and their booked services — tap anyone to open the full record.</p>'+
+        '<section class="section" style="margin:0 0 18px"><div class="section-h"><h2>Participants · live</h2><p>Each participant with their service(s), orders and balance — same records as Programme payments, editable here and logged.</p></div><div id="payParticipantsRoot"></div></section>'+
         '<div class="pax-contacts-filters">'+
         '<div class="pax-contacts-fld"><label for="paxContactsSearch">Search</label><input class="inp" id="paxContactsSearch" type="search" placeholder="Search for a contact" autocomplete="off" /></div>'+
         '<div class="pax-contacts-fld"><label for="paxContactsBookingStatus">Booking status</label><select class="sel" id="paxContactsBookingStatus">'+paxContactsBookingStatusOptionsHtml()+'</select></div>'+
@@ -18081,6 +18083,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(id==='bookings' || id==='orders_all' || id==='c4k_payments'){
         bindBookingModule();
         if(id==='bookings' || id==='orders_all'){
+          if(window.AdminPayments && $('payOrdersRoot')){
+            window.AdminPayments.configure({ getClient:getSchedSupabaseClient, toast:portalAdminToast, esc:esc, openModal:openModal, closeModal:closeModal });
+            window.AdminPayments.mount($('payOrdersRoot'), { mode:'orders' });
+          }
           var scrollBk = state.pendingBookingsScroll;
           state.pendingBookingsScroll = null;
           if(scrollBk){
@@ -18103,6 +18109,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(id==='participant_achievements') bindParticipantAchievementsModule();
       if(id==='staff_live_map') bindStaffLiveMapModule();
       if(id==='clients'){
+        if(window.AdminPayments && $('payParticipantsRoot')){
+          window.AdminPayments.configure({ getClient:getSchedSupabaseClient, toast:portalAdminToast, esc:esc, openModal:openModal, closeModal:closeModal });
+          window.AdminPayments.mount($('payParticipantsRoot'), { mode:'participants' });
+        }
         var root2 = $('workspace');
         function paxContactsFindById(pid){
           var L = paxContactsUnifiedList();
