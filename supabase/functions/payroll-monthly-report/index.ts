@@ -166,7 +166,7 @@ async function aggregate(supabase: any, targetMonthIso: string) {
       supabase.from("staff_profiles").select("id, full_name, username"),
       supabase
         .from("staff_timesheet_imports")
-        .select("user_id, period_month, name, role, pay_type, total_hours, gross")
+        .select("user_id, period_month, name, role, pay_type, total_hours, gross, contract_type")
         .eq("period_month", targetMonthIso),
       supabase.from("staff_payroll_start").select("user_id, start_month"),
       // Contract/invoice people across ALL months (paid outside the timesheet flow,
@@ -246,7 +246,7 @@ async function aggregate(supabase: any, targetMonthIso: string) {
   const importRows = importRaw || [];
   const importedTimesheetIds = new Set<string>();
   const contractIds = new Set<string>();
-  const contracts: { name: string; role: string; gross: number | null }[] = [];
+  const contracts: { name: string; role: string; gross: number | null; contractType: string }[] = [];
 
   for (const im of importRows) {
     const uid = String(im.user_id || "");
@@ -254,7 +254,7 @@ async function aggregate(supabase: any, targetMonthIso: string) {
     const role = String(im.role || (uid ? expected.get(uid) || "" : "")).trim();
     const gross = im.gross == null ? null : Number(im.gross);
     if (String(im.pay_type || "timesheet") === "contract") {
-      contracts.push({ name, role, gross });
+      contracts.push({ name, role, gross, contractType: String(im.contract_type || "").trim() });
       if (uid) contractIds.add(uid);
       continue;
     }
@@ -512,7 +512,8 @@ async function buildPdf(
     y -= 16;
     for (const c of data.contracts) {
       ensureRoom(16);
-      const label = c.role ? `${c.name} — ${c.role}` : c.name;
+      const bits = [c.role, c.contractType].filter((x) => x && String(x).trim());
+      const label = bits.length ? `${c.name} — ${bits.join(" · ")}` : c.name;
       drawText(`•  ${clip(label, tableW - 70, font, 10)}`, margin + 2, y - 4, 10, font, ink);
       drawText(c.gross == null ? "—" : `£${money(c.gross)}`, tableX + tableW - 4 - font.widthOfTextAtSize(c.gross == null ? "—" : `£${money(c.gross)}`, 10), y - 4, 10, font, ink);
       y -= 15;

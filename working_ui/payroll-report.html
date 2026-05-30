@@ -316,14 +316,15 @@
           "<tr>" +
           `<td>${esc(c.name)}</td>` +
           `<td>${esc(c.role || "")}</td>` +
+          `<td>${esc(c.contractType || "")}</td>` +
           `<td class="num">${c.gross == null ? "—" : "£" + money(c.gross)}</td>` +
           "</tr>"
         ).join("");
         const ctotal = contracts.reduce((a, c) => a + (Number(c.gross) || 0), 0);
         contractsTable.innerHTML =
-          "<thead><tr><th>Name</th><th>Role</th><th class='num'>Gross</th></tr></thead>" +
+          "<thead><tr><th>Name</th><th>Role</th><th>Contract</th><th class='num'>Gross</th></tr></thead>" +
           `<tbody>${crows}</tbody>` +
-          `<tfoot><tr><td>SUBTOTAL</td><td></td><td class="num">£${money(ctotal)}</td></tr></tfoot>`;
+          `<tfoot><tr><td>SUBTOTAL</td><td></td><td></td><td class="num">£${money(ctotal)}</td></tr></tfoot>`;
         contractsWrap.classList.remove("hidden");
       } else {
         contractsWrap.classList.add("hidden");
