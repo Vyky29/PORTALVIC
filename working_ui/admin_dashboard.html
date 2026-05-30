@@ -11900,7 +11900,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var c = P && P.comm ? P.comm : {};
       var opId = P.mockEnrichId || P.id;
       var od = (MOCK.c4kPaxOperationalById && opId && MOCK.c4kPaxOperationalById[opId]) ? MOCK.c4kPaxOperationalById[opId] : null;
-      var tabBtn = function(id, label, on){ return '<button type="button" class="c4k-tab-btn'+(on?' is-active':'')+'" data-c4k-tab="'+id+'" role="tab" '+(on?'aria-selected="true"':'')+'">'+esc(label)+'</button>'; };
+      var C4K_TAB_ICONS = { ov:'dashboard', preg:'c4k_registers', asm:'portal_docs_checklist', svc:'c4k_services', ses:'c4k_sessions', att:'portal_docs_timesheet', bill:'invoices', pay:'c4k_payments', rpt:'c4k_reports', rev:'c4k_reviews' };
+      var tabBtn = function(id, label, on){
+        var ic = NAV_ICON_SVGS[C4K_TAB_ICONS[id]];
+        var icoHtml = ic ? ('<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:0 0 auto">'+ic+'</svg>') : '';
+        return '<button type="button" class="c4k-tab-btn'+(on?' is-active':'')+'" data-c4k-tab="'+id+'" role="tab" '+(on?'aria-selected="true"':'')+'><span style="display:inline-flex;align-items:center;gap:6px">'+icoHtml+esc(label)+'</span></button>';
+      };
       var fl = od && od.flags ? od.flags : {};
       var flagChip = function(key, label){
         var on = !!fl[key];
