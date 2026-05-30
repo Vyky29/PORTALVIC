@@ -1302,7 +1302,24 @@
         try {
           await submitTimesheet(auth.supabase);
         } catch (rowErr) {
-          console.warn("[timesheet] My Documents OK; staff_timesheets insert failed:", rowErr);
+          // The PDF is already in Documents, so we don't block the worker. But we
+          // must NOT swallow this silently: a failed insert means the structured
+          // row the payroll report reads is missing (suspected cause: the
+          // staff_timesheets server trigger). Surface full detail for diagnosis;
+          // the admin can backfill via staff_timesheet_imports meanwhile.
+          console.error(
+            "[timesheet] staff_timesheets insert FAILED (PDF saved, but no payroll row).",
+            "userId=", state.userId,
+            "period_month=", `${state.periodEnd.slice(0, 7)}-01`,
+            "error=", rowErr
+          );
+          try {
+            window.__timesheetInsertError = {
+              when: new Date().toISOString(),
+              userId: state.userId,
+              message: String((rowErr && rowErr.message) || rowErr)
+            };
+          } catch (_) {}
         }
         const s = submissionLateStatus();
         const gross = Number(state.totalCost || 0);

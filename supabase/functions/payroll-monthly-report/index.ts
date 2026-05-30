@@ -122,7 +122,7 @@ interface WorkerRow {
   userId: string;
   name: string;
   role: string;
-  hours: number;
+  hours: number | null;
   rate: number | null;
   gross: number | null;
   penalty: number;
@@ -145,18 +145,23 @@ function dedupeLatest(rows: any[]): any[] {
 }
 
 async function aggregate(supabase: any, targetMonthIso: string) {
-  const [{ data: tsRaw, error: tsErr }, { data: rates }, { data: roleRates }, { data: profs }] = await Promise.all([
-    supabase
-      .from("staff_timesheets")
-      .select(
-        "submitted_by_user_id, submitted_by_name, role_label, total_hours, hourly_rate_used, total_cost, penalty_amount, net_cost, is_late, created_at"
-      )
-      .eq("period_month", targetMonthIso)
-      .order("created_at", { ascending: true }),
-    supabase.from("staff_pay_rates").select("user_id, role_label, hourly_rate"),
-    supabase.from("staff_role_rates").select("user_id, role, is_primary"),
-    supabase.from("staff_profiles").select("id, full_name, username"),
-  ]);
+  const [{ data: tsRaw, error: tsErr }, { data: rates }, { data: roleRates }, { data: profs }, { data: importRaw }] =
+    await Promise.all([
+      supabase
+        .from("staff_timesheets")
+        .select(
+          "submitted_by_user_id, submitted_by_name, role_label, total_hours, hourly_rate_used, total_cost, penalty_amount, net_cost, is_late, created_at"
+        )
+        .eq("period_month", targetMonthIso)
+        .order("created_at", { ascending: true }),
+      supabase.from("staff_pay_rates").select("user_id, role_label, hourly_rate"),
+      supabase.from("staff_role_rates").select("user_id, role, is_primary"),
+      supabase.from("staff_profiles").select("id, full_name, username"),
+      supabase
+        .from("staff_timesheet_imports")
+        .select("user_id, period_month, name, role, pay_type, total_hours, gross")
+        .eq("period_month", targetMonthIso),
+    ]);
   if (tsErr) throw tsErr;
 
   const nameById = new Map<string, string>();
@@ -202,8 +207,43 @@ async function aggregate(supabase: any, targetMonthIso: string) {
     if (rr.is_primary) expected.set(id, String(rr.role || "").trim() || expected.get(id) || "");
   }
 
+  // Merge hand-imported figures (months that exist only as PDFs / contract pay).
+  // A real portal submission always wins over an import for the same user.
+  const importRows = importRaw || [];
+  const importedTimesheetIds = new Set<string>();
+  const contractIds = new Set<string>();
+  const contracts: { name: string; role: string; gross: number | null }[] = [];
+
+  for (const im of importRows) {
+    const uid = String(im.user_id || "");
+    const name = (uid && nameById.get(uid)) || String(im.name || "Unknown");
+    const role = String(im.role || (uid ? expected.get(uid) || "" : "")).trim();
+    const gross = im.gross == null ? null : Number(im.gross);
+    if (String(im.pay_type || "timesheet") === "contract") {
+      contracts.push({ name, role, gross });
+      if (uid) contractIds.add(uid);
+      continue;
+    }
+    if (uid && submittedIds.has(uid)) continue; // portal submission wins
+    workers.push({
+      userId: uid,
+      name,
+      role,
+      hours: im.total_hours == null ? null : Number(im.total_hours),
+      rate: null,
+      gross,
+      penalty: 0,
+      net: gross,
+      isLate: false,
+    });
+    if (uid) importedTimesheetIds.add(uid);
+  }
+
+  workers.sort((a, b) => a.name.localeCompare(b.name));
+  contracts.sort((a, b) => a.name.localeCompare(b.name));
+
   const notSubmitted = [...expected.entries()]
-    .filter(([id]) => !submittedIds.has(id))
+    .filter(([id]) => !submittedIds.has(id) && !importedTimesheetIds.has(id) && !contractIds.has(id))
     .map(([id, role]) => ({
       userId: id,
       name: nameById.get(id) || id,
@@ -222,7 +262,9 @@ async function aggregate(supabase: any, targetMonthIso: string) {
     { hours: 0, gross: 0, penalty: 0, net: 0 }
   );
 
-  return { workers, notSubmitted, totals };
+  const contractTotal = contracts.reduce((acc, c) => acc + (c.gross || 0), 0);
+
+  return { workers, notSubmitted, totals, contracts, contractTotal };
 }
 
 async function buildPdf(targetMonthIso: string, data: Awaited<ReturnType<typeof aggregate>>) {
@@ -384,6 +426,35 @@ async function buildPdf(targetMonthIso: string, data: Awaited<ReturnType<typeof 
     }
   }
 
+  // Contract / invoice people (paid outside the timesheet flow).
+  if (data.contracts && data.contracts.length) {
+    y -= 12;
+    ensureRoom(40);
+    drawText("Contract / invoice — paid separately", margin, y - 6, 12, bold, ink);
+    y -= 16;
+    drawText(
+      "Not part of the timesheet total above (fixed contract or self-employed invoice).",
+      margin,
+      y - 4,
+      8.5,
+      font,
+      muted
+    );
+    y -= 16;
+    for (const c of data.contracts) {
+      ensureRoom(16);
+      const label = c.role ? `${c.name} — ${c.role}` : c.name;
+      drawText(`•  ${clip(label, tableW - 70, font, 10)}`, margin + 2, y - 4, 10, font, ink);
+      drawText(c.gross == null ? "—" : `£${money(c.gross)}`, tableX + tableW - 4 - font.widthOfTextAtSize(c.gross == null ? "—" : `£${money(c.gross)}`, 10), y - 4, 10, font, ink);
+      y -= 15;
+    }
+    ensureRoom(16);
+    drawText("Contract subtotal", margin + 2, y - 4, 10, bold, ink);
+    const ctStr = `£${money(data.contractTotal || 0)}`;
+    drawText(ctStr, tableX + tableW - 4 - bold.widthOfTextAtSize(ctStr, 10), y - 4, 10, bold, ink);
+    y -= 15;
+  }
+
   y -= 10;
   drawText(
     "Net = Gross minus any late penalty. The accountant applies tax/NI per each worker's HMRC code.",
@@ -499,6 +570,8 @@ Deno.serve(async (req: Request) => {
     monthLabel: monthLabelFromIso(targetMonthIso),
     submitted: data.workers.length,
     notSubmitted: data.notSubmitted.length,
+    contracts: data.contracts.length,
+    contractTotal: data.contractTotal,
     totals: data.totals,
   };
 
@@ -606,6 +679,9 @@ Deno.serve(async (req: Request) => {
     (data.notSubmitted.length
       ? `<p><strong>${data.notSubmitted.length}</strong> worker(s) did NOT submit by the deadline (24th, 00:00) — please do not process them this month. They are listed in the PDF and a £5 late penalty applies to their next timesheet (paid next month).</p>`
       : `<p>All workers with a pay rate have submitted.</p>`) +
+    (data.contracts && data.contracts.length
+      ? `<p><strong>${data.contracts.length}</strong> contract/invoice payment(s) listed separately (subtotal £${money(data.contractTotal || 0)}) — not part of the timesheet total.</p>`
+      : "") +
     `<p>Net = Gross minus any late penalty. Please apply tax/NI per each worker's HMRC code.</p>`;
 
   try {
