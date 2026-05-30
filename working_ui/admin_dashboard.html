@@ -8997,6 +8997,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '<input type="time" id="schedAddEnd" class="inp" style="max-width:120px" value="10:00" /></label>'+
         '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text);min-width:0">Venue (optional)'+
           '<input type="text" id="schedAddVenue" class="inp" style="max-width:160px" placeholder="e.g. Acton" /></label>'+
+        '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text);min-width:0">Who gives it (optional)'+
+          '<input type="text" id="schedAddTrainer" class="inp" style="max-width:170px" placeholder="e.g. Laura" /></label>'+
+        '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text);min-width:0">Where'+
+          '<select class="sel" id="schedAddLocation" style="max-width:140px"><option value="">—</option><option value="room">Room</option><option value="pool">Pool</option><option value="both">Both</option></select></label>'+
         '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text);flex:1;min-width:160px">Note (optional)'+
           '<input type="text" id="schedAddNote" class="inp" placeholder="What is it for" /></label>'+
         '<button type="button" class="btn btn--pri btn--sm" id="schedAddSaveBtn">Add session</button>'+
@@ -9023,6 +9027,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var start = String((($('schedAddStart')||{}).value) || '').trim();
       var end = String((($('schedAddEnd')||{}).value) || '').trim();
       var venue = String((($('schedAddVenue')||{}).value) || '').trim();
+      var trainer = String((($('schedAddTrainer')||{}).value) || '').trim();
+      var location = String((($('schedAddLocation')||{}).value) || '').trim().toLowerCase();
       var note = String((($('schedAddNote')||{}).value) || '').trim();
       if(!staffSlug){ showMsg('Pick a staff member.', 'err'); return; }
       if(!dateIso){ showMsg('Pick a date.', 'err'); return; }
@@ -9044,7 +9050,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           anchor_client_id: kind,
           anchor_time_slot_label: start + ' to ' + end,
           override_type: 'session_add',
-          payload: { kind: kind, label: label, note: note },
+          payload: { kind: kind, label: label, note: note, trainer: trainer, location: location },
           reason: note || (label + ' session'),
           status: 'active',
           superseded_by: null,

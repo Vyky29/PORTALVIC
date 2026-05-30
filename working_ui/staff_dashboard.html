@@ -7213,13 +7213,20 @@
         const sT = { start: stT, end: enT, venue: ov.anchor_venue || '' };
         const note = String(ov.reason || (ov.payload && ov.payload.note) || '').trim();
         const tts = portalSessionRowTimestamps(sessionDateKey, stT, enT, anchor);
+        // Who runs it (centre, under the title) and where it happens (right column).
+        const trainerName = String(ov.payload && ov.payload.trainer || '').trim();
+        const locRaw = String(ov.payload && ov.payload.location || '').trim().toLowerCase();
+        const locLabel = locRaw === 'both' ? 'Room & Pool'
+          : (locRaw === 'pool' ? 'Pool' : (locRaw === 'room' ? 'Room' : ''));
+        const venueTitle = String(ov.anchor_venue || '').trim()
+          .replace(/\S+/g, function(w){ return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase(); });
         extra.push({
           time: rosterSlotTimeLabel(sT),
           kind: 'client',
           clientId: slug,
           name: label,
           activity: label,
-          areaLabel: String(ov.anchor_venue || '').trim(),
+          areaLabel: trainerName,
           poolLocationLabel: null,
           showPoolSymbol: false,
           showSpecialty: false,
@@ -7235,10 +7242,10 @@
           detailsOpenAllowed: true,
           portalOverrideSuppressReviewOrange: true,
           portalOverrideCardTone: 'blue',
-          portalOverrideSymbolText: label,
+          portalOverrideSymbolText: locLabel || label,
           scheduleAdminAdjusted: true,
           portalOverrideHideAdminBadge: true,
-          sessionVenue: String(ov.anchor_venue || '').trim() || '—',
+          sessionVenue: venueTitle || '—',
           __portalScheduleOverride: ov
         });
       });
