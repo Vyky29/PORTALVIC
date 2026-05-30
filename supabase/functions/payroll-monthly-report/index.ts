@@ -152,6 +152,7 @@ async function aggregate(supabase: any, targetMonthIso: string) {
     { data: profs },
     { data: importRaw },
     { data: importStartRaw },
+    { data: contractIdRaw },
   ] = await Promise.all([
       supabase
         .from("staff_timesheets")
@@ -168,8 +169,17 @@ async function aggregate(supabase: any, targetMonthIso: string) {
         .select("user_id, period_month, name, role, pay_type, total_hours, gross")
         .eq("period_month", targetMonthIso),
       supabase.from("staff_payroll_start").select("user_id, start_month"),
+      // Contract/invoice people across ALL months (paid outside the timesheet flow,
+      // e.g. Roberto/Victor/Raul). They never get a timesheet line or a late penalty.
+      supabase.from("staff_timesheet_imports").select("user_id").eq("pay_type", "contract"),
     ]);
   if (tsErr) throw tsErr;
+
+  const contractUserIds = new Set<string>();
+  for (const c of contractIdRaw || []) {
+    const id = String(c.user_id || "");
+    if (id) contractUserIds.add(id);
+  }
 
   // Workers only become "expected" from their payroll start month onwards, so a
   // new hire / returner is not flagged "not submitted" (or penalised) earlier.
@@ -190,7 +200,11 @@ async function aggregate(supabase: any, targetMonthIso: string) {
     if (p.id && nm) nameById.set(String(p.id), nm);
   }
 
-  const submitted = dedupeLatest(tsRaw || []);
+  // Contract people are paid by invoice/payslip (extra hours included there), so
+  // their portal submissions never appear as a separate timesheet line or penalty.
+  const submitted = dedupeLatest(tsRaw || []).filter(
+    (r) => !contractUserIds.has(String(r.submitted_by_user_id || ""))
+  );
   const submittedIds = new Set<string>(submitted.map((r) => String(r.submitted_by_user_id || "")));
 
   const workers: WorkerRow[] = submitted
@@ -268,6 +282,7 @@ async function aggregate(supabase: any, targetMonthIso: string) {
         !submittedIds.has(id) &&
         !importedTimesheetIds.has(id) &&
         !contractIds.has(id) &&
+        !contractUserIds.has(id) &&
         startedByTarget(id)
     )
     .map(([id, role]) => ({
@@ -377,9 +392,9 @@ async function buildPdf(targetMonthIso: string, data: Awaited<ReturnType<typeof 
 
   // Title block
   drawText("MONTHLY PAYROLL REPORT", margin, y - 6, 16, bold, ink);
-  y -= 22;
+  y -= 30;
   drawText(`Pay month: ${monthLabelFromIso(targetMonthIso)}  (cycle 25th -> 24th)`, margin, y - 4, 11, font, muted);
-  y -= 16;
+  y -= 20;
   drawText(
     `Generated: ${new Date().toLocaleString("en-GB", { timeZone: "Europe/London" })}`,
     margin,
@@ -388,9 +403,9 @@ async function buildPdf(targetMonthIso: string, data: Awaited<ReturnType<typeof 
     font,
     muted
   );
-  y -= 8;
-  drawText("To process this month (submitted)", margin, y - 4, 11, bold, ink);
-  y -= 16;
+  y -= 30;
+  drawText("To process this month (submitted)", margin, y - 4, 12, bold, ink);
+  y -= 22;
 
   drawHeaderRow();
 
