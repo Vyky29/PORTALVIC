@@ -195,15 +195,22 @@ async function aggregate(supabase: any, targetMonthIso: string) {
   };
 
   const nameById = new Map<string, string>();
+  // Test/demo accounts are never part of payroll (kept only for button testing).
+  const excludedIds = new Set<string>();
   for (const p of profs || []) {
     const nm = String(p.full_name || p.username || "").trim();
     if (p.id && nm) nameById.set(String(p.id), nm);
+    const uname = String(p.username || "").toLowerCase().trim();
+    const fname = String(p.full_name || "").toLowerCase().trim();
+    if (p.id && (uname === "demo" || fname === "demo")) excludedIds.add(String(p.id));
   }
 
   // Contract people are paid by invoice/payslip (extra hours included there), so
   // their portal submissions never appear as a separate timesheet line or penalty.
   const submitted = dedupeLatest(tsRaw || []).filter(
-    (r) => !contractUserIds.has(String(r.submitted_by_user_id || ""))
+    (r) =>
+      !contractUserIds.has(String(r.submitted_by_user_id || "")) &&
+      !excludedIds.has(String(r.submitted_by_user_id || ""))
   );
   const submittedIds = new Set<string>(submitted.map((r) => String(r.submitted_by_user_id || "")));
 
@@ -232,11 +239,11 @@ async function aggregate(supabase: any, targetMonthIso: string) {
   const expected = new Map<string, string>();
   for (const r of rates || []) {
     const id = String(r.user_id || "");
-    if (id) expected.set(id, String(r.role_label || "").trim());
+    if (id && !excludedIds.has(id)) expected.set(id, String(r.role_label || "").trim());
   }
   for (const rr of roleRates || []) {
     const id = String(rr.user_id || "");
-    if (!id) continue;
+    if (!id || excludedIds.has(id)) continue;
     if (!expected.has(id)) expected.set(id, "");
     if (rr.is_primary) expected.set(id, String(rr.role || "").trim() || expected.get(id) || "");
   }
@@ -250,6 +257,7 @@ async function aggregate(supabase: any, targetMonthIso: string) {
 
   for (const im of importRows) {
     const uid = String(im.user_id || "");
+    if (uid && excludedIds.has(uid)) continue; // never list the demo/test account
     const name = (uid && nameById.get(uid)) || String(im.name || "Unknown");
     const role = String(im.role || (uid ? expected.get(uid) || "" : "")).trim();
     const gross = im.gross == null ? null : Number(im.gross);
@@ -410,16 +418,19 @@ async function buildPdf(
     }
   }
 
-  // Company logo, centered at the top.
-  if (logoBytes) {
+  // Company logo, centered at the top. The file may be a PNG or a JPEG (our
+  // logoPDF.png is actually JPEG-encoded), so pick the embedder by signature.
+  if (logoBytes && logoBytes.length > 4) {
     try {
-      const img = await pdf.embedPng(logoBytes);
-      const logoW = 74;
+      const isPng =
+        logoBytes[0] === 0x89 && logoBytes[1] === 0x50 && logoBytes[2] === 0x4e && logoBytes[3] === 0x47;
+      const img = isPng ? await pdf.embedPng(logoBytes) : await pdf.embedJpg(logoBytes);
+      const logoW = 64; // modest header logo
       const logoH = (img.height / img.width) * logoW;
       page.drawImage(img, { x: (width - logoW) / 2, y: y - logoH, width: logoW, height: logoH });
       y -= logoH + 14;
     } catch (_) {
-      // Not a PNG / decode failed — skip the logo, keep the report.
+      // Decode failed — skip the logo, keep the report.
     }
   }
 

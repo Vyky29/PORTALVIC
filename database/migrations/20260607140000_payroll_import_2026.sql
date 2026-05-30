@@ -91,12 +91,11 @@ from (values
   ('2026-05-01', 'youssef',  'Youssef Moustafa',     'timesheet', 961.50),
   ('2026-05-01', 'angel',    'Angel Falceto',        'timesheet', 447.50),
   ('2026-05-01', 'michelle', 'Michelle',             'timesheet', 3000.00),
+  ('2026-05-01', 'alex',     'Alex Stone',           'timesheet', 240.00),
+  ('2026-05-01', 'aurora',   'Aurora Garcia',        'timesheet', 671.50),
+  ('2026-05-01', 'sandra',   'Sandra Bartolome',     'timesheet', 168.00),
   ('2026-05-01', 'victor',   'Victor',               'contract',  4167.00),
-  ('2026-05-01', 'raul',     'Raul',                 'contract',  4167.00),
-  -- June 2026 (carry-over paid next month, no penalty)
-  ('2026-06-01', 'aurora',   'Aurora Garcia',        'timesheet', 671.50),
-  ('2026-06-01', 'sandra',   'Sandra Bartolome',     'timesheet', 168.00),
-  ('2026-06-01', 'alex',     'Alex Stone',           'timesheet', 240.00)
+  ('2026-05-01', 'raul',     'Raul',                 'contract',  4167.00)
 ) as v(period_month, key, name, pay_type, gross)
 on conflict (period_month, name_key) do update
   set user_id = excluded.user_id,
