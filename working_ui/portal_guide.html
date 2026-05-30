@@ -1,22 +1,37 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <script src="/portal-static-bootstrap.js?v=20260523-portal-guide"></script>
-  <script src="/portal-shared-js/portal-hub-auth.js?v=20260523-portal-guide"></script>
+  <script src="/portal-static-bootstrap.js?v=20260530-portal-guide"></script>
+  <script src="/portal-shared-js/portal-hub-auth.js?v=20260530-portal-guide"></script>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Portal guide</title>
+  <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="stylesheet" href="/portal-shared-js/portal_page_logo.css?v=20260517-portal-logos" />
   <link rel="stylesheet" href="/portal-shared-js/portal_page_logo_themes.css?v=20260517-portal-logos" />
   <style>
     :root{
       --navy:#0a3d62;
+      --blue:#2d84b3;
+      --gold:#f4b740;
       --panel-border:#d9e4ef;
       --text-main:#1d2b3a;
       --text-soft:#5f7185;
       --shadow-soft:0 20px 50px rgba(10,61,98,0.10);
       --app-bg:linear-gradient(180deg,#f4f8fc 0%,#eaf1f8 100%);
+      /* Review state colours (mirror staff dashboard) */
+      --reviewGreenBg:linear-gradient(180deg,#eef8f1 0%,#dff6e8 100%);
+      --reviewGreenBorder:rgba(21,115,71,.5);
+      --reviewOrangeBg:linear-gradient(180deg,#fff6ed 0%,#ffe8d6 100%);
+      --reviewOrangeBorder:rgba(200,110,45,.55);
+      --reviewRedBg:linear-gradient(180deg,#fff0f0 0%,#fde8e8 100%);
+      --reviewRedBorder:rgba(190,65,65,.55);
+      --reviewLilacBg:linear-gradient(180deg,#f3eff9 0%,#e8e2f4 100%);
+      --reviewLilacBorder:rgba(110,90,150,.5);
+      --reviewBlueBg:linear-gradient(180deg,#eaf5fb 0%,#dceefb 100%);
+      --reviewBlueBorder:rgba(45,132,179,.5);
     }
+    *,*::before,*::after{box-sizing:border-box}
     body{
       font-family:system-ui,-apple-system,Segoe UI,Roboto,"Open Sans",Arial,sans-serif;
       background:var(--app-bg);
@@ -25,16 +40,17 @@
       min-height:100vh;
       padding:18px;
     }
-    .pg-shell{max-width:720px;margin:0 auto;width:100%;min-width:0}
+    .pg-shell{max-width:760px;margin:0 auto;width:100%;min-width:0}
     .pg-logo-wrap-outer{text-align:center;margin-bottom:8px}
     .pg-page-title{
-      margin:0 0 16px;
+      margin:0 0 6px;
       text-align:center;
       font-size:clamp(26px,4vw,34px);
       font-weight:800;
       letter-spacing:-0.03em;
       color:var(--navy);
     }
+    .pg-sub{text-align:center;color:var(--text-soft);margin:0 0 18px;font-size:14px}
     .pg-card{
       border:1px solid var(--panel-border);
       border-radius:22px;
@@ -42,6 +58,7 @@
       background:rgba(255,255,255,0.96);
       padding:20px 18px;
       min-width:0;
+      margin-bottom:16px;
     }
     .pg-card p,.pg-card li{
       line-height:1.55;
@@ -49,13 +66,18 @@
       color:var(--text-main);
       overflow-wrap:break-word;
     }
-    .pg-card p{color:var(--text-soft)}
+    .pg-card>p{color:var(--text-soft)}
     .pg-card h2{
-      margin:0 0 10px;
-      font-size:18px;
+      margin:0 0 12px;
+      font-size:19px;
       color:var(--navy);
       overflow-wrap:break-word;
+      display:flex;align-items:center;gap:9px;
     }
+    .pg-card h3{margin:16px 0 8px;font-size:15px;color:var(--navy)}
+    .pg-ico{width:22px;height:22px;flex:none;color:var(--blue)}
+    .pg-card ul,.pg-card ol{margin:8px 0 0;padding-left:20px}
+    .pg-card li{margin-bottom:6px}
     .pg-note{
       margin:14px 0 0;
       padding:12px 14px;
@@ -65,24 +87,41 @@
       color:var(--text-main);
       font-size:14px;
     }
+    /* Colour legend */
+    .legend{display:grid;gap:12px;margin-top:6px}
+    .legend-item{display:flex;gap:13px;align-items:flex-start;min-width:0}
+    .swatch{width:52px;height:38px;border-radius:11px;border:1.5px solid;flex:none;box-shadow:0 4px 10px rgba(10,61,98,.06)}
+    .swatch--green{background:var(--reviewGreenBg);border-color:var(--reviewGreenBorder)}
+    .swatch--orange{background:var(--reviewOrangeBg);border-color:var(--reviewOrangeBorder)}
+    .swatch--red{background:var(--reviewRedBg);border-color:var(--reviewRedBorder)}
+    .swatch--lilac{background:var(--reviewLilacBg);border-color:var(--reviewLilacBorder)}
+    .swatch--blue{background:var(--reviewBlueBg);border-color:var(--reviewBlueBorder)}
+    .legend-text{min-width:0}
+    .legend-text b{color:var(--navy)}
+    .legend-text span{display:block;color:var(--text-soft);font-size:13px}
+    /* Logo halo dots */
+    .halo-row{display:flex;gap:18px;flex-wrap:wrap;margin-top:8px}
+    .halo{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;color:var(--text-soft);width:88px;text-align:center}
+    .halo-dot{width:30px;height:30px;border-radius:50%}
+    .halo-dot--red{background:#d64545}
+    .halo-dot--blue{background:var(--blue)}
+    .halo-dot--gold{background:var(--gold)}
+    .halo-dot--multi{background:conic-gradient(var(--blue) 0 33%,#d64545 33% 66%,var(--gold) 66% 100%)}
+    /* Pills */
+    .pill-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    .pill{display:inline-block;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:800}
+    .pill--done{background:#e7f6ee;color:#15803d}
+    .pill--pending{background:#fff1e3;color:#b45309}
+    .pill--late{background:#fef2f2;color:#b91c1c}
+    .pill--absent{background:#fff8e1;color:#a56a12}
+    .pill--incident{background:#fde8e8;color:#991b1b}
+    .pill--info{background:#eaf5fb;color:#1d6f9c}
     .pg-toolbar{
-      display:flex;
-      flex-wrap:wrap;
-      gap:10px;
-      margin-top:18px;
-      justify-content:center;
+      display:flex;flex-wrap:wrap;gap:10px;margin-top:6px;justify-content:center;
     }
     .pg-btn{
-      border:0;
-      border-radius:10px;
-      padding:12px 18px;
-      font-weight:700;
-      font-size:15px;
-      cursor:pointer;
-      text-decoration:none;
-      display:inline-block;
-      text-align:center;
-      min-width:0;
+      border:0;border-radius:10px;padding:12px 18px;font-weight:700;font-size:15px;
+      cursor:pointer;text-decoration:none;display:inline-block;text-align:center;min-width:0;
     }
     .pg-btn-main{background:#0b2a5b;color:#fff}
     .pg-btn-ghost{background:#e8f1fa;color:#0b2a5b;border:1px solid #b0c7e2}
@@ -92,17 +131,135 @@
   <div class="pg-shell">
     <div class="pg-logo-wrap-outer" id="portalPageLogoHost"></div>
     <h1 class="pg-page-title">Portal guide</h1>
+    <p class="pg-sub">Everything you need to use the clubSENsational portal on your phone.</p>
+
+    <!-- Install -->
     <article class="pg-card">
-      <h2>Welcome</h2>
-      <p>
-        This page will walk you through the new Club Sensational staff portal — dashboard, sessions,
-        feedback, venue checks, timesheets, announcements, and the Quick menu.
-      </p>
-      <p class="pg-note" role="status">
-        The full step-by-step guide is being prepared. For now, explore the Quick menu on your dashboard
-        and sign any announcements that need your confirmation. If you are unsure where something lives,
-        open Quick menu → Guide again (at the top during your first month, then under Settings).
-      </p>
+      <h2>
+        <svg class="pg-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
+        Install it like an app
+      </h2>
+      <p>Add the portal to your home screen so it opens full-screen with the clubSENsational icon — no browser bar.</p>
+      <h3>iPhone (Safari)</h3>
+      <ol>
+        <li>Open the portal in <b>Safari</b>.</li>
+        <li>Tap the <b>Share</b> button (square with an arrow).</li>
+        <li>Choose <b>Add to Home Screen</b>, then <b>Add</b>.</li>
+      </ol>
+      <h3>Android (Chrome)</h3>
+      <ol>
+        <li>Open the portal in <b>Chrome</b>.</li>
+        <li>Tap the <b>⋮</b> menu (top-right).</li>
+        <li>Choose <b>Install app</b> / <b>Add to Home screen</b>.</li>
+      </ol>
+      <p class="pg-note">Sign in once and the app remembers you. If you ever get signed out, just open it again and log in.</p>
+    </article>
+
+    <!-- Colour system -->
+    <article class="pg-card">
+      <h2>
+        <svg class="pg-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="19" cy="13" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="10" cy="19" r="2.5"/><path d="M12 2a10 10 0 1 0 0 20"/></svg>
+        What the colours mean
+      </h2>
+      <p>The portal uses colour so you can tell at a glance what needs your attention. Same colours everywhere — session cards, pills and the logo.</p>
+
+      <h3>Session cards &amp; reviews</h3>
+      <div class="legend">
+        <div class="legend-item"><div class="swatch swatch--blue"></div><div class="legend-text"><b>Blue — scheduled</b><span>An upcoming session. Nothing to do yet.</span></div></div>
+        <div class="legend-item"><div class="swatch swatch--orange"></div><div class="legend-text"><b>Orange — action needed</b><span>Feedback is still pending for this session. Tap it to submit.</span></div></div>
+        <div class="legend-item"><div class="swatch swatch--green"></div><div class="legend-text"><b>Green — done</b><span>Feedback submitted (or absence recorded). All good.</span></div></div>
+        <div class="legend-item"><div class="swatch swatch--red"></div><div class="legend-text"><b>Red — incident / urgent</b><span>An incident was reported, or something needs sorting now.</span></div></div>
+        <div class="legend-item"><div class="swatch swatch--lilac"></div><div class="legend-text"><b>Purple — schedule change</b><span>A cancellation or roster change affecting this slot.</span></div></div>
+      </div>
+
+      <h3>The logo halo (the dots around the logo)</h3>
+      <p style="margin-top:4px">When something is waiting for you, the dots circling the logo change colour:</p>
+      <div class="halo-row">
+        <div class="halo"><span class="halo-dot halo-dot--red"></span>Announcement to sign</div>
+        <div class="halo"><span class="halo-dot halo-dot--blue"></span>New chat message</div>
+        <div class="halo"><span class="halo-dot halo-dot--gold"></span>Feedback pending</div>
+        <div class="halo"><span class="halo-dot halo-dot--multi"></span>Several at once</div>
+      </div>
+    </article>
+
+    <!-- Pills -->
+    <article class="pg-card">
+      <h2>
+        <svg class="pg-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="8" width="20" height="8" rx="4"/></svg>
+        Status pills
+      </h2>
+      <p>Little rounded tags on cards and lists. They tell you the state of a session or task:</p>
+      <div class="pill-row">
+        <span class="pill pill--done">Done</span>
+        <span class="pill pill--pending">Pending</span>
+        <span class="pill pill--late">Late</span>
+        <span class="pill pill--absent">Absent</span>
+        <span class="pill pill--incident">Incident</span>
+        <span class="pill pill--info">Scheduled</span>
+      </div>
+      <ul>
+        <li><b>Done</b> — feedback/report submitted.</li>
+        <li><b>Pending</b> — still needs your feedback.</li>
+        <li><b>Late</b> — submitted (or being submitted) after the deadline.</li>
+        <li><b>Absent</b> — the participant didn’t attend.</li>
+        <li><b>Incident</b> — an incident report is attached.</li>
+      </ul>
+    </article>
+
+    <!-- Quick menu -->
+    <article class="pg-card">
+      <h2>
+        <svg class="pg-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        The Quick menu
+      </h2>
+      <p>Everything you submit lives here. Open it from your dashboard.</p>
+      <ul>
+        <li><b>Session feedback</b> — how the session went (engagement, regulation, independence, notes).</li>
+        <li><b>Incident report</b> — anything that needs recording for safeguarding/safety.</li>
+        <li><b>Cancellation</b> — when a session can’t go ahead.</li>
+        <li><b>Expenses</b> — submit your expenses; a PDF is saved to your documents.</li>
+        <li><b>Timesheet</b> — log your hours for the month.</li>
+        <li><b>Venue review</b> — opening/closing checks for your venue.</li>
+        <li><b>Pickup / handover</b> — record who collected a participant.</li>
+        <li><b>Update my profile</b> — confirm your personal &amp; emergency details.</li>
+      </ul>
+      <p class="pg-note">Tip: open a form from the session card itself when you can — it pre-fills the participant, date and time for you.</p>
+    </article>
+
+    <!-- Chats -->
+    <article class="pg-card">
+      <h2>
+        <svg class="pg-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        Chats
+      </h2>
+      <p>Message the office or a colleague directly from the portal.</p>
+      <ul>
+        <li>A <b>blue</b> halo on the logo means you have a new message.</li>
+        <li>You can send <b>text</b> or a <b>voice note</b>.</li>
+        <li>Chats are private between you and the person/office you’re messaging.</li>
+      </ul>
+    </article>
+
+    <!-- Announcements -->
+    <article class="pg-card">
+      <h2>
+        <svg class="pg-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
+        Announcements &amp; reminders
+      </h2>
+      <p>When the office posts an announcement, the logo halo turns <b>red</b> and a banner appears.</p>
+      <ul>
+        <li>Read it and tap <b>Sign / confirm</b> so the office knows you’ve seen it.</li>
+        <li>Employment contracts to sign also appear here; the signed PDF is saved under <b>My Documents</b>.</li>
+      </ul>
+    </article>
+
+    <!-- Lead extras + close -->
+    <article class="pg-card">
+      <h2>
+        <svg class="pg-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15 8.5 22 9.3 17 14 18.2 21 12 17.7 5.8 21 7 14 2 9.3 9 8.5 12 2"/></svg>
+        For leads
+      </h2>
+      <p>Leads have everything above, plus a <b>Lead session report</b> in the Quick menu for reporting on the sessions you oversee.</p>
       <div class="pg-toolbar">
         <a class="pg-btn pg-btn-main" id="pgBackDashboard" href="staff_dashboard.html">Back to dashboard</a>
         <button type="button" class="pg-btn pg-btn-ghost" id="pgBackHistory">Go back</button>
