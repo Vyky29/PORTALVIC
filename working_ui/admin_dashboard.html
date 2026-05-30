@@ -20,9 +20,11 @@
   <script src="/portal/admin-portal-staff-map.js?v=20260602-staff-map-header"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
   <script src="/portal/portal_dm_voice.js?v=20260531-dm-voice"></script>
-  <script src="/portal/admin-hr.js?v=20260530-hr-fullscreen-icons"></script>
-  <script src="/portal/admin-payments.js?v=20260530-term-participants"></script>
+  <script src="/portal/portal-change-log.js?v=20260530-changelog"></script>
+  <script src="/portal/admin-hr.js?v=20260530-hr-changelog"></script>
+  <script src="/portal/admin-payments.js?v=20260530-pay-changelog"></script>
   <script src="/portal/admin-onboarding.js?v=20260530-onboarding-clickdocs"></script>
+  <script src="/portal/admin-logs.js?v=20260530-logs"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
   <title>clubSENsational · Operations + Operator workflow (merged)</title>
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
@@ -209,6 +211,7 @@
       { id:'portal_docs_firstaid', label:'First aids' },
       { id:'policies', label:'Documents & compliance' },
       { id:'settings', label:'System settings' },
+      { id:'logs', label:'Activity log' },
       { id:'portal_nav_alerts', label:'Alerts inbox', navAction:'alerts', skipBottomNav:true },
       { id:'portal_nav_staff', label:'Staff dashboard', externalUrl:'/staff_dashboard.html', skipBottomNav:true },
       { id:'portal_nav_lead', label:'Lead dashboard', externalUrl:'/lead_dashboard.html', skipBottomNav:true },
@@ -225,7 +228,7 @@
       { id:'g_zoho', label:'H&R (ZohoPeople)', children:['staffhr','onboarding','staffhr_contracts','interviews'] },
       { id:'g_supabase', label:'Documents', children:['portal_docs_timesheet','portal_docs_expense','portal_docs_portalpin','portal_docs_certificate','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid'] },
       { id:'g_xero', label:'Finance (Xero)', children:['reenrol_payments','invoices'] },
-      { id:'g_settings_portal', label:'Settings & dashboards', children:['__h:This app','settings','portal_nav_alerts','__h:Other portals','portal_nav_staff','portal_nav_lead','portal_nav_ceo','portal_nav_admin','__h:Session','portal_nav_logout'] }
+      { id:'g_settings_portal', label:'Settings & dashboards', children:['__h:This app','settings','logs','portal_nav_alerts','__h:Other portals','portal_nav_staff','portal_nav_lead','portal_nav_ceo','portal_nav_admin','__h:Session','portal_nav_logout'] }
     ];
     /* Stroke SVGs (outline), inherit sidebar text colour — replaces emoji glyphs */
     var NAV_ICON_SVGS = {
@@ -257,6 +260,7 @@
       onboarding:'<path d="M2 3h6a4 4 0 014 4v14a4 4 0 00-4-4H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a4 4 0 014-4h6z"/>',
       staffhr_contracts:'<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>',
       invoices:'<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/>',
+      logs:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/>',
       recruitment:'<rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><path d="M12 11v6"/><path d="M9 14h6"/>',
       interviews:'<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>',
       reports:'<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
@@ -14841,6 +14845,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(id==='c4k_late_submissions') return viewC4kLateSubmissions();
       if(id==='c4k_payments') return viewC4kPaymentsView();
       if(id==='reenrol_payments') return viewReenrolPayments();
+      if(id==='logs') return viewLogs();
       if(id==='c4k_waitlist') return viewC4kWaitlistView();
       if(id==='c4k_registers'){
         sessionsHubEnsureState().tab = 'feedback';
@@ -15845,6 +15850,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return '<h1 class="page-title" style="display:flex;align-items:center;gap:10px"><span aria-hidden="true" style="display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;background:#eff6ff;color:#2d84b3"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="none"><text x="12" y="17" text-anchor="middle" font-size="15" font-weight="800" fill="currentColor" font-family="system-ui,Segoe UI,sans-serif">\u00a3</text></svg></span><span>Programme payments</span></h1>'+
         '<p class="page-intro">Track client payments — totals, who has paid vs outstanding, split by private (parents) and local-authority groups. Tap a client to open the full record and edit status, amount, service and any field.</p>'+
         '<div id="payModuleRoot"></div>';
+    }
+    function viewLogs(){
+      // Rendered by /portal/admin-logs.js into #logsModuleRoot (see bindView 'logs').
+      return '<h1 class="page-title" style="display:flex;align-items:center;gap:10px">'+adminNavIconHtml('logs')+'<span>Activity log</span></h1>'+
+        '<p class="page-intro">Every change made in the app, kept by day — when, what time, by whom, and what changed.</p>'+
+        '<div id="logsModuleRoot"></div>';
     }
 
     function viewStaffHR(){
@@ -17854,7 +17865,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       root.querySelectorAll('[data-act]').forEach(function(b){
         b.addEventListener('click', function(){
           var v = b.getAttribute('data-act');
-          if(v==='dashboard'||v==='operations'||v==='operations_admin'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='c4k_registers'||v==='c4k_late_submissions'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='staffhr_contracts'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='scheduling'||v==='absents_refunds'||v==='portal_documents'||v==='portal_activity'||v==='participant_achievements'||v==='staff_live_map'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings') setView(v);
+          if(v==='dashboard'||v==='operations'||v==='operations_admin'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='c4k_registers'||v==='c4k_late_submissions'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='staffhr_contracts'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='scheduling'||v==='absents_refunds'||v==='portal_documents'||v==='portal_activity'||v==='participant_achievements'||v==='staff_live_map'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings'||v==='logs') setView(v);
           closeSidebarMob();
         });
       });
@@ -18012,6 +18023,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             closeModal: closeModal
           });
           window.AdminPayments.mount($('payModuleRoot'));
+        }
+      }
+      if(id==='logs'){
+        if(window.AdminLogs && $('logsModuleRoot')){
+          window.AdminLogs.configure({ toast: portalAdminToast, esc: esc });
+          window.AdminLogs.mount($('logsModuleRoot'));
         }
       }
       if(id==='staffhr'){

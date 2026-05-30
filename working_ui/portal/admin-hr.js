@@ -463,12 +463,21 @@
     if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = "Saving…"; }
     if (msg) msg.textContent = "";
 
+    var personRow = rows.filter(function (r) { return r.sheet === PEOPLE_SHEET; })[0] || rows[0];
+    var displayName = (personRow && personRow.employee_name) || "Person";
+
     // We loaded every row, so `rows` already holds all rows for this person.
     // Active is derived from the login account, so we only persist field edits.
     // .select() confirms the write actually landed (RLS blocks return 0 rows, no error).
     var blocked = 0;
+    var allChanges = [];
     var ops = rows.map(function (r) {
+      var oldData = r.data || {};
       var newData = collectRowData(mr, r.id);
+      if (global.PortalChangeLog) {
+        var df = global.PortalChangeLog.diff(oldData, newData);
+        if (df) df.changes.forEach(function (c) { allChanges.push({ field: labelFor(r.sheet) + " · " + c.field, from: c.from, to: c.to }); });
+      }
       return client.from("hr_records").update({ data: newData }).eq("id", r.id).select().then(function (res) {
         if (res.error) throw res.error;
         if (!(res.data && res.data.length)) { blocked++; return; }
@@ -481,6 +490,14 @@
         if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = "Save changes"; }
         if (msg) msg.textContent = "Not saved: no rows were updated. You are likely not signed in as an admin (RLS blocks the change). Sign in to the admin dashboard and retry.";
         return;
+      }
+      // Audit log: who changed what across this person's categories.
+      if (global.PortalChangeLog && allChanges.length) {
+        var summary = allChanges.map(function (c) {
+          var from = c.from === "" ? "∅" : c.from; var to = c.to === "" ? "∅" : c.to;
+          return c.field + ": " + from + " → " + to;
+        }).join("; ");
+        global.PortalChangeLog.record({ area: "Staff & HR", entity: displayName, action: "update", summary: summary, details: { changes: allChanges }, source: "staffhr" });
       }
       deps.toast("Saved.");
       closeScreen();

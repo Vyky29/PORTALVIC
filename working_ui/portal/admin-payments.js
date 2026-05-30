@@ -473,6 +473,10 @@
     var msg = mr.querySelector("#payMsg");
     if (!client) { if (msg) msg.textContent = "Supabase not connected yet — sign in as admin and retry."; return; }
 
+    // Snapshot before the write so we can log a readable diff afterwards.
+    var logLabels = { client_name: "Client name", parent_name: "Parent / LA", payment_status: "Status", amount: "Total (£)" };
+    var oldFlat = Object.assign({ client_name: r.client_name, parent_name: r.parent_name, payment_status: r.payment_status, amount: r.amount }, r.data || {});
+
     var patch = {};
     mr.querySelectorAll("[data-prop]").forEach(function (inp) {
       var p = inp.getAttribute("data-prop");
@@ -501,6 +505,12 @@
         if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = "Save changes"; }
         if (msg) msg.textContent = "Not saved: no row was updated. You are likely not signed in as an admin (RLS blocks the change). Sign in to the admin dashboard and retry.";
         return;
+      }
+      // Audit log: record who changed what (readable field diff).
+      if (global.PortalChangeLog) {
+        var newFlat = Object.assign({ client_name: saved.client_name, parent_name: saved.parent_name, payment_status: saved.payment_status, amount: saved.amount }, saved.data || {});
+        var df = global.PortalChangeLog.diff(oldFlat, newFlat, logLabels);
+        if (df) global.PortalChangeLog.record({ area: "Payments", entity: saved.client_name || r.client_name, action: "update", summary: df.summary, details: { changes: df.changes, group: labelFor(r.sheet) }, source: "reenrol_payments" });
       }
       // Sync the in-memory row with exactly what the database stored.
       Object.keys(saved).forEach(function (k) { r[k] = saved[k]; });
