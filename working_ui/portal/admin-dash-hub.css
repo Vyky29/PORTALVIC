@@ -872,13 +872,13 @@ body:has(#workspace .dash-hub--dayops) .admin-main{
      rows) gets the same height and the same gap — all rows look identical. */
   flex:1 1 0;
   min-height:0;
-  /* Staff & HR identity colour. */
-  background:#eef4f9;
-  border-color:#cfe1ee;
+  /* H&R (ZohoPeople) red identity colour. */
+  background:#fdeeef;
+  border-color:#f3ccd0;
 }
 .dash-hub--dayops .dash-hub__panel--team .dash-hub__panel-ico{
-  background:#dceaf3;
-  color:#2d84b3;
+  background:#f8d7da;
+  color:#c0392b;
 }
 .dash-hub--dayops .dash-hub__panel--sessions{
   flex:2 1 0;
@@ -888,6 +888,11 @@ body:has(#workspace .dash-hub--dayops) .admin-main{
 .dash-hub--dayops .dash-hub__panel--sessions .dash-hub__tile{
   --dh-tile-bg:rgba(251,191,36,.22);
   --dh-tile-fg:#b45309;
+}
+/* All Team tiles share the H&R (ZohoPeople) red identity. */
+.dash-hub--dayops .dash-hub__panel--team .dash-hub__tile{
+  --dh-tile-bg:rgba(220,38,38,.16);
+  --dh-tile-fg:#b91c1c;
 }
 .dash-hub--dayops .dash-hub__panel--team > .dash-hub__grid,
 .dash-hub--dayops .dash-hub__sessions-grids{
