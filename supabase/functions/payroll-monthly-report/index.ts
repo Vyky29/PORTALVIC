@@ -434,9 +434,9 @@ async function buildPdf(
     }
   }
 
-  // Company logo, centered at the top, ABOVE the title. The file may be a PNG or
-  // a JPEG (our logoPDF.png is actually JPEG-encoded), so pick the embedder by
-  // signature.
+  // Company logo, centered at the top, ABOVE the title. The bundled asset is a
+  // transparent-background PNG (no black box). Pick the embedder by signature so
+  // a JPEG fallback would still work.
   if (logoBytes && logoBytes.length > 4) {
     try {
       const isPng =
