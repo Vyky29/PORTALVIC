@@ -21,7 +21,7 @@
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
   <script src="/portal/portal_dm_voice.js?v=20260531-dm-voice"></script>
   <script src="/portal/admin-hr.js?v=20260530-hr-active-account"></script>
-  <script src="/portal/admin-payments.js?v=20260530-active-service"></script>
+  <script src="/portal/admin-payments.js?v=20260530-service-modal-merge"></script>
   <script src="/portal/admin-onboarding.js?v=20260530-onboarding-clickdocs"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
   <title>clubSENsational · Operations + Operator workflow (merged)</title>
@@ -187,8 +187,8 @@
       { id:'comms_bookings', label:'Staff & shift notices' },
       { id:'comms_ops', label:'Ops comms & log' },
       { id:'clients', label:'Participants' },
-      { id:'c4k_payments', label:'Programme payments', hubLabel:'Payments' },
-      { id:'reenrol_payments', label:'Re-enrolment payments', hubLabel:'Re-enrolments' },
+      { id:'c4k_payments', label:'Programme payments (operations)', hubLabel:'Ops payments' },
+      { id:'reenrol_payments', label:'Programme payments', hubLabel:'Payments' },
       { id:'invoices', label:'Xero / finance', hubLabel:'Create invoice' },
       { id:'c4k_waitlist', label:'Waiting list' },
       { id:'c4k_reviews', label:'Reviews' },
@@ -224,7 +224,7 @@
       { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','__h:Participants','clients','__h:Orders','orders_all','__h:Communications','comms_ops'] },
       { id:'g_zoho', label:'H&R (ZohoPeople)', children:['staffhr','onboarding','staffhr_contracts','interviews'] },
       { id:'g_supabase', label:'Documents', children:['portal_docs_timesheet','portal_docs_expense','portal_docs_portalpin','portal_docs_certificate','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid'] },
-      { id:'g_xero', label:'Finance (Xero)', children:['c4k_payments','reenrol_payments','invoices'] },
+      { id:'g_xero', label:'Finance (Xero)', children:['reenrol_payments','invoices'] },
       { id:'g_settings_portal', label:'Settings & dashboards', children:['__h:This app','settings','portal_nav_alerts','__h:Other portals','portal_nav_staff','portal_nav_lead','portal_nav_ceo','portal_nav_admin','__h:Session','portal_nav_logout'] }
     ];
     /* Stroke SVGs (outline), inherit sidebar text colour — replaces emoji glyphs */
@@ -241,7 +241,7 @@
       c4k_sessions:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
       scheduling:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="8" cy="15" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="15" r="1" fill="currentColor" stroke="none"/><circle cx="16" cy="15" r="1" fill="currentColor" stroke="none"/>',
       c4k_payments:'<text x="12" y="17" text-anchor="middle" font-size="15" font-weight="800" fill="currentColor" stroke="none" font-family="system-ui,Segoe UI,sans-serif">£</text>',
-      reenrol_payments:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/>',
+      reenrol_payments:'<text x="12" y="17" text-anchor="middle" font-size="15" font-weight="800" fill="currentColor" stroke="none" font-family="system-ui,Segoe UI,sans-serif">£</text>',
       c4k_waitlist:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
       c4k_registers:'<path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="15" y2="16"/>',
       c4k_late_submissions:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/><line x1="12" y1="2" x2="12" y2="4"/>',
@@ -15535,7 +15535,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           hubChildIds = ['c4k_services','clients','orders_all'];
         }
         if(gid === 'g_xero'){
-          hubChildIds = ['invoices','absents_refunds','c4k_payments'];
+          hubChildIds = ['invoices','absents_refunds','reenrol_payments'];
         }
         hubChildIds.forEach(function(cid){
           if(String(cid).indexOf('__h:') === 0) return;
@@ -15620,7 +15620,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function viewOperationsAdmin(){
       var participantsRow1 =
         portalDashTileHtml('orders_all', '', 'bookings', 'Bookings / orders', 'Bookings &amp; wait list', false, 'bookings')+
-        portalDashTileHtml('c4k_payments', '', 'c4k_payments', 'Payments', 'Programme payments', false, 'payments')+
+        portalDashTileHtml('reenrol_payments', '', 'reenrol_payments', 'Payments', 'Programme payments', false, 'payments')+
         portalDashTileHtml('invoices', '', 'invoices', 'Invoices', 'Xero draft &amp; export', false, 'payments');
       var participantsRow2 =
         portalDashTileHtml('absents_refunds', '', 'absents_refunds', 'Absents &amp; credits', 'Refunds, credits, missed sessions', false, 'absents')+
@@ -15842,7 +15842,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function viewReenrolPayments(){
       // Live, editable client re-enrolment payments (powered by public.client_payments).
       // Rendered by /portal/admin-payments.js into #payModuleRoot (see bindView).
-      return '<h1 class="page-title">Re-enrolment payments</h1><p class="page-intro">Client payments from the SUMMER re-enrolments workbook — totals, who is paid vs outstanding, by private (parents) and local-authority groups. Tap a client to edit status, amount and any field.</p>'+
+      return '<h1 class="page-title">Programme payments</h1><p class="page-intro">Client payments from the SUMMER re-enrolments workbook — totals, who is paid vs outstanding, by private (parents) and local-authority groups. Tap a client to open the full record and edit status, amount, service and any field.</p>'+
         '<div id="payModuleRoot"></div>';
     }
 

@@ -260,14 +260,23 @@
     if (!r) return;
     var d = r.data || {};
 
+    // Resolve which data key actually holds the booked service, so editing
+    // writes back to the right key (avoids creating a duplicate "Services").
+    var svcKey = ["Services", "Service", "Programme", "Programmes", "Activity"].filter(function (k) {
+      return d[k] != null && String(d[k]).trim();
+    })[0] || "Services";
+
     var top = '<div class="pay-fields" style="margin-bottom:12px">'
       + field("client_name", "Client name", r.client_name, "prop")
       + field("parent_name", "Parent / LA", r.parent_name, "prop")
+      + field(svcKey, "Service", d[svcKey] || "", "data")
       + field(null, "Status", r.payment_status, "status")
       + field(null, "Total (£)", r.amount, "amount")
       + "</div>";
 
-    var dataFields = Object.keys(d).map(function (k) { return field(k, k, d[k], "data"); }).join("");
+    // Service is shown prominently above, so skip its key in the raw-fields grid.
+    var dataFields = Object.keys(d).filter(function (k) { return k !== svcKey; })
+      .map(function (k) { return field(k, k, d[k], "data"); }).join("");
     if (!dataFields) dataFields = '<p class="pay-empty">No extra fields.</p>';
 
     var html = '<div class="modal-h"><h2 id="modalTitle">' + esc(r.client_name || "Client") + " · " + esc(labelFor(r.sheet)) + "</h2></div>"
