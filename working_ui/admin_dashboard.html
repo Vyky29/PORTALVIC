@@ -20,6 +20,7 @@
   <script src="/portal/admin-portal-staff-map.js?v=20260602-staff-map-header"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
   <script src="/portal/portal_dm_voice.js?v=20260531-dm-voice"></script>
+  <script src="/portal/admin-hr.js?v=20260530-hr-editable"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
   <title>clubSENsational · Operations + Operator workflow (merged)</title>
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
@@ -15736,29 +15737,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
 
     function viewStaffHR(){
-      var rows = MOCK.staff.map(function(s){
-        var ch = s.st==='active'?'chip--ok':(s.st==='leave'?'chip--pend':'chip--info');
-        var av = s.availability ? esc(s.availability) : '—';
-        return '<tr><td><strong>'+esc(s.name)+'</strong></td><td>'+esc(s.role)+'</td><td>'+esc(s.site)+'</td><td class="muted" style="max-width:200px">'+av+'</td><td><span class="chip '+ch+'">'+esc(s.st)+'</span></td><td class="toolbar"><button type="button" class="btn btn--sec btn--sm" data-staff="'+esc(s.id)+'">Profile</button> <button type="button" class="btn btn--ghost btn--sm" data-shift-session="">Shift</button></td></tr>';
-      }).join('');
-      var shifts = MOCK.shiftsDemo.map(function(s){
-        return '<tr><td><button type="button" class="btn btn--ghost btn--sm" data-staff="'+esc(s.staffId||'')+'">'+esc(s.staff)+'</button></td><td>'+esc(s.when)+'</td><td>'+esc(s.venue)+'</td><td><span class="chip chip--info">'+esc(s.st)+'</span></td><td><button type="button" class="btn btn--ghost btn--sm" data-shift-session="">Edit</button></td></tr>';
-      }).join('');
-      var intRows = MOCK.interviews.map(function(i){
-        return '<tr><td>'+esc(i.name)+'</td><td class="muted">'+esc(i.role)+'</td><td><span class="chip chip--pend">'+esc(i.status)+'</span></td></tr>';
-      }).join('');
-      var obSummary = MOCK.onboardingSteps.map(function(o){ return o.label+' '+o.pct+'%'; }).join(' · ');
-      return '<h1 class="page-title">Staff &amp; HR</h1><p class="page-intro">Roster, shifts, interviews, and HR notes. Create employment contracts from <button type="button" class="btn btn--ghost btn--sm" data-view-target="staffhr_contracts" style="vertical-align:baseline;padding:0 4px;font-size:inherit">Contracts</button> in H&amp;R.</p>'+
+      // Live, editable Staff & HR (powered by public.hr_records). Rendered by
+      // /portal/admin-hr.js into #hrModuleRoot (see bindView 'staffhr').
+      return '<h1 class="page-title">Staff &amp; HR</h1><p class="page-intro">Live staff &amp; HR from the STAFF MATRIX — filter by active, tap a person to open and edit every detail. Create employment contracts from <button type="button" class="btn btn--ghost btn--sm" data-view-target="staffhr_contracts" style="vertical-align:baseline;padding:0 4px;font-size:inherit">Contracts</button> in H&amp;R.</p>'+
         '<div class="toolbar" style="margin-bottom:14px;flex-wrap:wrap;gap:8px">'+
         '<button type="button" class="btn btn--pri" data-view-target="staffhr_contracts">+ New employment contract</button>'+
-        '<a class="btn btn--sec" href="/hr-matrix.html" style="text-decoration:none">Open HR matrix</a>'+
         '<button type="button" class="btn btn--sec" data-open-compose data-preset="announcement">Compose announcement</button></div>'+
-        '<div class="filter-row"><input class="inp" id="filStaff" placeholder="Filter staff…" /><select class="sel" id="filStaffSite"><option value="">All sites</option><option>Acton</option><option>Ealing</option><option>All</option></select></div>'+
-        '<div class="card" style="margin-bottom:14px"><div class="card-h"><h3>Staff</h3></div><div class="card-pad" style="overflow:auto"><table class="tbl tbl--center" id="tblStaff"><thead><tr><th>Name</th><th>Role</th><th>Site</th><th>Availability</th><th>Status</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div></div>'+
-        '<div class="card" style="margin-bottom:14px"><div class="card-h"><h3>Shifts (roster)</h3></div><div class="card-pad" style="overflow:auto"><table class="tbl tbl--center"><thead><tr><th>Staff</th><th>When</th><th>Venue</th><th>Status</th><th></th></tr></thead><tbody>'+shifts+'</tbody></table></div></div>'+
-        '<div class="grid-2"><div class="card"><div class="card-h"><h3>Interviews (summary)</h3></div><div class="card-pad" style="overflow:auto"><table class="tbl tbl--center"><thead><tr><th>Candidate</th><th>Role</th><th>Status</th></tr></thead><tbody>'+intRows+'</tbody></table></div></div>'+
-        '<div class="card"><div class="card-h"><h3>Onboarding (summary)</h3></div><div class="card-pad"><p class="muted" style="margin:0;font-size:13px;line-height:1.5">'+esc(obSummary)+'</p><div class="toolbar" style="margin-top:12px"><button type="button" class="btn btn--sec btn--sm" data-open-compose data-preset="reminder">Send reminder</button></div></div></div></div>'+
-        '<div class="card" style="margin-top:14px"><div class="card-h"><h3>Internal HR notes</h3></div><div class="card-pad"><p class="muted" style="margin:0;white-space:pre-wrap;font-size:13px;line-height:1.5">'+esc(MOCK.hrNotesInternal)+'</p></div></div>';
+        '<div id="hrModuleRoot"></div>';
     }
 
     function viewStaffHRContracts(){
@@ -17913,9 +17898,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
 
       if(id==='staffhr'){
-        var fs = $('filStaff'), fss = $('filStaffSite');
-        if(fs) fs.addEventListener('input', filterStaffTable);
-        if(fss) fss.addEventListener('change', filterStaffTable);
+        if(window.AdminHR && $('hrModuleRoot')){
+          window.AdminHR.configure({
+            getClient: getSchedSupabaseClient,
+            getProfile: function(){ var b=window.__PORTAL_SUPABASE__; return (b && b.staff_profile) || null; },
+            toast: portalAdminToast,
+            esc: esc,
+            openModal: openModal,
+            closeModal: closeModal
+          });
+          window.AdminHR.mount($('hrModuleRoot'));
+        }
       }
       if(id==='staffhr_contracts'){
         ensureHRContractScripts(function(){
