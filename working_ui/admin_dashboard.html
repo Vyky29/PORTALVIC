@@ -12174,7 +12174,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '<td class="pax-contacts-contact" style="min-width:0"><div>'+phone+'</div><div class="muted">'+em+'</div></td>'+
           '<td style="white-space:nowrap">'+esc(p.firstBookingDisplay || '—')+'</td>'+
           '<td style="white-space:nowrap">'+esc(p.latestBookingDisplay || '—')+'</td>'+
-          '<td style="white-space:nowrap;min-width:0">'+paxContactsOutstandingCellHtml(p)+'</td>'+
           '</tr>'
         );
       }).join('');
@@ -12210,8 +12209,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return (
         '<div class="pax-contacts-toolbar"><h1 class="page-title">Participants</h1>'+
         '<button type="button" class="btn btn--pri" id="paxContactsAddBtn"><span aria-hidden="true">+ </span>Add new contact</button></div>'+
-        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">Participants and their booked services — tap anyone to open the full record.</p>'+
-        '<section class="section" style="margin:0 0 18px"><div class="section-h"><h2>Participants · live</h2><p>Each participant with their service(s), orders and balance — same records as Programme payments, editable here and logged.</p></div><div id="payParticipantsRoot"></div></section>'+
+        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">Participants and their booked services — tap anyone to open the full record (feedback, absences, incidents, positive feedback and more).</p>'+
         '<div class="pax-contacts-filters">'+
         '<div class="pax-contacts-fld"><label for="paxContactsSearch">Search</label><input class="inp" id="paxContactsSearch" type="search" placeholder="Search for a contact" autocomplete="off" /></div>'+
         '<div class="pax-contacts-fld"><label for="paxContactsBookingStatus">Booking status</label><select class="sel" id="paxContactsBookingStatus">'+paxContactsBookingStatusOptionsHtml()+'</select></div>'+
@@ -12221,7 +12219,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '</div>'+
         '<p class="pax-contacts-count" id="paxContactsCount">Showing '+String(n)+' contacts</p>'+
         '<div class="pax-contacts-table-wrap"><table class="pax-contacts-tbl" id="paxContactsTbl"><thead><tr>'+
-        '<th>Name</th><th>Contact</th><th>First booking</th><th>Latest booking</th><th>Outstanding amount owe</th>'+
+        '<th>Name</th><th>Contact</th><th>First booking</th><th>Latest booking</th>'+
         '</tr></thead><tbody>'+listRows+'</tbody></table></div>'+
         '<div class="pax-contacts-detail" id="paxContactsDetail" aria-live="polite"></div>'
       );
@@ -18252,11 +18250,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(id==='participant_achievements') bindParticipantAchievementsModule();
       if(id==='staff_live_map') bindStaffLiveMapModule();
       if(id==='clients'){
-        portalLoadLivePaymentsSource(function(changed){ if(changed && state.view==='clients') setView('clients'); });
-        if(window.AdminPayments && $('payParticipantsRoot')){
-          window.AdminPayments.configure({ getClient:getSchedSupabaseClient, toast:portalAdminToast, esc:esc, openModal:openModal, closeModal:closeModal });
-          window.AdminPayments.mount($('payParticipantsRoot'), { mode:'participants' });
-        }
         var root2 = $('workspace');
         function paxContactsFindById(pid){
           var L = paxContactsUnifiedList();
@@ -20284,14 +20277,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
 
     window.addEventListener('portal:supabase-ready', function portalLivePaymentsPrime(){
       portalLoadLivePaymentsSource(function(changed){
-        if(changed && (state.view==='bookings' || state.view==='orders_all' || state.view==='c4k_payments' || state.view==='clients')) setView(state.view);
+        if(changed && (state.view==='bookings' || state.view==='orders_all' || state.view==='c4k_payments')) setView(state.view);
       });
     });
     // After an edit in the Programme payments record screen (also opened from the
     // Orders catalogue "Edit"), re-pull the live figures and refresh the view.
     window.addEventListener('portal:payments-updated', function portalLivePaymentsRefresh(){
       portalLoadLivePaymentsSource(function(){
-        if(state.view==='bookings' || state.view==='orders_all' || state.view==='c4k_payments' || state.view==='clients') setView(state.view);
+        if(state.view==='bookings' || state.view==='orders_all' || state.view==='c4k_payments') setView(state.view);
       }, true);
     });
     window.addEventListener('portal:supabase-ready', function portalVenueReviewAlertsFetch(){
