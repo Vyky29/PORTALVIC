@@ -396,9 +396,11 @@ body:has(#workspace .dash-hub--nav-index) .admin-main{
 .dash-hub--nav-index .dash-hub-cat:nth-child(2){grid-column:span 8;grid-row:1}
 /* Row 2: H&R full width */
 .dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_zoho"]{grid-column:1 / -1;grid-row:2}
-/* Row 3: Supabase (narrow) + Finance */
-.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_supabase"]{grid-column:span 2;grid-row:3}
-.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_xero"]{grid-column:span 10;grid-row:3}
+/* Row 3: Documents + Finance share the line, sized to their button counts
+   (Documents 7 tiles, Finance 3) so the buttons keep the same size as the
+   other categories and both fit on one row. */
+.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_supabase"]{grid-column:span 8;grid-row:3}
+.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_xero"]{grid-column:span 4;grid-row:3}
 @media (max-width:960px){
   .dash-hub-cat-grid{grid-template-columns:1fr}
   .dash-hub--nav-index .dash-hub-cat-grid{
@@ -526,7 +528,10 @@ body:has(#workspace .dash-hub--nav-index) .admin-main{
 .dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_zoho"] .dash-hub__grid--inline{
   grid-template-columns:repeat(4,minmax(0,1fr));
 }
-.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_supabase"] .dash-hub__grid--inline,
+.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_supabase"] .dash-hub__grid--inline{
+  /* Documents: lay the 7 buttons in one row (like Finance), not stacked. */
+  grid-template-columns:repeat(7,minmax(0,1fr));
+}
 .dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_indeed"] .dash-hub__grid--inline{
   grid-template-columns:minmax(0,1fr);
 }
@@ -633,6 +638,9 @@ body:has(#workspace .dash-hub--nav-index) .admin-main{
   .dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_xero"] .dash-hub__grid--inline{
     grid-template-columns:repeat(2,minmax(0,1fr));
   }
+  .dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_supabase"] .dash-hub__grid--inline{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+  }
 }
 @media (max-width:560px){
   body:has(#workspace .dash-hub--nav-index) .admin-workspace{
@@ -646,6 +654,9 @@ body:has(#workspace .dash-hub--nav-index) .admin-main{
   }
   .dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_zoho"] .dash-hub__grid--inline{
     grid-template-columns:minmax(0,1fr);
+  }
+  .dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_supabase"] .dash-hub__grid--inline{
+    grid-template-columns:repeat(2,minmax(0,1fr));
   }
   .dash-hub--nav-index .dash-hub-cat__body .dash-hub__grid--inline .dash-hub__tile{
     min-height:clamp(120px,28vw,160px);
