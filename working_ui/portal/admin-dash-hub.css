@@ -259,6 +259,59 @@
   text-decoration:none;
   color:inherit;
 }
+/* Staff members: all 5 buttons on a single row inside the ops-admin grids. */
+.dash-hub--ops-admin .dash-hub__ops-admin-grids > .dash-hub__grid--5{
+  grid-template-columns:repeat(auto-fill,minmax(min(100%,120px),1fr));
+}
+@media (min-width:720px){
+  .dash-hub--ops-admin .dash-hub__ops-admin-grids > .dash-hub__grid--5{
+    grid-template-columns:repeat(5,minmax(0,1fr));
+  }
+}
+/* Operations admin — fill the viewport so every button is visible without
+   scrolling; panels and their tile grids share the height and tiles shrink. */
+body:has(#workspace .dash-hub--ops-admin) .admin-workspace{
+  display:flex;
+  flex-direction:column;
+  min-height:calc(100dvh - 56px);
+  overflow:hidden;
+}
+body:has(#workspace .dash-hub--ops-admin) .admin-main{ min-height:0; }
+.dash-hub--ops-admin{
+  flex:1;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+.dash-hub--ops-admin > .page-title{ flex-shrink:0; margin:0 0 4px; }
+.dash-hub--ops-admin > .page-intro{ flex-shrink:0; margin:0 0 10px; }
+.dash-hub--ops-admin .dash-hub__stack{
+  flex:1;
+  min-height:0;
+  gap:clamp(8px,1.4vh,14px);
+}
+.dash-hub--ops-admin .dash-hub__panel{
+  display:flex;
+  flex-direction:column;
+  min-height:0;
+  padding:clamp(10px,1.4vh,16px) clamp(12px,1.4vw,18px);
+}
+.dash-hub--ops-admin .dash-hub__panel-head{ flex-shrink:0; }
+.dash-hub--ops-admin .dash-hub__ops-admin-grids{
+  flex:1;
+  min-height:0;
+  justify-content:stretch;
+}
+.dash-hub--ops-admin .dash-hub__ops-admin-grids > .dash-hub__grid{
+  flex:1;
+  min-height:0;
+  grid-auto-rows:minmax(0,1fr);
+}
+.dash-hub--ops-admin .dash-hub__tile{
+  min-height:0;
+  height:100%;
+}
 @media (min-width:1200px){
   .dash-hub__grid--6{grid-template-columns:repeat(6,minmax(0,1fr))}
 }

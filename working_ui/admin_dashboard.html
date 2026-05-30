@@ -6,7 +6,7 @@
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260604-summary-valid-html" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260527-lead-log" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260530-finance-row2-hr" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260530-opsadmin-fit" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260521-embed" />
   <script src="/portal/hr-contract-embed-html.js?v=20260521-embed"></script>
@@ -15733,19 +15733,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portalDashTileHtml('portal_documents', '', 'portal_documents', 'Documents', 'Timesheets, expenses &amp; uploads', false, 'scheduling')+
         portalDashTileHtml('', '', 'invoices', 'Payroll report', 'Monthly PDF · preview &amp; send', false, 'payments', '', '', '/payroll-report.html')+
         portalDashTileHtml('', '', 'c4k_payments', 'Pay rates', 'Hourly rates by role &amp; scale', false, 'payments', '', '', '/pay-rates.html');
-      function opsAdminGridHtml(row1, row2){
+      function opsAdminGridHtml(row1, row2, gridCls){
+        var cls = gridCls || 'dash-hub__grid--3';
         var html =
           '<div class="dash-hub__ops-admin-grids">'+
-          '<div class="dash-hub__grid dash-hub__grid--3">'+row1+'</div>';
+          '<div class="dash-hub__grid '+cls+'">'+row1+'</div>';
         if(row2){
-          html += '<div class="dash-hub__grid dash-hub__grid--3">'+row2+'</div>';
+          html += '<div class="dash-hub__grid '+cls+'">'+row2+'</div>';
         }
         return html + '</div>';
       }
       return (
         '<div class="dash-hub dash-hub--ops-admin">'+
         '<h1 class="page-title">Operations admin</h1>'+
-        '<p class="page-intro">Participant and staff administration outside the live session window — orders, finance, HR, contracts, and reporting. For on-site session tools, use <button type="button" class="btn btn--ghost btn--sm" data-view-target="dashboard" style="vertical-align:baseline;padding:0 4px;font-size:inherit">Day operations</button>.</p>'+
+        '<p class="page-intro" style="white-space:nowrap;max-width:100%;font-size:clamp(10px,1.1vw,13px)">Participant and staff administration outside the live session window — orders, finance, HR, contracts, and reporting. For on-site session tools, use <button type="button" class="btn btn--ghost btn--sm" data-view-target="dashboard" style="vertical-align:baseline;padding:0 4px;font-size:inherit">Day operations</button>.</p>'+
         '<div class="dash-hub__stack">'+
         portalDashPanel({
           title:'Participants',
@@ -15764,7 +15765,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           linkIconId:'staffhr',
           jumpTitle:'Staff &amp; HR',
           panelClass:'dash-hub__panel--staff',
-          bodyHtml: opsAdminGridHtml(staffRow1),
+          bodyHtml: opsAdminGridHtml(staffRow1, '', 'dash-hub__grid--5'),
           ariaLabel:'Staff members'
         })+
         '</div></div>'
