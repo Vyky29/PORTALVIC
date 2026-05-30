@@ -242,6 +242,106 @@
     rota: ["Days on rota", "Days on Rota", "Rota days", "Days", "Rota", "Working days", "Days working", "Availability"]
   };
 
+  // ---- Roster-derived schedule (from STAFF_DASHBOARD_SOURCE) ----------------
+  // The HR matrix (hr_records) does not carry rota/venue/service columns, so we
+  // derive Shifts / Services / Days on rota / Venues from the live roster bundle
+  // and match each HR person to a roster staff by first name.
+  var DAY_ORDER = { monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6, sunday: 7 };
+  var ROLE_ABBR = {
+    CLI: "Climbing Instructor", SWI: "Swimming Instructor", SI: "Swimming Instructor",
+    SW: "Support Worker", SWL: "Lead Support Worker", SL: "Support Lead", FI: "Fitness Instructor",
+  };
+  function normName(v) {
+    var s = String(v == null ? "" : v).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+    if (!s) return "";
+    if (s === "yousef" || s === "youssef") return "yusef";
+    return s;
+  }
+  function firstKey(name) { return normName(String(name || "").trim().split(/\s+/)[0]); }
+  function shortDay(day) { var d = String(day || "").trim(); return d ? d.slice(0, 3) : ""; }
+  function normTime(label) { return String(label || "").replace(/\s*-\s*/g, " to ").replace(/\s+/g, " ").trim(); }
+
+  function buildRosterSummary() {
+    var src = global.STAFF_DASHBOARD_SOURCE;
+    var adapter = global.StaffDashboardSpreadsheetAdapter;
+    if (!src || !src.staffProfiles || !adapter || typeof adapter.bootstrap !== "function") return {};
+    var map = {};
+    Object.keys(src.staffProfiles).forEach(function (sid) {
+      if (sid === "demo") return;
+      var prof = src.staffProfiles[sid] || {};
+      var boot;
+      try { boot = adapter.bootstrap({ source: src, staffId: sid }); } catch (_e) { return; }
+      var sessions = (boot && boot.sessionsModel) || [];
+      var days = [], venues = [], services = [], byDayLabels = {};
+      sessions.forEach(function (s) {
+        if (s.status === "closed") return;
+        var day = String(s.day || "").trim();
+        var ven = String(s.venue || "").trim();
+        var svc = String(s.rosterService || s.activity || "").trim();
+        var lbl = normTime(s.timeSlotLabel);
+        if (day && days.indexOf(day) < 0) days.push(day);
+        if (ven && venues.indexOf(ven) < 0) venues.push(ven);
+        if (svc && services.indexOf(svc) < 0) services.push(svc);
+        if (day && lbl) {
+          if (!byDayLabels[day]) byDayLabels[day] = [];
+          if (byDayLabels[day].indexOf(lbl) < 0) byDayLabels[day].push(lbl);
+        }
+      });
+      if (!days.length && !venues.length && !services.length) return;
+      days.sort(function (a, b) { return (DAY_ORDER[a.toLowerCase()] || 9) - (DAY_ORDER[b.toLowerCase()] || 9); });
+      var shifts;
+      if (days.length <= 1) {
+        shifts = ((byDayLabels[days[0]] || [])).join(" / ");
+      } else {
+        var parts = [];
+        days.forEach(function (day) {
+          (byDayLabels[day] || []).forEach(function (lbl) { parts.push(lbl + " (" + shortDay(day) + ")"); });
+        });
+        shifts = parts.join(" / ");
+      }
+      var dd = days.length <= 1 ? days.join("") : (days.length === 2 ? days.join(" & ") : days.join(", "));
+      var summary = {
+        shifts: shifts,
+        services: services.join(", "),
+        venues: venues.join(", "),
+        days: dd,
+        track: prof.staffRoleTrack || "",
+        primaryService: services[0] || "",
+      };
+      map[normName(sid)] = summary;
+      if (prof.staffName) map[normName(prof.staffName)] = summary;
+    });
+    return map;
+  }
+  function rosterMap() {
+    if (!state._roster || !Object.keys(state._roster).length) state._roster = buildRosterSummary();
+    return state._roster;
+  }
+  function rosterFor(p) {
+    var m = rosterMap();
+    return m[firstKey(p && p.employee_name)] || m[normName(p && p.employee_name)] || null;
+  }
+  function roleLabel(rawRole, rsum) {
+    var raw = String(rawRole || "").trim();
+    if (raw) {
+      var up = raw.toUpperCase();
+      if (ROLE_ABBR[up]) return ROLE_ABBR[up];
+      if (raw.length > 4) return raw; // already a full label
+    }
+    if (rsum) {
+      var svc = String(rsum.primaryService || "").toLowerCase();
+      if (svc.indexOf("climb") >= 0) return "Climbing Instructor";
+      if (svc.indexOf("aquatic") >= 0 || svc.indexOf("swim") >= 0) return "Swimming Instructor";
+      if (svc.indexOf("fit") >= 0 || svc.indexOf("gym") >= 0) return "Fitness Instructor";
+      var tr = String(rsum.track || "").toLowerCase();
+      if (tr === "support_lead") return "Lead Support Worker";
+      if (tr === "support") return "Support Worker";
+      if (tr === "swimming") return "Swimming Instructor";
+      if (tr === "fitness") return "Fitness Instructor";
+    }
+    return raw;
+  }
+
   function matchesFilter(r) {
     if (state.activeFilter === "all") return true;
     if (state.activeFilter === "inactive") return !personActive(r);
@@ -295,7 +395,7 @@
 
     // People table (basics)
     html += '<div class="hr-card"><div class="hr-card-h"><h3>' + icon("staff", 17) + 'Staff</h3><span class="hr-multi">' + peopleRows.length + ' shown</span></div>';
-    html += '<div class="hr-tbl-wrap"><table class="hr-tbl hr-tbl--center"><thead><tr><th>Name</th><th>Role</th><th>Shifts</th><th>Services booked for</th><th>Venues</th><th>Days on rota</th><th>Status</th></tr></thead><tbody>';
+    html += '<div class="hr-tbl-wrap"><table class="hr-tbl hr-tbl--center"><thead><tr><th>Name</th><th>Role</th><th>Shifts</th><th>Services booked for</th><th>Days on rota</th><th>Venues</th><th>Status</th></tr></thead><tbody>';
     if (!peopleRows.length) {
       html += '<tr><td colspan="7" class="hr-empty">No people match this filter.</td></tr>';
     } else {
@@ -309,16 +409,19 @@
           ? '<span class="hr-off-chip" title="' + esc(up.map(function (u) { return fmtDate(u.off_date); }).join(", ")) + '">' + icon("cal", 12) + up.length + ' day' + (up.length === 1 ? "" : "s") + ' off</span>'
           : "";
         var dash = '<span class="muted">—</span>';
-        var svc = pickData(d, STAFF_COL_KEYS.services);
-        var ven = pickData(d, STAFF_COL_KEYS.venues);
-        var rota = pickData(d, STAFF_COL_KEYS.rota);
+        var rsum = rosterFor(p);
+        var role = roleLabel(d.Role || d.role || "", rsum);
+        var shifts = (rsum && rsum.shifts) || String(d.Shifts || "");
+        var svc = (rsum && rsum.services) || pickData(d, STAFF_COL_KEYS.services);
+        var ven = (rsum && rsum.venues) || pickData(d, STAFF_COL_KEYS.venues);
+        var rota = (rsum && rsum.days) || pickData(d, STAFF_COL_KEYS.rota);
         html += '<tr data-hr-person="' + esc(nk(p)) + '">'
           + '<td class="hr-name">' + esc(p.employee_name || "—") + '</td>'
-          + '<td>' + (esc(d.Role || d.role || "") || dash) + '</td>'
-          + '<td>' + (esc(d.Shifts || "") || dash) + '</td>'
+          + '<td>' + (esc(role) || dash) + '</td>'
+          + '<td>' + (esc(shifts) || dash) + '</td>'
           + '<td>' + (esc(svc) || dash) + '</td>'
-          + '<td>' + (esc(ven) || dash) + '</td>'
           + '<td>' + (esc(rota) || dash) + '</td>'
+          + '<td>' + (esc(ven) || dash) + '</td>'
           + '<td>' + pill + offChip + '</td></tr>';
       });
     }
