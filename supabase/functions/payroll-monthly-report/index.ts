@@ -41,6 +41,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { PDFDocument, StandardFonts, rgb } from "https://esm.sh/pdf-lib@1.17.1";
+import { PAYROLL_LOGO_BASE64 } from "./logo_base64.ts";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -317,7 +318,22 @@ async function aggregate(supabase: any, targetMonthIso: string) {
   return { workers, notSubmitted, totals, contracts, contractTotal };
 }
 
+function embeddedLogoBytes(): Uint8Array | null {
+  try {
+    const bin = atob(PAYROLL_LOGO_BASE64);
+    const out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out.length > 4 ? out : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+// Prefer the bundled logo (always available); only try the URL if, for some
+// reason, the embedded asset is missing. This guarantees the header logo shows.
 async function fetchLogo(logoUrl: string): Promise<Uint8Array | null> {
+  const embedded = embeddedLogoBytes();
+  if (embedded) return embedded;
   if (!logoUrl || !/^https?:\/\//i.test(logoUrl)) return null;
   try {
     const ctrl = new AbortController();
@@ -418,17 +434,18 @@ async function buildPdf(
     }
   }
 
-  // Company logo, centered at the top. The file may be a PNG or a JPEG (our
-  // logoPDF.png is actually JPEG-encoded), so pick the embedder by signature.
+  // Company logo, centered at the top, ABOVE the title. The file may be a PNG or
+  // a JPEG (our logoPDF.png is actually JPEG-encoded), so pick the embedder by
+  // signature.
   if (logoBytes && logoBytes.length > 4) {
     try {
       const isPng =
         logoBytes[0] === 0x89 && logoBytes[1] === 0x50 && logoBytes[2] === 0x4e && logoBytes[3] === 0x47;
       const img = isPng ? await pdf.embedPng(logoBytes) : await pdf.embedJpg(logoBytes);
-      const logoW = 64; // modest header logo
+      const logoW = 96; // header logo
       const logoH = (img.height / img.width) * logoW;
       page.drawImage(img, { x: (width - logoW) / 2, y: y - logoH, width: logoW, height: logoH });
-      y -= logoH + 14;
+      y -= logoH + 16;
     } catch (_) {
       // Decode failed — skip the logo, keep the report.
     }
@@ -436,17 +453,8 @@ async function buildPdf(
 
   // Title block
   drawText("MONTHLY PAYROLL REPORT", margin, y - 6, 16, bold, ink);
-  y -= 30;
-  drawText(`Pay month: ${monthLabelFromIso(targetMonthIso)}  (cycle 25th -> 24th)`, margin, y - 4, 11, font, muted);
-  y -= 20;
-  drawText(
-    `Generated: ${new Date().toLocaleString("en-GB", { timeZone: "Europe/London" })}`,
-    margin,
-    y - 4,
-    9,
-    font,
-    muted
-  );
+  y -= 32;
+  drawText(`Pay month: ${monthLabelFromIso(targetMonthIso)}  (cycle 25th -> 24th)`, margin, y - 4, 15, bold, ink);
   y -= 30;
   drawText("To process this month (submitted)", margin, y - 4, 12, bold, ink);
   y -= 22;
