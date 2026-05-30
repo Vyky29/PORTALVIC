@@ -884,6 +884,11 @@ body:has(#workspace .dash-hub--dayops) .admin-main{
   flex:2 1 0;
   min-height:0;
 }
+/* All Sessions tiles share the "Services & Participants (CFK)" amber identity. */
+.dash-hub--dayops .dash-hub__panel--sessions .dash-hub__tile{
+  --dh-tile-bg:rgba(251,191,36,.22);
+  --dh-tile-fg:#b45309;
+}
 .dash-hub--dayops .dash-hub__panel--team > .dash-hub__grid,
 .dash-hub--dayops .dash-hub__sessions-grids{
   flex:1;
