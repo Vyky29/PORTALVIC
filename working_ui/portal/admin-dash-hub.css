@@ -250,6 +250,20 @@
 .dash-hub--ops-admin .dash-hub__ops-admin-grids > .dash-hub__grid--3{
   grid-template-columns:repeat(auto-fill,minmax(min(100%,148px),1fr));
 }
+/* Participants row 2 (Progress + Reports): only 2 tiles — centre them while
+   keeping each tile at the same 1/3 width as the row above. */
+@media (min-width:720px){
+  .dash-hub--ops-admin .dash-hub__ops-admin-grids > .dash-hub__grid--participants-row2{
+    display:flex;
+    justify-content:center;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  .dash-hub--ops-admin .dash-hub__ops-admin-grids > .dash-hub__grid--participants-row2 > *{
+    flex:0 1 calc((100% - 24px) / 3);
+    min-width:0;
+  }
+}
 @media (min-width:720px){
   .dash-hub--ops-admin .dash-hub__ops-admin-grids > .dash-hub__grid--3{
     grid-template-columns:repeat(3,minmax(0,1fr));

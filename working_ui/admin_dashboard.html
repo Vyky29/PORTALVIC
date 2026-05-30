@@ -6,7 +6,7 @@
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260604-summary-valid-html" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260527-lead-log" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260530-opsadmin-fit" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260530-partrow2-center" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260521-embed" />
   <script src="/portal/hr-contract-embed-html.js?v=20260521-embed"></script>
@@ -15782,13 +15782,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portalDashTileHtml('portal_documents', '', 'portal_documents', 'Documents', 'Timesheets, expenses &amp; uploads', false, 'scheduling')+
         portalDashTileHtml('', '', 'invoices', 'Payroll report', 'Monthly PDF · preview &amp; send', false, 'payments', '', '', '/payroll-report.html')+
         portalDashTileHtml('', '', 'c4k_payments', 'Pay rates', 'Hourly rates by role &amp; scale', false, 'payments', '', '', '/pay-rates.html');
-      function opsAdminGridHtml(row1, row2, gridCls){
+      function opsAdminGridHtml(row1, row2, gridCls, row2ExtraCls){
         var cls = gridCls || 'dash-hub__grid--3';
         var html =
           '<div class="dash-hub__ops-admin-grids">'+
           '<div class="dash-hub__grid '+cls+'">'+row1+'</div>';
         if(row2){
-          html += '<div class="dash-hub__grid '+cls+'">'+row2+'</div>';
+          html += '<div class="dash-hub__grid '+cls+(row2ExtraCls?(' '+row2ExtraCls):'')+'">'+row2+'</div>';
         }
         return html + '</div>';
       }
@@ -15804,7 +15804,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           linkIconId:'clients',
           jumpTitle:'Participants directory',
           panelClass:'dash-hub__panel--participants',
-          bodyHtml: opsAdminGridHtml(participantsRow1, participantsRow2),
+          bodyHtml: opsAdminGridHtml(participantsRow1, participantsRow2, '', 'dash-hub__grid--participants-row2'),
           ariaLabel:'Participants'
         })+
         portalDashPanel({
