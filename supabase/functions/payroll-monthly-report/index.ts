@@ -609,6 +609,7 @@ Deno.serve(async (req: Request) => {
       summary,
       workers: data.workers,
       missing: data.notSubmitted,
+      contracts: data.contracts,
     });
   }
 
@@ -657,6 +658,7 @@ Deno.serve(async (req: Request) => {
       summary,
       workers: data.workers,
       missing: data.notSubmitted,
+      contracts: data.contracts,
       filename: `payroll-${targetMonthIso.slice(0, 7)}.pdf`,
       pdfBase64: toBase64(pdfBytes),
     });

@@ -37,12 +37,20 @@
     .btn--send:hover{filter:brightness(.95)}
     .btn[disabled]{opacity:.55;cursor:not-allowed}
     .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-top:4px}
-    .stat{background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-width:0}
-    .stat b{display:block;font-size:18px;color:var(--ink)}
+    .stat{background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:12px;min-width:0;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:2px}
+    .stat b{font-size:18px;color:var(--ink)}
     .stat span{font-size:12px;color:var(--muted);overflow-wrap:break-word}
     .missing{margin:10px 0 0;padding:0;list-style:none}
     .missing li{padding:6px 10px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px;background:var(--dangerSoft);
       color:#7f1d1d;font-size:13px;overflow-wrap:break-word}
+    .tbl-wrap{overflow-x:auto;min-width:0}
+    .ptbl{width:100%;border-collapse:collapse;font-size:13px;min-width:520px}
+    .ptbl th,.ptbl td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;overflow-wrap:break-word}
+    .ptbl thead th{background:#f8fafc;color:var(--ink);font-size:11px;text-transform:uppercase;letter-spacing:.03em}
+    .ptbl td.num,.ptbl th.num{text-align:right;white-space:nowrap}
+    .ptbl tfoot td{font-weight:700;border-top:2px solid #cbd5e1;border-bottom:0}
+    .ptbl .late{color:var(--warn);font-weight:600}
     .pdf-frame{width:100%;height:70vh;min-height:420px;border:1px solid var(--line);border-radius:12px;background:#fff}
     .note{border-radius:10px;padding:10px 12px;font-size:13px;margin:0 0 12px;overflow-wrap:break-word}
     .note--warn{background:var(--warnSoft);border:1px solid #fde68a;color:var(--warn)}
@@ -100,6 +108,18 @@
         </div>
       </div>
 
+      <div class="card hidden" id="submittedCard">
+        <div class="card-pad">
+          <p style="margin:0 0 8px;font-weight:700;color:var(--ink)">To process this month (submitted)</p>
+          <div class="tbl-wrap"><table class="ptbl" id="submittedTable"></table></div>
+          <div id="contractsWrap" class="hidden">
+            <p style="margin:16px 0 6px;font-weight:700;color:var(--ink)">Contract / invoice — paid separately</p>
+            <p class="muted" style="margin:0 0 6px;font-size:12px">Not part of the timesheet total above.</p>
+            <div class="tbl-wrap"><table class="ptbl" id="contractsTable"></table></div>
+          </div>
+        </div>
+      </div>
+
       <div class="card">
         <div class="card-pad">
           <p style="margin:0 0 10px;font-weight:700;color:var(--ink)">Document preview</p>
@@ -126,6 +146,10 @@
     const statsEl = document.getElementById("stats");
     const missingWrap = document.getElementById("missingWrap");
     const missingList = document.getElementById("missingList");
+    const submittedCard = document.getElementById("submittedCard");
+    const submittedTable = document.getElementById("submittedTable");
+    const contractsWrap = document.getElementById("contractsWrap");
+    const contractsTable = document.getElementById("contractsTable");
     const pdfFrame = document.getElementById("pdfFrame");
 
     const fnUrl = getSupabaseFunctionUrl("payroll-monthly-report");
@@ -182,12 +206,15 @@
       return body;
     }
 
+    function esc(x) {
+      return String(x == null ? "" : x).replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+    }
+
     function renderSummary(out) {
       const s = out.summary || {};
       const t = s.totals || {};
       statsEl.innerHTML = "";
       const cells = [
-        [s.monthLabel || s.month || "—", "Pay month"],
         [String(s.submitted ?? 0), "Submitted (to process)"],
         [String(s.notSubmitted ?? 0), "Not submitted"],
         ["£" + money(t.gross), "Gross"],
@@ -205,6 +232,9 @@
         d.appendChild(sp);
         statsEl.appendChild(d);
       }
+
+      renderSubmittedTable(out);
+
       const missing = Array.isArray(out.missing) ? out.missing : [];
       if (missing.length) {
         missingList.innerHTML = "";
@@ -217,6 +247,62 @@
       } else {
         missingWrap.classList.add("hidden");
       }
+    }
+
+    function renderSubmittedTable(out) {
+      const workers = Array.isArray(out.workers) ? out.workers : [];
+      const t = (out.summary && out.summary.totals) || {};
+      const num = (v) => (v == null || v === "" || !Number.isFinite(Number(v)) ? "—" : money(v));
+      if (workers.length) {
+        const rows = workers.map((w) => {
+          const lateClass = w.isLate ? ' class="late"' : "";
+          return (
+            "<tr>" +
+            `<td>${esc(w.name)}</td>` +
+            `<td>${esc(w.role || "")}</td>` +
+            `<td class="num">${num(w.hours)}</td>` +
+            `<td class="num">${w.rate == null ? "—" : "£" + money(w.rate)}</td>` +
+            `<td class="num">£${num(w.gross)}</td>` +
+            `<td class="num">${Number(w.penalty) ? "-£" + money(w.penalty) : "£0.00"}</td>` +
+            `<td class="num">£${num(w.net)}</td>` +
+            `<td${lateClass}>${w.isLate ? "Late" : "On time"}</td>` +
+            "</tr>"
+          );
+        }).join("");
+        submittedTable.innerHTML =
+          "<thead><tr><th>Name</th><th>Role</th><th class='num'>Hours</th><th class='num'>Rate</th>" +
+          "<th class='num'>Gross</th><th class='num'>Penalty</th><th class='num'>Net</th><th>Status</th></tr></thead>" +
+          `<tbody>${rows}</tbody>` +
+          "<tfoot><tr><td>TOTAL</td><td></td>" +
+          `<td class="num">${num(t.hours)}</td><td></td>` +
+          `<td class="num">£${num(t.gross)}</td>` +
+          `<td class="num">${Number(t.penalty) ? "-£" + money(t.penalty) : "£0.00"}</td>` +
+          `<td class="num">£${num(t.net)}</td><td></td></tr></tfoot>`;
+      } else {
+        submittedTable.innerHTML =
+          "<tbody><tr><td class='muted'>No timesheets submitted for this month.</td></tr></tbody>";
+      }
+
+      const contracts = Array.isArray(out.contracts) ? out.contracts : [];
+      if (contracts.length) {
+        const crows = contracts.map((c) =>
+          "<tr>" +
+          `<td>${esc(c.name)}</td>` +
+          `<td>${esc(c.role || "")}</td>` +
+          `<td class="num">${c.gross == null ? "—" : "£" + money(c.gross)}</td>` +
+          "</tr>"
+        ).join("");
+        const ctotal = contracts.reduce((a, c) => a + (Number(c.gross) || 0), 0);
+        contractsTable.innerHTML =
+          "<thead><tr><th>Name</th><th>Role</th><th class='num'>Gross</th></tr></thead>" +
+          `<tbody>${crows}</tbody>` +
+          `<tfoot><tr><td>SUBTOTAL</td><td></td><td class="num">£${money(ctotal)}</td></tr></tfoot>`;
+        contractsWrap.classList.remove("hidden");
+      } else {
+        contractsWrap.classList.add("hidden");
+      }
+
+      submittedCard.classList.remove("hidden");
     }
 
     function downloadPdf() {
