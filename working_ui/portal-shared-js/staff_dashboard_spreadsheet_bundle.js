@@ -13579,7 +13579,7 @@
     {
       "client_name": "Emmanuel",
       "day": "Friday",
-      "instructors": "YOUSSEF",
+      "instructors": "VICTOR",
       "service": "Day Centre",
       "area": "Hub Room",
       "time_slot": "11 to 4",
