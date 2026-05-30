@@ -100,11 +100,6 @@
       <div class="card" id="summaryCard">
         <div class="card-pad">
           <div class="stat-grid" id="stats"></div>
-          <div id="missingWrap" class="hidden">
-            <p style="margin:14px 0 4px;font-weight:700;color:var(--ink)">Not submitted — do NOT process this month</p>
-            <p class="muted" style="margin:0;font-size:12px">A £5 late penalty applies to their next timesheet (paid next month).</p>
-            <ul class="missing" id="missingList"></ul>
-          </div>
         </div>
       </div>
 
@@ -116,6 +111,16 @@
             <p style="margin:16px 0 6px;font-weight:700;color:var(--ink)">Contract / invoice — paid separately</p>
             <p class="muted" style="margin:0 0 6px;font-size:12px">Not part of the timesheet total above.</p>
             <div class="tbl-wrap"><table class="ptbl" id="contractsTable"></table></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card hidden" id="missingCard">
+        <div class="card-pad">
+          <div id="missingWrap" class="hidden">
+            <p style="margin:0 0 4px;font-weight:700;color:var(--ink)">Not submitted — do NOT process this month</p>
+            <p class="muted" style="margin:0;font-size:12px">A £5 late penalty applies to their next timesheet (paid next month).</p>
+            <ul class="missing" id="missingList"></ul>
           </div>
         </div>
       </div>
@@ -144,6 +149,7 @@
     const sendBtn = document.getElementById("sendBtn");
     const statusNote = document.getElementById("statusNote");
     const statsEl = document.getElementById("stats");
+    const missingCard = document.getElementById("missingCard");
     const missingWrap = document.getElementById("missingWrap");
     const missingList = document.getElementById("missingList");
     const submittedCard = document.getElementById("submittedCard");
@@ -248,8 +254,10 @@
           missingList.appendChild(li);
         }
         missingWrap.classList.remove("hidden");
+        missingCard.classList.remove("hidden");
       } else {
         missingWrap.classList.add("hidden");
+        missingCard.classList.add("hidden");
       }
     }
 
