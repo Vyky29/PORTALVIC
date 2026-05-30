@@ -11079,7 +11079,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var clientSel = ordersPortalClientFilterSelectHtml(booking.ordersClientFilter);
       return '<h1 class="page-title">Orders</h1>'+
         '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word;display:flex;flex-wrap:wrap;align-items:center;gap:8px">Bookings and orders for the range you pick. '+scopeChip+'</p>'+
-        '<section class="section" style="margin:0 0 18px"><div class="section-h"><h2>Orders · live</h2><p>The booked services and balances — same records as Programme payments, editable here and logged.</p></div><div id="payOrdersRoot"></div></section>'+
         '<div class="filter-row" style="align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;min-width:0;max-width:100%">'+
         '<label class="muted" for="bookingOrdersRange" style="white-space:nowrap">Show orders:</label> '+
         '<select class="sel" id="bookingOrdersRange" style="max-width:200px" aria-label="Orders time range">'+
@@ -18083,10 +18082,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(id==='bookings' || id==='orders_all' || id==='c4k_payments'){
         bindBookingModule();
         if(id==='bookings' || id==='orders_all'){
-          if(window.AdminPayments && $('payOrdersRoot')){
-            window.AdminPayments.configure({ getClient:getSchedSupabaseClient, toast:portalAdminToast, esc:esc, openModal:openModal, closeModal:closeModal });
-            window.AdminPayments.mount($('payOrdersRoot'), { mode:'orders' });
-          }
           var scrollBk = state.pendingBookingsScroll;
           state.pendingBookingsScroll = null;
           if(scrollBk){
