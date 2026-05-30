@@ -54,7 +54,8 @@
     rootEl: null,
     rows: [],
     people: [],
-    activeFilter: "active", // active | all | inactive
+    linkedKeys: {}, // name_key -> true when the person has a login account
+    activeFilter: "active", // active | inactive | all
     query: "",
   };
 
@@ -116,12 +117,21 @@
       .sort(function (a, b) {
         return String(a.employee_name || "").localeCompare(String(b.employee_name || ""));
       });
+    // Active = has a login account (linked to staff_profiles). Everyone else is
+    // inactive. Linkage is per-person, so a name_key counts as linked if ANY of
+    // its rows carries a staff_id.
+    state.linkedKeys = {};
+    state.rows.forEach(function (r) {
+      if (r.staff_id) state.linkedKeys[nk(r)] = true;
+    });
   }
 
-  function matchesFilter(active) {
+  function personActive(r) { return !!state.linkedKeys[nk(r)]; }
+
+  function matchesFilter(r) {
     if (state.activeFilter === "all") return true;
-    if (state.activeFilter === "inactive") return active === false;
-    return active !== false; // active (default)
+    if (state.activeFilter === "inactive") return !personActive(r);
+    return personActive(r); // active (default) = has a login account
   }
 
   function rowMatchesQuery(r) {
@@ -141,7 +151,7 @@
     var n = 0;
     for (var i = 0; i < state.rows.length; i++) {
       var r = state.rows[i];
-      if (r.sheet === sheet && matchesFilter(r.active)) n++;
+      if (r.sheet === sheet && matchesFilter(r)) n++;
     }
     return n;
   }
@@ -152,19 +162,19 @@
     var counts = { active: 0, all: 0, inactive: 0 };
     state.people.forEach(function (p) {
       counts.all++;
-      if (p.active === false) counts.inactive++; else counts.active++;
+      if (personActive(p)) counts.active++; else counts.inactive++;
     });
 
     var peopleRows = state.people.filter(function (p) {
-      return matchesFilter(p.active) && rowMatchesQuery(p);
+      return matchesFilter(p) && rowMatchesQuery(p);
     });
 
     var html = '<div class="hr-wrap">';
     html += '<div class="hr-bar">'
-      + '<div class="hr-seg" role="group" aria-label="Active filter">'
+      + '<div class="hr-seg" role="group" aria-label="Account filter">'
       + '<button type="button" data-hr-filter="active" aria-pressed="' + (state.activeFilter === "active") + '">Active (' + counts.active + ')</button>'
-      + '<button type="button" data-hr-filter="all" aria-pressed="' + (state.activeFilter === "all") + '">All (' + counts.all + ')</button>'
       + '<button type="button" data-hr-filter="inactive" aria-pressed="' + (state.activeFilter === "inactive") + '">Inactive (' + counts.inactive + ')</button>'
+      + '<button type="button" data-hr-filter="all" aria-pressed="' + (state.activeFilter === "all") + '">All (' + counts.all + ')</button>'
       + '</div>'
       + '<input type="search" class="hr-search" id="hrSearch" placeholder="Search people & all categories…" value="' + esc(state.query) + '" />'
       + '</div>';
@@ -177,9 +187,9 @@
     } else {
       peopleRows.forEach(function (p) {
         var d = p.data || {};
-        var pill = p.active === false
-          ? '<span class="hr-pill hr-pill--off">Inactive</span>'
-          : '<span class="hr-pill hr-pill--on">Active</span>';
+        var pill = personActive(p)
+          ? '<span class="hr-pill hr-pill--on">Active</span>'
+          : '<span class="hr-pill hr-pill--off">Inactive</span>';
         html += '<tr data-hr-person="' + esc(nk(p)) + '">'
           + '<td class="hr-name">' + esc(p.employee_name || "—") + '</td>'
           + '<td>' + esc(d.Role || d.role || "") + '</td>'
@@ -235,7 +245,7 @@
   function openCategory(sheet) {
     if (typeof deps.openModal !== "function") return;
     var rows = state.rows.filter(function (r) {
-      return r.sheet === sheet && matchesFilter(r.active) && rowMatchesQuery(r);
+      return r.sheet === sheet && matchesFilter(r) && rowMatchesQuery(r);
     });
     // Column union (first-seen order; json preserves it).
     var seen = {}, cols = [];
@@ -284,7 +294,7 @@
     if (!rows.length) return;
     var personRow = rows.filter(function (r) { return r.sheet === PEOPLE_SHEET; })[0] || rows[0];
     var displayName = personRow.employee_name || "Person";
-    var isActive = personRow.active !== false;
+    var linked = personActive(personRow);
 
     // Order: Employee info first, then the rest by CATEGORY_ORDER, then any others.
     var order = [PEOPLE_SHEET].concat(CATEGORY_ORDER);
@@ -314,7 +324,11 @@
 
     var html = '<div class="modal-h"><h2 id="modalTitle">' + esc(displayName) + '</h2></div>'
       + '<div class="modal-b hr-person">'
-      + '<label class="hr-toggle" style="margin-bottom:12px"><input type="checkbox" id="hrActiveToggle"' + (isActive ? " checked" : "") + ' /> Active (unchecking marks them inactive in H&R — does not block login)</label>'
+      + '<p style="margin:0 0 12px;font-size:13px">Status: '
+      + (linked
+          ? '<span class="hr-pill hr-pill--on">Active</span> <span class="muted">has a login account</span>'
+          : '<span class="hr-pill hr-pill--off">Inactive</span> <span class="muted">no login account</span>')
+      + '</p>'
       + sections
       + '<p id="hrPersonMsg" class="muted" style="margin:8px 0 0;font-size:13px"></p>'
       + '</div>'
@@ -350,20 +364,17 @@
     var msg = mr.querySelector("#hrPersonMsg");
     if (!client) { if (msg) msg.textContent = "Supabase not connected yet — sign in as admin and retry."; return; }
     var rows = state.rows.filter(function (r) { return nk(r) === nameKey; });
-    var toggle = mr.querySelector("#hrActiveToggle");
-    var activeVal = toggle ? !!toggle.checked : true;
 
     if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = "Saving…"; }
     if (msg) msg.textContent = "";
 
     // We loaded every row, so `rows` already holds all rows for this person.
-    // Update data + the HR-only active flag together, per row, by id (precise).
+    // Active is derived from the login account, so we only persist field edits.
     var ops = rows.map(function (r) {
       var newData = collectRowData(mr, r.id);
-      return client.from("hr_records").update({ data: newData, active: activeVal }).eq("id", r.id).then(function (res) {
+      return client.from("hr_records").update({ data: newData }).eq("id", r.id).then(function (res) {
         if (res.error) throw res.error;
         r.data = newData;
-        r.active = activeVal;
       });
     });
 
