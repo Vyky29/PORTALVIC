@@ -22,7 +22,7 @@
   <script src="/portal/portal_dm_voice.js?v=20260531-dm-voice"></script>
   <script src="/portal/portal-change-log.js?v=20260530-changelog"></script>
   <script src="/portal/admin-hr.js?v=20260530-hr-daysoff"></script>
-  <script src="/portal/admin-payments.js?v=20260530-pay-participant-orders"></script>
+  <script src="/portal/admin-payments.js?v=20260530-orders-editable"></script>
   <script src="/portal/admin-onboarding.js?v=20260530-onboarding-clickdocs"></script>
   <script src="/portal/admin-logs.js?v=20260530-logs"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
@@ -8603,6 +8603,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var regTot = ordersPortalRegisterTermTotal(pp);
       var wl = pp.onWaitingList === true;
       var dateLine = ordersPortalFormatBookingWhen(lastIso) + (wl ? ' <span class="chip chip--pend" style="font-size:10px">Waitlist</span>' : '');
+      // Live client_payments ids matched for this order — enable inline editing
+      // of the same record shown in Programme payments.
+      var payIds = payHits.map(function(h){ return h && h.payId; }).filter(Boolean);
+      var editBtn = payIds.length
+        ? '<button type="button" class="btn btn--pri btn--sm" data-portal-order-edit="'+escAttr(payIds.join(','))+'" data-portal-order-name="'+escAttr(chDisp || parentNm)+'">Edit</button>'
+        : '';
       return '<tr style="min-width:0">'+
         '<td class="muted" style="min-width:0;max-width:12rem;white-space:normal;overflow-wrap:break-word">'+ordersPortalOrdersCellStack(dateLine)+'</td>'+
         '<td style="min-width:0;max-width:14rem;overflow-wrap:break-word;font-weight:600">'+ordersPortalOrdersCellStack(esc(parentNm))+'</td>'+
@@ -8612,6 +8618,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<td style="min-width:0">'+ordersPortalOrdersCellStack(ordersPortalMoneyBlockAggregate(payHits, regTot))+'</td>'+
         '<td class="toolbar" style="min-width:0;white-space:normal;max-width:12rem">'+
         '<div class="tbl-portal-orders-actions">'+
+        editBtn+
         '<button type="button" class="btn btn--ghost btn--sm" data-portal-order-view="'+escAttr(cid)+'" data-portal-order-lk="'+escAttr(olk)+'">View Order</button>'+
         '<button type="button" class="btn btn--sec btn--sm" data-portal-order-invoice="1">Send Invoice</button>'+
         '<div class="muted" style="font-size:11px">0 sent</div></div></td></tr>';
@@ -8671,6 +8678,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function ordersPortalTableClick(ev){
       var t = ev.target;
       if(!t || !t.closest) return;
+      var ed = t.closest('[data-portal-order-edit]');
+      if(ed){
+        var ids = String(ed.getAttribute('data-portal-order-edit') || '').split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+        var nm = String(ed.getAttribute('data-portal-order-name') || '').trim();
+        if(ids.length && window.AdminPayments){
+          window.AdminPayments.configure({ getClient:getSchedSupabaseClient, toast:portalAdminToast, esc:esc, openModal:openModal, closeModal:closeModal });
+          window.AdminPayments.openRecords(nm, ids);
+        }
+        return;
+      }
       var v = t.closest('[data-portal-order-view]');
       if(v){
         var lk = String(v.getAttribute('data-portal-order-lk') || '').trim();
@@ -9493,6 +9510,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       else if(isPaid) out = 0;
       else out = (paid != null ? Math.max(0, amount - paid) : amount);
       return {
+        payId: r.id,
         pax: r.client_name || '',
         parent: r.parent_name || '',
         payMethod: portalLivePayDataPick(d, ['Pay method', 'Payment method', 'Method', 'payMethod']) || '—',
@@ -9513,8 +9531,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       };
     }
     var __portalLivePaySource = { loaded:false, loading:false };
-    function portalLoadLivePaymentsSource(cb){
+    function portalLoadLivePaymentsSource(cb, force){
       cb = typeof cb === 'function' ? cb : function(){};
+      if(force){ __portalLivePaySource.loaded = false; }
       if(__portalLivePaySource.loaded){ cb(false); return; }
       if(__portalLivePaySource.loading){ return; }
       var client = getSchedSupabaseClient();
@@ -20215,6 +20234,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       portalLoadLivePaymentsSource(function(changed){
         if(changed && (state.view==='bookings' || state.view==='orders_all' || state.view==='c4k_payments' || state.view==='clients')) setView(state.view);
       });
+    });
+    // After an edit in the Programme payments record screen (also opened from the
+    // Orders catalogue "Edit"), re-pull the live figures and refresh the view.
+    window.addEventListener('portal:payments-updated', function portalLivePaymentsRefresh(){
+      portalLoadLivePaymentsSource(function(){
+        if(state.view==='bookings' || state.view==='orders_all' || state.view==='c4k_payments' || state.view==='clients') setView(state.view);
+      }, true);
     });
     window.addEventListener('portal:supabase-ready', function portalVenueReviewAlertsFetch(){
       try{

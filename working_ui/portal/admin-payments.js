@@ -639,6 +639,13 @@
       // Sync the in-memory row with exactly what the database stored.
       Object.keys(saved).forEach(function (k) { r[k] = saved[k]; });
       deps.toast("Saved.");
+      // Let other views (Orders/Participants catalogues fed from client_payments)
+      // refresh their money columns after an edit.
+      try {
+        if (global.dispatchEvent && typeof CustomEvent === "function") {
+          global.dispatchEvent(new CustomEvent("portal:payments-updated", { detail: { id: saved.id } }));
+        }
+      } catch (_e) {}
       closeScreen();
       render();
     }).catch(function (err) {
@@ -705,5 +712,30 @@
     return page(0);
   }
 
-  global.AdminPayments = { configure: configure, mount: mount };
+  // Ensure rows are in memory (load once if needed), then run cb(true|false).
+  function ensureLoaded(cb) {
+    if (state.rows && state.rows.length) { cb(true); return; }
+    var client = deps.getClient();
+    if (!client) { cb(false); return; }
+    loadAll(client).then(function (rows) { state.rows = rows; cb(true); }).catch(function () { cb(false); });
+  }
+
+  // Open the editable full-screen record for a single client_payments id.
+  function openRecord(id) {
+    ensureLoaded(function (ok) { if (ok) openDetail(id); });
+  }
+
+  // Open one editable record (1 id) or the intermediate list (several ids) for
+  // a participant/family — used by the Orders catalogue "Edit" action.
+  function openRecords(name, ids) {
+    ids = (ids || []).filter(Boolean);
+    if (!ids.length) return;
+    ensureLoaded(function (ok) {
+      if (!ok) return;
+      if (ids.length === 1) openDetail(ids[0]);
+      else openParticipantOrders(name || "Orders", ids);
+    });
+  }
+
+  global.AdminPayments = { configure: configure, mount: mount, openRecord: openRecord, openRecords: openRecords };
 })(typeof window !== "undefined" ? window : globalThis);
