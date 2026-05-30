@@ -47,6 +47,20 @@
   function esc(s) { return deps.esc(s); }
   function labelFor(sheet) { return SHEET_LABELS[sheet] || sheet; }
 
+  var ICONS = {
+    billed: '<path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1z"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/>',
+    paid: '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',
+    out: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
+    priv: '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>',
+    fund: '<line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 21 8 3 8"/>',
+    clients: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  };
+  function icon(name, px) {
+    var p = ICONS[name] || "";
+    var s = px || 18;
+    return '<svg class="pay-ico" viewBox="0 0 24 24" width="' + s + '" height="' + s + '" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + p + "</svg>";
+  }
+
   function money(n) {
     if (n == null || n === "" || isNaN(Number(n))) return "—";
     return "£" + Number(n).toLocaleString("en-GB", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
@@ -63,12 +77,33 @@
     if (document.getElementById("adminPayStyle")) return;
     var css = [
       ".pay-wrap{min-width:0}",
-      ".pay-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:0 0 14px}",
-      ".pay-kpi{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px 16px}",
+      ".pay-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:0 0 12px}",
+      ".pay-kpi{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px 16px}",
+      ".pay-kpi__ico{flex:0 0 auto;width:38px;height:38px;border-radius:11px;display:grid;place-items:center;background:#eff6ff;color:#2d84b3}",
+      ".pay-kpi__txt{min-width:0}",
       ".pay-kpi b{display:block;font-size:22px;color:#0f172a}",
       ".pay-kpi span{font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:.03em;font-weight:700}",
       ".pay-kpi--out b{color:#b91c1c}",
+      ".pay-kpi--out .pay-kpi__ico{background:#fef2f2;color:#b91c1c}",
       ".pay-kpi--paid b{color:#15803d}",
+      ".pay-kpi--paid .pay-kpi__ico{background:#e7f6ee;color:#15803d}",
+      ".pay-groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin:0 0 14px}",
+      ".pay-grp{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px 16px;min-width:0}",
+      ".pay-grp__h{display:flex;align-items:center;gap:10px;margin:0 0 12px;min-width:0}",
+      ".pay-grp__ico{flex:0 0 auto;width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:#eef2f7;color:#334155}",
+      ".pay-grp--priv .pay-grp__ico{background:#eff6ff;color:#2d84b3}",
+      ".pay-grp--fund .pay-grp__ico{background:#f1ecfb;color:#7c3aed}",
+      ".pay-grp__head-txt{min-width:0}",
+      ".pay-grp__t{display:block;font-size:14px;font-weight:800;color:#0f172a;overflow-wrap:break-word}",
+      ".pay-grp__sub{display:block;font-size:11px;color:#94a3b8;font-weight:700}",
+      ".pay-grp__stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}",
+      ".pay-grp__stat{min-width:0}",
+      ".pay-grp__stat span{display:block;font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.03em;font-weight:700}",
+      ".pay-grp__stat b{font-size:17px;color:#0f172a;font-variant-numeric:tabular-nums;overflow-wrap:break-word}",
+      ".pay-grp__stat--paid b{color:#15803d}",
+      ".pay-grp__stat--out b{color:#b91c1c}",
+      ".pay-ico{display:block}",
+      ".pay-card-h h3{display:flex;align-items:center;gap:8px}",
       ".pay-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:0 0 14px;min-width:0}",
       ".pay-seg{display:inline-flex;border:1px solid #c3d0e0;border-radius:10px;overflow:hidden}",
       ".pay-seg button{font:inherit;font-weight:700;font-size:13px;border:0;background:#fff;color:#334155;padding:9px 13px;cursor:pointer}",
@@ -148,21 +183,34 @@
     var visible = scoped.filter(statusMatch);
 
     var billed = 0, paid = 0, outstanding = 0, paidN = 0, outN = 0;
+    // Income split by funding type: Private (parents) vs Funded (local authority).
+    var grp = { PARENTS: { billed: 0, paid: 0, out: 0, n: 0 }, LA: { billed: 0, paid: 0, out: 0, n: 0 } };
     scoped.forEach(function (r) {
       var a = Number(r.amount) || 0;
       var c = category(r);
       if (c !== "notreenrolled") billed += a;
       if (c === "paid") { paid += a; paidN++; }
       else if (c === "outstanding") { outstanding += a; outN++; }
+      var g = grp[r.sheet];
+      if (g && c !== "notreenrolled") {
+        g.billed += a; g.n++;
+        if (c === "paid") g.paid += a; else g.out += a;
+      }
     });
 
     var html = '<div class="pay-wrap">';
 
     // KPIs
     html += '<div class="pay-kpis">'
-      + '<div class="pay-kpi"><span>Billed</span><b>' + money(billed) + '</b></div>'
-      + '<div class="pay-kpi pay-kpi--paid"><span>Paid</span><b>' + money(paid) + '</b></div>'
-      + '<div class="pay-kpi pay-kpi--out"><span>Outstanding</span><b>' + money(outstanding) + '</b></div>'
+      + kpiCard("billed", "", "Billed", money(billed))
+      + kpiCard("paid", "pay-kpi--paid", "Paid", money(paid))
+      + kpiCard("out", "pay-kpi--out", "Outstanding", money(outstanding))
+      + '</div>';
+
+    // Income by funding type (private parents vs funded / local authority).
+    html += '<div class="pay-groups">'
+      + grpCard("priv", "pay-grp--priv", labelFor("PARENTS"), grp.PARENTS)
+      + grpCard("fund", "pay-grp--fund", labelFor("LA"), grp.LA)
       + '</div>';
 
     // Filter bar
@@ -181,7 +229,7 @@
       + '</div>';
 
     // Table
-    html += '<div class="pay-card"><div class="pay-card-h"><h3>Clients</h3><span style="font-size:12px;color:#64748b">' + visible.length + ' shown</span></div>';
+    html += '<div class="pay-card"><div class="pay-card-h"><h3>' + icon("clients", 17) + 'Clients</h3><span style="font-size:12px;color:#64748b">' + visible.length + ' shown</span></div>';
     html += '<div class="pay-tbl-wrap"><table class="pay-tbl"><thead><tr><th>Client</th><th>Group</th><th>Service</th><th>Parent / LA</th><th class="num">Total</th><th>Status</th></tr></thead><tbody>';
     if (!visible.length) {
       html += '<tr><td colspan="6" class="pay-empty">No clients match this filter.</td></tr>';
@@ -209,6 +257,28 @@
 
   function seg(id, label) {
     return '<button type="button" data-pay-status="' + id + '" aria-pressed="' + (state.statusFilter === id) + '">' + label + "</button>";
+  }
+
+  function kpiCard(ico, cls, label, value) {
+    return '<div class="pay-kpi ' + cls + '">'
+      + '<span class="pay-kpi__ico">' + icon(ico, 20) + '</span>'
+      + '<span class="pay-kpi__txt"><span>' + esc(label) + '</span><b>' + value + '</b></span>'
+      + '</div>';
+  }
+
+  function grpCard(ico, cls, title, g) {
+    return '<div class="pay-grp ' + cls + '">'
+      + '<div class="pay-grp__h">'
+      + '<span class="pay-grp__ico">' + icon(ico, 18) + '</span>'
+      + '<span class="pay-grp__head-txt">'
+      + '<span class="pay-grp__t">' + esc(title) + '</span>'
+      + '<span class="pay-grp__sub">' + g.n + ' client' + (g.n === 1 ? "" : "s") + ' · re-enrolled</span>'
+      + '</span></div>'
+      + '<div class="pay-grp__stats">'
+      + '<div class="pay-grp__stat"><span>Billed</span><b>' + money(g.billed) + '</b></div>'
+      + '<div class="pay-grp__stat pay-grp__stat--paid"><span>Received</span><b>' + money(g.paid) + '</b></div>'
+      + '<div class="pay-grp__stat pay-grp__stat--out"><span>Outstanding</span><b>' + money(g.out) + '</b></div>'
+      + '</div></div>';
   }
 
   function bindRoot(root) {
