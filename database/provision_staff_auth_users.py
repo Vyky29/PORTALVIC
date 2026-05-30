@@ -49,6 +49,7 @@ STAFF_PLACEHOLDER_EMAILS = [
     "stf018@staff.import.pending",
     "stf019@staff.import.pending",
     "stf020@staff.import.pending",
+    "stf021@staff.import.pending",
 ]
 
 
