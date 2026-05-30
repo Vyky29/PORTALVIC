@@ -306,16 +306,14 @@ async function buildPdf(targetMonthIso: string, data: Awaited<ReturnType<typeof 
   const headBg = rgb(0.07, 0.31, 0.47);
   const warn = rgb(0.6, 0.13, 0.13);
 
-  // columns: Name, Role, Hours, Rate, Gross, Penalty, Net, Status
+  // columns: Name, Role, Gross, Penalty, Net, Status
   const cols = [
-    { key: "name", title: "Name", w: 108, align: "left" },
-    { key: "role", title: "Role", w: 86, align: "left" },
-    { key: "hours", title: "Hours", w: 40, align: "right" },
-    { key: "rate", title: "Rate", w: 42, align: "right" },
-    { key: "gross", title: "Gross £", w: 56, align: "right" },
-    { key: "penalty", title: "Penalty £", w: 54, align: "right" },
-    { key: "net", title: "Net £", w: 56, align: "right" },
-    { key: "status", title: "Status", w: 50, align: "left" },
+    { key: "name", title: "Name", w: 132, align: "left" },
+    { key: "role", title: "Role", w: 120, align: "left" },
+    { key: "gross", title: "Gross £", w: 62, align: "right" },
+    { key: "penalty", title: "Penalty £", w: 60, align: "right" },
+    { key: "net", title: "Net £", w: 62, align: "right" },
+    { key: "status", title: "Status", w: 56, align: "left" },
   ];
   const tableX = margin;
   const colX: number[] = [];
@@ -406,12 +404,10 @@ async function buildPdf(targetMonthIso: string, data: Awaited<ReturnType<typeof 
     const baseY = y - 12;
     drawCell(w.name, 0, baseY, 9, font);
     drawCell(w.role, 1, baseY, 9, font, muted);
-    drawCell(money(w.hours), 2, baseY, 9, font);
-    drawCell(w.rate == null ? "—" : money(w.rate), 3, baseY, 9, font);
-    drawCell(w.gross == null ? "—" : money(w.gross), 4, baseY, 9, font);
-    drawCell(w.penalty ? `-${money(w.penalty)}` : "0.00", 5, baseY, 9, font, w.penalty ? warn : ink);
-    drawCell(w.net == null ? "—" : money(w.net), 6, baseY, 9, bold);
-    drawCell(w.isLate ? "Late" : "On time", 7, baseY, 9, font, w.isLate ? warn : ink);
+    drawCell(w.gross == null ? "—" : money(w.gross), 2, baseY, 9, font);
+    drawCell(w.penalty ? `-${money(w.penalty)}` : "0.00", 3, baseY, 9, font, w.penalty ? warn : ink);
+    drawCell(w.net == null ? "—" : money(w.net), 4, baseY, 9, bold);
+    drawCell(w.isLate ? "Late" : "On time", 5, baseY, 9, font, w.isLate ? warn : ink);
     y -= rowH;
     hr(y + 3);
   }
@@ -421,10 +417,9 @@ async function buildPdf(targetMonthIso: string, data: Awaited<ReturnType<typeof 
   page.drawRectangle({ x: tableX, y: y - rowH + 4, width: tableW, height: rowH, color: rgb(0.95, 0.97, 0.99) });
   const ty = y - 12;
   drawCell("TOTAL", 0, ty, 9, bold);
-  drawCell(money(data.totals.hours), 2, ty, 9, bold);
-  drawCell(money(data.totals.gross), 4, ty, 9, bold);
-  drawCell(data.totals.penalty ? `-${money(data.totals.penalty)}` : "0.00", 5, ty, 9, bold, data.totals.penalty ? warn : ink);
-  drawCell(money(data.totals.net), 6, ty, 9, bold);
+  drawCell(money(data.totals.gross), 2, ty, 9, bold);
+  drawCell(data.totals.penalty ? `-${money(data.totals.penalty)}` : "0.00", 3, ty, 9, bold, data.totals.penalty ? warn : ink);
+  drawCell(money(data.totals.net), 4, ty, 9, bold);
   y -= rowH + 10;
 
   // Not submitted
