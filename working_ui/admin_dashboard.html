@@ -9460,6 +9460,82 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var box = window.__PORTAL_SUPABASE__;
       return box && box.client ? box.client : null;
     }
+    /**
+     * Bridge the live Programme payments table (public.client_payments — the rows
+     * edited in the Re-enrolment payments module) into the same shape the Orders,
+     * Participants and finance-overview tables already read from
+     * (window.CLIENTS_PAYMENTS_PORTAL_SOURCE). This is how the existing money
+     * columns (Total / Paid / Out) get the real figures instead of demo rows: no
+     * new columns, no new tables — we just feed the data we already have.
+     */
+    function portalLivePayMoney(v){
+      if(v == null || v === '') return null;
+      var n = Number(String(v).replace(/[^0-9.\-]/g, ''));
+      return Number.isFinite(n) ? n : null;
+    }
+    function portalLivePayDataPick(d, keys){
+      d = d || {};
+      for(var i = 0; i < keys.length; i++){
+        var v = d[keys[i]];
+        if(v != null && String(v).trim() && String(v).trim() !== '-' && String(v).trim() !== '—') return String(v).trim();
+      }
+      return null;
+    }
+    function portalLivePayRowToExport(r){
+      var d = r && r.data ? r.data : {};
+      var amount = portalLivePayMoney(r.amount);
+      var status = String(r.payment_status || '').toLowerCase();
+      var isPaid = status.indexOf('paid') === 0;                 // "Paid"
+      var notReenrolled = status.indexOf('re-enrol') >= 0 || status.indexOf('reenrol') >= 0;
+      var paid = isPaid && amount != null ? amount : portalLivePayMoney(portalLivePayDataPick(d, ['Paid', 'paid', 'Amount paid', 'Paid (£)']));
+      var out;
+      if(notReenrolled || amount == null) out = null;
+      else if(isPaid) out = 0;
+      else out = (paid != null ? Math.max(0, amount - paid) : amount);
+      return {
+        pax: r.client_name || '',
+        parent: r.parent_name || '',
+        payMethod: portalLivePayDataPick(d, ['Pay method', 'Payment method', 'Method', 'payMethod']) || '—',
+        service: portalLivePayDataPick(d, ['Services', 'Service', 'Programme', 'Programmes', 'Activity']) || '—',
+        costLabel: portalLivePayDataPick(d, ['Cost', 'Cost label', 'costLabel']),
+        sessionsLabel: portalLivePayDataPick(d, ['Sessions', 'Sessions label', 'sessionsLabel']),
+        tot: amount,
+        vat: portalLivePayDataPick(d, ['VAT', 'Vat', 'vat']) || '—',
+        inv: portalLivePayDataPick(d, ['Invoice', 'Inv', 'inv']) || '—',
+        st: r.payment_status || (isPaid ? 'Paid' : 'Outstanding'),
+        rec: portalLivePayDataPick(d, ['Rec', 'Reconciled', 'rec']) || '—',
+        paid: paid,
+        out: out,
+        fund: portalLivePayDataPick(d, ['Funding', 'Fund', 'fund']) || (r.sheet === 'LA' ? 'Local authority' : 'Private'),
+        next: portalLivePayDataPick(d, ['Next', 'next']) || '—',
+        periodNote: portalLivePayDataPick(d, ['Term', 'term', 'Period', 'periodNote']) || '—',
+        cfkSync: 'Programme payments'
+      };
+    }
+    var __portalLivePaySource = { loaded:false, loading:false };
+    function portalLoadLivePaymentsSource(cb){
+      cb = typeof cb === 'function' ? cb : function(){};
+      if(__portalLivePaySource.loaded){ cb(false); return; }
+      if(__portalLivePaySource.loading){ return; }
+      var client = getSchedSupabaseClient();
+      if(!client || !client.from){ cb(false); return; }
+      __portalLivePaySource.loading = true;
+      try{
+        client.from('client_payments').select('*').then(function(res){
+          __portalLivePaySource.loading = false;
+          if(res && res.error){ console.warn('[orders] client_payments load failed:', res.error.message); cb(false); return; }
+          var rows = (res && res.data) || [];
+          if(!rows.length){ cb(false); return; }
+          window.CLIENTS_PAYMENTS_PORTAL_SOURCE = {
+            meta: { source: 'client_payments', live: true, exportedAt: new Date().toISOString(), rowCount: rows.length },
+            rows: rows.map(portalLivePayRowToExport)
+          };
+          try{ __portalEmailToParentDisplay = null; }catch(_e){}
+          __portalLivePaySource.loaded = true;
+          cb(true);
+        }, function(err){ __portalLivePaySource.loading = false; console.warn('[orders] client_payments load error:', err); cb(false); });
+      }catch(e){ __portalLivePaySource.loading = false; console.warn('[orders] client_payments load threw:', e); cb(false); }
+    }
     function closeSchedDrawer(){
       if(sched._schedDrawerFormCleanup){
         try{ sched._schedDrawerFormCleanup(); }catch(e){}
@@ -18080,6 +18156,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         refreshBookingWaitlistPipelineTable();
       }
       if(id==='bookings' || id==='orders_all' || id==='c4k_payments'){
+        portalLoadLivePaymentsSource(function(changed){ if(changed && state.view===id) setView(id); });
         bindBookingModule();
         if(id==='bookings' || id==='orders_all'){
           var scrollBk = state.pendingBookingsScroll;
@@ -18104,6 +18181,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(id==='participant_achievements') bindParticipantAchievementsModule();
       if(id==='staff_live_map') bindStaffLiveMapModule();
       if(id==='clients'){
+        portalLoadLivePaymentsSource(function(changed){ if(changed && state.view==='clients') setView('clients'); });
         if(window.AdminPayments && $('payParticipantsRoot')){
           window.AdminPayments.configure({ getClient:getSchedSupabaseClient, toast:portalAdminToast, esc:esc, openModal:openModal, closeModal:closeModal });
           window.AdminPayments.mount($('payParticipantsRoot'), { mode:'participants' });
@@ -20133,6 +20211,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     try{ window.__portalAdminRenderAlerts = renderAlerts; }catch(e){}
 
+    window.addEventListener('portal:supabase-ready', function portalLivePaymentsPrime(){
+      portalLoadLivePaymentsSource(function(changed){
+        if(changed && (state.view==='bookings' || state.view==='orders_all' || state.view==='c4k_payments' || state.view==='clients')) setView(state.view);
+      });
+    });
     window.addEventListener('portal:supabase-ready', function portalVenueReviewAlertsFetch(){
       try{
         var p = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
