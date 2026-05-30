@@ -9004,8 +9004,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text);flex:1;min-width:160px">Note (optional)'+
           '<input type="text" id="schedAddNote" class="inp" placeholder="What is it for" /></label>'+
         '<button type="button" class="btn btn--pri btn--sm" id="schedAddSaveBtn">Add session</button>'+
+        '<button type="button" class="btn btn--ghost btn--sm" id="schedAddCancelEdit" style="display:none">Cancel edit</button>'+
         '</div>'+
         '<p id="schedAddMsg" class="muted" style="margin:10px 0 0;min-height:1.2em;overflow-wrap:break-word"></p>'+
+        '<div id="schedAddedList" style="margin-top:14px"></div>'+
         '</div></div></details>';
     }
     function schedFillAddStaffSelect(){
@@ -9056,11 +9058,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           superseded_by: null,
           spreadsheet_revision: 'admin-dashboard:training-shadowing'
         };
-        var ins = await client.from('schedule_overrides').insert([row]).select('id,created_at');
-        if(ins.error) throw ins.error;
-        showMsg(label + ' added for ' + dateIso + '.', 'ok');
-        var noteEl = $('schedAddNote'); if(noteEl) noteEl.value = '';
+        var editId = sched.addEditingId;
+        if(editId){
+          var upd = await client.from('schedule_overrides').update(row).eq('id', editId).select('id');
+          if(upd.error) throw upd.error;
+          showMsg(label + ' updated.', 'ok');
+          schedAddSessionFormReset();
+        }else{
+          var ins = await client.from('schedule_overrides').insert([row]).select('id,created_at');
+          if(ins.error) throw ins.error;
+          showMsg(label + ' added for ' + dateIso + '.', 'ok');
+          var noteEl = $('schedAddNote'); if(noteEl) noteEl.value = '';
+        }
         if(String(((($('schedDate')||{}).value)) || '') === dateIso){ void refreshSchedulingModule(); }
+        else { renderSchedAddedSessions(); }
       }catch(err){
         showMsg('Could not save: ' + String((err && err.message) || err), 'err');
       }finally{
@@ -9069,8 +9080,88 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function bindSchedAddSessionForm(){
       schedFillAddStaffSelect();
+      sched.addEditingId = null;
       var btn = $('schedAddSaveBtn');
       if(btn && !btn.__schedAddBound){ btn.__schedAddBound = true; btn.onclick = function(){ void saveSchedAddSession(); }; }
+      var cx = $('schedAddCancelEdit');
+      if(cx && !cx.__schedAddBound){ cx.__schedAddBound = true; cx.onclick = function(){ schedAddSessionFormReset(); var m=$('schedAddMsg'); if(m){ m.textContent=''; } }; }
+    }
+    function schedTimeInputValue(t){ return String(t == null ? '' : t).slice(0, 5); }
+    /** Clears the add/edit form back to "new session" mode. */
+    function schedAddSessionFormReset(){
+      sched.addEditingId = null;
+      ['schedAddVenue','schedAddTrainer','schedAddNote'].forEach(function(id){ var e=$(id); if(e) e.value=''; });
+      var loc=$('schedAddLocation'); if(loc) loc.value='';
+      var btn=$('schedAddSaveBtn'); if(btn) btn.textContent='Add session';
+      var cx=$('schedAddCancelEdit'); if(cx) cx.style.display='none';
+    }
+    /** Load an existing session_add override into the form for editing. */
+    function schedEditAddedSession(id){
+      var ov=(sched.overrides||[]).filter(function(o){ return String(o.id)===String(id); })[0];
+      if(!ov) return;
+      sched.addEditingId = ov.id;
+      var wrap=$('schedAddSessionWrap'); if(wrap && !wrap.open) wrap.open=true;
+      var staffSel=$('schedAddStaff');
+      if(staffSel){
+        var target=String(ov.anchor_staff_id||'');
+        var matched='';
+        Array.prototype.forEach.call(staffSel.options,function(opt){
+          if(!matched && normalizeSchedAnchorStaffId(opt.value)===target) matched=opt.value;
+        });
+        staffSel.value = matched || target;
+      }
+      var kind=String((ov.payload&&ov.payload.kind)||ov.anchor_client_id||'training').toLowerCase();
+      var kindSel=$('schedAddKind'); if(kindSel) kindSel.value=(kind==='shadowing'?'shadowing':'training');
+      var dEl=$('schedAddDate'); if(dEl) dEl.value=String(ov.session_date||'').slice(0,10);
+      var sEl=$('schedAddStart'); if(sEl) sEl.value=schedTimeInputValue(ov.anchor_start);
+      var eEl=$('schedAddEnd'); if(eEl) eEl.value=schedTimeInputValue(ov.anchor_end);
+      var vEl=$('schedAddVenue'); if(vEl) vEl.value=String(ov.anchor_venue||'');
+      var tEl=$('schedAddTrainer'); if(tEl) tEl.value=String((ov.payload&&ov.payload.trainer)||'');
+      var lEl=$('schedAddLocation'); if(lEl) lEl.value=String((ov.payload&&ov.payload.location)||'').toLowerCase();
+      var nEl=$('schedAddNote'); if(nEl) nEl.value=String((ov.payload&&ov.payload.note)||ov.reason||'');
+      var btn=$('schedAddSaveBtn'); if(btn) btn.textContent='Update session';
+      var cx=$('schedAddCancelEdit'); if(cx) cx.style.display='';
+      var msg=$('schedAddMsg'); if(msg){ msg.textContent='Editing existing '+(kind==='shadowing'?'shadowing':'training')+' session — change anything and Update.'; msg.style.color=''; }
+      try{ if(wrap) wrap.scrollIntoView({ behavior:'smooth', block:'nearest' }); }catch(_e){}
+    }
+    async function schedRemoveAddedSession(id){
+      var client=getSchedSupabaseClient();
+      if(!client) return;
+      if(!window.confirm('Remove this session? It will disappear from the staff member\u2019s dashboard.')) return;
+      try{
+        var up=await client.from('schedule_overrides').update({ status:'cancelled' }).eq('id', id);
+        if(up.error) throw up.error;
+        if(sched.addEditingId && String(sched.addEditingId)===String(id)) schedAddSessionFormReset();
+        void refreshSchedulingModule();
+      }catch(err){
+        var msg=$('schedAddMsg'); if(msg){ msg.textContent='Could not remove: '+String((err&&err.message)||err); msg.style.color='var(--danger)'; }
+      }
+    }
+    /** Lists this date's added training/shadowing sessions with Edit / Remove. */
+    function renderSchedAddedSessions(){
+      var box=$('schedAddedList');
+      if(!box) return;
+      var rows=(sched.overrides||[]).filter(function(o){ return o.override_type==='session_add' && String(o.status||'active')==='active'; });
+      if(!rows.length){ box.innerHTML='<p class="muted" style="margin:0;font-size:12px">No added training/shadowing sessions for this date.</p>'; return; }
+      var html='<div class="card" style="margin:0"><div class="card-h"><h3 style="font-size:13px;margin:0">Added training / shadowing (this date)</h3></div><div class="card-pad" style="overflow:auto"><table class="tbl tbl--center" style="font-size:13px"><thead><tr><th>Time</th><th>Type</th><th>Staff</th><th>Who gives it</th><th>Where</th><th>Venue</th><th></th></tr></thead><tbody>';
+      rows.forEach(function(o){
+        var kind=String((o.payload&&o.payload.kind)||o.anchor_client_id||'training').toLowerCase();
+        var loc=String((o.payload&&o.payload.location)||'').toLowerCase();
+        var locLab=loc==='both'?'Room &amp; Pool':(loc==='pool'?'Pool':(loc==='room'?'Room':'—'));
+        html+='<tr>'+
+          '<td style="white-space:nowrap">'+esc(schedTimeInputValue(o.anchor_start))+'\u2013'+esc(schedTimeInputValue(o.anchor_end))+'</td>'+
+          '<td>'+esc(kind==='shadowing'?'Shadowing':'Training')+'</td>'+
+          '<td style="overflow-wrap:break-word">'+esc(String(o.anchor_staff_id||'—'))+'</td>'+
+          '<td style="overflow-wrap:break-word">'+esc(String((o.payload&&o.payload.trainer)||'—'))+'</td>'+
+          '<td>'+locLab+'</td>'+
+          '<td style="overflow-wrap:break-word">'+esc(String(o.anchor_venue||'—'))+'</td>'+
+          '<td class="toolbar" style="white-space:nowrap"><button type="button" class="btn btn--sec btn--sm" data-sched-add-edit="'+esc(o.id)+'">Edit</button> <button type="button" class="btn btn--ghost btn--sm" data-sched-add-remove="'+esc(o.id)+'">Remove</button></td>'+
+          '</tr>';
+      });
+      html+='</tbody></table></div></div>';
+      box.innerHTML=html;
+      box.querySelectorAll('[data-sched-add-edit]').forEach(function(b){ b.onclick=function(){ schedEditAddedSession(b.getAttribute('data-sched-add-edit')); }; });
+      box.querySelectorAll('[data-sched-add-remove]').forEach(function(b){ b.onclick=function(){ void schedRemoveAddedSession(b.getAttribute('data-sched-add-remove')); }; });
     }
     function schedRepSuggestOutsideClick(ev){
       var wrap = $('schedRepComboWrap');
@@ -10812,6 +10903,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           ? renderSchedLogRows()
           : '<tr><td colspan="7" class="muted">No overrides logged for this date.</td></tr>';
       }
+      renderSchedAddedSessions();
       applySchedTableFilters();
       portalApplyPendingBookingsSlotFocusAfterSchedRefresh();
     }
