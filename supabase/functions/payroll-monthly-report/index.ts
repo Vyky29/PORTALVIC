@@ -661,7 +661,8 @@ Deno.serve(async (req: Request) => {
   // manually (no Resend/DNS needed). Idempotent + deadline-guarded.
   if (isRecord) {
     let penaltiesRecorded = 0;
-    if (deadlinePassedForMonth(targetMonthIso) && data.notSubmitted.length) {
+    // Late penalties only start from June 2026 onwards.
+    if (targetMonthIso >= "2026-06-01" && deadlinePassedForMonth(targetMonthIso) && data.notSubmitted.length) {
       const penaltyRows = data.notSubmitted
         .filter((n) => n.userId)
         .map((n) => ({ user_id: n.userId, missed_month: targetMonthIso, amount: 5, reason: "no_timesheet" }));

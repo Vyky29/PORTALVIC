@@ -214,12 +214,15 @@
       const s = out.summary || {};
       const t = s.totals || {};
       statsEl.innerHTML = "";
-      const penaltyTotal = (Number(s.notSubmitted) || 0) * 5;
+      // Late penalties start June 2026 — earlier months show £0.
+      const penaltiesActive = String(s.month || "") >= "2026-06-01";
+      const penaltyCount = penaltiesActive ? (Number(s.notSubmitted) || 0) : 0;
+      const penaltyTotal = penaltyCount * 5;
       const cells = [
         [String(s.submitted ?? 0), "Submitted (to process)"],
         [String(s.notSubmitted ?? 0), "Not submitted"],
         ["£" + money(t.gross), "Gross"],
-        ["£" + money(penaltyTotal), "Penalties (£5 × " + (Number(s.notSubmitted) || 0) + ")"],
+        ["£" + money(penaltyTotal), penaltiesActive ? "Penalties (£5 × " + penaltyCount + ")" : "Penalties (from June)"],
         ["£" + money(t.net), "Net to pay"],
       ];
       for (const [v, label] of cells) {
