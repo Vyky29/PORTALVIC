@@ -24,7 +24,7 @@
   <script src="/portal/admin-hr.js?v=20260530-hr-staff-cols"></script>
   <script src="/portal/admin-payments.js?v=20260530-orders-edit-css"></script>
   <script src="/portal/admin-onboarding.js?v=20260530-onboarding-clickdocs"></script>
-  <script src="/portal/admin-logs.js?v=20260530-logs"></script>
+  <script src="/portal/admin-logs.js?v=20260530-logs-weekday"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
   <title>clubSENsational · Operations + Operator workflow (merged)</title>
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
@@ -9105,6 +9105,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(ins.error) throw ins.error;
           showMsg(label + ' added for ' + dateIso + '.', 'ok');
           var noteEl = $('schedAddNote'); if(noteEl) noteEl.value = '';
+          try{
+            if(window.PortalChangeLog){
+              var dNiceA = (typeof bookingFormatDdMmYyyy === 'function' ? bookingFormatDdMmYyyy(dateIso) : dateIso);
+              var dayLongA = (typeof portalWeekdayLongFromIsoDate === 'function' ? portalWeekdayLongFromIsoDate(dateIso) : '');
+              window.PortalChangeLog.record({
+                area: 'Scheduling',
+                entity: (trainer ? String(trainer) : label),
+                action: 'add',
+                summary: (dayLongA ? dayLongA + ' ' : '') + dNiceA + ' · ' + label + ' · ' + (start + ' to ' + end) + (venue ? ' · ' + venue : ''),
+                details: { session_date: dateIso, override_type: 'session_add', kind: kind, venue: venue || '', time: start + ' to ' + end, note: note || '' },
+                source: 'scheduling_training'
+              });
+            }
+          }catch(_lgA){}
         }
         if(String(((($('schedDate')||{}).value)) || '') === dateIso){ void refreshSchedulingModule(); }
         else { renderSchedAddedSessions(); }
@@ -9858,6 +9872,30 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         await refreshSchedulingModule();
         return;
       }
+      // Audit trail (Activity log): record the override keyed to the session it
+      // affects so future-dated changes show up under their own day.
+      try{
+        if(window.PortalChangeLog){
+          var ovLabel = (typeof schedOverrideTypeLabel === 'function' ? schedOverrideTypeLabel(ovType) : ovType) || ovType;
+          var whenLbl = slot.whenLabel || slot.anchorTimeLabel || (typeof normTimeShort === 'function' ? normTimeShort(slot.anchorStart) : '') || '';
+          var dNice = (typeof bookingFormatDdMmYyyy === 'function' ? bookingFormatDdMmYyyy(slot.sessionDate) : slot.sessionDate);
+          var dayLong = (typeof portalWeekdayLongFromIsoDate === 'function' ? portalWeekdayLongFromIsoDate(slot.sessionDate) : '');
+          var pax = String(slot.clientName || slot.client || slot.clientSlug || '').trim();
+          var sumBits = [ovLabel];
+          if(ovType === 'instructor_reassign' && payload.covering_staff_name) sumBits.push('cover: ' + payload.covering_staff_name);
+          if(ovType === 'client_replace_in_slot' && payload.to_client_name) sumBits.push('replacement: ' + payload.to_client_name);
+          if(reason) sumBits.push('reason: ' + reason);
+          var sumStr = (dayLong ? dayLong + ' ' : '') + dNice + ' · ' + String(slot.venue || '') + ' ' + whenLbl + ' · ' + sumBits.join(' · ');
+          window.PortalChangeLog.record({
+            area: 'Scheduling',
+            entity: pax || (String(slot.venue || '') + ' ' + whenLbl).trim(),
+            action: 'override',
+            summary: sumStr,
+            details: { session_date: slot.sessionDate, override_type: ovType, venue: slot.venue, time: whenLbl, payload: payload, reason: reason || '' },
+            source: 'scheduling_cover'
+          });
+        }
+      }catch(_lg){}
       closeSchedDrawer();
       sched.lastMsg = 'Override saved.';
       adminInvalidateSessionsHubLiveCaches();
