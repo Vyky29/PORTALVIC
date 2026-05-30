@@ -377,8 +377,12 @@
         var pill = g.anyOut
           ? '<span class="pay-pill pay-pill--out">Outstanding</span>'
           : '<span class="pay-pill pay-pill--paid">Paid</span>';
-        // Click opens the first order's full record (all edits + audit shared).
-        html += '<tr data-pay-id="' + esc(g.orders[0].id) + '">'
+        // One order -> open its record directly. Several orders -> open an
+        // intermediate screen listing them all, then drill into one.
+        var rowAttr = g.orders.length > 1
+          ? 'data-pay-orders="' + esc(g.orders.map(function (o) { return o.id; }).join(",")) + '" data-pay-pname="' + esc(g.name) + '"'
+          : 'data-pay-id="' + esc(g.orders[0].id) + '"';
+        html += '<tr ' + rowAttr + '>'
           + '<td class="pay-name">' + esc(g.name) + "</td>"
           + "<td>" + esc(labelFor(g.sheet)) + "</td>"
           + "<td>" + esc(svcTxt) + "</td>"
@@ -431,6 +435,69 @@
     }
     root.querySelectorAll("[data-pay-id]").forEach(function (tr) {
       tr.addEventListener("click", function () { openDetail(tr.getAttribute("data-pay-id")); });
+    });
+    root.querySelectorAll("[data-pay-orders]").forEach(function (tr) {
+      tr.addEventListener("click", function () {
+        var ids = String(tr.getAttribute("data-pay-orders") || "").split(",").filter(Boolean);
+        openParticipantOrders(tr.getAttribute("data-pay-pname"), ids);
+      });
+    });
+  }
+
+  // Intermediate screen: a participant's full list of orders. Tap one to open
+  // its editable record (same detail + audit as everywhere else).
+  function openParticipantOrders(name, ids) {
+    var orders = ids
+      .map(function (id) { return state.rows.filter(function (x) { return String(x.id) === String(id); })[0]; })
+      .filter(Boolean);
+    if (!orders.length) return;
+    if (orders.length === 1) { openDetail(orders[0].id); return; }
+
+    var rowsHtml = orders
+      .slice()
+      .sort(function (a, b) { return String(serviceFor(a)).localeCompare(String(serviceFor(b))); })
+      .map(function (r) {
+        return '<tr data-pay-open="' + esc(r.id) + '">'
+          + '<td>' + esc(serviceFor(r)) + '</td>'
+          + '<td>' + esc(termFor(r)) + '</td>'
+          + '<td>' + esc(r.parent_name || "") + '</td>'
+          + '<td class="num">' + money(r.amount) + '</td>'
+          + '<td>' + pillFor(r) + '</td></tr>';
+      }).join("");
+
+    closeScreen();
+    var screen = document.createElement("div");
+    screen.id = "payScreen";
+    screen.className = "pay-screen";
+    screen.setAttribute("role", "dialog");
+    screen.setAttribute("aria-modal", "true");
+    screen.innerHTML =
+      '<div class="pay-screen__head">'
+      + '<span class="pay-screen__ico">' + icon("users", 22) + '</span>'
+      + '<div class="pay-screen__ttl"><h2>' + esc(name || "Participant") + '</h2>'
+      + '<span class="pay-screen__sub">' + icon("list", 12) + " " + orders.length + ' orders · ' + esc(labelFor(orders[0].sheet)) + '</span></div>'
+      + '<button type="button" class="pay-screen__x" id="payClose" aria-label="Close">' + icon("x", 20) + '</button>'
+      + '</div>'
+      + '<div class="pay-screen__body"><div class="pay-screen__inner">'
+      + '<p class="muted" style="margin:0 0 12px;font-size:13px">Tap an order to open and edit its full record.</p>'
+      + '<div class="pay-card"><div class="pay-tbl-wrap"><table class="pay-tbl"><thead><tr><th>Service</th><th>Term</th><th>Parent / LA</th><th class="num">Total</th><th>Status</th></tr></thead><tbody>'
+      + rowsHtml
+      + '</tbody></table></div></div>'
+      + '</div></div>'
+      + '<div class="pay-screen__foot"><p class="pay-msg"></p>'
+      + '<button type="button" class="btn btn--ghost" id="payCancel">Close</button></div>';
+    document.body.appendChild(screen);
+    state.prevHtmlOverflow = document.documentElement.style.overflow;
+    document.documentElement.style.overflow = "hidden";
+    state.escHandler = function (e) { if (e.key === "Escape") closeScreen(); };
+    document.addEventListener("keydown", state.escHandler);
+
+    var x = screen.querySelector("#payClose");
+    if (x) x.addEventListener("click", function () { closeScreen(); });
+    var c = screen.querySelector("#payCancel");
+    if (c) c.addEventListener("click", function () { closeScreen(); });
+    screen.querySelectorAll("[data-pay-open]").forEach(function (tr) {
+      tr.addEventListener("click", function () { openDetail(tr.getAttribute("data-pay-open")); });
     });
   }
 
