@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <!-- Admin-only yearly overview: salaries (timesheets + contracts/invoices) + staff expense claims.
+       Static deploy from working_ui/ on Vercel (same origin as login.html / admin_dashboard.html).
+       Reads directly from Supabase with the signed-in admin/ceo JWT (RLS restricts to admin/ceo). -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Yearly overview · clubSENsational</title>
+  <style>
+    :root{
+      --blue:#2d84b3;--blueDark:#256d96;--ink:#0f172a;--text:#334155;--muted:#64748b;
+      --line:#e2e8f0;--bg:#f1f5f9;--surface:#fff;--gold:#f4b740;
+      --danger:#dc2626;--dangerSoft:#fef2f2;--success:#15803d;--successSoft:#f0fdf4;
+      --warn:#b45309;--warnSoft:#fffbeb;--radius:14px;
+      --font:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    }
+    *,*::before,*::after{box-sizing:border-box}
+    html,body{margin:0;max-width:100%;overflow-x:hidden}
+    body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:15px;line-height:1.5}
+    .wrap{max-width:100%;margin:0;padding:18px 24px 60px;min-width:0}
+    header.page{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:8px 0 18px;min-width:0}
+    header.page h1{font-size:20px;margin:0;color:var(--ink);min-width:0;overflow-wrap:break-word;
+      display:flex;align-items:center;gap:10px}
+    .back{font-size:13px;color:var(--blue);text-decoration:none;font-weight:600}
+    .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+      box-shadow:0 1px 3px rgba(15,23,42,.05),0 8px 24px rgba(15,23,42,.05);margin-bottom:16px;overflow:hidden}
+    .card-pad{padding:16px}
+    .muted{color:var(--muted)}
+    .btn{font:inherit;font-weight:700;border-radius:10px;padding:11px 16px;border:1px solid transparent;cursor:pointer;min-width:0;
+      display:inline-flex;align-items:center;justify-content:center;gap:7px}
+    .btn--sec{background:#fff;color:var(--ink);border-color:#c3d0e0}
+    .ico{width:16px;height:16px;flex:none}
+    .ico--lg{width:22px;height:22px}
+    h1 .ico,.sec-title .ico{color:var(--blue)}
+    .sec-title{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-weight:700;color:var(--ink)}
+    .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:4px}
+    .stat{background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:16px;min-width:0;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:4px}
+    .stat .ico{width:22px;height:22px;color:var(--blue);margin-bottom:2px}
+    .stat b{font-size:22px;color:var(--ink)}
+    .stat span{font-size:12px;color:var(--muted);overflow-wrap:break-word}
+    .stat--salary{background:#eff6ff;border-color:#bfdbfe}
+    .stat--exp{background:var(--warnSoft);border-color:#fde68a}
+    .stat--exp .ico{color:var(--warn)}
+    .stat--grand{background:var(--successSoft);border-color:#bbf7d0}
+    .stat--grand .ico{color:var(--success)}
+    .tbl-wrap{overflow-x:auto;min-width:0}
+    .ptbl{width:100%;border-collapse:collapse;font-size:15px;min-width:560px}
+    .ptbl th,.ptbl td{padding:11px 12px;border-bottom:1px solid var(--line);text-align:center;overflow-wrap:break-word}
+    .ptbl thead th{background:#f8fafc;color:var(--ink);font-size:12px;text-transform:uppercase;letter-spacing:.03em}
+    .ptbl td.lead,.ptbl th.lead{text-align:left;font-weight:600}
+    .ptbl tfoot td{font-weight:800;border-top:2px solid #cbd5e1;border-bottom:0;background:#f8fafc}
+    .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;text-transform:capitalize}
+    .pill--submitted{background:#eff6ff;color:#1d4ed8}
+    .pill--reviewed{background:#f5f3ff;color:#6d28d9}
+    .pill--approved{background:var(--successSoft);color:var(--success)}
+    .pill--paid{background:#ecfeff;color:#0e7490}
+    .pill--rejected{background:var(--dangerSoft);color:#991b1b}
+    .note{border-radius:10px;padding:10px 12px;font-size:13px;margin:0 0 12px;overflow-wrap:break-word}
+    .note--err{background:var(--dangerSoft);border:1px solid #fecaca;color:#991b1b}
+    .note--info{background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af}
+    .gate{max-width:480px;margin:40px auto;text-align:center}
+    .hidden{display:none!important}
+    .spin{display:inline-block;width:16px;height:16px;border:2px solid #cbd5e1;border-top-color:var(--blue);
+      border-radius:50%;animation:spin .7s linear infinite;vertical-align:-3px;margin-right:6px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <!-- Auth gate -->
+    <div id="gate" class="gate">
+      <p class="muted"><span class="spin"></span>Checking access…</p>
+    </div>
+
+    <!-- App -->
+    <div id="app" class="hidden">
+      <header class="page">
+        <a class="back" href="/payroll-report.html">← Payroll report</a>
+        <h1>
+          <svg class="ico ico--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          Yearly overview — salaries &amp; expenses
+        </h1>
+      </header>
+
+      <div id="statusNote"></div>
+
+      <!-- Headline totals -->
+      <div class="card">
+        <div class="card-pad">
+          <div class="stat-grid" id="stats">
+            <div class="stat stat--salary">
+              <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              <b id="salaryTotal">£0.00</b><span>Salaries (timesheets + contracts)</span>
+            </div>
+            <div class="stat stat--exp">
+              <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/><path d="M18 12a2 2 0 0 0-2 2c0 1.1.9 2 2 2h4v-4z"/></svg>
+              <b id="expensesTotal">£0.00</b><span>Staff expense claims</span>
+            </div>
+            <div class="stat stat--grand">
+              <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
+              <b id="grandTotal">£0.00</b><span>Grand total (salaries + expenses)</span>
+            </div>
+          </div>
+          <p class="muted" id="rangeNote" style="margin:12px 0 0;font-size:12px;text-align:center"></p>
+        </div>
+      </div>
+
+      <!-- Month-by-month breakdown -->
+      <div class="card">
+        <div class="card-pad">
+          <p class="sec-title">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Month by month
+          </p>
+          <div class="tbl-wrap"><table class="ptbl" id="monthTable"></table></div>
+        </div>
+      </div>
+
+      <!-- Expense claims detail -->
+      <div class="card" id="expCard">
+        <div class="card-pad">
+          <p class="sec-title" style="color:var(--warn)">
+            <svg class="ico" style="color:var(--warn)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+            Expense claims submitted by staff
+          </p>
+          <div class="tbl-wrap"><table class="ptbl" id="expTable"></table></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { getSupabaseClient } from "/portal/supabase-client.js?v=20260530-yearly";
+
+    const gate = document.getElementById("gate");
+    const app = document.getElementById("app");
+    const statusNote = document.getElementById("statusNote");
+    const salaryTotalEl = document.getElementById("salaryTotal");
+    const expensesTotalEl = document.getElementById("expensesTotal");
+    const grandTotalEl = document.getElementById("grandTotal");
+    const rangeNote = document.getElementById("rangeNote");
+    const monthTable = document.getElementById("monthTable");
+    const expCard = document.getElementById("expCard");
+    const expTable = document.getElementById("expTable");
+
+    const supabase = getSupabaseClient();
+
+    function money(n) {
+      const v = Number(n || 0);
+      return "£" + v.toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    function monthKey(d) {
+      if (!d) return null;
+      const s = String(d).slice(0, 7); // YYYY-MM
+      return /^\d{4}-\d{2}$/.test(s) ? s + "-01" : null;
+    }
+    function monthLabel(iso) {
+      const d = new Date(iso + "T00:00:00Z");
+      if (isNaN(d)) return iso;
+      return new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", month: "short", year: "numeric" }).format(d);
+    }
+    function esc(s) {
+      return String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
+        ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    }
+    function showError(msg) {
+      statusNote.innerHTML = '<div class="note note--err">' + esc(msg) + "</div>";
+    }
+
+    async function loadAll() {
+      const [tsRes, impRes, expRes] = await Promise.all([
+        supabase
+          .from("staff_timesheets")
+          .select("submitted_by_user_id, period_month, total_cost, created_at"),
+        supabase
+          .from("staff_timesheet_imports")
+          .select("user_id, period_month, pay_type, gross"),
+        supabase
+          .from("expense_claims")
+          .select("submitted_by_name, submitted_by_role, claim_month, submitted_on, total_amount, status, line_items"),
+      ]);
+
+      if (tsRes.error) throw tsRes.error;
+      if (impRes.error) throw impRes.error;
+      if (expRes.error) throw expRes.error;
+
+      return {
+        timesheets: tsRes.data || [],
+        imports: impRes.data || [],
+        expenses: expRes.data || [],
+      };
+    }
+
+    function aggregate({ timesheets, imports, expenses }) {
+      // Contract users: any import row marked pay_type='contract'. Their real
+      // timesheet submissions are paid by invoice, so they are excluded (mirrors
+      // the monthly payroll report logic).
+      const contractUserIds = new Set(
+        imports.filter((r) => String(r.pay_type || "timesheet") === "contract")
+          .map((r) => String(r.user_id || ""))
+          .filter(Boolean)
+      );
+
+      // Dedupe real timesheets: latest row per user|month by created_at.
+      const latest = new Map();
+      for (const r of timesheets) {
+        const uid = String(r.submitted_by_user_id || "");
+        if (!uid || contractUserIds.has(uid)) continue;
+        const mk = monthKey(r.period_month);
+        if (!mk) continue;
+        const key = uid + "|" + mk;
+        const prev = latest.get(key);
+        if (!prev || new Date(r.created_at || 0) > new Date(prev.created_at || 0)) {
+          latest.set(key, r);
+        }
+      }
+
+      const months = new Map(); // iso -> {timesheets, contracts, expenses}
+      const bucket = (mk) => {
+        if (!months.has(mk)) months.set(mk, { ts: 0, contract: 0, exp: 0 });
+        return months.get(mk);
+      };
+      const submittedKeys = new Set();
+
+      for (const [key, r] of latest) {
+        const mk = key.split("|")[1];
+        bucket(mk).ts += Number(r.total_cost || 0);
+        submittedKeys.add(key);
+      }
+
+      for (const im of imports) {
+        const mk = monthKey(im.period_month);
+        if (!mk) continue;
+        const gross = Number(im.gross || 0);
+        if (String(im.pay_type || "timesheet") === "contract") {
+          bucket(mk).contract += gross;
+        } else {
+          const uid = String(im.user_id || "");
+          // A real submission for this user+month wins over a timesheet import.
+          if (uid && submittedKeys.has(uid + "|" + mk)) continue;
+          bucket(mk).ts += gross;
+        }
+      }
+
+      for (const ex of expenses) {
+        if (String(ex.status || "") === "rejected") continue;
+        const mk = monthKey(ex.claim_month) || monthKey(ex.submitted_on) || monthKey(ex.created_at);
+        if (!mk) continue;
+        bucket(mk).exp += Number(ex.total_amount || 0);
+      }
+
+      return months;
+    }
+
+    function renderMonths(months) {
+      const isos = [...months.keys()].sort(); // chronological
+      let salaryTotal = 0, expTotal = 0;
+
+      let rows = "";
+      for (const iso of isos) {
+        const m = months.get(iso);
+        const sal = m.ts + m.contract;
+        const tot = sal + m.exp;
+        salaryTotal += sal;
+        expTotal += m.exp;
+        rows +=
+          "<tr>" +
+          '<td class="lead">' + esc(monthLabel(iso)) + "</td>" +
+          "<td>" + money(m.ts) + "</td>" +
+          "<td>" + money(m.contract) + "</td>" +
+          "<td>" + money(m.exp) + "</td>" +
+          "<td><b>" + money(tot) + "</b></td>" +
+          "</tr>";
+      }
+
+      if (!isos.length) {
+        rows = '<tr><td colspan="5" class="muted">No payroll or expense data yet.</td></tr>';
+      }
+
+      monthTable.innerHTML =
+        "<thead><tr>" +
+        '<th class="lead">Month</th><th>Timesheets</th><th>Contracts / invoices</th><th>Expenses</th><th>Total</th>' +
+        "</tr></thead><tbody>" + rows + "</tbody>" +
+        "<tfoot><tr>" +
+        '<td class="lead">Year total</td>' +
+        "<td>" + money([...months.values()].reduce((a, m) => a + m.ts, 0)) + "</td>" +
+        "<td>" + money([...months.values()].reduce((a, m) => a + m.contract, 0)) + "</td>" +
+        "<td>" + money(expTotal) + "</td>" +
+        "<td>" + money(salaryTotal + expTotal) + "</td>" +
+        "</tr></tfoot>";
+
+      salaryTotalEl.textContent = money(salaryTotal);
+      expensesTotalEl.textContent = money(expTotal);
+      grandTotalEl.textContent = money(salaryTotal + expTotal);
+
+      if (isos.length) {
+        rangeNote.textContent =
+          "Showing " + monthLabel(isos[0]) + " – " + monthLabel(isos[isos.length - 1]) +
+          " · salaries merge timesheet submissions and contract / invoice imports.";
+      }
+    }
+
+    function renderExpenses(expenses) {
+      const active = (expenses || []).filter((e) => String(e.status || "") !== "rejected");
+      if (!active.length) {
+        expCard.classList.add("hidden");
+        return;
+      }
+      active.sort((a, b) => {
+        const da = a.claim_month || a.submitted_on || "";
+        const db = b.claim_month || b.submitted_on || "";
+        return db < da ? -1 : db > da ? 1 : 0;
+      });
+      const statusClass = (s) => "pill pill--" + (String(s || "submitted").toLowerCase());
+      let rows = "";
+      for (const e of active) {
+        const mk = monthKey(e.claim_month) || monthKey(e.submitted_on);
+        const items = Array.isArray(e.line_items) ? e.line_items.length : 0;
+        rows +=
+          "<tr>" +
+          '<td class="lead">' + esc(e.submitted_by_name || "—") + "</td>" +
+          "<td>" + (mk ? esc(monthLabel(mk)) : "—") + "</td>" +
+          "<td>" + (items ? items + (items === 1 ? " item" : " items") : "—") + "</td>" +
+          "<td>" + money(e.total_amount) + "</td>" +
+          '<td><span class="' + statusClass(e.status) + '">' + esc(e.status || "submitted") + "</span></td>" +
+          "</tr>";
+      }
+      expTable.innerHTML =
+        "<thead><tr>" +
+        '<th class="lead">Worker</th><th>Month</th><th>Lines</th><th>Amount</th><th>Status</th>' +
+        "</tr></thead><tbody>" + rows + "</tbody>";
+    }
+
+    async function boot() {
+      let session = null;
+      try {
+        const { data } = await supabase.auth.getSession();
+        session = data?.session || null;
+      } catch (_) { session = null; }
+
+      if (!session?.user?.id) {
+        gate.innerHTML =
+          '<h1 style="color:#0f172a">Sign in required</h1>' +
+          '<p class="muted">This page is for admins only.</p>' +
+          '<p><a class="btn btn--sec" href="/login.html" style="text-decoration:none">Go to login</a></p>';
+        return;
+      }
+
+      let role = "";
+      try {
+        const { data: prof } = await supabase
+          .from("staff_profiles")
+          .select("app_role")
+          .eq("id", session.user.id)
+          .maybeSingle();
+        role = String(prof?.app_role || "").toLowerCase();
+      } catch (_) { role = ""; }
+
+      if (role !== "admin" && role !== "ceo") {
+        gate.innerHTML =
+          '<h1 style="color:#0f172a">No access</h1>' +
+          '<p class="muted">This overview is restricted to admin / CEO accounts.</p>' +
+          '<p><a class="back" href="/admin_dashboard.html">← Back to admin</a></p>';
+        return;
+      }
+
+      gate.classList.add("hidden");
+      app.classList.remove("hidden");
+
+      try {
+        const data = await loadAll();
+        const months = aggregate(data);
+        renderMonths(months);
+        renderExpenses(data.expenses);
+      } catch (err) {
+        showError("Could not load overview: " + (err?.message || err));
+      }
+    }
+
+    boot();
+  </script>
+</body>
+</html>

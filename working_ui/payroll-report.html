@@ -29,7 +29,12 @@
     .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;min-width:0}
     label.fld{font-size:13px;font-weight:600;color:var(--ink);display:flex;flex-direction:column;gap:4px;min-width:0}
     input[type=month]{font:inherit;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
-    .btn{font:inherit;font-weight:700;border-radius:10px;padding:11px 16px;border:1px solid transparent;cursor:pointer;min-width:0}
+    .btn{font:inherit;font-weight:700;border-radius:10px;padding:11px 16px;border:1px solid transparent;cursor:pointer;min-width:0;
+      display:inline-flex;align-items:center;justify-content:center;gap:7px}
+    .ico{width:16px;height:16px;flex:none}
+    .ico--lg{width:20px;height:20px}
+    h1 .ico,.sec-title .ico{color:var(--blue)}
+    .sec-title{display:flex;align-items:center;gap:8px;margin:0 0 8px;font-weight:700;color:var(--ink)}
     .btn--pri{background:var(--blue);color:#fff}
     .btn--pri:hover{background:var(--blueDark)}
     .btn--sec{background:#fff;color:var(--ink);border-color:#c3d0e0}
@@ -45,9 +50,9 @@
     .missing li{padding:6px 10px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px;background:var(--dangerSoft);
       color:#7f1d1d;font-size:13px;overflow-wrap:break-word}
     .tbl-wrap{overflow-x:auto;min-width:0}
-    .ptbl{width:100%;border-collapse:collapse;font-size:13px;min-width:520px}
-    .ptbl th,.ptbl td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:center;overflow-wrap:break-word}
-    .ptbl thead th{background:#f8fafc;color:var(--ink);font-size:11px;text-transform:uppercase;letter-spacing:.03em}
+    .ptbl{width:100%;border-collapse:collapse;font-size:15px;min-width:520px}
+    .ptbl th,.ptbl td{padding:11px 12px;border-bottom:1px solid var(--line);text-align:center;overflow-wrap:break-word}
+    .ptbl thead th{background:#f8fafc;color:var(--ink);font-size:12px;text-transform:uppercase;letter-spacing:.03em}
     .ptbl td.num,.ptbl th.num{text-align:center;white-space:nowrap}
     .ptbl tfoot td{font-weight:700;border-top:2px solid #cbd5e1;border-bottom:0}
     .ptbl .late{color:var(--warn);font-weight:600}
@@ -74,7 +79,10 @@
     <div id="app" class="hidden">
       <header class="page">
         <a class="back" href="/admin_dashboard.html">← Admin</a>
-        <h1>Monthly payroll report</h1>
+        <h1>
+          <svg class="ico ico--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+          Monthly payroll report
+        </h1>
       </header>
 
       <div class="card">
@@ -87,10 +95,23 @@
               <label class="fld">Pay month
                 <input type="month" id="month" />
               </label>
-              <button type="button" class="btn btn--sec" id="refreshBtn" style="align-self:flex-end">Refresh preview</button>
-              <button type="button" class="btn btn--pri" id="downloadBtn" style="align-self:flex-end" disabled>Download PDF</button>
+              <button type="button" class="btn btn--sec" id="refreshBtn" style="align-self:flex-end">
+                <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                Refresh preview
+              </button>
+              <button type="button" class="btn btn--pri" id="downloadBtn" style="align-self:flex-end" disabled>
+                <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Download PDF
+              </button>
+              <a class="btn btn--sec" href="/payroll-yearly.html" style="align-self:flex-end;text-decoration:none">
+                <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                Yearly overview
+              </a>
             </div>
-            <button type="button" class="btn btn--send" id="sendBtn" style="align-self:flex-end" disabled hidden>Send to accountant now</button>
+            <button type="button" class="btn btn--send" id="sendBtn" style="align-self:flex-end" disabled hidden>
+              <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              Send to accountant now
+            </button>
           </div>
         </div>
       </div>
@@ -105,10 +126,16 @@
 
       <div class="card hidden" id="submittedCard">
         <div class="card-pad">
-          <p style="margin:0 0 8px;font-weight:700;color:var(--ink)">To process this month (submitted)</p>
+          <p class="sec-title">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            To process this month (submitted)
+          </p>
           <div class="tbl-wrap"><table class="ptbl" id="submittedTable"></table></div>
           <div id="contractsWrap" class="hidden">
-            <p style="margin:16px 0 6px;font-weight:700;color:var(--ink)">Contract / invoice — paid separately</p>
+            <p class="sec-title" style="margin-top:16px">
+              <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              Contract / invoice — paid separately
+            </p>
             <p class="muted" style="margin:0 0 6px;font-size:12px">Not part of the timesheet total above.</p>
             <div class="tbl-wrap"><table class="ptbl" id="contractsTable"></table></div>
           </div>
@@ -118,7 +145,10 @@
       <div class="card hidden" id="missingCard">
         <div class="card-pad">
           <div id="missingWrap" class="hidden">
-            <p style="margin:0 0 4px;font-weight:700;color:var(--ink)">Not submitted — do NOT process this month</p>
+            <p class="sec-title" style="color:var(--warn)">
+              <svg class="ico" style="color:var(--warn)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              Not submitted — do NOT process this month
+            </p>
             <p class="muted" style="margin:0;font-size:12px">A £5 late penalty applies to their next timesheet (paid next month).</p>
             <ul class="missing" id="missingList"></ul>
           </div>
@@ -128,7 +158,10 @@
       <div class="card hidden" id="grandCard">
         <div class="card-pad" style="display:flex;justify-content:center;align-items:center;gap:14px;flex-wrap:wrap;text-align:center">
           <div>
-            <p style="margin:0;font-weight:800;color:var(--ink);font-size:16px">Total this month (everyone)</p>
+            <p style="margin:0;font-weight:800;color:var(--ink);font-size:16px;display:flex;align-items:center;justify-content:center;gap:8px">
+              <svg class="ico" style="color:var(--blue)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              Total this month (everyone)
+            </p>
             <p class="muted" style="margin:2px 0 0;font-size:12px">Timesheets + zero-hours + contract / invoice combined.</p>
           </div>
           <div style="font-size:24px;font-weight:800;color:var(--ink)" id="grandTotal">£0.00</div>
