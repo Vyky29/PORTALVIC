@@ -257,7 +257,7 @@
     var scoped = baseRows();
     var visible = scoped.filter(statusMatch);
 
-    var billed = 0, paid = 0, outstanding = 0, paidN = 0, outN = 0;
+    var billed = 0, paid = 0, outstanding = 0, paidN = 0, outN = 0, naN = 0;
     // Income split by funding type: Private (parents) vs Funded (local authority).
     var grp = { PARENTS: { billed: 0, paid: 0, out: 0, n: 0 }, LA: { billed: 0, paid: 0, out: 0, n: 0 } };
     scoped.forEach(function (r) {
@@ -266,6 +266,7 @@
       if (c !== "notreenrolled") billed += a;
       if (c === "paid") { paid += a; paidN++; }
       else if (c === "outstanding") { outstanding += a; outN++; }
+      else if (c === "notreenrolled") naN++;
       var g = grp[r.sheet];
       if (g && c !== "notreenrolled") {
         g.billed += a; g.n++;
@@ -300,7 +301,7 @@
     });
     html += '<div class="pay-bar">'
       + '<div class="pay-seg" role="group" aria-label="Status filter">'
-      + seg("active", "Active (" + (paidN + outN) + ")") + seg("outstanding", "Outstanding (" + outN + ")") + seg("paid", "Paid (" + paidN + ")") + seg("notreenrolled", "Not re-enrolled") + seg("all", "All")
+      + seg("active", "Active (" + (paidN + outN) + ")") + seg("outstanding", "Outstanding (" + outN + ")") + seg("paid", "Paid (" + paidN + ")") + seg("notreenrolled", "Not re-enrolled (" + naN + ")") + seg("all", "All")
       + '</div>'
       + '<select class="pay-sel" id="paySheet">' + sheetOpts + '</select>'
       + '<input type="search" class="pay-search" id="paySearch" placeholder="Search client, parent…" value="' + esc(state.query) + '" />'
