@@ -3315,15 +3315,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<p class="c4k-reg-kpi-card-sub">(' + esc(ADMIN_PORTAL_SESSION_FEEDBACK_TERM_TITLE) + ')</p>' +
         '</div>';
       var kpiIndBody = adminC4kRegistersKpiIndependenceParticipantVisualHtml(drf);
-      var kpiIncHead =
-        '<div class="c4k-reg-kpi-card-head">' +
-        '<h3 class="c4k-reg-kpi-card-title">Incidents</h3>' +
-        '<p class="c4k-reg-kpi-card-sub">(' + esc(ADMIN_PORTAL_SESSION_FEEDBACK_TERM_TITLE) + ')</p>' +
-        '</div>';
-      var kpiIncBody = adminC4kRegistersKpiIncidentsParticipantVisualHtml(drf, od);
       return (
         '<div class="c4k-sf-kpi-slab c4k-sf-kpi-slab--embed" style="margin-bottom:12px">' +
-        '<div class="c4k-sf-kpi-row c4k-sf-kpi-row--pax">' +
+        '<div class="c4k-sf-kpi-row">' +
         '<div class="c4k-sf-kpi-panel c4k-sf-kpi-panel--eng-sm">' +
         kpiEngHead +
         kpiEngBody +
@@ -3335,10 +3329,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="c4k-sf-kpi-panel">' +
         kpiIndHead +
         kpiIndBody +
-        '</div>' +
-        '<div class="c4k-sf-kpi-panel">' +
-        kpiIncHead +
-        kpiIncBody +
         '</div>' +
         '</div></div>'
       );
@@ -10127,6 +10117,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         void window.portalAdminLoadScriptSet('roster');
         void window.portalAdminLoadScriptSet('participants');
         void window.portalAdminLoadScriptSet('oldpax');
+        // Session feedback powers the participant "Sessions" KPIs + "All feedbacks" table.
+        void window.portalAdminLoadScriptSet('feedback').then(function(){
+          if(state.view === 'clients' && state.openPaxContactId && typeof state.reopenPaxDetail === 'function'){
+            state.reopenPaxDetail();
+          }
+        });
         return;
       }
       if(id === 'c4k_waitlist') void window.portalAdminLoadScriptSet('waitlist');
@@ -18318,6 +18314,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         function paxContactsShowDetail(p){
           var box = $('paxContactsDetail');
           if(!box) return;
+          state.openPaxContactId = p && p.id ? p.id : null;
           box.classList.add('is-on');
           document.documentElement.classList.add('pax-contacts-detail-open');
           document.body.classList.add('pax-contacts-detail-open');
@@ -18334,6 +18331,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           }catch(_oC){}
           var bk = $('paxContactsBack');
           if(bk) bk.onclick = function(){
+            state.openPaxContactId = null;
             box.classList.remove('is-on');
             box.innerHTML = '';
             document.documentElement.classList.remove('pax-contacts-detail-open');
@@ -18341,6 +18339,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           };
         }
         if(root2){
+          state.openPaxContactId = null;
+          state.reopenPaxDetail = function(){
+            if(!state.openPaxContactId) return;
+            var pp = paxContactsFindById(state.openPaxContactId);
+            if(pp) paxContactsShowDetail(pp);
+          };
           var ps = $('paxContactsSearch');
           if(ps) ps.addEventListener('input', paxContactsRefreshFilters);
           var pb = $('paxContactsBookingStatus');
