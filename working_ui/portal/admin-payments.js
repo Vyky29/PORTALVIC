@@ -123,12 +123,12 @@
       ".pay-card-h h3{margin:0;font-size:15px;color:#0f172a}",
       ".pay-tbl-wrap{overflow-x:auto;min-width:0}",
       ".pay-tbl{width:100%;border-collapse:collapse;font-size:14px}",
-      ".pay-tbl th,.pay-tbl td{padding:10px 12px;border-bottom:1px solid #eef2f7;text-align:left;overflow-wrap:break-word;max-width:260px}",
+      ".pay-tbl th,.pay-tbl td{padding:10px 12px;border-bottom:1px solid #eef2f7;text-align:center;vertical-align:middle;overflow-wrap:break-word;max-width:260px}",
       ".pay-tbl thead th{background:#f8fafc;color:#0f172a;font-size:11px;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}",
       ".pay-tbl tbody tr{cursor:pointer}",
       ".pay-tbl tbody tr:hover{background:#f8fafc}",
-      ".pay-tbl td.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}",
-      ".pay-name{font-weight:700;color:#0f172a;white-space:nowrap}",
+      ".pay-tbl td.num{text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums}",
+      ".pay-name{font-weight:700;color:#0f172a}",
       ".pay-pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}",
       ".pay-pill--paid{background:#e7f6ee;color:#15803d}",
       ".pay-pill--out{background:#fef2f2;color:#b91c1c}",
@@ -202,6 +202,16 @@
     return "—";
   }
 
+  function monthFor(r) {
+    var d = r.data || {};
+    var keys = ["Month", "MONTH", "month", "Months", "Period"];
+    for (var i = 0; i < keys.length; i++) {
+      var v = d[keys[i]];
+      if (v != null && String(v).trim() && String(v).trim() !== "-") return String(v).trim();
+    }
+    return "—";
+  }
+
   function render() {
     var root = state.rootEl;
     if (!root) return;
@@ -256,9 +266,9 @@
 
     // Table
     html += '<div class="pay-card"><div class="pay-card-h"><h3>' + icon("clients", 17) + 'Clients</h3><span style="font-size:12px;color:#64748b">' + visible.length + ' shown</span></div>';
-    html += '<div class="pay-tbl-wrap"><table class="pay-tbl"><thead><tr><th>Client</th><th>Group</th><th>Service</th><th>Parent / LA</th><th class="num">Total</th><th>Status</th></tr></thead><tbody>';
+    html += '<div class="pay-tbl-wrap"><table class="pay-tbl"><thead><tr><th>Client</th><th>Group</th><th>Service</th><th>Month</th><th>Parent / LA</th><th class="num">Total</th><th>Status</th></tr></thead><tbody>';
     if (!visible.length) {
-      html += '<tr><td colspan="6" class="pay-empty">No clients match this filter.</td></tr>';
+      html += '<tr><td colspan="7" class="pay-empty">No clients match this filter.</td></tr>';
     } else {
       visible.sort(function (a, b) {
         var s = String(a.sheet).localeCompare(String(b.sheet));
@@ -270,6 +280,7 @@
           + '<td class="pay-name">' + esc(r.client_name || "—") + "</td>"
           + "<td>" + esc(labelFor(r.sheet)) + "</td>"
           + "<td>" + esc(serviceFor(r)) + "</td>"
+          + "<td>" + esc(monthFor(r)) + "</td>"
           + "<td>" + esc(r.parent_name || "") + "</td>"
           + '<td class="num">' + money(r.amount) + "</td>"
           + "<td>" + pillFor(r) + "</td></tr>";
