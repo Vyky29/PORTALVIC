@@ -54,6 +54,14 @@
     priv: '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>',
     fund: '<line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 21 8 3 8"/>',
     clients: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+    user: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+    users: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+    tag: '<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>',
+    flag: '<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>',
+    coins: '<circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="M16.71 13.88l.7.71-2.82 2.82"/>',
+    list: '<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>',
+    field: '<rect x="3" y="4" width="18" height="6" rx="1"/><rect x="3" y="14" width="18" height="6" rx="1"/>',
+    x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
   };
   function icon(name, px) {
     var p = ICONS[name] || "";
@@ -128,9 +136,27 @@
       ".pay-empty{color:#64748b;padding:18px;text-align:center;font-size:14px}",
       ".pay-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}",
       ".pay-field{display:flex;flex-direction:column;gap:4px;min-width:0}",
-      ".pay-field label{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.03em}",
+      ".pay-field label{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.03em}",
+      ".pay-field label .pay-ico{flex:0 0 auto;color:#94a3b8}",
       ".pay-field input,.pay-field select,.pay-field textarea{font:inherit;font-size:14px;padding:8px 10px;border:1px solid #e2e8f0;border-radius:9px;background:#fff;color:#0f172a;width:100%}",
       ".pay-field textarea{min-height:60px;resize:vertical}",
+      // Full-screen client detail
+      ".pay-screen{position:fixed;inset:0;z-index:2147483000;background:#f1f5f9;display:flex;flex-direction:column}",
+      ".pay-screen__head{flex:0 0 auto;display:flex;align-items:center;gap:12px;padding:16px 20px;background:#fff;border-bottom:1px solid #e2e8f0}",
+      ".pay-screen__ico{flex:0 0 auto;width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:#eff6ff;color:#2d84b3}",
+      ".pay-screen__ttl{min-width:0;flex:1}",
+      ".pay-screen__ttl h2{margin:0;font-size:20px;color:#0f172a;overflow-wrap:break-word}",
+      ".pay-screen__ttl .pay-screen__sub{font-size:13px;color:#64748b;font-weight:700}",
+      ".pay-screen__x{flex:0 0 auto;width:40px;height:40px;border-radius:10px;border:1px solid #e2e8f0;background:#fff;color:#334155;cursor:pointer;display:grid;place-items:center}",
+      ".pay-screen__x:hover{background:#f1f5f9}",
+      ".pay-screen__body{flex:1 1 auto;overflow-y:auto;padding:20px;min-height:0}",
+      ".pay-screen__inner{max-width:1100px;margin:0 auto}",
+      ".pay-sect{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:16px 18px;margin:0 0 16px}",
+      ".pay-sect__h{display:flex;align-items:center;gap:9px;margin:0 0 14px;font-size:15px;font-weight:800;color:#0f172a}",
+      ".pay-sect__h .pay-ico{flex:0 0 auto;color:#2d84b3}",
+      ".pay-screen__foot{flex:0 0 auto;display:flex;justify-content:flex-end;gap:10px;padding:14px 20px;background:#fff;border-top:1px solid #e2e8f0}",
+      ".pay-screen__foot .pay-msg{flex:1;align-self:center;font-size:13px;color:#64748b;margin:0}",
+      "@media(max-width:560px){.pay-screen__body{padding:14px}.pay-screen__ttl h2{font-size:17px}}",
     ].join("\n");
     var st = document.createElement("style");
     st.id = "adminPayStyle";
@@ -302,7 +328,7 @@
     });
   }
 
-  function field(name, label, value, type) {
+  function field(name, label, value, type, ico) {
     var v = value == null ? "" : String(value);
     var control;
     if (type === "status") {
@@ -321,11 +347,18 @@
         ? '<textarea data-data="' + esc(name) + '">' + esc(v) + "</textarea>"
         : '<input type="text" data-data="' + esc(name) + '" value="' + esc(v) + '" />';
     }
-    return '<div class="pay-field"><label>' + esc(label) + "</label>" + control + "</div>";
+    var lab = (ico ? icon(ico, 13) : icon("field", 13)) + "<span>" + esc(label) + "</span>";
+    return '<div class="pay-field"><label>' + lab + "</label>" + control + "</div>";
+  }
+
+  function closeScreen() {
+    if (state.escHandler) { document.removeEventListener("keydown", state.escHandler); state.escHandler = null; }
+    var el = document.getElementById("payScreen");
+    if (el && el.parentNode) el.parentNode.removeChild(el);
+    document.documentElement.style.overflow = state.prevHtmlOverflow || "";
   }
 
   function openDetail(id) {
-    if (typeof deps.openModal !== "function") return;
     var r = state.rows.filter(function (x) { return String(x.id) === String(id); })[0];
     if (!r) return;
     var d = r.data || {};
@@ -336,12 +369,12 @@
       return d[k] != null && String(d[k]).trim();
     })[0] || "Services";
 
-    var top = '<div class="pay-fields" style="margin-bottom:12px">'
-      + field("client_name", "Client name", r.client_name, "prop")
-      + field("parent_name", "Parent / LA", r.parent_name, "prop")
-      + field(svcKey, "Service", d[svcKey] || "", "data")
-      + field(null, "Status", r.payment_status, "status")
-      + field(null, "Total (£)", r.amount, "amount")
+    var top = '<div class="pay-fields">'
+      + field("client_name", "Client name", r.client_name, "prop", "user")
+      + field("parent_name", "Parent / LA", r.parent_name, "prop", "users")
+      + field(svcKey, "Service", d[svcKey] || "", "data", "tag")
+      + field(null, "Status", r.payment_status, "status", "flag")
+      + field(null, "Total (£)", r.amount, "amount", "coins")
       + "</div>";
 
     // Service is shown prominently above, so skip its key in the raw-fields grid.
@@ -349,22 +382,40 @@
       .map(function (k) { return field(k, k, d[k], "data"); }).join("");
     if (!dataFields) dataFields = '<p class="pay-empty">No extra fields.</p>';
 
-    var html = '<div class="modal-h"><h2 id="modalTitle">' + esc(r.client_name || "Client") + " · " + esc(labelFor(r.sheet)) + "</h2></div>"
-      + '<div class="modal-b">'
-      + top
-      + '<div class="pay-card-h" style="padding:0 0 8px;border:0"><h3>All spreadsheet fields</h3></div>'
-      + '<div class="pay-fields">' + dataFields + "</div>"
-      + '<p id="payMsg" class="muted" style="margin:10px 0 0;font-size:13px"></p>'
-      + "</div>"
-      + '<div class="modal-f">'
+    closeScreen();
+    var screen = document.createElement("div");
+    screen.id = "payScreen";
+    screen.className = "pay-screen";
+    screen.setAttribute("role", "dialog");
+    screen.setAttribute("aria-modal", "true");
+    screen.innerHTML =
+      '<div class="pay-screen__head">'
+      + '<span class="pay-screen__ico">' + icon("user", 22) + '</span>'
+      + '<div class="pay-screen__ttl"><h2>' + esc(r.client_name || "Client") + '</h2>'
+      + '<span class="pay-screen__sub">' + icon("fund", 12) + " " + esc(labelFor(r.sheet)) + '</span></div>'
+      + '<button type="button" class="pay-screen__x" id="payClose" aria-label="Close">' + icon("x", 20) + '</button>'
+      + '</div>'
+      + '<div class="pay-screen__body"><div class="pay-screen__inner">'
+      + '<section class="pay-sect"><div class="pay-sect__h">' + icon("clients", 17) + 'Key details</div>' + top + '</section>'
+      + '<section class="pay-sect"><div class="pay-sect__h">' + icon("list", 17) + 'All spreadsheet fields</div>'
+      + '<div class="pay-fields">' + dataFields + '</div></section>'
+      + '</div></div>'
+      + '<div class="pay-screen__foot">'
+      + '<p id="payMsg" class="pay-msg"></p>'
       + '<button type="button" class="btn btn--ghost" id="payCancel">Close</button>'
       + '<button type="button" class="btn btn--pri" id="paySave">Save changes</button>'
-      + "</div>";
-    deps.openModal(html);
+      + '</div>';
+    document.body.appendChild(screen);
+    state.prevHtmlOverflow = document.documentElement.style.overflow;
+    document.documentElement.style.overflow = "hidden";
+    state.escHandler = function (e) { if (e.key === "Escape") closeScreen(); };
+    document.addEventListener("keydown", state.escHandler);
 
-    var mr = document.getElementById("modalRoot") || document;
+    var mr = screen;
+    var closeX = mr.querySelector("#payClose");
+    if (closeX) closeX.addEventListener("click", function () { closeScreen(); });
     var cancel = mr.querySelector("#payCancel");
-    if (cancel) cancel.addEventListener("click", function () { if (deps.closeModal) deps.closeModal(); });
+    if (cancel) cancel.addEventListener("click", function () { closeScreen(); });
     var save = mr.querySelector("#paySave");
     if (save) save.addEventListener("click", function () { saveDetail(r, mr, save); });
   }
@@ -406,7 +457,7 @@
       // Sync the in-memory row with exactly what the database stored.
       Object.keys(saved).forEach(function (k) { r[k] = saved[k]; });
       deps.toast("Saved.");
-      if (deps.closeModal) deps.closeModal();
+      closeScreen();
       render();
     }).catch(function (err) {
       if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = "Save changes"; }
