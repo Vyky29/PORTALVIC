@@ -62,7 +62,42 @@
     list: '<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>',
     field: '<rect x="3" y="4" width="18" height="6" rx="1"/><rect x="3" y="14" width="18" height="6" rx="1"/>',
     x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+    calendar: '<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+    dots: '<line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/>',
   };
+
+  // Field-grouping for the detail screen: each raw spreadsheet key is sorted into
+  // the first group whose pattern matches (order matters), the rest go to "Other".
+  var FIELD_GROUPS = [
+    { label: "Money & billing", ico: "coins", rx: /(cost|total|vat|amount|price|fee|balance|deposit|owed|\bpaid\b|invoice|charge|payment|funding|gbp|£)/i },
+    { label: "Dates & period", ico: "calendar", rx: /(month|date|period|term|start|end|week|\bday\b|year|time)/i },
+    { label: "Sessions & counts", ico: "list", rx: /(session|hours?|qty|quantity|count|number|ratio)/i },
+    { label: "People & contact", ico: "users", rx: /(name|parent|client|carer|email|phone|contact|guardian|address)/i },
+  ];
+
+  function groupedFieldsHtml(d, skipKey) {
+    var keys = Object.keys(d).filter(function (k) { return k !== skipKey; });
+    if (!keys.length) return '<p class="pay-empty">No extra fields.</p>';
+    var used = {};
+    var html = "";
+    FIELD_GROUPS.forEach(function (g) {
+      var inGroup = keys.filter(function (k) { return !used[k] && g.rx.test(k); });
+      if (!inGroup.length) return;
+      inGroup.forEach(function (k) { used[k] = true; });
+      html += '<div class="pay-subh">' + icon(g.ico, 13) + "<span>" + esc(g.label) + "</span></div>"
+        + '<div class="pay-fields">'
+        + inGroup.map(function (k) { return field(k, k, d[k], "data", g.ico); }).join("")
+        + "</div>";
+    });
+    var other = keys.filter(function (k) { return !used[k]; });
+    if (other.length) {
+      html += '<div class="pay-subh">' + icon("dots", 13) + "<span>Other</span></div>"
+        + '<div class="pay-fields">'
+        + other.map(function (k) { return field(k, k, d[k], "data", "field"); }).join("")
+        + "</div>";
+    }
+    return html;
+  }
   function icon(name, px) {
     var p = ICONS[name] || "";
     var s = px || 18;
@@ -154,6 +189,9 @@
       ".pay-sect{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:16px 18px;margin:0 0 16px}",
       ".pay-sect__h{display:flex;align-items:center;gap:9px;margin:0 0 14px;font-size:15px;font-weight:800;color:#0f172a}",
       ".pay-sect__h .pay-ico{flex:0 0 auto;color:#2d84b3}",
+      ".pay-subh{display:flex;align-items:center;gap:7px;margin:16px 0 8px;font-size:12px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.04em}",
+      ".pay-subh:first-child{margin-top:0}",
+      ".pay-subh .pay-ico{flex:0 0 auto;color:#94a3b8}",
       ".pay-screen__foot{flex:0 0 auto;display:flex;justify-content:flex-end;gap:10px;padding:14px 20px;background:#fff;border-top:1px solid #e2e8f0}",
       ".pay-screen__foot .pay-msg{flex:1;align-self:center;font-size:13px;color:#64748b;margin:0}",
       "@media(max-width:560px){.pay-screen__body{padding:14px}.pay-screen__ttl h2{font-size:17px}}",
@@ -388,10 +426,9 @@
       + field(null, "Total (£)", r.amount, "amount", "coins")
       + "</div>";
 
-    // Service is shown prominently above, so skip its key in the raw-fields grid.
-    var dataFields = Object.keys(d).filter(function (k) { return k !== svcKey; })
-      .map(function (k) { return field(k, k, d[k], "data"); }).join("");
-    if (!dataFields) dataFields = '<p class="pay-empty">No extra fields.</p>';
+    // Service is shown prominently above, so skip its key here; the rest are
+    // grouped by type (money, dates, sessions, people, other) for readability.
+    var dataFields = groupedFieldsHtml(d, svcKey);
 
     closeScreen();
     var screen = document.createElement("div");
@@ -409,7 +446,7 @@
       + '<div class="pay-screen__body"><div class="pay-screen__inner">'
       + '<section class="pay-sect"><div class="pay-sect__h">' + icon("clients", 17) + 'Key details</div>' + top + '</section>'
       + '<section class="pay-sect"><div class="pay-sect__h">' + icon("list", 17) + 'All spreadsheet fields</div>'
-      + '<div class="pay-fields">' + dataFields + '</div></section>'
+      + dataFields + '</section>'
       + '</div></div>'
       + '<div class="pay-screen__foot">'
       + '<p id="payMsg" class="pay-msg"></p>'
