@@ -12166,17 +12166,40 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<option value="old_participants">Old Participants</option>'
       );
     }
+    /** Compact booked-services cell for the participants list (programme + day abbreviations). */
+    function paxContactsServicesCellHtml(p){
+      if(!p || !String(p.name || '').trim()) return '<span class="muted">—</span>';
+      if(typeof adminSpreadsheetAdapterAvailable !== 'function' || !adminSpreadsheetAdapterAvailable()) return '<span class="muted">—</span>';
+      var bands = [];
+      try{ bands = paxPortalMergedBandsForParticipant(p) || []; }catch(_e){ bands = []; }
+      if(!bands.length) return '<span class="muted">—</span>';
+      var map = {};
+      var order = [];
+      bands.forEach(function(b){
+        var prog = String(b.programme || '').trim() || 'Service';
+        if(!map[prog]){ map[prog] = []; order.push(prog); }
+        var d = String(b.day || '').trim().slice(0, 3);
+        if(d && map[prog].indexOf(d) === -1) map[prog].push(d);
+      });
+      return order.map(function(prog){
+        var days = map[prog].length ? ' <span class="muted">('+esc(map[prog].join(', '))+')</span>' : '';
+        return '<div style="min-width:0;overflow-wrap:break-word">'+esc(prog)+days+'</div>';
+      }).join('');
+    }
     function paxContactsListRowsHtml(){
       var rows = paxContactsUnifiedList();
       return rows.map(function(p){
         var r = p.reg || {};
         var phone = esc(r.phone || '—');
         var em = esc(r.email || '—');
-        var sub = esc(String(p.parentDisplay || r.carer || '—'));
+        var contact = esc(String(p.parentDisplay || r.carer || '—'));
         return (
           '<tr data-pax-id="'+esc(p.id)+'" data-pax-bk="'+esc(p.bookingStatus || '')+'">'+
-          '<td style="min-width:0"><button type="button" class="pax-contacts-namebtn" data-pax-contacts-open="'+esc(p.id)+'"><strong>'+esc(p.name)+'</strong><span class="muted">'+sub+'</span></button></td>'+
-          '<td class="pax-contacts-contact" style="min-width:0"><div>'+phone+'</div><div class="muted">'+em+'</div></td>'+
+          '<td style="min-width:0"><button type="button" class="pax-contacts-namebtn" data-pax-contacts-open="'+esc(p.id)+'"><strong>'+esc(p.name)+'</strong></button></td>'+
+          '<td style="min-width:0;overflow-wrap:break-word">'+contact+'</td>'+
+          '<td class="pax-contacts-contact" style="min-width:0">'+em+'</td>'+
+          '<td style="white-space:nowrap">'+phone+'</td>'+
+          '<td class="pax-contacts-contact" style="min-width:0;max-width:16rem">'+paxContactsServicesCellHtml(p)+'</td>'+
           '<td style="white-space:nowrap">'+esc(p.firstBookingDisplay || '—')+'</td>'+
           '<td style="white-space:nowrap">'+esc(p.latestBookingDisplay || '—')+'</td>'+
           '</tr>'
@@ -12224,7 +12247,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '</div>'+
         '<p class="pax-contacts-count" id="paxContactsCount">Showing '+String(n)+' contacts</p>'+
         '<div class="pax-contacts-table-wrap"><table class="pax-contacts-tbl" id="paxContactsTbl"><thead><tr>'+
-        '<th>Name</th><th>Contact</th><th>First booking</th><th>Latest booking</th>'+
+        '<th>Participant name</th><th>Contact</th><th>Email</th><th>Phone</th><th>Services</th><th>First booking</th><th>Latest booking</th>'+
         '</tr></thead><tbody>'+listRows+'</tbody></table></div>'+
         '<div class="pax-contacts-detail" id="paxContactsDetail" aria-live="polite"></div>'
       );
