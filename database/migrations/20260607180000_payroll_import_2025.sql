@@ -4,7 +4,8 @@
 -- Names with no account (Martin, Paloma, Polly) keep user_id null. Re-runnable:
 -- the four months are wiped first so re-labels / re-runs land cleanly.
 --
--- PENDING (not loaded here, waiting on figures): Sevitha Sep/Dec, Michelle Sep.
+-- "©" next to a Dec name = climbing rate for those hours (does not change the gross).
+-- The club operated before September 2025 — earlier months still to be added.
 
 begin;
 
@@ -30,8 +31,10 @@ from (values
   ('2025-09-01', 'polly',    'Polly',                null,                          'timesheet', 144.00),
   ('2025-09-01', 'dan',      'Dan Clarke',           null,                          'timesheet', 896.00),
   ('2025-09-01', 'andres',   'Andres Borrego',       null,                          'timesheet', 678.00),
+  ('2025-09-01', 'michelle', 'Michelle',             null,                          'timesheet', 2000.00),
   ('2025-09-01', 'roberto',  'Roberto Reali (extra hours)', 'Extra hours',          'timesheet', 540.00),
   ('2025-09-01', 'roberto',  'Roberto Reali',        'Contract - base salary (partial)', 'contract', 416.44),
+  ('2025-09-01', 'sevitha',  'Sevitha',              'Self-employed (invoice)',     'contract',  2458.33),
   ('2025-09-01', 'victor',   'Victor',               'Director',                    'contract',  4167.00),
   ('2025-09-01', 'raul',     'Raul',                 'Director',                    'contract',  4167.00),
   -- ===== October 2025 =====
@@ -88,6 +91,7 @@ from (values
   ('2025-12-01', 'paloma',   'Paloma',               null,                          'timesheet', 414.00),
   ('2025-12-01', 'roberto',  'Roberto Reali (extra hours)', 'Extra hours',          'timesheet', 184.00),
   ('2025-12-01', 'roberto',  'Roberto Reali',        'Contract - base salary',      'contract',  1583.33),
+  ('2025-12-01', 'sevitha',  'Sevitha',              'Self-employed (invoice)',     'contract',  2458.33),
   ('2025-12-01', 'raul',     'Raul',                 'Director',                    'contract',  4167.00),
   ('2025-12-01', 'victor',   'Victor',               'Director',                    'contract',  4167.00)
 ) as v(period_month, key, name, role, pay_type, gross)
