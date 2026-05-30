@@ -359,7 +359,7 @@
         "Could not load portal_documents.js from /portal-shared-js/. Ensure portal-shared-js/portal_documents.js is deployed."
       );
     }
-    const { portalSubmitPdfDocument, portalRequireUser } = await portalImportDocumentsModule("expenses");
+    const { portalUploadPdfAndCreateDocument, portalRequireUser } = await portalImportDocumentsModule("expenses");
 
     const MAX_ROWS = 12;
     const STAFF_CODE_FALLBACK = {
@@ -951,7 +951,7 @@
         latestPdfBlob = pdfBlob;
         latestPdfFileName = pdfFileName;
         const relatedDate = new Date().toISOString().slice(0, 10);
-        await portalSubmitPdfDocument({
+        await portalUploadPdfAndCreateDocument({
           blob: pdfBlob,
           full_name: empDisplay && empDisplay !== "-" ? empDisplay : "",
           document_type: "expense",

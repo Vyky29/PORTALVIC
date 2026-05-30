@@ -266,11 +266,9 @@
     </div>
   </div>
   <script type="module">
-    import { bootPortalLeadFeedback } from "/portal-shared-js/portal_lead_feedback_app.js?v=20260524-emotion-multiselect";
-    bootPortalLeadFeedback().catch(function (e) {
-      console.error(e);
-      alert("Could not load lead report. Refresh the page.");
-    });
+    // lead_feedback_report_app.js self-initialises (calls initLeadFeedbackReportPage()
+    // on import). The previous module name did not exist, so the form never booted.
+    import "/portal-shared-js/lead_feedback_report_app.js?v=20260524-emotion-multiselect";
   </script>
 </body>
 </html>

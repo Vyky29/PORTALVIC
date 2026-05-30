@@ -1049,8 +1049,10 @@
   <script>
     (async function(){
       const STORAGE_KEY = 'clubsensational_handover_records_v2';
-      const SUPABASE_URL = 'https://tehfptyoyutnbhuislvs.supabase.co';
-      const SUPABASE_KEY = 'sb_publishable_dULoLikBXTXDkiNfj-6kIA_-69Vmp5w';
+      // Use the Portal project (set by portal-static-bootstrap.js) so handovers land
+      // in the same DB the admin dashboard reads. Falls back to Portal defaults.
+      const SUPABASE_URL = (window.SUPABASE_URL || 'https://cklpnwhlqsulpmkipmqb.supabase.co');
+      const SUPABASE_KEY = (window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrbHBud2hscXN1bHBta2lwbXFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyMDg4NzIsImV4cCI6MjA5MTc4NDg3Mn0.-T7rVyDHQbzMqEKOVz6fi3OlZdB_gPH2i5p-ZPveopE');
       const TABLE = 'daily_handover_logs';
       const client = window.supabase && window.supabase.createClient
         ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
