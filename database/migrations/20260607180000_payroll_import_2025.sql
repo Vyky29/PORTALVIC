@@ -4,7 +4,7 @@
 -- Names with no account (Martin, Paloma, Polly) keep user_id null. Re-runnable:
 -- the four months are wiped first so re-labels / re-runs land cleanly.
 --
--- PENDING (not loaded here, waiting on figures): Sevitha Sep/Oct/Dec, Michelle Sep.
+-- PENDING (not loaded here, waiting on figures): Sevitha Sep/Dec, Michelle Sep.
 
 begin;
 
@@ -51,6 +51,7 @@ from (values
   ('2025-10-01', 'paloma',   'Paloma',               null,                          'timesheet', 644.00),
   ('2025-10-01', 'roberto',  'Roberto Reali (extra hours)', 'Extra hours',          'timesheet', 368.00),
   ('2025-10-01', 'roberto',  'Roberto Reali',        'Contract - base salary',      'contract',  1583.33),
+  ('2025-10-01', 'sevitha',  'Sevitha',              'Self-employed (invoice)',     'contract',  2458.33),
   ('2025-10-01', 'raul',     'Raul',                 'Director',                    'contract',  4167.00),
   ('2025-10-01', 'victor',   'Victor',               'Director',                    'contract',  1000.00),
   -- ===== November 2025 =====
