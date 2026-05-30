@@ -23,5 +23,9 @@ yarn-error.log*
 __pycache__/
 *.py[cod]
 
+# HR source data + generated seeds (PII: never commit, never deploy)
+hr_source/
+*.xlsx
+
 # Optional: uncomment if you add Node tooling later
 # node_modules/

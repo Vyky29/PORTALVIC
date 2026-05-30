@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <!-- Admin-only HR matrix viewer. Reads public.hr_records (RLS: admin/ceo only),
+       which is fed from the STAFF MATRIX workbook (imported locally, never deployed).
+       Static deploy from working_ui/ on Vercel; browser uses only the anon key. -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Staff &amp; HR matrix · clubSENsational</title>
+  <style>
+    :root{
+      --blue:#2d84b3;--blueDark:#256d96;--ink:#0f172a;--text:#334155;--muted:#64748b;
+      --line:#e2e8f0;--bg:#f1f5f9;--surface:#fff;--gold:#f4b740;
+      --danger:#dc2626;--dangerSoft:#fef2f2;--success:#15803d;--successSoft:#f0fdf4;
+      --warn:#b45309;--warnSoft:#fffbeb;--radius:14px;
+      --font:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    }
+    *,*::before,*::after{box-sizing:border-box}
+    html,body{margin:0;max-width:100%;overflow-x:hidden}
+    body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:15px;line-height:1.5}
+    .wrap{max-width:100%;margin:0;padding:18px 24px 60px;min-width:0}
+    header.page{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:8px 0 18px;min-width:0}
+    header.page h1{font-size:20px;margin:0;color:var(--ink);min-width:0;overflow-wrap:break-word;
+      display:flex;align-items:center;gap:10px}
+    .back{font-size:13px;color:var(--blue);text-decoration:none;font-weight:600}
+    .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+      box-shadow:0 1px 3px rgba(15,23,42,.05),0 8px 24px rgba(15,23,42,.05);margin-bottom:16px;overflow:hidden}
+    .card-pad{padding:16px}
+    .muted{color:var(--muted)}
+    .ico{width:16px;height:16px;flex:none}
+    .ico--lg{width:22px;height:22px}
+    h1 .ico{color:var(--blue)}
+    .tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+    .tab{font:inherit;font-weight:600;font-size:13px;border-radius:999px;padding:8px 14px;cursor:pointer;
+      border:1px solid #c3d0e0;background:#fff;color:var(--ink);display:inline-flex;align-items:center;gap:7px;min-width:0}
+    .tab .cnt{font-size:11px;font-weight:700;background:#eef2f7;color:var(--muted);border-radius:999px;padding:1px 7px}
+    .tab[aria-selected="true"]{background:var(--blue);color:#fff;border-color:var(--blue)}
+    .tab[aria-selected="true"] .cnt{background:rgba(255,255,255,.25);color:#fff}
+    .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;min-width:0}
+    .search{flex:1;min-width:180px;font:inherit;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
+    .sheet-title{display:flex;align-items:center;gap:8px;margin:0 0 4px;font-weight:700;color:var(--ink);font-size:16px}
+    .tbl-wrap{overflow-x:auto;min-width:0;border:1px solid var(--line);border-radius:12px}
+    .ptbl{width:100%;border-collapse:collapse;font-size:14px}
+    .ptbl th,.ptbl td{padding:9px 12px;border-bottom:1px solid var(--line);text-align:left;
+      vertical-align:top;overflow-wrap:break-word;max-width:280px}
+    .ptbl thead th{background:#f8fafc;color:var(--ink);font-size:11px;text-transform:uppercase;
+      letter-spacing:.03em;white-space:nowrap;position:sticky;top:0}
+    .ptbl tbody tr:hover{background:#f8fafc}
+    .ptbl td.emp{font-weight:700;color:var(--ink);white-space:nowrap}
+    .pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:10px;font-weight:700;margin-left:6px;vertical-align:1px}
+    .pill--linked{background:var(--successSoft);color:var(--success)}
+    .pill--unlinked{background:var(--warnSoft);color:var(--warn)}
+    .empty{color:var(--muted);font-size:14px;padding:18px;text-align:center}
+    .note{border-radius:10px;padding:10px 12px;font-size:13px;margin:0 0 12px;overflow-wrap:break-word}
+    .note--err{background:var(--dangerSoft);border:1px solid #fecaca;color:#991b1b}
+    .note--info{background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af}
+    .gate{max-width:480px;margin:40px auto;text-align:center}
+    .hidden{display:none!important}
+    .btn{font:inherit;font-weight:700;border-radius:10px;padding:11px 16px;border:1px solid transparent;cursor:pointer;
+      display:inline-flex;align-items:center;justify-content:center;gap:7px}
+    .btn--sec{background:#fff;color:var(--ink);border-color:#c3d0e0}
+    .spin{display:inline-block;width:16px;height:16px;border:2px solid #cbd5e1;border-top-color:var(--blue);
+      border-radius:50%;animation:spin .7s linear infinite;vertical-align:-3px;margin-right:6px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div id="gate" class="gate">
+      <p class="muted"><span class="spin"></span>Checking access…</p>
+    </div>
+
+    <div id="app" class="hidden">
+      <header class="page">
+        <a class="back" href="/admin_dashboard.html">← Admin</a>
+        <h1>
+          <svg class="ico ico--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Staff &amp; HR matrix
+        </h1>
+      </header>
+
+      <div id="statusNote"></div>
+
+      <div class="card">
+        <div class="card-pad">
+          <p class="muted" style="margin:0 0 12px;font-size:13px">
+            Source of truth fed from the STAFF MATRIX workbook. Sensitive (DOB, addresses,
+            health, bank, emergency contacts) — admin / CEO only.
+          </p>
+          <div class="tabs" id="tabs"></div>
+          <div class="toolbar">
+            <input type="search" class="search" id="search" placeholder="Search this sheet (name, value)…" />
+          </div>
+          <p class="sheet-title" id="sheetTitle"></p>
+          <p class="muted" id="sheetMeta" style="margin:0 0 10px;font-size:12px"></p>
+          <div class="tbl-wrap"><table class="ptbl" id="hrTable"></table></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { getSupabaseClient } from "/portal/supabase-client.js?v=20260530-hr";
+
+    const gate = document.getElementById("gate");
+    const app = document.getElementById("app");
+    const statusNote = document.getElementById("statusNote");
+    const tabsEl = document.getElementById("tabs");
+    const searchEl = document.getElementById("search");
+    const sheetTitleEl = document.getElementById("sheetTitle");
+    const sheetMetaEl = document.getElementById("sheetMeta");
+    const hrTable = document.getElementById("hrTable");
+
+    const supabase = getSupabaseClient();
+
+    const SHEET_ORDER = [
+      "Employees info", "Employee Docs", "Emergency Contact Info",
+      "Induction & Safeguarding", "Shadowings & Trainings", "Observations",
+      "Paid CoursesCertificatesFirst A", "Interviews", "Job application",
+      "Health Questionaire",
+    ];
+
+    let bySheet = new Map();   // sheet -> [rows]
+    let activeSheet = null;
+
+    function esc(s) {
+      return String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
+        ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    }
+    function showError(msg) {
+      statusNote.innerHTML = '<div class="note note--err">' + esc(msg) + "</div>";
+    }
+
+    function columnsFor(rows) {
+      // Preserve first-seen column order across the sheet's rows (json keeps order).
+      const seen = new Set();
+      const cols = [];
+      for (const r of rows) {
+        const d = r.data || {};
+        for (const k of Object.keys(d)) {
+          if (!seen.has(k)) { seen.add(k); cols.push(k); }
+        }
+      }
+      return cols;
+    }
+
+    function renderTabs() {
+      const sheets = [...bySheet.keys()].sort((a, b) => {
+        const ia = SHEET_ORDER.indexOf(a), ib = SHEET_ORDER.indexOf(b);
+        return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+      });
+      tabsEl.innerHTML = "";
+      for (const s of sheets) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "tab";
+        btn.setAttribute("role", "tab");
+        btn.setAttribute("aria-selected", String(s === activeSheet));
+        btn.innerHTML = esc(s) + ' <span class="cnt">' + (bySheet.get(s) || []).length + "</span>";
+        btn.addEventListener("click", () => { activeSheet = s; searchEl.value = ""; renderTabs(); renderSheet(); });
+        tabsEl.appendChild(btn);
+      }
+    }
+
+    function renderSheet() {
+      const rows = bySheet.get(activeSheet) || [];
+      const q = String(searchEl.value || "").trim().toLowerCase();
+      sheetTitleEl.textContent = activeSheet || "";
+
+      const cols = columnsFor(rows);
+      const filtered = !q ? rows : rows.filter((r) => {
+        if (String(r.employee_name || "").toLowerCase().includes(q)) return true;
+        const d = r.data || {};
+        return Object.values(d).some((v) => String(v).toLowerCase().includes(q));
+      });
+
+      const linked = rows.filter((r) => r.staff_id).length;
+      sheetMetaEl.textContent =
+        filtered.length + " of " + rows.length + " rows" +
+        (rows.length ? " · " + linked + " linked to a staff account" : "");
+
+      if (!cols.length || !filtered.length) {
+        hrTable.innerHTML = '<tbody><tr><td class="empty">' +
+          (rows.length ? "No rows match your search." : "No data imported for this sheet yet.") +
+          "</td></tr></tbody>";
+        return;
+      }
+
+      let head = "<thead><tr><th>Person</th>";
+      for (const c of cols) head += "<th>" + esc(c) + "</th>";
+      head += "</tr></thead>";
+
+      let body = "<tbody>";
+      for (const r of filtered) {
+        const d = r.data || {};
+        const linkPill = r.staff_id
+          ? '<span class="pill pill--linked">linked</span>'
+          : '<span class="pill pill--unlinked">no acct</span>';
+        body += '<tr><td class="emp">' + esc(r.employee_name || "—") + linkPill + "</td>";
+        for (const c of cols) body += "<td>" + esc(d[c] != null ? d[c] : "") + "</td>";
+        body += "</tr>";
+      }
+      body += "</tbody>";
+
+      hrTable.innerHTML = head + body;
+    }
+
+    async function loadAll() {
+      const pageSize = 1000;
+      let from = 0;
+      let all = [];
+      for (;;) {
+        const { data, error } = await supabase
+          .from("hr_records")
+          .select("sheet, row_index, employee_name, staff_id, data")
+          .order("sheet", { ascending: true })
+          .order("row_index", { ascending: true })
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        all = all.concat(data || []);
+        if (!data || data.length < pageSize) break;
+        from += pageSize;
+      }
+      return all;
+    }
+
+    async function boot() {
+      let session = null;
+      try {
+        const { data } = await supabase.auth.getSession();
+        session = data?.session || null;
+      } catch (_) { session = null; }
+
+      if (!session?.user?.id) {
+        gate.innerHTML =
+          '<h1 style="color:#0f172a">Sign in required</h1>' +
+          '<p class="muted">This page is for admins only.</p>' +
+          '<p><a class="btn btn--sec" href="/login.html" style="text-decoration:none">Go to login</a></p>';
+        return;
+      }
+
+      let role = "";
+      try {
+        const { data: prof } = await supabase
+          .from("staff_profiles").select("app_role").eq("id", session.user.id).maybeSingle();
+        role = String(prof?.app_role || "").toLowerCase();
+      } catch (_) { role = ""; }
+
+      if (role !== "admin" && role !== "ceo") {
+        gate.innerHTML =
+          '<h1 style="color:#0f172a">No access</h1>' +
+          '<p class="muted">The HR matrix is restricted to admin / CEO accounts.</p>' +
+          '<p><a class="back" href="/admin_dashboard.html">← Back to admin</a></p>';
+        return;
+      }
+
+      gate.classList.add("hidden");
+      app.classList.remove("hidden");
+
+      try {
+        const rows = await loadAll();
+        bySheet = new Map();
+        for (const r of rows) {
+          if (!bySheet.has(r.sheet)) bySheet.set(r.sheet, []);
+          bySheet.get(r.sheet).push(r);
+        }
+        if (!bySheet.size) {
+          statusNote.innerHTML =
+            '<div class="note note--info">No HR data imported yet. Run the local importer ' +
+            "(hr_source/import_staff_matrix.py) and paste the generated SQL into Supabase.</div>";
+          return;
+        }
+        const sheets = [...bySheet.keys()].sort((a, b) => {
+          const ia = SHEET_ORDER.indexOf(a), ib = SHEET_ORDER.indexOf(b);
+          return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+        });
+        activeSheet = sheets[0];
+        renderTabs();
+        renderSheet();
+        searchEl.addEventListener("input", renderSheet);
+      } catch (err) {
+        showError("Could not load HR matrix: " + (err?.message || err));
+      }
+    }
+
+    boot();
+  </script>
+</body>
+</html>
