@@ -330,7 +330,7 @@
       const prevLabel = refreshBtn.textContent;
       refreshBtn.innerHTML = '<span class="spin"></span>Loading…';
       try {
-        const out = await callFn({ mode: "preview", month: monthInput.value });
+        const out = await callFn({ mode: "preview", month: monthInput.value, logoUrl: location.origin + "/portal/logoPDF.png" });
         lastPreview = out;
         renderSummary(out);
         if (out.pdfBase64) {
@@ -367,7 +367,7 @@
       const prev = sendBtn.textContent;
       sendBtn.innerHTML = '<span class="spin"></span>Sending…';
       try {
-        const out = await callFn({ mode: "send", month: monthInput.value });
+        const out = await callFn({ mode: "send", month: monthInput.value, logoUrl: location.origin + "/portal/logoPDF.png" });
         const to = Array.isArray(out.to) ? out.to.join(", ") : "";
         showNote(
           "ok",

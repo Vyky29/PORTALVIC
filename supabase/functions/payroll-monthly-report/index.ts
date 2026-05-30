@@ -308,10 +308,29 @@ async function aggregate(supabase: any, targetMonthIso: string) {
   return { workers, notSubmitted, totals, contracts, contractTotal };
 }
 
-async function buildPdf(targetMonthIso: string, data: Awaited<ReturnType<typeof aggregate>>) {
+async function fetchLogo(logoUrl: string): Promise<Uint8Array | null> {
+  if (!logoUrl || !/^https?:\/\//i.test(logoUrl)) return null;
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 4000);
+    const resp = await fetch(logoUrl, { signal: ctrl.signal });
+    clearTimeout(t);
+    if (!resp.ok) return null;
+    return new Uint8Array(await resp.arrayBuffer());
+  } catch (_) {
+    return null;
+  }
+}
+
+async function buildPdf(
+  targetMonthIso: string,
+  data: Awaited<ReturnType<typeof aggregate>>,
+  logoUrl = ""
+) {
   const pdf = await PDFDocument.create();
   const font = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
+  const logoBytes = await fetchLogo(logoUrl);
 
   const A4: [number, number] = [595.28, 841.89];
   const margin = 40;
@@ -387,6 +406,19 @@ async function buildPdf(targetMonthIso: string, data: Awaited<ReturnType<typeof 
       height = sz.height;
       y = height - margin;
       drawHeaderRow();
+    }
+  }
+
+  // Company logo, centered at the top.
+  if (logoBytes) {
+    try {
+      const img = await pdf.embedPng(logoBytes);
+      const logoW = 74;
+      const logoH = (img.height / img.width) * logoW;
+      page.drawImage(img, { x: (width - logoW) / 2, y: y - logoH, width: logoW, height: logoH });
+      y -= logoH + 14;
+    } catch (_) {
+      // Not a PNG / decode failed — skip the logo, keep the report.
     }
   }
 
@@ -590,6 +622,7 @@ Deno.serve(async (req: Request) => {
   const dryRun =
     body.dryRun === true || ["1", "true", "yes"].includes(String(url.searchParams.get("dryRun") || "").toLowerCase());
   const mode = String(body.mode || url.searchParams.get("mode") || "").toLowerCase();
+  const logoUrl = typeof body.logoUrl === "string" ? body.logoUrl : "";
   const isPreview = mode === "preview";
   const isRecord = mode === "record";
   const targetMonthIso = resolveTargetMonthIso(monthRaw);
@@ -653,7 +686,7 @@ Deno.serve(async (req: Request) => {
   // PDF is needed for both preview and send.
   let pdfBytes: Uint8Array;
   try {
-    pdfBytes = await buildPdf(targetMonthIso, data);
+    pdfBytes = await buildPdf(targetMonthIso, data, logoUrl);
   } catch (e) {
     return json(500, { ok: false, error: `PDF failed: ${e?.message || e}` });
   }
