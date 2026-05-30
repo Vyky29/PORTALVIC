@@ -394,13 +394,12 @@ body:has(#workspace .dash-hub--nav-index) .admin-main{
 /* Row 1: Operator + CFK */
 .dash-hub--nav-index .dash-hub-cat:nth-child(1){grid-column:span 4;grid-row:1}
 .dash-hub--nav-index .dash-hub-cat:nth-child(2){grid-column:span 8;grid-row:1}
-/* Row 2: H&R full width */
-.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_zoho"]{grid-column:1 / -1;grid-row:2}
-/* Row 3: Documents + Finance share the line, sized to their button counts
-   (Documents 7 tiles, Finance 3) so the buttons keep the same size as the
-   other categories and both fit on one row. */
-.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_supabase"]{grid-column:span 8;grid-row:3}
-.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_xero"]{grid-column:span 4;grid-row:3}
+/* Row 2: H&R (4 tiles) + Finance (3 tiles) share the line, sized to their
+   button counts so the buttons keep the same size as the other categories. */
+.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_zoho"]{grid-column:span 7;grid-row:2}
+.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_xero"]{grid-column:span 5;grid-row:2}
+/* Row 3: Documents full width (7 tiles). */
+.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_supabase"]{grid-column:1 / -1;grid-row:3}
 @media (max-width:960px){
   .dash-hub-cat-grid{grid-template-columns:1fr}
   .dash-hub--nav-index .dash-hub-cat-grid{
@@ -743,9 +742,9 @@ body:has(#workspace .dash-hub--nav-index) .admin-main{
   }
   .dash-hub--nav-index .dash-hub-cat:nth-child(1){grid-column:span 2;grid-row:1}
   .dash-hub--nav-index .dash-hub-cat:nth-child(2){grid-column:span 4;grid-row:1}
-  .dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_zoho"]{grid-column:1 / -1;grid-row:2}
-  .dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_supabase"]{grid-column:span 2;grid-row:3}
-  .dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_xero"]{grid-column:span 4;grid-row:3}
+  .dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_zoho"]{grid-column:span 3;grid-row:2}
+  .dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_xero"]{grid-column:span 3;grid-row:2}
+  .dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_supabase"]{grid-column:1 / -1;grid-row:3}
 }
 @media (max-width:960px){
   .dash-hub--nav-index .dash-hub-cat-grid{
