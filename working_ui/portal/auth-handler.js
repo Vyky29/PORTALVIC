@@ -336,7 +336,7 @@ function bindLogin() {
 
   async function fetchStaffProfile(supabase, userId) {
     const selectCols =
-      "id, username, full_name, app_role, staff_role, dashboard_route, auth_session_generation";
+      "id, username, full_name, app_role, staff_role, dashboard_route, auth_session_generation, is_active";
     const byId = await supabase
       .from("staff_profiles")
       .select(selectCols)
@@ -352,6 +352,16 @@ function bindLogin() {
       showError(
         "No staff profile for this account. Ask an admin to link your user in public.staff_profiles."
       );
+      return null;
+    }
+    if (profile.is_active === false) {
+      try {
+        await portalLogout();
+      } catch {
+        /* ignore */
+      }
+      clearPortalStaffContext();
+      showError("This account is disabled. Please contact an admin.");
       return null;
     }
     const { data: userData } = await supabase.auth.getUser();
@@ -571,10 +581,25 @@ export async function bootstrapDashboardSupabase(_opts) {
     }
     const { data: profile, error } = await supabase
       .from("staff_profiles")
-      .select("id, username, full_name, app_role, staff_role, dashboard_route, auth_session_generation")
+      .select("id, username, full_name, app_role, staff_role, dashboard_route, auth_session_generation, is_active")
       .eq("id", session.user.id)
       .maybeSingle();
     if (error) throw error;
+
+    if (profile && profile.is_active === false) {
+      try {
+        await portalLogout();
+      } catch {
+        /* ignore */
+      }
+      clearPortalStaffContext();
+      try {
+        window.location.replace(loginRedirect);
+      } catch {
+        window.location.href = loginRedirect;
+      }
+      return;
+    }
 
     let authEmailGate = String(session.user?.email || "").trim();
     if (!authEmailGate) {
@@ -756,7 +781,7 @@ export async function bootstrapDashboardSupabase(_opts) {
             const { data } = await supabase
               .from("staff_profiles")
               .select(
-                "id, username, full_name, app_role, staff_role, dashboard_route, auth_session_generation"
+                "id, username, full_name, app_role, staff_role, dashboard_route, auth_session_generation, is_active"
               )
               .eq("id", session.user.id)
               .maybeSingle();
