@@ -240,14 +240,14 @@
     return "—";
   }
 
-  function monthFor(r) {
+  function termFor(r) {
     var d = r.data || {};
-    var keys = ["Month", "MONTH", "month", "Months", "Period"];
+    var keys = ["Term", "term", "Terms"];
     for (var i = 0; i < keys.length; i++) {
       var v = d[keys[i]];
       if (v != null && String(v).trim() && String(v).trim() !== "-") return String(v).trim();
     }
-    return "—";
+    return "Summer term 2026";
   }
 
   function render() {
@@ -303,8 +303,8 @@
       + '</div>';
 
     // Table
-    html += '<div class="pay-card"><div class="pay-card-h"><h3>' + icon("clients", 17) + 'Clients</h3><span style="font-size:12px;color:#64748b">' + visible.length + ' shown</span></div>';
-    html += '<div class="pay-tbl-wrap"><table class="pay-tbl"><thead><tr><th>Client</th><th>Group</th><th>Service</th><th>Month</th><th>Parent / LA</th><th class="num">Total</th><th>Status</th></tr></thead><tbody>';
+    html += '<div class="pay-card"><div class="pay-card-h"><h3>' + icon("clients", 17) + 'Participants</h3><span style="font-size:12px;color:#64748b">' + visible.length + ' shown</span></div>';
+    html += '<div class="pay-tbl-wrap"><table class="pay-tbl"><thead><tr><th>Client</th><th>Group</th><th>Service</th><th>Term</th><th>Parent / LA</th><th class="num">Total</th><th>Status</th></tr></thead><tbody>';
     if (!visible.length) {
       html += '<tr><td colspan="7" class="pay-empty">No clients match this filter.</td></tr>';
     } else {
@@ -318,7 +318,7 @@
           + '<td class="pay-name">' + esc(r.client_name || "—") + "</td>"
           + "<td>" + esc(labelFor(r.sheet)) + "</td>"
           + "<td>" + esc(serviceFor(r)) + "</td>"
-          + "<td>" + esc(monthFor(r)) + "</td>"
+          + "<td>" + esc(termFor(r)) + "</td>"
           + "<td>" + esc(r.parent_name || "") + "</td>"
           + '<td class="num">' + money(r.amount) + "</td>"
           + "<td>" + pillFor(r) + "</td></tr>";
