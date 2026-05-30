@@ -14,6 +14,7 @@ select
   ) as user_id,
   v.period_month::date, v.name, v.role, v.pay_type, v.gross::numeric, v.note
 from (values
+  ('2026-03-01', 'Sevitha', 'Self-employed (invoice)', 'contract', 1800.00, 'Invoice: 120h @ 15 (27/02-27/03)'),
   ('2026-04-01', 'Sevitha', 'Self-employed (invoice)', 'contract', 1747.78, 'Invoice: 114.5h @ 15 = 1717.50 + Bizay leaflets 30.28')
 ) as v(period_month, name, role, pay_type, gross, note)
 on conflict (period_month, name_key) do update
