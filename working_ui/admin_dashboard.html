@@ -8255,16 +8255,23 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!hit) return null;
       return bookingMetaForSlot(hit.slot, hit.ov);
     }
-    /** Three lines: Service Booking meta (same labels as the master table chips, plain text). */
-    function ordersPortalFundingSourceEhcpHtml(pp, lastIso){
+    /** Funding (bold) + source (same labels as the master table chips, plain text). */
+    function ordersPortalFundingSourceHtml(pp, lastIso){
       var meta = ordersPortalMetaForPp(pp, lastIso);
       var fund = meta ? bookingFundingLabel(meta.funding) : 'Private';
       var src = meta ? bookingSourceLabel(meta.source) : 'Parent';
-      var ehcp = meta && meta.hasEhcp ? 'EHCP' : 'No EHCP';
       return ordersPortalOrdersCellStack(
         '<div style="font-weight:700;color:var(--ink)">'+esc(fund)+'</div>'+
-        '<div class="muted" style="font-size:12px;line-height:1.35">'+esc(src)+'</div>'+
-        '<div class="muted" style="font-size:12px;line-height:1.35">'+esc(ehcp)+'</div>'
+        '<div class="muted" style="font-size:12px;line-height:1.35">'+esc(src)+'</div>'
+      );
+    }
+    /** EHCP status only (its own column). */
+    function ordersPortalEhcpCellHtml(pp, lastIso){
+      var meta = ordersPortalMetaForPp(pp, lastIso);
+      var ehcp = meta && meta.hasEhcp ? 'EHCP' : 'No EHCP';
+      var on = meta && meta.hasEhcp;
+      return ordersPortalOrdersCellStack(
+        '<div style="font-weight:'+(on ? '700' : '600')+';color:'+(on ? 'var(--ink)' : '#64748b')+';font-size:12px">'+esc(ehcp)+'</div>'
       );
     }
     /** One stack per matched payments row: <code>fund</code> then <code>payMethod</code> (Clients Payments export). */
@@ -8552,13 +8559,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var bd = $('modalBackdrop');
       if(bd) bd.onclick = function(e){ if(e.target === bd) closeModal(); };
     }
+    /** Participant (child) display name — its own column. */
+    function ordersPortalParticipantCellHtml(pp){
+      var child = adminParticipantsParentsChildDisplayName(pp) || '—';
+      return ordersPortalOrdersCellStack('<div style="font-weight:700;color:var(--ink)">'+esc(child)+'</div>');
+    }
     /**
-     * Child + one line per booked service (Clients Payments <code>service</code>, split on ·); roster time appended only when exactly one service line.
-     * Latest booking from Participants_Parents export.
+     * One line per booked service (Clients Payments <code>service</code>, split on ·); roster time appended only when exactly one service line.
      */
     function ordersPortalSummaryHtml(pp, lastIso, payHits){
       payHits = payHits || [];
-      var child = adminParticipantsParentsChildDisplayName(pp) || '—';
       var iso10 = ordersPortalIso10(lastIso);
       var hit = ordersPortalFindRosterSlotForPp(pp, lastIso) || ordersPortalFindRosterSlotForPp(pp, booking.selectedDate);
       var tm = hit && hit.slot ? String(hit.slot.anchorTimeLabel || normTimeShort(hit.slot.anchorStart) || '').trim() : '';
@@ -8583,14 +8593,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var blocks = svcStrings.map(function(one){
         var line = one;
         if(svcStrings.length === 1 && tm) line = one + ' · ' + tm;
-        return '<div class="muted" style="font-size:12px;line-height:1.4;max-width:100%;margin-top:2px">'+esc(line)+'</div>';
+        return '<div style="font-size:12px;line-height:1.4;max-width:100%;margin-top:2px;color:var(--ink)">'+esc(line)+'</div>';
       });
+      return ordersPortalOrdersCellStack(blocks.join(''));
+    }
+    /** Latest booking date — its own "Booked" column. */
+    function ordersPortalBookedCellHtml(pp, lastIso){
+      var iso10 = ordersPortalIso10(lastIso);
       var dateParen = iso10 ? bookingFormatDdMmYyyy(iso10) : '—';
-      return ordersPortalOrdersCellStack(
-        '<div style="font-weight:700;color:var(--ink)">'+esc(child)+'</div>'+
-        blocks.join('')+
-        '<div class="muted" style="font-size:12px;line-height:1.35;margin-top:6px">Latest Booking: ('+esc(dateParen)+')</div>'
-      );
+      return ordersPortalOrdersCellStack('<div class="muted" style="font-size:12px;line-height:1.35">Latest Booking: ('+esc(dateParen)+')</div>');
     }
     function ordersPortalOrderItemRowHtml(item){
       var pp = item.pp;
@@ -8611,10 +8622,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         : '';
       return '<tr style="min-width:0">'+
         '<td class="muted" style="min-width:0;max-width:12rem;white-space:normal;overflow-wrap:break-word">'+ordersPortalOrdersCellStack(dateLine)+'</td>'+
-        '<td style="min-width:0;max-width:14rem;overflow-wrap:break-word;font-weight:600">'+ordersPortalOrdersCellStack(esc(parentNm))+'</td>'+
+        '<td style="min-width:0;max-width:12rem;overflow-wrap:break-word;font-weight:600">'+ordersPortalOrdersCellStack(esc(parentNm))+'</td>'+
+        '<td style="min-width:0;max-width:11rem;overflow-wrap:break-word">'+ordersPortalParticipantCellHtml(pp)+'</td>'+
         '<td style="min-width:0">'+ordersPortalSummaryHtml(pp, lastIso, payHits)+'</td>'+
+        '<td style="min-width:0;max-width:10rem">'+ordersPortalBookedCellHtml(pp, lastIso)+'</td>'+
         '<td style="min-width:0">'+ordersPortalPaymentMethodHtml(pp, payHits)+'</td>'+
-        '<td style="min-width:0">'+ordersPortalFundingSourceEhcpHtml(pp, lastIso)+'</td>'+
+        '<td style="min-width:0">'+ordersPortalFundingSourceHtml(pp, lastIso)+'</td>'+
+        '<td style="min-width:0;max-width:7rem">'+ordersPortalEhcpCellHtml(pp, lastIso)+'</td>'+
         '<td style="min-width:0">'+ordersPortalOrdersCellStack(ordersPortalMoneyBlockAggregate(payHits, regTot))+'</td>'+
         '<td class="toolbar" style="min-width:0;white-space:normal;max-width:12rem">'+
         '<div class="tbl-portal-orders-actions">'+
@@ -8626,7 +8640,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     /** Participant workspace · Booking & billing — Orders grid rows for this child (same pipeline as Orders page). */
     function ordersPortalParticipantWorkspaceOrderRowsHtml(displayName){
       var nm = String(displayName || '').trim();
-      if(!nm) return '<tr><td colspan="7" class="muted">No participant name.</td></tr>';
+      if(!nm) return '<tr><td colspan="10" class="muted">No participant name.</td></tr>';
       var term = ordersPortalParticipantWorkspaceTermBounds();
       var built = ordersPortalBuildFilteredRowsInBounds(term, '');
       var amb = adminPortalParticipantAmbiguityMap();
@@ -8635,7 +8649,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return adminPortalParticipantMatchesDisplayName(nm, ch, amb);
       });
       if(!list.length){
-        return '<tr><td colspan="7" class="muted" style="min-width:0;overflow-wrap:break-word">No orders for this participant in the <strong>current programme term</strong> ('+esc(term.startIso)+'–'+esc(term.endIso)+'). Open <strong>Orders</strong> for other date ranges.</td></tr>';
+        return '<tr><td colspan="10" class="muted" style="min-width:0;overflow-wrap:break-word">No orders for this participant in the <strong>current programme term</strong> ('+esc(term.startIso)+'–'+esc(term.endIso)+'). Open <strong>Orders</strong> for other date ranges.</td></tr>';
       }
       return list.map(ordersPortalOrderItemRowHtml).join('');
     }
@@ -8659,7 +8673,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var start = (page - 1) * pageSize;
       var slice = list.slice(start, start + pageSize);
       if(!slice.length){
-        tbody.innerHTML = '<tr><td colspan="7" class="muted" style="min-width:0;overflow-wrap:break-word">No orders in this range.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" class="muted" style="min-width:0;overflow-wrap:break-word">No orders in this range.</td></tr>';
         return;
       }
       tbody.innerHTML = slice.map(ordersPortalOrderItemRowHtml).join('');
@@ -11194,7 +11208,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="filter-row" style="align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;min-width:0">'+
         '<label class="muted" for="bookingPortalOrdersPage" style="white-space:nowrap">Go to page:</label> '+
         '<select class="sel" id="bookingPortalOrdersPage" style="max-width:120px" aria-label="Orders catalogue page"><option value="1">1</option></select></div>'+
-        '<div class="card" style="min-width:0"><div class="card-pad" style="overflow:auto;padding:0"><table class="tbl" id="bookingPortalOrdersTable" style="min-width:1120px"><thead><tr><th>Date</th><th>Parent name</th><th>Order summary</th><th>Payment method</th><th>Funding / Source / EHCP</th><th>Cost</th><th>Actions</th></tr></thead><tbody></tbody></table></div></div></div>';
+        '<div class="card" style="min-width:0"><div class="card-pad" style="overflow:auto;padding:0"><table class="tbl tbl--center" id="bookingPortalOrdersTable" style="min-width:1320px"><thead><tr><th>Date</th><th>Parent name</th><th>Participant name</th><th>Order summary</th><th>Booked</th><th>Payment method</th><th>Funding / Source</th><th>EHCP</th><th>Cost</th><th>Actions</th></tr></thead><tbody></tbody></table></div></div></div>';
     }
     function invoiceDefaultDescription(kind){
       if(kind === 'exempt'){
@@ -12004,7 +12018,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="card"><div class="card-h"><h3 style="margin:0">Orders</h3><span class="chip chip--info">this participant</span></div>'+
         '<div class="card-pad" style="overflow:auto;padding:0;border-top:1px solid var(--line)">'+
         '<p class="muted" style="margin:0 0 10px;font-size:12px;max-width:52rem;min-width:0;overflow-wrap:break-word">Same logic as <strong>Orders</strong>, scoped to the <strong>current programme term</strong> (summer register window). Open <strong>Orders</strong> for day/week/month filters.</p>'+
-        '<table class="tbl" id="paxWorkspacePortalOrdersTable" style="min-width:1120px"><thead><tr><th>Date</th><th>Parent name</th><th>Order summary</th><th>Payment method</th><th>Funding / Source / EHCP</th><th>Cost</th><th>Actions</th></tr></thead><tbody>'+paxOrdersTbody+'</tbody></table></div></div>'+
+        '<table class="tbl tbl--center" id="paxWorkspacePortalOrdersTable" style="min-width:1320px"><thead><tr><th>Date</th><th>Parent name</th><th>Participant name</th><th>Order summary</th><th>Booked</th><th>Payment method</th><th>Funding / Source</th><th>EHCP</th><th>Cost</th><th>Actions</th></tr></thead><tbody>'+paxOrdersTbody+'</tbody></table></div></div>'+
         '<div class="toolbar" style="margin-top:10px;flex-wrap:wrap;gap:8px"><button type="button" class="btn btn--pri btn--sm" data-view-target="orders_all">Open Orders</button></div>'+
         '</div>';
       var paxPayTbody = renderProgrammeFinanceSheetRowsForParticipant(pname);
