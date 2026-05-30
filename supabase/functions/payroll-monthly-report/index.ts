@@ -273,7 +273,8 @@ async function aggregate(supabase: any, targetMonthIso: string) {
     if (uid) importedTimesheetIds.add(uid);
   }
 
-  workers.sort((a, b) => a.name.localeCompare(b.name));
+  // On-time submissions first, late ones after, alphabetical within each group.
+  workers.sort((a, b) => (a.isLate ? 1 : 0) - (b.isLate ? 1 : 0) || a.name.localeCompare(b.name));
   contracts.sort((a, b) => a.name.localeCompare(b.name));
 
   const notSubmitted = [...expected.entries()]
@@ -342,12 +343,12 @@ async function buildPdf(
 
   // columns: Name, Role, Gross, Penalty, Net, Status
   const cols = [
-    { key: "name", title: "Name", w: 132, align: "center" },
-    { key: "role", title: "Role", w: 120, align: "center" },
-    { key: "gross", title: "Gross £", w: 62, align: "center" },
-    { key: "penalty", title: "Penalty £", w: 60, align: "center" },
-    { key: "net", title: "Net £", w: 62, align: "center" },
-    { key: "status", title: "Status", w: 56, align: "center" },
+    { key: "name", title: "Name", w: 132, align: "left" },
+    { key: "role", title: "Role", w: 120, align: "left" },
+    { key: "gross", title: "Gross £", w: 62, align: "right" },
+    { key: "penalty", title: "Penalty £", w: 60, align: "right" },
+    { key: "net", title: "Net £", w: 62, align: "right" },
+    { key: "status", title: "Status", w: 56, align: "left" },
   ];
   const tableX = margin;
   const colX: number[] = [];
@@ -369,13 +370,13 @@ async function buildPdf(
   function drawCell(text: string, ci: number, yy: number, size: number, f = font, color = ink) {
     const c = cols[ci];
     const x = colX[ci];
-    const t = clip(String(text == null ? "" : text), c.w - 6, f, size);
-    const tw = f.widthOfTextAtSize(t, size);
-    let tx: number;
-    if (c.align === "right") tx = x + c.w - tw - 4;
-    else if (c.align === "center") tx = x + (c.w - tw) / 2;
-    else tx = x + 2;
-    drawText(t, tx, yy, size, f, color);
+    const t = String(text == null ? "" : text);
+    if (c.align === "right") {
+      const tw = f.widthOfTextAtSize(t, size);
+      drawText(t, x + c.w - tw - 4, yy, size, f, color);
+    } else {
+      drawText(clip(t, c.w - 6, f, size), x + 2, yy, size, f, color);
+    }
   }
   function clip(t: string, maxW: number, f: any, size: number): string {
     if (f.widthOfTextAtSize(t, size) <= maxW) return t;
@@ -446,8 +447,7 @@ async function buildPdf(
     drawText("No timesheets submitted for this month.", margin + 2, y - 12, 10, font, muted);
     y -= rowH;
   }
-  const workersOrdered = [...data.workers].sort((a, b) => (a.isLate ? 1 : 0) - (b.isLate ? 1 : 0));
-  for (const w of workersOrdered) {
+  for (const w of data.workers) {
     ensureRoom();
     const baseY = y - 12;
     drawCell(w.name, 0, baseY, 9, font);
