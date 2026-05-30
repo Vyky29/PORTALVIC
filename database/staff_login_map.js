@@ -18,7 +18,7 @@ window.PORTAL_STAFF_LOGIN_MAP = {
     Godsway: "stf009@staff.import.pending",
     Javier: "stf010@staff.import.pending",
     Aurora: "stf011@staff.import.pending",
-    Michelle: "stf021@staff.import.pending",
+    Michelle: "michelle@youtimecounselling.com",
     Berta: "b.traperocasado@gmail.com",
     Victor: "stf013@staff.import.pending",
     Carlos: "stf014@staff.import.pending",

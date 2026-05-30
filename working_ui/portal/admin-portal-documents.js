@@ -433,14 +433,29 @@
     var closeBtn = document.getElementById('portalDocumentsPreviewClose');
     if (closeBtn) closeBtn.addEventListener('click', closePreview);
 
-    // Preset filter from the sidebar sub-menu (e.g. clicking "Expenses").
+    // Preset filter from the sidebar sub-menu (e.g. clicking "Expenses") or from
+    // an onboarding document chip (which also presets a search + auto-open).
     var preset = String(global.__portalDocsPresetFilter || '').trim();
     if (preset && (preset === 'all' || TYPE_LABELS[preset])) {
       state.filter = preset;
     }
+    var presetSearch = String(global.__portalDocsPresetSearch || '').trim();
+    if (presetSearch) {
+      state.search = presetSearch;
+      if (search) search.value = presetSearch;
+    }
+    var autoOpen = global.__portalDocsAutoOpen === true;
+    // One-shot presets: clear so a later plain visit is not stuck filtered.
+    global.__portalDocsPresetFilter = '';
+    global.__portalDocsPresetSearch = '';
+    global.__portalDocsAutoOpen = false;
     applyActiveCard();
 
-    void refresh();
+    refresh().then(function () {
+      if (!autoOpen) return;
+      var items = global._portalDocumentsCurrent || [];
+      if (items.length) void openPreview(0);
+    });
   }
 
   function statCardsHtml() {

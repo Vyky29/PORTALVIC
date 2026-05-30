@@ -20,7 +20,8 @@
     getSupabaseUrl: null,
     getAnonKey: null,
     esc: null,
-    toast: null
+    toast: null,
+    gotoDocuments: null
   };
 
   var root = null;
@@ -33,12 +34,13 @@
     error: ""
   };
 
+  // docFilter = the matching filter key in the admin Documents view.
   var DOC_CHIP_SPECS = [
-    { key: "passport", label: "Passport" },
-    { key: "checklist", label: "Checklist" },
-    { key: "certificate", label: "Certificate" },
-    { key: "firstaid", label: "First aid" },
-    { key: "safeguarding", label: "Safeguarding" }
+    { key: "passport", label: "Passport", docFilter: "passport" },
+    { key: "checklist", label: "Checklist", docFilter: "checklist" },
+    { key: "certificate", label: "Certificate", docFilter: "certificate" },
+    { key: "firstaid", label: "First aid", docFilter: "firstaid" },
+    { key: "safeguarding", label: "Safeguarding", docFilter: "certificate" }
   ];
 
   function esc(s) {
@@ -92,7 +94,9 @@
       ".ob-pill--yes{background:#d1fae5;color:#065f46}" +
       ".ob-pill--no{background:#f1f5f9;color:#64748b}" +
       ".ob-chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}" +
-      ".ob-chip{font-size:11px;font-weight:700;color:#1e3a8a;background:#eef2ff;border:1px solid #c7d2fe;border-radius:999px;padding:4px 10px;line-height:1.2}" +
+      ".ob-chip{font-size:11px;font-weight:700;color:#1e3a8a;background:#eef2ff;border:1px solid #c7d2fe;border-radius:999px;padding:4px 10px;line-height:1.2;font-family:inherit}" +
+      ".ob-chip--open{cursor:pointer}" +
+      ".ob-chip--open:hover{background:#e0e7ff;border-color:#a5b4fc}" +
       ".ob-counts{font-size:12px;color:#64748b;line-height:1.4}" +
       ".ob-export{display:flex;flex-wrap:wrap;gap:6px}" +
       ".ob-export .ob-link{font-size:11px;font-weight:700;color:#0f2747;background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;padding:4px 10px;cursor:pointer}" +
@@ -109,14 +113,29 @@
     return '<span class="ob-pill ob-pill--' + (done ? "yes" : "no") + '">' + (done ? "Done" : "—") + "</span>";
   }
 
-  function docChips(uploads) {
+  function docChips(uploads, sessionId, name) {
     uploads = uploads || {};
     var chips = [];
     DOC_CHIP_SPECS.forEach(function (spec) {
       var n = uploads[spec.key] || 0;
       if (!n) return;
       var label = spec.label + (n > 1 ? " \u00d7" + n : "");
-      chips.push('<span class="ob-chip">' + esc(label) + "</span>");
+      var canOpen = !!deps.gotoDocuments;
+      if (canOpen) {
+        chips.push(
+          '<button type="button" class="ob-chip ob-chip--open" data-ob-doc="' +
+            esc(spec.docFilter) +
+            '" data-ob-sid="' +
+            esc(sessionId || "") +
+            '" data-ob-name="' +
+            esc(name || "") +
+            '" title="Open in Documents">' +
+            esc(label) +
+            "</button>"
+        );
+      } else {
+        chips.push('<span class="ob-chip">' + esc(label) + "</span>");
+      }
     });
     if (!chips.length) return '<span class="ob-pill ob-pill--no">—</span>';
     return '<div class="ob-chips">' + chips.join("") + "</div>";
@@ -172,7 +191,7 @@
           "</td><td>" +
           pill(!!a.health) +
           '</td><td class="ob-counts">' +
-          docChips(a.uploads) +
+          docChips(a.uploads, sid, name) +
           '</td><td class="ob-counts">' +
           esc(fmtDate(a.last_online_at)) +
           '</td><td class="ob-counts">' +
@@ -213,6 +232,16 @@
         var kind = btn.getAttribute("data-ob-csv");
         if (!sid || !kind) return;
         downloadCsv(sid, kind, kind === "job" ? "job-application" : "health-questionnaire");
+      });
+    });
+    root.querySelectorAll("[data-ob-doc]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        if (!deps.gotoDocuments) return;
+        deps.gotoDocuments({
+          filter: btn.getAttribute("data-ob-doc") || "all",
+          sessionId: btn.getAttribute("data-ob-sid") || "",
+          name: btn.getAttribute("data-ob-name") || ""
+        });
       });
     });
   }
@@ -314,6 +343,7 @@
     if (opts.getAnonKey) deps.getAnonKey = opts.getAnonKey;
     if (opts.esc) deps.esc = opts.esc;
     if (opts.toast) deps.toast = opts.toast;
+    if (opts.gotoDocuments) deps.gotoDocuments = opts.gotoDocuments;
   }
 
   function mount(rootEl) {
