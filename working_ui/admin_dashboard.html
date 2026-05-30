@@ -15670,12 +15670,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portalDashTileHtml('participant_achievements', '', 'clients', 'Achievement photos', 'Session photos after feedback', false, 'feedback')+
         portalDashTileHtml('c4k_sessions', '', 'c4k_registers', 'Feedbacks', 'Registers & session notes', false, 'feedback', 'sessions_hub_feedback')+
         portalDashTileHtml('c4k_late_submissions', '', 'c4k_late_submissions', 'Late submissions', 'Approve past-session forms', state.portalLatePendingCount > 0, 'feedback')+
-        portalDashTileHtml('c4k_sessions', '', 'c4k_relevant', 'Relevant info', 'Relevant notes to review', false, 'analytics', 'sessions_hub_relevant');
+        portalDashTileHtml('c4k_sessions', '', 'c4k_relevant', 'Relevant info', 'Relevant notes to review', false, 'analytics', 'sessions_hub_relevant')+
+        portalDashTileHtml('c4k_sessions', '', 'absents', 'Absents', 'Quick marks by day', false, 'absents', 'sessions_hub_absents');
       var sessionsRow2 =
         portalDashTileHtml('c4k_sessions', '', 'portal_nav_lead', 'Lead report', 'Lead session reports', false, 'feedback', 'sessions_hub_lead')+
         portalDashTileHtml('c4k_sessions', '', 'analytics', 'Incidents', 'Safeguarding & logs', false, 'analytics', 'sessions_hub_incidents')+
-        portalDashTileHtml('c4k_sessions', '', 'absents', 'Absents', 'Quick marks by day', false, 'absents', 'sessions_hub_absents')+
-        portalDashTileHtml('c4k_sessions', '', 'absents_refunds', 'Cancellations', '&nbsp;', false, 'absents', 'sessions_hub_cancellations')+
+        portalDashTileHtml('absents_refunds', '', 'absents_refunds', 'Absents & credits', 'Refunds, credits, missed sessions', false, 'absents')+
         portalDashTileHtml('c4k_sessions', '', 'c4k_services', 'Venue review', 'Venue opening reviews', false, 'scheduling', 'sessions_hub_venue')+
         portalDashTileHtml('c4k_sessions', '', 'scheduling', 'Pick up / drop off', 'Drop off & pick up portal', false, 'scheduling', 'sessions_hub_pickup');
       var teamTiles =
@@ -15710,8 +15710,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           panelClass:'dash-hub__panel--sessions',
           bodyHtml:
             '<div class="dash-hub__sessions-grids">'+
-            '<div class="dash-hub__grid dash-hub__grid--5">'+sessionsRow1+'</div>'+
-            '<div class="dash-hub__grid dash-hub__grid--6 dash-hub__grid--sessions-row2">'+sessionsRow2+'</div>'+
+            '<div class="dash-hub__grid dash-hub__grid--6">'+sessionsRow1+'</div>'+
+            '<div class="dash-hub__grid dash-hub__grid--5 dash-hub__grid--sessions-row2">'+sessionsRow2+'</div>'+
             '</div>',
           ariaLabel:'Sessions'
         })+
@@ -15724,7 +15724,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portalDashTileHtml('reenrol_payments', '', 'reenrol_payments', 'Payments', 'Programme payments', false, 'payments')+
         portalDashTileHtml('invoices', '', 'invoices', 'Invoices', 'Xero draft &amp; export', false, 'payments');
       var participantsRow2 =
-        portalDashTileHtml('absents_refunds', '', 'absents_refunds', 'Absents &amp; credits', 'Refunds, credits, missed sessions', false, 'absents')+
         portalDashTileHtml('c4k_reviews', '', 'c4k_reviews', 'Progress', 'Term reviews &amp; goals', false, 'reviews')+
         portalDashTileHtml('c4k_reports', '', 'c4k_reports', 'Reports', 'Request packs &amp; LA delivery', false, 'reports_q');
       var staffRow1 =
