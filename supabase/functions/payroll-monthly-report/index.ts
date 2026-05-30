@@ -145,8 +145,14 @@ function dedupeLatest(rows: any[]): any[] {
 }
 
 async function aggregate(supabase: any, targetMonthIso: string) {
-  const [{ data: tsRaw, error: tsErr }, { data: rates }, { data: roleRates }, { data: profs }, { data: importRaw }] =
-    await Promise.all([
+  const [
+    { data: tsRaw, error: tsErr },
+    { data: rates },
+    { data: roleRates },
+    { data: profs },
+    { data: importRaw },
+    { data: importStartRaw },
+  ] = await Promise.all([
       supabase
         .from("staff_timesheets")
         .select(
@@ -161,8 +167,22 @@ async function aggregate(supabase: any, targetMonthIso: string) {
         .from("staff_timesheet_imports")
         .select("user_id, period_month, name, role, pay_type, total_hours, gross")
         .eq("period_month", targetMonthIso),
+      supabase.from("staff_payroll_start").select("user_id, start_month"),
     ]);
   if (tsErr) throw tsErr;
+
+  // Workers only become "expected" from their payroll start month onwards, so a
+  // new hire / returner is not flagged "not submitted" (or penalised) earlier.
+  const startById = new Map<string, string>();
+  for (const r of importStartRaw || []) {
+    const id = String(r.user_id || "");
+    const sm = String(r.start_month || "");
+    if (id && sm) startById.set(id, sm.slice(0, 10));
+  }
+  const startedByTarget = (id: string): boolean => {
+    const sm = startById.get(String(id));
+    return !sm || sm <= targetMonthIso;
+  };
 
   const nameById = new Map<string, string>();
   for (const p of profs || []) {
@@ -243,7 +263,13 @@ async function aggregate(supabase: any, targetMonthIso: string) {
   contracts.sort((a, b) => a.name.localeCompare(b.name));
 
   const notSubmitted = [...expected.entries()]
-    .filter(([id]) => !submittedIds.has(id) && !importedTimesheetIds.has(id) && !contractIds.has(id))
+    .filter(
+      ([id]) =>
+        !submittedIds.has(id) &&
+        !importedTimesheetIds.has(id) &&
+        !contractIds.has(id) &&
+        startedByTarget(id)
+    )
     .map(([id, role]) => ({
       userId: id,
       name: nameById.get(id) || id,
