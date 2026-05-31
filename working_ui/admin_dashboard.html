@@ -3549,6 +3549,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var src = window.STAFF_DASHBOARD_SOURCE;
       var keys = Object.keys(src.staffProfiles || {});
       for(var i=0;i<keys.length;i++){
+        // The "demo" profile is a staff-login placeholder that the adapter maps onto
+        // Youssef's rows — in the admin aggregate it would duplicate a real instructor
+        // (phantom "Demo" line) and overstate register capacity. Never roster it here.
+        if(String(keys[i] || '').trim().toLowerCase() === 'demo') continue;
         try{
           var boot = window.StaffDashboardSpreadsheetAdapter.bootstrap({ source: src, staffId: keys[i] });
           var sm = boot.sessionsModel || [];
