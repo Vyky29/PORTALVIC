@@ -811,6 +811,45 @@
       background: var(--blueSoft);
       color: var(--blue);
     }
+    .ceo-rev-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .ceo-rev-filter {
+      cursor: pointer;
+      border: 1px solid var(--line);
+      background: var(--white);
+      color: var(--muted);
+      padding: 6px 12px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1;
+    }
+    .ceo-rev-filter[aria-pressed="true"] {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #fff;
+    }
+    .ceo-rev-num {
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      text-align: right;
+    }
+    .ceo-rev-bar {
+      height: 6px;
+      border-radius: 99px;
+      background: var(--blueSoft);
+      overflow: hidden;
+      max-width: 220px;
+    }
+    .ceo-rev-bar span {
+      display: block;
+      height: 100%;
+      background: var(--blue);
+    }
     .ceo-snap-fc-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -1235,7 +1274,7 @@
       }
     })();
   </script>
-  <script src="portal/portal_ceo_snapshot.js?v=20260530-salaries-clients"></script>
+  <script src="portal/portal_ceo_snapshot.js?v=20260531-revenue-filters"></script>
   <script>
     (function () {
       var isElementorPreview =

@@ -337,6 +337,143 @@
     );
   }
 
+  // ---- Revenue · money generated -------------------------------------------
+  function parseMoney(v) {
+    if (v == null) return 0;
+    var n = Number(String(v).replace(/[^0-9.\-]/g, ""));
+    return isFinite(n) ? n : 0;
+  }
+
+  function payData(p) {
+    var d = p && p.data;
+    if (typeof d === "string") {
+      try { d = JSON.parse(d); } catch (e) { d = {}; }
+    }
+    return d || {};
+  }
+
+  // Classify a payment by who funds the place (Private parents / LA / NHS) and a
+  // finer funder label (H&F, Ealing, NHS · ILA, …) for the breakdown table.
+  function payGroup(p) {
+    var sheet = String((p && p.sheet) || "");
+    var d = payData(p);
+    if (sheet === "LA") {
+      var raw = String(d.Funder || d.Funding || "");
+      if (/nhs/i.test(raw)) return { group: "NHS", funder: raw || "NHS" };
+      return { group: "Local authority", funder: raw || "Local authority" };
+    }
+    return { group: "Private", funder: "Private (parents)" };
+  }
+
+  function revAggregate(payments, filter) {
+    var groups = {};
+    var tot = { billed: 0, received: 0, clients: 0, outstanding: 0 };
+    (payments || []).forEach(function (p) {
+      var a = Number(p.amount) || 0;
+      var s = String(p.payment_status || "").toLowerCase();
+      if (s.indexOf("re-enrol") >= 0 || s.indexOf("reenrol") >= 0) return;
+      var g = payGroup(p);
+      if (filter === "private" && g.group !== "Private") return;
+      if (filter === "la" && g.group !== "Local authority") return;
+      if (filter === "nhs" && g.group !== "NHS") return;
+      var paid = s.indexOf("paid") === 0;
+      var key = g.funder;
+      if (!groups[key]) groups[key] = { funder: g.funder, group: g.group, billed: 0, received: 0, clients: 0 };
+      groups[key].billed += a;
+      groups[key].clients += 1;
+      if (paid) groups[key].received += a;
+      tot.billed += a;
+      tot.clients += 1;
+      if (paid) tot.received += a;
+    });
+    tot.outstanding = tot.billed - tot.received;
+    var list = Object.keys(groups)
+      .map(function (k) { return groups[k]; })
+      .sort(function (a, b) { return b.billed - a.billed; });
+    return { list: list, tot: tot };
+  }
+
+  function fcell(l, v) {
+    return (
+      '<div class="ceo-snap-fc"><div class="ceo-snap-kpi-l">' +
+      esc(l) +
+      '</div><div class="ceo-snap-kpi-v">' +
+      esc(v) +
+      "</div></div>"
+    );
+  }
+
+  function revBtn(id, label, on) {
+    return (
+      '<button type="button" class="ceo-rev-filter" data-rev="' +
+      id +
+      '" aria-pressed="' +
+      (on ? "true" : "false") +
+      '">' +
+      esc(label) +
+      "</button>"
+    );
+  }
+
+  function renderRevenueBody(model, filter) {
+    var agg = revAggregate(model.payments, filter);
+    var t = agg.tot;
+    var rate = t.billed ? Math.round((t.received / t.billed) * 100) : 0;
+    var kpis =
+      '<div class="ceo-snap-fc-grid" style="margin-bottom:14px">' +
+      fcell("Billed (summer term)", money(t.billed)) +
+      fcell("Received", money(t.received)) +
+      fcell("Outstanding", money(t.outstanding)) +
+      fcell("Collection", rate + "%") +
+      "</div>";
+    var maxB = agg.list.reduce(function (m, x) { return Math.max(m, x.billed); }, 0) || 1;
+    var rowsH = agg.list.length
+      ? agg.list
+          .map(function (x) {
+            var o = x.billed - x.received;
+            var w = Math.max(3, Math.round((x.billed / maxB) * 100));
+            return (
+              "<tr><td><strong>" +
+              esc(x.funder) +
+              '</strong><div class="ceo-rev-bar" style="margin-top:5px"><span style="width:' +
+              w +
+              '%"></span></div></td>' +
+              '<td class="ceo-rev-num">' + esc(money(x.billed)) + "</td>" +
+              '<td class="ceo-rev-num">' + esc(money(x.received)) + "</td>" +
+              '<td class="ceo-rev-num">' + esc(money(o)) + "</td>" +
+              '<td class="ceo-rev-num">' + esc(x.clients) + "</td></tr>"
+            );
+          })
+          .join("")
+      : '<tr><td colspan="5" class="ceo-snap-muted">No payments in this filter.</td></tr>';
+    var table =
+      '<table class="ceo-snap-tbl"><thead><tr><th>Source</th><th class="ceo-rev-num">Billed</th><th class="ceo-rev-num">Received</th><th class="ceo-rev-num">Outstanding</th><th class="ceo-rev-num">Clients</th></tr></thead><tbody>' +
+      rowsH +
+      "</tbody></table>";
+    var ledger =
+      model.ledgerBilled > 0
+        ? '<p class="ceo-snap-muted" style="margin:12px 0 0">LA / NHS year 25/26 ledger: <strong style="color:var(--ink)">' +
+          esc(money(model.ledgerBilled)) +
+          '</strong> billed · <strong style="color:var(--ink)">' +
+          esc(money(model.ledgerReceived)) +
+          "</strong> received across the year (the term figures above are summer only).</p>"
+        : "";
+    return kpis + table + ledger;
+  }
+
+  function wireRevenue(mount, model) {
+    var body = mount.querySelector("#ceo-rev-body");
+    if (!body) return;
+    var btns = mount.querySelectorAll(".ceo-rev-filter");
+    btns.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        btns.forEach(function (b) { b.setAttribute("aria-pressed", "false"); });
+        btn.setAttribute("aria-pressed", "true");
+        body.innerHTML = renderRevenueBody(model, btn.getAttribute("data-rev") || "all");
+      });
+    });
+  }
+
   function render(model) {
     var hero =
       '<div class="ceo-snap-hero">' +
@@ -477,7 +614,22 @@
       welfareLines +
       "</div></div>";
 
-    return hero + kpis + charts + finance + welfare + recent;
+    var revenue =
+      '<div class="ceo-snap-card"><div class="ceo-snap-card-h">Revenue · money generated</div>' +
+      '<div class="ceo-snap-card-p">' +
+      '<div class="ceo-rev-filters" role="group" aria-label="Filter revenue by funder">' +
+      revBtn("all", "All", true) +
+      revBtn("private", "Private (parents)") +
+      revBtn("la", "Local authority") +
+      revBtn("nhs", "NHS") +
+      "</div>" +
+      '<div id="ceo-rev-body">' +
+      renderRevenueBody(model, "all") +
+      "</div>" +
+      '<p class="ceo-snap-muted" style="margin:12px 0 0">Summer term 2026 re-enrolments — filter by who funds the place. Edit figures in Admin → Programme payments.</p>' +
+      "</div></div>";
+
+    return hero + kpis + charts + finance + revenue + welfare + recent;
   }
 
   function buildModel(results) {
@@ -556,6 +708,16 @@
     var fin = computeFinance(timesheets, imports, expenses, payments);
     var financeEmpty = !fin.hasSalary && !fin.hasExpense && !fin.hasPayments;
 
+    // LA/NHS year-to-date ledger (the per-row 25/26 billed/received we seeded),
+    // so the revenue card can show real annual money generated, not just summer.
+    var ledgerBilled = 0, ledgerReceived = 0;
+    payments.forEach(function (p) {
+      if (String(p.sheet || "") !== "LA") return;
+      var d = payData(p);
+      ledgerBilled += parseMoney(d["Year billed (25/26)"]);
+      ledgerReceived += parseMoney(d["Year received (25/26)"]);
+    });
+
     var portalAvailable =
       results.visits && results.visits.status === "fulfilled" && !results.visits.value.error;
     var portalSet = {};
@@ -624,6 +786,9 @@
       services: services,
       trend: weeklyTrend(feedback, 10),
       recent: recent,
+      payments: payments,
+      ledgerBilled: ledgerBilled,
+      ledgerReceived: ledgerReceived,
     };
   }
 
@@ -684,7 +849,7 @@
         .select("user_id, period_month, pay_type, gross"),
       client
         .from("client_payments")
-        .select("payment_status, amount"),
+        .select("payment_status, amount, sheet, client_name, parent_name, data"),
     ];
 
     var settled = await Promise.allSettled(queries);
@@ -702,7 +867,9 @@
     };
 
     try {
-      mount.innerHTML = render(buildModel(results));
+      var model = buildModel(results);
+      mount.innerHTML = render(model);
+      wireRevenue(mount, model);
       try {
         window.dispatchEvent(new CustomEvent("portal:ceo-snapshot-rendered"));
       } catch (e2) {}
