@@ -18587,6 +18587,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var n = String(s || '')
         .trim()
         .toLowerCase()
+        .replace(/-/g, ' ')
         .replace(/\s+/g, ' ');
       return Object.prototype.hasOwnProperty.call(ADMIN_PARTICIPANT_NAME_ALIASES, n)
         ? ADMIN_PARTICIPANT_NAME_ALIASES[n]
