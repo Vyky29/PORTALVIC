@@ -11717,6 +11717,61 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return out;
     }
+    /** Surname length (dots/spaces stripped) — 999 when there is no surname token. */
+    function paxContactsSurnameLen(nm){
+      var t = adminPortalNormalizedPersonName(nm).split(/\s+/).filter(Boolean);
+      if(t.length < 2) return 999;
+      return t.slice(1).join('').replace(/\./g, '').length;
+    }
+    /** "Richness" score so the merged row keeps the entry with the most contact / profile data. */
+    function paxContactsContactScore(p){
+      var rg = (p && p.reg) || {};
+      var score = 0;
+      if(p && p.parentDisplay && String(p.parentDisplay).trim() && p.parentDisplay !== '—') score += 2;
+      if(rg.email && rg.email !== '—') score += 2;
+      if(rg.phone && rg.phone !== '—') score += 1;
+      if(p && p.dobDisplay && p.dobDisplay !== '—') score += 1;
+      if(p && p.bookingStatus === 'programme_in') score += 1;
+      if(p && !p._waitlistOnly) score += 1;
+      return score;
+    }
+    /**
+     * Same child can arrive from registration (full name "Aadam Ahmed"), roster/overview
+     * (worker short form "Adaam Ah") and feedback — collapse them into one row. Display keeps the
+     * SHORT worker form (2-letter surname); contact/profile keeps the richest source.
+     */
+    function paxContactsDedupeByPerson(list){
+      var amb = (typeof adminPortalParticipantAmbiguityMap === 'function') ? adminPortalParticipantAmbiguityMap() : {};
+      var clusters = [];
+      for(var i = 0; i < list.length; i++){
+        var p = list[i];
+        var nm = String((p && p.name) || '').trim();
+        var placed = false;
+        if(nm){
+          for(var c = 0; c < clusters.length; c++){
+            if(clusters[c].repName && adminPortalParticipantMatchesDisplayName(clusters[c].repName, nm, amb)){
+              clusters[c].members.push(p);
+              if(paxContactsSurnameLen(nm) < paxContactsSurnameLen(clusters[c].repName)) clusters[c].repName = nm;
+              placed = true;
+              break;
+            }
+          }
+        }
+        if(!placed) clusters.push({ repName: nm, members: [p] });
+      }
+      return clusters.map(function(cl){
+        var base = cl.members[0];
+        var best = -1;
+        cl.members.forEach(function(m){
+          var s = paxContactsContactScore(m);
+          if(s > best){ best = s; base = m; }
+        });
+        if(cl.repName && cl.repName !== base.name){
+          return Object.assign({}, base, { name: cl.repName });
+        }
+        return base;
+      });
+    }
     function paxContactsUnifiedList(){
       var catalog = adminPortalParticipantsCatalogRows();
       var out = [];
@@ -11739,6 +11794,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         op.id = 'old-' + String(oldR[j].contactId != null ? oldR[j].contactId : j);
         out.push(op);
       }
+      out = paxContactsDedupeByPerson(out);
+      out.sort(function(a, b){
+        return String((a && a.name) || '').localeCompare(String((b && b.name) || ''), undefined, { sensitivity: 'base' });
+      });
       return out;
     }
     function paxContactsOutstandingCellHtml(p){
