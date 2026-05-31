@@ -125,6 +125,66 @@
     }
     .pg-btn-main{background:#0b2a5b;color:#fff}
     .pg-btn-ghost{background:#e8f1fa;color:#0b2a5b;border:1px solid #b0c7e2}
+
+    /* ---- Screen previews (phone mockups) ---- */
+    .pg-shot{margin:14px 0 2px;display:flex;flex-direction:column;align-items:center;gap:0}
+    .pg-phone{
+      width:248px;max-width:100%;
+      border-radius:32px;
+      border:9px solid #11243a;
+      background:#11243a;
+      box-shadow:0 18px 42px rgba(10,61,98,.22);
+      padding:9px 9px 13px;
+    }
+    .pg-phone__notch{width:78px;height:6px;border-radius:999px;background:#39506c;margin:2px auto 9px}
+    .pg-screen{
+      background:linear-gradient(180deg,#f4f8fc 0%,#eaf1f8 100%);
+      border-radius:22px;padding:13px 11px;overflow:hidden;min-width:0;
+    }
+    .pg-cap{margin:9px 6px 0;font-size:12.5px;color:var(--text-soft);text-align:center;line-height:1.45}
+    .pg-screen__bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+    .pg-screen__title{font-size:12px;font-weight:800;color:var(--navy)}
+    .pg-screen__menu{display:flex;flex-direction:column;gap:3px}
+    .pg-screen__menu i{display:block;width:16px;height:2px;border-radius:2px;background:#9fb3c8}
+    /* mini logo + halo */
+    .pg-mini-logo{position:relative;width:62px;height:62px;margin:0 auto 12px}
+    .pg-mini-logo__img{position:absolute;inset:9px;width:calc(100% - 18px);height:calc(100% - 18px);object-fit:contain}
+    .pg-mini-logo__dot{position:absolute;width:12px;height:12px;border-radius:50%;box-shadow:0 0 0 2px #eef4fa}
+    /* mini session cards */
+    .pg-ses{border-radius:12px;border:1.5px solid;padding:8px 10px;margin-bottom:8px;min-width:0}
+    .pg-ses:last-child{margin-bottom:0}
+    .pg-ses b{display:block;font-size:12px;color:var(--navy);overflow-wrap:break-word}
+    .pg-ses small{display:block;color:var(--text-soft);font-size:10.5px;margin-top:2px}
+    .pg-ses__pill{display:inline-block;margin-top:6px;padding:2px 9px;border-radius:999px;font-size:9.5px;font-weight:800}
+    .pg-ses--blue{background:var(--reviewBlueBg);border-color:var(--reviewBlueBorder)}
+    .pg-ses--orange{background:var(--reviewOrangeBg);border-color:var(--reviewOrangeBorder)}
+    .pg-ses--green{background:var(--reviewGreenBg);border-color:var(--reviewGreenBorder)}
+    .pg-ses--red{background:var(--reviewRedBg);border-color:var(--reviewRedBorder)}
+    /* quick-menu grid */
+    .pg-qgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+    .pg-qtile{background:#fff;border:1px solid var(--panel-border);border-radius:11px;padding:9px 4px;text-align:center;font-size:9px;font-weight:700;color:var(--navy);line-height:1.2}
+    .pg-qtile svg{width:19px;height:19px;color:var(--blue);display:block;margin:0 auto 5px}
+    /* chat bubbles */
+    .pg-chat{display:flex;flex-direction:column;gap:7px}
+    .pg-bub{max-width:80%;padding:7px 11px;border-radius:13px;font-size:11px;line-height:1.4}
+    .pg-bub--in{background:#fff;border:1px solid var(--panel-border);align-self:flex-start;border-bottom-left-radius:4px;color:var(--text-main)}
+    .pg-bub--out{background:#0b2a5b;color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+    .pg-bub--voice{display:flex;align-items:center;gap:7px}
+    .pg-bub--voice svg{width:15px;height:15px;flex:none}
+    .pg-wave{flex:1;height:12px;border-radius:6px;background:linear-gradient(90deg,#cfe0f1 0 18%,#9bbcdc 18% 22%,#cfe0f1 22% 45%,#9bbcdc 45% 50%,#cfe0f1 50% 72%,#9bbcdc 72% 77%,#cfe0f1 77% 100%)}
+    /* announcement banner */
+    .pg-ann{background:var(--reviewRedBg);border:1.5px solid var(--reviewRedBorder);border-radius:13px;padding:11px}
+    .pg-ann__tag{display:inline-block;background:#fde8e8;color:#991b1b;font-size:9.5px;font-weight:800;padding:2px 9px;border-radius:999px}
+    .pg-ann__title{font-size:12.5px;font-weight:800;color:var(--navy);margin:7px 0 4px}
+    .pg-ann__txt{font-size:10.5px;color:var(--text-soft);line-height:1.4}
+    .pg-ann__btn{margin-top:9px;background:#0b2a5b;color:#fff;border:0;border-radius:9px;padding:7px 0;width:100%;font-size:11px;font-weight:800}
+    /* home-screen icon mock */
+    .pg-home{display:flex;flex-direction:column;align-items:center;gap:9px;padding:8px 0 4px}
+    .pg-home__icon{width:62px;height:62px;border-radius:15px;box-shadow:0 8px 18px rgba(10,61,98,.18);background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden}
+    .pg-home__icon img{width:100%;height:100%;object-fit:cover}
+    .pg-home__label{font-size:11px;font-weight:700;color:var(--navy)}
+    .pg-home__row{display:flex;gap:16px;margin-top:4px}
+    .pg-home__dim{width:46px;height:46px;border-radius:12px;background:#dde7f1}
   </style>
 </head>
 <body>
@@ -153,6 +213,28 @@
         <li>Choose <b>Install app</b> / <b>Add to Home screen</b>.</li>
       </ol>
       <p class="pg-note">Sign in once and the app remembers you. If you ever get signed out, just open it again and log in.</p>
+      <div class="pg-shot">
+        <div class="pg-phone">
+          <div class="pg-phone__notch"></div>
+          <div class="pg-screen">
+            <div class="pg-home">
+              <div class="pg-home__row">
+                <div class="pg-home__dim"></div>
+                <div class="pg-home__dim"></div>
+                <div class="pg-home__dim"></div>
+              </div>
+              <div class="pg-home__icon"><img src="/portal/app-icon/apple-touch-icon.png" alt="clubSENsational app icon" /></div>
+              <div class="pg-home__label">clubSENsational</div>
+              <div class="pg-home__row">
+                <div class="pg-home__dim"></div>
+                <div class="pg-home__dim"></div>
+                <div class="pg-home__dim"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="pg-cap">Once added, the portal sits on your home screen with the club icon and opens full-screen — just like any other app.</p>
+      </div>
     </article>
 
     <!-- Colour system -->
@@ -179,6 +261,25 @@
         <div class="halo"><span class="halo-dot halo-dot--blue"></span>New chat message</div>
         <div class="halo"><span class="halo-dot halo-dot--gold"></span>Feedback pending</div>
         <div class="halo"><span class="halo-dot halo-dot--multi"></span>Several at once</div>
+      </div>
+
+      <div class="pg-shot">
+        <div class="pg-phone">
+          <div class="pg-phone__notch"></div>
+          <div class="pg-screen">
+            <div class="pg-mini-logo">
+              <span class="pg-mini-logo__dot" style="top:-3px;left:50%;transform:translateX(-50%);background:#d64545"></span>
+              <span class="pg-mini-logo__dot" style="right:-3px;top:50%;transform:translateY(-50%);background:var(--blue)"></span>
+              <span class="pg-mini-logo__dot" style="bottom:-3px;left:50%;transform:translateX(-50%);background:var(--gold)"></span>
+              <img class="pg-mini-logo__img" src="/assets/clubsensational-logo-transparent.png" alt="clubSENsational" />
+            </div>
+            <div class="pg-ses pg-ses--orange"><b>Aquatic Activity · 4:00pm</b><small>Abodi · Crawley pool</small><span class="pg-ses__pill" style="background:#fff1e3;color:#b45309">Feedback pending</span></div>
+            <div class="pg-ses pg-ses--green"><b>Climbing · 2:00pm</b><small>Maya · The Boulder</small><span class="pg-ses__pill" style="background:#e7f6ee;color:#15803d">Done</span></div>
+            <div class="pg-ses pg-ses--blue"><b>Sensory play · 5:30pm</b><small>Liam · Main hall</small><span class="pg-ses__pill" style="background:#eaf5fb;color:#1d6f9c">Scheduled</span></div>
+            <div class="pg-ses pg-ses--red"><b>Trampoline · 3:15pm</b><small>Noah · incident logged</small><span class="pg-ses__pill" style="background:#fde8e8;color:#991b1b">Incident</span></div>
+          </div>
+        </div>
+        <p class="pg-cap">Your dashboard: the dots around the logo flag what’s waiting, and each session card is coloured by its state — orange needs feedback, green is done, blue is upcoming, red is an incident.</p>
       </div>
     </article>
 
@@ -223,6 +324,26 @@
         <li><b>Pickup / handover</b> — record who collected a participant.</li>
         <li><b>Update my profile</b> — confirm your personal &amp; emergency details.</li>
       </ul>
+      <div class="pg-shot">
+        <div class="pg-phone">
+          <div class="pg-phone__notch"></div>
+          <div class="pg-screen">
+            <div class="pg-screen__bar"><span class="pg-screen__title">Quick menu</span><span class="pg-screen__menu"><i></i><i></i><i></i></span></div>
+            <div class="pg-qgrid">
+              <div class="pg-qtile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Session feedback</div>
+              <div class="pg-qtile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>Incident</div>
+              <div class="pg-qtile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6"/><path d="M9 9l6 6"/></svg>Cancellation</div>
+              <div class="pg-qtile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Expenses</div>
+              <div class="pg-qtile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>Timesheet</div>
+              <div class="pg-qtile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Venue review</div>
+              <div class="pg-qtile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 11l-3 3-2-2"/></svg>Pickup / handover</div>
+              <div class="pg-qtile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>My profile</div>
+              <div class="pg-qtile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>My documents</div>
+            </div>
+          </div>
+        </div>
+        <p class="pg-cap">The Quick menu groups every form in one place. Tiles you don’t need (e.g. Lead report) simply won’t show for your role.</p>
+      </div>
       <p class="pg-note">Tip: open a form from the session card itself when you can — it pre-fills the participant, date and time for you.</p>
     </article>
 
@@ -238,6 +359,21 @@
         <li>You can send <b>text</b> or a <b>voice note</b>.</li>
         <li>Chats are private between you and the person/office you’re messaging.</li>
       </ul>
+      <div class="pg-shot">
+        <div class="pg-phone">
+          <div class="pg-phone__notch"></div>
+          <div class="pg-screen">
+            <div class="pg-screen__bar"><span class="pg-screen__title">Office</span><span class="pg-screen__menu"><i></i><i></i><i></i></span></div>
+            <div class="pg-chat">
+              <div class="pg-bub pg-bub--in">Hi! Can you cover the 4pm climbing slot?</div>
+              <div class="pg-bub pg-bub--out">Yes, all good — I’m on site.</div>
+              <div class="pg-bub pg-bub--in pg-bub--voice"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg><span class="pg-wave"></span><small>0:08</small></div>
+              <div class="pg-bub pg-bub--out">Thanks 🙌</div>
+            </div>
+          </div>
+        </div>
+        <p class="pg-cap">A chat thread: your messages on the right, the office/colleague on the left. Tap the mic to send a voice note instead of typing.</p>
+      </div>
     </article>
 
     <!-- Announcements -->
@@ -251,6 +387,21 @@
         <li>Read it and tap <b>Sign / confirm</b> so the office knows you’ve seen it.</li>
         <li>Employment contracts to sign also appear here; the signed PDF is saved under <b>My Documents</b>.</li>
       </ul>
+      <div class="pg-shot">
+        <div class="pg-phone">
+          <div class="pg-phone__notch"></div>
+          <div class="pg-screen">
+            <div class="pg-screen__bar"><span class="pg-screen__title">Announcements</span><span class="pg-screen__menu"><i></i><i></i><i></i></span></div>
+            <div class="pg-ann">
+              <span class="pg-ann__tag">Action needed</span>
+              <div class="pg-ann__title">Summer rota — please confirm</div>
+              <div class="pg-ann__txt">New venue times start Monday. Read the update and confirm you’ve seen it.</div>
+              <button type="button" class="pg-ann__btn">Sign / confirm</button>
+            </div>
+          </div>
+        </div>
+        <p class="pg-cap">When an announcement (or a contract) is waiting, the logo halo turns red and this banner appears — tap <b>Sign / confirm</b> to clear it.</p>
+      </div>
     </article>
 
     <!-- Lead extras + close -->
@@ -260,6 +411,23 @@
         For leads
       </h2>
       <p>Leads have everything above, plus a <b>Lead session report</b> in the Quick menu for reporting on the sessions you oversee.</p>
+      <div class="pg-shot">
+        <div class="pg-phone">
+          <div class="pg-phone__notch"></div>
+          <div class="pg-screen">
+            <div class="pg-screen__bar"><span class="pg-screen__title">Lead session report</span><span class="pg-screen__menu"><i></i><i></i><i></i></span></div>
+            <div class="pg-ses pg-ses--blue" style="margin-bottom:8px"><b>Crawley pool · afternoon</b><small>4 instructors · 6 participants</small></div>
+            <div class="pg-qgrid" style="grid-template-columns:repeat(2,1fr)">
+              <div class="pg-qtile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>How it ran</div>
+              <div class="pg-qtile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Team on shift</div>
+              <div class="pg-qtile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>Issues</div>
+              <div class="pg-qtile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Notes</div>
+            </div>
+            <button type="button" class="pg-ann__btn" style="margin-top:9px;background:#0b2a5b">Submit report</button>
+          </div>
+        </div>
+        <p class="pg-cap">The lead report rolls up the session you oversee — who was on shift, how it ran, and any issues — into one submission for the office.</p>
+      </div>
       <div class="pg-toolbar">
         <a class="pg-btn pg-btn-main" id="pgBackDashboard" href="staff_dashboard.html">Back to dashboard</a>
         <button type="button" class="pg-btn pg-btn-ghost" id="pgBackHistory">Go back</button>
