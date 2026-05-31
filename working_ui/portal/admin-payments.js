@@ -42,6 +42,7 @@
     mode: "payments",     // payments | orders | participants (same data, different framing)
     statusFilter: "active", // active (re-enrolled) | all | outstanding | paid | notreenrolled
     sheetFilter: "",      // "" = all groups, else sheet name
+    laFilter: "",         // "" = all LAs, else normalized LA label (Ealing, LBHF (H&F)…)
     query: "",
   };
 
@@ -215,6 +216,7 @@
     var q = state.query;
     return state.rows.filter(function (r) {
       if (state.sheetFilter && r.sheet !== state.sheetFilter) return false;
+      if (state.laFilter && laFor(r) !== state.laFilter) return false;
       if (!q) return true;
       if (String(r.client_name || "").toLowerCase().indexOf(q) >= 0) return true;
       if (String(r.parent_name || "").toLowerCase().indexOf(q) >= 0) return true;
@@ -249,6 +251,34 @@
       if (v != null && String(v).trim() && String(v).trim() !== "-") return String(v).trim();
     }
     return "Summer term 2026";
+  }
+
+  // Local authority / funder for the row, normalized to a short label so it can
+  // be its own column and a filter (Ealing, LBHF (H&F), NHS · SBS, NHS · ILA).
+  // Private (parents) rows have no LA -> "".
+  function laFor(r) {
+    var d = r.data || {};
+    var raw = String(d.Funder || "").trim();
+    if (!raw) {
+      var pn = String(r.parent_name || "");
+      var ix = pn.indexOf("\u00b7"); // "·"
+      if (ix > 0) raw = pn.slice(0, ix).trim();
+    }
+    if (!raw) return "";
+    if (/hammersmith|h&f|lbhf/i.test(raw)) return "LBHF (H&F)";
+    if (/ealing/i.test(raw)) return "Ealing";
+    if (/nhs/i.test(raw) && /sbs/i.test(raw)) return "NHS \u00b7 SBS";
+    if (/nhs/i.test(raw) && /ila/i.test(raw)) return "NHS \u00b7 ILA";
+    if (/nhs/i.test(raw)) return "NHS";
+    return raw;
+  }
+
+  // Parent / contact name only (strip the "Funder ·" prefix now shown in the LA column).
+  function parentPersonFor(r) {
+    var pn = String(r.parent_name || "").trim();
+    var ix = pn.indexOf("\u00b7"); // "·"
+    if (ix >= 0) return pn.slice(ix + 1).trim() || "—";
+    return pn || "—";
   }
 
   function render() {
@@ -299,11 +329,21 @@
         sheetOpts += '<option value="' + esc(s) + '"' + (state.sheetFilter === s ? " selected" : "") + ">" + esc(labelFor(s)) + "</option>";
       }
     });
+    // LA / funder filter — distinct normalized LA labels present in the data.
+    var laVals = {};
+    state.rows.forEach(function (r) { var l = laFor(r); if (l) laVals[l] = 1; });
+    var laList = Object.keys(laVals).sort();
+    var laOpts = '<option value="">All LAs</option>';
+    laList.forEach(function (l) {
+      laOpts += '<option value="' + esc(l) + '"' + (state.laFilter === l ? " selected" : "") + ">" + esc(l) + "</option>";
+    });
+
     html += '<div class="pay-bar">'
       + '<div class="pay-seg" role="group" aria-label="Status filter">'
       + seg("active", "Active (" + (paidN + outN) + ")") + seg("outstanding", "Outstanding (" + outN + ")") + seg("paid", "Paid (" + paidN + ")") + seg("notreenrolled", "Not re-enrolled (" + naN + ")") + seg("all", "All")
       + '</div>'
       + '<select class="pay-sel" id="paySheet">' + sheetOpts + '</select>'
+      + (laList.length ? '<select class="pay-sel" id="payLA" aria-label="Local authority filter">' + laOpts + '</select>' : '')
       + '<input type="search" class="pay-search" id="paySearch" placeholder="Search client, parent…" value="' + esc(state.query) + '" />'
       + '</div>';
 
@@ -314,9 +354,9 @@
     } else {
       var cardTitle = state.mode === "orders" ? "Orders" : "Participants";
       html += '<div class="pay-card"><div class="pay-card-h"><h3>' + icon("clients", 17) + esc(cardTitle) + '</h3><span style="font-size:12px;color:#64748b">' + visible.length + ' shown</span></div>';
-      html += '<div class="pay-tbl-wrap"><table class="pay-tbl"><thead><tr><th>' + (state.mode === "orders" ? "Participant" : "Client") + '</th><th>Group</th><th>Service</th><th>Term</th><th>Parent / LA</th><th class="num">Total</th><th>Status</th></tr></thead><tbody>';
+      html += '<div class="pay-tbl-wrap"><table class="pay-tbl"><thead><tr><th>' + (state.mode === "orders" ? "Participant" : "Client") + '</th><th>Group</th><th>Service</th><th>Term</th><th>LA</th><th>Parent</th><th class="num">Total</th><th>Status</th></tr></thead><tbody>';
       if (!visible.length) {
-        html += '<tr><td colspan="7" class="pay-empty">No records match this filter.</td></tr>';
+        html += '<tr><td colspan="8" class="pay-empty">No records match this filter.</td></tr>';
       } else {
         visible.sort(function (a, b) {
           var s = String(a.sheet).localeCompare(String(b.sheet));
@@ -329,7 +369,8 @@
             + "<td>" + esc(labelFor(r.sheet)) + "</td>"
             + "<td>" + esc(serviceFor(r)) + "</td>"
             + "<td>" + esc(termFor(r)) + "</td>"
-            + "<td>" + esc(r.parent_name || "") + "</td>"
+            + "<td>" + esc(laFor(r) || "—") + "</td>"
+            + "<td>" + esc(parentPersonFor(r)) + "</td>"
             + '<td class="num">' + money(r.amount) + "</td>"
             + "<td>" + pillFor(r) + "</td></tr>";
         });
@@ -424,6 +465,8 @@
     });
     var sh = root.querySelector("#paySheet");
     if (sh) sh.addEventListener("change", function () { state.sheetFilter = sh.value; render(); });
+    var la = root.querySelector("#payLA");
+    if (la) la.addEventListener("change", function () { state.laFilter = la.value; render(); });
     var s = root.querySelector("#paySearch");
     if (s) {
       s.addEventListener("input", function () {
