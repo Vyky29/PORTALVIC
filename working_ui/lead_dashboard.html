@@ -120,7 +120,7 @@
   })();
   </script>
   <title>clubSENsational Lead Dashboard</title>
-  <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260605-css-extract" />
+  <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260531-training-completed" />
 </head>
 <body>
   <script>
@@ -3939,6 +3939,9 @@
       if(pillNorm === 'CANCELLED'){
         return '<span class="portal-ov-alert-pill portal-ov-alert-pill--symbol portal-ov-alert-pill--cancelled" aria-label="Cancelled"><span>CANCELLED</span></span>';
       }
+      if(pillNorm === 'COMPLETED'){
+        return '<span class="portal-ov-alert-pill portal-ov-alert-pill--symbol portal-ov-alert-pill--completed" aria-label="Completed"><span>COMPLETED</span></span>';
+      }
       if(pillText){
         const display = escapeHtml(pillText).replace(/\n/g, ' ');
         return `<span class="portal-ov-alert-pill portal-ov-alert-pill--symbol" aria-label="${display}"><span>${display}</span></span>`;
@@ -6829,6 +6832,60 @@
           portalOverrideAlertPill: '',
           sessionVenue: String(s.venue || '').trim() || '—',
           __portalBaseSession: base,
+          __portalScheduleOverride: ov
+        });
+      });
+      // Admin-added Training / Shadowing sessions (override_type='session_add') anchored to this lead.
+      // Corporate-yellow while scheduled; turns green with a "Completed" chip once the slot has ended.
+      const normStaffKeyAdd = function(v){ return String(v == null ? '' : v).trim().toLowerCase().replace(/[^a-z0-9]+/g, ''); };
+      const staffIdNormAdd = normStaffKeyAdd(staffId);
+      portalScheduleOverrideRowsAll().forEach(function(ov){
+        if(normaliseIsoDate(ov.session_date) !== normaliseIsoDate(sessionDateKey)) return;
+        if(String(ov.status || 'active') !== 'active') return;
+        if(ov.override_type !== 'session_add') return;
+        if(normStaffKeyAdd(ov.anchor_staff_id) !== staffIdNormAdd) return;
+        const kind = String(ov.payload && ov.payload.kind || '').trim().toLowerCase();
+        const label = kind === 'shadowing' ? 'Shadowing' : 'Training';
+        const slug = kind === 'shadowing' ? 'shadowing' : 'training';
+        const stT = portalHmFromDbTime(ov.anchor_start) || '09:00';
+        const enT = portalHmFromDbTime(ov.anchor_end) || stT;
+        const sT = { start: stT, end: enT, venue: ov.anchor_venue || '' };
+        const note = String(ov.reason || (ov.payload && ov.payload.note) || '').trim();
+        const tts = portalSessionRowTimestamps(sessionDateKey, stT, enT, anchor);
+        const trainingEnded = (typeof tts.sessionEndTs === 'number' && Date.now() > tts.sessionEndTs);
+        const trainerName = String(ov.payload && ov.payload.trainer || '').trim();
+        const locRaw = String(ov.payload && ov.payload.location || '').trim().toLowerCase();
+        const locLabel = locRaw === 'both' ? 'Room & Pool'
+          : (locRaw === 'pool' ? 'Pool' : (locRaw === 'room' ? 'Room' : ''));
+        const venueTitle = String(ov.anchor_venue || '').trim()
+          .replace(/\S+/g, function(w){ return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase(); });
+        extra.push({
+          time: rosterSlotTimeLabel(sT),
+          kind: 'client',
+          clientId: slug,
+          name: label,
+          activity: label,
+          areaLabel: trainerName,
+          poolLocationLabel: null,
+          showPoolSymbol: false,
+          showSpecialty: false,
+          specialtyLabel: '',
+          general: note || (label + ' session (added by admin) — paid at £13.50/h.'),
+          specialty: '',
+          openSheet: false,
+          sessionKey: sessionDateKey + '|' + stT + '|' + slug,
+          sessionStartTs: tts.sessionStartTs,
+          sessionEndTs: tts.sessionEndTs,
+          noSessionFeedbackRequired: true,
+          actionsDisabled: true,
+          detailsOpenAllowed: true,
+          portalOverrideSuppressReviewOrange: true,
+          portalOverrideCardTone: trainingEnded ? 'green' : 'yellow',
+          portalOverrideAlertPill: trainingEnded ? 'COMPLETED' : '',
+          portalOverrideSymbolText: trainingEnded ? '' : (locLabel || label),
+          scheduleAdminAdjusted: true,
+          portalOverrideHideAdminBadge: true,
+          sessionVenue: venueTitle || '—',
           __portalScheduleOverride: ov
         });
       });

@@ -3089,6 +3089,13 @@
       border:1px solid rgba(123,18,18,.92);
       box-shadow:0 0 0 1px rgba(255,255,255,.45) inset,0 2px 10px rgba(123,18,18,.24);
     }
+    .section-card--today .session-line--override .portal-ov-alert-pill.portal-ov-alert-pill--completed,
+    .section-card--today .session-line--symbol .portal-ov-alert-pill.portal-ov-alert-pill--completed{
+      color:#fff;
+      background:linear-gradient(145deg,#157347,#0f5b37);
+      border:1px solid rgba(11,85,51,.45);
+      box-shadow:0 0 0 1px rgba(255,255,255,.45) inset,0 2px 10px rgba(15,91,55,.22);
+    }
     .section-card--today .session-line--override .portal-ov-alert-pill.portal-ov-alert-pill--symbol{
       display:inline-flex;
       flex-direction:row;

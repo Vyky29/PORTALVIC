@@ -120,7 +120,7 @@
   })();
   </script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260605-css-extract" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260531-training-completed" />
 </head>
 <body>
   <script>
@@ -4260,6 +4260,9 @@
       if(pillNorm === 'CANCELLED'){
         return '<span class="portal-ov-alert-pill portal-ov-alert-pill--symbol portal-ov-alert-pill--cancelled" aria-label="Cancelled"><span>CANCELLED</span></span>';
       }
+      if(pillNorm === 'COMPLETED'){
+        return '<span class="portal-ov-alert-pill portal-ov-alert-pill--symbol portal-ov-alert-pill--completed" aria-label="Completed"><span>COMPLETED</span></span>';
+      }
       if(pillText){
         const display = escapeHtml(pillText).replace(/\n/g, ' ');
         return `<span class="portal-ov-alert-pill portal-ov-alert-pill--symbol" aria-label="${display}"><span>${display}</span></span>`;
@@ -7213,6 +7216,8 @@
         const sT = { start: stT, end: enT, venue: ov.anchor_venue || '' };
         const note = String(ov.reason || (ov.payload && ov.payload.note) || '').trim();
         const tts = portalSessionRowTimestamps(sessionDateKey, stT, enT, anchor);
+        // Corporate-yellow while scheduled; turns green with a "Completed" chip once the slot has ended.
+        const trainingEnded = (typeof tts.sessionEndTs === 'number' && Date.now() > tts.sessionEndTs);
         // Who runs it (centre, under the title) and where it happens (right column).
         const trainerName = String(ov.payload && ov.payload.trainer || '').trim();
         const locRaw = String(ov.payload && ov.payload.location || '').trim().toLowerCase();
@@ -7241,8 +7246,9 @@
           actionsDisabled: true,
           detailsOpenAllowed: true,
           portalOverrideSuppressReviewOrange: true,
-          portalOverrideCardTone: 'blue',
-          portalOverrideSymbolText: locLabel || label,
+          portalOverrideCardTone: trainingEnded ? 'green' : 'yellow',
+          portalOverrideAlertPill: trainingEnded ? 'COMPLETED' : '',
+          portalOverrideSymbolText: trainingEnded ? '' : (locLabel || label),
           scheduleAdminAdjusted: true,
           portalOverrideHideAdminBadge: true,
           sessionVenue: venueTitle || '—',
