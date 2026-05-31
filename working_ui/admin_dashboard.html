@@ -18846,7 +18846,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       // to its own family (Jack S = Jack Stratton ≠ Jack W = Jack Walker) and the Sunday (parent)
       // + Monday (LA day centre) rows merge into one participant.
       'jack w': 'jack walker',
-      'jack s': 'jack stratton'
+      'jack s': 'jack stratton',
+      // Registration is "Yusuf Ahmed" (mother Fatimah Ahmed). The Sunday roster
+      // splits him across three short names — "Yusuf" (Aquatic 9:00–10:15 pool with
+      // Roberto), "Yusuf Ah" (Multi-Activity 10:15–11:00 class) and "Yusef" (Climbing
+      // 11:00–12:00). Pin every variant to the full name so they merge into one
+      // participant and all three services show (single-token "Yusuf" otherwise fails
+      // the booked-services matcher and the Aquatic segment goes missing).
+      'yusef': 'yusuf ahmed',
+      'yusuf': 'yusuf ahmed'
     };
     function adminPortalNormalizedPersonName(s){
       var n = String(s || '')
