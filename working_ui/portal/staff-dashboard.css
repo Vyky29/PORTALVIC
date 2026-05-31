@@ -3587,6 +3587,8 @@
       outline-offset:2px;
     }
     .clients-grid-avatar{
+      position:relative;
+      overflow:hidden;
       width:40px;
       height:40px;
       border-radius:50%;
@@ -3599,6 +3601,17 @@
       color:var(--blue);
       background:var(--blueSoft);
       border:1px solid rgba(45,132,179,.14);
+    }
+    /* Real participant photo (so instructors can recognise them on site). Sits on
+       top of the initials; if it fails to load the JS removes it and initials show. */
+    .clients-grid-avatar-img{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      border-radius:50%;
+      background:#fff;
     }
     .clients-grid-text{display:flex;flex-direction:column;justify-content:center;min-width:0;flex:1}
     .clients-grid-name{

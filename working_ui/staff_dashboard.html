@@ -120,7 +120,7 @@
   })();
   </script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260531-training-completed" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260531-participant-photos" />
 </head>
 <body>
   <script>
@@ -3787,6 +3787,26 @@
       if(parts.length === 1) return parts[0].charAt(0).toUpperCase();
       return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
     }
+    /**
+     * Participant recognition photos. We share centres with other providers and
+     * their clients, so instructors get a real face on the participant avatar.
+     * Add more by mapping the participant's display name (case-insensitive,
+     * spaces collapsed) to an image under working_ui/portal/participants/.
+     */
+    const PARTICIPANT_PHOTOS = {
+      'jack w': 'portal/participants/jack-w.jpg'
+    };
+    function clientPhotoUrl(name){
+      const key = String(name || '').trim().toLowerCase().replace(/\s+/g, ' ');
+      return Object.prototype.hasOwnProperty.call(PARTICIPANT_PHOTOS, key) ? PARTICIPANT_PHOTOS[key] : '';
+    }
+    /** Avatar inner HTML: initials always present; photo overlays them when on file. */
+    function clientAvatarInner(name){
+      const initials = escapeHtml(clientInitials(name));
+      const url = clientPhotoUrl(name);
+      if(!url) return initials;
+      return initials + '<img class="clients-grid-avatar-img" src="' + escapeHtml(url) + '" alt="" loading="lazy" decoding="async" onerror="this.remove()">';
+    }
     /** Topbar: first token = given name line; remaining tokens = surname line. */
     function splitStaffTopbarName(fullName){
       const parts = String(fullName || '').trim().split(/\s+/).filter(Boolean);
@@ -3920,7 +3940,6 @@
       grid.innerHTML = ids.map(clientId => {
         const c = clientNotesById[clientId];
         if(!c) return '';
-        const initials = escapeHtml(clientInitials(c.name));
         const name = escapeHtml(c.name);
         const gAttr = clientGenderDataAttr(c);
         const med = c.hasMedicalAlert ? clientsGridMedicalIconSvg() : '';
@@ -3933,7 +3952,7 @@
           statLine = `<span class="clients-grid-stat">${escapeHtml(bits.join(' · '))}</span>`;
         }
         return `<button type="button" class="clients-grid-card" data-client-id="${escapeHtml(clientId)}" data-list-mode="${isAll ? 'all' : 'my'}"${gAttr}>
-      <span class="clients-grid-avatar" aria-hidden="true">${initials}</span>
+      <span class="clients-grid-avatar" aria-hidden="true">${clientAvatarInner(c.name)}</span>
       <span class="clients-grid-text">
         <span class="clients-grid-name">${name}</span>
         ${statLine}
@@ -3969,10 +3988,9 @@
       box.innerHTML = ids.map((clientId, i) => {
         const c = clientNotesById[clientId];
         if(!c) return '';
-        const initials = escapeHtml(clientInitials(c.name));
         const name = escapeHtml(c.name);
         const gAttr = clientGenderDataAttr(c);
-        return `<button type="button" role="option" class="clients-suggest-option" id="clientsSuggestOpt-${i}" data-client-id="${escapeHtml(clientId)}"${gAttr}><span class="clients-grid-avatar" aria-hidden="true">${initials}</span><span class="clients-grid-name">${name}</span></button>`;
+        return `<button type="button" role="option" class="clients-suggest-option" id="clientsSuggestOpt-${i}" data-client-id="${escapeHtml(clientId)}"${gAttr}><span class="clients-grid-avatar" aria-hidden="true">${clientAvatarInner(c.name)}</span><span class="clients-grid-name">${name}</span></button>`;
       }).join('');
     }
     function refreshClientsAllTabUI(){
