@@ -855,6 +855,38 @@ body:has(#workspace .dash-hub--dayops) .admin-main{
   flex-shrink:0;
   margin-bottom:8px;
 }
+/* Cross-link CTA (e.g. "Operations admin") on its own centred row, in the
+   filled-orange accent so it reads like the active/hover state. */
+.dash-hub__intro-cta-wrap{
+  flex:1 1 100%;
+  display:flex;
+  justify-content:center;
+  margin-top:8px;
+}
+.dash-hub__intro-cta.btn{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 22px;
+  border-radius:9999px;
+  background:#ea580c;
+  border:1px solid #ea580c;
+  color:#fff !important;
+  font-weight:700;
+  font-size:13px;
+  box-shadow:0 1px 2px rgba(234,88,12,.20);
+}
+.dash-hub__intro-cta.btn *{ color:#fff !important; }
+.dash-hub__intro-cta.btn:hover,
+.dash-hub__intro-cta.btn:focus-visible{
+  background:#c2410c !important;
+  border-color:#c2410c !important;
+  color:#fff !important;
+  box-shadow:0 3px 10px rgba(234,88,12,.30);
+  outline:none;
+}
+.dash-hub__intro-cta.btn:hover *,
+.dash-hub__intro-cta.btn:focus-visible *{ color:#fff !important; }
 .dash-hub--dayops .dash-hub__stack{
   flex:1;
   min-height:0;
