@@ -12219,6 +12219,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var sec = adminParseClientsInfoNumberedSections(String(ci.client_info));
       return !!(sec && sec[n] && String(sec[n]).trim());
     }
+    /** Plain-text answer for a registration section number (or '' when none). */
+    function paxContactsRegAnswerText(p, qid){
+      if(!p || !qid || qid === 'all') return '';
+      var n = parseInt(qid, 10);
+      if(!Number.isFinite(n) || n < 1) return '';
+      var ci = adminClientsInfoRowForClientDisplayName(p.name);
+      if(!ci || !String(ci.client_info || '').trim()) return '';
+      var sec = adminParseClientsInfoNumberedSections(String(ci.client_info));
+      return (sec && sec[n]) ? String(sec[n]).trim() : '';
+    }
+    /** Human label for a registration section number (matches the filter dropdown). */
+    function paxContactsRegQuestionLabel(qid){
+      var n = parseInt(qid, 10);
+      var labels = (typeof ADMIN_CLIENTS_INFO_SECTION_LABELS !== 'undefined' && ADMIN_CLIENTS_INFO_SECTION_LABELS) ? ADMIN_CLIENTS_INFO_SECTION_LABELS : [];
+      return (Number.isFinite(n) && n >= 1 && labels[n - 1]) ? labels[n - 1] : 'Registration answer';
+    }
     function paxContactsMatchesBookingStatus(p, bk){
       if(bk === 'all') return true;
       var st = String(p.bookingStatus || '');
@@ -12278,6 +12294,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '<td style="min-width:0;overflow-wrap:break-word">'+contact+'</td>'+
           '<td class="pax-contacts-contact" style="min-width:0">'+em+'</td>'+
           '<td style="white-space:nowrap">'+phone+'</td>'+
+          '<td class="pax-reg-ans-col" data-pax-ans hidden style="min-width:0;max-width:26rem;white-space:normal;overflow-wrap:break-word"></td>'+
           '</tr>'
         );
       }).join('');
@@ -12321,9 +12338,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<label class="muted" for="paxContactsRegQuestion" style="display:block;font-size:11px;font-weight:700;margin-bottom:6px;letter-spacing:.02em">Registration question</label>'+
         '<select class="sel" id="paxContactsRegQuestion">'+paxContactsRegQuestionOptionsHtml()+'</select></div>'+
         '</div>'+
-        '<p class="pax-contacts-count" id="paxContactsCount">Showing '+String(n)+' contacts</p>'+
+        '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 10px">'+
+        '<p class="pax-contacts-count" id="paxContactsCount" style="margin:0">Showing '+String(n)+' contacts</p>'+
+        '<button type="button" class="btn btn--ghost btn--sm" id="paxContactsExportBtn" style="display:inline-flex;align-items:center;gap:8px"><svg viewBox="0 0 24 24" width="1.05em" height="1.05em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export to CSV</button>'+
+        '</div>'+
         '<div class="pax-contacts-table-wrap"><table class="pax-contacts-tbl" id="paxContactsTbl"><thead><tr>'+
         '<th>Participant name</th><th>D.O.B</th><th>Service/s</th><th>Time slot/s</th><th>Contact</th><th>Email</th><th>Phone</th>'+
+        '<th class="pax-reg-ans-col" id="paxRegAnsTh" hidden style="min-width:0;max-width:26rem">Registration answer</th>'+
         '</tr></thead><tbody>'+listRows+'</tbody></table></div>'+
         '<div class="pax-contacts-detail" id="paxContactsDetail" aria-live="polite"></div>'
       );
@@ -18375,6 +18396,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var bk = ($('paxContactsBookingStatus') && $('paxContactsBookingStatus').value) || 'all';
           var qSel = $('paxContactsRegQuestion');
           var qv = qSel ? String(qSel.value || 'all') : 'all';
+          var showAns = qv !== 'all';
+          var ansTh = $('paxRegAnsTh');
+          if(ansTh){
+            ansTh.hidden = !showAns;
+            if(showAns) ansTh.textContent = paxContactsRegQuestionLabel(qv);
+          }
           var n = 0;
           root2.querySelectorAll('#paxContactsTbl tbody tr').forEach(function(tr){
             var id = tr.getAttribute('data-pax-id');
@@ -18390,11 +18417,75 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               ).toLowerCase();
               if(blob.indexOf(q) < 0) ok = false;
             }
+            var ansCell = tr.querySelector('[data-pax-ans]');
+            if(ansCell){
+              ansCell.hidden = !showAns;
+              ansCell.textContent = showAns ? (paxContactsRegAnswerText(p, qv) || '—') : '';
+            }
             tr.style.display = ok ? '' : 'none';
             if(ok) n++;
           });
           var cEl = $('paxContactsCount');
           if(cEl) cEl.textContent = 'Showing ' + n + ' contact' + (n === 1 ? '' : 's');
+        }
+        function paxContactsExportVisibleCsv(){
+          if(!root2) return;
+          var qSel = $('paxContactsRegQuestion');
+          var qv = qSel ? String(qSel.value || 'all') : 'all';
+          var showAns = qv !== 'all';
+          var headers = ['Participant name', 'D.O.B', 'Service/s', 'Time slot/s', 'Contact', 'Email', 'Phone'];
+          if(showAns) headers.push(paxContactsRegQuestionLabel(qv));
+          function csvCell(v){
+            var s = String(v == null ? '' : v).replace(/\u2014/g, '').replace(/\s+/g, ' ').trim();
+            return '"' + s.replace(/"/g, '""') + '"';
+          }
+          function bandsText(p){
+            var bands = [];
+            try{ bands = paxPortalMergedBandsForParticipant(p) || []; }catch(_e){ bands = []; }
+            var svc = bands.map(function(b){ return String(b.programme || '').trim() || 'Service'; });
+            var slot = bands.map(function(b){
+              var dayFull = c4kServiceDowLong(String(b.day || '').trim().slice(0, 3));
+              var t = String(b.timeDisp || '').trim();
+              return (dayFull && dayFull !== '\u2014') ? (dayFull + (t && t !== '\u2014' ? ', ' + t : '')) : (t || '');
+            });
+            return { svc: svc.join(' | '), slot: slot.join(' | ') };
+          }
+          var lines = [headers.map(csvCell).join(',')];
+          var count = 0;
+          root2.querySelectorAll('#paxContactsTbl tbody tr').forEach(function(tr){
+            if(tr.style.display === 'none') return;
+            var p = paxContactsFindById(tr.getAttribute('data-pax-id'));
+            if(!p) return;
+            var r = p.reg || {};
+            var bt = bandsText(p);
+            var row = [
+              p.name || '',
+              p.dobDisplay || r.dobDisplay || '',
+              bt.svc,
+              bt.slot,
+              p.parentDisplay || r.carer || '',
+              r.email || '',
+              r.phone || ''
+            ];
+            if(showAns) row.push(paxContactsRegAnswerText(p, qv) || '');
+            lines.push(row.map(csvCell).join(','));
+            count++;
+          });
+          var csv = '\ufeff' + lines.join('\r\n');
+          var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          var stamp = new Date().toISOString().slice(0, 10);
+          var suffix = showAns ? ('-' + paxContactsRegQuestionLabel(qv).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')) : '';
+          a.href = url;
+          a.download = 'participants' + suffix + '-' + stamp + '.csv';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(function(){ try{ URL.revokeObjectURL(url); }catch(_u){} }, 1500);
+          try{
+            if(typeof portalAdminToast === 'function') portalAdminToast('Exported ' + count + ' participant' + (count === 1 ? '' : 's') + ' to CSV.');
+          }catch(_t){}
         }
         function paxContactsShowDetail(p){
           var box = $('paxContactsDetail');
@@ -18436,6 +18527,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(pb) pb.addEventListener('change', paxContactsRefreshFilters);
           var pq = $('paxContactsRegQuestion');
           if(pq) pq.addEventListener('change', paxContactsRefreshFilters);
+          var exB = $('paxContactsExportBtn');
+          if(exB) exB.addEventListener('click', paxContactsExportVisibleCsv);
           var addB = $('paxContactsAddBtn');
           if(addB) addB.onclick = function(){
             try{
