@@ -12165,24 +12165,28 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       );
     }
     /** Compact booked-services cell for the participants list (programme + day abbreviations). */
-    function paxContactsServicesCellHtml(p){
-      if(!p || !String(p.name || '').trim()) return '<span class="muted">—</span>';
-      if(typeof adminSpreadsheetAdapterAvailable !== 'function' || !adminSpreadsheetAdapterAvailable()) return '<span class="muted">—</span>';
+    /** Participant list: aligned "Service/s" and "Time slot/s" cells (one line per booked band). */
+    function paxContactsServiceSlotCells(p){
+      var dash = '<span class="muted">—</span>';
+      var empty = { svc: dash, slot: dash };
+      if(!p || !String(p.name || '').trim()) return empty;
+      if(typeof adminSpreadsheetAdapterAvailable !== 'function' || !adminSpreadsheetAdapterAvailable()) return empty;
       var bands = [];
       try{ bands = paxPortalMergedBandsForParticipant(p) || []; }catch(_e){ bands = []; }
-      if(!bands.length) return '<span class="muted">—</span>';
-      var map = {};
-      var order = [];
-      bands.forEach(function(b){
+      if(!bands.length) return empty;
+      var svc = bands.map(function(b){
         var prog = String(b.programme || '').trim() || 'Service';
-        if(!map[prog]){ map[prog] = []; order.push(prog); }
-        var d = String(b.day || '').trim().slice(0, 3);
-        if(d && map[prog].indexOf(d) === -1) map[prog].push(d);
-      });
-      return order.map(function(prog){
-        var days = map[prog].length ? ' <span class="muted">('+esc(map[prog].join(', '))+')</span>' : '';
-        return '<div style="min-width:0;overflow-wrap:break-word">'+esc(prog)+days+'</div>';
+        return '<div style="min-width:0;overflow-wrap:break-word">'+esc(prog)+'</div>';
       }).join('');
+      var slot = bands.map(function(b){
+        var dayFull = c4kServiceDowLong(String(b.day || '').trim().slice(0, 3));
+        var t = String(b.timeDisp || '').trim();
+        var label = (dayFull && dayFull !== '—')
+          ? (dayFull + (t && t !== '—' ? ', ' + t : ''))
+          : (t || '—');
+        return '<div style="min-width:0;overflow-wrap:break-word">'+esc(label || '—')+'</div>';
+      }).join('');
+      return { svc: svc, slot: slot };
     }
     function paxContactsListRowsHtml(){
       var rows = paxContactsUnifiedList();
@@ -12191,15 +12195,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var phone = esc(r.phone || '—');
         var em = esc(r.email || '—');
         var contact = esc(String(p.parentDisplay || r.carer || '—'));
+        var dob = esc(String(p.dobDisplay || r.dobDisplay || '—'));
+        var cells = paxContactsServiceSlotCells(p);
         return (
           '<tr data-pax-id="'+esc(p.id)+'" data-pax-bk="'+esc(p.bookingStatus || '')+'">'+
           '<td style="min-width:0"><button type="button" class="pax-contacts-namebtn" data-pax-contacts-open="'+esc(p.id)+'"><strong>'+esc(p.name)+'</strong></button></td>'+
+          '<td style="white-space:nowrap">'+dob+'</td>'+
+          '<td class="pax-contacts-contact" style="min-width:0;max-width:14rem">'+cells.svc+'</td>'+
+          '<td class="pax-contacts-contact" style="min-width:0;max-width:16rem">'+cells.slot+'</td>'+
           '<td style="min-width:0;overflow-wrap:break-word">'+contact+'</td>'+
           '<td class="pax-contacts-contact" style="min-width:0">'+em+'</td>'+
           '<td style="white-space:nowrap">'+phone+'</td>'+
-          '<td class="pax-contacts-contact" style="min-width:0;max-width:16rem">'+paxContactsServicesCellHtml(p)+'</td>'+
-          '<td style="white-space:nowrap">'+esc(p.firstBookingDisplay || '—')+'</td>'+
-          '<td style="white-space:nowrap">'+esc(p.latestBookingDisplay || '—')+'</td>'+
           '</tr>'
         );
       }).join('');
@@ -12245,7 +12251,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '</div>'+
         '<p class="pax-contacts-count" id="paxContactsCount">Showing '+String(n)+' contacts</p>'+
         '<div class="pax-contacts-table-wrap"><table class="pax-contacts-tbl" id="paxContactsTbl"><thead><tr>'+
-        '<th>Participant name</th><th>Contact</th><th>Email</th><th>Phone</th><th>Services</th><th>First booking</th><th>Latest booking</th>'+
+        '<th>Participant name</th><th>D.O.B</th><th>Service/s</th><th>Time slot/s</th><th>Contact</th><th>Email</th><th>Phone</th>'+
         '</tr></thead><tbody>'+listRows+'</tbody></table></div>'+
         '<div class="pax-contacts-detail" id="paxContactsDetail" aria-live="polite"></div>'
       );
