@@ -11737,8 +11737,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     /**
      * Same child can arrive from registration (full name "Aadam Ahmed"), roster/overview
-     * (worker short form "Adaam Ah") and feedback — collapse them into one row. Display keeps the
-     * SHORT worker form (2-letter surname); contact/profile keeps the richest source.
+     * (worker short form "Adaam Ah") and feedback — collapse them into one row. The Participants
+     * list shows the FULL surname (registration form, e.g. "Amaar Ahmed"); contact/profile keeps
+     * the richest source. Schedule &amp; Cover tables read `clientDisplay` (roster short form)
+     * independently, so they stay first-name + 2-letter surname for staff / lead.
      */
     function paxContactsDedupeByPerson(list){
       var amb = (typeof adminPortalParticipantAmbiguityMap === 'function') ? adminPortalParticipantAmbiguityMap() : {};
@@ -11766,8 +11768,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var s = paxContactsContactScore(m);
           if(s > best){ best = s; base = m; }
         });
-        if(cl.repName && cl.repName !== base.name){
-          return Object.assign({}, base, { name: cl.repName });
+        // Display the fullest available surname (registration "Amaar Ahmed" beats roster "Amaar Ah").
+        var disp = base.name;
+        var dispLen = paxContactsSurnameLen(base.name);
+        cl.members.forEach(function(m){
+          var sl = paxContactsSurnameLen(m.name);
+          if(sl === 999) return;
+          if(dispLen === 999 || sl > dispLen){ dispLen = sl; disp = m.name; }
+        });
+        if(disp && disp !== base.name){
+          return Object.assign({}, base, { name: disp });
         }
         return base;
       });
