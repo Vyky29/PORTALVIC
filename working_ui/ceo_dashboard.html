@@ -1052,6 +1052,7 @@
         <p class="ceo-nav-kicker">This dashboard</p>
         <nav class="ceo-nav-aux" aria-label="Sections on this page">
           <a class="ceo-nav-link" href="#ceo-strategic" data-ceo-nav><span class="ceo-nav-ico" aria-hidden="true">📊</span>Strategic snapshot</a>
+          <a class="ceo-nav-link" href="#ceo-finance" data-ceo-nav><span class="ceo-nav-ico" aria-hidden="true">💷</span>Finance</a>
           <a class="ceo-nav-link" href="#ceo-charts" data-ceo-nav><span class="ceo-nav-ico" aria-hidden="true">📈</span>Trends &amp; service mix</a>
           <a class="ceo-nav-link" href="#ceo-messages" data-ceo-nav><span class="ceo-nav-ico" aria-hidden="true">✉️</span>Messages</a>
           <a class="ceo-nav-link" href="#ceo-insights" data-ceo-nav><span class="ceo-nav-ico" aria-hidden="true">🗂️</span>Company insights</a>
@@ -1084,6 +1085,14 @@
             <p>Live figures from the portal database — session feedback, welfare reports, staff and finance. Finance detail stays on this page only.</p>
           </div>
           <div id="ceoStrategicMount"></div>
+        </section>
+
+        <section id="ceo-finance" class="ceo-strategic" aria-labelledby="ceoFinanceTitle">
+          <div class="ceo-strategic-head">
+            <h2 id="ceoFinanceTitle">Finance</h2>
+            <p>Whole-money view — client income across every funder (plus the LA/NHS annual 25/26 ledger) and staff payroll &amp; expenses month by month. Not limited to one month or term; Spring 2026 and Autumn 2025 fold in here to build the full-year total.</p>
+          </div>
+          <div id="ceoFinanceMount"></div>
         </section>
 
         <section id="ceo-messages" class="ceo-panel ceo-panel--chat" aria-labelledby="ceoChatPanelTitle">
@@ -1259,7 +1268,7 @@
         );
         // ceo-charts is rendered async by the snapshot; observe lazily.
         function observeTargets() {
-          ["ceo-strategic", "ceo-charts", "ceo-messages", "ceo-insights"].forEach(function (id) {
+          ["ceo-strategic", "ceo-finance", "ceo-charts", "ceo-messages", "ceo-insights"].forEach(function (id) {
             var el = document.getElementById(id);
             if (el && !el.dataset.ceoSpy) {
               el.dataset.ceoSpy = "1";
@@ -1274,7 +1283,7 @@
       }
     })();
   </script>
-  <script src="portal/portal_ceo_snapshot.js?v=20260531-revenue-filters"></script>
+  <script src="portal/portal_ceo_snapshot.js?v=20260531-finance-section"></script>
   <script>
     (function () {
       var isElementorPreview =

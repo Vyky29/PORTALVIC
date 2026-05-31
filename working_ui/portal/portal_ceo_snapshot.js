@@ -157,6 +157,22 @@
       }
     });
 
+    // Per-month staff outgoings (salaries + approved expenses), recent first, for
+    // the Finance section's month-by-month table.
+    var monthsBreakdown = Object.keys(months)
+      .map(function (k) {
+        var b = months[k];
+        return {
+          key: k,
+          salaries: b.ts + b.contract,
+          expenses: b.exp,
+          hours: b.hours,
+        };
+      })
+      .sort(function (a, b) {
+        return a.key < b.key ? 1 : a.key > b.key ? -1 : 0;
+      });
+
     return {
       monthSal: monthB.ts + monthB.contract,
       monthExp: monthB.exp,
@@ -168,8 +184,21 @@
       clientsPaid: clientsPaid,
       clientsPaidN: clientsPaidN,
       clientsBilled: clientsBilled,
-      hasPayments: payments.length > 0
+      hasPayments: payments.length > 0,
+      monthsBreakdown: monthsBreakdown
     };
+  }
+
+  // 'YYYY-MM' → 'Mon YYYY' (e.g. '2026-03' → 'Mar 2026').
+  function monthKeyLabel(k) {
+    var p = String(k || "").split("-");
+    if (p.length < 2) return String(k || "");
+    var d = new Date(Number(p[0]), Number(p[1]) - 1, 1);
+    try {
+      return d.toLocaleDateString("en-GB", { month: "short", year: "numeric" });
+    } catch (e) {
+      return String(k);
+    }
   }
 
   function monthLabel() {
@@ -461,10 +490,11 @@
     return kpis + table + ledger;
   }
 
-  function wireRevenue(mount, model) {
-    var body = mount.querySelector("#ceo-rev-body");
+  function wireRevenueScope(scope, model, bodyId, btnSel) {
+    if (!scope) return;
+    var body = scope.querySelector("#" + bodyId);
     if (!body) return;
-    var btns = mount.querySelectorAll(".ceo-rev-filter");
+    var btns = scope.querySelectorAll(btnSel);
     btns.forEach(function (btn) {
       btn.addEventListener("click", function () {
         btns.forEach(function (b) { b.setAttribute("aria-pressed", "false"); });
@@ -472,6 +502,105 @@
         body.innerHTML = renderRevenueBody(model, btn.getAttribute("data-rev") || "all");
       });
     });
+  }
+
+  function wireRevenue(mount, model) {
+    wireRevenueScope(mount, model, "ceo-rev-body", ".ceo-rev-filter");
+  }
+
+  // ---- Finance section (dedicated, whole-money view) -----------------------
+  function financeFunderFilters(btnClass) {
+    return (
+      '<div class="ceo-rev-filters" role="group" aria-label="Filter client income by funder">' +
+      '<button type="button" class="ceo-rev-filter ' + btnClass + '" data-rev="all" aria-pressed="true">All</button>' +
+      '<button type="button" class="ceo-rev-filter ' + btnClass + '" data-rev="private" aria-pressed="false">Private (parents)</button>' +
+      '<button type="button" class="ceo-rev-filter ' + btnClass + '" data-rev="la" aria-pressed="false">Local authority</button>' +
+      '<button type="button" class="ceo-rev-filter ' + btnClass + '" data-rev="nhs" aria-pressed="false">NHS</button>' +
+      "</div>"
+    );
+  }
+
+  function renderFinance(model) {
+    if (!model) return "";
+    var fin = model.fin || {};
+    var agg = revAggregate(model.payments, "all");
+    var t = agg.tot;
+
+    var kpisTop =
+      '<div class="ceo-snap-fc-grid" style="margin-bottom:14px">' +
+      fcell("Income billed · summer term", money(t.billed)) +
+      fcell("Income received · summer term", money(t.received)) +
+      fcell("Outstanding · summer term", money(t.outstanding)) +
+      fcell("Staff cost · year to date", money((fin.ytdSal || 0) + (fin.ytdExp || 0))) +
+      "</div>";
+
+    var ledgerLine =
+      model.ledgerBilled > 0
+        ? '<p class="ceo-snap-muted" style="margin:10px 0 0">LA / NHS annual 25/26 ledger: <strong style="color:var(--ink)">' +
+          esc(money(model.ledgerBilled)) +
+          '</strong> billed · <strong style="color:var(--ink)">' +
+          esc(money(model.ledgerReceived)) +
+          "</strong> received (full year to date for LA/NHS-funded places; private term-by-term added below as it loads).</p>"
+        : "";
+
+    var incomeCard =
+      '<div class="ceo-snap-card" style="margin-bottom:14px"><div class="ceo-snap-card-h">Client income · by funder</div>' +
+      '<div class="ceo-snap-card-p">' +
+      financeFunderFilters("ceo-finrev-filter") +
+      '<div id="ceo-finrev-body">' +
+      renderRevenueBody(model, "all") +
+      "</div>" +
+      ledgerLine +
+      "</div></div>";
+
+    var staffKpis =
+      '<div class="ceo-snap-fc-grid" style="margin-bottom:14px">' +
+      fcell("Salaries · this month", fin.hasSalary ? money(fin.monthSal) : "—") +
+      fcell("Salaries · year to date", fin.hasSalary ? money(fin.ytdSal) : "—") +
+      fcell("Expenses · year to date", fin.hasExpense ? money(fin.ytdExp) : "—") +
+      fcell("Hours · this month", fin.monthHours ? Math.round(fin.monthHours) + "h" : "—") +
+      "</div>";
+
+    var mb = fin.monthsBreakdown || [];
+    var mbRows = mb.length
+      ? mb
+          .map(function (m) {
+            var total = (m.salaries || 0) + (m.expenses || 0);
+            return (
+              "<tr><td><strong>" +
+              esc(monthKeyLabel(m.key)) +
+              "</strong></td>" +
+              '<td class="ceo-rev-num">' + esc(money(m.salaries)) + "</td>" +
+              '<td class="ceo-rev-num">' + esc(money(m.expenses)) + "</td>" +
+              '<td class="ceo-rev-num">' + esc(money(total)) + "</td>" +
+              '<td class="ceo-rev-num">' + esc(m.hours ? Math.round(m.hours) + "h" : "—") + "</td></tr>"
+            );
+          })
+          .join("")
+      : '<tr><td colspan="5" class="ceo-snap-muted">No payroll data yet.</td></tr>';
+
+    var staffTable =
+      '<table class="ceo-snap-tbl"><thead><tr><th>Month</th><th class="ceo-rev-num">Salaries</th><th class="ceo-rev-num">Expenses</th><th class="ceo-rev-num">Total out</th><th class="ceo-rev-num">Hours</th></tr></thead><tbody>' +
+      mbRows +
+      "</tbody></table>";
+
+    var staffCard =
+      '<div class="ceo-snap-card" style="margin-bottom:14px"><div class="ceo-snap-card-h">Staff payroll &amp; expenses</div>' +
+      '<div class="ceo-snap-card-p">' +
+      staffKpis +
+      '<div style="overflow:auto">' +
+      staffTable +
+      "</div>" +
+      '<p class="ceo-snap-muted" style="margin:10px 0 0">Money paid to staff (salaries + approved expenses) by calendar month. Detail lives in Admin → Staff &amp; HR / Payroll.</p>' +
+      "</div></div>";
+
+    var rollup =
+      '<div class="ceo-snap-card"><div class="ceo-snap-card-h">Annual roll-up · 25/26</div>' +
+      '<div class="ceo-snap-card-p">' +
+      '<p class="ceo-snap-muted" style="margin:0">Loaded so far: <strong style="color:var(--ink)">Summer term 2026</strong> client payments plus the LA/NHS annual ledger, and staff payroll for the current year. Add <strong style="color:var(--ink)">Spring term 2026</strong> and <strong style="color:var(--ink)">Autumn 2025</strong> client figures to complete the full 25/26 income total.</p>' +
+      "</div></div>";
+
+    return '<div class="ceo-fin-wrap">' + kpisTop + incomeCard + staffCard + rollup + "</div>";
   }
 
   function render(model) {
@@ -789,6 +918,7 @@
       payments: payments,
       ledgerBilled: ledgerBilled,
       ledgerReceived: ledgerReceived,
+      fin: fin,
     };
   }
 
@@ -870,6 +1000,11 @@
       var model = buildModel(results);
       mount.innerHTML = render(model);
       wireRevenue(mount, model);
+      var finMount = document.getElementById("ceoFinanceMount");
+      if (finMount) {
+        finMount.innerHTML = renderFinance(model);
+        wireRevenueScope(finMount, model, "ceo-finrev-body", ".ceo-finrev-filter");
+      }
       try {
         window.dispatchEvent(new CustomEvent("portal:ceo-snapshot-rendered"));
       } catch (e2) {}
