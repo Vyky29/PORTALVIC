@@ -18694,7 +18694,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
      */
     var ADMIN_PARTICIPANT_NAME_ALIASES = {
       'adam a': 'adam ab',
-      'adam a.': 'adam ab'
+      'adam a.': 'adam ab',
+      // Roster / feedback use the short first name only; pin them to the full registration
+      // spelling so each links to its own family (brothers Eiji & Hazem → surname BELHADJ).
+      'eiji': 'kacem eiji belhadj',
+      'hazem': 'hazem kei belhadj'
     };
     function adminPortalNormalizedPersonName(s){
       var n = String(s || '')
@@ -18827,6 +18831,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var pf = adminPortalFuzzyFirstToken(portalFullName);
       var rf = adminPortalFuzzyFirstToken(rosterOrSheetDisplayName);
       if(!pf || !rf || pf !== rf) return false;
+      // When BOTH names carry a surname token, require surname compatibility regardless of the
+      // ambiguity map. This keeps different families that share a first name from ever merging
+      // (Adam Pilcher ≠ Aadam Ahmed, Amar-Rai Singh ≠ Amaar Ahmed) even if the ambiguity scan
+      // missed a spelling. One-token roster names (Eiji, Hazem, Tinashe) keep the older gate.
+      var pHasSurname = portalNorm.split(' ').filter(Boolean).length >= 2;
+      var rHasSurname = rosterNorm.split(' ').filter(Boolean).length >= 2;
+      if(pHasSurname && rHasSurname) return adminPortalNameMatchesPaxBookedServices(portalFullName, rosterOrSheetDisplayName);
       if(!ambiguousFirsts || !ambiguousFirsts[pf]) return true;
       return adminPortalNameMatchesPaxBookedServices(portalFullName, rosterOrSheetDisplayName);
     }
