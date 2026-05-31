@@ -261,6 +261,63 @@
   function shortDay(day) { var d = String(day || "").trim(); return d ? d.slice(0, 3) : ""; }
   function normTime(label) { return String(label || "").replace(/\s*-\s*/g, " to ").replace(/\s+/g, " ").trim(); }
 
+  // Parse a clock token ("9", "9.30", "11.45", "1pm") into minutes-from-midnight.
+  // Roster labels are 12h with no am/pm, but the club day runs 7am→7pm, so:
+  // 7–11 = morning, 12 = noon, 1–6 = afternoon/evening (keeps the day monotonic).
+  function shiftParseClock(tok) {
+    var t = String(tok == null ? "" : tok).trim().toLowerCase();
+    var ap = /pm/.test(t) ? "pm" : (/am/.test(t) ? "am" : null);
+    var m = t.match(/(\d{1,2})(?:[.:](\d{1,2}))?/);
+    if (!m) return null;
+    var h = parseInt(m[1], 10);
+    var mn = m[2] ? parseInt(m[2], 10) : 0;
+    var h24;
+    if (ap === "pm") h24 = (h % 12) + 12;
+    else if (ap === "am") h24 = (h % 12);
+    else if (h === 12) h24 = 12;
+    else if (h >= 7 && h <= 11) h24 = h;   // morning
+    else h24 = h + 12;                      // 1..6 -> afternoon/evening
+    return h24 * 60 + mn;
+  }
+  function shiftFmtClock(abs) {
+    var h24 = Math.floor(abs / 60), mn = abs % 60;
+    var ap = h24 >= 12 ? "pm" : "am";
+    var h12 = h24 % 12; if (h12 === 0) h12 = 12;
+    var s = "" + h12;
+    if (mn > 0) s += "." + (mn < 10 ? "0" : "") + mn;
+    return s + ap;
+  }
+  function shiftFmtDur(mins) {
+    var h = Math.floor(mins / 60), m = mins % 60;
+    if (m === 0) return h + "h";
+    if (h === 0) return m + "m";
+    return h + "h " + m + "m";
+  }
+  // Collapse contiguous slots ("10 to 11 / 11 to 12 / 12 to 1") into a single
+  // range with a total ("10am to 1pm (3h)"). Gaps start a new range.
+  function shiftCompress(labels) {
+    var slots = [];
+    (labels || []).forEach(function (lbl) {
+      var parts = String(lbl).split(/\s+to\s+/i);
+      if (parts.length < 2) return;
+      var s = shiftParseClock(parts[0]);
+      var e = shiftParseClock(parts[parts.length - 1]);
+      if (s == null || e == null) return;
+      if (e < s) e += 720; // crossed the 12h heuristic boundary
+      slots.push({ s: s, e: e });
+    });
+    slots.sort(function (a, b) { return a.s - b.s || a.e - b.e; });
+    var groups = [];
+    slots.forEach(function (sl) {
+      var g = groups[groups.length - 1];
+      if (g && sl.s <= g.e) { if (sl.e > g.e) g.e = sl.e; }
+      else groups.push({ s: sl.s, e: sl.e });
+    });
+    return groups.map(function (g) {
+      return shiftFmtClock(g.s) + " to " + shiftFmtClock(g.e) + " (" + shiftFmtDur(g.e - g.s) + ")";
+    });
+  }
+
   function buildRosterSummary() {
     var src = global.STAFF_DASHBOARD_SOURCE;
     var adapter = global.StaffDashboardSpreadsheetAdapter;
@@ -291,11 +348,11 @@
       days.sort(function (a, b) { return (DAY_ORDER[a.toLowerCase()] || 9) - (DAY_ORDER[b.toLowerCase()] || 9); });
       var shifts;
       if (days.length <= 1) {
-        shifts = ((byDayLabels[days[0]] || [])).join(" / ");
+        shifts = shiftCompress(byDayLabels[days[0]] || []).join(" / ");
       } else {
         var parts = [];
         days.forEach(function (day) {
-          (byDayLabels[day] || []).forEach(function (lbl) { parts.push(lbl + " (" + shortDay(day) + ")"); });
+          shiftCompress(byDayLabels[day] || []).forEach(function (g) { parts.push(g + " (" + shortDay(day) + ")"); });
         });
         shifts = parts.join(" / ");
       }
