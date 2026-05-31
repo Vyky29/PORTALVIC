@@ -873,6 +873,12 @@ body:has(#workspace .dash-hub--dayops) .admin-main{
   flex:1 1 0;
   min-height:0;
 }
+/* Team + Sessions header icons in a strong H&R red. */
+.dash-hub--dayops .dash-hub__panel--team .dash-hub__panel-ico,
+.dash-hub--dayops .dash-hub__panel--sessions .dash-hub__panel-ico{
+  background:#fde0e2;
+  color:#dc2626;
+}
 .dash-hub--dayops .dash-hub__panel--sessions{
   flex:2 1 0;
   min-height:0;
