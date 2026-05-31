@@ -11484,7 +11484,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     /** Participants whose primary contact is a service / local-authority coordinator (not a family member). Keyed by normalized name. */
     var ADMIN_PARTICIPANT_CONTACT_OVERRIDES = {
-      'acat': { contact: 'Mara Mendes & Jordan Smith / H&F Adult Social Care', email: 'Mara.Mendes@lbhf.gov.uk · jordan.smith@lbhf.gov.uk', phone: '07766 364819' }
+      'acat': { contact: 'Mara Mendes & Jordan Smith / H&F Adult Social Care', email: 'Mara.Mendes@lbhf.gov.uk · jordan.smith@lbhf.gov.uk', phone: '07766 364819' },
+      // Jack Stratton (Jack S) — one child, registered twice (mother + LBHF day centre). Family is
+      // the primary contact (Sunday with parents); Mondays run via the LA day centre (Jordan Smith).
+      'jack stratton': { contact: 'Veronica Grace (mother) · Mon: LA day centre — Jordan Smith (LBHF)', email: 'vgrace67@gmail.com', phone: '07803093911' },
+      // Jack Walker (Jack W) — family contact provided by CEO (no email/phone on file); Mondays via LA day centre.
+      'jack walker': { contact: 'Francesca Walker (mother) · Mon: LA day centre — Jordan Smith (LBHF)' }
     };
     function adminParticipantContactOverride(displayName){
       var k = adminPortalNormalizedPersonName(displayName);
@@ -18810,7 +18815,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       // Roster / feedback use the short first name only; pin them to the full registration
       // spelling so each links to its own family (brothers Eiji & Hazem → surname BELHADJ).
       'eiji': 'kacem eiji belhadj',
-      'hazem': 'hazem kei belhadj'
+      'hazem': 'hazem kei belhadj',
+      // Day-centre kids: short roster/payment names → full registration surnames so each links
+      // to its own family (Jack S = Jack Stratton ≠ Jack W = Jack Walker) and the Sunday (parent)
+      // + Monday (LA day centre) rows merge into one participant.
+      'jack w': 'jack walker',
+      'jack s': 'jack stratton'
     };
     function adminPortalNormalizedPersonName(s){
       var n = String(s || '')
