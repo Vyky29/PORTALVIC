@@ -13221,6 +13221,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var allInst = adminSlotInstancesForProgrammeVenueRange(block.programme, vn.venue, termStart, termEnd, pack, pack.notes);
           var byDow = adminServiceInstancesByDowNorm(allInst);
           var rowsInVenue = 0;
+          // Header Instructors / Participants are counted from the rostered booked
+          // lines actually shown for the picked week (one instructor per booked
+          // participant), NOT every term-wide cover or empty "available" line —
+          // so the venue totals match the per-turn register the user sees.
+          var venueInstrSet = {};
+          var venuePaxSet = {};
           var dowParts = [];
           for(var dix = 0; dix < dowOrder.length; dix++){
             var dk = dowOrder[dix];
@@ -13295,6 +13301,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               var B = bandMap[bandKeys[bi]];
               var mergedLines = B.lines;
               if(!mergedLines.length) continue;
+              for(var pli = 0; pli < mergedLines.length; pli++){
+                var pl = mergedLines[pli];
+                var plSlug = String((pl && pl.clientSlug) || '').trim().toLowerCase();
+                if(!bookingIsBookedClientSlug(plSlug)) continue;
+                var plCd = String((pl && pl.clientDisplay) || '').trim();
+                if(plCd) venuePaxSet[plCd.toLowerCase()] = 1;
+                var plSn = String((pl && pl.staffName) || '').trim();
+                var plSnL = plSn.toLowerCase();
+                if(plSn && plSnL !== 'no participant' && plSnL !== 'closed' && plSnL !== 'available' && plSnL !== 'demo'){
+                  venueInstrSet[plSnL] = 1;
+                }
+              }
               var demoIds = mergedLines.map(function(g){ return String(g.demoId || '').trim(); }).filter(Boolean);
               var uniq = [];
               for(var ui = 0; ui < demoIds.length; ui++){
@@ -13398,6 +13416,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             '</span>';
           var venueSt = adminStatsSlotsWeek(allInst);
           var venueAgg = adminServiceVenueAggFromInstances(allInst);
+          var venueInstrCount = Object.keys(venueInstrSet).length;
+          var venuePaxCount = Object.keys(venuePaxSet).length;
           var venueMetrics =
             '<span class="c4k-svc-venue-acc__cell c4k-svc-venue-acc__cell--pill c4k-svc-venue-acc__cell--pill-total">'+
             '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Participant places booked across the whole summer term at this venue — every dated session on the roster added up.">'+
@@ -13417,12 +13437,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             '<span class="c4k-svc-venue-acc__cell c4k-svc-venue-acc__cell--pill c4k-svc-venue-acc__cell--pill-inst">'+
             '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Distinct instructors working this service at this venue across the term.">'+
             '<span class="c4k-svc-venue-acc__pill-lbl">Instructors: </span>'+
-            '<strong class="c4k-svc-venue-acc__pill-strong">'+esc(String(venueAgg.instructors))+'</strong>'+
+            '<strong class="c4k-svc-venue-acc__pill-strong">'+esc(String(venueInstrCount))+'</strong>'+
             '</span></span>'+
             '<span class="c4k-svc-venue-acc__cell c4k-svc-venue-acc__cell--pill c4k-svc-venue-acc__cell--pill-pax">'+
             '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Distinct participants booked into this service at this venue across the term.">'+
             '<span class="c4k-svc-venue-acc__pill-lbl">Participants: </span>'+
-            '<strong class="c4k-svc-venue-acc__pill-strong">'+esc(String(venueAgg.participants))+'</strong>'+
+            '<strong class="c4k-svc-venue-acc__pill-strong">'+esc(String(venuePaxCount))+'</strong>'+
             '</span></span>';
           var venueMetricsRow =
             '<span class="c4k-svc-venue-acc__metrics">'+
