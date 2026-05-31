@@ -146,16 +146,30 @@
     });
 
     var clientsPaid = 0, clientsPaidN = 0, clientsBilled = 0;
+    // Retention (re-enrolled vs not) + funder concentration (share of billed by
+    // who funds the place). Both read straight from the live client_payments rows.
+    var reenrolNames = {}, notReenrolN = 0;
+    var groupBilled = { Private: 0, "Local authority": 0, NHS: 0 };
     payments.forEach(function (p) {
       var a = Number(p.amount) || 0;
       var s = String(p.payment_status || "").toLowerCase();
       var notReenrol = s.indexOf("re-enrol") >= 0 || s.indexOf("reenrol") >= 0;
-      if (!notReenrol) clientsBilled += a;
+      if (notReenrol) { notReenrolN += 1; return; }
+      clientsBilled += a;
       if (s.indexOf("paid") === 0) {
         clientsPaid += a;
         clientsPaidN += 1;
       }
+      var nm = String(p.client_name || "").trim().toLowerCase();
+      if (nm) reenrolNames[nm] = 1;
+      var g = payGroup(p).group;
+      if (groupBilled[g] == null) groupBilled[g] = 0;
+      groupBilled[g] += a;
     });
+    var reenrolN = Object.keys(reenrolNames).length;
+    var retentionRate = (reenrolN + notReenrolN)
+      ? Math.round((reenrolN / (reenrolN + notReenrolN)) * 100)
+      : null;
 
     // Per-month staff outgoings (salaries + approved expenses), recent first, for
     // the Finance section's month-by-month table.
@@ -184,6 +198,11 @@
       clientsPaid: clientsPaid,
       clientsPaidN: clientsPaidN,
       clientsBilled: clientsBilled,
+      outstandingTerm: clientsBilled - clientsPaid,
+      reenrolN: reenrolN,
+      notReenrolN: notReenrolN,
+      retentionRate: retentionRate,
+      groupBilled: groupBilled,
       hasPayments: payments.length > 0,
       monthsBreakdown: monthsBreakdown
     };
@@ -432,18 +451,6 @@
     );
   }
 
-  function revBtn(id, label, on) {
-    return (
-      '<button type="button" class="ceo-rev-filter" data-rev="' +
-      id +
-      '" aria-pressed="' +
-      (on ? "true" : "false") +
-      '">' +
-      esc(label) +
-      "</button>"
-    );
-  }
-
   function renderRevenueBody(model, filter) {
     var agg = revAggregate(model.payments, filter);
     var t = agg.tot;
@@ -504,10 +511,6 @@
     });
   }
 
-  function wireRevenue(mount, model) {
-    wireRevenueScope(mount, model, "ceo-rev-body", ".ceo-rev-filter");
-  }
-
   // ---- Finance section (dedicated, whole-money view) -----------------------
   function financeFunderFilters(btnClass) {
     return (
@@ -533,6 +536,40 @@
       fcell("Outstanding · summer term", money(t.outstanding)) +
       fcell("Staff cost · year to date", money((fin.ytdSal || 0) + (fin.ytdExp || 0))) +
       "</div>";
+
+    // Whole-money headline: net position, total outstanding, retention, funder mix.
+    var netVal = model.netPosition || 0;
+    var netColor = netVal >= 0 ? "#15803d" : "#b91c1c";
+    var gb = model.groupBilled || {};
+    var gbTotal = (gb.Private || 0) + (gb["Local authority"] || 0) + (gb.NHS || 0) || 1;
+    function mixRow(label, v) {
+      var pct = Math.round(((v || 0) / gbTotal) * 100);
+      var w = Math.max(2, pct);
+      return (
+        '<div style="display:flex;align-items:center;gap:10px;margin:6px 0">' +
+        '<span style="min-width:120px;font-size:12px;color:var(--muted)">' + esc(label) + "</span>" +
+        '<span class="ceo-rev-bar" style="flex:1"><span style="width:' + w + '%"></span></span>' +
+        '<strong style="min-width:118px;text-align:right;font-size:12px;color:var(--ink)">' + esc(money(v || 0)) + " · " + pct + "%</strong>" +
+        "</div>"
+      );
+    }
+    var businessCard =
+      '<div class="ceo-snap-card" style="margin-bottom:14px"><div class="ceo-snap-card-h">Net position &amp; retention</div>' +
+      '<div class="ceo-snap-card-p">' +
+      '<div class="ceo-snap-fc-grid" style="margin-bottom:14px">' +
+      '<div class="ceo-snap-fc"><div class="ceo-snap-kpi-l">Net position · YTD</div><div class="ceo-snap-kpi-v" style="color:' + netColor + '">' + esc(money(netVal)) + "</div></div>" +
+      fcell("Income received · YTD", money(model.incomeReceivedYtd || 0)) +
+      fcell("Outstanding · at risk", money(model.outstandingTotal || 0)) +
+      fcell("Retention", model.retentionRate != null ? model.retentionRate + "%" : "—") +
+      "</div>" +
+      '<div class="ceo-snap-card-h" style="font-size:13px;margin-bottom:4px">Funder mix · share of billed income</div>' +
+      mixRow("Private (parents)", gb.Private) +
+      mixRow("Local authority", gb["Local authority"]) +
+      mixRow("NHS", gb.NHS) +
+      '<p class="ceo-snap-muted" style="margin:12px 0 0">Net position = income received to date (LA/NHS annual ledger + private summer) minus staff cost YTD — partial until Spring 2026 and Autumn 2025 load. Retention = ' +
+      esc(model.reenrolN != null ? model.reenrolN : "—") + " re-enrolled of " +
+      esc((model.reenrolN || 0) + (model.notReenrolN || 0)) + " known places.</p>" +
+      "</div></div>";
 
     var ledgerLine =
       model.ledgerBilled > 0
@@ -600,7 +637,7 @@
       '<p class="ceo-snap-muted" style="margin:0">Loaded so far: <strong style="color:var(--ink)">Summer term 2026</strong> client payments plus the LA/NHS annual ledger, and staff payroll for the current year. Add <strong style="color:var(--ink)">Spring term 2026</strong> and <strong style="color:var(--ink)">Autumn 2025</strong> client figures to complete the full 25/26 income total.</p>' +
       "</div></div>";
 
-    return '<div class="ceo-fin-wrap">' + kpisTop + incomeCard + staffCard + rollup + "</div>";
+    return '<div class="ceo-fin-wrap">' + kpisTop + businessCard + incomeCard + staffCard + rollup + "</div>";
   }
 
   function render(model) {
@@ -743,22 +780,28 @@
       welfareLines +
       "</div></div>";
 
-    var revenue =
-      '<div class="ceo-snap-card"><div class="ceo-snap-card-h">Revenue · money generated</div>' +
+    // Business health at a glance — the strategic numbers that change decisions.
+    // Full money detail (by funder, month-by-month) lives in the Finance section.
+    var netVal = model.netPosition || 0;
+    var netColor = netVal >= 0 ? "#15803d" : "#b91c1c";
+    var business =
+      '<div class="ceo-snap-card" style="margin-bottom:14px"><div class="ceo-snap-card-h">Business health</div>' +
       '<div class="ceo-snap-card-p">' +
-      '<div class="ceo-rev-filters" role="group" aria-label="Filter revenue by funder">' +
-      revBtn("all", "All", true) +
-      revBtn("private", "Private (parents)") +
-      revBtn("la", "Local authority") +
-      revBtn("nhs", "NHS") +
+      '<div class="ceo-snap-fc-grid">' +
+      '<div class="ceo-snap-fc"><div class="ceo-snap-kpi-l">Net position · YTD</div><div class="ceo-snap-kpi-v" style="color:' + netColor + '">' +
+      (model.fin && (model.fin.hasSalary || model.hasPayments) ? esc(money(netVal)) : "—") +
+      "</div></div>" +
+      fcell("Outstanding · at risk", model.hasPayments ? money(model.outstandingTotal) : "—") +
+      fcell("Retention", model.retentionRate != null ? model.retentionRate + "%" : "—") +
+      fcell("Collection", model.collectionRate != null ? model.collectionRate + "%" : "—") +
       "</div>" +
-      '<div id="ceo-rev-body">' +
-      renderRevenueBody(model, "all") +
-      "</div>" +
-      '<p class="ceo-snap-muted" style="margin:12px 0 0">Summer term 2026 re-enrolments — filter by who funds the place. Edit figures in Admin → Programme payments.</p>' +
+      '<p class="ceo-snap-muted" style="margin:12px 0 0">Net position = income received to date (LA/NHS annual + private summer) minus staff cost year-to-date' +
+      (model.topFunderShare != null ? ' · biggest funder is <strong style="color:var(--ink)">' + esc(model.topFunder) + " " + model.topFunderShare + "%</strong> of billed income" : "") +
+      (model.reenrolN != null ? " · " + esc(model.reenrolN) + " re-enrolled, " + esc(model.notReenrolN) + " not" : "") +
+      ". Full breakdown in <strong style=\"color:var(--ink)\">Finance</strong>.</p>" +
       "</div></div>";
 
-    return hero + kpis + charts + finance + revenue + welfare + recent;
+    return hero + kpis + charts + business + finance + welfare + recent;
   }
 
   function buildModel(results) {
@@ -847,6 +890,32 @@
       ledgerReceived += parseMoney(d["Year received (25/26)"]);
     });
 
+    // Whole-money position to date: LA/NHS annual ledger + private (summer) money,
+    // versus staff cost year-to-date. Partial until Spring/Autumn private loads.
+    var privateBilled = 0, privateReceived = 0;
+    payments.forEach(function (p) {
+      if (String(p.sheet || "") === "LA") return;
+      var s = String(p.payment_status || "").toLowerCase();
+      if (s.indexOf("re-enrol") >= 0 || s.indexOf("reenrol") >= 0) return;
+      var a = Number(p.amount) || 0;
+      privateBilled += a;
+      if (s.indexOf("paid") === 0) privateReceived += a;
+    });
+    var incomeBilledYtd = ledgerBilled + privateBilled;
+    var incomeReceivedYtd = ledgerReceived + privateReceived;
+    var staffCostYtd = (fin.ytdSal || 0) + (fin.ytdExp || 0);
+    var netPosition = incomeReceivedYtd - staffCostYtd;
+    var outstandingTotal = (fin.outstandingTerm || 0) + Math.max(0, ledgerBilled - ledgerReceived);
+    var collectionRate = incomeBilledYtd ? Math.round((incomeReceivedYtd / incomeBilledYtd) * 100) : null;
+    // Funder concentration: biggest single share of billed income (dependency risk).
+    var gb = fin.groupBilled || {};
+    var gbTotal = (gb.Private || 0) + (gb["Local authority"] || 0) + (gb.NHS || 0);
+    var topFunder = null;
+    Object.keys(gb).forEach(function (k) {
+      if (topFunder == null || gb[k] > gb[topFunder]) topFunder = k;
+    });
+    var topFunderShare = (topFunder && gbTotal) ? Math.round((gb[topFunder] / gbTotal) * 100) : null;
+
     var portalAvailable =
       results.visits && results.visits.status === "fulfilled" && !results.visits.value.error;
     var portalSet = {};
@@ -918,6 +987,18 @@
       payments: payments,
       ledgerBilled: ledgerBilled,
       ledgerReceived: ledgerReceived,
+      incomeBilledYtd: incomeBilledYtd,
+      incomeReceivedYtd: incomeReceivedYtd,
+      staffCostYtd: staffCostYtd,
+      netPosition: netPosition,
+      outstandingTotal: outstandingTotal,
+      collectionRate: collectionRate,
+      retentionRate: fin.retentionRate,
+      reenrolN: fin.reenrolN,
+      notReenrolN: fin.notReenrolN,
+      groupBilled: fin.groupBilled,
+      topFunder: topFunder,
+      topFunderShare: topFunderShare,
       fin: fin,
     };
   }
@@ -999,7 +1080,6 @@
     try {
       var model = buildModel(results);
       mount.innerHTML = render(model);
-      wireRevenue(mount, model);
       var finMount = document.getElementById("ceoFinanceMount");
       if (finMount) {
         finMount.innerHTML = renderFinance(model);
