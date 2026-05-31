@@ -18515,6 +18515,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         .toLowerCase()
         .replace(/\s+/g, ' ');
     }
+    /** Collapse runs of the same letter so instructor typos line up (aadam→adam, haneff→hanef, sammer→samer). */
+    function adminPortalCollapseRepeats(t){
+      return String(t || '').replace(/(.)\1+/g, '$1');
+    }
+    /** Repeat-tolerant first name token (lowercased) used for messy free-text participant names. */
+    function adminPortalFuzzyFirstToken(name){
+      return adminPortalCollapseRepeats(adminPortalPersonFirstToken(name));
+    }
     function adminPortalNameMatchesBooking(sheetName, clientRecordName){
       var a = adminPortalNormalizedPersonName(sheetName);
       var b = adminPortalNormalizedPersonName(clientRecordName);
@@ -18536,7 +18544,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var b = adminPortalNormalizedPersonName(rosterDisplayName);
       if(!a || !b) return false;
       if(a === b) return true;
-      function stripTrailDot(t){ return String(t || '').replace(/\.$/, ''); }
+      function stripTrailDot(t){ return adminPortalCollapseRepeats(String(t || '').replace(/\.$/, '')); }
       var ta = a.split(/\s+/).map(stripTrailDot).filter(Boolean);
       var tb = b.split(/\s+/).map(stripTrailDot).filter(Boolean);
       if(!ta.length || !tb.length) return false;
@@ -18563,10 +18571,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       (fullNameList || []).forEach(function(nm){
         var norm = adminPortalNormalizedPersonName(nm);
         if(!norm) return;
-        var ft = norm.split(' ')[0] || '';
+        var ft = adminPortalCollapseRepeats(norm.split(' ')[0] || '');
         if(!ft || ft.length < 2) return;
         if(!byFirst[ft]) byFirst[ft] = {};
-        byFirst[ft][norm] = true;
+        // Bucket by the repeat-collapsed full name so the same child typed two ways
+        // (Haneef / Haneff) is not flagged as two different ambiguous people.
+        byFirst[ft][adminPortalCollapseRepeats(norm)] = true;
       });
       var o = {};
       Object.keys(byFirst).forEach(function(ft){
@@ -18623,8 +18633,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var rosterNorm = adminPortalNormalizedPersonName(rosterOrSheetDisplayName);
       if(!portalNorm || !rosterNorm) return false;
       if(portalNorm === rosterNorm) return true;
-      var pf = adminPortalPersonFirstToken(portalFullName);
-      var rf = adminPortalPersonFirstToken(rosterOrSheetDisplayName);
+      var pf = adminPortalFuzzyFirstToken(portalFullName);
+      var rf = adminPortalFuzzyFirstToken(rosterOrSheetDisplayName);
       if(!pf || !rf || pf !== rf) return false;
       if(!ambiguousFirsts || !ambiguousFirsts[pf]) return true;
       return adminPortalNameMatchesPaxBookedServices(portalFullName, rosterOrSheetDisplayName);
