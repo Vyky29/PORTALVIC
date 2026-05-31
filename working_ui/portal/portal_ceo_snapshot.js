@@ -644,6 +644,31 @@
       '<p class="ceo-snap-muted" style="margin:12px 0 0">Each service has a fixed price; the term sets how many sessions. Summer term 2026 re-enrolments.</p>' +
       "</div></div>";
 
+    // Ealing direct payments: annual place ÷ 12 equal monthly instalments
+    // (April→March). Show expected-to-date vs received so cashflow is clear.
+    var ealingCard = "";
+    if ((model.ealingBilled || 0) > 0) {
+      var evVar = model.ealingVariance || 0;
+      var evColor = evVar >= 0 ? "#15803d" : "#b91c1c";
+      var evLabel = evVar >= 0 ? "ahead of schedule" : "behind schedule";
+      var monthsLA = ["April", "May", "June", "July", "August", "September", "October", "November", "December", "January", "February", "March"];
+      var curMonthLabel = monthsLA[Math.max(0, (model.ealingMonthsElapsed || 1) - 1)];
+      ealingCard =
+        '<div class="ceo-snap-card" style="margin-bottom:14px"><div class="ceo-snap-card-h">Ealing · monthly cashflow (Apr→Mar)</div>' +
+        '<div class="ceo-snap-card-p">' +
+        '<div class="ceo-snap-fc-grid" style="margin-bottom:14px">' +
+        fcell("Annual billed · 25/26", money(model.ealingBilled || 0)) +
+        fcell("Expected · per month", money(model.ealingMonthly || 0)) +
+        fcell("Expected · to date (" + esc(model.ealingMonthsElapsed || 0) + "/12 mo)", money(model.ealingExpectedToDate || 0)) +
+        fcell("Received · to date", money(model.ealingReceived || 0)) +
+        "</div>" +
+        '<p class="ceo-snap-muted" style="margin:0">Ealing spreads each place over the academic year (weekly price × 38 weeks) and pays in <strong style="color:var(--ink)">12 equal monthly instalments April→March</strong>. By <strong style="color:var(--ink)">' +
+        esc(curMonthLabel) + '</strong> the expected take is <strong style="color:var(--ink)">' + esc(money(model.ealingExpectedToDate || 0)) +
+        '</strong>; received is <strong style="color:var(--ink)">' + esc(money(model.ealingReceived || 0)) +
+        '</strong> — <strong style="color:' + evColor + '">' + esc(money(Math.abs(evVar))) + " " + evLabel + "</strong>.</p>" +
+        "</div></div>";
+    }
+
     var staffKpis =
       '<div class="ceo-snap-fc-grid" style="margin-bottom:14px">' +
       fcell("Salaries · this month", fin.hasSalary ? money(fin.monthSal) : "—") +
@@ -691,7 +716,7 @@
       '<p class="ceo-snap-muted" style="margin:0">Loaded so far: <strong style="color:var(--ink)">Summer term 2026</strong> client payments plus the LA/NHS annual ledger, and staff payroll for the current year. Add <strong style="color:var(--ink)">Spring term 2026</strong> and <strong style="color:var(--ink)">Autumn 2025</strong> client figures to complete the full 25/26 income total.</p>' +
       "</div></div>";
 
-    return '<div class="ceo-fin-wrap">' + kpisTop + businessCard + incomeCard + serviceCard + staffCard + rollup + "</div>";
+    return '<div class="ceo-fin-wrap">' + kpisTop + businessCard + incomeCard + serviceCard + ealingCard + staffCard + rollup + "</div>";
   }
 
   function render(model) {
@@ -955,6 +980,25 @@
       privateBilled += a;
       if (s.indexOf("paid") === 0) privateReceived += a;
     });
+    // Ealing spreads each place over the academic year: weekly price × 38 weeks =
+    // annual total, paid in 12 equal monthly instalments April→March. Model the
+    // expected-to-date cashflow vs what the ledger shows received.
+    var ealingBilled = 0, ealingReceived = 0;
+    payments.forEach(function (p) {
+      if (String(p.sheet || "") !== "LA") return;
+      var d = payData(p);
+      var f = String(d.Funder || d.Funding || "");
+      if (!/ealing/i.test(f)) return;
+      ealingBilled += parseMoney(d["Year billed (25/26)"]);
+      ealingReceived += parseMoney(d["Year received (25/26)"]);
+    });
+    var ealingMonthly = ealingBilled / 12;
+    // Months elapsed in the LA year (April = month 1 … March = month 12).
+    var nowM = new Date().getMonth(); // 0=Jan
+    var ealingMonthsElapsed = Math.min(12, ((nowM - 3 + 12) % 12) + 1);
+    var ealingExpectedToDate = ealingMonthly * ealingMonthsElapsed;
+    var ealingVariance = ealingReceived - ealingExpectedToDate;
+
     var incomeBilledYtd = ledgerBilled + privateBilled;
     var incomeReceivedYtd = ledgerReceived + privateReceived;
     var staffCostYtd = (fin.ytdSal || 0) + (fin.ytdExp || 0);
@@ -1053,6 +1097,12 @@
       groupBilled: fin.groupBilled,
       topFunder: topFunder,
       topFunderShare: topFunderShare,
+      ealingBilled: ealingBilled,
+      ealingReceived: ealingReceived,
+      ealingMonthly: ealingMonthly,
+      ealingMonthsElapsed: ealingMonthsElapsed,
+      ealingExpectedToDate: ealingExpectedToDate,
+      ealingVariance: ealingVariance,
       fin: fin,
     };
   }
