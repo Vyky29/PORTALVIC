@@ -451,6 +451,34 @@
     );
   }
 
+  // Service for a payment row (each service has a fixed price; the term sets how
+  // many sessions). Mirrors the admin payments serviceFor() key order.
+  function paySvc(p) {
+    var d = payData(p);
+    var keys = ["Services", "Service", "Programme", "Programmes", "Activity"];
+    for (var i = 0; i < keys.length; i++) {
+      var v = d[keys[i]];
+      if (v != null && String(v).trim() && String(v).trim() !== "-") return String(v).trim();
+    }
+    return "Other / unspecified";
+  }
+  function svcAggregate(payments) {
+    var groups = {};
+    (payments || []).forEach(function (p) {
+      var s = String(p.payment_status || "").toLowerCase();
+      if (s.indexOf("re-enrol") >= 0 || s.indexOf("reenrol") >= 0) return;
+      var a = Number(p.amount) || 0;
+      var k = paySvc(p);
+      if (!groups[k]) groups[k] = { svc: k, billed: 0, received: 0, clients: 0 };
+      groups[k].billed += a;
+      groups[k].clients += 1;
+      if (s.indexOf("paid") === 0) groups[k].received += a;
+    });
+    return Object.keys(groups)
+      .map(function (k) { return groups[k]; })
+      .sort(function (a, b) { return b.billed - a.billed; });
+  }
+
   function renderRevenueBody(model, filter) {
     var agg = revAggregate(model.payments, filter);
     var t = agg.tot;
@@ -590,6 +618,32 @@
       ledgerLine +
       "</div></div>";
 
+    // Income by service — each service has a fixed price; the term sets sessions.
+    var svcList = svcAggregate(model.payments);
+    var maxSvc = svcList.reduce(function (m, x) { return Math.max(m, x.billed); }, 0) || 1;
+    var svcRows = svcList.length
+      ? svcList.map(function (x) {
+          var o = x.billed - x.received;
+          var w = Math.max(3, Math.round((x.billed / maxSvc) * 100));
+          return (
+            "<tr><td><strong>" + esc(x.svc) +
+            '</strong><div class="ceo-rev-bar" style="margin-top:5px"><span style="width:' + w + '%"></span></div></td>' +
+            '<td class="ceo-rev-num">' + esc(money(x.billed)) + "</td>" +
+            '<td class="ceo-rev-num">' + esc(money(x.received)) + "</td>" +
+            '<td class="ceo-rev-num">' + esc(money(o)) + "</td>" +
+            '<td class="ceo-rev-num">' + esc(x.clients) + "</td></tr>"
+          );
+        }).join("")
+      : '<tr><td colspan="5" class="ceo-snap-muted">No service income yet.</td></tr>';
+    var serviceCard =
+      '<div class="ceo-snap-card" style="margin-bottom:14px"><div class="ceo-snap-card-h">Client income · by service</div>' +
+      '<div class="ceo-snap-card-p"><div style="overflow:auto">' +
+      '<table class="ceo-snap-tbl"><thead><tr><th>Service</th><th class="ceo-rev-num">Billed</th><th class="ceo-rev-num">Received</th><th class="ceo-rev-num">Outstanding</th><th class="ceo-rev-num">Clients</th></tr></thead><tbody>' +
+      svcRows +
+      "</tbody></table></div>" +
+      '<p class="ceo-snap-muted" style="margin:12px 0 0">Each service has a fixed price; the term sets how many sessions. Summer term 2026 re-enrolments.</p>' +
+      "</div></div>";
+
     var staffKpis =
       '<div class="ceo-snap-fc-grid" style="margin-bottom:14px">' +
       fcell("Salaries · this month", fin.hasSalary ? money(fin.monthSal) : "—") +
@@ -637,7 +691,7 @@
       '<p class="ceo-snap-muted" style="margin:0">Loaded so far: <strong style="color:var(--ink)">Summer term 2026</strong> client payments plus the LA/NHS annual ledger, and staff payroll for the current year. Add <strong style="color:var(--ink)">Spring term 2026</strong> and <strong style="color:var(--ink)">Autumn 2025</strong> client figures to complete the full 25/26 income total.</p>' +
       "</div></div>";
 
-    return '<div class="ceo-fin-wrap">' + kpisTop + businessCard + incomeCard + staffCard + rollup + "</div>";
+    return '<div class="ceo-fin-wrap">' + kpisTop + businessCard + incomeCard + serviceCard + staffCard + rollup + "</div>";
   }
 
   function render(model) {
