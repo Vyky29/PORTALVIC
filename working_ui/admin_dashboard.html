@@ -15871,12 +15871,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function viewOperationsAdmin(){
       var participantsRow1 =
+        portalDashTileHtml('clients', '', 'clients', 'Participants', 'Directory, profiles &amp; feedback', false, 'sessions')+
         portalDashTileHtml('orders_all', '', 'bookings', 'Bookings / orders', 'Bookings &amp; wait list', false, 'bookings')+
-        portalDashTileHtml('reenrol_payments', '', 'reenrol_payments', 'Payments', 'Programme payments', false, 'payments')+
-        portalDashTileHtml('invoices', '', 'invoices', 'Invoices', 'Xero draft &amp; export', false, 'payments');
-      var participantsRow2 =
         portalDashTileHtml('c4k_reviews', '', 'c4k_reviews', 'Progress', 'Term reviews &amp; goals', false, 'reviews')+
         portalDashTileHtml('c4k_reports', '', 'c4k_reports', 'Reports', 'Request packs &amp; LA delivery', false, 'reports_q');
+      var financeRow =
+        portalDashTileHtml('reenrol_payments', '', 'reenrol_payments', 'Payments', 'Programme payments', false, 'payments')+
+        portalDashTileHtml('invoices', '', 'invoices', 'Invoices', 'Xero draft &amp; export', false, 'payments');
       var staffRow1 =
         portalDashTileHtml('staffhr', '', 'staffhr', 'Staff &amp; HR', 'Records, availability &amp; HR notes', false, 'sessions')+
         portalDashTileHtml('staffhr_contracts', '', 'staffhr_contracts', 'Contracts', 'Employment contracts &amp; signatures', false, 'reviews')+
@@ -15899,14 +15900,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<p class="page-intro" style="white-space:nowrap;max-width:100%;font-size:clamp(10px,1.1vw,13px)">Participant and staff administration outside the live session window — orders, finance, HR, contracts, and reporting. For on-site session tools, use <button type="button" class="btn btn--ghost btn--sm" data-view-target="dashboard" style="vertical-align:middle;padding:7px 14px;font-size:inherit;display:inline-flex;align-items:center;gap:8px;color:#ea580c;border-color:#fdba74;background:rgba(234,88,12,0.06);border-radius:10px"><svg viewBox="0 0 24 24" width="1.15em" height="1.15em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 auto" aria-hidden="true">'+NAV_ICON_SVGS.dashboard+'</svg>Day operations</button>.</p>'+
         '<div class="dash-hub__stack">'+
         portalDashPanel({
-          title:'Participants',
-          subtitle:'Bookings, payments, reviews, and reporting',
-          linkView:'clients',
-          linkIconId:'clients',
-          jumpTitle:'Participants directory',
+          title:'Sessions & Participants',
+          subtitle:'Participants, bookings, progress, and reporting',
+          iconId:'clients',
           panelClass:'dash-hub__panel--participants',
-          bodyHtml: opsAdminGridHtml(participantsRow1, participantsRow2, '', 'dash-hub__grid--participants-row2'),
-          ariaLabel:'Participants'
+          bodyHtml: opsAdminGridHtml(participantsRow1, '', 'dash-hub__grid--4'),
+          ariaLabel:'Sessions and Participants'
+        })+
+        portalDashPanel({
+          title:'Finance',
+          subtitle:'Programme payments and invoicing',
+          iconId:'reenrol_payments',
+          panelClass:'dash-hub__panel--finance',
+          bodyHtml: opsAdminGridHtml(financeRow, '', 'dash-hub__grid--participants-row2'),
+          ariaLabel:'Finance'
         })+
         portalDashPanel({
           title:'Staff members',
