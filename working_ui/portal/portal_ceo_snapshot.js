@@ -451,6 +451,21 @@
     );
   }
 
+  // Collapse historical / synonymous service names into one canonical label so
+  // the "Sessions per service" chart doesn't split the same activity:
+  //  - Aquatic Activity = Swimming / Swimming sessions
+  //  - Multi-Activity   = Splash & Connect / Multidisciplinary Sessions
+  //  - Physical Activity = Fitness
+  function canonService(raw) {
+    var s = String(raw == null ? "" : raw).trim();
+    if (!s) return "";
+    var l = s.toLowerCase();
+    if (/aquatic|swim/.test(l)) return "Aquatic Activity";
+    if (/multi|splash|multidiscipl/.test(l)) return "Multi-Activity";
+    if (/fitness|physical/.test(l)) return "Physical Activity";
+    return s;
+  }
+
   // Service for a payment row (each service has a fixed price; the term sets how
   // many sessions). Mirrors the admin payments serviceFor() key order.
   function paySvc(p) {
@@ -934,7 +949,7 @@
     var services = topCounts(
       feedback,
       function (f) {
-        return String(f.service || "").trim();
+        return canonService(f.service);
       },
       8
     ).map(function (s) {
