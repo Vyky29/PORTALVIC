@@ -72,7 +72,7 @@
     },
     "youssef": {
       "staffId": "youssef",
-      "staffName": "Youseff",
+      "staffName": "Youssef",
       "avatarFile": "portal/staff_photos/youssef.jpg",
       "staffRoleTrack": "swimming",
       "canViewAll": false
