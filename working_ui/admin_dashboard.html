@@ -18509,11 +18509,23 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }catch(e){}
       return null;
     }
+    /**
+     * Hand-curated fixes for free-text participant names whose surname is too short to
+     * disambiguate automatically. Keyed by normalized spelling → roster-equivalent spelling.
+     * "Adam A" / "Adam A." are Adam Abed (roster "Adam Ab"), NOT Aadam Ahmed ("Adaam Ah").
+     */
+    var ADMIN_PARTICIPANT_NAME_ALIASES = {
+      'adam a': 'adam ab',
+      'adam a.': 'adam ab'
+    };
     function adminPortalNormalizedPersonName(s){
-      return String(s || '')
+      var n = String(s || '')
         .trim()
         .toLowerCase()
         .replace(/\s+/g, ' ');
+      return Object.prototype.hasOwnProperty.call(ADMIN_PARTICIPANT_NAME_ALIASES, n)
+        ? ADMIN_PARTICIPANT_NAME_ALIASES[n]
+        : n;
     }
     /** Collapse runs of the same letter so instructor typos line up (aadam→adam, haneff→hanef, sammer→samer). */
     function adminPortalCollapseRepeats(t){
