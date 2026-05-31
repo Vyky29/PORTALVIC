@@ -1656,16 +1656,6 @@
       "session_date": "2026-05-20"
     },
     {
-      "client_name": "ACAT",
-      "day": "Wednesday",
-      "instructors": "ROBERTO",
-      "service": "Day Centre",
-      "area": "Both Pools",
-      "time_slot": "11 to 12",
-      "venue": "SwimFarm",
-      "session_date": "2026-05-20"
-    },
-    {
       "client_name": "Ikram",
       "day": "Wednesday",
       "instructors": "RAUL, LULIYA",

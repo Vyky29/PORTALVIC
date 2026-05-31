@@ -11474,6 +11474,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return px;
     }
+    /** Participants whose primary contact is a service / local-authority coordinator (not a family member). Keyed by normalized name. */
+    var ADMIN_PARTICIPANT_CONTACT_OVERRIDES = {
+      'acat': { contact: 'Mara Mendes / H&F Adult Social Care', email: 'Mara.Mendes@lbhf.gov.uk', phone: '07766 364819' }
+    };
+    function adminParticipantContactOverride(displayName){
+      var k = adminPortalNormalizedPersonName(displayName);
+      return (k && Object.prototype.hasOwnProperty.call(ADMIN_PARTICIPANT_CONTACT_OVERRIDES, k)) ? ADMIN_PARTICIPANT_CONTACT_OVERRIDES[k] : null;
+    }
     function paxContactsPortalRowToPax(row, idx, forceStatus){
       var cid = String(row.contactId != null ? row.contactId : idx).trim();
       var id = 'pp-' + cid;
@@ -11485,6 +11493,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         parentDisp = (String(row.parentFirstName || '').trim() + ' ' + String(row.parentLastName || '').trim()).trim() || '—';
       }
       var nm = adminParticipantsParentsChildDisplayName(row) || '—';
+      var phoneV = String(row.mobile || '').trim() || '—';
+      var emailV = String(row.username || '').trim() || '—';
+      var contactOv = adminParticipantContactOverride(nm);
+      if(contactOv){
+        if(contactOv.contact) parentDisp = contactOv.contact;
+        if(contactOv.phone) phoneV = contactOv.phone;
+        if(contactOv.email) emailV = contactOv.email;
+      }
       return {
         id: id,
         name: nm,
@@ -11498,8 +11514,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         bookingStatus: bookingStatus,
         reg: {
           carer: parentDisp,
-          phone: String(row.mobile || '').trim() || '—',
-          email: String(row.username || '').trim() || '—',
+          phone: phoneV,
+          email: emailV,
           la: '—',
           nhsTr: '—',
           assessment: '—',
