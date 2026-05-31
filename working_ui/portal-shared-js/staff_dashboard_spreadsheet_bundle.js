@@ -936,7 +936,7 @@
       "instructors": "GODSWAY",
       "service": "Multi-Activity",
       "area": "Hub Room",
-      "time_slot": "12.30 to 1.15",
+      "time_slot": "12 to 1.15",
       "venue": "SwimFarm",
       "session_date": "2026-05-17"
     },
@@ -3336,7 +3336,7 @@
       "instructors": "BISMARK",
       "service": "Multi-Activity",
       "area": "Room 2",
-      "time_slot": "12.30 to 1.15",
+      "time_slot": "12 to 1.15",
       "venue": "SwimFarm",
       "session_date": "2026-06-07"
     },
@@ -4876,7 +4876,7 @@
       "instructors": "BISMARK",
       "service": "Multi-Activity",
       "area": "Room 2",
-      "time_slot": "12.30 to 1.15",
+      "time_slot": "12 to 1.15",
       "venue": "SwimFarm",
       "session_date": "2026-06-14"
     },
@@ -6416,7 +6416,7 @@
       "instructors": "BISMARK",
       "service": "Multi-Activity",
       "area": "Room 2",
-      "time_slot": "12.30 to 1.15",
+      "time_slot": "12 to 1.15",
       "venue": "SwimFarm",
       "session_date": "2026-06-21"
     },
@@ -7956,7 +7956,7 @@
       "instructors": "BISMARK",
       "service": "Multi-Activity",
       "area": "Room 2",
-      "time_slot": "12.30 to 1.15",
+      "time_slot": "12 to 1.15",
       "venue": "SwimFarm",
       "session_date": "2026-06-28"
     },
@@ -9496,7 +9496,7 @@
       "instructors": "BISMARK",
       "service": "Multi-Activity",
       "area": "Room 2",
-      "time_slot": "12.30 to 1.15",
+      "time_slot": "12 to 1.15",
       "venue": "SwimFarm",
       "session_date": "2026-07-05"
     },
@@ -11036,7 +11036,7 @@
       "instructors": "BISMARK",
       "service": "Multi-Activity",
       "area": "Room 2",
-      "time_slot": "12.30 to 1.15",
+      "time_slot": "12 to 1.15",
       "venue": "SwimFarm",
       "session_date": "2026-07-12"
     },
@@ -12781,7 +12781,7 @@
       "instructors": "BISMARK",
       "service": "Multi-Activity",
       "area": "Room 2",
-      "time_slot": "12.30 to 1.15",
+      "time_slot": "12 to 1.15",
       "venue": "SwimFarm"
     },
     {
