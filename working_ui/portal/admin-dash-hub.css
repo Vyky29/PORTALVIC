@@ -872,13 +872,6 @@ body:has(#workspace .dash-hub--dayops) .admin-main{
      rows) gets the same height and the same gap — all rows look identical. */
   flex:1 1 0;
   min-height:0;
-  /* H&R (ZohoPeople) red identity colour. */
-  background:#fdeeef;
-  border-color:#f3ccd0;
-}
-.dash-hub--dayops .dash-hub__panel--team .dash-hub__panel-ico{
-  background:#f8d7da;
-  color:#c0392b;
 }
 .dash-hub--dayops .dash-hub__panel--sessions{
   flex:2 1 0;
