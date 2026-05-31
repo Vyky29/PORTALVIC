@@ -200,7 +200,7 @@
       { id:'onboarding', label:'Onboarding' },
       { id:'staffhr_contracts', label:'Employment contracts', hubLabel:'CONTRACTS' },
       { id:'recruitment', label:'Recruitment' },
-      { id:'interviews', label:'Interviews', externalUrl:'/Working_interview.html' },
+      { id:'interviews', label:'Interviews' },
       { id:'portal_documents', label:'Documents', hubLabel:'Documents' },
       { id:'portal_docs_timesheet', label:'Timesheets' },
       { id:'portal_docs_expense', label:'Expenses' },
@@ -15277,6 +15277,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(id==='leads') return viewLeads();
       if(id==='servicecap') return viewServiceCap();
       if(id==='recruitment') return viewRecruitment();
+      if(id==='interviews') return viewInterviews();
       if(id==='settings') return viewSettings();
       return viewOperations();
     }
@@ -16582,6 +16583,55 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<p class="page-intro">Hiring pipeline for roles — separate from family intake.</p>'+
         '<div class="card"><div class="card-pad"><p class="muted" style="margin:0 0 12px">This board connects to the hiring you already track. Use <button type="button" class="btn btn--pri btn--sm" data-view-target="staffhr">Staff &amp; HR</button> for full roster, shifts, and interview list.</p>'+
         '<div class="op-banner" style="margin:0"><strong>Demo</strong> — shortlist: Ellis F. (relief) · review panel Fri.</div></div></div>'
+      );
+    }
+    /** Interviews pipeline: candidates by stage + a button into the interview tool
+     *  (/Working_interview.html). Populates as applications/interviews come in. */
+    function viewInterviews(){
+      var list = (MOCK.interviews || []);
+      function stageTone(s){
+        var t = String(s||'').toLowerCase();
+        if(t.indexOf('accept')>=0) return '#15803d';
+        if(t.indexOf('reject')>=0||t.indexOf('declin')>=0) return '#b91c1c';
+        if(t.indexOf('offer')>=0) return '#7c3aed';
+        if(t.indexOf('2nd')>=0||t.indexOf('practical')>=0||t.indexOf('assessment')>=0) return '#b45309';
+        return '#2d84b3';
+      }
+      var stageOrder = ['Application sift','1st interview','2nd interview','Practical / assessment','Offer','Offer accepted','Rejected'];
+      var counts = {};
+      list.forEach(function(c){ var s = String(c.status||'').trim() || '—'; counts[s] = (counts[s]||0)+1; });
+      var stageKeys = stageOrder.filter(function(s){ return counts[s]; });
+      Object.keys(counts).forEach(function(s){ if(stageKeys.indexOf(s)<0) stageKeys.push(s); });
+      var kpis = stageKeys.length
+        ? stageKeys.map(function(s){
+            return '<div class="kpi card--premium"><div class="kpi-l">'+esc(s)+'</div><div class="kpi-v" style="color:'+stageTone(s)+'">'+counts[s]+'</div><div class="kpi-s muted">candidate'+(counts[s]===1?'':'s')+'</div></div>';
+          }).join('')
+        : '<div class="kpi card--premium"><div class="kpi-l">Pipeline</div><div class="kpi-v">0</div><div class="kpi-s muted">no candidates yet</div></div>';
+      var rows = list.length
+        ? list.map(function(c){
+            var tone = stageTone(c.status);
+            return '<tr>'+
+              '<td><strong>'+esc(c.name||'—')+'</strong></td>'+
+              '<td>'+esc(c.role||'—')+'</td>'+
+              '<td><span class="chip" style="background:'+tone+'14;color:'+tone+';border:1px solid '+tone+'40;font-weight:700">'+esc(c.status||'—')+'</span></td>'+
+              '<td>'+esc(c.ob||'—')+'</td>'+
+              '<td>'+esc(c.rec||'—')+'</td>'+
+              '<td class="toolbar"><a class="btn btn--pri btn--sm" href="/Working_interview.html" target="_blank" rel="noopener">Start interview</a></td>'+
+            '</tr>';
+          }).join('')
+        : '<tr><td colspan="6" class="muted">No candidates in the pipeline yet — they appear here as applications come in.</td></tr>';
+      var playIco = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" stroke="none" style="flex:0 0 auto;vertical-align:-3px;margin-right:6px" aria-hidden="true"><path d="M5 3l14 9-14 9V3z"/></svg>';
+      return (
+        '<h1 class="page-title">Interviews</h1>'+
+        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">Candidate pipeline — who is at which stage, the next step, and a link to run the interview. Fills as applications and interviews are completed.</p>'+
+        '<div class="toolbar" style="margin-bottom:14px;flex-wrap:wrap;gap:8px">'+
+        '<a class="btn btn--pri" href="/Working_interview.html" target="_blank" rel="noopener">'+playIco+'Start a new interview</a> '+
+        '<button type="button" class="btn btn--ghost btn--sm" data-view-target="staffhr">Staff &amp; HR</button> '+
+        '<button type="button" class="btn btn--ghost btn--sm" data-view-target="onboarding">Onboarding</button>'+
+        '</div>'+
+        '<div class="grid-kpi grid-kpi--6" style="margin-bottom:14px">'+kpis+'</div>'+
+        '<div class="card"><div class="card-h"><h3>Candidates</h3><span class="muted" style="font-size:12px">'+list.length+' in pipeline</span></div>'+
+        '<div class="card-pad" style="overflow:auto;padding:0"><table class="tbl tbl--center"><thead><tr><th>Name</th><th>Role</th><th>Stage</th><th>Start / availability</th><th>Next step</th><th>Action</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>'
       );
     }
     function viewOperator(){
@@ -18262,7 +18312,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       root.querySelectorAll('[data-act]').forEach(function(b){
         b.addEventListener('click', function(){
           var v = b.getAttribute('data-act');
-          if(v==='dashboard'||v==='operations'||v==='operations_admin'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='c4k_registers'||v==='c4k_late_submissions'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='staffhr_contracts'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='scheduling'||v==='absents_refunds'||v==='portal_documents'||v==='portal_activity'||v==='participant_achievements'||v==='staff_live_map'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings'||v==='logs') setView(v);
+          if(v==='dashboard'||v==='operations'||v==='operations_admin'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='c4k_registers'||v==='c4k_late_submissions'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='staffhr_contracts'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='scheduling'||v==='absents_refunds'||v==='portal_documents'||v==='portal_activity'||v==='participant_achievements'||v==='staff_live_map'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='interviews'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings'||v==='logs') setView(v);
           closeSidebarMob();
         });
       });
