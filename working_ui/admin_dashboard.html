@@ -6465,7 +6465,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(st.feedbackMirror && st.feedbackMirror[dateIso]) return true;
       var fb = registerSessionFeedbackAttendanceTriState(slot, paxRow, dateIso);
       if(fb !== null) return fb;
-      if(adminSessionFeedbackPortalRows().length > 0) return false;
+      if(adminSessionFeedbackPortalRows().length > 0){
+        // Historical back-fill: portal feedback only covers some weeks, but every real
+        // session up to today counts as attended unless feedback/absence marks otherwise.
+        // Future + pre-term cells stay blank (bounds below); column/manual overrides win above.
+        var todayIsoCk = isoDateLocal(new Date());
+        var bndsCk = registerSummerBoundsYmd(slot.sessionDate);
+        if(String(dateIso) >= String(bndsCk.startIso) && String(dateIso) <= String(todayIsoCk)) return true;
+        return false;
+      }
       return registerDemoCellBasePresent(slot, cid, dateIso);
     }
     /** Header: any row present → ✓; column absence → ✗; future / before term → blank; else session feedback or demo aggregate. */
@@ -13336,20 +13344,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             dayAcc = '<p class="muted" style="margin:6px 0 0;font-size:12px;min-width:0;overflow-wrap:break-word">No roster rows for this programme and venue in the term window.</p>';
           }
           var venueChip =
-            '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Distinct time-slot rows (all weekdays) — sessions per week">'+
+            '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Distinct class time-slots per week at this venue (e.g. Mon 4:00–4:30, Mon 4:30–5:00 …).">'+
             '<span class="c4k-svc-venue-acc__pill-lbl">Sessions/wk: </span>'+
             '<strong class="c4k-svc-venue-acc__pill-strong">'+esc(String(rowsInVenue))+'</strong>'+
             '</span>';
           var venueSt = adminStatsSlotsWeek(allInst);
           var venueMetrics =
             '<span class="c4k-svc-venue-acc__cell c4k-svc-venue-acc__cell--pill c4k-svc-venue-acc__cell--pill-total">'+
-            '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Total rostered slot lines this week">'+
-            '<span class="c4k-svc-venue-acc__pill-lbl">Total slots: </span>'+
+            '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Participant places booked across the whole summer term at this venue — every dated session on the roster added up.">'+
+            '<span class="c4k-svc-venue-acc__pill-lbl">Booked (term): </span>'+
             '<strong class="c4k-svc-venue-acc__pill-strong">'+esc(String(venueSt.booked))+'</strong>'+
             '</span></span>'+
             '<span class="c4k-svc-venue-acc__cell c4k-svc-venue-acc__cell--pill c4k-svc-venue-acc__cell--pill-open">'+
-            '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Slots available this week">'+
-            '<span class="c4k-svc-venue-acc__pill-lbl">Available: </span>'+
+            '<span class="c4k-svc-venue-acc__pill chip chip--info" title="Unbooked places left across the term at this venue.">'+
+            '<span class="c4k-svc-venue-acc__pill-lbl">Open (term): </span>'+
             '<strong class="c4k-svc-venue-acc__pill-strong">'+esc(String(venueSt.open))+'</strong>'+
             '</span></span>';
           var venueMetricsRow =
@@ -13385,8 +13393,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           return '';
         }
         var chips =
-          '<span class="chip chip--info" title="Roster anchors Mon–Sun for the week of the selected date">'+esc(String(wn))+' week</span>'+
-          '<span class="chip chip--ok" title="Instances from '+esc(termStart)+' to '+esc(termEnd)+' (projected from sheet weekdays)">'+esc(String(nRange))+' term</span>';
+          '<span class="chip chip--info" title="Roster lines (instructor × participant) Mon–Sun in the selected week across all venues.">'+esc(String(wn))+' roster lines/wk</span>'+
+          '<span class="chip chip--ok" title="Distinct class time-slots per week, summed across all venues for this programme.">'+esc(String(nRange))+' sessions/wk</span>';
         return adminAppendServiceCapacityBoardAfterPhysicalActivity(
           '<div class="card c4k-svc-card '+adminServiceProgrammeCardClass(block.programme)+'" style="margin-bottom:10px">'+
           '<div class="card-h card-h--c4k-svc">'+
