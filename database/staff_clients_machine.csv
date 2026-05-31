@@ -76,7 +76,7 @@ Hub Room,Gabriel,Sunday,GODSWAY,Multi-Activity,2026-05-17,11.45 to 12.30,SwimFar
 Hub Room,Hazem,Sunday,GIUSEPPE,Multi-Activity,2026-05-17,11.45 to 12.30,SwimFarm
 Climbing Wall,Scott,Sunday,BISMARK,Climbing Activity,2026-05-17,12 to 1,Westway
 Climbing Wall,Serine,Sunday,CARLOS,Climbing Activity,2026-05-17,12 to 1,Westway
-Hub Room,Adaam Ah,Sunday,GODSWAY,Multi-Activity,2026-05-17,12 to 1.15,SwimFarm
+Hub Room,Adaam Ah,Sunday,GODSWAY,Multi-Activity,2026-05-17,12.30 to 1.15,SwimFarm
 Big Pool,Amaar Ah,Sunday,ROBERTO,Multi-Activity,2026-05-17,12.30 to 1.15,SwimFarm
 Big Pool,Aydaan Ah,Sunday,AURORA,Multi-Activity,2026-05-17,12.30 to 1.15,SwimFarm
 Hub Room,Erik,Sunday,JOHN,Multi-Activity,2026-05-17,12.30 to 1.15,SwimFarm
@@ -90,7 +90,7 @@ Big Pool,Shaan,Sunday,JAVIER,Aquatic Activity,2026-05-17,2.30 to 3,SwimFarm
 Big Pool,Yoan,Sunday,ROBERTO,Aquatic Activity,2026-05-17,2.30 to 3,SwimFarm
 Small Pool,Shire,Sunday,JAVIER,Aquatic Activity,2026-05-17,9 to 9.30,SwimFarm
 Small Pool,Simon,Sunday,AURORA,Aquatic Activity,2026-05-17,9 to 9.30,SwimFarm
-Small Pool,Yusuf Ah,Sunday,ROBERTO,Aquatic Activity,2026-05-17,9 to 9.30,SwimFarm
+Small Pool,Yusuf Ah,Sunday,ROBERTO,Multi-Activity,2026-05-17,9 to 9.30,SwimFarm
 Big Pool,Adam Ab,Sunday,AURORA,Multi-Activity,2026-05-17,9.30 to 10.15,SwimFarm
 Hub Room,Jack S,Sunday,GODSWAY,Multi-Activity,2026-05-17,9.30 to 10.15,SwimFarm
 Hub Room,Jack W,Sunday,JOHN,Multi-Activity,2026-05-17,9.30 to 10.15,SwimFarm
@@ -291,39 +291,39 @@ Wall,Zakariya,Sunday,CARLOS,Climbing Activity,2026-06-07,1 to 2,Westway
 Teaching Pool,Adaam Ah,Sunday,ROBERTO,Multi-Activity,2026-06-07,1.15 to 2,SwimFarm
 Room 2,Amaar Ah,Sunday,BISMARK,Multi-Activity,2026-06-07,1.15 to 2,SwimFarm
 Room 2,Aydaan Ah,Sunday,JOHN,Multi-Activity,2026-06-07,1.15 to 2,SwimFarm
-Teaching Pool,Erik,Sunday,AURORA,Aquatic Activity,2026-06-07,1.15 to 2,SwimFarm
-Teaching Pool,Haneef,Sunday,JAVIER,Aquatic Activity,2026-06-07,1.15 to 2,SwimFarm
+Teaching Pool,Erik,Sunday,AURORA,Multi-Activity,2026-06-07,1.15 to 2,SwimFarm
+Teaching Pool,Haneef,Sunday,JAVIER,Multi-Activity,2026-06-07,1.15 to 2,SwimFarm
 Room 2,Rayyan Fi,Sunday,GIUSEPPE,Multi-Activity,2026-06-07,1.15 to 2,SwimFarm
 Wall,Eiji,Sunday,ALEX,Climbing Activity,2026-06-07,10 to 11,Westway
 Wall,Hazem,Sunday,CARLOS,Climbing Activity,2026-06-07,10 to 11,Westway
 Room 2,Adam Ab,Sunday,JOHN,Multi-Activity,2026-06-07,10.15 to 11,SwimFarm
-Teaching Pool,Jack S,Sunday,ROBERTO,Aquatic Activity,2026-06-07,10.15 to 11,SwimFarm
-Teaching Pool,Jack W,Sunday,AURORA,Aquatic Activity,2026-06-07,10.15 to 11,SwimFarm
+Teaching Pool,Jack S,Sunday,ROBERTO,Multi-Activity,2026-06-07,10.15 to 11,SwimFarm
+Teaching Pool,Jack W,Sunday,AURORA,Multi-Activity,2026-06-07,10.15 to 11,SwimFarm
 Room 2,Yusuf Ah,Sunday,BISMARK,Multi-Activity,2026-06-07,10.15 to 11,SwimFarm
-Teaching Pool,Zaid,Sunday,JAVIER,Aquatic Activity,2026-06-07,10.15 to 11,SwimFarm
+Teaching Pool,Zaid,Sunday,JAVIER,Multi-Activity,2026-06-07,10.15 to 11,SwimFarm
 Room 2,Zaid,Sunday,GIUSEPPE,Multi-Activity,2026-06-07,10.15 to 11,SwimFarm
-Teaching Pool,Arthur Ma,Sunday,AURORA,Aquatic Activity,2026-06-07,11 to 11.45,SwimFarm
+Teaching Pool,Arthur Ma,Sunday,AURORA,Multi-Activity,2026-06-07,11 to 11.45,SwimFarm
 Room 2,Arthur Mo,Sunday,BISMARK,Multi-Activity,2026-06-07,11 to 11.45,SwimFarm
 Room 2,Cyrus,Sunday,JOHN,Multi-Activity,2026-06-07,11 to 11.45,SwimFarm
 Room 2,Eiji,Sunday,GIUSEPPE,Multi-Activity,2026-06-07,11 to 11.45,SwimFarm
-Teaching Pool,Gabriel,Sunday,ROBERTO,Aquatic Activity,2026-06-07,11 to 11.45,SwimFarm
-Teaching Pool,Hazem,Sunday,JAVIER,Aquatic Activity,2026-06-07,11 to 11.45,SwimFarm
+Teaching Pool,Gabriel,Sunday,ROBERTO,Multi-Activity,2026-06-07,11 to 11.45,SwimFarm
+Teaching Pool,Hazem,Sunday,JAVIER,Multi-Activity,2026-06-07,11 to 11.45,SwimFarm
 Wall,Yusef,Sunday,ALEX,Climbing Activity,2026-06-07,11 to 12,Westway
 Wall,Zaid,Sunday,CARLOS,Climbing Activity,2026-06-07,11 to 12,Westway
 Room 2,Arthur Ma,Sunday,JOHN,Multi-Activity,2026-06-07,11.45 to 12.30,SwimFarm
-Teaching Pool,Arthur Mo,Sunday,ROBERTO,Aquatic Activity,2026-06-07,11.45 to 12.30,SwimFarm
-Teaching Pool,Cyrus,Sunday,AURORA,Aquatic Activity,2026-06-07,11.45 to 12.30,SwimFarm
-Teaching Pool,Eiji,Sunday,JAVIER,Aquatic Activity,2026-06-07,11.45 to 12.30,SwimFarm
+Teaching Pool,Arthur Mo,Sunday,ROBERTO,Multi-Activity,2026-06-07,11.45 to 12.30,SwimFarm
+Teaching Pool,Cyrus,Sunday,AURORA,Multi-Activity,2026-06-07,11.45 to 12.30,SwimFarm
+Teaching Pool,Eiji,Sunday,JAVIER,Multi-Activity,2026-06-07,11.45 to 12.30,SwimFarm
 Room 2,Gabriel,Sunday,BISMARK,Multi-Activity,2026-06-07,11.45 to 12.30,SwimFarm
 Room 2,Hazem,Sunday,GIUSEPPE,Multi-Activity,2026-06-07,11.45 to 12.30,SwimFarm
 Wall,Scott,Sunday,ALEX,Climbing Activity,2026-06-07,12 to 1,Westway
 Wall,Serine,Sunday,CARLOS,Climbing Activity,2026-06-07,12 to 1,Westway
-Room 2,Adaam Ah,Sunday,BISMARK,Multi-Activity,2026-06-07,12 to 1.15,SwimFarm
-Teaching Pool,Amaar Ah,Sunday,ROBERTO,Aquatic Activity,2026-06-07,12.30 to 1.15,SwimFarm
-Teaching Pool,Aydaan Ah,Sunday,AURORA,Aquatic Activity,2026-06-07,12.30 to 1.15,SwimFarm
+Room 2,Adaam Ah,Sunday,BISMARK,Multi-Activity,2026-06-07,12.30 to 1.15,SwimFarm
+Teaching Pool,Amaar Ah,Sunday,ROBERTO,Multi-Activity,2026-06-07,12.30 to 1.15,SwimFarm
+Teaching Pool,Aydaan Ah,Sunday,AURORA,Multi-Activity,2026-06-07,12.30 to 1.15,SwimFarm
 Room 2,Erik,Sunday,JOHN,Multi-Activity,2026-06-07,12.30 to 1.15,SwimFarm
 Room 2,Haneef,Sunday,GIUSEPPE,Multi-Activity,2026-06-07,12.30 to 1.15,SwimFarm
-Teaching Pool,Rayyan Fi,Sunday,JAVIER,Aquatic Activity,2026-06-07,12.30 to 1.15,SwimFarm
+Teaching Pool,Rayyan Fi,Sunday,JAVIER,Multi-Activity,2026-06-07,12.30 to 1.15,SwimFarm
 Teaching Pool,Max,Sunday,JAVIER,Aquatic Activity,2026-06-07,2 to 2.30,SwimFarm
 Teaching Pool,Rodin,Sunday,ROBERTO,Aquatic Activity,2026-06-07,2 to 2.30,SwimFarm
 Teaching Pool,Zakariya,Sunday,AURORA,Aquatic Activity,2026-06-07,2 to 2.30,SwimFarm
@@ -335,10 +335,10 @@ Teaching Pool,Yoan,Sunday,ROBERTO,Aquatic Activity,2026-06-07,2.30 to 3,SwimFarm
 Teaching Pool,Yusuf,Sunday,ROBERTO,Aquatic Activity,2026-06-07,9 to 10.15,SwimFarm
 Teaching Pool,Shire,Sunday,JAVIER,Aquatic Activity,2026-06-07,9 to 9.30,SwimFarm
 Teaching Pool,Simon,Sunday,AURORA,Aquatic Activity,2026-06-07,9 to 9.30,SwimFarm
-Teaching Pool,Adam Ab,Sunday,AURORA,Aquatic Activity,2026-06-07,9.30 to 10.15,SwimFarm
+Teaching Pool,Adam Ab,Sunday,AURORA,Multi-Activity,2026-06-07,9.30 to 10.15,SwimFarm
 Room 2,Jack S,Sunday,BISMARK,Multi-Activity,2026-06-07,9.30 to 10.15,SwimFarm
 Room 2,Jack W,Sunday,JOHN,Multi-Activity,2026-06-07,9.30 to 10.15,SwimFarm
-Teaching Pool,Samer,Sunday,JAVIER,Aquatic Activity,2026-06-07,9.30 to 10.15,SwimFarm
+Teaching Pool,Samer,Sunday,JAVIER,Multi-Activity,2026-06-07,9.30 to 10.15,SwimFarm
 Room 2,Samer,Sunday,GIUSEPPE,Multi-Activity,2026-06-07,9.30 to 10.15,SwimFarm
 Hub Room,Timi,Monday,"RAUL, CARLOS",Day Centre,2026-06-08,1 to 3,SwimFarm
 Both Pools,ACAT,Monday,ROBERTO,Day Centre,2026-06-08,11 to 12,SwimFarm
@@ -446,39 +446,39 @@ Wall,Zakariya,Sunday,CARLOS,Climbing Activity,2026-06-14,1 to 2,Westway
 Teaching Pool,Adaam Ah,Sunday,ROBERTO,Multi-Activity,2026-06-14,1.15 to 2,SwimFarm
 Room 2,Amaar Ah,Sunday,BISMARK,Multi-Activity,2026-06-14,1.15 to 2,SwimFarm
 Room 2,Aydaan Ah,Sunday,BERTA,Multi-Activity,2026-06-14,1.15 to 2,SwimFarm
-Teaching Pool,Erik,Sunday,AURORA,Aquatic Activity,2026-06-14,1.15 to 2,SwimFarm
-Teaching Pool,Haneef,Sunday,JAVIER,Aquatic Activity,2026-06-14,1.15 to 2,SwimFarm
+Teaching Pool,Erik,Sunday,AURORA,Multi-Activity,2026-06-14,1.15 to 2,SwimFarm
+Teaching Pool,Haneef,Sunday,JAVIER,Multi-Activity,2026-06-14,1.15 to 2,SwimFarm
 Room 2,Rayyan Fi,Sunday,GIUSEPPE,Multi-Activity,2026-06-14,1.15 to 2,SwimFarm
 Wall,Eiji,Sunday,ALEX,Climbing Activity,2026-06-14,10 to 11,Westway
 Wall,Hazem,Sunday,CARLOS,Climbing Activity,2026-06-14,10 to 11,Westway
 Room 2,Adam Ab,Sunday,BERTA,Multi-Activity,2026-06-14,10.15 to 11,SwimFarm
-Teaching Pool,Jack S,Sunday,ROBERTO,Aquatic Activity,2026-06-14,10.15 to 11,SwimFarm
-Teaching Pool,Jack W,Sunday,AURORA,Aquatic Activity,2026-06-14,10.15 to 11,SwimFarm
+Teaching Pool,Jack S,Sunday,ROBERTO,Multi-Activity,2026-06-14,10.15 to 11,SwimFarm
+Teaching Pool,Jack W,Sunday,AURORA,Multi-Activity,2026-06-14,10.15 to 11,SwimFarm
 Room 2,Yusuf Ah,Sunday,BISMARK,Multi-Activity,2026-06-14,10.15 to 11,SwimFarm
-Teaching Pool,Zaid,Sunday,JAVIER,Aquatic Activity,2026-06-14,10.15 to 11,SwimFarm
+Teaching Pool,Zaid,Sunday,JAVIER,Multi-Activity,2026-06-14,10.15 to 11,SwimFarm
 Room 2,Zaid,Sunday,GIUSEPPE,Multi-Activity,2026-06-14,10.15 to 11,SwimFarm
-Teaching Pool,Arthur Ma,Sunday,AURORA,Aquatic Activity,2026-06-14,11 to 11.45,SwimFarm
+Teaching Pool,Arthur Ma,Sunday,AURORA,Multi-Activity,2026-06-14,11 to 11.45,SwimFarm
 Room 2,Arthur Mo,Sunday,BISMARK,Multi-Activity,2026-06-14,11 to 11.45,SwimFarm
 Room 2,Cyrus,Sunday,BERTA,Multi-Activity,2026-06-14,11 to 11.45,SwimFarm
 Room 2,Eiji,Sunday,GIUSEPPE,Multi-Activity,2026-06-14,11 to 11.45,SwimFarm
-Teaching Pool,Gabriel,Sunday,ROBERTO,Aquatic Activity,2026-06-14,11 to 11.45,SwimFarm
-Teaching Pool,Hazem,Sunday,JAVIER,Aquatic Activity,2026-06-14,11 to 11.45,SwimFarm
+Teaching Pool,Gabriel,Sunday,ROBERTO,Multi-Activity,2026-06-14,11 to 11.45,SwimFarm
+Teaching Pool,Hazem,Sunday,JAVIER,Multi-Activity,2026-06-14,11 to 11.45,SwimFarm
 Wall,Yusef,Sunday,ALEX,Climbing Activity,2026-06-14,11 to 12,Westway
 Wall,Zaid,Sunday,CARLOS,Climbing Activity,2026-06-14,11 to 12,Westway
 Room 2,Arthur Ma,Sunday,BERTA,Multi-Activity,2026-06-14,11.45 to 12.30,SwimFarm
-Teaching Pool,Arthur Mo,Sunday,ROBERTO,Aquatic Activity,2026-06-14,11.45 to 12.30,SwimFarm
-Teaching Pool,Cyrus,Sunday,AURORA,Aquatic Activity,2026-06-14,11.45 to 12.30,SwimFarm
-Teaching Pool,Eiji,Sunday,JAVIER,Aquatic Activity,2026-06-14,11.45 to 12.30,SwimFarm
+Teaching Pool,Arthur Mo,Sunday,ROBERTO,Multi-Activity,2026-06-14,11.45 to 12.30,SwimFarm
+Teaching Pool,Cyrus,Sunday,AURORA,Multi-Activity,2026-06-14,11.45 to 12.30,SwimFarm
+Teaching Pool,Eiji,Sunday,JAVIER,Multi-Activity,2026-06-14,11.45 to 12.30,SwimFarm
 Room 2,Gabriel,Sunday,BISMARK,Multi-Activity,2026-06-14,11.45 to 12.30,SwimFarm
 Room 2,Hazem,Sunday,GIUSEPPE,Multi-Activity,2026-06-14,11.45 to 12.30,SwimFarm
 Wall,Scott,Sunday,ALEX,Climbing Activity,2026-06-14,12 to 1,Westway
 Wall,Serine,Sunday,CARLOS,Climbing Activity,2026-06-14,12 to 1,Westway
-Room 2,Adaam Ah,Sunday,BISMARK,Multi-Activity,2026-06-14,12 to 1.15,SwimFarm
-Teaching Pool,Amaar Ah,Sunday,ROBERTO,Aquatic Activity,2026-06-14,12.30 to 1.15,SwimFarm
-Teaching Pool,Aydaan Ah,Sunday,AURORA,Aquatic Activity,2026-06-14,12.30 to 1.15,SwimFarm
+Room 2,Adaam Ah,Sunday,BISMARK,Multi-Activity,2026-06-14,12.30 to 1.15,SwimFarm
+Teaching Pool,Amaar Ah,Sunday,ROBERTO,Multi-Activity,2026-06-14,12.30 to 1.15,SwimFarm
+Teaching Pool,Aydaan Ah,Sunday,AURORA,Multi-Activity,2026-06-14,12.30 to 1.15,SwimFarm
 Room 2,Erik,Sunday,BERTA,Multi-Activity,2026-06-14,12.30 to 1.15,SwimFarm
 Room 2,Haneef,Sunday,GIUSEPPE,Multi-Activity,2026-06-14,12.30 to 1.15,SwimFarm
-Teaching Pool,Rayyan Fi,Sunday,JAVIER,Aquatic Activity,2026-06-14,12.30 to 1.15,SwimFarm
+Teaching Pool,Rayyan Fi,Sunday,JAVIER,Multi-Activity,2026-06-14,12.30 to 1.15,SwimFarm
 Teaching Pool,Max,Sunday,JAVIER,Aquatic Activity,2026-06-14,2 to 2.30,SwimFarm
 Teaching Pool,Rodin,Sunday,ROBERTO,Aquatic Activity,2026-06-14,2 to 2.30,SwimFarm
 Teaching Pool,Zakariya,Sunday,AURORA,Aquatic Activity,2026-06-14,2 to 2.30,SwimFarm
@@ -490,10 +490,10 @@ Teaching Pool,Yoan,Sunday,ROBERTO,Aquatic Activity,2026-06-14,2.30 to 3,SwimFarm
 Teaching Pool,Yusuf,Sunday,ROBERTO,Aquatic Activity,2026-06-14,9 to 10.15,SwimFarm
 Teaching Pool,Shire,Sunday,JAVIER,Aquatic Activity,2026-06-14,9 to 9.30,SwimFarm
 Teaching Pool,Simon,Sunday,AURORA,Aquatic Activity,2026-06-14,9 to 9.30,SwimFarm
-Teaching Pool,Adam Ab,Sunday,AURORA,Aquatic Activity,2026-06-14,9.30 to 10.15,SwimFarm
+Teaching Pool,Adam Ab,Sunday,AURORA,Multi-Activity,2026-06-14,9.30 to 10.15,SwimFarm
 Room 2,Jack S,Sunday,BISMARK,Multi-Activity,2026-06-14,9.30 to 10.15,SwimFarm
 Room 2,Jack W,Sunday,BERTA,Multi-Activity,2026-06-14,9.30 to 10.15,SwimFarm
-Teaching Pool,Samer,Sunday,JAVIER,Aquatic Activity,2026-06-14,9.30 to 10.15,SwimFarm
+Teaching Pool,Samer,Sunday,JAVIER,Multi-Activity,2026-06-14,9.30 to 10.15,SwimFarm
 Room 2,Samer,Sunday,GIUSEPPE,Multi-Activity,2026-06-14,9.30 to 10.15,SwimFarm
 Hub Room,Timi,Monday,"RAUL, CARLOS",Day Centre,2026-06-15,1 to 3,SwimFarm
 Both Pools,ACAT,Monday,ROBERTO,Day Centre,2026-06-15,11 to 12,SwimFarm
@@ -601,39 +601,39 @@ Wall,Zakariya,Sunday,CARLOS,Climbing Activity,2026-06-21,1 to 2,Westway
 Teaching Pool,Adaam Ah,Sunday,ROBERTO,Multi-Activity,2026-06-21,1.15 to 2,SwimFarm
 Room 2,Amaar Ah,Sunday,BISMARK,Multi-Activity,2026-06-21,1.15 to 2,SwimFarm
 Room 2,Aydaan Ah,Sunday,JOHN,Multi-Activity,2026-06-21,1.15 to 2,SwimFarm
-Teaching Pool,Erik,Sunday,AURORA,Aquatic Activity,2026-06-21,1.15 to 2,SwimFarm
-Teaching Pool,Haneef,Sunday,JAVIER,Aquatic Activity,2026-06-21,1.15 to 2,SwimFarm
+Teaching Pool,Erik,Sunday,AURORA,Multi-Activity,2026-06-21,1.15 to 2,SwimFarm
+Teaching Pool,Haneef,Sunday,JAVIER,Multi-Activity,2026-06-21,1.15 to 2,SwimFarm
 Room 2,Rayyan Fi,Sunday,GIUSEPPE,Multi-Activity,2026-06-21,1.15 to 2,SwimFarm
 Wall,Eiji,Sunday,ALEX,Climbing Activity,2026-06-21,10 to 11,Westway
 Wall,Hazem,Sunday,CARLOS,Climbing Activity,2026-06-21,10 to 11,Westway
 Room 2,Adam Ab,Sunday,JOHN,Multi-Activity,2026-06-21,10.15 to 11,SwimFarm
-Teaching Pool,Jack S,Sunday,ROBERTO,Aquatic Activity,2026-06-21,10.15 to 11,SwimFarm
-Teaching Pool,Jack W,Sunday,AURORA,Aquatic Activity,2026-06-21,10.15 to 11,SwimFarm
+Teaching Pool,Jack S,Sunday,ROBERTO,Multi-Activity,2026-06-21,10.15 to 11,SwimFarm
+Teaching Pool,Jack W,Sunday,AURORA,Multi-Activity,2026-06-21,10.15 to 11,SwimFarm
 Room 2,Yusuf Ah,Sunday,BISMARK,Multi-Activity,2026-06-21,10.15 to 11,SwimFarm
-Teaching Pool,Zaid,Sunday,JAVIER,Aquatic Activity,2026-06-21,10.15 to 11,SwimFarm
+Teaching Pool,Zaid,Sunday,JAVIER,Multi-Activity,2026-06-21,10.15 to 11,SwimFarm
 Room 2,Zaid,Sunday,GIUSEPPE,Multi-Activity,2026-06-21,10.15 to 11,SwimFarm
-Teaching Pool,Arthur Ma,Sunday,AURORA,Aquatic Activity,2026-06-21,11 to 11.45,SwimFarm
+Teaching Pool,Arthur Ma,Sunday,AURORA,Multi-Activity,2026-06-21,11 to 11.45,SwimFarm
 Room 2,Arthur Mo,Sunday,BISMARK,Multi-Activity,2026-06-21,11 to 11.45,SwimFarm
 Room 2,Cyrus,Sunday,JOHN,Multi-Activity,2026-06-21,11 to 11.45,SwimFarm
 Room 2,Eiji,Sunday,GIUSEPPE,Multi-Activity,2026-06-21,11 to 11.45,SwimFarm
-Teaching Pool,Gabriel,Sunday,ROBERTO,Aquatic Activity,2026-06-21,11 to 11.45,SwimFarm
-Teaching Pool,Hazem,Sunday,JAVIER,Aquatic Activity,2026-06-21,11 to 11.45,SwimFarm
+Teaching Pool,Gabriel,Sunday,ROBERTO,Multi-Activity,2026-06-21,11 to 11.45,SwimFarm
+Teaching Pool,Hazem,Sunday,JAVIER,Multi-Activity,2026-06-21,11 to 11.45,SwimFarm
 Wall,Yusef,Sunday,ALEX,Climbing Activity,2026-06-21,11 to 12,Westway
 Wall,Zaid,Sunday,CARLOS,Climbing Activity,2026-06-21,11 to 12,Westway
 Room 2,Arthur Ma,Sunday,JOHN,Multi-Activity,2026-06-21,11.45 to 12.30,SwimFarm
-Teaching Pool,Arthur Mo,Sunday,ROBERTO,Aquatic Activity,2026-06-21,11.45 to 12.30,SwimFarm
-Teaching Pool,Cyrus,Sunday,AURORA,Aquatic Activity,2026-06-21,11.45 to 12.30,SwimFarm
-Teaching Pool,Eiji,Sunday,JAVIER,Aquatic Activity,2026-06-21,11.45 to 12.30,SwimFarm
+Teaching Pool,Arthur Mo,Sunday,ROBERTO,Multi-Activity,2026-06-21,11.45 to 12.30,SwimFarm
+Teaching Pool,Cyrus,Sunday,AURORA,Multi-Activity,2026-06-21,11.45 to 12.30,SwimFarm
+Teaching Pool,Eiji,Sunday,JAVIER,Multi-Activity,2026-06-21,11.45 to 12.30,SwimFarm
 Room 2,Gabriel,Sunday,BISMARK,Multi-Activity,2026-06-21,11.45 to 12.30,SwimFarm
 Room 2,Hazem,Sunday,GIUSEPPE,Multi-Activity,2026-06-21,11.45 to 12.30,SwimFarm
 Wall,Scott,Sunday,ALEX,Climbing Activity,2026-06-21,12 to 1,Westway
 Wall,Serine,Sunday,CARLOS,Climbing Activity,2026-06-21,12 to 1,Westway
-Room 2,Adaam Ah,Sunday,BISMARK,Multi-Activity,2026-06-21,12 to 1.15,SwimFarm
-Teaching Pool,Amaar Ah,Sunday,ROBERTO,Aquatic Activity,2026-06-21,12.30 to 1.15,SwimFarm
-Teaching Pool,Aydaan Ah,Sunday,AURORA,Aquatic Activity,2026-06-21,12.30 to 1.15,SwimFarm
+Room 2,Adaam Ah,Sunday,BISMARK,Multi-Activity,2026-06-21,12.30 to 1.15,SwimFarm
+Teaching Pool,Amaar Ah,Sunday,ROBERTO,Multi-Activity,2026-06-21,12.30 to 1.15,SwimFarm
+Teaching Pool,Aydaan Ah,Sunday,AURORA,Multi-Activity,2026-06-21,12.30 to 1.15,SwimFarm
 Room 2,Erik,Sunday,JOHN,Multi-Activity,2026-06-21,12.30 to 1.15,SwimFarm
 Room 2,Haneef,Sunday,GIUSEPPE,Multi-Activity,2026-06-21,12.30 to 1.15,SwimFarm
-Teaching Pool,Rayyan Fi,Sunday,JAVIER,Aquatic Activity,2026-06-21,12.30 to 1.15,SwimFarm
+Teaching Pool,Rayyan Fi,Sunday,JAVIER,Multi-Activity,2026-06-21,12.30 to 1.15,SwimFarm
 Teaching Pool,Max,Sunday,JAVIER,Aquatic Activity,2026-06-21,2 to 2.30,SwimFarm
 Teaching Pool,Rodin,Sunday,ROBERTO,Aquatic Activity,2026-06-21,2 to 2.30,SwimFarm
 Teaching Pool,Zakariya,Sunday,AURORA,Aquatic Activity,2026-06-21,2 to 2.30,SwimFarm
@@ -645,10 +645,10 @@ Teaching Pool,Yoan,Sunday,ROBERTO,Aquatic Activity,2026-06-21,2.30 to 3,SwimFarm
 Teaching Pool,Yusuf,Sunday,ROBERTO,Aquatic Activity,2026-06-21,9 to 10.15,SwimFarm
 Teaching Pool,Shire,Sunday,JAVIER,Aquatic Activity,2026-06-21,9 to 9.30,SwimFarm
 Teaching Pool,Simon,Sunday,AURORA,Aquatic Activity,2026-06-21,9 to 9.30,SwimFarm
-Teaching Pool,Adam Ab,Sunday,AURORA,Aquatic Activity,2026-06-21,9.30 to 10.15,SwimFarm
+Teaching Pool,Adam Ab,Sunday,AURORA,Multi-Activity,2026-06-21,9.30 to 10.15,SwimFarm
 Room 2,Jack S,Sunday,BISMARK,Multi-Activity,2026-06-21,9.30 to 10.15,SwimFarm
 Room 2,Jack W,Sunday,JOHN,Multi-Activity,2026-06-21,9.30 to 10.15,SwimFarm
-Teaching Pool,Samer,Sunday,JAVIER,Aquatic Activity,2026-06-21,9.30 to 10.15,SwimFarm
+Teaching Pool,Samer,Sunday,JAVIER,Multi-Activity,2026-06-21,9.30 to 10.15,SwimFarm
 Room 2,Samer,Sunday,GIUSEPPE,Multi-Activity,2026-06-21,9.30 to 10.15,SwimFarm
 Hub Room,Timi,Monday,"RAUL, CARLOS",Day Centre,2026-06-22,1 to 3,SwimFarm
 Both Pools,ACAT,Monday,ROBERTO,Day Centre,2026-06-22,11 to 12,SwimFarm
@@ -756,39 +756,39 @@ Wall,Zakariya,Sunday,CARLOS,Climbing Activity,2026-06-28,1 to 2,Westway
 Teaching Pool,Adaam Ah,Sunday,ROBERTO,Multi-Activity,2026-06-28,1.15 to 2,SwimFarm
 Room 2,Amaar Ah,Sunday,BISMARK,Multi-Activity,2026-06-28,1.15 to 2,SwimFarm
 Room 2,Aydaan Ah,Sunday,JOHN,Multi-Activity,2026-06-28,1.15 to 2,SwimFarm
-Teaching Pool,Erik,Sunday,AURORA,Aquatic Activity,2026-06-28,1.15 to 2,SwimFarm
-Teaching Pool,Haneef,Sunday,JAVIER,Aquatic Activity,2026-06-28,1.15 to 2,SwimFarm
+Teaching Pool,Erik,Sunday,AURORA,Multi-Activity,2026-06-28,1.15 to 2,SwimFarm
+Teaching Pool,Haneef,Sunday,JAVIER,Multi-Activity,2026-06-28,1.15 to 2,SwimFarm
 Room 2,Rayyan Fi,Sunday,GIUSEPPE,Multi-Activity,2026-06-28,1.15 to 2,SwimFarm
 Wall,Eiji,Sunday,ALEX,Climbing Activity,2026-06-28,10 to 11,Westway
 Wall,Hazem,Sunday,CARLOS,Climbing Activity,2026-06-28,10 to 11,Westway
 Room 2,Adam Ab,Sunday,JOHN,Multi-Activity,2026-06-28,10.15 to 11,SwimFarm
-Teaching Pool,Jack S,Sunday,ROBERTO,Aquatic Activity,2026-06-28,10.15 to 11,SwimFarm
-Teaching Pool,Jack W,Sunday,AURORA,Aquatic Activity,2026-06-28,10.15 to 11,SwimFarm
+Teaching Pool,Jack S,Sunday,ROBERTO,Multi-Activity,2026-06-28,10.15 to 11,SwimFarm
+Teaching Pool,Jack W,Sunday,AURORA,Multi-Activity,2026-06-28,10.15 to 11,SwimFarm
 Room 2,Yusuf Ah,Sunday,BISMARK,Multi-Activity,2026-06-28,10.15 to 11,SwimFarm
-Teaching Pool,Zaid,Sunday,JAVIER,Aquatic Activity,2026-06-28,10.15 to 11,SwimFarm
+Teaching Pool,Zaid,Sunday,JAVIER,Multi-Activity,2026-06-28,10.15 to 11,SwimFarm
 Room 2,Zaid,Sunday,GIUSEPPE,Multi-Activity,2026-06-28,10.15 to 11,SwimFarm
-Teaching Pool,Arthur Ma,Sunday,AURORA,Aquatic Activity,2026-06-28,11 to 11.45,SwimFarm
+Teaching Pool,Arthur Ma,Sunday,AURORA,Multi-Activity,2026-06-28,11 to 11.45,SwimFarm
 Room 2,Arthur Mo,Sunday,BISMARK,Multi-Activity,2026-06-28,11 to 11.45,SwimFarm
 Room 2,Cyrus,Sunday,JOHN,Multi-Activity,2026-06-28,11 to 11.45,SwimFarm
 Room 2,Eiji,Sunday,GIUSEPPE,Multi-Activity,2026-06-28,11 to 11.45,SwimFarm
-Teaching Pool,Gabriel,Sunday,ROBERTO,Aquatic Activity,2026-06-28,11 to 11.45,SwimFarm
-Teaching Pool,Hazem,Sunday,JAVIER,Aquatic Activity,2026-06-28,11 to 11.45,SwimFarm
+Teaching Pool,Gabriel,Sunday,ROBERTO,Multi-Activity,2026-06-28,11 to 11.45,SwimFarm
+Teaching Pool,Hazem,Sunday,JAVIER,Multi-Activity,2026-06-28,11 to 11.45,SwimFarm
 Wall,Yusef,Sunday,ALEX,Climbing Activity,2026-06-28,11 to 12,Westway
 Wall,Zaid,Sunday,CARLOS,Climbing Activity,2026-06-28,11 to 12,Westway
 Room 2,Arthur Ma,Sunday,JOHN,Multi-Activity,2026-06-28,11.45 to 12.30,SwimFarm
-Teaching Pool,Arthur Mo,Sunday,ROBERTO,Aquatic Activity,2026-06-28,11.45 to 12.30,SwimFarm
-Teaching Pool,Cyrus,Sunday,AURORA,Aquatic Activity,2026-06-28,11.45 to 12.30,SwimFarm
-Teaching Pool,Eiji,Sunday,JAVIER,Aquatic Activity,2026-06-28,11.45 to 12.30,SwimFarm
+Teaching Pool,Arthur Mo,Sunday,ROBERTO,Multi-Activity,2026-06-28,11.45 to 12.30,SwimFarm
+Teaching Pool,Cyrus,Sunday,AURORA,Multi-Activity,2026-06-28,11.45 to 12.30,SwimFarm
+Teaching Pool,Eiji,Sunday,JAVIER,Multi-Activity,2026-06-28,11.45 to 12.30,SwimFarm
 Room 2,Gabriel,Sunday,BISMARK,Multi-Activity,2026-06-28,11.45 to 12.30,SwimFarm
 Room 2,Hazem,Sunday,GIUSEPPE,Multi-Activity,2026-06-28,11.45 to 12.30,SwimFarm
 Wall,Scott,Sunday,ALEX,Climbing Activity,2026-06-28,12 to 1,Westway
 Wall,Serine,Sunday,CARLOS,Climbing Activity,2026-06-28,12 to 1,Westway
-Room 2,Adaam Ah,Sunday,BISMARK,Multi-Activity,2026-06-28,12 to 1.15,SwimFarm
-Teaching Pool,Amaar Ah,Sunday,ROBERTO,Aquatic Activity,2026-06-28,12.30 to 1.15,SwimFarm
-Teaching Pool,Aydaan Ah,Sunday,AURORA,Aquatic Activity,2026-06-28,12.30 to 1.15,SwimFarm
+Room 2,Adaam Ah,Sunday,BISMARK,Multi-Activity,2026-06-28,12.30 to 1.15,SwimFarm
+Teaching Pool,Amaar Ah,Sunday,ROBERTO,Multi-Activity,2026-06-28,12.30 to 1.15,SwimFarm
+Teaching Pool,Aydaan Ah,Sunday,AURORA,Multi-Activity,2026-06-28,12.30 to 1.15,SwimFarm
 Room 2,Erik,Sunday,JOHN,Multi-Activity,2026-06-28,12.30 to 1.15,SwimFarm
 Room 2,Haneef,Sunday,GIUSEPPE,Multi-Activity,2026-06-28,12.30 to 1.15,SwimFarm
-Teaching Pool,Rayyan Fi,Sunday,JAVIER,Aquatic Activity,2026-06-28,12.30 to 1.15,SwimFarm
+Teaching Pool,Rayyan Fi,Sunday,JAVIER,Multi-Activity,2026-06-28,12.30 to 1.15,SwimFarm
 Teaching Pool,Max,Sunday,JAVIER,Aquatic Activity,2026-06-28,2 to 2.30,SwimFarm
 Teaching Pool,Rodin,Sunday,ROBERTO,Aquatic Activity,2026-06-28,2 to 2.30,SwimFarm
 Teaching Pool,Zakariya,Sunday,AURORA,Aquatic Activity,2026-06-28,2 to 2.30,SwimFarm
@@ -800,10 +800,10 @@ Teaching Pool,Yoan,Sunday,ROBERTO,Aquatic Activity,2026-06-28,2.30 to 3,SwimFarm
 Teaching Pool,Yusuf,Sunday,ROBERTO,Aquatic Activity,2026-06-28,9 to 10.15,SwimFarm
 Teaching Pool,Shire,Sunday,JAVIER,Aquatic Activity,2026-06-28,9 to 9.30,SwimFarm
 Teaching Pool,Simon,Sunday,AURORA,Aquatic Activity,2026-06-28,9 to 9.30,SwimFarm
-Teaching Pool,Adam Ab,Sunday,AURORA,Aquatic Activity,2026-06-28,9.30 to 10.15,SwimFarm
+Teaching Pool,Adam Ab,Sunday,AURORA,Multi-Activity,2026-06-28,9.30 to 10.15,SwimFarm
 Room 2,Jack S,Sunday,BISMARK,Multi-Activity,2026-06-28,9.30 to 10.15,SwimFarm
 Room 2,Jack W,Sunday,JOHN,Multi-Activity,2026-06-28,9.30 to 10.15,SwimFarm
-Teaching Pool,Samer,Sunday,JAVIER,Aquatic Activity,2026-06-28,9.30 to 10.15,SwimFarm
+Teaching Pool,Samer,Sunday,JAVIER,Multi-Activity,2026-06-28,9.30 to 10.15,SwimFarm
 Room 2,Samer,Sunday,GIUSEPPE,Multi-Activity,2026-06-28,9.30 to 10.15,SwimFarm
 Hub Room,Timi,Monday,"RAUL, CARLOS",Day Centre,2026-06-29,1 to 3,SwimFarm
 Both Pools,ACAT,Monday,ROBERTO,Day Centre,2026-06-29,11 to 12,SwimFarm
@@ -911,39 +911,39 @@ Wall,Zakariya,Sunday,CARLOS,Climbing Activity,2026-07-05,1 to 2,Westway
 Teaching Pool,Adaam Ah,Sunday,ROBERTO,Multi-Activity,2026-07-05,1.15 to 2,SwimFarm
 Room 2,Amaar Ah,Sunday,BISMARK,Multi-Activity,2026-07-05,1.15 to 2,SwimFarm
 Room 2,Aydaan Ah,Sunday,JOHN,Multi-Activity,2026-07-05,1.15 to 2,SwimFarm
-Teaching Pool,Erik,Sunday,AURORA,Aquatic Activity,2026-07-05,1.15 to 2,SwimFarm
-Teaching Pool,Haneef,Sunday,JAVIER,Aquatic Activity,2026-07-05,1.15 to 2,SwimFarm
+Teaching Pool,Erik,Sunday,AURORA,Multi-Activity,2026-07-05,1.15 to 2,SwimFarm
+Teaching Pool,Haneef,Sunday,JAVIER,Multi-Activity,2026-07-05,1.15 to 2,SwimFarm
 Room 2,Rayyan Fi,Sunday,GIUSEPPE,Multi-Activity,2026-07-05,1.15 to 2,SwimFarm
 Wall,Eiji,Sunday,ALEX,Climbing Activity,2026-07-05,10 to 11,Westway
 Wall,Hazem,Sunday,CARLOS,Climbing Activity,2026-07-05,10 to 11,Westway
 Room 2,Adam Ab,Sunday,JOHN,Multi-Activity,2026-07-05,10.15 to 11,SwimFarm
-Teaching Pool,Jack S,Sunday,ROBERTO,Aquatic Activity,2026-07-05,10.15 to 11,SwimFarm
-Teaching Pool,Jack W,Sunday,AURORA,Aquatic Activity,2026-07-05,10.15 to 11,SwimFarm
+Teaching Pool,Jack S,Sunday,ROBERTO,Multi-Activity,2026-07-05,10.15 to 11,SwimFarm
+Teaching Pool,Jack W,Sunday,AURORA,Multi-Activity,2026-07-05,10.15 to 11,SwimFarm
 Room 2,Yusuf Ah,Sunday,BISMARK,Multi-Activity,2026-07-05,10.15 to 11,SwimFarm
-Teaching Pool,Zaid,Sunday,JAVIER,Aquatic Activity,2026-07-05,10.15 to 11,SwimFarm
+Teaching Pool,Zaid,Sunday,JAVIER,Multi-Activity,2026-07-05,10.15 to 11,SwimFarm
 Room 2,Zaid,Sunday,GIUSEPPE,Multi-Activity,2026-07-05,10.15 to 11,SwimFarm
-Teaching Pool,Arthur Ma,Sunday,AURORA,Aquatic Activity,2026-07-05,11 to 11.45,SwimFarm
+Teaching Pool,Arthur Ma,Sunday,AURORA,Multi-Activity,2026-07-05,11 to 11.45,SwimFarm
 Room 2,Arthur Mo,Sunday,BISMARK,Multi-Activity,2026-07-05,11 to 11.45,SwimFarm
 Room 2,Cyrus,Sunday,JOHN,Multi-Activity,2026-07-05,11 to 11.45,SwimFarm
 Room 2,Eiji,Sunday,GIUSEPPE,Multi-Activity,2026-07-05,11 to 11.45,SwimFarm
-Teaching Pool,Gabriel,Sunday,ROBERTO,Aquatic Activity,2026-07-05,11 to 11.45,SwimFarm
-Teaching Pool,Hazem,Sunday,JAVIER,Aquatic Activity,2026-07-05,11 to 11.45,SwimFarm
+Teaching Pool,Gabriel,Sunday,ROBERTO,Multi-Activity,2026-07-05,11 to 11.45,SwimFarm
+Teaching Pool,Hazem,Sunday,JAVIER,Multi-Activity,2026-07-05,11 to 11.45,SwimFarm
 Wall,Yusef,Sunday,ALEX,Climbing Activity,2026-07-05,11 to 12,Westway
 Wall,Zaid,Sunday,CARLOS,Climbing Activity,2026-07-05,11 to 12,Westway
 Room 2,Arthur Ma,Sunday,JOHN,Multi-Activity,2026-07-05,11.45 to 12.30,SwimFarm
-Teaching Pool,Arthur Mo,Sunday,ROBERTO,Aquatic Activity,2026-07-05,11.45 to 12.30,SwimFarm
-Teaching Pool,Cyrus,Sunday,AURORA,Aquatic Activity,2026-07-05,11.45 to 12.30,SwimFarm
-Teaching Pool,Eiji,Sunday,JAVIER,Aquatic Activity,2026-07-05,11.45 to 12.30,SwimFarm
+Teaching Pool,Arthur Mo,Sunday,ROBERTO,Multi-Activity,2026-07-05,11.45 to 12.30,SwimFarm
+Teaching Pool,Cyrus,Sunday,AURORA,Multi-Activity,2026-07-05,11.45 to 12.30,SwimFarm
+Teaching Pool,Eiji,Sunday,JAVIER,Multi-Activity,2026-07-05,11.45 to 12.30,SwimFarm
 Room 2,Gabriel,Sunday,BISMARK,Multi-Activity,2026-07-05,11.45 to 12.30,SwimFarm
 Room 2,Hazem,Sunday,GIUSEPPE,Multi-Activity,2026-07-05,11.45 to 12.30,SwimFarm
 Wall,Scott,Sunday,ALEX,Climbing Activity,2026-07-05,12 to 1,Westway
 Wall,Serine,Sunday,CARLOS,Climbing Activity,2026-07-05,12 to 1,Westway
-Room 2,Adaam Ah,Sunday,BISMARK,Multi-Activity,2026-07-05,12 to 1.15,SwimFarm
-Teaching Pool,Amaar Ah,Sunday,ROBERTO,Aquatic Activity,2026-07-05,12.30 to 1.15,SwimFarm
-Teaching Pool,Aydaan Ah,Sunday,AURORA,Aquatic Activity,2026-07-05,12.30 to 1.15,SwimFarm
+Room 2,Adaam Ah,Sunday,BISMARK,Multi-Activity,2026-07-05,12.30 to 1.15,SwimFarm
+Teaching Pool,Amaar Ah,Sunday,ROBERTO,Multi-Activity,2026-07-05,12.30 to 1.15,SwimFarm
+Teaching Pool,Aydaan Ah,Sunday,AURORA,Multi-Activity,2026-07-05,12.30 to 1.15,SwimFarm
 Room 2,Erik,Sunday,JOHN,Multi-Activity,2026-07-05,12.30 to 1.15,SwimFarm
 Room 2,Haneef,Sunday,GIUSEPPE,Multi-Activity,2026-07-05,12.30 to 1.15,SwimFarm
-Teaching Pool,Rayyan Fi,Sunday,JAVIER,Aquatic Activity,2026-07-05,12.30 to 1.15,SwimFarm
+Teaching Pool,Rayyan Fi,Sunday,JAVIER,Multi-Activity,2026-07-05,12.30 to 1.15,SwimFarm
 Teaching Pool,Max,Sunday,JAVIER,Aquatic Activity,2026-07-05,2 to 2.30,SwimFarm
 Teaching Pool,Rodin,Sunday,ROBERTO,Aquatic Activity,2026-07-05,2 to 2.30,SwimFarm
 Teaching Pool,Zakariya,Sunday,AURORA,Aquatic Activity,2026-07-05,2 to 2.30,SwimFarm
@@ -955,10 +955,10 @@ Teaching Pool,Yoan,Sunday,ROBERTO,Aquatic Activity,2026-07-05,2.30 to 3,SwimFarm
 Teaching Pool,Yusuf,Sunday,ROBERTO,Aquatic Activity,2026-07-05,9 to 10.15,SwimFarm
 Teaching Pool,Shire,Sunday,JAVIER,Aquatic Activity,2026-07-05,9 to 9.30,SwimFarm
 Teaching Pool,Simon,Sunday,AURORA,Aquatic Activity,2026-07-05,9 to 9.30,SwimFarm
-Teaching Pool,Adam Ab,Sunday,AURORA,Aquatic Activity,2026-07-05,9.30 to 10.15,SwimFarm
+Teaching Pool,Adam Ab,Sunday,AURORA,Multi-Activity,2026-07-05,9.30 to 10.15,SwimFarm
 Room 2,Jack S,Sunday,BISMARK,Multi-Activity,2026-07-05,9.30 to 10.15,SwimFarm
 Room 2,Jack W,Sunday,JOHN,Multi-Activity,2026-07-05,9.30 to 10.15,SwimFarm
-Teaching Pool,Samer,Sunday,JAVIER,Aquatic Activity,2026-07-05,9.30 to 10.15,SwimFarm
+Teaching Pool,Samer,Sunday,JAVIER,Multi-Activity,2026-07-05,9.30 to 10.15,SwimFarm
 Room 2,Samer,Sunday,GIUSEPPE,Multi-Activity,2026-07-05,9.30 to 10.15,SwimFarm
 Hub Room,Timi,Monday,"RAUL, CARLOS",Day Centre,2026-07-06,1 to 3,SwimFarm
 Both Pools,ACAT,Monday,ROBERTO,Day Centre,2026-07-06,11 to 12,SwimFarm
@@ -1066,39 +1066,39 @@ Wall,Zakariya,Sunday,CARLOS,Climbing Activity,2026-07-12,1 to 2,Westway
 Teaching Pool,Adaam Ah,Sunday,ROBERTO,Multi-Activity,2026-07-12,1.15 to 2,SwimFarm
 Room 2,Amaar Ah,Sunday,BISMARK,Multi-Activity,2026-07-12,1.15 to 2,SwimFarm
 Room 2,Aydaan Ah,Sunday,BERTA,Multi-Activity,2026-07-12,1.15 to 2,SwimFarm
-Teaching Pool,Erik,Sunday,AURORA,Aquatic Activity,2026-07-12,1.15 to 2,SwimFarm
-Teaching Pool,Haneef,Sunday,JAVIER,Aquatic Activity,2026-07-12,1.15 to 2,SwimFarm
+Teaching Pool,Erik,Sunday,AURORA,Multi-Activity,2026-07-12,1.15 to 2,SwimFarm
+Teaching Pool,Haneef,Sunday,JAVIER,Multi-Activity,2026-07-12,1.15 to 2,SwimFarm
 Room 2,Rayyan Fi,Sunday,GIUSEPPE,Multi-Activity,2026-07-12,1.15 to 2,SwimFarm
 Wall,Eiji,Sunday,ALEX,Climbing Activity,2026-07-12,10 to 11,Westway
 Wall,Hazem,Sunday,CARLOS,Climbing Activity,2026-07-12,10 to 11,Westway
 Room 2,Adam Ab,Sunday,BERTA,Multi-Activity,2026-07-12,10.15 to 11,SwimFarm
-Teaching Pool,Jack S,Sunday,ROBERTO,Aquatic Activity,2026-07-12,10.15 to 11,SwimFarm
-Teaching Pool,Jack W,Sunday,AURORA,Aquatic Activity,2026-07-12,10.15 to 11,SwimFarm
+Teaching Pool,Jack S,Sunday,ROBERTO,Multi-Activity,2026-07-12,10.15 to 11,SwimFarm
+Teaching Pool,Jack W,Sunday,AURORA,Multi-Activity,2026-07-12,10.15 to 11,SwimFarm
 Room 2,Yusuf Ah,Sunday,BISMARK,Multi-Activity,2026-07-12,10.15 to 11,SwimFarm
-Teaching Pool,Zaid,Sunday,JAVIER,Aquatic Activity,2026-07-12,10.15 to 11,SwimFarm
+Teaching Pool,Zaid,Sunday,JAVIER,Multi-Activity,2026-07-12,10.15 to 11,SwimFarm
 Room 2,Zaid,Sunday,GIUSEPPE,Multi-Activity,2026-07-12,10.15 to 11,SwimFarm
-Teaching Pool,Arthur Ma,Sunday,AURORA,Aquatic Activity,2026-07-12,11 to 11.45,SwimFarm
+Teaching Pool,Arthur Ma,Sunday,AURORA,Multi-Activity,2026-07-12,11 to 11.45,SwimFarm
 Room 2,Arthur Mo,Sunday,BISMARK,Multi-Activity,2026-07-12,11 to 11.45,SwimFarm
 Room 2,Cyrus,Sunday,BERTA,Multi-Activity,2026-07-12,11 to 11.45,SwimFarm
 Room 2,Eiji,Sunday,GIUSEPPE,Multi-Activity,2026-07-12,11 to 11.45,SwimFarm
-Teaching Pool,Gabriel,Sunday,ROBERTO,Aquatic Activity,2026-07-12,11 to 11.45,SwimFarm
-Teaching Pool,Hazem,Sunday,JAVIER,Aquatic Activity,2026-07-12,11 to 11.45,SwimFarm
+Teaching Pool,Gabriel,Sunday,ROBERTO,Multi-Activity,2026-07-12,11 to 11.45,SwimFarm
+Teaching Pool,Hazem,Sunday,JAVIER,Multi-Activity,2026-07-12,11 to 11.45,SwimFarm
 Wall,Yusef,Sunday,ALEX,Climbing Activity,2026-07-12,11 to 12,Westway
 Wall,Zaid,Sunday,CARLOS,Climbing Activity,2026-07-12,11 to 12,Westway
 Room 2,Arthur Ma,Sunday,BERTA,Multi-Activity,2026-07-12,11.45 to 12.30,SwimFarm
-Teaching Pool,Arthur Mo,Sunday,ROBERTO,Aquatic Activity,2026-07-12,11.45 to 12.30,SwimFarm
-Teaching Pool,Cyrus,Sunday,AURORA,Aquatic Activity,2026-07-12,11.45 to 12.30,SwimFarm
-Teaching Pool,Eiji,Sunday,JAVIER,Aquatic Activity,2026-07-12,11.45 to 12.30,SwimFarm
+Teaching Pool,Arthur Mo,Sunday,ROBERTO,Multi-Activity,2026-07-12,11.45 to 12.30,SwimFarm
+Teaching Pool,Cyrus,Sunday,AURORA,Multi-Activity,2026-07-12,11.45 to 12.30,SwimFarm
+Teaching Pool,Eiji,Sunday,JAVIER,Multi-Activity,2026-07-12,11.45 to 12.30,SwimFarm
 Room 2,Gabriel,Sunday,BISMARK,Multi-Activity,2026-07-12,11.45 to 12.30,SwimFarm
 Room 2,Hazem,Sunday,GIUSEPPE,Multi-Activity,2026-07-12,11.45 to 12.30,SwimFarm
 Wall,Scott,Sunday,ALEX,Climbing Activity,2026-07-12,12 to 1,Westway
 Wall,Serine,Sunday,CARLOS,Climbing Activity,2026-07-12,12 to 1,Westway
-Room 2,Adaam Ah,Sunday,BISMARK,Multi-Activity,2026-07-12,12 to 1.15,SwimFarm
-Teaching Pool,Amaar Ah,Sunday,ROBERTO,Aquatic Activity,2026-07-12,12.30 to 1.15,SwimFarm
-Teaching Pool,Aydaan Ah,Sunday,AURORA,Aquatic Activity,2026-07-12,12.30 to 1.15,SwimFarm
+Room 2,Adaam Ah,Sunday,BISMARK,Multi-Activity,2026-07-12,12.30 to 1.15,SwimFarm
+Teaching Pool,Amaar Ah,Sunday,ROBERTO,Multi-Activity,2026-07-12,12.30 to 1.15,SwimFarm
+Teaching Pool,Aydaan Ah,Sunday,AURORA,Multi-Activity,2026-07-12,12.30 to 1.15,SwimFarm
 Room 2,Erik,Sunday,BERTA,Multi-Activity,2026-07-12,12.30 to 1.15,SwimFarm
 Room 2,Haneef,Sunday,GIUSEPPE,Multi-Activity,2026-07-12,12.30 to 1.15,SwimFarm
-Teaching Pool,Rayyan Fi,Sunday,JAVIER,Aquatic Activity,2026-07-12,12.30 to 1.15,SwimFarm
+Teaching Pool,Rayyan Fi,Sunday,JAVIER,Multi-Activity,2026-07-12,12.30 to 1.15,SwimFarm
 Teaching Pool,Max,Sunday,JAVIER,Aquatic Activity,2026-07-12,2 to 2.30,SwimFarm
 Teaching Pool,Rodin,Sunday,ROBERTO,Aquatic Activity,2026-07-12,2 to 2.30,SwimFarm
 Teaching Pool,Zakariya,Sunday,AURORA,Aquatic Activity,2026-07-12,2 to 2.30,SwimFarm
@@ -1110,10 +1110,10 @@ Teaching Pool,Yoan,Sunday,ROBERTO,Aquatic Activity,2026-07-12,2.30 to 3,SwimFarm
 Teaching Pool,Yusuf,Sunday,ROBERTO,Aquatic Activity,2026-07-12,9 to 10.15,SwimFarm
 Teaching Pool,Shire,Sunday,JAVIER,Aquatic Activity,2026-07-12,9 to 9.30,SwimFarm
 Teaching Pool,Simon,Sunday,AURORA,Aquatic Activity,2026-07-12,9 to 9.30,SwimFarm
-Teaching Pool,Adam Ab,Sunday,AURORA,Aquatic Activity,2026-07-12,9.30 to 10.15,SwimFarm
+Teaching Pool,Adam Ab,Sunday,AURORA,Multi-Activity,2026-07-12,9.30 to 10.15,SwimFarm
 Room 2,Jack S,Sunday,BISMARK,Multi-Activity,2026-07-12,9.30 to 10.15,SwimFarm
 Room 2,Jack W,Sunday,BERTA,Multi-Activity,2026-07-12,9.30 to 10.15,SwimFarm
-Teaching Pool,Samer,Sunday,JAVIER,Aquatic Activity,2026-07-12,9.30 to 10.15,SwimFarm
+Teaching Pool,Samer,Sunday,JAVIER,Multi-Activity,2026-07-12,9.30 to 10.15,SwimFarm
 Room 2,Samer,Sunday,GIUSEPPE,Multi-Activity,2026-07-12,9.30 to 10.15,SwimFarm
 Hub Room,Timi,Monday,"RAUL, CARLOS",Day Centre,2026-07-13,1 to 3,SwimFarm
 Both Pools,ACAT,Monday,ROBERTO,Day Centre,2026-07-13,11 to 12,SwimFarm
@@ -1248,39 +1248,39 @@ Wall,Zakariya,Sunday,CARLOS,Climbing Activity,,1 to 2,Westway
 Teaching Pool,Adaam Ah,Sunday,ROBERTO,Multi-Activity,,1.15 to 2,SwimFarm
 Room 2,Amaar Ah,Sunday,BISMARK,Multi-Activity,,1.15 to 2,SwimFarm
 Room 2,Aydaan Ah,Sunday,"JOHN, BERTA",Multi-Activity,,1.15 to 2,SwimFarm
-Teaching Pool,Erik,Sunday,AURORA,Aquatic Activity,,1.15 to 2,SwimFarm
-Teaching Pool,Haneef,Sunday,JAVIER,Aquatic Activity,,1.15 to 2,SwimFarm
+Teaching Pool,Erik,Sunday,AURORA,Multi-Activity,,1.15 to 2,SwimFarm
+Teaching Pool,Haneef,Sunday,JAVIER,Multi-Activity,,1.15 to 2,SwimFarm
 Room 2,Rayyan Fi,Sunday,GIUSEPPE,Multi-Activity,,1.15 to 2,SwimFarm
 Wall,Eiji,Sunday,ALEX,Climbing Activity,,10 to 11,Westway
 Wall,Hazem,Sunday,CARLOS,Climbing Activity,,10 to 11,Westway
 Room 2,Adam Ab,Sunday,"JOHN, BERTA",Multi-Activity,,10.15 to 11,SwimFarm
-Teaching Pool,Jack S,Sunday,ROBERTO,Aquatic Activity,,10.15 to 11,SwimFarm
-Teaching Pool,Jack W,Sunday,AURORA,Aquatic Activity,,10.15 to 11,SwimFarm
+Teaching Pool,Jack S,Sunday,ROBERTO,Multi-Activity,,10.15 to 11,SwimFarm
+Teaching Pool,Jack W,Sunday,AURORA,Multi-Activity,,10.15 to 11,SwimFarm
 Room 2,Yusuf Ah,Sunday,BISMARK,Multi-Activity,,10.15 to 11,SwimFarm
-Teaching Pool,Zaid,Sunday,JAVIER,Aquatic Activity,,10.15 to 11,SwimFarm
+Teaching Pool,Zaid,Sunday,JAVIER,Multi-Activity,,10.15 to 11,SwimFarm
 Room 2,Zaid,Sunday,GIUSEPPE,Multi-Activity,,10.15 to 11,SwimFarm
-Teaching Pool,Arthur Ma,Sunday,AURORA,Aquatic Activity,,11 to 11.45,SwimFarm
+Teaching Pool,Arthur Ma,Sunday,AURORA,Multi-Activity,,11 to 11.45,SwimFarm
 Room 2,Arthur Mo,Sunday,BISMARK,Multi-Activity,,11 to 11.45,SwimFarm
 Room 2,Cyrus,Sunday,"JOHN, BERTA",Multi-Activity,,11 to 11.45,SwimFarm
 Room 2,Eiji,Sunday,GIUSEPPE,Multi-Activity,,11 to 11.45,SwimFarm
-Teaching Pool,Gabriel,Sunday,ROBERTO,Aquatic Activity,,11 to 11.45,SwimFarm
-Teaching Pool,Hazem,Sunday,JAVIER,Aquatic Activity,,11 to 11.45,SwimFarm
+Teaching Pool,Gabriel,Sunday,ROBERTO,Multi-Activity,,11 to 11.45,SwimFarm
+Teaching Pool,Hazem,Sunday,JAVIER,Multi-Activity,,11 to 11.45,SwimFarm
 Wall,Yusef,Sunday,ALEX,Climbing Activity,,11 to 12,Westway
 Wall,Zaid,Sunday,CARLOS,Climbing Activity,,11 to 12,Westway
 Room 2,Arthur Ma,Sunday,"JOHN, BERTA",Multi-Activity,,11.45 to 12.30,SwimFarm
-Teaching Pool,Arthur Mo,Sunday,ROBERTO,Aquatic Activity,,11.45 to 12.30,SwimFarm
-Teaching Pool,Cyrus,Sunday,AURORA,Aquatic Activity,,11.45 to 12.30,SwimFarm
-Teaching Pool,Eiji,Sunday,JAVIER,Aquatic Activity,,11.45 to 12.30,SwimFarm
+Teaching Pool,Arthur Mo,Sunday,ROBERTO,Multi-Activity,,11.45 to 12.30,SwimFarm
+Teaching Pool,Cyrus,Sunday,AURORA,Multi-Activity,,11.45 to 12.30,SwimFarm
+Teaching Pool,Eiji,Sunday,JAVIER,Multi-Activity,,11.45 to 12.30,SwimFarm
 Room 2,Gabriel,Sunday,BISMARK,Multi-Activity,,11.45 to 12.30,SwimFarm
 Room 2,Hazem,Sunday,GIUSEPPE,Multi-Activity,,11.45 to 12.30,SwimFarm
 Wall,Scott,Sunday,ALEX,Climbing Activity,,12 to 1,Westway
 Wall,Serine,Sunday,CARLOS,Climbing Activity,,12 to 1,Westway
-Room 2,Adaam Ah,Sunday,BISMARK,Multi-Activity,,12 to 1.15,SwimFarm
-Teaching Pool,Amaar Ah,Sunday,ROBERTO,Aquatic Activity,,12.30 to 1.15,SwimFarm
-Teaching Pool,Aydaan Ah,Sunday,AURORA,Aquatic Activity,,12.30 to 1.15,SwimFarm
+Room 2,Adaam Ah,Sunday,BISMARK,Multi-Activity,,12.30 to 1.15,SwimFarm
+Teaching Pool,Amaar Ah,Sunday,ROBERTO,Multi-Activity,,12.30 to 1.15,SwimFarm
+Teaching Pool,Aydaan Ah,Sunday,AURORA,Multi-Activity,,12.30 to 1.15,SwimFarm
 Room 2,Erik,Sunday,"JOHN, BERTA",Multi-Activity,,12.30 to 1.15,SwimFarm
 Room 2,Haneef,Sunday,GIUSEPPE,Multi-Activity,,12.30 to 1.15,SwimFarm
-Teaching Pool,Rayyan Fi,Sunday,JAVIER,Aquatic Activity,,12.30 to 1.15,SwimFarm
+Teaching Pool,Rayyan Fi,Sunday,JAVIER,Multi-Activity,,12.30 to 1.15,SwimFarm
 Teaching Pool,Max,Sunday,JAVIER,Aquatic Activity,,2 to 2.30,SwimFarm
 Teaching Pool,Rodin,Sunday,ROBERTO,Aquatic Activity,,2 to 2.30,SwimFarm
 Teaching Pool,Zakariya,Sunday,AURORA,Aquatic Activity,,2 to 2.30,SwimFarm
@@ -1292,10 +1292,10 @@ Teaching Pool,Yoan,Sunday,ROBERTO,Aquatic Activity,,2.30 to 3,SwimFarm
 Teaching Pool,Yusuf,Sunday,ROBERTO,Aquatic Activity,,9 to 10.15,SwimFarm
 Teaching Pool,Shire,Sunday,JAVIER,Aquatic Activity,,9 to 9.30,SwimFarm
 Teaching Pool,Simon,Sunday,AURORA,Aquatic Activity,,9 to 9.30,SwimFarm
-Teaching Pool,Adam Ab,Sunday,AURORA,Aquatic Activity,,9.30 to 10.15,SwimFarm
+Teaching Pool,Adam Ab,Sunday,AURORA,Multi-Activity,,9.30 to 10.15,SwimFarm
 Room 2,Jack S,Sunday,BISMARK,Multi-Activity,,9.30 to 10.15,SwimFarm
 Room 2,Jack W,Sunday,"JOHN, BERTA",Multi-Activity,,9.30 to 10.15,SwimFarm
-Teaching Pool,Samer,Sunday,JAVIER,Aquatic Activity,,9.30 to 10.15,SwimFarm
+Teaching Pool,Samer,Sunday,JAVIER,Multi-Activity,,9.30 to 10.15,SwimFarm
 Room 2,Samer,Sunday,GIUSEPPE,Multi-Activity,,9.30 to 10.15,SwimFarm
 Hub Room,Fadi,Thursday,ROBERTO,Day Centre,,12.30 to 3,SwimFarm
 Hub Room,Fadi,Thursday,RAUL,Day Centre,,12.30 to 3,SwimFarm

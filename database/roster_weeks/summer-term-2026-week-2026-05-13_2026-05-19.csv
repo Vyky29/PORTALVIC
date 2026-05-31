@@ -46,7 +46,7 @@ date,weekday,client,service,time_slot,instructor,venue,notes,session_key,feedbac
 2026-05-16,Saturday,Saaib,Aquatic Activity,12 to 12.30,YOUSSEF,Acton,Teaching Pool,2026-05-16|12:00|saaib,2026-05-16|12:00|saaib
 2026-05-17,Sunday,Shire,Aquatic Activity,9 to 9.30,JAVIER,SwimFarm,Small Pool,2026-05-17|09:00|shire,2026-05-17|09:00|shire
 2026-05-17,Sunday,Simon,Aquatic Activity,9 to 9.30,AURORA,SwimFarm,Small Pool,2026-05-17|09:00|simon,2026-05-17|09:00|simon
-2026-05-17,Sunday,Yusuf Ah,Aquatic Activity,9 to 9.30,ROBERTO,SwimFarm,Small Pool,2026-05-17|09:00|yusuf_ah,2026-05-17|09:00|yusuf_ah
+2026-05-17,Sunday,Yusuf Ah,Multi-Activity,9 to 9.30,ROBERTO,SwimFarm,Small Pool,2026-05-17|09:00|yusuf_ah,2026-05-17|09:00|yusuf_ah
 2026-05-17,Sunday,Adam Ab,Multi-Activity,9.30 to 10.15,AURORA,SwimFarm,Big Pool,2026-05-17|09:30|adam_ab|big_pool,2026-05-17|adam_ab|09:30|multi-activity|big_pool
 2026-05-17,Sunday,Jack S,Multi-Activity,9.30 to 10.15,GODSWAY,SwimFarm,Hub Room,2026-05-17|09:30|jack_s|hub_room,2026-05-17|jack_s|09:30|multi-activity|hub_room
 2026-05-17,Sunday,Jack W,Multi-Activity,9.30 to 10.15,JOHN,SwimFarm,Hub Room,2026-05-17|09:30|jack_w|hub_room,2026-05-17|jack_w|09:30|multi-activity|hub_room
@@ -77,7 +77,7 @@ date,weekday,client,service,time_slot,instructor,venue,notes,session_key,feedbac
 2026-05-17,Sunday,Hazem,Multi-Activity,11.45 to 12.30,GIUSEPPE,SwimFarm,Hub Room,2026-05-17|11:45|hazem|hub_room,2026-05-17|hazem|11:45|multi-activity|hub_room
 2026-05-17,Sunday,Scott,Climbing Activity,12 to 1,BISMARK,Westway,Climbing Wall,2026-05-17|12:00|scott,2026-05-17|12:00|scott
 2026-05-17,Sunday,Serine,Climbing Activity,12 to 1,CARLOS,Westway,Climbing Wall,2026-05-17|12:00|serine,2026-05-17|12:00|serine
-2026-05-17,Sunday,Adaam Ah,Multi-Activity,12 to 1.15,GODSWAY,SwimFarm,Hub Room,2026-05-17|12:30|adaam_ah|hub_room,2026-05-17|adaam_ah|12:30|multi-activity|hub_room
+2026-05-17,Sunday,Adaam Ah,Multi-Activity,12.30 to 1.15,GODSWAY,SwimFarm,Hub Room,2026-05-17|12:30|adaam_ah|hub_room,2026-05-17|adaam_ah|12:30|multi-activity|hub_room
 2026-05-17,Sunday,Amaar Ah,Multi-Activity,12.30 to 1.15,ROBERTO,SwimFarm,Big Pool,2026-05-17|12:30|amaar_ah|big_pool,2026-05-17|amaar_ah|12:30|multi-activity|big_pool
 2026-05-17,Sunday,Aydaan Ah,Multi-Activity,12.30 to 1.15,AURORA,SwimFarm,Big Pool,2026-05-17|12:30|aydaan_ah|big_pool,2026-05-17|aydaan_ah|12:30|multi-activity|big_pool
 2026-05-17,Sunday,Erik,Multi-Activity,12.30 to 1.15,JOHN,SwimFarm,Hub Room,2026-05-17|12:30|erik|hub_room,2026-05-17|erik|12:30|multi-activity|hub_room
