@@ -12186,35 +12186,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '</div>'
       );
     }
+    /** Registration filter options: the participant registration-form fields workers see (Clients Info sections — no family/contact data). */
     function paxContactsRegQuestionOptionsHtml(){
-      var cat = portalParticipantRegCatalog();
-      var list = cat.parent || [];
-      return '<option value="all">All</option>'+list.map(function(q){
-        return '<option value="'+esc(q.id)+'">'+esc(q.text)+'</option>';
+      var labels = (typeof ADMIN_CLIENTS_INFO_SECTION_LABELS !== 'undefined' && ADMIN_CLIENTS_INFO_SECTION_LABELS) ? ADMIN_CLIENTS_INFO_SECTION_LABELS : [];
+      return '<option value="all">All</option>'+labels.map(function(lab, ix){
+        return '<option value="'+esc(String(ix + 1))+'">'+esc(lab)+'</option>';
       }).join('');
     }
-    function paxContactsRegCatalogParentEntryById(qid){
-      var list = (portalParticipantRegCatalog().parent) || [];
-      for(var i = 0; i < list.length; i++){
-        if(list[i].id === qid) return list[i];
-      }
-      return null;
-    }
-    /** List filter: MOCK answer on p.regQsParent[qid], else keyword match in Clients Info <code>client_info</code>. */
+    /** List filter: participant has a non-empty answer for this registration section (Clients Info <code>client_info</code>). */
     function paxContactsRegQuestionHasAnswer(p, qid){
       if(!p || !qid || qid === 'all') return true;
-      var bucket = p.regQsParent || {};
-      if(String(bucket[qid] || '').trim()) return true;
+      var n = parseInt(qid, 10);
+      if(!Number.isFinite(n) || n < 1) return false;
       var ci = adminClientsInfoRowForClientDisplayName(p.name);
       if(!ci || !String(ci.client_info || '').trim()) return false;
-      var ent = paxContactsRegCatalogParentEntryById(qid);
-      var kws = ent && ent.keywords;
-      if(!kws || !kws.length) return String(ci.client_info).trim().length >= 40;
-      var blob = String(ci.client_info).toLowerCase();
-      for(var k = 0; k < kws.length; k++){
-        if(blob.indexOf(String(kws[k]).toLowerCase()) >= 0) return true;
-      }
-      return false;
+      var sec = adminParseClientsInfoNumberedSections(String(ci.client_info));
+      return !!(sec && sec[n] && String(sec[n]).trim());
     }
     function paxContactsMatchesBookingStatus(p, bk){
       if(bk === 'all') return true;
@@ -12315,7 +12302,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="pax-contacts-fld"><label for="paxContactsSearch">Search</label><input class="inp" id="paxContactsSearch" type="search" placeholder="Search for a contact" autocomplete="off" /></div>'+
         '<div class="pax-contacts-fld"><label for="paxContactsBookingStatus">Booking status</label><select class="sel" id="paxContactsBookingStatus">'+paxContactsBookingStatusOptionsHtml()+'</select></div>'+
         '<div class="pax-contacts-fld">'+
-        '<label class="muted" for="paxContactsRegQuestion" style="display:block;font-size:11px;font-weight:700;margin-bottom:6px;letter-spacing:.02em">Parent registration question</label>'+
+        '<label class="muted" for="paxContactsRegQuestion" style="display:block;font-size:11px;font-weight:700;margin-bottom:6px;letter-spacing:.02em">Registration question</label>'+
         '<select class="sel" id="paxContactsRegQuestion">'+paxContactsRegQuestionOptionsHtml()+'</select></div>'+
         '</div>'+
         '<p class="pax-contacts-count" id="paxContactsCount">Showing '+String(n)+' contacts</p>'+
