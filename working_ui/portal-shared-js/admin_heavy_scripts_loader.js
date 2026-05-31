@@ -7,14 +7,14 @@
   var SETS = {
     roster: [
       "/portal/term_from_timetable.js?v=20260519-portal-roster",
-      "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260531-aadam-sun-12to2",
+      "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260531-aadam-sun-multi",
       "/portal/clients_info_embed.js?v=20260519-portal-roster",
       "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260519-portal-roster",
     ],
     feedback: [
       "/portal/cancellations_portal_data.js?v=20260528-timi-cancel",
       "/portal/session_feedback_status_portal_data.js?v=20260528-timi-cancel",
-      "/portal/session_feedback_portal_data.js?v=20260528-timi-cancel",
+      "/portal/session_feedback_portal_data.js?v=20260531-adaam-sun-multi",
       "/portal/venue_reviews_portal_data.js?v=20260520",
     ],
     payments: ["/portal/clients_payments_portal_data.js?v=20260507-portalfix"],
