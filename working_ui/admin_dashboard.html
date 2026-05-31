@@ -30,7 +30,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260605-css-extract" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260531-pax-cols-center" />
 </head>
 <body>
   <script>
@@ -11507,6 +11507,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         parentDisplay: parentDisp,
         gender: String(row.gender || '').trim() || '—',
         dobDisplay: String(row.dobDisplay || '').trim() || '—',
+        dobIso: String(row.dobIso || '').trim(),
         ageDisplay: '',
         addressFull: paxContactsFormatAddressFromPortal(row),
         firstBookingDisplay: String(row.firstBookingDisplay || '').trim() || '—',
@@ -12276,24 +12277,51 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }).join('');
       return { svc: svc, slot: slot };
     }
+    /** Current age in whole years from dobIso (preferred) or dd/mm/yyyy display — recomputes every render so it stays correct each year. */
+    function paxContactsAgeYears(p){
+      var d = null;
+      var iso = String((p && p.dobIso) || '').trim();
+      if(/^\d{4}-\d{2}-\d{2}/.test(iso)){
+        d = new Date(iso.slice(0, 10) + 'T00:00:00');
+      } else {
+        var disp = String((p && (p.dobDisplay || (p.reg && p.reg.dobDisplay))) || '').trim();
+        var m = disp.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        if(m) d = new Date(parseInt(m[3], 10), parseInt(m[2], 10) - 1, parseInt(m[1], 10));
+      }
+      if(!d || isNaN(d.getTime())) return null;
+      var now = new Date();
+      var age = now.getFullYear() - d.getFullYear();
+      var mm = now.getMonth() - d.getMonth();
+      if(mm < 0 || (mm === 0 && now.getDate() < d.getDate())) age--;
+      if(age < 0 || age > 130) return null;
+      return age;
+    }
     function paxContactsListRowsHtml(){
       var rows = paxContactsUnifiedList();
       return rows.map(function(p){
         var r = p.reg || {};
-        var phone = esc(r.phone || '—');
-        var em = esc(r.email || '—');
+        var emRaw = String(r.email || '').trim();
+        var phRaw = String(r.phone || '').trim();
         var contact = esc(String(p.parentDisplay || r.carer || '—'));
-        var dob = esc(String(p.dobDisplay || r.dobDisplay || '—'));
+        var dobDisp = String(p.dobDisplay || r.dobDisplay || '').trim();
+        var dobLine = (dobDisp && dobDisp !== '—')
+          ? '<span class="muted">DOB '+esc(dobDisp)+'</span>'
+          : '';
+        var ageY = paxContactsAgeYears(p);
+        var ageCell = (ageY != null) ? String(ageY) : '<span class="muted">—</span>';
+        var emPhoneParts = [];
+        if(emRaw && emRaw !== '—') emPhoneParts.push('<div style="overflow-wrap:break-word">'+esc(emRaw)+'</div>');
+        if(phRaw && phRaw !== '—') emPhoneParts.push('<div style="white-space:nowrap">'+esc(phRaw)+'</div>');
+        var emPhone = emPhoneParts.length ? emPhoneParts.join('') : '<span class="muted">—</span>';
         var cells = paxContactsServiceSlotCells(p);
         return (
           '<tr data-pax-id="'+esc(p.id)+'" data-pax-bk="'+esc(p.bookingStatus || '')+'">'+
-          '<td style="min-width:0"><button type="button" class="pax-contacts-namebtn" data-pax-contacts-open="'+esc(p.id)+'"><strong>'+esc(p.name)+'</strong></button></td>'+
-          '<td style="white-space:nowrap">'+dob+'</td>'+
+          '<td style="min-width:0"><button type="button" class="pax-contacts-namebtn" data-pax-contacts-open="'+esc(p.id)+'"><strong>'+esc(p.name)+'</strong>'+dobLine+'</button></td>'+
+          '<td style="white-space:nowrap">'+ageCell+'</td>'+
           '<td class="pax-contacts-contact" style="min-width:0;max-width:14rem">'+cells.svc+'</td>'+
           '<td class="pax-contacts-contact" style="min-width:0;max-width:16rem">'+cells.slot+'</td>'+
           '<td style="min-width:0;overflow-wrap:break-word">'+contact+'</td>'+
-          '<td class="pax-contacts-contact" style="min-width:0">'+em+'</td>'+
-          '<td style="white-space:nowrap">'+phone+'</td>'+
+          '<td class="pax-contacts-contact" style="min-width:0">'+emPhone+'</td>'+
           '<td class="pax-reg-ans-col" data-pax-ans hidden style="min-width:0;max-width:26rem;white-space:normal;overflow-wrap:break-word"></td>'+
           '</tr>'
         );
@@ -12343,7 +12371,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<button type="button" class="btn btn--ghost btn--sm" id="paxContactsExportBtn" style="display:inline-flex;align-items:center;gap:8px"><svg viewBox="0 0 24 24" width="1.05em" height="1.05em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export to CSV</button>'+
         '</div>'+
         '<div class="pax-contacts-table-wrap"><table class="pax-contacts-tbl" id="paxContactsTbl"><thead><tr>'+
-        '<th>Participant name</th><th>D.O.B</th><th>Service/s</th><th>Time slot/s</th><th>Contact</th><th>Email</th><th>Phone</th>'+
+        '<th>Participant name</th><th>Age</th><th>Service/s</th><th>Time slot/s</th><th>Contact</th><th>Email / phone</th>'+
         '<th class="pax-reg-ans-col" id="paxRegAnsTh" hidden style="min-width:0;max-width:26rem">Registration answer</th>'+
         '</tr></thead><tbody>'+listRows+'</tbody></table></div>'+
         '<div class="pax-contacts-detail" id="paxContactsDetail" aria-live="polite"></div>'
@@ -18433,7 +18461,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var qSel = $('paxContactsRegQuestion');
           var qv = qSel ? String(qSel.value || 'all') : 'all';
           var showAns = qv !== 'all';
-          var headers = ['Participant name', 'D.O.B', 'Service/s', 'Time slot/s', 'Contact', 'Email', 'Phone'];
+          var headers = ['Participant name', 'DOB', 'Age', 'Service/s', 'Time slot/s', 'Contact', 'Email', 'Phone'];
           if(showAns) headers.push(paxContactsRegQuestionLabel(qv));
           function csvCell(v){
             var s = String(v == null ? '' : v).replace(/\u2014/g, '').replace(/\s+/g, ' ').trim();
@@ -18458,9 +18486,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             if(!p) return;
             var r = p.reg || {};
             var bt = bandsText(p);
+            var ageY = paxContactsAgeYears(p);
             var row = [
               p.name || '',
               p.dobDisplay || r.dobDisplay || '',
+              ageY != null ? String(ageY) : '',
               bt.svc,
               bt.slot,
               p.parentDisplay || r.carer || '',
@@ -18607,6 +18637,25 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           });
         }
         paxContactsRefreshFilters();
+        // The roster bundle (booked services / age) loads lazily. If it isn't ready when this
+        // view first paints, the Service/s + Time slot/s cells come back empty — so load it and
+        // repaint the table body once it arrives.
+        if(!adminSpreadsheetAdapterAvailable() && window.portalAdminLoadHeavyScripts){
+          void window.portalAdminLoadHeavyScripts(['roster', 'feedback']).then(function(){
+            if(state.view !== 'clients' || !root2) return;
+            try{ if(typeof adminMergeSpreadsheetSessionsForSlotLookup.invalidate === 'function') adminMergeSpreadsheetSessionsForSlotLookup.invalidate(); }catch(_inv){}
+            var tb = root2.querySelector('#paxContactsTbl tbody');
+            if(!tb) return;
+            tb.innerHTML = paxContactsListRowsHtml();
+            tb.querySelectorAll('[data-pax-contacts-open]').forEach(function(bo){
+              bo.addEventListener('click', function(){
+                var p = paxContactsFindById(bo.getAttribute('data-pax-contacts-open'));
+                if(p) paxContactsShowDetail(p);
+              });
+            });
+            paxContactsRefreshFilters();
+          });
+        }
       }
       if(id==='operator') bindOperatorLight();
       if(id==='c4k_sessions'){

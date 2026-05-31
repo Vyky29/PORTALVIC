@@ -364,10 +364,10 @@
     .pax-contacts-count{text-align:right;font-size:13px;color:var(--muted);margin:0 0 8px;min-width:0;overflow-wrap:break-word}
     .pax-contacts-table-wrap{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);overflow:auto;min-width:0}
     .pax-contacts-tbl{width:100%;min-width:0;border-collapse:collapse;font-size:13px}
-    .pax-contacts-tbl th{text-align:left;font-size:11px;font-weight:700;color:var(--muted);padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
-    .pax-contacts-tbl td{padding:12px;border-bottom:1px solid #eef2f7;vertical-align:top;min-width:0}
+    .pax-contacts-tbl th{text-align:center;font-size:11px;font-weight:700;color:var(--muted);padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+    .pax-contacts-tbl td{padding:12px;border-bottom:1px solid #eef2f7;vertical-align:middle;text-align:center;min-width:0}
     .pax-contacts-tbl tbody tr:hover{background:#f8fafc}
-    .pax-contacts-tbl .pax-contacts-namebtn{display:block;width:100%;text-align:left;border:0;background:transparent;padding:0;cursor:pointer;font:inherit;min-width:0}
+    .pax-contacts-tbl .pax-contacts-namebtn{display:block;width:100%;text-align:center;border:0;background:transparent;padding:0;cursor:pointer;font:inherit;min-width:0}
     .pax-contacts-tbl .pax-contacts-namebtn strong{display:block;color:var(--blue);font-weight:700;overflow-wrap:break-word}
     .pax-contacts-tbl .pax-contacts-namebtn .muted{display:block;font-size:12px;margin-top:2px;overflow-wrap:break-word}
     .pax-contacts-tbl .pax-contacts-contact{font-size:12px;line-height:1.45;min-width:0;overflow-wrap:break-word}
