@@ -7,7 +7,7 @@
   var SETS = {
     roster: [
       "/portal/term_from_timetable.js?v=20260519-portal-roster",
-      "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260531-multi-90",
+      "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260601-tue-acton-lanes",
       "/portal/clients_info_embed.js?v=20260519-portal-roster",
       "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260519-portal-roster",
     ],
