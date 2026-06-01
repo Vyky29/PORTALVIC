@@ -210,13 +210,33 @@
       });
   }
 
+  function applyPortalRosterDbRows(rows) {
+    var cache =
+      typeof window !== "undefined" && window.PORTAL_ROSTER_ROWS_CACHE;
+    var list = Array.isArray(cache) ? cache : [];
+    if (!list.length) return rows;
+    var mergeFn =
+      typeof window !== "undefined" &&
+      window.PortalRosterRowsMerge &&
+      window.PortalRosterRowsMerge.mergePortalRosterRows;
+    if (!mergeFn) return rows;
+    return mergeFn(rows, list);
+  }
+
   function resolveStaffDashboardSource() {
     var base =
       (typeof window !== "undefined" && window.STAFF_DASHBOARD_SOURCE) || {};
     var machineRows = snapshotMachineRows();
     var portalRows = buildRowsFromPortalStatus();
     var floor = machineRosterFloorIso();
-    if (!portalRows.length) return base;
+    var mergedRows;
+
+    if (!portalRows.length) {
+      mergedRows = applyPortalRosterDbRows(
+        Array.isArray(machineRows) && machineRows.length ? machineRows : base.rows || []
+      );
+      return Object.assign({}, base, { rows: mergedRows });
+    }
 
     var fromMachine = machineRows.filter(function (r) {
       return normIso(r.session_date) >= floor;
@@ -226,8 +246,10 @@
       return !iso || iso < floor;
     });
 
+    mergedRows = applyPortalRosterDbRows(fromPortal.concat(fromMachine));
+
     return Object.assign({}, base, {
-      rows: fromPortal.concat(fromMachine),
+      rows: mergedRows,
       rosterSourceNote:
         "portal status before " +
         floor +
@@ -254,6 +276,22 @@
   }
 
   window.portalRefreshStaffDashboardSourceFromPortal = refreshStaffDashboardSourceFromPortal;
+
+  function refreshPortalRosterRowsFromSupabase(client) {
+    if (
+      typeof window === "undefined" ||
+      !window.PortalRosterRowsMerge ||
+      typeof window.PortalRosterRowsMerge.loadAndCache !== "function"
+    ) {
+      return Promise.resolve([]);
+    }
+    return window.PortalRosterRowsMerge.loadAndCache(client).then(function (rows) {
+      refreshStaffDashboardSourceFromPortal();
+      return rows;
+    });
+  }
+
+  window.portalRefreshPortalRosterRowsFromSupabase = refreshPortalRosterRowsFromSupabase;
 
   refreshStaffDashboardSourceFromPortal();
 })();

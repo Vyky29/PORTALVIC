@@ -25,6 +25,8 @@
   <script src="/portal/admin-payments.js?v=20260531-la-column"></script>
   <script src="/portal/admin-onboarding.js?v=20260530-onboarding-clickdocs"></script>
   <script src="/portal/admin-logs.js?v=20260601-logs-merge"></script>
+  <script src="/portal/portal-roster-rows-merge.js?v=20260601-term-slot"></script>
+  <script src="/portal/admin-portal-term-slot.js?v=20260601-term-slot"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
   <title>clubSENsational · Operations + Operator workflow (merged)</title>
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
@@ -181,6 +183,7 @@
       { id:'operations_admin', label:'Operations admin' },
       { id:'operator', label:'Control centre' },
       { id:'scheduling', label:'Schedule & Covers' },
+      { id:'term_roster_edit', label:'Edit term slot' },
       { id:'absents_refunds', label:'Absents, refunds & credits', hubLabel:'Refunds & credits' },
       { id:'receptionist', label:'Receptionist hub' },
       { id:'leads', label:'Enquiries & intake' },
@@ -227,7 +230,7 @@
     ];
     var NAV_GROUPS = [
       { id:'g_operator', label:'Operator', children:['dashboard','operations_admin','operator'] },
-      { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','c4k_sessions','scheduling','c4k_waitlist','__h:Participants','clients','c4k_reviews','c4k_reports','__h:Orders','orders_all','absents_refunds','__h:Communications','comms_ops'] },
+      { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','c4k_sessions','scheduling','term_roster_edit','c4k_waitlist','__h:Participants','clients','c4k_reviews','c4k_reports','__h:Orders','orders_all','absents_refunds','__h:Communications','comms_ops'] },
       { id:'g_zoho', label:'H&R (ZohoPeople)', children:['staffhr','onboarding','staffhr_contracts','interviews'] },
       { id:'g_supabase', label:'Documents', children:['portal_docs_timesheet','portal_docs_expense','portal_docs_portalpin','portal_docs_certificate','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid'] },
       { id:'g_xero', label:'Finance (Xero)', children:['reenrol_payments','invoices'] },
@@ -246,6 +249,7 @@
       c4k_services:'<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>',
       c4k_sessions:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
       scheduling:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="8" cy="15" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="15" r="1" fill="currentColor" stroke="none"/><circle cx="16" cy="15" r="1" fill="currentColor" stroke="none"/>',
+      term_roster_edit:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M12 14v4"/><path d="M10 16h4"/>',
       c4k_payments:'<text x="12" y="17" text-anchor="middle" font-size="15" font-weight="800" fill="currentColor" stroke="none" font-family="system-ui,Segoe UI,sans-serif">£</text>',
       reenrol_payments:'<text x="12" y="17" text-anchor="middle" font-size="15" font-weight="800" fill="currentColor" stroke="none" font-family="system-ui,Segoe UI,sans-serif">£</text>',
       c4k_waitlist:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
@@ -1618,7 +1622,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       try{ history.replaceState(null,'','#'+id); }catch(e){}
     }
-    function navGetItem(id){
+    window.portalAdminOpenTermSlotEdit = function(prefill){
+      window.__PORTAL_TERM_SLOT_PREFILL__ = prefill || null;
+      setView('term_roster_edit');
+    };
       for(var i=0;i<NAV.length;i++) if(NAV[i].id===id) return NAV[i];
       return null;
     }
@@ -10228,7 +10235,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         void window.portalAdminLoadHeavyScripts(['roster', 'feedback']);
         return;
       }
-      if(id === 'scheduling' || id === 'c4k_services' || id === 'servicecap' || id === 'absents_refunds'){
+      if(id === 'scheduling' || id === 'c4k_services' || id === 'servicecap' || id === 'absents_refunds' || id === 'term_roster_edit'){
         void window.portalAdminLoadScriptSet('roster').then(function(){
           portalInvalidateAdminSlotsCache();
           if(state.view === 'scheduling'){
@@ -11327,7 +11334,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<select class="sel" id="schedStaffFilter" style="max-width:220px" aria-label="Instructor filter"><option value="">All instructors</option></select>'+
         '<select class="sel" id="schedParticipantFilter" style="max-width:220px" aria-label="Participant filter"><option value="">All participants</option></select>'+
         '<label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);min-width:0"><input type="checkbox" id="schedOnlyOverride" /> Overrides only</label>'+
-        '<button type="button" class="btn btn--sec btn--sm" id="schedRefreshBtn">Refresh</button></div>'+
+        '<button type="button" class="btn btn--sec btn--sm" id="schedRefreshBtn">Refresh</button>'+
+        '<button type="button" class="btn btn--ghost btn--sm" data-view-target="term_roster_edit">Edit term slot</button></div>'+
         '<p id="schedConnMsg" class="muted" style="margin:0 0 12px;min-height:1.25em;max-width:900px;overflow-wrap:break-word"></p>'+
         schedAddSessionFormHtml()+
         '<div class="section"><div class="section-h"><h2>Base schedule</h2><p>Click a row for full context and to add or review an override. Instructor and participant names open profiles when linked in admin data.</p></div>'+
@@ -15468,6 +15476,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(id==='bookings' || id==='orders_all') return viewBookings();
       if(id==='invoices') return viewInvoices();
       if(id==='scheduling') return viewScheduling();
+      if(id==='term_roster_edit') return viewTermRosterEdit();
       if(id==='absents_refunds') return viewAbsentsRefundsCredits();
       if(id==='portal_documents'){
         window.__portalDocsPresetFilter = 'all';
@@ -16470,6 +16479,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return '<h1 class="page-title" style="display:flex;align-items:center;gap:10px">'+adminNavIconHtml('logs')+'<span>Activity log</span></h1>'+
         '<p class="page-intro">Every change made in the app, kept by day — when, what time, by whom, and what changed.</p>'+
         '<div id="logsModuleRoot"></div>';
+    }
+    function viewTermRosterEdit(){
+      return '<h1 class="page-title" style="display:flex;align-items:center;gap:10px">'+adminNavIconHtml('term_roster_edit')+'<span>Edit term slot</span></h1>'+
+        '<p class="page-intro">Update the term timetable in Supabase — choose whether the change applies to one day, every matching weekday until term end, or from the anchor date forward. One-day covers and absences stay in <strong>Schedule &amp; Covers</strong>.</p>'+
+        '<div id="termSlotModuleRoot"></div>';
     }
 
     function viewStaffHR(){
@@ -18528,7 +18542,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       root.querySelectorAll('[data-act]').forEach(function(b){
         b.addEventListener('click', function(){
           var v = b.getAttribute('data-act');
-          if(v==='dashboard'||v==='operations'||v==='operations_admin'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='c4k_registers'||v==='c4k_late_submissions'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='staffhr_contracts'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='scheduling'||v==='absents_refunds'||v==='portal_documents'||v==='portal_activity'||v==='participant_achievements'||v==='staff_live_map'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='interviews'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings'||v==='logs') setView(v);
+          if(v==='dashboard'||v==='operations'||v==='operations_admin'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='c4k_registers'||v==='c4k_late_submissions'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='staffhr_contracts'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='scheduling'||v==='term_roster_edit'||v==='absents_refunds'||v==='portal_documents'||v==='portal_activity'||v==='participant_achievements'||v==='staff_live_map'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='interviews'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings'||v==='logs') setView(v);
           closeSidebarMob();
         });
       });
@@ -18693,6 +18707,36 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           window.AdminLogs.configure({ toast: portalAdminToast, esc: esc });
           window.AdminLogs.mount($('logsModuleRoot'));
         }
+      }
+      if(id==='term_roster_edit'){
+        void (window.portalAdminLoadScriptSet ? window.portalAdminLoadScriptSet('roster') : Promise.resolve()).then(function(){
+          var client = getSchedSupabaseClient();
+          if(window.PortalRosterRowsMerge && client){
+            void window.PortalRosterRowsMerge.loadAndCache(client).then(function(){
+              if(typeof window.portalRefreshStaffDashboardSourceFromPortal === 'function'){
+                window.portalRefreshStaffDashboardSourceFromPortal();
+              }
+            });
+          }
+          if(window.AdminTermSlot && $('termSlotModuleRoot')){
+            window.AdminTermSlot.configure({
+              getClient: getSchedSupabaseClient,
+              toast: portalAdminToast,
+              esc: esc,
+              setView: setView,
+              getTermBounds: function(){
+                var t = window.PORTAL_TERM_FROM_TIMETABLE || {};
+                return {
+                  firstDate: String(t.firstDate || '2026-04-13').slice(0, 10),
+                  lastDate: String(t.lastDate || '2026-07-17').slice(0, 10),
+                  termBreakFrom: String(t.termBreakFrom || '').slice(0, 10),
+                  termBreakTo: String(t.termBreakTo || '').slice(0, 10),
+                };
+              },
+            });
+            window.AdminTermSlot.mount($('termSlotModuleRoot'));
+          }
+        });
       }
       if(id==='staffhr'){
         if(window.AdminHR && $('hrModuleRoot')){
