@@ -151,17 +151,17 @@
   function hintForGroup(group) {
     if (group === "italian") {
       if (whisperAvailable) {
-        return "Italiano: tap mic, speak clearly, tap again. We convert to English (best quality). English option uses live text.";
+        return "Tap mic, speak, tap again. Italiano → English or English direct (same quality). Edit before submit.";
       }
       return "Tap mic, speak in Italiano or English. For Italiano we translate finished phrases to English — speak slowly. Or pick English if easier.";
     }
     if (group === "spanish") {
       if (whisperAvailable) {
-        return "Español: tap mic, speak clearly, tap again. We convert to English (best quality). English option uses live text.";
+        return "Tap mic, speak, tap again. Español → English or English direct (same quality). Edit before submit.";
       }
       return "Tap mic, speak in Español or English. For Español we translate finished phrases to English — speak slowly. Or pick English if easier.";
     }
-    return "Tap mic and speak in English. Text updates as you talk. Tap mic again or pause to stop.";
+    return "Tap mic, speak in English, tap again. Edit before submit.";
   }
 
   function refreshHint() {
@@ -591,7 +591,11 @@
 
     var mime = s.mime || "audio/webm";
     var blob = new Blob(chunks, { type: mime });
-    if (s.statusEl) s.statusEl.textContent = "Converting speech to English…";
+    if (s.statusEl) {
+      s.statusEl.textContent = s.needsTranslate
+        ? "Converting speech to English…"
+        : "Converting speech to text…";
+    }
     if (s.btn) s.btn.disabled = true;
 
     whisperTranscribe(blob, mime, s.whisperCode)
@@ -621,8 +625,8 @@
     if (session) requestStop(session, "manual");
   }
 
-  function shouldUseWhisper(cfg) {
-    return !!(whisperAvailable && cfg && cfg.translate);
+  function shouldUseWhisper() {
+    return !!whisperAvailable;
   }
 
   function startWhisperCapture(textarea, btn, statusEl, langValue) {
@@ -634,10 +638,6 @@
 
     var lang = langAllowed(langValue) ? langValue : defaultLangForGroup(ui.staffGroup);
     var cfg = getLangConfig(lang);
-    if (!cfg.translate) {
-      startWebSpeechCapture(textarea, btn, statusEl, langValue);
-      return;
-    }
 
     var mime = pickMime();
     if (!mime || typeof MediaRecorder === "undefined") {
@@ -651,7 +651,8 @@
       statusEl: statusEl,
       textarea: textarea,
       prefix: String(textarea.value || ""),
-      whisperCode: cfg.whisperCode || cfg.code || "es",
+      whisperCode: cfg.whisperCode || cfg.code || "en",
+      needsTranslate: !!cfg.translate,
       audioChunks: [],
       mime: mime,
       recorder: null,
@@ -668,7 +669,9 @@
     btn.setAttribute("aria-label", "Stop voice input");
     btn.setAttribute("aria-pressed", "true");
     if (statusEl) {
-      statusEl.textContent = "Recording… speak clearly, tap mic when finished.";
+      statusEl.textContent = s.needsTranslate
+        ? "Recording… speak clearly, tap mic when finished."
+        : "Recording… speak in English, tap mic when finished.";
     }
 
     navigator.mediaDevices
@@ -801,9 +804,7 @@
   }
 
   function startCapture(textarea, btn, statusEl, langValue) {
-    var lang = langAllowed(langValue) ? langValue : defaultLangForGroup(ui.staffGroup);
-    var cfg = getLangConfig(lang);
-    if (shouldUseWhisper(cfg)) {
+    if (shouldUseWhisper()) {
       startWhisperCapture(textarea, btn, statusEl, langValue);
     } else {
       startWebSpeechCapture(textarea, btn, statusEl, langValue);
