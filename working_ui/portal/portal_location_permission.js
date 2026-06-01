@@ -27,16 +27,48 @@ function isLocalDevHost() {
   }
 }
 
+/**
+ * Remembered permission, persisted across app closes. We use localStorage (not
+ * sessionStorage) so that once a worker accepts location on a phone, reopening
+ * the app does NOT prompt or nag them again — the grant is remembered until the
+ * browser/OS permission itself changes. Falls back silently if storage is off.
+ */
+function persistGet(key) {
+  try {
+    var v = localStorage.getItem(key);
+    if (v != null) return v;
+  } catch (_) {}
+  try {
+    return sessionStorage.getItem(key);
+  } catch (_) {
+    return null;
+  }
+}
+function persistSet(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch (_) {}
+  try {
+    sessionStorage.setItem(key, value);
+  } catch (_) {}
+}
+function persistRemove(key) {
+  try {
+    localStorage.removeItem(key);
+  } catch (_) {}
+  try {
+    sessionStorage.removeItem(key);
+  } catch (_) {}
+}
+
 export function portalLocationPermissionGranted() {
   return _state === "granted";
 }
 
 export function markLocationGranted() {
   _state = "granted";
-  try {
-    sessionStorage.setItem("portal_location_granted_v1", "1");
-    sessionStorage.removeItem("portal_location_denied_v1");
-  } catch (_) {}
+  persistSet("portal_location_granted_v1", "1");
+  persistRemove("portal_location_denied_v1");
   window.dispatchEvent(
     new CustomEvent("portal:location-permission-change", { detail: { state: "granted" } })
   );
@@ -44,9 +76,7 @@ export function markLocationGranted() {
 
 export function markLocationDenied() {
   _state = "denied";
-  try {
-    sessionStorage.setItem("portal_location_denied_v1", "1");
-  } catch (_) {}
+  persistSet("portal_location_denied_v1", "1");
   window.dispatchEvent(
     new CustomEvent("portal:location-permission-change", { detail: { state: "denied" } })
   );
@@ -113,10 +143,10 @@ export async function probeLocationPermissionState() {
           ? perm.state
           : "prompt";
       if (_state === "granted") {
-        try {
-          sessionStorage.setItem("portal_location_granted_v1", "1");
-          sessionStorage.removeItem("portal_location_denied_v1");
-        } catch (_) {}
+        persistSet("portal_location_granted_v1", "1");
+        persistRemove("portal_location_denied_v1");
+      } else if (_state === "denied") {
+        persistRemove("portal_location_granted_v1");
       }
       window.dispatchEvent(
         new CustomEvent("portal:location-permission-change", { detail: { state: _state } })
@@ -125,19 +155,18 @@ export async function probeLocationPermissionState() {
       portalSyncAlertsSettingsChrome();
     };
     if (_state === "granted") {
-      try {
-        sessionStorage.setItem("portal_location_granted_v1", "1");
-      } catch (_) {}
+      persistSet("portal_location_granted_v1", "1");
+    } else if (_state === "prompt") {
+      // Permissions API says "prompt", but if this device already granted once
+      // (remembered), trust that so we don't nag again on reopen. iOS Safari in
+      // particular reports prompt/unsupported even after a real grant.
+      if (persistGet("portal_location_granted_v1") === "1") _state = "granted";
     }
     return _state;
   } catch (_) {
-    try {
-      if (sessionStorage.getItem("portal_location_granted_v1") === "1") _state = "granted";
-      else if (sessionStorage.getItem("portal_location_denied_v1") === "1") _state = "denied";
-      else _state = "prompt";
-    } catch (_e2) {
-      _state = "prompt";
-    }
+    if (persistGet("portal_location_granted_v1") === "1") _state = "granted";
+    else if (persistGet("portal_location_denied_v1") === "1") _state = "denied";
+    else _state = "prompt";
     return _state;
   }
 }
