@@ -21,6 +21,37 @@ TUESDAY_HAZEM_ROBERTO_END = "2026-07-14"
 TUESDAY_RAYAN_ANGEL_END = "2026-07-17"
 TUESDAY_SWAP_SLOT = "5.30 to 6"
 
+# Carlos off weekday roster from 2026-06-01 through July; keeps Sunday climbing only.
+CARLOS_WEEKDAY_OFF_START = "2026-06-01"
+CARLOS_WEEKDAY_OFF_END = "2026-07-31"
+
+
+def _strip_carlos_from_instructors(instr: str) -> str | None:
+    parts = [p.strip() for p in instr.split(",") if p.strip()]
+    if not any(p.upper() == "CARLOS" for p in parts):
+        return None
+    kept = [p for p in parts if p.upper() != "CARLOS"]
+    if not kept:
+        return None
+    return ", ".join(kept)
+
+
+def patch_carlos_weekday_roster_off(rows: list[dict]) -> int:
+    """Remove Carlos from non-Sunday rows from Jun–Jul 2026 (dated + undated template)."""
+    n = 0
+    for row in rows:
+        if str(row.get("day") or "").strip() == "Sunday":
+            continue
+        sd = str(row.get("session_date") or "").strip()[:10]
+        if sd and (sd < CARLOS_WEEKDAY_OFF_START or sd > CARLOS_WEEKDAY_OFF_END):
+            continue
+        instr = str(row.get("instructors") or "").strip()
+        new_instr = _strip_carlos_from_instructors(instr)
+        if new_instr and new_instr != instr:
+            row["instructors"] = new_instr
+            n += 1
+    return n
+
 
 def patch_legacy_sunday_morning_pool(rows: list[dict]) -> int:
     """Remove only erroneous Zaid 9:00 slot (he starts 9:30, not 9:00)."""
@@ -153,7 +184,7 @@ def morning_day_centre() -> list[dict]:
 
     for day in ("Monday", "Wednesday", "Friday"):
         rows.append(
-            r("Timi", day, "RAUL, CARLOS", "1 to 3", service=dc, area=hub, venue=sf)
+            r("Timi", day, "RAUL", "1 to 3", service=dc, area=hub, venue=sf)
         )
 
     return rows
@@ -431,6 +462,7 @@ def main() -> None:
     pool_removed = patch_legacy_sunday_morning_pool(merged)
     pool_small = patch_sunday_small_pool_shire_simon(merged)
     patched = patch_tuesday_hazem_rayan_instructors(merged)
+    carlos_off = patch_carlos_weekday_roster_off(merged)
     JSON_PATH.write_text(
         json.dumps(merged, ensure_ascii=True, indent=2) + "\n",
         encoding="utf-8",
@@ -444,6 +476,11 @@ def main() -> None:
         )
     if patched:
         print(f"Patched {patched} Tue Hazem/Rayan Ta 5.30–6 instructor row(s)")
+    if carlos_off:
+        print(
+            f"Removed Carlos from {carlos_off} weekday roster row(s) "
+            f"({CARLOS_WEEKDAY_OFF_START} .. {CARLOS_WEEKDAY_OFF_END}); Sunday climbing unchanged"
+        )
 
 
 if __name__ == "__main__":

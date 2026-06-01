@@ -57,6 +57,32 @@
     return "";
   }
 
+  function portalStaffProfileKey() {
+    try {
+      var box = window.__PORTAL_SUPABASE__;
+      var u = box && box.staff_profile && box.staff_profile.username;
+      if (u) return String(u).trim().toLowerCase();
+      var sk = sessionStorage.getItem("__portal_feedback_staff_rota_key_v1");
+      if (sk) return String(sk).trim().toLowerCase();
+    } catch (_) {}
+    return "";
+  }
+
+  function portalLateSubmissionBypassForStaff() {
+    try {
+      var t = window.PORTAL_TERM_FROM_TIMETABLE;
+      var list = t && t.termStaffLateSubmissionBypassProfileKeys;
+      if (!Array.isArray(list) || !list.length) return false;
+      var key = portalStaffProfileKey();
+      if (!key) return false;
+      return list.some(function (k) {
+        return String(k || "").trim().toLowerCase() === key;
+      });
+    } catch (_) {
+      return false;
+    }
+  }
+
   window.portalFetchLateSubmissionRequest = async function portalFetchLateSubmissionRequest(
     sessionKey,
     submissionType
@@ -124,6 +150,9 @@
     if (!item || !item.sessionKey) return { allowed: false, reason: "no_session" };
     var iso = portalSessionIsoFromKey(item.sessionKey);
     if (!portalIsPastSessionDateIso(iso)) return { allowed: true, late: false };
+    if (portalLateSubmissionBypassForStaff()) {
+      return { allowed: true, late: true, approved: true, bypass: true };
+    }
 
     var label = portalLateSubmissionLabel(submissionType);
     var existing = await portalFetchLateSubmissionRequest(item.sessionKey, submissionType);
@@ -179,6 +208,7 @@
     sessionKey,
     submissionType
   ) {
+    if (portalLateSubmissionBypassForStaff()) return true;
     var qs =
       typeof URLSearchParams !== "undefined"
         ? new URLSearchParams(String(location.search || ""))

@@ -1078,13 +1078,13 @@
         <div class="brand-logo-shell">
           <img
             class="brand-logo"
-            src="ELEMENTOR/MEDIOS/F-02-1.png"
+            src="portal/F-02-1.png"
             width="200"
             height="200"
             alt="clubSENsational - Autism Consultancy Services"
             decoding="async"
             referrerpolicy="no-referrer-when-downgrade"
-            onerror="(function(img){var t=Number(img.dataset.logoTier||0);img.dataset.logoTier=String(t+1);if(t===0){img.src='ELEMENTOR/MEDIOS/portal_crest.svg';return;}img.onerror=null;img.src='data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20200%20200%27%3E%3Crect%20fill%3D%27%23ffffff%27%20width%3D%27200%27%20height%3D%27200%27%2F%3E%3Ctext%20x%3D%27100%27%20y%3D%2778%27%20text-anchor%3D%27middle%27%20font-family%3D%27system-ui%2Csans-serif%27%20font-size%3D%2722%27%20font-weight%3D%27800%27%20fill%3D%27%230f172a%27%3Eclub%3C%2Ftext%3E%3Ctext%20x%3D%27100%27%20y%3D%27120%27%20text-anchor%3D%27middle%27%20font-family%3D%27system-ui%2Csans-serif%27%20font-size%3D%2740%27%20font-weight%3D%27800%27%20fill%3D%27%23b45309%27%3ESEN%3C%2Ftext%3E%3Ctext%20x%3D%27100%27%20y%3D%27152%27%20text-anchor%3D%27middle%27%20font-family%3D%27system-ui%2Csans-serif%27%20font-size%3D%2716%27%20font-weight%3D%27700%27%20fill%3D%27%23334155%27%3Esational%3C%2Ftext%3E%3C%2Fsvg%3E';})(this);"
+            onerror="(function(img){var t=Number(img.dataset.logoTier||0);img.dataset.logoTier=String(t+1);if(t===0){img.src='portal/portal_crest.svg';return;}img.onerror=null;img.src='data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20200%20200%27%3E%3Crect%20fill%3D%27%23ffffff%27%20width%3D%27200%27%20height%3D%27200%27%2F%3E%3Ctext%20x%3D%27100%27%20y%3D%2778%27%20text-anchor%3D%27middle%27%20font-family%3D%27system-ui%2Csans-serif%27%20font-size%3D%2722%27%20font-weight%3D%27800%27%20fill%3D%27%230f172a%27%3Eclub%3C%2Ftext%3E%3Ctext%20x%3D%27100%27%20y%3D%27120%27%20text-anchor%3D%27middle%27%20font-family%3D%27system-ui%2Csans-serif%27%20font-size%3D%2740%27%20font-weight%3D%27800%27%20fill%3D%27%23b45309%27%3ESEN%3C%2Ftext%3E%3Ctext%20x%3D%27100%27%20y%3D%27152%27%20text-anchor%3D%27middle%27%20font-family%3D%27system-ui%2Csans-serif%27%20font-size%3D%2716%27%20font-weight%3D%27700%27%20fill%3D%27%23334155%27%3Esational%3C%2Ftext%3E%3C%2Fsvg%3E';})(this);"
           />
         </div>
       </div>
@@ -1097,7 +1097,7 @@
     <div id="profileLoadOverlay" class="profile-load-overlay is-visible" role="status" aria-live="polite" aria-busy="true">
       <div class="profile-load-card">
         <p class="profile-load-title">Loading your profile…</p>
-        <p class="profile-load-sub">If this takes more than a few seconds, open <strong>Annual profile</strong> again from the Staff or Lead hub after signing in with your PIN.</p>
+        <p class="profile-load-sub">Opening your saved staff details from the portal. One moment…</p>
       </div>
     </div>
 
@@ -1112,7 +1112,7 @@
             <h2 class="card-head-title" id="screenProfileTitle">
               Hi <span id="profileGreetingName">there</span>
             </h2>
-            <p class="card-head-sub">Tap <strong>Confirm</strong> if a section is correct, or <strong>Edit</strong> to change it.</p>
+            <p class="card-head-sub">Your details are loaded from staff records. Tap <strong>Confirm</strong> if a section is correct, or <strong>Edit</strong> to change it.</p>
           </div>
         </div>
         <p class="card-help">
@@ -1617,6 +1617,16 @@
           .trim();
         if (fromUrl) return fromUrl;
       } catch (_) {}
+      try {
+        const box = window.__PORTAL_SUPABASE__;
+        const prof = box && box.staff_profile;
+        if (prof) {
+          const fn = String(prof.full_name || prof.fullName || "").trim();
+          if (fn) return fn;
+          const un = String(prof.username || "").trim();
+          if (un) return un;
+        }
+      } catch (_) {}
       const STAFF_SESSION_KEY = "clubsens_staff_session_v2";
       const LEAD_SESSION_KEY = "clubsens_lead_session_v2";
       for (const key of [STAFF_SESSION_KEY, LEAD_SESSION_KEY]) {
@@ -1630,6 +1640,15 @@
         } catch (_) {}
       }
       return "";
+    }
+
+    function openedFromPortalHub() {
+      try {
+        const fp = String(new URL(window.location.href).searchParams.get("from_portal") || "").trim().toLowerCase();
+        return fp === "staff" || fp === "lead" || fp === "1" || fp === "true";
+      } catch (_) {
+        return false;
+      }
     }
 
     function identityPassesAllowlist(name) {
@@ -1785,13 +1804,17 @@
       const secret = readBridgeSecretFromWindowOrHash();
       if (!secret || secret.length < 16) {
         showBootSignedOut(
-          "Could not start a secure session from this link (missing portal bridge on this deploy, or open Annual profile from the Staff/Lead hub after signing in). Use Staff or Lead on this site, sign in, then open Annual profile from the menu — not from an old bookmark alone.",
+          openedFromPortalHub()
+            ? "Could not connect this page to your portal session. Close this tab, open Annual profile again from the menu in Staff or Lead hub."
+            : "Could not start a secure session from this link (missing portal bridge on this deploy, or open Annual profile from the Staff/Lead hub after signing in). Use Staff or Lead on this site, sign in, then open Annual profile from the menu — not from an old bookmark alone.",
         );
         return false;
       }
       if (!identityName || identityName.length < 2) {
         showBootSignedOut(
-          "We could not detect who you are. Open the Staff or Lead hub on this site, sign in with your PIN, then open Annual profile again.",
+          openedFromPortalHub()
+            ? "We could not detect your staff name from the portal. Go back to the hub and open Annual profile from the menu again."
+            : "We could not detect who you are. Open the Staff or Lead hub on this site, sign in with your PIN, then open Annual profile again.",
         );
         return false;
       }
@@ -1851,6 +1874,13 @@
     async function bootstrapFromPortalAuth() {
       showBootSigningIn();
       try {
+        let accessToken = "";
+        try {
+          const box = window.__PORTAL_SUPABASE__;
+          if (box && box.session && box.session.access_token) {
+            accessToken = String(box.session.access_token || "");
+          }
+        } catch (_) {}
         const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.49.1");
         const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
           auth: {
@@ -1859,9 +1889,13 @@
             detectSessionInUrl: true,
           },
         });
-        let {
-          data: { session },
-        } = await supabase.auth.getSession();
+        let session = null;
+        if (accessToken) {
+          session = { access_token: accessToken };
+        } else {
+          const sessRes = await supabase.auth.getSession();
+          session = sessRes.data && sessRes.data.session;
+        }
         if (!session?.access_token) {
           try {
             await supabase.auth.refreshSession();
@@ -2476,7 +2510,9 @@
         const n = $("profileNotice");
         if (n && n.hidden) {
           showBootSignedOut(
-            "Your profile could not be loaded. Open the Staff or Lead hub on this website, sign in with your account or PIN, then open Annual profile from there.",
+            openedFromPortalHub()
+              ? "Your profile could not be loaded from the portal. Go back to Staff or Lead hub and open Annual profile from the menu again."
+              : "Your profile could not be loaded. Open the Staff or Lead hub on this website, sign in with your account or PIN, then open Annual profile from there.",
           );
         }
       }

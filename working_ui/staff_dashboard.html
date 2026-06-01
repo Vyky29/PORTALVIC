@@ -375,7 +375,7 @@
           <div class="menu-grid">
             <button type="button" class="menu-btn menu-btn--work-timesheet" id="quickMenuAnnualProfileCheckin" data-portal-external-url="staff_profile_update.html" aria-label="Annual profile check-in — confirm your details">
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-              <div class="menu-btn-copy"><strong>Annual profile check-in</strong><span class="menu-btn-sub">Confirm phone and address (OTP). This shortcut hides after you submit.</span></div>
+              <div class="menu-btn-copy"><strong>Annual profile check-in</strong><span class="menu-btn-sub">Review and confirm your contact details on file.</span></div>
             </button>
           </div>
         </div>
@@ -1436,7 +1436,13 @@
           if(role) tu.searchParams.set('portalSignerRole', role);
         }
         try{
-          if(/portal-|cancellation\.html/i.test(tu.pathname)) tu.searchParams.set('from_portal', portalFormFromPortalParam());
+          if(/portal-|cancellation\.html|staff_profile_update/i.test(tu.pathname)) tu.searchParams.set('from_portal', portalFormFromPortalParam());
+        }catch(_){}
+        try{
+          if(/staff_profile_update/i.test(tu.pathname)){
+            const nm = String((window.dashboardData && window.dashboardData.staffName) || '').trim();
+            if(nm) tu.searchParams.set('full_name', nm);
+          }
         }catch(_){}
         target = tu.href;
       }catch(_){
@@ -2914,12 +2920,19 @@
       try{
         const ptd = window.PortalTermCalendarDashboard;
         const todayKey = portalTermLocalYmdFromMs(termCalendarNowMs());
+        const staffId = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
         if(ptd && typeof ptd.feedbackReminderDayInScope === 'function'){
-          return ptd.feedbackReminderDayInScope(isoYmd, todayKey);
+          return ptd.feedbackReminderDayInScope(isoYmd, todayKey, staffId);
         }
       }catch(_){}
       const key = String(isoYmd || '').trim().slice(0, 10);
       if(!/^\d{4}-\d{2}-\d{2}$/.test(key)) return false;
+      const staffIdFb = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
+      if(staffIdFb && typeof portalTermStaffExtraCalendarDates === 'function'
+        && portalTermStaffExtraCalendarDates(staffIdFb).indexOf(key) >= 0){
+        const todayKey = portalTermLocalYmdFromMs(termCalendarNowMs());
+        return key <= todayKey;
+      }
       const fromIso = (window.PortalTermCalendarDashboard && typeof window.PortalTermCalendarDashboard.feedbackReminderFromIso === 'function')
         ? window.PortalTermCalendarDashboard.feedbackReminderFromIso()
         : '2026-06-01';
@@ -3944,6 +3957,15 @@
         const gAttr = clientGenderDataAttr(c);
         const med = c.hasMedicalAlert ? clientsGridMedicalIconSvg() : '';
         const medSr = c.hasMedicalAlert ? '<span class="topbar-sr-only">Medical information on file.</span>' : '';
+        if(!isAll){
+          return `<button type="button" class="clients-grid-card clients-grid-card--my" data-client-id="${escapeHtml(clientId)}" data-list-mode="my"${gAttr}>
+      <span class="clients-grid-text">
+        <span class="clients-grid-name">${name}</span>
+      </span>
+      ${medSr}
+      <span class="clients-grid-med-slot" aria-hidden="true">${med}</span>
+    </button>`;
+        }
         let statLine = '';
         if(c.portalAttendancePct != null || c.portalEngagementAvg != null){
           const bits = [];
@@ -3951,7 +3973,7 @@
           if(c.portalEngagementAvg != null) bits.push('eng ' + c.portalEngagementAvg);
           statLine = `<span class="clients-grid-stat">${escapeHtml(bits.join(' · '))}</span>`;
         }
-        return `<button type="button" class="clients-grid-card" data-client-id="${escapeHtml(clientId)}" data-list-mode="${isAll ? 'all' : 'my'}"${gAttr}>
+        return `<button type="button" class="clients-grid-card" data-client-id="${escapeHtml(clientId)}" data-list-mode="all"${gAttr}>
       <span class="clients-grid-avatar" aria-hidden="true">${clientAvatarInner(c.name)}</span>
       <span class="clients-grid-text">
         <span class="clients-grid-name">${name}</span>
@@ -5113,6 +5135,7 @@
       const sid = String(staffId || '').trim().toLowerCase();
       const w = String(weekdayLong || '').trim();
       if(!iso || !sid || !w) return true;
+      if(portalTermStaffExtraCalendarDates(sid).indexOf(iso) >= 0) return true;
       if(portalTermDateForcedComplete(iso, sid)) return true;
       if(portalTermStaffOffWeekdayOnDate(iso, sid)) return false;
       if(portalStaffHasDatedRowsForIso(iso, sid)) return true;
@@ -8276,6 +8299,22 @@
         dashboardData.termShiftEndByDate = {};
         dashboardData.termDemoNow = null;
       }
+      const extraDates = portalTermStaffExtraCalendarDates(id);
+      if(extraDates.length){
+        const months = new Set((dashboardData.termCalendarMonths || []).map(Number));
+        const fd = dashboardData.termCalendarFirstDom && typeof dashboardData.termCalendarFirstDom === 'object'
+          ? Object.assign({}, dashboardData.termCalendarFirstDom) : {};
+        extraDates.forEach(function(iso){
+          const m = parseInt(String(iso).slice(5, 7), 10) - 1;
+          const day = parseInt(String(iso).slice(8, 10), 10);
+          if(Number.isFinite(m) && m >= 0 && m <= 11) months.add(m);
+          if(Number.isFinite(m) && Number.isFinite(day) && day > 1){
+            if(!Object.prototype.hasOwnProperty.call(fd, m) || Number(fd[m]) > day) fd[m] = day;
+          }
+        });
+        dashboardData.termCalendarMonths = Array.from(months).sort(function(a, b){ return a - b; });
+        dashboardData.termCalendarFirstDom = fd;
+      }
     };
     window.portalApplyTermCalendarForStaff(STAFF_DASHBOARD_ID);
 
@@ -9280,6 +9319,14 @@
       if(!Array.isArray(raw)) return [];
       return raw.map(function(d){ return String(d || '').trim().slice(0, 10); }).filter(Boolean);
     }
+    function portalTermStaffExtraCalendarDates(staffId){
+      const t = window.PORTAL_TERM_FROM_TIMETABLE;
+      const map = t && t.termStaffExtraCalendarDatesByProfileKey;
+      const id = String(staffId || '').trim().toLowerCase();
+      const raw = map && map[id];
+      if(!Array.isArray(raw)) return [];
+      return raw.map(function(d){ return String(d || '').trim().slice(0, 10); }).filter(Boolean);
+    }
     function portalTermDateForcedComplete(isoYmd, staffId){
       const iso = String(isoYmd || '').trim().slice(0, 10);
       return portalTermStaffForcedCompleteDates(staffId).indexOf(iso) >= 0;
@@ -9759,6 +9806,46 @@
         }
         cur.setDate(cur.getDate() + 1);
       }
+      portalTermStaffExtraCalendarDates(staffId).forEach(function(isoKey){
+        if(Object.prototype.hasOwnProperty.call(fbMap, isoKey)) return;
+        const curExtra = new Date(String(isoKey) + 'T12:00:00');
+        const w = curExtra.getDay();
+        const isExtraCatchUp = portalTermStaffExtraCalendarDates(staffId).indexOf(isoKey) >= 0;
+        if(!isExtraCatchUp && !worked.includes(w)) return;
+        const dayWord = curExtra.toLocaleDateString('en-GB', { weekday: 'long' });
+        if(portalTermDateForcedComplete(isoKey, staffId)) {
+          fbMap[isoKey] = 'complete';
+          return;
+        }
+        if(portalTermStaffAwayOnDate(isoKey, staffId) || portalTermStaffOffWeekdayOnDate(isoKey, staffId)) return;
+        const isRealExtra = function(s){
+          if(baseRealTerm) return baseRealTerm(s, isoKey);
+          const st = String(s.status || '').toLowerCase();
+          if(st === 'closed' || st === 'available') return false;
+          const cid = String(s.clientId || '').toLowerCase();
+          return Boolean(cid && cid !== 'closed' && cid !== 'available');
+        };
+        const relAllExtra = typeof portalBaseClientSessionsForCalendarDate === 'function'
+          ? portalBaseClientSessionsForCalendarDate(dayWord, isoKey, staffId, isRealExtra)
+          : (sessionsModel || []).filter(function(s){
+            return String(s.staffId || '').toLowerCase() === staffId &&
+              String(s.day || '').trim() === dayWord &&
+              isRealExtra(s) &&
+              (typeof portalSessionSpreadsheetRowMatchesCalendarDate !== 'function'
+                || portalSessionSpreadsheetRowMatchesCalendarDate(s, isoKey, dayWord));
+          });
+        const relFbExtra = typeof portalTermFeedbackSessionsForDate === 'function'
+          ? portalTermFeedbackSessionsForDate(dayWord, isoKey, staffId, isRealExtra)
+          : relAllExtra;
+        if(!relAllExtra.length) return;
+        const relPick = relFbExtra.length ? relFbExtra : relAllExtra;
+        if(typeof portalTermDayAllSessionsComplete === 'function'
+          && portalTermDayAllSessionsComplete(dayWord, isoKey, staffId, relPick, curExtra)){
+          fbMap[isoKey] = 'complete';
+        } else {
+          fbMap[isoKey] = 'late';
+        }
+      });
       dashboardData.termShiftEndByDate = endMap;
       dashboardData.termFeedbackByDate = fbMap;
     }
@@ -9897,7 +9984,8 @@
           const exportWorked = termStaffId && isoKey <= todayKeyGrid
             && typeof portalTermExportCountsAsWorkedDay === 'function'
             && portalTermExportCountsAsWorkedDay(isoKey, termStaffId, dayWordRoster);
-          const isWorked = worked.includes(w) && (rosterApplies || exportWorked);
+          const extraCatchUp = termStaffId && portalTermStaffExtraCalendarDates(termStaffId).indexOf(isoKey) >= 0;
+          const isWorked = extraCatchUp || (worked.includes(w) && (rosterApplies || exportWorked));
           let cls = 'term-cal-day';
           let label;
           if(half){

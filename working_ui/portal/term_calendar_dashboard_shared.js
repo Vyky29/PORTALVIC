@@ -36,14 +36,29 @@
   }
 
   /** True when a calendar day may count toward incomplete-feedback reminders (in term window and not future). */
-  function feedbackReminderDayInScope(iso, todayIso) {
+  function feedbackReminderDayInScope(iso, todayIso, staffId) {
     var key = normIso(iso);
     if (!key) return false;
-    var from = feedbackReminderFromIso();
     var today = normIso(todayIso);
-    if (from && key < from) return false;
     if (today && key > today) return false;
+    var id = String(staffId || "").trim().toLowerCase();
+    if (id && staffExtraCalendarDates(id).indexOf(key) >= 0) return true;
+    var from = feedbackReminderFromIso();
+    if (from && key < from) return false;
     return true;
+  }
+
+  function staffExtraCalendarDates(staffId) {
+    var id = String(staffId || "").trim().toLowerCase();
+    var map = termCfg().termStaffExtraCalendarDatesByProfileKey;
+    var raw = map && map[id];
+    if (!Array.isArray(raw)) return [];
+    return raw.map(normIso).filter(Boolean);
+  }
+
+  function staffDateInView(iso, staffId) {
+    if (inView(iso)) return true;
+    return staffExtraCalendarDates(staffId).indexOf(iso) >= 0;
   }
 
   function applyView(dashboardData) {
@@ -106,7 +121,11 @@
 
   /** Red cell: outside view, vacation, or weekday not on this staff's Summer Term rota. */
   function dayIsRed(iso, weekdayIndex, staffId, worked, extraRed) {
-    if (!inView(iso)) return true;
+    if (!staffDateInView(iso, staffId)) return true;
+    if (staffExtraCalendarDates(staffId).indexOf(iso) >= 0) {
+      if (staffOffWeekdayOnDate(iso, staffId)) return true;
+      return false;
+    }
     if (extraRed) return true;
     if (staffOffWeekdayOnDate(iso, staffId)) return true;
     if (Array.isArray(worked) && worked.length && worked.indexOf(weekdayIndex) < 0) return true;
@@ -117,6 +136,8 @@
     fromIso: fromIso,
     toIso: toIso,
     inView: inView,
+    staffExtraCalendarDates: staffExtraCalendarDates,
+    staffDateInView: staffDateInView,
     feedbackReminderFromIso: feedbackReminderFromIso,
     feedbackReminderDayInScope: feedbackReminderDayInScope,
     applyView: applyView,

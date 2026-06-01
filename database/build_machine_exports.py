@@ -26,6 +26,12 @@ TERM_STAFF_OFF_WEEKDAYS_RANGE_BY_PROFILE_KEY = {
 TERM_STAFF_FEEDBACK_COMPLETE_DATES_BY_PROFILE_KEY = {
     "roberto": ["2026-05-17", "2026-05-22"],
 }
+# Staff may open specific pre-term calendar days for catch-up feedback (My Term grid).
+TERM_STAFF_EXTRA_CALENDAR_DATES_BY_PROFILE_KEY = {
+    "javier": ["2026-05-11", "2026-05-17"],
+}
+# Skip admin late-submission approval prompts (feedback/cancellation/incident).
+TERM_STAFF_LATE_SUBMISSION_BYPASS_PROFILE_KEYS = ["javier"]
 # First calendar date this client appears on rota (slug = clientId in staff bundle).
 TERM_CLIENT_FIRST_SESSION_DATE = {
     "amaar_ah": "2026-04-24",
@@ -311,6 +317,12 @@ def write_term_from_timetable_js(records, roster_rows=None):
         ),
         "termStaffFeedbackCompleteDatesByProfileKey": dict(
             TERM_STAFF_FEEDBACK_COMPLETE_DATES_BY_PROFILE_KEY
+        ),
+        "termStaffExtraCalendarDatesByProfileKey": dict(
+            TERM_STAFF_EXTRA_CALENDAR_DATES_BY_PROFILE_KEY
+        ),
+        "termStaffLateSubmissionBypassProfileKeys": list(
+            TERM_STAFF_LATE_SUBMISSION_BYPASS_PROFILE_KEYS
         ),
         "termClientFirstSessionDate": dict(TERM_CLIENT_FIRST_SESSION_DATE),
         "termHalfTermWeekStarts": half_term_week_starts,

@@ -2068,7 +2068,7 @@
   {
     "client_name": "Timi",
     "day": "Monday",
-    "instructors": "RAUL, CARLOS",
+    "instructors": "RAUL",
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "1 to 3",
@@ -2538,7 +2538,7 @@
   {
     "client_name": "Timi",
     "day": "Wednesday",
-    "instructors": "RAUL, CARLOS",
+    "instructors": "RAUL",
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "1 to 3",
@@ -2958,7 +2958,7 @@
   {
     "client_name": "Timi",
     "day": "Friday",
-    "instructors": "RAUL, CARLOS",
+    "instructors": "RAUL",
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "1 to 3",
@@ -3628,7 +3628,7 @@
   {
     "client_name": "Timi",
     "day": "Monday",
-    "instructors": "RAUL, CARLOS",
+    "instructors": "RAUL",
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "1 to 3",
@@ -4098,7 +4098,7 @@
   {
     "client_name": "Timi",
     "day": "Wednesday",
-    "instructors": "RAUL, CARLOS",
+    "instructors": "RAUL",
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "1 to 3",
@@ -4518,7 +4518,7 @@
   {
     "client_name": "Timi",
     "day": "Friday",
-    "instructors": "RAUL, CARLOS",
+    "instructors": "RAUL",
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "1 to 3",
@@ -5198,7 +5198,7 @@
   {
     "client_name": "Timi",
     "day": "Monday",
-    "instructors": "RAUL, CARLOS",
+    "instructors": "RAUL",
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "1 to 3",
@@ -5688,7 +5688,7 @@
   {
     "client_name": "Timi",
     "day": "Wednesday",
-    "instructors": "RAUL, CARLOS",
+    "instructors": "RAUL",
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "1 to 3",
@@ -6128,7 +6128,7 @@
   {
     "client_name": "Timi",
     "day": "Friday",
-    "instructors": "RAUL, CARLOS",
+    "instructors": "RAUL",
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "1 to 3",
@@ -6808,7 +6808,7 @@
   {
     "client_name": "Timi",
     "day": "Monday",
-    "instructors": "RAUL, CARLOS",
+    "instructors": "RAUL",
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "1 to 3",
@@ -7298,7 +7298,7 @@
   {
     "client_name": "Timi",
     "day": "Wednesday",
-    "instructors": "RAUL, CARLOS",
+    "instructors": "RAUL",
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "1 to 3",
@@ -7738,7 +7738,7 @@
   {
     "client_name": "Timi",
     "day": "Friday",
-    "instructors": "RAUL, CARLOS",
+    "instructors": "RAUL",
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "1 to 3",
@@ -8418,7 +8418,7 @@
   {
     "client_name": "Timi",
     "day": "Monday",
-    "instructors": "RAUL, CARLOS",
+    "instructors": "RAUL",
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "1 to 3",
@@ -8908,7 +8908,7 @@
   {
     "client_name": "Timi",
     "day": "Wednesday",
-    "instructors": "RAUL, CARLOS",
+    "instructors": "RAUL",
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "1 to 3",
@@ -9348,7 +9348,7 @@
   {
     "client_name": "Timi",
     "day": "Friday",
-    "instructors": "RAUL, CARLOS",
+    "instructors": "RAUL",
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "1 to 3",
@@ -10028,7 +10028,7 @@
   {
     "client_name": "Timi",
     "day": "Monday",
-    "instructors": "RAUL, CARLOS",
+    "instructors": "RAUL",
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "1 to 3",
@@ -10518,7 +10518,7 @@
   {
     "client_name": "Timi",
     "day": "Wednesday",
-    "instructors": "RAUL, CARLOS",
+    "instructors": "RAUL",
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "1 to 3",
@@ -10958,7 +10958,7 @@
   {
     "client_name": "Timi",
     "day": "Friday",
-    "instructors": "RAUL, CARLOS",
+    "instructors": "RAUL",
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "1 to 3",
@@ -11638,7 +11638,7 @@
   {
     "client_name": "Timi",
     "day": "Monday",
-    "instructors": "RAUL, CARLOS",
+    "instructors": "RAUL",
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "1 to 3",
@@ -12128,7 +12128,7 @@
   {
     "client_name": "Timi",
     "day": "Wednesday",
-    "instructors": "RAUL, CARLOS",
+    "instructors": "RAUL",
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "1 to 3",
@@ -12568,7 +12568,7 @@
   {
     "client_name": "Timi",
     "day": "Friday",
-    "instructors": "RAUL, CARLOS",
+    "instructors": "RAUL",
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "1 to 3",
@@ -12746,7 +12746,7 @@
   {
     "client_name": "Timi",
     "day": "Monday",
-    "instructors": "RAUL, CARLOS",
+    "instructors": "RAUL",
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "1 to 3",
@@ -12755,7 +12755,7 @@
   {
     "client_name": "Timi",
     "day": "Wednesday",
-    "instructors": "RAUL, CARLOS",
+    "instructors": "RAUL",
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "1 to 3",
@@ -12764,7 +12764,7 @@
   {
     "client_name": "Timi",
     "day": "Friday",
-    "instructors": "RAUL, CARLOS",
+    "instructors": "RAUL",
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "1 to 3",

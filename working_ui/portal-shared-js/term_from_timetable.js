@@ -285,5 +285,14 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       5,
       6
     ]
-  }
+  },
+  "termStaffExtraCalendarDatesByProfileKey": {
+    "javier": [
+      "2026-05-11",
+      "2026-05-17"
+    ]
+  },
+  "termStaffLateSubmissionBypassProfileKeys": [
+    "javier"
+  ]
 };

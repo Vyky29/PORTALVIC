@@ -376,7 +376,7 @@
           <div class="menu-grid">
             <button type="button" class="menu-btn menu-btn--work-timesheet" id="quickMenuAnnualProfileCheckin" data-portal-external-url="staff_profile_update.html" aria-label="Annual profile check-in — confirm your details">
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-              <div class="menu-btn-copy"><strong>Annual profile check-in</strong><span class="menu-btn-sub">Confirm phone and address (OTP). This shortcut hides after you submit.</span></div>
+              <div class="menu-btn-copy"><strong>Annual profile check-in</strong><span class="menu-btn-sub">Review and confirm your contact details on file.</span></div>
             </button>
           </div>
         </div>
@@ -1121,7 +1121,13 @@
           if(role) tu.searchParams.set('portalSignerRole', role);
         }
         try{
-          if(/portal-|cancellation\.html/i.test(tu.pathname)) tu.searchParams.set('from_portal', portalFormFromPortalParam());
+          if(/portal-|cancellation\.html|staff_profile_update/i.test(tu.pathname)) tu.searchParams.set('from_portal', portalFormFromPortalParam());
+        }catch(_){}
+        try{
+          if(/staff_profile_update/i.test(tu.pathname)){
+            const nm = String((window.dashboardData && window.dashboardData.staffName) || '').trim();
+            if(nm) tu.searchParams.set('full_name', nm);
+          }
         }catch(_){}
         target = tu.href;
       }catch(_){
@@ -3602,12 +3608,21 @@
       grid.innerHTML = ids.map(clientId => {
         const c = clientNotesById[clientId];
         if(!c) return '';
-        const initials = escapeHtml(clientInitials(c.name));
         const name = escapeHtml(c.name);
         const gAttr = clientGenderDataAttr(c);
         const med = c.hasMedicalAlert ? clientsGridMedicalIconSvg() : '';
         const medSr = c.hasMedicalAlert ? '<span class="topbar-sr-only">Medical information on file.</span>' : '';
-        return `<button type="button" class="clients-grid-card" data-client-id="${escapeHtml(clientId)}" data-list-mode="${isAll ? 'all' : 'my'}"${gAttr}>
+        if(!isAll){
+          return `<button type="button" class="clients-grid-card clients-grid-card--my" data-client-id="${escapeHtml(clientId)}" data-list-mode="my"${gAttr}>
+      <span class="clients-grid-text">
+        <span class="clients-grid-name">${name}</span>
+      </span>
+      ${medSr}
+      <span class="clients-grid-med-slot" aria-hidden="true">${med}</span>
+    </button>`;
+        }
+        const initials = escapeHtml(clientInitials(c.name));
+        return `<button type="button" class="clients-grid-card" data-client-id="${escapeHtml(clientId)}" data-list-mode="all"${gAttr}>
       <span class="clients-grid-avatar" aria-hidden="true">${initials}</span>
       <span class="clients-grid-text">
         <span class="clients-grid-name">${name}</span>
