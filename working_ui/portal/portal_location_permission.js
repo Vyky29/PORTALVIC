@@ -303,11 +303,19 @@ export async function portalEnsureMandatoryAlertsSettings(opts = {}) {
 
   await probeLocationPermissionState();
   if (portalMandatoryAlertsSettingsComplete()) {
+    // Fully set up — remember it so we never auto-prompt again, even if the
+    // browser later reports a permission as not-granted (iOS quirks).
+    persistSet("portal_alerts_prompt_shown_v1", "1");
     portalSyncAlertsSettingsChrome();
     return;
   }
 
   portalSyncAlertsSettingsChrome();
+
+  // Ask only ONCE, at the beginning. After the alerts sheet has been shown a
+  // first time we never auto-open it again on reopen/resume — the quick-menu
+  // indicator still lets the worker enable it manually. Stops the re-nagging.
+  if (persistGet("portal_alerts_prompt_shown_v1") === "1") return;
 
   try {
     if (typeof window.portalAnnouncementSheetLockActive === "function") {
@@ -316,6 +324,7 @@ export async function portalEnsureMandatoryAlertsSettings(opts = {}) {
   } catch (_) {}
 
   const openAlerts = () => {
+    persistSet("portal_alerts_prompt_shown_v1", "1");
     if (typeof openSheet === "function") {
       openSheet("alertsNotificationsSheet");
       return;
