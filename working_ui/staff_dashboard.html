@@ -82,12 +82,12 @@
   <meta name="apple-mobile-web-app-title" content="Staff" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="theme-color" content="#edf4fb" />
-  <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
-  <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
-  <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="manifest" href="/staff-dashboard.webmanifest?v=20260608-pwa-icons" />
+  <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png?v=20260608" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png?v=20260608" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png?v=20260608" />
+  <link rel="manifest" href="/staff-dashboard.webmanifest?v=20260608-logo-pwa" />
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260601-outstanding-orange" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260608-logo-pwa" />
 </head>
 <body>
   <script>
@@ -318,7 +318,7 @@
               </g>
             </svg>
           </span>
-          <img class="dock-nav-item__logo" src="/FOOTERLOGO.png?v=20260523" alt="clubSENsational" width="120" height="48" decoding="async" referrerpolicy="no-referrer-when-downgrade" onerror="this.onerror=null;this.src='/portal/F-02-1.png'" />
+          <img class="dock-nav-item__logo" src="/portal/logo-pwa.png?v=20260608" alt="clubSENsational Autism Consultancy Services" width="132" height="52" decoding="async" referrerpolicy="no-referrer-when-downgrade" onerror="this.onerror=null;this.src='/portal/F-02-1.png'" />
         </span>
       </button>
       <button type="button" class="dock-nav-item dock-nav-item--quick-menu" id="dockQuickMenuTile" aria-label="Open quick menu">
@@ -7398,7 +7398,7 @@
     }
     try{ window.portalSyncTodaySectionDisplay = portalSyncTodaySectionDisplay; }catch(_){}
 
-    /** Staff/lead topbar brand orbits: `logoamarillo.png` while identity loads or when both announcement+reminder; `ANNOUNCEMENTES_LOGO.png` announcements only; `logoNaranja.png` reminders only; `logoazul.png` when clear. Dock centre uses `FOOTERLOGO.png`. */
+    /** Staff/lead topbar brand orbits use F-02-1 crest. Dock centre uses portal/logo-pwa.png (clubSENsational wordmark). */
     const PORTAL_STAFF_TOPBAR_LOGO_IDLE_URL = '/portal/F-02-1.png';
     const PORTAL_STAFF_TOPBAR_LOGO_CLEAR_URL = '/portal/F-02-1.png';
     const PORTAL_STAFF_TOPBAR_LOGO_REMINDER_URL = '/portal/F-02-1.png';
