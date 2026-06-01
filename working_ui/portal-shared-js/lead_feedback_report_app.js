@@ -614,6 +614,13 @@ async function initLeadFeedbackReportPage() {
   applyLeadContextRules(ctx);
   applySessionContextDisplay(ctx);
 
+  if (typeof window.PortalFeedbackVoiceInput !== "undefined") {
+    window.PortalFeedbackVoiceInput.init({
+      fields: ["lrPositiveFeedback", "lrRelevantInformation"],
+      staffName: clean(ctx.completedBy) || "",
+    });
+  }
+
   prefillBespokeFromQuery();
 
   const wireAutocomplete = () => {

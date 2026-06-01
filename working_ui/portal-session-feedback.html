@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="/portal-shared-js/portal_page_logo_themes.css?v=20260519-form-context" />
 <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260605-feedback-select-max3" />
 <script src="/portal/portal_participant_achievements.js?v=20260605-feedback-select-max3"></script>
+<script src="/portal/portal_feedback_voice_input.js?v=20260602-voice-staff"></script>
 <style>
 :root{
   /* Corporate gold — warmer yellow field tints (logo pulse / #ffcc33 family) */
@@ -2734,6 +2735,11 @@ button{
     enrichPortalSessionContext().catch(function(){}),
     loadInstructorDisplayName().catch(function(){}),
   ]).then(function(){
+    if (typeof window.PortalFeedbackVoiceInput !== "undefined") {
+      window.PortalFeedbackVoiceInput.setStaffName(
+        readPinIdentityName() || clean(instructorDisplayName) || ""
+      );
+    }
     return refreshFeedbackParticipantAndServicePickers().catch(function(){});
   }).then(function(){
     resolveInstructorFromUrl();
@@ -2816,6 +2822,13 @@ button{
   })();
 
   syncPillSelection();
+
+  if (typeof window.PortalFeedbackVoiceInput !== "undefined") {
+    window.PortalFeedbackVoiceInput.init({
+      fields: ["fbPositiveFeedback", "fbRelevantInformation"],
+      staffName: readPinIdentityName() || clean(instructorDisplayName) || "",
+    });
+  }
 })();
 </script>
 
