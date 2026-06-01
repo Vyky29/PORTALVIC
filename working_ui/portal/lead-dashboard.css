@@ -59,7 +59,7 @@
       --app-surface:linear-gradient(180deg,#f7fbff 0%,#edf4fb 100%);
       /* Barra inferior: 3 cajas (My clients | Dashboard | Quick menu); degradado en .app::after */
       --dock-strip-height:62px;
-      --dock-nav-logo-max-height:48px;
+      --dock-nav-logo-max-height:40px;
       /* On mobile Safari the browser bar covers the footer: raise the dock (only .portal-in-browser) */
       --dock-browser-ui-lift:0px;
       /* Should match ~real dock height (no extra “air” above the menu) */
