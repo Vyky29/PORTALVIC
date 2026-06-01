@@ -475,6 +475,97 @@
         box-shadow: 8px 0 32px rgba(15, 23, 42, 0.25);
       }
     }
+    /* Tablet / phone landscape: overlay menu (same as narrow portrait) */
+    @media (orientation: landscape) and (max-width: 1279px) {
+      .ceo-menu-mob {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .ceo-sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        height: 100dvh;
+        max-height: 100dvh;
+        width: min(100vw, 320px);
+        min-width: 0;
+        max-width: min(100vw, 320px);
+        transform: translateX(-100%);
+        box-shadow: 8px 0 32px rgba(15, 23, 42, 0.25);
+      }
+      body.ceo-sidebar-open .ceo-sidebar {
+        transform: translateX(0);
+      }
+      .ceo-main {
+        width: 100%;
+        min-width: 0;
+      }
+    }
+    body.ceo-touch-compact .ceo-menu-mob {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    body.ceo-touch-compact .ceo-sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      height: 100dvh;
+      max-height: 100dvh;
+      width: min(100vw, 320px);
+      min-width: 0;
+      max-width: min(100vw, 320px);
+      transform: translateX(-100%);
+      box-shadow: 8px 0 32px rgba(15, 23, 42, 0.25);
+    }
+    body.ceo-touch-compact .ceo-main {
+      width: 100%;
+      min-width: 0;
+    }
+    .ceo-float-menu-btn {
+      display: none;
+      position: fixed;
+      z-index: 12080;
+      bottom: max(14px, env(safe-area-inset-bottom, 0px));
+      left: max(14px, env(safe-area-inset-left, 0px));
+      width: 50px;
+      height: 50px;
+      border-radius: 999px;
+      border: 2px solid rgba(255, 255, 255, 0.22);
+      background: linear-gradient(180deg, #1e293b 0%, var(--sidebar) 100%);
+      color: #f8fafc;
+      font-size: 22px;
+      line-height: 1;
+      padding: 0;
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 28px rgba(15, 23, 42, 0.42);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .ceo-float-menu-btn:hover,
+    .ceo-float-menu-btn:focus-visible {
+      background: linear-gradient(180deg, #334155 0%, #1e293b 100%);
+      outline: 2px solid rgba(125, 211, 252, 0.45);
+      outline-offset: 2px;
+    }
+    body.ceo-touch-compact:not(.ceo-sidebar-open) .ceo-float-menu-btn {
+      display: inline-flex;
+    }
+    @media (orientation: landscape) and (max-width: 1279px) {
+      body:not(.ceo-sidebar-open) .ceo-float-menu-btn {
+        display: inline-flex;
+      }
+      .ceo-workspace {
+        padding-bottom: max(72px, calc(14px + env(safe-area-inset-bottom, 0px)));
+      }
+    }
+    body.ceo-sidebar-open .ceo-float-menu-btn {
+      display: none !important;
+    }
 
     .ceo-portal-dm-backdrop {
       position: fixed;
@@ -1024,9 +1115,6 @@
         align-items: center;
         justify-content: center;
       }
-      .ceo-sidebar {
-        width: min(220px, 34vw);
-      }
       .ceo-topbar {
         height: auto;
         min-height: 44px;
@@ -1047,17 +1135,13 @@
       .ceo-panel {
         padding: 14px 12px 12px;
       }
+      .ceo-dm-direct {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
     }
     @media (max-width: 1024px) and (orientation: landscape) and (max-height: 520px) {
       :root {
         --topH: 42px;
-      }
-      .ceo-sidebar-brand-mark img {
-        width: 56px;
-        height: 56px;
-      }
-      .ceo-sidebar {
-        width: min(168px, 28vw);
       }
       .ceo-nav-link {
         font-size: 12px;
@@ -1072,6 +1156,17 @@
       }
       .ceo-snap-card__value {
         font-size: 1.15rem;
+      }
+      .ceo-dm-direct {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+      }
+      .ceo-panel__title {
+        font-size: 0.95rem;
+      }
+      .ceo-panel__lead {
+        font-size: 0.8rem;
+        margin-bottom: 10px;
       }
     }
   </style>
@@ -1175,6 +1270,8 @@
     </div>
   </div>
 
+  <button type="button" class="ceo-float-menu-btn" id="ceoFloatMenuBtn" aria-label="Open menu" aria-controls="ceoSidebar" aria-expanded="false">☰</button>
+
   <div class="ceo-portal-dm-backdrop" id="ceoPortalDmBackdrop" hidden aria-hidden="true"></div>
   <section
     class="ceo-portal-dm-sheet"
@@ -1273,18 +1370,49 @@
   </script>
   <script>
     (function () {
+      function ceoTouchCompactLayoutActive() {
+        try {
+          var w = window.innerWidth || document.documentElement.clientWidth || 0;
+          var h = window.innerHeight || document.documentElement.clientHeight || 0;
+          if (w >= 1280 && h >= 680) return false;
+          if (w <= 767) return true;
+          if (h <= 640) return true;
+          return w > h;
+        } catch (_) {
+          return false;
+        }
+      }
+      function ceoApplyTouchCompactLayoutClass() {
+        var on = ceoTouchCompactLayoutActive();
+        document.body.classList.toggle("ceo-touch-compact", on);
+      }
+      try {
+        ceoApplyTouchCompactLayoutClass();
+        window.addEventListener("resize", ceoApplyTouchCompactLayoutClass);
+        window.addEventListener("orientationchange", ceoApplyTouchCompactLayoutClass);
+      } catch (_) {}
+
       var mob = document.getElementById("ceoBtnMenuMob");
+      var floatMob = document.getElementById("ceoFloatMenuBtn");
       var bd = document.getElementById("ceoSidebarBackdrop");
       function setOpen(open) {
         document.body.classList.toggle("ceo-sidebar-open", open);
         if (mob) mob.setAttribute("aria-expanded", open ? "true" : "false");
+        if (floatMob) floatMob.setAttribute("aria-expanded", open ? "true" : "false");
       }
       function close() {
         setOpen(false);
       }
+      function toggleMenu() {
+        setOpen(!document.body.classList.contains("ceo-sidebar-open"));
+      }
       if (mob) {
-        mob.addEventListener("click", function () {
-          setOpen(!document.body.classList.contains("ceo-sidebar-open"));
+        mob.addEventListener("click", toggleMenu);
+      }
+      if (floatMob) {
+        floatMob.addEventListener("click", function (e) {
+          e.preventDefault();
+          toggleMenu();
         });
       }
       if (bd) bd.addEventListener("click", close);

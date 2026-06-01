@@ -167,6 +167,31 @@
     return "";
   }
 
+  /** Roster slug → clients_info slug (e.g. Adam Ab ↔ Abodi Pa). */
+  var CLIENT_INFO_SLUG_ALIASES = {
+    adam_a: "adam_ab",
+    abodi_p: "adam_ab",
+    abodi_pa: "adam_ab",
+    abodi: "adam_ab",
+  };
+
+  function clientInfoTextForSlug(bySlug, slug) {
+    const direct = bySlug.get(slug);
+    if (direct) return direct;
+    const alias = CLIENT_INFO_SLUG_ALIASES[slug];
+    if (alias) return bySlug.get(alias) || "";
+    for (const key in CLIENT_INFO_SLUG_ALIASES) {
+      if (
+        Object.prototype.hasOwnProperty.call(CLIENT_INFO_SLUG_ALIASES, key) &&
+        CLIENT_INFO_SLUG_ALIASES[key] === slug
+      ) {
+        const hit = bySlug.get(key);
+        if (hit) return hit;
+      }
+    }
+    return "";
+  }
+
   function mergeClientsInfoRows(clientNotesById, rows) {
     const list = Array.isArray(rows) ? rows : [];
     const bySlug = new Map();
@@ -179,7 +204,7 @@
       if (k === "available" || k === "closed") return;
       const note = clientNotesById[k];
       if (!note) return;
-      const t = bySlug.get(k);
+      const t = clientInfoTextForSlug(bySlug, k);
       if (t) note.generalInfoSheet = t;
       const infoText = t || note.generalInfoSheet || "";
       const ovGender = genderOverrideFor(k, note.name);

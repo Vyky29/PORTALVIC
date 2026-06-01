@@ -32,7 +32,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260531-svc-overview-metrics" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260609-mob-landscape" />
 </head>
 <body>
   <script>
@@ -114,6 +114,7 @@
     <nav class="admin-bottom-nav" id="adminBottomNav" aria-label="Quick mobile navigation"></nav>
   </div>
   <div class="admin-fullnav-backdrop" id="adminFullnavBackdrop" aria-hidden="true"></div>
+  <button type="button" class="admin-float-menu-btn" id="adminFloatMenuBtn" aria-label="Open menu" aria-controls="adminSidebar" aria-expanded="false">☰</button>
 
   <div class="modal-backdrop" id="modalBackdrop">
     <div class="modal" role="dialog" aria-modal="true" id="modalRoot" aria-labelledby="modalTitle"></div>
@@ -20808,22 +20809,31 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       try{
         var w = window.innerWidth || document.documentElement.clientWidth || 0;
         var h = window.innerHeight || document.documentElement.clientHeight || 0;
-        if(w >= 1200) return false;
-        if(w <= 640) return true;
+        if(w >= 1280 && h >= 680) return false;
+        if(w <= 767) return true;
+        if(h <= 640) return true;
         return w > h;
       }catch(e){ return false; }
     }
     function adminApplyTouchCompactLayoutClass(){
       var on = adminTouchCompactLayoutActive();
       document.body.classList.toggle('admin-touch-compact', on);
+      var floater = $('adminFloatMenuBtn');
+      if(floater){
+        floater.setAttribute('aria-expanded', document.body.classList.contains('admin-fullnav-open') ? 'true' : 'false');
+      }
       if(!on) document.body.classList.remove('admin-fullnav-open');
     }
     function adminCloseFullnav(){
       document.body.classList.remove('admin-fullnav-open');
+      var floater = $('adminFloatMenuBtn');
+      if(floater) floater.setAttribute('aria-expanded', 'false');
     }
     function adminOpenFullnav(){
       if(!document.body.classList.contains('admin-touch-compact')) return;
       document.body.classList.add('admin-fullnav-open');
+      var floater = $('adminFloatMenuBtn');
+      if(floater) floater.setAttribute('aria-expanded', 'true');
     }
 
     var KEY_ADMIN_SIDEBAR_PINNED = 'portalAdminSidebarDesktopPinned';
@@ -21219,6 +21229,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(fnClose) fnClose.addEventListener('click', function(e){ e.stopPropagation(); adminCloseFullnav(); });
       var fnBd = $('adminFullnavBackdrop');
       if(fnBd) fnBd.addEventListener('click', adminCloseFullnav);
+      var floatMenu = $('adminFloatMenuBtn');
+      if(floatMenu){
+        floatMenu.addEventListener('click', function(e){
+          e.preventDefault();
+          e.stopPropagation();
+          if(document.body.classList.contains('admin-fullnav-open')) adminCloseFullnav();
+          else adminOpenFullnav();
+        });
+      }
       renderAlerts();
       initOpWorkflowMock();
       var params = new URLSearchParams(location.search);

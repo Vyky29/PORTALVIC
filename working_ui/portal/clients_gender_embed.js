@@ -81,6 +81,7 @@ window.PORTAL_CLIENT_GENDER_OVERRIDES = {
   simon: "m",
   steven: "m",
   thushyan: "m",
+  timi: "m",
   tinashe: "m",
   tom: "m",
   tyson: "m",

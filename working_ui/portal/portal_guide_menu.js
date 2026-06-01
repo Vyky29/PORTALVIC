@@ -33,7 +33,11 @@
       var promo = portalGuidePromoActive();
       var topGrp = global.document && global.document.getElementById('portalQuickMenuGuideGroup');
       var setBtn = global.document && global.document.getElementById('quickMenuPortalGuideSettings');
-      if (topGrp) topGrp.hidden = !promo;
+      var guideGrid = global.document && global.document.getElementById('portalQuickMenuGuideGrid');
+      var ovHost = global.document && global.document.getElementById('portalQuickMenuScheduleOverridesTop');
+      var hasOv = !!(ovHost && !ovHost.hidden && String(ovHost.innerHTML || '').trim());
+      if (guideGrid) guideGrid.hidden = !promo;
+      if (topGrp) topGrp.hidden = !promo && !hasOv;
       if (setBtn) setBtn.hidden = promo;
     } catch (_) {}
   }
