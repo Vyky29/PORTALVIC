@@ -744,16 +744,23 @@ export async function bootstrapDashboardSupabase(_opts) {
       console.debug("[portal] visit tracker skipped:", visitErr);
     }
     try {
-      const perm = await import("./portal_location_permission.js?v=20260601-alerts-ask-once");
+      const perm = await import("./portal_location_permission.js?v=20260609-alerts-mic");
       window.portalLocationPermissionGranted = perm.portalLocationPermissionGranted;
+      window.portalMicrophonePermissionGranted = perm.portalMicrophonePermissionGranted;
       window.portalRequestLocationPermission = perm.requestLocationPermission;
+      window.portalRequestMicrophonePermission = perm.requestMicrophonePermission;
       window.portalRefreshLocationUi = perm.portalRefreshLocationUi;
+      window.portalRefreshMicrophoneUi = perm.portalRefreshMicrophoneUi;
       window.portalRefreshMandatoryAlertsSettingsUi = perm.portalRefreshMandatoryAlertsSettingsUi;
       window.portalEnsureMandatoryAlertsSettings = perm.portalEnsureMandatoryAlertsSettings;
       window.portalSyncAlertsSettingsChrome = perm.portalSyncAlertsSettingsChrome;
       perm.bindPortalLocationPermissionUi();
       perm.bindMandatoryAlertsSettingsResume();
-      await perm.probeLocationPermissionState();
+      await Promise.all([
+        perm.probeLocationPermissionState(),
+        perm.probeMicrophonePermissionState(),
+      ]);
+      perm.portalRefreshMicrophoneUi();
       perm.portalSyncAlertsSettingsChrome();
       const loc = await import("./portal_location_tracker.js?v=20260608-shift-window");
       window.portalRestartLocationTracker = function () {

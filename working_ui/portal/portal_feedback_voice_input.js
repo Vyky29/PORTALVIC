@@ -1,10 +1,9 @@
 /**
- * Session feedback voice — Web Speech (English) or Whisper (Español/Italiano → English).
+ * Session feedback voice — auto language from staff profile; output English for records.
  */
 (function (global) {
   "use strict";
 
-  var LANG_KEY = "portalFbVoiceLang_v1";
   var WHISPER_FN = "portal-feedback-voice-transcribe";
   var MAX_TRANSLATE_CHUNK = 450;
   var SILENCE_STOP_MS = 2800;
@@ -37,13 +36,9 @@
   var whisperProbeDone = false;
 
   var ui = {
-    bar: null,
-    label: null,
-    select: null,
-    hint: null,
-    allowedLangs: ALL_LANGS.slice(0, 1),
     staffGroup: "english",
     staffName: "",
+    resolvedLang: "en-GB",
   };
 
   function getSpeechRecognition() {
@@ -55,11 +50,6 @@
     var st = document.createElement("style");
     st.id = "portal-fb-voice-styles";
     st.textContent =
-      ".portal-fb-voice-lang{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:0 0 14px;padding:12px 14px;border-radius:14px;border:1px solid rgba(180,145,90,.28);background:linear-gradient(180deg,#faf9f6 0%,#f5f2ec 100%);min-width:0}" +
-      ".portal-fb-voice-lang--single .portal-fb-voice-lang-label,.portal-fb-voice-lang--single .portal-fb-voice-lang-select{display:none}" +
-      ".portal-fb-voice-lang-label{font-size:13px;font-weight:700;color:rgba(11,18,32,.88);flex-shrink:0}" +
-      ".portal-fb-voice-lang-select{min-width:0;max-width:100%;font-size:13px;padding:8px 10px;border-radius:10px;border:1px solid rgba(180,145,90,.38);background:#fff;color:#0b1220}" +
-      ".portal-fb-voice-lang-hint{flex:1 1 100%;margin:0;font-size:12px;line-height:1.45;color:#5b6473;min-width:0;overflow-wrap:break-word}" +
       ".portal-fb-voice-wrap{display:flex;flex-direction:column;gap:8px;min-width:0;width:100%}" +
       ".portal-fb-voice-wrap textarea{min-width:0;width:100%}" +
       ".portal-fb-voice-wrap--live textarea{outline:2px solid rgba(220,38,38,.25)}" +
@@ -96,6 +86,12 @@
 
   function resolveStaffVoiceGroup(staffName) {
     var tokens = nameTokens(staffName);
+    try {
+      var prof = global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.staff_profile;
+      if (prof) {
+        tokens = tokens.concat(nameTokens(prof.full_name || prof.username || ""));
+      }
+    } catch (_) {}
     var i;
     for (i = 0; i < tokens.length; i++) {
       if (ITALIAN_STAFF[tokens[i]]) return "italian";
@@ -104,12 +100,6 @@
       if (SPANISH_STAFF[tokens[i]]) return "spanish";
     }
     return "english";
-  }
-
-  function langsForGroup(group) {
-    if (group === "italian") return [ALL_LANGS[2], ALL_LANGS[0]];
-    if (group === "spanish") return [ALL_LANGS[1], ALL_LANGS[0]];
-    return [ALL_LANGS[0]];
   }
 
   function defaultLangForGroup(group) {
@@ -126,80 +116,14 @@
     return ALL_LANGS[0];
   }
 
-  function langAllowed(langValue) {
-    var i;
-    for (i = 0; i < ui.allowedLangs.length; i++) {
-      if (ui.allowedLangs[i].value === langValue) return true;
-    }
-    return false;
-  }
-
-  function getStoredLang() {
-    try {
-      var v = sessionStorage.getItem(LANG_KEY);
-      if (v) return v;
-    } catch (_) {}
-    return "";
-  }
-
-  function storeLang(v) {
-    try {
-      sessionStorage.setItem(LANG_KEY, v);
-    } catch (_) {}
-  }
-
-  function hintForGroup(group) {
-    if (group === "italian") {
-      if (whisperAvailable) {
-        return "Tap mic, speak, tap again. Italiano → English or English direct (same quality). Edit before submit.";
-      }
-      return "Tap mic, speak in Italiano or English. For Italiano we translate finished phrases to English — speak slowly. Or pick English if easier.";
-    }
-    if (group === "spanish") {
-      if (whisperAvailable) {
-        return "Tap mic, speak, tap again. Español → English or English direct (same quality). Edit before submit.";
-      }
-      return "Tap mic, speak in Español or English. For Español we translate finished phrases to English — speak slowly. Or pick English if easier.";
-    }
-    return "Tap mic, speak in English, tap again. Edit before submit.";
-  }
-
-  function refreshHint() {
-    if (!ui.hint) return;
-    ui.hint.textContent = hintForGroup(ui.staffGroup);
-    if (!getSpeechRecognition() && !whisperAvailable) {
-      ui.hint.textContent +=
-        " Voice works best in Chrome (Android or desktop). You can still type below.";
-    }
+  function getResolvedLang() {
+    return ui.resolvedLang || defaultLangForGroup(ui.staffGroup);
   }
 
   function applyStaffLanguages(staffName) {
-    if (!ui.select || !ui.bar) return;
     ui.staffName = String(staffName || "");
-    var group = resolveStaffVoiceGroup(ui.staffName);
-    ui.staffGroup = group;
-    ui.allowedLangs = langsForGroup(group);
-
-    var stored = getStoredLang();
-    var pick = langAllowed(stored) ? stored : defaultLangForGroup(group);
-    storeLang(pick);
-
-    ui.select.replaceChildren();
-    ui.allowedLangs.forEach(function (l) {
-      var opt = document.createElement("option");
-      opt.value = l.value;
-      opt.textContent = l.label;
-      ui.select.appendChild(opt);
-    });
-    ui.select.value = pick;
-
-    if (group === "english") {
-      ui.bar.classList.add("portal-fb-voice-lang--single");
-    } else {
-      ui.bar.classList.remove("portal-fb-voice-lang--single");
-    }
-
-    refreshHint();
+    ui.staffGroup = resolveStaffVoiceGroup(ui.staffName);
+    ui.resolvedLang = defaultLangForGroup(ui.staffGroup);
   }
 
   function supabaseFnUrl() {
@@ -228,7 +152,6 @@
       })
       .then(function (data) {
         whisperAvailable = !!(data && data.whisper);
-        refreshHint();
         return whisperAvailable;
       })
       .catch(function () {
@@ -447,7 +370,7 @@
         setLiveTextarea(s, english || source);
         if (s.statusEl && !s.stopRequested) {
           var heard = s.interimText ? ' Heard: "' + s.interimText + '"' : "";
-          s.statusEl.textContent = "Listening… English updates when you pause." + heard;
+          s.statusEl.textContent = "Listening…" + heard;
         }
       })
       .catch(function () {
@@ -555,7 +478,7 @@
     }
 
     if (hadSpeech && s.needsTranslate) {
-      if (s.statusEl) s.statusEl.textContent = "Translating to English…";
+      if (s.statusEl) s.statusEl.textContent = "Processing voice…";
       translateToEnglish(source, s.translateCode)
         .then(function (english) {
           setLiveTextarea(s, english || source);
@@ -593,7 +516,7 @@
     var blob = new Blob(chunks, { type: mime });
     if (s.statusEl) {
       s.statusEl.textContent = s.needsTranslate
-        ? "Converting speech to English…"
+        ? "Converting speech to text…"
         : "Converting speech to text…";
     }
     if (s.btn) s.btn.disabled = true;
@@ -611,11 +534,11 @@
       .catch(function (err) {
         cleanupSessionUi(s);
         if (s.textarea) s.textarea.value = s.prefix;
-        var msg = "Could not transcribe — try English or type manually.";
+        var msg = "Could not transcribe — type feedback below or try again.";
         if (err && err.message === "not_signed_in") {
-          msg = "Sign in to the portal to use voice in Español.";
+          msg = "Sign in to the portal to use voice input.";
         } else if (err && err.message === "no_openai") {
-          msg = "Español voice needs server setup — use English or type for now.";
+          msg = "Voice is not available yet — type feedback below.";
         }
         if (s.statusEl) s.statusEl.textContent = msg;
       });
@@ -629,19 +552,19 @@
     return !!whisperAvailable;
   }
 
-  function startWhisperCapture(textarea, btn, statusEl, langValue) {
+  function startWhisperCapture(textarea, btn, statusEl) {
     if (session && session.btn === btn) {
       requestStop(session, "manual");
       return;
     }
     if (session) stopActiveSession();
 
-    var lang = langAllowed(langValue) ? langValue : defaultLangForGroup(ui.staffGroup);
+    var lang = getResolvedLang();
     var cfg = getLangConfig(lang);
 
     var mime = pickMime();
     if (!mime || typeof MediaRecorder === "undefined") {
-      startWebSpeechCapture(textarea, btn, statusEl, langValue);
+      startWebSpeechCapture(textarea, btn, statusEl);
       return;
     }
 
@@ -669,9 +592,7 @@
     btn.setAttribute("aria-label", "Stop voice input");
     btn.setAttribute("aria-pressed", "true");
     if (statusEl) {
-      statusEl.textContent = s.needsTranslate
-        ? "Recording… speak clearly, tap mic when finished."
-        : "Recording… speak in English, tap mic when finished.";
+      statusEl.textContent = "Recording… tap mic when finished.";
     }
 
     navigator.mediaDevices
@@ -698,12 +619,12 @@
         }, MAX_RECORD_MS);
       })
       .catch(function () {
-        if (statusEl) statusEl.textContent = "Microphone blocked — allow mic in settings.";
+        if (statusEl) statusEl.textContent = "Microphone blocked — allow it under Alerts, location & microphone in the menu.";
         cleanupSessionUi(s);
       });
   }
 
-  function startWebSpeechCapture(textarea, btn, statusEl, langValue) {
+  function startWebSpeechCapture(textarea, btn, statusEl) {
     var Rec = getSpeechRecognition();
     if (!Rec) {
       if (statusEl) {
@@ -720,7 +641,7 @@
 
     if (session) stopActiveSession();
 
-    var lang = langAllowed(langValue) ? langValue : defaultLangForGroup(ui.staffGroup);
+    var lang = getResolvedLang();
     var cfg = getLangConfig(lang);
 
     var s = {
@@ -750,9 +671,7 @@
     btn.setAttribute("aria-label", "Stop voice input");
     btn.setAttribute("aria-pressed", "true");
     if (statusEl) {
-      statusEl.textContent = s.needsTranslate
-        ? "Listening… English updates when you finish each phrase."
-        : "Listening… text updates as you speak.";
+      statusEl.textContent = "Listening… tap mic when finished.";
     }
 
     var rec = new Rec();
@@ -775,7 +694,7 @@
       if (e.error === "aborted") return;
       var msg = "Voice error — try again.";
       if (e.error === "not-allowed") {
-        msg = "Microphone blocked — allow mic in browser settings.";
+        msg = "Microphone blocked — allow it under Alerts, location & microphone in the menu.";
       } else if (e.error === "no-speech") {
         requestStop(s, "pause");
         return;
@@ -803,11 +722,11 @@
     }
   }
 
-  function startCapture(textarea, btn, statusEl, langValue) {
+  function startCapture(textarea, btn, statusEl) {
     if (shouldUseWhisper()) {
-      startWhisperCapture(textarea, btn, statusEl, langValue);
+      startWhisperCapture(textarea, btn, statusEl);
     } else {
-      startWebSpeechCapture(textarea, btn, statusEl, langValue);
+      startWebSpeechCapture(textarea, btn, statusEl);
     }
   }
 
@@ -843,46 +762,8 @@
     wrap.appendChild(bar);
 
     btn.addEventListener("click", function () {
-      var lang = ui.select ? ui.select.value : defaultLangForGroup(ui.staffGroup);
-      startCapture(ta, btn, statusEl, lang);
+      startCapture(ta, btn, statusEl);
     });
-  }
-
-  function createLangBar(insertBeforeEl) {
-    var bar = document.createElement("div");
-    bar.className = "portal-fb-voice-lang";
-    bar.setAttribute("role", "group");
-    bar.setAttribute("aria-label", "Voice input language");
-
-    var label = document.createElement("label");
-    label.className = "portal-fb-voice-lang-label";
-    label.setAttribute("for", "portalFbVoiceLang");
-    label.textContent = "Voice language";
-
-    var sel = document.createElement("select");
-    sel.id = "portalFbVoiceLang";
-    sel.className = "portal-fb-voice-lang-select";
-    sel.addEventListener("change", function () {
-      storeLang(sel.value);
-    });
-
-    var hint = document.createElement("p");
-    hint.className = "portal-fb-voice-lang-hint";
-
-    bar.appendChild(label);
-    bar.appendChild(sel);
-    bar.appendChild(hint);
-
-    if (insertBeforeEl && insertBeforeEl.parentNode) {
-      insertBeforeEl.parentNode.insertBefore(bar, insertBeforeEl);
-    }
-
-    ui.bar = bar;
-    ui.label = label;
-    ui.select = sel;
-    ui.hint = hint;
-
-    return bar;
   }
 
   var initDone = false;
@@ -896,12 +777,6 @@
     injectStyles();
     var fieldIds = opts.fields || [];
     if (!fieldIds.length) return;
-
-    var firstEl = document.getElementById(fieldIds[0]);
-    if (!firstEl) return;
-
-    var anchor = firstEl.closest(".field") || firstEl;
-    createLangBar(anchor);
 
     fieldIds.forEach(function (id) {
       wrapTextarea(document.getElementById(id));

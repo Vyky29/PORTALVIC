@@ -9,7 +9,7 @@ import {
   portalLocationPermissionGranted,
   probeLocationPermissionState,
   tryProbeLocationGrantedViaGeolocation,
-} from "./portal_location_permission.js?v=20260601-alerts-ask-once";
+} from "./portal_location_permission.js?v=20260609-alerts-mic";
 
 const MIN_SEND_INTERVAL_MS = 120000;
 const MIN_MOVE_M = 25;
