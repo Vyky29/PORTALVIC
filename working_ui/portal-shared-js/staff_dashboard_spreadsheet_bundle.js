@@ -1385,7 +1385,7 @@
       "day": "Tuesday",
       "instructors": "JAVIER",
       "service": "Aquatic Activity",
-      "area": "Lane (DE)",
+      "area": "Lane (SE)",
       "time_slot": "4 to 4.30",
       "venue": "Acton",
       "session_date": "2026-05-19"
@@ -1495,7 +1495,7 @@
       "day": "Tuesday",
       "instructors": "AURORA",
       "service": "Aquatic Activity",
-      "area": "Lane (SE)",
+      "area": "Lane (DE)",
       "time_slot": "5.30 to 6",
       "venue": "Acton",
       "session_date": "2026-05-19"
@@ -1505,7 +1505,7 @@
       "day": "Tuesday",
       "instructors": "JAVIER",
       "service": "Aquatic Activity",
-      "area": "Lane (DE)",
+      "area": "Lane",
       "time_slot": "5.30 to 6",
       "venue": "Acton",
       "session_date": "2026-05-19"
@@ -1515,7 +1515,7 @@
       "day": "Tuesday",
       "instructors": "ANGEL",
       "service": "Aquatic Activity",
-      "area": "Lane (DE)",
+      "area": "Teaching Pool",
       "time_slot": "5.30 to 6",
       "venue": "Acton",
       "session_date": "2026-05-19"
@@ -1545,7 +1545,7 @@
       "day": "Tuesday",
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
-      "area": "Lane (DE)",
+      "area": "Lane",
       "time_slot": "6 to 6.30",
       "venue": "Acton",
       "session_date": "2026-05-19"
@@ -1585,7 +1585,7 @@
       "day": "Tuesday",
       "instructors": "ANGEL",
       "service": "Aquatic Activity",
-      "area": "Lane (DE)",
+      "area": "Lane (SE)",
       "time_slot": "6 to 6.30",
       "venue": "Acton",
       "session_date": "2026-05-19"
@@ -13176,7 +13176,7 @@
       "day": "Tuesday",
       "instructors": "JAVIER",
       "service": "Aquatic Activity",
-      "area": "Lane (DE)",
+      "area": "Teaching Pool",
       "time_slot": "4 to 4.30",
       "venue": "Acton"
     },
@@ -13230,7 +13230,7 @@
       "day": "Tuesday",
       "instructors": "AURORA",
       "service": "Aquatic Activity",
-      "area": "Lane (SE)",
+      "area": "Teaching Pool",
       "time_slot": "4.30 to 5",
       "venue": "Acton"
     },
@@ -13257,7 +13257,7 @@
       "day": "Tuesday",
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
-      "area": "Lane (DE)",
+      "area": "Teaching Pool",
       "time_slot": "4.30 to 5.30",
       "venue": "Acton"
     },
@@ -13275,7 +13275,7 @@
       "day": "Tuesday",
       "instructors": "AURORA",
       "service": "Aquatic Activity",
-      "area": "Lane (SE)",
+      "area": "Teaching Pool",
       "time_slot": "5 to 5.30",
       "venue": "Acton"
     },
@@ -13284,7 +13284,7 @@
       "day": "Tuesday",
       "instructors": "JAVIER",
       "service": "Aquatic Activity",
-      "area": "Lane (SE)",
+      "area": "Teaching Pool",
       "time_slot": "5 to 5.30",
       "venue": "Acton"
     },
@@ -13302,7 +13302,7 @@
       "day": "Tuesday",
       "instructors": "AURORA",
       "service": "Aquatic Activity",
-      "area": "Lane (SE)",
+      "area": "Teaching Pool",
       "time_slot": "5.30 to 6",
       "venue": "Acton"
     },
@@ -13311,7 +13311,7 @@
       "day": "Tuesday",
       "instructors": "JAVIER",
       "service": "Aquatic Activity",
-      "area": "Lane (DE)",
+      "area": "Teaching Pool",
       "time_slot": "5.30 to 6",
       "venue": "Acton"
     },
@@ -13320,7 +13320,7 @@
       "day": "Tuesday",
       "instructors": "ANGEL",
       "service": "Aquatic Activity",
-      "area": "Lane (DE)",
+      "area": "Teaching Pool",
       "time_slot": "5.30 to 6",
       "venue": "Acton"
     },
@@ -13338,7 +13338,7 @@
       "day": "Tuesday",
       "instructors": "YOUSSEF",
       "service": "Aquatic Activity",
-      "area": "Lane (SE)",
+      "area": "Teaching Pool",
       "time_slot": "5.30 to 6.30",
       "venue": "Acton"
     },
@@ -13347,16 +13347,16 @@
       "day": "Tuesday",
       "instructors": "ROBERTO",
       "service": "Aquatic Activity",
-      "area": "Lane (DE)",
+      "area": "Teaching Pool",
       "time_slot": "6 to 6.30",
       "venue": "Acton"
     },
     {
-      "client_name": "Hazem",
+      "client_name": "Eiji",
       "day": "Tuesday",
       "instructors": "AURORA",
       "service": "Aquatic Activity",
-      "area": "Lane (DE)",
+      "area": "Teaching Pool",
       "time_slot": "6 to 6.30",
       "venue": "Acton"
     },
@@ -13365,7 +13365,7 @@
       "day": "Tuesday",
       "instructors": "JAVIER",
       "service": "Aquatic Activity",
-      "area": "Lane (SE)",
+      "area": "Teaching Pool",
       "time_slot": "6 to 6.30",
       "venue": "Acton"
     },
@@ -13374,7 +13374,7 @@
       "day": "Tuesday",
       "instructors": "ANGEL",
       "service": "Aquatic Activity",
-      "area": "Lane (DE)",
+      "area": "Teaching Pool",
       "time_slot": "6 to 6.30",
       "venue": "Acton"
     },
