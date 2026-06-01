@@ -1007,7 +1007,7 @@ body:has(#workspace .dash-hub--dayops) .admin-main{
     -webkit-overflow-scrolling:touch;
   }
   body.admin-touch-compact:has(#workspace .dash-hub--dayops) .admin-workspace{
-    padding-bottom:calc(68px + env(safe-area-inset-bottom, 0px)) !important;
+    padding:max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-inset-right, 0px)) max(12px, env(safe-area-inset-bottom, 0px)) max(6px, env(safe-area-inset-left, 0px)) !important;
   }
   .dash-hub--dayops{
     flex:none;

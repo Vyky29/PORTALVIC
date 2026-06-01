@@ -3984,9 +3984,28 @@
     /* Touch / small tablet: rail sidebar, full menu from logo or float btn (body.admin-touch-compact). Desktop ≥1280px: never applied (JS). */
     body.admin-touch-compact{--sidebarLayoutReserve:56px;--sidebarW:56px}
     body.admin-touch-compact .admin-topbar{display:none !important}
-    body.admin-touch-compact .admin-shell{height:100dvh;max-height:100dvh}
+    body.admin-touch-compact .admin-shell{height:100dvh;max-height:100dvh;min-height:0}
+    body.admin-touch-compact .admin-main{
+      flex:1 1 auto;
+      min-width:0;
+      min-height:0;
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+    }
     body.admin-touch-compact .admin-sidebar{
-      width:56px !important;min-width:56px !important;max-width:56px !important;flex-shrink:0
+      width:56px !important;min-width:56px !important;max-width:56px !important;flex-shrink:0;
+      display:flex;
+      flex-direction:column;
+      min-height:0;
+      overflow:hidden;
+    }
+    body.admin-touch-compact .admin-nav{
+      flex:1 1 auto;
+      min-height:0;
+      overflow-x:hidden;
+      overflow-y:auto;
+      -webkit-overflow-scrolling:touch;
     }
     body.admin-touch-compact .admin-sidebar-brand{
       position:relative;padding:8px 6px 6px !important;cursor:pointer
@@ -4018,7 +4037,7 @@
     body.admin-touch-compact:not(.admin-fullnav-open) #adminNav button[data-view],
     body.admin-touch-compact:not(.admin-fullnav-open) #adminNav a.admin-nav-external{justify-content:center;padding:8px 6px !important}
     body.admin-touch-compact:not(.admin-fullnav-open) .admin-sidebar-foot__txt{display:none !important}
-    body.admin-touch-compact:not(.admin-fullnav-open) .admin-sidebar-width-controls{display:none !important}
+    body.admin-touch-compact .admin-sidebar-width-controls{display:none !important}
     #adminFullnavClose{
       display:none;position:absolute;top:4px;right:2px;z-index:8;width:34px;height:34px;border-radius:10px;border:1px solid rgba(255,255,255,.22);
       background:rgba(15,23,42,.5);color:#f1f5f9;font-size:20px;line-height:1;padding:0;cursor:pointer;align-items:center;justify-content:center
@@ -4054,8 +4073,16 @@
     body.admin-touch-compact.admin-fullnav-open #adminNav button[data-view],
     body.admin-touch-compact.admin-fullnav-open #adminNav a.admin-nav-external{justify-content:flex-start !important;padding:8px 10px !important}
     body.admin-touch-compact.admin-fullnav-open .admin-sidebar-foot__txt{display:block !important}
-    body.admin-touch-compact.admin-fullnav-open .admin-sidebar-width-controls{display:flex !important}
-    body.admin-touch-compact .admin-workspace{padding:8px 10px calc(72px + env(safe-area-inset-bottom, 0px)) 10px !important;font-size:13px}
+    body.admin-touch-compact .admin-workspace{
+      flex:1 1 auto;
+      min-height:0;
+      min-width:0;
+      overflow-x:hidden;
+      overflow-y:auto;
+      -webkit-overflow-scrolling:touch;
+      padding:8px 10px calc(12px + env(safe-area-inset-bottom, 0px)) 10px !important;
+      font-size:13px;
+    }
     body.admin-touch-compact:has(#workspace .dayops-ops-fold) .admin-workspace{
       padding:max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-inset-right, 0px)) max(8px, env(safe-area-inset-bottom, 0px)) max(6px, env(safe-area-inset-left, 0px)) !important;
     }
@@ -4117,46 +4144,43 @@
       }
     }
 
-    /* Floating menu — visible in touch-compact when full nav sheet is closed */
-    .admin-float-menu-btn{
-      display:none;
-      position:fixed;
-      z-index:12080;
-      bottom:max(14px,env(safe-area-inset-bottom,0px));
-      left:max(14px,env(safe-area-inset-left,0px));
-      width:50px;
-      height:50px;
-      border-radius:999px;
-      border:2px solid rgba(255,255,255,.22);
-      background:linear-gradient(180deg,#1e293b 0%,var(--sidebar) 100%);
-      color:#f8fafc;
-      font-size:22px;
-      line-height:1;
-      padding:0;
-      cursor:pointer;
-      align-items:center;
-      justify-content:center;
-      box-shadow:0 8px 28px rgba(15,23,42,.42);
-      -webkit-tap-highlight-color:transparent;
+    /* Touch-compact: hub views scroll inside workspace (no clipped viewport) */
+    body.admin-touch-compact:has(#workspace .dash-hub--nav-index) .admin-workspace,
+    body.admin-touch-compact:has(#workspace .dash-hub--dayops) .admin-workspace,
+    body.admin-touch-compact:has(#workspace .dash-hub--ops-admin) .admin-workspace{
+      overflow-y:auto;
+      min-height:0;
+      flex:1 1 auto;
     }
-    .admin-float-menu-btn:hover,
-    .admin-float-menu-btn:focus-visible{
-      background:linear-gradient(180deg,#334155 0%,#1e293b 100%);
-      outline:2px solid rgba(125,211,252,.45);
-      outline-offset:2px;
+    body.admin-touch-compact:has(#workspace .dash-hub--nav-index) .dash-hub--nav-index,
+    body.admin-touch-compact:has(#workspace .dash-hub--dayops) .dash-hub--dayops{
+      flex:none;
+      min-height:auto;
+      overflow:visible;
     }
-    body.admin-touch-compact:not(.admin-fullnav-open) .admin-float-menu-btn{
-      display:inline-flex;
-    }
-    @media (orientation:landscape) and (max-height:640px){
-      body.admin-touch-compact:not(.admin-fullnav-open) .admin-float-menu-btn{
-        left:auto;
-        right:max(14px,env(safe-area-inset-right,0px));
+
+    /* Sessions hub — keep week/day controls on one horizontal row (scroll if needed) */
+    @media (max-width:1023px), (orientation:landscape) and (max-height:640px){
+      body.admin-touch-compact .c4k-sessions-hub__toolbar,
+      body.admin-touch-compact .c4k-sessions-hub-tabs,
+      body.admin-touch-compact .ash-tabs,
+      body.admin-touch-compact .ash-week-nav{
+        flex-wrap:nowrap;
+        overflow-x:auto;
+        -webkit-overflow-scrolling:touch;
+        max-width:100%;
+        overscroll-behavior-x:contain;
+      }
+      body.admin-touch-compact .c4k-sessions-hub-tab,
+      body.admin-touch-compact .ash-tab,
+      body.admin-touch-compact .ash-week-nav .ash-btn{
+        flex:0 0 auto;
+        white-space:nowrap;
       }
     }
-    body.admin-touch-compact.admin-fullnav-open .admin-float-menu-btn{
-      display:none !important;
-    }
+
+    /* Floating menu removed — logo opens/closes full nav in touch-compact */
+    .admin-float-menu-btn{display:none !important}
     body.admin-touch-compact #modalBackdrop.modal-backdrop--register{
       left:56px !important;
     }

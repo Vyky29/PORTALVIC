@@ -4,9 +4,9 @@
   <!-- Admin portal · Vercel static deploy: working_ui/admin_dashboard.html + portal/ assets -->
   <meta charset="UTF-8" />
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
-  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260604-summary-valid-html" />
+  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260601-week-row-scroll" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260527-lead-log" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260601-dayops-landscape" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260601-touch-scroll" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260521-embed" />
   <script src="/portal/hr-contract-embed-html.js?v=20260521-embed"></script>
@@ -32,7 +32,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260601-fab-landscape" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260601-touch-scroll" />
 </head>
 <body>
   <script>
@@ -48,7 +48,7 @@
   <div class="admin-shell" id="adminShell">
     <div class="sidebar-backdrop" id="sidebarBackdrop" aria-hidden="true"></div>
     <aside class="admin-sidebar" id="adminSidebar" aria-label="Main navigation">
-      <div class="admin-sidebar-brand" id="adminSidebarBrand" tabindex="0" aria-label="Open full menu" aria-haspopup="true">
+      <div class="admin-sidebar-brand" id="adminSidebarBrand" tabindex="0" role="button" aria-label="Open or close menu" aria-haspopup="true" aria-expanded="false">
         <button type="button" id="adminFullnavClose" aria-label="Close menu">×</button>
         <div class="admin-sidebar-logo" aria-label="clubSENsational logo">
           <div class="admin-brand-wrap">
@@ -114,7 +114,6 @@
     <nav class="admin-bottom-nav" id="adminBottomNav" aria-label="Quick mobile navigation"></nav>
   </div>
   <div class="admin-fullnav-backdrop" id="adminFullnavBackdrop" aria-hidden="true"></div>
-  <button type="button" class="admin-float-menu-btn" id="adminFloatMenuBtn" aria-label="Open menu" aria-controls="adminSidebar" aria-expanded="false">☰</button>
 
   <div class="modal-backdrop" id="modalBackdrop">
     <div class="modal" role="dialog" aria-modal="true" id="modalRoot" aria-labelledby="modalTitle"></div>
@@ -1578,7 +1577,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var bdNav = $('modalBackdrop');
         if(bdNav && bdNav.classList.contains('open')) closeModal();
       }catch(_e){}
-      try{ document.body.classList.remove('admin-fullnav-open'); }catch(_e2){}
+      try{ document.body.classList.remove('admin-fullnav-open'); adminSyncFullnavAria(); }catch(_e2){}
       if(id === 'bookings'){
         booking.ordersScope = 'all';
         id = 'orders_all';
@@ -20713,7 +20712,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
 
     function renderNav(){
       var topHtml = (NAV_TOP || []).map(function(item){
-        return '<button type="button" class="admin-nav-direct" data-nav-top="'+esc(item.id)+'" data-view="'+esc(item.id)+'">'+adminNavIconHtml(item.id)+'<span class="admin-nav-label">'+esc(item.label)+'</span></button>';
+        return '<button type="button" class="admin-nav-direct" data-nav-top="'+esc(item.id)+'" data-view="'+esc(item.id)+'" title="'+escAttr(item.label)+'">'+adminNavIconHtml(item.id)+'<span class="admin-nav-label">'+esc(item.label)+'</span></button>';
       }).join('');
       var navHtml = topHtml + NAV_GROUPS.map(function(group){
         var childHtml = (group.children || []).map(function(cid){
@@ -20725,13 +20724,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(!item) return '';
           var btn;
           if(item.externalUrl){
-            btn = '<a class="admin-nav-external" href="'+esc(String(item.externalUrl))+'">'+adminNavIconHtml(item.id)+'<span class="admin-nav-label">'+esc(item.label)+'</span></a>';
+            btn = '<a class="admin-nav-external" href="'+esc(String(item.externalUrl))+'" title="'+escAttr(item.label)+'">'+adminNavIconHtml(item.id)+'<span class="admin-nav-label">'+esc(item.label)+'</span></a>';
           }else if(item.navAction === 'logout'){
-            btn = '<button type="button" data-portal-logout="1">'+adminNavIconHtml(item.id)+'<span class="admin-nav-label">'+esc(item.label)+'</span></button>';
+            btn = '<button type="button" data-portal-logout="1" title="'+escAttr(item.label)+'">'+adminNavIconHtml(item.id)+'<span class="admin-nav-label">'+esc(item.label)+'</span></button>';
           }else if(item.navAction === 'alerts'){
-            btn = '<button type="button" data-admin-nav-action="alerts">'+adminNavIconHtml(item.id)+'<span class="admin-nav-label">'+esc(item.label)+'</span></button>';
+            btn = '<button type="button" data-admin-nav-action="alerts" title="'+escAttr(item.label)+'">'+adminNavIconHtml(item.id)+'<span class="admin-nav-label">'+esc(item.label)+'</span></button>';
           }else{
-            btn = '<button type="button" data-view="'+esc(item.id)+'">'+adminNavIconHtml(item.id)+'<span class="admin-nav-label">'+esc(item.label)+'</span>';
+            btn = '<button type="button" data-view="'+esc(item.id)+'" title="'+escAttr(item.label)+'">'+adminNavIconHtml(item.id)+'<span class="admin-nav-label">'+esc(item.label)+'</span>';
             if(item.id === 'c4k_late_submissions' && state.portalLatePendingCount > 0){
               btn += '<span class="admin-nav-pending-badge" aria-label="'+esc(state.portalLatePendingCount)+' pending">'+esc(String(Math.min(99, state.portalLatePendingCount)))+'</span>';
             }
@@ -20745,7 +20744,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }).join('');
         var open = !!(state.navGroupsOpen && state.navGroupsOpen[group.id]);
         return '<div class="admin-nav-group'+(open?' is-open':'')+'" data-group-id="'+esc(group.id)+'">'+
-          '<button type="button" class="admin-nav-group-toggle" data-nav-group-toggle="'+esc(group.id)+'"><span class="admin-nav-toggle-inner">'+adminNavIconHtml(group.id)+'<span class="admin-nav-label">'+esc(group.label)+'</span></span><span class="admin-nav-group-caret">▸</span></button>'+
+          '<button type="button" class="admin-nav-group-toggle" data-nav-group-toggle="'+esc(group.id)+'" title="'+escAttr(group.label)+'"><span class="admin-nav-toggle-inner">'+adminNavIconHtml(group.id)+'<span class="admin-nav-label">'+esc(group.label)+'</span></span><span class="admin-nav-group-caret">▸</span></button>'+
           '<div class="admin-nav-group-body'+(open?'':' is-collapsed')+'">'+childHtml+'</div>'+
           '</div>';
       }).join('');
@@ -20803,7 +20802,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
     }
 
-    function closeSidebarMob(){ document.body.classList.remove('sidebar-open'); }
+    function closeSidebarMob(){
+      document.body.classList.remove('sidebar-open');
+      adminCloseFullnav();
+    }
 
     function adminTouchCompactLayoutActive(){
       try{
@@ -20815,25 +20817,30 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return w > h;
       }catch(e){ return false; }
     }
+    function adminSyncFullnavAria(){
+      var brandEl = $('adminSidebarBrand');
+      var open = document.body.classList.contains('admin-fullnav-open');
+      if(brandEl) brandEl.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
     function adminApplyTouchCompactLayoutClass(){
       var on = adminTouchCompactLayoutActive();
       document.body.classList.toggle('admin-touch-compact', on);
-      var floater = $('adminFloatMenuBtn');
-      if(floater){
-        floater.setAttribute('aria-expanded', document.body.classList.contains('admin-fullnav-open') ? 'true' : 'false');
-      }
       if(!on) document.body.classList.remove('admin-fullnav-open');
+      adminSyncFullnavAria();
     }
     function adminCloseFullnav(){
       document.body.classList.remove('admin-fullnav-open');
-      var floater = $('adminFloatMenuBtn');
-      if(floater) floater.setAttribute('aria-expanded', 'false');
+      adminSyncFullnavAria();
     }
     function adminOpenFullnav(){
       if(!document.body.classList.contains('admin-touch-compact')) return;
       document.body.classList.add('admin-fullnav-open');
-      var floater = $('adminFloatMenuBtn');
-      if(floater) floater.setAttribute('aria-expanded', 'true');
+      adminSyncFullnavAria();
+    }
+    function adminToggleFullnav(){
+      if(!document.body.classList.contains('admin-touch-compact')) return;
+      if(document.body.classList.contains('admin-fullnav-open')) adminCloseFullnav();
+      else adminOpenFullnav();
     }
 
     var KEY_ADMIN_SIDEBAR_PINNED = 'portalAdminSidebarDesktopPinned';
@@ -20947,6 +20954,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         tog.dataset.adminDesktopPinToggleBound = '1';
         tog.addEventListener('click', function(ev){
           railPinClickGuard(ev);
+          if(document.body.classList.contains('admin-touch-compact')) return;
           if(tog.disabled) return;
           if(document.body.classList.contains('sidebar-desktop-pinned')){
             adminUnpinDesktopSidebar();
@@ -21215,13 +21223,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         brandEl.addEventListener('click', function(ev){
           if(!document.body.classList.contains('admin-touch-compact')) return;
           if(ev.target && ev.target.closest && ev.target.closest('#adminFullnavClose')) return;
-          adminOpenFullnav();
+          adminToggleFullnav();
         });
         brandEl.addEventListener('keydown', function(ev){
           if(!document.body.classList.contains('admin-touch-compact')) return;
           if(ev.key === 'Enter' || ev.key === ' '){
             ev.preventDefault();
-            adminOpenFullnav();
+            adminToggleFullnav();
           }
         });
       }
@@ -21229,15 +21237,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(fnClose) fnClose.addEventListener('click', function(e){ e.stopPropagation(); adminCloseFullnav(); });
       var fnBd = $('adminFullnavBackdrop');
       if(fnBd) fnBd.addEventListener('click', adminCloseFullnav);
-      var floatMenu = $('adminFloatMenuBtn');
-      if(floatMenu){
-        floatMenu.addEventListener('click', function(e){
-          e.preventDefault();
-          e.stopPropagation();
-          if(document.body.classList.contains('admin-fullnav-open')) adminCloseFullnav();
-          else adminOpenFullnav();
-        });
-      }
       renderAlerts();
       initOpWorkflowMock();
       var params = new URLSearchParams(location.search);
