@@ -387,8 +387,8 @@
       '<div class="trs-scope" role="group" aria-labelledby="trsScopeLegend">' +
       '<div id="trsScopeLegend" style="font-weight:800;font-size:13px;margin:0 0 6px;color:#0f172a">Apply change to</div>' +
       '<label><input type="radio" name="trsScope" value="single_day" checked/><span><strong>This day only</strong><em>One dated exception on the anchor date.</em></span></label>' +
-      '<label><input type="radio" name="trsScope" value="weekday_term"/><span><strong>Every ' + esc(weekday || "weekday") + " until end of term</strong><em>Updates the weekly template for all " + esc(weekday || "weekday") + "s in the term.</em></span></label>' +
-      '<label><input type="radio" name="trsScope" value="rest_of_term"/><span><strong>Rest of term (from anchor date)</strong><em>Same weekday from the anchor date through " + esc(bounds.lastDate) + ".</em></span></label>" +
+      '<label><input type="radio" name="trsScope" value="weekday_term"/><span><strong>Every ' + esc(weekday || "weekday") + ' until end of term</strong><em>Updates the weekly template for all ' + esc(weekday || "weekday") + 's in the term.</em></span></label>' +
+      '<label><input type="radio" name="trsScope" value="rest_of_term"/><span><strong>Rest of term (from anchor date)</strong><em>Same weekday from the anchor date through ' + esc(bounds.lastDate) + '.</em></span></label>' +
       "</div>" +
       '<div class="trs-actions">' +
       '<button type="button" class="btn btn--pri" id="trsSave"' + (state.saving ? " disabled" : "") + ">" + (state.saving ? "Saving…" : "Save term slot") + "</button>" +
