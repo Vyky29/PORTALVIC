@@ -1,13 +1,12 @@
 {
   "version": 1,
-  "notes": "WordPress Media often blocks .json — upload staff_login_map.js instead (same folder as auth-handler). This file is for validators / tooling.",
+  "notes": "WordPress Media often blocks .json \u2014 upload staff_login_map.js instead (same folder as auth-handler). This file is for validators / tooling.",
   "staff_username_to_email": {
     "Sandra": "stf001@staff.import.pending",
     "Roberto": "stf002@staff.import.pending",
     "Dan": "stf003@staff.import.pending",
     "Angel": "stf004@staff.import.pending",
     "Youssef": "stf005@staff.import.pending",
-    "Yusef": "stf005@staff.import.pending",
     "John": "johnnyosti37@gmail.com",
     "Bismark": "stf007@staff.import.pending",
     "Giuseppe": "stf008@staff.import.pending",

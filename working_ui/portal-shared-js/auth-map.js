@@ -11,7 +11,6 @@ export const STAFF_USERNAME_TO_EMAIL = {
   Dan: "stf003@staff.import.pending",
   Angel: "stf004@staff.import.pending",
   Youssef: "stf005@staff.import.pending",
-  Yusef: "stf005@staff.import.pending",
   John: "johnnyosti37@gmail.com",
   Bismark: "stf007@staff.import.pending",
   Giuseppe: "stf008@staff.import.pending",

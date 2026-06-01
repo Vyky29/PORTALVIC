@@ -3292,7 +3292,7 @@
     "session_date": "2026-06-07"
   },
   {
-    "client_name": "Yusef",
+    "client_name": "Yusuf Ah",
     "day": "Sunday",
     "instructors": "ALEX",
     "service": "Climbing Activity",
@@ -3532,7 +3532,7 @@
     "session_date": "2026-06-07"
   },
   {
-    "client_name": "Yusuf",
+    "client_name": "Yusuf Ah",
     "day": "Sunday",
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",
@@ -4822,7 +4822,7 @@
     "session_date": "2026-06-14"
   },
   {
-    "client_name": "Yusef",
+    "client_name": "Yusuf Ah",
     "day": "Sunday",
     "instructors": "ALEX",
     "service": "Climbing Activity",
@@ -5062,7 +5062,7 @@
     "session_date": "2026-06-14"
   },
   {
-    "client_name": "Yusuf",
+    "client_name": "Yusuf Ah",
     "day": "Sunday",
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",
@@ -6352,7 +6352,7 @@
     "session_date": "2026-06-21"
   },
   {
-    "client_name": "Yusef",
+    "client_name": "Yusuf Ah",
     "day": "Sunday",
     "instructors": "ALEX",
     "service": "Climbing Activity",
@@ -6592,7 +6592,7 @@
     "session_date": "2026-06-21"
   },
   {
-    "client_name": "Yusuf",
+    "client_name": "Yusuf Ah",
     "day": "Sunday",
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",
@@ -7882,7 +7882,7 @@
     "session_date": "2026-06-28"
   },
   {
-    "client_name": "Yusef",
+    "client_name": "Yusuf Ah",
     "day": "Sunday",
     "instructors": "ALEX",
     "service": "Climbing Activity",
@@ -8122,7 +8122,7 @@
     "session_date": "2026-06-28"
   },
   {
-    "client_name": "Yusuf",
+    "client_name": "Yusuf Ah",
     "day": "Sunday",
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",
@@ -9412,7 +9412,7 @@
     "session_date": "2026-07-05"
   },
   {
-    "client_name": "Yusef",
+    "client_name": "Yusuf Ah",
     "day": "Sunday",
     "instructors": "ALEX",
     "service": "Climbing Activity",
@@ -9652,7 +9652,7 @@
     "session_date": "2026-07-05"
   },
   {
-    "client_name": "Yusuf",
+    "client_name": "Yusuf Ah",
     "day": "Sunday",
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",
@@ -10942,7 +10942,7 @@
     "session_date": "2026-07-12"
   },
   {
-    "client_name": "Yusef",
+    "client_name": "Yusuf Ah",
     "day": "Sunday",
     "instructors": "ALEX",
     "service": "Climbing Activity",
@@ -11182,7 +11182,7 @@
     "session_date": "2026-07-12"
   },
   {
-    "client_name": "Yusuf",
+    "client_name": "Yusuf Ah",
     "day": "Sunday",
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",
@@ -12768,7 +12768,7 @@
     "venue": "SwimFarm"
   },
   {
-    "client_name": "Yusef",
+    "client_name": "Yusuf Ah",
     "day": "Sunday",
     "instructors": "ALEX",
     "service": "Climbing Activity",
@@ -13038,7 +13038,7 @@
     "venue": "SwimFarm"
   },
   {
-    "client_name": "Yusuf",
+    "client_name": "Yusuf Ah",
     "day": "Sunday",
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",

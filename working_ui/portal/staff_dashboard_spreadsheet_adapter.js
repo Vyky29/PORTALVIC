@@ -167,12 +167,14 @@
     return "";
   }
 
-  /** Roster slug → clients_info slug (e.g. Adam Ab ↔ Abodi Pa). */
+  /** Roster slug → clients_info slug (e.g. Adam Ab ↔ Abodi Pa; legacy Yusuf/Yusef → Yusuf Ah). */
   var CLIENT_INFO_SLUG_ALIASES = {
     adam_a: "adam_ab",
     abodi_p: "adam_ab",
     abodi_pa: "adam_ab",
     abodi: "adam_ab",
+    yusuf: "yusuf_ah",
+    yusef: "yusuf_ah",
   };
 
   function clientInfoTextForSlug(bySlug, slug) {

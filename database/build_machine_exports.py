@@ -71,10 +71,10 @@ def parse_staff_assignment(raw):
         return None
     m = re.match(r"^(.*?)(\d[\d\.:]*\s*[-]\s*\d[\d\.:]*)$", t)
     if m:
-        name = norm_text(m.group(1))
+        name = normalize_staff_display_name(norm_text(m.group(1)))
         timerange = norm_text(m.group(2)).replace(" ", "")
         return {"staff_name": name, "time_range": timerange, "raw": t}
-    return {"staff_name": t, "time_range": "", "raw": t}
+    return {"staff_name": normalize_staff_display_name(t), "time_range": "", "raw": t}
 
 
 def export_json_csv(base_name, rows):
@@ -137,6 +137,23 @@ def portal_staff_profile_key(staff_name: str) -> str:
     if v in ("yousef", "youssef", "yusef"):
         return "youssef"
     return v
+
+
+ROSTER_CLIENT_CANONICAL = "Yusuf Ah"
+ROSTER_CLIENT_ALIASES = frozenset({"Yusuf", "Yusef", "Yusuf Ah", "Yusuf Ahmed"})
+STAFF_DISPLAY_YOUSSEF = "Youssef"
+
+
+def normalize_roster_client_name(name: str) -> str:
+    t = norm_text(name)
+    return ROSTER_CLIENT_CANONICAL if t in ROSTER_CLIENT_ALIASES else t
+
+
+def normalize_staff_display_name(name: str) -> str:
+    t = norm_text(name)
+    if t.lower() in ("yusef", "yousef", "youssef"):
+        return STAFF_DISPLAY_YOUSSEF
+    return t
 
 
 def term_staff_weekday_indices_from_timetable_records(records: list) -> dict:
@@ -387,7 +404,7 @@ def build_staff_timetable():
                                 "day": current_day,
                                 "date": d,
                                 "venue": venue,
-                                "staff_name": parsed["staff_name"],
+                                "staff_name": normalize_staff_display_name(parsed["staff_name"]),
                                 "time_range": parsed["time_range"],
                                 "raw_assignment": parsed["raw"],
                             })
@@ -431,7 +448,7 @@ def read_staff_clients_flat_workbook(path: Path) -> list:
             return norm_text(r[i])
 
         rec = {
-            "client_name": get(ci),
+            "client_name": normalize_roster_client_name(get(ci)),
             "day": get(di),
             "instructors": get(ii),
             "service": get(si),
