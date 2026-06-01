@@ -3307,11 +3307,30 @@
       }
       return '';
     }
+    /** Day Centre participants: their feedback turns orange / "ready to judge" 15 min BEFORE the
+     *  session ends (e.g. ends 3:00pm → judgeable from 2:45pm). Every other service stays gated on
+     *  the real end time. Detected from the roster row service ("Day Centre"). */
+    const DAY_CENTRE_FEEDBACK_LEAD_MS = 15 * 60 * 1000;
+    function portalRosterSessionIsDayCentre(s){
+      if(!s) return false;
+      if(/day\s*centre/i.test(String(s.rosterService || ''))) return true;
+      if(/day\s*centre/i.test(String(s.service || ''))) return true;
+      if(/day\s*centre/i.test(String(s.activity || ''))) return true;
+      if(String(s.feedbackUnitKey || '').indexOf('day_centre') >= 0) return true;
+      return false;
+    }
+    function portalFeedbackItemIsDayCentre(item){
+      if(!item) return false;
+      if(item.dayCentre === true || item.isDayCentre === true) return true;
+      if(/day\s*centre/i.test(String(item.service || ''))) return true;
+      return portalRosterSessionIsDayCentre(item.__portalBaseSession);
+    }
     function isSessionEndedForFeedback(item){
       if(STAFF_DASH_FORCE_SESSIONS_ENDED) return true;
       const t = item && item.sessionEndTs;
       if(t == null) return false;
-      return Date.now() >= t;
+      const lead = portalFeedbackItemIsDayCentre(item) ? DAY_CENTRE_FEEDBACK_LEAD_MS : 0;
+      return Date.now() >= (t - lead);
     }
     /**
      * True when this weekday (current week strip) still has a replace / make-up slot
@@ -7708,7 +7727,7 @@
               var sk = (sessionDateIso && typeof portalSessionReviewKeyForModelRow === 'function')
                 ? portalSessionReviewKeyForModelRow(s, w, sessionDateIso)
                 : (sessionDateIso ? sessionDateIso + '|' + String(s.start || '') + '|' + effClientId : '');
-              var fbItem = { sessionEndTs: sessionEndTs, sessionKey: sk };
+              var fbItem = { sessionEndTs: sessionEndTs, sessionKey: sk, __portalBaseSession: s, dayCentre: portalRosterSessionIsDayCentre(s) };
               var rec = (typeof getSessionReviewRecord === 'function' ? getSessionReviewRecord(fbItem) : null) || {};
               if(typeof isSessionEndedForFeedback === 'function' && !isSessionEndedForFeedback(fbItem)){
                 futureOverrideTone = 'pink';
@@ -8471,7 +8490,12 @@
         ? portalSessionReviewKeyForModelRow(rosterSession, dayWord, sessionDateKey)
         : `${sessionDateKey}|${rosterSession.start}|${rosterSession.clientId}`;
       const sessionEndTs = buildSessionEndMsForCalendarDate(y, mo, da, rosterSession.end);
-      return { sessionKey: sessionKey || `${sessionDateKey}|${rosterSession.start}|${rosterSession.clientId}`, sessionEndTs };
+      return {
+        sessionKey: sessionKey || `${sessionDateKey}|${rosterSession.start}|${rosterSession.clientId}`,
+        sessionEndTs,
+        dayCentre: portalRosterSessionIsDayCentre(rosterSession),
+        __portalBaseSession: rosterSession
+      };
     }
     function weekListHasPendingFeedbackForDay(dayName){
       const cell = calendarDateForWeekListDay(dayName);
