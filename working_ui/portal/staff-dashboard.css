@@ -1365,19 +1365,19 @@
       color:#b45309;
       border:1px solid rgba(180,120,20,.22);
     }
-    /* Outstanding feedbacks: soft green when complete, corporate orange when pending */
+    /* Outstanding feedbacks: always corporate orange; pending state adds the pulse below */
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-outstanding-feedback--complete{
-      background:linear-gradient(180deg,#e8faf0 0%,#d4f5e3 100%);
-      border:1px solid rgba(21,115,71,.32);
-      color:var(--ink);
-      box-shadow:0 3px 12px rgba(21,115,71,.1);
+      background:#f97316;
+      border:2px solid #ffedd5;
+      color:#fff;
+      box-shadow:0 6px 22px rgba(234,88,12,.42);
     }
-    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-outstanding-feedback--complete .menu-btn-copy strong{color:#126b42}
-    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-outstanding-feedback--complete .menu-btn-chev{color:rgba(18,100,60,.4)}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-outstanding-feedback--complete .menu-btn-copy strong{color:#fff}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-outstanding-feedback--complete .menu-btn-chev{color:rgba(255,255,255,.92)}
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-outstanding-feedback--complete .menu-btn-icon{
-      background:var(--successSoft);
-      color:var(--success);
-      border:1px solid rgba(21,115,71,.22);
+      background:rgba(255,255,255,.22);
+      color:#fff;
+      border:2px solid rgba(255,255,255,.45);
     }
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-outstanding-feedback--need,
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-reminder-venue{

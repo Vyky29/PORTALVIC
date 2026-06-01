@@ -120,7 +120,7 @@
   })();
   </script>
   <title>clubSENsational Lead Dashboard</title>
-  <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260531-training-completed" />
+  <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260601-outstanding-orange" />
 </head>
 <body>
   <script>
@@ -2676,7 +2676,18 @@
             ? portalTermFeedbackSessionsForDate(dayWord, key, staffId, isReal)
             : [];
           let dayCount = 0;
+          /* Feedback reminders fire only after the whole shift has ended (+15 min grace),
+             so a worker with back-to-back sessions is not nagged mid-shift. The last
+             session end of the day is the anchor (e.g. a 10–3 shift reminds from 3:15).
+             Future worked days stay silent (shift not ended); past days count normally. */
+          const SHIFT_FEEDBACK_GRACE_MS = 15 * 60 * 1000;
+          let dayShiftEndMs = NaN;
           for(let i = 0; i < relFb.length; i++){
+            const em = buildSessionEndMsForCalendarDate(cur.getFullYear(), cur.getMonth(), cur.getDate(), relFb[i].end);
+            if(Number.isFinite(em) && (!Number.isFinite(dayShiftEndMs) || em > dayShiftEndMs)) dayShiftEndMs = em;
+          }
+          const dayShiftEnded = Number.isFinite(dayShiftEndMs) && nowMs >= (dayShiftEndMs + SHIFT_FEEDBACK_GRACE_MS);
+          for(let i = 0; dayShiftEnded && i < relFb.length; i++){
             const s = relFb[i];
             const manualOv = String(s && s.override || '').trim().toUpperCase();
             if(manualOv === 'ABSENT') continue;
@@ -2692,8 +2703,7 @@
               ? portalGetMergedSessionReviewRecordForRoster(s, dayWord, key)
               : (getSessionReviewRecord({ sessionKey: sk }) || {});
             if(rec.feedbackDone || rec.absent || rec.cancelled) continue;
-            const endMs = buildSessionEndMsForCalendarDate(cur.getFullYear(), cur.getMonth(), cur.getDate(), s.end);
-            if(Number.isFinite(endMs) && nowMs >= endMs) dayCount++;
+            dayCount++;
           }
           /* Same reconciliation as rebuildTermShiftAndFeedbackFromSessionModel: Today list + date lock
              can show zero pending while roster-key merge still looks unresolved (key/time/client drift). */
