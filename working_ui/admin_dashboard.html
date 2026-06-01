@@ -3389,6 +3389,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         .trim();
       if(!v) return '';
       if(v === 'yousef' || v === 'youssef') return 'yusef';
+      if(v === 'luliya') return 'lulia';
       return v;
     }
     function adminRosterParseHm(token){
@@ -3896,20 +3897,42 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       for(si = 1; si < slots.length; si++){
         if(String(slots[si].anchorStart || '') < String(rep.anchorStart || '')) rep = slots[si];
       }
-      if(slots.length === 1 || String(rep.programme || '').toLowerCase().indexOf('day centre') < 0) return rep;
-      var last = rep;
-      for(si = 0; si < slots.length; si++){
-        if(String(slots[si].anchorStart || '') >= String(last.anchorStart || '')) last = slots[si];
+      var merged = rep;
+      if(slots.length > 1 && String(rep.programme || '').toLowerCase().indexOf('day centre') >= 0){
+        var last = rep;
+        for(si = 0; si < slots.length; si++){
+          if(String(slots[si].anchorStart || '') >= String(last.anchorStart || '')) last = slots[si];
+        }
+        if(last !== rep){
+          merged = Object.assign({}, rep);
+          var a = String(rep.anchorTimeLabel || '').trim();
+          var b = String(last.anchorTimeLabel || '').trim();
+          if(a && b && a !== b){
+            var startPart = a.indexOf(' to ') >= 0 ? a.split(' to ')[0] : a;
+            var endPart = b.indexOf(' to ') >= 0 ? b.split(' to ').pop() : b;
+            merged.anchorTimeLabel = startPart + ' to ' + endPart;
+            merged.whenLabel = String(rep.sheetDay || rep.day || '') + ' · ' + merged.anchorTimeLabel;
+          }
+        }
       }
-      if(last === rep) return rep;
-      var merged = Object.assign({}, rep);
-      var a = String(rep.anchorTimeLabel || '').trim();
-      var b = String(last.anchorTimeLabel || '').trim();
-      if(a && b && a !== b){
-        var startPart = a.indexOf(' to ') >= 0 ? a.split(' to ')[0] : a;
-        var endPart = b.indexOf(' to ') >= 0 ? b.split(' to ').pop() : b;
-        merged.anchorTimeLabel = startPart + ' to ' + endPart;
-        merged.whenLabel = String(rep.sheetDay || rep.day || '') + ' · ' + merged.anchorTimeLabel;
+      var instrSeen = {};
+      var allInstr = [];
+      for(si = 0; si < slots.length; si++){
+        var sl = slots[si];
+        var rid = normalizeSchedAnchorStaffId(sl.staffRosterId);
+        if(!rid || instrSeen[rid]) continue;
+        instrSeen[rid] = 1;
+        allInstr.push({
+          staffRosterId: rid,
+          staffName: String(sl.staffName || '').trim() || schedStaffDisplayName(rid, rid)
+        });
+      }
+      allInstr.sort(function(a, b){
+        return String(a.staffName || '').localeCompare(String(b.staffName || ''), undefined, { sensitivity: 'base' });
+      });
+      if(allInstr.length > 1){
+        merged = Object.assign({}, merged);
+        merged.allInstructors = allInstr;
       }
       return merged;
     }
@@ -10677,9 +10700,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
       var staffMap = {};
       filteredSlots.forEach(function(s){
-        if(!s.staffRosterId) return;
-        var id = String(s.staffRosterId).toLowerCase();
-        staffMap[id] = String(s.staffName || s.staffRosterId || id).trim() || id;
+        function addStaff(id, label){
+          var k = String(id || '').trim().toLowerCase();
+          if(!k) return;
+          staffMap[k] = String(label || s.staffName || k).trim() || k;
+        }
+        addStaff(s.staffRosterId, s.staffName);
+        if(s.allInstructors && s.allInstructors.length){
+          s.allInstructors.forEach(function(inst){
+            addStaff(inst.staffRosterId, inst.staffName);
+          });
+        }
       });
       var sKeys = Object.keys(staffMap).sort(function(a, b){
         return String(staffMap[a] || '').localeCompare(String(staffMap[b] || ''), undefined, { sensitivity:'base' });
@@ -10891,6 +10922,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         );
       }
       var lab = String(slot.staffName || '').trim() || schedStaffDisplayName(slot.staffRosterId, '—');
+      var co = slot.allInstructors;
+      if(co && co.length > 1){
+        return (
+          '<div class="sched-pax-pill-row">' +
+          co.map(function(inst){
+            return schedStaffPillHtml(inst.staffName, inst.staffRosterId, schedIso, 'booked');
+          }).join('') +
+          '</div>'
+        );
+      }
       return schedStaffPillHtml(lab, slot.staffRosterId, schedIso, 'booked');
     }
     function schedParticipantCellHtml(slot, ov){
@@ -10929,12 +10970,24 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           paxSlug2 = String(ov.payload && (ov.payload.to_client_id || ov.payload.replacement_client_id) || '').trim().toLowerCase();
         }
         var staffKey = String(slot.staffRosterId || '').trim().toLowerCase();
+        var staffAllKeys = [];
+        if(slot.allInstructors && slot.allInstructors.length){
+          slot.allInstructors.forEach(function(inst){
+            var k = String(inst.staffRosterId || '').trim().toLowerCase();
+            if(k && staffAllKeys.indexOf(k) < 0) staffAllKeys.push(k);
+          });
+        } else if(staffKey){
+          staffAllKeys.push(staffKey);
+        }
+        var staffAllAttr = staffAllKeys.length
+          ? ' data-staff-all="'+esc(staffAllKeys.join(','))+'"'
+          : '';
         var serviceCell = esc(schedServiceLabelForSlot(slot));
         var notesRaw = schedNotesAreaLabel(slot);
         var notesCell = notesRaw
           ? '<span class="sched-notes-cell">'+esc(notesRaw)+'</span>'
           : '<span class="muted">—</span>';
-        return '<tr class="sched-slot-row" data-sched-demo-id="'+esc(slot.demoId)+'" data-venue="'+esc(slot.venue)+'" data-staff="'+esc(staffKey)+'" data-pax-slug="'+esc(paxSlug)+'"'+(paxSlug2 ? ' data-pax-slug2="'+esc(paxSlug2)+'"' : '')+' data-has-ov="'+(hasOv?'1':'0')+'">'+
+        return '<tr class="sched-slot-row" data-sched-demo-id="'+esc(slot.demoId)+'" data-venue="'+esc(slot.venue)+'" data-staff="'+esc(staffKey)+'"'+staffAllAttr+' data-pax-slug="'+esc(paxSlug)+'"'+(paxSlug2 ? ' data-pax-slug2="'+esc(paxSlug2)+'"' : '')+' data-has-ov="'+(hasOv?'1':'0')+'">'+
           '<td style="min-width:0">'+clientCellHtml+'</td>'+
           '<td style="min-width:0">'+serviceCell+'</td>'+
           '<td style="white-space:nowrap">'+esc(slot.anchorTimeLabel||normTimeShort(slot.anchorStart))+'</td>'+
@@ -10977,7 +11030,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       document.querySelectorAll('#schedBaseTable tbody tr').forEach(function(tr){
         var ok = true;
         if(v && tr.getAttribute('data-venue') !== v) ok = false;
-        if(st && tr.getAttribute('data-staff') !== st) ok = false;
+        if(st){
+          var ps = tr.getAttribute('data-staff') || '';
+          var psAll = tr.getAttribute('data-staff-all') || '';
+          var staffHit = st === ps;
+          if(!staffHit && psAll){
+            staffHit = psAll.split(',').some(function(k){ return String(k || '').trim() === st; });
+          }
+          if(!staffHit) ok = false;
+        }
         if(pax){
           var ps = tr.getAttribute('data-pax-slug') || '';
           var ps2 = tr.getAttribute('data-pax-slug2') || '';
@@ -14564,6 +14625,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         fetchAbsents: adminFetchAbsentQuickMarksForHub,
         fetchScheduleOverrides: adminFetchScheduleOverridesForHub,
         fetchLeadReports: adminFetchLeadSessionReportsForHub,
+        fetchSessionFeedback: adminFetchSessionFeedbackForHub,
         onLogJumpWeek: function(weekStart){
           var iso = String(weekStart || '').trim().substring(0, 10);
           if(!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
@@ -14614,6 +14676,65 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             ? d + '||' + adminSfStr(r.clientName).toLowerCase().replace(/[^a-z0-9]+/g, '_')
             : '')
       };
+    }
+    function adminSessionTimeFromPortalKey(pk){
+      var parts = String(pk || '').trim().split('|');
+      if(parts.length >= 2){
+        var t = String(parts[1] || '').trim();
+        var m = t.match(/^(\d{1,2}:\d{2})/);
+        if(m) return m[1];
+      }
+      return '';
+    }
+    /** Live Supabase session_feedback → AdminSessionsHub row (same shape as lead overview). */
+    function adminMapDbSessionFeedbackToHub(row){
+      var d = String(row.session_date || '').trim().slice(0, 10);
+      if(!d || d < ADMIN_PORTAL_SESSION_FEEDBACK_FIRST_DATE_ISO) return null;
+      var patterns = row.engagement_patterns;
+      var pk = String(row.portal_session_key || '').trim();
+      var st = String(row.session_time || '').trim() || adminSessionTimeFromPortalKey(pk);
+      return {
+        client_name: adminSfStr(row.client_name) || '—',
+        session_date: d,
+        service: portalDisplayProgrammeFromSheet(row.service) || adminSfStr(row.service) || '—',
+        attendance: row.attendance,
+        engagement_rating:
+          row.engagement_rating != null && !isNaN(Number(row.engagement_rating))
+            ? Number(row.engagement_rating)
+            : null,
+        client_emotions: adminSfStr(row.client_emotions) || '',
+        engagement_patterns: Array.isArray(patterns)
+          ? patterns.join(', ')
+          : adminSfStr(patterns) || null,
+        positive_feedback: adminSfStr(row.positive_feedback) || '',
+        relevant_information: adminSfStr(row.relevant_information) || '',
+        completed_by_name: adminSfStr(row.completed_by_name) || '—',
+        session_time: st,
+        created_at: row.created_at || null,
+        portal_session_key: pk
+      };
+    }
+    async function adminFetchSessionFeedbackForHub(){
+      var client = getSchedSupabaseClient();
+      if(!client) return [];
+      var since = new Date();
+      since.setDate(since.getDate() - 150);
+      var sinceIso = since.toISOString().slice(0, 10);
+      try{
+        var res = await client
+          .from('session_feedback')
+          .select(
+            'client_name,session_date,service,attendance,engagement_rating,engagement_patterns,client_emotions,positive_feedback,relevant_information,completed_by_name,portal_session_key,session_time,created_at'
+          )
+          .gte('session_date', sinceIso)
+          .order('session_date', { ascending: false })
+          .limit(2500);
+        if(res.error) throw res.error;
+        return (res.data || []).map(adminMapDbSessionFeedbackToHub).filter(Boolean);
+      }catch(e){
+        console.warn('[admin] session_feedback fetch', e);
+        return [];
+      }
     }
     function adminBuildSessionsHubPayload(){
       var rows = adminSessionFeedbackPortalRows().map(adminMapPortalRowToHubFeedback);

@@ -1,7 +1,6 @@
 /**
  * Staff name → Supabase login email (same data as staff_login_map.json).
- * WordPress Media often blocks .json uploads; this plain script is the supported workaround.
- * Load BEFORE auth-handler.js (see working_ui/login.html).
+ * Keep in sync with database/auth-map.js and working_ui/login.html.
  */
 window.PORTAL_STAFF_LOGIN_MAP = {
   version: 1,
@@ -20,12 +19,16 @@ window.PORTAL_STAFF_LOGIN_MAP = {
     Aurora: "stf011@staff.import.pending",
     Michelle: "michelle@youtimecounselling.com",
     Berta: "b.traperocasado@gmail.com",
-    Victor: "stf013@staff.import.pending",
+    Victor: "victor@clubsensational.org",
     Carlos: "stf014@staff.import.pending",
     Alex: "stf015@staff.import.pending",
-    Javi: "stf017@staff.import.pending",
-    Raul: "stf018@staff.import.pending",
-    Sevitha: "stf019@staff.import.pending",
+    Simon: "stf016@staff.import.pending",
+    Luliya: "stf021@staff.import.pending",
+    Lulia: "stf021@staff.import.pending",
+    Andres: "stf022@staff.import.pending",
+    Javi: "javier@clubsensational.org",
+    Raul: "raul@clubsensational.org",
+    Sevitha: "sevitha802@gmail.com",
     Demo: "stf020@staff.import.pending",
     demo: "stf020@staff.import.pending",
   },

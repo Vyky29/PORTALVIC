@@ -24,9 +24,13 @@ export const STAFF_USERNAME_TO_EMAIL = {
   Victor: "victor@clubsensational.org",
   Carlos: "stf014@staff.import.pending",
   Alex: "stf015@staff.import.pending",
+  Simon: "stf016@staff.import.pending",
+  Luliya: "stf021@staff.import.pending",
+  Lulia: "stf021@staff.import.pending",
+  Andres: "stf022@staff.import.pending",
   Javi: "javier@clubsensational.org",
   Raul: "raul@clubsensational.org",
-  Sevitha: "sevitha@clubsensational.org",
+  Sevitha: "sevitha802@gmail.com",
   Demo: "stf020@staff.import.pending",
   demo: "stf020@staff.import.pending",
   "victor@clubsensational.org": "victor@clubsensational.org",
@@ -34,7 +38,8 @@ export const STAFF_USERNAME_TO_EMAIL = {
   "javier@clubsensational.org": "javier@clubsensational.org",
   "javi@clubsensational.org": "javi@clubsensational.org",
   "javier@clbusensational.org": "javier@clubsensational.org",
-  "sevitha@clubsensational.org": "sevitha@clubsensational.org",
+  "sevitha@clubsensational.org": "sevitha802@gmail.com",
+  "sevitha802@gmail.com": "sevitha802@gmail.com",
   "info@clubsensational.org": "info@clubsensational.org",
 };
 
@@ -46,6 +51,7 @@ export const PORTAL_CORPORATE_AUTH_EMAIL_TO_STAFF_KEY = {
   "javi@clubsensational.org": "javi",
   "javier@clbusensational.org": "javi",
   "sevitha@clubsensational.org": "sevitha",
+  "sevitha802@gmail.com": "sevitha",
   "info@clubsensational.org": "sevitha",
 };
 
@@ -94,7 +100,8 @@ export function mergeStaffLoginEmailMap(extra) {
 /** Shown when the name field does not match any staff in STAFF_USERNAME_TO_EMAIL. */
 export const PORTAL_LOGIN_UNKNOWN_NAME_HELP =
   "Name or email not recognised. Staff: use your first name as on the timetable. " +
-  "Victor, Javi, Raúl: your @clubsensational.org email. Sevitha: sevitha@ or info@clubsensational.org.";
+  "Victor, Javi, Raúl: your @clubsensational.org email. Sevitha: sevitha802@gmail.com or info@clubsensational.org. " +
+  "Michelle, Berta, John: your personal email.";
 
 function isPlausibleLoginEmail(value) {
   const s = String(value || "").trim();
