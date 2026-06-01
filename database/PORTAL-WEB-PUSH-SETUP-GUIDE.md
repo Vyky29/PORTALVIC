@@ -225,9 +225,11 @@ Vercel (**portalvic**) redeploya `working_ui/` automáticamente desde este repo.
 
 Los webhooks **no** viven en git. Hay que crearlos a mano.
 
-**Dashboard:**  
-[https://supabase.com/dashboard/project/cklpnwhlqsulpmkipmqb/database/hooks](https://supabase.com/dashboard/project/cklpnwhlqsulpmkipmqb/database/hooks)  
-*(Database → Webhooks / Hooks)*
+**Dashboard (UI moved):**  
+[https://supabase.com/dashboard/project/cklpnwhlqsulpmkipmqb/integrations/webhooks/overview](https://supabase.com/dashboard/project/cklpnwhlqsulpmkipmqb/integrations/webhooks/overview)  
+*(La ruta antigua `/database/hooks` devuelve 404.)*
+
+**En Portal ya existe** un trigger SQL `schedule-overrides-web-push` en `schedule_overrides` (INSERT). Si el push de roster devolvía **403**, suele faltar el header `x-portal-webhook-secret` en ese trigger — ver §6.4.
 
 Necesitas el valor de `PORTAL_PUSH_WEBHOOK_SECRET` (Edge Secrets). **No lo pegues en documentos públicos** — cópialo del Dashboard al crear el webhook.
 
@@ -264,7 +266,26 @@ Solo filas con `status = active` y `session_date` dentro del horizonte **hoy …
 
 Respeta `audience_scope` y `ends_at` del anuncio.
 
-### 6.3 Probar un webhook
+### 6.4 Portal roster — trigger SQL (alternativa al Dashboard)
+
+En el proyecto **Portal** el webhook de roster **ya está** como trigger Postgres (no hace falta la UI si está bien configurado):
+
+```sql
+-- Comprobar:
+select pg_get_triggerdef(oid)
+from pg_trigger
+where tgname = 'schedule-overrides-web-push';
+```
+
+Debe incluir en los headers JSON: `"x-portal-webhook-secret":"<PORTAL_PUSH_WEBHOOK_SECRET>"`.
+
+Si solo tiene `Content-Type`, la Edge Function responde **403**. Reparar con la migración plantilla  
+`database/migrations/20260601174600_portal_fix_schedule_override_push_webhook.sql`  
+(sustituir `__PORTAL_PUSH_WEBHOOK_SECRET__` en SQL Editor y ejecutar).
+
+**Estado jun 2026:** trigger reparado en remoto con header correcto.
+
+---
 
 Tras crear el webhook, Supabase suele ofrecer **"Send test webhook"** o podéis insertar una fila de prueba en SQL Editor y mirar:
 
@@ -384,7 +405,7 @@ Cuando los pasos 2 y 3 estén hechos, el sistema está **completo** para uso rea
 | Supabase proyecto Portal | https://supabase.com/dashboard/project/cklpnwhlqsulpmkipmqb |
 | Edge Functions | https://supabase.com/dashboard/project/cklpnwhlqsulpmkipmqb/functions |
 | Edge Secrets | https://supabase.com/dashboard/project/cklpnwhlqsulpmkipmqb/settings/functions |
-| Database Webhooks | https://supabase.com/dashboard/project/cklpnwhlqsulpmkipmqb/database/hooks |
+| Database Webhooks | https://supabase.com/dashboard/project/cklpnwhlqsulpmkipmqb/integrations/webhooks/overview |
 | SQL Editor | https://supabase.com/dashboard/project/cklpnwhlqsulpmkipmqb/sql/new |
 | Staff login (PORTALVIC) | https://portalvic.vercel.app/ |
 | Staff dashboard | https://portalvic.vercel.app/staff_dashboard.html |
