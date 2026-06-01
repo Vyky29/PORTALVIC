@@ -22,6 +22,42 @@ TUESDAY_RAYAN_ANGEL_END = "2026-07-17"
 TUESDAY_SWAP_SLOT = "5.30 to 6"
 
 
+def patch_legacy_sunday_morning_pool(rows: list[dict]) -> int:
+    """Remove only erroneous Zaid 9:00 slot (he starts 9:30, not 9:00)."""
+    removed = 0
+    kept: list[dict] = []
+    for row in rows:
+        client = str(row.get("client_name") or "").strip()
+        day = str(row.get("day") or "").strip()
+        slot = str(row.get("time_slot") or "").strip()
+        if client == "Zaid" and day == "Sunday" and slot == "9 to 9.30":
+            removed += 1
+            continue
+        kept.append(row)
+    rows.clear()
+    rows.extend(kept)
+    return removed
+
+
+def patch_sunday_small_pool_shire_simon(rows: list[dict]) -> int:
+    """Shire & Simon 9:00–9:30 Sunday = Small Pool (SwimFarm aquatic lane)."""
+    n = 0
+    for row in rows:
+        client = str(row.get("client_name") or "").strip()
+        if client not in ("Shire", "Simon"):
+            continue
+        if str(row.get("day") or "").strip() != "Sunday":
+            continue
+        if str(row.get("time_slot") or "").strip() != "9 to 9.30":
+            continue
+        if str(row.get("area") or "").strip() == "Small Pool":
+            continue
+        row["area"] = "Small Pool"
+        row["service"] = "Aquatic Activity"
+        n += 1
+    return n
+
+
 def patch_tuesday_hazem_rayan_instructors(rows: list[dict]) -> int:
     """Apply dated + template instructor swap for Hazem / Rayan Ta (Tue Teaching Pool 5.30–6)."""
     n = 0
@@ -312,7 +348,7 @@ def sunday_roster() -> list[dict]:
     climb = "Climbing Activity"
     ww = "Westway"
     rows = [
-        r("Simon", "Sunday", "AURORA", "9 to 9.30", service=aa, area=tp, venue=sf),
+        r("Simon", "Sunday", "AURORA", "9 to 9.30", service=aa, area="Small Pool", venue=sf),
         r("Adam Ab", "Sunday", "AURORA", "9.30 to 10.15", service=aa, area=tp, venue=sf),
         r("Jack W", "Sunday", "AURORA", "10.15 to 11", service=aa, area=tp, venue=sf),
         r("Arthur Ma", "Sunday", "AURORA", "11 to 11.45", service=aa, area=tp, venue=sf),
@@ -321,10 +357,11 @@ def sunday_roster() -> list[dict]:
         r("Erik", "Sunday", "AURORA", "1.15 to 2", service=aa, area=tp, venue=sf),
         r("Zakariya", "Sunday", "AURORA", "2 to 2.30", service=aa, area=tp, venue=sf),
         r("Faris", "Sunday", "AURORA", "2.30 to 3", service=aa, area=tp, venue=sf),
-        r("Shire", "Sunday", "JAVIER", "9 to 9.30", service=aa, area=tp, venue=sf),
+        r("Shire", "Sunday", "JAVIER", "9 to 9.30", service=aa, area="Small Pool", venue=sf),
         r("Samer", "Sunday", "JAVIER", "9.30 to 10.15", service=aa, area=tp, venue=sf),
+        r("Zaid", "Sunday", "JAVIER", "9.30 to 10.15", service=ma, area="Big Pool", venue=sf),
         r("Zaid", "Sunday", "JAVIER", "10.15 to 11", service=aa, area=tp, venue=sf),
-        r("Hazem", "Sunday", "JAVIER", "11 to 11.45", service=aa, area=tp, venue=sf),
+        r("Hazem", "Sunday", "JAVIER", "11 to 11.45", service=ma, area="Big Pool", venue=sf),
         r("Eiji", "Sunday", "JAVIER", "11.45 to 12.30", service=aa, area=tp, venue=sf),
         r("Rayyan Fi", "Sunday", "JAVIER", "12.30 to 1.15", service=aa, area=tp, venue=sf),
         r("Haneef", "Sunday", "JAVIER", "1.15 to 2", service=aa, area=tp, venue=sf),
@@ -391,6 +428,8 @@ def main() -> None:
     dated = [row for row in existing if row.get("session_date")]
     template = build_template()
     merged = dated + template
+    pool_removed = patch_legacy_sunday_morning_pool(merged)
+    pool_small = patch_sunday_small_pool_shire_simon(merged)
     patched = patch_tuesday_hazem_rayan_instructors(merged)
     JSON_PATH.write_text(
         json.dumps(merged, ensure_ascii=True, indent=2) + "\n",
@@ -399,6 +438,10 @@ def main() -> None:
     print(
         f"Wrote {len(merged)} rows ({len(dated)} dated + {len(template)} template) -> {JSON_PATH}"
     )
+    if pool_removed or pool_small:
+        print(
+            f"Patched Sunday pool: removed {pool_removed} wrong Zaid 9:00 slot(s), set {pool_small} Shire/Simon row(s) to Small Pool"
+        )
     if patched:
         print(f"Patched {patched} Tue Hazem/Rayan Ta 5.30–6 instructor row(s)")
 

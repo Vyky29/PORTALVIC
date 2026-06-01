@@ -114,6 +114,7 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-06-07,Sunday,Jack S,Multi-Activity,10.15 to 11,ROBERTO,SwimFarm,Teaching Pool
 2026-06-07,Sunday,Jack W,Multi-Activity,10.15 to 11,AURORA,SwimFarm,Teaching Pool
 2026-06-07,Sunday,Yusuf Ah,Multi-Activity,10.15 to 11,BISMARK,SwimFarm,Room 2
+2026-06-07,Sunday,Zaid,Multi-Activity,9.30 to 10.15,JAVIER,SwimFarm,Big Pool
 2026-06-07,Sunday,Zaid,Multi-Activity,10.15 to 11,JAVIER,SwimFarm,Teaching Pool
 2026-06-07,Sunday,Zaid,Multi-Activity,10.15 to 11,GIUSEPPE,SwimFarm,Room 2
 2026-06-07,Sunday,Arthur Ma,Multi-Activity,11 to 11.45,AURORA,SwimFarm,Teaching Pool
@@ -147,8 +148,8 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-06-07,Sunday,Shaan,Aquatic Activity,2.30 to 3,JAVIER,SwimFarm,Teaching Pool
 2026-06-07,Sunday,Yoan,Aquatic Activity,2.30 to 3,ROBERTO,SwimFarm,Teaching Pool
 2026-06-07,Sunday,Yusuf,Aquatic Activity,9 to 10.15,ROBERTO,SwimFarm,Teaching Pool
-2026-06-07,Sunday,Shire,Aquatic Activity,9 to 9.30,JAVIER,SwimFarm,Teaching Pool
-2026-06-07,Sunday,Simon,Aquatic Activity,9 to 9.30,AURORA,SwimFarm,Teaching Pool
+2026-06-07,Sunday,Shire,Aquatic Activity,9 to 9.30,JAVIER,SwimFarm,Small Pool
+2026-06-07,Sunday,Simon,Aquatic Activity,9 to 9.30,AURORA,SwimFarm,Small Pool
 2026-06-07,Sunday,Adam Ab,Multi-Activity,9.30 to 10.15,AURORA,SwimFarm,Teaching Pool
 2026-06-07,Sunday,Jack S,Multi-Activity,9.30 to 10.15,BISMARK,SwimFarm,Room 2
 2026-06-07,Sunday,Jack W,Multi-Activity,9.30 to 10.15,JOHN,SwimFarm,Room 2

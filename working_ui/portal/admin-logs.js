@@ -1,7 +1,7 @@
 /**
  * Admin Activity log — read-only audit trail viewer.
  *
- * Reads public.change_log (Portal Supabase, RLS admin/CEO) via
+ * Reads change_log plus schedule_override_events (all admins/CEOs) via
  * window.PortalChangeLog.load() and lists every recorded change grouped by day,
  * newest first. Each entry shows WHEN (day header) · WHAT TIME · BY WHOM · WHAT.
  * Search + area filter on top. Nothing is editable here.

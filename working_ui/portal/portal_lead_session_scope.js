@@ -2,6 +2,7 @@
  * Programme-lead session overview scope for John & Berta (client-side filters).
  */
 import { portalInferStaffKey } from "./auth-handler.js";
+import { resolveStaffKeyFromAuthEmail } from "./auth-map.js";
 
 const LEAD_OVERVIEW_KEYS = new Set(["berta", "john"]);
 
@@ -14,16 +15,29 @@ const LEAD_PROGRAMME_EMAIL_TO_KEY = {
 };
 
 /**
+ * Normalise auth email from Supabase session / getUser().
+ * @param {string} authEmail
+ * @returns {string}
+ */
+export function portalLeadNormalizeAuthEmail(authEmail) {
+  return String(authEmail || "")
+    .trim()
+    .toLowerCase();
+}
+
+/**
  * Programme lead key for John/Berta session overview (not generic portalInferStaffKey).
  * @param {Record<string, unknown> | null | undefined} profile
  * @param {string} authEmail
  * @returns {"john"|"berta"|""}
  */
 export function portalLeadProgrammeKey(profile, authEmail) {
-  const em = String(authEmail || "")
-    .trim()
-    .toLowerCase();
+  const em = portalLeadNormalizeAuthEmail(authEmail);
   if (em && LEAD_PROGRAMME_EMAIL_TO_KEY[em]) return LEAD_PROGRAMME_EMAIL_TO_KEY[em];
+  const staffKeyFromEmail = resolveStaffKeyFromAuthEmail(em);
+  if (LEAD_OVERVIEW_KEYS.has(staffKeyFromEmail)) return staffKeyFromEmail;
+  if (em.indexOf("johnnyosti") >= 0 || em.indexOf("john.osti") >= 0) return "john";
+  if (em.indexOf("traperocasado") >= 0) return "berta";
   const usernameKey = normKey(profile && profile.username);
   if (LEAD_OVERVIEW_KEYS.has(usernameKey)) return usernameKey;
   const firstNameKey = normKey(
@@ -32,6 +46,9 @@ export function portalLeadProgrammeKey(profile, authEmail) {
       .split(/\s+/)[0]
   );
   if (LEAD_OVERVIEW_KEYS.has(firstNameKey)) return firstNameKey;
+  const fullNameKey = normKey(profile && profile.full_name);
+  if (fullNameKey.indexOf("traperocasado") >= 0 || fullNameKey.indexOf("berta") >= 0) return "berta";
+  if (fullNameKey.indexOf("kyeifram") >= 0 || fullNameKey.indexOf("john") >= 0) return "john";
   if (usernameKey === "stf006" || em === "stf006@staff.import.pending") return "john";
   if (usernameKey === "stf012" || em === "stf012@staff.import.pending") return "berta";
   const inferred = portalInferStaffKey(profile, authEmail);

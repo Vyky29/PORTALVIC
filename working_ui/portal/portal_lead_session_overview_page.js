@@ -542,20 +542,12 @@ function awaitPortalSupabaseReady(timeoutMs) {
       resolve(window.__PORTAL_SUPABASE__ || {});
     };
     window.addEventListener("portal:supabase-ready", finish, { once: true });
-    setTimeout(finish, timeoutMs || 3500);
+    setTimeout(finish, timeoutMs || 5000);
   });
 }
 
-export async function portalInitLeadSessionOverviewPage() {
-  const statusEl = $("portalDayOpsStatus");
-  try {
-    await bootstrapDashboardSupabase({ page: "lead" });
-  } catch (e) {
-    console.warn("lead session overview auth", e);
-  }
-  await awaitPortalSupabaseReady(3500);
-  const ctx = window.__PORTAL_SUPABASE__ || {};
-  const profile = ctx.staff_profile;
+async function portalResolveLeadAuthEmail(ctx) {
+  ctx = ctx || window.__PORTAL_SUPABASE__ || {};
   let email = String((ctx.session && ctx.session.user && ctx.session.user.email) || "").trim();
   if (!email && ctx.client) {
     try {
@@ -565,7 +557,64 @@ export async function portalInitLeadSessionOverviewPage() {
       /* ignore */
     }
   }
+  if (!email && ctx.client) {
+    try {
+      const { data: sess } = await ctx.client.auth.getSession();
+      email = String(sess?.session?.user?.email || "").trim();
+    } catch {
+      /* ignore */
+    }
+  }
+  return email;
+}
+
+async function portalResolveLeadAccessContext() {
+  try {
+    await bootstrapDashboardSupabase({ page: "lead" });
+  } catch (e) {
+    console.warn("lead session overview auth", e);
+  }
+  await awaitPortalSupabaseReady(5000);
+  let ctx = window.__PORTAL_SUPABASE__ || {};
+  let profile = ctx.staff_profile || null;
+  let email = await portalResolveLeadAuthEmail(ctx);
   if (!portalCanAccessLeadSessionOverview(profile, email)) {
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      await new Promise(function (r) {
+        setTimeout(r, 350);
+      });
+      ctx = window.__PORTAL_SUPABASE__ || {};
+      profile = ctx.staff_profile || profile;
+      email = await portalResolveLeadAuthEmail(ctx);
+      if (portalCanAccessLeadSessionOverview(profile, email)) break;
+      if (!ctx.client) {
+        try {
+          await bootstrapDashboardSupabase({ page: "lead" });
+        } catch {
+          /* ignore */
+        }
+        await awaitPortalSupabaseReady(1500);
+        ctx = window.__PORTAL_SUPABASE__ || {};
+        profile = ctx.staff_profile || profile;
+        email = await portalResolveLeadAuthEmail(ctx);
+        if (portalCanAccessLeadSessionOverview(profile, email)) break;
+      }
+    }
+  }
+  return { ctx, profile, email };
+}
+
+export async function portalInitLeadSessionOverviewPage() {
+  const statusEl = $("portalDayOpsStatus");
+  const access = await portalResolveLeadAccessContext();
+  const ctx = access.ctx || {};
+  const profile = access.profile;
+  const email = access.email;
+  if (!portalCanAccessLeadSessionOverview(profile, email)) {
+    console.warn(
+      "[lead session overview] access denied",
+      { email: email || "(empty)", username: profile && profile.username, full_name: profile && profile.full_name }
+    );
     window.location.replace(LEAD_URL);
     return;
   }
@@ -622,12 +671,13 @@ export async function portalInitLeadSessionOverviewPage() {
   await refreshTab("feedback");
 }
 
-export function portalSyncLeadSessionOverviewButton() {
+export async function portalSyncLeadSessionOverviewButton() {
   const btn = document.getElementById("quickMenuLeadSessionOverview");
   if (!btn) return;
+  await awaitPortalSupabaseReady(5000);
   const ctx = window.__PORTAL_SUPABASE__ || {};
   const profile = ctx.staff_profile;
-  const email = String((ctx.session && ctx.session.user && ctx.session.user.email) || "").trim();
+  const email = await portalResolveLeadAuthEmail(ctx);
   const show = portalCanAccessLeadSessionOverview(profile, email);
   btn.hidden = !show;
   btn.setAttribute("aria-hidden", show ? "false" : "true");
