@@ -1,12 +1,14 @@
 /**
- * Session feedback — free voice input (Web Speech API + MyMemory translate → English).
- * Language choices depend on who is signed in (Italian / Spanish staff vs English-only).
+ * Session feedback — free voice input (Web Speech API + live MyMemory translate → English).
  */
 (function (global) {
   "use strict";
 
   var LANG_KEY = "portalFbVoiceLang_v1";
   var MAX_TRANSLATE_CHUNK = 450;
+  var SILENCE_STOP_MS = 2800;
+  var MAX_RECORD_MS = 90000;
+  var TRANSLATE_DEBOUNCE_MS = 550;
 
   var ALL_LANGS = [
     { value: "en-GB", label: "English", translate: false },
@@ -14,7 +16,6 @@
     { value: "it-IT", label: "Italiano", translate: true, code: "it" },
   ];
 
-  /** First-name / username tokens (normalized, no accents). */
   var ITALIAN_STAFF = { roberto: 1, giuseppe: 1 };
   var SPANISH_STAFF = {
     aurora: 1,
@@ -29,12 +30,7 @@
   };
 
   var activeRec = null;
-  var activeBtn = null;
-  var activeStatus = null;
-  var activeTextarea = null;
-  var activeLangValue = "en-GB";
-  var finalChunks = [];
-  var stopRequested = false;
+  var session = null;
 
   var ui = {
     bar: null,
@@ -61,6 +57,7 @@
       ".portal-fb-voice-lang-hint{flex:1 1 100%;margin:0;font-size:12px;line-height:1.45;color:#5b6473;min-width:0;overflow-wrap:break-word}" +
       ".portal-fb-voice-wrap{display:flex;flex-direction:column;gap:8px;min-width:0;width:100%}" +
       ".portal-fb-voice-wrap textarea{min-width:0;width:100%}" +
+      ".portal-fb-voice-wrap--live textarea{outline:2px solid rgba(220,38,38,.25)}" +
       ".portal-fb-voice-bar{display:flex;align-items:center;gap:10px;min-width:0;width:100%}" +
       ".portal-fb-voice-mic{flex-shrink:0;width:44px;height:44px;border-radius:50%;border:1px solid rgba(180,145,90,.38);background:#fff;color:#6b4a18;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;line-height:1}" +
       ".portal-fb-voice-mic:hover{background:#faf9f6}" +
@@ -105,18 +102,8 @@
   }
 
   function langsForGroup(group) {
-    if (group === "italian") {
-      return [
-        ALL_LANGS[2],
-        ALL_LANGS[0],
-      ];
-    }
-    if (group === "spanish") {
-      return [
-        ALL_LANGS[1],
-        ALL_LANGS[0],
-      ];
-    }
+    if (group === "italian") return [ALL_LANGS[2], ALL_LANGS[0]];
+    if (group === "spanish") return [ALL_LANGS[1], ALL_LANGS[0]];
     return [ALL_LANGS[0]];
   }
 
@@ -158,12 +145,12 @@
 
   function hintForGroup(group) {
     if (group === "italian") {
-      return "Tap the mic, speak in Italiano or English, tap again to stop. Text appears in English — edit before submit.";
+      return "Tap mic, speak in Italiano or English. English text updates as you talk. Tap mic again or pause to stop.";
     }
     if (group === "spanish") {
-      return "Tap the mic, speak in Español or English, tap again to stop. Text appears in English — edit before submit.";
+      return "Tap mic, speak in Español or English. English text updates as you talk. Tap mic again or pause to stop.";
     }
-    return "Tap the mic, speak in English, tap again to stop. Edit the text before submit.";
+    return "Tap mic and speak in English. Text updates as you talk. Tap mic again or pause to stop.";
   }
 
   function applyStaffLanguages(staffName) {
@@ -249,71 +236,173 @@
     });
   }
 
-  function applyTextToTextarea(ta, text) {
-    var next = String(text || "").replace(/\s+/g, " ").trim();
-    if (!next || !ta) return;
-    var prev = String(ta.value || "").trim();
-    if (prev) {
-      var join = prev.slice(-1).match(/[.!?]/) ? " " : ". ";
-      ta.value = prev + join + next;
-    } else {
-      ta.value = next;
-    }
+  function composePrefix(prefix, live) {
+    var p = String(prefix || "").trim();
+    var l = String(live || "").replace(/\s+/g, " ").trim();
+    if (!l) return p;
+    if (!p) return l;
+    return p + (p.slice(-1).match(/[.!?]/) ? " " : ". ") + l;
+  }
+
+  function dispatchInput(ta) {
     try {
       ta.dispatchEvent(new Event("input", { bubbles: true }));
     } catch (_) {}
-    ta.focus();
   }
 
-  function resetMicUi() {
-    if (activeBtn) {
-      activeBtn.classList.remove("portal-fb-voice-mic--rec");
-      activeBtn.setAttribute("aria-label", "Start voice input");
-      activeBtn.setAttribute("aria-pressed", "false");
-      activeBtn.disabled = false;
+  function clearSessionTimers(s) {
+    if (!s) return;
+    if (s.silenceTimer) {
+      clearTimeout(s.silenceTimer);
+      s.silenceTimer = null;
     }
-    activeRec = null;
-    activeBtn = null;
-    activeTextarea = null;
+    if (s.maxTimer) {
+      clearTimeout(s.maxTimer);
+      s.maxTimer = null;
+    }
+    if (s.translateTimer) {
+      clearTimeout(s.translateTimer);
+      s.translateTimer = null;
+    }
   }
 
-  function finishAndApply() {
-    var textarea = activeTextarea;
-    var langValue = activeLangValue;
-    var statusEl = activeStatus;
-    var raw = finalChunks.join(" ").replace(/\s+/g, " ").trim();
-    finalChunks = [];
-    resetMicUi();
+  function liveSourceText(s) {
+    var finals = s.finalChunks.join(" ").replace(/\s+/g, " ").trim();
+    var interim = String(s.interimText || "").replace(/\s+/g, " ").trim();
+    if (finals && interim) return finals + " " + interim;
+    return finals || interim;
+  }
 
-    if (!raw) {
-      if (statusEl) statusEl.textContent = "No speech detected — tap mic and try again.";
-      return;
-    }
+  function setLiveTextarea(s, liveEnglish) {
+    if (!s || !s.textarea) return;
+    s.textarea.value = composePrefix(s.prefix, liveEnglish);
+    dispatchInput(s.textarea);
+  }
 
-    var cfg = getLangConfig(langValue);
-    if (!cfg.translate) {
-      applyTextToTextarea(textarea, raw);
-      if (statusEl) statusEl.textContent = "Added — edit if needed before submit.";
-      return;
-    }
+  function bumpSilenceTimer(s) {
+    if (!s || s.stopRequested) return;
+    if (s.silenceTimer) clearTimeout(s.silenceTimer);
+    s.silenceTimer = setTimeout(function () {
+      requestStop(s, "pause");
+    }, SILENCE_STOP_MS);
+  }
 
-    if (statusEl) statusEl.textContent = "Translating to English…";
-    translateToEnglish(raw, cfg.code)
+  function scheduleLiveTranslate(s) {
+    if (!s || !s.needsTranslate) return;
+    if (s.translateTimer) clearTimeout(s.translateTimer);
+    s.translateTimer = setTimeout(function () {
+      runLiveTranslate(s);
+    }, TRANSLATE_DEBOUNCE_MS);
+  }
+
+  function runLiveTranslate(s) {
+    if (!s || s.stopRequested) return;
+    var source = liveSourceText(s);
+    if (!source) return;
+
+    s.translateSeq += 1;
+    var seq = s.translateSeq;
+    if (s.statusEl) s.statusEl.textContent = "Translating as you speak…";
+
+    translateToEnglish(source, s.translateCode)
       .then(function (english) {
-        applyTextToTextarea(textarea, english || raw);
-        if (statusEl) {
-          statusEl.textContent = english
-            ? "Added in English — edit if the translation is wrong."
-            : "Added — edit if needed before submit.";
+        if (!session || session !== s || seq !== s.translateSeq) return;
+        setLiveTextarea(s, english || source);
+        if (s.statusEl && !s.stopRequested) {
+          s.statusEl.textContent = "Listening… English updates live.";
         }
       })
       .catch(function () {
-        applyTextToTextarea(textarea, raw);
-        if (statusEl) {
-          statusEl.textContent =
-            "Translation unavailable — original text added. Edit or type in English.";
+        if (!session || session !== s || seq !== s.translateSeq) return;
+        setLiveTextarea(s, source);
+        if (s.statusEl && !s.stopRequested) {
+          s.statusEl.textContent = "Listening… (translation slow — edit English after)";
         }
       });
+  }
+
+  function pushLivePreview(s) {
+    var source = liveSourceText(s);
+    if (!source) return;
+
+    if (!s.needsTranslate) {
+      setLiveTextarea(s, source);
+      if (s.statusEl) s.statusEl.textContent = "Listening… text updates live.";
+      return;
+    }
+
+    scheduleLiveTranslate(s);
+  }
+
+  function requestStop(s, reason) {
+    if (!s || s.stopRequested) return;
+    s.stopRequested = true;
+    clearSessionTimers(s);
+    if (s.statusEl) {
+      s.statusEl.textContent =
+        reason === "pause" ? "Stopped — paused." : "Stopping…";
+    }
+    if (s.rec) {
+      try {
+        s.rec.stop();
+      } catch (_) {
+        finishSession(s);
+      }
+    } else {
+      finishSession(s);
+    }
+  }
+
+  function resetMicButton(btn) {
+    if (!btn) return;
+    btn.classList.remove("portal-fb-voice-mic--rec");
+    btn.setAttribute("aria-label", "Start voice input");
+    btn.setAttribute("aria-pressed", "false");
+    btn.disabled = false;
+  }
+
+  function finishSession(s) {
+    if (!s) return;
+    clearSessionTimers(s);
+
+    var wrap = s.textarea && s.textarea.closest(".portal-fb-voice-wrap");
+    if (wrap) wrap.classList.remove("portal-fb-voice-wrap--live");
+
+    var source = liveSourceText(s);
+    var hadSpeech = source.length > 0;
+
+    function wrapUp() {
+      if (!hadSpeech) {
+        if (s.textarea) s.textarea.value = s.prefix;
+        if (s.statusEl) {
+          s.statusEl.textContent = "No speech detected — tap mic and try again.";
+        }
+      } else if (s.statusEl) {
+        s.statusEl.textContent = "Done — edit if needed before submit.";
+      }
+      resetMicButton(s.btn);
+      if (activeRec === s.rec) activeRec = null;
+      if (session === s) session = null;
+    }
+
+    if (hadSpeech && s.needsTranslate) {
+      translateToEnglish(source, s.translateCode)
+        .then(function (english) {
+          setLiveTextarea(s, english || source);
+          wrapUp();
+        })
+        .catch(function () {
+          setLiveTextarea(s, source);
+          wrapUp();
+        });
+      return;
+    }
+
+    wrapUp();
+  }
+
+  function stopActiveSession() {
+    if (session) requestStop(session, "manual");
   }
 
   function startRecognition(textarea, btn, statusEl, langValue) {
@@ -326,76 +415,96 @@
       return;
     }
 
-    if (activeRec && activeBtn === btn) {
-      stopRequested = true;
-      try {
-        activeRec.stop();
-      } catch (_) {}
+    if (session && session.btn === btn) {
+      requestStop(session, "manual");
       return;
     }
 
-    if (activeRec) {
-      stopRequested = true;
-      try {
-        activeRec.stop();
-      } catch (_) {}
-    }
+    if (session) stopActiveSession();
 
-    stopRequested = false;
-    finalChunks = [];
-    activeTextarea = textarea;
-    activeLangValue = langAllowed(langValue) ? langValue : defaultLangForGroup(ui.staffGroup);
-    activeBtn = btn;
-    activeStatus = statusEl;
+    var lang = langAllowed(langValue) ? langValue : defaultLangForGroup(ui.staffGroup);
+    var cfg = getLangConfig(lang);
 
-    var rec = new Rec();
-    activeRec = rec;
-    rec.lang = activeLangValue;
-    rec.continuous = true;
-    rec.interimResults = true;
+    var s = {
+      rec: null,
+      btn: btn,
+      statusEl: statusEl,
+      textarea: textarea,
+      prefix: String(textarea.value || ""),
+      lang: lang,
+      needsTranslate: !!cfg.translate,
+      translateCode: cfg.code || "",
+      finalChunks: [],
+      interimText: "",
+      stopRequested: false,
+      silenceTimer: null,
+      maxTimer: null,
+      translateTimer: null,
+      translateSeq: 0,
+    };
+    session = s;
+
+    var wrap = textarea.closest(".portal-fb-voice-wrap");
+    if (wrap) wrap.classList.add("portal-fb-voice-wrap--live");
 
     btn.classList.add("portal-fb-voice-mic--rec");
     btn.setAttribute("aria-label", "Stop voice input");
     btn.setAttribute("aria-pressed", "true");
-    if (statusEl) statusEl.textContent = "Listening… tap mic when finished.";
+    if (statusEl) {
+      statusEl.textContent = s.needsTranslate
+        ? "Listening… English will update as you speak."
+        : "Listening… text updates as you speak.";
+    }
+
+    var rec = new Rec();
+    s.rec = rec;
+    activeRec = rec;
+    rec.lang = lang;
+    rec.continuous = true;
+    rec.interimResults = true;
 
     rec.onresult = function (e) {
-      var interim = "";
+      if (s.stopRequested) return;
+      s.interimText = "";
       for (var i = e.resultIndex; i < e.results.length; i++) {
         var t = e.results[i][0].transcript;
-        if (e.results[i].isFinal) finalChunks.push(t);
-        else interim = t;
+        if (e.results[i].isFinal) s.finalChunks.push(t);
+        else s.interimText = t;
       }
-      if (statusEl && interim) statusEl.textContent = interim;
+      bumpSilenceTimer(s);
+      pushLivePreview(s);
     };
 
     rec.onerror = function (e) {
+      if (s.stopRequested) return;
+      if (e.error === "aborted") return;
       var msg = "Voice error — try again.";
       if (e.error === "not-allowed") {
         msg = "Microphone blocked — allow mic in browser settings.";
       } else if (e.error === "no-speech") {
-        msg = "No speech heard — tap mic and speak clearly.";
+        requestStop(s, "pause");
+        return;
       } else if (e.error === "network") {
         msg = "Network error — check connection and try again.";
       }
       if (statusEl) statusEl.textContent = msg;
+      if (e.error !== "no-speech") requestStop(s, "error");
     };
 
     rec.onend = function () {
-      if (!stopRequested && activeRec === rec) {
-        try {
-          rec.start();
-          return;
-        } catch (_) {}
-      }
-      if (activeRec === rec) finishAndApply();
+      if (session !== s) return;
+      finishSession(s);
     };
+
+    s.maxTimer = setTimeout(function () {
+      requestStop(s, "max");
+    }, MAX_RECORD_MS);
 
     try {
       rec.start();
     } catch (_) {
       if (statusEl) statusEl.textContent = "Could not start microphone.";
-      resetMicUi();
+      finishSession(s);
     }
   }
 
