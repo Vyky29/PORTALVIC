@@ -3,7 +3,15 @@
 
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path $PSScriptRoot -Parent
-$dest = Join-Path $repoRoot "local-secrets"
+$dest = Join-Path $repoRoot "_local\secrets"
+if (-not (Test-Path $dest)) {
+  New-Item -ItemType Directory -Force -Path $dest | Out-Null
+}
+# Junction local-secrets -> _local/secrets for older docs
+$legacyLink = Join-Path $repoRoot "local-secrets"
+if (-not (Test-Path $legacyLink)) {
+  cmd /c mklink /J "$legacyLink" "$dest" 2>$null | Out-Null
+}
 $srcVault = Join-Path $PSScriptRoot "local-vault\portal-vault.html"
 $srcTemplate = Join-Path $PSScriptRoot "local-vault\secrets.template.env"
 
@@ -36,6 +44,8 @@ First time:
   1. Open portal-vault.html in Chrome or Edge
   2. Create a master password (min 8 chars)
   3. Fill entries or Import secrets.env
+
+Data folder: _local/secrets/ (move entire _local/ outside repo when sharing)
 
 Re-run bootstrap to refresh portal-vault.html after repo updates:
   .\database\bootstrap-local-vault.ps1

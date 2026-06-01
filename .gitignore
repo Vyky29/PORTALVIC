@@ -6,7 +6,9 @@
 working_ui/onboarding_portal_config.js
 
 # Local password vault (data + copies — never commit, never deploy)
+# Prefer _local/secrets/ (see bootstrap-local-data.ps1). Junction local-secrets/ is OK.
 local-secrets/
+_local/
 
 # Vercel
 .vercel
@@ -21,12 +23,16 @@ Desktop.ini
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+.tmp_*
+**/_tmp_*
+supabase/.temp/
 
 # Python
 __pycache__/
 *.py[cod]
 
 # HR + payments source data + generated seeds (PII: never commit, never deploy)
+# Canonical path: _local/hr and _local/payments (legacy folder names still ignored)
 hr_source/
 payments_source/
 *.xlsx

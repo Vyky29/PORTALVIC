@@ -1,0 +1,39 @@
+PORTAL — datos locales (NO subir a GitHub)
+============================================
+
+Todo lo privado vive en la carpeta:
+
+  _local/
+
+Esa carpeta está en .gitignore. Cuando compartas el repo o clones en otro sitio,
+puedes moverla FUERA del proyecto, por ejemplo:
+
+  C:\Users\info\PORTAL-local\
+
+y dejar el repo limpio.
+
+Estructura (_local/):
+  secrets/       — portal-vault.html, secrets.env (contraseñas)
+  hr/            — Excel HR + scripts import (PII)
+  payments/      — Excel pagos + scripts import (PII)
+  scratch/       — .tmp_* previews, notas sueltas
+  spreadsheets/  — .xlsx sueltos que no van al repo
+  roster-work/   — exports de roster en bruto antes de importar
+
+Primera vez (desde la raíz del repo):
+
+  .\database\bootstrap-local-data.ps1
+
+Solo vault de contraseñas:
+
+  .\database\bootstrap-local-vault.ps1
+
+Plantilla roster oficial (SÍ en git, no es secreto):
+
+  database\roster_exports\weekly-template-reference.txt
+
+Tras editar el export de trabajo, importar al machine JSON:
+
+  python database\import_roster_export_txt.py
+
+(Revisa database\import_roster_export_txt.py si usas una copia en _local\roster-work\.)

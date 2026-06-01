@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Replace undated roster template rows from database/_tmp_roster_export.txt."""
+"""Replace undated roster template rows from database/roster_exports/weekly-template-reference.txt."""
 from __future__ import annotations
 
 import json
@@ -7,7 +7,9 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-EXPORT = ROOT / "database" / "_tmp_roster_export.txt"
+EXPORT = ROOT / "database" / "roster_exports" / "weekly-template-reference.txt"
+LOCAL_WORK_EXPORT = ROOT / "_local" / "roster-work" / "weekly-template-reference.txt"
+LEGACY_EXPORT = ROOT / "database" / "_tmp_roster_export.txt"
 JSON_PATH = ROOT / "database" / "staff_clients_machine.json"
 
 DAYS = {
@@ -93,10 +95,21 @@ def parse_export(path: Path) -> list[dict]:
     return rows
 
 
+def resolve_export_path() -> Path:
+    for candidate in (EXPORT, LOCAL_WORK_EXPORT, LEGACY_EXPORT):
+        if candidate.exists():
+            return candidate
+    raise SystemExit(
+        "Missing roster export. Expected one of:\n"
+        f"  {EXPORT}\n"
+        f"  {LOCAL_WORK_EXPORT}\n"
+        f"  {LEGACY_EXPORT}"
+    )
+
+
 def main() -> None:
-    if not EXPORT.exists():
-        raise SystemExit(f"Missing export: {EXPORT}")
-    template = parse_export(EXPORT)
+    export_path = resolve_export_path()
+    template = parse_export(export_path)
     if not template:
         raise SystemExit("No template rows parsed from export")
 

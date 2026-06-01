@@ -997,3 +997,113 @@ body:has(#workspace .dash-hub--dayops) .admin-main{
     height:auto;
   }
 }
+
+/* Day operations — phone/tablet landscape: scroll, wrap tiles, no panel overlap */
+@media (orientation:landscape) and (max-height:640px){
+  body:has(#workspace .dash-hub--dayops) .admin-workspace{
+    overflow-x:hidden;
+    overflow-y:auto;
+    min-height:0;
+    -webkit-overflow-scrolling:touch;
+  }
+  body.admin-touch-compact:has(#workspace .dash-hub--dayops) .admin-workspace{
+    padding-bottom:calc(68px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  .dash-hub--dayops{
+    flex:none;
+    min-height:auto;
+    overflow:visible;
+  }
+  .dash-hub--dayops > .page-title{
+    font-size:clamp(16px,4vw,20px) !important;
+    margin-bottom:2px !important;
+  }
+  .dash-hub--dayops > .page-intro{
+    white-space:normal !important;
+    font-size:11px !important;
+    line-height:1.35 !important;
+    margin-bottom:8px !important;
+    max-width:100%;
+    overflow-wrap:break-word;
+  }
+  .dash-hub--dayops .dash-hub__stack{
+    flex:none;
+    min-height:auto;
+    gap:8px;
+  }
+  .dash-hub--dayops .dash-hub__panel{
+    flex:0 0 auto !important;
+    min-height:auto;
+    overflow:visible;
+    padding:8px 10px 10px;
+  }
+  .dash-hub--dayops .dash-hub__panel-head{
+    margin-bottom:6px;
+    padding-bottom:6px;
+  }
+  .dash-hub--dayops .dash-hub__panel-title{
+    font-size:11px;
+  }
+  .dash-hub--dayops .dash-hub__panel-desc{
+    display:none;
+  }
+  .dash-hub--dayops .dash-hub__panel--team > .dash-hub__grid,
+  .dash-hub--dayops .dash-hub__sessions-grids{
+    flex:none;
+    min-height:auto;
+  }
+  .dash-hub--dayops .dash-hub__sessions-grids{
+    gap:8px;
+  }
+  .dash-hub--dayops .dash-hub__panel--team > .dash-hub__grid,
+  .dash-hub--dayops .dash-hub__sessions-grids > .dash-hub__grid{
+    align-content:stretch;
+    align-items:stretch;
+    grid-auto-rows:auto;
+    gap:8px;
+    min-height:0;
+  }
+  .dash-hub--dayops .dash-hub__panel--team > .dash-hub__grid--5,
+  .dash-hub--dayops .dash-hub__sessions-grids > .dash-hub__grid--5,
+  .dash-hub--dayops .dash-hub__sessions-grids > .dash-hub__grid--6{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+  .dash-hub.dash-hub--dayops:not(.dash-hub--nav-index) .dash-hub__tile{
+    min-height:0;
+    height:auto;
+    align-self:stretch;
+    padding-top:42px;
+    padding-bottom:6px;
+  }
+  .dash-hub.dash-hub--dayops:not(.dash-hub--nav-index) .dash-hub__tile-band{
+    min-height:38px;
+    max-height:38px;
+    padding:6px;
+  }
+  .dash-hub.dash-hub--dayops:not(.dash-hub--nav-index) .dash-hub__tile-band .admin-nav-ico{
+    width:28px;
+    height:28px;
+  }
+  .dash-hub.dash-hub--dayops:not(.dash-hub--nav-index) .dash-hub__tile-band .admin-nav-ico svg{
+    width:20px;
+    height:20px;
+  }
+  .dash-hub.dash-hub--dayops:not(.dash-hub--nav-index) .dash-hub__tile-label{
+    font-size:9.5px;
+    line-height:1.2;
+    padding:0 4px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .dash-hub.dash-hub--dayops:not(.dash-hub--nav-index) .dash-hub__tile-desc{
+    display:none !important;
+  }
+}
+@media (orientation:landscape) and (max-height:420px){
+  .dash-hub--dayops .dash-hub__panel--team > .dash-hub__grid--5,
+  .dash-hub--dayops .dash-hub__sessions-grids > .dash-hub__grid--5,
+  .dash-hub--dayops .dash-hub__sessions-grids > .dash-hub__grid--6{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}

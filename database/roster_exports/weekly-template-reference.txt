@@ -1,0 +1,294 @@
+﻿
+========================================================================
+MONDAY
+========================================================================
+
+--- Aquatic Activity ---
+Cliente | nota | Instructor | session time | venue
+------------------------------------------------------------------------
+CLOSED | Teaching Pool | YOUSSEF | 4 to 4.30 | Acton
+Adam Pi | Teaching Pool | ANGEL | 4 to 5.30 | Acton
+Eddie | Teaching Pool | YOUSSEF | 4.30 to 5 | Acton
+Kirushy | Teaching Pool | DAN | 4.30 to 5 | Northolt
+Yunis | Teaching Pool | ROBERTO | 4.30 to 5 | Northolt
+Gemma | Teaching Pool | DAN | 5 to 5.30 | Northolt
+Joel | Teaching Pool | YOUSSEF | 5 to 5.30 | Acton
+Amar Ra | Teaching Pool | ROBERTO | 5 to 6 | Northolt
+Steven C | Teaching Pool | ANGEL | 5.30 to 6 | Acton
+Zayana | Teaching Pool | DAN | 5.30 to 6 | Northolt
+Abodi P | Teaching Pool | YOUSSEF | 5.30 to 6.30 | Acton
+Adaam Ah | Teaching Pool | DAN | 6 to 6.30 | Northolt
+Mario | Teaching Pool | ANGEL | 6 to 6.30 | Acton
+Yamik | Teaching Pool | ROBERTO | 6 to 6.30 | Northolt
+
+--- Bespoke Programme ---
+Cliente | nota | Instructor | session time | venue
+------------------------------------------------------------------------
+Tinashe | Hub Room | BISMARK, GIUSEPPE, JOHN | 4.30 to 6 | SwimFarm
+
+--- Day Centre ---
+Cliente | nota | Instructor | session time | venue
+------------------------------------------------------------------------
+Timi | Hub Room | RAUL | 1 to 3 | SwimFarm
+ACAT | Hub Room | ROBERTO | 11 to 12 | SwimFarm
+Ikram | Hub Room | LULIA, MICHELLE | 11 to 4 | SwimFarm
+Fadi | Hub Room | ROBERTO, VICTOR | 12.30 to 3 | SwimFarm
+
+--- Physical Activity ---
+Cliente | nota | Instructor | session time | venue
+------------------------------------------------------------------------
+Ayaan | Gym | SANDRA | 4 to 5 | Westway
+Serine | Gym | SANDRA | 5 to 6 | Westway
+
+--- Aquatic Activity ---
+Cliente | nota | Instructor | session time | venue
+------------------------------------------------------------------------
+Mari Trini | Teaching Pool | TEFLON | 10 to 11 | Acton
+
+========================================================================
+TUESDAY
+========================================================================
+
+--- Aquatic Activity ---
+Cliente | nota | Instructor | session time | venue
+------------------------------------------------------------------------
+Ayman | Lane (DE) | JAVIER | 4 to 4.30 | Acton
+CLOSED | Teaching Pool | ANGEL | 4 to 4.30 | Acton
+CLOSED | Teaching Pool | AURORA | 4 to 4.30 | Acton
+CLOSED | Teaching Pool | YOUSSEF | 4 to 4.30 | Acton
+Jad | Teaching Pool | ROBERTO | 4 to 4.30 | Acton
+Adam Me | Teaching Pool | JAVIER | 4.30 to 5 | Acton
+Bediako | Lane (SE) | AURORA | 4.30 to 5 | Acton
+NO CLIENT | Teaching Pool | ANGEL | 4.30 to 5 | Acton
+NO CLIENT | Teaching Pool | YOUSSEF | 4.30 to 5 | Acton
+Serine | Lane (DE) | ROBERTO | 4.30 to 5.30 | Acton
+Amir | Teaching Pool | ANGEL | 5 to 5.30 | Acton
+Junaid | Lane (SE) | AURORA | 5 to 5.30 | Acton
+Linda | Lane (SE) | JAVIER | 5 to 5.30 | Acton
+Logan | Teaching Pool | YOUSSEF | 5 to 5.30 | Acton
+Aydaan Ah | Lane (SE) | AURORA | 5.30 to 6 | Acton
+Eiji | Lane (DE) | JAVIER | 5.30 to 6 | Acton
+Hazem | Lane (DE) | ROBERTO | 5.30 to 6 | Acton
+Rayan Ta | Teaching Pool | ANGEL | 5.30 to 6 | Acton
+Rayyan Fi | Lane (SE) | YOUSSEF | 5.30 to 6.30 | Acton
+Eiji | Lane (DE) | ROBERTO | 6 to 6.30 | Acton
+Hazem | Lane (DE) | AURORA | 6 to 6.30 | Acton
+Kareena | Lane (SE) | JAVIER | 6 to 6.30 | Acton
+Richard | Lane (DE) | ANGEL | 6 to 6.30 | Acton
+
+--- Day Centre ---
+Cliente | nota | Instructor | session time | venue
+------------------------------------------------------------------------
+Ikram | Hub Room | LULIA, MICHELLE | 11 to 4 | SwimFarm
+Fadi | Hub Room | ROBERTO, VICTOR | 12.30 to 3 | SwimFarm
+
+--- Multi-Activity ---
+Cliente | nota | Instructor | session time | venue
+------------------------------------------------------------------------
+Sam | Hub Room | TEFLON | 2 to 3 | SwimFarm
+
+========================================================================
+WEDNESDAY
+========================================================================
+
+--- Aquatic Activity ---
+Cliente | nota | Instructor | session time | venue
+------------------------------------------------------------------------
+Tyson | Teaching Pool | DAN | 4.30 to 5 | Northolt
+Vithura | Teaching Pool | ROBERTO | 4.30 to 5 | Northolt
+Cyrus | Teaching Pool | JAVIER | 4 to 4.30 | Acton
+NO CLIENT | Teaching Pool | YOUSSEF | 4 to 4.30 | Acton
+Ruben | Teaching Pool | DAN | 5 to 5.30 | Northolt
+Amar Ra | Teaching Pool | ROBERTO | 5 to 6 | Northolt
+Mia | Teaching Pool | DAN | 5.30 to 6.30 | Northolt
+Amber | Teaching Pool | ROBERTO | 6 to 6.30 | Northolt
+Kayden | Teaching Pool | JAVIER | 6 to 6.30 | Acton
+NO CLIENT | Teaching Pool | YOUSSEF | 6 to 6.30 | Acton
+
+--- Bespoke Programme ---
+Cliente | nota | Instructor | session time | venue
+------------------------------------------------------------------------
+Tinashe | Hub Room | BISMARK, GIUSEPPE, JOHN | 4.30 to 6 | SwimFarm
+
+--- Day Centre ---
+Cliente | nota | Instructor | session time | venue
+------------------------------------------------------------------------
+Ikram | Hub Room | LULIA, MICHELLE | 11 to 4 | SwimFarm
+Fadi | Hub Room | ROBERTO, YOUSSEF | 12.30 to 3 | SwimFarm
+
+--- Multi-Activity ---
+Cliente | nota | Instructor | session time | venue
+------------------------------------------------------------------------
+Cyrus | Teaching Pool | JAVIER | 4.30 to 5.15 | Acton
+Cyrus | Room 2 | GIUSEPPE | 5.15 to 6 | Acton
+Stephanie | Teaching Pool | YOUSSEF | 4.30 to 5.15 | Acton
+Stephanie | Room 2 | BERTA | 5.15 to 6 | Acton
+Adam Ab | Room 2 | GIUSEPPE | 4.30 to 5.15 | Acton
+Adam Ab | Teaching Pool | JAVIER | 5.15 to 6 | Acton
+Scott | Room 2 | BERTA | 4.30 to 5.15 | Acton
+Scott | Room 2 | YOUSSEF | 5.15 to 6 | Acton
+
+========================================================================
+THURSDAY
+========================================================================
+
+--- Aquatic Activity ---
+Cliente | nota | Instructor | session time | venue
+------------------------------------------------------------------------
+Ayman | Lane (DE)/(SE) | JAVIER | 4 to 5 | Acton
+Elijah | Lane (SE) | AURORA | 4 to 4.30 | Acton
+NO CLIENT | Teaching Pool | SIMON | 4 to 4.30 | Acton
+Tom | Lane (SE) | ROBERTO | 4 to 4.30 | Acton
+Thushyan | Lane (DE) | SIMON | 4.30 to 5 | Acton
+Yassir | Lane (SE) | ROBERTO | 4.30 to 5 | Acton
+Aqsa | Lane (DE) | AURORA | 4.30 to 5.30 | Acton
+Khalid Ab | Lane (SE) | JAVIER | 5 to 5.30 | Acton
+Yossi | Lane (DE) | ROBERTO | 5 to 5.30 | Acton
+Yuri | Lane (SE) | SIMON | 5 to 5.30 | Acton
+Hazem | Lane (DE) | AURORA | 5.30 to 6 | Acton
+Karo | Lane (SE) | JAVIER | 5.30 to 6 | Acton
+Eiji | Lane (DE) | SIMON | 5.30 to 6.30 | Acton
+Mohammed | Lane (SE) | ROBERTO | 5.30 to 6.30 | Acton
+Hazem | Lane (DE) | JAVIER | 6 to 6.30 | Acton
+Maiyar | Teaching Pool | AURORA | 6 to 6.30 | Acton
+
+--- Bespoke Programme ---
+Cliente | nota | Instructor | session time | venue
+------------------------------------------------------------------------
+Cyrus | Hub Room | VICTOR | 3.30 to 5 | SwimFarm
+
+--- Day Centre ---
+Cliente | nota | Instructor | session time | venue
+------------------------------------------------------------------------
+Fadi | Hub Room | ROBERTO, RAUL | 12.30 to 3 | SwimFarm
+
+========================================================================
+FRIDAY
+========================================================================
+
+--- Aquatic Activity ---
+Cliente | nota | Instructor | session time | venue
+------------------------------------------------------------------------
+Adam Pi | Teaching Pool | ROBERTO | 4 to 5.30 | Acton
+Amaar Ah | Teaching Pool | ROBERTO | 5.30 to 6 | Acton
+
+--- Bespoke Programme ---
+Cliente | nota | Instructor | session time | venue
+------------------------------------------------------------------------
+Tinashe | Hub Room | BISMARK, GIUSEPPE, JOHN | 4.30 to 6 | SwimFarm
+
+--- Day Centre ---
+Cliente | nota | Instructor | session time | venue
+------------------------------------------------------------------------
+Timi | Hub Room | Raul | 1 to 3 | SwimFarm
+Ikram | Hub Room | LULIA, MICHELLE | 11 to 4 | SwimFarm
+Fadi | Hub Room | ROBERTO, YOUSSEF | 12.30 to 3 | SwimFarm
+Emmanuel | Hub Room | VICTOR | 11 to 4 | SwimFarm
+
+========================================================================
+SATURDAY
+========================================================================
+
+--- Aquatic Activity ---
+Cliente | nota | Instructor | session time | venue
+------------------------------------------------------------------------
+NO CLIENT | Teaching Pool | YOUSSEF | 10 to 10.30 | Acton
+Emani | Teaching Pool | YOUSSEF | 10.30 to 11 | Acton
+Matthias | Teaching Pool | YOUSSEF | 11 to 12 | Acton
+Saaib | Teaching Pool | YOUSSEF | 12 to 12.30 | Acton
+NO CLIENT | Teaching Pool | YOUSSEF | 12.30 to 1 | Acton
+NO CLIENT | Teaching Pool | YOUSSEF | 9.30 to 10 | Acton
+
+========================================================================
+SUNDAY
+========================================================================
+
+--- Aquatic Activity ---
+Cliente | nota | Instructor | session time | venue
+------------------------------------------------------------------------
+Adaam Ah | Teaching Pool | ROBERTO | 1.15 to 2 | SwimFarm
+Erik | Teaching Pool | AURORA | 1.15 to 2 | SwimFarm
+Haneef | Teaching Pool | JAVIER | 1.15 to 2 | SwimFarm
+Jordan | Teaching Pool | TEFLON | 10 to 11 | Northolt
+Jack S | Teaching Pool | ROBERTO | 10.15 to 11 | SwimFarm
+Jack W | Teaching Pool | AURORA | 10.15 to 11 | SwimFarm
+Zaid | Teaching Pool | JAVIER | 10.15 to 11 | SwimFarm
+Arthur Ma | Teaching Pool | AURORA | 11 to 11.45 | SwimFarm
+Gabriel | Teaching Pool | ROBERTO | 11 to 11.45 | SwimFarm
+Arthur Mo | Teaching Pool | ROBERTO | 11.45 to 12.30 | SwimFarm
+Cyrus | Teaching Pool | AURORA | 11.45 to 12.30 | SwimFarm
+Eiji | Teaching Pool | JAVIER | 11.45 to 12.30 | SwimFarm
+Amaar Ah | Teaching Pool | ROBERTO | 12.30 to 1.15 | SwimFarm
+Aydaan Ah | Teaching Pool | AURORA | 12.30 to 1.15 | SwimFarm
+Rayyan Fi | Teaching Pool | JAVIER | 12.30 to 1.15 | SwimFarm
+Max | Teaching Pool | JAVIER | 2 to 2.30 | SwimFarm
+Rodin | Teaching Pool | ROBERTO | 2 to 2.30 | SwimFarm
+Zakariya | Teaching Pool | AURORA | 2 to 2.30 | SwimFarm
+Faris | Teaching Pool | AURORA | 2.30 to 3 | SwimFarm
+Shaan | Teaching Pool | JAVIER | 2.30 to 3 | SwimFarm
+Yoan | Teaching Pool | ROBERTO | 2.30 to 3 | SwimFarm
+Yusuf | Small Pool | ROBERTO | 9 to 10.15 | SwimFarm
+Shire | Small Pool | JAVIER | 9 to 9.30 | SwimFarm
+Simon | Small Pool | AURORA | 9 to 9.30 | SwimFarm
+
+
+--- Climbing Activity ---
+Cliente | nota | Instructor | session time | venue
+------------------------------------------------------------------------
+Rodin | Wall | ALEX | 1 to 2 | Westway
+Zakariya | Wall | CARLOS | 1 to 2 | Westway
+Eiji | Wall | ALEX | 10 to 11 | Westway
+Hazem | Wall | CARLOS | 10 to 11 | Westway
+Yusef | Wall | ALEX | 11 to 12 | Westway
+Zaid | Wall | CARLOS | 11 to 12 | Westway
+Scott | Wall | ALEX | 12 to 1 | Westway
+Serine | Wall | CARLOS | 12 to 1 | Westway
+Ayden W | Wall | ALEX | 2 to 3 | Westway
+Patrick | Wall | CARLOS | 2 to 3 | Westway
+
+--- Multi-Activity ---
+Cliente | nota | Instructor | session time | venue
+------------------------------------------------------------------------
+Amaar Ah | Hub Room  | BISMARK | 1.15 to 2 | SwimFarm
+Aydaan Ah | Hub Room  | JOHN, BERTA | 1.15 to 2 | SwimFarm
+Rayyan Fi | Hub Room  | GIUSEPPE | 1.15 to 2 | SwimFarm
+Adaam Ah | Big Pool | ROBERTO | 1.15 to 2 | SwimFarm
+Erik | Big Pool | AURORA | 1.15 to 2 | SwimFarm
+Haneef | Small Pool | JAVIER | 1.15 to 2 | SwimFarm
+Adaam Ah | Hub Room | BISMARK | 12.30 to 1.15 | SwimFarm
+Erik | Hub Room | JOHN, BERTA | 12.30 to 1.15 | SwimFarm
+Haneef | Hub Room | GIUSEPPE | 12.30 to 1.15 | SwimFarm
+Amaar Ah | Big Pool | ROBERTO | 12.30 to 1.15| SwimFarm
+Aydaan Ah | Big Pool | AURORA | 12.30 to 1.15 | SwimFarm
+Rayyan Fi | Small Pool | JAVIER | 12.30 to 1.15 | SwimFarm
+Cyrus | Hub Room | JOHN, BERTA | 11 to 11.45 | SwimFarm
+Eiji | Hub Room | GIUSEPPE | 11 to 11.45 | SwimFarm
+Arthur Mo | Hub Room | BISMARK | 11 to 11.45 | SwimFarm
+Cyrus | Small Pool | AURORA | 11.45 to 12.30 | SwimFarm
+Eiji | Big Pool | JAVIER | 11.45 to 12.30 | SwimFarm
+Arthur Mo | Big Pool | ROBERTO | 11.45 to 12.30 | SwimFarm
+Arthur Ma | Small Pool | AURORA | 11 to 11.45 | SwimFarm
+Gabriel | Big Pool | ROBERTO | 11 to 11.45 | SwimFarm
+Hazem | Big Pool | JAVIER | 11 to 11.45 | SwimFarm
+Hazem | Hub Room | GIUSEPPE | 11.45 to 12.30 | SwimFarm
+Arthur Ma | Hub Room | JOHN, BERTA |  11.45 to 12.30 | SwimFarm
+Gabriel | Hub Room | BISMARK | 11.45 to 12.30 | SwimFarm
+Jack S | Hub Room | BISMARK | 9.30 to 10.15 | SwimFarm
+Jack W | Hub Room | JOHN, BERTA | 9.30 to 10.15 | SwimFarm
+Jack S | Big Pool | ROBERTO | 10.15 to 11 | SwimFarm
+Jack W | Big Pool | AURORA | 10.15 to 11 | SwimFarm
+Zaid | Hub Room | GIUSEPPE | 9.30 to 10.15 | SwimFarm
+Zaid | Small Pool | JAVIER | 10.15 to 11 | SwimFarm
+Adam Ab | Hub Room | JOHN, BERTA | 10.15 to 11 | SwimFarm
+Adam Ab | Small Pool | AURORA | 9.30 to 10.15 | SwimFarm
+Samer | Hub Room | GIUSEPPE | 10.15 to 11 | SwimFarm
+Samer | Big Pool | JAVIER | 9.30 to 10.15 | SwimFarm
+Yusuf Ah | Big Pool | ROBERTO | 9.30 to 10.15 | SwimFarm
+Yusuf Ah | Hub Room | BISMARK | 10.15 to 11 | SwimFarm
+
+========================================================================
+TEFLON  (dated sessions for portal guide)
+========================================================================
+2026-05-25 Sunday | Aquatic Activity | Jordan | Teaching Pool | 10 to 11 | Northolt
+2026-05-27 Tuesday | Multi-Activity | Sam | Hub Room | 2 to 3 | SwimFarm
+2026-06-01 Monday | Bespoke Programme | Vitin | Client's Home | 10 to 11 | Chelsea

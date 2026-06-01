@@ -4148,6 +4148,12 @@
     body.admin-touch-compact:not(.admin-fullnav-open) .admin-float-menu-btn{
       display:inline-flex;
     }
+    @media (orientation:landscape) and (max-height:640px){
+      body.admin-touch-compact:not(.admin-fullnav-open) .admin-float-menu-btn{
+        left:auto;
+        right:max(14px,env(safe-area-inset-right,0px));
+      }
+    }
     body.admin-touch-compact.admin-fullnav-open .admin-float-menu-btn{
       display:none !important;
     }
