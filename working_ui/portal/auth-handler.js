@@ -755,7 +755,7 @@ export async function bootstrapDashboardSupabase(_opts) {
       perm.bindMandatoryAlertsSettingsResume();
       await perm.probeLocationPermissionState();
       perm.portalSyncAlertsSettingsChrome();
-      const loc = await import("./portal_location_tracker.js?v=20260601-alerts-ask-once");
+      const loc = await import("./portal_location_tracker.js?v=20260608-shift-window");
       window.portalRestartLocationTracker = function () {
         return loc.restartPortalLocationTracker({ page, profile, session });
       };

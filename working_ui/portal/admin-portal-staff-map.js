@@ -125,7 +125,7 @@
     if (!host) return;
     if (!rows.length) {
       host.innerHTML =
-        '<p class="muted">No staff sharing location right now. They must have the portal open on their phone and allow location when prompted.</p>';
+        '<p class="muted">No staff sharing location right now. GPS is only sent from 15 minutes before their first session until 30 minutes after their last session on rostered days (portal open + location allowed).</p>';
       return;
     }
     host.innerHTML =

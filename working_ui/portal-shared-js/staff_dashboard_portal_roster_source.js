@@ -273,9 +273,17 @@
   function refreshStaffDashboardSourceFromPortal() {
     if (typeof window === "undefined" || !window.STAFF_DASHBOARD_SOURCE) return;
     window.STAFF_DASHBOARD_SOURCE = resolveStaffDashboardSource();
+    dispatchStaffDashboardSourceUpdated();
   }
 
   window.portalRefreshStaffDashboardSourceFromPortal = refreshStaffDashboardSourceFromPortal;
+
+  function dispatchStaffDashboardSourceUpdated() {
+    if (typeof window === "undefined") return;
+    try {
+      window.dispatchEvent(new CustomEvent("portal:staff-dashboard-source-updated"));
+    } catch (_) {}
+  }
 
   function refreshPortalRosterRowsFromSupabase(client) {
     if (

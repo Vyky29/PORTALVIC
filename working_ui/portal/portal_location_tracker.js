@@ -67,8 +67,93 @@ function reportUploadResult(ok, message, lat, lng) {
   );
 }
 
+/** @type {ReturnType<typeof setTimeout> | null} */
+let _shiftBoundaryTimer = null;
+/** @type {Record<string, unknown> | null} */
+let _trackerProfile = null;
+/** @type {import("@supabase/supabase-js").Session | null} */
+let _trackerSession = null;
+/** @type {boolean} */
+let _shiftWindowModuleLoading = false;
+
+async function ensureShiftWindowModule() {
+  if (typeof window !== "undefined" && typeof window.portalLiveMapShiftWindowState === "function") {
+    return;
+  }
+  if (_shiftWindowModuleLoading) return;
+  _shiftWindowModuleLoading = true;
+  try {
+    await import("./portal_live_map_shift_window.js?v=20260608-shift-window");
+  } catch (err) {
+    console.debug("[portal] live map shift window module skipped:", err);
+  } finally {
+    _shiftWindowModuleLoading = false;
+  }
+}
+
+function currentShiftWindowState() {
+  if (typeof window === "undefined" || typeof window.portalLiveMapShiftWindowState !== "function") {
+    return { allowed: false, reason: "shift_module_unavailable" };
+  }
+  return window.portalLiveMapShiftWindowState(
+    _trackerProfile || window.__PORTAL_SUPABASE__?.staff_profile || null,
+    _trackerSession?.user || window.__PORTAL_SUPABASE__?.session?.user || null
+  );
+}
+
+function isLiveMapSharingAllowed() {
+  return !!currentShiftWindowState().allowed;
+}
+
+function clearShiftBoundaryTimer() {
+  if (_shiftBoundaryTimer) {
+    clearTimeout(_shiftBoundaryTimer);
+    _shiftBoundaryTimer = null;
+  }
+}
+
+function scheduleShiftBoundaryTimer() {
+  clearShiftBoundaryTimer();
+  const state = currentShiftWindowState();
+  const ms =
+    typeof window.portalLiveMapMsUntilShiftBoundary === "function"
+      ? window.portalLiveMapMsUntilShiftBoundary(state)
+      : 60000;
+  _shiftBoundaryTimer = setTimeout(() => {
+    _shiftBoundaryTimer = null;
+    void syncLiveMapShiftWindow();
+  }, ms);
+}
+
+async function syncLiveMapShiftWindow() {
+  await ensureShiftWindowModule();
+  const state = currentShiftWindowState();
+  window.__PORTAL_LIVE_MAP_SHIFT_STATE__ = state;
+
+  if (!state.allowed) {
+    clearWatch();
+    await stopSharing();
+    scheduleShiftBoundaryTimer();
+    return;
+  }
+
+  if (document.visibilityState === "visible" && portalLocationPermissionGranted()) {
+    startWatchInternal();
+  }
+  scheduleShiftBoundaryTimer();
+}
+
+function bindShiftWindowListeners() {
+  if (typeof window === "undefined" || window.__PORTAL_LIVE_MAP_SHIFT_LISTENERS__) return;
+  window.__PORTAL_LIVE_MAP_SHIFT_LISTENERS__ = true;
+  window.addEventListener("portal:staff-dashboard-source-updated", () => {
+    void syncLiveMapShiftWindow();
+  });
+}
+
 async function upsertLocation(pos, opts = {}) {
   if (!_client || !_userId) return false;
+  if (!isLiveMapSharingAllowed()) return false;
   const lat = Number(pos.coords.latitude);
   const lng = Number(pos.coords.longitude);
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
@@ -159,6 +244,7 @@ function cancelStopSharing() {
 }
 
 function onPosition(pos) {
+  if (!isLiveMapSharingAllowed()) return;
   markLocationGranted();
   void upsertLocation(pos);
 }
@@ -256,6 +342,7 @@ export async function startPortalLocationTracker(opts = {}) {
 
   const sendCurrentPositionOnce = (force) => {
     if (!portalLocationPermissionGranted() || !navigator.geolocation) return;
+    if (!isLiveMapSharingAllowed()) return;
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         markLocationGranted();
@@ -266,8 +353,8 @@ export async function startPortalLocationTracker(opts = {}) {
     );
   };
 
-  const startWatch = () => {
-    if (!portalLocationPermissionGranted()) return;
+  const startWatchInternal = () => {
+    if (!portalLocationPermissionGranted() || !isLiveMapSharingAllowed()) return;
     cancelStopSharing();
     if (_watchId == null) {
       sendCurrentPositionOnce(true);
@@ -281,7 +368,7 @@ export async function startPortalLocationTracker(opts = {}) {
     if (document.visibilityState === "visible") {
       cancelStopSharing();
       void probeLocationPermissionState().then(() => {
-        if (portalLocationPermissionGranted()) startWatch();
+        void syncLiveMapShiftWindow();
       });
     } else {
       clearWatch();
@@ -291,11 +378,17 @@ export async function startPortalLocationTracker(opts = {}) {
 
   window.addEventListener("pagehide", () => {
     clearWatch();
+    clearShiftBoundaryTimer();
     void stopSharing();
   });
 
+  bindShiftWindowListeners();
+  await ensureShiftWindowModule();
+  _trackerProfile = profile;
+  _trackerSession = session || null;
+
   if (document.visibilityState === "visible") {
-    startWatch();
+    await syncLiveMapShiftWindow();
   }
 }
 
@@ -305,6 +398,7 @@ export async function restartPortalLocationTracker(opts = {}) {
   const session = opts.session || window.__PORTAL_SUPABASE__?.session;
   const profile = opts.profile || window.__PORTAL_SUPABASE__?.staff_profile || null;
   clearWatch();
+  clearShiftBoundaryTimer();
   _lastSentAt = 0;
   _lastSentPos = null;
   await startPortalLocationTracker({ page, profile, session });
