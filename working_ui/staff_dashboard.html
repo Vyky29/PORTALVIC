@@ -3793,7 +3793,8 @@
      * spaces collapsed) to an image under working_ui/portal/participants/.
      */
     const PARTICIPANT_PHOTOS = {
-      'jack w': 'portal/participants/jack-w.jpg'
+      'jack w': 'portal/participants/jack-w.jpg',
+      'jack walker': 'portal/participants/jack-w.jpg'
     };
     function clientPhotoUrl(name){
       const key = String(name || '').trim().toLowerCase().replace(/\s+/g, ' ');
@@ -8177,7 +8178,7 @@
               start: s.start,
               name: c.name || nameFromReplace || (s.status === 'closed' ? 'Closed' : 'No participant'),
               venue: s.venue || '—',
-              avatarFile: c.avatarFile || '',
+              avatarFile: c.avatarFile || clientPhotoUrl(c.name || nameFromReplace) || '',
               areaNote: String(areaNote).trim(),
               futureOverrideLabel: futureOverrideLabel,
               futureOverrideTone: futureOverrideTone
