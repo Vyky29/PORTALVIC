@@ -85,41 +85,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <!-- PWA: start_url = página actual; scope = origen. Manifest blob en cliente. Fallback: working_ui/staff-dashboard.webmanifest -->
-  <script>
-  (function(){
-    try {
-      if (document.getElementById('portalStaffPwaManifest')) return;
-      if (location.protocol !== 'https:' && location.protocol !== 'http:') return;
-      var start = (location.origin + location.pathname + (location.search || ''));
-      if (!start) return;
-      var sc = location.origin + '/';
-      var payload = {
-        'name': 'clubSENsational Staff',
-        'short_name': 'Staff',
-        'id': 'clubsensational-staff-dashboard',
-        'start_url': start,
-        'scope': sc,
-        'display': 'standalone',
-        'background_color': '#f4f8fb',
-        'theme_color': '#edf4fb',
-        'description': 'Staff schedule, participants, and quick menu.',
-        'icons': [
-          { 'src': '/portal/app-icon/icon-192.png', 'sizes': '192x192', 'type': 'image/png', 'purpose': 'any' },
-          { 'src': '/portal/app-icon/icon-512.png', 'sizes': '512x512', 'type': 'image/png', 'purpose': 'any' },
-          { 'src': '/portal/app-icon/icon-maskable-192.png', 'sizes': '192x192', 'type': 'image/png', 'purpose': 'maskable' },
-          { 'src': '/portal/app-icon/icon-maskable-512.png', 'sizes': '512x512', 'type': 'image/png', 'purpose': 'maskable' }
-        ]
-      };
-      var blob = new Blob([JSON.stringify(payload)], { type: 'application/manifest+json' });
-      var l = document.createElement('link');
-      l.id = 'portalStaffPwaManifest';
-      l.rel = 'manifest';
-      l.href = URL.createObjectURL(blob);
-      (document.head || document.getElementsByTagName('head')[0]).appendChild(l);
-    } catch (e) {}
-  })();
-  </script>
+  <link rel="manifest" href="/staff-dashboard.webmanifest?v=20260608-pwa-icons" />
   <title>clubSENsational Staff Dashboard</title>
   <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260601-outstanding-orange" />
 </head>
@@ -777,7 +743,7 @@
 
   <script src="/portal/term_from_timetable.js"></script>
   <script src="/portal/term_calendar_dashboard_shared.js?v=20260523-feedback-window"></script>
-  <script src="/portal/staff_dashboard_spreadsheet_bundle.js"></script>
+  <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260601-tue-hazem-roberto-rayan-angel"></script>
   <script src="/portal/session_feedback_portal_data.js?v=20260527-ma-apr-may"></script>
   <script src="/portal/session_feedback_status_portal_data.js?v=20260526-all-complete"></script>
   <script src="/portal/staff_portal_feedback_bridge.js?v=20260522-week-staff"></script>
@@ -4132,6 +4098,28 @@
       if(/\blane\s*\(\s*de\s*\)|\(\s*de\s*\)|\bdeep\s+end\b/i.test(blob)) return 'DE';
       return null;
     }
+    /** Per-session pool from roster `area` column (wins over global client notes). */
+    function inferPoolTierFromRosterArea(sessionRow){
+      const area = String(sessionRow && (sessionRow.rosterArea != null ? sessionRow.rosterArea : sessionRow.area) || '').trim().toLowerCase();
+      if(area === 'teaching pool') return 'fish';
+      if(area === 'small pool') return 'small';
+      if(area === 'big pool') return 'shark';
+      if(/^lane\s*\(\s*se\s*\)$/i.test(area)) return 'dolphin';
+      if(/^lane\s*\(\s*de\s*\)$/i.test(area)) return 'dolphin';
+      return null;
+    }
+    function rosterAreaToPoolLabel(sessionRow){
+      const raw = String(sessionRow && (sessionRow.rosterArea != null ? sessionRow.rosterArea : sessionRow.area) || '').trim();
+      if(!raw) return null;
+      const low = raw.toLowerCase();
+      if(low === 'teaching pool') return 'Teaching Pool';
+      if(low === 'small pool') return 'Small Pool';
+      if(low === 'big pool') return 'Big Pool';
+      const laneM = raw.match(/^lane\s*\(\s*(se|de)\s*\)$/i);
+      if(laneM) return 'Lane (' + laneM[1].toUpperCase() + ')';
+      if(/pool|lane/i.test(raw)) return raw;
+      return null;
+    }
     function splitPoolLabelTwoLines(label){
       const s = String(label || '').trim();
       if(!s) return { line1: '', line2: '' };
@@ -4151,6 +4139,8 @@
     function resolvePoolLocationLabelFromSession(s, activity, clientNotes, viewDay){
       const fromSvc = parseRosterPoolServiceString(s && s.service);
       if(fromSvc) return fromSvc;
+      const fromArea = rosterAreaToPoolLabel(s);
+      if(fromArea) return fromArea;
       if(!shouldShowPoolSymbolForSession(s, activity, viewDay) || !isPoolTierActivity(activity)) return null;
       const tier = resolvePoolTier(s, activity, clientNotes, viewDay);
       return tier ? mapPoolTierToLocationLabel(tier, clientNotes) : null;
@@ -4199,6 +4189,8 @@
         const t = String(sessionRow.poolTier).toLowerCase();
         if(POOL_TIER_META[t]) return t;
       }
+      const fromArea = inferPoolTierFromRosterArea(sessionRow);
+      if(fromArea) return fromArea;
       return inferPoolTierFromNotes(clientNotes) || 'fish';
     }
 

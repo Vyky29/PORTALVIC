@@ -15,6 +15,39 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "database"
 JSON_PATH = OUT / "staff_clients_machine.json"
 
+# Tue 5.30–6: Angel takes Rayan Ta; Hazem goes to Roberto (Jun–Jul 2026 term).
+TUESDAY_HAZEM_RAYAN_SWAP_START = "2026-06-02"
+TUESDAY_HAZEM_ROBERTO_END = "2026-07-14"
+TUESDAY_RAYAN_ANGEL_END = "2026-07-17"
+TUESDAY_SWAP_SLOT = "5.30 to 6"
+
+
+def patch_tuesday_hazem_rayan_instructors(rows: list[dict]) -> int:
+    """Apply dated + template instructor swap for Hazem / Rayan Ta (Tue Teaching Pool 5.30–6)."""
+    n = 0
+    for row in rows:
+        if row.get("day") != "Tuesday" or row.get("time_slot") != TUESDAY_SWAP_SLOT:
+            continue
+        client = str(row.get("client_name") or "").strip()
+        if client not in ("Hazem", "Rayan Ta"):
+            continue
+        sd = str(row.get("session_date") or "").strip()[:10]
+        if sd:
+            if sd < TUESDAY_HAZEM_RAYAN_SWAP_START or sd > TUESDAY_RAYAN_ANGEL_END:
+                continue
+            if client == "Rayan Ta":
+                want = "ANGEL"
+            elif sd > TUESDAY_HAZEM_ROBERTO_END:
+                continue
+            else:
+                want = "ROBERTO"
+        else:
+            want = "ANGEL" if client == "Rayan Ta" else "ROBERTO"
+        if str(row.get("instructors") or "").strip().upper() != want:
+            row["instructors"] = want
+            n += 1
+    return n
+
 
 def r(
     client: str,
@@ -144,7 +177,7 @@ def tuesday_afternoon() -> list[dict]:
     return [
         r("Jad", "Tuesday", "ROBERTO", "4 to 4.30", service=aa, area=tp, venue="Acton"),
         r("Serine", "Tuesday", "ROBERTO", "4.30 to 5.30", service=aa, area=tp, venue="Acton"),
-        r("Rayan Ta", "Tuesday", "ROBERTO", "5.30 to 6", service=aa, area=tp, venue="Acton"),
+        r("Rayan Ta", "Tuesday", "ANGEL", "5.30 to 6", service=aa, area=tp, venue="Acton"),
         r("Eiji", "Tuesday", "ROBERTO", "6 to 6.30", service=aa, area=tp, venue="Acton"),
         r("Ayman", "Tuesday", "JAVIER", "4 to 4.30", service=aa, area=tp, venue="Acton"),
         r("Adam Me", "Tuesday", "JAVIER", "4.30 to 5", service=aa, area=tp, venue="Acton"),
@@ -154,7 +187,7 @@ def tuesday_afternoon() -> list[dict]:
         r("CLOSED", "Tuesday", "ANGEL", "4 to 4.30", service=aa, area=tp, venue="Acton"),
         r("NO CLIENT", "Tuesday", "ANGEL", "4.30 to 5", service=aa, area=tp, venue="Acton"),
         r("Amir", "Tuesday", "ANGEL", "5 to 5.30", service=aa, area=tp, venue="Acton"),
-        r("Hazem", "Tuesday", "ANGEL", "5.30 to 6", service=aa, area=tp, venue="Acton"),
+        r("Hazem", "Tuesday", "ROBERTO", "5.30 to 6", service=aa, area=tp, venue="Acton"),
         r("Richard", "Tuesday", "ANGEL", "6 to 6.30", service=aa, area=tp, venue="Acton"),
         r("CLOSED", "Tuesday", "AURORA", "4 to 4.30", service=aa, area=tp, venue="Acton"),
         r("Bediako", "Tuesday", "AURORA", "4.30 to 5", service=aa, area=tp, venue="Acton"),
@@ -358,6 +391,7 @@ def main() -> None:
     dated = [row for row in existing if row.get("session_date")]
     template = build_template()
     merged = dated + template
+    patched = patch_tuesday_hazem_rayan_instructors(merged)
     JSON_PATH.write_text(
         json.dumps(merged, ensure_ascii=True, indent=2) + "\n",
         encoding="utf-8",
@@ -365,6 +399,8 @@ def main() -> None:
     print(
         f"Wrote {len(merged)} rows ({len(dated)} dated + {len(template)} template) -> {JSON_PATH}"
     )
+    if patched:
+        print(f"Patched {patched} Tue Hazem/Rayan Ta 5.30–6 instructor row(s)")
 
 
 if __name__ == "__main__":

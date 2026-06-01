@@ -1015,6 +1015,64 @@
       .ceo-snap-fc-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
+      .ceo-shell {
+        min-height: 100dvh;
+        max-height: 100dvh;
+      }
+      .ceo-menu-mob {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .ceo-sidebar {
+        width: min(220px, 34vw);
+      }
+      .ceo-topbar {
+        height: auto;
+        min-height: 44px;
+        flex-wrap: wrap;
+        padding-top: max(4px, env(safe-area-inset-top, 0px));
+        padding-bottom: 4px;
+      }
+      .ceo-topbar-titles h1 {
+        font-size: 15px;
+      }
+      .ceo-topbar-titles p {
+        font-size: 11px;
+      }
+      .ceo-workspace {
+        padding: 12px max(14px, env(safe-area-inset-right, 0px))
+          max(14px, env(safe-area-inset-bottom, 0px)) max(14px, env(safe-area-inset-left, 0px));
+      }
+      .ceo-panel {
+        padding: 14px 12px 12px;
+      }
+    }
+    @media (max-width: 1024px) and (orientation: landscape) and (max-height: 520px) {
+      :root {
+        --topH: 42px;
+      }
+      .ceo-sidebar-brand-mark img {
+        width: 56px;
+        height: 56px;
+      }
+      .ceo-sidebar {
+        width: min(168px, 28vw);
+      }
+      .ceo-nav-link {
+        font-size: 12px;
+        padding: 8px 10px;
+      }
+      .ceo-snap-kpis {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+      }
+      .ceo-snap-card {
+        padding: 10px 8px;
+      }
+      .ceo-snap-card__value {
+        font-size: 1.15rem;
+      }
     }
   </style>
 </head>

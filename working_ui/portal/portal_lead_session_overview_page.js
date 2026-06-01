@@ -530,6 +530,22 @@ function bindTabs() {
   });
 }
 
+function awaitPortalSupabaseReady(timeoutMs) {
+  if (window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client) {
+    return Promise.resolve(window.__PORTAL_SUPABASE__);
+  }
+  return new Promise(function (resolve) {
+    var done = false;
+    var finish = function () {
+      if (done) return;
+      done = true;
+      resolve(window.__PORTAL_SUPABASE__ || {});
+    };
+    window.addEventListener("portal:supabase-ready", finish, { once: true });
+    setTimeout(finish, timeoutMs || 3500);
+  });
+}
+
 export async function portalInitLeadSessionOverviewPage() {
   const statusEl = $("portalDayOpsStatus");
   try {
@@ -537,6 +553,7 @@ export async function portalInitLeadSessionOverviewPage() {
   } catch (e) {
     console.warn("lead session overview auth", e);
   }
+  await awaitPortalSupabaseReady(3500);
   const ctx = window.__PORTAL_SUPABASE__ || {};
   const profile = ctx.staff_profile;
   let email = String((ctx.session && ctx.session.user && ctx.session.user.email) || "").trim();

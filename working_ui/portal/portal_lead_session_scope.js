@@ -24,6 +24,16 @@ export function portalLeadProgrammeKey(profile, authEmail) {
     .trim()
     .toLowerCase();
   if (em && LEAD_PROGRAMME_EMAIL_TO_KEY[em]) return LEAD_PROGRAMME_EMAIL_TO_KEY[em];
+  const usernameKey = normKey(profile && profile.username);
+  if (LEAD_OVERVIEW_KEYS.has(usernameKey)) return usernameKey;
+  const firstNameKey = normKey(
+    String((profile && profile.full_name) || "")
+      .trim()
+      .split(/\s+/)[0]
+  );
+  if (LEAD_OVERVIEW_KEYS.has(firstNameKey)) return firstNameKey;
+  if (usernameKey === "stf006" || em === "stf006@staff.import.pending") return "john";
+  if (usernameKey === "stf012" || em === "stf012@staff.import.pending") return "berta";
   const inferred = portalInferStaffKey(profile, authEmail);
   return LEAD_OVERVIEW_KEYS.has(inferred) ? inferred : "";
 }

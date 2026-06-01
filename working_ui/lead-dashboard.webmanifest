@@ -1,13 +1,13 @@
 {
-  "name": "clubSENsational Staff",
-  "short_name": "Staff",
-  "id": "portalvic-staff-dashboard",
-  "start_url": "./staff_dashboard.html",
+  "name": "clubSENsational Lead",
+  "short_name": "Lead",
+  "id": "portalvic-lead-dashboard",
+  "start_url": "./lead_dashboard.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f4f8fb",
   "theme_color": "#edf4fb",
-  "description": "Staff schedule, participants, and quick menu.",
+  "description": "Lead schedule, programme tools, and quick menu.",
   "icons": [
     {
       "src": "/portal/app-icon/icon-192.png",
