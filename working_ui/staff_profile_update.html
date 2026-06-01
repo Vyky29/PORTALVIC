@@ -26,6 +26,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="theme-color" content="#f4f8fb" />
   <title>clubSENsational Portal — Update your details</title>
+  <script src="/portal-static-bootstrap.js"></script>
   <style>
     :root {
       --blue: #2d84b3;
@@ -1593,17 +1594,41 @@
 
     function readBridgeSecretFromWindowOrHash() {
       try {
+        if (typeof window.portalEnsureBridgeCached === "function") {
+          const cached = String(window.portalEnsureBridgeCached() || "").trim();
+          if (cached && cached !== "%%PB6%%" && cached.length >= 16) return cached;
+        }
+      } catch (_) {}
+      try {
         const s = String(STAFF_PROFILE_PORTAL_BRIDGE_SECRET || "").trim();
-        if (s && s !== "%%PB6%%" && s.length >= 16) return s;
+        if (s && s !== "%%PB6%%" && s.length >= 16) {
+          if (typeof window.portalPersistBridgeSecret === "function") {
+            window.portalPersistBridgeSecret(s);
+          }
+          return s;
+        }
       } catch (_) {}
       try {
         const raw = String(window.location.hash || "").replace(/^#/, "");
         if (!raw) return "";
         const sp = new URLSearchParams(raw.includes("=") ? raw : `portal_bridge=${raw}`);
-        return String(sp.get("portal_bridge") || "").trim();
-      } catch (_) {
-        return "";
-      }
+        const fromHash = String(sp.get("portal_bridge") || "").trim();
+        if (fromHash && fromHash !== "%%PB6%%" && fromHash.length >= 16) {
+          if (typeof window.portalPersistBridgeSecret === "function") {
+            window.portalPersistBridgeSecret(fromHash);
+          }
+          return fromHash;
+        }
+      } catch (_) {}
+      try {
+        const stored =
+          sessionStorage.getItem("clubsens_portal_bridge_v1") ||
+          localStorage.getItem("clubsens_portal_bridge_v1") ||
+          "";
+        const t = String(stored).trim();
+        if (t && t !== "%%PB6%%" && t.length >= 16) return t;
+      } catch (_) {}
+      return "";
     }
 
     function readPortalPinIdentityName() {
@@ -1873,30 +1898,29 @@
 
     async function bootstrapFromPortalAuth() {
       showBootSigningIn();
+      let accessToken = "";
+      let profileHint = "";
       try {
-        let accessToken = "";
-        try {
-          const box = window.__PORTAL_SUPABASE__;
-          if (box && box.session && box.session.access_token) {
-            accessToken = String(box.session.access_token || "");
-          }
-        } catch (_) {}
-        const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.49.1");
-        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-          auth: {
-            persistSession: true,
-            autoRefreshToken: true,
-            detectSessionInUrl: true,
-          },
-        });
-        let session = null;
-        if (accessToken) {
-          session = { access_token: accessToken };
-        } else {
-          const sessRes = await supabase.auth.getSession();
-          session = sessRes.data && sessRes.data.session;
+        const { bootstrapDashboardSupabase } = await import(
+          "/portal/auth-handler.js?v=20260609-profile-hub"
+        );
+        await bootstrapDashboardSupabase({ page: "profile" });
+        const box = window.__PORTAL_SUPABASE__;
+        if (box && box.session && box.session.access_token) {
+          accessToken = String(box.session.access_token || "");
         }
-        if (!session?.access_token) {
+        if (box && box.staff_profile) {
+          profileHint = String(box.staff_profile.full_name || box.staff_profile.username || "").trim();
+        }
+      } catch (e) {
+        console.warn("[profile] auth-handler bootstrap", e);
+      }
+      if (!accessToken) {
+        try {
+          const { getSupabaseClient } = await import(
+            "/portal/supabase-client.js?v=20260609-profile-hub"
+          );
+          const supabase = getSupabaseClient();
           try {
             await supabase.auth.refreshSession();
           } catch (_) {
@@ -1905,24 +1929,17 @@
           const {
             data: { session: sR },
           } = await supabase.auth.getSession();
-          if (sR?.access_token) session = sR;
-        }
-        if (!session?.access_token) {
-          const { data: ud, error: guErr } = await supabase.auth.getUser();
-          if (!guErr && ud?.user?.id) {
-            const {
-              data: { session: s2 },
-            } = await supabase.auth.getSession();
-            session = s2;
-          }
-        }
-        if (session?.access_token) {
+          if (sR && sR.access_token) accessToken = String(sR.access_token);
+        } catch (_) {}
+      }
+      if (accessToken) {
+        try {
           const res = await fetch(FN("staff-profile-session-from-portal"), {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
               apikey: SUPABASE_ANON_KEY,
-              Authorization: `Bearer ${session.access_token}`,
+              Authorization: `Bearer ${accessToken}`,
             },
             body: "{}",
           });
@@ -1937,13 +1954,19 @@
             } else {
               return true;
             }
+          } else if (!res.ok) {
+            console.warn(
+              "[profile] staff-profile-session-from-portal",
+              res.status,
+              body?.error || body,
+            );
           }
+        } catch (e) {
+          console.warn("[profile] portal password bootstrap", e);
         }
-      } catch (e) {
-        console.warn("[profile] portal password bootstrap", e);
       }
 
-      const pinName = readPortalPinIdentityName();
+      const pinName = readPortalPinIdentityName() || profileHint;
       return bootstrapFromPortalBridge(pinName);
     }
 

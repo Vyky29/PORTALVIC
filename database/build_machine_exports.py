@@ -575,6 +575,13 @@ if __name__ == "__main__":
     build_clients_info()
     write_clients_info_embed_js()
     patch_bundle_rows_from_json()
+    try:
+        from patch_teflon_demo_environment import patch_machine_json, patch_bundle_file
+
+        patch_machine_json()
+        patch_bundle_file(OUT / "staff_dashboard_spreadsheet_bundle.js")
+    except Exception as exc:
+        print("patch_teflon_demo_environment:", exc)
     copy_term_to_working_ui()
     copy_spreadsheet_js_to_working_ui()
     print("Generated machine files in database/ and term_from_timetable.js")

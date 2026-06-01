@@ -248,8 +248,8 @@
     },
     {
       "staff_id": "STF-020",
-      "full_name": "Demo",
-      "username": "demo",
+      "full_name": "Teflon",
+      "username": "teflon",
       "email": null,
       "app_role": null,
       "staff_role": null,
@@ -257,7 +257,7 @@
       "dashboard_route": null,
       "is_active": true,
       "onboarding_auth_email": "stf020@staff.import.pending",
-      "notes": "Shared test account; roster mirrors Youssef in adapter bootstrap."
+      "notes": "Portal guide demo account; roster with 3 fictional Demo clients."
     }
   ]
 }

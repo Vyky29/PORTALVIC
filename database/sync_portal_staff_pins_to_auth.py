@@ -56,7 +56,6 @@ PIN_SKIP_NAMES = {
     "Raul",
     "Sevitha",
     "Javier Arranz Escorial",
-    "Teflon",
     "Victor",
     "Admin",
 }
@@ -297,7 +296,7 @@ def main() -> int:
         nk = norm_key(un)
         if nk in {norm_key(x) for x in PIN_SKIP_NAMES}:
             continue
-        if nk in {"demo", "arranz"}:
+        if nk in {"teflon", "arranz"}:
             continue
         if nk not in pinned_usernames and p.get("app_role") == "staff":
             uid = str(p.get("id") or "")

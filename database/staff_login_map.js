@@ -29,7 +29,7 @@ window.PORTAL_STAFF_LOGIN_MAP = {
     Javi: "javier@clubsensational.org",
     Raul: "raul@clubsensational.org",
     Sevitha: "sevitha802@gmail.com",
-    Demo: "stf020@staff.import.pending",
-    demo: "stf020@staff.import.pending",
+    Teflon: "stf020@staff.import.pending",
+    teflon: "stf020@staff.import.pending",
   },
 };

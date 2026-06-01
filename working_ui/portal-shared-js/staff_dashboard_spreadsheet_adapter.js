@@ -321,9 +321,9 @@
     const profiles = (source && source.staffProfiles) || {};
     const profile = profiles[rawId] || {};
 
-    const isDemoAcct = rawId === "demo";
-    const effectiveRowStaffId = isDemoAcct ? "youssef" : rawId;
-    const built = buildForStaff(source, effectiveRowStaffId, isDemoAcct ? "demo" : null);
+    const isDemoAcct = rawId === "teflon";
+    const effectiveRowStaffId = isDemoAcct ? "teflon" : rawId;
+    const built = buildForStaff(source, effectiveRowStaffId, isDemoAcct ? "teflon" : null);
     const allRows = Array.isArray(source && source.rows) ? source.rows : [];
     mergeCompanyClientsFromRosterRows(built.clientNotesById, allRows);
 

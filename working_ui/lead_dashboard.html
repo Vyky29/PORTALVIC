@@ -835,21 +835,21 @@
       portalStartTopbarLiveClock();
     }
     let DEMO_VIEW_DAY = portalWeekdayLongEnGB(new Date());
-    /** Optional local preview only: `?portalPreview=demo` (not used on Vercel production). */
+    /** Optional local preview only: `?portalPreview=teflon` (not used on Vercel production). */
     function portalStaffDashIsEditorPreviewMode(){
       try{
         if(typeof window === 'undefined' || !window.location) return false;
-        return /(?:^|[?&])portalPreview=demo(?:&|$)/i.test(String(window.location.search || ''));
+        return /(?:^|[?&])portalPreview=teflon(?:&|$)/i.test(String(window.location.search || ''));
       }catch(_){}
       return false;
     }
-    /** Live: no rota id until `rehydrateFromProfile` maps Supabase `staff_profile`. Preview: sample `demo` rota only. */
+    /** Live: no rota id until `rehydrateFromProfile` maps Supabase `staff_profile`. Preview: sample `teflon` rota only. */
     let STAFF_DASHBOARD_ID = '';
     let __spreadsheetBoot = null;
     let sessionsModel = [];
     let clientNotesById = {};
     if(portalStaffDashIsEditorPreviewMode()){
-      STAFF_DASHBOARD_ID = 'demo';
+      STAFF_DASHBOARD_ID = 'teflon';
       var _staffDashSource = typeof window.portalResolveStaffDashboardSource === 'function'
         ? window.portalResolveStaffDashboardSource()
         : window.STAFF_DASHBOARD_SOURCE;
@@ -864,9 +864,9 @@
         DEMO_VIEW_DAY = __spreadsheetBoot.defaultViewDay;
       }
     }
-    /** Demo login only (`demo`): fake term dates, sample TERM feedback, bypass session-end for quick feedback, etc. */
+    /** Teflon demo login: fake term dates, sample TERM feedback, bypass session-end for quick feedback, etc. */
     function portalStaffIsDemoAccount(){
-      return String(STAFF_DASHBOARD_ID || '').trim().toLowerCase() === 'demo';
+      return String(STAFF_DASHBOARD_ID || '').trim().toLowerCase() === 'teflon';
     }
     var _staffDashAdapterMissing = typeof StaffDashboardSpreadsheetAdapter === 'undefined' || !window.STAFF_DASHBOARD_SOURCE;
     if(_staffDashAdapterMissing){
@@ -1127,6 +1127,18 @@
           if(/staff_profile_update/i.test(tu.pathname)){
             const nm = String((window.dashboardData && window.dashboardData.staffName) || '').trim();
             if(nm) tu.searchParams.set('full_name', nm);
+            try{
+              var bridge = '';
+              if(typeof window.portalEnsureBridgeCached === 'function'){
+                bridge = String(window.portalEnsureBridgeCached() || '').trim();
+              }
+              if(!bridge || bridge.length < 16){
+                bridge = String(sessionStorage.getItem('portalStaffProfileBridgeSecret_v1') || sessionStorage.getItem('clubsens_portal_bridge_v1') || localStorage.getItem('clubsens_portal_bridge_v1') || '').trim();
+              }
+              if(bridge && bridge.indexOf('%%') !== 0 && bridge.length >= 16){
+                tu.hash = 'portal_bridge=' + encodeURIComponent(bridge);
+              }
+            }catch(_){}
           }
         }catch(_){}
         target = tu.href;
@@ -1505,8 +1517,9 @@
     }
     window.portalOpenPendingFeedbackReviewFlow = portalOpenPendingFeedbackReviewFlow;
     const DEMO_DATE_BY_DAY = {
-      Monday: new Date(2026, 3, 13),
-      Tuesday: new Date(2026, 3, 14)
+      Monday: new Date(2026, 5, 1),
+      Tuesday: new Date(2026, 4, 27),
+      Sunday: new Date(2026, 4, 25)
     };
     /** When the rota weekday matches today, use the real calendar date (accurate session times / headers). */
     function getViewAnchorCalendarDate(dayName){
@@ -7793,7 +7806,7 @@
     })();
 
     /** Usernames that see sample term colours / demo TERM state (`demo` only; everyone else uses rota + timetable). */
-    window.PORTAL_TERM_UI_DEMO_USERNAMES = ['demo'];
+    window.PORTAL_TERM_UI_DEMO_USERNAMES = ['teflon'];
     const PORTAL_TERM_DEMO_FEEDBACK_BY_DATE = {
       '2026-05-05': 'complete',
       '2026-05-07': 'late',

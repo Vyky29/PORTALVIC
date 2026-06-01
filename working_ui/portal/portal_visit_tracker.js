@@ -392,7 +392,7 @@ function portalVisitIsDemoAccount(profile, session) {
   const fn = String(p.full_name || "").trim().toLowerCase();
   const email = String(session?.user?.email || "").trim().toLowerCase();
   const local = email.split("@")[0] || "";
-  return u === "demo" || fn === "demo" || local === "demo" || local === "stf020";
+  return u === "teflon" || fn === "teflon" || local === "teflon" || local === "stf020";
 }
 
 export async function startPortalVisitTracker(opts = {}) {

@@ -128,7 +128,7 @@ export async function startPortalLivePresence(opts = {}) {
     const u = String(p.username || "").trim().toLowerCase();
     const fn = String(p.full_name || "").trim().toLowerCase();
     const local = String(session.user.email || "").trim().toLowerCase().split("@")[0] || "";
-    if (opts.isDemo === true || u === "demo" || fn === "demo" || local === "demo" || local === "stf020") {
+    if (opts.isDemo === true || u === "teflon" || fn === "teflon" || local === "teflon" || local === "stf020") {
       return;
     }
   }
