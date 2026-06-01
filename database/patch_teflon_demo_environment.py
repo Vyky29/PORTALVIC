@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Wire Teflon as the portal guide demo account (auth stf020, roster, 3 fictional clients)."""
+"""Wire Teflon as the portal guide demo account (auth stf020, roster, fictional guide clients)."""
 from __future__ import annotations
 
 import json
@@ -10,28 +10,47 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DATABASE = ROOT / "database"
 
+# Guide clients: Mari Trini, Sam, Vitin (dated Mon), Jordan — no "Demo" suffix.
 TEFLON_DEMO_ROWS = [
     {
-        "client_name": "Alex Demo",
+        "client_name": "Mari Trini",
         "day": "Monday",
         "instructors": "TEFLON",
-        "service": "Swimming",
+        "service": "Aquatic Activity",
         "area": "Teaching Pool",
         "time_slot": "10 to 11",
         "venue": "Acton",
+    },
+    {
+        "client_name": "Sam",
+        "day": "Tuesday",
+        "instructors": "TEFLON",
+        "service": "Multi-Activity",
+        "area": "Hub Room",
+        "time_slot": "2 to 3",
+        "venue": "SwimFarm",
+    },
+    {
+        "client_name": "Jordan",
+        "day": "Sunday",
+        "instructors": "TEFLON",
+        "service": "Aquatic Activity",
+        "area": "Teaching Pool",
+        "time_slot": "10 to 11",
+        "venue": "Northolt",
+    },
+    {
+        "client_name": "Vitin",
+        "day": "Monday",
+        "instructors": "TEFLON",
+        "service": "Bespoke Programme",
+        "area": "Client's Home",
+        "time_slot": "10 to 11",
+        "venue": "Chelsea",
         "session_date": "2026-06-01",
     },
     {
-        "client_name": "Alex Demo",
-        "day": "Monday",
-        "instructors": "TEFLON",
-        "service": "Swimming",
-        "area": "Teaching Pool",
-        "time_slot": "10 to 11",
-        "venue": "Acton",
-    },
-    {
-        "client_name": "Sam Demo",
+        "client_name": "Sam",
         "day": "Tuesday",
         "instructors": "TEFLON",
         "service": "Multi-Activity",
@@ -41,16 +60,7 @@ TEFLON_DEMO_ROWS = [
         "session_date": "2026-05-27",
     },
     {
-        "client_name": "Sam Demo",
-        "day": "Tuesday",
-        "instructors": "TEFLON",
-        "service": "Multi-Activity",
-        "area": "Hub Room",
-        "time_slot": "2 to 3",
-        "venue": "SwimFarm",
-    },
-    {
-        "client_name": "Jordan Demo",
+        "client_name": "Jordan",
         "day": "Sunday",
         "instructors": "TEFLON",
         "service": "Aquatic Activity",
@@ -59,20 +69,21 @@ TEFLON_DEMO_ROWS = [
         "venue": "Northolt",
         "session_date": "2026-05-25",
     },
-    {
-        "client_name": "Jordan Demo",
-        "day": "Sunday",
-        "instructors": "TEFLON",
-        "service": "Aquatic Activity",
-        "area": "Teaching Pool",
-        "time_slot": "10 to 11",
-        "venue": "Northolt",
-    },
 ]
+
+TEFLON_DEMO_CLIENT_NAMES = {
+    "Alex Demo",
+    "Sam Demo",
+    "Jordan Demo",
+    "Mari Trini",
+    "Sam",
+    "Vitin",
+    "Jordan",
+}
 
 TEFLON_CLIENTS_INFO = [
     {
-        "client_name": "Alex Demo",
+        "client_name": "Mari Trini",
         "client_info": (
             "1. Goals: Build water confidence and independent entry.\n"
             "2. Medical: None.\n"
@@ -80,7 +91,7 @@ TEFLON_CLIENTS_INFO = [
         ),
     },
     {
-        "client_name": "Sam Demo",
+        "client_name": "Sam",
         "client_info": (
             "1. Goals: Social participation in group activities.\n"
             "2. Medical: None known.\n"
@@ -88,7 +99,15 @@ TEFLON_CLIENTS_INFO = [
         ),
     },
     {
-        "client_name": "Jordan Demo",
+        "client_name": "Vitin",
+        "client_info": (
+            "1. Goals: Maintain mobility and routine through home-based bespoke sessions.\n"
+            "2. Medical: None known.\n"
+            "3. Communication: Verbal — family present at home visits."
+        ),
+    },
+    {
+        "client_name": "Jordan",
         "client_info": (
             "1. Goals: Improve pool entry routine and floating.\n"
             "2. Medical: Epilepsy — emergency medication in bag; staff briefed on seizure protocol.\n"
@@ -116,7 +135,9 @@ BUNDLE_PATHS = [
 def is_teflon_demo_row(row: dict) -> bool:
     if str(row.get("instructors") or "").strip().upper() != "TEFLON":
         return False
-    name = str(row.get("client_name") or "")
+    name = str(row.get("client_name") or "").strip()
+    if name in TEFLON_DEMO_CLIENT_NAMES:
+        return True
     return " Demo" in name or name.endswith("Demo")
 
 

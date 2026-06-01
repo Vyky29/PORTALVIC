@@ -49,6 +49,15 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-05-22"
     ]
   },
+  "termStaffExtraCalendarDatesByProfileKey": {
+    "javier": [
+      "2026-05-11",
+      "2026-05-17"
+    ]
+  },
+  "termStaffLateSubmissionBypassProfileKeys": [
+    "javier"
+  ],
   "termClientFirstSessionDate": {
     "amaar_ah": "2026-04-24"
   },
@@ -80,9 +89,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     ],
     "carlos": [
       0,
-      1,
-      3,
-      5
+      3
     ],
     "dan": [
       0,
@@ -155,6 +162,11 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     ],
     "simon": [
       4
+    ],
+    "teflon": [
+      0,
+      1,
+      2
     ],
     "victor": [
       1,
@@ -196,10 +208,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       5
     ],
     "carlos": [
-      0,
-      1,
-      3,
-      5
+      0
     ],
     "dan": [
       0,
@@ -270,6 +279,11 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     "simon": [
       4
     ],
+    "teflon": [
+      0,
+      1,
+      2
+    ],
     "victor": [
       1,
       2,
@@ -285,14 +299,5 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       5,
       6
     ]
-  },
-  "termStaffExtraCalendarDatesByProfileKey": {
-    "javier": [
-      "2026-05-11",
-      "2026-05-17"
-    ]
-  },
-  "termStaffLateSubmissionBypassProfileKeys": [
-    "javier"
-  ]
+  }
 };

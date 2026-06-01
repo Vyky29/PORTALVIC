@@ -455,9 +455,11 @@ def build_template() -> list[dict]:
 
 
 def main() -> None:
+    from import_roster_export_txt import parse_export, EXPORT
+
     existing = json.loads(JSON_PATH.read_text(encoding="utf-8"))
     dated = [row for row in existing if row.get("session_date")]
-    template = build_template()
+    template = parse_export(EXPORT)
     merged = dated + template
     pool_removed = patch_legacy_sunday_morning_pool(merged)
     pool_small = patch_sunday_small_pool_shire_simon(merged)

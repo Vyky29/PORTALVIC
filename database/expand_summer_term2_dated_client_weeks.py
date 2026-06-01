@@ -65,8 +65,16 @@ def _template_by_weekday(template: list[dict]) -> dict[str, list[dict]]:
     return by_day
 
 
+def _load_template_from_machine() -> list[dict]:
+    if not JSON_PATH.exists():
+        return _load_template_builder()()
+    rows = json.loads(JSON_PATH.read_text(encoding="utf-8"))
+    template = [r for r in rows if not r.get("session_date")]
+    return template if template else _load_template_builder()()
+
+
 def expand_dated_rows() -> list[dict]:
-    template = _load_template_builder()()
+    template = _load_template_from_machine()
     by_day = _template_by_weekday(template)
     rows: list[dict] = []
     cur = TERM2_START

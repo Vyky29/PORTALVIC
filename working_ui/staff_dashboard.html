@@ -1034,6 +1034,27 @@
         .replace(/[^a-z0-9]+/g, '_')
         .replace(/^_+|_+$/g, '');
     }
+    /** Hide merged duplicate slots on Today (e.g. Cyrus Aquatic 4–4.30 when MA pool row covers swimming). */
+    function portalStaffDashboardOmitSpreadsheetSession(s, weekday){
+      try{
+        const src = typeof window !== 'undefined' ? window.STAFF_DASHBOARD_SOURCE : null;
+        const rules = src && Array.isArray(src.overviewOmitRosterSlots) ? src.overviewOmitRosterSlots : [];
+        if(!rules.length || !s) return false;
+        const day = String(weekday || s.day || '').trim();
+        const slug = portalRosterClientLabelForMatch(s) || portalSlugifyClientKey(s.clientId);
+        const ts = String(s.timeSlotLabel || '').trim();
+        const svc = String(s.rosterService || s.activity || '').trim();
+        for(let i = 0; i < rules.length; i++){
+          const r = rules[i];
+          if(r.weekday && String(r.weekday).trim() !== day) continue;
+          if(r.client_slug && portalSlugifyClientKey(r.client_slug) !== slug) continue;
+          if(r.time_slot && String(r.time_slot).trim() !== ts) continue;
+          if(r.service && String(r.service).trim() !== svc) continue;
+          return true;
+        }
+      }catch(_){}
+      return false;
+    }
     function portalRosterClientLabelForMatch(s){
       const cid = String(s && s.clientId || '').trim().toLowerCase();
       if(!cid || cid === 'closed' || cid === 'available') return '';
@@ -6765,6 +6786,8 @@
         if(useIsoPin) return normaliseIsoDate(s.session_date || s.sessionDate) === isoPin;
         return typeof portalSessionSpreadsheetRowMatchesCalendarDate === 'function'
           && portalSessionSpreadsheetRowMatchesCalendarDate(s, sessionDateKey, anchorDayWord);
+      }).filter(function(s){
+        return !portalStaffDashboardOmitSpreadsheetSession(s, anchorDayWord);
       });
       const primary = todaySessionsAfterFilter
         .sort((a, b) => Number(normalizeTimeForSort(a.start)) - Number(normalizeTimeForSort(b.start)))

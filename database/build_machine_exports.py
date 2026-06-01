@@ -582,6 +582,12 @@ if __name__ == "__main__":
         patch_bundle_file(OUT / "staff_dashboard_spreadsheet_bundle.js")
     except Exception as exc:
         print("patch_teflon_demo_environment:", exc)
+    try:
+        from patch_roster_bundle_feedback_rules import patch_all as patch_feedback_rules
+
+        patch_feedback_rules()
+    except Exception as exc:
+        print("patch_roster_bundle_feedback_rules:", exc)
     copy_term_to_working_ui()
     copy_spreadsheet_js_to_working_ui()
     print("Generated machine files in database/ and term_from_timetable.js")
