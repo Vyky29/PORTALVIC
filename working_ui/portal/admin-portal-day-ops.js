@@ -178,6 +178,69 @@
     payload.session_feedback_loaded = payload.session_feedback.length;
   }
 
+  function portalDayOpsAfterFeedbackPayloadMerge() {
+    if (typeof window.portalInvalidateAdminFeedbackStatusCache === 'function') {
+      window.portalInvalidateAdminFeedbackStatusCache();
+    }
+    if (feedbackHub && typeof feedbackHub.setPayload === 'function') {
+      feedbackHub.setPayload(payload);
+      if (typeof feedbackHub.render === 'function') feedbackHub.render();
+    }
+    if (trackingHub && typeof trackingHub.setPayload === 'function') {
+      trackingHub.setPayload(payload);
+      if (typeof trackingHub.renderPanels === 'function') trackingHub.renderPanels();
+    }
+  }
+
+  var sessionFeedbackRtBound = false;
+  var sessionFeedbackRtDebounce = null;
+
+  async function refreshSessionFeedbackLive() {
+    if (!cfg.fetchSessionFeedback) return;
+    try {
+      var dbFb = await cfg.fetchSessionFeedback();
+      if (cfg.buildFeedbackFromPortal) {
+        payload.session_feedback = mergeFeedbackRowLists(cfg.buildFeedbackFromPortal() || [], dbFb || []);
+      } else {
+        payload.session_feedback = dbFb || [];
+      }
+      payload.session_feedback_total = payload.session_feedback.length;
+      payload.session_feedback_loaded = payload.session_feedback.length;
+      portalDayOpsAfterFeedbackPayloadMerge();
+    } catch (eFb) {
+      console.debug('[PortalDayOps] refreshSessionFeedbackLive', eFb);
+    }
+  }
+
+  function ensureSessionFeedbackRealtime() {
+    if (sessionFeedbackRtBound) return;
+    var client = cfg.getClient && cfg.getClient();
+    if (!client || typeof client.channel !== 'function') return;
+    sessionFeedbackRtBound = true;
+    try {
+      client
+        .channel('portal-admin-session-feedback')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'session_feedback' },
+          function () {
+            if (sessionFeedbackRtDebounce) clearTimeout(sessionFeedbackRtDebounce);
+            sessionFeedbackRtDebounce = setTimeout(function () {
+              sessionFeedbackRtDebounce = null;
+              void refreshSessionFeedbackLive();
+            }, 400);
+          }
+        )
+        .subscribe(function (status, err) {
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            console.debug('[PortalDayOps] session_feedback realtime', status, err || '');
+          }
+        });
+    } catch (eRt) {
+      console.debug('[PortalDayOps] ensureSessionFeedbackRealtime', eRt);
+    }
+  }
+
   function venueReviewMergeKey(r) {
     return (
       String((r && r.review_date) || '').trim().substring(0, 10) +
@@ -851,14 +914,8 @@
               applyPayload(fb);
               mergePortalFeedbackIntoPayload();
               mergePortalVenueIntoPayload();
-              if (feedbackHub && typeof feedbackHub.setPayload === 'function') {
-                feedbackHub.setPayload(payload);
-                if (typeof feedbackHub.render === 'function') feedbackHub.render();
-              }
-              if (trackingHub && typeof trackingHub.setPayload === 'function') {
-                trackingHub.setPayload(payload);
-                if (typeof trackingHub.renderPanels === 'function') trackingHub.renderPanels();
-              }
+              portalDayOpsAfterFeedbackPayloadMerge();
+              ensureSessionFeedbackRealtime();
               renderLeadVenueTables();
             } catch (bgErr) {
               console.debug('[PortalDayOps] background enrich', bgErr);
@@ -870,6 +927,8 @@
         applyPayload(fb);
         mergePortalFeedbackIntoPayload();
         mergePortalVenueIntoPayload();
+        portalDayOpsAfterFeedbackPayloadMerge();
+        ensureSessionFeedbackRealtime();
         return payload;
       })()
         .finally(function () {

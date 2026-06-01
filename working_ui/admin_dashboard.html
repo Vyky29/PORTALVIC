@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260521-embed" />
   <script src="/portal/hr-contract-embed-html.js?v=20260521-embed"></script>
-  <script src="/portal/admin-portal-day-ops.js?v=20260527-lead-log"></script>
+  <script src="/portal/admin-portal-day-ops.js?v=20260601-fb-stats"></script>
   <script src="/portal/admin-portal-documents.js?v=20260530-docs-presetsearch"></script>
   <script src="/portal/admin-portal-pins.js?v=20260530-portal-pins-db"></script>
   <script src="/portal/admin-portal-activity.js?v=20260604-visit-activity"></script>
@@ -1718,6 +1718,78 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(st === 'absent' || st === 'cancelled') return true;
       return !!stRow.feedbackComplete;
     }
+    /** Live session_feedback rows merged into PortalDayOps payload (Supabase + static export). */
+    function adminLiveSessionFeedbackHubRows(){
+      try{
+        var ops = window.PortalDayOps;
+        if(ops && typeof ops.getPayload === 'function'){
+          var p = ops.getPayload();
+          if(p && Array.isArray(p.session_feedback) && p.session_feedback.length){
+            return p.session_feedback;
+          }
+        }
+      }catch(_e){}
+      return [];
+    }
+    function adminHubFeedbackRowIsComplete(r){
+      if(!r) return false;
+      var att = adminSfStr(r.attendance).toLowerCase();
+      if(/^(no|n|false|0|absent)$/.test(att)) return true;
+      var er = r.engagement_rating;
+      if(er != null && er !== '' && !isNaN(Number(er))) return true;
+      if(adminSfStr(r.positive_feedback).trim()) return true;
+      return false;
+    }
+    function adminLiveFeedbackCoversStatusRow(iso, st, hubRows){
+      var want = String(iso || '').trim().substring(0, 10);
+      var client = String(st.client || '').trim();
+      if(!client || !hubRows || !hubRows.length) return false;
+      for(var i = 0; i < hubRows.length; i++){
+        var r = hubRows[i];
+        if(String(r.session_date || '').slice(0, 10) !== want) continue;
+        if(!sessionOverviewNameMatch(client, r.client_name)) continue;
+        if(adminHubFeedbackRowIsComplete(r)) return true;
+      }
+      return false;
+    }
+    /** Same counts as AdminSessionsHub table — bypass stale getFeedbackDayStats override. */
+    function adminHubDayStatsBypassOverride(hub, iso){
+      if(!hub || typeof hub.dayStats !== 'function') return null;
+      var want = String(iso || '').trim().substring(0, 10);
+      var saved = hub.opts ? hub.opts.getFeedbackDayStats : null;
+      if(hub.opts) hub.opts.getFeedbackDayStats = null;
+      var st;
+      try{
+        st = hub.dayStats(want);
+      }finally{
+        if(hub.opts) hub.opts.getFeedbackDayStats = saved;
+      }
+      if(!st || typeof st.total !== 'number') return null;
+      var total = st.total;
+      var done = typeof st.done === 'number' ? st.done : 0;
+      var pct = total > 0 ? Math.min(100, Math.round((done / total) * 1000) / 10) : (done > 0 ? 100 : 0);
+      return { required: total, completed: done, pending: Math.max(0, total - done), pct: pct };
+    }
+    function adminFeedbackDayStatsFromActiveHub(iso){
+      try{
+        var ops = window.PortalDayOps;
+        if(!ops) return null;
+        var hubs = [];
+        if(typeof ops.getFeedbackHub === 'function'){
+          var fh = ops.getFeedbackHub();
+          if(fh) hubs.push(fh);
+        }
+        if(typeof ops.getTrackingHub === 'function'){
+          var th = ops.getTrackingHub();
+          if(th && hubs.indexOf(th) < 0) hubs.push(th);
+        }
+        for(var hi = 0; hi < hubs.length; hi++){
+          var out = adminHubDayStatsBypassOverride(hubs[hi], iso);
+          if(out) return out;
+        }
+      }catch(_e){}
+      return null;
+    }
     function adminCancellationPortalRows(){
       var src = typeof window !== 'undefined' ? window.CANCELLATIONS_PORTAL_SOURCE : null;
       if(!src || !Array.isArray(src.rows) || !src.rows.length) return [];
@@ -1749,6 +1821,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(!absent) byUnit[ukey].absent = false;
         }
         clientsInUnits[adminRosterSlugify(st.client)] = true;
+      }
+      var hubRows = adminLiveSessionFeedbackHubRows();
+      if(hubRows.length){
+        for(si = 0; si < statusDay.length; si++){
+          st = statusDay[si];
+          ukey = String(st.feedbackUnitKey || st.sessionKey || '').trim().toLowerCase();
+          if(!ukey) ukey = want + '||' + adminRosterSlugify(st.client);
+          if(byUnit[ukey] && !byUnit[ukey].done && adminLiveFeedbackCoversStatusRow(want, st, hubRows)){
+            byUnit[ukey].done = true;
+          }
+        }
       }
       var required = 0;
       var completed = 0;
@@ -4193,6 +4276,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var closedOut = { required: 0, completed: 0, pending: 0, pct: 0 };
         bookingFeedbackStatsForIsoCalendarDay._cache[want] = closedOut;
         return closedOut;
+      }
+      if(adminLiveSessionFeedbackHubRows().length){
+        var hubLive = adminFeedbackDayStatsFromActiveHub(want);
+        if(hubLive && hubLive.required > 0){
+          bookingFeedbackStatsForIsoCalendarDay._cache[want] = hubLive;
+          return hubLive;
+        }
       }
       var statusDay = adminSessionFeedbackStatusByDate()[want];
       if(statusDay && statusDay.length){
@@ -14638,9 +14728,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           openSessionsHubTab('overview');
         },
         getFeedbackDayStats: function(iso){
-          if(typeof window.portalBookingFeedbackStatsForIso === 'function'){
-            return window.portalBookingFeedbackStatsForIso(iso);
-          }
+          // Overview + Feedback week strip must match the table (live Supabase via hub.dayStats).
+          // Positive/Relevant already count from payload.session_feedback directly.
+          // Static session_feedback_status export lags — do not use portalBookingFeedbackStatsForIso here.
           return null;
         },
         formatDate: function(iso){
