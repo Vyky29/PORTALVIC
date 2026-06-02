@@ -364,16 +364,9 @@
     var pre = state.prefill || {};
     var anchor = normIso(pre.anchorDate) || normIso(new Date().toISOString().slice(0, 10));
     var weekday = weekdayLongFromIso(anchor);
-    var scopeHint =
-      "Term " + esc(bounds.firstDate) + " to " + esc(bounds.lastDate) +
-      (bounds.termBreakFrom ? " (break " + esc(bounds.termBreakFrom) + "–" + esc(bounds.termBreakTo) + ")" : "");
 
     root.innerHTML =
       '<div class="trs-wrap">' +
-      '<p class="muted" style="margin:0 0 14px;font-size:13px;line-height:1.5;overflow-wrap:break-word">' +
-      "Change the <strong>term timetable</strong> (not a one-day cover). Daily absences and swaps stay in <strong>Schedule &amp; Covers</strong>. " +
-      esc(scopeHint) +
-      "</p>" +
       '<div class="trs-grid">' +
       '<div class="trs-field"><label for="trsAnchorDate">Anchor date</label><input type="date" id="trsAnchorDate" value="' + esc(anchor) + '"/></div>' +
       '<div class="trs-field"><label>Weekday</label><input type="text" id="trsWeekday" readonly value="' + esc(weekday) + '"/></div>' +

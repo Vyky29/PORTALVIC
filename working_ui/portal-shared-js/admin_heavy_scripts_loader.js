@@ -7,7 +7,7 @@
   var SETS = {
     roster: [
       "/portal/term_from_timetable.js?v=20260602-javier-may20-catchup",
-      "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260602-javier-may20-catchup",
+      "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260602-tue-23-cayra-ayman",
       "/portal/clients_info_embed.js?v=20260519-portal-roster",
       "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260602-cap-roster",
       "/portal/portal-roster-rows-merge.js?v=20260601-term-slot",
@@ -24,6 +24,7 @@
     participants: ["/portal/participants_parents_portal_data.js?v=20260430-pp"],
     oldpax: ["/portal/old_participants_portal_data.js?v=20260430-oldpax-export"],
     waitlist: ["/portal/waiting_list_portal_data.js?v=20260430-waitlist"],
+    spreadsheet_ref: ["/portal/spreadsheet_reference_data.js?v=20260602-weekend"],
   };
 
   var inflight = {};

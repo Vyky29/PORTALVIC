@@ -5,6 +5,7 @@
   <meta charset="UTF-8" />
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260601-week-row-scroll" />
+  <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260602-weekend" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260527-lead-log" />
   <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260601-docs-row8" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
@@ -27,7 +28,8 @@
   <script src="/portal/admin-onboarding.js?v=20260530-onboarding-clickdocs"></script>
   <script src="/portal/admin-logs.js?v=20260601-logs-merge"></script>
   <script src="/portal/portal-roster-rows-merge.js?v=20260601-term-slot"></script>
-  <script src="/portal/admin-portal-term-slot.js?v=20260601-term-slot-fix"></script>
+  <script src="/portal/admin-portal-term-slot.js?v=20260602-term-slot-copy"></script>
+  <script src="/portal/admin-roster-spreadsheet-reference.js?v=20260602-weekend"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
   <title>clubSENsational · Operations + Operator workflow (merged)</title>
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
@@ -205,6 +207,7 @@
       { id:'operator', label:'Control centre' },
       { id:'scheduling', label:'Schedule & Covers' },
       { id:'term_roster_edit', label:'Edit term slot' },
+      { id:'roster_spreadsheets', label:'Spreadsheet reference', hubLabel:'Roster sheets' },
       { id:'absents_refunds', label:'Absents, refunds & credits', hubLabel:'Refunds & credits' },
       { id:'receptionist', label:'Receptionist hub' },
       { id:'leads', label:'Enquiries & intake' },
@@ -252,7 +255,7 @@
     ];
     var NAV_GROUPS = [
       { id:'g_operator', label:'Operator', children:['dashboard','operations_admin','operator'] },
-      { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','c4k_sessions','scheduling','term_roster_edit','c4k_waitlist','__h:Participants','clients','c4k_reviews','c4k_reports','__h:Orders','orders_all','absents_refunds','__h:Communications','comms_ops'] },
+      { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','c4k_sessions','scheduling','term_roster_edit','roster_spreadsheets','c4k_waitlist','__h:Participants','clients','c4k_reviews','c4k_reports','__h:Orders','orders_all','absents_refunds','__h:Communications','comms_ops'] },
       { id:'g_zoho', label:'H&R (ZohoPeople)', children:['staffhr','onboarding','staffhr_contracts','interviews'] },
       { id:'g_supabase', label:'Documents', children:['portal_payslips','portal_docs_timesheet','portal_docs_expense','portal_docs_portalpin','portal_docs_certificate','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid'] },
       { id:'g_xero', label:'Finance (Xero)', children:['reenrol_payments','invoices'] },
@@ -272,6 +275,7 @@
       c4k_sessions:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
       scheduling:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="8" cy="15" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="15" r="1" fill="currentColor" stroke="none"/><circle cx="16" cy="15" r="1" fill="currentColor" stroke="none"/>',
       term_roster_edit:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M12 14v4"/><path d="M10 16h4"/>',
+      roster_spreadsheets:'<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/>',
       c4k_payments:'<text x="12" y="17" text-anchor="middle" font-size="15" font-weight="800" fill="currentColor" stroke="none" font-family="system-ui,Segoe UI,sans-serif">£</text>',
       reenrol_payments:'<text x="12" y="17" text-anchor="middle" font-size="15" font-weight="800" fill="currentColor" stroke="none" font-family="system-ui,Segoe UI,sans-serif">£</text>',
       c4k_waitlist:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
@@ -10801,6 +10805,62 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
       }catch(_e){}
     }
+    function portalDayOpsFormatOpenSlotLabel(sl, iso){
+      var whenLine = String(sl.whenLabel || '').trim() || (String(sl.sheetDay || '')+' · '+String(sl.anchorTimeLabel || '').trim());
+      var d = bookingParseIsoLocal(iso);
+      var dayShort = d ? d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) : String(iso || '');
+      return dayShort+' · '+whenLine+' · '+String(sl.venue || '—')+' · '+String(sl.programme || '—');
+    }
+    /** Open roster rows (capacity) for quick new-participant placement — next N calendar days. */
+    function portalDayOpsCollectOpenSlotOptions(opts){
+      opts = opts || {};
+      var horizon = Math.min(Math.max(Number(opts.horizonDays) || 14, 1), 28);
+      var out = [];
+      var seen = {};
+      if(!adminSpreadsheetAdapterAvailable()) return out;
+      var start = bookingParseIsoLocal(isoDateLocal(new Date()));
+      if(!start) return out;
+      for(var i = 0; i < horizon; i++){
+        var d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i, 12, 0, 0);
+        var iso = isoDateLocal(d);
+        try{
+          var slots = slotsForSelectedDate(iso) || [];
+          slots.forEach(function(sl){
+            if(!portalDayOpsIsOpenParticipantSlot(sl.clientSlug)) return;
+            var id = String(sl.demoId || '').trim();
+            if(!id || seen[id]) return;
+            seen[id] = true;
+            out.push({
+              demoId: id,
+              iso: iso,
+              label: portalDayOpsFormatOpenSlotLabel(sl, iso),
+              venue: String(sl.venue || '').trim(),
+              programme: String(sl.programme || '').trim()
+            });
+          });
+        }catch(_e){}
+      }
+      out.sort(function(a, b){
+        var c = String(a.iso).localeCompare(String(b.iso));
+        if(c) return c;
+        return String(a.label).localeCompare(String(b.label), undefined, { sensitivity: 'base' });
+      });
+      return out;
+    }
+    function portalDayOpsNewParticipantSlotSelectHtml(slotOpts){
+      if(!slotOpts.length){
+        return (
+          '<select class="inp" id="npSlot" style="margin-top:6px;max-width:100%;min-width:0" disabled>'+
+          '<option value="">No open slots in the next 2 weeks (load roster or pick later in Scheduling)</option>'+
+          '</select>'
+        );
+      }
+      var opts = '<option value="">— Choose an open slot (optional) —</option>';
+      slotOpts.forEach(function(o){
+        opts += '<option value="'+esc(o.demoId)+'" data-np-slot-iso="'+esc(o.iso)+'">'+esc(o.label)+'</option>';
+      });
+      return '<select class="inp" id="npSlot" style="margin-top:6px;max-width:100%;min-width:0">'+opts+'</select>';
+    }
     function openDayOpsNewParticipantPickSlot(cid, displayName){
       var iso = isoDateLocal(new Date());
       var rows = [];
@@ -10852,39 +10912,69 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       $('modalBackdrop').onclick = function(e){ if(e.target === $('modalBackdrop')) closeModal(); };
     }
     function openDayOpsNewParticipantModal(){
+      var slotOpts = portalDayOpsCollectOpenSlotOptions({ horizonDays: 14 });
       openModal(
         '<div class="modal-h"><h2 id="modalTitle">New participant</h2></div>'+
         '<div class="modal-b" style="min-width:0">'+
-        '<p class="muted" style="margin:0 0 12px;font-size:13px;line-height:1.55;min-width:0;overflow-wrap:break-word">Adds a row to the in-browser <strong>participant directory</strong> (demo). When the roster is loaded, you can attach them to a class row that currently has <strong>no participant</strong> (same-day overlay — production would update Supabase / sheet).</p>'+
-        '<label class="muted" for="npName" style="display:block">Legal / known name</label>'+
+        '<p class="muted" style="margin:0 0 14px;font-size:13px;line-height:1.55;min-width:0;overflow-wrap:break-word">Quick add before the family completes the questionnaire — their answers will merge with this record later. Or wait for the <strong>new client</strong> notification and offer times after the form is in.</p>'+
+        '<label class="muted" for="npName" style="display:block">Name</label>'+
         '<input type="text" id="npName" class="inp" style="margin-top:6px;max-width:100%;min-width:0" maxlength="120" autocomplete="name" placeholder="e.g. River K."/>'+
-        '<label class="muted" for="npSub" style="display:block;margin-top:12px">Profile line (optional)</label>'+
-        '<input type="text" id="npSub" class="inp" style="margin-top:6px;max-width:100%;min-width:0" maxlength="180" placeholder="e.g. Swim trial · Guardian: P. Smith"/>'+
+        '<label class="muted" for="npAge" style="display:block;margin-top:12px">Age</label>'+
+        '<input type="number" id="npAge" class="inp" style="margin-top:6px;max-width:8rem;min-width:0" min="0" max="120" inputmode="numeric" placeholder="e.g. 8"/>'+
+        '<label class="muted" for="npSlot" style="display:block;margin-top:12px">Available slot <span class="muted" style="font-weight:400">(open places from capacity)</span></label>'+
+        portalDayOpsNewParticipantSlotSelectHtml(slotOpts)+
+        '<p class="muted" id="npSlotHint" style="margin:10px 0 0;font-size:12px;line-height:1.45;min-width:0;overflow-wrap:break-word">'+
+        (slotOpts.length
+          ? esc(String(slotOpts.length))+' open slot'+(slotOpts.length===1?'':'s')+' in the next 2 weeks. Placement is a demo overlay until Supabase is wired.'
+          : 'Load the roster bundle to see open cells, or save without a slot and place later in <strong>Scheduling &amp; Covers</strong>.')+
+        '</p>'+
         '</div>'+
         '<div class="modal-f">'+
         '<button type="button" class="btn btn--ghost" id="npCancel">Cancel</button>'+
-        '<button type="button" class="btn btn--pri" id="npStep2">Continue</button>'+
+        '<button type="button" class="btn btn--pri" id="npSave">Save &amp; place</button>'+
         '</div>'
       );
       var cancel = $('npCancel');
       if(cancel) cancel.onclick = closeModal;
-      var s2 = $('npStep2');
-      if(s2) s2.onclick = function(){
+      var saveBtn = $('npSave');
+      if(saveBtn) saveBtn.onclick = function(){
         var nm = $('npName');
-        var sb = $('npSub');
+        var ag = $('npAge');
+        var sel = $('npSlot');
         var name = nm && nm.value ? String(nm.value).trim() : '';
         if(!name){
           portalAdminToast('Enter a participant name.');
           if(nm) nm.focus();
           return;
         }
-        var sub = sb && sb.value ? String(sb.value).trim() : ('New enrolment · added from Day operations');
+        var ageRaw = ag && ag.value != null ? String(ag.value).trim() : '';
+        var ageNum = ageRaw === '' ? null : parseInt(ageRaw, 10);
+        if(ageRaw !== '' && (!Number.isFinite(ageNum) || ageNum < 0 || ageNum > 120)){
+          portalAdminToast('Enter a valid age (0–120) or leave blank.');
+          if(ag) ag.focus();
+          return;
+        }
+        var slotId = sel && !sel.disabled ? String(sel.value || '').trim() : '';
+        var slotPick = null;
+        if(slotId){
+          for(var si = 0; si < slotOpts.length; si++){
+            if(String(slotOpts[si].demoId) === slotId){ slotPick = slotOpts[si]; break; }
+          }
+        }
+        var subParts = [];
+        if(ageNum != null) subParts.push('Age '+ageNum);
+        subParts.push('Quick add · questionnaire pending');
+        if(slotPick) subParts.push(slotPick.label);
         var cid = portalDayOpsNextMockClientId();
         if(!MOCK.clientsById) MOCK.clientsById = {};
         MOCK.clientsById[cid] = {
           id: cid,
           name: name,
-          sub: sub,
+          age: ageNum,
+          sub: subParts.join(' · '),
+          intake: 'pending',
+          provisionalSlotDemoId: slotId,
+          provisionalSlotLabel: slotPick ? slotPick.label : '',
           sessionsAttended: 0,
           attendancePct: 0,
           cancellations: 0,
@@ -10893,20 +10983,36 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           engagement: [],
           positives: [],
           notes: [],
-          pattern: 'New — profile will grow once sessions are logged.',
+          pattern: 'Quick add — family questionnaire pending; profile will merge when the form is received.',
           attendanceTerm: { booked: 0, attended: 0, late: 0, cancelled: 0 },
           recentSessions: [],
           activitiesWorked: [],
           lastEngagementLabel: '',
           lastEmotionalLabel: '',
           incidentHistory: [],
-          recommendedNext: 'Confirm roster placement and send welcome pack.'
+          recommendedNext: slotId
+            ? 'Family completes questionnaire; confirm placement and billing.'
+            : 'Pick an open slot in Scheduling or offer times after the form is in.'
         };
-        logAction('booking', 'New participant (demo): '+name+' · '+cid, 'Day operations');
-        portalAdminToast('Participant saved (demo): '+name);
-        openDayOpsNewParticipantPickSlot(cid, name);
+        if(slotId){
+          portalDayOpsApplyAssignmentToSlotDemo(slotId, cid, name);
+          logAction('booking', 'New participant + slot (demo): '+name+' → '+slotId.slice(0, 24)+'… · '+cid, 'Day operations');
+          portalAdminToast(name+' saved and placed on open slot (demo).');
+        }else{
+          logAction('booking', 'New participant (demo): '+name+' · '+cid, 'Day operations');
+          portalAdminToast('Participant saved: '+name+'. Place on roster when ready.');
+        }
+        closeModal();
+        if(state.view === 'dashboard'){
+          $('workspace').innerHTML = renderView('dashboard');
+          bindView('dashboard');
+        }
       };
       $('modalBackdrop').onclick = function(e){ if(e.target === $('modalBackdrop')) closeModal(); };
+      setTimeout(function(){
+        var focusNm = $('npName');
+        if(focusNm) try{ focusNm.focus(); }catch(_f){}
+      }, 0);
     }
     function openStaffDrawerFromDayOps(rosterId){
       var r = String(rosterId || '').trim().toLowerCase();
@@ -15833,6 +15939,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(id==='invoices') return viewInvoices();
       if(id==='scheduling') return viewScheduling();
       if(id==='term_roster_edit') return viewTermRosterEdit();
+      if(id==='roster_spreadsheets') return viewRosterSpreadsheets();
       if(id==='absents_refunds') return viewAbsentsRefundsCredits();
       if(id==='portal_documents'){
         window.__portalDocsPresetFilter = 'all';
@@ -16461,6 +16568,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         operations_admin:'Participants (orders, finance, reports) and staff (HR, contracts, documents).',
         operator:'Control centre · KPIs · suggestions · new leads',
         c4k_services:'Weekly capacity snapshot, service registers and rota-linked session overview.',
+        roster_spreadsheets:'Read-only group session grids and staff hours timetable (spreadsheet layout).',
+        term_roster_edit:'Change a recurring term slot from the anchor date or for one day only.',
         clients:'Search participant profiles, attendance history, activity and report requests.',
         orders_all:'Every booking and order — slot state, funding route and waiting-list links. Use Outstanding only on the Orders page to filter balances.',
         comms_ops:'Programme comms · CEO chat · internal messages',
@@ -16649,7 +16758,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalOperatorNewLeadsHubHtml(){
       var tiles =
-        portalDashTileHtml('', '', 'new_participant', 'New participant', 'Add to clients &amp; roster row', false, 'new_participant', 'new_participant')+
+        portalDashTileHtml('', '', 'new_participant', 'New participant', 'Name, age &amp; open slot', false, 'new_participant', 'new_participant')+
         portalDashTileHtml('c4k_waitlist', '', 'c4k_waitlist', 'Waiting list', 'Offers &amp; matching queue', false, 'waitlist')+
         portalDashTileHtml('leads', '', 'leads', 'Enquiries &amp; intake', 'New families &amp; triage', false, 'leads')+
         portalDashTileHtml('servicecap', '', 'servicecap', 'Capacity', 'Mon–Sun snapshot &amp; tables', false, 'servicecap');
@@ -16851,8 +16960,25 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function viewTermRosterEdit(){
       return '<h1 class="page-title" style="display:flex;align-items:center;gap:10px">'+adminNavIconHtml('term_roster_edit')+'<span>Edit term slot</span></h1>'+
-        '<p class="page-intro">Update the term timetable in Supabase — choose whether the change applies to one day, every matching weekday until term end, or from the anchor date forward. One-day covers and absences stay in <strong>Schedule &amp; Covers</strong>.</p>'+
+        '<p class="page-intro">Update the term timetable — choose whether the change applies to one day, every matching weekday until term end, or from the anchor date forward. One-day covers and absences stay in <strong>Schedule &amp; Covers</strong>.</p>'+
         '<div id="termSlotModuleRoot"></div>';
+    }
+    function portalSpreadsheetRefConfigureOnce(){
+      if(window.__portalSpreadsheetRefConfigured || !window.PortalSpreadsheetReference) return;
+      window.__portalSpreadsheetRefConfigured = true;
+      window.PortalSpreadsheetReference.configure({ esc: esc });
+    }
+    function viewRosterSpreadsheets(){
+      portalSpreadsheetRefConfigureOnce();
+      return window.PortalSpreadsheetReference
+        ? window.PortalSpreadsheetReference.viewHtml()
+        : '<p class="page-intro">Spreadsheet reference module failed to load.</p>';
+    }
+    function bindRosterSpreadsheetsModule(){
+      portalSpreadsheetRefConfigureOnce();
+      if(window.PortalSpreadsheetReference && typeof window.PortalSpreadsheetReference.bindModule === 'function'){
+        window.PortalSpreadsheetReference.bindModule();
+      }
     }
 
     function viewStaffHR(){
@@ -19092,7 +19218,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       root.querySelectorAll('[data-act]').forEach(function(b){
         b.addEventListener('click', function(){
           var v = b.getAttribute('data-act');
-          if(v==='dashboard'||v==='operations'||v==='operations_admin'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='c4k_registers'||v==='c4k_late_submissions'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='staffhr_contracts'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='scheduling'||v==='term_roster_edit'||v==='absents_refunds'||v==='portal_documents'||v==='portal_payslips'||v==='portal_activity'||v==='participant_achievements'||v==='staff_live_map'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='interviews'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings'||v==='logs') setView(v);
+          if(v==='dashboard'||v==='operations'||v==='operations_admin'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='c4k_registers'||v==='c4k_late_submissions'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='staffhr_contracts'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='scheduling'||v==='term_roster_edit'||v==='roster_spreadsheets'||v==='absents_refunds'||v==='portal_documents'||v==='portal_payslips'||v==='portal_activity'||v==='participant_achievements'||v==='staff_live_map'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='interviews'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings'||v==='logs') setView(v);
           closeSidebarMob();
         });
       });
@@ -19258,6 +19384,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           window.AdminLogs.mount($('logsModuleRoot'));
         }
       }
+      if(id==='roster_spreadsheets') bindRosterSpreadsheetsModule();
       if(id==='term_roster_edit'){
         void (window.portalAdminLoadScriptSet ? window.portalAdminLoadScriptSet('roster') : Promise.resolve()).then(function(){
           var client = getSchedSupabaseClient();
