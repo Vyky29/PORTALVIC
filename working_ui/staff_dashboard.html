@@ -747,13 +747,13 @@
     </div>
   </section>
 
-  <script src="/portal/term_from_timetable.js?v=20260601-javier-may"></script>
+  <script src="/portal/term_from_timetable.js?v=20260602-javier-catchup-orange-v2"></script>
   <script src="/portal/term_calendar_dashboard_shared.js?v=20260523-feedback-window"></script>
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260601-tue-hazem-roberto-rayan-angel"></script>
   <script src="/portal/session_feedback_portal_data.js?v=20260527-ma-apr-may"></script>
   <script src="/portal/session_feedback_status_portal_data.js?v=20260526-all-complete"></script>
   <script src="/portal/staff_portal_feedback_bridge.js?v=20260522-week-staff"></script>
-  <script src="/portal-shared-js/portal_late_submission.js?v=20260520"></script>
+  <script src="/portal-shared-js/portal_late_submission.js?v=20260602-javier-bypass"></script>
   <script src="/portal/portal-roster-rows-merge.js?v=20260601-term-slot"></script>
   <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260601-term-slot"></script>
   <script src="/portal/clients_info_embed.js?v=20260605-sambhav"></script>
@@ -1292,6 +1292,7 @@
           byDate[iso].push(st);
         });
         Object.keys(byDate).forEach(function(iso){
+          if(typeof portalTermIsCatchUpFeedbackDate === 'function' && portalTermIsCatchUpFeedbackDate(iso, staffId)) return;
           const dayWord = new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
           const rel = typeof portalTermFeedbackSessionsForDate === 'function'
             ? portalTermFeedbackSessionsForDate(dayWord, iso, staffId, function(s){
@@ -1343,6 +1344,7 @@
         src.rows.forEach(function(row){
           const iso = String(row.date || '').trim().substring(0, 10);
           if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
+          if(typeof portalTermIsCatchUpFeedbackDate === 'function' && portalTermIsCatchUpFeedbackDate(iso, staffId)) return;
           const dayWord = new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
           const rel = typeof portalTermFeedbackSessionsForDate === 'function'
             ? portalTermFeedbackSessionsForDate(dayWord, iso, staffId, function(s){
@@ -1381,6 +1383,18 @@
     }
     function portalSeedAllReviewDoneFromPortalExports(){
       let changed = false;
+      try{
+        const sid = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
+        const resetV = '20260602-javier-catchup-orange-v2';
+        if(sid && typeof portalClearCatchUpExportReviewFlags === 'function'){
+          let prev = '';
+          try{ prev = localStorage.getItem('portalCatchUpReviewReset_v1') || ''; }catch(_){}
+          if(prev !== resetV){
+            if(portalClearCatchUpExportReviewFlags(sid)) changed = true;
+            try{ localStorage.setItem('portalCatchUpReviewReset_v1', resetV); }catch(_){}
+          }
+        }
+      }catch(_){}
       if(typeof portalSeedReviewDoneFromFeedbackStatusBundle === 'function'){
         if(portalSeedReviewDoneFromFeedbackStatusBundle()) changed = true;
       }
@@ -2347,7 +2361,8 @@
         }
       }
       const staffId = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
-      const fromBundle = typeof portalRosterReviewStateFromStatusBundle === 'function'
+      const fromBundle = (!portalTermIsCatchUpFeedbackDate(sessionDateIso, staffId)
+        && typeof portalRosterReviewStateFromStatusBundle === 'function')
         ? portalRosterReviewStateFromStatusBundle(s, sessionDateIso, staffId)
         : null;
       if(fromBundle){
@@ -2368,7 +2383,9 @@
         const dw = String(dayWord || '').trim();
         if(!/^\d{4}-\d{2}-\d{2}$/.test(iso) || !PORTAL_WEEK_REVIEW_VALID_DAYS.has(dw)) return 0;
         const staffIdPortal = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
-        if(staffIdPortal && typeof window !== 'undefined' && window.PortalStaffFeedbackBridge
+        const skipExportShortcut = typeof portalTermIsCatchUpFeedbackDate === 'function'
+          && portalTermIsCatchUpFeedbackDate(iso, staffIdPortal);
+        if(!skipExportShortcut && staffIdPortal && typeof window !== 'undefined' && window.PortalStaffFeedbackBridge
           && typeof window.PortalStaffFeedbackBridge.dayFeedbackCountsFromPortalExports === 'function'){
           const portalCounts = window.PortalStaffFeedbackBridge.dayFeedbackCountsFromPortalExports(iso, staffIdPortal);
           if(portalCounts && portalCounts.unresolved === 0) return 0;
@@ -3135,8 +3152,9 @@
           }
           /* Same reconciliation as rebuildTermShiftAndFeedbackFromSessionModel: Today list + date lock
              can show zero pending while roster-key merge still looks unresolved (key/time/client drift). */
-          if(dayCount > 0 && typeof portalCountPendingSessionReviewsForCalendarDay === 'function' &&
-              portalCountPendingSessionReviewsForCalendarDay(key, dayWord) === 0){
+          if(dayCount > 0 && !portalTermIsCatchUpFeedbackDate(key, staffId)
+            && typeof portalCountPendingSessionReviewsForCalendarDay === 'function'
+            && portalCountPendingSessionReviewsForCalendarDay(key, dayWord) === 0){
             dayCount = 0;
           }
           count += dayCount;
@@ -3186,8 +3204,9 @@
               if(rec.feedbackDone || rec.absent || rec.cancelled) continue;
               dayCount++;
             }
-            if(dayCount > 0 && typeof portalCountPendingSessionReviewsForCalendarDay === 'function' &&
-                portalCountPendingSessionReviewsForCalendarDay(key, dayWord) === 0){
+            if(dayCount > 0 && !portalTermIsCatchUpFeedbackDate(key, staffId)
+              && typeof portalCountPendingSessionReviewsForCalendarDay === 'function'
+              && portalCountPendingSessionReviewsForCalendarDay(key, dayWord) === 0){
               dayCount = 0;
             }
             count += dayCount;
@@ -6907,9 +6926,14 @@
       return base;
     }
     function portalRosterSessionFeedbackCompleteForTerm(s, dayWord, sessionDateIso, staffId){
+      const iso = String(sessionDateIso || '').trim().slice(0, 10);
+      const sid = String(staffId || '').trim().toLowerCase();
       const rec = typeof portalGetMergedSessionReviewRecordForRoster === 'function'
         ? portalGetMergedSessionReviewRecordForRoster(s, dayWord, sessionDateIso)
         : {};
+      if(portalTermIsCatchUpFeedbackDate(iso, sid)){
+        return !!(rec.feedbackDone || rec.absent || rec.cancelled);
+      }
       const bridge = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
       if(bridge && typeof bridge.sessionComplete === 'function'){
         return bridge.sessionComplete(sessionDateIso, staffId, s, clientNotesById, rec);
@@ -9581,6 +9605,50 @@
       if(!Array.isArray(raw)) return [];
       return raw.map(function(d){ return String(d || '').trim().slice(0, 10); }).filter(Boolean);
     }
+    function portalTermStaffLateSubmissionBypass(staffId){
+      const id = String(staffId || '').trim().toLowerCase();
+      const t = window.PORTAL_TERM_FROM_TIMETABLE;
+      const list = t && t.termStaffLateSubmissionBypassProfileKeys;
+      if(!Array.isArray(list) || !id) return false;
+      return list.some(function(k){ return String(k || '').trim().toLowerCase() === id; });
+    }
+    /** Javier catch-up May days: show real pending feedback (orange), not static export greens. */
+    function portalTermIsCatchUpFeedbackDate(isoYmd, staffId){
+      const iso = String(isoYmd || '').trim().slice(0, 10);
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
+      return portalTermStaffLateSubmissionBypass(staffId)
+        && portalTermStaffExtraCalendarDates(staffId).indexOf(iso) >= 0;
+    }
+    function portalClearCatchUpExportReviewFlags(staffId){
+      const sid = String(staffId || '').trim().toLowerCase();
+      if(!portalTermStaffLateSubmissionBypass(sid)) return false;
+      const extras = portalTermStaffExtraCalendarDates(sid);
+      if(!extras.length) return false;
+      let changed = false;
+      extras.forEach(function(iso){
+        const dayWord = new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
+        const rel = typeof portalTermFeedbackSessionsForDate === 'function'
+          ? portalTermFeedbackSessionsForDate(dayWord, iso, sid, function(s){
+              const st = String(s.status || '').toLowerCase();
+              if(st === 'closed' || st === 'available') return false;
+              return Boolean(String(s.clientId || '').trim());
+            })
+          : [];
+        rel.forEach(function(s){
+          const sk = typeof portalSessionReviewKeyForModelRow === 'function'
+            ? portalSessionReviewKeyForModelRow(s, dayWord, iso)
+            : '';
+          if(!sk) return;
+          const prev = sessionReviewMapMemory[sk];
+          if(prev && prev.feedbackDone && !prev.incident && !prev.absent && !prev.cancelled){
+            sessionReviewMapMemory[sk] = Object.assign({}, prev, { feedbackDone: false });
+            changed = true;
+          }
+        });
+      });
+      if(changed && typeof persistSessionReviewMap === 'function') persistSessionReviewMap();
+      return changed;
+    }
     function portalTermDateForcedComplete(isoYmd, staffId){
       const iso = String(isoYmd || '').trim().slice(0, 10);
       return portalTermStaffForcedCompleteDates(staffId).indexOf(iso) >= 0;
@@ -9725,10 +9793,29 @@
       if(key > todayKey) return 'pending';
       const map = dashboardData.termFeedbackByDate;
       const explicit = map && map[key];
+      const staffId = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
+      if(staffId && portalTermIsCatchUpFeedbackDate(key, staffId)){
+        const dayWordCatch = new Date(key + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
+        const curCatch = new Date(key + 'T12:00:00');
+        const isRealCatch = function(sess){
+          const st = String(sess.status || '').toLowerCase();
+          if(st === 'closed' || st === 'available') return false;
+          const cid = String(sess.clientId || '').toLowerCase();
+          return Boolean(cid && cid !== 'closed' && cid !== 'available');
+        };
+        const relCatch = typeof portalTermFeedbackSessionsForDate === 'function'
+          ? portalTermFeedbackSessionsForDate(dayWordCatch, key, staffId, isRealCatch)
+          : [];
+        if(relCatch.length && typeof portalTermDayAllSessionsComplete === 'function'
+          && portalTermDayAllSessionsComplete(dayWordCatch, key, staffId, relCatch, curCatch)){
+          return 'complete';
+        }
+        if(key <= todayKey) return 'late';
+        return 'pending';
+      }
       if(explicit === 'complete') return 'complete';
       if(explicit === 'cancelled') return 'cancelled';
       if(explicit === 'late') return 'late';
-      const staffId = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
       const dayWord = new Date(key + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
       if(staffId && portalTermDateForcedComplete(key, staffId)) return 'complete';
       if(staffId && portalTermStaffOffWeekdayOnDate(key, staffId)) return 'pending';
@@ -9781,6 +9868,7 @@
     /** Export-only: day green when portal feedback/status says done (even if roster row missing for that date). */
     function portalTermExportMarksDayComplete(iso, staffId){
       try{
+        if(portalTermIsCatchUpFeedbackDate(iso, staffId)) return false;
         const bridge = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
         if(!bridge || typeof bridge.dayFeedbackCountsFromPortalExports !== 'function') return false;
         const c = bridge.dayFeedbackCountsFromPortalExports(iso, staffId);
@@ -9804,6 +9892,7 @@
     }
     /** Before this calendar week: green when export or in-day sessions say done (not orange/blue for old work). */
     function portalTermApplyHistoricalDayGreen(iso, staffId, dayWord, key, relAll, relFb, cur, fbMap){
+      if(portalTermIsCatchUpFeedbackDate(iso, staffId)) return;
       if(!portalTermIsBeforeCurrentWeek(iso)) return;
       if(portalTermStaffOffWeekdayOnDate(iso, staffId)) return;
       if(typeof portalTermExportMarksDayComplete === 'function'
@@ -9934,14 +10023,15 @@
           continue;
         }
         endMap[key] = new Date(maxEnd).toISOString();
-        const portalDayCounts = (typeof window !== 'undefined' && window.PortalStaffFeedbackBridge
+        const portalDayCountsRaw = (typeof window !== 'undefined' && window.PortalStaffFeedbackBridge
           && typeof window.PortalStaffFeedbackBridge.dayFeedbackCountsFromPortalExports === 'function')
           ? window.PortalStaffFeedbackBridge.dayFeedbackCountsFromPortalExports(key, staffId)
           : null;
+        const portalDayCounts = portalTermIsCatchUpFeedbackDate(key, staffId) ? null : portalDayCountsRaw;
         if(portalDayCounts){
           if(portalDayCounts.applicable > 0 && portalDayCounts.unresolved === 0){
             fbMap[key] = 'complete';
-          } else if(portalTermIsBeforeCurrentWeek(key)
+          } else if(!portalTermIsCatchUpFeedbackDate(key, staffId) && portalTermIsBeforeCurrentWeek(key)
             && typeof portalTermExportMarksDayComplete === 'function'
             && portalTermExportMarksDayComplete(key, staffId)){
             fbMap[key] = 'complete';
@@ -9953,7 +10043,7 @@
             fbMap[key] = portalDayCounts.applicable === 0 ? 'pending' : 'late';
           }
         } else if(!relFb.length){
-          if(portalTermIsBeforeCurrentWeek(key)
+          if(!portalTermIsCatchUpFeedbackDate(key, staffId) && portalTermIsBeforeCurrentWeek(key)
             && typeof portalTermExportMarksDayComplete === 'function'
             && portalTermExportMarksDayComplete(key, staffId)){
             fbMap[key] = 'complete';
@@ -10019,8 +10109,9 @@
               unresolved++;
             });
             let allDone = applicable > 0 && unresolved === 0;
-            if(applicable > 0 && !allDone && typeof portalCountPendingSessionReviewsForCalendarDay === 'function' &&
-                portalCountPendingSessionReviewsForCalendarDay(key, dayWord) === 0){
+            if(applicable > 0 && !allDone && !portalTermIsCatchUpFeedbackDate(key, staffId)
+              && typeof portalCountPendingSessionReviewsForCalendarDay === 'function'
+              && portalCountPendingSessionReviewsForCalendarDay(key, dayWord) === 0){
               allDone = true;
             }
             if(applicable === 0){
@@ -10055,7 +10146,8 @@
           }
         }
         const relReconcile = relFb.length ? relFb : relAll;
-        if(fbMap[key] !== 'cancelled' && key <= todayKey && relReconcile.length
+        if(fbMap[key] !== 'cancelled' && fbMap[key] !== 'late'
+          && !portalTermIsCatchUpFeedbackDate(key, staffId) && key <= todayKey && relReconcile.length
           && typeof portalTermDayAllSessionsComplete === 'function'
           && portalTermDayAllSessionsComplete(dayWord, key, staffId, relReconcile, cur)){
           fbMap[key] = 'complete';
@@ -10103,11 +10195,14 @@
           : relAllExtra;
         if(!relAllExtra.length) return;
         const relPick = relFbExtra.length ? relFbExtra : relAllExtra;
+        const catchUpDay = portalTermIsCatchUpFeedbackDate(isoKey, staffId);
         if(typeof portalTermDayAllSessionsComplete === 'function'
           && portalTermDayAllSessionsComplete(dayWord, isoKey, staffId, relPick, curExtra)){
           fbMap[isoKey] = 'complete';
-        } else {
+        } else if(catchUpDay || isoKey <= portalTermLocalYmdFromMs(termCalendarNowMs())) {
           fbMap[isoKey] = 'late';
+        } else {
+          fbMap[isoKey] = 'pending';
         }
       });
       dashboardData.termShiftEndByDate = endMap;

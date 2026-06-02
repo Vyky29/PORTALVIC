@@ -2,7 +2,7 @@
  * Supabase Realtime Presence — who is online on admin / staff / lead / onboarding shells.
  * Admin mounts `#portalLivePresenceBar`; other dashboards only publish presence.
  */
-import { getSupabaseClient } from "./supabase-client.js?v=20260506-portal-interactions";
+import { getSharedSupabaseClient } from "./supabase-client.js";
 import {
   STAFF_USERNAME_TO_EMAIL,
   PORTAL_CORPORATE_AUTH_EMAIL_TO_STAFF_KEY,
@@ -143,10 +143,20 @@ export async function startPortalLivePresence(opts = {}) {
   const session =
     opts.session || window.__PORTAL_SUPABASE__?.session || null;
   if (!session?.user?.id) return;
+  // Demo account is a sandbox: do not broadcast presence to real admins/CEOs.
+  {
+    const p = profile || {};
+    const u = String(p.username || "").trim().toLowerCase();
+    const fn = String(p.full_name || "").trim().toLowerCase();
+    const local = String(session.user.email || "").trim().toLowerCase().split("@")[0] || "";
+    if (opts.isDemo === true || u === "teflon" || fn === "teflon" || local === "teflon" || local === "stf020") {
+      return;
+    }
+  }
 
   let supabase;
   try {
-    supabase = getSupabaseClient();
+    supabase = getSharedSupabaseClient();
   } catch {
     return;
   }
@@ -230,6 +240,24 @@ function presencePillsHtml(entries, emptyLabel) {
     .join("");
 }
 
+function presenceSelfEmail() {
+  return String(window.__PORTAL_SUPABASE__?.session?.user?.email || "")
+    .trim()
+    .toLowerCase();
+}
+
+function presenceFilterSelf(grouped) {
+  const me = presenceSelfEmail();
+  if (!me) return grouped;
+  const drop = (list) =>
+    (list || []).filter((e) => String(e.email || "").trim().toLowerCase() !== me);
+  return {
+    admins: drop(grouped.admins),
+    staffLeads: drop(grouped.staffLeads),
+    onboarding: drop(grouped.onboarding),
+  };
+}
+
 function presenceZoneHtml(tag, entries, emptyLabel) {
   return (
     '<div class="sf-status-bar__zone">' +
@@ -251,23 +279,24 @@ export function mountPortalLivePresenceBar(hostId = "portalLivePresenceBar") {
   if (!host) return;
 
   function render(grouped) {
-    const g = grouped || window.__PORTAL_PRESENCE_GROUPED__ || {
-      admins: [],
-      staffLeads: [],
-      onboarding: [],
-    };
+    const g = presenceFilterSelf(
+      grouped ||
+        window.__PORTAL_PRESENCE_GROUPED__ || {
+          admins: [],
+          staffLeads: [],
+          onboarding: [],
+        }
+    );
     host.hidden = false;
     host.innerHTML =
       '<div class="sf-status-bar">' +
       '<div class="sf-status-bar__main">' +
-      presenceZoneHtml("Admins online", g.admins, "No admins online") +
-      presenceZoneHtml("Staff & leads online", g.staffLeads, "No staff or leads online") +
-      presenceZoneHtml("Onboarding online", g.onboarding, "No one on onboarding") +
+      presenceZoneHtml("Admins", g.admins, "—") +
+      presenceZoneHtml("Staff & leads", g.staffLeads, "—") +
+      presenceZoneHtml("Onboarding", g.onboarding, "—") +
       "</div>" +
-      '<div class="sf-status-bar__side">' +
-      '<a class="sf-status-bar__btn" href="/OTROS/admin_architecture_guide.html" target="_blank" rel="noopener noreferrer">Admin guide</a>' +
-      '<button type="button" class="sf-status-bar__btn sf-status-bar__btn--danger" data-portal-logout>Log out</button>' +
-      "</div></div>";
+      '<a class="sf-status-bar__guide" href="/OTROS/admin_architecture_guide.html" target="_blank" rel="noopener noreferrer">Guide</a>' +
+      "</div>";
   }
 
   render(window.__PORTAL_PRESENCE_GROUPED__);

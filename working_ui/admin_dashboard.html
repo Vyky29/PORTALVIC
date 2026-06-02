@@ -6,7 +6,7 @@
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260601-week-row-scroll" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260527-lead-log" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260601-mobile-full" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260601-ops-participants" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260521-embed" />
   <script src="/portal/hr-contract-embed-html.js?v=20260521-embed"></script>
@@ -32,7 +32,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260601-mobile-full" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260602-topbar-one-row" />
 </head>
 <body>
   <script>
@@ -108,13 +108,13 @@
       </div>
     </aside>
     <div class="admin-main">
-      <div id="portalLivePresenceBar" class="portal-live-presence" hidden aria-live="polite"></div>
       <header class="admin-topbar" id="adminTopbar">
         <button type="button" class="admin-menu-mob" id="btnMenuMob" aria-label="Open menu" aria-controls="adminSidebar" aria-expanded="false">☰</button>
         <div class="admin-search-wrap">
           <span class="admin-search-ico" aria-hidden="true">⌕</span>
           <input type="search" id="globalSearch" placeholder="Search participants, staff, sessions…" autocomplete="off" aria-label="Global search" />
         </div>
+        <div id="portalLivePresenceBar" class="portal-live-presence admin-topbar-presence" hidden aria-live="polite"></div>
         <div class="admin-topbar-meta">
           <span class="admin-date" id="topDate"></span>
           <button type="button" class="admin-icon-btn" id="btnAlerts" aria-label="Alerts" title="Alerts">
@@ -16261,14 +16261,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       );
     }
     function viewOperationsAdmin(){
-      var participantsRow1 =
+      var participantsRow =
         portalDashTileHtml('clients', '', 'clients', 'Participants', 'Directory, profiles &amp; feedback', false, 'sessions')+
         portalDashTileHtml('orders_all', '', 'bookings', 'Bookings / orders', 'Bookings &amp; wait list', false, 'bookings')+
+        portalDashTileHtml('reenrol_payments', '', 'reenrol_payments', 'Payments', 'Programme payments', false, 'payments')+
+        portalDashTileHtml('invoices', '', 'invoices', 'Invoices', 'Xero draft &amp; export', false, 'payments')+
         portalDashTileHtml('c4k_reviews', '', 'c4k_reviews', 'Progress', 'Term reviews &amp; goals', false, 'reviews')+
         portalDashTileHtml('c4k_reports', '', 'c4k_reports', 'Reports', 'Request packs &amp; LA delivery', false, 'reports_q');
-      var financeRow =
-        portalDashTileHtml('reenrol_payments', '', 'reenrol_payments', 'Payments', 'Programme payments', false, 'payments')+
-        portalDashTileHtml('invoices', '', 'invoices', 'Invoices', 'Xero draft &amp; export', false, 'payments');
       var staffRow1 =
         portalDashTileHtml('staffhr', '', 'staffhr', 'Staff & HR', 'Records, availability &amp; HR notes', false, 'sessions')+
         portalDashTileHtml('staffhr_contracts', '', 'staffhr_contracts', 'Contracts', 'Employment contracts &amp; signatures', false, 'reviews')+
@@ -16291,26 +16290,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<p class="page-intro" style="white-space:nowrap;max-width:100%;font-size:clamp(10px,1.1vw,13px)">Participant and staff administration outside the live session window — orders, finance, HR, contracts, and reporting. For on-site session tools, use <button type="button" class="btn btn--ghost btn--sm" data-view-target="dashboard" style="vertical-align:middle;padding:7px 14px;font-size:inherit;display:inline-flex;align-items:center;gap:8px;color:#ea580c;border-color:#fdba74;background:rgba(234,88,12,0.06);border-radius:10px"><svg viewBox="0 0 24 24" width="1.15em" height="1.15em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 auto" aria-hidden="true">'+NAV_ICON_SVGS.dashboard+'</svg>Day operations</button>.</p>'+
         '<div class="dash-hub__stack">'+
         portalDashPanel({
-          title:'Sessions & Participants',
-          subtitle:'Participants, bookings, progress, and reporting',
+          title:'Participants',
+          subtitle:'Participants, bookings, payments, progress, and reporting',
           iconId:'clients',
-          panelClass:'dash-hub__panel--participants',
-          bodyHtml: opsAdminGridHtml(participantsRow1, '', 'dash-hub__grid--4'),
-          ariaLabel:'Sessions and Participants'
-        })+
-        portalDashPanel({
-          title:'Finance',
-          subtitle:'Programme payments and invoicing',
-          iconId:'reenrol_payments',
-          panelClass:'dash-hub__panel--finance',
-          bodyHtml: opsAdminGridHtml(financeRow, '', 'dash-hub__grid--participants-row2'),
-          ariaLabel:'Finance'
+          panelClass:'dash-hub__panel--participants dash-hub__panel--sessions-tone',
+          bodyHtml: opsAdminGridHtml(participantsRow, '', 'dash-hub__grid--6'),
+          ariaLabel:'Participants'
         })+
         portalDashPanel({
           title:'Staff members',
           subtitle:'HR, contracts, and staff documents',
           iconId:'staffhr',
-          panelClass:'dash-hub__panel--staff',
+          panelClass:'dash-hub__panel--staff dash-hub__panel--team-tone',
           bodyHtml: opsAdminGridHtml(staffRow1, '', 'dash-hub__grid--5'),
           ariaLabel:'Staff members'
         })+
@@ -21005,24 +20996,170 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
     }
 
+    window.__PORTAL_ADMIN_ACTIVITY_ALERTS__ = window.__PORTAL_ADMIN_ACTIVITY_ALERTS__ || [];
+    var portalAdminActivityRtBound = false;
+
+    function portalAdminAlertTimeLabel(iso){
+      if(!iso) return 'New';
+      try{
+        return new Date(iso).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+      }catch(e){ return 'New'; }
+    }
+
+    function portalAdminPushActivityAlert(item){
+      if(!item || !item.id) return;
+      var list = window.__PORTAL_ADMIN_ACTIVITY_ALERTS__;
+      if(list.some(function(a){ return a.id === item.id; })) return;
+      list.unshift({
+        id: item.id,
+        title: item.title || 'Portal activity',
+        sub: item.sub || '',
+        t: item.t || portalAdminAlertTimeLabel(item.created_at),
+        created_at: item.created_at || null,
+        kind: item.kind || 'activity',
+        view: item.view || ''
+      });
+      if(list.length > 60) list.length = 60;
+      if(typeof window.__portalAdminRenderAlerts === 'function') window.__portalAdminRenderAlerts();
+    }
+
+    function portalAdminActivityFromFeedback(row){
+      if(!row || !row.id) return null;
+      var who = String(row.completed_by_name || row.submitted_by_name || 'Staff').trim() || 'Staff';
+      var client = String(row.client_name || 'Participant').trim() || 'Participant';
+      var svc = String(row.service || '').trim();
+      var d = String(row.session_date || '').trim().slice(0, 10);
+      return {
+        id: 'sf-' + row.id,
+        title: 'Session feedback · ' + client,
+        sub: who + (svc ? ' · ' + svc : '') + (d ? ' · ' + d : ''),
+        created_at: row.created_at,
+        kind: 'feedback',
+        view: 'feedback'
+      };
+    }
+
+    function portalAdminActivityFromCancellation(row){
+      if(!row || !row.id) return null;
+      var who = String(row.submitted_by_name || 'Staff').trim() || 'Staff';
+      var client = String(row.client_name || 'Participant').trim() || 'Participant';
+      return {
+        id: 'cx-' + row.id,
+        title: 'Cancellation · ' + client,
+        sub: who + ' · ' + String(row.session_date || '').slice(0, 10),
+        created_at: row.created_at,
+        kind: 'cancellation',
+        view: 'cancellations'
+      };
+    }
+
+    function portalAdminActivityFromIncident(row){
+      if(!row || !row.id) return null;
+      var who = String(row.submitted_by_name || 'Staff').trim() || 'Staff';
+      var client = String(row.client_name || 'Participant').trim() || 'Participant';
+      var cat = String(row.incident_category || 'Incident').trim();
+      return {
+        id: 'inc-' + row.id,
+        title: cat + ' · ' + client,
+        sub: who + ' · ' + String(row.session_date || '').slice(0, 10),
+        created_at: row.created_at,
+        kind: 'incident',
+        view: 'incidents'
+      };
+    }
+
+    async function portalAdminBootstrapActivityAlerts(){
+      try{
+        var box = window.__PORTAL_SUPABASE__;
+        var client = box && box.client;
+        var profile = box && box.staff_profile;
+        var role = String(profile && profile.app_role || '').toLowerCase();
+        if(!client || !client.from || (role !== 'admin' && role !== 'ceo')) return;
+        var since = new Date();
+        since.setDate(since.getDate() - 3);
+        var sinceIso = since.toISOString();
+        var sinceDate = sinceIso.slice(0, 10);
+        var results = await Promise.all([
+          client.from('session_feedback').select('id,created_at,client_name,service,session_date,completed_by_name').gte('created_at', sinceIso).order('created_at',{ascending:false}).limit(40),
+          client.from('cancellation_reports').select('id,created_at,client_name,session_date,submitted_by_name').gte('created_at', sinceIso).order('created_at',{ascending:false}).limit(20),
+          client.from('incident_reports').select('id,created_at,client_name,session_date,submitted_by_name,incident_category').gte('created_at', sinceIso).order('created_at',{ascending:false}).limit(20)
+        ]);
+        (results[0].data || []).forEach(function(r){
+          var a = portalAdminActivityFromFeedback(r);
+          if(a) portalAdminPushActivityAlert(a);
+        });
+        (results[1].data || []).forEach(function(r){
+          var a = portalAdminActivityFromCancellation(r);
+          if(a) portalAdminPushActivityAlert(a);
+        });
+        (results[2].data || []).forEach(function(r){
+          var a = portalAdminActivityFromIncident(r);
+          if(a) portalAdminPushActivityAlert(a);
+        });
+      }catch(err){ console.warn('[admin] activity alerts bootstrap', err); }
+    }
+
+    function portalAdminEnsureActivityRealtime(){
+      if(portalAdminActivityRtBound) return;
+      try{
+        var box = window.__PORTAL_SUPABASE__;
+        var client = box && box.client;
+        var profile = box && box.staff_profile;
+        var role = String(profile && profile.app_role || '').toLowerCase();
+        if(!client || typeof client.channel !== 'function' || (role !== 'admin' && role !== 'ceo')) return;
+        portalAdminActivityRtBound = true;
+        var debounce = null;
+        function scheduleRefresh(){
+          if(debounce) clearTimeout(debounce);
+          debounce = setTimeout(function(){
+            debounce = null;
+            void portalAdminBootstrapActivityAlerts();
+          }, 500);
+        }
+        client.channel('portal-admin-activity-alerts')
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'session_feedback' }, function(payload){
+            var a = portalAdminActivityFromFeedback(payload && payload.new);
+            if(a) portalAdminPushActivityAlert(a);
+          })
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'cancellation_reports' }, function(payload){
+            var a = portalAdminActivityFromCancellation(payload && payload.new);
+            if(a) portalAdminPushActivityAlert(a);
+          })
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'incident_reports' }, function(payload){
+            var a = portalAdminActivityFromIncident(payload && payload.new);
+            if(a) portalAdminPushActivityAlert(a);
+          })
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'venue_review_admin_notifications' }, function(){
+            scheduleRefresh();
+          })
+          .subscribe();
+      }catch(err){ console.warn('[admin] activity alerts realtime', err); }
+    }
+
     function renderAlerts(){
       var pop = $('alertsPop');
       if(!pop) return;
       var venueList = (typeof window.__PORTAL_VENUE_REVIEW_ALERTS__ !== 'undefined' && window.__PORTAL_VENUE_REVIEW_ALERTS__) ? window.__PORTAL_VENUE_REVIEW_ALERTS__ : [];
+      var activityList = window.__PORTAL_ADMIN_ACTIVITY_ALERTS__ || [];
+      var hasLive = !!(window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client);
       var venueHtml = (venueList || []).map(function(a){
-        var t = '';
-        try{
-          if(a.created_at) t = new Date(a.created_at).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
-        }catch(e){}
+        var t = portalAdminAlertTimeLabel(a.created_at);
         var body = a.body || '';
-        return '<div class="line-item"><div><strong>'+esc(a.headline || 'Venue review')+'</strong><div class="muted" style="white-space:pre-wrap;margin-top:6px;font-size:12px;line-height:1.45">'+esc(body)+'</div></div><span class="chip chip--urg">'+(t?esc(t):'New')+'</span></div>';
+        return '<div class="line-item" data-alert-kind="venue"><div><strong>'+esc(a.headline || 'Venue review')+'</strong><div class="muted" style="white-space:pre-wrap;margin-top:6px;font-size:12px;line-height:1.45">'+esc(body)+'</div></div><span class="chip chip--urg">'+esc(t)+'</span></div>';
       }).join('');
-      var mockHtml = MOCK.alerts.map(function(a){
+      var activityHtml = (activityList || []).map(function(a){
+        var jump = a.view ? ' data-alert-view="'+esc(a.view)+'"' : '';
+        return '<button type="button" class="line-item portal-admin-activity-alert"'+jump+' style="width:100%;text-align:left;border:0;background:transparent;cursor:pointer;padding:12px 16px;font:inherit"><div><strong>'+esc(a.title)+'</strong><div class="muted">'+esc(a.sub)+'</div></div><span class="chip chip--info">'+esc(a.t || 'New')+'</span></button>';
+      }).join('');
+      var mockHtml = hasLive ? '' : MOCK.alerts.map(function(a){
         return '<div class="line-item"><div><strong>'+esc(a.title)+'</strong><div class="muted">'+esc(a.sub)+'</div></div><span class="chip chip--urg">'+esc(a.t)+'</span></div>';
       }).join('');
-      pop.innerHTML = '<div class="card-h" style="border-radius:var(--radiusLg) var(--radiusLg) 0 0"><h3 style="margin:0;font-size:14px">Alerts</h3></div>'+venueHtml+mockHtml;
+      var emptyHtml = (!venueHtml && !activityHtml && !mockHtml)
+        ? '<p class="muted" style="margin:12px 16px">No new staff or lead activity yet.</p>'
+        : '';
+      pop.innerHTML = '<div class="card-h" style="border-radius:var(--radiusLg) var(--radiusLg) 0 0"><h3 style="margin:0;font-size:14px">Alerts</h3></div>'+activityHtml+venueHtml+mockHtml+emptyHtml;
       var bd = $('alertBadge');
-      if(bd) bd.textContent = String((venueList||[]).length + MOCK.alerts.length);
+      if(bd) bd.textContent = String((activityList||[]).length + (venueList||[]).length + (hasLive ? 0 : MOCK.alerts.length));
     }
     try{ window.__portalAdminRenderAlerts = renderAlerts; }catch(e){}
 
@@ -21042,7 +21179,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       try{
         var p = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
         var role = String(p && p.app_role || '').toLowerCase();
-        if(role !== 'admin') return;
+        if(role !== 'admin' && role !== 'ceo') return;
         var client = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client;
         if(!client || !client.from) return;
         client.from('venue_review_admin_notifications').select('id,created_at,headline,body').is('read_at',null).order('created_at',{ascending:false}).limit(40).then(function(res){
@@ -21050,6 +21187,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           window.__PORTAL_VENUE_REVIEW_ALERTS__ = res.data || [];
           if(typeof window.__portalAdminRenderAlerts === 'function') window.__portalAdminRenderAlerts();
         });
+        void portalAdminBootstrapActivityAlerts();
+        portalAdminEnsureActivityRealtime();
       }catch(err){ console.warn(err); }
     });
 
@@ -21357,6 +21496,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         e.stopPropagation();
         toggleAlerts();
       });
+      var alertsPopEl = $('alertsPop');
+      if(alertsPopEl && !alertsPopEl.dataset.activityJumpBound){
+        alertsPopEl.dataset.activityJumpBound = '1';
+        alertsPopEl.addEventListener('click', function(ev){
+          var btn = ev.target && ev.target.closest ? ev.target.closest('[data-alert-view]') : null;
+          if(!btn || !alertsPopEl.contains(btn)) return;
+          var v = String(btn.getAttribute('data-alert-view') || '').trim();
+          if(!v) return;
+          alertsPopEl.classList.remove('open');
+          setView(v);
+        });
+      }
       document.addEventListener('click', function(){
         var ap = $('alertsPop');
         if(ap) ap.classList.remove('open');
@@ -21457,6 +21608,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if (displayName) {
             const nameEl = document.getElementById("miniName");
             if (nameEl) nameEl.textContent = displayName;
+            const avEl = document.getElementById("miniAv");
+            if (avEl) avEl.textContent = displayName.charAt(0).toUpperCase();
           }
         }
         const now = new Date();

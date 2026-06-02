@@ -64,6 +64,10 @@
       if (u) return String(u).trim().toLowerCase();
       var sk = sessionStorage.getItem("__portal_feedback_staff_rota_key_v1");
       if (sk) return String(sk).trim().toLowerCase();
+      try {
+        var sid = typeof global.STAFF_DASHBOARD_ID !== "undefined" ? global.STAFF_DASHBOARD_ID : "";
+        if (sid) return String(sid).trim().toLowerCase();
+      } catch (_) {}
     } catch (_) {}
     return "";
   }
