@@ -403,7 +403,35 @@ body:has(#workspace .dash-hub--nav-index) .admin-main{
 .dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_zoho"] .dash-hub__grid--inline{
   grid-template-columns:repeat(4,minmax(0,1fr));
 }
-.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_supabase"] .dash-hub__grid--inline,
+.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_supabase"] .dash-hub__grid--inline{
+  grid-template-columns:repeat(8,minmax(0,1fr));
+  gap:clamp(5px,.7vw,8px);
+}
+.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_supabase"] .dash-hub__tile{
+  padding:0;
+  min-height:0;
+}
+.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_supabase"] .dash-hub__tile-label,
+.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_supabase"] .dash-hub__tile-desc{
+  display:none;
+}
+.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_supabase"] .dash-hub__tile-band{
+  position:static;
+  flex:1 1 auto;
+  min-height:clamp(38px,5vh,46px);
+  max-height:none;
+  height:100%;
+  padding:6px 4px;
+  border-radius:10px;
+}
+.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_supabase"] .dash-hub__tile-band .admin-nav-ico{
+  width:28px;
+  height:28px;
+}
+.dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_supabase"] .dash-hub__tile-band .admin-nav-ico svg{
+  width:18px;
+  height:18px;
+}
 .dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_indeed"] .dash-hub__grid--inline{
   grid-template-columns:minmax(0,1fr);
 }
@@ -535,12 +563,12 @@ body:has(#workspace .dash-hub--nav-index) .admin-main{
 }
 /* Sidebar menu colours → hub category + tiles */
 .dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_operator"]{
-  --hub-accent:#818cf8;
-  --hub-soft:rgba(129,140,232,.16);
-  --hub-band-bg:rgba(129,140,232,.22);
-  --hub-tile-bg:linear-gradient(180deg,rgba(129,140,232,.14) 0%,#fff 48%);
-  --hub-tile-border:rgba(129,140,232,.32);
-  --hub-glow:rgba(129,140,232,.18);
+  --hub-accent:#f472b6;
+  --hub-soft:rgba(244,114,182,.16);
+  --hub-band-bg:rgba(244,114,182,.22);
+  --hub-tile-bg:linear-gradient(180deg,rgba(244,114,182,.14) 0%,#fff 48%);
+  --hub-tile-border:rgba(244,114,182,.32);
+  --hub-glow:rgba(244,114,182,.18);
 }
 .dash-hub--nav-index .dash-hub-cat[data-hub-cat="g_c4k"]{
   --hub-accent:#fbbf24;

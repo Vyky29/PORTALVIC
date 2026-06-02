@@ -34,6 +34,13 @@ export function portalPresenceDisplayLabel(nameRaw, email) {
   return local ? local.charAt(0).toUpperCase() + local.slice(1) : em;
 }
 
+/** First name only — used in the live presence bar when many users may be online. */
+export function portalPresenceFirstName(nameRaw, email) {
+  const label = portalPresenceDisplayLabel(nameRaw, email);
+  const part = String(label).trim().split(/\s+/).filter(Boolean)[0];
+  return part || label;
+}
+
 function escHtml(s) {
   return String(s ?? "")
     .replace(/&/g, "&amp;")
@@ -62,14 +69,11 @@ export function portalPresenceSurface(page, profile, authEmail) {
 
 /**
  * @param {Record<string, import("@supabase/supabase-js").RealtimePresenceState[string]>} state
+ * @returns {{ connected: { email: string, name: string, at: number }[] }}
  */
 export function portalPresenceGrouped(state) {
   /** @type {{ email: string, name: string, at: number }[]} */
-  const admins = [];
-  /** @type {{ email: string, name: string, at: number }[]} */
-  const staffLeads = [];
-  /** @type {{ email: string, name: string, at: number }[]} */
-  const onboarding = [];
+  const connected = [];
   const seen = new Set();
 
   for (const key of Object.keys(state || {})) {
@@ -88,21 +92,15 @@ export function portalPresenceGrouped(state) {
     const dedupe = email.toLowerCase();
     if (seen.has(dedupe)) continue;
     seen.add(dedupe);
-    const entry = {
+    connected.push({
       email,
-      name: portalPresenceDisplayLabel(best.name, email),
+      name: portalPresenceFirstName(best.name, email),
       at: Number(best.at) || 0,
-    };
-    const surface = String(best.surface || "staff").toLowerCase();
-    if (surface === "admin") admins.push(entry);
-    else if (surface === "onboarding") onboarding.push(entry);
-    else staffLeads.push(entry);
+    });
   }
 
-  admins.sort((a, b) => a.email.localeCompare(b.email));
-  staffLeads.sort((a, b) => a.email.localeCompare(b.email));
-  onboarding.sort((a, b) => a.email.localeCompare(b.email));
-  return { admins, staffLeads, onboarding };
+  connected.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
+  return { connected };
 }
 
 function dispatchPresenceSync() {
@@ -120,7 +118,7 @@ async function presenceTrackPayload(page, profile, session) {
   const email = String(user?.email || "").trim();
   if (!email) return null;
   const surface = portalPresenceSurface(page, profile, email);
-  const name = portalPresenceDisplayLabel(
+  const name = portalPresenceFirstName(
     String(profile?.full_name || profile?.username || "").trim(),
     email
   );
@@ -249,25 +247,10 @@ function presenceSelfEmail() {
 function presenceFilterSelf(grouped) {
   const me = presenceSelfEmail();
   if (!me) return grouped;
-  const drop = (list) =>
-    (list || []).filter((e) => String(e.email || "").trim().toLowerCase() !== me);
-  return {
-    admins: drop(grouped.admins),
-    staffLeads: drop(grouped.staffLeads),
-    onboarding: drop(grouped.onboarding),
-  };
-}
-
-function presenceZoneHtml(tag, entries, emptyLabel) {
-  return (
-    '<div class="sf-status-bar__zone">' +
-    '<span class="sf-status-bar__tag">' +
-    escHtml(tag) +
-    "</span>" +
-    '<div class="sf-status-bar__values">' +
-    presencePillsHtml(entries, emptyLabel) +
-    "</div></div>"
+  const connected = (grouped.connected || []).filter(
+    (e) => String(e.email || "").trim().toLowerCase() !== me
   );
+  return { connected };
 }
 
 /**
@@ -282,19 +265,21 @@ export function mountPortalLivePresenceBar(hostId = "portalLivePresenceBar") {
     const g = presenceFilterSelf(
       grouped ||
         window.__PORTAL_PRESENCE_GROUPED__ || {
-          admins: [],
-          staffLeads: [],
-          onboarding: [],
+          connected: [],
         }
     );
+    const list = g.connected || [];
+    const countLabel = list.length ? String(list.length) : "0";
     host.hidden = false;
     host.innerHTML =
       '<div class="sf-status-bar">' +
       '<div class="sf-status-bar__main">' +
-      presenceZoneHtml("Admins", g.admins, "—") +
-      presenceZoneHtml("Staff & leads", g.staffLeads, "—") +
-      presenceZoneHtml("Onboarding", g.onboarding, "—") +
-      "</div>" +
+      '<span class="sf-status-bar__tag" title="Connected now">Online · ' +
+      escHtml(countLabel) +
+      "</span>" +
+      '<div class="sf-status-bar__values">' +
+      presencePillsHtml(list, "Nobody else online") +
+      "</div></div>" +
       '<a class="sf-status-bar__guide" href="/OTROS/admin_architecture_guide.html" target="_blank" rel="noopener noreferrer">Guide</a>' +
       "</div>";
   }
