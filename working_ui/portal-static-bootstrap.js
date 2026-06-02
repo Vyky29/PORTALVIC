@@ -11,6 +11,10 @@
     window.SUPABASE_ANON_KEY ||
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNrbHBud2hscXN1bHBta2lwbXFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyMDg4NzIsImV4cCI6MjA5MTc4NDg3Mn0.-T7rVyDHQbzMqEKOVz6fi3OlZdB_gPH2i5p-ZPveopE";
 
+  /** Injected at Vercel build from STAFF_PROFILE_PORTAL_BRIDGE_SECRET (must match Supabase Edge secret). */
+  window.STAFF_PROFILE_PORTAL_BRIDGE_SECRET =
+    window.STAFF_PROFILE_PORTAL_BRIDGE_SECRET || "%%PB6%%";
+
   if (!window.PORTAL_SHARED_JS_BASE) {
     window.PORTAL_SHARED_JS_BASE = "/portal-shared-js";
   }
@@ -56,11 +60,22 @@
 
   window.portalEnsureBridgeCached = function portalEnsureBridgeCached() {
     try {
-      return sessionStorage.getItem(BRIDGE_KEY) || "";
-    } catch (_) {
-      return "";
-    }
+      var cached = sessionStorage.getItem(BRIDGE_KEY) || "";
+      if (cached && cached.indexOf("%%") !== 0 && cached.length >= 16) return cached;
+    } catch (_) {}
+    try {
+      var fromWin = String(window.STAFF_PROFILE_PORTAL_BRIDGE_SECRET || "").trim();
+      if (fromWin && fromWin.indexOf("%%") !== 0 && fromWin.length >= 16) {
+        window.portalPersistBridgeSecret(fromWin);
+        return fromWin;
+      }
+    } catch (_) {}
+    return "";
   };
+
+  try {
+    window.portalEnsureBridgeCached();
+  } catch (_) {}
 
   function portalReadStoredSupabaseAccessToken() {
     try {

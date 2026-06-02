@@ -1,4 +1,5 @@
 {
+  "buildCommand": "node scripts/inject-portal-bridge-secret.mjs",
   "outputDirectory": "working_ui",
   "rewrites": [
     { "source": "/", "destination": "/login.html" },
