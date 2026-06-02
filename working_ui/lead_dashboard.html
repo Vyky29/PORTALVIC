@@ -4799,7 +4799,10 @@
       if(portalStaffHasDatedRowsForIso(iso, sid)) return true;
       if(portalStaffClientSessionsOnCalendarDate(iso, w, sid)) return true;
       const snapFloor = portalCalendarIsoUsesSummerDatedRosterOnly(iso) ? portalTermSummerRosterFromIso() : '';
-      if(!portalStaffHasDatedWeekdaySnapshots(sid, w, snapFloor)) return true;
+      const hasSnaps = portalStaffHasDatedWeekdaySnapshots(sid, w, snapFloor);
+      /* Summer dated roster: no row on this date = off (e.g. Aurora Thu cover → Dan). */
+      if(portalCalendarIsoUsesSummerDatedRosterOnly(iso) && hasSnaps) return false;
+      if(!hasSnaps) return true;
       const anchor = new Date(iso + 'T12:00:00');
       const model = (typeof sessionsModel !== 'undefined' && Array.isArray(sessionsModel)) ? sessionsModel : [];
       if(!!portalBestStaffRosterIsoForWeekday(model, sid, w, anchor)) return true;
@@ -8896,7 +8899,17 @@
         } else {
           worked = [1, 2, 4, 5];
         }
-        return ptd.dayIsRed(iso, dt.getDay(), staffId, worked, extraRed);
+        const red = ptd.dayIsRed(iso, dt.getDay(), staffId, worked, extraRed);
+        if(red) return true;
+        if(staffId && worked.indexOf(dt.getDay()) >= 0 && typeof portalStaffRosterAppliesOnCalendarDate === 'function'){
+          const dayWord = dt.toLocaleDateString('en-GB', { weekday: 'long' });
+          if(!portalStaffRosterAppliesOnCalendarDate(iso, dayWord, staffId)){
+            if(typeof portalTermExportCountsAsWorkedDay === 'function'
+              && portalTermExportCountsAsWorkedDay(iso, staffId, dayWord)) return false;
+            return true;
+          }
+        }
+        return false;
       }
       const toIso = portalTermCalendarToIso();
       if(toIso && iso > toIso) return true;
