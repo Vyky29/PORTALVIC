@@ -15,6 +15,11 @@ const MIN_SEND_INTERVAL_MS = 120000;
 const MIN_MOVE_M = 25;
 const MAX_STALE_SEND_MS = 300000;
 const DISPLAY_ACCURACY_CAP_M = 10;
+const GEO_OPTS = {
+  enableHighAccuracy: true,
+  maximumAge: 60000,
+  timeout: 25000,
+};
 
 /** @type {number | null} */
 let _watchId = null;
@@ -83,7 +88,7 @@ async function ensureShiftWindowModule() {
   if (_shiftWindowModuleLoading) return;
   _shiftWindowModuleLoading = true;
   try {
-    await import("./portal_live_map_shift_window.js?v=20260608-shift-window");
+    await import("./portal_live_map_shift_window.js?v=20260610-live-map-fix");
   } catch (err) {
     console.debug("[portal] live map shift window module skipped:", err);
   } finally {
@@ -143,12 +148,40 @@ async function syncLiveMapShiftWindow() {
   scheduleShiftBoundaryTimer();
 }
 
+function sendCurrentPositionOnce(force) {
+  if (typeof navigator === "undefined" || !navigator.geolocation) return;
+  if (!portalLocationPermissionGranted()) return;
+  if (!isLiveMapSharingAllowed()) return;
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      markLocationGranted();
+      void upsertLocation(pos, { force: !!force });
+    },
+    onPositionError,
+    GEO_OPTS
+  );
+}
+
+function startWatchInternal() {
+  if (typeof navigator === "undefined" || !navigator.geolocation) return;
+  if (!portalLocationPermissionGranted() || !isLiveMapSharingAllowed()) return;
+  cancelStopSharing();
+  if (_watchId == null) {
+    sendCurrentPositionOnce(true);
+    _watchId = navigator.geolocation.watchPosition(onPosition, onPositionError, GEO_OPTS);
+    return;
+  }
+  sendCurrentPositionOnce(false);
+}
+
 function bindShiftWindowListeners() {
   if (typeof window === "undefined" || window.__PORTAL_LIVE_MAP_SHIFT_LISTENERS__) return;
   window.__PORTAL_LIVE_MAP_SHIFT_LISTENERS__ = true;
-  window.addEventListener("portal:staff-dashboard-source-updated", () => {
+  const resync = () => {
     void syncLiveMapShiftWindow();
-  });
+  };
+  window.addEventListener("portal:staff-dashboard-source-updated", resync);
+  window.addEventListener("portal:supabase-ready", resync);
 }
 
 async function upsertLocation(pos, opts = {}) {
@@ -333,36 +366,6 @@ export async function startPortalLocationTracker(opts = {}) {
   } catch (_) {
     return;
   }
-
-  const geoOpts = {
-    enableHighAccuracy: true,
-    maximumAge: 60000,
-    timeout: 25000,
-  };
-
-  const sendCurrentPositionOnce = (force) => {
-    if (!portalLocationPermissionGranted() || !navigator.geolocation) return;
-    if (!isLiveMapSharingAllowed()) return;
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        markLocationGranted();
-        void upsertLocation(pos, { force: !!force });
-      },
-      onPositionError,
-      geoOpts
-    );
-  };
-
-  const startWatchInternal = () => {
-    if (!portalLocationPermissionGranted() || !isLiveMapSharingAllowed()) return;
-    cancelStopSharing();
-    if (_watchId == null) {
-      sendCurrentPositionOnce(true);
-      _watchId = navigator.geolocation.watchPosition(onPosition, onPositionError, geoOpts);
-      return;
-    }
-    sendCurrentPositionOnce(false);
-  };
 
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") {

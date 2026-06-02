@@ -9,13 +9,31 @@
   var AFTER_MS = 30 * 60 * 1000;
 
   function localTodayIso() {
-    var d = new Date();
+    try {
+      var parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Europe/London",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).formatToParts(new Date());
+      var y = parts.find(function (p) {
+        return p.type === "year";
+      });
+      var m = parts.find(function (p) {
+        return p.type === "month";
+      });
+      var d = parts.find(function (p) {
+        return p.type === "day";
+      });
+      if (y && m && d) return y.value + "-" + m.value + "-" + d.value;
+    } catch (_) {}
+    var dt = new Date();
     return (
-      d.getFullYear() +
+      dt.getFullYear() +
       "-" +
-      String(d.getMonth() + 1).padStart(2, "0") +
+      String(dt.getMonth() + 1).padStart(2, "0") +
       "-" +
-      String(d.getDate()).padStart(2, "0")
+      String(dt.getDate()).padStart(2, "0")
     );
   }
 
@@ -34,7 +52,10 @@
 
   function sessionsForCalendarToday(sessionsModel) {
     var todayIso = localTodayIso();
-    var todayDow = new Date().toLocaleDateString("en-GB", { weekday: "long" });
+    var todayDow = new Date().toLocaleDateString("en-GB", {
+      weekday: "long",
+      timeZone: "Europe/London",
+    });
     return (sessionsModel || []).filter(function (s) {
       if (!s || s.clientId === "closed") return false;
       if (!s.start || !s.end) return false;

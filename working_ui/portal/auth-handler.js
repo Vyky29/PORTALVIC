@@ -762,7 +762,7 @@ export async function bootstrapDashboardSupabase(_opts) {
       ]);
       perm.portalRefreshMicrophoneUi();
       perm.portalSyncAlertsSettingsChrome();
-      const loc = await import("./portal_location_tracker.js?v=20260608-shift-window");
+      const loc = await import("./portal_location_tracker.js?v=20260610-live-map-fix");
       window.portalRestartLocationTracker = function () {
         return loc.restartPortalLocationTracker({ page, profile, session });
       };
