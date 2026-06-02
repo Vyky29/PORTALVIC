@@ -91,7 +91,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260610-recording-guard" />
   <script src="/portal/portal_screenshot_guard.js?v=20260610-recording-guard"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260609-qm-feedback" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260610-payslips" />
 </head>
 <body>
   <script>
@@ -441,6 +441,10 @@
             <button type="button" class="menu-btn menu-btn--mydocs-training" id="quickMenuMyDocsTraining" data-portal-external-url="my_documents.html?category=training&amp;from=staff">
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div>
               <div class="menu-btn-copy"><strong>Training</strong><span class="menu-btn-sub">Certificates and completed training</span></div>
+            </button>
+            <button type="button" class="menu-btn menu-btn--mydocs-payslips" id="quickMenuMyDocsPayslips" data-portal-external-url="my_documents.html?category=payslips&amp;from=staff">
+              <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/></svg></div>
+              <div class="menu-btn-copy"><strong>Payslips</strong><span class="menu-btn-sub">View and download your monthly payslips</span></div>
             </button>
           </div>
         </div>
@@ -3827,10 +3831,10 @@
       }
       return '';
     }
-    /** Day Centre participants: their feedback turns orange / "ready to judge" 15 min BEFORE the
-     *  session ends (e.g. ends 3:00pm → judgeable from 2:45pm). Every other service stays gated on
+    /** Day Centre participants: their feedback turns orange / "ready to judge" 30 min BEFORE the
+     *  session ends (e.g. ends 3:00pm → judgeable from 2:30pm). Every other service stays gated on
      *  the real end time. Detected from the roster row service ("Day Centre"). */
-    const DAY_CENTRE_FEEDBACK_LEAD_MS = 15 * 60 * 1000;
+    const DAY_CENTRE_FEEDBACK_LEAD_MS = 30 * 60 * 1000;
     function portalRosterSessionIsDayCentre(s){
       if(!s) return false;
       if(/day\s*centre/i.test(String(s.rosterService || ''))) return true;

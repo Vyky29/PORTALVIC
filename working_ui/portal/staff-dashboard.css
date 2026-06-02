@@ -5292,6 +5292,11 @@
       color:#5b21b6;
       border-color:rgba(91,33,182,.18);
     }
+    #menuSheet #quickMenuMyDocsPayslips .menu-btn-icon{
+      background:linear-gradient(180deg,#fff7ed,#ffedd5);
+      color:#c2410c;
+      border-color:rgba(194,65,12,.2);
+    }
     #menuSheet #quickMenuLogout .menu-btn-icon{
       background:linear-gradient(180deg,#edf6ff,#d8e9ff);
       color:#2a76ad;

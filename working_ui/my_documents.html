@@ -37,6 +37,7 @@
     .doc-icon--expense{background:#fff7ed;color:#c2410c;border-color:rgba(194,65,12,.18)}
     .doc-icon--report{background:#ecfdf5;color:#047857;border-color:rgba(4,120,87,.2)}
     .doc-icon--training{background:#f5f3ff;color:#5b21b6;border-color:rgba(91,33,182,.18)}
+    .doc-icon--payslip{background:#fff7ed;color:#c2410c;border-color:rgba(194,65,12,.18)}
     .doc-icon--file{background:#f4f7fb;color:#475569;border-color:rgba(71,85,105,.15)}
     .title{font-weight:700;color:#102238}
     .meta{font-size:12px;color:#62758a}
@@ -187,6 +188,11 @@
         key: "training",
         label: "Training",
         intro: "Certificates and records from internal training, safeguarding, and other completed modules."
+      },
+      {
+        key: "payslips",
+        label: "Payslips",
+        intro: "Monthly payslip PDFs uploaded by payroll. View and download your payslips here."
       }
     ];
 
@@ -195,7 +201,7 @@
         const c = String(new URLSearchParams(location.search).get("category") || "")
           .trim()
           .toLowerCase();
-        if (c === "finance" || c === "reports" || c === "training") return c;
+        if (c === "finance" || c === "reports" || c === "training" || c === "payslips") return c;
       } catch (_) {}
       return "";
     }
@@ -274,11 +280,28 @@
         if (t) return t.replace(/^Signed:\s*/i, "").trim() || t;
         return "Policy acknowledgment";
       }
+      if (type === "payslip") {
+        const t = String((doc && doc.title) || "").trim();
+        if (t) return t;
+        const base = doc.related_date || doc.created_at;
+        const d = base ? new Date(base) : null;
+        if (d && !Number.isNaN(d.getTime())) {
+          const month = d.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+          return month + " Payslip";
+        }
+        return "Payslip";
+      }
       return String((doc && doc.title) || "Document");
     }
     function displayMeta(doc) {
       const type = String((doc && doc.document_type) || "").toLowerCase();
-      if (type === "timesheet" || type === "expense" || type === "swim_term_review" || type === "staff_policy_ack") {
+      if (
+        type === "timesheet" ||
+        type === "expense" ||
+        type === "swim_term_review" ||
+        type === "staff_policy_ack" ||
+        type === "payslip"
+      ) {
         return prettyDateTime(doc.created_at);
       }
       return `${String(doc.document_type || "").toLowerCase()} • ${prettyDate(doc.related_date || doc.created_at)}`;
@@ -289,12 +312,14 @@
       if (t === "timesheet") return "timesheet";
       if (t === "expense") return "expense";
       if (t === "staff_policy_ack") return "training";
+      if (t === "payslip") return "payslip";
       if (t === "swim_term_review") return "report";
       if (t.includes("report")) return "report";
       if (t.includes("train") || t.includes("induction") || t.includes("safeguard")) return "training";
       const c = String((doc && doc.category) || "").toLowerCase();
       if (c === "reports") return "report";
       if (c === "training") return "training";
+      if (c === "payslips") return "payslip";
       return "file";
     }
 
@@ -303,6 +328,7 @@
       expense: "Expenses",
       report: "Report",
       training: "Training",
+      payslip: "Payslip",
       file: "Document"
     };
 
@@ -318,6 +344,8 @@
           '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M4 20V10M12 20V4M20 20v-8"/></svg>',
         training:
           '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 2 3 3 6 3s6-1 6-3v-5"/></svg>',
+        payslip:
+          '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/></svg>',
         file:
           '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>'
       };
@@ -458,6 +486,7 @@
       ) {
         return true;
       }
+      if (categoryKey === "payslips" && t === "payslip") return true;
       return false;
     }
 
@@ -471,6 +500,9 @@
       if (key === "training") {
         return "No training documents yet. Certificates and completed training records will appear here.";
       }
+      if (key === "payslips") {
+        return "No payslips yet. Monthly payslip PDFs from payroll will appear here when uploaded.";
+      }
       return "No documents yet.";
     }
 
@@ -478,7 +510,7 @@
       const root = document.getElementById("docsRoot");
       if (!root) return;
       const filterCat = parseCategoryFilter();
-      const grouped = { finance: [], reports: [], training: [] };
+      const grouped = { finance: [], reports: [], training: [], payslips: [] };
       (list || []).forEach((doc) => {
         const cat = String(doc.category || "").toLowerCase();
         if (grouped[cat]) {
@@ -510,6 +542,9 @@
         items.forEach((doc) => {
           const docId = esc(doc.id || "");
           const iconKind = docIconKind(doc);
+          const isPayslip =
+            String((doc && doc.document_type) || "").toLowerCase() === "payslip" ||
+            String((doc && doc.category) || "").toLowerCase() === "payslips";
           html += `
             <div class="row">
               <div class="row-main minw0">
@@ -523,7 +558,7 @@
                 <button type="button" class="btn btn-outline" data-file-url="${esc(doc.file_url)}" data-download-name="${esc(displayTitle(doc))}">
                   <span class="btn-label-desk">View / Download</span><span class="btn-label-mob"><span class="btn-mob-row1">Download</span><span class="btn-mob-row2" aria-live="polite"></span></span>
                 </button>
-                <button type="button" class="btn btn-outline" data-doc-id="${docId}">Delete</button>
+                ${isPayslip ? "" : `<button type="button" class="btn btn-outline" data-doc-id="${docId}">Delete</button>`}
               </div>
             </div>
           `;

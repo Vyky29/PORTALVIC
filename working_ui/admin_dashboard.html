@@ -12,6 +12,7 @@
   <script src="/portal/hr-contract-embed-html.js?v=20260521-embed"></script>
   <script src="/portal/admin-portal-day-ops.js?v=20260601-fb-stats"></script>
   <script src="/portal/admin-portal-documents.js?v=20260530-docs-presetsearch"></script>
+  <script src="/portal/admin-payslips.js?v=20260610-payslips"></script>
   <script src="/portal/admin-portal-pins.js?v=20260530-portal-pins-db"></script>
   <script src="/portal/admin-portal-activity.js?v=20260604-visit-activity"></script>
   <script src="/portal/admin-portal-achievements.js?v=20260604-ach-az-directory"></script>
@@ -228,6 +229,7 @@
       { id:'recruitment', label:'Recruitment' },
       { id:'interviews', label:'Interviews' },
       { id:'portal_documents', label:'Documents', hubLabel:'Documents' },
+      { id:'portal_payslips', label:'Payslips', hubLabel:'Payslips' },
       { id:'portal_docs_timesheet', label:'Timesheets' },
       { id:'portal_docs_expense', label:'Expenses' },
       { id:'portal_docs_portalpin', label:'Portal PINs' },
@@ -252,7 +254,7 @@
       { id:'g_operator', label:'Operator', children:['dashboard','operations_admin','operator'] },
       { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','c4k_sessions','scheduling','term_roster_edit','c4k_waitlist','__h:Participants','clients','c4k_reviews','c4k_reports','__h:Orders','orders_all','absents_refunds','__h:Communications','comms_ops'] },
       { id:'g_zoho', label:'H&R (ZohoPeople)', children:['staffhr','onboarding','staffhr_contracts','interviews'] },
-      { id:'g_supabase', label:'Documents', children:['portal_docs_timesheet','portal_docs_expense','portal_docs_portalpin','portal_docs_certificate','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid'] },
+      { id:'g_supabase', label:'Documents', children:['portal_payslips','portal_docs_timesheet','portal_docs_expense','portal_docs_portalpin','portal_docs_certificate','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid'] },
       { id:'g_xero', label:'Finance (Xero)', children:['reenrol_payments','invoices'] },
       { id:'g_settings_portal', label:'Settings & dashboards', children:['__h:This app','settings','logs','portal_nav_alerts','__h:Monitoring','portal_activity','staff_live_map','__h:Other portals','portal_nav_staff','portal_nav_lead','portal_nav_ceo','portal_nav_admin','__h:Session','portal_nav_logout'] }
     ];
@@ -303,6 +305,7 @@
       g_xero:'<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/>',
       g_supabase:'<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>',
       portal_documents:'<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>',
+      portal_payslips:'<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/>',
       portal_docs_timesheet:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="9 16 11 18 15 14"/>',
       portal_docs_expense:'<text x="12" y="17" text-anchor="middle" font-size="15" font-weight="800" fill="currentColor" stroke="none" font-family="system-ui,Segoe UI,sans-serif">£</text>',
       portal_docs_portalpin:'<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>',
@@ -15735,6 +15738,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         window.__portalDocsPresetFilter = 'all';
         return viewPortalDocuments();
       }
+      if(id==='portal_payslips') return viewPortalPayslips();
       if(id==='portal_docs_portalpin') return viewPortalPins();
       if(id.indexOf('portal_docs_')===0){
         window.__portalDocsPresetFilter = id.slice('portal_docs_'.length);
@@ -16364,6 +16368,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         onboarding:'New-hire onboarding pipeline — forms, tasks and worker progress.',
         staffhr_contracts:'Zero-hours employment contracts — create, send and track staff signatures.',
         portal_documents:'Timesheets, expense claims, onboarding uploads and files in Supabase storage.',
+        portal_payslips:'Upload monthly payslip PDFs for each worker — visible in My Documents on the staff app.',
         portal_activity:'Staff portal visits — login, pages, and active-tab time (UK London).',
         staff_live_map:'Live map during shift windows only: from 15 minutes before first session until 30 minutes after last session on days they are rostered.',
         policies:'Documents · sign-offs · compliance',
@@ -16505,6 +16510,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portalDashTileHtml('staffhr', '', 'staffhr', 'Staff & HR', 'Records, availability &amp; HR notes', false, 'sessions')+
         portalDashTileHtml('staffhr_contracts', '', 'staffhr_contracts', 'Contracts', 'Employment contracts &amp; signatures', false, 'reviews')+
         portalDashTileHtml('portal_documents', '', 'portal_documents', 'Documents', 'Timesheets, expenses &amp; uploads', false, 'scheduling')+
+        portalDashTileHtml('portal_payslips', '', 'portal_payslips', 'Payslips', 'Upload worker payslip PDFs', false, 'payments')+
         portalDashTileHtml('', '', 'invoices', 'Payroll report', 'Monthly PDF · preview &amp; send', false, 'payments', '', '', '/payroll-report.html')+
         portalDashTileHtml('', '', 'c4k_payments', 'Pay rates', 'Hourly rates by role &amp; scale', false, 'payments', '', '', '/pay-rates.html');
       function opsAdminGridHtml(row1, row2, gridCls, row2ExtraCls){
@@ -16597,6 +16603,25 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function viewPortalDocuments(){
       portalDocumentsConfigureOnce();
       return window.PortalDocuments ? window.PortalDocuments.viewHtml() : '<p class="page-intro">Documents module failed to load.</p>';
+    }
+    function portalPayslipsConfigureOnce(){
+      if(window.__portalPayslipsConfigured || !window.PortalPayslips) return;
+      window.__portalPayslipsConfigured = true;
+      window.PortalPayslips.configure({
+        esc: esc,
+        toast: portalAdminToast,
+        getClient: getSchedSupabaseClient
+      });
+    }
+    function viewPortalPayslips(){
+      portalPayslipsConfigureOnce();
+      return window.PortalPayslips ? window.PortalPayslips.viewHtml() : '<p class="page-intro">Payslips module failed to load.</p>';
+    }
+    function bindPortalPayslipsModule(){
+      portalPayslipsConfigureOnce();
+      if(window.PortalPayslips && typeof window.PortalPayslips.bindModule === 'function'){
+        window.PortalPayslips.bindModule();
+      }
     }
     function bindPortalDocumentsModule(){
       portalDocumentsConfigureOnce();
@@ -18876,7 +18901,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       root.querySelectorAll('[data-act]').forEach(function(b){
         b.addEventListener('click', function(){
           var v = b.getAttribute('data-act');
-          if(v==='dashboard'||v==='operations'||v==='operations_admin'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='c4k_registers'||v==='c4k_late_submissions'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='staffhr_contracts'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='scheduling'||v==='term_roster_edit'||v==='absents_refunds'||v==='portal_documents'||v==='portal_activity'||v==='participant_achievements'||v==='staff_live_map'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='interviews'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings'||v==='logs') setView(v);
+          if(v==='dashboard'||v==='operations'||v==='operations_admin'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='c4k_registers'||v==='c4k_late_submissions'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='staffhr_contracts'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='scheduling'||v==='term_roster_edit'||v==='absents_refunds'||v==='portal_documents'||v==='portal_payslips'||v==='portal_activity'||v==='participant_achievements'||v==='staff_live_map'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='interviews'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings'||v==='logs') setView(v);
           closeSidebarMob();
         });
       });
@@ -19140,6 +19165,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       if(id==='invoices') bindInvoicesModule();
       if(id==='portal_docs_portalpin') bindPortalPinsModule();
+      else if(id==='portal_payslips') bindPortalPayslipsModule();
       else if(id==='portal_documents' || id.indexOf('portal_docs_')===0) bindPortalDocumentsModule();
       if(id==='portal_activity') bindPortalActivityModule();
       if(id==='participant_achievements') bindParticipantAchievementsModule();
