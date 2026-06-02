@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260601-week-row-scroll" />
-  <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260602-weekend" />
+  <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260602-hours-edit" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260527-lead-log" />
   <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260601-docs-row8" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
@@ -29,7 +29,8 @@
   <script src="/portal/admin-logs.js?v=20260601-logs-merge"></script>
   <script src="/portal/portal-roster-rows-merge.js?v=20260601-term-slot"></script>
   <script src="/portal/admin-portal-term-slot.js?v=20260602-term-slot-copy"></script>
-  <script src="/portal/admin-roster-spreadsheet-reference.js?v=20260602-weekend"></script>
+  <script src="/portal/portal-staff-timetable-merge.js?v=20260602-hours-edit"></script>
+  <script src="/portal/admin-roster-spreadsheet-reference.js?v=20260602-hours-edit"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
   <title>clubSENsational · Operations + Operator workflow (merged)</title>
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
@@ -16966,7 +16967,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function portalSpreadsheetRefConfigureOnce(){
       if(window.__portalSpreadsheetRefConfigured || !window.PortalSpreadsheetReference) return;
       window.__portalSpreadsheetRefConfigured = true;
-      window.PortalSpreadsheetReference.configure({ esc: esc });
+      window.PortalSpreadsheetReference.configure({
+        esc: esc,
+        toast: portalAdminToast,
+        getClient: getSchedSupabaseClient
+      });
     }
     function viewRosterSpreadsheets(){
       portalSpreadsheetRefConfigureOnce();
@@ -17252,6 +17257,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       refreshKpisFromDemo();
       var k = MOCK.kpi;
       return '<h1 class="page-title">Settings &amp; demo tools</h1><p class="page-intro">Session, connections, and demo snapshot controls for this admin build.</p>'+
+        '<div class="card card-pad" style="margin-bottom:14px;border-color:#c5d9ef;background:linear-gradient(180deg,#f8fbff,#eef5fc)">'+
+        '<h3 style="margin:0 0 8px;font-size:14px">Admin portal guide</h3>'+
+        '<p class="muted" style="margin:0 0 12px;max-width:42rem;overflow-wrap:break-word">How this app is organised, what each menu area does, and how it differs from the staff phone dashboard — with layout mockups (no screenshots required).</p>'+
+        '<a class="btn btn--pri btn--sm" href="/admin_portal_guide.html" target="_blank" rel="noopener">Open admin portal guide</a></div>'+
         '<div class="grid-2"><div class="card card-pad"><h3 style="margin:0 0 10px;font-size:14px">Connections</h3><p class="muted" style="margin:0 0 8px">Admin UI: <code>/admin_dashboard.html</code> on the Vercel deploy (same origin as <code>/portal/</code>). Login sets <code>PORTAL_ADMIN_DASHBOARD_URL</code> in <code>login.html</code> / <code>auth-handler.js</code>.</p><p class="muted" style="margin:0">Supabase: active after sign-in; this card does not probe live connection state.</p></div>'+
         '<div class="card card-pad"><h3 style="margin:0 0 10px;font-size:14px">Operational snapshot (demo)</h3><p class="muted" style="margin:0">Open incidents: <strong style="color:var(--ink)">'+k.incidentsOpen+'</strong></p><p class="muted" style="margin:8px 0 0">Absents / credits pending: <strong style="color:var(--ink)">'+k.cancellationsOpen+'</strong></p><p class="muted" style="margin:8px 0 0">Reports in flight: <strong style="color:var(--ink)">'+k.reportsPending+'</strong> · Onboarding tasks: <strong style="color:var(--ink)">'+k.onboardingPending+'</strong></p><p class="muted" style="margin:8px 0 0">Billable sessions in model: <strong style="color:var(--ink)">'+MOCK.sessionEconomics.billableSessionCount+'</strong></p></div></div>'+
         '<div class="card" style="margin-top:14px"><div class="card-pad"><div class="toolbar"><button type="button" class="btn btn--sec" data-open-report>Report generator</button> <button type="button" class="btn btn--ghost" data-portal-logout>Log out</button></div></div></div>';

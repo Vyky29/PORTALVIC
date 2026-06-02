@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <script src="/portal-static-bootstrap.js?v=20260611-admin-guide"></script>
+  <script src="/portal-shared-js/portal-hub-auth.js?v=20260611-admin-guide"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Admin portal guide</title>
+  <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
+  <link rel="stylesheet" href="/portal-shared-js/portal_page_logo.css?v=20260517-portal-logos" />
+  <link rel="stylesheet" href="/portal-shared-js/portal_page_logo_themes.css?v=20260517-portal-logos" />
+  <style>
+    :root{
+      --navy:#0a3d62;
+      --blue:#2d84b3;
+      --gold:#f4b740;
+      --ink:#1d2b3a;
+      --muted:#5f7185;
+      --line:#d9e4ef;
+      --panel:#fff;
+      --shadow:0 20px 50px rgba(10,61,98,0.10);
+      --app-bg:linear-gradient(180deg,#f4f8fc 0%,#eaf1f8 100%);
+      --sidebar:#0b2a5b;
+      --sidebar-soft:#163a6b;
+      --ok:#15803d;
+      --warn:#b45309;
+      --danger:#b91c1c;
+    }
+    *,*::before,*::after{box-sizing:border-box}
+    body{
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,"Open Sans",Arial,sans-serif;
+      background:var(--app-bg);
+      color:var(--ink);
+      margin:0;
+      min-height:100vh;
+      padding:18px;
+    }
+    .ag-shell{max-width:920px;margin:0 auto;width:100%;min-width:0}
+    .ag-title{margin:0 0 6px;text-align:center;font-size:clamp(26px,4vw,34px);font-weight:800;letter-spacing:-0.03em;color:var(--navy)}
+    .ag-sub{text-align:center;color:var(--muted);margin:0 0 18px;font-size:14px;line-height:1.5}
+    .ag-card{
+      border:1px solid var(--line);
+      border-radius:22px;
+      box-shadow:var(--shadow);
+      background:rgba(255,255,255,0.96);
+      padding:20px 18px;
+      min-width:0;
+      margin-bottom:16px;
+    }
+    .ag-card p,.ag-card li{line-height:1.55;font-size:15px;overflow-wrap:break-word}
+    .ag-card>p{color:var(--muted)}
+    .ag-card h2{margin:0 0 12px;font-size:19px;color:var(--navy);display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+    .ag-card h3{margin:16px 0 8px;font-size:15px;color:var(--navy)}
+    .ag-ico{width:22px;height:22px;flex:none;color:var(--blue)}
+    .ag-card ul,.ag-card ol{margin:8px 0 0;padding-left:20px}
+    .ag-card li{margin-bottom:6px}
+    .ag-note{
+      margin:14px 0 0;
+      padding:12px 14px;
+      border-radius:12px;
+      background:#f0f7ff;
+      border:1px solid #c5d9ef;
+      font-size:14px;
+    }
+    .ag-toolbar{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px;justify-content:center}
+    .ag-btn{
+      border:0;border-radius:10px;padding:12px 18px;font-weight:700;font-size:15px;
+      cursor:pointer;text-decoration:none;display:inline-block;text-align:center;min-width:0;
+    }
+    .ag-btn-main{background:#0b2a5b;color:#fff}
+    .ag-btn-ghost{background:#e8f1fa;color:#0b2a5b;border:1px solid #b0c7e2}
+    .ag-cap{margin:9px 6px 0;font-size:12.5px;color:var(--muted);text-align:center;line-height:1.45}
+
+    /* Desktop admin mock */
+    .ag-mock{
+      margin:14px auto 0;
+      max-width:100%;
+      border-radius:16px;
+      border:1px solid var(--line);
+      overflow:hidden;
+      box-shadow:0 18px 42px rgba(10,61,98,.14);
+      background:#eef4fa;
+    }
+    .ag-mock__top{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      background:#dde7f1;
+      font-size:11px;
+      color:var(--muted);
+    }
+    .ag-mock__dot{width:8px;height:8px;border-radius:50%;background:#c5d3e0}
+    .ag-mock__body{display:flex;min-height:220px;min-width:0}
+    .ag-mock__side{
+      width:118px;
+      flex:none;
+      background:var(--sidebar);
+      color:#dce8f5;
+      padding:10px 8px;
+      font-size:9.5px;
+      line-height:1.35;
+    }
+    .ag-mock__brand{
+      font-weight:800;
+      font-size:10px;
+      margin-bottom:10px;
+      color:#fff;
+      overflow-wrap:break-word;
+    }
+    .ag-mock__navitem{
+      padding:6px 7px;
+      border-radius:8px;
+      margin-bottom:4px;
+      overflow-wrap:break-word;
+    }
+    .ag-mock__navitem--on{background:var(--sidebar-soft);color:#fff;font-weight:700}
+    .ag-mock__navitem--muted{opacity:.65}
+    .ag-mock__main{flex:1;min-width:0;padding:12px 14px;background:linear-gradient(180deg,#f8fbfe,#eef4fa)}
+    .ag-mock__bar{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      margin-bottom:10px;
+      flex-wrap:wrap;
+    }
+    .ag-mock__search{
+      flex:1;
+      min-width:0;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:999px;
+      padding:6px 12px;
+      font-size:10px;
+      color:var(--muted);
+    }
+    .ag-mock__pill{
+      font-size:9px;
+      font-weight:800;
+      padding:3px 8px;
+      border-radius:999px;
+      background:#fff;
+      border:1px solid var(--line);
+      color:var(--navy);
+      white-space:nowrap;
+    }
+    .ag-mock__h{font-size:13px;font-weight:800;color:var(--navy);margin:0 0 6px;overflow-wrap:break-word}
+    .ag-mock__p{font-size:10px;color:var(--muted);margin:0 0 10px;line-height:1.4}
+    .ag-kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:10px}
+    .ag-kpi{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px;min-width:0}
+    .ag-kpi b{display:block;font-size:14px;color:var(--navy)}
+    .ag-kpi span{font-size:9px;color:var(--muted)}
+    .ag-table{width:100%;border-collapse:collapse;font-size:9px;background:#fff;border-radius:10px;overflow:hidden}
+    .ag-table th,.ag-table td{padding:5px 6px;border-bottom:1px solid var(--line);text-align:left;min-width:0;overflow-wrap:break-word}
+    .ag-table th{background:#f0f6fc;color:var(--navy);font-weight:800}
+    .ag-tag{display:inline-block;padding:2px 7px;border-radius:999px;font-size:8.5px;font-weight:800}
+    .ag-tag--ok{background:#e7f6ee;color:var(--ok)}
+    .ag-tag--warn{background:#fff1e3;color:var(--warn)}
+    .ag-tag--late{background:#fef2f2;color:var(--danger)}
+    .ag-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    @media (max-width:560px){.ag-grid-2{grid-template-columns:1fr}.ag-mock__side{width:92px}}
+    .ag-flow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:10px 0}
+    .ag-flow__step{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:8px 10px;
+      font-size:11px;
+      font-weight:700;
+      color:var(--navy);
+      min-width:0;
+      overflow-wrap:break-word;
+    }
+    .ag-flow__arr{color:var(--muted);font-size:14px}
+  </style>
+</head>
+<body>
+  <div class="ag-shell">
+    <div id="portalPageLogoHost" style="text-align:center;margin-bottom:8px"></div>
+    <h1 class="ag-title">Admin portal guide</h1>
+    <p class="ag-sub">How the operations admin app is organised, what each area does today, and how it connects to staff and CEO portals.</p>
+
+    <article class="ag-card">
+      <h2>
+        <svg class="ag-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M9 22V12h6v10"/></svg>
+        What this app is
+      </h2>
+      <p><strong>Admin dashboard</strong> (<code>admin_dashboard.html</code>) is the control room for ops, managers, and CEOs. It runs in the browser (desktop or tablet) on the same Vercel origin as staff and lead dashboards.</p>
+      <ul>
+        <li><strong>Left sidebar</strong> — grouped navigation (Operator, Services &amp; participants, HR, Documents, Finance, Settings).</li>
+        <li><strong>Top bar</strong> — global search, date, alerts, profile (opens Settings).</li>
+        <li><strong>Main workspace</strong> — the page you picked from the menu; content swaps without leaving the app.</li>
+        <li><strong>Supabase</strong> — live data (roster rows, feedback, documents, DMs, timetable overrides) after you sign in with your club account.</li>
+      </ul>
+      <p class="ag-note"><strong>Not the same as the staff app.</strong> Instructors use <em>Staff dashboard</em> for their own sessions and feedback. Admin sees everyone’s data, scheduling tools, and office workflows. CEOs can switch portals from Settings (Staff / Lead / Admin).</p>
+    </article>
+
+    <article class="ag-card">
+      <h2>
+        <svg class="ag-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Layout at a glance
+      </h2>
+      <div class="ag-mock" role="img" aria-label="Mock admin layout: sidebar, search bar, KPI cards">
+        <div class="ag-mock__top"><span class="ag-mock__dot"></span><span class="ag-mock__dot"></span><span class="ag-mock__dot"></span> clubSENsational · Operations Control</div>
+        <div class="ag-mock__body">
+          <div class="ag-mock__side">
+            <div class="ag-mock__brand">clubSENsational</div>
+            <div class="ag-mock__navitem ag-mock__navitem--on">Dashboard</div>
+            <div class="ag-mock__navitem ag-mock__navitem--muted">Operator</div>
+            <div class="ag-mock__navitem ag-mock__navitem--muted">Sessions hub</div>
+            <div class="ag-mock__navitem ag-mock__navitem--muted">Participants</div>
+            <div class="ag-mock__navitem ag-mock__navitem--muted">Schedule &amp; covers</div>
+            <div class="ag-mock__navitem ag-mock__navitem--muted">Spreadsheet ref.</div>
+            <div class="ag-mock__navitem ag-mock__navitem--muted">Settings</div>
+          </div>
+          <div class="ag-mock__main">
+            <div class="ag-mock__bar">
+              <div class="ag-mock__search">Search participants, staff, sessions…</div>
+              <span class="ag-mock__pill">Mon 2 Jun</span>
+              <span class="ag-mock__pill">Alerts</span>
+            </div>
+            <p class="ag-mock__h">Day operations</p>
+            <p class="ag-mock__p">KPIs and quick actions for today’s running sheet.</p>
+            <div class="ag-kpi-row">
+              <div class="ag-kpi"><span>Open actions</span><b>12</b></div>
+              <div class="ag-kpi"><span>Late feedback</span><b style="color:var(--warn)">4</b></div>
+              <div class="ag-kpi"><span>Covers</span><b>2</b></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="ag-cap">Your real sidebar lists every section; tap the logo to expand groups on mobile.</p>
+    </article>
+
+    <article class="ag-card">
+      <h2>
+        <svg class="ag-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Operator &amp; day operations
+      </h2>
+      <p><strong>Dashboard</strong> and <strong>Operator</strong> are your morning control screens: what needs a human today (late feedback, absences, covers, comms).</p>
+      <ul>
+        <li><strong>Day operations hub</strong> — cards for internal chat, CEO chat (if you are Victor/Raúl/Javi), staff map, and cross-links into sessions.</li>
+        <li><strong>Operations admin</strong> — deeper ops board (incidents, suggestions, mock KPIs where demo data is still wired).</li>
+        <li><strong>Portal activity</strong> — who opened which portal and when (audit-style visit log).</li>
+        <li><strong>Staff live map</strong> — last known location ping from staff devices (when enabled).</li>
+      </ul>
+      <div class="ag-flow">
+        <span class="ag-flow__step">See KPI / alert</span>
+        <span class="ag-flow__arr">→</span>
+        <span class="ag-flow__step">Open Sessions hub or participant</span>
+        <span class="ag-flow__arr">→</span>
+        <span class="ag-flow__step">Fix roster / feedback / comms</span>
+      </div>
+    </article>
+
+    <article class="ag-card">
+      <h2>
+        <svg class="ag-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Services &amp; participants (CFK)
+      </h2>
+      <h3>Sessions hub</h3>
+      <p>Calendar-style view of <strong>who is scheduled where</strong>, session feedback status, and filters by date, venue, or instructor. Use it to chase late feedback or check a day’s running sheet.</p>
+      <div class="ag-mock">
+        <div class="ag-mock__body" style="min-height:0">
+          <div class="ag-mock__main" style="width:100%">
+            <p class="ag-mock__h">Sessions · Tuesday 2 Jun</p>
+            <table class="ag-table">
+              <thead><tr><th>Time</th><th>Participant</th><th>Instructor</th><th>Feedback</th></tr></thead>
+              <tbody>
+                <tr><td>4:30</td><td>Cayra A.</td><td>Ayman</td><td><span class="ag-tag ag-tag--ok">Done</span></td></tr>
+                <tr><td>5:00</td><td>Sam P.</td><td>Roberto</td><td><span class="ag-tag ag-tag--warn">Pending</span></td></tr>
+                <tr><td>5:30</td><td>Jordan K.</td><td>Dan</td><td><span class="ag-tag ag-tag--late">Late</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <h3>Participants directory</h3>
+      <p>Search any child, open their <strong>participant workspace</strong> (booking, medical, assessments, session feedback history, documents). This is the admin view of one family — not “my clients” on the staff phone.</p>
+
+      <h3>Schedule &amp; covers · Edit term slot</h3>
+      <p>Change who teaches a recurring slot, mark covers, and sync with <code>portal_roster_rows</code> in Supabase. Needs <strong>admin or CEO</strong> role for saves (RLS).</p>
+
+      <h3>Spreadsheet reference</h3>
+      <p>Mirror of the Excel rosters: <strong>group sessions</strong> grid and <strong>staff hours</strong> (from 1 Jun 2026). Staff-hours cells can be edited and saved — overrides flow to dashboards via <code>portal_staff_timetable_cells</code>.</p>
+
+      <h3>Reviews, reports, orders, comms</h3>
+      <ul>
+        <li><strong>Reviews / reports</strong> — oversight of submitted session feedback and lead reports.</li>
+        <li><strong>Orders &amp; absents/refunds</strong> — billing-related queues (with demo blocks where noted).</li>
+        <li><strong>Communications ops</strong> — outbound comms tied to operations (templates vary by build).</li>
+      </ul>
+    </article>
+
+    <article class="ag-card">
+      <h2>
+        <svg class="ag-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        Staff &amp; HR · Documents · Finance
+      </h2>
+      <div class="ag-grid-2">
+        <div>
+          <h3 style="margin-top:0">Staff &amp; HR</h3>
+          <ul>
+            <li>Roster, shifts, contracts embed.</li>
+            <li>Onboarding pipeline and interviews list.</li>
+            <li>Quick links to Zoho-style HR screens where integrated.</li>
+          </ul>
+        </div>
+        <div>
+          <h3 style="margin-top:0">Documents (Supabase)</h3>
+          <ul>
+            <li><strong>Payslips</strong> — upload for staff; workers see theirs under My documents.</li>
+            <li>Timesheets, expenses, PINs, certificates, passports, checklists, first aid.</li>
+          </ul>
+        </div>
+      </div>
+      <h3>Finance (Xero)</h3>
+      <p>Re-enrolment payments and invoices views — aligned with club billing spreadsheets where live data is connected.</p>
+    </article>
+
+    <article class="ag-card">
+      <h2>
+        <svg class="ag-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        Settings &amp; other portals
+      </h2>
+      <p><strong>Settings &amp; dashboards</strong> (sidebar) holds preferences, activity log, alerts inbox, and links to:</p>
+      <ul>
+        <li><strong>Staff dashboard</strong> — instructor day view (your own sessions only).</li>
+        <li><strong>Lead dashboard</strong> — programme lead tools.</li>
+        <li><strong>CEO dashboard</strong> — executive summaries.</li>
+        <li><strong>Operations admin</strong> — this app.</li>
+      </ul>
+      <p class="ag-note"><strong>CEO / exec users:</strong> opening Staff dashboard shows <em>your</em> identity only — not another instructor’s participant list. If you have no pool sessions, My participants stays empty; use Admin for company-wide views.</p>
+      <p>Staff-facing help lives in <a href="portal_guide.html">Portal guide</a> (mobile-first, colours, feedback, announcements).</p>
+    </article>
+
+    <article class="ag-card">
+      <h2>
+        <svg class="ag-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        Tips &amp; permissions
+      </h2>
+      <ul>
+        <li><strong>Search</strong> — participants and staff from the top bar; some views add their own filters.</li>
+        <li><strong>Alerts bell</strong> — portal notices; may overlap with day-ops reminders.</li>
+        <li><strong>Saving roster / schedule</strong> — requires <code>app_role</code> admin or ceo in Supabase (or known username overrides).</li>
+        <li><strong>Demo labels</strong> — some KPI cards still say “demo”; live session rows come from imported roster + Supabase merges.</li>
+        <li><strong>Logout</strong> — Settings or sidebar “Log out”; clears Supabase session on this origin.</li>
+      </ul>
+      <div class="ag-toolbar">
+        <a class="ag-btn ag-btn-main" id="agBackAdmin" href="admin_dashboard.html">Back to admin</a>
+        <button type="button" class="ag-btn ag-btn-ghost" id="agBackHistory">Go back</button>
+      </div>
+    </article>
+  </div>
+  <script>
+    (function () {
+      var histBtn = document.getElementById("agBackHistory");
+      if (histBtn) {
+        histBtn.addEventListener("click", function () {
+          if (history.length > 1) history.back();
+          else window.location.href = "admin_dashboard.html";
+        });
+      }
+      if (typeof portalRenderPageLogo === "function") portalRenderPageLogo("portalPageLogoHost");
+    })();
+  </script>
+</body>
+</html>

@@ -2092,26 +2092,6 @@
     "session_date": "2026-05-22"
   },
   {
-    "client_name": "Jordan",
-    "day": "Sunday",
-    "instructors": "TEFLON",
-    "service": "Aquatic Activity",
-    "area": "Teaching Pool",
-    "time_slot": "10 to 11",
-    "venue": "Northolt",
-    "session_date": "2026-05-25"
-  },
-  {
-    "client_name": "Sam",
-    "day": "Tuesday",
-    "instructors": "TEFLON",
-    "service": "Multi-Activity",
-    "area": "Hub Room",
-    "time_slot": "2 to 3",
-    "venue": "SwimFarm",
-    "session_date": "2026-05-27"
-  },
-  {
     "client_name": "Timi",
     "day": "Monday",
     "instructors": "RAUL",
@@ -2119,16 +2099,6 @@
     "area": "Hub Room",
     "time_slot": "1 to 3",
     "venue": "SwimFarm",
-    "session_date": "2026-06-01"
-  },
-  {
-    "client_name": "Mari Trini",
-    "day": "Monday",
-    "instructors": "TEFLON",
-    "service": "Aquatic Activity",
-    "area": "Teaching Pool",
-    "time_slot": "10 to 11",
-    "venue": "Acton",
     "session_date": "2026-06-01"
   },
   {
@@ -2348,16 +2318,6 @@
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "12.30 to 3",
-    "venue": "SwimFarm",
-    "session_date": "2026-06-02"
-  },
-  {
-    "client_name": "Sam",
-    "day": "Tuesday",
-    "instructors": "TEFLON",
-    "service": "Multi-Activity",
-    "area": "Hub Room",
-    "time_slot": "2 to 3",
     "venue": "SwimFarm",
     "session_date": "2026-06-02"
   },
@@ -3212,16 +3172,6 @@
     "session_date": "2026-06-07"
   },
   {
-    "client_name": "Jordan",
-    "day": "Sunday",
-    "instructors": "TEFLON",
-    "service": "Aquatic Activity",
-    "area": "Teaching Pool",
-    "time_slot": "10 to 11",
-    "venue": "Northolt",
-    "session_date": "2026-06-07"
-  },
-  {
     "client_name": "Adam Ab",
     "day": "Sunday",
     "instructors": "JOHN",
@@ -3682,16 +3632,6 @@
     "session_date": "2026-06-08"
   },
   {
-    "client_name": "Mari Trini",
-    "day": "Monday",
-    "instructors": "TEFLON",
-    "service": "Aquatic Activity",
-    "area": "Teaching Pool",
-    "time_slot": "10 to 11",
-    "venue": "Acton",
-    "session_date": "2026-06-08"
-  },
-  {
     "client_name": "ACAT",
     "day": "Monday",
     "instructors": "ROBERTO",
@@ -3908,16 +3848,6 @@
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "12.30 to 3",
-    "venue": "SwimFarm",
-    "session_date": "2026-06-09"
-  },
-  {
-    "client_name": "Sam",
-    "day": "Tuesday",
-    "instructors": "TEFLON",
-    "service": "Multi-Activity",
-    "area": "Hub Room",
-    "time_slot": "2 to 3",
     "venue": "SwimFarm",
     "session_date": "2026-06-09"
   },
@@ -4772,16 +4702,6 @@
     "session_date": "2026-06-14"
   },
   {
-    "client_name": "Jordan",
-    "day": "Sunday",
-    "instructors": "TEFLON",
-    "service": "Aquatic Activity",
-    "area": "Teaching Pool",
-    "time_slot": "10 to 11",
-    "venue": "Northolt",
-    "session_date": "2026-06-14"
-  },
-  {
     "client_name": "Adam Ab",
     "day": "Sunday",
     "instructors": "BERTA",
@@ -5242,16 +5162,6 @@
     "session_date": "2026-06-15"
   },
   {
-    "client_name": "Mari Trini",
-    "day": "Monday",
-    "instructors": "TEFLON",
-    "service": "Aquatic Activity",
-    "area": "Teaching Pool",
-    "time_slot": "10 to 11",
-    "venue": "Acton",
-    "session_date": "2026-06-15"
-  },
-  {
     "client_name": "ACAT",
     "day": "Monday",
     "instructors": "ROBERTO",
@@ -5468,16 +5378,6 @@
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "12.30 to 3",
-    "venue": "SwimFarm",
-    "session_date": "2026-06-16"
-  },
-  {
-    "client_name": "Sam",
-    "day": "Tuesday",
-    "instructors": "TEFLON",
-    "service": "Multi-Activity",
-    "area": "Hub Room",
-    "time_slot": "2 to 3",
     "venue": "SwimFarm",
     "session_date": "2026-06-16"
   },
@@ -6332,16 +6232,6 @@
     "session_date": "2026-06-21"
   },
   {
-    "client_name": "Jordan",
-    "day": "Sunday",
-    "instructors": "TEFLON",
-    "service": "Aquatic Activity",
-    "area": "Teaching Pool",
-    "time_slot": "10 to 11",
-    "venue": "Northolt",
-    "session_date": "2026-06-21"
-  },
-  {
     "client_name": "Adam Ab",
     "day": "Sunday",
     "instructors": "JOHN",
@@ -6802,16 +6692,6 @@
     "session_date": "2026-06-22"
   },
   {
-    "client_name": "Mari Trini",
-    "day": "Monday",
-    "instructors": "TEFLON",
-    "service": "Aquatic Activity",
-    "area": "Teaching Pool",
-    "time_slot": "10 to 11",
-    "venue": "Acton",
-    "session_date": "2026-06-22"
-  },
-  {
     "client_name": "ACAT",
     "day": "Monday",
     "instructors": "ROBERTO",
@@ -7028,16 +6908,6 @@
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "12.30 to 3",
-    "venue": "SwimFarm",
-    "session_date": "2026-06-23"
-  },
-  {
-    "client_name": "Sam",
-    "day": "Tuesday",
-    "instructors": "TEFLON",
-    "service": "Multi-Activity",
-    "area": "Hub Room",
-    "time_slot": "2 to 3",
     "venue": "SwimFarm",
     "session_date": "2026-06-23"
   },
@@ -7892,16 +7762,6 @@
     "session_date": "2026-06-28"
   },
   {
-    "client_name": "Jordan",
-    "day": "Sunday",
-    "instructors": "TEFLON",
-    "service": "Aquatic Activity",
-    "area": "Teaching Pool",
-    "time_slot": "10 to 11",
-    "venue": "Northolt",
-    "session_date": "2026-06-28"
-  },
-  {
     "client_name": "Adam Ab",
     "day": "Sunday",
     "instructors": "JOHN",
@@ -8362,16 +8222,6 @@
     "session_date": "2026-06-29"
   },
   {
-    "client_name": "Mari Trini",
-    "day": "Monday",
-    "instructors": "TEFLON",
-    "service": "Aquatic Activity",
-    "area": "Teaching Pool",
-    "time_slot": "10 to 11",
-    "venue": "Acton",
-    "session_date": "2026-06-29"
-  },
-  {
     "client_name": "ACAT",
     "day": "Monday",
     "instructors": "ROBERTO",
@@ -8588,16 +8438,6 @@
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "12.30 to 3",
-    "venue": "SwimFarm",
-    "session_date": "2026-06-30"
-  },
-  {
-    "client_name": "Sam",
-    "day": "Tuesday",
-    "instructors": "TEFLON",
-    "service": "Multi-Activity",
-    "area": "Hub Room",
-    "time_slot": "2 to 3",
     "venue": "SwimFarm",
     "session_date": "2026-06-30"
   },
@@ -9452,16 +9292,6 @@
     "session_date": "2026-07-05"
   },
   {
-    "client_name": "Jordan",
-    "day": "Sunday",
-    "instructors": "TEFLON",
-    "service": "Aquatic Activity",
-    "area": "Teaching Pool",
-    "time_slot": "10 to 11",
-    "venue": "Northolt",
-    "session_date": "2026-07-05"
-  },
-  {
     "client_name": "Adam Ab",
     "day": "Sunday",
     "instructors": "JOHN",
@@ -9922,16 +9752,6 @@
     "session_date": "2026-07-06"
   },
   {
-    "client_name": "Mari Trini",
-    "day": "Monday",
-    "instructors": "TEFLON",
-    "service": "Aquatic Activity",
-    "area": "Teaching Pool",
-    "time_slot": "10 to 11",
-    "venue": "Acton",
-    "session_date": "2026-07-06"
-  },
-  {
     "client_name": "ACAT",
     "day": "Monday",
     "instructors": "ROBERTO",
@@ -10148,16 +9968,6 @@
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "12.30 to 3",
-    "venue": "SwimFarm",
-    "session_date": "2026-07-07"
-  },
-  {
-    "client_name": "Sam",
-    "day": "Tuesday",
-    "instructors": "TEFLON",
-    "service": "Multi-Activity",
-    "area": "Hub Room",
-    "time_slot": "2 to 3",
     "venue": "SwimFarm",
     "session_date": "2026-07-07"
   },
@@ -11012,16 +10822,6 @@
     "session_date": "2026-07-12"
   },
   {
-    "client_name": "Jordan",
-    "day": "Sunday",
-    "instructors": "TEFLON",
-    "service": "Aquatic Activity",
-    "area": "Teaching Pool",
-    "time_slot": "10 to 11",
-    "venue": "Northolt",
-    "session_date": "2026-07-12"
-  },
-  {
     "client_name": "Adam Ab",
     "day": "Sunday",
     "instructors": "BERTA",
@@ -11479,16 +11279,6 @@
     "area": "Hub Room",
     "time_slot": "1 to 3",
     "venue": "SwimFarm",
-    "session_date": "2026-07-13"
-  },
-  {
-    "client_name": "Mari Trini",
-    "day": "Monday",
-    "instructors": "TEFLON",
-    "service": "Aquatic Activity",
-    "area": "Teaching Pool",
-    "time_slot": "10 to 11",
-    "venue": "Acton",
     "session_date": "2026-07-13"
   },
   {
@@ -11708,16 +11498,6 @@
     "service": "Day Centre",
     "area": "Hub Room",
     "time_slot": "12.30 to 3",
-    "venue": "SwimFarm",
-    "session_date": "2026-07-14"
-  },
-  {
-    "client_name": "Sam",
-    "day": "Tuesday",
-    "instructors": "TEFLON",
-    "service": "Multi-Activity",
-    "area": "Hub Room",
-    "time_slot": "2 to 3",
     "venue": "SwimFarm",
     "session_date": "2026-07-14"
   },

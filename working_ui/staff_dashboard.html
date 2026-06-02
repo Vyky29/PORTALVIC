@@ -764,7 +764,7 @@
   <script src="/portal/clients_info_embed.js?v=20260605-sambhav"></script>
   <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260601-luliya-mic"></script>
-  <script src="/portal/staff_roster_resolve.js?v=20260601-luliya-roster-guard"></script>
+  <script src="/portal/staff_roster_resolve.js?v=20260611-javi-roster-guard"></script>
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260603-achievements-shared" />
   <script src="/portal/portal_participant_achievements.js?v=20260610-pwa-black-fix"></script>
   <script src="/portal/portal_guide_menu.js?v=20260609-qm-top"></script>
@@ -12617,6 +12617,16 @@
               portalStaffFinishIdentityUi(profileForRoster, p, session);
               return;
             }
+          }
+          __spreadsheetBoot = boot;
+          STAFF_DASHBOARD_ID = staffId;
+          try { window.STAFF_DASHBOARD_ID = staffId; } catch (_) {}
+          sessionsModel = [];
+          clientNotesById = boot.clientNotesById || {};
+          _staffRosterHydratedOk = true;
+          dashboardData.week = buildWeekRows(staffId);
+          if (typeof window.portalApplyTermCalendarForStaff === "function") {
+            window.portalApplyTermCalendarForStaff(staffId);
           }
           portalStaffFinishIdentityUi(profileForRoster, p, session);
           return;

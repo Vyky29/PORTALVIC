@@ -1,6 +1,5 @@
 date,weekday,client,service,time_slot,instructor,venue,notes
 2026-06-22,Monday,Timi,Day Centre,1 to 3,RAUL,SwimFarm,Hub Room
-2026-06-22,Monday,Mari Trini,Aquatic Activity,10 to 11,TEFLON,Acton,Teaching Pool
 2026-06-22,Monday,ACAT,Day Centre,11 to 12,ROBERTO,SwimFarm,Hub Room
 2026-06-22,Monday,Ikram,Day Centre,11 to 4,"LULIA, MICHELLE",SwimFarm,Hub Room
 2026-06-22,Monday,Fadi,Day Centre,12.30 to 3,"ROBERTO, VICTOR",SwimFarm,Hub Room
@@ -23,7 +22,6 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-06-22,Monday,Yamik,Aquatic Activity,6 to 6.30,ROBERTO,Northolt,Teaching Pool
 2026-06-23,Tuesday,Ikram,Day Centre,11 to 4,"LULIA, MICHELLE",SwimFarm,Hub Room
 2026-06-23,Tuesday,Fadi,Day Centre,12.30 to 3,"ROBERTO, VICTOR",SwimFarm,Hub Room
-2026-06-23,Tuesday,Sam,Multi-Activity,2 to 3,TEFLON,SwimFarm,Hub Room
 2026-06-23,Tuesday,Ayman,Aquatic Activity,4 to 4.30,JAVIER,Acton,Lane (DE)
 2026-06-23,Tuesday,CLOSED,Aquatic Activity,4 to 4.30,ANGEL,Acton,Teaching Pool
 2026-06-23,Tuesday,CLOSED,Aquatic Activity,4 to 4.30,AURORA,Acton,Teaching Pool
@@ -112,7 +110,6 @@ date,weekday,client,service,time_slot,instructor,venue,notes
 2026-06-28,Sunday,Rayyan Fi,Multi-Activity,1.15 to 2,GIUSEPPE,SwimFarm,Hub Room
 2026-06-28,Sunday,Eiji,Climbing Activity,10 to 11,ALEX,Westway,Wall
 2026-06-28,Sunday,Hazem,Climbing Activity,10 to 11,CARLOS,Westway,Wall
-2026-06-28,Sunday,Jordan,Aquatic Activity,10 to 11,TEFLON,Northolt,Teaching Pool
 2026-06-28,Sunday,Adam Ab,Multi-Activity,10.15 to 11,JOHN,SwimFarm,Hub Room
 2026-06-28,Sunday,Jack S,Aquatic Activity,10.15 to 11,ROBERTO,SwimFarm,Teaching Pool
 2026-06-28,Sunday,Jack S,Multi-Activity,10.15 to 11,ROBERTO,SwimFarm,Big Pool

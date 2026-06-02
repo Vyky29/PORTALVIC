@@ -27,6 +27,29 @@ SESSION_WEEK_CSV = DB / "roster_weeks" / "summer-term-2-week-2026-06-01_2026-06-
 TERM_BREAK_FROM = "2026-05-23"
 TERM_BREAK_TO = "2026-05-31"
 TERM_CLOSED = {"2026-05-04"}
+HOURS_FROM = "2026-06-01"
+
+
+def is_pool_hours_row(rec: dict) -> bool:
+    """Staff Timetable pool columns only (exclude day-centre 11–4 rows)."""
+    tr = norm(rec.get("time_range", "")).replace(":", ".")
+    if not tr:
+        raw = norm(rec.get("raw_assignment", ""))
+        m = re.search(r"(\d[\d\.:]*)\s*-\s*(\d)", raw)
+        tr = m.group(1) if m else ""
+    if re.match(r"^(4|3\.30|3\.30)", tr):
+        return True
+    if re.match(r"^(9|10)\b", tr):
+        return True
+    return False
+
+
+def hour_cell(text: str, tone: str, date: str, day: str, col_key: str) -> dict:
+    return {
+        "text": text,
+        "tone": tone,
+        "editKey": f"{date}|{day}|{col_key}",
+    }
 
 
 def norm(s: str) -> str:
@@ -176,19 +199,17 @@ def build_saturday_hours_sheet(recs: list[dict]) -> dict:
         r
         for r in recs
         if r.get("date")
-        and "2026-04-13" <= r["date"] <= "2026-07-17"
+        and HOURS_FROM <= r["date"] <= "2026-07-17"
         and not (TERM_BREAK_FROM <= r["date"] <= TERM_BREAK_TO)
+        and is_pool_hours_row(r)
     ]
-    early_dates = sorted(
-        {r["date"] for r in term_recs if r["date"] < "2026-06-01"},
-    )
-    late_dates = sorted(
-        {r["date"] for r in term_recs if r["date"] >= "2026-06-01"},
-    )
+    late_dates = sorted({r["date"] for r in term_recs})
 
     def rows_for(dates: list[str], cols: int) -> list[dict]:
         out = []
         for d in dates:
+            day = "Saturday"
+            cells = []
             vals = [
                 norm(r.get("raw_assignment", ""))
                 for r in sorted(
@@ -196,10 +217,9 @@ def build_saturday_hours_sheet(recs: list[dict]) -> dict:
                     key=lambda x: int(x.get("sort_index", 0)),
                 )
             ]
-            cells = []
             for i in range(cols):
                 val = vals[i] if i < len(vals) else ""
-                cells.append({"text": val, "tone": assignment_tone(val)})
+                cells.append(hour_cell(val, assignment_tone(val), d, day, f"Acton:{i}"))
             out.append(
                 {
                     "date": d,
@@ -210,31 +230,19 @@ def build_saturday_hours_sheet(recs: list[dict]) -> dict:
             )
         return out
 
-    blocks = []
-    if early_dates:
-        blocks.append(
-            {
-                "venueGroups": [
-                    {
-                        "venue": "Acton",
-                        "style": "acton",
-                        "span": 2,
-                        "labels": ["Acton", "Acton"],
-                    }
-                ],
-                "dates": rows_for(early_dates, 2),
-            }
-        )
-    if late_dates:
-        blocks.append(
+    if not late_dates:
+        return {"blocks": [], "placeholder": True}
+    return {
+        "blocks": [
             {
                 "venueGroups": [
                     {"venue": "Acton", "style": "acton", "span": 1, "labels": ["Acton"]}
                 ],
                 "dates": rows_for(late_dates, 1),
             }
-        )
-    return {"blocks": blocks, "placeholder": not blocks}
+        ],
+        "placeholder": False,
+    }
 
 
 def sunday_cells_for_date(day_recs: list[dict]) -> tuple[list[dict], list[dict]]:
@@ -266,12 +274,14 @@ def sunday_cells_for_date(day_recs: list[dict]) -> tuple[list[dict], list[dict]]
         ww.append("")
 
     cells = []
-    for val in ma[:3]:
-        cells.append({"text": val, "tone": assignment_tone(val)})
-    for val in aq[:max_aq]:
-        cells.append({"text": val, "tone": assignment_tone(val)})
-    for val in ww[:2]:
-        cells.append({"text": val, "tone": assignment_tone(val)})
+    d = norm(day_recs[0].get("date", "")) if day_recs else ""
+    day = "Sunday"
+    for i, val in enumerate(ma[:3]):
+        cells.append(hour_cell(val, assignment_tone(val), d, day, f"SwimFarm-ma:{i}"))
+    for i, val in enumerate(aq[:max_aq]):
+        cells.append(hour_cell(val, assignment_tone(val), d, day, f"SwimFarm-aq:{i}"))
+    for i, val in enumerate(ww[:2]):
+        cells.append(hour_cell(val, assignment_tone(val), d, day, f"Westway:{i}"))
 
     venue_groups = [
         {"venue": "SwimFarm", "style": "swimfarm-ma", "span": 3, "labels": ["SwimFarm"] * 3},
@@ -286,8 +296,9 @@ def build_sunday_hours_sheet(recs: list[dict]) -> dict:
         r
         for r in recs
         if r.get("date")
-        and "2026-04-13" <= r["date"] <= "2026-07-17"
+        and HOURS_FROM <= r["date"] <= "2026-07-17"
         and not (TERM_BREAK_FROM <= r["date"] <= TERM_BREAK_TO)
+        and is_pool_hours_row(r)
     ]
     dates_sorted = sorted({r["date"] for r in term_recs})
     venue_groups = [
@@ -342,31 +353,21 @@ def build_staff_hours(tt: list[dict]) -> dict:
             r
             for r in recs
             if r.get("date")
-            and r["date"] >= "2026-04-13"
-            and r["date"] <= "2026-07-17"
+            and HOURS_FROM <= r["date"] <= "2026-07-17"
             and not (TERM_BREAK_FROM <= r["date"] <= TERM_BREAK_TO)
             and r["date"] not in TERM_CLOSED
+            and is_pool_hours_row(r)
         ]
-        if not term_recs:
-            term_recs = recs
 
-        col_order: list[tuple[str, int]] = []
-        seen_cols: set[tuple[str, int]] = set()
-        for r in sorted(term_recs, key=lambda x: date_key(x.get("date", ""))):
-            venue = norm(r.get("venue", "")) or "—"
-            # slot index within venue for this date
-            pass
-
-        # Build per-date venue -> list of raw assignments (column slots)
         dates_sorted = sorted(
             {norm(r.get("date", "")) for r in term_recs if norm(r.get("date", ""))},
             key=date_key,
         )
 
-        # Infer max slots per venue from data
+        jun_recs = [r for r in term_recs if r["date"] >= HOURS_FROM]
         venue_slots: dict[str, int] = defaultdict(int)
         by_date_venue: dict[str, dict[str, list[str]]] = defaultdict(lambda: defaultdict(list))
-        for r in term_recs:
+        for r in jun_recs:
             d = norm(r.get("date", ""))
             venue = norm(r.get("venue", "")) or "—"
             raw = norm(r.get("raw_assignment", "")) or (
@@ -398,13 +399,17 @@ def build_staff_hours(tt: list[dict]) -> dict:
 
         date_rows = []
         for d in dates_sorted:
+            if d < HOURS_FROM:
+                continue
             cells = []
             for g in venue_groups:
                 venue = g["venue"]
                 vals = by_date_venue[d].get(venue, [])
                 for i in range(g["span"]):
                     val = vals[i] if i < len(vals) else ""
-                    cells.append({"text": val, "tone": assignment_tone(val)})
+                    cells.append(
+                        hour_cell(val, assignment_tone(val), d, day, f"{venue}:{i}")
+                    )
             status = date_row_status(d)
             date_rows.append(
                 {
@@ -464,6 +469,7 @@ def main() -> None:
         "meta": {
             "sessionSource": SESSION_WEEK_CSV.name,
             "sessionWeekLabel": "1–7 Jun 2026 (Summer term 2)",
+            "hoursFrom": HOURS_FROM,
             "timetableSource": "staff_timetable_machine.json",
             "termBreakFrom": TERM_BREAK_FROM,
             "termBreakTo": TERM_BREAK_TO,

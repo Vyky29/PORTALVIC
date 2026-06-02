@@ -26,6 +26,19 @@
     stf022: "andres",
   };
 
+  /** Never treat these as the same person when bootstrapping rosters. */
+  var ROSTER_KEY_NEVER_CROSS = {
+    javi: ["javier"],
+    javier: ["javi"],
+  };
+
+  var EXEC_OR_ADMIN_ROSTER_KEYS = {
+    victor: true,
+    raul: true,
+    javi: true,
+    sevitha: true,
+  };
+
   function portalProfileRosterKey(v) {
     var k = String(v || "")
       .normalize("NFD")
@@ -41,14 +54,50 @@
     return k;
   }
 
+  var PORTAL_AUTH_EMAIL_TO_ROSTER_KEY = {
+    "b.traperocasado@gmail.com": "berta",
+    "johnnyosti37@gmail.com": "john",
+    "stf012@staff.import.pending": "berta",
+    "stf006@staff.import.pending": "john",
+    "stf021@staff.import.pending": "lulia",
+  };
+
   /** Auth email → roster key (berta, john); stf00x local part via staff code map. */
   function portalRosterKeyFromAuthEmail(authEmail) {
     var em = String(authEmail || "").trim().toLowerCase();
     if (!em) return "";
+    if (PORTAL_AUTH_EMAIL_TO_ROSTER_KEY[em]) return PORTAL_AUTH_EMAIL_TO_ROSTER_KEY[em];
     var local = em.split("@")[0] || "";
     if (!local) return "";
     var alias = PORTAL_STAFF_CODE_TO_ROSTER_KEY[local];
     return alias || "";
+  }
+
+  /**
+   * Authoritative roster key for the signed-in user (email / username / infer — not name guesses).
+   * @returns {string}
+   */
+  function portalPrimaryStaffRosterKey(profile, authUser) {
+    var p = profile || {};
+    var user = authUser || null;
+    var email = user && user.email ? String(user.email) : "";
+    if (typeof window.portalInferStaffKey === "function") {
+      var inferred = window.portalInferStaffKey(p, email);
+      if (inferred) return portalProfileRosterKey(inferred);
+    }
+    var fromEmail = portalRosterKeyFromAuthEmail(email);
+    if (fromEmail) return fromEmail;
+    var fromUser = portalProfileRosterKey(p.username);
+    if (fromUser && PORTAL_STAFF_CODE_TO_ROSTER_KEY[fromUser]) return PORTAL_STAFF_CODE_TO_ROSTER_KEY[fromUser];
+    if (fromUser && !/^stf\d{3}$/.test(fromUser)) return fromUser;
+    return "";
+  }
+
+  function portalStaffIsExecOrAdminProfile(profile, authUser) {
+    var app = String((profile && profile.app_role) || "").toLowerCase();
+    if (app === "ceo" || app === "admin") return true;
+    var pk = portalPrimaryStaffRosterKey(profile, authUser);
+    return !!(pk && EXEC_OR_ADMIN_ROSTER_KEYS[pk]);
   }
 
   function portalStaffRosterKeyCandidates(profile, authUser) {
@@ -92,6 +141,40 @@
     return out;
   }
 
+  /**
+   * Keys allowed for roster bootstrap — never borrow another instructor's sessions.
+   * @returns {string[]}
+   */
+  function portalBootstrapKeysForProfile(profile, authUser) {
+    var primary = portalPrimaryStaffRosterKey(profile, authUser);
+    var blocked = Object.create(null);
+    if (primary && ROSTER_KEY_NEVER_CROSS[primary]) {
+      ROSTER_KEY_NEVER_CROSS[primary].forEach(function (k) {
+        blocked[k] = true;
+      });
+    }
+    var seen = Object.create(null);
+    var out = [];
+    function push(k) {
+      var c = portalProfileRosterKey(k);
+      if (!c || seen[c] || blocked[c]) return;
+      seen[c] = true;
+      out.push(c);
+    }
+    if (primary) push(primary);
+    if (portalStaffIsExecOrAdminProfile(profile, authUser)) {
+      return out;
+    }
+    if (primary) {
+      Object.keys(PORTAL_STAFF_CODE_TO_ROSTER_KEY).forEach(function (code) {
+        if (PORTAL_STAFF_CODE_TO_ROSTER_KEY[code] === primary) push(code);
+      });
+    }
+    return out.length ? out : portalStaffRosterKeyCandidates(profile, authUser).filter(function (k) {
+      return !blocked[portalProfileRosterKey(k)];
+    });
+  }
+
   function portalDashboardSource() {
     if (typeof window.portalResolveStaffDashboardSource === "function") {
       return window.portalResolveStaffDashboardSource();
@@ -107,7 +190,8 @@
       typeof window !== "undefined" ? window.StaffDashboardSpreadsheetAdapter : null;
     var source = portalDashboardSource();
     if (!Adapter || !source) return null;
-    var keys = portalStaffRosterKeyCandidates(profile, authUser);
+    var keys = portalBootstrapKeysForProfile(profile, authUser);
+    if (!keys.length) return null;
     var i;
     for (i = 0; i < keys.length; i++) {
       var boot = Adapter.bootstrap({ source: source, staffId: keys[i] });
@@ -115,14 +199,15 @@
         return { staffId: portalProfileRosterKey(keys[i]), boot: boot };
       }
     }
-    var fallback = keys[0] || "";
-    if (!fallback) return null;
-    var boot0 = Adapter.bootstrap({ source: source, staffId: fallback });
-    if (!boot0 || !Array.isArray(boot0.sessionsModel) || !boot0.sessionsModel.length) return null;
-    return { staffId: portalProfileRosterKey(fallback), boot: boot0 };
+    var useKey = portalProfileRosterKey(keys[0]);
+    var boot0 = Adapter.bootstrap({ source: source, staffId: useKey });
+    if (!boot0) return null;
+    return { staffId: useKey, boot: boot0 };
   }
 
+  window.portalPrimaryStaffRosterKey = portalPrimaryStaffRosterKey;
   window.portalStaffRosterKeyCandidates = portalStaffRosterKeyCandidates;
   window.portalBootstrapStaffRosterFromProfile = portalBootstrapStaffRosterFromProfile;
   window.portalRosterKeyFromAuthEmail = portalRosterKeyFromAuthEmail;
+  window.portalStaffIsExecOrAdminProfile = portalStaffIsExecOrAdminProfile;
 })();

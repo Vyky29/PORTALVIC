@@ -74,6 +74,30 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
   "termStaffExtraCalendarDatesByProfileKey": {
     "javier": []
   },
+  "termStaffCatchUpFeedbackDatesByProfileKey": {
+    "javier": [
+      "2026-05-14",
+      "2026-05-17",
+      "2026-05-20"
+    ]
+  },
+  "termStaffCatchUpFeedbackDoneClientsByDateByProfileKey": {
+    "javier": {
+      "2026-05-17": [
+        "shire",
+        "samer",
+        "hazem",
+        "eiji",
+        "rayyan_fi",
+        "haneef",
+        "max",
+        "shaan"
+      ],
+      "2026-05-20": [
+        "kayden"
+      ]
+    }
+  },
   "termStaffLateSubmissionBypassProfileKeys": [
     "javier"
   ],
@@ -84,6 +108,9 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     "2026-05-25"
   ],
   "termStaffWeekdayIndicesByProfileKey": {
+    "aida": [
+      0
+    ],
     "alex": [
       0
     ],
@@ -180,6 +207,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       1
     ],
     "simon": [
+      0,
       4
     ],
     "teflon": [
@@ -730,33 +758,5 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-07-15",
       "2026-07-17"
     ]
-  },
-  "termStaffCatchUpFeedbackDatesByProfileKey": {
-    "javier": [
-      "2026-05-14",
-      "2026-05-17",
-      "2026-05-20"
-    ]
-  },
-  "termStaffCatchUpFeedbackDoneClientsByDateByProfileKey": {
-    "javier": {
-      "2026-05-17": [
-        "shire",
-        "samer",
-        "hazem",
-        "eiji",
-        "rayyan_fi",
-        "haneef",
-        "max",
-        "shaan",
-        "zaid"
-      ],
-      "2026-05-20": [
-        "cyrus",
-        "adam_ab",
-        "kayden",
-        "zaid"
-      ]
-    }
   }
 };

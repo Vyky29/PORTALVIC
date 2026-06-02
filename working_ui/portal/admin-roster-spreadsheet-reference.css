@@ -1,6 +1,40 @@
 /* Admin — spreadsheet reference (sessions + staff hours) */
 .asr-root {
   min-width: 0;
+  max-width: 100%;
+}
+.asr-panel-host {
+  min-width: 0;
+  max-width: 100%;
+}
+.asr-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 12px;
+}
+.asr-scroll {
+  overflow-x: auto;
+  overflow-y: visible;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+.asr-cell-input {
+  width: 100%;
+  min-width: 5.5rem;
+  max-width: 11rem;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 12px;
+  padding: 4px 6px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: #fff;
+}
+.asr-cell-input--dirty {
+  border-color: #2563eb;
+  background: #eff6ff;
 }
 .asr-tabs {
   display: flex;
@@ -33,9 +67,8 @@
   border: 1px solid rgba(0, 0, 0, 0.12);
   flex: 0 0 auto;
 }
-.asr-scroll {
-  overflow: auto;
-  max-width: 100%;
+.asr-hours-block.asr-scroll,
+.asr-scroll.asr-hours-block {
   border: 1px solid var(--border, #e5e7eb);
   border-radius: 10px;
   background: #fff;
@@ -53,6 +86,10 @@
   min-width: 0;
   max-width: 11rem;
   overflow-wrap: break-word;
+}
+.asr-hours td {
+  max-width: none;
+  min-width: 6.5rem;
 }
 .asr-grid th {
   background: #f3f4f6;

@@ -114,7 +114,7 @@ def monday_assignments() -> list[dict]:
                 slot(iso, "Monday", "Dan", "4.30-6.30", "Northolt"),
                 slot(iso, "Monday", "Angel", "4-6.30", "Acton"),
                 slot(iso, "Monday", "Youssef", "4.30-6.30", "Acton"),
-                slot(iso, "Monday", "John", "4.15-6.15", "Acton"),
+                slot(iso, "Monday", "John", "4.15-6.15", "SwimFarm"),
                 slot(iso, "Monday", "Bismark", "4.15-6.15", "SwimFarm"),
                 slot(iso, "Monday", "Giuseppe", "4.15-6.15", "SwimFarm"),
                 slot(iso, "Monday", "Luliya", "11-4", "SwimFarm"),
