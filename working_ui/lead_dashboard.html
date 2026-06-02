@@ -4788,6 +4788,24 @@
         return portalSessionSpreadsheetRowMatchesCalendarDate(s, iso, w);
       });
     }
+    /** Pool shift dates from Staff Timetable (1 Jun+); null when map not loaded. */
+    function portalTermStaffShiftDatesFor(staffId){
+      const t = window.PORTAL_TERM_FROM_TIMETABLE;
+      if(!t || !Object.prototype.hasOwnProperty.call(t, 'termStaffShiftDatesByProfileKey')) return null;
+      const map = t.termStaffShiftDatesByProfileKey;
+      if(!map || typeof map !== 'object') return null;
+      const id = String(staffId || '').trim().toLowerCase();
+      if(!Object.prototype.hasOwnProperty.call(map, id)) return [];
+      const raw = map[id];
+      if(!Array.isArray(raw)) return [];
+      return raw.map(function(d){ return String(d || '').trim().slice(0, 10); }).filter(Boolean);
+    }
+    function portalStaffHasShiftOnCalendarDate(isoYmd, staffId){
+      const dates = portalTermStaffShiftDatesFor(staffId);
+      if(dates === null) return null;
+      const iso = normaliseIsoDate(isoYmd);
+      return !!(iso && dates.indexOf(iso) >= 0);
+    }
     /** Worked day for term colours: clients that day, export done, or dated roster snap (not pool-only). */
     function portalStaffRosterAppliesOnCalendarDate(isoYmd, weekdayLong, staffId){
       const iso = normaliseIsoDate(isoYmd);
@@ -4796,12 +4814,14 @@
       if(!iso || !sid || !w) return true;
       if(portalTermDateForcedComplete(iso, sid)) return true;
       if(portalTermStaffOffWeekdayOnDate(iso, sid)) return false;
+      if(portalCalendarIsoUsesSummerDatedRosterOnly(iso)){
+        const onShift = portalStaffHasShiftOnCalendarDate(iso, sid);
+        if(onShift !== null) return onShift;
+      }
       if(portalStaffHasDatedRowsForIso(iso, sid)) return true;
       if(portalStaffClientSessionsOnCalendarDate(iso, w, sid)) return true;
       const snapFloor = portalCalendarIsoUsesSummerDatedRosterOnly(iso) ? portalTermSummerRosterFromIso() : '';
       const hasSnaps = portalStaffHasDatedWeekdaySnapshots(sid, w, snapFloor);
-      /* Summer dated roster: no row on this date = off (e.g. Aurora Thu cover → Dan). */
-      if(portalCalendarIsoUsesSummerDatedRosterOnly(iso) && hasSnaps) return false;
       if(!hasSnaps) return true;
       const anchor = new Date(iso + 'T12:00:00');
       const model = (typeof sessionsModel !== 'undefined' && Array.isArray(sessionsModel)) ? sessionsModel : [];

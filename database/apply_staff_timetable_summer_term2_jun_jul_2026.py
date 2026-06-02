@@ -371,6 +371,134 @@ def refresh_term_js(records: list[dict]) -> None:
     copy_term_to_working_ui()
 
 
+# Aurora SwimFarm Sunday clients only when she is on the pool rota (5 & 12 Jul 2026).
+AURORA_SUNDAY_SHIFT_DATES = frozenset({"2026-07-05", "2026-07-12"})
+SUNDAY_COVER_INSTRUCTOR = "DAN"
+
+
+def sunday_swimfarm_cover_instructor(records: list[dict], iso: str) -> str:
+    """First 9-3 SwimFarm instructor on this Sunday (prefer Dan when listed)."""
+    names: list[str] = []
+    for r in records:
+        if str(r.get("date") or "").strip()[:10] != iso:
+            continue
+        if str(r.get("day") or "").strip() != "Sunday":
+            continue
+        if str(r.get("venue") or "").strip() != "SwimFarm":
+            continue
+        if str(r.get("time_range") or "").strip() != "9-3":
+            continue
+        nm = str(r.get("staff_name") or "").strip()
+        if not nm or nm.lower() == "aurora":
+            continue
+        names.append(nm)
+    if not names:
+        return SUNDAY_COVER_INSTRUCTOR
+    for pref in ("Dan", "DAN"):
+        for nm in names:
+            if nm.lower() == pref.lower():
+                return nm.upper() if nm.isupper() else nm
+    return names[0].upper() if names[0].isupper() else names[0]
+
+
+def aurora_sunday_shift_dates_from_timetable(records: list[dict]) -> frozenset[str]:
+    out: set[str] = set()
+    for r in records:
+        iso = str(r.get("date") or "").strip()[:10]
+        if not in_term2_range(iso):
+            continue
+        if str(r.get("day") or "").strip() != "Sunday":
+            continue
+        if str(r.get("staff_name") or "").strip().lower() != "aurora":
+            continue
+        out.add(iso)
+    return frozenset(out) if out else AURORA_SUNDAY_SHIFT_DATES
+
+
+def patch_aurora_sunday_client_roster(
+    shift_dates: frozenset[str], timetable: list[dict]
+) -> int:
+    """Client roster: Aurora Sunday rows only on her timetable Sundays; else pool cover."""
+    json_path = OUT / "staff_clients_machine.json"
+    if not json_path.exists():
+        return 0
+    rows = json.loads(json_path.read_text(encoding="utf-8"))
+    n = 0
+    for row in rows:
+        iso = str(row.get("session_date") or "").strip()[:10]
+        if not in_term2_range(iso):
+            continue
+        if str(row.get("day") or "").strip() != "Sunday":
+            continue
+        if str(row.get("instructors") or "").strip().upper() != "AURORA":
+            continue
+        if iso in shift_dates:
+            continue
+        cover = sunday_swimfarm_cover_instructor(timetable, iso).upper()
+        row["instructors"] = cover
+        n += 1
+    if n:
+        json_path.write_text(json.dumps(rows, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
+    dan_sunday_shifts = {
+        str(r.get("date") or "").strip()[:10]
+        for r in timetable
+        if in_term2_range(str(r.get("date") or ""))
+        and str(r.get("day") or "").strip() == "Sunday"
+        and str(r.get("staff_name") or "").strip().lower() == "dan"
+    }
+    n_fix = 0
+    for row in rows:
+        iso = str(row.get("session_date") or "").strip()[:10]
+        if not in_term2_range(iso):
+            continue
+        if str(row.get("day") or "").strip() != "Sunday":
+            continue
+        if iso in shift_dates:
+            continue
+        if str(row.get("instructors") or "").strip().upper() != "DAN":
+            continue
+        if iso in dan_sunday_shifts:
+            continue
+        row["instructors"] = sunday_swimfarm_cover_instructor(timetable, iso).upper()
+        n_fix += 1
+    if n_fix:
+        json_path.write_text(json.dumps(rows, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
+    n += n_fix
+    weeks_dir = OUT / "roster_weeks"
+    if weeks_dir.is_dir():
+        instr_key = "instructors"
+        for path in sorted(weeks_dir.glob("*.csv")):
+            text = path.read_text(encoding="utf-8-sig")
+            if not text.strip():
+                continue
+            rows_in = list(csv.DictReader(text.splitlines()))
+            if not rows_in:
+                continue
+            fieldnames = list(rows_in[0].keys())
+            if "instructor" in fieldnames:
+                instr_key = "instructor"
+            file_changed = False
+            for row in rows_in:
+                iso = (row.get("date") or row.get("session_date") or "").strip()[:10]
+                if not in_term2_range(iso):
+                    continue
+                if (row.get("weekday") or row.get("day") or "").strip() != "Sunday":
+                    continue
+                if (row.get(instr_key) or "").strip().upper() != "AURORA":
+                    continue
+                if iso in shift_dates:
+                    continue
+                cover = sunday_swimfarm_cover_instructor(timetable, iso).upper()
+                row[instr_key] = cover
+                file_changed = True
+            if file_changed:
+                with path.open("w", newline="", encoding="utf-8") as f:
+                    w = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
+                    w.writeheader()
+                    w.writerows(rows_in)
+    return n
+
+
 def patch_roster_week_sunday_ma_leads() -> int:
     """Set Sunday SwimFarm Multi-Activity lead column to the on-duty lead only."""
     weeks_dir = OUT / "roster_weeks"
@@ -474,6 +602,8 @@ def main() -> None:
     new_rows = build_summer_term2_rows()
     merged = append_rota_alignment_patch(kept + new_rows)
     write_exports(merged)
+    aurora_sundays = aurora_sunday_shift_dates_from_timetable(merged)
+    n_aurora = patch_aurora_sunday_client_roster(aurora_sundays, merged)
     n_weeks = patch_roster_week_sunday_ma_leads()
     refresh_term_js(merged)
     try:
@@ -484,11 +614,22 @@ def main() -> None:
         n_roster = 0
         print("import_roster_week_csv:", exc)
     patch_bundle_sunday_lead_overrides()
+    try:
+        from build_machine_exports import patch_bundle_rows_from_json, copy_spreadsheet_js_to_working_ui  # noqa: E402
+
+        patch_bundle_rows_from_json()
+        copy_spreadsheet_js_to_working_ui()
+        portal_shared = ROOT / "working_ui" / "portal-shared-js" / "staff_dashboard_spreadsheet_bundle.js"
+        bundle = OUT / "staff_dashboard_spreadsheet_bundle.js"
+        if bundle.exists() and portal_shared.parent.is_dir():
+            portal_shared.write_text(bundle.read_text(encoding="utf-8"), encoding="utf-8")
+    except Exception as exc:
+        print("bundle sync:", exc)
     print(
         f"Summer Term 2 staff timetable: {len(new_rows)} rows "
         f"({TERM2_START}..{TERM2_END}); kept {len(kept)} outside range; total {len(merged)}"
     )
-    print(f"Sunday MA lead roster weeks patched: {n_weeks}; dated roster rows merged: {n_roster}")
+    print(f"Sunday MA lead roster weeks patched: {n_weeks}; Aurora Sunday client rows to Dan cover: {n_aurora}; dated roster rows merged: {n_roster}")
 
 
 if __name__ == "__main__":
