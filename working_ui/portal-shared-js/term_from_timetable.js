@@ -728,7 +728,8 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
   "termStaffCatchUpFeedbackDatesByProfileKey": {
     "javier": [
       "2026-05-14",
-      "2026-05-17"
+      "2026-05-17",
+      "2026-05-20"
     ]
   },
   "termStaffCatchUpFeedbackDoneClientsByDateByProfileKey": {
@@ -742,6 +743,9 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
         "haneef",
         "max",
         "shaan"
+      ],
+      "2026-05-20": [
+        "kayden"
       ]
     }
   }

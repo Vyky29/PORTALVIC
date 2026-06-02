@@ -41,7 +41,7 @@ TERM_STAFF_EXTRA_CALENDAR_DATES_BY_PROFILE_KEY = {
 }
 # Catch-up days: ignore static export greens; use real portal review state only.
 TERM_STAFF_CATCH_UP_FEEDBACK_DATES_BY_PROFILE_KEY = {
-    "javier": ["2026-05-14", "2026-05-17"],
+    "javier": ["2026-05-14", "2026-05-17", "2026-05-20"],
 }
 # On catch-up days, treat these client slugs as already done (e.g. May 17 Samer done, Zaid pending).
 TERM_STAFF_CATCH_UP_FEEDBACK_DONE_CLIENTS_BY_DATE_BY_PROFILE_KEY = {
@@ -55,6 +55,9 @@ TERM_STAFF_CATCH_UP_FEEDBACK_DONE_CLIENTS_BY_DATE_BY_PROFILE_KEY = {
             "haneef",
             "max",
             "shaan",
+        ],
+        "2026-05-20": [
+            "kayden",
         ],
     },
 }

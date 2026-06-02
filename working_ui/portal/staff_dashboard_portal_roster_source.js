@@ -210,6 +210,46 @@
       });
   }
 
+  /** Pre–Summer Term 2 catch-up/extra calendar days: keep machine dated rows when portal status projection misses them. */
+  function preTermCatchUpMachineDates() {
+    var t = typeof window !== "undefined" ? window.PORTAL_TERM_FROM_TIMETABLE : null;
+    if (!t) return [];
+    var out = [];
+    var add = function (iso) {
+      var d = normIso(iso);
+      if (d && out.indexOf(d) < 0) out.push(d);
+    };
+    var extra = t.termStaffExtraCalendarDatesByProfileKey || {};
+    var catchUp = t.termStaffCatchUpFeedbackDatesByProfileKey || {};
+    Object.keys(extra).forEach(function (k) {
+      (extra[k] || []).forEach(add);
+    });
+    Object.keys(catchUp).forEach(function (k) {
+      (catchUp[k] || []).forEach(add);
+    });
+    return out;
+  }
+
+  function appendMachineRowsForPreTermCatchUpDays(baseRows, machineRows, floorIso) {
+    var dates = preTermCatchUpMachineDates();
+    if (!dates.length) return baseRows;
+    var floor = normIso(floorIso) || machineRosterFloorIso();
+    var seen = Object.create(null);
+    (baseRows || []).forEach(function (r) {
+      if (normIso(r.session_date)) seen[datedSlotKey(r)] = true;
+    });
+    var out = (baseRows || []).slice();
+    (machineRows || []).forEach(function (r) {
+      var iso = normIso(r.session_date);
+      if (!iso || iso >= floor || dates.indexOf(iso) < 0) return;
+      var sk = datedSlotKey(r);
+      if (seen[sk]) return;
+      seen[sk] = true;
+      out.push(r);
+    });
+    return out;
+  }
+
   function applyPortalRosterDbRows(rows) {
     var cache =
       typeof window !== "undefined" && window.PORTAL_ROSTER_ROWS_CACHE;
@@ -246,7 +286,12 @@
       return !iso || iso < floor;
     });
 
-    mergedRows = applyPortalRosterDbRows(fromPortal.concat(fromMachine));
+    mergedRows = appendMachineRowsForPreTermCatchUpDays(
+      fromPortal.concat(fromMachine),
+      machineRows,
+      floor
+    );
+    mergedRows = applyPortalRosterDbRows(mergedRows);
 
     return Object.assign({}, base, {
       rows: mergedRows,
