@@ -163,7 +163,7 @@ export async function portalBumpAuthSessionGeneration(supabase) {
  * `portal_session_key` values (co-instructors on the same slot share one key).
  * @param {import("@supabase/supabase-js").SupabaseClient} supabase
  * @param {string} userId
- * @param {{ rosterSessionKeys?: string[] }} [opts]
+ * @param {{ rosterSessionKeys?: string[], catchUpSessionDates?: string[] }} [opts]
  * @returns {Promise<{ feedbackKeys: string[], incidentKeys: string[], cancellationKeys: string[], absentKeys: string[], quickFeedbackDoneKeys: string[] }>}
  */
 export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, opts = {}) {
@@ -181,8 +181,13 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
 
   const rawRoster = opts && Array.isArray(opts.rosterSessionKeys) ? opts.rosterSessionKeys : [];
   const rosterSessionKeys = [...new Set(rawRoster.map((k) => String(k || "").trim()).filter(Boolean))].slice(0, 250);
+  const catchUpDates = (
+    opts && Array.isArray(opts.catchUpSessionDates) ? opts.catchUpSessionDates : []
+  )
+    .map((d) => String(d || "").trim().slice(0, 10))
+    .filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d));
 
-  const [fb, inc, can, fbSharedRpc, quickMarks] = await Promise.all([
+  const [fb, inc, can, fbSharedRpc, quickMarks, fbCatchUp] = await Promise.all([
     supabase
       .from("session_feedback")
       .select("portal_session_key")
@@ -210,6 +215,14 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
       .eq("staff_user_id", userId)
       .gte("session_date", sinceStr)
       .in("mark_type", ["absent", "feedback_done"]),
+    catchUpDates.length
+      ? supabase
+          .from("session_feedback")
+          .select("portal_session_key")
+          .eq("submitted_by_user_id", userId)
+          .not("portal_session_key", "is", null)
+          .in("session_date", catchUpDates)
+      : Promise.resolve({ data: null, error: null }),
   ]);
 
   /** @param {unknown} rows */
@@ -245,8 +258,9 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
   }
 
   const ownFb = dedupeKeys(fb.data);
+  const catchUpFb = dedupeKeys(fbCatchUp && !fbCatchUp.error ? fbCatchUp.data : null);
   const sharedFb = !fbSharedRpc || fbSharedRpc.error ? [] : feedbackKeysFromSharedRpc(fbSharedRpc.data);
-  const feedbackMerged = [...new Set([...ownFb, ...sharedFb])];
+  const feedbackMerged = [...new Set([...ownFb, ...catchUpFb, ...sharedFb])];
 
   /** @type {string[]} */
   const absentKeys = [];
@@ -302,6 +316,33 @@ export async function portalUpsertStaffSessionQuickMark(supabase, row) {
   if (error) throw error;
 }
 
+/** Client slug tokens from portal_session_key (skip date, time, empty). */
+function clientSlugTokensFromPortalSessionKey(key) {
+  const parts = String(key || "")
+    .split("|")
+    .map((p) => String(p || "").trim().toLowerCase())
+    .filter(Boolean);
+  const out = [];
+  for (const p of parts) {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(p)) continue;
+    if (/^\d{1,2}:\d{2}$/.test(p)) continue;
+    out.push(p);
+  }
+  return out;
+}
+
+function portalSessionKeyClientSlugsMatch(submittedKey, rosterKey) {
+  const rSlugs = clientSlugTokensFromPortalSessionKey(rosterKey);
+  const sSlugs = clientSlugTokensFromPortalSessionKey(submittedKey);
+  if (!rSlugs.length || !sSlugs.length) return false;
+  for (const rs of rSlugs) {
+    for (const ss of sSlugs) {
+      if (rs === ss || rs.includes(ss) || ss.includes(rs)) return true;
+    }
+  }
+  return false;
+}
+
 /**
  * Roster keys use `YYYY-MM-DD|HH:mm|client_id`; Supabase often stores `YYYY-MM-DD||client_slug`.
  */
@@ -324,6 +365,7 @@ export function portalFeedbackSubmittedKeyMatchesRosterKey(submittedKey, rosterK
       return false;
     }
   }
+  if (portalSessionKeyClientSlugsMatch(s, r)) return true;
   const rClient = String(rParts[2] || rParts[1] || "")
     .trim()
     .toLowerCase();

@@ -1612,6 +1612,14 @@ button{
     };
   }
 
+  /** Session day from roster link (?date= / sessionKey) — never default to today when these are set. */
+  function portalResolvedSessionDateIso(){
+    if(portalDate && /^\d{4}-\d{2}-\d{2}$/.test(portalDate)) return portalDate;
+    const fromKey = parseSessionKey(portalSessionKeyFromUrl);
+    if(fromKey.session_date) return fromKey.session_date;
+    return "";
+  }
+
   /** True when opened from Staff/Lead hub link, trusted PIN context, or an active staff/lead portal session in this browser. */
   function portalOpenedFromStaffHub(){
     try{
@@ -1877,7 +1885,7 @@ button{
     const wantSvc = (fbSv && clean(fbSv.value)) || portalService.trim();
     rebuildServiceSelectForParticipant("fbService", pnm, wantSvc);
     if(fbDt && !clean(fbDt.value)){
-      let iso = portalDate && /^\d{4}-\d{2}-\d{2}$/.test(portalDate) ? portalDate : (fromKey.session_date || "");
+      let iso = portalResolvedSessionDateIso();
       if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) iso = todayIsoPortal();
       fbDt.value = iso;
     }
@@ -1892,10 +1900,15 @@ button{
     const fbDt = document.getElementById("fbSessionDate");
     let session_date = fbDt && clean(fbDt.value) ? clean(fbDt.value) : "";
     if(!/^\d{4}-\d{2}-\d{2}$/.test(session_date)){
-      session_date = portalDate && /^\d{4}-\d{2}-\d{2}$/.test(portalDate) ? portalDate : fromKey.session_date;
+      session_date = portalResolvedSessionDateIso();
     }
     if(!/^\d{4}-\d{2}-\d{2}$/.test(session_date)){
       session_date = todayIsoPortal();
+    }
+    const lockedIso = portalResolvedSessionDateIso();
+    if(lockedIso && session_date !== lockedIso && qs.get("lateApproved") === "1"){
+      session_date = lockedIso;
+      if(fbDt) fbDt.value = lockedIso;
     }
     const session_time = (portalTime || fromKey.session_time || "").trim() || null;
     const client_id = (portalClientId || fromKey.client_id || "").trim() || null;

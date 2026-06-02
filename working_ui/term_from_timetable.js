@@ -55,18 +55,14 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     "javier": [
       "2026-05-12",
       "2026-05-13",
-      "2026-05-19"
-    ]
-  },
-  "termStaffExtraCalendarDatesByProfileKey": {
-    "javier": [
-      "2026-05-12",
-      "2026-05-13",
       "2026-05-14",
       "2026-05-17",
       "2026-05-19",
       "2026-05-20"
     ]
+  },
+  "termStaffExtraCalendarDatesByProfileKey": {
+    "javier": []
   },
   "termStaffLateSubmissionBypassProfileKeys": [
     "javier"
@@ -742,10 +738,14 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
         "rayyan_fi",
         "haneef",
         "max",
-        "shaan"
+        "shaan",
+        "zaid"
       ],
       "2026-05-20": [
-        "kayden"
+        "cyrus",
+        "adam_ab",
+        "kayden",
+        "zaid"
       ]
     }
   }

@@ -752,7 +752,7 @@
     </div>
   </section>
 
-  <script src="/portal/term_from_timetable.js?v=20260602-feedback-voice-fix-javier-may20-catchup"></script>
+  <script src="/portal/term_from_timetable.js?v=20260602-javier-term-jun1"></script>
   <script src="/portal/term_calendar_dashboard_shared.js?v=20260523-feedback-window"></script>
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260602-feedback-voice-fix-javier-may20-catchup"></script>
   <script src="/portal/session_feedback_portal_data.js?v=20260527-ma-apr-may"></script>
@@ -983,7 +983,7 @@
     /** Persisted register/feedback flags so returning from session_feedback.html keeps row colours. */
     const PORTAL_SESSION_REVIEW_MAP_STORAGE = 'portalSessionReviewMap_v1';
     /** Same folder as auth-handler on the CDN; used to pull server-side review keys onto this device. */
-    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260520-portal-all';
+    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260602-javier-may20-greens';
     /**
      * Web Push (app closed / phone locked): VAPID **public** key only — generate pair with `npx web-push generate-vapid-keys`,
      * put public key here (or `window.__PORTAL_VAPID_PUBLIC_KEY__` on the host page); private key lives in Supabase Edge secrets only.
@@ -1354,7 +1354,14 @@
         src.rows.forEach(function(row){
           const iso = String(row.date || '').trim().substring(0, 10);
           if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
-          if(typeof portalTermIsCatchUpFeedbackDate === 'function' && portalTermIsCatchUpFeedbackDate(iso, staffId)) return;
+          const catchUpDay = typeof portalTermIsCatchUpFeedbackDate === 'function'
+            && portalTermIsCatchUpFeedbackDate(iso, staffId);
+          if(catchUpDay){
+            const instructor = String(row.instructor || row.completedBy || '').trim();
+            if(!portalStaffMatchesStatusInstructor(staffId, instructor)) return;
+            const att0 = String(row.attendance != null ? row.attendance : '').trim().toLowerCase();
+            if(att0 === 'no' || att0 === 'n' || att0 === '0' || att0 === 'false') return;
+          }
           const dayWord = new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
           const rel = typeof portalTermFeedbackSessionsForDate === 'function'
             ? portalTermFeedbackSessionsForDate(dayWord, iso, staffId, function(s){
@@ -1395,7 +1402,7 @@
       let changed = false;
       try{
         const sid = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
-        const resetV = '20260602-javier-may14-zaid';
+        const resetV = '20260602-javier-term-jun1-zaid';
         if(sid && typeof portalClearCatchUpExportReviewFlags === 'function'){
           let prev = '';
           try{ prev = localStorage.getItem('portalCatchUpReviewReset_v1') || ''; }catch(_){}
@@ -1425,7 +1432,13 @@
           ? portalSeedAllReviewDoneFromPortalExports()
           : false;
         const rosterKeys = typeof portalCollectRosterSessionKeysForReviewSync === 'function' ? portalCollectRosterSessionKeysForReviewSync() : [];
-        const keys = await mod.portalFetchSubmittedReviewSessionKeys(box.client, uid, { rosterSessionKeys: rosterKeys });
+        const catchUpDates = typeof portalTermStaffCatchUpFeedbackDates === 'function'
+          ? portalTermStaffCatchUpFeedbackDates(String(STAFF_DASHBOARD_ID || '').trim().toLowerCase())
+          : [];
+        const keys = await mod.portalFetchSubmittedReviewSessionKeys(box.client, uid, {
+          rosterSessionKeys: rosterKeys,
+          catchUpSessionDates: catchUpDates
+        });
         const merged = mod.portalMergeReviewKeysIntoMemoryMap(sessionReviewMapMemory, keys, { rosterSessionKeys: rosterKeys });
         if(seeded || merged){
           persistSessionReviewMap();
@@ -8639,7 +8652,7 @@
         dashboardData.termShiftEndByDate = {};
         dashboardData.termDemoNow = null;
       }
-      const extraDates = portalTermStaffExtraCalendarDates(id);
+      const extraDates = id === 'javier' ? [] : portalTermStaffExtraCalendarDates(id);
       if(extraDates.length){
         const months = new Set((dashboardData.termCalendarMonths || []).map(Number));
         const fd = dashboardData.termCalendarFirstDom && typeof dashboardData.termCalendarFirstDom === 'object'
