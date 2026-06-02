@@ -328,6 +328,8 @@
     rayyan_f: "rayyan_fi",
     adam_pilcher: "adam_pi",
     adam_a: "adam_ab",
+    steven_ce: "steven_c",
+    steven_c: "steven_c",
   };
 
   function canonicalClientSlug(name) {
@@ -877,6 +879,10 @@
       keys.push(slot.session_date + "|" + cid + "|aquatic");
       if (!clientNeedsPerSlotAquaticFeedback(slot)) keys.push(base);
     }
+    if (isPhysicalActivityService(slot.service)) {
+      keys.push(slot.session_date + "|" + cid);
+      keys.push(feedbackUnitKey(slot));
+    }
     return keys;
   }
 
@@ -930,6 +936,10 @@
     }
     if (isDayCentreService(svc)) {
       keys.push(sd + "|" + nm + "|day_centre");
+    }
+    if (isPhysicalActivityService(svc)) {
+      keys.push(broadDateClient);
+      if (normTimeKey(fb.session_time)) keys.push(tk);
     }
     return keys;
   }
@@ -1044,6 +1054,16 @@
 
   function isClimbingService(service) {
     return serviceKey(service).indexOf("climbing") !== -1;
+  }
+
+  function isPhysicalActivityService(service) {
+    var k = serviceKey(service);
+    return (
+      k.indexOf("physical activity") !== -1 ||
+      k.indexOf("physical activities") !== -1 ||
+      k.indexOf("fitness") !== -1 ||
+      k === "gym"
+    );
   }
 
   /** Monday SwimFarm ACAT block \u2013 group feedback covers these roster names (slug keys). */
@@ -1365,6 +1385,11 @@
     var pk = clean(fb.portal_session_key);
     if (pk) {
       var parts = pk.split("|").map(clean);
+      if (parts.length >= 3 && /^\d{4}-\d{2}-\d{2}$/.test(parts[0])) {
+        if (!parts[1] && parts[2] && canonicalClientSlug(parts[2]) === canonicalClientSlug(slot.client_name)) {
+          return true;
+        }
+      }
       if (parts.length >= 2 && normTimeKey(parts[1]) === st) return true;
     }
     if (clientNeedsPerSlotAquaticFeedback(slot)) return false;
@@ -1393,6 +1418,9 @@
     }
     if (isAquaticService(fb.service) && isAquaticService(slot.service)) {
       return completedByFitsSlotArea(fb.completed_by_name, slot);
+    }
+    if (isPhysicalActivityService(fb.service) && isPhysicalActivityService(slot.service)) {
+      return true;
     }
     return false;
   }
@@ -2760,7 +2788,11 @@
     for (var j = 0; j < list.length; j++) {
       if (feedbackFitsSlot(list[j], slot)) return list[j];
     }
-    if (isBespokeService(slot.service) || isDayCentreService(slot.service)) {
+    if (
+      isBespokeService(slot.service) ||
+      isDayCentreService(slot.service) ||
+      isPhysicalActivityService(slot.service)
+    ) {
       var dk = slot.session_date + "|" + canonicalClientSlug(slot.client_name);
       var fb = this._fbByDateClient && this._fbByDateClient[dk];
       if (fb && feedbackFitsSlot(fb, slot)) return fb;
@@ -3010,7 +3042,7 @@
   AdminSessionsHub.prototype.overviewSlotsForDate = function (iso) {
     var hub = this;
     return this.expandSlotsForDate(iso).filter(function (s) {
-      return !shouldOmitOverviewSlot(hub, s);
+      return !shouldOmitOverviewSlot(hub, s) && !isTeflonDemoRosterSlot(s);
     });
   };
 
@@ -4632,7 +4664,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     }
     var q = this.clientSearch.toLowerCase();
     var scopedSlots = slots.filter(function (s) {
-      return !shouldOmitOverviewSlot(hub, s);
+      return !shouldOmitOverviewSlot(hub, s) && !isTeflonDemoRosterSlot(s);
     });
     var displaySlots = hub.sortOverviewSlotsForDisplay(
       overviewDisplaySlotsFromUnits(hub, scopedSlots).filter(function (s) {

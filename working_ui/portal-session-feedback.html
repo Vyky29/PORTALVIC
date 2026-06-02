@@ -2694,7 +2694,17 @@ button{
 
       try {
         if (typeof window.portalRecordFormSubmit === "function") {
-          await window.portalRecordFormSubmit("Session feedback submitted", "feedback");
+          var participantForActivity =
+            typeof window.portalFeedbackSubmitClientName === "function"
+              ? window.portalFeedbackSubmitClientName(ctx2.client_name)
+              : clean(ctx2.client_name);
+          if (!participantForActivity && row && row.client_name) {
+            participantForActivity = clean(row.client_name);
+          }
+          await window.portalRecordFormSubmit(
+            "Session feedback submitted",
+            participantForActivity || "Participant"
+          );
         }
       } catch (_) {}
 

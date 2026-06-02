@@ -138,6 +138,14 @@
     );
   }
 
+  function submitParticipantHint(s) {
+    var p = String((s && (s.participant || s.page)) || '').trim();
+    if (!p) return '';
+    var low = p.toLowerCase();
+    if (low === 'feedback' || low === 'session feedback') return '';
+    return ' (' + esc(p) + ')';
+  }
+
   function renderSubmits(submits) {
     if (!Array.isArray(submits) || !submits.length) {
       return '<p class="portal-activity-detail__empty">No form submits recorded.</p>';
@@ -146,7 +154,7 @@
       '<ul class="portal-activity-pages">' +
       submits
         .map(function (s) {
-          var pageHint = s.page ? ' (' + esc(s.page) + ')' : '';
+          var pageHint = submitParticipantHint(s);
           return (
             '<li><span class="portal-activity-pages__label">' +
             esc(s.label || s.action || 'submit') +

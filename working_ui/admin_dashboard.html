@@ -14149,11 +14149,58 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return iso10 === want && adminC4kSfMeaningfulText(d.rel);
       });
     }
-    function adminHubAbsentsStatusRowsForIso(iso){
+    function adminDisplayNameFromPortalSessionKey(pk){
+      var parts = String(pk || '').split('|').map(function(s){ return String(s || '').trim(); });
+      var slug = '';
+      for(var i = parts.length - 1; i >= 1; i--){
+        var p = parts[i];
+        if(!p) continue;
+        if(/^\d{4}-\d{2}-\d{2}$/.test(p)) continue;
+        if(/^\d{1,2}:\d{2}$/.test(p)) continue;
+        slug = p;
+        break;
+      }
+      if(!slug) return '';
+      return slug.replace(/_/g, ' ').replace(/\b\w/g, function(c){ return c.toUpperCase(); });
+    }
+    /** Absent rows for hub Absents tab: live quick marks first, then static status export. */
+    function adminHubAbsentMarksDisplayRowsForIso(iso){
       var want = String(iso || '').trim().substring(0, 10);
+      var marks = (window.__PORTAL_ABSENT_QUICK_MARKS__ || []).filter(function(m){
+        return String(m.session_date || '').trim().substring(0, 10) === want;
+      });
+      if(marks.length){
+        return marks.map(function(m){
+          var pk = String(m.portal_session_key || '').trim();
+          var client = String(m.client_name || '').trim() || adminDisplayNameFromPortalSessionKey(pk) || '—';
+          var slot = String(m.session_time || '').trim() || adminSessionTimeFromPortalKey(pk);
+          return {
+            date: want,
+            client: client,
+            service: String(m.service || '').trim(),
+            timeSlot: slot,
+            instructor: String(m.staff_name || '').trim(),
+            sessionKey: pk,
+            _mark: m
+          };
+        });
+      }
       return adminSessionFeedbackStatusRows().filter(function(r){
         return String(r.date || '').trim().substring(0, 10) === want && String(r.overviewStatus || '').trim() === 'absent';
+      }).map(function(r){
+        return {
+          date: r.date,
+          client: r.client,
+          service: r.service,
+          timeSlot: r.timeSlot,
+          instructor: r.instructor,
+          sessionKey: r.sessionKey,
+          _fromStatus: true
+        };
       });
+    }
+    function adminHubAbsentsStatusRowsForIso(iso){
+      return adminHubAbsentMarksDisplayRowsForIso(iso);
     }
     function adminHubCancellationReportsAll(){
       if(window.__PORTAL_CANCELLATION_REPORTS__) return window.__PORTAL_CANCELLATION_REPORTS__;
@@ -14370,6 +14417,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       window.__PORTAL_ABSENT_QUICK_MARKS__ = null;
       window.__PORTAL_SCHEDULE_OVERRIDES__ = null;
       window.__PORTAL_LEAD_SESSION_REPORTS__ = null;
+      adminHubQuickMarksBySessionKey._m = null;
       if(window.PortalDayOps && typeof window.PortalDayOps.invalidatePayload === 'function'){
         window.PortalDayOps.invalidatePayload();
       }
@@ -14425,27 +14473,67 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!client){ window.__PORTAL_ABSENT_QUICK_MARKS__ = []; return []; }
       try{
         var since = new Date();
-        since.setDate(since.getDate() - 60);
-        var res = await client
-          .from('portal_staff_session_quick_marks')
-          .select('portal_session_key,session_date,created_at,staff_user_id')
-          .eq('mark_type', 'absent')
-          .gte('session_date', since.toISOString().slice(0, 10))
-          .order('created_at', { ascending: false })
-          .limit(500);
-        var rows = res.error ? [] : (res.data || []);
-        var prof = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
-        window.__PORTAL_ABSENT_QUICK_MARKS__ = rows.map(function(r){
+        since.setDate(since.getDate() - 120);
+        var sinceIso = since.toISOString().slice(0, 10);
+        var rows = [];
+        var rpc = await client.rpc('portal_admin_fetch_absent_quick_marks', { p_since: sinceIso });
+        if(!rpc.error && Array.isArray(rpc.data)){
+          rows = rpc.data;
+        }else{
+          var res = await client
+            .from('portal_staff_session_quick_marks')
+            .select('portal_session_key,session_date,created_at,staff_user_id')
+            .eq('mark_type', 'absent')
+            .gte('session_date', sinceIso)
+            .order('created_at', { ascending: false })
+            .limit(500);
+          rows = res.error ? [] : (res.data || []);
+          var staffIds = [];
+          var seenStaff = {};
+          for(var si = 0; si < rows.length; si++){
+            var sid = rows[si] && rows[si].staff_user_id ? String(rows[si].staff_user_id) : '';
+            if(sid && !seenStaff[sid]){ seenStaff[sid] = true; staffIds.push(sid); }
+          }
+          var nameByStaff = {};
+          if(staffIds.length){
+            try{
+              var spRes = await client
+                .from('staff_profiles')
+                .select('id,full_name,username')
+                .in('id', staffIds);
+              if(!spRes.error && spRes.data){
+                spRes.data.forEach(function(sp){
+                  var id = String(sp.id || '');
+                  if(!id) return;
+                  nameByStaff[id] = String(sp.full_name || sp.username || '').trim();
+                });
+              }
+            }catch(_sp){}
+          }
+          rows = rows.map(function(r){
+            var uid = r.staff_user_id ? String(r.staff_user_id) : '';
+            return {
+              portal_session_key: r.portal_session_key,
+              session_date: r.session_date,
+              created_at: r.created_at,
+              staff_user_id: r.staff_user_id,
+              staff_name: uid && nameByStaff[uid] ? nameByStaff[uid] : ''
+            };
+          });
+        }
+        window.__PORTAL_ABSENT_QUICK_MARKS__ = (rows || []).map(function(r){
           return {
             portal_session_key: r.portal_session_key,
             session_date: r.session_date,
             created_at: r.created_at,
-            staff_name: prof && r.staff_user_id === prof.id ? String(prof.full_name || prof.username || '') : ''
+            staff_user_id: r.staff_user_id || null,
+            staff_name: String(r.staff_name || '').trim()
           };
         });
       }catch(_e2){
         window.__PORTAL_ABSENT_QUICK_MARKS__ = [];
       }
+      adminHubQuickMarksBySessionKey._m = null;
       return window.__PORTAL_ABSENT_QUICK_MARKS__;
     }
     function refreshSessionsHubPosRelGrid(){
@@ -14499,7 +14587,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           selectedIso: iso
         });
       }
-      var statusRows = adminHubAbsentsStatusRowsForIso(iso);
+      var statusRows = adminHubAbsentMarksDisplayRowsForIso(iso);
       var marks = adminHubQuickMarksBySessionKey();
       var q = String(h.clientQ || st.clientQ || '').trim().toLowerCase();
       if(q){
@@ -14510,7 +14598,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         tbody.innerHTML = statusRows.length
           ? statusRows.map(function(r){
               var sk = String(r.sessionKey || '').trim();
-              return adminHubAbsentRowHtml(r, sk ? marks[sk] : null);
+              var mark = r._mark || (sk ? marks[sk] : null);
+              return adminHubAbsentRowHtml(r, mark);
             }).join('')
           : '<tr><td colspan="4" class="muted">No absent marks for this day' + (q ? ' matching search' : '') + '.</td></tr>';
       }
@@ -14857,7 +14946,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
     var ADMIN_SESSIONS_HUB_SRC =
-      '/portal/admin-sessions-hub.js?v=20260601-abodi-teflon-stats';
+      '/portal/admin-sessions-hub.js?v=20260601-teflon-fb-match';
 
     /** Club closed — half-term 23–31 May 2026, bank holiday 4 May (see PORTAL_TERM_FROM_TIMETABLE). */
     function portalAdminDayIsClubClosed(iso){

@@ -140,14 +140,30 @@ function appendPageEvent(pages, label) {
   return arr;
 }
 
+function isPortalPageContextLabel(label) {
+  const L = String(label || "")
+    .trim()
+    .toLowerCase();
+  if (!L) return false;
+  if (L === "feedback" || L === "session feedback") return true;
+  if (/hub\b/.test(L) || L.indexOf("dashboard") >= 0) return true;
+  return false;
+}
+
 function appendFormSubmitEvent(submits, actionLabel, pageLabel) {
   const arr = Array.isArray(submits) ? submits.slice() : [];
   const action = String(actionLabel || "").trim();
   if (!action) return arr;
+  const hint = String(pageLabel || "").trim();
+  const participant =
+    hint && !isPortalPageContextLabel(hint) ? hint : "";
   arr.push({
     label: action,
     action,
-    page: String(pageLabel || _lastPageLabel || "").trim(),
+    page: participant
+      ? _lastPageLabel || "session feedback"
+      : hint || _lastPageLabel || "",
+    participant,
     at: new Date().toISOString(),
   });
   return arr;
