@@ -86,6 +86,8 @@
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png?v=20260608-footer" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png?v=20260608-footer" />
   <link rel="manifest" href="/staff-dashboard.webmanifest?v=20260608-footer" />
+  <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260602" />
+  <script src="/portal/portal_screenshot_guard.js?v=20260602"></script>
   <title>clubSENsational Staff Dashboard</title>
   <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260609-qm-feedback" />
 </head>
@@ -747,9 +749,9 @@
     </div>
   </section>
 
-  <script src="/portal/term_from_timetable.js?v=20260602-javier-catchup-orange-v2"></script>
+  <script src="/portal/term_from_timetable.js?v=20260602-javier-may14-zaid"></script>
   <script src="/portal/term_calendar_dashboard_shared.js?v=20260523-feedback-window"></script>
-  <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260601-tue-hazem-roberto-rayan-angel"></script>
+  <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260602-javier-may14"></script>
   <script src="/portal/session_feedback_portal_data.js?v=20260527-ma-apr-may"></script>
   <script src="/portal/session_feedback_status_portal_data.js?v=20260526-all-complete"></script>
   <script src="/portal/staff_portal_feedback_bridge.js?v=20260522-week-staff"></script>
@@ -761,7 +763,7 @@
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260609-participants"></script>
   <script src="/portal/staff_roster_resolve.js"></script>
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260603-achievements-shared" />
-  <script src="/portal/portal_participant_achievements.js?v=20260603-achievements-shared"></script>
+  <script src="/portal/portal_participant_achievements.js?v=20260602-screenshot-guard"></script>
   <script src="/portal/portal_guide_menu.js?v=20260609-qm-top"></script>
   <script src="/portal/portal_dm_voice.js?v=20260531-dm-voice"></script>
   <script>
@@ -1385,7 +1387,7 @@
       let changed = false;
       try{
         const sid = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
-        const resetV = '20260602-javier-catchup-orange-v2';
+        const resetV = '20260602-javier-may14-zaid';
         if(sid && typeof portalClearCatchUpExportReviewFlags === 'function'){
           let prev = '';
           try{ prev = localStorage.getItem('portalCatchUpReviewReset_v1') || ''; }catch(_){}
@@ -4040,7 +4042,7 @@
       const initials = escapeHtml(clientInitials(name));
       const url = clientPhotoUrl(name);
       if(!url) return initials;
-      return initials + '<img class="clients-grid-avatar-img" src="' + escapeHtml(url) + '" alt="" loading="lazy" decoding="async" onerror="this.remove()">';
+      return initials + '<img class="clients-grid-avatar-img portal-screenshot-protected" src="' + escapeHtml(url) + '" alt="" loading="lazy" decoding="async" draggable="false" onerror="this.remove()">';
     }
     /** Topbar: first token = given name line; remaining tokens = surname line. */
     function splitStaffTopbarName(fullName){
@@ -6932,6 +6934,10 @@
         ? portalGetMergedSessionReviewRecordForRoster(s, dayWord, sessionDateIso)
         : {};
       if(portalTermIsCatchUpFeedbackDate(iso, sid)){
+        const cid = typeof portalEffectiveClientIdForReview === 'function'
+          ? portalEffectiveClientIdForReview(s, sessionDateIso)
+          : String(s && s.clientId || '').trim().toLowerCase();
+        if(portalTermCatchUpClientMarkedDone(iso, sid, cid)) return true;
         return !!(rec.feedbackDone || rec.absent || rec.cancelled);
       }
       const bridge = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
@@ -9605,6 +9611,26 @@
       if(!Array.isArray(raw)) return [];
       return raw.map(function(d){ return String(d || '').trim().slice(0, 10); }).filter(Boolean);
     }
+    function portalTermStaffCatchUpFeedbackDates(staffId){
+      const t = window.PORTAL_TERM_FROM_TIMETABLE;
+      const map = t && t.termStaffCatchUpFeedbackDatesByProfileKey;
+      const id = String(staffId || '').trim().toLowerCase();
+      const raw = map && map[id];
+      if(!Array.isArray(raw)) return [];
+      return raw.map(function(d){ return String(d || '').trim().slice(0, 10); }).filter(Boolean);
+    }
+    function portalTermCatchUpClientMarkedDone(isoYmd, staffId, clientId){
+      const iso = String(isoYmd || '').trim().slice(0, 10);
+      const sid = String(staffId || '').trim().toLowerCase();
+      const cid = String(clientId || '').trim().toLowerCase();
+      if(!iso || !sid || !cid) return false;
+      const t = window.PORTAL_TERM_FROM_TIMETABLE;
+      const map = t && t.termStaffCatchUpFeedbackDoneClientsByDateByProfileKey;
+      const dayMap = map && map[sid];
+      const raw = dayMap && dayMap[iso];
+      if(!Array.isArray(raw)) return false;
+      return raw.some(function(c){ return String(c || '').trim().toLowerCase() === cid; });
+    }
     function portalTermStaffLateSubmissionBypass(staffId){
       const id = String(staffId || '').trim().toLowerCase();
       const t = window.PORTAL_TERM_FROM_TIMETABLE;
@@ -9617,12 +9643,12 @@
       const iso = String(isoYmd || '').trim().slice(0, 10);
       if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
       return portalTermStaffLateSubmissionBypass(staffId)
-        && portalTermStaffExtraCalendarDates(staffId).indexOf(iso) >= 0;
+        && portalTermStaffCatchUpFeedbackDates(staffId).indexOf(iso) >= 0;
     }
     function portalClearCatchUpExportReviewFlags(staffId){
       const sid = String(staffId || '').trim().toLowerCase();
       if(!portalTermStaffLateSubmissionBypass(sid)) return false;
-      const extras = portalTermStaffExtraCalendarDates(sid);
+      const extras = portalTermStaffCatchUpFeedbackDates(sid);
       if(!extras.length) return false;
       let changed = false;
       extras.forEach(function(iso){
@@ -9635,6 +9661,10 @@
             })
           : [];
         rel.forEach(function(s){
+          const cid = typeof portalEffectiveClientIdForReview === 'function'
+            ? portalEffectiveClientIdForReview(s, iso)
+            : String(s && s.clientId || '').trim().toLowerCase();
+          if(portalTermCatchUpClientMarkedDone(iso, sid, cid)) return;
           const sk = typeof portalSessionReviewKeyForModelRow === 'function'
             ? portalSessionReviewKeyForModelRow(s, dayWord, iso)
             : '';
@@ -9927,6 +9957,11 @@
           : `${isoKey}|${s.start}|${s.clientId}`;
         if(!sk) continue;
         applicable++;
+        const cidDone = typeof portalEffectiveClientIdForReview === 'function'
+          ? portalEffectiveClientIdForReview(s, isoKey)
+          : String(s && s.clientId || '').trim().toLowerCase();
+        if(portalTermIsCatchUpFeedbackDate(isoKey, staffId)
+          && portalTermCatchUpClientMarkedDone(isoKey, staffId, cidDone)) continue;
         if(typeof portalRosterSessionFeedbackCompleteForTerm === 'function'
           && portalRosterSessionFeedbackCompleteForTerm(s, dayWord, isoKey, staffId)) continue;
         const rec = typeof portalGetMergedSessionReviewRecordForRoster === 'function'
@@ -10734,6 +10769,9 @@
       try{
         if(window.PortalParticipantAchievements && typeof window.PortalParticipantAchievements.stopCamera === 'function'){
           window.PortalParticipantAchievements.stopCamera();
+        }
+        if(window.PortalParticipantAchievements && typeof window.PortalParticipantAchievements.syncScreenshotGuard === 'function'){
+          window.PortalParticipantAchievements.syncScreenshotGuard();
         }
       }catch(_achCam){}
       const hadClientOpen = $$('.sheet.open').some(s => s.id === 'clientSheet');

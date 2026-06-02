@@ -15,6 +15,35 @@
     window.PORTAL_SHARED_JS_BASE = "/portal-shared-js";
   }
 
+  (function portalLoadScreenshotGuardEarly() {
+    try {
+      var path = String(
+        (typeof location !== "undefined" && location.pathname) || ""
+      ).toLowerCase();
+      if (/login\.html(?:$|[?#])/.test(path) || /\/login(?:$|[/?#])/.test(path)) return;
+      var sensitive =
+        /staff_dashboard|lead_dashboard|staff_profile_update|portal-|cancellation|observation|policies|pickup|certificates|ra_portal|venue-review|incident|expenses|timesheet/i.test(
+          path
+        );
+      if (!sensitive) return;
+      var base = window.PORTAL_SHARED_JS_BASE || "/portal-shared-js";
+      var head = document.head || document.documentElement;
+      if (!document.querySelector('link[data-portal-screenshot-guard-css="1"]')) {
+        var link = document.createElement("link");
+        link.rel = "stylesheet";
+        link.href = base + "/portal_screenshot_guard.css?v=20260602";
+        link.setAttribute("data-portal-screenshot-guard-css", "1");
+        head.appendChild(link);
+      }
+      if (!document.querySelector('script[data-portal-screenshot-guard-js="1"]')) {
+        var s = document.createElement("script");
+        s.src = base + "/portal_screenshot_guard.js?v=20260602";
+        s.setAttribute("data-portal-screenshot-guard-js", "1");
+        head.appendChild(s);
+      }
+    } catch (_) {}
+  })();
+
   var BRIDGE_KEY = "portalStaffProfileBridgeSecret_v1";
 
   window.portalPersistBridgeSecret = function portalPersistBridgeSecret(secret) {

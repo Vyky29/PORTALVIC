@@ -44,7 +44,6 @@
     participant: null,
     photos: [],
     stream: null,
-    guardBound: false,
     captureMode: "gallery",
     cameraMode: "photo",
     viewerIndex: -1,
@@ -99,54 +98,27 @@
     if (options.getWorkingDateIso) cfg.getWorkingDateIso = options.getWorkingDateIso;
   }
 
-  function ensureCaptureGuard() {
-    var el = document.getElementById("portalAchievementCaptureGuard");
-    if (!el) {
-      el = document.createElement("div");
-      el.id = "portalAchievementCaptureGuard";
-      el.className = "portal-achievement-capture-guard";
-      el.setAttribute("aria-hidden", "true");
-      document.body.appendChild(el);
-    }
-    if (state.guardBound) return;
-    state.guardBound = true;
-
-    function flashBlack(ms) {
-      el.classList.add("is-active");
-      global.clearTimeout(flashBlack._t);
-      flashBlack._t = global.setTimeout(function () {
-        el.classList.remove("is-active");
-      }, ms || 2400);
-    }
-
-    document.addEventListener("visibilitychange", function () {
-      if (document.hidden && isAchievementSurfaceOpen()) flashBlack(2800);
-    });
-    global.addEventListener("blur", function () {
-      if (isAchievementSurfaceOpen()) flashBlack(1800);
-    });
-    document.addEventListener("keyup", function (e) {
-      if (!isAchievementSurfaceOpen()) return;
-      if (e.key === "PrintScreen" || (e.ctrlKey && e.shiftKey && (e.key === "s" || e.key === "S"))) {
-        flashBlack(3000);
-      }
-    });
-    document.addEventListener("contextmenu", function (e) {
-      if (e.target && e.target.closest && e.target.closest(".portal-achievement-protected")) {
-        e.preventDefault();
-      }
-    });
-  }
-
-  function isAchievementSurfaceOpen() {
+  function isAchievementPhotoSurfaceOpen() {
     var fs = document.getElementById("portalAchievementsCameraFullscreen");
     if (fs && !fs.hidden) return true;
     var viewer = document.getElementById("portalAchievementsGalleryViewer");
     if (viewer && !viewer.hidden) return true;
-    var sheet = document.getElementById("achievementsSheet");
-    if (sheet && sheet.classList.contains("open")) return true;
     var fb = document.getElementById("portalFeedbackAchievementsPanel");
-    return !!(fb && !fb.hidden);
+    if (fb && !fb.hidden && fb.querySelector("img")) return true;
+    var gal = document.getElementById("portalAchievementsGallery");
+    if (gal && gal.querySelector(".portal-achievements-gallery-grid img")) return true;
+    return false;
+  }
+
+  function syncAchievementScreenshotGuard() {
+    var g = global.PortalScreenshotGuard;
+    if (!g || typeof g.pushStrict !== "function") return;
+    if (isAchievementPhotoSurfaceOpen()) g.pushStrict("participant-achievements");
+    else g.popStrict("participant-achievements");
+  }
+
+  function ensureCaptureGuard() {
+    syncAchievementScreenshotGuard();
   }
 
   function getCameraFullscreenEl() {
@@ -258,6 +230,7 @@
       fs.setAttribute("aria-hidden", "false");
       document.body.classList.add("portal-achievements-camera-open");
     }
+    syncAchievementScreenshotGuard();
     showCameraLiveUi();
   }
 
@@ -270,6 +243,7 @@
       fs.setAttribute("aria-hidden", "true");
     }
     document.body.classList.remove("portal-achievements-camera-open");
+    syncAchievementScreenshotGuard();
   }
 
   function setStatus(html, isError) {
@@ -661,6 +635,7 @@
     document.body.classList.remove("portal-achievements-viewer-open");
     state.viewerIndex = -1;
     if (state.participant) showStep("capture");
+    syncAchievementScreenshotGuard();
   }
 
   function updateViewerNavButtons() {
@@ -686,6 +661,7 @@
     }
     document.body.classList.add("portal-achievements-viewer-open");
     updateViewerNavButtons();
+    syncAchievementScreenshotGuard();
   }
 
   function navigateGalleryViewer(delta) {
@@ -774,6 +750,7 @@
     if (state.viewerIndex >= 0 && state.viewerIndex < state.photos.length) {
       void openGalleryViewer(state.viewerIndex);
     }
+    syncAchievementScreenshotGuard();
   }
 
   function bindSheet() {
@@ -915,7 +892,7 @@
       '<h3 id="achievementsSheetTitle">Participant achievements</h3>' +
       "</div>" +
       '<div class="sheet-body portal-achievements-sheet-body">' +
-      '<p class="portal-achievements-note">Photos stay in the portal only (not your phone gallery). Screenshots are blocked while you view them here.</p>' +
+      '<p class="portal-achievements-note">Photos stay in the portal only (not your phone gallery). On this device, screen captures show black while you view photos here.</p>' +
       '<div id="portalAchievementsStatus" class="portal-achievements-status" role="status"></div>' +
       '<div id="portalAchievementsStepPick">' +
       '<p class="portal-achievements-step-title">Today — <span id="portalAchievementsDayLabel"></span></p>' +
@@ -945,8 +922,8 @@
       "</div></div></div>" +
       '<div id="portalAchievementsGalleryViewer" class="portal-achievements-viewer" hidden aria-hidden="true">' +
       '<button type="button" class="portal-achievements-viewer__close" id="portalAchievementsViewerClose" aria-label="Close">×</button>' +
-      '<div class="portal-achievements-viewer__stage portal-achievement-protected">' +
-      '<img id="portalAchievementsViewerImg" alt="" draggable="false" class="portal-achievements-viewer__img" />' +
+      '<div class="portal-achievements-viewer__stage portal-screenshot-protected portal-achievement-protected">' +
+      '<img id="portalAchievementsViewerImg" alt="" draggable="false" class="portal-achievements-viewer__img portal-screenshot-protected portal-achievement-protected" />' +
       "</div>" +
       '<div class="portal-achievements-viewer__nav" role="group" aria-label="Photo navigation">' +
       '<button type="button" class="portal-achievements-viewer__nav-btn" id="portalAchievementsViewerPrev" aria-label="Previous photo">' +
@@ -959,7 +936,7 @@
       ICON_NEXT +
       "</button></div></div>" +
       '<div id="portalAchievementsCameraFullscreen" class="portal-achievements-camera-fs" hidden aria-hidden="true">' +
-      '<div class="portal-achievements-camera-fs__viewport portal-achievement-protected">' +
+      '<div class="portal-achievements-camera-fs__viewport portal-screenshot-protected portal-achievement-protected">' +
       '<video id="portalAchievementsCameraVideo" playsinline autoplay muted class="portal-achievements-camera-fs__video"></video>' +
       "</div>" +
       '<div class="portal-achievements-camera-fs__chrome">' +
@@ -1066,7 +1043,7 @@
           el.innerHTML =
             '<img src="' +
             esc(url) +
-            '" alt="" draggable="false" class="portal-achievement-protected" />';
+            '" alt="" draggable="false" class="portal-screenshot-protected portal-achievement-protected" />';
         });
       })(picks[i], picks[i].getAttribute("data-path"));
     }
@@ -1116,6 +1093,7 @@
     renderFeedbackAttachPanel: renderFeedbackAttachPanel,
     getSelectedFeedbackPhotoIds: getSelectedFeedbackPhotoIds,
     finalizeOnFeedbackSubmit: finalizeOnFeedbackSubmit,
+    syncScreenshotGuard: syncAchievementScreenshotGuard,
     MAX_PHOTOS: MAX_PHOTOS,
   };
 })(typeof window !== "undefined" ? window : globalThis);

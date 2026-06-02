@@ -33,6 +33,9 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
   "termStaffAwayDatesByProfileKey": {
     "roberto": [
       "2026-05-07"
+    ],
+    "javier": [
+      "2026-05-21"
     ]
   },
   "termStaffOffWeekdaysRangeByProfileKey": {
@@ -48,14 +51,17 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     "roberto": [
       "2026-05-17",
       "2026-05-22"
+    ],
+    "javier": [
+      "2026-05-13",
+      "2026-05-19",
+      "2026-05-20"
     ]
   },
   "termStaffExtraCalendarDatesByProfileKey": {
     "javier": [
-      "2026-05-13",
-      "2026-05-17",
-      "2026-05-19",
-      "2026-05-20"
+      "2026-05-14",
+      "2026-05-17"
     ]
   },
   "termStaffLateSubmissionBypassProfileKeys": [
@@ -714,5 +720,25 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-07-15",
       "2026-07-17"
     ]
+  },
+  "termStaffCatchUpFeedbackDatesByProfileKey": {
+    "javier": [
+      "2026-05-14",
+      "2026-05-17"
+    ]
+  },
+  "termStaffCatchUpFeedbackDoneClientsByDateByProfileKey": {
+    "javier": {
+      "2026-05-17": [
+        "shire",
+        "samer",
+        "hazem",
+        "eiji",
+        "rayyan_fi",
+        "haneef",
+        "max",
+        "shaan"
+      ]
+    }
   }
 };

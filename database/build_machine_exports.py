@@ -17,6 +17,7 @@ TERM_RESUME_DATE = "2026-06-01"
 TERM_CLOSED_DATES = ["2026-05-04"]
 TERM_STAFF_AWAY_DATES_BY_PROFILE_KEY = {
     "roberto": ["2026-05-07"],
+    "javier": ["2026-05-21"],
 }
 # Summer Term 2: staff no longer on pool rota these weekdays (term cell red).
 TERM_STAFF_OFF_WEEKDAYS_RANGE_BY_PROFILE_KEY = {
@@ -25,10 +26,30 @@ TERM_STAFF_OFF_WEEKDAYS_RANGE_BY_PROFILE_KEY = {
 # Term calendar green override when export/roster reconciliation misses a worked day.
 TERM_STAFF_FEEDBACK_COMPLETE_DATES_BY_PROFILE_KEY = {
     "roberto": ["2026-05-17", "2026-05-22"],
+    "javier": ["2026-05-13", "2026-05-19", "2026-05-20"],
 }
 # Staff may open specific pre-term calendar days for catch-up feedback (My Term grid).
 TERM_STAFF_EXTRA_CALENDAR_DATES_BY_PROFILE_KEY = {
-    "javier": ["2026-05-13", "2026-05-17", "2026-05-19", "2026-05-20"],
+    "javier": ["2026-05-14", "2026-05-17"],
+}
+# Catch-up days: ignore static export greens; use real portal review state only.
+TERM_STAFF_CATCH_UP_FEEDBACK_DATES_BY_PROFILE_KEY = {
+    "javier": ["2026-05-14", "2026-05-17"],
+}
+# On catch-up days, treat these client slugs as already done (e.g. May 17 Samer done, Zaid pending).
+TERM_STAFF_CATCH_UP_FEEDBACK_DONE_CLIENTS_BY_DATE_BY_PROFILE_KEY = {
+    "javier": {
+        "2026-05-17": [
+            "shire",
+            "samer",
+            "hazem",
+            "eiji",
+            "rayyan_fi",
+            "haneef",
+            "max",
+            "shaan",
+        ],
+    },
 }
 # Skip admin late-submission approval prompts (feedback/cancellation/incident).
 TERM_STAFF_LATE_SUBMISSION_BYPASS_PROFILE_KEYS = ["javier"]
@@ -363,6 +384,12 @@ def write_term_from_timetable_js(records, roster_rows=None):
         ),
         "termStaffExtraCalendarDatesByProfileKey": dict(
             TERM_STAFF_EXTRA_CALENDAR_DATES_BY_PROFILE_KEY
+        ),
+        "termStaffCatchUpFeedbackDatesByProfileKey": dict(
+            TERM_STAFF_CATCH_UP_FEEDBACK_DATES_BY_PROFILE_KEY
+        ),
+        "termStaffCatchUpFeedbackDoneClientsByDateByProfileKey": dict(
+            TERM_STAFF_CATCH_UP_FEEDBACK_DONE_CLIENTS_BY_DATE_BY_PROFILE_KEY
         ),
         "termStaffLateSubmissionBypassProfileKeys": list(
             TERM_STAFF_LATE_SUBMISSION_BYPASS_PROFILE_KEYS

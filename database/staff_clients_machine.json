@@ -190,6 +190,46 @@
     "session_date": "2026-05-13"
   },
   {
+    "client_name": "Ayman",
+    "day": "Thursday",
+    "instructors": "JAVIER",
+    "service": "Aquatic Activity",
+    "area": "Lane (SE)",
+    "time_slot": "4 to 5",
+    "venue": "Acton",
+    "session_date": "2026-05-14"
+  },
+  {
+    "client_name": "Khalid Ab",
+    "day": "Thursday",
+    "instructors": "JAVIER",
+    "service": "Aquatic Activity",
+    "area": "Lane (SE)",
+    "time_slot": "5 to 5.30",
+    "venue": "Acton",
+    "session_date": "2026-05-14"
+  },
+  {
+    "client_name": "Karo",
+    "day": "Thursday",
+    "instructors": "JAVIER",
+    "service": "Aquatic Activity",
+    "area": "Lane (SE)",
+    "time_slot": "5.30 to 6",
+    "venue": "Acton",
+    "session_date": "2026-05-14"
+  },
+  {
+    "client_name": "Hazem",
+    "day": "Thursday",
+    "instructors": "JAVIER",
+    "service": "Aquatic Activity",
+    "area": "Teaching Pool",
+    "time_slot": "6 to 6.30",
+    "venue": "Acton",
+    "session_date": "2026-05-14"
+  },
+  {
     "client_name": "Fadi",
     "day": "Thursday",
     "instructors": "ROBERTO",

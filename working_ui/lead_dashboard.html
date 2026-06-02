@@ -86,6 +86,8 @@
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png?v=20260608-footer" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png?v=20260608-footer" />
   <link rel="manifest" href="/lead-dashboard.webmanifest?v=20260608-footer" />
+  <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260602" />
+  <script src="/portal/portal_screenshot_guard.js?v=20260602"></script>
   <title>clubSENsational Lead Dashboard</title>
   <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260609-qm-feedback" />
 </head>
@@ -775,7 +777,7 @@
   <script src="portal/staff_dashboard_spreadsheet_adapter.js?v=20260609-participants"></script>
   <script src="portal/staff_roster_resolve.js"></script>
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260603-achievements-shared" />
-  <script src="/portal/portal_participant_achievements.js?v=20260603-achievements-shared"></script>
+  <script src="/portal/portal_participant_achievements.js?v=20260602-screenshot-guard"></script>
   <script src="/portal/portal_guide_menu.js?v=20260609-qm-top"></script>
   <script src="/portal/portal_dm_voice.js?v=20260531-dm-voice"></script>
   <script>
@@ -9906,6 +9908,9 @@
       try{
         if(window.PortalParticipantAchievements && typeof window.PortalParticipantAchievements.stopCamera === 'function'){
           window.PortalParticipantAchievements.stopCamera();
+        }
+        if(window.PortalParticipantAchievements && typeof window.PortalParticipantAchievements.syncScreenshotGuard === 'function'){
+          window.PortalParticipantAchievements.syncScreenshotGuard();
         }
       }catch(_achCam){}
       const hadClientOpen = $$('.sheet.open').some(s => s.id === 'clientSheet');
