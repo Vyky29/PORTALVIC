@@ -98,9 +98,7 @@
     if (options.getWorkingDateIso) cfg.getWorkingDateIso = options.getWorkingDateIso;
   }
 
-  function isAchievementPhotoSurfaceOpen() {
-    var fs = document.getElementById("portalAchievementsCameraFullscreen");
-    if (fs && !fs.hidden) return true;
+  function isAchievementGalleryViewerOpen() {
     var viewer = document.getElementById("portalAchievementsGalleryViewer");
     if (viewer && !viewer.hidden) return true;
     var fb = document.getElementById("portalFeedbackAchievementsPanel");
@@ -110,11 +108,26 @@
     return false;
   }
 
+  function isAchievementCameraOpen() {
+    var fs = document.getElementById("portalAchievementsCameraFullscreen");
+    return !!(fs && !fs.hidden);
+  }
+
+  function isAchievementPhotoSurfaceOpen() {
+    return isAchievementGalleryViewerOpen() || isAchievementCameraOpen();
+  }
+
   function syncAchievementScreenshotGuard() {
     var g = global.PortalScreenshotGuard;
-    if (!g || typeof g.pushStrict !== "function") return;
-    if (isAchievementPhotoSurfaceOpen()) g.pushStrict("participant-achievements");
-    else g.popStrict("participant-achievements");
+    if (!g) return;
+    if (typeof g.pushStrict === "function" && typeof g.popStrict === "function") {
+      if (isAchievementGalleryViewerOpen()) g.pushStrict("participant-achievements");
+      else g.popStrict("participant-achievements");
+    }
+    if (typeof g.pushMediaCaptureBypass === "function" && typeof g.popMediaCaptureBypass === "function") {
+      if (isAchievementCameraOpen()) g.pushMediaCaptureBypass("participant-achievements-camera");
+      else g.popMediaCaptureBypass("participant-achievements-camera");
+    }
   }
 
   function ensureCaptureGuard() {

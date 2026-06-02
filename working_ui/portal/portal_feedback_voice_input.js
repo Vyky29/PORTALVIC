@@ -45,6 +45,16 @@
     return global.SpeechRecognition || global.webkitSpeechRecognition || null;
   }
 
+  function setScreenshotGuardForRecording(on) {
+    var g = global.PortalScreenshotGuard;
+    if (!g) return;
+    if (on && typeof g.pushMediaCaptureBypass === "function") {
+      g.pushMediaCaptureBypass("session-feedback-voice");
+    } else if (!on && typeof g.popMediaCaptureBypass === "function") {
+      g.popMediaCaptureBypass("session-feedback-voice");
+    }
+  }
+
   function injectStyles() {
     if (document.getElementById("portal-fb-voice-styles")) return;
     var st = document.createElement("style");
@@ -441,6 +451,7 @@
 
   function cleanupSessionUi(s) {
     clearSessionTimers(s);
+    setScreenshotGuardForRecording(false);
     var wrap = s.textarea && s.textarea.closest(".portal-fb-voice-wrap");
     if (wrap) wrap.classList.remove("portal-fb-voice-wrap--live");
     if (s.stream) {
@@ -584,6 +595,7 @@
       maxTimer: null,
     };
     session = s;
+    setScreenshotGuardForRecording(true);
 
     var wrap = textarea.closest(".portal-fb-voice-wrap");
     if (wrap) wrap.classList.add("portal-fb-voice-wrap--live");
@@ -663,6 +675,7 @@
       translateSeq: 0,
     };
     session = s;
+    setScreenshotGuardForRecording(true);
 
     var wrap = textarea.closest(".portal-fb-voice-wrap");
     if (wrap) wrap.classList.add("portal-fb-voice-wrap--live");

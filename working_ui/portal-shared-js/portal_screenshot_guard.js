@@ -11,6 +11,7 @@
   var armed = false;
   var bound = false;
   var strictTokens = Object.create(null);
+  var mediaCaptureTokens = Object.create(null);
   var lingerTimer = null;
   var DEFAULT_LINGER_MS = 3400;
   var STRICT_LINGER_MS = 5200;
@@ -34,6 +35,14 @@
     return false;
   }
 
+  function isMediaCaptureActive() {
+    var k;
+    for (k in mediaCaptureTokens) {
+      if (Object.prototype.hasOwnProperty.call(mediaCaptureTokens, k)) return true;
+    }
+    return false;
+  }
+
   function ensureEl() {
     var el = document.getElementById(GUARD_ID);
     if (el) return el;
@@ -53,7 +62,7 @@
   }
 
   function showBlack(opts) {
-    if (!armed) return;
+    if (!armed || isMediaCaptureActive()) return;
     opts = opts || {};
     var el = ensureEl();
     el.classList.add("is-active");
@@ -76,6 +85,13 @@
     setSensitiveHidden(false);
   }
 
+  function hideBlackForce() {
+    global.clearTimeout(lingerTimer);
+    var el = document.getElementById(GUARD_ID);
+    if (el) el.classList.remove("is-active");
+    setSensitiveHidden(false);
+  }
+
   function bindEvents() {
     if (bound) return;
     bound = true;
@@ -84,8 +100,12 @@
       "visibilitychange",
       function () {
         if (!armed) return;
+        if (isMediaCaptureActive()) {
+          hideBlackForce();
+          return;
+        }
         if (document.hidden) showBlack({ persist: true });
-        else showBlack({ lingerMs: isStrict() ? STRICT_LINGER_MS : DEFAULT_LINGER_MS });
+        else hideBlack();
       },
       true
     );
@@ -93,7 +113,7 @@
     global.addEventListener(
       "blur",
       function () {
-        if (armed) showBlack({ persist: true });
+        if (armed && !isMediaCaptureActive()) showBlack({ persist: true });
       },
       true
     );
@@ -101,7 +121,7 @@
     global.addEventListener(
       "pagehide",
       function () {
-        if (armed) showBlack({ persist: true });
+        if (armed && !isMediaCaptureActive()) showBlack({ persist: true });
       },
       true
     );
@@ -110,6 +130,10 @@
       "focus",
       function () {
         if (!armed || document.hidden) return;
+        if (isMediaCaptureActive()) {
+          hideBlackForce();
+          return;
+        }
         if (isStrict()) showBlack({ persist: true });
         else hideBlack();
       },
@@ -180,6 +204,18 @@
     if (!document.hidden && !isStrict()) hideBlack();
   }
 
+  function pushMediaCaptureBypass(token) {
+    var key = String(token || "default");
+    mediaCaptureTokens[key] = 1;
+    hideBlackForce();
+  }
+
+  function popMediaCaptureBypass(token) {
+    var key = String(token || "default");
+    delete mediaCaptureTokens[key];
+    if (!document.hidden && !isStrict()) hideBlack();
+  }
+
   function autoArmFromDocument() {
     try {
       var mode = document.documentElement.getAttribute("data-portal-screenshot-guard");
@@ -197,6 +233,8 @@
     disarm: disarm,
     pushStrict: pushStrict,
     popStrict: popStrict,
+    pushMediaCaptureBypass: pushMediaCaptureBypass,
+    popMediaCaptureBypass: popMediaCaptureBypass,
     showBlack: showBlack,
     hideBlack: hideBlack,
     isMobilePortalDevice: isMobilePortalDevice,

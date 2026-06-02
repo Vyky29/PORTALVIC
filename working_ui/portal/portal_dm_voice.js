@@ -88,6 +88,10 @@
   }
 
   function stopRecording() {
+    var g = typeof window !== "undefined" && window.PortalScreenshotGuard;
+    if (g && typeof g.popMediaCaptureBypass === "function") {
+      g.popMediaCaptureBypass("portal-dm-voice");
+    }
     if (recordState.timerId) {
       clearTimeout(recordState.timerId);
       recordState.timerId = null;
@@ -313,6 +317,10 @@
           return;
         }
         try {
+          var g = typeof window !== "undefined" && window.PortalScreenshotGuard;
+          if (g && typeof g.pushMediaCaptureBypass === "function") {
+            g.pushMediaCaptureBypass("portal-dm-voice");
+          }
           var stream = await navigator.mediaDevices.getUserMedia({ audio: true });
           var chosen = pickMime();
           var recorder = new MediaRecorder(stream, chosen ? { mimeType: chosen } : {});
