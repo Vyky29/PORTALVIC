@@ -13,7 +13,7 @@
     Secret Edge PORTAL_PUSH_OPEN_URL: URL HTTPS pública de este dashboard (sin barra final), p. ej. …/staff_dashboard.html en producción.
   -->
   <script src="/portal/portal-vapid-public.js?v=20260601-vapid"></script>
-  <script src="/portal/portal_announcement_ack.js?v=20260610-portal-ready"></script>
+  <script src="/portal/portal_announcement_ack.js?v=20260602-ann-live-jun2"></script>
   <script src="/portal-static-bootstrap.js?v=20260610-profile-bridge"></script>
   <!-- Optional: hide parent site chrome when embedded in another shell. -->
   <script>
@@ -752,9 +752,9 @@
     </div>
   </section>
 
-  <script src="/portal/term_from_timetable.js?v=20260602-javier-term-jun1"></script>
+  <script src="/portal/term_from_timetable.js?v=20260602-youssef-term-jun1"></script>
   <script src="/portal/term_calendar_dashboard_shared.js?v=20260523-feedback-window"></script>
-  <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260602-feedback-voice-fix-javier-may20-catchup"></script>
+  <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260602-tue-cayra-430-ayman"></script>
   <script src="/portal/session_feedback_portal_data.js?v=20260527-ma-apr-may"></script>
   <script src="/portal/session_feedback_status_portal_data.js?v=20260526-all-complete"></script>
   <script src="/portal/staff_portal_feedback_bridge.js?v=20260601-luliya-roster-guard"></script>
@@ -1402,7 +1402,7 @@
       let changed = false;
       try{
         const sid = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
-        const resetV = '20260602-javier-term-jun1-zaid';
+        const resetV = '20260602-youssef-term-jun1';
         if(sid && typeof portalClearCatchUpExportReviewFlags === 'function'){
           let prev = '';
           try{ prev = localStorage.getItem('portalCatchUpReviewReset_v1') || ''; }catch(_){}
@@ -7877,13 +7877,24 @@
         }
         if(!Array.isArray(res.data)) return;
         const now = Date.now();
+        const annLiveFrom =
+          typeof portalAnnouncementCreatedOnOrAfterLive === 'function'
+            ? portalAnnouncementCreatedOnOrAfterLive
+            : function(iso){ return String(iso || '').slice(0, 10) >= '2026-06-02'; };
         const visible = res.data.filter(function(row){
           if(!row || !row.id) return false;
           if(row.ends_at){
             const t = Date.parse(row.ends_at);
             if(Number.isFinite(t) && t < now) return false;
           }
+          const typ = String(row.message_type || '').toLowerCase().trim();
+          if(typ === 'announcement' && !annLiveFrom(row.created_at)) return false;
           return true;
+        });
+        dashboardData.portalLiveAnnouncementIdSet = {};
+        visible.forEach(function(row){
+          if(String(row.message_type || '').toLowerCase().trim() !== 'announcement') return;
+          dashboardData.portalLiveAnnouncementIdSet[String(row.id)] = true;
         });
         const preserved = dashboardData.notices.filter(function(n){
           return !n || n.type !== 'announcement' || !n.portalAnnouncementId;
@@ -7988,6 +7999,13 @@
           }
         }
         if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
+        if(typeof portalPrunePreLaunchAnnouncementAcks === 'function'){
+          portalPrunePreLaunchAnnouncementAcks(
+            portalAnnouncementAckMapLoad,
+            portalAnnouncementAckMapSave,
+            dashboardData.portalLiveAnnouncementIdSet || {}
+          );
+        }
       }catch(_){}
     }
     try{ window.portalHydrateAnnouncementsFromSupabase = portalHydrateAnnouncementsFromSupabase; }catch(_){}
@@ -8032,7 +8050,7 @@
       try{
         const ack = portalAnnouncementAckMapLoad();
         let changed = false;
-        const titleNeedles = ['pool safety', 'bank holiday', 'spring checklist', 'revised hours'];
+        const titleNeedles = ['pool safety', 'bank holiday', 'spring checklist', 'revised hours', 'welcome to the new club'];
         Object.keys(ack).forEach(function(k){
           const rec = ack[k];
           if(!rec || typeof rec !== 'object') return;
@@ -8109,12 +8127,20 @@
       const annOpen = !!document.getElementById('announcementsSheet')?.classList.contains('open');
       return !!(portalAnnouncementLockRequired && annOpen && portalAnnouncementPendingItem());
     }
+    function portalLiveAnnouncementIdSet(){
+      const map = dashboardData && dashboardData.portalLiveAnnouncementIdSet;
+      return map && typeof map === 'object' ? map : {};
+    }
     function portalAnnouncementHistoryRows(){
       const ack = portalAnnouncementAckMapLoad();
+      const liveSet = portalLiveAnnouncementIdSet();
       const out = [];
       Object.keys(ack).forEach(function(k){
         const rec = ack[k];
         if(!rec || typeof rec !== 'object') return;
+        if(typeof portalAnnouncementAckRecordIsLive === 'function'){
+          if(!portalAnnouncementAckRecordIsLive(rec, k, liveSet)) return;
+        }
         if(portalAnnouncementAckPastHideWindow(rec)) return;
         out.push({
           key: k,
@@ -8652,7 +8678,7 @@
         dashboardData.termShiftEndByDate = {};
         dashboardData.termDemoNow = null;
       }
-      const extraDates = id === 'javier' ? [] : portalTermStaffExtraCalendarDates(id);
+      const extraDates = (id === 'javier' || id === 'youssef') ? [] : portalTermStaffExtraCalendarDates(id);
       if(extraDates.length){
         const months = new Set((dashboardData.termCalendarMonths || []).map(Number));
         const fd = dashboardData.termCalendarFirstDom && typeof dashboardData.termCalendarFirstDom === 'object'
@@ -9061,16 +9087,21 @@
           'pending'
         );
       }
-      appendAnnouncementSubcategory(
-        'Previously Signed',
-        buildAnnouncementQuickRow(
-          'announcementSignedLog',
-          'Signed Announcements',
-          'Signed Announcements — open log to read',
-          'menu-btn--announcement-signed'
-        ),
-        'signed'
-      );
+      const signedHistoryRows = typeof portalAnnouncementHistoryRows === 'function'
+        ? portalAnnouncementHistoryRows()
+        : [];
+      if(signedHistoryRows.length > 0){
+        appendAnnouncementSubcategory(
+          'Previously Signed',
+          buildAnnouncementQuickRow(
+            'announcementSignedLog',
+            'Signed Announcements',
+            'Signed Announcements — open log to read',
+            'menu-btn--announcement-signed'
+          ),
+          'signed'
+        );
+      }
       if(typeof portalRenderQuickMenuInternalChatTile === 'function') portalRenderQuickMenuInternalChatTile();
       if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
       else {
@@ -9099,6 +9130,13 @@
       }catch(_){}
     }
     function portalSyncAnnouncementsAndRemindersUi(){
+      if(typeof portalPrunePreLaunchAnnouncementAcks === 'function'){
+        portalPrunePreLaunchAnnouncementAcks(
+          portalAnnouncementAckMapLoad,
+          portalAnnouncementAckMapSave,
+          portalLiveAnnouncementIdSet()
+        );
+      }
       if(typeof portalPruneTestAnnouncementAckKeys === 'function') portalPruneTestAnnouncementAckKeys();
       if(typeof portalPruneLegacyStaffDemoAnnouncementAckKeys === 'function') portalPruneLegacyStaffDemoAnnouncementAckKeys();
       if(typeof portalResetStaffDemoAnnouncementAckIfFlagged === 'function') portalResetStaffDemoAnnouncementAckIfFlagged();

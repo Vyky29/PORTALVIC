@@ -15,7 +15,7 @@
     const k = String(value || "").trim().toLowerCase();
     if (!k) return "";
     if (k === "luliya" || k === "aida" || k === "stf021") return "lulia";
-    if (k === "yousef" || k === "youssef" || k === "yousseff") return "yusef";
+    if (k === "yousef" || k === "youssef" || k === "yousseff" || k === "yusef") return "youssef";
     return k;
   }
 

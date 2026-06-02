@@ -229,7 +229,7 @@
 
   <script type="module">
     async function portalImportDocumentsModule(tag) {
-      const v = "20260423-12";
+      const v = "20260602-deadline24";
       const custom =
         typeof window !== "undefined" && window.PORTAL_WP_UPLOADS_BASE
           ? String(window.PORTAL_WP_UPLOADS_BASE).trim().replace(/\/$/, "")
@@ -285,11 +285,11 @@
      */
     const MANUAL_TIMESHEET_ROSTER_KEYS = new Set(["roberto"]);
     /**
-     * Payroll cycle is 25 -> 24. On-time deadline is the 23rd of the closing
-     * month; submitting on the 24th (last day of the cycle) is late: it rolls to
-     * next month's pay and a fixed penalty is deducted (HMRC late-reporting).
+     * Payroll cycle is 25 -> 24. On-time deadline is the 24th of the closing
+     * month (last day of the cycle). Submitting on the 25th or later is late:
+     * rolls to next month's pay and a fixed penalty is deducted (HMRC late-reporting).
      */
-    const ONTIME_DEADLINE_DAY = 23;
+    const ONTIME_DEADLINE_DAY = 24;
     const LATE_PENALTY_GBP = 5;
     /** Personal / placeholder Auth emails → spreadsheet roster id (berta, john, …). */
     const AUTH_EMAIL_TO_ROSTER_KEY = {
@@ -522,28 +522,43 @@
       const n = new Date(d.getFullYear(), d.getMonth() + 1, 1);
       return n.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
     }
-    /** Late if submitted on the 24th (deadline is the 23rd; the 25th starts a new cycle). */
+    /** Late from the 25th in the closing month (deadline is the 24th, last day of the cycle). */
     function submissionLateStatus() {
       const today = new Date();
-      const day = today.getDate();
-      const isLate = day > ONTIME_DEADLINE_DAY && day < 25;
+      const end = parseIsoDate(state.periodEnd);
+      const deadlineDay = end ? end.getDate() : ONTIME_DEADLINE_DAY;
+      const sameClosingMonth = !!(
+        end &&
+        today.getFullYear() === end.getFullYear() &&
+        today.getMonth() === end.getMonth()
+      );
+      const isLate = sameClosingMonth && today.getDate() > deadlineDay;
       const onTimeMonth = payrollMonthLabel(state.periodEnd);
       const lateMonth = nextPayrollMonthLabel(state.periodEnd);
-      return { isLate, day, onTimeMonth, lateMonth, payMonth: isLate ? lateMonth : onTimeMonth };
+      return {
+        isLate,
+        day: today.getDate(),
+        deadlineDay,
+        onTimeMonth,
+        lateMonth,
+        payMonth: isLate ? lateMonth : onTimeMonth
+      };
     }
     function renderDeadlineBanner() {
       const el = document.getElementById("deadlineBanner");
       if (!el) return;
       const s = submissionLateStatus();
+      const deadlineLabel = dayOrdinal(s.deadlineDay || ONTIME_DEADLINE_DAY);
+      const lateFromLabel = dayOrdinal((s.deadlineDay || ONTIME_DEADLINE_DAY) + 1);
       el.hidden = false;
       el.classList.toggle("deadline-banner--late", s.isLate);
       el.classList.toggle("deadline-banner--ok", !s.isLate);
       if (s.isLate) {
         el.innerHTML =
-          `<strong>Late.</strong> The deadline was the 23rd. If you submit now, these hours move to <strong>${esc(s.lateMonth)}</strong>'s pay (not this month) and a <strong>£${money(LATE_PENALTY_GBP)} late penalty</strong> is deducted, because worked hours must be reported to HMRC on time.`;
+          `<strong>Late.</strong> The deadline was the ${deadlineLabel}. If you submit now, these hours move to <strong>${esc(s.lateMonth)}</strong>'s pay (not this month) and a <strong>£${money(LATE_PENALTY_GBP)} late penalty</strong> is deducted, because worked hours must be reported to HMRC on time.`;
       } else {
         el.innerHTML =
-          `<strong>On time.</strong> Submit by the <strong>23rd</strong>. This timesheet will be included in <strong>${esc(s.onTimeMonth)}</strong>'s pay. Submitting on the 24th or later moves it to the next month and adds a £${money(LATE_PENALTY_GBP)} penalty.`;
+          `<strong>On time.</strong> Submit by the <strong>${deadlineLabel}</strong>. This timesheet will be included in <strong>${esc(s.onTimeMonth)}</strong>'s pay. Submitting on the ${lateFromLabel} or later moves it to the next month and adds a £${money(LATE_PENALTY_GBP)} penalty.`;
       }
     }
 

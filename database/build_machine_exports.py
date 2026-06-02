@@ -26,18 +26,21 @@ TERM_STAFF_OFF_WEEKDAYS_RANGE_BY_PROFILE_KEY = {
 # Term calendar green override when export/roster reconciliation misses a worked day.
 TERM_STAFF_FEEDBACK_COMPLETE_DATES_BY_PROFILE_KEY = {
     "roberto": ["2026-05-17", "2026-05-22"],
-    "javier": ["2026-05-12", "2026-05-13", "2026-05-19"],
-}
-# Staff may open specific pre-term calendar days for catch-up feedback (My Term grid).
-TERM_STAFF_EXTRA_CALENDAR_DATES_BY_PROFILE_KEY = {
-    "javier": [
+    "javier": ["2026-05-12", "2026-05-13", "2026-05-14", "2026-05-17", "2026-05-19", "2026-05-20"],
+    "youssef": [
+        "2026-05-06",
+        "2026-05-11",
         "2026-05-12",
         "2026-05-13",
-        "2026-05-14",
-        "2026-05-17",
+        "2026-05-16",
+        "2026-05-18",
         "2026-05-19",
         "2026-05-20",
     ],
+}
+# Staff may open specific pre-term calendar days for catch-up feedback (My Term grid).
+TERM_STAFF_EXTRA_CALENDAR_DATES_BY_PROFILE_KEY = {
+    "javier": [],
 }
 # Catch-up days: ignore static export greens; use real portal review state only.
 TERM_STAFF_CATCH_UP_FEEDBACK_DATES_BY_PROFILE_KEY = {

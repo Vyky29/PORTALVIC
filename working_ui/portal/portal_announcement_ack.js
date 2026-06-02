@@ -5,6 +5,90 @@
 (function (global) {
   if (typeof global === "undefined") return;
 
+  /** Staff announcements go-live (Europe/London calendar day). */
+  global.PORTAL_ANNOUNCEMENTS_LIVE_FROM_ISO = "2026-06-02";
+  global.PORTAL_ANNOUNCEMENTS_LIVE_FROM_MS = Date.parse("2026-06-02T00:00:00");
+
+  global.portalAnnouncementCreatedOnOrAfterLive = function portalAnnouncementCreatedOnOrAfterLive(
+    createdAt
+  ) {
+    var d = String(createdAt || "")
+      .trim()
+      .slice(0, 10);
+    return !!d && d >= global.PORTAL_ANNOUNCEMENTS_LIVE_FROM_ISO;
+  };
+
+  global.portalAnnouncementIdFromAckKey = function portalAnnouncementIdFromAckKey(key) {
+    var k = String(key || "").trim();
+    if (!k || k.indexOf("portal-ann:contract:") === 0) return "";
+    if (k.indexOf("portal-ann:") === 0) return k.slice("portal-ann:".length);
+    return "";
+  };
+
+  /**
+   * @param {object} rec ack map value
+   * @param {string} key ack map key
+   * @param {Record<string, boolean>} liveIdSet announcement ids from Supabase (go-live)
+   */
+  global.portalAnnouncementAckRecordIsLive = function portalAnnouncementAckRecordIsLive(
+    rec,
+    key,
+    liveIdSet
+  ) {
+    if (!rec || typeof rec !== "object") return false;
+    var liveSet = liveIdSet && typeof liveIdSet === "object" ? liveIdSet : {};
+    var annId =
+      String(rec.portalAnnouncementId || "").trim() ||
+      global.portalAnnouncementIdFromAckKey(key);
+    if (!annId || !liveSet[annId]) return false;
+    var signedAt = Number(rec.signedAt || 0);
+    if (!Number.isFinite(signedAt) || signedAt < global.PORTAL_ANNOUNCEMENTS_LIVE_FROM_MS)
+      return false;
+    return true;
+  };
+
+  /** Drop pre-launch / orphan announcement ack rows from localStorage. */
+  global.portalPrunePreLaunchAnnouncementAcks = function portalPrunePreLaunchAnnouncementAcks(
+    loadMap,
+    saveMap,
+    liveIdSet
+  ) {
+    try {
+      if (typeof loadMap !== "function" || typeof saveMap !== "function") return false;
+      var ack = loadMap();
+      var liveSet = liveIdSet && typeof liveIdSet === "object" ? liveIdSet : {};
+      var changed = false;
+      var welcomeNeedle = "welcome to the new club";
+      Object.keys(ack).forEach(function (k) {
+        var rec = ack[k];
+        if (!rec || typeof rec !== "object") {
+          delete ack[k];
+          changed = true;
+          return;
+        }
+        var title = String(rec.title || "")
+          .trim()
+          .toLowerCase();
+        if (title.indexOf(welcomeNeedle) !== -1) {
+          delete ack[k];
+          changed = true;
+          return;
+        }
+        if (!global.portalAnnouncementAckRecordIsLive(rec, k, liveSet)) {
+          delete ack[k];
+          changed = true;
+        }
+      });
+      if (changed) saveMap(ack);
+      return changed;
+    } catch (e) {
+      try {
+        console.warn("[portal] prune pre-launch announcement acks", e);
+      } catch (_) {}
+      return false;
+    }
+  };
+
   function readBox() {
     return global.__PORTAL_SUPABASE__ || null;
   }

@@ -1554,6 +1554,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           target:'c4k_late_submissions'
         });
       }
+      if(portalAdminDmHasUnread()){
+        var chatParts = [];
+        if(window.__PORTAL_ADMIN_DM_UNREAD) chatParts.push('staff & leads');
+        if(window.__PORTAL_ADMIN_CEO_DM_UNREAD || window.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD) chatParts.push('CEO / admin');
+        out.push({
+          id:'os_chat',
+          label:'New internal chat — '+chatParts.join(' · '),
+          action:'chat_hub'
+        });
+      }
       var pend = portalAbsentsPendingCount();
       if(pend > 0){
         out.push({
@@ -1822,6 +1832,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(_hadRegisterPeek){
         try{ renderNav(); }catch(_rnNav){}
       }
+      try{ portalAdminDmPatchGlobalChatBanner(); }catch(_chatBn){}
       try{ history.replaceState(null,'','#'+id); }catch(e){}
     }
     window.portalAdminOpenTermSlotEdit = function(prefill){
@@ -3681,7 +3692,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         .replace(/[^a-z0-9]+/g, '')
         .trim();
       if(!v) return '';
-      if(v === 'yousef' || v === 'youssef') return 'yusef';
+      if(v === 'yousef' || v === 'youssef' || v === 'yusef') return 'youssef';
       if(v === 'luliya') return 'lulia';
       return v;
     }
@@ -17240,6 +17251,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           }else if(s.action==='notify') openComposeModal('reminder');
           else if(s.action==='session') openShiftModal('');
           else if(s.action==='jump' && s.target) setView(s.target);
+          else if(s.action==='chat_hub') openDayOpsAdminChatHubModal();
           else if(s.action==='client' && s.clientId){ setView('clients'); setTimeout(function(){ openClientDrawer(s.clientId); }, 0); }
           else if(s.action==='report') openReportModal(null, s.reportId||null);
           else openReportModal(null);
@@ -17312,14 +17324,25 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           host.innerHTML = '<p class="submission-state is-error" style="margin:0">Could not load signatures: '+esc(String(ackRes.error.message||ackRes.error))+'</p>';
           return;
         }
-        var announcements = Array.isArray(annRes.data) ? annRes.data : [];
+        var announcements = (Array.isArray(annRes.data) ? annRes.data : []).filter(function(ann){
+          var d = String(ann && ann.created_at || '').trim().slice(0, 10);
+          return d && d >= '2026-06-02';
+        });
         var acks = Array.isArray(ackRes.data) ? ackRes.data : [];
         if(!announcements.length){
-          host.innerHTML = '<p class="muted" style="margin:0">No announcements published yet.</p>';
+          host.innerHTML = '<p class="muted" style="margin:0">No announcements published yet (live from 2 Jun 2026).</p>';
           return;
+        }
+        function portalAdminAckStaffExcluded(r){
+          var who = String(r.staff_full_name || r.staff_username || '').trim().toLowerCase();
+          if(!who) return false;
+          if(who.indexOf('javier marquez') !== -1) return true;
+          if(who === 'javier') return true;
+          return false;
         }
         var ackByAnn = {};
         acks.forEach(function(a){
+          if(portalAdminAckStaffExcluded(a)) return;
           var aid = String(a.announcement_id || '');
           if(!aid) return;
           if(!ackByAnn[aid]) ackByAnn[aid] = [];
@@ -17719,6 +17742,77 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var b3 = document.querySelector('[data-dayops-act="ceo_all_group_dm"]');
       if(b3) b3.classList.toggle('dayops-screen-nav__card--portal-ceo-group-unread', onCeo);
     }
+    function portalAdminDmHasUnread(){
+      return !!(window.__PORTAL_ADMIN_DM_UNREAD || window.__PORTAL_ADMIN_CEO_DM_UNREAD || window.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD);
+    }
+    function portalAdminDmShouldShowChatBanner(){
+      if(!portalAdminDmHasUnread()) return false;
+      if(window.__PORTAL_ADMIN_DM_OPEN) return false;
+      return true;
+    }
+    function portalAdminDmChatBannerHtml(){
+      var staff = !!window.__PORTAL_ADMIN_DM_UNREAD;
+      var ceo = !!(window.__PORTAL_ADMIN_CEO_DM_UNREAD || window.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD);
+      var who = [];
+      if(staff) who.push('staff or a lead');
+      if(ceo) who.push('CEO / admin chat');
+      var whoTxt = who.length === 2 ? who.join(' and ') : (who[0] || 'someone');
+      var btns =
+        '<button type="button" class="btn btn--pri btn--sm" data-portal-admin-open-chat-hub style="margin-top:8px;margin-right:8px">Open chat</button>';
+      if(staff) btns += '<button type="button" class="btn btn--sec btn--sm" data-portal-admin-open-staff-chat style="margin-top:8px;margin-right:8px">Staff &amp; leads</button>';
+      if(ceo) btns += '<button type="button" class="btn btn--sec btn--sm" data-portal-admin-open-ceo-chat style="margin-top:8px">CEO chat</button>';
+      return (
+        '<div id="portalAdminChatBanner" class="card card-pad" style="margin-bottom:12px;border-color:rgba(220,38,38,.25);background:var(--dangerSoft)">' +
+        '<p style="margin:0;font-size:13px;overflow-wrap:break-word"><strong>New chat message</strong> — '+esc(whoTxt)+' sent a message while you were away. '+btns+'</p></div>'
+      );
+    }
+    function portalAdminDmBindChatBanner(root){
+      if(!root || root._portalChatBannerBound) return;
+      root._portalChatBannerBound = true;
+      root.addEventListener('click', function(ev){
+        var hub = ev.target.closest('[data-portal-admin-open-chat-hub]');
+        if(hub){ ev.preventDefault(); openDayOpsAdminChatHubModal(); return; }
+        var st = ev.target.closest('[data-portal-admin-open-staff-chat]');
+        if(st){ ev.preventDefault(); openInternalDmChatModal(); return; }
+        var ce = ev.target.closest('[data-portal-admin-open-ceo-chat]');
+        if(ce){ ev.preventDefault(); openCeoExecDmChatModal(); return; }
+      });
+    }
+    function portalAdminDmPatchGlobalChatBanner(){
+      var ws = $('workspace');
+      if(!ws) return;
+      var el = document.getElementById('portalAdminChatBanner');
+      if(!portalAdminDmShouldShowChatBanner()){
+        if(el) el.remove();
+        return;
+      }
+      var html = portalAdminDmChatBannerHtml();
+      if(el) el.outerHTML = html;
+      else ws.insertAdjacentHTML('afterbegin', html);
+      portalAdminDmBindChatBanner(document.getElementById('portalAdminChatBanner'));
+    }
+    function portalAdminDmOnUnreadAttentionChanged(prevUnread){
+      try{ portalAdminDmPatchGlobalChatBanner(); }catch(_pb){}
+      var nowUnread = portalAdminDmHasUnread();
+      if(prevUnread === nowUnread) return;
+      try{ recomputeOperatorSuggestions(); }catch(_rs){}
+      try{
+        if(state.view === 'operator'){
+          var sugHost = $('portalOperatorSuggestHost');
+          if(sugHost){
+            sugHost.innerHTML = portalOperatorSuggestionsInnerHtml();
+            bindOperatorSuggestButtons();
+          }
+        }
+      }catch(_op){}
+      if(!prevUnread && nowUnread) portalAdminDmNotifyIncomingChat();
+    }
+    function portalAdminDmNotifyIncomingChat(){
+      if(!portalAdminDmShouldShowChatBanner()) return;
+      if(typeof portalAdminToast === 'function'){
+        portalAdminToast('New message in internal chat — use the banner at the top or Team → Chat.');
+      }
+    }
     function portalAdminDmTryOsNotifyIncoming(kind){
       kind = String(kind || 'staff').trim();
       try{
@@ -17743,6 +17837,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }catch(_e){}
     }
     async function portalAdminDmSyncIncomingAttention(){
+      var prevUnread = portalAdminDmHasUnread();
       var client = getSchedSupabaseClient();
       var me = portalAdminDmMe();
       if(!client || !me){
@@ -17750,6 +17845,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         window.__PORTAL_ADMIN_CEO_DM_UNREAD = false;
         window.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD = false;
         portalAdminDmApplyTeamTileUnreadClass();
+        portalAdminDmOnUnreadAttentionChanged(prevUnread);
         return;
       }
       function bootAck(key){
@@ -17835,6 +17931,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         window.__PORTAL_ADMIN_CEO_DM_UNREAD = hc;
         window.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD = hg;
         portalAdminDmApplyTeamTileUnreadClass();
+        portalAdminDmOnUnreadAttentionChanged(prevUnread);
         if(hs) portalAdminDmTryOsNotifyIncoming('staff');
         if(hc || hg) portalAdminDmTryOsNotifyIncoming('ceo');
       }catch(_e){
@@ -17842,6 +17939,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         window.__PORTAL_ADMIN_CEO_DM_UNREAD = false;
         window.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD = false;
         portalAdminDmApplyTeamTileUnreadClass();
+        portalAdminDmOnUnreadAttentionChanged(prevUnread);
       }
     }
     function portalInitAdminDmRealtime(){
@@ -18006,6 +18104,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       try{ localStorage.setItem('portal_admin_ceo_group_ack_iso', new Date().toISOString()); }catch(_a){}
       window.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD = false;
       portalAdminDmApplyTeamTileUnreadClass();
+      try{ portalAdminDmPatchGlobalChatBanner(); }catch(_cbn4){}
       await portalAdminDmLoadMessages();
     }
     function openCeoExecDmChatModalToAllCeoGroup(){
@@ -18682,6 +18781,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         window.__PORTAL_ADMIN_DM_UNREAD = false;
       }
       portalAdminDmApplyTeamTileUnreadClass();
+      try{ portalAdminDmPatchGlobalChatBanner(); }catch(_cbn){}
       portalInitAdminDmRealtime();
       if(channel === 'staff_lead') void portalLoadDmPeerUserSelect();
       var title = channel === 'ceo_exec' ? 'CEO\'s Chat' : 'Internal chat';
@@ -18758,12 +18858,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(bd) bd.onclick = function(e){
         if(e.target === bd){
           window.__PORTAL_ADMIN_DM_OPEN = false;
+          try{ portalAdminDmPatchGlobalChatBanner(); }catch(_cbn2){}
           closeModal();
         }
       };
       var bc = $('admDmBtnClose');
       if(bc) bc.onclick = function(){
         window.__PORTAL_ADMIN_DM_OPEN = false;
+        try{ portalAdminDmPatchGlobalChatBanner(); }catch(_cbn3){}
         closeModal();
       };
       var bn = $('admDmBtnNew');

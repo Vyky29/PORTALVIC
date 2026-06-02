@@ -6,13 +6,13 @@
 // late penalty, net, status) plus a "not submitted yet" list, and emails it to
 // the accountant + admin so they can process payslips.
 //
-// Payroll cycle is 25 -> 24. This report is meant to run on the 24th at 00:00
+// Payroll cycle is 25 -> 24. This report is meant to run on the 25th at 00:00
 // (deadline cut-off) and covers the month that is closing (period_month = first
 // day of the current month). At that moment it is a clean snapshot:
 //   - "To process": timesheets already submitted for this month (on time, by the
-//     23rd). Late carry-overs from the previous cycle also show here with a £5
+//     24th). Late carry-overs from the previous cycle also show here with a £5
 //     penalty and status "Late" (they are paid this month).
-//   - "Not submitted": workers who missed the 24th 00:00 deadline. They are NOT
+//   - "Not submitted": workers who missed the 25th 00:00 deadline. They are NOT
 //     processed this month; a £5 late penalty applies to their next timesheet
 //     (paid the following month).
 //
@@ -93,14 +93,14 @@ function londonParts(): { y: number; m: number; d: number } {
   return { y: get("year"), m: get("month"), d: get("day") };
 }
 
-/** True once the 24th (00:00 London) of the target month has arrived/passed. */
+/** True once the 25th (00:00 London) of the target month has arrived/passed. */
 function deadlinePassedForMonth(targetMonthIso: string): boolean {
   const tY = Number(targetMonthIso.slice(0, 4));
   const tM = Number(targetMonthIso.slice(5, 7));
   const now = londonParts();
   if (now.y !== tY) return now.y > tY;
   if (now.m !== tM) return now.m > tM;
-  return now.d >= 24;
+  return now.d >= 25;
 }
 
 function resolveTargetMonthIso(raw: string): string {
@@ -494,7 +494,7 @@ async function buildPdf(
   drawText("Not submitted — do NOT process this month", margin, y - 6, 12, bold, warn);
   y -= 16;
   drawText(
-    "Missed the deadline (24th, 00:00). A £5 late penalty applies to their next timesheet (paid next month).",
+    "Missed the deadline (25th, 00:00). A £5 late penalty applies to their next timesheet (paid next month).",
     margin,
     y - 4,
     8.5,
@@ -678,7 +678,7 @@ Deno.serve(async (req: Request) => {
   }
 
   // Record-only: register no-submission penalties without building a PDF or
-  // emailing. Intended for a tiny cron at 00:00 on the 24th when email is sent
+  // emailing. Intended for a tiny cron at 00:00 on the 25th when email is sent
   // manually (no Resend/DNS needed). Idempotent + deadline-guarded.
   if (isRecord) {
     let penaltiesRecorded = 0;
@@ -730,7 +730,7 @@ Deno.serve(async (req: Request) => {
   }
 
   // Send path: record a pending £5 penalty for each worker who missed the
-  // deadline. Only once the 24th 00:00 (London) cut-off has passed, so an early
+  // deadline. Only once the 25th 00:00 (London) cut-off has passed, so an early
   // run never penalises anyone prematurely. Idempotent via the unique constraint.
   let penaltiesRecorded = 0;
   if (deadlinePassedForMonth(targetMonthIso) && data.notSubmitted.length) {
@@ -770,7 +770,7 @@ Deno.serve(async (req: Request) => {
     `<p><strong>${data.workers.length}</strong> timesheet(s) submitted · Gross £${money(data.totals.gross)} · ` +
     `Penalties £${money(data.totals.penalty)} · Net £${money(data.totals.net)}.</p>` +
     (data.notSubmitted.length
-      ? `<p><strong>${data.notSubmitted.length}</strong> worker(s) did NOT submit by the deadline (24th, 00:00) — please do not process them this month. They are listed in the PDF and a £5 late penalty applies to their next timesheet (paid next month).</p>`
+      ? `<p><strong>${data.notSubmitted.length}</strong> worker(s) did NOT submit by the deadline (25th, 00:00) — please do not process them this month. They are listed in the PDF and a £5 late penalty applies to their next timesheet (paid next month).</p>`
       : `<p>All workers with a pay rate have submitted.</p>`) +
     (data.contracts && data.contracts.length
       ? `<p><strong>${data.contracts.length}</strong> contract/invoice payment(s) listed separately (subtotal £${money(data.contractTotal || 0)}) — not part of the timesheet total.</p>`

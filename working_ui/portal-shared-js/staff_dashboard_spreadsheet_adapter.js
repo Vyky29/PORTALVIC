@@ -52,7 +52,7 @@
       .replace(/[^a-z0-9]+/g, "")
       .trim();
     if (!v) return "";
-    if (v === "yousef" || v === "youssef") return "yusef";
+    if (v === "yousef" || v === "youssef" || v === "yusef") return "youssef";
     if (v === "luliya") return "lulia";
     if (v === "aida") return "lulia";
     return v;

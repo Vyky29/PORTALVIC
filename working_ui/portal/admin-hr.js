@@ -254,7 +254,7 @@
   function normName(v) {
     var s = String(v == null ? "" : v).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "");
     if (!s) return "";
-    if (s === "yousef" || s === "youssef") return "yusef";
+    if (s === "yousef" || s === "youssef" || s === "yusef") return "youssef";
     return s;
   }
   function firstKey(name) { return normName(String(name || "").trim().split(/\s+/)[0]); }

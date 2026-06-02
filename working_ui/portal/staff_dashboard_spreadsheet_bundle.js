@@ -432,46 +432,6 @@
     "session_date": "2026-05-13"
   },
   {
-    "client_name": "Ayman",
-    "day": "Thursday",
-    "instructors": "JAVIER",
-    "service": "Aquatic Activity",
-    "area": "Lane (SE)",
-    "time_slot": "4 to 5",
-    "venue": "Acton",
-    "session_date": "2026-05-14"
-  },
-  {
-    "client_name": "Khalid Ab",
-    "day": "Thursday",
-    "instructors": "JAVIER",
-    "service": "Aquatic Activity",
-    "area": "Lane (SE)",
-    "time_slot": "5 to 5.30",
-    "venue": "Acton",
-    "session_date": "2026-05-14"
-  },
-  {
-    "client_name": "Karo",
-    "day": "Thursday",
-    "instructors": "JAVIER",
-    "service": "Aquatic Activity",
-    "area": "Lane (SE)",
-    "time_slot": "5.30 to 6",
-    "venue": "Acton",
-    "session_date": "2026-05-14"
-  },
-  {
-    "client_name": "Hazem",
-    "day": "Thursday",
-    "instructors": "JAVIER",
-    "service": "Aquatic Activity",
-    "area": "Teaching Pool",
-    "time_slot": "6 to 6.30",
-    "venue": "Acton",
-    "session_date": "2026-05-14"
-  },
-  {
     "client_name": "Fadi",
     "day": "Thursday",
     "instructors": "ROBERTO",
@@ -2462,6 +2422,16 @@
     "session_date": "2026-06-02"
   },
   {
+    "client_name": "Ayman",
+    "day": "Tuesday",
+    "instructors": "YOUSSEF",
+    "service": "Aquatic Activity",
+    "area": "Lane (DE)",
+    "time_slot": "4.30 to 5",
+    "venue": "Acton",
+    "session_date": "2026-06-02"
+  },
+  {
     "client_name": "Bediako",
     "day": "Tuesday",
     "instructors": "AURORA",
@@ -2472,21 +2442,11 @@
     "session_date": "2026-06-02"
   },
   {
-    "client_name": "NO CLIENT",
+    "client_name": "Cayra",
     "day": "Tuesday",
     "instructors": "ANGEL",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
-    "time_slot": "4.30 to 5",
-    "venue": "Acton",
-    "session_date": "2026-06-02"
-  },
-  {
-    "client_name": "NO CLIENT",
-    "day": "Tuesday",
-    "instructors": "YOUSSEF",
-    "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Lane (SE)",
     "time_slot": "4.30 to 5",
     "venue": "Acton",
     "session_date": "2026-06-02"
@@ -4022,6 +3982,16 @@
     "session_date": "2026-06-09"
   },
   {
+    "client_name": "Ayman",
+    "day": "Tuesday",
+    "instructors": "YOUSSEF",
+    "service": "Aquatic Activity",
+    "area": "Lane (DE)",
+    "time_slot": "4.30 to 5",
+    "venue": "Acton",
+    "session_date": "2026-06-09"
+  },
+  {
     "client_name": "Bediako",
     "day": "Tuesday",
     "instructors": "AURORA",
@@ -4032,21 +4002,11 @@
     "session_date": "2026-06-09"
   },
   {
-    "client_name": "NO CLIENT",
+    "client_name": "Cayra",
     "day": "Tuesday",
     "instructors": "ANGEL",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
-    "time_slot": "4.30 to 5",
-    "venue": "Acton",
-    "session_date": "2026-06-09"
-  },
-  {
-    "client_name": "NO CLIENT",
-    "day": "Tuesday",
-    "instructors": "YOUSSEF",
-    "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Lane (SE)",
     "time_slot": "4.30 to 5",
     "venue": "Acton",
     "session_date": "2026-06-09"
@@ -5582,6 +5542,16 @@
     "session_date": "2026-06-16"
   },
   {
+    "client_name": "Ayman",
+    "day": "Tuesday",
+    "instructors": "YOUSSEF",
+    "service": "Aquatic Activity",
+    "area": "Lane (DE)",
+    "time_slot": "4.30 to 5",
+    "venue": "Acton",
+    "session_date": "2026-06-16"
+  },
+  {
     "client_name": "Bediako",
     "day": "Tuesday",
     "instructors": "AURORA",
@@ -5592,21 +5562,11 @@
     "session_date": "2026-06-16"
   },
   {
-    "client_name": "NO CLIENT",
+    "client_name": "Cayra",
     "day": "Tuesday",
     "instructors": "ANGEL",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
-    "time_slot": "4.30 to 5",
-    "venue": "Acton",
-    "session_date": "2026-06-16"
-  },
-  {
-    "client_name": "NO CLIENT",
-    "day": "Tuesday",
-    "instructors": "YOUSSEF",
-    "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Lane (SE)",
     "time_slot": "4.30 to 5",
     "venue": "Acton",
     "session_date": "2026-06-16"
@@ -7142,6 +7102,16 @@
     "session_date": "2026-06-23"
   },
   {
+    "client_name": "Ayman",
+    "day": "Tuesday",
+    "instructors": "YOUSSEF",
+    "service": "Aquatic Activity",
+    "area": "Lane (DE)",
+    "time_slot": "4.30 to 5",
+    "venue": "Acton",
+    "session_date": "2026-06-23"
+  },
+  {
     "client_name": "Bediako",
     "day": "Tuesday",
     "instructors": "AURORA",
@@ -7152,21 +7122,11 @@
     "session_date": "2026-06-23"
   },
   {
-    "client_name": "NO CLIENT",
+    "client_name": "Cayra",
     "day": "Tuesday",
     "instructors": "ANGEL",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
-    "time_slot": "4.30 to 5",
-    "venue": "Acton",
-    "session_date": "2026-06-23"
-  },
-  {
-    "client_name": "NO CLIENT",
-    "day": "Tuesday",
-    "instructors": "YOUSSEF",
-    "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Lane (SE)",
     "time_slot": "4.30 to 5",
     "venue": "Acton",
     "session_date": "2026-06-23"
@@ -7884,7 +7844,7 @@
   {
     "client_name": "Erik",
     "day": "Sunday",
-    "instructors": "JAVI",
+    "instructors": "DAN",
     "service": "Multi-Activity",
     "area": "Big Pool",
     "time_slot": "1.15 to 2",
@@ -7964,7 +7924,7 @@
   {
     "client_name": "Jack W",
     "day": "Sunday",
-    "instructors": "JAVI",
+    "instructors": "DAN",
     "service": "Multi-Activity",
     "area": "Big Pool",
     "time_slot": "10.15 to 11",
@@ -8004,7 +7964,7 @@
   {
     "client_name": "Arthur Ma",
     "day": "Sunday",
-    "instructors": "JAVI",
+    "instructors": "DAN",
     "service": "Multi-Activity",
     "area": "Small Pool",
     "time_slot": "11 to 11.45",
@@ -8104,7 +8064,7 @@
   {
     "client_name": "Cyrus",
     "day": "Sunday",
-    "instructors": "JAVI",
+    "instructors": "DAN",
     "service": "Multi-Activity",
     "area": "Small Pool",
     "time_slot": "11.45 to 12.30",
@@ -8184,7 +8144,7 @@
   {
     "client_name": "Aydaan Ah",
     "day": "Sunday",
-    "instructors": "JAVI",
+    "instructors": "DAN",
     "service": "Multi-Activity",
     "area": "Big Pool",
     "time_slot": "12.30 to 1.15",
@@ -8244,7 +8204,7 @@
   {
     "client_name": "Zakariya",
     "day": "Sunday",
-    "instructors": "JAVI",
+    "instructors": "DAN",
     "service": "Aquatic Activity",
     "area": "Teaching Pool",
     "time_slot": "2 to 2.30",
@@ -8274,7 +8234,7 @@
   {
     "client_name": "Faris",
     "day": "Sunday",
-    "instructors": "JAVI",
+    "instructors": "DAN",
     "service": "Aquatic Activity",
     "area": "Teaching Pool",
     "time_slot": "2.30 to 3",
@@ -8324,7 +8284,7 @@
   {
     "client_name": "Simon",
     "day": "Sunday",
-    "instructors": "JAVI",
+    "instructors": "DAN",
     "service": "Aquatic Activity",
     "area": "Small Pool",
     "time_slot": "9 to 9.30",
@@ -8334,7 +8294,7 @@
   {
     "client_name": "Adam Ab",
     "day": "Sunday",
-    "instructors": "JAVI",
+    "instructors": "DAN",
     "service": "Multi-Activity",
     "area": "Small Pool",
     "time_slot": "9.30 to 10.15",
@@ -8702,6 +8662,16 @@
     "session_date": "2026-06-30"
   },
   {
+    "client_name": "Ayman",
+    "day": "Tuesday",
+    "instructors": "YOUSSEF",
+    "service": "Aquatic Activity",
+    "area": "Lane (DE)",
+    "time_slot": "4.30 to 5",
+    "venue": "Acton",
+    "session_date": "2026-06-30"
+  },
+  {
     "client_name": "Bediako",
     "day": "Tuesday",
     "instructors": "AURORA",
@@ -8712,21 +8682,11 @@
     "session_date": "2026-06-30"
   },
   {
-    "client_name": "NO CLIENT",
+    "client_name": "Cayra",
     "day": "Tuesday",
     "instructors": "ANGEL",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
-    "time_slot": "4.30 to 5",
-    "venue": "Acton",
-    "session_date": "2026-06-30"
-  },
-  {
-    "client_name": "NO CLIENT",
-    "day": "Tuesday",
-    "instructors": "YOUSSEF",
-    "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Lane (SE)",
     "time_slot": "4.30 to 5",
     "venue": "Acton",
     "session_date": "2026-06-30"
@@ -10262,6 +10222,16 @@
     "session_date": "2026-07-07"
   },
   {
+    "client_name": "Ayman",
+    "day": "Tuesday",
+    "instructors": "YOUSSEF",
+    "service": "Aquatic Activity",
+    "area": "Lane (DE)",
+    "time_slot": "4.30 to 5",
+    "venue": "Acton",
+    "session_date": "2026-07-07"
+  },
+  {
     "client_name": "Bediako",
     "day": "Tuesday",
     "instructors": "AURORA",
@@ -10272,21 +10242,11 @@
     "session_date": "2026-07-07"
   },
   {
-    "client_name": "NO CLIENT",
+    "client_name": "Cayra",
     "day": "Tuesday",
     "instructors": "ANGEL",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
-    "time_slot": "4.30 to 5",
-    "venue": "Acton",
-    "session_date": "2026-07-07"
-  },
-  {
-    "client_name": "NO CLIENT",
-    "day": "Tuesday",
-    "instructors": "YOUSSEF",
-    "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Lane (SE)",
     "time_slot": "4.30 to 5",
     "venue": "Acton",
     "session_date": "2026-07-07"
@@ -11822,6 +11782,16 @@
     "session_date": "2026-07-14"
   },
   {
+    "client_name": "Ayman",
+    "day": "Tuesday",
+    "instructors": "YOUSSEF",
+    "service": "Aquatic Activity",
+    "area": "Lane (DE)",
+    "time_slot": "4.30 to 5",
+    "venue": "Acton",
+    "session_date": "2026-07-14"
+  },
+  {
     "client_name": "Bediako",
     "day": "Tuesday",
     "instructors": "AURORA",
@@ -11832,21 +11802,11 @@
     "session_date": "2026-07-14"
   },
   {
-    "client_name": "NO CLIENT",
+    "client_name": "Cayra",
     "day": "Tuesday",
     "instructors": "ANGEL",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
-    "time_slot": "4.30 to 5",
-    "venue": "Acton",
-    "session_date": "2026-07-14"
-  },
-  {
-    "client_name": "NO CLIENT",
-    "day": "Tuesday",
-    "instructors": "YOUSSEF",
-    "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Lane (SE)",
     "time_slot": "4.30 to 5",
     "venue": "Acton",
     "session_date": "2026-07-14"
