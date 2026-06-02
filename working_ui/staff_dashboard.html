@@ -760,14 +760,14 @@
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260610-recording-guard-javier-may20-catchup"></script>
   <script src="/portal/session_feedback_portal_data.js?v=20260527-ma-apr-may"></script>
   <script src="/portal/session_feedback_status_portal_data.js?v=20260526-all-complete"></script>
-  <script src="/portal/staff_portal_feedback_bridge.js?v=20260522-week-staff"></script>
+  <script src="/portal/staff_portal_feedback_bridge.js?v=20260610-luliya-roster"></script>
   <script src="/portal-shared-js/portal_late_submission.js?v=20260610-recording-guard-javier-bypass"></script>
   <script src="/portal/portal-roster-rows-merge.js?v=20260601-term-slot"></script>
   <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260610-javier-may14-roster"></script>
   <script src="/portal/clients_info_embed.js?v=20260605-sambhav"></script>
   <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
-  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260609-participants"></script>
-  <script src="/portal/staff_roster_resolve.js"></script>
+  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260610-luliya-roster"></script>
+  <script src="/portal/staff_roster_resolve.js?v=20260610-luliya-roster"></script>
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260603-achievements-shared" />
   <script src="/portal/portal_participant_achievements.js?v=20260610-recording-guard"></script>
   <script src="/portal/portal_guide_menu.js?v=20260609-qm-top"></script>
@@ -1096,14 +1096,17 @@
       if(bridge && typeof bridge.staffOwnsInstructor === 'function'){
         return bridge.staffOwnsInstructor(staffId, instructor);
       }
-      const sid = String(staffId || '').trim().toLowerCase();
+      const sidRaw = String(staffId || '').trim().toLowerCase();
+      const sid = sidRaw === 'luliya' ? 'lulia' : sidRaw;
       const blob = String(instructor || '').trim();
       if(!sid || !blob) return false;
       const parts = blob.split(/[,/&]+|\s+and\s+/gi);
       for(let i = 0; i < parts.length; i++){
-        const p = String(parts[i] || '').trim().toLowerCase();
-        if(!p) continue;
-        const first = (p.split(/\s+/)[0] || '').trim();
+        const pRaw = String(parts[i] || '').trim().toLowerCase();
+        if(!pRaw) continue;
+        const firstRaw = (pRaw.split(/\s+/)[0] || '').trim();
+        const p = pRaw === 'luliya' ? 'lulia' : pRaw;
+        const first = firstRaw === 'luliya' ? 'lulia' : firstRaw;
         if(p === sid || first === sid) return true;
         if(sid === 'youssef' && (first === 'yousef' || first === 'yusef' || first === 'yousseff')) return true;
       }

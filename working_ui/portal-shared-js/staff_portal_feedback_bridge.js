@@ -11,22 +11,24 @@
       .replace(/^_+|_+$/g, "");
   }
 
+  function canonicalStaffRosterKey(value) {
+    const k = String(value || "").trim().toLowerCase();
+    if (!k) return "";
+    if (k === "luliya") return "lulia";
+    if (k === "yousef" || k === "youssef" || k === "yousseff") return "yusef";
+    return k;
+  }
+
   function staffOwnsInstructor(staffId, instructor) {
-    const sid = String(staffId || "").trim().toLowerCase();
+    const sid = canonicalStaffRosterKey(staffId);
     const blob = String(instructor || "").trim();
     if (!sid || !blob) return false;
     const parts = blob.split(/[,/&]+|\s+and\s+/gi);
     for (let i = 0; i < parts.length; i++) {
       const p = String(parts[i] || "").trim().toLowerCase();
       if (!p) continue;
-      const first = (p.split(/\s+/)[0] || "").trim();
-      if (p === sid || first === sid) return true;
-      if (
-        sid === "youssef" &&
-        (first === "yousef" || first === "yusef" || first === "yousseff")
-      ) {
-        return true;
-      }
+      const first = canonicalStaffRosterKey((p.split(/\s+/)[0] || "").trim());
+      if (canonicalStaffRosterKey(p) === sid || first === sid) return true;
     }
     return false;
   }

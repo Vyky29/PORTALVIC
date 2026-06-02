@@ -25,12 +25,14 @@
   };
 
   function portalProfileRosterKey(v) {
-    return String(v || "")
+    var k = String(v || "")
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "")
       .trim();
+    if (k === "luliya") return "lulia";
+    return k;
   }
 
   var PORTAL_AUTH_EMAIL_TO_ROSTER_KEY = {
