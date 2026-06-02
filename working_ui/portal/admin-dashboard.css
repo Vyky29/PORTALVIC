@@ -4179,8 +4179,46 @@
       }
     }
 
-    /* Floating menu removed — logo opens/closes full nav in touch-compact */
-    .admin-float-menu-btn{display:none !important}
+    /* Floating menu — visible in touch-compact when full nav sheet is closed */
+    .admin-float-menu-btn{
+      display:none;
+      position:fixed;
+      z-index:12080;
+      bottom:max(14px,env(safe-area-inset-bottom,0px));
+      left:max(14px,env(safe-area-inset-left,0px));
+      width:50px;
+      height:50px;
+      border-radius:999px;
+      border:2px solid rgba(255,255,255,.22);
+      background:linear-gradient(180deg,#1e293b 0%,var(--sidebar) 100%);
+      color:#f8fafc;
+      font-size:22px;
+      line-height:1;
+      padding:0;
+      cursor:pointer;
+      align-items:center;
+      justify-content:center;
+      box-shadow:0 8px 28px rgba(15,23,42,.42);
+      -webkit-tap-highlight-color:transparent;
+    }
+    .admin-float-menu-btn:hover,
+    .admin-float-menu-btn:focus-visible{
+      background:linear-gradient(180deg,#334155 0%,#1e293b 100%);
+      outline:2px solid rgba(125,211,252,.45);
+      outline-offset:2px;
+    }
+    body.admin-touch-compact:not(.admin-fullnav-open) .admin-float-menu-btn{
+      display:inline-flex;
+    }
+    @media (orientation:landscape) and (max-height:640px){
+      body.admin-touch-compact:not(.admin-fullnav-open) .admin-float-menu-btn{
+        left:auto;
+        right:max(14px,env(safe-area-inset-right,0px));
+      }
+    }
+    body.admin-touch-compact.admin-fullnav-open .admin-float-menu-btn{
+      display:none !important;
+    }
     body.admin-touch-compact #modalBackdrop.modal-backdrop--register{
       left:56px !important;
     }

@@ -114,6 +114,7 @@
     <nav class="admin-bottom-nav" id="adminBottomNav" aria-label="Quick mobile navigation"></nav>
   </div>
   <div class="admin-fullnav-backdrop" id="adminFullnavBackdrop" aria-hidden="true"></div>
+  <button type="button" class="admin-float-menu-btn" id="adminFloatMenuBtn" aria-label="Open menu" aria-controls="adminSidebar" aria-expanded="false">☰</button>
 
   <div class="modal-backdrop" id="modalBackdrop">
     <div class="modal" role="dialog" aria-modal="true" id="modalRoot" aria-labelledby="modalTitle"></div>
@@ -20821,6 +20822,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var brandEl = $('adminSidebarBrand');
       var open = document.body.classList.contains('admin-fullnav-open');
       if(brandEl) brandEl.setAttribute('aria-expanded', open ? 'true' : 'false');
+      var floater = $('adminFloatMenuBtn');
+      if(floater) floater.setAttribute('aria-expanded', open ? 'true' : 'false');
     }
     function adminApplyTouchCompactLayoutClass(){
       var on = adminTouchCompactLayoutActive();
@@ -21237,6 +21240,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(fnClose) fnClose.addEventListener('click', function(e){ e.stopPropagation(); adminCloseFullnav(); });
       var fnBd = $('adminFullnavBackdrop');
       if(fnBd) fnBd.addEventListener('click', adminCloseFullnav);
+      var floatMenu = $('adminFloatMenuBtn');
+      if(floatMenu){
+        floatMenu.addEventListener('click', function(e){
+          e.preventDefault();
+          e.stopPropagation();
+          if(document.body.classList.contains('admin-fullnav-open')) adminCloseFullnav();
+          else adminOpenFullnav();
+        });
+      }
       renderAlerts();
       initOpWorkflowMock();
       var params = new URLSearchParams(location.search);

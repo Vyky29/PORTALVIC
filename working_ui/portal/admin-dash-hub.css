@@ -998,6 +998,22 @@ body:has(#workspace .dash-hub--dayops) .admin-main{
   }
 }
 
+/* Touch-compact: never clip Day operations / nav hub — workspace scrolls */
+body.admin-touch-compact:has(#workspace .dash-hub--dayops) .admin-workspace,
+body.admin-touch-compact:has(#workspace .dash-hub--nav-index) .admin-workspace{
+  overflow-x:hidden;
+  overflow-y:auto !important;
+  min-height:0;
+  flex:1 1 auto;
+  -webkit-overflow-scrolling:touch;
+}
+body.admin-touch-compact:has(#workspace .dash-hub--dayops) .dash-hub--dayops,
+body.admin-touch-compact:has(#workspace .dash-hub--nav-index) .dash-hub--nav-index{
+  flex:none;
+  min-height:auto;
+  overflow:visible !important;
+}
+
 /* Day operations — phone/tablet landscape: scroll, wrap tiles, no panel overlap */
 @media (orientation:landscape) and (max-height:640px){
   body:has(#workspace .dash-hub--dayops) .admin-workspace{
