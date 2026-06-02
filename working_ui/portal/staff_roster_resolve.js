@@ -33,8 +33,11 @@
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "")
       .trim();
+    if (!k) return "";
     if (k === "luliya") return "lulia";
     if (k === "aida") return "lulia";
+    var alias = PORTAL_STAFF_CODE_TO_ROSTER_KEY[k];
+    if (alias) return alias;
     return k;
   }
 
@@ -118,14 +121,14 @@
     for (i = 0; i < keys.length; i++) {
       var boot = Adapter.bootstrap({ source: source, staffId: keys[i] });
       if (boot && Array.isArray(boot.sessionsModel) && boot.sessionsModel.length) {
-        return { staffId: keys[i], boot: boot };
+        return { staffId: portalProfileRosterKey(keys[i]), boot: boot };
       }
     }
     var fallback = keys[0] || "";
     if (!fallback) return null;
     var boot0 = Adapter.bootstrap({ source: source, staffId: fallback });
-    if (!boot0) return null;
-    return { staffId: fallback, boot: boot0 };
+    if (!boot0 || !Array.isArray(boot0.sessionsModel) || !boot0.sessionsModel.length) return null;
+    return { staffId: portalProfileRosterKey(fallback), boot: boot0 };
   }
 
   window.portalStaffRosterKeyCandidates = portalStaffRosterKeyCandidates;

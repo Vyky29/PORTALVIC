@@ -757,14 +757,14 @@
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260602-feedback-voice-fix-javier-may20-catchup"></script>
   <script src="/portal/session_feedback_portal_data.js?v=20260527-ma-apr-may"></script>
   <script src="/portal/session_feedback_status_portal_data.js?v=20260526-all-complete"></script>
-  <script src="/portal/staff_portal_feedback_bridge.js?v=20260601-luliya-mic"></script>
+  <script src="/portal/staff_portal_feedback_bridge.js?v=20260601-luliya-roster-guard"></script>
   <script src="/portal-shared-js/portal_late_submission.js?v=20260602-feedback-voice-fix-javier-bypass"></script>
   <script src="/portal/portal-roster-rows-merge.js?v=20260601-term-slot"></script>
   <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260610-javier-may14-roster"></script>
   <script src="/portal/clients_info_embed.js?v=20260605-sambhav"></script>
   <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260601-luliya-mic"></script>
-  <script src="/portal/staff_roster_resolve.js?v=20260601-luliya-mic"></script>
+  <script src="/portal/staff_roster_resolve.js?v=20260601-luliya-roster-guard"></script>
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260603-achievements-shared" />
   <script src="/portal/portal_participant_achievements.js?v=20260610-pwa-black-fix"></script>
   <script src="/portal/portal_guide_menu.js?v=20260609-qm-top"></script>
@@ -1094,7 +1094,9 @@
         return bridge.staffOwnsInstructor(staffId, instructor);
       }
       const sidRaw = String(staffId || '').trim().toLowerCase();
-      const sid = sidRaw === 'luliya' ? 'lulia' : sidRaw;
+      const sid = typeof window.portalCanonicalStaffRosterKey === 'function'
+        ? (window.portalCanonicalStaffRosterKey(sidRaw) || sidRaw)
+        : (sidRaw === 'luliya' || sidRaw === 'aida' || sidRaw === 'stf021' ? 'lulia' : sidRaw);
       const blob = String(instructor || '').trim();
       if(!sid || !blob) return false;
       const parts = blob.split(/[,/&]+|\s+and\s+/gi);
@@ -12403,6 +12405,46 @@
         });
       }
 
+      function portalLocalCanonicalStaffKey(raw) {
+        var k = String(raw || "")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "")
+          .trim();
+        if (!k) return "";
+        if (typeof window.portalCanonicalStaffRosterKey === "function") {
+          return window.portalCanonicalStaffRosterKey(k) || k;
+        }
+        if (k === "luliya" || k === "aida" || k === "stf021") return "lulia";
+        return k;
+      }
+      var _rehydrateRun = 0;
+      var _staffRosterHydratedOk = false;
+      function portalRebootstrapSessionsForPinnedStaff() {
+        if (!_staffRosterHydratedOk || !String(STAFF_DASHBOARD_ID || "").trim()) return;
+        var sid = portalLocalCanonicalStaffKey(STAFF_DASHBOARD_ID);
+        var Adapter = typeof StaffDashboardSpreadsheetAdapter !== "undefined" ? StaffDashboardSpreadsheetAdapter : null;
+        var source =
+          typeof window.portalResolveStaffDashboardSource === "function"
+            ? window.portalResolveStaffDashboardSource()
+            : window.STAFF_DASHBOARD_SOURCE;
+        if (!Adapter || !source || !sid) return;
+        var boot = Adapter.bootstrap({ source: source, staffId: sid });
+        if (!boot || !Array.isArray(boot.sessionsModel) || !boot.sessionsModel.length) return;
+        __spreadsheetBoot = boot;
+        STAFF_DASHBOARD_ID = sid;
+        try { window.STAFF_DASHBOARD_ID = sid; } catch (_) {}
+        sessionsModel = boot.sessionsModel;
+        clientNotesById = boot.clientNotesById || clientNotesById;
+        portalSyncTodaySectionDisplay(sessionsModel);
+        if (typeof window.__portalSyncNextSessionFromModel === "function") window.__portalSyncNextSessionFromModel();
+        dashboardData.week = buildWeekRows(sid);
+        if (typeof window.portalApplyTermCalendarForStaff === "function") window.portalApplyTermCalendarForStaff(sid);
+        if (typeof renderToday === "function") renderToday();
+        if (typeof renderLists === "function") renderLists();
+        if (typeof renderMiniCounts === "function") renderMiniCounts();
+      }
       function portalStaffKeyForRotaFromProfile(p){
         var sess = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session;
         var user = sess && sess.user ? sess.user : null;
@@ -12461,12 +12503,13 @@
         for (i = 0; i < keys.length; i++) {
           var boot = Adapter.bootstrap({ source: source, staffId: keys[i] });
           if (boot && Array.isArray(boot.sessionsModel) && boot.sessionsModel.length) {
-            return { staffId: keys[i], boot: boot };
+            return { staffId: portalLocalCanonicalStaffKey(keys[i]), boot: boot };
           }
         }
         if (!keys[0]) return null;
         var boot0 = Adapter.bootstrap({ source: source, staffId: keys[0] });
-        return boot0 ? { staffId: keys[0], boot: boot0 } : null;
+        if (!boot0 || !Array.isArray(boot0.sessionsModel) || !boot0.sessionsModel.length) return null;
+        return { staffId: portalLocalCanonicalStaffKey(keys[0]), boot: boot0 };
       }
       function portalStaffFinishIdentityUi(profileForRoster, p, session) {
         if (!dashboardData) return;
@@ -12485,6 +12528,7 @@
         if (typeof renderLists === "function") renderLists();
       }
       async function rehydrateFromProfile(){
+        var runId = ++_rehydrateRun;
         try {
         var p = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
         var session = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session;
@@ -12511,16 +12555,28 @@
           portalStaffFinishIdentityUi(profileForRoster, p, session);
           return;
         }
-        var staffId = rosterHit.staffId;
-        if (typeof window.portalCanonicalStaffRosterKey === "function") {
-          staffId = window.portalCanonicalStaffRosterKey(staffId) || staffId;
-        }
+        var staffId = portalLocalCanonicalStaffKey(rosterHit.staffId);
         var boot = rosterHit.boot;
+        var newSessions = boot.sessionsModel || [];
+        if (!newSessions.length) {
+          if (_staffRosterHydratedOk && Array.isArray(sessionsModel) && sessionsModel.length) {
+            var prevSid = portalLocalCanonicalStaffKey(STAFF_DASHBOARD_ID);
+            if (prevSid && prevSid === staffId) {
+              console.warn("staff_dashboard: keep roster (empty re-bootstrap)", staffId);
+              portalStaffFinishIdentityUi(profileForRoster, p, session);
+              return;
+            }
+          }
+          portalStaffFinishIdentityUi(profileForRoster, p, session);
+          return;
+        }
+        if (runId !== _rehydrateRun) return;
 
         __spreadsheetBoot = boot;
         STAFF_DASHBOARD_ID = staffId;
         try { window.STAFF_DASHBOARD_ID = staffId; } catch (_) {}
-        sessionsModel = boot.sessionsModel || [];
+        sessionsModel = newSessions;
+        _staffRosterHydratedOk = true;
         clientNotesById = boot.clientNotesById || {};
         var postFbDay = "";
         try{
@@ -12594,9 +12650,11 @@
         portalStaffFinishIdentityUi(profileForRoster, p, session);
         if(typeof window.portalApplyScheduleOverridesToSessionsModelSafe === "function"){
           try{
+            if (runId !== _rehydrateRun) return;
             sessionsModel = await window.portalApplyScheduleOverridesToSessionsModelSafe();
           }catch(_e){}
         }
+        if (runId !== _rehydrateRun) return;
         console.log("TODAY USING MODEL", sessionsModel);
         portalSyncTodaySectionDisplay(sessionsModel);
         console.log("TODAY DATA FINAL", dashboardData.today);
@@ -12745,17 +12803,20 @@
         _finishStaffRehydrateUi();
         void (async function portalStaffBackgroundRosterRefresh(){
           try{
+            if (runId !== _rehydrateRun) return;
             if(typeof portalRefreshScheduleOverridesCache === "function"){
               await portalRefreshScheduleOverridesCache();
+              if (runId !== _rehydrateRun) return;
               _portalStaffRebuildAfterOverridesFetch(staffId);
             }
             if(typeof portalMergeServerReviewStateForDashboard === "function"){
               await portalMergeServerReviewStateForDashboard();
             }
+            if (runId !== _rehydrateRun) return;
             _finishStaffRehydrateUi();
           }catch(e){
             console.warn("[portal] staff background roster refresh", e);
-            _finishStaffRehydrateUi();
+            if (runId === _rehydrateRun) _finishStaffRehydrateUi();
           }
         })();
         } catch (reErr) {
@@ -12772,8 +12833,10 @@
 
       window.__PORTAL_STAFF_REHYDRATE__ = rehydrateFromProfile;
       window.addEventListener("portal:supabase-ready", rehydrateFromProfile);
-      setTimeout(rehydrateFromProfile, 200);
-      setTimeout(rehydrateFromProfile, 1200);
+      window.addEventListener("portal:staff-dashboard-source-updated", portalRebootstrapSessionsForPinnedStaff);
+      setTimeout(function () {
+        if (!_staffRosterHydratedOk) void rehydrateFromProfile();
+      }, 1800);
     })();
   </script>
   <script>
