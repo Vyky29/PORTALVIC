@@ -631,7 +631,7 @@ export async function bootstrapDashboardSupabase(_opts) {
     );
     try {
       const { startPortalLivePresence, mountPortalLivePresenceBar } = await import(
-        "./portal_live_presence.js?v=20260601-presence-flat"
+        "./portal_live_presence.js?v=20260610-presence-db"
       );
       await startPortalLivePresence({ page, profile, session });
       if (document.getElementById("portalLivePresenceBar")) {
