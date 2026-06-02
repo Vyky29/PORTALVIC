@@ -750,9 +750,9 @@
     </div>
   </section>
 
-  <script src="/portal/term_from_timetable.js?v=20260602-javier-may14-zaid"></script>
+  <script src="/portal/term_from_timetable.js?v=20260602-javier-may-cal"></script>
   <script src="/portal/term_calendar_dashboard_shared.js?v=20260523-feedback-window"></script>
-  <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260602-javier-may14"></script>
+  <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260602-javier-may-cal"></script>
   <script src="/portal/session_feedback_portal_data.js?v=20260527-ma-apr-may"></script>
   <script src="/portal/session_feedback_status_portal_data.js?v=20260526-all-complete"></script>
   <script src="/portal/staff_portal_feedback_bridge.js?v=20260522-week-staff"></script>
@@ -6931,6 +6931,9 @@
     }
     function portalTermFeedbackSessionsForDate(dayWord, sessionDateIso, staffId, isRealFn){
       const base = portalBaseClientSessionsForCalendarDate(dayWord, sessionDateIso, staffId, isRealFn);
+      const iso = String(sessionDateIso || '').trim().slice(0, 10);
+      const sid = String(staffId || '').trim().toLowerCase();
+      if(sid && portalTermIsCatchUpFeedbackDate(iso, sid)) return base;
       const bridge = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
       if(bridge && typeof bridge.termSessionsForDate === 'function'){
         return bridge.termSessionsForDate(dayWord, sessionDateIso, staffId, base, clientNotesById);

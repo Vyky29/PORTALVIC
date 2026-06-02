@@ -190,7 +190,7 @@
   })();
   </script>
   <!-- Large portal datasets load on demand (portalAdminLoadScriptSet) so Day operations opens without freezing. -->
-  <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260601-tue-hazem-roberto-rayan-angel"></script>
+  <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260602-cap-roster"></script>
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260521-late-perf"></script>
 
   <script>
@@ -3768,6 +3768,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var nameRaw = String(row.client_name || '').trim();
         var nameLower = nameRaw.toLowerCase();
         var isClosed = nameLower === 'closed';
+        var isOpenSlot = !nameRaw || nameLower === 'no client' || nameLower === 'noclient' || nameLower === 'no_client';
         var timeSlotLabel = String(row.time_slot || '').trim();
         var rosterService = String(row.service || '').trim();
         var rosterArea = row.area !== undefined && row.area !== null ? String(row.area).trim() : '';
@@ -3792,6 +3793,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var sObj;
           if(isClosed){
             sObj = Object.assign({}, baseSession, { clientId: 'closed', activity: '', status: 'closed' });
+          }else if(isOpenSlot){
+            if(!timeSlotLabel) continue;
+            sObj = Object.assign({}, baseSession, { clientId: 'available', activity: rosterService || 'Swimming', status: 'available' });
           }else if(!nameRaw){
             if(!timeSlotLabel) continue;
             sObj = Object.assign({}, baseSession, { clientId: 'available', activity: rosterService || 'Swimming', status: 'available' });
@@ -4392,7 +4396,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function bookingIsBookedClientSlug(slug){
       var s = String(slug || '').trim().toLowerCase();
       if(!s) return false;
-      if(s === 'available' || s === 'noclient' || s === 'closed') return false;
+      if(s === 'available' || s === 'noclient' || s === 'no_client' || s === 'no client' || s === 'closed') return false;
       return true;
     }
     /**
@@ -10427,6 +10431,48 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }catch(_2){}
       return null;
     }
+    function portalAdminRefreshRosterDependentViews(viewId){
+      var id = String(viewId || state.view || '');
+      if(id === 'c4k_services'){
+        fillC4kServicesFilterSelects();
+        refreshC4kServicesPartial();
+        return;
+      }
+      if(id === 'servicecap'){
+        var ws = $('workspace');
+        if(ws){
+          ws.innerHTML = renderView('servicecap');
+          bindView('servicecap');
+        }
+        return;
+      }
+      if(id === 'scheduling'){
+        schedEnsureState();
+        void refreshSchedulingModule();
+      }
+    }
+    function portalAdminAfterRosterScriptsLoaded(viewId){
+      try{
+        if(typeof window.portalRefreshStaffDashboardSourceFromPortal === 'function'){
+          window.portalRefreshStaffDashboardSourceFromPortal();
+        }
+      }catch(_pr){}
+      portalInvalidateAdminSlotsCache();
+      try{
+        if(typeof adminMergeSpreadsheetSessionsForSlotLookup !== 'undefined' && adminMergeSpreadsheetSessionsForSlotLookup.invalidate){
+          adminMergeSpreadsheetSessionsForSlotLookup.invalidate();
+        }
+      }catch(_inv){}
+      var finish = function(){
+        if(String(state.view || '') === String(viewId || '')) portalAdminRefreshRosterDependentViews(viewId);
+      };
+      var client = typeof getSchedSupabaseClient === 'function' ? getSchedSupabaseClient() : null;
+      if(client && typeof window.portalRefreshPortalRosterRowsFromSupabase === 'function'){
+        void window.portalRefreshPortalRosterRowsFromSupabase(client).then(finish).catch(finish);
+      }else{
+        finish();
+      }
+    }
     function portalAdminEnsureScriptsForView(viewId){
       if(!window.portalAdminLoadScriptSet) return;
       var id = String(viewId || '');
@@ -10435,12 +10481,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return;
       }
       if(id === 'scheduling' || id === 'c4k_services' || id === 'servicecap' || id === 'absents_refunds' || id === 'term_roster_edit'){
-        void window.portalAdminLoadScriptSet('roster').then(function(){
-          portalInvalidateAdminSlotsCache();
-          if(state.view === 'scheduling'){
-            schedEnsureState();
-            void refreshSchedulingModule();
-          }
+        var loads = [window.portalAdminLoadScriptSet('roster')];
+        if(id === 'c4k_services' || id === 'servicecap'){
+          loads.push(window.portalAdminLoadScriptSet('feedback'));
+          loads.push(window.portalAdminLoadScriptSet('waitlist'));
+        }
+        void Promise.all(loads).then(function(){
+          portalAdminAfterRosterScriptsLoaded(id);
         });
         return;
       }
@@ -13325,7 +13372,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
       return out;
     }
-    /** Mon–Sun visual strip + legend (roster when loaded, else demo slot rows). */
+    /** Label under each Mon–Sun capacity bar (no "demo" copy). */
+    function adminCapacityWeekCellStatLabel(c){
+      var open = Number(c && c.open) || 0;
+      if(open > 0) return String(open) + ' open';
+      return 'FULLY BOOKED';
+    }
+    /** Mon–Sun visual strip + legend (roster when loaded, else weekday mock counts). */
     function adminCapacityMonSunStripHtml(){
       var anchor = isoDateLocal(new Date());
       var days = bookingWeekIsoRangeMonSun(anchor);
@@ -13360,19 +13413,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '<span class="cap-week-strip__dow">'+esc(dowLbl[di])+'</span>'+
           '<span class="cap-week-strip__date muted">'+esc(dateUk)+'</span>'+
           bar+
-          '<span class="cap-week-strip__stat muted">'+(total ? esc(String(c.open)+' open') : (hasRoster ? '—' : 'demo'))+'</span>'+
+          '<span class="cap-week-strip__stat muted" style="min-width:0;overflow-wrap:break-word;text-align:center">'+esc(adminCapacityWeekCellStatLabel(c))+'</span>'+
           '</div>'
         );
       }
       var sub =
         hasRoster
           ? 'Each column is this calendar week (Mon–Sun). Segments are roster lines for that date: booked vs open vs closed.'
-          : 'Roster bundle not loaded — weekday columns use demo slot rows from the capacity mock where a day is set.';
+          : 'Weekday columns use capacity slot rows until the roster bundle finishes loading. Refresh if booked/open counts stay empty.';
       return (
         '<section class="cap-week-strip card card--premium" aria-label="Capacity this week Monday to Sunday" style="margin-bottom:14px;min-width:0;overflow:hidden">'+
         '<div class="card-h" style="align-items:flex-end;flex-wrap:wrap;gap:8px;min-width:0">'+
         '<h3 class="cap-week-strip__title">This week (Mon–Sun)</h3>'+
-        '<span class="chip chip--info">'+(hasRoster ? 'Roster' : 'Demo')+'</span></div>'+
+        (hasRoster ? '<span class="chip chip--info">Roster</span>' : '')+'</div>'+
         '<div class="card-pad" style="padding-top:10px;min-width:0">'+
         '<p class="page-intro" style="margin:0 0 12px;max-width:52rem;min-width:0;overflow-wrap:break-word">'+sub+'</p>'+
         '<div class="cap-week-strip__row">'+cells.join('')+'</div>'+

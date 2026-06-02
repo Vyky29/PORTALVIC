@@ -256,6 +256,11 @@
       const nameRaw = String(row.client_name || "").trim();
       const nameLower = nameRaw.toLowerCase();
       const isClosed = nameLower === "closed";
+      const isOpenSlot =
+        !nameRaw ||
+        nameLower === "no client" ||
+        nameLower === "noclient" ||
+        nameLower === "no_client";
       const timeSlotLabel = String(row.time_slot || "").trim();
       const rosterService = String(row.service || "").trim();
       const rosterArea =
@@ -293,6 +298,18 @@
             clientId: "closed",
             activity: "",
             status: "closed",
+          })
+        );
+        return;
+      }
+
+      if (isOpenSlot) {
+        if (!timeSlotLabel) return;
+        sessionsModel.push(
+          Object.assign({}, baseSession, {
+            clientId: "available",
+            activity: rosterService || "Swimming",
+            status: "available",
           })
         );
         return;
