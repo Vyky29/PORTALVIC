@@ -13,6 +13,7 @@
     Secret Edge PORTAL_PUSH_OPEN_URL: URL HTTPS pública de este dashboard (sin barra final), p. ej. …/lead_dashboard.html en producción.
   -->
   <script src="/portal/portal-vapid-public.js?v=20260601-vapid"></script>
+  <script src="/portal/portal_announcement_ack.js?v=20260610-portal-ready"></script>
   <!-- Optional: hide parent site chrome when embedded in another shell. -->
   <script>
     (function () {
@@ -1170,6 +1171,15 @@
       }
       try{ closeSheet(); }catch(_){}
       try{
+        var profileTarget = false;
+        try{
+          var parsedTarget = new URL(target, window.location.href);
+          profileTarget = /staff_profile_update/i.test(parsedTarget.pathname);
+        }catch(_){}
+        if(profileTarget && typeof window.portalOpenAnnualProfileUpdate === 'function'){
+          window.portalOpenAnnualProfileUpdate(target);
+          return;
+        }
         window.open(target, '_blank', 'noopener,noreferrer');
       }catch(_){
         window.location.href = target;
@@ -7318,6 +7328,38 @@
             if(sh && sh.classList.contains('open')) renderAnnouncementsSheetContent();
           }
         }
+        const annIds = visible
+          .filter(function(row){ return String(row.message_type || '').toLowerCase().trim() === 'announcement'; })
+          .map(function(row){ return String(row.id || ''); })
+          .filter(Boolean);
+        if(annIds.length && typeof portalMergeAnnouncementAcksFromSupabase === 'function'){
+          await portalMergeAnnouncementAcksFromSupabase(
+            annIds,
+            portalAnnouncementAckMapLoad,
+            portalAnnouncementAckMapSave,
+            portalAnnouncementSignatureKey
+          );
+          const ackPatch = portalAnnouncementAckMapLoad();
+          let ackChanged = false;
+          annIds.forEach(function(id){
+            const key = 'portal-ann:' + id;
+            const notice = (dashboardData.notices || []).find(function(n){
+              return n && String(n.portalAnnouncementId || '') === id;
+            });
+            if(notice && ackPatch[key]){
+              ackPatch[key].title = String(notice.title || ackPatch[key].title || 'Announcement').trim();
+              ackPatch[key].text = String(notice.text || ackPatch[key].text || '').trim();
+              ackPatch[key].href = String(notice.href || ackPatch[key].href || '').trim();
+              ackChanged = true;
+            }
+          });
+          if(ackChanged) portalAnnouncementAckMapSave(ackPatch);
+          if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
+          if(typeof renderAnnouncementsSheetContent === 'function'){
+            const sh2 = document.getElementById('announcementsSheet');
+            if(sh2 && sh2.classList.contains('open')) renderAnnouncementsSheetContent();
+          }
+        }
         if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
       }catch(_){}
     }
@@ -10683,6 +10725,9 @@
           portalAnnouncementId: pending.portalAnnouncementId || ''
         };
         portalAnnouncementAckMapSave(ack);
+        if(typeof portalPersistAnnouncementAckToSupabase === 'function'){
+          void portalPersistAnnouncementAckToSupabase(pending);
+        }
         portalAnnouncementLockRequired = false;
         renderAnnouncementsSheetContent();
         if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();

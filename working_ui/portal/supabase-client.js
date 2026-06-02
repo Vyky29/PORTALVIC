@@ -482,6 +482,39 @@ export function bindPortalRemoteLogoutOnStaleAuthGeneration(supabase, userId, op
  * Logout: Supabase signOut + clear cached staff context.
  * @returns {Promise<{ error: import("@supabase/supabase-js").AuthError | null }>}
  */
+/** Read a Supabase Auth access token from browser storage (same-origin dashboards + forms). */
+export function portalReadPersistedSupabaseAccessToken() {
+  const parseToken = (raw) => {
+    try {
+      if (!raw) return "";
+      const data = JSON.parse(raw);
+      if (data && typeof data.access_token === "string" && data.access_token) {
+        return String(data.access_token);
+      }
+      if (data?.currentSession?.access_token) {
+        return String(data.currentSession.access_token);
+      }
+    } catch {
+      /* ignore */
+    }
+    return "";
+  };
+  if (typeof window === "undefined") return "";
+  for (const store of [localStorage, sessionStorage]) {
+    try {
+      for (let i = 0; i < store.length; i++) {
+        const k = store.key(i);
+        if (!k || !/^sb-.*-auth-token/i.test(k)) continue;
+        const tok = parseToken(store.getItem(k));
+        if (tok) return tok;
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+  return "";
+}
+
 /** Remove Supabase Auth tokens from browser storage (same-origin). */
 export function portalClearPersistedSupabaseAuth() {
   const drop = (store) => {

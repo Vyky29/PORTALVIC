@@ -62,7 +62,52 @@
     }
   };
 
-  /** One-shot Supabase access token for Annual profile opened in a new tab from Staff/Lead hub. */
+  function portalReadStoredSupabaseAccessToken() {
+    try {
+      var parseToken = function (raw) {
+        try {
+          if (!raw) return "";
+          var data = JSON.parse(raw);
+          if (data && data.access_token) return String(data.access_token);
+          if (data && data.currentSession && data.currentSession.access_token) {
+            return String(data.currentSession.access_token);
+          }
+        } catch (_) {}
+        return "";
+      };
+      var stores = [localStorage, sessionStorage];
+      for (var s = 0; s < stores.length; s++) {
+        var store = stores[s];
+        for (var i = 0; i < store.length; i++) {
+          var k = store.key(i);
+          if (!k || !/^sb-.*-auth-token/i.test(k)) continue;
+          var tok = parseToken(store.getItem(k));
+          if (tok) return tok;
+        }
+      }
+    } catch (_) {}
+    return "";
+  }
+
+  function portalWriteProfileUpdateHandoff(accessToken, staffId) {
+    var token = String(accessToken || "").trim();
+    if (!token) return false;
+    try {
+      localStorage.setItem(
+        "portalProfileAuthHandoff_v1",
+        JSON.stringify({
+          access_token: token,
+          staff_id: staffId ? String(staffId) : "",
+          at: Date.now(),
+        })
+      );
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /** One-shot Supabase access token for Annual profile from Staff/Lead hub. */
   window.portalPrepareProfileUpdateHandoff = function portalPrepareProfileUpdateHandoff() {
     try {
       var box = window.__PORTAL_SUPABASE__;
@@ -70,18 +115,61 @@
         box && box.session && box.session.access_token
           ? String(box.session.access_token)
           : "";
+      if (!token) token = portalReadStoredSupabaseAccessToken();
       if (!token) return false;
       var profile = box && box.staff_profile;
-      var payload = {
-        access_token: token,
-        staff_id: profile && profile.id ? String(profile.id) : "",
-        at: Date.now(),
-      };
-      localStorage.setItem("portalProfileAuthHandoff_v1", JSON.stringify(payload));
-      return true;
+      return portalWriteProfileUpdateHandoff(
+        token,
+        profile && profile.id ? String(profile.id) : ""
+      );
     } catch (_) {
       return false;
     }
+  };
+
+  /** Async handoff — refreshes session from the dashboard client when needed. */
+  window.portalPrepareProfileUpdateHandoffAsync =
+    async function portalPrepareProfileUpdateHandoffAsync() {
+      try {
+        if (window.portalPrepareProfileUpdateHandoff()) return true;
+      } catch (_) {}
+      try {
+        var box = window.__PORTAL_SUPABASE__;
+        var client = box && box.client;
+        if (client && client.auth && typeof client.auth.getSession === "function") {
+          var res = await client.auth.getSession();
+          var session = res && res.data && res.data.session;
+          if (session && session.access_token) {
+            var prof = box && box.staff_profile;
+            return portalWriteProfileUpdateHandoff(
+              session.access_token,
+              prof && prof.id ? String(prof.id) : ""
+            );
+          }
+        }
+      } catch (_) {}
+      try {
+        var stored = portalReadStoredSupabaseAccessToken();
+        if (stored) return portalWriteProfileUpdateHandoff(stored, "");
+      } catch (_) {}
+      return false;
+    };
+
+  /** Same-tab navigation so Annual profile inherits the portal auth session reliably. */
+  window.portalOpenAnnualProfileUpdate = function portalOpenAnnualProfileUpdate(targetUrl) {
+    var href = String(targetUrl || "staff_profile_update.html");
+    void (async function () {
+      try {
+        if (typeof window.portalPrepareProfileUpdateHandoffAsync === "function") {
+          await window.portalPrepareProfileUpdateHandoffAsync();
+        } else if (typeof window.portalPrepareProfileUpdateHandoff === "function") {
+          window.portalPrepareProfileUpdateHandoff();
+        }
+      } catch (_) {}
+      try {
+        window.location.href = href;
+      } catch (_) {}
+    })();
   };
 
   try {

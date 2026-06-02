@@ -14669,6 +14669,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var fh = window.PortalDayOps && window.PortalDayOps.getFeedbackHub && window.PortalDayOps.getFeedbackHub();
         if(fh && String(h.clientQ || '').trim()) fh.clientSearch = String(h.clientQ).trim();
         sessionsHubStampRefresh();
+        portalAdminApplyPendingActivityAlertFocus(h.tab);
       }
       function onHubRefreshFail(err){
         var root = $('adminSessionFeedbacksRoot');
@@ -16912,6 +16913,87 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(MOCK.actionLog.length>80) MOCK.actionLog.length=80;
     }
 
+    function portalAdminFormatAckWhen(iso){
+      if(!iso) return '—';
+      try{
+        return new Date(iso).toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+      }catch(_){ return String(iso); }
+    }
+    function openPortalAdminAnnouncementSignedModal(){
+      closeSidebarMob();
+      var client = getSchedSupabaseClient();
+      if(!client || !client.from){
+        alert('Sign in to Supabase as admin/CEO to view signed acknowledgments.');
+        return;
+      }
+      openModal(
+        '<div class="modal-h"><h2 id="modalTitle">Signed announcements</h2></div>'+
+        '<div class="modal-b" style="min-width:0">'+
+        '<p class="muted" style="margin:0 0 12px;font-size:13px;line-height:1.55;min-width:0;overflow-wrap:break-word">Who has signed each staff announcement (live from Supabase).</p>'+
+        '<div id="portalAdminAnnSignedHost"><p class="muted" style="margin:0">Loading…</p></div>'+
+        '</div>'+
+        '<div class="modal-f"><button type="button" class="btn btn--ghost" id="portalAdminAnnSignedClose">Close</button></div>'
+      );
+      var host = $('portalAdminAnnSignedHost');
+      var closeFn = function(){ closeModal(); };
+      var xc = $('portalAdminAnnSignedClose');
+      if(xc) xc.onclick = closeFn;
+      var bd = $('modalBackdrop');
+      if(bd) bd.onclick = function(e){ if(e.target === bd) closeFn(); };
+      Promise.all([
+        client.from('portal_staff_announcements')
+          .select('id,title,created_at,message_type')
+          .eq('message_type', 'announcement')
+          .order('created_at', { ascending: false })
+          .limit(20),
+        client.from('portal_staff_announcement_acks')
+          .select('announcement_id,staff_id,signed_at,staff_full_name,staff_username')
+          .order('signed_at', { ascending: false })
+          .limit(500)
+      ]).then(function(results){
+        if(!host) return;
+        var annRes = results[0];
+        var ackRes = results[1];
+        if(annRes.error){
+          host.innerHTML = '<p class="submission-state is-error" style="margin:0">Could not load announcements: '+esc(String(annRes.error.message||annRes.error))+'</p>';
+          return;
+        }
+        if(ackRes.error){
+          host.innerHTML = '<p class="submission-state is-error" style="margin:0">Could not load signatures: '+esc(String(ackRes.error.message||ackRes.error))+'</p>';
+          return;
+        }
+        var announcements = Array.isArray(annRes.data) ? annRes.data : [];
+        var acks = Array.isArray(ackRes.data) ? ackRes.data : [];
+        if(!announcements.length){
+          host.innerHTML = '<p class="muted" style="margin:0">No announcements published yet.</p>';
+          return;
+        }
+        var ackByAnn = {};
+        acks.forEach(function(a){
+          var aid = String(a.announcement_id || '');
+          if(!aid) return;
+          if(!ackByAnn[aid]) ackByAnn[aid] = [];
+          ackByAnn[aid].push(a);
+        });
+        var html = announcements.map(function(ann){
+          var aid = String(ann.id || '');
+          var rows = ackByAnn[aid] || [];
+          var bodyRows = rows.length ? rows.map(function(r){
+            var who = String(r.staff_full_name || r.staff_username || r.staff_id || '—').trim() || '—';
+            return '<tr><td>'+esc(who)+'</td><td>'+esc(portalAdminFormatAckWhen(r.signed_at))+'</td></tr>';
+          }).join('') : '<tr><td colspan="2"><span class="muted">No signatures yet</span></td></tr>';
+          return (
+            '<div class="card" style="margin-bottom:12px;min-width:0">'+
+            '<div class="card-h"><div style="min-width:0"><h3 style="margin:0;font-size:15px;overflow-wrap:break-word">'+esc(String(ann.title||'Announcement'))+'</h3>'+
+            '<p class="muted" style="margin:6px 0 0;font-size:12px">Published '+esc(portalAdminFormatAckWhen(ann.created_at))+' · <strong>'+esc(String(rows.length))+'</strong> signed</p></div></div>'+
+            '<div class="card-pad" style="overflow:auto;padding:0"><table class="tbl" style="min-width:280px"><thead><tr><th>Staff</th><th>Signed</th></tr></thead><tbody>'+bodyRows+'</tbody></table></div></div>'
+          );
+        }).join('');
+        host.innerHTML = html;
+      }).catch(function(err){
+        if(host) host.innerHTML = '<p class="submission-state is-error" style="margin:0">'+esc(String(err && err.message ? err.message : err))+'</p>';
+      });
+    }
     function openDayOpsAnnouncementsHubModal(){
       closeSidebarMob();
       openModal(
@@ -16933,6 +17015,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<span class="dayops-screen-nav__label">Reminder</span>'+
         '<span class="dayops-screen-nav__desc">Targeted</span>'+
         '</div></div></button>'+
+        '</div>'+
+        '<div style="margin-top:12px;min-width:0">'+
+        '<button type="button" id="dayopsAnnHubSigned" class="btn btn--sec" style="width:100%;max-width:100%">Signed announcements log</button>'+
         '</div></div>'+
         '<div class="modal-f"><button type="button" class="btn btn--ghost" id="dayopsAnnHubClose">Cancel</button></div>'
       );
@@ -16941,6 +17026,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(ann) ann.onclick = function(){ closeHub(); openComposeModalAnnouncementOrReminder(false); };
       var rem = $('dayopsAnnHubReminder');
       if(rem) rem.onclick = function(){ closeHub(); openComposeModalAnnouncementOrReminder(true); };
+      var signed = $('dayopsAnnHubSigned');
+      if(signed) signed.onclick = function(){ closeHub(); openPortalAdminAnnouncementSignedModal(); };
       var xc = $('dayopsAnnHubClose');
       if(xc) xc.onclick = closeHub;
       var bd = $('modalBackdrop');
@@ -21017,7 +21104,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         t: item.t || portalAdminAlertTimeLabel(item.created_at),
         created_at: item.created_at || null,
         kind: item.kind || 'activity',
-        view: item.view || ''
+        view: item.view || '',
+        recordId: item.recordId || '',
+        clientName: item.clientName || '',
+        sessionDate: item.sessionDate || ''
       });
       if(list.length > 60) list.length = 60;
       if(typeof window.__portalAdminRenderAlerts === 'function') window.__portalAdminRenderAlerts();
@@ -21035,7 +21125,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         sub: who + (svc ? ' · ' + svc : '') + (d ? ' · ' + d : ''),
         created_at: row.created_at,
         kind: 'feedback',
-        view: 'feedback'
+        view: 'feedback',
+        recordId: String(row.id || ''),
+        clientName: client,
+        sessionDate: d
       };
     }
 
@@ -21049,7 +21142,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         sub: who + ' · ' + String(row.session_date || '').slice(0, 10),
         created_at: row.created_at,
         kind: 'cancellation',
-        view: 'cancellations'
+        view: 'cancellations',
+        recordId: String(row.id || ''),
+        clientName: client,
+        sessionDate: String(row.session_date || '').trim().slice(0, 10)
       };
     }
 
@@ -21064,8 +21160,180 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         sub: who + ' · ' + String(row.session_date || '').slice(0, 10),
         created_at: row.created_at,
         kind: 'incident',
-        view: 'incidents'
+        view: 'incidents',
+        recordId: String(row.id || ''),
+        clientName: client,
+        sessionDate: String(row.session_date || '').trim().slice(0, 10)
       };
+    }
+
+    function portalAdminOpenActivityAlert(meta){
+      meta = meta || {};
+      var tab = String(meta.view || '').trim();
+      if(!tab) return;
+      var client = String(meta.clientName || '').trim();
+      var dateIso = String(meta.sessionDate || '').trim().slice(0, 10);
+      var h = sessionsHubEnsureState();
+      h.tab = tab;
+      h.sfSection = 'main';
+      if(client){
+        h.clientQ = client;
+        sessionFeedbackEnsureState().clientQ = client;
+      }
+      if(dateIso && /^\d{4}-\d{2}-\d{2}$/.test(dateIso)){
+        h.selectedIso = dateIso;
+        var week = bookingWeekIsoRangeMonSun(dateIso);
+        if(week && week[0]) h.weekAnchorIso = week[0];
+        state.sessionOverview.iso = dateIso;
+        var st = sessionFeedbackEnsureState();
+        st.selectedIso = dateIso;
+        st.anchorIso = (week && week[0]) ? week[0] : dateIso;
+      }
+      state.pendingAdminActivityAlertFocus = {
+        tab: tab,
+        recordId: String(meta.recordId || '').trim(),
+        clientName: client,
+        sessionDate: dateIso
+      };
+      openSessionsHubTab(tab);
+    }
+
+    function portalAdminFindFeedbackHubRowIndex(hub, recordId, clientName){
+      if(!hub || typeof hub.feedbackRowsForSelectedDay !== 'function') return -1;
+      var rows = hub.tab === 'feedback'
+        ? hub.feedbackRowsForSelectedDay()
+        : (typeof hub.feedbackInRange === 'function'
+          ? hub.feedbackInRange().filter(function(fb){
+              return !fb.attendance || String(fb.attendance).toLowerCase().indexOf('no') !== 0;
+            })
+          : []);
+      recordId = String(recordId || '').trim();
+      clientName = String(clientName || '').trim().toLowerCase();
+      var clientFallback = -1;
+      for(var i = 0; i < rows.length; i++){
+        var fb = rows[i];
+        if(recordId && String(fb.id || '') === recordId) return i;
+        if(clientName){
+          var nm = String(fb.client_name || '').trim().toLowerCase();
+          if(nm === clientName || nm.indexOf(clientName) >= 0 || clientName.indexOf(nm) >= 0){
+            if(clientFallback < 0) clientFallback = i;
+          }
+        }
+      }
+      return clientFallback >= 0 ? clientFallback : (rows.length ? 0 : -1);
+    }
+
+    function portalAdminFindPortalFormsIdx(kind, recordId, clientName, sessionDate){
+      var ops = window.PortalDayOps;
+      var payload = ops && ops.getPayload ? ops.getPayload() : null;
+      if(!payload) return -1;
+      var arr = kind === 'cancellation'
+        ? payload.cancellation_reports
+        : kind === 'incident'
+          ? payload.incident_reports
+          : null;
+      if(!Array.isArray(arr)) return -1;
+      recordId = String(recordId || '').trim();
+      clientName = String(clientName || '').trim().toLowerCase();
+      sessionDate = String(sessionDate || '').trim().slice(0, 10);
+      var clientFallback = -1;
+      for(var i = 0; i < arr.length; i++){
+        var r = arr[i];
+        if(recordId && String(r.id || '') === recordId) return i;
+        if(clientName || sessionDate){
+          var nm = String(r.client_name || '').trim().toLowerCase();
+          var sd = String(r.session_date || '').trim().slice(0, 10);
+          var clientOk = !clientName || nm === clientName || nm.indexOf(clientName) >= 0 || clientName.indexOf(nm) >= 0;
+          var dateOk = !sessionDate || sd === sessionDate;
+          if(clientOk && dateOk && clientFallback < 0) clientFallback = i;
+        }
+      }
+      return clientFallback;
+    }
+
+    function portalAdminFlashAlertTargetRow(tr){
+      if(!tr) return;
+      requestAnimationFrame(function(){
+        requestAnimationFrame(function(){
+          try{ tr.scrollIntoView({ behavior: 'smooth', block: 'center' }); }catch(_e){
+            try{ tr.scrollIntoView(true); }catch(_e2){}
+          }
+          tr.classList.add('sched-slot-row--focus-flash');
+          window.setTimeout(function(){ tr.classList.remove('sched-slot-row--focus-flash'); }, 2400);
+        });
+      });
+    }
+
+    function portalAdminApplyPendingActivityAlertFocus(activeTab){
+      var focus = state.pendingAdminActivityAlertFocus;
+      if(!focus) return;
+      if(String(activeTab || '').trim() !== String(focus.tab || '').trim()) return;
+      state.pendingAdminActivityAlertFocus = null;
+      var tab = focus.tab;
+      var client = String(focus.clientName || '').trim();
+      var dateIso = String(focus.sessionDate || '').trim().slice(0, 10);
+      var recordId = String(focus.recordId || '').trim();
+      var ops = window.PortalDayOps;
+
+      function finishFeedbackFocus(hub){
+        if(!hub) return;
+        var rowIdx = portalAdminFindFeedbackHubRowIndex(hub, recordId, client);
+        if(rowIdx < 0) return;
+        var root = $('adminSessionFeedbacksRoot');
+        var tr = root ? root.querySelector('[data-ash-fb-row="' + rowIdx + '"]') : null;
+        portalAdminFlashAlertTargetRow(tr);
+        if(typeof hub.openReviewModal === 'function'){
+          var rows = hub.tab === 'feedback'
+            ? hub.feedbackRowsForSelectedDay()
+            : hub.feedbackInRange().filter(function(fb){
+                return !fb.attendance || String(fb.attendance).toLowerCase().indexOf('no') !== 0;
+              });
+          if(rows[rowIdx]) hub.openReviewModal(rows[rowIdx], rowIdx);
+        }
+      }
+
+      function finishTrackingFocus(kind){
+        var idx = portalAdminFindPortalFormsIdx(kind, recordId, client, dateIso);
+        var hubRoot = $('adminSessionsHubRoot');
+        var pick = hubRoot ? hubRoot.querySelector('[data-portal-forms-kind="' + kind + '"][data-portal-forms-idx="' + idx + '"]') : null;
+        if(!pick && hubRoot){
+          var all = hubRoot.querySelectorAll('[data-portal-forms-kind="' + kind + '"]');
+          if(client){
+            var want = client.toLowerCase();
+            for(var j = 0; j < all.length; j++){
+              if(String(all[j].textContent || '').toLowerCase().indexOf(want) >= 0){ pick = all[j]; break; }
+            }
+          }
+          if(!pick && all.length) pick = all[0];
+        }
+        portalAdminFlashAlertTargetRow(pick);
+        if(idx >= 0 && window.PortalFormRecordModal && typeof window.PortalFormRecordModal.open === 'function'){
+          window.PortalFormRecordModal.open(kind, idx);
+        }
+      }
+
+      window.setTimeout(function(){
+        if(tab === 'feedback' || tab === 'positive' || tab === 'relevant'){
+          var fh = ops && ops.getFeedbackHub ? ops.getFeedbackHub() : null;
+          if(fh){
+            if(client) fh.clientSearch = client;
+            if(dateIso && /^\d{4}-\d{2}-\d{2}$/.test(dateIso) && typeof fh.goToCalendarDay === 'function'){
+              fh.goToCalendarDay(dateIso);
+            }else if(typeof fh.render === 'function'){
+              fh.render();
+            }
+          }
+          finishFeedbackFocus(fh);
+          return;
+        }
+        if(tab === 'cancellations' || tab === 'incidents'){
+          var th = ops && ops.getTrackingHub ? ops.getTrackingHub() : null;
+          if(th && dateIso && /^\d{4}-\d{2}-\d{2}$/.test(dateIso) && typeof th.goToCalendarDay === 'function'){
+            th.goToCalendarDay(dateIso);
+          }
+          finishTrackingFocus(tab === 'cancellations' ? 'cancellation' : 'incident');
+        }
+      }, 80);
     }
 
     async function portalAdminBootstrapActivityAlerts(){
@@ -21149,7 +21417,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }).join('');
       var activityHtml = (activityList || []).map(function(a){
         var jump = a.view ? ' data-alert-view="'+esc(a.view)+'"' : '';
-        return '<button type="button" class="line-item portal-admin-activity-alert"'+jump+' style="width:100%;text-align:left;border:0;background:transparent;cursor:pointer;padding:12px 16px;font:inherit"><div><strong>'+esc(a.title)+'</strong><div class="muted">'+esc(a.sub)+'</div></div><span class="chip chip--info">'+esc(a.t || 'New')+'</span></button>';
+        var meta = '';
+        if(a.recordId) meta += ' data-alert-record-id="'+esc(a.recordId)+'"';
+        if(a.clientName) meta += ' data-alert-client="'+esc(a.clientName)+'"';
+        if(a.sessionDate) meta += ' data-alert-date="'+esc(a.sessionDate)+'"';
+        return '<button type="button" class="line-item portal-admin-activity-alert"'+jump+meta+' style="width:100%;text-align:left;border:0;background:transparent;cursor:pointer;padding:12px 16px;font:inherit"><div><strong>'+esc(a.title)+'</strong><div class="muted">'+esc(a.sub)+'</div></div><span class="chip chip--info">'+esc(a.t || 'New')+'</span></button>';
       }).join('');
       var mockHtml = hasLive ? '' : MOCK.alerts.map(function(a){
         return '<div class="line-item"><div><strong>'+esc(a.title)+'</strong><div class="muted">'+esc(a.sub)+'</div></div><span class="chip chip--urg">'+esc(a.t)+'</span></div>';
@@ -21505,7 +21777,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var v = String(btn.getAttribute('data-alert-view') || '').trim();
           if(!v) return;
           alertsPopEl.classList.remove('open');
-          setView(v);
+          portalAdminOpenActivityAlert({
+            view: v,
+            recordId: String(btn.getAttribute('data-alert-record-id') || '').trim(),
+            clientName: String(btn.getAttribute('data-alert-client') || '').trim(),
+            sessionDate: String(btn.getAttribute('data-alert-date') || '').trim()
+          });
         });
       }
       document.addEventListener('click', function(){

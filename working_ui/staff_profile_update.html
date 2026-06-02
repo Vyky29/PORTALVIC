@@ -1627,10 +1627,9 @@
       return "";
     }
 
-    function consumeProfileAuthHandoff() {
+    function peekProfileAuthHandoff() {
       try {
         const raw = localStorage.getItem("portalProfileAuthHandoff_v1");
-        localStorage.removeItem("portalProfileAuthHandoff_v1");
         if (!raw) return null;
         const o = JSON.parse(raw);
         if (!o || !o.access_token) return null;
@@ -1641,13 +1640,21 @@
       }
     }
 
+    function clearProfileAuthHandoff() {
+      try {
+        localStorage.removeItem("portalProfileAuthHandoff_v1");
+      } catch (_) {}
+    }
+
     async function resolvePortalAccessToken() {
-      const handoff = consumeProfileAuthHandoff();
+      const handoff = peekProfileAuthHandoff();
       if (handoff && handoff.access_token) return String(handoff.access_token);
       try {
-        const { getSupabaseClient } = await import(
-          "/portal/supabase-client.js?v=20260601-profile-hub"
+        const { getSupabaseClient, portalReadPersistedSupabaseAccessToken } = await import(
+          "/portal/supabase-client.js?v=20260609-profile-handoff"
         );
+        const stored = portalReadPersistedSupabaseAccessToken();
+        if (stored) return stored;
         const sb = getSupabaseClient();
         const {
           data: { session },
@@ -1666,10 +1673,12 @@
           };
           const {
             data: { subscription: sub },
-          } = sb.auth.onAuthStateChange((_ev, s) => {
-            if (s && s.access_token) finish(String(s.access_token));
+          } = sb.auth.onAuthStateChange((event, s) => {
+            if (s && s.access_token && (event === "INITIAL_SESSION" || event === "SIGNED_IN" || event === "TOKEN_REFRESHED")) {
+              finish(String(s.access_token));
+            }
           });
-          const t = setTimeout(() => finish(""), 800);
+          const t = setTimeout(() => finish(""), 2800);
         });
         if (token) return token;
       } catch (_) {}
@@ -1687,7 +1696,10 @@
         body: "{}",
       });
       const body = await res.json().catch(() => ({}));
-      if (!res.ok || !body?.ok || !body.session_token) return false;
+      if (!res.ok || !body?.ok || !body.session_token) {
+        console.warn("[profile] session-from-portal failed", res.status, body?.error || body);
+        return false;
+      }
       state.session.token = String(body.session_token || "");
       state.session.expiresAt = new Date(body.expires_at || 0).getTime();
       return true;
@@ -1960,6 +1972,7 @@
       if (!accessToken) return false;
       try {
         if (!(await mintProfileSessionFromPortalJwt(accessToken))) return false;
+        clearProfileAuthHandoff();
         return loadProfileAndShow();
       } catch (e) {
         console.warn("[profile] portal session mint", e);
