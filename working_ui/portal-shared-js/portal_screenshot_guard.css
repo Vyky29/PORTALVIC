@@ -11,7 +11,13 @@
 
 #portalScreenshotGuard.is-active {
   opacity: 1;
+  /* Block touches only while the app is in the background; foreground recovery via JS watchdog. */
   pointer-events: auto;
+}
+
+html:not(.portal-screenshot-page-hidden) #portalScreenshotGuard.is-active {
+  pointer-events: none;
+  opacity: 0;
 }
 
 html.portal-screenshot-guard-armed,

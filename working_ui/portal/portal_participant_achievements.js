@@ -100,11 +100,7 @@
 
   function isAchievementGalleryViewerOpen() {
     var viewer = document.getElementById("portalAchievementsGalleryViewer");
-    if (viewer && !viewer.hidden) return true;
-    /* Feedback attach picker uses small thumbs — do not enable strict guard (blocks the form). */
-    var gal = document.getElementById("portalAchievementsGallery");
-    if (gal && gal.querySelector(".portal-achievements-gallery-grid img")) return true;
-    return false;
+    return !!(viewer && !viewer.hidden);
   }
 
   function isAchievementCameraOpen() {
@@ -394,6 +390,7 @@
 
   function stopCamera() {
     closeCameraFullscreen();
+    syncAchievementScreenshotGuard();
   }
 
   async function snapPhoto() {

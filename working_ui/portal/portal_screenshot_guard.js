@@ -1,8 +1,7 @@
 /**
  * Mobile portal screenshot deterrence (best-effort in browser/PWA).
- * Hides sensitive UI behind an instant black overlay when the page loses focus
- * (common during power+volume screenshot on Android). Strict mode for photo viewers.
- * True black screenshots on the same device need a native Android wrapper (FLAG_SECURE).
+ * Black overlay only while the app is in the background (app switcher / task switch).
+ * Never block touches while the page is visible — fixes PWA stuck black screen.
  */
 (function (global) {
   "use strict";
@@ -13,6 +12,7 @@
   var strictTokens = Object.create(null);
   var mediaCaptureTokens = Object.create(null);
   var lingerTimer = null;
+  var watchdogTimer = null;
   var DEFAULT_LINGER_MS = 3400;
   var STRICT_LINGER_MS = 5200;
 
@@ -43,6 +43,14 @@
     return false;
   }
 
+  function isPageVisible() {
+    try {
+      return !document.hidden && document.visibilityState === "visible";
+    } catch (_e) {
+      return true;
+    }
+  }
+
   function ensureEl() {
     var el = document.getElementById(GUARD_ID);
     if (el) return el;
@@ -52,6 +60,13 @@
     el.setAttribute("role", "presentation");
     var root = document.body || document.documentElement;
     root.appendChild(el);
+    el.addEventListener(
+      "click",
+      function () {
+        if (isPageVisible()) hideBlackForce();
+      },
+      true
+    );
     return el;
   }
 
@@ -61,35 +76,61 @@
     } catch (_e) {}
   }
 
+  function syncPageHiddenClass() {
+    try {
+      document.documentElement.classList.toggle("portal-screenshot-page-hidden", !!document.hidden);
+    } catch (_e) {}
+  }
+
   function showBlack(opts) {
     if (!armed || isMediaCaptureActive()) return;
     opts = opts || {};
+    global.clearTimeout(lingerTimer);
+
+    if (!document.hidden && !opts.allowForegroundLinger) {
+      return;
+    }
+
     var el = ensureEl();
     el.classList.add("is-active");
     setSensitiveHidden(true);
-    global.clearTimeout(lingerTimer);
     if (opts.persist) return;
     var ms = opts.lingerMs != null ? opts.lingerMs : isStrict() ? STRICT_LINGER_MS : DEFAULT_LINGER_MS;
     lingerTimer = global.setTimeout(function () {
-      if (document.hidden || isStrict()) return;
-      el.classList.remove("is-active");
-      setSensitiveHidden(false);
+      if (document.hidden) return;
+      hideBlackForce();
     }, ms);
   }
 
   function hideBlack() {
-    if (document.hidden || isStrict()) return;
-    global.clearTimeout(lingerTimer);
-    var el = document.getElementById(GUARD_ID);
-    if (el) el.classList.remove("is-active");
-    setSensitiveHidden(false);
+    hideBlackForce();
   }
 
   function hideBlackForce() {
     global.clearTimeout(lingerTimer);
     var el = document.getElementById(GUARD_ID);
     if (el) el.classList.remove("is-active");
-    setSensitiveHidden(false);
+    if (isPageVisible() && !isMediaCaptureActive()) setSensitiveHidden(false);
+  }
+
+  function onPageVisible() {
+    syncPageHiddenClass();
+    hideBlackForce();
+  }
+
+  function onPageHidden() {
+    syncPageHiddenClass();
+    if (!armed || isMediaCaptureActive()) return;
+    showBlack({ persist: true });
+  }
+
+  function startWatchdog() {
+    if (watchdogTimer) return;
+    watchdogTimer = global.setInterval(function () {
+      if (!armed || !isPageVisible() || isMediaCaptureActive()) return;
+      var el = document.getElementById(GUARD_ID);
+      if (el && el.classList.contains("is-active")) hideBlackForce();
+    }, 2500);
   }
 
   function bindEvents() {
@@ -104,38 +145,17 @@
           hideBlackForce();
           return;
         }
-        if (document.hidden) showBlack({ persist: true });
-        else hideBlack();
+        if (document.hidden) onPageHidden();
+        else onPageVisible();
       },
       true
     );
 
     global.addEventListener(
-      "blur",
+      "pageshow",
       function () {
-        if (armed && !isMediaCaptureActive()) showBlack({ persist: true });
-      },
-      true
-    );
-
-    global.addEventListener(
-      "pagehide",
-      function () {
-        if (armed && !isMediaCaptureActive()) showBlack({ persist: true });
-      },
-      true
-    );
-
-    global.addEventListener(
-      "focus",
-      function () {
-        if (!armed || document.hidden) return;
-        if (isMediaCaptureActive()) {
-          hideBlackForce();
-          return;
-        }
-        if (isStrict()) showBlack({ persist: true });
-        else hideBlack();
+        if (!armed) return;
+        onPageVisible();
       },
       true
     );
@@ -144,8 +164,10 @@
       "keyup",
       function (e) {
         if (!armed) return;
-        if (e.key === "PrintScreen") showBlack({ lingerMs: 4500 });
-        if (e.ctrlKey && e.shiftKey && (e.key === "s" || e.key === "S")) showBlack({ lingerMs: 4500 });
+        if (e.key === "PrintScreen") showBlack({ lingerMs: 4500, allowForegroundLinger: true });
+        if (e.ctrlKey && e.shiftKey && (e.key === "s" || e.key === "S")) {
+          showBlack({ lingerMs: 4500, allowForegroundLinger: true });
+        }
       },
       true
     );
@@ -169,6 +191,8 @@
       },
       true
     );
+
+    startWatchdog();
   }
 
   function arm(options) {
@@ -181,6 +205,8 @@
     } catch (_e2) {}
     ensureEl();
     bindEvents();
+    syncPageHiddenClass();
+    if (isPageVisible()) hideBlackForce();
     return true;
   }
 
@@ -189,19 +215,19 @@
     try {
       document.documentElement.classList.remove("portal-screenshot-guard-armed");
     } catch (_e3) {}
-    hideBlack();
+    hideBlackForce();
   }
 
   function pushStrict(token) {
     var key = String(token || "default");
     strictTokens[key] = 1;
-    if (armed && document.hidden) showBlack({ persist: true });
+    if (armed && document.hidden && !isMediaCaptureActive()) showBlack({ persist: true });
   }
 
   function popStrict(token) {
     var key = String(token || "default");
     delete strictTokens[key];
-    if (!document.hidden && !isStrict()) hideBlack();
+    if (isPageVisible() && !isMediaCaptureActive()) hideBlackForce();
   }
 
   function pushMediaCaptureBypass(token) {
@@ -213,7 +239,7 @@
   function popMediaCaptureBypass(token) {
     var key = String(token || "default");
     delete mediaCaptureTokens[key];
-    if (!document.hidden && !isStrict()) hideBlack();
+    if (isPageVisible() && !document.hidden) hideBlackForce();
   }
 
   function autoArmFromDocument() {
@@ -237,6 +263,7 @@
     popMediaCaptureBypass: popMediaCaptureBypass,
     showBlack: showBlack,
     hideBlack: hideBlack,
+    hideBlackForce: hideBlackForce,
     isMobilePortalDevice: isMobilePortalDevice,
   };
 
