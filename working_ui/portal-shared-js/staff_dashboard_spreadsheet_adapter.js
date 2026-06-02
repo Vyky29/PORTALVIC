@@ -368,7 +368,7 @@
       staffName: profile.staffName || rawId || "Staff",
       avatarFile: profile.avatarFile || "",
       staffRoleTrack: profile.staffRoleTrack || "swimming",
-      defaultViewDay: dayNameToday(),
+      defaultViewDay: isDemoAcct ? "Monday" : dayNameToday(),
       sessionsModel: built.sessionsModel,
       clientNotesById: built.clientNotesById,
     };

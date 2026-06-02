@@ -13458,26 +13458,9 @@
     "instructors": "TEFLON",
     "service": "Aquatic Activity",
     "area": "Teaching Pool",
-    "time_slot": "10 to 11",
-    "venue": "Acton"
-  },
-  {
-    "client_name": "Sam",
-    "day": "Tuesday",
-    "instructors": "TEFLON",
-    "service": "Multi-Activity",
-    "area": "Hub Room",
-    "time_slot": "2 to 3",
-    "venue": "SwimFarm"
-  },
-  {
-    "client_name": "Jordan",
-    "day": "Sunday",
-    "instructors": "TEFLON",
-    "service": "Aquatic Activity",
-    "area": "Teaching Pool",
-    "time_slot": "10 to 11",
-    "venue": "Northolt"
+    "time_slot": "9 to 10",
+    "venue": "Acton",
+    "session_date": "2026-06-01"
   },
   {
     "client_name": "Vitin",
@@ -13487,6 +13470,26 @@
     "area": "Client's Home",
     "time_slot": "10 to 11",
     "venue": "Chelsea",
+    "session_date": "2026-06-01"
+  },
+  {
+    "client_name": "Sam",
+    "day": "Monday",
+    "instructors": "TEFLON",
+    "service": "Multi-Activity",
+    "area": "Hub Room",
+    "time_slot": "11 to 12",
+    "venue": "SwimFarm",
+    "session_date": "2026-06-01"
+  },
+  {
+    "client_name": "Jordan",
+    "day": "Monday",
+    "instructors": "TEFLON",
+    "service": "Aquatic Activity",
+    "area": "Teaching Pool",
+    "time_slot": "2 to 3",
+    "venue": "Northolt",
     "session_date": "2026-06-01"
   },
   {

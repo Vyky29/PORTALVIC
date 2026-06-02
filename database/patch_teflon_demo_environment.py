@@ -10,7 +10,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DATABASE = ROOT / "database"
 
-# Guide clients: Mari Trini, Sam, Vitin (dated Mon), Jordan — no "Demo" suffix.
+# Guide clients: Mari Trini, Sam, Vitin, Jordan — Mon 2026-06-01 showcase (all colours on one day).
+TEFLON_MONDAY_SHOWCASE = "2026-06-01"
 TEFLON_DEMO_ROWS = [
     {
         "client_name": "Mari Trini",
@@ -18,26 +19,9 @@ TEFLON_DEMO_ROWS = [
         "instructors": "TEFLON",
         "service": "Aquatic Activity",
         "area": "Teaching Pool",
-        "time_slot": "10 to 11",
+        "time_slot": "9 to 10",
         "venue": "Acton",
-    },
-    {
-        "client_name": "Sam",
-        "day": "Tuesday",
-        "instructors": "TEFLON",
-        "service": "Multi-Activity",
-        "area": "Hub Room",
-        "time_slot": "2 to 3",
-        "venue": "SwimFarm",
-    },
-    {
-        "client_name": "Jordan",
-        "day": "Sunday",
-        "instructors": "TEFLON",
-        "service": "Aquatic Activity",
-        "area": "Teaching Pool",
-        "time_slot": "10 to 11",
-        "venue": "Northolt",
+        "session_date": TEFLON_MONDAY_SHOWCASE,
     },
     {
         "client_name": "Vitin",
@@ -47,7 +31,27 @@ TEFLON_DEMO_ROWS = [
         "area": "Client's Home",
         "time_slot": "10 to 11",
         "venue": "Chelsea",
-        "session_date": "2026-06-01",
+        "session_date": TEFLON_MONDAY_SHOWCASE,
+    },
+    {
+        "client_name": "Sam",
+        "day": "Monday",
+        "instructors": "TEFLON",
+        "service": "Multi-Activity",
+        "area": "Hub Room",
+        "time_slot": "11 to 12",
+        "venue": "SwimFarm",
+        "session_date": TEFLON_MONDAY_SHOWCASE,
+    },
+    {
+        "client_name": "Jordan",
+        "day": "Monday",
+        "instructors": "TEFLON",
+        "service": "Aquatic Activity",
+        "area": "Teaching Pool",
+        "time_slot": "2 to 3",
+        "venue": "Northolt",
+        "session_date": TEFLON_MONDAY_SHOWCASE,
     },
     {
         "client_name": "Sam",

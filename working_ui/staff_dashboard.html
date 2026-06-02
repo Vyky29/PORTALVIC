@@ -816,7 +816,10 @@
       if(window.__portalTopbarClockTimer) return;
       const tick = function(){
         if(typeof portalApplyTopbarDateDisplayFromDate === 'function'){
-          portalApplyTopbarDateDisplayFromDate(new Date());
+          const d = typeof portalResolveTopbarDisplayDate === 'function'
+            ? portalResolveTopbarDisplayDate()
+            : new Date();
+          portalApplyTopbarDateDisplayFromDate(d);
         }
       };
       tick();
@@ -853,14 +856,88 @@
         sessionsModel = __spreadsheetBoot.sessionsModel || [];
         clientNotesById = __spreadsheetBoot.clientNotesById || {};
       }
-      if(__spreadsheetBoot && __spreadsheetBoot.defaultViewDay && typeof portalStaffIsDemoAccount === 'function' && portalStaffIsDemoAccount()){
-        DEMO_VIEW_DAY = __spreadsheetBoot.defaultViewDay;
+      if(__spreadsheetBoot && typeof portalStaffIsDemoAccount === 'function' && portalStaffIsDemoAccount()){
+        if(typeof portalApplyTeflonGuideDemoViewDefaults === 'function') portalApplyTeflonGuideDemoViewDefaults();
+        else if(__spreadsheetBoot.defaultViewDay) DEMO_VIEW_DAY = __spreadsheetBoot.defaultViewDay;
       }
+      if(typeof portalSeedTeflonGuideDemoReviewState === 'function') portalSeedTeflonGuideDemoReviewState();
     }
     /** Teflon demo login: fake term dates, sample TERM feedback, bypass session-end for quick feedback, etc. */
     function portalStaffIsDemoAccount(){
       return String(STAFF_DASHBOARD_ID || '').trim().toLowerCase() === 'teflon';
     }
+    const TEFLON_GUIDE_SHOWCASE_ISO = '2026-06-01';
+    const TEFLON_GUIDE_SHOWCASE_DAY = 'Monday';
+    /** Guide photos: always anchor session list to Mon 2026-06-01 (4 demo clients), not live weekday. */
+    function portalApplyTeflonGuideDemoViewDefaults(){
+      if(!portalStaffIsDemoAccount()) return;
+      DEMO_VIEW_DAY = TEFLON_GUIDE_SHOWCASE_DAY;
+      try{ window.DEMO_VIEW_DAY = DEMO_VIEW_DAY; }catch(_){}
+      try{
+        __PORTAL_REVIEW_DATE_URL_LOCK = TEFLON_GUIDE_SHOWCASE_ISO;
+        __PORTAL_REVIEW_DAY_URL_LOCK = TEFLON_GUIDE_SHOWCASE_DAY;
+        window.__PORTAL_REVIEW_DATE_URL_LOCK = TEFLON_GUIDE_SHOWCASE_ISO;
+        window.__PORTAL_REVIEW_DAY_URL_LOCK = TEFLON_GUIDE_SHOWCASE_DAY;
+      }catch(_){}
+    }
+    /** Topbar date pill: Teflon demo pins Mon 01/06/2026; everyone else uses live clock. */
+    function portalResolveTopbarDisplayDate(){
+      if(typeof portalStaffIsDemoAccount === 'function' && portalStaffIsDemoAccount()){
+        const d = typeof portalParseIsoDateLocal === 'function'
+          ? portalParseIsoDateLocal(TEFLON_GUIDE_SHOWCASE_ISO)
+          : new Date(2026, 5, 1);
+        if(d && !isNaN(d.getTime())) return d;
+      }
+      return new Date();
+    }
+    /** Mon 2026-06-01 guide showcase: blue / orange / green / red cards for portal guide photos. */
+    function portalSeedTeflonGuideDemoReviewState(){
+      if(!portalStaffIsDemoAccount()) return false;
+      const iso = '2026-06-01';
+      const specs = [
+        { cid: 'mari_trini', start: '09:00', scheduled: true },
+        { cid: 'vitin', start: '10:00' },
+        { cid: 'sam', start: '11:00', feedbackDone: true },
+        { cid: 'jordan', start: '14:00', incident: true }
+      ];
+      let changed = false;
+      try{
+        window.__PORTAL_TEFLON_GUIDE_SCHEDULED_KEYS__ = window.__PORTAL_TEFLON_GUIDE_SCHEDULED_KEYS__ || new Set();
+        specs.forEach(function(sp){
+          const sk = iso + '|' + sp.start + '|' + sp.cid;
+          if(sp.scheduled){
+            window.__PORTAL_TEFLON_GUIDE_SCHEDULED_KEYS__.add(sk);
+            if(sessionReviewMapMemory[sk]){
+              delete sessionReviewMapMemory[sk];
+              changed = true;
+            }
+            return;
+          }
+          const prev = sessionReviewMapMemory[sk] || { feedbackDone: false, incident: false, absent: false, cancelled: false };
+          const next = {
+            feedbackDone: !!sp.feedbackDone,
+            incident: !!sp.incident,
+            absent: !!sp.absent,
+            cancelled: false
+          };
+          if(prev.feedbackDone !== next.feedbackDone || prev.incident !== next.incident || prev.absent !== next.absent){
+            sessionReviewMapMemory[sk] = next;
+            changed = true;
+          }
+        });
+        if(changed && typeof persistSessionReviewMap === 'function') persistSessionReviewMap();
+      }catch(_e){}
+      return true;
+    }
+    (function portalGuideShotHaloOverride(){
+      try{
+        if(typeof window === 'undefined' || !window.location) return;
+        const p = new URLSearchParams(String(window.location.search || ''));
+        const h = String(p.get('portalGuideHalo') || '').trim().toLowerCase();
+        if(!h) return;
+        window.__PORTAL_GUIDE_HALO_SHOT__ = h;
+      }catch(_e){}
+    })();
     var _staffDashAdapterMissing = typeof StaffDashboardSpreadsheetAdapter === 'undefined' || !window.STAFF_DASHBOARD_SOURCE;
     if(_staffDashAdapterMissing){
       console.warn('staff_dashboard: STAFF_DASHBOARD_SOURCE or adapter missing; sessions/clients empty.');
@@ -3686,6 +3763,11 @@
     }
     function isSessionEndedForFeedback(item){
       if(STAFF_DASH_FORCE_SESSIONS_ENDED) return true;
+      try{
+        if(portalStaffIsDemoAccount() && item && item.sessionKey && window.__PORTAL_TEFLON_GUIDE_SCHEDULED_KEYS__ && window.__PORTAL_TEFLON_GUIDE_SCHEDULED_KEYS__.has(item.sessionKey)){
+          return false;
+        }
+      }catch(_e){}
       const t = item && item.sessionEndTs;
       if(t == null) return false;
       const lead = portalFeedbackItemIsDayCentre(item) ? DAY_CENTRE_FEEDBACK_LEAD_MS : 0;
@@ -7965,6 +8047,30 @@
     }
 
     function portalNotificationAlertFlags(st){
+      const shot = typeof window !== 'undefined' ? String(window.__PORTAL_GUIDE_HALO_SHOT__ || '').trim().toLowerCase() : '';
+      if(shot && portalStaffIsDemoAccount()){
+        if(shot === 'gold' || shot === 'orange' || shot === 'reminder' || shot === 'feedback'){
+          return { chat: false, announcement: false, feedback: true };
+        }
+        if(shot === 'red' || shot === 'announcement'){
+          return { chat: false, announcement: true, feedback: false };
+        }
+        if(shot === 'blue' || shot === 'chat'){
+          return { chat: true, announcement: false, feedback: false };
+        }
+        if(shot === 'both' || shot === 'ann-fb'){
+          return { chat: false, announcement: true, feedback: true };
+        }
+        if(shot === 'chat-fb'){
+          return { chat: true, announcement: false, feedback: true };
+        }
+        if(shot === 'chat-ann'){
+          return { chat: true, announcement: true, feedback: false };
+        }
+        if(shot === 'triple' || shot === 'multi' || shot === 'all'){
+          return { chat: true, announcement: true, feedback: true };
+        }
+      }
       const state = st || (typeof portalReminderState === 'function' ? portalReminderState() : null);
       const hasFeedback = !!(state && state.sessionFeedbackNeed);
       const hasReminderOther = !!(state && (state.venueOpenNeed || state.venueCloseNeed || state.setupPending || state.rosterOverrideNeed));
@@ -8566,7 +8672,9 @@
         if(sn) sn.setAttribute('aria-label', dashboardData.staffName || (split.given + (split.surname ? ' ' + split.surname : '')));
       }
       if(typeof portalApplyTopbarDateDisplayFromDate === 'function'){
-        portalApplyTopbarDateDisplayFromDate(new Date());
+        portalApplyTopbarDateDisplayFromDate(
+          typeof portalResolveTopbarDisplayDate === 'function' ? portalResolveTopbarDisplayDate() : new Date()
+        );
       }else{
         const dateStr = typeof portalFormatTopbarDateFromDate === 'function' ? portalFormatTopbarDateFromDate(new Date()) : dashboardData.dateTopbar;
         const td = document.getElementById('topbarDate');
@@ -10660,7 +10768,7 @@
       if(item.actionsDisabled) return;
       const rec = getSessionReviewRecord(item) || {};
       if(rec.feedbackDone || rec.absent || rec.cancelled) return;
-      if(typeof portalEnsureLateSubmissionAllowed === 'function'){
+      if(typeof portalEnsureLateSubmissionAllowed === 'function' && !portalStaffIsDemoAccount()){
         const gate = await portalEnsureLateSubmissionAllowed(item, 'feedback');
         if(!gate.allowed) return;
       }
@@ -10745,7 +10853,7 @@
       const rec = getSessionReviewRecord(item) || {};
       if(rec.absent || rec.cancelled) return;
       if(!portalStaffIsDemoAccount() && !isSessionEndedForFeedback(item)) return;
-      if(typeof portalEnsureLateSubmissionAllowed === 'function'){
+      if(typeof portalEnsureLateSubmissionAllowed === 'function' && !portalStaffIsDemoAccount()){
         const gate = await portalEnsureLateSubmissionAllowed(item, 'incident');
         if(!gate.allowed) return;
       }
@@ -10780,7 +10888,7 @@
       const rec = getSessionReviewRecord(item) || {};
       if(rec.absent || rec.cancelled) return;
       if(!portalStaffIsDemoAccount() && !isSessionEndedForFeedback(item)) return;
-      if(typeof portalEnsureLateSubmissionAllowed === 'function'){
+      if(typeof portalEnsureLateSubmissionAllowed === 'function' && !portalStaffIsDemoAccount()){
         const gate = await portalEnsureLateSubmissionAllowed(item, 'cancellation');
         if(!gate.allowed) return;
       }
@@ -12075,8 +12183,8 @@
           try{ window.DEMO_VIEW_DAY = DEMO_VIEW_DAY; }catch(_){}
         }else if(postFbDay && typeof PORTAL_WEEK_REVIEW_VALID_DAYS !== "undefined" && PORTAL_WEEK_REVIEW_VALID_DAYS.has(postFbDay)){
           DEMO_VIEW_DAY = postFbDay;
-        }else if(!_portalStickyReviewDayLoad && typeof portalStaffIsDemoAccount === "function" && portalStaffIsDemoAccount() && boot.defaultViewDay && String(boot.defaultViewDay).trim()){
-          DEMO_VIEW_DAY = String(boot.defaultViewDay).trim();
+        }else if(!_portalStickyReviewDayLoad && typeof portalStaffIsDemoAccount === "function" && portalStaffIsDemoAccount()){
+          if(typeof portalApplyTeflonGuideDemoViewDefaults === "function") portalApplyTeflonGuideDemoViewDefaults();
         }else if(!_portalStickyReviewDayLoad){
           DEMO_VIEW_DAY = typeof window.portalWeekdayLongEnGB === "function"
             ? window.portalWeekdayLongEnGB(new Date())
@@ -12105,6 +12213,7 @@
         if(typeof portalSeedAllReviewDoneFromPortalExports === "function"){
           portalSeedAllReviewDoneFromPortalExports();
         }
+        if(typeof portalSeedTeflonGuideDemoReviewState === "function") portalSeedTeflonGuideDemoReviewState();
         if(typeof portalEnrichClientNotesFromPortalFeedback === "function"){
           portalEnrichClientNotesFromPortalFeedback();
         }

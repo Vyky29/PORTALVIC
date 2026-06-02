@@ -1,0 +1,697 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Teflon — guion y fotos (Portal guide)</title>
+  <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
+  <link rel="stylesheet" href="/portal-shared-js/portal_page_logo.css?v=20260517-portal-logos" />
+  <style>
+    :root{
+      --navy:#0a3d62;
+      --blue:#2d84b3;
+      --gold:#f4b740;
+      --line:#d9e4ef;
+      --ink:#1d2b3a;
+      --muted:#5f7185;
+      --ok:#15803d;
+      --warn:#b45309;
+      --shadow:0 16px 40px rgba(10,61,98,.10);
+      --bg:linear-gradient(180deg,#f4f8fc 0%,#eaf1f8 100%);
+    }
+    *,*::before,*::after{box-sizing:border-box}
+    body{
+      margin:0;
+      min-height:100vh;
+      padding:16px;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background:var(--bg);
+      color:var(--ink);
+    }
+    .wrap{max-width:920px;margin:0 auto;min-width:0}
+    h1{margin:0 0 4px;font-size:clamp(24px,4vw,32px);color:var(--navy);letter-spacing:-.02em}
+    .lead{margin:0 0 16px;color:var(--muted);line-height:1.5;font-size:14px}
+    .card{
+      background:rgba(255,255,255,.97);
+      border:1px solid var(--line);
+      border-radius:18px;
+      box-shadow:var(--shadow);
+      padding:16px 18px;
+      margin-bottom:14px;
+      min-width:0;
+    }
+    .card h2{margin:0 0 10px;font-size:17px;color:var(--navy)}
+    .card p,.card li{line-height:1.5;font-size:14px;color:var(--ink);overflow-wrap:break-word}
+    .card ul{margin:8px 0 0;padding-left:18px}
+    .pill-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+    .pill{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:6px 12px;border-radius:999px;font-size:12px;font-weight:700;
+      background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;
+    }
+    .pill--warn{background:#fff7ed;border-color:#fdba74;color:var(--warn)}
+    .toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px}
+    .btn{
+      border:0;border-radius:10px;padding:10px 14px;font:inherit;font-size:13px;font-weight:700;
+      cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px;
+    }
+    .btn--pri{background:#0b2a5b;color:#fff}
+    .btn--sec{background:#e8f1fa;color:#0b2a5b;border:1px solid #b0c7e2}
+    .btn--ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
+    .progress{
+      height:10px;border-radius:999px;background:#e2e8f0;overflow:hidden;margin:10px 0 0;
+    }
+    .progress>i{display:block;height:100%;background:linear-gradient(90deg,var(--blue),#0ea5e9);width:0;transition:width .2s ease}
+    .progress-meta{font-size:12px;color:var(--muted);margin-top:6px}
+    .shots{display:flex;flex-direction:column;gap:12px;margin-top:12px}
+    .shot{
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:12px 14px;
+      background:#fafcff;
+      min-width:0;
+    }
+    .shot.is-done{border-color:#86efac;background:#f0fdf4}
+    .shot__head{display:flex;flex-wrap:wrap;align-items:flex-start;gap:10px;margin-bottom:8px}
+    .shot__num{
+      flex:0 0 auto;width:28px;height:28px;border-radius:8px;
+      display:grid;place-items:center;font-size:12px;font-weight:800;
+      background:#0b2a5b;color:#fff;
+    }
+    .shot__titles{flex:1;min-width:0}
+    .shot__titles strong{display:block;font-size:14px;color:var(--navy);overflow-wrap:break-word}
+    .shot__titles span{display:block;font-size:12px;color:var(--muted);margin-top:2px;overflow-wrap:break-word}
+    .shot__actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+    .shot__note{
+      width:100%;min-width:0;margin-top:8px;
+      border:1px solid var(--line);border-radius:10px;padding:8px 10px;
+      font:inherit;font-size:13px;resize:vertical;min-height:52px;
+    }
+    .shot__preview{
+      margin-top:10px;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start;
+    }
+    .shot__thumb{
+      width:120px;max-width:100%;aspect-ratio:9/16;object-fit:cover;
+      border-radius:12px;border:2px solid var(--line);background:#fff;
+      box-shadow:0 6px 16px rgba(15,23,42,.08);
+    }
+    .shot__thumb--landscape{width:180px;aspect-ratio:16/10}
+    .shot__meta{font-size:11px;color:var(--muted);max-width:100%;overflow-wrap:anywhere}
+    .check-row{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px}
+    .check-row input{width:18px;height:18px;flex-shrink:0}
+    .note-box{
+      margin-top:10px;padding:10px 12px;border-radius:10px;
+      background:#fffbeb;border:1px solid #fde68a;font-size:13px;line-height:1.45;
+    }
+    code{font-size:12px;background:#f1f5f9;padding:2px 6px;border-radius:6px}
+    @media (max-width:640px){
+      .shot__thumb{width:100px}
+      .shot__thumb--landscape{width:100%}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div id="logoHost" style="text-align:center;margin-bottom:8px"></div>
+    <h1>Teflon — guion y fotos</h1>
+    <p class="lead">
+      Herramienta interna para preparar capturas del <strong>Portal guide</strong> y del recorrido demo.
+      Las imágenes se guardan solo en <strong>este navegador</strong> (localStorage), no en GitHub ni Supabase.
+    </p>
+
+    <article class="card">
+      <h2>Cuenta demo</h2>
+      <ul>
+        <li>Login staff: usuario <code>Teflon</code> · PIN <code>1111</code></li>
+        <li>Participantes del roster demo: <strong>Mari Trini</strong>, <strong>Sam</strong>, <strong>Vitin</strong>, <strong>Jordan</strong></li>
+        <li>El <strong>lunes 01/06/2026</strong> muestra <strong>4 sesiones</strong> (Mari Trini, Vitin, Sam, Jordan) con colores distintos</li>
+        <li>Halos del logo (solo Teflon): añade <code>?portalGuideHalo=gold|red|blue|triple</code> al dashboard</li>
+      </ul>
+      <div class="pill-row">
+        <span class="pill">Solo uso interno</span>
+        <span class="pill pill--warn">No subas fotos reales de niños al repo</span>
+      </div>
+      <div class="toolbar">
+        <a class="btn btn--pri" href="login.html">Abrir login</a>
+        <a class="btn btn--sec" href="staff_dashboard.html?portalPreview=teflon">Dashboard Teflon (preview)</a>
+        <a class="btn btn--sec" href="portal_guide.html">Portal guide (publicado)</a>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>Lunes showcase + halos (capturas)</h2>
+      <p>Tras login Teflon, abre el dashboard en <strong>Monday</strong> (vista por defecto). Deberías ver cuatro tarjetas:</p>
+      <ul>
+        <li><strong>Azul</strong> — Mari Trini 9–10 (programada)</li>
+        <li><strong>Naranja</strong> — Vitin 10–11 (feedback pendiente)</li>
+        <li><strong>Verde</strong> — Sam 11–12 (feedback hecho)</li>
+        <li><strong>Rojo</strong> — Jordan 2–3 (incidente)</li>
+      </ul>
+      <p>Enlaces rápidos para halos alrededor del logo:</p>
+      <div class="toolbar">
+        <a class="btn btn--sec" href="staff_dashboard.html?portalPreview=teflon&amp;portalGuideHalo=gold">Halo dorado (feedback)</a>
+        <a class="btn btn--sec" href="staff_dashboard.html?portalPreview=teflon&amp;portalGuideHalo=red">Halo rojo (anuncio)</a>
+        <a class="btn btn--sec" href="staff_dashboard.html?portalPreview=teflon&amp;portalGuideHalo=blue">Halo azul (chat)</a>
+        <a class="btn btn--sec" href="staff_dashboard.html?portalPreview=teflon&amp;portalGuideHalo=triple">Halo triple</a>
+      </div>
+      <p class="note-box">En producción (login real): usa las mismas URLs sin <code>portalPreview=teflon</code>. Si solo ves a Vitin, recarga tras el deploy o aplica la migración SQL del roster Teflon.</p>
+    </article>
+
+    <article class="card">
+      <h2>Progreso del guion</h2>
+      <div class="progress" aria-hidden="true"><i id="progressBar"></i></div>
+      <p class="progress-meta" id="progressText">0 / 0 fotos marcadas</p>
+      <div class="toolbar">
+        <button type="button" class="btn btn--sec" id="btnExport">Exportar JSON</button>
+        <button type="button" class="btn btn--ghost" id="btnImport">Importar JSON</button>
+        <input type="file" id="importFile" accept="application/json,.json" hidden />
+        <button type="button" class="btn btn--ghost" id="btnClear">Borrar todo (local)</button>
+      </div>
+      <p class="note-box">
+        Cuando tengas las capturas finales, guárdalas en
+        <code>working_ui/portal/guide-shots/teflon/</code> (carpeta local, fuera de git si son PII)
+        o sustituye los mockups CSS en <code>portal_guide.html</code>.
+      </p>
+    </article>
+
+    <article class="card">
+      <h2>Lista de tomas</h2>
+      <div class="shots" id="shotsHost"></div>
+    </article>
+  </div>
+
+  <script>
+  (function(){
+    'use strict';
+
+    var STORAGE_KEY = 'portalTeflonGuideShots_v1';
+
+    var SHOTS = [
+      {
+        id: 'install-home',
+        title: 'Instalar app — icono en home screen',
+        hint: 'Captura del icono clubSENsational en la pantalla de inicio (iPhone o Android).',
+        href: 'portal_guide.html',
+        landscape: false,
+        fileHint: '01-install-home.png'
+      },
+      {
+        id: 'dashboard-outstanding-feedback',
+        title: 'Dashboard — feedback pendiente (naranja)',
+        hint: 'Teflon logueado: halo dorado en el logo + tarjeta naranja de sesión (ej. Vitin · Chelsea · feedback outstanding).',
+        href: 'staff_dashboard.html?portalPreview=teflon',
+        landscape: false,
+        fileHint: 'outstanding-feedback-en-dashboard.png',
+        assetPath: 'portal/guide-shots/teflon/outstanding-feedback-en-dashboard.png'
+      },
+      {
+        id: 'dashboard-reviewed-absent',
+        title: 'Dashboard — revisado (Absent, verde)',
+        hint: 'Tarjeta verde con pill ABSENT — sesión revisada, participante ausente (Vitin · Chelsea).',
+        href: 'staff_dashboard.html?portalPreview=teflon',
+        landscape: false,
+        fileHint: 'reviewed-absent.png',
+        assetPath: 'portal/guide-shots/teflon/reviewed-absent.png'
+      },
+      {
+        id: 'dashboard-4-clients-outstanding',
+        title: 'Dashboard — 4 participantes (lunes, outstanding)',
+        hint: 'Monday 01/06/2026: Mari Trini, Vitin (ABSENT), Sam, Jordan en la lista TODAY — varias tarjetas naranja + una verde.',
+        href: 'staff_dashboard.html?portalPreview=teflon',
+        landscape: false,
+        fileHint: '4clientes-tarjeta-outstanding.png',
+        assetPath: 'portal/guide-shots/teflon/4clientes-tarjeta-outstanding.png'
+      },
+      {
+        id: 'dashboard-monday-variety',
+        title: 'Dashboard lunes — 4 colores (Mari Trini, Vitin, Sam, Jordan)',
+        hint: 'Login Teflon → Monday 01/06/2026: azul + naranja + verde + rojo en la misma lista.',
+        href: 'staff_dashboard.html?portalPreview=teflon',
+        landscape: false,
+        fileHint: 'dashboard-monday-variety.png'
+      },
+      {
+        id: 'halo-gold',
+        title: 'Halo dorado — feedback pendiente',
+        hint: 'staff_dashboard?portalGuideHalo=gold (cuenta Teflon).',
+        href: 'staff_dashboard.html?portalPreview=teflon&portalGuideHalo=gold',
+        landscape: false,
+        fileHint: 'halo-gold-feedback.png'
+      },
+      {
+        id: 'halo-red',
+        title: 'Halo rojo — anuncio pendiente',
+        hint: 'staff_dashboard?portalGuideHalo=red',
+        href: 'staff_dashboard.html?portalPreview=teflon&portalGuideHalo=red',
+        landscape: false,
+        fileHint: 'halo-red-announcement.png'
+      },
+      {
+        id: 'halo-blue',
+        title: 'Halo azul — chat nuevo',
+        hint: 'staff_dashboard?portalGuideHalo=blue',
+        href: 'staff_dashboard.html?portalPreview=teflon&portalGuideHalo=blue',
+        landscape: false,
+        fileHint: 'halo-blue-chat.png'
+      },
+      {
+        id: 'halo-triple',
+        title: 'Halo triple — varios avisos',
+        hint: 'staff_dashboard?portalGuideHalo=triple',
+        href: 'staff_dashboard.html?portalPreview=teflon&portalGuideHalo=triple',
+        landscape: false,
+        fileHint: 'halo-triple.png'
+      },
+      {
+        id: 'alerts-outstanding-feedbacks',
+        title: 'Alerts — Outstanding feedbacks x1',
+        hint: 'Tap logo → Alerts/Notifications: tile naranja Outstanding feedbacks x1 bajo Reminders.',
+        href: 'staff_dashboard.html?portalPreview=teflon',
+        landscape: false,
+        fileHint: 'outstanding-feedbacks-x1.png',
+        assetPath: 'portal/guide-shots/teflon/outstanding-feedbacks-x1.png'
+      },
+      {
+        id: 'term-outstanding-feedback',
+        title: 'Term — días con feedback pendiente (rojo)',
+        hint: 'Dashboard → botón TERM → Summer Term 2026: días en rojo = sesiones con feedback outstanding en el term.',
+        href: 'staff_dashboard.html?portalPreview=teflon',
+        landscape: false,
+        fileHint: 'reminder-en-term-outstanding-feedback.png',
+        assetPath: 'portal/guide-shots/teflon/reminder-en-term-outstanding-feedback.png'
+      },
+      {
+        id: 'quick-menu1',
+        title: 'Quick menu (1) — formularios de sesión',
+        hint: 'QUICK MENU abierto, parte superior: feedback, incidente, cancelación, perfil, etc.',
+        href: 'staff_dashboard.html?portalPreview=teflon',
+        landscape: false,
+        fileHint: 'quick-menu1.png'
+      },
+      {
+        id: 'quick-menu2',
+        title: 'Quick menu (2) — Finance, Documents, Training',
+        hint: 'Desplaza el Quick menu: Timesheets, Expenses, My documents, Induction, Calendar…',
+        href: 'staff_dashboard.html?portalPreview=teflon',
+        landscape: false,
+        fileHint: 'quick-menu2.png',
+        assetPath: 'portal/guide-shots/teflon/quick-menu2.png'
+      },
+      {
+        id: 'quick-menu3',
+        title: 'Quick menu (3) — Compliance y Settings',
+        hint: 'Más abajo en Quick menu: Safeguarding, Policies, Risk Assessments, Guide, Alerts, View, Logout.',
+        href: 'staff_dashboard.html?portalPreview=teflon',
+        landscape: false,
+        fileHint: 'quick-menu3.png',
+        assetPath: 'portal/guide-shots/teflon/quick-menu3.png'
+      },
+      {
+        id: 'alerts-location-microphone',
+        title: 'Alerts, location & microphone',
+        hint: 'Quick menu → Settings → Alerts, location & mic: notifications, GPS en vivo y micrófono para feedback por voz.',
+        href: 'staff_dashboard.html?portalPreview=teflon',
+        landscape: false,
+        fileHint: 'alerts-location-microphone.png',
+        assetPath: 'portal/guide-shots/teflon/alerts-location-microphone.png'
+      },
+      {
+        id: 'expenses',
+        title: 'Expenses — reclamación con recibo',
+        hint: 'Quick menu → Expenses: filas Description / Amount / Upload Receipt, + Add row, Total.',
+        href: 'portal-expenses.html',
+        landscape: false,
+        fileHint: 'expenses.png',
+        assetPath: 'portal/guide-shots/teflon/expenses.png'
+      },
+      {
+        id: 'timesheet1',
+        title: 'Timesheet — verde/naranja por feedback',
+        hint: 'Quick menu → Timesheets: filas verdes = pagables ya; naranja = pending feedback (excluidas del total).',
+        href: 'timesheet.html',
+        landscape: false,
+        fileHint: 'timesheet1.png',
+        assetPath: 'portal/guide-shots/teflon/timesheet1.png'
+      },
+      {
+        id: 'venue-review',
+        title: 'Venue Review — apertura/cierre',
+        hint: 'Quick menu → Venue review: venue, fecha/hora, ¿issues/damages/incidents? No/Yes + Submit.',
+        href: 'portal-venue-review.html',
+        landscape: false,
+        fileHint: 'venue-review.png',
+        assetPath: 'portal/guide-shots/teflon/venue-review.png'
+      },
+      {
+        id: 'drop-off-pickup',
+        title: 'Drop Off & Pick Up — handover',
+        hint: 'Quick menu → Drop Off & Pick Up: buscar participante, New, handovers de hoy.',
+        href: 'portal-pickup.html',
+        landscape: false,
+        fileHint: 'drop-off-pickup.png',
+        assetPath: 'portal/guide-shots/teflon/drop-off-pickup.png'
+      },
+      {
+        id: 'drop-off-pickup-2',
+        title: 'Drop Off & Pick Up (2) — handover abierto (Vitin)',
+        hint: 'Vitin OPEN → Handover record → Drop Off: fecha/hora, estado emocional, etc.',
+        href: 'portal-pickup.html',
+        landscape: false,
+        fileHint: 'drop-off-pickup-2.png',
+        assetPath: 'portal/guide-shots/teflon/drop-off-pickup-2.png'
+      },
+      {
+        id: 'my-participants-list',
+        title: 'My participants — lista (Vitin)',
+        hint: 'Botón MY PARTICIPANTS → pestaña My participants: lista del roster demo (Vitin).',
+        href: 'staff_dashboard.html?portalPreview=teflon',
+        landscape: false,
+        fileHint: 'my-participants.png',
+        assetPath: 'portal/guide-shots/teflon/my-participants.png'
+      },
+      {
+        id: 'all-participants-list',
+        title: 'All participants — rejilla completa',
+        hint: 'MY PARTICIPANTS → pestaña All participants: rejilla de todos los participantes del club.',
+        href: 'staff_dashboard.html?portalPreview=teflon',
+        landscape: false,
+        fileHint: 'all-participants.png',
+        assetPath: 'portal/guide-shots/teflon/all-participants.png'
+      },
+      {
+        id: 'vitin-participant-quick-actions',
+        title: 'Participante Vitin — tarjeta y quick actions',
+        hint: 'MY PARTICIPANTS → Vitin (10 to 11): Feedback, Absence, Incident, Cancellation + General Info / Bespoke programme.',
+        href: 'staff_dashboard.html?portalPreview=teflon',
+        landscape: false,
+        fileHint: 'vitin-tarjeta-quick-actions.png',
+        assetPath: 'portal/guide-shots/teflon/vitin-tarjeta-quick-actions.png'
+      },
+      {
+        id: 'vitin-general-info',
+        title: 'Vitin — General Info (Goals, Medical, Communication)',
+        hint: 'Desde la tarjeta de Vitin → General Info: metas, médico y comunicación del participante demo.',
+        href: 'staff_dashboard.html?portalPreview=teflon',
+        landscape: false,
+        fileHint: 'clientes-informacion.png',
+        assetPath: 'portal/guide-shots/teflon/clientes-informacion.png'
+      },
+      {
+        id: 'session-feedback',
+        title: 'Session feedback — formulario',
+        hint: 'Abrir feedback desde una sesión naranja (pendiente). Relleno parcial visible.',
+        href: 'portal-session-feedback.html',
+        landscape: false,
+        fileHint: '04-session-feedback.png'
+      },
+      {
+        id: 'achievement-camera',
+        title: 'Logros — cámara / adjuntar foto en feedback',
+        hint: 'Sección de fotos de logros al enviar feedback (participante demo, sin rostro real si es para marketing).',
+        href: 'staff_dashboard.html?portalPreview=teflon',
+        landscape: false,
+        fileHint: '05-achievement-camera.png'
+      },
+      {
+        id: 'achievement-gallery',
+        title: 'Participant achievements — galería in-app',
+        hint: 'Quick menu → Participant achievements, o admin → Achievement photos con datos demo.',
+        href: 'admin_dashboard.html?view=participant_achievements',
+        landscape: true,
+        fileHint: '06-achievement-gallery.png'
+      },
+      {
+        id: 'internal-chat',
+        title: 'Internal chat — vacío (Admin)',
+        hint: 'Alerts/Notifications → Internal chat: hilo con la oficina, micrófono y Send.',
+        href: 'staff_dashboard.html?portalPreview=teflon',
+        landscape: false,
+        fileHint: 'internal-chat.png',
+        assetPath: 'portal/guide-shots/teflon/internal-chat.png'
+      },
+      {
+        id: 'chat-thread',
+        title: 'Chat — hilo con burbujas',
+        hint: 'Chat staff/office: texto + nota de voz (puede ser captura de demo).',
+        href: 'staff_dashboard.html?portalPreview=teflon',
+        landscape: false,
+        fileHint: '07-chat.png'
+      },
+      {
+        id: 'signed-announcements-closed',
+        title: 'Signed Announcements — log (cerrado)',
+        hint: 'Alerts/Notifications → Signed Announcements: log de anuncios ya firmados (Welcome to the new Club Sensational portal).',
+        href: 'staff_dashboard.html?portalPreview=teflon',
+        landscape: false,
+        fileHint: 'signed-announcements-closed.png',
+        assetPath: 'portal/guide-shots/teflon/signed-announcements-closed.png'
+      },
+      {
+        id: 'announcement',
+        title: 'Anuncio — banner rojo + Sign/confirm',
+        hint: 'Pantalla de anuncios con acción pendiente (halo rojo en dashboard).',
+        href: 'staff_dashboard.html?portalPreview=teflon',
+        landscape: false,
+        fileHint: '08-announcement.png'
+      },
+      {
+        id: 'portal-guide-page',
+        title: 'Portal guide — página completa (opcional)',
+        hint: 'Captura de portal_guide.html en móvil para revisión de equipo.',
+        href: 'portal_guide.html',
+        landscape: false,
+        fileHint: '09-portal-guide.png'
+      },
+      {
+        id: 'lead-report',
+        title: 'Lead session report (opcional)',
+        hint: 'Solo si el guion incluye leads: lead_dashboard con informe de sesión.',
+        href: 'lead_dashboard.html?portalPreview=teflon',
+        landscape: false,
+        fileHint: '10-lead-report.png'
+      }
+    ];
+
+    function loadState(){
+      try{
+        var raw = localStorage.getItem(STORAGE_KEY);
+        if(!raw) return {};
+        var o = JSON.parse(raw);
+        return o && typeof o === 'object' ? o : {};
+      }catch(_e){ return {}; }
+    }
+
+    function saveState(state){
+      try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(_e){}
+    }
+
+    var state = loadState();
+
+    function esc(s){
+      return String(s == null ? '' : s)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;');
+    }
+
+    function fileToDataUrl(file){
+      return new Promise(function(resolve, reject){
+        var r = new FileReader();
+        r.onload = function(){ resolve(String(r.result || '')); };
+        r.onerror = reject;
+        r.readAsDataURL(file);
+      });
+    }
+
+    function updateProgress(){
+      var done = 0;
+      SHOTS.forEach(function(sh){
+        var row = state[sh.id] || {};
+        if(row.done || row.dataUrl || sh.assetPath) done++;
+      });
+      var pct = SHOTS.length ? Math.round((done / SHOTS.length) * 100) : 0;
+      var bar = document.getElementById('progressBar');
+      var txt = document.getElementById('progressText');
+      if(bar) bar.style.width = pct + '%';
+      if(txt) txt.textContent = done + ' / ' + SHOTS.length + ' tomas con foto o marcadas';
+    }
+
+    function render(){
+      var host = document.getElementById('shotsHost');
+      if(!host) return;
+      host.innerHTML = SHOTS.map(function(sh, idx){
+        var row = state[sh.id] || {};
+        var cls = (row.done || row.dataUrl || sh.assetPath) ? ' shot is-done' : ' shot';
+        var thumbSrc = row.dataUrl || (sh.assetPath ? sh.assetPath : '');
+        var thumb = thumbSrc
+          ? '<img class="shot__thumb' + (sh.landscape ? ' shot__thumb--landscape' : '') + '" src="' + esc(thumbSrc) + '" alt="' + esc(sh.title) + '" />'
+          : '';
+        var meta = row.fileName
+          ? '<div class="shot__meta">' + esc(row.fileName) + (row.updated ? ' · ' + esc(row.updated) : '') + '</div>'
+          : (row.updated ? '<div class="shot__meta">' + esc(row.updated) + '</div>' : '');
+        return (
+          '<section class="' + cls.trim() + '" data-shot-id="' + esc(sh.id) + '">' +
+            '<div class="shot__head">' +
+              '<span class="shot__num">' + (idx + 1) + '</span>' +
+              '<div class="shot__titles">' +
+                '<strong>' + esc(sh.title) + '</strong>' +
+                '<span>' + esc(sh.hint) + '</span>' +
+                '<span>Sugerido: <code>' + esc(sh.fileHint) + '</code></span>' +
+              '</div>' +
+            '</div>' +
+            '<div class="shot__actions">' +
+              '<a class="btn btn--sec" href="' + esc(sh.href) + '" target="_blank" rel="noopener">Abrir pantalla</a>' +
+              '<label class="btn btn--pri">' +
+                'Subir foto' +
+                '<input type="file" accept="image/*" hidden data-shot-file="' + esc(sh.id) + '" />' +
+              '</label>' +
+              (row.dataUrl ? '<button type="button" class="btn btn--ghost" data-shot-clear="' + esc(sh.id) + '">Quitar foto</button>' : '') +
+            '</div>' +
+            '<label class="check-row">' +
+              '<input type="checkbox" data-shot-done="' + esc(sh.id) + '"' + (row.done ? ' checked' : '') + ' />' +
+              'Marcada lista (aunque la foto esté en otra carpeta)' +
+            '</label>' +
+            '<textarea class="shot__note" rows="2" placeholder="Notas (encuadre, participante, fecha…)" data-shot-note="' + esc(sh.id) + '">' + esc(row.note || '') + '</textarea>' +
+            '<div class="shot__preview">' + thumb + meta + '</div>' +
+          '</section>'
+        );
+      }).join('');
+
+      host.querySelectorAll('input[data-shot-file]').forEach(function(inp){
+        inp.addEventListener('change', function(){
+          var id = inp.getAttribute('data-shot-file');
+          var f = inp.files && inp.files[0];
+          if(!id || !f) return;
+          fileToDataUrl(f).then(function(dataUrl){
+            state[id] = state[id] || {};
+            state[id].dataUrl = dataUrl;
+            state[id].fileName = f.name;
+            state[id].updated = new Date().toLocaleString('es-ES');
+            state[id].done = true;
+            saveState(state);
+            render();
+          }).catch(function(){
+            alert('No se pudo leer la imagen.');
+          });
+        });
+      });
+
+      host.querySelectorAll('button[data-shot-clear]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var id = btn.getAttribute('data-shot-clear');
+          if(!id || !state[id]) return;
+          delete state[id].dataUrl;
+          delete state[id].fileName;
+          saveState(state);
+          render();
+        });
+      });
+
+      host.querySelectorAll('input[data-shot-done]').forEach(function(cb){
+        cb.addEventListener('change', function(){
+          var id = cb.getAttribute('data-shot-done');
+          if(!id) return;
+          state[id] = state[id] || {};
+          state[id].done = !!cb.checked;
+          state[id].updated = new Date().toLocaleString('es-ES');
+          saveState(state);
+          render();
+        });
+      });
+
+      host.querySelectorAll('textarea[data-shot-note]').forEach(function(ta){
+        ta.addEventListener('change', function(){
+          var id = ta.getAttribute('data-shot-note');
+          if(!id) return;
+          state[id] = state[id] || {};
+          state[id].note = ta.value;
+          state[id].updated = new Date().toLocaleString('es-ES');
+          saveState(state);
+        });
+      });
+
+      updateProgress();
+    }
+
+    document.getElementById('btnExport').addEventListener('click', function(){
+      var exportObj = {
+        exportedAt: new Date().toISOString(),
+        account: 'Teflon / PIN 1111',
+        shots: SHOTS.map(function(sh){
+          var row = state[sh.id] || {};
+          return {
+            id: sh.id,
+            title: sh.title,
+            fileHint: sh.fileHint,
+            done: !!row.done,
+            note: row.note || '',
+            fileName: row.fileName || '',
+            hasImage: !!row.dataUrl
+          };
+        })
+      };
+      var blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'teflon-guide-shots-' + new Date().toISOString().slice(0, 10) + '.json';
+      a.click();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); }, 500);
+    });
+
+    document.getElementById('btnImport').addEventListener('click', function(){
+      document.getElementById('importFile').click();
+    });
+
+    document.getElementById('importFile').addEventListener('change', function(ev){
+      var f = ev.target.files && ev.target.files[0];
+      if(!f) return;
+      var r = new FileReader();
+      r.onload = function(){
+        try{
+          var o = JSON.parse(String(r.result || '{}'));
+          if(o.shots && Array.isArray(o.shots)){
+            o.shots.forEach(function(s){
+              if(!s || !s.id) return;
+              state[s.id] = state[s.id] || {};
+              if(typeof s.note === 'string') state[s.id].note = s.note;
+              if(typeof s.done === 'boolean') state[s.id].done = s.done;
+            });
+            saveState(state);
+            render();
+            alert('Notas y checks importados (las imágenes no van en el JSON exportado).');
+          }
+        }catch(_e){
+          alert('JSON no válido.');
+        }
+      };
+      r.readAsText(f);
+      ev.target.value = '';
+    });
+
+    document.getElementById('btnClear').addEventListener('click', function(){
+      if(!confirm('¿Borrar todas las fotos y notas guardadas en este navegador?')) return;
+      state = {};
+      saveState(state);
+      render();
+    });
+
+    if(typeof portalRenderPageLogo === 'function'){
+      portalRenderPageLogo('logoHost');
+    }else{
+      var s = document.createElement('script');
+      s.src = '/portal-static-bootstrap.js?v=20260530-portal-guide';
+      s.onload = function(){
+        var s2 = document.createElement('script');
+        s2.src = '/portal-shared-js/portal_page_logo.js?v=20260517-portal-logos';
+        s2.onload = function(){
+          if(typeof portalRenderPageLogo === 'function') portalRenderPageLogo('logoHost');
+        };
+        document.body.appendChild(s2);
+      };
+      document.body.appendChild(s);
+    }
+
+    render();
+  })();
+  </script>
+</body>
+</html>

@@ -56,7 +56,8 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     ]
   },
   "termStaffLateSubmissionBypassProfileKeys": [
-    "javier"
+    "javier",
+    "teflon"
   ],
   "termClientFirstSessionDate": {
     "amaar_ah": "2026-04-24"
