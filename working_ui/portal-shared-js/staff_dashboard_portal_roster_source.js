@@ -236,15 +236,18 @@
     var floor = normIso(floorIso) || machineRosterFloorIso();
     var seen = Object.create(null);
     (baseRows || []).forEach(function (r) {
-      if (normIso(r.session_date)) seen[datedSlotKey(r)] = true;
+      var iso = normIso(r.session_date);
+      if (!iso) return;
+      if (dates.indexOf(iso) >= 0) seen[datedRowKey(r)] = true;
+      else seen[datedSlotKey(r)] = true;
     });
     var out = (baseRows || []).slice();
     (machineRows || []).forEach(function (r) {
       var iso = normIso(r.session_date);
       if (!iso || iso >= floor || dates.indexOf(iso) < 0) return;
-      var sk = datedSlotKey(r);
-      if (seen[sk]) return;
-      seen[sk] = true;
+      var dedupeKey = datedRowKey(r);
+      if (seen[dedupeKey]) return;
+      seen[dedupeKey] = true;
       out.push(r);
     });
     return out;
