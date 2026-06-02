@@ -747,7 +747,7 @@
     </div>
   </section>
 
-  <script src="/portal/term_from_timetable.js"></script>
+  <script src="/portal/term_from_timetable.js?v=20260601-javier-may"></script>
   <script src="/portal/term_calendar_dashboard_shared.js?v=20260523-feedback-window"></script>
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260601-tue-hazem-roberto-rayan-angel"></script>
   <script src="/portal/session_feedback_portal_data.js?v=20260527-ma-apr-may"></script>
@@ -1544,8 +1544,17 @@
         }catch(_){}
         try{
           if(/staff_profile_update/i.test(tu.pathname)){
+            try{
+              if(typeof window.portalPrepareProfileUpdateHandoff === 'function'){
+                window.portalPrepareProfileUpdateHandoff();
+              }
+            }catch(_){}
             const nm = String((window.dashboardData && window.dashboardData.staffName) || '').trim();
             if(nm) tu.searchParams.set('full_name', nm);
+            try{
+              const prof = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
+              if(prof && prof.id) tu.searchParams.set('staff_id', String(prof.id));
+            }catch(_){}
             try{
               var bridge = '';
               if(typeof window.portalEnsureBridgeCached === 'function'){
@@ -3132,6 +3141,57 @@
           }
           count += dayCount;
           cur.setDate(cur.getDate() + 1);
+        }
+        /* Catch-up May days (before feedbackReminderFromIso) only appear via extra calendar dates. */
+        if(typeof portalTermStaffExtraCalendarDates === 'function'){
+          const fromFloor = String(fromIso || '').slice(0, 10);
+          portalTermStaffExtraCalendarDates(staffId).forEach(function(key){
+            if(!key || (fromFloor && key >= fromFloor)) return;
+            if(!portalFeedbackReminderDayInScope(key)) return;
+            const curExtra = new Date(String(key) + 'T12:00:00');
+            const dayWord = curExtra.toLocaleDateString('en-GB', { weekday: 'long' });
+            const isReal = function(s){
+              if(baseRealFb) return baseRealFb(s, key);
+              const st = String(s.status || '').toLowerCase();
+              if(st === 'closed' || st === 'available') return false;
+              const cid = String(s.clientId || '').toLowerCase();
+              return Boolean(cid && cid !== 'closed' && cid !== 'available');
+            };
+            const relFb = typeof portalTermFeedbackSessionsForDate === 'function'
+              ? portalTermFeedbackSessionsForDate(dayWord, key, staffId, isReal)
+              : [];
+            let dayCount = 0;
+            const SHIFT_FEEDBACK_GRACE_MS = 15 * 60 * 1000;
+            let dayShiftEndMs = NaN;
+            for(let i = 0; i < relFb.length; i++){
+              const em = buildSessionEndMsForCalendarDate(curExtra.getFullYear(), curExtra.getMonth(), curExtra.getDate(), relFb[i].end);
+              if(Number.isFinite(em) && (!Number.isFinite(dayShiftEndMs) || em > dayShiftEndMs)) dayShiftEndMs = em;
+            }
+            const dayShiftEnded = Number.isFinite(dayShiftEndMs) && nowMs >= (dayShiftEndMs + SHIFT_FEEDBACK_GRACE_MS);
+            for(let i = 0; dayShiftEnded && i < relFb.length; i++){
+              const s = relFb[i];
+              const manualOv = String(s && s.override || '').trim().toUpperCase();
+              if(manualOv === 'ABSENT') continue;
+              const ovS = typeof portalTodayScheduleOverrideForSession === 'function'
+                ? portalTodayScheduleOverrideForSession(s, key)
+                : null;
+              if(ovS && String(ovS.override_type || '').trim() === 'client_absence_announced') continue;
+              const sk = typeof portalSessionReviewKeyForModelRow === 'function'
+                ? portalSessionReviewKeyForModelRow(s, dayWord, key)
+                : `${key}|${s.start}|${s.clientId}`;
+              if(!sk) continue;
+              const rec = typeof portalGetMergedSessionReviewRecordForRoster === 'function'
+                ? portalGetMergedSessionReviewRecordForRoster(s, dayWord, key)
+                : (getSessionReviewRecord({ sessionKey: sk }) || {});
+              if(rec.feedbackDone || rec.absent || rec.cancelled) continue;
+              dayCount++;
+            }
+            if(dayCount > 0 && typeof portalCountPendingSessionReviewsForCalendarDay === 'function' &&
+                portalCountPendingSessionReviewsForCalendarDay(key, dayWord) === 0){
+              dayCount = 0;
+            }
+            count += dayCount;
+          });
         }
         return Math.max(0, count);
       }catch(_){ return 0; }

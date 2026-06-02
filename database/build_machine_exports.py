@@ -28,7 +28,7 @@ TERM_STAFF_FEEDBACK_COMPLETE_DATES_BY_PROFILE_KEY = {
 }
 # Staff may open specific pre-term calendar days for catch-up feedback (My Term grid).
 TERM_STAFF_EXTRA_CALENDAR_DATES_BY_PROFILE_KEY = {
-    "javier": ["2026-05-11", "2026-05-17"],
+    "javier": ["2026-05-13", "2026-05-17", "2026-05-19", "2026-05-20"],
 }
 # Skip admin late-submission approval prompts (feedback/cancellation/incident).
 TERM_STAFF_LATE_SUBMISSION_BYPASS_PROFILE_KEYS = ["javier"]

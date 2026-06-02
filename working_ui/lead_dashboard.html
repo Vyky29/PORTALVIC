@@ -1131,8 +1131,17 @@
         }catch(_){}
         try{
           if(/staff_profile_update/i.test(tu.pathname)){
+            try{
+              if(typeof window.portalPrepareProfileUpdateHandoff === 'function'){
+                window.portalPrepareProfileUpdateHandoff();
+              }
+            }catch(_){}
             const nm = String((window.dashboardData && window.dashboardData.staffName) || '').trim();
             if(nm) tu.searchParams.set('full_name', nm);
+            try{
+              const prof = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
+              if(prof && prof.id) tu.searchParams.set('staff_id', String(prof.id));
+            }catch(_){}
             try{
               var bridge = '';
               if(typeof window.portalEnsureBridgeCached === 'function'){

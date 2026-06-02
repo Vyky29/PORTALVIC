@@ -224,7 +224,7 @@
       .replace(/^_+|_+$/g, "");
   }
 
-  /** Legacy roster / feedback spellings ? canonical slug */
+  /** Legacy roster / feedback spellings → canonical slug (same person only — do not merge distinct participants). */
   var CLIENT_SLUG_ALIASES = {
     sammer: "samer",
     amaar: "amaar_ah",
@@ -232,8 +232,6 @@
     rayyan_f: "rayyan_fi",
     adam_pilcher: "adam_pi",
     adam_a: "adam_ab",
-    abodi_p: "adam_ab",
-    abodi: "adam_ab",
   };
 
   function canonicalClientSlug(name) {
@@ -775,6 +773,18 @@
       .split(/[,/&+]+/)
       .map(function (x) { return clean(x); })
       .filter(Boolean);
+  }
+
+  /** Portal guide (Teflon) demo roster — visible in roster but excluded from session totals. */
+  function isTeflonDemoRosterSlot(slot) {
+    if (!slot) return false;
+    var insts =
+      slot.instructors && slot.instructors.length
+        ? slot.instructors
+        : parseInstructors(slot.instructor_label || "");
+    if (!insts.length) return false;
+    if (insts.length === 1) return clean(insts[0]).toUpperCase() === "TEFLON";
+    return false;
   }
 
   function serviceKey(service) {
@@ -2518,14 +2528,14 @@
       }
     }
     var slots = this.expandSlotsForDate(iso).filter(function (s) {
-      return !shouldOmitOverviewSlot(hub, s);
+      return !shouldOmitOverviewSlot(hub, s) && !isTeflonDemoRosterSlot(s);
     });
     var units = this.getFeedbackUnitsForDate(iso)
       .map(function (u) {
         return {
           key: u.key,
           slots: u.slots.filter(function (s) {
-            return !shouldOmitOverviewSlot(hub, s);
+            return !shouldOmitOverviewSlot(hub, s) && !isTeflonDemoRosterSlot(s);
           }),
         };
       })
@@ -3326,8 +3336,12 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     }
 
     var absent = isAbsentFeedbackRow(fb);
+    var displaySlot = fb._ashDisplaySlot || null;
+    var rawClient = clean((displaySlot && displaySlot.client_name) || fb.client_name);
     var clientLabel =
-      resolveRosterClientName(canonicalClientSlug(fb.client_name)) || clean(fb.client_name);
+      rawClient ||
+      resolveRosterClientName(canonicalClientSlug(fb.client_name)) ||
+      "\u2014";
     var svcLabel = hub.feedbackDisplayService(fb) || "\u2014";
     var ind = absent ? "N/A" : independenceLabel(fb);
     var pos = absent ? "N/A" : clean(fb.positive_feedback) || "\u2014";

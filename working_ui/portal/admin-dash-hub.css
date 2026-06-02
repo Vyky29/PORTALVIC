@@ -1001,9 +1001,10 @@ body:has(#workspace .dash-hub--dayops) .admin-main{
 /* Touch-compact: never clip Day operations / nav hub — workspace scrolls */
 body.admin-touch-compact:has(#workspace .dash-hub--dayops) .admin-workspace,
 body.admin-touch-compact:has(#workspace .dash-hub--nav-index) .admin-workspace{
+  display:block !important;
   overflow-x:hidden;
   overflow-y:auto !important;
-  min-height:0;
+  min-height:0 !important;
   flex:1 1 auto;
   -webkit-overflow-scrolling:touch;
 }
@@ -1012,6 +1013,39 @@ body.admin-touch-compact:has(#workspace .dash-hub--nav-index) .dash-hub--nav-ind
   flex:none;
   min-height:auto;
   overflow:visible !important;
+}
+body.admin-touch-compact .dash-hub--dayops .dash-hub__stack,
+body.admin-touch-compact .dash-hub--dayops .dash-hub__panel,
+body.admin-touch-compact .dash-hub--dayops .dash-hub__sessions-grids{
+  flex:none !important;
+  min-height:auto !important;
+  overflow:visible !important;
+}
+
+/* Touch-compact portrait: nav hub stacks like accordion cards; Day ops tiles in 2 columns */
+body.admin-touch-compact .dash-hub--nav-index .dash-hub-cat-grid{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  grid-template-columns:none;
+  grid-template-rows:none;
+}
+body.admin-touch-compact .dash-hub--nav-index .dash-hub-cat,
+body.admin-touch-compact .dash-hub--nav-index .dash-hub-cat[data-hub-cat]{
+  grid-column:auto !important;
+  grid-row:auto !important;
+  width:100%;
+  min-height:0;
+  height:auto;
+}
+body.admin-touch-compact .dash-hub--nav-index .dash-hub-cat__body{
+  overflow:visible;
+  max-height:none;
+}
+body.admin-touch-compact .dash-hub--dayops .dash-hub__panel--team > .dash-hub__grid--5,
+body.admin-touch-compact .dash-hub--dayops .dash-hub__sessions-grids > .dash-hub__grid--5,
+body.admin-touch-compact .dash-hub--dayops .dash-hub__sessions-grids > .dash-hub__grid--6{
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
 }
 
 /* Day operations — phone/tablet landscape: scroll, wrap tiles, no panel overlap */

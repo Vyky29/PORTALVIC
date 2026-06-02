@@ -6,7 +6,7 @@
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260601-week-row-scroll" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260527-lead-log" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260601-touch-scroll" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260601-mobile-full" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260521-embed" />
   <script src="/portal/hr-contract-embed-html.js?v=20260521-embed"></script>
@@ -32,7 +32,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260601-touch-scroll" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260601-mobile-full" />
 </head>
 <body>
   <script>
@@ -109,6 +109,25 @@
     </aside>
     <div class="admin-main">
       <div id="portalLivePresenceBar" class="portal-live-presence" hidden aria-live="polite"></div>
+      <header class="admin-topbar" id="adminTopbar">
+        <button type="button" class="admin-menu-mob" id="btnMenuMob" aria-label="Open menu" aria-controls="adminSidebar" aria-expanded="false">☰</button>
+        <div class="admin-search-wrap">
+          <span class="admin-search-ico" aria-hidden="true">⌕</span>
+          <input type="search" id="globalSearch" placeholder="Search participants, staff, sessions…" autocomplete="off" aria-label="Global search" />
+        </div>
+        <div class="admin-topbar-meta">
+          <span class="admin-date" id="topDate"></span>
+          <button type="button" class="admin-icon-btn" id="btnAlerts" aria-label="Alerts" title="Alerts">
+            🔔
+            <span class="admin-badge" id="alertBadge">0</span>
+          </button>
+          <button type="button" class="view-toggle" id="viewToggle" role="switch" aria-checked="false" title="Narrow preview"></button>
+          <button type="button" class="admin-profile" id="btnProfileMini">
+            <span class="admin-av" id="miniAv">A</span>
+            <span id="miniName">Admin</span>
+          </button>
+        </div>
+      </header>
       <main class="admin-workspace" id="workspace"></main>
     </div>
     <nav class="admin-bottom-nav" id="adminBottomNav" aria-label="Quick mobile navigation"></nav>
@@ -14603,7 +14622,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
     var ADMIN_SESSIONS_HUB_SRC =
-      '/portal/admin-sessions-hub.js?v=20260604-summary-valid-html';
+      '/portal/admin-sessions-hub.js?v=20260601-abodi-teflon-stats';
 
     /** Club closed — half-term 23–31 May 2026, bank holiday 4 May (see PORTAL_TERM_FROM_TIMETABLE). */
     function portalAdminDayIsClubClosed(iso){
@@ -20822,6 +20841,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var brandEl = $('adminSidebarBrand');
       var open = document.body.classList.contains('admin-fullnav-open');
       if(brandEl) brandEl.setAttribute('aria-expanded', open ? 'true' : 'false');
+      var mob = $('btnMenuMob');
+      if(mob) mob.setAttribute('aria-expanded', open ? 'true' : 'false');
       var floater = $('adminFloatMenuBtn');
       if(floater) floater.setAttribute('aria-expanded', open ? 'true' : 'false');
     }
@@ -21325,7 +21346,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       initMobileToggle();
       var btnMob = $('btnMenuMob');
-      if(btnMob) btnMob.addEventListener('click', function(){ document.body.classList.toggle('sidebar-open'); });
+      if(btnMob) btnMob.addEventListener('click', function(e){
+        e.preventDefault();
+        if(document.body.classList.contains('admin-touch-compact')) adminToggleFullnav();
+        else document.body.classList.toggle('sidebar-open');
+      });
       $('sidebarBackdrop').addEventListener('click', closeSidebarMob);
       var btnAlertsEl = $('btnAlerts');
       if(btnAlertsEl) btnAlertsEl.addEventListener('click', function(e){

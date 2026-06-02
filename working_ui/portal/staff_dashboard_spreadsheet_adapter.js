@@ -167,12 +167,9 @@
     return "";
   }
 
-  /** Roster slug → clients_info slug (e.g. Adam Ab ↔ Abodi Pa; legacy Yusuf/Yusef → Yusuf Ah). */
+  /** Roster slug → clients_info slug only (e.g. Adam A → Adam Ab sheet row). Not for matching distinct roster participants. */
   var CLIENT_INFO_SLUG_ALIASES = {
     adam_a: "adam_ab",
-    abodi_p: "adam_ab",
-    abodi_pa: "adam_ab",
-    abodi: "adam_ab",
     yusuf: "yusuf_ah",
     yusef: "yusuf_ah",
   };

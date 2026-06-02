@@ -5,7 +5,7 @@
 // Fallback when staff_profile_update.html is opened from the Staff/Lead hub
 // (PIN session + display name) without a usable Supabase Auth JWT path.
 //
-// POST JSON: { full_name: string, portal_bridge_secret: string }
+// POST JSON: { full_name?: string, staff_id?: string, portal_bridge_secret: string }
 // 200 { ok: true, session_token, expires_at, staff: { id, full_name, username, staff_role } }
 // 401 { ok: false, error: "invalid_bridge_secret" | "unknown" | "ambiguous" | ... }
 
@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
     return new Response("Method Not Allowed", { status: 405, headers: corsHeaders });
   }
 
-  let body: { full_name?: unknown; portal_bridge_secret?: unknown };
+  let body: { full_name?: unknown; staff_id?: unknown; portal_bridge_secret?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -78,8 +78,9 @@ Deno.serve(async (req) => {
   }
 
   const fullName = String(body.full_name || "").trim();
+  const staffIdRaw = String(body.staff_id || "").trim();
   const submittedSecret = String(body.portal_bridge_secret || "").trim();
-  if (!fullName || fullName.length < 2) return jsonError("invalid", 400);
+  if (!staffIdRaw && (!fullName || fullName.length < 2)) return jsonError("invalid", 400);
 
   const configuredSecret = String(Deno.env.get("STAFF_PROFILE_PORTAL_BRIDGE_SECRET") || "").trim();
   if (!configuredSecret || configuredSecret.length < 16) {
@@ -101,28 +102,50 @@ Deno.serve(async (req) => {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  const want = normalizeFullName(fullName);
-  if (!want) return jsonError("unknown");
+  let profile: {
+    id: string;
+    full_name: string | null;
+    username: string | null;
+    staff_role: string | null;
+    is_active: boolean | null;
+  } | null = null;
 
-  const { data: profiles, error: profErr } = await supabase
-    .from("staff_profiles")
-    .select("id, full_name, username, staff_role, is_active")
-    .eq("is_active", true);
-  if (profErr) {
-    console.error("[staff-profile-portal-bridge] profile list", profErr);
-    return jsonError("invalid", 500);
+  if (staffIdRaw && /^[0-9a-f-]{36}$/i.test(staffIdRaw)) {
+    const { data: row, error: idErr } = await supabase
+      .from("staff_profiles")
+      .select("id, full_name, username, staff_role, is_active")
+      .eq("id", staffIdRaw)
+      .maybeSingle();
+    if (idErr) {
+      console.error("[staff-profile-portal-bridge] profile by id", idErr);
+      return jsonError("invalid", 500);
+    }
+    if (!row || row.is_active === false) return jsonError("unknown");
+    profile = row;
+  } else {
+    const want = normalizeFullName(fullName);
+    if (!want) return jsonError("unknown");
+
+    const { data: profiles, error: profErr } = await supabase
+      .from("staff_profiles")
+      .select("id, full_name, username, staff_role, is_active")
+      .eq("is_active", true);
+    if (profErr) {
+      console.error("[staff-profile-portal-bridge] profile list", profErr);
+      return jsonError("invalid", 500);
+    }
+
+    const hits = (profiles || []).filter((p) => {
+      const fn = normalizeFullName(String(p.full_name || ""));
+      const un = normalizeFullName(String(p.username || ""));
+      return fn === want || un === want;
+    });
+
+    if (hits.length === 0) return jsonError("unknown");
+    if (hits.length > 1) return jsonError("ambiguous");
+    profile = hits[0];
   }
 
-  const hits = (profiles || []).filter((p) => {
-    const fn = normalizeFullName(String(p.full_name || ""));
-    const un = normalizeFullName(String(p.username || ""));
-    return fn === want || un === want;
-  });
-
-  if (hits.length === 0) return jsonError("unknown");
-  if (hits.length > 1) return jsonError("ambiguous");
-
-  const profile = hits[0];
   const userId = profile.id;
   const nowIso = new Date().toISOString();
   const ip = clientIp(req);

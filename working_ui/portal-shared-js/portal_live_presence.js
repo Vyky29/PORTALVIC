@@ -3,6 +3,10 @@
  * Admin mounts `#portalLivePresenceBar`; other dashboards only publish presence.
  */
 import { getSupabaseClient } from "./supabase-client.js?v=20260506-portal-interactions";
+import {
+  STAFF_USERNAME_TO_EMAIL,
+  PORTAL_CORPORATE_AUTH_EMAIL_TO_STAFF_KEY,
+} from "./auth-map.js";
 
 const CHANNEL_NAME = "portal-live-presence-v1";
 const HEARTBEAT_MS = 28000;
@@ -13,6 +17,22 @@ let _channel = null;
 let _presenceKey = null;
 /** @type {ReturnType<typeof setInterval> | null} */
 let _heartbeat = null;
+
+export function portalPresenceDisplayLabel(nameRaw, email) {
+  const em = String(email || "").trim();
+  const emLow = em.toLowerCase();
+  const n = String(nameRaw || "").trim();
+  if (n && n.toLowerCase() !== emLow && !/@/.test(n)) return n;
+  const corpKey = PORTAL_CORPORATE_AUTH_EMAIL_TO_STAFF_KEY[emLow];
+  if (corpKey) return corpKey.charAt(0).toUpperCase() + corpKey.slice(1);
+  for (const [label, addr] of Object.entries(STAFF_USERNAME_TO_EMAIL)) {
+    if (String(addr).trim().toLowerCase() === emLow && !String(label).includes("@")) {
+      return label;
+    }
+  }
+  const local = em.split("@")[0] || em;
+  return local ? local.charAt(0).toUpperCase() + local.slice(1) : em;
+}
 
 function escHtml(s) {
   return String(s ?? "")
@@ -70,7 +90,7 @@ export function portalPresenceGrouped(state) {
     seen.add(dedupe);
     const entry = {
       email,
-      name: String(best.name || email).trim(),
+      name: portalPresenceDisplayLabel(best.name, email),
       at: Number(best.at) || 0,
     };
     const surface = String(best.surface || "staff").toLowerCase();
@@ -100,9 +120,10 @@ async function presenceTrackPayload(page, profile, session) {
   const email = String(user?.email || "").trim();
   if (!email) return null;
   const surface = portalPresenceSurface(page, profile, email);
-  const name =
-    String(profile?.full_name || profile?.username || "").trim() ||
-    email.split("@")[0];
+  const name = portalPresenceDisplayLabel(
+    String(profile?.full_name || profile?.username || "").trim(),
+    email
+  );
   return {
     surface,
     email,
@@ -202,10 +223,8 @@ function presencePillsHtml(entries, emptyLabel) {
   return entries
     .map(
       (e) =>
-        '<span class="sf-status-bar__chip" title="' +
+        '<span class="sf-status-bar__chip">' +
         escHtml(e.name) +
-        '">' +
-        escHtml(e.email) +
         "</span>"
     )
     .join("");

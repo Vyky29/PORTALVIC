@@ -2,7 +2,10 @@
  * Records staff/lead/admin portal visit sessions into public.portal_staff_visit_sessions.
  */
 import { getSharedSupabaseClient } from "./supabase-client.js";
-import { portalPresenceSurface } from "./portal_live_presence.js";
+import {
+  portalPresenceSurface,
+  portalPresenceDisplayLabel,
+} from "./portal_live_presence.js";
 
 const STORAGE_KEY = "portalVisitSessionId_v1";
 const HEARTBEAT_MS = 12000;
@@ -18,6 +21,10 @@ let _visibleSince = 0;
 let _activeTabAccumMs = 0;
 /** @type {string} */
 let _lastPageLabel = "";
+/** @type {{ label: string, at: string }[]} */
+let _pagesLocal = [];
+/** @type {{ label: string, action: string, page: string, at: string }[]} */
+let _formSubmitsLocal = [];
 /** @type {import("@supabase/supabase-js").SupabaseClient | null} */
 let _client = null;
 /** @type {string} */
@@ -37,6 +44,19 @@ const SHEET_VISIT_LABELS = {
   safeguardingFeedbackPolicySheet: "safeguarding policy",
   setupReminderSheet: "setup reminder",
 };
+
+function newSessionId() {
+  try {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+      return crypto.randomUUID();
+    }
+  } catch (_) {}
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
 
 function londonDateIso(d) {
   const dt = d || new Date();
@@ -155,10 +175,20 @@ async function flushPatch(extra) {
   const { error } = await _client
     .from("portal_staff_visit_sessions")
     .update(payload)
-    .eq("id", _sessionId);
+    .eq("id", _sessionId)
+    .eq("staff_user_id", _userId);
   if (error) {
     console.warn("[portal] visit session update", error.message || error);
   }
+}
+
+async function insertVisitSessionRow(row) {
+  let result = await _client.from("portal_staff_visit_sessions").insert([row]);
+  if (result.error) {
+    await new Promise((r) => setTimeout(r, 1500));
+    result = await _client.from("portal_staff_visit_sessions").insert([row]);
+  }
+  return result;
 }
 
 async function ensureSession(opts) {
@@ -167,33 +197,39 @@ async function ensureSession(opts) {
   const session = opts.session || {};
   const email = String(session.user?.email || "").trim();
   const surface = portalPresenceSurface(opts.page, profile, email);
-  const displayName =
-    String(profile.full_name || profile.username || "").trim() ||
-    email.split("@")[0] ||
-    "Staff";
+  const displayName = portalPresenceDisplayLabel(
+    String(profile.full_name || profile.username || "").trim(),
+    email
+  );
   const pageLabel = portalVisitPageLabelFromLocation(location);
   _lastPageLabel = pageLabel;
   const today = londonDateIso(new Date());
 
   const existingId = loadStoredSessionId();
   if (existingId) {
-    const { data } = await _client
+    const { data, error } = await _client
       .from("portal_staff_visit_sessions")
-      .select("id, session_date, still_open, pages")
+      .select("id, session_date, still_open, pages, form_submits")
       .eq("id", existingId)
       .eq("staff_user_id", _userId)
       .maybeSingle();
-    if (data && data.still_open && String(data.session_date) === today) {
+    if (!error && data && data.still_open && String(data.session_date) === today) {
       _sessionId = data.id;
-      const pagesPatch = appendPageEvent(data.pages, pageLabel);
+      _pagesLocal = Array.isArray(data.pages) ? data.pages.slice() : [];
+      _formSubmitsLocal = Array.isArray(data.form_submits) ? data.form_submits.slice() : [];
+      const pagesPatch = appendPageEvent(_pagesLocal, pageLabel);
+      _pagesLocal = pagesPatch;
       await flushPatch({ last_page_label: pageLabel, pages: pagesPatch });
       return;
     }
     saveStoredSessionId("");
   }
 
-  const pages = [{ label: pageLabel, at: new Date().toISOString() }];
+  const sessionId = newSessionId();
+  _pagesLocal = [{ label: pageLabel, at: new Date().toISOString() }];
+  _formSubmitsLocal = [];
   const row = {
+    id: sessionId,
     staff_user_id: _userId,
     staff_display_name: displayName,
     staff_surface: surface,
@@ -201,32 +237,17 @@ async function ensureSession(opts) {
     login_at: new Date().toISOString(),
     last_seen_at: new Date().toISOString(),
     last_page_label: pageLabel,
-    pages,
+    pages: _pagesLocal,
     still_open: true,
     active_tab_ms: 0,
     total_ms: 0,
   };
-  var insResult = await _client
-    .from("portal_staff_visit_sessions")
-    .insert([row])
-    .select("id")
-    .maybeSingle();
-  // A transient auth/token race can 403 the first insert; retry once after a short delay.
+  const insResult = await insertVisitSessionRow(row);
   if (insResult.error) {
-    await new Promise(function (r) {
-      setTimeout(r, 1500);
-    });
-    insResult = await _client
-      .from("portal_staff_visit_sessions")
-      .insert([row])
-      .select("id")
-      .maybeSingle();
-  }
-  if (insResult.error || !insResult.data?.id) {
-    console.warn("[portal] visit session insert", insResult.error?.message || insResult.error);
+    console.warn("[portal] visit session insert", insResult.error.message || insResult.error);
     return;
   }
-  _sessionId = insResult.data.id;
+  _sessionId = sessionId;
   saveStoredSessionId(_sessionId);
 }
 
@@ -234,17 +255,7 @@ async function heartbeat() {
   if (!_client || !_sessionId) return;
   const label = portalVisitPageLabelFromLocation(location);
   notePage(label);
-  let pagesPatch;
-  try {
-    const { data } = await _client
-      .from("portal_staff_visit_sessions")
-      .select("pages")
-      .eq("id", _sessionId)
-      .maybeSingle();
-    pagesPatch = appendPageEvent(data?.pages, label);
-  } catch (_) {
-    pagesPatch = appendPageEvent([], label);
-  }
+  _pagesLocal = appendPageEvent(_pagesLocal, label);
   const now = Date.now();
   if (document.visibilityState === "visible") {
     if (_visibleSince <= 0) _visibleSince = now;
@@ -261,10 +272,11 @@ async function heartbeat() {
       last_page_label: label,
       active_tab_ms: active,
       total_ms: active,
-      pages: pagesPatch,
+      pages: _pagesLocal,
       still_open: true,
     })
-    .eq("id", _sessionId);
+    .eq("id", _sessionId)
+    .eq("staff_user_id", _userId);
   if (error) {
     console.warn("[portal] visit session heartbeat", error.message || error);
   }
@@ -283,9 +295,12 @@ async function closeSession() {
       total_ms: active,
       still_open: false,
     })
-    .eq("id", _sessionId);
+    .eq("id", _sessionId)
+    .eq("staff_user_id", _userId);
   saveStoredSessionId("");
   _sessionId = null;
+  _pagesLocal = [];
+  _formSubmitsLocal = [];
 }
 
 export function mountPortalVisitActivityBridge() {
@@ -338,18 +353,8 @@ export async function recordPortalVisitPage(label) {
   const L = String(label || "").trim();
   if (!L) return;
   notePage(L);
-  let pagesPatch;
-  try {
-    const { data } = await _client
-      .from("portal_staff_visit_sessions")
-      .select("pages")
-      .eq("id", _sessionId)
-      .maybeSingle();
-    pagesPatch = appendPageEvent(data?.pages, L);
-  } catch (_) {
-    pagesPatch = appendPageEvent([], L);
-  }
-  await flushPatch({ last_page_label: L, pages: pagesPatch });
+  _pagesLocal = appendPageEvent(_pagesLocal, L);
+  await flushPatch({ last_page_label: L, pages: _pagesLocal });
 }
 
 /**
@@ -361,18 +366,8 @@ export async function recordPortalFormSubmit(actionLabel, pageLabel) {
   const action = String(actionLabel || "").trim();
   if (!action) return;
   const page = String(pageLabel || _lastPageLabel || portalVisitPageLabelFromLocation(location)).trim();
-  let submitsPatch;
-  try {
-    const { data } = await _client
-      .from("portal_staff_visit_sessions")
-      .select("form_submits")
-      .eq("id", _sessionId)
-      .maybeSingle();
-    submitsPatch = appendFormSubmitEvent(data?.form_submits, action, page);
-  } catch (_) {
-    submitsPatch = appendFormSubmitEvent([], action, page);
-  }
-  await flushPatch({ form_submits: submitsPatch, last_page_label: page || _lastPageLabel });
+  _formSubmitsLocal = appendFormSubmitEvent(_formSubmitsLocal, action, page);
+  await flushPatch({ form_submits: _formSubmitsLocal, last_page_label: page || _lastPageLabel });
 }
 
 export async function endPortalVisitSession() {
@@ -405,15 +400,13 @@ export async function startPortalVisitTracker(opts = {}) {
   const session = opts.session;
   _userId = String(session?.user?.id || "").trim();
   if (!_userId) return;
-  // Demo account is a sandbox: never record visit sessions (kept out of
-  // admin Portal Activity, and avoids RLS 403s if the demo auth session
-  // is not a full Supabase JWT).
   if (opts.isDemo === true || portalVisitIsDemoAccount(opts.profile, session)) {
     return;
   }
 
   _visibleSince = document.visibilityState === "visible" ? Date.now() : 0;
   await ensureSession(opts);
+  if (!_sessionId) return;
   mountPortalVisitActivityBridge();
   installDashboardSheetHooksWithRetry();
 

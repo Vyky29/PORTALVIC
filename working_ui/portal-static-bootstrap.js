@@ -33,6 +33,28 @@
     }
   };
 
+  /** One-shot Supabase access token for Annual profile opened in a new tab from Staff/Lead hub. */
+  window.portalPrepareProfileUpdateHandoff = function portalPrepareProfileUpdateHandoff() {
+    try {
+      var box = window.__PORTAL_SUPABASE__;
+      var token =
+        box && box.session && box.session.access_token
+          ? String(box.session.access_token)
+          : "";
+      if (!token) return false;
+      var profile = box && box.staff_profile;
+      var payload = {
+        access_token: token,
+        staff_id: profile && profile.id ? String(profile.id) : "",
+        at: Date.now(),
+      };
+      localStorage.setItem("portalProfileAuthHandoff_v1", JSON.stringify(payload));
+      return true;
+    } catch (_) {
+      return false;
+    }
+  };
+
   try {
     document.documentElement.classList.add("portal-app-shell");
   } catch (_) {}

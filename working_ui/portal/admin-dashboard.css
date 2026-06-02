@@ -3981,24 +3981,51 @@
       .grid-4{grid-template-columns:repeat(4,minmax(0,1fr)) !important}
     }
 
-    /* Touch / small tablet: rail sidebar, full menu from logo or float btn (body.admin-touch-compact). Desktop ≥1280px: never applied (JS). */
-    body.admin-touch-compact{--sidebarLayoutReserve:56px;--sidebarW:56px}
-    body.admin-touch-compact .admin-topbar{display:none !important}
+    /* Touch / small tablet: full-width workspace + topbar ☰; nav as overlay drawer (body.admin-touch-compact). Desktop ≥1280px: never applied (JS). */
+    body.admin-touch-compact{--sidebarLayoutReserve:0px;--sidebarW:0px}
+    body.admin-touch-compact .admin-topbar{
+      display:flex !important;
+      flex-shrink:0;
+      min-height:var(--topH);
+      height:auto;
+      padding:max(6px,env(safe-area-inset-top,0)) max(12px,env(safe-area-inset-right,0)) 6px max(12px,env(safe-area-inset-left,0));
+      gap:10px;
+    }
+    body.admin-touch-compact .admin-menu-mob{display:inline-flex !important;order:1;flex-shrink:0}
+    body.admin-touch-compact .admin-topbar-meta{order:3;margin-left:auto;flex-shrink:0}
+    body.admin-touch-compact .admin-topbar .admin-search-wrap,
+    body.admin-touch-compact .admin-topbar .admin-date,
+    body.admin-touch-compact .admin-topbar #viewToggle,
+    body.admin-touch-compact .admin-topbar #btnAlerts{display:none !important}
+    body.admin-touch-compact .admin-profile{padding:2px;border-radius:999px;border:none;background:transparent}
+    body.admin-touch-compact .admin-profile span#miniName{display:none}
     body.admin-touch-compact .admin-shell{height:100dvh;max-height:100dvh;min-height:0}
     body.admin-touch-compact .admin-main{
       flex:1 1 auto;
       min-width:0;
       min-height:0;
+      width:100%;
+      max-width:100%;
       display:flex;
       flex-direction:column;
       overflow:hidden;
     }
     body.admin-touch-compact .admin-sidebar{
-      width:56px !important;min-width:56px !important;max-width:56px !important;flex-shrink:0;
+      position:fixed !important;
+      left:0;top:0;bottom:0;
+      width:min(100vw,380px) !important;
+      min-width:0 !important;
+      max-width:min(100vw,380px) !important;
+      flex-shrink:0;
       display:flex;
       flex-direction:column;
       min-height:0;
       overflow:hidden;
+      z-index:12060;
+      transform:translateX(-105%);
+      visibility:hidden;
+      pointer-events:none;
+      transition:transform .22s ease,visibility .22s;
     }
     body.admin-touch-compact .admin-nav{
       flex:1 1 auto;
@@ -4007,36 +4034,6 @@
       overflow-y:auto;
       -webkit-overflow-scrolling:touch;
     }
-    body.admin-touch-compact .admin-sidebar-brand{
-      position:relative;padding:8px 6px 6px !important;cursor:pointer
-    }
-    body.admin-touch-compact .admin-sidebar-brand:focus-visible{
-      outline:2px solid rgba(125,211,252,.45);outline-offset:2px;border-radius:10px
-    }
-    body.admin-touch-compact:not(.admin-fullnav-open) .admin-sidebar-brand > strong,
-    body.admin-touch-compact:not(.admin-fullnav-open) .admin-sidebar-brand > span{
-      position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0
-    }
-    body.admin-touch-compact:not(.admin-fullnav-open) .admin-brand-orbit{display:none !important}
-    body.admin-touch-compact:not(.admin-fullnav-open) .admin-brand-wrap{width:44px !important;height:44px !important;margin-bottom:4px !important}
-    body.admin-touch-compact:not(.admin-fullnav-open) .admin-brand-mark{width:38px !important;height:38px !important}
-    body.admin-touch-compact:not(.admin-fullnav-open) .admin-nav .admin-nav-label,
-    body.admin-touch-compact:not(.admin-fullnav-open) .admin-nav .admin-nav-subhead,
-    body.admin-touch-compact:not(.admin-fullnav-open) .admin-nav .admin-nav-group-caret{
-      position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0
-    }
-    body.admin-touch-compact:not(.admin-fullnav-open) .admin-nav-novo-kicker{display:none !important}
-    body.admin-touch-compact:not(.admin-fullnav-open) .admin-nav-novo-label{
-      position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0
-    }
-    body.admin-touch-compact:not(.admin-fullnav-open) .admin-nav-novo-btn{justify-content:center;padding:8px 4px !important}
-    body.admin-touch-compact:not(.admin-fullnav-open) .admin-nav-register-peek{display:none !important}
-    body.admin-touch-compact:not(.admin-fullnav-open) .admin-nav-group-toggle,
-    body.admin-touch-compact:not(.admin-fullnav-open) .admin-nav-direct{justify-content:center;padding:8px 6px !important}
-    body.admin-touch-compact:not(.admin-fullnav-open) .admin-nav-toggle-inner{justify-content:center;flex:0 0 auto}
-    body.admin-touch-compact:not(.admin-fullnav-open) #adminNav button[data-view],
-    body.admin-touch-compact:not(.admin-fullnav-open) #adminNav a.admin-nav-external{justify-content:center;padding:8px 6px !important}
-    body.admin-touch-compact:not(.admin-fullnav-open) .admin-sidebar-foot__txt{display:none !important}
     body.admin-touch-compact .admin-sidebar-width-controls{display:none !important}
     #adminFullnavClose{
       display:none;position:absolute;top:4px;right:2px;z-index:8;width:34px;height:34px;border-radius:10px;border:1px solid rgba(255,255,255,.22);
@@ -4051,8 +4048,18 @@
       overflow:hidden
     }
     body.admin-touch-compact.admin-fullnav-open .admin-sidebar{
-      position:fixed !important;left:0;top:0;bottom:0;width:min(100vw, 380px) !important;min-width:min(280px, 88vw) !important;max-width:min(100vw, 380px) !important;
-      z-index:12060 !important;box-shadow:12px 0 36px rgba(0,0,0,.35);height:100dvh !important;max-height:100dvh !important
+      transform:none;
+      visibility:visible;
+      pointer-events:auto;
+      box-shadow:12px 0 36px rgba(0,0,0,.35);
+      height:100dvh !important;
+      max-height:100dvh !important;
+    }
+    body.admin-touch-compact .admin-sidebar-brand{
+      position:relative;padding:12px 14px 10px !important;cursor:pointer
+    }
+    body.admin-touch-compact .admin-sidebar-brand:focus-visible{
+      outline:2px solid rgba(125,211,252,.45);outline-offset:2px;border-radius:10px
     }
     body.admin-touch-compact.admin-fullnav-open .admin-sidebar-brand > strong,
     body.admin-touch-compact.admin-fullnav-open .admin-sidebar-brand > span{
@@ -4071,7 +4078,14 @@
     body.admin-touch-compact.admin-fullnav-open .admin-nav-novo-btn{justify-content:flex-start;padding:11px 10px !important}
     body.admin-touch-compact.admin-fullnav-open .admin-nav-group-toggle{justify-content:space-between !important;padding:9px 10px !important}
     body.admin-touch-compact.admin-fullnav-open #adminNav button[data-view],
-    body.admin-touch-compact.admin-fullnav-open #adminNav a.admin-nav-external{justify-content:flex-start !important;padding:8px 10px !important}
+    body.admin-touch-compact.admin-fullnav-open #adminNav a.admin-nav-external{
+      justify-content:flex-start !important;padding:8px 10px !important;
+      display:flex;align-items:center;gap:8px;min-width:0
+    }
+    body.admin-touch-compact.admin-fullnav-open .admin-nav-label{
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1 1 auto;min-width:0
+    }
+    body.admin-touch-compact.admin-fullnav-open .admin-nav-pending-badge{margin-left:auto;flex-shrink:0}
     body.admin-touch-compact.admin-fullnav-open .admin-sidebar-foot__txt{display:block !important}
     body.admin-touch-compact .admin-workspace{
       flex:1 1 auto;
@@ -4208,22 +4222,16 @@
       outline-offset:2px;
     }
     body.admin-touch-compact:not(.admin-fullnav-open) .admin-float-menu-btn{
-      display:inline-flex;
-    }
-    @media (orientation:landscape) and (max-height:640px){
-      body.admin-touch-compact:not(.admin-fullnav-open) .admin-float-menu-btn{
-        left:auto;
-        right:max(14px,env(safe-area-inset-right,0px));
-      }
+      display:none !important;
     }
     body.admin-touch-compact.admin-fullnav-open .admin-float-menu-btn{
       display:none !important;
     }
     body.admin-touch-compact #modalBackdrop.modal-backdrop--register{
-      left:56px !important;
+      left:0 !important;
     }
     body.admin-touch-compact .pax-profile-backdrop{
-      inset:0 0 0 56px !important;
+      inset:0 !important;
     }
 
     /* Host admin bar offset (embedded shells) */
