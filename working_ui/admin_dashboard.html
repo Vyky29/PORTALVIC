@@ -1542,31 +1542,210 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
 
     function recomputeOperatorSuggestions(){
       var out = [];
-      if(portalAbsentsPendingCount()){
-        out.push({ id:'os_can', label:'Absents / refunds — '+portalAbsentsPendingCount()+' pending (credits + comms)', action:'jump', target:'absents_refunds' });
+      var late = Number(state.portalLatePendingCount || 0);
+      if(late > 0){
+        out.push({
+          id:'os_late',
+          label:'Review '+late+' late submission'+(late===1?'':'s'),
+          action:'jump',
+          target:'c4k_late_submissions'
+        });
       }
-      if(MOCK.shiftGaps.length){
-        out.push({ id:'os_gap', label:'Fill roster gap — '+MOCK.shiftGaps[0].site+' '+MOCK.shiftGaps[0].when.slice(0,22)+'…', action:'session' });
+      var pend = portalAbsentsPendingCount();
+      if(pend > 0){
+        out.push({
+          id:'os_abs',
+          label:'Absents & credits — '+pend+' pending',
+          action:'jump',
+          target:'absents_refunds'
+        });
       }
-      var inc = MOCK.openIncidents.find(function(i){ return i.status.indexOf('sign-off')>=0 || i.status.indexOf('admin action')>=0; });
-      if(inc){
-        out.push({ id:'os_inc', label:'Review incident — '+inc.ref+' · '+inc.clientName, action:'jump', target:'reports' });
+      var acts = window.__PORTAL_ADMIN_ACTIVITY_ALERTS__ || [];
+      for(var ai = 0; ai < acts.length && out.length < 5; ai++){
+        var act = acts[ai];
+        if(!act || !act.view) continue;
+        out.push({
+          id:'os_act_'+ai,
+          label: String(act.title || 'Portal activity'),
+          action:'activity',
+          alertMeta: {
+            view: act.view,
+            recordId: act.recordId || '',
+            clientName: act.clientName || '',
+            sessionDate: act.sessionDate || ''
+          }
+        });
       }
-      var blk = MOCK.reportItems.find(function(r){ return r.status==='blocked'; });
-      if(blk){
-        out.push({ id:'os_rep', label:'Unblock report — '+blk.type+' · '+blk.clientName, action:'report', reportId:blk.id });
+      var ovN = portalOperatorActiveOverridesThisWeekCount();
+      if(ovN != null && ovN > 0){
+        out.push({
+          id:'os_ov',
+          label:'Roster changes this week — '+ovN+' active override'+(ovN===1?'':'s'),
+          action:'jump',
+          target:'scheduling'
+        });
       }
-      var lowAtt = Object.keys(MOCK.clientsById).find(function(k){
-        return MOCK.clientsById[k].attendancePct < 72;
+      if(!out.length){
+        out.push({
+          id:'os_sessions',
+          label:'No urgent queues — open today\'s sessions',
+          action:'jump',
+          target:'c4k_sessions'
+        });
+      }
+      MOCK.operatorSuggestions = out.slice(0, 6);
+    }
+
+    function portalOperatorActiveOverridesThisWeekCount(){
+      var list = window.__PORTAL_SCHEDULE_OVERRIDES__;
+      if(!Array.isArray(list)) return null;
+      var days = bookingWeekIsoRangeMonSun(isoDateLocal(new Date()));
+      if(!days.length){
+        return list.filter(function(o){ return String(o.status || '') === 'active'; }).length;
+      }
+      var mon = days[0];
+      var sun = days[6];
+      return list.filter(function(o){
+        if(String(o.status || '') !== 'active') return false;
+        var d = String(o.session_date || '').trim().slice(0, 10);
+        return d && d >= mon && d <= sun;
+      }).length;
+    }
+
+    function portalOperatorKpiCard(label, value, sub, targetView, alert){
+      var vHtml = value == null ? '—' : esc(String(value));
+      return (
+        '<button type="button" class="kpi card--premium'+(alert ? ' kpi--alert' : '')+'" data-view-target="'+esc(targetView)+'" style="text-align:left;cursor:pointer;border:1px solid var(--line);width:100%;min-width:0">'+
+          '<div class="kpi-l">'+esc(label)+'</div>'+
+          '<div class="kpi-v"'+(alert ? ' style="color:var(--danger)"' : '')+'>'+vHtml+'</div>'+
+          '<div class="kpi-s muted" style="overflow-wrap:break-word">'+esc(sub)+'</div>'+
+        '</button>'
+      );
+    }
+
+    function portalOperatorKpiGridHtml(){
+      refreshKpisFromDemo();
+      var k = MOCK.kpi;
+      var late = Number(state.portalLatePendingCount || 0);
+      var activityN = (window.__PORTAL_ADMIN_ACTIVITY_ALERTS__ || []).length;
+      var absPend = portalAbsentsPendingCount();
+      var ovN = portalOperatorActiveOverridesThisWeekCount();
+      var isoToday = isoDateLocal(new Date());
+      return (
+        '<div class="grid-kpi grid-kpi--6">'+
+          portalOperatorKpiCard('Late submissions', late, late ? 'Approve past-session forms' : 'None waiting', 'c4k_late_submissions', late > 0)+
+          portalOperatorKpiCard('Portal activity (72h)', activityN, 'Feedback · cancellations · incidents', 'c4k_sessions', activityN > 0)+
+          portalOperatorKpiCard('Absents pending', absPend, 'Credits & family follow-up', 'absents_refunds', absPend > 0)+
+          portalOperatorKpiCard('Sessions today', k.sessionsToday || 0, 'Roster anchors · '+isoToday, 'c4k_sessions', false)+
+          portalOperatorKpiCard('Staff on roster', k.activeStaff || 0, 'Distinct instructors today', 'scheduling', false)+
+          portalOperatorKpiCard('Roster changes (week)', ovN == null ? '…' : ovN, 'Active schedule overrides Mon–Sun', 'scheduling', ovN != null && ovN > 0)+
+        '</div>'
+      );
+    }
+
+    function portalOperatorRecentActivityInnerHtml(){
+      var acts = window.__PORTAL_ADMIN_ACTIVITY_ALERTS__ || [];
+      if(!acts.length){
+        return '<p class="muted" style="margin:0">No staff or lead submissions in the last 72 hours.</p>';
+      }
+      return acts.slice(0, 8).map(function(a, idx){
+        return (
+          '<button type="button" class="line-item portal-operator-activity-row" data-operator-activity-idx="'+idx+'" style="width:100%;text-align:left;border:0;background:transparent;cursor:pointer;padding:12px 16px;font:inherit">'+
+            '<div style="min-width:0"><strong>'+esc(a.title || 'Portal activity')+'</strong><div class="muted" style="overflow-wrap:break-word">'+esc(a.sub || '')+'</div></div>'+
+            '<span class="chip chip--info">'+esc(a.t || 'New')+'</span>'+
+          '</button>'
+        );
+      }).join('');
+    }
+
+    function portalOperatorRecentActivityHtml(){
+      var acts = window.__PORTAL_ADMIN_ACTIVITY_ALERTS__ || [];
+      return (
+        '<div class="section" style="margin-top:18px">'+
+          '<div class="card">'+
+            '<div class="card-h">'+
+              '<div style="min-width:0"><h3 style="margin:0">Recent portal activity</h3>'+
+              '<p class="muted" style="margin:6px 0 0;font-size:12px;line-height:1.45;overflow-wrap:break-word">Last 72 hours from live staff submissions — tap a row to open it in Sessions hub.</p></div>'+
+              '<span class="chip '+(acts.length ? 'chip--pend' : 'chip--ok')+'">'+esc(String(acts.length))+'</span>'+
+            '</div>'+
+            '<div class="card-pad row-lines" id="portalOperatorActivityHost" style="padding:0">'+
+              portalOperatorRecentActivityInnerHtml()+
+            '</div>'+
+          '</div>'+
+        '</div>'
+      );
+    }
+
+    function portalOperatorSuggestionsInnerHtml(){
+      var sug = MOCK.operatorSuggestions || [];
+      if(!sug.length){
+        return '<p class="muted" style="margin:0">Nothing queued right now.</p>';
+      }
+      return sug.map(function(s){
+        return (
+          '<div class="line-item" style="align-items:center">'+
+            '<div style="min-width:0"><strong>'+esc(s.label)+'</strong>'+
+            '<div class="muted" style="margin-top:2px;overflow-wrap:break-word">Opens the relevant screen — you confirm each step.</div></div>'+
+            '<button type="button" class="btn btn--pri btn--sm" data-op-suggest="'+esc(s.id)+'">Open</button>'+
+          '</div>'
+        );
+      }).join('');
+    }
+
+    function portalOperatorPatchLiveHosts(){
+      if(state.view !== 'operator') return;
+      var kpiHost = $('portalOperatorKpiHost');
+      if(kpiHost){
+        kpiHost.innerHTML = portalOperatorKpiGridHtml();
+        kpiHost.querySelectorAll('[data-view-target]').forEach(function(b){
+          b.addEventListener('click', function(){
+            setView(b.getAttribute('data-view-target'));
+            closeSidebarMob();
+          });
+        });
+      }
+      var actHost = $('portalOperatorActivityHost');
+      if(actHost) actHost.innerHTML = portalOperatorRecentActivityInnerHtml();
+      recomputeOperatorSuggestions();
+      var sugHost = $('portalOperatorSuggestHost');
+      if(sugHost) sugHost.innerHTML = portalOperatorSuggestionsInnerHtml();
+      bindOperatorSuggestButtons();
+      bindOperatorActivityRows();
+    }
+
+    function bindOperatorActivityRows(){
+      document.querySelectorAll('[data-operator-activity-idx]').forEach(function(btn){
+        if(btn.dataset.operatorActBound === '1') return;
+        btn.dataset.operatorActBound = '1';
+        btn.addEventListener('click', function(){
+          var idx = parseInt(btn.getAttribute('data-operator-activity-idx'), 10);
+          var acts = window.__PORTAL_ADMIN_ACTIVITY_ALERTS__ || [];
+          var a = acts[idx];
+          if(!a || !a.view) return;
+          portalAdminOpenActivityAlert({
+            view: a.view,
+            recordId: a.recordId || '',
+            clientName: a.clientName || '',
+            sessionDate: a.sessionDate || ''
+          });
+        });
       });
-      if(lowAtt){
-        var c = MOCK.clientsById[lowAtt];
-        out.push({ id:'os_cli', label:'Check in — '+c.name+' (attendance '+c.attendancePct+'%)', action:'client', clientId:c.id });
+    }
+
+    function bindOperatorLive(){
+      bindOperatorLight();
+      bindOperatorActivityRows();
+      void portalLateAdminRefreshNavBadge().then(function(){
+        portalOperatorPatchLiveHosts();
+      });
+      void adminFetchScheduleOverridesForHub().then(function(){
+        portalOperatorPatchLiveHosts();
+      });
+      if(typeof portalAdminBootstrapActivityAlerts === 'function'){
+        void portalAdminBootstrapActivityAlerts().then(function(){
+          portalOperatorPatchLiveHosts();
+        });
       }
-      if(out.length<4){
-        out.push({ id:'os_pool', label:'Notify leads — weekly pool cover check (Thu PM)', action:'notify' });
-      }
-      MOCK.operatorSuggestions = out.slice(0,6);
     }
 
     function pushCommsHistory(type, summary){
@@ -16776,14 +16955,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
 
     function viewOperatorHTMLAddon(){
       recomputeOperatorSuggestions();
-      var sug = MOCK.operatorSuggestions.map(function(s){
-        return '<div class="line-item" style="align-items:center"><div><strong>'+esc(s.label)+'</strong><div class="muted" style="margin-top:2px">Opens the relevant flow — you confirm each step.</div></div><button type="button" class="btn btn--pri btn--sm" data-op-suggest="'+esc(s.id)+'">Run</button></div>';
-      }).join('');
       return (
         '<div class="section" style="margin-top:22px">'+
-        '<p class="page-intro">Quick actions and suggested follow-ups below the control-centre tiles.</p>'+
-        '<div class="card" style="max-width:560px"><div class="card-h"><h3>Suggested actions</h3></div><div class="card-pad row-lines">'+sug+'</div></div>'+
-        '<div class="toolbar" style="margin-top:16px"><button type="button" class="btn btn--sec" data-open-compose>Custom notification</button> <button type="button" class="btn btn--sec" data-shift-session="">Session / shift update</button> <button type="button" class="btn btn--sec" data-open-report>Prepare report</button></div>'+
+        '<div class="card" style="max-width:640px;min-width:0"><div class="card-h"><h3>Suggested next steps</h3></div>'+
+        '<div class="card-pad row-lines" id="portalOperatorSuggestHost">'+portalOperatorSuggestionsInnerHtml()+'</div></div>'+
         '</div>'
       );
     }
@@ -16877,22 +17052,25 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       );
     }
     function viewOperator(){
-      var core = (typeof __OPWF_HTML!=='undefined' && __OPWF_HTML.opHome) ? __OPWF_HTML.opHome : '<p class="page-intro">Workflow block loading…</p>';
-      core = String(core).replace(/^\s*<h[12][^>]*class="[^"]*page-title[^"]*"[^>]*>[\s\S]*?<\/h[12]>\s*(?:<p class="page-(?:desc|intro)"[^>]*>[\s\S]*?<\/p>\s*)?/i,'');
       return portalOperatorNewLeadsHubHtml()+
         '<h1 class="page-title">Control centre</h1>'+
-        '<p class="page-intro">Illustrative KPIs and queues — not live data. New intake shortcuts are under <strong>New leads</strong> above.</p>'+
-        core+
+        '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">Live operational snapshot from the portal — roster, late submissions, absences, and staff activity. KPI tiles open the relevant screen.</p>'+
+        '<div id="portalOperatorKpiHost">'+portalOperatorKpiGridHtml()+'</div>'+
+        portalOperatorRecentActivityHtml()+
         viewOperatorHTMLAddon();
     }
 
-    function bindOperatorLight(){
+    function bindOperatorSuggestButtons(){
       document.querySelectorAll('[data-op-suggest]').forEach(function(b){
+        if(b.dataset.opSuggestBound === '1') return;
+        b.dataset.opSuggestBound = '1';
         b.addEventListener('click', function(){
           var id = b.getAttribute('data-op-suggest');
           var s = MOCK.operatorSuggestions.find(function(x){ return x.id===id; });
           if(!s) return;
-          if(s.action==='notify') openComposeModal('reminder');
+          if(s.action==='activity' && s.alertMeta){
+            portalAdminOpenActivityAlert(s.alertMeta);
+          }else if(s.action==='notify') openComposeModal('reminder');
           else if(s.action==='session') openShiftModal('');
           else if(s.action==='jump' && s.target) setView(s.target);
           else if(s.action==='client' && s.clientId){ setView('clients'); setTimeout(function(){ openClientDrawer(s.clientId); }, 0); }
@@ -16901,6 +17079,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           logAction('manual', 'Operator: '+s.label, 'Operator');
         });
       });
+    }
+
+    function bindOperatorLight(){
+      bindOperatorSuggestButtons();
+      bindOperatorActivityRows();
     }
 
     function logAction(kind, summary, source){
@@ -19156,7 +19339,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           });
         }
       }
-      if(id==='operator') bindOperatorLight();
+      if(id==='operator') bindOperatorLive();
       if(id==='c4k_sessions'){
         bindSessionsHubModule();
         portalSessionsHubLazyLoad();
