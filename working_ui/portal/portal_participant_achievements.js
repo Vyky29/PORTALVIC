@@ -633,19 +633,39 @@
       .join("");
     host.querySelectorAll("[data-ach-client]").forEach(function (btn) {
       btn.addEventListener("click", function () {
-        state.participant = {
+        selectParticipant({
           clientId: btn.getAttribute("data-ach-client"),
           clientName: btn.getAttribute("data-ach-name"),
           portalSessionKey: btn.getAttribute("data-ach-key") || null,
-        };
-        signedUrlCache = Object.create(null);
-        closeGalleryViewer();
-        closeCameraFullscreen();
-        showStep("capture");
-        setCaptureMode("hub");
-        void refreshGallery();
+        });
       });
     });
+  }
+
+  function selectParticipant(p) {
+    if (!p || !p.clientId) return;
+    state.participant = {
+      clientId: p.clientId,
+      clientName: p.clientName || p.clientId,
+      portalSessionKey: p.portalSessionKey || null,
+    };
+    signedUrlCache = Object.create(null);
+    closeGalleryViewer();
+    closeCameraFullscreen();
+    showStep("capture");
+    setCaptureMode("hub");
+    void refreshGallery();
+  }
+
+  /** Topbar camera: open sheet; auto-start camera when exactly one Today participant. */
+  function openCameraDirect() {
+    bindSheet();
+    var list = getTodayParticipantList();
+    if (list.length === 1) {
+      selectParticipant(list[0]);
+      setCaptureMode("camera");
+      void captureFromCamera();
+    }
   }
 
   function setCaptureMode(mode) {
@@ -1166,6 +1186,7 @@
     sheetHtml: sheetHtml,
     bindSheet: bindSheet,
     openSheet: openSheet,
+    openCameraDirect: openCameraDirect,
     stopCamera: stopCamera,
     listDraftsForFeedback: listDraftsForFeedback,
     renderFeedbackAttachPanel: renderFeedbackAttachPanel,

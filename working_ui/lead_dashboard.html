@@ -91,7 +91,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260602-feedback-voice-fix" />
   <script src="/portal/portal_screenshot_guard.js?v=20260602-feedback-voice-fix"></script>
   <title>clubSENsational Lead Dashboard</title>
-  <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260609-qm-feedback" />
+  <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260610-topbar-camera" />
 </head>
 <body>
   <script>
@@ -202,11 +202,8 @@
     <header class="topbar" aria-labelledby="staffName">
       <div class="topbar-lead">
         <div class="topbar-left">
-          <button type="button" class="topbar-date-btn" id="topbarDateBtn" aria-label="Working day">
-            <span id="topbarDate" class="topbar-date-stack">
-              <span class="topbar-date-line topbar-date-line--wk" id="topbarDateLineWk">…</span>
-              <span class="topbar-date-line topbar-date-line--ymd" id="topbarDateLineYmd">…</span>
-            </span>
+          <button type="button" class="topbar-camera-btn" id="topbarCameraBtn" aria-label="Participant photos">
+            <span class="topbar-camera-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
           </button>
         </div>
         <div class="topbar-center">
@@ -783,7 +780,7 @@
   <script src="portal/staff_dashboard_spreadsheet_adapter.js?v=20260610-luliya-roster"></script>
   <script src="portal/staff_roster_resolve.js?v=20260610-luliya-roster"></script>
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260603-achievements-shared" />
-  <script src="/portal/portal_participant_achievements.js?v=20260602-feedback-voice-fix"></script>
+  <script src="/portal/portal_participant_achievements.js?v=20260610-topbar-camera"></script>
   <script src="/portal/portal_guide_menu.js?v=20260609-qm-top"></script>
   <script src="/portal/portal_dm_voice.js?v=20260602-feedback-voice-fix"></script>
   <script>
@@ -1674,11 +1671,14 @@
       const custom = dashboardData && dashboardData.portalTodaySectionHeading;
       if(custom) return String(custom);
       const d = portalResolveTodaySectionCalendarDate();
-      if(!d) return 'Today';
+      if(!d) return 'TODAY';
+      const num = typeof portalFormatPortalDateDdMmYyyy === 'function'
+        ? portalFormatPortalDateDdMmYyyy(d)
+        : '';
       const now = new Date();
       const t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
       const d0 = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-      if(d0 === t0) return 'Today';
+      if(d0 === t0) return num ? ('TODAY ' + num) : 'TODAY';
       return portalFormatTodaySectionCompactDate(d);
     }
 
@@ -11879,6 +11879,19 @@
           }
         });
       }
+      function bindTopbarCamera(){
+        var btn = document.getElementById('topbarCameraBtn');
+        if(!btn || btn.getAttribute('data-ach-topbar-bound') === '1') return;
+        btn.setAttribute('data-ach-topbar-bound','1');
+        btn.addEventListener('click', function(){
+          mountSheet();
+          configure();
+          if(typeof openSheet === 'function') openSheet('achievementsSheet');
+          if(window.PortalParticipantAchievements && typeof window.PortalParticipantAchievements.openCameraDirect === 'function'){
+            window.PortalParticipantAchievements.openCameraDirect();
+          }
+        });
+      }
       function bindQuickMenu(){
         var btn = document.getElementById('quickMenuParticipantAchievements');
         if(!btn || btn.getAttribute('data-achievements-bound') === '1') return;
@@ -11890,9 +11903,9 @@
         });
       }
       if(document.readyState === 'loading'){
-        document.addEventListener('DOMContentLoaded', function(){ mountSheet(); configure(); bindQuickMenu(); });
+        document.addEventListener('DOMContentLoaded', function(){ mountSheet(); configure(); bindQuickMenu(); bindTopbarCamera(); });
       }else{
-        mountSheet(); configure(); bindQuickMenu();
+        mountSheet(); configure(); bindQuickMenu(); bindTopbarCamera();
       }
       window.addEventListener('portal:supabase-ready', function(){ configure(); });
     })();
