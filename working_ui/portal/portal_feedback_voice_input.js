@@ -48,11 +48,31 @@
   function setScreenshotGuardForRecording(on) {
     var g = global.PortalScreenshotGuard;
     if (!g) return;
-    if (on && typeof g.pushMediaCaptureBypass === "function") {
-      g.pushMediaCaptureBypass("session-feedback-voice");
-    } else if (!on && typeof g.popMediaCaptureBypass === "function") {
-      g.popMediaCaptureBypass("session-feedback-voice");
+    if (on) {
+      if (typeof g.pushMediaCaptureBypass === "function") {
+        g.pushMediaCaptureBypass("session-feedback-voice");
+      }
+      if (typeof g.hideBlackForce === "function") g.hideBlackForce();
+    } else {
+      if (typeof g.popMediaCaptureBypass === "function") {
+        g.popMediaCaptureBypass("session-feedback-voice");
+      }
+      if (typeof g.hideBlackForce === "function") g.hideBlackForce();
     }
+  }
+
+  function wireScreenshotGuardVoiceRecovery() {
+    if (global.__PORTAL_FB_VOICE_GUARD_RECOVERY__) return;
+    global.__PORTAL_FB_VOICE_GUARD_RECOVERY__ = true;
+    document.addEventListener("visibilitychange", function () {
+      if (session && !document.hidden) setScreenshotGuardForRecording(true);
+    });
+    global.addEventListener("focus", function () {
+      if (session) setScreenshotGuardForRecording(true);
+    });
+    global.addEventListener("pageshow", function () {
+      if (session) setScreenshotGuardForRecording(true);
+    });
   }
 
   function injectStyles() {
@@ -797,6 +817,8 @@
     wrap.appendChild(bar);
 
     btn.addEventListener("click", function () {
+      wireScreenshotGuardVoiceRecovery();
+      setScreenshotGuardForRecording(true);
       startCapture(ta, btn, statusEl);
     });
   }

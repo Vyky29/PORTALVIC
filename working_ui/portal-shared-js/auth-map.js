@@ -143,6 +143,50 @@ export function resolveDemoEmail(rawUsername) {
   return null;
 }
 
+/** stf00x import emails → roster key used in spreadsheet bundle / term calendar. */
+export const PORTAL_STAFF_CODE_TO_ROSTER_KEY = {
+  stf001: "sandra",
+  stf002: "roberto",
+  stf003: "dan",
+  stf004: "angel",
+  stf005: "youssef",
+  stf006: "john",
+  stf007: "bismark",
+  stf008: "giuseppe",
+  stf009: "godsway",
+  stf010: "javier",
+  stf011: "aurora",
+  stf012: "berta",
+  stf013: "victor",
+  stf014: "carlos",
+  stf015: "alex",
+  stf017: "javi",
+  stf018: "raul",
+  stf019: "sevitha",
+  stf020: "teflon",
+  stf021: "lulia",
+  stf022: "andres",
+};
+
+/**
+ * Normalize username / email local / display name → canonical roster key (lulia, roberto, …).
+ * @param {string | null | undefined} value
+ * @returns {string}
+ */
+export function portalCanonicalStaffRosterKey(value) {
+  const k = String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "");
+  if (!k) return "";
+  if (k === "luliya") return "lulia";
+  if (k === "aida") return "lulia";
+  if (k === "yousef" || k === "yousseff") return "yusef";
+  return PORTAL_STAFF_CODE_TO_ROSTER_KEY[k] || k;
+}
+
 /**
  * Maps auth.users.email to a stable staff key for redirects.
  *
@@ -155,11 +199,15 @@ export function resolveStaffKeyFromAuthEmail(authEmail) {
     .toLowerCase();
   if (!e) return "";
   if (PORTAL_CORPORATE_AUTH_EMAIL_TO_STAFF_KEY[e]) {
-    return PORTAL_CORPORATE_AUTH_EMAIL_TO_STAFF_KEY[e];
+    return portalCanonicalStaffRosterKey(PORTAL_CORPORATE_AUTH_EMAIL_TO_STAFF_KEY[e]);
+  }
+  const local = e.split("@")[0] || "";
+  if (local && PORTAL_STAFF_CODE_TO_ROSTER_KEY[local]) {
+    return PORTAL_STAFF_CODE_TO_ROSTER_KEY[local];
   }
   for (const [name, email] of Object.entries(STAFF_USERNAME_TO_EMAIL)) {
     if (String(email).trim().toLowerCase() === e) {
-      return name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
+      return portalCanonicalStaffRosterKey(name);
     }
   }
   return "";

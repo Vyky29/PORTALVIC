@@ -22,6 +22,8 @@
     stf018: "raul",
     stf019: "sevitha",
     stf020: "teflon",
+    stf021: "lulia",
+    stf022: "andres",
   };
 
   function portalProfileRosterKey(v) {
@@ -32,6 +34,7 @@
       .replace(/[^a-z0-9]+/g, "")
       .trim();
     if (k === "luliya") return "lulia";
+    if (k === "aida") return "lulia";
     return k;
   }
 
@@ -40,6 +43,7 @@
     "johnnyosti37@gmail.com": "john",
     "stf012@staff.import.pending": "berta",
     "stf006@staff.import.pending": "john",
+    "stf021@staff.import.pending": "lulia",
   };
 
   /** Auth email → roster key (berta, john); stf00x local part via staff code map. */

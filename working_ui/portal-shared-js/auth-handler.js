@@ -23,6 +23,7 @@ import {
 import {
   resolveDemoEmail,
   resolveStaffKeyFromAuthEmail,
+  portalCanonicalStaffRosterKey,
   PORTAL_LOGIN_UNKNOWN_NAME_HELP,
   mergeStaffLoginEmailMap,
 } from "./auth-map.js";
@@ -145,19 +146,21 @@ function portalNormalizeStaffKey(value) {
 
 export function portalInferStaffKey(profile, authEmail) {
   const u = portalNormalizeStaffKey(profile?.username);
-  if (u) return u;
+  if (u) return portalCanonicalStaffRosterKey(u);
   const rawName = String(profile?.full_name || "").trim();
   if (rawName) {
     const firstWord = rawName.split(/\s+/)[0] || "";
     const firstKey = portalNormalizeStaffKey(firstWord);
-    if (firstKey) return firstKey;
+    if (firstKey) return portalCanonicalStaffRosterKey(firstKey);
   }
   const fromEmail = resolveStaffKeyFromAuthEmail(authEmail);
   if (fromEmail) return fromEmail;
   const fn = portalNormalizeStaffKey(profile?.full_name);
-  if (fn) return fn;
+  if (fn) return portalCanonicalStaffRosterKey(fn);
   return "";
 }
+
+export { portalCanonicalStaffRosterKey };
 
 function portalInferEffectiveRole(profile, authEmail) {
   const appRole = String(profile?.app_role || "").toLowerCase();

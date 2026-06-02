@@ -757,14 +757,14 @@
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260602-feedback-voice-fix-javier-may20-catchup"></script>
   <script src="/portal/session_feedback_portal_data.js?v=20260527-ma-apr-may"></script>
   <script src="/portal/session_feedback_status_portal_data.js?v=20260526-all-complete"></script>
-  <script src="/portal/staff_portal_feedback_bridge.js?v=20260610-luliya-roster"></script>
+  <script src="/portal/staff_portal_feedback_bridge.js?v=20260601-luliya-mic"></script>
   <script src="/portal-shared-js/portal_late_submission.js?v=20260602-feedback-voice-fix-javier-bypass"></script>
   <script src="/portal/portal-roster-rows-merge.js?v=20260601-term-slot"></script>
   <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260610-javier-may14-roster"></script>
   <script src="/portal/clients_info_embed.js?v=20260605-sambhav"></script>
   <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
-  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260610-luliya-roster"></script>
-  <script src="/portal/staff_roster_resolve.js?v=20260610-luliya-roster"></script>
+  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260601-luliya-mic"></script>
+  <script src="/portal/staff_roster_resolve.js?v=20260601-luliya-mic"></script>
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260603-achievements-shared" />
   <script src="/portal/portal_participant_achievements.js?v=20260610-pwa-black-fix"></script>
   <script src="/portal/portal_guide_menu.js?v=20260609-qm-top"></script>
@@ -12298,10 +12298,11 @@
       var s = document.createElement("script");
       s.type = "module";
       s.textContent = `
-        import { portalLogout, bootstrapDashboardSupabase, portalInferStaffKey } from "/portal/auth-handler.js?v=20260609-alerts-mic";
+        import { portalLogout, bootstrapDashboardSupabase, portalInferStaffKey, portalCanonicalStaffRosterKey } from "/portal/auth-handler.js?v=20260601-luliya-mic";
         import { portalSyncExecWorkspaceSwitchSlot } from "/portal/portal_exec_workspace_switch.js?v=20260526-exec-modes";
         window.__PORTAL_LOGOUT_FN__ = portalLogout;
         window.portalInferStaffKey = portalInferStaffKey;
+        window.portalCanonicalStaffRosterKey = portalCanonicalStaffRosterKey;
         try { await bootstrapDashboardSupabase({ page: "staff" }); } catch (e) {
           console.warn("staff_dashboard: Supabase bootstrap", e);
         }
@@ -12436,6 +12437,7 @@
             .replace(/[^a-z0-9]+/g, "")
             .trim();
           if (!k || seen[k]) return;
+          if (k === "luliya" || k === "aida") k = "lulia";
           seen[k] = true;
           keys.push(k);
           if (/^stf\d{3}$/.test(k)) {
@@ -12444,7 +12446,8 @@
               stf005: "youssef", stf006: "john", stf007: "bismark", stf008: "giuseppe",
               stf009: "godsway", stf010: "javier", stf011: "aurora", stf012: "berta",
               stf013: "victor", stf014: "carlos", stf015: "alex", stf017: "javi",
-              stf018: "raul", stf019: "sevitha", stf020: "teflon",
+              stf018: "raul", stf019: "sevitha", stf020: "teflon", stf021: "lulia",
+              stf022: "andres",
             };
             if (map[k] && !seen[map[k]]) { seen[map[k]] = true; keys.push(map[k]); }
           }
@@ -12509,6 +12512,9 @@
           return;
         }
         var staffId = rosterHit.staffId;
+        if (typeof window.portalCanonicalStaffRosterKey === "function") {
+          staffId = window.portalCanonicalStaffRosterKey(staffId) || staffId;
+        }
         var boot = rosterHit.boot;
 
         __spreadsheetBoot = boot;
