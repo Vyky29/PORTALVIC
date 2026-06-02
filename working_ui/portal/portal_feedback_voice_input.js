@@ -400,9 +400,15 @@
       return;
     }
 
+    var live = liveSourceText(s);
+    if (live) {
+      setLiveTextarea(s, live);
+    }
     var interim = String(s.interimText || "").trim();
     if (interim && s.statusEl) {
-      s.statusEl.textContent = 'Listening… heard: "' + interim + '"';
+      s.statusEl.textContent = 'Listening… heard: "' + interim + '" (translating to English…)';
+    } else if (s.statusEl && !s.stopRequested) {
+      s.statusEl.textContent = "Listening… translating to English…";
     }
 
     if (finalSourceText(s)) scheduleLiveTranslate(s);
@@ -559,8 +565,24 @@
     if (session) requestStop(session, "manual");
   }
 
-  function shouldUseWhisper() {
-    return !!whisperAvailable;
+  /** Live Web Speech when the browser supports it; Whisper only as fallback (no live preview). */
+  function preferWebSpeechCapture() {
+    return !!getSpeechRecognition();
+  }
+
+  function startCapture(textarea, btn, statusEl) {
+    if (preferWebSpeechCapture()) {
+      startWebSpeechCapture(textarea, btn, statusEl);
+      return;
+    }
+    if (whisperAvailable) {
+      startWhisperCapture(textarea, btn, statusEl);
+      return;
+    }
+    if (statusEl) {
+      statusEl.textContent =
+        "Voice not supported in this browser — try Chrome on Android or desktop.";
+    }
   }
 
   function startWhisperCapture(textarea, btn, statusEl) {
@@ -720,6 +742,14 @@
 
     rec.onend = function () {
       if (session !== s) return;
+      if (!s.stopRequested) {
+        try {
+          rec.start();
+        } catch (_) {
+          finishWebSpeechSession(s);
+        }
+        return;
+      }
       finishWebSpeechSession(s);
     };
 
@@ -732,14 +762,6 @@
     } catch (_) {
       if (statusEl) statusEl.textContent = "Could not start microphone.";
       finishWebSpeechSession(s);
-    }
-  }
-
-  function startCapture(textarea, btn, statusEl) {
-    if (shouldUseWhisper()) {
-      startWhisperCapture(textarea, btn, statusEl);
-    } else {
-      startWebSpeechCapture(textarea, btn, statusEl);
     }
   }
 

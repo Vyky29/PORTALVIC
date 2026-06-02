@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Arquitectura Admin — ClubSENsational</title>
+  <title>Admin architecture — ClubSENsational</title>
   <style>
     :root {
       --bg: #f4f6fa;
@@ -243,89 +243,90 @@
   </style>
 </head>
 <body>
-  <a class="skip" href="#contenido">Ir al contenido</a>
+  <a class="skip" href="#content">Skip to content</a>
   <header class="topbar">
-    <h1>Portal Admin — arquitectura y raíz</h1>
+    <h1>Portal Admin — architecture &amp; foundations</h1>
     <div class="actions">
-      <span class="muted" style="color:var(--muted);font-size:0.85rem;">Lectura</span>
-      <button type="button" id="btnFontSm" title="Texto más pequeño">A−</button>
-      <button type="button" id="btnFontMd" title="Tamaño normal">A</button>
-      <button type="button" id="btnFontLg" title="Texto más grande">A+</button>
-      <button type="button" id="btnExpand" class="primary">Abrir todo</button>
-      <button type="button" id="btnCollapse">Cerrar todo</button>
-      <button type="button" id="btnTheme" aria-pressed="false">Modo oscuro</button>
+      <span class="muted" style="color:var(--muted);font-size:0.85rem;">Reading</span>
+      <button type="button" id="btnFontSm" title="Smaller text">A−</button>
+      <button type="button" id="btnFontMd" title="Normal size">A</button>
+      <button type="button" id="btnFontLg" title="Larger text">A+</button>
+      <button type="button" id="btnExpand" class="primary">Expand all</button>
+      <button type="button" id="btnCollapse">Collapse all</button>
+      <button type="button" id="btnTheme" aria-pressed="false">Dark mode</button>
     </div>
   </header>
 
   <div class="layout">
-    <nav class="toc-wrap" aria-label="Índice">
-      <h2>Índice</h2>
+    <nav class="toc-wrap" aria-label="Contents">
+      <h2>Contents</h2>
       <ul class="toc" id="toc">
-        <li><a href="#s0">0. Alcance y reglas</a></li>
-        <li><a href="#s1">1. Cuatro pilares + sistema</a></li>
-        <li><a href="#s2">2. Mapa de navegación sugerido</a></li>
-        <li><a href="#s3">3. Inventario de vistas</a></li>
-        <li><a href="#s4">4. Flujos de datos</a></li>
-        <li><a href="#s5">5. Fases de evolución</a></li>
-        <li><a href="#s6">6. Referencias externas</a></li>
-        <li><a href="#s7">7. Preguntas cerradas</a></li>
+        <li><a href="#s0">0. Scope &amp; rules</a></li>
+        <li><a href="#s1">1. Four pillars + system</a></li>
+        <li><a href="#s2">2. Suggested navigation map</a></li>
+        <li><a href="#s3">3. View inventory</a></li>
+        <li><a href="#s4">4. Data flows</a></li>
+        <li><a href="#s5">5. Evolution phases</a></li>
+        <li><a href="#s6">6. External references</a></li>
+        <li><a href="#s7">7. Closed questions</a></li>
         <li><a href="#s8">8. HR Excel vs portal</a></li>
-        <li><a href="#s9">9. Archivos relacionados</a></li>
+        <li><a href="#s9">9. Related files</a></li>
+        <li><a href="#s10">10. Recent portal features</a></li>
       </ul>
     </nav>
 
-    <main id="contenido">
+    <main id="content">
       <p class="intro">
-        Documento interactivo (HTML): usa el índice para saltar, las flechas en cada bloque para
-        plegar o desplegar, y los botones de arriba para tamaño de texto, tema y abrir/cerrar todo.
-        También existe la versión plana en <span class="kbd">docs/ADMIN_ARQUITECTURA_Y_RAIZ.txt</span>.
+        Interactive HTML guide: use the contents list to jump, the arrows on each block to
+        expand or collapse, and the buttons above for text size, theme, and expand/collapse all.
+        A plain-text version also exists at <span class="kbd">docs/ADMIN_ARQUITECTURA_Y_RAIZ.txt</span>.
       </p>
 
       <details class="section" id="s0" open>
-        <summary>0. Alcance y reglas que fijasteis</summary>
+        <summary>0. Scope and agreed rules</summary>
         <div class="section-body">
-          <p>Este documento describe solo el <strong>admin</strong> (<code>working_ui/admin_dashboard.html</code> y lo que conecta: roster, Supabase overrides, localStorage de bookings, etc.).</p>
-          <p><strong>No</strong> se modifica <code>staff_dashboard.html</code> ni <code>lead_dashboard.html</code> salvo petición explícita futura: esos dashboards se consideran cerrados y correctos.</p>
-          <p>Los padres <strong>no</strong> interactúan con el portal interno: comunicación vía WhatsApp, email, HTML públicos puntuales y ClassForKids donde aplique.</p>
+          <p>This document covers the <strong>admin</strong> only (<code>working_ui/admin_dashboard.html</code> and what it connects to: roster, Supabase overrides, booking localStorage, etc.).</p>
+          <p><strong>Do not</strong> change <code>staff_dashboard.html</code> or <code>lead_dashboard.html</code> unless explicitly requested later — those dashboards are considered stable and correct.</p>
+          <p>Parents <strong>do not</strong> use the internal portal: communication is via WhatsApp, email, occasional public HTML, and ClassForKids where applicable.</p>
         </div>
       </details>
 
       <details class="section" id="s1" open>
-        <summary>1. Cuatro pilares (modelo mental) + quinto “Sistema”</summary>
+        <summary>1. Four pillars (mental model) + fifth “System”</summary>
         <div class="section-body">
-          <p><strong>1.1 Pilar A — Clientes</strong> <span class="pill">participante + contrato + cobro</span></p>
+          <p><strong>1.1 Pillar A — Clients</strong> <span class="pill">participant + contract + billing</span></p>
           <ul>
-            <li><strong>Cubre:</strong> participante, contexto LA/privado, intake, lifecycle; pagos (due, parciales, saldo, vencimientos); avisos al padre sobre cobros; ausencias/compensación cuando esté enlazado a política.</li>
-            <li><strong>No cubre:</strong> compliance empleados (DBS, etc.) → Pilar B; catálogo maestro de producto → Pilar C (enlace).</li>
+            <li><strong>Covers:</strong> participant, LA/private context, intake, lifecycle; payments (due, partial, balance, due dates); parent notices about charges; absences/compensation when linked to policy.</li>
+            <li><strong>Does not cover:</strong> staff compliance (DBS, etc.) → Pillar B; master product catalogue → Pillar C (link only).</li>
           </ul>
-          <p><strong>1.2 Pilar B — Instructores</strong> <span class="pill">people ops</span></p>
+          <p><strong>1.2 Pillar B — Instructors</strong> <span class="pill">people ops</span></p>
           <ul>
-            <li><strong>Cubre:</strong> ficha staff, disponibilidad declarada, onboarding, entrevistas, políticas; matriz tipo Staff Matrix (Excel hoy).</li>
-            <li><strong>No cubre:</strong> “quién está en el pool a las 16:30 hoy” → roster + overrides (Pilar D).</li>
+            <li><strong>Covers:</strong> staff record, declared availability, onboarding, interviews, policies; Staff Matrix-style grid (Excel today).</li>
+            <li><strong>Does not cover:</strong> “who is in the pool at 4:30 pm today” → roster + overrides (Pillar D).</li>
           </ul>
-          <p><strong>1.3 Pilar C — Servicios / oferta</strong></p>
+          <p><strong>1.3 Pillar C — Services / offer</strong></p>
           <ul>
-            <li><strong>Cubre:</strong> programmes, sede, precio por sesión, sesiones por term; reglas del re-enrol (formulario público como referencia de negocio).</li>
-            <li><strong>No cubre:</strong> huecos asignados del día → D; ledger → A.</li>
+            <li><strong>Covers:</strong> programmes, venue, price per session, sessions per term; re-enrol rules (public form as business reference).</li>
+            <li><strong>Does not cover:</strong> assigned day slots → D; ledger → A.</li>
           </ul>
-          <p><strong>1.4 Pilar D — Cruce operativo</strong></p>
+          <p><strong>1.4 Pillar D — Operational cross-cut</strong></p>
           <ul>
-            <li><strong>Cubre:</strong> día/semana desde roster; overrides Supabase; capacidad agregada; mensajes a padre por cambio de instructor (borrador).</li>
-            <li><strong>No cubre:</strong> contrato financiero completo del term → mentalmente Pilar A.</li>
+            <li><strong>Covers:</strong> day/week from roster; Supabase overrides; aggregated capacity; parent messages for instructor changes (draft).</li>
+            <li><strong>Does not cover:</strong> full term financial contract → mentally Pillar A.</li>
           </ul>
-          <p><strong>1.5 Sistema:</strong> integraciones, exportaciones globales, ajustes, logout, placeholders.</p>
+          <p><strong>1.5 System:</strong> integrations, global exports, settings, logout, placeholders.</p>
         </div>
       </details>
 
       <details class="section" id="s2">
-        <summary>2. Mapa de navegación sugerido (documental)</summary>
+        <summary>2. Suggested navigation map (documentation)</summary>
         <div class="section-body">
-          <p>Agrupar el menú lateral en bloques alineados con los pilares evita mezclar responsabilidades.</p>
+          <p>Grouping the sidebar into pillar-aligned blocks avoids mixing responsibilities.</p>
           <ul>
-            <li><strong>Overview:</strong> Dashboard; Operator (atajos demo).</li>
-            <li><strong>Clients &amp; revenue (A):</strong> Bookings; Invoices; (futuro) ficha única participante.</li>
-            <li><strong>Services &amp; catalogue (C):</strong> (futuro) módulo dedicado; hoy catálogo en web/Excel.</li>
-            <li><strong>Schedule &amp; delivery (D):</strong> Scheduling &amp; Covers; (opcional) Operations live board (demo hoy).</li>
+            <li><strong>Overview:</strong> Dashboard; Operator (demo shortcuts).</li>
+            <li><strong>Clients &amp; revenue (A):</strong> Bookings; Invoices; (future) single participant record.</li>
+            <li><strong>Services &amp; catalogue (C):</strong> (future) dedicated module; catalogue in web/Excel today.</li>
+            <li><strong>Schedule &amp; delivery (D):</strong> Scheduling &amp; Covers; (optional) Operations live board (demo today).</li>
             <li><strong>People — staff (B):</strong> Staff &amp; HR; Onboarding; Policy sign-offs.</li>
             <li><strong>Comms &amp; quality:</strong> Communications; Reports &amp; incidents.</li>
             <li><strong>System:</strong> Settings.</li>
@@ -334,102 +335,121 @@
       </details>
 
       <details class="section" id="s3">
-        <summary>3. Inventario actual de vistas (<code>admin_dashboard.html</code>)</summary>
+        <summary>3. Current view inventory (<code>admin_dashboard.html</code>)</summary>
         <div class="section-body">
-          <p><em>Real</em> = roster, Supabase, localStorage. <em>Demo</em> = mock en sesión.</p>
+          <p><em>Real</em> = roster, Supabase, localStorage. <em>Demo</em> = session mock data.</p>
           <ul>
-            <li><strong>Dashboard</strong> — KPIs demo + snapshot meta bookings + acciones + log.</li>
-            <li><strong>Operator</strong> — sugerencias demo + enlaces.</li>
-            <li><strong>Operations</strong> — demo: cancelaciones, sesiones, asignaciones (no agenda real).</li>
-            <li><strong>Bookings</strong> — <strong>real:</strong> roster, overrides, meta/finance LS, capacidad semanal, intake, billing, notify parent, export; Manage abre drawer scheduling.</li>
+            <li><strong>Dashboard</strong> — demo KPIs + booking meta snapshot + actions + log.</li>
+            <li><strong>Operator</strong> — demo suggestions + links.</li>
+            <li><strong>Operations</strong> — demo: cancellations, sessions, assignments (not live schedule).</li>
+            <li><strong>Bookings</strong> — <strong>real:</strong> roster, overrides, meta/finance LS, weekly capacity, intake, billing, notify parent, export; Manage opens scheduling drawer.</li>
             <li><strong>Invoices</strong> — builder + preview + CSV.</li>
-            <li><strong>Scheduling &amp; Covers</strong> — <strong>real:</strong> roster, overrides, log Supabase, mensajes padre en drawer.</li>
-            <li><strong>Communications, Reports, Participant activity, Staff &amp; HR, Onboarding, Policy sign-offs</strong> — demo / maquetas.</li>
-            <li><strong>Settings</strong> — placeholders + snapshot demo + logout.</li>
+            <li><strong>Scheduling &amp; Covers</strong> — <strong>real:</strong> roster, overrides, Supabase log, parent messages in drawer.</li>
+            <li><strong>Communications, Reports, Participant activity, Staff &amp; HR, Onboarding, Policy sign-offs</strong> — demo / wireframes.</li>
+            <li><strong>Settings</strong> — placeholders + demo snapshot + logout.</li>
           </ul>
         </div>
       </details>
 
       <details class="section" id="s4">
-        <summary>4. Flujos de datos (quién alimenta a quién)</summary>
+        <summary>4. Data flows (who feeds whom)</summary>
         <div class="section-body">
           <pre class="flow">[Spreadsheet / STAFF_DASHBOARD_SOURCE + Adapter]
-  → sesiones por weekday + slots por fecha (Pilar D)
-  → misma base para Bookings y Scheduling
+  → sessions by weekday + slots by date (Pillar D)
+  → same base for Bookings and Scheduling
 
 [Supabase schedule_overrides]
-  → cambios del día sobre anclas (staff, cliente, hora, venue, fecha)
-  → participante “efectivo” en UI → coherente con Bookings
+  → day changes on anchors (staff, client, time, venue, date)
+  → “effective” participant in UI → consistent with Bookings
 
 [localStorage portal_booking_meta_v1_* / portal_booking_finance_v1_*]
-  → intake, funding, contacto padre, planes de pago, transacciones (Pilar A)
-  → evolución: migrar a Supabase
+  → intake, funding, parent contact, payment plans, transactions (Pillar A)
+  → evolution: migrate to Supabase
 
-[Excel comercial / formulario re-enrol web]
-  → hoy: verdad operativa + ClassForKids
-  → futuro: contrato term + catálogo (C → A)
+[Commercial Excel / re-enrol web form]
+  → today: operational truth + ClassForKids
+  → future: term contract + catalogue (C → A)
 
 [Excel Staff Matrix / Job applications]
-  → especificación Pilar B; no alimenta Staff/Lead por decisión</pre>
+  → Pillar B specification; does not feed Staff/Lead by design</pre>
         </div>
       </details>
 
       <details class="section" id="s5">
-        <summary>5. Fases de evolución (sin tocar Staff/Lead)</summary>
+        <summary>5. Evolution phases (without touching Staff/Lead)</summary>
         <div class="section-body">
           <ul>
-            <li><strong>Fase 1 (ahora):</strong> D + A sobre roster + LS + overrides + avisos padre.</li>
-            <li><strong>Fase 2:</strong> persistir A (y C) en BD; ficha cliente / matriz cobros.</li>
-            <li><strong>Fase 3:</strong> módulo HR en admin (import Staff Matrix).</li>
-            <li><strong>Fase 4:</strong> catálogo servicios que alimente precios / re-enrol interno.</li>
+            <li><strong>Phase 1 (now):</strong> D + A on roster + LS + overrides + parent notices.</li>
+            <li><strong>Phase 2:</strong> persist A (and C) in DB; client record / billing matrix.</li>
+            <li><strong>Phase 3:</strong> HR module in admin (import Staff Matrix).</li>
+            <li><strong>Phase 4:</strong> services catalogue feeding prices / internal re-enrol.</li>
           </ul>
         </div>
       </details>
 
       <details class="section" id="s6">
-        <summary>6. Referencias externas (modelo de negocio)</summary>
+        <summary>6. External references (business model)</summary>
         <div class="section-body">
           <ul>
-            <li><strong>Re-enrol público (padres):</strong> <a href="https://www.clubsensational.org/RE-ENROLMENTS/" target="_blank" rel="noopener noreferrer">clubsensational.org/RE-ENROLMENTS/</a> — servicios por día, precio por sesión, nº sesiones del term, funding, método de pago, total. No eligen hora: mantienen slots del term anterior; el coste varía con más/menos sesiones.</li>
-            <li><strong>ClassForKids:</strong> vitrina para familias; operación fuerte en hojas + admin portal.</li>
+            <li><strong>Public re-enrol (parents):</strong> <a href="https://www.clubsensational.org/RE-ENROLMENTS/" target="_blank" rel="noopener noreferrer">clubsensational.org/RE-ENROLMENTS/</a> — services by day, price per session, number of term sessions, funding, payment method, total. Parents do not pick times: they keep slots from the previous term; cost varies with more/fewer sessions.</li>
+            <li><strong>ClassForKids:</strong> family-facing shop window; heavy operations in spreadsheets + admin portal.</li>
           </ul>
         </div>
       </details>
 
       <details class="section" id="s7">
-        <summary>7. Preguntas que quedaron abiertas — respuestas inferidas</summary>
+        <summary>7. Open questions — inferred answers</summary>
         <div class="section-body">
           <ol>
-            <li>URL re-enrol: facilitada; activa (p. ej. Summer 2026) en la web.</li>
-            <li>Primera hoja Excel grande: libro operativo del term; varias filas por cliente/meses/bloques.</li>
-            <li>Segunda hoja: vista paralela orientada a cobros/LA/invoices.</li>
-            <li>Dos pestañas Bookings vs ficha única: hoy dos pestañas; ficha única sería mejora UX.</li>
-            <li>“Updated” CFK: razonable por línea o bloque; opcional sync por term.</li>
-            <li>Matriz mensual vs lista: hábito Excel = matriz; implementación rápida = lista + CSV.</li>
-            <li>Assign participant desde Manage/drawer: correcto hoy; modal solo Bookings = pendiente si lo pedís.</li>
-            <li>Tras capacidad semanal, lista “schedule del día”: siguiente bloque lógico en Bookings u Operations.</li>
+            <li>Re-enrol URL: provided; active (e.g. Summer 2026) on the website.</li>
+            <li>First large Excel sheet: term operational workbook; several rows per client/months/blocks.</li>
+            <li>Second sheet: parallel view oriented to billing/LA/invoices.</li>
+            <li>Two Bookings tabs vs single record: two tabs today; single record would be a UX improvement.</li>
+            <li>CFK “Updated”: reasonable per line or block; optional sync per term.</li>
+            <li>Monthly matrix vs list: Excel habit = matrix; fast implementation = list + CSV.</li>
+            <li>Assign participant from Manage/drawer: correct today; modal only in Bookings = pending if requested.</li>
+            <li>After weekly capacity, “schedule of the day” list: next logical block in Bookings or Operations.</li>
           </ol>
         </div>
       </details>
 
       <details class="section" id="s8">
-        <summary>8. Resumen HR (Excel) vs portal — sin duplicar Staff/Lead</summary>
+        <summary>8. HR summary (Excel) vs portal — without duplicating Staff/Lead</summary>
         <div class="section-body">
-          <p><strong>Job Application Form (Responses):</strong> pipeline completo de candidatura (RTW, educación, empleo, DBS declaración, referencias…). No hay equivalente persistido en Staff/Lead; encaja en Admin Pilar B (reclutamiento).</p>
-          <p><strong>Staff Matrix:</strong> Employees info, Employee Docs (DBS, first aid, STA…), Induction &amp; Safeguarding, Shadowings, Observations, Interviews, Paid courses, Job application (datos bancarios — muy sensible), Health questionnaire.</p>
-          <p>Staff/Lead hoy: formación externa e identidad de sesión; <strong>no</strong> guardan vencimientos ni matriz HR. Eso es Pilar B futuro en Admin (o HR externo con API).</p>
+          <p><strong>Job Application Form (Responses):</strong> full application pipeline (RTW, education, employment, DBS declaration, references…). No persisted equivalent in Staff/Lead; fits Admin Pillar B (recruitment).</p>
+          <p><strong>Staff Matrix:</strong> Employees info, Employee Docs (DBS, first aid, STA…), Induction &amp; Safeguarding, Shadowings, Observations, Interviews, Paid courses, Job application (bank details — highly sensitive), Health questionnaire.</p>
+          <p>Staff/Lead today: external training and session identity; <strong>do not</strong> store HR expiry dates or matrix. That is future Pillar B in Admin (or external HR with API).</p>
         </div>
       </details>
 
       <details class="section" id="s9">
-        <summary>9. Archivos relacionados</summary>
+        <summary>9. Related files</summary>
         <div class="section-body">
           <ul>
-            <li>Versión texto plano: <code>docs/ADMIN_ARQUITECTURA_Y_RAIZ.txt</code></li>
-            <li>Esta guía interactiva: <code>working_ui/admin_architecture_guide.html</code> — abrid el archivo en el navegador (doble clic o “Abrir con”).</li>
-            <li>Admin en producción de iteración: <code>working_ui/admin_dashboard.html</code></li>
-            <li>Mocks SaaS v1: <a href="admin_dashboard_saas_concept.html">Admin</a> · <a href="ceo_dashboard_saas_concept.html">CEO</a> — <strong>v2 (ES):</strong> <a href="admin_dashboard_saas_concept_v2.html">Admin</a> · <a href="ceo_dashboard_saas_concept_v2.html">CEO</a> — <strong>v2 (EN, administradora):</strong> <a href="admin_dashboard_saas_concept_v2_en.html">Admin</a> · <a href="ceo_dashboard_saas_concept_v2_en.html">CEO</a></li>
-            <li><a href="admin_opinion_centralizacion.html">Opinión centralización</a> · <a href="admin_backlog_priorizado.html">Backlog priorizado</a></li>
+            <li>Plain-text version: <code>docs/ADMIN_ARQUITECTURA_Y_RAIZ.txt</code></li>
+            <li>This interactive guide: <code>working_ui/OTROS/admin_architecture_guide.html</code></li>
+            <li>Iteration admin (production): <code>working_ui/admin_dashboard.html</code></li>
+            <li>SaaS mocks v1: <a href="admin_dashboard_saas_concept.html">Admin</a> · <a href="ceo_dashboard_saas_concept.html">CEO</a> — <strong>v2 (ES):</strong> <a href="admin_dashboard_saas_concept_v2.html">Admin</a> · <a href="ceo_dashboard_saas_concept_v2.html">CEO</a> — <strong>v2 (EN):</strong> <a href="admin_dashboard_saas_concept_v2_en.html">Admin</a> · <a href="ceo_dashboard_saas_concept_v2_en.html">CEO</a></li>
+            <li><a href="admin_opinion_centralizacion.html">Centralisation opinion</a> · <a href="admin_backlog_priorizado.html">Prioritised backlog</a></li>
+          </ul>
+        </div>
+      </details>
+
+      <details class="section" id="s10" open>
+        <summary>10. Recent portal features (production, Jun 2026)</summary>
+        <div class="section-body">
+          <p>Summary of what shipped on the <strong>Portal</strong> static app and Supabase backend — for admin operators and support.</p>
+          <ul>
+            <li><strong>Admin topbar — live presence:</strong> one row of first names only (no Admin / Staff / Onboarding columns). Link <strong>Guide</strong> opens this page in English.</li>
+            <li><strong>Admin hub — Operator:</strong> category colour is pink (sidebar + dashboard tiles).</li>
+            <li><strong>Admin hub — Documents:</strong> eight compact icon tiles in one row (Payslips, Timesheets, Expenses, PINs, Certificates, Passports, Checklists, First aid).</li>
+            <li><strong>Payslips:</strong> admin uploads monthly PDFs per worker (<code>portal_payslips</code>); workers see them under <strong>My Documents → Payslips</strong>. Migration: <code>20260610140000_portal_payslips_documents.sql</code>.</li>
+            <li><strong>Participant achievements:</strong> staff/lead take in-app photos per participant (not saved to phone gallery). Up to 10 drafts per participant per day; attach up to 3 when submitting session feedback. Admin views under <strong>Participant achievements</strong>.</li>
+            <li><strong>Session feedback — voice:</strong> mic on Positive feedback and Relevant information. Browser <strong>Web Speech</strong> when available (live text); Spanish and Italian auto-detected from staff name → live speech with translation to English for the record. Whisper edge function is fallback only when Web Speech is unavailable.</li>
+            <li><strong>Session feedback — photos:</strong> optional checkboxes for achievement drafts; finalize runs via RPC <code>portal_finalize_achievement_photos</code> (requires Supabase auth — PIN-only submit saves feedback but may skip attach if not signed in).</li>
+            <li><strong>Day Centre — lead feedback window:</strong> 30 minutes before session end (was 15).</li>
+            <li><strong>Announcements:</strong> production cleanup migration keeps one portal-ready announcement; acks table <code>portal_staff_announcement_acks</code>. Migrations: <code>20260610120000</code>, <code>20260610150000</code>.</li>
+            <li><strong>Mobile screenshot guard:</strong> pauses black overlay during camera/mic capture so feedback and achievements do not freeze on a black screen.</li>
           </ul>
         </div>
       </details>
@@ -457,11 +477,11 @@
       function setTheme(dark) {
         if (dark) {
           root.setAttribute("data-theme", "dark");
-          document.getElementById("btnTheme").textContent = "Modo claro";
+          document.getElementById("btnTheme").textContent = "Light mode";
           document.getElementById("btnTheme").setAttribute("aria-pressed", "true");
         } else {
           root.removeAttribute("data-theme");
-          document.getElementById("btnTheme").textContent = "Modo oscuro";
+          document.getElementById("btnTheme").textContent = "Dark mode";
           document.getElementById("btnTheme").setAttribute("aria-pressed", "false");
         }
         try { localStorage.setItem("adminArchGuideTheme", dark ? "dark" : "light"); } catch (e) {}

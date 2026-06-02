@@ -101,8 +101,7 @@
   function isAchievementGalleryViewerOpen() {
     var viewer = document.getElementById("portalAchievementsGalleryViewer");
     if (viewer && !viewer.hidden) return true;
-    var fb = document.getElementById("portalFeedbackAchievementsPanel");
-    if (fb && !fb.hidden && fb.querySelector("img")) return true;
+    /* Feedback attach picker uses small thumbs — do not enable strict guard (blocks the form). */
     var gal = document.getElementById("portalAchievementsGallery");
     if (gal && gal.querySelector(".portal-achievements-gallery-grid img")) return true;
     return false;
@@ -136,6 +135,63 @@
 
   function getCameraFullscreenEl() {
     return document.getElementById("portalAchievementsCameraFullscreen");
+  }
+
+  function pushCameraMediaBypass() {
+    var g = global.PortalScreenshotGuard;
+    if (g && typeof g.pushMediaCaptureBypass === "function") {
+      g.pushMediaCaptureBypass("participant-achievements-camera");
+    }
+    try {
+      document.documentElement.classList.remove("portal-screenshot-sensitive-hidden");
+    } catch (_e) {}
+  }
+
+  function cameraErrorMessage(err) {
+    var name = String((err && err.name) || "").trim();
+    if (name === "NotAllowedError" || name === "PermissionDeniedError") {
+      return "Could not open camera. Allow camera access in your browser settings.";
+    }
+    if (name === "NotFoundError" || name === "DevicesNotFoundError") {
+      return "No camera found on this device.";
+    }
+    if (name === "NotReadableError" || name === "TrackStartError") {
+      return "Camera is busy (another app may be using it). Close it and try again.";
+    }
+    if (name === "OverconstrainedError" || name === "ConstraintNotSatisfiedError") {
+      return "Could not open camera with these settings. Try again or pick from Gallery.";
+    }
+    if (name === "SecurityError") {
+      return "Camera blocked on this page. Open the portal via HTTPS.";
+    }
+    var msg = String((err && err.message) || "").trim();
+    if (/overconstrained|constraint/i.test(msg)) {
+      return "Could not open camera with these settings. Try again or pick from Gallery.";
+    }
+    return "Could not open camera. Check browser permissions.";
+  }
+
+  async function acquireCameraStream(facingMode) {
+    var fm = facingMode || state.facingMode || "environment";
+    var videoAttempts = [
+      { facingMode: { ideal: fm }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+      { facingMode: { ideal: fm }, width: { ideal: 1280 }, height: { ideal: 720 } },
+      { facingMode: { ideal: fm } },
+      { facingMode: fm },
+      true,
+    ];
+    var lastErr = null;
+    for (var i = 0; i < videoAttempts.length; i++) {
+      try {
+        var v = videoAttempts[i];
+        var constraints =
+          v === true ? { audio: false, video: true } : { audio: false, video: v };
+        return await navigator.mediaDevices.getUserMedia(constraints);
+      } catch (err) {
+        lastErr = err;
+      }
+    }
+    throw lastErr || new Error("camera_unavailable");
   }
 
   function applyVideoZoom() {
@@ -206,22 +262,16 @@
     state.facingMode = state.facingMode === "user" ? "environment" : "user";
     var video = document.getElementById("portalAchievementsCameraVideo");
     if (!video) return;
+    pushCameraMediaBypass();
     stopCameraTracksOnly();
     try {
-      state.stream = await navigator.mediaDevices.getUserMedia({
-        audio: false,
-        video: {
-          facingMode: { ideal: state.facingMode },
-          width: { ideal: 3840 },
-          height: { ideal: 2160 },
-        },
-      });
+      state.stream = await acquireCameraStream(state.facingMode);
       video.srcObject = state.stream;
       video.hidden = false;
       applyVideoZoom();
     } catch (err) {
       console.error(err);
-      setStatus("Could not switch camera.", true);
+      setStatus(cameraErrorMessage(err), true);
     }
   }
 
@@ -326,16 +376,10 @@
       setStatus("");
       state.cameraMode = "photo";
       setCameraFooterMode();
+      pushCameraMediaBypass();
       openCameraFullscreen();
       showCameraLiveUi();
-      state.stream = await navigator.mediaDevices.getUserMedia({
-        audio: false,
-        video: {
-          facingMode: { ideal: state.facingMode },
-          width: { ideal: 3840 },
-          height: { ideal: 2160 },
-        },
-      });
+      state.stream = await acquireCameraStream(state.facingMode);
       video.srcObject = state.stream;
       video.hidden = false;
       applyVideoZoom();
@@ -344,7 +388,7 @@
       console.error(err);
       closeCameraFullscreen();
       setCaptureMode("hub");
-      setStatus("Could not open camera. Check browser permissions.", true);
+      setStatus(cameraErrorMessage(err), true);
     }
   }
 
@@ -949,7 +993,7 @@
       ICON_NEXT +
       "</button></div></div>" +
       '<div id="portalAchievementsCameraFullscreen" class="portal-achievements-camera-fs" hidden aria-hidden="true">' +
-      '<div class="portal-achievements-camera-fs__viewport portal-screenshot-protected portal-achievement-protected">' +
+      '<div class="portal-achievements-camera-fs__viewport portal-achievement-protected">' +
       '<video id="portalAchievementsCameraVideo" playsinline autoplay muted class="portal-achievements-camera-fs__video"></video>' +
       "</div>" +
       '<div class="portal-achievements-camera-fs__chrome">' +
@@ -1083,16 +1127,37 @@
   async function finalizeOnFeedbackSubmit(opts) {
     var client = cfg.getClient();
     if (!client) return;
+    try {
+      var sess = await client.auth.getSession();
+      if (!sess || !sess.data || !sess.data.session || !sess.data.session.user) {
+        console.warn("[achievements] finalize skipped — sign in required to attach photos");
+        return;
+      }
+    } catch (_auth) {
+      return;
+    }
     var ids = (opts && opts.attachedIds) || [];
+    if (!ids.length) return;
     var payload = {
       p_attached_ids: ids,
       p_client_id: opts.clientId || null,
       p_session_date: opts.sessionDate || null,
     };
     if (opts.feedbackId) payload.p_feedback_id = opts.feedbackId;
-    var res = await client.rpc("portal_finalize_achievement_photos", payload);
-    if (res.error) {
-      console.warn("[achievements] finalize", res.error);
+    try {
+      var res = await Promise.race([
+        client.rpc("portal_finalize_achievement_photos", payload),
+        new Promise(function (_resolve, reject) {
+          setTimeout(function () {
+            reject(new Error("finalize_timeout"));
+          }, 12000);
+        }),
+      ]);
+      if (res.error) {
+        console.warn("[achievements] finalize", res.error);
+      }
+    } catch (e) {
+      console.warn("[achievements] finalize", e);
     }
   }
 
