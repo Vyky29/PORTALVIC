@@ -20,6 +20,8 @@
     { "source": "/guide", "destination": "/portal_guide.html" },
     { "source": "/timesheet", "destination": "/timesheet.html" },
     { "source": "/induction", "destination": "/general-induction/index.html" },
-    { "source": "/general-induction", "destination": "/general-induction/index.html" }
+    { "source": "/general-induction", "destination": "/general-induction/index.html" },
+    { "source": "/sw-term-review", "destination": "/swtermreview.html" },
+    { "source": "/sw-term-review/", "destination": "/swtermreview.html" }
   ]
 }

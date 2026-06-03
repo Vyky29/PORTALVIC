@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en-GB">
 <head>
+  <script src="/portal-static-bootstrap.js?v=20260605-form-redirect"></script>
   <script>
     (function () {
       try { document.documentElement.classList.add("portal-app-shell"); } catch (e) {}
@@ -12,7 +13,7 @@
     html.portal-app-shell .site-content,html.portal-app-shell #content,html.portal-app-shell .site-main,html.portal-app-shell #primary{margin-top:0!important;padding-top:0!important}
     html.portal-app-shell #page,html.portal-app-shell .site{margin-top:0!important;padding-top:0!important}
   </style>
-  <!-- Rutas relativas fallan en Elementor (404). Misma carpeta de uploads que el resto del portal. -->
+  <!-- portal_return_and_shell.js — same-origin portal/ on Vercel (working_ui/). -->
   <script>
     (function () {
       var v = "20260510-portal-admin";
@@ -1636,15 +1637,15 @@
     src="portal/clients_info_embed.js?v=20260510-portal-admin"
     onerror="this.onerror=null;this.src='portal/clients_info_embed.js?v=20260510-portal-admin'"
   ></script>
-  <!-- swtermreview_app.js: absoluto + fallbacks (Elementor no resuelve rutas relativas al HTML local). -->
+  <!-- swtermreview_app.js — portal/ then portal-shared-js/ on Vercel. -->
   <script>
     (function () {
       var v = "20260510-portal-admin";
       var file = "swtermreview_app.js";
       var bases = [];
       try {
-        if (typeof window !== "undefined" && window.PORTAL_WP_UPLOADS_BASE) {
-          bases.push(String(window.PORTAL_WP_UPLOADS_BASE).trim().replace(/\/$/, ""));
+        if (typeof window !== "undefined" && window.PORTAL_SHARED_JS_BASE) {
+          bases.push(String(window.PORTAL_SHARED_JS_BASE).trim().replace(/\/$/, ""));
         }
       } catch (e) {}
       try {
@@ -1665,7 +1666,7 @@
       s.onerror = function () {
         i += 1;
         if (i >= bases.length) {
-          console.error("[swtermreview] Could not load " + file + " from any base. Ensure it exists under portal/ on this origin, or set window.PORTAL_WP_UPLOADS_BASE.");
+          console.error("[swtermreview] Could not load " + file + " from portal-shared-js/ or portal/ on this origin.");
           return;
         }
         s.src = bases[i] + "/" + file + "?v=" + v;

@@ -764,8 +764,8 @@ const LEVEL_DATA = {
     function swtermPortalUploadBases(){
       const bases = [];
       try{
-        if(typeof window !== "undefined" && window.PORTAL_WP_UPLOADS_BASE){
-          bases.push(String(window.PORTAL_WP_UPLOADS_BASE).trim().replace(/\/$/, ""));
+        if(typeof window !== "undefined" && window.PORTAL_SHARED_JS_BASE){
+          bases.push(String(window.PORTAL_SHARED_JS_BASE).trim().replace(/\/$/, ""));
         }
       }catch(_){}
       try{
