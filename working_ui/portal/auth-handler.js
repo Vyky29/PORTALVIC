@@ -189,6 +189,16 @@ export function portalCanAccessAdminDashboard(profile, authEmail) {
   return false;
 }
 
+/** CEO dashboard shell — Victor, Javi, Raúl only (not ops admins such as Sevitha). */
+const PORTAL_CEO_DASHBOARD_DENIED_KEYS = new Set(["sevitha"]);
+
+export function portalCanAccessCeoDashboard(profile, authEmail) {
+  if (!profile) return false;
+  const staffKey = portalInferStaffKey(profile, authEmail);
+  if (PORTAL_CEO_DASHBOARD_DENIED_KEYS.has(staffKey)) return false;
+  return portalInferEffectiveRole(profile, authEmail) === "ceo";
+}
+
 /**
  * Schedule & Covers writes (schedule_overrides RLS): admin/ceo in staff_profiles,
  * or portal username overrides (Victor/Javi/Raúl → ceo, Sevitha → admin).
@@ -289,13 +299,13 @@ function inferDashboardRoute(profile, authEmail) {
     typeof window !== "undefined" &&
     window.location.pathname.toLowerCase().includes("/working_ui/");
   if (fromWorkingUi) {
-    if (effectiveRole === "ceo") return "ceo_dashboard.html";
+    if (portalCanAccessCeoDashboard(profile, authEmail)) return "ceo_dashboard.html";
     if (portalCanAccessAdminDashboard(profile, authEmail)) return "admin_dashboard.html";
     if (effectiveRole === "lead") return "lead_dashboard.html";
     return "staff_dashboard.html";
   }
   const ceoUrl = portalPublishedPageUrl("ceo_dashboard.html", "PORTAL_CEO_DASHBOARD_URL");
-  if (effectiveRole === "ceo") return ceoUrl;
+  if (portalCanAccessCeoDashboard(profile, authEmail)) return ceoUrl;
   if (portalCanAccessAdminDashboard(profile, authEmail)) return portalPublishedAdminUrl();
   if (effectiveRole === "lead") return portalPublishedLeadUrl();
   return portalPublishedStaffUrl();
@@ -685,7 +695,7 @@ export async function bootstrapDashboardSupabase(_opts) {
     }
 
     if (page === "ceo") {
-      if (portalInferEffectiveRole(profile, authEmailGate) !== "ceo") {
+      if (!portalCanAccessCeoDashboard(profile, authEmailGate)) {
         const dest = resolveDashboardRedirect(inferDashboardRoute(profile, authEmailGate));
         try {
           window.location.replace(dest);

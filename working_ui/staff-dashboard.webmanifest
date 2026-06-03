@@ -1,6 +1,6 @@
 {
-  "name": "clubSENsational Staff",
-  "short_name": "Staff",
+  "name": "CS Portal",
+  "short_name": "CS Portal",
   "id": "portalvic-staff-dashboard",
   "start_url": "./staff_dashboard.html",
   "scope": "./",

@@ -322,15 +322,23 @@ export function requestMicrophonePermission() {
 }
 
 export function portalMicrophoneReadyForSetup() {
-  return portalMicrophonePermissionGranted() || _micState === "unsupported";
+  return true;
+}
+
+export function portalLocationRequiredForSetup() {
+  try {
+    if (typeof window !== "undefined" && typeof window.portalLiveMapLocationRequiredForWorker === "function") {
+      const box = window.__PORTAL_SUPABASE__ || {};
+      return !!window.portalLiveMapLocationRequiredForWorker(box.staff_profile, box.session?.user);
+    }
+  } catch (_) {}
+  return false;
 }
 
 export function portalMandatoryAlertsSettingsComplete() {
-  return (
-    portalNotificationsGranted() &&
-    portalLocationPermissionGranted() &&
-    portalMicrophoneReadyForSetup()
-  );
+  const locRequired = portalLocationRequiredForSetup();
+  const locOk = !locRequired || portalLocationPermissionGranted();
+  return portalNotificationsGranted() && locOk;
 }
 
 export function portalSyncAlertsSettingsChrome() {
@@ -338,20 +346,23 @@ export function portalSyncAlertsSettingsChrome() {
   if (!btn) return;
   const sub = btn.querySelector(".menu-btn-sub");
   const notifyOk = portalNotificationsGranted();
-  const locOk = portalLocationPermissionGranted();
-  const micOk = portalMicrophoneReadyForSetup();
-  const incomplete = !notifyOk || !locOk || !micOk;
+  const locRequired = portalLocationRequiredForSetup();
+  const locOk = !locRequired || portalLocationPermissionGranted();
+  const incomplete = !notifyOk || !locOk;
   btn.classList.toggle("menu-btn--settings-alerts-incomplete", incomplete);
   if (!sub) return;
   if (incomplete) {
     const missing = [];
     if (!notifyOk) missing.push("notifications");
-    if (!locOk) missing.push("location");
-    if (!micOk) missing.push("microphone");
+    if (locRequired && !locOk) missing.push("location");
     sub.textContent = "Turn on " + missing.join(", ");
   } else {
-    sub.textContent = "Alerts, location and mic on";
+    sub.textContent = locRequired
+      ? "Notifications and location on"
+      : "Notifications on";
   }
+  const locBlock = document.getElementById("portalLocationBlock");
+  if (locBlock) locBlock.hidden = !locRequired;
 }
 
 export function portalRefreshMicrophoneUi() {
@@ -408,7 +419,7 @@ export function portalRefreshLocationUi() {
   } else if (st === "granted") {
     var upload = typeof window !== "undefined" ? window.__PORTAL_LOCATION_LAST_UPLOAD__ : null;
     if (upload && upload.ok) {
-      statusEl.textContent = "On — office can see you on the live map.";
+      statusEl.textContent = "On — office can see you on the live map during Bespoke / Day Centre sessions.";
     } else if (upload && upload.ok === false && upload.message) {
       statusEl.textContent = "On — could not send yet. Keep app open or tap Refresh.";
     } else {
@@ -425,7 +436,9 @@ export function portalRefreshLocationUi() {
       btn.disabled = false;
     }
   } else {
-    statusEl.textContent = "Off — tap below. Only while the app is open." + ctx;
+    statusEl.textContent = portalLocationRequiredForSetup()
+      ? "Off — required for Bespoke Programme and Day Centre during your session."
+      : "Not required for your rota today — only needed for Bespoke Programme and Day Centre staff during sessions.";
     if (btn) {
       btn.textContent = "Allow location";
       btn.disabled = false;

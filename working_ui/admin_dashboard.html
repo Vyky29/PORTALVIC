@@ -1563,12 +1563,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         });
       }
       if(portalAdminDmHasUnread()){
+        var hints = window.__PORTAL_ADMIN_DM_UNREAD_HINTS__ || [];
+        var names = hints.slice(0, 2).map(function(h){ return String(h.displayName || '').trim(); }).filter(Boolean);
         var chatParts = [];
         if(window.__PORTAL_ADMIN_DM_UNREAD) chatParts.push('staff & leads');
         if(window.__PORTAL_ADMIN_CEO_DM_UNREAD || window.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD) chatParts.push('CEO / admin');
+        var chatLabel = names.length
+          ? ('New chat from '+names.join(', '))
+          : ('New internal chat — '+chatParts.join(' · '));
         out.push({
           id:'os_chat',
-          label:'New internal chat — '+chatParts.join(' · '),
+          label: chatLabel,
           action:'chat_hub'
         });
       }
@@ -16564,6 +16569,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!n) return false;
       return n === 'victor' || n === 'raul' || n === 'javi';
     }
+    function portalAdminCanAccessCeoDashboard(){
+      if(typeof window.__portalCanAccessCeoDashboard === 'function'){
+        var box = window.__PORTAL_SUPABASE__ || {};
+        var email = '';
+        try{ email = String((box.session && box.session.user && box.session.user.email) || ''); }catch(_e){ email = ''; }
+        return !!window.__portalCanAccessCeoDashboard(box.staff_profile, email);
+      }
+      return portalAdminCanOpenAllCeoGroup();
+    }
     var DASH_HUB_NAV_GROUPS = ['g_operator','g_c4k','g_zoho','g_supabase','g_xero'];
     function dashHubItemDesc(item){
       var id = item && item.id;
@@ -16583,7 +16597,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portal_documents:'Timesheets, expense claims, onboarding uploads and files in Supabase storage.',
         portal_payslips:'Upload monthly payslip PDFs for each worker — visible in My Documents on the staff app.',
         portal_activity:'Staff portal visits — login, pages, and active-tab time (UK London).',
-        staff_live_map:'Live map during shift windows only: from 15 minutes before first session until 30 minutes after last session on days they are rostered.',
+        staff_live_map:'Live map during Bespoke Programme and Day Centre shift windows only: from 15 minutes before first qualifying session until 30 minutes after last.',
         policies:'Documents · sign-offs · compliance',
         invoices:'Build draft invoice lines here, then export a CSV ready to import into Xero.',
         c4k_payments:'Term fees and balances owed — programme finance grid with one row per family.',
@@ -17947,25 +17961,43 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return true;
     }
     function portalAdminDmChatBannerHtml(){
+      var hints = window.__PORTAL_ADMIN_DM_UNREAD_HINTS__ || [];
+      var senderBtns = '';
+      if(hints.length){
+        senderBtns = hints.slice(0, 4).map(function(h, idx){
+          var nm = esc(String(h.displayName || 'Someone'));
+          return '<button type="button" class="btn btn--link btn--sm" data-portal-admin-open-dm-hint="'+String(idx)+'" style="padding:0 4px;font-weight:700">'+nm+'</button>';
+        }).join(', ');
+      }
       var staff = !!window.__PORTAL_ADMIN_DM_UNREAD;
       var ceo = !!(window.__PORTAL_ADMIN_CEO_DM_UNREAD || window.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD);
       var who = [];
       if(staff) who.push('staff or a lead');
       if(ceo) who.push('CEO / admin chat');
       var whoTxt = who.length === 2 ? who.join(' and ') : (who[0] || 'someone');
+      var senderLine = senderBtns
+        ? '<span style="display:block;margin-top:6px;min-width:0;overflow-wrap:break-word">From: '+senderBtns+' — tap a name to open that chat.</span>'
+        : '';
       var btns =
         '<button type="button" class="btn btn--pri btn--sm" data-portal-admin-open-chat-hub style="margin-top:8px;margin-right:8px">Open chat</button>';
       if(staff) btns += '<button type="button" class="btn btn--sec btn--sm" data-portal-admin-open-staff-chat style="margin-top:8px;margin-right:8px">Staff &amp; leads</button>';
       if(ceo) btns += '<button type="button" class="btn btn--sec btn--sm" data-portal-admin-open-ceo-chat style="margin-top:8px">CEO chat</button>';
       return (
         '<div id="portalAdminChatBanner" class="card card-pad" style="margin-bottom:12px;border-color:rgba(220,38,38,.25);background:var(--dangerSoft)">' +
-        '<p style="margin:0;font-size:13px;overflow-wrap:break-word"><strong>New chat message</strong> — '+esc(whoTxt)+' sent a message while you were away. '+btns+'</p></div>'
+        '<p style="margin:0;font-size:13px;overflow-wrap:break-word"><strong>New chat message</strong> — '+esc(whoTxt)+' sent a message while you were away.'+senderLine+' '+btns+'</p></div>'
       );
     }
     function portalAdminDmBindChatBanner(root){
       if(!root || root._portalChatBannerBound) return;
       root._portalChatBannerBound = true;
       root.addEventListener('click', function(ev){
+        var hintBtn = ev.target.closest('[data-portal-admin-open-dm-hint]');
+        if(hintBtn){
+          ev.preventDefault();
+          var idx = hintBtn.getAttribute('data-portal-admin-open-dm-hint');
+          void portalAdminDmOpenFromHint(idx);
+          return;
+        }
         var hub = ev.target.closest('[data-portal-admin-open-chat-hub]');
         if(hub){ ev.preventDefault(); openDayOpsAdminChatHubModal(); return; }
         var st = ev.target.closest('[data-portal-admin-open-staff-chat]');
@@ -17973,6 +18005,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var ce = ev.target.closest('[data-portal-admin-open-ceo-chat]');
         if(ce){ ev.preventDefault(); openCeoExecDmChatModal(); return; }
       });
+    }
+    async function portalAdminDmOpenFromHint(idx){
+      var hints = window.__PORTAL_ADMIN_DM_UNREAD_HINTS__ || [];
+      var hint = hints[Number(idx)];
+      if(!hint) return;
+      if(hint.kind === 'ceo_group'){
+        openCeoExecDmChatModal();
+        await portalAdminDmOpenGroupThread(hint.groupId);
+        return;
+      }
+      var ch = hint.channel === 'ceo_exec' || hint.kind === 'ceo_dm' ? 'ceo_exec' : 'staff_lead';
+      if(ch === 'ceo_exec') openCeoExecDmChatModal();
+      else openInternalDmChatModal();
+      if(hint.threadId) await portalAdminDmOpenThread(hint.threadId);
     }
     function portalAdminDmPatchGlobalChatBanner(){
       var ws = $('workspace');
@@ -18005,8 +18051,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminDmNotifyIncomingChat(){
       if(!portalAdminDmShouldShowChatBanner()) return;
+      var hints = window.__PORTAL_ADMIN_DM_UNREAD_HINTS__ || [];
+      var names = hints.slice(0, 2).map(function(h){ return String(h.displayName || '').trim(); }).filter(Boolean);
+      var detail = names.length ? (' from '+names.join(', ')) : '';
       if(typeof portalAdminToast === 'function'){
-        portalAdminToast('New message in internal chat — use the banner at the top or Team → Chat.');
+        portalAdminToast('New message'+detail+' — tap the name in the banner or open Team → Chat.');
       }
     }
     function portalAdminDmTryOsNotifyIncoming(kind){
@@ -18020,7 +18069,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         try{ sessionStorage.setItem(sk, String(Date.now())); }catch(_){}
         if(typeof Notification === 'undefined') return;
         var title = kind === 'ceo' ? 'CEO\'s Chat' : 'Internal chat';
-        var body = kind === 'ceo' ? 'New message in CEO / admin chat.' : 'New reply from staff or a lead.';
+        var hints = window.__PORTAL_ADMIN_DM_UNREAD_HINTS__ || [];
+        var names = hints.slice(0, 2).map(function(h){ return String(h.displayName || '').trim(); }).filter(Boolean);
+        var body = names.length
+          ? ('New message from '+names.join(', ')+'.')
+          : (kind === 'ceo' ? 'New message in CEO / admin chat.' : 'New reply from staff or a lead.');
         if(Notification.permission === 'granted'){
           try{
             new Notification(title, { body: body, tag: kind === 'ceo' ? 'portal-admin-ceo-dm' : 'portal-admin-dm' });
@@ -18032,6 +18085,72 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
       }catch(_e){}
     }
+    async function portalAdminDmCollectUnreadHints(client, me, cfg){
+      var hints = [];
+      var profBy = cfg.profBy || {};
+      async function pushDmSenders(threadIds, ack, kind, channel){
+        if(!ack || !threadIds || !threadIds.length) return;
+        var q = await client.from('portal_staff_dm_messages')
+          .select('thread_id,author_id,created_at')
+          .in('thread_id', threadIds)
+          .neq('author_id', me)
+          .gt('created_at', ack)
+          .order('created_at', { ascending: false })
+          .limit(24);
+        if(q.error || !Array.isArray(q.data)) return;
+        var seen = {};
+        q.data.forEach(function(m){
+          if(!m || !m.thread_id) return;
+          var tid = String(m.thread_id);
+          var aid = String(m.author_id || '');
+          var sk = kind + ':' + tid + ':' + aid;
+          if(seen[sk]) return;
+          seen[sk] = true;
+          var pr = profBy[aid] || {};
+          var nm = String(pr.full_name || pr.username || '').trim() || 'Unknown sender';
+          hints.push({ kind: kind, threadId: tid, authorId: aid, displayName: nm, channel: channel });
+        });
+      }
+      if(cfg.hs) await pushDmSenders(cfg.staffTids, cfg.ackStaff, 'staff', 'staff_lead');
+      if(cfg.hc) await pushDmSenders(cfg.execTids, cfg.ackCeo, 'ceo_dm', 'ceo_exec');
+      if(cfg.hg && cfg.gids && cfg.gids.length && cfg.ackGroup){
+        var gq = await client.from('portal_ceo_group_message')
+          .select('group_id,author_id,created_at')
+          .in('group_id', cfg.gids)
+          .neq('author_id', me)
+          .gt('created_at', cfg.ackGroup)
+          .order('created_at', { ascending: false })
+          .limit(12);
+        var groupTitles = cfg.groupTitles || {};
+        if(!gq.error && Array.isArray(gq.data)){
+          var gseen = {};
+          var extraIds = [];
+          gq.data.forEach(function(m){
+            var aid = String(m.author_id || '');
+            if(aid && !profBy[aid]) extraIds.push(aid);
+          });
+          if(extraIds.length){
+            var ep = await client.from('staff_profiles').select('id,full_name,username').in('id', extraIds);
+            if(!ep.error && Array.isArray(ep.data)){
+              ep.data.forEach(function(p){ if(p && p.id) profBy[String(p.id)] = p; });
+            }
+          }
+          gq.data.forEach(function(m){
+            if(!m || !m.group_id) return;
+            var gid = String(m.group_id);
+            var aid = String(m.author_id || '');
+            var sk = 'g:' + gid + ':' + aid;
+            if(gseen[sk]) return;
+            gseen[sk] = true;
+            var pr = profBy[aid] || {};
+            var nm = String(pr.full_name || pr.username || '').trim() || 'Unknown sender';
+            var gt = groupTitles[gid] || 'CEO group';
+            hints.push({ kind: 'ceo_group', groupId: gid, authorId: aid, displayName: nm + ' (' + gt + ')', channel: 'ceo_exec' });
+          });
+        }
+      }
+      return hints;
+    }
     async function portalAdminDmSyncIncomingAttention(){
       var prevUnread = portalAdminDmHasUnread();
       var client = getSchedSupabaseClient();
@@ -18040,6 +18159,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         window.__PORTAL_ADMIN_DM_UNREAD = false;
         window.__PORTAL_ADMIN_CEO_DM_UNREAD = false;
         window.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD = false;
+        window.__PORTAL_ADMIN_DM_UNREAD_HINTS__ = [];
         portalAdminDmApplyTeamTileUnreadClass();
         portalAdminDmOnUnreadAttentionChanged(prevUnread);
         return;
@@ -18060,6 +18180,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       try{
         var hs = false;
         var hc = false;
+        var profBy = {};
+        var staffTids = [];
+        var execTids = [];
         var tr = await portalAdminDmFetchStaffDmThreads(client, me, 'staff_lead');
         var trExec = await portalAdminDmFetchStaffDmThreads(client, me, 'ceo_exec');
         var allT = [];
@@ -18078,17 +18201,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             if(t.participant_b) allPeerIds.push(String(t.participant_b));
           });
           allPeerIds = allPeerIds.filter(function(id, idx, arr){ return id && arr.indexOf(id) === idx; });
-          var profBy = {};
+          profBy = {};
           if(allPeerIds.length){
-            var pr = await client.from('staff_profiles').select('id,app_role,staff_role,dashboard_route,is_active').in('id', allPeerIds);
+            var pr = await client.from('staff_profiles').select('id,full_name,username,app_role,staff_role,dashboard_route,is_active').in('id', allPeerIds);
             if(!pr.error && Array.isArray(pr.data)){
               pr.data.forEach(function(p){
                 if(p && p.id) profBy[String(p.id)] = p;
               });
             }
           }
-          var staffTids = [];
-          var execTids = [];
+          staffTids = [];
+          execTids = [];
           allT.forEach(function(t){
             var wid = portalAdminDmWorkerPeerFromThread(t, profBy, me);
             var wprof = profBy[wid] || {};
@@ -18108,14 +18231,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           hc = ackCeo ? await hasUnread(execTids, ackCeo) : false;
         }
         var hg = false;
+        var gids = [];
+        var groupTitles = {};
         try{
-          var gr = await client.from('portal_ceo_group').select('id,slug');
-          var gids = [];
+          var gr = await client.from('portal_ceo_group').select('id,slug,title');
           if(!gr.error && Array.isArray(gr.data)){
             gr.data.forEach(function(r){
               if(!r || !r.id) return;
               if(!portalAdminDmViewerSeesCeoGroupSlug(r.slug)) return;
               gids.push(String(r.id));
+              groupTitles[String(r.id)] = String(r.title || r.slug || 'CEO group');
             });
           }
           if(ackGroup && gids.length){
@@ -18123,6 +18248,23 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             hg = !!(gq.data && gq.data.length);
           }
         }catch(_g){ hg = false; }
+        var unreadHints = [];
+        try{
+          unreadHints = await portalAdminDmCollectUnreadHints(client, me, {
+            profBy: profBy || {},
+            staffTids: staffTids || [],
+            execTids: execTids || [],
+            ackStaff: ackStaff,
+            ackCeo: ackCeo,
+            ackGroup: ackGroup,
+            gids: gids,
+            groupTitles: groupTitles,
+            hs: hs,
+            hc: hc,
+            hg: hg
+          });
+        }catch(_uh){ unreadHints = []; }
+        window.__PORTAL_ADMIN_DM_UNREAD_HINTS__ = unreadHints;
         window.__PORTAL_ADMIN_DM_UNREAD = hs;
         window.__PORTAL_ADMIN_CEO_DM_UNREAD = hc;
         window.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD = hg;
@@ -18134,6 +18276,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         window.__PORTAL_ADMIN_DM_UNREAD = false;
         window.__PORTAL_ADMIN_CEO_DM_UNREAD = false;
         window.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD = false;
+        window.__PORTAL_ADMIN_DM_UNREAD_HINTS__ = [];
         portalAdminDmApplyTeamTileUnreadClass();
         portalAdminDmOnUnreadAttentionChanged(prevUnread);
       }
@@ -21474,6 +21617,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           }
           var item = navGetItem(cid);
           if(!item) return '';
+          if(item.id === 'portal_nav_ceo' && !portalAdminCanAccessCeoDashboard()) return '';
           var btn;
           if(item.externalUrl){
             btn = '<a class="admin-nav-external" href="'+esc(String(item.externalUrl))+'" title="'+escAttr(item.label)+'">'+adminNavIconHtml(item.id)+'<span class="admin-nav-label">'+esc(item.label)+'</span></a>';
@@ -22539,8 +22683,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var s = document.createElement("script");
       s.type = "module";
       s.textContent = `
-        import { portalLogout, bootstrapDashboardSupabase, portalCanWriteScheduleOverrides } from "/portal/auth-handler.js?v=20260604f-redirect-normalize";
+        import { portalLogout, bootstrapDashboardSupabase, portalCanWriteScheduleOverrides, portalCanAccessCeoDashboard } from "/portal/auth-handler.js?v=20260604f-redirect-normalize";
         window.portalCanWriteScheduleOverrides = portalCanWriteScheduleOverrides;
+        window.__portalCanAccessCeoDashboard = portalCanAccessCeoDashboard;
         try { await bootstrapDashboardSupabase({ page: "admin" }); } catch (bootErr) {
           console.debug("[portal] admin bootstrap:", bootErr);
         }

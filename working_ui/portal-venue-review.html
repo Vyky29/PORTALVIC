@@ -35,6 +35,22 @@
       margin-bottom: 14px;
       text-align: center;
     }
+    .venue-review-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin: 0 0 10px;
+      padding: 0;
+      border: 0;
+      background: none;
+      color: #2d84b3;
+      font: 700 14px inherit;
+      cursor: pointer;
+      text-decoration: none;
+      max-width: 100%;
+      min-width: 0;
+    }
+    .venue-review-back:hover { text-decoration: underline; }
     .title-row h1 {
       margin: 0 0 4px;
       font-size: 22px;
@@ -472,6 +488,7 @@
   -->
   <div class="wrap">
     <div class="title-row">
+      <button type="button" class="venue-review-back" id="venueReviewBackBtn" aria-label="Back to dashboard">← Back to dashboard</button>
       <h1>Venue Review</h1>
       <p>Record the opening or closing check for your venue. Choose the venue, confirm today’s date and time, then say if anything needs reporting.</p>
     </div>
@@ -545,6 +562,6 @@
     var STAFF_PROFILE_PORTAL_BRIDGE_SECRET = "%%PB6%%";
   </script>
   <!-- Front-end + Supabase insert: portal-shared-js/venue_review_app.js -->
-  <script type="module" src="/portal-shared-js/venue_review_app.js?v=20260605-venue-fixes"></script>
+  <script type="module" src="/portal-shared-js/venue_review_app.js?v=20260601-venue-return"></script>
 </body>
 </html>

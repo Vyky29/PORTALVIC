@@ -188,6 +188,16 @@ export function portalCanAccessAdminDashboard(profile, authEmail) {
   return false;
 }
 
+/** CEO dashboard shell — Victor, Javi, Raúl only (not ops admins such as Sevitha). */
+const PORTAL_CEO_DASHBOARD_DENIED_KEYS = new Set(["sevitha"]);
+
+export function portalCanAccessCeoDashboard(profile, authEmail) {
+  if (!profile) return false;
+  const staffKey = portalInferStaffKey(profile, authEmail);
+  if (PORTAL_CEO_DASHBOARD_DENIED_KEYS.has(staffKey)) return false;
+  return portalInferEffectiveRole(profile, authEmail) === "ceo";
+}
+
 /**
  * Admin / CEO / manager: pick Staff, Lead, or Admin after sign-in.
  * @param {Record<string, unknown> | null | undefined} profile
@@ -262,13 +272,13 @@ function inferDashboardRoute(profile, authEmail) {
     typeof window !== "undefined" &&
     window.location.pathname.toLowerCase().includes("/working_ui/");
   if (fromWorkingUi) {
-    if (effectiveRole === "ceo") return "ceo_dashboard.html";
+    if (portalCanAccessCeoDashboard(profile, authEmail)) return "ceo_dashboard.html";
     if (portalCanAccessAdminDashboard(profile, authEmail)) return "admin_dashboard.html";
     if (effectiveRole === "lead") return "lead_dashboard.html";
     return "staff_dashboard.html";
   }
   const ceoUrl = portalPublishedPageUrl("ceo_dashboard.html", "PORTAL_CEO_DASHBOARD_URL");
-  if (effectiveRole === "ceo") return ceoUrl;
+  if (portalCanAccessCeoDashboard(profile, authEmail)) return ceoUrl;
   if (portalCanAccessAdminDashboard(profile, authEmail)) return portalPublishedAdminUrl();
   if (effectiveRole === "lead") return portalPublishedLeadUrl();
   return portalPublishedStaffUrl();

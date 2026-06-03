@@ -168,17 +168,21 @@
         saveToDocuments: true,
       });
       if (result && result.savedToDocuments) {
-        setSavedHint("Saved to My documents → Training. You can open it from the portal anytime.");
+        setSavedHint(
+          "Saved to My documents → Training. Open it anytime from the dashboard — no need to download again on your phone."
+        );
       } else if (result && result.downloaded) {
-        setSavedHint("PDF downloaded. Sign in on the portal to save a copy under My documents → Training.");
+        setSavedHint("PDF downloaded. A copy is also saved under My documents → Training when you are signed in.");
+      } else if (result && !result.downloaded && !result.savedToDocuments) {
+        setSavedHint("Could not save yet. Sign in on the portal and try again, or open My documents → Training.");
       }
       if (result && result.downloaded && typeof global.portalInductionMarkCertificatePdfDownloaded === "function") {
         global.portalInductionMarkCertificatePdfDownloaded();
       }
     } catch (err) {
       console.error("[induction] certificate PDF", err);
-      alert(
-        "Could not download the certificate PDF. Check your connection and try again, or use My documents → Training from the dashboard."
+      setSavedHint(
+        "Could not prepare the certificate. Try again, or open My documents → Training from your dashboard."
       );
     } finally {
       if (btn) {

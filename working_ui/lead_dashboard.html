@@ -81,13 +81,13 @@
   <!-- Add to Home Screen (iOS / Android): open from icon without Safari URL bar + bottom bar -->
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-title" content="Lead" />
+  <meta name="apple-mobile-web-app-title" content="CS Portal" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="theme-color" content="#edf4fb" />
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png?v=20260608-footer" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png?v=20260608-footer" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png?v=20260608-footer" />
-  <link rel="manifest" href="/lead-dashboard.webmanifest?v=20260608-footer" />
+  <link rel="manifest" href="/lead-dashboard.webmanifest?v=20260601-cs-portal" />
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260610-pwa-black-fix" />
   <script src="/portal/portal_screenshot_guard.js?v=20260610-pwa-black-fix"></script>
   <title>clubSENsational Lead Dashboard</title>
@@ -108,7 +108,7 @@
       if(!document.head) return;
       ensureMeta('apple-mobile-web-app-capable', 'yes');
       ensureMeta('mobile-web-app-capable', 'yes');
-      ensureMeta('apple-mobile-web-app-title', 'Staff');
+      ensureMeta('apple-mobile-web-app-title', 'CS Portal');
       ensureMeta('apple-mobile-web-app-status-bar-style', 'default');
       ensureMeta('theme-color', '#edf4fb');
     }catch(e){}
@@ -497,7 +497,7 @@
             </button>
             <button type="button" class="menu-btn menu-btn--settings-alerts" data-open="alertsNotificationsSheet" id="quickMenuAlerts">
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
-              <div class="menu-btn-copy"><strong>Alerts, location &amp; mic</strong><span class="menu-btn-sub">Set up once on this device</span></div>
+              <div class="menu-btn-copy"><strong>Alerts &amp; notifications</strong><span class="menu-btn-sub">Set up once on this device</span></div>
             </button>
             <div id="portalExecWorkspaceSwitchSlot" class="portal-exec-workspace-switch-slot" hidden aria-hidden="true"></div>
             <div class="menu-btn menu-btn--settings-view" id="quickMenuViewRow">
@@ -608,28 +608,28 @@
     <div class="sheet-head">
       <div class="sheet-handle"></div>
       <h3 id="alertsNotificationsTitle">Alerts, location &amp; microphone</h3>
-      <p>Turn on all three once on this device.</p>
+      <p>Turn on notifications once on this device. Location only if you deliver Bespoke Programme or Day Centre.</p>
     </div>
     <div class="sheet-body">
       <div class="portal-alerts-panel">
-        <p class="portal-alerts-lead">Set this up once: <strong>notifications</strong> for announcements and roster changes, <strong>location</strong> for the live staff map while the app is open, and <strong>microphone</strong> for voice session feedback. Register and day-to-day feedback stay on your dashboard.</p>
+        <p class="portal-alerts-lead">Set this up once: <strong>notifications</strong> for announcements and roster changes. <strong>Location</strong> only appears here if you deliver Bespoke Programme or Day Centre on your rota. <strong>Microphone</strong> is optional — only if you prefer voice session feedback.</p>
         <div class="portal-alerts-block">
           <h4 class="portal-alerts-section-title">Notifications</h4>
           <p id="portalNotifyStatus" class="portal-alerts-status" aria-live="polite"></p>
           <button type="button" class="portal-alerts-action-btn" id="portalNotifyEnableBtn">Turn on notifications</button>
           <button type="button" class="portal-alerts-action-btn portal-alerts-action-btn--ghost" id="portalNotifyTestBtn" hidden>Send test</button>
         </div>
-        <div class="portal-alerts-block">
+        <div class="portal-alerts-block" id="portalLocationBlock">
           <h4 class="portal-alerts-section-title">Location</h4>
           <p id="portalLocationStatus" class="portal-alerts-status" aria-live="polite"></p>
           <button type="button" class="portal-alerts-action-btn" id="portalLocationEnableBtn">Allow location</button>
         </div>
         <div class="portal-alerts-block">
-          <h4 class="portal-alerts-section-title">Microphone</h4>
+          <h4 class="portal-alerts-section-title">Microphone <span class="muted" style="font-weight:600">(optional)</span></h4>
           <p id="portalMicStatus" class="portal-alerts-status" aria-live="polite"></p>
           <button type="button" class="portal-alerts-action-btn" id="portalMicEnableBtn">Allow microphone</button>
         </div>
-        <p class="portal-alerts-footnote muted">Your timetable updates when ops change scheduling. Location stops when you close the app.</p>
+        <p class="portal-alerts-footnote muted">Location sharing runs only during Bespoke Programme and Day Centre session windows and stops when you close the app.</p>
       </div>
     </div>
   </section>

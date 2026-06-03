@@ -285,6 +285,16 @@
    * @param {{ saveToDocuments?: boolean }} [opts]
    * @returns {Promise<{ downloaded: boolean, savedToDocuments?: boolean }>}
    */
+  function shouldSkipBrowserCertificateDownload() {
+    try {
+      if (global.matchMedia && global.matchMedia("(display-mode: standalone)").matches) return true;
+    } catch (_e) {}
+    try {
+      if (/iPhone|iPad|iPod|Android/i.test(String(global.navigator && global.navigator.userAgent || ""))) return true;
+    } catch (_e2) {}
+    return false;
+  }
+
   async function portalDownloadInductionCertificatePdf(learnerName, issuedIso, opts) {
     var options = opts || {};
     var built;
@@ -300,8 +310,7 @@
       throw err;
     }
     var date = parseDate(issuedIso);
-    triggerBrowserDownload(built.blob, built.filename);
-    var out = { downloaded: true, savedToDocuments: false };
+    var out = { downloaded: false, savedToDocuments: false };
     if (options.saveToDocuments) {
       try {
         var saved = await savePdfToMyDocuments(built.blob, date.toISOString());
@@ -311,7 +320,11 @@
         console.warn("[induction-cert] My Documents save", err);
       }
     }
-    if (out.downloaded && typeof global.portalInductionMarkCertificatePdfDownloaded === "function") {
+    if (!shouldSkipBrowserCertificateDownload()) {
+      triggerBrowserDownload(built.blob, built.filename);
+      out.downloaded = true;
+    }
+    if ((out.downloaded || out.savedToDocuments) && typeof global.portalInductionMarkCertificatePdfDownloaded === "function") {
       global.portalInductionMarkCertificatePdfDownloaded();
     }
     return out;

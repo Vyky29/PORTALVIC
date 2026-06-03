@@ -194,8 +194,7 @@ function showVenueReviewSuccessLocked() {
   var el = document.createElement("div");
   el.setAttribute("role", "status");
   el.setAttribute("aria-live", "polite");
-  el.textContent =
-    "Venue report submitted successfully. Please close this window.";
+  el.textContent = "Venue report submitted successfully. Returning to your dashboard…";
   el.style.cssText =
     "position:fixed;left:50%;top:20px;transform:translateX(-50%);z-index:99999;" +
     "padding:16px 22px;background:#173247;color:#fff;border-radius:14px;" +
@@ -206,13 +205,36 @@ function showVenueReviewSuccessLocked() {
   } catch (_) {}
 }
 
-function showCompletionPopupAndTryCloseWindow() {
+function venueReviewDashboardReturnUrl() {
   try {
-    alert("Venue report submitted successfully.");
+    var ret = new URLSearchParams(location.search).get("return");
+    if (ret) {
+      var ru = new URL(ret, location.href);
+      if (ru.protocol === "http:" || ru.protocol === "https:") return ru.href;
+    }
   } catch (_) {}
   try {
-    window.close();
+    if (typeof window.portalFormComputeReturnTarget === "function") {
+      return window.portalFormComputeReturnTarget();
+    }
   } catch (_) {}
+  try {
+    var rp = new URLSearchParams(location.search).get("rp");
+    if (rp && /\.html(\?|$)/i.test(rp)) return new URL(rp, location.href).href;
+  } catch (_) {}
+  return new URL("lead_dashboard.html", location.href).href;
+}
+
+function showCompletionPopupAndReturnDashboard() {
+  showVenueReviewSuccessLocked();
+  var dest = venueReviewDashboardReturnUrl();
+  window.setTimeout(function () {
+    try {
+      window.location.assign(dest);
+    } catch (_) {
+      window.location.href = dest;
+    }
+  }, 1600);
 }
 
 async function renderVenueContextHeader(ctx) {
@@ -257,6 +279,18 @@ function updateNoButtonText(btnNo) {
 
 function initVenueReviewPage() {
   const form = document.getElementById("form");
+  const backBtn = document.getElementById("venueReviewBackBtn");
+  if (backBtn) {
+    backBtn.addEventListener("click", function (e) {
+      e.preventDefault();
+      var dest = venueReviewDashboardReturnUrl();
+      try {
+        window.location.assign(dest);
+      } catch (_) {
+        window.location.href = dest;
+      }
+    });
+  }
   const btnNo = document.getElementById("btnNoReady");
   const btnYes =
     document.getElementById("btnYesIssues") ||
@@ -394,7 +428,7 @@ function initVenueReviewPage() {
       successSubmitted = true;
       showVenueReviewSuccessLocked();
       lockVenueReviewForm(form, submitBtn);
-      showCompletionPopupAndTryCloseWindow();
+      showCompletionPopupAndReturnDashboard();
     } catch (err) {
       console.error(err);
       const msg = err && err.message ? String(err.message) : "";

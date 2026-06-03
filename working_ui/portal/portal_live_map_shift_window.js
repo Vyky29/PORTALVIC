@@ -50,6 +50,17 @@
     return new Date(y, mo, da, h, m, 0, 0).getTime();
   }
 
+  function sessionQualifiesForLiveLocation(s) {
+    var svc = String(
+      (s && (s.service || s.serviceName || s.programme)) || ""
+    ).toLowerCase();
+    return (
+      svc.indexOf("bespoke") !== -1 ||
+      svc.indexOf("day centre") !== -1 ||
+      svc.indexOf("day center") !== -1
+    );
+  }
+
   function sessionsForCalendarToday(sessionsModel) {
     var todayIso = localTodayIso();
     var todayDow = new Date().toLocaleDateString("en-GB", {
@@ -81,6 +92,41 @@
   }
 
   /**
+   * True when the worker has any Bespoke Programme or Day Centre session on their rota
+   * (not just today — controls whether Location appears in Settings at all).
+   * @param {Record<string, unknown> | null | undefined} profile
+   * @param {import("@supabase/supabase-js").User | null | undefined} authUser
+   */
+  function portalLiveMapLocationRequiredForWorker(profile, authUser) {
+    var bootFn = global.portalBootstrapStaffRosterFromProfile;
+    var bootWrap =
+      typeof bootFn === "function" ? bootFn(profile || null, authUser || null) : null;
+    if (!bootWrap || !bootWrap.boot) return false;
+    var model = bootWrap.boot.sessionsModel || [];
+    for (var i = 0; i < model.length; i++) {
+      var s = model[i];
+      if (!s || s.clientId === "closed") continue;
+      if (!s.start || !s.end) continue;
+      if (sessionQualifiesForLiveLocation(s)) return true;
+    }
+    return false;
+  }
+
+  /**
+   * True when the worker has Bespoke Programme or Day Centre on today's rota.
+   * @param {Record<string, unknown> | null | undefined} profile
+   * @param {import("@supabase/supabase-js").User | null | undefined} authUser
+   */
+  function portalLiveMapLocationRequiredToday(profile, authUser) {
+    var bootFn = global.portalBootstrapStaffRosterFromProfile;
+    var bootWrap =
+      typeof bootFn === "function" ? bootFn(profile || null, authUser || null) : null;
+    if (!bootWrap || !bootWrap.boot) return false;
+    var todaySessions = sessionsForCalendarToday(bootWrap.boot.sessionsModel);
+    return todaySessions.some(sessionQualifiesForLiveLocation);
+  }
+
+  /**
    * @param {Record<string, unknown> | null | undefined} profile
    * @param {import("@supabase/supabase-js").User | null | undefined} authUser
    */
@@ -94,6 +140,7 @@
       return {
         allowed: false,
         reason: "no_roster",
+        locationRequired: false,
         todayIso: todayIso,
         windowStartMs: null,
         windowEndMs: null,
@@ -101,10 +148,14 @@
     }
 
     var todaySessions = sessionsForCalendarToday(bootWrap.boot.sessionsModel);
+    var qualifyingSessions = todaySessions.filter(sessionQualifiesForLiveLocation);
+    var locationRequired = qualifyingSessions.length > 0;
+
     if (!todaySessions.length) {
       return {
         allowed: false,
         reason: "no_shift_today",
+        locationRequired: false,
         staffId: bootWrap.staffId,
         todayIso: todayIso,
         windowStartMs: null,
@@ -112,7 +163,20 @@
       };
     }
 
-    var bounds = shiftBoundsFromSessions(todaySessions, todayIso);
+    if (!qualifyingSessions.length) {
+      return {
+        allowed: false,
+        reason: "location_not_required",
+        locationRequired: false,
+        staffId: bootWrap.staffId,
+        todayIso: todayIso,
+        windowStartMs: null,
+        windowEndMs: null,
+        sessionCount: todaySessions.length,
+      };
+    }
+
+    var bounds = shiftBoundsFromSessions(qualifyingSessions, todayIso);
     if (!bounds) {
       return {
         allowed: false,
@@ -137,13 +201,14 @@
     return {
       allowed: allowed,
       reason: reason,
+      locationRequired: locationRequired,
       staffId: bootWrap.staffId,
       todayIso: todayIso,
       shiftStartMs: bounds.shiftStartMs,
       shiftEndMs: bounds.shiftEndMs,
       windowStartMs: windowStartMs,
       windowEndMs: windowEndMs,
-      sessionCount: todaySessions.length,
+      sessionCount: qualifyingSessions.length,
     };
   }
 
@@ -161,6 +226,8 @@
   }
 
   global.portalLiveMapShiftWindowState = portalLiveMapShiftWindowState;
+  global.portalLiveMapLocationRequiredForWorker = portalLiveMapLocationRequiredForWorker;
+  global.portalLiveMapLocationRequiredToday = portalLiveMapLocationRequiredToday;
   global.portalLiveMapMsUntilShiftBoundary = portalLiveMapMsUntilShiftBoundary;
   global.PORTAL_LIVE_MAP_SHIFT_BEFORE_MS = BEFORE_MS;
   global.PORTAL_LIVE_MAP_SHIFT_AFTER_MS = AFTER_MS;

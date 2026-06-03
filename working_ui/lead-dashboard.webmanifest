@@ -1,6 +1,6 @@
 {
-  "name": "clubSENsational Lead",
-  "short_name": "Lead",
+  "name": "CS Portal",
+  "short_name": "CS Portal",
   "id": "portalvic-lead-dashboard",
   "start_url": "./lead_dashboard.html",
   "scope": "./",

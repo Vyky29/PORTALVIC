@@ -9,7 +9,7 @@
   var SILENCE_STOP_MS = 2800;
   var SILENCE_STOP_TRANSLATE_MS = 3600;
   var MAX_RECORD_MS = 90000;
-  var TRANSLATE_DEBOUNCE_MS = 700;
+  var TRANSLATE_DEBOUNCE_MS = 450;
 
   var ALL_LANGS = [
     { value: "en-GB", label: "English", translate: false, whisperCode: "en" },
@@ -388,11 +388,15 @@
 
   function runLiveTranslate(s) {
     if (!s || s.stopRequested) return;
-    var source = finalSourceText(s);
+    var source = liveSourceText(s);
     if (!source) return;
 
     s.translateSeq += 1;
     var seq = s.translateSeq;
+
+    if (s.statusEl && !s.stopRequested) {
+      s.statusEl.textContent = "Translating to English…";
+    }
 
     translateToEnglish(source, s.translateCode)
       .then(function (english) {
@@ -400,7 +404,7 @@
         setLiveTextarea(s, english || source);
         if (s.statusEl && !s.stopRequested) {
           var heard = s.interimText ? ' Heard: "' + s.interimText + '"' : "";
-          s.statusEl.textContent = "Listening…" + heard;
+          s.statusEl.textContent = "Listening… (English in box)" + heard;
         }
       })
       .catch(function () {
@@ -420,18 +424,16 @@
       return;
     }
 
-    var live = liveSourceText(s);
-    if (live) {
-      setLiveTextarea(s, live);
-    }
     var interim = String(s.interimText || "").trim();
+    var source = liveSourceText(s);
+    if (source) scheduleLiveTranslate(s);
     if (interim && s.statusEl) {
-      s.statusEl.textContent = 'Listening… heard: "' + interim + '" (translating to English…)';
+      s.statusEl.textContent = 'Listening… heard: "' + interim + '" (English appears below)';
     } else if (s.statusEl && !s.stopRequested) {
-      s.statusEl.textContent = "Listening… translating to English…";
+      s.statusEl.textContent = source
+        ? "Listening… translating to English…"
+        : "Listening… speak now — English will appear in the box.";
     }
-
-    if (finalSourceText(s)) scheduleLiveTranslate(s);
   }
 
   function requestStop(s, reason) {
