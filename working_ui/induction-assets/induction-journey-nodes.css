@@ -1,0 +1,151 @@
+/**
+ * General Induction — dark navy journey/roadmap (not Swimming light aqua).
+ */
+
+.portal .main .content #journey .journey-title,
+.portal .main .content #journey .journey-item.active .journey-title,
+.portal .main .content #journey .journey-item.page-linkable:not(.journey-item--past) .journey-title,
+.portal .main .content #journey .journey-item:not(.active):not(.journey-item--past) .journey-title,
+.portal .main .content #journey .journey-item.journey-item--past .journey-title,
+#inside-module a.module-roadmap__item .module-roadmap__text-stack .journey-title{
+  color:#0f2840 !important;
+}
+
+.portal .main .content #journey .journey-item.active .journey-status{
+  color:#16324f !important;
+}
+
+.portal .main .content #journey .journey-item.journey-item--past .journey-status,
+.portal .main .content #journey .journey-item:not(.active):not(.journey-item--past) .journey-status{
+  color:#4a6278 !important;
+}
+
+/* Kicker labels above circles */
+.portal .main .content #journey .journey-node__kicker,
+#inside-module a.module-roadmap__item .module-roadmap__node-kicker{
+  color:#0f2840 !important;
+}
+
+.portal .main .content #journey .journey-item.active .journey-node__kicker{
+  color:#7a5200 !important;
+}
+
+/* Circles — journey: dark navy (upcoming / completed), orange (active) */
+.portal .main .content #journey .journey-item:not(.active):not(.journey-item--past) .journey-circle{
+  background:linear-gradient(155deg,#1a4a6e 0%,#0f2840 42%,#0d2238 100%) !important;
+  border:1px solid rgba(255,255,255,.35) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.2),
+    0 8px 20px rgba(15,40,64,.22) !important;
+}
+
+.portal .main .content #journey .journey-item:not(.active):not(.journey-item--past) .journey-node__num{
+  color:#fff !important;
+}
+
+/* Inside This Module — orange milestone circles with navy detail */
+.portal[data-induction-module] #inside-module a.module-roadmap__item .journey-circle,
+#inside-module[data-roadmap-stack="general-induction"] a.module-roadmap__item .journey-circle{
+  background:linear-gradient(
+    152deg,
+    #fff0c8 0%,
+    #ffe08a 16%,
+    #f5cc6a 36%,
+    #f0b323 56%,
+    #e8a82a 76%,
+    #d99518 100%
+  ) !important;
+  border:2px solid rgba(15,40,64,.16) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.58),
+    inset 0 -2px 8px rgba(15,40,64,.08),
+    0 0 0 1px rgba(15,40,64,.05),
+    0 8px 22px rgba(232,168,32,.26),
+    0 4px 14px rgba(15,40,64,.1) !important;
+}
+
+.portal[data-induction-module] #inside-module a.module-roadmap__item .journey-circle .module-roadmap__node-kicker,
+#inside-module[data-roadmap-stack="general-induction"] a.module-roadmap__item .journey-circle .module-roadmap__node-kicker{
+  color:rgba(15,40,64,.68) !important;
+}
+
+.portal[data-induction-module] #inside-module a.module-roadmap__item .journey-circle .module-roadmap__node-num,
+#inside-module[data-roadmap-stack="general-induction"] a.module-roadmap__item .journey-circle .module-roadmap__node-num{
+  color:#0f2840 !important;
+}
+
+.portal[data-induction-module] #inside-module a.module-roadmap__item:hover .journey-circle,
+.portal[data-induction-module] #inside-module a.module-roadmap__item:focus-visible .journey-circle,
+#inside-module[data-roadmap-stack="general-induction"] a.module-roadmap__item:hover .journey-circle,
+#inside-module[data-roadmap-stack="general-induction"] a.module-roadmap__item:focus-visible .journey-circle{
+  border-color:rgba(15,40,64,.28) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.72),
+    0 0 0 2px rgba(15,40,64,.08),
+    0 10px 24px rgba(240,179,35,.32),
+    0 4px 14px rgba(15,40,64,.12) !important;
+}
+
+.portal .main .content #journey .journey-item.journey-item--past .journey-circle{
+  background:linear-gradient(155deg,#2a5f85 0%,#1a4a6e 55%,#0f2840 100%) !important;
+  border:1px solid rgba(255,255,255,.4) !important;
+}
+
+.portal .main .content #journey .journey-item.active .journey-circle{
+  background:linear-gradient(152deg,#f5cc6a 0%,#f0b323 38%,#d79d15 58%,#c99212 100%) !important;
+  border:1px solid rgba(255,255,255,.72) !important;
+  animation:journey-active-induction-aura 2.2s ease-in-out infinite;
+}
+
+.portal .main .content #journey .journey-item.active .journey-node__num{
+  color:#fff !important;
+}
+
+@keyframes journey-active-induction-aura{
+  0%,100%{
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,.58),
+      0 8px 18px rgba(15,40,64,.22),
+      0 0 12px rgba(240,179,35,.24),
+      inset 0 0 18px rgba(240,179,35,.22);
+  }
+  50%{
+    box-shadow:
+      0 0 0 1px rgba(255,255,255,.72),
+      0 9px 20px rgba(15,40,64,.26),
+      0 0 18px rgba(240,179,35,.45),
+      inset 0 0 36px rgba(240,179,35,.45);
+  }
+}
+
+#inside-module .section-title-row h3,
+#inside-module .section-title-row::before{
+  color:#0f2840;
+}
+
+#inside-module .section-title-row::before{
+  background:linear-gradient(180deg,#f0b323 0%,#d79d15 100%);
+}
+
+#inside-module .section-title-row h3::after{
+  background:linear-gradient(90deg,#f0b323 0%,#d79d15 100%);
+}
+
+#inside-module a.module-roadmap__item:focus-visible{
+  outline-color:rgba(15,40,64,.35);
+}
+
+/* Roadmap shell — warm cream/orange with subtle navy depth */
+.portal[data-induction-module] #inside-module .module-roadmap-wrap.journey-wrap,
+#inside-module[data-roadmap-stack="general-induction"] .module-roadmap-wrap.journey-wrap{
+  border-color:rgba(240,179,35,.28);
+  background:
+    radial-gradient(ellipse 74% 58% at 12% 16%, rgba(255,255,255,.52) 0%, transparent 52%),
+    radial-gradient(ellipse 60% 48% at 88% 18%, rgba(255,236,179,.38) 0%, transparent 56%),
+    radial-gradient(ellipse 92% 80% at 50% 108%, rgba(15,40,64,.08) 0%, transparent 50%),
+    linear-gradient(175deg, #fff6e3 0%, #fff0c8 38%, #fef8ec 72%, #fffcf5 100%);
+  box-shadow:
+    0 12px 32px rgba(232,168,32,.1),
+    inset 0 1px 0 rgba(255,255,255,.62),
+    inset 0 -32px 64px rgba(15,40,64,.04);
+}

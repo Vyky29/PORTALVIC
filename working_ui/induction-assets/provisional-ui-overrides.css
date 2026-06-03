@@ -1,0 +1,258 @@
+/**
+ * Provisional induction  hub parity, module hero, crisp video, gated sections.
+ */
+
+/* ----- Dashboard: match full induction / swimming pathway hub ----- */
+.training-page .modules-grid {
+  margin-top: 8px;
+}
+
+.training-page .module-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.training-page .module-top {
+  flex: 0 0 auto;
+}
+
+.training-page .module-body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.training-page .module-footer {
+  margin-top: auto;
+  padding-top: 8px;
+}
+
+/* ----- Gated sections (video / completion / quiz) ----- */
+.portal .section.gated-locked .section-lock-banner {
+  display: block;
+  background: #fff8e8;
+  border: 1px solid rgba(240, 179, 35, 0.28);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #7a5200;
+}
+
+.portal .section.gated-locked:not(.is-unlocked) .section-body > :not(.section-lock-banner) {
+  opacity: 0.45;
+  pointer-events: none;
+  user-select: none;
+  filter: none;
+}
+
+.portal .section.gated-locked.is-unlocked .section-lock-banner {
+  display: none;
+}
+
+.portal .section.gated-locked.is-unlocked .section-body,
+.portal .section.gated-locked.is-unlocked .section-body > * {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  filter: none !important;
+}
+
+/* ----- Video: no fog, no inherited blur/opacity ----- */
+.portal #video .module-video-shell {
+  position: relative;
+  z-index: 1;
+  margin-top: 18px;
+  padding: 0;
+  overflow: hidden;
+  background: #0f1a28;
+  border: 1px solid rgba(240, 179, 35, 0.35);
+  border-radius: 16px;
+  box-shadow: 0 12px 28px rgba(145, 96, 9, 0.08);
+  isolation: isolate;
+}
+
+.portal #video .module-video-shell::before,
+.portal #video .module-video-shell::after {
+  display: none !important;
+}
+
+.portal #video .module-video {
+  width: 100%;
+  height: auto;
+  min-height: 320px;
+  max-height: min(72vh, 620px);
+  display: block;
+  vertical-align: top;
+  object-fit: contain;
+  object-position: center center;
+  background: #0f1a28;
+  border-radius: 14px;
+  opacity: 1 !important;
+  filter: none !important;
+  transform: none !important;
+  mix-blend-mode: normal !important;
+}
+
+.portal #video.is-unlocked .module-video,
+.portal #video.is-unlocked .module-video-shell {
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+.portal #video .module-video-status {
+  margin: 14px 18px 16px;
+}
+
+/* ----- Module hero: gold background + navy titles (General Induction) ----- */
+.portal[data-provisional-induction] .hero.hero--module-system {
+  background: linear-gradient(
+    135deg,
+    #f0b323 0%,
+    #f5cc6a 72%,
+    rgba(255, 248, 236, 0.98) 130%
+  ) !important;
+  color: #0f2840 !important;
+  box-shadow: 0 18px 40px rgba(145, 96, 9, 0.14);
+}
+
+/* Aqua wave layers bleach orange heroes  keep them very subtle */
+.portal[data-provisional-induction] .hero.hero--module-system > .module-hero__atmosphere::before,
+.portal[data-provisional-induction] .hero.hero--module-system > .module-hero__atmosphere::after {
+  opacity: 0.05 !important;
+  mix-blend-mode: multiply !important;
+}
+
+.portal[data-provisional-induction] .hero.hero--module-system .module-hero__glow {
+  background: radial-gradient(
+    ellipse 80% 70% at 72% 18%,
+    rgba(255, 255, 255, 0.2) 0%,
+    rgba(245, 204, 106, 0.16) 42%,
+    transparent 72%
+  );
+  opacity: 0.55;
+}
+
+.portal[data-provisional-induction] .hero.hero--module-system .module-hero__signature,
+.portal[data-provisional-induction] .hero.hero--module-system .module-hero__wave,
+.portal[data-provisional-induction] .hero.hero--module-system .module-hero__orb {
+  opacity: 0.07;
+}
+
+.portal[data-provisional-induction] .hero.hero--module-system .module-hero__kicker {
+  margin: 0 0 10px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(15, 40, 64, 0.72) !important;
+}
+
+.portal[data-provisional-induction] .hero.hero--module-system .section-top--hero .hero-title-line__stack h2,
+.portal[data-provisional-induction] .hero.hero--module-system .hero-module-num,
+.portal[data-provisional-induction] .hero.hero--module-system .hero-heading-row .hero-module-num {
+  color: #0f2840 !important;
+}
+
+.portal[data-provisional-induction] .hero.hero--module-system .hero-title-line__stack .module-hero__descriptor {
+  color: #16324f !important;
+  opacity: 1 !important;
+}
+
+.portal[data-provisional-induction] .hero.hero--module-system .hero-title-line__stack .module-hero__path,
+.portal[data-provisional-induction] .hero.hero--module-system .hero-title-line__stack .module-hero__path span {
+  color: rgba(15, 40, 64, 0.72) !important;
+  opacity: 1 !important;
+}
+
+.portal[data-provisional-induction] .hero.hero--module-system .module-hero__path-sep {
+  color: rgba(15, 40, 64, 0.45) !important;
+  opacity: 1 !important;
+}
+
+.portal[data-provisional-induction] .hero.hero--module-system .hero-module-num {
+  color: #9a6b00 !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.85) inset,
+    0 6px 22px rgba(145, 96, 9, 0.14),
+    0 0 0 1px rgba(240, 179, 35, 0.12);
+}
+
+.portal[data-provisional-induction] .hero.hero--module-system .btn.btn-primary {
+  color: #0f2840 !important;
+  background: linear-gradient(135deg, #ffffff 0%, #fffaf0 100%) !important;
+  border: 1px solid rgba(15, 40, 64, 0.1) !important;
+  box-shadow: 0 10px 28px rgba(145, 96, 9, 0.18);
+}
+
+.portal[data-provisional-induction] .hero.hero--module-system .btn.btn-primary:hover {
+  filter: brightness(1.02);
+}
+
+.portal .module-progress-top span#moduleProgressText {
+  font-weight: 700;
+}
+
+/* ----- Quiz: module-completion-flow hides .quiz-embed until .quiz-visible ----- */
+.portal #quiz.is-unlocked .quiz-embed,
+.portal #quiz.quiz-visible .quiz-embed {
+  display: block !important;
+}
+
+.portal #quiz.is-unlocked .quiz-inline,
+.portal #quiz.quiz-visible .quiz-inline {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.portal #quiz.is-unlocked .section-body,
+.portal #quiz.is-unlocked .section-body > * {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* ----- Learning outcomes (after journey) ----- */
+.portal .stage-helper {
+  margin: 18px 0 14px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #7a5200;
+  line-height: 1.55;
+}
+
+.portal #outcomes .outcome.clicked {
+  border: 2px solid rgba(240, 179, 35, 0.55);
+  background: linear-gradient(180deg, #fffaf0 0%, #fff4de 100%);
+  box-shadow: 0 4px 14px rgba(145, 96, 9, 0.12);
+}
+
+.portal #outcomes .outcome-index::before {
+  content: "";
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #f0b323;
+  box-shadow: 0 0 0 3px rgba(240, 179, 35, 0.22);
+}
+
+.portal #outcomes .section-title-row h3 {
+  color: #0f2840 !important;
+}
+
+.portal #outcomes.is-unlocked .outcomes,
+.portal #outcomes.is-unlocked .outcome {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+.portal #outcomes.is-unlocked .outcome {
+  user-select: none;
+}
+
+.portal #outcomes.is-unlocked .outcome:focus-visible {
+  outline: 2px solid #f0b323;
+  outline-offset: 2px;
+}

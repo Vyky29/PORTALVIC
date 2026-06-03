@@ -1,0 +1,25 @@
+/* Orange overrides for journey-editorial-hierarchy on induction modules */
+
+.portal .main .content #journey .journey-wrap{
+  border-color:rgba(240,179,35,.2);
+  background:linear-gradient(180deg,#fffaf0 0%,#ffffff 100%);
+}
+
+.portal .main .content #journey .journey-item.active .journey-circle{
+  background:linear-gradient(152deg,#f5cc6a 0%,#f0b323 38%,#d79d15 58%,#c99212 100%);
+  box-shadow:
+    inset 0 -12px 28px rgba(240,179,35,.15),
+    0 5px 14px rgba(240,179,35,.25);
+}
+
+.portal .main .content #journey .journey-item.journey-item--past .journey-circle{
+  background:linear-gradient(155deg,#e8c96a 0%,#d79d15 100%);
+}
+
+.portal .main .content #journey .journey-status{
+  color:#9a6b00;
+}
+
+.portal .main .content #inside-module .module-roadmap-wrap.journey-wrap{
+  border-color:rgba(240,179,35,.18);
+}

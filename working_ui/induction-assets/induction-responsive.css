@@ -1,0 +1,382 @@
+/**
+ * Induction  mobile / tablet / desktop layout
+ * Load after induction-concept-system.css and module-concept-media.css.
+ */
+
+/* ----- Concept panels: no horizontal overflow ----- */
+.portal .concept-panel,
+.portal .concept-panel.show {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.portal .concept-panel > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* ----- Staff role subconcept nav (orange boxes) ----- */
+.portal [data-parent-subconcept-nav] {
+  margin-top: 16px;
+  width: 100%;
+  max-width: 100%;
+}
+
+.portal [data-parent-subconcept-nav] .staff-roles-lead,
+.portal .staff-roles-lead {
+  margin: 0 0 14px;
+  font-size: 0.93rem;
+  line-height: 1.6;
+  color: var(--ink, #0f2840);
+}
+
+.portal [data-parent-subconcept-nav] .concept-grid--staff-roles {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+}
+
+.portal [data-parent-subconcept-nav] .concept-square--staff-role {
+  min-height: 96px;
+  padding: 12px 10px;
+  font-size: 0.82rem;
+  line-height: 1.25;
+  text-align: center;
+  background: linear-gradient(180deg, #fff4de 0%, #f6e3b9 100%);
+  border: 2px solid #d79d15 !important;
+  color: #0f2840 !important;
+  box-shadow: 0 10px 22px rgba(204, 149, 43, 0.18);
+}
+
+.portal [data-parent-subconcept-nav] .concept-square--staff-role:hover,
+.portal [data-parent-subconcept-nav] .concept-square--staff-role:focus-visible {
+  background: linear-gradient(180deg, #ffe9b8 0%, #f0c96a 100%);
+  border-color: #cc952b !important;
+  transform: translateY(-2px);
+}
+
+.portal [data-parent-subconcept-nav] .concept-square--staff-role.visited {
+  background: linear-gradient(180deg, #fff8ec 0%, #ffffff 100%);
+  border-color: #cc952b !important;
+}
+
+/* ----- Block concept grid: 4 squares  desktop only in one row ----- */
+@media (min-width: 901px) {
+  .portal .concept-grid:has(> .concept-square:nth-child(4):last-child) {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+}
+
+/* ----- Tablet (601px  1024px) ----- */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .portal {
+    grid-template-columns: 1fr;
+  }
+
+  .portal .sidebar {
+    position: relative;
+    top: auto;
+    left: auto;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    max-height: none;
+    margin-left: 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--line, #d9e6ef);
+  }
+
+  .portal .main {
+    margin-left: 0 !important;
+    padding: 20px 16px 28px !important;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .portal .sidebar .brand-card {
+    display: none;
+  }
+
+  .portal .sidebar-card {
+    margin-bottom: 10px;
+  }
+
+  .portal #moduleNav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .portal [data-parent-subconcept-nav] .concept-grid--staff-roles {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .portal .concept-grid:has(> .concept-square:nth-child(4):last-child) {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .portal [data-parent-subconcept-nav] .concept-grid--staff-roles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .portal [data-parent-subconcept-nav] .concept-square--staff-role {
+    min-height: 88px;
+  }
+}
+
+/* ----- Mobile: drawer nav (fixes nav eating full screen) ----- */
+@media (max-width: 768px) {
+  .portal {
+    display: block;
+  }
+
+  .portal .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(300px, 88vw);
+    max-width: 88vw;
+    height: 100%;
+    max-height: 100vh;
+    margin: 0;
+    padding: 14px 12px 20px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    border-right: 1px solid var(--line, #d9e6ef);
+    border-bottom: 0;
+    z-index: 1100;
+    transform: translateX(-105%);
+    transition: transform 0.25s ease;
+    box-shadow: 12px 0 32px rgba(15, 40, 64, 0.18);
+  }
+
+  .portal.sidebar-open .sidebar {
+    transform: translateX(0);
+  }
+
+  .portal .sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1090;
+    background: rgba(15, 40, 64, 0.45);
+  }
+
+  .portal.sidebar-open .sidebar-backdrop {
+    display: block;
+  }
+
+  .portal .main {
+    margin-left: 0 !important;
+    padding: 0 12px 24px !important;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .portal .induction-nav-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    margin: 12px 0 16px;
+    padding: 14px 18px;
+    font-size: 0.95rem;
+    font-weight: 800;
+    font-family: inherit;
+    color: #0f2840;
+    background: linear-gradient(180deg, #fff4de 0%, #f6e3b9 100%);
+    border: 2px solid #d79d15;
+    border-radius: 14px;
+    cursor: pointer;
+    box-shadow: 0 8px 18px rgba(204, 149, 43, 0.2);
+  }
+
+  .portal .induction-nav-toggle__icon {
+    font-size: 1.15rem;
+    line-height: 1;
+  }
+
+  .portal .sidebar .brand-card {
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+
+  .portal .sidebar .sidebar-logo-img {
+    max-width: 140px;
+  }
+
+  .portal .btn-back-pathway {
+    margin-bottom: 10px;
+    padding: 10px 12px;
+    font-size: 0.82rem;
+  }
+
+  body.induction-nav-locked {
+    overflow: hidden;
+  }
+}
+
+@media (min-width: 769px) {
+  .portal .induction-nav-toggle,
+  .portal .sidebar-backdrop {
+    display: none !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .portal .concept-grid:has(> .concept-square:nth-child(4):last-child) {
+    grid-template-columns: 1fr !important;
+  }
+
+  .portal [data-parent-subconcept-nav] .concept-grid--staff-roles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .portal [data-parent-subconcept-nav] .concept-square--staff-role {
+    min-height: 80px;
+    font-size: 0.78rem;
+    padding: 10px 8px;
+  }
+
+  .portal .concept-intro-line,
+  .portal .concept-panel-desc,
+  .portal .concept-points-box,
+  .portal [data-concept-primary-image].concept-section-card,
+  .portal .concept-image.concept-section-card {
+    padding: 12px;
+  }
+
+  .portal .img-expand-btn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .portal .main {
+    padding: 0 10px 20px !important;
+  }
+
+  .portal .induction-nav-toggle {
+    margin: 10px 0 14px;
+    padding: 12px 16px;
+  }
+}
+
+@media (max-width: 400px) {
+  .portal [data-parent-subconcept-nav] .concept-grid--staff-roles {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ----- Block / section titles: flex-basis 420px must not become height in column layout ----- */
+@media (max-width: 860px) {
+  .portal .block-header,
+  .portal .section-title-row {
+    flex: 0 0 auto;
+    align-items: flex-start;
+  }
+
+  .portal .block-title-wrap,
+  .portal .section-title-row h3 {
+    flex: 0 0 auto !important;
+    flex-basis: auto !important;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .portal .block-header::before,
+  .portal .section-title-row::before {
+    top: 4px;
+    bottom: auto;
+    height: calc(100% - 4px);
+    max-height: 72px;
+  }
+}
+
+/* ----- Block roadmaps & programme journey (mobile spacing) ----- */
+@media (max-width: 860px) {
+  .portal .main .content #inside-module .section-body {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .portal .main .content #inside-module .journey-track,
+  .portal .main .content #inside-module .journey-track:has(> :nth-child(4):last-child) {
+    grid-template-columns: 1fr !important;
+  }
+
+  .portal .main .content #journey .journey-wrap {
+    padding: 18px 14px 16px;
+    margin-top: 12px;
+  }
+
+  .portal .main .content #journey .journey-track {
+    grid-template-columns: 1fr !important;
+    gap: 18px;
+    padding-left: 6px;
+  }
+
+  .portal .main .content #journey .journey-item {
+    display: grid !important;
+    grid-template-columns: 52px minmax(0, 1fr) !important;
+    gap: 8px 12px !important;
+    padding-left: 0 !important;
+    align-items: start !important;
+    text-align: left !important;
+  }
+
+  .portal .main .content #journey .journey-item .journey-node {
+    grid-column: 1;
+    grid-row: 1;
+    align-items: center;
+  }
+
+  .portal .main .content #journey .journey-item .journey-circle {
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+  }
+
+  .portal .main .content #journey .journey-item .journey-title,
+  .portal .main .content #journey .journey-item .journey-status {
+    max-width: 100% !important;
+    text-align: left;
+    min-width: 0;
+  }
+
+  .portal .main .content #inside-module a.module-roadmap__item {
+    padding-left: 0 !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .portal .main .content #inside-module .module-roadmap-wrap.journey-wrap {
+    padding: 16px 12px 14px;
+    border-radius: 16px;
+  }
+
+  .portal .main .content #inside-module .section-title-row {
+    padding-left: 10px;
+  }
+
+  .portal .main .content #inside-module .section-title-row h3 {
+    font-size: 1.2rem;
+  }
+
+  .portal .main .content #journey .journey-wrap {
+    padding: 16px 12px 14px;
+    border-radius: 16px;
+  }
+}

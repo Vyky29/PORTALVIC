@@ -1,0 +1,206 @@
+/**
+ * Editorial block roadmap — matches induction slide visuals:
+ * gold rail, nodes on the line, alternating labels with S-curve connectors.
+ */
+
+.induction-block-map{
+  --ind-gold:#f0b323;
+  --ind-gold-deep:#d79d15;
+  --ind-ink:#16324f;
+  --ind-rail-h:8px;
+  position:relative;
+  margin:8px 0 28px;
+  padding:72px 4% 72px;
+  min-height:200px;
+  list-style:none;
+  display:grid;
+  gap:0;
+  align-items:center;
+}
+
+.induction-block-map__rail{
+  position:absolute;
+  left:6%;
+  right:6%;
+  top:50%;
+  height:var(--ind-rail-h);
+  margin-top:calc(var(--ind-rail-h) / -2);
+  background:var(--ind-gold);
+  border-radius:999px;
+  z-index:0;
+  box-shadow:0 2px 0 rgba(255,255,255,.35) inset;
+}
+
+.induction-block-map__item{
+  position:relative;
+  z-index:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  text-align:center;
+  min-width:0;
+}
+
+.induction-block-map__node{
+  width:52px;
+  height:52px;
+  border-radius:50%;
+  background:var(--ind-gold);
+  border:3px solid #fff;
+  box-shadow:0 6px 18px rgba(145,96,9,.22);
+  flex-shrink:0;
+  order:2;
+}
+
+.induction-block-map__label{
+  font-size:clamp(.82rem,1.35vw,1rem);
+  font-weight:800;
+  color:var(--ind-ink);
+  line-height:1.2;
+  max-width:11rem;
+  padding:0 6px;
+}
+
+.induction-block-map__item--below{
+  padding-top:38px;
+}
+
+.induction-block-map__item--below .induction-block-map__label{
+  order:3;
+  margin-top:14px;
+}
+
+.induction-block-map__item--below .induction-block-map__node::before{
+  content:"";
+  position:absolute;
+  left:50%;
+  bottom:100%;
+  width:2px;
+  height:22px;
+  margin-bottom:6px;
+  margin-left:-1px;
+  background:var(--ind-gold);
+  border-radius:2px;
+}
+
+.induction-block-map__item--below .induction-block-map__node::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  bottom:calc(100% + 22px);
+  width:44px;
+  height:28px;
+  margin-left:-22px;
+  border:2px solid var(--ind-gold);
+  border-bottom:none;
+  border-radius:28px 28px 0 0;
+  transform:scaleX(.85);
+}
+
+.induction-block-map__item--above{
+  padding-bottom:38px;
+}
+
+.induction-block-map__item--above .induction-block-map__label{
+  order:1;
+  margin-bottom:14px;
+}
+
+.induction-block-map__item--above .induction-block-map__node{
+  order:2;
+}
+
+.induction-block-map__item--above .induction-block-map__node::before{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:100%;
+  width:2px;
+  height:22px;
+  margin-top:6px;
+  margin-left:-1px;
+  background:var(--ind-gold);
+  border-radius:2px;
+}
+
+.induction-block-map__item--above .induction-block-map__node::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:calc(100% + 22px);
+  width:44px;
+  height:28px;
+  margin-left:-22px;
+  border:2px solid var(--ind-gold);
+  border-top:none;
+  border-radius:0 0 28px 28px;
+  transform:scaleX(.85);
+}
+
+.induction-block-map--count-3{
+  grid-template-columns:repeat(3,minmax(0,1fr));
+}
+
+.induction-block-map--count-4{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+}
+
+#inside-module .induction-block-map-wrap{
+  margin-bottom:26px;
+  padding:8px 0 4px;
+  border-radius:20px;
+  background:linear-gradient(180deg,rgba(255,252,246,.9) 0%,#fff 100%);
+  border:1px solid rgba(240,179,35,.18);
+}
+
+#inside-module .induction-block-map-header{
+  padding:18px 22px 0;
+}
+
+#inside-module .induction-block-map-header .module-tag{
+  font-size:clamp(1.5rem,2.4vw,2rem);
+  font-weight:800;
+  color:var(--ind-gold);
+  line-height:1.05;
+}
+
+#inside-module .induction-block-map-header .pathway-tag{
+  font-size:.95rem;
+  font-weight:700;
+  color:var(--ind-ink);
+  margin-top:4px;
+}
+
+@media(max-width:760px){
+  .induction-block-map{
+    padding:24px 0 32px;
+    grid-template-columns:1fr !important;
+    gap:28px;
+  }
+
+  .induction-block-map__rail{
+    display:none;
+  }
+
+  .induction-block-map__item--above,
+  .induction-block-map__item--below{
+    padding:0;
+    flex-direction:row;
+    gap:14px;
+    text-align:left;
+    align-items:center;
+  }
+
+  .induction-block-map__item--above .induction-block-map__label,
+  .induction-block-map__item--below .induction-block-map__label{
+    order:2;
+    margin:0;
+    max-width:none;
+    flex:1;
+  }
+
+  .induction-block-map__node::before,
+  .induction-block-map__node::after{
+    display:none !important;
+  }
+}

@@ -5298,6 +5298,12 @@
       color:#be4f46;
       border-color:rgba(190,79,70,.24);
     }
+    #menuSheet .menu-btn.menu-btn--induction-done .menu-btn-copy strong{
+      color:#15803d;
+    }
+    #menuSheet .menu-btn.menu-btn--induction-done .menu-btn-copy .menu-btn-sub{
+      color:#166534;
+    }
     #menuSheet .menu-btn.menu-btn--portal-pending{
       background:linear-gradient(180deg,#fff6f4 0%,#ffeeea 100%);
       border-color:rgba(190,79,70,.28);

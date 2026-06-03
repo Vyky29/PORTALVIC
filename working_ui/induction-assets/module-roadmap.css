@@ -1,0 +1,503 @@
+/**
+ * Inside This Module  editorial roadmap (lightweight; not a second Journey).
+ * Block index lives inside the circle (BLOCK + number); title + hint below.
+ */
+
+#inside-module{
+  scroll-margin-top:12px;
+}
+
+/* Lighter section header than programme Journey */
+#inside-module .section-title-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:14px;
+  flex-wrap:wrap;
+  margin-bottom:12px;
+  padding:2px 0 14px 16px;
+  border-bottom:1px solid rgba(45,132,179,.09);
+  position:relative;
+}
+
+#inside-module .section-title-row::before{
+  content:"";
+  position:absolute;
+  top:2px;
+  bottom:14px;
+  left:0;
+  width:2px;
+  border-radius:999px;
+  background:linear-gradient(180deg,rgba(45,132,179,.55) 0%,rgba(137,181,193,.45) 100%);
+  opacity:.85;
+}
+
+#inside-module .section-title-row h3{
+  margin:0;
+  flex:1 1 420px;
+  min-width:0;
+  color:var(--blue);
+  font-size:clamp(1.35rem,2vw,1.72rem);
+  line-height:1.14;
+  letter-spacing:-.02em;
+  font-weight:800;
+  position:relative;
+  padding-bottom:9px;
+}
+
+#inside-module .section-title-row h3::after{
+  content:"";
+  position:absolute;
+  left:0;
+  bottom:0;
+  width:56px;
+  height:2px;
+  border-radius:999px;
+  background:linear-gradient(90deg,var(--blue) 0%,rgba(137,181,193,.75) 100%);
+  opacity:.75;
+}
+
+/* Circle: BLOCK (small) + number (larger), centred; fixed round size */
+#inside-module a.module-roadmap__item .journey-circle{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  line-height:1;
+  padding:0 6px;
+  gap:2px;
+  font-size:unset;
+  background:linear-gradient(155deg, #4eb2ea 0%, #2d84b3 42%, #2a7daa 100%);
+  border:1px solid rgba(255,255,255,.42);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.35),
+    0 8px 20px rgba(45,132,179,.28);
+  min-width:64px;
+  min-height:64px;
+  width:64px;
+  height:64px;
+  border-radius:50%;
+  flex-shrink:0;
+}
+
+#inside-module a.module-roadmap__item .journey-circle .module-roadmap__node-kicker{
+  display:block;
+  margin:0;
+  font-size:.5rem;
+  font-weight:700;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:rgba(255,255,255,.88);
+  line-height:1.05;
+}
+
+#inside-module a.module-roadmap__item .journey-circle .module-roadmap__node-num{
+  display:block;
+  margin:0;
+  font-size:1.12rem;
+  font-weight:800;
+  letter-spacing:-.02em;
+  color:#fff;
+  line-height:1;
+}
+
+#inside-module .module-roadmap__text-stack{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  text-align:center;
+  gap:5px;
+  min-width:0;
+  width:100%;
+}
+
+/* Calm roadmap shell  restraint vs #journey immersive wrap */
+#inside-module .module-roadmap-wrap.journey-wrap{
+  margin-top:4px;
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  border:1px solid rgba(45,132,179,.2);
+  border-radius:22px;
+  background:
+    radial-gradient(ellipse 74% 58% at 12% 16%, rgba(255,255,255,.42) 0%, transparent 52%),
+    radial-gradient(ellipse 60% 48% at 88% 18%, rgba(137,181,193,.2) 0%, transparent 56%),
+    radial-gradient(ellipse 92% 80% at 50% 108%, rgba(29,111,153,.1) 0%, transparent 50%),
+    linear-gradient(175deg, #e4f1f9 0%, #eef7fc 38%, #f9fcfe 72%, #fbfdff 100%);
+  box-shadow:
+    0 12px 32px rgba(18,50,71,.07),
+    inset 0 1px 0 rgba(255,255,255,.55),
+    inset 0 -32px 64px rgba(45,132,179,.05);
+  padding:22px 20px 20px;
+}
+
+#inside-module .module-roadmap-wrap.journey-wrap > .journey-track{
+  position:relative;
+  z-index:1;
+}
+
+#inside-module .module-roadmap-wrap.journey-wrap::before,
+#inside-module .module-roadmap-wrap.journey-wrap::after{
+  content:"";
+  position:absolute;
+  border-radius:inherit;
+  z-index:0;
+  pointer-events:none;
+  overflow:hidden;
+}
+
+#inside-module .module-roadmap-wrap.journey-wrap::before{
+  top:0;
+  left:-28%;
+  right:-28%;
+  bottom:-48%;
+  opacity:.18;
+  mix-blend-mode:screen;
+  background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%201200%20300%27%20preserveAspectRatio%3D%27none%27%3E%3Cpath%20fill%3D%27rgba%28255%2C255%2C255%2C0.26%29%27%20d%3D%27M0%2C108%20C200%2C62%20400%2C154%20600%2C108%20S1000%2C82%201200%2C108%20L1200%2C300%20L0%2C300%20Z%27%2F%3E%3Cpath%20fill%3D%27rgba%28137%2C181%2C193%2C0.3%29%27%20d%3D%27M0%2C132%20C220%2C88%20440%2C176%20660%2C132%20S980%2C102%201200%2C132%20L1200%2C300%20L0%2C300%20Z%27%2F%3E%3Cpath%20fill%3D%27rgba%2845%2C132%2C179%2C0.2%29%27%20d%3D%27M0%2C158%20C260%2C118%20520%2C198%20780%2C158%20S1060%2C128%201200%2C158%20L1200%2C300%20L0%2C300%20Z%27%2F%3E%3C%2Fsvg%3E");
+  background-repeat:repeat-x;
+  background-position:240px 100%;
+  background-size:1200px 100%;
+  mask-image:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.4) 10%,#000 32%,#000 100%);
+  -webkit-mask-image:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.4) 10%,#000 32%,#000 100%);
+  animation:insideModuleRoadmapWaveB 34s linear infinite reverse;
+  will-change:background-position;
+}
+
+#inside-module .module-roadmap-wrap.journey-wrap::after{
+  top:0;
+  left:-22%;
+  right:-22%;
+  bottom:-58%;
+  opacity:.32;
+  mix-blend-mode:soft-light;
+  background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%201200%20300%27%20preserveAspectRatio%3D%27none%27%3E%3Cpath%20fill%3D%27rgba%28255%2C255%2C255%2C0.28%29%27%20d%3D%27M0%2C118%20C200%2C72%20400%2C164%20600%2C118%20S1000%2C92%201200%2C118%20L1200%2C300%20L0%2C300%20Z%27%2F%3E%3Cpath%20fill%3D%27rgba%28137%2C181%2C193%2C0.34%29%27%20d%3D%27M0%2C142%20C220%2C98%20440%2C186%20660%2C142%20S980%2C112%201200%2C142%20L1200%2C300%20L0%2C300%20Z%27%2F%3E%3Cpath%20fill%3D%27rgba%2845%2C132%2C179%2C0.22%29%27%20d%3D%27M0%2C168%20C260%2C128%20520%2C208%20780%2C168%20S1060%2C138%201200%2C168%20L1200%2C300%20L0%2C300%20Z%27%2F%3E%3C%2Fsvg%3E");
+  background-repeat:repeat-x;
+  background-position:0 100%;
+  background-size:1200px 100%;
+  mask-image:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.32) 6%,#000 26%,#000 100%);
+  -webkit-mask-image:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.32) 6%,#000 26%,#000 100%);
+  animation:insideModuleRoadmapWaveA 24s linear infinite;
+  will-change:background-position;
+}
+
+@keyframes insideModuleRoadmapWaveB{
+  0%{ background-position:240px 100%; }
+  100%{ background-position:-960px 100%; }
+}
+
+@keyframes insideModuleRoadmapWaveA{
+  0%{ background-position:0 100%; }
+  100%{ background-position:-1200px 100%; }
+}
+
+#inside-module .journey-track{
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  column-gap:18px;
+  row-gap:8px;
+  padding-top:4px;
+}
+
+/* Exactly four roadmap nodes (e.g. Training I Module 4): one row, not 3+1 */
+#inside-module .journey-track:has(> :nth-child(4):last-child){
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  column-gap:clamp(10px,1.6vw,16px);
+}
+
+#inside-module a.module-roadmap__item{
+  text-decoration:none;
+  color:inherit;
+  cursor:pointer;
+  transition:transform .2s ease,opacity .2s ease;
+  gap:10px;
+}
+
+#inside-module a.module-roadmap__item:hover{
+  transform:translateY(-1px);
+}
+
+#inside-module a.module-roadmap__item:focus-visible{
+  outline:2px solid rgba(45,132,179,.4);
+  outline-offset:3px;
+  border-radius:12px;
+}
+
+#inside-module a.module-roadmap__item .module-roadmap__text-stack .journey-title{
+  color:var(--blue);
+  font-weight:800;
+  max-width:min(260px,100%);
+  font-size:.86rem;
+  line-height:1.32;
+  letter-spacing:-.012em;
+}
+
+#inside-module a.module-roadmap__item .module-roadmap__text-stack .journey-status.module-roadmap__hint{
+  min-height:0;
+  font-size:.7rem;
+  font-weight:600;
+  line-height:1.42;
+  color:#6a8496;
+  text-transform:none;
+  letter-spacing:.01em;
+  max-width:min(260px,100%);
+}
+
+@media (max-width:1080px){
+  #inside-module .journey-track{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    row-gap:22px;
+  }
+
+  #inside-module .journey-track:has(> :nth-child(4):last-child){
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    row-gap:22px;
+    column-gap:14px;
+  }
+
+  #inside-module .journey-track::before{
+    top:28px;
+    left:11%;
+    right:11%;
+  }
+
+  #inside-module .journey-track:has(> :nth-child(4):last-child)::before{
+    left:10%;
+    right:10%;
+  }
+}
+
+/* Tablet: 2×2 for four blocks before stacking on phone */
+@media (max-width:900px){
+  #inside-module .journey-track:has(> :nth-child(4):last-child){
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    row-gap:24px;
+    column-gap:12px;
+  }
+}
+
+/* Mobile: vertical block roadmap (all stacks including general-induction) */
+@media (max-width:860px){
+  #inside-module .journey-track,
+  #inside-module .journey-track:has(> :nth-child(4):last-child),
+  #inside-module .journey-track:has(> :nth-child(3):last-child){
+    grid-template-columns:1fr !important;
+    gap:20px;
+    padding-left:8px;
+    padding-top:6px;
+    row-gap:22px;
+  }
+
+  #inside-module .journey-track::before,
+  #inside-module .journey-track:has(> :nth-child(4):last-child)::before{
+    left:32px;
+    right:auto;
+    top:14px;
+    bottom:14px;
+    width:2px;
+    height:auto;
+  }
+
+  #inside-module .module-roadmap-wrap.journey-wrap{
+    padding:18px 14px 16px;
+    margin-top:8px;
+    border-radius:18px;
+  }
+
+  #inside-module .section-title-row{
+    padding:2px 0 12px 12px;
+    margin-bottom:8px;
+  }
+
+  #inside-module a.module-roadmap__item{
+    display:grid !important;
+    grid-template-columns:64px minmax(0,1fr) !important;
+    gap:8px 14px !important;
+    align-items:start !important;
+    justify-items:start !important;
+    text-align:left !important;
+    padding:6px 0 10px !important;
+    position:relative;
+  }
+
+  #inside-module a.module-roadmap__item .journey-node{
+    grid-column:1;
+    grid-row:1;
+    align-items:center;
+    gap:4px;
+  }
+
+  #inside-module a.module-roadmap__item .journey-circle{
+    position:static !important;
+    width:64px;
+    height:64px;
+    min-width:64px;
+    min-height:64px;
+    flex-shrink:0;
+  }
+
+  #inside-module a.module-roadmap__item .journey-node .module-roadmap__node-kicker{
+    position:static !important;
+    transform:none !important;
+    top:auto;
+    left:auto;
+  }
+
+  #inside-module a.module-roadmap__item .module-roadmap__text-stack{
+    grid-column:2;
+    grid-row:1;
+    align-items:flex-start;
+    text-align:left;
+    gap:6px;
+    width:100%;
+  }
+
+  #inside-module a.module-roadmap__item .module-roadmap__text-stack .journey-title,
+  #inside-module a.module-roadmap__item .module-roadmap__text-stack .journey-status.module-roadmap__hint{
+    max-width:100% !important;
+    text-align:left;
+    min-width:0;
+    word-break:break-word;
+    overflow-wrap:anywhere;
+  }
+
+  #inside-module a.module-roadmap__item .module-roadmap__text-stack .journey-title{
+    font-size:.88rem;
+    line-height:1.3;
+  }
+
+  #inside-module a.module-roadmap__item .module-roadmap__text-stack .journey-status.module-roadmap__hint{
+    font-size:.72rem;
+    line-height:1.45;
+  }
+}
+
+@media (max-width:780px){
+  #inside-module[data-roadmap-stack="training-ii"] .journey-track{
+    grid-template-columns:1fr;
+    row-gap:20px;
+  }
+
+  #inside-module[data-roadmap-stack="training-ii"] .journey-track::before{
+    left:22px;
+    right:auto;
+    top:16px;
+    bottom:16px;
+    width:2px;
+    height:auto;
+  }
+
+  #inside-module[data-roadmap-stack="training-ii"] a.module-roadmap__item{
+    position:relative;
+    align-items:flex-start;
+    text-align:left;
+    padding-left:76px;
+  }
+
+  #inside-module[data-roadmap-stack="training-ii"] a.module-roadmap__item .journey-circle{
+    position:absolute;
+    left:0;
+    top:2px;
+  }
+
+  #inside-module[data-roadmap-stack="training-ii"] a.module-roadmap__item .module-roadmap__text-stack{
+    align-items:flex-start;
+    text-align:left;
+  }
+
+  #inside-module[data-roadmap-stack="training-ii"] a.module-roadmap__item .module-roadmap__text-stack .journey-title,
+  #inside-module[data-roadmap-stack="training-ii"] a.module-roadmap__item .module-roadmap__text-stack .journey-status.module-roadmap__hint{
+    max-width:none;
+    text-align:left;
+  }
+}
+
+@media (max-width:860px){
+  #inside-module[data-roadmap-stack="training-i"] .journey-track{
+    grid-template-columns:1fr;
+    gap:18px;
+    padding-left:6px;
+  }
+
+  #inside-module[data-roadmap-stack="training-i"] .journey-track::before{
+    left:25px;
+    right:auto;
+    top:6px;
+    bottom:6px;
+    width:2px;
+    height:auto;
+  }
+
+  #inside-module[data-roadmap-stack="training-i"] a.module-roadmap__item{
+    display:grid;
+    grid-template-columns:64px minmax(0,1fr);
+    gap:10px 14px;
+    align-items:start;
+    justify-items:start;
+    text-align:left;
+  }
+
+  #inside-module[data-roadmap-stack="training-i"] a.module-roadmap__item .journey-circle{
+    position:static;
+    grid-row:1;
+    grid-column:1;
+    width:64px;
+    height:64px;
+    min-width:64px;
+    min-height:64px;
+    max-width:64px;
+    max-height:64px;
+    border-radius:50%;
+    align-self:start;
+    padding:0 5px;
+    gap:1px;
+  }
+
+  #inside-module[data-roadmap-stack="training-i"] a.module-roadmap__item .journey-circle .module-roadmap__node-kicker{
+    font-size:.44rem;
+    letter-spacing:.12em;
+  }
+
+  #inside-module[data-roadmap-stack="training-i"] a.module-roadmap__item .journey-circle .module-roadmap__node-num{
+    font-size:.95rem;
+  }
+
+  #inside-module[data-roadmap-stack="training-i"] a.module-roadmap__item .module-roadmap__text-stack{
+    grid-column:2;
+    grid-row:1;
+    align-items:flex-start;
+    text-align:left;
+  }
+
+  #inside-module[data-roadmap-stack="training-i"] a.module-roadmap__item .module-roadmap__text-stack .journey-title,
+  #inside-module[data-roadmap-stack="training-i"] a.module-roadmap__item .module-roadmap__text-stack .journey-status.module-roadmap__hint{
+    min-width:0;
+    max-width:100%;
+    word-break:break-word;
+    overflow-wrap:anywhere;
+    text-align:left;
+  }
+
+  #inside-module[data-roadmap-stack="training-i"] a.module-roadmap__item .module-roadmap__text-stack .journey-title{
+    font-size:.84rem;
+    line-height:1.28;
+  }
+
+  #inside-module[data-roadmap-stack="training-i"] a.module-roadmap__item .module-roadmap__text-stack .journey-status.module-roadmap__hint{
+    font-size:.68rem;
+  }
+}
+
+@media (prefers-reduced-motion:reduce){
+  #inside-module a.module-roadmap__item{
+    transition:none;
+  }
+
+  #inside-module a.module-roadmap__item:hover{
+    transform:none;
+  }
+
+  #inside-module .module-roadmap-wrap.journey-wrap::before,
+  #inside-module .module-roadmap-wrap.journey-wrap::after{
+    animation:none !important;
+  }
+}

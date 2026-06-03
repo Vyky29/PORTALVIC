@@ -25,6 +25,7 @@ yarn-debug.log*
 yarn-error.log*
 .tmp_*
 **/_tmp_*
+.tmp_induction_repo/
 supabase/.temp/
 
 # Python

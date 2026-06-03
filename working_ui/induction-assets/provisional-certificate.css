@@ -1,0 +1,124 @@
+/* General Induction — pathway completion & certificate download */
+.induction-certificate-panel {
+  margin: 28px auto 0;
+  max-width: 920px;
+  padding: 28px 32px 32px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #0f2840 0%, #1a4a6e 100%);
+  color: #fff;
+  box-shadow: 0 22px 44px rgba(15, 40, 64, 0.18);
+  border: 1px solid rgba(240, 179, 35, 0.35);
+}
+
+.induction-certificate-panel[hidden] {
+  display: none !important;
+}
+
+.induction-certificate-panel__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 24px 32px;
+}
+
+.induction-certificate-panel__copy {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+.induction-certificate-panel__kicker {
+  margin: 0 0 8px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #f5cc6a;
+}
+
+.induction-certificate-panel h2 {
+  margin: 0 0 10px;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  line-height: 1.2;
+  color: #fff;
+}
+
+.induction-certificate-panel p {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.induction-certificate-panel__learner {
+  margin-top: 12px !important;
+  font-size: 0.92rem !important;
+  font-weight: 600;
+  color: #f5cc6a !important;
+}
+
+.induction-certificate-panel__logo {
+  flex: 0 0 auto;
+  width: min(200px, 42vw);
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 18px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
+}
+
+.induction-certificate-panel__logo img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.induction-certificate-panel__actions {
+  flex: 0 0 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.induction-certificate-panel .btn-certificate-download {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 28px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: linear-gradient(135deg, #f0b323 0%, #f5cc6a 100%);
+  color: #0f2840;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 12px 28px rgba(145, 96, 9, 0.28);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.induction-certificate-panel .btn-certificate-download:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 32px rgba(145, 96, 9, 0.34);
+}
+
+#quiz .score-card.module-result-card [data-download-certificate] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 28px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+#quiz .score-card.module-result-card--final [data-download-certificate] {
+  background: linear-gradient(135deg, #f0b323 0%, #f5cc6a 100%);
+  color: #0f2840;
+  border-color: rgba(255, 255, 255, 0.35);
+}

@@ -143,7 +143,23 @@
     </article>
   </main>
 
+  <script src="/portal/portal_induction.js?v=20260611-induction"></script>
+  <script src="/portal/portal_induction_certificate.js?v=20260611-induction"></script>
   <script type="module">
+    async function portalImportAuthModule() {
+      const v = "20260611-induction";
+      const bases = ["portal", "/portal"];
+      for (const base of bases) {
+        const url = `${base}/auth-handler.js?v=${v}`;
+        try {
+          return await import(url);
+        } catch (e) {
+          console.warn("[my_documents] auth import", url, e);
+        }
+      }
+      return null;
+    }
+
     async function portalImportDocumentsModule(tag) {
       const v = "20260423-13";
       const custom =
@@ -291,6 +307,9 @@
         }
         return "Payslip";
       }
+      if (type === "induction_certificate") {
+        return "clubSENsational General Induction Certificate";
+      }
       return String((doc && doc.title) || "Document");
     }
     function displayMeta(doc) {
@@ -300,7 +319,8 @@
         type === "expense" ||
         type === "swim_term_review" ||
         type === "staff_policy_ack" ||
-        type === "payslip"
+        type === "payslip" ||
+        type === "induction_certificate"
       ) {
         return prettyDateTime(doc.created_at);
       }
@@ -315,7 +335,8 @@
       if (t === "payslip") return "payslip";
       if (t === "swim_term_review") return "report";
       if (t.includes("report")) return "report";
-      if (t.includes("train") || t.includes("induction") || t.includes("safeguard")) return "training";
+      if (t === "induction_certificate" || t.includes("train") || t.includes("induction") || t.includes("safeguard"))
+        return "training";
       const c = String((doc && doc.category) || "").toLowerCase();
       if (c === "reports") return "report";
       if (c === "training") return "training";
@@ -482,7 +503,11 @@
       if (categoryKey === "reports" && (t === "swim_term_review" || t.includes("report"))) return true;
       if (
         categoryKey === "training" &&
-        (t === "staff_policy_ack" || t.includes("train") || t.includes("induction") || t.includes("safeguard"))
+        (t === "staff_policy_ack" ||
+          t === "induction_certificate" ||
+          t.includes("train") ||
+          t.includes("induction") ||
+          t.includes("safeguard"))
       ) {
         return true;
       }
@@ -545,6 +570,9 @@
           const isPayslip =
             String((doc && doc.document_type) || "").toLowerCase() === "payslip" ||
             String((doc && doc.category) || "").toLowerCase() === "payslips";
+          const isInductionCert =
+            String((doc && doc.document_type) || "").toLowerCase() === "induction_certificate" ||
+            docId === "portal-induction-certificate";
           html += `
             <div class="row">
               <div class="row-main minw0">
@@ -555,10 +583,14 @@
                 </div>
               </div>
               <div class="docs-actions">
-                <button type="button" class="btn btn-outline" data-file-url="${esc(doc.file_url)}" data-download-name="${esc(displayTitle(doc))}">
-                  <span class="btn-label-desk">View / Download</span><span class="btn-label-mob"><span class="btn-mob-row1">Download</span><span class="btn-mob-row2" aria-live="polite"></span></span>
+                <button type="button" class="btn btn-outline" ${
+                  isInductionCert
+                    ? `data-induction-cert="1" data-learner-name="${esc(doc.learnerName || "")}" data-issued-iso="${esc(doc.created_at || "")}"`
+                    : `data-file-url="${esc(doc.file_url)}" data-download-name="${esc(displayTitle(doc))}"`
+                }>
+                  <span class="btn-label-desk">${isInductionCert ? "Download certificate" : "View / Download"}</span><span class="btn-label-mob"><span class="btn-mob-row1">Download</span><span class="btn-mob-row2" aria-live="polite"></span></span>
                 </button>
-                ${isPayslip ? "" : `<button type="button" class="btn btn-outline" data-doc-id="${docId}">Delete</button>`}
+                ${isPayslip || isInductionCert ? "" : `<button type="button" class="btn btn-outline" data-doc-id="${docId}">Delete</button>`}
               </div>
             </div>
           `;
@@ -566,6 +598,15 @@
         html += `</section>`;
       });
       root.innerHTML = html;
+      root.querySelectorAll("button[data-induction-cert]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const name = btn.getAttribute("data-learner-name") || "";
+          const issued = btn.getAttribute("data-issued-iso") || "";
+          if (typeof window.portalDownloadInductionCertificate === "function") {
+            void window.portalDownloadInductionCertificate(name, issued);
+          }
+        });
+      });
       root.querySelectorAll("button[data-file-url]").forEach((btn) => {
         btn.addEventListener("click", () =>
           openOrDownloadDocument(
@@ -601,12 +642,38 @@
       });
     }
 
+    async function mergeInductionCertificateRow(docs) {
+      const list = Array.isArray(docs) ? docs.slice() : [];
+      let profile = null;
+      let email = "";
+      try {
+        const auth = await portalImportAuthModule();
+        if (auth && typeof auth.bootstrapDashboardSupabase === "function") {
+          await auth.bootstrapDashboardSupabase({ page: "staff" });
+          const ctx = window.__PORTAL_SUPABASE__ || {};
+          profile = ctx.staff_profile || null;
+          email = String((ctx.session && ctx.session.user && ctx.session.user.email) || "");
+        }
+      } catch (e) {
+        console.warn("[my_documents] induction auth bootstrap", e);
+      }
+      if (typeof window.portalInductionApplyGrandfather === "function") {
+        window.portalInductionApplyGrandfather(profile, email);
+      }
+      if (typeof window.portalInductionGetCertificateMeta !== "function") return list;
+      const meta = window.portalInductionGetCertificateMeta(profile, email);
+      if (!meta) return list;
+      if (list.some((d) => String(d.id || "") === meta.id)) return list;
+      return [meta, ...list];
+    }
+
     (async function init() {
       applyPageChrome();
       const root = document.getElementById("docsRoot");
       if (root) root.innerHTML = `<div class="empty">Loading your documents...</div>`;
       try {
-        const docs = await portalListMyDocuments();
+        let docs = await portalListMyDocuments();
+        docs = await mergeInductionCertificateRow(docs);
         renderGroups(docs);
       } catch (_) {
         if (root) root.innerHTML = `<div class="empty">Could not load documents. Please sign in again.</div>`;

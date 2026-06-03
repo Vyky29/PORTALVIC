@@ -1,0 +1,68 @@
+/**
+ * Module/Block label sits above the circle; only the number stays inside.
+ */
+
+.portal .main .content #journey .journey-item,
+#inside-module a.module-roadmap__item{
+  align-items:center;
+}
+
+.journey-node,
+.roadmap-node{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+  flex-shrink:0;
+}
+
+.journey-node .journey-node__kicker,
+.roadmap-node .module-roadmap__node-kicker,
+.journey-node .module-roadmap__node-kicker{
+  display:block;
+  margin:0;
+  font-size:.5rem;
+  font-weight:700;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  line-height:1.1;
+  white-space:nowrap;
+}
+
+.journey-node .journey-circle,
+.roadmap-node .journey-circle{
+  display:flex;
+  flex-direction:row;
+  align-items:center;
+  justify-content:center;
+  gap:0;
+  padding:0;
+  line-height:1;
+}
+
+.journey-node .journey-circle .journey-node__num,
+.roadmap-node .journey-circle .module-roadmap__node-num,
+.journey-node .journey-circle .module-roadmap__node-num{
+  display:block;
+  margin:0;
+  font-size:1.12rem;
+  font-weight:800;
+  letter-spacing:-.02em;
+  line-height:1;
+}
+
+.journey-circle > .journey-node__kicker,
+.journey-circle > .module-roadmap__node-kicker{
+  position:absolute;
+  top:-14px;
+  left:50%;
+  transform:translateX(-50%);
+  width:max-content;
+  z-index:2;
+}
+
+.journey-circle > .journey-node__num,
+.journey-circle > .module-roadmap__node-num{
+  position:relative;
+  z-index:1;
+}

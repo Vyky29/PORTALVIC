@@ -1,0 +1,120 @@
+/**
+ * Gold induction theme overrides on top of swimming-compatible module shell.
+ */
+
+:root{
+  --blue:#2d84b3;
+  --blueSoft:#89b5c1;
+  --gold:#f0b323;
+  --gold-deep:#d79d15;
+  --goldSoft:#fff4de;
+  --ink:#16324f;
+  --text:#314555;
+  --muted:#786247;
+  --line:rgba(22,50,71,.1);
+  --white:#ffffff;
+  --bg:#fef8ec;
+  --bgSoft:#fffaf0;
+  --gradBrand:linear-gradient(90deg,var(--gold) 0%,var(--gold-deep) 100%);
+  --gradHero:linear-gradient(135deg,var(--gold) 0%,#f5cc6a 72%,rgba(255,255,255,.96) 130%);
+}
+
+body{
+  background:linear-gradient(180deg,var(--bg) 0%,#fff 100%);
+}
+
+.portal .brand-card{
+  background:linear-gradient(135deg,var(--gold) 0%,#f5cc6a 100%);
+}
+
+.portal .btn-back-portal{
+  color:#7a5200;
+  background:var(--goldSoft);
+  border-color:rgba(240,179,35,.35);
+}
+
+.portal .btn-back-portal:hover{
+  background:#ffefc8;
+  border-color:var(--gold-deep);
+  color:#5c3d00;
+}
+
+.portal .nav-link:hover,
+.portal .nav-link.active,
+.portal .nav-link.done{
+  background:#fff8e8;
+  border-color:rgba(240,179,35,.28);
+  color:#7a5200;
+}
+
+.portal .nav-link.completed{
+  background:var(--gold) !important;
+  color:var(--ink) !important;
+  border-color:var(--gold-deep) !important;
+}
+
+.portal .hero.hero--module-system{
+  background:var(--gradHero) !important;
+  color:var(--ink) !important;
+}
+
+.portal .section-pill{
+  background:rgba(240,179,35,.18);
+  color:#7a5200;
+}
+
+.portal .btn-primary{
+  background:var(--gold);
+  color:var(--ink);
+  border-color:rgba(240,179,35,.5);
+}
+
+.portal .btn-primary:hover{
+  background:var(--gold-deep);
+}
+
+.portal #journey .section-title-row::before,
+.portal #inside-module .section-title-row::before{
+  background:linear-gradient(180deg,rgba(240,179,35,.85) 0%,rgba(215,157,21,.55) 100%);
+}
+
+.portal #journey .section-title-row h3,
+.portal #inside-module .section-title-row h3{
+  color:#7a5200;
+}
+
+.portal #journey .section-title-row h3::after,
+.portal #inside-module .section-title-row h3::after{
+  background:linear-gradient(90deg,var(--gold) 0%,var(--gold-deep) 100%);
+}
+
+.portal .main .content #journey .journey-item.active .journey-circle,
+.portal .main .content #inside-module a.module-roadmap__item .journey-circle{
+  background:linear-gradient(155deg,#f5cc6a 0%,var(--gold) 42%,var(--gold-deep) 100%);
+  border-color:rgba(255,255,255,.5);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 8px 20px rgba(145,96,9,.22);
+}
+
+.portal .main .content #journey .journey-item.journey-item--past .journey-circle{
+  background:linear-gradient(155deg,#e8c96a 0%,#c99212 100%);
+}
+
+.portal .module-progress-fill,
+.portal .progress-fill{
+  background:var(--gradBrand);
+}
+
+.portal .concept-stage--empty{
+  border:2px dashed rgba(240,179,35,.35);
+  border-radius:18px;
+  padding:32px 24px;
+  background:#fff;
+  text-align:center;
+  color:var(--muted);
+}
+
+.portal .concept-stage--empty h4{
+  margin:0 0 8px;
+  color:var(--ink);
+  font-size:1.1rem;
+}

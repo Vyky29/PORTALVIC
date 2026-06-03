@@ -1,0 +1,28 @@
+/* Video shell/video rules live in provisional-ui-overrides.css (#video scoped). */
+
+.module-video-status {
+  margin-top: 12px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #7a5200;
+}
+
+.module-video-status.is-done {
+  color: #1d6f42;
+}
+
+.video-complete-check[hidden] {
+  display: none !important;
+}
+
+.quiz-submit-hint {
+  margin: 12px 0 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #7a5200;
+}
+
+.btn-submit:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

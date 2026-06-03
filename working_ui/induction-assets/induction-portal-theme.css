@@ -1,0 +1,118 @@
+/**
+ * General Induction module pages — orange hero, dark navy titles.
+ */
+.portal{
+  --blue:#f0b323;
+  --blueSoft:#f5cc6a;
+  --blue-deep:#f0b323;
+  --blue-mid:#f5cc6a;
+  --gold:#f0b323;
+  --gold-deep:#d79d15;
+  --goldSoft:#fff4de;
+  --accent:#f0b323;
+  --accent-dark:#d79d15;
+  --accent-soft:#f5cc6a;
+  --title-navy:#0f2840;
+  --ink:#0f2840;
+  --text:#314555;
+  --muted:#5d6b7a;
+  --line:rgba(145,96,9,.12);
+  --bg:#fef8ec;
+  --bgSoft:#fffaf0;
+  --success:#fff8e8;
+  --successText:#9a6b00;
+  --gradBrand:linear-gradient(90deg,#f0b323 0%,#d79d15 100%);
+  --gradBlue:linear-gradient(135deg,#f0b323 0%,#f5cc6a 100%);
+  --grad-blue:var(--gradBlue);
+}
+
+.portal .btn-back-pathway{
+  color:var(--title-navy);
+  background:#fff4de;
+  border-color:rgba(240,179,35,.35);
+}
+
+.portal .btn-back-pathway:hover{
+  background:#ffefc8;
+  border-color:#d79d15;
+}
+
+.portal .journey-panel{
+  background:var(--gradBlue) !important;
+  border-color:rgba(240,179,35,.28) !important;
+  color:var(--title-navy) !important;
+}
+
+.portal .journey-panel h4,
+.portal .journey-panel p{
+  color:var(--title-navy) !important;
+}
+
+.portal .brand-card{
+  background:linear-gradient(135deg,#f0b323 0%,#f5cc6a 100%) !important;
+}
+
+/* Module hero — orange background (distinct from Swimming aqua) */
+.portal .hero.hero--module-system{
+  background:linear-gradient(135deg,#f0b323 0%,#f5cc6a 72%,rgba(255,255,255,.96) 130%) !important;
+  color:var(--title-navy) !important;
+}
+
+.portal .hero.hero--module-system .section-top--hero .hero-title-line__stack h2,
+.portal .hero.hero--module-system .hero-module-num,
+.portal .hero.hero--module-system .hero-heading-row .hero-module-num{
+  color:var(--title-navy) !important;
+}
+
+.portal .hero.hero--module-system .hero-title-line__stack .module-hero__descriptor{
+  color:#16324f !important;
+}
+
+.portal .hero.hero--module-system .hero-title-line__stack .module-hero__path,
+.portal .hero.hero--module-system .hero-title-line__stack .module-hero__path span{
+  color:rgba(15,40,64,.72) !important;
+}
+
+.portal .hero.hero--module-system .hero-title-line__stack .module-hero__kicker{
+  color:rgba(15,40,64,.72) !important;
+}
+
+.portal .hero.hero--module-system .hero-title-line__stack .module-hero__descriptor,
+.portal .hero.hero--module-system .hero-title-line__stack .module-hero__path{
+  opacity:1 !important;
+}
+
+.portal .hero.hero--module-system .btn.btn-primary{
+  color:var(--title-navy) !important;
+  background:linear-gradient(135deg,#fff 0%,#fffaf0 100%) !important;
+  border:1px solid rgba(15,40,64,.1) !important;
+}
+
+.portal .section-pill{
+  background:rgba(240,179,35,.18);
+  color:#7a5200;
+}
+
+/* Section and block titles — dark navy (not orange accent) */
+.portal .section h3,
+.portal .section-title-row h3,
+.portal .block-title-wrap h3,
+.portal #journey .section-title-row h3,
+.portal #inside-module .section-title-row h3,
+.portal .concept-stage h4,
+.portal .concept-points-box h4,
+.portal .reflection-gate h4,
+.portal .block-intro-card h4,
+.portal .journey-panel h4{
+  color:var(--title-navy) !important;
+}
+
+.portal .section-title-row::before,
+.portal .block-header::before{
+  background:linear-gradient(180deg,#f0b323 0%,#f5cc6a 100%);
+}
+
+.portal .section-title-row h3::after,
+.portal .block-title-wrap::after{
+  background:linear-gradient(90deg,#f0b323 0%,rgba(245,204,106,.9) 100%);
+}

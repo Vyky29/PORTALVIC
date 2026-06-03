@@ -1,0 +1,457 @@
+/**
+ * Module hero system — mega wave layers, stripe waves, signature, glass badge.
+ * Module hero is the first child inside .content so its width matches sections (e.g. journey).
+ */
+
+.hero.hero--module-system{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+}
+
+.hero.hero--module-system::before,
+.hero.hero--module-system::after{
+  content:none !important;
+  display:none !important;
+}
+
+/* Hero sits inside .content so its outer edge matches journey / sections */
+.content > .hero.hero--module-system{
+  width:100%;
+  max-width:none;
+  margin-left:0;
+  margin-right:0;
+}
+
+.hero.hero--module-system > .module-hero__atmosphere{
+  position:absolute;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  border-radius:inherit;
+  overflow:hidden;
+}
+
+/* Secondary mega wave layer (parallax, brighter crests) */
+.hero.hero--module-system > .module-hero__atmosphere::before{
+  content:"";
+  position:absolute;
+  top:0;
+  left:-28%;
+  right:-28%;
+  bottom:-48%;
+  z-index:1;
+  pointer-events:none;
+  opacity:.22;
+  mix-blend-mode:screen;
+  background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%201200%20300%27%20preserveAspectRatio%3D%27none%27%3E%3Cpath%20fill%3D%27rgba%28255%2C255%2C255%2C0.26%29%27%20d%3D%27M0%2C108%20C200%2C62%20400%2C154%20600%2C108%20S1000%2C82%201200%2C108%20L1200%2C300%20L0%2C300%20Z%27%2F%3E%3Cpath%20fill%3D%27rgba%28137%2C181%2C193%2C0.3%29%27%20d%3D%27M0%2C132%20C220%2C88%20440%2C176%20660%2C132%20S980%2C102%201200%2C132%20L1200%2C300%20L0%2C300%20Z%27%2F%3E%3Cpath%20fill%3D%27rgba%2845%2C132%2C179%2C0.2%29%27%20d%3D%27M0%2C158%20C260%2C118%20520%2C198%20780%2C158%20S1060%2C128%201200%2C158%20L1200%2C300%20L0%2C300%20Z%27%2F%3E%3C%2Fsvg%3E");
+  background-repeat:repeat-x;
+  background-position:240px 100%;
+  background-size:1200px 100%;
+  mask-image:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.4) 10%,#000 32%,#000 100%);
+  -webkit-mask-image:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.4) 10%,#000 32%,#000 100%);
+  animation:moduleHeroMegaWaveScrollB 34s linear infinite reverse;
+  will-change:background-position;
+}
+
+@keyframes moduleHeroMegaWaveScrollB{
+  0%{ background-position:240px 100%; }
+  100%{ background-position:-960px 100%; }
+}
+
+/* Full-bleed scrolling water mass (seamless 1200px tile; hover speeds motion) */
+.hero.hero--module-system > .module-hero__atmosphere::after{
+  content:"";
+  position:absolute;
+  top:0;
+  left:-22%;
+  right:-22%;
+  bottom:-58%;
+  z-index:1;
+  pointer-events:none;
+  opacity:.4;
+  mix-blend-mode:soft-light;
+  background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%201200%20300%27%20preserveAspectRatio%3D%27none%27%3E%3Cpath%20fill%3D%27rgba%28255%2C255%2C255%2C0.28%29%27%20d%3D%27M0%2C118%20C200%2C72%20400%2C164%20600%2C118%20S1000%2C92%201200%2C118%20L1200%2C300%20L0%2C300%20Z%27%2F%3E%3Cpath%20fill%3D%27rgba%28137%2C181%2C193%2C0.34%29%27%20d%3D%27M0%2C142%20C220%2C98%20440%2C186%20660%2C142%20S980%2C112%201200%2C142%20L1200%2C300%20L0%2C300%20Z%27%2F%3E%3Cpath%20fill%3D%27rgba%2845%2C132%2C179%2C0.22%29%27%20d%3D%27M0%2C168%20C260%2C128%20520%2C208%20780%2C168%20S1060%2C138%201200%2C168%20L1200%2C300%20L0%2C300%20Z%27%2F%3E%3C%2Fsvg%3E");
+  background-repeat:repeat-x;
+  background-position:0 100%;
+  background-size:1200px 100%;
+  mask-image:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.32) 6%,#000 26%,#000 100%);
+  -webkit-mask-image:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.32) 6%,#000 26%,#000 100%);
+  animation:moduleHeroMegaWaveScroll 24s linear infinite;
+  will-change:background-position;
+}
+
+@keyframes moduleHeroMegaWaveScroll{
+  0%{ background-position:0 100%; }
+  100%{ background-position:-1200px 100%; }
+}
+
+@media (hover:hover){
+  .hero.hero--module-system:hover > .module-hero__atmosphere::after,
+  .hero.hero--module-system:hover > .module-hero__atmosphere::before{
+    filter:saturate(1.08) brightness(1.05);
+  }
+
+  .hero.hero--module-system:hover > .module-hero__atmosphere::after{
+    opacity:.5;
+    animation-duration:14s;
+  }
+
+  .hero.hero--module-system:hover > .module-hero__atmosphere::before{
+    opacity:.3;
+    animation-duration:22s;
+  }
+}
+
+.hero.hero--module-system > .section-top,
+.hero.hero--module-system > .hero-actions{
+  position:relative;
+  z-index:2;
+}
+
+/* --- Deep lighting (slow breathing) --- */
+
+.module-hero__glow{
+  position:absolute;
+  inset:-25% -12% auto -12%;
+  height:62%;
+  z-index:0;
+  background:
+    radial-gradient(ellipse 58% 48% at 14% 22%,rgba(255,255,255,.16) 0%,transparent 55%),
+    radial-gradient(ellipse 48% 42% at 86% 28%,rgba(137,181,193,.28) 0%,transparent 58%),
+    radial-gradient(ellipse 90% 55% at 50% 8%,rgba(255,255,255,.06) 0%,transparent 45%);
+  opacity:.9;
+  animation:moduleHeroGlowPulse 14s ease-in-out infinite;
+}
+
+@keyframes moduleHeroGlowPulse{
+  0%,100%{ opacity:.82; transform:scale(1); }
+  50%{ opacity:1; transform:scale(1.02); }
+}
+
+/* --- Signature: single flowing curve (brand motion line) --- */
+
+.module-hero__signature{
+  position:absolute;
+  left:-8%;
+  right:-8%;
+  top:38%;
+  height:min(42vw,220px);
+  z-index:2;
+  opacity:.11;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none'%3E%3Cpath fill='none' stroke='%23ffffff' stroke-width='1.2' stroke-linecap='round' d='M0 78 C200 22 400 110 600 48 S1000 18 1200 72'/%3E%3Cpath fill='none' stroke='%2389b5c1' stroke-width='0.9' stroke-opacity='0.55' stroke-linecap='round' d='M0 92 C220 40 420 102 640 58 S980 32 1200 88'/%3E%3C/svg%3E")
+    center / 100% 100% no-repeat;
+  animation:moduleHeroSignatureDrift 48s ease-in-out infinite alternate;
+}
+
+@keyframes moduleHeroSignatureDrift{
+  0%{ transform:translate3d(0,0,0) scale(1); }
+  100%{ transform:translate3d(-2.5%,-6px,0) scale(1.02); }
+}
+
+/* --- Layered waves --- */
+
+.module-hero__wave{
+  position:absolute;
+  left:-40%;
+  width:180%;
+  height:42%;
+  bottom:-20%;
+  z-index:1;
+  opacity:.14;
+  background:repeating-linear-gradient(
+    96deg,
+    rgba(255,255,255,0) 0 28px,
+    rgba(255,255,255,.06) 28px 32px
+  );
+  mask-image:radial-gradient(ellipse 88% 68% at 50% 100%,#000 36%,transparent 74%);
+  -webkit-mask-image:radial-gradient(ellipse 88% 68% at 50% 100%,#000 36%,transparent 74%);
+  animation:moduleHeroWaveDrift 32s linear infinite;
+  will-change:transform;
+}
+
+.module-hero__wave--2{
+  bottom:-32%;
+  opacity:.11;
+  animation-duration:44s;
+  animation-direction:reverse;
+  background:repeating-linear-gradient(
+    92deg,
+    rgba(255,255,255,0) 0 36px,
+    rgba(255,255,255,.045) 36px 40px
+  );
+}
+
+.module-hero__wave--3{
+  bottom:-6%;
+  height:30%;
+  opacity:.08;
+  animation-duration:56s;
+  background:repeating-linear-gradient(
+    88deg,
+    rgba(45,132,179,0) 0 44px,
+    rgba(45,132,179,.055) 44px 48px
+  );
+}
+
+@keyframes moduleHeroWaveDrift{
+  0%{ transform:translate3d(0,0,0); }
+  50%{ transform:translate3d(-48px,-3px,0); }
+  100%{ transform:translate3d(-96px,0,0); }
+}
+
+/* --- Orbs: intentional arc, varied depth --- */
+
+.module-hero__orb{
+  position:absolute;
+  border-radius:50%;
+  pointer-events:none;
+  z-index:3;
+  animation:moduleHeroOrbFloat 14s ease-in-out infinite;
+  will-change:transform,opacity;
+}
+
+.module-hero__orb--1{
+  width:64px;
+  height:64px;
+  left:6%;
+  top:18%;
+  border:1px solid rgba(255,255,255,.22);
+  background:radial-gradient(circle at 32% 28%,rgba(255,255,255,.2),rgba(255,255,255,.04) 55%,transparent 70%);
+  box-shadow:0 0 0 1px rgba(45,132,179,.1) inset,0 12px 28px rgba(18,50,71,.12);
+  opacity:.55;
+  filter:blur(.3px);
+  animation-delay:0s;
+}
+
+.module-hero__orb--2{
+  width:38px;
+  height:38px;
+  left:18%;
+  bottom:22%;
+  border:1px solid rgba(255,255,255,.16);
+  background:rgba(255,255,255,.06);
+  opacity:.4;
+  filter:blur(1.2px);
+  animation-delay:1.2s;
+}
+
+.module-hero__orb--3{
+  width:48px;
+  height:48px;
+  left:56%;
+  top:16%;
+  right:auto;
+  border:1px solid rgba(255,255,255,.18);
+  background:radial-gradient(circle at 70% 70%,rgba(137,181,193,.25),rgba(255,255,255,.05) 60%);
+  box-shadow:0 10px 24px rgba(18,50,71,.1);
+  opacity:.38;
+  filter:blur(.5px);
+  animation-delay:.5s;
+}
+
+.module-hero__orb--4{
+  width:22px;
+  height:22px;
+  left:44%;
+  bottom:26%;
+  right:auto;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.05);
+  opacity:.28;
+  filter:blur(1.6px);
+  animation-delay:2.4s;
+}
+
+@keyframes moduleHeroOrbFloat{
+  0%,100%{ transform:translate3d(0,0,0) scale(1); }
+  50%{ transform:translate3d(4px,-10px,0) scale(1.04); }
+}
+
+/* --- Badge: glass, high contrast (sits in right rail) --- */
+
+.hero.hero--module-system .hero-heading-row{
+  justify-content:flex-end;
+  margin:0;
+}
+
+.hero.hero--module-system .hero-module-num{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:9px 16px;
+  border-radius:999px;
+  font-size:.74rem;
+  font-weight:800;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--blue,#2d84b3);
+  background:rgba(255,255,255,.94);
+  border:1px solid rgba(255,255,255,.72);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.85) inset,
+    0 6px 22px rgba(18,50,71,.14),
+    0 0 0 1px rgba(45,132,179,.08);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+}
+
+/* --- Title area: left stack + right rail (badge) --- */
+
+.hero.hero--module-system .hero-title-line{
+  display:flex;
+  flex-direction:row;
+  flex-wrap:wrap;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:22px 36px;
+  width:100%;
+  max-width:none;
+}
+
+.hero.hero--module-system .hero-title-line__stack{
+  flex:1 1 min(0,32rem);
+  min-width:min(100%,280px);
+}
+
+.hero.hero--module-system .hero-title-line__rail{
+  flex:0 0 auto;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:16px;
+  max-width:220px;
+  padding-top:2px;
+}
+
+.hero.hero--module-system .section-top--hero .hero-title-line__stack h2{
+  margin:0;
+  font-size:clamp(1.65rem,3.2vw,2.55rem);
+  line-height:1.18;
+  letter-spacing:-0.03em;
+  font-weight:800;
+  text-wrap:balance;
+}
+
+.hero.hero--module-system .hero-title-line__stack .module-hero__descriptor{
+  margin:12px 0 0;
+  max-width:42ch;
+  font-size:.98rem;
+  line-height:1.72;
+  font-weight:500;
+  color:rgba(255,255,255,.92);
+}
+
+.hero.hero--module-system .hero-title-line__stack .module-hero__path{
+  margin:18px 0 0;
+  padding:0;
+  max-width:min(36rem,100%);
+  font-size:.68rem;
+  font-weight:800;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:rgba(255,255,255,.68);
+  line-height:1.5;
+}
+
+.hero.hero--module-system .module-hero__path-sep{
+  display:inline-block;
+  padding:0 .32em;
+  font-weight:600;
+  opacity:.45;
+}
+
+.hero.hero--module-system .hero-actions{
+  margin-top:26px;
+}
+
+/* --- Primary CTA: depth + calm hover --- */
+
+.hero.hero--module-system .btn.btn-primary{
+  position:relative;
+  border:1px solid rgba(255,255,255,.22);
+  box-shadow:
+    0 10px 28px rgba(18,50,71,.22),
+    0 1px 0 rgba(255,255,255,.28) inset;
+  transition:transform .25s ease,box-shadow .25s ease,filter .25s ease,background .25s ease;
+}
+
+.hero.hero--module-system .btn.btn-primary:hover{
+  transform:translateY(-2px);
+  box-shadow:
+    0 14px 34px rgba(18,50,71,.28),
+    0 0 0 1px rgba(255,255,255,.12),
+    0 1px 0 rgba(255,255,255,.35) inset;
+  filter:brightness(1.04);
+}
+
+.hero.hero--module-system .btn.btn-primary:active{
+  transform:translateY(0);
+}
+
+@media (max-width:860px){
+  .hero.hero--module-system .hero-title-line{
+    flex-direction:column;
+    align-items:stretch;
+    gap:18px;
+  }
+
+  .hero.hero--module-system .hero-title-line__rail{
+    order:-1;
+    flex-direction:row;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+    align-items:center;
+    max-width:none;
+    width:100%;
+    gap:14px;
+  }
+
+  .hero.hero--module-system .module-hero__orb--1{
+    left:3%;
+    top:14%;
+    width:48px;
+    height:48px;
+  }
+
+  .hero.hero--module-system .module-hero__orb--3{
+    left:58%;
+    top:12%;
+    width:36px;
+    height:36px;
+  }
+
+  .hero.hero--module-system .module-hero__signature{
+    top:44%;
+    opacity:.08;
+  }
+
+  .hero.hero--module-system .section-top--hero .hero-title-line__stack h2{
+    font-size:clamp(1.45rem,4.6vw,2.1rem);
+  }
+}
+
+@media (prefers-reduced-motion:reduce){
+  .module-hero__wave,
+  .module-hero__orb,
+  .module-hero__signature,
+  .module-hero__glow,
+  .hero.hero--module-system > .module-hero__atmosphere::after,
+  .hero.hero--module-system > .module-hero__atmosphere::before{
+    animation:none !important;
+  }
+
+  .hero.hero--module-system:hover > .module-hero__atmosphere::after,
+  .hero.hero--module-system:hover > .module-hero__atmosphere::before{
+    filter:none;
+  }
+
+  .hero.hero--module-system .btn.btn-primary{
+    transition:none;
+  }
+
+  .hero.hero--module-system .btn.btn-primary:hover{
+    transform:none;
+    filter:none;
+  }
+}

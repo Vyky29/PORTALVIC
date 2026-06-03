@@ -1,0 +1,88 @@
+/**
+ * Unified primary imagery across Training I / II modules.
+ * Loaded last so it overrides per-module .concept-image img rules.
+ * 16:9 frame + object-fit: cover keeps mixed source ratios visually consistent.
+ */
+.portal .concept-panel .concept-image > img:not(.concept-overview-infographic),
+.portal .concept-slide-block .concept-image > img:not(.concept-overview-infographic),
+.portal .concept-panel [data-concept-primary-image] > img:not(.concept-overview-infographic),
+.portal .concept-panel [data-concept-intro-media] > img:not(.concept-overview-infographic),
+.portal .concept-panel [data-concept-primary-image] .concept-image > img:not(.concept-overview-infographic),
+.portal .concept-panel [data-concept-intro-media] .concept-image > img:not(.concept-overview-infographic),
+.portal .block-intro-slide .concept-image > img:not(.concept-overview-infographic),
+.portal .concept-panel .concept-image > figure > img:not(.concept-overview-infographic),
+.portal .concept-panel [data-concept-primary-image] > figure > img:not(.concept-overview-infographic),
+.portal .concept-panel [data-concept-intro-media] > figure > img:not(.concept-overview-infographic),
+.portal .block-intro-slide .concept-image > figure > img:not(.concept-overview-infographic),
+.portal .concept-panel .concept-image.concept-section-card > img:not(.concept-overview-infographic),
+.portal .concept-panel .concept-image.concept-section-card figure > img:not(.concept-overview-infographic) {
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.portal .carousel-slide img,
+.portal .carousel-inline-slide img,
+.portal .carousel-slides-container .carousel-slide img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.portal .b3c2-concept-hero > img {
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+/* Overview infographics — same proportion as Training I concept imagery (full width, 16:9 frame) */
+.portal .concept-panel [data-concept-primary-image].concept-primary-image--overview,
+.portal .concept-panel .concept-image.concept-primary-image--overview {
+  margin-top: 14px;
+  border-top: none;
+  width: 100%;
+  max-width: 100%;
+}
+
+.portal .concept-panel [data-concept-primary-image] > img.concept-overview-infographic,
+.portal .concept-panel .concept-image.concept-section-card > img.concept-overview-infographic {
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
+  object-position: center;
+  display: block;
+  height: auto;
+  margin: 0;
+  border-radius: 12px;
+  border: 1px solid rgba(22, 50, 71, 0.1);
+}
+
+/* Infographics: same frame at tablet/mobile, tighter padding on small screens */
+@media (max-width: 1024px) {
+  .portal .concept-panel [data-concept-primary-image].concept-primary-image--overview,
+  .portal .concept-panel .concept-image.concept-primary-image--overview {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 600px) {
+  .portal .concept-panel [data-concept-primary-image].concept-primary-image--overview,
+  .portal .concept-panel .concept-image.concept-primary-image--overview {
+    padding: 10px;
+    margin-top: 12px;
+  }
+
+  .portal .concept-panel [data-concept-primary-image] > img.concept-overview-infographic,
+  .portal .concept-panel .concept-image.concept-section-card > img.concept-overview-infographic {
+    border-radius: 10px;
+  }
+}

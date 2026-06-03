@@ -1,0 +1,83 @@
+/**
+ * General Induction — pathway hub (dashboard) orange hero + navy titles.
+ * Load after pathway-hub.css and portal-induction-atmosphere.css.
+ */
+
+.training-page{
+  --blue-deep:#f0b323;
+  --blue-mid:#f5cc6a;
+  --blue-soft:#fff4de;
+  --yellow:#d79d15;
+  --navy:#0f2840;
+  --title-navy:#0f2840;
+  --text:#314555;
+  --border:#f3e4c6;
+  background:linear-gradient(180deg,#fef8ec 0%,#ffffff 52%,#fffaf0 100%);
+}
+
+/* Dashboard hero — orange (not Swimming aqua blue) */
+.training-page .hero.hero--pathway-hub.hero--induction,
+.training-page .hero.hero--induction{
+  background:linear-gradient(135deg,#f0b323 0%,#f5cc6a 68%,rgba(255,255,255,.97) 128%) !important;
+  color:var(--title-navy);
+  border:1px solid rgba(240,179,35,.22);
+}
+
+.training-page .hero.hero--pathway-hub.hero--induction::before,
+.training-page .hero.hero--pathway-hub.hero--induction::after,
+.training-page .hero.hero--induction::before,
+.training-page .hero.hero--induction::after{
+  background:rgba(255,255,255,.14);
+}
+
+.training-page .hero.hero--induction .pathway-hero__waves{
+  opacity:.28;
+  filter:hue-rotate(-18deg) saturate(1.15);
+}
+
+.training-page .hero.hero--induction .brand-chip{
+  background:rgba(15,40,64,.08);
+  color:var(--title-navy);
+  border:1px solid rgba(15,40,64,.12);
+}
+
+.training-page .hero.hero--induction h1{
+  color:var(--title-navy);
+}
+
+.training-page .hero.hero--induction .hero-subtitle{
+  color:#16324f;
+}
+
+.training-page .modules-grid .module-card::before{
+  background:linear-gradient(90deg,#f0b323 0%,#d79d15 100%);
+}
+
+.training-page .module-number{
+  color:#9a6b00;
+}
+
+.training-page .module-card h3,
+.training-page .modules-grid .module-card h3{
+  color:var(--title-navy) !important;
+}
+
+.training-page .module-status-badge.status-not-started{
+  background:rgba(240,179,35,.14);
+  color:#7a5200;
+}
+
+.training-page .btn-primary,
+.training-page .modules-grid .btn-primary{
+  background:#f0b323;
+  color:var(--title-navy);
+  border-color:rgba(240,179,35,.45);
+}
+
+.training-page .btn-primary:hover{
+  background:#d79d15;
+}
+
+.training-page .module-card:hover{
+  border-color:rgba(240,179,35,.28);
+}

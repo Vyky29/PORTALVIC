@@ -1,0 +1,260 @@
+/**
+ * Induction theme overrides for key-ideas recap and completion flow.
+ * Preserves Swimming Training layout; swaps blue accents for induction orange/navy.
+ */
+
+#recap .recap-takeaway-card,
+#keyideas .recap-takeaway-card{
+  background:linear-gradient(165deg,#fffaf0 0%,#ffffff 52%,#fff8eb 100%);
+  border-color:rgba(240,179,35,.18);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.95) inset,
+    0 10px 28px rgba(15,40,64,.06);
+}
+
+#recap .recap-takeaway-card:hover,
+#keyideas .recap-takeaway-card:hover{
+  border-color:rgba(240,179,35,.32);
+  background:linear-gradient(165deg,#fff6e3 0%,#ffffff 55%,#fff4dc 100%);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.98) inset,
+    0 16px 36px rgba(15,40,64,.09);
+}
+
+#recap .recap-takeaway-card.clicked,
+#keyideas .recap-takeaway-card.clicked{
+  border:2px solid var(--accent,#f0b323);
+  background:linear-gradient(165deg,#fff3d6 0%,#fff9ec 100%);
+  box-shadow:0 10px 30px rgba(240,179,35,.22);
+}
+
+#recap .recap-takeaway-card__title,
+#keyideas .recap-takeaway-card__title{
+  color:var(--title-navy,#0f2840);
+}
+
+#recap .recap-takeaway-card__text,
+#keyideas .recap-takeaway-card__text{
+  color:var(--muted,#5d7688);
+}
+
+/* ?? Completion / Ready for the Quiz � primary orange milestone card ?? */
+
+#complete .completion,
+#complete .completion-box{
+  color:var(--title-navy,#0f2840);
+  background:
+    radial-gradient(ellipse 92% 72% at 18% 8%,rgba(255,255,255,.52) 0%,transparent 58%),
+    radial-gradient(ellipse 68% 58% at 88% 12%,rgba(255,244,196,.62) 0%,transparent 54%),
+    radial-gradient(ellipse 55% 45% at 50% 38%,rgba(255,214,120,.38) 0%,transparent 62%),
+    radial-gradient(ellipse 100% 80% at 50% 112%,rgba(15,40,64,.18) 0%,transparent 48%),
+    linear-gradient(
+      152deg,
+      #fff0c8 0%,
+      #ffe08a 14%,
+      #f5cc6a 32%,
+      #f0b323 52%,
+      #e8a82a 72%,
+      #d99518 90%,
+      #c98510 100%
+    );
+  border:1px solid rgba(255,255,255,.48);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.62),
+    inset 0 -1px 0 rgba(201,133,16,.22),
+    0 0 0 1px rgba(255,220,140,.28),
+    0 22px 48px rgba(232,168,32,.26),
+    0 10px 28px rgba(15,40,64,.07);
+  transition:box-shadow .4s ease,transform .35s ease;
+}
+
+@media (hover:hover){
+  #complete .completion-box:hover{
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.72),
+      inset 0 -1px 0 rgba(201,133,16,.26),
+      0 0 0 1px rgba(255,230,160,.42),
+      0 28px 60px rgba(240,179,35,.34),
+      0 0 48px rgba(255,214,120,.28),
+      0 12px 32px rgba(15,40,64,.08);
+  }
+}
+
+#complete .completion-box::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  pointer-events:none;
+  z-index:0;
+  background:
+    radial-gradient(circle at 12% 18%,rgba(255,255,255,.35) 0%,transparent 42%),
+    radial-gradient(circle at 92% 22%,rgba(255,236,179,.4) 0%,transparent 38%);
+  mix-blend-mode:soft-light;
+}
+
+#complete .completion-box::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  pointer-events:none;
+  z-index:0;
+  background:radial-gradient(ellipse 115% 95% at 50% 50%,transparent 58%,rgba(15,40,64,.1) 100%);
+}
+
+#complete .completion-atmosphere::before,
+#complete .completion-box > .completion-atmosphere::before{
+  opacity:.28;
+  mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%201200%20300%27%20preserveAspectRatio%3D%27none%27%3E%3Cpath%20fill%3D%27rgba%28255%2C255%2C255%2C0.42%29%27%20d%3D%27M0%2C108%20C200%2C62%20400%2C154%20600%2C108%20S1000%2C82%201200%2C108%20L1200%2C300%20L0%2C300%20Z%27%2F%3E%3Cpath%20fill%3D%27rgba%28255%2C220%2C140%2C0.38%29%27%20d%3D%27M0%2C132%20C220%2C88%20440%2C176%20660%2C132%20S980%2C102%201200%2C132%20L1200%2C300%20L0%2C300%20Z%27%2F%3E%3Cpath%20fill%3D%27rgba%28240%2C179%2C35%2C0.24%29%27%20d%3D%27M0%2C158%20C260%2C118%20520%2C198%20780%2C158%20S1060%2C128%201200%2C158%20L1200%2C300%20L0%2C300%20Z%27%2F%3E%3C%2Fsvg%3E");
+}
+
+#complete .completion-atmosphere::after,
+#complete .completion-box > .completion-atmosphere::after{
+  opacity:.42;
+  mix-blend-mode:soft-light;
+  background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%201200%20300%27%20preserveAspectRatio%3D%27none%27%3E%3Cpath%20fill%3D%27rgba%28255%2C255%2C255%2C0.36%29%27%20d%3D%27M0%2C118%20C200%2C72%20400%2C164%20600%2C118%20S1000%2C92%201200%2C118%20L1200%2C300%20L0%2C300%20Z%27%2F%3E%3Cpath%20fill%3D%27rgba%28255%2C214%2C120%2C0.4%29%27%20d%3D%27M0%2C142%20C220%2C98%20440%2C186%20660%2C142%20S980%2C112%201200%2C142%20L1200%2C300%20L0%2C300%20Z%27%2F%3E%3Cpath%20fill%3D%27rgba%28201%2C146%2C26%2C0.28%29%27%20d%3D%27M0%2C168%20C260%2C128%20520%2C208%20780%2C168%20S1060%2C138%201200%2C168%20L1200%2C300%20L0%2C300%20Z%27%2F%3E%3C%2Fsvg%3E");
+}
+
+@media (hover:hover){
+  #complete .completion-box:hover .completion-atmosphere::after{
+    opacity:.5;
+    filter:saturate(1.08) brightness(1.06);
+    animation-duration:20s;
+  }
+
+  #complete .completion-box:hover .completion-atmosphere::before{
+    opacity:.34;
+    animation-duration:30s;
+  }
+}
+
+#complete .completion-box .completion-inner{
+  position:relative;
+  z-index:1;
+}
+
+#complete .completion-box .completion-pathway{
+  color:rgba(15,40,64,.58);
+  font-size:.7rem;
+  letter-spacing:.14em;
+}
+
+#complete .completion-box .completion-pathway__sep{
+  color:rgba(15,40,64,.32);
+  opacity:1;
+}
+
+#complete .completion-box .completion-pathway__quiz{
+  color:var(--title-navy,#0f2840);
+  font-weight:800;
+  letter-spacing:.18em;
+  text-shadow:
+    0 0 28px rgba(255,255,255,.75),
+    0 0 14px rgba(255,236,179,.65);
+}
+
+#complete .completion-box .completion-pathway::after{
+  background:linear-gradient(90deg,transparent,rgba(15,40,64,.22),transparent);
+  opacity:.85;
+}
+
+#complete .completion-box .completion-title{
+  margin-top:10px;
+  font-size:clamp(32px,4.4vw,48px);
+  font-weight:800;
+  line-height:1.04;
+  letter-spacing:-.03em;
+  color:var(--title-navy,#0f2840);
+  text-shadow:
+    0 2px 0 rgba(255,255,255,.42),
+    0 0 48px rgba(255,255,255,.35);
+}
+
+#complete .completion-box .completion-body{
+  margin-top:20px;
+}
+
+#complete .completion-box .completion-lead{
+  font-size:clamp(17px,1.8vw,19px);
+  font-weight:600;
+  color:rgba(15,40,64,.9);
+  line-height:1.62;
+}
+
+#complete .completion-box .completion-sub{
+  margin-top:14px;
+  font-size:clamp(15px,1.6vw,17px);
+  font-weight:500;
+  color:rgba(15,40,64,.72);
+  line-height:1.65;
+}
+
+#complete .completion-box .completion-actions{
+  margin-top:30px;
+}
+
+#complete .completion-box .completion-actions .btn.btn-primary{
+  min-width:210px;
+  padding:16px 34px;
+  font-size:16px;
+  font-weight:800;
+  letter-spacing:.02em;
+  color:var(--title-navy,#0f2840);
+  background:rgba(255,255,255,.78);
+  border:1px solid rgba(255,255,255,.72);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  box-shadow:
+    0 14px 36px rgba(201,133,16,.28),
+    0 0 0 1px rgba(15,40,64,.06),
+    0 1px 0 rgba(255,255,255,.85) inset;
+  transition:
+    transform .28s ease,
+    box-shadow .32s ease,
+    background .28s ease,
+    border-color .28s ease;
+}
+
+@media (hover:hover){
+  #complete .completion-box .completion-actions .btn.btn-primary:hover{
+    transform:translateY(-3px);
+    background:rgba(255,255,255,.94);
+    border-color:rgba(255,255,255,.92);
+    color:var(--title-navy,#0f2840);
+    box-shadow:
+      0 20px 48px rgba(240,179,35,.38),
+      0 0 36px rgba(255,220,140,.45),
+      0 0 0 1px rgba(15,40,64,.08),
+      0 1px 0 rgba(255,255,255,.95) inset;
+    filter:none;
+  }
+}
+
+#complete .completion-box .completion-actions .btn-secondary{
+  color:var(--title-navy,#0f2840);
+  background:rgba(15,40,64,.08);
+  border:1px solid rgba(15,40,64,.14);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+}
+
+#complete .completion-box .completion-actions .btn-secondary:hover{
+  background:rgba(15,40,64,.12);
+  border-color:rgba(15,40,64,.22);
+  color:var(--title-navy,#0f2840);
+}
+
+@media (prefers-reduced-motion:reduce){
+  #complete .completion-atmosphere::before,
+  #complete .completion-atmosphere::after,
+  #complete .completion-box > .completion-atmosphere::before,
+  #complete .completion-box > .completion-atmosphere::after{
+    animation:none !important;
+  }
+
+  #complete .completion-box:hover{
+    transform:none;
+  }
+}

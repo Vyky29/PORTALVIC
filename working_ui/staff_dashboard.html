@@ -448,7 +448,7 @@
         <div class="menu-group">
           <div class="menu-group-title">Training</div>
           <div class="menu-grid" id="quickMenuTrainingGrid">
-            <button type="button" class="menu-btn menu-btn--portal-pending" id="quickMenuInduction" disabled aria-label="Induction — temporarily unavailable">
+            <button type="button" class="menu-btn menu-btn--induction" id="quickMenuInduction" data-portal-induction="1" aria-label="Induction — core company training">
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 12h6M9 16h6"/></svg></div>
               <div class="menu-btn-copy"><strong>Induction</strong><span class="menu-btn-sub">Core company training</span></div>
             </button>
@@ -767,6 +767,8 @@
   <script src="/portal/staff_roster_resolve.js?v=20260611-javi-roster-guard"></script>
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260603-achievements-shared" />
   <script src="/portal/portal_participant_achievements.js?v=20260610-pwa-black-fix"></script>
+  <script src="/portal/portal_induction.js?v=20260611-induction"></script>
+  <script src="/portal/portal_induction_bind.js?v=20260611-induction"></script>
   <script src="/portal/portal_guide_menu.js?v=20260609-qm-top"></script>
   <script src="/portal/portal_dm_voice.js?v=20260602-feedback-voice-fix"></script>
   <script>
@@ -12577,6 +12579,9 @@
         if (typeof renderToday === "function") renderToday();
         if (typeof renderMiniCounts === "function") renderMiniCounts();
         if (typeof renderLists === "function") renderLists();
+        if (typeof window.portalInductionSyncQuickMenu === "function") {
+          window.portalInductionSyncQuickMenu();
+        }
       }
       async function rehydrateFromProfile(){
         var runId = ++_rehydrateRun;
