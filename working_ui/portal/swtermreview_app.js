@@ -14,24 +14,28 @@
 const LEVEL_DATA = {
       1: [
         { title: "Water Familiarisation I", items: [
-          { id:"l1_1", text:"Enters water with predictable supported routine" },
-          { id:"l1_2", text:"Tolerates splash and water contact on body" },
-          { id:"l1_3", text:"Accepts face wetting with support" },
+          { id:"l1_1", text:"Become comfortable entering the aquatic environment with support" },
+          { id:"l1_2", text:"Build positive relationships with adults in the water" },
+          { id:"l1_3", text:"Participate in familiar swimming routines and activities" },
+          { id:"l1_4", text:"Engage confidently in structured water based experiences" },
         ]},
         { title: "Water Adaptation I", items: [
-          { id:"l1_4", text:"Maintains supported upright position" },
-          { id:"l1_5", text:"Holds poolside and releases on cue" },
-          { id:"l1_6", text:"Moves short distance with close adult support" },
+          { id:"l1_5", text:"Move through the water with adult or equipment support" },
+          { id:"l1_6", text:"Explore different movements and body positions in water" },
+          { id:"l1_7", text:"Maintain balance during simple aquatic activities" },
+          { id:"l1_8", text:"Participate in basic fitness and movement activities in water" },
         ]},
         { title: "Breathing Control I", items: [
-          { id:"l1_7", text:"Attempts bubbles or exhale in water" },
-          { id:"l1_8", text:"Recovers breathing calmly after splash" },
-          { id:"l1_9", text:"Responds to simple breath cue" },
+          { id:"l1_9", text:"Tolerate water contact around the face" },
+          { id:"l1_10", text:"Explore blowing and breathing activities in water" },
+          { id:"l1_11", text:"Place the chin and mouth in the water when supported" },
+          { id:"l1_12", text:"Attempt to place the eyes in the water when ready" },
         ]},
         { title: "Water Safety I", items: [
-          { id:"l1_10", text:"Responds to stop and wait cues" },
-          { id:"l1_11", text:"Returns to wall with support" },
-          { id:"l1_12", text:"Demonstrates supported safe poolside behaviour" },
+          { id:"l1_13", text:"Enter the water safely with adult support" },
+          { id:"l1_14", text:"Exit the water safely using appropriate pool access points" },
+          { id:"l1_15", text:"Follow adult guidance during entry and exit routines" },
+          { id:"l1_16", text:"Demonstrate early awareness of pool boundaries and safe behaviours" },
         ]},
       ],
       2: [
