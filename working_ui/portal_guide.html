@@ -125,6 +125,12 @@
     }
     .pg-btn-main{background:#0b2a5b;color:#fff}
     .pg-btn-ghost{background:#e8f1fa;color:#0b2a5b;border:1px solid #b0c7e2}
+    .pg-mark-read-label{
+      display:flex;align-items:flex-start;gap:10px;margin-top:10px;font-size:15px;line-height:1.45;cursor:pointer;
+    }
+    .pg-mark-read-label input{margin-top:3px;flex-shrink:0}
+    .pg-mark-read-done{color:#15803d;font-weight:600;font-size:14px;margin:10px 0 0}
+    .pg-mark-read-err{color:#b91c1c;font-size:13px;margin:8px 0 0}
 
     /* ---- Screen previews (phone mockups) ---- */
     .pg-shot{margin:14px 0 2px;display:flex;flex-direction:column;align-items:center;gap:0}
@@ -566,7 +572,25 @@
         <button type="button" class="pg-btn pg-btn-ghost" id="pgBackHistory">Go back</button>
       </div>
     </article>
+
+    <article class="pg-card" id="pgMarkReadCard">
+      <h2>
+        <svg class="pg-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        Mark as read
+      </h2>
+      <p>When you have finished reading, mark this guide as read. It will disappear from <b>alerts on your dashboard logo</b> but stays available under <b>Quick menu → Settings → Guide</b>.</p>
+      <label class="pg-mark-read-label" for="pgMarkReadConfirm">
+        <input type="checkbox" id="pgMarkReadConfirm" />
+        <span>I have read this guide</span>
+      </label>
+      <div class="pg-toolbar" style="margin-top:12px">
+        <button type="button" class="pg-btn pg-btn-main" id="pgMarkReadBtn" disabled>Mark as read</button>
+      </div>
+      <p class="pg-mark-read-done" id="pgMarkReadDone" hidden>You marked this guide as read. The office can see when you did.</p>
+      <p class="pg-mark-read-err" id="pgMarkReadErr" hidden></p>
+    </article>
   </div>
+  <script src="/portal/portal_guide_ack.js?v=20260612-guide-read"></script>
   <script>
     (function () {
       try {
@@ -589,6 +613,64 @@
         });
       }
       if (typeof portalRenderPageLogo === 'function') portalRenderPageLogo('portalPageLogoHost');
+
+      var confirm = document.getElementById('pgMarkReadConfirm');
+      var markBtn = document.getElementById('pgMarkReadBtn');
+      var doneEl = document.getElementById('pgMarkReadDone');
+      var errEl = document.getElementById('pgMarkReadErr');
+      var card = document.getElementById('pgMarkReadCard');
+
+      function pgGuideReadUiDone() {
+        if (confirm) confirm.disabled = true;
+        if (markBtn) markBtn.hidden = true;
+        if (doneEl) doneEl.hidden = false;
+        if (card) card.classList.add('pg-card--read');
+      }
+
+      if (typeof portalGuideIsRead === 'function' && portalGuideIsRead()) {
+        pgGuideReadUiDone();
+      }
+
+      if (confirm && markBtn) {
+        confirm.addEventListener('change', function () {
+          markBtn.disabled = !confirm.checked;
+        });
+        markBtn.addEventListener('click', function () {
+          if (!confirm.checked) return;
+          markBtn.disabled = true;
+          if (errEl) errEl.hidden = true;
+          var run = typeof portalMarkPortalGuideRead === 'function'
+            ? portalMarkPortalGuideRead()
+            : Promise.resolve({ ok: false });
+          Promise.resolve(run).then(function (res) {
+            pgGuideReadUiDone();
+            if (errEl && (!res || !res.ok)) {
+              errEl.textContent = 'Saved on this device. Sign in to sync with the office.';
+              errEl.hidden = false;
+            }
+          }).catch(function () {
+            if (typeof portalGuideMarkReadLocal === 'function') portalGuideMarkReadLocal();
+            pgGuideReadUiDone();
+            if (errEl) {
+              errEl.textContent = 'Saved on this device only.';
+              errEl.hidden = false;
+            }
+          });
+        });
+      }
+
+      function pgTryMergeGuideAck() {
+        if (typeof portalMergeGuideAckFromSupabase === 'function') {
+          portalMergeGuideAckFromSupabase().then(function () {
+            if (typeof portalGuideIsRead === 'function' && portalGuideIsRead()) pgGuideReadUiDone();
+          });
+        }
+      }
+      if (window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client) {
+        pgTryMergeGuideAck();
+      } else {
+        window.addEventListener('portal:supabase-ready', pgTryMergeGuideAck, { once: true });
+      }
     })();
   </script>
 </body>

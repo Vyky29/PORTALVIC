@@ -95,7 +95,43 @@
     .doc-download-toast-sub{display:block;font-size:12px;font-weight:600;color:#62758a;margin:0 0 4px}
     .doc-download-toast-hint{display:block;font-size:12px;color:#62758a;font-weight:400}
     .btn-label-mob .btn-mob-row2{font-size:11px;font-weight:700;opacity:0.95;min-height:1.2em;line-height:1.2}
+    .doc-viewer-sheet{
+      position:fixed;inset:0;z-index:1200;display:flex;align-items:stretch;justify-content:center;
+      padding:env(safe-area-inset-top,0) env(safe-area-inset-right,0) env(safe-area-inset-bottom,0) env(safe-area-inset-left,0);
+    }
+    .doc-viewer-sheet[hidden]{display:none!important}
+    .doc-viewer-backdrop{position:absolute;inset:0;background:rgba(11,42,91,.45)}
+    .doc-viewer-panel{
+      position:relative;z-index:1;display:flex;flex-direction:column;width:min(980px,100%);max-height:100%;
+      margin:auto;background:#fff;border-radius:14px 14px 0 0;box-shadow:0 12px 40px rgba(17,24,39,.18);
+      min-width:0;overflow:hidden;
+    }
+    @media (min-width:561px){
+      .doc-viewer-sheet{align-items:center;padding:16px}
+      .doc-viewer-panel{border-radius:14px;max-height:calc(100vh - 32px)}
+    }
+    .doc-viewer-head{
+      display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;
+      border-bottom:1px solid #e6ecf4;min-width:0;
+    }
+    .doc-viewer-head h2{margin:0;font-size:17px;color:#0b2a5b;min-width:0;overflow-wrap:break-word}
+    .doc-viewer-close{
+      flex-shrink:0;border:0;background:#e4edf8;color:#0b2a5b;border-radius:10px;
+      width:40px;height:40px;font-size:22px;line-height:1;cursor:pointer;font-weight:700;
+    }
+    .doc-viewer-body{flex:1;min-height:0;background:#f4f7fb;padding:10px}
+    .doc-viewer-frame{
+      display:block;width:100%;height:min(72vh,640px);min-height:280px;border:1px solid #e6ecf4;
+      border-radius:10px;background:#fff;
+    }
+    .doc-viewer-foot{
+      display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;padding:12px 14px;border-top:1px solid #e6ecf4;
+    }
+    .doc-viewer-foot .btn{min-width:0}
     @media (max-width:560px){
+      .doc-viewer-panel{border-radius:0;max-height:100%;height:100%}
+      .doc-viewer-frame{height:calc(100vh - 200px);min-height:200px}
+      .doc-viewer-foot .btn{flex:1}
       .doc-download-toast{margin:8px 12px 0}
       .page{padding:10px}
       .head h1{font-size:19px}
@@ -143,11 +179,29 @@
     </article>
   </main>
 
-  <script src="/portal/portal_induction.js?v=20260611-induction-cert"></script>
-  <script src="/portal/portal_induction_certificate.js?v=20260611-induction-cert"></script>
+  <div id="docViewerSheet" class="doc-viewer-sheet" hidden aria-hidden="true">
+    <div class="doc-viewer-backdrop" data-doc-viewer-close tabindex="-1"></div>
+    <div class="doc-viewer-panel" role="dialog" aria-modal="true" aria-labelledby="docViewerTitle">
+      <header class="doc-viewer-head">
+        <h2 id="docViewerTitle">Document</h2>
+        <button type="button" class="doc-viewer-close" data-doc-viewer-close aria-label="Close">×</button>
+      </header>
+      <div class="doc-viewer-body">
+        <iframe id="docViewerFrame" class="doc-viewer-frame" title="Document preview"></iframe>
+      </div>
+      <footer class="doc-viewer-foot">
+        <button type="button" class="btn btn-outline" id="docViewerDownloadBtn">Download PDF</button>
+        <button type="button" class="btn btn-outline" data-doc-viewer-close>Close</button>
+      </footer>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js?v=20260612-induction-view"></script>
+  <script src="/portal/portal_induction.js?v=20260612-induction-view"></script>
+  <script src="/portal/portal_induction_certificate.js?v=20260612-induction-view"></script>
   <script type="module">
     async function portalImportAuthModule() {
-      const v = "20260611-induction";
+      const v = "20260612-induction-view";
       const bases = ["portal", "/portal"];
       for (const base of bases) {
         const url = `${base}/auth-handler.js?v=${v}`;
@@ -425,6 +479,175 @@
       });
     }
 
+    let docViewerCleanup = null;
+    let docViewerDownloadHandler = null;
+
+    function closeDocumentViewer() {
+      const sheet = document.getElementById("docViewerSheet");
+      const frame = document.getElementById("docViewerFrame");
+      if (frame) frame.removeAttribute("src");
+      if (typeof docViewerCleanup === "function") {
+        try {
+          docViewerCleanup();
+        } catch (_e) {}
+      }
+      docViewerCleanup = null;
+      docViewerDownloadHandler = null;
+      if (sheet) {
+        sheet.hidden = true;
+        sheet.setAttribute("aria-hidden", "true");
+      }
+      document.body.style.overflow = "";
+    }
+
+    function openDocumentViewer(title, src, onDownload) {
+      const sheet = document.getElementById("docViewerSheet");
+      const titleEl = document.getElementById("docViewerTitle");
+      const frame = document.getElementById("docViewerFrame");
+      const dlBtn = document.getElementById("docViewerDownloadBtn");
+      if (!sheet || !frame) return;
+      if (titleEl) titleEl.textContent = String(title || "Document").trim() || "Document";
+      frame.src = src;
+      docViewerDownloadHandler = typeof onDownload === "function" ? onDownload : null;
+      if (dlBtn) dlBtn.style.display = docViewerDownloadHandler ? "" : "none";
+      sheet.hidden = false;
+      sheet.setAttribute("aria-hidden", "false");
+      document.body.style.overflow = "hidden";
+    }
+
+    function bindDocumentViewerChrome() {
+      document.querySelectorAll("[data-doc-viewer-close]").forEach((el) => {
+        el.addEventListener("click", closeDocumentViewer);
+      });
+      const dlBtn = document.getElementById("docViewerDownloadBtn");
+      if (dlBtn) {
+        dlBtn.addEventListener("click", async () => {
+          if (!docViewerDownloadHandler) return;
+          const orig = dlBtn.textContent;
+          dlBtn.disabled = true;
+          dlBtn.textContent = "Preparing…";
+          try {
+            await docViewerDownloadHandler();
+          } catch (err) {
+            console.warn("[my_documents] viewer download", err);
+            alert("Could not download this document right now.");
+          } finally {
+            dlBtn.disabled = false;
+            dlBtn.textContent = orig || "Download PDF";
+          }
+        });
+      }
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          const sheet = document.getElementById("docViewerSheet");
+          if (sheet && !sheet.hidden) closeDocumentViewer();
+        }
+      });
+    }
+
+    function portalResolveLearnerNameForCert(fallback) {
+      if (typeof window.portalResolveInductionLearnerName === "function") {
+        return window.portalResolveInductionLearnerName(fallback);
+      }
+      return String(fallback || "").trim();
+    }
+
+    async function ensurePortalStaffContext() {
+      try {
+        const auth = await portalImportAuthModule();
+        if (auth && typeof auth.bootstrapDashboardSupabase === "function") {
+          await auth.bootstrapDashboardSupabase({ page: "staff" });
+          const ctx = window.__PORTAL_SUPABASE__ || {};
+          const profile = ctx.staff_profile || null;
+          const email = String((ctx.session && ctx.session.user && ctx.session.user.email) || "");
+          if (typeof window.portalInductionApplyGrandfather === "function") {
+            window.portalInductionApplyGrandfather(profile, email);
+          }
+        }
+      } catch (e) {
+        console.warn("[my_documents] staff context bootstrap", e);
+      }
+    }
+
+    function enrichInductionCertificateRows(list) {
+      const resolved = portalResolveLearnerNameForCert("");
+      if (!resolved) return list;
+      return (list || []).map((doc) => {
+        if (String((doc && doc.document_type) || "").toLowerCase() !== "induction_certificate") return doc;
+        if (doc.learnerName && String(doc.learnerName).trim()) return doc;
+        return Object.assign({}, doc, { learnerName: resolved });
+      });
+    }
+
+    function inductionCertNoNameMessage() {
+      return "We could not load your name for this certificate. Sign in to the staff portal, or open General Induction once from the quick menu.";
+    }
+
+    async function openInductionCertificateInApp(btn) {
+      const fileUrl = String(btn.getAttribute("data-file-url") || "").trim();
+      const learnerName = portalResolveLearnerNameForCert(btn.getAttribute("data-learner-name") || "");
+      const issuedIso = btn.getAttribute("data-issued-iso") || "";
+      const title = btn.getAttribute("data-download-name") || "clubSENsational General Induction Certificate";
+      const desk = btn.querySelector(".btn-label-desk");
+      const origDesk = desk ? desk.textContent : "";
+      btn.disabled = true;
+      if (desk) desk.textContent = "Opening…";
+      try {
+        if (fileUrl) {
+          const signed = await portalCreateDocumentSignedUrl(fileUrl, 3600);
+          if (!signed) throw new Error("No URL");
+          openDocumentViewer(title, signed, async () => {
+            const base = sanitizeDownloadBasename(title);
+            let blob = await fetchPdfBlobViaXHR(signed);
+            if (!blob.type || blob.type === "application/octet-stream") {
+              blob = new Blob([blob], { type: "application/pdf" });
+            }
+            const objUrl = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = objUrl;
+            a.download = `${base}.pdf`;
+            a.rel = "noopener";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(objUrl), 90_000);
+            if (typeof window.portalInductionMarkCertificatePdfDownloaded === "function") {
+              window.portalInductionMarkCertificatePdfDownloaded();
+            }
+          });
+          docViewerCleanup = null;
+          return;
+        }
+        if (!learnerName) {
+          alert(inductionCertNoNameMessage());
+          return;
+        }
+        if (typeof window.portalGetInductionCertificatePreview !== "function") {
+          alert("Certificate viewer is not available. Please refresh the page.");
+          return;
+        }
+        const preview = await window.portalGetInductionCertificatePreview(learnerName, issuedIso);
+        if (!preview || !preview.ok || !preview.previewUrl) {
+          alert(inductionCertNoNameMessage());
+          return;
+        }
+        docViewerCleanup = typeof preview.revoke === "function" ? preview.revoke : null;
+        const certName = preview.learnerName || learnerName;
+        const certIssued = preview.issuedIso || issuedIso;
+        openDocumentViewer(title, preview.previewUrl, async () => {
+          if (typeof window.portalDownloadInductionCertificatePdf === "function") {
+            await window.portalDownloadInductionCertificatePdf(certName, certIssued, { saveToDocuments: false });
+          }
+        });
+      } catch (err) {
+        console.warn("[my_documents] induction cert view", err);
+        alert("Could not open this certificate right now.");
+      } finally {
+        btn.disabled = false;
+        if (desk) desk.textContent = origDesk || "View certificate";
+      }
+    }
+
     /** Escritorio: nueva pestaña. Móvil: XHR + blob + download (progreso en el botón; fallback: pestaña). */
     async function openOrDownloadDocument(fileUrl, downloadName, btn) {
       const mobLab = btn && btn.querySelector ? btn.querySelector(".btn-label-mob") : null;
@@ -585,10 +808,10 @@
               <div class="docs-actions">
                 <button type="button" class="btn btn-outline" ${
                   isInductionCert
-                    ? `data-induction-cert="1" data-learner-name="${esc(doc.learnerName || "")}" data-issued-iso="${esc(doc.created_at || "")}"`
+                    ? `data-induction-cert="1" data-file-url="${esc(doc.file_url || "")}" data-learner-name="${esc(doc.learnerName || "")}" data-issued-iso="${esc(doc.created_at || "")}" data-download-name="${esc(displayTitle(doc))}"`
                     : `data-file-url="${esc(doc.file_url)}" data-download-name="${esc(displayTitle(doc))}"`
                 }>
-                  <span class="btn-label-desk">${isInductionCert ? "Download certificate (PDF)" : "View / Download"}</span><span class="btn-label-mob"><span class="btn-mob-row1">Download</span><span class="btn-mob-row2" aria-live="polite"></span></span>
+                  <span class="btn-label-desk">${isInductionCert ? "View certificate" : "View / Download"}</span><span class="btn-label-mob"><span class="btn-mob-row1">${isInductionCert ? "View" : "Download"}</span><span class="btn-mob-row2" aria-live="polite"></span></span>
                 </button>
                 ${isPayslip || isInductionCert ? "" : `<button type="button" class="btn btn-outline" data-doc-id="${docId}">Delete</button>`}
               </div>
@@ -599,24 +822,7 @@
       });
       root.innerHTML = html;
       root.querySelectorAll("button[data-induction-cert]").forEach((btn) => {
-        btn.addEventListener("click", async () => {
-          const name = btn.getAttribute("data-learner-name") || "";
-          const issued = btn.getAttribute("data-issued-iso") || "";
-          const desk = btn.querySelector(".btn-label-desk");
-          const origDesk = desk ? desk.textContent : "";
-          try {
-            if (desk) desk.textContent = "Preparing PDF…";
-            btn.disabled = true;
-            if (typeof window.portalDownloadInductionCertificatePdf === "function") {
-              await window.portalDownloadInductionCertificatePdf(name, issued, { saveToDocuments: true });
-            } else if (typeof window.portalDownloadInductionCertificate === "function") {
-              await window.portalDownloadInductionCertificate(name, issued);
-            }
-          } finally {
-            btn.disabled = false;
-            if (desk) desk.textContent = origDesk || "Download certificate (PDF)";
-          }
-        });
+        btn.addEventListener("click", () => openInductionCertificateInApp(btn));
       });
       root.querySelectorAll("button[data-file-url]").forEach((btn) => {
         btn.addEventListener("click", () =>
@@ -684,11 +890,14 @@
 
     (async function init() {
       applyPageChrome();
+      bindDocumentViewerChrome();
       const root = document.getElementById("docsRoot");
       if (root) root.innerHTML = `<div class="empty">Loading your documents...</div>`;
       try {
+        await ensurePortalStaffContext();
         let docs = await portalListMyDocuments();
         docs = await mergeInductionCertificateRow(docs);
+        docs = enrichInductionCertificateRows(docs);
         renderGroups(docs);
       } catch (_) {
         if (root) root.innerHTML = `<div class="empty">Could not load documents. Please sign in again.</div>`;

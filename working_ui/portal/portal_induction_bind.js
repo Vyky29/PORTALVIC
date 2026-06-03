@@ -41,5 +41,10 @@
     sync();
   }
 
+  if (global.addEventListener) {
+    global.addEventListener("portal:induction-cert-downloaded", sync);
+    global.addEventListener("portal:supabase-ready", sync);
+  }
+
   global.portalInductionSyncQuickMenu = sync;
 })(typeof window !== "undefined" ? window : globalThis);

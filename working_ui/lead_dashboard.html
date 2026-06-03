@@ -781,9 +781,10 @@
   <script src="portal/staff_roster_resolve.js?v=20260601-luliya-mic"></script>
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260603-achievements-shared" />
   <script src="/portal/portal_participant_achievements.js?v=20260610-pwa-black-fix"></script>
-  <script src="/portal/portal_induction.js?v=20260611-induction"></script>
-  <script src="/portal/portal_induction_bind.js?v=20260611-induction"></script>
-  <script src="/portal/portal_guide_menu.js?v=20260609-qm-top"></script>
+  <script src="/portal/portal_induction.js?v=20260612-induction-cert-btn"></script>
+  <script src="/portal/portal_induction_bind.js?v=20260612-induction-cert-btn"></script>
+  <script src="/portal/portal_guide_ack.js?v=20260612-guide-read"></script>
+  <script src="/portal/portal_guide_menu.js?v=20260612-guide-read"></script>
   <script src="/portal/portal_dm_voice.js?v=20260602-feedback-voice-fix"></script>
   <script>
     console.log("ABSENT FIX VERSION LOADED 20260425");
@@ -3180,9 +3181,9 @@
         host.hidden = true;
         if(titleEl) titleEl.textContent = 'Getting started';
       }
-      const promo = typeof portalGuidePromoActive === 'function' && portalGuidePromoActive();
-      if(guideGrid) guideGrid.hidden = !promo;
-      guideGrp.hidden = !promo && !hasOv;
+      const showGuideHeader = typeof portalGuideShowInHeader === 'function' && portalGuideShowInHeader();
+      if(guideGrid) guideGrid.hidden = !showGuideHeader;
+      guideGrp.hidden = !showGuideHeader && !hasOv;
       return hasOv;
     }
     function portalBuildQuickMenuOverrideStackHtml(st){
@@ -3194,8 +3195,7 @@
         const iso = escapeHtml(String(item.iso || ''));
         const title = escapeHtml(String(item.title || 'Schedule change'));
         const sub = escapeHtml(String(item.sub || ''));
-        const k = String(item.kind || 'other');
-        const tone = k === 'reverted' ? 'menu-btn--qm-ov-reverted' : (k === 'absent' ? 'menu-btn--qm-ov-absent' : (k === 'makeup' ? 'menu-btn--qm-ov-makeup' : (k === 'cancelled' ? 'menu-btn--qm-ov-cancelled' : (k === 'slot_opened' ? 'menu-btn--qm-ov-slot-opened' : 'menu-btn--qm-ov-other'))));
+        const tone = 'menu-btn--qm-ov-schedule menu-btn--portal-pulse';
         return '<button type="button" class="menu-btn notice menu-btn--qm-tile ' + tone + '" data-action="open-roster-override-attention" data-portal-override-id="' + id + '" data-portal-override-nav-iso="' + iso + '" aria-label="' + title + ' — ' + iso + '">' +
           '<div class="menu-btn-icon" aria-hidden="true">' + calIcon + '</div>' +
           '<div class="menu-btn-copy"><strong>' + title + '</strong><span class="menu-btn-sub">' + sub + '</span></div>' +
@@ -7627,30 +7627,41 @@
     function portalNotificationAlertFlags(st){
       const state = st || (typeof portalReminderState === 'function' ? portalReminderState() : null);
       const hasFeedback = !!(state && state.sessionFeedbackNeed);
-      const hasReminderOther = !!(state && (state.venueOpenNeed || state.venueCloseNeed || state.setupPending || state.rosterOverrideNeed));
+      const hasReminderOther = !!(state && (state.venueOpenNeed || state.venueCloseNeed || state.setupPending));
+      const hasSchedule = !!(state && state.rosterOverrideNeed);
       return {
         chat: !!window.__PORTAL_STAFF_DM_HAS_UNREAD__,
         announcement: portalActiveAnnouncementItems().length > 0,
-        feedback: hasFeedback || hasReminderOther
+        feedback: hasFeedback || hasReminderOther,
+        schedule: hasSchedule
       };
     }
     function portalNotificationAlertState(st){
       const f = portalNotificationAlertFlags(st);
       const orange = f.feedback;
+      const green = f.schedule;
+      if(f.chat && f.announcement && orange && green) return 'quad';
+      if(f.chat && f.announcement && green) return 'chat-ann-schedule';
+      if(f.chat && orange && green) return 'chat-fb-schedule';
+      if(f.announcement && orange && green) return 'both-schedule';
       if(f.chat && f.announcement && orange) return 'triple';
       if(f.chat && f.announcement) return 'chat-ann';
       if(f.chat && orange) return 'chat-fb';
       if(f.announcement && orange) return 'both';
+      if(f.chat && green) return 'chat-schedule';
+      if(f.announcement && green) return 'announcement-schedule';
+      if(orange && green) return 'reminder-schedule';
       if(f.chat) return 'chat';
       if(f.announcement) return 'announcement';
       if(orange) return 'reminder';
+      if(green) return 'schedule';
       return 'none';
     }
     function portalApplyPortalOrbitAlertClasses(el, st){
       if(!el) return;
       const f = portalNotificationAlertFlags(st);
       const orange = f.feedback;
-      const active = !!(f.chat || f.announcement || orange);
+      const active = !!(f.chat || f.announcement || orange || f.schedule);
       const orbitClasses = [
         'avatar-wrap--portal-orbit-idle',
         'avatar-wrap--portal-alert',
@@ -7659,7 +7670,15 @@
         'avatar-wrap--portal-alert-chat',
         'avatar-wrap--portal-alert-chat-ann',
         'avatar-wrap--portal-alert-chat-fb',
-        'avatar-wrap--portal-alert-triple'
+        'avatar-wrap--portal-alert-triple',
+        'avatar-wrap--portal-alert-schedule',
+        'avatar-wrap--portal-alert-chat-schedule',
+        'avatar-wrap--portal-alert-announcement-schedule',
+        'avatar-wrap--portal-alert-reminder-schedule',
+        'avatar-wrap--portal-alert-both-schedule',
+        'avatar-wrap--portal-alert-chat-ann-schedule',
+        'avatar-wrap--portal-alert-chat-fb-schedule',
+        'avatar-wrap--portal-alert-quad'
       ];
       const dockClasses = [
         'dock-nav-item--portal-attention',
@@ -7677,13 +7696,25 @@
       if(isDock) return;
       el.classList.toggle('avatar-wrap--portal-orbit-idle', !active);
       if(!active) return;
-      if(f.chat && f.announcement && orange) el.classList.add('avatar-wrap--portal-alert-triple');
-      else if(f.chat && f.announcement) el.classList.add('avatar-wrap--portal-alert-chat-ann');
-      else if(f.chat && orange) el.classList.add('avatar-wrap--portal-alert-chat-fb');
-      else if(f.announcement && orange) el.classList.add('avatar-wrap--portal-alert-both');
-      else if(f.chat) el.classList.add('avatar-wrap--portal-alert-chat');
-      else if(f.announcement) el.classList.add('avatar-wrap--portal-alert');
-      else if(orange) el.classList.add('avatar-wrap--portal-alert-reminder');
+      const mode = portalNotificationAlertState(st);
+      const modeClass = {
+        quad: 'avatar-wrap--portal-alert-quad',
+        'chat-ann-schedule': 'avatar-wrap--portal-alert-chat-ann-schedule',
+        'chat-fb-schedule': 'avatar-wrap--portal-alert-chat-fb-schedule',
+        'both-schedule': 'avatar-wrap--portal-alert-both-schedule',
+        triple: 'avatar-wrap--portal-alert-triple',
+        'chat-ann': 'avatar-wrap--portal-alert-chat-ann',
+        'chat-fb': 'avatar-wrap--portal-alert-chat-fb',
+        both: 'avatar-wrap--portal-alert-both',
+        'chat-schedule': 'avatar-wrap--portal-alert-chat-schedule',
+        'announcement-schedule': 'avatar-wrap--portal-alert-announcement-schedule',
+        'reminder-schedule': 'avatar-wrap--portal-alert-reminder-schedule',
+        chat: 'avatar-wrap--portal-alert-chat',
+        announcement: 'avatar-wrap--portal-alert',
+        reminder: 'avatar-wrap--portal-alert-reminder',
+        schedule: 'avatar-wrap--portal-alert-schedule'
+      }[mode];
+      if(modeClass) el.classList.add(modeClass);
     }
     function portalHasActiveAnnouncementOrReminder(st){
       return portalNotificationAlertState(st) !== 'none';
@@ -7711,10 +7742,11 @@
       }catch(_){ /* ignore */ }
       var mode = 'none';
       try{ mode = portalNotificationAlertState(st); }catch(_){ mode = 'none'; }
-      if(mode === 'triple' || mode === 'chat-ann' || mode === 'chat-fb' || mode === 'both') return PORTAL_STAFF_TOPBAR_LOGO_BOTH_URL;
-      if(mode === 'announcement') return PORTAL_STAFF_TOPBAR_LOGO_ANNOUNCEMENT_URL;
-      if(mode === 'chat') return PORTAL_STAFF_TOPBAR_LOGO_CLEAR_URL;
-      if(mode === 'reminder') return PORTAL_STAFF_TOPBAR_LOGO_REMINDER_URL;
+      if(mode === 'schedule') return PORTAL_STAFF_TOPBAR_LOGO_CLEAR_URL;
+      if(mode === 'triple' || mode === 'chat-ann' || mode === 'chat-fb' || mode === 'both' || mode === 'quad' || mode.indexOf('-schedule') >= 0) return PORTAL_STAFF_TOPBAR_LOGO_BOTH_URL;
+      if(mode === 'announcement' || mode === 'announcement-schedule') return PORTAL_STAFF_TOPBAR_LOGO_ANNOUNCEMENT_URL;
+      if(mode === 'chat' || mode === 'chat-schedule') return PORTAL_STAFF_TOPBAR_LOGO_CLEAR_URL;
+      if(mode === 'reminder' || mode === 'reminder-schedule') return PORTAL_STAFF_TOPBAR_LOGO_REMINDER_URL;
       return PORTAL_STAFF_TOPBAR_LOGO_CLEAR_URL;
     }
     function syncPortalHeaderAlertChrome(st){
@@ -11074,6 +11106,14 @@
     })();
 
     window.addEventListener('portal:supabase-ready', function(){
+      try{
+        if(typeof portalMergeGuideAckFromSupabase === 'function'){
+          void portalMergeGuideAckFromSupabase().then(function(){
+            if(typeof portalSyncQuickMenuGuidePlacement === 'function') portalSyncQuickMenuGuidePlacement();
+            if(typeof syncPortalScheduleOverridesTopSlot === 'function') syncPortalScheduleOverridesTopSlot();
+          });
+        }
+      }catch(_guide){}
       try{
         if(typeof Notification !== 'undefined' && Notification.permission === 'granted' && typeof window.portalEnsureWebPushSubscription === 'function'){
           void window.portalEnsureWebPushSubscription();

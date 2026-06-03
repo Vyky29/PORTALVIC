@@ -226,6 +226,59 @@
     return { savedToDocuments: true, alreadyHad: false };
   }
 
+  function resolveLearnerName(learnerName) {
+    var name = String(learnerName || "").trim();
+    if (!name && typeof global.portalResolveInductionLearnerName === "function") {
+      name = global.portalResolveInductionLearnerName("");
+    }
+    return name;
+  }
+
+  /**
+   * @param {string} learnerName
+   * @param {string} [issuedIso]
+   * @returns {Promise<{ ok: boolean, previewUrl?: string, revoke?: function, learnerName?: string, issuedIso?: string, error?: string }>}
+   */
+  async function portalGetInductionCertificatePreview(learnerName, issuedIso) {
+    var name = resolveLearnerName(learnerName);
+    if (!name) return { ok: false, error: "no_name" };
+    var logoDataUri = "";
+    try {
+      logoDataUri = await loadLogoDataUri();
+    } catch (_e) {}
+    var svg = portalBuildInductionCertificateSvg(name, issuedIso, logoDataUri);
+    var previewUrl = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }));
+    return {
+      ok: true,
+      previewUrl: previewUrl,
+      revoke: function () {
+        try {
+          URL.revokeObjectURL(previewUrl);
+        } catch (_e) {}
+      },
+      learnerName: name,
+      issuedIso: issuedIso,
+    };
+  }
+
+  /**
+   * @param {string} learnerName
+   * @param {string} [issuedIso]
+   * @returns {Promise<{ blob: Blob, filename: string, learnerName: string }>}
+   */
+  async function portalBuildInductionCertificatePdfBlob(learnerName, issuedIso) {
+    var name = resolveLearnerName(learnerName);
+    if (!name) throw new Error("INDUCTION_CERT_NO_NAME");
+    var logoDataUri = "";
+    try {
+      logoDataUri = await loadLogoDataUri();
+    } catch (_e) {}
+    var svg = portalBuildInductionCertificateSvg(name, issuedIso, logoDataUri);
+    var pdfBlob = await svgToPdfBlob(svg);
+    var filename = slugify("general-induction-" + name) + "-certificate.pdf";
+    return { blob: pdfBlob, filename: filename, learnerName: name };
+  }
+
   /**
    * @param {string} learnerName
    * @param {string} [issuedIso]
@@ -234,29 +287,32 @@
    */
   async function portalDownloadInductionCertificatePdf(learnerName, issuedIso, opts) {
     var options = opts || {};
-    var name = String(learnerName || "").trim();
-    if (!name) {
-      alert("Your name is not available for the certificate. Open induction from the staff portal first.");
-      return { downloaded: false };
+    var built;
+    try {
+      built = await portalBuildInductionCertificatePdfBlob(learnerName, issuedIso);
+    } catch (err) {
+      if (err && err.message === "INDUCTION_CERT_NO_NAME") {
+        alert(
+          "Your name is not available for the certificate. Sign in to the staff portal, or open induction once so we can load your profile."
+        );
+        return { downloaded: false };
+      }
+      throw err;
     }
     var date = parseDate(issuedIso);
-    var logoDataUri = "";
-    try {
-      logoDataUri = await loadLogoDataUri();
-    } catch (_e) {}
-    var svg = portalBuildInductionCertificateSvg(name, issuedIso, logoDataUri);
-    var pdfBlob = await svgToPdfBlob(svg);
-    var filename = slugify("general-induction-" + name) + "-certificate.pdf";
-    triggerBrowserDownload(pdfBlob, filename);
+    triggerBrowserDownload(built.blob, built.filename);
     var out = { downloaded: true, savedToDocuments: false };
     if (options.saveToDocuments) {
       try {
-        var saved = await savePdfToMyDocuments(pdfBlob, date.toISOString());
+        var saved = await savePdfToMyDocuments(built.blob, date.toISOString());
         out.savedToDocuments = !!(saved && saved.savedToDocuments);
         out.alreadyHad = !!(saved && saved.alreadyHad);
       } catch (err) {
         console.warn("[induction-cert] My Documents save", err);
       }
+    }
+    if (out.downloaded && typeof global.portalInductionMarkCertificatePdfDownloaded === "function") {
+      global.portalInductionMarkCertificatePdfDownloaded();
     }
     return out;
   }
@@ -270,6 +326,8 @@
   }
 
   global.portalBuildInductionCertificateSvg = portalBuildInductionCertificateSvg;
+  global.portalGetInductionCertificatePreview = portalGetInductionCertificatePreview;
+  global.portalBuildInductionCertificatePdfBlob = portalBuildInductionCertificatePdfBlob;
   global.portalDownloadInductionCertificatePdf = portalDownloadInductionCertificatePdf;
   global.portalDownloadInductionCertificate = portalDownloadInductionCertificate;
 })(typeof window !== "undefined" ? window : globalThis);

@@ -29,8 +29,9 @@
   <script src="/portal/admin-logs.js?v=20260601-logs-merge"></script>
   <script src="/portal/portal-roster-rows-merge.js?v=20260601-term-slot"></script>
   <script src="/portal/admin-portal-term-slot.js?v=20260602-term-slot-copy"></script>
-  <script src="/portal/portal-staff-timetable-merge.js?v=20260602-hours-edit"></script>
-  <script src="/portal/admin-roster-spreadsheet-reference.js?v=20260602-hours-edit"></script>
+  <script src="/portal/portal-staff-timetable-merge.js?v=20260612-hours-edit"></script>
+  <script src="/portal/spreadsheet_reference_data.js?v=20260612-jun-jul-timetable"></script>
+  <script src="/portal/admin-roster-spreadsheet-reference.js?v=20260612-hours-edit"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
   <title>clubSENsational · Operations + Operator workflow (merged)</title>
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
@@ -17260,7 +17261,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="card card-pad" style="margin-bottom:14px;border-color:#c5d9ef;background:linear-gradient(180deg,#f8fbff,#eef5fc)">'+
         '<h3 style="margin:0 0 8px;font-size:14px">Admin portal guide</h3>'+
         '<p class="muted" style="margin:0 0 12px;max-width:42rem;overflow-wrap:break-word">How this app is organised, what each menu area does, and how it differs from the staff phone dashboard — with layout mockups (no screenshots required).</p>'+
-        '<a class="btn btn--pri btn--sm" href="/admin_portal_guide.html" target="_blank" rel="noopener">Open admin portal guide</a></div>'+
+        '<a class="btn btn--pri btn--sm" href="/admin_portal_guide.html" target="_blank" rel="noopener">Open admin portal guide</a> '+
+        '<button type="button" class="btn btn--sec btn--sm" id="portalAdminGuideReadLogBtn" style="margin-left:8px">Staff guide — who marked read</button></div>'+
         '<div class="grid-2"><div class="card card-pad"><h3 style="margin:0 0 10px;font-size:14px">Connections</h3><p class="muted" style="margin:0 0 8px">Admin UI: <code>/admin_dashboard.html</code> on the Vercel deploy (same origin as <code>/portal/</code>). Login sets <code>PORTAL_ADMIN_DASHBOARD_URL</code> in <code>login.html</code> / <code>auth-handler.js</code>.</p><p class="muted" style="margin:0">Supabase: active after sign-in; this card does not probe live connection state.</p></div>'+
         '<div class="card card-pad"><h3 style="margin:0 0 10px;font-size:14px">Operational snapshot (demo)</h3><p class="muted" style="margin:0">Open incidents: <strong style="color:var(--ink)">'+k.incidentsOpen+'</strong></p><p class="muted" style="margin:8px 0 0">Absents / credits pending: <strong style="color:var(--ink)">'+k.cancellationsOpen+'</strong></p><p class="muted" style="margin:8px 0 0">Reports in flight: <strong style="color:var(--ink)">'+k.reportsPending+'</strong> · Onboarding tasks: <strong style="color:var(--ink)">'+k.onboardingPending+'</strong></p><p class="muted" style="margin:8px 0 0">Billable sessions in model: <strong style="color:var(--ink)">'+MOCK.sessionEconomics.billableSessionCount+'</strong></p></div></div>'+
         '<div class="card" style="margin-top:14px"><div class="card-pad"><div class="toolbar"><button type="button" class="btn btn--sec" data-open-report>Report generator</button> <button type="button" class="btn btn--ghost" data-portal-logout>Log out</button></div></div></div>';
@@ -17501,6 +17503,63 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }).catch(function(err){
         if(host) host.innerHTML = '<p class="submission-state is-error" style="margin:0">'+esc(String(err && err.message ? err.message : err))+'</p>';
       });
+    }
+    function openPortalAdminGuideReadModal(){
+      closeSidebarMob();
+      var client = getSchedSupabaseClient();
+      if(!client || !client.from){
+        alert('Sign in to Supabase as admin/CEO to view guide read log.');
+        return;
+      }
+      openModal(
+        '<div class="modal-h"><h2 id="modalTitle">Portal guide — marked as read</h2></div>'+
+        '<div class="modal-b" style="min-width:0">'+
+        '<p class="muted" style="margin:0 0 12px;font-size:13px;line-height:1.55;min-width:0;overflow-wrap:break-word">Staff and leads who finished <code>portal_guide.html</code> and tapped <strong>Mark as read</strong> (live from Supabase).</p>'+
+        '<div id="portalAdminGuideReadHost"><p class="muted" style="margin:0">Loading…</p></div>'+
+        '</div>'+
+        '<div class="modal-f"><button type="button" class="btn btn--ghost" id="portalAdminGuideReadClose">Close</button></div>'
+      );
+      var host = $('portalAdminGuideReadHost');
+      var closeFn = function(){ closeModal(); };
+      var xc = $('portalAdminGuideReadClose');
+      if(xc) xc.onclick = closeFn;
+      var bd = $('modalBackdrop');
+      if(bd) bd.onclick = function(e){ if(e.target === bd) closeFn(); };
+      client.from('portal_staff_app_guide_acks')
+        .select('staff_id,read_at,staff_full_name,staff_username,guide_version')
+        .order('read_at', { ascending: false })
+        .limit(500)
+        .then(function(res){
+          if(!host) return;
+          if(res.error){
+            host.innerHTML = '<p class="submission-state is-error" style="margin:0">Could not load: '+esc(String(res.error.message||res.error))+'</p>';
+            return;
+          }
+          var rows = Array.isArray(res.data) ? res.data : [];
+          if(!rows.length){
+            host.innerHTML = '<p class="muted" style="margin:0">No one has marked the guide as read yet.</p>';
+            return;
+          }
+          function portalAdminGuideStaffExcluded(r){
+            var who = String(r.staff_full_name || r.staff_username || '').trim().toLowerCase();
+            if(!who) return false;
+            if(who.indexOf('javier marquez') !== -1) return true;
+            if(who === 'javier') return true;
+            return false;
+          }
+          var bodyRows = rows.filter(function(r){ return !portalAdminGuideStaffExcluded(r); }).map(function(r){
+            var who = String(r.staff_full_name || r.staff_username || r.staff_id || '—').trim() || '—';
+            var ver = String(r.guide_version || '').trim();
+            return '<tr><td>'+esc(who)+'</td><td>'+esc(portalAdminFormatAckWhen(r.read_at))+'</td><td>'+esc(ver || '—')+'</td></tr>';
+          }).join('');
+          host.innerHTML =
+            '<div class="card" style="min-width:0"><div class="card-pad" style="overflow:auto;padding:0">'+
+            '<table class="tbl" style="min-width:320px"><thead><tr><th>Staff</th><th>Marked read</th><th>Version</th></tr></thead><tbody>'+
+            (bodyRows || '<tr><td colspan="3"><span class="muted">No rows</span></td></tr>')+
+            '</tbody></table></div></div>';
+        }).catch(function(err){
+          if(host) host.innerHTML = '<p class="submission-state is-error" style="margin:0">'+esc(String(err && err.message ? err.message : err))+'</p>';
+        });
     }
     function openDayOpsAnnouncementsHubModal(){
       closeSidebarMob();
@@ -19237,6 +19296,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           openReportModal(null, rid||null);
         });
       });
+      if(id==='settings'){
+        var guideReadBtn = $('portalAdminGuideReadLogBtn');
+        if(guideReadBtn) guideReadBtn.onclick = openPortalAdminGuideReadModal;
+      }
 
       root.querySelectorAll('[data-jump]').forEach(function(b){
         b.addEventListener('click', function(){ setView(b.getAttribute('data-view-target')); closeSidebarMob(); });

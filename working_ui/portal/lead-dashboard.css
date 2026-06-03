@@ -472,6 +472,37 @@
     .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar-orbit-layer--ccw circle{fill:var(--sen-gold) !important}
     .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar-orbit-layer--ccw circle:nth-child(2n){fill:var(--gold) !important}
     .avatar-wrap.avatar-wrap--portal-alert-reminder .avatar-orbit-layer--ccw circle:nth-child(3n){fill:#ffe08a !important}
+    @keyframes portal-orbit-dot-green-pulse{
+      0%,100%{opacity:1;transform:scale(1)}
+      50%{opacity:.42;transform:scale(.78)}
+    }
+    .avatar-wrap.avatar-wrap--portal-alert-schedule .avatar-orbit,
+    .avatar-wrap.avatar-wrap--portal-alert-schedule .avatar-orbit-layer{opacity:1;visibility:visible}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule .avatar-orbit-layer circle{
+      fill:#22c55e !important;
+      animation:portal-orbit-dot-green-pulse 1.05s ease-in-out infinite;
+    }
+    .avatar-wrap.avatar-wrap--portal-alert-schedule .avatar-orbit-layer circle:nth-child(2n){fill:#16a34a !important}
+    .avatar-wrap.avatar-wrap--portal-alert-schedule .avatar-orbit-layer circle:nth-child(3n){fill:#4ade80 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule .avatar-orbit-layer circle:nth-child(2n+1){fill:#f97316 !important;animation:portal-orbit-dot-green-pulse 1.05s ease-in-out infinite}
+    .avatar-wrap.avatar-wrap--portal-alert-reminder-schedule .avatar-orbit-layer circle:nth-child(2n){fill:#22c55e !important;animation:portal-orbit-dot-green-pulse 1.05s ease-in-out infinite}
+    .avatar-wrap.avatar-wrap--portal-alert-chat-schedule .avatar-orbit-layer circle:nth-child(2n+1){fill:var(--blue) !important}
+    .avatar-wrap.avatar-wrap--portal-alert-chat-schedule .avatar-orbit-layer circle:nth-child(2n){fill:#22c55e !important;animation:portal-orbit-dot-green-pulse 1.05s ease-in-out infinite}
+    .avatar-wrap.avatar-wrap--portal-alert-announcement-schedule .avatar-orbit-layer circle:nth-child(2n+1){fill:#dc2626 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-announcement-schedule .avatar-orbit-layer circle:nth-child(2n){fill:#22c55e !important;animation:portal-orbit-dot-green-pulse 1.05s ease-in-out infinite}
+    .avatar-wrap.avatar-wrap--portal-alert-both-schedule .avatar-orbit-layer circle:nth-child(3n+1){fill:#dc2626 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-both-schedule .avatar-orbit-layer circle:nth-child(3n+2){fill:#f97316 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-both-schedule .avatar-orbit-layer circle:nth-child(3n){fill:#22c55e !important;animation:portal-orbit-dot-green-pulse 1.05s ease-in-out infinite}
+    .avatar-wrap.avatar-wrap--portal-alert-chat-ann-schedule .avatar-orbit-layer circle:nth-child(3n+1){fill:var(--blue) !important}
+    .avatar-wrap.avatar-wrap--portal-alert-chat-ann-schedule .avatar-orbit-layer circle:nth-child(3n+2){fill:#dc2626 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-chat-ann-schedule .avatar-orbit-layer circle:nth-child(3n){fill:#22c55e !important;animation:portal-orbit-dot-green-pulse 1.05s ease-in-out infinite}
+    .avatar-wrap.avatar-wrap--portal-alert-chat-fb-schedule .avatar-orbit-layer circle:nth-child(3n+1){fill:var(--blue) !important}
+    .avatar-wrap.avatar-wrap--portal-alert-chat-fb-schedule .avatar-orbit-layer circle:nth-child(3n+2){fill:#f97316 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-chat-fb-schedule .avatar-orbit-layer circle:nth-child(3n){fill:#22c55e !important;animation:portal-orbit-dot-green-pulse 1.05s ease-in-out infinite}
+    .avatar-wrap.avatar-wrap--portal-alert-quad .avatar-orbit-layer circle:nth-child(4n+1){fill:var(--blue) !important}
+    .avatar-wrap.avatar-wrap--portal-alert-quad .avatar-orbit-layer circle:nth-child(4n+2){fill:#dc2626 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-quad .avatar-orbit-layer circle:nth-child(4n+3){fill:#f97316 !important}
+    .avatar-wrap.avatar-wrap--portal-alert-quad .avatar-orbit-layer circle:nth-child(4n){fill:#22c55e !important;animation:portal-orbit-dot-green-pulse 1.05s ease-in-out infinite}
     /* Pending announcement + reminders: red logo, red aura + gold touch, vivid red and orange dots */
     .avatar-wrap.avatar-wrap--portal-alert-both .avatar-aura{
       background:
@@ -1683,7 +1714,39 @@
       border-color:rgba(131,24,67,.3);
       box-shadow:0 4px 14px rgba(90,20,50,.1);
     }
-    /* Overrides by type (no pulse in quick menu) */
+    @keyframes portal-qm-schedule-pulse{
+      0%,100%{box-shadow:0 6px 18px rgba(34,197,94,.22)}
+      50%{box-shadow:0 8px 22px rgba(34,197,94,.42),0 0 0 2px rgba(34,197,94,.28)}
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-schedule,
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-schedule{
+      background:linear-gradient(180deg,#ecfdf5 0%,#bbf7d0 100%);
+      border:2px solid rgba(21,128,61,.5);
+      color:var(--ink);
+      box-shadow:0 6px 18px rgba(34,197,94,.22);
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-schedule.menu-btn--portal-pulse:not(:active),
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-schedule.menu-btn--portal-pulse:not(:active){
+      animation:portal-qm-schedule-pulse 1.35s ease-in-out infinite;
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-schedule .menu-btn-copy strong,
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-schedule .menu-btn-copy strong{color:#065f46}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-schedule .menu-btn-sub,
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-schedule .menu-btn-sub{color:#047857}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-schedule .menu-btn-chev,
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-schedule .menu-btn-chev{color:rgba(6,95,70,.55)}
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-schedule .menu-btn-icon,
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-schedule .menu-btn-icon{
+      background:rgba(34,197,94,.22);
+      color:#047857;
+      border-color:rgba(21,128,61,.38);
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-schedule:hover,
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .portal-qm-override-top-host .menu-btn.menu-btn--qm-ov-schedule:hover{
+      background:linear-gradient(180deg,#d1fae5 0%,#86efac 100%);
+      border-color:rgba(21,128,61,.62);
+    }
+    /* Legacy per-kind override tiles (unused in logo-lite alerts; session pills unchanged) */
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuReminderBannerHost .menu-btn.menu-btn--qm-ov-absent{
       background:linear-gradient(180deg,#ecfdf5 0%,#d1fae5 100%);
       border:2px solid rgba(5,150,105,.45);
@@ -5298,11 +5361,34 @@
       color:#be4f46;
       border-color:rgba(190,79,70,.24);
     }
+    @keyframes portal-qm-induction-cert-pulse{
+      0%,100%{box-shadow:0 6px 18px rgba(34,197,94,.22)}
+      50%{box-shadow:0 8px 22px rgba(34,197,94,.42),0 0 0 2px rgba(34,197,94,.28)}
+    }
+    #menuSheet #quickMenuInduction.menu-btn--induction-cert-pending{
+      background:linear-gradient(180deg,#ecfdf5 0%,#bbf7d0 100%);
+      border:2px solid rgba(21,128,61,.5);
+      box-shadow:0 6px 18px rgba(34,197,94,.22);
+    }
+    #menuSheet #quickMenuInduction.menu-btn--induction-cert-pending.menu-btn--portal-pulse:not(:active){
+      animation:portal-qm-induction-cert-pulse 1.35s ease-in-out infinite;
+    }
+    #menuSheet #quickMenuInduction.menu-btn--induction-cert-pending .menu-btn-copy strong{color:#065f46}
+    #menuSheet #quickMenuInduction.menu-btn--induction-cert-pending .menu-btn-sub{color:#047857}
+    #menuSheet #quickMenuInduction.menu-btn--induction-cert-pending .menu-btn-icon{
+      background:rgba(34,197,94,.22);
+      color:#047857;
+      border-color:rgba(21,128,61,.38);
+    }
+    .sheet.sheet--fullscreen.sheet--mobile-frame #menuSheet #quickMenuInduction.menu-btn--induction-cert-pending:hover{
+      background:linear-gradient(180deg,#d1fae5 0%,#86efac 100%);
+      border-color:rgba(21,128,61,.62);
+    }
     #menuSheet .menu-btn.menu-btn--induction-done .menu-btn-copy strong{
-      color:#15803d;
+      color:var(--ink);
     }
     #menuSheet .menu-btn.menu-btn--induction-done .menu-btn-copy .menu-btn-sub{
-      color:#166534;
+      color:var(--muted);
     }
     #menuSheet .menu-btn.menu-btn--portal-pending{
       background:linear-gradient(180deg,#fff6f4 0%,#ffeeea 100%);

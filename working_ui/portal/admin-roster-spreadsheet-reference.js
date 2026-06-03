@@ -19,7 +19,7 @@
   };
 
   var state = {
-    tab: "sessions",
+    tab: "hours",
     sessionDay: "Monday",
     hoursDay: "Monday",
     dirty: Object.create(null),
@@ -94,10 +94,10 @@
       (weekLbl ? " (" + weekLbl + ")" : "") +
       " (read-only here; use <strong>Edit term slot</strong> or <strong>Schedule &amp; Covers</strong> for participant slots).</p>" +
       '<div class="asr-tabs" role="tablist">' +
-      '<button type="button" class="btn btn--ghost btn--sm is-active" data-asr-tab="sessions">Group sessions</button>' +
-      '<button type="button" class="btn btn--ghost btn--sm" data-asr-tab="hours">Staff hours</button>' +
+      '<button type="button" class="btn btn--ghost btn--sm" data-asr-tab="sessions">Group sessions</button>' +
+      '<button type="button" class="btn btn--ghost btn--sm is-active" data-asr-tab="hours">Staff hours</button>' +
       "</div>" +
-      '<div class="asr-toolbar" id="asrToolbar" hidden>' +
+      '<div class="asr-toolbar" id="asrToolbar">' +
       '<button type="button" class="btn btn--pri btn--sm" id="asrSaveBtn">Save staff hours</button>' +
       '<span class="muted" id="asrSaveStatus" style="font-size:12px;min-width:0;overflow-wrap:break-word"></span>' +
       "</div>" +
@@ -147,7 +147,10 @@
     }
     var day = state.sessionDay;
     var grid = d.sessionGrids[day] || { columns: [], rows: [] };
-    var html = sessionLegendHtml() + weekdaySubtabs(day, "data-asr-session-day");
+    var html =
+      '<p class="muted asr-tab-hint" style="margin:0 0 10px;max-width:52rem;overflow-wrap:break-word">Read-only mirror of the roster week. To change participant slots use <strong>Edit term slot</strong> or <strong>Schedule &amp; Covers</strong>. Staff pool hours are edited under the <strong>Staff hours</strong> tab.</p>' +
+      sessionLegendHtml() +
+      weekdaySubtabs(day, "data-asr-session-day");
     if (!grid.columns.length) {
       html += '<p class="muted">No session columns for ' + esc(day) + ".</p>";
       return html;
@@ -330,36 +333,35 @@
       updateToolbar();
       return;
     }
-    var chain = Promise.resolve();
-    rows.forEach(function (row) {
-      chain = chain.then(function () {
-        return client
-          .from("portal_staff_timetable_cells")
-          .upsert(
-            [
-              {
-                session_date: row.session_date,
-                day: row.day,
-                column_key: row.column_key,
-                raw_assignment: row.raw_assignment,
-                status: row.status,
-                created_by: uid,
-                updated_by: uid,
-              },
-            ],
-            { onConflict: "session_date,column_key" }
-          );
-      });
+    var payload = rows.map(function (row) {
+      return {
+        session_date: row.session_date,
+        day: row.day,
+        column_key: row.column_key,
+        raw_assignment: row.raw_assignment,
+        status: row.status,
+        created_by: uid,
+        updated_by: uid,
+      };
     });
-    chain
-      .then(function () {
+    client
+      .from("portal_staff_timetable_cells")
+      .upsert(payload, { onConflict: "session_date,column_key" })
+      .then(function (res) {
+        if (res.error) throw res.error;
         if (global.PortalStaffTimetableMerge) global.PortalStaffTimetableMerge.invalidate();
         state.dirty = Object.create(null);
         return applyOverridesToMerged();
       })
       .then(function () {
         refreshPanel();
-        cfg.toast("Staff hours saved — dashboards will use overrides on next load.");
+        cfg.toast(
+          "Staff hours saved (" +
+            payload.length +
+            " cell" +
+            (payload.length === 1 ? "" : "s") +
+            ") — dashboards pick up overrides on reload."
+        );
         if (global.PortalRosterRowsMerge && client) {
           return global.PortalRosterRowsMerge.loadAndCache(client);
         }
@@ -370,7 +372,11 @@
         }
       })
       .catch(function (err) {
-        cfg.toast("Save failed: " + String((err && err.message) || err));
+        var msg = String((err && err.message) || err || "Unknown error");
+        if (/portal_staff_timetable_cells|relation.*does not exist/i.test(msg)) {
+          msg += " — run migration 20260611120000_portal_staff_timetable_cells on Portal Supabase.";
+        }
+        cfg.toast("Save failed: " + msg);
       })
       .finally(function () {
         state.saving = false;
@@ -405,8 +411,7 @@
 
   function bindModule() {
     var root = document.getElementById("adminSpreadsheetRefRoot");
-    if (!root || root._asrBound) return;
-    root._asrBound = true;
+    if (!root) return;
     root.querySelectorAll("[data-asr-tab]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         state.tab = btn.getAttribute("data-asr-tab") || "sessions";
@@ -417,7 +422,10 @@
       });
     });
     var saveBtn = document.getElementById("asrSaveBtn");
-    if (saveBtn) saveBtn.addEventListener("click", saveStaffHours);
+    if (saveBtn && !saveBtn._asrSaveBound) {
+      saveBtn._asrSaveBound = true;
+      saveBtn.addEventListener("click", saveStaffHours);
+    }
 
     function mount() {
       if (!baseData()) {
@@ -428,23 +436,11 @@
         }
         return;
       }
+      state.mergedData = null;
       applyOverridesToMerged().then(refreshPanel);
     }
 
-    if (baseData()) mount();
-    else {
-      var s = document.createElement("script");
-      s.src = "/portal/spreadsheet_reference_data.js?v=20260602-weekend-editable";
-      s.onload = mount;
-      s.onerror = function () {
-        var panel = document.getElementById("adminSpreadsheetRefPanel");
-        if (panel) {
-          panel.innerHTML =
-            '<p class="submission-state is-error">Failed to load spreadsheet reference data.</p>';
-        }
-      };
-      document.head.appendChild(s);
-    }
+    mount();
   }
 
   global.PortalSpreadsheetReference = {

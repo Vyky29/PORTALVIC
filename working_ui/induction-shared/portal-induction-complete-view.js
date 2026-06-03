@@ -172,6 +172,9 @@
       } else if (result && result.downloaded) {
         setSavedHint("PDF downloaded. Sign in on the portal to save a copy under My documents → Training.");
       }
+      if (result && result.downloaded && typeof global.portalInductionMarkCertificatePdfDownloaded === "function") {
+        global.portalInductionMarkCertificatePdfDownloaded();
+      }
     } catch (err) {
       console.error("[induction] certificate PDF", err);
       alert(

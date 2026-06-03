@@ -7,6 +7,7 @@
   var COMPLETED_AT_KEY = "provisional-induction-completed-at";
   var GRANDFATHER_ISSUED_KEY = "portalvic_induction_grandfather_issued_iso";
   var LEARNER_NAME_KEY = "portalvic_staff_display_name";
+  var CERT_PDF_DOWNLOADED_KEY = "portalvic_induction_certificate_pdf_downloaded";
 
   /** Must complete the full pathway in-app (Zoho alumni already trained). */
   var REQUIRED_ROSTER_KEYS = { alex: true, michelle: true, carlos: true };
@@ -55,6 +56,23 @@
       if (n && String(n).trim()) return String(n).trim();
     }
     return String((profile && profile.full_name) || (profile && profile.username) || "").trim();
+  }
+
+  /** Name for certificate PDF/SVG — profile, storage, then explicit fallback. */
+  function portalResolveInductionLearnerName(fallback) {
+    var fb = String(fallback || "").trim();
+    if (fb) return fb;
+    try {
+      var stored =
+        global.localStorage.getItem(LEARNER_NAME_KEY) || global.sessionStorage.getItem(LEARNER_NAME_KEY);
+      if (stored && String(stored).trim()) return String(stored).trim();
+    } catch (_e) {}
+    var box = global.__PORTAL_SUPABASE__;
+    var profile = box && box.staff_profile;
+    var email = "";
+    var sess = box && box.session;
+    if (sess && sess.user && sess.user.email) email = String(sess.user.email);
+    return displayNameFromProfile(profile, email);
   }
 
   function setModulePassed(n) {
@@ -141,26 +159,81 @@
     global.location.href = url.href;
   }
 
+  function portalInductionCertificatePdfDownloaded() {
+    try {
+      return global.localStorage.getItem(CERT_PDF_DOWNLOADED_KEY) === "1";
+    } catch (_e) {
+      return false;
+    }
+  }
+
+  function portalInductionMarkCertificatePdfDownloaded() {
+    try {
+      global.localStorage.setItem(CERT_PDF_DOWNLOADED_KEY, "1");
+    } catch (_e) {}
+    try {
+      global.dispatchEvent(new CustomEvent("portal:induction-cert-downloaded"));
+    } catch (_e2) {}
+  }
+
+  /** Training complete but worker has not opened induction and downloaded the certificate PDF yet. */
+  function portalInductionNeedsCertificateDownload(profile, authEmail) {
+    if (!portalInductionIsComplete(profile, authEmail)) return false;
+    return !portalInductionCertificatePdfDownloaded();
+  }
+
+  async function portalInductionTryMarkPdfFromDocuments() {
+    if (portalInductionCertificatePdfDownloaded()) return;
+    try {
+      var box = global.__PORTAL_SUPABASE__ || {};
+      var client = box.client;
+      var uid = box.session && box.session.user && box.session.user.id;
+      if (!client || !uid || !client.from) return;
+      var res = await client
+        .from("documents")
+        .select("id")
+        .eq("user_id", uid)
+        .eq("document_type", "induction_certificate")
+        .is("hidden_by_user_at", null)
+        .limit(1);
+      if (res.error || !Array.isArray(res.data) || !res.data.length) return;
+      portalInductionMarkCertificatePdfDownloaded();
+    } catch (_e) {}
+  }
+
   function portalInductionSyncQuickMenu(btn, profile, authEmail) {
     if (!btn) return;
     portalInductionApplyGrandfather(profile, authEmail);
     var must = portalInductionMustComplete(profile, authEmail);
     var done = portalInductionIsComplete(profile, authEmail);
+    var needsCert = portalInductionNeedsCertificateDownload(profile, authEmail);
     btn.disabled = false;
     btn.removeAttribute("disabled");
     btn.classList.remove("menu-btn--portal-pending");
     btn.setAttribute("aria-disabled", "false");
+    btn.classList.toggle("menu-btn--induction-cert-pending", needsCert);
+    btn.classList.toggle("menu-btn--portal-pulse", needsCert);
     var sub = btn.querySelector(".menu-btn-sub");
     if (sub) {
-      if (must && !done) sub.textContent = "Core company training — start here";
-      else if (must && done) sub.textContent = "Completed — view pathway or certificate";
-      else sub.textContent = "Completed — certificate in My documents";
+      if (needsCert) {
+        sub.textContent = "Open and download your certificate (PDF)";
+      } else if (must && !done) {
+        sub.textContent = "Core company training — start here";
+      } else if (must && done) {
+        sub.textContent = "Completed — certificate in My documents";
+      } else {
+        sub.textContent = "Completed — certificate in My documents";
+      }
     }
-    if (done) btn.classList.add("menu-btn--induction-done");
+    if (done && !needsCert) btn.classList.add("menu-btn--induction-done");
     else btn.classList.remove("menu-btn--induction-done");
     btn.setAttribute(
       "aria-label",
-      done ? "Induction — completed" : "Induction — core company training"
+      needsCert
+        ? "Induction — download your certificate PDF"
+        : done
+          ? "Induction — completed"
+          : "Induction — core company training"
     );
   }
 
@@ -173,6 +246,9 @@
     }
     portalInductionApplyGrandfather(profile, email);
     portalInductionSyncQuickMenu(global.document.getElementById("quickMenuInduction"), profile, email);
+    void portalInductionTryMarkPdfFromDocuments().then(function () {
+      portalInductionSyncQuickMenu(global.document.getElementById("quickMenuInduction"), profile, email);
+    });
   }
 
   function portalInductionGetCertificateMeta(profile, authEmail) {
@@ -206,4 +282,9 @@
   global.portalInductionBindDashboard = portalInductionBindDashboard;
   global.portalInductionGetCertificateMeta = portalInductionGetCertificateMeta;
   global.portalInductionDisplayName = displayNameFromProfile;
+  global.portalResolveInductionLearnerName = portalResolveInductionLearnerName;
+  global.portalInductionCertificatePdfDownloaded = portalInductionCertificatePdfDownloaded;
+  global.portalInductionMarkCertificatePdfDownloaded = portalInductionMarkCertificatePdfDownloaded;
+  global.portalInductionNeedsCertificateDownload = portalInductionNeedsCertificateDownload;
+  global.portalInductionTryMarkPdfFromDocuments = portalInductionTryMarkPdfFromDocuments;
 })(typeof window !== "undefined" ? window : globalThis);
