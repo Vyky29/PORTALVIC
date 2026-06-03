@@ -91,7 +91,8 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260610-pwa-black-fix" />
   <script src="/portal/portal_screenshot_guard.js?v=20260610-pwa-black-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260610-topbar-camera" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260614-participant-tiles" />
+  <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260614-sessions-overview" />
 </head>
 <body>
   <script>
@@ -547,6 +548,14 @@
             </span>
           </button>
         </div>
+        <div class="client-info-row client-info-row--general">
+          <button type="button" class="client-info-btn--icon" id="clientBtnSessionsOverview" aria-expanded="false" aria-controls="clientSessionsOverviewSheet" aria-label="Sessions Overview" title="Sessions Overview">
+            <span class="client-info-btn-stack">
+              <svg class="client-info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+              <span class="client-info-btn-caption">Sessions Overview</span>
+            </span>
+          </button>
+        </div>
         <div class="client-info-services-stack" id="clientServiceButtonsRow" hidden></div>
       </div>
       <div class="client-info-panel" id="clientPanelSpecialty" hidden>
@@ -567,6 +576,20 @@
     <div class="sheet-body">
       <div class="client-general-sheet-prose">
         <div id="clientGeneral" class="client-general-info-host"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sheet sheet--fullscreen sheet--mobile-frame" id="clientSessionsOverviewSheet" aria-labelledby="clientSessionsOverviewSheetTitle" aria-hidden="true">
+    <div class="sheet-head client-general-sheet-head">
+      <button type="button" class="client-general-back" id="clientSessionsOverviewSheetBack">← Back to participant</button>
+      <div class="sheet-handle"></div>
+      <h3 id="clientSessionsOverviewSheetTitle">Sessions Overview</h3>
+      <p id="clientSessionsOverviewSheetSub" style="margin:6px 0 0;font-size:13px;color:var(--muted)"></p>
+    </div>
+    <div class="sheet-body">
+      <div class="client-general-sheet-prose">
+        <div id="clientSessionsOverviewHost" class="client-general-info-host"></div>
       </div>
     </div>
   </section>
@@ -763,10 +786,11 @@
   <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260610-javier-may14-roster"></script>
   <script src="/portal/clients_info_embed.js?v=20260605-sambhav"></script>
   <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
-  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260601-luliya-mic"></script>
+  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260614-gender-medical"></script>
   <script src="/portal/staff_roster_resolve.js?v=20260611-javi-roster-guard"></script>
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260603-achievements-shared" />
   <script src="/portal/portal_participant_achievements.js?v=20260610-pwa-black-fix"></script>
+  <script src="/portal/portal_client_sessions_overview.js?v=20260614-sessions-overview"></script>
   <script src="/portal/portal_induction.js?v=20260613-required-induction"></script>
   <script src="/portal/portal_induction_bind.js?v=20260612-induction-cert-btn"></script>
   <script src="/portal/portal_guide_ack.js?v=20260612-guide-read"></script>
@@ -4208,30 +4232,15 @@
         const gAttr = clientGenderDataAttr(c);
         const med = c.hasMedicalAlert ? clientsGridMedicalIconSvg() : '';
         const medSr = c.hasMedicalAlert ? '<span class="topbar-sr-only">Medical information on file.</span>' : '';
-        if(!isAll){
-          return `<button type="button" class="clients-grid-card clients-grid-card--my" data-client-id="${escapeHtml(clientId)}" data-list-mode="my"${gAttr}>
+        const myCls = !isAll ? ' clients-grid-card--my' : '';
+        const listMode = isAll ? 'all' : 'my';
+        return `<button type="button" class="clients-grid-card${myCls}" data-client-id="${escapeHtml(clientId)}" data-list-mode="${listMode}"${gAttr}>
       <span class="clients-grid-text">
-        <span class="clients-grid-name">${name}</span>
+        <span class="clients-grid-name-line">
+          <span class="clients-grid-name">${name}</span>${med}
+        </span>
       </span>
       ${medSr}
-      <span class="clients-grid-med-slot" aria-hidden="true">${med}</span>
-    </button>`;
-        }
-        let statLine = '';
-        if(c.portalAttendancePct != null || c.portalEngagementAvg != null){
-          const bits = [];
-          if(c.portalAttendancePct != null) bits.push(c.portalAttendancePct + '% attend');
-          if(c.portalEngagementAvg != null) bits.push('eng ' + c.portalEngagementAvg);
-          statLine = `<span class="clients-grid-stat">${escapeHtml(bits.join(' · '))}</span>`;
-        }
-        return `<button type="button" class="clients-grid-card" data-client-id="${escapeHtml(clientId)}" data-list-mode="all"${gAttr}>
-      <span class="clients-grid-avatar" aria-hidden="true">${clientAvatarInner(c.name)}</span>
-      <span class="clients-grid-text">
-        <span class="clients-grid-name">${name}</span>
-        ${statLine}
-      </span>
-      ${medSr}
-      <span class="clients-grid-med-slot" aria-hidden="true">${med}</span>
     </button>`;
       }).join('');
     }
@@ -10997,6 +11006,8 @@
       $$('.sheet.open').forEach(s => s.classList.remove('open'));
       document.getElementById('clientGeneralSheet')?.setAttribute('aria-hidden', 'true');
       document.getElementById('clientBtnGeneral')?.setAttribute('aria-expanded', 'false');
+      document.getElementById('clientSessionsOverviewSheet')?.setAttribute('aria-hidden', 'true');
+      document.getElementById('clientBtnSessionsOverview')?.setAttribute('aria-expanded', 'false');
       if(hadClientOpen) currentOpenClientItem = null;
       document.getElementById('clientSheet')?.classList.remove('client-sheet--roster-entry');
       const qaDock = document.getElementById('dockClientQuickActions');
@@ -11018,6 +11029,54 @@
       return true;
     }
 
+    function closeClientSessionsOverviewSheet(){
+      const sheet = document.getElementById('clientSessionsOverviewSheet');
+      if(!sheet || !sheet.classList.contains('open')) return;
+      sheet.classList.remove('open');
+      sheet.setAttribute('aria-hidden', 'true');
+      document.getElementById('clientBtnSessionsOverview')?.setAttribute('aria-expanded', 'false');
+      const stillOpen = document.querySelectorAll('.sheet.open').length;
+      if(stillOpen === 0 && backdropEl){
+        backdropEl.classList.remove('open');
+        document.body.style.overflow = '';
+      }
+      syncDockNavContext();
+    }
+    async function openClientSessionsOverviewFullscreen(){
+      const sheet = document.getElementById('clientSessionsOverviewSheet');
+      const host = document.getElementById('clientSessionsOverviewHost');
+      if(!sheet || !host) return;
+      const item = currentOpenClientItem;
+      const nameEl = document.getElementById('clientTitle');
+      const timeEl = document.getElementById('clientTime');
+      const ht = document.getElementById('clientSessionsOverviewSheetTitle');
+      const sub = document.getElementById('clientSessionsOverviewSheetSub');
+      const clientName = item && item.name ? String(item.name).trim() : (nameEl ? nameEl.textContent.trim() : '');
+      const clientId = item && item.clientId ? String(item.clientId).trim() : '';
+      if(ht) ht.textContent = clientName || 'Sessions Overview';
+      if(sub) sub.textContent = timeEl ? timeEl.textContent.trim() : '';
+      closeClientGeneralSheet();
+      const ps = document.getElementById('clientPanelSpecialty');
+      if(ps) ps.hidden = true;
+      document.getElementById('clientBtnGeneral')?.setAttribute('aria-expanded', 'false');
+      document.querySelectorAll('#clientServiceButtonsRow .client-info-btn--service').forEach(b => b.setAttribute('aria-expanded', 'false'));
+      sheet.classList.add('open');
+      sheet.setAttribute('aria-hidden', 'false');
+      if(backdropEl) backdropEl.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      document.getElementById('clientBtnSessionsOverview')?.setAttribute('aria-expanded', 'true');
+      syncDockNavContext();
+      if(window.PortalClientSessionsOverview && typeof window.PortalClientSessionsOverview.render === 'function'){
+        try{
+          await window.PortalClientSessionsOverview.render(host, { clientId, clientName });
+        }catch(e){
+          host.innerHTML = '<p class="pcso-empty" role="status">Could not load sessions overview. Try again in a moment.</p>';
+          console.warn('[portal] sessions overview', e);
+        }
+      }else{
+        host.innerHTML = '<p class="pcso-empty" role="status">Sessions overview is not available on this page.</p>';
+      }
+    }
     function closeClientGeneralSheet(){
       const sheet = document.getElementById('clientGeneralSheet');
       if(!sheet || !sheet.classList.contains('open')) return;
@@ -11034,6 +11093,7 @@
     function openClientGeneralFullscreen(){
       const sheet = document.getElementById('clientGeneralSheet');
       if(!sheet) return;
+      closeClientSessionsOverviewSheet();
       const nameEl = document.getElementById('clientTitle');
       const timeEl = document.getElementById('clientTime');
       const ht = document.getElementById('clientGeneralSheetTitle');
@@ -11050,9 +11110,12 @@
     function resetClientInfoPanels(){
       const ps = document.getElementById('clientPanelSpecialty');
       const bg = document.getElementById('clientBtnGeneral');
+      const so = document.getElementById('clientBtnSessionsOverview');
       closeClientGeneralSheet();
+      closeClientSessionsOverviewSheet();
       if(ps) ps.hidden = true;
       if(bg) bg.setAttribute('aria-expanded', 'false');
+      if(so) so.setAttribute('aria-expanded', 'false');
       document.querySelectorAll('#clientServiceButtonsRow .client-info-btn--service').forEach(b => b.setAttribute('aria-expanded', 'false'));
     }
     function resolveClientServiceActivities(item){
@@ -11106,7 +11169,10 @@
       const body = pickSpecialtyBody(c, activity) || '';
       setClientInfoFormattedBody('clientSpecialtyBody', body, 'No information for this programme.');
       if(genSheet && genSheet.classList.contains('open')) closeClientGeneralSheet();
+      const soSheet = document.getElementById('clientSessionsOverviewSheet');
+      if(soSheet && soSheet.classList.contains('open')) closeClientSessionsOverviewSheet();
       if(genBtn) genBtn.setAttribute('aria-expanded', 'false');
+      document.getElementById('clientBtnSessionsOverview')?.setAttribute('aria-expanded', 'false');
       document.querySelectorAll('#clientServiceButtonsRow .client-info-btn--service').forEach(b => {
         if(b !== btn) b.setAttribute('aria-expanded', 'false');
       });
@@ -11422,6 +11488,18 @@
       });
     }
     document.getElementById('clientGeneralSheetBack')?.addEventListener('click', closeClientGeneralSheet);
+    document.getElementById('clientSessionsOverviewSheetBack')?.addEventListener('click', closeClientSessionsOverviewSheet);
+    const clientBtnSessionsOverview = document.getElementById('clientBtnSessionsOverview');
+    if(clientBtnSessionsOverview){
+      clientBtnSessionsOverview.addEventListener('click', () => {
+        const sheet = document.getElementById('clientSessionsOverviewSheet');
+        if(sheet && sheet.classList.contains('open')){
+          closeClientSessionsOverviewSheet();
+          return;
+        }
+        openClientSessionsOverviewFullscreen();
+      });
+    }
     document.getElementById('clientServiceButtonsRow')?.addEventListener('click', e => {
       const btn = e.target.closest('.client-info-btn--service');
       if(!btn) return;

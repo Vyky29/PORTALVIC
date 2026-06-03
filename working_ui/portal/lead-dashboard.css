@@ -3739,23 +3739,23 @@
       border:1px solid rgba(45,132,179,.14);
     }
     .clients-grid-text{display:flex;flex-direction:column;justify-content:center;min-width:0;flex:1}
+    .clients-grid-name-line{
+      display:flex;
+      align-items:center;
+      gap:6px;
+      min-width:0;
+    }
     .clients-grid-name{
       font-size:14px;
       font-weight:700;
       color:var(--ink);
       line-height:1.25;
+      min-width:0;
+      overflow-wrap:break-word;
     }
-    .clients-grid-med-slot{
-      width:26px;
-      flex-shrink:0;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      align-self:stretch;
-    }
-    .clients-grid-med-icon{
-      width:24px;
-      height:24px;
+    .clients-grid-name-line .clients-grid-med-icon{
+      width:20px;
+      height:20px;
       display:block;
       color:#c62828;
       flex-shrink:0;

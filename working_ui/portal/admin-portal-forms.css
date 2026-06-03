@@ -311,3 +311,112 @@
   white-space:nowrap;
 }
 .portal-documents-embed .portal-documents-data-row:hover td{background:#f8fafc !important}
+
+/* Form record read modal (lead reports, venue, incidents, …) */
+body.pfrm-modal-open { overflow: hidden; }
+.pfrm-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 120000;
+  background: rgba(15, 23, 42, 0.52);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: max(16px, env(safe-area-inset-top)) 16px 24px;
+  overflow: auto;
+}
+.pfrm-modal {
+  width: min(560px, 100%);
+  max-height: min(88vh, 720px);
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+  border: 1px solid #e2e8f0;
+  min-width: 0;
+}
+.pfrm-modal__head {
+  position: relative;
+  padding: 18px 48px 12px 18px;
+  border-bottom: 1px solid #e2e8f0;
+  min-width: 0;
+}
+.pfrm-modal__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f2840;
+  overflow-wrap: break-word;
+}
+.pfrm-modal__sub {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: #64748b;
+  overflow-wrap: break-word;
+}
+.pfrm-modal__close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 10px;
+  background: #f1f5f9;
+  color: #334155;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+.pfrm-modal__close:hover { background: #e2e8f0; }
+.pfrm-modal__body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 14px 18px;
+}
+.pfrm-modal__foot {
+  padding: 12px 18px 16px;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: flex-end;
+}
+.pfrm-modal__btn {
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  border-radius: 10px;
+  padding: 10px 18px;
+  font: 700 14px inherit;
+  color: #0f2840;
+  cursor: pointer;
+}
+.pfrm-modal__btn:hover { background: #f8fafc; }
+.pfrm-qa__row {
+  display: grid;
+  grid-template-columns: minmax(0, 34%) minmax(0, 1fr);
+  gap: 8px 14px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f1f5f9;
+  min-width: 0;
+}
+.pfrm-qa__row:last-child { border-bottom: 0; }
+.pfrm-qa__label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+  overflow-wrap: break-word;
+}
+.pfrm-qa__value {
+  font-size: 14px;
+  line-height: 1.45;
+  color: #1e293b;
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+.pfrm-qa__value--block { white-space: pre-wrap; }
+@media (max-width: 520px) {
+  .pfrm-qa__row { grid-template-columns: 1fr; gap: 4px; }
+}
