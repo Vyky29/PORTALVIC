@@ -517,18 +517,29 @@ function bindLogin() {
 export async function bootstrapDashboardSupabase(_opts) {
   const page = String((_opts && _opts.page) || "").trim().toLowerCase();
   const loginRedirect = portalPublishedLoginUrl();
+  const isLeadOverview = page === "lead_overview";
+  const leadHubUrl = portalPublishedLeadUrl();
+  /** Programme-lead session overview: return to lead hub, not login, when auth is not ready yet. */
+  const authFailureRedirect = isLeadOverview ? leadHubUrl : loginRedirect;
+  const sessionWaitMs = isLeadOverview ? 7000 : 2800;
 
-  /** Admin + Lead + CEO + portal chooser enforce login + staff_profiles. */
+  /** Admin + Lead + CEO + portal chooser (+ lead overview) enforce login + staff_profiles. */
   function portalDashboardRequiresStrictGate(page) {
-    return page === "admin" || page === "lead" || page === "ceo" || page === "choose";
+    return (
+      page === "admin" ||
+      page === "lead" ||
+      page === "lead_overview" ||
+      page === "ceo" ||
+      page === "choose"
+    );
   }
 
   if (!isSupabaseConfigured()) {
     if (portalDashboardRequiresStrictGate(page)) {
       try {
-        window.location.replace(loginRedirect);
+        window.location.replace(authFailureRedirect);
       } catch {
-        window.location.href = loginRedirect;
+        window.location.href = authFailureRedirect;
       }
     }
     return;
@@ -569,15 +580,15 @@ export async function bootstrapDashboardSupabase(_opts) {
             /* ignore */
           }
           resolve(null);
-        }, 2800);
+        }, sessionWaitMs);
       });
     }
     if (!session?.user?.id) {
       if (portalDashboardRequiresStrictGate(page)) {
         try {
-          window.location.replace(loginRedirect);
+          window.location.replace(authFailureRedirect);
         } catch {
-          window.location.href = loginRedirect;
+          window.location.href = authFailureRedirect;
         }
       }
       return;
@@ -622,11 +633,35 @@ export async function bootstrapDashboardSupabase(_opts) {
       }
       clearPortalStaffContext();
       try {
-        window.location.replace(loginRedirect);
+        window.location.replace(authFailureRedirect);
       } catch {
-        window.location.href = loginRedirect;
+        window.location.href = authFailureRedirect;
       }
       return;
+    }
+
+    if (page === "lead_overview") {
+      try {
+        const { portalCanAccessLeadSessionOverview } = await import(
+          "./portal_lead_session_scope.js"
+        );
+        if (!portalCanAccessLeadSessionOverview(profile, authEmailGate)) {
+          try {
+            window.location.replace(leadHubUrl);
+          } catch {
+            window.location.href = leadHubUrl;
+          }
+          return;
+        }
+      } catch (scopeErr) {
+        console.warn("[portal] lead_overview scope check", scopeErr);
+        try {
+          window.location.replace(leadHubUrl);
+        } catch {
+          window.location.href = leadHubUrl;
+        }
+        return;
+      }
     }
 
     if (page === "admin") {
@@ -728,6 +763,9 @@ export async function bootstrapDashboardSupabase(_opts) {
       new CustomEvent("portal:supabase-ready", { detail: window.__PORTAL_SUPABASE__ })
     );
     try {
+      if (page === "lead_overview") {
+        throw new Error("skip_presence_on_lead_overview");
+      }
       const { startPortalLivePresence, mountPortalLivePresenceBar } = await import(
         "./portal_live_presence.js?v=20260610-presence-db"
       );
@@ -739,14 +777,19 @@ export async function bootstrapDashboardSupabase(_opts) {
       console.debug("[portal] live presence skipped:", presenceErr);
     }
     try {
-      const { startPortalVisitTracker } = await import(
-        "./portal_visit_tracker.js?v=20260601-visit-insert-fix"
-      );
-      await startPortalVisitTracker({ page, profile, session });
+      if (page !== "lead_overview") {
+        const { startPortalVisitTracker } = await import(
+          "./portal_visit_tracker.js?v=20260601-visit-insert-fix"
+        );
+        await startPortalVisitTracker({ page, profile, session });
+      }
     } catch (visitErr) {
       console.debug("[portal] visit tracker skipped:", visitErr);
     }
     try {
+      if (page === "lead_overview") {
+        throw new Error("skip_location_on_lead_overview");
+      }
       const perm = await import("./portal_location_permission.js?v=20260609-alerts-mic");
       window.portalLocationPermissionGranted = perm.portalLocationPermissionGranted;
       window.portalMicrophonePermissionGranted = perm.portalMicrophonePermissionGranted;

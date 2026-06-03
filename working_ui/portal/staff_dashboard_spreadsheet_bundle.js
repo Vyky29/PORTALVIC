@@ -2654,7 +2654,7 @@
   {
     "client_name": "Tinashe",
     "day": "Wednesday",
-    "instructors": "BISMARK, GIUSEPPE, JOHN",
+    "instructors": "JOHN, GODSWAY, BISMARK",
     "service": "Bespoke Programme",
     "area": "Hub Room",
     "time_slot": "4.30 to 6",
@@ -4184,7 +4184,7 @@
   {
     "client_name": "Tinashe",
     "day": "Wednesday",
-    "instructors": "BISMARK, GIUSEPPE, JOHN",
+    "instructors": "JOHN, GODSWAY, BISMARK",
     "service": "Bespoke Programme",
     "area": "Hub Room",
     "time_slot": "4.30 to 6",
@@ -5714,7 +5714,7 @@
   {
     "client_name": "Tinashe",
     "day": "Wednesday",
-    "instructors": "BISMARK, GIUSEPPE, JOHN",
+    "instructors": "JOHN, GODSWAY, BISMARK",
     "service": "Bespoke Programme",
     "area": "Hub Room",
     "time_slot": "4.30 to 6",
@@ -7244,7 +7244,7 @@
   {
     "client_name": "Tinashe",
     "day": "Wednesday",
-    "instructors": "BISMARK, GIUSEPPE, JOHN",
+    "instructors": "JOHN, GODSWAY, BISMARK",
     "service": "Bespoke Programme",
     "area": "Hub Room",
     "time_slot": "4.30 to 6",
@@ -8774,7 +8774,7 @@
   {
     "client_name": "Tinashe",
     "day": "Wednesday",
-    "instructors": "BISMARK, GIUSEPPE, JOHN",
+    "instructors": "JOHN, GODSWAY, BISMARK",
     "service": "Bespoke Programme",
     "area": "Hub Room",
     "time_slot": "4.30 to 6",
@@ -10304,7 +10304,7 @@
   {
     "client_name": "Tinashe",
     "day": "Wednesday",
-    "instructors": "BISMARK, GIUSEPPE, JOHN",
+    "instructors": "JOHN, GODSWAY, BISMARK",
     "service": "Bespoke Programme",
     "area": "Hub Room",
     "time_slot": "4.30 to 6",
@@ -11834,7 +11834,7 @@
   {
     "client_name": "Tinashe",
     "day": "Wednesday",
-    "instructors": "BISMARK, GIUSEPPE, JOHN",
+    "instructors": "JOHN, GODSWAY, BISMARK",
     "service": "Bespoke Programme",
     "area": "Hub Room",
     "time_slot": "4.30 to 6",
@@ -13598,7 +13598,7 @@
   {
     "client_name": "Tinashe",
     "day": "Wednesday",
-    "instructors": "BISMARK, GIUSEPPE, JOHN",
+    "instructors": "JOHN, GODSWAY, BISMARK",
     "service": "Bespoke Programme",
     "area": "Hub Room",
     "time_slot": "4.30 to 6",

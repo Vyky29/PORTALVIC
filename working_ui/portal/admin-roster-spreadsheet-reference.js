@@ -21,7 +21,7 @@
   var state = {
     tab: "hours",
     sessionDay: "Monday",
-    hoursDay: "Monday",
+    hoursDay: "all",
     dirty: Object.create(null),
     saving: false,
     mergedData: null,
@@ -123,8 +123,23 @@
     );
   }
 
-  function weekdaySubtabs(active, attr) {
+  function weekdaySubtabs(active, attr, opts) {
+    opts = opts || {};
     var html = '<div class="asr-subtabs" role="tablist">';
+    if (opts.includeAll) {
+      var allVal = opts.allValue || "all";
+      var allLbl = opts.allLabel || "All week";
+      html +=
+        '<button type="button" class="btn btn--ghost btn--sm' +
+        (active === allVal ? " is-active" : "") +
+        '" ' +
+        attr +
+        '="' +
+        esc(allVal) +
+        '">' +
+        esc(allLbl) +
+        "</button>";
+    }
     WEEKDAYS.forEach(function (day) {
       html +=
         '<button type="button" class="btn btn--ghost btn--sm' +
@@ -238,22 +253,14 @@
     return html;
   }
 
-  function renderHoursPanel() {
-    var d = data();
-    if (!d || !d.staffHours) {
-      return '<p class="muted">Staff hours data not loaded.</p>';
-    }
-    var day = state.hoursDay;
-    var sheet = d.staffHours[day];
-    var html = hoursLegendHtml() + weekdaySubtabs(day, "data-asr-hours-day");
+  function renderHoursDaySection(day, sheet) {
     if (!sheet) {
-      html += '<p class="muted">No hours sheet for ' + esc(day) + ".</p>";
-      return html;
+      return '<p class="muted">No hours sheet for ' + esc(day) + ".</p>";
     }
     if (sheet.placeholder) {
-      html += '<p class="muted">No staff hours for ' + esc(day) + " from 1 Jun 2026.</p>";
-      return html;
+      return '<p class="muted">No staff hours for ' + esc(day) + " from 1 Jun 2026.</p>";
     }
+    var html = "";
     if (sheet.blocks && sheet.blocks.length) {
       sheet.blocks.forEach(function (block) {
         html += renderHoursTableHtml(block.venueGroups || [], block.dates || [], "");
@@ -261,6 +268,39 @@
       return html;
     }
     return renderHoursTableHtml(sheet.venueGroups || [], sheet.dates || [], "");
+  }
+
+  function renderHoursPanel() {
+    var d = data();
+    if (!d || !d.staffHours) {
+      return '<p class="muted">Staff hours data not loaded.</p>';
+    }
+    var day = state.hoursDay;
+    var html =
+      hoursLegendHtml() +
+      weekdaySubtabs(day, "data-asr-hours-day", {
+        includeAll: true,
+        allLabel: "Mon–Sun",
+        allValue: "all",
+      });
+    if (day === "all") {
+      WEEKDAYS.forEach(function (wd) {
+        var sheet = d.staffHours[wd];
+        html +=
+          '<section class="asr-hours-day-section" aria-labelledby="asr-hours-day-' +
+          esc(wd) +
+          '">' +
+          '<h3 class="asr-hours-day-section__title" id="asr-hours-day-' +
+          esc(wd) +
+          '">' +
+          esc(wd) +
+          "</h3>";
+        html += renderHoursDaySection(wd, sheet);
+        html += "</section>";
+      });
+      return html;
+    }
+    return html + renderHoursDaySection(day, d.staffHours[day]);
   }
 
   function updateToolbar() {
@@ -394,7 +434,7 @@
     });
     root.querySelectorAll("[data-asr-hours-day]").forEach(function (btn) {
       btn.addEventListener("click", function () {
-        state.hoursDay = btn.getAttribute("data-asr-hours-day") || "Monday";
+        state.hoursDay = btn.getAttribute("data-asr-hours-day") || "all";
         refreshPanel();
       });
     });

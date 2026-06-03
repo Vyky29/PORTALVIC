@@ -200,7 +200,9 @@
       var p = String(
         (typeof location !== "undefined" && location.pathname) || ""
       ).toLowerCase();
-      if (p.indexOf("lead_dashboard") >= 0) return "lead_dashboard.html";
+      if (p.indexOf("lead_dashboard") >= 0 || p.indexOf("portal-lead-session-overview") >= 0) {
+        return "lead_dashboard.html";
+      }
     } catch (_) {}
     return "staff_dashboard.html";
   };
@@ -210,7 +212,9 @@
       var p = String(
         (typeof location !== "undefined" && location.pathname) || ""
       ).toLowerCase();
-      if (p.indexOf("lead_dashboard") >= 0) return "lead";
+      if (p.indexOf("lead_dashboard") >= 0 || p.indexOf("portal-lead-session-overview") >= 0) {
+        return "lead";
+      }
     } catch (_) {}
     return "staff";
   };

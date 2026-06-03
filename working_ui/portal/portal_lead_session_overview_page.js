@@ -569,19 +569,25 @@ async function portalResolveLeadAuthEmail(ctx) {
 }
 
 async function portalResolveLeadAccessContext() {
-  try {
-    await bootstrapDashboardSupabase({ page: "lead" });
-  } catch (e) {
-    console.warn("lead session overview auth", e);
-  }
-  await awaitPortalSupabaseReady(5000);
   let ctx = window.__PORTAL_SUPABASE__ || {};
   let profile = ctx.staff_profile || null;
   let email = await portalResolveLeadAuthEmail(ctx);
+  if (portalCanAccessLeadSessionOverview(profile, email) && ctx.client) {
+    return { ctx, profile, email };
+  }
+  try {
+    await bootstrapDashboardSupabase({ page: "lead_overview" });
+  } catch (e) {
+    console.warn("lead session overview auth", e);
+  }
+  await awaitPortalSupabaseReady(8000);
+  ctx = window.__PORTAL_SUPABASE__ || {};
+  profile = ctx.staff_profile || null;
+  email = await portalResolveLeadAuthEmail(ctx);
   if (!portalCanAccessLeadSessionOverview(profile, email)) {
-    for (let attempt = 0; attempt < 5; attempt += 1) {
+    for (let attempt = 0; attempt < 6; attempt += 1) {
       await new Promise(function (r) {
-        setTimeout(r, 350);
+        setTimeout(r, 400);
       });
       ctx = window.__PORTAL_SUPABASE__ || {};
       profile = ctx.staff_profile || profile;
@@ -589,11 +595,11 @@ async function portalResolveLeadAccessContext() {
       if (portalCanAccessLeadSessionOverview(profile, email)) break;
       if (!ctx.client) {
         try {
-          await bootstrapDashboardSupabase({ page: "lead" });
+          await bootstrapDashboardSupabase({ page: "lead_overview" });
         } catch {
           /* ignore */
         }
-        await awaitPortalSupabaseReady(1500);
+        await awaitPortalSupabaseReady(2000);
         ctx = window.__PORTAL_SUPABASE__ || {};
         profile = ctx.staff_profile || profile;
         email = await portalResolveLeadAuthEmail(ctx);
