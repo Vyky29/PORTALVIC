@@ -70,7 +70,7 @@ set search_path = public
 as $$
 begin
   new.updated_at := now();
-  new.updated_by := auth.uid();
+  new.updated_by := coalesce(auth.uid(), new.updated_by, new.created_by);
   return new;
 end;
 $$;
