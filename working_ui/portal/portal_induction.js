@@ -105,19 +105,65 @@
     return true;
   }
 
-  function portalInductionIsComplete(profile, authEmail) {
-    if (!portalInductionMustComplete(profile, authEmail)) return true;
-    try {
-      if (global.localStorage.getItem(COMPLETE_KEY) === "1") return true;
-    } catch (_e) {}
+  function portalInductionModulesAllPassed() {
     for (var i = 1; i <= MODULES; i++) {
       try {
         var s = JSON.parse(global.localStorage.getItem("provisional-induction-module-" + i) || "{}");
         if (!s.quizPass) return false;
-      } catch (_e2) {
+      } catch (_e) {
         return false;
       }
     }
+    return true;
+  }
+
+  /** Stale Zoho-era / grandfather flags must not skip induction for Alex, Michelle, Carlos. */
+  function portalInductionLooksGrandfatheredComplete() {
+    try {
+      if (global.localStorage.getItem(COMPLETE_KEY) !== "1") return false;
+      var at = String(global.localStorage.getItem(COMPLETED_AT_KEY) || "").trim();
+      var gf = String(global.localStorage.getItem(GRANDFATHER_ISSUED_KEY) || "2026-05-01T12:00:00.000Z").trim();
+      if (!at) return true;
+      if (at === gf || at.indexOf("2026-05-01") === 0) return true;
+    } catch (_e) {}
+    return false;
+  }
+
+  function portalInductionClearGrandfatherStateForRequired(profile, authEmail) {
+    if (!portalInductionMustComplete(profile, authEmail)) return;
+    if (!portalInductionLooksGrandfatheredComplete() && portalInductionModulesAllPassed()) return;
+    if (!portalInductionLooksGrandfatheredComplete() && !portalInductionModulesAllPassed()) {
+      try {
+        if (global.localStorage.getItem(COMPLETE_KEY) === "1") global.localStorage.removeItem(COMPLETE_KEY);
+      } catch (_e) {}
+      return;
+    }
+    try {
+      global.localStorage.removeItem(COMPLETE_KEY);
+      global.localStorage.removeItem(COMPLETED_AT_KEY);
+      global.localStorage.removeItem(CERT_PDF_DOWNLOADED_KEY);
+      for (var i = 1; i <= MODULES; i++) {
+        global.localStorage.removeItem("provisional-induction-module-" + i);
+      }
+    } catch (_e2) {}
+  }
+
+  function portalInductionIsComplete(profile, authEmail) {
+    if (!portalInductionMustComplete(profile, authEmail)) {
+      try {
+        if (global.localStorage.getItem(COMPLETE_KEY) === "1") return true;
+      } catch (_e) {}
+      return true;
+    }
+    if (!portalInductionModulesAllPassed()) {
+      try {
+        if (global.localStorage.getItem(COMPLETE_KEY) === "1") global.localStorage.removeItem(COMPLETE_KEY);
+      } catch (_e2) {}
+      return false;
+    }
+    try {
+      global.localStorage.setItem(COMPLETE_KEY, "1");
+    } catch (_e3) {}
     return true;
   }
 
@@ -139,6 +185,7 @@
 
   function portalInductionOpen(profile, authEmail) {
     portalInductionPrepareLearnerName(profile, authEmail);
+    portalInductionClearGrandfatherStateForRequired(profile, authEmail);
     portalInductionApplyGrandfather(profile, authEmail);
     var url;
     try {
@@ -203,6 +250,7 @@
 
   function portalInductionSyncQuickMenu(btn, profile, authEmail) {
     if (!btn) return;
+    portalInductionClearGrandfatherStateForRequired(profile, authEmail);
     portalInductionApplyGrandfather(profile, authEmail);
     var must = portalInductionMustComplete(profile, authEmail);
     var done = portalInductionIsComplete(profile, authEmail);
@@ -244,6 +292,7 @@
       var sess = global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.session;
       email = sess && sess.user && sess.user.email ? String(sess.user.email) : "";
     }
+    portalInductionClearGrandfatherStateForRequired(profile, email);
     portalInductionApplyGrandfather(profile, email);
     portalInductionSyncQuickMenu(global.document.getElementById("quickMenuInduction"), profile, email);
     void portalInductionTryMarkPdfFromDocuments().then(function () {

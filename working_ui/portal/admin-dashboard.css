@@ -4245,10 +4245,21 @@
       outline-offset:2px;
     }
     body.admin-touch-compact:not(.admin-fullnav-open) .admin-float-menu-btn{
-      display:none !important;
+      display:inline-flex !important;
     }
     body.admin-touch-compact.admin-fullnav-open .admin-float-menu-btn{
       display:none !important;
+    }
+    body.admin-touch-compact .admin-bottom-nav{
+      display:flex !important;
+      z-index:12090;
+    }
+    body.admin-touch-compact .admin-workspace{
+      padding-bottom:calc(58px + env(safe-area-inset-bottom, 0px)) !important;
+    }
+    body.admin-touch-compact .admin-topbar{
+      position:relative;
+      z-index:12070;
     }
     body.admin-touch-compact #modalBackdrop.modal-backdrop--register{
       left:0 !important;

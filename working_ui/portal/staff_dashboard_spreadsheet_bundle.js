@@ -1076,7 +1076,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Big Pool",
+    "area": "Teaching Pool",
     "time_slot": "2 to 2.30",
     "venue": "SwimFarm",
     "session_date": "2026-05-17"
@@ -1086,7 +1086,7 @@
     "day": "Sunday",
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",
-    "area": "Big Pool",
+    "area": "Teaching Pool",
     "time_slot": "2 to 2.30",
     "venue": "SwimFarm",
     "session_date": "2026-05-17"
@@ -1096,7 +1096,7 @@
     "day": "Sunday",
     "instructors": "AURORA",
     "service": "Aquatic Activity",
-    "area": "Big Pool",
+    "area": "Teaching Pool",
     "time_slot": "2 to 2.30",
     "venue": "SwimFarm",
     "session_date": "2026-05-17"
@@ -1106,7 +1106,7 @@
     "day": "Sunday",
     "instructors": "AURORA",
     "service": "Aquatic Activity",
-    "area": "Big Pool",
+    "area": "Teaching Pool",
     "time_slot": "2.30 to 3",
     "venue": "SwimFarm",
     "session_date": "2026-05-17"
@@ -1116,7 +1116,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Big Pool",
+    "area": "Teaching Pool",
     "time_slot": "2.30 to 3",
     "venue": "SwimFarm",
     "session_date": "2026-05-17"
@@ -1126,7 +1126,7 @@
     "day": "Sunday",
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",
-    "area": "Big Pool",
+    "area": "Teaching Pool",
     "time_slot": "2.30 to 3",
     "venue": "SwimFarm",
     "session_date": "2026-05-17"
@@ -2706,7 +2706,7 @@
     "day": "Wednesday",
     "instructors": "YOUSSEF",
     "service": "Multi-Activity",
-    "area": "Room 2",
+    "area": "Teaching Pool",
     "time_slot": "5.15 to 6",
     "venue": "Acton",
     "session_date": "2026-06-03"
@@ -4236,7 +4236,7 @@
     "day": "Wednesday",
     "instructors": "YOUSSEF",
     "service": "Multi-Activity",
-    "area": "Room 2",
+    "area": "Teaching Pool",
     "time_slot": "5.15 to 6",
     "venue": "Acton",
     "session_date": "2026-06-10"
@@ -5766,7 +5766,7 @@
     "day": "Wednesday",
     "instructors": "YOUSSEF",
     "service": "Multi-Activity",
-    "area": "Room 2",
+    "area": "Teaching Pool",
     "time_slot": "5.15 to 6",
     "venue": "Acton",
     "session_date": "2026-06-17"
@@ -7296,7 +7296,7 @@
     "day": "Wednesday",
     "instructors": "YOUSSEF",
     "service": "Multi-Activity",
-    "area": "Room 2",
+    "area": "Teaching Pool",
     "time_slot": "5.15 to 6",
     "venue": "Acton",
     "session_date": "2026-06-24"
@@ -8826,7 +8826,7 @@
     "day": "Wednesday",
     "instructors": "YOUSSEF",
     "service": "Multi-Activity",
-    "area": "Room 2",
+    "area": "Teaching Pool",
     "time_slot": "5.15 to 6",
     "venue": "Acton",
     "session_date": "2026-07-01"
@@ -10356,7 +10356,7 @@
     "day": "Wednesday",
     "instructors": "YOUSSEF",
     "service": "Multi-Activity",
-    "area": "Room 2",
+    "area": "Teaching Pool",
     "time_slot": "5.15 to 6",
     "venue": "Acton",
     "session_date": "2026-07-08"
@@ -11886,7 +11886,7 @@
     "day": "Wednesday",
     "instructors": "YOUSSEF",
     "service": "Multi-Activity",
-    "area": "Room 2",
+    "area": "Teaching Pool",
     "time_slot": "5.15 to 6",
     "venue": "Acton",
     "session_date": "2026-07-15"
@@ -13645,7 +13645,7 @@
     "day": "Wednesday",
     "instructors": "YOUSSEF",
     "service": "Multi-Activity",
-    "area": "Room 2",
+    "area": "Teaching Pool",
     "time_slot": "5.15 to 6",
     "venue": "Acton"
   },

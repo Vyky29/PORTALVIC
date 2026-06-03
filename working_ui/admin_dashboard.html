@@ -37,7 +37,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260601-operator-pink" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260613-admin-mob-nav" />
 </head>
 <body>
   <script>
@@ -255,6 +255,8 @@
     var NAV_TOP = [
       { id:'nav_hub', label:'Dashboard' }
     ];
+    /** Touch layout: short bottom bar (full menu via ☰ / float button). */
+    var MOBILE_BOTTOM_NAV_IDS = ['nav_hub', 'dashboard', 'c4k_services', 'scheduling', 'staffhr'];
     var NAV_GROUPS = [
       { id:'g_operator', label:'Operator', children:['dashboard','operations_admin','operator'] },
       { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','c4k_sessions','scheduling','term_roster_edit','roster_spreadsheets','c4k_waitlist','__h:Participants','clients','c4k_reviews','c4k_reports','__h:Orders','orders_all','absents_refunds','__h:Communications','comms_ops'] },
@@ -21499,8 +21501,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '</div>';
       }).join('');
       $('adminNav').innerHTML = navHtml;
-      $('adminBottomNav').innerHTML = NAV.filter(function(item){ return !item.skipBottomNav; }).map(function(item){
-        return '<button type="button" data-view="'+item.id+'">'+esc(item.label)+'</button>';
+      var bottomNavItems = NAV.filter(function(item){ return !item.skipBottomNav; });
+      if(document.body.classList.contains('admin-touch-compact')){
+        bottomNavItems = MOBILE_BOTTOM_NAV_IDS.map(function(id){ return navGetItem(id); }).filter(Boolean);
+      }
+      $('adminBottomNav').innerHTML = bottomNavItems.map(function(item){
+        var lab = item.hubLabel || item.label;
+        return '<button type="button" data-view="'+esc(item.id)+'">'+esc(lab)+'</button>';
       }).join('');
       $('adminNav').querySelectorAll('[data-nav-group-toggle]').forEach(function(b){
         b.addEventListener('click', function(ev){
@@ -22302,8 +22309,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       try{ window.addEventListener('resize', adminApplyDesktopSidebarFromStorage); }catch(e){}
       adminApplyTouchCompactLayoutClass();
       try{
-        window.addEventListener('resize', adminApplyTouchCompactLayoutClass);
-        window.addEventListener('orientationchange', adminApplyTouchCompactLayoutClass);
+        window.addEventListener('resize', function(){
+          adminApplyTouchCompactLayoutClass();
+          try{ renderNav(); }catch(_rn){}
+        });
+        window.addEventListener('orientationchange', function(){
+          adminApplyTouchCompactLayoutClass();
+          try{ renderNav(); }catch(_rn){}
+        });
       }catch(_e){}
       var brandEl = $('adminSidebarBrand');
       if(brandEl){
