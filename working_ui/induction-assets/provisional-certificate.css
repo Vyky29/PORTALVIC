@@ -122,3 +122,92 @@
   color: #0f2840;
   border-color: rgba(255, 255, 255, 0.35);
 }
+
+/* PORTALVIC — completed induction (same green as feedback-done session cards) */
+.induction-certificate-panel.induction-certificate-panel--portal-complete {
+  margin-top: 0;
+  background: linear-gradient(180deg, #eef8f1 0%, #dff6e8 100%);
+  border: 1px solid rgba(21, 115, 71, 0.5);
+  box-shadow: 0 0 0 1px rgba(21, 115, 71, 0.1), 0 8px 22px rgba(21, 115, 71, 0.12);
+  color: #0f2840;
+}
+
+.induction-certificate-panel--portal-complete .induction-certificate-panel__kicker {
+  color: #15803d;
+}
+
+.induction-certificate-panel--portal-complete h2 {
+  color: #0a3d62;
+}
+
+.induction-certificate-panel--portal-complete p {
+  color: #445e70;
+}
+
+.induction-certificate-panel--portal-complete .induction-certificate-panel__learner {
+  color: #166534 !important;
+}
+
+.induction-certificate-panel--portal-complete .btn-certificate-download {
+  background: linear-gradient(135deg, #15803d 0%, #22a06b 100%);
+  color: #fff;
+  border-color: rgba(21, 115, 71, 0.35);
+  box-shadow: 0 8px 20px rgba(21, 115, 71, 0.22);
+}
+
+.induction-certificate-panel--portal-complete .btn-certificate-download:hover {
+  box-shadow: 0 12px 26px rgba(21, 115, 71, 0.28);
+}
+
+.induction-certificate-panel--portal-complete .induction-certificate-panel__saved {
+  margin: 10px 0 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #166534;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+body.induction--certificate-only {
+  background: linear-gradient(180deg, #f4f8fc 0%, #eaf1f8 100%);
+}
+
+body.induction--certificate-only #inductionPathwayWrap {
+  display: none !important;
+}
+
+body.induction--certificate-only #inductionCertificatePanel {
+  display: block !important;
+  margin: 24px auto;
+  max-width: min(920px, calc(100% - 28px));
+}
+
+body.induction--certificate-only .training-wrap {
+  padding: 14px 14px 28px;
+  min-width: 0;
+}
+
+.induction-portal-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 14px;
+  max-width: min(920px, calc(100% - 28px));
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #2d84b3;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  overflow-wrap: break-word;
+}
+
+.induction-portal-back:hover,
+.induction-portal-back:focus-visible {
+  text-decoration: underline;
+}

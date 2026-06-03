@@ -1,9 +1,14 @@
 /**
- * Download General Induction certificate (SVG) — same visual as induction app.
+ * General Induction certificate — SVG build, PDF download, optional My Documents upload.
  */
 (function (global) {
   var TRAINING_LABEL = "clubSENsational General Induction";
   var LOGO_URL = "/induction-assets/clubsensational-portal-logo.png";
+  var DOC_TITLE = "clubSENsational General Induction Certificate";
+  var DOC_TYPE = "induction_certificate";
+  var DOC_CATEGORY = "training";
+  var DOC_SOURCE = "general-induction";
+  var DOC_SESSION_KEY = "general-induction-certificate";
   var logoDataUriCache = null;
 
   function escapeXml(value) {
@@ -33,6 +38,12 @@
     });
   }
 
+  function parseDate(issuedIso) {
+    var date = issuedIso ? new Date(issuedIso) : new Date();
+    if (Number.isNaN(date.getTime())) date = new Date();
+    return date;
+  }
+
   function loadLogoDataUri() {
     if (logoDataUriCache) return Promise.resolve(logoDataUriCache);
     return fetch(LOGO_URL)
@@ -51,6 +62,16 @@
           reader.readAsDataURL(blob);
         });
       });
+  }
+
+  function portalBuildInductionCertificateSvg(learnerName, issuedIso, logoDataUri) {
+    var date = parseDate(issuedIso);
+    return buildCertificateSvg({
+      learnerName: learnerName,
+      trainingLabel: TRAINING_LABEL,
+      logoDataUri: logoDataUri || "",
+      date: date,
+    });
   }
 
   function buildCertificateSvg(meta) {
@@ -109,8 +130,47 @@
     ].join("");
   }
 
-  function downloadSvg(filename, content) {
-    var blob = new Blob([content], { type: "image/svg+xml;charset=utf-8" });
+  function svgToPdfBlob(svgString) {
+    return new Promise(function (resolve, reject) {
+      var w = 1600;
+      var h = 1131;
+      var img = new Image();
+      var url = URL.createObjectURL(new Blob([svgString], { type: "image/svg+xml;charset=utf-8" }));
+      img.onload = function () {
+        try {
+          var canvas = global.document.createElement("canvas");
+          canvas.width = w;
+          canvas.height = h;
+          var ctx = canvas.getContext("2d");
+          if (!ctx) throw new Error("canvas");
+          ctx.fillStyle = "#fef8ec";
+          ctx.fillRect(0, 0, w, h);
+          ctx.drawImage(img, 0, 0, w, h);
+          URL.revokeObjectURL(url);
+          var dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+          if (!global.jspdf || !global.jspdf.jsPDF) throw new Error("jsPDF missing");
+          var pdf = new global.jspdf.jsPDF({
+            orientation: "landscape",
+            unit: "px",
+            format: [w, h],
+            compress: true,
+          });
+          pdf.addImage(dataUrl, "JPEG", 0, 0, w, h);
+          resolve(pdf.output("blob"));
+        } catch (err) {
+          URL.revokeObjectURL(url);
+          reject(err);
+        }
+      };
+      img.onerror = function () {
+        URL.revokeObjectURL(url);
+        reject(new Error("Could not render certificate image"));
+      };
+      img.src = url;
+    });
+  }
+
+  function triggerBrowserDownload(blob, filename) {
     var url = URL.createObjectURL(blob);
     var link = global.document.createElement("a");
     link.href = url;
@@ -120,39 +180,96 @@
     link.remove();
     setTimeout(function () {
       URL.revokeObjectURL(url);
-    }, 1000);
+    }, 2000);
+  }
+
+  async function importDocumentsModule() {
+    var v = "20260611-induction-cert";
+    var bases = ["/portal/portal_documents.js", "portal/portal_documents.js"];
+    for (var i = 0; i < bases.length; i++) {
+      try {
+        return await import(bases[i] + "?v=" + v);
+      } catch (e) {
+        console.warn("[induction-cert] import", bases[i], e);
+      }
+    }
+    throw new Error("portal_documents.js not available");
+  }
+
+  async function savePdfToMyDocuments(pdfBlob, relatedDateIso) {
+    var docs = await importDocumentsModule();
+    if (typeof docs.portalRequireUser !== "function" || typeof docs.portalUploadPdfAndCreateDocument !== "function") {
+      throw new Error("Document upload API missing");
+    }
+    var auth = await docs.portalRequireUser();
+    var existing = await auth.supabase
+      .from("documents")
+      .select("id")
+      .eq("user_id", auth.user.id)
+      .eq("document_type", DOC_TYPE)
+      .is("hidden_by_user_at", null)
+      .limit(1);
+    if (existing.error) throw existing.error;
+    if (existing.data && existing.data.length) {
+      return { savedToDocuments: true, alreadyHad: true };
+    }
+    await docs.portalUploadPdfAndCreateDocument({
+      blob: pdfBlob,
+      document_type: DOC_TYPE,
+      category: DOC_CATEGORY,
+      title: DOC_TITLE,
+      source_page: DOC_SOURCE,
+      related_date: relatedDateIso ? String(relatedDateIso).slice(0, 10) : null,
+      related_session_key: DOC_SESSION_KEY,
+      reuseAuth: auth,
+    });
+    return { savedToDocuments: true, alreadyHad: false };
+  }
+
+  /**
+   * @param {string} learnerName
+   * @param {string} [issuedIso]
+   * @param {{ saveToDocuments?: boolean }} [opts]
+   * @returns {Promise<{ downloaded: boolean, savedToDocuments?: boolean }>}
+   */
+  async function portalDownloadInductionCertificatePdf(learnerName, issuedIso, opts) {
+    var options = opts || {};
+    var name = String(learnerName || "").trim();
+    if (!name) {
+      alert("Your name is not available for the certificate. Open induction from the staff portal first.");
+      return { downloaded: false };
+    }
+    var date = parseDate(issuedIso);
+    var logoDataUri = "";
+    try {
+      logoDataUri = await loadLogoDataUri();
+    } catch (_e) {}
+    var svg = portalBuildInductionCertificateSvg(name, issuedIso, logoDataUri);
+    var pdfBlob = await svgToPdfBlob(svg);
+    var filename = slugify("general-induction-" + name) + "-certificate.pdf";
+    triggerBrowserDownload(pdfBlob, filename);
+    var out = { downloaded: true, savedToDocuments: false };
+    if (options.saveToDocuments) {
+      try {
+        var saved = await savePdfToMyDocuments(pdfBlob, date.toISOString());
+        out.savedToDocuments = !!(saved && saved.savedToDocuments);
+        out.alreadyHad = !!(saved && saved.alreadyHad);
+      } catch (err) {
+        console.warn("[induction-cert] My Documents save", err);
+      }
+    }
+    return out;
   }
 
   function portalDownloadInductionCertificate(learnerName, issuedIso) {
-    var name = String(learnerName || "").trim();
-    if (!name) {
-      alert("Your name is not available for the certificate. Open the portal from your staff dashboard first.");
-      return Promise.resolve(false);
-    }
-    var date = issuedIso ? new Date(issuedIso) : new Date();
-    if (Number.isNaN(date.getTime())) date = new Date();
-
-    return loadLogoDataUri()
-      .then(function (logoDataUri) {
-        var svg = buildCertificateSvg({
-          learnerName: name,
-          trainingLabel: TRAINING_LABEL,
-          logoDataUri: logoDataUri,
-          date: date,
-        });
-        downloadSvg(slugify("general-induction-" + name) + "-certificate.svg", svg);
-        return true;
-      })
-      .catch(function () {
-        var svg = buildCertificateSvg({
-          learnerName: name,
-          trainingLabel: TRAINING_LABEL,
-          date: date,
-        });
-        downloadSvg(slugify("general-induction-" + name) + "-certificate.svg", svg);
-        return true;
-      });
+    return portalDownloadInductionCertificatePdf(learnerName, issuedIso, { saveToDocuments: false }).then(
+      function (r) {
+        return !!(r && r.downloaded);
+      }
+    );
   }
 
+  global.portalBuildInductionCertificateSvg = portalBuildInductionCertificateSvg;
+  global.portalDownloadInductionCertificatePdf = portalDownloadInductionCertificatePdf;
   global.portalDownloadInductionCertificate = portalDownloadInductionCertificate;
 })(typeof window !== "undefined" ? window : globalThis);

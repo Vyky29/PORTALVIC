@@ -143,8 +143,8 @@
     </article>
   </main>
 
-  <script src="/portal/portal_induction.js?v=20260611-induction"></script>
-  <script src="/portal/portal_induction_certificate.js?v=20260611-induction"></script>
+  <script src="/portal/portal_induction.js?v=20260611-induction-cert"></script>
+  <script src="/portal/portal_induction_certificate.js?v=20260611-induction-cert"></script>
   <script type="module">
     async function portalImportAuthModule() {
       const v = "20260611-induction";
@@ -588,7 +588,7 @@
                     ? `data-induction-cert="1" data-learner-name="${esc(doc.learnerName || "")}" data-issued-iso="${esc(doc.created_at || "")}"`
                     : `data-file-url="${esc(doc.file_url)}" data-download-name="${esc(displayTitle(doc))}"`
                 }>
-                  <span class="btn-label-desk">${isInductionCert ? "Download certificate" : "View / Download"}</span><span class="btn-label-mob"><span class="btn-mob-row1">Download</span><span class="btn-mob-row2" aria-live="polite"></span></span>
+                  <span class="btn-label-desk">${isInductionCert ? "Download certificate (PDF)" : "View / Download"}</span><span class="btn-label-mob"><span class="btn-mob-row1">Download</span><span class="btn-mob-row2" aria-live="polite"></span></span>
                 </button>
                 ${isPayslip || isInductionCert ? "" : `<button type="button" class="btn btn-outline" data-doc-id="${docId}">Delete</button>`}
               </div>
@@ -599,11 +599,22 @@
       });
       root.innerHTML = html;
       root.querySelectorAll("button[data-induction-cert]").forEach((btn) => {
-        btn.addEventListener("click", () => {
+        btn.addEventListener("click", async () => {
           const name = btn.getAttribute("data-learner-name") || "";
           const issued = btn.getAttribute("data-issued-iso") || "";
-          if (typeof window.portalDownloadInductionCertificate === "function") {
-            void window.portalDownloadInductionCertificate(name, issued);
+          const desk = btn.querySelector(".btn-label-desk");
+          const origDesk = desk ? desk.textContent : "";
+          try {
+            if (desk) desk.textContent = "Preparing PDF…";
+            btn.disabled = true;
+            if (typeof window.portalDownloadInductionCertificatePdf === "function") {
+              await window.portalDownloadInductionCertificatePdf(name, issued, { saveToDocuments: true });
+            } else if (typeof window.portalDownloadInductionCertificate === "function") {
+              await window.portalDownloadInductionCertificate(name, issued);
+            }
+          } finally {
+            btn.disabled = false;
+            if (desk) desk.textContent = origDesk || "Download certificate (PDF)";
           }
         });
       });
@@ -644,6 +655,10 @@
 
     async function mergeInductionCertificateRow(docs) {
       const list = Array.isArray(docs) ? docs.slice() : [];
+      const hasStoredCert = list.some(
+        (d) => String((d && d.document_type) || "").toLowerCase() === "induction_certificate"
+      );
+      if (hasStoredCert) return list;
       let profile = null;
       let email = "";
       try {

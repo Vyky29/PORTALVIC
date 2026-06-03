@@ -109,6 +109,11 @@ def main() -> None:
         text = rewrite_html_paths(text)
         cert_js.write_text(text, encoding="utf-8")
 
+    portal_view = WORKING_UI / "induction-shared" / "portal-induction-complete-view.js"
+    src_view = REPO_ROOT / "working_ui" / "induction-shared" / "portal-induction-complete-view.js"
+    if src_view.is_file() and not portal_view.is_file():
+        shutil.copy2(src_view, portal_view)
+
     print(f"Synced induction dist from {dist} -> {WORKING_UI}")
 
 
