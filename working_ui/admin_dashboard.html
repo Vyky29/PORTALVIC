@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260614-mob-fit" />
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260613-hours-all-week" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260603-form-record-modal" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260602-team-row6" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260616-dash-cat-pick" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260521-embed" />
   <script src="/portal/hr-contract-embed-html.js?v=20260521-embed"></script>
@@ -916,7 +916,7 @@
       }
     };
 
-    var state = { view:'nav_hub', drawerClient:null, drawerStaff:null, drawerIsSynthetic:false, reportTargetClient:null, search:'', shiftModalCtx:null, pendingBookingsScroll:null, pendingBookingsSlotFocus:null, commsOrderDetailKey:'', sessionOverview:{ iso:'', overrides:[] }, sessionFeedback:{ anchorIso:'', selectedIso:null, rangeFrom:'', rangeTo:'', clientQ:'' }, navGroupsOpen:{ g_operator:false, g_c4k:false, g_zoho:false, g_supabase:false, g_xero:false, g_indeed:false, g_settings_portal:false }, c4kServicesRegisterOpen:false, registerSessionSlot:null, scrollToCapacityEmbed:false, portalLatePendingCount:0 };
+    var state = { view:'nav_hub', navHubGroup:null, drawerClient:null, drawerStaff:null, drawerIsSynthetic:false, reportTargetClient:null, search:'', shiftModalCtx:null, pendingBookingsScroll:null, pendingBookingsSlotFocus:null, commsOrderDetailKey:'', sessionOverview:{ iso:'', overrides:[] }, sessionFeedback:{ anchorIso:'', selectedIso:null, rangeFrom:'', rangeTo:'', clientQ:'' }, navGroupsOpen:{ g_operator:false, g_c4k:false, g_zoho:false, g_supabase:false, g_xero:false, g_indeed:false, g_settings_portal:false }, c4kServicesRegisterOpen:false, registerSessionSlot:null, scrollToCapacityEmbed:false, portalLatePendingCount:0 };
     var sched = { slotsById:{}, overrides:[], activeSlot:null, lastMsg:'', waitingSupabaseRetryBound:false, weekAnchorIso:'' };
     /** Schedule &amp; Covers: summer term 2 roster window (dated rows in spreadsheet bundle). */
     var SCHED_COVER_TERM_START = '2026-06-01';
@@ -1818,6 +1818,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(id === 'c4k_service_register') id = 'c4k_services';
       if(id === 'operations') id = 'dashboard';
       if(id === 'operations-admin') id = 'operations_admin';
+      if(id === 'nav_hub' && !state._navHubKeepGroup){
+        state.navHubGroup = null;
+      }
+      state._navHubKeepGroup = false;
       if(id === 'orders_outstanding'){
         booking.ordersScope = 'outstanding';
         id = 'orders_all';
@@ -16612,7 +16616,43 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return portalAdminCanOpenAllCeoGroup();
     }
-    var DASH_HUB_NAV_GROUPS = ['g_operator','g_c4k','g_zoho','g_supabase','g_xero'];
+    function navGroupById(gid){
+      for(var gi = 0; gi < NAV_GROUPS.length; gi++){
+        if(NAV_GROUPS[gi].id === gid) return NAV_GROUPS[gi];
+      }
+      return null;
+    }
+    function portalNavHubRerender(){
+      if(state.view !== 'nav_hub') return;
+      $('workspace').innerHTML = renderView('nav_hub');
+      bindView('nav_hub');
+    }
+    function openNavHubIndex(){
+      state.navHubGroup = null;
+      if(state.view !== 'nav_hub') setView('nav_hub');
+      else portalNavHubRerender();
+    }
+    function openNavHubGroup(gid){
+      state.navHubGroup = String(gid || '').trim() || null;
+      if(!state.navHubGroup) return openNavHubIndex();
+      if(state.view !== 'nav_hub'){
+        state._navHubKeepGroup = true;
+        setView('nav_hub');
+      }else{
+        portalNavHubRerender();
+      }
+    }
+    function hubMenuTilesForGroup(group){
+      var tiles = [];
+      (group.children || []).forEach(function(cid){
+        if(String(cid).indexOf('__h:') === 0) return;
+        var item = navGetItem(cid);
+        if(!item) return;
+        if(item.id === 'portal_nav_ceo' && !portalAdminCanAccessCeoDashboard()) return;
+        tiles.push(dashHubNavTileHtml(item));
+      });
+      return tiles;
+    }
     function dashHubItemDesc(item){
       var id = item && item.id;
       var map = {
@@ -16668,43 +16708,39 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return '<button type="button" class="dash-hub__tile" data-view-target="'+esc(item.id)+'">'+band+label+descHtml+'</button>';
     }
     function viewNavHubDashboard(){
-      var panels = DASH_HUB_NAV_GROUPS.map(function(gid){
-        var group = null;
-        for(var gi = 0; gi < NAV_GROUPS.length; gi++){
-          if(NAV_GROUPS[gi].id === gid){ group = NAV_GROUPS[gi]; break; }
+      if(state.navHubGroup){
+        var group = navGroupById(state.navHubGroup);
+        if(!group){
+          state.navHubGroup = null;
+        }else{
+          var tiles = hubMenuTilesForGroup(group);
+          return (
+            '<div class="dash-hub dash-hub--nav-group">' +
+            '<div class="dash-hub__hub-toolbar">' +
+            '<button type="button" class="btn btn--ghost btn--sm" data-hub-back-dashboard">← Dashboard</button>' +
+            '</div>' +
+            '<h2 class="page-title">'+esc(group.label)+'</h2>' +
+            '<p class="page-intro">Same sections as the left menu — choose where to go.</p>' +
+            '<div class="dash-hub__grid dash-hub__grid--hub-menu">'+tiles.join('')+'</div>' +
+            '</div>'
+          );
         }
-        if(!group) return '';
-        var tiles = [];
-        var hubChildIds = (group.children || []).slice();
-        if(gid === 'g_c4k'){
-          hubChildIds = ['c4k_services','clients','orders_all'];
-        }
-        if(gid === 'g_xero'){
-          hubChildIds = ['invoices','absents_refunds','reenrol_payments'];
-        }
-        hubChildIds.forEach(function(cid){
-          if(String(cid).indexOf('__h:') === 0) return;
-          if(gid === 'g_operator' && cid === 'operator') return;
-          var item = navGetItem(cid);
-          if(!item) return;
-          tiles.push(dashHubNavTileHtml(item));
-        });
+      }
+      var panels = NAV_GROUPS.map(function(group){
         return (
-          '<section class="dash-hub-cat" data-hub-cat="'+esc(group.id)+'">' +
-          '<header class="dash-hub-cat__head">' +
+          '<button type="button" class="dash-hub-cat dash-hub-cat--pick" data-hub-cat="'+esc(group.id)+'" data-hub-open-group="'+esc(group.id)+'" title="'+escAttr('Open '+group.label)+'">' +
+          '<span class="dash-hub-cat__head">' +
           adminNavIconHtml(group.id) +
           '<span class="dash-hub-cat__label">'+esc(group.label)+'</span>' +
-          '</header>' +
-          '<div class="dash-hub-cat__body">' +
-          '<div class="dash-hub__grid dash-hub__grid--inline">' + tiles.join('') + '</div>' +
-          '</div></section>'
+          '</span>' +
+          '</button>'
         );
       }).join('');
       return (
-        '<div class="dash-hub dash-hub--nav-index">' +
+        '<div class="dash-hub dash-hub--nav-index dash-hub--nav-index-pick">' +
         '<h2 class="page-title">Dashboard</h2>' +
-        '<p class="page-intro">All admin areas at a glance — pick a shortcut below.</p>' +
-        '<div class="dash-hub-cat-grid">'+panels+'</div>' +
+        '<p class="page-intro">Choose a category — same as the left menu.</p>' +
+        '<div class="dash-hub-cat-grid dash-hub-cat-grid--pick">'+panels+'</div>' +
         '</div>'
       );
     }
@@ -19470,6 +19506,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       root.querySelectorAll('[data-shift-session]').forEach(function(b){
         b.addEventListener('click', function(){ openShiftModal(b.getAttribute('data-shift-session')||''); });
       });
+      if(id === 'nav_hub'){
+        root.querySelectorAll('[data-hub-open-group]').forEach(function(b){
+          b.addEventListener('click', function(){
+            openNavHubGroup(b.getAttribute('data-hub-open-group'));
+            closeSidebarMob();
+          });
+        });
+        root.querySelectorAll('[data-hub-back-dashboard]').forEach(function(b){
+          b.addEventListener('click', function(){
+            openNavHubIndex();
+          });
+        });
+      }
       root.querySelectorAll('[data-view-target]').forEach(function(b){
         b.addEventListener('click', function(){
           if(b.getAttribute('data-cap-embed-scroll') === '1') state.scrollToCapacityEmbed = true;
