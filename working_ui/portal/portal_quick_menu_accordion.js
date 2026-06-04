@@ -14,7 +14,10 @@
 
   var ACCORDION_LABELS = {
     portalQuickMenuGuideGroup: "Getting started",
+    portalQuickMenuNotificationsGroup: "Communication",
     portalAnnualProfileQuickGroup: "Profile",
+    portalQuickMenuServiceLeadsGroup: "Service Leads",
+    portalQuickMenuMyRecordsGroup: "My Records",
   };
 
   var ACCORDION_BY_TITLE = {
@@ -24,35 +27,35 @@
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>',
       chips: ["Photos", "Venue", "Pickup"],
     },
-    lead: {
+    communication: {
+      theme: "comms",
+      icon:
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+      chips: ["Chat", "Announcements", "Reminders"],
+    },
+    "service leads": {
       theme: "lead",
       icon:
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
-      chips: ["Session planner", "Term review", "Performance"],
-    },
-    planning: {
-      theme: "plan",
-      icon:
-        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
-      chips: ["Session planner"],
+      chips: ["Sessions", "Performance", "Term review"],
     },
     finance: {
       theme: "finance",
       icon:
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>',
-      chips: ["Timesheets", "Expenses"],
+      chips: ["Timesheets", "Expenses", "Payslips"],
     },
-    "my documents": {
+    "my records": {
       theme: "docs",
       icon:
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
-      chips: ["Payslips", "Reports", "PDFs"],
+      chips: ["Reports", "Certificates", "Documents"],
     },
     training: {
       theme: "training",
       icon:
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>',
-      chips: ["Induction", "Swimming", "Safeguarding"],
+      chips: ["Induction", "Swimming training", "Safeguarding"],
     },
     compliance: {
       theme: "compliance",
@@ -80,6 +83,18 @@
       icon:
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
       chips: ["Annual check-in"],
+    },
+    portalQuickMenuServiceLeadsGroup: {
+      theme: "lead",
+      icon:
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+      chips: ["Sessions", "Performance", "Term review"],
+    },
+    portalQuickMenuMyRecordsGroup: {
+      theme: "docs",
+      icon:
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+      chips: ["Reports", "Certificates", "Documents"],
     },
   };
 

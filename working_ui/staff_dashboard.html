@@ -370,6 +370,7 @@
           </div>
         </div>
         <div class="menu-group" id="portalQuickMenuNotificationsGroup" hidden>
+          <div class="menu-group-title" id="portalQuickMenuCommunicationTitle">Communication</div>
           <div class="menu-group-title portal-quickmenu-internal-chat-heading" id="portalQuickMenuInternalChatHeading">Internal chat</div>
           <div class="menu-grid menu-grid--portal-internal-chat" id="portalQuickMenuInternalChatSlot"></div>
           <div class="menu-group-title" id="portalQuickMenuAnnouncementsHeading">Announcements</div>
@@ -377,6 +378,7 @@
           <div class="menu-group-title menu-group-title--portal-reminders" id="portalQuickMenuRemindersHeading">Reminders</div>
           <div class="menu-grid menu-grid--portal-safeguarding-policy" id="portalQuickMenuSafeguardingPolicySlot" hidden></div>
           <div class="menu-grid menu-grid--portal-outstanding-feedback" id="portalQuickMenuOutstandingFeedbackSlot" hidden></div>
+          <div class="menu-grid menu-grid--portal-wellbeing-review" id="portalQuickMenuWellbeingReviewSlot" hidden></div>
           <div class="menu-grid menu-grid--portal-reminder-single" id="portalQuickMenuReminderGroup" hidden>
             <div id="portalQuickMenuReminderBannerHost"></div>
           </div>
@@ -405,19 +407,31 @@
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h11l4 4v6a2 2 0 0 1-2 2h-1"/><path d="M4 7v12a2 2 0 0 0 2 2h3"/><circle cx="8.5" cy="18.5" r="2.5"/><circle cx="15.5" cy="18.5" r="2.5"/><path d="M15 7v4h4"/></svg></div>
               <div class="menu-btn-copy"><strong>Pickup</strong><span class="menu-btn-sub">Open handover panel</span></div>
             </button>
+            <button type="button" class="menu-btn menu-btn--work-expenses" id="quickMenuStaffTermReview" data-portal-external-url="swtermreview.html" aria-label="Swimming term review — review each participant per term" hidden aria-hidden="true">
+              <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+              <div class="menu-btn-copy"><strong>Swimming Term Review</strong><span class="menu-btn-sub">Review each participant per term</span></div>
+            </button>
           </div>
         </div>
-        <div class="menu-group">
-          <div class="menu-group-title">Planning</div>
-          <div class="menu-grid" id="quickMenuStaffToolsGrid">
+        <div class="menu-group" id="portalQuickMenuServiceLeadsGroup" hidden aria-hidden="true">
+          <div class="menu-group-title">Service Leads</div>
+          <div class="menu-grid" id="quickMenuServiceLeadsGrid">
             <button type="button" class="menu-btn menu-btn--session-planner menu-btn--feature-deactivated" id="quickMenuStaffSessionPlan" aria-label="Session planner (deactivated)" aria-disabled="true" disabled>
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V10l8-4 8 4v12"/><path d="M9 22v-6h6v6"/><path d="M8 6h8"/><path d="M10 10h4"/></svg></div>
               <div class="menu-btn-copy"><strong>Session planner</strong><span class="menu-btn-sub">Not available yet</span></div>
               <span class="menu-btn-corner-chip" aria-hidden="true">Deactivated</span>
             </button>
-            <button type="button" class="menu-btn menu-btn--work-expenses" id="quickMenuStaffTermReview" data-portal-external-url="swtermreview.html" aria-label="Swimming term review — review each participant per term" hidden aria-hidden="true">
-              <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
-              <div class="menu-btn-copy"><strong>Swimming Term Review</strong><span class="menu-btn-sub">Review each participant per term</span></div>
+            <button type="button" class="menu-btn menu-btn--lead-session-overview" id="quickMenuStaffSessionsOverview" data-portal-external-url="portal-lead-session-overview.html" hidden aria-hidden="true" aria-label="Sessions overview — feedbacks and lead reports for your programmes">
+              <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M9 18h6"/></svg></div>
+              <div class="menu-btn-copy"><strong>Sessions Overview</strong><span class="menu-btn-sub">Feedbacks &amp; lead reports for your programmes</span></div>
+            </button>
+            <button type="button" class="menu-btn menu-btn--lead-tool" id="quickMenuStaffLeadPerformanceReview" data-portal-external-url="performance.html" hidden aria-hidden="true" aria-label="Performance review — staff performance and development">
+              <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 5-6"/></svg></div>
+              <div class="menu-btn-copy"><strong>Performance Review (Workers)</strong><span class="menu-btn-sub">Staff performance &amp; development</span></div>
+            </button>
+            <button type="button" class="menu-btn menu-btn--work-expenses" id="quickMenuStaffLeadTermReview" data-portal-external-url="termreview.html" hidden aria-hidden="true" aria-label="Term review — staff term reviews and development notes">
+              <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01"/></svg></div>
+              <div class="menu-btn-copy"><strong>Term Review (Workers)</strong><span class="menu-btn-sub">Staff term reviews and development notes</span></div>
             </button>
           </div>
         </div>
@@ -432,23 +446,6 @@
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div>
               <div class="menu-btn-copy"><strong>Expenses</strong><span class="menu-btn-sub">Submit receipts and claims</span></div>
             </button>
-          </div>
-        </div>
-        <div class="menu-group">
-          <div class="menu-group-title">My documents</div>
-          <div class="menu-grid" id="quickMenuMyDocsGrid">
-            <button type="button" class="menu-btn menu-btn--mydocs-finance" id="quickMenuMyDocsFinance" data-portal-external-url="my_documents.html?category=finance&amp;from=staff">
-              <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9h5M7 13h10"/><circle cx="15.5" cy="9.5" r="1.25" fill="currentColor" stroke="none"/></svg></div>
-              <div class="menu-btn-copy"><strong>Finance</strong><span class="menu-btn-sub">Timesheet and expense PDFs</span></div>
-            </button>
-            <button type="button" class="menu-btn menu-btn--mydocs-reports" id="quickMenuMyDocsReports" data-portal-external-url="my_documents.html?category=reports&amp;from=staff">
-              <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M12 20V4M20 20v-8"/></svg></div>
-              <div class="menu-btn-copy"><strong>Reports</strong><span class="menu-btn-sub">Review reports you have submitted</span></div>
-            </button>
-            <button type="button" class="menu-btn menu-btn--mydocs-training" id="quickMenuMyDocsTraining" data-portal-external-url="my_documents.html?category=training&amp;from=staff">
-              <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div>
-              <div class="menu-btn-copy"><strong>Training</strong><span class="menu-btn-sub">Certificates and completed training</span></div>
-            </button>
             <button type="button" class="menu-btn menu-btn--mydocs-payslips" id="quickMenuMyDocsPayslips" data-portal-external-url="my_documents.html?category=payslips&amp;from=staff">
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/></svg></div>
               <div class="menu-btn-copy"><strong>Payslips</strong><span class="menu-btn-sub">View and download your monthly payslips</span></div>
@@ -462,9 +459,9 @@
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 12h6M9 16h6"/></svg></div>
               <div class="menu-btn-copy"><strong>Induction</strong><span class="menu-btn-sub">Core company training</span></div>
             </button>
-            <button type="button" class="menu-btn menu-btn--training-role-swimming" id="quickMenuRoleTraining" data-portal-external-url="SWtraining_portal.html" hidden aria-hidden="true" aria-label="Swimming programme — role training modules">
+            <button type="button" class="menu-btn menu-btn--training-role-swimming" id="quickMenuRoleTraining" data-portal-external-url="SWtraining_portal.html" hidden aria-hidden="true" aria-label="Swimming training — role training modules">
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div>
-              <div class="menu-btn-copy"><strong>Swimming Programme</strong><span class="menu-btn-sub">Modules linked to your role</span></div>
+              <div class="menu-btn-copy"><strong>Swimming Training</strong><span class="menu-btn-sub">Modules linked to your role</span></div>
             </button>
             <button type="button" class="menu-btn menu-btn--training-safeguarding" id="quickMenuSafeguarding" data-portal-external-url="https://mylearning.nspcc.org.uk/UserInfo.aspx" aria-label="Safeguarding — opens NSPCC My Learning (user profile)">
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
@@ -483,9 +480,26 @@
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
               <div class="menu-btn-copy"><strong>Risk Assessments</strong><span class="menu-btn-sub">Venue and activity risk assessments</span></div>
             </button>
-            <button type="button" class="menu-btn menu-btn--work-expenses menu-btn--portal-wellbeing" id="quickMenuStaffWellbeingReview" data-portal-external-url="staff_wellbeing_review.html" aria-label="Staff wellbeing review — stress risk assessment">
+            <button type="button" class="menu-btn menu-btn--work-expenses menu-btn--portal-wellbeing" id="quickMenuStaffWellbeingReview" data-portal-external-url="staff_wellbeing_review.html" aria-label="Staff wellbeing review — end-of-term wellbeing and workload assessment">
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg></div>
-              <div class="menu-btn-copy"><strong>Staff Wellbeing Review</strong><span class="menu-btn-sub">Individual and team stress risk assessment</span></div>
+              <div class="menu-btn-copy"><strong>Staff Wellbeing Review</strong><span class="menu-btn-sub">End-of-term wellbeing and workload assessment</span></div>
+            </button>
+          </div>
+        </div>
+        <div class="menu-group" id="portalQuickMenuMyRecordsGroup">
+          <div class="menu-group-title">My Records</div>
+          <div class="menu-grid" id="quickMenuMyDocsGrid">
+            <button type="button" class="menu-btn menu-btn--mydocs-reports" id="quickMenuMyDocsReports" data-portal-external-url="my_documents.html?category=reports&amp;from=staff">
+              <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M12 20V4M20 20v-8"/></svg></div>
+              <div class="menu-btn-copy"><strong>Reports Submitted</strong><span class="menu-btn-sub">Review reports you have submitted</span></div>
+            </button>
+            <button type="button" class="menu-btn menu-btn--mydocs-training" id="quickMenuMyDocsTraining" data-portal-external-url="my_documents.html?category=training&amp;from=staff">
+              <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div>
+              <div class="menu-btn-copy"><strong>Certificates</strong><span class="menu-btn-sub">Certificates and completed training</span></div>
+            </button>
+            <button type="button" class="menu-btn menu-btn--mydocs-finance" id="quickMenuMyDocsDocuments" data-portal-external-url="my_documents.html?from=staff" aria-label="Documents — all your portal documents">
+              <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+              <div class="menu-btn-copy"><strong>Documents</strong><span class="menu-btn-sub">All your portal documents</span></div>
             </button>
           </div>
         </div>
@@ -822,6 +836,8 @@
   <script src="/portal/portal_guide_menu.js?v=20260612-guide-read"></script>
   <script src="/portal/portal_quick_menu_accordion.js?v=20260601-work-flat"></script>
   <script src="/portal/portal_swimming_instructor_menus.js?v=20260617-swim-aquatic-gate"></script>
+  <script src="/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder"></script>
+  <script type="module" src="/portal/portal_quick_menu_service_leads.js?v=20260604-service-leads"></script>
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260616-michelle-only"></script>
   <script src="/portal/portal_dm_voice.js?v=20260602-feedback-voice-fix"></script>
@@ -3810,6 +3826,7 @@
         }
         if(typeof syncPortalSafeguardingFeedbackPolicySlot === 'function') syncPortalSafeguardingFeedbackPolicySlot();
         if(typeof syncPortalOutstandingFeedbackSlot === 'function') syncPortalOutstandingFeedbackSlot();
+        if(typeof syncPortalWellbeingReviewReminderSlot === 'function') syncPortalWellbeingReviewReminderSlot();
         if(typeof syncPortalScheduleOverridesTopSlot === 'function') syncPortalScheduleOverridesTopSlot(st);
         const qg = document.getElementById('portalQuickMenuReminderGroup');
         const qh = document.getElementById('portalQuickMenuReminderBannerHost');
@@ -9229,7 +9246,9 @@
         if(typeof syncPortalQuickMenuNotificationsGroupVisibility === 'function') syncPortalQuickMenuNotificationsGroupVisibility();
       }else{
         const grp = document.getElementById('portalQuickMenuNotificationsGroup');
-        if(grp) grp.hidden = true;
+        if(grp) grp.hidden = false;
+        if(typeof portalRenderQuickMenuInternalChatTile === 'function') portalRenderQuickMenuInternalChatTile();
+        if(typeof renderNotices === 'function') renderNotices();
         if(typeof portalCollapseQuickMenuAccordions === 'function') portalCollapseQuickMenuAccordions();
       }
     }
@@ -9242,12 +9261,14 @@
       const slotIc = document.getElementById('portalQuickMenuInternalChatSlot');
       if(!grp) return;
       if(portalQuickMenuEntryMode !== 'logo-lite'){
-        grp.hidden = true;
+        grp.hidden = false;
         return;
       }
+      const wellbeingSlot = document.getElementById('portalQuickMenuWellbeingReviewSlot');
       const hasPolicy = !!(policySlot && !policySlot.hidden);
       const hasOutstanding = !!(outstandingSlot && !outstandingSlot.hidden);
-      const hasBanner = hasPolicy || hasOutstanding || !!(qg && !qg.hidden);
+      const hasWellbeing = !!(wellbeingSlot && !wellbeingSlot.hidden);
+      const hasBanner = hasPolicy || hasOutstanding || hasWellbeing || !!(qg && !qg.hidden);
       const hasNotices = !!(grid && grid.childElementCount > 0);
       const hasInternalChat = !!(slotIc && slotIc.childElementCount > 0);
       grp.hidden = !hasBanner && !hasNotices && !hasInternalChat;
@@ -12287,6 +12308,11 @@
           void window.portalStaffDmSyncUnreadChrome();
         }
       }catch(_dm){}
+      try{
+        if(typeof portalSyncServiceLeadsQuickMenu === 'function'){
+          portalSyncServiceLeadsQuickMenu();
+        }
+      }catch(_sl){}
     });
     window.addEventListener('portal:location-permission-change', function(){
       try{
@@ -12685,6 +12711,9 @@
           console.warn("staff_dashboard: Supabase bootstrap", e);
         }
         portalSyncExecWorkspaceSwitchSlot("staff");
+        if (typeof window.portalSyncServiceLeadsQuickMenu === "function") {
+          window.portalSyncServiceLeadsQuickMenu();
+        }
         const profile = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
         const session = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session;
         if (window.dashboardData) {
@@ -13010,6 +13039,9 @@
         }
         if(typeof portalSyncSwimmingInstructorQuickMenus === 'function'){
           void portalSyncSwimmingInstructorQuickMenus();
+        }
+        if(typeof portalSyncServiceLeadsQuickMenu === 'function'){
+          portalSyncServiceLeadsQuickMenu();
         }
         if(typeof portalSyncOnboardingQuickMenu === 'function'){
           void portalSyncOnboardingQuickMenu();

@@ -38,19 +38,19 @@ export function portalExecWorkspaceSwitchTargets(currentMode) {
   const all = [
     {
       mode: "staff",
-      label: "Staff portal",
+      label: "Staff Portal",
       sub: "Your shifts, sessions, feedback and daily roster",
       url: publishedUrl("staff_dashboard.html", "PORTAL_STAFF_DASHBOARD_URL"),
     },
     {
       mode: "lead",
-      label: "Lead portal",
+      label: "Lead Portal",
       sub: "Team overview, lead reports and support workflows",
       url: publishedUrl("lead_dashboard.html", "PORTAL_LEAD_DASHBOARD_URL"),
     },
     {
       mode: "admin",
-      label: "Admin portal",
+      label: "Admin Portal",
       sub: "Day operations, feedback overview and admin tools",
       url: publishedUrl("admin_dashboard.html", "PORTAL_ADMIN_DASHBOARD_URL"),
     },

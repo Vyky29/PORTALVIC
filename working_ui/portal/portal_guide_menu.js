@@ -32,8 +32,6 @@
 
   function portalSyncQuickMenuGuidePlacement() {
     try {
-      var showHeader =
-        typeof global.portalGuideShowInHeader === "function" && global.portalGuideShowInHeader();
       var read = typeof global.portalGuideIsRead === "function" && global.portalGuideIsRead();
       var topGrp = global.document && global.document.getElementById("portalQuickMenuGuideGroup");
       var setBtn = global.document && global.document.getElementById("quickMenuPortalGuideSettings");
@@ -44,9 +42,9 @@
       var hasOb =
         typeof global.portalOnboardingHasTopPromo === "function" &&
         global.portalOnboardingHasTopPromo();
-      if (guideGrid) guideGrid.hidden = !showHeader;
-      if (topGrp) topGrp.hidden = !showHeader && !hasOv && !hasOb;
-      if (setBtn) setBtn.hidden = showHeader || (portalGuidePromoActive() && !read);
+      if (guideGrid) guideGrid.hidden = true;
+      if (topGrp) topGrp.hidden = !hasOv && !hasOb;
+      if (setBtn) setBtn.hidden = portalGuidePromoActive() && !read;
       if (typeof global.portalInitQuickMenuAccordion === "function") {
         global.portalInitQuickMenuAccordion();
       }

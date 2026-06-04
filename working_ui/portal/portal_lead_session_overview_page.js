@@ -2,6 +2,7 @@
  * Standalone Session overview for programme leads (John, Berta).
  */
 import { bootstrapDashboardSupabase } from "./auth-handler.js";
+import { portalCanAccessServiceLeadsMenu } from "./portal_quick_menu_service_leads.js";
 import {
   portalCanAccessLeadSessionOverview,
   portalLeadSessionScopeFilterFns,
@@ -684,7 +685,7 @@ export async function portalSyncLeadSessionOverviewButton() {
   const ctx = window.__PORTAL_SUPABASE__ || {};
   const profile = ctx.staff_profile;
   const email = await portalResolveLeadAuthEmail(ctx);
-  const show = portalCanAccessLeadSessionOverview(profile, email);
+  const show = portalCanAccessServiceLeadsMenu(profile, email);
   btn.hidden = !show;
   btn.setAttribute("aria-hidden", show ? "false" : "true");
 }
