@@ -91,7 +91,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260610-pwa-black-fix" />
   <script src="/portal/portal_screenshot_guard.js?v=20260610-pwa-black-fix"></script>
   <title>clubSENsational Lead Dashboard</title>
-  <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260604-topbar-gap" />
+  <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260604-lead-staff-dir" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260601-landscape-full" />
 </head>
 <body>
@@ -202,39 +202,11 @@
     <main class="app-body-scroll" id="appBodyScroll">
     <header class="topbar" aria-labelledby="staffName">
       <div class="topbar-lead">
-        <div class="topbar-left">
-          <button type="button" class="topbar-camera-btn topbar-achievements-btn" id="topbarCameraBtn" aria-label="Participant achievements">
-            <span class="topbar-camera-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
-          </button>
-          <div class="topbar-chat-orbit-wrap topbar-chat-orbit-wrap--idle" id="portalFloatingChatOrbitWrap">
-            <div class="topbar-chat-orbit" aria-hidden="true">
-              <svg class="topbar-chat-orbit-svg" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
-                <g transform="translate(100,100)">
-                  <g class="topbar-chat-orbit-layer topbar-chat-orbit-layer--cw">
-                    <circle cx="0" cy="-72" r="7"/>
-                    <circle cx="62.35" cy="-36" r="6"/>
-                    <circle cx="62.35" cy="36" r="6"/>
-                    <circle cx="0" cy="72" r="7"/>
-                    <circle cx="-62.35" cy="36" r="6"/>
-                    <circle cx="-62.35" cy="-36" r="6"/>
-                  </g>
-                  <g class="topbar-chat-orbit-layer topbar-chat-orbit-layer--ccw">
-                    <circle cx="0" cy="-78" r="4"/>
-                    <circle cx="67.55" cy="-39" r="4"/>
-                    <circle cx="67.55" cy="39" r="4"/>
-                    <circle cx="0" cy="78" r="4"/>
-                    <circle cx="-67.55" cy="39" r="4"/>
-                    <circle cx="-67.55" cy="-39" r="4"/>
-                  </g>
-                </g>
-              </svg>
-            </div>
-            <button type="button" class="topbar-camera-btn topbar-chat-btn portal-floating-chat-btn" id="portalFloatingChatBtn" aria-label="Open internal chat" title="Chat" hidden aria-hidden="true">
-              <span class="topbar-camera-btn__ico portal-floating-chat-btn__icon" aria-hidden="true"><svg class="portal-floating-chat-btn__svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg></span>
-              <span class="portal-floating-chat-badge" id="portalFloatingChatBadge" hidden aria-hidden="true"></span>
-              <span class="topbar-sr-only">Chat</span>
-            </button>
-          </div>
+        <div class="topbar-left topbar-left--name">
+          <h1 class="topbar-name" id="staffName" aria-label="Loading profile">
+            <span class="topbar-name__given" id="staffNameGiven">…</span>
+            <span class="topbar-name__surname" id="staffNameSurname" hidden></span>
+          </h1>
         </div>
         <div class="topbar-center">
           <div class="avatar-wrap avatar-wrap--portal-orbit-idle" id="avatarWrap" role="button" tabindex="0" aria-label="Open alerts and notifications">
@@ -276,11 +248,10 @@
             </div>
           </div>
         </div>
-        <div class="topbar-right">
-          <h1 class="topbar-name" id="staffName" aria-label="Loading profile">
-            <span class="topbar-name__given" id="staffNameGiven">…</span>
-            <span class="topbar-name__surname" id="staffNameSurname" hidden></span>
-          </h1>
+        <div class="topbar-right topbar-right--tools">
+          <button type="button" class="topbar-camera-btn topbar-achievements-btn" id="topbarCameraBtn" aria-label="Participant achievements">
+            <span class="topbar-camera-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
+          </button>
         </div>
       </div>
     </header>
@@ -330,10 +301,14 @@
 
   <nav class="dock-bar" aria-label="Main navigation">
     <div class="dock-bar__nav" role="toolbar" aria-label="Footer navigation">
-      <button type="button" class="dock-nav-item dock-nav-item--clients" id="dockClientsTile" data-open="clientsSheet" aria-label="Open my participants">
-        <span class="dock-nav-item__icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
-        <span class="dock-nav-item__label">My participants</span>
-      </button>
+      <div class="dock-chat-wrap dock-chat-wrap--idle" id="portalFloatingChatOrbitWrap">
+        <button type="button" class="dock-nav-item dock-nav-item--chat portal-floating-chat-btn" id="portalFloatingChatBtn" aria-label="Open internal chat" title="Chat" hidden aria-hidden="true">
+          <span class="dock-nav-item__icon portal-floating-chat-btn__icon" aria-hidden="true"><svg class="portal-floating-chat-btn__svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg></span>
+          <span class="dock-nav-item__label">Chat</span>
+          <span class="portal-floating-chat-badge" id="portalFloatingChatBadge" hidden aria-hidden="true"></span>
+          <span class="topbar-sr-only">Chat</span>
+        </button>
+      </div>
       <button type="button" class="dock-nav-item dock-nav-item--dashboard" id="dockDashboardTile" aria-label="Home — return to dashboard and close open panels">
         <span class="dock-logo-stage">
           <span class="dock-logo-orbit" aria-hidden="true">
@@ -422,6 +397,10 @@
         <div class="menu-group" id="portalQuickMenuWorkGroup">
           <div class="menu-group-title">Sessions &amp; Participants</div>
           <div class="menu-grid" id="quickMenuWorkGrid">
+            <button type="button" class="menu-btn menu-btn--work-participants" id="quickMenuSessionParticipants" data-open="clientsSheet" aria-label="My participants — your roster and client information">
+              <span class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+              <div class="menu-btn-copy"><strong>My participants</strong><span class="menu-btn-sub">Your roster, profiles and quick actions</span></div>
+            </button>
             <button type="button" class="menu-btn menu-btn--work-achievements" id="quickMenuParticipantAchievements">
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
               <div class="menu-btn-copy"><strong>Participant achievements</strong><span class="menu-btn-sub">Session photos (in-app only)</span></div>
@@ -741,10 +720,33 @@
     </div>
     <div class="sheet-body portal-dm-wrap portal-dm-sheet-body" style="min-width:0">
       <p id="internalChatTopErr" class="portal-dm-top-err muted" hidden></p>
+      <div id="internalChatLeadInboxNav" class="portal-dm-inbox-nav" hidden aria-hidden="true">
+        <button type="button" class="portal-dm-inbox-nav-btn is-active" id="internalChatInboxTabChats" data-inbox-tab="chats">Chats</button>
+        <button type="button" class="portal-dm-inbox-nav-btn" id="internalChatInboxTabStaff" data-inbox-tab="staff">Staff</button>
+      </div>
       <div id="internalChatListWrap" class="portal-dm-inbox-list"></div>
+      <div id="internalChatStaffDirectoryWrap" class="portal-dm-staff-directory" hidden aria-hidden="true">
+        <label class="topbar-sr-only" for="internalChatStaffSearch">Search staff</label>
+        <input type="search" id="internalChatStaffSearch" class="portal-dm-staff-search" placeholder="Search staff by name…" autocomplete="off" autocapitalize="off" spellcheck="false" />
+        <div id="internalChatStaffDirectoryList" class="portal-dm-staff-directory-list" role="list"></div>
+      </div>
       <div id="internalChatOfficeComposeHost" class="portal-dm-office-compose-host" hidden></div>
       <div id="internalChatThreadWrap" class="portal-dm-wrap portal-dm-thread-view" hidden aria-hidden="true">
         <p id="internalChatPeerLabel" class="portal-dm-peer-label" hidden aria-hidden="true"></p>
+        <div id="internalChatCallBar" class="portal-dm-call-bar" hidden aria-hidden="true">
+          <button type="button" class="portal-dm-call-bar-btn" id="internalChatVoiceCallBtn" title="Start a voice call">
+            <span class="portal-dm-call-bar-icon" aria-hidden="true">📞</span>
+            <span>Voice</span>
+          </button>
+          <button type="button" class="portal-dm-call-bar-btn" id="internalChatVideoCallBtn" title="Start a video call">
+            <span class="portal-dm-call-bar-icon" aria-hidden="true">📹</span>
+            <span>Video</span>
+          </button>
+          <button type="button" class="portal-dm-call-bar-btn" id="internalChatMeetingBtn" title="Schedule a meeting">
+            <span class="portal-dm-call-bar-icon" aria-hidden="true">📅</span>
+            <span>Meeting</span>
+          </button>
+        </div>
         <div id="internalChatMessages" class="portal-dm-msgs-col portal-dm-msgs-scroll"></div>
         <div class="portal-dm-compose-bar">
           <label class="topbar-sr-only" for="internalChatInput">Your message</label>
@@ -866,11 +868,13 @@
   <script src="/portal/portal_quick_menu_accordion.js?v=20260604-training-chip"></script>
   <script src="/portal/portal_swimming_instructor_menus.js?v=20260617-swim-aquatic-gate"></script>
   <script src="/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off"></script>
-  <script src="/portal/portal_floating_internal_chat.js?v=20260604-chat-wa"></script>
+  <script src="/portal/portal_floating_internal_chat.js?v=20260604-footer-chat"></script>
   <script type="module" src="/portal/portal_quick_menu_service_leads.js?v=20260604-service-leads-lead-only"></script>
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260616-michelle-only"></script>
   <script src="/portal/portal_dm_voice.js?v=20260602-feedback-voice-fix"></script>
+  <script src="/portal/portal_staff_chat_calls.js?v=20260604-staff-calls"></script>
+  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260604-lead-staff-dir"></script>
   <script>
     console.log("ABSENT FIX VERSION LOADED 20260425");
     /** Real calendar weekday for “Today” (en-GB), aligned with staff_clients_machine.xlsx */
@@ -3805,19 +3809,66 @@
         openSheet: true
       };
     }
+    const PORTAL_PARTICIPANTS_ALL_VIEWER_KEYS = new Set([
+      'raul', 'victor', 'javier', 'javi', 'berta', 'john'
+    ]);
+    function portalStaffParticipantAccessKey(){
+      const id = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
+      const nm = String((window.dashboardData && window.dashboardData.staffName) || '').trim().toLowerCase();
+      const first = nm.split(/\s+/).filter(Boolean)[0] || '';
+      return id || first;
+    }
+    function portalStaffCanBrowseAllParticipants(){
+      const key = portalStaffParticipantAccessKey();
+      if(PORTAL_PARTICIPANTS_ALL_VIEWER_KEYS.has(key)) return true;
+      const nm = String((window.dashboardData && window.dashboardData.staffName) || '').trim().toLowerCase();
+      if(/\bjavier\s+arranz\b/.test(nm)) return true;
+      if(/\braul\b/.test(nm) && /\b(gallego|salvador)\b/.test(nm)) return true;
+      return false;
+    }
+    function portalApplyClientsDirectoryAccess(){
+      const canAll = portalStaffCanBrowseAllParticipants();
+      const allBtn = document.getElementById('clientsTabAll');
+      const tools = document.getElementById('clientsAllToolsWrap');
+      if(allBtn){
+        allBtn.hidden = !canAll;
+        allBtn.setAttribute('aria-hidden', canAll ? 'false' : 'true');
+        if(!canAll && allBtn.classList.contains('is-active')) setClientsSheetTab('my');
+      }
+      if(tools && !canAll){
+        tools.hidden = true;
+        const si = document.getElementById('clientsDirectorySearch');
+        if(si) si.value = '';
+        const sug = document.getElementById('clientsDirectorySuggest');
+        if(sug){
+          sug.hidden = true;
+          sug.innerHTML = '';
+        }
+      }
+    }
     function getAssignedClientIdsForStaff(){
       const sid = String(STAFF_DASHBOARD_ID).toLowerCase();
       const seen = new Set();
       const out = [];
-      sessionsModel.forEach(s => {
-        if(String(s.staffId).toLowerCase() !== sid) return;
-        const cid = s.clientId;
-        if(!cid || CLIENT_LIST_PSEUDO_IDS.includes(cid)) return;
-        if(sessionModelStatus(s) !== 'Scheduled') return;
-        if(seen.has(cid)) return;
+      function pushClient(cid){
+        if(!cid || CLIENT_LIST_PSEUDO_IDS.includes(cid) || seen.has(cid)) return;
         seen.add(cid);
         out.push(cid);
+      }
+      sessionsModel.forEach(s => {
+        if(String(s.staffId).toLowerCase() !== sid) return;
+        const st = sessionModelStatus(s);
+        if(st === 'Closed' || st === 'Available') return;
+        pushClient(s.clientId);
       });
+      function pushDashboardRow(row){
+        if(!row) return;
+        const rowStaff = String(row.staffId || row.instructorId || row.staff || '').trim().toLowerCase();
+        if(rowStaff && rowStaff !== sid) return;
+        pushClient(row.clientId);
+      }
+      (dashboardData.today || []).forEach(pushDashboardRow);
+      (dashboardData.tomorrow || []).forEach(pushDashboardRow);
       out.sort((a, b) => {
         const na = (clientNotesById[a] && clientNotesById[a].name) || a;
         const nb = (clientNotesById[b] && clientNotesById[b].name) || b;
@@ -3967,7 +4018,8 @@
     function setClientsSheetTab(mode){
       const myBtn = document.getElementById('clientsTabMy');
       const allBtn = document.getElementById('clientsTabAll');
-      const isMy = mode === 'my';
+      let isMy = mode === 'my';
+      if(!isMy && !portalStaffCanBrowseAllParticipants()) isMy = true;
       const tools = document.getElementById('clientsAllToolsWrap');
       if(tools){
         tools.hidden = isMy;
@@ -5465,8 +5517,21 @@
       var sr = String(row.staff_role || '').toLowerCase();
       return sr === 'manager' || sr === 'admin';
     }
+    function portalStaffIsLeadUser(prof){
+      if(window.portalLeadStaffChatDirectory && typeof window.portalLeadStaffChatDirectory.portalStaffIsLeadUser === 'function'){
+        return window.portalLeadStaffChatDirectory.portalStaffIsLeadUser(prof);
+      }
+      prof = prof || (window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile) || {};
+      return String(prof.app_role || '').toLowerCase() === 'lead';
+    }
+    function portalStaffIsRestrictedWorkerChat(prof){
+      if(window.portalLeadStaffChatDirectory && typeof window.portalLeadStaffChatDirectory.portalStaffIsRestrictedWorkerChat === 'function'){
+        return window.portalLeadStaffChatDirectory.portalStaffIsRestrictedWorkerChat(prof);
+      }
+      return portalStaffActsAsWorkerMessenger(prof) && !portalStaffIsLeadUser(prof);
+    }
     function portalInternalChatOfficeRestricted(){
-      return portalStaffActsAsWorkerMessenger();
+      return portalStaffIsRestrictedWorkerChat();
     }
     function portalSyncInternalChatMobileViewport(){
       var sh = document.getElementById('internalChatSheet');
@@ -5590,7 +5655,7 @@
     /** One line above bubble: workers see "Admin" for office authors (admin/CEO/manager). */
     function portalDmInternalMsgAuthorChip(mine, authorProf){
       if(mine) return '';
-      if(portalStaffActsAsWorkerMessenger()){
+      if(portalStaffIsRestrictedWorkerChat()){
         if(portalStaffProfileIsOfficePeer(authorProf || {})) return 'Admin';
         return portalDmShortDisplayName(authorProf) || 'Team';
       }
@@ -5668,7 +5733,7 @@
         if(!m) continue;
         if(String(m.author_id || '').toLowerCase() === String(me || '').toLowerCase()) continue;
         var prof = authorProfBy[String(m.author_id || '')] || {};
-        if(portalStaffActsAsWorkerMessenger()){
+        if(portalStaffIsRestrictedWorkerChat()){
           if(!portalStaffProfileIsOfficePeer(prof)) continue;
         }
         if(!seen){
@@ -5732,7 +5797,7 @@
         }
         var trows = tr.data || [];
         var peerIdsU = [];
-        if(portalStaffActsAsWorkerMessenger(box && box.staff_profile)){
+        if(portalStaffIsRestrictedWorkerChat(box && box.staff_profile)){
           peerIdsU = trows.map(function(r){
             var a = String(r && r.participant_a || '');
             var b = String(r && r.participant_b || '');
@@ -5750,7 +5815,7 @@
         }
         var ids = trows
           .filter(function(r){
-            if(!portalStaffActsAsWorkerMessenger(box && box.staff_profile)) return true;
+            if(!portalStaffIsRestrictedWorkerChat(box && box.staff_profile)) return true;
             var a = String(r && r.participant_a || '');
             var b = String(r && r.participant_b || '');
             var peer = a === me ? b : a;
@@ -5838,6 +5903,15 @@
         offHost.hidden = true;
         offHost.innerHTML = '';
       }
+      if(window.portalStaffChatCalls && typeof window.portalStaffChatCalls.syncCallBar === 'function'){
+        window.portalStaffChatCalls.syncCallBar({ inThread: !!inThread });
+      }
+      if(window.portalLeadStaffChatDirectory && typeof window.portalLeadStaffChatDirectory.syncInboxChrome === 'function'){
+        window.portalLeadStaffChatDirectory.syncInboxChrome({
+          isLead: portalStaffIsLeadUser(),
+          inThread: !!inThread
+        });
+      }
     }
     window.portalOpenInternalChatFromHeaderQuickMenu = function portalOpenInternalChatFromHeaderQuickMenu(){
       try{
@@ -5866,6 +5940,9 @@
         })();
       }else{
         window.__PORTAL_INTERNAL_CHAT_UI.threadId = null;
+        if(portalStaffIsLeadUser()){
+          window.__PORTAL_INTERNAL_CHAT_UI.inboxTab = window.__PORTAL_INTERNAL_CHAT_UI.inboxTab || 'chats';
+        }
         void (async function(){
           if(typeof window.portalStaffDmAckInboxOpened === 'function'){
             await window.portalStaffDmAckInboxOpened();
@@ -6110,6 +6187,16 @@
           offHost.hidden = true;
           offHost.innerHTML = "";
         }
+        if(portalStaffIsLeadUser() && window.portalLeadStaffChatDirectory && window.portalLeadStaffChatDirectory.getInboxTab() === 'staff'){
+          listHost.innerHTML = "";
+          if(errTop){
+            errTop.textContent = "";
+            errTop.hidden = true;
+          }
+          window.portalLeadStaffChatDirectory.syncInboxChrome({ isLead: true, inThread: false });
+          void window.portalLeadStaffChatDirectory.renderStaffDirectory();
+          return;
+        }
         listHost.innerHTML = "";
         var res = await client.from("portal_staff_dm_threads").select("id,participant_a,participant_b,updated_at").or("participant_a.eq."+me+",participant_b.eq."+me).order("updated_at", { ascending: false });
         if(res.error){
@@ -6131,16 +6218,22 @@
             });
           }
         }
-        if(portalStaffActsAsWorkerMessenger(box && box.staff_profile)){
+        if(portalStaffIsRestrictedWorkerChat(box && box.staff_profile)){
           rows = rows.filter(function(r){
             var peer = portalDmPeerIdForThread(me, r);
             return portalStaffProfileIsOfficePeer(profBy[peer] || {});
           });
         }
         if(!rows.length){
-          listHost.innerHTML = "<p class=\"alerts-sheet-placeholder\" style=\"min-width:0;overflow-wrap:break-word\">"+(portalInternalChatOfficeRestricted()
+          var emptyMsg = portalInternalChatOfficeRestricted()
             ? "No conversations yet. When the office sends you a message, it appears here. If you expected a thread with the office, check that an active admin or CEO exists in staff_profiles."
-            : "No conversations yet. When the office sends you a direct message, it appears here.")+"</p>";
+            : (portalStaffIsLeadUser()
+              ? "No conversations yet. Tap <strong>Staff</strong> above to message a colleague."
+              : "No conversations yet. When the office sends you a direct message, it appears here.");
+          listHost.innerHTML = "<p class=\"alerts-sheet-placeholder\" style=\"min-width:0;overflow-wrap:break-word\">"+emptyMsg+"</p>";
+          if(portalStaffIsLeadUser() && window.portalLeadStaffChatDirectory && window.portalLeadStaffChatDirectory.getInboxTab() === 'staff'){
+            void window.portalLeadStaffChatDirectory.renderStaffDirectory();
+          }
           return;
         }
         var rowIds = rows.map(function(r){ return String(r.id || ""); }).filter(Boolean);
@@ -6189,6 +6282,12 @@
         if(typeof window.portalStaffDmSyncUnreadChrome === "function"){
           void window.portalStaffDmSyncUnreadChrome();
         }
+        if(portalStaffIsLeadUser() && window.portalLeadStaffChatDirectory){
+          window.portalLeadStaffChatDirectory.syncInboxChrome({ isLead: true, inThread: false });
+          if(window.portalLeadStaffChatDirectory.getInboxTab() === 'staff'){
+            void window.portalLeadStaffChatDirectory.renderStaffDirectory();
+          }
+        }
         return;
       }
       var offHostThread = document.getElementById("internalChatOfficeComposeHost");
@@ -6212,6 +6311,8 @@
       }
       var peerEl = document.getElementById("internalChatPeerLabel");
       if(peerEl) peerEl.textContent = peerLabel ? String(peerLabel) : "Conversation";
+      window.__PORTAL_INTERNAL_CHAT_UI = window.__PORTAL_INTERNAL_CHAT_UI || {};
+      window.__PORTAL_INTERNAL_CHAT_UI.peerLabel = peerLabel;
       portalSyncInternalChatSheetView(true, peerLabel);
       var msgsBox = document.getElementById("internalChatMessages");
       var inp = document.getElementById("internalChatInput");
@@ -6231,7 +6332,7 @@
       function portalDmIncomingIsUnread(m){
         if(!m || String(m.author_id || "").toLowerCase() === String(me || "").toLowerCase()) return false;
         var aid = String(m.author_id || "").trim();
-        if(!portalStaffProfileIsOfficePeer(authorBy[aid] || {})) return false;
+        if(portalStaffIsRestrictedWorkerChat() && !portalStaffProfileIsOfficePeer(authorBy[aid] || {})) return false;
         if(!seenAtOpen) return true;
         try{ return new Date(m.created_at) > new Date(seenAtOpen); }catch(_d){ return true; }
       }
@@ -6278,7 +6379,9 @@
           var bodyHost = document.createElement("div");
           bodyHost.className = "portal-dm-msg-body";
           bodyHost.style.minWidth = "0";
-          if(window.portalDmVoice && window.portalDmVoice.fillMessageBody){
+          if(window.portalStaffChatCalls && window.portalStaffChatCalls.fillMessageBody){
+            await window.portalStaffChatCalls.fillMessageBody(bodyHost, m, client, escapeHtml, me);
+          }else if(window.portalDmVoice && window.portalDmVoice.fillMessageBody){
             await window.portalDmVoice.fillMessageBody(bodyHost, m, client, escapeHtml);
           }else{
             var textEl = document.createElement("div");
@@ -8433,6 +8536,7 @@
         }
         if(sn) sn.setAttribute('aria-label', dashboardData.staffName || (split.given + (split.surname ? ' ' + split.surname : '')));
       }
+      if(typeof portalApplyClientsDirectoryAccess === 'function') portalApplyClientsDirectoryAccess();
       if(typeof portalApplyTopbarDateDisplayFromDate === 'function'){
         portalApplyTopbarDateDisplayFromDate(new Date());
       }else{
@@ -9163,7 +9267,7 @@
     function renderMiniCounts(){
       const tomorrowCard = document.querySelector('.section-card--overview .mini-card[data-open="tomorrowSheet"]');
       const weekCard = document.querySelector('.section-card--overview .mini-card[data-open="weekSheet"]');
-      const dockClientsBtn = document.getElementById('dockClientsTile');
+      const participantsBtn = document.getElementById('quickMenuSessionParticipants');
       if(tomorrowCard){
         const c = formatClientCount(dashboardData.tomorrow.length);
         tomorrowCard.setAttribute('aria-label', 'Open next session list — ' + c);
@@ -9175,10 +9279,10 @@
         const weekTotal = dashboardData.week.reduce((acc, day) => acc + weekRowTotalClients(day), 0);
         weekCard.setAttribute('aria-label', 'Open this week’s sessions by day — ' + formatClientCount(weekTotal));
       }
-      if(dockClientsBtn){
+      if(participantsBtn){
         const n = getAssignedClientIdsForStaff().length;
         const detail = n === 0 ? 'no participants assigned this term' : (n === 1 ? '1 participant assigned' : n + ' participants assigned');
-        dockClientsBtn.setAttribute('aria-label', 'Open my participants — ' + detail);
+        participantsBtn.setAttribute('aria-label', 'My participants — ' + detail);
       }
     }
 
@@ -12315,9 +12419,9 @@
         });
       }
       if(document.readyState === 'loading'){
-        document.addEventListener('DOMContentLoaded', function(){ mountSheet(); configure(); bindQuickMenu(); bindTopbarCamera(); });
+        document.addEventListener('DOMContentLoaded', function(){ mountSheet(); configure(); bindQuickMenu(); bindTopbarCamera(); if(typeof portalApplyClientsDirectoryAccess === 'function') portalApplyClientsDirectoryAccess(); });
       }else{
-        mountSheet(); configure(); bindQuickMenu(); bindTopbarCamera();
+        mountSheet(); configure(); bindQuickMenu(); bindTopbarCamera(); if(typeof portalApplyClientsDirectoryAccess === 'function') portalApplyClientsDirectoryAccess();
       }
       window.addEventListener('portal:supabase-ready', function(){ configure(); });
     })();

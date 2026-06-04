@@ -290,6 +290,18 @@
       align-items:center;
       align-self:center;
     }
+    .topbar-left--name{
+      justify-content:flex-start;
+      justify-self:start;
+    }
+    .topbar-left--name .topbar-name{
+      text-align:left;
+      align-items:flex-start;
+    }
+    .topbar-right--tools{
+      justify-content:flex-end;
+      justify-self:end;
+    }
     .topbar-center{
       display:flex;
       justify-content:center;
@@ -926,6 +938,65 @@
       0%,100%{ box-shadow:0 0 0 0 rgba(45,132,179,.28); }
       50%{ box-shadow:0 0 0 6px rgba(45,132,179,.1); }
     }
+    .portal-dm-call-bar{
+      display:flex;align-items:stretch;gap:8px;width:100%;min-width:0;padding:0 2px 4px;
+      border-bottom:1px solid rgba(45,132,179,.12);margin-bottom:2px;
+    }
+    .portal-dm-call-bar[aria-busy="true"]{opacity:.72;pointer-events:none}
+    .portal-dm-call-bar-btn{
+      flex:1;min-width:0;display:inline-flex;align-items:center;justify-content:center;gap:6px;
+      padding:10px 8px;border-radius:12px;border:1px solid rgba(45,132,179,.22);
+      background:linear-gradient(180deg,#fff,#f6fbff);color:var(--ink);font:inherit;font-size:13px;font-weight:700;
+      cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s ease,border-color .15s ease,box-shadow .15s ease;
+    }
+    .portal-dm-call-bar-btn:hover{
+      background:linear-gradient(180deg,#f6fbff,#e8f4fc);border-color:rgba(45,132,179,.38);
+      box-shadow:0 2px 8px rgba(45,132,179,.12);
+    }
+    .portal-dm-call-bar-btn:active{transform:translateY(1px)}
+    .portal-dm-call-bar-btn:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+    .portal-dm-call-bar-icon{font-size:15px;line-height:1}
+    .portal-dm-call-card{
+      display:flex;flex-direction:column;gap:10px;min-width:0;padding:10px 12px;border-radius:12px;
+      background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);
+    }
+    .portal-dm-msg--them .portal-dm-call-card{
+      background:linear-gradient(180deg,#f8fbff,#eef6fc);border-color:rgba(45,132,179,.22);
+    }
+    .portal-dm-call-card-head{display:flex;align-items:flex-start;gap:10px;min-width:0}
+    .portal-dm-call-card-icon{font-size:20px;line-height:1;flex-shrink:0}
+    .portal-dm-call-card-titles{flex:1;min-width:0}
+    .portal-dm-call-card-label{font-weight:700;font-size:14px;line-height:1.3;min-width:0;overflow-wrap:break-word}
+    .portal-dm-call-card-when{font-size:12px;opacity:.88;margin-top:2px;line-height:1.35}
+    .portal-dm-call-card-when--live{font-style:italic}
+    .portal-dm-call-join-btn{
+      width:100%;padding:10px 14px;border-radius:12px;border:0;font:inherit;font-weight:800;font-size:14px;cursor:pointer;
+      background:#fff;color:var(--blue);box-shadow:0 2px 8px rgba(15,23,42,.12);
+    }
+    .portal-dm-msg--them .portal-dm-call-join-btn{
+      background:var(--blue);color:#fff;box-shadow:0 4px 12px rgba(45,132,179,.28);
+    }
+    .portal-dm-call-join-btn:hover{filter:brightness(1.03)}
+    .portal-dm-meeting-panel{
+      position:absolute;inset:0;z-index:12;display:flex;align-items:flex-end;justify-content:center;
+      padding:12px;background:rgba(15,23,42,.42);box-sizing:border-box;
+    }
+    #internalChatThreadWrap{position:relative}
+    .portal-dm-meeting-panel-card{
+      width:100%;max-width:420px;background:#fff;border-radius:18px 18px 14px 14px;padding:18px 16px 16px;
+      box-shadow:0 12px 40px rgba(15,23,42,.22);box-sizing:border-box;
+    }
+    .portal-dm-meeting-panel-card h4{margin:0 0 6px;font-size:18px;line-height:1.25;color:var(--ink)}
+    .portal-dm-meeting-panel-sub{margin:0 0 14px;font-size:13px;line-height:1.45;color:var(--muted)}
+    .portal-dm-meeting-field{display:flex;flex-direction:column;gap:6px;margin:0 0 12px;min-width:0}
+    .portal-dm-meeting-field span{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.02em}
+    .portal-dm-meeting-field input{
+      width:100%;box-sizing:border-box;padding:11px 12px;border-radius:12px;border:1px solid rgba(45,132,179,.25);
+      font:inherit;font-size:15px;min-width:0;
+    }
+    .portal-dm-meeting-err{margin:0 0 10px;font-size:13px;color:var(--danger);min-width:0}
+    .portal-dm-meeting-actions{display:flex;gap:10px;min-width:0}
+    .portal-dm-meeting-actions .portal-dm-btn{flex:1;min-width:0}
     .portal-alerts-panel{margin:0;padding:0 0 16px;max-width:24rem;min-width:0}
     .portal-alerts-lead{margin:0 0 18px;font-size:14px;line-height:1.45;color:var(--muted);overflow-wrap:break-word}
     .portal-alerts-hint{margin:0 0 10px;font-size:13px;line-height:1.4;overflow-wrap:break-word}
@@ -6728,7 +6799,7 @@
       -webkit-appearance:none;
       transition:transform .14s ease, box-shadow .14s ease, border-color .14s ease, background .14s ease, color .14s ease;
     }
-    .dock-nav-item:hover:not(.dock-nav-item--dashboard):not(.dock-nav-item--quick-menu):not(.dock-nav-item--clients){
+    .dock-nav-item:hover:not(.dock-nav-item--dashboard):not(.dock-nav-item--quick-menu):not(.dock-nav-item--chat){
       transform:translateY(-1px);
       border-color:var(--ink);
       background:rgba(23,50,71,.05);
@@ -6909,40 +6980,44 @@
       .dock-nav-item--dashboard .dock-logo-orbit-layer{animation:none}
       .dock-nav-item--dashboard[class*="portal-attention"] .dock-nav-item__logo{animation:none}
     }
-    /* My clients + Quick menu: icon and title always visible (column) */
-    .dock-nav-item--clients{
+    /* Footer chat tile (same footprint as Quick menu) */
+    .dock-chat-wrap{
       position:relative;
+      flex:1;
+      min-width:0;
+      display:flex;
+      align-items:stretch;
+      justify-content:center;
+    }
+    .dock-nav-item--chat{
+      position:relative;
+      width:100%;
       gap:4px;
       padding:5px 3px 6px;
-      background:var(--ink);
-      border-color:rgba(255,255,255,.22);
-      color:#fff;
-      box-shadow:0 2px 14px rgba(23,50,71,.28);
+      background:linear-gradient(145deg,#fff 0%,#eaf5fb 100%);
+      border-color:rgba(45,132,179,.32);
+      color:var(--blue);
+      box-shadow:0 2px 12px rgba(45,132,179,.14);
     }
-    .dock-nav-item--clients:hover{
-      transform:translateY(-1px);
-      background:#142a3d;
-      border-color:rgba(255,255,255,.38);
-      box-shadow:0 6px 22px rgba(11,24,38,.4);
+    .dock-nav-item--chat:hover{
+      border-color:rgba(45,132,179,.45);
+      background:linear-gradient(145deg,#f6fbff 0%,#ddeef8 100%);
+      box-shadow:0 6px 20px rgba(45,132,179,.2);
     }
-    .dock-nav-item--clients:active{
-      transform:translateY(0);
-      background:var(--ink);
-    }
-    .dock-nav-item--clients .dock-nav-item__icon{
+    .dock-nav-item--chat .dock-nav-item__icon{
       position:static;
       transform:none;
       margin:0;
-      background:rgba(255,255,255,.18);
-      color:#fff;
-      border:1px solid rgba(255,255,255,.32);
+      background:rgba(45,132,179,.12);
+      color:var(--blue);
+      border:1px solid rgba(45,132,179,.22);
     }
-    .dock-nav-item--clients .dock-nav-item__icon svg{stroke:#fff}
-    .dock-nav-item--clients .dock-nav-item__label{
+    .dock-nav-item--chat .dock-nav-item__icon svg{fill:currentColor;stroke:none}
+    .dock-nav-item--chat .dock-nav-item__label{
       position:static;
       transform:none;
       margin:0;
-      color:#fff;
+      color:var(--blue);
       opacity:1;
       visibility:visible;
       white-space:nowrap;
@@ -6951,35 +7026,59 @@
       pointer-events:none;
       line-height:1.05;
     }
-    .dock-nav-item.dock-nav-item--clients:focus-visible{
-      outline:2px solid rgba(255,255,255,.95);
-      outline-offset:2px;
-    }
-    /* Quick menu abierto: My clients pasa a azul muy suave */
-    body.dock-context-menu .dock-nav-item--clients{
-      background:linear-gradient(180deg,#e9f0f8 0%,#dde8f4 100%);
-      border-color:rgba(45,90,130,.22);
-      color:var(--ink);
-      box-shadow:0 2px 10px rgba(23,50,71,.1);
-    }
-    body.dock-context-menu .dock-nav-item--clients:hover{
-      background:linear-gradient(180deg,#e2ebf6 0%,#d4e2f0 100%);
-      border-color:rgba(45,90,130,.3);
-      box-shadow:0 5px 16px rgba(23,50,71,.12);
-    }
-    body.dock-context-menu .dock-nav-item--clients:active{
-      background:linear-gradient(180deg,#dde8f4 0%,#cfddef 100%);
-    }
-    body.dock-context-menu .dock-nav-item--clients .dock-nav-item__icon{
-      background:rgba(45,132,179,.14);
-      border-color:rgba(45,132,179,.22);
-      color:var(--ink);
-    }
-    body.dock-context-menu .dock-nav-item--clients .dock-nav-item__icon svg{stroke:var(--ink)}
-    body.dock-context-menu .dock-nav-item--clients .dock-nav-item__label{color:var(--ink)}
-    body.dock-context-menu .dock-nav-item.dock-nav-item--clients:focus-visible{
+    .dock-nav-item.dock-nav-item--chat:focus-visible{
       outline:2px solid var(--blue);
       outline-offset:2px;
+    }
+    .dock-chat-wrap--unread .dock-nav-item--chat{
+      animation:dock-chat-unread-pulse 1.15s ease-in-out infinite;
+    }
+    @keyframes dock-chat-unread-pulse{
+      0%,100%{
+        box-shadow:0 0 0 0 rgba(45,132,179,.42), 0 2px 10px rgba(23,50,71,.08);
+        border-color:rgba(45,132,179,.45);
+      }
+      50%{
+        box-shadow:0 0 0 7px rgba(45,132,179,.12), 0 4px 14px rgba(45,132,179,.22);
+        border-color:rgba(45,132,179,.72);
+      }
+    }
+    .dock-nav-item--chat .portal-floating-chat-badge{
+      position:absolute;
+      top:3px;
+      right:6px;
+      transform:none;
+      min-width:18px;
+      height:18px;
+      padding:0 4px;
+      border-radius:999px;
+      background:var(--blue);
+      color:#fff;
+      font-size:10px;
+      font-weight:800;
+      line-height:1;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border:2px solid #fff;
+      box-sizing:border-box;
+      z-index:2;
+      pointer-events:none;
+    }
+    body.dock-context-menu .dock-nav-item--chat{
+      background:#fff;
+      border-color:rgba(23,50,71,.14);
+      box-shadow:0 2px 8px rgba(23,50,71,.08);
+    }
+    body.dock-context-menu .dock-nav-item--chat .dock-nav-item__icon{
+      background:rgba(23,50,71,.1);
+      border-color:rgba(23,50,71,.12);
+      color:var(--ink);
+    }
+    body.dock-context-menu .dock-nav-item--chat .dock-nav-item__label{color:var(--ink)}
+    body.dock-context-clients .dock-nav-item--chat{
+      background:linear-gradient(180deg,#e9f4fb 0%,#ddeef8 100%);
+      border-color:rgba(45,132,179,.38);
     }
 
     .dock-nav-item--quick-menu{
@@ -7063,7 +7162,7 @@
       flex-shrink:0;
       transition:background .14s ease, color .14s ease;
     }
-    .dock-nav-item:hover:not(.dock-nav-item--clients):not(.dock-nav-item--quick-menu) .dock-nav-item__icon{
+    .dock-nav-item:hover:not(.dock-nav-item--chat):not(.dock-nav-item--quick-menu) .dock-nav-item__icon{
       background:rgba(23,50,71,.14);
       color:var(--ink);
     }

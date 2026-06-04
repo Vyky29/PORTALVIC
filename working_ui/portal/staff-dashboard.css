@@ -290,10 +290,17 @@
       align-items:center;
       align-self:center;
     }
-    .topbar-left--spacer{
-      visibility:hidden;
-      pointer-events:none;
-      min-height:1px;
+    .topbar-left--name{
+      justify-content:flex-start;
+      justify-self:start;
+    }
+    .topbar-left--name .topbar-name{
+      text-align:left;
+      align-items:flex-start;
+    }
+    .topbar-right--tools{
+      justify-content:flex-end;
+      justify-self:end;
     }
     .topbar-center{
       display:flex;
@@ -936,6 +943,65 @@
       0%,100%{ box-shadow:0 0 0 0 rgba(45,132,179,.28); }
       50%{ box-shadow:0 0 0 6px rgba(45,132,179,.1); }
     }
+    .portal-dm-call-bar{
+      display:flex;align-items:stretch;gap:8px;width:100%;min-width:0;padding:0 2px 4px;
+      border-bottom:1px solid rgba(45,132,179,.12);margin-bottom:2px;
+    }
+    .portal-dm-call-bar[aria-busy="true"]{opacity:.72;pointer-events:none}
+    .portal-dm-call-bar-btn{
+      flex:1;min-width:0;display:inline-flex;align-items:center;justify-content:center;gap:6px;
+      padding:10px 8px;border-radius:12px;border:1px solid rgba(45,132,179,.22);
+      background:linear-gradient(180deg,#fff,#f6fbff);color:var(--ink);font:inherit;font-size:13px;font-weight:700;
+      cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s ease,border-color .15s ease,box-shadow .15s ease;
+    }
+    .portal-dm-call-bar-btn:hover{
+      background:linear-gradient(180deg,#f6fbff,#e8f4fc);border-color:rgba(45,132,179,.38);
+      box-shadow:0 2px 8px rgba(45,132,179,.12);
+    }
+    .portal-dm-call-bar-btn:active{transform:translateY(1px)}
+    .portal-dm-call-bar-btn:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+    .portal-dm-call-bar-icon{font-size:15px;line-height:1}
+    .portal-dm-call-card{
+      display:flex;flex-direction:column;gap:10px;min-width:0;padding:10px 12px;border-radius:12px;
+      background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);
+    }
+    .portal-dm-msg--them .portal-dm-call-card{
+      background:linear-gradient(180deg,#f8fbff,#eef6fc);border-color:rgba(45,132,179,.22);
+    }
+    .portal-dm-call-card-head{display:flex;align-items:flex-start;gap:10px;min-width:0}
+    .portal-dm-call-card-icon{font-size:20px;line-height:1;flex-shrink:0}
+    .portal-dm-call-card-titles{flex:1;min-width:0}
+    .portal-dm-call-card-label{font-weight:700;font-size:14px;line-height:1.3;min-width:0;overflow-wrap:break-word}
+    .portal-dm-call-card-when{font-size:12px;opacity:.88;margin-top:2px;line-height:1.35}
+    .portal-dm-call-card-when--live{font-style:italic}
+    .portal-dm-call-join-btn{
+      width:100%;padding:10px 14px;border-radius:12px;border:0;font:inherit;font-weight:800;font-size:14px;cursor:pointer;
+      background:#fff;color:var(--blue);box-shadow:0 2px 8px rgba(15,23,42,.12);
+    }
+    .portal-dm-msg--them .portal-dm-call-join-btn{
+      background:var(--blue);color:#fff;box-shadow:0 4px 12px rgba(45,132,179,.28);
+    }
+    .portal-dm-call-join-btn:hover{filter:brightness(1.03)}
+    .portal-dm-meeting-panel{
+      position:absolute;inset:0;z-index:12;display:flex;align-items:flex-end;justify-content:center;
+      padding:12px;background:rgba(15,23,42,.42);box-sizing:border-box;
+    }
+    #internalChatThreadWrap{position:relative}
+    .portal-dm-meeting-panel-card{
+      width:100%;max-width:420px;background:#fff;border-radius:18px 18px 14px 14px;padding:18px 16px 16px;
+      box-shadow:0 12px 40px rgba(15,23,42,.22);box-sizing:border-box;
+    }
+    .portal-dm-meeting-panel-card h4{margin:0 0 6px;font-size:18px;line-height:1.25;color:var(--ink)}
+    .portal-dm-meeting-panel-sub{margin:0 0 14px;font-size:13px;line-height:1.45;color:var(--muted)}
+    .portal-dm-meeting-field{display:flex;flex-direction:column;gap:6px;margin:0 0 12px;min-width:0}
+    .portal-dm-meeting-field span{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.02em}
+    .portal-dm-meeting-field input{
+      width:100%;box-sizing:border-box;padding:11px 12px;border-radius:12px;border:1px solid rgba(45,132,179,.25);
+      font:inherit;font-size:15px;min-width:0;
+    }
+    .portal-dm-meeting-err{margin:0 0 10px;font-size:13px;color:var(--danger);min-width:0}
+    .portal-dm-meeting-actions{display:flex;gap:10px;min-width:0}
+    .portal-dm-meeting-actions .portal-dm-btn{flex:1;min-width:0}
     .portal-alerts-panel{margin:0;padding:0 0 16px;max-width:24rem;min-width:0}
     .portal-alerts-lead{margin:0 0 18px;font-size:14px;line-height:1.45;color:var(--muted);overflow-wrap:break-word}
     .portal-alerts-hint{margin:0 0 10px;font-size:13px;line-height:1.4;overflow-wrap:break-word}
@@ -6695,7 +6761,7 @@
       -webkit-appearance:none;
       transition:transform .14s ease, box-shadow .14s ease, border-color .14s ease, background .14s ease, color .14s ease;
     }
-    .dock-nav-item:hover:not(.dock-nav-item--dashboard):not(.dock-nav-item--quick-menu){
+    .dock-nav-item:hover:not(.dock-nav-item--dashboard):not(.dock-nav-item--quick-menu):not(.dock-nav-item--chat){
       transform:translateY(-1px);
       border-color:var(--ink);
       background:rgba(23,50,71,.05);
@@ -6876,84 +6942,57 @@
       .dock-nav-item--dashboard .dock-logo-orbit-layer{animation:none}
       .dock-nav-item--dashboard[class*="portal-attention"] .dock-nav-item__logo{animation:none}
     }
-    /* Footer tools: achievements camera + internal chat (left of logo) */
-    .dock-footer-tools{
+    /* Footer chat tile (same footprint as Quick menu) */
+    .dock-chat-wrap{
+      position:relative;
       flex:1;
       min-width:0;
       display:flex;
-      align-items:center;
+      align-items:stretch;
       justify-content:center;
-      gap:10px;
-      padding:4px 2px 5px;
     }
-    .dock-tool-btn{
+    .dock-nav-item--chat{
       position:relative;
-      flex-shrink:0;
-      width:44px;
-      height:44px;
-      min-width:44px;
-      padding:0;
-      border-radius:12px;
-      border:1px solid rgba(23,50,71,.14);
-      background:#fff;
+      width:100%;
+      gap:4px;
+      padding:5px 3px 6px;
+      background:linear-gradient(145deg,#fff 0%,#eaf5fb 100%);
+      border-color:rgba(45,132,179,.32);
       color:var(--blue);
-      box-shadow:0 2px 10px rgba(23,50,71,.08);
-      cursor:pointer;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      -webkit-tap-highlight-color:transparent;
-      appearance:none;
-      -webkit-appearance:none;
-      font-family:inherit;
-      transition:transform .14s ease, box-shadow .14s ease, border-color .14s ease;
+      box-shadow:0 2px 12px rgba(45,132,179,.14);
     }
-    .dock-tool-btn:hover{
-      transform:translateY(-1px);
-      border-color:rgba(45,132,179,.35);
-      box-shadow:0 6px 16px rgba(23,50,71,.12);
+    .dock-nav-item--chat:hover{
+      border-color:rgba(45,132,179,.45);
+      background:linear-gradient(145deg,#f6fbff 0%,#ddeef8 100%);
+      box-shadow:0 6px 20px rgba(45,132,179,.2);
     }
-    .dock-tool-btn:active{transform:translateY(0)}
-    .dock-tool-btn:focus-visible{
+    .dock-nav-item--chat .dock-nav-item__icon{
+      position:static;
+      transform:none;
+      margin:0;
+      background:rgba(45,132,179,.12);
+      color:var(--blue);
+      border:1px solid rgba(45,132,179,.22);
+    }
+    .dock-nav-item--chat .dock-nav-item__icon svg{fill:currentColor;stroke:none}
+    .dock-nav-item--chat .dock-nav-item__label{
+      position:static;
+      transform:none;
+      margin:0;
+      color:var(--blue);
+      opacity:1;
+      visibility:visible;
+      white-space:nowrap;
+      max-width:100%;
+      padding:0 2px;
+      pointer-events:none;
+      line-height:1.05;
+    }
+    .dock-nav-item.dock-nav-item--chat:focus-visible{
       outline:2px solid var(--blue);
       outline-offset:2px;
     }
-    .dock-tool-btn__ico{
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      width:22px;
-      height:22px;
-    }
-    .dock-tool-btn__ico svg{
-      display:block;
-      width:22px;
-      height:22px;
-    }
-    .dock-tool-btn--achievements{
-      border-color:rgba(236,72,153,.35);
-      background:rgba(236,72,153,.12);
-      color:#db2777;
-      box-shadow:0 2px 8px rgba(236,72,153,.12);
-    }
-    .dock-tool-btn--achievements:hover{
-      border-color:rgba(236,72,153,.45);
-      background:rgba(236,72,153,.18);
-      color:#be185d;
-    }
-    .dock-tool-btn--chat{
-      border-color:rgba(45,132,179,.32);
-      background:linear-gradient(145deg,#fff 0%,#eaf5fb 100%);
-      color:var(--blue);
-    }
-    .dock-chat-wrap{
-      position:relative;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      flex-shrink:0;
-    }
-    .dock-chat-wrap--unread .dock-tool-btn--chat{
+    .dock-chat-wrap--unread .dock-nav-item--chat{
       animation:dock-chat-unread-pulse 1.15s ease-in-out infinite;
     }
     @keyframes dock-chat-unread-pulse{
@@ -6966,10 +7005,10 @@
         border-color:rgba(45,132,179,.72);
       }
     }
-    .dock-tool-btn--chat .portal-floating-chat-badge{
+    .dock-nav-item--chat .portal-floating-chat-badge{
       position:absolute;
-      top:-2px;
-      right:-2px;
+      top:3px;
+      right:6px;
       transform:none;
       min-width:18px;
       height:18px;
@@ -6988,14 +7027,20 @@
       z-index:2;
       pointer-events:none;
     }
-    body.dock-context-menu .dock-footer-tools .dock-tool-btn{
+    body.dock-context-menu .dock-nav-item--chat{
       background:#fff;
       border-color:rgba(23,50,71,.14);
       box-shadow:0 2px 8px rgba(23,50,71,.08);
     }
-    body.dock-context-clients .dock-footer-tools .dock-tool-btn--achievements{
-      background:rgba(236,72,153,.12);
-      border-color:rgba(236,72,153,.35);
+    body.dock-context-menu .dock-nav-item--chat .dock-nav-item__icon{
+      background:rgba(23,50,71,.1);
+      border-color:rgba(23,50,71,.12);
+      color:var(--ink);
+    }
+    body.dock-context-menu .dock-nav-item--chat .dock-nav-item__label{color:var(--ink)}
+    body.dock-context-clients .dock-nav-item--chat{
+      background:linear-gradient(180deg,#e9f4fb 0%,#ddeef8 100%);
+      border-color:rgba(45,132,179,.38);
     }
 
     .dock-nav-item--quick-menu{
@@ -7079,7 +7124,7 @@
       flex-shrink:0;
       transition:background .14s ease, color .14s ease;
     }
-    .dock-nav-item:hover:not(.dock-nav-item--quick-menu) .dock-nav-item__icon{
+    .dock-nav-item:hover:not(.dock-nav-item--quick-menu):not(.dock-nav-item--chat) .dock-nav-item__icon{
       background:rgba(23,50,71,.14);
       color:var(--ink);
     }

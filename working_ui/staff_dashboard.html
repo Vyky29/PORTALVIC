@@ -91,7 +91,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260610-pwa-black-fix" />
   <script src="/portal/portal_screenshot_guard.js?v=20260610-pwa-black-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260604-footer-dock" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260604-footer-chat" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260601-landscape-full" />
 </head>
 <body>
@@ -202,7 +202,12 @@
     <main class="app-body-scroll" id="appBodyScroll">
     <header class="topbar" aria-labelledby="staffName">
       <div class="topbar-lead">
-        <div class="topbar-left topbar-left--spacer" aria-hidden="true"></div>
+        <div class="topbar-left topbar-left--name">
+          <h1 class="topbar-name" id="staffName" aria-label="Loading profile">
+            <span class="topbar-name__given" id="staffNameGiven">…</span>
+            <span class="topbar-name__surname" id="staffNameSurname" hidden></span>
+          </h1>
+        </div>
         <div class="topbar-center">
           <div class="avatar-wrap avatar-wrap--portal-orbit-idle" id="avatarWrap" role="button" tabindex="0" aria-label="Open alerts and notifications">
             <div class="avatar-aura" aria-hidden="true"></div>
@@ -243,11 +248,10 @@
             </div>
           </div>
         </div>
-        <div class="topbar-right">
-          <h1 class="topbar-name" id="staffName" aria-label="Loading profile">
-            <span class="topbar-name__given" id="staffNameGiven">…</span>
-            <span class="topbar-name__surname" id="staffNameSurname" hidden></span>
-          </h1>
+        <div class="topbar-right topbar-right--tools">
+          <button type="button" class="topbar-camera-btn topbar-achievements-btn" id="topbarCameraBtn" aria-label="Participant achievements">
+            <span class="topbar-camera-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
+          </button>
         </div>
       </div>
     </header>
@@ -296,17 +300,13 @@
 
   <nav class="dock-bar" aria-label="Main navigation">
     <div class="dock-bar__nav" role="toolbar" aria-label="Footer navigation">
-      <div class="dock-footer-tools" aria-label="Achievements and chat">
-        <button type="button" class="dock-tool-btn dock-tool-btn--achievements topbar-achievements-btn" id="dockCameraBtn" aria-label="Participant achievements">
-          <span class="dock-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
+      <div class="dock-chat-wrap dock-chat-wrap--idle" id="portalFloatingChatOrbitWrap">
+        <button type="button" class="dock-nav-item dock-nav-item--chat portal-floating-chat-btn" id="portalFloatingChatBtn" aria-label="Open internal chat" title="Chat" hidden aria-hidden="true">
+          <span class="dock-nav-item__icon portal-floating-chat-btn__icon" aria-hidden="true"><svg class="portal-floating-chat-btn__svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg></span>
+          <span class="dock-nav-item__label">Chat</span>
+          <span class="portal-floating-chat-badge" id="portalFloatingChatBadge" hidden aria-hidden="true"></span>
+          <span class="topbar-sr-only">Chat</span>
         </button>
-        <div class="dock-chat-wrap dock-chat-wrap--idle" id="portalFloatingChatOrbitWrap">
-          <button type="button" class="dock-tool-btn dock-tool-btn--chat portal-floating-chat-btn" id="portalFloatingChatBtn" aria-label="Open internal chat" title="Chat" hidden aria-hidden="true">
-            <span class="dock-tool-btn__ico portal-floating-chat-btn__icon" aria-hidden="true"><svg class="portal-floating-chat-btn__svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg></span>
-            <span class="portal-floating-chat-badge" id="portalFloatingChatBadge" hidden aria-hidden="true"></span>
-            <span class="topbar-sr-only">Chat</span>
-          </button>
-        </div>
       </div>
       <button type="button" class="dock-nav-item dock-nav-item--dashboard" id="dockDashboardTile" aria-label="Home — return to dashboard and close open panels">
         <span class="dock-logo-stage">
@@ -723,6 +723,20 @@
       <div id="internalChatOfficeComposeHost" class="portal-dm-office-compose-host" hidden></div>
       <div id="internalChatThreadWrap" class="portal-dm-wrap portal-dm-thread-view" hidden aria-hidden="true">
         <p id="internalChatPeerLabel" class="portal-dm-peer-label" hidden aria-hidden="true"></p>
+        <div id="internalChatCallBar" class="portal-dm-call-bar" hidden aria-hidden="true">
+          <button type="button" class="portal-dm-call-bar-btn" id="internalChatVoiceCallBtn" title="Start a voice call">
+            <span class="portal-dm-call-bar-icon" aria-hidden="true">📞</span>
+            <span>Voice</span>
+          </button>
+          <button type="button" class="portal-dm-call-bar-btn" id="internalChatVideoCallBtn" title="Start a video call">
+            <span class="portal-dm-call-bar-icon" aria-hidden="true">📹</span>
+            <span>Video</span>
+          </button>
+          <button type="button" class="portal-dm-call-bar-btn" id="internalChatMeetingBtn" title="Schedule a meeting">
+            <span class="portal-dm-call-bar-icon" aria-hidden="true">📅</span>
+            <span>Meeting</span>
+          </button>
+        </div>
         <div id="internalChatMessages" class="portal-dm-msgs-col portal-dm-msgs-scroll"></div>
         <div class="portal-dm-compose-bar">
           <label class="topbar-sr-only" for="internalChatInput">Your message</label>
@@ -846,11 +860,12 @@
   <script src="/portal/portal_quick_menu_accordion.js?v=20260604-training-chip"></script>
   <script src="/portal/portal_swimming_instructor_menus.js?v=20260617-swim-aquatic-gate"></script>
   <script src="/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off"></script>
-  <script src="/portal/portal_floating_internal_chat.js?v=20260604-dock-chat"></script>
+  <script src="/portal/portal_floating_internal_chat.js?v=20260604-footer-chat"></script>
   <script type="module" src="/portal/portal_quick_menu_service_leads.js?v=20260604-service-leads-lead-only"></script>
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260616-michelle-only"></script>
   <script src="/portal/portal_dm_voice.js?v=20260602-feedback-voice-fix"></script>
+  <script src="/portal/portal_staff_chat_calls.js?v=20260604-staff-calls"></script>
   <script>
     console.log("ABSENT FIX VERSION LOADED 20260425");
     /** Real calendar weekday for “Today” (en-GB), aligned with staff_clients_machine.xlsx */
@@ -6496,6 +6511,9 @@
         offHost.hidden = true;
         offHost.innerHTML = '';
       }
+      if(window.portalStaffChatCalls && typeof window.portalStaffChatCalls.syncCallBar === 'function'){
+        window.portalStaffChatCalls.syncCallBar({ inThread: !!inThread });
+      }
     }
     window.portalOpenInternalChatFromHeaderQuickMenu = function portalOpenInternalChatFromHeaderQuickMenu(){
       try{
@@ -6870,6 +6888,8 @@
       }
       var peerEl = document.getElementById("internalChatPeerLabel");
       if(peerEl) peerEl.textContent = peerLabel ? String(peerLabel) : "Conversation";
+      window.__PORTAL_INTERNAL_CHAT_UI = window.__PORTAL_INTERNAL_CHAT_UI || {};
+      window.__PORTAL_INTERNAL_CHAT_UI.peerLabel = peerLabel;
       portalSyncInternalChatSheetView(true, peerLabel);
       var msgsBox = document.getElementById("internalChatMessages");
       var inp = document.getElementById("internalChatInput");
@@ -6936,7 +6956,9 @@
           var bodyHost = document.createElement("div");
           bodyHost.className = "portal-dm-msg-body";
           bodyHost.style.minWidth = "0";
-          if(window.portalDmVoice && window.portalDmVoice.fillMessageBody){
+          if(window.portalStaffChatCalls && window.portalStaffChatCalls.fillMessageBody){
+            await window.portalStaffChatCalls.fillMessageBody(bodyHost, m, client, escapeHtml, me);
+          }else if(window.portalDmVoice && window.portalDmVoice.fillMessageBody){
             await window.portalDmVoice.fillMessageBody(bodyHost, m, client, escapeHtml);
           }else{
             var textEl = document.createElement("div");
@@ -13426,10 +13448,10 @@
           }
         });
       }
-      function bindDockCamera(){
-        var btn = document.getElementById('dockCameraBtn');
-        if(!btn || btn.getAttribute('data-ach-dock-bound') === '1') return;
-        btn.setAttribute('data-ach-dock-bound','1');
+      function bindTopbarCamera(){
+        var btn = document.getElementById('topbarCameraBtn');
+        if(!btn || btn.getAttribute('data-ach-topbar-bound') === '1') return;
+        btn.setAttribute('data-ach-topbar-bound','1');
         btn.addEventListener('click', function(){
           mountSheet();
           configure();
@@ -13450,9 +13472,9 @@
         });
       }
       if(document.readyState === 'loading'){
-        document.addEventListener('DOMContentLoaded', function(){ mountSheet(); configure(); bindQuickMenu(); bindDockCamera(); if(typeof portalApplyClientsDirectoryAccess === 'function') portalApplyClientsDirectoryAccess(); });
+        document.addEventListener('DOMContentLoaded', function(){ mountSheet(); configure(); bindQuickMenu(); bindTopbarCamera(); if(typeof portalApplyClientsDirectoryAccess === 'function') portalApplyClientsDirectoryAccess(); });
       }else{
-        mountSheet(); configure(); bindQuickMenu(); bindDockCamera(); if(typeof portalApplyClientsDirectoryAccess === 'function') portalApplyClientsDirectoryAccess();
+        mountSheet(); configure(); bindQuickMenu(); bindTopbarCamera(); if(typeof portalApplyClientsDirectoryAccess === 'function') portalApplyClientsDirectoryAccess();
       }
       window.addEventListener('portal:supabase-ready', function(){ configure(); });
     })();

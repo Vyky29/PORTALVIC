@@ -32,7 +32,7 @@
     }
     if (btn) {
       btn.classList.toggle("portal-floating-chat-btn--unread", unread);
-      btn.classList.toggle("dock-tool-btn--unread", unread);
+      btn.classList.toggle("dock-nav-item--unread", unread);
     }
   }
 
