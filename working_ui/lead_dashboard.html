@@ -800,7 +800,7 @@
   <script src="portal/staff_dashboard_portal_roster_source.js?v=20260601-term-slot"></script>
   <script src="/portal/clients_info_embed.js?v=20260601-general-info"></script>
   <script src="portal/clients_gender_embed.js?v=20260605-gender3"></script>
-  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260601-general-info"></script>
+  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260601-general-info-live"></script>
   <script src="portal/staff_roster_resolve.js?v=20260601-luliya-mic"></script>
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260603-achievements-shared" />
   <script src="/portal/portal_participant_achievements.js?v=20260610-pwa-black-fix"></script>
@@ -897,6 +897,7 @@
       if(__spreadsheetBoot){
         sessionsModel = __spreadsheetBoot.sessionsModel || [];
         clientNotesById = __spreadsheetBoot.clientNotesById || {};
+        portalApplyClientsInfoToNotes();
       }
       if(__spreadsheetBoot && __spreadsheetBoot.defaultViewDay && typeof portalStaffIsDemoAccount === 'function' && portalStaffIsDemoAccount()){
         DEMO_VIEW_DAY = __spreadsheetBoot.defaultViewDay;
@@ -3539,9 +3540,12 @@
       const emptyMsg = emptyLabel != null ? String(emptyLabel) : 'No general information available.';
       const t = String(raw == null ? '' : raw).trim();
       if(!t) return '<p class="client-general-fallback">' + escapeHtml(emptyMsg) + '</p>';
-      let chunks = t.split(/\s(?=\d+\.\s+)/).map(s => s.trim()).filter(Boolean);
-      if(chunks.length < 2 && /\n\s*\d+\.\s+/.test(t)){
+      let chunks = [];
+      if(/\n\s*\d+\.\s+/.test(t)){
         chunks = t.split(/\n(?=\s*\d+\.\s+)/).map(s => s.trim()).filter(Boolean);
+      }
+      if(chunks.length < 2){
+        chunks = t.split(/\s(?=\d+\.\s+)/).map(s => s.trim()).filter(Boolean);
       }
       const rowRe = /^(\d+)\.\s*([^:]+):\s*(.*)$/s;
       if(chunks.length >= 2){
@@ -4223,10 +4227,26 @@
     function resolveClientGeneralInfoText(item){
       const cid = item && item.clientId ? String(item.clientId).trim() : '';
       const c = cid && typeof clientNotesById !== 'undefined' ? clientNotesById[cid] : null;
+      const name = (item && item.name) || (c && c.name) || cid;
       if(c && c.generalInfoSheet) return String(c.generalInfoSheet).trim();
+      try{
+        const Adapter = typeof StaffDashboardSpreadsheetAdapter !== 'undefined' ? StaffDashboardSpreadsheetAdapter : null;
+        if(Adapter && typeof Adapter.lookupClientInfoText === 'function'){
+          const live = Adapter.lookupClientInfoText(cid, name);
+          if(live) return live;
+        }
+      }catch(_){}
       if(item && item.general) return String(item.general).trim();
       if(c && c.generalLead) return String(c.generalLead).trim();
       return '';
+    }
+    function portalApplyClientsInfoToNotes(){
+      try{
+        const Adapter = typeof StaffDashboardSpreadsheetAdapter !== 'undefined' ? StaffDashboardSpreadsheetAdapter : null;
+        if(Adapter && typeof Adapter.applyClientsInfoMerge === 'function' && clientNotesById){
+          Adapter.applyClientsInfoMerge(clientNotesById);
+        }
+      }catch(_){}
     }
 
     function portalNormKeyStr(v){ return String(v == null ? '' : v).trim().toLowerCase(); }
@@ -10229,6 +10249,7 @@
       if(!sheet || !sheet.classList.contains('open')) return;
       sheet.classList.remove('open');
       sheet.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('portal-client-general-open');
       document.getElementById('clientBtnGeneral')?.setAttribute('aria-expanded', 'false');
       const stillOpen = document.querySelectorAll('.sheet.open').length;
       if(stillOpen === 0 && backdropEl){
@@ -10251,6 +10272,7 @@
       setClientInfoFormattedBody('clientGeneral', resolveClientGeneralInfoText(item), 'No general information available.');
       sheet.classList.add('open');
       sheet.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('portal-client-general-open');
       if(backdropEl) backdropEl.classList.add('open');
       document.body.style.overflow = 'hidden';
       document.getElementById('clientBtnGeneral')?.setAttribute('aria-expanded', 'true');
@@ -11745,6 +11767,7 @@
         try { window.STAFF_DASHBOARD_ID = staffId; } catch (_) {}
         sessionsModel = boot.sessionsModel || [];
         clientNotesById = boot.clientNotesById || {};
+        portalApplyClientsInfoToNotes();
         var postFbDay = "";
         try{
           if(typeof __postFbLand !== "undefined" && __postFbLand && __postFbLand.appliedReviewDay){

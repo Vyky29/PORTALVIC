@@ -211,8 +211,51 @@
     return keys;
   }
 
+  function buildClientsInfoBySlug(rows) {
+    const bySlug = new Map();
+    const list = Array.isArray(rows) ? rows : [];
+    list.forEach((r) => {
+      const txt = String(r.client_info || "").trim();
+      if (!txt) return;
+      clientInfoLookupKeys(r.client_name || "").forEach(function (k) {
+        if (k && !bySlug.has(k)) bySlug.set(k, txt);
+      });
+    });
+    return bySlug;
+  }
+
+  function clientsInfoRowsFromWindow() {
+    if (typeof window === "undefined") return [];
+    if (Array.isArray(window.PORTAL_CLIENTS_INFO_ROWS)) {
+      return window.PORTAL_CLIENTS_INFO_ROWS;
+    }
+    return [];
+  }
+
+  function lookupClientInfoText(clientId, displayName) {
+    const slug = String(clientId || "").trim();
+    const bySlug = buildClientsInfoBySlug(clientsInfoRowsFromWindow());
+    if (!bySlug.size) return "";
+    return clientInfoTextForSlug(bySlug, slug, displayName || slug);
+  }
+
+  function applyClientsInfoMerge(clientNotesById) {
+    if (!clientNotesById || typeof clientNotesById !== "object") return;
+    mergeClientsInfoRows(clientNotesById, clientsInfoRowsFromWindow());
+  }
+
   function clientInfoTextForSlug(bySlug, slug, displayName) {
-    const tryKeys = clientInfoLookupKeys(displayName || slug);
+    const tryKeys = [];
+    const seen = new Set();
+    const addKey = function (k) {
+      k = String(k || "").trim();
+      if (!k || seen.has(k)) return;
+      seen.add(k);
+      tryKeys.push(k);
+    };
+    clientInfoLookupKeys(displayName || "").forEach(addKey);
+    clientInfoLookupKeys(slug || "").forEach(addKey);
+    addKey(slug);
     for (let i = 0; i < tryKeys.length; i++) {
       const hit = bySlug.get(tryKeys[i]);
       if (hit) return hit;
@@ -430,5 +473,9 @@
     };
   }
 
-  window.StaffDashboardSpreadsheetAdapter = { bootstrap };
+  window.StaffDashboardSpreadsheetAdapter = {
+    bootstrap: bootstrap,
+    lookupClientInfoText: lookupClientInfoText,
+    applyClientsInfoMerge: applyClientsInfoMerge,
+  };
 })();

@@ -5969,6 +5969,20 @@
     #clientGeneralSheet.open{
       z-index:110;
     }
+    body.portal-client-general-open .dock-bar{
+      display:none !important;
+    }
+    body.portal-client-general-open{
+      --fab-reserved-bottom:max(8px, env(safe-area-inset-bottom, 0px));
+    }
+    #clientGeneralSheet.sheet--fullscreen.open{
+      padding-bottom:env(safe-area-inset-bottom, 0px);
+    }
+    #clientGeneralSheet.sheet--fullscreen.open .sheet-body{
+      flex:1;
+      min-height:0;
+      overflow-y:auto;
+    }
     .client-general-sheet-head .client-general-back{
       display:block;
       width:100%;
