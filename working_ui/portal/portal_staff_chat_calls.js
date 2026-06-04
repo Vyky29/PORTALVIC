@@ -301,26 +301,40 @@
 
       host.innerHTML = "";
       var audioOnly = kind === "audio";
+      var displayName = callerDisplayName();
       var api = new JitsiMeetExternalAPI(JITSI_DOMAIN, {
         roomName: room,
         parentNode: host,
-        userInfo: { displayName: callerDisplayName() },
+        userInfo: { displayName: displayName },
+        lang: "en",
         configOverwrite: {
           startWithAudioMuted: false,
           startWithVideoMuted: audioOnly,
           startAudioOnly: audioOnly,
           prejoinPageEnabled: false,
+          prejoinConfig: {
+            enabled: false,
+            hideExtraJoinButtons: true,
+          },
           disableDeepLinking: true,
           enableWelcomePage: false,
+          enableClosePage: false,
           requireDisplayName: false,
+          enableLobby: false,
+          hideConferenceSubject: true,
         },
         interfaceConfigOverwrite: {
           APP_NAME: "clubSENsational",
           NATIVE_APP_NAME: "clubSENsational Portal",
           SHOW_JITSI_WATERMARK: false,
           SHOW_WATERMARK_FOR_GUESTS: false,
+          SHOW_BRAND_WATERMARK: false,
+          SHOW_POWERED_BY: false,
           MOBILE_APP_PROMO: false,
           DISABLE_JOIN_LEAVE_NOTIFICATIONS: true,
+          DISPLAY_WELCOME_PAGE_CONTENT: false,
+          DISPLAY_WELCOME_FOOTER: false,
+          HIDE_INVITE_MORE_HEADER: true,
           TOOLBAR_BUTTONS: [
             "microphone",
             "camera",
@@ -334,10 +348,34 @@
       });
 
       callState.api = api;
-      if (loading) loading.hidden = true;
 
+      function hideCallLoading() {
+        var loadEl = shell.querySelector("#portalInAppCallLoading");
+        if (loadEl) loadEl.hidden = true;
+      }
+
+      function autoJoinFromPrejoin() {
+        try {
+          api.executeCommand("displayName", displayName);
+        } catch (_dn) {}
+        try {
+          api.executeCommand("submit", { displayName: displayName });
+        } catch (_sub) {}
+        try {
+          api.executeCommand("joinConference");
+        } catch (_join) {}
+      }
+
+      api.addEventListener("videoConferenceJoined", hideCallLoading);
+      api.addEventListener("prejoinScreenLoaded", function () {
+        autoJoinFromPrejoin();
+        setTimeout(autoJoinFromPrejoin, 120);
+        setTimeout(autoJoinFromPrejoin, 420);
+      });
       api.addEventListener("readyToClose", closeInAppCall);
       api.addEventListener("videoConferenceLeft", closeInAppCall);
+
+      setTimeout(hideCallLoading, 4500);
     } catch (e) {
       closeInAppCall();
       var errEl = document.getElementById("internalChatErr");
