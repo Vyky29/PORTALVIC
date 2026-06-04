@@ -269,6 +269,24 @@ def merge_term_staff_weekday_maps(tt: dict, roster: dict) -> dict:
     return out
 
 
+def merge_dashboard_weekday_maps(tt: dict, roster: dict) -> dict:
+    """
+    Timetable weekdays for the dashboard term grid, plus roster-only Mon–Sat days
+    (e.g. Victor Thu Bespoke). Roster Sunday (0) is excluded so pool-only Sunday
+    slots do not turn the whole term grid blue for swimming staff.
+    """
+    out: dict[str, list[int]] = {}
+    keys = set(tt) | set(roster)
+    for k in sorted(keys):
+        s = set(tt.get(k) or [])
+        for d in roster.get(k) or []:
+            if int(d) != 0:
+                s.add(int(d))
+        if s:
+            out[k] = sorted(s)
+    return out
+
+
 def term_staff_shift_dates_from_roster_machine_rows(
     rows: list, from_iso: str, to_iso: str
 ) -> dict:
@@ -398,8 +416,8 @@ def write_term_from_timetable_js(records, roster_rows=None):
     ]
     wd_tt_summer = term_staff_weekday_indices_from_timetable_records(tt_summer)
     wd_roster_summer = term_staff_weekday_indices_from_roster_machine_rows(roster_summer)
-    # Dashboard pattern weekdays: timetable only (not client roster — avoids all-Sunday blues).
-    staff_wd_dashboard = dict(wd_tt_summer)
+    # Dashboard pattern weekdays: timetable + roster Mon–Sat (Thu bespoke for Victor, etc.).
+    staff_wd_dashboard = merge_dashboard_weekday_maps(wd_tt_summer, wd_roster_summer)
     shift_dates_tt = term_staff_shift_dates_by_profile_key(
         tt_summer, view_from, view_to
     )
