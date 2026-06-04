@@ -6,10 +6,7 @@
 
   var SKIP_GROUP_IDS = { portalQuickMenuNotificationsGroup: true };
 
-  /** Always visible: section title + buttons (no collapse trigger). */
-  var FLAT_GROUP_IDS = {
-    portalQuickMenuSettingsGroup: true,
-  };
+  var SETTINGS_GROUP_ID = "portalQuickMenuSettingsGroup";
 
   var ACCORDION_LABELS = {
     portalQuickMenuGuideGroup: "Getting started",
@@ -18,6 +15,7 @@
     portalQuickMenuWorkGroup: "Sessions & Participants",
     portalQuickMenuServiceLeadsGroup: "Service Leads",
     portalQuickMenuMyRecordsGroup: "My Records",
+    portalQuickMenuSettingsGroup: "Settings",
   };
 
   var ACCORDION_BY_TITLE = {
@@ -61,7 +59,7 @@
       theme: "training",
       icon:
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>',
-      chips: ["Induction", "Swimming training", "Safeguarding"],
+      chips: ["Induction", "Swimming", "Safeguarding"],
     },
     compliance: {
       theme: "compliance",
@@ -73,7 +71,7 @@
       theme: "settings",
       icon:
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
-      chips: ["Alerts", "Logout"],
+      chips: ["Guide", "Alerts", "Portals"],
     },
   };
 
@@ -107,6 +105,12 @@
       icon:
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
       chips: ["Reports", "Certificates", "Documents"],
+    },
+    portalQuickMenuSettingsGroup: {
+      theme: "settings",
+      icon:
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+      chips: ["Guide", "Alerts", "Portals"],
     },
   };
 
@@ -188,39 +192,12 @@
     trigger.innerHTML = portalQuickMenuAccordionTriggerHtml(label, meta);
   }
 
-  function portalIsFlatQuickMenuGroup(grp) {
-    if (!grp) return false;
-    var id = String(grp.id || "").trim();
-    if (id && FLAT_GROUP_IDS[id]) return true;
-    return !!(grp.querySelector && grp.querySelector("#quickMenuSettingsGrid"));
-  }
-
-  function portalRestoreFlatQuickMenuGroup(grp) {
-    if (!grp || !grp.classList.contains("menu-group--accordion")) return;
-    var trigger = grp.querySelector(".menu-accordion-trigger");
-    var panel = grp.querySelector(".menu-group-panel");
-    var label = portalQuickMenuAccordionLabel(grp);
-    if (trigger) trigger.remove();
-    if (panel) {
-      var title = document.createElement("div");
-      title.className = "menu-group-title";
-      title.textContent = label;
-      grp.insertBefore(title, panel);
-      while (panel.firstChild) {
-        grp.appendChild(panel.firstChild);
-      }
-      panel.remove();
-    }
-    grp.classList.remove("menu-group--accordion", "menu-group--open");
+  function portalIsSettingsQuickMenuGroup(grp) {
+    return !!(grp && String(grp.id || "").trim() === SETTINGS_GROUP_ID);
   }
 
   function portalPrepareQuickMenuAccordionGroup(grp) {
     if (!grp) return;
-    if (portalIsFlatQuickMenuGroup(grp)) {
-      portalRestoreFlatQuickMenuGroup(grp);
-      grp.classList.add("menu-group--flat", "menu-group--accordion-ready");
-      return;
-    }
     if (grp.classList.contains("menu-group--accordion-ready")) return;
     var id = String(grp.id || "").trim();
     if (id && SKIP_GROUP_IDS[id]) {
@@ -234,6 +211,8 @@
     var panel = document.createElement("div");
     panel.className = "menu-group-panel";
     panel.hidden = true;
+    var settingsPinned =
+      portalIsSettingsQuickMenuGroup(grp) && grp.querySelector("#quickMenuSettingsPinned");
 
     var kids = Array.prototype.slice.call(grp.children);
     for (var i = 0; i < kids.length; i++) {
@@ -243,6 +222,8 @@
         continue;
       }
       if (child.classList && child.classList.contains("menu-accordion-trigger")) continue;
+      if (settingsPinned && child === settingsPinned) continue;
+      if (portalIsSettingsQuickMenuGroup(grp) && child.id !== "quickMenuSettingsGrid") continue;
       panel.appendChild(child);
     }
 
@@ -273,6 +254,7 @@
 
     grp.insertBefore(trigger, grp.firstChild);
     grp.appendChild(panel);
+    if (settingsPinned) grp.appendChild(settingsPinned);
     grp.classList.add("menu-group--accordion", "menu-group--accordion-ready");
   }
 
@@ -316,12 +298,9 @@
     try {
       var main = global.document && global.document.querySelector("#menuSheet .menu-sheet-main");
       if (!main) return;
-      var openGroups = main.querySelectorAll(
-        ":scope > .menu-group--accordion.menu-group--open:not(.menu-group--flat)"
-      );
+      var openGroups = main.querySelectorAll(":scope > .menu-group--accordion.menu-group--open");
       for (var i = 0; i < openGroups.length; i++) {
         var grp = openGroups[i];
-        if (grp.classList.contains("menu-group--flat")) continue;
         grp.classList.remove("menu-group--open");
         var panel = grp.querySelector(".menu-group-panel");
         var trigger = grp.querySelector(".menu-accordion-trigger");

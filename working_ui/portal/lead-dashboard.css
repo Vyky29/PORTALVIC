@@ -820,6 +820,31 @@
     .portal-dm-thread-item:active{opacity:.92}
     .portal-dm-thread-peer{font-weight:700;font-size:15px;min-width:0;overflow-wrap:break-word}
     .portal-dm-thread-meta{font-size:12px;color:var(--muted)}
+    .portal-dm-thread-main{
+      flex:1;
+      min-width:0;
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+      align-items:flex-start;
+      text-align:left;
+    }
+    .portal-dm-thread-badge{
+      flex-shrink:0;
+      min-width:22px;
+      height:22px;
+      padding:0 6px;
+      border-radius:999px;
+      background:var(--blue);
+      color:#fff;
+      font-size:12px;
+      font-weight:800;
+      line-height:1;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      box-shadow:0 1px 4px rgba(45,132,179,.28);
+    }
     #internalChatMessages.portal-dm-msgs-col,
     #internalChatSheet .portal-dm-msgs-scroll.portal-dm-msgs-col{
       display:flex;flex-direction:column;gap:6px;align-items:stretch;width:100%;min-width:0;
@@ -1720,10 +1745,17 @@
       box-shadow:none;
     }
     #internalChatSheet.sheet--portal-chat-inbox .portal-dm-thread-item.portal-dm-thread-item--unread{
-      background:#f0f7fc;
-      border-bottom-color:rgba(45,132,179,.12);
-      box-shadow:none;
-      animation:none;
+      background:#eef6fc;
+      border-bottom-color:rgba(45,132,179,.16);
+      box-shadow:inset 3px 0 0 var(--blue);
+    }
+    #internalChatSheet.sheet--portal-chat-inbox .portal-dm-thread-item.portal-dm-thread-item--unread .portal-dm-thread-peer{
+      color:var(--ink);
+      font-weight:800;
+    }
+    #internalChatSheet.sheet--portal-chat-inbox .portal-dm-thread-item.portal-dm-thread-item--unread .portal-dm-thread-meta{
+      color:#4f6b7f;
+      font-weight:600;
     }
     #internalChatSheet.sheet--portal-chat-inbox .portal-dm-thread-peer{
       flex:1;
@@ -5297,12 +5329,18 @@
       transform:translateY(-1px);
     }
     .sheet.sheet--fullscreen.sheet--mobile-frame .menu-btn:active{transform:translateY(0)}
-    /* Quick menu · Settings: title + icon only (no subtitle), tighter than the general block */
-    .sheet.sheet--fullscreen.sheet--mobile-frame #quickMenuSettingsGrid > .menu-btn{
+    /* Quick menu · Settings accordion panel + pinned View / Logout rows */
+    #menuSheet #portalQuickMenuSettingsGroup > .menu-grid--settings-pinned{
+      margin-top:10px;
+    }
+    .sheet.sheet--fullscreen.sheet--mobile-frame #quickMenuSettingsGrid > .menu-btn,
+    .sheet.sheet--fullscreen.sheet--mobile-frame #quickMenuSettingsPinned > .menu-btn,
+    .sheet.sheet--fullscreen.sheet--mobile-frame #quickMenuSettingsPinned > .menu-btn.menu-btn--settings-view{
       padding:8px 10px;
       gap:10px;
     }
-    .sheet.sheet--fullscreen.sheet--mobile-frame #quickMenuSettingsGrid .menu-btn-copy strong{
+    .sheet.sheet--fullscreen.sheet--mobile-frame #quickMenuSettingsGrid .menu-btn-copy strong,
+    .sheet.sheet--fullscreen.sheet--mobile-frame #quickMenuSettingsPinned .menu-btn-copy strong{
       margin-bottom:0;
     }
     .sheet.sheet--fullscreen.sheet--mobile-frame #quickMenuSettingsGrid .menu-btn-sub{

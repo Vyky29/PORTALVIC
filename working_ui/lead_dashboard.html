@@ -530,8 +530,7 @@
             </button>
           </div>
         </div>
-        <div class="menu-group menu-group--flat" id="portalQuickMenuSettingsGroup">
-          <div class="menu-group-title">Settings</div>
+        <div class="menu-group" id="portalQuickMenuSettingsGroup">
           <div class="menu-grid" id="quickMenuSettingsGrid">
             <button type="button" class="menu-btn menu-btn--portal-guide" id="quickMenuPortalGuideSettings" data-portal-external-url="portal_guide.html" hidden aria-hidden="true" aria-label="clubSENsational portal guide">
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div>
@@ -550,6 +549,8 @@
               <div class="menu-btn-copy"><strong>Alerts &amp; notifications</strong><span class="menu-btn-sub">Set up once on this device</span></div>
             </button>
             <div id="portalExecWorkspaceSwitchSlot" class="portal-exec-workspace-switch-slot" hidden aria-hidden="true"></div>
+          </div>
+          <div class="menu-grid menu-grid--settings-pinned" id="quickMenuSettingsPinned">
             <div class="menu-btn menu-btn--settings-view" id="quickMenuViewRow">
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
               <div class="menu-btn-copy">
@@ -862,7 +863,7 @@
   <script src="/portal/portal_induction_bind.js?v=20260615-tprog-sync"></script>
   <script src="/portal/portal_guide_ack.js?v=20260604-guide-first-read"></script>
   <script src="/portal/portal_guide_menu.js?v=20260604-guide-first-read"></script>
-  <script src="/portal/portal_quick_menu_accordion.js?v=20260601-work-flat"></script>
+  <script src="/portal/portal_quick_menu_accordion.js?v=20260604-training-chip"></script>
   <script src="/portal/portal_swimming_instructor_menus.js?v=20260617-swim-aquatic-gate"></script>
   <script src="/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off"></script>
   <script src="/portal/portal_floating_internal_chat.js?v=20260604-chat-wa"></script>
@@ -5638,6 +5639,37 @@
         return false;
       }
     }
+    function portalStaffDmCountUnreadInThread(threadId, msgsByThread, authorProfBy, me){
+      var seen = portalStaffDmGetSeenIso(threadId);
+      var list = msgsByThread[threadId] || [];
+      var count = 0;
+      for(var ui = 0; ui < list.length; ui++){
+        var m = list[ui];
+        if(!m) continue;
+        if(String(m.author_id || '').toLowerCase() === String(me || '').toLowerCase()) continue;
+        var prof = authorProfBy[String(m.author_id || '')] || {};
+        if(portalStaffActsAsWorkerMessenger()){
+          if(!portalStaffProfileIsOfficePeer(prof)) continue;
+        }
+        if(!seen){
+          count++;
+          continue;
+        }
+        try{
+          if(new Date(m.created_at).getTime() > new Date(seen).getTime() + 800) count++;
+        }catch(_du){
+          count++;
+        }
+      }
+      return count;
+    }
+    function portalStaffDmThreadListItemHtml(label, when, unreadCount){
+      unreadCount = Math.max(0, parseInt(unreadCount, 10) || 0);
+      var badgeHtml = unreadCount > 0
+        ? '<span class="portal-dm-thread-badge" aria-label="' + escapeHtml(unreadCount === 1 ? '1 unread message' : unreadCount + ' unread messages') + '">' + escapeHtml(unreadCount > 99 ? '99+' : String(unreadCount)) + '</span>'
+        : '';
+      return '<span class="portal-dm-thread-main"><span class="portal-dm-thread-peer">' + escapeHtml(label) + '</span><span class="portal-dm-thread-meta">' + escapeHtml(when || 'Conversation') + '</span></span>' + badgeHtml;
+    }
     function portalStaffDmSetUnreadCount(count){
       count = Math.max(0, parseInt(count, 10) || 0);
       window.__PORTAL_STAFF_DM_UNREAD_COUNT__ = count;
@@ -5652,50 +5684,9 @@
       if(typeof syncDockQuickMenuAttention === 'function') syncDockQuickMenuAttention();
     }
     window.portalStaffDmAckInboxOpened = async function portalStaffDmAckInboxOpened(){
-      var box = window.__PORTAL_SUPABASE__;
-      var client = box && box.client;
-      var me = String((box && box.staff_profile && box.staff_profile.id) || (box && box.session && box.session.user && box.session.user.id) || '').trim();
-      if(!client || !me){
-        portalStaffDmClearUnreadChromeLocally();
-        return;
+      if(typeof window.portalStaffDmSyncUnreadChrome === 'function'){
+        await window.portalStaffDmSyncUnreadChrome();
       }
-      try{
-        var tr = await client.from('portal_staff_dm_threads').select('id,participant_a,participant_b').or('participant_a.eq.' + me + ',participant_b.eq.' + me).limit(120);
-        if(tr.error || !tr.data || !tr.data.length){
-          portalStaffDmClearUnreadChromeLocally();
-          return;
-        }
-        var trows = tr.data || [];
-        var peerIdsU = [];
-        if(portalStaffActsAsWorkerMessenger(box && box.staff_profile)){
-          peerIdsU = trows.map(function(r){
-            var a = String(r && r.participant_a || '');
-            var b = String(r && r.participant_b || '');
-            return a === me ? b : a;
-          }).filter(Boolean);
-        }
-        var profU = {};
-        if(peerIdsU.length){
-          var pru = await client.from('staff_profiles').select('id,app_role,staff_role').in('id', peerIdsU);
-          if(!pru.error && Array.isArray(pru.data)){
-            pru.data.forEach(function(p){
-              if(p && p.id) profU[String(p.id)] = p;
-            });
-          }
-        }
-        var ids = trows
-          .filter(function(r){
-            if(!portalStaffActsAsWorkerMessenger(box && box.staff_profile)) return true;
-            var a = String(r && r.participant_a || '');
-            var b = String(r && r.participant_b || '');
-            var peer = a === me ? b : a;
-            return portalStaffProfileIsOfficePeer(profU[peer] || {});
-          })
-          .map(function(r){ return r && r.id ? String(r.id) : ''; })
-          .filter(Boolean);
-        ids.forEach(function(tid){ portalStaffDmForceMarkThreadSeen(tid); });
-      }catch(_ack){}
-      portalStaffDmClearUnreadChromeLocally();
     };
     window.portalStaffDmSyncUnreadChrome = async function portalStaffDmSyncUnreadChrome(){
       var box = window.__PORTAL_SUPABASE__;
@@ -5779,18 +5770,9 @@
             });
           }
         }
-        var chatSh = document.getElementById('internalChatSheet');
-        if(chatSh && chatSh.classList.contains('open')){
-          ids.forEach(function(tid){ portalStaffDmForceMarkThreadSeen(tid); });
-          portalStaffDmClearUnreadChromeLocally();
-          return;
-        }
         var unreadCount = 0;
         ids.forEach(function(threadId){
-          var officeMsg = portalStaffDmLastOfficeMessage(msgsByThread, threadId, authorProfBy, me);
-          if(!officeMsg) return;
-          var prof = authorProfBy[String(officeMsg.author_id || '')] || {};
-          if(portalStaffDmThreadUnreadFromOffice(threadId, officeMsg, prof, me)) unreadCount += 1;
+          unreadCount += portalStaffDmCountUnreadInThread(threadId, msgsByThread, authorProfBy, me);
         });
         portalStaffDmSetUnreadCount(unreadCount);
         if(typeof syncPortalHeaderAlertChrome === 'function'){
@@ -6171,14 +6153,13 @@
           try{
             if(r.updated_at) when = new Date(r.updated_at).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
           }catch(_d){}
-          var officeMsg = portalStaffDmLastOfficeMessage(msgsByThread, id, lastAuthorProfBy, me);
-          var officeProf = officeMsg && officeMsg.author_id ? (lastAuthorProfBy[String(officeMsg.author_id)] || {}) : {};
-          var unread = !!(officeMsg && portalStaffDmThreadUnreadFromOffice(id, officeMsg, officeProf, me));
+          var unreadCount = portalStaffDmCountUnreadInThread(id, msgsByThread, lastAuthorProfBy, me);
           var btn = document.createElement("button");
           btn.type = "button";
-          btn.className = "portal-dm-thread-item" + (unread ? " portal-dm-thread-item--unread" : "");
+          btn.className = "portal-dm-thread-item" + (unreadCount > 0 ? " portal-dm-thread-item--unread" : "");
           btn.setAttribute("data-dm-thread", id);
-          btn.innerHTML = "<span class=\"portal-dm-thread-peer\">"+escapeHtml(label)+"</span><span class=\"portal-dm-thread-meta\">"+escapeHtml(when || "Conversation")+"</span>";
+          if(unreadCount > 0) btn.setAttribute("data-dm-unread-count", String(unreadCount));
+          btn.innerHTML = portalStaffDmThreadListItemHtml(label, when, unreadCount);
           btn.addEventListener("click", function(){
             window.__PORTAL_INTERNAL_CHAT_UI.threadId = id;
             void window.portalRenderInternalChatSheet();
