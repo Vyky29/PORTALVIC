@@ -39,6 +39,20 @@
     ].join("|");
   }
 
+  /** From this ISO, machine/bundle dated rows keep their instructors; DB templates may not replace them. */
+  function summerRosterFloorIso() {
+    try {
+      var t = global.PORTAL_TERM_FROM_TIMETABLE;
+      if (t) {
+        var v = String(t.termResumeDate || t.termDashboardCalendarFrom || "")
+          .trim()
+          .slice(0, 10);
+        if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+      }
+    } catch (_) {}
+    return "2026-06-01";
+  }
+
   function dbToAdapter(r) {
     return {
       client_name: String(r.client_name || "").trim(),
@@ -83,7 +97,17 @@
       if (iso) {
         var tk = templateKey({ day: r.day || weekdayLongFromIso(iso), client_name: r.client_name, time_slot: r.time_slot });
         if (templates[tk]) {
-          out.push(Object.assign({}, r, templates[tk], { session_date: iso, day: r.day || templates[tk].day }));
+          var tpl = templates[tk];
+          var merged = Object.assign({}, r, tpl, {
+            session_date: iso,
+            day: r.day || tpl.day,
+          });
+          var rowIso = normIso(r.session_date);
+          var floor = summerRosterFloorIso();
+          if (rowIso && iso >= floor) {
+            merged.instructors = r.instructors;
+          }
+          out.push(merged);
           return;
         }
       }
