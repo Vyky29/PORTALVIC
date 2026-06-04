@@ -8,9 +8,6 @@ const cors: Record<string, string> = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
     status,
@@ -39,6 +36,9 @@ Deno.serve(async (req) => {
   if (!portalUrl || !portalService) {
     return json(500, { ok: false, error: "misconfigured" });
   }
+  if (!obUrl || !obService) {
+    return json(503, { ok: false, error: "onboarding_not_configured" });
+  }
 
   const portalAdmin = createClient(portalUrl, portalService, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -50,51 +50,44 @@ Deno.serve(async (req) => {
   }
 
   const userId = String(userData.user.id);
-  if (!UUID_RE.test(userId)) {
-    return json(400, { ok: false, error: "invalid_user" });
+
+  let body: { form_type?: string };
+  try {
+    body = await req.json();
+  } catch {
+    return json(400, { ok: false, error: "bad_json" });
   }
 
-  let job = false;
-  let health = false;
+  const formType = String(body.form_type ?? "job").trim().toLowerCase();
+  if (formType !== "job") {
+    return json(400, { ok: false, error: "invalid_form_type" });
+  }
 
-  const { data: healthRow } = await portalAdmin
-    .from("staff_health_questionnaire_drafts")
-    .select("submitted_at")
-    .eq("staff_session_id", userId)
+  const obAdmin = createClient(obUrl, obService, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+
+  const { data, error } = await obAdmin
+    .from("onboarding_applicant_drafts")
+    .select("payload, updated_at")
+    .eq("applicant_session_id", userId)
+    .eq("form_type", formType)
     .maybeSingle();
 
-  if (healthRow?.submitted_at) {
-    health = true;
+  if (error) {
+    console.error("[portal-staff-onboarding-draft-load]", error);
+    return json(500, { ok: false, error: "load_failed" });
   }
 
-  if (obUrl && obService) {
-    const obAdmin = createClient(obUrl, obService, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-
-    const { data: drafts } = await obAdmin
-      .from("onboarding_applicant_drafts")
-      .select("form_type, payload")
-      .eq("applicant_session_id", userId);
-
-    for (const row of drafts ?? []) {
-      const ft = String(row.form_type ?? "").toLowerCase();
-      const payload = row.payload as Record<string, unknown> | null;
-      const portal =
-        payload?._portal && typeof payload._portal === "object"
-          ? (payload._portal as Record<string, unknown>)
-          : null;
-      const submitted = portal?.submitted_at;
-      if (ft === "job" && submitted) job = true;
-      if (ft === "health" && submitted) health = true;
-    }
+  if (!data) {
+    return json(200, { ok: true, draft: null });
   }
 
   return json(200, {
     ok: true,
-    applicant_session_id: userId,
-    job,
-    health,
-    onboarding_configured: !!(obUrl && obService),
+    draft: {
+      payload: data.payload ?? {},
+      updated_at: data.updated_at ?? null,
+    },
   });
 });

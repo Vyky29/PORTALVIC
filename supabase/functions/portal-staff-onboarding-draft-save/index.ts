@@ -11,6 +11,8 @@ const cors: Record<string, string> = {
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+const MAX_PAYLOAD_BYTES = 450_000;
+
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
     status,
@@ -39,6 +41,9 @@ Deno.serve(async (req) => {
   if (!portalUrl || !portalService) {
     return json(500, { ok: false, error: "misconfigured" });
   }
+  if (!obUrl || !obService) {
+    return json(503, { ok: false, error: "onboarding_not_configured" });
+  }
 
   const portalAdmin = createClient(portalUrl, portalService, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -54,47 +59,62 @@ Deno.serve(async (req) => {
     return json(400, { ok: false, error: "invalid_user" });
   }
 
-  let job = false;
-  let health = false;
-
-  const { data: healthRow } = await portalAdmin
-    .from("staff_health_questionnaire_drafts")
-    .select("submitted_at")
-    .eq("staff_session_id", userId)
-    .maybeSingle();
-
-  if (healthRow?.submitted_at) {
-    health = true;
+  let body: {
+    form_type?: string;
+    payload?: Record<string, unknown>;
+    portal_staff_name?: string;
+  };
+  try {
+    body = await req.json();
+  } catch {
+    return json(400, { ok: false, error: "bad_json" });
   }
 
-  if (obUrl && obService) {
-    const obAdmin = createClient(obUrl, obService, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-
-    const { data: drafts } = await obAdmin
-      .from("onboarding_applicant_drafts")
-      .select("form_type, payload")
-      .eq("applicant_session_id", userId);
-
-    for (const row of drafts ?? []) {
-      const ft = String(row.form_type ?? "").toLowerCase();
-      const payload = row.payload as Record<string, unknown> | null;
-      const portal =
-        payload?._portal && typeof payload._portal === "object"
-          ? (payload._portal as Record<string, unknown>)
-          : null;
-      const submitted = portal?.submitted_at;
-      if (ft === "job" && submitted) job = true;
-      if (ft === "health" && submitted) health = true;
-    }
+  const formType = String(body.form_type ?? "").trim().toLowerCase();
+  if (formType !== "job") {
+    return json(400, { ok: false, error: "invalid_form_type" });
   }
 
-  return json(200, {
-    ok: true,
-    applicant_session_id: userId,
-    job,
-    health,
-    onboarding_configured: !!(obUrl && obService),
+  const payload = body.payload && typeof body.payload === "object"
+    ? { ...body.payload }
+    : {};
+  const staffName = String(body.portal_staff_name ?? "").trim().slice(0, 200);
+  if (staffName) {
+    const meta = payload._portal && typeof payload._portal === "object"
+      ? { ...(payload._portal as Record<string, unknown>) }
+      : {};
+    meta.staff_name = staffName;
+    payload._portal = meta;
+  }
+
+  const raw = JSON.stringify(payload);
+  if (raw.length > MAX_PAYLOAD_BYTES) {
+    return json(413, { ok: false, error: "payload_too_large" });
+  }
+
+  const obAdmin = createClient(obUrl, obService, {
+    auth: { persistSession: false, autoRefreshToken: false },
   });
+
+  const { error } = await obAdmin.from("onboarding_applicant_drafts").upsert({
+    applicant_session_id: userId,
+    form_type: formType,
+    payload,
+    updated_at: new Date().toISOString(),
+  });
+
+  if (error) {
+    console.error("[portal-staff-onboarding-draft-save]", error);
+    return json(500, { ok: false, error: "save_failed" });
+  }
+
+  if (staffName) {
+    await obAdmin.from("onboarding_applicant_sessions").upsert({
+      applicant_session_id: userId,
+      portal_staff_name: staffName,
+      updated_at: new Date().toISOString(),
+    });
+  }
+
+  return json(200, { ok: true });
 });
