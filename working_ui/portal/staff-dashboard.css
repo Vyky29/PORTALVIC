@@ -283,7 +283,7 @@
     .topbar-left{
       display:flex;
       flex-wrap:nowrap;
-      gap:8px;
+      gap:16px;
       width:100%;
       min-width:0;
       justify-content:center;
@@ -7058,10 +7058,11 @@
       width:44px;
       height:44px;
       flex-shrink:0;
+      margin-left:6px;
     }
     .topbar-chat-orbit-wrap .topbar-chat-orbit{
       position:absolute;
-      inset:-14px;
+      inset:-11px;
       pointer-events:none;
       opacity:0;
       visibility:hidden;
