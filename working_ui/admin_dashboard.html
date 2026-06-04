@@ -227,8 +227,8 @@
   <!-- Large portal datasets load on demand (portalAdminLoadScriptSet) so Day operations opens without freezing. -->
   <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260602-cap-roster"></script>
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260521-late-perf"></script>
-  <script src="/portal/portal_admin_alerts_bell.js?v=20260601-inbound-toast"></script>
-  <script src="/portal/portal-admin-web-push.js?v=20260601-inbound-toast"></script>
+  <script src="/portal/portal_admin_alerts_bell.js?v=20260602-chat-alerts"></script>
+  <script src="/portal/portal-admin-web-push.js?v=20260602-chat-alerts"></script>
 
   <script>
   (function(){
@@ -1600,7 +1600,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         });
       }
       if(portalAdminDmHasUnread()){
-        var hints = window.__PORTAL_ADMIN_DM_UNREAD_HINTS__ || [];
+        var hints = typeof window.portalAdminBellResolveChatHints === 'function'
+          ? window.portalAdminBellResolveChatHints()
+          : (window.__PORTAL_ADMIN_DM_UNREAD_HINTS__ || []);
         var names = hints.slice(0, 2).map(function(h){ return String(h.displayName || '').trim(); }).filter(Boolean);
         var chatParts = [];
         if(window.__PORTAL_ADMIN_DM_UNREAD) chatParts.push('staff & leads');
@@ -18324,17 +18326,30 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function portalAdminDmApplyTeamTileUnreadClass(){
       var onStaff = !!window.__PORTAL_ADMIN_DM_UNREAD;
       var onCeo = !!(window.__PORTAL_ADMIN_CEO_DM_UNREAD || window.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD);
-      var hub = document.querySelector('[data-dayops-act="admin_chat_hub"]');
-      if(hub){
+      var onAny = onStaff || onCeo;
+      document.querySelectorAll('[data-dayops-act="admin_chat_hub"]').forEach(function(hub){
         hub.classList.toggle('dayops-screen-nav__card--portal-dm-unread', onStaff);
         hub.classList.toggle('dayops-screen-nav__card--portal-ceo-dm-unread', onCeo);
-      }
-      var b1 = document.querySelector('[data-dayops-act="team_dm"]');
-      if(b1) b1.classList.toggle('dayops-screen-nav__card--portal-dm-unread', onStaff);
-      var b2 = document.querySelector('[data-dayops-act="ceo_exec_dm"]');
-      if(b2) b2.classList.toggle('dayops-screen-nav__card--portal-ceo-dm-unread', onCeo);
-      var b3 = document.querySelector('[data-dayops-act="ceo_all_group_dm"]');
-      if(b3) b3.classList.toggle('dayops-screen-nav__card--portal-ceo-group-unread', onCeo);
+        hub.classList.toggle('dayops-screen-nav__card--portal-ceo-group-unread', onCeo);
+      });
+      document.querySelectorAll('[data-dayops-act="team_dm"]').forEach(function(b1){
+        b1.classList.toggle('dayops-screen-nav__card--portal-dm-unread', onStaff);
+      });
+      document.querySelectorAll('[data-dayops-act="ceo_exec_dm"]').forEach(function(b2){
+        b2.classList.toggle('dayops-screen-nav__card--portal-ceo-dm-unread', onCeo);
+      });
+      document.querySelectorAll('[data-dayops-act="ceo_all_group_dm"]').forEach(function(b3){
+        b3.classList.toggle('dayops-screen-nav__card--portal-ceo-group-unread', onCeo);
+      });
+      document.querySelectorAll('#dayopsChatHubInternal').forEach(function(el){
+        el.classList.toggle('dayops-screen-nav__card--portal-dm-unread', onStaff);
+      });
+      document.querySelectorAll('#dayopsChatHubCeo').forEach(function(el){
+        el.classList.toggle('dayops-screen-nav__card--portal-ceo-dm-unread', onCeo || !!window.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD);
+      });
+      document.querySelectorAll('#adminNav button[data-view="operations"], #adminNav button[data-view="dashboard"]').forEach(function(nb){
+        nb.classList.toggle('admin-nav-item--chat-unread', onAny);
+      });
     }
     function portalAdminDmHasUnread(){
       return !!(window.__PORTAL_ADMIN_DM_UNREAD || window.__PORTAL_ADMIN_CEO_DM_UNREAD || window.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD);
@@ -18395,7 +18410,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!hint) return;
       if(hint.kind === 'ceo_group'){
         openCeoExecDmChatModal();
-        await portalAdminDmOpenGroupThread(hint.groupId);
+        if(hint.groupId && String(hint.groupId) !== '__unread__'){
+          await portalAdminDmOpenGroupThread(hint.groupId);
+        }
         return;
       }
       var ch = hint.channel === 'ceo_exec' || hint.kind === 'ceo_dm' ? 'ceo_exec' : 'staff_lead';
@@ -18435,7 +18452,23 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!prevUnread && nowUnread) portalAdminDmNotifyIncomingChat();
     }
     function portalAdminDmNotifyIncomingChat(){
-      /* Bell + optional OS notification when tab hidden; no workspace banner or toast. */
+      var hints = typeof window.portalAdminBellResolveChatHints === 'function'
+        ? window.portalAdminBellResolveChatHints()
+        : (window.__PORTAL_ADMIN_DM_UNREAD_HINTS__ || []);
+      var names = hints.slice(0, 3).map(function(h){
+        return String(h.displayName || '').trim();
+      }).filter(Boolean);
+      var title = names.length ? ('Chat · ' + names.join(', ')) : 'New chat message';
+      var parts = [];
+      if(window.__PORTAL_ADMIN_DM_UNREAD) parts.push('staff & leads');
+      if(window.__PORTAL_ADMIN_CEO_DM_UNREAD) parts.push('CEO / admin DM');
+      if(window.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD) parts.push('CEO group');
+      var sub = names.length
+        ? 'Tap Alerts or open Chat to reply.'
+        : ('Unread in ' + (parts.join(' · ') || 'internal chat') + ' — open Chat from Day operations.');
+      if(typeof window.portalAdminShowInboundAlert === 'function'){
+        window.portalAdminShowInboundAlert({ title: title, sub: sub });
+      }
     }
     function portalAdminDmTryOsNotifyIncoming(kind){
       kind = String(kind || 'staff').trim();
@@ -18652,10 +18685,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(hs) portalAdminDmTryOsNotifyIncoming('staff');
         if(hc || hg) portalAdminDmTryOsNotifyIncoming('ceo');
       }catch(_e){
-        window.__PORTAL_ADMIN_DM_UNREAD = false;
-        window.__PORTAL_ADMIN_CEO_DM_UNREAD = false;
-        window.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD = false;
-        window.__PORTAL_ADMIN_DM_UNREAD_HINTS__ = [];
+        try{ console.warn('[portal] portalAdminDmSyncIncomingAttention', _e); }catch(_log){}
         portalAdminDmApplyTeamTileUnreadClass();
         portalAdminDmOnUnreadAttentionChanged(prevUnread);
       }
@@ -18819,15 +18849,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(inp) inp.value = '';
       var errB = $('admDmThreadErr');
       if(errB) errB.textContent = '';
-      try{ localStorage.setItem('portal_admin_ceo_group_ack_iso', new Date().toISOString()); }catch(_a){}
-      window.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD = false;
       portalAdminDmApplyTeamTileUnreadClass();
       try{ portalAdminDmPatchGlobalChatBanner(); }catch(_cbn4){}
       await portalAdminDmLoadMessages();
     }
     function openCeoExecDmChatModalToAllCeoGroup(){
-      try{ localStorage.setItem('portal_admin_ceo_group_ack_iso', new Date().toISOString()); }catch(_x){}
-      window.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD = false;
       portalAdminDmApplyTeamTileUnreadClass();
       openCeoExecDmChatModal();
       setTimeout(function(){ void portalAdminDmJumpToQuickCeoGroupWhenReady(); }, 200);
@@ -19029,6 +19055,24 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(errB) errB.textContent = '';
       await portalAdminDmLoadMessages();
     }
+    function portalAdminDmMarkChannelReadFromMessages(arr, gid){
+      var latestIso = new Date().toISOString();
+      if(Array.isArray(arr) && arr.length){
+        for(var li = arr.length - 1; li >= 0; li--){
+          if(arr[li] && arr[li].created_at){ latestIso = arr[li].created_at; break; }
+        }
+      }
+      if(gid){
+        try{ localStorage.setItem('portal_admin_ceo_group_ack_iso', latestIso); }catch(_ga){}
+        return;
+      }
+      var ch = portalAdminDmChannel();
+      if(ch === 'ceo_exec'){
+        try{ localStorage.setItem('portal_admin_ceo_dm_ack_iso', latestIso); }catch(_ca){}
+      }else{
+        try{ localStorage.setItem('portal_admin_dm_ack_iso', latestIso); }catch(_sa){}
+      }
+    }
     async function portalAdminDmLoadMessages(){
       var msgsBox = $('admDmMsgs');
       var client = getSchedSupabaseClient();
@@ -19151,6 +19195,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           row.appendChild(div);
           msgsBox.appendChild(row);
         }
+      }
+      var uiRead = window.__PORTAL_ADMIN_DM_UI || {};
+      if((uiRead.threadId || uiRead.groupId) && (uiRead.panel === 'thread' || String(uiRead.panel || '') === 'thread')){
+        portalAdminDmMarkChannelReadFromMessages(arr, gid);
+        void portalAdminDmSyncIncomingAttention();
       }
       msgsBox.scrollTop = msgsBox.scrollHeight;
     }
@@ -19491,13 +19540,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       window.__PORTAL_ADMIN_DM_CHANNEL = channel;
       window.__PORTAL_ADMIN_DM_OPEN = true;
       window.__PORTAL_ADMIN_DM_UI = { threadId: '', groupId: '', panel: 'list' };
-      if(channel === 'ceo_exec'){
-        try{ localStorage.setItem('portal_admin_ceo_dm_ack_iso', new Date().toISOString()); }catch(_a){}
-        window.__PORTAL_ADMIN_CEO_DM_UNREAD = false;
-      }else{
-        try{ localStorage.setItem('portal_admin_dm_ack_iso', new Date().toISOString()); }catch(_b){}
-        window.__PORTAL_ADMIN_DM_UNREAD = false;
-      }
       portalAdminDmApplyTeamTileUnreadClass();
       try{ portalAdminDmPatchGlobalChatBanner(); }catch(_cbn){}
       portalInitAdminDmRealtime();
@@ -22726,7 +22768,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         : '';
       pop.innerHTML = '<div class="card-h" style="border-radius:var(--radiusLg) var(--radiusLg) 0 0"><h3 style="margin:0;font-size:14px">Alerts</h3></div>'+activityHtml+emptyHtml;
       var bd = $('alertBadge');
-      if(bd) bd.textContent = String((activityList||[]).length);
+      var n = (activityList || []).length;
+      if(bd){
+        bd.textContent = String(n);
+        bd.classList.toggle('is-empty', n < 1);
+        if(n > 0 && typeof window.portalAdminPulseAlertBadge === 'function'){
+          window.portalAdminPulseAlertBadge();
+        }
+      }
+      var btnAlerts = $('btnAlerts');
+      if(btnAlerts) btnAlerts.classList.toggle('admin-icon-btn--has-alerts', n > 0);
     }
     try{ window.__portalAdminRenderAlerts = renderAlerts; }catch(e){}
 

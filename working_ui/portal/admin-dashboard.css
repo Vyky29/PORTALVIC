@@ -822,6 +822,33 @@
     }
     .admin-icon-btn:hover,.admin-icon-btn:focus-visible{background:#f1f5f9;border-color:#8eb4d0;outline:none;box-shadow:0 0 0 1px rgba(45,132,179,.1)}
     .admin-badge{position:absolute;top:6px;right:6px;min-width:16px;height:16px;padding:0 4px;border-radius:99px;background:var(--danger);color:#fff;font-size:9px;font-weight:800;line-height:16px;text-align:center}
+    .admin-badge.is-empty{display:none}
+    .dayops-screen-nav__card--portal-dm-unread,
+    .dayops-screen-nav__card--portal-ceo-dm-unread,
+    .dayops-screen-nav__card--portal-ceo-group-unread{
+      border-color:rgba(220,38,38,.45)!important;
+      box-shadow:0 0 0 2px rgba(220,38,38,.18),0 8px 22px rgba(220,38,38,.12)!important;
+      animation:portal-chat-tile-pulse 1.35s ease-in-out infinite;
+    }
+    .dayops-screen-nav__card--portal-dm-unread .dayops-screen-nav__label,
+    .dayops-screen-nav__card--portal-ceo-dm-unread .dayops-screen-nav__label,
+    .dayops-screen-nav__card--portal-ceo-group-unread .dayops-screen-nav__label{
+      color:#b91c1c;
+      font-weight:800;
+    }
+    @keyframes portal-chat-tile-pulse{
+      0%,100%{box-shadow:0 0 0 2px rgba(220,38,38,.16),0 8px 20px rgba(220,38,38,.08)}
+      50%{box-shadow:0 0 0 3px rgba(220,38,38,.32),0 10px 26px rgba(220,38,38,.16)}
+    }
+    #adminNav button.admin-nav-item--chat-unread{
+      position:relative;
+    }
+    #adminNav button.admin-nav-item--chat-unread::after{
+      content:'';
+      position:absolute;top:8px;right:8px;width:9px;height:9px;border-radius:50%;
+      background:var(--danger);box-shadow:0 0 0 2px var(--surface,#fff);
+      animation:portal-alert-badge-pulse .85s ease 6;
+    }
     .admin-profile{display:flex;align-items:center;gap:8px;padding:4px 10px 4px 4px;border-radius:9999px;border:1px solid var(--btnSecBorder);cursor:pointer;background:var(--btnSecBg);transition:background .15s,border-color .15s}
     .admin-profile:hover,.admin-profile:focus-visible{background:#f1f5f9;border-color:#8eb4d0;outline:none}
     .admin-av{width:32px;height:32px;border-radius:8px;background:var(--blueSoft);color:var(--blue);font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center}
@@ -2695,6 +2722,12 @@
       box-shadow:0 12px 32px rgba(15,23,42,.25);pointer-events:none;opacity:0;transition:transform .25s ease,opacity .2s ease;max-width:min(90vw,400px);text-align:center
     }
     .opwf-toast.is-on{transform:translateX(-50%) translateY(0);opacity:1}
+    .admin-icon-btn--has-alerts .admin-badge:not(.is-empty){
+      display:inline-block;
+    }
+    .admin-icon-btn.admin-icon-btn--has-alerts{
+      animation:portal-alert-badge-pulse 1.1s ease 4;
+    }
     #alertBadge.portal-alert-badge--pulse,
     .admin-badge.portal-alert-badge--pulse{
       animation:portal-alert-badge-pulse .85s ease 3;

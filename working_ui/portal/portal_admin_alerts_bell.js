@@ -274,13 +274,47 @@
     return true;
   }
 
+  /** Hints from sync, or generic rows when unread flags are set but sender lookup failed. */
+  function resolveChatHints() {
+    var hints = global.__PORTAL_ADMIN_DM_UNREAD_HINTS__ || [];
+    if (hints.length) return hints;
+    var out = [];
+    var now = new Date().toISOString();
+    if (global.__PORTAL_ADMIN_DM_UNREAD) {
+      out.push({
+        kind: "staff",
+        displayName: "Staff or lead",
+        channel: "staff_lead",
+        created_at: now,
+      });
+    }
+    if (global.__PORTAL_ADMIN_CEO_DM_UNREAD) {
+      out.push({
+        kind: "ceo_dm",
+        displayName: "CEO / admin chat",
+        channel: "ceo_exec",
+        created_at: now,
+      });
+    }
+    if (global.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD) {
+      out.push({
+        kind: "ceo_group",
+        groupId: "__unread__",
+        displayName: "CEO group",
+        channel: "ceo_exec",
+        created_at: now,
+      });
+    }
+    return out;
+  }
+
   function syncChatBellAlerts(opts) {
     opts = opts || {};
     var list = listRef().filter(function (a) {
       return a.kind !== "chat";
     });
     global.__PORTAL_ADMIN_ACTIVITY_ALERTS__ = list;
-    var hints = global.__PORTAL_ADMIN_DM_UNREAD_HINTS__ || [];
+    var hints = resolveChatHints();
     hints.forEach(function (h, idx) {
       var item = activityFromChatHint(h, idx);
       if (item) pushActivityAlert(item, { silent: true });
@@ -317,6 +351,7 @@
   global.portalAdminBellBadgeCount = badgeCount;
   global.portalAdminActivityFromLateRequest = activityFromLateRequest;
   global.portalAdminSyncChatBellAlerts = syncChatBellAlerts;
+  global.portalAdminBellResolveChatHints = resolveChatHints;
   global.portalAdminPushActivityAlert = pushActivityAlert;
   global.portalAdminBellRemoveLateRequest = removeLateRequestAlert;
   global.portalAdminBellSyncLateFromServer = syncLateRequestsFromServer;

@@ -70,6 +70,7 @@
   }
 
   global.portalAdminShowInboundAlert = portalAdminShowInboundAlert;
+  global.portalAdminPulseAlertBadge = portalAdminPulseAlertBadge;
 
   function portalAdminOpenAlertsNotificationsSheet() {
     var sheet = document.getElementById("alertsNotificationsSheet");
