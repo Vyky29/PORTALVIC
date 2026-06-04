@@ -73,6 +73,17 @@
     });
   }
 
+  /** All status rows on a calendar day (any instructor) — shared Bespoke / merge groups. */
+  function statusRowsForDateAll(iso) {
+    const src =
+      typeof window !== "undefined" && window.SESSION_FEEDBACK_STATUS_PORTAL_SOURCE;
+    if (!src || !Array.isArray(src.rows)) return [];
+    const day = String(iso || "").trim().substring(0, 10);
+    return src.rows.filter(function (st) {
+      return String(st.date || "").trim().substring(0, 10) === day;
+    });
+  }
+
   function submittedRowsForStaffDate(iso, staffId) {
     const src =
       typeof window !== "undefined" && window.SESSION_FEEDBACK_PORTAL_SOURCE;
@@ -183,16 +194,26 @@
     });
   }
 
+  /** Co-instructors: any row in the merge group on this day (admin mergeGroupFeedbackComplete parity). */
   function mergeGroupResolved(iso, staffId, groupKey) {
     const g = String(groupKey || "").trim();
     if (!g) return false;
-    const status = statusRowsForStaffDate(iso, staffId);
-    const inGroup = status.filter(function (st) {
-      return String(st.feedbackMergeGroup || "").trim() === g;
+    return statusRowsForDateAll(iso).some(function (st) {
+      return (
+        String(st.feedbackMergeGroup || "").trim() === g &&
+        statusSlotResolved(iso, st)
+      );
     });
-    if (!inGroup.length) return false;
-    return inGroup.some(function (st) {
-      return statusSlotResolved(iso, st);
+  }
+
+  function feedbackUnitKeyResolved(iso, unitKey) {
+    const u = String(unitKey || "").trim();
+    if (!u) return false;
+    return statusRowsForDateAll(iso).some(function (st) {
+      return (
+        String(st.feedbackUnitKey || "").trim() === u &&
+        statusSlotResolved(iso, st)
+      );
     });
   }
 
@@ -311,23 +332,34 @@
     if (isDayCentreRosterSession(s) && clientKey && dayCentreClientResolved(iso, staffId, clientKey)) {
       return true;
     }
-    const status = statusRowsForStaffDate(iso, staffId);
-    const matching = status.filter(function (st) {
-      return staffOwnsStatusRow(staffId, st) && clientMatch(st, s, clientNotesById);
+    const owned = statusRowsForStaffDate(iso, staffId);
+    const allDay = statusRowsForDateAll(iso);
+    const matchingAll = allDay.filter(function (st) {
+      return clientMatch(st, s, clientNotesById);
+    });
+    const matchingOwned = owned.filter(function (st) {
+      return clientMatch(st, s, clientNotesById);
     });
     if (
-      matching.some(function (st) {
+      matchingAll.some(function (st) {
         return statusSlotResolved(iso, st);
       })
     ) {
       return true;
     }
-    const mg = matching
+    const mergeSources = matchingOwned.length ? matchingOwned : matchingAll;
+    const mg = mergeSources
       .map(function (st) {
         return String(st.feedbackMergeGroup || "").trim();
       })
       .find(Boolean);
     if (mg && mergeGroupResolved(iso, staffId, mg)) return true;
+    const unitKey = mergeSources
+      .map(function (st) {
+        return String(st.feedbackUnitKey || "").trim();
+      })
+      .find(Boolean);
+    if (unitKey && feedbackUnitKeyResolved(iso, unitKey)) return true;
     const sub = submittedRowsForStaffDate(iso, staffId);
     const fbHit = sub.find(function (r) {
       return clientMatch({ clientName: r.clientName }, s, clientNotesById);
@@ -397,12 +429,14 @@
     staffOwnsInstructor: staffOwnsInstructor,
     clientMatch: clientMatch,
     statusRowsForStaffDate: statusRowsForStaffDate,
+    statusRowsForDateAll: statusRowsForDateAll,
     submittedRowsForStaffDate: submittedRowsForStaffDate,
     submittedRowsForDateAll: submittedRowsForDateAll,
     statusSlotResolved: statusSlotResolved,
     anySubmittedCoversRosterSession: anySubmittedCoversRosterSession,
     dayCentreClientResolved: dayCentreClientResolved,
     mergeGroupResolved: mergeGroupResolved,
+    feedbackUnitKeyResolved: feedbackUnitKeyResolved,
     termSessionsForDate: termSessionsForDate,
     dayFeedbackCountsFromPortalExports: dayFeedbackCountsFromPortalExports,
     sessionComplete: sessionComplete,
