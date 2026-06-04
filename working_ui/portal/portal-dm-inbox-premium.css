@@ -1,0 +1,109 @@
+/* Shared premium internal-chat inbox (staff + lead dashboards). */
+#internalChatSheet.sheet--portal-chat-inbox .portal-dm-sheet-head{
+  grid-template-areas:"spacer brand close";
+  padding-top:max(10px, env(safe-area-inset-top, 0px));
+  padding-bottom:12px;
+  background:linear-gradient(180deg,#f4f9fc 0%,#fff 72%);
+  border-bottom:1px solid rgba(45,132,179,.12);
+  box-shadow:0 8px 24px rgba(45,132,179,.06);
+}
+#internalChatSheet.sheet--portal-chat-inbox .portal-dm-back-btn{
+  grid-area:spacer;
+}
+#internalChatSheet.sheet--portal-chat-inbox #internalChatInboxBrand.portal-dm-inbox-brand{
+  grid-area:brand;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  min-width:0;
+  padding:4px 0 2px;
+}
+#internalChatSheet.sheet--portal-chat-inbox #internalChatTitle{
+  display:none !important;
+}
+#internalChatSheet.sheet--portal-chat-thread #internalChatInboxBrand{
+  display:none !important;
+}
+#internalChatSheet .portal-dm-inbox-brand__logo-wrap{
+  width:72px;
+  height:72px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  background:#fff;
+  border:2px solid rgba(198,162,74,.45);
+  box-shadow:0 6px 20px rgba(45,132,179,.14);
+}
+#internalChatSheet .portal-dm-inbox-brand__logo{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+#internalChatSheet .portal-dm-inbox-brand__tagline{
+  margin:0;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:#7a94a8;
+  line-height:1.2;
+  text-align:center;
+}
+#internalChatSheet.sheet--portal-chat-inbox #internalChatOfficeComposeHost,
+#internalChatSheet.sheet--portal-chat-inbox #internalChatThreadWrap,
+#internalChatSheet.sheet--portal-chat-inbox .portal-dm-compose-bar,
+#internalChatSheet.sheet--portal-chat-inbox #internalChatMessages,
+#internalChatSheet.sheet--portal-chat-inbox #internalChatCallBar{
+  display:none !important;
+}
+#internalChatSheet.sheet--portal-chat-inbox .portal-dm-thread-main{
+  flex:1;
+  min-width:0;
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:10px;
+}
+#internalChatSheet.sheet--portal-chat-inbox .portal-dm-thread-peer{
+  flex:1;
+  min-width:0;
+  font-size:16px;
+  font-weight:700;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+#internalChatSheet.sheet--portal-chat-inbox .portal-dm-thread-meta{
+  flex-shrink:0;
+  font-size:12px;
+  color:#7a8f9f;
+}
+#internalChatSheet.sheet--portal-chat-inbox .portal-dm-thread-avatar,
+#internalChatSheet.sheet--portal-chat-inbox .portal-dm-staff-directory-avatar{
+  flex-shrink:0;
+  width:44px;
+  height:44px;
+  border-radius:50%;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  background:linear-gradient(145deg,#eaf5fb,#d4e8f4);
+  color:var(--blue);
+  font-size:14px;
+  font-weight:800;
+  border:1px solid rgba(45,132,179,.18);
+  letter-spacing:.02em;
+}
+#internalChatSheet.sheet--portal-chat-inbox .portal-dm-inbox-empty{
+  margin:0;
+  padding:20px 18px;
+  font-size:14px;
+  line-height:1.5;
+  color:#6b7f90;
+  overflow-wrap:break-word;
+}

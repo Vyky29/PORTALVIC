@@ -1907,22 +1907,6 @@
       box-shadow:0 1px 0 rgba(255,255,255,.8);
       overflow:hidden;
     }
-    #internalChatSheet.sheet--portal-chat-inbox .portal-dm-lead-inbox-watermark{
-      position:absolute;
-      inset:auto -12px -18px auto;
-      width:min(52vw, 200px);
-      opacity:.07;
-      pointer-events:none;
-      user-select:none;
-      transform:rotate(-8deg);
-      z-index:0;
-    }
-    #internalChatSheet.sheet--portal-chat-inbox .portal-dm-lead-inbox-watermark img{
-      display:block;
-      width:100%;
-      height:auto;
-      object-fit:contain;
-    }
     #internalChatSheet.sheet--portal-chat-inbox .portal-dm-lead-search-row,
     #internalChatSheet.sheet--portal-chat-inbox .portal-dm-inbox-nav{
       position:relative;

@@ -7,8 +7,11 @@
 
   var CALL_TAG = "[[portal-staff-call:";
   var CALL_TAG_END = "]]";
-  var JITSI_DOMAIN = "meet.jit.si";
-  var JITSI_API_SRC = "https://meet.jit.si/external_api.js";
+  /** meet.jit.si requires OAuth for moderators  unusable in embedded iframe. */
+  var JITSI_JAAS_DOMAIN = "8x8.vc";
+  var JITSI_JAAS_API_SRC = "https://8x8.vc/external_api.js";
+  var JITSI_FALLBACK_DOMAIN = "meet.ffmuc.net";
+  var JITSI_FALLBACK_API_SRC = "https://" + JITSI_FALLBACK_DOMAIN + "/external_api.js";
   var ROOM_PREFIX = "cs-portal-";
 
   var callState = {
@@ -16,6 +19,7 @@
     shell: null,
     host: null,
     loading: false,
+    apiSrc: "",
   };
 
   function esc(s) {
@@ -54,8 +58,15 @@
       if (!data.room && data.url) {
         try {
           var u = new URL(String(data.url));
-          data.room = decodeURIComponent(u.pathname.replace(/^\//, ""));
+          var pathRoom = decodeURIComponent(u.pathname.replace(/^\//, ""));
+          var slash = pathRoom.indexOf("/");
+          data.room = slash >= 0 ? pathRoom.slice(slash + 1) : pathRoom;
         } catch (_u) {}
+      }
+      if (data.room) {
+        var r = String(data.room);
+        var ix = r.indexOf("/");
+        if (ix >= 0) data.room = r.slice(ix + 1);
       }
       if (!data.room) return null;
       return data;
@@ -90,7 +101,7 @@
       v: 2,
       kind: kind === "meeting" ? "meeting" : kind,
       room: room,
-      url: "https://" + JITSI_DOMAIN + "/" + encodeURIComponent(room),
+      url: "https://" + JITSI_JAAS_DOMAIN + "/" + encodeURIComponent(room),
       title: String(opts.title || "").trim(),
       scheduledAt: opts.scheduledAt || null,
       createdAt: new Date().toISOString(),
@@ -203,11 +214,56 @@
     return shell;
   }
 
-  function loadJitsiApi() {
-    if (global.JitsiMeetExternalAPI) {
+  function stripRoomSlug(room) {
+    room = String(room || "").trim();
+    var ix = room.indexOf("/");
+    return ix >= 0 ? room.slice(ix + 1) : room;
+  }
+
+  async function resolveCallSession(room, opts) {
+    opts = opts || {};
+    room = stripRoomSlug(room);
+    var displayName = callerDisplayName();
+    var box = global.__PORTAL_SUPABASE__;
+    var client = box && box.client;
+
+    if (client && typeof client.functions.invoke === "function") {
+      try {
+        var res = await client.functions.invoke("portal-jitsi-jaas-token", {
+          body: {
+            room: room,
+            displayName: displayName,
+            moderator: opts.asModerator !== false,
+          },
+        });
+        var data = res && res.data;
+        if (data && data.ok && data.jwt && data.roomName) {
+          return {
+            domain: String(data.domain || JITSI_JAAS_DOMAIN),
+            roomName: String(data.roomName),
+            jwt: String(data.jwt),
+            apiSrc: "https://" + String(data.domain || JITSI_JAAS_DOMAIN) + "/external_api.js",
+            backend: "jaas",
+          };
+        }
+      } catch (_jaas) {}
+    }
+
+    return {
+      domain: JITSI_FALLBACK_DOMAIN,
+      roomName: room,
+      jwt: null,
+      apiSrc: JITSI_FALLBACK_API_SRC,
+      backend: "community",
+    };
+  }
+
+  function loadJitsiApi(apiSrc) {
+    apiSrc = String(apiSrc || JITSI_JAAS_API_SRC).trim();
+    if (global.JitsiMeetExternalAPI && callState.apiSrc === apiSrc) {
       return Promise.resolve(global.JitsiMeetExternalAPI);
     }
-    if (callState.loading) {
+    if (callState.loading && callState.apiSrc === apiSrc) {
       return new Promise(function (resolve, reject) {
         var tries = 0;
         var t = setInterval(function () {
@@ -222,9 +278,27 @@
         }, 125);
       });
     }
+
+    var prev = document.querySelector('script[data-portal-jitsi-api="1"]');
+    if (prev && callState.apiSrc && callState.apiSrc !== apiSrc) {
+      prev.remove();
+      try {
+        delete global.JitsiMeetExternalAPI;
+      } catch (_d) {
+        global.JitsiMeetExternalAPI = undefined;
+      }
+    }
+
+    callState.apiSrc = apiSrc;
     callState.loading = true;
     return new Promise(function (resolve, reject) {
       var existing = document.querySelector('script[data-portal-jitsi-api="1"]');
+      if (existing) {
+        if (existing.getAttribute("src") !== apiSrc) {
+          existing.remove();
+          existing = null;
+        }
+      }
       if (existing) {
         existing.addEventListener("load", function () {
           callState.loading = false;
@@ -234,10 +308,14 @@
           callState.loading = false;
           reject(new Error("Could not load call service"));
         });
+        if (global.JitsiMeetExternalAPI) {
+          callState.loading = false;
+          resolve(global.JitsiMeetExternalAPI);
+        }
         return;
       }
       var s = document.createElement("script");
-      s.src = JITSI_API_SRC;
+      s.src = apiSrc;
       s.async = true;
       s.dataset.portalJitsiApi = "1";
       s.onload = function () {
@@ -295,15 +373,16 @@
     loading = shell.querySelector("#portalInAppCallLoading");
 
     try {
-      var JitsiMeetExternalAPI = await loadJitsiApi();
+      var session = await resolveCallSession(room, { asModerator: opts.asModerator !== false });
+      var JitsiMeetExternalAPI = await loadJitsiApi(session.apiSrc);
       host = callState.host;
       if (!host) throw new Error("Call panel missing");
 
       host.innerHTML = "";
       var audioOnly = kind === "audio";
       var displayName = callerDisplayName();
-      var api = new JitsiMeetExternalAPI(JITSI_DOMAIN, {
-        roomName: room,
+      var apiOptions = {
+        roomName: session.roomName,
         parentNode: host,
         userInfo: { displayName: displayName },
         lang: "en",
@@ -345,7 +424,9 @@
             "tileview",
           ],
         },
-      });
+      };
+      if (session.jwt) apiOptions.jwt = session.jwt;
+      var api = new JitsiMeetExternalAPI(session.domain, apiOptions);
 
       callState.api = api;
 
@@ -393,6 +474,7 @@
       kind: data.kind,
       title: humanLabel(data.kind, data.title),
       meetingTitle: data.title,
+      asModerator: false,
     });
   }
 
@@ -514,6 +596,7 @@
         room: payload.room,
         kind: payload.kind,
         title: ctx.peerLabel ? "Call with " + ctx.peerLabel : humanLabel(kind, ""),
+        asModerator: true,
       });
       if (typeof global.portalRenderInternalChatSheet === "function") {
         await global.portalRenderInternalChatSheet();
@@ -693,11 +776,15 @@
   function syncCallBar(opts) {
     opts = opts || {};
     var inThread = !!opts.inThread;
+    var workerInboxOnly =
+      typeof global.portalInternalChatOfficeRestricted === "function" &&
+      global.portalInternalChatOfficeRestricted();
+    var showBar = inThread && !workerInboxOnly;
     var bar = document.getElementById("internalChatCallBar");
     if (!bar) return;
-    bar.hidden = !inThread;
-    bar.setAttribute("aria-hidden", inThread ? "false" : "true");
-    if (inThread) bindCallBar();
+    bar.hidden = !showBar;
+    bar.setAttribute("aria-hidden", showBar ? "false" : "true");
+    if (showBar) bindCallBar();
     var panel = document.getElementById("portalStaffChatMeetingPanel");
     if (panel && !inThread) panel.hidden = true;
   }

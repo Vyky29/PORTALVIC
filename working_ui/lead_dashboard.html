@@ -92,6 +92,7 @@
   <script src="/portal/portal_screenshot_guard.js?v=20260610-pwa-black-fix"></script>
   <title>clubSENsational Lead Dashboard</title>
   <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260604-lead-staff-dir" />
+  <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260620-inbox-premium" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260601-landscape-full" />
 </head>
 <body>
@@ -715,23 +716,8 @@
       <div class="sheet-handle"></div>
       <button type="button" class="portal-dm-btn portal-dm-btn--ghost portal-dm-back-btn" id="internalChatBackBtn" hidden aria-label="Back to chats">‹</button>
       <div class="portal-dm-inbox-brand" id="internalChatInboxBrand" aria-label="clubSENsational team chat">
-        <div class="portal-dm-inbox-brand__stage">
-          <span class="portal-dm-inbox-brand__orbit" aria-hidden="true">
-            <svg class="portal-dm-inbox-brand__orbit-svg" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
-              <g transform="translate(100,100)">
-                <g class="portal-dm-inbox-brand__orbit-layer">
-                  <circle cx="0" cy="-72" r="7" fill="var(--blue)"/>
-                  <circle cx="62.35" cy="-36" r="6" fill="#2d84b3"/>
-                  <circle cx="62.35" cy="36" r="6" fill="#4f8fca"/>
-                  <circle cx="0" cy="72" r="7" fill="#1d4f8f"/>
-                  <circle cx="-62.35" cy="36" r="6" fill="#7fb3dc"/>
-                  <circle cx="-62.35" cy="-36" r="6" fill="#123b70"/>
-                </g>
-              </g>
-            </svg>
-          </span>
-          <img class="portal-dm-inbox-brand__crest" src="/portal/F-02-1.png" alt="" width="36" height="36" decoding="async" referrerpolicy="no-referrer-when-downgrade" onerror="typeof portalBrandLogoOnError==='function'?portalBrandLogoOnError(this):(this.onerror=null,this.src='/portal/portal_crest.svg')" />
-          <img class="portal-dm-inbox-brand__wordmark" src="/FOOTERLOGO.png?v=20260602-footerlogo" alt="clubSENsational" width="128" height="44" decoding="async" referrerpolicy="no-referrer-when-downgrade" onerror="typeof portalBrandLogoProOnError==='function'?portalBrandLogoProOnError(this):(this.onerror=null,this.src='/portal/FOOTERLOGO.png?v=20260602-footerlogo')" />
+        <div class="portal-dm-inbox-brand__logo-wrap">
+          <img class="portal-dm-inbox-brand__logo" src="/portal/F-02-1.png" alt="" width="72" height="72" decoding="async" referrerpolicy="no-referrer-when-downgrade" onerror="typeof portalBrandLogoOnError==='function'?portalBrandLogoOnError(this):(this.onerror=null,this.src='/portal/portal_crest.svg')" />
         </div>
         <p class="portal-dm-inbox-brand__tagline">Secure team messaging</p>
       </div>
@@ -742,9 +728,6 @@
     <div class="sheet-body portal-dm-wrap portal-dm-sheet-body" style="min-width:0">
       <p id="internalChatTopErr" class="portal-dm-top-err muted" hidden></p>
       <div id="internalChatLeadInboxChrome" class="portal-dm-lead-inbox-chrome" hidden aria-hidden="true">
-        <div class="portal-dm-lead-inbox-watermark" aria-hidden="true">
-          <img src="/FOOTERLOGO.png?v=20260602-footerlogo" alt="" width="160" height="56" decoding="async" referrerpolicy="no-referrer-when-downgrade" onerror="typeof portalBrandLogoProOnError==='function'?portalBrandLogoProOnError(this):(this.onerror=null,this.src='/portal/FOOTERLOGO.png?v=20260602-footerlogo')" />
-        </div>
         <div class="portal-dm-lead-search-row">
           <label class="topbar-sr-only" for="internalChatLeadSearch">Search chats or staff</label>
           <span class="portal-dm-lead-search-icon" aria-hidden="true">⌕</span>
@@ -906,7 +889,7 @@
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260616-michelle-only"></script>
   <script src="/portal/portal_dm_voice.js?v=20260602-feedback-voice-fix"></script>
-  <script src="/portal/portal_staff_chat_calls.js?v=20260619-skip-prejoin"></script>
+  <script src="/portal/portal_staff_chat_calls.js?v=20260619-jaas-calls"></script>
   <script src="/portal/portal_lead_staff_chat_directory.js?v=20260619-lead-staff-rls"></script>
   <script>
     console.log("ABSENT FIX VERSION LOADED 20260425");
@@ -6324,7 +6307,7 @@
                 ? "No chats match your search. Check the team matches below or open the <strong>Staff</strong> tab."
                 : "No conversations yet. Search above to message a colleague, or open the <strong>Staff</strong> tab.")
               : "No conversations yet. When the office sends you a direct message, it appears here.");
-          listHost.innerHTML = "<p class=\"portal-dm-lead-empty\">"+emptyMsg+"</p>";
+          listHost.innerHTML = "<p class=\"portal-dm-inbox-empty\">"+emptyMsg+"</p>";
           if(portalStaffIsLeadUser() && window.portalLeadStaffChatDirectory){
             window.portalLeadStaffChatDirectory.syncInboxChrome({ isLead: true, inThread: false });
             if(window.portalLeadStaffChatDirectory.getInboxTab() === 'staff'){

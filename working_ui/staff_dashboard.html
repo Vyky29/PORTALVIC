@@ -92,6 +92,7 @@
   <script src="/portal/portal_screenshot_guard.js?v=20260610-pwa-black-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
   <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260604-footer-chat" />
+  <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260620-inbox-premium" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260601-landscape-full" />
 </head>
 <body>
@@ -713,6 +714,12 @@
     <div class="sheet-head portal-dm-sheet-head">
       <div class="sheet-handle"></div>
       <button type="button" class="portal-dm-btn portal-dm-btn--ghost portal-dm-back-btn" id="internalChatBackBtn" hidden aria-label="Back to chats">‹</button>
+      <div class="portal-dm-inbox-brand" id="internalChatInboxBrand" aria-label="clubSENsational team chat">
+        <div class="portal-dm-inbox-brand__logo-wrap">
+          <img class="portal-dm-inbox-brand__logo" src="/portal/F-02-1.png" alt="" width="72" height="72" decoding="async" referrerpolicy="no-referrer-when-downgrade" onerror="typeof portalBrandLogoOnError==='function'?portalBrandLogoOnError(this):(this.onerror=null,this.src='/portal/portal_crest.svg')" />
+        </div>
+        <p class="portal-dm-inbox-brand__tagline">Secure team messaging</p>
+      </div>
       <h3 id="internalChatTitle">Chats</h3>
       <button type="button" class="portal-dm-btn portal-dm-btn--ghost portal-dm-close-btn" id="internalChatCloseBtn" aria-label="Close chat">Close</button>
       <p id="internalChatSheetSub" hidden aria-hidden="true">Private messages with people you have a thread with.</p>
@@ -867,7 +874,7 @@
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260616-michelle-only"></script>
   <script src="/portal/portal_dm_voice.js?v=20260602-feedback-voice-fix"></script>
-  <script src="/portal/portal_staff_chat_calls.js?v=20260619-skip-prejoin"></script>
+  <script src="/portal/portal_staff_chat_calls.js?v=20260619-jaas-calls"></script>
   <script>
     console.log("ABSENT FIX VERSION LOADED 20260425");
     /** Real calendar weekday for “Today” (en-GB), aligned with staff_clients_machine.xlsx */
@@ -6190,6 +6197,7 @@
     function portalInternalChatOfficeRestricted(){
       return portalStaffActsAsWorkerMessenger();
     }
+    window.portalInternalChatOfficeRestricted = portalInternalChatOfficeRestricted;
     function portalSyncInternalChatMobileViewport(){
       var sh = document.getElementById('internalChatSheet');
       if(!sh){
@@ -6406,12 +6414,23 @@
       }
       return count;
     }
-    function portalStaffDmThreadListItemHtml(label, when, unreadCount){
+    function portalStaffDmInboxInitials(label){
+      var parts = String(label || '').trim().split(/\s+/).filter(Boolean);
+      if(!parts.length) return '?';
+      if(parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    function portalStaffDmThreadListItemHtml(label, when, unreadCount, opts){
+      opts = opts || {};
       unreadCount = Math.max(0, parseInt(unreadCount, 10) || 0);
       var badgeHtml = unreadCount > 0
         ? '<span class="portal-dm-thread-badge" aria-label="' + escapeHtml(unreadCount === 1 ? '1 unread message' : unreadCount + ' unread messages') + '">' + escapeHtml(unreadCount > 99 ? '99+' : String(unreadCount)) + '</span>'
         : '';
-      return '<span class="portal-dm-thread-main"><span class="portal-dm-thread-peer">' + escapeHtml(label) + '</span><span class="portal-dm-thread-meta">' + escapeHtml(when || 'Conversation') + '</span></span>' + badgeHtml;
+      var avatarHtml = '';
+      if(opts.withAvatar){
+        avatarHtml = '<span class="portal-dm-thread-avatar" aria-hidden="true">' + escapeHtml(portalStaffDmInboxInitials(label)) + '</span>';
+      }
+      return avatarHtml + '<span class="portal-dm-thread-main"><span class="portal-dm-thread-peer">' + escapeHtml(label) + '</span><span class="portal-dm-thread-meta">' + escapeHtml(when || 'Conversation') + '</span></span>' + badgeHtml;
     }
     function portalStaffDmSetUnreadCount(count){
       count = Math.max(0, parseInt(count, 10) || 0);
@@ -6865,9 +6884,10 @@
           });
         }
         if(!rows.length){
-          listHost.innerHTML = "<p class=\"alerts-sheet-placeholder\" style=\"min-width:0;overflow-wrap:break-word\">"+(portalInternalChatOfficeRestricted()
-            ? "No conversations yet. When the office sends you a message, it appears here. If you expected a thread with the office, check that an active admin or CEO exists in staff_profiles."
-            : "No conversations yet. When the office sends you a direct message, it appears here.")+"</p>";
+          var staffEmptyMsg = portalInternalChatOfficeRestricted()
+            ? "No messages yet. When the office contacts you, the conversation appears here. You cannot start new chats from this inbox."
+            : "No conversations yet. When someone messages you, it appears here.";
+          listHost.innerHTML = "<p class=\"portal-dm-inbox-empty\">"+staffEmptyMsg+"</p>";
           return;
         }
         var rowIds = rows.map(function(r){ return String(r.id || ""); }).filter(Boolean);
@@ -6906,7 +6926,7 @@
           btn.className = "portal-dm-thread-item" + (unreadCount > 0 ? " portal-dm-thread-item--unread" : "");
           btn.setAttribute("data-dm-thread", id);
           if(unreadCount > 0) btn.setAttribute("data-dm-unread-count", String(unreadCount));
-          btn.innerHTML = portalStaffDmThreadListItemHtml(label, when, unreadCount);
+          btn.innerHTML = portalStaffDmThreadListItemHtml(label, when, unreadCount, { withAvatar: true });
           btn.addEventListener("click", function(){
             window.__PORTAL_INTERNAL_CHAT_UI.threadId = id;
             void window.portalRenderInternalChatSheet();
