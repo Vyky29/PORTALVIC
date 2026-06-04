@@ -25,7 +25,7 @@ EXEMPT = [
     ("Victor", "victor@clubsensational.org", "121212"),
     ("Raul", "raul@clubsensational.org", "121212"),
     ("Javi CEO", "javier@clubsensational.org", "121212"),
-    ("Sevitha", "sevitha802@gmail.com", "121212"),
+    ("Sevitha", "sevitha@clubsensational.org", "121212"),
     ("Michelle", "michelle@youtimecounselling.com", "555555"),
     ("Berta", "b.traperocasado@gmail.com", "121212"),
     ("John", "johnnyosti37@gmail.com", "121212"),

@@ -8,6 +8,10 @@
   var FALLBACK = "/portal/portal_crest.svg";
   global.PORTAL_BRAND_LOGO_SRC = LOGO;
   global.PORTAL_BRAND_LOGO_FALLBACK = FALLBACK;
+  /** Outbound mail (Resend/SMTP later). Not portal logins. */
+  global.PORTAL_MAIL_CONTACT_EMAIL = "info@clubsensational.org";
+  global.PORTAL_MAIL_FROM_EMAIL = "admin@clubsensational.org";
+  global.PORTAL_MAIL_SAFEGUARDING_EMAIL = "management@clubsensational.org";
 
   global.portalBrandApplyLogoImg = function (img) {
     if (!img || !img.tagName) return;

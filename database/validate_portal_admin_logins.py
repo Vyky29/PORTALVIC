@@ -27,6 +27,8 @@ DEFAULT_EMAILS = [
     "info@clubsensational.org",
 ]
 
+# info@ signs in via alias → sevitha@ Auth (same password as sevitha@).
+
 
 def sign_in(base: str, anon: str, email: str, password: str) -> tuple[bool, str]:
     url = f"{base.rstrip('/')}/auth/v1/token?grant_type=password"

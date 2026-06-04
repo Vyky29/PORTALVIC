@@ -1,6 +1,6 @@
 {
-  "version": 1,
-  "notes": "Optional fetch if host allows .json. Prefer staff_login_map.js in WordPress Media. Keep in sync with staff_login_map.js.",
+  "version": 2,
+  "notes": "Executives use @clubsensational.org. info@ logs in as Sevitha (alias). admin@ is outbound mail only.",
   "staff_username_to_email": {
     "Sandra": "stf001@staff.import.pending",
     "Roberto": "stf002@staff.import.pending",
@@ -15,13 +15,18 @@
     "Aurora": "stf011@staff.import.pending",
     "Michelle": "michelle@youtimecounselling.com",
     "Berta": "b.traperocasado@gmail.com",
-    "Victor": "stf013@staff.import.pending",
+    "Victor": "victor@clubsensational.org",
     "Carlos": "stf014@staff.import.pending",
     "Alex": "stf015@staff.import.pending",
-    "Javi": "stf017@staff.import.pending",
-    "Raul": "stf018@staff.import.pending",
-    "Sevitha": "stf019@staff.import.pending",
-    "Demo": "stf020@staff.import.pending",
+    "Simon": "stf016@staff.import.pending",
+    "Luliya": "stf021@staff.import.pending",
+    "Lulia": "stf021@staff.import.pending",
+    "Andres": "stf022@staff.import.pending",
+    "Javi": "javier@clubsensational.org",
+    "Raul": "raul@clubsensational.org",
+    "Sevitha": "sevitha@clubsensational.org",
+    "Info": "info@clubsensational.org",
+    "Teflon": "stf020@staff.import.pending",
     "demo": "stf020@staff.import.pending"
   }
 }

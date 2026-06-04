@@ -1,8 +1,67 @@
 /**
  * Username → email for Supabase signInWithPassword (resolveDemoEmail for auth-handler).
  *
- * CEOs / admin use @clubsensational.org only (no stf013/017/018/019 placeholders).
+ * Executives: victor@, javier@, raul@, sevitha@ (Auth users).
+ * info@ → login alias for Sevitha (same Auth as sevitha@).
+ * admin@ → system From address only (no portal login).
  */
+
+/** Canonical Auth emails for CEO + admin (one Supabase user each). */
+export const PORTAL_EXECUTIVE_AUTH_EMAILS = [
+  "victor@clubsensational.org",
+  "javier@clubsensational.org",
+  "raul@clubsensational.org",
+  "sevitha@clubsensational.org",
+];
+
+/** Typed login / typo → Auth email (no second Auth user). */
+export const PORTAL_CORPORATE_LOGIN_EMAIL_ALIASES = {
+  "info@clubsensational.org": "sevitha@clubsensational.org",
+  "javi@clubsensational.org": "javier@clubsensational.org",
+  "javier@clbusensational.org": "javier@clubsensational.org",
+};
+
+/** Public contact + outbound mail (not separate Auth logins). */
+export const PORTAL_MAIL_CONTACT_EMAIL = "info@clubsensational.org";
+export const PORTAL_MAIL_FROM_EMAIL = "admin@clubsensational.org";
+export const PORTAL_MAIL_SAFEGUARDING_EMAIL = "management@clubsensational.org";
+
+/** Do not use for sign-in (reserved for SMTP / comms). */
+export const PORTAL_MAILBOX_ONLY_EMAILS = new Set([
+  PORTAL_MAIL_FROM_EMAIL.toLowerCase(),
+  PORTAL_MAIL_SAFEGUARDING_EMAIL.toLowerCase(),
+]);
+
+/** Retired import placeholders + personal emails for executives. */
+export const PORTAL_RETIRED_PLACEHOLDER_EMAILS = new Set([
+  "stf013@staff.import.pending",
+  "stf017@staff.import.pending",
+  "stf018@staff.import.pending",
+  "stf019@staff.import.pending",
+]);
+
+export const PORTAL_RETIRED_LOGIN_EMAILS = new Set([
+  "sevitha802@gmail.com",
+]);
+
+/**
+ * @param {string} rawEmail
+ * @returns {string}
+ */
+export function resolveCorporateAuthEmail(rawEmail) {
+  const lower = String(rawEmail || "").trim().toLowerCase();
+  if (!lower) return lower;
+  return PORTAL_CORPORATE_LOGIN_EMAIL_ALIASES[lower] || lower;
+}
+
+/** First-name login for executives (before Javier→stf010 swimming collision). */
+export const PORTAL_EXECUTIVE_LOGIN_NAMES = {
+  victor: "victor@clubsensational.org",
+  javi: "javier@clubsensational.org",
+  raul: "raul@clubsensational.org",
+  sevitha: "sevitha@clubsensational.org",
+  info: "sevitha@clubsensational.org",
+};
 
 /** @type {Record<string, string>} */
 export const STAFF_USERNAME_TO_EMAIL = {
@@ -17,10 +76,16 @@ export const STAFF_USERNAME_TO_EMAIL = {
   Godsway: "stf009@staff.import.pending",
   Javier: "stf010@staff.import.pending",
   Aurora: "stf011@staff.import.pending",
+  Michelle: "michelle@youtimecounselling.com",
+  "michelle@youtimecounselling.com": "michelle@youtimecounselling.com",
   Berta: "b.traperocasado@gmail.com",
   Victor: "victor@clubsensational.org",
   Carlos: "stf014@staff.import.pending",
   Alex: "stf015@staff.import.pending",
+  Simon: "stf016@staff.import.pending",
+  Luliya: "stf021@staff.import.pending",
+  Lulia: "stf021@staff.import.pending",
+  Andres: "stf022@staff.import.pending",
   Javi: "javier@clubsensational.org",
   Raul: "raul@clubsensational.org",
   Sevitha: "sevitha@clubsensational.org",
@@ -29,10 +94,10 @@ export const STAFF_USERNAME_TO_EMAIL = {
   "victor@clubsensational.org": "victor@clubsensational.org",
   "raul@clubsensational.org": "raul@clubsensational.org",
   "javier@clubsensational.org": "javier@clubsensational.org",
-  "javi@clubsensational.org": "javi@clubsensational.org",
+  "javi@clubsensational.org": "javier@clubsensational.org",
   "javier@clbusensational.org": "javier@clubsensational.org",
   "sevitha@clubsensational.org": "sevitha@clubsensational.org",
-  "info@clubsensational.org": "info@clubsensational.org",
+  "info@clubsensational.org": "sevitha@clubsensational.org",
 };
 
 /** Corporate login emails → staff key (redirects / role overrides). */
@@ -45,14 +110,6 @@ export const PORTAL_CORPORATE_AUTH_EMAIL_TO_STAFF_KEY = {
   "sevitha@clubsensational.org": "sevitha",
   "info@clubsensational.org": "sevitha",
 };
-
-/** Placeholder emails retired for these four — do not use for sign-in. */
-export const PORTAL_RETIRED_PLACEHOLDER_EMAILS = new Set([
-  "stf013@staff.import.pending",
-  "stf017@staff.import.pending",
-  "stf018@staff.import.pending",
-  "stf019@staff.import.pending",
-]);
 
 function normalizeMatchKey(value) {
   return String(value || "")
@@ -70,7 +127,7 @@ function rebuildNormalizedLookup() {
   STAFF_NORMALIZED_NAME_TO_EMAIL = {};
   for (const [name, email] of Object.entries(STAFF_USERNAME_TO_EMAIL)) {
     const k = normalizeMatchKey(name);
-    if (k) STAFF_NORMALIZED_NAME_TO_EMAIL[k] = email;
+    if (k) STAFF_NORMALIZED_NAME_TO_EMAIL[k] = resolveCorporateAuthEmail(email);
   }
 }
 
@@ -82,16 +139,39 @@ rebuildNormalizedLookup();
  *
  * @param {Record<string, string> | null | undefined} extra
  */
+const PORTAL_LOGIN_MAP_PROTECTED_KEYS = new Set([
+  "Victor",
+  "Javi",
+  "Raul",
+  "Sevitha",
+  "Info",
+  "victor@clubsensational.org",
+  "javier@clubsensational.org",
+  "raul@clubsensational.org",
+  "sevitha@clubsensational.org",
+  "info@clubsensational.org",
+]);
+
 export function mergeStaffLoginEmailMap(extra) {
   if (!extra || typeof extra !== "object") return;
-  Object.assign(STAFF_USERNAME_TO_EMAIL, extra);
+  const incoming =
+    extra.staff_username_to_email && typeof extra.staff_username_to_email === "object"
+      ? extra.staff_username_to_email
+      : extra;
+  for (const [key, email] of Object.entries(incoming)) {
+    if (PORTAL_LOGIN_MAP_PROTECTED_KEYS.has(key)) {
+      const cur = STAFF_USERNAME_TO_EMAIL[key];
+      if (cur && String(cur).toLowerCase().endsWith("@clubsensational.org")) continue;
+    }
+    STAFF_USERNAME_TO_EMAIL[key] = email;
+  }
   rebuildNormalizedLookup();
 }
 
 /** Shown when the name field does not match any staff in STAFF_USERNAME_TO_EMAIL. */
 export const PORTAL_LOGIN_UNKNOWN_NAME_HELP =
-  "Name or email not recognised. Use your first name as on the timetable, or the email address on your Portal account. " +
-  "If you are unsure, contact your line manager or the office.";
+  "Name or email not recognised. Use your first name as on the timetable, or your @clubsensational.org email. " +
+  "Executives: Victor, Javi, Raul, Sevitha — or info@ for admin. Contact the office if unsure.";
 
 function isPlausibleLoginEmail(value) {
   const s = String(value || "").trim();
@@ -106,11 +186,20 @@ export function resolveDemoEmail(rawUsername) {
   const lower = trimmed.toLowerCase();
   if (isPlausibleLoginEmail(trimmed)) {
     if (PORTAL_RETIRED_PLACEHOLDER_EMAILS.has(lower)) return null;
-    if (STAFF_USERNAME_TO_EMAIL[trimmed]) return STAFF_USERNAME_TO_EMAIL[trimmed];
-    if (STAFF_USERNAME_TO_EMAIL[lower]) return STAFF_USERNAME_TO_EMAIL[lower];
-    if (PORTAL_CORPORATE_AUTH_EMAIL_TO_STAFF_KEY[lower]) return lower;
+    if (PORTAL_RETIRED_LOGIN_EMAILS.has(lower)) return null;
+    if (PORTAL_MAILBOX_ONLY_EMAILS.has(lower)) return null;
+
+    if (STAFF_USERNAME_TO_EMAIL[trimmed]) {
+      return resolveCorporateAuthEmail(STAFF_USERNAME_TO_EMAIL[trimmed]);
+    }
+    if (STAFF_USERNAME_TO_EMAIL[lower]) {
+      return resolveCorporateAuthEmail(STAFF_USERNAME_TO_EMAIL[lower]);
+    }
+    if (PORTAL_CORPORATE_AUTH_EMAIL_TO_STAFF_KEY[lower]) {
+      return resolveCorporateAuthEmail(lower);
+    }
     if (lower.endsWith("@clubsensational.org") || lower.endsWith("@clbusensational.org")) {
-      return lower;
+      return resolveCorporateAuthEmail(lower);
     }
     return lower;
   }
@@ -122,12 +211,20 @@ export function resolveDemoEmail(rawUsername) {
     }
   }
 
-  if (STAFF_USERNAME_TO_EMAIL[trimmed]) return STAFF_USERNAME_TO_EMAIL[trimmed];
+  if (STAFF_USERNAME_TO_EMAIL[trimmed]) {
+    return resolveCorporateAuthEmail(STAFF_USERNAME_TO_EMAIL[trimmed]);
+  }
 
   const norm = normalizeMatchKey(trimmed);
   if (!norm) return null;
 
-  if (STAFF_NORMALIZED_NAME_TO_EMAIL[norm]) return STAFF_NORMALIZED_NAME_TO_EMAIL[norm];
+  if (PORTAL_EXECUTIVE_LOGIN_NAMES[norm]) {
+    return PORTAL_EXECUTIVE_LOGIN_NAMES[norm];
+  }
+
+  if (STAFF_NORMALIZED_NAME_TO_EMAIL[norm]) {
+    return resolveCorporateAuthEmail(STAFF_NORMALIZED_NAME_TO_EMAIL[norm]);
+  }
 
   const first = norm.split(/\s+/)[0] || "";
   if (first && STAFF_NORMALIZED_NAME_TO_EMAIL[first]) {
@@ -137,7 +234,9 @@ export function resolveDemoEmail(rawUsername) {
   for (const [name, email] of Object.entries(STAFF_USERNAME_TO_EMAIL)) {
     const nk = normalizeMatchKey(name);
     if (!nk) continue;
-    if (norm === nk || norm.startsWith(nk + " ")) return email;
+    if (norm === nk || norm.startsWith(nk + " ")) {
+      return resolveCorporateAuthEmail(email);
+    }
   }
 
   return null;
@@ -194,9 +293,7 @@ export function portalCanonicalStaffRosterKey(value) {
  * @returns {string}
  */
 export function resolveStaffKeyFromAuthEmail(authEmail) {
-  const e = String(authEmail || "")
-    .trim()
-    .toLowerCase();
+  const e = resolveCorporateAuthEmail(authEmail);
   if (!e) return "";
   if (PORTAL_CORPORATE_AUTH_EMAIL_TO_STAFF_KEY[e]) {
     return portalCanonicalStaffRosterKey(PORTAL_CORPORATE_AUTH_EMAIL_TO_STAFF_KEY[e]);
@@ -206,7 +303,7 @@ export function resolveStaffKeyFromAuthEmail(authEmail) {
     return PORTAL_STAFF_CODE_TO_ROSTER_KEY[local];
   }
   for (const [name, email] of Object.entries(STAFF_USERNAME_TO_EMAIL)) {
-    if (String(email).trim().toLowerCase() === e) {
+    if (resolveCorporateAuthEmail(email) === e) {
       return portalCanonicalStaffRosterKey(name);
     }
   }
