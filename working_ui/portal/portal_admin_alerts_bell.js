@@ -259,7 +259,15 @@
     });
     if (list.length > 60) list.length = 60;
     sortNewestFirst();
-    if (!opts.silent) playSound();
+    if (!opts.silent) {
+      playSound();
+      if (typeof global.portalAdminShowInboundAlert === "function") {
+        global.portalAdminShowInboundAlert({
+          title: item.title,
+          sub: item.sub,
+        });
+      }
+    }
     if (typeof global.__portalAdminRenderAlerts === "function") {
       global.__portalAdminRenderAlerts();
     }

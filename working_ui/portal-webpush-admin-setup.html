@@ -275,11 +275,18 @@
         <tr><th>Table</th><td><code>portal_staff_dm_messages</code></td></tr>
       </table>
 
+      <h3>Webhook E — grupo CEO (todos los directores)</h3>
+      <table>
+        <tr><th>Name</th><td><code>portal-push-admin-ceo-group</code></td></tr>
+        <tr><th>Table</th><td><code>portal_ceo_group_message</code></td></tr>
+      </table>
+
       <p class="checklist">
         <label><input type="checkbox" /> portal-push-admin-late</label>
         <label><input type="checkbox" /> portal-push-admin-cancellation</label>
         <label><input type="checkbox" /> portal-push-admin-incident</label>
         <label><input type="checkbox" /> portal-push-admin-chat</label>
+        <label><input type="checkbox" /> portal-push-admin-ceo-group</label>
       </p>
     </section>
 
@@ -287,7 +294,7 @@
       <h2><span class="num">4</span> Probar</h2>
       <ol>
         <li>Dashboard → <strong>Edge Functions → portal-push-dispatch-admin-alert → Logs</strong>.</li>
-        <li>Genera un evento real o de prueba (p. ej. late submission <code>pending</code>, o mensaje DM de un staff que no sea admin/ceo).</li>
+        <li>Genera un evento real o de prueba (p. ej. late submission <code>pending</code>, mensaje en el <strong>grupo CEO</strong>, o DM interno).</li>
         <li>En logs debe aparecer actividad y respuesta <strong>200</strong>. Si ves <strong>403</strong>, el header del webhook no coincide con el secret.</li>
       </ol>
       <p class="checklist">
@@ -312,8 +319,8 @@
       <ul>
         <li><strong>Staff</strong> sigue usando <code>PORTAL_PUSH_OPEN_URL</code> → staff_dashboard.</li>
         <li><strong>Admin/CEO</strong> usa <code>PORTAL_PUSH_ADMIN_OPEN_URL</code> → admin_dashboard (ya configurado).</li>
-        <li>Los 4 webhooks llaman a la <strong>misma</strong> URL de Edge Function.</li>
-        <li>Chat: no notifica si quien escribe ya es admin/ceo.</li>
+        <li>Los <strong>5</strong> webhooks llaman a la <strong>misma</strong> URL de Edge Function.</li>
+        <li>Chat: notifica a <strong>todos</strong> los admin/ceo excepto quien escribió (incluye mensajes de directores en DM o grupo CEO).</li>
       </ul>
       <p>Documentación larga en el repo: <code>database/PORTAL-WEB-PUSH-SETUP-GUIDE.md</code></p>
     </section>

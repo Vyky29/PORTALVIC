@@ -2695,6 +2695,14 @@
       box-shadow:0 12px 32px rgba(15,23,42,.25);pointer-events:none;opacity:0;transition:transform .25s ease,opacity .2s ease;max-width:min(90vw,400px);text-align:center
     }
     .opwf-toast.is-on{transform:translateX(-50%) translateY(0);opacity:1}
+    #alertBadge.portal-alert-badge--pulse,
+    .admin-badge.portal-alert-badge--pulse{
+      animation:portal-alert-badge-pulse .85s ease 3;
+    }
+    @keyframes portal-alert-badge-pulse{
+      0%,100%{transform:scale(1)}
+      50%{transform:scale(1.2)}
+    }
     .quick-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;align-items:center;min-width:0}
     .list-row{font-size:12px;color:var(--muted)}
 

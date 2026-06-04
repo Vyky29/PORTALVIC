@@ -274,7 +274,7 @@ Respeta `audience_scope` y `ends_at` del anuncio.
 
 ### 6.3 Webhooks — alertas admin/CEO (misma función, cuatro tablas)
 
-Tras aplicar la migración `20260617120000_portal_webpush_admin_alert_sent.sql` y desplegar `portal-push-dispatch-admin-alert`, crea **cuatro** webhooks (o uno por tabla) con la **misma URL** y el **mismo** header `x-portal-webhook-secret`.
+Tras aplicar la migración `20260617120000_portal_webpush_admin_alert_sent.sql` y desplegar `portal-push-dispatch-admin-alert`, crea **cinco** webhooks (o uno por tabla) con la **misma URL** y el **mismo** header `x-portal-webhook-secret`.
 
 | Campo | Valor |
 |---|---|
@@ -288,12 +288,13 @@ Tras aplicar la migración `20260617120000_portal_webpush_admin_alert_sent.sql` 
 | `portal-push-admin-cancellation` | `cancellation_reports` |
 | `portal-push-admin-incident` | `incident_reports` |
 | `portal-push-admin-chat` | `portal_staff_dm_messages` |
+| `portal-push-admin-ceo-group` | `portal_ceo_group_message` |
 
 **Destinatarios:** usuarios con `staff_profiles.app_role` en `admin` o `ceo` que hayan activado notificaciones en `admin_dashboard.html` (misma tabla `portal_push_subscriptions`).
 
 **Al pulsar la notificación:** abre `admin_dashboard.html?portalOpen=alerts` (hoja de notificaciones / campana).
 
-**Chat:** no envía push si el autor del mensaje ya es admin/ceo (respuesta interna).
+**Chat (DM y grupo CEO):** push a **todos** los admin/ceo **excepto quien escribió** (estilo grupo: dos directores hablan y el tercero recibe aviso; el autor no recibe push de su propio mensaje). Incluye mensajes escritos por admin/ceo, no solo staff.
 
 **Secret recomendado:** `PORTAL_PUSH_ADMIN_OPEN_URL` = `https://portalvic.vercel.app/admin_dashboard.html`. **No** sustituyas `PORTAL_PUSH_OPEN_URL` del staff por la URL admin.
 

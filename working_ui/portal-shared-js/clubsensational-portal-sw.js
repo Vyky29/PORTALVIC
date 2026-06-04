@@ -1,6 +1,5 @@
 /* clubSENsational portal — minimal service worker for installability + Web Push.
- * Register from staff/lead dashboard after login. Push payload: JSON { title, body, url?, portalOpen? }
- * Server send: Supabase Edge Function or worker with VAPID + subscriptions table (not in this file).
+ * Register from staff/lead/admin dashboard after login. Push payload: JSON { title, body, url?, portalOpen?, tag?, requireInteraction? }
  */
 self.addEventListener('install', function (event) {
   self.skipWaiting();
@@ -22,11 +21,36 @@ function portalAppendQueryParam(absUrl, key, value) {
   }
 }
 
+function portalPushIconUrl() {
+  try {
+    return new URL('portal/F-02-1.png', self.registration.scope).href;
+  } catch (e) {
+    return 'portal/F-02-1.png';
+  }
+}
+
+function portalNotifyOpenClients(title, body, portalOpen) {
+  return self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clientList) {
+    clientList.forEach(function (client) {
+      try {
+        client.postMessage({
+          type: 'portal-push-received',
+          title: title,
+          body: body,
+          portalOpen: portalOpen,
+        });
+      } catch (e) {}
+    });
+  });
+}
+
 self.addEventListener('push', function (event) {
   var title = 'clubSENsational';
   var body = 'Schedule update';
   var url = '/';
   var portalOpen = 'alerts';
+  var tag = 'portal-' + Date.now();
+  var requireInteraction = false;
   try {
     if (event.data) {
       var j = event.data.json();
@@ -34,6 +58,8 @@ self.addEventListener('push', function (event) {
       if (j && j.body) body = String(j.body);
       if (j && j.url) url = String(j.url);
       if (j && j.portalOpen) portalOpen = String(j.portalOpen);
+      if (j && j.tag) tag = String(j.tag);
+      if (j && j.requireInteraction) requireInteraction = true;
     }
   } catch (e) {
     try {
@@ -41,16 +67,23 @@ self.addEventListener('push', function (event) {
       if (t) body = t.slice(0, 200);
     } catch (e2) {}
   }
-  var icon = 'portal/F-02-1.png';
+  if (portalOpen === 'alerts') {
+    requireInteraction = true;
+  }
+  var icon = portalPushIconUrl();
   event.waitUntil(
-    self.registration.showNotification(title, {
-      body: body,
-      icon: icon,
-      badge: icon,
-      tag: 'clubsensational-roster',
-      renotify: true,
-      data: { url: url, portalOpen: portalOpen },
-    })
+    Promise.all([
+      self.registration.showNotification(title, {
+        body: body,
+        icon: icon,
+        badge: icon,
+        tag: tag,
+        renotify: true,
+        requireInteraction: requireInteraction,
+        data: { url: url, portalOpen: portalOpen },
+      }),
+      portalNotifyOpenClients(title, body, portalOpen),
+    ])
   );
 });
 
@@ -64,7 +97,10 @@ self.addEventListener('notificationclick', function (event) {
       for (var i = 0; i < list.length; i++) {
         if (list[i] && 'focus' in list[i]) {
           try {
-            list[i].postMessage({ type: 'portal-notification-click', portalOpen: openAlerts ? 'alerts' : '' });
+            list[i].postMessage({
+              type: 'portal-notification-click',
+              portalOpen: openAlerts ? 'alerts' : '',
+            });
           } catch (e) {}
           return list[i].focus();
         }

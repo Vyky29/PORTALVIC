@@ -23,6 +23,54 @@
     return outputArray;
   }
 
+  var portalInboundAlertLastAt = 0;
+
+  function portalAdminToastFallback(msg, ms) {
+    var m = String(msg || "").trim();
+    if (!m) return;
+    if (typeof global.portalAdminToast === "function") {
+      global.portalAdminToast(m);
+      return;
+    }
+    var t = document.getElementById("opwfToast");
+    if (!t) return;
+    t.textContent = m;
+    t.classList.add("is-on");
+    clearTimeout(portalAdminToastFallback._tm);
+    portalAdminToastFallback._tm = setTimeout(function () {
+      t.classList.remove("is-on");
+    }, ms || 4200);
+  }
+
+  function portalAdminPulseAlertBadge() {
+    var bd = document.getElementById("alertBadge");
+    if (!bd) return;
+    bd.classList.add("portal-alert-badge--pulse");
+    clearTimeout(portalAdminPulseAlertBadge._tm);
+    portalAdminPulseAlertBadge._tm = setTimeout(function () {
+      bd.classList.remove("portal-alert-badge--pulse");
+    }, 3600);
+  }
+
+  function portalAdminShowInboundAlert(payload) {
+    payload = payload || {};
+    var now = Date.now();
+    if (now - portalInboundAlertLastAt < 1400) return;
+    portalInboundAlertLastAt = now;
+    var title = String(payload.title || "New alert").trim();
+    var body = String(payload.body || payload.sub || "").trim();
+    var msg = body ? title + " — " + body : title;
+    portalAdminToastFallback(msg, 4200);
+    portalAdminPulseAlertBadge();
+    if (typeof global.__portalAdminRenderAlerts === "function") {
+      try {
+        global.__portalAdminRenderAlerts();
+      } catch (_) {}
+    }
+  }
+
+  global.portalAdminShowInboundAlert = portalAdminShowInboundAlert;
+
   function portalAdminOpenAlertsNotificationsSheet() {
     var sheet = document.getElementById("alertsNotificationsSheet");
     var backdrop = document.getElementById("portalAdminSheetBackdrop");
@@ -363,7 +411,15 @@
       navigator.serviceWorker.addEventListener("message", function (ev) {
         try {
           var d = ev.data;
-          if (!d || d.type !== "portal-notification-click") return;
+          if (!d || !d.type) return;
+          if (d.type === "portal-push-received") {
+            portalAdminShowInboundAlert({
+              title: d.title,
+              body: d.body,
+            });
+            return;
+          }
+          if (d.type !== "portal-notification-click") return;
           if (d.portalOpen === "alerts") {
             portalAdminOpenAlertsNotificationsSheet();
           }

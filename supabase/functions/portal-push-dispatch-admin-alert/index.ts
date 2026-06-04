@@ -18,6 +18,7 @@
 //   INSERT → cancellation_reports
 //   INSERT → incident_reports
 //   INSERT → portal_staff_dm_messages
+//   INSERT → portal_ceo_group_message
 //   URL: https://<ref>.supabase.co/functions/v1/portal-push-dispatch-admin-alert
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
@@ -40,9 +41,14 @@ const ALLOWED_TABLES = new Set([
   "cancellation_reports",
   "incident_reports",
   "portal_staff_dm_messages",
+  "portal_ceo_group_message",
 ]);
 
-const ADMIN_CEO_ROLES = new Set(["admin", "ceo"]);
+/** Chat tables: notify every admin/ceo except the author (group-style). */
+const CHAT_TABLES = new Set([
+  "portal_staff_dm_messages",
+  "portal_ceo_group_message",
+]);
 
 function lateTypeLabel(t: string): string {
   const x = String(t || "").toLowerCase();
@@ -54,8 +60,10 @@ function lateTypeLabel(t: string): string {
 function buildAlert(
   table: string,
   record: Record<string, unknown>,
-  authorName?: string,
+  opts?: { authorName?: string; groupTitle?: string },
 ): { title: string; body: string; sourceId: string } | null {
+  const authorName = opts?.authorName;
+  const groupTitle = opts?.groupTitle;
   const id = String(record.id ?? "").trim();
   if (!id) return null;
 
@@ -116,6 +124,21 @@ function buildAlert(
     };
   }
 
+  if (table === "portal_ceo_group_message") {
+    const nm = String(authorName ?? "Someone").trim() || "Someone";
+    const gt = String(groupTitle ?? "CEO chat").trim() || "CEO chat";
+    const msgType = String(record.message_type ?? "text").toLowerCase();
+    const hasAudio = !!String(record.audio_storage_path ?? "").trim();
+    let preview = clampPushBody(String(record.body ?? ""), 120);
+    if (msgType === "audio" || hasAudio) preview = "Voice message";
+    if (!preview) preview = "New message in group";
+    return {
+      sourceId: id,
+      title: `Chat · ${gt}`,
+      body: clampPushBody(`${nm}: ${preview}`),
+    };
+  }
+
   return null;
 }
 
@@ -131,7 +154,10 @@ Deno.serve(async (req) => {
   }
 
   const forbidden = verifyPortalPushWebhook(req);
-  if (forbidden) return forbidden;
+  if (forbidden) {
+    console.warn("[portal-push-admin] forbidden — check x-portal-webhook-secret");
+    return forbidden;
+  }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -168,11 +194,16 @@ Deno.serve(async (req) => {
   }
 
   const table = String(payload.table ?? "").trim();
+  const eventType = String(payload.type ?? "").trim() || "INSERT";
+  console.log("[portal-push-admin] invoke", { table, eventType });
+
   if (!ALLOWED_TABLES.has(table)) {
+    console.log("[portal-push-admin] skip", { reason: "table", table });
     return jsonPushResponse({ skipped: true, reason: "table" });
   }
 
-  if (payload.type && payload.type !== "INSERT") {
+  if (eventType !== "INSERT") {
+    console.log("[portal-push-admin] skip", { reason: "event", eventType });
     return jsonPushResponse({ skipped: true, reason: "event" });
   }
 
@@ -183,31 +214,47 @@ Deno.serve(async (req) => {
 
   const admin = createClient(supabaseUrl, serviceKey);
 
+  const authorId = String(record.author_id ?? "").trim();
   let authorName = "";
-  if (table === "portal_staff_dm_messages") {
-    const authorId = String(record.author_id ?? "").trim();
+  let groupTitle = "";
+
+  if (CHAT_TABLES.has(table)) {
     if (!authorId) {
       return jsonPushResponse({ skipped: true, reason: "no author" });
     }
     const { data: authorProf, error: authErr } = await admin
       .from("staff_profiles")
-      .select("app_role, full_name, username")
+      .select("full_name, username")
       .eq("id", authorId)
       .maybeSingle();
     if (authErr) {
       console.error("[portal-push-admin] author profile", authErr);
       return jsonPushResponse({ error: authErr.message }, 500);
     }
-    const authorRole = String(authorProf?.app_role ?? "").toLowerCase();
-    if (ADMIN_CEO_ROLES.has(authorRole)) {
-      return jsonPushResponse({ skipped: true, reason: "author is admin/ceo" });
-    }
     authorName = String(authorProf?.full_name ?? authorProf?.username ?? "")
       .trim();
+
+    if (table === "portal_ceo_group_message") {
+      const groupId = String(record.group_id ?? "").trim();
+      if (!groupId) {
+        return jsonPushResponse({ skipped: true, reason: "no group" });
+      }
+      const { data: grp, error: grpErr } = await admin
+        .from("portal_ceo_group")
+        .select("title, slug")
+        .eq("id", groupId)
+        .maybeSingle();
+      if (grpErr) {
+        console.error("[portal-push-admin] group", grpErr);
+        return jsonPushResponse({ error: grpErr.message }, 500);
+      }
+      groupTitle = String(grp?.title ?? grp?.slug ?? "CEO chat").trim();
+    }
   }
 
-  const alert = buildAlert(table, record, authorName);
+  const alert = buildAlert(table, record, { authorName, groupTitle });
   if (!alert) {
+    console.log("[portal-push-admin] skip", { reason: "not eligible", table });
     return jsonPushResponse({ skipped: true, reason: "not eligible" });
   }
 
@@ -219,7 +266,25 @@ Deno.serve(async (req) => {
   }
 
   if (!adminIds.length) {
+    console.log("[portal-push-admin] no admin/ceo profiles", { table });
     return jsonPushResponse({ ok: true, sent: 0, targets: 0 });
+  }
+
+  let recipientIds = adminIds;
+  if (CHAT_TABLES.has(table) && authorId) {
+    recipientIds = adminIds.filter((id) => id !== authorId);
+  }
+  if (!recipientIds.length) {
+    console.log("[portal-push-admin] skip", {
+      reason: "no recipients besides author",
+      table,
+    });
+    return jsonPushResponse({
+      ok: true,
+      sent: 0,
+      targets: 0,
+      reason: "no recipients",
+    });
   }
 
   const dedupe = await insertDedupeOrSkip(
@@ -229,9 +294,15 @@ Deno.serve(async (req) => {
     alert.sourceId,
   );
   if (dedupe === "duplicate") {
+    console.log("[portal-push-admin] skip", {
+      reason: "already sent",
+      table,
+      sourceId: alert.sourceId,
+    });
     return jsonPushResponse({ skipped: true, reason: "already sent" });
   }
   if (dedupe === "error") {
+    console.error("[portal-push-admin] dedupe insert failed", { table });
     return jsonPushResponse({ error: "dedupe" }, 500);
   }
 
@@ -241,16 +312,28 @@ Deno.serve(async (req) => {
     body: alert.body,
     url: notifyUrl,
     portalOpen: "alerts",
+    tag: `admin-${table}-${alert.sourceId}`,
+    requireInteraction: true,
   });
 
   try {
     const { sent, targets } = await sendPushPayloadToUserIds(
       admin,
-      adminIds,
+      recipientIds,
       pushPayload,
     );
+    console.log("[portal-push-admin] done", {
+      table,
+      title: alert.title,
+      sent,
+      targets,
+      subscriptionsNote: sent === 0
+        ? "no portal_push_subscriptions or all sends failed"
+        : "ok",
+    });
     return jsonPushResponse({ ok: true, sent, targets, table });
   } catch (e) {
+    console.error("[portal-push-admin] send error", e);
     return jsonPushResponse({ error: String(e) }, 500);
   }
 });
