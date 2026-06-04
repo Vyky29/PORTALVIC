@@ -2,12 +2,14 @@
 <html lang="en-GB" data-portal-ui-build="20260520" data-portal-session-feedback-v="20260520" data-portal-clients-payments-v="20260507-portalfix" data-portal-waiting-list-v="20260430-waitlist">
 <head>
   <!-- Admin portal · Vercel static deploy: working_ui/admin_dashboard.html + portal/ assets -->
+  <!-- Web Push: window.__PORTAL_VAPID_PUBLIC_KEY__ must match Supabase VAPID_PUBLIC_KEY (see portal-vapid-public.js). -->
   <meta charset="UTF-8" />
+  <script src="/portal/portal-vapid-public.js?v=20260601-vapid"></script>
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260614-mob-fit" />
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260613-hours-all-week" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260603-form-record-modal" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260616-dash-cat-pick" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260616-dash-cat-ui" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260521-embed" />
   <script src="/portal/hr-contract-embed-html.js?v=20260521-embed"></script>
@@ -27,6 +29,8 @@
   <script src="/portal/portal-change-log.js?v=20260601-changelog-merge"></script>
   <script src="/portal/admin-hr.js?v=20260601-annual-profile"></script>
   <script src="/portal/admin-payments.js?v=20260531-la-column"></script>
+  <script src="/portal/portal-comms-order-payments.js?v=20260617-cfk-order-live"></script>
+  <script src="/portal/portal-admin-settings-hub.js?v=20260617-settings-hub"></script>
   <script src="/portal/admin-onboarding.js?v=20260530-onboarding-clickdocs"></script>
   <script src="/portal/admin-logs.js?v=20260601-logs-merge"></script>
   <script src="/portal/portal-roster-rows-merge.js?v=20260601-term-slot"></script>
@@ -39,7 +43,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260614-admin-mob-fit" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260617-settings-hub" />
 </head>
 <body>
   <script>
@@ -176,6 +180,30 @@
 
   <div class="alerts-pop" id="alertsPop" role="region" aria-label="Alerts"></div>
 
+  <div class="portal-admin-sheet-backdrop" id="portalAdminSheetBackdrop" aria-hidden="true"></div>
+  <section class="sheet portal-admin-alerts-sheet" id="alertsNotificationsSheet" aria-labelledby="alertsNotificationsTitle" aria-hidden="true">
+    <div class="sheet-head">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;min-width:0">
+        <div style="min-width:0;flex:1">
+          <h3 id="alertsNotificationsTitle">Device notifications</h3>
+          <p>Turn on once on this computer or tablet so ops alerts can reach you when the admin app is in the background or closed.</p>
+        </div>
+        <button type="button" class="btn btn--ghost btn--sm" id="portalAdminAlertsSheetClose" aria-label="Close">Close</button>
+      </div>
+    </div>
+    <div class="sheet-body">
+      <div class="portal-alerts-panel">
+        <div class="portal-alerts-block">
+          <h4 class="portal-alerts-section-title">Notifications</h4>
+          <p class="portal-alerts-hint muted">Chat, late submission requests, and activity alerts. The in-app bell still works while you are signed in.</p>
+          <p id="portalNotifyStatus" class="portal-alerts-status" aria-live="polite"></p>
+          <button type="button" class="btn btn--pri portal-alerts-action-btn" id="portalNotifyEnableBtn">Turn on notifications</button>
+          <button type="button" class="btn btn--sec portal-alerts-action-btn" id="portalNotifyTestBtn" hidden>Send test</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <div class="opwf-backdrop" id="opwfBackdrop" aria-hidden="true"></div>
   <aside class="opwf-drawer" id="opwfDrawer" aria-hidden="true" aria-labelledby="opwfDrawerTitle">
     <div class="opwf-drawer-h">
@@ -200,6 +228,7 @@
   <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260602-cap-roster"></script>
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260521-late-perf"></script>
   <script src="/portal/portal_admin_alerts_bell.js?v=20260616-late-bell-sync"></script>
+  <script src="/portal/portal-admin-web-push.js?v=20260616-admin-web-push"></script>
 
   <script>
   (function(){
@@ -247,7 +276,8 @@
       { id:'portal_docs_checklist', label:'Checklists' },
       { id:'portal_docs_firstaid', label:'First aids' },
       { id:'policies', label:'Documents & compliance' },
-      { id:'settings', label:'System settings' },
+      { id:'settings', label:'Settings' },
+      { id:'portal_device_notifications', label:'Device notifications', navAction:'device_notifications', skipBottomNav:true },
       { id:'logs', label:'Activity log' },
       { id:'portal_nav_alerts', label:'Alerts inbox', navAction:'alerts', skipBottomNav:true },
       { id:'portal_nav_staff', label:'Staff dashboard', externalUrl:'/staff_dashboard.html', skipBottomNav:true },
@@ -268,7 +298,7 @@
       { id:'g_zoho', label:'H&R (ZohoPeople)', children:['staffhr','onboarding','staffhr_contracts','interviews'] },
       { id:'g_supabase', label:'Documents', children:['portal_payslips','portal_docs_timesheet','portal_docs_expense','portal_docs_portalpin','portal_docs_certificate','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid'] },
       { id:'g_xero', label:'Finance (Xero)', children:['reenrol_payments','invoices'] },
-      { id:'g_settings_portal', label:'Settings & dashboards', children:['__h:This app','settings','logs','portal_nav_alerts','__h:Monitoring','portal_activity','portal_training_progress','staff_live_map','__h:Other portals','portal_nav_staff','portal_nav_lead','portal_nav_ceo','portal_nav_admin','__h:Session','portal_nav_logout'] }
+      { id:'g_settings_portal', label:'Settings & dashboards', children:['__h:This app','settings','portal_device_notifications','logs','portal_nav_alerts','__h:Monitoring','portal_activity','portal_training_progress','staff_live_map','__h:Other portals','portal_nav_staff','portal_nav_lead','portal_nav_ceo','portal_nav_admin','__h:Session','portal_nav_logout'] }
     ];
     /* Stroke SVGs (outline), inherit sidebar text colour — replaces emoji glyphs */
     var NAV_ICON_SVGS = {
@@ -329,6 +359,7 @@
       portal_docs_firstaid:'<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="12" y1="11" x2="12" y2="16"/><line x1="9.5" y1="13.5" x2="14.5" y2="13.5"/>',
       g_indeed:'<rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><path d="M12 11v6"/><path d="M9 14h6"/>',
       g_settings_portal:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82-.33A1.65 1.65 0 009 3.09V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>',
+      portal_device_notifications:'<path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/><path d="M12 2v2"/>',
       portal_nav_alerts:'<path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/>',
       portal_nav_staff:'<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>',
       portal_nav_lead:'<path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/>',
@@ -8884,6 +8915,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       var pp = item.pp;
       var payHits = item.payHits && item.payHits.length ? item.payHits : ordersPortalMatchedPayRows(pp);
+      var pr = payHits.length ? payHits[0] : ordersPortalPrimaryPayRow(pp);
+      var invRef = pr && pr.inv ? String(pr.inv).trim().split(/[·•]/)[0].trim() : '';
+      if(invRef){
+        var afterLoad = function(){
+          state.commsOrderDetailKey = invRef;
+          setView('comms_ops_order');
+        };
+        if(typeof portalLoadLivePaymentsSource === 'function'){
+          portalLoadLivePaymentsSource(function(){ afterLoad(); }, false);
+        }else{
+          afterLoad();
+        }
+        return;
+      }
       var child = adminParticipantsParentsChildDisplayName(pp) || '—';
       var par = String(pp.parentDisplay != null ? pp.parentDisplay : '').trim() || '—';
       var lastIso = item.lastIso;
@@ -16680,7 +16725,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         absents_refunds:'Refunds, session credits and missed-session queues — approve or resolve family credits.',
         recruitment:'Indeed / web recruitment queue',
         interviews:'Call and face-to-face interview stages — link to onboarding when ready.',
-        settings:'This app · preferences',
+        settings:'Session, money, exports & shortcuts',
+        portal_device_notifications:'Browser permission + Web Push for this device',
         portal_nav_alerts:'Unread venue / ops alerts',
         portal_nav_staff:'Open staff dashboard',
         portal_nav_lead:'Open lead dashboard',
@@ -16704,6 +16750,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       if(item.navAction === 'alerts'){
         return '<button type="button" class="dash-hub__tile" data-admin-nav-action="alerts">'+band+label+descHtml+'</button>';
+      }
+      if(item.navAction === 'device_notifications'){
+        return '<button type="button" class="dash-hub__tile" data-admin-nav-action="device_notifications">'+band+label+descHtml+'</button>';
       }
       return '<button type="button" class="dash-hub__tile" data-view-target="'+esc(item.id)+'">'+band+label+descHtml+'</button>';
     }
@@ -17225,12 +17274,42 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<label class="muted" style="display:block;font-size:12px;margin-top:10px">Receipt</label><select class="sel" style="max-width:100%;width:100%;min-width:0;box-sizing:border-box;margin-top:4px"><option>Send Receipt</option><option>Do not send</option></select>'+
         '<div style="margin-top:14px"><button type="button" class="btn btn--pri comms-order-payact" style="width:100%;max-width:100%;box-sizing:border-box" data-comms-order-payact="'+escAttr(dataPayAttr)+'">'+payButtonLabel+'</button></div>';
     }
-    function portalCommsOrderStatusColumnHtml(){
-      return '<div style="min-width:0">'+
-        '<p style="margin:0 0 8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0"><span class="chip chip--urg" style="margin:0">✕</span> <strong style="min-width:0;overflow-wrap:break-word">Full Payment Outstanding</strong></p>'+
-        '<div class="comms-order-warn" style="margin-bottom:10px"><strong>Warning:</strong> You have not sent a booking confirmation yet.</div>'+
+    function portalCommsOrderStatusColumnHtml(svc, packSource){
+      svc = svc || {};
+      var bal = (svc.amount||0)-(svc.paid||0);
+      var paidUp = bal <= 0.02;
+      var chip = paidUp
+        ? '<span class="chip chip--ok" style="margin:0">✓</span>'
+        : '<span class="chip chip--urg" style="margin:0">✕</span>';
+      var label = paidUp ? 'Paid up' : 'Payment outstanding';
+      var warn = paidUp
+        ? ''
+        : '<div class="comms-order-warn" style="margin-bottom:10px"><strong>Balance due:</strong> '+money(bal)+' — record a payment below or open <strong>Programme payments</strong> to edit the ledger.</div>';
+      var liveNote = packSource && packSource !== 'demo'
+        ? '<p class="muted" style="margin:0 0 8px;font-size:11px;line-height:1.4;overflow-wrap:break-word">Totals from <strong>Clients Payments</strong>'+(packSource==='client_payments' ? ' (live Supabase)' : ' (export)')+'.</p>'
+        : '';
+      return '<div style="min-width:0">'+liveNote+
+        '<p style="margin:0 0 8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0">'+chip+' <strong style="min-width:0;overflow-wrap:break-word">'+label+'</strong></p>'+
+        warn+
         '<button type="button" class="btn btn--sec btn--sm comms-order-sendconf">Send Confirmation Email</button>'+
         '</div>';
+    }
+    function portalCommsOrderFundingStripHtml(svc){
+      if(!svc) return '';
+      var bits = [];
+      if(svc.fund) bits.push('<span class="chip chip--info" style="margin:0 6px 6px 0;max-width:100%;overflow-wrap:break-word">'+esc(svc.fund)+'</span>');
+      if(svc.payMethod) bits.push('<span class="muted" style="font-size:12px;display:block;overflow-wrap:break-word">Pay method: <strong style="color:var(--ink)">'+esc(svc.payMethod)+'</strong></span>');
+      if(svc.periodNote) bits.push('<span class="muted" style="font-size:12px;display:block;margin-top:4px;overflow-wrap:break-word">Billing period: '+esc(svc.periodNote)+'</span>');
+      if(svc.vat && svc.vat !== '—') bits.push('<span class="muted" style="font-size:11px;display:block;margin-top:4px">VAT: '+esc(svc.vat)+'</span>');
+      if(!bits.length) return '';
+      return '<div style="margin:8px 0 0;min-width:0">'+bits.join('')+'</div>';
+    }
+    function portalCommsOrderResolvePack(orderRef){
+      if(window.PortalCommsOrderPayments && typeof window.PortalCommsOrderPayments.resolvePack === 'function'){
+        return window.PortalCommsOrderPayments.resolvePack(orderRef, MOCK.commsOrderDemoByRef);
+      }
+      var key = String(orderRef||'').trim();
+      return MOCK.commsOrderDemoByRef && MOCK.commsOrderDemoByRef[key] ? Object.assign({ source:'demo' }, MOCK.commsOrderDemoByRef[key]) : null;
     }
     function portalCommsOrderMoneyColHtml(svc){
       var bal = (svc.amount||0)-(svc.paid||0);
@@ -17242,14 +17321,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function viewCommsOpsOrderDetail(){
       var key = String(state.commsOrderDetailKey||'').trim();
-      var pack = MOCK.commsOrderDemoByRef && MOCK.commsOrderDemoByRef[key];
+      var pack = portalCommsOrderResolvePack(key);
       if(!pack || !Array.isArray(pack.services) || !pack.services.length){
         return '<div class="toolbar" style="margin-bottom:14px"><button type="button" class="btn btn--ghost btn--sm" data-view-target="comms_ops">← Ops comms &amp; log</button></div>'+
           '<h1 class="page-title">Order</h1><p class="page-intro">No demo layout for this reference. Open <strong>Ops comms &amp; log</strong> and use <strong>View Order</strong> on a row that has a linked ref.</p>';
       }
       var multi = pack.services.length > 1;
-      var tailAcc = '<details class="comms-order-acc" style="margin-top:4px"><summary>Communication</summary><div style="padding-top:10px"><p class="muted" style="margin:0;font-size:13px;line-height:1.45;overflow-wrap:break-word">Demo — parent / staff threads would load from ClassForKids in production.</p></div></details>'+
-        '<details class="comms-order-acc"><summary>Activity Log</summary><div style="padding-top:10px"><p class="muted" style="margin:0;font-size:13px">Demo — audit trail placeholder.</p></div></details>';
+      var packSrc = String(pack.source || 'demo');
+      var tailAcc = '<details class="comms-order-acc" style="margin-top:4px"><summary>Communication</summary><div style="padding-top:10px"><p class="muted" style="margin:0;font-size:13px;line-height:1.45;overflow-wrap:break-word">'+(packSrc==='demo' ? 'Demo — parent / staff threads would load from ClassForKids in production.' : 'Link email / WhatsApp threads here when messaging is wired to this invoice ref.')+'</p></div></details>'+
+        '<details class="comms-order-acc"><summary>Activity Log</summary><div style="padding-top:10px"><p class="muted" style="margin:0;font-size:13px;overflow-wrap:break-word">'+(packSrc==='demo' ? 'Demo — audit trail placeholder.' : 'Payment edits from this screen and Programme payments are logged via portal change log when enabled.')+'</p></div></details>';
       var pickHtml = '';
       if(multi){
         pickHtml = '<div class="card" style="margin-bottom:14px;min-width:0"><div class="card-pad">'+
@@ -17264,25 +17344,28 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var bal = (svc.amount||0)-(svc.paid||0);
         var pills = (svc.sessionDates||[]).map(function(d){ return '<span class="comms-order-pill">'+esc(d)+'</span>'; }).join('');
         var payAttr = multi ? ('line:'+idx) : 'single';
-        var payBtnLabel = multi ? 'Add' : ('Pay balance ('+money(bal)+')');
+        var payBtnLabel = multi ? 'Add payment' : ('Pay balance ('+money(bal)+')');
+        var payIdAttr = svc.payId ? ' data-comms-pay-id="'+escAttr(String(svc.payId))+'"' : '';
         var head = '<p style="margin:0;font-weight:700;font-size:1.05rem;line-height:1.3;min-width:0;overflow-wrap:break-word">'+esc(pack.parentName||'Carer')+' <span class="comms-order-ref">(booking ref: '+esc(svc.bookingRef)+')</span></p>';
-        var payDetails = '<details class="comms-order-paydetails">'+
+        var payDetails = '<details class="comms-order-paydetails"'+(svc.payId ? payIdAttr : '')+'>'+
           '<summary><span class="comms-order-paydetails__sum"><span class="comms-order-paydetails__mark" aria-hidden="true">&#128179;</span><span>Record a payment</span><span class="comms-order-paydetails__chev" aria-hidden="true"></span></span></summary>'+
           '<div style="padding:14px 16px 16px">'+
           '<div class="comms-order-paygrid">'+
-          portalCommsOrderStatusColumnHtml()+
+          portalCommsOrderStatusColumnHtml(svc, packSrc)+
           '<div style="min-width:0">'+
           '<p class="muted" style="margin:0 0 10px;font-size:12px;line-height:1.45;min-width:0;overflow-wrap:break-word">Items <strong>'+money(svc.amount)+'</strong> · Paid <strong>'+money(svc.paid)+'</strong> · Balance <strong>'+money(bal)+'</strong></p>'+
           portalCommsOrderPayFieldsHtml(payAttr, payBtnLabel, bal, 'svc'+idx)+
+          (svc.payId ? '<p class="muted" style="margin:10px 0 0;font-size:11px;overflow-wrap:break-word">Updates <strong>Programme payments</strong> (Supabase) for this family.</p>' : '')+
           '</div></div></div></details>';
-        return '<div class="comms-order-svc card" data-comms-order-svc-idx="'+idx+'" style="margin-bottom:14px;min-width:0">'+
+        return '<div class="comms-order-svc card" data-comms-order-svc-idx="'+idx+'"'+(svc.payId ? ' data-comms-pay-id="'+escAttr(String(svc.payId))+'"' : '')+' style="margin-bottom:14px;min-width:0">'+
           '<div class="card-pad" style="padding-bottom:8px">'+
           head+
           '<div class="comms-order-grid" style="margin-top:12px">'+
           '<div style="min-width:0"><p style="margin:0;font-weight:600;color:var(--ink);overflow-wrap:break-word">'+esc(svc.programme)+'</p>'+
           '<p class="muted" style="margin:6px 0 4px;font-size:13px;overflow-wrap:break-word">'+esc(svc.schedule)+'</p>'+
-          '<p class="muted" style="margin:0 0 10px;font-size:13px;overflow-wrap:break-word">'+esc(svc.venue)+'</p>'+
-          '<button type="button" class="btn btn--sec btn--sm" data-comms-view-register="1">View Register</button></div>'+
+          '<p class="muted" style="margin:0 0 6px;font-size:13px;overflow-wrap:break-word">'+esc(svc.venue)+'</p>'+
+          portalCommsOrderFundingStripHtml(svc)+
+          '<button type="button" class="btn btn--sec btn--sm" data-comms-view-register="1" style="margin-top:10px">View Register</button></div>'+
           '<div style="min-width:0"><span class="chip chip--info" style="margin:0 8px 8px 0;background:#ffedd5;color:#9a3412;border:0">'+esc(String(svc.sessionCount))+' sessions</span>'+
           '<div class="comms-order-pills">'+pills+'</div></div>'+
           portalCommsOrderMoneyColHtml(svc)+
@@ -17300,14 +17383,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '<summary><span class="comms-order-paydetails__sum"><span class="comms-order-paydetails__mark" aria-hidden="true">&#128179;</span><span>Record a payment</span><span class="comms-order-paydetails__chev" aria-hidden="true"></span></span></summary>'+
           '<div style="padding:14px 0 0">'+
           '<div class="comms-order-paygrid">'+
-          portalCommsOrderStatusColumnHtml()+
+          portalCommsOrderStatusColumnHtml({ amount: ta, paid: tp }, packSrc)+
           '<div style="min-width:0">'+
           '<p class="muted" style="margin:0 0 10px;font-size:12px;line-height:1.45;overflow-wrap:break-word">Items <strong>'+money(ta)+'</strong> · Paid <strong>'+money(tp)+'</strong> · Balance <strong>'+money(bt)+'</strong></p>'+
+          '<p class="muted" style="margin:0 0 10px;font-size:11px;line-height:1.4;overflow-wrap:break-word">Apply each line payment on the service block above (live rows are per invoice line).</p>'+
           portalCommsOrderPayFieldsHtml('footer','Pay balance ('+money(bt)+')', bt, 'footer')+
           '</div></div></div></details></div></div>';
       }
+      var srcChip = packSrc === 'demo'
+        ? '<span class="chip chip--info">Demo · CFK-style</span>'
+        : '<span class="chip chip--ok">Live payments · CFK-style</span>';
       return '<div class="toolbar" style="margin-bottom:14px;flex-wrap:wrap;gap:8px;align-items:center"><button type="button" class="btn btn--ghost btn--sm" data-view-target="comms_ops">← Ops comms &amp; log</button>'+
-        '<span class="chip chip--info">Demo · CFK-style</span></div>'+
+        srcChip+
+        (packSrc !== 'demo' ? ' <button type="button" class="btn btn--ghost btn--sm" data-view-target="c4k_payments">Programme payments</button>' : '')+
+        '</div>'+
         '<h1 class="page-title">Order</h1>'+
         '<p class="page-intro" style="max-width:52rem;min-width:0;overflow-wrap:break-word">From the communications log · Ref <strong>'+esc(key)+'</strong> · '+(multi ? 'Several bookings on one account — pay per line or the order total.' : 'Single booking — one payment block.')+'</p>'+
         pickHtml+svcHtml+footer+
@@ -17329,7 +17418,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var parentTo = adminParentDisplayForCommsEmail(row.email);
         var toCell = parentTo ? esc(parentTo) : '<span class="muted">—</span>';
         var demoRef = row.orderRef ? String(row.orderRef).trim() : '';
-        var hasDemo = demoRef && MOCK.commsOrderDemoByRef && MOCK.commsOrderDemoByRef[demoRef];
+        var hasDemo = demoRef && portalCommsOrderResolvePack(demoRef);
         var orderBtn = hasDemo ? '<button type="button" class="btn btn--ghost btn--sm" data-comms-order-ref="'+escAttr(demoRef)+'">View Order</button>' : '<span class="muted">—</span>';
         return '<tr>'+
           '<td class="muted" style="white-space:nowrap;min-width:0">'+esc(row.at)+'</td>'+
@@ -17360,18 +17449,42 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return viewCommsOps();
     }
 
+    function portalAdminRefreshSettingsView(){
+      var root = $('adminMain') || document.getElementById('adminMain');
+      if(!root || state.view !== 'settings') return;
+      if(!window.PortalAdminSettingsHub){
+        root.innerHTML = '<h1 class="page-title">Settings</h1><p class="page-intro">Settings hub script missing.</p>';
+        return;
+      }
+      root.innerHTML = window.PortalAdminSettingsHub.renderLoading();
+      window.PortalAdminSettingsHub.collect({
+        getClient: getSchedSupabaseClient,
+        refreshKpis: refreshKpisFromDemo,
+        getOpsKpis: function(){ return MOCK.kpi; }
+      }).then(function(snap){
+        state.settingsHubSnapshot = snap;
+        if(state.view !== 'settings') return;
+        root.innerHTML = window.PortalAdminSettingsHub.renderHtml(snap);
+        state._settingsHubRepaintOnly = true;
+        bindView('settings');
+        state._settingsHubRepaintOnly = false;
+      }).catch(function(err){
+        console.warn('[admin-settings]', err);
+        if(state.view !== 'settings') return;
+        root.innerHTML =
+          '<h1 class="page-title">Settings</h1>'+
+          '<p class="page-intro">Could not load settings snapshot.</p>'+
+          '<div class="card card-pad"><p class="muted" style="margin:0">'+esc((err&&err.message)||String(err))+'</p></div>';
+        state._settingsHubRepaintOnly = true;
+        bindView('settings');
+        state._settingsHubRepaintOnly = false;
+      });
+    }
     function viewSettings(){
-      refreshKpisFromDemo();
-      var k = MOCK.kpi;
-      return '<h1 class="page-title">Settings &amp; demo tools</h1><p class="page-intro">Session, connections, and demo snapshot controls for this admin build.</p>'+
-        '<div class="card card-pad" style="margin-bottom:14px;border-color:#c5d9ef;background:linear-gradient(180deg,#f8fbff,#eef5fc)">'+
-        '<h3 style="margin:0 0 8px;font-size:14px">Admin portal guide</h3>'+
-        '<p class="muted" style="margin:0 0 12px;max-width:42rem;overflow-wrap:break-word">How this app is organised, what each menu area does, and how it differs from the staff phone dashboard — with layout mockups (no screenshots required).</p>'+
-        '<a class="btn btn--pri btn--sm" href="/admin_portal_guide.html" target="_blank" rel="noopener">Open admin portal guide</a> '+
-        '<button type="button" class="btn btn--sec btn--sm" id="portalAdminGuideReadLogBtn" style="margin-left:8px">Staff guide — who marked read</button></div>'+
-        '<div class="grid-2"><div class="card card-pad"><h3 style="margin:0 0 10px;font-size:14px">Connections</h3><p class="muted" style="margin:0 0 8px">Admin UI: <code>/admin_dashboard.html</code> on the Vercel deploy (same origin as <code>/portal/</code>). Login sets <code>PORTAL_ADMIN_DASHBOARD_URL</code> in <code>login.html</code> / <code>auth-handler.js</code>.</p><p class="muted" style="margin:0">Supabase: active after sign-in; this card does not probe live connection state.</p></div>'+
-        '<div class="card card-pad"><h3 style="margin:0 0 10px;font-size:14px">Operational snapshot (demo)</h3><p class="muted" style="margin:0">Open incidents: <strong style="color:var(--ink)">'+k.incidentsOpen+'</strong></p><p class="muted" style="margin:8px 0 0">Absents / credits pending: <strong style="color:var(--ink)">'+k.cancellationsOpen+'</strong></p><p class="muted" style="margin:8px 0 0">Reports in flight: <strong style="color:var(--ink)">'+k.reportsPending+'</strong> · Onboarding tasks: <strong style="color:var(--ink)">'+k.onboardingPending+'</strong></p><p class="muted" style="margin:8px 0 0">Billable sessions in model: <strong style="color:var(--ink)">'+MOCK.sessionEconomics.billableSessionCount+'</strong></p></div></div>'+
-        '<div class="card" style="margin-top:14px"><div class="card-pad"><div class="toolbar"><button type="button" class="btn btn--sec" data-open-report>Report generator</button> <button type="button" class="btn btn--ghost" data-portal-logout>Log out</button></div></div></div>';
+      if(window.PortalAdminSettingsHub && window.PortalAdminSettingsHub.renderLoading){
+        return window.PortalAdminSettingsHub.renderLoading();
+      }
+      return '<h1 class="page-title">Settings</h1><p class="page-intro">Loading…</p>';
     }
 
     function viewOperatorHTMLAddon(){
@@ -19542,6 +19655,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(id==='settings'){
         var guideReadBtn = $('portalAdminGuideReadLogBtn');
         if(guideReadBtn) guideReadBtn.onclick = openPortalAdminGuideReadModal;
+        if(!state._settingsHubRepaintOnly){
+          portalAdminRefreshSettingsView();
+        }
       }
 
       root.querySelectorAll('[data-jump]').forEach(function(b){
@@ -19615,11 +19731,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       root.querySelectorAll('[data-comms-order-ref]').forEach(function(b){
         b.addEventListener('click', function(){
           state.commsOrderDetailKey = String(b.getAttribute('data-comms-order-ref')||'').trim();
-          setView('comms_ops_order');
-          closeSidebarMob();
+          var open = function(){ setView('comms_ops_order'); closeSidebarMob(); };
+          if(typeof portalLoadLivePaymentsSource === 'function'){
+            portalLoadLivePaymentsSource(function(){ open(); }, false);
+          }else{
+            open();
+          }
         });
       });
       if(id==='comms_ops_order'){
+        if(typeof portalLoadLivePaymentsSource === 'function'){
+          portalLoadLivePaymentsSource(function(){}, false);
+        }
         var sp = $('commsOrderServicePicker');
         if(sp){
           sp.onchange = function(){
@@ -19641,9 +19764,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             var card = b.closest('[data-comms-order-svc-idx]');
             var idx = card ? parseInt(card.getAttribute('data-comms-order-svc-idx') || '', 10) : NaN;
             var rawKey = String(state.commsOrderDetailKey || '').trim();
-            var pack = MOCK.commsOrderDemoByRef && rawKey
-              ? (MOCK.commsOrderDemoByRef[rawKey] || MOCK.commsOrderDemoByRef[rawKey.toLowerCase()])
-              : null;
+            var pack = portalCommsOrderResolvePack(rawKey);
             if(!pack || !pack.services || Number.isNaN(idx) || idx < 0 || idx >= pack.services.length){
               try{ window.alert('Could not resolve this booking line (demo).'); }catch(_e){}
               return;
@@ -19666,10 +19787,50 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           b.addEventListener('click', function(ev){
             ev.preventDefault();
             var det = b.closest('details');
+            var svcCard = b.closest('[data-comms-pay-id]');
+            var payId = svcCard ? String(svcCard.getAttribute('data-comms-pay-id')||'').trim() : '';
             var inp = det ? det.querySelector('input[id^="commsPayAmt_"]') : null;
             var amt = inp && inp.value ? String(inp.value).trim() : '';
+            var actKey = String(b.getAttribute('data-comms-order-payact')||'').trim();
+            if(actKey === 'footer'){
+              try{ window.alert('Record payment on each service line above (each invoice row in Programme payments).'); }catch(_e){}
+              return;
+            }
+            if(payId && window.PortalCommsOrderPayments && typeof window.PortalCommsOrderPayments.recordPayment === 'function'){
+              b.disabled = true;
+              window.PortalCommsOrderPayments.recordPayment({
+                payId: payId,
+                amount: amt,
+                getClient: getSchedSupabaseClient
+              }).then(function(res){
+                b.disabled = false;
+                if(res && res.ok){
+                  if(typeof portalAdminToast === 'function') portalAdminToast('Payment recorded — £'+amt);
+                  else try{ window.alert('Payment recorded.'); }catch(_e){}
+                  if(typeof portalLoadLivePaymentsSource === 'function'){
+                    portalLoadLivePaymentsSource(function(){
+                      setView('comms_ops_order');
+                    }, true);
+                  }else{
+                    setView('comms_ops_order');
+                  }
+                  return;
+                }
+                var msg = !res || res.reason === 'rls'
+                  ? 'Not saved — sign in as admin/CEO or check Programme payments permissions.'
+                  : 'Could not record payment for this line.';
+                if(typeof portalAdminToast === 'function') portalAdminToast(msg);
+                else try{ window.alert(msg); }catch(_e2){}
+              }).catch(function(err){
+                b.disabled = false;
+                var em = (err && err.message) ? err.message : String(err);
+                if(typeof portalAdminToast === 'function') portalAdminToast('Payment error: '+em);
+                else try{ window.alert('Payment error: '+em); }catch(_e3){}
+              });
+              return;
+            }
             try{
-              window.alert('Demo only — payment would be recorded for £' + (amt || '\u2014') + ' (ClassForKids not wired in this file).');
+              window.alert('Demo only — payment would be recorded for £' + (amt || '\u2014') + '. Link a live invoice ref from Clients Payments to save to Supabase.');
             }catch(_e){}
           });
         });
@@ -21724,6 +21885,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             btn = '<button type="button" data-portal-logout="1" title="'+escAttr(item.label)+'">'+adminNavIconHtml(item.id)+'<span class="admin-nav-label">'+esc(item.label)+'</span></button>';
           }else if(item.navAction === 'alerts'){
             btn = '<button type="button" data-admin-nav-action="alerts" title="'+escAttr(item.label)+'">'+adminNavIconHtml(item.id)+'<span class="admin-nav-label">'+esc(item.label)+'</span></button>';
+          }else if(item.navAction === 'device_notifications'){
+            btn = '<button type="button" data-admin-nav-action="device_notifications" title="'+escAttr(item.label)+'">'+adminNavIconHtml(item.id)+'<span class="admin-nav-label">'+esc(item.label)+'</span></button>';
           }else{
             btn = '<button type="button" data-view="'+esc(item.id)+'" title="'+escAttr(item.label)+'">'+adminNavIconHtml(item.id)+'<span class="admin-nav-label">'+esc(item.label)+'</span>';
             if(item.id === 'c4k_late_submissions' && state.portalLatePendingCount > 0){
@@ -21826,6 +21989,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               state.navGroupsOpen[gid] = true;
             }
             syncNavGroupsUi();
+            return;
+          }
+          var deviceNotifyBtn = ev.target.closest ? ev.target.closest('button[data-admin-nav-action="device_notifications"]') : null;
+          if(deviceNotifyBtn){
+            ev.preventDefault();
+            if(typeof window.portalAdminOpenAlertsNotificationsSheet === 'function'){
+              window.portalAdminOpenAlertsNotificationsSheet();
+            }
             return;
           }
           var alertsBtn = ev.target.closest ? ev.target.closest('button[data-admin-nav-action="alerts"]') : null;
@@ -22383,6 +22554,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     window.addEventListener('portal:payments-updated', function portalLivePaymentsRefresh(){
       portalLoadLivePaymentsSource(function(){
         if(state.view==='bookings' || state.view==='orders_all' || state.view==='c4k_payments') setView(state.view);
+        if(state.view==='settings') portalAdminRefreshSettingsView();
       }, true);
     });
     function portalAdminVenueReviewAlertsTableMissing(err){
@@ -22709,7 +22881,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!window.__portalAdminProfileRefreshBound){
         window.__portalAdminProfileRefreshBound = true;
         window.addEventListener('portal:supabase-ready', function(){
-          if(state.view === 'settings') setView('settings');
+          if(state.view === 'settings') portalAdminRefreshSettingsView();
           portalLateAdminScheduleBadgeRefresh();
           try{
             portalInitAdminDmRealtime();

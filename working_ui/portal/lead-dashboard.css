@@ -314,6 +314,7 @@
       justify-content:center;
       transition:transform .2s ease;
       -webkit-tap-highlight-color:transparent;
+      cursor:pointer;
     }
     .avatar-wrap:hover{
       transform:scale(1.05);
@@ -5024,6 +5025,44 @@
       line-height:1.35;
       color:var(--muted);
       font-weight:400;
+    }
+    #menuSheet .menu-btn.portal-onboarding-menu-hidden,
+    #menuSheet .menu-btn[hidden],
+    #menuSheet .menu-btn[aria-hidden="true"]{
+      display:none !important;
+      visibility:hidden !important;
+      pointer-events:none !important;
+    }
+    #menuSheet .menu-btn.menu-btn--feature-deactivated{
+      position:relative;
+      opacity:.94;
+      cursor:default;
+      pointer-events:none;
+    }
+    #menuSheet .menu-btn.menu-btn--feature-deactivated .menu-btn-copy{
+      padding-right:4px;
+      padding-bottom:18px;
+      min-width:0;
+    }
+    #menuSheet .menu-btn-corner-chip{
+      position:absolute;
+      right:8px;
+      bottom:8px;
+      z-index:2;
+      padding:3px 7px;
+      border-radius:6px;
+      font-size:9px;
+      font-weight:800;
+      line-height:1.15;
+      letter-spacing:.03em;
+      text-transform:uppercase;
+      color:#5c4a00;
+      background:linear-gradient(180deg,#fff8d6 0%,#f5e6a8 100%);
+      border:1px solid rgba(180,140,20,.35);
+      box-shadow:0 1px 4px rgba(92,74,0,.12);
+      max-width:calc(100% - 16px);
+      overflow-wrap:break-word;
+      pointer-events:none;
     }
     /* Planning — Session Plan: “Coming soon” a la derecha (mismo <button>; el badge es decorativo) */
     #menuSheet .menu-btn-badge--coming-soon{

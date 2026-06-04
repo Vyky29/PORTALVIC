@@ -67,13 +67,16 @@ Revisado contra el repo + `supabase secrets list` + `supabase functions list` en
 | Edge Function `portal-push-subscribe` | ✅ ACTIVE v18 | Guarda suscripción del dispositivo |
 | Edge Function `portal-push-dispatch-schedule-override` | ✅ ACTIVE v17 | Roster: make-up, ausencia, slot reopened |
 | Edge Function `portal-push-dispatch-announcement` | ✅ ACTIVE v1 | Anuncios staff |
+| Edge Function `portal-push-dispatch-admin-alert` | 📦 En repo | Admin/CEO: late approval, cancelación, incidente, chat interno |
+| Tabla `portal_webpush_admin_alert_sent` | 📦 En repo | `20260617120000_portal_webpush_admin_alert_sent.sql` |
 | Secret `VAPID_PUBLIC_KEY` | ✅ | Solo en Supabase Edge Secrets |
 | Secret `VAPID_PRIVATE_KEY` | ✅ | **Nunca** en el frontend ni en git |
-| Secret `PORTAL_PUSH_OPEN_URL` | ⚠️ **Verificar valor** | Debe ser `https://portalvic.vercel.app/staff_dashboard.html` — si apunta a otro dominio Vercel, corregir (§4) |
+| Secret `PORTAL_PUSH_OPEN_URL` | ⚠️ **Verificar valor** | Debe ser `https://portalvic.vercel.app/staff_dashboard.html` — **no** cambiar a admin (§4) |
+| Secret `PORTAL_PUSH_ADMIN_OPEN_URL` | ⚠️ **Recomendado** | `https://portalvic.vercel.app/admin_dashboard.html` — o se deriva del staff URL (§4) |
 | Secret `PORTAL_PUSH_WEBHOOK_SECRET` | ✅ | Lo usa el header del webhook |
 | Secret `VAPID_SUBJECT` | ⚠️ Opcional | Si no existe, el código usa `mailto:hello@clubsensational.org` |
 | Service Worker `clubsensational-portal-sw.js` | ✅ | En `working_ui/` (Vercel lo sirve en la raíz) |
-| Código suscripción en dashboards | ✅ | `staff_dashboard.html` + `lead_dashboard.html` |
+| Código suscripción en dashboards | ✅ | `staff_dashboard.html`, `lead_dashboard.html`, `admin_dashboard.html` |
 | **`window.__PORTAL_VAPID_PUBLIC_KEY__` en producción** | ❌ **Falta** | Sin esto el staff ve *"alerts when app is closed need ops setup"* |
 | **Database Webhooks (2)** | ❌ **Verificar / crear** | No se pueden commitear; solo Dashboard Supabase |
 | Filas en `portal_push_subscriptions` | ❌ **Probablemente 0** | Hasta que alguien active notificaciones con VAPID puesto |
@@ -92,8 +95,10 @@ Revisado contra el repo + `supabase secrets list` + `supabase functions list` en
 | Suscribir dispositivo | `supabase/functions/portal-push-subscribe/index.ts` |
 | Enviar por roster | `supabase/functions/portal-push-dispatch-schedule-override/index.ts` |
 | Enviar por anuncio | `supabase/functions/portal-push-dispatch-announcement/index.ts` |
+| Enviar a admin/CEO | `supabase/functions/portal-push-dispatch-admin-alert/index.ts` |
+| Utilidades compartidas | `supabase/functions/_shared/portal_webpush_util.ts` |
 | Service worker | `working_ui/clubsensational-portal-sw.js` |
-| UI + registro push | `working_ui/staff_dashboard.html`, `working_ui/lead_dashboard.html` |
+| UI + registro push | `working_ui/staff_dashboard.html`, `lead_dashboard.html`, `admin_dashboard.html` |
 | Generador local de par VAPID | `working_ui/vapid-key-generator.html` (solo en local; no subir claves a git) |
 
 ---
@@ -110,7 +115,8 @@ Revisado contra el repo + `supabase secrets list` + `supabase functions list` en
 |---|---|---|
 | `VAPID_PUBLIC_KEY` | Cadena base64url (par generado con web-push) | ✅ |
 | `VAPID_PRIVATE_KEY` | Pareja de la anterior | ✅ |
-| `PORTAL_PUSH_OPEN_URL` | `https://portalvic.vercel.app/staff_dashboard.html` | ⚠️ **Comprobar en Dashboard** — debe ser portalvic, sin `/` final |
+| `PORTAL_PUSH_OPEN_URL` | `https://portalvic.vercel.app/staff_dashboard.html` | ⚠️ **Comprobar en Dashboard** — staff/lead roster y anuncios; sin `/` final |
+| `PORTAL_PUSH_ADMIN_OPEN_URL` | `https://portalvic.vercel.app/admin_dashboard.html` | ⚠️ **Recomendado** — si falta, la función admin sustituye `staff_dashboard` → `admin_dashboard` en la URL staff |
 | `PORTAL_PUSH_WEBHOOK_SECRET` | String largo aleatorio (≥32 caracteres) | ✅ |
 | `SUPABASE_URL` | `https://cklpnwhlqsulpmkipmqb.supabase.co` | ✅ (auto) |
 | `SUPABASE_SERVICE_ROLE_KEY` | service role del proyecto | ✅ (auto) |
@@ -266,6 +272,31 @@ Solo filas con `status = active` y `session_date` dentro del horizonte **hoy …
 
 Respeta `audience_scope` y `ends_at` del anuncio.
 
+### 6.3 Webhooks — alertas admin/CEO (misma función, cuatro tablas)
+
+Tras aplicar la migración `20260617120000_portal_webpush_admin_alert_sent.sql` y desplegar `portal-push-dispatch-admin-alert`, crea **cuatro** webhooks (o uno por tabla) con la **misma URL** y el **mismo** header `x-portal-webhook-secret`.
+
+| Campo | Valor |
+|---|---|
+| **URL** | `https://cklpnwhlqsulpmkipmqb.supabase.co/functions/v1/portal-push-dispatch-admin-alert` |
+| **Events** | ☑ **Insert** en cada tabla |
+| **HTTP Headers** | `x-portal-webhook-secret: <PORTAL_PUSH_WEBHOOK_SECRET>` |
+
+| Name sugerido | Table |
+|---|---|
+| `portal-push-admin-late` | `portal_late_submission_requests` |
+| `portal-push-admin-cancellation` | `cancellation_reports` |
+| `portal-push-admin-incident` | `incident_reports` |
+| `portal-push-admin-chat` | `portal_staff_dm_messages` |
+
+**Destinatarios:** usuarios con `staff_profiles.app_role` en `admin` o `ceo` que hayan activado notificaciones en `admin_dashboard.html` (misma tabla `portal_push_subscriptions`).
+
+**Al pulsar la notificación:** abre `admin_dashboard.html?portalOpen=alerts` (hoja de notificaciones / campana).
+
+**Chat:** no envía push si el autor del mensaje ya es admin/ceo (respuesta interna).
+
+**Secret recomendado:** `PORTAL_PUSH_ADMIN_OPEN_URL` = `https://portalvic.vercel.app/admin_dashboard.html`. **No** sustituyas `PORTAL_PUSH_OPEN_URL` del staff por la URL admin.
+
 ### 6.4 Portal roster — trigger SQL (alternativa al Dashboard)
 
 En el proyecto **Portal** el webhook de roster **ya está** como trigger Postgres (no hace falta la UI si está bien configurado):
@@ -301,6 +332,7 @@ En orden, en **SQL Editor** del proyecto Portal o vía CLI cuando la conexión D
 1. `supabase/migrations/20260430140000_portal_web_push.sql`  
 2. `supabase/migrations/20260430140100_portal_push_session_horizon.sql`  
 3. `supabase/migrations/20260601140000_portal_webpush_announcement_sent.sql`  
+4. `supabase/migrations/20260617120000_portal_webpush_admin_alert_sent.sql`  
 
 Comprobar tablas:
 
@@ -308,6 +340,7 @@ Comprobar tablas:
 select count(*) from public.portal_push_subscriptions;
 select count(*) from public.portal_webpush_override_sent;
 select count(*) from public.portal_webpush_announcement_sent;
+select count(*) from public.portal_webpush_admin_alert_sent;
 ```
 
 ---
@@ -321,9 +354,10 @@ cd C:\Users\info\PORTAL
 supabase functions deploy portal-push-subscribe
 supabase functions deploy portal-push-dispatch-schedule-override
 supabase functions deploy portal-push-dispatch-announcement
+supabase functions deploy portal-push-dispatch-admin-alert
 ```
 
-**Estado actual:** las tres están **ACTIVE** en remoto; no hace falta redeploy salvo cambios de código.
+**Estado actual:** las tres funciones staff están **ACTIVE** en remoto; tras añadir admin-alert, desplegarla y crear los webhooks §6.3.
 
 ---
 

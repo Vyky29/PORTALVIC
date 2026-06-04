@@ -28,7 +28,7 @@
       theme: "plan",
       icon:
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
-      chips: ["Session plan", "Swim term review"],
+      chips: ["Session planner"],
     },
     finance: {
       theme: "finance",
@@ -67,7 +67,7 @@
       theme: "start",
       icon:
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>',
-      chips: ["Guide", "Job", "Health"],
+      chips: ["Guide"],
     },
     portalAnnualProfileQuickGroup: {
       theme: "profile",
@@ -158,8 +158,8 @@
     if (!grp || grp.classList.contains("menu-group--accordion-ready")) return;
     var id = String(grp.id || "").trim();
     if (id && SKIP_GROUP_IDS[id]) {
-      grp.hidden = true;
-      grp.setAttribute("aria-hidden", "true");
+      /* Alerts block: no accordion chrome; visibility is driven by logo-lite sync on the dashboard. */
+      grp.classList.add("menu-group--accordion-ready");
       return;
     }
     var label = portalQuickMenuAccordionLabel(grp);
@@ -218,6 +218,7 @@
         if (!SKIP_GROUP_IDS[id]) continue;
         var grp = global.document.getElementById(id);
         if (!grp) continue;
+        if (id === "portalQuickMenuNotificationsGroup") continue;
         grp.hidden = true;
         grp.setAttribute("aria-hidden", "true");
         grp.classList.remove("menu-group--open");

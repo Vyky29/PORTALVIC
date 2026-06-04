@@ -59,8 +59,16 @@ Documento vivo: resume **de dónde sale cada parte** de la vista **Orders** en `
 
 ### Actions
 
-- **View Order:** `portalResolveClientIdFromSheetPax` + cajón de cliente.
+- **View Order:** abre la vista **CFK-style** (`comms_ops_order`) con datos de **Clients Payments** / `client_payments` cuando hay `inv` emparejado; si no, cajón de cliente o demo.
+- **Edit:** filas con `payId` (Supabase) → módulo **Programme payments**.
 - **Send Invoice:** demo / alerta.
+
+### Vista Order (CFK-style) — Ops comms & log
+
+- **Ruta:** Communications → Ops comms → Communications Log → **View Order** (ref `inv …`).
+- **Datos:** `PortalCommsOrderPayments.resolvePack()` — primero filas live/export por ref de factura; si no hay match, `MOCK.commsOrderDemoByRef`.
+- **Funding / método:** chips y texto desde columnas `fund`, `payMethod`, `periodNote`, `vat` del export.
+- **Record a payment:** si la línea tiene `payId`, actualiza `client_payments.data.Paid` y `payment_status` (misma fuente que Programme payments y Orders catalogue).
 
 ## Orden y paginación
 

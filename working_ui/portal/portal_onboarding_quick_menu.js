@@ -5,10 +5,12 @@
 (function (global) {
   "use strict";
 
-  /** Production allowlist — email on Portal auth session. */
+  /** Production allowlist — auth email on Portal session (Michelle applicant only). */
   var ONBOARDING_APPLICANT_EMAILS = {
     "michelle@youtimecounselling.com": true,
   };
+
+  var ONBOARDING_MENU_HIDDEN_CLASS = "portal-onboarding-menu-hidden";
 
   var JOB_TOP = "quickMenuOnboardingJobTop";
   var HEALTH_TOP = "quickMenuOnboardingHealthTop";
@@ -56,12 +58,11 @@
 
   global.portalOnboardingApplicantIs = function portalOnboardingApplicantIs(profile, authEmail) {
     var email = normEmail(authEmail);
-    if (email && ONBOARDING_APPLICANT_EMAILS[email]) return true;
     if (portalPreviewTeflon()) {
       var key = rosterKeyFromProfile(profile, authEmail);
       return key === "teflon";
     }
-    return false;
+    return !!(email && ONBOARDING_APPLICANT_EMAILS[email]);
   };
 
   function resolveUrl(pathOrUrl) {
@@ -120,18 +121,24 @@
     }
   }
 
+  function onboardingMenuButtons() {
+    return [
+      global.document && global.document.getElementById(JOB_TOP),
+      global.document && global.document.getElementById(HEALTH_TOP),
+      global.document && global.document.getElementById(JOB_SETTINGS),
+      global.document && global.document.getElementById(HEALTH_SETTINGS),
+    ];
+  }
+
   function setBtn(btn, show) {
     if (!btn) return;
     btn.hidden = !show;
     btn.setAttribute("aria-hidden", show ? "false" : "true");
+    btn.classList.toggle(ONBOARDING_MENU_HIDDEN_CLASS, !show);
   }
 
   function hideAllOnboardingButtons() {
-    var jobTop = global.document && global.document.getElementById(JOB_TOP);
-    var healthTop = global.document && global.document.getElementById(HEALTH_TOP);
-    var jobSet = global.document && global.document.getElementById(JOB_SETTINGS);
-    var healthSet = global.document && global.document.getElementById(HEALTH_SETTINGS);
-    [jobTop, healthTop, jobSet, healthSet].forEach(function (b) {
+    onboardingMenuButtons().forEach(function (b) {
       setBtn(b, false);
     });
   }
@@ -179,8 +186,15 @@
 
       var isApplicant = global.portalOnboardingApplicantIs(profile, email);
       if (!isApplicant) {
+        statusCache.job = false;
+        statusCache.health = false;
         statusCache.loaded = true;
         applyVisibility(false);
+        if (typeof global.portalUpdateQuickMenuAccordionLabel === "function") {
+          global.portalUpdateQuickMenuAccordionLabel("portalQuickMenuGuideGroup", "Getting started", [
+            "Guide",
+          ]);
+        }
         if (typeof global.portalSyncQuickMenuGuidePlacement === "function") {
           global.portalSyncQuickMenuGuidePlacement();
         }
@@ -214,6 +228,17 @@
 
       statusCache.loaded = true;
       applyVisibility(true);
+
+      if (typeof global.portalUpdateQuickMenuAccordionLabel === "function") {
+        var guideChips = ["Guide"];
+        if (!statusCache.job) guideChips.push("Job");
+        if (!statusCache.health) guideChips.push("Health");
+        global.portalUpdateQuickMenuAccordionLabel(
+          "portalQuickMenuGuideGroup",
+          "Getting started",
+          guideChips
+        );
+      }
 
       if (
         isApplicant &&
