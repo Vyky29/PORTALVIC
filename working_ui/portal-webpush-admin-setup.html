@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PORTAL — Webhooks admin Web Push (guía paso a paso)</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --paper: #ffffff;
+      --ink: #1a2332;
+      --muted: #4a5568;
+      --accent: #1d4ed8;
+      --ok: #166534;
+      --warn: #92400e;
+      --line: #cbd5e1;
+      --code-bg: #eef2f7;
+    }
+    * { box-sizing: border-box; }
+    html { font-size: 20px; scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      line-height: 1.65;
+      color: var(--ink);
+      background: var(--bg);
+    }
+    .wrap {
+      max-width: 52rem;
+      margin: 0 auto;
+      padding: 28px 20px 80px;
+    }
+    header {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 24px 28px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.06);
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 1.55rem;
+      line-height: 1.25;
+      font-weight: 800;
+    }
+    .sub {
+      margin: 0;
+      font-size: 1.05rem;
+      color: var(--muted);
+    }
+    section {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 22px 26px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 8px rgba(0,0,0,.04);
+    }
+    h2 {
+      margin: 0 0 14px;
+      font-size: 1.35rem;
+      color: var(--accent);
+      border-bottom: 3px solid #dbeafe;
+      padding-bottom: 8px;
+    }
+    h3 {
+      margin: 22px 0 10px;
+      font-size: 1.15rem;
+    }
+    p, li { font-size: 1rem; }
+    ul, ol { padding-left: 1.35rem; }
+    li { margin-bottom: 10px; }
+    a {
+      color: var(--accent);
+      font-weight: 600;
+      word-break: break-all;
+    }
+    a:hover { text-decoration: underline; }
+    .done {
+      background: #ecfdf5;
+      border: 2px solid #86efac;
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-bottom: 18px;
+      font-size: 1.05rem;
+    }
+    .done strong { color: var(--ok); }
+    .warn {
+      background: #fffbeb;
+      border: 2px solid #fcd34d;
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin: 16px 0;
+      font-size: 1rem;
+    }
+    .secret {
+      background: #fef2f2;
+      border: 2px solid #fca5a5;
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin: 16px 0;
+      font-size: 1rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+      margin: 12px 0;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: #eff6ff; font-weight: 700; }
+    code, .mono {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.92em;
+      background: var(--code-bg);
+      padding: 2px 6px;
+      border-radius: 4px;
+      word-break: break-all;
+    }
+    .copy-block {
+      display: block;
+      background: var(--code-bg);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin: 8px 0 14px;
+      font-family: Consolas, monospace;
+      font-size: 0.9rem;
+      line-height: 1.45;
+      user-select: all;
+    }
+    .checklist label {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      margin: 12px 0;
+      cursor: pointer;
+      font-size: 1.05rem;
+    }
+    .checklist input {
+      width: 22px;
+      height: 22px;
+      margin-top: 4px;
+      flex-shrink: 0;
+    }
+    .num {
+      display: inline-block;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 800;
+      width: 2rem;
+      height: 2rem;
+      line-height: 2rem;
+      text-align: center;
+      border-radius: 50%;
+      margin-right: 8px;
+      font-size: 1rem;
+    }
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-top: 24px;
+    }
+    @media print {
+      body { background: #fff; }
+      section { break-inside: avoid; box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Web Push admin — webhooks y Edge Function</h1>
+      <p class="sub">Proyecto <strong>Portal</strong> · ref <code>cklpnwhlqsulpmkipmqb</code> · Guía para leer en pantalla grande (fondo claro)</p>
+    </header>
+
+    <section>
+      <div class="done">
+        <strong>Ya hecho (CLI):</strong> <code>PORTAL_PUSH_ADMIN_OPEN_URL</code> =
+        <code>https://portalvic.vercel.app/admin_dashboard.html</code><br />
+        Lo viste en <code>supabase secrets list</code> con nombre + DIGEST (hash). Eso es correcto. No hace falta volver a pegar el listado en chats.
+      </div>
+      <div class="secret">
+        <strong>Seguridad:</strong> No compartas en público el valor de
+        <code>PORTAL_PUSH_WEBHOOK_SECRET</code>, <code>SUPABASE_SERVICE_ROLE_KEY</code> ni
+        <code>VAPID_PRIVATE_KEY</code>. En los webhooks solo lo copias del Dashboard de Supabase a mano.
+      </div>
+      <p><strong>Qué falta para que las alertas admin funcionen:</strong></p>
+      <ol>
+        <li>SQL de la tabla dedupe (una vez).</li>
+        <li>Edge Function desplegada (si no está en remoto).</li>
+        <li><strong>Cuatro webhooks</strong> en el Dashboard (este documento).</li>
+        <li>Activar notificaciones en <code>admin_dashboard.html</code>.</li>
+      </ol>
+    </section>
+
+    <section id="paso1">
+      <h2><span class="num">1</span> SQL — tabla dedupe</h2>
+      <p>En Supabase → <strong>SQL Editor</strong> (proyecto Portal), ejecuta el archivo del repo:</p>
+      <p class="copy-block">supabase/migrations/20260617120000_portal_webpush_admin_alert_sent.sql</p>
+      <p>Crea la tabla <code>portal_webpush_admin_alert_sent</code> para no enviar el mismo push dos veces.</p>
+      <p class="checklist">
+        <label><input type="checkbox" /> SQL ejecutado sin error</label>
+      </p>
+    </section>
+
+    <section id="paso2">
+      <h2><span class="num">2</span> Edge Function — desplegar</h2>
+      <p>En PowerShell, carpeta del repo, con CLI logueado y proyecto Portal enlazado:</p>
+      <p class="copy-block">cd C:\Users\info\PORTAL<br />supabase functions deploy portal-push-dispatch-admin-alert</p>
+      <p>Comprueba en Dashboard → <strong>Edge Functions</strong> que aparece
+        <code>portal-push-dispatch-admin-alert</code> como activa.</p>
+      <p class="checklist">
+        <label><input type="checkbox" /> Función desplegada</label>
+      </p>
+    </section>
+
+    <section id="paso3">
+      <h2><span class="num">3</span> Webhooks — lo importante (4 veces)</h2>
+      <p>Abre el enlace directo a webhooks del proyecto Portal:</p>
+      <p><a href="https://supabase.com/dashboard/project/cklpnwhlqsulpmkipmqb/integrations/webhooks/overview" target="_blank" rel="noopener">Dashboard → Integrations → Webhooks</a></p>
+      <div class="warn">
+        La ruta antigua <code>/database/hooks</code> da 404. Usa <strong>Integrations → Webhooks</strong>.
+      </div>
+
+      <h3>Valor del header (una sola vez)</h3>
+      <p>Antes de crear webhooks, copia el secret desde:</p>
+      <p><strong>Project Settings → Edge Functions → Secrets</strong> (o donde guardaste el valor al crearlo):</p>
+      <ul>
+        <li>Nombre del header: <code>x-portal-webhook-secret</code></li>
+        <li>Valor: el contenido de <code>PORTAL_PUSH_WEBHOOK_SECRET</code> (no el DIGEST del CLI)</li>
+      </ul>
+
+      <h3>Datos iguales en los 4 webhooks</h3>
+      <table>
+        <tr><th>Campo</th><th>Valor</th></tr>
+        <tr><td>Type</td><td>HTTP Request</td></tr>
+        <tr><td>Method</td><td>POST</td></tr>
+        <tr><td>Events</td><td>Solo <strong>Insert</strong> (marcar Insert)</td></tr>
+        <tr><td>URL</td><td><span class="copy-block" style="margin:0">https://cklpnwhlqsulpmkipmqb.supabase.co/functions/v1/portal-push-dispatch-admin-alert</span></td></tr>
+        <tr><td>HTTP Header</td><td><code>x-portal-webhook-secret</code> = (tu PORTAL_PUSH_WEBHOOK_SECRET)</td></tr>
+        <tr><td>Timeout</td><td>5000 ms o más</td></tr>
+      </table>
+
+      <h3>Crea 4 webhooks — solo cambia nombre y tabla</h3>
+
+      <h3>Webhook A</h3>
+      <table>
+        <tr><th>Name</th><td><code>portal-push-admin-late</code></td></tr>
+        <tr><th>Table</th><td><code>portal_late_submission_requests</code></td></tr>
+      </table>
+
+      <h3>Webhook B</h3>
+      <table>
+        <tr><th>Name</th><td><code>portal-push-admin-cancellation</code></td></tr>
+        <tr><th>Table</th><td><code>cancellation_reports</code></td></tr>
+      </table>
+
+      <h3>Webhook C</h3>
+      <table>
+        <tr><th>Name</th><td><code>portal-push-admin-incident</code></td></tr>
+        <tr><th>Table</th><td><code>incident_reports</code></td></tr>
+      </table>
+
+      <h3>Webhook D</h3>
+      <table>
+        <tr><th>Name</th><td><code>portal-push-admin-chat</code></td></tr>
+        <tr><th>Table</th><td><code>portal_staff_dm_messages</code></td></tr>
+      </table>
+
+      <p class="checklist">
+        <label><input type="checkbox" /> portal-push-admin-late</label>
+        <label><input type="checkbox" /> portal-push-admin-cancellation</label>
+        <label><input type="checkbox" /> portal-push-admin-incident</label>
+        <label><input type="checkbox" /> portal-push-admin-chat</label>
+      </p>
+    </section>
+
+    <section id="paso4">
+      <h2><span class="num">4</span> Probar</h2>
+      <ol>
+        <li>Dashboard → <strong>Edge Functions → portal-push-dispatch-admin-alert → Logs</strong>.</li>
+        <li>Genera un evento real o de prueba (p. ej. late submission <code>pending</code>, o mensaje DM de un staff que no sea admin/ceo).</li>
+        <li>En logs debe aparecer actividad y respuesta <strong>200</strong>. Si ves <strong>403</strong>, el header del webhook no coincide con el secret.</li>
+      </ol>
+      <p class="checklist">
+        <label><input type="checkbox" /> Logs sin 403</label>
+      </p>
+    </section>
+
+    <section id="paso5">
+      <h2><span class="num">5</span> Admin dashboard — activar push en el navegador</h2>
+      <ol>
+        <li>Entra como admin/CEO en <a href="https://portalvic.vercel.app/admin_dashboard.html" target="_blank" rel="noopener">admin_dashboard.html</a>.</li>
+        <li>Activa notificaciones (campana / ajustes de push) hasta ver texto tipo “On — including alerts when the app is closed”.</li>
+        <li>Al pulsar una notificación admin debe abrir el admin con alertas (<code>?portalOpen=alerts</code>), gracias a <code>PORTAL_PUSH_ADMIN_OPEN_URL</code>.</li>
+      </ol>
+      <p class="checklist">
+        <label><input type="checkbox" /> Push activado en admin</label>
+      </p>
+    </section>
+
+    <section>
+      <h2>Resumen rápido</h2>
+      <ul>
+        <li><strong>Staff</strong> sigue usando <code>PORTAL_PUSH_OPEN_URL</code> → staff_dashboard.</li>
+        <li><strong>Admin/CEO</strong> usa <code>PORTAL_PUSH_ADMIN_OPEN_URL</code> → admin_dashboard (ya configurado).</li>
+        <li>Los 4 webhooks llaman a la <strong>misma</strong> URL de Edge Function.</li>
+        <li>Chat: no notifica si quien escribe ya es admin/ceo.</li>
+      </ul>
+      <p>Documentación larga en el repo: <code>database/PORTAL-WEB-PUSH-SETUP-GUIDE.md</code></p>
+    </section>
+
+    <footer>
+      PORTALVIC · portal-webpush-admin-setup.html · Jun 2026
+    </footer>
+  </div>
+</body>
+</html>
