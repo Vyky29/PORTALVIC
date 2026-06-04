@@ -9130,6 +9130,7 @@
       if(typeof portalAnnouncementLockActive === 'function' && portalAnnouncementLockActive()){
         if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
       }
+      portalQuickMenuEntryMode = 'logo-lite';
       if(typeof portalApplyQuickMenuEntryMode === 'function') portalApplyQuickMenuEntryMode();
       if(typeof openSheet === 'function') openSheet('menuSheet');
       if(typeof syncPortalHeaderAlertChrome === 'function'){
@@ -9148,22 +9149,30 @@
     function portalApplyQuickMenuEntryMode(){
       const menu = document.getElementById('menuSheet');
       if(!menu) return;
-      menu.classList.add('menu-sheet--logo-lite');
-      menu.classList.remove('menu-sheet--full');
+      const mode = portalQuickMenuEntryMode === 'logo-lite' ? 'logo-lite' : 'full';
+      menu.classList.toggle('menu-sheet--logo-lite', mode === 'logo-lite');
+      menu.classList.toggle('menu-sheet--full', mode === 'full');
       const titleEl = document.getElementById('portalMenuSheetTitle');
-      if(titleEl) titleEl.textContent = 'Menu';
+      if(titleEl) titleEl.textContent = mode === 'logo-lite' ? 'Alerts/Notifications' : 'Quick menu';
     }
     function syncPortalQuickMenuNotificationsGroupVisibility(){
       const grp = document.getElementById('portalQuickMenuNotificationsGroup');
-      if(grp){
+      const grid = document.getElementById('portalQuickMenuNoticesGrid');
+      const qg = document.getElementById('portalQuickMenuReminderGroup');
+      const policySlot = document.getElementById('portalQuickMenuSafeguardingPolicySlot');
+      const outstandingSlot = document.getElementById('portalQuickMenuOutstandingFeedbackSlot');
+      const slotIc = document.getElementById('portalQuickMenuInternalChatSlot');
+      if(!grp) return;
+      if(portalQuickMenuEntryMode !== 'logo-lite'){
         grp.hidden = true;
-        grp.setAttribute('aria-hidden', 'true');
+        return;
       }
-      if(typeof portalHideSkippedQuickMenuGroups === 'function'){
-        portalHideSkippedQuickMenuGroups();
-      }else if(typeof portalInitQuickMenuAccordion === 'function'){
-        portalInitQuickMenuAccordion();
-      }
+      const hasPolicy = !!(policySlot && !policySlot.hidden);
+      const hasOutstanding = !!(outstandingSlot && !outstandingSlot.hidden);
+      const hasBanner = hasPolicy || hasOutstanding || !!(qg && !qg.hidden);
+      const hasNotices = !!(grid && grid.childElementCount > 0);
+      const hasInternalChat = !!(slotIc && slotIc.childElementCount > 0);
+      grp.hidden = !hasBanner && !hasNotices && !hasInternalChat;
     }
 
     function syncDockQuickMenuAttention(){
@@ -11708,6 +11717,7 @@
       }
     }
     function handleQuickMenuDockClick(){
+      portalQuickMenuEntryMode = 'full';
       if(document.getElementById('internalChatSheet')?.classList.contains('open')){
         portalCloseInternalChatReturnToAlertsMenu();
         return;
@@ -11744,7 +11754,6 @@
     }
     document.getElementById('dockDashboardTile')?.addEventListener('click', handleDashboardDockClick);
     document.getElementById('dockQuickMenuTile')?.addEventListener('click', handleQuickMenuDockClick);
-    document.getElementById('avatarWrap')?.addEventListener('click', handleQuickMenuDockClick);
     document.getElementById('termCalIntroUnderstood')?.addEventListener('click', dismissTermCalendarColorIntro);
 
     (function bindTermGridPendingReviewNavigation(){
