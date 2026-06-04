@@ -349,7 +349,7 @@ function bindLogin() {
 
   async function fetchStaffProfile(supabase, userId) {
     const selectCols =
-      "id, username, full_name, app_role, staff_role, dashboard_route, auth_session_generation, is_active";
+      "id, username, full_name, app_role, staff_role, dashboard_route, auth_session_generation, is_active, nationality";
     const byId = await supabase
       .from("staff_profiles")
       .select(selectCols)
@@ -605,7 +605,7 @@ export async function bootstrapDashboardSupabase(_opts) {
     }
     const { data: profile, error } = await supabase
       .from("staff_profiles")
-      .select("id, username, full_name, app_role, staff_role, dashboard_route, auth_session_generation, is_active")
+      .select("id, username, full_name, app_role, staff_role, dashboard_route, auth_session_generation, is_active, nationality")
       .eq("id", session.user.id)
       .maybeSingle();
     if (error) throw error;
@@ -851,7 +851,7 @@ export async function bootstrapDashboardSupabase(_opts) {
             const { data } = await supabase
               .from("staff_profiles")
               .select(
-                "id, username, full_name, app_role, staff_role, dashboard_route, auth_session_generation, is_active"
+                "id, username, full_name, app_role, staff_role, dashboard_route, auth_session_generation, is_active, nationality"
               )
               .eq("id", session.user.id)
               .maybeSingle();

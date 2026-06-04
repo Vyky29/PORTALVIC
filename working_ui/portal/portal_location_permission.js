@@ -9,6 +9,122 @@ let _state = "unknown";
 /** @type {'unknown' | 'granted' | 'denied' | 'prompt' | 'unsupported'} */
 let _micState = "unknown";
 
+const MIC_ITALIAN_STAFF = { roberto: 1, giuseppe: 1 };
+const MIC_SPANISH_STAFF = {
+  aurora: 1,
+  javier: 1,
+  javi: 1,
+  angel: 1,
+  victor: 1,
+  sandra: 1,
+  raul: 1,
+  carlos: 1,
+  andres: 1,
+};
+
+function micNormalizeToken(raw) {
+  return String(raw || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function micNameTokens(staffName) {
+  return micNormalizeToken(staffName)
+    .split(/[\s,._-]+/)
+    .filter(Boolean);
+}
+
+function micNormalizeNationality(nat) {
+  return String(nat || "").trim().toLowerCase();
+}
+
+function micIsBritishNationality(nat) {
+  const n = micNormalizeNationality(nat);
+  if (!n) return false;
+  return (
+    /^(uk|u\.k\.|united kingdom|british|britain|great britain|english|england|scottish|scotland|welsh|wales|northern ireland)$/.test(
+      n
+    ) ||
+    n.includes("british") ||
+    n.includes("united kingdom")
+  );
+}
+
+function micNationalityToRecordingLanguage(nat) {
+  const n = micNormalizeNationality(nat);
+  if (!n) return null;
+  if (n.includes("spanish") || n.includes("spain") || n.includes("espa")) return "Spanish";
+  if (n.includes("italian") || n.includes("italy") || n.includes("italia")) return "Italian";
+  if (n.includes("portuguese") || n.includes("portugal")) return "Portuguese";
+  if (n.includes("french") || n.includes("france")) return "French";
+  if (n.includes("polish") || n.includes("poland")) return "Polish";
+  if (n.includes("romanian") || n.includes("romania")) return "Romanian";
+  const raw = String(nat || "").trim();
+  if (/^[A-Z][a-z]+$/.test(raw)) return raw;
+  return null;
+}
+
+function micResolveStaffVoiceGroup() {
+  let tokens = [];
+  try {
+    const prof =
+      typeof window !== "undefined" && window.__PORTAL_SUPABASE__
+        ? window.__PORTAL_SUPABASE__.staff_profile
+        : null;
+    if (prof && prof.nationality) {
+      const nat = micNormalizeNationality(prof.nationality);
+      if (micIsBritishNationality(prof.nationality)) return { group: "english" };
+      if (nat.includes("spanish") || nat.includes("spain") || nat.includes("espa")) {
+        return { group: "spanish", lang: "Spanish" };
+      }
+      if (nat.includes("italian") || nat.includes("italy") || nat.includes("italia")) {
+        return { group: "italian", lang: "Italian" };
+      }
+      const lang = micNationalityToRecordingLanguage(prof.nationality);
+      if (lang) return { group: "other", lang };
+      return { group: "other", lang: null };
+    }
+    if (prof) tokens = micNameTokens(prof.full_name || prof.username || "");
+  } catch (_) {}
+  let i;
+  for (i = 0; i < tokens.length; i++) {
+    if (MIC_ITALIAN_STAFF[tokens[i]]) return { group: "italian", lang: "Italian" };
+  }
+  for (i = 0; i < tokens.length; i++) {
+    if (MIC_SPANISH_STAFF[tokens[i]]) return { group: "spanish", lang: "Spanish" };
+  }
+  return { group: "english" };
+}
+
+function portalMicSetupHintText() {
+  const resolved = micResolveStaffVoiceGroup();
+  if (resolved.group === "spanish") {
+    return "You can record session feedback in Spanish — we live-transcribe into English for records.";
+  }
+  if (resolved.group === "italian") {
+    return "You can record session feedback in Italian — we live-transcribe into English for records.";
+  }
+  if (resolved.group === "other") {
+    if (resolved.lang) {
+      return (
+        "You can record session feedback in " +
+        resolved.lang +
+        " — we live-transcribe into English for records."
+      );
+    }
+    return "You can record session feedback in your official language — we live-transcribe into English for records.";
+  }
+  return "Optional — for voice session feedback if you prefer speaking instead of typing.";
+}
+
+function portalRefreshMicrophoneHint() {
+  const hintEl = document.getElementById("portalMicHint");
+  if (!hintEl) return;
+  hintEl.textContent = portalMicSetupHintText();
+}
+
 function locationContextHint() {
   try {
     if (typeof window !== "undefined" && window.self !== window.top) {
@@ -366,6 +482,7 @@ export function portalSyncAlertsSettingsChrome() {
 }
 
 export function portalRefreshMicrophoneUi() {
+  portalRefreshMicrophoneHint();
   const statusEl = document.getElementById("portalMicStatus");
   const btn = document.getElementById("portalMicEnableBtn");
   if (!statusEl) return;

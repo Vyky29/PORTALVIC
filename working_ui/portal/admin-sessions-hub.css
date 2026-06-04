@@ -262,12 +262,53 @@
     .ash-day-row--week { margin-top: 2px; }
     @media (max-width: 900px) {
       .ash-day-row {
-        grid-template-columns: repeat(7, minmax(64px, 1fr));
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        padding-bottom: 6px;
-        overscroll-behavior-x: contain;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        overflow-x: visible;
+        gap: 4px;
+        padding-bottom: 0;
       }
+    }
+    body.admin-touch-compact .ash-day-row--feedback {
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      overflow-x: visible;
+      gap: 4px;
+    }
+    body.admin-touch-compact .ash-day-card--feedback {
+      padding: 6px 3px 7px;
+    }
+    body.admin-touch-compact .ash-day-card--feedback .ash-day-card__top {
+      margin-bottom: 4px;
+    }
+    body.admin-touch-compact .ash-day-card--feedback .ash-day-card__dt {
+      display: none !important;
+    }
+    body.admin-touch-compact .ash-day-card--feedback .ash-day-card__wd-full {
+      display: none !important;
+    }
+    body.admin-touch-compact .ash-day-card--feedback .ash-day-card__wd-short {
+      display: block !important;
+      font-size: 10px;
+      font-weight: 800;
+    }
+    body.admin-touch-compact .ash-day-card--feedback .ash-day-card__bar {
+      height: 6px;
+      margin-bottom: 4px;
+    }
+    body.admin-touch-compact .ash-day-card--feedback .ash-day-card__count {
+      font-size: 10px;
+      font-weight: 700;
+      line-height: 1.1;
+    }
+    body.admin-touch-compact .ash-feedback-week {
+      padding: 10px 8px;
+      margin-bottom: 12px;
+    }
+    body.admin-touch-compact .ash-feedback-week__title {
+      font-size: 12px;
+    }
+    body.admin-touch-compact .ash-feedback-week__head {
+      gap: 8px;
+      margin-bottom: 4px;
     }
     .ash-day-card {
       border: 1px solid var(--border); border-radius: 12px; background: #fff;

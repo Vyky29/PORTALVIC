@@ -631,24 +631,26 @@
     <div class="sheet-head">
       <div class="sheet-handle"></div>
       <h3 id="alertsNotificationsTitle">Alerts, location &amp; microphone</h3>
-      <p>Turn on notifications once on this device. Location only if you deliver Bespoke Programme or Day Centre.</p>
+      <p>Turn on notifications once on this device.</p>
     </div>
     <div class="sheet-body">
       <div class="portal-alerts-panel">
-        <p class="portal-alerts-lead">Set this up once: <strong>notifications</strong> for announcements and roster changes. <strong>Location</strong> only appears here if you deliver Bespoke Programme or Day Centre on your rota. <strong>Microphone</strong> is optional — only if you prefer voice session feedback.</p>
         <div class="portal-alerts-block">
           <h4 class="portal-alerts-section-title">Notifications</h4>
+          <p class="portal-alerts-hint muted">For announcements and roster changes.</p>
           <p id="portalNotifyStatus" class="portal-alerts-status" aria-live="polite"></p>
           <button type="button" class="portal-alerts-action-btn" id="portalNotifyEnableBtn">Turn on notifications</button>
           <button type="button" class="portal-alerts-action-btn portal-alerts-action-btn--ghost" id="portalNotifyTestBtn" hidden>Send test</button>
         </div>
         <div class="portal-alerts-block" id="portalLocationBlock">
           <h4 class="portal-alerts-section-title">Location</h4>
+          <p class="portal-alerts-hint muted">Only if you deliver Bespoke Programme or Day Centre on your rota.</p>
           <p id="portalLocationStatus" class="portal-alerts-status" aria-live="polite"></p>
           <button type="button" class="portal-alerts-action-btn" id="portalLocationEnableBtn">Allow location</button>
         </div>
         <div class="portal-alerts-block">
           <h4 class="portal-alerts-section-title">Microphone <span class="muted" style="font-weight:600">(optional)</span></h4>
+          <p id="portalMicHint" class="portal-alerts-hint muted"></p>
           <p id="portalMicStatus" class="portal-alerts-status" aria-live="polite"></p>
           <button type="button" class="portal-alerts-action-btn" id="portalMicEnableBtn">Allow microphone</button>
         </div>
@@ -3590,6 +3592,47 @@
       if(parts.length === 1) return parts[0].charAt(0).toUpperCase();
       return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
     }
+    const PARTICIPANT_PHOTOS = {
+      'jack w': 'portal/participants/jack-w.jpg',
+      'jack walker': 'portal/participants/jack-w.jpg'
+    };
+    function clientPhotoUrl(name){
+      const key = String(name || '').trim().toLowerCase().replace(/\s+/g, ' ');
+      return Object.prototype.hasOwnProperty.call(PARTICIPANT_PHOTOS, key) ? PARTICIPANT_PHOTOS[key] : '';
+    }
+    function resolveParticipantPhotoUrl(name, clientId){
+      const c = clientId && clientNotesById[clientId];
+      const fromNote = c && c.avatarFile ? String(c.avatarFile).trim() : '';
+      if(fromNote) return fromNote;
+      return clientPhotoUrl(name);
+    }
+    function clientPhotoSlotPlaceholderHtml(){
+      return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>';
+    }
+    function syncClientPhotoSlot(name, clientId){
+      const slot = document.getElementById('clientPhotoSlot');
+      if(!slot) return;
+      const url = resolveParticipantPhotoUrl(name, clientId);
+      if(url){
+        slot.classList.add('client-photo-slot--has-photo');
+        slot.innerHTML = '<img class="portal-screenshot-protected" src="' + escapeHtml(url) + '" alt="" loading="lazy" decoding="async" draggable="false" onerror="portalClientPhotoSlotFallback(this)">';
+      } else {
+        slot.classList.remove('client-photo-slot--has-photo');
+        slot.innerHTML = clientPhotoSlotPlaceholderHtml();
+      }
+    }
+    window.portalClientPhotoSlotFallback = function(img){
+      const slot = img && img.parentElement;
+      if(!slot) return;
+      slot.classList.remove('client-photo-slot--has-photo');
+      slot.innerHTML = clientPhotoSlotPlaceholderHtml();
+    };
+    function clientAvatarInner(name, clientId){
+      const initials = escapeHtml(clientInitials(name));
+      const url = resolveParticipantPhotoUrl(name, clientId);
+      if(!url) return initials;
+      return initials + '<img class="clients-grid-avatar-img portal-screenshot-protected" src="' + escapeHtml(url) + '" alt="" loading="lazy" decoding="async" draggable="false" onerror="this.remove()">';
+    }
     /** Topbar: first token = given name line; remaining tokens = surname line. */
     function splitStaffTopbarName(fullName){
       const parts = String(fullName || '').trim().split(/\s+/).filter(Boolean);
@@ -3765,10 +3808,9 @@
       box.innerHTML = ids.map((clientId, i) => {
         const c = clientNotesById[clientId];
         if(!c) return '';
-        const initials = escapeHtml(clientInitials(c.name));
         const name = escapeHtml(c.name);
         const gAttr = clientGenderDataAttr(c);
-        return `<button type="button" role="option" class="clients-suggest-option" id="clientsSuggestOpt-${i}" data-client-id="${escapeHtml(clientId)}"${gAttr}><span class="clients-grid-avatar" aria-hidden="true">${initials}</span><span class="clients-grid-name">${name}</span></button>`;
+        return `<button type="button" role="option" class="clients-suggest-option" id="clientsSuggestOpt-${i}" data-client-id="${escapeHtml(clientId)}"${gAttr}><span class="clients-grid-avatar" aria-hidden="true">${clientAvatarInner(c.name, clientId)}</span><span class="clients-grid-name">${name}</span></button>`;
       }).join('');
     }
     function refreshClientsAllTabUI(){
@@ -10623,9 +10665,10 @@
       const gen = resolveClientGeneralInfoText(item);
       document.getElementById('clientTitle').textContent = item.name;
       document.getElementById('clientTime').textContent = item.time;
+      syncClientPhotoSlot(item.name, item.clientId);
       setClientInfoFormattedBody('clientGeneral', gen, 'No general information available.');
       setClientInfoFormattedBody('clientSpecialtyBody', '', 'No information for this programme.');
-      renderClientServiceButtons(resolveClientServiceActivities(item));
+      renderClientServiceButtons([]);
       openSheet('clientSheet');
       const cs = document.getElementById('clientSheet');
       if(cs) cs.classList.toggle('client-sheet--roster-entry', !!item.directoryProfile);

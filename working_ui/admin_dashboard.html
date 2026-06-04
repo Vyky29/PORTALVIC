@@ -4,7 +4,7 @@
   <!-- Admin portal · Vercel static deploy: working_ui/admin_dashboard.html + portal/ assets -->
   <meta charset="UTF-8" />
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
-  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260601-week-row-scroll" />
+  <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260614-mob-fit" />
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260613-hours-all-week" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260603-form-record-modal" />
   <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260601-docs-row8" />
@@ -39,7 +39,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260613-admin-mob-nav" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260614-admin-mob-fit" />
 </head>
 <body>
   <script>
@@ -253,13 +253,14 @@
       { id:'portal_nav_lead', label:'Lead dashboard', externalUrl:'/lead_dashboard.html', skipBottomNav:true },
       { id:'portal_nav_ceo', label:'CEO dashboard', externalUrl:'/ceo_dashboard.html', skipBottomNav:true },
       { id:'portal_nav_admin', label:'Operations admin', externalUrl:'/admin_dashboard.html', skipBottomNav:true },
-      { id:'portal_nav_logout', label:'Log out', navAction:'logout', skipBottomNav:true }
+      { id:'portal_nav_logout', label:'Log out', navAction:'logout', skipBottomNav:true },
+      { id:'nav_all_menu', label:'Menu', navAction:'fullnav', skipBottomNav:false }
     ];
     var NAV_TOP = [
       { id:'nav_hub', label:'Dashboard' }
     ];
     /** Touch layout: short bottom bar (full menu via ☰ / float button). */
-    var MOBILE_BOTTOM_NAV_IDS = ['nav_hub', 'dashboard', 'c4k_services', 'scheduling', 'staffhr'];
+    var MOBILE_BOTTOM_NAV_IDS = ['nav_hub', 'dashboard', 'c4k_sessions', 'scheduling', 'nav_all_menu'];
     var NAV_GROUPS = [
       { id:'g_operator', label:'Operator', children:['dashboard','operations_admin','operator'] },
       { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','c4k_sessions','scheduling','term_roster_edit','roster_spreadsheets','c4k_waitlist','__h:Participants','clients','c4k_reviews','c4k_reports','__h:Orders','orders_all','absents_refunds','__h:Communications','comms_ops'] },
@@ -4618,6 +4619,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var colCss = '--cap-accent:' + pal.lo + ';--cap-soft:' + pal.soft + ';--cap-border:' + pal.border;
         var dParse = bookingParseIsoLocal(dIso);
         var dayLong = dParse ? dParse.toLocaleDateString('en-GB', { weekday: 'long' }) : '—';
+        var dayLabel = embedWeekTile && dParse
+          ? dParse.toLocaleDateString('en-GB', { weekday: 'short' })
+          : dayLong;
         var tip;
         var barInner;
         var metaLine;
@@ -4640,7 +4644,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             barInner = segDone + segPend;
             if(!barInner) barInner = '<span class="booking-cap-seg booking-cap-seg--open" style="flex:1 1 0"></span>';
           }
-          metaLine = esc(String(fbs.completed) + '/' + String(fbs.required)) + ' feedbacks';
+          metaLine = esc(String(fbs.completed) + '/' + String(fbs.required));
         }else{
           var st = bookingRosterStatsForIsoCalendarDay(dIso);
           sumTot += st.total;
@@ -4662,8 +4666,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         bars.push(
           '<div class="booking-cap-col' + (isSelected ? ' is-selected' : '') + '" data-booking-week-day="' + esc(dIso) + '" role="button" tabindex="0" title="' + esc(tip) + '" style="' + colCss + '">' +
             '<div class="booking-cap-day">' +
-              '<span class="booking-cap-day-lbl">' + esc(dayLong) + '</span>' +
-              '<span class="booking-cap-day-date muted">' + esc(bookingFormatDdMmYyyy(dIso)) + '</span>' +
+              '<span class="booking-cap-day-lbl">' + esc(dayLabel) + '</span>' +
+              (embedWeekTile ? '' : ('<span class="booking-cap-day-date muted">' + esc(bookingFormatDdMmYyyy(dIso)) + '</span>')) +
             '</div>' +
             '<div class="booking-cap-bar" aria-hidden="true">' + barInner + '</div>' +
             '<div class="booking-cap-meta muted">' + metaLine + '</div>' +
@@ -15076,7 +15080,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
     var ADMIN_SESSIONS_HUB_SRC =
-      '/portal/admin-sessions-hub.js?v=20260601-teflon-fb-match';
+      '/portal/admin-sessions-hub.js?v=20260614-mob-fit';
 
     /** Club closed — half-term 23–31 May 2026, bank holiday 4 May (see PORTAL_TERM_FROM_TIMETABLE). */
     function portalAdminDayIsClubClosed(iso){
@@ -21677,50 +21681,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       $('adminBottomNav').innerHTML = bottomNavItems.map(function(item){
         var lab = item.hubLabel || item.label;
+        if(item.navAction === 'fullnav'){
+          return '<button type="button" data-admin-nav-action="fullnav">'+esc(lab)+'</button>';
+        }
         return '<button type="button" data-view="'+esc(item.id)+'">'+esc(lab)+'</button>';
       }).join('');
-      $('adminNav').querySelectorAll('[data-nav-group-toggle]').forEach(function(b){
-        b.addEventListener('click', function(ev){
-          ev.preventDefault();
-          try{
-            if(state.registerSessionSlot) closeRegisterSessionView();
-          }catch(_e){}
-          var gid = b.getAttribute('data-nav-group-toggle');
-          var wasOpen = !!(state.navGroupsOpen && state.navGroupsOpen[gid]);
-          if(wasOpen){
-            state.navGroupsOpen[gid] = false;
-          }else{
-            Object.keys(state.navGroupsOpen).forEach(function(k){ state.navGroupsOpen[k] = false; });
-            state.navGroupsOpen[gid] = true;
-          }
-          syncNavGroupsUi();
-        });
-      });
-      $('adminNav').querySelectorAll('button').forEach(function(b){
-        if(b.hasAttribute('data-admin-nav-action')) return;
-        if(b.hasAttribute('data-portal-logout')) return;
-        if(!b.hasAttribute('data-view')) return;
-        b.addEventListener('click', function(){
-          setView(b.getAttribute('data-view'));
-          closeSidebarMob();
-          if(!document.body.classList.contains('admin-touch-compact')){
-            adminSidebarSuppressExpandUntilLeave();
-          }
-        });
-      });
-      $('adminNav').querySelectorAll('button[data-admin-nav-action="alerts"]').forEach(function(b){
-        b.addEventListener('click', function(ev){
-          ev.preventDefault();
-          toggleAlerts();
-          closeSidebarMob();
-          if(!document.body.classList.contains('admin-touch-compact')){
-            adminSidebarSuppressExpandUntilLeave();
-          }
-        });
-      });
-      $('adminBottomNav').querySelectorAll('button').forEach(function(b){
-        b.addEventListener('click', function(){ setView(b.getAttribute('data-view')); closeSidebarMob(); });
-      });
       var cur = state.view;
       document.querySelectorAll('#adminNav button').forEach(function(b){
         var v = b.getAttribute('data-view');
@@ -21765,8 +21730,68 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function adminOpenFullnav(){
       if(!document.body.classList.contains('admin-touch-compact')) return;
+      var g = navGroupForView(state.view);
+      if(g && state.navGroupsOpen){
+        Object.keys(state.navGroupsOpen).forEach(function(k){ state.navGroupsOpen[k] = (k === g); });
+        syncNavGroupsUi();
+      }
+      document.body.classList.remove('sidebar-open');
       document.body.classList.add('admin-fullnav-open');
       adminSyncFullnavAria();
+    }
+    function bindAdminMobileNavOnce(){
+      if(window.__adminMobNavBound) return;
+      window.__adminMobNavBound = true;
+      var navEl = $('adminNav');
+      if(navEl){
+        navEl.addEventListener('click', function(ev){
+          var toggle = ev.target.closest ? ev.target.closest('[data-nav-group-toggle]') : null;
+          if(toggle){
+            ev.preventDefault();
+            try{ if(state.registerSessionSlot) closeRegisterSessionView(); }catch(_e){}
+            var gid = toggle.getAttribute('data-nav-group-toggle');
+            var wasOpen = !!(state.navGroupsOpen && state.navGroupsOpen[gid]);
+            if(wasOpen) state.navGroupsOpen[gid] = false;
+            else{
+              Object.keys(state.navGroupsOpen).forEach(function(k){ state.navGroupsOpen[k] = false; });
+              state.navGroupsOpen[gid] = true;
+            }
+            syncNavGroupsUi();
+            return;
+          }
+          var alertsBtn = ev.target.closest ? ev.target.closest('button[data-admin-nav-action="alerts"]') : null;
+          if(alertsBtn){
+            ev.preventDefault();
+            toggleAlerts();
+            closeSidebarMob();
+            return;
+          }
+          var viewBtn = ev.target.closest ? ev.target.closest('button[data-view]') : null;
+          if(viewBtn && navEl.contains(viewBtn)){
+            var v = viewBtn.getAttribute('data-view');
+            if(!v) return;
+            setView(v);
+            closeSidebarMob();
+            if(!document.body.classList.contains('admin-touch-compact')){
+              adminSidebarSuppressExpandUntilLeave();
+            }
+          }
+        });
+      }
+      var bottomEl = $('adminBottomNav');
+      if(bottomEl){
+        bottomEl.addEventListener('click', function(ev){
+          var btn = ev.target.closest ? ev.target.closest('button') : null;
+          if(!btn || !bottomEl.contains(btn)) return;
+          if(btn.getAttribute('data-admin-nav-action') === 'fullnav'){
+            adminOpenFullnav();
+            return;
+          }
+          var v = btn.getAttribute('data-view');
+          if(v) setView(v);
+          closeSidebarMob();
+        });
+      }
     }
     function adminToggleFullnav(){
       if(!document.body.classList.contains('admin-touch-compact')) return;
@@ -22227,6 +22252,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             if(a) portalAdminPushActivityAlert(a);
           })
           .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'venue_review_admin_notifications' }, function(){
+            if(window.__PORTAL_VENUE_REVIEW_ALERTS_TABLE_MISSING__) return;
             scheduleRefresh();
           })
           .subscribe();
@@ -22276,6 +22302,25 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(state.view==='bookings' || state.view==='orders_all' || state.view==='c4k_payments') setView(state.view);
       }, true);
     });
+    function portalAdminVenueReviewAlertsTableMissing(err){
+      var msg = String((err && err.message) || err || '');
+      return /does not exist|could not find|schema cache|PGRST205|404/i.test(msg);
+    }
+    function portalAdminFetchVenueReviewAlerts(client){
+      if(!client || !client.from || window.__PORTAL_VENUE_REVIEW_ALERTS_TABLE_MISSING__) return;
+      client.from('venue_review_admin_notifications').select('id,created_at,headline,body').is('read_at',null).order('created_at',{ascending:false}).limit(40).then(function(res){
+        if(res.error){
+          if(portalAdminVenueReviewAlertsTableMissing(res.error)){
+            window.__PORTAL_VENUE_REVIEW_ALERTS_TABLE_MISSING__ = true;
+            return;
+          }
+          console.warn('[admin] venue review alerts', res.error);
+          return;
+        }
+        window.__PORTAL_VENUE_REVIEW_ALERTS__ = res.data || [];
+        if(typeof window.__portalAdminRenderAlerts === 'function') window.__portalAdminRenderAlerts();
+      });
+    }
     window.addEventListener('portal:supabase-ready', function portalVenueReviewAlertsFetch(){
       try{
         var p = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
@@ -22283,11 +22328,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(role !== 'admin' && role !== 'ceo') return;
         var client = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client;
         if(!client || !client.from) return;
-        client.from('venue_review_admin_notifications').select('id,created_at,headline,body').is('read_at',null).order('created_at',{ascending:false}).limit(40).then(function(res){
-          if(res.error){ console.warn(res.error); return; }
-          window.__PORTAL_VENUE_REVIEW_ALERTS__ = res.data || [];
-          if(typeof window.__portalAdminRenderAlerts === 'function') window.__portalAdminRenderAlerts();
-        });
+        portalAdminFetchVenueReviewAlerts(client);
         void portalAdminBootstrapActivityAlerts();
         portalAdminEnsureActivityRealtime();
       }catch(err){ console.warn(err); }
@@ -22473,6 +22514,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(mnm) mnm.textContent = MOCK.profile.name;
       refreshKpisFromDemo();
       recomputeOperatorSuggestions();
+      bindAdminMobileNavOnce();
       renderNav();
       bindAdminDesktopSidebar();
       adminApplyDesktopSidebarFromStorage();

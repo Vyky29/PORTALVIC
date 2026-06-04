@@ -182,22 +182,14 @@
         '">' +
         '<div class="ash-day-card__top">' +
         htmlWeekdayLabel(iso, esc) +
-        '<span class="ash-day-card__dt">' +
-        esc(formatShortDate(iso)) +
-        '</span></div>' +
+        '</div>' +
         '<div class="ash-day-card__bar" style="--ash-pct:' +
         innerPct +
         ";--ash-col:" +
         col +
         '"></div>' +
-        '<span class="ash-day-card__count">' +
-        '<span class="ash-day-card__count-full">' +
-        esc(countStrong) +
-        " " +
-        esc(countLabel) +
-        '</span><span class="ash-day-card__count-short" aria-hidden="true">' +
-        esc(countStrong) +
-        "</span></span></button>"
+        htmlAshRatioCount(esc, countStrong) +
+        "</button>"
       );
     } else {
       var ds = hub.dayStats(iso);
@@ -448,6 +440,17 @@
       esc(weekdayLongFromIso(iso)) +
       '</span><span class="ash-day-card__wd-short" aria-hidden="true">' +
       esc(weekdayShortFromIso(iso)) +
+      "</span></span>"
+    );
+  }
+
+  function htmlAshRatioCount(esc, ratioText) {
+    return (
+      '<span class="ash-day-card__count">' +
+      '<span class="ash-day-card__count-full">' +
+      esc(ratioText) +
+      '</span><span class="ash-day-card__count-short" aria-hidden="true">' +
+      esc(ratioText) +
       "</span></span>"
     );
   }
@@ -5217,24 +5220,14 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           '">' +
           '<div class="ash-day-card__top">' +
           htmlWeekdayLabel(iso, esc) +
-          '<span class="ash-day-card__dt">' +
-          esc(formatShortDate(iso)) +
-          '</span></div>' +
+          '</div>' +
           '<div class="ash-day-card__bar" style="--ash-pct:' +
           innerPct +
           ";--ash-col:" +
           col +
           '"></div>' +
-          '<span class="ash-day-card__count">' +
-          '<span class="ash-day-card__count-full">' +
-          ds.done +
-          "/" +
-          ds.total +
-          ' feedbacks</span><span class="ash-day-card__count-short" aria-hidden="true">' +
-          ds.done +
-          "/" +
-          ds.total +
-          "</span></span></button>"
+          htmlAshRatioCount(esc, ds.done + "/" + ds.total) +
+          "</button>"
         );
       })
       .join("");
@@ -5290,24 +5283,14 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
           '">' +
           '<div class="ash-day-card__top">' +
           htmlWeekdayLabel(iso, escFn) +
-          '<span class="ash-day-card__dt">' +
-          escFn(formatShortDate(iso)) +
-          '</span></div>' +
+          '</div>' +
           '<div class="ash-day-card__bar" style="--ash-pct:' +
           innerPct +
           ";--ash-col:" +
           col +
           '"></div>' +
-          '<span class="ash-day-card__count">' +
-          '<span class="ash-day-card__count-full">' +
-          ds.done +
-          "/" +
-          ds.total +
-          ' feedbacks</span><span class="ash-day-card__count-short" aria-hidden="true">' +
-          ds.done +
-          "/" +
-          ds.total +
-          "</span></span></button>"
+          htmlAshRatioCount(escFn, ds.done + "/" + ds.total) +
+          "</button>"
       );
     }
     var tableRows = items

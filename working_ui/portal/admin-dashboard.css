@@ -664,7 +664,7 @@
     .c4k-sessions-hub__dash-jump .admin-nav-ico svg{width:18px;height:18px;display:block}
     .c4k-sessions-hub__dash-jump-label{line-height:1.2}
     .c4k-sessions-hub__toolbar{
-      display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;
+      display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:12px;
       margin:0 0 12px;min-width:0
     }
     .c4k-sessions-hub__actions{
@@ -4077,6 +4077,7 @@
       box-shadow:12px 0 36px rgba(0,0,0,.35);
       height:100dvh !important;
       max-height:100dvh !important;
+      z-index:12100 !important;
     }
     body.admin-touch-compact .admin-sidebar-brand{
       position:relative;padding:12px 14px 10px !important;cursor:pointer
@@ -4198,7 +4199,11 @@
 
     /* Sessions hub — keep week/day controls on one horizontal row (scroll if needed) */
     @media (max-width:1023px), (orientation:landscape) and (max-height:640px){
-      body.admin-touch-compact .c4k-sessions-hub__toolbar,
+      body.admin-touch-compact .c4k-sessions-hub__toolbar{
+        flex-direction:column;
+        align-items:stretch;
+        gap:8px;
+      }
       body.admin-touch-compact .c4k-sessions-hub-tabs,
       body.admin-touch-compact .ash-tabs,
       body.admin-touch-compact .ash-week-nav{
@@ -4207,6 +4212,13 @@
         -webkit-overflow-scrolling:touch;
         max-width:100%;
         overscroll-behavior-x:contain;
+      }
+      body.admin-touch-compact .c4k-sessions-hub__actions{
+        margin-left:0;
+        width:100%;
+        justify-content:flex-end;
+        flex-wrap:wrap;
+        gap:6px;
       }
       body.admin-touch-compact .c4k-sessions-hub-tab,
       body.admin-touch-compact .ash-tab,
@@ -4254,6 +4266,40 @@
       display:flex !important;
       z-index:12090;
     }
+    body.admin-touch-compact .admin-bottom-nav button{
+      padding:5px 9px;
+      font-size:10px;
+      font-weight:700;
+    }
+    body.admin-touch-compact .admin-bottom-nav button[data-admin-nav-action="fullnav"]{
+      border-color:#1e3a8a;
+      background:linear-gradient(180deg,#1e40af 0%,#1d4ed8 100%);
+      color:#fff;
+    }
+    body.admin-touch-compact .c4k-sessions-hub-tab{
+      padding:6px 9px;
+      font-size:11px;
+      gap:4px;
+    }
+    body.admin-touch-compact .c4k-sessions-hub-tab__ico{width:16px;height:16px}
+    body.admin-touch-compact .c4k-sessions-hub-tab__ico .admin-nav-ico svg{width:14px;height:14px}
+    body.admin-touch-compact .c4k-sessions-hub__refresh-at{font-size:10px}
+    body.admin-touch-compact .booking-capacity-bars{
+      overflow-x:visible;
+      gap:4px;
+    }
+    body.admin-touch-compact .booking-cap-col{
+      padding:6px 3px 7px;
+      gap:4px;
+      border-radius:10px;
+    }
+    body.admin-touch-compact .booking-cap-day-lbl{
+      font-size:9px;
+      line-height:1.15;
+    }
+    body.admin-touch-compact .booking-cap-day-date{display:none !important}
+    body.admin-touch-compact .booking-cap-bar{height:8px}
+    body.admin-touch-compact .booking-cap-meta{font-size:9px;font-weight:700}
     body.admin-touch-compact .admin-workspace{
       padding-bottom:calc(58px + env(safe-area-inset-bottom, 0px)) !important;
     }
