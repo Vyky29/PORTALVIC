@@ -115,11 +115,17 @@
       payload._portal = payload._portal && typeof payload._portal === "object" ? payload._portal : {};
       payload._portal.submitted_at = new Date().toISOString();
     }
-    return edgePost("portal-staff-onboarding-draft-save", {
+    var result = await edgePost("portal-staff-onboarding-draft-save", {
       form_type: "job",
       payload: payload,
       portal_staff_name: name,
     });
+    if (opts.submit && typeof global.portalOnboardingMakeWebhookPost === "function") {
+      try {
+        global.portalOnboardingMakeWebhookPost("job", staffSessionId(), name, payload);
+      } catch (_) {}
+    }
+    return result;
   };
   global.portalOnboardingFormLoadJob = async function () {
     return edgePost("portal-staff-onboarding-draft-load", { form_type: "job" });
@@ -128,15 +134,22 @@
     opts = opts || {};
     var sid = staffSessionId();
     if (!sid) throw new Error("not_signed_in");
+    var name = staffDisplayName();
     if (opts.submit) {
       payload._portal = payload._portal && typeof payload._portal === "object" ? payload._portal : {};
       payload._portal.submitted_at = new Date().toISOString();
     }
-    return edgePost("staff-health-draft-save", {
+    var result = await edgePost("staff-health-draft-save", {
       staff_session_id: sid,
-      staff_name: staffDisplayName(),
+      staff_name: name,
       payload: payload,
     });
+    if (opts.submit && typeof global.portalOnboardingMakeWebhookPost === "function") {
+      try {
+        global.portalOnboardingMakeWebhookPost("health", sid, name, payload);
+      } catch (_) {}
+    }
+    return result;
   };
   global.portalOnboardingFormLoadHealth = async function () {
     var sid = staffSessionId();

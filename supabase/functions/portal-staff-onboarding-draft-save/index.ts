@@ -1,5 +1,10 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  buildMakeOnboardingBody,
+  onboardingSubmittedAt,
+  postMakeOnboardingWebhook,
+} from "../_shared/onboarding_make_webhook.ts";
 
 const cors: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -114,6 +119,15 @@ Deno.serve(async (req) => {
       portal_staff_name: staffName,
       updated_at: new Date().toISOString(),
     });
+  }
+
+  if (onboardingSubmittedAt(payload)) {
+    const webhookUrl = (Deno.env.get("ONBOARDING_JOB_APPLICATION_MAKE_WEBHOOK_URL") ??
+      "").trim();
+    await postMakeOnboardingWebhook(
+      webhookUrl,
+      buildMakeOnboardingBody("job", userId, staffName, payload),
+    );
   }
 
   return json(200, { ok: true });

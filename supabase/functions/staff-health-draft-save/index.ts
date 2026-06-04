@@ -1,5 +1,9 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  buildMakeOnboardingBody,
+  postMakeOnboardingWebhook,
+} from "../_shared/onboarding_make_webhook.ts";
 
 const cors: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -83,6 +87,15 @@ Deno.serve(async (req) => {
       return json(500, { ok: false, error: "table_missing" });
     }
     return json(500, { ok: false, error: "save_failed" });
+  }
+
+  if (submittedAt) {
+    const webhookUrl = (Deno.env.get("ONBOARDING_HEALTH_QUESTIONNAIRE_MAKE_WEBHOOK_URL") ??
+      "").trim();
+    await postMakeOnboardingWebhook(
+      webhookUrl,
+      buildMakeOnboardingBody("health", sid, staffName, payload),
+    );
   }
 
   return json(200, { ok: true });

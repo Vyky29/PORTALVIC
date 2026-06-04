@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
- * Vercel build step: replace %%PB6%% with STAFF_PROFILE_PORTAL_BRIDGE_SECRET.
- * Same value must be set in Supabase Edge Function secrets.
+ * Vercel build step:
+ * - replace %%PB6%% with STAFF_PROFILE_PORTAL_BRIDGE_SECRET
+ * - inject Make.com webhook URLs into portal/onboarding_make_webhooks.js
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { readdirSync, statSync } from "node:fs";
@@ -48,3 +49,24 @@ for (const file of files) {
 }
 
 console.log(`[inject-portal-bridge-secret] Updated ${touched} file(s).`);
+
+const webhookFile = join(ROOT, "portal", "onboarding_make_webhooks.js");
+const jobMakeUrl = String(process.env.ONBOARDING_JOB_APPLICATION_MAKE_WEBHOOK_URL || "").trim();
+const healthMakeUrl = String(process.env.ONBOARDING_HEALTH_QUESTIONNAIRE_MAKE_WEBHOOK_URL || "").trim();
+
+try {
+  const webhookSrc = readFileSync(webhookFile, "utf8");
+  const webhookNext = webhookSrc
+    .split("%%ONBOARDING_JOB_MAKE_URL%%")
+    .join(jobMakeUrl)
+    .split("%%ONBOARDING_HEALTH_MAKE_URL%%")
+    .join(healthMakeUrl);
+  if (webhookNext !== webhookSrc) {
+    writeFileSync(webhookFile, webhookNext, "utf8");
+    console.log(
+      `[inject-portal-bridge-secret] Onboarding Make webhooks: job=${jobMakeUrl ? "set" : "empty"}, health=${healthMakeUrl ? "set" : "empty"}.`,
+    );
+  }
+} catch (err) {
+  console.warn("[inject-portal-bridge-secret] onboarding_make_webhooks.js not updated:", err);
+}
