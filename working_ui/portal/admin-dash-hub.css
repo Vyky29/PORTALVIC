@@ -1350,15 +1350,65 @@ body:has(#workspace .dash-hub--nav-index-pick) .admin-workspace{
 .dash-hub--nav-group{
   max-width:100%;
 }
-.dash-hub--nav-group .dash-hub__hub-toolbar{
-  margin:0 0 12px;
+/* Unified page head: back + title (left) · intro (right) */
+.admin-page-head{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px 20px;
+  margin:0 0 18px;
+  min-width:0;
+  width:100%;
 }
-.dash-hub--nav-group > .page-title{
-  margin:0 0 4px;
+.admin-page-head__main{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:10px 14px;
+  min-width:0;
+  flex:1 1 auto;
 }
-.dash-hub--nav-group > .page-intro{
-  margin:0 0 16px;
-  max-width:42rem;
+.admin-page-head__back{
+  flex-shrink:0;
+  white-space:nowrap;
+  font-weight:600;
+}
+.admin-page-head__back-ico{
+  margin-right:4px;
+  font-weight:700;
+}
+.admin-page-head__title{
+  margin:0 !important;
+  font-size:clamp(1.2rem,2.4vw,1.55rem);
+  line-height:1.2;
+  min-width:0;
+  overflow-wrap:break-word;
+}
+.admin-page-head__intro{
+  margin:0;
+  flex:0 1 min(100%,22rem);
+  text-align:right;
+  font-size:14px;
+  line-height:1.45;
+  min-width:0;
+  overflow-wrap:break-word;
+}
+.dash-hub--nav-group .admin-page-head{
+  margin-bottom:16px;
+}
+.dash-hub--nav-index-pick .admin-page-head{
+  margin-bottom:14px;
+}
+@media (max-width:720px){
+  .admin-page-head{
+    flex-direction:column;
+    align-items:stretch;
+  }
+  .admin-page-head__intro{
+    text-align:left;
+    flex:1 1 100%;
+  }
 }
 .dash-hub--nav-group .dash-hub__grid--hub-menu{
   gap:12px;

@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260614-mob-fit" />
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260613-hours-all-week" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260603-form-record-modal" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260616-dash-cat-ui" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260617-page-head-row" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260521-embed" />
   <script src="/portal/hr-contract-embed-html.js?v=20260521-embed"></script>
@@ -1905,6 +1905,80 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if((g.children||[]).indexOf(viewId)>=0) return g.id;
       }
       return '';
+    }
+    var PORTAL_ADMIN_PAGE_HEAD_SKIP = {
+      nav_hub: true,
+      comms_ops_order: true
+    };
+    function portalAdminExtractPageTitle(html){
+      var m = String(html || '').match(/<h[12]\s+class="page-title"[^>]*>([\s\S]*?)<\/h[12]>/i);
+      if(!m) return '';
+      return String(m[1] || '').replace(/<[^>]+>/g, '').trim();
+    }
+    function portalAdminExtractPageIntro(html){
+      var m = String(html || '').match(/<p class="page-intro"([^>]*)>([\s\S]*?)<\/p>/i);
+      if(!m) return '';
+      if(/<button|<\/?a\s/i.test(m[2])) return '';
+      return String(m[2] || '').trim();
+    }
+    function portalAdminStripLegacyPageHeader(html){
+      var s = String(html || '');
+      s = s.replace(/^(\s*<div class="toolbar"[^>]*>[\s\S]*?<\/div>\s*)+/i, function(block){
+        if(block.length > 900) return block;
+        if(/data-hub-back|data-admin-back|data-view-target="(?:dashboard|nav_hub|operations_admin)"/i.test(block)) return '';
+        return block;
+      });
+      s = s.replace(/^(\s*<div class="dash-hub__hub-toolbar"[\s\S]*?<\/div>\s*)+/i, '');
+      s = s.replace(/^(\s*<h[12]\s+class="page-title"[^>]*>[\s\S]*?<\/h[12]>\s*)+/i, '');
+      s = s.replace(/^(\s*<p class="page-intro"[^>]*>[\s\S]*?<\/p>\s*)+/i, function(block){
+        if(/<button|<\/?a\s/i.test(block)) return block;
+        return '';
+      });
+      return s.trim();
+    }
+    function portalAdminPageHeadRowHtml(opts){
+      opts = opts || {};
+      var title = String(opts.title || '').trim() || 'Page';
+      var intro = String(opts.intro || '').trim();
+      var backMode = String(opts.backMode || 'auto');
+      var viewId = String(opts.viewId || '').trim();
+      var backBtn = '';
+      if(backMode === 'hub'){
+        backBtn = '<button type="button" class="btn btn--ghost btn--sm admin-page-head__back" data-admin-back-hub><span class="admin-page-head__back-ico" aria-hidden="true">←</span> Dashboard</button>';
+      }else if(backMode === 'group'){
+        var gid = String(opts.groupId || '').trim();
+        var grp = gid ? navGroupById(gid) : null;
+        var glab = grp ? grp.label : 'Category';
+        backBtn = '<button type="button" class="btn btn--ghost btn--sm admin-page-head__back" data-admin-back-group="'+escAttr(gid)+'"><span class="admin-page-head__back-ico" aria-hidden="true">←</span> Back to '+esc(glab)+'</button>';
+      }else if(backMode !== 'none'){
+        var g = navGroupForView(viewId);
+        if(g){
+          var g2 = navGroupById(g);
+          backBtn = '<button type="button" class="btn btn--ghost btn--sm admin-page-head__back" data-admin-back-group="'+escAttr(g)+'"><span class="admin-page-head__back-ico" aria-hidden="true">←</span> '+esc(g2 ? g2.label : 'Category')+'</button>';
+        }else{
+          backBtn = '<button type="button" class="btn btn--ghost btn--sm admin-page-head__back" data-admin-back-hub><span class="admin-page-head__back-ico" aria-hidden="true">←</span> Dashboard</button>';
+        }
+      }
+      var introHtml = intro
+        ? '<p class="admin-page-head__intro muted">'+intro+'</p>'
+        : '';
+      return (
+        '<header class="admin-page-head">'+
+        '<div class="admin-page-head__main">'+
+        backBtn+
+        '<h1 class="page-title admin-page-head__title">'+title+'</h1>'+
+        '</div>'+
+        introHtml+
+        '</header>'
+      );
+    }
+    function portalAdminApplyPageHead(viewId, body){
+      if(PORTAL_ADMIN_PAGE_HEAD_SKIP[viewId]) return body;
+      var item = navGetItem(viewId);
+      var title = portalAdminExtractPageTitle(body) || (item && (item.hubLabel || item.label)) || viewId;
+      var intro = portalAdminExtractPageIntro(body);
+      var stripped = portalAdminStripLegacyPageHeader(body);
+      return portalAdminPageHeadRowHtml({ viewId: viewId, title: title, intro: intro, backMode: 'auto' }) + stripped;
     }
     function syncNavGroupsUi(){
       document.querySelectorAll('#adminNav .admin-nav-group').forEach(function(box){
@@ -16007,60 +16081,59 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
 
     function renderView(id){
+      var html;
       if(id==='nav_hub') return viewNavHubDashboard();
-      if(id==='operations_admin') return viewOperationsAdmin();
-      if(id==='dashboard' || id==='operations') return viewOperations();
-      if(id==='clients') return viewC4kParticipants();
-      if(id==='c4k_services') return viewC4kServices();
-      if(id==='c4k_sessions') return viewC4kSessions();
-      if(id==='c4k_late_submissions') return viewC4kLateSubmissions();
-      if(id==='c4k_payments') return viewC4kPaymentsView();
-      if(id==='reenrol_payments') return viewReenrolPayments();
-      if(id==='logs') return viewLogs();
-      if(id==='c4k_waitlist') return viewC4kWaitlistView();
-      if(id==='c4k_registers'){
+      if(id==='operations_admin') html = viewOperationsAdmin();
+      else if(id==='dashboard' || id==='operations') html = viewOperations();
+      else if(id==='clients') html = viewC4kParticipants();
+      else if(id==='c4k_services') html = viewC4kServices();
+      else if(id==='c4k_sessions') html = viewC4kSessions();
+      else if(id==='c4k_late_submissions') html = viewC4kLateSubmissions();
+      else if(id==='c4k_payments') html = viewC4kPaymentsView();
+      else if(id==='reenrol_payments') html = viewReenrolPayments();
+      else if(id==='logs') html = viewLogs();
+      else if(id==='c4k_waitlist') html = viewC4kWaitlistView();
+      else if(id==='c4k_registers'){
         sessionsHubEnsureState().tab = 'feedback';
-        return viewC4kSessions();
-      }
-      if(id==='c4k_reviews') return viewC4kInstructorReviews();
-      if(id==='c4k_reports') return viewC4kGlobalReportsTracker();
-      if(id==='staffhr') return viewStaffHR();
-      if(id==='staffhr_contracts') return viewStaffHRContracts();
-      if(id==='bookings' || id==='orders_all') return viewBookings();
-      if(id==='invoices') return viewInvoices();
-      if(id==='scheduling') return viewScheduling();
-      if(id==='term_roster_edit') return viewTermRosterEdit();
-      if(id==='roster_spreadsheets') return viewRosterSpreadsheets();
-      if(id==='absents_refunds') return viewAbsentsRefundsCredits();
-      if(id==='portal_documents'){
+        html = viewC4kSessions();
+      }else if(id==='c4k_reviews') html = viewC4kInstructorReviews();
+      else if(id==='c4k_reports') html = viewC4kGlobalReportsTracker();
+      else if(id==='staffhr') html = viewStaffHR();
+      else if(id==='staffhr_contracts') html = viewStaffHRContracts();
+      else if(id==='bookings' || id==='orders_all') html = viewBookings();
+      else if(id==='invoices') html = viewInvoices();
+      else if(id==='scheduling') html = viewScheduling();
+      else if(id==='term_roster_edit') html = viewTermRosterEdit();
+      else if(id==='roster_spreadsheets') html = viewRosterSpreadsheets();
+      else if(id==='absents_refunds') html = viewAbsentsRefundsCredits();
+      else if(id==='portal_documents'){
         window.__portalDocsPresetFilter = 'all';
-        return viewPortalDocuments();
-      }
-      if(id==='portal_payslips') return viewPortalPayslips();
-      if(id==='portal_docs_portalpin') return viewPortalPins();
-      if(id.indexOf('portal_docs_')===0){
+        html = viewPortalDocuments();
+      }else if(id==='portal_payslips') html = viewPortalPayslips();
+      else if(id==='portal_docs_portalpin') html = viewPortalPins();
+      else if(id.indexOf('portal_docs_')===0){
         window.__portalDocsPresetFilter = id.slice('portal_docs_'.length);
-        return viewPortalDocuments();
-      }
-      if(id==='portal_activity') return viewPortalActivity();
-      if(id==='portal_training_progress') return viewPortalTrainingProgress();
-      if(id==='participant_achievements') return viewParticipantAchievements();
-      if(id==='staff_live_map') return viewStaffLiveMap();
-      if(id==='policies') return viewPoliciesSignoffs();
-      if(id==='onboarding') return viewOnboarding();
-      if(id==='reports') return viewReports();
-      if(id==='communications') return viewCommunications();
-      if(id==='comms_bookings') return viewCommsBookings();
-      if(id==='comms_ops') return viewCommsOps();
-      if(id==='comms_ops_order') return viewCommsOpsOrderDetail();
-      if(id==='receptionist') return viewReceptionist();
-      if(id==='operator') return viewOperator();
-      if(id==='leads') return viewLeads();
-      if(id==='servicecap') return viewServiceCap();
-      if(id==='recruitment') return viewRecruitment();
-      if(id==='interviews') return viewInterviews();
-      if(id==='settings') return viewSettings();
-      return viewOperations();
+        html = viewPortalDocuments();
+      }else if(id==='portal_activity') html = viewPortalActivity();
+      else if(id==='portal_training_progress') html = viewPortalTrainingProgress();
+      else if(id==='participant_achievements') html = viewParticipantAchievements();
+      else if(id==='staff_live_map') html = viewStaffLiveMap();
+      else if(id==='policies') html = viewPoliciesSignoffs();
+      else if(id==='onboarding') html = viewOnboarding();
+      else if(id==='reports') html = viewReports();
+      else if(id==='communications') html = viewCommunications();
+      else if(id==='comms_bookings') html = viewCommsBookings();
+      else if(id==='comms_ops') html = viewCommsOps();
+      else if(id==='comms_ops_order') html = viewCommsOpsOrderDetail();
+      else if(id==='receptionist') html = viewReceptionist();
+      else if(id==='operator') html = viewOperator();
+      else if(id==='leads') html = viewLeads();
+      else if(id==='servicecap') html = viewServiceCap();
+      else if(id==='recruitment') html = viewRecruitment();
+      else if(id==='interviews') html = viewInterviews();
+      else if(id==='settings') html = viewSettings();
+      else html = viewOperations();
+      return portalAdminApplyPageHead(id, html);
     }
 
     function dashboardCollectBookingMetaAllDates(){
@@ -16765,11 +16838,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var tiles = hubMenuTilesForGroup(group);
           return (
             '<div class="dash-hub dash-hub--nav-group">' +
-            '<div class="dash-hub__hub-toolbar">' +
-            '<button type="button" class="btn btn--ghost btn--sm" data-hub-back-dashboard">← Dashboard</button>' +
-            '</div>' +
-            '<h2 class="page-title">'+esc(group.label)+'</h2>' +
-            '<p class="page-intro">Same sections as the left menu — choose where to go.</p>' +
+            portalAdminPageHeadRowHtml({
+              title: group.label,
+              intro: 'Same sections as the left menu — choose where to go.',
+              backMode: 'hub'
+            }) +
             '<div class="dash-hub__grid dash-hub__grid--hub-menu">'+tiles.join('')+'</div>' +
             '</div>'
           );
@@ -16787,8 +16860,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }).join('');
       return (
         '<div class="dash-hub dash-hub--nav-index dash-hub--nav-index-pick">' +
-        '<h2 class="page-title">Dashboard</h2>' +
-        '<p class="page-intro">Choose a category — same as the left menu.</p>' +
+        portalAdminPageHeadRowHtml({
+          title: 'Dashboard',
+          intro: 'Choose a category — same as the left menu.',
+          backMode: 'none'
+        }) +
         '<div class="dash-hub-cat-grid dash-hub-cat-grid--pick">'+panels+'</div>' +
         '</div>'
       );
@@ -19715,12 +19791,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             closeSidebarMob();
           });
         });
-        root.querySelectorAll('[data-hub-back-dashboard]').forEach(function(b){
-          b.addEventListener('click', function(){
-            openNavHubIndex();
-          });
-        });
       }
+      root.querySelectorAll('[data-hub-back-dashboard],[data-admin-back-hub]').forEach(function(b){
+        b.addEventListener('click', function(){
+          openNavHubIndex();
+        });
+      });
+      root.querySelectorAll('[data-admin-back-group]').forEach(function(b){
+        b.addEventListener('click', function(){
+          openNavHubGroup(b.getAttribute('data-admin-back-group'));
+        });
+      });
       root.querySelectorAll('[data-view-target]').forEach(function(b){
         b.addEventListener('click', function(){
           if(b.getAttribute('data-cap-embed-scroll') === '1') state.scrollToCapacityEmbed = true;
