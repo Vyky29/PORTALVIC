@@ -1138,6 +1138,40 @@
         return '';
       }
     }
+    function portalCollectTodayParticipantNames(){
+      const out = [];
+      const seen = new Set();
+      try{
+        (dashboardData.today || []).forEach(function(it){
+          if(!it || it.kind !== 'client') return;
+          const nm = String(it.name || it.clientName || it.client || '').trim();
+          if(!nm) return;
+          const k = nm.toLowerCase();
+          if(seen.has(k)) return;
+          seen.add(k);
+          out.push(nm);
+        });
+      }catch(_){}
+      return out.sort(function(a, b){
+        return a.localeCompare(b, 'en', { sensitivity: 'base' });
+      });
+    }
+    function portalBuildPickupQuickMenuUrl(url){
+      const base = String(url || '').trim();
+      if(!base) return '';
+      try{
+        const u = new URL(base, window.location.href);
+        const names = portalCollectTodayParticipantNames();
+        if(names.length) u.searchParams.set('roster', names.join('|'));
+        try{
+          const nm = String((window.dashboardData && window.dashboardData.staffName) || '').trim();
+          if(nm) u.searchParams.set('staff', nm);
+        }catch(_){}
+        return u.href;
+      }catch(_){
+        return base;
+      }
+    }
     function portalBuildVenueQuickMenuUrl(url){
       const base = String(url || '').trim();
       if(!base) return '';
@@ -11471,6 +11505,17 @@
                 const tu = new URL(String(target || ''), window.location.href);
                 tu.searchParams.set('portalReturn', dash);
                 target = tu.href;
+              }
+            }catch(_){}
+            portalQuickMenuNavigate(target);
+            return;
+          }
+          if(extBtn.id === 'quickMenuDropoffPickup'){
+            let target = typeof portalBuildPickupQuickMenuUrl === 'function' ? portalBuildPickupQuickMenuUrl(u) : u;
+            try{
+              const names = typeof portalCollectTodayParticipantNames === 'function' ? portalCollectTodayParticipantNames() : [];
+              if(names.length){
+                sessionStorage.setItem('portalPickupRosterToday', JSON.stringify(names));
               }
             }catch(_){}
             portalQuickMenuNavigate(target);

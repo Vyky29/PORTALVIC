@@ -318,7 +318,9 @@ function initVenueReviewPage() {
     window.setInterval(setAutomaticTime, 15000);
   } catch (_) {}
   updateNoButtonText(btnNo);
-  renderVenueContextHeader(contextFromQuery());
+  const ctx = contextFromQuery();
+  renderVenueContextHeader(ctx);
+  portalBindVenueReviewVoice(ctx);
 
   function getIssueMode() {
     const m = clean(form.dataset.issueMode || "").toLowerCase();
@@ -446,6 +448,16 @@ function initVenueReviewPage() {
     } finally {
       if (submitBtn && !successSubmitted) submitBtn.disabled = false;
     }
+  });
+}
+
+function portalBindVenueReviewVoice(ctx) {
+  if (typeof window === "undefined" || typeof window.PortalFeedbackVoiceInput === "undefined") {
+    return;
+  }
+  window.PortalFeedbackVoiceInput.init({
+    fields: ["issues"],
+    staffName: clean((ctx && ctx.completedBy) || ""),
   });
 }
 

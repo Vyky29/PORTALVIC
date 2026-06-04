@@ -1928,6 +1928,14 @@ const LEVEL_DATA = {
           });
         }
         generateTermSummary();
+        void hydrateLoggedInStaffDisplayName().then(function(){
+          if(typeof window.PortalFeedbackVoiceInput === "undefined") return;
+          const inst = document.getElementById("instructorName");
+          window.PortalFeedbackVoiceInput.init({
+            fields: ["eviRegulation", "eviIndependence", "eviEngagement", "decisionNotes"],
+            staffName: inst ? String(inst.value || "").trim() : "",
+          });
+        });
       }catch(err){
         console.error("swtermreview init failed:", err);
       }

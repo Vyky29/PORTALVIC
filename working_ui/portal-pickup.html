@@ -290,6 +290,55 @@
       gap:12px;
     }
 
+    .pickup-roster-today{
+      margin:0 0 14px;
+      padding:14px 16px;
+      border-radius:16px;
+      border:1px solid rgba(124,58,237,.22);
+      background:linear-gradient(180deg,#faf5ff 0%,#fff 100%);
+      min-width:0;
+    }
+    .pickup-roster-today__title{
+      margin:0 0 4px;
+      font-size:13px;
+      font-weight:800;
+      color:var(--ink);
+      letter-spacing:.02em;
+    }
+    .pickup-roster-today__hint{
+      margin:0 0 10px;
+      font-size:12px;
+      line-height:1.45;
+      color:var(--muted);
+    }
+    .pickup-roster-today__list{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      min-width:0;
+    }
+    .pickup-roster-chip{
+      display:inline-flex;
+      align-items:center;
+      max-width:100%;
+      padding:8px 14px;
+      border-radius:999px;
+      border:1px solid rgba(124,58,237,.35);
+      background:#fff;
+      color:var(--pickupPrimary);
+      font:inherit;
+      font-size:13px;
+      font-weight:700;
+      line-height:1.25;
+      cursor:pointer;
+      overflow-wrap:break-word;
+      text-align:left;
+    }
+    .pickup-roster-chip:hover{
+      background:var(--goldSoft);
+      border-color:rgba(124,58,237,.5);
+    }
+
     .participant-card{
       border:1px solid var(--line);
       border-radius:18px;
@@ -902,7 +951,7 @@
   <div class="pickup-wrap">
     <div class="title-row">
       <h1>Drop Off &amp; Pick Up</h1>
-      <p>Record when a participant arrives and when they are collected. Type a name to open today’s handover, or tap New for someone not listed yet.</p>
+      <p>Record when a participant arrives and when they are collected. Tap someone on your roster today, pick an open handover below, or type a name and tap New.</p>
     </div>
 
     <section class="panel pickup-main">
@@ -914,6 +963,11 @@
             <datalist id="pickupParticipantList"></datalist>
             <button type="button" class="btn btn-pickup-new" id="addParticipantBtn">New</button>
           </div>
+        </div>
+        <div id="pickupRosterTodayWrap" class="pickup-roster-today" hidden>
+          <p class="pickup-roster-today__title">On your roster today</p>
+          <p class="pickup-roster-today__hint">Tap a name to start their handover — no need to type.</p>
+          <div id="pickupRosterTodayList" class="pickup-roster-today__list" role="list"></div>
         </div>
         <div id="searchResults" class="result-list pickup-results"></div>
 
@@ -1160,6 +1214,164 @@
         try{ sessionStorage.setItem(PENDING_DEL_KEY, JSON.stringify([...set])); } catch(_){}
       }
       let pendingLocalDeletes = loadPendingDeletes();
+      let rosterTodayNames = [];
+
+      function parseRosterTodayNames(){
+        const names = [];
+        try{
+          const sp = new URLSearchParams(String(location.search || '').replace(/^\?/, ''));
+          const raw = String(sp.get('roster') || sp.get('participants') || '').trim();
+          if(raw){
+            if(raw.charAt(0) === '['){
+              const arr = JSON.parse(raw);
+              if(Array.isArray(arr)){
+                arr.forEach(function(n){ names.push(String(n || '').trim()); });
+              }
+            }else{
+              raw.split(/[|,]/).forEach(function(part){
+                let t = String(part || '').trim();
+                try{ if(t.indexOf('%') !== -1) t = decodeURIComponent(t); }catch(_){}
+                if(t) names.push(t);
+              });
+            }
+          }
+        }catch(_){}
+        try{
+          const stored = sessionStorage.getItem('portalPickupRosterToday');
+          if(stored){
+            const arr = JSON.parse(stored);
+            if(Array.isArray(arr)){
+              arr.forEach(function(n){ names.push(String(n || '').trim()); });
+            }
+          }
+        }catch(_){}
+        return names;
+      }
+
+      function uniqueSortedNames(list){
+        const map = new Map();
+        (list || []).forEach(function(n){
+          const t = String(n || '').trim();
+          if(!t) return;
+          const k = t.toLowerCase();
+          if(!map.has(k)) map.set(k, t);
+        });
+        return Array.from(map.values()).sort(function(a, b){
+          return a.localeCompare(b, 'en', { sensitivity: 'base' });
+        });
+      }
+
+      function staffNameMatchesInstructors(staffName, instructorsRaw){
+        const want = String(staffName || '').trim().toLowerCase().replace(/[\s._-]+/g, ' ');
+        if(!want) return true;
+        const blob = String(instructorsRaw || '').toLowerCase();
+        if(!blob) return false;
+        return blob.indexOf(want) >= 0;
+      }
+
+      async function loadRosterTodayFromSupabase(staffName){
+        if(!client) return [];
+        const today = nowDate();
+        const weekday = new Date().toLocaleDateString('en-GB', { weekday: 'long' });
+        try{
+          const res = await client
+            .from('portal_roster_rows')
+            .select('client_name,instructors,session_date,day,status')
+            .eq('status', 'active');
+          if(res.error) throw res.error;
+          const out = [];
+          (res.data || []).forEach(function(r){
+            const nm = String(r.client_name || '').trim();
+            if(!nm) return;
+            const sd = sessionDayKey(r.session_date);
+            const onDay = sd === today || (!sd && String(r.day || '').trim() === weekday);
+            if(!onDay) return;
+            if(staffName && !staffNameMatchesInstructors(staffName, r.instructors)) return;
+            out.push(nm);
+          });
+          return out;
+        }catch(_){
+          return [];
+        }
+      }
+
+      async function refreshRosterTodayNames(){
+        let names = parseRosterTodayNames();
+        let staffName = '';
+        try{
+          const sp = new URLSearchParams(String(location.search || '').replace(/^\?/, ''));
+          staffName = String(sp.get('staff') || sp.get('completedBy') || '').trim();
+        }catch(_){}
+        if(!staffName && client && client.auth && typeof client.auth.getUser === 'function'){
+          try{
+            const { data: authData } = await client.auth.getUser();
+            const uid = authData && authData.user && authData.user.id;
+            if(uid){
+              const prof = await client.from('staff_profiles').select('full_name,username').eq('id', uid).maybeSingle();
+              if(prof && prof.data){
+                staffName = String(prof.data.full_name || prof.data.username || '').trim();
+              }
+            }
+          }catch(_){}
+        }
+        if(!names.length){
+          names = names.concat(await loadRosterTodayFromSupabase(staffName));
+        }
+        rosterTodayNames = uniqueSortedNames(names);
+        renderRosterTodayChips();
+        refreshParticipantDatalist();
+      }
+
+      function renderRosterTodayChips(){
+        const wrap = document.getElementById('pickupRosterTodayWrap');
+        const listEl = document.getElementById('pickupRosterTodayList');
+        if(!wrap || !listEl) return;
+        const openHandoverKeys = new Set();
+        read().filter(function(r){
+          return isTodaySession(r.sessionDate) && isActiveHandover(r);
+        }).forEach(function(r){
+          openHandoverKeys.add(String(r.participantName || '').trim().toLowerCase());
+        });
+        const chips = rosterTodayNames.filter(function(nm){
+          return nm && !openHandoverKeys.has(nm.toLowerCase());
+        });
+        if(!chips.length){
+          wrap.hidden = true;
+          listEl.innerHTML = '';
+          return;
+        }
+        wrap.hidden = false;
+        listEl.innerHTML = '';
+        chips.forEach(function(name){
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'pickup-roster-chip';
+          btn.setAttribute('role', 'listitem');
+          btn.textContent = name;
+          btn.addEventListener('click', function(){
+            searchInput.value = name;
+            addNewParticipantFromInput();
+          });
+          listEl.appendChild(btn);
+        });
+      }
+
+      function mergeRosterIntoDatalist(){
+        const dl = document.getElementById('pickupParticipantList');
+        if(!dl) return;
+        const existing = new Set();
+        Array.prototype.forEach.call(dl.querySelectorAll('option'), function(opt){
+          existing.add(String(opt.value || '').trim().toLowerCase());
+        });
+        rosterTodayNames.forEach(function(nm){
+          const k = nm.toLowerCase();
+          if(existing.has(k)) return;
+          existing.add(k);
+          const opt = document.createElement('option');
+          opt.value = nm;
+          dl.appendChild(opt);
+        });
+      }
       function markPendingDelete(id){
         if(!id) return;
         pendingLocalDeletes.add(id);
@@ -1510,10 +1722,20 @@
         const dl = document.getElementById('pickupParticipantList');
         if(!dl) return;
         dl.innerHTML = '';
-        filterParticipants('').forEach(function(r){
+        const seen = new Set();
+        function addOpt(nm){
+          const t = String(nm || '').trim();
+          if(!t) return;
+          const k = t.toLowerCase();
+          if(seen.has(k)) return;
+          seen.add(k);
           const opt = document.createElement('option');
-          opt.value = r.participantName || '';
+          opt.value = t;
           dl.appendChild(opt);
+        }
+        rosterTodayNames.forEach(addOpt);
+        filterParticipants('').forEach(function(r){
+          addOpt(r.participantName);
         });
       }
 
@@ -1886,6 +2108,7 @@
           searchResults.appendChild(card);
         });
         refreshParticipantDatalist();
+        renderRosterTodayChips();
       }
 
       function escapeHtml(s){
@@ -2242,6 +2465,7 @@
 
       write(readLocal());
       keepTodayOnly();
+      await refreshRosterTodayNames();
       await cleanupRemoteDaily();
       await pullTodayFromSupabase();
       setTimeout(function(){ pullTodayFromSupabase(); }, 1000);

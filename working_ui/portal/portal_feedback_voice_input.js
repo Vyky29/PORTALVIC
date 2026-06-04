@@ -827,32 +827,31 @@
 
   var initDone = false;
 
-  function init(opts) {
+  function attachVoiceFields(opts) {
     opts = opts || {};
-    if (initDone) {
-      if (opts.staffName) applyStaffLanguages(opts.staffName);
-      return;
+    if (!initDone) {
+      injectStyles();
+      initDone = true;
+      probeWhisperAvailability();
     }
-    injectStyles();
+    applyStaffLanguages(opts.staffName || "");
     var fieldIds = opts.fields || [];
-    if (!fieldIds.length) return;
-
     fieldIds.forEach(function (id) {
       wrapTextarea(document.getElementById(id));
     });
+  }
 
-    initDone = true;
-    applyStaffLanguages(opts.staffName || "");
-    probeWhisperAvailability();
+  function init(opts) {
+    attachVoiceFields(opts);
   }
 
   function setStaffName(staffName) {
-    if (!initDone) return;
     applyStaffLanguages(staffName || "");
   }
 
   global.PortalFeedbackVoiceInput = {
     init: init,
+    attach: attachVoiceFields,
     setStaffName: setStaffName,
   };
 })(typeof window !== "undefined" ? window : this);

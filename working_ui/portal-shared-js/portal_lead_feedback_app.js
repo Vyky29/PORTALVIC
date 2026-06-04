@@ -531,7 +531,12 @@ export async function bootPortalLeadFeedback() {
 
   if (typeof window.PortalFeedbackVoiceInput !== "undefined") {
     window.PortalFeedbackVoiceInput.init({
-      fields: ["lrPositiveFeedback", "lrRelevantInformation", "lrSessionSummary", "lrOtherOptional"],
+      fields: [
+        "lrPositiveFeedback",
+        "lrRelevantInformation",
+        "lrSessionSummary",
+        "lrOtherOptional",
+      ],
       staffName: ctx.submittedByName,
     });
   }

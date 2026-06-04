@@ -616,7 +616,12 @@ async function initLeadFeedbackReportPage() {
 
   if (typeof window.PortalFeedbackVoiceInput !== "undefined") {
     window.PortalFeedbackVoiceInput.init({
-      fields: ["lrPositiveFeedback", "lrRelevantInformation"],
+      fields: [
+        "lrPositiveFeedback",
+        "lrRelevantInformation",
+        "lrSessionSummary",
+        "lrOtherOptional",
+      ],
       staffName: clean(ctx.completedBy) || "",
     });
   }

@@ -965,4 +965,18 @@
       syncReportDateAcrossPickers();
       renderAutoFeedbackPanels();
       calculateScores(); updateProgress(); generateSummary();
+      if(typeof window.PortalFeedbackVoiceInput !== 'undefined'){
+        const rev = document.getElementById('reviewerName');
+        window.PortalFeedbackVoiceInput.init({
+          fields: ['strengthsOther', 'developmentOther'],
+          staffName: rev ? String(rev.value || '').trim() : '',
+        });
+        if(rev){
+          rev.addEventListener('input', function(){
+            if(typeof window.PortalFeedbackVoiceInput.setStaffName === 'function'){
+              window.PortalFeedbackVoiceInput.setStaffName(String(rev.value || '').trim());
+            }
+          });
+        }
+      }
     })();
