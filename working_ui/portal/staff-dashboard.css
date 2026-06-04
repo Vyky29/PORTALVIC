@@ -282,6 +282,8 @@
     }
     .topbar-left{
       display:flex;
+      flex-wrap:nowrap;
+      gap:8px;
       width:100%;
       min-width:0;
       justify-content:center;
@@ -6897,81 +6899,40 @@
     #menuSheet.menu-sheet--full #portalAnnualProfileQuickGroup{
       display:none !important;
     }
+    #portalQuickMenuServiceLeadsGroup[data-portal-staff-hidden="1"]{
+      display:none !important;
+    }
 
-    /* Floating Internal Chat — outside Quick menu, above dock */
-    .portal-floating-chat-btn{
-      position:fixed;
-      right:max(12px, env(safe-area-inset-right, 0px));
-      bottom:calc(var(--dock-strip-height, 62px) + 10px + env(safe-area-inset-bottom, 0px) + var(--dock-browser-ui-lift, 0px));
-      z-index:124;
-      display:inline-flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
-      gap:2px;
-      min-width:52px;
-      padding:8px 10px 7px;
-      border-radius:14px;
-      border:1px solid rgba(23,50,71,.14);
-      background:#fff;
-      box-shadow:0 4px 16px rgba(23,50,71,.14);
-      color:var(--ink);
-      font-family:inherit;
-      cursor:pointer;
-      pointer-events:auto;
-      -webkit-tap-highlight-color:transparent;
-      transition:transform .14s ease, box-shadow .14s ease, border-color .14s ease;
+    /* Internal Chat — topbar, beside achievements camera */
+    header.topbar button.topbar-chat-btn,
+    .topbar-chat-btn.portal-floating-chat-btn{
+      flex-shrink:0;
     }
-    .portal-floating-chat-btn:hover{
-      transform:translateY(-1px);
-      border-color:var(--blue);
-      box-shadow:0 8px 22px rgba(45,132,179,.22);
+    .topbar-chat-btn--unread,
+    .portal-floating-chat-btn--unread.topbar-chat-btn{
+      border-color:rgba(45,132,179,.5) !important;
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,.55) inset,
+        0 2px 10px rgba(45,132,179,.22),
+        0 0 0 3px rgba(229,57,53,.2) !important;
     }
-    .portal-floating-chat-btn:focus-visible{
-      outline:2px solid var(--blue);
-      outline-offset:2px;
-    }
-    .portal-floating-chat-btn__icon{
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      width:22px;
-      height:22px;
-      color:var(--blue);
-    }
-    .portal-floating-chat-btn__svg{
-      width:22px;
-      height:22px;
-      display:block;
-    }
-    .portal-floating-chat-btn__label{
-      font-size:10px;
-      font-weight:700;
-      line-height:1.1;
-      letter-spacing:.02em;
-    }
-    .portal-floating-chat-btn--unread{
-      border-color:rgba(45,132,179,.45);
-      box-shadow:0 4px 18px rgba(45,132,179,.28);
-    }
-    .portal-floating-chat-btn--unread .portal-floating-chat-btn__icon{
-      color:#1d4f8f;
-    }
-    .portal-floating-chat-btn--unread::after{
+    .topbar-chat-btn--unread::before,
+    .portal-floating-chat-btn--unread.topbar-chat-btn::before{
       content:"";
       position:absolute;
-      top:6px;
-      right:8px;
-      width:8px;
-      height:8px;
+      top:2px;
+      right:2px;
+      width:9px;
+      height:9px;
       border-radius:50%;
       background:#e53935;
       border:2px solid #fff;
       box-sizing:border-box;
+      z-index:1;
+      pointer-events:none;
     }
-    body.portal-internal-chat-open .portal-floating-chat-btn{
-      display:none !important;
-    }
-    html.dev-mobile-preview .portal-floating-chat-btn{
-      right:max(12px, calc((100vw - var(--layout-max-mobile, 390px)) / 2 + 12px));
+    body.portal-internal-chat-open .topbar-chat-btn,
+    body.portal-internal-chat-open #portalFloatingChatBtn{
+      visibility:hidden;
+      pointer-events:none;
     }

@@ -1,11 +1,8 @@
 /**
- * Floating Internal Chat button (outside Quick menu).
+ * Internal Chat — topbar button (beside achievements camera), outside Quick menu.
  */
 (function (global) {
   "use strict";
-
-  var CHAT_SVG =
-    '<svg class="portal-floating-chat-btn__svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>';
 
   function portalFloatingChatBtn() {
     return global.document && global.document.getElementById("portalFloatingChatBtn");
@@ -22,6 +19,7 @@
       } catch (_) {}
     }
     floatBtn.classList.toggle("portal-floating-chat-btn--unread", unread);
+    floatBtn.classList.toggle("topbar-chat-btn--unread", unread);
   }
 
   function portalInitFloatingInternalChat() {
@@ -30,12 +28,6 @@
     btn.setAttribute("data-portal-floating-chat-bound", "1");
     btn.hidden = false;
     btn.setAttribute("aria-hidden", "false");
-    if (!btn.querySelector(".portal-floating-chat-btn__icon")) {
-      btn.innerHTML =
-        '<span class="portal-floating-chat-btn__icon" aria-hidden="true">' +
-        CHAT_SVG +
-        '</span><span class="portal-floating-chat-btn__label">Chat</span>';
-    }
     btn.addEventListener("click", function () {
       if (typeof global.portalOpenInternalChatFromHeaderQuickMenu === "function") {
         global.portalOpenInternalChatFromHeaderQuickMenu();

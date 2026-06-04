@@ -206,6 +206,10 @@
           <button type="button" class="topbar-camera-btn topbar-achievements-btn" id="topbarCameraBtn" aria-label="Participant achievements">
             <span class="topbar-camera-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
           </button>
+          <button type="button" class="topbar-camera-btn topbar-chat-btn portal-floating-chat-btn" id="portalFloatingChatBtn" aria-label="Open internal chat" title="Chat" hidden aria-hidden="true">
+            <span class="topbar-camera-btn__ico portal-floating-chat-btn__icon" aria-hidden="true"><svg class="portal-floating-chat-btn__svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg></span>
+            <span class="topbar-sr-only">Chat</span>
+          </button>
         </div>
         <div class="topbar-center">
           <div class="avatar-wrap avatar-wrap--portal-orbit-idle" id="avatarWrap" role="button" tabindex="0" aria-label="Open alerts and notifications">
@@ -330,11 +334,6 @@
     </div>
   </nav>
 
-  <button type="button" class="portal-floating-chat-btn" id="portalFloatingChatBtn" aria-label="Open internal chat" title="Chat" hidden aria-hidden="true">
-    <span class="portal-floating-chat-btn__icon" aria-hidden="true"><svg class="portal-floating-chat-btn__svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg></span>
-    <span class="portal-floating-chat-btn__label">Chat</span>
-  </button>
-
   <div class="sheet-backdrop" id="backdrop"></div>
 
   <div class="demo-quick-overlay" id="demoQuickActionOverlay" hidden aria-hidden="true">
@@ -418,7 +417,7 @@
             </button>
           </div>
         </div>
-        <div class="menu-group" id="portalQuickMenuServiceLeadsGroup" hidden aria-hidden="true">
+        <div class="menu-group" id="portalQuickMenuServiceLeadsGroup" hidden aria-hidden="true" data-portal-staff-hidden="1">
           <div class="menu-group-title">Service Leads</div>
           <div class="menu-grid" id="quickMenuServiceLeadsGrid">
             <button type="button" class="menu-btn menu-btn--session-planner menu-btn--feature-deactivated" id="quickMenuStaffSessionPlan" aria-label="Session planner (deactivated)" aria-disabled="true" disabled>
@@ -842,8 +841,8 @@
   <script src="/portal/portal_quick_menu_accordion.js?v=20260601-work-flat"></script>
   <script src="/portal/portal_swimming_instructor_menus.js?v=20260617-swim-aquatic-gate"></script>
   <script src="/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off"></script>
-  <script src="/portal/portal_floating_internal_chat.js?v=20260604-floating-chat"></script>
-  <script type="module" src="/portal/portal_quick_menu_service_leads.js?v=20260604-service-leads"></script>
+  <script src="/portal/portal_floating_internal_chat.js?v=20260604-topbar-chat"></script>
+  <script type="module" src="/portal/portal_quick_menu_service_leads.js?v=20260604-service-leads-lead-only"></script>
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260616-michelle-only"></script>
   <script src="/portal/portal_dm_voice.js?v=20260602-feedback-voice-fix"></script>
@@ -12318,9 +12317,8 @@
         }
       }catch(_dm){}
       try{
-        if(typeof portalSyncServiceLeadsQuickMenu === 'function'){
-          portalSyncServiceLeadsQuickMenu();
-        }
+        var slGrp = document.getElementById('portalQuickMenuServiceLeadsGroup');
+        if(slGrp){ slGrp.hidden = true; slGrp.setAttribute('aria-hidden', 'true'); }
       }catch(_sl){}
     });
     window.addEventListener('portal:location-permission-change', function(){
@@ -12720,9 +12718,6 @@
           console.warn("staff_dashboard: Supabase bootstrap", e);
         }
         portalSyncExecWorkspaceSwitchSlot("staff");
-        if (typeof window.portalSyncServiceLeadsQuickMenu === "function") {
-          window.portalSyncServiceLeadsQuickMenu();
-        }
         const profile = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
         const session = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session;
         if (window.dashboardData) {
@@ -13049,9 +13044,10 @@
         if(typeof portalSyncSwimmingInstructorQuickMenus === 'function'){
           void portalSyncSwimmingInstructorQuickMenus();
         }
-        if(typeof portalSyncServiceLeadsQuickMenu === 'function'){
-          portalSyncServiceLeadsQuickMenu();
-        }
+        (function hideStaffServiceLeadsMenu(){
+          var g = document.getElementById('portalQuickMenuServiceLeadsGroup');
+          if(g){ g.hidden = true; g.setAttribute('aria-hidden', 'true'); }
+        })();
         if(typeof portalSyncOnboardingQuickMenu === 'function'){
           void portalSyncOnboardingQuickMenu();
         }

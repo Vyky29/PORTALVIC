@@ -1,12 +1,25 @@
 /**
- * Quick menu  Service Leads section (Berta, John, Victor, Javier, Ral, Sevitha).
+ * Quick menu — Service Leads section (lead dashboard only: Berta, John, Victor, Javier, Raúl).
  */
 import { portalInferStaffKey } from "./auth-handler.js";
 
-const SERVICE_LEAD_KEYS = new Set(["berta", "john", "victor", "javi", "raul", "sevitha"]);
+/** Programme leads who use the lead dashboard shell — not shown on staff dashboard. */
+const LEAD_DASHBOARD_SERVICE_LEAD_KEYS = new Set(["berta", "john", "victor", "javi", "raul"]);
+
+export function portalIsLeadDashboardShell() {
+  try {
+    const path = String(
+      (typeof window !== "undefined" && window.location && window.location.pathname) || "",
+    ).toLowerCase();
+    return path.indexOf("lead_dashboard") >= 0;
+  } catch {
+    return false;
+  }
+}
 
 export function portalCanAccessServiceLeadsMenu(profile, authEmail) {
-  return SERVICE_LEAD_KEYS.has(portalInferStaffKey(profile, authEmail));
+  if (!portalIsLeadDashboardShell()) return false;
+  return LEAD_DASHBOARD_SERVICE_LEAD_KEYS.has(portalInferStaffKey(profile, authEmail));
 }
 
 function portalAuthEmailFromContext() {
@@ -37,8 +50,8 @@ export function portalSyncServiceLeadsQuickMenu() {
     (id) => {
       const btn = document.getElementById(id);
       if (!btn) return;
-      btn.hidden = !show;
-      btn.setAttribute("aria-hidden", show ? "false" : "true");
+      btn.hidden = true;
+      btn.setAttribute("aria-hidden", "true");
     },
   );
 
@@ -50,6 +63,7 @@ export function portalSyncServiceLeadsQuickMenu() {
 }
 
 if (typeof window !== "undefined") {
+  window.portalIsLeadDashboardShell = portalIsLeadDashboardShell;
   window.portalCanAccessServiceLeadsMenu = portalCanAccessServiceLeadsMenu;
   window.portalSyncServiceLeadsQuickMenu = portalSyncServiceLeadsQuickMenu;
 }
