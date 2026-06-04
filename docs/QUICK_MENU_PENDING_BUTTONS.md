@@ -15,6 +15,7 @@ Los botones del menú rápido volvieron a **staff** y **lead** dashboards, conec
 | `quickMenuSafeguarding` | NSPCC My Learning (URL externa) |
 | `quickMenuPolicies` | `policies_portal.html` (+ firmante vía `portalQuickMenuNavigate`) |
 | `quickMenuRiskAssessments` | `risk_assessment.html` (read-only staff portal; PDF export in-page) |
+| `quickMenuStaffWellbeingReview` | `staff_wellbeing_review.html` (stress RA form; draft save + summary PDF) |
 
 ## Chips del acordeón
 

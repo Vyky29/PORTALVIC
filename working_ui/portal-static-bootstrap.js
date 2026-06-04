@@ -26,7 +26,7 @@
       ).toLowerCase();
       if (/login\.html(?:$|[?#])/.test(path) || /\/login(?:$|[/?#])/.test(path)) return;
       var sensitive =
-        /staff_dashboard|lead_dashboard|staff_profile_update|portal-|cancellation|observation|policies|pickup|certificates|ra_portal|risk_assessment|venue-review|incident|expenses|timesheet/i.test(
+        /staff_dashboard|lead_dashboard|staff_profile_update|portal-|cancellation|observation|policies|pickup|certificates|ra_portal|risk_assessment|staff_wellbeing_review|venue-review|incident|expenses|timesheet/i.test(
           path
         );
       if (!sensitive) return;

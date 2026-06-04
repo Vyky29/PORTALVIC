@@ -24,6 +24,8 @@
     { "source": "/risk_assessment", "destination": "/risk_assessment.html" },
     { "source": "/ra_portal", "destination": "/risk_assessment.html" },
     { "source": "/ra_portal.html", "destination": "/risk_assessment.html" },
+    { "source": "/staff-wellbeing-review", "destination": "/staff_wellbeing_review.html" },
+    { "source": "/wellbeing-review", "destination": "/staff_wellbeing_review.html" },
     { "source": "/timesheet", "destination": "/timesheet.html" },
     { "source": "/induction", "destination": "/general-induction/index.html" },
     { "source": "/general-induction", "destination": "/general-induction/index.html" },

@@ -1,0 +1,2947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Individual / team stress risk assessment — clubSENsational</title>
+  <link rel="preconnect" href="https://www.clubsensational.org" />
+  <link rel="dns-prefetch" href="https://www.clubsensational.org" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css?family=DM+Sans:400,400i,500,500i,600,600i,700,700i|Fraunces:600,600i,700,700i&amp;display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      /* Aligned with clubSENsational brand (slate + mustard) */
+      --navy: #2a3140;
+      --navy-mid: #343a48;
+      --navy-soft: #3d4452;
+      --gold: #e4a82a;
+      --gold-bright: #f4bc44;
+      --gold-light: #f5d78a;
+      --gold-dim: rgba(201, 162, 39, 0.22);
+      --cream: #f6f3eb;
+      --paper: #fdfcfa;
+      --card: #ffffff;
+      --text: #1a2330;
+      --muted: #5c6778;
+      --line: #c5cdd8;
+      --line-strong: #8b98a8;
+      --ok: #1d6b4a;
+      --ok-bg: #e6f4ef;
+      --warn: #b45309;
+      --warn-bg: #fff7e6;
+      --bad: #b42318;
+      --bad-bg: #fdecea;
+      --crit: #7f1d1d;
+      --crit-bg: #fee2e2;
+      --shadow: 0 4px 24px rgba(15, 39, 64, 0.08);
+      --radius: 12px;
+      --font: "DM Sans", system-ui, sans-serif;
+      --font-display: "Fraunces", Georgia, serif;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      color: var(--text);
+      background: linear-gradient(165deg, #dfe8f0 0%, #eef2f6 40%, #e8ecf2 100%);
+      min-height: 100vh;
+      padding-bottom: 88px;
+    }
+    /* ——— CEO toolbar ——— */
+    .ceo-toolbar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 20px;
+      background: linear-gradient(90deg, var(--navy) 0%, var(--navy-mid) 100%);
+      border-top: 3px solid var(--gold);
+      box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.18);
+      font-size: 13px;
+    }
+    .ceo-toolbar .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 16px;
+      border-radius: 8px;
+      border: none;
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+    }
+    .ceo-toolbar .btn:active { transform: scale(0.98); }
+    .btn-gold {
+      background: linear-gradient(180deg, var(--gold-light) 0%, var(--gold) 100%);
+      color: var(--navy);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+    .btn-ghost {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+    }
+    .toolbar-msg {
+      margin-left: auto;
+      color: rgba(255, 255, 255, 0.85);
+      font-size: 12px;
+      max-width: 280px;
+      text-align: right;
+    }
+    .page {
+      width: min(1180px, calc(100% - 32px));
+      margin: 24px auto 32px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      /* allow wide tables to scroll — overflow:hidden was clipping the 8-column grids */
+      overflow-x: auto;
+      overflow-y: visible;
+    }
+
+    .header {
+      position: relative;
+      padding: 28px 32px 24px;
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 48%, var(--navy-soft) 100%);
+      color: #fff;
+    }
+    .header::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--gold) 0%, var(--gold-bright) 40%, var(--gold) 100%);
+    }
+    .header-top {
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+      gap: 24px;
+      margin-bottom: 18px;
+    }
+    .header-logo {
+      flex-shrink: 0;
+      display: block;
+      padding: 12px 14px;
+      background: #ffffff;
+      border-radius: 20px;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18), 0 0 0 2px rgba(244, 188, 68, 0.35);
+      line-height: 0;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .header-logo:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22), 0 0 0 2px rgba(244, 188, 68, 0.55);
+    }
+    .header-logo:focus-visible {
+      outline: 3px solid var(--gold-bright);
+      outline-offset: 3px;
+    }
+    .header-logo img {
+      display: block;
+      width: clamp(88px, 18vw, 118px);
+      height: auto;
+      max-height: 118px;
+      object-fit: contain;
+    }
+    .brand {
+      flex: 1;
+      min-width: 0;
+    }
+    .brand h1 {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(1.35rem, 2.5vw, 1.75rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      color: #fff;
+    }
+    .brand .subtitle {
+      margin: 10px 0 0;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--gold-light);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .brand .lead {
+      margin: 12px 0 0;
+      font-size: 14px;
+      line-height: 1.55;
+      color: rgba(255, 255, 255, 0.88);
+      max-width: 820px;
+    }
+    .badge-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .tag-confidential {
+      font-size: 12px;
+      font-weight: 700;
+      color: #fecaca;
+      background: rgba(185, 28, 28, 0.35);
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(254, 202, 202, 0.4);
+    }
+
+    .header-fields {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-top: 8px;
+    }
+    .header .field label { color: rgba(255, 255, 255, 0.65); }
+    .header input {
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      color: #fff;
+    }
+    .header input::placeholder { color: rgba(255, 255, 255, 0.4); }
+
+    .toc {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 14px 28px;
+      background: var(--cream);
+      border-bottom: 1px solid var(--line);
+    }
+    .toc a {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--navy-mid);
+      text-decoration: none;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: #fff;
+      border: 1px solid var(--line);
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .toc a:hover {
+      background: var(--gold-dim);
+      border-color: var(--gold);
+      color: var(--navy);
+    }
+
+    .section {
+      padding: 22px 28px 26px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.35);
+    }
+    .section:nth-of-type(odd) { background: rgba(255, 255, 255, 0.65); }
+    .section-title {
+      margin: 0 0 14px;
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--navy);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-title::before {
+      content: "";
+      width: 5px;
+      height: 1.15em;
+      border-radius: 3px;
+      background: linear-gradient(180deg, var(--gold) 0%, #a67c00 100%);
+    }
+
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    input[type="text"], input[type="date"], input[type="number"], textarea, select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 14px;
+      font-family: inherit;
+      color: var(--text);
+      background: var(--card);
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--navy-mid);
+      box-shadow: 0 0 0 3px rgba(26, 58, 92, 0.15);
+    }
+    textarea { resize: vertical; min-height: 76px; line-height: 1.5; }
+
+    .intro-block {
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text);
+      padding: 16px 18px;
+      background: linear-gradient(135deg, #eef6ff 0%, #f5f9fc 100%);
+      border-radius: var(--radius);
+      border: 1px solid #c5d8eb;
+    }
+    .intro-block a { color: #0b5cab; font-weight: 600; word-break: break-all; }
+
+    .pdf-parenthetical {
+      margin: 0 0 16px;
+      padding: 14px 16px;
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--navy-soft);
+      background: linear-gradient(90deg, rgba(201, 162, 39, 0.12) 0%, rgba(255, 255, 255, 0.9) 100%);
+      border-left: 4px solid var(--gold);
+      border-radius: 0 var(--radius) var(--radius) 0;
+    }
+
+    .risk-bands {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .risk-band {
+      padding: 12px 14px;
+      border-radius: var(--radius);
+      border: 2px solid transparent;
+      text-align: center;
+    }
+    .risk-band label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 8px; text-transform: none; letter-spacing: 0; }
+    .risk-band.low { background: var(--ok-bg); border-color: #86c5a8; }
+    .risk-band.low label { color: var(--ok); }
+    .risk-band.mod { background: var(--warn-bg); border-color: #f0c070; }
+    .risk-band.mod label { color: var(--warn); }
+    .risk-band.high { background: var(--bad-bg); border-color: #f0a8a3; }
+    .risk-band.high label { color: var(--bad); }
+    .risk-band.vhigh { background: var(--crit-bg); border-color: #fca5a5; }
+    .risk-band.vhigh label { color: var(--crit); }
+    .risk-band input { text-align: center; font-weight: 600; }
+
+    .ref-box {
+      background: var(--cream);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-top: 14px;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .ref-box strong { color: var(--navy); }
+
+    .table-scroll {
+      margin-top: 12px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: var(--radius);
+      border: 1px solid var(--line-strong);
+      background: var(--card);
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
+    }
+    table.domain-table {
+      width: 100%;
+      min-width: 1140px;
+      table-layout: fixed;
+      border-collapse: separate;
+      border-spacing: 0;
+      margin-top: 0;
+      border: none;
+      border-radius: 0;
+    }
+    .domain-table th, .domain-table td {
+      border: 1px solid var(--line-strong);
+      padding: 10px;
+      vertical-align: top;
+      font-size: 12px;
+      line-height: 1.4;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+    .domain-table th {
+      background: linear-gradient(180deg, #e8eef5 0%, #dce6f0 100%);
+      color: var(--navy);
+      font-weight: 700;
+      text-align: left;
+    }
+    .domain-table tbody tr:nth-child(even) { background: rgba(246, 243, 235, 0.35); }
+    .domain-table td textarea, .domain-table td input { font-size: 12px; border-radius: 8px; }
+    .domain-table td input[type="text"], .domain-table td input[type="number"] { min-height: 38px; }
+    .domain-table td input[type="number"].js-s,
+    .domain-table td input[type="number"].js-l,
+    .domain-table td .sl-num-input {
+      text-align: center;
+      padding-left: 6px;
+      padding-right: 6px;
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
+    .domain-table td input[type="number"].js-s::-webkit-outer-spin-button,
+    .domain-table td input[type="number"].js-s::-webkit-inner-spin-button,
+    .domain-table td input[type="number"].js-l::-webkit-outer-spin-button,
+    .domain-table td input[type="number"].js-l::-webkit-inner-spin-button,
+    .domain-table td .sl-num-input::-webkit-outer-spin-button,
+    .domain-table td .sl-num-input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    .domain-table td input.js-score {
+      background: #eef2f7 !important;
+      text-align: center;
+      font-weight: 600;
+      color: var(--navy);
+      cursor: default;
+    }
+    .col-sl { width: 148px; min-width: 140px; }
+    .col-score { width: 104px; min-width: 100px; }
+    .th-sub { display: block; font-weight: 500; font-size: 10px; color: var(--muted); margin-top: 4px; }
+
+    /* Severity / likelihood: slider + label + number (logic: Appendix I → 1–5; score = S×L, band = Appendix III) */
+    .sl-td { vertical-align: middle !important; }
+    .sl-wrap { display: flex; flex-direction: column; gap: 4px; }
+    .sl-caption {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 6px;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--navy-mid);
+      line-height: 1.2;
+    }
+    .sl-caption .sl-letter {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 6px;
+      background: #eaf1f5;
+      color: var(--navy);
+      font-size: 11px;
+    }
+    .sl-wrap.sev .sl-letter { background: linear-gradient(135deg, #dce8f5, #c5d8eb); }
+    .sl-wrap.like .sl-letter { background: linear-gradient(135deg, #fff3d6, #fde9a8); }
+    .js-s-name, .js-l-name {
+      font-weight: 600;
+      color: var(--muted);
+      text-align: right;
+      flex: 1;
+      font-size: 9px;
+      line-height: 1.25;
+      max-width: 108px;
+    }
+    .sl-wrap input[type="range"] {
+      width: 100%;
+      height: 8px;
+      border-radius: 999px;
+      appearance: none;
+      cursor: pointer;
+      margin: 2px 0 4px;
+    }
+    .sl-wrap.sev input[type="range"]::-webkit-slider-runnable-track {
+      height: 8px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #e6f4ef 0%, #fdecea 50%, #fee2e2 100%);
+    }
+    .sl-wrap.like input[type="range"]::-webkit-slider-runnable-track {
+      height: 8px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #e6f4ef 0%, #fff7e6 45%, #fdecea 100%);
+    }
+    .sl-wrap input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, var(--gold-light), var(--gold));
+      border: 2px solid var(--navy-mid);
+      margin-top: -5px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    }
+    .sl-wrap input[type="range"]::-moz-range-track {
+      height: 8px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #e6f4ef, #fff7e6, #fdecea);
+    }
+    .sl-wrap input[type="range"]::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, var(--gold-light), var(--gold));
+      border: 2px solid var(--navy-mid);
+      cursor: pointer;
+    }
+    .sl-num-input {
+      width: 100% !important;
+      min-height: 32px !important;
+      padding: 6px 8px !important;
+      font-size: 12px !important;
+      text-align: center;
+    }
+    .score-td { vertical-align: middle !important; }
+    .score-td .js-score { margin-bottom: 4px; }
+    .score-band {
+      font-size: 9px;
+      font-weight: 700;
+      line-height: 1.25;
+      text-align: center;
+      min-height: 2.5em;
+      color: var(--muted);
+    }
+    .score-band.b-low { color: #1d6b4a; }
+    .score-band.b-mod { color: #b45309; }
+    .score-band.b-high { color: #b42318; }
+    .score-band.b-vhigh { color: #7f1d1d; }
+
+    .discuss-block {
+      margin-top: 16px;
+      padding: 16px 18px;
+      background: var(--card);
+      border-radius: var(--radius);
+      border: 1px dashed var(--gold);
+      box-shadow: inset 0 0 0 1px rgba(201, 162, 39, 0.08);
+    }
+    .discuss-block .discuss-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 10px;
+    }
+    .discuss-list { margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.65; color: var(--text); }
+    .discuss-list li { margin: 6px 0; }
+    .discuss-list li::marker { color: var(--gold); }
+
+    .table-actions {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .btn-add-row {
+      padding: 8px 14px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--navy);
+      background: var(--gold-light);
+      border: 1px solid var(--gold);
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .btn-add-row:hover { background: var(--gold); color: #fff; }
+
+    .stressor-cell {
+      vertical-align: top !important;
+      min-width: 260px;
+      max-width: 320px;
+    }
+    .stressor-cell .micro-label {
+      display: block;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--muted);
+      margin: 8px 0 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .stressor-cell .micro-label:first-child { margin-top: 0; }
+    /* Native select: explicit sizing so it matches fields and stays readable in narrow table cells */
+    .stressor-cell .js-common-stressor,
+    .domain-table td.stressor-cell select.js-common-stressor {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      min-height: 44px;
+      font-size: 13px;
+      line-height: 1.35;
+      padding: 10px 36px 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--line-strong);
+      font-family: inherit;
+      font-weight: 500;
+      color: var(--text);
+      background-color: #fff;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23343a48' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      background-size: 16px 16px;
+      cursor: pointer;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .stressor-cell .js-common-stressor:focus {
+      outline: none;
+      border-color: var(--navy-mid);
+      box-shadow: 0 0 0 3px rgba(26, 58, 92, 0.15);
+    }
+    .stressor-cell .js-common-stressor option,
+    .domain-table td.stressor-cell select.js-common-stressor option {
+      color: var(--text);
+      background: #fff;
+      font-weight: 400;
+      padding: 6px;
+    }
+    .stressor-cell .js-stressor-text { margin-top: 2px; }
+    .stressor-quick {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: relative;
+      z-index: 4;
+    }
+    .stressor-quick.is-no-stressor-choice .btn-no-stressor.btn-no-stressor-primary {
+      border-color: var(--ok);
+      box-shadow: 0 0 0 3px rgba(29, 107, 74, 0.28), 0 2px 10px rgba(0, 0, 0, 0.08);
+    }
+    .btn-no-stressor.btn-no-stressor-primary {
+      width: 100%;
+      margin: 0;
+      padding: 12px 14px;
+      font-size: 15px;
+      font-weight: 800;
+      font-family: inherit;
+      border-radius: 10px;
+      border: 2px solid var(--gold);
+      background: linear-gradient(180deg, var(--gold-light) 0%, var(--gold) 100%);
+      color: var(--navy);
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    }
+    .btn-no-stressor.btn-no-stressor-primary:hover {
+      filter: brightness(1.04);
+      border-color: var(--gold-bright);
+    }
+    .btn-expand-stressor {
+      width: 100%;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      font-family: inherit;
+      border-radius: 8px;
+      border: 1px dashed var(--navy-mid);
+      background: #fff;
+      color: var(--navy-mid);
+      cursor: pointer;
+    }
+    .btn-expand-stressor:hover {
+      border-style: solid;
+      border-color: var(--gold);
+      background: #fffbeb;
+      color: var(--navy);
+    }
+    .stressor-detail {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+    }
+    .btn-collapse-stressor {
+      margin-top: 10px;
+      padding: 6px 12px;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: inherit;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: var(--cream);
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .btn-collapse-stressor:hover {
+      border-color: var(--navy-mid);
+      color: var(--navy);
+    }
+
+    .controls-cell {
+      vertical-align: top !important;
+      min-width: 200px;
+    }
+    .controls-cell .micro-label.controls-micro {
+      display: block;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--muted);
+      margin: 0 0 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .controls-cell .micro-label.controls-micro:not(:first-child) {
+      margin-top: 10px;
+    }
+    .controls-cell .js-suggested-measure-select {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      min-height: 42px;
+      font-size: 12px;
+      line-height: 1.35;
+      padding: 9px 34px 9px 11px;
+      border-radius: 10px;
+      border: 1px solid var(--line-strong);
+      font-family: inherit;
+      font-weight: 500;
+      color: var(--text);
+      background-color: #fff;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23343a48' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 9px center;
+      background-size: 15px 15px;
+      cursor: pointer;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .controls-cell .js-suggested-measure-select:focus {
+      outline: none;
+      border-color: var(--navy-mid);
+      box-shadow: 0 0 0 3px rgba(26, 58, 92, 0.15);
+    }
+    .controls-cell .js-suggested-measure-select option {
+      color: var(--text);
+      background: #fff;
+    }
+    .controls-cell .js-controls-text {
+      margin-top: 6px;
+      min-height: 64px;
+    }
+
+    .obs-cell {
+      vertical-align: top !important;
+      min-width: 200px;
+    }
+    .obs-cell .micro-label.obs-micro {
+      display: block;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--muted);
+      margin: 0 0 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .obs-cell .micro-label.obs-micro:not(:first-child) {
+      margin-top: 10px;
+    }
+    .obs-cell .js-suggested-obs-select {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      min-height: 42px;
+      font-size: 12px;
+      line-height: 1.35;
+      padding: 9px 34px 9px 11px;
+      border-radius: 10px;
+      border: 1px solid var(--line-strong);
+      font-family: inherit;
+      font-weight: 500;
+      color: var(--text);
+      background-color: #fff;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23343a48' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 9px center;
+      background-size: 15px 15px;
+      cursor: pointer;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .obs-cell .js-suggested-obs-select:focus {
+      outline: none;
+      border-color: var(--navy-mid);
+      box-shadow: 0 0 0 3px rgba(26, 58, 92, 0.15);
+    }
+    .obs-cell .js-suggested-obs-select option {
+      color: var(--text);
+      background: #fff;
+    }
+    .obs-cell .js-obs-text {
+      margin-top: 6px;
+      min-height: 64px;
+    }
+
+    .who-cell {
+      vertical-align: top !important;
+      min-width: 140px;
+    }
+    .when-cell {
+      vertical-align: top !important;
+      min-width: 168px;
+    }
+    .who-cell .js-by-who {
+      width: 100%;
+      min-height: 44px;
+      font-size: 14px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--line-strong);
+      font-family: inherit;
+      color: var(--text);
+      background: #fff;
+    }
+    .when-cell .micro-label.when-micro {
+      display: block;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--muted);
+      margin: 0 0 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .when-cell .micro-label.when-micro:not(:first-child) {
+      margin-top: 10px;
+    }
+    .when-cell .js-by-when-date {
+      width: 100%;
+      min-height: 44px;
+      font-size: 14px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid var(--line-strong);
+      font-family: inherit;
+      color: var(--text);
+      background: #fff;
+    }
+    .when-cell .js-by-when-note {
+      width: 100%;
+      min-height: 40px;
+      font-size: 13px;
+      padding: 9px 11px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      font-family: inherit;
+      color: var(--text);
+      background: #fff;
+    }
+
+    .btn-pdf {
+      padding: 12px 22px;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: inherit;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      background: linear-gradient(180deg, var(--gold-light) 0%, var(--gold) 100%);
+      color: var(--navy);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+    }
+    .btn-pdf:hover { filter: brightness(1.03); }
+    .btn-pdf:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    .appendix-table { margin-top: 12px; border-radius: var(--radius); border: 1px solid var(--line-strong); }
+    .table-scroll .appendix-table { margin-top: 0; min-width: 640px; }
+    .appendix-table th, .appendix-table td { font-size: 11px; padding: 8px 10px; vertical-align: top; border: 1px solid var(--line); }
+    .appendix-table thead th { background: var(--navy); color: #fff; font-weight: 600; }
+    .appendix-table tbody th { background: #eef2f7; color: var(--navy); }
+    .appendix-table .matrix-num { text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .cell-l { background: var(--ok-bg); }
+    .cell-m { background: var(--warn-bg); }
+    .cell-h { background: var(--bad-bg); }
+    .cell-v { background: var(--crit-bg); color: var(--crit); }
+
+    .sign-off { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 12px; }
+    .signature-box {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 16px;
+      min-height: 130px;
+      background: linear-gradient(180deg, #fff 0%, #faf8f5 100%);
+    }
+    .signature-box strong { color: var(--navy); }
+    .signature-line { margin-top: 48px; border-top: 1px solid var(--line-strong); padding-top: 10px; font-size: 12px; color: var(--muted); }
+
+    .footer-note {
+      padding: 20px 28px 28px;
+      background: linear-gradient(180deg, #f0f3f7 0%, #e5eaf0 100%);
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.55;
+      border-top: 1px solid var(--line);
+    }
+
+  </style>
+  <style media="print">
+    .no-print { display: none !important; }
+    body { background: #fff; padding-bottom: 0; }
+    .page { box-shadow: none !important; margin: 0 !important; width: 100% !important; border: none !important; overflow: visible !important; }
+    .table-scroll { overflow: visible !important; border: none !important; }
+    .section { break-inside: avoid; }
+    a[href]::after { content: none !important; }
+    .js-s-range, .js-l-range { display: none !important; }
+    .stressor-quick { display: none !important; }
+    .js-stressor-detail[hidden] {
+      display: block !important;
+    }
+    .js-stressor-detail {
+      border-top: none !important;
+      margin-top: 0 !important;
+      padding-top: 0 !important;
+    }
+    .sl-caption { font-size: 9px !important; }
+  </style>
+  <style media="(max-width: 900px)">
+    .toolbar-msg { width: 100%; margin-left: 0; text-align: left; max-width: none; }
+  </style>
+  <style media="(max-width: 1100px)">
+    .header-fields, .grid { grid-template-columns: repeat(2, 1fr); }
+    .risk-bands { grid-template-columns: repeat(2, 1fr); }
+  </style>
+  <style media="(max-width: 720px)">
+    .header-fields, .grid, .grid-2, .risk-bands, .sign-off { grid-template-columns: 1fr; }
+    .header-top {
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .brand .badge-row { justify-content: center; }
+    .brand .lead { margin-left: auto; margin-right: auto; }
+    .page { width: calc(100% - 16px); margin: 12px auto; }
+  </style>
+</head>
+<body>
+
+<nav class="ceo-toolbar no-print" aria-label="Meeting tools">
+  <button type="button" class="btn btn-gold" id="btn-print">Print / PDF</button>
+  <button type="button" class="btn btn-ghost" id="btn-save">Save draft</button>
+  <button type="button" class="btn btn-ghost" id="btn-load">Load draft</button>
+  <button type="button" class="btn btn-ghost" id="btn-clear">Clear draft</button>
+  <span class="toolbar-msg" id="toolbar-msg"></span>
+</nav>
+
+<form id="sra-form" class="page" autocomplete="off">
+  <header class="header">
+    <div class="header-top">
+      <a class="header-logo" href="https://www.clubsensational.org/" target="_blank" rel="noopener noreferrer" title="clubSENsational — Autism Consultancy Services" aria-label="clubSENsational — visit website">
+        <img src="https://www.clubsensational.org/wp-content/uploads/2026/03/F-02-1.png" width="236" height="236" alt="clubSENsational — Autism Consultancy Services" decoding="async" fetchpriority="high" />
+      </a>
+      <div class="brand">
+        <div class="badge-row">
+          <span class="tag-confidential">Private &amp; confidential</span>
+        </div>
+        <h1>Individual/team stress risk assessment form</h1>
+        <p class="subtitle">(1-2-1 / team discussion document)</p>
+        <p class="lead">Complete during the meeting. Drafts stay in this browser only.</p>
+      </div>
+    </div>
+    <div class="header-fields">
+      <div class="field"><label>Document title (optional)</label><input type="text" placeholder="e.g. Stress RA — [name or team]" /></div>
+      <div class="field"><label>Department / site / location</label><input type="text" /></div>
+      <div class="field"><label>Reference (optional)</label><input type="text" /></div>
+      <div class="field"><label>Date of assessment</label><input type="date" /></div>
+    </div>
+  </header>
+
+  <div class="toc no-print" aria-label="Quick links">
+    <a href="#sec-guidance">HSE toolkit</a>
+    <a href="#sec-cover">Cover</a>
+    <a href="#sec-demands">Demands</a>
+    <a href="#sec-control">Control</a>
+    <a href="#sec-support">Support</a>
+    <a href="#sec-relations">Relationships</a>
+    <a href="#sec-role">Role</a>
+    <a href="#sec-change">Change</a>
+    <a href="#sec-app1">Appendices</a>
+    <a href="#sec-summary">Summary</a>
+    <a href="#sec-sign">Sign off</a>
+    <a href="#sec-pdf">Summary PDF</a>
+  </div>
+
+  <section class="section" id="sec-guidance">
+    <h2 class="section-title">The Health &amp; Safety Executive (HSE) — supporting guidance</h2>
+    <div class="intro-block">
+      <p style="margin: 0 0 12px;">The Health &amp; Safety Executive’s (HSE) <strong>Talking Toolkit</strong> provides useful additional guidance and support. The toolkit is designed to help managers have initial discussions with their employees as part of your organisation’s overall work-stress management approach, and can supplement this employee stress risk assessment form.</p>
+      <p style="margin: 0;"><a href="https://www.hse.gov.uk/stress/assets/docs/stress-talking-toolkit.pdf" target="_blank" rel="noopener noreferrer">https://www.hse.gov.uk/stress/assets/docs/stress-talking-toolkit.pdf</a></p>
+    </div>
+  </section>
+
+  <section class="section" id="sec-cover">
+    <h2 class="section-title">Cover details &amp; overall risk score</h2>
+    <p class="pdf-parenthetical" style="margin-bottom: 14px;"><strong>Overall risk score</strong> (please refer to the Appendices for guidance).</p>
+    <div class="grid-2">
+      <div class="field"><label>Team / employee name</label><textarea></textarea></div>
+      <div class="field"><label>Role(s) / job titles</label><textarea></textarea></div>
+      <div class="field"><label>HR representative</label><input type="text" /></div>
+      <div class="field"><label>Stress risk assessment undertaken by</label><input type="text" placeholder="Name / role" /></div>
+      <div class="field" style="grid-column: 1 / -1;"><label>Trigger / reason for risk assessment</label><textarea></textarea></div>
+      <div class="field" style="grid-column: 1 / -1;"><label>Current control measures</label><textarea></textarea></div>
+    </div>
+    <div class="risk-bands">
+      <div class="risk-band low">
+        <label>Low (1–3)</label>
+        <input type="text" placeholder="Notes / tick" />
+      </div>
+      <div class="risk-band mod">
+        <label>Moderate (4–6)</label>
+        <input type="text" placeholder="Notes / tick" />
+      </div>
+      <div class="risk-band high">
+        <label>High (8–12)</label>
+        <input type="text" placeholder="Notes / tick" />
+      </div>
+      <div class="risk-band vhigh">
+        <label>Very high (13+)</label>
+        <input type="text" placeholder="Notes / tick" />
+      </div>
+    </div>
+    <div class="field" style="margin-top: 18px;"><label>Overall observations</label><textarea rows="5" placeholder="e.g. [Name] and I have found workable solutions for each of the areas [name] struggled with. An action plan will be drawn up to reflect the actions. We have planned discussion points for monthly meetings and will minute these to ensure each area is addressed and any control measures are actioned. I will check out training/upskilling opportunities for [name] and ensure they are upskilled on anything relevant."></textarea></div>
+  </section>
+
+  <!-- ——— Domain tables: class domain-tbody + data-domain key ——— -->
+
+  <section class="section" id="sec-demands">
+    <h2 class="section-title">Workload and job demands</h2>
+    <p class="pdf-parenthetical">(How the employee/team perceives their ability to cope with the demands of their job, whether they feel they are provided with achievable demands in relation to their normal working hours and whether their skills and abilities are matched to their job requirements).</p>
+    <div class="table-scroll" role="region" aria-label="Workload and job demands table">
+    <table class="domain-table">
+      <thead>
+        <tr>
+          <th style="width:21%">Stressor</th>
+          <th style="width:22%">Observations / issues identified</th>
+          <th class="col-sl">Severity <span class="th-sub">(S) 1–5 · bar + number · App. I</span></th>
+          <th class="col-sl">Likelihood <span class="th-sub">(L) 1–5 · bar + number · App. I</span></th>
+          <th class="col-score">Score <span class="th-sub">S×L + risk band · App. II–III</span></th>
+          <th style="width:18%">Additional control measures</th>
+          <th style="width:13%">By who</th>
+          <th style="width:16%">By when</th>
+        </tr>
+      </thead>
+      <tbody class="domain-tbody" data-domain="demands">
+        <tr>
+          <td class="stressor-cell">
+            <div class="stressor-quick no-print">
+              <button type="button" class="btn-no-stressor btn-no-stressor-primary" aria-pressed="false">No stressor</button>
+              <button type="button" class="btn-expand-stressor" aria-expanded="false">+ Add stressor</button>
+            </div>
+            <div class="js-stressor-detail stressor-detail" hidden>
+              <label class="micro-label">Select common stressor</label>
+              <select class="js-common-stressor" aria-label="Select common stressor">
+                <option value="">— Select common stressor —</option>
+                <option value="__none__">No stressor (not applicable)</option>
+                <option value="__other__">Other (type below)</option>
+              </select>
+              <label class="micro-label">Stressor (describe / manual)</label>
+              <textarea class="js-stressor-text" rows="2" placeholder="Pick from the list or describe your own"></textarea>
+              <button type="button" class="btn-collapse-stressor no-print">Hide stressor fields</button>
+            </div>
+          </td>
+          <td class="obs-cell">
+            <div class="js-picklists-obs-wrap no-print" hidden>
+              <label class="micro-label obs-micro">Possible observations (examples)</label>
+              <select class="js-suggested-obs-select no-print" aria-label="Choose an observation example to add below">
+                <option value="">— Choose to add —</option>
+              </select>
+            </div>
+            <label class="micro-label obs-micro">Observations / issues identified</label>
+            <textarea class="js-obs-text" rows="3" placeholder="Pick from the list above and/or write your own notes"></textarea>
+          </td>
+          <td class="sl-td">
+            <div class="sl-wrap sev">
+              <label class="sl-caption"><span class="sl-letter">S</span> <span class="js-s-name">—</span></label>
+              <input type="range" class="js-s-range" min="1" max="5" step="1" aria-label="Severity 1 to 5" />
+              <input type="number" class="js-s sl-num-input" min="1" max="5" step="1" inputmode="numeric" placeholder="1–5" title="Severity 1–5 (Appendix I)" />
+            </div>
+          </td>
+          <td class="sl-td">
+            <div class="sl-wrap like">
+              <label class="sl-caption"><span class="sl-letter">L</span> <span class="js-l-name">—</span></label>
+              <input type="range" class="js-l-range" min="1" max="5" step="1" aria-label="Likelihood 1 to 5" />
+              <input type="number" class="js-l sl-num-input" min="1" max="5" step="1" inputmode="numeric" placeholder="1–5" title="Likelihood 1–5 (Appendix I)" />
+            </div>
+          </td>
+          <td class="score-td">
+            <input type="text" class="js-score" readonly placeholder="S×L" aria-label="Risk score" />
+            <div class="js-band score-band" aria-live="polite"></div>
+          </td>
+          <td class="controls-cell">
+            <div class="js-picklists-measures-wrap no-print" hidden>
+              <label class="micro-label controls-micro">Suggested additional control measures</label>
+              <select class="js-suggested-measure-select no-print" aria-label="Choose a suggested measure to add to the box below">
+                <option value="">— Choose to add —</option>
+              </select>
+            </div>
+            <label class="micro-label controls-micro">Additional control measures (free text)</label>
+            <textarea class="js-controls-text" rows="3" placeholder="Pick from the list above and/or write your own wording"></textarea>
+          </td>
+          <td class="who-cell">
+            <input type="text" class="js-by-who" autocomplete="off" placeholder="Name or role" />
+          </td>
+          <td class="when-cell">
+            <label class="micro-label when-micro">Date (calendar)</label>
+            <input type="date" class="js-by-when-date" title="Pick a target date" />
+            <label class="micro-label when-micro">Or describe timing</label>
+            <input type="text" class="js-by-when-note" placeholder="e.g. ASAP, end of term" />
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="table-actions no-print">
+      <button type="button" class="btn-add-row" data-add-for="demands">+ Add stressor row</button>
+    </div>
+    <div class="discuss-block">
+      <div class="discuss-label">Discussion points:</div>
+      <ul class="discuss-list">
+        <li>On the whole, does your workload feel achievable?</li>
+        <li>Do you have clear priorities?</li>
+        <li>Do you have realistic deadlines?</li>
+        <li>Do you have sufficient resources to do your job?</li>
+        <li>Are your skills, training and knowledge sufficient to do your job?</li>
+        <li>Do you have any other concerns?</li>
+        <li>What improvements or support could be put in place to help with any of the issues discussed?</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section" id="sec-control">
+    <h2 class="section-title">Job control</h2>
+    <p class="pdf-parenthetical">(How employees feel they are consulted over the way their work is organised, having regular opportunities to discuss and input into work/projects, the degree to which they are encouraged to utilise their skills and initiative to undertake their work, for example).</p>
+    <div class="table-scroll" role="region" aria-label="Job control table">
+    <table class="domain-table">
+      <thead>
+        <tr>
+          <th style="width:21%">Stressor</th>
+          <th style="width:22%">Observations / issues identified</th>
+          <th class="col-sl">Severity <span class="th-sub">(S) 1–5 · bar + number · App. I</span></th>
+          <th class="col-sl">Likelihood <span class="th-sub">(L) 1–5 · bar + number · App. I</span></th>
+          <th class="col-score">Score <span class="th-sub">S×L + risk band · App. II–III</span></th>
+          <th style="width:18%">Additional control measures</th>
+          <th style="width:13%">By who</th>
+          <th style="width:16%">By when</th>
+        </tr>
+      </thead>
+      <tbody class="domain-tbody" data-domain="control">
+        <tr>
+          <td class="stressor-cell">
+            <div class="stressor-quick no-print">
+              <button type="button" class="btn-no-stressor btn-no-stressor-primary" aria-pressed="false">No stressor</button>
+              <button type="button" class="btn-expand-stressor" aria-expanded="false">+ Add stressor</button>
+            </div>
+            <div class="js-stressor-detail stressor-detail" hidden>
+              <label class="micro-label">Select common stressor</label>
+              <select class="js-common-stressor" aria-label="Select common stressor">
+                <option value="">— Select common stressor —</option>
+                <option value="__none__">No stressor (not applicable)</option>
+                <option value="__other__">Other (type below)</option>
+              </select>
+              <label class="micro-label">Stressor (describe / manual)</label>
+              <textarea class="js-stressor-text" rows="2" placeholder="Pick from the list or describe your own"></textarea>
+              <button type="button" class="btn-collapse-stressor no-print">Hide stressor fields</button>
+            </div>
+          </td>
+          <td class="obs-cell">
+            <div class="js-picklists-obs-wrap no-print" hidden>
+              <label class="micro-label obs-micro">Possible observations (examples)</label>
+              <select class="js-suggested-obs-select no-print" aria-label="Choose an observation example to add below">
+                <option value="">— Choose to add —</option>
+              </select>
+            </div>
+            <label class="micro-label obs-micro">Observations / issues identified</label>
+            <textarea class="js-obs-text" rows="3" placeholder="Pick from the list above and/or write your own notes"></textarea>
+          </td>
+          <td class="sl-td">
+            <div class="sl-wrap sev">
+              <label class="sl-caption"><span class="sl-letter">S</span> <span class="js-s-name">—</span></label>
+              <input type="range" class="js-s-range" min="1" max="5" step="1" aria-label="Severity 1 to 5" />
+              <input type="number" class="js-s sl-num-input" min="1" max="5" step="1" inputmode="numeric" placeholder="1–5" title="Severity 1–5 (Appendix I)" />
+            </div>
+          </td>
+          <td class="sl-td">
+            <div class="sl-wrap like">
+              <label class="sl-caption"><span class="sl-letter">L</span> <span class="js-l-name">—</span></label>
+              <input type="range" class="js-l-range" min="1" max="5" step="1" aria-label="Likelihood 1 to 5" />
+              <input type="number" class="js-l sl-num-input" min="1" max="5" step="1" inputmode="numeric" placeholder="1–5" title="Likelihood 1–5 (Appendix I)" />
+            </div>
+          </td>
+          <td class="score-td">
+            <input type="text" class="js-score" readonly placeholder="S×L" aria-label="Risk score" />
+            <div class="js-band score-band" aria-live="polite"></div>
+          </td>
+          <td class="controls-cell">
+            <div class="js-picklists-measures-wrap no-print" hidden>
+              <label class="micro-label controls-micro">Suggested additional control measures</label>
+              <select class="js-suggested-measure-select no-print" aria-label="Choose a suggested measure to add to the box below">
+                <option value="">— Choose to add —</option>
+              </select>
+            </div>
+            <label class="micro-label controls-micro">Additional control measures (free text)</label>
+            <textarea class="js-controls-text" rows="3" placeholder="Pick from the list above and/or write your own wording"></textarea>
+          </td>
+          <td class="who-cell">
+            <input type="text" class="js-by-who" autocomplete="off" placeholder="Name or role" />
+          </td>
+          <td class="when-cell">
+            <label class="micro-label when-micro">Date (calendar)</label>
+            <input type="date" class="js-by-when-date" title="Pick a target date" />
+            <label class="micro-label when-micro">Or describe timing</label>
+            <input type="text" class="js-by-when-note" placeholder="e.g. ASAP, end of term" />
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="table-actions no-print"><button type="button" class="btn-add-row" data-add-for="control">+ Add stressor row</button></div>
+    <div class="discuss-block">
+      <div class="discuss-label">Discussion points:</div>
+      <ul class="discuss-list">
+        <li>Do you feel appropriately involved in how decisions about your role are made?</li>
+        <li>How well do you feel you have a say in how your work is organised?</li>
+        <li>Do you feel your opinions are listened to?</li>
+        <li>Do you feel that your skills and capabilities are used effectively? Could more be done/differently?</li>
+        <li>Do you have any other concerns?</li>
+        <li>What improvements or support could be put in place to help with any of the issues discussed?</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section" id="sec-support">
+    <h2 class="section-title">Support, resources and communication</h2>
+    <p class="pdf-parenthetical">(How employees feel about the level of information and support from colleagues and their manager, knowing what support is available and how to access it, for example).</p>
+    <div class="table-scroll" role="region" aria-label="Support and communication table">
+    <table class="domain-table">
+      <thead>
+        <tr>
+          <th style="width:21%">Stressor</th>
+          <th style="width:22%">Observations / issues identified</th>
+          <th class="col-sl">Severity <span class="th-sub">(S) 1–5 · bar + number · App. I</span></th>
+          <th class="col-sl">Likelihood <span class="th-sub">(L) 1–5 · bar + number · App. I</span></th>
+          <th class="col-score">Score <span class="th-sub">S×L + risk band · App. II–III</span></th>
+          <th style="width:18%">Additional control measures</th>
+          <th style="width:13%">By who</th>
+          <th style="width:16%">By when</th>
+        </tr>
+      </thead>
+      <tbody class="domain-tbody" data-domain="support">
+        <tr>
+          <td class="stressor-cell">
+            <div class="stressor-quick no-print">
+              <button type="button" class="btn-no-stressor btn-no-stressor-primary" aria-pressed="false">No stressor</button>
+              <button type="button" class="btn-expand-stressor" aria-expanded="false">+ Add stressor</button>
+            </div>
+            <div class="js-stressor-detail stressor-detail" hidden>
+              <label class="micro-label">Select common stressor</label>
+              <select class="js-common-stressor" aria-label="Select common stressor">
+                <option value="">— Select common stressor —</option>
+                <option value="__none__">No stressor (not applicable)</option>
+                <option value="__other__">Other (type below)</option>
+              </select>
+              <label class="micro-label">Stressor (describe / manual)</label>
+              <textarea class="js-stressor-text" rows="2" placeholder="Pick from the list or describe your own"></textarea>
+              <button type="button" class="btn-collapse-stressor no-print">Hide stressor fields</button>
+            </div>
+          </td>
+          <td class="obs-cell">
+            <div class="js-picklists-obs-wrap no-print" hidden>
+              <label class="micro-label obs-micro">Possible observations (examples)</label>
+              <select class="js-suggested-obs-select no-print" aria-label="Choose an observation example to add below">
+                <option value="">— Choose to add —</option>
+              </select>
+            </div>
+            <label class="micro-label obs-micro">Observations / issues identified</label>
+            <textarea class="js-obs-text" rows="3" placeholder="Pick from the list above and/or write your own notes"></textarea>
+          </td>
+          <td class="sl-td">
+            <div class="sl-wrap sev">
+              <label class="sl-caption"><span class="sl-letter">S</span> <span class="js-s-name">—</span></label>
+              <input type="range" class="js-s-range" min="1" max="5" step="1" aria-label="Severity 1 to 5" />
+              <input type="number" class="js-s sl-num-input" min="1" max="5" step="1" inputmode="numeric" placeholder="1–5" title="Severity 1–5 (Appendix I)" />
+            </div>
+          </td>
+          <td class="sl-td">
+            <div class="sl-wrap like">
+              <label class="sl-caption"><span class="sl-letter">L</span> <span class="js-l-name">—</span></label>
+              <input type="range" class="js-l-range" min="1" max="5" step="1" aria-label="Likelihood 1 to 5" />
+              <input type="number" class="js-l sl-num-input" min="1" max="5" step="1" inputmode="numeric" placeholder="1–5" title="Likelihood 1–5 (Appendix I)" />
+            </div>
+          </td>
+          <td class="score-td">
+            <input type="text" class="js-score" readonly placeholder="S×L" aria-label="Risk score" />
+            <div class="js-band score-band" aria-live="polite"></div>
+          </td>
+          <td class="controls-cell">
+            <div class="js-picklists-measures-wrap no-print" hidden>
+              <label class="micro-label controls-micro">Suggested additional control measures</label>
+              <select class="js-suggested-measure-select no-print" aria-label="Choose a suggested measure to add to the box below">
+                <option value="">— Choose to add —</option>
+              </select>
+            </div>
+            <label class="micro-label controls-micro">Additional control measures (free text)</label>
+            <textarea class="js-controls-text" rows="3" placeholder="Pick from the list above and/or write your own wording"></textarea>
+          </td>
+          <td class="who-cell">
+            <input type="text" class="js-by-who" autocomplete="off" placeholder="Name or role" />
+          </td>
+          <td class="when-cell">
+            <label class="micro-label when-micro">Date (calendar)</label>
+            <input type="date" class="js-by-when-date" title="Pick a target date" />
+            <label class="micro-label when-micro">Or describe timing</label>
+            <input type="text" class="js-by-when-note" placeholder="e.g. ASAP, end of term" />
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="table-actions no-print"><button type="button" class="btn-add-row" data-add-for="support">+ Add stressor row</button></div>
+    <div class="discuss-block">
+      <div class="discuss-label">Discussion points:</div>
+      <ul class="discuss-list">
+        <li>Do you feel your company/working environment is a positive place to work?</li>
+        <li>Do you feel valued in the work you do?</li>
+        <li>Do you know what support is available to you?</li>
+        <li>Where might you go for support?</li>
+        <li>Do you believe there are suitable opportunities to discuss issues or pressures?</li>
+        <li>Any other concerns?</li>
+        <li>What improvements or support could be put in place to help with any of the issues discussed?</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section" id="sec-relations">
+    <h2 class="section-title">Work relationships</h2>
+    <p class="pdf-parenthetical">(How employees feel they are treated at work, the degree to which they feel they are subject to unacceptable behaviours, whether relevant policies and procedures are in place to report and address poor behaviours, for example).</p>
+    <div class="table-scroll" role="region" aria-label="Work relationships table">
+    <table class="domain-table">
+      <thead>
+        <tr>
+          <th style="width:21%">Stressor</th>
+          <th style="width:22%">Observations / issues identified</th>
+          <th class="col-sl">Severity <span class="th-sub">(S) 1–5 · bar + number · App. I</span></th>
+          <th class="col-sl">Likelihood <span class="th-sub">(L) 1–5 · bar + number · App. I</span></th>
+          <th class="col-score">Score <span class="th-sub">S×L + risk band · App. II–III</span></th>
+          <th style="width:18%">Additional control measures</th>
+          <th style="width:13%">By who</th>
+          <th style="width:16%">By when</th>
+        </tr>
+      </thead>
+      <tbody class="domain-tbody" data-domain="relations">
+        <tr>
+          <td class="stressor-cell">
+            <div class="stressor-quick no-print">
+              <button type="button" class="btn-no-stressor btn-no-stressor-primary" aria-pressed="false">No stressor</button>
+              <button type="button" class="btn-expand-stressor" aria-expanded="false">+ Add stressor</button>
+            </div>
+            <div class="js-stressor-detail stressor-detail" hidden>
+              <label class="micro-label">Select common stressor</label>
+              <select class="js-common-stressor" aria-label="Select common stressor">
+                <option value="">— Select common stressor —</option>
+                <option value="__none__">No stressor (not applicable)</option>
+                <option value="__other__">Other (type below)</option>
+              </select>
+              <label class="micro-label">Stressor (describe / manual)</label>
+              <textarea class="js-stressor-text" rows="2" placeholder="Pick from the list or describe your own"></textarea>
+              <button type="button" class="btn-collapse-stressor no-print">Hide stressor fields</button>
+            </div>
+          </td>
+          <td class="obs-cell">
+            <div class="js-picklists-obs-wrap no-print" hidden>
+              <label class="micro-label obs-micro">Possible observations (examples)</label>
+              <select class="js-suggested-obs-select no-print" aria-label="Choose an observation example to add below">
+                <option value="">— Choose to add —</option>
+              </select>
+            </div>
+            <label class="micro-label obs-micro">Observations / issues identified</label>
+            <textarea class="js-obs-text" rows="3" placeholder="Pick from the list above and/or write your own notes"></textarea>
+          </td>
+          <td class="sl-td">
+            <div class="sl-wrap sev">
+              <label class="sl-caption"><span class="sl-letter">S</span> <span class="js-s-name">—</span></label>
+              <input type="range" class="js-s-range" min="1" max="5" step="1" aria-label="Severity 1 to 5" />
+              <input type="number" class="js-s sl-num-input" min="1" max="5" step="1" inputmode="numeric" placeholder="1–5" title="Severity 1–5 (Appendix I)" />
+            </div>
+          </td>
+          <td class="sl-td">
+            <div class="sl-wrap like">
+              <label class="sl-caption"><span class="sl-letter">L</span> <span class="js-l-name">—</span></label>
+              <input type="range" class="js-l-range" min="1" max="5" step="1" aria-label="Likelihood 1 to 5" />
+              <input type="number" class="js-l sl-num-input" min="1" max="5" step="1" inputmode="numeric" placeholder="1–5" title="Likelihood 1–5 (Appendix I)" />
+            </div>
+          </td>
+          <td class="score-td">
+            <input type="text" class="js-score" readonly placeholder="S×L" aria-label="Risk score" />
+            <div class="js-band score-band" aria-live="polite"></div>
+          </td>
+          <td class="controls-cell">
+            <div class="js-picklists-measures-wrap no-print" hidden>
+              <label class="micro-label controls-micro">Suggested additional control measures</label>
+              <select class="js-suggested-measure-select no-print" aria-label="Choose a suggested measure to add to the box below">
+                <option value="">— Choose to add —</option>
+              </select>
+            </div>
+            <label class="micro-label controls-micro">Additional control measures (free text)</label>
+            <textarea class="js-controls-text" rows="3" placeholder="Pick from the list above and/or write your own wording"></textarea>
+          </td>
+          <td class="who-cell">
+            <input type="text" class="js-by-who" autocomplete="off" placeholder="Name or role" />
+          </td>
+          <td class="when-cell">
+            <label class="micro-label when-micro">Date (calendar)</label>
+            <input type="date" class="js-by-when-date" title="Pick a target date" />
+            <label class="micro-label when-micro">Or describe timing</label>
+            <input type="text" class="js-by-when-note" placeholder="e.g. ASAP, end of term" />
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="table-actions no-print"><button type="button" class="btn-add-row" data-add-for="relations">+ Add stressor row</button></div>
+    <div class="discuss-block">
+      <div class="discuss-label">Discussion points:</div>
+      <ul class="discuss-list">
+        <li>Are you exposed to, or subject to bullying or harassment at work?</li>
+        <li>Do you feel that open, honest communication is encouraged in the team/leadership/company?</li>
+        <li>Do you know where to go and what to do if you experience unacceptable behaviour?</li>
+        <li>Do you feel confident that steps would be taken to investigate and resolve any issues identified?</li>
+        <li>Do you feel there is any lack of recognition for diversity in the team?</li>
+        <li>Any other concerns?</li>
+        <li>What improvements or support could be put in place to help with any of the issues discussed?</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section" id="sec-role">
+    <h2 class="section-title">Job role and conditions</h2>
+    <p class="pdf-parenthetical">(How employees understand their role and responsibilities, perceived clarity of role expectations, for example).</p>
+    <div class="table-scroll" role="region" aria-label="Job role and conditions table">
+    <table class="domain-table">
+      <thead>
+        <tr>
+          <th style="width:21%">Stressor</th>
+          <th style="width:22%">Observations / issues identified</th>
+          <th class="col-sl">Severity <span class="th-sub">(S) 1–5 · bar + number · App. I</span></th>
+          <th class="col-sl">Likelihood <span class="th-sub">(L) 1–5 · bar + number · App. I</span></th>
+          <th class="col-score">Score <span class="th-sub">S×L + risk band · App. II–III</span></th>
+          <th style="width:18%">Additional control measures</th>
+          <th style="width:13%">By who</th>
+          <th style="width:16%">By when</th>
+        </tr>
+      </thead>
+      <tbody class="domain-tbody" data-domain="role">
+        <tr>
+          <td class="stressor-cell">
+            <div class="stressor-quick no-print">
+              <button type="button" class="btn-no-stressor btn-no-stressor-primary" aria-pressed="false">No stressor</button>
+              <button type="button" class="btn-expand-stressor" aria-expanded="false">+ Add stressor</button>
+            </div>
+            <div class="js-stressor-detail stressor-detail" hidden>
+              <label class="micro-label">Select common stressor</label>
+              <select class="js-common-stressor" aria-label="Select common stressor">
+                <option value="">— Select common stressor —</option>
+                <option value="__none__">No stressor (not applicable)</option>
+                <option value="__other__">Other (type below)</option>
+              </select>
+              <label class="micro-label">Stressor (describe / manual)</label>
+              <textarea class="js-stressor-text" rows="2" placeholder="Pick from the list or describe your own"></textarea>
+              <button type="button" class="btn-collapse-stressor no-print">Hide stressor fields</button>
+            </div>
+          </td>
+          <td class="obs-cell">
+            <div class="js-picklists-obs-wrap no-print" hidden>
+              <label class="micro-label obs-micro">Possible observations (examples)</label>
+              <select class="js-suggested-obs-select no-print" aria-label="Choose an observation example to add below">
+                <option value="">— Choose to add —</option>
+              </select>
+            </div>
+            <label class="micro-label obs-micro">Observations / issues identified</label>
+            <textarea class="js-obs-text" rows="3" placeholder="Pick from the list above and/or write your own notes"></textarea>
+          </td>
+          <td class="sl-td">
+            <div class="sl-wrap sev">
+              <label class="sl-caption"><span class="sl-letter">S</span> <span class="js-s-name">—</span></label>
+              <input type="range" class="js-s-range" min="1" max="5" step="1" aria-label="Severity 1 to 5" />
+              <input type="number" class="js-s sl-num-input" min="1" max="5" step="1" inputmode="numeric" placeholder="1–5" title="Severity 1–5 (Appendix I)" />
+            </div>
+          </td>
+          <td class="sl-td">
+            <div class="sl-wrap like">
+              <label class="sl-caption"><span class="sl-letter">L</span> <span class="js-l-name">—</span></label>
+              <input type="range" class="js-l-range" min="1" max="5" step="1" aria-label="Likelihood 1 to 5" />
+              <input type="number" class="js-l sl-num-input" min="1" max="5" step="1" inputmode="numeric" placeholder="1–5" title="Likelihood 1–5 (Appendix I)" />
+            </div>
+          </td>
+          <td class="score-td">
+            <input type="text" class="js-score" readonly placeholder="S×L" aria-label="Risk score" />
+            <div class="js-band score-band" aria-live="polite"></div>
+          </td>
+          <td class="controls-cell">
+            <div class="js-picklists-measures-wrap no-print" hidden>
+              <label class="micro-label controls-micro">Suggested additional control measures</label>
+              <select class="js-suggested-measure-select no-print" aria-label="Choose a suggested measure to add to the box below">
+                <option value="">— Choose to add —</option>
+              </select>
+            </div>
+            <label class="micro-label controls-micro">Additional control measures (free text)</label>
+            <textarea class="js-controls-text" rows="3" placeholder="Pick from the list above and/or write your own wording"></textarea>
+          </td>
+          <td class="who-cell">
+            <input type="text" class="js-by-who" autocomplete="off" placeholder="Name or role" />
+          </td>
+          <td class="when-cell">
+            <label class="micro-label when-micro">Date (calendar)</label>
+            <input type="date" class="js-by-when-date" title="Pick a target date" />
+            <label class="micro-label when-micro">Or describe timing</label>
+            <input type="text" class="js-by-when-note" placeholder="e.g. ASAP, end of term" />
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="table-actions no-print"><button type="button" class="btn-add-row" data-add-for="role">+ Add stressor row</button></div>
+    <div class="discuss-block">
+      <div class="discuss-label">Discussion points:</div>
+      <ul class="discuss-list">
+        <li>Do you feel you are sufficiently inducted into your role?</li>
+        <li>Are you clear about your role and responsibilities?</li>
+        <li>Do you clearly understand your role/responsibilities?</li>
+        <li>Is your reporting structure clear?</li>
+        <li>Are you clear on your performance objectives?</li>
+        <li>How well do you understand how your role fits with the overall goals of the team/company?</li>
+        <li>On the whole, do you feel that your responsibilities are achievable?</li>
+        <li>Are there other demands outside your normal role which are affecting your main duties?</li>
+        <li>Any other concerns (e.g. length of commute? Having dull or repetitive work? Role interfering with an appropriate work/life balance?)</li>
+        <li>What improvements or support could be put in place to help with any of the issues discussed?</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section" id="sec-change">
+    <h2 class="section-title">Job security &amp; change</h2>
+    <p class="pdf-parenthetical">(How employees feel how change is communicated and managed in the company, whether they are provided with relevant and timely information so they understand the need and potential implications of change(s), the degree to which they are consulted about change, for example).</p>
+    <div class="table-scroll" role="region" aria-label="Job security and change table">
+    <table class="domain-table">
+      <thead>
+        <tr>
+          <th style="width:21%">Stressor</th>
+          <th style="width:22%">Observations / issues identified</th>
+          <th class="col-sl">Severity <span class="th-sub">(S) 1–5 · bar + number · App. I</span></th>
+          <th class="col-sl">Likelihood <span class="th-sub">(L) 1–5 · bar + number · App. I</span></th>
+          <th class="col-score">Score <span class="th-sub">S×L + risk band · App. II–III</span></th>
+          <th style="width:18%">Additional control measures</th>
+          <th style="width:13%">By who</th>
+          <th style="width:16%">By when</th>
+        </tr>
+      </thead>
+      <tbody class="domain-tbody" data-domain="change">
+        <tr>
+          <td class="stressor-cell">
+            <div class="stressor-quick no-print">
+              <button type="button" class="btn-no-stressor btn-no-stressor-primary" aria-pressed="false">No stressor</button>
+              <button type="button" class="btn-expand-stressor" aria-expanded="false">+ Add stressor</button>
+            </div>
+            <div class="js-stressor-detail stressor-detail" hidden>
+              <label class="micro-label">Select common stressor</label>
+              <select class="js-common-stressor" aria-label="Select common stressor">
+                <option value="">— Select common stressor —</option>
+                <option value="__none__">No stressor (not applicable)</option>
+                <option value="__other__">Other (type below)</option>
+              </select>
+              <label class="micro-label">Stressor (describe / manual)</label>
+              <textarea class="js-stressor-text" rows="2" placeholder="Pick from the list or describe your own"></textarea>
+              <button type="button" class="btn-collapse-stressor no-print">Hide stressor fields</button>
+            </div>
+          </td>
+          <td class="obs-cell">
+            <div class="js-picklists-obs-wrap no-print" hidden>
+              <label class="micro-label obs-micro">Possible observations (examples)</label>
+              <select class="js-suggested-obs-select no-print" aria-label="Choose an observation example to add below">
+                <option value="">— Choose to add —</option>
+              </select>
+            </div>
+            <label class="micro-label obs-micro">Observations / issues identified</label>
+            <textarea class="js-obs-text" rows="3" placeholder="Pick from the list above and/or write your own notes"></textarea>
+          </td>
+          <td class="sl-td">
+            <div class="sl-wrap sev">
+              <label class="sl-caption"><span class="sl-letter">S</span> <span class="js-s-name">—</span></label>
+              <input type="range" class="js-s-range" min="1" max="5" step="1" aria-label="Severity 1 to 5" />
+              <input type="number" class="js-s sl-num-input" min="1" max="5" step="1" inputmode="numeric" placeholder="1–5" title="Severity 1–5 (Appendix I)" />
+            </div>
+          </td>
+          <td class="sl-td">
+            <div class="sl-wrap like">
+              <label class="sl-caption"><span class="sl-letter">L</span> <span class="js-l-name">—</span></label>
+              <input type="range" class="js-l-range" min="1" max="5" step="1" aria-label="Likelihood 1 to 5" />
+              <input type="number" class="js-l sl-num-input" min="1" max="5" step="1" inputmode="numeric" placeholder="1–5" title="Likelihood 1–5 (Appendix I)" />
+            </div>
+          </td>
+          <td class="score-td">
+            <input type="text" class="js-score" readonly placeholder="S×L" aria-label="Risk score" />
+            <div class="js-band score-band" aria-live="polite"></div>
+          </td>
+          <td class="controls-cell">
+            <div class="js-picklists-measures-wrap no-print" hidden>
+              <label class="micro-label controls-micro">Suggested additional control measures</label>
+              <select class="js-suggested-measure-select no-print" aria-label="Choose a suggested measure to add to the box below">
+                <option value="">— Choose to add —</option>
+              </select>
+            </div>
+            <label class="micro-label controls-micro">Additional control measures (free text)</label>
+            <textarea class="js-controls-text" rows="3" placeholder="Pick from the list above and/or write your own wording"></textarea>
+          </td>
+          <td class="who-cell">
+            <input type="text" class="js-by-who" autocomplete="off" placeholder="Name or role" />
+          </td>
+          <td class="when-cell">
+            <label class="micro-label when-micro">Date (calendar)</label>
+            <input type="date" class="js-by-when-date" title="Pick a target date" />
+            <label class="micro-label when-micro">Or describe timing</label>
+            <input type="text" class="js-by-when-note" placeholder="e.g. ASAP, end of term" />
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="table-actions no-print"><button type="button" class="btn-add-row" data-add-for="change">+ Add stressor row</button></div>
+    <div class="discuss-block">
+      <div class="discuss-label">Discussion points:</div>
+      <ul class="discuss-list">
+        <li>Do you feel the company/leadership manages and communicates change sufficiently?</li>
+        <li>Do you feel you have sufficient opportunities to comment/influence change?</li>
+        <li>Do you feel you are properly consulted when changes are made which affect you and your role?</li>
+        <li>Do you feel the reasons for the change are explained well?</li>
+        <li>Do you feel you have sufficient time/resources to implement changes that affect your role/work?</li>
+        <li>What improvements or support could be put in place to help with any of the issues discussed?</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section" id="sec-app1">
+    <h2 class="section-title">Appendix I — Severity and likelihood measures</h2>
+    <p class="pdf-parenthetical" style="border-left-color: var(--navy-mid); background: #f0f4f8;"><strong>Severity measure</strong> — perceived scale of potential mental distress posed to the team/employee as a result of work-based stress (based on existing evidence). Can include one-off situations and short-term stress not requiring medical intervention.</p>
+    <table class="appendix-table">
+      <thead><tr><th>Level</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Insignificant</strong></td><td>Perceived scale of potential mental distress posed to the team/employee as a result of work-based stress is insignificant. This is based on existing evidence. This can include one-off situations and short-term stress not requiring medical intervention.</td></tr>
+        <tr><td><strong>Minor</strong></td><td>There are some concerns displayed over a period of time, but they are minor. Support is given by line manager and work colleagues and does not require time off work.</td></tr>
+        <tr><td><strong>Moderate</strong></td><td>Stress displayed is quite significant. It could follow a traumatic work situation or occur over a longer period of time. It can potentially cause ill health and might require intervention such as GP.</td></tr>
+        <tr><td><strong>Severe</strong></td><td>Result of a stress-related illness causing incapacity to work and requiring medical intervention.</td></tr>
+        <tr><td><strong>Extreme</strong></td><td>Stress-related ill health that is extreme and leads to long-term or permanent incapacity to work.</td></tr>
+      </tbody>
+    </table>
+    <p class="pdf-parenthetical" style="margin-top: 18px; border-left-color: var(--navy-mid); background: #f0f4f8;"><strong>Likelihood measure</strong> — how likely it is that the stressor could cause further mental distress or harm in the circumstances.</p>
+    <table class="appendix-table">
+      <thead><tr><th>Level</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Remote</strong></td><td>There is very little or no risk of the stressor causing an accident or causing further mental distress. All reasonable precautions have been taken.</td></tr>
+        <tr><td><strong>Unlikely</strong></td><td>The stressor could cause further distress or an accident, but the risk is minimal and the probability is still low.</td></tr>
+        <tr><td><strong>Possible</strong></td><td>The stressor could cause an accident or further mental distress if additional factors contribute to it, but it is unlikely to happen without them.</td></tr>
+        <tr><td><strong>Likely</strong></td><td>The stressor will, more often than not, cause further mental distress or an accident. Additional factors could contribute further, but it is still likely to happen without any additional factors.</td></tr>
+        <tr><td><strong>Almost certain</strong></td><td>The stressor will almost certainly cause further mental distress and employees/team could be injured or cause injury due to work-related stress.</td></tr>
+      </tbody>
+    </table>
+    <p class="ref-box" style="margin-top: 14px;"><strong>Using 1–5 in the tables above:</strong> map severity to Insignificant=1 … Extreme=5 and likelihood to Remote=1 … Almost certain=5, then multiply for the matrix in Appendix II.</p>
+  </section>
+
+  <section class="section" id="sec-app2">
+    <h2 class="section-title">Appendix II — Potential risk table</h2>
+    <p class="pdf-parenthetical">Multiply the two scores (likelihood × severity) to calculate the overall risk for a stressor. <strong>Example:</strong> an employee that a line manager observes with <strong>“Moderate” severity</strong> (e.g. their stress is quite significant and may result in a traumatic work situation) against a <strong>“Possible” likelihood</strong> (the stressor(s) could cause an accident or further distress) would equate to an overall risk score of <strong>9</strong> (see matrix).</p>
+    <div class="table-scroll" role="region" aria-label="Risk matrix">
+    <table class="appendix-table">
+      <thead>
+        <tr>
+          <th style="width:16%">Likelihood →<br />Severity ↓</th>
+          <th class="matrix-num">Insignificant</th>
+          <th class="matrix-num">Minor</th>
+          <th class="matrix-num">Moderate</th>
+          <th class="matrix-num">Severe</th>
+          <th class="matrix-num">Extreme</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><th>Almost certain</th><td class="matrix-num cell-m">5</td><td class="matrix-num cell-h">10</td><td class="matrix-num cell-h">15</td><td class="matrix-num cell-v">20</td><td class="matrix-num cell-v">25</td></tr>
+        <tr><th>Likely</th><td class="matrix-num cell-l">4</td><td class="matrix-num cell-m">8</td><td class="matrix-num cell-h">12</td><td class="matrix-num cell-h">16</td><td class="matrix-num cell-v">20</td></tr>
+        <tr><th>Possible</th><td class="matrix-num cell-l">3</td><td class="matrix-num cell-m">6</td><td class="matrix-num cell-h">9</td><td class="matrix-num cell-h">12</td><td class="matrix-num cell-h">15</td></tr>
+        <tr><th>Unlikely</th><td class="matrix-num cell-l">2</td><td class="matrix-num cell-l">4</td><td class="matrix-num cell-m">6</td><td class="matrix-num cell-m">8</td><td class="matrix-num cell-h">10</td></tr>
+        <tr><th>Remote</th><td class="matrix-num cell-l">1</td><td class="matrix-num cell-l">2</td><td class="matrix-num cell-l">3</td><td class="matrix-num cell-l">4</td><td class="matrix-num cell-l">5</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="section" id="sec-app3">
+    <h2 class="section-title">Appendix III — Overall risk table &amp; actions</h2>
+    <p class="pdf-parenthetical">Use the overall score from Appendix II with the band below to agree actions (adapt to your organisation’s governance).</p>
+    <div class="table-scroll" role="region" aria-label="Overall risk actions table">
+    <table class="appendix-table">
+      <thead><tr><th style="width:16%">Score</th><th style="width:20%">Risk</th><th>Action</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>Low (1–3)</strong></td>
+          <td>Acceptable</td>
+          <td><ul class="discuss-list" style="margin:0;"><li>No further action required</li><li>Review and monitor to ensure any controls in place are maintained and the situation does not change</li></ul></td>
+        </tr>
+        <tr>
+          <td><strong>Moderate (4–6)</strong></td>
+          <td>Some action required</td>
+          <td><ul class="discuss-list" style="margin:0;"><li>Make effort to work together to find solutions to reduce the risk</li><li>Complete and agree an action plan</li><li>Ensure any changes are carefully measured and are kept to a low or moderate level</li></ul></td>
+        </tr>
+        <tr>
+          <td><strong>High (8–12)</strong></td>
+          <td>Immediate action required</td>
+          <td><ul class="discuss-list" style="margin:0;"><li>Methods to reduce risks should be implemented immediately</li><li>Consider restricting activity until control measures are implemented</li><li>Complete and agree an action plan</li><li>Ensure control measures are maintained and reviewed regularly</li><li>Refer employees to Occupational Health within two working weeks to avoid unnecessary prolonging or worsening of their condition</li></ul></td>
+        </tr>
+        <tr>
+          <td><strong>Very high (13+)</strong></td>
+          <td>Intolerable, immediate action required</td>
+          <td><ul class="discuss-list" style="margin:0;"><li>Substantial improvements of risk control measures are necessary to ensure risk is reduced to a low or moderate level</li><li>Activities should be stopped until controls are in place and carefully monitored once implemented</li><li>Refer employee to Occupational Health within two working weeks to avoid unnecessary prolonging or worsening of their condition</li></ul></td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="section" id="sec-summary">
+    <h2 class="section-title">Summary of discussion &amp; agreed actions</h2>
+    <div class="field"><label>Working record (minutes / next steps)</label><textarea class="js-summary-record" rows="6" placeholder="Agreed actions, owners, dates, review points, training/upskilling."></textarea></div>
+    <div class="grid-2" style="margin-top: 14px;">
+      <div class="field"><label>Line manager / facilitator — name &amp; date</label><input type="text" /></div>
+      <div class="field"><label>Employee / participant — name &amp; date</label><input type="text" /></div>
+    </div>
+  </section>
+
+  <section class="section" id="sec-sign">
+    <h2 class="section-title">Sign off</h2>
+    <div class="sign-off">
+      <div class="signature-box"><strong>Employee / participant</strong><div class="signature-line">Name / signature / date</div></div>
+      <div class="signature-box"><strong>Line manager</strong><div class="signature-line">Name / signature / date</div></div>
+      <div class="signature-box"><strong>HR (if applicable)</strong><div class="signature-line">Name / signature / date</div></div>
+    </div>
+  </section>
+
+  <section class="section no-print" id="sec-pdf">
+    <h2 class="section-title">Generate summary PDF</h2>
+    <button type="button" class="btn-pdf" id="btn-generate-pdf">Generate Summary PDF</button>
+  </section>
+
+  <div id="pdf-render-host" style="position:fixed;left:-12000px;top:0;width:794px;min-height:400px;background:#fdfcfa;font-family:DM Sans,Helvetica,Arial,sans-serif;color:#2a3140;font-size:11px;line-height:1.45;" aria-hidden="true"></div>
+
+  <div class="footer-note">
+    Wide tables: scroll horizontally if needed. Save draft uses localStorage in this browser. Risk bands and occupational health wording must match your organisation’s policy.
+  </div>
+</form>
+
+<script>
+/* clubSENsational — stress RA common stressors (keep with Stress Risk Assessment Template.html) */
+window.stressorSuggestions = {
+  demands: {
+    "High workload / too many sessions": [
+      "Review timetable and session allocation",
+      "Reduce workload temporarily where appropriate",
+      "Add protected breaks between sessions",
+      "Provide additional staff support",
+      "Schedule regular manager check-ins"
+    ],
+    "Back to back sessions without breaks": [
+      "Add protected transition time",
+      "Review session spacing",
+      "Rotate staff where possible",
+      "Monitor fatigue during shifts"
+    ],
+    "Unclear priorities or conflicting deadlines": [
+      "Agree written priorities for the week",
+      "Clarify deadlines with line manager",
+      "Escalate conflicting demands to leadership",
+      "Review planning meeting frequency"
+    ],
+    "Insufficient staffing on shift": [
+      "Review staffing ratios against risk assessment",
+      "Recruit or redeploy cover where possible",
+      "Adjust programme delivery to safe levels",
+      "Document staffing gaps for leadership"
+    ],
+    "Skills or training gap for assigned duties": [
+      "Identify mandatory vs desirable training",
+      "Schedule supervised practice sessions",
+      "Pair with experienced colleague",
+      "Review role fit and development plan"
+    ]
+  },
+  control: {
+    "Limited input in planning": [
+      "Involve staff in session planning",
+      "Provide opportunities to give feedback",
+      "Clarify where staff can adapt delivery",
+      "Schedule review meeting with line manager"
+    ],
+    "Little autonomy in daily decisions": [
+      "Define decision rights clearly",
+      "Pilot increased autonomy in low-risk areas",
+      "Document escalation paths",
+      "Review outcomes after agreed period"
+    ],
+    "Rigid processes with no room to adapt": [
+      "Map where flexibility is safe and desirable",
+      "Agree exceptions with safeguarding lead",
+      "Simplify unnecessary steps",
+      "Capture improvement suggestions"
+    ],
+    "Unclear expectations from management": [
+      "Set SMART objectives for the role",
+      "Weekly short check-ins",
+      "Written summary of agreed expectations",
+      "360 or peer feedback where appropriate"
+    ]
+  },
+  support: {
+    "Unclear where to get support": [
+      "Share updated wellbeing and HR contacts",
+      "Walk through support pathways in 1-2-1",
+      "Display key numbers on noticeboard / intranet",
+      "Offer guided tour of EAP / counselling access"
+    ],
+    "Manager unavailable for check-ins": [
+      "Agree fixed office hours for questions",
+      "Nominate deputy contact when absent",
+      "Use shared calendar for visibility",
+      "Short async updates when face-to-face not possible"
+    ],
+    "Information not cascaded in time": [
+      "Improve briefing rhythm (email + meeting)",
+      "Confirm read-receipts for critical updates",
+      "Use simple FAQ after major changes",
+      "Feedback loop on communication quality"
+    ],
+    "Limited access to EAP or wellbeing resources": [
+      "Remind staff how to access EAP confidentially",
+      "Poster / wallet card with helplines",
+      "Signpost external charities where relevant",
+      "Review confidentiality concerns openly"
+    ]
+  },
+  relations: {
+    "Interpersonal conflict within the team": [
+      "Mediated conversation with neutral facilitator",
+      "Clear behaviour expectations in writing",
+      "Refer to dignity at work / grievance policy",
+      "Follow up within agreed timescale"
+    ],
+    "Perceived unfair treatment": [
+      "Listen without interruption; summarise concerns",
+      "Check facts with witnesses where appropriate",
+      "Explain decisions transparently where possible",
+      "Offer appeal or escalation route"
+    ],
+    "Bullying or harassment concern": [
+      "Take concern seriously; do not minimise",
+      "Follow safeguarding / HR procedure immediately",
+      "Offer support and adjust working arrangements if needed",
+      "Document actions and timelines"
+    ],
+    "Lack of recognition or feedback": [
+      "Introduce regular positive feedback moments",
+      "Link praise to specific behaviours",
+      "Agree development goals jointly",
+      "Celebrate small wins in team meetings"
+    ]
+  },
+  role: {
+    "Unclear role boundaries": [
+      "Produce simple role description one-pager",
+      "Agree what is in / out of scope",
+      "Align with job description and contract",
+      "Review after change projects"
+    ],
+    "Responsibilities exceed capacity": [
+      "Prioritise tasks with line manager",
+      "Defer or delegate non-essential work",
+      "Temporary reduction of duties if needed",
+      "Review resourcing at leadership level"
+    ],
+    "Unclear performance expectations": [
+      "Set measurable objectives for the quarter",
+      "Mid-point review on progress",
+      "Training linked to performance gaps",
+      "Document agreed metrics"
+    ],
+    "Commute or travel burden": [
+      "Explore hybrid or adjusted hours if policy allows",
+      "Batch meetings to reduce travel days",
+      "Consider travel expenses and recovery time",
+      "Review long-term sustainability of pattern"
+    ]
+  },
+  change: {
+    "Poor communication during organisational change": [
+      "Structured comms plan with dates and owners",
+      "Q&A channel or anonymous questions",
+      "Repeat key messages in multiple formats",
+      "Evaluate understanding after each wave"
+    ],
+    "Consultation lacking on changes affecting role": [
+      "Arrange consultation meeting before implementation",
+      "Document feedback received and responses",
+      "Adjust timeline if significant concerns raised",
+      "Share final rationale clearly"
+    ],
+    "Fear regarding job security": [
+      "Honest messaging within legal constraints",
+      "Signpost support for anxiety",
+      "One-to-one reassurance where appropriate",
+      "Avoid rumours; correct misinformation promptly"
+    ],
+    "Rapid change without adequate support": [
+      "Phase implementation where possible",
+      "Provide training and shadowing",
+      "Allow extra supervision during transition",
+      "Review workload impact after 4–6 weeks"
+    ]
+  }
+};
+
+window.observationHints = {
+  demands: {
+    "High workload / too many sessions": [
+      "Staff reports feeling unable to complete tasks within contracted hours.",
+      "Signs of fatigue or errors linked to volume of sessions."
+    ],
+    "Back to back sessions without breaks": [
+      "Little or no transition time observed between groups.",
+      "Staff mention skipping breaks to stay on time."
+    ],
+    "Unclear priorities or conflicting deadlines": [
+      "Conflicting instructions from different stakeholders noted.",
+      "Staff unsure which task is most urgent."
+    ],
+    "Insufficient staffing on shift": [
+      "Ratios feel stretched compared to policy or risk assessment.",
+      "Near misses or incidents linked to low cover."
+    ],
+    "Skills or training gap for assigned duties": [
+      "Staff express lack of confidence in specific tasks.",
+      "Training records not up to date for current role."
+    ]
+  },
+  control: {
+    "Limited input in planning": [
+      "Staff feel plans are imposed without meaningful discussion.",
+      "Ideas from frontline rarely reflected in schedules."
+    ],
+    "Little autonomy in daily decisions": [
+      "Frequent escalation for minor decisions.",
+      "Micromanagement reported in supervision."
+    ],
+    "Rigid processes with no room to adapt": [
+      "Frustration where exceptions would be safe and reasonable.",
+      "Workarounds used because official process too slow."
+    ],
+    "Unclear expectations from management": [
+      "Objectives change without written update.",
+      "Performance conversations feel reactive only."
+    ]
+  },
+  support: {
+    "Unclear where to get support": [
+      "Staff unsure who to contact for wellbeing concerns.",
+      "EAP or HR pathway not recalled when stressed."
+    ],
+    "Manager unavailable for check-ins": [
+      "Repeated difficulty booking 1-2-1 time.",
+      "Issues left unresolved due to lack of access."
+    ],
+    "Information not cascaded in time": [
+      "Important updates learned late via informal channels.",
+      "Role changes announced with little notice."
+    ],
+    "Limited access to EAP or wellbeing resources": [
+      "Low awareness of what is free / confidential.",
+      "Perceived stigma around using support services."
+    ]
+  },
+  relations: {
+    "Interpersonal conflict within the team": [
+      "Tension between named individuals affecting morale.",
+      "Avoidance or silo working within the team."
+    ],
+    "Perceived unfair treatment": [
+      "Examples given of inconsistent application of rules.",
+      "Strong emotional response when discussing fairness."
+    ],
+    "Bullying or harassment concern": [
+      "Specific behaviours or language reported.",
+      "Reluctance to attend certain shifts or locations."
+    ],
+    "Lack of recognition or feedback": [
+      "Staff feel invisible despite extra effort.",
+      "Only negative feedback remembered."
+    ]
+  },
+  role: {
+    "Unclear role boundaries": [
+      "Overlap or gaps between roles described.",
+      "Tasks outside job description becoming routine."
+    ],
+    "Responsibilities exceed capacity": [
+      "Regular overtime or work at home to keep up.",
+      "Quality slipping due to volume."
+    ],
+    "Unclear performance expectations": [
+      "Uncertainty what ‘good’ looks like this term.",
+      "Objectives not reviewed since induction."
+    ],
+    "Commute or travel burden": [
+      "Travel time significantly eating recovery time.",
+      "Cost or caring responsibilities mentioned."
+    ]
+  },
+  change: {
+    "Poor communication during organisational change": [
+      "Rumours; inconsistent messages from leaders.",
+      "Key details missing at point of change."
+    ],
+    "Consultation lacking on changes affecting role": [
+      "Change announced with little prior dialogue.",
+      "Feedback channel not offered or not responded to."
+    ],
+    "Fear regarding job security": [
+      "Anxiety about redundancy or site closure.",
+      "Sleep or health impact mentioned."
+    ],
+    "Rapid change without adequate support": [
+      "Multiple changes overlapping in short period.",
+      "Training or documentation lagging behind new process."
+    ]
+  }
+};
+
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var STORAGE_KEY = "clubSENsational-stress-RA-v10";
+  var SEV_NAMES = ["", "Insignificant", "Minor", "Moderate", "Severe", "Extreme"];
+  var LIKE_NAMES = ["", "Remote", "Unlikely", "Possible", "Likely", "Almost certain"];
+
+  var form = document.getElementById("sra-form");
+  var msg = document.getElementById("toolbar-msg");
+
+  function setMsg(text) {
+    if (msg) msg.textContent = text;
+  }
+
+  function syncRangeFromNumbers(tr) {
+    ["s", "l"].forEach(function (ax) {
+      var n = tr.querySelector(".js-" + ax);
+      var r = tr.querySelector(".js-" + ax + "-range");
+      if (!n || !r) return;
+      if (n.value === "" || isNaN(parseInt(n.value, 10))) {
+        r.value = "1";
+        return;
+      }
+      var v = Math.min(5, Math.max(1, parseInt(n.value, 10)));
+      r.value = String(v);
+    });
+  }
+
+  function syncNumberFromRange(tr, ax) {
+    var r = tr.querySelector(".js-" + ax + "-range");
+    var n = tr.querySelector(".js-" + ax);
+    if (r && n) n.value = r.value;
+  }
+
+  function updateSlLabels(tr) {
+    var sn = tr.querySelector(".js-s-name");
+    var ln = tr.querySelector(".js-l-name");
+    var sIn = tr.querySelector(".js-s");
+    var lIn = tr.querySelector(".js-l");
+    var sv = sIn && sIn.value !== "" ? parseInt(sIn.value, 10) : NaN;
+    var lv = lIn && lIn.value !== "" ? parseInt(lIn.value, 10) : NaN;
+    if (sn) sn.textContent = sv >= 1 && sv <= 5 ? SEV_NAMES[sv] : "—";
+    if (ln) ln.textContent = lv >= 1 && lv <= 5 ? LIKE_NAMES[lv] : "—";
+  }
+
+  function bandFromProduct(n) {
+    if (n <= 3) return { text: "Low (1–3)", cls: "b-low" };
+    if (n <= 6) return { text: "Moderate (4–6)", cls: "b-mod" };
+    if (n <= 12) return { text: "High (8–12)", cls: "b-high" };
+    return { text: "Very high (13+)", cls: "b-vhigh" };
+  }
+
+  function refreshRiskRow(tr) {
+    if (!tr) return;
+    var sIn = tr.querySelector(".js-s");
+    var lIn = tr.querySelector(".js-l");
+    var out = tr.querySelector(".js-score");
+    var bandEl = tr.querySelector(".js-band");
+    updateSlLabels(tr);
+    if (!out) return;
+    var s = sIn && sIn.value !== "" ? parseInt(sIn.value, 10) : NaN;
+    var l = lIn && lIn.value !== "" ? parseInt(lIn.value, 10) : NaN;
+    if (s >= 1 && s <= 5 && l >= 1 && l <= 5) {
+      var prod = s * l;
+      out.value = String(prod);
+      out.style.fontWeight = "700";
+      out.style.color = prod <= 3 ? "#1d6b4a" : prod <= 6 ? "#b45309" : prod <= 12 ? "#b42318" : "#7f1d1d";
+      if (bandEl) {
+        var b = bandFromProduct(prod);
+        bandEl.textContent = b.text;
+        bandEl.className = "js-band score-band " + b.cls;
+      }
+    } else {
+      out.value = "";
+      out.style.fontWeight = "";
+      out.style.color = "";
+      if (bandEl) {
+        bandEl.textContent = "";
+        bandEl.className = "js-band score-band";
+      }
+    }
+  }
+
+  var LOGO_SRC = "https://www.clubsensational.org/wp-content/uploads/2026/03/F-02-1.png";
+
+  function escapeHtml(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  var DOMAIN_TITLES = {
+    demands: "Workload and job demands",
+    control: "Job control",
+    support: "Support, resources and communication",
+    relations: "Work relationships",
+    role: "Job role and conditions",
+    change: "Job security and change"
+  };
+
+  function populateStressorDropdowns() {
+    var sug = window.stressorSuggestions || {};
+    form.querySelectorAll(".domain-tbody").forEach(function (tb) {
+      var dom = tb.getAttribute("data-domain");
+      for (var ri = 0; ri < tb.rows.length; ri++) {
+        var sel = tb.rows[ri].querySelector(".js-common-stressor");
+        if (!sel) continue;
+        while (sel.options.length > 3) sel.remove(3);
+        if (dom && sug[dom]) {
+          Object.keys(sug[dom]).forEach(function (k) {
+            var o = document.createElement("option");
+            o.value = k;
+            o.textContent = k;
+            sel.appendChild(o);
+          });
+        }
+      }
+    });
+  }
+
+  function populateSuggestedMeasuresSelect(tr, dom, val) {
+    var ms = tr.querySelector(".js-suggested-measure-select");
+    if (!ms) return;
+    while (ms.options.length) ms.remove(0);
+    var ph = document.createElement("option");
+    ph.value = "";
+    ph.textContent = "— Choose to add —";
+    ms.appendChild(ph);
+    if (!dom || !val || val === "__other__" || val === "__none__") return;
+    var sug = window.stressorSuggestions || {};
+    var list = (sug[dom] && sug[dom][val]) || [];
+    list.forEach(function (text) {
+      var o = document.createElement("option");
+      o.value = text;
+      o.textContent = text;
+      ms.appendChild(o);
+    });
+  }
+
+  function populateSuggestedObservationsSelect(tr, dom, val) {
+    var os = tr.querySelector(".js-suggested-obs-select");
+    if (!os) return;
+    while (os.options.length) os.remove(0);
+    var ph = document.createElement("option");
+    ph.value = "";
+    ph.textContent = "— Choose to add —";
+    os.appendChild(ph);
+    if (!dom || !val || val === "__other__" || val === "__none__") return;
+    var obsHints = window.observationHints || {};
+    var list = (obsHints[dom] && obsHints[dom][val]) || [];
+    list.forEach(function (text) {
+      var o = document.createElement("option");
+      o.value = text;
+      o.textContent = text;
+      os.appendChild(o);
+    });
+  }
+
+  function setPicklistWrapsVisibility(tr) {
+    var sel = tr.querySelector(".js-common-stressor");
+    var wObs = tr.querySelector(".js-picklists-obs-wrap");
+    var wMeas = tr.querySelector(".js-picklists-measures-wrap");
+    if (!sel || !wObs || !wMeas) return;
+    var tb = tr.closest(".domain-tbody");
+    var dom = tb ? tb.getAttribute("data-domain") : "";
+    var val = sel.value;
+    var sug = window.stressorSuggestions || {};
+    var obsHints = window.observationHints || {};
+    var hasMeas = !!(
+      val &&
+      val !== "__other__" &&
+      val !== "__none__" &&
+      dom &&
+      sug[dom] &&
+      sug[dom][val] &&
+      sug[dom][val].length
+    );
+    var hasObs = !!(
+      val &&
+      val !== "__other__" &&
+      val !== "__none__" &&
+      dom &&
+      obsHints[dom] &&
+      obsHints[dom][val] &&
+      obsHints[dom][val].length
+    );
+    wMeas.hidden = !hasMeas;
+    wObs.hidden = !hasObs;
+  }
+
+  function refreshStressorRowPicklists(tr) {
+    var tb = tr.closest(".domain-tbody");
+    var dom = tb ? tb.getAttribute("data-domain") : "";
+    var sel = tr.querySelector(".js-common-stressor");
+    if (!sel) return;
+    var val = sel.value;
+    populateSuggestedMeasuresSelect(tr, dom, val);
+    populateSuggestedObservationsSelect(tr, dom, val);
+    setPicklistWrapsVisibility(tr);
+  }
+
+  function setStressorExpandButton(tr, isOpen) {
+    var btn = tr.querySelector(".btn-expand-stressor");
+    if (!btn) return;
+    btn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    btn.textContent = isOpen ? "− Hide stressor fields" : "+ Add stressor";
+  }
+
+  function collapseStressorDetail(tr, opts) {
+    opts = opts || {};
+    var det = tr.querySelector(".js-stressor-detail");
+    if (det) det.hidden = true;
+    setStressorExpandButton(tr, false);
+    if (opts.stickyCollapse) tr.setAttribute("data-stressor-ui-collapsed", "1");
+    else tr.removeAttribute("data-stressor-ui-collapsed");
+  }
+
+  function expandStressorDetail(tr) {
+    var det = tr.querySelector(".js-stressor-detail");
+    if (!det) return;
+    tr.removeAttribute("data-stressor-ui-collapsed");
+    det.hidden = false;
+    setStressorExpandButton(tr, true);
+    var sel = tr.querySelector(".js-common-stressor");
+    if (sel) {
+      try {
+        sel.focus();
+      } catch (err) {}
+    }
+  }
+
+  function syncStressorDetailVisibility(tr) {
+    var det = tr.querySelector(".js-stressor-detail");
+    var sel = tr.querySelector(".js-common-stressor");
+    var ta = tr.querySelector(".js-stressor-text");
+    if (!det) return;
+    if (tr.getAttribute("data-stressor-ui-collapsed") === "1") return;
+    var v = sel ? sel.value : "";
+    var txt = ta ? String(ta.value).trim() : "";
+    var keepOpen =
+      (v && v !== "__none__") ||
+      v === "__other__" ||
+      (!v && txt);
+    det.hidden = !keepOpen;
+    setStressorExpandButton(tr, !det.hidden);
+  }
+
+  function updateNoStressorQuickVisual(tr) {
+    var q = tr.querySelector(".stressor-quick");
+    var s = tr.querySelector(".js-common-stressor");
+    var prim = tr.querySelector(".btn-no-stressor-primary");
+    if (!q || !s) return;
+    if (s.value === "__none__") {
+      q.classList.add("is-no-stressor-choice");
+      if (prim) prim.setAttribute("aria-pressed", "true");
+    } else {
+      q.classList.remove("is-no-stressor-choice");
+      if (prim) prim.setAttribute("aria-pressed", "false");
+    }
+  }
+
+  function getStressorDisplayForPdf(tr) {
+    var s = tr.querySelector(".js-common-stressor");
+    var ta = tr.querySelector(".js-stressor-text");
+    if (s && s.value === "__none__") return "No stressor (not applicable)";
+    if (ta && String(ta.value).trim()) return String(ta.value).trim();
+    if (s && s.value && s.value !== "__other__") return s.value;
+    return "";
+  }
+
+  function rowHasContent(tr) {
+    var st = tr.querySelector(".js-stressor-text");
+    var obs = tr.querySelector(".js-obs-text");
+    var sc = tr.querySelector(".js-score");
+    var ctrl = tr.querySelector(".js-controls-text");
+    var whoEl = tr.querySelector(".js-by-who");
+    var whenD = tr.querySelector(".js-by-when-date");
+    var whenN = tr.querySelector(".js-by-when-note");
+    var sel = tr.querySelector(".js-common-stressor");
+    function nz(v) {
+      return v && String(v).trim();
+    }
+    return (
+      nz(st && st.value) ||
+      (sel && sel.value === "__none__") ||
+      nz(obs && obs.value) ||
+      nz(sc && sc.value) ||
+      nz(ctrl && ctrl.value) ||
+      nz(whoEl && whoEl.value) ||
+      nz(whenD && whenD.value) ||
+      nz(whenN && whenN.value)
+    );
+  }
+
+  function maxRiskScore() {
+    var max = 0;
+    form.querySelectorAll(".domain-tbody tr").forEach(function (tr) {
+      var sc = tr.querySelector(".js-score");
+      if (sc && sc.value !== "") {
+        var v = parseInt(sc.value, 10);
+        if (!isNaN(v)) max = Math.max(max, v);
+      }
+    });
+    return max;
+  }
+
+  function pad2(n) {
+    return (n < 10 ? "0" : "") + n;
+  }
+
+  function pdfDateStamp() {
+    var ins = form.querySelectorAll(".header-fields input");
+    var dateIn = ins[3];
+    if (dateIn && dateIn.value) return dateIn.value;
+    var x = new Date();
+    return x.getFullYear() + "-" + pad2(x.getMonth() + 1) + "-" + pad2(x.getDate());
+  }
+
+  function bandBadgeStyle(cls) {
+    if (cls.indexOf("b-low") !== -1) return "background:#1d6b4a;color:#fff;";
+    if (cls.indexOf("b-mod") !== -1) return "background:#b45309;color:#fff;";
+    if (cls.indexOf("b-high") !== -1) return "background:#b42318;color:#fff;";
+    if (cls.indexOf("b-vhigh") !== -1) return "background:#7f1d1d;color:#fff;";
+    return "background:#64748b;color:#fff;";
+  }
+
+  function buildPdfHtml() {
+    var NAVY = "#1a2744";
+    var GOLD = "#c9a227";
+    var BG = "#faf9f6";
+    var LINE = "#e8e4dc";
+    var ins = form.querySelectorAll(".header-fields input");
+    var docTitle = ins[0] ? ins[0].value : "";
+    var dept = ins[1] ? ins[1].value : "";
+    var ref = ins[2] ? ins[2].value : "";
+    var assessDate = ins[3] ? ins[3].value : "";
+    var coverSec = document.getElementById("sec-cover");
+    var coverVals = [];
+    if (coverSec) {
+      coverSec.querySelectorAll("textarea, input").forEach(function (el) {
+        coverVals.push(el.value || "");
+      });
+    }
+    var team = coverVals[0] || "";
+    var roles = coverVals[1] || "";
+    var hrRep = coverVals[2] || "";
+    var assessor = coverVals[3] || "";
+    var trigger = coverVals[4] || "";
+    var currentCtrl = coverVals[5] || "";
+    var rbLow = coverVals[6] || "";
+    var rbMod = coverVals[7] || "";
+    var rbHigh = coverVals[8] || "";
+    var rbVh = coverVals[9] || "";
+    var overallObs = coverVals[10] || "";
+    var summaryTa = form.querySelector(".js-summary-record");
+    var summaryText = summaryTa ? summaryTa.value : "";
+    var sumInputs = form.querySelectorAll("#sec-summary .grid-2 input");
+    var mgrSign = sumInputs[0] ? sumInputs[0].value : "";
+    var empSign = sumInputs[1] ? sumInputs[1].value : "";
+    var mx = maxRiskScore();
+    var parts = [];
+    parts.push(
+      '<div style="padding:22px 26px;background:' +
+        BG +
+        ';color:#2a3140;font-size:10.5px;line-height:1.45;font-family:DM Sans,Helvetica,Arial,sans-serif;">'
+    );
+    parts.push(
+      '<div style="display:flex;align-items:center;gap:16px;border-bottom:3px solid ' +
+        GOLD +
+        ";padding-bottom:14px;margin-bottom:16px;background:" +
+        NAVY +
+        ';margin:-22px -26px 16px;padding:18px 26px;color:#fff;">'
+    );
+    parts.push('<img src="' + LOGO_SRC + '" width="64" height="64" alt="" crossorigin="anonymous" style="border-radius:6px;background:#fff;object-fit:contain;" />');
+    parts.push('<div style="flex:1;">');
+    parts.push('<div style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:' + GOLD + ';font-weight:700;">Stress risk assessment — summary</div>');
+    parts.push('<div style="font-size:17px;font-weight:700;margin-top:4px;">' + escapeHtml(docTitle || "Individual / team stress risk assessment") + "</div>");
+    parts.push('<div style="opacity:0.92;margin-top:6px;font-size:10px;">ClubSENsational Ltd · Internal document</div>');
+    parts.push("</div></div>");
+
+    parts.push('<table style="width:100%;border-collapse:collapse;margin-bottom:14px;font-size:10px;"><tbody>');
+    function metaRow(k, v) {
+      return (
+        '<tr><td style="width:28%;padding:6px 8px;border:1px solid ' +
+        LINE +
+        ";background:#fff;font-weight:700;color:" +
+        NAVY +
+        ';">' +
+        escapeHtml(k) +
+        '</td><td style="padding:6px 8px;border:1px solid ' +
+        LINE +
+        ';background:#fff;">' +
+        escapeHtml(v) +
+        "</td></tr>"
+      );
+    }
+    parts.push(metaRow("Date", assessDate || pdfDateStamp()));
+    parts.push(metaRow("Department / site", dept));
+    parts.push(metaRow("Reference", ref));
+    parts.push(metaRow("Team / employee", team));
+    parts.push(metaRow("Role(s)", roles));
+    parts.push(metaRow("Undertaken by", assessor));
+    parts.push(metaRow("HR representative", hrRep));
+    parts.push(metaRow("Trigger / reason", trigger));
+    parts.push(metaRow("Current control measures", currentCtrl));
+    parts.push("</tbody></table>");
+
+    parts.push(
+      '<div style="background:#fff;border:1px solid ' +
+        LINE +
+        ';padding:12px 14px;margin-bottom:14px;border-radius:6px;">'
+    );
+    parts.push('<div style="font-size:11px;font-weight:700;color:' + NAVY + ';margin-bottom:8px;">Overall risk score (cover)</div>');
+    parts.push(
+      '<table style="width:100%;border-collapse:collapse;font-size:9.5px;"><tr>' +
+        '<td style="padding:6px;border:1px solid ' +
+        LINE +
+        ';vertical-align:top;"><strong>Low (1–3)</strong><div style="margin-top:4px;">' +
+        escapeHtml(rbLow) +
+        "</div></td>" +
+        '<td style="padding:6px;border:1px solid ' +
+        LINE +
+        ';vertical-align:top;"><strong>Moderate (4–6)</strong><div style="margin-top:4px;">' +
+        escapeHtml(rbMod) +
+        "</div></td>" +
+        '<td style="padding:6px;border:1px solid ' +
+        LINE +
+        ';vertical-align:top;"><strong>High (8–12)</strong><div style="margin-top:4px;">' +
+        escapeHtml(rbHigh) +
+        "</div></td>" +
+        '<td style="padding:6px;border:1px solid ' +
+        LINE +
+        ';vertical-align:top;"><strong>Very high (13+)</strong><div style="margin-top:4px;">' +
+        escapeHtml(rbVh) +
+        "</div></td></tr></table>"
+    );
+    parts.push(
+      '<div style="margin-top:10px;font-size:10px;"><strong>Highest S×L score in tables:</strong> ' +
+        (mx > 0 ? String(mx) : "—") +
+        "</div>"
+    );
+    parts.push(
+      '<div style="margin-top:10px;"><strong>Overall observations</strong><div style="margin-top:4px;white-space:pre-wrap;">' +
+        escapeHtml(overallObs) +
+        "</div></div>"
+    );
+    parts.push("</div>");
+
+    parts.push('<div style="height:1px;background:' + LINE + ';margin:16px 0;"></div>');
+
+    form.querySelectorAll(".domain-tbody").forEach(function (tb) {
+      var dom = tb.getAttribute("data-domain");
+      var title = DOMAIN_TITLES[dom] || dom;
+      var blockRows = [];
+      for (var i = 0; i < tb.rows.length; i++) {
+        var tr = tb.rows[i];
+        if (!rowHasContent(tr)) continue;
+        var obs = tr.querySelector(".js-obs-text");
+        var sIn = tr.querySelector(".js-s");
+        var lIn = tr.querySelector(".js-l");
+        var sc = tr.querySelector(".js-score");
+        var bandEl = tr.querySelector(".js-band");
+        var ctrl = tr.querySelector(".js-controls-text");
+        var whoEl = tr.querySelector(".js-by-who");
+        var whenD = tr.querySelector(".js-by-when-date");
+        var whenN = tr.querySelector(".js-by-when-note");
+        var whenStr = "";
+        if (whenD && whenD.value) whenStr = whenD.value;
+        if (whenN && String(whenN.value).trim()) {
+          whenStr = whenStr ? whenStr + " · " + String(whenN.value).trim() : String(whenN.value).trim();
+        }
+        var sv = sIn && sIn.value !== "" ? sIn.value : "—";
+        var lv = lIn && lIn.value !== "" ? lIn.value : "—";
+        var sn = tr.querySelector(".js-s-name");
+        var ln = tr.querySelector(".js-l-name");
+        var sLabel = sn ? sn.textContent : "";
+        var lLabel = ln ? ln.textContent : "";
+        var scoreV = sc && sc.value !== "" ? sc.value : "—";
+        var bandTxt = bandEl ? bandEl.textContent : "";
+        var bandCls = bandEl ? bandEl.className : "";
+        var badge = bandTxt
+          ? '<span style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;' +
+            bandBadgeStyle(bandCls) +
+            '">' +
+            escapeHtml(bandTxt) +
+            "</span>"
+          : "—";
+        blockRows.push(
+          "<tr>" +
+            '<td style="border:1px solid ' +
+            LINE +
+            ';padding:6px;vertical-align:top;">' +
+            escapeHtml(getStressorDisplayForPdf(tr)) +
+            "</td>" +
+            '<td style="border:1px solid ' +
+            LINE +
+            ';padding:6px;vertical-align:top;">' +
+            escapeHtml(obs ? obs.value : "") +
+            "</td>" +
+            '<td style="border:1px solid ' +
+            LINE +
+            ';padding:6px;vertical-align:top;">' +
+            escapeHtml(sv + (sLabel ? " · " + sLabel : "")) +
+            "</td>" +
+            '<td style="border:1px solid ' +
+            LINE +
+            ';padding:6px;vertical-align:top;">' +
+            escapeHtml(lv + (lLabel ? " · " + lLabel : "")) +
+            "</td>" +
+            '<td style="border:1px solid ' +
+            LINE +
+            ';padding:6px;vertical-align:top;">' +
+            escapeHtml(scoreV) +
+            "</td>" +
+            '<td style="border:1px solid ' +
+            LINE +
+            ';padding:6px;vertical-align:top;">' +
+            badge +
+            "</td>" +
+            '<td style="border:1px solid ' +
+            LINE +
+            ';padding:6px;vertical-align:top;white-space:pre-wrap;">' +
+            escapeHtml(ctrl ? ctrl.value : "") +
+            "</td>" +
+            '<td style="border:1px solid ' +
+            LINE +
+            ';padding:6px;vertical-align:top;">' +
+            escapeHtml(whoEl ? whoEl.value : "") +
+            "</td>" +
+            '<td style="border:1px solid ' +
+            LINE +
+            ';padding:6px;vertical-align:top;">' +
+            escapeHtml(whenStr) +
+            "</td></tr>"
+        );
+      }
+      if (!blockRows.length) return;
+      parts.push(
+        '<h3 style="font-size:12px;color:' +
+          NAVY +
+          ';margin:18px 0 8px;border-left:4px solid ' +
+          GOLD +
+          ';padding-left:10px;">' +
+          escapeHtml(title) +
+          "</h3>"
+      );
+      parts.push(
+        '<table style="width:100%;border-collapse:collapse;font-size:9.5px;margin-bottom:8px;"><thead><tr style="background:' +
+          NAVY +
+          ';color:#fff;"><th style="padding:6px;border:1px solid ' +
+          NAVY +
+          ';">Stressor</th><th style="padding:6px;border:1px solid ' +
+          NAVY +
+          ';">Observations</th><th style="padding:6px;border:1px solid ' +
+          NAVY +
+          ';">Severity</th><th style="padding:6px;border:1px solid ' +
+          NAVY +
+          ';">Likelihood</th><th style="padding:6px;border:1px solid ' +
+          NAVY +
+          ';">Score</th><th style="padding:6px;border:1px solid ' +
+          NAVY +
+          ';">Band</th><th style="padding:6px;border:1px solid ' +
+          NAVY +
+          ';">Additional controls</th><th style="padding:6px;border:1px solid ' +
+          NAVY +
+          ';">By who</th><th style="padding:6px;border:1px solid ' +
+          NAVY +
+          ';">By when</th></tr></thead><tbody>'
+      );
+      parts.push(blockRows.join(""));
+      parts.push("</tbody></table>");
+    });
+
+    parts.push('<div style="height:1px;background:' + LINE + ';margin:16px 0;"></div>');
+    parts.push(
+      '<div style="background:#fff;border:1px solid ' +
+        LINE +
+        ';padding:12px 14px;margin-bottom:12px;border-radius:6px;">'
+    );
+    parts.push(
+      '<div style="font-size:11px;font-weight:700;color:' + NAVY + ';margin-bottom:6px;">Summary of discussion and agreed actions</div>'
+    );
+    parts.push('<div style="white-space:pre-wrap;font-size:10px;">' + escapeHtml(summaryText) + "</div>");
+    parts.push(
+      '<div style="margin-top:10px;font-size:9.5px;"><strong>Line manager / facilitator</strong> — ' +
+        escapeHtml(mgrSign) +
+        "</div>"
+    );
+    parts.push(
+      '<div style="margin-top:4px;font-size:9.5px;"><strong>Employee / participant</strong> — ' +
+        escapeHtml(empSign) +
+        "</div>"
+    );
+    parts.push("</div>");
+
+    parts.push(
+      '<div style="background:#fff;border:1px solid ' +
+        LINE +
+        ';padding:12px 14px;margin-bottom:20px;border-radius:6px;">'
+    );
+    parts.push(
+      '<div style="font-size:11px;font-weight:700;color:' + NAVY + ';margin-bottom:8px;">Sign off</div>'
+    );
+    parts.push(
+      '<table style="width:100%;font-size:9.5px;border-collapse:collapse;"><tr><td style="width:33%;padding:8px;border:1px solid ' +
+        LINE +
+        ';vertical-align:top;"><strong>Employee / participant</strong><div style="margin-top:28px;border-bottom:1px solid #94a3b8;"></div><div style="margin-top:4px;">Name / signature / date</div></td><td style="width:33%;padding:8px;border:1px solid ' +
+        LINE +
+        ';vertical-align:top;"><strong>Line manager</strong><div style="margin-top:28px;border-bottom:1px solid #94a3b8;"></div><div style="margin-top:4px;">Name / signature / date</div></td><td style="width:33%;padding:8px;border:1px solid ' +
+        LINE +
+        ';vertical-align:top;"><strong>HR (if applicable)</strong><div style="margin-top:28px;border-bottom:1px solid #94a3b8;"></div><div style="margin-top:4px;">Name / signature / date</div></td></tr></table>'
+    );
+    parts.push("</div>");
+
+    parts.push(
+      '<div style="text-align:center;font-size:9px;color:#64748b;padding-top:8px;border-top:1px solid ' +
+        LINE +
+        ';">Private &amp; Confidential | ClubSENsational Ltd · Generated ' +
+        escapeHtml(pdfDateStamp()) +
+        "</div>"
+    );
+    parts.push("</div>");
+    return parts.join("");
+  }
+
+  if (!form) {
+    if (msg) msg.textContent = "Error: form not found.";
+    return;
+  }
+
+  populateStressorDropdowns();
+
+  form.addEventListener("input", function (e) {
+    var t = e.target;
+    if (!(t instanceof HTMLElement)) return;
+    var row = t.closest("tr");
+    if (!row || !row.closest(".domain-tbody")) return;
+
+    if (t.classList.contains("js-s-range")) {
+      syncNumberFromRange(row, "s");
+      syncRangeFromNumbers(row);
+      refreshRiskRow(row);
+      return;
+    }
+    if (t.classList.contains("js-l-range")) {
+      syncNumberFromRange(row, "l");
+      syncRangeFromNumbers(row);
+      refreshRiskRow(row);
+      return;
+    }
+    if (t.classList.contains("js-s") || t.classList.contains("js-l")) {
+      syncRangeFromNumbers(row);
+      refreshRiskRow(row);
+    }
+  });
+
+  form.addEventListener("change", function (e) {
+    var t = e.target;
+    if (!(t instanceof HTMLElement)) return;
+    if (t.classList.contains("js-common-stressor")) {
+      var row = t.closest("tr");
+      if (row) {
+        var ta = row.querySelector(".js-stressor-text");
+        if (t.value === "__none__") {
+          if (ta) ta.value = "";
+        } else if (t.value && t.value !== "__other__" && ta) {
+          ta.value = t.value;
+        }
+        refreshStressorRowPicklists(row);
+        syncStressorDetailVisibility(row);
+        updateNoStressorQuickVisual(row);
+      }
+      return;
+    }
+    if (t.classList.contains("js-suggested-measure-select")) {
+      var rowM = t.closest("tr");
+      var taM = rowM && rowM.querySelector(".js-controls-text");
+      if (t.value && taM) {
+        taM.value = (taM.value ? taM.value.replace(/\s+$/, "") + "\n" : "") + "• " + t.value;
+        t.value = "";
+        setMsg("Suggested measure added.");
+      }
+      return;
+    }
+    if (t.classList.contains("js-suggested-obs-select")) {
+      var rowObs = t.closest("tr");
+      var taObs = rowObs && rowObs.querySelector(".js-obs-text");
+      if (t.value && taObs) {
+        taObs.value = (taObs.value ? taObs.value.replace(/\s+$/, "") + "\n" : "") + "• " + t.value;
+        t.value = "";
+        setMsg("Observation example added.");
+      }
+      return;
+    }
+    if (t.classList.contains("js-s") || t.classList.contains("js-l") || t.classList.contains("js-s-range") || t.classList.contains("js-l-range")) {
+      var row2 = t.closest("tr");
+      if (row2 && row2.closest(".domain-tbody")) refreshRiskRow(row2);
+    }
+  });
+
+  document.addEventListener(
+    "click",
+    function (e) {
+      var el = e.target;
+      if (!el) return;
+      if (el.nodeType !== 1) el = el.parentElement;
+      if (!(el instanceof HTMLElement)) return;
+      var t = el.closest("button");
+      if (!t) return;
+      if (!t.classList.contains("btn-no-stressor") && !t.classList.contains("btn-expand-stressor") && !t.classList.contains("btn-collapse-stressor")) return;
+      var tr = t.closest("tr");
+      if (!tr || !tr.closest(".domain-tbody")) return;
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (t.classList.contains("btn-no-stressor")) {
+        var s = tr.querySelector(".js-common-stressor");
+        var ta = tr.querySelector(".js-stressor-text");
+        if (ta) ta.value = "";
+        if (s) {
+          s.value = "__none__";
+          s.dispatchEvent(new Event("change", { bubbles: true }));
+        } else {
+          refreshStressorRowPicklists(tr);
+          updateNoStressorQuickVisual(tr);
+        }
+        collapseStressorDetail(tr);
+        setMsg("No stressor selected for this row.");
+        return;
+      }
+
+      if (t.classList.contains("btn-expand-stressor")) {
+        var det = tr.querySelector(".js-stressor-detail");
+        if (!det) return;
+        if (det.hidden) expandStressorDetail(tr);
+        else collapseStressorDetail(tr, { stickyCollapse: true });
+        return;
+      }
+
+      if (t.classList.contains("btn-collapse-stressor")) {
+        collapseStressorDetail(tr, { stickyCollapse: true });
+      }
+    },
+    true
+  );
+
+  form.querySelectorAll(".domain-tbody tr").forEach(function (tr) {
+    syncRangeFromNumbers(tr);
+    refreshRiskRow(tr);
+    refreshStressorRowPicklists(tr);
+    syncStressorDetailVisibility(tr);
+    updateNoStressorQuickVisual(tr);
+  });
+
+  document.querySelectorAll(".btn-add-row").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var key = btn.getAttribute("data-add-for");
+      var tb = form.querySelector('.domain-tbody[data-domain="' + key + '"]');
+      if (!tb || !tb.rows.length) return;
+      var clone = tb.rows[tb.rows.length - 1].cloneNode(true);
+      clone.querySelectorAll("input, textarea, select").forEach(function (el) {
+        if (el.tagName === "SELECT") el.value = "";
+        else {
+          el.value = "";
+          if (el.classList.contains("js-score")) el.removeAttribute("style");
+        }
+      });
+      clone.querySelectorAll(".js-s-range, .js-l-range").forEach(function (r) {
+        r.value = "1";
+      });
+      clone.querySelectorAll(".js-band").forEach(function (b) {
+        b.textContent = "";
+        b.className = "js-band score-band";
+      });
+      clone.querySelectorAll(".js-s-name, .js-l-name").forEach(function (x) {
+        x.textContent = "—";
+      });
+      clone.querySelectorAll(".js-common-stressor").forEach(function (s) {
+        s.value = "";
+      });
+      tb.appendChild(clone);
+      refreshStressorRowPicklists(clone);
+      collapseStressorDetail(clone);
+      updateNoStressorQuickVisual(clone);
+      refreshRiskRow(clone);
+      setMsg("Row added.");
+    });
+  });
+
+  var btnPrint = document.getElementById("btn-print");
+  if (btnPrint) btnPrint.addEventListener("click", function () { window.print(); });
+
+  function collectValues() {
+    var els = form.querySelectorAll("input, textarea, select");
+    return Array.prototype.map.call(els, function (el) {
+      if (el.type === "checkbox" || el.type === "radio") return el.checked ? "1" : "";
+      return el.value;
+    });
+  }
+
+  function applyValues(arr) {
+    var els = form.querySelectorAll("input, textarea, select");
+    var n = Math.min(arr.length, els.length);
+    for (var i = 0; i < n; i++) {
+      var el = els[i];
+      if (el.type === "checkbox" || el.type === "radio") el.checked = arr[i] === "1";
+      else el.value = arr[i] != null ? arr[i] : "";
+    }
+    form.querySelectorAll(".domain-tbody tr").forEach(function (tr) {
+      tr.removeAttribute("data-stressor-ui-collapsed");
+      syncRangeFromNumbers(tr);
+      refreshRiskRow(tr);
+      refreshStressorRowPicklists(tr);
+      syncStressorDetailVisibility(tr);
+      updateNoStressorQuickVisual(tr);
+    });
+  }
+
+  var btnSave = document.getElementById("btn-save");
+  if (btnSave) {
+    btnSave.addEventListener("click", function () {
+      try {
+        if (typeof localStorage === "undefined") {
+          setMsg("localStorage unavailable (use http/https or allow storage).");
+          return;
+        }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(collectValues()));
+        setMsg("Draft saved.");
+      } catch (e) {
+        setMsg("Could not save (private mode or file://).");
+      }
+    });
+  }
+
+  var btnLoad = document.getElementById("btn-load");
+  if (btnLoad) {
+    btnLoad.addEventListener("click", function () {
+      try {
+        if (typeof localStorage === "undefined") {
+          setMsg("localStorage unavailable.");
+          return;
+        }
+        var raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) {
+          setMsg("No draft found.");
+          return;
+        }
+        var arr = JSON.parse(raw);
+        if (!Array.isArray(arr)) {
+          setMsg("Draft format not recognised.");
+          return;
+        }
+        applyValues(arr);
+        setMsg("Draft loaded.");
+      } catch (e) {
+        setMsg("Could not load draft.");
+      }
+    });
+  }
+
+  var btnClear = document.getElementById("btn-clear");
+  if (btnClear) {
+    btnClear.addEventListener("click", function () {
+      try {
+        if (typeof localStorage !== "undefined") localStorage.removeItem(STORAGE_KEY);
+        setMsg("Stored draft cleared.");
+      } catch (e) {}
+    });
+  }
+
+  var btnPdf = document.getElementById("btn-generate-pdf");
+  var pdfHost = document.getElementById("pdf-render-host");
+  if (btnPdf && pdfHost) {
+    btnPdf.addEventListener("click", function () {
+      if (typeof html2pdf === "undefined") {
+        setMsg("PDF library did not load. Try again or use Print.");
+        return;
+      }
+      try {
+        pdfHost.innerHTML = buildPdfHtml();
+        pdfHost.style.cssText =
+          "position:fixed;left:0;top:0;width:794px;min-height:200px;opacity:0.02;pointer-events:none;z-index:-1;background:#fdfcfa;font-family:DM Sans,Helvetica,Arial,sans-serif;";
+        var fname = "Stress-RA-summary-" + pdfDateStamp().replace(/[^0-9-]/g, "") + ".pdf";
+        var opt = {
+          margin: [10, 10, 12, 10],
+          filename: fname,
+          image: { type: "jpeg", quality: 0.92 },
+          html2canvas: { scale: 2, useCORS: true, logging: false },
+          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+          pagebreak: { mode: ["avoid-all", "css", "legacy"] }
+        };
+        function resetPdfHost() {
+          pdfHost.innerHTML = "";
+          pdfHost.style.cssText =
+            "position:fixed;left:-12000px;top:0;width:794px;min-height:400px;background:#fdfcfa;font-family:DM Sans,Helvetica,Arial,sans-serif;color:#2a3140;font-size:11px;line-height:1.45;";
+        }
+        var job = html2pdf().set(opt).from(pdfHost).save();
+        if (job && typeof job.then === "function") {
+          job
+            .then(function () {
+              resetPdfHost();
+              setMsg("Summary PDF downloaded.");
+            })
+            .catch(function () {
+              resetPdfHost();
+              setMsg("PDF failed (logo CORS or canvas). Try Print / PDF or another browser.");
+            });
+        } else {
+          setTimeout(function () {
+            resetPdfHost();
+            setMsg("Summary PDF downloaded.");
+          }, 1500);
+        }
+      } catch (err) {
+        setMsg("PDF generation error.");
+      }
+    });
+  }
+
+  if (window.location.protocol === "file:" && msg) {
+    msg.textContent =
+      (msg.textContent || "") +
+      " file:// may block draft save or the PDF script; use a local server or Print/PDF.";
+  }
+});
+</script>
+</body>
+</html>

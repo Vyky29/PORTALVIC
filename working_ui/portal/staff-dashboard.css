@@ -5658,6 +5658,11 @@
       color:#be4f46;
       border-color:rgba(190,79,70,.24);
     }
+    #menuSheet #quickMenuStaffWellbeingReview .menu-btn-icon{
+      background:linear-gradient(180deg,#ecfdf5,#d1fae5);
+      color:#0d9488;
+      border-color:rgba(13,148,136,.24);
+    }
     /* Linked HTML under audit — disabled, light red card + red icon (like Risk Assessments) */
     #menuSheet .menu-btn.menu-btn--portal-pending{
       background:linear-gradient(180deg,#fff6f4 0%,#ffeeea 100%);
@@ -5717,7 +5722,8 @@
     #menuSheet #quickMenuRoleTraining.menu-btn--portal-pending .menu-btn-icon,
     #menuSheet #quickMenuSafeguarding.menu-btn--portal-pending .menu-btn-icon,
     #menuSheet #quickMenuPolicies.menu-btn--portal-pending .menu-btn-icon,
-    #menuSheet #quickMenuRiskAssessments.menu-btn--portal-pending .menu-btn-icon{
+    #menuSheet #quickMenuRiskAssessments.menu-btn--portal-pending .menu-btn-icon,
+    #menuSheet #quickMenuStaffWellbeingReview.menu-btn--portal-pending .menu-btn-icon{
       background:linear-gradient(180deg,#fff1ee,#ffdeda);
       color:#be4f46;
       border-color:rgba(190,79,70,.24);
