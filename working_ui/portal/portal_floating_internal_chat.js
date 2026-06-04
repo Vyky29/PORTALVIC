@@ -1,11 +1,15 @@
 /**
- * Internal Chat — topbar button (beside achievements camera), outside Quick menu.
+ * Internal Chat — topbar button with orbit halo + badge; Quick menu tile sync.
  */
 (function (global) {
   "use strict";
 
   function portalFloatingChatBtn() {
     return global.document && global.document.getElementById("portalFloatingChatBtn");
+  }
+
+  function portalFloatingChatOrbitWrap() {
+    return global.document && global.document.getElementById("portalFloatingChatOrbitWrap");
   }
 
   function portalFloatingChatBadgeEl() {
@@ -30,6 +34,13 @@
     return 0;
   }
 
+  function portalApplyTopbarChatOrbit(unread) {
+    var wrap = portalFloatingChatOrbitWrap();
+    if (!wrap) return;
+    wrap.classList.toggle("topbar-chat-orbit-wrap--unread", unread);
+    wrap.classList.toggle("topbar-chat-orbit-wrap--idle", !unread);
+  }
+
   function portalSyncFloatingChatUnreadFromMenuBtn() {
     var floatBtn = portalFloatingChatBtn();
     if (!floatBtn) return;
@@ -37,7 +48,7 @@
     var unread = count > 0;
     floatBtn.classList.toggle("portal-floating-chat-btn--unread", unread);
     floatBtn.classList.toggle("topbar-chat-btn--unread", unread);
-    floatBtn.classList.toggle("menu-btn--portal-pulse", unread);
+    portalApplyTopbarChatOrbit(unread);
     var badge = portalFloatingChatBadgeEl();
     if (!badge) {
       badge = global.document.createElement("span");
@@ -90,6 +101,7 @@
 
   global.portalInitFloatingInternalChat = portalInitFloatingInternalChat;
   global.portalSyncFloatingChatUnreadFromMenuBtn = portalSyncFloatingChatUnreadFromMenuBtn;
+  global.portalApplyTopbarChatOrbit = portalApplyTopbarChatOrbit;
 
   if (global.document) {
     function boot() {

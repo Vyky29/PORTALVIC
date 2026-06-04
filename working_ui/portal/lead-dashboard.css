@@ -1646,6 +1646,29 @@
     #internalChatSheet.sheet--portal-chat-immersive .portal-dm-sheet-head p{
       grid-area:sub;min-width:0;margin:0;text-align:left;font-size:13px;
     }
+    #internalChatSheet:not(.sheet--portal-chat-thread) #internalChatBackBtn{
+      display:none !important;
+    }
+    #internalChatSheet.sheet--portal-chat-thread #internalChatListWrap,
+    #internalChatSheet.sheet--portal-chat-thread #internalChatOfficeComposeHost,
+    #internalChatSheet.sheet--portal-chat-thread #internalChatTopErr{
+      display:none !important;
+    }
+    #internalChatSheet.sheet--portal-chat-thread #internalChatThreadWrap.portal-dm-thread-view{
+      flex:1;
+      min-height:0;
+      display:flex !important;
+    }
+    #internalChatSheet.sheet--portal-chat-thread .portal-dm-sheet-head p#internalChatSheetSub{
+      display:none !important;
+    }
+    #internalChatSheet.sheet--portal-chat-thread #internalChatBackBtn:not(.portal-dm-back-hidden){
+      display:inline-flex !important;
+      align-self:flex-start;
+      width:auto;
+      max-width:100%;
+      margin:0 0 4px;
+    }
     #internalChatSheet #internalChatBackBtn.portal-dm-back-hidden{display:none !important}
     #internalChatSheet.sheet--portal-chat-immersive.sheet--fullscreen.sheet--mobile-frame .sheet-head{
       text-align:center;
@@ -6935,62 +6958,120 @@
       padding:0 1px;
     }
 
-    /* Quick menu (full): Communication / profile live elsewhere on the dashboard */
+    /* Quick menu (full): alerts/profile groups; Communication = internal chat only */
     #menuSheet.menu-sheet--full #portalQuickMenuNotificationsGroup,
     #menuSheet.menu-sheet--full #portalAnnualProfileQuickGroup{
       display:none !important;
     }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuCommunicationGroup{
+      display:none !important;
+    }
+    #menuSheet.menu-sheet--full #portalQuickMenuInternalChatSlot #portalQuickMenuInternalChatBtn.menu-btn--portal-ic{
+      border-color:rgba(45,132,179,.28);
+      background:linear-gradient(145deg,#f8fcff 0%,#eaf5fb 100%);
+    }
+    #menuSheet.menu-sheet--full #portalQuickMenuInternalChatSlot #portalQuickMenuInternalChatBtn.menu-btn--portal-ic.menu-btn--portal-ic--unread{
+      border-color:rgba(45,132,179,.45);
+      background:linear-gradient(145deg,#2d84b3 0%,#1d5f8f 100%);
+      box-shadow:0 4px 14px rgba(45,132,179,.28);
+    }
+    #menuSheet.menu-sheet--full #portalQuickMenuInternalChatSlot #portalQuickMenuInternalChatBtn.menu-btn--portal-ic.menu-btn--portal-ic--unread .menu-btn-copy strong,
+    #menuSheet.menu-sheet--full #portalQuickMenuInternalChatSlot #portalQuickMenuInternalChatBtn.menu-btn--portal-ic.menu-btn--portal-ic--unread .menu-btn-sub{
+      color:#fff;
+    }
+    #menuSheet.menu-sheet--full #portalQuickMenuInternalChatSlot #portalQuickMenuInternalChatBtn.menu-btn--portal-ic.menu-btn--portal-ic--unread .menu-btn-chev{
+      color:rgba(255,255,255,.55);
+    }
 
-    /* Internal Chat — topbar, beside achievements camera */
-    header.topbar button.topbar-chat-btn,
-    .topbar-chat-btn.portal-floating-chat-btn{
+    /* Internal Chat — topbar orbit halo (unread), beside achievements camera */
+    .topbar-chat-orbit-wrap{
+      position:relative;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:44px;
+      height:44px;
       flex-shrink:0;
     }
-    @keyframes portal-topbar-chat-pulse{
-      0%,100%{
-        box-shadow:
-          0 0 0 1px rgba(255,255,255,.55) inset,
-          0 2px 10px rgba(45,132,179,.22),
-          0 0 0 3px rgba(229,57,53,.18);
-      }
-      50%{
-        box-shadow:
-          0 0 0 1px rgba(255,255,255,.55) inset,
-          0 2px 14px rgba(45,132,179,.34),
-          0 0 0 5px rgba(229,57,53,.38);
-      }
+    .topbar-chat-orbit-wrap .topbar-chat-orbit{
+      position:absolute;
+      inset:-12px;
+      pointer-events:none;
+      opacity:0;
+      visibility:hidden;
     }
-    .topbar-chat-btn--unread,
-    .portal-floating-chat-btn--unread.topbar-chat-btn{
-      border-color:rgba(45,132,179,.5) !important;
-      box-shadow:
-        0 0 0 1px rgba(255,255,255,.55) inset,
-        0 2px 10px rgba(45,132,179,.22),
-        0 0 0 3px rgba(229,57,53,.2) !important;
+    .topbar-chat-orbit-wrap--unread .topbar-chat-orbit{
+      opacity:1;
+      visibility:visible;
     }
-    .topbar-chat-btn--unread.menu-btn--portal-pulse:not(:active),
-    .portal-floating-chat-btn--unread.topbar-chat-btn.menu-btn--portal-pulse:not(:active){
-      animation:portal-topbar-chat-pulse 1.35s ease-in-out infinite;
+    .topbar-chat-orbit-svg{
+      display:block;
+      width:100%;
+      height:100%;
+    }
+    .topbar-chat-orbit-layer--cw{
+      transform-origin:100px 100px;
+      animation:topbar-chat-orbit-cw 9s linear infinite;
+    }
+    .topbar-chat-orbit-layer--ccw{
+      transform-origin:100px 100px;
+      animation:topbar-chat-orbit-ccw 12s linear infinite;
+    }
+    @keyframes topbar-chat-orbit-cw{
+      from{transform:rotate(0deg)}
+      to{transform:rotate(360deg)}
+    }
+    @keyframes topbar-chat-orbit-ccw{
+      from{transform:rotate(0deg)}
+      to{transform:rotate(-360deg)}
+    }
+    .topbar-chat-orbit-wrap--unread .topbar-chat-orbit-layer circle{
+      fill:var(--blue) !important;
+    }
+    .topbar-chat-orbit-wrap--unread .topbar-chat-orbit-layer--cw circle:nth-child(2n){
+      fill:#4f8fca !important;
+    }
+    .topbar-chat-orbit-wrap--unread .topbar-chat-orbit-layer--cw circle:nth-child(3n){
+      fill:#1d4f8f !important;
+    }
+    .topbar-chat-orbit-wrap--unread .topbar-chat-orbit-layer--ccw circle:nth-child(2n){
+      fill:#2d84b3 !important;
+    }
+    .topbar-chat-orbit-wrap--unread .topbar-chat-orbit-layer--ccw circle:nth-child(3n){
+      fill:#7fb3dc !important;
+    }
+    header.topbar button.topbar-chat-btn,
+    .topbar-chat-orbit-wrap .topbar-chat-btn.portal-floating-chat-btn{
+      flex-shrink:0;
+      position:relative;
+      z-index:1;
+    }
+    .topbar-chat-orbit-wrap--unread .topbar-chat-btn.portal-floating-chat-btn{
+      animation:avatar-outline-alert-blue 1.12s ease-in-out infinite;
     }
     .topbar-chat-btn .portal-floating-chat-badge,
     .portal-floating-chat-badge{
       position:absolute;
-      top:-3px;
-      right:-3px;
+      top:0;
+      right:0;
+      transform:translate(38%, -38%);
       min-width:18px;
       height:18px;
-      padding:0 5px;
+      padding:0 4px;
       border-radius:999px;
       background:#e53935;
       color:#fff;
       font-size:10px;
       font-weight:800;
-      line-height:18px;
+      line-height:1;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
       text-align:center;
       letter-spacing:-0.02em;
       border:2px solid #fff;
       box-sizing:border-box;
-      z-index:2;
+      z-index:3;
       pointer-events:none;
       font-family:inherit;
     }
