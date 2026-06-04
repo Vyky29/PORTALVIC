@@ -133,6 +133,25 @@
     return document.getElementById("portalAchievementsCameraFullscreen");
   }
 
+  function syncCameraLandscapeRail() {
+    var fs = getCameraFullscreenEl();
+    if (!fs || fs.hidden) return;
+    var shortSide = Math.min(window.innerWidth || 0, window.innerHeight || 0);
+    var landscape = (window.innerWidth || 0) > (window.innerHeight || 0);
+    fs.classList.toggle("is-landscape-rail", landscape && shortSide > 0 && shortSide < 520);
+  }
+
+  function uploadErrorMessage(err) {
+    var msg = String((err && err.message) || err || "").trim();
+    if (/row-level security|rls|policy/i.test(msg)) {
+      return (
+        "Photo could not be saved (permissions). Ask ops to run Supabase migration " +
+        "20260602140000_portal_achievement_photos_worker_rls.sql, then sign out and in again."
+      );
+    }
+    return msg || "Could not save photo";
+  }
+
   function pushCameraMediaBypass() {
     var g = global.PortalScreenshotGuard;
     if (g && typeof g.pushMediaCaptureBypass === "function") {
@@ -357,6 +376,7 @@
       fs.hidden = false;
       fs.setAttribute("aria-hidden", "false");
       document.body.classList.add("portal-achievements-camera-open");
+      syncCameraLandscapeRail();
     }
     syncAchievementScreenshotGuard();
     showCameraLiveUi();
@@ -369,6 +389,7 @@
     if (fs) {
       fs.hidden = true;
       fs.setAttribute("aria-hidden", "true");
+      fs.classList.remove("is-landscape-rail");
     }
     document.body.classList.remove("portal-achievements-camera-open");
     syncAchievementScreenshotGuard();
@@ -501,7 +522,7 @@
       showCameraLiveUi();
     } catch (e) {
       console.error(e);
-      setStatus(esc(e.message || "Could not save photo"), true);
+      setStatus(esc(uploadErrorMessage(e)), true);
     } finally {
       if (snapBtn) snapBtn.disabled = false;
     }
@@ -533,8 +554,7 @@
     var day = londonTodayIso();
     var cid = normalizeClientId(p.clientId);
     var photoId = global.crypto && crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
-    var path =
-      user.id + "/" + day + "/" + encodeURIComponent(cid) + "/" + photoId + ".jpg";
+    var path = user.id + "/" + day + "/" + cid + "/" + photoId + ".jpg";
 
     setStatus("Uploading…");
     var up = await client.storage.from(BUCKET).upload(path, encoded.blob, {
@@ -568,7 +588,12 @@
         byte_size: encoded.blob.size,
       },
     ]);
-    if (ins.error) throw ins.error;
+    if (ins.error) {
+      try {
+        await client.storage.from(BUCKET).remove([path]);
+      } catch (_rm) {}
+      throw ins.error;
+    }
 
     setStatus("");
     await refreshGallery();
@@ -938,6 +963,22 @@
     if (!root || root.getAttribute("data-portal-achievements-bound") === "1") return;
     root.setAttribute("data-portal-achievements-bound", "1");
     ensureCaptureGuard();
+    if (!global.__portalAchievementsCamLayoutBound) {
+      global.__portalAchievementsCamLayoutBound = true;
+      var onLayout = function () {
+        syncCameraLandscapeRail();
+      };
+      window.addEventListener("resize", onLayout, { passive: true });
+      window.addEventListener("orientationchange", onLayout, { passive: true });
+      try {
+        var mq = window.matchMedia("(orientation: landscape)");
+        if (mq && typeof mq.addEventListener === "function") {
+          mq.addEventListener("change", onLayout);
+        } else if (mq && typeof mq.addListener === "function") {
+          mq.addListener(onLayout);
+        }
+      } catch (_mq) {}
+    }
 
     var backBtn = document.getElementById("portalAchievementsBackParticipants");
     if (backBtn) {
