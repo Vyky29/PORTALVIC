@@ -565,10 +565,11 @@
           </button>
         </div>
         <div class="client-info-row client-info-row--general">
-          <button type="button" class="client-info-btn--icon" id="clientBtnSessionsOverview" aria-expanded="false" aria-controls="clientSessionsOverviewSheet" aria-label="Sessions Overview" title="Sessions Overview">
+          <button type="button" class="client-info-btn--icon client-info-btn--sessions-overview" id="clientBtnSessionsOverview" aria-expanded="false" aria-controls="clientSessionsOverviewSheet" aria-label="Sessions Overview — on mobile, rotate to landscape for feedback table" title="Sessions Overview">
             <span class="client-info-btn-stack">
               <svg class="client-info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
               <span class="client-info-btn-caption">Sessions Overview</span>
+              <span class="client-info-btn-hint">Rotate phone sideways on mobile</span>
             </span>
           </button>
         </div>
@@ -804,7 +805,8 @@
   <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260610-javier-may14-roster"></script>
   <script src="/portal/clients_info_embed.js?v=20260601-general-info"></script>
   <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
-  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260601-general-info-live"></script>
+  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260601-participant-dedupe"></script>
+  <script src="/portal/portal_participant_catalog.js?v=20260601-participant-dedupe"></script>
   <script src="/portal/staff_roster_resolve.js?v=20260611-javi-roster-guard"></script>
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260601-cam-ux" />
   <script src="/portal/portal_participant_achievements.js?v=20260601-cam-ux"></script>
@@ -4241,17 +4243,16 @@
       return out;
     }
     function getAllClientIdsCatalog(){
-      return Object.keys(clientNotesById)
-        .filter(id => !CLIENT_LIST_PSEUDO_IDS.includes(id))
-        .sort((a, b) => clientNotesById[a].name.localeCompare(clientNotesById[b].name, 'en'));
+      let ids = Object.keys(clientNotesById).filter(id => !CLIENT_LIST_PSEUDO_IDS.includes(id));
+      if(typeof window.portalFilterParticipantCatalogIds === 'function'){
+        ids = window.portalFilterParticipantCatalogIds(ids, clientNotesById);
+      }
+      return ids.sort((a, b) => clientNotesById[a].name.localeCompare(clientNotesById[b].name, 'en'));
     }
     const CLIENT_DIRECTORY_PREP_LINE = 'Preparation view before session';
 
     function clientsGridMedicalIconSvg(){
       return '<svg class="clients-grid-med-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><title>Medical condition</title><path d="M9 2h6a1 1 0 0 1 1 1v5h5a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-5v5a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-5H3a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1h5V3a1 1 0 0 1 1-1z"/></svg>';
-    }
-    function normalizeParticipantDisplayName(name){
-      return String(name || '').trim().toLowerCase().replace(/\s+/g, ' ');
     }
     function participantCatalogIdScore(clientId){
       let s = 0;
@@ -4265,22 +4266,14 @@
     }
     /** One tile per participant display name (roster spelling variants collapse to the richest record). */
     function dedupeClientIdsByDisplayName(ids){
-      const groups = new Map();
-      ids.forEach(clientId => {
-        const c = clientNotesById[clientId];
-        const key = normalizeParticipantDisplayName(c && c.name || clientId);
-        if(!groups.has(key)) groups.set(key, []);
-        groups.get(key).push(clientId);
-      });
-      const out = [];
-      groups.forEach(groupIds => {
-        if(groupIds.length === 1){
-          out.push(groupIds[0]);
-          return;
-        }
-        out.push(groupIds.slice().sort((a, b) => participantCatalogIdScore(b) - participantCatalogIdScore(a))[0]);
-      });
-      return out;
+      if(typeof window.portalDedupeParticipantClientIds === 'function'){
+        return window.portalDedupeParticipantClientIds(ids, {
+          clientNotesById,
+          photoUrl: (name, id) => resolveParticipantPhotoUrl(name, id),
+          score: participantCatalogIdScore
+        });
+      }
+      return ids;
     }
     /** Shared row: round photo (or initials), name, medical icon slot on the right. */
     function clientsParticipantRowInnerHtml(clientId, c){

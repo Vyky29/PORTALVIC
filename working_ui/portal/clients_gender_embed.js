@@ -5,7 +5,7 @@
  * dashboard colours each participant button blue (male) / pink (female) from
  * this map. Keys are matched (in order) by client slug, full name (lowercase),
  * or FIRST NAME (lowercase) — so "Abodi P" and "Abodi Pa" both resolve via
- * "abodi". Anything not listed here stays neutral (white).
+ * "abodi". Anything not listed here uses the soft blue neutral tile style.
  *
  * EDIT FREELY: add or correct entries as "name": "m" | "f".
  */
@@ -34,6 +34,7 @@ window.PORTAL_CLIENT_GENDER_OVERRIDES = {
   abodi: "m",
   bediako: "m",
   adaam: "m",
+  aadam: "m",
   adam: "m",
   amaar: "m",
   amar: "m",

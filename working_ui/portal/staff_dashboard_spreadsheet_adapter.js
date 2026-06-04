@@ -183,7 +183,19 @@
     rayan_ta: "rayan_tapa",
     rayyan_fi: "rayyan_f",
     aadam_ah: "adaam_ah",
+    aydaan_ah: "adaam_ah",
   };
+
+  function canonicalParticipantClientId(nameRaw) {
+    const slug = slugify(String(nameRaw || "").trim());
+    if (!slug) return slug;
+    return CLIENT_INFO_SLUG_ALIASES[slug] || slug;
+  }
+
+  function isParticipantCatalogExcludedName(nameRaw) {
+    const n = String(nameRaw || "").trim().toLowerCase();
+    return !n || n === "closed" || n === "acat" || n === "acat group";
+  }
 
   function clientInfoLookupKeys(nameOrSlug) {
     const raw = String(nameOrSlug || "").trim();
@@ -300,13 +312,44 @@
   }
 
   /** Every real client on any roster row (any instructor): powers ALL CLIENTS without changing MY CLIENTS logic. */
+  function collapseAliasParticipantNotes(clientNotesById) {
+    if (!clientNotesById || typeof clientNotesById !== "object") return;
+    Object.keys(CLIENT_INFO_SLUG_ALIASES).forEach(function (alias) {
+      var canon = CLIENT_INFO_SLUG_ALIASES[alias];
+      if (!alias || !canon || alias === canon) return;
+      var from = clientNotesById[alias];
+      if (!from) return;
+      if (!clientNotesById[canon]) {
+        clientNotesById[canon] = from;
+      } else {
+        var to = clientNotesById[canon];
+        if (!String(to.gender || "").trim() && String(from.gender || "").trim()) {
+          to.gender = from.gender;
+        }
+        if (!String(to.generalInfoSheet || "").trim() && String(from.generalInfoSheet || "").trim()) {
+          to.generalInfoSheet = from.generalInfoSheet;
+        }
+      }
+      delete clientNotesById[alias];
+    });
+  }
+
+  function remapSessionsToCanonicalClientIds(sessionsModel, clientNotesById) {
+    if (!Array.isArray(sessionsModel)) return;
+    sessionsModel.forEach(function (s) {
+      if (!s || !s.clientId) return;
+      var canon = CLIENT_INFO_SLUG_ALIASES[s.clientId];
+      if (canon && clientNotesById[canon]) s.clientId = canon;
+    });
+  }
+
   function mergeCompanyClientsFromRosterRows(clientNotesById, rows) {
     const list = Array.isArray(rows) ? rows : [];
     list.forEach((row) => {
       const nameRaw = String(row.client_name || "").trim();
       const nameLower = nameRaw.toLowerCase();
-      if (!nameRaw || nameLower === "closed") return;
-      const clientId = slugify(nameRaw);
+      if (!nameRaw || nameLower === "closed" || isParticipantCatalogExcludedName(nameRaw)) return;
+      const clientId = canonicalParticipantClientId(nameRaw);
       if (!clientId || clientId === "closed" || clientId === "available") return;
       if (clientNotesById[clientId]) return;
       const rosterService = String(row.service || "").trim();
@@ -409,7 +452,7 @@
         return;
       }
 
-      const clientId = slugify(nameRaw);
+      const clientId = canonicalParticipantClientId(nameRaw);
       sessionsModel.push(
         Object.assign({}, baseSession, {
           clientId,
@@ -462,6 +505,8 @@
       clientsInfo = window.PORTAL_CLIENTS_INFO_ROWS;
     }
     mergeClientsInfoRows(built.clientNotesById, clientsInfo);
+    collapseAliasParticipantNotes(built.clientNotesById);
+    remapSessionsToCanonicalClientIds(built.sessionsModel, built.clientNotesById);
 
     return {
       staffName: profile.staffName || rawId || "Staff",
@@ -477,5 +522,7 @@
     bootstrap: bootstrap,
     lookupClientInfoText: lookupClientInfoText,
     applyClientsInfoMerge: applyClientsInfoMerge,
+    canonicalParticipantClientId: canonicalParticipantClientId,
+    isParticipantCatalogExcludedName: isParticipantCatalogExcludedName,
   };
 })();
