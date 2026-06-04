@@ -7,7 +7,10 @@
   var SKIP_GROUP_IDS = { portalQuickMenuNotificationsGroup: true };
 
   /** Always visible: section title + buttons (no collapse trigger). */
-  var FLAT_GROUP_IDS = { portalQuickMenuSettingsGroup: true };
+  var FLAT_GROUP_IDS = {
+    portalQuickMenuSettingsGroup: true,
+    portalQuickMenuWorkGroup: true,
+  };
 
   var ACCORDION_LABELS = {
     portalQuickMenuGuideGroup: "Getting started",
@@ -161,7 +164,10 @@
     if (!grp) return false;
     var id = String(grp.id || "").trim();
     if (id && FLAT_GROUP_IDS[id]) return true;
-    return !!(grp.querySelector && grp.querySelector("#quickMenuSettingsGrid"));
+    return !!(
+      grp.querySelector &&
+      (grp.querySelector("#quickMenuSettingsGrid") || grp.querySelector("#quickMenuWorkGrid"))
+    );
   }
 
   function portalRestoreFlatQuickMenuGroup(grp) {

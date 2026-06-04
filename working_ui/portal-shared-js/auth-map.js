@@ -90,8 +90,8 @@ export function mergeStaffLoginEmailMap(extra) {
 
 /** Shown when the name field does not match any staff in STAFF_USERNAME_TO_EMAIL. */
 export const PORTAL_LOGIN_UNKNOWN_NAME_HELP =
-  "Name or email not recognised. Staff: use your first name as on the timetable. " +
-  "Victor, Javi, Raúl: your @clubsensational.org email. Sevitha: sevitha@ or info@clubsensational.org.";
+  "Name or email not recognised. Use your first name as on the timetable, or the email address on your Portal account. " +
+  "If you are unsure, contact your line manager or the office.";
 
 function isPlausibleLoginEmail(value) {
   const s = String(value || "").trim();

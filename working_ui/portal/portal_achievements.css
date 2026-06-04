@@ -835,6 +835,36 @@ body.portal-achievements-viewer-open .dock-bar {
   color: #db2777;
 }
 
+/* Header shortcut — same pink icon box as Work → Participant achievements */
+header.topbar button.topbar-camera-btn.topbar-achievements-btn,
+.topbar-camera-btn.topbar-achievements-btn {
+  border-radius: 12px;
+  border: 1px solid rgba(236, 72, 153, 0.35);
+  background: rgba(236, 72, 153, 0.12) !important;
+  background-color: rgba(236, 72, 153, 0.12) !important;
+  color: #db2777 !important;
+  box-shadow: 0 2px 8px rgba(236, 72, 153, 0.12);
+}
+
+header.topbar button.topbar-camera-btn.topbar-achievements-btn::after,
+.topbar-camera-btn.topbar-achievements-btn::after {
+  inset: 4px;
+  border-radius: 8px;
+  border-color: rgba(236, 72, 153, 0.2);
+}
+
+header.topbar button.topbar-camera-btn.topbar-achievements-btn:hover,
+header.topbar button.topbar-camera-btn.topbar-achievements-btn:focus,
+header.topbar button.topbar-camera-btn.topbar-achievements-btn:active,
+.topbar-camera-btn.topbar-achievements-btn:hover,
+.topbar-camera-btn.topbar-achievements-btn:focus,
+.topbar-camera-btn.topbar-achievements-btn:active {
+  background: rgba(236, 72, 153, 0.18) !important;
+  background-color: rgba(236, 72, 153, 0.18) !important;
+  color: #be185d !important;
+  border-color: rgba(236, 72, 153, 0.45);
+}
+
 .portal-admin-achievements-list {
   display: flex;
   flex-direction: column;

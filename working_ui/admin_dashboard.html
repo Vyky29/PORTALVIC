@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260614-mob-fit" />
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260613-hours-all-week" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260603-form-record-modal" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260604-hub-cat-tiles" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260604-hub-subpanel-fix" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260521-embed" />
   <script src="/portal/hr-contract-embed-html.js?v=20260521-embed"></script>
@@ -1910,7 +1910,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       nav_hub: true,
       comms_ops_order: true,
       dashboard: true,
-      operations: true
+      operations: true,
+      operations_admin: true
     };
     function portalAdminExtractPageTitle(html){
       var m = String(html || '').match(/<h[12]\s+class="page-title"[^>]*>([\s\S]*?)<\/h[12]>/i);
@@ -1964,11 +1965,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var introHtml = intro
         ? '<p class="admin-page-head__intro muted">'+intro+'</p>'
         : '';
+      var titleIconId = String(opts.titleIconId || '').trim();
+      var headExtraClass = opts.headStacked ? ' admin-page-head--stacked' : '';
+      var titleBlock = titleIconId
+        ? (
+          '<div class="admin-page-head__title-stack">'+
+          '<span class="admin-page-head__title-ico" aria-hidden="true">'+adminNavIconHtml(titleIconId)+'</span>'+
+          '<h1 class="page-title admin-page-head__title">'+title+'</h1>'+
+          '</div>'
+        )
+        : ('<h1 class="page-title admin-page-head__title">'+title+'</h1>');
       return (
-        '<header class="admin-page-head">'+
+        '<header class="admin-page-head'+headExtraClass+'">'+
         '<div class="admin-page-head__main">'+
         backBtn+
-        '<h1 class="page-title admin-page-head__title">'+title+'</h1>'+
+        titleBlock+
         '</div>'+
         introHtml+
         '</header>'
@@ -16864,6 +16875,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="dash-hub dash-hub--nav-index dash-hub--nav-index-pick">' +
         portalAdminPageHeadRowHtml({
           title: 'Dashboard',
+          titleIconId: 'nav_hub',
+          headStacked: true,
           intro: 'Choose a category — same as the left menu.',
           backMode: 'none'
         }) +
@@ -16893,7 +16906,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portalDashTileHtml('staff_live_map', '', 'clients', 'Staff live map', 'On-site locations (~10 m)', false, 'scheduling')+
         portalDashTileHtml('', '', 'announcements', 'Announcements', 'Notices &amp; reminders', false, 'announcements', 'announcements_comms');
       return (
-        '<div class="dash-hub dash-hub--dayops" data-hub-group="g_operator">'+
+        '<div class="dash-hub dash-hub--dayops">'+
         '<h1 class="page-title">Day operations</h1>'+
         '<p class="page-intro dash-hub__page-intro--inline-nav" style="white-space:nowrap;max-width:100%;font-size:clamp(10px,1.1vw,13px)">Live sessions with participants — rota, on-site feedback, incidents, and venue checks. For bookings, payments, and formal reports, use <button type="button" class="btn btn--ghost btn--sm" data-view-target="operations_admin" style="vertical-align:middle;padding:7px 14px;font-size:inherit;display:inline-flex;align-items:center;gap:8px;color:var(--blue);border-color:#9fc6db;background:var(--blueSoft);border-radius:10px"><svg viewBox="0 0 24 24" width="1.15em" height="1.15em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 auto" aria-hidden="true">'+NAV_ICON_SVGS.operations_admin+'</svg>Operations admin</button>. <button type="button" class="btn btn--ghost btn--sm admin-page-head__back" data-admin-back-group="g_operator" style="vertical-align:middle;padding:7px 14px;font-size:inherit;display:inline-flex;align-items:center;gap:6px;border-radius:10px;margin-left:4px"><span class="admin-page-head__back-ico" aria-hidden="true">←</span> Back to Operator</button></p>'+
         '<div class="dash-hub__stack">'+
@@ -16950,9 +16963,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return html + '</div>';
       }
       return (
-        '<div class="dash-hub dash-hub--ops-admin" data-hub-group="g_operator">'+
+        '<div class="dash-hub dash-hub--ops-admin">'+
+        '<div class="dash-hub__ops-admin-top"><button type="button" class="btn btn--ghost btn--sm admin-page-head__back" data-admin-back-group="g_operator"><span class="admin-page-head__back-ico" aria-hidden="true">←</span> Back to Operator</button></div>'+
         '<h1 class="page-title">Operations admin</h1>'+
-        '<p class="page-intro" style="white-space:nowrap;max-width:100%;font-size:clamp(10px,1.1vw,13px)">Participant and staff administration outside the live session window — orders, finance, HR, contracts, and reporting. For on-site session tools, use <button type="button" class="btn btn--ghost btn--sm" data-view-target="dashboard" style="vertical-align:middle;padding:7px 14px;font-size:inherit;display:inline-flex;align-items:center;gap:8px;color:#ea580c;border-color:#fdba74;background:rgba(234,88,12,0.06);border-radius:10px"><svg viewBox="0 0 24 24" width="1.15em" height="1.15em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 auto" aria-hidden="true">'+NAV_ICON_SVGS.dashboard+'</svg>Day operations</button>.</p>'+
+        '<p class="page-intro dash-hub__page-intro--inline-nav" style="max-width:100%;font-size:clamp(10px,1.1vw,13px)">Participant and staff administration outside the live session window — orders, finance, HR, contracts, and reporting. For on-site session tools, use <button type="button" class="btn btn--ghost btn--sm" data-view-target="dashboard" style="vertical-align:middle;padding:7px 14px;font-size:inherit;display:inline-flex;align-items:center;gap:8px;color:#ea580c;border-color:#fdba74;background:rgba(234,88,12,0.06);border-radius:10px"><svg viewBox="0 0 24 24" width="1.15em" height="1.15em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 auto" aria-hidden="true">'+NAV_ICON_SVGS.dashboard+'</svg>Day operations</button>.</p>'+
         '<div class="dash-hub__stack">'+
         portalDashPanel({
           title:'Participants',

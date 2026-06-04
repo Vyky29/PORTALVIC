@@ -203,7 +203,7 @@
     <header class="topbar" aria-labelledby="staffName">
       <div class="topbar-lead">
         <div class="topbar-left">
-          <button type="button" class="topbar-camera-btn" id="topbarCameraBtn" aria-label="Participant photos">
+          <button type="button" class="topbar-camera-btn topbar-achievements-btn" id="topbarCameraBtn" aria-label="Participant achievements">
             <span class="topbar-camera-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
           </button>
         </div>
@@ -390,9 +390,9 @@
             </button>
           </div>
         </div>
-        <div class="menu-group">
+        <div class="menu-group menu-group--flat" id="portalQuickMenuWorkGroup">
           <div class="menu-group-title">Work</div>
-          <div class="menu-grid">
+          <div class="menu-grid" id="quickMenuWorkGrid">
             <button type="button" class="menu-btn menu-btn--work-achievements" id="quickMenuParticipantAchievements">
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
               <div class="menu-btn-copy"><strong>Participant achievements</strong><span class="menu-btn-sub">Session photos (in-app only)</span></div>
@@ -809,14 +809,14 @@
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260601-participant-dedupe"></script>
   <script src="/portal/portal_participant_catalog.js?v=20260601-participant-dedupe"></script>
   <script src="/portal/staff_roster_resolve.js?v=20260611-javi-roster-guard"></script>
-  <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260601-cam-ux" />
+  <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260601-topbar-ach" />
   <script src="/portal/portal_participant_achievements.js?v=20260601-cam-ux"></script>
   <script src="/portal/portal_client_sessions_overview.js?v=20260601-sessions-fit"></script>
   <script src="/portal/portal_induction.js?v=20260613-required-induction"></script>
   <script src="/portal/portal_induction_bind.js?v=20260615-tprog-sync"></script>
   <script src="/portal/portal_guide_ack.js?v=20260612-guide-read"></script>
   <script src="/portal/portal_guide_menu.js?v=20260612-guide-read"></script>
-  <script src="/portal/portal_quick_menu_accordion.js?v=20260617-settings-flat"></script>
+  <script src="/portal/portal_quick_menu_accordion.js?v=20260601-work-flat"></script>
   <script src="/portal/portal_swimming_instructor_menus.js?v=20260617-swim-aquatic-gate"></script>
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260616-michelle-only"></script>
