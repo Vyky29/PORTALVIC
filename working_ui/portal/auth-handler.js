@@ -428,7 +428,64 @@ function bindLogin() {
     }
   }
 
+  const LEGACY_PORTAL_AUTH_HOSTS = new Set([
+    "clubsensational-portal-2026.vercel.app",
+    "portal-2025-eta.vercel.app",
+  ]);
+  const PORTALVIC_LOGIN_URL = "https://portalvic.vercel.app/login.html";
+
+  function tryRedirectLegacyPortalAuthHost() {
+    if (typeof window === "undefined") return false;
+    try {
+      const host = window.location.hostname;
+      if (!LEGACY_PORTAL_AUTH_HOSTS.has(host)) return false;
+      const dest = new URL(PORTALVIC_LOGIN_URL);
+      dest.search = window.location.search || "";
+      dest.hash = window.location.hash || "";
+      window.location.replace(dest.toString());
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /** Supabase email links land with #error=… or #access_token=… in the hash. */
+  function showAuthCallbackErrorFromHash() {
+    if (typeof window === "undefined") return false;
+    try {
+      const u = new URL(window.location.href);
+      const rawHash = (u.hash || "").replace(/^#/, "");
+      if (!rawHash) return false;
+      const params = new URLSearchParams(rawHash);
+      const err = params.get("error");
+      const code = params.get("error_code") || err;
+      const desc = params.get("error_description") || "";
+      if (!err && !code && !desc) return false;
+      let msg =
+        "Problema con el enlace del correo" +
+        (code ? " (" + code + "). " : ". ");
+      if (code === "otp_expired" || /expired/i.test(desc)) {
+        msg +=
+          "El enlace ya no es válido o ha caducado. Pide un enlace nuevo desde https://portalvic.vercel.app/ (no uses el host portal-2026). ";
+      } else if (err === "access_denied") {
+        msg +=
+          "Si el correo te abrió clubsensational-portal-2026.vercel.app en lugar de portalvic, un admin debe cambiar Supabase → Authentication → URL Configuration (Site URL = portalvic). ";
+      }
+      if (desc) {
+        msg += decodeURIComponent(String(desc).replace(/\+/g, " "));
+      }
+      showError(msg);
+      u.hash = "";
+      window.history.replaceState({}, "", u.pathname + (u.search || ""));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   async function tryRedirectIfSession() {
+    if (tryRedirectLegacyPortalAuthHost()) return;
+    if (showAuthCallbackErrorFromHash()) return;
     hideError();
     await tryForceLogoutFromUrl();
     let supabase;

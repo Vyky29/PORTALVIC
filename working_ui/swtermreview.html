@@ -84,6 +84,36 @@
     }
     .wrap{ max-width:900px; margin:0 auto; padding:24px 16px 40px; position:relative; }
 
+    .swterm-topbar{
+      display:flex;
+      align-items:center;
+      justify-content:flex-start;
+      margin:0 0 10px;
+      min-width:0;
+    }
+    .swterm-back-dashboard{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      margin:0;
+      padding:10px 14px;
+      border:1px solid rgba(45,132,179,0.35);
+      border-radius:999px;
+      background:#fff;
+      color:var(--blue);
+      font:700 14px inherit;
+      cursor:pointer;
+      text-decoration:none;
+      max-width:100%;
+      min-width:0;
+      box-shadow:0 4px 14px rgba(11,18,32,0.06);
+    }
+    .swterm-back-dashboard:hover{
+      background:var(--blueSoft);
+      text-decoration:none;
+    }
+    .swterm-back-dashboard:active{ transform:scale(0.98); }
+
     .pageHeader{
       display:flex;
       align-items:center;
@@ -1164,6 +1194,9 @@
 
 <body>
   <div class="wrap">
+    <div class="swterm-topbar">
+      <button type="button" class="swterm-back-dashboard" id="swtermBackDashboard" aria-label="Back to dashboard without submitting">← Back to dashboard</button>
+    </div>
     <header class="pageHeader" aria-label="clubSENsational Swimming Term Review header">
       <div class="pageHeader-inner">
         <img
@@ -1641,7 +1674,7 @@
   <!-- swtermreview_app.js — portal/ then portal-shared-js/ on Vercel. -->
   <script>
     (function () {
-      var v = "20260510-portal-admin";
+      var v = "20260602-back-dashboard";
       var file = "swtermreview_app.js";
       var bases = [];
       try {

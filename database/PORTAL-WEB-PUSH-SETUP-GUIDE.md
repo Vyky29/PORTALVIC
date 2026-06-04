@@ -8,6 +8,8 @@
 | **Frontend en producción (Vercel)** | **PORTALVIC** · `https://portalvic.vercel.app/` | Login, staff, lead, admin — **este es el portal real** |
 | ~~Otro deploy Vercel~~ | ~~`clubsensational-portal-2026.vercel.app`~~ | **No usar** en esta guía; no es producción PORTALVIC |
 
+**Magic link / reset password al host equivocado:** ver checklist `database/SUPABASE-AUTH-REDIRECT-PORTALVIC.md` (Site URL en Supabase + desactivar proyecto Vercel `clubsensational-portal-2026`).
+
 **URLs de producción PORTALVIC (Vercel):**
 
 | Página | URL |

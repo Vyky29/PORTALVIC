@@ -1291,47 +1291,51 @@ body.admin-touch-compact .dash-hub--dayops .dash-hub__sessions-grids > .dash-hub
   }
 }
 
-/* Dashboard index — category picker: 2 rows × 3, fits viewport without scroll */
+/* Dashboard index — category picker: 2 rows × 3, fills workspace without scroll */
 body:has(#workspace .dash-hub--nav-index-pick) .admin-workspace{
   display:flex;
   flex-direction:column;
-  overflow:visible;
-  min-height:calc(100dvh - var(--topH, 56px));
+  overflow:hidden;
+  min-height:0;
+  flex:1;
+  padding:clamp(10px,1.6vh,20px) clamp(14px,2vw,24px) clamp(12px,1.4vh,18px);
 }
 body:has(#workspace .dash-hub--nav-index-pick) .admin-main{
   min-height:0;
-  overflow:visible;
+  overflow:hidden;
 }
 .dash-hub--nav-index-pick{
-  flex:0 0 auto;
+  flex:1;
   min-height:0;
+  width:100%;
+  max-width:none;
   display:flex;
   flex-direction:column;
-  overflow:visible;
-  max-width:720px;
+  overflow:hidden;
+  padding:0;
 }
 .dash-hub--nav-index-pick .admin-page-head{
   flex-shrink:0;
-  margin-bottom:10px;
+  margin-bottom:clamp(8px,1.2vh,14px);
 }
 .dash-hub--nav-index-pick .dash-hub-cat-grid--pick{
-  flex:0 0 auto;
+  flex:1;
   min-height:0;
   display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  grid-template-rows:none;
-  gap:10px;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  grid-template-rows:repeat(2,minmax(0,1fr));
+  gap:clamp(10px,1.6vh,18px);
   min-width:0;
   align-items:stretch;
-  align-content:start;
+  align-content:stretch;
 }
 .dash-hub-cat--pick{
   display:flex;
   flex-direction:column;
   width:100%;
   min-width:0;
-  min-height:clamp(64px,9vw,76px);
-  height:auto;
+  min-height:0;
+  height:100%;
   margin:0;
   padding:0;
   border:1px solid var(--dh-line,#e2e8f0);
@@ -1357,38 +1361,38 @@ body:has(#workspace .dash-hub--nav-index-pick) .admin-main{
   display:flex;
   flex:1;
   align-items:center;
-  gap:10px;
+  gap:clamp(10px,1.4vw,16px);
   min-width:0;
   min-height:0;
-  padding:10px 12px;
+  padding:clamp(12px,2vh,22px) clamp(14px,1.6vw,20px);
   border-radius:inherit;
   border-bottom:0;
   background:var(--hub-soft,#f8fafc);
 }
 .dash-hub-cat--pick .dash-hub-cat__head .admin-nav-ico{
   flex-shrink:0;
-  width:clamp(36px,4.5vw,42px);
-  height:clamp(36px,4.5vw,42px);
-  border-radius:10px;
+  width:clamp(40px,5.5vw,56px);
+  height:clamp(40px,5.5vw,56px);
+  border-radius:12px;
   background:var(--hub-band-bg,#eef2ff);
   color:var(--hub-accent,#4f46e5);
 }
 .dash-hub-cat--pick .dash-hub-cat__head .admin-nav-ico svg{
-  width:clamp(18px,2.4vw,22px);
-  height:clamp(18px,2.4vw,22px);
+  width:clamp(20px,2.8vw,28px);
+  height:clamp(20px,2.8vw,28px);
   display:block;
 }
 .dash-hub-cat--pick .dash-hub-cat__label{
   flex:1;
   min-width:0;
-  font-size:clamp(12px,1.35vw,14px);
+  font-size:clamp(13px,1.5vw,17px);
   font-weight:800;
-  line-height:1.25;
+  line-height:1.28;
   letter-spacing:.01em;
   overflow-wrap:break-word;
   display:-webkit-box;
   -webkit-box-orient:vertical;
-  -webkit-line-clamp:2;
+  -webkit-line-clamp:3;
   overflow:hidden;
 }
 .dash-hub--nav-index-pick .dash-hub-cat--pick[data-hub-cat="g_operator"]{
@@ -1409,34 +1413,38 @@ body:has(#workspace .dash-hub--nav-index-pick) .admin-main{
 .dash-hub--nav-index-pick .dash-hub-cat--pick[data-hub-cat="g_settings_portal"]{
   --hub-accent:#64748b;--hub-soft:rgba(100,116,139,.1);--hub-band-bg:rgba(148,163,184,.22);--hub-glow:rgba(100,116,139,.15);
 }
-@media (max-width:720px){
+@media (max-width:900px){
   .dash-hub--nav-index-pick .dash-hub-cat-grid--pick{
     grid-template-columns:repeat(2,minmax(0,1fr));
     grid-template-rows:repeat(3,minmax(0,1fr));
     gap:10px;
   }
 }
-@media (max-width:480px){
+@media (max-width:520px){
   body:has(#workspace .dash-hub--nav-index-pick) .admin-workspace{
     overflow-y:auto;
   }
   .dash-hub--nav-index-pick{
     overflow:visible;
+    min-height:auto;
+  }
+  .dash-hub--nav-index-pick .dash-hub-cat-grid--pick{
+    flex:none;
+    grid-template-columns:1fr;
+    grid-template-rows:none;
+    min-height:auto;
+  }
+  .dash-hub-cat--pick{
+    min-height:clamp(56px,14vw,72px);
+    height:auto;
   }
 }
-/* Picker grid must not inherit legacy 12-column nav-index layout */
-.dash-hub--nav-index-pick .dash-hub-cat-grid--pick{
-  flex:none !important;
-  min-height:0 !important;
-  grid-template-rows:none !important;
-  align-content:start;
-}
+/* Picker tiles must not inherit legacy 12-column nav-index placement */
 .dash-hub--nav-index-pick .dash-hub-cat--pick,
 .dash-hub--nav-index-pick .dash-hub-cat--pick[data-hub-cat]{
   grid-column:auto !important;
   grid-row:auto !important;
   align-self:stretch;
-  height:auto !important;
 }
 
 /* Category drill-down — same tile size as hub panels / sidebar destinations */

@@ -624,6 +624,22 @@ const LEVEL_DATA = {
       throw lastErr || new Error("Could not load portal_documents.js. Add portal/portal_documents.js on this origin (Vercel/repo), or set window.PORTAL_WP_UPLOADS_BASE.");
     }
 
+    function wireSwtermBackDashboard(){
+      const back = document.getElementById("swtermBackDashboard");
+      if(!back || back.getAttribute("data-swterm-back-bound") === "1") return;
+      back.setAttribute("data-swterm-back-bound", "1");
+      back.addEventListener("click", function(ev){
+        ev.preventDefault();
+        const swimmer = fieldValTerm("swimmerName").replace(/\s+/g, " ").trim();
+        const notes = fieldValTerm("decisionNotes").replace(/\s+/g, " ").trim();
+        if(swimmer || notes){
+          const ok = confirm("Leave without submitting? Unsaved changes on this review will be lost.");
+          if(!ok) return;
+        }
+        closeOrReturnSwterm();
+      });
+    }
+
     function closeOrReturnSwterm(){
       try{
         if(typeof window.portalGetPortalReturnUrl === "function"){
@@ -1878,6 +1894,7 @@ const LEVEL_DATA = {
         });
 
         bindTermSummaryRefresh();
+        wireSwtermBackDashboard();
         const submitBtn = $("#btnSwtermSubmit");
         if(submitBtn){
           submitBtn.addEventListener("click", async function(){
