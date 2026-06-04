@@ -1,0 +1,1017 @@
+[
+  {
+    "day": "Saturday",
+    "venue": "Acton",
+    "time_slot": "10.30 to 11",
+    "client_name": "Emani",
+    "area": "Teaching Pool"
+  },
+  {
+    "day": "Saturday",
+    "venue": "Acton",
+    "time_slot": "11 to 11.30",
+    "client_name": "Matthias",
+    "area": "Lane (SwallowEnd)"
+  },
+  {
+    "day": "Saturday",
+    "venue": "Acton",
+    "time_slot": "12 to 12.30",
+    "client_name": "Saaib",
+    "area": "Teaching Pool"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "9 to 9.30",
+    "client_name": "Simon",
+    "area": "Small Pool"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "9 to 9.30",
+    "client_name": "Shire",
+    "area": "Big Pool"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "9 to 9.30",
+    "client_name": "Yusuf Ah",
+    "area": "Big Pool"
+  },
+  {
+    "day": "Sunday",
+    "venue": "Westway",
+    "time_slot": "10 to 11",
+    "client_name": "Hazem",
+    "area": "Wall"
+  },
+  {
+    "day": "Sunday",
+    "venue": "Westway",
+    "time_slot": "10 to 11",
+    "client_name": "Eiji",
+    "area": "Wall"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "9.30 to 10.15",
+    "client_name": "Adam Ab",
+    "area": "Small Pool"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "9.30 to 10.15",
+    "client_name": "Samer",
+    "area": "Big Pool"
+  },
+  {
+    "day": "Sunday",
+    "venue": "Westway",
+    "time_slot": "11 to 12",
+    "client_name": "Zaid",
+    "area": "Wall"
+  },
+  {
+    "day": "Sunday",
+    "venue": "Westway",
+    "time_slot": "11 to 12",
+    "client_name": "Yusuf Ah",
+    "area": "Wall"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "9.30 to 10.15",
+    "client_name": "Jack W",
+    "area": "Hub Room"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "9.30 to 10.15",
+    "client_name": "Zaid",
+    "area": "Hub Room"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "9.30 to 10.15",
+    "client_name": "Jack S",
+    "area": "Hub Room"
+  },
+  {
+    "day": "Sunday",
+    "venue": "Westway",
+    "time_slot": "12 to 1",
+    "client_name": "Serine",
+    "area": "Wall"
+  },
+  {
+    "day": "Sunday",
+    "venue": "Westway",
+    "time_slot": "12 to 1",
+    "client_name": "Scott",
+    "area": "Wall"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "10.15 to 11",
+    "client_name": "Jack W",
+    "area": "Big Pool"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "10.15 to 11",
+    "client_name": "Zaid",
+    "area": "Small Pool"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "10.15 to 11",
+    "client_name": "Jack S",
+    "area": "Big Pool"
+  },
+  {
+    "day": "Sunday",
+    "venue": "Westway",
+    "time_slot": "1 to 2",
+    "client_name": "Zakariya",
+    "area": "Wall"
+  },
+  {
+    "day": "Sunday",
+    "venue": "Westway",
+    "time_slot": "1 to 2",
+    "client_name": "Rodin",
+    "area": "Wall"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "10.15 to 11",
+    "client_name": "Adam Ab",
+    "area": "Hub Room"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "10.15 to 11",
+    "client_name": "Samer",
+    "area": "Hub Room"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "10.15 to 11",
+    "client_name": "Yusuf Ah",
+    "area": "Hub Room"
+  },
+  {
+    "day": "Sunday",
+    "venue": "Westway",
+    "time_slot": "2 to 3",
+    "client_name": "Patrick",
+    "area": "Wall"
+  },
+  {
+    "day": "Sunday",
+    "venue": "Westway",
+    "time_slot": "2 to 3",
+    "client_name": "Ayden W",
+    "area": "Wall"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "11 to 11.45",
+    "client_name": "Arthur Ma",
+    "area": "Big Pool"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "11 to 11.45",
+    "client_name": "Hazem",
+    "area": "Small Pool"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "11 to 11.45",
+    "client_name": "Gabriel",
+    "area": "Big Pool"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "11 to 11.45",
+    "client_name": "Cyrus",
+    "area": "Hub Room"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "11 to 11.45",
+    "client_name": "Eiji",
+    "area": "Hub Room"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "11 to 11.45",
+    "client_name": "Arthur Mo",
+    "area": "Hub Room"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "11.45 to 12.30",
+    "client_name": "Cyrus",
+    "area": "Big Pool"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "11.45 to 12.30",
+    "client_name": "Eiji",
+    "area": "Small Pool"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "11.45 to 12.30",
+    "client_name": "Arthur Mo",
+    "area": "Big Pool"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "12.30 to 1.15",
+    "client_name": "Aydaan Ah",
+    "area": "Big Pool"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "12.30 to 1.15",
+    "client_name": "Rayyan F",
+    "area": "Small Pool"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "12.30 to 1.15",
+    "client_name": "Amaar Ah",
+    "area": "Big Pool"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "1.15 to 2",
+    "client_name": "Aydaan Ah",
+    "area": "Hub Room"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "1.15 to 2",
+    "client_name": "Rayyan F",
+    "area": "Hub Room"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "1.15 to 2",
+    "client_name": "Amaar Ah",
+    "area": "Hub Room"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "1.15 to 2",
+    "client_name": "Erik",
+    "area": "Small Pool"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "1.15 to 2",
+    "client_name": "Haneef",
+    "area": "Big Pool"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "1.15 to 2",
+    "client_name": "Adaam Ah",
+    "area": "Big Pool"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "12.30 to 1.15",
+    "client_name": "Erik",
+    "area": "Hub Room"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "12.30 to 1.15",
+    "client_name": "Haneef",
+    "area": "Hub Room"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "12.30 to 1.15",
+    "client_name": "Adaam Ah",
+    "area": "Hub Room"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "2 to 2.30",
+    "client_name": "Zakariya",
+    "area": "Big Pool"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "2 to 2.30",
+    "client_name": "Max",
+    "area": "Small Pool"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "2 to 2.30",
+    "client_name": "Rodin",
+    "area": "Big Pool"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "2.30 to 3",
+    "client_name": "Faris",
+    "area": "Big Pool"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "2.30 to 3",
+    "client_name": "Shaan",
+    "area": "Small Pool"
+  },
+  {
+    "day": "Sunday",
+    "venue": "SwimFarm",
+    "time_slot": "2.30 to 3",
+    "client_name": "Yoan",
+    "area": "Big Pool"
+  },
+  {
+    "day": "Monday",
+    "venue": "Acton",
+    "time_slot": "4 to 4.30",
+    "client_name": "Adam P",
+    "area": "Teaching Pool"
+  },
+  {
+    "day": "Monday",
+    "venue": "Northolt",
+    "time_slot": "4.30 to 5",
+    "client_name": "Yunis",
+    "area": "Teaching Pool"
+  },
+  {
+    "day": "Monday",
+    "venue": "Northolt",
+    "time_slot": "4.30 to 5",
+    "client_name": "Kirushy",
+    "area": "Teaching Pool"
+  },
+  {
+    "day": "Monday",
+    "venue": "SwimFarm",
+    "time_slot": "4.15 to 6.15",
+    "client_name": "Tinashe",
+    "area": "Hub Room"
+  },
+  {
+    "day": "Monday",
+    "venue": "Westway",
+    "time_slot": "4 to 5",
+    "client_name": "Ayaan",
+    "area": "Gym"
+  },
+  {
+    "day": "Monday",
+    "venue": "Westway",
+    "time_slot": "11 to 4",
+    "client_name": "Ikram",
+    "area": "Hub Room"
+  },
+  {
+    "day": "Monday",
+    "venue": "Acton",
+    "time_slot": "4.30 to 5",
+    "client_name": "Eddie",
+    "area": "Lane (SE)"
+  },
+  {
+    "day": "Monday",
+    "venue": "Acton",
+    "time_slot": "4.30 to 5",
+    "client_name": "Adam P",
+    "area": "Teaching Pool"
+  },
+  {
+    "day": "Monday",
+    "venue": "Northolt",
+    "time_slot": "5 to 6",
+    "client_name": "Amar Rai",
+    "area": "Teaching Pool"
+  },
+  {
+    "day": "Monday",
+    "venue": "Northolt",
+    "time_slot": "5 to 5.30",
+    "client_name": "Gemma",
+    "area": "Teaching Pool"
+  },
+  {
+    "day": "Monday",
+    "venue": "Westway",
+    "time_slot": "5 to 6",
+    "client_name": "Serine",
+    "area": "Gym"
+  },
+  {
+    "day": "Monday",
+    "venue": "Westway",
+    "time_slot": "11 to 12",
+    "client_name": "ACAT",
+    "area": "Hub Room"
+  },
+  {
+    "day": "Monday",
+    "venue": "Acton",
+    "time_slot": "5 to 5.30",
+    "client_name": "Joel",
+    "area": "Teaching Pool"
+  },
+  {
+    "day": "Monday",
+    "venue": "Acton",
+    "time_slot": "5 to 5.30",
+    "client_name": "Adam P",
+    "area": "Teaching Pool"
+  },
+  {
+    "day": "Monday",
+    "venue": "Northolt",
+    "time_slot": "5.30 to 6",
+    "client_name": "Zayana",
+    "area": "Teaching Pool"
+  },
+  {
+    "day": "Monday",
+    "venue": "Westway",
+    "time_slot": "12.30 to 3",
+    "client_name": "Fadi",
+    "area": "Hub Room"
+  },
+  {
+    "day": "Monday",
+    "venue": "Acton",
+    "time_slot": "5.30 to 6",
+    "client_name": "Abodi P",
+    "area": "Teaching Pool"
+  },
+  {
+    "day": "Monday",
+    "venue": "Acton",
+    "time_slot": "5.30 to 6",
+    "client_name": "Steven C",
+    "area": "Teaching Pool"
+  },
+  {
+    "day": "Monday",
+    "venue": "Northolt",
+    "time_slot": "6 to 6.30",
+    "client_name": "Amaar",
+    "area": "Teaching Pool"
+  },
+  {
+    "day": "Monday",
+    "venue": "Northolt",
+    "time_slot": "6 to 6.30",
+    "client_name": "Aadam",
+    "area": "Teaching Pool"
+  },
+  {
+    "day": "Monday",
+    "venue": "Westway",
+    "time_slot": "11 to 4",
+    "client_name": "Emmanuel",
+    "area": "Hub Room"
+  },
+  {
+    "day": "Monday",
+    "venue": "Acton",
+    "time_slot": "6 to 6.30",
+    "client_name": "Abodi P",
+    "area": "Teaching Pool"
+  },
+  {
+    "day": "Monday",
+    "venue": "Acton",
+    "time_slot": "6 to 6.30",
+    "client_name": "Mario",
+    "area": "Teaching Pool"
+  },
+  {
+    "day": "Monday",
+    "venue": "Westway",
+    "time_slot": "1 to 3",
+    "client_name": "Timi",
+    "area": "Hub Room"
+  },
+  {
+    "day": "Tuesday",
+    "venue": "Acton",
+    "time_slot": "4 to 4.30",
+    "client_name": "Jad",
+    "area": "Teaching Pool"
+  },
+  {
+    "day": "Tuesday",
+    "venue": "Acton",
+    "time_slot": "4 to 4.30",
+    "client_name": "Ayman",
+    "area": "Lane (DE)"
+  },
+  {
+    "day": "Tuesday",
+    "venue": "Westway",
+    "time_slot": "11 to 4",
+    "client_name": "Ikram",
+    "area": "Hub Room"
+  },
+  {
+    "day": "Tuesday",
+    "venue": "Acton",
+    "time_slot": "4.30-5.30",
+    "client_name": "Serine",
+    "area": "Lane (DE)"
+  },
+  {
+    "day": "Tuesday",
+    "venue": "Acton",
+    "time_slot": "4.30 to 5",
+    "client_name": "Adam M",
+    "area": "Teaching Pool"
+  },
+  {
+    "day": "Tuesday",
+    "venue": "Acton",
+    "time_slot": "4.30 to 5",
+    "client_name": "Cayra",
+    "area": "Lane (SE)"
+  },
+  {
+    "day": "Tuesday",
+    "venue": "Acton",
+    "time_slot": "4.30 to 5",
+    "client_name": "Bediako",
+    "area": "Lane (SE)"
+  },
+  {
+    "day": "Tuesday",
+    "venue": "Acton",
+    "time_slot": "4.30 to 5",
+    "client_name": "Ayman",
+    "area": "Lane (DE)"
+  },
+  {
+    "day": "Tuesday",
+    "venue": "Westway",
+    "time_slot": "12.30 to 3",
+    "client_name": "Fadi",
+    "area": "Hub Room"
+  },
+  {
+    "day": "Tuesday",
+    "venue": "Acton",
+    "time_slot": "5 to 5.30",
+    "client_name": "Linda",
+    "area": "Lane (SE)"
+  },
+  {
+    "day": "Tuesday",
+    "venue": "Acton",
+    "time_slot": "5 to 5.30",
+    "client_name": "Amir",
+    "area": "Teaching Pool"
+  },
+  {
+    "day": "Tuesday",
+    "venue": "Acton",
+    "time_slot": "5 to 5.30",
+    "client_name": "Junaid",
+    "area": "Lane (SE)"
+  },
+  {
+    "day": "Tuesday",
+    "venue": "Acton",
+    "time_slot": "5 to 5.30",
+    "client_name": "Logan",
+    "area": "Teaching Pool"
+  },
+  {
+    "day": "Tuesday",
+    "venue": "Acton",
+    "time_slot": "5.30 to 6",
+    "client_name": "Hazem",
+    "area": "Lane (DE)"
+  },
+  {
+    "day": "Tuesday",
+    "venue": "Acton",
+    "time_slot": "5.30 to 6",
+    "client_name": "Eiji",
+    "area": "Lane (DE)"
+  },
+  {
+    "day": "Tuesday",
+    "venue": "Acton",
+    "time_slot": "5.30 to 6",
+    "client_name": "Rayan T",
+    "area": "Teaching Pool"
+  },
+  {
+    "day": "Tuesday",
+    "venue": "Acton",
+    "time_slot": "5.30 to 6",
+    "client_name": "Aydaan",
+    "area": "Lane (SE)"
+  },
+  {
+    "day": "Tuesday",
+    "venue": "Acton",
+    "time_slot": "5.30 to 6.30",
+    "client_name": "Rayyan F",
+    "area": "Lane (SE)"
+  },
+  {
+    "day": "Tuesday",
+    "venue": "Acton",
+    "time_slot": "6 to 6.30",
+    "client_name": "Eiji",
+    "area": "Lane (DE)"
+  },
+  {
+    "day": "Tuesday",
+    "venue": "Acton",
+    "time_slot": "6 to 6.30",
+    "client_name": "Kareena",
+    "area": "Lane (SE)"
+  },
+  {
+    "day": "Tuesday",
+    "venue": "Acton",
+    "time_slot": "6 to 6.30",
+    "client_name": "Richard",
+    "area": "Lane (SE)"
+  },
+  {
+    "day": "Tuesday",
+    "venue": "Acton",
+    "time_slot": "6 to 6.30",
+    "client_name": "Hazem",
+    "area": "Lane (DE)"
+  },
+  {
+    "day": "Tuesday",
+    "venue": "Acton",
+    "time_slot": "6 to 6.30",
+    "client_name": "ub",
+    "area": ""
+  },
+  {
+    "day": "Wednesday",
+    "venue": "Acton",
+    "time_slot": "4 to 5.15",
+    "client_name": "Cyrus",
+    "area": "Teaching Pool"
+  },
+  {
+    "day": "Wednesday",
+    "venue": "Northolt",
+    "time_slot": "4.30 to 5",
+    "client_name": "Tyson",
+    "area": "Teaching Pool"
+  },
+  {
+    "day": "Wednesday",
+    "venue": "Northolt",
+    "time_slot": "4.30 to 5",
+    "client_name": "Vithura",
+    "area": "Teaching Pool"
+  },
+  {
+    "day": "Wednesday",
+    "venue": "SwimFarm",
+    "time_slot": "4.15 to 6.15",
+    "client_name": "Tinashe",
+    "area": "Hub Room"
+  },
+  {
+    "day": "Wednesday",
+    "venue": "Westway",
+    "time_slot": "11 to 4",
+    "client_name": "Ikram",
+    "area": "Hub Room"
+  },
+  {
+    "day": "Wednesday",
+    "venue": "Acton",
+    "time_slot": "4.30 to 5.15",
+    "client_name": "Stephanie",
+    "area": "Teaching Pool"
+  },
+  {
+    "day": "Wednesday",
+    "venue": "Northolt",
+    "time_slot": "5 to 5.30",
+    "client_name": "Ruben",
+    "area": "Teaching Pool"
+  },
+  {
+    "day": "Wednesday",
+    "venue": "Northolt",
+    "time_slot": "5 to 6",
+    "client_name": "Amar Rai",
+    "area": "Teaching Pool"
+  },
+  {
+    "day": "Wednesday",
+    "venue": "Westway",
+    "time_slot": "12.30 to 3",
+    "client_name": "Fadi",
+    "area": "Hub Room"
+  },
+  {
+    "day": "Wednesday",
+    "venue": "Acton",
+    "time_slot": "5.15 to 6",
+    "client_name": "Cyrus",
+    "area": "Room 2"
+  },
+  {
+    "day": "Wednesday",
+    "venue": "Acton",
+    "time_slot": "5.15 to 6",
+    "client_name": "Stephanie",
+    "area": "Room 2"
+  },
+  {
+    "day": "Wednesday",
+    "venue": "Northolt",
+    "time_slot": "5.30 to 6.30",
+    "client_name": "Mia",
+    "area": "Teaching Pool"
+  },
+  {
+    "day": "Wednesday",
+    "venue": "Westway",
+    "time_slot": "11 to 4",
+    "client_name": "Emmanuel",
+    "area": "Hub Room"
+  },
+  {
+    "day": "Wednesday",
+    "venue": "Acton",
+    "time_slot": "4.30 to 5.15",
+    "client_name": "Adam A",
+    "area": "Room 2"
+  },
+  {
+    "day": "Wednesday",
+    "venue": "Acton",
+    "time_slot": "4.30 to 5.15",
+    "client_name": "Scott",
+    "area": "Room 2"
+  },
+  {
+    "day": "Wednesday",
+    "venue": "Northolt",
+    "time_slot": "6 to 6.30",
+    "client_name": "Amber",
+    "area": "Teaching Pool"
+  },
+  {
+    "day": "Wednesday",
+    "venue": "Acton",
+    "time_slot": "5.15 to 6",
+    "client_name": "Adam A",
+    "area": "Teaching Pool"
+  },
+  {
+    "day": "Wednesday",
+    "venue": "Acton",
+    "time_slot": "5.15 to 6",
+    "client_name": "Scott",
+    "area": "Teaching Pool"
+  },
+  {
+    "day": "Wednesday",
+    "venue": "Acton",
+    "time_slot": "6 to 6.30",
+    "client_name": "Kayden",
+    "area": "Lane"
+  },
+  {
+    "day": "Thursday",
+    "venue": "Acton",
+    "time_slot": "4 to 5",
+    "client_name": "Ayman",
+    "area": "Lane (SE)"
+  },
+  {
+    "day": "Thursday",
+    "venue": "Acton",
+    "time_slot": "4 to 4.30",
+    "client_name": "Tom",
+    "area": "Lane (SE)"
+  },
+  {
+    "day": "Thursday",
+    "venue": "Acton",
+    "time_slot": "4 to 4.30",
+    "client_name": "Elijah",
+    "area": "Lane (SE)"
+  },
+  {
+    "day": "Thursday",
+    "venue": "SwimFarm",
+    "time_slot": "3.30 to 5",
+    "client_name": "Cyrus",
+    "area": "Hub Room"
+  },
+  {
+    "day": "Thursday",
+    "venue": "Westway",
+    "time_slot": "11 to 4",
+    "client_name": "Ikram",
+    "area": "Hub Room"
+  },
+  {
+    "day": "Thursday",
+    "venue": "Acton",
+    "time_slot": "4.30 to 5",
+    "client_name": "Yassir",
+    "area": "Lane (SE)"
+  },
+  {
+    "day": "Thursday",
+    "venue": "Acton",
+    "time_slot": "4.30 to 5.30",
+    "client_name": "Aqsa",
+    "area": "Lane (DE)"
+  },
+  {
+    "day": "Thursday",
+    "venue": "Acton",
+    "time_slot": "4.30 to 5",
+    "client_name": "Thushyan",
+    "area": "Lane (DE)"
+  },
+  {
+    "day": "Thursday",
+    "venue": "Westway",
+    "time_slot": "12.30 to 3",
+    "client_name": "Fadi",
+    "area": "Hub Room"
+  },
+  {
+    "day": "Thursday",
+    "venue": "Acton",
+    "time_slot": "5 to 5.30",
+    "client_name": "Khalid Ab",
+    "area": "Lane (SE)"
+  },
+  {
+    "day": "Thursday",
+    "venue": "Acton",
+    "time_slot": "5 to 5.30",
+    "client_name": "Yossi",
+    "area": "Lane (DE)"
+  },
+  {
+    "day": "Thursday",
+    "venue": "Acton",
+    "time_slot": "5 to 5.30",
+    "client_name": "Yuri",
+    "area": "Lane (SE)"
+  },
+  {
+    "day": "Thursday",
+    "venue": "Acton",
+    "time_slot": "5.30 to 6",
+    "client_name": "Karo",
+    "area": "Lane (SE)"
+  },
+  {
+    "day": "Thursday",
+    "venue": "Acton",
+    "time_slot": "5.30 to 6.30",
+    "client_name": "Mohammed",
+    "area": "Lane (SE)"
+  },
+  {
+    "day": "Thursday",
+    "venue": "Acton",
+    "time_slot": "5.30 to 6",
+    "client_name": "Hazem",
+    "area": "Lane (DE)"
+  },
+  {
+    "day": "Thursday",
+    "venue": "Acton",
+    "time_slot": "5.30 to 6.30",
+    "client_name": "Eiji",
+    "area": "Lane (DE)"
+  },
+  {
+    "day": "Thursday",
+    "venue": "Acton",
+    "time_slot": "6 to 6.30",
+    "client_name": "Hazem",
+    "area": "Lane (DE)"
+  },
+  {
+    "day": "Thursday",
+    "venue": "Acton",
+    "time_slot": "6 to 6.30",
+    "client_name": "Maiyar",
+    "area": "Teaching Pool"
+  },
+  {
+    "day": "Friday",
+    "venue": "SwimFarm",
+    "time_slot": "4.15 to 6.15",
+    "client_name": "Tinashe",
+    "area": "Hub Room"
+  },
+  {
+    "day": "Friday",
+    "venue": "Acton",
+    "time_slot": "4 to 5.30",
+    "client_name": "Adam P",
+    "area": "Teaching Pool"
+  },
+  {
+    "day": "Friday",
+    "venue": "Westway",
+    "time_slot": "11 to 4",
+    "client_name": "Ikram",
+    "area": "Hub Room"
+  },
+  {
+    "day": "Friday",
+    "venue": "Westway",
+    "time_slot": "12.30 to 3",
+    "client_name": "Fadi",
+    "area": "Hub Room"
+  },
+  {
+    "day": "Friday",
+    "venue": "Westway",
+    "time_slot": "11 to 4",
+    "client_name": "Emmanuel",
+    "area": "Hub Room"
+  },
+  {
+    "day": "Friday",
+    "venue": "Acton",
+    "time_slot": "5.30 to 6",
+    "client_name": "Adaam Ah",
+    "area": "Teaching Pool"
+  },
+  {
+    "day": "Friday",
+    "venue": "Westway",
+    "time_slot": "11 to 4",
+    "client_name": "Timi",
+    "area": "Hub Room"
+  }
+]

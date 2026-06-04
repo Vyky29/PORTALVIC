@@ -337,7 +337,7 @@
     "instructors": "JOHN, GODSWAY, BISMARK",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.30 to 6",
+    "time_slot": "4.15 to 6.15",
     "venue": "SwimFarm",
     "session_date": "2026-05-13"
   },
@@ -456,7 +456,7 @@
     "day": "Thursday",
     "instructors": "AURORA",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Lane (SE)",
     "time_slot": "4 to 4.30",
     "venue": "Acton",
     "session_date": "2026-05-14"
@@ -486,7 +486,7 @@
     "day": "Thursday",
     "instructors": "DAN",
     "service": "Aquatic Activity",
-    "area": "Lane",
+    "area": "Lane (DE)",
     "time_slot": "4.30 to 5",
     "venue": "Acton",
     "session_date": "2026-05-14"
@@ -496,7 +496,7 @@
     "day": "Thursday",
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",
-    "area": "Swallow End",
+    "area": "Lane (SE)",
     "time_slot": "4.30 to 5",
     "venue": "Acton",
     "session_date": "2026-05-14"
@@ -506,7 +506,7 @@
     "day": "Thursday",
     "instructors": "AURORA",
     "service": "Aquatic Activity",
-    "area": "Lane",
+    "area": "Lane (DE)",
     "time_slot": "4.30 to 5.30",
     "venue": "Acton",
     "session_date": "2026-05-14"
@@ -526,7 +526,7 @@
     "day": "Thursday",
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",
-    "area": "Lane",
+    "area": "Lane (DE)",
     "time_slot": "5 to 5.30",
     "venue": "Acton",
     "session_date": "2026-05-14"
@@ -546,7 +546,7 @@
     "day": "Thursday",
     "instructors": "AURORA",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Lane (DE)",
     "time_slot": "5.30 to 6",
     "venue": "Acton",
     "session_date": "2026-05-14"
@@ -566,7 +566,7 @@
     "day": "Thursday",
     "instructors": "DAN",
     "service": "Aquatic Activity",
-    "area": "Lane",
+    "area": "Lane (DE)",
     "time_slot": "5.30 to 6.30",
     "venue": "Acton",
     "session_date": "2026-05-14"
@@ -576,7 +576,7 @@
     "day": "Thursday",
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",
-    "area": "Lane",
+    "area": "Lane (SE)",
     "time_slot": "5.30 to 6.30",
     "venue": "Acton",
     "session_date": "2026-05-14"
@@ -586,7 +586,7 @@
     "day": "Thursday",
     "instructors": "JAVI",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Lane (DE)",
     "time_slot": "6 to 6.30",
     "venue": "Acton",
     "session_date": "2026-05-14"
@@ -647,7 +647,7 @@
     "instructors": "BISMARK, GIUSEPPE, JOHN",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.30 to 6",
+    "time_slot": "4.15 to 6.15",
     "venue": "SwimFarm",
     "session_date": "2026-05-15"
   },
@@ -676,8 +676,8 @@
     "day": "Saturday",
     "instructors": "YOUSSEF",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
-    "time_slot": "11 to 12",
+    "area": "Lane (SwallowEnd)",
+    "time_slot": "11 to 11.30",
     "venue": "Acton",
     "session_date": "2026-05-16"
   },
@@ -696,7 +696,7 @@
     "day": "Sunday",
     "instructors": "BISMARK",
     "service": "Climbing Activity",
-    "area": "Climbing Wall",
+    "area": "Wall",
     "time_slot": "1 to 2",
     "venue": "Westway",
     "session_date": "2026-05-17"
@@ -706,7 +706,7 @@
     "day": "Sunday",
     "instructors": "CARLOS",
     "service": "Climbing Activity",
-    "area": "Climbing Wall",
+    "area": "Wall",
     "time_slot": "1 to 2",
     "venue": "Westway",
     "session_date": "2026-05-17"
@@ -746,7 +746,7 @@
     "day": "Sunday",
     "instructors": "AURORA",
     "service": "Multi-Activity",
-    "area": "Big Pool",
+    "area": "Small Pool",
     "time_slot": "1.15 to 2",
     "venue": "SwimFarm",
     "session_date": "2026-05-17"
@@ -776,7 +776,7 @@
     "day": "Sunday",
     "instructors": "BISMARK",
     "service": "Climbing Activity",
-    "area": "Climbing Wall",
+    "area": "Wall",
     "time_slot": "10 to 11",
     "venue": "Westway",
     "session_date": "2026-05-17"
@@ -786,7 +786,7 @@
     "day": "Sunday",
     "instructors": "CARLOS",
     "service": "Climbing Activity",
-    "area": "Climbing Wall",
+    "area": "Wall",
     "time_slot": "10 to 11",
     "venue": "Westway",
     "session_date": "2026-05-17"
@@ -826,7 +826,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Multi-Activity",
-    "area": "Big Pool",
+    "area": "Hub Room",
     "time_slot": "10.15 to 11",
     "venue": "SwimFarm",
     "session_date": "2026-05-17"
@@ -846,7 +846,7 @@
     "day": "Sunday",
     "instructors": "GIUSEPPE",
     "service": "Multi-Activity",
-    "area": "Hub Room",
+    "area": "Small Pool",
     "time_slot": "10.15 to 11",
     "venue": "SwimFarm",
     "session_date": "2026-05-17"
@@ -906,7 +906,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Multi-Activity",
-    "area": "Big Pool",
+    "area": "Small Pool",
     "time_slot": "11 to 11.45",
     "venue": "SwimFarm",
     "session_date": "2026-05-17"
@@ -916,7 +916,7 @@
     "day": "Sunday",
     "instructors": "BISMARK",
     "service": "Climbing Activity",
-    "area": "Climbing Wall",
+    "area": "Wall",
     "time_slot": "11 to 12",
     "venue": "Westway",
     "session_date": "2026-05-17"
@@ -926,7 +926,7 @@
     "day": "Sunday",
     "instructors": "CARLOS",
     "service": "Climbing Activity",
-    "area": "Climbing Wall",
+    "area": "Wall",
     "time_slot": "11 to 12",
     "venue": "Westway",
     "session_date": "2026-05-17"
@@ -936,8 +936,8 @@
     "day": "Sunday",
     "instructors": "JOHN",
     "service": "Multi-Activity",
-    "area": "Hub Room",
-    "time_slot": "11.45 to 12.30",
+    "area": "Big Pool",
+    "time_slot": "11 to 11.45",
     "venue": "SwimFarm",
     "session_date": "2026-05-17"
   },
@@ -966,7 +966,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Multi-Activity",
-    "area": "Big Pool",
+    "area": "Small Pool",
     "time_slot": "11.45 to 12.30",
     "venue": "SwimFarm",
     "session_date": "2026-05-17"
@@ -976,8 +976,8 @@
     "day": "Sunday",
     "instructors": "GODSWAY",
     "service": "Multi-Activity",
-    "area": "Hub Room",
-    "time_slot": "11.45 to 12.30",
+    "area": "Big Pool",
+    "time_slot": "11 to 11.45",
     "venue": "SwimFarm",
     "session_date": "2026-05-17"
   },
@@ -986,8 +986,8 @@
     "day": "Sunday",
     "instructors": "GIUSEPPE",
     "service": "Multi-Activity",
-    "area": "Hub Room",
-    "time_slot": "11.45 to 12.30",
+    "area": "Small Pool",
+    "time_slot": "11 to 11.45",
     "venue": "SwimFarm",
     "session_date": "2026-05-17"
   },
@@ -996,7 +996,7 @@
     "day": "Sunday",
     "instructors": "BISMARK",
     "service": "Climbing Activity",
-    "area": "Climbing Wall",
+    "area": "Wall",
     "time_slot": "12 to 1",
     "venue": "Westway",
     "session_date": "2026-05-17"
@@ -1006,7 +1006,7 @@
     "day": "Sunday",
     "instructors": "CARLOS",
     "service": "Climbing Activity",
-    "area": "Climbing Wall",
+    "area": "Wall",
     "time_slot": "12 to 1",
     "venue": "Westway",
     "session_date": "2026-05-17"
@@ -1076,7 +1076,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Small Pool",
     "time_slot": "2 to 2.30",
     "venue": "SwimFarm",
     "session_date": "2026-05-17"
@@ -1086,7 +1086,7 @@
     "day": "Sunday",
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "2 to 2.30",
     "venue": "SwimFarm",
     "session_date": "2026-05-17"
@@ -1096,7 +1096,7 @@
     "day": "Sunday",
     "instructors": "AURORA",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "2 to 2.30",
     "venue": "SwimFarm",
     "session_date": "2026-05-17"
@@ -1106,7 +1106,7 @@
     "day": "Sunday",
     "instructors": "AURORA",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "2.30 to 3",
     "venue": "SwimFarm",
     "session_date": "2026-05-17"
@@ -1116,7 +1116,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Small Pool",
     "time_slot": "2.30 to 3",
     "venue": "SwimFarm",
     "session_date": "2026-05-17"
@@ -1126,7 +1126,7 @@
     "day": "Sunday",
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "2.30 to 3",
     "venue": "SwimFarm",
     "session_date": "2026-05-17"
@@ -1136,7 +1136,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Small Pool",
+    "area": "Big Pool",
     "time_slot": "9 to 9.30",
     "venue": "SwimFarm",
     "session_date": "2026-05-17"
@@ -1156,7 +1156,7 @@
     "day": "Sunday",
     "instructors": "ROBERTO",
     "service": "Multi-Activity",
-    "area": "Small Pool",
+    "area": "Big Pool",
     "time_slot": "9 to 9.30",
     "venue": "SwimFarm",
     "session_date": "2026-05-17"
@@ -1166,7 +1166,7 @@
     "day": "Sunday",
     "instructors": "AURORA",
     "service": "Multi-Activity",
-    "area": "Big Pool",
+    "area": "Small Pool",
     "time_slot": "9.30 to 10.15",
     "venue": "SwimFarm",
     "session_date": "2026-05-17"
@@ -1196,7 +1196,7 @@
     "day": "Sunday",
     "instructors": "GIUSEPPE",
     "service": "Multi-Activity",
-    "area": "Hub Room",
+    "area": "Big Pool",
     "time_slot": "9.30 to 10.15",
     "venue": "SwimFarm",
     "session_date": "2026-05-17"
@@ -1216,7 +1216,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Multi-Activity",
-    "area": "Big Pool",
+    "area": "Hub Room",
     "time_slot": "9.30 to 10.15",
     "venue": "SwimFarm",
     "session_date": "2026-05-17"
@@ -1296,7 +1296,7 @@
     "day": "Monday",
     "instructors": "YOUSSEF",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Lane (SE)",
     "time_slot": "4.30 to 5",
     "venue": "Acton",
     "session_date": "2026-05-18"
@@ -1327,7 +1327,7 @@
     "instructors": "BISMARK, GIUSEPPE, JOHN",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.30 to 6",
+    "time_slot": "4.15 to 6.15",
     "venue": "SwimFarm",
     "session_date": "2026-05-18"
   },
@@ -1397,7 +1397,7 @@
     "instructors": "YOUSSEF",
     "service": "Aquatic Activity",
     "area": "Teaching Pool",
-    "time_slot": "5.30 to 6.30",
+    "time_slot": "5.30 to 6",
     "venue": "Acton",
     "session_date": "2026-05-18"
   },
@@ -1466,7 +1466,7 @@
     "day": "Tuesday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Lane (SE)",
+    "area": "Lane (DE)",
     "time_slot": "4 to 4.30",
     "venue": "Acton",
     "session_date": "2026-05-19"
@@ -1517,7 +1517,7 @@
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",
     "area": "Lane (DE)",
-    "time_slot": "4.30 to 5",
+    "time_slot": "4.30-5.30",
     "venue": "Acton",
     "session_date": "2026-05-19"
   },
@@ -1556,7 +1556,7 @@
     "day": "Tuesday",
     "instructors": "YOUSSEF",
     "service": "Aquatic Activity",
-    "area": "Lane (DE)",
+    "area": "Teaching Pool",
     "time_slot": "5 to 5.30",
     "venue": "Acton",
     "session_date": "2026-05-19"
@@ -1567,7 +1567,7 @@
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",
     "area": "Lane (DE)",
-    "time_slot": "5 to 5.30",
+    "time_slot": "4.30-5.30",
     "venue": "Acton",
     "session_date": "2026-05-19"
   },
@@ -1586,7 +1586,7 @@
     "day": "Tuesday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Lane",
+    "area": "Lane (DE)",
     "time_slot": "5.30 to 6",
     "venue": "Acton",
     "session_date": "2026-05-19"
@@ -1596,7 +1596,7 @@
     "day": "Tuesday",
     "instructors": "ANGEL",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Lane (DE)",
     "time_slot": "5.30 to 6",
     "venue": "Acton",
     "session_date": "2026-05-19"
@@ -1626,7 +1626,7 @@
     "day": "Tuesday",
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",
-    "area": "Lane",
+    "area": "Lane (DE)",
     "time_slot": "6 to 6.30",
     "venue": "Acton",
     "session_date": "2026-05-19"
@@ -1636,7 +1636,7 @@
     "day": "Tuesday",
     "instructors": "AURORA",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Lane (DE)",
     "time_slot": "6 to 6.30",
     "venue": "Acton",
     "session_date": "2026-05-19"
@@ -1767,7 +1767,7 @@
     "instructors": "JOHN, GODSWAY, BISMARK",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.30 to 6",
+    "time_slot": "4.15 to 6.15",
     "venue": "SwimFarm",
     "session_date": "2026-05-20"
   },
@@ -1886,7 +1886,7 @@
     "day": "Thursday",
     "instructors": "AURORA",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Lane (SE)",
     "time_slot": "4 to 4.30",
     "venue": "Acton",
     "session_date": "2026-05-21"
@@ -1916,7 +1916,7 @@
     "day": "Thursday",
     "instructors": "DAN",
     "service": "Aquatic Activity",
-    "area": "Lane",
+    "area": "Lane (DE)",
     "time_slot": "4.30 to 5",
     "venue": "Acton",
     "session_date": "2026-05-21"
@@ -1926,7 +1926,7 @@
     "day": "Thursday",
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",
-    "area": "Swallow End",
+    "area": "Lane (SE)",
     "time_slot": "4.30 to 5",
     "venue": "Acton",
     "session_date": "2026-05-21"
@@ -1936,7 +1936,7 @@
     "day": "Thursday",
     "instructors": "AURORA",
     "service": "Aquatic Activity",
-    "area": "Lane",
+    "area": "Lane (DE)",
     "time_slot": "4.30 to 5.30",
     "venue": "Acton",
     "session_date": "2026-05-21"
@@ -1956,7 +1956,7 @@
     "day": "Thursday",
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",
-    "area": "Lane",
+    "area": "Lane (DE)",
     "time_slot": "5 to 5.30",
     "venue": "Acton",
     "session_date": "2026-05-21"
@@ -1976,7 +1976,7 @@
     "day": "Thursday",
     "instructors": "AURORA",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Lane (DE)",
     "time_slot": "5.30 to 6",
     "venue": "Acton",
     "session_date": "2026-05-21"
@@ -1996,7 +1996,7 @@
     "day": "Thursday",
     "instructors": "DAN",
     "service": "Aquatic Activity",
-    "area": "Lane",
+    "area": "Lane (DE)",
     "time_slot": "5.30 to 6.30",
     "venue": "Acton",
     "session_date": "2026-05-21"
@@ -2006,7 +2006,7 @@
     "day": "Thursday",
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",
-    "area": "Lane",
+    "area": "Lane (SE)",
     "time_slot": "5.30 to 6.30",
     "venue": "Acton",
     "session_date": "2026-05-21"
@@ -2016,7 +2016,7 @@
     "day": "Thursday",
     "instructors": "JAVI",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Lane (DE)",
     "time_slot": "6 to 6.30",
     "venue": "Acton",
     "session_date": "2026-05-21"
@@ -2077,7 +2077,7 @@
     "instructors": "BISMARK, GIUSEPPE, JOHN",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.30 to 6",
+    "time_slot": "4.15 to 6.15",
     "venue": "SwimFarm",
     "session_date": "2026-05-22"
   },
@@ -2166,7 +2166,7 @@
     "day": "Monday",
     "instructors": "YOUSSEF",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Lane (SE)",
     "time_slot": "4.30 to 5",
     "venue": "Acton",
     "session_date": "2026-06-01"
@@ -2197,7 +2197,7 @@
     "instructors": "BISMARK, GIUSEPPE, JOHN",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.30 to 6",
+    "time_slot": "4.15 to 6.15",
     "venue": "SwimFarm",
     "session_date": "2026-06-01"
   },
@@ -2267,7 +2267,7 @@
     "instructors": "YOUSSEF",
     "service": "Aquatic Activity",
     "area": "Teaching Pool",
-    "time_slot": "5.30 to 6.30",
+    "time_slot": "5.30 to 6",
     "venue": "Acton",
     "session_date": "2026-06-01"
   },
@@ -2546,7 +2546,7 @@
     "day": "Tuesday",
     "instructors": "ANGEL",
     "service": "Aquatic Activity",
-    "area": "Lane (DE)",
+    "area": "Lane (SE)",
     "time_slot": "6 to 6.30",
     "venue": "Acton",
     "session_date": "2026-06-02"
@@ -2657,7 +2657,7 @@
     "instructors": "JOHN, GODSWAY, BISMARK",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.30 to 6",
+    "time_slot": "4.15 to 6.15",
     "venue": "SwimFarm",
     "session_date": "2026-06-03"
   },
@@ -2746,7 +2746,7 @@
     "day": "Wednesday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Lane",
     "time_slot": "6 to 6.30",
     "venue": "Acton",
     "session_date": "2026-06-03"
@@ -2816,7 +2816,7 @@
     "day": "Thursday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Lane (DE)/(SE)",
+    "area": "Lane (SE)",
     "time_slot": "4 to 5",
     "venue": "Acton",
     "session_date": "2026-06-04"
@@ -2997,7 +2997,7 @@
     "instructors": "BISMARK, GIUSEPPE, JOHN",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.30 to 6",
+    "time_slot": "4.15 to 6.15",
     "venue": "SwimFarm",
     "session_date": "2026-06-05"
   },
@@ -3036,8 +3036,8 @@
     "day": "Saturday",
     "instructors": "YOUSSEF",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
-    "time_slot": "11 to 12",
+    "area": "Lane (SwallowEnd)",
+    "time_slot": "11 to 11.30",
     "venue": "Acton",
     "session_date": "2026-06-06"
   },
@@ -3126,7 +3126,7 @@
     "day": "Sunday",
     "instructors": "DAN",
     "service": "Multi-Activity",
-    "area": "Big Pool",
+    "area": "Small Pool",
     "time_slot": "1.15 to 2",
     "venue": "SwimFarm",
     "session_date": "2026-06-07"
@@ -3136,7 +3136,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Multi-Activity",
-    "area": "Small Pool",
+    "area": "Big Pool",
     "time_slot": "1.15 to 2",
     "venue": "SwimFarm",
     "session_date": "2026-06-07"
@@ -3236,7 +3236,7 @@
     "day": "Sunday",
     "instructors": "DAN",
     "service": "Multi-Activity",
-    "area": "Small Pool",
+    "area": "Big Pool",
     "time_slot": "11 to 11.45",
     "venue": "SwimFarm",
     "session_date": "2026-06-07"
@@ -3286,7 +3286,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Multi-Activity",
-    "area": "Big Pool",
+    "area": "Small Pool",
     "time_slot": "11 to 11.45",
     "venue": "SwimFarm",
     "session_date": "2026-06-07"
@@ -3316,8 +3316,8 @@
     "day": "Sunday",
     "instructors": "JOHN",
     "service": "Multi-Activity",
-    "area": "Hub Room",
-    "time_slot": "11.45 to 12.30",
+    "area": "Big Pool",
+    "time_slot": "11 to 11.45",
     "venue": "SwimFarm",
     "session_date": "2026-06-07"
   },
@@ -3336,7 +3336,7 @@
     "day": "Sunday",
     "instructors": "DAN",
     "service": "Multi-Activity",
-    "area": "Small Pool",
+    "area": "Big Pool",
     "time_slot": "11.45 to 12.30",
     "venue": "SwimFarm",
     "session_date": "2026-06-07"
@@ -3346,7 +3346,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Multi-Activity",
-    "area": "Big Pool",
+    "area": "Small Pool",
     "time_slot": "11.45 to 12.30",
     "venue": "SwimFarm",
     "session_date": "2026-06-07"
@@ -3356,8 +3356,8 @@
     "day": "Sunday",
     "instructors": "BISMARK",
     "service": "Multi-Activity",
-    "area": "Hub Room",
-    "time_slot": "11.45 to 12.30",
+    "area": "Big Pool",
+    "time_slot": "11 to 11.45",
     "venue": "SwimFarm",
     "session_date": "2026-06-07"
   },
@@ -3366,8 +3366,8 @@
     "day": "Sunday",
     "instructors": "GIUSEPPE",
     "service": "Multi-Activity",
-    "area": "Hub Room",
-    "time_slot": "11.45 to 12.30",
+    "area": "Small Pool",
+    "time_slot": "11 to 11.45",
     "venue": "SwimFarm",
     "session_date": "2026-06-07"
   },
@@ -3456,7 +3456,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Small Pool",
     "time_slot": "2 to 2.30",
     "venue": "SwimFarm",
     "session_date": "2026-06-07"
@@ -3466,7 +3466,7 @@
     "day": "Sunday",
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "2 to 2.30",
     "venue": "SwimFarm",
     "session_date": "2026-06-07"
@@ -3476,7 +3476,7 @@
     "day": "Sunday",
     "instructors": "DAN",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "2 to 2.30",
     "venue": "SwimFarm",
     "session_date": "2026-06-07"
@@ -3506,7 +3506,7 @@
     "day": "Sunday",
     "instructors": "DAN",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "2.30 to 3",
     "venue": "SwimFarm",
     "session_date": "2026-06-07"
@@ -3516,7 +3516,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Small Pool",
     "time_slot": "2.30 to 3",
     "venue": "SwimFarm",
     "session_date": "2026-06-07"
@@ -3526,7 +3526,7 @@
     "day": "Sunday",
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "2.30 to 3",
     "venue": "SwimFarm",
     "session_date": "2026-06-07"
@@ -3546,7 +3546,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Small Pool",
+    "area": "Big Pool",
     "time_slot": "9 to 9.30",
     "venue": "SwimFarm",
     "session_date": "2026-06-07"
@@ -3696,7 +3696,7 @@
     "day": "Monday",
     "instructors": "YOUSSEF",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Lane (SE)",
     "time_slot": "4.30 to 5",
     "venue": "Acton",
     "session_date": "2026-06-08"
@@ -3727,7 +3727,7 @@
     "instructors": "BISMARK, GIUSEPPE, JOHN",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.30 to 6",
+    "time_slot": "4.15 to 6.15",
     "venue": "SwimFarm",
     "session_date": "2026-06-08"
   },
@@ -3797,7 +3797,7 @@
     "instructors": "YOUSSEF",
     "service": "Aquatic Activity",
     "area": "Teaching Pool",
-    "time_slot": "5.30 to 6.30",
+    "time_slot": "5.30 to 6",
     "venue": "Acton",
     "session_date": "2026-06-08"
   },
@@ -4076,7 +4076,7 @@
     "day": "Tuesday",
     "instructors": "ANGEL",
     "service": "Aquatic Activity",
-    "area": "Lane (DE)",
+    "area": "Lane (SE)",
     "time_slot": "6 to 6.30",
     "venue": "Acton",
     "session_date": "2026-06-09"
@@ -4187,7 +4187,7 @@
     "instructors": "JOHN, GODSWAY, BISMARK",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.30 to 6",
+    "time_slot": "4.15 to 6.15",
     "venue": "SwimFarm",
     "session_date": "2026-06-10"
   },
@@ -4276,7 +4276,7 @@
     "day": "Wednesday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Lane",
     "time_slot": "6 to 6.30",
     "venue": "Acton",
     "session_date": "2026-06-10"
@@ -4346,7 +4346,7 @@
     "day": "Thursday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Lane (DE)/(SE)",
+    "area": "Lane (SE)",
     "time_slot": "4 to 5",
     "venue": "Acton",
     "session_date": "2026-06-11"
@@ -4527,7 +4527,7 @@
     "instructors": "BISMARK, GIUSEPPE, JOHN",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.30 to 6",
+    "time_slot": "4.15 to 6.15",
     "venue": "SwimFarm",
     "session_date": "2026-06-12"
   },
@@ -4566,8 +4566,8 @@
     "day": "Saturday",
     "instructors": "YOUSSEF",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
-    "time_slot": "11 to 12",
+    "area": "Lane (SwallowEnd)",
+    "time_slot": "11 to 11.30",
     "venue": "Acton",
     "session_date": "2026-06-13"
   },
@@ -4656,7 +4656,7 @@
     "day": "Sunday",
     "instructors": "DAN",
     "service": "Multi-Activity",
-    "area": "Big Pool",
+    "area": "Small Pool",
     "time_slot": "1.15 to 2",
     "venue": "SwimFarm",
     "session_date": "2026-06-14"
@@ -4666,7 +4666,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Multi-Activity",
-    "area": "Small Pool",
+    "area": "Big Pool",
     "time_slot": "1.15 to 2",
     "venue": "SwimFarm",
     "session_date": "2026-06-14"
@@ -4766,7 +4766,7 @@
     "day": "Sunday",
     "instructors": "DAN",
     "service": "Multi-Activity",
-    "area": "Small Pool",
+    "area": "Big Pool",
     "time_slot": "11 to 11.45",
     "venue": "SwimFarm",
     "session_date": "2026-06-14"
@@ -4816,7 +4816,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Multi-Activity",
-    "area": "Big Pool",
+    "area": "Small Pool",
     "time_slot": "11 to 11.45",
     "venue": "SwimFarm",
     "session_date": "2026-06-14"
@@ -4846,8 +4846,8 @@
     "day": "Sunday",
     "instructors": "BERTA",
     "service": "Multi-Activity",
-    "area": "Hub Room",
-    "time_slot": "11.45 to 12.30",
+    "area": "Big Pool",
+    "time_slot": "11 to 11.45",
     "venue": "SwimFarm",
     "session_date": "2026-06-14"
   },
@@ -4866,7 +4866,7 @@
     "day": "Sunday",
     "instructors": "DAN",
     "service": "Multi-Activity",
-    "area": "Small Pool",
+    "area": "Big Pool",
     "time_slot": "11.45 to 12.30",
     "venue": "SwimFarm",
     "session_date": "2026-06-14"
@@ -4876,7 +4876,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Multi-Activity",
-    "area": "Big Pool",
+    "area": "Small Pool",
     "time_slot": "11.45 to 12.30",
     "venue": "SwimFarm",
     "session_date": "2026-06-14"
@@ -4886,8 +4886,8 @@
     "day": "Sunday",
     "instructors": "BISMARK",
     "service": "Multi-Activity",
-    "area": "Hub Room",
-    "time_slot": "11.45 to 12.30",
+    "area": "Big Pool",
+    "time_slot": "11 to 11.45",
     "venue": "SwimFarm",
     "session_date": "2026-06-14"
   },
@@ -4896,8 +4896,8 @@
     "day": "Sunday",
     "instructors": "GIUSEPPE",
     "service": "Multi-Activity",
-    "area": "Hub Room",
-    "time_slot": "11.45 to 12.30",
+    "area": "Small Pool",
+    "time_slot": "11 to 11.45",
     "venue": "SwimFarm",
     "session_date": "2026-06-14"
   },
@@ -4986,7 +4986,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Small Pool",
     "time_slot": "2 to 2.30",
     "venue": "SwimFarm",
     "session_date": "2026-06-14"
@@ -4996,7 +4996,7 @@
     "day": "Sunday",
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "2 to 2.30",
     "venue": "SwimFarm",
     "session_date": "2026-06-14"
@@ -5006,7 +5006,7 @@
     "day": "Sunday",
     "instructors": "DAN",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "2 to 2.30",
     "venue": "SwimFarm",
     "session_date": "2026-06-14"
@@ -5036,7 +5036,7 @@
     "day": "Sunday",
     "instructors": "DAN",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "2.30 to 3",
     "venue": "SwimFarm",
     "session_date": "2026-06-14"
@@ -5046,7 +5046,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Small Pool",
     "time_slot": "2.30 to 3",
     "venue": "SwimFarm",
     "session_date": "2026-06-14"
@@ -5056,7 +5056,7 @@
     "day": "Sunday",
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "2.30 to 3",
     "venue": "SwimFarm",
     "session_date": "2026-06-14"
@@ -5076,7 +5076,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Small Pool",
+    "area": "Big Pool",
     "time_slot": "9 to 9.30",
     "venue": "SwimFarm",
     "session_date": "2026-06-14"
@@ -5226,7 +5226,7 @@
     "day": "Monday",
     "instructors": "YOUSSEF",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Lane (SE)",
     "time_slot": "4.30 to 5",
     "venue": "Acton",
     "session_date": "2026-06-15"
@@ -5257,7 +5257,7 @@
     "instructors": "BISMARK, GIUSEPPE, JOHN",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.30 to 6",
+    "time_slot": "4.15 to 6.15",
     "venue": "SwimFarm",
     "session_date": "2026-06-15"
   },
@@ -5327,7 +5327,7 @@
     "instructors": "YOUSSEF",
     "service": "Aquatic Activity",
     "area": "Teaching Pool",
-    "time_slot": "5.30 to 6.30",
+    "time_slot": "5.30 to 6",
     "venue": "Acton",
     "session_date": "2026-06-15"
   },
@@ -5606,7 +5606,7 @@
     "day": "Tuesday",
     "instructors": "ANGEL",
     "service": "Aquatic Activity",
-    "area": "Lane (DE)",
+    "area": "Lane (SE)",
     "time_slot": "6 to 6.30",
     "venue": "Acton",
     "session_date": "2026-06-16"
@@ -5717,7 +5717,7 @@
     "instructors": "JOHN, GODSWAY, BISMARK",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.30 to 6",
+    "time_slot": "4.15 to 6.15",
     "venue": "SwimFarm",
     "session_date": "2026-06-17"
   },
@@ -5806,7 +5806,7 @@
     "day": "Wednesday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Lane",
     "time_slot": "6 to 6.30",
     "venue": "Acton",
     "session_date": "2026-06-17"
@@ -5876,7 +5876,7 @@
     "day": "Thursday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Lane (DE)/(SE)",
+    "area": "Lane (SE)",
     "time_slot": "4 to 5",
     "venue": "Acton",
     "session_date": "2026-06-18"
@@ -6057,7 +6057,7 @@
     "instructors": "BISMARK, GIUSEPPE, JOHN",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.30 to 6",
+    "time_slot": "4.15 to 6.15",
     "venue": "SwimFarm",
     "session_date": "2026-06-19"
   },
@@ -6096,8 +6096,8 @@
     "day": "Saturday",
     "instructors": "YOUSSEF",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
-    "time_slot": "11 to 12",
+    "area": "Lane (SwallowEnd)",
+    "time_slot": "11 to 11.30",
     "venue": "Acton",
     "session_date": "2026-06-20"
   },
@@ -6186,7 +6186,7 @@
     "day": "Sunday",
     "instructors": "DAN",
     "service": "Multi-Activity",
-    "area": "Big Pool",
+    "area": "Small Pool",
     "time_slot": "1.15 to 2",
     "venue": "SwimFarm",
     "session_date": "2026-06-21"
@@ -6196,7 +6196,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Multi-Activity",
-    "area": "Small Pool",
+    "area": "Big Pool",
     "time_slot": "1.15 to 2",
     "venue": "SwimFarm",
     "session_date": "2026-06-21"
@@ -6296,7 +6296,7 @@
     "day": "Sunday",
     "instructors": "DAN",
     "service": "Multi-Activity",
-    "area": "Small Pool",
+    "area": "Big Pool",
     "time_slot": "11 to 11.45",
     "venue": "SwimFarm",
     "session_date": "2026-06-21"
@@ -6346,7 +6346,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Multi-Activity",
-    "area": "Big Pool",
+    "area": "Small Pool",
     "time_slot": "11 to 11.45",
     "venue": "SwimFarm",
     "session_date": "2026-06-21"
@@ -6376,8 +6376,8 @@
     "day": "Sunday",
     "instructors": "JOHN",
     "service": "Multi-Activity",
-    "area": "Hub Room",
-    "time_slot": "11.45 to 12.30",
+    "area": "Big Pool",
+    "time_slot": "11 to 11.45",
     "venue": "SwimFarm",
     "session_date": "2026-06-21"
   },
@@ -6396,7 +6396,7 @@
     "day": "Sunday",
     "instructors": "DAN",
     "service": "Multi-Activity",
-    "area": "Small Pool",
+    "area": "Big Pool",
     "time_slot": "11.45 to 12.30",
     "venue": "SwimFarm",
     "session_date": "2026-06-21"
@@ -6406,7 +6406,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Multi-Activity",
-    "area": "Big Pool",
+    "area": "Small Pool",
     "time_slot": "11.45 to 12.30",
     "venue": "SwimFarm",
     "session_date": "2026-06-21"
@@ -6416,8 +6416,8 @@
     "day": "Sunday",
     "instructors": "BISMARK",
     "service": "Multi-Activity",
-    "area": "Hub Room",
-    "time_slot": "11.45 to 12.30",
+    "area": "Big Pool",
+    "time_slot": "11 to 11.45",
     "venue": "SwimFarm",
     "session_date": "2026-06-21"
   },
@@ -6426,8 +6426,8 @@
     "day": "Sunday",
     "instructors": "GIUSEPPE",
     "service": "Multi-Activity",
-    "area": "Hub Room",
-    "time_slot": "11.45 to 12.30",
+    "area": "Small Pool",
+    "time_slot": "11 to 11.45",
     "venue": "SwimFarm",
     "session_date": "2026-06-21"
   },
@@ -6516,7 +6516,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Small Pool",
     "time_slot": "2 to 2.30",
     "venue": "SwimFarm",
     "session_date": "2026-06-21"
@@ -6526,7 +6526,7 @@
     "day": "Sunday",
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "2 to 2.30",
     "venue": "SwimFarm",
     "session_date": "2026-06-21"
@@ -6536,7 +6536,7 @@
     "day": "Sunday",
     "instructors": "DAN",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "2 to 2.30",
     "venue": "SwimFarm",
     "session_date": "2026-06-21"
@@ -6566,7 +6566,7 @@
     "day": "Sunday",
     "instructors": "DAN",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "2.30 to 3",
     "venue": "SwimFarm",
     "session_date": "2026-06-21"
@@ -6576,7 +6576,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Small Pool",
     "time_slot": "2.30 to 3",
     "venue": "SwimFarm",
     "session_date": "2026-06-21"
@@ -6586,7 +6586,7 @@
     "day": "Sunday",
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "2.30 to 3",
     "venue": "SwimFarm",
     "session_date": "2026-06-21"
@@ -6606,7 +6606,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Small Pool",
+    "area": "Big Pool",
     "time_slot": "9 to 9.30",
     "venue": "SwimFarm",
     "session_date": "2026-06-21"
@@ -6756,7 +6756,7 @@
     "day": "Monday",
     "instructors": "YOUSSEF",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Lane (SE)",
     "time_slot": "4.30 to 5",
     "venue": "Acton",
     "session_date": "2026-06-22"
@@ -6787,7 +6787,7 @@
     "instructors": "BISMARK, GIUSEPPE, JOHN",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.30 to 6",
+    "time_slot": "4.15 to 6.15",
     "venue": "SwimFarm",
     "session_date": "2026-06-22"
   },
@@ -6857,7 +6857,7 @@
     "instructors": "YOUSSEF",
     "service": "Aquatic Activity",
     "area": "Teaching Pool",
-    "time_slot": "5.30 to 6.30",
+    "time_slot": "5.30 to 6",
     "venue": "Acton",
     "session_date": "2026-06-22"
   },
@@ -7136,7 +7136,7 @@
     "day": "Tuesday",
     "instructors": "ANGEL",
     "service": "Aquatic Activity",
-    "area": "Lane (DE)",
+    "area": "Lane (SE)",
     "time_slot": "6 to 6.30",
     "venue": "Acton",
     "session_date": "2026-06-23"
@@ -7247,7 +7247,7 @@
     "instructors": "JOHN, GODSWAY, BISMARK",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.30 to 6",
+    "time_slot": "4.15 to 6.15",
     "venue": "SwimFarm",
     "session_date": "2026-06-24"
   },
@@ -7336,7 +7336,7 @@
     "day": "Wednesday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Lane",
     "time_slot": "6 to 6.30",
     "venue": "Acton",
     "session_date": "2026-06-24"
@@ -7406,7 +7406,7 @@
     "day": "Thursday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Lane (DE)/(SE)",
+    "area": "Lane (SE)",
     "time_slot": "4 to 5",
     "venue": "Acton",
     "session_date": "2026-06-25"
@@ -7587,7 +7587,7 @@
     "instructors": "BISMARK, GIUSEPPE, JOHN",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.30 to 6",
+    "time_slot": "4.15 to 6.15",
     "venue": "SwimFarm",
     "session_date": "2026-06-26"
   },
@@ -7626,8 +7626,8 @@
     "day": "Saturday",
     "instructors": "YOUSSEF",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
-    "time_slot": "11 to 12",
+    "area": "Lane (SwallowEnd)",
+    "time_slot": "11 to 11.30",
     "venue": "Acton",
     "session_date": "2026-06-27"
   },
@@ -7716,7 +7716,7 @@
     "day": "Sunday",
     "instructors": "DAN",
     "service": "Multi-Activity",
-    "area": "Big Pool",
+    "area": "Small Pool",
     "time_slot": "1.15 to 2",
     "venue": "SwimFarm",
     "session_date": "2026-06-28"
@@ -7726,7 +7726,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Multi-Activity",
-    "area": "Small Pool",
+    "area": "Big Pool",
     "time_slot": "1.15 to 2",
     "venue": "SwimFarm",
     "session_date": "2026-06-28"
@@ -7826,7 +7826,7 @@
     "day": "Sunday",
     "instructors": "DAN",
     "service": "Multi-Activity",
-    "area": "Small Pool",
+    "area": "Big Pool",
     "time_slot": "11 to 11.45",
     "venue": "SwimFarm",
     "session_date": "2026-06-28"
@@ -7876,7 +7876,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Multi-Activity",
-    "area": "Big Pool",
+    "area": "Small Pool",
     "time_slot": "11 to 11.45",
     "venue": "SwimFarm",
     "session_date": "2026-06-28"
@@ -7906,8 +7906,8 @@
     "day": "Sunday",
     "instructors": "JOHN",
     "service": "Multi-Activity",
-    "area": "Hub Room",
-    "time_slot": "11.45 to 12.30",
+    "area": "Big Pool",
+    "time_slot": "11 to 11.45",
     "venue": "SwimFarm",
     "session_date": "2026-06-28"
   },
@@ -7926,7 +7926,7 @@
     "day": "Sunday",
     "instructors": "DAN",
     "service": "Multi-Activity",
-    "area": "Small Pool",
+    "area": "Big Pool",
     "time_slot": "11.45 to 12.30",
     "venue": "SwimFarm",
     "session_date": "2026-06-28"
@@ -7936,7 +7936,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Multi-Activity",
-    "area": "Big Pool",
+    "area": "Small Pool",
     "time_slot": "11.45 to 12.30",
     "venue": "SwimFarm",
     "session_date": "2026-06-28"
@@ -7946,8 +7946,8 @@
     "day": "Sunday",
     "instructors": "BISMARK",
     "service": "Multi-Activity",
-    "area": "Hub Room",
-    "time_slot": "11.45 to 12.30",
+    "area": "Big Pool",
+    "time_slot": "11 to 11.45",
     "venue": "SwimFarm",
     "session_date": "2026-06-28"
   },
@@ -7956,8 +7956,8 @@
     "day": "Sunday",
     "instructors": "GIUSEPPE",
     "service": "Multi-Activity",
-    "area": "Hub Room",
-    "time_slot": "11.45 to 12.30",
+    "area": "Small Pool",
+    "time_slot": "11 to 11.45",
     "venue": "SwimFarm",
     "session_date": "2026-06-28"
   },
@@ -8046,7 +8046,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Small Pool",
     "time_slot": "2 to 2.30",
     "venue": "SwimFarm",
     "session_date": "2026-06-28"
@@ -8056,7 +8056,7 @@
     "day": "Sunday",
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "2 to 2.30",
     "venue": "SwimFarm",
     "session_date": "2026-06-28"
@@ -8066,7 +8066,7 @@
     "day": "Sunday",
     "instructors": "DAN",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "2 to 2.30",
     "venue": "SwimFarm",
     "session_date": "2026-06-28"
@@ -8096,7 +8096,7 @@
     "day": "Sunday",
     "instructors": "DAN",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "2.30 to 3",
     "venue": "SwimFarm",
     "session_date": "2026-06-28"
@@ -8106,7 +8106,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Small Pool",
     "time_slot": "2.30 to 3",
     "venue": "SwimFarm",
     "session_date": "2026-06-28"
@@ -8116,7 +8116,7 @@
     "day": "Sunday",
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "2.30 to 3",
     "venue": "SwimFarm",
     "session_date": "2026-06-28"
@@ -8136,7 +8136,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Small Pool",
+    "area": "Big Pool",
     "time_slot": "9 to 9.30",
     "venue": "SwimFarm",
     "session_date": "2026-06-28"
@@ -8286,7 +8286,7 @@
     "day": "Monday",
     "instructors": "YOUSSEF",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Lane (SE)",
     "time_slot": "4.30 to 5",
     "venue": "Acton",
     "session_date": "2026-06-29"
@@ -8317,7 +8317,7 @@
     "instructors": "BISMARK, GIUSEPPE, JOHN",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.30 to 6",
+    "time_slot": "4.15 to 6.15",
     "venue": "SwimFarm",
     "session_date": "2026-06-29"
   },
@@ -8387,7 +8387,7 @@
     "instructors": "YOUSSEF",
     "service": "Aquatic Activity",
     "area": "Teaching Pool",
-    "time_slot": "5.30 to 6.30",
+    "time_slot": "5.30 to 6",
     "venue": "Acton",
     "session_date": "2026-06-29"
   },
@@ -8666,7 +8666,7 @@
     "day": "Tuesday",
     "instructors": "ANGEL",
     "service": "Aquatic Activity",
-    "area": "Lane (DE)",
+    "area": "Lane (SE)",
     "time_slot": "6 to 6.30",
     "venue": "Acton",
     "session_date": "2026-06-30"
@@ -8777,7 +8777,7 @@
     "instructors": "JOHN, GODSWAY, BISMARK",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.30 to 6",
+    "time_slot": "4.15 to 6.15",
     "venue": "SwimFarm",
     "session_date": "2026-07-01"
   },
@@ -8866,7 +8866,7 @@
     "day": "Wednesday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Lane",
     "time_slot": "6 to 6.30",
     "venue": "Acton",
     "session_date": "2026-07-01"
@@ -8936,7 +8936,7 @@
     "day": "Thursday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Lane (DE)/(SE)",
+    "area": "Lane (SE)",
     "time_slot": "4 to 5",
     "venue": "Acton",
     "session_date": "2026-07-02"
@@ -9117,7 +9117,7 @@
     "instructors": "BISMARK, GIUSEPPE, JOHN",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.30 to 6",
+    "time_slot": "4.15 to 6.15",
     "venue": "SwimFarm",
     "session_date": "2026-07-03"
   },
@@ -9156,8 +9156,8 @@
     "day": "Saturday",
     "instructors": "YOUSSEF",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
-    "time_slot": "11 to 12",
+    "area": "Lane (SwallowEnd)",
+    "time_slot": "11 to 11.30",
     "venue": "Acton",
     "session_date": "2026-07-04"
   },
@@ -9246,7 +9246,7 @@
     "day": "Sunday",
     "instructors": "AURORA",
     "service": "Multi-Activity",
-    "area": "Big Pool",
+    "area": "Small Pool",
     "time_slot": "1.15 to 2",
     "venue": "SwimFarm",
     "session_date": "2026-07-05"
@@ -9256,7 +9256,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Multi-Activity",
-    "area": "Small Pool",
+    "area": "Big Pool",
     "time_slot": "1.15 to 2",
     "venue": "SwimFarm",
     "session_date": "2026-07-05"
@@ -9356,7 +9356,7 @@
     "day": "Sunday",
     "instructors": "AURORA",
     "service": "Multi-Activity",
-    "area": "Small Pool",
+    "area": "Big Pool",
     "time_slot": "11 to 11.45",
     "venue": "SwimFarm",
     "session_date": "2026-07-05"
@@ -9406,7 +9406,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Multi-Activity",
-    "area": "Big Pool",
+    "area": "Small Pool",
     "time_slot": "11 to 11.45",
     "venue": "SwimFarm",
     "session_date": "2026-07-05"
@@ -9436,8 +9436,8 @@
     "day": "Sunday",
     "instructors": "JOHN",
     "service": "Multi-Activity",
-    "area": "Hub Room",
-    "time_slot": "11.45 to 12.30",
+    "area": "Big Pool",
+    "time_slot": "11 to 11.45",
     "venue": "SwimFarm",
     "session_date": "2026-07-05"
   },
@@ -9456,7 +9456,7 @@
     "day": "Sunday",
     "instructors": "AURORA",
     "service": "Multi-Activity",
-    "area": "Small Pool",
+    "area": "Big Pool",
     "time_slot": "11.45 to 12.30",
     "venue": "SwimFarm",
     "session_date": "2026-07-05"
@@ -9466,7 +9466,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Multi-Activity",
-    "area": "Big Pool",
+    "area": "Small Pool",
     "time_slot": "11.45 to 12.30",
     "venue": "SwimFarm",
     "session_date": "2026-07-05"
@@ -9476,8 +9476,8 @@
     "day": "Sunday",
     "instructors": "BISMARK",
     "service": "Multi-Activity",
-    "area": "Hub Room",
-    "time_slot": "11.45 to 12.30",
+    "area": "Big Pool",
+    "time_slot": "11 to 11.45",
     "venue": "SwimFarm",
     "session_date": "2026-07-05"
   },
@@ -9486,8 +9486,8 @@
     "day": "Sunday",
     "instructors": "GIUSEPPE",
     "service": "Multi-Activity",
-    "area": "Hub Room",
-    "time_slot": "11.45 to 12.30",
+    "area": "Small Pool",
+    "time_slot": "11 to 11.45",
     "venue": "SwimFarm",
     "session_date": "2026-07-05"
   },
@@ -9576,7 +9576,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Small Pool",
     "time_slot": "2 to 2.30",
     "venue": "SwimFarm",
     "session_date": "2026-07-05"
@@ -9586,7 +9586,7 @@
     "day": "Sunday",
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "2 to 2.30",
     "venue": "SwimFarm",
     "session_date": "2026-07-05"
@@ -9596,7 +9596,7 @@
     "day": "Sunday",
     "instructors": "AURORA",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "2 to 2.30",
     "venue": "SwimFarm",
     "session_date": "2026-07-05"
@@ -9626,7 +9626,7 @@
     "day": "Sunday",
     "instructors": "AURORA",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "2.30 to 3",
     "venue": "SwimFarm",
     "session_date": "2026-07-05"
@@ -9636,7 +9636,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Small Pool",
     "time_slot": "2.30 to 3",
     "venue": "SwimFarm",
     "session_date": "2026-07-05"
@@ -9646,7 +9646,7 @@
     "day": "Sunday",
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "2.30 to 3",
     "venue": "SwimFarm",
     "session_date": "2026-07-05"
@@ -9666,7 +9666,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Small Pool",
+    "area": "Big Pool",
     "time_slot": "9 to 9.30",
     "venue": "SwimFarm",
     "session_date": "2026-07-05"
@@ -9816,7 +9816,7 @@
     "day": "Monday",
     "instructors": "YOUSSEF",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Lane (SE)",
     "time_slot": "4.30 to 5",
     "venue": "Acton",
     "session_date": "2026-07-06"
@@ -9847,7 +9847,7 @@
     "instructors": "BISMARK, GIUSEPPE, JOHN",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.30 to 6",
+    "time_slot": "4.15 to 6.15",
     "venue": "SwimFarm",
     "session_date": "2026-07-06"
   },
@@ -9917,7 +9917,7 @@
     "instructors": "YOUSSEF",
     "service": "Aquatic Activity",
     "area": "Teaching Pool",
-    "time_slot": "5.30 to 6.30",
+    "time_slot": "5.30 to 6",
     "venue": "Acton",
     "session_date": "2026-07-06"
   },
@@ -10196,7 +10196,7 @@
     "day": "Tuesday",
     "instructors": "ANGEL",
     "service": "Aquatic Activity",
-    "area": "Lane (DE)",
+    "area": "Lane (SE)",
     "time_slot": "6 to 6.30",
     "venue": "Acton",
     "session_date": "2026-07-07"
@@ -10307,7 +10307,7 @@
     "instructors": "JOHN, GODSWAY, BISMARK",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.30 to 6",
+    "time_slot": "4.15 to 6.15",
     "venue": "SwimFarm",
     "session_date": "2026-07-08"
   },
@@ -10396,7 +10396,7 @@
     "day": "Wednesday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Lane",
     "time_slot": "6 to 6.30",
     "venue": "Acton",
     "session_date": "2026-07-08"
@@ -10466,7 +10466,7 @@
     "day": "Thursday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Lane (DE)/(SE)",
+    "area": "Lane (SE)",
     "time_slot": "4 to 5",
     "venue": "Acton",
     "session_date": "2026-07-09"
@@ -10647,7 +10647,7 @@
     "instructors": "BISMARK, GIUSEPPE, JOHN",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.30 to 6",
+    "time_slot": "4.15 to 6.15",
     "venue": "SwimFarm",
     "session_date": "2026-07-10"
   },
@@ -10686,8 +10686,8 @@
     "day": "Saturday",
     "instructors": "YOUSSEF",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
-    "time_slot": "11 to 12",
+    "area": "Lane (SwallowEnd)",
+    "time_slot": "11 to 11.30",
     "venue": "Acton",
     "session_date": "2026-07-11"
   },
@@ -10776,7 +10776,7 @@
     "day": "Sunday",
     "instructors": "AURORA",
     "service": "Multi-Activity",
-    "area": "Big Pool",
+    "area": "Small Pool",
     "time_slot": "1.15 to 2",
     "venue": "SwimFarm",
     "session_date": "2026-07-12"
@@ -10786,7 +10786,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Multi-Activity",
-    "area": "Small Pool",
+    "area": "Big Pool",
     "time_slot": "1.15 to 2",
     "venue": "SwimFarm",
     "session_date": "2026-07-12"
@@ -10886,7 +10886,7 @@
     "day": "Sunday",
     "instructors": "AURORA",
     "service": "Multi-Activity",
-    "area": "Small Pool",
+    "area": "Big Pool",
     "time_slot": "11 to 11.45",
     "venue": "SwimFarm",
     "session_date": "2026-07-12"
@@ -10936,7 +10936,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Multi-Activity",
-    "area": "Big Pool",
+    "area": "Small Pool",
     "time_slot": "11 to 11.45",
     "venue": "SwimFarm",
     "session_date": "2026-07-12"
@@ -10966,8 +10966,8 @@
     "day": "Sunday",
     "instructors": "BERTA",
     "service": "Multi-Activity",
-    "area": "Hub Room",
-    "time_slot": "11.45 to 12.30",
+    "area": "Big Pool",
+    "time_slot": "11 to 11.45",
     "venue": "SwimFarm",
     "session_date": "2026-07-12"
   },
@@ -10986,7 +10986,7 @@
     "day": "Sunday",
     "instructors": "AURORA",
     "service": "Multi-Activity",
-    "area": "Small Pool",
+    "area": "Big Pool",
     "time_slot": "11.45 to 12.30",
     "venue": "SwimFarm",
     "session_date": "2026-07-12"
@@ -10996,7 +10996,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Multi-Activity",
-    "area": "Big Pool",
+    "area": "Small Pool",
     "time_slot": "11.45 to 12.30",
     "venue": "SwimFarm",
     "session_date": "2026-07-12"
@@ -11006,8 +11006,8 @@
     "day": "Sunday",
     "instructors": "BISMARK",
     "service": "Multi-Activity",
-    "area": "Hub Room",
-    "time_slot": "11.45 to 12.30",
+    "area": "Big Pool",
+    "time_slot": "11 to 11.45",
     "venue": "SwimFarm",
     "session_date": "2026-07-12"
   },
@@ -11016,8 +11016,8 @@
     "day": "Sunday",
     "instructors": "GIUSEPPE",
     "service": "Multi-Activity",
-    "area": "Hub Room",
-    "time_slot": "11.45 to 12.30",
+    "area": "Small Pool",
+    "time_slot": "11 to 11.45",
     "venue": "SwimFarm",
     "session_date": "2026-07-12"
   },
@@ -11106,7 +11106,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Small Pool",
     "time_slot": "2 to 2.30",
     "venue": "SwimFarm",
     "session_date": "2026-07-12"
@@ -11116,7 +11116,7 @@
     "day": "Sunday",
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "2 to 2.30",
     "venue": "SwimFarm",
     "session_date": "2026-07-12"
@@ -11126,7 +11126,7 @@
     "day": "Sunday",
     "instructors": "AURORA",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "2 to 2.30",
     "venue": "SwimFarm",
     "session_date": "2026-07-12"
@@ -11156,7 +11156,7 @@
     "day": "Sunday",
     "instructors": "AURORA",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "2.30 to 3",
     "venue": "SwimFarm",
     "session_date": "2026-07-12"
@@ -11166,7 +11166,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Small Pool",
     "time_slot": "2.30 to 3",
     "venue": "SwimFarm",
     "session_date": "2026-07-12"
@@ -11176,7 +11176,7 @@
     "day": "Sunday",
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "2.30 to 3",
     "venue": "SwimFarm",
     "session_date": "2026-07-12"
@@ -11196,7 +11196,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Small Pool",
+    "area": "Big Pool",
     "time_slot": "9 to 9.30",
     "venue": "SwimFarm",
     "session_date": "2026-07-12"
@@ -11346,7 +11346,7 @@
     "day": "Monday",
     "instructors": "YOUSSEF",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Lane (SE)",
     "time_slot": "4.30 to 5",
     "venue": "Acton",
     "session_date": "2026-07-13"
@@ -11377,7 +11377,7 @@
     "instructors": "BISMARK, GIUSEPPE, JOHN",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.30 to 6",
+    "time_slot": "4.15 to 6.15",
     "venue": "SwimFarm",
     "session_date": "2026-07-13"
   },
@@ -11447,7 +11447,7 @@
     "instructors": "YOUSSEF",
     "service": "Aquatic Activity",
     "area": "Teaching Pool",
-    "time_slot": "5.30 to 6.30",
+    "time_slot": "5.30 to 6",
     "venue": "Acton",
     "session_date": "2026-07-13"
   },
@@ -11726,7 +11726,7 @@
     "day": "Tuesday",
     "instructors": "ANGEL",
     "service": "Aquatic Activity",
-    "area": "Lane (DE)",
+    "area": "Lane (SE)",
     "time_slot": "6 to 6.30",
     "venue": "Acton",
     "session_date": "2026-07-14"
@@ -11837,7 +11837,7 @@
     "instructors": "JOHN, GODSWAY, BISMARK",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.30 to 6",
+    "time_slot": "4.15 to 6.15",
     "venue": "SwimFarm",
     "session_date": "2026-07-15"
   },
@@ -11926,7 +11926,7 @@
     "day": "Wednesday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Lane",
     "time_slot": "6 to 6.30",
     "venue": "Acton",
     "session_date": "2026-07-15"
@@ -11996,7 +11996,7 @@
     "day": "Thursday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Lane (DE)/(SE)",
+    "area": "Lane (SE)",
     "time_slot": "4 to 5",
     "venue": "Acton",
     "session_date": "2026-07-16"
@@ -12177,7 +12177,7 @@
     "instructors": "BISMARK, GIUSEPPE, JOHN",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.30 to 6",
+    "time_slot": "4.15 to 6.15",
     "venue": "SwimFarm",
     "session_date": "2026-07-17"
   },
@@ -12242,7 +12242,7 @@
     "instructors": "BISMARK, GIUSEPPE, JOHN",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.30 to 6",
+    "time_slot": "4.15 to 6.15",
     "venue": "SwimFarm"
   },
   {
@@ -12322,7 +12322,7 @@
     "day": "Monday",
     "instructors": "YOUSSEF",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Lane (SE)",
     "time_slot": "4.30 to 5",
     "venue": "Acton"
   },
@@ -12350,7 +12350,7 @@
     "instructors": "BISMARK, GIUSEPPE, JOHN",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.30 to 6",
+    "time_slot": "4.15 to 6.15",
     "venue": "SwimFarm"
   },
   {
@@ -12413,7 +12413,7 @@
     "instructors": "YOUSSEF",
     "service": "Aquatic Activity",
     "area": "Teaching Pool",
-    "time_slot": "5.30 to 6.30",
+    "time_slot": "5.30 to 6",
     "venue": "Acton"
   },
   {
@@ -12466,8 +12466,8 @@
     "day": "Saturday",
     "instructors": "YOUSSEF",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
-    "time_slot": "11 to 12",
+    "area": "Lane (SwallowEnd)",
+    "time_slot": "11 to 11.30",
     "venue": "Acton"
   },
   {
@@ -12520,7 +12520,7 @@
     "day": "Sunday",
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "1.15 to 2",
     "venue": "SwimFarm"
   },
@@ -12556,7 +12556,7 @@
     "day": "Sunday",
     "instructors": "AURORA",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Small Pool",
     "time_slot": "1.15 to 2",
     "venue": "SwimFarm"
   },
@@ -12565,7 +12565,7 @@
     "day": "Sunday",
     "instructors": "AURORA",
     "service": "Multi-Activity",
-    "area": "Big Pool",
+    "area": "Small Pool",
     "time_slot": "1.15 to 2",
     "venue": "SwimFarm"
   },
@@ -12574,7 +12574,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "1.15 to 2",
     "venue": "SwimFarm"
   },
@@ -12583,7 +12583,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Multi-Activity",
-    "area": "Small Pool",
+    "area": "Big Pool",
     "time_slot": "1.15 to 2",
     "venue": "SwimFarm"
   },
@@ -12628,7 +12628,7 @@
     "day": "Sunday",
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "10.15 to 11",
     "venue": "SwimFarm"
   },
@@ -12646,7 +12646,7 @@
     "day": "Sunday",
     "instructors": "AURORA",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "10.15 to 11",
     "venue": "SwimFarm"
   },
@@ -12682,7 +12682,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Small Pool",
     "time_slot": "10.15 to 11",
     "venue": "SwimFarm"
   },
@@ -12700,7 +12700,7 @@
     "day": "Sunday",
     "instructors": "AURORA",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "11 to 11.45",
     "venue": "SwimFarm"
   },
@@ -12709,7 +12709,7 @@
     "day": "Sunday",
     "instructors": "AURORA",
     "service": "Multi-Activity",
-    "area": "Small Pool",
+    "area": "Big Pool",
     "time_slot": "11 to 11.45",
     "venue": "SwimFarm"
   },
@@ -12745,7 +12745,7 @@
     "day": "Sunday",
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "11 to 11.45",
     "venue": "SwimFarm"
   },
@@ -12763,7 +12763,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Multi-Activity",
-    "area": "Big Pool",
+    "area": "Small Pool",
     "time_slot": "11 to 11.45",
     "venue": "SwimFarm"
   },
@@ -12790,8 +12790,8 @@
     "day": "Sunday",
     "instructors": "JOHN, BERTA",
     "service": "Multi-Activity",
-    "area": "Hub Room",
-    "time_slot": "11.45 to 12.30",
+    "area": "Big Pool",
+    "time_slot": "11 to 11.45",
     "venue": "SwimFarm"
   },
   {
@@ -12799,7 +12799,7 @@
     "day": "Sunday",
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "11.45 to 12.30",
     "venue": "SwimFarm"
   },
@@ -12817,7 +12817,7 @@
     "day": "Sunday",
     "instructors": "AURORA",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "11.45 to 12.30",
     "venue": "SwimFarm"
   },
@@ -12826,6 +12826,15 @@
     "day": "Sunday",
     "instructors": "AURORA",
     "service": "Multi-Activity",
+    "area": "Big Pool",
+    "time_slot": "11.45 to 12.30",
+    "venue": "SwimFarm"
+  },
+  {
+    "client_name": "Eiji",
+    "day": "Sunday",
+    "instructors": "JAVIER",
+    "service": "Aquatic Activity",
     "area": "Small Pool",
     "time_slot": "11.45 to 12.30",
     "venue": "SwimFarm"
@@ -12834,17 +12843,8 @@
     "client_name": "Eiji",
     "day": "Sunday",
     "instructors": "JAVIER",
-    "service": "Aquatic Activity",
-    "area": "Teaching Pool",
-    "time_slot": "11.45 to 12.30",
-    "venue": "SwimFarm"
-  },
-  {
-    "client_name": "Eiji",
-    "day": "Sunday",
-    "instructors": "JAVIER",
     "service": "Multi-Activity",
-    "area": "Big Pool",
+    "area": "Small Pool",
     "time_slot": "11.45 to 12.30",
     "venue": "SwimFarm"
   },
@@ -12853,8 +12853,8 @@
     "day": "Sunday",
     "instructors": "BISMARK",
     "service": "Multi-Activity",
-    "area": "Hub Room",
-    "time_slot": "11.45 to 12.30",
+    "area": "Big Pool",
+    "time_slot": "11 to 11.45",
     "venue": "SwimFarm"
   },
   {
@@ -12862,8 +12862,8 @@
     "day": "Sunday",
     "instructors": "GIUSEPPE",
     "service": "Multi-Activity",
-    "area": "Hub Room",
-    "time_slot": "11.45 to 12.30",
+    "area": "Small Pool",
+    "time_slot": "11 to 11.45",
     "venue": "SwimFarm"
   },
   {
@@ -12898,7 +12898,7 @@
     "day": "Sunday",
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "12.30 to 1.15",
     "venue": "SwimFarm"
   },
@@ -12916,7 +12916,7 @@
     "day": "Sunday",
     "instructors": "AURORA",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "12.30 to 1.15",
     "venue": "SwimFarm"
   },
@@ -12970,7 +12970,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Small Pool",
     "time_slot": "2 to 2.30",
     "venue": "SwimFarm"
   },
@@ -12979,7 +12979,7 @@
     "day": "Sunday",
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "2 to 2.30",
     "venue": "SwimFarm"
   },
@@ -12988,7 +12988,7 @@
     "day": "Sunday",
     "instructors": "AURORA",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "2 to 2.30",
     "venue": "SwimFarm"
   },
@@ -13015,7 +13015,7 @@
     "day": "Sunday",
     "instructors": "AURORA",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "2.30 to 3",
     "venue": "SwimFarm"
   },
@@ -13024,7 +13024,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Small Pool",
     "time_slot": "2.30 to 3",
     "venue": "SwimFarm"
   },
@@ -13033,7 +13033,7 @@
     "day": "Sunday",
     "instructors": "ROBERTO",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Big Pool",
     "time_slot": "2.30 to 3",
     "venue": "SwimFarm"
   },
@@ -13051,7 +13051,7 @@
     "day": "Sunday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Small Pool",
+    "area": "Big Pool",
     "time_slot": "9 to 9.30",
     "venue": "SwimFarm"
   },
@@ -13168,7 +13168,7 @@
     "day": "Thursday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Lane (DE)/(SE)",
+    "area": "Lane (SE)",
     "time_slot": "4 to 5",
     "venue": "Acton"
   },
@@ -13501,7 +13501,7 @@
     "day": "Tuesday",
     "instructors": "ANGEL",
     "service": "Aquatic Activity",
-    "area": "Lane (DE)",
+    "area": "Lane (SE)",
     "time_slot": "6 to 6.30",
     "venue": "Acton"
   },
@@ -13601,7 +13601,7 @@
     "instructors": "JOHN, GODSWAY, BISMARK",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.30 to 6",
+    "time_slot": "4.15 to 6.15",
     "venue": "SwimFarm"
   },
   {
@@ -13681,7 +13681,7 @@
     "day": "Wednesday",
     "instructors": "JAVIER",
     "service": "Aquatic Activity",
-    "area": "Teaching Pool",
+    "area": "Lane",
     "time_slot": "6 to 6.30",
     "venue": "Acton"
   },

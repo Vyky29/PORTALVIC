@@ -168,19 +168,55 @@
     return "";
   }
 
-  /** Roster slug → clients_info slug (e.g. Adam Ab ↔ Abodi Pa; legacy Yusuf/Yusef → Yusuf Ah). */
+  /** Roster slug → clients_info slug (abbreviated roster names vs full sheet names). */
   var CLIENT_INFO_SLUG_ALIASES = {
     adam_a: "adam_ab",
-    abodi_p: "adam_ab",
-    abodi_pa: "adam_ab",
-    abodi: "adam_ab",
+    abodi_p: "abodi_pa",
+    abodi: "abodi_pa",
     yusuf: "yusuf_ah",
     yusef: "yusuf_ah",
+    junaid: "junaid_f",
+    khalid_ab: "khalid",
+    amar_ra: "amar_rai",
+    steven_c: "steven_ces",
+    steven_ce: "steven_ces",
+    rayan_ta: "rayan_tapa",
+    rayyan_fi: "rayyan_f",
+    aadam_ah: "adaam_ah",
   };
 
-  function clientInfoTextForSlug(bySlug, slug) {
-    const direct = bySlug.get(slug);
-    if (direct) return direct;
+  function clientInfoLookupKeys(nameOrSlug) {
+    const raw = String(nameOrSlug || "").trim();
+    const keys = [];
+    const seen = new Set();
+    const add = function (k) {
+      k = String(k || "").trim();
+      if (!k || seen.has(k)) return;
+      seen.add(k);
+      keys.push(k);
+    };
+    add(slugify(raw));
+    const parts = raw.replace(/_/g, " ").split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      const first = parts[0];
+      const last = parts[parts.length - 1];
+      add(slugify(first + " " + last));
+      add(slugify(first + " " + last.charAt(0)));
+      if (last.length >= 2) {
+        add(slugify(first + " " + last.slice(0, 2)));
+      }
+    } else if (parts.length === 1) {
+      add(slugify(parts[0]));
+    }
+    return keys;
+  }
+
+  function clientInfoTextForSlug(bySlug, slug, displayName) {
+    const tryKeys = clientInfoLookupKeys(displayName || slug);
+    for (let i = 0; i < tryKeys.length; i++) {
+      const hit = bySlug.get(tryKeys[i]);
+      if (hit) return hit;
+    }
     const alias = CLIENT_INFO_SLUG_ALIASES[slug];
     if (alias) return bySlug.get(alias) || "";
     for (const key in CLIENT_INFO_SLUG_ALIASES) {
@@ -199,15 +235,17 @@
     const list = Array.isArray(rows) ? rows : [];
     const bySlug = new Map();
     list.forEach((r) => {
-      const id = slugify(r.client_name || "");
       const txt = String(r.client_info || "").trim();
-      if (id && txt) bySlug.set(id, txt);
+      if (!txt) return;
+      clientInfoLookupKeys(r.client_name || "").forEach(function (k) {
+        if (k && !bySlug.has(k)) bySlug.set(k, txt);
+      });
     });
     Object.keys(clientNotesById).forEach((k) => {
       if (k === "available" || k === "closed") return;
       const note = clientNotesById[k];
       if (!note) return;
-      const t = clientInfoTextForSlug(bySlug, k);
+      const t = clientInfoTextForSlug(bySlug, k, note.name || k);
       if (t) note.generalInfoSheet = t;
       const infoText = t || note.generalInfoSheet || "";
       const ovGender = genderOverrideFor(k, note.name);

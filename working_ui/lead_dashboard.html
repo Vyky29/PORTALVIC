@@ -92,7 +92,7 @@
   <script src="/portal/portal_screenshot_guard.js?v=20260610-pwa-black-fix"></script>
   <title>clubSENsational Lead Dashboard</title>
   <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260614-participant-tiles" />
-  <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260614-sessions-table" />
+  <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260601-sessions-fit" />
 </head>
 <body>
   <script>
@@ -791,20 +791,20 @@
 
   <script src="portal/term_from_timetable.js"></script>
   <script src="/portal/term_calendar_dashboard_shared.js?v=20260523-feedback-window"></script>
-  <script src="portal/staff_dashboard_spreadsheet_bundle.js"></script>
+  <script src="portal/staff_dashboard_spreadsheet_bundle.js?v=20260601-notas-participants"></script>
   <script src="portal/session_feedback_portal_data.js?v=20260527-ma-apr-may"></script>
   <script src="portal/session_feedback_status_portal_data.js?v=20260527-ma-apr-may"></script>
   <script src="portal/staff_portal_feedback_bridge.js?v=20260601-luliya-mic"></script>
   <script src="/portal-shared-js/portal_late_submission.js?v=20260520"></script>
   <script src="portal/portal-roster-rows-merge.js?v=20260601-term-slot"></script>
   <script src="portal/staff_dashboard_portal_roster_source.js?v=20260601-term-slot"></script>
-  <script src="portal/clients_info_embed.js?v=20260605-sambhav"></script>
+  <script src="/portal/clients_info_embed.js?v=20260601-general-info"></script>
   <script src="portal/clients_gender_embed.js?v=20260605-gender3"></script>
-  <script src="portal/staff_dashboard_spreadsheet_adapter.js?v=20260614-gender-medical"></script>
+  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260601-general-info"></script>
   <script src="portal/staff_roster_resolve.js?v=20260601-luliya-mic"></script>
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260603-achievements-shared" />
   <script src="/portal/portal_participant_achievements.js?v=20260610-pwa-black-fix"></script>
-  <script src="/portal/portal_client_sessions_overview.js?v=20260614-sessions-table"></script>
+  <script src="/portal/portal_client_sessions_overview.js?v=20260601-sessions-fit"></script>
   <script src="/portal/portal_induction.js?v=20260613-required-induction"></script>
   <script src="/portal/portal_induction_bind.js?v=20260612-induction-cert-btn"></script>
   <script src="/portal/portal_guide_ack.js?v=20260612-guide-read"></script>
@@ -4219,6 +4219,14 @@
       const sheet = c && c.generalInfoSheet != null ? String(c.generalInfoSheet).trim() : '';
       if(sheet) return sheet;
       return `${s.venue || ''} pool · ${c.generalLead || ''}`.trim();
+    }
+    function resolveClientGeneralInfoText(item){
+      const cid = item && item.clientId ? String(item.clientId).trim() : '';
+      const c = cid && typeof clientNotesById !== 'undefined' ? clientNotesById[cid] : null;
+      if(c && c.generalInfoSheet) return String(c.generalInfoSheet).trim();
+      if(item && item.general) return String(item.general).trim();
+      if(c && c.generalLead) return String(c.generalLead).trim();
+      return '';
     }
 
     function portalNormKeyStr(v){ return String(v == null ? '' : v).trim().toLowerCase(); }
@@ -10044,6 +10052,8 @@
       document.body.classList.toggle('dock-context-menu', !!menuOpen);
       const annLock = !!(typeof portalAnnouncementLockActive === 'function' && portalAnnouncementLockActive());
       document.body.classList.toggle('dock-context-announcement-lock', annLock);
+      const sessionsOverviewOpen = document.getElementById('clientSessionsOverviewSheet')?.classList.contains('open');
+      document.body.classList.toggle('portal-sessions-overview-open', !!sessionsOverviewOpen);
       if(typeof syncDockQuickMenuAttention === 'function') syncDockQuickMenuAttention();
     }
     function openSheet(id){
@@ -10231,12 +10241,14 @@
       const sheet = document.getElementById('clientGeneralSheet');
       if(!sheet) return;
       closeClientSessionsOverviewSheet();
+      const item = currentOpenClientItem;
       const nameEl = document.getElementById('clientTitle');
       const timeEl = document.getElementById('clientTime');
       const ht = document.getElementById('clientGeneralSheetTitle');
       const sub = document.getElementById('clientGeneralSheetSub');
       if(ht) ht.textContent = nameEl ? nameEl.textContent.trim() : 'Participant';
       if(sub) sub.textContent = timeEl ? timeEl.textContent.trim() : '';
+      setClientInfoFormattedBody('clientGeneral', resolveClientGeneralInfoText(item), 'No general information available.');
       sheet.classList.add('open');
       sheet.setAttribute('aria-hidden', 'false');
       if(backdropEl) backdropEl.classList.add('open');
@@ -10575,7 +10587,7 @@
       if(!item || item.kind !== 'client' || item.openSheet === false) return;
       currentOpenClientItem = item;
       resetClientInfoPanels();
-      const gen = item.general || '';
+      const gen = resolveClientGeneralInfoText(item);
       document.getElementById('clientTitle').textContent = item.name;
       document.getElementById('clientTime').textContent = item.time;
       setClientInfoFormattedBody('clientGeneral', gen, 'No general information available.');

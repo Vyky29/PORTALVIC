@@ -80,6 +80,17 @@ def norm_text(v):
     return s
 
 
+def norm_client_info_blob(v):
+    """Preserve line breaks in numbered questionnaire blobs (General Info sheet)."""
+    if v is None:
+        return ""
+    s = str(v).replace("\t", " ").replace("\r\n", "\n").replace("\r", "\n").strip()
+    s = re.sub(r"[ \t]+", " ", s)
+    s = re.sub(r" *\n *", "\n", s)
+    s = re.sub(r"\n{3,}", "\n\n", s)
+    return s
+
+
 def to_iso_date(v):
     if isinstance(v, datetime):
         return v.date().isoformat()
@@ -544,16 +555,31 @@ def build_staff_clients():
 
 
 def build_clients_info():
-    wb = openpyxl.load_workbook(SPREAD / "Clients Info (PORTAL).xlsx", data_only=True)
-    ws = wb["Clients info"]
+    candidates = (
+        ROOT / "working_ui" / "PARTICIPANTS. GENERAL INFO.xlsx",
+        SPREAD / "PARTICIPANTS. GENERAL INFO.xlsx",
+        SPREAD / "Clients Info (PORTAL).xlsx",
+        ROOT / "working_ui" / "Clients Info (PORTAL).xlsx",
+    )
+    path = next((p for p in candidates if p.exists()), None)
+    if not path:
+        print("build_clients_info: no workbook found (PARTICIPANTS. GENERAL INFO.xlsx or Clients Info)")
+        return
+    wb = openpyxl.load_workbook(path, data_only=True)
+    sheet_name = next(
+        (sn for sn in ("General info", "General Info", "Clients info", "Clients Info") if sn in wb.sheetnames),
+        wb.sheetnames[0],
+    )
+    ws = wb[sheet_name]
     rows = []
     for r in ws.iter_rows(min_row=2, values_only=True):
         name = norm_text(r[0] if len(r) > 0 else None)
-        info = norm_text(r[1] if len(r) > 1 else None)
-        if not name:
+        info = norm_client_info_blob(r[1] if len(r) > 1 else None)
+        if not name or not info:
             continue
         rows.append({"client_name": name, "client_info": info})
     export_json_csv("clients_info_machine", rows)
+    print(f"build_clients_info: {len(rows)} rows from {path.name} ({sheet_name})")
 
 
 def write_clients_info_embed_js():
@@ -567,8 +593,15 @@ def write_clients_info_embed_js():
         + json.dumps(rows, ensure_ascii=True)
         + ";\n"
     )
-    (OUT / "clients_info_embed.js").write_text(body, encoding="utf-8")
-    (ROOT / "working_ui" / "clients_info_embed.js").write_text(body, encoding="utf-8")
+    targets = (
+        OUT / "clients_info_embed.js",
+        ROOT / "working_ui" / "clients_info_embed.js",
+        ROOT / "working_ui" / "portal" / "clients_info_embed.js",
+        ROOT / "working_ui" / "portal-shared-js" / "clients_info_embed.js",
+    )
+    for dst in targets:
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        dst.write_text(body, encoding="utf-8")
 
 
 def copy_term_to_working_ui():
@@ -650,6 +683,17 @@ if __name__ == "__main__":
             print(f"Merged {n_week} dated rows from database/roster_weeks/ (+ portal week CSV)")
     except Exception as exc:
         print("import_roster_week_csv:", exc)
+    try:
+        from import_notas_participants_portal import sync_notas
+
+        notas_stats = sync_notas()
+        if notas_stats:
+            print(
+                f"NOTAS participants: {notas_stats['parsed']} slots, "
+                f"{notas_stats['updated']} roster rows updated"
+            )
+    except Exception as exc:
+        print("import_notas_participants_portal:", exc)
     roster_path = OUT / "staff_clients_machine.json"
     roster_rows = (
         json.loads(roster_path.read_text(encoding="utf-8"))

@@ -71,6 +71,31 @@
     return t.replace(/\./g, ":").replace(/\s*-\s*/g, " to ");
   }
 
+  /** Canonical programme label — Aquatic / Climbing / Physical / Multi-Activity only. */
+  function displayProgrammeName(raw) {
+    var t = clean(raw);
+    if (!t) return "Session";
+    t = t.replace(/\([^)]*\)/g, " ").replace(/\s+/g, " ").trim();
+    var p = t.toLowerCase().replace(/\s+/g, " ");
+    if (/multi[\s_-]*activity/i.test(t) || /splash[\s&+]+connect|splash\s+and\s+connect/i.test(t)) {
+      return "Multi-Activity";
+    }
+    if (/\bfitness\b/.test(p) || /physical\s+act/i.test(p)) return "Physical Activity";
+    if (/\bclimbing\s+activity\b/.test(p) || /\bclimb(ing)?\b/.test(p)) return "Climbing Activity";
+    if (
+      /\baquatic\s+activity\b/.test(p) ||
+      /\bswimming\b/.test(p) ||
+      /\bswim\b/.test(p) ||
+      p.indexOf("aquatic") >= 0
+    ) {
+      return "Aquatic Activity";
+    }
+    if (p.indexOf("physical activity") >= 0) return "Physical Activity";
+    if (/\bbespoke\b/.test(p) || /\bfitfun\b/.test(p)) return "Bespoke Programme";
+    if (p.indexOf("day centre") >= 0 || p.indexOf("daycentre") >= 0) return "Day centre";
+    return t.length > 40 ? t.slice(0, 37) + "…" : t;
+  }
+
   function participantMatches(clientId, clientName, rowName, rowId) {
     const wantName = normName(clientName);
     const wantId = slugify(clientId || clientName);
@@ -491,7 +516,7 @@
   function feedbackTableRow(row, incMap) {
     const inst = clean(row.completed_by_name) || "—";
     const dateLine = formatDateLong(row.session_date);
-    const svc = clean(row.service) || "—";
+    const svc = displayProgrammeName(row.service);
     const timeLine = formatServiceTime(row.session_time);
     const eng =
       row.engagement_rating != null && row.engagement_rating !== ""
@@ -509,7 +534,6 @@
       '<td class="pcso-tbl__eng">' + eng + "</td>" +
       '<td class="pcso-tbl__emo">' + emotionIconsCell(row.client_emotions) + "</td>" +
       '<td class="pcso-tbl__indep">' + esc(clean(row.engagement_patterns) || "—") + "</td>" +
-      '<td class="pcso-tbl__att">' + esc(clean(row.attendance) || "—") + "</td>" +
       '<td class="pcso-tbl__inc">' + incidentCellForRow(row, incMap) + "</td>" +
       '<td class="pcso-tbl__pos">' + noteCell(row.positive_feedback, 140) + "</td>" +
       '<td class="pcso-tbl__rel">' + noteCell(row.relevant_information, 100) + "</td>" +
@@ -530,7 +554,6 @@
       '<th scope="col" class="pcso-tbl__eng" title="Engagement (1–5)">' + starHeaderHtml() + "</th>" +
       '<th scope="col" class="pcso-tbl__emo" aria-label="Regulation and emotions">' + emotionHeaderHtml() + "</th>" +
       '<th scope="col" class="pcso-tbl__indep">Independence</th>' +
-      '<th scope="col" class="pcso-tbl__att">Attendance</th>' +
       '<th scope="col" class="pcso-tbl__inc">Incidents</th>' +
       '<th scope="col" class="pcso-tbl__pos">Positive <span class="pcso-opt">(opt.)</span></th>' +
       '<th scope="col" class="pcso-tbl__rel">Relevant <span class="pcso-opt">(opt.)</span></th>' +
@@ -589,7 +612,6 @@
     const incMap = incidentLookup(incidents);
 
     hostEl.innerHTML =
-      '<p class="pcso-rotate-hint">Tip: rotate your phone to landscape for the best table view.</p>' +
       kpiSlabHtml(feedback) +
       '<section class="pcso-feed-section">' +
       '<div class="pcso-feed-head"><h4 class="pcso-section__title">All feedbacks</h4></div>' +
