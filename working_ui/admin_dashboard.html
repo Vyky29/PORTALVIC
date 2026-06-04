@@ -1944,7 +1944,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var viewId = String(opts.viewId || '').trim();
       var backBtn = '';
       if(backMode === 'hub'){
-        backBtn = '<button type="button" class="btn btn--ghost btn--sm admin-page-head__back" data-admin-back-hub><span class="admin-page-head__back-ico" aria-hidden="true">←</span> Dashboard</button>';
+        backBtn = '<button type="button" class="btn btn--ghost btn--sm admin-page-head__back" data-admin-back-hub><span class="admin-page-head__back-ico" aria-hidden="true">←</span> Back to dashboard</button>';
       }else if(backMode === 'group'){
         var gid = String(opts.groupId || '').trim();
         var grp = gid ? navGroupById(gid) : null;
@@ -1954,9 +1954,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var g = navGroupForView(viewId);
         if(g){
           var g2 = navGroupById(g);
-          backBtn = '<button type="button" class="btn btn--ghost btn--sm admin-page-head__back" data-admin-back-group="'+escAttr(g)+'"><span class="admin-page-head__back-ico" aria-hidden="true">←</span> '+esc(g2 ? g2.label : 'Category')+'</button>';
+          backBtn = '<button type="button" class="btn btn--ghost btn--sm admin-page-head__back" data-admin-back-group="'+escAttr(g)+'"><span class="admin-page-head__back-ico" aria-hidden="true">←</span> Back to '+esc(g2 ? g2.label : 'Category')+'</button>';
         }else{
-          backBtn = '<button type="button" class="btn btn--ghost btn--sm admin-page-head__back" data-admin-back-hub><span class="admin-page-head__back-ico" aria-hidden="true">←</span> Dashboard</button>';
+          backBtn = '<button type="button" class="btn btn--ghost btn--sm admin-page-head__back" data-admin-back-hub><span class="admin-page-head__back-ico" aria-hidden="true">←</span> Back to dashboard</button>';
         }
       }
       var introHtml = intro
