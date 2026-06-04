@@ -714,20 +714,51 @@
     <div class="sheet-head portal-dm-sheet-head">
       <div class="sheet-handle"></div>
       <button type="button" class="portal-dm-btn portal-dm-btn--ghost portal-dm-back-btn" id="internalChatBackBtn" hidden aria-label="Back to chats">‹</button>
+      <div class="portal-dm-inbox-brand" id="internalChatInboxBrand" aria-label="clubSENsational team chat">
+        <div class="portal-dm-inbox-brand__stage">
+          <span class="portal-dm-inbox-brand__orbit" aria-hidden="true">
+            <svg class="portal-dm-inbox-brand__orbit-svg" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
+              <g transform="translate(100,100)">
+                <g class="portal-dm-inbox-brand__orbit-layer">
+                  <circle cx="0" cy="-72" r="7" fill="var(--blue)"/>
+                  <circle cx="62.35" cy="-36" r="6" fill="#2d84b3"/>
+                  <circle cx="62.35" cy="36" r="6" fill="#4f8fca"/>
+                  <circle cx="0" cy="72" r="7" fill="#1d4f8f"/>
+                  <circle cx="-62.35" cy="36" r="6" fill="#7fb3dc"/>
+                  <circle cx="-62.35" cy="-36" r="6" fill="#123b70"/>
+                </g>
+              </g>
+            </svg>
+          </span>
+          <img class="portal-dm-inbox-brand__crest" src="/portal/F-02-1.png" alt="" width="36" height="36" decoding="async" referrerpolicy="no-referrer-when-downgrade" onerror="typeof portalBrandLogoOnError==='function'?portalBrandLogoOnError(this):(this.onerror=null,this.src='/portal/portal_crest.svg')" />
+          <img class="portal-dm-inbox-brand__wordmark" src="/FOOTERLOGO.png?v=20260602-footerlogo" alt="clubSENsational" width="128" height="44" decoding="async" referrerpolicy="no-referrer-when-downgrade" onerror="typeof portalBrandLogoProOnError==='function'?portalBrandLogoProOnError(this):(this.onerror=null,this.src='/portal/FOOTERLOGO.png?v=20260602-footerlogo')" />
+        </div>
+        <p class="portal-dm-inbox-brand__tagline">Secure team messaging</p>
+      </div>
       <h3 id="internalChatTitle">Chats</h3>
       <button type="button" class="portal-dm-btn portal-dm-btn--ghost portal-dm-close-btn" id="internalChatCloseBtn" aria-label="Close chat">Close</button>
       <p id="internalChatSheetSub" hidden aria-hidden="true">Private messages with people you have a thread with.</p>
     </div>
     <div class="sheet-body portal-dm-wrap portal-dm-sheet-body" style="min-width:0">
       <p id="internalChatTopErr" class="portal-dm-top-err muted" hidden></p>
-      <div id="internalChatLeadInboxNav" class="portal-dm-inbox-nav" hidden aria-hidden="true">
-        <button type="button" class="portal-dm-inbox-nav-btn is-active" id="internalChatInboxTabChats" data-inbox-tab="chats">Chats</button>
-        <button type="button" class="portal-dm-inbox-nav-btn" id="internalChatInboxTabStaff" data-inbox-tab="staff">Staff</button>
+      <div id="internalChatLeadInboxChrome" class="portal-dm-lead-inbox-chrome" hidden aria-hidden="true">
+        <div class="portal-dm-lead-inbox-watermark" aria-hidden="true">
+          <img src="/FOOTERLOGO.png?v=20260602-footerlogo" alt="" width="160" height="56" decoding="async" referrerpolicy="no-referrer-when-downgrade" onerror="typeof portalBrandLogoProOnError==='function'?portalBrandLogoProOnError(this):(this.onerror=null,this.src='/portal/FOOTERLOGO.png?v=20260602-footerlogo')" />
+        </div>
+        <div class="portal-dm-lead-search-row">
+          <label class="topbar-sr-only" for="internalChatLeadSearch">Search chats or staff</label>
+          <span class="portal-dm-lead-search-icon" aria-hidden="true">⌕</span>
+          <input type="search" id="internalChatLeadSearch" class="portal-dm-lead-search-input" placeholder="Search staff or chats…" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" />
+          <button type="button" id="internalChatLeadSearchClear" class="portal-dm-lead-search-clear" hidden aria-label="Clear search">×</button>
+        </div>
+        <div id="internalChatLeadInboxNav" class="portal-dm-inbox-nav">
+          <button type="button" class="portal-dm-inbox-nav-btn is-active" id="internalChatInboxTabChats" data-inbox-tab="chats">Chats</button>
+          <button type="button" class="portal-dm-inbox-nav-btn" id="internalChatInboxTabStaff" data-inbox-tab="staff">Staff</button>
+        </div>
       </div>
       <div id="internalChatListWrap" class="portal-dm-inbox-list"></div>
+      <div id="internalChatLeadStaffSuggestions" class="portal-dm-lead-staff-suggestions" hidden aria-hidden="true" role="list"></div>
       <div id="internalChatStaffDirectoryWrap" class="portal-dm-staff-directory" hidden aria-hidden="true">
-        <label class="topbar-sr-only" for="internalChatStaffSearch">Search staff</label>
-        <input type="search" id="internalChatStaffSearch" class="portal-dm-staff-search" placeholder="Search staff by name…" autocomplete="off" autocapitalize="off" spellcheck="false" />
         <div id="internalChatStaffDirectoryList" class="portal-dm-staff-directory-list" role="list"></div>
       </div>
       <div id="internalChatOfficeComposeHost" class="portal-dm-office-compose-host" hidden></div>
@@ -876,7 +907,7 @@
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260616-michelle-only"></script>
   <script src="/portal/portal_dm_voice.js?v=20260602-feedback-voice-fix"></script>
   <script src="/portal/portal_staff_chat_calls.js?v=20260604-inapp-calls"></script>
-  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260604-lead-staff-dir"></script>
+  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260619-lead-staff-rls"></script>
   <script>
     console.log("ABSENT FIX VERSION LOADED 20260425");
     /** Real calendar weekday for “Today” (en-GB), aligned with staff_clients_machine.xlsx */
@@ -5785,12 +5816,25 @@
       }
       return count;
     }
-    function portalStaffDmThreadListItemHtml(label, when, unreadCount){
+    function portalStaffDmThreadListItemHtml(label, when, unreadCount, opts){
+      opts = opts || {};
       unreadCount = Math.max(0, parseInt(unreadCount, 10) || 0);
       var badgeHtml = unreadCount > 0
         ? '<span class="portal-dm-thread-badge" aria-label="' + escapeHtml(unreadCount === 1 ? '1 unread message' : unreadCount + ' unread messages') + '">' + escapeHtml(unreadCount > 99 ? '99+' : String(unreadCount)) + '</span>'
         : '';
-      return '<span class="portal-dm-thread-main"><span class="portal-dm-thread-peer">' + escapeHtml(label) + '</span><span class="portal-dm-thread-meta">' + escapeHtml(when || 'Conversation') + '</span></span>' + badgeHtml;
+      var avatarHtml = '';
+      if(opts.withAvatar){
+        var ini = '?';
+        if(window.portalLeadStaffChatDirectory && typeof window.portalLeadStaffChatDirectory.initialsFromLabel === 'function'){
+          ini = window.portalLeadStaffChatDirectory.initialsFromLabel(label);
+        }else{
+          var parts = String(label || '').trim().split(/\s+/).filter(Boolean);
+          if(parts.length === 1) ini = parts[0].slice(0, 2).toUpperCase();
+          else if(parts.length) ini = (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+        }
+        avatarHtml = '<span class="portal-dm-thread-avatar" aria-hidden="true">' + escapeHtml(ini) + '</span>';
+      }
+      return avatarHtml + '<span class="portal-dm-thread-main"><span class="portal-dm-thread-peer">' + escapeHtml(label) + '</span><span class="portal-dm-thread-meta">' + escapeHtml(when || 'Conversation') + '</span></span>' + badgeHtml;
     }
     function portalStaffDmSetUnreadCount(count){
       count = Math.max(0, parseInt(count, 10) || 0);
@@ -6261,15 +6305,33 @@
             return portalStaffProfileIsOfficePeer(profBy[peer] || {});
           });
         }
+        var leadSearchQ = '';
+        if(portalStaffIsLeadUser() && window.portalLeadStaffChatDirectory && typeof window.portalLeadStaffChatDirectory.getSearchQuery === 'function'){
+          leadSearchQ = window.portalLeadStaffChatDirectory.getSearchQuery();
+        }
+        if(leadSearchQ && window.portalLeadStaffChatDirectory && typeof window.portalLeadStaffChatDirectory.matchesSearchQuery === 'function'){
+          rows = rows.filter(function(r){
+            var peer = portalDmPeerIdForThread(me, r);
+            var label = portalDmPeerDisplayLabel(peer, profBy[peer] || {});
+            return window.portalLeadStaffChatDirectory.matchesSearchQuery(label, leadSearchQ);
+          });
+        }
         if(!rows.length){
           var emptyMsg = portalInternalChatOfficeRestricted()
             ? "No conversations yet. When the office sends you a message, it appears here. If you expected a thread with the office, check that an active admin or CEO exists in staff_profiles."
             : (portalStaffIsLeadUser()
-              ? "No conversations yet. Tap <strong>Staff</strong> above to message a colleague."
+              ? (leadSearchQ
+                ? "No chats match your search. Check the team matches below or open the <strong>Staff</strong> tab."
+                : "No conversations yet. Search above to message a colleague, or open the <strong>Staff</strong> tab.")
               : "No conversations yet. When the office sends you a direct message, it appears here.");
-          listHost.innerHTML = "<p class=\"alerts-sheet-placeholder\" style=\"min-width:0;overflow-wrap:break-word\">"+emptyMsg+"</p>";
-          if(portalStaffIsLeadUser() && window.portalLeadStaffChatDirectory && window.portalLeadStaffChatDirectory.getInboxTab() === 'staff'){
-            void window.portalLeadStaffChatDirectory.renderStaffDirectory();
+          listHost.innerHTML = "<p class=\"portal-dm-lead-empty\">"+emptyMsg+"</p>";
+          if(portalStaffIsLeadUser() && window.portalLeadStaffChatDirectory){
+            window.portalLeadStaffChatDirectory.syncInboxChrome({ isLead: true, inThread: false });
+            if(window.portalLeadStaffChatDirectory.getInboxTab() === 'staff'){
+              void window.portalLeadStaffChatDirectory.renderStaffDirectory();
+            }else if(leadSearchQ){
+              void window.portalLeadStaffChatDirectory.renderStaffSuggestions(leadSearchQ);
+            }
           }
           return;
         }
@@ -6309,7 +6371,7 @@
           btn.className = "portal-dm-thread-item" + (unreadCount > 0 ? " portal-dm-thread-item--unread" : "");
           btn.setAttribute("data-dm-thread", id);
           if(unreadCount > 0) btn.setAttribute("data-dm-unread-count", String(unreadCount));
-          btn.innerHTML = portalStaffDmThreadListItemHtml(label, when, unreadCount);
+          btn.innerHTML = portalStaffDmThreadListItemHtml(label, when, unreadCount, { withAvatar: portalStaffIsLeadUser() });
           btn.addEventListener("click", function(){
             window.__PORTAL_INTERNAL_CHAT_UI.threadId = id;
             void window.portalRenderInternalChatSheet();
@@ -6323,6 +6385,14 @@
           window.portalLeadStaffChatDirectory.syncInboxChrome({ isLead: true, inThread: false });
           if(window.portalLeadStaffChatDirectory.getInboxTab() === 'staff'){
             void window.portalLeadStaffChatDirectory.renderStaffDirectory();
+          }else if(leadSearchQ){
+            void window.portalLeadStaffChatDirectory.renderStaffSuggestions(leadSearchQ);
+          }else{
+            var sugHost = document.getElementById('internalChatLeadStaffSuggestions');
+            if(sugHost){
+              sugHost.hidden = true;
+              sugHost.innerHTML = '';
+            }
           }
         }
         return;
@@ -10445,6 +10515,9 @@
           window.__PORTAL_INTERNAL_CHAT_UI.skipResetThreadOnNextSheetOpen = false;
         }catch(_icc){}
         portalBindInternalChatCloseControls();
+        if(window.portalLeadStaffChatDirectory && typeof window.portalLeadStaffChatDirectory.initLeadInbox === 'function'){
+          window.portalLeadStaffChatDirectory.initLeadInbox();
+        }
         void (async function(){
           if(typeof window.portalStaffDmAckInboxOpened === 'function'){
             await window.portalStaffDmAckInboxOpened();
