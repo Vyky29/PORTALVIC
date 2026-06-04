@@ -14,7 +14,7 @@
   -->
   <script src="/portal/portal-vapid-public.js?v=20260601-vapid"></script>
   <script src="/portal/portal_announcement_ack.js?v=20260602-ann-live-jun2"></script>
-  <script src="/portal-static-bootstrap.js?v=20260610-profile-bridge"></script>
+  <script src="/portal-static-bootstrap.js?v=20260601-annual-profile-sync"></script>
   <!-- Optional: hide parent site chrome when embedded in another shell. -->
   <script>
     (function () {
@@ -92,7 +92,7 @@
   <script src="/portal/portal_screenshot_guard.js?v=20260610-pwa-black-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
   <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260614-participant-tiles" />
-  <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260601-sessions-fit" />
+  <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260601-landscape-full" />
 </head>
 <body>
   <script>
@@ -13061,23 +13061,6 @@
       setTimeout(function () {
         if (!_staffRosterHydratedOk) void rehydrateFromProfile();
       }, 1800);
-    })();
-  </script>
-  <script>
-    (function () {
-      try {
-        var force = false;
-        try {
-          force = new URLSearchParams(window.location.search).get('portalAnnualProfile') === '1';
-        } catch (_) {}
-        if (!force && localStorage.getItem('portalvic_annual_profile_checkin_v1') === '1') {
-          var g = document.getElementById('portalAnnualProfileQuickGroup');
-          if (g) {
-            g.hidden = true;
-            g.setAttribute('aria-hidden', 'true');
-          }
-        }
-      } catch (_) {}
     })();
   </script>
   <script>

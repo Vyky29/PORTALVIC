@@ -170,6 +170,110 @@
       return false;
     };
 
+  /** Annual profile check-in campaign — hide hub menu once confirmed on/after this date (UTC). */
+  window.PORTAL_ANNUAL_PROFILE_CAMPAIGN_START = "2026-01-01";
+
+  window.portalAnnualProfileCampaignStartMs = function portalAnnualProfileCampaignStartMs() {
+    try {
+      var start = String(window.PORTAL_ANNUAL_PROFILE_CAMPAIGN_START || "2026-01-01").trim();
+      var ms = Date.parse(start + "T00:00:00Z");
+      return isNaN(ms) ? 0 : ms;
+    } catch (_) {
+      return 0;
+    }
+  };
+
+  window.portalAnnualProfileIsCompleteAt = function portalAnnualProfileIsCompleteAt(confirmedAtIso) {
+    if (!confirmedAtIso) return false;
+    try {
+      var t = Date.parse(String(confirmedAtIso));
+      if (isNaN(t)) return false;
+      return t >= portalAnnualProfileCampaignStartMs();
+    } catch (_) {
+      return false;
+    }
+  };
+
+  window.portalHideAnnualProfileQuickMenu = function portalHideAnnualProfileQuickMenu() {
+    try {
+      var g = document.getElementById("portalAnnualProfileQuickGroup");
+      if (g) {
+        g.hidden = true;
+        g.setAttribute("aria-hidden", "true");
+      }
+    } catch (_) {}
+  };
+
+  /** Hide Annual profile check-in when Supabase says this user already confirmed (2026 cycle). */
+  window.portalSyncAnnualProfileQuickMenu = async function portalSyncAnnualProfileQuickMenu(opts) {
+    opts = opts || {};
+    try {
+      var force = false;
+      try {
+        force = new URLSearchParams(window.location.search).get("portalAnnualProfile") === "1";
+      } catch (_) {}
+      if (force) return;
+
+      try {
+        if (localStorage.getItem("portalvic_annual_profile_checkin_v1") === "1") {
+          portalHideAnnualProfileQuickMenu();
+        }
+      } catch (_) {}
+
+      var profile = opts.profile;
+      if (
+        profile &&
+        portalAnnualProfileIsCompleteAt(profile.profile_last_confirmed_at)
+      ) {
+        try {
+          localStorage.setItem("portalvic_annual_profile_checkin_v1", "1");
+        } catch (_) {}
+        portalHideAnnualProfileQuickMenu();
+        return;
+      }
+
+      var client = opts.client;
+      var userId =
+        opts.userId ||
+        (profile && profile.id) ||
+        "";
+      if (!client || !userId) {
+        var box = window.__PORTAL_SUPABASE__;
+        client = client || (box && box.client);
+        userId =
+          userId ||
+          (box && box.staff_profile && box.staff_profile.id) ||
+          (box && box.session && box.session.user && box.session.user.id) ||
+          "";
+      }
+      if (!client || !userId) return;
+
+      var res = await client
+        .from("staff_profiles")
+        .select("profile_last_confirmed_at")
+        .eq("id", userId)
+        .maybeSingle();
+      if (res.error) return;
+      if (portalAnnualProfileIsCompleteAt(res.data && res.data.profile_last_confirmed_at)) {
+        try {
+          localStorage.setItem("portalvic_annual_profile_checkin_v1", "1");
+        } catch (_) {}
+        portalHideAnnualProfileQuickMenu();
+      }
+    } catch (_) {}
+  };
+
+  (function portalAnnualProfileQuickMenuBootstrap() {
+    try {
+      var path = String((location && location.pathname) || "").toLowerCase();
+      if (path.indexOf("staff_dashboard") < 0 && path.indexOf("lead_dashboard") < 0) return;
+      void window.portalSyncAnnualProfileQuickMenu();
+      window.addEventListener("portal:supabase-ready", function () {
+        void window.portalSyncAnnualProfileQuickMenu();
+      });
+    } catch (_) {}
+  })();
+
   /** Same-tab navigation so Annual profile inherits the portal auth session reliably. */
   window.portalOpenAnnualProfileUpdate = function portalOpenAnnualProfileUpdate(targetUrl) {
     var href = String(targetUrl || "staff_profile_update.html");

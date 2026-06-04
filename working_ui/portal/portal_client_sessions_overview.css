@@ -23,6 +23,11 @@ body.portal-sessions-overview-open{
 }
 #clientSessionsOverviewSheet.sheet--sessions-overview.open .client-general-sheet-prose{
   min-width:0;
+  max-width:none;
+  width:100%;
+  margin:0;
+  padding:0 4px 12px;
+  box-sizing:border-box;
 }
 #clientSessionsOverviewSheet.sheet--sessions-overview.open .sheet-head{
   flex-shrink:0;
@@ -227,8 +232,16 @@ body.portal-sessions-overview-open{
     font-size:11px !important;
     margin-top:2px !important;
   }
+  #clientSessionsOverviewSheet.sheet--sessions-overview.open .sheet-body{
+    padding:6px 8px 10px;
+  }
+  #clientSessionsOverviewSheet.sheet--sessions-overview.open .client-general-sheet-prose{
+    padding:0 6px 10px;
+  }
   .pcso-kpi-grid{gap:6px;margin-bottom:8px}
-  .pcso-table{font-size:clamp(9px, 1.4vw, 11px)}
+  .pcso-table{font-size:clamp(9px, 1.35vw, 12px)}
+  .pcso-feed-section{border-radius:10px}
+  .pcso-feed-head{padding:8px 10px 6px}
 }
 
 @media (orientation: landscape) and (max-height: 520px){

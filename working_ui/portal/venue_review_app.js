@@ -5,8 +5,17 @@
  * - Front-end: DOM, query context, issues toggles, submit handler
  */
 
-const PORTAL_AUTH_MODULE =
-  "portal/auth-handler.js?v=20260419-99";
+const PORTAL_AUTH_MODULE_V = "20260419-99";
+
+/** Resolve auth-handler from same folder as this module (portal/ or portal-shared-js/). */
+function portalAuthModuleUrl() {
+  try {
+    if (typeof import.meta !== "undefined" && import.meta.url) {
+      return new URL("./auth-handler.js?v=" + PORTAL_AUTH_MODULE_V, import.meta.url).href;
+    }
+  } catch (_) {}
+  return "/portal/auth-handler.js?v=" + PORTAL_AUTH_MODULE_V;
+}
 
 const qs = new URLSearchParams(typeof location !== "undefined" ? location.search || "" : "");
 
@@ -95,7 +104,7 @@ function submittedByNameFromProfileAndUser(profileRow, user) {
  * - falls back to query name or generic label for open submissions
  */
 async function resolveSubmissionContext(ctx) {
-  const { getSupabaseClient } = await import(PORTAL_AUTH_MODULE);
+  const { getSupabaseClient } = await import(portalAuthModuleUrl());
   const supabase = getSupabaseClient();
   const { data: authData, error: authErr } = await supabase.auth.getUser();
   const user =

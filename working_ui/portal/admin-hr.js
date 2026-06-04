@@ -50,12 +50,15 @@
     "Health Questionaire", "Job application", "Interviews",
   ];
 
+  var ANNUAL_PROFILE_CAMPAIGN_START_MS = Date.parse("2026-01-01T00:00:00Z");
+
   var state = {
     rootEl: null,
     rows: [],
     people: [],
     linkedKeys: {}, // name_key -> true when the person has a login account
     unavail: [],    // staff_unavailability rows
+    profileConfirmRows: [], // staff_profiles with profile_last_confirmed_at
     activeFilter: "active", // active | inactive | all
     query: "",
   };
@@ -427,6 +430,73 @@
     return n;
   }
 
+  function annualProfileComplete(iso) {
+    if (!iso) return false;
+    try {
+      var t = Date.parse(String(iso));
+      return !isNaN(t) && t >= ANNUAL_PROFILE_CAMPAIGN_START_MS;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function fmtDateTime(iso) {
+    var s = String(iso || "");
+    if (!s) return "";
+    try {
+      var d = new Date(s);
+      if (isNaN(d.getTime())) return s.slice(0, 10);
+      return d.toLocaleString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "Europe/London",
+      });
+    } catch (_) {
+      return s.slice(0, 16).replace("T", " ");
+    }
+  }
+
+  function renderAnnualProfileCard() {
+    var rows = (state.profileConfirmRows || []).slice().sort(function (a, b) {
+      return String(a.full_name || a.username || "").localeCompare(String(b.full_name || b.username || ""));
+    });
+    var done = 0;
+    var pending = 0;
+    rows.forEach(function (r) {
+      if (annualProfileComplete(r.profile_last_confirmed_at)) done++;
+      else pending++;
+    });
+    var q = String(state.query || "").trim().toLowerCase();
+    var shown = rows.filter(function (r) {
+      if (!q) return true;
+      var hay = [r.full_name, r.username].map(function (x) { return String(x || "").toLowerCase(); }).join(" ");
+      return hay.indexOf(q) >= 0;
+    });
+    var html = '<div class="hr-card"><div class="hr-card-h"><h3>' + icon("clipboard", 17) + 'Annual profile check-in (2026)</h3>'
+      + '<span class="hr-multi">' + done + ' done · ' + pending + ' pending</span></div>';
+    html += '<div class="hr-tbl-wrap"><table class="hr-tbl hr-tbl--center"><thead><tr>'
+      + '<th>Name</th><th>Portal login</th><th>Last confirmed</th><th>Status</th></tr></thead><tbody>';
+    if (!shown.length) {
+      html += '<tr><td colspan="4" class="hr-empty">No active portal accounts match this filter.</td></tr>';
+    } else {
+      shown.forEach(function (r) {
+        var name = String(r.full_name || r.username || "—").trim() || "—";
+        var login = String(r.username || "—").trim() || "—";
+        var complete = annualProfileComplete(r.profile_last_confirmed_at);
+        var when = complete ? fmtDateTime(r.profile_last_confirmed_at) : "—";
+        var pill = complete
+          ? '<span class="hr-pill hr-pill--on">Done</span>'
+          : '<span class="hr-pill hr-pill--off">Pending</span>';
+        html += '<tr><td class="hr-name">' + esc(name) + '</td><td>' + esc(login) + '</td><td>' + esc(when) + '</td><td>' + pill + '</td></tr>';
+      });
+    }
+    html += '</tbody></table></div></div>';
+    return html;
+  }
+
   function render() {
     var root = state.rootEl;
     if (!root) return;
@@ -449,6 +519,8 @@
       + '</div>'
       + '<input type="search" class="hr-search" id="hrSearch" placeholder="Search people & all categories…" value="' + esc(state.query) + '" />'
       + '</div>';
+
+    html += renderAnnualProfileCard();
 
     // People table (basics)
     html += '<div class="hr-card"><div class="hr-card-h"><h3>' + icon("staff", 17) + 'Staff</h3><span class="hr-multi">' + peopleRows.length + ' shown</span></div>';
@@ -876,13 +948,32 @@
         rootEl.innerHTML = '<p class="hr-empty">No HR data yet. Import the STAFF MATRIX (hr_records) in Supabase, then reopen this view.</p>';
         return;
       }
-      return loadUnavail(client).then(function (offs) {
-        state.unavail = offs || [];
+      return Promise.all([
+        loadUnavail(client),
+        loadStaffProfileConfirmations(client),
+      ]).then(function (parts) {
+        state.unavail = parts[0] || [];
+        state.profileConfirmRows = parts[1] || [];
         render();
       });
     }).catch(function (err) {
       rootEl.innerHTML = '<p class="hr-empty">Could not load H&amp;R: ' + esc((err && err.message) || err) + "</p>";
     });
+  }
+
+  function loadStaffProfileConfirmations(client) {
+    return client
+      .from("staff_profiles")
+      .select("id, full_name, username, profile_last_confirmed_at, is_active")
+      .neq("is_active", false)
+      .order("full_name", { ascending: true })
+      .then(function (res) {
+        if (res.error) {
+          try { console.warn("[hr] staff_profiles confirmations:", res.error.message); } catch (_) {}
+          return [];
+        }
+        return res.data || [];
+      });
   }
 
   function loadUnavail(client) {
