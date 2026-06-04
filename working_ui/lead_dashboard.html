@@ -3594,7 +3594,25 @@
     }
     const PARTICIPANT_PHOTOS = {
       'jack w': 'portal/participants/jack-w.jpg',
-      'jack walker': 'portal/participants/jack-w.jpg'
+      'jack walker': 'portal/participants/jack-w.jpg',
+      'arthur ma': 'portal/participants/arthur-manners.png',
+      'arthur mo': 'portal/participants/arthur-mo.png',
+      'arthur manners': 'portal/participants/arthur-manners.png',
+      'ayaan': 'portal/participants/ayaan.png',
+      'adam ab': 'portal/participants/adam-ab.png',
+      'adam a': 'portal/participants/adam-ab.png',
+      'haneef': 'portal/participants/haneef.png',
+      'haneff': 'portal/participants/haneef.png',
+      'aydaan ah': 'portal/participants/aydaan-ah.png',
+      'adaam ah': 'portal/participants/aydaan-ah.png',
+      'aadam ah': 'portal/participants/aydaan-ah.png',
+      'amir': 'portal/participants/amir.png',
+      'serine': 'portal/participants/serine.png',
+      'fadi': 'portal/participants/fadi.png',
+      'scott': 'portal/participants/scott.png',
+      'stephanie': 'portal/participants/stephanie.png',
+      'timi': 'portal/participants/timi.png',
+      'ikram': 'portal/participants/ikram.png'
     };
     function clientPhotoUrl(name){
       const key = String(name || '').trim().toLowerCase().replace(/\s+/g, ' ');
@@ -3731,6 +3749,45 @@
     function clientsGridMedicalIconSvg(){
       return '<svg class="clients-grid-med-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><title>Medical condition</title><path d="M9 2h6a1 1 0 0 1 1 1v5h5a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-5v5a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-5H3a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1h5V3a1 1 0 0 1 1-1z"/></svg>';
     }
+    function normalizeParticipantDisplayName(name){
+      return String(name || '').trim().toLowerCase().replace(/\s+/g, ' ');
+    }
+    function participantCatalogIdScore(clientId){
+      let s = 0;
+      const c = clientNotesById[clientId];
+      if(!c) return s;
+      if(resolveParticipantPhotoUrl(c.name, clientId)) s += 4;
+      if(String(c.generalInfoSheet || '').trim()) s += 2;
+      if(c.hasMedicalAlert) s += 1;
+      s += Math.min(sessionsModel.filter(x => x.clientId === clientId).length, 5);
+      return s;
+    }
+    function dedupeClientIdsByDisplayName(ids){
+      const groups = new Map();
+      ids.forEach(clientId => {
+        const c = clientNotesById[clientId];
+        const key = normalizeParticipantDisplayName(c && c.name || clientId);
+        if(!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(clientId);
+      });
+      const out = [];
+      groups.forEach(groupIds => {
+        if(groupIds.length === 1){
+          out.push(groupIds[0]);
+          return;
+        }
+        out.push(groupIds.slice().sort((a, b) => participantCatalogIdScore(b) - participantCatalogIdScore(a))[0]);
+      });
+      return out;
+    }
+    function clientsParticipantRowInnerHtml(clientId, c){
+      const name = escapeHtml(c.name);
+      const avatar = '<span class="clients-grid-avatar" aria-hidden="true">' + clientAvatarInner(c.name, clientId) + '</span>';
+      const medInner = c.hasMedicalAlert ? clientsGridMedicalIconSvg() : '';
+      const medSlot = '<span class="clients-grid-med' + (medInner ? '' : ' clients-grid-med--empty') + '"' + (medInner ? '' : ' aria-hidden="true"') + '>' + medInner + '</span>';
+      const medSr = c.hasMedicalAlert ? '<span class="topbar-sr-only">Medical information on file.</span>' : '';
+      return avatar + '<span class="clients-grid-name">' + name + '</span>' + medSlot + medSr;
+    }
 
     function renderClientsSheetList(mode, filterQuery){
       const grid = document.getElementById('clientsListGrid');
@@ -3738,6 +3795,12 @@
       const isAll = mode === 'all';
       const q = String(filterQuery || '').trim().toLowerCase();
       let ids = isAll ? getAllClientIdsCatalog() : getAssignedClientIdsForStaff();
+      ids = dedupeClientIdsByDisplayName(ids);
+      ids.sort((a, b) => {
+        const na = (clientNotesById[a] && clientNotesById[a].name) || a;
+        const nb = (clientNotesById[b] && clientNotesById[b].name) || b;
+        return na.localeCompare(nb, 'en');
+      });
       if(isAll && q){
         ids = ids.filter(id => {
           const n = (clientNotesById[id] && clientNotesById[id].name) || '';
@@ -3766,20 +3829,10 @@
       grid.innerHTML = ids.map(clientId => {
         const c = clientNotesById[clientId];
         if(!c) return '';
-        const name = escapeHtml(c.name);
         const gAttr = clientGenderDataAttr(c);
-        const med = c.hasMedicalAlert ? clientsGridMedicalIconSvg() : '';
-        const medSr = c.hasMedicalAlert ? '<span class="topbar-sr-only">Medical information on file.</span>' : '';
         const myCls = !isAll ? ' clients-grid-card--my' : '';
         const listMode = isAll ? 'all' : 'my';
-        return `<button type="button" class="clients-grid-card${myCls}" data-client-id="${escapeHtml(clientId)}" data-list-mode="${listMode}"${gAttr}>
-      <span class="clients-grid-text">
-        <span class="clients-grid-name-line">
-          <span class="clients-grid-name">${name}</span>${med}
-        </span>
-      </span>
-      ${medSr}
-    </button>`;
+        return `<button type="button" class="clients-grid-card${myCls}" data-client-id="${escapeHtml(clientId)}" data-list-mode="${listMode}"${gAttr}>${clientsParticipantRowInnerHtml(clientId, c)}</button>`;
       }).join('');
     }
     function getClientsDirectoryQuery(){
@@ -3795,7 +3848,7 @@
         box.innerHTML = '';
         return;
       }
-      const ids = getAllClientIdsCatalog().filter(id => {
+      const ids = dedupeClientIdsByDisplayName(getAllClientIdsCatalog()).filter(id => {
         const n = (clientNotesById[id] && clientNotesById[id].name) || '';
         return n.toLowerCase().startsWith(q);
       }).slice(0, 14);
@@ -3808,9 +3861,8 @@
       box.innerHTML = ids.map((clientId, i) => {
         const c = clientNotesById[clientId];
         if(!c) return '';
-        const name = escapeHtml(c.name);
         const gAttr = clientGenderDataAttr(c);
-        return `<button type="button" role="option" class="clients-suggest-option" id="clientsSuggestOpt-${i}" data-client-id="${escapeHtml(clientId)}"${gAttr}><span class="clients-grid-avatar" aria-hidden="true">${clientAvatarInner(c.name, clientId)}</span><span class="clients-grid-name">${name}</span></button>`;
+        return `<button type="button" role="option" class="clients-suggest-option" id="clientsSuggestOpt-${i}" data-client-id="${escapeHtml(clientId)}"${gAttr}>${clientsParticipantRowInnerHtml(clientId, c)}</button>`;
       }).join('');
     }
     function refreshClientsAllTabUI(){
