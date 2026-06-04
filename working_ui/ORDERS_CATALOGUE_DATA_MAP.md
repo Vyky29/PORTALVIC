@@ -68,6 +68,9 @@ Documento vivo: resume **de dónde sale cada parte** de la vista **Orders** en `
 - **Ruta:** Communications → Ops comms → Communications Log → **View Order** (ref `inv …`).
 - **Datos:** `PortalCommsOrderPayments.resolvePack()` — primero filas live/export por ref de factura; si no hay match, `MOCK.commsOrderDemoByRef`.
 - **Funding / método:** chips y texto desde columnas `fund`, `payMethod`, `periodNote`, `vat` del export.
+- **Fechas de sesión (pastillas):** roster del día (`ordersPortalFindRosterSlotForPp` + `lastBookingIso` de Participants_Parents) → `registerEnumerateTermDates`, excluyendo cierre de medio término / festivos (`PORTAL_TERM_FROM_TIMETABLE`).
+- **Venue / horario:** venue y franja del slot de roster; si no hay match, `portalFindRegisterSlotForOrderLine` por horario del export.
+- **Pagos fraccionados:** `periodNote` con varios tramos (`Mar/Apr: 650 · May: 256`) se desglosa en **varias tarjetas** en la misma Order (mismo `payId` en cada una).
 - **Record a payment:** si la línea tiene `payId`, actualiza `client_payments.data.Paid` y `payment_status` (misma fuente que Programme payments y Orders catalogue).
 
 ## Orden y paginación

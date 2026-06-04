@@ -29,7 +29,7 @@
   <script src="/portal/portal-change-log.js?v=20260601-changelog-merge"></script>
   <script src="/portal/admin-hr.js?v=20260601-annual-profile"></script>
   <script src="/portal/admin-payments.js?v=20260531-la-column"></script>
-  <script src="/portal/portal-comms-order-payments.js?v=20260617-cfk-order-live"></script>
+  <script src="/portal/portal-comms-order-payments.js?v=20260617-cfk-order-enrich"></script>
   <script src="/portal/portal-admin-settings-hub.js?v=20260617-settings-hub"></script>
   <script src="/portal/admin-onboarding.js?v=20260530-onboarding-clickdocs"></script>
   <script src="/portal/admin-logs.js?v=20260601-logs-merge"></script>
@@ -17294,12 +17294,95 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<button type="button" class="btn btn--sec btn--sm comms-order-sendconf">Send Confirmation Email</button>'+
         '</div>';
     }
+    function portalCommsOrderFilterClosedSessionIsos(isos){
+      var t = window.PORTAL_TERM_FROM_TIMETABLE || {};
+      var closed = {};
+      var list = t.termClosedDates;
+      var i;
+      if(Array.isArray(list)){
+        for(i = 0; i < list.length; i++) closed[String(list[i] || '').slice(0, 10)] = true;
+      }
+      var brFrom = String(t.termBreakFrom || '').slice(0, 10);
+      var brTo = String(t.termBreakTo || '').slice(0, 10);
+      return (isos || []).filter(function(iso){
+        if(!iso) return false;
+        if(closed[iso]) return false;
+        if(brFrom && brTo && iso >= brFrom && iso <= brTo) return false;
+        return true;
+      });
+    }
+    function portalCommsOrderSessionPillLabel(iso){
+      var d = bookingParseIsoLocal(String(iso || '').trim() + 'T12:00:00');
+      if(!d) return String(iso || '');
+      var dd = String(d.getDate()).padStart(2, '0');
+      var mm = String(d.getMonth() + 1).padStart(2, '0');
+      var yy = String(d.getFullYear()).slice(-2);
+      return dd + '/' + mm + '/' + yy;
+    }
+    function portalCommsOrderEnrichOneService(svc){
+      if(!svc) return svc;
+      var pr = svc.sourcePayRow;
+      var pp = null;
+      if(pr && window.PortalCommsOrderPayments && typeof PortalCommsOrderPayments.ppRowForPayRow === 'function'){
+        pp = PortalCommsOrderPayments.ppRowForPayRow(pr);
+      }
+      if(!pp && svc.pax) pp = adminParticipantsParentsRowForClientDisplayName(svc.pax);
+      var lastIso = pp ? ordersPortalIso10(pp.lastBookingIso || pp.firstBookingIso || pp.createdIso) : '';
+      var hit = pp && lastIso ? ordersPortalFindRosterSlotForPp(pp, lastIso) : null;
+      if(!hit && pp) hit = ordersPortalFindRosterSlotForPp(pp, booking.selectedDate);
+      var slot = hit && hit.slot;
+      if(slot){
+        svc.venue = String(slot.venue || '').trim() || svc.venue;
+        var anchor = String(slot.anchorTimeLabel || '').trim();
+        var when = String(slot.whenLabel || '').trim();
+        if(anchor){
+          var day = String(slot.sheetDay || portalWeekdayLongFromIsoDate(slot.sessionDate) || '').trim();
+          svc.schedule = day && anchor.indexOf(day) < 0 ? day + ' · ' + anchor : (when || anchor);
+        }else if(when) svc.schedule = when;
+        var dates = portalCommsOrderFilterClosedSessionIsos(registerEnumerateTermDates(slot));
+        if(dates.length){
+          svc.sessionDates = dates.slice().reverse().map(portalCommsOrderSessionPillLabel);
+          svc.sessionCount = dates.length;
+        }
+      }else if(svc.schedule && svc.schedule !== '—'){
+        var regSl = portalFindRegisterSlotForOrderLine({
+          scheduleText: svc.schedule,
+          schedule: svc.schedule,
+          venue: svc.venue !== '—' ? svc.venue : '',
+          serviceTitle: svc.programme,
+          programme: svc.programme
+        });
+        if(regSl){
+          svc.venue = String(regSl.venue || '').trim() || svc.venue;
+          var dates2 = portalCommsOrderFilterClosedSessionIsos(registerEnumerateTermDates(regSl));
+          if(dates2.length){
+            svc.sessionDates = dates2.slice().reverse().map(portalCommsOrderSessionPillLabel);
+            svc.sessionCount = dates2.length;
+          }
+        }
+      }
+      if(svc.sessionsLabel){
+        var m = String(svc.sessionsLabel).match(/(\d+)\s*\/\s*(\d+)/);
+        if(m){
+          var booked = parseInt(m[2], 10) || parseInt(m[1], 10);
+          if(booked && (!svc.sessionCount || svc.sessionCount < booked)) svc.sessionCount = booked;
+        }
+      }
+      return svc;
+    }
+    function portalCommsOrderEnrichLivePack(pack){
+      if(!pack || !Array.isArray(pack.services) || pack.source === 'demo') return pack;
+      pack.services = pack.services.map(portalCommsOrderEnrichOneService);
+      return pack;
+    }
     function portalCommsOrderFundingStripHtml(svc){
       if(!svc) return '';
       var bits = [];
+      if(svc.installmentLabel) bits.push('<span class="chip chip--info" style="margin:0 6px 6px 0;max-width:100%;overflow-wrap:break-word;background:#e0f2fe;color:#0369a1;border:0">'+esc(svc.installmentLabel)+'</span>');
       if(svc.fund) bits.push('<span class="chip chip--info" style="margin:0 6px 6px 0;max-width:100%;overflow-wrap:break-word">'+esc(svc.fund)+'</span>');
       if(svc.payMethod) bits.push('<span class="muted" style="font-size:12px;display:block;overflow-wrap:break-word">Pay method: <strong style="color:var(--ink)">'+esc(svc.payMethod)+'</strong></span>');
-      if(svc.periodNote) bits.push('<span class="muted" style="font-size:12px;display:block;margin-top:4px;overflow-wrap:break-word">Billing period: '+esc(svc.periodNote)+'</span>');
+      if(svc.periodNote && !svc.installmentLabel) bits.push('<span class="muted" style="font-size:12px;display:block;margin-top:4px;overflow-wrap:break-word">Billing period: '+esc(svc.periodNote)+'</span>');
+      else if(svc.periodNote && svc.isInstallmentLine) bits.push('<span class="muted" style="font-size:12px;display:block;margin-top:4px;overflow-wrap:break-word">'+esc(svc.periodNote)+'</span>');
       if(svc.vat && svc.vat !== '—') bits.push('<span class="muted" style="font-size:11px;display:block;margin-top:4px">VAT: '+esc(svc.vat)+'</span>');
       if(!bits.length) return '';
       return '<div style="margin:8px 0 0;min-width:0">'+bits.join('')+'</div>';
@@ -17310,6 +17393,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       var key = String(orderRef||'').trim();
       return MOCK.commsOrderDemoByRef && MOCK.commsOrderDemoByRef[key] ? Object.assign({ source:'demo' }, MOCK.commsOrderDemoByRef[key]) : null;
+    }
+    if(window.PortalCommsOrderPayments && typeof PortalCommsOrderPayments.setLiveEnricher === 'function'){
+      PortalCommsOrderPayments.setLiveEnricher(portalCommsOrderEnrichLivePack);
     }
     function portalCommsOrderMoneyColHtml(svc){
       var bal = (svc.amount||0)-(svc.paid||0);
@@ -17336,7 +17422,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '<label class="muted" style="display:block;font-size:12px;margin-bottom:6px">Select booking</label>'+
           '<select class="sel" id="commsOrderServicePicker" style="max-width:min(100%,440px)">'+
           '<option value="all">All bookings (whole order)</option>'+
-          pack.services.map(function(s,i){ return '<option value="'+i+'">'+esc(s.programme)+' · ref '+esc(s.bookingRef)+'</option>'; }).join('')+
+          pack.services.map(function(s,i){
+            var lab = s.programme + (s.installmentLabel ? ' · '+s.installmentLabel : '') + ' · ref '+s.bookingRef;
+            return '<option value="'+i+'">'+esc(lab)+'</option>';
+          }).join('')+
           '</select>'+
           '<p class="muted" style="margin:8px 0 0;font-size:12px;line-height:1.45;max-width:42rem;min-width:0;overflow-wrap:break-word">More than one service on this order — pick a line to highlight (demo only).</p></div></div>';
       }
@@ -17355,13 +17444,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '<div style="min-width:0">'+
           '<p class="muted" style="margin:0 0 10px;font-size:12px;line-height:1.45;min-width:0;overflow-wrap:break-word">Items <strong>'+money(svc.amount)+'</strong> · Paid <strong>'+money(svc.paid)+'</strong> · Balance <strong>'+money(bal)+'</strong></p>'+
           portalCommsOrderPayFieldsHtml(payAttr, payBtnLabel, bal, 'svc'+idx)+
-          (svc.payId ? '<p class="muted" style="margin:10px 0 0;font-size:11px;overflow-wrap:break-word">Updates <strong>Programme payments</strong> (Supabase) for this family.</p>' : '')+
+          (svc.payId ? '<p class="muted" style="margin:10px 0 0;font-size:11px;overflow-wrap:break-word">Updates <strong>Programme payments</strong> (Supabase) for this family.'+(svc.isInstallmentLine ? ' Amounts are split from billing period; payment still applies to the full invoice row.' : '')+'</p>' : '')+
           '</div></div></div></details>';
         return '<div class="comms-order-svc card" data-comms-order-svc-idx="'+idx+'"'+(svc.payId ? ' data-comms-pay-id="'+escAttr(String(svc.payId))+'"' : '')+' style="margin-bottom:14px;min-width:0">'+
           '<div class="card-pad" style="padding-bottom:8px">'+
           head+
           '<div class="comms-order-grid" style="margin-top:12px">'+
-          '<div style="min-width:0"><p style="margin:0;font-weight:600;color:var(--ink);overflow-wrap:break-word">'+esc(svc.programme)+'</p>'+
+          '<div style="min-width:0"><p style="margin:0;font-weight:600;color:var(--ink);overflow-wrap:break-word">'+esc(svc.programme)+(svc.installmentLabel ? ' <span class="muted" style="font-weight:600">('+esc(svc.installmentLabel)+')</span>' : '')+'</p>'+
           '<p class="muted" style="margin:6px 0 4px;font-size:13px;overflow-wrap:break-word">'+esc(svc.schedule)+'</p>'+
           '<p class="muted" style="margin:0 0 6px;font-size:13px;overflow-wrap:break-word">'+esc(svc.venue)+'</p>'+
           portalCommsOrderFundingStripHtml(svc)+
