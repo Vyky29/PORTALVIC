@@ -324,6 +324,48 @@
     return null;
   }
 
+  /**
+   * Day green from status export (merge groups / shared units), any instructor on that day.
+   */
+  function exportMarksDayComplete(iso, staffId) {
+    const c = dayFeedbackCountsFromPortalExports(iso, staffId);
+    if (c && c.applicable > 0 && c.unresolved === 0) return true;
+    if (c === null && submittedRowsForStaffDate(iso, staffId).length > 0) return true;
+    const status = statusRowsForStaffDate(iso, staffId);
+    if (!status.length) return false;
+    const mergeDone = Object.create(null);
+    for (let i = 0; i < status.length; i++) {
+      const st = status[i];
+      if (statusSlotResolved(iso, st)) continue;
+      const mg = String(st.feedbackMergeGroup || "").trim();
+      if (mg) {
+        if (mergeDone[mg]) continue;
+        mergeDone[mg] = true;
+        if (mergeGroupResolved(iso, staffId, mg)) continue;
+      }
+      const uk = String(st.feedbackUnitKey || "").trim();
+      if (uk && feedbackUnitKeyResolved(iso, uk)) continue;
+      return false;
+    }
+    return true;
+  }
+
+  function rosterSessionCompleteForTerm(
+    sessionDateIso,
+    staffId,
+    sessionRow,
+    clientNotesById,
+    mergedRec
+  ) {
+    return sessionComplete(
+      sessionDateIso,
+      staffId,
+      sessionRow,
+      clientNotesById,
+      mergedRec || {}
+    );
+  }
+
   function sessionComplete(iso, staffId, s, clientNotesById, mergedRec) {
     const rec = mergedRec || {};
     if (rec.feedbackDone || rec.absent || rec.cancelled) return true;
@@ -437,6 +479,9 @@
     dayCentreClientResolved: dayCentreClientResolved,
     mergeGroupResolved: mergeGroupResolved,
     feedbackUnitKeyResolved: feedbackUnitKeyResolved,
+    exportMarksDayComplete: exportMarksDayComplete,
+    rosterSessionCompleteForTerm: rosterSessionCompleteForTerm,
+    staffOwnsStatusRow: staffOwnsStatusRow,
     termSessionsForDate: termSessionsForDate,
     dayFeedbackCountsFromPortalExports: dayFeedbackCountsFromPortalExports,
     sessionComplete: sessionComplete,

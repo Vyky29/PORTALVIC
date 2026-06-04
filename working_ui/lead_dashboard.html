@@ -847,7 +847,7 @@
   <script src="portal/staff_dashboard_spreadsheet_bundle.js?v=20260601-notas-participants"></script>
   <script src="portal/session_feedback_portal_data.js?v=20260527-ma-apr-may"></script>
   <script src="portal/session_feedback_status_portal_data.js?v=20260527-ma-apr-may"></script>
-  <script src="portal/staff_portal_feedback_bridge.js?v=20260601-bespoke-merge-group"></script>
+  <script src="portal/staff_portal_feedback_bridge.js?v=20260604-bespoke-merge-lead"></script>
   <script src="/portal-shared-js/portal_late_submission.js?v=20260520"></script>
   <script src="portal/portal-roster-rows-merge.js?v=20260615-fadi-roster-merge"></script>
   <script src="portal/staff_dashboard_portal_roster_source.js?v=20260601-term-slot"></script>
@@ -1102,8 +1102,12 @@
         if(!mod.portalFetchSubmittedReviewSessionKeys || !mod.portalMergeReviewKeysIntoMemoryMap) return;
         const rosterKeys = typeof portalCollectRosterSessionKeysForReviewSync === 'function' ? portalCollectRosterSessionKeysForReviewSync() : [];
         const keys = await mod.portalFetchSubmittedReviewSessionKeys(box.client, uid, { rosterSessionKeys: rosterKeys });
-        if(mod.portalMergeReviewKeysIntoMemoryMap(sessionReviewMapMemory, keys)){
+        const merged = mod.portalMergeReviewKeysIntoMemoryMap(sessionReviewMapMemory, keys, { rosterSessionKeys: rosterKeys });
+        if(merged){
           persistSessionReviewMap();
+          if(typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function'){
+            rebuildTermShiftAndFeedbackFromSessionModel();
+          }
           if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
           if(typeof renderTermCalendarGrid === 'function') renderTermCalendarGrid();
         }
@@ -2086,6 +2090,22 @@
         }
       }
       return out;
+    }
+    /** Co-instructor / merge-group parity with staff dashboard (Bespoke shared feedback). */
+    function portalRosterSessionFeedbackCompleteForTerm(s, dayWord, sessionDateIso, staffId){
+      const iso = String(sessionDateIso || '').trim().slice(0, 10);
+      const sid = String(staffId || '').trim().toLowerCase();
+      const rec = typeof portalGetMergedSessionReviewRecordForRoster === 'function'
+        ? portalGetMergedSessionReviewRecordForRoster(s, dayWord, sessionDateIso)
+        : {};
+      const bridge = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
+      if(bridge && typeof bridge.rosterSessionCompleteForTerm === 'function'){
+        return bridge.rosterSessionCompleteForTerm(iso, sid, s, clientNotesById, rec);
+      }
+      if(bridge && typeof bridge.sessionComplete === 'function'){
+        return bridge.sessionComplete(iso, sid, s, clientNotesById, rec);
+      }
+      return !!(rec.feedbackDone || rec.absent || rec.cancelled);
     }
     /**
      * Same pending-feedback count as the Today/Week list for a calendar YYYY-MM-DD (uses Today builder + review date lock).
@@ -9434,22 +9454,8 @@
           return false;
         }
         const bridge = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
-        if(!bridge || typeof bridge.dayFeedbackCountsFromPortalExports !== 'function') return false;
-        const c = bridge.dayFeedbackCountsFromPortalExports(iso, staffId);
-        if(c && c.applicable > 0 && c.unresolved === 0) return true;
-        if(c === null && typeof bridge.submittedRowsForStaffDate === 'function'){
-          const sub = bridge.submittedRowsForStaffDate(iso, staffId);
-          if(sub.length > 0) return true;
-        }
-        const src = typeof window !== 'undefined' ? window.SESSION_FEEDBACK_STATUS_PORTAL_SOURCE : null;
-        if(src && Array.isArray(src.rows) && bridge.statusSlotResolved){
-          const day = String(iso || '').trim().substring(0, 10);
-          const owned = src.rows.filter(function(st){
-            return String(st.date || '').trim().substring(0, 10) === day
-              && typeof portalStaffOwnsFeedbackStatusRow === 'function'
-              && portalStaffOwnsFeedbackStatusRow(staffId, st);
-          });
-          if(owned.length && owned.every(function(st){ return bridge.statusSlotResolved(iso, st); })) return true;
+        if(bridge && typeof bridge.exportMarksDayComplete === 'function'){
+          return bridge.exportMarksDayComplete(iso, staffId);
         }
       }catch(_){}
       return false;
