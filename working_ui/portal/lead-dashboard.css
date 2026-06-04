@@ -6946,6 +6946,20 @@
     .topbar-chat-btn.portal-floating-chat-btn{
       flex-shrink:0;
     }
+    @keyframes portal-topbar-chat-pulse{
+      0%,100%{
+        box-shadow:
+          0 0 0 1px rgba(255,255,255,.55) inset,
+          0 2px 10px rgba(45,132,179,.22),
+          0 0 0 3px rgba(229,57,53,.18);
+      }
+      50%{
+        box-shadow:
+          0 0 0 1px rgba(255,255,255,.55) inset,
+          0 2px 14px rgba(45,132,179,.34),
+          0 0 0 5px rgba(229,57,53,.38);
+      }
+    }
     .topbar-chat-btn--unread,
     .portal-floating-chat-btn--unread.topbar-chat-btn{
       border-color:rgba(45,132,179,.5) !important;
@@ -6954,20 +6968,35 @@
         0 2px 10px rgba(45,132,179,.22),
         0 0 0 3px rgba(229,57,53,.2) !important;
     }
-    .topbar-chat-btn--unread::before,
-    .portal-floating-chat-btn--unread.topbar-chat-btn::before{
-      content:"";
+    .topbar-chat-btn--unread.menu-btn--portal-pulse:not(:active),
+    .portal-floating-chat-btn--unread.topbar-chat-btn.menu-btn--portal-pulse:not(:active){
+      animation:portal-topbar-chat-pulse 1.35s ease-in-out infinite;
+    }
+    .topbar-chat-btn .portal-floating-chat-badge,
+    .portal-floating-chat-badge{
       position:absolute;
-      top:2px;
-      right:2px;
-      width:9px;
-      height:9px;
-      border-radius:50%;
+      top:-3px;
+      right:-3px;
+      min-width:18px;
+      height:18px;
+      padding:0 5px;
+      border-radius:999px;
       background:#e53935;
+      color:#fff;
+      font-size:10px;
+      font-weight:800;
+      line-height:18px;
+      text-align:center;
+      letter-spacing:-0.02em;
       border:2px solid #fff;
       box-sizing:border-box;
-      z-index:1;
+      z-index:2;
       pointer-events:none;
+      font-family:inherit;
+    }
+    .topbar-chat-btn .portal-floating-chat-badge[hidden],
+    .portal-floating-chat-badge[hidden]{
+      display:none !important;
     }
     body.portal-internal-chat-open .topbar-chat-btn,
     body.portal-internal-chat-open #portalFloatingChatBtn{

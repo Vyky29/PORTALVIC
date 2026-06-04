@@ -8,18 +8,61 @@
     return global.document && global.document.getElementById("portalFloatingChatBtn");
   }
 
+  function portalFloatingChatBadgeEl() {
+    return (
+      (global.document && global.document.getElementById("portalFloatingChatBadge")) ||
+      (portalFloatingChatBtn() &&
+        portalFloatingChatBtn().querySelector(".portal-floating-chat-badge"))
+    );
+  }
+
+  function portalStaffDmUnreadCount() {
+    try {
+      var n = parseInt(global.window.__PORTAL_STAFF_DM_UNREAD_COUNT__, 10);
+      if (!isNaN(n) && n > 0) return n;
+    } catch (_) {}
+    try {
+      if (global.window.__PORTAL_STAFF_DM_HAS_UNREAD__) return 1;
+    } catch (_) {}
+    var menuBtn =
+      global.document && global.document.getElementById("portalQuickMenuInternalChatBtn");
+    if (menuBtn && menuBtn.classList.contains("menu-btn--portal-ic--unread")) return 1;
+    return 0;
+  }
+
   function portalSyncFloatingChatUnreadFromMenuBtn() {
     var floatBtn = portalFloatingChatBtn();
-    var menuBtn = global.document && global.document.getElementById("portalQuickMenuInternalChatBtn");
     if (!floatBtn) return;
-    var unread = !!(menuBtn && menuBtn.classList.contains("menu-btn--portal-ic--unread"));
-    if (!unread) {
-      try {
-        unread = !!global.window.__PORTAL_STAFF_DM_HAS_UNREAD__;
-      } catch (_) {}
-    }
+    var count = portalStaffDmUnreadCount();
+    var unread = count > 0;
     floatBtn.classList.toggle("portal-floating-chat-btn--unread", unread);
     floatBtn.classList.toggle("topbar-chat-btn--unread", unread);
+    floatBtn.classList.toggle("menu-btn--portal-pulse", unread);
+    var badge = portalFloatingChatBadgeEl();
+    if (!badge) {
+      badge = global.document.createElement("span");
+      badge.className = "portal-floating-chat-badge";
+      badge.id = "portalFloatingChatBadge";
+      badge.setAttribute("aria-hidden", "true");
+      floatBtn.appendChild(badge);
+    }
+    if (unread) {
+      badge.hidden = false;
+      badge.setAttribute("aria-hidden", "false");
+      badge.textContent = count > 99 ? "99+" : String(count);
+      var label =
+        count === 1
+          ? "Open internal chat — 1 unread message"
+          : "Open internal chat — " + count + " unread messages";
+      floatBtn.setAttribute("aria-label", label);
+      floatBtn.title = count === 1 ? "Chat — 1 new message" : "Chat — " + count + " new messages";
+    } else {
+      badge.hidden = true;
+      badge.setAttribute("aria-hidden", "true");
+      badge.textContent = "";
+      floatBtn.setAttribute("aria-label", "Open internal chat");
+      floatBtn.title = "Chat";
+    }
   }
 
   function portalInitFloatingInternalChat() {

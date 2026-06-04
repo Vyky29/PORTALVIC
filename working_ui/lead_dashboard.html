@@ -208,6 +208,7 @@
           </button>
           <button type="button" class="topbar-camera-btn topbar-chat-btn portal-floating-chat-btn" id="portalFloatingChatBtn" aria-label="Open internal chat" title="Chat" hidden aria-hidden="true">
             <span class="topbar-camera-btn__ico portal-floating-chat-btn__icon" aria-hidden="true"><svg class="portal-floating-chat-btn__svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg></span>
+            <span class="portal-floating-chat-badge" id="portalFloatingChatBadge" hidden aria-hidden="true"></span>
             <span class="topbar-sr-only">Chat</span>
           </button>
         </div>
@@ -375,9 +376,6 @@
           </div>
         </div>
         <div class="menu-group" id="portalQuickMenuNotificationsGroup" hidden>
-          <div class="menu-group-title" id="portalQuickMenuCommunicationTitle">Communication</div>
-          <div class="menu-group-title portal-quickmenu-internal-chat-heading" id="portalQuickMenuInternalChatHeading">Internal chat</div>
-          <div class="menu-grid menu-grid--portal-internal-chat" id="portalQuickMenuInternalChatSlot"></div>
           <div class="menu-group-title" id="portalQuickMenuAnnouncementsHeading">Announcements</div>
           <div class="menu-grid menu-grid--portal-notices" id="portalQuickMenuNoticesGrid"></div>
           <div class="menu-group-title menu-group-title--portal-reminders" id="portalQuickMenuRemindersHeading">Reminders</div>
@@ -843,7 +841,7 @@
   <script src="/portal/portal_quick_menu_accordion.js?v=20260601-work-flat"></script>
   <script src="/portal/portal_swimming_instructor_menus.js?v=20260617-swim-aquatic-gate"></script>
   <script src="/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off"></script>
-  <script src="/portal/portal_floating_internal_chat.js?v=20260604-topbar-chat"></script>
+  <script src="/portal/portal_floating_internal_chat.js?v=20260604-chat-badge"></script>
   <script type="module" src="/portal/portal_quick_menu_service_leads.js?v=20260604-service-leads-lead-only"></script>
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260616-michelle-only"></script>
@@ -5601,10 +5599,18 @@
         return false;
       }
     }
-    function portalStaffDmClearUnreadChromeLocally(){
-      window.__PORTAL_STAFF_DM_HAS_UNREAD__ = false;
+    function portalStaffDmSetUnreadCount(count){
+      count = Math.max(0, parseInt(count, 10) || 0);
+      window.__PORTAL_STAFF_DM_UNREAD_COUNT__ = count;
+      window.__PORTAL_STAFF_DM_HAS_UNREAD__ = count > 0;
       var btn = document.getElementById('portalQuickMenuInternalChatBtn');
-      if(btn) btn.classList.remove('menu-btn--portal-ic--unread');
+      if(!btn && typeof portalRenderQuickMenuInternalChatTile === 'function') portalRenderQuickMenuInternalChatTile();
+      btn = document.getElementById('portalQuickMenuInternalChatBtn');
+      if(btn) btn.classList.toggle('menu-btn--portal-ic--unread', count > 0);
+      if(typeof window.portalSyncFloatingChatUnreadFromMenuBtn === 'function') window.portalSyncFloatingChatUnreadFromMenuBtn();
+    }
+    function portalStaffDmClearUnreadChromeLocally(){
+      portalStaffDmSetUnreadCount(0);
       if(typeof syncPortalHeaderAlertChrome === 'function'){
         syncPortalHeaderAlertChrome(typeof portalReminderState === 'function' ? portalReminderState() : null);
       }
@@ -5657,22 +5663,12 @@
       portalStaffDmClearUnreadChromeLocally();
     };
     window.portalStaffDmSyncUnreadChrome = async function portalStaffDmSyncUnreadChrome(){
-      var btn = document.getElementById('portalQuickMenuInternalChatBtn');
+      if(typeof portalRenderQuickMenuInternalChatTile === 'function') portalRenderQuickMenuInternalChatTile();
       var box = window.__PORTAL_SUPABASE__;
       var client = box && box.client;
       var me = String((box && box.staff_profile && box.staff_profile.id) || (box && box.session && box.session.user && box.session.user.id) || '').trim();
-      window.__PORTAL_STAFF_DM_HAS_UNREAD__ = false;
-      if(btn) btn.classList.remove('menu-btn--portal-ic--unread');
-      if(!btn){
-        if(typeof syncPortalHeaderAlertChrome === 'function'){
-          syncPortalHeaderAlertChrome(typeof portalReminderState === 'function' ? portalReminderState() : null);
-        }
-        if(typeof syncDockQuickMenuAttention === 'function') syncDockQuickMenuAttention();
-        return;
-      }
+      portalStaffDmSetUnreadCount(0);
       if(!client || !me){
-        btn.classList.remove('menu-btn--portal-ic--unread');
-        window.__PORTAL_STAFF_DM_HAS_UNREAD__ = false;
         if(typeof syncPortalHeaderAlertChrome === 'function'){
           syncPortalHeaderAlertChrome(typeof portalReminderState === 'function' ? portalReminderState() : null);
         }
@@ -5682,8 +5678,7 @@
       try{
         var tr = await client.from('portal_staff_dm_threads').select('id,participant_a,participant_b').or('participant_a.eq.' + me + ',participant_b.eq.' + me).limit(120);
         if(tr.error || !tr.data || !tr.data.length){
-          btn.classList.remove('menu-btn--portal-ic--unread');
-          window.__PORTAL_STAFF_DM_HAS_UNREAD__ = false;
+          portalStaffDmSetUnreadCount(0);
           if(typeof syncPortalHeaderAlertChrome === 'function'){
             syncPortalHeaderAlertChrome(typeof portalReminderState === 'function' ? portalReminderState() : null);
           }
@@ -5719,8 +5714,7 @@
           .map(function(r){ return r && r.id ? String(r.id) : ''; })
           .filter(Boolean);
         if(!ids.length){
-          btn.classList.remove('menu-btn--portal-ic--unread');
-          window.__PORTAL_STAFF_DM_HAS_UNREAD__ = false;
+          portalStaffDmSetUnreadCount(0);
           if(typeof syncPortalHeaderAlertChrome === 'function'){
             syncPortalHeaderAlertChrome(typeof portalReminderState === 'function' ? portalReminderState() : null);
           }
@@ -5729,8 +5723,7 @@
         }
         var msgRes = await client.from('portal_staff_dm_messages').select('thread_id,author_id,created_at').in('thread_id', ids).order('created_at', { ascending: false }).limit(500);
         if(msgRes.error){
-          btn.classList.remove('menu-btn--portal-ic--unread');
-          window.__PORTAL_STAFF_DM_HAS_UNREAD__ = false;
+          portalStaffDmSetUnreadCount(0);
           if(typeof syncPortalHeaderAlertChrome === 'function'){
             syncPortalHeaderAlertChrome(typeof portalReminderState === 'function' ? portalReminderState() : null);
           }
@@ -5758,22 +5751,20 @@
           portalStaffDmClearUnreadChromeLocally();
           return;
         }
-        var any = false;
+        var unreadCount = 0;
         ids.forEach(function(threadId){
           var officeMsg = portalStaffDmLastOfficeMessage(msgsByThread, threadId, authorProfBy, me);
           if(!officeMsg) return;
           var prof = authorProfBy[String(officeMsg.author_id || '')] || {};
-          if(portalStaffDmThreadUnreadFromOffice(threadId, officeMsg, prof, me)) any = true;
+          if(portalStaffDmThreadUnreadFromOffice(threadId, officeMsg, prof, me)) unreadCount += 1;
         });
-        btn.classList.toggle('menu-btn--portal-ic--unread', any);
-        window.__PORTAL_STAFF_DM_HAS_UNREAD__ = any;
+        portalStaffDmSetUnreadCount(unreadCount);
         if(typeof syncPortalHeaderAlertChrome === 'function'){
           syncPortalHeaderAlertChrome(typeof portalReminderState === 'function' ? portalReminderState() : null);
         }
         if(typeof syncDockQuickMenuAttention === 'function') syncDockQuickMenuAttention();
       }catch(_e){
-        window.__PORTAL_STAFF_DM_HAS_UNREAD__ = false;
-        if(btn) btn.classList.remove('menu-btn--portal-ic--unread');
+        portalStaffDmSetUnreadCount(0);
         if(typeof syncPortalHeaderAlertChrome === 'function'){
           syncPortalHeaderAlertChrome(typeof portalReminderState === 'function' ? portalReminderState() : null);
         }
@@ -5781,23 +5772,23 @@
       }
     };
     function portalRenderQuickMenuInternalChatTile(){
-      var slot = document.getElementById('portalQuickMenuInternalChatSlot');
-      if(!slot) return;
-      slot.innerHTML = '';
+      var host = document.getElementById('portalStaffDmUnreadChromeHost');
+      if(!host){
+        host = document.createElement('div');
+        host.id = 'portalStaffDmUnreadChromeHost';
+        host.hidden = true;
+        host.setAttribute('aria-hidden', 'true');
+        host.className = 'portal-staff-dm-unread-chrome-host';
+        document.body.appendChild(host);
+      }
+      if(document.getElementById('portalQuickMenuInternalChatBtn')) return;
       var b = document.createElement('button');
       b.type = 'button';
       b.id = 'portalQuickMenuInternalChatBtn';
-      b.className = 'menu-btn notice announcement menu-btn--qm-tile menu-btn--portal-ic';
-      b.setAttribute('aria-label', 'Internal chat — message the office');
-      var svgIc = '<svg class="notice-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>';
-      b.innerHTML = '<div class="menu-btn-icon" aria-hidden="true">' + svgIc + '</div><div class="menu-btn-copy txt"><div class="portal-quick-reminder-block"><strong><span class="announcement-title-line announcement-title-line--quick-menu-only">Internal chat</span></strong><span class="menu-btn-sub" style="display:block;margin-top:4px;font-weight:600;max-width:100%;min-width:0;overflow-wrap:break-word">Message the office</span></div></div><span class="menu-btn-chev" aria-hidden="true">›</span>';
-      b.addEventListener('click', function(){
-        if(typeof window.portalOpenInternalChatFromHeaderQuickMenu === 'function') window.portalOpenInternalChatFromHeaderQuickMenu();
-      });
-      slot.appendChild(b);
-      if(typeof window.portalStaffDmSyncUnreadChrome === 'function'){
-        void window.portalStaffDmSyncUnreadChrome();
-      }
+      b.className = 'menu-btn menu-btn--portal-ic';
+      b.hidden = true;
+      b.setAttribute('aria-hidden', 'true');
+      host.appendChild(b);
     }
     window.portalOpenInternalChatFromHeaderQuickMenu = function portalOpenInternalChatFromHeaderQuickMenu(){
       try{
@@ -8582,7 +8573,6 @@
       const qg = document.getElementById('portalQuickMenuReminderGroup');
       const policySlot = document.getElementById('portalQuickMenuSafeguardingPolicySlot');
       const outstandingSlot = document.getElementById('portalQuickMenuOutstandingFeedbackSlot');
-      const slotIc = document.getElementById('portalQuickMenuInternalChatSlot');
       if(!grp) return;
       if(portalQuickMenuEntryMode !== 'logo-lite'){
         grp.hidden = true;
@@ -8594,8 +8584,7 @@
       const hasWellbeing = !!(wellbeingSlot && !wellbeingSlot.hidden);
       const hasBanner = hasPolicy || hasOutstanding || hasWellbeing || !!(qg && !qg.hidden);
       const hasNotices = !!(grid && grid.childElementCount > 0);
-      const hasInternalChat = !!(slotIc && slotIc.childElementCount > 0);
-      grp.hidden = !hasBanner && !hasNotices && !hasInternalChat;
+      grp.hidden = !hasBanner && !hasNotices;
     }
 
     function syncDockQuickMenuAttention(){
