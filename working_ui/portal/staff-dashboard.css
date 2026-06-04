@@ -3993,6 +3993,12 @@
     }
     /* Real participant photo (so instructors can recognise them on site). Sits on
        top of the initials; if it fails to load the JS removes it and initials show. */
+    .clients-grid-avatar:has(.clients-grid-avatar-img){
+      color:transparent;
+      font-size:0;
+      background:transparent;
+      border-color:transparent;
+    }
     .clients-grid-avatar-img{
       position:absolute;
       inset:0;

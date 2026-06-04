@@ -1,5 +1,7 @@
 /**
- * Quick menu — Swimming Term Review + Swimming Programme visible only for Swimming Instructor roles.
+ * Quick menu — Swimming Term Review + Swimming Programme (Training section).
+ * Visible for aquatic/swimming staff; hidden for climbing, support-only, etc.
+ * CEOs (Victor, Javi, Raúl) and Sevitha see all swimming training items on staff/lead shells.
  */
 (function (global) {
   "use strict";
@@ -8,6 +10,17 @@
 
   function portalStaffRoleLabelIsSwimmingInstructor(role) {
     return /swimming\s*instructor/i.test(String(role || "").trim());
+  }
+
+  function portalStaffRoleLabelIsAquatic(role) {
+    var r = String(role || "")
+      .trim()
+      .toLowerCase();
+    if (!r) return false;
+    if (portalStaffRoleLabelIsSwimmingInstructor(role)) return true;
+    return /aquatic|swim(?:ming)?\s*(?:instructor|coach|teacher)|pool\s*instructor|lane\s*coach/.test(
+      r,
+    );
   }
 
   function staffRoleTrackFallback() {
@@ -19,10 +32,34 @@
       var boot = global.__spreadsheetBoot;
       if (boot && boot.staffRoleTrack) return boot.staffRoleTrack;
     } catch (_) {}
-    return "swimming";
+    return "";
+  }
+
+  function staffRoleTrackIsAquatic(track) {
+    var t = String(track || "")
+      .toLowerCase()
+      .replace(/[\s_-]+/g, "");
+    if (!t) return false;
+    return t === "swimming";
+  }
+
+  function portalStaffHasFullTrainingAccess() {
+    try {
+      var box = global.__PORTAL_SUPABASE__ || {};
+      var profile = box.staff_profile;
+      var user = box.session && box.session.user;
+      if (typeof global.portalStaffIsExecOrAdminProfile === "function") {
+        if (global.portalStaffIsExecOrAdminProfile(profile, user)) return true;
+      }
+      var app = String((profile && profile.app_role) || "").toLowerCase();
+      if (app === "ceo" || app === "admin") return true;
+    } catch (_) {}
+    return false;
   }
 
   async function portalStaffIsSwimmingInstructor() {
+    if (portalStaffHasFullTrainingAccess()) return true;
+
     var box = global.__PORTAL_SUPABASE__;
     var client = box && box.client;
     var uid =
@@ -34,20 +71,13 @@
         var res = await client.from("staff_role_rates").select("role").eq("user_id", uid);
         if (!res.error && Array.isArray(res.data) && res.data.length) {
           return res.data.some(function (row) {
-            return portalStaffRoleLabelIsSwimmingInstructor(row && row.role);
+            return portalStaffRoleLabelIsAquatic(row && row.role);
           });
         }
-        var track = String(staffRoleTrackFallback() || "")
-          .toLowerCase()
-          .replace(/[\s_-]+/g, "");
-        return track === "swimming";
       }
-      var trackFallback = String(staffRoleTrackFallback() || "")
-        .toLowerCase()
-        .replace(/[\s_-]+/g, "");
-      return trackFallback === "swimming";
+      return staffRoleTrackIsAquatic(staffRoleTrackFallback());
     } catch (_) {
-      return false;
+      return staffRoleTrackIsAquatic(staffRoleTrackFallback());
     }
   }
 
@@ -71,6 +101,8 @@
   }
 
   global.portalStaffRoleLabelIsSwimmingInstructor = portalStaffRoleLabelIsSwimmingInstructor;
+  global.portalStaffRoleLabelIsAquatic = portalStaffRoleLabelIsAquatic;
+  global.portalStaffHasFullTrainingAccess = portalStaffHasFullTrainingAccess;
   global.portalStaffIsSwimmingInstructor = portalStaffIsSwimmingInstructor;
   global.portalSyncSwimmingInstructorQuickMenus = portalSyncSwimmingInstructorQuickMenus;
   global.portalSyncSwimmingTermReviewQuickMenu = portalSyncSwimmingInstructorQuickMenus;
