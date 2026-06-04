@@ -290,6 +290,11 @@
       align-items:center;
       align-self:center;
     }
+    .topbar-left--spacer{
+      visibility:hidden;
+      pointer-events:none;
+      min-height:1px;
+    }
     .topbar-center{
       display:flex;
       justify-content:center;
@@ -852,8 +857,8 @@
     }
     #internalChatMessages.portal-dm-msgs-col,
     #internalChatSheet .portal-dm-msgs-scroll.portal-dm-msgs-col{
-      display:flex;flex-direction:column;gap:6px;align-items:stretch;width:100%;min-width:0;
-      background:linear-gradient(180deg,var(--blueSoft) 0%,#f4f8fb 100%);
+      display:flex;flex-direction:column;gap:8px;align-items:stretch;width:100%;min-width:0;
+      background:#fff;
     }
     .portal-dm-msg-row{display:flex;width:100%;min-width:0;padding:2px 6px;box-sizing:border-box}
     .portal-dm-msg-row--mine{justify-content:flex-end}
@@ -869,14 +874,14 @@
     }
     .portal-dm-msg--them,
     .portal-dm-msg--them-read{
-      background:linear-gradient(180deg,#fff4df 0%,var(--goldSoft) 100%);
-      color:var(--ink);border-radius:14px 14px 14px 4px;border:1px solid rgba(244,183,64,.45);
-      box-shadow:0 2px 6px rgba(249,191,46,.18);
+      background:#fff;
+      color:var(--ink);border-radius:14px 14px 14px 4px;border:1px solid rgba(45,132,179,.18);
+      box-shadow:0 2px 8px rgba(23,50,71,.06);
     }
     .portal-dm-msg--them-unread{
-      background:linear-gradient(180deg,var(--sen-gold) 0%,var(--gold) 100%);
-      color:var(--ink);border-radius:14px 14px 14px 4px;border:1px solid rgba(217,119,6,.35);
-      box-shadow:0 2px 10px rgba(249,191,46,.32);
+      background:linear-gradient(180deg,#f0f8ff 0%,#e8f4fc 100%);
+      color:var(--ink);border-radius:14px 14px 14px 4px;border:1px solid rgba(45,132,179,.32);
+      box-shadow:0 2px 10px rgba(45,132,179,.12);
     }
     .portal-dm-msg--them-unread .portal-dm-msg-by{color:rgba(23,50,71,.82)}
     .portal-dm-msg--them-unread .portal-dm-msg-time{color:rgba(23,50,71,.62)}
@@ -1831,10 +1836,10 @@
       -webkit-overflow-scrolling:touch;
       border:none;
       border-radius:0;
-      padding:8px 8px 20px;
+      padding:12px 12px 20px;
       margin-bottom:0;
       scroll-padding-bottom:20px;
-      background:#e5ddd5;
+      background:#fff;
     }
     #internalChatSheet .portal-dm-compose-bar{
       position:relative;
@@ -4011,6 +4016,9 @@
       border-radius:999px;
       background:rgba(23,50,71,.06);
       box-sizing:border-box;
+    }
+    .clients-sheet-tab[hidden]{
+      display:none !important;
     }
     .clients-sheet-tab{
       flex:1;
@@ -6687,7 +6695,7 @@
       -webkit-appearance:none;
       transition:transform .14s ease, box-shadow .14s ease, border-color .14s ease, background .14s ease, color .14s ease;
     }
-    .dock-nav-item:hover:not(.dock-nav-item--dashboard):not(.dock-nav-item--quick-menu):not(.dock-nav-item--clients){
+    .dock-nav-item:hover:not(.dock-nav-item--dashboard):not(.dock-nav-item--quick-menu){
       transform:translateY(-1px);
       border-color:var(--ink);
       background:rgba(23,50,71,.05);
@@ -6868,77 +6876,126 @@
       .dock-nav-item--dashboard .dock-logo-orbit-layer{animation:none}
       .dock-nav-item--dashboard[class*="portal-attention"] .dock-nav-item__logo{animation:none}
     }
-    /* My clients + Quick menu: icon and title always visible (column) */
-    .dock-nav-item--clients{
+    /* Footer tools: achievements camera + internal chat (left of logo) */
+    .dock-footer-tools{
+      flex:1;
+      min-width:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      padding:4px 2px 5px;
+    }
+    .dock-tool-btn{
       position:relative;
-      gap:4px;
-      padding:5px 3px 6px;
-      background:var(--ink);
-      border-color:rgba(255,255,255,.22);
-      color:#fff;
-      box-shadow:0 2px 14px rgba(23,50,71,.28);
+      flex-shrink:0;
+      width:44px;
+      height:44px;
+      min-width:44px;
+      padding:0;
+      border-radius:12px;
+      border:1px solid rgba(23,50,71,.14);
+      background:#fff;
+      color:var(--blue);
+      box-shadow:0 2px 10px rgba(23,50,71,.08);
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      -webkit-tap-highlight-color:transparent;
+      appearance:none;
+      -webkit-appearance:none;
+      font-family:inherit;
+      transition:transform .14s ease, box-shadow .14s ease, border-color .14s ease;
     }
-    .dock-nav-item--clients:hover{
+    .dock-tool-btn:hover{
       transform:translateY(-1px);
-      background:#142a3d;
-      border-color:rgba(255,255,255,.38);
-      box-shadow:0 6px 22px rgba(11,24,38,.4);
+      border-color:rgba(45,132,179,.35);
+      box-shadow:0 6px 16px rgba(23,50,71,.12);
     }
-    .dock-nav-item--clients:active{
-      transform:translateY(0);
-      background:var(--ink);
-    }
-    .dock-nav-item--clients .dock-nav-item__icon{
-      position:static;
-      transform:none;
-      margin:0;
-      background:rgba(255,255,255,.18);
-      color:#fff;
-      border:1px solid rgba(255,255,255,.32);
-    }
-    .dock-nav-item--clients .dock-nav-item__icon svg{stroke:#fff}
-    .dock-nav-item--clients .dock-nav-item__label{
-      position:static;
-      transform:none;
-      margin:0;
-      color:#fff;
-      opacity:1;
-      visibility:visible;
-      white-space:nowrap;
-      max-width:100%;
-      padding:0 2px;
-      pointer-events:none;
-      line-height:1.05;
-    }
-    .dock-nav-item.dock-nav-item--clients:focus-visible{
-      outline:2px solid rgba(255,255,255,.95);
-      outline-offset:2px;
-    }
-    /* Quick menu abierto: My clients pasa a azul muy suave */
-    body.dock-context-menu .dock-nav-item--clients{
-      background:linear-gradient(180deg,#e9f0f8 0%,#dde8f4 100%);
-      border-color:rgba(45,90,130,.22);
-      color:var(--ink);
-      box-shadow:0 2px 10px rgba(23,50,71,.1);
-    }
-    body.dock-context-menu .dock-nav-item--clients:hover{
-      background:linear-gradient(180deg,#e2ebf6 0%,#d4e2f0 100%);
-      border-color:rgba(45,90,130,.3);
-      box-shadow:0 5px 16px rgba(23,50,71,.12);
-    }
-    body.dock-context-menu .dock-nav-item--clients:active{
-      background:linear-gradient(180deg,#dde8f4 0%,#cfddef 100%);
-    }
-    body.dock-context-menu .dock-nav-item--clients .dock-nav-item__icon{
-      background:rgba(45,132,179,.14);
-      border-color:rgba(45,132,179,.22);
-      color:var(--ink);
-    }
-    body.dock-context-menu .dock-nav-item--clients .dock-nav-item__icon svg{stroke:var(--ink)}
-    body.dock-context-menu .dock-nav-item--clients .dock-nav-item__label{color:var(--ink)}
-    body.dock-context-menu .dock-nav-item.dock-nav-item--clients:focus-visible{
+    .dock-tool-btn:active{transform:translateY(0)}
+    .dock-tool-btn:focus-visible{
       outline:2px solid var(--blue);
       outline-offset:2px;
+    }
+    .dock-tool-btn__ico{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      width:22px;
+      height:22px;
+    }
+    .dock-tool-btn__ico svg{
+      display:block;
+      width:22px;
+      height:22px;
+    }
+    .dock-tool-btn--achievements{
+      border-color:rgba(236,72,153,.35);
+      background:rgba(236,72,153,.12);
+      color:#db2777;
+      box-shadow:0 2px 8px rgba(236,72,153,.12);
+    }
+    .dock-tool-btn--achievements:hover{
+      border-color:rgba(236,72,153,.45);
+      background:rgba(236,72,153,.18);
+      color:#be185d;
+    }
+    .dock-tool-btn--chat{
+      border-color:rgba(45,132,179,.32);
+      background:linear-gradient(145deg,#fff 0%,#eaf5fb 100%);
+      color:var(--blue);
+    }
+    .dock-chat-wrap{
+      position:relative;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      flex-shrink:0;
+    }
+    .dock-chat-wrap--unread .dock-tool-btn--chat{
+      animation:dock-chat-unread-pulse 1.15s ease-in-out infinite;
+    }
+    @keyframes dock-chat-unread-pulse{
+      0%,100%{
+        box-shadow:0 0 0 0 rgba(45,132,179,.42), 0 2px 10px rgba(23,50,71,.08);
+        border-color:rgba(45,132,179,.45);
+      }
+      50%{
+        box-shadow:0 0 0 7px rgba(45,132,179,.12), 0 4px 14px rgba(45,132,179,.22);
+        border-color:rgba(45,132,179,.72);
+      }
+    }
+    .dock-tool-btn--chat .portal-floating-chat-badge{
+      position:absolute;
+      top:-2px;
+      right:-2px;
+      transform:none;
+      min-width:18px;
+      height:18px;
+      padding:0 4px;
+      border-radius:999px;
+      background:var(--blue);
+      color:#fff;
+      font-size:10px;
+      font-weight:800;
+      line-height:1;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border:2px solid #fff;
+      box-sizing:border-box;
+      z-index:2;
+      pointer-events:none;
+    }
+    body.dock-context-menu .dock-footer-tools .dock-tool-btn{
+      background:#fff;
+      border-color:rgba(23,50,71,.14);
+      box-shadow:0 2px 8px rgba(23,50,71,.08);
+    }
+    body.dock-context-clients .dock-footer-tools .dock-tool-btn--achievements{
+      background:rgba(236,72,153,.12);
+      border-color:rgba(236,72,153,.35);
     }
 
     .dock-nav-item--quick-menu{
@@ -7022,7 +7079,7 @@
       flex-shrink:0;
       transition:background .14s ease, color .14s ease;
     }
-    .dock-nav-item:hover:not(.dock-nav-item--clients):not(.dock-nav-item--quick-menu) .dock-nav-item__icon{
+    .dock-nav-item:hover:not(.dock-nav-item--quick-menu) .dock-nav-item__icon{
       background:rgba(23,50,71,.14);
       color:var(--ink);
     }
@@ -7049,110 +7106,26 @@
       display:none !important;
     }
 
-    /* Internal Chat — topbar orbit halo (unread), beside achievements camera */
-    .topbar-chat-orbit-wrap{
-      position:relative;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      width:44px;
-      height:44px;
-      flex-shrink:0;
-      margin-left:6px;
-    }
-    .topbar-chat-orbit-wrap .topbar-chat-orbit{
-      position:absolute;
-      inset:-11px;
-      pointer-events:none;
-      opacity:0;
-      visibility:hidden;
-      overflow:hidden;
-      border-radius:50%;
-    }
-    .topbar-chat-orbit-wrap--unread .topbar-chat-orbit{
-      opacity:1;
-      visibility:visible;
-    }
-    .topbar-chat-orbit-svg{
-      display:block;
-      width:100%;
-      height:100%;
-      overflow:visible;
-    }
-    .topbar-chat-orbit-layer{
-      transform-box:fill-box;
-      transform-origin:50% 50%;
-    }
-    .topbar-chat-orbit-layer--cw{
-      animation:topbar-chat-orbit-cw 9s linear infinite;
-    }
-    .topbar-chat-orbit-layer--ccw{
-      animation:topbar-chat-orbit-ccw 12s linear infinite;
-    }
-    @keyframes topbar-chat-orbit-cw{
-      from{transform:rotate(0deg)}
-      to{transform:rotate(360deg)}
-    }
-    @keyframes topbar-chat-orbit-ccw{
-      from{transform:rotate(0deg)}
-      to{transform:rotate(-360deg)}
-    }
-    .topbar-chat-orbit-wrap--unread .topbar-chat-orbit-layer circle{
-      fill:var(--blue) !important;
-    }
-    .topbar-chat-orbit-wrap--unread .topbar-chat-orbit-layer--cw circle:nth-child(2n){
-      fill:#4f8fca !important;
-    }
-    .topbar-chat-orbit-wrap--unread .topbar-chat-orbit-layer--cw circle:nth-child(3n){
-      fill:#1d4f8f !important;
-    }
-    .topbar-chat-orbit-wrap--unread .topbar-chat-orbit-layer--ccw circle:nth-child(2n){
-      fill:#2d84b3 !important;
-    }
-    .topbar-chat-orbit-wrap--unread .topbar-chat-orbit-layer--ccw circle:nth-child(3n){
-      fill:#7fb3dc !important;
-    }
-    header.topbar button.topbar-chat-btn,
-    .topbar-chat-orbit-wrap .topbar-chat-btn.portal-floating-chat-btn{
-      flex-shrink:0;
-      position:relative;
-      z-index:1;
-    }
-    .topbar-chat-orbit-wrap--unread .topbar-chat-btn.portal-floating-chat-btn{
-      animation:avatar-outline-alert-blue 1.12s ease-in-out infinite;
-    }
-    .topbar-chat-btn .portal-floating-chat-badge,
-    .portal-floating-chat-badge{
-      position:absolute;
-      top:0;
-      right:0;
-      transform:translate(38%, -38%);
-      min-width:18px;
-      height:18px;
-      padding:0 4px;
-      border-radius:999px;
-      background:#e53935;
-      color:#fff;
-      font-size:10px;
-      font-weight:800;
-      line-height:1;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      text-align:center;
-      letter-spacing:-0.02em;
-      border:2px solid #fff;
-      box-sizing:border-box;
-      z-index:3;
-      pointer-events:none;
-      font-family:inherit;
-    }
-    .topbar-chat-btn .portal-floating-chat-badge[hidden],
     .portal-floating-chat-badge[hidden]{
       display:none !important;
     }
-    body.portal-internal-chat-open .topbar-chat-btn,
     body.portal-internal-chat-open #portalFloatingChatBtn{
       visibility:hidden;
       pointer-events:none;
+    }
+    #menuSheet .menu-btn.menu-btn--work-participants .menu-btn-icon{
+      background:rgba(23,50,71,.1);
+      color:var(--ink);
+    }
+    #internalChatSheet.sheet--portal-chat-immersive{
+      background:#fff;
+    }
+    #internalChatSheet.sheet--portal-chat-immersive .portal-dm-sheet-head{
+      background:#fff;
+      border-bottom:1px solid rgba(23,50,71,.08);
+    }
+    #internalChatSheet.sheet--portal-chat-thread .portal-dm-compose-bar{
+      background:#fff;
+      border-top:1px solid rgba(23,50,71,.08);
+      padding:10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
     }

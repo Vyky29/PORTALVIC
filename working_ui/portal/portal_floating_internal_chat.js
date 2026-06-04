@@ -1,5 +1,5 @@
 /**
- * Internal Chat — topbar button (orbit halo, badge).
+ * Internal Chat — footer dock button (badge + blue pulse when unread).
  */
 (function (global) {
   "use strict";
@@ -23,16 +23,22 @@
     return 0;
   }
 
-  function portalApplyChatOrbitChrome(wrap, unread) {
-    if (!wrap) return;
-    wrap.classList.toggle("topbar-chat-orbit-wrap--unread", unread);
-    wrap.classList.toggle("topbar-chat-orbit-wrap--idle", !unread);
+  function portalApplyChatDockChrome(wrap, btn, unread) {
+    if (wrap) {
+      wrap.classList.toggle("dock-chat-wrap--unread", unread);
+      wrap.classList.toggle("dock-chat-wrap--idle", !unread);
+      wrap.classList.toggle("topbar-chat-orbit-wrap--unread", unread);
+      wrap.classList.toggle("topbar-chat-orbit-wrap--idle", !unread);
+    }
+    if (btn) {
+      btn.classList.toggle("portal-floating-chat-btn--unread", unread);
+      btn.classList.toggle("dock-tool-btn--unread", unread);
+    }
   }
 
   function portalApplyChatButtonChrome(btn, badge, count, unread) {
     if (!btn) return;
-    btn.classList.toggle("portal-floating-chat-btn--unread", unread);
-    btn.classList.toggle("topbar-chat-btn--unread", unread);
+    portalApplyChatDockChrome(portalFloatingChatOrbitWrap(), btn, unread);
     if (!badge) {
       badge = btn.querySelector(".portal-floating-chat-badge");
     }
@@ -64,7 +70,6 @@
   function portalSyncFloatingChatUnreadFromMenuBtn() {
     var count = portalStaffDmUnreadCount();
     var unread = count > 0;
-    portalApplyChatOrbitChrome(portalFloatingChatOrbitWrap(), unread);
     portalApplyChatButtonChrome(
       portalFloatingChatBtn(),
       global.document && global.document.getElementById("portalFloatingChatBadge"),
@@ -102,7 +107,7 @@
   global.portalInitFloatingInternalChat = portalInitFloatingInternalChat;
   global.portalSyncFloatingChatUnreadFromMenuBtn = portalSyncFloatingChatUnreadFromMenuBtn;
   global.portalApplyTopbarChatOrbit = function (unread) {
-    portalApplyChatOrbitChrome(portalFloatingChatOrbitWrap(), unread);
+    portalApplyChatDockChrome(portalFloatingChatOrbitWrap(), portalFloatingChatBtn(), unread);
   };
 
   if (global.document) {

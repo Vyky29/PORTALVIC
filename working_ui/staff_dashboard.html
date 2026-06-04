@@ -91,7 +91,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260610-pwa-black-fix" />
   <script src="/portal/portal_screenshot_guard.js?v=20260610-pwa-black-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260604-topbar-gap" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260604-footer-dock" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260601-landscape-full" />
 </head>
 <body>
@@ -202,40 +202,7 @@
     <main class="app-body-scroll" id="appBodyScroll">
     <header class="topbar" aria-labelledby="staffName">
       <div class="topbar-lead">
-        <div class="topbar-left">
-          <button type="button" class="topbar-camera-btn topbar-achievements-btn" id="topbarCameraBtn" aria-label="Participant achievements">
-            <span class="topbar-camera-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
-          </button>
-          <div class="topbar-chat-orbit-wrap topbar-chat-orbit-wrap--idle" id="portalFloatingChatOrbitWrap">
-            <div class="topbar-chat-orbit" aria-hidden="true">
-              <svg class="topbar-chat-orbit-svg" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
-                <g transform="translate(100,100)">
-                  <g class="topbar-chat-orbit-layer topbar-chat-orbit-layer--cw">
-                    <circle cx="0" cy="-72" r="7"/>
-                    <circle cx="62.35" cy="-36" r="6"/>
-                    <circle cx="62.35" cy="36" r="6"/>
-                    <circle cx="0" cy="72" r="7"/>
-                    <circle cx="-62.35" cy="36" r="6"/>
-                    <circle cx="-62.35" cy="-36" r="6"/>
-                  </g>
-                  <g class="topbar-chat-orbit-layer topbar-chat-orbit-layer--ccw">
-                    <circle cx="0" cy="-78" r="4"/>
-                    <circle cx="67.55" cy="-39" r="4"/>
-                    <circle cx="67.55" cy="39" r="4"/>
-                    <circle cx="0" cy="78" r="4"/>
-                    <circle cx="-67.55" cy="39" r="4"/>
-                    <circle cx="-67.55" cy="-39" r="4"/>
-                  </g>
-                </g>
-              </svg>
-            </div>
-            <button type="button" class="topbar-camera-btn topbar-chat-btn portal-floating-chat-btn" id="portalFloatingChatBtn" aria-label="Open internal chat" title="Chat" hidden aria-hidden="true">
-              <span class="topbar-camera-btn__ico portal-floating-chat-btn__icon" aria-hidden="true"><svg class="portal-floating-chat-btn__svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg></span>
-              <span class="portal-floating-chat-badge" id="portalFloatingChatBadge" hidden aria-hidden="true"></span>
-              <span class="topbar-sr-only">Chat</span>
-            </button>
-          </div>
-        </div>
+        <div class="topbar-left topbar-left--spacer" aria-hidden="true"></div>
         <div class="topbar-center">
           <div class="avatar-wrap avatar-wrap--portal-orbit-idle" id="avatarWrap" role="button" tabindex="0" aria-label="Open alerts and notifications">
             <div class="avatar-aura" aria-hidden="true"></div>
@@ -329,10 +296,18 @@
 
   <nav class="dock-bar" aria-label="Main navigation">
     <div class="dock-bar__nav" role="toolbar" aria-label="Footer navigation">
-      <button type="button" class="dock-nav-item dock-nav-item--clients" id="dockClientsTile" data-open="clientsSheet" aria-label="Open my participants">
-        <span class="dock-nav-item__icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
-        <span class="dock-nav-item__label">My participants</span>
-      </button>
+      <div class="dock-footer-tools" aria-label="Achievements and chat">
+        <button type="button" class="dock-tool-btn dock-tool-btn--achievements topbar-achievements-btn" id="dockCameraBtn" aria-label="Participant achievements">
+          <span class="dock-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
+        </button>
+        <div class="dock-chat-wrap dock-chat-wrap--idle" id="portalFloatingChatOrbitWrap">
+          <button type="button" class="dock-tool-btn dock-tool-btn--chat portal-floating-chat-btn" id="portalFloatingChatBtn" aria-label="Open internal chat" title="Chat" hidden aria-hidden="true">
+            <span class="dock-tool-btn__ico portal-floating-chat-btn__icon" aria-hidden="true"><svg class="portal-floating-chat-btn__svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg></span>
+            <span class="portal-floating-chat-badge" id="portalFloatingChatBadge" hidden aria-hidden="true"></span>
+            <span class="topbar-sr-only">Chat</span>
+          </button>
+        </div>
+      </div>
       <button type="button" class="dock-nav-item dock-nav-item--dashboard" id="dockDashboardTile" aria-label="Home — return to dashboard and close open panels">
         <span class="dock-logo-stage">
           <span class="dock-logo-orbit" aria-hidden="true">
@@ -421,6 +396,10 @@
         <div class="menu-group" id="portalQuickMenuWorkGroup">
           <div class="menu-group-title">Sessions &amp; Participants</div>
           <div class="menu-grid" id="quickMenuWorkGrid">
+            <button type="button" class="menu-btn menu-btn--work-participants" id="quickMenuSessionParticipants" data-open="clientsSheet" aria-label="Session participants — your roster and client information">
+              <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+              <div class="menu-btn-copy"><strong>Session participants</strong><span class="menu-btn-sub">Your roster, profiles and quick actions</span></div>
+            </button>
             <button type="button" class="menu-btn menu-btn--work-achievements" id="quickMenuParticipantAchievements">
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
               <div class="menu-btn-copy"><strong>Participant achievements</strong><span class="menu-btn-sub">Session photos (in-app only)</span></div>
@@ -865,7 +844,7 @@
   <script src="/portal/portal_quick_menu_accordion.js?v=20260604-training-chip"></script>
   <script src="/portal/portal_swimming_instructor_menus.js?v=20260617-swim-aquatic-gate"></script>
   <script src="/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off"></script>
-  <script src="/portal/portal_floating_internal_chat.js?v=20260604-chat-wa"></script>
+  <script src="/portal/portal_floating_internal_chat.js?v=20260604-dock-chat"></script>
   <script type="module" src="/portal/portal_quick_menu_service_leads.js?v=20260604-service-leads-lead-only"></script>
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260616-michelle-only"></script>
@@ -4381,19 +4360,66 @@
         openSheet: true
       };
     }
+    const PORTAL_PARTICIPANTS_ALL_VIEWER_KEYS = new Set([
+      'raul', 'victor', 'javier', 'javi', 'berta', 'john'
+    ]);
+    function portalStaffParticipantAccessKey(){
+      const id = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
+      const nm = String((window.dashboardData && window.dashboardData.staffName) || '').trim().toLowerCase();
+      const first = nm.split(/\s+/).filter(Boolean)[0] || '';
+      return id || first;
+    }
+    function portalStaffCanBrowseAllParticipants(){
+      const key = portalStaffParticipantAccessKey();
+      if(PORTAL_PARTICIPANTS_ALL_VIEWER_KEYS.has(key)) return true;
+      const nm = String((window.dashboardData && window.dashboardData.staffName) || '').trim().toLowerCase();
+      if(/\bjavier\s+arranz\b/.test(nm)) return true;
+      if(/\braul\b/.test(nm) && /\b(gallego|salvador)\b/.test(nm)) return true;
+      return false;
+    }
+    function portalApplyClientsDirectoryAccess(){
+      const canAll = portalStaffCanBrowseAllParticipants();
+      const allBtn = document.getElementById('clientsTabAll');
+      const tools = document.getElementById('clientsAllToolsWrap');
+      if(allBtn){
+        allBtn.hidden = !canAll;
+        allBtn.setAttribute('aria-hidden', canAll ? 'false' : 'true');
+        if(!canAll && allBtn.classList.contains('is-active')) setClientsSheetTab('my');
+      }
+      if(tools && !canAll){
+        tools.hidden = true;
+        const si = document.getElementById('clientsDirectorySearch');
+        if(si) si.value = '';
+        const sug = document.getElementById('clientsDirectorySuggest');
+        if(sug){
+          sug.hidden = true;
+          sug.innerHTML = '';
+        }
+      }
+    }
     function getAssignedClientIdsForStaff(){
       const sid = String(STAFF_DASHBOARD_ID).toLowerCase();
       const seen = new Set();
       const out = [];
-      sessionsModel.forEach(s => {
-        if(String(s.staffId).toLowerCase() !== sid) return;
-        const cid = s.clientId;
-        if(!cid || CLIENT_LIST_PSEUDO_IDS.includes(cid)) return;
-        if(sessionModelStatus(s) !== 'Scheduled') return;
-        if(seen.has(cid)) return;
+      function pushClient(cid){
+        if(!cid || CLIENT_LIST_PSEUDO_IDS.includes(cid) || seen.has(cid)) return;
         seen.add(cid);
         out.push(cid);
+      }
+      sessionsModel.forEach(s => {
+        if(String(s.staffId).toLowerCase() !== sid) return;
+        const st = sessionModelStatus(s);
+        if(st === 'Closed' || st === 'Available') return;
+        pushClient(s.clientId);
       });
+      function pushDashboardRow(row){
+        if(!row) return;
+        const rowStaff = String(row.staffId || row.instructorId || row.staff || '').trim().toLowerCase();
+        if(rowStaff && rowStaff !== sid) return;
+        pushClient(row.clientId);
+      }
+      (dashboardData.today || []).forEach(pushDashboardRow);
+      (dashboardData.tomorrow || []).forEach(pushDashboardRow);
       out.sort((a, b) => {
         const na = (clientNotesById[a] && clientNotesById[a].name) || a;
         const nb = (clientNotesById[b] && clientNotesById[b].name) || b;
@@ -4545,7 +4571,8 @@
     function setClientsSheetTab(mode){
       const myBtn = document.getElementById('clientsTabMy');
       const allBtn = document.getElementById('clientsTabAll');
-      const isMy = mode === 'my';
+      let isMy = mode === 'my';
+      if(!isMy && !portalStaffCanBrowseAllParticipants()) isMy = true;
       const tools = document.getElementById('clientsAllToolsWrap');
       if(tools){
         tools.hidden = isMy;
@@ -9184,6 +9211,7 @@
         }
         if(sn) sn.setAttribute('aria-label', dashboardData.staffName || (split.given + (split.surname ? ' ' + split.surname : '')));
       }
+      if(typeof portalApplyClientsDirectoryAccess === 'function') portalApplyClientsDirectoryAccess();
       if(typeof portalApplyTopbarDateDisplayFromDate === 'function'){
         portalApplyTopbarDateDisplayFromDate(
           typeof portalResolveTopbarDisplayDate === 'function' ? portalResolveTopbarDisplayDate() : new Date()
@@ -9978,7 +10006,6 @@
     function renderMiniCounts(){
       const tomorrowCard = document.querySelector('.section-card--overview .mini-card[data-open="tomorrowSheet"]');
       const weekCard = document.querySelector('.section-card--overview .mini-card[data-open="weekSheet"]');
-      const dockClientsBtn = document.getElementById('dockClientsTile');
       if(tomorrowCard){
         const c = formatClientCount(dashboardData.tomorrow.length);
         tomorrowCard.setAttribute('aria-label', 'Open next session list — ' + c);
@@ -9989,11 +10016,6 @@
       if(weekCard){
         const weekTotal = dashboardData.week.reduce((acc, day) => acc + weekRowTotalClients(day), 0);
         weekCard.setAttribute('aria-label', 'Open this week’s sessions by day — ' + formatClientCount(weekTotal));
-      }
-      if(dockClientsBtn){
-        const n = getAssignedClientIdsForStaff().length;
-        const detail = n === 0 ? 'no participants assigned this term' : (n === 1 ? '1 participant assigned' : n + ' participants assigned');
-        dockClientsBtn.setAttribute('aria-label', 'Open my participants — ' + detail);
       }
     }
 
@@ -13395,10 +13417,10 @@
           }
         });
       }
-      function bindTopbarCamera(){
-        var btn = document.getElementById('topbarCameraBtn');
-        if(!btn || btn.getAttribute('data-ach-topbar-bound') === '1') return;
-        btn.setAttribute('data-ach-topbar-bound','1');
+      function bindDockCamera(){
+        var btn = document.getElementById('dockCameraBtn');
+        if(!btn || btn.getAttribute('data-ach-dock-bound') === '1') return;
+        btn.setAttribute('data-ach-dock-bound','1');
         btn.addEventListener('click', function(){
           mountSheet();
           configure();
@@ -13419,9 +13441,9 @@
         });
       }
       if(document.readyState === 'loading'){
-        document.addEventListener('DOMContentLoaded', function(){ mountSheet(); configure(); bindQuickMenu(); bindTopbarCamera(); });
+        document.addEventListener('DOMContentLoaded', function(){ mountSheet(); configure(); bindQuickMenu(); bindDockCamera(); if(typeof portalApplyClientsDirectoryAccess === 'function') portalApplyClientsDirectoryAccess(); });
       }else{
-        mountSheet(); configure(); bindQuickMenu(); bindTopbarCamera();
+        mountSheet(); configure(); bindQuickMenu(); bindDockCamera(); if(typeof portalApplyClientsDirectoryAccess === 'function') portalApplyClientsDirectoryAccess();
       }
       window.addEventListener('portal:supabase-ready', function(){ configure(); });
     })();
