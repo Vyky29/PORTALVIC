@@ -9,13 +9,13 @@
   /** Always visible: section title + buttons (no collapse trigger). */
   var FLAT_GROUP_IDS = {
     portalQuickMenuSettingsGroup: true,
-    portalQuickMenuWorkGroup: true,
   };
 
   var ACCORDION_LABELS = {
     portalQuickMenuGuideGroup: "Getting started",
     portalQuickMenuNotificationsGroup: "Communication",
     portalAnnualProfileQuickGroup: "Profile",
+    portalQuickMenuWorkGroup: "Sessions & Participants",
     portalQuickMenuServiceLeadsGroup: "Service Leads",
     portalQuickMenuMyRecordsGroup: "My Records",
   };
@@ -26,6 +26,12 @@
       icon:
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>',
       chips: ["Photos", "Venue", "Pickup"],
+    },
+    "sessions & participants": {
+      theme: "work",
+      icon:
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+      chips: ["Achievements", "Venue", "Pickup"],
     },
     communication: {
       theme: "comms",
@@ -84,6 +90,12 @@
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
       chips: ["Annual check-in"],
     },
+    portalQuickMenuWorkGroup: {
+      theme: "work",
+      icon:
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+      chips: ["Achievements", "Venue", "Pickup"],
+    },
     portalQuickMenuServiceLeadsGroup: {
       theme: "lead",
       icon:
@@ -119,17 +131,18 @@
     var id = String((grp && grp.id) || "").trim();
     if (id && ACCORDION_BY_ID[id]) return ACCORDION_BY_ID[id];
     var key = String(label || "").trim().toLowerCase();
-    if (key === "work") {
+    if (key === "work" || key === "sessions & participants") {
       try {
         var path = String((global.location && global.location.pathname) || "").toLowerCase();
         if (path.indexOf("lead_dashboard") >= 0) {
           return {
             theme: "work",
-            icon: ACCORDION_BY_TITLE.work.icon,
-            chips: ["Photos", "Venue", "Lead report", "Pickup"],
+            icon: ACCORDION_BY_TITLE["sessions & participants"].icon,
+            chips: ["Achievements", "Venue", "Lead report", "Pickup"],
           };
         }
       } catch (_) {}
+      if (ACCORDION_BY_TITLE["sessions & participants"]) return ACCORDION_BY_TITLE["sessions & participants"];
     }
     if (ACCORDION_BY_TITLE[key]) return ACCORDION_BY_TITLE[key];
     return {
@@ -179,10 +192,7 @@
     if (!grp) return false;
     var id = String(grp.id || "").trim();
     if (id && FLAT_GROUP_IDS[id]) return true;
-    return !!(
-      grp.querySelector &&
-      (grp.querySelector("#quickMenuSettingsGrid") || grp.querySelector("#quickMenuWorkGrid"))
-    );
+    return !!(grp.querySelector && grp.querySelector("#quickMenuSettingsGrid"));
   }
 
   function portalRestoreFlatQuickMenuGroup(grp) {

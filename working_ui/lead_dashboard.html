@@ -331,6 +331,11 @@
     </div>
   </nav>
 
+  <button type="button" class="portal-floating-chat-btn" id="portalFloatingChatBtn" aria-label="Open internal chat" title="Chat" hidden aria-hidden="true">
+    <span class="portal-floating-chat-btn__icon" aria-hidden="true"><svg class="portal-floating-chat-btn__svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg></span>
+    <span class="portal-floating-chat-btn__label">Chat</span>
+  </button>
+
   <div class="sheet-backdrop" id="backdrop"></div>
 
   <div class="demo-quick-overlay" id="demoQuickActionOverlay" hidden aria-hidden="true">
@@ -384,7 +389,7 @@
             <div id="portalQuickMenuReminderBannerHost"></div>
           </div>
         </div>
-        <div class="menu-group" id="portalAnnualProfileQuickGroup">
+        <div class="menu-group" id="portalAnnualProfileQuickGroup" hidden aria-hidden="true">
           <div class="menu-group-title">Profile</div>
           <div class="menu-grid">
             <button type="button" class="menu-btn menu-btn--work-timesheet" id="quickMenuAnnualProfileCheckin" data-portal-external-url="staff_profile_update.html" aria-label="Annual profile check-in — confirm your details">
@@ -393,8 +398,8 @@
             </button>
           </div>
         </div>
-        <div class="menu-group menu-group--flat" id="portalQuickMenuWorkGroup">
-          <div class="menu-group-title">Work</div>
+        <div class="menu-group" id="portalQuickMenuWorkGroup">
+          <div class="menu-group-title">Sessions &amp; Participants</div>
           <div class="menu-grid" id="quickMenuWorkGrid">
             <button type="button" class="menu-btn menu-btn--work-achievements" id="quickMenuParticipantAchievements">
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
@@ -838,7 +843,8 @@
   <script src="/portal/portal_guide_menu.js?v=20260612-guide-read"></script>
   <script src="/portal/portal_quick_menu_accordion.js?v=20260601-work-flat"></script>
   <script src="/portal/portal_swimming_instructor_menus.js?v=20260617-swim-aquatic-gate"></script>
-  <script src="/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder"></script>
+  <script src="/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off"></script>
+  <script src="/portal/portal_floating_internal_chat.js?v=20260604-floating-chat"></script>
   <script type="module" src="/portal/portal_quick_menu_service_leads.js?v=20260604-service-leads"></script>
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260616-michelle-only"></script>
@@ -8562,9 +8568,12 @@
         if(typeof syncPortalQuickMenuNotificationsGroupVisibility === 'function') syncPortalQuickMenuNotificationsGroupVisibility();
       }else{
         const grp = document.getElementById('portalQuickMenuNotificationsGroup');
-        if(grp) grp.hidden = false;
-        if(typeof portalRenderQuickMenuInternalChatTile === 'function') portalRenderQuickMenuInternalChatTile();
-        if(typeof renderNotices === 'function') renderNotices();
+        if(grp) grp.hidden = true;
+        const profGrp = document.getElementById('portalAnnualProfileQuickGroup');
+        if(profGrp){
+          profGrp.hidden = true;
+          profGrp.setAttribute('aria-hidden', 'true');
+        }
         if(typeof portalCollapseQuickMenuAccordions === 'function') portalCollapseQuickMenuAccordions();
       }
     }
@@ -8577,7 +8586,7 @@
       const slotIc = document.getElementById('portalQuickMenuInternalChatSlot');
       if(!grp) return;
       if(portalQuickMenuEntryMode !== 'logo-lite'){
-        grp.hidden = false;
+        grp.hidden = true;
         return;
       }
       const wellbeingSlot = document.getElementById('portalQuickMenuWellbeingReviewSlot');

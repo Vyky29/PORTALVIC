@@ -6932,3 +6932,87 @@
       max-width:100%;
       padding:0 1px;
     }
+
+    /* Quick menu (full): Communication / profile live elsewhere on the dashboard */
+    #menuSheet.menu-sheet--full #portalQuickMenuNotificationsGroup,
+    #menuSheet.menu-sheet--full #portalAnnualProfileQuickGroup{
+      display:none !important;
+    }
+
+    /* Floating Internal Chat — outside Quick menu, above dock */
+    .portal-floating-chat-btn{
+      position:fixed;
+      right:max(12px, env(safe-area-inset-right, 0px));
+      bottom:calc(var(--dock-strip-height, 62px) + 10px + env(safe-area-inset-bottom, 0px) + var(--dock-browser-ui-lift, 0px));
+      z-index:124;
+      display:inline-flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:2px;
+      min-width:52px;
+      padding:8px 10px 7px;
+      border-radius:14px;
+      border:1px solid rgba(23,50,71,.14);
+      background:#fff;
+      box-shadow:0 4px 16px rgba(23,50,71,.14);
+      color:var(--ink);
+      font-family:inherit;
+      cursor:pointer;
+      pointer-events:auto;
+      -webkit-tap-highlight-color:transparent;
+      transition:transform .14s ease, box-shadow .14s ease, border-color .14s ease;
+    }
+    .portal-floating-chat-btn:hover{
+      transform:translateY(-1px);
+      border-color:var(--blue);
+      box-shadow:0 8px 22px rgba(45,132,179,.22);
+    }
+    .portal-floating-chat-btn:focus-visible{
+      outline:2px solid var(--blue);
+      outline-offset:2px;
+    }
+    .portal-floating-chat-btn__icon{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      width:22px;
+      height:22px;
+      color:var(--blue);
+    }
+    .portal-floating-chat-btn__svg{
+      width:22px;
+      height:22px;
+      display:block;
+    }
+    .portal-floating-chat-btn__label{
+      font-size:10px;
+      font-weight:700;
+      line-height:1.1;
+      letter-spacing:.02em;
+    }
+    .portal-floating-chat-btn--unread{
+      border-color:rgba(45,132,179,.45);
+      box-shadow:0 4px 18px rgba(45,132,179,.28);
+    }
+    .portal-floating-chat-btn--unread .portal-floating-chat-btn__icon{
+      color:#1d4f8f;
+    }
+    .portal-floating-chat-btn--unread::after{
+      content:"";
+      position:absolute;
+      top:6px;
+      right:8px;
+      width:8px;
+      height:8px;
+      border-radius:50%;
+      background:#e53935;
+      border:2px solid #fff;
+      box-sizing:border-box;
+    }
+    body.portal-internal-chat-open .portal-floating-chat-btn{
+      display:none !important;
+    }
+    html.dev-mobile-preview .portal-floating-chat-btn{
+      right:max(12px, calc((100vw - var(--layout-max-mobile, 390px)) / 2 + 12px));
+    }
