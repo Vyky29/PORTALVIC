@@ -1,14 +1,22 @@
 /**
- * Staff internal chat ù voice/video calls and scheduled meetings via Jitsi Meet.
- * Call invites are stored as text DM bodies with an embedded payload (no DB migration required).
+ * Staff internal chat - in-portal voice/video calls (embedded Jitsi, no new tab).
+ * Call invites are stored as text DM bodies with an embedded payload.
  */
 (function (global) {
   "use strict";
 
   var CALL_TAG = "[[portal-staff-call:";
   var CALL_TAG_END = "]]";
-  var JITSI_HOST = "https://meet.jit.si";
+  var JITSI_DOMAIN = "meet.jit.si";
+  var JITSI_API_SRC = "https://meet.jit.si/external_api.js";
   var ROOM_PREFIX = "cs-portal-";
+
+  var callState = {
+    api: null,
+    shell: null,
+    host: null,
+    loading: false,
+  };
 
   function esc(s) {
     return String(s == null ? "" : s)
@@ -42,7 +50,14 @@
     var json = raw.slice(start + CALL_TAG.length, end);
     try {
       var data = JSON.parse(json);
-      if (!data || !data.url || !data.kind) return null;
+      if (!data || !data.kind) return null;
+      if (!data.room && data.url) {
+        try {
+          var u = new URL(String(data.url));
+          data.room = decodeURIComponent(u.pathname.replace(/^\//, ""));
+        } catch (_u) {}
+      }
+      if (!data.room) return null;
       return data;
     } catch (_e) {
       return null;
@@ -67,25 +82,24 @@
     return ROOM_PREFIX + tid + "-" + k + "-" + randomSuffix();
   }
 
-  function jitsiUrl(room, opts) {
+  function buildCallPayload(opts) {
     opts = opts || {};
     var kind = String(opts.kind || "video");
-    var url = JITSI_HOST + "/" + encodeURIComponent(room);
-    var hash = [];
-    if (kind === "audio") {
-      hash.push("config.startWithVideoMuted=true");
-      hash.push("config.startAudioOnly=true");
-    }
-    hash.push("config.prejoinPageEnabled=true");
-    hash.push("config.disableDeepLinking=true");
-    if (hash.length) url += "#" + hash.join("&");
-    return url;
+    var room = String(opts.room || "").trim();
+    return {
+      v: 2,
+      kind: kind === "meeting" ? "meeting" : kind,
+      room: room,
+      url: "https://" + JITSI_DOMAIN + "/" + encodeURIComponent(room),
+      title: String(opts.title || "").trim(),
+      scheduledAt: opts.scheduledAt || null,
+      createdAt: new Date().toISOString(),
+    };
   }
 
   function encodeCallBody(data) {
     var label = humanLabel(data.kind, data.title);
-    var line = label + " ù tap Join";
-    return line + "\n" + CALL_TAG + JSON.stringify(data) + CALL_TAG_END;
+    return label + " - tap Join\n" + CALL_TAG + JSON.stringify(data) + CALL_TAG_END;
   }
 
   function formatWhen(iso) {
@@ -118,14 +132,230 @@
     };
   }
 
-  function openJitsi(url) {
-    if (!url) return;
+  function callerDisplayName() {
+    var box = global.__PORTAL_SUPABASE__;
+    var p = box && box.staff_profile;
+    var nm = String((p && p.full_name) || (p && p.username) || "").trim();
+    if (nm) return nm;
     try {
-      var w = global.open(url, "_blank", "noopener,noreferrer");
-      if (!w) global.location.href = url;
-    } catch (_e) {
-      global.location.href = url;
+      nm = String((global.dashboardData && global.dashboardData.staffName) || "").trim();
+    } catch (_d) {}
+    return nm || "Staff";
+  }
+
+  function injectStyles() {
+    if (document.getElementById("portal-inapp-call-styles")) return;
+    var st = document.createElement("style");
+    st.id = "portal-inapp-call-styles";
+    st.textContent =
+      "body.portal-inapp-call-open{overflow:hidden}" +
+      ".portal-inapp-call-shell{position:fixed;inset:0;z-index:12050;display:flex;flex-direction:column;background:#0f172a;color:#fff}" +
+      ".portal-inapp-call-shell[hidden]{display:none!important}" +
+      ".portal-inapp-call-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:max(10px,env(safe-area-inset-top)) 14px 10px;background:linear-gradient(180deg,#173247,#0f2435);border-bottom:1px solid rgba(255,255,255,.1);flex-shrink:0}" +
+      ".portal-inapp-call-title{font-size:15px;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}" +
+      ".portal-inapp-call-leave{flex-shrink:0;padding:8px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.25);background:rgba(220,38,38,.92);color:#fff;font:inherit;font-size:13px;font-weight:700;cursor:pointer}" +
+      ".portal-inapp-call-leave:hover{filter:brightness(1.05)}" +
+      ".portal-inapp-call-host{flex:1;min-height:0;position:relative;background:#000}" +
+      ".portal-inapp-call-host iframe{border:0;width:100%!important;height:100%!important}" +
+      ".portal-inapp-call-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:rgba(255,255,255,.85);background:#0f172a;z-index:2}" +
+      ".portal-inapp-call-loading[hidden]{display:none!important}";
+    document.head.appendChild(st);
+  }
+
+  function ensureCallShell() {
+    injectStyles();
+    if (callState.shell && callState.host) return callState.shell;
+
+    var shell = document.createElement("div");
+    shell.id = "portalInAppCallShell";
+    shell.className = "portal-inapp-call-shell";
+    shell.hidden = true;
+    shell.setAttribute("role", "dialog");
+    shell.setAttribute("aria-modal", "true");
+    shell.setAttribute("aria-label", "In-portal call");
+    shell.innerHTML =
+      '<div class="portal-inapp-call-head">' +
+      '<span class="portal-inapp-call-title" id="portalInAppCallTitle">Call</span>' +
+      '<button type="button" class="portal-inapp-call-leave" id="portalInAppCallLeave">Leave</button>' +
+      "</div>" +
+      '<div class="portal-inapp-call-host" id="portalInAppCallHost">' +
+      '<div class="portal-inapp-call-loading" id="portalInAppCallLoading">Connecting...</div>' +
+      "</div>";
+
+    document.body.appendChild(shell);
+    callState.shell = shell;
+    callState.host = shell.querySelector("#portalInAppCallHost");
+
+    var leaveBtn = shell.querySelector("#portalInAppCallLeave");
+    if (leaveBtn) {
+      leaveBtn.addEventListener("click", function () {
+        closeInAppCall();
+      });
     }
+
+    if (!shell.dataset.portalEscBound) {
+      shell.dataset.portalEscBound = "1";
+      document.addEventListener("keydown", function (ev) {
+        if (ev.key === "Escape" && shell && !shell.hidden) closeInAppCall();
+      });
+    }
+
+    return shell;
+  }
+
+  function loadJitsiApi() {
+    if (global.JitsiMeetExternalAPI) {
+      return Promise.resolve(global.JitsiMeetExternalAPI);
+    }
+    if (callState.loading) {
+      return new Promise(function (resolve, reject) {
+        var tries = 0;
+        var t = setInterval(function () {
+          tries++;
+          if (global.JitsiMeetExternalAPI) {
+            clearInterval(t);
+            resolve(global.JitsiMeetExternalAPI);
+          } else if (tries > 80) {
+            clearInterval(t);
+            reject(new Error("Call service did not load"));
+          }
+        }, 125);
+      });
+    }
+    callState.loading = true;
+    return new Promise(function (resolve, reject) {
+      var existing = document.querySelector('script[data-portal-jitsi-api="1"]');
+      if (existing) {
+        existing.addEventListener("load", function () {
+          callState.loading = false;
+          resolve(global.JitsiMeetExternalAPI);
+        });
+        existing.addEventListener("error", function () {
+          callState.loading = false;
+          reject(new Error("Could not load call service"));
+        });
+        return;
+      }
+      var s = document.createElement("script");
+      s.src = JITSI_API_SRC;
+      s.async = true;
+      s.dataset.portalJitsiApi = "1";
+      s.onload = function () {
+        callState.loading = false;
+        if (global.JitsiMeetExternalAPI) resolve(global.JitsiMeetExternalAPI);
+        else reject(new Error("Call service unavailable"));
+      };
+      s.onerror = function () {
+        callState.loading = false;
+        reject(new Error("Could not load call service"));
+      };
+      document.head.appendChild(s);
+    });
+  }
+
+  function disposeCallApi() {
+    if (!callState.api) return;
+    try {
+      callState.api.dispose();
+    } catch (_e) {}
+    callState.api = null;
+  }
+
+  function closeInAppCall() {
+    disposeCallApi();
+    var shell = callState.shell || document.getElementById("portalInAppCallShell");
+    var host = callState.host || (shell && shell.querySelector("#portalInAppCallHost"));
+    if (host) {
+      host.innerHTML =
+        '<div class="portal-inapp-call-loading" id="portalInAppCallLoading">Connecting...</div>';
+    }
+    if (shell) shell.hidden = true;
+    document.body.classList.remove("portal-inapp-call-open");
+  }
+
+  async function openInAppCall(opts) {
+    opts = opts || {};
+    var room = String(opts.room || "").trim();
+    if (!room) return;
+
+    var kind = String(opts.kind || "video");
+    var title = String(opts.title || opts.label || humanLabel(kind, opts.meetingTitle || "")).trim();
+    var shell = ensureCallShell();
+    var host = callState.host;
+    var loading = shell.querySelector("#portalInAppCallLoading");
+    var titleEl = shell.querySelector("#portalInAppCallTitle");
+
+    if (titleEl) titleEl.textContent = title || "Call";
+    if (loading) loading.hidden = false;
+    shell.hidden = false;
+    document.body.classList.add("portal-inapp-call-open");
+
+    disposeCallApi();
+    if (host) host.innerHTML = '<div class="portal-inapp-call-loading" id="portalInAppCallLoading">Connecting...</div>';
+    loading = shell.querySelector("#portalInAppCallLoading");
+
+    try {
+      var JitsiMeetExternalAPI = await loadJitsiApi();
+      host = callState.host;
+      if (!host) throw new Error("Call panel missing");
+
+      host.innerHTML = "";
+      var audioOnly = kind === "audio";
+      var api = new JitsiMeetExternalAPI(JITSI_DOMAIN, {
+        roomName: room,
+        parentNode: host,
+        userInfo: { displayName: callerDisplayName() },
+        configOverwrite: {
+          startWithAudioMuted: false,
+          startWithVideoMuted: audioOnly,
+          startAudioOnly: audioOnly,
+          prejoinPageEnabled: false,
+          disableDeepLinking: true,
+          enableWelcomePage: false,
+          requireDisplayName: false,
+        },
+        interfaceConfigOverwrite: {
+          APP_NAME: "clubSENsational",
+          NATIVE_APP_NAME: "clubSENsational Portal",
+          SHOW_JITSI_WATERMARK: false,
+          SHOW_WATERMARK_FOR_GUESTS: false,
+          MOBILE_APP_PROMO: false,
+          DISABLE_JOIN_LEAVE_NOTIFICATIONS: true,
+          TOOLBAR_BUTTONS: [
+            "microphone",
+            "camera",
+            "closedcaptions",
+            "desktop",
+            "fullscreen",
+            "hangup",
+            "tileview",
+          ],
+        },
+      });
+
+      callState.api = api;
+      if (loading) loading.hidden = true;
+
+      api.addEventListener("readyToClose", closeInAppCall);
+      api.addEventListener("videoConferenceLeft", closeInAppCall);
+    } catch (e) {
+      closeInAppCall();
+      var errEl = document.getElementById("internalChatErr");
+      if (errEl) {
+        errEl.textContent = String((e && e.message) || e || "Could not start call");
+      }
+      throw e;
+    }
+  }
+
+  function openCallFromPayload(data) {
+    if (!data) return;
+    void openInAppCall({
+      room: data.room,
+      kind: data.kind,
+      title: humanLabel(data.kind, data.title),
+      meetingTitle: data.title,
+    });
   }
 
   function renderCallCard(host, data, mine) {
@@ -133,7 +363,8 @@
     var title = String(data.title || "").trim();
     var label = humanLabel(kind, title);
     var when = data.scheduledAt ? formatWhen(data.scheduledAt) : "";
-    var icon = kind === "meeting" ? "??" : kind === "video" ? "??" : "??";
+    var icon = kind === "meeting" ? "\uD83D\uDCC5" : kind === "video" ? "\uD83D\uDCF9" : "\uD83D\uDCDE";
+    var live = !when;
 
     var card = document.createElement("div");
     card.className =
@@ -150,14 +381,16 @@
       "</div>" +
       (when
         ? '<div class="portal-dm-call-card-when">' + esc(when) + "</div>"
-        : '<div class="portal-dm-call-card-when portal-dm-call-card-when--live">Ready to join</div>') +
+        : '<div class="portal-dm-call-card-when portal-dm-call-card-when--live">Tap Join - opens inside the portal</div>') +
       "</div></div>" +
-      '<button type="button" class="portal-dm-call-join-btn">Join</button>';
+      '<button type="button" class="portal-dm-call-join-btn">' +
+      (live ? "Join now" : "Join") +
+      "</button>";
 
     var joinBtn = card.querySelector(".portal-dm-call-join-btn");
     if (joinBtn) {
       joinBtn.addEventListener("click", function () {
-        openJitsi(String(data.url || ""));
+        openCallFromPayload(data);
       });
     }
     host.appendChild(card);
@@ -208,16 +441,12 @@
     if (!client || !threadId) throw new Error("Not available.");
 
     var room = buildRoomName(threadId, kind);
-    var url = jitsiUrl(room, { kind: kind === "meeting" ? "video" : kind });
-    var payload = {
-      v: 1,
-      kind: kind === "meeting" ? "meeting" : kind,
+    var payload = buildCallPayload({
+      kind: kind,
       room: room,
-      url: url,
-      title: title || "",
+      title: title,
       scheduledAt: scheduledAt || null,
-      createdAt: new Date().toISOString(),
-    };
+    });
     var body = encodeCallBody(payload);
     var ins = await client
       .from("portal_staff_dm_messages")
@@ -243,7 +472,11 @@
         threadId: ctx.threadId,
         kind: kind,
       });
-      openJitsi(payload.url);
+      await openInAppCall({
+        room: payload.room,
+        kind: payload.kind,
+        title: ctx.peerLabel ? "Call with " + ctx.peerLabel : humanLabel(kind, ""),
+      });
       if (typeof global.portalRenderInternalChatSheet === "function") {
         await global.portalRenderInternalChatSheet();
       }
@@ -268,7 +501,7 @@
     panel.innerHTML =
       '<div class="portal-dm-meeting-panel-card">' +
       '<h4 id="portalStaffChatMeetingTitle">Schedule meeting</h4>' +
-      '<p class="portal-dm-meeting-panel-sub">A join link is sent in this chat. Everyone can open it at the scheduled time.</p>' +
+      '<p class="portal-dm-meeting-panel-sub">Everyone gets a join button in this chat. The meeting opens inside the portal.</p>' +
       '<label class="portal-dm-meeting-field"><span>Title</span><input type="text" id="portalStaffChatMeetingTitleInput" maxlength="120" placeholder="e.g. Weekly handover" /></label>' +
       '<label class="portal-dm-meeting-field"><span>Date</span><input type="date" id="portalStaffChatMeetingDateInput" /></label>' +
       '<label class="portal-dm-meeting-field"><span>Time</span><input type="time" id="portalStaffChatMeetingTimeInput" /></label>' +
@@ -440,8 +673,8 @@
     startCall: startCall,
     openMeetingPanel: openMeetingPanel,
     syncCallBar: syncCallBar,
-    openJitsi: openJitsi,
-    jitsiUrl: jitsiUrl,
+    openInAppCall: openInAppCall,
+    closeInAppCall: closeInAppCall,
     buildRoomName: buildRoomName,
   };
 })(typeof window !== "undefined" ? window : globalThis);
