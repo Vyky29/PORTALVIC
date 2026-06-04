@@ -7,7 +7,7 @@
 
   var CALL_TAG = "[[portal-staff-call:";
   var CALL_TAG_END = "]]";
-  /** meet.jit.si requires OAuth for moderators ù unusable in embedded iframe. */
+  /** meet.jit.si requires OAuth for moderators ÔøΩ unusable in embedded iframe. */
   var JITSI_JAAS_DOMAIN = "8x8.vc";
   var JITSI_JAAS_API_SRC = "https://8x8.vc/external_api.js";
   var JITSI_FALLBACK_DOMAIN = "meet.ffmuc.net";
@@ -351,12 +351,27 @@
     document.body.classList.remove("portal-inapp-call-open");
   }
 
+  async function warmCallMediaIfNeeded(kind) {
+    var fn = global.portalRequestCallMediaPermissions;
+    if (typeof fn !== "function") return;
+    if (
+      typeof global.portalCommsMediaPermissionsGranted === "function" &&
+      global.portalCommsMediaPermissionsGranted()
+    ) {
+      return;
+    }
+    try {
+      await fn({ video: kind !== "audio" });
+    } catch (_warm) {}
+  }
+
   async function openInAppCall(opts) {
     opts = opts || {};
     var room = String(opts.room || "").trim();
     if (!room) return;
 
     var kind = String(opts.kind || "video");
+    await warmCallMediaIfNeeded(kind);
     var title = String(opts.title || opts.label || humanLabel(kind, opts.meetingTitle || "")).trim();
     var shell = ensureCallShell();
     var host = callState.host;

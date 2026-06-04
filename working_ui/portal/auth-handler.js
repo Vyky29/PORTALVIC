@@ -883,13 +883,20 @@ export async function bootstrapDashboardSupabase(_opts) {
       if (page === "lead_overview") {
         throw new Error("skip_location_on_lead_overview");
       }
-      const perm = await import("./portal_location_permission.js?v=20260609-alerts-mic");
+      const perm = await import("./portal_location_permission.js?v=20260619-enable-all-perms");
       window.portalLocationPermissionGranted = perm.portalLocationPermissionGranted;
       window.portalMicrophonePermissionGranted = perm.portalMicrophonePermissionGranted;
+      window.portalCameraPermissionGranted = perm.portalCameraPermissionGranted;
+      window.portalCommsMediaPermissionsGranted = perm.portalCommsMediaPermissionsGranted;
       window.portalRequestLocationPermission = perm.requestLocationPermission;
       window.portalRequestMicrophonePermission = perm.requestMicrophonePermission;
+      window.portalRequestCameraPermission = perm.requestCameraPermission;
+      window.portalRequestCallMediaPermissions = perm.requestCallMediaPermissions;
+      window.portalRequestAllPortalPermissions = perm.requestAllPortalPermissions;
       window.portalRefreshLocationUi = perm.portalRefreshLocationUi;
       window.portalRefreshMicrophoneUi = perm.portalRefreshMicrophoneUi;
+      window.portalRefreshCameraUi = perm.portalRefreshCameraUi;
+      window.portalRefreshEnableAllUi = perm.portalRefreshEnableAllUi;
       window.portalRefreshMandatoryAlertsSettingsUi = perm.portalRefreshMandatoryAlertsSettingsUi;
       window.portalEnsureMandatoryAlertsSettings = perm.portalEnsureMandatoryAlertsSettings;
       window.portalSyncAlertsSettingsChrome = perm.portalSyncAlertsSettingsChrome;
@@ -898,8 +905,11 @@ export async function bootstrapDashboardSupabase(_opts) {
       await Promise.all([
         perm.probeLocationPermissionState(),
         perm.probeMicrophonePermissionState(),
+        perm.probeCameraPermissionState(),
       ]);
       perm.portalRefreshMicrophoneUi();
+      perm.portalRefreshCameraUi();
+      perm.portalRefreshEnableAllUi();
       perm.portalSyncAlertsSettingsChrome();
       const loc = await import("./portal_location_tracker.js?v=20260610-live-map-fix");
       window.portalRestartLocationTracker = function () {

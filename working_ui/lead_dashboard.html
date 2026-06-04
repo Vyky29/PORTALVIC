@@ -661,11 +661,19 @@
   <section class="sheet sheet--fullscreen sheet--mobile-frame" id="alertsNotificationsSheet" aria-labelledby="alertsNotificationsTitle">
     <div class="sheet-head">
       <div class="sheet-handle"></div>
-      <h3 id="alertsNotificationsTitle">Alerts, location &amp; microphone</h3>
-      <p>Turn on notifications once on this device.</p>
+      <h3 id="alertsNotificationsTitle">Portal permissions</h3>
+      <p>One tap for alerts, chat, calls, meetings and photos on this device.</p>
     </div>
     <div class="sheet-body">
       <div class="portal-alerts-panel">
+        <div class="portal-alerts-block portal-alerts-block--primary">
+          <h4 class="portal-alerts-section-title">Everything at once</h4>
+          <p class="portal-alerts-hint muted">Notifications, microphone, camera and location (if your role needs it). The browser may show a few prompts — allow each once.</p>
+          <p id="portalEnableAllStatus" class="portal-alerts-status" aria-live="polite"></p>
+          <button type="button" class="portal-alerts-action-btn portal-alerts-action-btn--primary" id="portalEnableAllBtn">Turn on all permissions</button>
+        </div>
+        <details class="portal-alerts-details">
+          <summary class="portal-alerts-details-summary">Adjust individually</summary>
         <div class="portal-alerts-block">
           <h4 class="portal-alerts-section-title">Notifications</h4>
           <p class="portal-alerts-hint muted">For announcements and roster changes.</p>
@@ -680,11 +688,18 @@
           <button type="button" class="portal-alerts-action-btn" id="portalLocationEnableBtn">Allow location</button>
         </div>
         <div class="portal-alerts-block">
-          <h4 class="portal-alerts-section-title">Microphone <span class="muted" style="font-weight:600">(optional)</span></h4>
+          <h4 class="portal-alerts-section-title">Microphone</h4>
           <p id="portalMicHint" class="portal-alerts-hint muted"></p>
           <p id="portalMicStatus" class="portal-alerts-status" aria-live="polite"></p>
           <button type="button" class="portal-alerts-action-btn" id="portalMicEnableBtn">Allow microphone</button>
         </div>
+        <div class="portal-alerts-block">
+          <h4 class="portal-alerts-section-title">Camera</h4>
+          <p class="portal-alerts-hint muted">For video calls, meetings and session achievement photos.</p>
+          <p id="portalCamStatus" class="portal-alerts-status" aria-live="polite"></p>
+          <button type="button" class="portal-alerts-action-btn" id="portalCamEnableBtn">Allow camera</button>
+        </div>
+        </details>
         <p class="portal-alerts-footnote muted">Location sharing runs only during Bespoke Programme and Day Centre session windows and stops when you close the app.</p>
       </div>
     </div>
@@ -889,7 +904,7 @@
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260616-michelle-only"></script>
   <script src="/portal/portal_dm_voice.js?v=20260602-feedback-voice-fix"></script>
-  <script src="/portal/portal_staff_chat_calls.js?v=20260619-jaas-calls"></script>
+  <script src="/portal/portal_staff_chat_calls.js?v=20260619-enable-all-perms"></script>
   <script src="/portal/portal_lead_staff_chat_directory.js?v=20260619-lead-staff-rls"></script>
   <script>
     console.log("ABSENT FIX VERSION LOADED 20260425");
@@ -11672,6 +11687,19 @@
       try{
         if(typeof window.portalRefreshMicrophoneUi === 'function') window.portalRefreshMicrophoneUi();
         if(typeof window.portalSyncAlertsSettingsChrome === 'function') window.portalSyncAlertsSettingsChrome();
+      }catch(_){}
+    });
+    window.addEventListener('portal:camera-permission-change', function(){
+      try{
+        if(typeof window.portalRefreshCameraUi === 'function') window.portalRefreshCameraUi();
+        if(typeof window.portalSyncAlertsSettingsChrome === 'function') window.portalSyncAlertsSettingsChrome();
+      }catch(_){}
+    });
+    window.addEventListener('portal:all-permissions-change', function(){
+      try{
+        if(typeof window.portalRefreshMandatoryAlertsSettingsUi === 'function'){
+          void window.portalRefreshMandatoryAlertsSettingsUi();
+        }
       }catch(_){}
     });
 
