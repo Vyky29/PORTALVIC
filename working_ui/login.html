@@ -196,14 +196,6 @@
       color:var(--ink);
       letter-spacing:-.02em;
     }
-    .login-sub{
-      margin:0 0 28px;
-      font-size:.9rem;
-      color:var(--muted);
-      text-align:center;
-      line-height:1.4;
-    }
-
     .field{
       margin-bottom:16px;
     }
@@ -363,7 +355,6 @@
         </div>
         <h1 class="login-portal-text">Portal</h1>
       </header>
-      <p class="login-sub">Staff: first name on the rota. <strong>CEO:</strong> use <strong>Javi</strong> (not Javier), Victor, or Raul — or your <strong>@clubsensational.org</strong> email. <strong>Admin:</strong> Sevitha or <strong>sevitha@</strong> / info@.</p>
 
       <form id="login-form" novalidate method="post" action="">
         <div class="field">
@@ -470,7 +461,7 @@
       window.PORTAL_LEAD_DASHBOARD_URL = "lead_dashboard.html";
       window.PORTAL_CHOOSE_URL = "portal_choose.html";
       window.PORTAL_AUTO_REDIRECT_FROM_LOGIN = true;
-      var portalJsVer = "20260618-corporate-emails";
+      var portalJsVer = "20260618-ceo-access-lock";
       /* Auth ES module: load from portal next to this page (same origin avoids CORS issues). */
       var portalJsBase = new URL("portal/", window.location.href).href;
       var s = document.createElement("script");

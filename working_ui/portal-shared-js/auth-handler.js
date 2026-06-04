@@ -22,6 +22,7 @@ import {
 } from "./supabase-client.js";
 import {
   resolveDemoEmail,
+  resolveCorporateAuthEmail,
   resolveStaffKeyFromAuthEmail,
   portalCanonicalStaffRosterKey,
   PORTAL_LOGIN_UNKNOWN_NAME_HELP,
@@ -189,13 +190,24 @@ export function portalCanAccessAdminDashboard(profile, authEmail) {
 }
 
 /** CEO dashboard shell — Victor, Javi, Raúl only (not ops admins such as Sevitha). */
-const PORTAL_CEO_DASHBOARD_DENIED_KEYS = new Set(["sevitha"]);
+const PORTAL_CEO_DASHBOARD_ALLOWED_KEYS = new Set(["victor", "javi", "raul"]);
+const PORTAL_CEO_DASHBOARD_DENIED_KEYS = new Set(["sevitha", "info"]);
+const PORTAL_CEO_DASHBOARD_DENIED_EMAILS = new Set([
+  "sevitha@clubsensational.org",
+  "info@clubsensational.org",
+]);
 
 export function portalCanAccessCeoDashboard(profile, authEmail) {
   if (!profile) return false;
+  const email = String(resolveCorporateAuthEmail(authEmail) || authEmail || "")
+    .trim()
+    .toLowerCase();
+  if (email && PORTAL_CEO_DASHBOARD_DENIED_EMAILS.has(email)) return false;
+  const app = String(profile.app_role || "").toLowerCase();
+  if (app === "admin") return false;
   const staffKey = portalInferStaffKey(profile, authEmail);
-  if (PORTAL_CEO_DASHBOARD_DENIED_KEYS.has(staffKey)) return false;
-  return portalInferEffectiveRole(profile, authEmail) === "ceo";
+  if (!staffKey || PORTAL_CEO_DASHBOARD_DENIED_KEYS.has(staffKey)) return false;
+  return PORTAL_CEO_DASHBOARD_ALLOWED_KEYS.has(staffKey);
 }
 
 /**
