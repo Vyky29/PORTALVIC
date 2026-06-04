@@ -4078,6 +4078,9 @@
       background:rgba(23,50,71,.06);
       box-sizing:border-box;
     }
+    .clients-sheet-tab[hidden]{
+      display:none;
+    }
     .clients-sheet-tab{
       flex:1;
       border:none;
@@ -4239,6 +4242,20 @@
       background:#fff;
     }
     .clients-grid-text{display:flex;flex-direction:column;justify-content:center;min-width:0;flex:1}
+    .clients-grid-name-col{
+      flex:1;
+      min-width:0;
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+    }
+    .clients-grid-sched{
+      font-size:11px;
+      font-weight:600;
+      color:var(--muted);
+      line-height:1.2;
+      overflow-wrap:break-word;
+    }
     .clients-grid-name{
       flex:1;
       font-size:14px;

@@ -800,7 +800,8 @@
       <h3>Participants</h3>
       <div class="clients-sheet-tabs" role="tablist" aria-label="Which participants to show">
         <button type="button" class="clients-sheet-tab is-active" role="tab" id="clientsTabMy" aria-selected="true" aria-controls="clientsListGrid">My participants</button>
-        <button type="button" class="clients-sheet-tab" role="tab" id="clientsTabAll" aria-selected="false" aria-controls="clientsListGrid">All participants</button>
+        <button type="button" class="clients-sheet-tab" role="tab" id="clientsTabNew" aria-selected="false" aria-controls="clientsListGrid" hidden>New participants</button>
+        <button type="button" class="clients-sheet-tab" role="tab" id="clientsTabAll" aria-selected="false" aria-controls="clientsListGrid" hidden>All participants</button>
       </div>
     </div>
     <div class="sheet-body clients-sheet-body">
@@ -845,6 +846,7 @@
   <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260610-javier-may14-roster"></script>
   <script src="/portal/clients_info_embed.js?v=20260601-general-info"></script>
   <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
+  <script src="/portal/portal_participants_sheet.js?v=20260601-new-participants-tab"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260601-participant-dedupe"></script>
   <script src="/portal/teflon_guide_demo_data.js?v=20260604-guide-roster"></script>
   <script src="/portal/teflon_guide_demo_merge.js?v=20260604-guide-roster"></script>
@@ -1592,9 +1594,11 @@
           if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
           if(typeof renderTermCalendarGrid === 'function') renderTermCalendarGrid();
           if(typeof renderClientsSheetList === 'function'){
+            const newBtn = document.getElementById('clientsTabNew');
             const myBtn = document.getElementById('clientsTabMy');
-            const mode = myBtn && myBtn.classList.contains('is-active') ? 'my' : 'all';
-            renderClientsSheetList(mode, mode === 'all' ? getClientsDirectoryQuery() : '');
+            const mode = newBtn && newBtn.classList.contains('is-active') ? 'new'
+              : (myBtn && myBtn.classList.contains('is-active') ? 'my' : 'my');
+            renderClientsSheetList(mode, '');
           }
         }else if(dashboardData && !dashboardData.portalFeedbackReconciled){
           if(typeof portalMarkFeedbackReconciledFromExports === 'function') portalMarkFeedbackReconciledFromExports();
@@ -4395,23 +4399,29 @@
       return id || first;
     }
     function portalStaffCanBrowseAllParticipants(){
-      const key = portalStaffParticipantAccessKey();
-      if(PORTAL_PARTICIPANTS_ALL_VIEWER_KEYS.has(key)) return true;
-      const nm = String((window.dashboardData && window.dashboardData.staffName) || '').trim().toLowerCase();
-      if(/\bjavier\s+arranz\b/.test(nm)) return true;
-      if(/\braul\b/.test(nm) && /\b(gallego|salvador)\b/.test(nm)) return true;
       return false;
     }
-    function portalApplyClientsDirectoryAccess(){
-      const canAll = portalStaffCanBrowseAllParticipants();
-      const allBtn = document.getElementById('clientsTabAll');
-      const tools = document.getElementById('clientsAllToolsWrap');
-      if(allBtn){
-        allBtn.hidden = !canAll;
-        allBtn.setAttribute('aria-hidden', canAll ? 'false' : 'true');
-        if(!canAll && allBtn.classList.contains('is-active')) setClientsSheetTab('my');
+    function portalNewParticipantsPack(){
+      const P = window.PortalParticipantsSheet;
+      if(!P || typeof P.collectNewParticipantIds !== 'function'){
+        return { ids: [], scheduleByClientId: Object.create(null) };
       }
-      if(tools && !canAll){
+      return P.collectNewParticipantIds(typeof P.buildContext === 'function' ? P.buildContext() : undefined);
+    }
+    function portalParticipantsSheetRefreshTabs(){
+      const P = window.PortalParticipantsSheet;
+      if(!P || typeof P.applyTabVisibility !== 'function') return portalNewParticipantsPack();
+      const pack = P.applyTabVisibility();
+      const newBtn = document.getElementById('clientsTabNew');
+      const myBtn = document.getElementById('clientsTabMy');
+      if(newBtn && newBtn.classList.contains('is-active')) renderClientsSheetList('new');
+      else if(myBtn && myBtn.classList.contains('is-active')) renderClientsSheetList('my');
+      return pack;
+    }
+    function portalApplyClientsDirectoryAccess(){
+      portalParticipantsSheetRefreshTabs();
+      const tools = document.getElementById('clientsAllToolsWrap');
+      if(tools){
         tools.hidden = true;
         const si = document.getElementById('clientsDirectorySearch');
         if(si) si.value = '';
@@ -4421,6 +4431,13 @@
           sug.innerHTML = '';
         }
       }
+    }
+    function portalClientNoteForParticipantsSheet(clientId){
+      const P = window.PortalParticipantsSheet;
+      if(P && typeof P.clientNoteForSheet === 'function'){
+        return P.clientNoteForSheet(clientId, typeof P.buildContext === 'function' ? P.buildContext() : undefined);
+      }
+      return clientNotesById[clientId] || null;
     }
     function getAssignedClientIdsForStaff(){
       const sid = String(STAFF_DASHBOARD_ID).toLowerCase();
@@ -4460,6 +4477,7 @@
       return ids.sort((a, b) => clientNotesById[a].name.localeCompare(clientNotesById[b].name, 'en'));
     }
     const CLIENT_DIRECTORY_PREP_LINE = 'Preparation view before session';
+    const CLIENT_NEW_PARTICIPANTS_PREP_LINE = 'New participant — scheduled make-up or replacement';
 
     function clientsGridMedicalIconSvg(){
       return '<svg class="clients-grid-med-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><title>Medical condition</title><path d="M9 2h6a1 1 0 0 1 1 1v5h5a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-5v5a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-5H3a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1h5V3a1 1 0 0 1 1-1z"/></svg>';
@@ -4486,21 +4504,35 @@
       return ids;
     }
     /** Shared row: avatar + name; medical icon anchored bottom-right of the tile. */
-    function clientsParticipantRowInnerHtml(clientId, c){
+    function clientsParticipantRowInnerHtml(clientId, c, scheduleIso){
       const name = escapeHtml(c.name);
       const avatar = '<span class="clients-grid-avatar" aria-hidden="true">' + clientAvatarInner(c.name, clientId) + '</span>';
       const medInner = c.hasMedicalAlert ? clientsGridMedicalIconSvg() : '';
       const medSlot = '<span class="clients-grid-med' + (medInner ? '' : ' clients-grid-med--empty') + '"' + (medInner ? '' : ' aria-hidden="true"') + '>' + medInner + '</span>';
       const medSr = c.hasMedicalAlert ? '<span class="topbar-sr-only">Medical information on file.</span>' : '';
-      return avatar + '<span class="clients-grid-name">' + name + '</span>' + medSlot + medSr;
+      let schedHtml = '';
+      const P = window.PortalParticipantsSheet;
+      if(scheduleIso && P && typeof P.formatScheduleLabel === 'function'){
+        const lbl = P.formatScheduleLabel(scheduleIso);
+        if(lbl) schedHtml = '<span class="clients-grid-sched">' + escapeHtml(lbl) + '</span>';
+      }
+      const nameCol = '<span class="clients-grid-name-col"><span class="clients-grid-name">' + name + '</span>' + schedHtml + '</span>';
+      return avatar + nameCol + medSlot + medSr;
     }
 
     function renderClientsSheetList(mode, filterQuery){
       const grid = document.getElementById('clientsListGrid');
       if(!grid) return;
       const isAll = mode === 'all';
+      const isNew = mode === 'new';
       const q = String(filterQuery || '').trim().toLowerCase();
-      let ids = isAll ? getAllClientIdsCatalog() : getAssignedClientIdsForStaff();
+      const newPack = portalNewParticipantsPack();
+      const newSet = new Set(newPack.ids);
+      const scheduleBy = newPack.scheduleByClientId || Object.create(null);
+      let ids;
+      if(isAll) ids = getAllClientIdsCatalog();
+      else if(isNew) ids = newPack.ids.slice();
+      else ids = getAssignedClientIdsForStaff().filter(id => !newSet.has(id));
       ids = dedupeClientIdsByDisplayName(ids);
       ids.sort((a, b) => {
         const na = (clientNotesById[a] && clientNotesById[a].name) || a;
@@ -4513,6 +4545,7 @@
           return n.toLowerCase().startsWith(q);
         });
       }
+      grid.setAttribute('aria-labelledby', isNew ? 'clientsTabNew' : 'clientsTabMy');
       if(!ids.length){
         grid.style.removeProperty('display');
         let emptyMsg;
@@ -4520,6 +4553,8 @@
           emptyMsg = `No participants whose name starts with “${escapeHtml(q)}”.`;
         } else if(isAll){
           emptyMsg = 'No participants in the directory.';
+        } else if(isNew){
+          emptyMsg = 'No new participants scheduled for you on the selected days.';
         } else {
           emptyMsg = 'No participants assigned to you on the term rota yet.';
         }
@@ -4533,12 +4568,15 @@
       }
       grid.style.removeProperty('display');
       grid.innerHTML = ids.map(clientId => {
-        const c = clientNotesById[clientId];
+        const c = (isNew || !clientNotesById[clientId])
+          ? portalClientNoteForParticipantsSheet(clientId)
+          : clientNotesById[clientId];
         if(!c) return '';
         const gAttr = clientGenderDataAttr(c);
-        const myCls = !isAll ? ' clients-grid-card--my' : '';
-        const listMode = isAll ? 'all' : 'my';
-        return `<button type="button" class="clients-grid-card${myCls}" data-client-id="${escapeHtml(clientId)}" data-list-mode="${listMode}"${gAttr}>${clientsParticipantRowInnerHtml(clientId, c)}</button>`;
+        const myCls = (!isAll && !isNew) ? ' clients-grid-card--my' : '';
+        const listMode = isAll ? 'all' : (isNew ? 'new' : 'my');
+        const schedIso = isNew ? scheduleBy[clientId] : '';
+        return `<button type="button" class="clients-grid-card${myCls}" data-client-id="${escapeHtml(clientId)}" data-list-mode="${listMode}"${gAttr}>${clientsParticipantRowInnerHtml(clientId, c, schedIso)}</button>`;
       }).join('');
     }
     function getClientsDirectoryQuery(){
@@ -4595,31 +4633,39 @@
     }
     function setClientsSheetTab(mode){
       const myBtn = document.getElementById('clientsTabMy');
+      const newBtn = document.getElementById('clientsTabNew');
       const allBtn = document.getElementById('clientsTabAll');
+      if(mode === 'all') mode = 'my';
       let isMy = mode === 'my';
-      if(!isMy && !portalStaffCanBrowseAllParticipants()) isMy = true;
+      let isNew = mode === 'new';
+      if(isNew && newBtn && newBtn.hidden){ isNew = false; isMy = true; }
       const tools = document.getElementById('clientsAllToolsWrap');
       if(tools){
-        tools.hidden = isMy;
-        if(isMy){
-          const si = document.getElementById('clientsDirectorySearch');
-          if(si) si.value = '';
-          const sug = document.getElementById('clientsDirectorySuggest');
-          if(sug){
-            sug.hidden = true;
-            sug.innerHTML = '';
-          }
+        tools.hidden = true;
+        const si = document.getElementById('clientsDirectorySearch');
+        if(si) si.value = '';
+        const sug = document.getElementById('clientsDirectorySuggest');
+        if(sug){
+          sug.hidden = true;
+          sug.innerHTML = '';
         }
       }
       if(myBtn){
         myBtn.classList.toggle('is-active', isMy);
         myBtn.setAttribute('aria-selected', isMy ? 'true' : 'false');
       }
-      if(allBtn){
-        allBtn.classList.toggle('is-active', !isMy);
-        allBtn.setAttribute('aria-selected', isMy ? 'false' : 'true');
+      if(newBtn){
+        newBtn.classList.toggle('is-active', isNew);
+        newBtn.setAttribute('aria-selected', isNew ? 'true' : 'false');
       }
+      if(allBtn){
+        allBtn.classList.remove('is-active');
+        allBtn.setAttribute('aria-selected', 'false');
+      }
+      const grid = document.getElementById('clientsListGrid');
+      if(grid) grid.setAttribute('aria-labelledby', isNew ? 'clientsTabNew' : 'clientsTabMy');
       if(isMy) renderClientsSheetList('my');
+      else if(isNew) renderClientsSheetList('new');
       else refreshClientsAllTabUI();
     }
 
@@ -5945,6 +5991,7 @@
         console.warn('[portal] schedule_overrides fetch', e);
         window.__PORTAL_SCHEDULE_OVERRIDE_ROWS__ = [];
       }
+      if(typeof portalParticipantsSheetRefreshTabs === 'function') portalParticipantsSheetRefreshTabs();
     };
     /** OS banner: white app tile + vibrate (same pattern as roster “undo”). */
     function portalStaffNotifyOsWhiteTile(title, body, tag, opts){
@@ -11282,6 +11329,7 @@
         syncTermCalendarColorIntro(true);
       }
       if(id === 'clientsSheet'){
+        if(typeof portalParticipantsSheetRefreshTabs === 'function') portalParticipantsSheetRefreshTabs();
         setClientsSheetTab('my');
       }
       if(id === 'menuSheet' && typeof syncPortalReminderChrome === 'function'){
@@ -11849,6 +11897,7 @@
     });
 
     document.getElementById('clientsTabMy')?.addEventListener('click', () => setClientsSheetTab('my'));
+    document.getElementById('clientsTabNew')?.addEventListener('click', () => setClientsSheetTab('new'));
     document.getElementById('clientsTabAll')?.addEventListener('click', () => setClientsSheetTab('all'));
     document.getElementById('clientsDirectorySearch')?.addEventListener('input', () => refreshClientsAllTabUI());
     document.getElementById('clientsDirectorySearch')?.addEventListener('keydown', e => {
@@ -11876,7 +11925,8 @@
       if(!btn) return;
       const clientId = btn.getAttribute('data-client-id');
       const mode = btn.getAttribute('data-list-mode');
-      const sub = mode === 'all' ? CLIENT_DIRECTORY_PREP_LINE : '';
+      const sub = mode === 'all' ? CLIENT_DIRECTORY_PREP_LINE
+        : (mode === 'new' ? CLIENT_NEW_PARTICIPANTS_PREP_LINE : '');
       const item = buildClientDirectorySheetItem(clientId, sub);
       if(!item) return;
       /* Clients overview (My + All): no session context → hide Feedback / Incident / Cancellation */
