@@ -91,7 +91,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260610-pwa-black-fix" />
   <script src="/portal/portal_screenshot_guard.js?v=20260610-pwa-black-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260614-participant-tiles" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260601-qm-soft" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260601-landscape-full" />
 </head>
 <body>
@@ -813,7 +813,7 @@
   <script src="/portal/portal_induction_bind.js?v=20260615-tprog-sync"></script>
   <script src="/portal/portal_guide_ack.js?v=20260612-guide-read"></script>
   <script src="/portal/portal_guide_menu.js?v=20260612-guide-read"></script>
-  <script src="/portal/portal_quick_menu_accordion.js?v=20260601-qm-accordion"></script>
+  <script src="/portal/portal_quick_menu_accordion.js?v=20260601-qm-soft"></script>
   <script src="/portal/portal_swimming_instructor_menus.js?v=20260601-swim-gate"></script>
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260601-onboarding-qm2"></script>
@@ -9162,19 +9162,15 @@
     }
     function syncPortalQuickMenuNotificationsGroupVisibility(){
       const grp = document.getElementById('portalQuickMenuNotificationsGroup');
-      const grid = document.getElementById('portalQuickMenuNoticesGrid');
-      const qg = document.getElementById('portalQuickMenuReminderGroup');
-      const policySlot = document.getElementById('portalQuickMenuSafeguardingPolicySlot');
-      const outstandingSlot = document.getElementById('portalQuickMenuOutstandingFeedbackSlot');
-      const slotIc = document.getElementById('portalQuickMenuInternalChatSlot');
-      if(!grp) return;
-      const hasPolicy = !!(policySlot && !policySlot.hidden);
-      const hasOutstanding = !!(outstandingSlot && !outstandingSlot.hidden);
-      const hasBanner = hasPolicy || hasOutstanding || !!(qg && !qg.hidden);
-      const hasNotices = !!(grid && grid.childElementCount > 0);
-      const hasInternalChat = !!(slotIc && slotIc.childElementCount > 0);
-      grp.hidden = !hasBanner && !hasNotices && !hasInternalChat;
-      if(typeof portalInitQuickMenuAccordion === 'function') portalInitQuickMenuAccordion();
+      if(grp){
+        grp.hidden = true;
+        grp.setAttribute('aria-hidden', 'true');
+      }
+      if(typeof portalHideSkippedQuickMenuGroups === 'function'){
+        portalHideSkippedQuickMenuGroups();
+      }else if(typeof portalInitQuickMenuAccordion === 'function'){
+        portalInitQuickMenuAccordion();
+      }
     }
 
     function syncDockQuickMenuAttention(){
