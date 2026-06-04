@@ -47,6 +47,9 @@
       if (guideGrid) guideGrid.hidden = !showHeader;
       if (topGrp) topGrp.hidden = !showHeader && !hasOv && !hasOb;
       if (setBtn) setBtn.hidden = showHeader || (portalGuidePromoActive() && !read);
+      if (typeof global.portalInitQuickMenuAccordion === "function") {
+        global.portalInitQuickMenuAccordion();
+      }
     } catch (_) {}
   }
 

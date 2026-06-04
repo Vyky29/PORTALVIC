@@ -348,7 +348,7 @@
   <section class="sheet sheet--fullscreen sheet--mobile-frame menu-sheet--layout" id="menuSheet">
     <div class="sheet-head">
       <div class="sheet-handle"></div>
-      <h3 id="portalMenuSheetTitle">Quick menu</h3>
+      <h3 id="portalMenuSheetTitle">Menu</h3>
     </div>
     <div class="sheet-body menu-sheet-body">
       <div class="menu-sheet-main">
@@ -811,6 +811,7 @@
   <script src="/portal/portal_induction_bind.js?v=20260615-tprog-sync"></script>
   <script src="/portal/portal_guide_ack.js?v=20260612-guide-read"></script>
   <script src="/portal/portal_guide_menu.js?v=20260612-guide-read"></script>
+  <script src="/portal/portal_quick_menu_accordion.js?v=20260601-qm-accordion"></script>
   <script src="/portal/portal_swimming_instructor_menus.js?v=20260601-swim-gate"></script>
   <script src="/portal/portal_dm_voice.js?v=20260602-feedback-voice-fix"></script>
   <script>
@@ -3110,11 +3111,6 @@
     function syncPortalSafeguardingFeedbackPolicySlot(){
       const slot = document.getElementById('portalQuickMenuSafeguardingPolicySlot');
       if(!slot) return false;
-      if(portalQuickMenuEntryMode !== 'logo-lite'){
-        slot.innerHTML = '';
-        slot.hidden = true;
-        return false;
-      }
       const html = typeof portalBuildSafeguardingFeedbackPolicyReminderHtml === 'function' ? portalBuildSafeguardingFeedbackPolicyReminderHtml() : '';
       if(html){
         slot.innerHTML = html;
@@ -3144,11 +3140,6 @@
     function syncPortalOutstandingFeedbackSlot(){
       const slot = document.getElementById('portalQuickMenuOutstandingFeedbackSlot');
       if(!slot) return false;
-      if(portalQuickMenuEntryMode !== 'logo-lite'){
-        slot.innerHTML = '';
-        slot.hidden = true;
-        return false;
-      }
       const st = typeof portalReminderState === 'function' ? portalReminderState() : {};
       const html = typeof portalBuildOutstandingFeedbackQuickMenuHtml === 'function' ? portalBuildOutstandingFeedbackQuickMenuHtml(st) : '';
       if(html){
@@ -3209,12 +3200,6 @@
       const guideGrid = document.getElementById('portalQuickMenuGuideGrid');
       const titleEl = document.getElementById('portalQuickMenuGuideGroupTitle');
       if(!host || !guideGrp) return false;
-      if(portalQuickMenuEntryMode !== 'logo-lite'){
-        host.innerHTML = '';
-        host.hidden = true;
-        if(typeof portalSyncQuickMenuGuidePlacement === 'function') portalSyncQuickMenuGuidePlacement();
-        return false;
-      }
       if(!st) st = typeof portalReminderState === 'function' ? portalReminderState() : {};
       const ovHtml = typeof portalBuildQuickMenuOverrideStackHtml === 'function' ? portalBuildQuickMenuOverrideStackHtml(st) : '';
       const hasOv = !!ovHtml;
@@ -3222,10 +3207,12 @@
         host.innerHTML = ovHtml;
         host.hidden = false;
         if(titleEl) titleEl.textContent = 'Schedule changes';
+        if(typeof portalUpdateQuickMenuAccordionLabel === 'function') portalUpdateQuickMenuAccordionLabel('portalQuickMenuGuideGroup', 'Schedule changes');
       }else{
         host.innerHTML = '';
         host.hidden = true;
         if(titleEl) titleEl.textContent = 'Getting started';
+        if(typeof portalUpdateQuickMenuAccordionLabel === 'function') portalUpdateQuickMenuAccordionLabel('portalQuickMenuGuideGroup', 'Getting started');
       }
       const showGuideHeader = typeof portalGuideShowInHeader === 'function' && portalGuideShowInHeader();
       if(guideGrid) guideGrid.hidden = !showGuideHeader;
@@ -3263,7 +3250,6 @@
     function syncPortalReminderChrome(){
       try{
         const st = typeof portalReminderState === 'function' ? portalReminderState() : {};
-        const logoLite = portalQuickMenuEntryMode === 'logo-lite';
       const opHost = document.getElementById('portalOperationalReminderList');
         if(opHost){
           const opHtml = typeof buildPortalOperationalReminderRowsHtml === 'function' ? buildPortalOperationalReminderRowsHtml(st) : '';
@@ -3275,7 +3261,7 @@
         if(typeof syncPortalScheduleOverridesTopSlot === 'function') syncPortalScheduleOverridesTopSlot(st);
         const qg = document.getElementById('portalQuickMenuReminderGroup');
         const qh = document.getElementById('portalQuickMenuReminderBannerHost');
-        if(logoLite && qg && qh){
+        if(qg && qh){
           const remRoot = typeof buildPortalQuickMenuLogoLiteRemindersHtml === 'function' ? buildPortalQuickMenuLogoLiteRemindersHtml(st) : '';
           if(remRoot){
             qh.innerHTML = remRoot;
@@ -3284,9 +3270,6 @@
             qh.innerHTML = '';
             qg.hidden = true;
           }
-        }else if(qg && qh){
-          qh.innerHTML = '';
-          qg.hidden = true;
         }
         const tn = document.getElementById('trainingNotice');
       if(tn){
@@ -3612,7 +3595,11 @@
       'scott': 'portal/participants/scott.png',
       'stephanie': 'portal/participants/stephanie.png',
       'timi': 'portal/participants/timi.png',
-      'ikram': 'portal/participants/ikram.png'
+      'ikram': 'portal/participants/ikram.png',
+      'rodin': 'portal/participants/rodin.png',
+      'zaid': 'portal/participants/zaid.png',
+      'yusef ah': 'portal/participants/yusef-ah.png',
+      'yusuf ah': 'portal/participants/yusef-ah.png'
     };
     function clientPhotoUrl(name){
       const key = String(name || '').trim().toLowerCase().replace(/\s+/g, ' ');
@@ -5456,8 +5443,6 @@
         window.__PORTAL_INTERNAL_CHAT_UI.threadId = null;
         window.__PORTAL_INTERNAL_CHAT_UI.skipResetThreadOnNextSheetOpen = false;
       }catch(_ui){}
-      portalQuickMenuEntryMode = 'logo-lite';
-      if(typeof portalApplyQuickMenuEntryMode === 'function') portalApplyQuickMenuEntryMode();
       if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
       setTimeout(function(){
         if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
@@ -5751,10 +5736,6 @@
     function portalRenderQuickMenuInternalChatTile(){
       var slot = document.getElementById('portalQuickMenuInternalChatSlot');
       if(!slot) return;
-      if(typeof portalQuickMenuEntryMode !== 'undefined' && portalQuickMenuEntryMode !== 'logo-lite'){
-        slot.innerHTML = '';
-        return;
-      }
       slot.innerHTML = '';
       var b = document.createElement('button');
       b.type = 'button';
@@ -5772,8 +5753,6 @@
       }
     }
     window.portalOpenInternalChatFromHeaderQuickMenu = function portalOpenInternalChatFromHeaderQuickMenu(){
-      portalQuickMenuEntryMode = 'logo-lite';
-      if(typeof portalApplyQuickMenuEntryMode === 'function') portalApplyQuickMenuEntryMode();
       try{
         if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
       }catch(_cl){}
@@ -8486,7 +8465,6 @@
       if(typeof portalAnnouncementLockActive === 'function' && portalAnnouncementLockActive()){
         if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
       }
-      portalQuickMenuEntryMode = 'logo-lite';
       if(typeof portalApplyQuickMenuEntryMode === 'function') portalApplyQuickMenuEntryMode();
       if(typeof openSheet === 'function') openSheet('menuSheet');
       if(typeof syncPortalHeaderAlertChrome === 'function'){
@@ -8505,11 +8483,10 @@
     function portalApplyQuickMenuEntryMode(){
       const menu = document.getElementById('menuSheet');
       if(!menu) return;
-      const mode = portalQuickMenuEntryMode === 'logo-lite' ? 'logo-lite' : 'full';
-      menu.classList.toggle('menu-sheet--logo-lite', mode === 'logo-lite');
-      menu.classList.toggle('menu-sheet--full', mode === 'full');
+      menu.classList.add('menu-sheet--logo-lite');
+      menu.classList.remove('menu-sheet--full');
       const titleEl = document.getElementById('portalMenuSheetTitle');
-      if(titleEl) titleEl.textContent = mode === 'logo-lite' ? 'Alerts/Notifications' : 'Quick menu';
+      if(titleEl) titleEl.textContent = 'Menu';
     }
     function syncPortalQuickMenuNotificationsGroupVisibility(){
       const grp = document.getElementById('portalQuickMenuNotificationsGroup');
@@ -8519,16 +8496,13 @@
       const outstandingSlot = document.getElementById('portalQuickMenuOutstandingFeedbackSlot');
       const slotIc = document.getElementById('portalQuickMenuInternalChatSlot');
       if(!grp) return;
-      if(portalQuickMenuEntryMode !== 'logo-lite'){
-        grp.hidden = true;
-        return;
-      }
       const hasPolicy = !!(policySlot && !policySlot.hidden);
       const hasOutstanding = !!(outstandingSlot && !outstandingSlot.hidden);
       const hasBanner = hasPolicy || hasOutstanding || !!(qg && !qg.hidden);
       const hasNotices = !!(grid && grid.childElementCount > 0);
       const hasInternalChat = !!(slotIc && slotIc.childElementCount > 0);
       grp.hidden = !hasBanner && !hasNotices && !hasInternalChat;
+      if(typeof portalInitQuickMenuAccordion === 'function') portalInitQuickMenuAccordion();
     }
 
     function syncDockQuickMenuAttention(){
@@ -8542,17 +8516,6 @@
     function renderNotices(){
       const noticesGrid = document.getElementById('portalQuickMenuNoticesGrid');
       if(!noticesGrid) return;
-      if(portalQuickMenuEntryMode !== 'logo-lite'){
-        noticesGrid.innerHTML = '';
-        const grp = document.getElementById('portalQuickMenuNotificationsGroup');
-        const qg = document.getElementById('portalQuickMenuReminderGroup');
-        const slotIc = document.getElementById('portalQuickMenuInternalChatSlot');
-        if(slotIc) slotIc.innerHTML = '';
-        if(qg) qg.hidden = true;
-        if(grp) grp.hidden = true;
-        if(typeof syncPortalIosAlertPreviewStack === 'function') syncPortalIosAlertPreviewStack();
-        return;
-      }
       noticesGrid.innerHTML = '';
       const activeAnnouncementCount = typeof portalActiveAnnouncementItems === 'function'
         ? portalActiveAnnouncementItems().length
@@ -10228,6 +10191,7 @@
       if(id === 'menuSheet' && typeof syncPortalReminderChrome === 'function'){
         if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
         else syncPortalReminderChrome();
+        if(typeof portalRefreshQuickMenuAccordion === 'function') portalRefreshQuickMenuAccordion();
       }
       if(id === 'alertsNotificationsSheet'){
         if(typeof window.portalRefreshMandatoryAlertsSettingsUi === 'function'){
@@ -10837,8 +10801,6 @@
           window.__PORTAL_INTERNAL_CHAT_UI.threadId = null;
           window.__PORTAL_INTERNAL_CHAT_UI.skipResetThreadOnNextSheetOpen = false;
         }catch(_dm){}
-        portalQuickMenuEntryMode = 'full';
-        if(typeof portalApplyQuickMenuEntryMode === 'function') portalApplyQuickMenuEntryMode();
         if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
         if(typeof window.portalStaffDmSyncUnreadChrome === 'function') void window.portalStaffDmSyncUnreadChrome();
       }
@@ -10887,12 +10849,11 @@
         else window.scrollTo(0, 0);
       }
     }
-    function handleQuickMenuDockClick(mode){
+    function handleQuickMenuDockClick(){
       if(document.getElementById('internalChatSheet')?.classList.contains('open')){
         portalCloseInternalChatReturnToAlertsMenu();
         return;
       }
-      portalQuickMenuEntryMode = (mode === 'logo-lite') ? 'logo-lite' : 'full';
       const demoOv = document.getElementById('demoQuickActionOverlay');
       if(demoOv && !demoOv.hidden){
         hideDemoQuickOverlay();
@@ -10924,10 +10885,8 @@
       openSheet('menuSheet');
     }
     document.getElementById('dockDashboardTile')?.addEventListener('click', handleDashboardDockClick);
-    document.getElementById('dockQuickMenuTile')?.addEventListener('click', function(){ handleQuickMenuDockClick('full'); });
-    document.getElementById('avatarWrap')?.addEventListener('click', function(){
-      handleQuickMenuDockClick('logo-lite');
-    });
+    document.getElementById('dockQuickMenuTile')?.addEventListener('click', handleQuickMenuDockClick);
+    document.getElementById('avatarWrap')?.addEventListener('click', handleQuickMenuDockClick);
     document.getElementById('termCalIntroUnderstood')?.addEventListener('click', dismissTermCalendarColorIntro);
 
     (function bindTermGridPendingReviewNavigation(){
