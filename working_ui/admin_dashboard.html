@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260614-mob-fit" />
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260613-hours-all-week" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260603-form-record-modal" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260601-dash-pick-2x3" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260604-mob-nav" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260521-embed" />
   <script src="/portal/hr-contract-embed-html.js?v=20260521-embed"></script>
@@ -43,7 +43,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260617-settings-hub" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260604-mob-nav" />
 </head>
 <body>
   <script>
@@ -58,7 +58,7 @@
   </script>
   <div class="admin-shell" id="adminShell">
     <div class="sidebar-backdrop" id="sidebarBackdrop" aria-hidden="true"></div>
-    <aside class="admin-sidebar" id="adminSidebar" aria-label="Main navigation">
+    <aside class="admin-sidebar" id="adminSidebar" aria-label="Main navigation" aria-hidden="true">
       <div class="admin-sidebar-brand" id="adminSidebarBrand" tabindex="0" role="button" aria-label="Open or close menu" aria-haspopup="true" aria-expanded="false">
         <button type="button" id="adminFullnavClose" aria-label="Close menu">×</button>
         <div class="admin-sidebar-logo" aria-label="clubSENsational logo">
@@ -290,8 +290,9 @@
     var NAV_TOP = [
       { id:'nav_hub', label:'Dashboard' }
     ];
-    /** Touch layout: short bottom bar (full menu via ☰ / float button). */
-    var MOBILE_BOTTOM_NAV_IDS = ['nav_hub', 'dashboard', 'c4k_sessions', 'scheduling', 'nav_all_menu'];
+    /** Touch layout (<900px): short bottom bar — full menu via sidebar. */
+    var ADMIN_MOBILE_MAX_WIDTH = 899;
+    var MOBILE_BOTTOM_NAV_IDS = ['nav_hub', 'dashboard', 'operations_admin', 'nav_all_menu'];
     var NAV_GROUPS = [
       { id:'g_operator', label:'Operator', children:['dashboard','operations_admin','operator'] },
       { id:'g_c4k', label:'Services & Participants (CFK)', children:['__h:Services','c4k_services','c4k_sessions','scheduling','term_roster_edit','roster_spreadsheets','c4k_waitlist','__h:Participants','clients','c4k_reviews','c4k_reports','__h:Orders','orders_all','absents_refunds','__h:Communications','comms_ops'] },
@@ -1841,7 +1842,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var bdNav = $('modalBackdrop');
         if(bdNav && bdNav.classList.contains('open')) closeModal();
       }catch(_e){}
-      try{ document.body.classList.remove('admin-fullnav-open'); adminSyncFullnavAria(); }catch(_e2){}
+      try{ closeMenu(); }catch(_e2){}
       if(id === 'bookings'){
         booking.ordersScope = 'all';
         id = 'orders_all';
@@ -22154,50 +22155,58 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
     }
 
-    function closeSidebarMob(){
-      document.body.classList.remove('sidebar-open');
-      adminCloseFullnav();
-    }
-
     function adminTouchCompactLayoutActive(){
       try{
         var w = window.innerWidth || document.documentElement.clientWidth || 0;
-        var h = window.innerHeight || document.documentElement.clientHeight || 0;
-        if(w >= 1280 && h >= 680) return false;
-        if(w <= 767) return true;
-        if(h <= 640) return true;
-        return w > h;
+        return w <= ADMIN_MOBILE_MAX_WIDTH;
       }catch(e){ return false; }
     }
-    function adminSyncFullnavAria(){
+    function adminIsMobileNavLayout(){
+      return document.body.classList.contains('admin-touch-compact');
+    }
+    function syncMenuAria(){
+      var open = document.body.classList.contains('sidebar-open');
+      var mobile = adminIsMobileNavLayout();
+      var sidebar = $('adminSidebar');
+      var backdrop = $('sidebarBackdrop');
+      if(sidebar) sidebar.setAttribute('aria-hidden', mobile ? (open ? 'false' : 'true') : 'false');
+      if(backdrop) backdrop.setAttribute('aria-hidden', mobile ? (open ? 'false' : 'true') : 'true');
       var brandEl = $('adminSidebarBrand');
-      var open = document.body.classList.contains('admin-fullnav-open');
-      if(brandEl) brandEl.setAttribute('aria-expanded', open ? 'true' : 'false');
       var mob = $('btnMenuMob');
-      if(mob) mob.setAttribute('aria-expanded', open ? 'true' : 'false');
       var floater = $('adminFloatMenuBtn');
+      var menuBtn = document.querySelector('#adminBottomNav button[data-admin-nav-action="fullnav"]');
+      if(brandEl) brandEl.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if(mob) mob.setAttribute('aria-expanded', open ? 'true' : 'false');
       if(floater) floater.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if(menuBtn) menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+    function openMenu(){
+      if(adminIsMobileNavLayout()){
+        var g = navGroupForView(state.view);
+        if(g && state.navGroupsOpen){
+          Object.keys(state.navGroupsOpen).forEach(function(k){ state.navGroupsOpen[k] = (k === g); });
+          syncNavGroupsUi();
+        }
+      }
+      document.body.classList.add('sidebar-open');
+      syncMenuAria();
+    }
+    function closeMenu(){
+      document.body.classList.remove('sidebar-open');
+      syncMenuAria();
+    }
+    function toggleMenu(){
+      if(document.body.classList.contains('sidebar-open')) closeMenu();
+      else openMenu();
+    }
+    function closeSidebarMob(){
+      closeMenu();
     }
     function adminApplyTouchCompactLayoutClass(){
       var on = adminTouchCompactLayoutActive();
       document.body.classList.toggle('admin-touch-compact', on);
-      if(!on) document.body.classList.remove('admin-fullnav-open');
-      adminSyncFullnavAria();
-    }
-    function adminCloseFullnav(){
-      document.body.classList.remove('admin-fullnav-open');
-      adminSyncFullnavAria();
-    }
-    function adminOpenFullnav(){
-      if(!document.body.classList.contains('admin-touch-compact')) return;
-      var g = navGroupForView(state.view);
-      if(g && state.navGroupsOpen){
-        Object.keys(state.navGroupsOpen).forEach(function(k){ state.navGroupsOpen[k] = (k === g); });
-        syncNavGroupsUi();
-      }
-      document.body.classList.remove('sidebar-open');
-      document.body.classList.add('admin-fullnav-open');
-      adminSyncFullnavAria();
+      if(!on) closeMenu();
+      else syncMenuAria();
     }
     function bindAdminMobileNavOnce(){
       if(window.__adminMobNavBound) return;
@@ -22252,7 +22261,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var btn = ev.target.closest ? ev.target.closest('button') : null;
           if(!btn || !bottomEl.contains(btn)) return;
           if(btn.getAttribute('data-admin-nav-action') === 'fullnav'){
-            adminOpenFullnav();
+            openMenu();
             return;
           }
           var v = btn.getAttribute('data-view');
@@ -22261,12 +22270,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         });
       }
     }
-    function adminToggleFullnav(){
-      if(!document.body.classList.contains('admin-touch-compact')) return;
-      if(document.body.classList.contains('admin-fullnav-open')) adminCloseFullnav();
-      else adminOpenFullnav();
-    }
-
     var KEY_ADMIN_SIDEBAR_PINNED = 'portalAdminSidebarDesktopPinned';
     function adminIsDesktopShell(){
       try{ return matchMedia('(min-width: 1280px)').matches; }catch(e){ return (window.innerWidth || 0) >= 1280; }
@@ -23034,27 +23037,26 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         brandEl.addEventListener('click', function(ev){
           if(!document.body.classList.contains('admin-touch-compact')) return;
           if(ev.target && ev.target.closest && ev.target.closest('#adminFullnavClose')) return;
-          adminToggleFullnav();
+          toggleMenu();
         });
         brandEl.addEventListener('keydown', function(ev){
           if(!document.body.classList.contains('admin-touch-compact')) return;
           if(ev.key === 'Enter' || ev.key === ' '){
             ev.preventDefault();
-            adminToggleFullnav();
+            toggleMenu();
           }
         });
       }
       var fnClose = $('adminFullnavClose');
-      if(fnClose) fnClose.addEventListener('click', function(e){ e.stopPropagation(); adminCloseFullnav(); });
+      if(fnClose) fnClose.addEventListener('click', function(e){ e.stopPropagation(); closeMenu(); });
       var fnBd = $('adminFullnavBackdrop');
-      if(fnBd) fnBd.addEventListener('click', adminCloseFullnav);
+      if(fnBd) fnBd.addEventListener('click', closeMenu);
       var floatMenu = $('adminFloatMenuBtn');
       if(floatMenu){
         floatMenu.addEventListener('click', function(e){
           e.preventDefault();
           e.stopPropagation();
-          if(document.body.classList.contains('admin-fullnav-open')) adminCloseFullnav();
-          else adminOpenFullnav();
+          toggleMenu();
         });
       }
       renderAlerts();
@@ -23135,10 +23137,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var btnMob = $('btnMenuMob');
       if(btnMob) btnMob.addEventListener('click', function(e){
         e.preventDefault();
-        if(document.body.classList.contains('admin-touch-compact')) adminToggleFullnav();
-        else document.body.classList.toggle('sidebar-open');
+        toggleMenu();
       });
-      $('sidebarBackdrop').addEventListener('click', closeSidebarMob);
+      $('sidebarBackdrop').addEventListener('click', closeMenu);
       var btnAlertsEl = $('btnAlerts');
       if(btnAlertsEl) btnAlertsEl.addEventListener('click', function(e){
         e.stopPropagation();
@@ -23193,8 +23194,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(sdb) sdb.onclick = function(e){ if(e.target=== $('schedDrawerBackdrop')) closeSchedDrawer(); };
       document.addEventListener('keydown', function(e){
         if(e.key === 'Escape'){
-          if(document.body.classList.contains('admin-fullnav-open')){
-            adminCloseFullnav();
+          if(document.body.classList.contains('sidebar-open')){
+            closeMenu();
             e.preventDefault();
             return;
           }

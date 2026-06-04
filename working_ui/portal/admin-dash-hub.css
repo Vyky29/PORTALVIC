@@ -1140,6 +1140,7 @@ body.admin-touch-compact:has(#workspace .dash-hub--nav-index:not(.dash-hub--nav-
   min-height:0 !important;
   flex:1 1 auto;
   -webkit-overflow-scrolling:touch;
+  padding-bottom:calc(64px + env(safe-area-inset-bottom, 0px)) !important;
 }
 body.admin-touch-compact:has(#workspace .dash-hub--dayops) .dash-hub--dayops,
 body.admin-touch-compact:has(#workspace .dash-hub--nav-index:not(.dash-hub--nav-index-pick)) .dash-hub--nav-index:not(.dash-hub--nav-index-pick){
@@ -1190,7 +1191,7 @@ body.admin-touch-compact .dash-hub--dayops .dash-hub__sessions-grids > .dash-hub
     -webkit-overflow-scrolling:touch;
   }
   body.admin-touch-compact:has(#workspace .dash-hub--dayops) .admin-workspace{
-    padding:max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-inset-right, 0px)) max(12px, env(safe-area-inset-bottom, 0px)) max(6px, env(safe-area-inset-left, 0px)) !important;
+    padding:max(6px, env(safe-area-inset-top, 0px)) max(6px, env(safe-area-inset-right, 0px)) calc(64px + env(safe-area-inset-bottom, 0px)) max(6px, env(safe-area-inset-left, 0px)) !important;
   }
   .dash-hub--dayops{
     flex:none;
