@@ -6958,29 +6958,35 @@
       padding:0 1px;
     }
 
-    /* Quick menu (full): alerts/profile groups; Communication = internal chat only */
+    /* Quick menu (full): chat circle in sheet head; hide alerts/profile groups */
     #menuSheet.menu-sheet--full #portalQuickMenuNotificationsGroup,
     #menuSheet.menu-sheet--full #portalAnnualProfileQuickGroup{
       display:none !important;
     }
-    #menuSheet.menu-sheet--logo-lite #portalQuickMenuCommunicationGroup{
+    #menuSheet:not(.menu-sheet--full) .portal-qm-chat-toolbar{
       display:none !important;
     }
-    #menuSheet.menu-sheet--full #portalQuickMenuInternalChatSlot #portalQuickMenuInternalChatBtn.menu-btn--portal-ic{
-      border-color:rgba(45,132,179,.28);
-      background:linear-gradient(145deg,#f8fcff 0%,#eaf5fb 100%);
+    #menuSheet.menu-sheet--full .menu-sheet-head .menu-sheet-head-row{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      width:100%;
+      max-width:100%;
+      padding:0 4px;
+      box-sizing:border-box;
     }
-    #menuSheet.menu-sheet--full #portalQuickMenuInternalChatSlot #portalQuickMenuInternalChatBtn.menu-btn--portal-ic.menu-btn--portal-ic--unread{
-      border-color:rgba(45,132,179,.45);
-      background:linear-gradient(145deg,#2d84b3 0%,#1d5f8f 100%);
-      box-shadow:0 4px 14px rgba(45,132,179,.28);
+    #menuSheet.menu-sheet--full .menu-sheet-head .menu-sheet-head-row h3{
+      flex:1;
+      min-width:0;
+      margin:0;
+      text-align:center;
     }
-    #menuSheet.menu-sheet--full #portalQuickMenuInternalChatSlot #portalQuickMenuInternalChatBtn.menu-btn--portal-ic.menu-btn--portal-ic--unread .menu-btn-copy strong,
-    #menuSheet.menu-sheet--full #portalQuickMenuInternalChatSlot #portalQuickMenuInternalChatBtn.menu-btn--portal-ic.menu-btn--portal-ic--unread .menu-btn-sub{
-      color:#fff;
-    }
-    #menuSheet.menu-sheet--full #portalQuickMenuInternalChatSlot #portalQuickMenuInternalChatBtn.menu-btn--portal-ic.menu-btn--portal-ic--unread .menu-btn-chev{
-      color:rgba(255,255,255,.55);
+    #menuSheet.menu-sheet--full .portal-qm-chat-toolbar{
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      flex-shrink:0;
     }
 
     /* Internal Chat — topbar orbit halo (unread), beside achievements camera */

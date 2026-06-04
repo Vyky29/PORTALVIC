@@ -375,9 +375,42 @@
 
   <div id="portalAchievementsSheetMount"></div>
   <section class="sheet sheet--fullscreen sheet--mobile-frame menu-sheet--layout" id="menuSheet">
-    <div class="sheet-head">
+    <div class="sheet-head menu-sheet-head">
       <div class="sheet-handle"></div>
-      <h3 id="portalMenuSheetTitle">Menu</h3>
+      <div class="menu-sheet-head-row">
+        <h3 id="portalMenuSheetTitle">Menu</h3>
+        <div class="portal-qm-chat-toolbar" id="portalQuickMenuChatToolbar">
+          <div class="topbar-chat-orbit-wrap topbar-chat-orbit-wrap--idle" id="portalQuickMenuChatOrbitWrap">
+            <div class="topbar-chat-orbit" aria-hidden="true">
+              <svg class="topbar-chat-orbit-svg" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
+                <g transform="translate(100,100)">
+                  <g class="topbar-chat-orbit-layer topbar-chat-orbit-layer--cw">
+                    <circle cx="0" cy="-72" r="7"/>
+                    <circle cx="62.35" cy="-36" r="6"/>
+                    <circle cx="62.35" cy="36" r="6"/>
+                    <circle cx="0" cy="72" r="7"/>
+                    <circle cx="-62.35" cy="36" r="6"/>
+                    <circle cx="-62.35" cy="-36" r="6"/>
+                  </g>
+                  <g class="topbar-chat-orbit-layer topbar-chat-orbit-layer--ccw">
+                    <circle cx="0" cy="-78" r="4"/>
+                    <circle cx="67.55" cy="-39" r="4"/>
+                    <circle cx="67.55" cy="39" r="4"/>
+                    <circle cx="0" cy="78" r="4"/>
+                    <circle cx="-67.55" cy="39" r="4"/>
+                    <circle cx="-67.55" cy="-39" r="4"/>
+                  </g>
+                </g>
+              </svg>
+            </div>
+            <button type="button" class="topbar-camera-btn topbar-chat-btn portal-qm-chat-btn" id="portalQuickMenuInternalChatBtn" aria-label="Open internal chat" title="Chat">
+              <span class="topbar-camera-btn__ico portal-floating-chat-btn__icon" aria-hidden="true"><svg class="portal-floating-chat-btn__svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg></span>
+              <span class="portal-floating-chat-badge" id="portalQuickMenuChatBadge" hidden aria-hidden="true"></span>
+              <span class="topbar-sr-only">Chat</span>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="sheet-body menu-sheet-body">
       <div class="menu-sheet-main">
@@ -398,10 +431,6 @@
               <div class="menu-btn-copy"><strong>Health questionnaire</strong><span class="menu-btn-sub">Pre-employment health form</span></div>
             </button>
           </div>
-        </div>
-        <div class="menu-group" id="portalQuickMenuCommunicationGroup">
-          <div class="menu-group-title" id="portalQuickMenuCommunicationTitle">Communication</div>
-          <div class="menu-grid menu-grid--portal-internal-chat" id="portalQuickMenuInternalChatSlot"></div>
         </div>
         <div class="menu-group" id="portalQuickMenuNotificationsGroup" hidden>
           <div class="menu-group-title" id="portalQuickMenuAnnouncementsHeading">Announcements</div>
@@ -869,7 +898,7 @@
   <script src="/portal/portal_quick_menu_accordion.js?v=20260601-work-flat"></script>
   <script src="/portal/portal_swimming_instructor_menus.js?v=20260617-swim-aquatic-gate"></script>
   <script src="/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off"></script>
-  <script src="/portal/portal_floating_internal_chat.js?v=20260604-chat-orbit"></script>
+  <script src="/portal/portal_floating_internal_chat.js?v=20260604-qm-chat-btn"></script>
   <script type="module" src="/portal/portal_quick_menu_service_leads.js?v=20260604-service-leads-lead-only"></script>
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260616-michelle-only"></script>
@@ -5632,7 +5661,7 @@
       window.__PORTAL_STAFF_DM_UNREAD_COUNT__ = count;
       window.__PORTAL_STAFF_DM_HAS_UNREAD__ = count > 0;
       var btn = document.getElementById('portalQuickMenuInternalChatBtn');
-      if(!btn && typeof portalRenderQuickMenuInternalChatTile === 'function') portalRenderQuickMenuInternalChatTile();
+      if(!btn && typeof portalBindQuickMenuInternalChatBtn === 'function') portalBindQuickMenuInternalChatBtn();
       btn = document.getElementById('portalQuickMenuInternalChatBtn');
       if(btn) btn.classList.toggle('menu-btn--portal-ic--unread', count > 0);
       if(typeof window.portalSyncFloatingChatUnreadFromMenuBtn === 'function') window.portalSyncFloatingChatUnreadFromMenuBtn();
@@ -5691,7 +5720,7 @@
       portalStaffDmClearUnreadChromeLocally();
     };
     window.portalStaffDmSyncUnreadChrome = async function portalStaffDmSyncUnreadChrome(){
-      if(typeof portalRenderQuickMenuInternalChatTile === 'function') portalRenderQuickMenuInternalChatTile();
+      if(typeof portalBindQuickMenuInternalChatBtn === 'function') portalBindQuickMenuInternalChatBtn();
       var box = window.__PORTAL_SUPABASE__;
       var client = box && box.client;
       var me = String((box && box.staff_profile && box.staff_profile.id) || (box && box.session && box.session.user && box.session.user.id) || '').trim();
@@ -5799,25 +5828,6 @@
         if(typeof syncDockQuickMenuAttention === 'function') syncDockQuickMenuAttention();
       }
     };
-    function portalRenderQuickMenuInternalChatTile(){
-      var slot = document.getElementById('portalQuickMenuInternalChatSlot');
-      if(!slot) return;
-      slot.innerHTML = '';
-      var b = document.createElement('button');
-      b.type = 'button';
-      b.id = 'portalQuickMenuInternalChatBtn';
-      b.className = 'menu-btn menu-btn--portal-ic menu-btn--portal-internal-chat-qm';
-      b.setAttribute('aria-label', 'Internal chat — message the office');
-      var svgIc = '<svg class="notice-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>';
-      b.innerHTML = '<div class="menu-btn-icon" aria-hidden="true">' + svgIc + '</div><div class="menu-btn-copy txt"><strong>Internal chat</strong><span class="menu-btn-sub">Message the office</span></div><span class="menu-btn-chev" aria-hidden="true">›</span>';
-      b.addEventListener('click', function(){
-        if(typeof window.portalOpenInternalChatFromHeaderQuickMenu === 'function') window.portalOpenInternalChatFromHeaderQuickMenu();
-      });
-      slot.appendChild(b);
-      if(typeof window.portalStaffDmSyncUnreadChrome === 'function'){
-        void window.portalStaffDmSyncUnreadChrome();
-      }
-    }
     function portalSyncInternalChatSheetView(inThread, peerLabel){
       var chatSheet = document.getElementById('internalChatSheet');
       if(chatSheet) chatSheet.classList.toggle('sheet--portal-chat-thread', !!inThread);
@@ -8691,7 +8701,7 @@
           'signed'
         );
       }
-      if(typeof portalRenderQuickMenuInternalChatTile === 'function') portalRenderQuickMenuInternalChatTile();
+      if(typeof portalBindQuickMenuInternalChatBtn === 'function') portalBindQuickMenuInternalChatBtn();
       if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
       else {
         if(typeof syncPortalQuickMenuNotificationsGroupVisibility === 'function') syncPortalQuickMenuNotificationsGroupVisibility();
