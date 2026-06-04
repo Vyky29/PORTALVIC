@@ -1,38 +1,16 @@
 /**
- * Quick menu — Portal Guide placement (promo at top until read / promo end; then Settings).
+ * Quick menu — Getting started (Guide at top until first read); then Guide in Settings only.
  */
 (function (global) {
   "use strict";
 
-  /** Last calendar day (inclusive) when Guide appears at the top of Quick menu. */
-  var PORTAL_APP_GUIDE_PROMO_END_ISO = "2026-06-19";
-
-  function portalGuidePromoActive() {
-    try {
-      var endIso = String(
-        (global.PORTAL_APP_GUIDE_PROMO_END_ISO != null
-          ? global.PORTAL_APP_GUIDE_PROMO_END_ISO
-          : PORTAL_APP_GUIDE_PROMO_END_ISO) || ""
-      )
-        .trim()
-        .slice(0, 10);
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(endIso)) return true;
-      var d = new Date();
-      var today =
-        d.getFullYear() +
-        "-" +
-        String(d.getMonth() + 1).padStart(2, "0") +
-        "-" +
-        String(d.getDate()).padStart(2, "0");
-      return today <= endIso;
-    } catch (_) {
-      return true;
-    }
-  }
-
   function portalSyncQuickMenuGuidePlacement() {
     try {
-      var read = typeof global.portalGuideIsRead === "function" && global.portalGuideIsRead();
+      var read =
+        typeof global.portalGuideIsRead === "function" && global.portalGuideIsRead();
+      var showGettingStarted =
+        typeof global.portalGuideShowInHeader === "function" &&
+        global.portalGuideShowInHeader();
       var topGrp = global.document && global.document.getElementById("portalQuickMenuGuideGroup");
       var setBtn = global.document && global.document.getElementById("quickMenuPortalGuideSettings");
       var guideGrid = global.document && global.document.getElementById("portalQuickMenuGuideGrid");
@@ -42,17 +20,25 @@
       var hasOb =
         typeof global.portalOnboardingHasTopPromo === "function" &&
         global.portalOnboardingHasTopPromo();
-      if (guideGrid) guideGrid.hidden = true;
-      if (topGrp) topGrp.hidden = !hasOv && !hasOb;
-      if (setBtn) setBtn.hidden = portalGuidePromoActive() && !read;
+
+      if (guideGrid) guideGrid.hidden = !showGettingStarted;
+
+      if (topGrp) {
+        topGrp.hidden = !showGettingStarted && !hasOv && !hasOb;
+        topGrp.setAttribute("aria-hidden", topGrp.hidden ? "true" : "false");
+      }
+
+      if (setBtn) {
+        setBtn.hidden = !read;
+        setBtn.setAttribute("aria-hidden", read ? "false" : "true");
+      }
+
       if (typeof global.portalInitQuickMenuAccordion === "function") {
         global.portalInitQuickMenuAccordion();
       }
     } catch (_) {}
   }
 
-  global.PORTAL_APP_GUIDE_PROMO_END_ISO = PORTAL_APP_GUIDE_PROMO_END_ISO;
-  global.portalGuidePromoActive = portalGuidePromoActive;
   global.portalSyncQuickMenuGuidePlacement = portalSyncQuickMenuGuidePlacement;
 
   function onGuideRead() {

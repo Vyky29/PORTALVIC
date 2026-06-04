@@ -40,11 +40,14 @@
     }
   };
 
-  /** Header promo tile: until promo end and not marked read. */
+  /** Quick menu Getting started: show Guide at top until the staff opens the guide for the first time. */
   global.portalGuideShowInHeader = function portalGuideShowInHeader() {
-    var promo =
-      typeof global.portalGuidePromoActive === "function" && global.portalGuidePromoActive();
-    return !!promo && !global.portalGuideIsRead();
+    return !global.portalGuideIsRead();
+  };
+
+  /** @deprecated Promo end date no longer gates Getting started; kept for legacy callers. */
+  global.portalGuidePromoActive = function portalGuidePromoActive() {
+    return true;
   };
 
   global.portalPersistGuideAckToSupabase = async function portalPersistGuideAckToSupabase() {
