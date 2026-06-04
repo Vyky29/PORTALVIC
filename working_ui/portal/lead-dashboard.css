@@ -3874,6 +3874,7 @@
       gap:10px;
     }
     .clients-grid-card{
+      position:relative;
       display:flex;
       flex-direction:row;
       align-items:center;
@@ -3952,9 +3953,16 @@
       outline:2px solid var(--blue);
       outline-offset:2px;
     }
+    .clients-grid-card:has(.clients-grid-med:not(.clients-grid-med--empty)){
+      padding-bottom:26px;
+      padding-right:10px;
+    }
     .clients-grid-card--my{
       min-height:58px;
       padding:15px 14px;
+    }
+    .clients-grid-card--my:has(.clients-grid-med:not(.clients-grid-med--empty)){
+      padding-bottom:28px;
     }
     .clients-grid-card--my .clients-grid-name{
       font-size:16px;
@@ -3984,20 +3992,25 @@
       line-height:1.25;
       min-width:0;
       overflow-wrap:break-word;
+      word-break:break-word;
     }
     .clients-grid-med{
-      flex-shrink:0;
-      width:20px;
-      height:20px;
+      position:absolute;
+      right:8px;
+      bottom:8px;
+      z-index:1;
+      width:18px;
+      height:18px;
       display:flex;
       align-items:center;
       justify-content:center;
+      pointer-events:none;
     }
-    .clients-grid-med--empty{visibility:hidden}
+    .clients-grid-med--empty{display:none}
     .clients-grid-med .clients-grid-med-icon,
     .clients-grid-med-icon{
-      width:20px;
-      height:20px;
+      width:18px;
+      height:18px;
       display:block;
       color:#c62828;
       flex-shrink:0;
@@ -4065,6 +4078,7 @@
     }
     .clients-directory-suggest[hidden]{display:none !important}
     .clients-suggest-option{
+      position:relative;
       display:flex;
       width:100%;
       align-items:center;
@@ -4077,6 +4091,9 @@
       font-family:inherit;
       text-align:left;
       box-sizing:border-box;
+    }
+    .clients-suggest-option:has(.clients-grid-med:not(.clients-grid-med--empty)){
+      padding-bottom:24px;
     }
     .clients-suggest-option:last-child{border-bottom:none}
     .clients-suggest-option[data-gender="m"]{background:#f8fbff}

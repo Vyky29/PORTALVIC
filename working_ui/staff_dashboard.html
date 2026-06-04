@@ -4275,7 +4275,7 @@
       }
       return ids;
     }
-    /** Shared row: round photo (or initials), name, medical icon slot on the right. */
+    /** Shared row: avatar + name; medical icon anchored bottom-right of the tile. */
     function clientsParticipantRowInnerHtml(clientId, c){
       const name = escapeHtml(c.name);
       const avatar = '<span class="clients-grid-avatar" aria-hidden="true">' + clientAvatarInner(c.name, clientId) + '</span>';
