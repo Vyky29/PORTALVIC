@@ -84,6 +84,30 @@
 
   global.portalOnboardingFormEnsureSession = ensurePortalSession;
   global.portalOnboardingFormStaffName = staffDisplayName;
+  global.portalOnboardingFormDashboardUrl = function portalOnboardingFormDashboardUrl() {
+    try {
+      var qs = new URLSearchParams(global.location.search || "");
+      if (String(qs.get("from") || "").trim().toLowerCase() === "lead") {
+        return "lead_dashboard.html";
+      }
+    } catch (_) {}
+    try {
+      var prof = global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.staff_profile;
+      var route = String((prof && prof.dashboard_route) || "").toLowerCase();
+      var staffRole = String((prof && prof.staff_role) || "").toLowerCase();
+      var appRole = String((prof && prof.app_role) || "").toLowerCase();
+      if (route.indexOf("lead") >= 0 || staffRole === "lead" || appRole === "lead") {
+        return "lead_dashboard.html";
+      }
+    } catch (_) {}
+    return "staff_dashboard.html";
+  };
+  global.portalOnboardingFormApplyBackLink = function portalOnboardingFormApplyBackLink() {
+    try {
+      var el = global.document && global.document.getElementById("obFormBack");
+      if (el) el.setAttribute("href", global.portalOnboardingFormDashboardUrl());
+    } catch (_) {}
+  };
   global.portalOnboardingFormSaveJob = async function (payload, opts) {
     opts = opts || {};
     var name = staffDisplayName();

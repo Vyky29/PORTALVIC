@@ -16,7 +16,7 @@
 <body>
   <main class="ob-form-page">
     <header class="ob-form-head">
-      <a class="ob-form-back" href="staff_dashboard.html">← Back</a>
+      <a class="ob-form-back" id="obFormBack" href="staff_dashboard.html">← Back</a>
       <h1>Job application</h1>
       <p>Complete your pre-employment application. You can save and return later.</p>
     </header>
@@ -37,7 +37,7 @@
       </div>
     </form>
   </main>
-  <script src="/portal/onboarding_applicant_form.js?v=20260601"></script>
+  <script src="/portal/onboarding_applicant_form.js?v=20260601-lead-back"></script>
   <script>
     (function () {
       var form = document.getElementById("jobForm");
@@ -66,6 +66,7 @@
       }
       async function init() {
         await portalOnboardingFormEnsureSession();
+        if (typeof portalOnboardingFormApplyBackLink === "function") portalOnboardingFormApplyBackLink();
         try {
           var res = await portalOnboardingFormLoadJob();
           fillForm(res.draft && res.draft.payload);

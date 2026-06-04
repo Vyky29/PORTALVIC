@@ -73,11 +73,23 @@
   }
 
   function jobUrl() {
-    return resolveUrl(global.PORTAL_ONBOARDING_JOB_URL || "onboarding_job_application.html");
+    return appendDashboardFrom(resolveUrl(global.PORTAL_ONBOARDING_JOB_URL || "onboarding_job_application.html"));
   }
 
   function healthUrl() {
-    return resolveUrl(global.PORTAL_ONBOARDING_HEALTH_URL || "onboarding_health_questionnaire.html");
+    return appendDashboardFrom(resolveUrl(global.PORTAL_ONBOARDING_HEALTH_URL || "onboarding_health_questionnaire.html"));
+  }
+
+  function appendDashboardFrom(url) {
+    var u = String(url || "").trim();
+    if (!u) return u;
+    if (/from=(lead|staff)/i.test(u)) return u;
+    var from = "staff";
+    try {
+      var path = String((global.location && global.location.pathname) || "").toLowerCase();
+      if (path.indexOf("lead_dashboard") >= 0) from = "lead";
+    } catch (_) {}
+    return u + (u.indexOf("?") >= 0 ? "&" : "?") + "from=" + from;
   }
 
   function supabaseUrl() {
@@ -202,6 +214,18 @@
 
       statusCache.loaded = true;
       applyVisibility(true);
+
+      if (
+        isApplicant &&
+        global.portalOnboardingHasTopPromo &&
+        global.portalOnboardingHasTopPromo()
+      ) {
+        var guideGrp = global.document && global.document.getElementById("portalQuickMenuGuideGroup");
+        if (guideGrp) {
+          guideGrp.hidden = false;
+          guideGrp.removeAttribute("aria-hidden");
+        }
+      }
 
       if (typeof global.portalSyncQuickMenuGuidePlacement === "function") {
         global.portalSyncQuickMenuGuidePlacement();
