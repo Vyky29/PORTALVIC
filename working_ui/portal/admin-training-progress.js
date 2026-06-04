@@ -20,6 +20,70 @@
   };
 
   var INDUCTION_MODULES = 6;
+  var INDUCTION_REQUIRED_KEYS = { alex: true, michelle: true, carlos: true };
+
+  function normStaffKey(value) {
+    return String(value || "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "");
+  }
+
+  function profileRosterKey(profile) {
+    if (!profile) return "";
+    var u = normStaffKey(profile.username);
+    if (u) return u;
+    var fn = String(profile.full_name || "")
+      .trim()
+      .split(/\s+/)[0];
+    return normStaffKey(fn);
+  }
+
+  function inductionRequiredForProfile(profile) {
+    var key = profileRosterKey(profile);
+    return !!(key && INDUCTION_REQUIRED_KEYS[key]);
+  }
+
+  function defaultGrandfatheredInductionTrack() {
+    var mods = {};
+    var i;
+    for (i = 1; i <= INDUCTION_MODULES; i++) {
+      mods[String(i)] = { journey: true, video: true, quizPass: true, label: "Done" };
+    }
+    return {
+      track: "induction",
+      current_module: INDUCTION_MODULES,
+      modules_total: INDUCTION_MODULES,
+      progress_pct: 100,
+      module_states: mods,
+      phase_label: "Grandfathered complete",
+      completed_at: "2026-05-01T12:00:00.000Z",
+    };
+  }
+
+  function defaultInductionNotStartedTrack() {
+    return {
+      track: "induction",
+      current_module: 1,
+      modules_total: INDUCTION_MODULES,
+      progress_pct: 0,
+      module_states: {},
+      phase_label: "Not started",
+      completed_at: null,
+    };
+  }
+
+  function applyInferredTrainingDefaults(byUser, profiles) {
+    (profiles || []).forEach(function (p) {
+      if (!p || !p.id || !byUser[p.id]) return;
+      if (byUser[p.id].tracks.induction) return;
+      byUser[p.id].tracks.induction = inductionRequiredForProfile(p)
+        ? Object.assign(defaultInductionNotStartedTrack(), { _inferred: true })
+        : Object.assign(defaultGrandfatheredInductionTrack(), { _inferred: true });
+    });
+  }
 
   function configure(options) {
     if (!options) return;
@@ -183,6 +247,7 @@
         byUser[s.staff_user_id].name = String(s.staff_display_name).trim();
       }
     });
+    applyInferredTrainingDefaults(byUser, profiles);
     return Object.keys(byUser)
       .map(function (k) {
         return byUser[k];

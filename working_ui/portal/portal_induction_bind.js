@@ -33,6 +33,9 @@
     if (typeof global.portalInductionBindDashboard === "function") {
       global.portalInductionBindDashboard({ profile: profile(), authEmail: authEmail() });
     }
+    if (typeof global.portalSyncTrainingProgressToSupabase === "function") {
+      void global.portalSyncTrainingProgressToSupabase();
+    }
   }
 
   if (global.document.readyState === "loading") {
