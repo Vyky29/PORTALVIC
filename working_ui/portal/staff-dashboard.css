@@ -1634,29 +1634,122 @@
     #internalChatSheet.sheet--portal-chat-immersive .sheet-handle{display:none}
     #internalChatSheet.sheet--portal-chat-immersive .portal-dm-sheet-head{
       display:grid;
-      grid-template-columns:minmax(0,1fr) auto;
-      grid-template-areas:"title close" "sub sub";
+      grid-template-columns:44px minmax(0,1fr) auto;
+      grid-template-areas:"back title close";
       align-items:center;
-      gap:6px 10px;
+      gap:4px 8px;
       flex-shrink:0;
-      padding-left:max(12px, env(safe-area-inset-left, 0px));
-      padding-right:max(12px, env(safe-area-inset-right, 0px));
+      padding-left:max(8px, env(safe-area-inset-left, 0px));
+      padding-right:max(8px, env(safe-area-inset-right, 0px));
+      border-bottom:1px solid rgba(0,0,0,.08);
+      background:#fff;
+    }
+    #internalChatSheet.sheet--portal-chat-immersive .portal-dm-sheet-head .portal-dm-back-btn{
+      grid-area:back;
+      width:44px;
+      min-width:44px;
+      height:44px;
+      padding:0;
+      margin:0;
+      border:none;
+      border-radius:50%;
+      background:transparent;
+      box-shadow:none;
+      font-size:28px;
+      font-weight:400;
+      line-height:1;
+      color:var(--blue);
+      justify-self:start;
+    }
+    #internalChatSheet.sheet--portal-chat-immersive .portal-dm-sheet-head .portal-dm-back-btn:hover{
+      background:rgba(45,132,179,.08);
     }
     #internalChatSheet.sheet--portal-chat-immersive .portal-dm-sheet-head h3{
-      grid-area:title;min-width:0;margin:0;text-align:left;
+      grid-area:title;
+      min-width:0;
+      margin:0;
+      text-align:left;
+      font-size:17px;
+      font-weight:700;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
     }
     #internalChatSheet.sheet--portal-chat-immersive .portal-dm-sheet-head .portal-dm-close-btn{
-      grid-area:close;flex-shrink:0;width:auto;max-width:100%;padding:10px 16px;margin:0;justify-self:end;
+      grid-area:close;
+      flex-shrink:0;
+      width:auto;
+      max-width:100%;
+      padding:10px 12px;
+      margin:0;
+      justify-self:end;
+      font-size:15px;
     }
-    #internalChatSheet.sheet--portal-chat-immersive .portal-dm-sheet-head p{
-      grid-area:sub;min-width:0;margin:0;text-align:left;font-size:13px;
-    }
-    #internalChatSheet:not(.sheet--portal-chat-thread) #internalChatBackBtn{
+    #internalChatSheet.sheet--portal-chat-immersive .portal-dm-sheet-head p#internalChatSheetSub{
       display:none !important;
     }
+    #internalChatSheet.sheet--portal-chat-inbox #internalChatBackBtn{
+      visibility:hidden;
+      pointer-events:none;
+    }
+    #internalChatSheet.sheet--portal-chat-inbox #internalChatListWrap.portal-dm-inbox-list{
+      flex:1;
+      min-height:0;
+      overflow:auto;
+      -webkit-overflow-scrolling:touch;
+      padding:0;
+      margin:0;
+      background:#fff;
+    }
+    #internalChatSheet.sheet--portal-chat-inbox #internalChatOfficeComposeHost,
+    #internalChatSheet.sheet--portal-chat-inbox #internalChatThreadWrap{
+      display:none !important;
+    }
+    #internalChatSheet.sheet--portal-chat-inbox .portal-dm-thread-item{
+      display:flex;
+      flex-direction:row;
+      align-items:center;
+      gap:12px;
+      width:100%;
+      min-width:0;
+      padding:14px 16px;
+      border:none;
+      border-radius:0;
+      border-bottom:1px solid rgba(0,0,0,.06);
+      background:#fff;
+      box-shadow:none;
+      animation:none;
+    }
+    #internalChatSheet.sheet--portal-chat-inbox .portal-dm-thread-item:hover{
+      background:#f5f6f6;
+      box-shadow:none;
+    }
+    #internalChatSheet.sheet--portal-chat-inbox .portal-dm-thread-item.portal-dm-thread-item--unread{
+      background:#f0f7fc;
+      border-bottom-color:rgba(45,132,179,.12);
+      box-shadow:none;
+      animation:none;
+    }
+    #internalChatSheet.sheet--portal-chat-inbox .portal-dm-thread-peer{
+      flex:1;
+      font-size:16px;
+    }
+    #internalChatSheet.sheet--portal-chat-inbox .portal-dm-thread-meta{
+      flex-shrink:0;
+      font-size:12px;
+    }
+    #internalChatSheet .portal-dm-top-err{
+      flex-shrink:0;
+      margin:0;
+      padding:8px 16px;
+      font-size:13px;
+      color:var(--danger);
+    }
     #internalChatSheet.sheet--portal-chat-thread #internalChatListWrap,
-    #internalChatSheet.sheet--portal-chat-thread #internalChatOfficeComposeHost,
-    #internalChatSheet.sheet--portal-chat-thread #internalChatTopErr{
+    #internalChatSheet.sheet--portal-chat-thread #internalChatOfficeComposeHost{
+      display:none !important;
+    }
+    #internalChatSheet.sheet--portal-chat-thread #internalChatCloseBtn{
       display:none !important;
     }
     #internalChatSheet.sheet--portal-chat-thread #internalChatThreadWrap.portal-dm-thread-view{
@@ -1664,15 +1757,8 @@
       min-height:0;
       display:flex !important;
     }
-    #internalChatSheet.sheet--portal-chat-thread .portal-dm-sheet-head p#internalChatSheetSub{
+    #internalChatSheet.sheet--portal-chat-thread #internalChatPeerLabel{
       display:none !important;
-    }
-    #internalChatSheet.sheet--portal-chat-thread #internalChatBackBtn:not(.portal-dm-back-hidden){
-      display:inline-flex !important;
-      align-self:flex-start;
-      width:auto;
-      max-width:100%;
-      margin:0 0 4px;
     }
     #internalChatSheet.sheet--portal-chat-immersive.sheet--fullscreen.sheet--mobile-frame .sheet-head{
       text-align:center;
@@ -1705,18 +1791,18 @@
     #internalChatSheet #internalChatPeerLabel{
       flex-shrink:0;margin:0 !important;
     }
-    #internalChatSheet .portal-dm-msgs-scroll{
+    #internalChatSheet.sheet--portal-chat-thread .portal-dm-msgs-scroll{
       flex:1;
       min-height:0;
       min-width:0;
       overflow:auto;
       -webkit-overflow-scrolling:touch;
-      border:1px solid rgba(0,0,0,.08);
-      border-radius:12px;
-      padding:6px 2px 20px;
+      border:none;
+      border-radius:0;
+      padding:8px 8px 20px;
       margin-bottom:0;
       scroll-padding-bottom:20px;
-      background:linear-gradient(180deg,var(--blueSoft) 0%,#f4f8fb 100%);
+      background:#e5ddd5;
     }
     #internalChatSheet .portal-dm-compose-bar{
       position:relative;
@@ -6916,35 +7002,10 @@
       padding:0 1px;
     }
 
-    /* Quick menu (full): chat circle in sheet head; hide alerts/profile groups */
+    /* Quick menu (full): hide alerts/profile groups */
     #menuSheet.menu-sheet--full #portalQuickMenuNotificationsGroup,
     #menuSheet.menu-sheet--full #portalAnnualProfileQuickGroup{
       display:none !important;
-    }
-    #menuSheet:not(.menu-sheet--full) .portal-qm-chat-toolbar{
-      display:none !important;
-    }
-    #menuSheet.menu-sheet--full .menu-sheet-head .menu-sheet-head-row{
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      gap:10px;
-      width:100%;
-      max-width:100%;
-      padding:0 4px;
-      box-sizing:border-box;
-    }
-    #menuSheet.menu-sheet--full .menu-sheet-head .menu-sheet-head-row h3{
-      flex:1;
-      min-width:0;
-      margin:0;
-      text-align:center;
-    }
-    #menuSheet.menu-sheet--full .portal-qm-chat-toolbar{
-      display:flex;
-      align-items:center;
-      justify-content:flex-end;
-      flex-shrink:0;
     }
     #portalQuickMenuServiceLeadsGroup[data-portal-staff-hidden="1"]{
       display:none !important;
@@ -6962,10 +7023,12 @@
     }
     .topbar-chat-orbit-wrap .topbar-chat-orbit{
       position:absolute;
-      inset:-12px;
+      inset:-14px;
       pointer-events:none;
       opacity:0;
       visibility:hidden;
+      overflow:hidden;
+      border-radius:50%;
     }
     .topbar-chat-orbit-wrap--unread .topbar-chat-orbit{
       opacity:1;
@@ -6975,13 +7038,16 @@
       display:block;
       width:100%;
       height:100%;
+      overflow:visible;
+    }
+    .topbar-chat-orbit-layer{
+      transform-box:fill-box;
+      transform-origin:50% 50%;
     }
     .topbar-chat-orbit-layer--cw{
-      transform-origin:100px 100px;
       animation:topbar-chat-orbit-cw 9s linear infinite;
     }
     .topbar-chat-orbit-layer--ccw{
-      transform-origin:100px 100px;
       animation:topbar-chat-orbit-ccw 12s linear infinite;
     }
     @keyframes topbar-chat-orbit-cw{
