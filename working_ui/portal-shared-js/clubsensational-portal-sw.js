@@ -23,9 +23,9 @@ function portalAppendQueryParam(absUrl, key, value) {
 
 function portalPushIconUrl() {
   try {
-    return new URL('portal/F-02-1.png', self.registration.scope).href;
+    return new URL('portal/app-icon/apple-touch-icon.png', self.registration.scope).href;
   } catch (e) {
-    return 'portal/F-02-1.png';
+    return 'portal/app-icon/apple-touch-icon.png';
   }
 }
 

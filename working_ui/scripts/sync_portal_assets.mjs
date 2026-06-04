@@ -34,6 +34,7 @@ const ROOT_JS_MOVE_TO_PORTAL = [
 const SERVICE_WORKER_COPY = "clubsensational-portal-sw.js";
 
 const RASTER_FILES = [
+  "FOOTERLOGO.png",
   "F-02-1.png",
   "F-06-1.png",
   "Logo-CS-azul.png",

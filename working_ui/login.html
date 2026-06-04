@@ -11,9 +11,9 @@
   <meta name="apple-mobile-web-app-title" content="Portal" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="theme-color" content="#f4f8fb" />
-  <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
-  <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
-  <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/portal/app-icon/apple-touch-icon.png?v=20260602-footerlogo" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png?v=20260602-footerlogo" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png?v=20260602-footerlogo" />
   <!-- PWA · login.html · dashboards: admin_dashboard, staff_dashboard, lead_dashboard, ceo_dashboard -->
   <script>
   (function(){
@@ -34,10 +34,11 @@
         'theme_color': '#f4f8fb',
         'description': 'Portal sign in',
         'icons': [
-          { 'src': '/portal/app-icon/icon-192.png', 'sizes': '192x192', 'type': 'image/png', 'purpose': 'any' },
-          { 'src': '/portal/app-icon/icon-512.png', 'sizes': '512x512', 'type': 'image/png', 'purpose': 'any' },
-          { 'src': '/portal/app-icon/icon-maskable-192.png', 'sizes': '192x192', 'type': 'image/png', 'purpose': 'maskable' },
-          { 'src': '/portal/app-icon/icon-maskable-512.png', 'sizes': '512x512', 'type': 'image/png', 'purpose': 'maskable' }
+          { 'src': '/portal/app-icon/icon-192.png?v=20260602-footerlogo', 'sizes': '192x192', 'type': 'image/png', 'purpose': 'any' },
+          { 'src': '/portal/app-icon/icon-512.png?v=20260602-footerlogo', 'sizes': '512x512', 'type': 'image/png', 'purpose': 'any' },
+          { 'src': '/portal/app-icon/apple-touch-icon.png?v=20260602-footerlogo', 'sizes': '180x180', 'type': 'image/png', 'purpose': 'any' },
+          { 'src': '/portal/app-icon/icon-maskable-192.png?v=20260602-footerlogo', 'sizes': '192x192', 'type': 'image/png', 'purpose': 'maskable' },
+          { 'src': '/portal/app-icon/icon-maskable-512.png?v=20260602-footerlogo', 'sizes': '512x512', 'type': 'image/png', 'purpose': 'maskable' }
         ]
       };
       var blob = new Blob([JSON.stringify(payload)], { type: 'application/manifest+json' });
