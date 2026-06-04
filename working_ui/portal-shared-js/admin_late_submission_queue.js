@@ -478,7 +478,7 @@
           }
           if (typeof opts.onReviewed === "function") {
             try {
-              opts.onReviewed();
+              opts.onReviewed(id, status);
             } catch (_) {}
           }
           await reload();

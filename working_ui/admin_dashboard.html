@@ -32,8 +32,8 @@
   <script src="/portal/portal-roster-rows-merge.js?v=20260601-term-slot"></script>
   <script src="/portal/admin-portal-term-slot.js?v=20260602-term-slot-copy"></script>
   <script src="/portal/portal-staff-timetable-merge.js?v=20260612-hours-edit"></script>
-  <script src="/portal/spreadsheet_reference_data.js?v=20260612-jun-jul-timetable"></script>
-  <script src="/portal/admin-roster-spreadsheet-reference.js?v=20260613-hours-all-week"></script>
+  <script src="/portal/spreadsheet_reference_data.js?v=20260616-day-centre-hours"></script>
+  <script src="/portal/admin-roster-spreadsheet-reference.js?v=20260616-day-centre-hours"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
   <title>clubSENsational · Operations + Operator workflow (merged)</title>
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
@@ -199,7 +199,7 @@
   <!-- Large portal datasets load on demand (portalAdminLoadScriptSet) so Day operations opens without freezing. -->
   <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260602-cap-roster"></script>
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260521-late-perf"></script>
-  <script src="/portal/portal_admin_alerts_bell.js?v=20260604-admin-bell"></script>
+  <script src="/portal/portal_admin_alerts_bell.js?v=20260616-late-bell-sync"></script>
 
   <script>
   (function(){
@@ -10610,7 +10610,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         void portalLateAdminRefreshNavBadge();
       }, 1500);
     }
-    function portalLateAdminRefreshNavBadge(){
+    function portalAdminBellSyncLatePending(opts){
+      opts = opts || {};
+      var client = getSchedSupabaseClient();
+      if(!client || typeof window.portalAdminBellSyncLateFromServer !== 'function') return Promise.resolve(0);
+      return window.portalAdminBellSyncLateFromServer(client, {
+        silent: opts.silent === true
+      }).catch(function(err){
+        console.warn('[admin] bell late sync', err);
+        return 0;
+      });
+    }
+    function portalLateAdminRefreshNavBadge(opts){
+      opts = opts || {};
       portalLateAdminEnsureConfigured();
       if(!window.PortalAdminLateSubmissions) return Promise.resolve(0);
       return window.PortalAdminLateSubmissions.fetchPendingCount().then(function(n){
@@ -10620,7 +10632,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           try{ renderNav(); }catch(_rn){}
           try{ portalLateAdminPatchSessionsBanner(); }catch(_pb){}
         }
-        return state.portalLatePendingCount;
+        var soundNew = opts.allowSound === true || (n > prev && prev >= 0);
+        return portalAdminBellSyncLatePending({ silent: !soundNew }).then(function(){
+          return state.portalLatePendingCount;
+        });
       }).catch(function(){ return 0; });
     }
     function portalLateAdminBindView(){
@@ -10634,8 +10649,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return;
       }
       var reloadFn = window.PortalAdminLateSubmissions.bindPanel(list, {
-        onReviewed: function(){
-          void portalLateAdminRefreshNavBadge();
+        onLoaded: function(rows){
+          var client = getSchedSupabaseClient();
+          if(client && typeof window.portalAdminBellSyncLateFromServer === 'function'){
+            void window.portalAdminBellSyncLateFromServer(client, { silent: true });
+          }
+        },
+        onReviewed: function(requestId){
+          if(requestId && typeof window.portalAdminBellRemoveLateRequest === 'function'){
+            window.portalAdminBellRemoveLateRequest(requestId);
+          }
+          void portalLateAdminRefreshNavBadge({ allowSound: false });
         }
       });
       if(typeof reloadFn === 'function') void reloadFn();
@@ -15081,7 +15105,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
     var ADMIN_SESSIONS_HUB_SRC =
-      '/portal/admin-sessions-hub.js?v=20260614-mob-fit';
+      '/portal/admin-sessions-hub.js?v=20260616-bespoke-feedback-area';
 
     /** Club closed — half-term 23–31 May 2026, bank holiday 4 May (see PORTAL_TERM_FROM_TIMETABLE). */
     function portalAdminDayIsClubClosed(iso){
@@ -17985,10 +18009,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function portalAdminDmHasUnread(){
       return !!(window.__PORTAL_ADMIN_DM_UNREAD || window.__PORTAL_ADMIN_CEO_DM_UNREAD || window.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD);
     }
+    /** Chat unread: campana only (no in-page banner — it shifted layout / overlapped controls). */
     function portalAdminDmShouldShowChatBanner(){
-      if(!portalAdminDmHasUnread()) return false;
-      if(window.__PORTAL_ADMIN_DM_OPEN) return false;
-      return true;
+      return false;
     }
     function portalAdminDmChatBannerHtml(){
       var hints = window.__PORTAL_ADMIN_DM_UNREAD_HINTS__ || [];
@@ -18051,17 +18074,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(hint.threadId) await portalAdminDmOpenThread(hint.threadId);
     }
     function portalAdminDmPatchGlobalChatBanner(){
-      var ws = $('workspace');
-      if(!ws) return;
       var el = document.getElementById('portalAdminChatBanner');
-      if(!portalAdminDmShouldShowChatBanner()){
-        if(el) el.remove();
-        return;
-      }
-      var html = portalAdminDmChatBannerHtml();
-      if(el) el.outerHTML = html;
-      else ws.insertAdjacentHTML('afterbegin', html);
-      portalAdminDmBindChatBanner(document.getElementById('portalAdminChatBanner'));
+      if(el) el.remove();
     }
     function portalAdminDmOnUnreadAttentionChanged(prevUnread){
       try{ portalAdminDmPatchGlobalChatBanner(); }catch(_pb){}
@@ -18091,13 +18105,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!prevUnread && nowUnread) portalAdminDmNotifyIncomingChat();
     }
     function portalAdminDmNotifyIncomingChat(){
-      if(!portalAdminDmShouldShowChatBanner()) return;
-      var hints = window.__PORTAL_ADMIN_DM_UNREAD_HINTS__ || [];
-      var names = hints.slice(0, 2).map(function(h){ return String(h.displayName || '').trim(); }).filter(Boolean);
-      var detail = names.length ? (' from '+names.join(', ')) : '';
-      if(typeof portalAdminToast === 'function'){
-        portalAdminToast('New message'+detail+' — tap the name in the banner or open Team → Chat.');
-      }
+      /* Bell + optional OS notification when tab hidden; no workspace banner or toast. */
     }
     function portalAdminDmTryOsNotifyIncoming(kind){
       kind = String(kind || 'staff').trim();
@@ -22186,31 +22194,32 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var since = new Date();
         since.setDate(since.getDate() - 3);
         var sinceIso = since.toISOString();
+        if(typeof window.portalAdminBellSyncLateFromServer === 'function'){
+          await window.portalAdminBellSyncLateFromServer(client, { silent: true });
+        }
         var results = await Promise.all([
-          client.from('portal_late_submission_requests').select('id,created_at,client_name,session_date,submission_type,service_label,status').eq('status','pending').order('created_at',{ascending:false}).limit(30),
           client.from('cancellation_reports').select('id,created_at,client_name,session_date,submitted_by_name').gte('created_at', sinceIso).order('created_at',{ascending:false}).limit(20),
           client.from('incident_reports').select('id,created_at,client_name,session_date,submitted_by_name,incident_category').gte('created_at', sinceIso).order('created_at',{ascending:false}).limit(20)
         ]);
         (results[0].data || []).forEach(function(r){
-          var a = typeof window.portalAdminActivityFromLateRequest === 'function'
-            ? window.portalAdminActivityFromLateRequest(r)
-            : null;
-          if(a && typeof window.portalAdminPushActivityAlert === 'function'){
-            window.portalAdminPushActivityAlert(a, { silent: true });
-          }
-        });
-        (results[1].data || []).forEach(function(r){
           var a = portalAdminActivityFromCancellation(r);
           if(a && typeof window.portalAdminPushActivityAlert === 'function'){
             window.portalAdminPushActivityAlert(a, { silent: true });
           }
         });
-        (results[2].data || []).forEach(function(r){
+        (results[1].data || []).forEach(function(r){
           var a = portalAdminActivityFromIncident(r);
           if(a && typeof window.portalAdminPushActivityAlert === 'function'){
             window.portalAdminPushActivityAlert(a, { silent: true });
           }
         });
+        try{
+          if(window.PortalAdminLateSubmissions){
+            portalLateAdminEnsureConfigured();
+            var lateN = await window.PortalAdminLateSubmissions.fetchPendingCount();
+            state.portalLatePendingCount = lateN || 0;
+          }
+        }catch(_lc){}
         if(typeof window.portalAdminSyncChatBellAlerts === 'function'){
           window.portalAdminSyncChatBellAlerts({ silent: true });
         }
@@ -22253,6 +22262,25 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             if(a && typeof window.portalAdminPushActivityAlert === 'function'){
               window.portalAdminPushActivityAlert(a);
             }
+            void portalLateAdminRefreshNavBadge({ allowSound: true });
+          })
+          .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'portal_late_submission_requests' }, function(payload){
+            var row = payload && payload.new;
+            if(!row || !row.id) return;
+            if(String(row.status || '').toLowerCase() !== 'pending'){
+              if(typeof window.portalAdminBellRemoveLateRequest === 'function'){
+                window.portalAdminBellRemoveLateRequest(row.id);
+              }
+              void portalLateAdminRefreshNavBadge({ allowSound: false });
+              return;
+            }
+            var a = typeof window.portalAdminActivityFromLateRequest === 'function'
+              ? window.portalAdminActivityFromLateRequest(row)
+              : null;
+            if(a && typeof window.portalAdminPushActivityAlert === 'function'){
+              window.portalAdminPushActivityAlert(a);
+            }
+            void portalLateAdminRefreshNavBadge({ allowSound: true });
           })
           .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'cancellation_reports' }, function(payload){
             var a = portalAdminActivityFromCancellation(payload && payload.new);
@@ -22337,6 +22365,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portalAdminFetchVenueReviewAlerts(client);
         void portalAdminBootstrapActivityAlerts();
         portalAdminEnsureActivityRealtime();
+        void portalLateAdminRefreshNavBadge({ allowSound: false });
+        if(!window.__portalAdminBellPollIv){
+          window.__portalAdminBellPollIv = setInterval(function(){
+            if(document.hidden) return;
+            void portalLateAdminRefreshNavBadge({ allowSound: true });
+          }, 90000);
+        }
       }catch(err){ console.warn(err); }
     });
 

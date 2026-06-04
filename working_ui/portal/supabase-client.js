@@ -260,7 +260,34 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
   const ownFb = dedupeKeys(fb.data);
   const catchUpFb = dedupeKeys(fbCatchUp && !fbCatchUp.error ? fbCatchUp.data : null);
   const sharedFb = !fbSharedRpc || fbSharedRpc.error ? [] : feedbackKeysFromSharedRpc(fbSharedRpc.data);
-  const feedbackMerged = [...new Set([...ownFb, ...catchUpFb, ...sharedFb])];
+
+  /** Roster peer read (RLS): co-instructors see keys even when area suffix differs from roster key. */
+  let peerFb = [];
+  if (rosterSessionKeys.length) {
+    const rosterDates = [
+      ...new Set(
+        rosterSessionKeys
+          .map((k) => String(k || "").split("|")[0].trim())
+          .filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d))
+      ),
+    ].slice(0, 21);
+    if (rosterDates.length) {
+      try {
+        const peerRes = await supabase
+          .from("session_feedback")
+          .select("portal_session_key")
+          .in("session_date", rosterDates)
+          .not("portal_session_key", "is", null)
+          .gte("session_date", sinceStr)
+          .limit(400);
+        if (!peerRes.error) peerFb = dedupeKeys(peerRes.data);
+      } catch (ePeer) {
+        console.debug("[portal] session_feedback peer keys", ePeer);
+      }
+    }
+  }
+
+  const feedbackMerged = [...new Set([...ownFb, ...catchUpFb, ...sharedFb, ...peerFb])];
 
   /** @type {string[]} */
   const absentKeys = [];

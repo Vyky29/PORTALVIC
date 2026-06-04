@@ -1286,6 +1286,15 @@
     return k;
   }
 
+  /** Bespoke hub keys may use hub_room while roster area slug is swimfarm_hub_room. */
+  function portalBespokeAreaTokensCompatible(pkArea, slotArea) {
+    if (!pkArea || !slotArea) return true;
+    if (pkArea === slotArea) return true;
+    if (pkArea.indexOf("hub") >= 0 && slotArea.indexOf("hub") >= 0) return true;
+    if (pkArea.indexOf("pool") >= 0 && slotArea.indexOf("pool") >= 0) return true;
+    return false;
+  }
+
   function completedByMatchesInstructor(completedBy, instructorRaw) {
     var by = clean(completedBy).toLowerCase();
     var inst = clean(instructorRaw).toLowerCase();
@@ -1556,6 +1565,9 @@
         var pkArea = portalKeyAreaToken(parts[3]);
         var slotArea = sessionAreaKey(slot.area);
         if (pkArea && slotArea && pkArea !== slotArea) {
+          if (isBespokeService(slot.service)) {
+            return portalBespokeAreaTokensCompatible(pkArea, slotArea);
+          }
           if (isMultiActivityService(slot.service) || isClimbingService(slot.service)) {
             return completedByFitsSlotArea(fb.completed_by_name, slot);
           }

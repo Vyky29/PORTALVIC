@@ -21,11 +21,19 @@
   var state = {
     tab: "hours",
     sessionDay: "Monday",
-    hoursDay: "all",
+    hoursDay: "Monday",
+    hoursService: "all",
     dirty: Object.create(null),
     saving: false,
     mergedData: null,
   };
+
+  var HOURS_SERVICE_FILTERS = [
+    { id: "all", label: "All" },
+    { id: "day_centre", label: "Day Centre" },
+    { id: "pool", label: "Pool / aquatic" },
+    { id: "bespoke", label: "Bespoke" },
+  ];
 
   var WEEKDAYS = [
     "Monday",
@@ -210,9 +218,58 @@
     );
   }
 
-  function renderHoursTableHtml(groups, dates, blockTitle) {
+  function cellMatchesServiceFilter(cell, serviceFilter) {
+    if (!serviceFilter || serviceFilter === "all") return true;
+    var band = String((cell && cell.band) || "").trim();
+    var t = String((cell && cell.text) || "").toLowerCase();
+    if (serviceFilter === "day_centre") {
+      return (
+        band === "day_centre" ||
+        /\b11-4\b|\b11-3\b|\b12\.30-3\b|\b12\.30-4\b|\b1-3\b/.test(t)
+      );
+    }
+    if (serviceFilter === "pool") {
+      return (
+        band === "pool" ||
+        /\b4\.15|\b4\.30|\b4-|\b3\.30|\b9-|\b10-|\b9\.15/.test(t)
+      );
+    }
+    if (serviceFilter === "bespoke") {
+      return /\b4\.15-6\.15\b/.test(t) && band !== "day_centre";
+    }
+    return true;
+  }
+
+  function serviceSubtabs(active, attr) {
+    var html = '<div class="asr-subtabs asr-subtabs--service" role="tablist">';
+    HOURS_SERVICE_FILTERS.forEach(function (f) {
+      html +=
+        '<button type="button" class="btn btn--ghost btn--sm' +
+        (f.id === active ? " is-active" : "") +
+        '" ' +
+        attr +
+        '="' +
+        esc(f.id) +
+        '">' +
+        esc(f.label) +
+        "</button>";
+    });
+    return html + "</div>";
+  }
+
+  function renderHoursTableHtml(groups, dates, blockTitle, serviceFilter) {
     if (!groups.length) {
       return '<p class="muted">No columns.</p>';
+    }
+    var sf = serviceFilter || "all";
+    var filteredDates = (dates || []).filter(function (dr) {
+      if (sf === "all") return true;
+      return (dr.cells || []).some(function (cell) {
+        return cellMatchesServiceFilter(cell, sf);
+      });
+    });
+    if (!filteredDates.length) {
+      return '<p class="muted">No assignments for this service on the selected day.</p>';
     }
     var html = "";
     if (blockTitle) {
@@ -237,7 +294,7 @@
       }
     });
     html += "</tr></thead><tbody>";
-    dates.forEach(function (dr) {
+    filteredDates.forEach(function (dr) {
       html +=
         '<tr class="asr-row--' +
         esc(dr.status || "confirmed") +
@@ -245,6 +302,10 @@
         esc(dr.label || dr.date) +
         "</td>";
       (dr.cells || []).forEach(function (cell) {
+        if (sf !== "all" && !cellMatchesServiceFilter(cell, sf)) {
+          html += '<td class="asr-cell--muted-filter">—</td>';
+          return;
+        }
         html += "<td>" + cellInputHtml(cell) + "</td>";
       });
       html += "</tr>";
@@ -263,11 +324,21 @@
     var html = "";
     if (sheet.blocks && sheet.blocks.length) {
       sheet.blocks.forEach(function (block) {
-        html += renderHoursTableHtml(block.venueGroups || [], block.dates || [], "");
+        html += renderHoursTableHtml(
+          block.venueGroups || [],
+          block.dates || [],
+          "",
+          state.hoursService
+        );
       });
       return html;
     }
-    return renderHoursTableHtml(sheet.venueGroups || [], sheet.dates || [], "");
+    return renderHoursTableHtml(
+      sheet.venueGroups || [],
+      sheet.dates || [],
+      "",
+      state.hoursService
+    );
   }
 
   function renderHoursPanel() {
@@ -280,9 +351,10 @@
       hoursLegendHtml() +
       weekdaySubtabs(day, "data-asr-hours-day", {
         includeAll: true,
-        allLabel: "Mon–Sun",
+        allLabel: "All week",
         allValue: "all",
-      });
+      }) +
+      serviceSubtabs(state.hoursService, "data-asr-hours-service");
     if (day === "all") {
       WEEKDAYS.forEach(function (wd) {
         var sheet = d.staffHours[wd];
@@ -434,7 +506,13 @@
     });
     root.querySelectorAll("[data-asr-hours-day]").forEach(function (btn) {
       btn.addEventListener("click", function () {
-        state.hoursDay = btn.getAttribute("data-asr-hours-day") || "all";
+        state.hoursDay = btn.getAttribute("data-asr-hours-day") || "Monday";
+        refreshPanel();
+      });
+    });
+    root.querySelectorAll("[data-asr-hours-service]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        state.hoursService = btn.getAttribute("data-asr-hours-service") || "all";
         refreshPanel();
       });
     });

@@ -36,6 +36,14 @@
   border-color: #2563eb;
   background: #eff6ff;
 }
+.asr-subtabs--service {
+  margin-top: 8px;
+}
+.asr-cell--muted-filter {
+  color: var(--muted, #6b7280);
+  text-align: center;
+  font-size: 12px;
+}
 .asr-tabs {
   display: flex;
   flex-wrap: wrap;

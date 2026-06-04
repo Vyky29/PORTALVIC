@@ -142,6 +142,93 @@
     };
   }
 
+  function removeLateRequestAlert(requestId) {
+    var id = "late-" + String(requestId || "").trim();
+    if (!id || id === "late-") return false;
+    var list = listRef();
+    var next = list.filter(function (a) {
+      return a.id !== id;
+    });
+    if (next.length === list.length) return false;
+    global.__PORTAL_ADMIN_ACTIVITY_ALERTS__ = next;
+    sortNewestFirst();
+    if (typeof global.__portalAdminRenderAlerts === "function") {
+      global.__portalAdminRenderAlerts();
+    }
+    return true;
+  }
+
+  /**
+   * Align bell with pending portal_late_submission_requests (sidebar count uses the same table).
+   * @param {import("@supabase/supabase-js").SupabaseClient} client
+   * @param {{ silent?: boolean }} [opts]
+   */
+  async function syncLateRequestsFromServer(client, opts) {
+    opts = opts || {};
+    if (!client || typeof client.from !== "function") return 0;
+    var prevLateIds = listRef()
+      .filter(function (a) {
+        return a && a.kind === "late_approval";
+      })
+      .map(function (a) {
+        return a.id;
+      });
+    var res = await client
+      .from("portal_late_submission_requests")
+      .select(
+        "id,created_at,client_name,session_date,submission_type,service_label,status"
+      )
+      .eq("status", "pending")
+      .order("created_at", { ascending: false })
+      .limit(40);
+    if (res.error) {
+      console.warn("[admin-bell] late requests", res.error);
+      return 0;
+    }
+    var rows = res.data || [];
+    var pendingIds = {};
+    rows.forEach(function (r) {
+      if (!r || !r.id) return;
+      pendingIds["late-" + r.id] = true;
+    });
+    var list = listRef().filter(function (a) {
+      if (!a || a.kind !== "late_approval") return true;
+      return !!pendingIds[a.id];
+    });
+    global.__PORTAL_ADMIN_ACTIVITY_ALERTS__ = list;
+    rows.forEach(function (r) {
+      var a = activityFromLateRequest(r);
+      if (!a) return;
+      pushActivityAlert(a, {
+        silent: opts.silent || bootstrapSilent,
+      });
+    });
+    sortNewestFirst();
+    if (typeof global.__portalAdminRenderAlerts === "function") {
+      global.__portalAdminRenderAlerts();
+    }
+    return rows.length;
+  }
+
+  function unlockBellAudioOnGesture() {
+    if (global.__portalAdminBellAudioUnlockBound) return;
+    global.__portalAdminBellAudioUnlockBound = true;
+    function tryResume() {
+      try {
+        var ctx = global.__portalAdminBellAudioCtx;
+        if (ctx && ctx.state === "suspended") {
+          var p = ctx.resume();
+          if (p && typeof p.catch === "function") p.catch(function () {});
+        }
+      } catch (_) {}
+    }
+    ["click", "keydown", "touchstart"].forEach(function (ev) {
+      try {
+        document.addEventListener(ev, tryResume, { once: true, passive: true });
+      } catch (_) {}
+    });
+  }
+
   function pushActivityAlert(item, opts) {
     opts = opts || {};
     if (!item || !item.id || !isAllowedKind(item.kind)) return false;
@@ -223,4 +310,7 @@
   global.portalAdminActivityFromLateRequest = activityFromLateRequest;
   global.portalAdminSyncChatBellAlerts = syncChatBellAlerts;
   global.portalAdminPushActivityAlert = pushActivityAlert;
+  global.portalAdminBellRemoveLateRequest = removeLateRequestAlert;
+  global.portalAdminBellSyncLateFromServer = syncLateRequestsFromServer;
+  unlockBellAudioOnGesture();
 })(typeof window !== "undefined" ? window : globalThis);

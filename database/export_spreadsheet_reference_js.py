@@ -30,13 +30,18 @@ TERM_CLOSED = {"2026-05-04"}
 HOURS_FROM = "2026-06-01"
 
 
-def is_pool_hours_row(rec: dict) -> bool:
-    """Staff Timetable pool columns only (exclude day-centre 11–4 rows)."""
+def _time_range_start(rec: dict) -> str:
     tr = norm(rec.get("time_range", "")).replace(":", ".")
     if not tr:
         raw = norm(rec.get("raw_assignment", ""))
         m = re.search(r"(\d[\d\.:]*)\s*-\s*(\d)", raw)
         tr = m.group(1) if m else ""
+    return tr
+
+
+def is_pool_hours_row(rec: dict) -> bool:
+    """Afternoon pool / aquatic blocks (4–6.30, 9–3 Sunday, etc.)."""
+    tr = _time_range_start(rec)
     if re.match(r"^(4|3\.30|3\.30)", tr):
         return True
     if re.match(r"^(9|10)\b", tr):
@@ -44,12 +49,41 @@ def is_pool_hours_row(rec: dict) -> bool:
     return False
 
 
-def hour_cell(text: str, tone: str, date: str, day: str, col_key: str) -> dict:
-    return {
+def is_day_centre_hours_row(rec: dict) -> bool:
+    """Day Centre hub blocks (11–4, 12.30–3, 1–3) — must match group sessions roster."""
+    tr = _time_range_start(rec)
+    if re.match(r"^11", tr):
+        return True
+    if re.match(r"^12\.30", tr):
+        return True
+    if re.match(r"^1\b", tr):
+        return True
+    if re.match(r"^9:30|^9\.30", tr):
+        return True
+    return False
+
+
+def is_staff_hours_row(rec: dict) -> bool:
+    return is_pool_hours_row(rec) or is_day_centre_hours_row(rec)
+
+
+def hours_row_band(rec: dict) -> str:
+    if is_day_centre_hours_row(rec):
+        return "day_centre"
+    if is_pool_hours_row(rec):
+        return "pool"
+    return "other"
+
+
+def hour_cell(text: str, tone: str, date: str, day: str, col_key: str, band: str = "") -> dict:
+    out = {
         "text": text,
         "tone": tone,
         "editKey": f"{date}|{day}|{col_key}",
     }
+    if band:
+        out["band"] = band
+    return out
 
 
 def norm(s: str) -> str:
@@ -201,7 +235,7 @@ def build_saturday_hours_sheet(recs: list[dict]) -> dict:
         if r.get("date")
         and HOURS_FROM <= r["date"] <= "2026-07-17"
         and not (TERM_BREAK_FROM <= r["date"] <= TERM_BREAK_TO)
-        and is_pool_hours_row(r)
+        and is_staff_hours_row(r)
     ]
     late_dates = sorted({r["date"] for r in term_recs})
 
@@ -298,7 +332,7 @@ def build_sunday_hours_sheet(recs: list[dict]) -> dict:
         if r.get("date")
         and HOURS_FROM <= r["date"] <= "2026-07-17"
         and not (TERM_BREAK_FROM <= r["date"] <= TERM_BREAK_TO)
-        and is_pool_hours_row(r)
+        and is_staff_hours_row(r)
     ]
     dates_sorted = sorted({r["date"] for r in term_recs})
     venue_groups = [
@@ -356,7 +390,7 @@ def build_staff_hours(tt: list[dict]) -> dict:
             and HOURS_FROM <= r["date"] <= "2026-07-17"
             and not (TERM_BREAK_FROM <= r["date"] <= TERM_BREAK_TO)
             and r["date"] not in TERM_CLOSED
-            and is_pool_hours_row(r)
+            and is_staff_hours_row(r)
         ]
 
         dates_sorted = sorted(
@@ -375,7 +409,7 @@ def build_staff_hours(tt: list[dict]) -> dict:
             )
             if not d or not raw:
                 continue
-            by_date_venue[d][venue].append(raw)
+            by_date_venue[d][venue].append({"text": raw, "band": hours_row_band(r)})
             venue_slots[venue] = max(venue_slots[venue], len(by_date_venue[d][venue]))
 
         venue_groups = []
@@ -406,9 +440,22 @@ def build_staff_hours(tt: list[dict]) -> dict:
                 venue = g["venue"]
                 vals = by_date_venue[d].get(venue, [])
                 for i in range(g["span"]):
-                    val = vals[i] if i < len(vals) else ""
+                    entry = vals[i] if i < len(vals) else {}
+                    if isinstance(entry, dict):
+                        val = entry.get("text", "")
+                        band = entry.get("band", "")
+                    else:
+                        val = entry
+                        band = ""
                     cells.append(
-                        hour_cell(val, assignment_tone(val), d, day, f"{venue}:{i}")
+                        hour_cell(
+                            val,
+                            assignment_tone(val),
+                            d,
+                            day,
+                            f"{venue}:{i}",
+                            band,
+                        )
                     )
             status = date_row_status(d)
             date_rows.append(
