@@ -13,7 +13,7 @@
     Secret Edge PORTAL_PUSH_OPEN_URL: URL HTTPS pública de este dashboard (sin barra final), p. ej. …/lead_dashboard.html en producción.
   -->
   <script src="/portal/portal-vapid-public.js?v=20260601-vapid"></script>
-  <script src="/portal/portal_announcement_ack.js?v=20260602-ann-live-jun2"></script>
+  <script src="/portal/portal_announcement_ack.js?v=20260601-ann-ack-hydrate"></script>
   <script src="/portal-static-bootstrap.js?v=20260601-annual-profile-sync"></script>
   <!-- Optional: hide parent site chrome when embedded in another shell. -->
   <script>
@@ -7239,6 +7239,7 @@
     const dashboardData = {
       staffName: '',
       portalIdentityResolved: false,
+      portalAnnouncementAcksMerged: false,
       avatarFile: (__spreadsheetBoot && __spreadsheetBoot.avatarFile) ? __spreadsheetBoot.avatarFile : '',
       /* Role training row colour: swimming | climbing | support | admin (support tint) | lead | manager | fitness */
       staffRoleTrack: (__spreadsheetBoot && __spreadsheetBoot.staffRoleTrack) ? __spreadsheetBoot.staffRoleTrack : 'swimming',
@@ -7325,7 +7326,10 @@
       try{
         const box = typeof window !== 'undefined' ? window.__PORTAL_SUPABASE__ : null;
         const client = box && box.client;
-        if(!client || !dashboardData || !Array.isArray(dashboardData.notices)) return;
+        if(!client || !dashboardData || !Array.isArray(dashboardData.notices)){
+          if(dashboardData) dashboardData.portalAnnouncementAcksMerged = true;
+          return;
+        }
         const res = await client
           .from('portal_staff_announcements')
           .select('id,title,body,message_type,priority,audience_scope,created_at,ends_at,reminder_category,hide_after_ack_amount,hide_after_ack_unit')
@@ -7401,13 +7405,6 @@
         if(annInjected.length){
           dashboardData.notices = annInjected.concat(preserved);
         }
-        if(annInjected.length || remList.length){
-          if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
-          if(typeof renderAnnouncementsSheetContent === 'function'){
-            const sh = document.getElementById('announcementsSheet');
-            if(sh && sh.classList.contains('open')) renderAnnouncementsSheetContent();
-          }
-        }
         const annIds = visible
           .filter(function(row){ return String(row.message_type || '').toLowerCase().trim() === 'announcement'; })
           .map(function(row){ return String(row.id || ''); })
@@ -7434,13 +7431,7 @@
             }
           });
           if(ackChanged) portalAnnouncementAckMapSave(ackPatch);
-          if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
-          if(typeof renderAnnouncementsSheetContent === 'function'){
-            const sh2 = document.getElementById('announcementsSheet');
-            if(sh2 && sh2.classList.contains('open')) renderAnnouncementsSheetContent();
-          }
         }
-        if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
         if(typeof portalPrunePreLaunchAnnouncementAcks === 'function'){
           portalPrunePreLaunchAnnouncementAcks(
             portalAnnouncementAckMapLoad,
@@ -7448,7 +7439,18 @@
             dashboardData.portalLiveAnnouncementIdSet || {}
           );
         }
-      }catch(_){}
+        dashboardData.portalAnnouncementAcksMerged = true;
+        if(annInjected.length || remList.length || annIds.length){
+          if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
+          if(typeof renderAnnouncementsSheetContent === 'function'){
+            const sh = document.getElementById('announcementsSheet');
+            if(sh && sh.classList.contains('open')) renderAnnouncementsSheetContent();
+          }
+        }
+        if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
+      }catch(_){
+        if(dashboardData) dashboardData.portalAnnouncementAcksMerged = true;
+      }
     }
     try{ window.portalHydrateAnnouncementsFromSupabase = portalHydrateAnnouncementsFromSupabase; }catch(_){}
     let _portalStaffDemoAnnouncementAckClearedForSession = false;
@@ -7555,6 +7557,7 @@
     }
     function portalActiveAnnouncementItems(){
       if(dashboardData && !dashboardData.portalIdentityResolved) return [];
+      if(dashboardData && dashboardData.portalAnnouncementAcksMerged === false) return [];
       const ack = portalAnnouncementAckMapLoad();
       return portalAnnouncementItemsFromNotices().filter(function(n){
         const k = portalAnnouncementSignatureKey(n);
@@ -8539,11 +8542,14 @@
     }
     function portalSyncAnnouncementsAndRemindersUi(){
       if(typeof portalPrunePreLaunchAnnouncementAcks === 'function'){
-        portalPrunePreLaunchAnnouncementAcks(
-          portalAnnouncementAckMapLoad,
-          portalAnnouncementAckMapSave,
-          portalLiveAnnouncementIdSet()
-        );
+        const liveSet = portalLiveAnnouncementIdSet();
+        if(Object.keys(liveSet).length > 0){
+          portalPrunePreLaunchAnnouncementAcks(
+            portalAnnouncementAckMapLoad,
+            portalAnnouncementAckMapSave,
+            liveSet
+          );
+        }
       }
       if(typeof portalPruneTestAnnouncementAckKeys === 'function') portalPruneTestAnnouncementAckKeys();
       if(typeof portalPruneLegacyStaffDemoAnnouncementAckKeys === 'function') portalPruneLegacyStaffDemoAnnouncementAckKeys();
@@ -8554,7 +8560,11 @@
       else if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
       if(typeof renderAnnouncementsSheetContent === 'function') renderAnnouncementsSheetContent();
       if(typeof syncSessionReviewReminderBanner === 'function') syncSessionReviewReminderBanner();
-      if(typeof portalMaybeNotifyUnsignedAnnouncementPending === 'function') portalMaybeNotifyUnsignedAnnouncementPending();
+      if(typeof portalMaybeNotifyUnsignedAnnouncementPending === 'function'){
+        if(!dashboardData || dashboardData.portalAnnouncementAcksMerged !== false){
+          portalMaybeNotifyUnsignedAnnouncementPending();
+        }
+      }
       if(typeof portalSyncQuickMenuGuidePlacement === 'function') portalSyncQuickMenuGuidePlacement();
     }
 

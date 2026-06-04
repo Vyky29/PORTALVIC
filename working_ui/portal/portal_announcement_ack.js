@@ -57,6 +57,8 @@
       if (typeof loadMap !== "function" || typeof saveMap !== "function") return false;
       var ack = loadMap();
       var liveSet = liveIdSet && typeof liveIdSet === "object" ? liveIdSet : {};
+      /* Do not prune until live announcement ids are loaded — empty set would wipe valid acks on every cold open. */
+      if (!Object.keys(liveSet).length) return false;
       var changed = false;
       var welcomeNeedle = "welcome to the new club";
       Object.keys(ack).forEach(function (k) {

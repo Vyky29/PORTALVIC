@@ -13,7 +13,7 @@
     Secret Edge PORTAL_PUSH_OPEN_URL: URL HTTPS pública de este dashboard (sin barra final), p. ej. …/staff_dashboard.html en producción.
   -->
   <script src="/portal/portal-vapid-public.js?v=20260601-vapid"></script>
-  <script src="/portal/portal_announcement_ack.js?v=20260602-ann-live-jun2"></script>
+  <script src="/portal/portal_announcement_ack.js?v=20260601-ann-ack-hydrate"></script>
   <script src="/portal-static-bootstrap.js?v=20260601-annual-profile-sync"></script>
   <!-- Optional: hide parent site chrome when embedded in another shell. -->
   <script>
@@ -406,7 +406,7 @@
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V10l8-4 8 4v12"/><path d="M9 22v-6h6v6"/><path d="M8 6h8"/><path d="M10 10h4"/></svg></div>
               <div class="menu-btn-copy"><strong>Session Plan</strong><span class="menu-btn-sub">Open the session plan</span></div>
             </button>
-            <button type="button" class="menu-btn menu-btn--work-expenses" id="quickMenuStaffTermReview" data-portal-external-url="swtermreview.html" aria-label="Swimming term review — review each participant per term">
+            <button type="button" class="menu-btn menu-btn--work-expenses" id="quickMenuStaffTermReview" data-portal-external-url="swtermreview.html" aria-label="Swimming term review — review each participant per term" hidden aria-hidden="true">
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
               <div class="menu-btn-copy"><strong>Swimming Term Review</strong><span class="menu-btn-sub">Review each participant per term</span></div>
             </button>
@@ -4727,6 +4727,39 @@
       }catch(_){}
       return (__spreadsheetBoot && __spreadsheetBoot.staffRoleTrack) ? __spreadsheetBoot.staffRoleTrack : 'swimming';
     }
+    function portalStaffRoleLabelIsSwimmingInstructor(role){
+      return /swimming\s*instructor/i.test(String(role || '').trim());
+    }
+    async function portalSyncSwimmingTermReviewQuickMenu(){
+      var btn = document.getElementById('quickMenuStaffTermReview');
+      if(!btn) return;
+      var show = false;
+      var box = window.__PORTAL_SUPABASE__;
+      var client = box && box.client;
+      var uid =
+        (box && box.session && box.session.user && box.session.user.id) ||
+        (box && box.staff_profile && box.staff_profile.id) ||
+        '';
+      try{
+        if(client && uid){
+          var res = await client.from('staff_role_rates').select('role').eq('user_id', uid);
+          if(!res.error && Array.isArray(res.data) && res.data.length){
+            show = res.data.some(function(row){
+              return portalStaffRoleLabelIsSwimmingInstructor(row && row.role);
+            });
+          }else{
+            var track = String(staffRoleTrackForTodayBuild() || '').toLowerCase().replace(/[\s_-]+/g, '');
+            show = track === 'swimming';
+          }
+        }else{
+          var trackFallback = String(staffRoleTrackForTodayBuild() || '').toLowerCase().replace(/[\s_-]+/g, '');
+          show = trackFallback === 'swimming';
+        }
+      }catch(_){}
+      btn.hidden = !show;
+      btn.setAttribute('aria-hidden', show ? 'false' : 'true');
+    }
+    try{ window.portalSyncSwimmingTermReviewQuickMenu = portalSyncSwimmingTermReviewQuickMenu; }catch(_){}
 
     function rosterSlotTimeLabel(s){
       const raw = String(s.timeSlotLabel || '').trim();
@@ -7817,6 +7850,7 @@
     const dashboardData = {
       staffName: '',
       portalIdentityResolved: false,
+      portalAnnouncementAcksMerged: false,
       avatarFile: (__spreadsheetBoot && __spreadsheetBoot.avatarFile) ? __spreadsheetBoot.avatarFile : '',
       /* Role training row colour: swimming | climbing | support | admin (support tint) | lead | manager | fitness */
       staffRoleTrack: (__spreadsheetBoot && __spreadsheetBoot.staffRoleTrack) ? __spreadsheetBoot.staffRoleTrack : 'swimming',
@@ -7904,7 +7938,10 @@
       try{
         const box = typeof window !== 'undefined' ? window.__PORTAL_SUPABASE__ : null;
         const client = box && box.client;
-        if(!client || !dashboardData || !Array.isArray(dashboardData.notices)) return;
+        if(!client || !dashboardData || !Array.isArray(dashboardData.notices)){
+          if(dashboardData) dashboardData.portalAnnouncementAcksMerged = true;
+          return;
+        }
         const res = await client
           .from('portal_staff_announcements')
           .select('id,title,body,message_type,priority,audience_scope,created_at,ends_at,reminder_category,hide_after_ack_amount,hide_after_ack_unit')
@@ -7998,13 +8035,6 @@
         if(annInjected.length){
           dashboardData.notices = annInjected.concat(preserved);
         }
-        if(annInjected.length || remList.length){
-          if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
-          if(typeof renderAnnouncementsSheetContent === 'function'){
-            const sh = document.getElementById('announcementsSheet');
-            if(sh && sh.classList.contains('open')) renderAnnouncementsSheetContent();
-          }
-        }
         const annIds = visible
           .filter(function(row){ return String(row.message_type || '').toLowerCase().trim() === 'announcement'; })
           .map(function(row){ return String(row.id || ''); })
@@ -8031,13 +8061,7 @@
             }
           });
           if(ackChanged) portalAnnouncementAckMapSave(ackPatch);
-          if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
-          if(typeof renderAnnouncementsSheetContent === 'function'){
-            const sh2 = document.getElementById('announcementsSheet');
-            if(sh2 && sh2.classList.contains('open')) renderAnnouncementsSheetContent();
-          }
         }
-        if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
         if(typeof portalPrunePreLaunchAnnouncementAcks === 'function'){
           portalPrunePreLaunchAnnouncementAcks(
             portalAnnouncementAckMapLoad,
@@ -8045,7 +8069,18 @@
             dashboardData.portalLiveAnnouncementIdSet || {}
           );
         }
-      }catch(_){}
+        dashboardData.portalAnnouncementAcksMerged = true;
+        if(annInjected.length || remList.length || annIds.length){
+          if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
+          if(typeof renderAnnouncementsSheetContent === 'function'){
+            const sh = document.getElementById('announcementsSheet');
+            if(sh && sh.classList.contains('open')) renderAnnouncementsSheetContent();
+          }
+        }
+        if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
+      }catch(_){
+        if(dashboardData) dashboardData.portalAnnouncementAcksMerged = true;
+      }
     }
     try{ window.portalHydrateAnnouncementsFromSupabase = portalHydrateAnnouncementsFromSupabase; }catch(_){}
     let _portalStaffDemoAnnouncementAckClearedForSession = false;
@@ -8152,6 +8187,7 @@
     }
     function portalActiveAnnouncementItems(){
       if(dashboardData && !dashboardData.portalIdentityResolved) return [];
+      if(dashboardData && dashboardData.portalAnnouncementAcksMerged === false) return [];
       const ack = portalAnnouncementAckMapLoad();
       return portalAnnouncementItemsFromNotices().filter(function(n){
         const k = portalAnnouncementSignatureKey(n);
@@ -9205,11 +9241,14 @@
     }
     function portalSyncAnnouncementsAndRemindersUi(){
       if(typeof portalPrunePreLaunchAnnouncementAcks === 'function'){
-        portalPrunePreLaunchAnnouncementAcks(
-          portalAnnouncementAckMapLoad,
-          portalAnnouncementAckMapSave,
-          portalLiveAnnouncementIdSet()
-        );
+        const liveSet = portalLiveAnnouncementIdSet();
+        if(Object.keys(liveSet).length > 0){
+          portalPrunePreLaunchAnnouncementAcks(
+            portalAnnouncementAckMapLoad,
+            portalAnnouncementAckMapSave,
+            liveSet
+          );
+        }
       }
       if(typeof portalPruneTestAnnouncementAckKeys === 'function') portalPruneTestAnnouncementAckKeys();
       if(typeof portalPruneLegacyStaffDemoAnnouncementAckKeys === 'function') portalPruneLegacyStaffDemoAnnouncementAckKeys();
@@ -9220,7 +9259,11 @@
       else if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
       if(typeof renderAnnouncementsSheetContent === 'function') renderAnnouncementsSheetContent();
       if(typeof syncSessionReviewReminderBanner === 'function') syncSessionReviewReminderBanner();
-      if(typeof portalMaybeNotifyUnsignedAnnouncementPending === 'function') portalMaybeNotifyUnsignedAnnouncementPending();
+      if(typeof portalMaybeNotifyUnsignedAnnouncementPending === 'function'){
+        if(!dashboardData || dashboardData.portalAnnouncementAcksMerged !== false){
+          portalMaybeNotifyUnsignedAnnouncementPending();
+        }
+      }
       if(typeof portalSyncQuickMenuGuidePlacement === 'function') portalSyncQuickMenuGuidePlacement();
     }
 
@@ -12839,6 +12882,9 @@
           void portalHydrateAnnouncementsFromSupabase().then(function(){
             if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
           });
+        }
+        if(typeof portalSyncSwimmingTermReviewQuickMenu === 'function'){
+          void portalSyncSwimmingTermReviewQuickMenu();
         }
         var metaAvatar = String((window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session && window.__PORTAL_SUPABASE__.session.user && window.__PORTAL_SUPABASE__.session.user.user_metadata && window.__PORTAL_SUPABASE__.session.user.user_metadata.avatar_url) || "").trim();
         dashboardData.avatarFile = metaAvatar || boot.avatarFile || dashboardData.avatarFile || "";
