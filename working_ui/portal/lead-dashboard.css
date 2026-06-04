@@ -1996,6 +1996,62 @@
       color:#465260;
     }
     #menuSheet .menu-accordion-trigger--theme-settings .menu-accordion-trigger__icon{color:#5a6472}
+    #menuSheet .menu-accordion-trigger--theme-lead{
+      background:#eef1f6;
+      border-color:#cdd5e1;
+      color:#3d4654;
+    }
+    #menuSheet .menu-accordion-trigger--theme-lead .menu-accordion-trigger__icon{color:#5a6472}
+    #menuSheet .menu-accordion-trigger--theme-start .menu-accordion-chip{
+      background:#fff5e3;
+      border-color:#e8d5ad;
+      color:#8a6918;
+    }
+    #menuSheet .menu-accordion-trigger--theme-profile .menu-accordion-chip{
+      background:#e4f2fa;
+      border-color:#b8d9ec;
+      color:#2a6589;
+    }
+    #menuSheet .menu-accordion-trigger--theme-work .menu-accordion-chip{
+      background:#e8edff;
+      border-color:#b8c4f5;
+      color:#4a5590;
+    }
+    #menuSheet .menu-accordion-trigger--theme-plan .menu-accordion-chip{
+      background:#efe6f8;
+      border-color:#d0bde8;
+      color:#6b548f;
+    }
+    #menuSheet .menu-accordion-trigger--theme-lead .menu-accordion-chip{
+      background:#e4e9f1;
+      border-color:#bcc6d4;
+      color:#4a5563;
+    }
+    #menuSheet .menu-accordion-trigger--theme-finance .menu-accordion-chip{
+      background:#dff5ea;
+      border-color:#b0dfc8;
+      color:#2f7a52;
+    }
+    #menuSheet .menu-accordion-trigger--theme-docs .menu-accordion-chip{
+      background:#dff0f3;
+      border-color:#acd5de;
+      color:#2f7580;
+    }
+    #menuSheet .menu-accordion-trigger--theme-training .menu-accordion-chip{
+      background:#ffede3;
+      border-color:#efc9b0;
+      color:#a85f38;
+    }
+    #menuSheet .menu-accordion-trigger--theme-compliance .menu-accordion-chip{
+      background:#fce8ef;
+      border-color:#e8b8c8;
+      color:#8f4a5f;
+    }
+    #menuSheet .menu-accordion-trigger--theme-settings .menu-accordion-chip{
+      background:#e9edf2;
+      border-color:#c5cdd8;
+      color:#556070;
+    }
     #menuSheet .menu-group-panel{
       padding:10px 0 2px;
       min-width:0;

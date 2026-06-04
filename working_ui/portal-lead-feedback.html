@@ -267,9 +267,11 @@
   </div>
   <script src="/portal/portal_feedback_voice_input.js?v=20260601-it-translate"></script>
   <script type="module">
-    // lead_feedback_report_app.js self-initialises (calls initLeadFeedbackReportPage()
-    // on import). The previous module name did not exist, so the form never booted.
-    import "/portal-shared-js/lead_feedback_report_app.js?v=20260602-voice-staff";
+    import { bootPortalLeadFeedback } from "/portal-shared-js/portal_lead_feedback_app.js?v=20260615-lead-report-fix";
+    bootPortalLeadFeedback().catch(function (e) {
+      console.error(e);
+      alert("Could not load lead report. Refresh the page or return to the lead dashboard.");
+    });
   </script>
 </body>
 </html>
