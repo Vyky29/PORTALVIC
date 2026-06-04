@@ -147,6 +147,91 @@
   white-space: nowrap;
 }
 
+.portal-sready-embed {
+  max-width: 100%;
+}
+
+.portal-sready-kpis-wrap {
+  margin: 0 0 16px;
+  min-width: 0;
+}
+
+.portal-sready-kpis {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 0;
+}
+
+@media (max-width: 1100px) {
+  .portal-sready-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.portal-sready-tabs {
+  margin-top: 4px;
+}
+
+.portal-sready-badge {
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.portal-sready-chip--bad {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.portal-sready-table {
+  min-width: 1080px;
+}
+
+.portal-sready-table--follow {
+  min-width: 720px;
+}
+
+.portal-sready-ind-detail {
+  margin-top: 6px;
+}
+
+.portal-sready-cell {
+  min-width: 120px;
+}
+
+.portal-sready-missing-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.portal-sready-missing-list li {
+  margin: 0 0 3px;
+}
+
+.portal-sready-action {
+  font-size: 12px;
+  line-height: 1.45;
+  max-width: 280px;
+}
+
+.portal-sready-row--sg td {
+  box-shadow: inset 3px 0 0 #fca5a5;
+}
+
+.portal-sready-row--compliance td {
+  background: linear-gradient(90deg, rgba(254, 243, 199, 0.35) 0%, transparent 28%);
+}
+
+.portal-sready-row--app td {
+  background: linear-gradient(90deg, rgba(254, 226, 226, 0.28) 0%, transparent 24%);
+}
+
+.portal-sready-row--sg.portal-sready-row--compliance td,
+.portal-sready-row--sg.portal-sready-row--app td {
+  background: linear-gradient(90deg, rgba(254, 226, 226, 0.22) 0%, rgba(254, 243, 199, 0.18) 40%, transparent 70%);
+}
+
 .portal-activity-visit__meta {
   font-size: 12px;
   color: var(--muted, #64748b);

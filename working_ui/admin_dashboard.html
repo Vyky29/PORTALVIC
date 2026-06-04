@@ -19,7 +19,7 @@
   <script src="/portal/admin-payslips.js?v=20260610-payslips"></script>
   <script src="/portal/admin-portal-pins.js?v=20260530-portal-pins-db"></script>
   <script src="/portal/admin-portal-activity.js?v=20260604-visit-activity"></script>
-  <script src="/portal/admin-training-progress.js?v=20260615-tprog-infer"></script>
+  <script src="/portal/admin-training-progress.js?v=20260604-staff-readiness"></script>
   <script src="/portal/admin-portal-achievements.js?v=20260604-ach-az-directory"></script>
   <link rel="stylesheet" href="/portal/portal_staff_map.css?v=20260602-staff-map-header" />
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260604-ach-az-directory" />
@@ -44,6 +44,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
   <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260604-mob-nav" />
+  <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
 </head>
 <body>
   <script>
@@ -56,7 +57,7 @@
     }catch(e){ h.classList.add('portal-in-browser'); }
   })();
   </script>
-  <div class="admin-shell" id="adminShell">
+  <div class="admin-shell admin-shell--layout" id="adminShell">
     <div class="sidebar-backdrop" id="sidebarBackdrop" aria-hidden="true"></div>
     <aside class="admin-sidebar" id="adminSidebar" aria-label="Main navigation" aria-hidden="true">
       <div class="admin-sidebar-brand" id="adminSidebarBrand" tabindex="0" role="button" aria-label="Open or close menu" aria-haspopup="true" aria-expanded="false">
@@ -16805,7 +16806,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portal_documents:'Timesheets, expense claims, onboarding uploads and files in Supabase storage.',
         portal_payslips:'Upload monthly payslip PDFs for each worker — visible in My Documents on the staff app.',
         portal_activity:'Staff portal visits — login, pages, and active-tab time (UK London).',
-        portal_training_progress:'Induction modules, swimming training/review progress, and app readiness (PWA, alerts, map, mic).',
+        portal_training_progress:'Staff readiness — training, compliance sign-offs, and app/device setup in one operational view.',
         staff_live_map:'Live map during Bespoke Programme and Day Centre shift windows only: from 15 minutes before first qualifying session until 30 minutes after last.',
         policies:'Documents · sign-offs · compliance',
         invoices:'Build draft invoice lines here, then export a CSV ready to import into Xero.',
@@ -16866,7 +16867,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       var panels = NAV_GROUPS.map(function(group){
         return (
-          '<button type="button" class="dash-hub-cat dash-hub-cat--pick" data-hub-cat="'+esc(group.id)+'" data-hub-open-group="'+esc(group.id)+'" title="'+escAttr('Open '+group.label)+'">' +
+          '<button type="button" class="dash-hub-cat dash-hub-cat--pick admin-home-card" data-hub-cat="'+esc(group.id)+'" data-hub-open-group="'+esc(group.id)+'" title="'+escAttr('Open '+group.label)+'">' +
           '<span class="dash-hub-cat__head">' +
           adminNavIconHtml(group.id) +
           '<span class="dash-hub-cat__label">'+esc(group.label)+'</span>' +
@@ -16883,7 +16884,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           intro: 'Choose a category — same as the left menu.',
           backMode: 'none'
         }) +
-        '<div class="dash-hub-cat-grid dash-hub-cat-grid--pick">'+panels+'</div>' +
+        '<div class="dash-hub-cat-grid dash-hub-cat-grid--pick admin-dashboard-grid">'+panels+'</div>' +
         '</div>'
       );
     }
@@ -16905,7 +16906,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portalDashTileHtml('scheduling', '', 'scheduling', 'Schedule & Covers', 'Weekly anchors & swap cover', true, 'scheduling')+
         portalDashTileHtml('', '', 'comms_ops', 'Chat', 'Internal staff & CEO / admin', false, 'notify', 'admin_chat_hub')+
         portalDashTileHtml('portal_activity', '', 'analytics', 'Portal activity', 'Login, pages & time on app', false, 'analytics')+
-        portalDashTileHtml('portal_training_progress', '', 'analytics', 'Training & readiness', 'Induction, swim tracks, app setup', false, 'analytics')+
+        portalDashTileHtml('portal_training_progress', '', 'analytics', 'Staff readiness', 'Training, compliance and app setup', false, 'analytics')+
         portalDashTileHtml('staff_live_map', '', 'clients', 'Staff live map', 'On-site locations (~10 m)', false, 'scheduling')+
         portalDashTileHtml('', '', 'announcements', 'Announcements', 'Notices &amp; reminders', false, 'announcements', 'announcements_comms');
       return (

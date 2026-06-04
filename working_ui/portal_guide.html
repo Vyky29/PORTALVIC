@@ -106,7 +106,23 @@
     .halo-dot--red{background:#d64545}
     .halo-dot--blue{background:var(--blue)}
     .halo-dot--gold{background:var(--gold)}
-    .halo-dot--multi{background:conic-gradient(var(--blue) 0 33%,#d64545 33% 66%,var(--gold) 66% 100%)}
+    .halo-dot--orange{background:#d97706}
+    .halo-dot--green{background:#15803d}
+    .halo-dot--multi{background:conic-gradient(var(--blue) 0 25%,#d64545 25% 50%,#d97706 50% 75%,#15803d 75% 100%)}
+    .pg-summary-card{
+      margin:14px 0 0;padding:14px 16px;border-radius:14px;
+      background:linear-gradient(180deg,#f0f9ff 0%,#e8f4fc 100%);
+      border:1px solid #c5d9ef;
+    }
+    .pg-summary-card h3{margin:0 0 8px;font-size:15px;color:var(--navy)}
+    .pg-summary-card ul{margin:0;padding-left:18px}
+    .pg-summary-card li{margin-bottom:5px;font-size:14px;line-height:1.45}
+    .pg-mini-cards{display:grid;gap:10px;margin-top:12px}
+    .pg-mini-card{
+      padding:12px 14px;border-radius:12px;background:#f8fafc;
+      border:1px solid var(--panel-border);font-size:14px;line-height:1.45;min-width:0;
+    }
+    .pg-mini-card b{color:var(--navy);display:block;margin-bottom:4px;font-size:14px}
     /* Pills */
     .pill-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
     .pill{display:inline-block;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:800}
@@ -207,25 +223,34 @@
         <svg class="pg-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
         Getting started on your phone
       </h2>
-      <p>The Portal has been designed to be used on your phone during and after your sessions.</p>
-      <p>As a priority, please:</p>
+      <p>The portal is designed for your phone — before, during and after sessions.</p>
+      <p><b>First steps:</b></p>
       <ol>
-        <li>Log into the Portal using the link provided.</li>
-        <li>Complete the first section of this guide.</li>
-        <li>Install the App on your mobile device following the instructions below.</li>
+        <li>Log in using the link provided.</li>
+        <li>Read this guide and mark it as read at the end.</li>
+        <li>Install <b>CS Portal</b> on your home screen (see below).</li>
+        <li>Turn on <b>Notifications/Alerts</b> in Quick menu → Settings.</li>
       </ol>
-      <p>When you install the app, the home-screen icon is labelled <b>CS Portal</b> automatically.</p>
-      <p>If you did not save your password when logging in through the web page, the App may not recognise your account when you first log in. If this happens, simply log out and log back into the App.</p>
-      <p>Once the App has been installed, please go to the <b>Quick Menu</b>, scroll down to <b>Settings</b>, and activate <b>Notifications/Alerts</b>.</p>
+      <p>The home-screen icon is labelled <b>CS Portal</b>. If the app does not recognise you at first, log out and sign in again.</p>
+      <div class="pg-summary-card">
+        <h3>Daily use summary</h3>
+        <ul>
+          <li>Check the dashboard before your sessions</li>
+          <li>Tap <b>orange</b> session cards to complete feedback</li>
+          <li>Tap the <b>logo</b> if the halo shows notifications</li>
+          <li>Use <b>My participants</b> to check client information</li>
+          <li>Use <b>Quick menu</b> for forms, finance, documents and settings</li>
+        </ul>
+      </div>
       <div class="pg-note">
         <p style="margin:0 0 8px"><b>Please also note:</b></p>
         <ul style="margin:0;padding-left:20px">
-          <li><b>Microphone</b> access is optional. You only need it if you prefer to give feedback by speaking instead of typing.</li>
-          <li><b>Location</b> access appears in Settings only for staff on <b>Bespoke Programme</b> or <b>Day Centre</b>, and is used only during the hours of that service.</li>
+          <li><b>Microphone</b> is optional — only if you prefer voice feedback.</li>
+          <li><b>Location</b> appears in Settings only for <b>Bespoke Programme</b> or <b>Day Centre</b> staff, during service hours.</li>
+          <li>Keep <b>Zoho Cliq</b> installed for now. You may delete <b>Zoho People</b> if you wish — payslips and documents are in the portal under <b>My Documents</b>.</li>
         </ul>
       </div>
-      <p>Finally, please keep <b>Zoho Cliq</b> installed for now. You may delete the Zoho People App if you wish, as you will be able to find payslips and company documents through the Portal under <b>My Documents</b>.</p>
-      <p>Going forward, you should only need two company Apps on your phone:</p>
+      <p>Going forward, you should only need two company apps:</p>
       <ol>
         <li><b>CS Portal</b> (operations)</li>
         <li><b>Zoho Cliq</b> (chat)</li>
@@ -276,62 +301,51 @@
       </div>
     </article>
 
+    <!-- Understanding your dashboard -->
+    <article class="pg-card">
+      <h2>
+        <svg class="pg-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+        Understanding your dashboard
+      </h2>
+      <p>Your <b>dashboard</b> is the main screen to check <b>before, during and after</b> sessions.</p>
+      <p>Everything works together:</p>
+      <div class="pg-mini-cards">
+        <div class="pg-mini-card"><b>Session cards</b> Show today’s participants and what still needs doing. Orange means feedback is waiting.</div>
+        <div class="pg-mini-card"><b>Logo halo</b> Coloured dots around the logo tell you about feedback, chats, announcements or documents.</div>
+        <div class="pg-mini-card"><b>Reminders</b> Tap the logo to open the notification centre for outstanding tasks.</div>
+        <div class="pg-mini-card"><b>Quick actions</b> Use session cards, My participants, or the Quick menu to submit forms.</div>
+      </div>
+      <p class="pg-note" style="margin-top:14px">Start on the dashboard each shift. If something needs attention, the card colour or logo halo will show you.</p>
+    </article>
+
     <!-- Colour system -->
     <article class="pg-card">
       <h2>
         <svg class="pg-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="19" cy="13" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="10" cy="19" r="2.5"/><path d="M12 2a10 10 0 1 0 0 20"/></svg>
         What the colours mean
       </h2>
-      <p>The portal uses colour so you can tell at a glance what needs your attention. Same colours everywhere — session cards, pills and the logo.</p>
+      <p>The portal uses the same colours on session cards, pills and reminders so you can see what needs attention at a glance.</p>
 
-      <h3>Session cards &amp; reviews</h3>
-      <p style="margin-top:4px">On a busy day you may see several participants in one list — each card keeps its own colour until you review that session.</p>
+      <h3>Session cards</h3>
+      <p>On a busy day you may see several participants — each card keeps its own colour until you complete that session.</p>
 
       <div class="pg-shot">
         <figure class="pg-real-shot">
           <img src="/portal/guide-shots/teflon/4clientes-tarjeta-outstanding.png" alt="Monday dashboard with four participants: Mari Trini, Vitin marked Absent, Sam and Jordan with feedback still outstanding" loading="lazy" width="390" height="844" />
         </figure>
-        <p class="pg-cap"><b>Monday at a glance</b> — four sessions on the same day. <b>Orange</b> cards still need feedback; <b>green</b> with <b>Absent</b> means you already closed that session.</p>
+        <p class="pg-cap"><b>Monday at a glance</b> — <b>orange</b> cards still need feedback; <b>green</b> with <b>Absent</b> means the session is already closed.</p>
       </div>
 
       <div class="legend">
-        <div class="legend-item"><div class="swatch swatch--blue"></div><div class="legend-text"><b>Blue — scheduled</b><span>An upcoming session. Nothing to do yet.</span></div></div>
-        <div class="legend-item"><div class="swatch swatch--orange"></div><div class="legend-text"><b>Orange — action needed</b><span>Feedback is still pending for this session. Tap it to submit.</span></div></div>
-        <div class="legend-item"><div class="swatch swatch--green"></div><div class="legend-text"><b>Green — done</b><span>Feedback submitted (or absence recorded). All good.</span></div></div>
-        <div class="legend-item"><div class="swatch swatch--red"></div><div class="legend-text"><b>Red — incident / urgent</b><span>An incident was reported, or something needs sorting now.</span></div></div>
-        <div class="legend-item"><div class="swatch swatch--lilac"></div><div class="legend-text"><b>Purple — schedule change</b><span>A cancellation or roster change affecting this slot.</span></div></div>
+        <div class="legend-item"><div class="swatch swatch--blue"></div><div class="legend-text"><b>Blue — scheduled</b><span>Upcoming session. Nothing to do yet.</span></div></div>
+        <div class="legend-item"><div class="swatch swatch--orange"></div><div class="legend-text"><b>Orange — action needed</b><span>Feedback still pending. Tap the card to submit.</span></div></div>
+        <div class="legend-item"><div class="swatch swatch--green"></div><div class="legend-text"><b>Green — done</b><span>Feedback submitted or absence recorded.</span></div></div>
+        <div class="legend-item"><div class="swatch swatch--red"></div><div class="legend-text"><b>Red — incident / urgent</b><span>Incident reported or something needs sorting now.</span></div></div>
+        <div class="legend-item"><div class="swatch swatch--lilac"></div><div class="legend-text"><b>Purple — schedule change</b><span>Cancellation or roster change affecting this slot.</span></div></div>
       </div>
 
-      <h3>The logo halo (the dots around the logo)</h3>
-      <p style="margin-top:4px">When something is waiting for you, the dots circling the logo change colour:</p>
-      <div class="halo-row">
-        <div class="halo"><span class="halo-dot halo-dot--red"></span>Announcement to sign</div>
-        <div class="halo"><span class="halo-dot halo-dot--blue"></span>New chat message</div>
-        <div class="halo"><span class="halo-dot halo-dot--gold"></span>Feedback pending</div>
-        <div class="halo"><span class="halo-dot halo-dot--multi"></span>Several at once</div>
-      </div>
-
-      <div class="pg-shot">
-        <figure class="pg-real-shot">
-          <img src="/portal/guide-shots/teflon/outstanding-feedback-en-dashboard.png" alt="Staff dashboard: orange session card means feedback is still outstanding" loading="lazy" width="390" height="844" />
-        </figure>
-        <p class="pg-cap"><b>Orange</b> — feedback still outstanding. The gold halo on the logo matches the reminder count.</p>
-      </div>
-      <div class="pg-shot">
-        <figure class="pg-real-shot">
-          <img src="/portal/guide-shots/teflon/reviewed-absent.png" alt="Green session card reviewed and marked Absent for Vitin" loading="lazy" width="390" height="844" />
-        </figure>
-        <p class="pg-cap"><b>Green</b> — reviewed and closed. Here the session is marked <b>Absent</b> (participant did not attend). Feedback submitted counts as green too.</p>
-      </div>
-    </article>
-
-    <!-- Pills -->
-    <article class="pg-card">
-      <h2>
-        <svg class="pg-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="8" width="20" height="8" rx="4"/></svg>
-        Status pills
-      </h2>
-      <p>Little rounded tags on cards and lists. They tell you the state of a session or task:</p>
+      <h3>Status pills</h3>
+      <p>Small rounded tags on cards and lists:</p>
       <div class="pill-row">
         <span class="pill pill--done">Done</span>
         <span class="pill pill--pending">Pending</span>
@@ -341,12 +355,100 @@
         <span class="pill pill--info">Scheduled</span>
       </div>
       <ul>
-        <li><b>Done</b> — feedback/report submitted.</li>
+        <li><b>Done</b> — feedback or report submitted.</li>
         <li><b>Pending</b> — still needs your feedback.</li>
-        <li><b>Late</b> — submitted (or being submitted) after the deadline.</li>
-        <li><b>Absent</b> — the participant didn’t attend.</li>
-        <li><b>Incident</b> — an incident report is attached.</li>
+        <li><b>Late</b> — submitted after the deadline.</li>
+        <li><b>Absent</b> — participant did not attend.</li>
+        <li><b>Incident</b> — incident report attached.</li>
       </ul>
+
+      <div class="pg-shot">
+        <figure class="pg-real-shot">
+          <img src="/portal/guide-shots/teflon/outstanding-feedback-en-dashboard.png" alt="Staff dashboard: orange session card means feedback is still outstanding" loading="lazy" width="390" height="844" />
+        </figure>
+        <p class="pg-cap"><b>Orange</b> — feedback still outstanding on the session card.</p>
+      </div>
+      <div class="pg-shot">
+        <figure class="pg-real-shot">
+          <img src="/portal/guide-shots/teflon/reviewed-absent.png" alt="Green session card reviewed and marked Absent for Vitin" loading="lazy" width="390" height="844" />
+        </figure>
+        <p class="pg-cap"><b>Green</b> — reviewed and closed. Here the session is marked <b>Absent</b>.</p>
+      </div>
+    </article>
+
+    <!-- Logo halo and notifications -->
+    <article class="pg-card">
+      <h2>
+        <svg class="pg-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+        Logo halo and notifications
+      </h2>
+      <p>Coloured dots around the <b>club logo</b> tell you what is waiting. Tap the logo to open the <b>notification centre</b>.</p>
+      <div class="halo-row">
+        <div class="halo"><span class="halo-dot halo-dot--orange"></span>Outstanding feedback</div>
+        <div class="halo"><span class="halo-dot halo-dot--blue"></span>New chat message</div>
+        <div class="halo"><span class="halo-dot halo-dot--red"></span>Announcement or document to sign</div>
+        <div class="halo"><span class="halo-dot halo-dot--green"></span>All up to date</div>
+        <div class="halo"><span class="halo-dot halo-dot--multi"></span>More than one type waiting</div>
+      </div>
+      <ul>
+        <li><b>Orange</b> — session feedback still outstanding.</li>
+        <li><b>Blue</b> — new internal chat message.</li>
+        <li><b>Red</b> — announcement or document needs reading or signing.</li>
+        <li><b>Green</b> — no action needed; everything is up to date.</li>
+        <li><b>Multiple dots</b> — more than one type of notification at the same time.</li>
+      </ul>
+      <div class="pg-shot">
+        <figure class="pg-real-shot">
+          <img src="/portal/guide-shots/teflon/green-halo-clear-dashboard.png" alt="Dashboard with green halo showing that all actions are complete" loading="lazy" width="390" height="844" />
+        </figure>
+        <p class="pg-cap">Green halo — everything is up to date. No outstanding feedback, announcements, chats or documents need action.</p>
+      </div>
+      <div class="pg-shot">
+        <figure class="pg-real-shot">
+          <img src="/portal/guide-shots/teflon/multiple-halo-notifications.png" alt="Dashboard logo showing multiple coloured notification dots" loading="lazy" width="390" height="844" />
+        </figure>
+        <p class="pg-cap">Multiple coloured dots mean different types of notifications are waiting at the same time.</p>
+      </div>
+      <div class="pg-shot">
+        <figure class="pg-real-shot">
+          <img src="/portal/guide-shots/teflon/alerts-notifications-centre.png" alt="Alerts and notifications centre showing reminders, chat, announcements and guide" loading="lazy" width="390" height="844" />
+        </figure>
+        <p class="pg-cap">The logo opens the notification centre — reminders, chats, announcements, documents to sign and this guide.</p>
+      </div>
+      <div class="pg-shot">
+        <figure class="pg-real-shot">
+          <img src="/portal/guide-shots/teflon/outstanding-feedbacks-x1.png" alt="Alerts and notifications sheet with Outstanding feedbacks x1 reminder" loading="lazy" width="390" height="844" />
+        </figure>
+        <p class="pg-cap">Under <b>Reminders</b>, <b>Outstanding feedbacks x1</b> (orange) opens the session still waiting for feedback.</p>
+      </div>
+      <div class="pg-shot">
+        <figure class="pg-real-shot">
+          <img src="/portal/guide-shots/teflon/reminder-en-term-outstanding-feedback.png" alt="Term calendar with red days marking outstanding session feedback" loading="lazy" width="390" height="844" />
+        </figure>
+        <p class="pg-cap">Tap <b>Term</b> on your dashboard. Days in <b>red</b> still have feedback outstanding.</p>
+      </div>
+    </article>
+
+    <!-- Sessions and feedback -->
+    <article class="pg-card">
+      <h2>
+        <svg class="pg-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Sessions and feedback
+      </h2>
+      <p><b>Always open feedback from the session card</b> when you can. It pre-fills the participant, date and time for you.</p>
+      <p>Use <b>Quick menu → Session feedback</b> only as a backup — you will need to choose the participant yourself.</p>
+      <ul>
+        <li>Tap an <b>orange</b> session card on your dashboard after the session.</li>
+        <li>Complete engagement, regulation, independence and notes.</li>
+        <li>Mark <b>Absent</b> from the participant card if they did not attend.</li>
+        <li>Submit before your timesheet deadline so hours turn <b>green</b> for pay.</li>
+      </ul>
+      <div class="pg-shot">
+        <figure class="pg-real-shot">
+          <img src="/portal/guide-shots/teflon/session-card-to-feedback.png" alt="Session card opening the feedback form with participant details pre-filled" loading="lazy" width="390" height="844" />
+        </figure>
+        <p class="pg-cap">Opening feedback from the session card automatically pre-fills the participant, date and time.</p>
+      </div>
     </article>
 
     <!-- My participants -->
@@ -355,7 +457,8 @@
         <svg class="pg-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 11l-3 3-2-2"/></svg>
         My participants
       </h2>
-      <p>Open <b>My participants</b> from the bottom bar to see everyone on your roster. Switch between <b>My participants</b> and <b>All participants</b>, then tap a child to open their card — quick actions pre-fill the participant for <b>Feedback</b>, <b>Absence</b>, <b>Incident</b>, or <b>Cancellation</b>.</p>
+      <p>Open <b>My participants</b> from the bottom bar to see everyone on your roster.</p>
+      <p>Switch between <b>My participants</b> and <b>All participants</b>, then tap a name to open their card. Quick actions pre-fill the participant for <b>Feedback</b>, <b>Absence</b>, <b>Incident</b> or <b>Cancellation</b>.</p>
       <div class="pg-shot">
         <figure class="pg-real-shot">
           <img src="/portal/guide-shots/teflon/my-participants.png" alt="Participants list showing My participants tab with Vitin on the roster" loading="lazy" width="390" height="844" />
@@ -372,7 +475,7 @@
         <figure class="pg-real-shot">
           <img src="/portal/guide-shots/teflon/vitin-tarjeta-quick-actions.png" alt="Participant card for Vitin with quick action buttons for feedback, absence, incident and cancellation" loading="lazy" width="390" height="844" />
         </figure>
-        <p class="pg-cap">Each participant card shows their session time and quick actions. Use <b>Feedback</b> here when you already know which child the form is for.</p>
+        <p class="pg-cap">Quick actions on the participant card — prefer opening <b>Feedback</b> from the dashboard session card when possible.</p>
       </div>
       <div class="pg-shot">
         <figure class="pg-real-shot">
@@ -411,80 +514,95 @@
         </figure>
         <p class="pg-cap">Further down: <b>Compliance</b> (policies, risk assessments, safeguarding) and <b>Settings</b> — including this <b>Guide</b>, alerts/permissions, and <b>Logout</b>.</p>
       </div>
-      <p class="pg-note">Tip: open a form from the session card itself when you can — it pre-fills the participant, date and time for you.</p>
     </article>
 
-    <!-- Expenses -->
+    <!-- Communication -->
     <article class="pg-card">
       <h2>
-        <svg class="pg-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-        Expenses
+        <svg class="pg-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        Communication: chats, announcements and contracts
       </h2>
-      <p>Submit receipts and claims from <b>Quick menu → Expenses</b> under Finance. A PDF is saved to <b>My documents</b> when you submit.</p>
-      <ul>
-        <li>Add each line: <b>Description</b>, <b>Amount (GBP)</b>, and <b>Upload receipt photo</b>.</li>
-        <li>Use <b>+ Add row</b> for multiple items; check the <b>Total</b> before submitting.</li>
-      </ul>
+      <p>Tap the <b>club logo</b> to open the notification centre — reminders, chat, announcements and documents to sign.</p>
+
+      <h3>Chats</h3>
+      <p>Use <b>Internal chat</b> for quick messages with the office. A <b>blue</b> halo means a new message is waiting.</p>
+      <p>Send <b>text</b> or a <b>voice note</b> (mic next to the message box). Please keep <b>Zoho Cliq</b> installed for now — portal chat is being rolled out alongside it.</p>
       <div class="pg-shot">
         <figure class="pg-real-shot">
-          <img src="/portal/guide-shots/teflon/expenses.png" alt="Expense claim form with description, amount and receipt upload rows" loading="lazy" width="390" height="844" />
+          <img src="/portal/guide-shots/teflon/chat-example-thread.png" alt="Internal chat example between staff and the office" loading="lazy" width="390" height="844" />
         </figure>
-        <p class="pg-cap">Expense claim — one row per receipt. Month and employee are pre-filled; attach a photo for each line where you have one.</p>
+        <p class="pg-cap">Internal chat — use this for quick communication with the office. A blue halo means a new message is waiting.</p>
+      </div>
+      <div class="pg-shot">
+        <figure class="pg-real-shot">
+          <img src="/portal/guide-shots/teflon/internal-chat.png" alt="Internal chat with the office, empty thread ready for a new message" loading="lazy" width="390" height="844" />
+        </figure>
+        <p class="pg-cap">Open <b>Internal chat</b> from the notification centre. Type a message or tap the mic for a voice note.</p>
+      </div>
+
+      <h3>Reminders</h3>
+      <p>Under <b>Reminders</b>, tiles such as <b>Outstanding feedbacks</b> (orange) take you straight to sessions still waiting for feedback.</p>
+      <p>Tap <b>Term</b> on your dashboard to see which days in the term still need feedback — days in <b>red</b> on the calendar.</p>
+      <div class="pg-shot">
+        <figure class="pg-real-shot">
+          <img src="/portal/guide-shots/teflon/outstanding-feedbacks-x1.png" alt="Alerts and notifications sheet with Outstanding feedbacks x1 reminder" loading="lazy" width="390" height="844" />
+        </figure>
+        <p class="pg-cap"><b>Outstanding feedbacks x1</b> under Reminders opens the pending session.</p>
+      </div>
+      <div class="pg-shot">
+        <figure class="pg-real-shot">
+          <img src="/portal/guide-shots/teflon/reminder-en-term-outstanding-feedback.png" alt="Term calendar with red days marking outstanding session feedback" loading="lazy" width="390" height="844" />
+        </figure>
+        <p class="pg-cap"><b>Term</b> calendar — red days still have feedback outstanding.</p>
+      </div>
+
+      <h3>Announcements</h3>
+      <p>When the office posts an announcement, the logo halo turns <b>red</b> and a banner appears. Read it and tap <b>Sign / confirm</b> so the office knows you have seen it.</p>
+      <div class="pg-shot">
+        <figure class="pg-real-shot">
+          <img src="/portal/guide-shots/teflon/announcement-to-sign.png" alt="Announcement waiting to be signed by staff" loading="lazy" width="390" height="844" />
+        </figure>
+        <p class="pg-cap">Announcements must be read and signed so the office knows they have been seen.</p>
+      </div>
+
+      <h3>Signed announcements</h3>
+      <p>After you sign, announcements move to the <b>Signed announcements log</b> with the date and time.</p>
+      <div class="pg-shot">
+        <figure class="pg-real-shot">
+          <img src="/portal/guide-shots/teflon/signed-announcements-closed.png" alt="Signed announcements log showing a completed portal welcome announcement" loading="lazy" width="390" height="844" />
+        </figure>
+        <p class="pg-cap">Signed announcements are kept in the log for your records.</p>
+      </div>
+
+      <h3>Contracts and documents to sign</h3>
+      <p>Employment contracts and other important documents may appear in the notification centre. The signed PDF is saved under <b>My Documents</b> when complete.</p>
+      <div class="pg-shot">
+        <figure class="pg-real-shot">
+          <img src="/portal/guide-shots/teflon/contract-to-sign.png" alt="Employment contract waiting for electronic signature" loading="lazy" width="390" height="844" />
+        </figure>
+        <p class="pg-cap">Contracts and important employment documents may appear here for electronic signature.</p>
       </div>
     </article>
 
-    <!-- Timesheet -->
+    <!-- Daily forms -->
     <article class="pg-card">
       <h2>
-        <svg class="pg-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>
-        Timesheet
+        <svg class="pg-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Daily forms: venue review, pickup and handover, incident, cancellation
       </h2>
-      <p>Open from <b>Quick menu → Timesheets</b> under Finance. Submit by the <b>24th</b> of the month so hours land in that month’s pay.</p>
-      <ul>
-        <li><b>Green</b> rows — session feedback complete; included in <b>ready to pay now</b>.</li>
-        <li><b>Orange</b> rows — feedback still pending; shown but excluded until you complete feedback.</li>
-        <li>Submitting on the 25th or later moves the timesheet to the next month and may add a penalty.</li>
-      </ul>
-      <div class="pg-shot">
-        <figure class="pg-real-shot">
-          <img src="/portal/guide-shots/teflon/timesheet1.png" alt="Timesheet with green completed rows and orange pending-feedback rows" loading="lazy" width="390" height="844" />
-        </figure>
-        <p class="pg-cap">Green = paid when feedback is done. Orange = waiting on feedback — complete the session feedback from your dashboard to turn the row green.</p>
-      </div>
-    </article>
+      <p>These forms live in the <b>Quick menu</b>. Open them during or after your shift as needed.</p>
 
-    <!-- Venue review -->
-    <article class="pg-card">
-      <h2>
-        <svg class="pg-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-        Venue review
-      </h2>
-      <p>Record opening or closing checks for your venue. Open from <b>Quick menu → Venue review</b>.</p>
-      <ul>
-        <li>Confirm venue, date, and time (pre-filled where possible).</li>
-        <li>Answer <b>Any issues, damages or incidents to report?</b> — <b>No</b> or <b>Yes</b>.</li>
-        <li>Tap <b>Submit</b> when done.</li>
-      </ul>
+      <h3>Venue review</h3>
+      <p>Record opening or closing checks for your venue. Confirm venue, date and time, then answer whether there are any issues to report.</p>
       <div class="pg-shot">
         <figure class="pg-real-shot">
           <img src="/portal/guide-shots/teflon/venue-review.png" alt="Venue review form with venue Acton and issues yes/no choice" loading="lazy" width="390" height="844" />
         </figure>
         <p class="pg-cap">Venue review — quick check at open or close. Choose <b>No</b> when all is fine, or <b>Yes</b> if something needs reporting.</p>
       </div>
-    </article>
 
-    <!-- Drop off & pick up -->
-    <article class="pg-card">
-      <h2>
-        <svg class="pg-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 11l-3 3-2-2"/></svg>
-        Drop off &amp; pick up
-      </h2>
-      <p>Record when a participant arrives and when they are collected. Open from <b>Quick menu → Drop Off &amp; Pick Up</b>.</p>
-      <ul>
-        <li>Type a name to open today’s handover for someone on your roster.</li>
-        <li>Tap <b>New</b> for a participant not listed yet.</li>
-        <li>Open handovers for today appear below the search box.</li>
-      </ul>
+      <h3>Pickup and handover</h3>
+      <p>Record when a participant arrives and when they are collected. Search for a name or tap <b>New</b> to start today’s handover.</p>
       <div class="pg-shot">
         <figure class="pg-real-shot">
           <img src="/portal/guide-shots/teflon/drop-off-pickup.png" alt="Drop off and pick up form with participant name search and New button" loading="lazy" width="390" height="844" />
@@ -495,82 +613,90 @@
         <figure class="pg-real-shot">
           <img src="/portal/guide-shots/teflon/drop-off-pickup-2.png" alt="Open handover for Vitin with drop off section and emotional state" loading="lazy" width="390" height="844" />
         </figure>
-        <p class="pg-cap">An open handover shows <b>Drop Off</b> details first — participant, date, time, and how they seemed on arrival. Complete <b>Pick Up</b> when they are collected.</p>
+        <p class="pg-cap">Complete <b>Drop Off</b> on arrival and <b>Pick Up</b> when the participant is collected.</p>
+      </div>
+
+      <h3>Incident report</h3>
+      <p>Use <b>Quick menu → Incident report</b> (or the participant card quick action) for anything that needs recording for safeguarding or safety. Submit as soon as you can.</p>
+
+      <h3>Cancellation</h3>
+      <p>Use <b>Quick menu → Cancellation</b> when a session cannot go ahead. You can also start this from a participant card if you already know which child it affects.</p>
+    </article>
+
+    <!-- Finance -->
+    <article class="pg-card">
+      <h2>
+        <svg class="pg-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Finance: expenses and timesheets
+      </h2>
+      <p>Both are under <b>Quick menu → Finance</b>.</p>
+
+      <h3>Expenses</h3>
+      <p>Submit receipts and claims. A PDF is saved to <b>My Documents</b> when you submit.</p>
+      <ul>
+        <li>Add each line: <b>Description</b>, <b>Amount (GBP)</b> and <b>Upload receipt photo</b>.</li>
+        <li>Use <b>+ Add row</b> for multiple items; check the <b>Total</b> before submitting.</li>
+      </ul>
+      <div class="pg-shot">
+        <figure class="pg-real-shot">
+          <img src="/portal/guide-shots/teflon/expenses.png" alt="Expense claim form with description, amount and receipt upload rows" loading="lazy" width="390" height="844" />
+        </figure>
+        <p class="pg-cap">Expense claim — one row per receipt. Attach a photo for each line where you have one.</p>
+      </div>
+
+      <h3>Timesheet</h3>
+      <p>Submit by the <b>24th</b> of the month so hours land in that month’s pay.</p>
+      <ul>
+        <li><b>Green</b> rows — feedback complete; included in <b>ready to pay now</b>.</li>
+        <li><b>Orange</b> rows — feedback still pending; complete session feedback to turn the row green.</li>
+        <li>Submitting on the 25th or later may move the timesheet to the next month.</li>
+      </ul>
+      <div class="pg-shot">
+        <figure class="pg-real-shot">
+          <img src="/portal/guide-shots/teflon/timesheet1.png" alt="Timesheet with green completed rows and orange pending-feedback rows" loading="lazy" width="390" height="844" />
+        </figure>
+        <p class="pg-cap">Green = ready to pay. Orange = waiting on feedback — complete it from your dashboard session card.</p>
       </div>
     </article>
 
-    <!-- Device permissions -->
+    <!-- My Documents -->
+    <article class="pg-card">
+      <h2>
+        <svg class="pg-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        My Documents
+      </h2>
+      <p>Open from <b>Quick menu → My Documents</b>. This is your personal document library in the portal.</p>
+      <ul>
+        <li><b>Payslips</b> — available here when published.</li>
+        <li><b>Expense PDFs</b> — saved automatically when you submit an expense claim.</li>
+        <li><b>Signed announcements</b> and <b>signed contracts</b> — accessible here when available.</li>
+      </ul>
+      <p>Because payslips and company documents are in the portal, you may delete <b>Zoho People</b> if you wish. Please keep <b>Zoho Cliq</b> installed for now.</p>
+      <div class="pg-shot">
+        <figure class="pg-real-shot">
+          <img src="/portal/guide-shots/teflon/my-documents-example.png" alt="My Documents section showing payslips, signed documents and expense PDFs" loading="lazy" width="390" height="844" />
+        </figure>
+        <p class="pg-cap">My Documents stores payslips, signed documents, contracts and expense PDFs.</p>
+      </div>
+    </article>
+
+    <!-- Settings: alerts, location and microphone -->
     <article class="pg-card">
       <h2>
         <svg class="pg-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-        Alerts, location &amp; microphone
+        Alerts, location and microphone
       </h2>
       <p>Turn on <b>notifications</b> once on each device. Open from <b>Quick menu → Alerts, location &amp; mic</b> under Settings.</p>
       <ul>
         <li><b>Notifications</b> — announcements and roster changes (use <b>Send test</b> to check).</li>
-        <li><b>Location</b> — only shown in Settings for <b>Bespoke Programme</b> and <b>Day Centre</b> staff, during your session window (from 15 minutes before until 30 minutes after).</li>
-        <li><b>Microphone</b> — optional; only if you want to give session feedback by voice instead of typing.</li>
+        <li><b>Location</b> — only for <b>Bespoke Programme</b> and <b>Day Centre</b> staff, during your session window (15 minutes before until 30 minutes after).</li>
+        <li><b>Microphone</b> — optional; only if you want voice feedback or voice notes in chat.</li>
       </ul>
       <div class="pg-shot">
         <figure class="pg-real-shot">
           <img src="/portal/guide-shots/teflon/alerts-location-microphone.png" alt="Settings sheet for notifications, location and microphone permissions" loading="lazy" width="390" height="844" />
         </figure>
-        <p class="pg-cap">Enable notifications here. Location only applies to Bespoke Programme and Day Centre sessions; microphone is optional for voice feedback.</p>
-      </div>
-    </article>
-
-    <!-- Chats -->
-    <article class="pg-card">
-      <h2>
-        <svg class="pg-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-        Chats
-      </h2>
-      <p>Message the office from <b>Alerts/Notifications → Internal chat</b>, or open an existing thread when the logo halo is blue.</p>
-      <ul>
-        <li>A <b>blue</b> halo on the logo means you have a new message.</li>
-        <li>You can send <b>text</b> or a <b>voice note</b> (mic next to the message box).</li>
-        <li>Chats are private between you and the person/office you’re messaging.</li>
-      </ul>
-      <div class="pg-shot">
-        <figure class="pg-real-shot">
-          <img src="/portal/guide-shots/teflon/internal-chat.png" alt="Internal chat with the office, empty thread ready for a new message" loading="lazy" width="390" height="844" />
-        </figure>
-        <p class="pg-cap"><b>Internal chat</b> — messages with the office. Type below or tap the mic for a voice note, then <b>Send</b>.</p>
-      </div>
-    </article>
-
-    <!-- Announcements -->
-    <article class="pg-card">
-      <h2>
-        <svg class="pg-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
-        Announcements &amp; reminders
-      </h2>
-      <p>Tap the <b>club logo</b> on your dashboard to open <b>Alerts/Notifications</b> — the guide, internal chat, signed announcements, and reminders in one place.</p>
-      <ul>
-        <li>Under <b>Reminders</b>, <b>Outstanding feedbacks x1</b> (orange) opens the session still waiting for feedback.</li>
-        <li>Tap <b>Term</b> on the dashboard to see which days in the term still need feedback (red on the calendar).</li>
-        <li>When the office posts an announcement, the logo halo turns <b>red</b> and a banner appears.</li>
-        <li>Read announcements and tap <b>Sign / confirm</b> so the office knows you’ve seen them.</li>
-        <li>After you sign, announcements move to the <b>Signed announcements log</b> with date and time.</li>
-        <li>Employment contracts to sign also appear here; the signed PDF is saved under <b>My Documents</b>.</li>
-      </ul>
-      <div class="pg-shot">
-        <figure class="pg-real-shot">
-          <img src="/portal/guide-shots/teflon/outstanding-feedbacks-x1.png" alt="Alerts and notifications sheet with Outstanding feedbacks x1 reminder" loading="lazy" width="390" height="844" />
-        </figure>
-        <p class="pg-cap">Tap the logo to open Alerts/Notifications. The bright orange <b>Outstanding feedbacks x1</b> tile under Reminders takes you straight to the pending session.</p>
-      </div>
-      <div class="pg-shot">
-        <figure class="pg-real-shot">
-          <img src="/portal/guide-shots/teflon/reminder-en-term-outstanding-feedback.png" alt="Term calendar with red days marking outstanding session feedback" loading="lazy" width="390" height="844" />
-        </figure>
-        <p class="pg-cap">Open <b>Term</b> from your dashboard to see the whole term at a glance. Days in <b>red</b> still have session feedback outstanding; tap a day to jump to that session.</p>
-      </div>
-      <div class="pg-shot">
-        <figure class="pg-real-shot">
-          <img src="/portal/guide-shots/teflon/signed-announcements-closed.png" alt="Signed announcements log showing a completed portal welcome announcement" loading="lazy" width="390" height="844" />
-        </figure>
-        <p class="pg-cap">Once signed, announcements appear in the <b>Signed announcements log</b>. When something new is waiting, the logo halo turns red and you’ll see a <b>Sign / confirm</b> banner first.</p>
+        <p class="pg-cap">Enable notifications here. Location and microphone are optional depending on your role.</p>
       </div>
     </article>
 

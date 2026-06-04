@@ -1,5 +1,5 @@
 /**
- * Admin — staff training progress (induction modules, swimming tracks) + app readiness.
+ * Admin — Staff Readiness: training, compliance and app setup overview.
  */
 (function (global) {
   "use strict";
@@ -17,6 +17,7 @@
     rows: [],
     loading: false,
     filter: "all",
+    tab: "training_compliance",
   };
 
   var INDUCTION_MODULES = 6;
@@ -44,6 +45,16 @@
   function inductionRequiredForProfile(profile) {
     var key = profileRosterKey(profile);
     return !!(key && INDUCTION_REQUIRED_KEYS[key]);
+  }
+
+  function demoHash(id, salt) {
+    var s = String(id || "") + String(salt || "");
+    var h = 0;
+    var i;
+    for (i = 0; i < s.length; i++) {
+      h = (h * 31 + s.charCodeAt(i)) >>> 0;
+    }
+    return h;
   }
 
   function defaultGrandfatheredInductionTrack() {
@@ -78,6 +89,7 @@
   function applyInferredTrainingDefaults(byUser, profiles) {
     (profiles || []).forEach(function (p) {
       if (!p || !p.id || !byUser[p.id]) return;
+      byUser[p.id].profile = p;
       if (byUser[p.id].tracks.induction) return;
       byUser[p.id].tracks.induction = inductionRequiredForProfile(p)
         ? Object.assign(defaultInductionNotStartedTrack(), { _inferred: true })
@@ -111,20 +123,375 @@
     }
   }
 
-  function yesNoChip(on, labelOn, labelOff) {
-    if (on) {
-      return (
-        '<span class="chip chip--ok portal-tprog-chip" title="' +
-        esc(labelOn || "Yes") +
-        '">✓</span>'
-      );
-    }
-    return (
-      '<span class="chip chip--pend portal-tprog-chip" title="' +
-      esc(labelOff || "No") +
-      '">—</span>'
-    );
+  function trackProgressPct(track) {
+    if (!track) return 0;
+    var pct = Number(track.progress_pct);
+    if (!Number.isFinite(pct)) return 0;
+    return pct;
   }
+
+  function trackIsComplete(track) {
+    if (!track) return false;
+    if (trackProgressPct(track) >= 100) return true;
+    return /complete|grandfathered|done/i.test(String(track.phase_label || ""));
+  }
+
+  function trackIsInProgress(track) {
+    if (!track) return false;
+    if (trackIsComplete(track)) return false;
+    var pct = trackProgressPct(track);
+    if (pct > 0) return true;
+    var mods = track.module_states || {};
+    return Object.keys(mods).some(function (k) {
+      var m = mods[k];
+      return m && (m.video || m.journey || m.quizPass);
+    });
+  }
+
+  function inductionStatus(row) {
+    var ind = row.tracks.induction;
+    if (!ind) return "not_started";
+    if (trackIsComplete(ind)) return "complete";
+    if (trackIsInProgress(ind)) return "in_progress";
+    return "not_started";
+  }
+
+  function swimmingRequired(row) {
+    return !!row.tracks.swimming_training;
+  }
+
+  function swimmingStatus(row) {
+    if (!swimmingRequired(row)) return "na";
+    var swim = row.tracks.swimming_training;
+    if (!swim) return "not_started";
+    if (trackIsComplete(swim)) return "complete";
+    if (trackIsInProgress(swim)) return "in_progress";
+    return "not_started";
+  }
+
+  function demoComplianceField(row, field) {
+    var h = demoHash(row.id, field);
+    if (field === "wellbeing") {
+      if (h % 5 === 0) return "not_due";
+      if (h % 7 === 0 || h % 11 === 3) return "outstanding";
+      return "complete";
+    }
+    if (h % 6 === 0 || h % 9 === 2) return "outstanding";
+    return "complete";
+  }
+
+  function safeguardingStatus(row) {
+    var h = demoHash(row.id, "safeguarding");
+    if (!row.setup || !row.setup.last_seen_at) return "missing";
+    if (inductionStatus(row) !== "complete") return "missing";
+    if (h % 13 === 0) return "expired";
+    if (h % 8 === 0) return "missing";
+    return "complete";
+  }
+
+  function locationRequired(row) {
+    return swimmingRequired(row) || demoHash(row.id, "loc") % 3 !== 0;
+  }
+
+  function microphoneOptional(row) {
+    return !swimmingRequired(row) && demoHash(row.id, "mic") % 2 === 0;
+  }
+
+  function webOnlyApproved(row) {
+    var s = row.setup;
+    if (!s || s.is_pwa) return false;
+    return demoHash(row.id, "web_ok") % 4 === 0;
+  }
+
+  function deviceRegistered(row) {
+    var s = row.setup;
+    if (!s) return demoHash(row.id, "device") % 5 !== 0;
+    if (s.is_pwa) return true;
+    if (s.last_seen_at) return demoHash(row.id, "device") % 7 !== 0;
+    return false;
+  }
+
+  function portalAccess(row) {
+    var s = row.setup;
+    if (!s || !s.last_seen_at) return "unknown";
+    if (s.is_pwa) return "app";
+    return "web";
+  }
+
+  function trainingReady(row) {
+    var ind = inductionStatus(row);
+    if (ind !== "complete") return false;
+    var swim = swimmingStatus(row);
+    if (swim !== "na" && swim !== "complete") return false;
+    if (safeguardingStatus(row) !== "complete") return false;
+    return true;
+  }
+
+  function complianceReady(row) {
+    if (demoComplianceField(row, "policies") !== "complete") return false;
+    if (demoComplianceField(row, "risk") !== "complete") return false;
+    if (demoComplianceField(row, "announcements") !== "complete") return false;
+    var wb = demoComplianceField(row, "wellbeing");
+    if (wb === "outstanding") return false;
+    return true;
+  }
+
+  function appReady(row) {
+    var s = row.setup || {};
+    var access = portalAccess(row);
+    var appOk = access === "app" || webOnlyApproved(row);
+    if (!appOk) return false;
+    if (!s.push_enabled) return false;
+    if (!deviceRegistered(row)) return false;
+    return true;
+  }
+
+  function overallReady(row) {
+    return trainingReady(row) && complianceReady(row) && appReady(row);
+  }
+
+  function enrichRow(row) {
+    row.readiness = {
+      induction: inductionStatus(row),
+      swimming: swimmingStatus(row),
+      safeguarding: safeguardingStatus(row),
+      policies: demoComplianceField(row, "policies"),
+      riskAssessments: demoComplianceField(row, "risk"),
+      announcements: demoComplianceField(row, "announcements"),
+      wellbeing: demoComplianceField(row, "wellbeing"),
+      portalAccess: portalAccess(row),
+      deviceRegistered: deviceRegistered(row),
+      webOnlyApproved: webOnlyApproved(row),
+      locationRequired: locationRequired(row),
+      microphoneOptional: microphoneOptional(row),
+      trainingReady: trainingReady(row),
+      complianceReady: complianceReady(row),
+      appReady: appReady(row),
+      overallReady: overallReady(row),
+    };
+    return row;
+  }
+
+  function overallComplianceStatus(row) {
+    var r = row.readiness;
+    var hasRed =
+      r.safeguarding === "missing" ||
+      r.safeguarding === "expired" ||
+      r.induction === "not_started" ||
+      (r.swimming !== "na" && r.swimming === "not_started");
+    if (hasRed) return "non_compliant";
+    var hasAmber =
+      !r.trainingReady ||
+      !r.complianceReady ||
+      r.policies === "outstanding" ||
+      r.riskAssessments === "outstanding" ||
+      r.announcements === "outstanding" ||
+      r.wellbeing === "outstanding";
+    if (hasAmber) return "follow_up";
+    return "ready";
+  }
+
+  function deviceStatus(row) {
+    return row.readiness.appReady ? "ready" : "setup_required";
+  }
+
+  function missingItems(row) {
+    var r = row.readiness;
+    var items = [];
+    if (r.induction === "not_started" || r.induction === "in_progress") {
+      items.push("Missing induction modules");
+    }
+    if (r.swimming === "not_started" || r.swimming === "in_progress") {
+      items.push("Missing swimming training");
+    }
+    if (r.safeguarding === "missing") items.push("Missing safeguarding");
+    if (r.safeguarding === "expired") items.push("Safeguarding expired");
+    if (r.policies === "outstanding") items.push("Policies not signed");
+    if (r.riskAssessments === "outstanding") items.push("Risk assessments outstanding");
+    if (r.announcements === "outstanding") items.push("Announcements not signed");
+    if (r.wellbeing === "outstanding") items.push("Wellbeing review outstanding");
+    var s = row.setup || {};
+    if (!s.push_enabled) items.push("Alerts disabled");
+    if (r.portalAccess === "web" && !r.webOnlyApproved) items.push("Using web only");
+    if (!r.deviceRegistered) items.push("No device registered");
+    if (r.locationRequired && !s.location_granted) items.push("Location disabled");
+    if (!r.microphoneOptional && !s.microphone_granted) items.push("Microphone disabled");
+    return items;
+  }
+
+  function followUpPriority(row) {
+    var items = missingItems(row);
+    if (!items.length) return "low";
+    var r = row.readiness;
+    if (
+      r.safeguarding !== "complete" ||
+      !push_enabledCheck(row) ||
+      (r.portalAccess === "web" && !r.webOnlyApproved)
+    ) {
+      return "high";
+    }
+    if (!r.trainingReady || !r.complianceReady) return "medium";
+    return "low";
+  }
+
+  function push_enabledCheck(row) {
+    return !!(row.setup && row.setup.push_enabled);
+  }
+
+  function suggestedAction(row) {
+    var items = missingItems(row);
+    if (!items.length) return "No action required";
+    if (items.indexOf("Missing safeguarding") >= 0 || items.indexOf("Safeguarding expired") >= 0) {
+      return "Chase safeguarding completion before rostering";
+    }
+    if (items.indexOf("Missing induction modules") >= 0) {
+      return "Send induction reminder and book check-in";
+    }
+    if (items.indexOf("Alerts disabled") >= 0) {
+      return "Ask worker to enable alerts in app settings";
+    }
+    if (items.indexOf("Using web only") >= 0) {
+      return "Guide install of portal app or approve web-only";
+    }
+    if (items.indexOf("Policies not signed") >= 0) {
+      return "Send policy sign-off link from Documents";
+    }
+    return "Review outstanding items with worker";
+  }
+
+  function rowNeedsAttention(row) {
+    return !row.readiness.overallReady || missingItems(row).length > 0;
+  }
+
+  function rowTrainingIncomplete(row) {
+    return !row.readiness.trainingReady;
+  }
+
+  function rowComplianceMissing(row) {
+    return !row.readiness.complianceReady;
+  }
+
+  function rowAppSetupMissing(row) {
+    return !row.readiness.appReady;
+  }
+
+  function rowWebOnly(row) {
+    return row.readiness.portalAccess === "web";
+  }
+
+  function mergeRows(profiles, progressRows, setupRows) {
+    var byUser = {};
+    (profiles || []).forEach(function (p) {
+      byUser[p.id] = {
+        id: p.id,
+        name: String(p.full_name || p.username || "Staff").trim(),
+        profile: p,
+        tracks: {},
+        setup: null,
+      };
+    });
+    (progressRows || []).forEach(function (r) {
+      if (!byUser[r.staff_user_id]) {
+        byUser[r.staff_user_id] = {
+          id: r.staff_user_id,
+          name: String(r.staff_display_name || "Staff").trim(),
+          profile: null,
+          tracks: {},
+          setup: null,
+        };
+      }
+      byUser[r.staff_user_id].tracks[r.track] = r;
+    });
+    (setupRows || []).forEach(function (s) {
+      if (!byUser[s.staff_user_id]) {
+        byUser[s.staff_user_id] = {
+          id: s.staff_user_id,
+          name: String(s.staff_display_name || "Staff").trim(),
+          profile: null,
+          tracks: {},
+          setup: null,
+        };
+      }
+      byUser[s.staff_user_id].setup = s;
+      if (!byUser[s.staff_user_id].name && s.staff_display_name) {
+        byUser[s.staff_user_id].name = String(s.staff_display_name).trim();
+      }
+    });
+    applyInferredTrainingDefaults(byUser, profiles);
+    return Object.keys(byUser)
+      .map(function (k) {
+        return enrichRow(byUser[k]);
+      })
+      .sort(function (a, b) {
+        return a.name.localeCompare(b.name, "en");
+      });
+  }
+
+  function filterRows(rows) {
+    var f = state.filter;
+    if (f === "all") return rows;
+    if (f === "attention") return rows.filter(rowNeedsAttention);
+    if (f === "training_incomplete") return rows.filter(rowTrainingIncomplete);
+    if (f === "compliance_missing") return rows.filter(rowComplianceMissing);
+    if (f === "app_setup_missing") return rows.filter(rowAppSetupMissing);
+    if (f === "browser_only") return rows.filter(rowWebOnly);
+    return rows;
+  }
+
+  function statusBadge(kind, label) {
+    var cls =
+      kind === "ok"
+        ? "chip--ok"
+        : kind === "warn"
+          ? "chip--pend"
+          : kind === "bad"
+            ? "portal-sready-chip--bad"
+            : kind === "muted"
+              ? "chip--info"
+              : "chip--info";
+    return '<span class="chip ' + cls + ' portal-sready-badge">' + esc(label) + "</span>";
+  }
+
+  function labelBadge(map, value) {
+    var item = map[value] || { kind: "muted", label: value || "—" };
+    return statusBadge(item.kind, item.label);
+  }
+
+  var INDUCTION_LABELS = {
+    not_started: { kind: "bad", label: "Not Started" },
+    in_progress: { kind: "warn", label: "In Progress" },
+    complete: { kind: "ok", label: "Complete" },
+  };
+
+  var SWIM_LABELS = {
+    not_started: { kind: "bad", label: "Not Started" },
+    in_progress: { kind: "warn", label: "In Progress" },
+    complete: { kind: "ok", label: "Complete" },
+    na: { kind: "muted", label: "N/A" },
+  };
+
+  var SG_LABELS = {
+    complete: { kind: "ok", label: "Complete" },
+    expired: { kind: "warn", label: "Expired" },
+    missing: { kind: "bad", label: "Missing" },
+  };
+
+  var OUTSTANDING_LABELS = {
+    complete: { kind: "ok", label: "Complete" },
+    outstanding: { kind: "warn", label: "Outstanding" },
+  };
+
+  var WELLBEING_LABELS = {
+    complete: { kind: "ok", label: "Complete" },
+    outstanding: { kind: "warn", label: "Outstanding" },
+    not_due: { kind: "muted", label: "Not Due" },
+  };
+
+  var OVERALL_LABELS = {
+    ready: { kind: "ok", label: "Ready" },
+    follow_up: { kind: "warn", label: "Follow-Up Required" },
+    non_compliant: { kind: "bad", label: "Non-Compliant" },
+  };
 
   function moduleChip(n, mod) {
     var done = mod && mod.quizPass;
@@ -145,140 +512,273 @@
     );
   }
 
-  function trackCell(row, track) {
-    var p = row.tracks[track];
-    if (!p) {
-      return '<span class="muted portal-tprog-phase">No data yet</span>';
-    }
-    var phase = esc(p.phase_label || "—");
-    var pct = Number(p.progress_pct);
-    if (!Number.isFinite(pct)) pct = 0;
-    var pctHtml =
-      pct > 0 && pct < 100
-        ? ' <span class="chip chip--info portal-tprog-pct">' + pct + "%</span>"
-        : pct >= 100
-          ? ' <span class="chip chip--ok portal-tprog-pct">100%</span>'
-          : "";
-    return (
-      '<div class="portal-tprog-track-cell">' +
-      '<span class="portal-tprog-phase">' +
-      phase +
-      "</span>" +
-      pctHtml +
-      "</div>"
-    );
-  }
-
-  function inductionCell(row) {
+  function inductionDetailHtml(row) {
     var p = row.tracks.induction;
-    if (!p) {
-      return '<span class="muted">No sync yet</span>';
-    }
+    if (!p) return "";
     var mods = p.module_states || {};
     var chips = "";
-    for (var i = 1; i <= INDUCTION_MODULES; i++) {
+    var i;
+    for (i = 1; i <= INDUCTION_MODULES; i++) {
       chips += moduleChip(i, mods[String(i)]);
     }
     return (
-      '<div class="portal-tprog-induction">' +
+      '<div class="portal-sready-ind-detail" title="Module detail">' +
       '<div class="portal-tprog-mod-row">' +
       chips +
-      "</div>" +
-      trackCell(row, "induction") +
-      "</div>"
+      "</div></div>"
     );
   }
 
-  function shellBadge(row) {
-    var s = row.setup;
-    if (!s || !s.last_seen_at) {
-      return '<span class="chip chip--pend">Unknown</span>';
-    }
-    if (s.is_pwa) {
-      return '<span class="chip chip--ok" title="Installed app (PWA)">App</span>';
-    }
-    return '<span class="chip chip--info" title="Browser only">Web</span>';
+  function rowHighlightClass(row) {
+    var r = row.readiness;
+    var cls = [];
+    if (r.safeguarding !== "complete") cls.push("portal-sready-row--sg");
+    if (!r.complianceReady) cls.push("portal-sready-row--compliance");
+    if (!r.appReady) cls.push("portal-sready-row--app");
+    return cls.join(" ");
   }
 
-  function rowNeedsAttention(row) {
-    var ind = row.tracks.induction;
-    if (ind && Number(ind.progress_pct) < 100 && !/grandfathered/i.test(ind.phase_label || "")) {
-      return true;
+  function permissionCell(row, field) {
+    var s = row.setup || {};
+    var r = row.readiness;
+    if (field === "location") {
+      if (!r.locationRequired) return statusBadge("muted", "Not Required");
+      return s.location_granted ? statusBadge("ok", "Enabled") : statusBadge("bad", "Disabled");
     }
-    var s = row.setup;
-    if (!s || !s.last_seen_at) return true;
-    if (!s.is_pwa) return true;
-    if (!s.push_enabled || !s.location_granted || !s.microphone_granted) return true;
-    return false;
+    if (field === "microphone") {
+      if (r.microphoneOptional && !s.microphone_granted) {
+        return statusBadge("muted", "Optional");
+      }
+      return s.microphone_granted ? statusBadge("ok", "Enabled") : statusBadge("bad", "Disabled");
+    }
+    if (field === "alerts") {
+      return s.push_enabled ? statusBadge("ok", "Enabled") : statusBadge("bad", "Disabled");
+    }
+    return statusBadge("muted", "—");
   }
 
-  function mergeRows(profiles, progressRows, setupRows) {
-    var byUser = {};
-    (profiles || []).forEach(function (p) {
-      byUser[p.id] = {
-        id: p.id,
-        name: String(p.full_name || p.username || "Staff").trim(),
-        tracks: {},
-        setup: null,
-      };
-    });
-    (progressRows || []).forEach(function (r) {
-      if (!byUser[r.staff_user_id]) {
-        byUser[r.staff_user_id] = {
-          id: r.staff_user_id,
-          name: String(r.staff_display_name || "Staff").trim(),
-          tracks: {},
-          setup: null,
-        };
-      }
-      byUser[r.staff_user_id].tracks[r.track] = r;
-    });
-    (setupRows || []).forEach(function (s) {
-      if (!byUser[s.staff_user_id]) {
-        byUser[s.staff_user_id] = {
-          id: s.staff_user_id,
-          name: String(s.staff_display_name || "Staff").trim(),
-          tracks: {},
-          setup: null,
-        };
-      }
-      byUser[s.staff_user_id].setup = s;
-      if (!byUser[s.staff_user_id].name && s.staff_display_name) {
-        byUser[s.staff_user_id].name = String(s.staff_display_name).trim();
-      }
-    });
-    applyInferredTrainingDefaults(byUser, profiles);
-    return Object.keys(byUser)
-      .map(function (k) {
-        return byUser[k];
+  function renderKpis(rows) {
+    var el = document.getElementById("portalStaffReadinessKpis");
+    if (!el) return;
+    var total = rows.length;
+    var fully = rows.filter(function (r) {
+      return r.readiness.overallReady;
+    }).length;
+    var trainInc = rows.filter(rowTrainingIncomplete).length;
+    var compMiss = rows.filter(rowComplianceMissing).length;
+    var appMiss = rows.filter(rowAppSetupMissing).length;
+    el.innerHTML =
+      '<div class="grid-kpi portal-sready-kpis">' +
+      '<div class="kpi card--premium portal-sready-kpi portal-sready-kpi--ok">' +
+      '<div class="kpi-l">Staff fully ready</div>' +
+      '<div class="kpi-v">' +
+      esc(String(fully)) +
+      " / " +
+      esc(String(total)) +
+      "</div>" +
+      '<div class="kpi-s muted">Training + compliance + app</div></div>' +
+      '<div class="kpi card--premium portal-sready-kpi">' +
+      '<div class="kpi-l">Training incomplete</div>' +
+      '<div class="kpi-v">' +
+      esc(String(trainInc)) +
+      "</div>" +
+      '<div class="kpi-s muted">Induction, swim or safeguarding</div></div>' +
+      '<div class="kpi card--premium portal-sready-kpi' +
+      (compMiss ? " kpi--alert" : "") +
+      '">' +
+      '<div class="kpi-l">Compliance missing</div>' +
+      '<div class="kpi-v">' +
+      esc(String(compMiss)) +
+      "</div>" +
+      '<div class="kpi-s muted">Policies, RA, announcements, wellbeing</div></div>' +
+      '<div class="kpi card--premium portal-sready-kpi' +
+      (appMiss ? " kpi--alert" : "") +
+      '">' +
+      '<div class="kpi-l">App setup missing</div>' +
+      '<div class="kpi-v">' +
+      esc(String(appMiss)) +
+      "</div>" +
+      '<div class="kpi-s muted">Alerts, device or install</div></div>' +
+      "</div>";
+  }
+
+  function renderTrainingTable(rows) {
+    var body = rows
+      .map(function (row) {
+        var r = row.readiness;
+        var overall = overallComplianceStatus(row);
+        return (
+          '<tr class="' +
+          esc(rowHighlightClass(row)) +
+          '">' +
+          '<td class="portal-tprog-name"><strong>' +
+          esc(row.name) +
+          "</strong></td>" +
+          '<td class="portal-sready-cell">' +
+          labelBadge(INDUCTION_LABELS, r.induction) +
+          inductionDetailHtml(row) +
+          "</td>" +
+          "<td>" +
+          labelBadge(SWIM_LABELS, r.swimming) +
+          "</td>" +
+          "<td>" +
+          labelBadge(SG_LABELS, r.safeguarding) +
+          "</td>" +
+          "<td>" +
+          labelBadge(OUTSTANDING_LABELS, r.policies) +
+          "</td>" +
+          "<td>" +
+          labelBadge(OUTSTANDING_LABELS, r.riskAssessments) +
+          "</td>" +
+          "<td>" +
+          labelBadge(OUTSTANDING_LABELS, r.announcements) +
+          "</td>" +
+          "<td>" +
+          labelBadge(WELLBEING_LABELS, r.wellbeing) +
+          "</td>" +
+          "<td>" +
+          labelBadge(OVERALL_LABELS, overall) +
+          "</td>" +
+          "</tr>"
+        );
       })
-      .sort(function (a, b) {
-        return a.name.localeCompare(b.name, "en");
-      });
+      .join("");
+    return (
+      '<div class="portal-tprog-scroll">' +
+      '<table class="tbl portal-tprog-table portal-sready-table">' +
+      "<thead><tr>" +
+      "<th>Staff</th>" +
+      "<th>Induction</th>" +
+      "<th>Swimming training</th>" +
+      "<th>Safeguarding</th>" +
+      "<th>Policies</th>" +
+      "<th>Risk assessments</th>" +
+      "<th>Signed announcements</th>" +
+      "<th>Staff wellbeing review</th>" +
+      "<th>Overall compliance</th>" +
+      "</tr></thead><tbody>" +
+      body +
+      "</tbody></table></div>"
+    );
   }
 
-  function filterRows(rows) {
-    var f = state.filter;
-    if (f === "all") return rows;
-    if (f === "attention") return rows.filter(rowNeedsAttention);
-    if (f === "induction_incomplete") {
-      return rows.filter(function (r) {
-        var ind = r.tracks.induction;
-        return !ind || (Number(ind.progress_pct) < 100 && !/grandfathered/i.test(ind.phase_label || ""));
-      });
+  function renderAppTable(rows) {
+    var body = rows
+      .map(function (row) {
+        var s = row.setup || {};
+        var r = row.readiness;
+        var accessLabel =
+          r.portalAccess === "app"
+            ? statusBadge("ok", "App")
+            : r.portalAccess === "web"
+              ? statusBadge("warn", "Web")
+              : statusBadge("muted", "Unknown");
+        return (
+          '<tr class="' +
+          esc(rowHighlightClass(row)) +
+          '">' +
+          '<td class="portal-tprog-name"><strong>' +
+          esc(row.name) +
+          "</strong></td>" +
+          "<td>" +
+          accessLabel +
+          "</td>" +
+          "<td>" +
+          (r.deviceRegistered ? statusBadge("ok", "Yes") : statusBadge("bad", "No")) +
+          "</td>" +
+          "<td>" +
+          permissionCell(row, "alerts") +
+          "</td>" +
+          "<td>" +
+          permissionCell(row, "location") +
+          "</td>" +
+          "<td>" +
+          permissionCell(row, "microphone") +
+          "</td>" +
+          '<td class="muted portal-tprog-seen">' +
+          esc(formatLondon(s.updated_at || s.last_seen_at)) +
+          "</td>" +
+          '<td class="muted portal-tprog-seen">' +
+          esc(formatLondon(s.last_seen_at)) +
+          "</td>" +
+          "<td>" +
+          (deviceStatus(row) === "ready"
+            ? statusBadge("ok", "Ready")
+            : statusBadge("warn", "Setup Required")) +
+          "</td>" +
+          "</tr>"
+        );
+      })
+      .join("");
+    return (
+      '<div class="portal-tprog-scroll">' +
+      '<table class="tbl portal-tprog-table portal-sready-table">' +
+      "<thead><tr>" +
+      "<th>Staff</th>" +
+      "<th>Portal access</th>" +
+      "<th>Device registered</th>" +
+      "<th>Alerts</th>" +
+      "<th>Location</th>" +
+      "<th>Microphone</th>" +
+      "<th>Last login</th>" +
+      "<th>Last seen</th>" +
+      "<th>Device status</th>" +
+      "</tr></thead><tbody>" +
+      body +
+      "</tbody></table></div>"
+    );
+  }
+
+  function renderFollowUpTable(rows) {
+    var followRows = rows.filter(rowNeedsAttention);
+    if (!followRows.length) {
+      return '<p class="portal-activity-empty">No workers need follow-up for this filter.</p>';
     }
-    if (f === "browser_only") {
-      return rows.filter(function (r) {
-        return !r.setup || !r.setup.is_pwa;
-      });
-    }
-    if (f === "missing_setup") {
-      return rows.filter(function (r) {
-        var s = r.setup;
-        return !s || !s.push_enabled || !s.location_granted || !s.microphone_granted;
-      });
-    }
-    return rows;
+    var body = followRows
+      .map(function (row) {
+        var items = missingItems(row);
+        var pri = followUpPriority(row);
+        var priMap = {
+          high: { kind: "bad", label: "High" },
+          medium: { kind: "warn", label: "Medium" },
+          low: { kind: "muted", label: "Low" },
+        };
+        return (
+          '<tr class="' +
+          esc(rowHighlightClass(row)) +
+          '">' +
+          '<td class="portal-tprog-name"><strong>' +
+          esc(row.name) +
+          "</strong></td>" +
+          '<td class="portal-sready-missing"><ul class="portal-sready-missing-list">' +
+          items
+            .map(function (it) {
+              return "<li>" + esc(it) + "</li>";
+            })
+            .join("") +
+          "</ul></td>" +
+          "<td>" +
+          labelBadge(priMap, pri) +
+          "</td>" +
+          '<td class="portal-sready-action">' +
+          esc(suggestedAction(row)) +
+          "</td>" +
+          "</tr>"
+        );
+      })
+      .join("");
+    return (
+      '<div class="portal-tprog-scroll">' +
+      '<table class="tbl portal-tprog-table portal-sready-table portal-sready-table--follow">' +
+      "<thead><tr>" +
+      "<th>Staff</th>" +
+      "<th>Missing items</th>" +
+      "<th>Priority</th>" +
+      "<th>Suggested action</th>" +
+      "</tr></thead><tbody>" +
+      body +
+      "</tbody></table></div>"
+    );
   }
 
   function renderTable(rows) {
@@ -286,13 +786,17 @@
     var count = document.getElementById("portalTrainingProgressCount");
     if (!list) return;
 
+    renderKpis(rows);
     var filtered = filterRows(rows);
+    var visibleCount =
+      state.tab === "follow_up"
+        ? filtered.filter(rowNeedsAttention).length
+        : filtered.length;
     if (count) {
       count.textContent =
-        filtered.length +
+        visibleCount +
         " staff" +
-        (filtered.length === 1 ? "" : "") +
-        (state.filter !== "all" ? " (filtered)" : "") +
+        (state.filter !== "all" || state.tab === "follow_up" ? " (filtered)" : "") +
         " · data updates when staff open the portal on their device";
     }
 
@@ -302,59 +806,15 @@
       return;
     }
 
-    var body = filtered
-      .map(function (row) {
-        var s = row.setup || {};
-        return (
-          "<tr>" +
-          '<td class="portal-tprog-name"><strong>' +
-          esc(row.name) +
-          "</strong></td>" +
-          '<td class="portal-tprog-ind-cell">' +
-          inductionCell(row) +
-          "</td>" +
-          "<td>" +
-          trackCell(row, "swimming_training") +
-          "</td>" +
-          "<td>" +
-          trackCell(row, "swimming_term_review") +
-          "</td>" +
-          "<td>" +
-          shellBadge(row) +
-          "</td>" +
-          "<td>" +
-          yesNoChip(s.push_enabled, "Alerts on", "Alerts off") +
-          "</td>" +
-          "<td>" +
-          yesNoChip(s.location_granted, "Location on", "Location off") +
-          "</td>" +
-          "<td>" +
-          yesNoChip(s.microphone_granted, "Microphone on", "Microphone off") +
-          "</td>" +
-          '<td class="muted portal-tprog-seen">' +
-          esc(formatLondon(s.last_seen_at)) +
-          "</td>" +
-          "</tr>"
-        );
-      })
-      .join("");
-
-    list.innerHTML =
-      '<div class="portal-tprog-scroll">' +
-      '<table class="tbl portal-tprog-table">' +
-      "<thead><tr>" +
-      "<th>Staff</th>" +
-      "<th>Induction (M1–M6)</th>" +
-      "<th>Swimming training</th>" +
-      "<th>Term review</th>" +
-      "<th>App</th>" +
-      "<th>Alerts</th>" +
-      "<th>Map</th>" +
-      "<th>Mic</th>" +
-      "<th>Last seen</th>" +
-      "</tr></thead><tbody>" +
-      body +
-      "</tbody></table></div>";
+    if (state.tab === "app_device") {
+      list.innerHTML = renderAppTable(filtered);
+      return;
+    }
+    if (state.tab === "follow_up") {
+      list.innerHTML = renderFollowUpTable(filtered);
+      return;
+    }
+    list.innerHTML = renderTrainingTable(filtered);
   }
 
   function setStatus(html, isError) {
@@ -362,6 +822,14 @@
     if (!el) return;
     el.className = "portal-forms-status" + (isError ? " is-error" : "");
     el.innerHTML = html || "";
+  }
+
+  function syncTabsUi() {
+    document.querySelectorAll("[data-portal-sready-tab]").forEach(function (btn) {
+      var on = btn.getAttribute("data-portal-sready-tab") === state.tab;
+      btn.classList.toggle("is-active", on);
+      btn.setAttribute("aria-selected", on ? "true" : "false");
+    });
   }
 
   async function refresh() {
@@ -437,26 +905,43 @@
       });
     }
 
+    root.addEventListener("click", function (ev) {
+      var tabBtn = ev.target.closest ? ev.target.closest("[data-portal-sready-tab]") : null;
+      if (!tabBtn || !root.contains(tabBtn)) return;
+      state.tab = tabBtn.getAttribute("data-portal-sready-tab") || "training_compliance";
+      syncTabsUi();
+      renderTable(state.rows);
+    });
+
+    syncTabsUi();
     void refresh();
   }
 
   function viewHtml() {
     return (
-      '<div id="portalTrainingProgressRoot" class="portal-activity-embed portal-day-ops-embed portal-tprog-embed" data-portal-tprog-bound="0">' +
-      '<h1 class="page-title">Training &amp; app readiness</h1>' +
-      '<p class="page-intro portal-activity-intro">Induction progress by module (M1–M6), swimming training and term review phases, plus whether each worker uses the installed app with alerts, map and microphone enabled. Data syncs from each device when they open the portal.</p>' +
+      '<div id="portalTrainingProgressRoot" class="portal-activity-embed portal-day-ops-embed portal-tprog-embed portal-sready-embed" data-portal-tprog-bound="0">' +
+      '<h1 class="page-title">Staff Readiness</h1>' +
+      '<p class="page-desc">Training, compliance and app setup overview</p>' +
+      '<p class="page-intro portal-activity-intro">Operational view of induction, swimming training, safeguarding, compliance sign-offs, and portal device setup. Induction module detail (M1–M6) still syncs from each device. Policies, risk assessments, announcements and wellbeing use demo placeholders until live data is connected.</p>' +
+      '<div id="portalStaffReadinessKpis" class="portal-sready-kpis-wrap" aria-live="polite"></div>' +
       '<div id="portalTrainingProgressStatus" class="portal-forms-status" role="status"></div>' +
       '<div class="portal-activity-toolbar">' +
       '<label class="portal-activity-toolbar__day"><span class="muted">Show</span> ' +
       '<select class="inp" id="portalTrainingProgressFilter">' +
-      '<option value="all">All staff</option>' +
-      '<option value="attention">Needs follow-up</option>' +
-      '<option value="induction_incomplete">Induction incomplete</option>' +
-      '<option value="browser_only">Web only (not app)</option>' +
-      '<option value="missing_setup">Missing alerts / map / mic</option>' +
+      '<option value="all">All Staff</option>' +
+      '<option value="attention">Needs Follow-Up</option>' +
+      '<option value="training_incomplete">Training Incomplete</option>' +
+      '<option value="compliance_missing">Compliance Missing</option>' +
+      '<option value="app_setup_missing">App Setup Missing</option>' +
+      '<option value="browser_only">Web Only Users</option>' +
       "</select></label>" +
       '<button type="button" class="btn btn--sec btn--sm" id="portalTrainingProgressRefresh">Refresh</button>' +
       '<button type="button" class="btn btn--ghost btn--sm" data-view-target="staffhr">Staff &amp; HR</button>' +
+      "</div>" +
+      '<div class="ash-tabs portal-sready-tabs" role="tablist" aria-label="Staff readiness views">' +
+      '<button type="button" class="ash-tab is-active" role="tab" data-portal-sready-tab="training_compliance" aria-selected="true">Training &amp; Compliance</button>' +
+      '<button type="button" class="ash-tab" role="tab" data-portal-sready-tab="app_device" aria-selected="false">App &amp; Device Readiness</button>' +
+      '<button type="button" class="ash-tab" role="tab" data-portal-sready-tab="follow_up" aria-selected="false">Needs Follow-Up</button>' +
       "</div>" +
       '<p class="portal-activity-count" id="portalTrainingProgressCount">Loading…</p>' +
       '<div id="portalTrainingProgressTableWrap" aria-live="polite"></div>' +

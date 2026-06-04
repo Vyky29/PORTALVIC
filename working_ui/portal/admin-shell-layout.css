@@ -1,0 +1,222 @@
+/**
+ * Admin shell layout stability  sidebar, topbar, dashboard home grid, mobile chrome.
+ * Scoped to .admin-shell only. Does not target feedback/session overview internals.
+ */
+
+/* ?? Shell frame ????????????????????????????????????????????? */
+.admin-shell.admin-shell--layout {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.admin-shell.admin-shell--layout > .admin-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.admin-shell.admin-shell--layout .admin-workspace {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* ?? Sidebar: scroll on short viewports (desktop / tablet rail) ?? */
+@media (min-width: 900px) {
+  body:not(.admin-touch-compact) .admin-shell.admin-shell--layout .admin-sidebar {
+    max-height: 100dvh;
+    height: 100dvh;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  body:not(.admin-touch-compact) .admin-shell.admin-shell--layout .admin-sidebar .admin-nav {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Tablet / small laptop: flex sidebar + main (10241279) */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  body:not(.admin-touch-compact):not(.dev-mobile-preview) .admin-shell.admin-shell--layout {
+    display: flex;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  body:not(.admin-touch-compact):not(.dev-mobile-preview)
+    .admin-shell.admin-shell--layout
+    .admin-sidebar {
+    position: relative;
+    width: min(220px, 20vw);
+    min-width: min(220px, 20vw);
+    max-width: 220px;
+    flex-shrink: 0;
+    transform: none;
+  }
+
+  body:not(.admin-touch-compact):not(.dev-mobile-preview)
+    .admin-shell.admin-shell--layout
+    .admin-main {
+    margin-left: 0;
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}
+
+/* Wide desktop: main column must respect rail reserve (set in admin-dashboard.css) */
+@media (min-width: 1280px) {
+  body:not(.admin-touch-compact):not(.dev-mobile-preview)
+    .admin-shell.admin-shell--layout
+    .admin-main {
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+/* ?? Top bar: flexible, no overlap ??????????????????????????? */
+.admin-shell.admin-shell--layout .admin-topbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  min-width: 0;
+  row-gap: 8px;
+}
+
+.admin-shell.admin-shell--layout .admin-topbar .admin-menu-mob {
+  flex: 0 0 auto;
+}
+
+.admin-shell.admin-shell--layout .admin-topbar .admin-search-wrap {
+  flex: 1 1 160px;
+  min-width: 0;
+  max-width: min(420px, 100%);
+}
+
+.admin-shell.admin-shell--layout .admin-topbar .admin-topbar-presence {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.admin-shell.admin-shell--layout .admin-topbar .admin-topbar-meta {
+  display: flex;
+  align-items: center;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+  min-width: 0;
+  justify-content: flex-end;
+}
+
+@media (min-width: 1024px) and (max-width: 1360px) {
+  body:not(.admin-touch-compact) .admin-shell.admin-shell--layout .admin-topbar .admin-date {
+    display: none;
+  }
+
+  body:not(.admin-touch-compact) .admin-shell.admin-shell--layout .admin-profile span {
+    max-width: 72px;
+  }
+}
+
+@media (min-width: 1361px) {
+  body:not(.admin-touch-compact) .admin-shell.admin-shell--layout .admin-topbar {
+    flex-wrap: nowrap;
+  }
+}
+
+/* ?? Mobile footer: desktop / tablet only ???????????????????? */
+@media (min-width: 900px) {
+  body:not(.admin-touch-compact) .admin-shell.admin-shell--layout .admin-bottom-nav {
+    display: none !important;
+  }
+}
+
+/* ?? Dashboard home (category picker)  responsive cards only ?? */
+body:has(#workspace .dash-hub--nav-index-pick) .admin-shell.admin-shell--layout .admin-workspace {
+  overflow-x: hidden;
+  overflow-y: auto;
+  min-width: 0;
+}
+
+.admin-shell.admin-shell--layout .dash-hub--nav-index-pick {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.admin-shell.admin-shell--layout .dash-hub--nav-index-pick .admin-dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-rows: none;
+  gap: clamp(10px, 1.6vh, 18px);
+  min-width: 0;
+  width: 100%;
+  flex: none;
+  min-height: auto;
+  align-content: start;
+  overflow: visible;
+}
+
+.admin-shell.admin-shell--layout .dash-hub--nav-index-pick .admin-home-card {
+  min-width: 0;
+  min-height: clamp(120px, 16vh, 200px);
+  height: auto;
+}
+
+@media (min-width: 1280px) and (min-height: 700px) {
+  .admin-shell.admin-shell--layout .dash-hub--nav-index-pick .admin-dashboard-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: repeat(2, minmax(160px, 1fr));
+    flex: 1;
+    min-height: 0;
+    align-content: stretch;
+  }
+
+  body:has(#workspace .dash-hub--nav-index-pick) .admin-shell.admin-shell--layout .admin-workspace {
+    overflow-y: hidden;
+  }
+
+  .admin-shell.admin-shell--layout .dash-hub--nav-index-pick .admin-home-card {
+    min-height: 0;
+    height: 100%;
+  }
+}
+
+@media (max-width: 899px) {
+  .admin-shell.admin-shell--layout .dash-hub--nav-index-pick .admin-dashboard-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  }
+}
+
+/* Prevent shell-level horizontal scroll (feedback views scroll inside their own wraps) */
+@media (min-width: 900px) {
+  body:not(.admin-touch-compact) .admin-shell.admin-shell--layout {
+    overflow-x: hidden;
+  }
+}
+
+/* Avoid 100vw scrollbar bleed on tablet / mobile shell */
+@media (max-width: 1023px) {
+  .admin-shell.admin-shell--layout {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  body:not(.admin-touch-compact) .admin-shell.admin-shell--layout > .admin-main {
+    width: auto;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+}
