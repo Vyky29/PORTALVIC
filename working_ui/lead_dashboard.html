@@ -492,7 +492,7 @@
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v3a1 1 0 0 0 1 1h2l4 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M18.07 5.93a9 9 0 0 1 0 12.14"/></svg></div>
               <div class="menu-btn-copy"><strong>Policies</strong><span class="menu-btn-sub">Company policies and procedures</span></div>
             </button>
-            <button type="button" class="menu-btn menu-btn--work-timesheet" id="quickMenuRiskAssessments" data-portal-external-url="ra_portal.html" aria-label="Risk assessments — venue and activity">
+            <button type="button" class="menu-btn menu-btn--work-timesheet menu-btn--portal-risk" id="quickMenuRiskAssessments" data-portal-external-url="risk_assessment.html" aria-label="Risk assessments — venue and activity">
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
               <div class="menu-btn-copy"><strong>Risk Assessments</strong><span class="menu-btn-sub">Venue and activity risk assessments</span></div>
             </button>
@@ -1200,7 +1200,7 @@
         const tu = new URL(u, typeof window !== 'undefined' && window.location ? window.location.href : undefined);
         const dash = typeof portalQuickMenuPortalReturnBaseUrl === 'function' ? portalQuickMenuPortalReturnBaseUrl() : '';
         if(dash) tu.searchParams.set('portalReturn', dash);
-        if(/(policies_portal|ra_portal|risk_assessments_portal)/i.test(tu.pathname) && typeof window !== 'undefined' && window.dashboardData){
+        if(/(policies_portal|risk_assessment|ra_portal|risk_assessments_portal)/i.test(tu.pathname) && typeof window !== 'undefined' && window.dashboardData){
           const nm = String(window.dashboardData.staffName || '').trim();
           let role = '';
           try{

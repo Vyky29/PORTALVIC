@@ -1,0 +1,2140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Risk assessments — clubSENsational</title>
+  <style>
+    :root {
+      --navy: #17354d;
+      --gold: #f4b942;
+      --bg: #f5f7f9;
+      --line: #cfd8df;
+      --text: #1f2a33;
+      --muted: #5f6b76;
+      --white: #ffffff;
+      --shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+      --radius: 10px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; color: var(--text); background: var(--bg); }
+    .app { max-width: min(1200px, 100%); margin: 0 auto; padding: 16px 14px 28px; }
+    #mainHome { min-width: 0; }
+    #mainHome .ra-page-load-hint { margin: 0; color: #5f6b76; font-size: 14px; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; line-height: 1.45; }
+
+    #cs-ra-staff {
+      isolation: isolate;
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 100%;
+      line-height: 1.45;
+      text-align: left;
+    }
+
+    .cs-index {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #1f2937;
+      max-width: 1080px;
+      margin: 0 auto;
+      min-width: 0;
+    }
+    .cs-index .cs-idx-hero {
+      background: linear-gradient(135deg, #2d3e50 0%, #1e2f40 100%);
+      color: #fff;
+      padding: 40px 32px 36px;
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 22px;
+      position: relative;
+      overflow: hidden;
+    }
+    .cs-index .cs-idx-hero::after {
+      content: "";
+      position: absolute;
+      top: -50%;
+      right: -10%;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(244, 185, 66, 0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .cs-index .cs-idx-logo {
+      flex: 0 0 auto;
+      width: 200px;
+      height: 200px;
+      background: #fff;
+      border-radius: 18px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+      position: relative;
+      z-index: 1;
+    }
+    .cs-index .cs-idx-logo img {
+      width: 100%;
+      height: auto;
+      max-height: 168px;
+      object-fit: contain;
+      object-position: center;
+      display: block;
+    }
+    .cs-index .cs-idx-text {
+      flex: 1;
+      min-width: 0;
+      max-width: 38rem;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+      text-align: center;
+    }
+    .cs-index .cs-idx-hero .cs-idx-sub {
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #f4b942;
+      font-weight: 600;
+      margin: 0 0 6px;
+    }
+    .cs-index .cs-idx-hero h1 { margin: 0 0 8px; font-size: clamp(1.35rem, 4vw, 2rem); color: #fff; font-weight: 700; line-height: 1.15; }
+    .cs-index .cs-idx-hero p { margin: 0; opacity: 0.9; font-size: 15px; color: #e5e7eb; line-height: 1.45; }
+    .cs-index .cs-section { margin-top: 28px; }
+    .cs-index .cs-section:first-of-type { margin-top: 22px; }
+    .cs-index .cs-section-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #2d3e50;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin: 0 0 4px;
+    }
+    .cs-index .cs-section-desc { font-size: 13px; color: #6b7280; margin: 0 0 14px; line-height: 1.45; }
+    .cs-index .cs-section-head { border-bottom: 2px solid #f4b942; padding-bottom: 10px; margin-bottom: 14px; }
+    .cs-index .cs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+      gap: 16px;
+    }
+    .cs-index .cs-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      border-top: 3px solid var(--card-accent, #f4b942);
+      min-width: 0;
+    }
+    .cs-index .cs-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(45, 62, 80, 0.15); }
+    .cs-index .cs-card .cs-ic { font-size: 26px; margin-bottom: 8px; line-height: 1; }
+    .cs-index .cs-card h3 { font-size: 17px; margin: 0 0 8px; color: #2d3e50; line-height: 1.25; overflow-wrap: break-word; }
+    .cs-index .cs-card .meta { font-size: 12px; color: #6b7280; margin: 0 0 10px; overflow-wrap: break-word; }
+    .cs-index .cs-card .ra-card-actions { margin-top: auto; display: flex; flex-direction: column; gap: 10px; }
+    .cs-index .cs-card button.ra-open-btn {
+      margin-top: 0;
+      background: #2d3e50;
+      color: #fff;
+      text-align: center;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: none;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      font-family: inherit;
+      width: 100%;
+      max-width: 100%;
+    }
+    .cs-index .cs-card button.ra-open-btn:hover { background: #f4b942; color: #2d3e50; }
+
+    .ra-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 52px 16px 20px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .ra-overlay.is-open { display: flex; }
+    .ra-overlay-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      cursor: pointer;
+    }
+    .ra-sheet {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 920px;
+      margin: 24px auto 40px;
+      background: var(--white);
+      border-radius: 14px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--line);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      max-height: calc(100vh - 48px);
+    }
+    .ra-floating-close {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 12;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: var(--shadow);
+      font-size: 24px;
+      line-height: 1;
+      color: var(--navy);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+    .ra-floating-close:hover { background: var(--gold); border-color: var(--gold); color: #1f2937; }
+    .ra-sheet-toolbar {
+      position: relative;
+      z-index: 11;
+      flex-shrink: 0;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 56px 10px 16px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+    .ra-sheet-toolbar .ra-btn-pdf {
+      background: #17354d;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .ra-sheet-toolbar .ra-btn-pdf:hover:not(:disabled) {
+      background: #f4b942;
+      color: #1f2937;
+    }
+    .ra-sheet-toolbar .ra-btn-pdf:disabled {
+      opacity: 0.65;
+      cursor: wait;
+    }
+    #raOverlayBody {
+      max-height: calc(100vh - 48px);
+      overflow: auto;
+      padding: 16px 18px 22px;
+      text-align: left;
+      background: #fafbfc;
+      flex: 1 1 auto;
+      min-height: 0;
+      min-width: 0;
+    }
+
+    .ra-staff-doc .document-header {
+      background: #d7e2e8;
+      border-bottom: 2px solid var(--navy);
+      padding: 15px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      border-radius: 10px 10px 0 0;
+      margin: -8px -8px 0 -8px;
+    }
+    .ra-staff-doc .document-header h2 { margin: 0; color: var(--navy); font-size: clamp(1.1rem, 3vw, 1.35rem); overflow-wrap: break-word; }
+    .ra-staff-doc .document-header p { margin: 5px 0 0; color: var(--muted); font-size: 13px; overflow-wrap: break-word; }
+    .ra-staff-doc .section { padding: 16px 14px; border-bottom: 1px solid #e7edf1; background: #fff; margin: 0 -8px; }
+    .ra-staff-doc .section-title {
+      margin: 0 0 11px;
+      color: var(--navy);
+      font-size: 17px;
+      font-weight: 700;
+    }
+    .ra-staff-doc .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .ra-staff-doc .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .ra-staff-doc .field label {
+      display: block;
+      font-size: 11px;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      margin-bottom: 5px;
+      color: var(--muted);
+    }
+    .ra-staff-doc .field input,
+    .ra-staff-doc .field textarea,
+    .ra-staff-doc .field select {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 11px;
+      font-size: 14px;
+      background: #f1f5f8;
+      color: var(--text);
+      cursor: default;
+    }
+    .ra-staff-doc .field textarea { min-height: 2.75em; resize: none; white-space: pre-wrap; }
+    .ra-staff-doc table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: auto;
+      margin-top: 8px;
+    }
+    .ra-staff-doc th,
+    .ra-staff-doc td {
+      border: 1px solid #7f8c96;
+      font-size: 12px;
+      padding: 6px;
+      vertical-align: top;
+      min-width: 0;
+      overflow-wrap: break-word;
+      word-break: normal;
+      hyphens: none;
+      -webkit-hyphens: none;
+    }
+    .ra-staff-doc th { background: #eaf1f5; color: var(--navy); text-align: left; }
+    .ra-read-bullets {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 14px 10px 12px;
+      background: #fafcfd;
+      min-height: 2.75em;
+    }
+    .ra-read-bullets-compact { padding: 8px 10px; min-height: 2.25em; }
+    .ra-prose-bullets { margin: 0; padding-left: 1.15em; list-style-type: disc; }
+    .ra-prose-bullets li { margin: 0.4em 0; line-height: 1.5; color: var(--text); }
+    .ra-bullet-empty { margin: 0; color: var(--muted); font-size: 14px; }
+    .ra-staff-doc-wrap { background: #fff; border: 1px solid var(--line); border-radius: 10px; overflow: visible; padding: 8px; }
+    /* Wide risk table: horizontal scroll instead of squashed columns */
+    .ra-hazard-scroll-hint {
+      margin: 0 0 8px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .ra-hazard-table-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      width: 100%;
+      max-width: 100%;
+      margin: 4px 0 0;
+      padding-bottom: 8px;
+      border-radius: 8px;
+    }
+    .ra-staff-doc #hazardTable {
+      width: 100%;
+      min-width: 1180px;
+      table-layout: auto;
+      margin-top: 4px;
+    }
+    .ra-staff-doc #hazardTable th,
+    .ra-staff-doc #hazardTable td {
+      font-size: 13px;
+      line-height: 1.5;
+      padding: 10px 12px;
+      hyphens: none;
+      -webkit-hyphens: none;
+      word-break: normal;
+      overflow-wrap: break-word;
+      vertical-align: top;
+    }
+    .ra-staff-doc #hazardTable th {
+      white-space: normal;
+      font-weight: 700;
+      font-size: 12px;
+      letter-spacing: 0.02em;
+    }
+    .ra-staff-doc #hazardTable .ra-hazard-read-cell {
+      min-width: 7.5rem;
+    }
+    .ra-staff-doc #hazardTable .ra-hazard-read-cell:nth-child(1) {
+      min-width: 10.5rem;
+    }
+    .ra-staff-doc #hazardTable .ra-hazard-read-cell:nth-child(4),
+    .ra-staff-doc #hazardTable .ra-hazard-read-cell:nth-child(5),
+    .ra-staff-doc #hazardTable .ra-hazard-read-cell:nth-child(6) {
+      min-width: 11rem;
+    }
+    .ra-staff-doc #hazardTable .ra-read-bullets.ra-read-bullets-compact {
+      border: 0;
+      background: #f4f7f9;
+      border-radius: 6px;
+      padding: 8px 10px;
+      min-height: 0;
+    }
+    .ra-staff-doc #hazardTable .ra-prose-bullets li {
+      margin: 0.35em 0;
+      line-height: 1.55;
+    }
+
+    /* RA overlay: full viewport on phones/tablets (portrait + landscape) */
+    @media (max-width: 1024px) {
+      .ra-sheet-toolbar {
+        padding-top: max(12px, env(safe-area-inset-top, 0px));
+        padding-right: max(56px, calc(48px + env(safe-area-inset-right, 0px)));
+      }
+      #raStaffOverlay.ra-overlay {
+        padding: 0;
+        align-items: stretch;
+        justify-content: stretch;
+        overflow: hidden;
+        height: 100dvh;
+        max-height: 100dvh;
+        min-height: 100vh;
+        min-height: -webkit-fill-available;
+      }
+      #raStaffOverlay .ra-sheet {
+        margin: 0;
+        width: 100%;
+        max-width: none;
+        min-width: 0;
+        min-height: 100%;
+        flex: 1 1 auto;
+        border-radius: 0;
+        border: none;
+        box-shadow: none;
+        max-height: none;
+      }
+      #raStaffOverlay #raOverlayBody {
+        flex: 1 1 auto;
+        min-height: 0;
+        min-width: 0;
+        max-height: none;
+        overflow-y: auto;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-y: contain;
+        padding-top: max(56px, calc(14px + env(safe-area-inset-top, 0px)));
+        padding-bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+        padding-left: max(14px, env(safe-area-inset-left, 0px));
+        padding-right: max(14px, env(safe-area-inset-right, 0px));
+      }
+      #raStaffOverlay .ra-floating-close {
+        position: fixed;
+        top: max(10px, env(safe-area-inset-top, 0px));
+        right: max(10px, env(safe-area-inset-right, 0px));
+        z-index: 10002;
+      }
+    }
+    @media (max-width: 1024px) and (orientation: landscape) {
+      #raStaffOverlay #raOverlayBody {
+        padding-top: max(52px, calc(10px + env(safe-area-inset-top, 0px)));
+      }
+    }
+
+    @media (max-width: 1180px) {
+      .ra-staff-doc .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 720px) {
+      .ra-staff-doc .grid-4,
+      .ra-staff-doc .grid-2 { grid-template-columns: 1fr; }
+      .cs-index .cs-idx-logo {
+        width: 176px;
+        height: 176px;
+        padding: 14px;
+      }
+      .cs-index .cs-idx-logo img { max-height: 148px; }
+    }
+    .ra-staff-doc .ra-sig-in-doc {
+      margin-top: 0;
+      padding-top: 10px;
+      padding-bottom: 10px;
+    }
+    .ra-staff-doc .ra-sig-in-doc .section-title {
+      font-size: 14px;
+      margin: 0 0 8px;
+      letter-spacing: 0.04em;
+    }
+    .ra-sig-compact {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+      max-width: 288px;
+      padding: 12px 14px;
+      background: #fff;
+      border: 1px solid #dce3e8;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(45, 62, 80, 0.06);
+    }
+    .ra-sig-compact-meta {
+      margin: 0;
+      font-size: 12px;
+      line-height: 1.35;
+      color: var(--text);
+    }
+    .ra-sig-compact-meta strong {
+      font-weight: 700;
+      color: var(--navy);
+      display: block;
+    }
+    .ra-sig-compact-date {
+      display: block;
+      margin: 4px 0 0;
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .ra-sig-wrap {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      overflow: hidden;
+      background: #fafbfc;
+      line-height: 0;
+      max-width: 268px;
+    }
+    .ra-sig-fixed-img {
+      display: block;
+      width: 100%;
+      max-width: 268px;
+      max-height: 78px;
+      height: auto;
+      object-fit: contain;
+      object-position: left center;
+    }
+    .ra-sig-placeholder {
+      margin: 0;
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.4;
+      max-width: 268px;
+    }
+    .ra-sig-placeholder code {
+      font-size: 10px;
+      word-break: break-all;
+    }
+
+    @media print {
+      .no-print, .ra-overlay { display: none !important; }
+      body { background: #fff; }
+      .ra-hazard-scroll-hint { display: none !important; }
+      .ra-staff-doc #hazardTable { min-width: 0; }
+    }
+
+    /* Off-screen PDF export — width set in JS from table.scrollWidth (no max cap here) */
+    #raPdfHost {
+      position: fixed;
+      left: -20000px;
+      top: 0;
+      width: 6000px;
+      min-width: 3200px;
+      overflow: visible;
+      opacity: 1;
+      pointer-events: none;
+      z-index: -1;
+    }
+    .ra-pdf-brand-header {
+      border-bottom: 3px solid #f4b942;
+      padding: 18px 20px 16px;
+      margin-bottom: 14px;
+      background: linear-gradient(180deg, #f8fafb 0%, #fff 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .ra-pdf-brand-header img {
+      display: block;
+      width: auto;
+      max-width: min(520px, 96%);
+      height: auto;
+      max-height: 132px;
+      object-fit: contain;
+      object-position: center;
+      margin: 0 auto;
+    }
+    .ra-pdf-brand-header .ra-pdf-brand-sub {
+      margin: 12px 0 0;
+      width: 100%;
+      font-size: 11px;
+      color: #5f6b76;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      font-weight: 600;
+      text-align: center;
+    }
+    /* Portrait bundle: A4-like width, single-column document control */
+    .ra-pdf-portrait-bundle {
+      width: 720px;
+      max-width: 720px;
+      background: #fff;
+      color: #1f2a33;
+      font-family: Arial, Helvetica, sans-serif;
+      line-height: 1.45;
+      padding: 0 0 16px;
+      box-sizing: border-box;
+    }
+    .ra-pdf-portrait-bundle .ra-staff-doc-wrap,
+    .ra-pdf-portrait-bundle .document-header,
+    .ra-pdf-portrait-bundle .section {
+      margin-left: 0;
+      margin-right: 0;
+    }
+    .ra-pdf-portrait-bundle .ra-staff-doc-wrap {
+      border: none;
+      box-shadow: none;
+      padding: 0 12px;
+    }
+    .ra-pdf-portrait-bundle .grid-4 {
+      grid-template-columns: 1fr !important;
+      gap: 12px;
+    }
+    .ra-pdf-portrait-bundle .field input,
+    .ra-pdf-portrait-bundle .field textarea {
+      font-size: 13px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .ra-pdf-portrait-bundle .ra-sig-compact {
+      max-width: 100%;
+    }
+    .ra-pdf-portrait-bundle .ra-sig-wrap {
+      min-width: 160px;
+      min-height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+    }
+    .ra-pdf-portrait-bundle .ra-sig-fixed-img {
+      max-height: 96px;
+      min-height: 48px;
+    }
+    /* Landscape table-only: natural wide table, one page scaled to fit */
+    .ra-pdf-table-bundle {
+      width: max-content;
+      max-width: none;
+      background: #fff;
+      padding: 12px 16px 16px;
+      box-sizing: border-box;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    .ra-pdf-table-bundle .ra-hazard-scroll-hint {
+      display: none !important;
+    }
+    .ra-pdf-table-bundle .ra-hazard-table-scroll {
+      overflow: visible;
+      max-width: none;
+    }
+    .ra-pdf-table-bundle #hazardTable,
+    .ra-pdf-table-bundle #hazardTablePartner {
+      width: max-content;
+      max-width: none;
+      table-layout: auto;
+    }
+    .ra-pdf-table-bundle #hazardTable {
+      min-width: 1180px;
+    }
+    .ra-pdf-table-bundle #hazardTablePartner {
+      min-width: 1500px;
+    }
+    .ra-pdf-table-bundle #hazardTable th,
+    .ra-pdf-table-bundle #hazardTable td {
+      font-size: 12px;
+      line-height: 1.5;
+      padding: 9px 10px;
+    }
+    .ra-pdf-table-bundle #hazardTablePartner th,
+    .ra-pdf-table-bundle #hazardTablePartner td {
+      font-size: 12px;
+      line-height: 1.5;
+      padding: 9px 10px;
+    }
+    .ra-pdf-table-bundle #hazardTable th {
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .ra-pdf-table-bundle #hazardTablePartner th {
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .ra-pdf-table-bundle .ra-partner-pdf-note {
+      margin: 0 0 10px;
+      font-size: 11px;
+      line-height: 1.45;
+      color: #5f6b76;
+      max-width: 56rem;
+    }
+    .ra-pdf-table-bundle .section-title {
+      margin-bottom: 8px;
+      font-size: 18px;
+    }
+    /* Partner-only landscape: large type, fixed column widths, high-contrast header */
+    .ra-pdf-table-bundle.ra-pdf-table-bundle--partner {
+      width: auto;
+      max-width: none;
+    }
+    .ra-pdf-table-bundle--partner {
+      --ra-partner-font-scale: 1;
+      font-size: calc(16px * var(--ra-partner-font-scale));
+      padding: 16px 22px 24px;
+    }
+    .ra-pdf-table-bundle--partner,
+    .ra-pdf-table-bundle--partner .ra-staff-doc,
+    .ra-pdf-table-bundle--partner .ra-staff-doc * {
+      hyphens: none !important;
+      -webkit-hyphens: none !important;
+      -moz-hyphens: none !important;
+    }
+    .ra-pdf-table-bundle--partner .ra-staff-doc-wrap {
+      padding: 14px 16px;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+    .ra-pdf-table-bundle--partner .ra-hazard-table-scroll {
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+    .ra-pdf-table-bundle--partner .ra-staff-doc .section {
+      margin-left: 0;
+      margin-right: 0;
+      width: 100%;
+      max-width: none;
+      box-sizing: border-box;
+    }
+    .ra-pdf-table-bundle--partner .section-title {
+      font-size: calc(23px * var(--ra-partner-font-scale));
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+      color: #0f2940;
+    }
+    .ra-pdf-table-bundle--partner .ra-partner-pdf-note {
+      font-size: calc(13.5px * var(--ra-partner-font-scale));
+      line-height: 1.52;
+      max-width: none;
+      margin-bottom: 16px;
+      color: #3d4f5c;
+    }
+    .ra-pdf-table-bundle.ra-pdf-table-bundle--partner #hazardTablePartner {
+      min-width: 0 !important;
+      width: 100% !important;
+      max-width: none !important;
+      table-layout: fixed !important;
+      border-collapse: collapse;
+    }
+    .ra-pdf-table-bundle--partner #hazardTablePartner th:nth-child(1) {
+      width: 11%;
+    }
+    .ra-pdf-table-bundle--partner #hazardTablePartner th:nth-child(2) {
+      width: 14%;
+    }
+    .ra-pdf-table-bundle--partner #hazardTablePartner th:nth-child(3) {
+      width: 11%;
+    }
+    .ra-pdf-table-bundle--partner #hazardTablePartner th:nth-child(4) {
+      width: 22%;
+    }
+    .ra-pdf-table-bundle--partner #hazardTablePartner th:nth-child(5) {
+      width: 21%;
+    }
+    .ra-pdf-table-bundle--partner #hazardTablePartner th:nth-child(6) {
+      width: 21%;
+    }
+    .ra-pdf-table-bundle--partner #hazardTablePartner th,
+    .ra-pdf-table-bundle--partner #hazardTablePartner td {
+      font-size: calc(16px * var(--ra-partner-font-scale));
+      line-height: 1.55;
+      padding: calc(12px * var(--ra-partner-font-scale))
+        calc(14px * var(--ra-partner-font-scale));
+      vertical-align: top;
+    }
+    .ra-pdf-table-bundle--partner #hazardTablePartner th {
+      font-size: calc(14px * var(--ra-partner-font-scale));
+      font-weight: 700;
+      background: #c8e0f4;
+      color: #0f2940;
+      border: 1px solid #9ebdd9;
+      overflow-wrap: break-word;
+      word-break: normal;
+      hyphens: none;
+      -webkit-hyphens: none;
+    }
+    .ra-pdf-table-bundle--partner #hazardTablePartner td {
+      border: 1px solid #b0c4d4;
+      background: #fff;
+      overflow-wrap: break-word;
+      word-break: normal;
+      hyphens: none;
+      -webkit-hyphens: none;
+    }
+    .ra-pdf-table-bundle--partner #hazardTablePartner .ra-read-bullets,
+    .ra-pdf-table-bundle--partner #hazardTablePartner .ra-read-bullets-compact,
+    .ra-pdf-table-bundle--partner #hazardTablePartner .ra-prose-bullets li {
+      overflow-wrap: break-word;
+      word-break: normal;
+      hyphens: none;
+      -webkit-hyphens: none;
+    }
+    .ra-pdf-table-bundle--partner #hazardTablePartner tbody tr:nth-child(even) td {
+      background: #f4f8fb;
+    }
+    .ra-pdf-table-bundle--partner #hazardTablePartner .ra-hazard-read-cell {
+      min-width: 0;
+    }
+    .ra-pdf-table-bundle--partner #hazardTablePartner .ra-read-bullets.ra-read-bullets-compact {
+      padding: calc(10px * var(--ra-partner-font-scale))
+        calc(11px * var(--ra-partner-font-scale));
+      font-size: calc(16px * var(--ra-partner-font-scale));
+      border-radius: 6px;
+    }
+    .ra-pdf-table-bundle--partner #hazardTablePartner .ra-prose-bullets li {
+      margin: 0.42em 0;
+      line-height: 1.55;
+      font-size: calc(16px * var(--ra-partner-font-scale));
+    }
+    .ra-pdf-table-bundle--partner #hazardTablePartner .ra-bullet-empty {
+      font-size: calc(16px * var(--ra-partner-font-scale));
+    }
+    .ra-pdf-table-bundle--partner .ra-partner-pdf-note--contd {
+      font-size: calc(12.5px * var(--ra-partner-font-scale));
+      font-style: italic;
+      color: #5f6b76;
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div id="cs-ra-staff">
+    <div class="app">
+      <div id="mainHome">
+        <p class="ra-page-load-hint">Loading risk assessments… If this message does not disappear, open this file in a full browser (Chrome or Safari) with JavaScript enabled, or use File → Open from the browser menu.</p>
+      </div>
+      <noscript><p class="ra-page-load-hint" style="padding:16px;">JavaScript is required to view risk assessments on this page.</p></noscript>
+    </div>
+    <div id="raStaffOverlay" class="ra-overlay no-print" aria-hidden="true">
+      <div class="ra-overlay-backdrop" data-ra-close="1" aria-label="Close"></div>
+      <div class="ra-sheet" role="dialog" aria-modal="true" aria-label="Risk assessment">
+        <div class="ra-sheet-toolbar no-print">
+          <button type="button" class="ra-btn-pdf" id="raBtnPdf" aria-label="Download full risk assessment as PDF (all columns)">
+            Download PDF
+          </button>
+          <button type="button" class="ra-btn-pdf" id="raBtnPdfPartner" aria-label="Download partner or venue summary PDF (includes further controls; omits internal action owner and dates)">
+            PDF — partners / venue
+          </button>
+        </div>
+        <button type="button" class="ra-floating-close no-print" id="raBtnClose" data-ra-close="1" aria-label="Close">×</button>
+        <div id="raOverlayBody"></div>
+      </div>
+    </div>
+  </div>
+  <script type="application/json" id="embedded-maria-defaults">
+[{"id":"RA-VENUE-001","category":"Aquatic Venues","documentControl":{"title":"Acton Centre — Aquatic Activity","venue":"Acton Centre","address":"Aquatic activity","documentReference":"RA-VENUE-001","assessor":"Maria Lopez","assessmentDate":"2026-04-05","assessmentTime":"16:00","version":"1.0","lastReviewDate":"2026-04-05","nextReviewDate":"2027-04-05","approvedBy":"Raul Salvador Gallego","documentStatus":"Active"},"riskSummary":{"typeOfVenue":"Aquatic Venue","generalRiskLevel":"Medium to High depending on swimmer profile","supervisionModel":"121 supervision where required","emergencyProcedureReference":"Venue pool procedures, accident and incident reporting, staff briefings","mainRisks":"Deep water access, slippery surfaces, suction and entrapment hazards, moveable floor hazards, diving related risks, microbiological contamination, poolside slips and trips, electrical hazards near water, damaged fixtures, glare, hoist safety, and unsecured poolside equipment.","generalControlApproach":"Venue controls are supported by 121 supervision, staff training, quarterly briefings, induction content, swimming session procedures, reporting systems, and operational follow up assigned to named leads."},"hazards":[{"hazard":"Pool access directly into deep water","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Unsafe access into deeper water may lead to loss of balance, panic, or submersion risk.","venueControls":"Wall mounted depth marker signs are clearly visible to bathers in and out of the water.\nEnsures access onto the poolside is into the shallow end of the pool under 1.2m in depth.\nTrained and competent lifeguards scan their lifeguard zone and monitor bathers entering the pool water.","clubControls":"121 supervision\nSafety Award training to swimming teachers\nSwimming instructor training to all staff\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and incident report in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nDevelopment of individualised session planning to anticipate behaviours and reduce risk through proactive strategies."},{"hazard":"Slippery pool tank floor particularly in shallow water areas","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Wet and slippery surfaces may cause slips, trips, falls, and impact injuries.","venueControls":"Ensure slip resistance of tile and floor gradient are appropriate.","clubControls":"121 supervision\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and incident report in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nDevelopment of individualised session planning to anticipate behaviours and reduce risk through proactive strategies."},{"hazard":"Excessive suction from pool tank outlets may cause entrapment","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Body parts, hair, or clothing may become trapped, creating panic, injury, or submersion risk.","venueControls":"Ensures more than one suction outlet dispersed around the pool so suction levels are insignificant.\nEnsure location of pool water circulation pump emergency shut off is clearly identified.\nLifeguards are trained in its location.","clubControls":"121 supervision\nSafety Award training to swimming teachers\nSwimming instructor training to all staff\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and incident report in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nOngoing staff training programme focusing on risk awareness, behaviour management, and safe activity delivery."},{"hazard":"Entrapment in pool grills","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Fingers, toes, hair, or clothing may become trapped, causing injury or distress.","venueControls":"Ensures pool grill apertures do not exceed 8mm.\nChecks outlet grids for damage and ensure they are securely in position.","clubControls":"121 supervision\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and incident report in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nUse of incident reports and session feedback data to identify patterns and update risk controls proactively."},{"hazard":"Entrapment caused by moveable floor","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Moveable floor operations may create trapping or crush hazards if not controlled.","venueControls":"Provide a SSOW for raising and lowering of moveable floor.\nProvide training for colleagues in the SSOW for raising and lowering of moveable floor.\nComplete daily equipment check of moveable floor.\nEnsure regular inspection and servicing by authorised contractor.","clubControls":"121 supervision\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and incident report in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nOngoing staff training programme focusing on risk awareness, behaviour management, and safe activity delivery."},{"hazard":"Damaged pool tank tiles","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Broken or lifted tiles may cause cuts, slips, trips, or foot injuries.","venueControls":"Checks pool tiles for signs of visible damage or tile lifting.","clubControls":"121 supervision\nReporting system in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nUse of incident reports and session feedback data to identify patterns and update risk controls proactively."},{"hazard":"Collision with objects or equipment in pool tank","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Users may collide with recessed fittings, lights, or equipment, causing impact injuries.","venueControls":"Ensure lane rope fittings are recessed into pool side or removed when not in use.\nEnsure all underwater lights are flush with the pool wall.","clubControls":"121 supervision\nReporting system in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nDevelopment of individualised session planning to anticipate behaviours and reduce risk through proactive strategies."},{"hazard":"Unauthorised access to diving boards intended to be out of use","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Access to diving boards when not in use may result in unsafe jumping or diving injuries.","venueControls":"Ensures diving boards have a physical barrier to prevent access to them out of hours.","clubControls":"121 supervision\nSafety Award training to swimming teachers\nSwimming instructor training to all staff\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and incident report in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nDevelopment of individualised session planning to anticipate behaviours and reduce risk through proactive strategies."},{"hazard":"Diving into insufficient depth of water","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Diving in prohibited or shallow areas may cause serious head, neck, or spinal injury.","venueControls":"Ensure diving blocks are removed following galas or covers put on highlighting they are out of use.\nEnsure no diving signs are in place to prevent diving in prohibited areas. These are electronic and highlight that there is no diving when under 1.5 metres on movable floors.\nEnsure trained and competent lifeguards enforce pool rules and are trained in emergency procedures.","clubControls":"121 supervision\nSafety Award training to swimming teachers\nSwimming instructor training to all staff\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and incident report in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nDevelopment of individualised session planning to anticipate behaviours and reduce risk through proactive strategies."},{"hazard":"Infection through microbiological contaminates including E coli, Coliforms, Pseudomonas aeruginosa, Colony count, Cryptosporidium, and Giardia","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Poor water quality or contamination may cause infection, illness, and pool closure.","venueControls":"Ensures there is independent monthly microbiological testing by authorised and competent company for E coli, Coliforms, Pseudomonas aeruginosa and colony count.\nCarry out daily and weekly pool water tests to ensure pool remains within PWTAG guidelines.\nEnsures operation of automatic dosing to keep pool chemical balance at the correct parameters.\nEnsures operation of automatic coagulant dosing at the correct rate.\nEnsures operation of secondary disinfection system at the correct parameters.\nEnsure six monthly maintenance and inspection checks of pool plant equipment by specialist contractor.\nCarry out weekly backwashing every seven days or in line with manufacturer guidance.\nFilter pressure gauge readings recorded.\nUndertake backwashing when pool is not in use, allowing 90 minutes after backwashing for the filter to resettle and recirculate before reopening the pool.\nAll Duty Managers are PPO trained.\nEnsure all lifeguards and Duty Managers are trained in CSOP, NOP, and EAP procedures.\nInclude EAP for release of faeces, blood, or vomit.\nFollow EAP and record on pool clearance incident sheet.\nDisplay on website and at reception information relating to customers who have suffered from sickness and diarrhoea and must not swim until symptom free for 48 hours or 14 days if diagnosed by GP with Cryptosporidium.\nPool hygiene signage displayed encouraging swimmers to shower and use toilet facilities.\nEnsure customers are aware that swimmers not toilet trained are required to wear aqua nappies as per admission policy.\nHighlight that those suffering from an upset tummy within the last 48 hours or 14 days if diagnosed by GP as having Cryptosporidiosis are requested not to swim as per admission policy.\nEnsure the Centre Safety Operating Procedures detail the procedure for discovery of faeces or vomit in pool as per PWTAG guidelines.","clubControls":"121 supervision\nPre Session Client Screening","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nOngoing staff training programme focusing on risk awareness, behaviour management, and safe activity delivery."},{"hazard":"Slips, trips, and falls on poolside due to poor cleaning, housekeeping, damaged or raised floor surface","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Wet or obstructed poolside surfaces may cause slips, trips, falls, and impact injuries.","venueControls":"Swimming pool floor and surround is slip resistant.\nEnsure poolside cleaning tasks as set out in the daily cleaning rota are carried out.\nEnsure poolside surround is free from debris and litter, free from any slip or trip hazard and that tiles or floor surface is free from damage.\nEnsure that running is prohibited on the poolside.\nEnsures pool edge is clearly highlighted.\nPool surround is a minimum of 2 metres in width.\nPool surround, steps, and tank floors have slip resistant tiles.\nThe gradient on the access ramps does not exceed 1:15 and has handrails on both sides.\nDrainage gullies are highlighted and covered by grating to prevent a tripping hazard.\nCompletes mapping of all poolside accidents to highlight any accident trends and identify additional measures to prevent reoccurrence.\nBarrier in place to prevent access from a freeboard greater than 380mm.","clubControls":"121 supervision\nEnsure appropriate footwear is used when outside of the pool\nClear rules on walking and not rushing\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and incident report in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nDevelopment of individualised session planning to anticipate behaviours and reduce risk through proactive strategies."},{"hazard":"Electricity causing possible electrocution","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Incorrect or damaged electrical equipment near water may cause shock, burns, or serious injury.","venueControls":"All electrical equipment for use on poolside is either battery operated or has the correct IP rating for the area or zone to be used in.\nElectrical sockets not to be sited within 1.25m of the pool edge and 0.3m from the floor and must be protected by a 30mA RCD.\nAny equipment to be used within the pool must be IPx8 rated.\nAny equipment to be used within 2m of the pool must be IPx5 rated.\nAny equipment used in excess of 2m from the pool must be IPx5.","clubControls":"121 supervision\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and incident report in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nOngoing staff training programme focusing on risk awareness, behaviour management, and safe activity delivery."},{"hazard":"Damaged glazing","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Broken or unsafe glazing may cause cuts or injury on impact.","venueControls":"All pool glass is safety glass.","clubControls":"121 supervision\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nAccident and incident report in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nUse of incident reports and session feedback data to identify patterns and update risk controls proactively."},{"hazard":"Glare preventing casualties from being seen","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Poor visibility may delay response and prevent swimmers being seen clearly.","venueControls":"Ensures lifeguard stations are located to minimise the effect of glare from the pool water surface.\nPool glazing treated or covered to minimise effects of glare through windows.","clubControls":"121 supervision\nInformation added to the induction sessions\nAccident and incident report in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nOngoing staff training programme focusing on risk awareness, behaviour management, and safe activity delivery."},{"hazard":"Unsecure or damaged pool steps","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Unstable steps or rails may cause slips, falls, or unsafe assisted transfers.","venueControls":"Ensures daily inspection of steps is completed to check:\nSteps are secure and stable\nNo sharp, rough or raised edges\nEnsures foot rails are secure\nGuard rails to prevent jumping onto poolside steps from the side.\nPoolside steps gently graded with handrails available.","clubControls":"121 supervision\nSwimming procedure highlights that teachers should get into the pool first","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nUse of incident reports and session feedback data to identify patterns and update risk controls proactively."},{"hazard":"Damage to pool hoist","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Damaged hoist or insecure fixing points may lead to transfer injuries or equipment failure.","venueControls":"Ensures daily check is completed to ensure hoist is free from visible damage and fixing points are secure.","clubControls":"121 supervision\nAccident and incident report in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nUse of incident reports and session feedback data to identify patterns and update risk controls proactively."},{"hazard":"Unsecured lifeguard chairs","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Unsecured chairs or poolview monitors may topple over and cause impact injury.","venueControls":"Any lifeguard chairs that have been modified to hold poolview monitors must be secured in a way that stops them from toppling over.","clubControls":"121 supervision","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nUse of incident reports and session feedback data to identify patterns and update risk controls proactively."}],"emergencyOperationalNotes":{"emergencyProcedures":"Emergency arrangements are supported by trained lifeguards, emergency procedures for prohibited diving, contamination response under the venue pool procedures, pool rules enforcement, and accident and incident reporting.","operationalNotes":"Quarterly briefings, induction content, 121 supervision, pre session screening for contamination risk, swimming session procedures, and reporting systems are repeated consultant controls and should remain part of routine delivery."},"reviewLog":[{"reviewDate":"2026-04-05","reviewedBy":"Raul Salvador Gallego","changesMade":"Annual review date carried over from the consultant assessment.","signature":"","nextReviewDue":"2027-04-05"},{"reviewDate":"","reviewedBy":"","changesMade":"","signature":"","nextReviewDue":""}],"signOff":{"assessor":"","reviewer":"","managerApproval":""}},{"id":"RA-VENUE-002","category":"Aquatic Venues","documentControl":{"title":"Northolt Leisure Centre — Aquatic Activity","venue":"Northolt Leisure Centre","address":"Aquatic activity","documentReference":"RA-VENUE-002","assessor":"Maria Lopez","assessmentDate":"2026-04-05","assessmentTime":"16:00","version":"1.0","lastReviewDate":"2026-04-05","nextReviewDate":"2027-04-05","approvedBy":"Raul Salvador Gallego","documentStatus":"Active"},"riskSummary":{"typeOfVenue":"Aquatic Venue","generalRiskLevel":"Medium to High depending on swimmer profile","supervisionModel":"1:1 supervision where required","emergencyProcedureReference":"Venue pool procedures, accident and incident reporting, staff briefings","mainRisks":"Deep water access, slippery surfaces, suction and entrapment hazards, diving related risks, poolside slips and trips, electrical hazards near water, damaged fixtures, visibility issues, hoist safety, and unsecured poolside equipment.","generalControlApproach":"Venue controls are supported by 1:1 supervision, staff training, quarterly briefings, induction content, swimming session procedures, and accident and incident reporting processes."},"hazards":[{"hazard":"Pool access directly into deep water","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Unsafe access into deeper water may lead to loss of balance, panic, or submersion risk.","venueControls":"Wall mounted depth marker signs are clearly visible to bathers in and out of the water.\nEnsures access onto the poolside is into the shallow end of the pool under 1.2m in depth.\nTrained and competent lifeguards scan their lifeguard zone and monitor bathers entering the pool water.","clubControls":"121 supervision\nSafety Award training to swimming teachers\nSwimming instructor training to all staff\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and Incident report in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nDevelopment of individualised session planning to anticipate behaviours and reduce risk through proactive strategies."},{"hazard":"Slippery pool tank floor particularly in shallow water areas","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Wet and slippery surfaces may cause slips, trips, falls, and impact injuries.","venueControls":"Ensure slip resistance of tile and floor gradient are appropriate.","clubControls":"121 supervision\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and Incident report in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nDevelopment of individualised session planning to anticipate behaviours and reduce risk through proactive strategies."},{"hazard":"Excessive suction from pool tank outlets may cause entrapment","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Body parts, hair, or clothing may become trapped, creating panic, injury, or submersion risk.","venueControls":"Ensures more than one suction outlet dispersed around the pool so suction levels are insignificant.\nEnsure location of pool water circulation pump emergency shut off is clearly identified.\nLifeguards are trained in its location.","clubControls":"121 supervision\nSafety Award training to swimming teachers\nSwimming instructor training to all staff\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and Incident report in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nOngoing staff training programme focusing on risk awareness, behaviour management, and safe activity delivery."},{"hazard":"Entrapment in pool grills","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Fingers, toes, hair, or clothing may become trapped, causing injury or distress.","venueControls":"Ensures pool grill apertures do not exceed 8mm.\nChecks outlet grids for damage and ensure they are securely in position.","clubControls":"121 supervision\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and Incident report in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nUse of incident reports and session feedback data to identify patterns and update risk controls proactively."},{"hazard":"Entrapment caused by moveable floor","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Moveable floor operations may create trapping or crush hazards if not controlled.","venueControls":"Provide a SSOW for raising and lowering of moveable floor.\nProvide training for colleagues in the SSOW for raising and lowering of moveable floor.\nComplete daily equipment check of moveable floor.\nEnsure regular inspection and servicing by authorised contractor.","clubControls":"121 supervision\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and Incident report in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nOngoing staff training programme focusing on risk awareness, behaviour management, and safe activity delivery."},{"hazard":"Damaged pool tank tiles","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Broken or lifted tiles may cause cuts, slips, trips, or foot injuries.","venueControls":"Checks pool tiles for signs of visible damage or tile lifting.","clubControls":"121 supervision\nReporting System in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nUse of incident reports and session feedback data to identify patterns and update risk controls proactively."},{"hazard":"Collision with objects or equipment in pool tank","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Users may collide with recessed fittings, lights, or equipment, causing impact injuries.","venueControls":"Ensure lane rope fittings are recessed into pool side or removed when not in use.\nEnsure all underwater lights are flush with the pool wall.","clubControls":"121 supervision\nReporting System in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nDevelopment of individualised session planning to anticipate behaviours and reduce risk through proactive strategies."},{"hazard":"Unauthorised access to diving boards intended to be out of use","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Access to diving boards when not in use may result in unsafe jumping or diving injuries.","venueControls":"Ensures diving boards have a physical barrier to prevent access to them out of hours.","clubControls":"121 supervision\nSafety Award training to swimming teachers\nSwimming instructor training to all staff\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and Incident report in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nDevelopment of individualised session planning to anticipate behaviours and reduce risk through proactive strategies."},{"hazard":"Diving into insufficient depth of water","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Diving in prohibited or shallow areas may cause serious head, neck, or spinal injury.","venueControls":"Ensure diving blocks are removed following galas or covers put on highlighting they are out of use.\nEnsure no diving signs are in place to prevent diving in prohibited areas.\nEnsure trained and competent lifeguards enforce pool rules and are trained in emergency procedures.","clubControls":"121 supervision\nSafety Award training to swimming teachers\nSwimming instructor training to all staff\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and Incident report in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nDevelopment of individualised session planning to anticipate behaviours and reduce risk through proactive strategies."},{"hazard":"Infection through microbiological contaminates including E coli, Coliforms, Pseudomonas aeruginosa, Colony count, Cryptosporidium, and Giardia","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Poor water quality or contamination may cause infection, illness, and pool closure.","venueControls":"Ensures there is independent monthly microbiological testing by authorised and competent company.\nCarry out daily and weekly pool water tests to ensure pool remains within PWTAG guidelines.\nEnsures operation of automatic dosing at correct parameters.\nEnsures operation of automatic coagulant dosing at the correct rate.\nEnsures operation of secondary disinfection system at the correct parameters.\nEnsure six monthly maintenance and inspection checks of pool plant equipment by specialist contractor.\nCarry out weekly backwashing every seven days or in line with manufacturer guidance.\nFilter pressure gauges readings recorded.\nUndertake backwashing when pool is not in use, allowing 90 minutes after backwashing for the filter to resettle and recirculate before reopening the pool.\nAll Duty Managers are PPO trained.\nEnsure all lifeguards and Duty Managers are trained in CSOP, NOP, and EAP procedures.\nInclude EAP for release of faeces, blood, or vomit.\nFollow EAP and record on pool clearance incident sheet.\nDisplay sickness and diarrhoea exclusion information on web site and at reception.\nPool hygiene signage displayed encouraging swimmers to shower and use toilet facilities.\nEnsure customers are aware that swimmers not toilet trained are required to wear aqua nappies as per admission policy.\nHighlight that those suffering from an upset tummy within the last 48 hours or 14 days if diagnosed by GP as having Cryptosporidiosis are requested not to swim.\nEnsures that the Centre Safety Operating Procedures details procedure for discovery of faeces or vomit in pool as per PWTAG guidelines.","clubControls":"121 supervision\nPre Session Client Screening","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nOngoing staff training programme focusing on risk awareness, behaviour management, and safe activity delivery."},{"hazard":"Slips, trips, and falls on poolside due to poor cleaning, housekeeping, damaged or raised floor surface","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Wet or obstructed poolside surfaces may cause slips, trips, falls, and impact injuries.","venueControls":"Swimming pool floor and surround is slip resistant.\nEnsure poolside cleaning tasks as set out in the daily cleaning rota are carried out.\nEnsure poolside surround is free from debris and litter, free from any slip or trip hazard and that tiles or floor surface is free from damage.\nEnsure that running is prohibited on the poolside.\nEnsures pool edge is clearly highlighted.\nPool surround is a minimum of 2 metres in width.\nPool surround, steps, and tank floors have slip resistant tiles.\nThe gradient on the access ramps does not exceed 1:15 and has handrails on both sides.\nDrainage gullies are highlighted and covered by grating to prevent a tripping hazard.\nCompletes mapping of all poolside accidents to highlight any accident trends and identify additional measures to prevent reoccurrence.\nBarrier in place to prevent access from a freeboard greater than 380mm.","clubControls":"121 supervision\nEnsure appropriate footwear is used when outside of the pool\nClear rules on walking and not rushing\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and Incident report in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nDevelopment of individualised session planning to anticipate behaviours and reduce risk through proactive strategies."},{"hazard":"Electricity causing possible electrocution","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Incorrect or damaged electrical equipment near water may cause shock, burns, or serious injury.","venueControls":"All electrical equipment for use on poolside is either battery operated or has the correct IP rating for the area or zone to be used in.\nElectrical sockets not to be sited within 1.25m of the pool edge and 0.3m from the floor and must be protected by a 30mA RCD.\nAny equipment to be used within the pool must be IPx8 rated.\nAny equipment to be used within 2m of the pool must be IPx5 rated.\nAny equipment used in excess of 2m from the pool must be IPx5.","clubControls":"121 supervision\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and incident report in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nOngoing staff training programme focusing on risk awareness, behaviour management, and safe activity delivery."},{"hazard":"Damaged glazing","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Broken or unsafe glazing may cause cuts or injury on impact.","venueControls":"All pool glass is safety glass.","clubControls":"121 supervision\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nAccident and incident report in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nUse of incident reports and session feedback data to identify patterns and update risk controls proactively."},{"hazard":"Glare preventing casualties from being seen","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Poor visibility may delay response and prevent swimmers being seen clearly.","venueControls":"Ensures lifeguard stations are located to minimise the effect of glare from the pool water surface.\nPool glazing treated or covered to minimise effects of glare through windows.","clubControls":"121 supervision\nInformation added to the induction sessions\nAccident and incident report in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nOngoing staff training programme focusing on risk awareness, behaviour management, and safe activity delivery."},{"hazard":"Unsecure or damaged pool steps","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Unstable steps or rails may cause slips, falls, or unsafe assisted transfers.","venueControls":"Ensures daily inspection of steps is completed to check:\nSteps are secure and stable\nNo sharp, rough or raised edges\nEnsures foot rails are secure\nGuard rails to prevent jumping onto poolside steps from the side\nPoolside steps gently graded and handrails available.","clubControls":"121 supervision\nSwimming procedure highlights that teachers should get into the pool first","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nUse of incident reports and session feedback data to identify patterns and update risk controls proactively."},{"hazard":"Damage to pool hoist","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Damaged hoist or insecure fixing points may lead to transfer injuries or equipment failure.","venueControls":"Ensures daily check is completed to ensure hoist is free from visible damage and fixing points are secure.","clubControls":"121 supervision\nAccident and Incident report in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nUse of incident reports and session feedback data to identify patterns and update risk controls proactively."},{"hazard":"Unsecured lifeguard chairs","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Unsecured chairs or poolview monitors may topple over and cause impact injury.","venueControls":"Any lifeguard chairs that have been modified to hold poolview monitors must be secured in a way that stops them from toppling over.","clubControls":"121 supervision","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nUse of incident reports and session feedback data to identify patterns and update risk controls proactively."}],"emergencyOperationalNotes":{"emergencyProcedures":"Emergency arrangements are supported by trained lifeguards, emergency procedures for prohibited diving, pool rules enforcement, accident and incident reporting, and contamination response under the venue pool procedures.","operationalNotes":"Quarterly briefings, induction content, 121 supervision, swimming session procedures, and reporting systems are repeatedly referenced throughout the consultant assessment and should remain active controls in delivery."},"reviewLog":[{"reviewDate":"2026-04-05","reviewedBy":"Raul Salvador Gallego","changesMade":"Annual review date carried over from the consultant assessment.","signature":"","nextReviewDue":"2027-04-05"},{"reviewDate":"","reviewedBy":"","changesMade":"","signature":"","nextReviewDue":""}],"signOff":{"assessor":"","reviewer":"","managerApproval":""}},{"id":"RA-VENUE-003","category":"Aquatic Venues","documentControl":{"title":"SwimFarm — Aquatic Activity","venue":"SwimFarm","address":"W10 6RP","documentReference":"RA-VENUE-003","assessor":"Maria Lopez","assessmentDate":"2026-04-05","assessmentTime":"16:00","version":"1.0","lastReviewDate":"2026-04-05","nextReviewDate":"2027-04-05","approvedBy":"Raul Salvador Gallego","documentStatus":"Active"},"riskSummary":{"typeOfVenue":"Aquatic Venue / Hydrotherapy Pool","generalRiskLevel":"Medium to High depending on swimmer profile","supervisionModel":"1:1 supervision where required","emergencyProcedureReference":"Venue EAP / NOP / Accident and Incident Reporting","mainRisks":"Unsafe pool entry and exit, slippery pool tank floor and poolside, suction and grill entrapment, damaged tiles, collision with equipment or fixed objects, diving into insufficient depth, microbiological contamination, electrical hazards near water, visibility issues, unsafe steps or access points, and unsecured observation equipment.","generalControlApproach":"Venue controls are supported by trained staff, 1:1 supervision where required, Safety Award training, swimming instructor training, individual risk assessments, monthly or session start briefings, induction content, session procedures, equipment checks, and accident and incident reporting."},"hazards":[{"hazard":"Pool access into hydrotherapy pool","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Slips, loss of balance or unsafe entry and exit may cause injury, distress or a fall into the water.","venueControls":"Wall mounted depth marker signs are clearly visible to bathers in and out of the water.\nSwimFarm hydrotherapy pool has a uniform shallow depth of 0.8m and no direct access into deep water.\nEntry and exit are controlled by staff and users are supported according to individual need and risk assessment.\nTrained and competent staff supervise all entries into the water.","clubControls":"121 supervision\nSafety Award training to swimming teachers\nSwimming instructor training to all staff\nIndividual Risk Assessment\nBriefings with instructors to be completed monthly\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and Incident report in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nDevelopment of individualised session planning to anticipate behaviours and reduce risk through proactive strategies."},{"hazard":"Slippery pool tank floor and pool area","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Slippery surfaces may cause slips, trips or falls when moving in or around the hydrotherapy pool.","venueControls":"Ensure slip resistance of tile and floor gradient are appropriate.","clubControls":"121 supervision\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and Incident report in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nDevelopment of individualised session planning to anticipate behaviours and reduce risk through proactive strategies."},{"hazard":"Excessive suction from pool tank outlets may cause entrapment","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Body parts, hair or clothing could become trapped, leading to panic, injury or submersion risk.","venueControls":"Ensures more than one suction outlet dispersed around the pool so suction levels are insignificant.\nEnsure location of pool water circulation pump emergency shut off is clearly identified.\nLifeguards are trained in its location.","clubControls":"121 supervision\nSafety Award training to swimming teachers\nSwimming instructor training to all staff\nIndividual Risk Assessment\nBriefings with instructors to be completed at the beginning of the sessions\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and Incident report in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nOngoing staff training programme focusing on risk awareness, behaviour management, and safe activity delivery."},{"hazard":"Entrapment in pool grills","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Fingers, toes, hair or clothing could become trapped in damaged or insecure grills, causing injury.","venueControls":"Ensures pool grill apertures do not exceed 8mm.\nChecks outlet grids for damage and ensure they are securely in position.","clubControls":"121 supervision\nIndividual Risk Assessment\nBriefings with instructors to be completed at the beginning of the sessions\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and Incident report in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nUse of incident reports and session feedback data to identify patterns and update risk controls proactively."},{"hazard":"Damaged pool tank tiles","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Broken or lifted tiles may cause cuts, trips or damage to feet and hands.","venueControls":"Checks pool tiles for signs of visible damage or tile lifting.","clubControls":"121 supervision\nReporting System in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nUse of incident reports and session feedback data to identify patterns and update risk controls proactively."},{"hazard":"Collision with objects or therapy equipment in pool tank","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Swimmers may collide with equipment or fixed objects, causing impact injuries, distress or loss of balance.","venueControls":"Ensure floats, noodles, mats and therapy equipment are suitable for hydrotherapy use and removed when not in use.\nEnsure all underwater lights, rails and fixed fittings are flush and in safe condition.\nKeep the pool tank clear of unnecessary equipment during sessions.","clubControls":"121 supervision\nReporting System in place\nEquipment checks completed before sessions","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nDevelopment of individualised session planning to anticipate behaviours and reduce risk through proactive strategies."},{"hazard":"Diving into insufficient depth of water","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Diving into 0.8m water may result in serious head, neck or spinal injury.","venueControls":"Ensure all users are prevented from diving and are supported to enter the water safely in line with the pool depth and individual needs.","clubControls":"121 supervision\nSafety Award training to swimming teachers\nSwimming instructor training to all staff\nIndividual Risk Assessment\nBriefings with instructors to be completed monthly\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and Incident report in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nDevelopment of individualised session planning to anticipate behaviours and reduce risk through proactive strategies."},{"hazard":"Infection through microbiological contaminates including E coli, Coliforms, Pseudomonas aeruginosa, Colony count, Cryptosporidium, and Giardia","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Poor water quality or contamination may cause illness, infection or required pool closure.","venueControls":"Ensures that there is independent monthly microbiological testing by authorised and competent company for E coli, Coliforms, Pseudomonas aeruginosa and colony count.\nCarry out daily and weekly pool water tests to ensure pool remains within PWTAG guidelines.\nEnsures operation of automatic dosing to keep pool chemical balance at the correct parameters.\nEnsures operation of automatic coagulant dosing at the correct rate.\nEnsures operation of secondary disinfection system at the correct parameters.\nEnsure six monthly maintenance and inspection checks of pool plant equipment by specialist contractor.\nCarry out weekly backwashing every seven days or when pressure differential rises by 0.5 bar or as per filter manufacturer instructions with freshwater dilution rates equal bather loading at 30 litres per bather per swim per day.\nFilter pressure gauge readings recorded.\nUndertake backwashing when pool is not in use, allowing 90 minutes after backwashing for the filter to resettle and recirculate before reopening the pool.\nAll Duty Managers are Pool Plant Operated trained.\nEnsure all Lifeguards and Duty Managers are trained in CSOP, NOP and EAP procedures.\nInclude EAP for release of faeces, blood or vomit.\nFollow EAP for release of faeces, blood or vomit and record on pool clearance incident sheet.\nMaintain safe pool water quality through daily and weekly water testing, monthly microbiological testing, correct automatic dosing, filtration and backwashing procedures, and immediate implementation of EAP and pool closure procedures where contamination is suspected or confirmed.","clubControls":"121 supervision","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nOngoing staff training programme focusing on risk awareness, behaviour management, and safe activity delivery."},{"hazard":"Slips, trips, falls on poolside due to poor cleaning, housekeeping, damaged or raised floor surface","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Wet or obstructed poolside surfaces may cause slips, trips and falls for swimmers, families or staff.","venueControls":"Swimming pool floor and surround is slip resistant.\nEnsure poolside cleaning tasks as set out in the daily cleaning rota are carried out.\nEnsure poolside surround is free from debris and litter, free from any slip or trip hazard and that tiles or floor surface is free from damage.\nEnsure that running is prohibited on the poolside.\nEnsures pool edge is clearly highlighted.\nPool surround is a minimum of 2 metres in width.\nPool surround, steps and tank floors have slip resistant tiles.\nThe gradient on the access ramps does not exceed 1:15 and has handrails on both sides.\nDrainage gullies are highlighted and covered by grating to prevent a tripping hazard.\nCompletes mapping of all poolside accidents to highlight any accident trends and identify additional measures to prevent reoccurrence.\nBarrier in place to prevent access from a freeboard greater than 380mm.","clubControls":"121 supervision\nEnsure appropriate footwear is used when outside of the pool\nClear rules on walking and not rushing\nIndividual Risk Assessment\nBriefings with instructors to be completed monthly\nInformation added to the induction sessions\nSwimming session procedure completed\nAccident and Incident report in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nDevelopment of individualised session planning to anticipate behaviours and reduce risk through proactive strategies."},{"hazard":"Electricity causing possible electrocution","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Incorrect or damaged electrical equipment near water may cause electric shock, burns or serious injury.","venueControls":"All electrical equipment for use on poolside is either battery operated or has the correct IP rating for the area or zone to be used in.\nElectrical sockets not to be sited within 1.25m of the pool edge and 0.3m from the floor and must be protected by a 30mA RCD.\nAny equipment to be used within the pool must be IPx8 rated.\nAny equipment to be used within 2m of the pool must be IPx5 rated.\nAny equipment used in excess of 2m from the pool must be IPx5.","clubControls":"121 supervision\nIndividual Risk Assessment\nBriefings with instructors to be completed monthly\nInformation added to the induction sessions\nSwimming session procedure completed","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nOngoing staff training programme focusing on risk awareness, behaviour management, and safe activity delivery."},{"hazard":"Damaged glazing","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Broken or unsafe glazing may cause cuts or injury if impacted.","venueControls":"All pool glass is safety glass.","clubControls":"121 supervision\nBriefings with instructors to be completed monthly\nInformation added to the induction sessions","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nUse of incident reports and session feedback data to identify patterns and update risk controls proactively."},{"hazard":"Glare or visibility issues preventing bathers from being seen clearly","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Poor visibility may delay staff response and increase risk of incidents not being seen promptly.","venueControls":"Viewing positions are selected to minimise glare and blind spots on the hydrotherapy pool water surface.\nPool glazing, lighting and blinds are managed to reduce reflection where reasonably practicable.","clubControls":"121 supervision\nStaff positioned to maintain clear visual contact with bathers at all times","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nOngoing staff training programme focusing on risk awareness, behaviour management, and safe activity delivery."},{"hazard":"Unsecure or damaged pool steps / access points","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Unstable steps, rails or access points may lead to slips, falls or unsafe assisted transfers.","venueControls":"Ensures daily inspection of steps, rails and access points is completed to check:\nSteps are secure and stable\nNo sharp, rough or raised edges\nFoot rails and handrails are secure\nAccess route into the hydrotherapy pool is safe for assisted entry and exit","clubControls":"121 supervision\nSwimming procedure highlights that teachers should get into the pool first where appropriate\nSupport provided according to individual risk assessment","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nUse of incident reports and session feedback data to identify patterns and update risk controls proactively."},{"hazard":"Unsecured observation chairs or portable poolside equipment","whoMayBeHarmed":"Customers\nEmployees","howMayBeHarmed":"Unstable portable equipment may topple, creating impact or trip hazards on poolside.","venueControls":"Any observation chair, portable seat, trolley or monitor used on poolside must be stable, positioned safely and secured where required so it cannot topple over.","clubControls":"121 supervision","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments; session procedures; and reporting tools during service delivery.\nUse of incident reports and session feedback data to identify patterns and update risk controls proactively."}],"emergencyOperationalNotes":{"emergencyProcedures":"Emergency arrangements are supported by trained staff, identified emergency shut off awareness, contamination response under EAP procedures for faeces, blood or vomit, pool closure where required, and accident and incident reporting.","operationalNotes":"Monthly or session start briefings, induction content, 1:1 supervision where required, individual risk assessments, session procedures, equipment checks, and clear staff positioning for visual contact are repeated consultant controls and should remain part of routine delivery."},"reviewLog":[{"reviewDate":"2026-04-05","reviewedBy":"Raul Salvador Gallego","changesMade":"Review date carried over from the consultant assessment.","signature":"","nextReviewDue":"2027-04-05"},{"reviewDate":"","reviewedBy":"","changesMade":"","signature":"","nextReviewDue":""}],"signOff":{"assessor":"","reviewer":"","managerApproval":""}},{"id":"RA-VENUE-004","category":"Indoor Venues","documentControl":{"title":"clubSENsational Hub — Multi-Activity, Active Play & Movement, Bespoke Programme","venue":"clubSENsational Hub","address":"Multi-Activity, Active Play & Movement, and Bespoke Programme","documentReference":"RA-VENUE-004","assessor":"Maria Lopez","assessmentDate":"2026-04-05","assessmentTime":"16:00","version":"1.0","lastReviewDate":"2026-04-05","nextReviewDate":"2027-04-05","approvedBy":"Raul Salvador Gallego","documentStatus":"Active"},"riskSummary":{"typeOfVenue":"clubSENsational Hub — Multi-Activity, Active Play & Movement, Bespoke Programme","generalRiskLevel":"Medium","supervisionModel":"Staff led supervision with controlled access","emergencyProcedureReference":"Hub emergency procedure and incident reporting process","mainRisks":"Slips and trips; climbing wall use; treadmill, static bike and mini trampoline use; large and mobile screen equipment; loose equipment; behaviour escalation; collisions with fixed structures; overcrowding; and programme-specific movement across Multi-Activity, Active Play & Movement, and the Bespoke Programme.","generalControlApproach":"Daily checks, active supervision, clear layout and zoned activity areas, structured delivery across Multi-Activity, Active Play & Movement, and the Bespoke Programme, individualised session planning where appropriate, and consistent incident reporting and review."},"hazards":[{"hazard":"Slips, trips and falls","whoMayBeHarmed":"Clients\nStaff\nVisitors","howMayBeHarmed":"Movement activities, equipment or congestion may lead to trips, slips or impact injuries","venueControls":"Clear layout, defined activity zones and safe flooring","clubControls":"121 supervision\nPre-session checks and structured movement during sessions\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nAccident and incident report in place","furtherControls":"• Development of individualised session planning to organise movement and reduce congestion during activities\n• Planned improvement of the Hub layout to increase usable space and improve movement flow during sessions","actionByWhom":"- Team leaders on duty\n- support staff on duty\n- Management Team","actionByWhen":"01/09/2026"},{"hazard":"Climbing wall use","whoMayBeHarmed":"Clients\nStaff","howMayBeHarmed":"Falls, unsafe climbing behaviour or misuse of equipment","venueControls":"Fixed climbing wall with safety matting","clubControls":"121 supervision\ncontrolled access and structured use of climbing activities\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nAccident and incident report in place","furtherControls":"• Development of individualised session planning to anticipate behaviours and manage climbing access safely\n• Introduction of an online Staff Portal enabling access to procedures and reporting tools during service delivery","actionByWhom":"- Team leaders on duty\n- support staff on duty\n- Management Team","actionByWhen":"01/09/2026"},{"hazard":"Use of treadmill","whoMayBeHarmed":"Clients\nStaff","howMayBeHarmed":"Loss of balance, incorrect use or sudden movement may cause injury","venueControls":"Installed equipment with safety features","clubControls":"121 supervision\ncontrolled speed and clear instructions\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nAccident and incident report in place","furtherControls":"• Development of individualised session planning to structure equipment use and reduce risk\n• Introduction of an online Staff Portal enabling monitoring through feedback and incident reporting","actionByWhom":"- Team leaders on duty\n- support staff on duty\n- Management Team","actionByWhen":"01/09/2026"},{"hazard":"Use of static bike","whoMayBeHarmed":"Clients\nStaff","howMayBeHarmed":"Incorrect use, slipping or loss of balance","venueControls":"Stable and maintained equipment","clubControls":"121 supervision\ncontrolled activity delivery\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nAccident and incident report in place","furtherControls":"• Development of individualised session planning to ensure safe and controlled use of equipment","actionByWhom":"- Team leaders on duty\n- support staff on duty\n- Management Team","actionByWhen":"01/09/2026"},{"hazard":"Use of mini trampoline","whoMayBeHarmed":"Clients\nStaff","howMayBeHarmed":"Falls, uncontrolled jumping or unsafe behaviour","venueControls":"Stable trampoline","clubControls":"121 supervision\nControlled use and structured activity\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nAccident and incident report in place","furtherControls":"• Development of individualised session planning to manage high-risk equipment use and behaviour proactively\n• Introduction of an online Staff Portal to support reporting and continuous improvement","actionByWhom":"- Team leaders on duty\n- support staff on duty\n- Management Team","actionByWhen":"01/09/2026"},{"hazard":"Large screen and mobile screen stand (distraction, sensory impact, collision risk)","whoMayBeHarmed":"Clients\nStaff","howMayBeHarmed":"Distraction or overstimulation may reduce awareness and increase risk; movement or instability of a stand may cause impact injuries.","venueControls":"Fixed or secured screen installation; stable base equipment where applicable","clubControls":"121 supervision\nScreen use controlled and adapted to activity; screens and stands positioned safely and monitored during sessions\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nAccident and incident report in place","furtherControls":"• Fixed installation of large screen equipment and secure mounting or stands to remove movement-related hazards and enhance environmental safety","actionByWhom":"- Team leaders on duty\n- support staff on duty\n- Management Team","actionByWhen":"01/09/2026"},{"hazard":"Loose equipment and materials","whoMayBeHarmed":"Clients\nStaff","howMayBeHarmed":"Trip hazards or misuse of equipment","venueControls":"Storage systems and organised layout","clubControls":"121 supervision\nEquipment managed and aligned to session procedures\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nAccident and incident report in place","furtherControls":"• Development of individualised session planning to control equipment use and reduce environmental risk\n• Planned improvement of the Hub layout to improve organisation and reduce clutter","actionByWhom":"- Team leaders on duty\n- support staff on duty\n- Management Team","actionByWhen":"01/09/2026"},{"hazard":"Behaviour escalation","whoMayBeHarmed":"Clients\nStaff","howMayBeHarmed":"Escalation may lead to unsafe movement or interaction","venueControls":"Open and visible environment","clubControls":"121 supervision\nBehaviour support strategies and structured delivery\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nAccident and incident report in place","furtherControls":"• Development of individualised session planning to anticipate behaviours and reduce escalation risk\n• Introduction of an online Staff Portal enabling consistent recording and review of behaviour patterns","actionByWhom":"- Team leaders on duty\n- support staff on duty\n- Management Team","actionByWhen":"01/09/2026"},{"hazard":"Collision with walls or fixed structures","whoMayBeHarmed":"Clients\nStaff","howMayBeHarmed":"Running or uncontrolled movement may cause impact injuries","venueControls":"Defined activity areas and safe layout","clubControls":"121 supervision\nControlled movement with clear session boundaries\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nAccident and incident report in place","furtherControls":"• Planned improvement of the Hub layout to increase usable space and reduce impact risk during movement","actionByWhom":"- Team leaders on duty\n- support staff on duty\n- Management Team","actionByWhen":"01/09/2026"},{"hazard":"Overcrowding or poor space management","whoMayBeHarmed":"Clients\nStaff","howMayBeHarmed":"Congestion may lead to collisions or reduced supervision","venueControls":"Defined zones and activity areas","clubControls":"121 supervision\nControlled group size and structured activity flow\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nAccident and incident report in place","furtherControls":"• Planned improvement of the Hub layout to increase usable space and improve movement flow during sessions\n• Development of individualised session planning to manage group structure and activity rotation","actionByWhom":"- Team leaders on duty\n- support staff on duty\n- Management Team","actionByWhen":"01/09/2026"}],"emergencyOperationalNotes":{"emergencyProcedures":"Follow Hub evacuation and first aid procedures, call emergency services if needed, and complete incident reporting for all significant events.","operationalNotes":"Deliver pre-session checks, staff briefing points, and safeguarding controls consistently across Multi-Activity, Active Play & Movement, and the Bespoke Programme."},"reviewLog":[{"reviewDate":"2026-04-05","reviewedBy":"Raul Salvador Gallego","changesMade":"Format aligned with the master clubSENsational template.","signature":"","nextReviewDue":"2027-04-05"},{"reviewDate":"","reviewedBy":"","changesMade":"","signature":"","nextReviewDue":""}],"signOff":{"assessor":"","reviewer":"","managerApproval":""}},{"id":"RA-VENUE-005","category":"Climbing","documentControl":{"title":"Westway Sports Centre — Climbing Activity","venue":"Westway Sports Centre","address":"Indoor climbing environment","documentReference":"RA-VENUE-005","assessor":"Maria Lopez","assessmentDate":"2026-04-05","assessmentTime":"16:00","version":"1.0","lastReviewDate":"2026-04-05","nextReviewDate":"2027-04-05","approvedBy":"Raul Salvador Gallego","documentStatus":"Active"},"riskSummary":{"typeOfVenue":"Indoor Climbing Venue","generalRiskLevel":"Medium to High depending on participant profile","supervisionModel":"1:1 support where required and instructor led climbing","emergencyProcedureReference":"Venue EAP, first aid process, and accident reporting route","mainRisks":"Falls from height, harness misuse, belay errors, behaviour at height, collision with structures, and slips and trips. Venue EAP covers rescue, suspension and evacuation — not duplicated as a separate wall row.","generalControlApproach":"Qualified staff lead all activities, pre session checks are completed, participants are supervised throughout, and incidents are reported and reviewed after each session."},"hazards":[{"hazard":"Fall from height","whoMayBeHarmed":"Clients\nStaff","howMayBeHarmed":"Loss of grip or incorrect climbing technique may result in falls and impact injuries.","venueControls":"Auto belay systems, padded flooring, and qualified climbing staff in place.","clubControls":"121 supervision\ncontrolled progression.\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nAccident and incident report in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments, session procedures and reporting tools during service delivery\nDevelopment of individualised session planning to anticipate behaviours and reduce risk through proactive strategies"},{"hazard":"Incorrect harness fitting","whoMayBeHarmed":"Clients","howMayBeHarmed":"Loose or incorrect fit can lead to poor restraint and increased fall risk.","venueControls":"Harness checks performed by venue climbing staff.","clubControls":"121 supervision\nDouble checks by clubSENsational staff before climbing begins.\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nAccident and incident report in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments, session procedures and reporting tools during service delivery\nDevelopment of individualised session planning to anticipate behaviours and reduce risk through proactive strategies"},{"hazard":"Belay misuse","whoMayBeHarmed":"Clients\nStaff","howMayBeHarmed":"Incorrect belay operation may cause uncontrolled descent or fall.","venueControls":"Belay systems maintained and operated by qualified personnel.","clubControls":"121 supervision\nNo independent belay use by participants without approval.\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nAccident and incident report in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments, session procedures and reporting tools during service delivery\nDevelopment of individualised session planning to anticipate behaviours and reduce risk through proactive strategies"},{"hazard":"Behaviour at height","whoMayBeHarmed":"Clients","howMayBeHarmed":"Panic or unsafe movement may lead to slips, falls, or rescue situations.","venueControls":"Staff supervision and controlled climbing routes.","clubControls":"121 supervision\nGradual exposure, clear communication, and tailored support plans.\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nAccident and incident report in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments, session procedures and reporting tools during service delivery\nDevelopment of individualised session planning to anticipate behaviours and reduce risk through proactive strategies"},{"hazard":"Slips and trips","whoMayBeHarmed":"Clients\nStaff\nVisitors","howMayBeHarmed":"Obstacles or poor housekeeping may cause trips and impact injuries.","venueControls":"Clear designated walkways and regular housekeeping checks.","clubControls":"121 supervision\nPre session area check and immediate removal of hazards.\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nAccident and incident report in place","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments, session procedures and reporting tools during service delivery\nDevelopment of individualised session planning to anticipate behaviours and reduce risk through proactive strategies"}],"emergencyOperationalNotes":{"emergencyProcedures":"Follow venue EAP for falls, suspension events, and medical incidents. Escalate to first aid and emergency services when required, and complete accident reporting immediately.","operationalNotes":"Complete harness and equipment checks before sessions, maintain participant ratios, and deliver structured staff briefings for behaviour support and safe progression."},"reviewLog":[{"reviewDate":"2026-04-05","reviewedBy":"Raul Salvador Gallego","changesMade":"Format aligned with the master clubSENsational template.","signature":"","nextReviewDue":"2027-04-05"},{"reviewDate":"","reviewedBy":"","changesMade":"","signature":"","nextReviewDue":""}],"signOff":{"assessor":"","reviewer":"","managerApproval":""}},{"id":"RA-VENUE-006","category":"Gym","documentControl":{"title":"Westway Sports Centre — Physical Activity","venue":"Westway Sports Centre","address":"Indoor gym environment","documentReference":"RA-VENUE-006","assessor":"Maria Lopez","assessmentDate":"2026-04-05","assessmentTime":"16:00","version":"1.0","lastReviewDate":"2026-04-05","nextReviewDate":"2027-04-05","approvedBy":"Raul Salvador Gallego","documentStatus":"Active"},"riskSummary":{"typeOfVenue":"Indoor Gym Venue","generalRiskLevel":"Medium","supervisionModel":"Instructor led activities with close support where needed","emergencyProcedureReference":"Venue EAP, first aid process, and incident reporting","mainRisks":"Incorrect equipment use, slips and trips, manual handling strain, collisions, behavior escalation (including violence or threats), and electrical equipment faults.","generalControlApproach":"Pre session safety checks, qualified staff supervision, clear participant instructions, controlled activity flow, and immediate incident reporting."},"hazards":[{"hazard":"Incorrect use or adjustment of equipment","whoMayBeHarmed":"• Clients\n• Staff","howMayBeHarmed":"• Incorrect setup or use may lead to poor body positioning, loss of control or excessive strain\n• May result in musculoskeletal injury or impact","venueControls":"• Equipment maintained and used in line with manufacturer guidance\n• User guidance signage where applicable","clubControls":"121 supervision\n• Staff provide demonstrations before use\n• Equipment adjusted to individual needs and maintained throughout the session\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nAccident and incident report in place","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments, session procedures and reporting tools during service delivery\nDevelopment of individualised session planning to anticipate behaviours and reduce risk through proactive strategies","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026"},{"hazard":"Use of damaged or faulty equipment","whoMayBeHarmed":"• Clients\n• Staff","howMayBeHarmed":"• Equipment failure during use may lead to loss of control or impact injury","venueControls":"• Planned maintenance and routine inspections","clubControls":"121 supervision\n• Visual checks before use\n• Immediate removal and reporting of unsafe equipment\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nAccident and incident report in place","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments, session procedures and reporting tools during service delivery\nDevelopment of individualised session planning to anticipate behaviours and reduce risk through proactive strategies","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026"},{"hazard":"Slips, trips and falls","whoMayBeHarmed":"• Clients\n• Staff\n• Visitors","howMayBeHarmed":"• Wet surfaces or obstacles may lead to loss of balance and falls","venueControls":"• Cleaning schedules and housekeeping standards\n• Clear walkways maintained","clubControls":"121 supervision\n• Pre-session area checks\n• Immediate removal of hazards and active monitoring\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nAccident and incident report in place","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments, session procedures and reporting tools during service delivery\nDevelopment of individualised session planning to anticipate behaviours and reduce risk through proactive strategies","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026"},{"hazard":"Handling loads beyond individual capability","whoMayBeHarmed":"• Clients\n• Staff","howMayBeHarmed":"• Excessive or inappropriate loads may cause strain or injury","venueControls":"• General guidance on safe equipment use","clubControls":"121 supervision\n• Appropriate load selection based on ability\n• Controlled and progressive activity\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nAccident and incident report in place","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments, session procedures and reporting tools during service delivery\nDevelopment of individualised session planning to anticipate behaviours and reduce risk through proactive strategies","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026"},{"hazard":"Uncontrolled movement within the activity space","whoMayBeHarmed":"• Clients\n• Staff","howMayBeHarmed":"• Unpredictable movement may lead to collisions or falls","venueControls":"• Zoned activity layout","clubControls":"121 supervision\n• Structured session flow and spacing control\n• Clear guidance during transitions\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nAccident and incident report in place","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments, session procedures and reporting tools during service delivery\nDevelopment of individualised session planning to anticipate behaviours and reduce risk through proactive strategies","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026"},{"hazard":"Use of electrical equipment within the activity area","whoMayBeHarmed":"• Clients\n• Staff","howMayBeHarmed":"• Damaged equipment may cause electric shock or fire risk","venueControls":"• PAT testing and routine maintenance","clubControls":"121 supervision\n• Visual checks before use\n• Unsafe equipment not used and reported immediately\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nAccident and incident report in place","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments, session procedures and reporting tools during service delivery\nDevelopment of individualised session planning to anticipate behaviours and reduce risk through proactive strategies","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026"},{"hazard":"Inadequate space or unsuitable environment for activity","whoMayBeHarmed":"• Clients\n• Staff","howMayBeHarmed":"• Limited space may increase risk of collision or unsafe movement","venueControls":"• Defined capacity and layout standards","clubControls":"121 supervision\n• Activity adapted to available space\n• Group size and spacing managed\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nAccident and incident report in place","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments, session procedures and reporting tools during service delivery\nDevelopment of individualised session planning to anticipate behaviours and reduce risk through proactive strategies","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026"},{"hazard":"Reduced awareness of surroundings during activity","whoMayBeHarmed":"• Clients\n• Staff","howMayBeHarmed":"• Reduced awareness may lead to unintended contact with equipment or others","venueControls":"• Clear layout and activity zones","clubControls":"121 supervision\n• Clear instructions and structured session management\n• Guidance to maintain spatial awareness\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nAccident and incident report in place","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments, session procedures and reporting tools during service delivery\nDevelopment of individualised session planning to anticipate behaviours and reduce risk through proactive strategies","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026"},{"hazard":"Loss of behavioural or emotional control during activity","whoMayBeHarmed":"• Clients\n• Staff","howMayBeHarmed":"• Sudden or unsafe movement may increase risk of injury or unsafe interaction","venueControls":"• General supervision expectations","clubControls":"121 supervision\n• Calm de-escalation strategies\n• Individualised support and activity adaptation\nBriefings with instructors to be completed quarterly\nInformation added to the induction sessions\nAccident and incident report in place","furtherControls":"Introduction of an online staff portal enabling instant access to risk assessments, session procedures and reporting tools during service delivery\nDevelopment of individualised session planning to anticipate behaviours and reduce risk through proactive strategies","actionByWhom":"- Instructor on duty\n- Management Team","actionByWhen":"01/09/2026"}],"emergencyOperationalNotes":{"emergencyProcedures":"Follow venue EAP, call first aid and emergency services when needed, isolate unsafe equipment, and complete incident reports for all serious events.","operationalNotes":"Complete daily checks, staff briefings, and participant inductions before activity. Maintain supervision ratios and review controls after incidents."},"reviewLog":[{"reviewDate":"2026-04-05","reviewedBy":"Raul Salvador Gallego","changesMade":"Format aligned with the master clubSENsational template.","signature":"","nextReviewDue":"2027-04-05"},{"reviewDate":"","reviewedBy":"","changesMade":"","signature":"","nextReviewDue":""}],"signOff":{"assessor":"","reviewer":"","managerApproval":""}}]
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script>
+(function () {
+  /**
+   * Firma fija: data URL (misma imagen que
+   * https://www.clubsensational.org/wp-content/uploads/2026/04/raul-sign.jpg ).
+   * Incrustada para que html2canvas/PDF funcionen: el JPEG en el servidor no envía CORS.
+   */
+  var RAUL_SIGNATURE_DATA_URL =
+    'data:image/jpeg;base64,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';
+  var RAUL_SIGNER_NAME = "Raul Salvador Gallego";
+  /** Shown under the name (same as document Date in the RA). */
+  var RAUL_SIGNATURE_DISPLAY_DATE = "05/04/2026";
+  /** Header logo for PDF exports (PNG). */
+  var RA_PDF_HEADER_LOGO_URL =
+    "https://www.clubsensational.org/wp-content/uploads/2026/03/F-01-1.png";
+
+  var CARD_VIS = {
+    "RA-VENUE-001": { ic: "🏊", ac: "#0ea5e9" },
+    "RA-VENUE-002": { ic: "🏊", ac: "#0284c7" },
+    "RA-VENUE-003": { ic: "🏊", ac: "#06b6d4" },
+    "RA-VENUE-004": { ic: "🧩", ac: "#6366f1" },
+    "RA-VENUE-005": { ic: "🧗", ac: "#f97316" },
+    "RA-VENUE-006": { ic: "🏋️", ac: "#22c55e" }
+  };
+
+  function getEmbeddedMariaDefaults() {
+    try {
+      var el = document.getElementById("embedded-maria-defaults");
+      if (!el || !el.textContent) return [];
+      var raw = String(el.textContent).trim();
+      if (!raw) return [];
+      return JSON.parse(raw);
+    } catch (e) {
+      try {
+        console.error("RA Dashboard: embedded JSON could not be parsed", e);
+      } catch (eLog) {}
+      return [];
+    }
+  }
+
+  var ras = getEmbeddedMariaDefaults();
+  var overlayOpenId = null;
+  var mainHome = document.getElementById("mainHome");
+  var raOverlay = document.getElementById("raStaffOverlay");
+  var raOverlayBody = document.getElementById("raOverlayBody");
+
+  function escapeHtml(str) {
+    return String(str == null ? "" : str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+
+  function escapeAttr(str) {
+    return String(str == null ? "" : str)
+      .replace(/&/g, "&amp;")
+      .replace(/"/g, "&quot;")
+      .replace(/</g, "&lt;");
+  }
+
+  /** Strip manual bullet / dot characters when <ul class="ra-prose-bullets"> already shows list markers. */
+  function stripLeadingListMarkers(str) {
+    var s = String(str == null ? "" : str).trim();
+    while (s.length) {
+      var c = s.charAt(0);
+      if (
+        c === "\u2022" ||
+        c === "\u2023" ||
+        c === "\u2219" ||
+        c === "\u00B7" ||
+        c === "*" ||
+        c === "\u25E6" ||
+        c === "\u25AA"
+      ) {
+        s = s.substring(1).trim();
+        continue;
+      }
+      if (c === "-" || c === "\u2013") {
+        if (s.length === 1 || s.charAt(1) === " " || s.charAt(1) === "\t") {
+          s = s.substring(1).trim();
+          continue;
+        }
+      }
+      break;
+    }
+    return s;
+  }
+
+  /** Ensure each bullet line starts with an uppercase letter at the first a–z (skip digits/symbols/spaces). */
+  function capitalizeFirstAlphaForBullet(str) {
+    var s = String(str == null ? "" : str);
+    if (!s) return s;
+    for (var i = 0; i < s.length; i++) {
+      var ch = s.charAt(i);
+      if (ch >= "a" && ch <= "z") {
+        return s.slice(0, i) + ch.toUpperCase() + s.slice(i + 1);
+      }
+      if (ch >= "A" && ch <= "Z") {
+        return s;
+      }
+    }
+    return s;
+  }
+
+  function expandLineToSentenceFragments(line) {
+    line = String(line || "").trim();
+    if (!line) return [];
+    if (line.indexOf(". ") === -1) return [line];
+    var chunks = line.split(". ").map(function (c) {
+      return c.trim();
+    }).filter(Boolean);
+    if (chunks.length < 2) return [line];
+    var minLen = 12;
+    var shortParts = 0;
+    for (var i = 0; i < chunks.length; i++) {
+      if (chunks[i].length < minLen) shortParts++;
+    }
+    if (shortParts > 1) return [line];
+    if (chunks.length === 2 && (chunks[0].length < 20 || chunks[1].length < 20)) return [line];
+    return chunks.map(function (c, j, arr) {
+      if (j < arr.length - 1 && c.slice(-1) !== ".") return c + ".";
+      return c;
+    });
+  }
+
+  function proseToBulletHtml(raw) {
+    var text = String(raw == null ? "" : raw).replace(/\r\n/g, "\n");
+    var rawLines = text.split("\n");
+    var parts = [];
+    for (var i = 0; i < rawLines.length; i++) {
+      var trimmed = rawLines[i].trim();
+      if (!trimmed) continue;
+      var frags = expandLineToSentenceFragments(trimmed);
+      for (var j = 0; j < frags.length; j++) parts.push(frags[j]);
+    }
+    if (!parts.length) return '<p class="ra-bullet-empty">—</p>';
+    var lis = parts
+      .map(function (p) {
+        var cleaned = stripLeadingListMarkers(p);
+        cleaned = capitalizeFirstAlphaForBullet(cleaned);
+        return cleaned ? "<li>" + escapeHtml(cleaned) + "</li>" : "";
+      })
+      .filter(Boolean)
+      .join("");
+    if (!lis) return '<p class="ra-bullet-empty">—</p>';
+    return '<ul class="ra-prose-bullets">' + lis + "</ul>";
+  }
+
+  function readBlock(label, value) {
+    return (
+      '<div class="field ra-staff-read-field">' +
+      '<label>' + escapeHtml(label) + "</label>" +
+      '<div class="ra-read-bullets">' +
+      proseToBulletHtml(value) +
+      "</div></div>"
+    );
+  }
+
+  function splitLineForVenueClubBullets(line) {
+    line = String(line || "").trim();
+    if (!line) return [];
+    if (
+      line.indexOf("Introduction of an online staff portal enabling instant access to risk assessments") !== -1
+    ) {
+      return [line];
+    }
+    if (line.indexOf(", ") !== -1) {
+      var commaParts = line.split(", ").map(function (p) {
+        return p.trim();
+      }).filter(Boolean);
+      if (
+        commaParts.length >= 2 &&
+        commaParts.every(function (p) {
+          return p.length >= 3;
+        })
+      ) {
+        return commaParts;
+      }
+    }
+    return expandLineToSentenceFragments(line);
+  }
+
+  function proseToBulletHtmlVenueClub(raw) {
+    var text = String(raw == null ? "" : raw).replace(/\r\n/g, "\n");
+    var rawLines = text.split("\n");
+    var parts = [];
+    for (var i = 0; i < rawLines.length; i++) {
+      var trimmed = rawLines[i].trim();
+      if (!trimmed) continue;
+      var frags = splitLineForVenueClubBullets(trimmed);
+      for (var j = 0; j < frags.length; j++) parts.push(frags[j]);
+    }
+    if (!parts.length) return '<p class="ra-bullet-empty">—</p>';
+    var lisVc = parts
+      .map(function (p) {
+        var cleaned = stripLeadingListMarkers(p);
+        cleaned = capitalizeFirstAlphaForBullet(cleaned);
+        return cleaned ? "<li>" + escapeHtml(cleaned) + "</li>" : "";
+      })
+      .filter(Boolean)
+      .join("");
+    if (!lisVc) return '<p class="ra-bullet-empty">—</p>';
+    return '<ul class="ra-prose-bullets">' + lisVc + "</ul>";
+  }
+
+  function hazardReadCell(val) {
+    return (
+      '<td class="ra-hazard-read-cell">' +
+      '<div class="ra-read-bullets ra-read-bullets-compact">' +
+      proseToBulletHtml(val) +
+      "</div></td>"
+    );
+  }
+
+  function hazardReadCellVenueClub(val) {
+    return (
+      '<td class="ra-hazard-read-cell">' +
+      '<div class="ra-read-bullets ra-read-bullets-compact">' +
+      proseToBulletHtmlVenueClub(val) +
+      "</div></td>"
+    );
+  }
+
+  /** Further controls: one bullet per line only (do not split on commas — portal sentence lists items with commas). */
+  function proseToBulletHtmlFurtherControls(raw) {
+    var text = String(raw == null ? "" : raw).replace(/\r\n/g, "\n");
+    var rawLines = text
+      .split("\n")
+      .map(function (ln) {
+        return ln.trim();
+      })
+      .filter(Boolean);
+    if (!rawLines.length) return '<p class="ra-bullet-empty">—</p>';
+    var lisFc = rawLines
+      .map(function (line) {
+        var cleaned = stripLeadingListMarkers(line);
+        cleaned = capitalizeFirstAlphaForBullet(cleaned);
+        return cleaned ? "<li>" + escapeHtml(cleaned) + "</li>" : "";
+      })
+      .filter(Boolean)
+      .join("");
+    if (!lisFc) return '<p class="ra-bullet-empty">—</p>';
+    return '<ul class="ra-prose-bullets">' + lisFc + "</ul>";
+  }
+
+  function hazardReadCellFurther(val) {
+    return (
+      '<td class="ra-hazard-read-cell ra-hazard-read-cell--further">' +
+      '<div class="ra-read-bullets ra-read-bullets-compact">' +
+      proseToBulletHtmlFurtherControls(val) +
+      "</div></td>"
+    );
+  }
+
+  function field(label, path, value, type) {
+    type = type || "text";
+    return (
+      '<div class="field">' +
+      '<label>' + escapeHtml(label) + "</label>" +
+      '<input type="' +
+      type +
+      '" data-path="' +
+      path +
+      '" value="' +
+      escapeAttr(value || "") +
+      '" readonly tabindex="-1" />' +
+      "</div>"
+    );
+  }
+
+  function buildHazardRows(ra) {
+    return ra.hazards
+      .map(function (row) {
+        return (
+          "<tr>" +
+          hazardReadCell(row.hazard) +
+          hazardReadCell(row.whoMayBeHarmed) +
+          hazardReadCell(row.howMayBeHarmed) +
+          hazardReadCellVenueClub(row.venueControls) +
+          hazardReadCellVenueClub(row.clubControls) +
+          hazardReadCellFurther(row.furtherControls) +
+          hazardReadCell(row.actionByWhom) +
+          hazardReadCell(row.actionByWhen) +
+          "</tr>"
+        );
+      })
+      .join("");
+  }
+
+  /** Same risk columns as the main table but without action owner or dates — for external partners / venue. */
+  function buildHazardRowsPartner(ra) {
+    return ra.hazards
+      .map(function (row) {
+        return (
+          "<tr>" +
+          hazardReadCell(row.hazard) +
+          hazardReadCell(row.whoMayBeHarmed) +
+          hazardReadCell(row.howMayBeHarmed) +
+          hazardReadCellVenueClub(row.venueControls) +
+          hazardReadCellVenueClub(row.clubControls) +
+          hazardReadCellFurther(row.furtherControls) +
+          "</tr>"
+        );
+      })
+      .join("");
+  }
+
+  /**
+   * HTML for the landscape PDF page only (not shown in the overlay).
+   * @param {number} [start] hazard index inclusive
+   * @param {number} [end] hazard index exclusive
+   */
+  function buildPartnerExportTableSection(ra, start, end, opts) {
+    opts = opts || {};
+    var hz = ra.hazards || [];
+    var s = 0;
+    var e = hz.length;
+    if (typeof start === "number") {
+      s = start;
+      if (typeof end === "number") e = end;
+    } else if (start && typeof start === "object") {
+      opts = start;
+    }
+    var subRa = { hazards: hz.slice(s, e) };
+    var rows = buildHazardRowsPartner(subRa);
+    var cont = !!opts.continuation;
+    var note = cont
+      ? '<p class="ra-partner-pdf-note ra-partner-pdf-note--contd">Continued from previous page.</p>'
+      : '<p class="ra-partner-pdf-note">Summary for external organisations: hazard, who may be harmed, how harm may occur, venue controls, clubSENsational controls, and further controls. Internal action owner and dates are omitted.</p>';
+    var title =
+      "B. Risk summary (partners / venue)" + (cont ? " — continued" : "");
+    return (
+      '<section class="section">' +
+      '<h3 class="section-title">' +
+      title +
+      "</h3>" +
+      note +
+      '<div class="ra-hazard-table-scroll">' +
+      '<table id="hazardTablePartner">' +
+      "<thead><tr>" +
+      "<th>Hazard</th><th>Who may be harmed</th><th>How harm may occur</th>" +
+      "<th>Venue controls</th><th>clubSENsational controls</th>" +
+      "<th>Further controls</th>" +
+      "</tr></thead><tbody>" +
+      rows +
+      "</tbody></table></div></section>"
+    );
+  }
+
+  function buildOverlayHtml(ra) {
+    var hazardRows = buildHazardRows(ra);
+    return (
+      '<div class="ra-staff-doc-wrap ra-staff-doc">' +
+      '<div class="document-header ra-pdf-source-header">' +
+      "<div>" +
+      "<h2>" +
+      escapeHtml(ra.documentControl.title || "Risk Assessment") +
+      "</h2>" +
+      "<p>" +
+      escapeHtml(ra.documentControl.venue) +
+      " — " +
+      escapeHtml(ra.documentControl.documentReference || ra.id) +
+      "</p>" +
+      "</div></div>" +
+      '<section class="section ra-pdf-source-doc">' +
+      '<h3 class="section-title">A. Document control</h3>' +
+      '<div class="grid-4">' +
+      field("Risk assessment title", "t", ra.documentControl.title) +
+      field("Venue", "t", ra.documentControl.venue) +
+      field("Document reference", "t", ra.documentControl.documentReference) +
+      field("Version", "t", ra.documentControl.version) +
+      field("Date", "t", "2026-04-05", "date") +
+      field("Next review date", "t", ra.documentControl.nextReviewDate, "date") +
+      field("Approved by", "t", ra.documentControl.approvedBy) +
+      "</div></section>" +
+      '<section class="section ra-pdf-source-table">' +
+      '<h3 class="section-title">B. Main risk table</h3>' +
+      '<p class="ra-hazard-scroll-hint">Tip: on a small screen, scroll sideways to read every column.</p>' +
+      '<div class="ra-hazard-table-scroll">' +
+      '<table id="hazardTable">' +
+      "<thead><tr>" +
+      "<th>Hazard</th><th>Who may be harmed</th><th>How harm may occur</th>" +
+      "<th>Venue controls</th><th>clubSENsational controls</th>" +
+      "<th>Further controls</th>" +
+      "<th>Action — whom</th><th>By when</th>" +
+      "</tr></thead><tbody>" +
+      hazardRows +
+      "</tbody></table></div></section>" +
+      raulOverlaySigBlockHtml() +
+      "</div>"
+    );
+  }
+
+  function raulOverlaySigBlockHtml() {
+    var src = String(RAUL_SIGNATURE_DATA_URL || "").trim();
+    var imgBlock = "";
+    var ok =
+      src.indexOf("data:image") === 0 ||
+      src.indexOf("https://") === 0 ||
+      src.indexOf("http://") === 0;
+    if (ok) {
+      imgBlock =
+        '<div class="ra-sig-wrap">' +
+        '<img class="ra-sig-fixed-img" src="' +
+        escapeAttr(src) +
+        '" alt="" loading="eager" decoding="auto" />' +
+        "</div>";
+    } else {
+      imgBlock =
+        '<p class="ra-sig-placeholder">Configura <code>RAUL_SIGNATURE_DATA_URL</code>.</p>';
+    }
+    return (
+      '<section class="section ra-sig-in-doc ra-pdf-source-sig" aria-labelledby="ra-doc-sig-h">' +
+      '<h3 id="ra-doc-sig-h" class="section-title">Signature</h3>' +
+      '<div class="ra-sig-compact">' +
+      '<p class="ra-sig-compact-meta"><strong>' +
+      escapeHtml(RAUL_SIGNER_NAME) +
+      '</strong><span class="ra-sig-compact-date">Date: ' +
+      escapeHtml(RAUL_SIGNATURE_DISPLAY_DATE) +
+      "</span></p>" +
+      imgBlock +
+      "</div></section>"
+    );
+  }
+
+  function openOverlay(raId) {
+    if (!raOverlay || !raOverlayBody) return;
+    var ra = null;
+    for (var i = 0; i < ras.length; i++) {
+      if (ras[i].id === raId) {
+        ra = ras[i];
+        break;
+      }
+    }
+    if (!ra) return;
+    overlayOpenId = raId;
+    raOverlayBody.innerHTML = buildOverlayHtml(ra);
+    raOverlay.classList.add("is-open");
+    raOverlay.setAttribute("aria-hidden", "false");
+    try {
+      raOverlayBody.focus();
+    } catch (e) {}
+  }
+
+  function closeOverlay() {
+    if (!raOverlay || !raOverlayBody) return;
+    overlayOpenId = null;
+    raOverlay.classList.remove("is-open");
+    raOverlay.setAttribute("aria-hidden", "true");
+    raOverlayBody.innerHTML = "";
+  }
+
+  function getCurrentRaForOverlay() {
+    if (!overlayOpenId) return null;
+    for (var i = 0; i < ras.length; i++) {
+      if (ras[i].id === overlayOpenId) return ras[i];
+    }
+    return null;
+  }
+
+  function ensurePdfHost() {
+    var el = document.getElementById("raPdfHost");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "raPdfHost";
+      el.setAttribute("aria-hidden", "true");
+      document.body.appendChild(el);
+    }
+    return el;
+  }
+
+  function prepareImagesForCanvas(root) {
+    var imgs = root.querySelectorAll("img");
+    for (var i = 0; i < imgs.length; i++) {
+      var im = imgs[i];
+      var s = String(im.getAttribute("src") || "");
+      if (s.indexOf("data:") === 0) continue;
+      try {
+        im.crossOrigin = "anonymous";
+      } catch (e1) {}
+    }
+  }
+
+  function whenImagesReady(container) {
+    var imgs = container.querySelectorAll("img");
+    var need = 0;
+    for (var i = 0; i < imgs.length; i++) {
+      if (!imgs[i].complete) need++;
+    }
+    if (!need) return Promise.resolve();
+    return new Promise(function (resolve) {
+      var left = need;
+      function one() {
+        left--;
+        if (left <= 0) resolve();
+      }
+      for (var j = 0; j < imgs.length; j++) {
+        if (!imgs[j].complete) {
+          imgs[j].addEventListener("load", one);
+          imgs[j].addEventListener("error", one);
+        }
+      }
+    });
+  }
+
+  /** Data-URL decode can lag behind img.complete; html2canvas may skip undecoded bitmaps. */
+  function raWaitSignatureDecoded(img) {
+    if (!img || !img.src) return Promise.resolve();
+    if (img.naturalWidth > 0) return Promise.resolve();
+    return new Promise(function (resolve) {
+      var done = false;
+      function fin() {
+        if (done) return;
+        done = true;
+        resolve();
+      }
+      if (img.complete && img.naturalWidth > 0) {
+        fin();
+        return;
+      }
+      img.addEventListener("load", fin);
+      img.addEventListener("error", fin);
+      try {
+        if (img.decode && typeof img.decode === "function") {
+          img.decode().then(fin).catch(fin);
+        }
+      } catch (e0) {}
+      setTimeout(function () {
+        if (img.naturalWidth > 0) fin();
+      }, 0);
+      setTimeout(fin, 1500);
+    });
+  }
+
+  function measureElementRelative(container, el) {
+    if (!container || !el) return null;
+    try {
+      var c = container.getBoundingClientRect();
+      var e = el.getBoundingClientRect();
+      var x = e.left - c.left;
+      var y = e.top - c.top;
+      var w = e.width;
+      var h = e.height;
+      if (!(w > 1 && h > 1)) return null;
+      return { x: x, y: y, w: w, h: h };
+    } catch (e1) {
+      return null;
+    }
+  }
+
+  function getJsPdfConstructor() {
+    return window.jspdf && window.jspdf.jsPDF;
+  }
+
+  /** Same math as addCanvasFittedMm — used to overlay signature in mm on top of the raster. */
+  function computeCanvasPlacementMm(pdf, canvas, margin, h2cScale) {
+    h2cScale = h2cScale || 2;
+    margin = typeof margin === "number" ? margin : 10;
+    var maxW = pdf.internal.pageSize.getWidth() - 2 * margin;
+    var maxH = pdf.internal.pageSize.getHeight() - 2 * margin;
+    var cssW = canvas.width / h2cScale;
+    var cssH = canvas.height / h2cScale;
+    var mmW = (cssW * 25.4) / 96;
+    var mmH = (cssH * 25.4) / 96;
+    var r = Math.min(maxW / mmW, maxH / mmH);
+    var w = mmW * r;
+    var h = mmH * r;
+    var x = margin + (maxW - w) / 2;
+    var y = margin + (maxH - h) / 2;
+    return {
+      x: x,
+      y: y,
+      w: w,
+      h: h,
+      cw: canvas.width,
+      ch: canvas.height
+    };
+  }
+
+  function canvasRectPxToPlacementMm(placement, sx, sy, sw, sh) {
+    return {
+      x: placement.x + (sx / placement.cw) * placement.w,
+      y: placement.y + (sy / placement.ch) * placement.h,
+      w: (sw / placement.cw) * placement.w,
+      h: (sh / placement.ch) * placement.h
+    };
+  }
+
+  /** Fit html2canvas raster on current PDF page (mm), using CSS pixel size = canvas/scale. */
+  function addCanvasFittedMm(pdf, canvas, margin, h2cScale) {
+    var pl = computeCanvasPlacementMm(pdf, canvas, margin, h2cScale);
+    pdf.addImage(canvas.toDataURL("image/jpeg", 0.92), "JPEG", pl.x, pl.y, pl.w, pl.h);
+    return pl;
+  }
+
+  /**
+   * Partner landscape: scale to full printable width when the full raster fits
+   * vertically at that scale. Never crop — if too tall, fit the whole image with
+   * uniform scale (may add side margins) so no text is lost.
+   */
+  function addCanvasFittedMmWidthFirst(pdf, canvas, margin, h2cScale) {
+    h2cScale = h2cScale || 2;
+    margin = typeof margin === "number" ? margin : 10;
+    var maxW = pdf.internal.pageSize.getWidth() - 2 * margin;
+    var maxH = pdf.internal.pageSize.getHeight() - 2 * margin;
+    var cssW = canvas.width / h2cScale;
+    var cssH = canvas.height / h2cScale;
+    var mmW = (cssW * 25.4) / 96;
+    var mmH = (cssH * 25.4) / 96;
+    if (!(mmW > 1e-6)) {
+      return addCanvasFittedMm(pdf, canvas, margin, h2cScale);
+    }
+    var rW = maxW / mmW;
+    var hDraw = mmH * rW;
+    if (hDraw > maxH + 0.35) {
+      return addCanvasFittedMm(pdf, canvas, margin, h2cScale);
+    }
+    var w = maxW;
+    var h = hDraw;
+    var x = margin;
+    var y = margin + Math.max(0, (maxH - h) / 2);
+    var pl = {
+      x: x,
+      y: y,
+      w: w,
+      h: h,
+      cw: canvas.width,
+      ch: canvas.height
+    };
+    pdf.addImage(canvas.toDataURL("image/jpeg", 0.92), "JPEG", pl.x, pl.y, pl.w, pl.h);
+    return pl;
+  }
+
+  /**
+   * Move PDF host on-screen (invisible) so layout + html2canvas behave reliably.
+   * Never use width:100vw alone — narrow viewports shrink wide tables before capture.
+   * @param {number} [contentMinWidthPx] floor width (e.g. A3 landscape printable px ~1550+)
+   */
+  function raPdfHostParkVisible(host, contentMinWidthPx) {
+    try {
+      host.setAttribute("data-ra-pdf-prev-style", host.getAttribute("style") || "");
+    } catch (e0) {}
+    var innerW = 1400;
+    try {
+      innerW = window.innerWidth || 1400;
+    } catch (e1) {}
+    var floor =
+      contentMinWidthPx != null && contentMinWidthPx > 0 ? contentMinWidthPx : 1720;
+    var hostW = Math.max(innerW, floor);
+    host.style.cssText =
+      "position:fixed!important;left:0!important;top:0!important;" +
+      "width:" +
+      hostW +
+      "px!important;min-width:" +
+      hostW +
+      "px!important;max-width:none!important;overflow:visible!important;" +
+      "opacity:0.02!important;pointer-events:none!important;z-index:2147483646!important;";
+  }
+
+  function raPdfHostRestore(host) {
+    var prev = host.getAttribute("data-ra-pdf-prev-style");
+    try {
+      host.removeAttribute("data-ra-pdf-prev-style");
+    } catch (e1) {}
+    if (prev != null && prev !== "") {
+      try {
+        host.setAttribute("style", prev);
+      } catch (e2) {}
+    } else {
+      try {
+        host.removeAttribute("style");
+      } catch (e3) {}
+    }
+  }
+
+  /** Draw JPEG data URL on current PDF page (mm), on top of prior content. */
+  function raAddSignaturePdfMm(pdf, placement, slotCss, scrollW, scrollH, dataUrl) {
+    if (!placement || !dataUrl || dataUrl.indexOf("data:image") !== 0) return;
+    scrollW = Math.max(1, scrollW || 1);
+    scrollH = Math.max(1, scrollH || 1);
+    var sx;
+    var sy;
+    var sw;
+    var sh;
+    if (slotCss && slotCss.w > 1 && slotCss.h > 1) {
+      sx = (slotCss.x / scrollW) * placement.cw;
+      sy = (slotCss.y / scrollH) * placement.ch;
+      sw = (slotCss.w / scrollW) * placement.cw;
+      sh = (slotCss.h / scrollH) * placement.ch;
+    } else {
+      sw = Math.min(placement.cw * 0.38, placement.cw * 0.92);
+      sh = sw * 0.32;
+      sx = placement.cw * 0.05;
+      sy = placement.ch - sh - placement.ch * 0.015;
+    }
+    var mm = canvasRectPxToPlacementMm(placement, sx, sy, sw, sh);
+    if (
+      !isFinite(mm.x) ||
+      !isFinite(mm.y) ||
+      !isFinite(mm.w) ||
+      !isFinite(mm.h) ||
+      mm.w < 0.5 ||
+      mm.h < 0.5
+    ) {
+      return;
+    }
+    var b64 = null;
+    try {
+      var comma = dataUrl.indexOf(",");
+      if (comma !== -1) b64 = dataUrl.slice(comma + 1);
+    } catch (eB) {}
+    try {
+      pdf.addImage(dataUrl, "JPEG", mm.x, mm.y, mm.w, mm.h);
+    } catch (e4) {
+      try {
+        if (b64) {
+          pdf.addImage(b64, "JPEG", mm.x, mm.y, mm.w, mm.h);
+        }
+      } catch (e5) {
+        try {
+          console.warn("RA PDF signature addImage failed", e4, e5);
+        } catch (e6) {}
+      }
+    }
+  }
+
+  /**
+   * html2canvas uses windowWidth like a viewport — if it is smaller than the
+   * laid-out table, columns are clipped. Always pass the full scroll width.
+   */
+  function captureDomToCanvas(el, scale, windowWidth) {
+    var w = windowWidth;
+    if (w == null) w = el.scrollWidth || el.offsetWidth;
+    w = Math.max(w, el.scrollWidth || 0, el.offsetWidth || 0);
+    var h = Math.max(el.scrollHeight || 0, el.offsetHeight || 0, 400);
+    return window.html2canvas(el, {
+      scale: scale || 2,
+      useCORS: true,
+      allowTaint: false,
+      logging: false,
+      letterRendering: true,
+      scrollX: 0,
+      scrollY: 0,
+      windowWidth: w,
+      windowHeight: h
+    });
+  }
+
+  /** Widen off-screen host so the table is not CSS-clamped before capture. */
+  function layoutPdfHostForTableWidth(host, tableBundle, extraPx) {
+    extraPx = extraPx || 120;
+    var tbl = tableBundle.querySelector("table");
+    var inner = tableBundle.querySelector(".ra-staff-doc-wrap") || tableBundle;
+    var w = Math.max(
+      tbl ? tbl.scrollWidth : 0,
+      inner.scrollWidth,
+      tableBundle.scrollWidth,
+      1600
+    );
+    w += extraPx;
+    host.style.width = w + "px";
+    host.style.minWidth = w + "px";
+    tableBundle.style.width = w + "px";
+    try {
+      void tableBundle.offsetWidth;
+    } catch (e0) {}
+  }
+
+  /** Printable area of the current PDF page in CSS px (96dpi convention). */
+  function raPdfPageDrawableCssPx(pdf, marginMm) {
+    var pw = pdf.internal.pageSize.getWidth();
+    var ph = pdf.internal.pageSize.getHeight();
+    var wmm = Math.max(1, pw - 2 * marginMm);
+    var hmm = Math.max(1, ph - 2 * marginMm);
+    return {
+      w: Math.max(320, Math.floor((wmm * 96) / 25.4)),
+      h: Math.max(200, Math.floor((hmm * 96) / 25.4))
+    };
+  }
+
+  /**
+   * Partner landscape PDF: measure bundle in mm and test whether it fits when scaled
+   * to full printable WIDTH (addCanvasFittedMmWidthFirst). Extra height slack keeps
+   * html2canvas output from exceeding the page after layout.
+   */
+  function partnerTableBundleMmAndMargins(bundle, pdf, marginMm) {
+    var wPx = Math.max(bundle.scrollWidth || 0, bundle.offsetWidth || 0, 1);
+    /* Generous height slack: DOM layout vs raster height and no bottom cropping. */
+    var hPx =
+      Math.max(bundle.scrollHeight || 0, bundle.offsetHeight || 0, 1) + 96;
+    var mmW = (wPx * 25.4) / 96;
+    var mmH = (hPx * 25.4) / 96;
+    var maxW = pdf.internal.pageSize.getWidth() - 2 * marginMm;
+    var maxH = pdf.internal.pageSize.getHeight() - 2 * marginMm;
+    return { mmW: mmW, mmH: mmH, maxW: maxW, maxH: maxH };
+  }
+
+  var RA_PARTNER_MIN_PAGE_FIT_SCALE = 0.54;
+
+  function partnerTableBundleFitsLandscapePage(bundle, pdf, marginMm, minScale) {
+    minScale =
+      minScale == null ? RA_PARTNER_MIN_PAGE_FIT_SCALE : Number(minScale);
+    var d = partnerTableBundleMmAndMargins(bundle, pdf, marginMm);
+    if (!(d.mmW > 1e-6)) return false;
+    var rW = d.maxW / d.mmW;
+    if (rW < minScale - 1e-9) return false;
+    var hWhenWidthFilled = d.mmH * rW;
+    var maxHDraw = d.maxH - 10;
+    return hWhenWidthFilled <= maxHDraw;
+  }
+
+  /**
+   * Height check aligned with addCanvasFittedMmWidthFirst (slight mm slack vs raster).
+   */
+  function partnerTableBundleFitsWidthFirstPlacement(bundle, pdf, marginMm) {
+    marginMm = typeof marginMm === "number" ? marginMm : 3;
+    var maxW = pdf.internal.pageSize.getWidth() - 2 * marginMm;
+    var maxH = pdf.internal.pageSize.getHeight() - 2 * marginMm;
+    var wPx = Math.max(bundle.offsetWidth || 0, bundle.scrollWidth || 0, 1);
+    var hPx = Math.max(bundle.scrollHeight || 0, bundle.offsetHeight || 0, 1);
+    var mmW = (wPx * 25.4) / 96;
+    var mmH = (hPx * 25.4) / 96;
+    if (!(mmW > 1e-6)) return false;
+    var hDraw = mmH * (maxW / mmW);
+    return hDraw <= maxH - 0.85;
+  }
+
+  /**
+   * Dense pages: shrink partner PDF typography until the bundle fits at full sheet width
+   * (avoids uniform scale / mismatched margins vs other pages). Column % stay fixed.
+   */
+  function raAdjustPartnerLandscapeFontForWidthFirst(
+    host,
+    tableBundle,
+    pdf,
+    marginMm,
+    targetCssW
+  ) {
+    var scales = [1, 0.93, 0.86, 0.8, 0.74, 0.68, 0.62, 0.56];
+    var i;
+    for (i = 0; i < scales.length; i++) {
+      tableBundle.style.setProperty(
+        "--ra-partner-font-scale",
+        String(scales[i])
+      );
+      layoutPdfHostForPartnerTable(host, tableBundle, targetCssW);
+      try {
+        void tableBundle.offsetHeight;
+      } catch (eAdj) {}
+      if (partnerTableBundleFitsWidthFirstPlacement(tableBundle, pdf, marginMm)) {
+        return;
+      }
+    }
+  }
+
+  /** Lock landscape bundle and host to one CSS width so every partner PDF page matches. */
+  function layoutPdfHostForPartnerTable(host, tableBundle, targetCssW) {
+    var extra = 96;
+    var hostW = targetCssW + extra;
+    var inner = tableBundle.querySelector(".ra-staff-doc-wrap") || tableBundle;
+    tableBundle.style.width = targetCssW + "px";
+    tableBundle.style.maxWidth = targetCssW + "px";
+    tableBundle.style.minWidth = targetCssW + "px";
+    tableBundle.style.boxSizing = "border-box";
+    inner.style.width = "100%";
+    inner.style.maxWidth = "100%";
+    inner.style.boxSizing = "border-box";
+    try {
+      void inner.offsetWidth;
+    } catch (e0) {}
+    host.style.width = hostW + "px";
+    host.style.minWidth = hostW + "px";
+    host.style.maxWidth = hostW + "px";
+    try {
+      void host.offsetWidth;
+    } catch (e2) {}
+  }
+
+  /**
+   * Slice hazards into ranges that each fit one A3 landscape page when the raster
+   * is scaled to full printable width (height must fit at that scale; min text scale).
+   */
+  function computePartnerLandscapeChunks(
+    ra,
+    tableInner,
+    tableBundle,
+    host,
+    pdf,
+    marginMm,
+    targetCssW
+  ) {
+    var hz = ra.hazards || [];
+    var n = hz.length;
+    var chunks = [];
+    var start = 0;
+    function setSlice(s, e, continuation) {
+      tableInner.innerHTML = buildPartnerExportTableSection(ra, s, e, {
+        continuation: continuation
+      });
+      layoutPdfHostForPartnerTable(host, tableBundle, targetCssW);
+      try {
+        void tableBundle.offsetHeight;
+      } catch (e1) {}
+    }
+    while (start < n) {
+      setSlice(start, n, chunks.length > 0);
+      if (partnerTableBundleFitsLandscapePage(tableBundle, pdf, marginMm)) {
+        chunks.push({ start: start, end: n });
+        break;
+      }
+      var lo = start + 1;
+      var hi = n;
+      setSlice(start, lo, chunks.length > 0);
+      if (!partnerTableBundleFitsLandscapePage(tableBundle, pdf, marginMm, 0.08)) {
+        chunks.push({ start: start, end: lo });
+        start = lo;
+        continue;
+      }
+      var best = lo;
+      var L = lo;
+      var R = hi;
+      while (L <= R) {
+        var mid = Math.floor((L + R) / 2);
+        setSlice(start, mid, chunks.length > 0);
+        if (partnerTableBundleFitsLandscapePage(tableBundle, pdf, marginMm)) {
+          best = mid;
+          L = mid + 1;
+        } else {
+          R = mid - 1;
+        }
+      }
+      if (best <= start) {
+        best = start + 1;
+      }
+      setSlice(start, best, chunks.length > 0);
+      while (
+        best > start + 1 &&
+        !partnerTableBundleFitsLandscapePage(tableBundle, pdf, marginMm)
+      ) {
+        best--;
+        setSlice(start, best, chunks.length > 0);
+      }
+      chunks.push({ start: start, end: best });
+      start = best;
+    }
+    return chunks;
+  }
+
+  /**
+   * @param {boolean} partnerExport If true, landscape table omits internal action owner and date columns only.
+   */
+  function downloadCurrentRaPdf(partnerExport) {
+    partnerExport = !!partnerExport;
+    var btn = document.getElementById("raBtnPdf");
+    var btnPartner = document.getElementById("raBtnPdfPartner");
+    if (!overlayOpenId || !raOverlayBody) {
+      if (btn) btn.disabled = false;
+      if (btnPartner) btnPartner.disabled = false;
+      return;
+    }
+    var wrap = raOverlayBody.querySelector(".ra-staff-doc-wrap");
+    if (!wrap) return;
+    var ra = getCurrentRaForOverlay();
+    var ref =
+      (ra && ra.documentControl && ra.documentControl.documentReference) ||
+      overlayOpenId ||
+      "risk-assessment";
+    var safeName = String(ref).replace(/[^\w\-.]+/g, "_");
+    if (!safeName) safeName = "risk-assessment";
+
+    var JsPDF = getJsPdfConstructor();
+    if (!JsPDF || typeof window.html2canvas !== "function") {
+      window.alert(
+        "PDF libraries did not load. Check your internet connection and try again."
+      );
+      return;
+    }
+
+    var hdr = wrap.querySelector(".ra-pdf-source-header");
+    var doc = wrap.querySelector(".ra-pdf-source-doc");
+    var tblSection = wrap.querySelector(".ra-pdf-source-table");
+    var sig = wrap.querySelector(".ra-pdf-source-sig");
+    if (!hdr || !doc) {
+      window.alert("Could not find document sections to export.");
+      return;
+    }
+    if (!partnerExport && !tblSection) {
+      window.alert("Could not find document sections to export.");
+      return;
+    }
+    if (partnerExport && (!ra || !ra.hazards || !ra.hazards.length)) {
+      window.alert("No hazard data to export for the partner summary.");
+      return;
+    }
+
+    var host = ensurePdfHost();
+    host.innerHTML = "";
+
+    function makeBrandBlock() {
+      var brand = document.createElement("div");
+      brand.className = "ra-pdf-brand-header";
+      var logo = document.createElement("img");
+      logo.src = RA_PDF_HEADER_LOGO_URL;
+      logo.alt = "clubSENsational";
+      logo.crossOrigin = "anonymous";
+      brand.appendChild(logo);
+      var sub = document.createElement("p");
+      sub.className = "ra-pdf-brand-sub";
+      sub.textContent = partnerExport
+        ? "Risk assessment — partner / venue summary (clubSENsational)"
+        : "Risk assessment — clubSENsational";
+      brand.appendChild(sub);
+      return brand;
+    }
+
+    var portraitBundle = document.createElement("div");
+    portraitBundle.className = "ra-pdf-portrait-bundle";
+    portraitBundle.appendChild(makeBrandBlock());
+    var portraitInner = document.createElement("div");
+    portraitInner.className = "ra-staff-doc-wrap ra-staff-doc";
+    portraitInner.appendChild(hdr.cloneNode(true));
+    portraitInner.appendChild(doc.cloneNode(true));
+    if (sig) portraitInner.appendChild(sig.cloneNode(true));
+    portraitBundle.appendChild(portraitInner);
+
+    var tableBundle = document.createElement("div");
+    tableBundle.className = "ra-pdf-table-bundle";
+    if (partnerExport) tableBundle.classList.add("ra-pdf-table-bundle--partner");
+    var tableInner = document.createElement("div");
+    tableInner.className = "ra-staff-doc-wrap ra-staff-doc";
+    if (partnerExport) {
+      tableInner.innerHTML = buildPartnerExportTableSection(ra);
+    } else {
+      tableInner.appendChild(tblSection.cloneNode(true));
+    }
+    tableBundle.appendChild(tableInner);
+
+    host.appendChild(portraitBundle);
+    host.appendChild(tableBundle);
+    raPdfHostParkVisible(host, partnerExport ? 2240 : 1720);
+    prepareImagesForCanvas(host);
+
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "Generating…";
+    }
+    if (btnPartner) {
+      btnPartner.disabled = true;
+      btnPartner.textContent = "Generating…";
+    }
+
+    var pdfScalePortrait = 2.25;
+    var pdfScaleTable = partnerExport ? 2.55 : 2.25;
+    var tablePageFormat = "a3";
+    var pdf = new JsPDF({ unit: "mm", format: "a4", orientation: "portrait", compress: true });
+    var fileName = (partnerExport ? safeName + "-partner" : safeName) + ".pdf";
+
+    function finishPdfUi() {
+      raPdfHostRestore(host);
+      host.innerHTML = "";
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = "Download PDF";
+      }
+      if (btnPartner) {
+        btnPartner.disabled = false;
+        btnPartner.textContent = "PDF — partners / venue";
+      }
+    }
+
+    whenImagesReady(host)
+      .then(function () {
+        var sigImg = portraitBundle.querySelector(".ra-sig-fixed-img");
+        return raWaitSignatureDecoded(sigImg).then(function () {
+          try {
+            void portraitBundle.offsetHeight;
+          } catch (eR) {}
+          var slot =
+            measureElementRelative(portraitBundle, sigImg) ||
+            measureElementRelative(
+              portraitBundle,
+              portraitBundle.querySelector(".ra-sig-wrap")
+            );
+          var pbW = Math.max(
+            1,
+            portraitBundle.scrollWidth || portraitBundle.offsetWidth
+          );
+          var pbH = Math.max(
+            1,
+            portraitBundle.scrollHeight || portraitBundle.offsetHeight
+          );
+          return captureDomToCanvas(portraitBundle, pdfScalePortrait, 720).then(function (canvasP) {
+            return { canvasP: canvasP, slot: slot, pbW: pbW, pbH: pbH };
+          });
+        });
+      })
+      .then(function (portraitPack) {
+        var canvasP = portraitPack.canvasP;
+        var pl = addCanvasFittedMm(pdf, canvasP, 10, pdfScalePortrait);
+        raAddSignaturePdfMm(
+          pdf,
+          pl,
+          portraitPack.slot,
+          portraitPack.pbW,
+          portraitPack.pbH,
+          RAUL_SIGNATURE_DATA_URL
+        );
+        pdf.addPage(tablePageFormat, "l");
+        /* Tight margins on partner A3 landscape so the table raster uses almost the full sheet width. */
+        var lmTable = partnerExport ? 3 : 8;
+        if (!partnerExport) {
+          layoutPdfHostForTableWidth(host, tableBundle, 160);
+          var tblEl0 = tableBundle.querySelector("table");
+          var tw0 = Math.max(
+            tableBundle.scrollWidth,
+            tblEl0 ? tblEl0.scrollWidth : 0,
+            1600
+          );
+          return captureDomToCanvas(tableBundle, pdfScaleTable, tw0).then(
+            function (canvasL) {
+              addCanvasFittedMm(pdf, canvasL, lmTable, pdfScaleTable);
+            }
+          );
+        }
+        var drawable = raPdfPageDrawableCssPx(pdf, lmTable);
+        var chunks = computePartnerLandscapeChunks(
+          ra,
+          tableInner,
+          tableBundle,
+          host,
+          pdf,
+          lmTable,
+          drawable.w
+        );
+        function capturePartnerLandscapePage(ci) {
+          var ch = chunks[ci];
+          tableBundle.style.setProperty("--ra-partner-font-scale", "1");
+          tableInner.innerHTML = buildPartnerExportTableSection(
+            ra,
+            ch.start,
+            ch.end,
+            { continuation: ci > 0 }
+          );
+          layoutPdfHostForPartnerTable(host, tableBundle, drawable.w);
+          try {
+            void tableBundle.offsetHeight;
+          } catch (eR) {}
+          raAdjustPartnerLandscapeFontForWidthFirst(
+            host,
+            tableBundle,
+            pdf,
+            lmTable,
+            drawable.w
+          );
+          return whenImagesReady(host).then(function () {
+            var laidW = Math.max(
+              tableBundle.offsetWidth || 0,
+              tableBundle.scrollWidth || 0,
+              drawable.w
+            );
+            var twP = Math.max(1680, laidW + 48);
+            return captureDomToCanvas(
+              tableBundle,
+              pdfScaleTable,
+              twP
+            ).then(function (canvasL) {
+              addCanvasFittedMmWidthFirst(pdf, canvasL, lmTable, pdfScaleTable);
+              if (ci + 1 < chunks.length) {
+                pdf.addPage(tablePageFormat, "l");
+                return capturePartnerLandscapePage(ci + 1);
+              }
+            });
+          });
+        }
+        return capturePartnerLandscapePage(0);
+      })
+      .then(function () {
+        pdf.save(fileName);
+      })
+      .then(function () {
+        finishPdfUi();
+      })
+      .catch(function (err) {
+        try {
+          console.error("RA PDF export failed", err);
+        } catch (eLog) {}
+        finishPdfUi();
+        window.alert(
+          "Could not create the PDF (often a network or image security issue). Try Chrome or Safari with internet access."
+        );
+      });
+  }
+
+  function renderHome() {
+    if (!mainHome) return;
+    if (!ras || !ras.length) {
+      mainHome.innerHTML =
+        '<p class="ra-page-load-hint">No risk assessment data could be loaded. The embedded register may be missing or invalid — check the browser console for details.</p>';
+      return;
+    }
+    var cards = ras
+      .map(function (ra) {
+        var vis = CARD_VIS[ra.id] || { ic: "📋", ac: "#f4b942" };
+        return (
+          '<div class="cs-card" style="--card-accent:' +
+          vis.ac +
+          '">' +
+          '<div class="cs-ic" aria-hidden="true">' +
+          vis.ic +
+          "</div>" +
+          "<h3>" +
+          escapeHtml(ra.documentControl.title || "Risk assessment") +
+          "</h3>" +
+          '<p class="meta">' +
+          escapeHtml(ra.documentControl.documentReference || ra.id) +
+          "</p>" +
+          '<div class="ra-card-actions">' +
+          '<button type="button" class="ra-open-btn" data-ra-id="' +
+          escapeAttr(ra.id) +
+          '">' +
+          "Open →" +
+          "</button>" +
+          "</div></div>"
+        );
+      })
+      .join("");
+    mainHome.innerHTML =
+      '<div class="cs-index">' +
+      '<div class="cs-idx-hero">' +
+      '<div class="cs-idx-logo">' +
+      '<img src="https://www.clubsensational.org/wp-content/uploads/2026/03/F-02-1.png" alt="clubSENsational" width="200" height="200" loading="lazy" decoding="async" />' +
+      "</div>" +
+      '<div class="cs-idx-text">' +
+      '<p class="cs-idx-sub">clubSENsational · Autism Consultancy Services</p>' +
+      "<h1>Risk assessments</h1>" +
+      "<p>Open each venue risk assessment to read the full content. Six assessments are listed below.</p>" +
+      "</div></div>" +
+      '<section class="cs-section" aria-labelledby="ra-sec-list">' +
+      '<div class="cs-section-head">' +
+      '<h2 id="ra-sec-list" class="cs-section-title">Venue &amp; activity risk assessments</h2>' +
+      '<p class="cs-section-desc">Same content as the admin register; this page is read-only for reference.</p>' +
+      "</div>" +
+      '<div class="cs-grid">' +
+      cards +
+      "</div></section></div>";
+    var btns = mainHome.querySelectorAll("button[data-ra-id]");
+    for (var b = 0; b < btns.length; b++) {
+      btns[b].addEventListener("click", function () {
+        var id = this.getAttribute("data-ra-id");
+        if (id) openOverlay(id);
+      });
+    }
+  }
+
+  renderHome();
+
+  var raBtnClose = document.getElementById("raBtnClose");
+  if (raBtnClose) raBtnClose.addEventListener("click", closeOverlay);
+  var raBtnPdf = document.getElementById("raBtnPdf");
+  if (raBtnPdf) {
+    raBtnPdf.addEventListener("click", function () {
+      downloadCurrentRaPdf(false);
+    });
+  }
+  var raBtnPdfPartner = document.getElementById("raBtnPdfPartner");
+  if (raBtnPdfPartner) {
+    raBtnPdfPartner.addEventListener("click", function () {
+      downloadCurrentRaPdf(true);
+    });
+  }
+  if (raOverlay) {
+    raOverlay.addEventListener("click", function (e) {
+      if (e.target.getAttribute("data-ra-close")) closeOverlay();
+    });
+  }
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && raOverlay && raOverlay.classList.contains("is-open")) closeOverlay();
+  });
+})();
+</script>
+</body>
+</html>

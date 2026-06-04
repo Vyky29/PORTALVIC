@@ -14,7 +14,7 @@ Los botones del menú rápido volvieron a **staff** y **lead** dashboards, conec
 | `quickMenuRoleTraining` | `SWtraining_portal.html` — visible solo swimming instructors (`portal_swimming_instructor_menus.js`) |
 | `quickMenuSafeguarding` | NSPCC My Learning (URL externa) |
 | `quickMenuPolicies` | `policies_portal.html` (+ firmante vía `portalQuickMenuNavigate`) |
-| `quickMenuRiskAssessments` | `ra_portal.html` (+ firmante vía `portalQuickMenuNavigate`) |
+| `quickMenuRiskAssessments` | `risk_assessment.html` (read-only staff portal; PDF export in-page) |
 
 ## Chips del acordeón
 
