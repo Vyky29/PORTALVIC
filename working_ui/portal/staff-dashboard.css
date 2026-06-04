@@ -1359,6 +1359,22 @@
     /* Dock quick menu: no “attention” state (same look with or without logo-lite notices). */
 
     #portalQuickMenuNotificationsGroup{margin-bottom:10px}
+    /* Header logo → logo-lite: alerts + schedule overrides only (footer dock = full quick menu) */
+    #menuSheet.menu-sheet--logo-lite .menu-sheet-main > .menu-group:not(#portalQuickMenuNotificationsGroup):not(#portalQuickMenuGuideGroup){
+      display:none !important;
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .menu-accordion-trigger,
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup #portalQuickMenuGuideGrid{
+      display:none !important;
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup .menu-group-panel[hidden]{
+      display:flex !important;
+      flex-direction:column;
+      gap:0;
+    }
+    #menuSheet.menu-sheet--logo-lite #portalQuickMenuGuideGroup:not(:has(.portal-qm-override-top-host:not([hidden]))){
+      display:none !important;
+    }
     /* Quick menu logo-lite: same tile height, typography, and radius for announcements, overrides, and reminders */
     #menuSheet.menu-sheet--logo-lite #portalQuickMenuNotificationsGroup .menu-btn.menu-btn--qm-tile{
       min-height:76px;
@@ -1852,6 +1868,14 @@
     }
     #menuSheet.sheet--fullscreen .sheet-body.menu-sheet-body{
       padding-bottom:max(20px, env(safe-area-inset-bottom, 0px));
+    }
+    /* Quick menu — Settings always expanded (no accordion trigger) */
+    #menuSheet .menu-group--flat{
+      margin-bottom:10px;
+      min-width:0;
+    }
+    #menuSheet .menu-group--flat > .menu-group-title{
+      margin-bottom:10px;
     }
     /* Quick menu accordions — soft themed category rows */
     #menuSheet .menu-group--accordion{

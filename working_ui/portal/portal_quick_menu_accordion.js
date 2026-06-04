@@ -6,6 +6,9 @@
 
   var SKIP_GROUP_IDS = { portalQuickMenuNotificationsGroup: true };
 
+  /** Always visible: section title + buttons (no collapse trigger). */
+  var FLAT_GROUP_IDS = { portalQuickMenuSettingsGroup: true };
+
   var ACCORDION_LABELS = {
     portalQuickMenuGuideGroup: "Getting started",
     portalAnnualProfileQuickGroup: "Profile",
@@ -154,8 +157,40 @@
     trigger.innerHTML = portalQuickMenuAccordionTriggerHtml(label, meta);
   }
 
+  function portalIsFlatQuickMenuGroup(grp) {
+    if (!grp) return false;
+    var id = String(grp.id || "").trim();
+    if (id && FLAT_GROUP_IDS[id]) return true;
+    return !!(grp.querySelector && grp.querySelector("#quickMenuSettingsGrid"));
+  }
+
+  function portalRestoreFlatQuickMenuGroup(grp) {
+    if (!grp || !grp.classList.contains("menu-group--accordion")) return;
+    var trigger = grp.querySelector(".menu-accordion-trigger");
+    var panel = grp.querySelector(".menu-group-panel");
+    var label = portalQuickMenuAccordionLabel(grp);
+    if (trigger) trigger.remove();
+    if (panel) {
+      var title = document.createElement("div");
+      title.className = "menu-group-title";
+      title.textContent = label;
+      grp.insertBefore(title, panel);
+      while (panel.firstChild) {
+        grp.appendChild(panel.firstChild);
+      }
+      panel.remove();
+    }
+    grp.classList.remove("menu-group--accordion", "menu-group--open");
+  }
+
   function portalPrepareQuickMenuAccordionGroup(grp) {
-    if (!grp || grp.classList.contains("menu-group--accordion-ready")) return;
+    if (!grp) return;
+    if (portalIsFlatQuickMenuGroup(grp)) {
+      portalRestoreFlatQuickMenuGroup(grp);
+      grp.classList.add("menu-group--flat", "menu-group--accordion-ready");
+      return;
+    }
+    if (grp.classList.contains("menu-group--accordion-ready")) return;
     var id = String(grp.id || "").trim();
     if (id && SKIP_GROUP_IDS[id]) {
       /* Alerts block: no accordion chrome; visibility is driven by logo-lite sync on the dashboard. */
@@ -250,9 +285,12 @@
     try {
       var main = global.document && global.document.querySelector("#menuSheet .menu-sheet-main");
       if (!main) return;
-      var openGroups = main.querySelectorAll(":scope > .menu-group--accordion.menu-group--open");
+      var openGroups = main.querySelectorAll(
+        ":scope > .menu-group--accordion.menu-group--open:not(.menu-group--flat)"
+      );
       for (var i = 0; i < openGroups.length; i++) {
         var grp = openGroups[i];
+        if (grp.classList.contains("menu-group--flat")) continue;
         grp.classList.remove("menu-group--open");
         var panel = grp.querySelector(".menu-group-panel");
         var trigger = grp.querySelector(".menu-accordion-trigger");

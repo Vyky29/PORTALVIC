@@ -91,7 +91,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260610-pwa-black-fix" />
   <script src="/portal/portal_screenshot_guard.js?v=20260610-pwa-black-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260617-avatar-swim-gate" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260617-logo-lite-alerts" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260601-landscape-full" />
 </head>
 <body>
@@ -485,7 +485,7 @@
             </button>
           </div>
         </div>
-        <div class="menu-group">
+        <div class="menu-group menu-group--flat" id="portalQuickMenuSettingsGroup">
           <div class="menu-group-title">Settings</div>
           <div class="menu-grid" id="quickMenuSettingsGrid">
             <button type="button" class="menu-btn menu-btn--portal-guide" id="quickMenuPortalGuideSettings" data-portal-external-url="portal_guide.html" hidden aria-label="Portal guide — how to use the app">
@@ -816,7 +816,7 @@
   <script src="/portal/portal_induction_bind.js?v=20260615-tprog-sync"></script>
   <script src="/portal/portal_guide_ack.js?v=20260612-guide-read"></script>
   <script src="/portal/portal_guide_menu.js?v=20260612-guide-read"></script>
-  <script src="/portal/portal_quick_menu_accordion.js?v=20260616-header-alerts"></script>
+  <script src="/portal/portal_quick_menu_accordion.js?v=20260617-settings-flat"></script>
   <script src="/portal/portal_swimming_instructor_menus.js?v=20260617-swim-aquatic-gate"></script>
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260616-michelle-only"></script>
@@ -3723,9 +3723,14 @@
         if(titleEl) titleEl.textContent = 'Getting started';
         if(typeof portalUpdateQuickMenuAccordionLabel === 'function') portalUpdateQuickMenuAccordionLabel('portalQuickMenuGuideGroup', 'Getting started');
       }
-      const showGuideHeader = typeof portalGuideShowInHeader === 'function' && portalGuideShowInHeader();
-      if(guideGrid) guideGrid.hidden = !showGuideHeader;
-      guideGrp.hidden = !showGuideHeader && !hasOv;
+      const logoLite = typeof portalQuickMenuEntryMode !== 'undefined' && portalQuickMenuEntryMode === 'logo-lite';
+      const showGuideHeader = !logoLite && typeof portalGuideShowInHeader === 'function' && portalGuideShowInHeader();
+      if(guideGrid) guideGrid.hidden = logoLite || !showGuideHeader;
+      guideGrp.hidden = logoLite ? !hasOv : (!showGuideHeader && !hasOv);
+      if(logoLite){
+        const panel = guideGrp.querySelector('.menu-group-panel');
+        if(panel) panel.hidden = false;
+      }
       return hasOv;
     }
     function portalBuildQuickMenuOverrideStackHtml(st){
@@ -9180,6 +9185,15 @@
       menu.classList.toggle('menu-sheet--full', mode === 'full');
       const titleEl = document.getElementById('portalMenuSheetTitle');
       if(titleEl) titleEl.textContent = mode === 'logo-lite' ? 'Alerts/Notifications' : 'Quick menu';
+      if(mode === 'logo-lite'){
+        const st = typeof portalReminderState === 'function' ? portalReminderState() : null;
+        if(typeof syncPortalScheduleOverridesTopSlot === 'function') syncPortalScheduleOverridesTopSlot(st);
+        if(typeof syncPortalQuickMenuNotificationsGroupVisibility === 'function') syncPortalQuickMenuNotificationsGroupVisibility();
+      }else{
+        const grp = document.getElementById('portalQuickMenuNotificationsGroup');
+        if(grp) grp.hidden = true;
+        if(typeof portalCollapseQuickMenuAccordions === 'function') portalCollapseQuickMenuAccordions();
+      }
     }
     function syncPortalQuickMenuNotificationsGroupVisibility(){
       const grp = document.getElementById('portalQuickMenuNotificationsGroup');
