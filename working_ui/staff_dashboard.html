@@ -820,7 +820,7 @@
     </div>
   </section>
 
-  <script src="/portal/term_from_timetable.js?v=20260602-victor-thu"></script>
+  <script src="/portal/term_from_timetable.js?v=20260604-teflon-guide-days"></script>
   <script src="/portal/term_calendar_dashboard_shared.js?v=20260523-feedback-window"></script>
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260601-notas-participants"></script>
   <script src="/portal/session_feedback_portal_data.js?v=20260527-ma-apr-may"></script>
@@ -832,6 +832,8 @@
   <script src="/portal/clients_info_embed.js?v=20260601-general-info"></script>
   <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260601-participant-dedupe"></script>
+  <script src="/portal/teflon_guide_demo_data.js?v=20260604-guide-roster"></script>
+  <script src="/portal/teflon_guide_demo_merge.js?v=20260604-guide-roster"></script>
   <script src="/portal/portal_participant_catalog.js?v=20260601-participant-dedupe"></script>
   <script src="/portal/staff_roster_resolve.js?v=20260611-javi-roster-guard"></script>
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260602-landscape-rail" />
@@ -942,6 +944,7 @@
         clientNotesById = __spreadsheetBoot.clientNotesById || {};
         portalApplyClientsInfoToNotes();
       }
+      if(typeof portalApplyTeflonGuideDemoRoster === 'function') portalApplyTeflonGuideDemoRoster();
       if(__spreadsheetBoot && typeof portalStaffIsDemoAccount === 'function' && portalStaffIsDemoAccount()){
         if(typeof portalApplyTeflonGuideDemoViewDefaults === 'function') portalApplyTeflonGuideDemoViewDefaults();
         else if(__spreadsheetBoot.defaultViewDay) DEMO_VIEW_DAY = __spreadsheetBoot.defaultViewDay;
@@ -952,68 +955,75 @@
     function portalStaffIsDemoAccount(){
       return String(STAFF_DASHBOARD_ID || '').trim().toLowerCase() === 'teflon';
     }
-    const TEFLON_GUIDE_SHOWCASE_ISO = '2026-06-01';
-    const TEFLON_GUIDE_SHOWCASE_DAY = 'Monday';
-    /** Guide photos: always anchor session list to Mon 2026-06-01 (4 demo clients), not live weekday. */
+    const TEFLON_GUIDE_DEFAULT_ISO = '2026-06-04';
+    const TEFLON_GUIDE_TOMORROW_ISO = '2026-06-05';
+    function portalTeflonGuidePinnedIso(){
+      try{
+        if(window.PortalTeflonGuideDemo && typeof window.PortalTeflonGuideDemo.pinnedIso === 'function'){
+          return window.PortalTeflonGuideDemo.pinnedIso();
+        }
+      }catch(_){}
+      return TEFLON_GUIDE_DEFAULT_ISO;
+    }
+    function portalTeflonGuidePinnedDayWord(){
+      const data = window.PortalTeflonGuideDemoData;
+      const iso = portalTeflonGuidePinnedIso();
+      if(data && typeof data.weekdayForIso === 'function') return data.weekdayForIso(iso);
+      try{
+        return new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
+      }catch(_){
+        return 'Thursday';
+      }
+    }
+    /** Isolated guide roster (Thu 04/06 + Fri 05/06) — never touches shared STAFF_DASHBOARD_SOURCE. */
+    function portalApplyTeflonGuideDemoRoster(){
+      if(typeof portalStaffIsDemoAccount !== 'function' || !portalStaffIsDemoAccount()) return false;
+      if(!window.PortalTeflonGuideDemo || typeof window.PortalTeflonGuideDemo.applyToDashboard !== 'function') return false;
+      const boot = window.PortalTeflonGuideDemo.applyToDashboard();
+      if(!boot || !Array.isArray(boot.sessionsModel)) return false;
+      sessionsModel = boot.sessionsModel;
+      clientNotesById = boot.clientNotesById || {};
+      __spreadsheetBoot = Object.assign({}, __spreadsheetBoot || {}, boot, {
+        defaultViewDay: portalTeflonGuidePinnedDayWord()
+      });
+      if(typeof portalApplyClientsInfoToNotes === 'function') portalApplyClientsInfoToNotes();
+      return true;
+    }
+    /** Guide photos: anchor to Thu 04/06/2026 by default; `?portalGuideIso=2026-06-05` for Fri. */
     function portalApplyTeflonGuideDemoViewDefaults(){
       if(!portalStaffIsDemoAccount()) return;
-      DEMO_VIEW_DAY = TEFLON_GUIDE_SHOWCASE_DAY;
+      const iso = portalTeflonGuidePinnedIso();
+      const dayWord = portalTeflonGuidePinnedDayWord();
+      DEMO_VIEW_DAY = dayWord;
       try{ window.DEMO_VIEW_DAY = DEMO_VIEW_DAY; }catch(_){}
       try{
-        __PORTAL_REVIEW_DATE_URL_LOCK = TEFLON_GUIDE_SHOWCASE_ISO;
-        __PORTAL_REVIEW_DAY_URL_LOCK = TEFLON_GUIDE_SHOWCASE_DAY;
-        window.__PORTAL_REVIEW_DATE_URL_LOCK = TEFLON_GUIDE_SHOWCASE_ISO;
-        window.__PORTAL_REVIEW_DAY_URL_LOCK = TEFLON_GUIDE_SHOWCASE_DAY;
+        __PORTAL_REVIEW_DATE_URL_LOCK = iso;
+        __PORTAL_REVIEW_DAY_URL_LOCK = dayWord;
+        window.__PORTAL_REVIEW_DATE_URL_LOCK = iso;
+        window.__PORTAL_REVIEW_DAY_URL_LOCK = dayWord;
       }catch(_){}
     }
-    /** Topbar date pill: Teflon demo pins Mon 01/06/2026; everyone else uses live clock. */
+    /** Topbar date pill: Teflon demo pins showcase ISO; everyone else uses live clock. */
     function portalResolveTopbarDisplayDate(){
       if(typeof portalStaffIsDemoAccount === 'function' && portalStaffIsDemoAccount()){
+        const iso = portalTeflonGuidePinnedIso();
         const d = typeof portalParseIsoDateLocal === 'function'
-          ? portalParseIsoDateLocal(TEFLON_GUIDE_SHOWCASE_ISO)
-          : new Date(2026, 5, 1);
+          ? portalParseIsoDateLocal(iso)
+          : new Date(2026, 5, 4);
         if(d && !isNaN(d.getTime())) return d;
       }
       return new Date();
     }
-    /** Mon 2026-06-01 guide showcase: blue / orange / green / red cards for portal guide photos. */
+    /** Guide showcase card colours for 04/06 and 05/06 (portal/teflon_guide_demo_data.js). */
     function portalSeedTeflonGuideDemoReviewState(){
       if(!portalStaffIsDemoAccount()) return false;
-      const iso = '2026-06-01';
-      const specs = [
-        { cid: 'mari_trini', start: '09:00', scheduled: true },
-        { cid: 'vitin', start: '10:00' },
-        { cid: 'sam', start: '11:00', feedbackDone: true },
-        { cid: 'jordan', start: '14:00', incident: true }
-      ];
-      let changed = false;
-      try{
-        window.__PORTAL_TEFLON_GUIDE_SCHEDULED_KEYS__ = window.__PORTAL_TEFLON_GUIDE_SCHEDULED_KEYS__ || new Set();
-        specs.forEach(function(sp){
-          const sk = iso + '|' + sp.start + '|' + sp.cid;
-          if(sp.scheduled){
-            window.__PORTAL_TEFLON_GUIDE_SCHEDULED_KEYS__.add(sk);
-            if(sessionReviewMapMemory[sk]){
-              delete sessionReviewMapMemory[sk];
-              changed = true;
-            }
-            return;
-          }
-          const prev = sessionReviewMapMemory[sk] || { feedbackDone: false, incident: false, absent: false, cancelled: false };
-          const next = {
-            feedbackDone: !!sp.feedbackDone,
-            incident: !!sp.incident,
-            absent: !!sp.absent,
-            cancelled: false
-          };
-          if(prev.feedbackDone !== next.feedbackDone || prev.incident !== next.incident || prev.absent !== next.absent){
-            sessionReviewMapMemory[sk] = next;
-            changed = true;
-          }
-        });
-        if(changed && typeof persistSessionReviewMap === 'function') persistSessionReviewMap();
-      }catch(_e){}
-      return true;
+      if(window.PortalTeflonGuideDemo && typeof window.PortalTeflonGuideDemo.seedReviewState === 'function'){
+        return window.PortalTeflonGuideDemo.seedReviewState(
+          sessionReviewMapMemory,
+          typeof persistSessionReviewMap === 'function' ? persistSessionReviewMap : null
+        );
+      }
+      return false;
     }
     (function portalGuideShotHaloOverride(){
       try{
@@ -12955,6 +12965,7 @@
         try { window.STAFF_DASHBOARD_ID = sid; } catch (_) {}
         sessionsModel = boot.sessionsModel;
         clientNotesById = boot.clientNotesById || clientNotesById;
+        if(sid === 'teflon' && typeof portalApplyTeflonGuideDemoRoster === 'function') portalApplyTeflonGuideDemoRoster();
         portalApplyClientsInfoToNotes();
         portalSyncTodaySectionDisplay(sessionsModel);
         if (typeof window.__portalSyncNextSessionFromModel === "function") window.__portalSyncNextSessionFromModel();
@@ -13094,6 +13105,10 @@
           try { window.STAFF_DASHBOARD_ID = staffId; } catch (_) {}
           sessionsModel = [];
           clientNotesById = boot.clientNotesById || {};
+          if(staffId === 'teflon' && typeof portalApplyTeflonGuideDemoRoster === 'function'){
+            portalApplyTeflonGuideDemoRoster();
+            if(typeof portalSeedTeflonGuideDemoReviewState === 'function') portalSeedTeflonGuideDemoReviewState();
+          }
           portalApplyClientsInfoToNotes();
           _staffRosterHydratedOk = true;
           dashboardData.week = buildWeekRows(staffId);
@@ -13111,6 +13126,10 @@
         sessionsModel = newSessions;
         _staffRosterHydratedOk = true;
         clientNotesById = boot.clientNotesById || {};
+        if(staffId === 'teflon' && typeof portalApplyTeflonGuideDemoRoster === 'function'){
+          portalApplyTeflonGuideDemoRoster();
+          if(typeof portalSeedTeflonGuideDemoReviewState === 'function') portalSeedTeflonGuideDemoReviewState();
+        }
         portalApplyClientsInfoToNotes();
         var postFbDay = "";
         try{
@@ -13139,6 +13158,7 @@
           DEMO_VIEW_DAY = postFbDay;
         }else if(!_portalStickyReviewDayLoad && typeof portalStaffIsDemoAccount === "function" && portalStaffIsDemoAccount()){
           if(typeof portalApplyTeflonGuideDemoViewDefaults === "function") portalApplyTeflonGuideDemoViewDefaults();
+          if(typeof portalSeedTeflonGuideDemoReviewState === "function") portalSeedTeflonGuideDemoReviewState();
         }else if(!_portalStickyReviewDayLoad){
           DEMO_VIEW_DAY = typeof window.portalWeekdayLongEnGB === "function"
             ? window.portalWeekdayLongEnGB(new Date())

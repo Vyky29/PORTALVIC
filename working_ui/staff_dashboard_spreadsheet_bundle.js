@@ -13695,23 +13695,6 @@
     "venue": "Acton"
   }
 ],
-  "clientsInfo": [
-    {
-      "client_name": "Mari Trini",
-      "client_info": "1. Goals: Build water confidence and independent entry.\n2. Medical: None.\n3. Communication: Uses visuals and short phrases."
-    },
-    {
-      "client_name": "Sam",
-      "client_info": "1. Goals: Social participation in group activities.\n2. Medical: None known.\n3. Communication: Verbal — prefers calm, step-by-step instructions."
-    },
-    {
-      "client_name": "Vitin",
-      "client_info": "1. Goals: Maintain mobility and routine through home-based bespoke sessions.\n2. Medical: None known.\n3. Communication: Verbal — family present at home visits."
-    },
-    {
-      "client_name": "Jordan",
-      "client_info": "1. Goals: Improve pool entry routine and floating.\n2. Medical: Epilepsy — emergency medication in bag; staff briefed on seizure protocol.\n3. Communication: Non-verbal; responds to gestures and picture cards."
-    }
-  ]
+  "clientsInfo": []
 };
 })();

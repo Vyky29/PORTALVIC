@@ -211,9 +211,8 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       4
     ],
     "teflon": [
-      0,
-      1,
-      2
+      4,
+      5
     ],
     "victor": [
       1,

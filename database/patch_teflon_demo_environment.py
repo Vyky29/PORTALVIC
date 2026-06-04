@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Wire Teflon as the portal guide demo account (auth stf020, roster, fictional guide clients)."""
+"""Wire Teflon as the portal guide demo account (auth stf020).
+
+Guide roster for photos lives in working_ui/portal/teflon_guide_demo_data.js (Teflon login only).
+Do not patch STAFF_DASHBOARD_SOURCE bundles — that would leak demo clients into other staff dashboards.
+"""
 from __future__ import annotations
 
 import json
@@ -193,13 +197,10 @@ def patch_machine_json() -> int:
 
 
 def main() -> None:
-    added = patch_machine_json()
-    for bundle in BUNDLE_PATHS:
-        if not bundle.exists():
-            raise SystemExit(f"Missing bundle: {bundle}")
-        patch_bundle_file(bundle)
-        print(f"patched {bundle.relative_to(ROOT)}")
-    print(f"machine json: net +{added} teflon demo rows")
+    print(
+        "Skipped bundle/machine patch — edit working_ui/portal/teflon_guide_demo_data.js instead."
+    )
+    print("Auth/SQL: supabase/migrations/20260608160000_portal_teflon_demo_account.sql")
 
 
 if __name__ == "__main__":
