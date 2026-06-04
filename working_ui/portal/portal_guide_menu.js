@@ -41,8 +41,11 @@
       var ovHost =
         global.document && global.document.getElementById("portalQuickMenuScheduleOverridesTop");
       var hasOv = !!(ovHost && !ovHost.hidden && String(ovHost.innerHTML || "").trim());
+      var hasOb =
+        typeof global.portalOnboardingHasTopPromo === "function" &&
+        global.portalOnboardingHasTopPromo();
       if (guideGrid) guideGrid.hidden = !showHeader;
-      if (topGrp) topGrp.hidden = !showHeader && !hasOv;
+      if (topGrp) topGrp.hidden = !showHeader && !hasOv && !hasOb;
       if (setBtn) setBtn.hidden = showHeader || (portalGuidePromoActive() && !read);
     } catch (_) {}
   }

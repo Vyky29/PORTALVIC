@@ -672,8 +672,8 @@
       min-width:44px;
       padding:0;
       border-radius:50%;
-      border:1px solid rgba(45,132,179,.28);
-      background:#fff !important;
+      border:1px solid rgba(45,132,179,.32);
+      background:linear-gradient(145deg,#fff 0%,#eaf5fb 100%) !important;
       background-color:#fff !important;
       color:var(--blue) !important;
       font-family:inherit;
@@ -681,8 +681,21 @@
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      box-shadow:0 0 0 1px rgba(255,255,255,.4) inset;
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,.55) inset,
+        0 2px 8px rgba(45,132,179,.14),
+        0 0 0 3px rgba(45,132,179,.08);
       -webkit-tap-highlight-color:transparent;
+      position:relative;
+    }
+    header.topbar button.topbar-camera-btn::after,
+    .topbar-camera-btn::after{
+      content:"";
+      position:absolute;
+      inset:5px;
+      border-radius:50%;
+      border:1px solid rgba(45,132,179,.14);
+      pointer-events:none;
     }
     header.topbar button.topbar-camera-btn:hover,
     header.topbar button.topbar-camera-btn:focus,

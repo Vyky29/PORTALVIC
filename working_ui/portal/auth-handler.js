@@ -797,6 +797,13 @@ export async function bootstrapDashboardSupabase(_opts) {
       console.debug("[portal] visit tracker skipped:", visitErr);
     }
     try {
+      if (page !== "lead_overview") {
+        await import("./portal_training_progress_sync.js?v=20260614-tprog-sync");
+      }
+    } catch (tprogErr) {
+      console.debug("[portal] training progress sync skipped:", tprogErr);
+    }
+    try {
       if (page === "lead_overview") {
         throw new Error("skip_location_on_lead_overview");
       }

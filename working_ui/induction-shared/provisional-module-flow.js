@@ -22,6 +22,9 @@
     if (typeof window.provisionalRefreshPathway === 'function') {
       window.provisionalRefreshPathway();
     }
+    try {
+      window.dispatchEvent(new CustomEvent('portal:induction-progress', { detail: { module: moduleNum } }));
+    } catch (_e) {}
   }
 
   function section(id) {

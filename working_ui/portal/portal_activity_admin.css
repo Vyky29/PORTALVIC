@@ -75,6 +75,78 @@
   overflow-wrap: break-word;
 }
 
+.portal-tprog-embed {
+  max-width: 100%;
+}
+
+.portal-tprog-scroll {
+  overflow: auto;
+  min-width: 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+.portal-tprog-table {
+  min-width: 920px;
+}
+
+.portal-tprog-table th,
+.portal-tprog-table td {
+  vertical-align: top;
+  min-width: 0;
+}
+
+.portal-tprog-name {
+  white-space: nowrap;
+  max-width: 140px;
+  overflow-wrap: break-word;
+}
+
+.portal-tprog-ind-cell {
+  min-width: 200px;
+}
+
+.portal-tprog-mod-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 6px;
+  min-width: 0;
+}
+
+.portal-tprog-mod {
+  min-width: 1.6rem;
+  text-align: center;
+  font-size: 11px;
+  padding: 2px 6px;
+}
+
+.portal-tprog-chip {
+  min-width: 1.6rem;
+  text-align: center;
+}
+
+.portal-tprog-phase {
+  display: block;
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+
+.portal-tprog-pct {
+  font-size: 10px;
+  margin-left: 4px;
+}
+
+.portal-tprog-track-cell {
+  min-width: 0;
+}
+
+.portal-tprog-seen {
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 .portal-activity-visit__meta {
   font-size: 12px;
   color: var(--muted, #64748b);

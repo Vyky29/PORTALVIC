@@ -17,6 +17,7 @@
   <script src="/portal/admin-payslips.js?v=20260610-payslips"></script>
   <script src="/portal/admin-portal-pins.js?v=20260530-portal-pins-db"></script>
   <script src="/portal/admin-portal-activity.js?v=20260604-visit-activity"></script>
+  <script src="/portal/admin-training-progress.js?v=20260614-tprog"></script>
   <script src="/portal/admin-portal-achievements.js?v=20260604-ach-az-directory"></script>
   <link rel="stylesheet" href="/portal/portal_staff_map.css?v=20260602-staff-map-header" />
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260604-ach-az-directory" />
@@ -228,6 +229,7 @@
       { id:'c4k_reports', label:'Report requests' },
       { id:'servicecap', label:'Services & capacity (full page)' },
       { id:'portal_activity', label:'Portal activity' },
+      { id:'portal_training_progress', label:'Training & readiness' },
       { id:'staff_live_map', label:'Staff live map' },
       { id:'staffhr', label:'Staff & HR' },
       { id:'onboarding', label:'Onboarding' },
@@ -264,7 +266,7 @@
       { id:'g_zoho', label:'H&R (ZohoPeople)', children:['staffhr','onboarding','staffhr_contracts','interviews'] },
       { id:'g_supabase', label:'Documents', children:['portal_payslips','portal_docs_timesheet','portal_docs_expense','portal_docs_portalpin','portal_docs_certificate','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid'] },
       { id:'g_xero', label:'Finance (Xero)', children:['reenrol_payments','invoices'] },
-      { id:'g_settings_portal', label:'Settings & dashboards', children:['__h:This app','settings','logs','portal_nav_alerts','__h:Monitoring','portal_activity','staff_live_map','__h:Other portals','portal_nav_staff','portal_nav_lead','portal_nav_ceo','portal_nav_admin','__h:Session','portal_nav_logout'] }
+      { id:'g_settings_portal', label:'Settings & dashboards', children:['__h:This app','settings','logs','portal_nav_alerts','__h:Monitoring','portal_activity','portal_training_progress','staff_live_map','__h:Other portals','portal_nav_staff','portal_nav_lead','portal_nav_ceo','portal_nav_admin','__h:Session','portal_nav_logout'] }
     ];
     /* Stroke SVGs (outline), inherit sidebar text colour — replaces emoji glyphs */
     var NAV_ICON_SVGS = {
@@ -302,6 +304,7 @@
       recruitment:'<rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><path d="M12 11v6"/><path d="M9 14h6"/>',
       interviews:'<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>',
       portal_activity:'<path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/>',
+      portal_training_progress:'<path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',
       staff_live_map:'<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>',
       reports:'<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
       policies:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>',
@@ -15962,6 +15965,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return viewPortalDocuments();
       }
       if(id==='portal_activity') return viewPortalActivity();
+      if(id==='portal_training_progress') return viewPortalTrainingProgress();
       if(id==='participant_achievements') return viewParticipantAchievements();
       if(id==='staff_live_map') return viewStaffLiveMap();
       if(id==='policies') return viewPoliciesSignoffs();
@@ -16598,6 +16602,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portal_documents:'Timesheets, expense claims, onboarding uploads and files in Supabase storage.',
         portal_payslips:'Upload monthly payslip PDFs for each worker — visible in My Documents on the staff app.',
         portal_activity:'Staff portal visits — login, pages, and active-tab time (UK London).',
+        portal_training_progress:'Induction modules, swimming training/review progress, and app readiness (PWA, alerts, map, mic).',
         staff_live_map:'Live map during Bespoke Programme and Day Centre shift windows only: from 15 minutes before first qualifying session until 30 minutes after last.',
         policies:'Documents · sign-offs · compliance',
         invoices:'Build draft invoice lines here, then export a CSV ready to import into Xero.',
@@ -16692,6 +16697,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portalDashTileHtml('scheduling', '', 'scheduling', 'Schedule & Covers', 'Weekly anchors & swap cover', true, 'scheduling')+
         portalDashTileHtml('', '', 'comms_ops', 'Chat', 'Internal staff &amp; CEO / admin', false, 'notify', 'admin_chat_hub')+
         portalDashTileHtml('portal_activity', '', 'analytics', 'Portal activity', 'Login, pages &amp; time on app', false, 'analytics')+
+        portalDashTileHtml('portal_training_progress', '', 'analytics', 'Training &amp; readiness', 'Induction, swim tracks, app setup', false, 'analytics')+
         portalDashTileHtml('staff_live_map', '', 'clients', 'Staff live map', 'On-site locations (~10 m)', false, 'scheduling')+
         portalDashTileHtml('', '', 'announcements', 'Announcements', 'Notices &amp; reminders', false, 'announcements', 'announcements_comms');
       return (
@@ -16899,6 +16905,24 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       portalActivityConfigureOnce();
       if(window.PortalActivity && typeof window.PortalActivity.bindModule === 'function'){
         window.PortalActivity.bindModule();
+      }
+    }
+    function portalTrainingProgressConfigureOnce(){
+      if(window.__portalTrainingProgressConfigured || !window.PortalTrainingProgress) return;
+      window.__portalTrainingProgressConfigured = true;
+      window.PortalTrainingProgress.configure({
+        esc: esc,
+        getClient: getSchedSupabaseClient
+      });
+    }
+    function viewPortalTrainingProgress(){
+      portalTrainingProgressConfigureOnce();
+      return window.PortalTrainingProgress ? window.PortalTrainingProgress.viewHtml() : '<p class="page-intro">Training progress module failed to load.</p>';
+    }
+    function bindPortalTrainingProgressModule(){
+      portalTrainingProgressConfigureOnce();
+      if(window.PortalTrainingProgress && typeof window.PortalTrainingProgress.bindModule === 'function'){
+        window.PortalTrainingProgress.bindModule();
       }
     }
     function portalAdminAchievementsConfigureOnce(){
@@ -19432,7 +19456,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       root.querySelectorAll('[data-act]').forEach(function(b){
         b.addEventListener('click', function(){
           var v = b.getAttribute('data-act');
-          if(v==='dashboard'||v==='operations'||v==='operations_admin'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='c4k_registers'||v==='c4k_late_submissions'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='staffhr_contracts'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='scheduling'||v==='term_roster_edit'||v==='roster_spreadsheets'||v==='absents_refunds'||v==='portal_documents'||v==='portal_payslips'||v==='portal_activity'||v==='participant_achievements'||v==='staff_live_map'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='interviews'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings'||v==='logs') setView(v);
+          if(v==='dashboard'||v==='operations'||v==='operations_admin'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='c4k_registers'||v==='c4k_late_submissions'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='staffhr_contracts'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='scheduling'||v==='term_roster_edit'||v==='roster_spreadsheets'||v==='absents_refunds'||v==='portal_documents'||v==='portal_payslips'||v==='portal_activity'||v==='portal_training_progress'||v==='participant_achievements'||v==='staff_live_map'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='interviews'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings'||v==='logs') setView(v);
           closeSidebarMob();
         });
       });
@@ -19704,6 +19728,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       else if(id==='portal_payslips') bindPortalPayslipsModule();
       else if(id==='portal_documents' || id.indexOf('portal_docs_')===0) bindPortalDocumentsModule();
       if(id==='portal_activity') bindPortalActivityModule();
+      if(id==='portal_training_progress') bindPortalTrainingProgressModule();
       if(id==='participant_achievements') bindParticipantAchievementsModule();
       if(id==='staff_live_map') bindStaffLiveMapModule();
       if(id==='clients'){
