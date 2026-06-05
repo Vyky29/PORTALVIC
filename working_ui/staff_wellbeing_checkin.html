@@ -3,188 +3,54 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Wellbeing check-in ù clubSENsational</title>
+  <title>Wellbeing Check-in ù clubSENsational</title>
   <script src="/portal-static-bootstrap.js"></script>
-  <style>
-    :root {
-      --navy: #2a3140;
-      --gold: #e4a82a;
-      --gold-light: #f5d78a;
-      --paper: #fdfcfa;
-      --text: #1a2330;
-      --muted: #5c6778;
-      --line: #d8dee8;
-      --ok: #1d6b4a;
-      --ok-bg: #e6f4ef;
-      --warn: #b45309;
-      --warn-bg: #fff7e6;
-      --bad: #b42318;
-      --bad-bg: #fdecea;
-      --radius: 14px;
-      --font: "DM Sans", system-ui, sans-serif;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: var(--font);
-      color: var(--text);
-      background: linear-gradient(165deg, #dfe8f0 0%, #eef2f6 50%, #e8ecf2 100%);
-      min-height: 100vh;
-      padding: 16px 16px 32px;
-    }
-    .wrap { max-width: 640px; margin: 0 auto; }
-    .card {
-      background: var(--paper);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      box-shadow: 0 4px 24px rgba(15, 39, 64, 0.08);
-      overflow: hidden;
-    }
-    .head {
-      padding: 22px 20px 18px;
-      background: linear-gradient(135deg, var(--navy) 0%, #343a48 100%);
-      color: #fff;
-      border-bottom: 3px solid var(--gold);
-    }
-    .head h1 { margin: 0; font-size: 1.35rem; line-height: 1.25; }
-    .head p { margin: 10px 0 0; font-size: 14px; color: rgba(255,255,255,.88); line-height: 1.5; }
-    .tag {
-      display: inline-block;
-      margin-bottom: 10px;
-      padding: 5px 10px;
-      border-radius: 8px;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: .04em;
-      text-transform: uppercase;
-      background: rgba(228,168,42,.2);
-      color: var(--gold-light);
-    }
-    .body { padding: 20px; }
-    .progress {
-      height: 6px;
-      background: #e8ecf2;
-      border-radius: 999px;
-      overflow: hidden;
-      margin-bottom: 18px;
-    }
-    .progress__bar {
-      height: 100%;
-      width: 0;
-      background: linear-gradient(90deg, var(--gold), #f4bc44);
-      transition: width .25s ease;
-    }
-    .step-meta { font-size: 12px; color: var(--muted); margin: 0 0 6px; font-weight: 600; }
-    .step-title { margin: 0 0 8px; font-size: 1.15rem; }
-    .step-q { margin: 0 0 16px; color: var(--muted); font-size: 14px; line-height: 1.5; }
-    .levels { display: grid; gap: 10px; margin-bottom: 16px; }
-    .level-btn {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      width: 100%;
-      padding: 14px 14px;
-      border-radius: 12px;
-      border: 2px solid var(--line);
-      background: #fff;
-      font: inherit;
-      text-align: left;
-      cursor: pointer;
-      transition: border-color .15s, background .15s;
-    }
-    .level-btn:hover { border-color: #9bb4cc; }
-    .level-btn.is-active { border-color: var(--navy); background: #f4f8fc; }
-    .level-btn[data-level="green"].is-active { border-color: var(--ok); background: var(--ok-bg); }
-    .level-btn[data-level="amber"].is-active { border-color: var(--warn); background: var(--warn-bg); }
-    .level-btn[data-level="red"].is-active { border-color: var(--bad); background: var(--bad-bg); }
-    .level-emoji { font-size: 22px; line-height: 1; flex-shrink: 0; }
-    .level-copy strong { display: block; font-size: 15px; margin-bottom: 2px; }
-    .level-copy span { font-size: 13px; color: var(--muted); line-height: 1.4; }
-    .extra { margin-top: 4px; }
-    .extra[hidden] { display: none !important; }
-    label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
-    textarea, input[type="text"] {
-      width: 100%;
-      padding: 10px 12px;
-      border-radius: 10px;
-      border: 1px solid var(--line);
-      font: inherit;
-      font-size: 14px;
-      resize: vertical;
-    }
-    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-    .chip {
-      padding: 8px 12px;
-      border-radius: 999px;
-      border: 1px solid var(--line);
-      background: #fff;
-      font: inherit;
-      font-size: 12px;
-      cursor: pointer;
-    }
-    .chip.is-on { border-color: var(--navy); background: #eef4fa; font-weight: 600; }
-    .actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
-    .btn {
-      flex: 1;
-      min-width: 120px;
-      padding: 12px 16px;
-      border-radius: 12px;
-      border: none;
-      font: inherit;
-      font-weight: 700;
-      font-size: 15px;
-      cursor: pointer;
-    }
-    .btn--ghost { background: #fff; border: 1px solid var(--line); color: var(--navy); }
-    .btn--pri {
-      background: linear-gradient(180deg, var(--gold-light), var(--gold));
-      color: var(--navy);
-    }
-    .btn:disabled { opacity: .55; cursor: not-allowed; }
-    .err { color: var(--bad); font-size: 13px; margin: 10px 0 0; min-height: 1.2em; }
-    .done {
-      text-align: center;
-      padding: 28px 12px;
-    }
-    .done h2 { margin: 0 0 10px; }
-    .done p { color: var(--muted); line-height: 1.55; margin: 0 0 16px; }
-    .foot-note {
-      margin-top: 14px;
-      font-size: 12px;
-      color: var(--muted);
-      line-height: 1.5;
-      text-align: center;
-    }
-  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="/portal/portal-wellbeing-checkin.css?v=20260605-wb-ui" />
 </head>
-<body>
-  <div class="wrap">
-    <div class="card" id="app">
-      <div class="head">
-        <span class="tag" id="termTag">This term</span>
-        <h1>Wellbeing check-in</h1>
-        <p>About 5 minutes. Confidential. If anything is affecting you at work, we will arrange a supportive 1-to-1 and complete the full review together.</p>
-      </div>
-      <div class="body" id="stepHost">
-        <p class="muted" style="margin:0">Loadingù</p>
+<body class="portal-wb-checkin">
+  <div class="portal-wb-wrap">
+    <div class="portal-wb-card" id="app">
+      <header class="portal-wb-head">
+        <div class="portal-wb-head-top">
+          <div class="portal-wb-logo">
+            <img src="https://www.clubsensational.org/wp-content/uploads/2026/03/F-02-1.png" width="40" height="40" alt="clubSENsational" decoding="async" />
+          </div>
+          <div class="portal-wb-head-copy">
+            <span class="portal-wb-tag" id="termTag">This term</span>
+            <h1>Wellbeing Check-in</h1>
+            <p>About 5 minutes. Confidential. If anything is affecting you at work, leadership will arrange a supportive 1-to-1 ù you do not need to complete the long form alone.</p>
+          </div>
+        </div>
+      </header>
+      <div class="portal-wb-body" id="stepHost">
+        <p class="portal-wb-foot" style="margin:0;text-align:left">Loadingù</p>
       </div>
     </div>
-    <p class="foot-note">Only ops admin and directors are notified when you flag a concern. ùAll goodù check-ins are recorded without a 1-to-1 request.</p>
+    <p class="portal-wb-foot">Only ops admin and directors are notified when you flag a concern. ùAll goodù check-ins are recorded without a 1-to-1 request.</p>
   </div>
 
-  <script src="/portal/portal_wellbeing_checkin.js?v=20260605-wellbeing"></script>
+  <script src="/portal/portal_wellbeing_checkin.js?v=20260605-wellbeing-ui"></script>
+  <script src="/portal/portal_feedback_voice_input.js?v=20260617-form-voice"></script>
   <script>
   (function () {
     var wb = window.portalWellbeingCheckin;
     if (!wb) return;
 
-    var STRESSOR_HINTS = {
-      demands: ["High workload", "Back-to-back sessions", "Unclear priorities", "Not enough breaks"],
-      control: ["Little input into planning", "Rigid timetable", "Can't adjust approach"],
-      support: ["Hard to reach manager", "Unclear who to ask", "Slow responses"],
-      relations: ["Team tension", "Feeling unheard", "Behaviour concerns"],
-      role: ["Unclear expectations", "Role changed recently", "Too many hats"],
-      change: ["Sudden changes", "Poor communication", "Job security worries"],
+    var DOMAIN_ICONS = {
+      demands: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>',
+      control: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3"/><path d="M2 10h4M10 8h4M18 12h4"/></svg>',
+      support: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/><path d="M8 9h8M8 13h5"/></svg>',
+      relations: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+      role: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>',
+      change: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>',
+    };
+
+    var LEVEL_ICONS = {
+      green: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg>',
+      amber: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>',
+      red: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>',
     };
 
     var state = {
@@ -193,6 +59,7 @@
       general_note: "",
       submitting: false,
       existing: null,
+      staffName: "",
     };
 
     function el(tag, cls, html) {
@@ -211,17 +78,27 @@
       return state.domains[key];
     }
 
+    function attachVoiceForField(fieldId) {
+      if (typeof window.PortalFeedbackVoiceInput === "undefined") return;
+      if (!document.getElementById(fieldId)) return;
+      window.PortalFeedbackVoiceInput.attach({
+        fields: [fieldId],
+        staffName: state.staffName || "",
+      });
+    }
+
     function renderDone(result) {
       var has = result && result.row && result.row.has_concerns;
       host().innerHTML =
-        '<div class="done">' +
+        '<div class="portal-wb-done">' +
+        '<div class="portal-wb-done-icon">' + LEVEL_ICONS.green + '</div>' +
         '<h2>' + (has ? "Thank you ù we have received your check-in" : "Thank you ù all recorded") + '</h2>' +
         '<p>' +
         (has
           ? "Someone from leadership will contact you to arrange a private 1-to-1. You do not need to fill in the long stress form now ù that is completed together in the meeting."
           : "Glad to hear things are OK this term. You can close this page.") +
         '</p>' +
-        '<button type="button" class="btn btn--pri" id="btnCloseDone">Back to portal</button>' +
+        '<button type="button" class="portal-wb-btn portal-wb-btn--pri" id="btnCloseDone">Back to portal</button>' +
         '</div>';
       document.getElementById("btnCloseDone").onclick = function () {
         if (window.history.length > 1) window.history.back();
@@ -240,34 +117,42 @@
         return;
       }
 
-      var prog = el("div", "progress", '<div class="progress__bar"></div>');
+      var progRow = el("div", "portal-wb-progress-row");
+      progRow.appendChild(el("span", "portal-wb-step-label", "Step " + (idx + 1) + " of " + steps));
+      h.appendChild(progRow);
+
+      var prog = el("div", "portal-wb-progress", '<div class="portal-wb-progress__bar"></div>');
       prog.firstChild.style.width = Math.round(((idx + 1) / steps) * 100) + "%";
       h.appendChild(prog);
 
       if (idx === wb.DOMAINS.length) {
-        renderGeneralStep(h);
+        renderGeneralStep(h, steps);
         return;
       }
 
       var dom = wb.DOMAINS[idx];
       var entry = domainEntry(dom.key);
+      var icon = DOMAIN_ICONS[dom.key] || DOMAIN_ICONS.demands;
 
-      h.appendChild(el("p", "step-meta", "Step " + (idx + 1) + " of " + steps));
-      h.appendChild(el("h2", "step-title", dom.title));
-      h.appendChild(el("p", "step-q", dom.question));
+      var head = el("div", "portal-wb-domain-head");
+      head.innerHTML =
+        '<div class="portal-wb-domain-icon">' + icon + '</div>' +
+        '<div><h2 class="portal-wb-domain-title">' + dom.title + '</h2>' +
+        '<p class="portal-wb-domain-q">' + dom.question + '</p></div>';
+      h.appendChild(head);
 
-      var levels = el("div", "levels");
+      var levels = el("div", "portal-wb-levels");
       [
-        { level: "green", emoji: "??", title: "All good", sub: "No concerns right now" },
-        { level: "amber", emoji: "??", title: "Some pressure", sub: "I'd like to talk when there is time" },
-        { level: "red", emoji: "??", title: "Need support soon", sub: "Please arrange a 1-to-1 with me" },
+        { level: "green", title: "All good", sub: "No concerns right now" },
+        { level: "amber", title: "Some pressure", sub: "I'd like to talk when there is time" },
+        { level: "red", title: "Need support soon", sub: "Please arrange a 1-to-1 with me" },
       ].forEach(function (opt) {
-        var btn = el("button", "level-btn" + (entry.level === opt.level ? " is-active" : ""), "");
+        var btn = el("button", "portal-wb-level" + (entry.level === opt.level ? " is-active" : ""), "");
         btn.type = "button";
         btn.setAttribute("data-level", opt.level);
         btn.innerHTML =
-          '<span class="level-emoji">' + opt.emoji + '</span>' +
-          '<span class="level-copy"><strong>' + opt.title + '</strong><span>' + opt.sub + '</span></span>';
+          '<span class="portal-wb-level-icon">' + LEVEL_ICONS[opt.level] + '</span>' +
+          '<span class="portal-wb-level-copy"><strong>' + opt.title + '</strong><span>' + opt.sub + '</span></span>';
         btn.onclick = function () {
           entry.level = opt.level;
           renderStep();
@@ -276,29 +161,33 @@
       });
       h.appendChild(levels);
 
-      var extra = el("div", "extra");
+      var extra = el("div", "portal-wb-extra");
       extra.hidden = entry.level === "green";
-      extra.appendChild(el("label", "", "Anything you want us to know? (optional)"));
+      extra.appendChild(el("label", "portal-wb-field-label", "Anything you want us to know? (optional)"));
+      extra.appendChild(el("p", "portal-wb-voice-hint", "Tap the microphone to dictate. Italian or Spanish is translated to English for our records."));
       var ta = document.createElement("textarea");
+      ta.id = "wb-domain-note-" + dom.key;
       ta.rows = 3;
       ta.placeholder = "Short note in your own wordsù";
       ta.value = entry.note || "";
       ta.oninput = function () { entry.note = ta.value; };
       extra.appendChild(ta);
 
-      var hints = STRESSOR_HINTS[dom.key] || [];
+      var hints = (wb.CHECKIN_STRESSORS && wb.CHECKIN_STRESSORS[dom.key]) || [];
       if (hints.length) {
-        extra.appendChild(el("label", "", "Common topics (tap any that apply)"));
-        var chips = el("div", "chips");
-        hints.forEach(function (hint) {
-          var on = (entry.stressors || []).indexOf(hint) >= 0;
-          var chip = el("button", "chip" + (on ? " is-on" : ""), hint);
+        extra.appendChild(el("label", "portal-wb-field-label", "Common topics (tap any that apply)"));
+        var chips = el("div", "portal-wb-chips");
+        hints.forEach(function (item) {
+          var key = item.key;
+          var on = (entry.stressors || []).indexOf(key) >= 0;
+          var chip = el("button", "portal-wb-chip" + (on ? " is-on" : ""), item.label);
           chip.type = "button";
+          chip.title = key;
           chip.onclick = function () {
             entry.stressors = entry.stressors || [];
-            var i = entry.stressors.indexOf(hint);
+            var i = entry.stressors.indexOf(key);
             if (i >= 0) entry.stressors.splice(i, 1);
-            else entry.stressors.push(hint);
+            else entry.stressors.push(key);
             renderStep();
           };
           chips.appendChild(chip);
@@ -307,38 +196,46 @@
       }
       h.appendChild(extra);
 
-      var actions = el("div", "actions");
+      var actions = el("div", "portal-wb-actions");
       if (idx > 0) {
-        var back = el("button", "btn btn--ghost", "Back");
+        var back = el("button", "portal-wb-btn portal-wb-btn--ghost", "Back");
         back.type = "button";
         back.onclick = function () { state.step--; renderStep(); };
         actions.appendChild(back);
       }
-      var next = el("button", "btn btn--pri", idx === wb.DOMAINS.length - 1 ? "Review & send" : "Next");
+      var next = el("button", "portal-wb-btn portal-wb-btn--pri", idx === wb.DOMAINS.length - 1 ? "Review & send" : "Next");
       next.type = "button";
       next.onclick = function () { state.step++; renderStep(); };
       actions.appendChild(next);
       h.appendChild(actions);
+
+      if (!extra.hidden) {
+        attachVoiceForField("wb-domain-note-" + dom.key);
+      }
     }
 
-    function renderGeneralStep(h) {
-      var steps = wb.DOMAINS.length + 1;
-      h.appendChild(el("p", "step-meta", "Step " + steps + " of " + steps));
-      h.appendChild(el("h2", "step-title", "Anything else?"));
-      h.appendChild(el("p", "step-q", "Optional message for leadership ù only read if you submit concerns above or write here."));
+    function renderGeneralStep(h, steps) {
+      h.appendChild(el("div", "portal-wb-domain-head",
+        '<div class="portal-wb-domain-icon">' + DOMAIN_ICONS.support + '</div>' +
+        '<div><h2 class="portal-wb-domain-title">Anything Else?</h2>' +
+        '<p class="portal-wb-domain-q">Optional message for leadership ù only read if you flagged concerns above or write here.</p></div>'
+      ));
+      h.appendChild(el("p", "portal-wb-voice-hint", "Tap the microphone to dictate. Italian or Spanish is translated to English for our records."));
       var ta = document.createElement("textarea");
+      ta.id = "wb-general-note";
       ta.rows = 4;
       ta.placeholder = "Optionalù";
       ta.value = state.general_note || "";
       ta.oninput = function () { state.general_note = ta.value; };
       h.appendChild(ta);
+      attachVoiceForField("wb-general-note");
 
-      var actions = el("div", "actions");
-      var back = el("button", "btn btn--ghost", "Back");
+      var actions = el("div", "portal-wb-actions");
+      var back = el("button", "portal-wb-btn portal-wb-btn--ghost", "Back");
       back.type = "button";
       back.onclick = function () { state.step--; renderStep(); };
       actions.appendChild(back);
-      var send = el("button", "btn btn--pri", "Submit check-in");
+      var send = el("button", "portal-wb-btn portal-wb-btn--pri", "Submit check-in");
       send.type = "button";
       send.onclick = function () { state.step++; renderStep(); };
       actions.appendChild(send);
@@ -347,7 +244,7 @@
 
     function renderSubmit() {
       var h = host();
-      h.innerHTML = '<p style="margin:0">Sendingù</p>';
+      h.innerHTML = '<p class="portal-wb-foot" style="margin:0;text-align:left">Sendingù</p>';
       if (state.submitting) return;
       state.submitting = true;
       wb.submitCheckin({ domains: state.domains, general_note: state.general_note })
@@ -358,27 +255,53 @@
           state.submitting = false;
           state.step = wb.DOMAINS.length;
           h.innerHTML =
-            '<p class="err">' + String((err && err.message) || err || "Could not submit.") + '</p>' +
-            '<button type="button" class="btn btn--pri" id="btnRetry">Try again</button>';
+            '<p class="portal-wb-err">' + String((err && err.message) || err || "Could not submit.") + '</p>' +
+            '<button type="button" class="portal-wb-btn portal-wb-btn--pri" id="btnRetry">Try again</button>';
           document.getElementById("btnRetry").onclick = function () { renderStep(); };
         });
     }
 
     function boot() {
       document.getElementById("termTag").textContent = wb.termLabel(wb.currentTermKey());
-      wb.fetchOwnCheckinThisTerm()
+      import("/portal/auth-handler.js?v=20260605-wellbeing-ui")
+        .then(function (mod) {
+          var client = mod.getSupabaseClient && mod.getSupabaseClient();
+          if (!client) return null;
+          return client.auth.getUser().then(function (ur) {
+            var user = ur && ur.data && ur.data.user;
+            if (!user) return null;
+            return client
+              .from("staff_profiles")
+              .select("full_name,username")
+              .eq("id", user.id)
+              .maybeSingle()
+              .then(function (pr) {
+                var p = pr && pr.data;
+                state.staffName = (p && (p.full_name || p.username)) || "";
+                if (!state.staffName && user.email) {
+                  state.staffName = String(user.email).split("@")[0].replace(/[._]+/g, " ");
+                }
+                return state.staffName;
+              });
+          });
+        })
+        .catch(function () {})
+        .then(function () {
+          return wb.fetchOwnCheckinThisTerm();
+        })
         .then(function (res) {
           state.existing = res.checkin;
           if (res.checkin) {
             host().innerHTML =
-              '<div class="done">' +
+              '<div class="portal-wb-done">' +
+              '<div class="portal-wb-done-icon">' + LEVEL_ICONS.green + '</div>' +
               '<h2>Check-in already sent this term</h2>' +
               '<p>Status: <strong>' + res.checkin.status.replace(/_/g, " ") + '</strong>. ' +
               (res.checkin.has_concerns
                 ? "Leadership has been notified. They will be in touch for your 1-to-1."
                 : "Thanks ù no further action needed right now.") +
               '</p>' +
-              '<button type="button" class="btn btn--pri" id="btnBackPortal">Back to portal</button>' +
+              '<button type="button" class="portal-wb-btn portal-wb-btn--pri" id="btnBackPortal">Back to portal</button>' +
               '</div>';
             document.getElementById("btnBackPortal").onclick = function () {
               window.location.href = /lead_dashboard/i.test(document.referrer || "") ? "lead_dashboard.html" : "staff_dashboard.html";
@@ -388,7 +311,7 @@
           renderStep();
         })
         .catch(function (err) {
-          host().innerHTML = '<p class="err">' + String((err && err.message) || err) + '</p>';
+          host().innerHTML = '<p class="portal-wb-err">' + String((err && err.message) || err) + '</p>';
         });
     }
 

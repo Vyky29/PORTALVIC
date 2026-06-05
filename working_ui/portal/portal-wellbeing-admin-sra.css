@@ -1,0 +1,140 @@
+/**
+ * Admin / CEO 1-to-1 wellbeing review ù streamlined portal mode (?checkin=)
+ */
+
+body.portal-wellbeing-admin-mode {
+  padding-bottom: 88px;
+}
+
+.portal-wb-admin-banner {
+  width: min(1180px, calc(100% - 32px));
+  margin: 20px auto 0;
+  padding: 18px 22px;
+  border-radius: 14px;
+  border: 1px solid rgba(228, 168, 42, 0.45);
+  background: linear-gradient(135deg, #2a3140 0%, #343a48 100%);
+  color: #fff;
+  box-shadow: 0 6px 28px rgba(26, 35, 48, 0.15);
+}
+
+.portal-wb-admin-banner__eyebrow {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #f5d78a;
+}
+
+.portal-wb-admin-banner h2 {
+  margin: 0 0 8px;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+.portal-wb-admin-banner__meta {
+  margin: 0 0 12px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.88);
+  line-height: 1.5;
+}
+
+.portal-wb-admin-banner__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.portal-wb-admin-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.portal-wb-admin-chip--amber { background: rgba(180, 83, 9, 0.35); }
+.portal-wb-admin-chip--red { background: rgba(180, 35, 24, 0.4); }
+
+.portal-wb-admin-steps {
+  width: min(1180px, calc(100% - 32px));
+  margin: 14px auto 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.portal-wb-admin-steps a {
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  color: var(--navy, #2a3140);
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.portal-wb-admin-steps a:hover {
+  border-color: rgba(228, 168, 42, 0.6);
+  background: #fffef8;
+}
+
+body.portal-wellbeing-admin-mode #sec-guidance,
+body.portal-wellbeing-admin-mode #sec-app1,
+body.portal-wellbeing-admin-mode #sec-app2,
+body.portal-wellbeing-admin-mode #sec-app3,
+body.portal-wellbeing-admin-mode #sec-pdf,
+body.portal-wellbeing-admin-mode .discuss-block,
+body.portal-wellbeing-admin-mode .toc,
+body.portal-wellbeing-admin-mode .risk-bands,
+body.portal-wellbeing-admin-mode .footer-note {
+  display: none !important;
+}
+
+body.portal-wellbeing-admin-mode .pdf-parenthetical {
+  display: none;
+}
+
+body.portal-wellbeing-admin-mode .header-fields .field:nth-child(1),
+body.portal-wellbeing-admin-mode .header-fields .field:nth-child(3) {
+  display: none;
+}
+
+body.portal-wellbeing-admin-mode #btn-save,
+body.portal-wellbeing-admin-mode #btn-load,
+body.portal-wellbeing-admin-mode #btn-clear {
+  display: none !important;
+}
+
+body.portal-wellbeing-admin-mode #btn-save-portal,
+body.portal-wellbeing-admin-mode #btn-complete-portal {
+  display: inline-flex !important;
+}
+
+body.portal-wellbeing-admin-mode .section-title {
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
+}
+
+body.portal-wellbeing-admin-mode .brand h1 {
+  font-size: 1.55rem;
+  text-transform: none;
+}
+
+body.portal-wellbeing-admin-mode .ceo-toolbar {
+  gap: 8px;
+}
+
+body.portal-wellbeing-admin-mode #btn-complete-portal {
+  background: linear-gradient(180deg, #4ade80, #22c55e);
+  color: #14532d;
+}

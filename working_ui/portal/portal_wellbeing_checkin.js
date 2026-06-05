@@ -5,13 +5,111 @@
   "use strict";
 
   var DOMAINS = [
-    { key: "demands", title: "Workload & demands", question: "Can you cope with your workload and session demands?" },
-    { key: "control", title: "Control & input", question: "Do you have enough say in how your work is organised?" },
-    { key: "support", title: "Support & communication", question: "Do you get enough support from your manager and team?" },
-    { key: "relations", title: "Relationships", question: "Do you feel treated fairly and respectfully at work?" },
-    { key: "role", title: "Role clarity", question: "Is your role and what is expected of you clear?" },
-    { key: "change", title: "Change & security", question: "Is change communicated well and do you feel secure in your role?" },
+    {
+      key: "demands",
+      title: "Workload & Demands",
+      question: "Can you manage your workload and session demands comfortably?",
+    },
+    {
+      key: "control",
+      title: "Control & Autonomy",
+      question: "Do you have enough input into how your work is planned and delivered?",
+    },
+    {
+      key: "support",
+      title: "Support & Communication",
+      question: "Do you receive timely support from your manager and team?",
+    },
+    {
+      key: "relations",
+      title: "Working Relationships",
+      question: "Do you feel treated fairly and respectfully at work?",
+    },
+    {
+      key: "role",
+      title: "Role Clarity",
+      question: "Are your responsibilities and expectations clear?",
+    },
+    {
+      key: "change",
+      title: "Change & Security",
+      question: "Is organisational change communicated well, and do you feel secure in your role?",
+    },
   ];
+
+  var DOMAIN_LABELS = {
+    demands: "Workload",
+    control: "Control",
+    support: "Support",
+    relations: "Relationships",
+    role: "Role",
+    change: "Change",
+  };
+
+  /**
+   * Chip labels are short; keys match staff_wellbeing_review.html stressorSuggestions exactly.
+   */
+  var CHECKIN_STRESSORS = {
+    demands: [
+      { key: "High workload / too many sessions", label: "High workload" },
+      { key: "Back to back sessions without breaks", label: "Back-to-back sessions" },
+      { key: "Unclear priorities or conflicting deadlines", label: "Unclear priorities" },
+      { key: "Insufficient staffing on shift", label: "Not enough staff on shift" },
+    ],
+    control: [
+      { key: "Limited input in planning", label: "Little input into planning" },
+      { key: "Little autonomy in daily decisions", label: "Can't adjust day-to-day" },
+      { key: "Rigid processes with no room to adapt", label: "Rigid processes" },
+      { key: "Unclear expectations from management", label: "Unclear expectations" },
+    ],
+    support: [
+      { key: "Unclear where to get support", label: "Unclear who to ask" },
+      { key: "Manager unavailable for check-ins", label: "Hard to reach manager" },
+      { key: "Information not cascaded in time", label: "Slow or late updates" },
+      { key: "Limited access to EAP or wellbeing resources", label: "Limited wellbeing support" },
+    ],
+    relations: [
+      { key: "Interpersonal conflict within the team", label: "Team tension" },
+      { key: "Perceived unfair treatment", label: "Feeling unfairly treated" },
+      { key: "Bullying or harassment concern", label: "Behaviour concerns" },
+      { key: "Lack of recognition or feedback", label: "Feeling unheard" },
+    ],
+    role: [
+      { key: "Unclear role boundaries", label: "Unclear expectations" },
+      { key: "Responsibilities exceed capacity", label: "Too many responsibilities" },
+      { key: "Unclear performance expectations", label: "Role changed recently" },
+      { key: "Commute or travel burden", label: "Travel / commute burden" },
+    ],
+    change: [
+      { key: "Poor communication during organisational change", label: "Poor communication" },
+      { key: "Consultation lacking on changes affecting role", label: "Sudden changes" },
+      { key: "Fear regarding job security", label: "Job security worries" },
+      { key: "Rapid change without adequate support", label: "Change without support" },
+    ],
+  };
+
+  /** Old check-in chip text -> SRA dropdown value */
+  var LEGACY_STRESSOR_MAP = {
+    "High workload": "High workload / too many sessions",
+    "Back-to-back sessions": "Back to back sessions without breaks",
+    "Unclear priorities": "Unclear priorities or conflicting deadlines",
+    "Not enough breaks": "Back to back sessions without breaks",
+    "Little input into planning": "Limited input in planning",
+    "Rigid timetable": "Rigid processes with no room to adapt",
+    "Can't adjust approach": "Little autonomy in daily decisions",
+    "Hard to reach manager": "Manager unavailable for check-ins",
+    "Unclear who to ask": "Unclear where to get support",
+    "Slow responses": "Information not cascaded in time",
+    "Team tension": "Interpersonal conflict within the team",
+    "Feeling unheard": "Lack of recognition or feedback",
+    "Behaviour concerns": "Bullying or harassment concern",
+    "Unclear expectations": "Unclear expectations from management",
+    "Role changed recently": "Unclear performance expectations",
+    "Too many hats": "Responsibilities exceed capacity",
+    "Sudden changes": "Consultation lacking on changes affecting role",
+    "Poor communication": "Poor communication during organisational change",
+    "Job security worries": "Fear regarding job security",
+  };
 
   var LEVEL_ORDER = { green: 0, amber: 1, red: 2 };
 
@@ -33,7 +131,7 @@
     key = clean(key);
     var m = /^(\d{4})-(H1|H2)$/.exec(key);
     if (!m) return key || "This term";
-    return m[1] + (m[2] === "H1" ? " · Jan–Jun" : " · Jul–Dec");
+    return m[1] + (m[2] === "H1" ? " ï¿½ Janï¿½Jun" : " ï¿½ Julï¿½Dec");
   }
 
   function highestLevel(domains) {
@@ -201,11 +299,116 @@
     return { s: 1, l: 1 };
   }
 
+  function resolveStressorKey(raw, selectEl) {
+    var val = clean(raw);
+    if (!val) return "";
+    if (LEGACY_STRESSOR_MAP[val]) val = LEGACY_STRESSOR_MAP[val];
+    if (selectEl) {
+      for (var i = 0; i < selectEl.options.length; i++) {
+        if (selectEl.options[i].value === val) return val;
+      }
+    }
+    Object.keys(CHECKIN_STRESSORS).forEach(function (dom) {
+      (CHECKIN_STRESSORS[dom] || []).forEach(function (item) {
+        if (item.key === val || item.label === val) val = item.key;
+      });
+    });
+    if (LEGACY_STRESSOR_MAP[val]) val = LEGACY_STRESSOR_MAP[val];
+    return val;
+  }
+
+  function ensureDomainRows(tbody, count) {
+    if (!tbody || count < 1) return;
+    while (tbody.rows.length < count) {
+      var clone = tbody.rows[tbody.rows.length - 1].cloneNode(true);
+      clone.querySelectorAll("input, textarea, select").forEach(function (el) {
+        if (el.tagName === "SELECT") el.value = "";
+        else {
+          el.value = "";
+          if (el.classList.contains("js-score")) el.removeAttribute("style");
+        }
+      });
+      clone.querySelectorAll(".js-s-range, .js-l-range").forEach(function (r) {
+        r.value = "1";
+      });
+      clone.querySelectorAll(".js-band").forEach(function (b) {
+        b.textContent = "";
+        b.className = "js-band score-band";
+      });
+      clone.querySelectorAll(".js-s-name, .js-l-name").forEach(function (x) {
+        x.textContent = "\u2014";
+      });
+      clone.querySelectorAll(".js-common-stressor").forEach(function (s) {
+        s.value = "";
+      });
+      clone.removeAttribute("data-stressor-ui-collapsed");
+      tbody.appendChild(clone);
+    }
+  }
+
+  function applyScoresToRow(tr, scores) {
+    var sIn = tr.querySelector(".js-s");
+    var lIn = tr.querySelector(".js-l");
+    var sR = tr.querySelector(".js-s-range");
+    var lR = tr.querySelector(".js-l-range");
+    if (sIn) sIn.value = String(scores.s);
+    if (lIn) lIn.value = String(scores.l);
+    if (sR) sR.value = String(scores.s);
+    if (lR) lR.value = String(scores.l);
+    if (typeof global.refreshRiskRow === "function") global.refreshRiskRow(tr);
+  }
+
+  function applyStressorToRow(tr, sraKey, note, scores, opts) {
+    opts = opts || {};
+    if (!tr) return;
+    tr.removeAttribute("data-stressor-ui-collapsed");
+    var detail = tr.querySelector(".js-stressor-detail");
+    if (detail) detail.hidden = false;
+    var sel = tr.querySelector(".js-common-stressor");
+    var stText = tr.querySelector(".js-stressor-text");
+    var obs = tr.querySelector(".js-obs-text");
+    var resolved = sraKey ? resolveStressorKey(sraKey, sel) : "";
+    var hasOption = false;
+    if (sel && resolved) {
+      for (var j = 0; j < sel.options.length; j++) {
+        if (sel.options[j].value === resolved) {
+          hasOption = true;
+          break;
+        }
+      }
+    }
+    if (sel) {
+      if (hasOption) {
+        sel.value = resolved;
+        if (stText) stText.value = "";
+      } else if (resolved || sraKey) {
+        sel.value = "__other__";
+        if (stText) stText.value = resolved || clean(sraKey);
+      } else if (note) {
+        sel.value = "__other__";
+        if (stText) stText.value = note;
+      }
+    }
+    if (opts.fromCheckinNote && note && obs) {
+      obs.value = "From staff check-in: " + note;
+    }
+    applyScoresToRow(tr, scores);
+    if (typeof global.refreshStressorRowPicklists === "function") {
+      global.refreshStressorRowPicklists(tr);
+    }
+    if (typeof global.syncStressorDetailVisibility === "function") {
+      global.syncStressorDetailVisibility(tr);
+    }
+    if (typeof global.updateNoStressorQuickVisual === "function") {
+      global.updateNoStressorQuickVisual(tr);
+    }
+  }
+
   function applyCheckinToSraForm(form, checkin) {
     if (!form || !checkin) return;
     var domains = checkin.domains || {};
     var ins = form.querySelectorAll(".header-fields input");
-    if (ins[0]) ins[0].value = "Stress RA — " + (checkin.staff_name || "");
+    if (ins[0]) ins[0].value = "Stress RA â€” " + (checkin.staff_name || "");
     if (ins[3] && !ins[3].value) {
       var d = new Date();
       ins[3].value =
@@ -224,7 +427,7 @@
         fields[4].value =
           "Staff wellbeing check-in (" +
           termLabel(checkin.term_key) +
-          ") — " +
+          ") â€” " +
           (checkin.has_concerns ? "concerns flagged for 1-to-1" : "routine review");
       }
       if (fields[5] && checkin.general_note) {
@@ -246,38 +449,128 @@
       if (!domainHasConcern(entry)) return;
       var tbody = form.querySelector('.domain-tbody[data-domain="' + domainMap[dk] + '"]');
       if (!tbody || !tbody.rows.length) return;
-      var tr = tbody.rows[0];
-      var detail = tr.querySelector(".js-stressor-detail");
-      if (detail) detail.hidden = false;
-      tr.setAttribute("data-stressor-ui-collapsed", "0");
-      var stressors = (entry && entry.stressors) || [];
-      var stText = tr.querySelector(".js-stressor-text");
-      var obs = tr.querySelector(".js-obs-text");
       var note = clean(entry && entry.note);
-      var lines = [];
-      if (stressors.length) lines.push(stressors.join("; "));
-      if (note) lines.push(note);
-      if (stText) stText.value = stressors[0] || note || "Concern raised in wellbeing check-in";
-      if (obs) {
-        obs.value =
-          (note ? note + "\n" : "") +
-          (stressors.length > 1 ? "Also: " + stressors.slice(1).join("; ") : "");
-      }
+      var stressors = ((entry && entry.stressors) || [])
+        .map(function (s) {
+          return clean(s);
+        })
+        .filter(Boolean);
       var scores = levelToScores(entry && entry.level);
-      var sIn = tr.querySelector(".js-s");
-      var lIn = tr.querySelector(".js-l");
-      var sR = tr.querySelector(".js-s-range");
-      var lR = tr.querySelector(".js-l-range");
-      if (sIn) sIn.value = String(scores.s);
-      if (lIn) lIn.value = String(scores.l);
-      if (sR) sR.value = String(scores.s);
-      if (lR) lR.value = String(scores.l);
-      if (typeof global.refreshRiskRow === "function") global.refreshRiskRow(tr);
+      var rowCount = Math.max(1, stressors.length || (note ? 1 : 0));
+      ensureDomainRows(tbody, rowCount);
+      if (stressors.length) {
+        stressors.forEach(function (key, i) {
+          applyStressorToRow(tbody.rows[i], key, i === 0 ? note : "", scores, {
+            fromCheckinNote: i === 0 && !!note,
+          });
+        });
+      } else {
+        applyStressorToRow(
+          tbody.rows[0],
+          null,
+          note || "Concern raised in wellbeing check-in",
+          scores,
+          { fromCheckinNote: !!note }
+        );
+      }
     });
+  }
+
+  function levelLabel(level) {
+    var lv = clean(level || "green").toLowerCase();
+    if (lv === "red") return "Needs support soon";
+    if (lv === "amber") return "Some pressure";
+    return "All good";
+  }
+
+  function flaggedDomainsList(checkin) {
+    var out = [];
+    var domains = (checkin && checkin.domains) || {};
+    Object.keys(DOMAIN_LABELS).forEach(function (key) {
+      var entry = domains[key];
+      if (!domainHasConcern(entry)) return;
+      out.push({
+        key: key,
+        label: DOMAIN_LABELS[key] || key,
+        level: clean((entry && entry.level) || "amber").toLowerCase(),
+      });
+    });
+    return out;
+  }
+
+  function renderAdminBanner(checkin) {
+    var host = document.getElementById("portalWellbeingAdminBanner");
+    if (!host || !checkin) return;
+    var name = clean(checkin.staff_name) || "Team member";
+    var term = termLabel(checkin.term_key);
+    var flagged = flaggedDomainsList(checkin);
+    var chips = flagged
+      .map(function (f) {
+        var cls =
+          f.level === "red"
+            ? " portal-wb-admin-chip--red"
+            : f.level === "amber"
+              ? " portal-wb-admin-chip--amber"
+              : "";
+        return (
+          '<span class="portal-wb-admin-chip' +
+          cls +
+          '">' +
+          f.label +
+          " Â· " +
+          levelLabel(f.level) +
+          "</span>"
+        );
+      })
+      .join("");
+    if (!chips) {
+      chips = '<span class="portal-wb-admin-chip">General note from check-in</span>';
+    }
+    host.innerHTML =
+      '<p class="portal-wb-admin-banner__eyebrow">1-to-1 Wellbeing Review</p>' +
+      "<h2>" +
+      name +
+      "</h2>" +
+      '<p class="portal-wb-admin-banner__meta">' +
+      term +
+      (checkin.staff_role ? " Â· " + clean(checkin.staff_role) : "") +
+      (checkin.general_note
+        ? '<br><span style="opacity:.9">Staff note: â€œ' +
+          clean(checkin.general_note).replace(/"/g, "'") +
+          "ï¿½</span>"
+        : "") +
+      "</p>" +
+      '<div class="portal-wb-admin-banner__chips">' +
+      chips +
+      "</div>";
+    host.hidden = false;
+    document.title = "1-to-1 Wellbeing Review â€” " + name + " â€” clubSENsational";
+    var h1 = document.querySelector("#sra-form .brand h1");
+    if (h1) h1.textContent = "1-to-1 Wellbeing Review â€” " + name;
+    var sub = document.querySelector("#sra-form .brand .subtitle");
+    if (sub) sub.textContent = "Complete together Â· HSE stress risk assessment";
+  }
+
+  function renderAdminQuickNav() {
+    var nav = document.getElementById("portalWellbeingAdminSteps");
+    if (!nav) return;
+    nav.innerHTML =
+      '<a href="#sec-cover">Cover</a>' +
+      '<a href="#sec-demands">Workload</a>' +
+      '<a href="#sec-control">Control</a>' +
+      '<a href="#sec-support">Support</a>' +
+      '<a href="#sec-relations">Relationships</a>' +
+      '<a href="#sec-role">Role</a>' +
+      '<a href="#sec-change">Change</a>' +
+      '<a href="#sec-summary">Summary &amp; actions</a>' +
+      '<a href="#sec-sign">Sign-off</a>';
+    nav.hidden = false;
   }
 
   global.portalWellbeingCheckin = {
     DOMAINS: DOMAINS,
+    DOMAIN_LABELS: DOMAIN_LABELS,
+    CHECKIN_STRESSORS: CHECKIN_STRESSORS,
     currentTermKey: currentTermKey,
     termLabel: termLabel,
     submitCheckin: submitCheckin,
@@ -288,5 +581,8 @@
     applyCheckinToSraForm: applyCheckinToSraForm,
     domainHasConcern: domainHasConcern,
     checkinHasConcerns: checkinHasConcerns,
+    renderAdminBanner: renderAdminBanner,
+    renderAdminQuickNav: renderAdminQuickNav,
+    flaggedDomainsList: flaggedDomainsList,
   };
 })(typeof window !== "undefined" ? window : globalThis);
