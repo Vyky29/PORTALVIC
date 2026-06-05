@@ -4,6 +4,9 @@
 (function (global) {
   "use strict";
 
+  /** TODO: set false before production ù one check-in per staff per term */
+  var ALLOW_REPEAT_CHECKIN = true;
+
   var DOMAINS = [
     {
       key: "demands",
@@ -131,7 +134,7 @@
     key = clean(key);
     var m = /^(\d{4})-(H1|H2)$/.exec(key);
     if (!m) return key || "This term";
-    return m[1] + (m[2] === "H1" ? " ÔøΩ JanÔøΩJun" : " ÔøΩ JulÔøΩDec");
+    return m[1] + (m[2] === "H1" ? " ù JanùJun" : " ù JulùDec");
   }
 
   function highestLevel(domains) {
@@ -243,14 +246,17 @@
 
   async function fetchOwnCheckinThisTerm() {
     var ctx = await getAuthClient();
+    var fields = ALLOW_REPEAT_CHECKIN
+      ? "id,status,has_concerns,term_key,created_at,highest_level,domains,general_note"
+      : "id,status,has_concerns,term_key,created_at,highest_level";
     var res = await ctx.client
       .from("portal_staff_wellbeing_checkins")
-      .select("id,status,has_concerns,term_key,created_at,highest_level")
+      .select(fields)
       .eq("staff_user_id", ctx.user.id)
       .eq("term_key", currentTermKey())
       .maybeSingle();
     if (res.error) throw res.error;
-    return { ctx: ctx, checkin: res.data };
+    return { ctx: ctx, checkin: res.data, allowRepeat: ALLOW_REPEAT_CHECKIN };
   }
 
   async function loadSraDraft(checkinId) {
@@ -408,7 +414,7 @@
     if (!form || !checkin) return;
     var domains = checkin.domains || {};
     var ins = form.querySelectorAll(".header-fields input");
-    if (ins[0]) ins[0].value = "Stress RA ‚Äî " + (checkin.staff_name || "");
+    if (ins[0]) ins[0].value = "Stress RA ù " + (checkin.staff_name || "");
     if (ins[3] && !ins[3].value) {
       var d = new Date();
       ins[3].value =
@@ -427,7 +433,7 @@
         fields[4].value =
           "Staff wellbeing check-in (" +
           termLabel(checkin.term_key) +
-          ") ‚Äî " +
+          ") ù " +
           (checkin.has_concerns ? "concerns flagged for 1-to-1" : "routine review");
       }
       if (fields[5] && checkin.general_note) {
@@ -517,7 +523,7 @@
           cls +
           '">' +
           f.label +
-          " ¬∑ " +
+          " ù " +
           levelLabel(f.level) +
           "</span>"
         );
@@ -533,22 +539,22 @@
       "</h2>" +
       '<p class="portal-wb-admin-banner__meta">' +
       term +
-      (checkin.staff_role ? " ¬∑ " + clean(checkin.staff_role) : "") +
+      (checkin.staff_role ? " ù " + clean(checkin.staff_role) : "") +
       (checkin.general_note
-        ? '<br><span style="opacity:.9">Staff note: ‚Äú' +
+        ? '<br><span style="opacity:.9">Staff note: ù' +
           clean(checkin.general_note).replace(/"/g, "'") +
-          "ÔøΩ</span>"
+          "ù</span>"
         : "") +
       "</p>" +
       '<div class="portal-wb-admin-banner__chips">' +
       chips +
       "</div>";
     host.hidden = false;
-    document.title = "1-to-1 Wellbeing Review ‚Äî " + name + " ‚Äî clubSENsational";
+    document.title = "1-to-1 Wellbeing Review ù " + name + " ù clubSENsational";
     var h1 = document.querySelector("#sra-form .brand h1");
-    if (h1) h1.textContent = "1-to-1 Wellbeing Review ‚Äî " + name;
+    if (h1) h1.textContent = "1-to-1 Wellbeing Review ù " + name;
     var sub = document.querySelector("#sra-form .brand .subtitle");
-    if (sub) sub.textContent = "Complete together ¬∑ HSE stress risk assessment";
+    if (sub) sub.textContent = "Complete together ù HSE stress risk assessment";
   }
 
   function renderAdminQuickNav() {
@@ -568,6 +574,7 @@
   }
 
   global.portalWellbeingCheckin = {
+    ALLOW_REPEAT_CHECKIN: ALLOW_REPEAT_CHECKIN,
     DOMAINS: DOMAINS,
     DOMAIN_LABELS: DOMAIN_LABELS,
     CHECKIN_STRESSORS: CHECKIN_STRESSORS,

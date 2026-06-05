@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Wellbeing Check-in ù clubSENsational</title>
+  <title>Wellbeing Check-in ÔøΩ clubSENsational</title>
   <script src="/portal-static-bootstrap.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -20,15 +20,15 @@
           <div class="portal-wb-head-copy">
             <span class="portal-wb-tag" id="termTag">This term</span>
             <h1>Wellbeing Check-in</h1>
-            <p>About 5 minutes. Confidential. If anything is affecting you at work, leadership will arrange a supportive 1-to-1 ù you do not need to complete the long form alone.</p>
+            <p>About 5 minutes. Confidential. If anything is affecting you at work, leadership will arrange a supportive 1-to-1 ÔøΩ you do not need to complete the long form alone.</p>
           </div>
         </div>
       </header>
       <div class="portal-wb-body" id="stepHost">
-        <p class="portal-wb-foot" style="margin:0;text-align:left">Loadingù</p>
+        <p class="portal-wb-foot" style="margin:0;text-align:left">LoadingÔøΩ</p>
       </div>
     </div>
-    <p class="portal-wb-foot">Only ops admin and directors are notified when you flag a concern. ùAll goodù check-ins are recorded without a 1-to-1 request.</p>
+    <p class="portal-wb-foot">Only ops admin and directors are notified when you flag a concern. ÔøΩAll goodÔøΩ check-ins are recorded without a 1-to-1 request.</p>
   </div>
 
   <script src="/portal/portal_wellbeing_checkin.js?v=20260605-wellbeing-ui"></script>
@@ -92,10 +92,10 @@
       host().innerHTML =
         '<div class="portal-wb-done">' +
         '<div class="portal-wb-done-icon">' + LEVEL_ICONS.green + '</div>' +
-        '<h2>' + (has ? "Thank you ù we have received your check-in" : "Thank you ù all recorded") + '</h2>' +
+        '<h2>' + (has ? "Thank you ÔøΩ we have received your check-in" : "Thank you ÔøΩ all recorded") + '</h2>' +
         '<p>' +
         (has
-          ? "Someone from leadership will contact you to arrange a private 1-to-1. You do not need to fill in the long stress form now ù that is completed together in the meeting."
+          ? "Someone from leadership will contact you to arrange a private 1-to-1. You do not need to fill in the long stress form now ÔøΩ that is completed together in the meeting."
           : "Glad to hear things are OK this term. You can close this page.") +
         '</p>' +
         '<button type="button" class="portal-wb-btn portal-wb-btn--pri" id="btnCloseDone">Back to portal</button>' +
@@ -168,7 +168,7 @@
       var ta = document.createElement("textarea");
       ta.id = "wb-domain-note-" + dom.key;
       ta.rows = 3;
-      ta.placeholder = "Short note in your own wordsù";
+      ta.placeholder = "Short note in your own wordsÔøΩ";
       ta.value = entry.note || "";
       ta.oninput = function () { entry.note = ta.value; };
       extra.appendChild(ta);
@@ -218,13 +218,13 @@
       h.appendChild(el("div", "portal-wb-domain-head",
         '<div class="portal-wb-domain-icon">' + DOMAIN_ICONS.support + '</div>' +
         '<div><h2 class="portal-wb-domain-title">Anything Else?</h2>' +
-        '<p class="portal-wb-domain-q">Optional message for leadership ù only read if you flagged concerns above or write here.</p></div>'
+        '<p class="portal-wb-domain-q">Optional message for leadership ÔøΩ only read if you flagged concerns above or write here.</p></div>'
       ));
       h.appendChild(el("p", "portal-wb-voice-hint", "Tap the microphone to dictate. Italian or Spanish is translated to English for our records."));
       var ta = document.createElement("textarea");
       ta.id = "wb-general-note";
       ta.rows = 4;
-      ta.placeholder = "Optionalù";
+      ta.placeholder = "OptionalÔøΩ";
       ta.value = state.general_note || "";
       ta.oninput = function () { state.general_note = ta.value; };
       h.appendChild(ta);
@@ -244,7 +244,7 @@
 
     function renderSubmit() {
       var h = host();
-      h.innerHTML = '<p class="portal-wb-foot" style="margin:0;text-align:left">Sendingù</p>';
+      h.innerHTML = '<p class="portal-wb-foot" style="margin:0;text-align:left">SendingÔøΩ</p>';
       if (state.submitting) return;
       state.submitting = true;
       wb.submitCheckin({ domains: state.domains, general_note: state.general_note })
@@ -291,7 +291,7 @@
         })
         .then(function (res) {
           state.existing = res.checkin;
-          if (res.checkin) {
+          if (res.checkin && !wb.ALLOW_REPEAT_CHECKIN) {
             host().innerHTML =
               '<div class="portal-wb-done">' +
               '<div class="portal-wb-done-icon">' + LEVEL_ICONS.green + '</div>' +
@@ -299,7 +299,7 @@
               '<p>Status: <strong>' + res.checkin.status.replace(/_/g, " ") + '</strong>. ' +
               (res.checkin.has_concerns
                 ? "Leadership has been notified. They will be in touch for your 1-to-1."
-                : "Thanks ù no further action needed right now.") +
+                : "Thanks ‚Äî no further action needed right now.") +
               '</p>' +
               '<button type="button" class="portal-wb-btn portal-wb-btn--pri" id="btnBackPortal">Back to portal</button>' +
               '</div>';
@@ -307,6 +307,14 @@
               window.location.href = /lead_dashboard/i.test(document.referrer || "") ? "lead_dashboard.html" : "staff_dashboard.html";
             };
             return;
+          }
+          if (res.checkin && wb.ALLOW_REPEAT_CHECKIN) {
+            state.domains = res.checkin.domains || {};
+            state.general_note = res.checkin.general_note || "";
+            var tag = document.getElementById("termTag");
+            if (tag) {
+              tag.textContent = wb.termLabel(wb.currentTermKey()) + " ¬∑ test mode ‚Äî edit & resend";
+            }
           }
           renderStep();
         })
