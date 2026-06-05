@@ -154,10 +154,7 @@
     var card = document.getElementById("topbarProfileCard");
     if (!card) return;
     var gender = resolveTopbarStaffGender();
-    var key = resolveTopbarStaffKey();
     card.setAttribute("data-gender", gender);
-    if (key) card.setAttribute("data-staff-key", key);
-    else card.removeAttribute("data-staff-key");
   }
 
   function staffFirstName(name) {

@@ -93,12 +93,12 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260610-pwa-black-fix" />
   <script src="/portal/portal_screenshot_guard.js?v=20260610-pwa-black-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260605-header-mockup" />
-  <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260605-header-mockup" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260605-today-date-color" />
+  <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260605-profile-card" />
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260620-inbox-logo-orbit" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260601-landscape-full" />
 </head>
-<body class="portal-staff-dashboard">
+<body>
   <script>
   /* Embedded shell: if only <body> is injected, <head> (PWA metas) is missing and iOS keeps the Safari bar. */
   (function(){
@@ -971,7 +971,7 @@
   <script src="/portal/staff_roster_resolve.js?v=20260611-javi-roster-guard"></script>
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260620-staff-header-ach" />
   <script src="/portal/portal_staff_gender_embed.js?v=20260605-profile-card"></script>
-  <script src="/portal/portal_topbar_header.js?v=20260605-header-mockup"></script>
+  <script src="/portal/portal_topbar_header.js?v=20260605-profile-card"></script>
   <script src="/portal/portal_participant_achievements.js?v=20260602-ach-rls-landscape"></script>
   <script src="/portal/portal_client_sessions_overview.js?v=20260601-sessions-fit"></script>
   <script src="/portal/portal_induction.js?v=20260613-required-induction"></script>
@@ -9409,16 +9409,12 @@
       }
     }
 
-    /** Scale topbar display name to fit the profile card (CSS clamp handles staff mockup). */
+    /** Scale topbar display name to fill the middle column (photo | name | date). */
     function portalFitTopbarName(){
       const h1 = document.getElementById('staffName');
       const givenEl = document.getElementById('staffNameGiven');
       const surEl = document.getElementById('staffNameSurname');
       if(!h1 || !givenEl) return;
-      if(document.body.classList.contains('portal-staff-dashboard')){
-        h1.style.fontSize = '';
-        return;
-      }
       const minPx = 12;
       const maxPx = 17;
       const avail = h1.clientWidth;
