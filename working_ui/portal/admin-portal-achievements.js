@@ -40,7 +40,35 @@
   function statusLabel(status) {
     if (status === "attached") return "In feedback";
     if (status === "draft") return "Draft";
-    return "Unused";
+    if (status === "archived_unused") return "Not used";
+    return "Not used";
+  }
+
+  function formatSessionDate(iso) {
+    var s = String(iso || "").trim().slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return "";
+    try {
+      var d = new Date(s + "T12:00:00");
+      if (isNaN(d.getTime())) return s;
+      return d.toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+    } catch (_e) {
+      return s;
+    }
+  }
+
+  /** Second line under the status chip (feedback day, not-used hint). */
+  function photoStatusDetail(row) {
+    if (row.status === "attached") {
+      var day = formatSessionDate(row.session_date);
+      return day ? "Used in feedback · " + day : "Used in feedback";
+    }
+    if (row.status === "archived_unused") return "Not used in feedback";
+    if (row.status === "draft") return "Draft — not in feedback yet";
+    return "Not used in feedback";
   }
 
   function statusChipClass(status) {
@@ -288,7 +316,11 @@
           var btn = document.createElement("button");
           btn.type = "button";
           btn.className = "portal-admin-achievement-thumb";
-          btn.setAttribute("aria-label", esc(group.clientName) + " — " + esc(caption));
+          var detail = photoStatusDetail(row);
+          btn.setAttribute(
+            "aria-label",
+            esc(group.clientName) + " — " + esc(statusLabel(row.status)) + " — " + esc(caption)
+          );
           btn.innerHTML =
             (url
               ? '<img src="' + esc(url) + '" alt="" draggable="false" class="portal-achievement-protected" />'
@@ -298,6 +330,9 @@
             statusChipClass(row.status) +
             '">' +
             esc(statusLabel(row.status)) +
+            "</span>" +
+            '<span class="portal-admin-achievement-thumb__who">' +
+            esc(detail) +
             "</span>" +
             '<span class="portal-admin-achievement-thumb__title">' +
             esc(caption) +

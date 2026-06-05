@@ -960,6 +960,7 @@
       return false;
     }
     /** Live: no rota id until `rehydrateFromProfile` maps Supabase `staff_profile`. Preview: sample `teflon` rota only. */
+    window.portalParticipantsSheetStaffOnly = true;
     let STAFF_DASHBOARD_ID = '';
     let __spreadsheetBoot = null;
     let sessionsModel = [];
@@ -4307,7 +4308,11 @@
       'yassir': 'portal/participants/yassir.png',
       'faris': 'portal/participants/faris.png',
       'eiji': 'portal/participants/eiji.png',
-      'hazem': 'portal/participants/hazem.png'
+      'hazem': 'portal/participants/hazem.png',
+      'samer': 'portal/participants/samer.png',
+      'kate': 'portal/participants/kate.png',
+      'kamy': 'portal/participants/kamy.png',
+      'cyrus': 'portal/participants/cyrus.png'
     };
     function clientPhotoUrl(name){
       const key = String(name || '').trim().toLowerCase().replace(/\s+/g, ' ');

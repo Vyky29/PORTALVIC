@@ -2382,7 +2382,10 @@ button{
   async function portalFinalizeAchievementPhotosAfterSubmit(opts){
     if(!window.PortalParticipantAchievements) return;
     await portalConfigureAchievementsModule();
-    const ids = window.PortalParticipantAchievements.getSelectedFeedbackPhotoIds();
+    const ids =
+      opts && Array.isArray(opts.attachedIds)
+        ? opts.attachedIds
+        : window.PortalParticipantAchievements.getSelectedFeedbackPhotoIds();
     await window.PortalParticipantAchievements.finalizeOnFeedbackSubmit({
       feedbackId: opts && opts.feedbackId ? opts.feedbackId : null,
       clientId: opts && opts.clientId ? opts.clientId : null,
@@ -2588,6 +2591,13 @@ button{
     submitBtn.textContent = "Submitting";
 
     try{
+      await portalConfigureAchievementsModule();
+      const achievementAttachedIds =
+        window.PortalParticipantAchievements &&
+        typeof window.PortalParticipantAchievements.getSelectedFeedbackPhotoIds === "function"
+          ? window.PortalParticipantAchievements.getSelectedFeedbackPhotoIds()
+          : [];
+
       resolveInstructorFromUrl();
       const { getSupabaseClient } = await import(PORTAL_AUTH_MODULE);
       const supabase = getSupabaseClient();
@@ -2656,6 +2666,7 @@ button{
           feedbackId: feedbackId,
           clientId: ctx2.client_id,
           sessionDate: ctx2.session_date,
+          attachedIds: achievementAttachedIds,
         });
       } else if (portalOpenedFromStaffHub()) {
         const pinName = readPinIdentityName() || clean(instructorDisplayName);
@@ -2687,6 +2698,7 @@ button{
           feedbackId: pinResult && pinResult.feedback_id ? String(pinResult.feedback_id) : null,
           clientId: ctx2.client_id,
           sessionDate: ctx2.session_date,
+          attachedIds: achievementAttachedIds,
         });
       } else {
         alert(

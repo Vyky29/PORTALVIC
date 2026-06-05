@@ -173,28 +173,52 @@
     }
   }
 
+  /** Staff dashboards only: My + optional New. Lead/admin/CEO: All participants (no New tab). */
+  function participantsSheetStaffOnly() {
+    if (typeof global.portalParticipantsSheetStaffOnly === "boolean") {
+      return global.portalParticipantsSheetStaffOnly;
+    }
+    return true;
+  }
+
   function applyTabVisibility() {
     const allBtn = global.document && global.document.getElementById("clientsTabAll");
     const newBtn = global.document && global.document.getElementById("clientsTabNew");
     const pack = collectNewParticipantIds(buildContext());
     const hasNew = pack.ids.length > 0;
+    const staffOnly = participantsSheetStaffOnly();
 
     if (allBtn) {
-      allBtn.hidden = true;
-      allBtn.setAttribute("aria-hidden", "true");
-      allBtn.classList.remove("is-active");
-      allBtn.setAttribute("aria-selected", "false");
+      if (staffOnly) {
+        allBtn.hidden = true;
+        allBtn.setAttribute("aria-hidden", "true");
+        allBtn.classList.remove("is-active");
+        allBtn.setAttribute("aria-selected", "false");
+      } else {
+        allBtn.hidden = false;
+        allBtn.setAttribute("aria-hidden", "false");
+      }
     }
 
     if (newBtn) {
       const wasActive = newBtn.classList.contains("is-active");
-      newBtn.hidden = !hasNew;
-      newBtn.setAttribute("aria-hidden", hasNew ? "false" : "true");
-      if (!hasNew) {
+      if (staffOnly) {
+        newBtn.hidden = !hasNew;
+        newBtn.setAttribute("aria-hidden", hasNew ? "false" : "true");
+        if (!hasNew) {
+          newBtn.classList.remove("is-active");
+          newBtn.setAttribute("aria-selected", "false");
+          if (wasActive && typeof global.setClientsSheetTab === "function") {
+            global.setClientsSheetTab("my");
+          }
+        }
+      } else {
+        newBtn.hidden = true;
+        newBtn.setAttribute("aria-hidden", "true");
         newBtn.classList.remove("is-active");
         newBtn.setAttribute("aria-selected", "false");
         if (wasActive && typeof global.setClientsSheetTab === "function") {
-          global.setClientsSheetTab("my");
+          global.setClientsSheetTab("all");
         }
       }
     }
@@ -244,6 +268,7 @@
 
   global.PortalParticipantsSheet = {
     REPLACE_TYPES: REPLACE_TYPES,
+    participantsSheetStaffOnly: participantsSheetStaffOnly,
     buildContext: buildContext,
     collectNewParticipantIds: collectNewParticipantIds,
     applyTabVisibility: applyTabVisibility,

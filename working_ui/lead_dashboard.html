@@ -972,6 +972,7 @@
       return false;
     }
     /** Live: no rota id until `rehydrateFromProfile` maps Supabase `staff_profile`. Preview: sample `teflon` rota only. */
+    window.portalParticipantsSheetStaffOnly = false;
     let STAFF_DASHBOARD_ID = '';
     let __spreadsheetBoot = null;
     let sessionsModel = [];
@@ -3737,7 +3738,11 @@
       'yassir': 'portal/participants/yassir.png',
       'faris': 'portal/participants/faris.png',
       'eiji': 'portal/participants/eiji.png',
-      'hazem': 'portal/participants/hazem.png'
+      'hazem': 'portal/participants/hazem.png',
+      'samer': 'portal/participants/samer.png',
+      'kate': 'portal/participants/kate.png',
+      'kamy': 'portal/participants/kamy.png',
+      'cyrus': 'portal/participants/cyrus.png'
     };
     function clientPhotoUrl(name){
       const key = String(name || '').trim().toLowerCase().replace(/\s+/g, ' ');
@@ -3863,16 +3868,16 @@
     }
     function portalApplyClientsDirectoryAccess(){
       portalParticipantsSheetRefreshTabs();
+      const allBtn = document.getElementById('clientsTabAll');
       const tools = document.getElementById('clientsAllToolsWrap');
+      if(allBtn){
+        allBtn.hidden = false;
+        allBtn.setAttribute('aria-hidden', 'false');
+      }
       if(tools){
-        tools.hidden = true;
-        const si = document.getElementById('clientsDirectorySearch');
-        if(si) si.value = '';
-        const sug = document.getElementById('clientsDirectorySuggest');
-        if(sug){
-          sug.hidden = true;
-          sug.innerHTML = '';
-        }
+        const myBtn = document.getElementById('clientsTabMy');
+        const isMy = myBtn && myBtn.classList.contains('is-active');
+        tools.hidden = !!isMy;
       }
     }
     function portalClientNoteForParticipantsSheet(clientId){
@@ -4076,19 +4081,20 @@
       const myBtn = document.getElementById('clientsTabMy');
       const newBtn = document.getElementById('clientsTabNew');
       const allBtn = document.getElementById('clientsTabAll');
-      if(mode === 'all') mode = 'my';
-      let isMy = mode === 'my';
-      let isNew = mode === 'new';
-      if(isNew && newBtn && newBtn.hidden){ isNew = false; isMy = true; }
+      const isMy = mode === 'my';
+      const isNew = mode === 'new';
+      const isAll = mode === 'all';
       const tools = document.getElementById('clientsAllToolsWrap');
       if(tools){
-        tools.hidden = true;
-        const si = document.getElementById('clientsDirectorySearch');
-        if(si) si.value = '';
-        const sug = document.getElementById('clientsDirectorySuggest');
-        if(sug){
-          sug.hidden = true;
-          sug.innerHTML = '';
+        tools.hidden = isMy || isNew;
+        if(isMy || isNew){
+          const si = document.getElementById('clientsDirectorySearch');
+          if(si) si.value = '';
+          const sug = document.getElementById('clientsDirectorySuggest');
+          if(sug){
+            sug.hidden = true;
+            sug.innerHTML = '';
+          }
         }
       }
       if(myBtn){
@@ -4100,13 +4106,16 @@
         newBtn.setAttribute('aria-selected', isNew ? 'true' : 'false');
       }
       if(allBtn){
-        allBtn.classList.remove('is-active');
-        allBtn.setAttribute('aria-selected', 'false');
+        allBtn.classList.toggle('is-active', isAll);
+        allBtn.setAttribute('aria-selected', isAll ? 'true' : 'false');
       }
       const grid = document.getElementById('clientsListGrid');
-      if(grid) grid.setAttribute('aria-labelledby', isNew ? 'clientsTabNew' : 'clientsTabMy');
+      if(grid){
+        grid.setAttribute('aria-labelledby', isAll ? 'clientsTabAll' : (isNew ? 'clientsTabNew' : 'clientsTabMy'));
+      }
       if(isMy) renderClientsSheetList('my');
       else if(isNew) renderClientsSheetList('new');
+      else if(isAll) refreshClientsAllTabUI();
       else refreshClientsAllTabUI();
     }
 
