@@ -150,7 +150,7 @@
     "javi": {
       "staffId": "javi",
       "staffName": "Javi",
-      "avatarFile": "portal/staff_photos/javi.jpg",
+      "avatarFile": "portal/staff_photos/javi.png?v=20260605-javi-arranz",
       "staffRoleTrack": "manager",
       "canViewAll": true
     },
