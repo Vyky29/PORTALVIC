@@ -1,11 +1,13 @@
 /* Staff / lead topbar — compact mockup profile card + matched action grid */
 :root{
-  --topbar-tools-gap-x:6px;
-  --topbar-tools-gap-y:4px;
   --topbar-side-block-w:clamp(108px,15vw,118px);
-  --topbar-tools-cell:calc((var(--topbar-side-block-w) - var(--topbar-tools-gap-x)) / 2);
-  --topbar-tools-block-width:var(--topbar-side-block-w);
   --topbar-card-h:clamp(106px,14vw,118px);
+  --topbar-tools-gap-x:4px;
+  --topbar-tools-gap-y:3px;
+  --topbar-tools-cell:clamp(38px,10vw,44px);
+  --topbar-tools-grid-w:calc(2 * var(--topbar-tools-cell) + var(--topbar-tools-gap-x));
+  --topbar-tools-grid-h:calc(2 * var(--topbar-tools-cell) + var(--topbar-tools-gap-y));
+  --topbar-tools-block-width:var(--topbar-tools-grid-w);
   --topbar-name-band-h:24px;
   --topbar-photo-h:calc(var(--topbar-card-h) - var(--topbar-name-band-h));
   --topbar-profile-male-bg:rgba(137,181,193,0.20);
@@ -164,7 +166,7 @@ header.topbar .topbar-profile-card h1.topbar-name,
   white-space:nowrap;
 }
 .topbar-right.topbar-right--tools{
-  width:var(--topbar-side-block-w);
+  width:var(--topbar-tools-grid-w);
   max-width:100%;
   min-width:0;
   justify-self:end;
@@ -178,12 +180,13 @@ header.topbar .topbar-profile-card h1.topbar-name,
 .topbar-tools-grid{
   display:grid;
   grid-template-columns:repeat(2,var(--topbar-tools-cell));
-  grid-auto-rows:auto;
+  grid-auto-rows:var(--topbar-tools-cell);
   gap:var(--topbar-tools-gap-y) var(--topbar-tools-gap-x);
   flex-shrink:0;
-  width:var(--topbar-side-block-w);
+  width:var(--topbar-tools-grid-w);
   max-width:100%;
-  height:var(--topbar-card-h);
+  height:var(--topbar-tools-grid-h);
+  max-height:var(--topbar-tools-grid-h);
 }
 .topbar-tools-grid--lead{
   grid-template-columns:repeat(2,var(--topbar-tools-cell));
@@ -210,10 +213,10 @@ header.topbar .topbar-profile-card h1.topbar-name,
   width:100%;
   max-width:100%;
   min-width:0;
-  font-size:6px;
+  font-size:5px;
   font-weight:800;
-  line-height:1.05;
-  letter-spacing:.04em;
+  line-height:1;
+  letter-spacing:.03em;
   text-align:center;
   text-transform:uppercase;
   color:inherit;
@@ -244,10 +247,11 @@ header.topbar .topbar-profile-card h1.topbar-name,
   width:100%;
   max-width:var(--topbar-tools-cell);
   min-width:0;
-  min-height:calc((var(--topbar-card-h) - var(--topbar-tools-gap-y)) / 2);
+  min-height:0;
   height:100%;
-  padding:4px 3px 3px;
-  border-radius:11px;
+  max-height:var(--topbar-tools-cell);
+  padding:3px 2px 2px;
+  border-radius:9px;
   border:1px solid rgba(45,132,179,.28);
   background:#fff !important;
   color:var(--blue) !important;
@@ -256,16 +260,16 @@ header.topbar .topbar-profile-card h1.topbar-name,
   flex-direction:column;
   align-items:center;
   justify-content:center;
-  gap:2px;
-  box-shadow:0 2px 6px rgba(45,132,179,.1);
+  gap:1px;
+  box-shadow:0 1px 4px rgba(45,132,179,.1);
   -webkit-tap-highlight-color:transparent;
 }
 .topbar-tools-grid--lead .topbar-tool-btn,
 .topbar-tools-grid--ceo-full .topbar-tool-btn{
   width:100%;
   max-width:var(--topbar-tools-cell);
-  min-height:calc((var(--topbar-card-h) - var(--topbar-tools-gap-y)) / 2);
-  border-radius:11px;
+  max-height:var(--topbar-tools-cell);
+  border-radius:9px;
 }
 .topbar-tool-cell .topbar-tool-btn{
   align-self:center;
@@ -275,16 +279,16 @@ header.topbar .topbar-profile-card h1.topbar-name,
   display:flex;
   align-items:center;
   justify-content:center;
-  width:18px;
-  height:18px;
+  width:14px;
+  height:14px;
   min-width:0;
   flex-shrink:0;
   pointer-events:none;
 }
 .topbar-tools-grid--lead .topbar-tool-btn__ico,
 .topbar-tools-grid--ceo-full .topbar-tool-btn__ico{
-  width:17px;
-  height:17px;
+  width:13px;
+  height:13px;
 }
 .topbar-tool-btn__ico svg{
   display:block;
@@ -377,6 +381,7 @@ header.topbar .topbar-profile-card h1.topbar-name,
     --topbar-side-block-w:clamp(100px,28vw,112px);
     --topbar-card-h:clamp(98px,27vw,108px);
     --topbar-name-band-h:22px;
+    --topbar-tools-cell:clamp(36px,9.5vw,40px);
   }
 }
 @media (max-width:360px){
@@ -384,9 +389,10 @@ header.topbar .topbar-profile-card h1.topbar-name,
     --topbar-side-block-w:clamp(94px,27vw,104px);
     --topbar-card-h:clamp(92px,26vw,100px);
     --topbar-name-band-h:20px;
+    --topbar-tools-cell:clamp(34px,9vw,38px);
   }
   .topbar-tool-btn__ico{
-    width:16px;
-    height:16px;
+    width:12px;
+    height:12px;
   }
 }
