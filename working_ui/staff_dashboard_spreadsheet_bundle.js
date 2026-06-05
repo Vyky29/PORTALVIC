@@ -66,7 +66,7 @@
     "angel": {
       "staffId": "angel",
       "staffName": "Angel",
-      "avatarFile": "portal/staff_photos/angel.png",
+      "avatarFile": "portal/staff_photos/angel.png?v=20260605-angel-buena",
       "staffRoleTrack": "swimming",
       "canViewAll": false
     },
