@@ -60,6 +60,21 @@
     }
   };
 
+  var TOPBAR_QUICK_MENU_REFS = {
+    topbarToolAchievements: "quickMenuParticipantAchievements",
+    topbarToolVenue: "quickMenuWorkVenue",
+    topbarToolPickup: "quickMenuDropoffPickup",
+    topbarToolLeadReport: "quickMenuLeadFeedbackReport",
+    topbarToolSessionsOverview: "quickMenuLeadSessionOverview",
+  };
+
+  function triggerQuickMenuButton(quickMenuId) {
+    var btn = document.getElementById(quickMenuId);
+    if (!btn) return false;
+    btn.click();
+    return true;
+  }
+
   global.portalInitTopbarToolsGrid = function portalInitTopbarToolsGrid(opts) {
     opts = opts || {};
     if (document.body.getAttribute("data-portal-topbar-tools-bound") === "1") return;
@@ -80,6 +95,13 @@
           return;
         }
 
+        var toolBtn = e.target.closest ? e.target.closest("[id^='topbarTool']") : null;
+        if (!toolBtn || !toolBtn.id || toolBtn.id === "topbarToolParticipants") return;
+        var quickId = TOPBAR_QUICK_MENU_REFS[toolBtn.id];
+        if (!quickId) return;
+        e.preventDefault();
+        e.stopPropagation();
+        triggerQuickMenuButton(quickId);
       },
       true
     );
