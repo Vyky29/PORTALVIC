@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260614-mob-fit" />
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260613-hours-all-week" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260603-form-record-modal" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260605-admin-hub-refresh" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260605-ops-hub-fit" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260521-embed" />
   <script src="/portal/hr-contract-embed-html.js?v=20260521-embed"></script>
@@ -345,6 +345,7 @@
       policies:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>',
       settings:'<line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>',
       nav_hub:'<rect x="3" y="3" width="8" height="10" rx="1"/><rect x="13" y="3" width="8" height="5" rx="1"/><rect x="13" y="10" width="8" height="11" rx="1"/><rect x="3" y="15" width="8" height="6" rx="1"/>',
+      nav_all_menu:'<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>',
       g_operator:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>',
       g_reception:'<path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>',
       g_c4k:'<path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>',
@@ -16925,27 +16926,33 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return null;
     }
+    function opsHubButtonInner(item, label){
+      var iconHtml = adminNavIconHtml(item.id) || adminNavIconHtml('nav_hub');
+      var labelHtml = '<span class="ops-hub-button__label">'+label+'</span>';
+      return iconHtml + labelHtml;
+    }
     function opsHubActionBtn(action, variant){
       var item = opsHubResolveAction(action);
       if(!item) return '';
       var label = esc(item.label || '');
+      var inner = opsHubButtonInner(item, label);
       var cls = 'ops-hub-button' + (variant === 'secondary' ? ' ops-hub-button--secondary' : ' ops-hub-button--primary');
       if(item.externalUrl){
-        return '<a class="'+cls+'" href="'+esc(String(item.externalUrl))+'">'+label+'</a>';
+        return '<a class="'+cls+'" href="'+esc(String(item.externalUrl))+'">'+inner+'</a>';
       }
       if(item.navAction === 'logout'){
-        return '<button type="button" class="'+cls+'" data-portal-logout="1">'+label+'</button>';
+        return '<button type="button" class="'+cls+'" data-portal-logout="1">'+inner+'</button>';
       }
       if(item.navAction === 'alerts'){
-        return '<button type="button" class="'+cls+'" data-admin-nav-action="alerts">'+label+'</button>';
+        return '<button type="button" class="'+cls+'" data-admin-nav-action="alerts">'+inner+'</button>';
       }
       if(item.navAction === 'device_notifications'){
-        return '<button type="button" class="'+cls+'" data-admin-nav-action="device_notifications">'+label+'</button>';
+        return '<button type="button" class="'+cls+'" data-admin-nav-action="device_notifications">'+inner+'</button>';
       }
       if(item.navAction === 'fullnav'){
-        return '<button type="button" class="'+cls+'" data-admin-nav-action="fullnav">'+label+'</button>';
+        return '<button type="button" class="'+cls+'" data-admin-nav-action="fullnav">'+inner+'</button>';
       }
-      return '<button type="button" class="'+cls+'" data-view-target="'+esc(item.id)+'">'+label+'</button>';
+      return '<button type="button" class="'+cls+'" data-view-target="'+esc(item.id)+'">'+inner+'</button>';
     }
     function opsHubActionsHtml(actions, variant){
       return (actions || []).map(function(a){ return opsHubActionBtn(a, variant); }).filter(Boolean).join('');
