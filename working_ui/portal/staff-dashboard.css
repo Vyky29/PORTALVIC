@@ -3373,18 +3373,18 @@
     .today-section-date{
       display:inline;
       margin:0;
-      font-size:13px;
-      font-weight:700;
-      line-height:1.25;
-      letter-spacing:.02em;
-      color:var(--blue);
+      font-size:inherit;
+      font-weight:inherit;
+      line-height:inherit;
+      letter-spacing:inherit;
+      color:inherit;
       text-transform:none;
     }
     .today-section-date:not(:empty)::before{
       content:'·';
       margin:0 .45em;
-      color:var(--muted);
-      font-weight:800;
+      color:inherit;
+      font-weight:inherit;
     }
     .today-section-date:empty{display:none}
 
