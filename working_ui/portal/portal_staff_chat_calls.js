@@ -163,14 +163,17 @@
     opts = opts || {};
     var kind = String(opts.kind || "video");
     var room = String(opts.room || "").trim();
+    var ctx = getContext();
     return {
-      v: 2,
+      v: 3,
       kind: kind === "meeting" ? "meeting" : kind,
       room: room,
       url: "https://" + JITSI_JAAS_DOMAIN + "/" + encodeURIComponent(room),
       title: String(opts.title || "").trim(),
       scheduledAt: opts.scheduledAt || null,
       createdAt: new Date().toISOString(),
+      callerId: String(ctx.me || "").trim(),
+      callerName: callerDisplayName(),
     };
   }
 
@@ -209,15 +212,43 @@
     };
   }
 
+  function shortDisplayName(value) {
+    var t = String(value == null ? "" : value).trim();
+    if (!t) return "";
+    var parts = t.split(/\s+/).filter(Boolean);
+    return parts[0] || t;
+  }
+
   function callerDisplayName() {
     var box = global.__PORTAL_SUPABASE__;
     var p = box && box.staff_profile;
-    var nm = String((p && p.full_name) || (p && p.username) || "").trim();
+    var nm = shortDisplayName((p && p.full_name) || (p && p.username) || "");
     if (nm) return nm;
     try {
-      nm = String((global.dashboardData && global.dashboardData.staffName) || "").trim();
+      nm = shortDisplayName(global.dashboardData && global.dashboardData.staffName);
     } catch (_d) {}
     return nm || "Staff";
+  }
+
+  function incomingCallerLabelFromProfile(prof) {
+    if (!prof) return "Team chat";
+    var nm = shortDisplayName(prof.full_name || prof.username);
+    return nm || "Team chat";
+  }
+
+  function isOwnCallAuthor(authorId) {
+    authorId = String(authorId || "").trim().toLowerCase();
+    if (!authorId) return false;
+    var box = global.__PORTAL_SUPABASE__;
+    var candidates = [
+      box && box.staff_profile && box.staff_profile.id,
+      box && box.session && box.session.user && box.session.user.id,
+    ];
+    for (var i = 0; i < candidates.length; i++) {
+      var id = candidates[i];
+      if (id && String(id).trim().toLowerCase() === authorId) return true;
+    }
+    return false;
   }
 
   function injectStyles() {
@@ -482,33 +513,59 @@
     return ov;
   }
 
-  function resolveIncomingCallerLabel(row, cb) {
+  function resolveIncomingCallerLabel(row, data, cb) {
     cb = typeof cb === "function" ? cb : function () {};
-    var ctx = getContext();
-    if (row && row.thread_id && ctx.threadId === String(row.thread_id) && ctx.peerLabel) {
-      cb(ctx.peerLabel);
+    data = data || parseCallPayload(row && row.body);
+
+    if (data && data.callerName) {
+      cb(shortDisplayName(data.callerName) || String(data.callerName).trim());
       return;
     }
+
     var box = global.__PORTAL_SUPABASE__;
     var client = box && box.client;
-    var authorId = row && row.author_id ? String(row.author_id) : "";
+    var authorId = String(
+      (data && data.callerId) || (row && row.author_id) || ""
+    ).trim();
     if (!client || !authorId) {
       cb("Team chat");
       return;
     }
     client
       .from("staff_profiles")
-      .select("full_name,username")
+      .select("full_name,username,app_role,staff_role")
       .eq("id", authorId)
       .maybeSingle()
       .then(function (res) {
-        var p = res && res.data;
-        var nm = p && (p.full_name || p.username);
-        cb(nm ? String(nm).trim() : "Team chat");
+        cb(incomingCallerLabelFromProfile(res && res.data));
       })
       .catch(function () {
         cb("Team chat");
       });
+  }
+
+  function showIncomingCallNotification(kind, callerLabel) {
+    if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+    try {
+      if (incomingState.notification) incomingState.notification.close();
+    } catch (_c) {}
+    try {
+      incomingState.notification = new Notification(
+        kind === "video" ? "Incoming video call" : "Incoming voice call",
+        {
+          body: String(callerLabel || "Team chat") + " ó tap to answer",
+          tag: "portal-incoming-call",
+          requireInteraction: true,
+          silent: false,
+        }
+      );
+      incomingState.notification.onclick = function () {
+        try {
+          global.focus();
+        } catch (_f) {}
+        answerIncomingCall();
+      };
+    } catch (_n) {}
   }
 
   function processIncomingCallRow(row, attempt) {
@@ -523,11 +580,12 @@
       }
       return;
     }
-    if (String(row.author_id || "").toLowerCase() === me.toLowerCase()) return;
+    if (isOwnCallAuthor(row.author_id)) return;
     if (isInActiveCall()) return;
 
     var body = String(row.body || "");
     var data = parseCallPayload(body);
+    if (data && data.callerId && isOwnCallAuthor(data.callerId)) return;
     if (!data) {
       if (!row.id || attempt >= incomingRowRetryMax) return;
       fetchDmRowForIncoming(row, attempt, function (full) {
@@ -560,9 +618,10 @@
       title.textContent = kind === "video" ? "Incoming video call" : "Incoming voice call";
     }
     if (sub) sub.textContent = label;
-    resolveIncomingCallerLabel(row, function (nm) {
-      if (!incomingState.active || !sub) return;
-      sub.textContent = nm;
+    resolveIncomingCallerLabel(row, data, function (nm) {
+      if (!incomingState.active) return;
+      if (sub) sub.textContent = nm;
+      showIncomingCallNotification(kind, nm);
     });
     try {
       document.body.appendChild(ov);
@@ -579,26 +638,6 @@
       incomingState.vibrateTimer = setInterval(function () {
         if (incomingState.active) navigator.vibrate([500, 180, 500, 180, 700]);
       }, 2400);
-    }
-
-    if (typeof Notification !== "undefined" && Notification.permission === "granted") {
-      try {
-        incomingState.notification = new Notification(
-          kind === "video" ? "Incoming video call" : "Incoming voice call",
-          {
-            body: label + " ù tap to answer",
-            tag: "portal-incoming-call",
-            requireInteraction: true,
-            silent: false,
-          }
-        );
-        incomingState.notification.onclick = function () {
-          try {
-            global.focus();
-          } catch (_f) {}
-          answerIncomingCall();
-        };
-      } catch (_n) {}
     }
 
     playIncomingRingtone();
@@ -1198,6 +1237,9 @@
       .insert([{ thread_id: threadId, body: body, message_type: "text" }])
       .select("id");
     if (ins.error) throw ins.error;
+    if (ins.data && ins.data[0] && ins.data[0].id) {
+      incomingHandledIds[String(ins.data[0].id)] = true;
+    }
     return payload;
   }
 
