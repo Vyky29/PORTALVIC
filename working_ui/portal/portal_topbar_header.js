@@ -4,27 +4,121 @@
 (function (global) {
   "use strict";
 
-  var CEO_STAFF_EXTRA_CELL_IDS = [
+  /** Programme leads — 6-icon grid on staff or lead shell (not CEOs on staff). */
+  var PROGRAMME_LEAD_TOPBAR_KEYS = { berta: true, john: true, michelle: true };
+
+  var LEAD_TOPBAR_CELL_IDS = [
     "topbarToolCellLeadReport",
     "topbarToolCellSessionsOverview",
   ];
-  var CEO_STAFF_EXTRA_BTN_IDS = [
+  var LEAD_TOPBAR_BTN_IDS = [
     "topbarToolLeadReport",
     "topbarToolSessionsOverview",
   ];
 
-  /** Admin-provided staff photo only (spreadsheet boot / profile.avatarFile) — not user-uploaded auth metadata. */
-  function staffPhotoUrl() {
+  function normalizeStaffPhotoUrl(url) {
+    var u = String(url || "").trim();
+    if (!u) return "";
+    if (/^https?:\/\//i.test(u) || u.indexOf("data:") === 0) return u;
+    if (u.charAt(0) !== "/") u = "/" + u.replace(/^\.?\/*/, "");
+    return u;
+  }
+
+  function staffPhotosBaseFromSource() {
+    try {
+      var src = global.STAFF_DASHBOARD_SOURCE || {};
+      var base = String(src.staffPhotosBaseUrl || "portal/staff_photos/").trim();
+      if (!base) return "/portal/staff_photos/";
+      return normalizeStaffPhotoUrl(base);
+    } catch (_) {
+      return "/portal/staff_photos/";
+    }
+  }
+
+  function swapStaffPhotoExtension(url, ext) {
+    var u = String(url || "").trim();
+    if (!u) return "";
+    return u.replace(/\.(png|jpe?g|webp)$/i, "." + ext);
+  }
+
+  /** Admin roster photo paths (spreadsheet boot / staffProfiles) — not user-uploaded auth metadata. */
+  function resolveStaffPhotoCandidates() {
+    var urls = [];
+    function push(raw) {
+      var u = normalizeStaffPhotoUrl(raw);
+      if (u && urls.indexOf(u) < 0) urls.push(u);
+    }
     try {
       var dd = global.dashboardData;
       if (dd && dd.avatarFile) {
-        var u = String(dd.avatarFile).trim();
-        if (u) return u;
+        push(dd.avatarFile);
+        push(swapStaffPhotoExtension(dd.avatarFile, "png"));
+        push(swapStaffPhotoExtension(dd.avatarFile, "jpg"));
       }
-      return "";
-    } catch (_) {
-      return "";
+      var key = resolveTopbarStaffKey();
+      var src = global.STAFF_DASHBOARD_SOURCE;
+      if (key && src && src.staffProfiles && src.staffProfiles[key]) {
+        var af = src.staffProfiles[key].avatarFile;
+        if (af) {
+          push(af);
+          push(swapStaffPhotoExtension(af, "png"));
+          push(swapStaffPhotoExtension(af, "jpg"));
+        }
+      }
+      if (key) {
+        var base = staffPhotosBaseFromSource();
+        if (base.charAt(base.length - 1) !== "/") base += "/";
+        push(base + key + ".png");
+        push(base + key + ".jpg");
+        push(base + key + ".jpeg");
+        push(base + key + ".webp");
+      }
+    } catch (_) {}
+    return urls;
+  }
+
+  function showStaffPhotoInitials(img, ini, pending, name) {
+    if (img) {
+      img.removeAttribute("src");
+      img.alt = "";
+      img.hidden = true;
+      img.style.display = "none";
+      img.onerror = null;
+      img.onload = null;
     }
+    var box = document.getElementById("topbarStaffPhoto");
+    if (box) box.setAttribute("aria-hidden", "true");
+    if (ini) {
+      ini.textContent = pending ? "\u2026" : photoInitials(name);
+      ini.hidden = false;
+    }
+  }
+
+  function applyStaffPhotoUrl(img, ini, candidates, idx, name) {
+    if (!img || !candidates.length) {
+      showStaffPhotoInitials(img, ini, false, name);
+      return;
+    }
+    var url = candidates[idx];
+    if (!url) {
+      showStaffPhotoInitials(img, ini, false, name);
+      return;
+    }
+    img.onerror = function () {
+      applyStaffPhotoUrl(img, ini, candidates, idx + 1, name);
+    };
+    img.onload = function () {
+      if (ini) {
+        ini.textContent = "";
+        ini.hidden = true;
+      }
+      img.alt = name ? name + " profile photo" : "Profile photo";
+      img.hidden = false;
+      img.style.display = "";
+      var box = document.getElementById("topbarStaffPhoto");
+      if (box) box.setAttribute("aria-hidden", "false");
+    };
+    img.src = url;
   }
 
   function staffFirstName(name) {
@@ -43,6 +137,74 @@
     if (!el) return;
     el.hidden = !visible;
     el.setAttribute("aria-hidden", visible ? "false" : "true");
+  }
+
+  function canonicalTopbarStaffKey(value) {
+    var k = String(value || "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "");
+    if (!k) return "";
+    if (k === "luliya" || k === "aida" || k === "stf021") return "lulia";
+    if (k === "yousef" || k === "yousseff" || k === "yusef") return "youssef";
+    if (k === "stf006") return "john";
+    if (k === "stf012") return "berta";
+    return k;
+  }
+
+  function resolveTopbarStaffKey() {
+    try {
+      var sid = global.STAFF_DASHBOARD_ID;
+      if (sid) {
+        var fromDashId = canonicalTopbarStaffKey(sid);
+        if (fromDashId) return fromDashId;
+      }
+    } catch (_) {}
+    try {
+      var dd = global.dashboardData;
+      if (dd && dd.staffId) {
+        var fromDash = canonicalTopbarStaffKey(dd.staffId);
+        if (fromDash) return fromDash;
+      }
+    } catch (_) {}
+    try {
+      var box = global.__PORTAL_SUPABASE__ || {};
+      var profile = box.staff_profile;
+      var user = box.session && box.session.user;
+      if (typeof global.portalInferStaffKey === "function") {
+        return canonicalTopbarStaffKey(
+          global.portalInferStaffKey(profile, user && user.email),
+        );
+      }
+      if (profile && profile.username) {
+        return canonicalTopbarStaffKey(profile.username);
+      }
+    } catch (_) {}
+    return "";
+  }
+
+  function portalStaffIsProgrammeLeadTopbar() {
+    var key = resolveTopbarStaffKey();
+    if (PROGRAMME_LEAD_TOPBAR_KEYS[key]) return true;
+    try {
+      var box = global.__PORTAL_SUPABASE__ || {};
+      var em = String((box.session && box.session.user && box.session.user.email) || "")
+        .trim()
+        .toLowerCase();
+      if (
+        em === "b.traperocasado@gmail.com" ||
+        em === "johnnyosti37@gmail.com" ||
+        em === "michelle@youtimecounselling.com"
+      ) {
+        return true;
+      }
+      if (em.indexOf("traperocasado") >= 0) return true;
+      if (em.indexOf("johnnyosti") >= 0 || em.indexOf("john.osti") >= 0) return true;
+      if (em.indexOf("michelle@youtimecounselling") >= 0) return true;
+    } catch (_) {}
+    return false;
   }
 
   function portalStaffIsCeoTopbarFullAccess() {
@@ -75,28 +237,12 @@
     var pending =
       global.dashboardData && global.dashboardData.portalIdentityResolved === false;
     var name = pending ? "" : staffFirstName((global.dashboardData && global.dashboardData.staffName) || "");
-    var url = pending ? "" : staffPhotoUrl();
-    if (img) {
-      if (url) {
-        img.src = url;
-        img.alt = name ? name + " profile photo" : "Profile photo";
-        img.hidden = false;
-        img.style.display = "";
-        if (ini) {
-          ini.textContent = "";
-          ini.hidden = true;
-        }
-      } else {
-        img.removeAttribute("src");
-        img.alt = "";
-        img.hidden = true;
-        img.style.display = "none";
-        if (ini) {
-          ini.textContent = pending ? "\u2026" : photoInitials(name);
-          ini.hidden = false;
-        }
-      }
+    var candidates = resolveStaffPhotoCandidates();
+    if (!candidates.length) {
+      showStaffPhotoInitials(img, ini, pending, name);
+      return;
     }
+    applyStaffPhotoUrl(img, ini, candidates, 0, name);
   };
 
   var TOPBAR_QUICK_MENU_REFS = {
@@ -134,33 +280,40 @@
     return true;
   }
 
-  /** Lead shell: 6 tools in 2×3. CEO on staff: show lead + overview cells too. */
+  /**
+   * Lead shell or programme lead (Berta/John): 6 tools in 2×3.
+   * CEOs: staff shell = staff tools only; lead shell = lead tools only.
+   */
   global.portalSyncTopbarRoleTools = function portalSyncTopbarRoleTools(opts) {
     opts = opts || {};
-    var isLead = !!opts.isLead;
-    global.__PORTAL_TOPBAR_IS_LEAD__ = isLead;
+    var isLeadShell = !!opts.isLead;
+    global.__PORTAL_TOPBAR_IS_LEAD__ = isLeadShell;
+
+    var isProgrammeLead = !isLeadShell && portalStaffIsProgrammeLeadTopbar();
+    var swimmingSix =
+      !isLeadShell && !isProgrammeLead && !!global.__PORTAL_TOPBAR_SIX_ICON_GRID__;
+    var showSixIconGrid = isLeadShell || isProgrammeLead || swimmingSix;
 
     var grid = document.getElementById("topbarToolsGrid");
     if (grid) {
-      grid.classList.toggle("topbar-tools-grid--lead", isLead);
+      grid.classList.toggle("topbar-tools-grid--lead", showSixIconGrid);
+      grid.classList.remove("topbar-tools-grid--ceo-full");
     }
+
+    LEAD_TOPBAR_CELL_IDS.forEach(function (id) {
+      setElementVisible(id, showSixIconGrid);
+    });
+    LEAD_TOPBAR_BTN_IDS.forEach(function (id) {
+      setElementVisible(id, showSixIconGrid);
+    });
 
     var isCeo = portalStaffIsCeoTopbarFullAccess();
-    if (grid) {
-      grid.classList.toggle("topbar-tools-grid--ceo-full", isCeo && !isLead);
-    }
-
-    CEO_STAFF_EXTRA_CELL_IDS.forEach(function (id) {
-      setElementVisible(id, isCeo && !isLead);
-    });
-    CEO_STAFF_EXTRA_BTN_IDS.forEach(function (id) {
-      setElementVisible(id, isCeo && !isLead);
-    });
-
-    if (isCeo && typeof global.portalSyncCeoFullTopbarTools === "function") {
+    if (isCeo && !isLeadShell && typeof global.portalSyncCeoFullTopbarTools === "function") {
       global.portalSyncCeoFullTopbarTools();
     }
   };
+
+  global.portalStaffIsProgrammeLeadTopbar = portalStaffIsProgrammeLeadTopbar;
 
   global.portalInitTopbarToolsGrid = function portalInitTopbarToolsGrid(opts) {
     opts = opts || {};
@@ -187,6 +340,13 @@
         if (!toolBtn || !toolBtn.id || toolBtn.id === "topbarToolParticipants") return;
         e.preventDefault();
         e.stopPropagation();
+
+        if (toolBtn.id === "topbarToolSessionPlanner") {
+          if (typeof global.openSheet === "function") {
+            global.openSheet("staffSessionPlanSheet");
+          }
+          return;
+        }
 
         var quickId = quickMenuIdForTopbarTool(toolBtn.id);
         if (quickId && triggerQuickMenuButton(quickId)) return;

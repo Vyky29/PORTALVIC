@@ -4,12 +4,13 @@
 import { portalInferStaffKey } from "./auth-handler.js";
 import { resolveStaffKeyFromAuthEmail } from "./auth-map.js";
 
-const LEAD_OVERVIEW_KEYS = new Set(["berta", "john"]);
+const LEAD_OVERVIEW_KEYS = new Set(["berta", "john", "michelle"]);
 
 /** Auth email → programme lead key (wins over staff_profiles.username e.g. stf012). */
 const LEAD_PROGRAMME_EMAIL_TO_KEY = {
   "johnnyosti37@gmail.com": "john",
   "b.traperocasado@gmail.com": "berta",
+  "michelle@youtimecounselling.com": "michelle",
   "stf006@staff.import.pending": "john",
   "stf012@staff.import.pending": "berta",
 };

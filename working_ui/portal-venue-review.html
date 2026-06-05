@@ -38,8 +38,9 @@
     .venue-review-back {
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 6px;
-      margin: 0 0 10px;
+      margin: 14px auto 0;
       padding: 0;
       border: 0;
       background: none;
@@ -48,6 +49,12 @@
       cursor: pointer;
       text-decoration: none;
       max-width: 100%;
+      min-width: 0;
+    }
+    .venue-review-back-wrap {
+      display: flex;
+      justify-content: center;
+      width: 100%;
       min-width: 0;
     }
     .venue-review-back:hover { text-decoration: underline; }
@@ -488,7 +495,6 @@
   -->
   <div class="wrap">
     <div class="title-row">
-      <button type="button" class="venue-review-back" id="venueReviewBackBtn" aria-label="Back to dashboard">← Back to dashboard</button>
       <h1>Venue Review</h1>
       <p>Record the opening or closing check for your venue. Choose the venue, confirm today’s date and time, then say if anything needs reporting.</p>
     </div>
@@ -554,6 +560,9 @@
         </div>
 
         <button type="submit" class="submit-btn">Submit</button>
+        <div class="venue-review-back-wrap">
+          <button type="button" class="venue-review-back" id="venueReviewBackBtn" aria-label="Back to dashboard">← Back to dashboard</button>
+        </div>
       </form>
     </div>
   </div>

@@ -66,7 +66,7 @@
     "angel": {
       "staffId": "angel",
       "staffName": "Angel",
-      "avatarFile": "portal/staff_photos/angel.jpg",
+      "avatarFile": "portal/staff_photos/angel.png",
       "staffRoleTrack": "swimming",
       "canViewAll": false
     },
@@ -108,14 +108,14 @@
     "javier": {
       "staffId": "javier",
       "staffName": "Javier",
-      "avatarFile": "portal/staff_photos/javier.jpg",
+      "avatarFile": "portal/staff_photos/javier.png",
       "staffRoleTrack": "swimming",
       "canViewAll": false
     },
     "aurora": {
       "staffId": "aurora",
       "staffName": "Aurora",
-      "avatarFile": "portal/staff_photos/aurora.jpg",
+      "avatarFile": "portal/staff_photos/aurora.png",
       "staffRoleTrack": "swimming",
       "canViewAll": false
     },

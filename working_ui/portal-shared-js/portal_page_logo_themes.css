@@ -1,1 +1,10 @@
-/* Theme hooks for portal form logos (extend when syncing full portal-shared-js). */
+/* Theme hooks for portal form logos */
+body.portal-logo-lead {
+  --portal-logo-orbit-a: #d4a017;
+  --portal-logo-orbit-b: #2d84b3;
+}
+
+body.portal-logo-feedback {
+  --portal-logo-orbit-a: #e8a820;
+  --portal-logo-orbit-b: #2d84b3;
+}

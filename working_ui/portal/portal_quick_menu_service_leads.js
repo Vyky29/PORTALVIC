@@ -1,10 +1,17 @@
 /**
- * Quick menu — Service Leads section (lead dashboard only: Berta, John, Victor, Javier, Raúl).
+ * Quick menu ï¿½ Service Leads section (lead dashboard only: Berta, John, Victor, Javier, Raï¿½l).
  */
 import { portalInferStaffKey } from "./auth-handler.js";
 
-/** Programme leads who use the lead dashboard shell — not shown on staff dashboard. */
-const LEAD_DASHBOARD_SERVICE_LEAD_KEYS = new Set(["berta", "john", "victor", "javi", "raul"]);
+/** Programme leads who use the lead dashboard shell ï¿½ not shown on staff dashboard. */
+const LEAD_DASHBOARD_SERVICE_LEAD_KEYS = new Set([
+  "berta",
+  "john",
+  "michelle",
+  "victor",
+  "javi",
+  "raul",
+]);
 
 export function portalIsLeadDashboardShell() {
   try {

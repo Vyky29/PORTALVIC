@@ -148,6 +148,7 @@ const PORTAL_USERNAME_ROLE_OVERRIDES = {
   sevitha: "admin",
   berta: "lead",
   john: "lead",
+  michelle: "lead",
   javi: "ceo",
   raul: "ceo",
   victor: "ceo",

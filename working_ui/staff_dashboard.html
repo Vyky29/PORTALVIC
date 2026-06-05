@@ -94,7 +94,7 @@
   <script src="/portal/portal_screenshot_guard.js?v=20260610-pwa-black-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
   <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260620-topbar-name-bottom" />
-  <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260621-topbar-venue-green-clients" />
+  <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260601-staff-photo-square" />
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260620-inbox-logo-orbit" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260601-landscape-full" />
 </head>
@@ -261,44 +261,50 @@
             <div class="topbar-tool-cell" id="topbarToolCellAchievements">
               <button type="button" class="topbar-tool-btn topbar-tool-btn--achievements" id="topbarToolAchievements" aria-label="Participant achievements — session photos">
                 <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
+                <span class="topbar-tool-label" aria-hidden="true">PHOTO</span>
               </button>
-              <span class="topbar-tool-label" aria-hidden="true">PHOTO</span>
-            </div>
-            <div class="topbar-tool-cell" id="topbarToolCellTermReview" hidden>
-              <button type="button" class="topbar-tool-btn topbar-tool-btn--term-review" id="topbarToolTermReview" data-portal-external-url="swtermreview.html" aria-label="Swimming term review — review each participant per term">
-                <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.32 0z"/></svg></span>
-              </button>
-              <span class="topbar-tool-label" aria-hidden="true">SW REVIEW</span>
             </div>
             <div class="topbar-tool-cell topbar-tool-cell--participants">
               <button type="button" class="topbar-tool-btn topbar-tool-btn--participants" id="topbarToolParticipants" aria-label="My participants">
                 <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+                <span class="topbar-tool-label" aria-hidden="true">CLIENTS</span>
               </button>
-              <span class="topbar-tool-label" aria-hidden="true">CLIENTS</span>
             </div>
             <div class="topbar-tool-cell" id="topbarToolCellVenue">
               <button type="button" class="topbar-tool-btn topbar-tool-btn--venue" id="topbarToolVenue" data-portal-external-url="portal-venue-review.html" aria-label="Venue report">
                 <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V10l8-4 8 4v12"/><path d="M9 22v-6h6v6"/><path d="M8 6h8"/><path d="M10 10h4"/></svg></span>
+                <span class="topbar-tool-label" aria-hidden="true">VENUE</span>
               </button>
-              <span class="topbar-tool-label" aria-hidden="true">VENUE</span>
             </div>
             <div class="topbar-tool-cell" id="topbarToolCellPickup">
               <button type="button" class="topbar-tool-btn topbar-tool-btn--pickup" id="topbarToolPickup" data-portal-external-url="portal-pickup.html" aria-label="Pickup">
                 <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h11l4 4v6a2 2 0 0 1-2 2h-1"/><path d="M4 7v12a2 2 0 0 0 2 2h3"/><circle cx="8.5" cy="18.5" r="2.5"/><circle cx="15.5" cy="18.5" r="2.5"/><path d="M15 7v4h4"/></svg></span>
+                <span class="topbar-tool-label" aria-hidden="true">PICKUP</span>
               </button>
-              <span class="topbar-tool-label" aria-hidden="true">PICKUP</span>
+            </div>
+            <div class="topbar-tool-cell" id="topbarToolCellTermReview" hidden>
+              <button type="button" class="topbar-tool-btn topbar-tool-btn--term-review" id="topbarToolTermReview" data-portal-external-url="swtermreview.html" aria-label="Swimming term review — review each participant per term">
+                <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.32 0z"/></svg></span>
+                <span class="topbar-tool-label" aria-hidden="true">SW REVIEW</span>
+              </button>
+            </div>
+            <div class="topbar-tool-cell" id="topbarToolCellSessionPlanner" hidden aria-hidden="true">
+              <button type="button" class="topbar-tool-btn topbar-tool-btn--session-planner" id="topbarToolSessionPlanner" aria-label="Session planner">
+                <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h2v4M14 14h2v4"/></svg></span>
+                <span class="topbar-tool-label topbar-tool-label--session-planner" aria-hidden="true">SESSION PLANNER</span>
+              </button>
             </div>
             <div class="topbar-tool-cell" id="topbarToolCellLeadReport" hidden aria-hidden="true">
               <button type="button" class="topbar-tool-btn topbar-tool-btn--lead-report" id="topbarToolLeadReport" data-portal-external-url="portal-lead-feedback.html" aria-label="Lead feedback report">
                 <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5"/></svg></span>
+                <span class="topbar-tool-label" aria-hidden="true">LEAD</span>
               </button>
-              <span class="topbar-tool-label" aria-hidden="true">LEAD</span>
             </div>
             <div class="topbar-tool-cell" id="topbarToolCellSessionsOverview" hidden aria-hidden="true">
               <button type="button" class="topbar-tool-btn topbar-tool-btn--sessions-overview" id="topbarToolSessionsOverview" data-portal-external-url="portal-lead-session-overview.html" aria-label="Sessions overview">
                 <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M9 18h6"/></svg></span>
+                <span class="topbar-tool-label" aria-hidden="true">OVERVIEW</span>
               </button>
-              <span class="topbar-tool-label" aria-hidden="true">OVERVIEW</span>
             </div>
           </div>
         </div>
@@ -946,7 +952,7 @@
 
   <script src="/portal/term_from_timetable.js?v=20260604-teflon-guide-days"></script>
   <script src="/portal/term_calendar_dashboard_shared.js?v=20260523-feedback-window"></script>
-  <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260601-notas-participants"></script>
+  <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260601-javier-photo"></script>
   <script src="/portal/session_feedback_portal_data.js?v=20260527-ma-apr-may"></script>
   <script src="/portal/session_feedback_status_portal_data.js?v=20260526-all-complete"></script>
   <script src="/portal/staff_portal_feedback_bridge.js?v=20260604-bespoke-merge-lead"></script>
@@ -962,7 +968,7 @@
   <script src="/portal/portal_participant_catalog.js?v=20260601-participant-dedupe"></script>
   <script src="/portal/staff_roster_resolve.js?v=20260611-javi-roster-guard"></script>
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260620-staff-header-ach" />
-  <script src="/portal/portal_topbar_header.js?v=20260621-lead-topbar-2x3"></script>
+  <script src="/portal/portal_topbar_header.js?v=20260601-staff-photo-square"></script>
   <script src="/portal/portal_participant_achievements.js?v=20260602-ach-rls-landscape"></script>
   <script src="/portal/portal_client_sessions_overview.js?v=20260601-sessions-fit"></script>
   <script src="/portal/portal_induction.js?v=20260613-required-induction"></script>
@@ -970,7 +976,7 @@
   <script src="/portal/portal_guide_ack.js?v=20260604-guide-first-read"></script>
   <script src="/portal/portal_guide_menu.js?v=20260604-guide-first-read"></script>
   <script src="/portal/portal_quick_menu_accordion.js?v=20260604-training-chip"></script>
-  <script src="/portal/portal_swimming_instructor_menus.js?v=20260621-ceo-topbar-full"></script>
+  <script src="/portal/portal_swimming_instructor_menus.js?v=20260601-roberto-six-icon"></script>
   <script src="/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off"></script>
   <script src="/portal/portal_floating_internal_chat.js?v=20260604-footer-chat"></script>
   <script type="module" src="/portal/portal_quick_menu_service_leads.js?v=20260604-service-leads-lead-only"></script>
@@ -13302,6 +13308,9 @@
           void portalSyncOnboardingQuickMenu();
         }
         dashboardData.avatarFile = boot.avatarFile || dashboardData.avatarFile || "";
+        if (typeof window.portalSyncTopbarStaffPhoto === "function") {
+          window.portalSyncTopbarStaffPhoto();
+        }
         dashboardData.staffRoleTrack = boot.staffRoleTrack || dashboardData.staffRoleTrack || "swimming";
         if(typeof getDemoDateLabel === "function" && typeof getDemoDateTopbar === "function"){
           dashboardData.dateLabel = getDemoDateLabel(DEMO_VIEW_DAY);
