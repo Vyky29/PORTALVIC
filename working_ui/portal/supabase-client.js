@@ -441,6 +441,15 @@ export function portalFeedbackSubmittedKeyMatchesRosterKey(submittedKey, rosterK
     }
   }
   if (portalSessionKeyClientSlugsMatch(s, r)) return true;
+  const rClientSlug = String(rParts[2] || rParts[1] || "")
+    .trim()
+    .toLowerCase();
+  const sClientSlug = String(sParts[sParts.length - 1] || sParts[1] || "")
+    .trim()
+    .toLowerCase();
+  if (/_ah$/.test(rClientSlug) && /_ah$/.test(sClientSlug) && rClientSlug !== sClientSlug) {
+    return false;
+  }
   const rClient = String(rParts[2] || rParts[1] || "")
     .trim()
     .toLowerCase();

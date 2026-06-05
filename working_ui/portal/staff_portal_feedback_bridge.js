@@ -49,6 +49,7 @@
     const statusKey = slug(st && (st.client || st.clientName));
     if (!rosterKey || !statusKey) return false;
     if (rosterKey === statusKey) return true;
+    if (/_ah$/.test(rosterKey) && /_ah$/.test(statusKey)) return false;
     return rosterKey.indexOf(statusKey) >= 0 || statusKey.indexOf(rosterKey) >= 0;
   }
 

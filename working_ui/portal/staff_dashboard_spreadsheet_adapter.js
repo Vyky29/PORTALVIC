@@ -168,7 +168,15 @@
     return "";
   }
 
-  /** Roster participant id slug aliases (session keys / feedback — not clients_info only). */
+  /**
+   * Ah brothers are separate participants — never alias across:
+   * amaar_ah, aydaan_ah (Aydan), adaam_ah.
+   */
+  var ROSTER_PARTICIPANT_SPELLING_ALIASES = {
+    aadam_ah: "adaam_ah",
+  };
+
+  /** Roster participant id slug aliases (not clients_info sheet; not Ah brothers). */
   var CLIENT_INFO_SLUG_ALIASES = {
     adam_a: "adam_ab",
     abodi_p: "abodi_pa",
@@ -181,18 +189,24 @@
     steven_c: "steven_ces",
     steven_ce: "steven_ces",
     rayyan_fi: "rayyan_f",
-    aadam_ah: "adaam_ah",
   };
 
   /** clients_info sheet lookup only — must not change roster clientId / portal_session_key. */
   var CLIENT_INFO_SHEET_ALIASES = {
     rayan_ta: "rayan_tapa",
+    aadam_ah: "adaam_ah",
   };
+
+  function rosterParticipantSlugAlias(slug) {
+    const s = String(slug || "").trim();
+    if (!s) return s;
+    return ROSTER_PARTICIPANT_SPELLING_ALIASES[s] || CLIENT_INFO_SLUG_ALIASES[s] || s;
+  }
 
   function canonicalParticipantClientId(nameRaw) {
     const slug = slugify(String(nameRaw || "").trim());
     if (!slug) return slug;
-    return CLIENT_INFO_SLUG_ALIASES[slug] || slug;
+    return rosterParticipantSlugAlias(slug);
   }
 
   function isParticipantCatalogExcludedName(nameRaw) {
@@ -328,8 +342,9 @@
   /** Every real client on any roster row (any instructor): powers ALL CLIENTS without changing MY CLIENTS logic. */
   function collapseAliasParticipantNotes(clientNotesById) {
     if (!clientNotesById || typeof clientNotesById !== "object") return;
-    Object.keys(CLIENT_INFO_SLUG_ALIASES).forEach(function (alias) {
-      var canon = CLIENT_INFO_SLUG_ALIASES[alias];
+    var mergeAliases = Object.assign({}, ROSTER_PARTICIPANT_SPELLING_ALIASES, CLIENT_INFO_SLUG_ALIASES);
+    Object.keys(mergeAliases).forEach(function (alias) {
+      var canon = mergeAliases[alias];
       if (!alias || !canon || alias === canon) return;
       var from = clientNotesById[alias];
       if (!from) return;
@@ -352,8 +367,8 @@
     if (!Array.isArray(sessionsModel)) return;
     sessionsModel.forEach(function (s) {
       if (!s || !s.clientId) return;
-      var canon = CLIENT_INFO_SLUG_ALIASES[s.clientId];
-      if (canon && clientNotesById[canon]) s.clientId = canon;
+      var canon = rosterParticipantSlugAlias(s.clientId);
+      if (canon && canon !== s.clientId && clientNotesById[canon]) s.clientId = canon;
     });
   }
 
