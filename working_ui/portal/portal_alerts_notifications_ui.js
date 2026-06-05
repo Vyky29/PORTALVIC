@@ -1,0 +1,238 @@
+/**
+ * Notifications block in alertsNotificationsSheet (staff / lead dashboards).
+ * Test button stays visible; tap requests permission when still at default, then sends a test alert.
+ */
+(function (global) {
+  "use strict";
+
+  var alertsSheet = document.getElementById("alertsNotificationsSheet");
+
+  function qNotify(id) {
+    return document.getElementById(id);
+  }
+
+  function notifyContextHint() {
+    try {
+      if (typeof global !== "undefined" && global.self !== global.top) {
+        return " Open the portal in a full browser tab.";
+      }
+    } catch (_) {}
+    if (typeof global !== "undefined" && global.isSecureContext === false) {
+      return " Needs HTTPS.";
+    }
+    return "";
+  }
+
+  function syncTestButton(testBtn, permission) {
+    if (!testBtn) return;
+    if (typeof Notification === "undefined") {
+      testBtn.hidden = true;
+      return;
+    }
+    testBtn.hidden = false;
+    testBtn.disabled = permission === "denied" || permission === "unsupported";
+    testBtn.setAttribute(
+      "aria-disabled",
+      testBtn.disabled ? "true" : "false"
+    );
+    if (permission === "granted") {
+      testBtn.textContent = "Send test alert";
+    } else if (permission === "denied") {
+      testBtn.textContent = "Send test alert";
+      testBtn.title = "Allow notifications in browser settings first.";
+    } else {
+      testBtn.textContent = "Send test alert";
+      testBtn.title = "Turns alerts on and sends a test notification.";
+    }
+  }
+
+  function refresh() {
+    var statusEl = qNotify("portalNotifyStatus");
+    var btn = qNotify("portalNotifyEnableBtn");
+    var testBtn = qNotify("portalNotifyTestBtn");
+    if (!statusEl) return;
+    var ctx = notifyContextHint();
+    if (typeof Notification === "undefined") {
+      statusEl.textContent = "Not supported on this browser." + ctx;
+      if (btn) btn.disabled = true;
+      syncTestButton(testBtn, "unsupported");
+      return;
+    }
+    var p = Notification.permission;
+    if (p === "granted") {
+      statusEl.textContent = "On — announcements and roster changes.";
+      if (typeof global.portalEnsureWebPushSubscription === "function") {
+        global.portalEnsureWebPushSubscription().then(function (wp) {
+          if (wp && wp.ok) {
+            statusEl.textContent = "On — including alerts when the app is closed.";
+          } else if (wp && wp.reason === "no-vapid") {
+            statusEl.textContent = "On — alerts when app is closed need ops setup.";
+          } else if (wp && wp.reason === "no-sw") {
+            statusEl.textContent = "On — closed-app alerts may be limited here.";
+          } else if (wp && wp.reason === "no-session") {
+            statusEl.textContent = "On — finish sign-in to register this device.";
+          }
+        });
+      }
+      if (btn) {
+        btn.textContent = "Notifications on";
+        btn.disabled = true;
+      }
+    } else if (p === "denied") {
+      statusEl.textContent =
+        "Blocked — allow notifications for this site in browser settings." + ctx;
+      if (btn) {
+        btn.textContent = "Open browser settings";
+        btn.disabled = false;
+      }
+    } else {
+      var env =
+        typeof global.portalNotifyEnvironment === "function"
+          ? global.portalNotifyEnvironment()
+          : null;
+      var desktopHint =
+        env && env.desktop
+          ? " Alerts are on by default — tap Continue or Send test alert once on this computer (Mac and Windows each need Allow in that browser)."
+          : " Alerts are on by default — tap Send test alert or Continue to allow on this device.";
+      if (typeof global.portalNotifyEnvironmentHint === "function") {
+        desktopHint += global.portalNotifyEnvironmentHint(env);
+      }
+      statusEl.textContent = desktopHint + ctx;
+      if (btn) {
+        btn.textContent = "Turn on notifications";
+        btn.disabled = false;
+      }
+    }
+    syncTestButton(testBtn, p);
+    if (typeof global.portalSyncAlertsSettingsChrome === "function") {
+      global.portalSyncAlertsSettingsChrome();
+    }
+  }
+
+  global.portalRefreshAlertsNotifyUi = refresh;
+
+  function requestNotifyThenRefresh() {
+    var statusEl = qNotify("portalNotifyStatus");
+    if (typeof Notification === "undefined") return Promise.resolve();
+    if (Notification.permission === "denied") {
+      refresh();
+      return Promise.resolve();
+    }
+    if (Notification.permission === "granted") {
+      if (typeof global.portalEnsureWebPushSubscription === "function") {
+        return global.portalEnsureWebPushSubscription().then(function () {
+          refresh();
+        }, function () {
+          refresh();
+        });
+      }
+      refresh();
+      return Promise.resolve();
+    }
+    return Notification.requestPermission()
+      .then(function (r) {
+        if (r === "granted") {
+          try {
+            new Notification("Portal alerts on", {
+              body: "Announcements and roster changes on this device.",
+            });
+          } catch (e) {
+            if (statusEl) {
+              statusEl.textContent =
+                "Permission was granted but the browser did not show a banner: " +
+                (e && e.message ? e.message : String(e)) +
+                notifyContextHint();
+            }
+            refresh();
+            return;
+          }
+          if (typeof global.portalEnsureWebPushSubscription === "function") {
+            return global.portalEnsureWebPushSubscription().then(function () {
+              refresh();
+            }, function () {
+              refresh();
+            });
+          }
+        } else if (r !== "default" && statusEl) {
+          statusEl.textContent =
+            "Notification permission was not granted (" + String(r) + ")." + notifyContextHint();
+        }
+        refresh();
+      })
+      .catch(function (err) {
+        if (statusEl) {
+          statusEl.textContent =
+            "Could not request notification permission: " +
+            (err && err.message ? err.message : String(err)) +
+            notifyContextHint();
+        }
+        refresh();
+      });
+  }
+
+  function onEnableClick() {
+    void requestNotifyThenRefresh();
+  }
+
+  function onTestClick() {
+    var statusEl = qNotify("portalNotifyStatus");
+    if (typeof Notification === "undefined") return;
+    if (Notification.permission === "default") {
+      void requestNotifyThenRefresh().then(function () {
+        if (Notification.permission !== "granted") return;
+        sendTestNotification(statusEl);
+      });
+      return;
+    }
+    if (Notification.permission !== "granted") {
+      if (statusEl) {
+        statusEl.textContent =
+          "Allow notifications for this site in browser settings, then try Send test alert again." +
+          notifyContextHint();
+      }
+      refresh();
+      return;
+    }
+    sendTestNotification(statusEl);
+  }
+
+  function sendTestNotification(statusEl) {
+    try {
+      new Notification("Test: portal notification", {
+        body: "If you see this, notifications can reach your device.",
+      });
+      if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+    } catch (e) {
+      if (statusEl) {
+        statusEl.textContent =
+          "Could not show test notification: " +
+          (e && e.message ? e.message : String(e)) +
+          notifyContextHint();
+      }
+    }
+  }
+
+  if (alertsSheet) {
+    alertsSheet.addEventListener(
+      "click",
+      function (e) {
+        var t =
+          e.target && e.target.closest
+            ? e.target.closest("#portalNotifyEnableBtn, #portalNotifyTestBtn")
+            : null;
+        if (!t || !alertsSheet.contains(t)) return;
+        e.preventDefault();
+        if (t.disabled) return;
+        if (t.id === "portalNotifyEnableBtn") onEnableClick();
+        else if (t.id === "portalNotifyTestBtn") onTestClick();
+      },
+      true
+    );
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", refresh);
+  } else {
+    refresh();
+  }
+})(typeof window !== "undefined" ? window : globalThis);

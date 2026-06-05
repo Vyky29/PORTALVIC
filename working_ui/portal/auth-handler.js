@@ -883,7 +883,7 @@ export async function bootstrapDashboardSupabase(_opts) {
       if (page === "lead_overview") {
         throw new Error("skip_location_on_lead_overview");
       }
-      const perm = await import("./portal_location_permission.js?v=20260620-default-perms");
+      const perm = await import("./portal_location_permission.js?v=20260601-call-mic-incoming");
       window.portalLocationPermissionGranted = perm.portalLocationPermissionGranted;
       window.portalMicrophonePermissionGranted = perm.portalMicrophonePermissionGranted;
       window.portalCameraPermissionGranted = perm.portalCameraPermissionGranted;
@@ -899,6 +899,8 @@ export async function bootstrapDashboardSupabase(_opts) {
       window.portalRefreshCameraUi = perm.portalRefreshCameraUi;
       window.portalRefreshEnableAllUi = perm.portalRefreshEnableAllUi;
       window.portalRefreshMandatoryAlertsSettingsUi = perm.portalRefreshMandatoryAlertsSettingsUi;
+      window.portalOnAlertsSheetOpened = perm.portalOnAlertsSheetOpened;
+      window.portalRequestNotificationPermission = perm.requestNotificationPermission;
       window.portalEnsureMandatoryAlertsSettings = perm.portalEnsureMandatoryAlertsSettings;
       window.portalSyncAlertsSettingsChrome = perm.portalSyncAlertsSettingsChrome;
       perm.bindPortalLocationPermissionUi();

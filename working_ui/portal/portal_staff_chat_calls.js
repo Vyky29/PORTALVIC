@@ -7,7 +7,7 @@
 
   var CALL_TAG = "[[portal-staff-call:";
   var CALL_TAG_END = "]]";
-  /** meet.jit.si requires OAuth for moderators � unusable in embedded iframe. */
+  /** meet.jit.si requires OAuth for moderators — unusable in embedded iframe. */
   var JITSI_JAAS_DOMAIN = "8x8.vc";
   var JITSI_JAAS_API_SRC = "https://8x8.vc/external_api.js";
   var JITSI_FALLBACK_DOMAIN = "meet.ffmuc.net";
@@ -35,6 +35,10 @@
     notification: null,
     overlay: null,
   };
+
+  var INCOMING_CALL_MAX_AGE_MS = 120000;
+  var incomingRowRetryMax = 8;
+  var incomingHandledIds = Object.create(null);
 
   function esc(s) {
     return String(s == null ? "" : s)
@@ -214,6 +218,61 @@
   function isInActiveCall() {
     var shell = callState.shell || document.getElementById("portalInAppCallShell");
     return !!(shell && !shell.hidden);
+  }
+
+  function isRecentLiveCall(data, row) {
+    if (!data || data.scheduledAt) return false;
+    if (!row || !row.created_at) return true;
+    try {
+      return Date.now() - new Date(row.created_at).getTime() <= INCOMING_CALL_MAX_AGE_MS;
+    } catch (_e) {
+      return true;
+    }
+  }
+
+  function fetchDmRowForIncoming(row, attempt, cb) {
+    attempt = attempt || 0;
+    cb = typeof cb === "function" ? cb : function () {};
+    var box = global.__PORTAL_SUPABASE__;
+    var client = box && box.client;
+    if (!client || !row || !row.id) {
+      cb(null);
+      return;
+    }
+    client
+      .from("portal_staff_dm_messages")
+      .select("id,author_id,body,thread_id,created_at")
+      .eq("id", row.id)
+      .maybeSingle()
+      .then(function (res) {
+        cb(res && res.data ? res.data : null);
+      })
+      .catch(function () {
+        cb(null);
+      });
+  }
+
+  function applyJitsiIframeAllow(host) {
+    if (!host) return;
+    function apply() {
+      var iframe = host.querySelector("iframe");
+      if (!iframe) return;
+      iframe.setAttribute(
+        "allow",
+        "camera; microphone; display-capture; autoplay; fullscreen; clipboard-write"
+      );
+      iframe.setAttribute("allowfullscreen", "true");
+    }
+    apply();
+    try {
+      var obs = new MutationObserver(apply);
+      obs.observe(host, { childList: true, subtree: true });
+      setTimeout(function () {
+        try {
+          obs.disconnect();
+        } catch (_d) {}
+      }, 20000);
+    } catch (_o) {}
   }
 
   function stopIncomingRingtone() {
@@ -401,6 +460,37 @@
       });
   }
 
+  function processIncomingCallRow(row, attempt) {
+    if (!row) return;
+    attempt = attempt || 0;
+    var me = meUserId();
+    if (!me) {
+      if (attempt < incomingRowRetryMax) {
+        setTimeout(function () {
+          processIncomingCallRow(row, attempt + 1);
+        }, 400);
+      }
+      return;
+    }
+    if (String(row.author_id || "").toLowerCase() === me.toLowerCase()) return;
+    if (isInActiveCall()) return;
+
+    var body = String(row.body || "");
+    var data = parseCallPayload(body);
+    if (!data) {
+      if (!row.id || attempt >= incomingRowRetryMax) return;
+      fetchDmRowForIncoming(row, attempt, function (full) {
+        if (full) processIncomingCallRow(full, incomingRowRetryMax);
+      });
+      return;
+    }
+    if (!isRecentLiveCall(data, row)) return;
+    var rowId = row.id ? String(row.id) : "";
+    if (rowId && incomingHandledIds[rowId]) return;
+    if (rowId) incomingHandledIds[rowId] = true;
+    startIncomingCallAlert(data, row);
+  }
+
   function startIncomingCallAlert(data, row) {
     if (!data || !data.room) return;
     if (data.scheduledAt) return;
@@ -445,7 +535,7 @@
         incomingState.notification = new Notification(
           kind === "video" ? "Incoming video call" : "Incoming voice call",
           {
-            body: label + " � tap to answer",
+            body: label + " — tap to answer",
             tag: "portal-incoming-call",
             requireInteraction: true,
             silent: false,
@@ -472,15 +562,7 @@
   }
 
   function onDmMessageInsert(row) {
-    if (!row) return;
-    var body = String(row.body || "");
-    var data = parseCallPayload(body);
-    if (!data) return;
-    var me = meUserId();
-    if (!me) return;
-    if (String(row.author_id || "").toLowerCase() === me.toLowerCase()) return;
-    if (isInActiveCall()) return;
-    startIncomingCallAlert(data, row);
+    processIncomingCallRow(row, 0);
   }
 
   function bindCallLayout(api, audioOnly) {
@@ -702,40 +784,12 @@
     document.body.classList.remove("portal-inapp-call-open");
   }
 
-  async function warmCallMediaIfNeeded(kind) {
-    var audioOnly = kind === "audio";
-    try {
-      if (audioOnly) {
-        if (
-          typeof global.portalMicrophonePermissionGranted === "function" &&
-          global.portalMicrophonePermissionGranted()
-        ) {
-          return;
-        }
-        if (typeof global.portalRequestMicrophonePermission === "function") {
-          await global.portalRequestMicrophonePermission();
-        }
-        return;
-      }
-      if (
-        typeof global.portalCameraPermissionGranted === "function" &&
-        global.portalCameraPermissionGranted()
-      ) {
-        return;
-      }
-      if (typeof global.portalRequestCameraPermission === "function") {
-        await global.portalRequestCameraPermission();
-      }
-    } catch (_warm) {}
-  }
-
   async function openInAppCall(opts) {
     opts = opts || {};
     var room = String(opts.room || "").trim();
     if (!room) return;
 
     var kind = String(opts.kind || "video");
-    await warmCallMediaIfNeeded(kind);
     var title = String(opts.title || opts.label || humanLabel(kind, opts.meetingTitle || "")).trim();
     var shell = ensureCallShell();
     var host = callState.host;
@@ -758,8 +812,16 @@
       if (!host) throw new Error("Call panel missing");
 
       host.innerHTML = "";
+      applyJitsiIframeAllow(host);
       var audioOnly = kind === "audio";
       var displayName = callerDisplayName();
+      var micReady =
+        typeof global.portalMicrophonePermissionGranted === "function" &&
+        global.portalMicrophonePermissionGranted();
+      var camReady =
+        typeof global.portalCameraPermissionGranted === "function" &&
+        global.portalCameraPermissionGranted();
+      var skipJitsiGum = audioOnly ? micReady : micReady && camReady;
       var apiOptions = {
         roomName: session.roomName,
         parentNode: host,
@@ -769,6 +831,7 @@
           startWithAudioMuted: false,
           startWithVideoMuted: audioOnly,
           startAudioOnly: audioOnly,
+          disableInitialGUM: !!skipJitsiGum,
           prejoinPageEnabled: false,
           prejoinConfig: {
             enabled: false,
@@ -822,6 +885,7 @@
       var api = new JitsiMeetExternalAPI(session.domain, apiOptions);
 
       callState.api = api;
+      applyJitsiIframeAllow(host);
       bindCallLayout(api, audioOnly);
       syncCallFlipButton(audioOnly);
       hideIncomingCallOverlay();
@@ -843,8 +907,22 @@
         } catch (_join) {}
       }
 
-      api.addEventListener("videoConferenceJoined", hideCallLoading);
+      api.addEventListener("videoConferenceJoined", function () {
+        hideCallLoading();
+        applyJitsiIframeAllow(host);
+        if (skipJitsiGum) {
+          try {
+            api.executeCommand("toggleAudio", false);
+          } catch (_au) {}
+          if (!audioOnly && camReady) {
+            try {
+              api.executeCommand("toggleVideo", false);
+            } catch (_vi) {}
+          }
+        }
+      });
       api.addEventListener("prejoinScreenLoaded", function () {
+        applyJitsiIframeAllow(host);
         autoJoinFromPrejoin();
         setTimeout(autoJoinFromPrejoin, 120);
         setTimeout(autoJoinFromPrejoin, 420);
@@ -1199,6 +1277,10 @@
     closeInAppCall: closeInAppCall,
     buildRoomName: buildRoomName,
     onDmMessageInsert: onDmMessageInsert,
+    processIncomingCallRow: processIncomingCallRow,
+    scanThreadForIncomingCall: function (lastMsg) {
+      processIncomingCallRow(lastMsg, 0);
+    },
     stopIncomingCallAlert: hideIncomingCallOverlay,
     primeCallRingAudio: primeCallRingAudio,
   };

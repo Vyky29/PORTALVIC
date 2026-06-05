@@ -1007,6 +1007,9 @@
     .portal-alerts-action-btn--ghost{font-weight:600}
     .portal-alerts-footnote{margin:4px 0 0;font-size:12px;line-height:1.4;overflow-wrap:break-word}
     .portal-alerts-block--primary{margin-bottom:22px;padding-bottom:18px;border-bottom:1px solid var(--line)}
+    .portal-alerts-block--primary .portal-alerts-action-btn{margin-top:10px}
+    .portal-alerts-block--primary .portal-alerts-action-btn--primary{margin-top:12px}
+    #portalNotifyTestBtn:disabled{opacity:.55;cursor:not-allowed}
     .portal-alerts-action-btn--primary{font-weight:800;background:var(--blue);color:#fff;border-color:var(--blue)}
     .portal-alerts-action-btn--primary:disabled{opacity:.72}
     .portal-alerts-details{margin:0 0 8px;min-width:0}

@@ -13,6 +13,8 @@
     Secret Edge PORTAL_PUSH_OPEN_URL: URL HTTPS pública de este dashboard (sin barra final), p. ej. …/staff_dashboard.html en producción.
   -->
   <script src="/portal/portal-vapid-public.js?v=20260601-vapid"></script>
+  <script src="/portal/portal_web_push_support.js?v=20260601-desktop-alerts"></script>
+  <script src="/portal/portal_alerts_notifications_ui.js?v=20260601-alerts-test"></script>
   <script src="/portal/portal_announcement_ack.js?v=20260601-ann-ack-hydrate"></script>
   <script src="/portal-static-bootstrap.js?v=20260601-annual-profile-sync"></script>
   <!-- Optional: hide parent site chrome when embedded in another shell. -->
@@ -662,15 +664,16 @@
     <div class="sheet-head">
       <div class="sheet-handle"></div>
       <h3 id="alertsNotificationsTitle">Portal features</h3>
-      <p>Alerts, chat, calls, video, meetings and photos come on by default. Microphone is optional for voice feedback.</p>
+      <p>Alerts, chat, calls, video, meetings and photos come on by default. Continue turns on microphone and camera once so calls do not ask again.</p>
     </div>
     <div class="sheet-body">
       <div class="portal-alerts-panel">
         <div class="portal-alerts-block portal-alerts-block--primary">
           <h4 class="portal-alerts-section-title">Continue</h4>
-          <p class="portal-alerts-hint muted">One tap turns on what the portal needs on this device. The browser may ask you to allow alerts, camera or location — accept once.</p>
+          <p class="portal-alerts-hint muted">One tap turns on what the portal needs on this device. The browser may ask for alerts, microphone, camera or location — accept each once.</p>
           <p id="portalEnableAllStatus" class="portal-alerts-status" aria-live="polite"></p>
           <button type="button" class="portal-alerts-action-btn portal-alerts-action-btn--primary" id="portalEnableAllBtn">Continue</button>
+          <button type="button" class="portal-alerts-action-btn portal-alerts-action-btn--ghost" id="portalNotifyTestBtn">Send test alert</button>
         </div>
         <details class="portal-alerts-details">
           <summary class="portal-alerts-details-summary">Advanced settings</summary>
@@ -679,7 +682,6 @@
           <p class="portal-alerts-hint muted">For announcements and roster changes.</p>
           <p id="portalNotifyStatus" class="portal-alerts-status" aria-live="polite"></p>
           <button type="button" class="portal-alerts-action-btn" id="portalNotifyEnableBtn">Turn on notifications</button>
-          <button type="button" class="portal-alerts-action-btn portal-alerts-action-btn--ghost" id="portalNotifyTestBtn" hidden>Send test</button>
         </div>
         <div class="portal-alerts-block" id="portalLocationBlock">
           <h4 class="portal-alerts-section-title">Location</h4>
@@ -688,10 +690,10 @@
           <button type="button" class="portal-alerts-action-btn" id="portalLocationEnableBtn">Allow location</button>
         </div>
         <div class="portal-alerts-block">
-          <h4 class="portal-alerts-section-title">Microphone <span class="muted" style="font-weight:600">(optional)</span></h4>
+          <h4 class="portal-alerts-section-title">Microphone</h4>
           <p id="portalMicHint" class="portal-alerts-hint muted"></p>
           <p id="portalMicStatus" class="portal-alerts-status" aria-live="polite"></p>
-          <button type="button" class="portal-alerts-action-btn" id="portalMicEnableBtn">Allow microphone (optional)</button>
+          <button type="button" class="portal-alerts-action-btn" id="portalMicEnableBtn">Allow microphone</button>
         </div>
         </details>
         <p class="portal-alerts-footnote muted">Location sharing runs only during Bespoke Programme and Day Centre session windows and stops when you close the app.</p>
@@ -923,7 +925,7 @@
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260616-michelle-only"></script>
   <script src="/portal/portal_dm_voice.js?v=20260602-feedback-voice-fix"></script>
-  <script src="/portal/portal_staff_chat_calls.js?v=20260620-call-selfview-flip"></script>
+  <script src="/portal/portal_staff_chat_calls.js?v=20260620-call-mic-incoming"></script>
   <script>
     console.log("ABSENT FIX VERSION LOADED 20260425");
     /** Real calendar weekday for “Today” (en-GB), aligned with staff_clients_machine.xlsx */
@@ -4352,7 +4354,8 @@
       'samer': 'portal/participants/samer.png',
       'kate': 'portal/participants/kate.png',
       'kamy': 'portal/participants/kamy.png',
-      'cyrus': 'portal/participants/cyrus.png'
+      'cyrus': 'portal/participants/cyrus.png',
+      'erik': 'portal/participants/erik.png'
     };
     function clientPhotoUrl(name){
       const key = String(name || '').trim().toLowerCase().replace(/\s+/g, ' ');
@@ -7065,6 +7068,9 @@
               if(p && p.id) authorBy[String(p.id)] = p;
             });
           }
+        }
+        if(arr.length && window.portalStaffChatCalls && typeof window.portalStaffChatCalls.scanThreadForIncomingCall === "function"){
+          window.portalStaffChatCalls.scanThreadForIncomingCall(arr[arr.length - 1], me);
         }
         for(var mxi = 0; mxi < arr.length; mxi++){
           var m = arr[mxi];
@@ -11439,7 +11445,9 @@
         if(typeof portalRefreshQuickMenuAccordion === 'function') portalRefreshQuickMenuAccordion();
       }
       if(id === 'alertsNotificationsSheet'){
-        if(typeof window.portalRefreshMandatoryAlertsSettingsUi === 'function'){
+        if(typeof window.portalOnAlertsSheetOpened === 'function'){
+          void window.portalOnAlertsSheetOpened();
+        }else if(typeof window.portalRefreshMandatoryAlertsSettingsUi === 'function'){
           void window.portalRefreshMandatoryAlertsSettingsUi();
         }else if(typeof window.portalRefreshAlertsNotifyUi === 'function'){
           window.portalRefreshAlertsNotifyUi();
@@ -12395,7 +12403,9 @@
         if(typeof Notification === 'undefined' || Notification.permission !== 'granted') return { ok: false, reason: 'no-notify-perm' };
         const vapid = PORTAL_VAPID_PUBLIC_KEY;
         if(!vapid) return { ok: false, reason: 'no-vapid' };
-        const reg = await navigator.serviceWorker.ready;
+        const reg = typeof window.portalAwaitServiceWorkerReady === 'function'
+          ? await window.portalAwaitServiceWorkerReady(15000)
+          : await navigator.serviceWorker.ready;
         const keyU8 = portalUrlBase64ToUint8Array(vapid);
         let sub = await reg.pushManager.getSubscription();
         if(!sub){
@@ -12431,142 +12441,6 @@
         window.__PORTAL_WPS_IN_FLIGHT = false;
       }
     };
-
-    (function initPortalAlertsNotificationsUi(){
-      const alertsSheet = document.getElementById('alertsNotificationsSheet');
-      function qNotify(id){ return document.getElementById(id); }
-      function notifyContextHint(){
-        try{
-          if(typeof window !== 'undefined' && window.self !== window.top){
-            return ' Open the portal in a full browser tab.';
-          }
-        }catch(_){}
-        if(typeof window !== 'undefined' && window.isSecureContext === false){
-          return ' Needs HTTPS.';
-        }
-        return '';
-      }
-      function refresh(){
-        const statusEl = qNotify('portalNotifyStatus');
-        const btn = qNotify('portalNotifyEnableBtn');
-        const testBtn = qNotify('portalNotifyTestBtn');
-        if(!statusEl) return;
-        const ctx = notifyContextHint();
-        if(typeof Notification === 'undefined'){
-          statusEl.textContent = 'Not supported on this browser.' + ctx;
-          if(btn) btn.disabled = true;
-          if(testBtn) testBtn.hidden = true;
-          return;
-        }
-        const p = Notification.permission;
-        if(p === 'granted'){
-          statusEl.textContent = 'On — announcements and roster changes.';
-          if(typeof window.portalEnsureWebPushSubscription === 'function'){
-            window.portalEnsureWebPushSubscription().then(function(wp){
-              if(wp && wp.ok){
-                statusEl.textContent = 'On — including alerts when the app is closed.';
-              }else if(wp && wp.reason === 'no-vapid'){
-                statusEl.textContent = 'On — alerts when app is closed need ops setup.';
-              }else if(wp && wp.reason === 'no-sw'){
-                statusEl.textContent = 'On — closed-app alerts may be limited here.';
-              }else if(wp && wp.reason === 'no-session'){
-                statusEl.textContent = 'On — finish sign-in to register this device.';
-              }
-            });
-          }
-          if(btn){
-            btn.textContent = 'Notifications on';
-            btn.disabled = true;
-          }
-          if(testBtn) testBtn.hidden = false;
-        } else if(p === 'denied'){
-          statusEl.textContent = 'Blocked — allow notifications for this site in browser settings.' + ctx;
-          if(btn){
-            btn.textContent = 'Open browser settings';
-            btn.disabled = false;
-          }
-          if(testBtn) testBtn.hidden = true;
-        } else {
-          statusEl.textContent = 'Off — tap below to allow.' + ctx;
-          if(btn){
-            btn.textContent = 'Turn on notifications';
-            btn.disabled = false;
-          }
-          if(testBtn) testBtn.hidden = true;
-        }
-        if(typeof window.portalSyncAlertsSettingsChrome === 'function'){
-          window.portalSyncAlertsSettingsChrome();
-        }
-      }
-      window.portalRefreshAlertsNotifyUi = refresh;
-      function onEnableClick(){
-        if(typeof Notification === 'undefined') return;
-        if(Notification.permission === 'denied'){
-          refresh();
-          return;
-        }
-        const statusEl = qNotify('portalNotifyStatus');
-        Notification.requestPermission().then(function(r){
-          if(r === 'granted'){
-            try{
-              new Notification('Portal alerts on', {
-                body: 'Announcements and roster changes on this device.'
-              });
-            }catch(e){
-              if(statusEl){
-                statusEl.textContent = 'Permission was granted but the browser did not show a banner: ' + (e && e.message ? e.message : String(e)) + notifyContextHint();
-              }
-              refresh();
-              return;
-            }
-            if(typeof window.portalEnsureWebPushSubscription === 'function'){
-              void window.portalEnsureWebPushSubscription().then(function(){ refresh(); }, function(){ refresh(); });
-              return;
-            }
-          }else if(r !== 'default' && statusEl){
-            statusEl.textContent = 'Notification permission was not granted (' + String(r) + ').' + notifyContextHint();
-          }
-          refresh();
-        }).catch(function(err){
-          if(statusEl){
-            statusEl.textContent = 'Could not request notification permission: ' + (err && err.message ? err.message : String(err)) + notifyContextHint();
-          }
-          refresh();
-        });
-      }
-      function onTestClick(){
-        const statusEl = qNotify('portalNotifyStatus');
-        if(typeof Notification === 'undefined') return;
-        if(Notification.permission !== 'granted'){
-          if(statusEl) statusEl.textContent = 'Allow notifications first (Turn on), then use Send test.' + notifyContextHint();
-          refresh();
-          return;
-        }
-        try{
-          new Notification('Test: portal notification', { body: 'If you see this, notifications can reach your device.' });
-          if(navigator.vibrate) navigator.vibrate([100, 50, 100]);
-        }catch(e){
-          if(statusEl){
-            statusEl.textContent = 'Could not show test notification: ' + (e && e.message ? e.message : String(e)) + notifyContextHint();
-          }
-        }
-      }
-      /* Capture on the sheet so taps reach us even if another layer stole bubbling (and above dock z-index). */
-      if(alertsSheet){
-        alertsSheet.addEventListener('click', function(e){
-          const t = e.target && e.target.closest ? e.target.closest('#portalNotifyEnableBtn, #portalNotifyTestBtn') : null;
-          if(!t || !alertsSheet.contains(t)) return;
-          e.preventDefault();
-          if(t.id === 'portalNotifyEnableBtn') onEnableClick();
-          else if(t.id === 'portalNotifyTestBtn') onTestClick();
-        }, true);
-      }
-      if(document.readyState === 'loading'){
-        document.addEventListener('DOMContentLoaded', refresh);
-      } else {
-        refresh();
-      }
-    })();
 
     window.addEventListener('portal:supabase-ready', function(){
       try{

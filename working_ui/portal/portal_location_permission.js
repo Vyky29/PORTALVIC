@@ -119,7 +119,7 @@ function portalMicSetupHintText() {
     }
     return "You can record session feedback in your official language — we live-transcribe into English for records.";
   }
-  return "Optional — for voice session feedback if you prefer speaking instead of typing.";
+  return "Required for voice and video calls, and for voice session feedback.";
 }
 
 function portalRefreshMicrophoneHint() {
@@ -345,9 +345,9 @@ export function portalCameraPermissionGranted() {
   return _camState === "granted" || persistGet("portal_cam_granted_v1") === "1";
 }
 
-/** Default portal setup: camera for calls/photos — microphone is optional (voice feedback only). */
+/** Default portal setup: camera + microphone for calls, photos and voice notes. */
 export function portalCommsMediaPermissionsGranted() {
-  return portalCameraPermissionGranted();
+  return portalCameraPermissionGranted() && portalMicrophonePermissionGranted();
 }
 
 export function markMicrophoneGranted() {
@@ -648,8 +648,7 @@ export function requestNotificationPermission() {
 }
 
 /**
- * Default portal setup in one in-app tap: alerts, camera, location (if required).
- * Microphone is intentionally excluded — optional for voice session feedback only.
+ * Default portal setup in one in-app tap: alerts, mic, camera, location (if required).
  * @returns {Promise<Record<string, string>>}
  */
 export async function requestDefaultPortalPermissions() {
@@ -663,13 +662,19 @@ export async function requestDefaultPortalPermissions() {
     notifications: "skipped",
     camera: "skipped",
     location: "skipped",
-    microphone: "optional",
+    microphone: "skipped",
   };
 
   if (!portalNotificationsGranted()) {
     results.notifications = await requestNotificationPermission();
   } else {
     results.notifications = "granted";
+  }
+
+  if (!portalMicrophonePermissionGranted()) {
+    results.microphone = await requestMicrophonePermission();
+  } else {
+    results.microphone = "granted";
   }
 
   if (!portalCameraPermissionGranted()) {
@@ -745,7 +750,8 @@ export function portalSyncAlertsSettingsChrome() {
   const locRequired = portalLocationRequiredForSetup();
   const locOk = !locRequired || portalLocationPermissionGranted();
   const cameraOk = portalCameraPermissionGranted();
-  const incomplete = !notifyOk || !locOk || !cameraOk;
+  const micOk = portalMicrophonePermissionGranted();
+  const incomplete = !notifyOk || !locOk || !cameraOk || !micOk;
   btn.classList.toggle("menu-btn--settings-alerts-incomplete", incomplete);
   if (!sub) return;
   if (incomplete) {
@@ -771,7 +777,7 @@ export function portalRefreshMicrophoneUi() {
       btn.textContent = "Not supported";
     }
   } else if (st === "granted") {
-    statusEl.textContent = "On — ready for session feedback voice.";
+    statusEl.textContent = "On — ready for voice and video calls.";
     if (btn) {
       btn.textContent = "Microphone on";
       btn.disabled = true;
@@ -783,9 +789,9 @@ export function portalRefreshMicrophoneUi() {
       btn.disabled = false;
     }
   } else {
-    statusEl.textContent = "Optional — only if you want voice session feedback instead of typing.";
+    statusEl.textContent = "Off — needed for voice and video calls.";
     if (btn) {
-      btn.textContent = "Allow microphone (optional)";
+      btn.textContent = "Allow microphone";
       btn.disabled = false;
     }
   }
@@ -837,10 +843,10 @@ export function portalRefreshEnableAllUi() {
   if (statusEl) {
     if (complete) {
       statusEl.textContent =
-        "Ready — alerts, chat, calls, video, meetings and photos. Microphone stays optional for voice feedback.";
+        "Ready — alerts, microphone, camera, and location (if your role needs it).";
     } else {
       statusEl.textContent =
-        "Tap Continue once. We turn on alerts, camera and location (if your role needs it). Microphone is optional.";
+        "Tap Continue once. The browser may ask for alerts, microphone, camera and location — accept each once.";
     }
   }
   if (btn) {
@@ -916,6 +922,28 @@ export async function portalRefreshMandatoryAlertsSettingsUi() {
   portalRefreshMicrophoneUi();
   portalRefreshCameraUi();
   portalRefreshEnableAllUi();
+}
+
+function portalUserActivationActive() {
+  try {
+    return (
+      typeof navigator !== "undefined" &&
+      navigator.userActivation &&
+      navigator.userActivation.isActive === true
+    );
+  } catch (_) {
+    return false;
+  }
+}
+
+/** Alerts sheet opened — refresh UI; on a user gesture, prompt notifications if still default. */
+export async function portalOnAlertsSheetOpened() {
+  if (portalUserActivationActive()) {
+    if (typeof Notification !== "undefined" && Notification.permission === "default") {
+      await requestNotificationPermission();
+    }
+  }
+  await portalRefreshMandatoryAlertsSettingsUi();
 }
 
 /**
