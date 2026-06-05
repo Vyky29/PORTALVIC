@@ -10,6 +10,7 @@
     cancellation: true,
     chat: true,
     late_approval: true,
+    wellbeing: true,
   };
 
   var bootstrapSilent = false;
@@ -118,6 +119,24 @@
       recordId: String(row.id || ""),
       clientName: client,
       sessionDate: d,
+    };
+  }
+
+  function activityFromWellbeingNotification(row) {
+    if (!row || !row.id) return null;
+    var body = String(row.body || "");
+    var staffLine = body.split("\n")[0] || "";
+    var staff = staffLine.replace(/^Staff:\s*/i, "").trim() || "Staff member";
+    return {
+      id: "wellbeing-" + row.id,
+      title: String(row.headline || "Wellbeing check-in"),
+      sub: staff + " — tap to open 1-to-1 document",
+      created_at: row.created_at,
+      kind: "wellbeing",
+      view: "wellbeing",
+      recordId: String(row.checkin_id || ""),
+      clientName: staff,
+      sessionDate: "",
     };
   }
 
@@ -350,6 +369,7 @@
   global.portalAdminBellPrepareForRender = prepareForRender;
   global.portalAdminBellBadgeCount = badgeCount;
   global.portalAdminActivityFromLateRequest = activityFromLateRequest;
+  global.portalAdminActivityFromWellbeingNotification = activityFromWellbeingNotification;
   global.portalAdminSyncChatBellAlerts = syncChatBellAlerts;
   global.portalAdminBellResolveChatHints = resolveChatHints;
   global.portalAdminPushActivityAlert = pushActivityAlert;

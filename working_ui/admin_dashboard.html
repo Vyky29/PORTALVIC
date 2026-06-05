@@ -22946,6 +22946,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
         return;
       }
+      if(tab === 'wellbeing'){
+        var wcid = String(meta.recordId || meta.checkinId || '').trim();
+        if(wcid){
+          window.open('staff_wellbeing_review.html?checkin=' + encodeURIComponent(wcid), '_blank', 'noopener');
+        }
+        return;
+      }
       if(!tab) return;
       var client = String(meta.clientName || '').trim();
       var dateIso = String(meta.sessionDate || '').trim().slice(0, 10);
@@ -23226,6 +23233,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               window.portalAdminPushActivityAlert(a);
             }
           })
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'portal_wellbeing_admin_notifications' }, function(payload){
+            var row = payload && payload.new;
+            var item = typeof window.portalAdminActivityFromWellbeingNotification === 'function'
+              ? window.portalAdminActivityFromWellbeingNotification(row)
+              : null;
+            if(item && typeof window.portalAdminPushActivityAlert === 'function'){
+              window.portalAdminPushActivityAlert(item);
+            }
+          })
           .subscribe();
       }catch(err){ console.warn('[admin] activity alerts realtime', err); }
     }
@@ -23297,6 +23313,33 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(typeof window.__portalAdminRenderAlerts === 'function') window.__portalAdminRenderAlerts();
       });
     }
+    function portalAdminWellbeingAlertsTableMissing(err){
+      var msg = String((err && err.message) || err || '');
+      return /does not exist|could not find|schema cache|PGRST205|404/i.test(msg);
+    }
+    function portalAdminFetchWellbeingAlerts(client){
+      if(!client || !client.from || window.__PORTAL_WELLBEING_ALERTS_TABLE_MISSING__) return;
+      client.from('portal_wellbeing_admin_notifications').select('id,created_at,headline,body,checkin_id').is('read_at',null).order('created_at',{ascending:false}).limit(40).then(function(res){
+        if(res.error){
+          if(portalAdminWellbeingAlertsTableMissing(res.error)){
+            window.__PORTAL_WELLBEING_ALERTS_TABLE_MISSING__ = true;
+            return;
+          }
+          console.warn('[admin] wellbeing alerts', res.error);
+          return;
+        }
+        var rows = res.data || [];
+        rows.forEach(function(row){
+          var item = typeof window.portalAdminActivityFromWellbeingNotification === 'function'
+            ? window.portalAdminActivityFromWellbeingNotification(row)
+            : null;
+          if(item && typeof window.portalAdminPushActivityAlert === 'function'){
+            window.portalAdminPushActivityAlert(item, { silent: true });
+          }
+        });
+        if(typeof window.__portalAdminRenderAlerts === 'function') window.__portalAdminRenderAlerts();
+      });
+    }
     window.addEventListener('portal:supabase-ready', function portalVenueReviewAlertsFetch(){
       try{
         var p = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
@@ -23305,6 +23348,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var client = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client;
         if(!client || !client.from) return;
         portalAdminFetchVenueReviewAlerts(client);
+        portalAdminFetchWellbeingAlerts(client);
         void portalAdminBootstrapActivityAlerts();
         portalAdminEnsureActivityRealtime();
         void portalLateAdminRefreshNavBadge({ allowSound: false });

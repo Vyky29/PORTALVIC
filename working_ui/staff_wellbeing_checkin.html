@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wellbeing check-in ù clubSENsational</title>
+  <script src="/portal-static-bootstrap.js"></script>
+  <style>
+    :root {
+      --navy: #2a3140;
+      --gold: #e4a82a;
+      --gold-light: #f5d78a;
+      --paper: #fdfcfa;
+      --text: #1a2330;
+      --muted: #5c6778;
+      --line: #d8dee8;
+      --ok: #1d6b4a;
+      --ok-bg: #e6f4ef;
+      --warn: #b45309;
+      --warn-bg: #fff7e6;
+      --bad: #b42318;
+      --bad-bg: #fdecea;
+      --radius: 14px;
+      --font: "DM Sans", system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      color: var(--text);
+      background: linear-gradient(165deg, #dfe8f0 0%, #eef2f6 50%, #e8ecf2 100%);
+      min-height: 100vh;
+      padding: 16px 16px 32px;
+    }
+    .wrap { max-width: 640px; margin: 0 auto; }
+    .card {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: 0 4px 24px rgba(15, 39, 64, 0.08);
+      overflow: hidden;
+    }
+    .head {
+      padding: 22px 20px 18px;
+      background: linear-gradient(135deg, var(--navy) 0%, #343a48 100%);
+      color: #fff;
+      border-bottom: 3px solid var(--gold);
+    }
+    .head h1 { margin: 0; font-size: 1.35rem; line-height: 1.25; }
+    .head p { margin: 10px 0 0; font-size: 14px; color: rgba(255,255,255,.88); line-height: 1.5; }
+    .tag {
+      display: inline-block;
+      margin-bottom: 10px;
+      padding: 5px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      background: rgba(228,168,42,.2);
+      color: var(--gold-light);
+    }
+    .body { padding: 20px; }
+    .progress {
+      height: 6px;
+      background: #e8ecf2;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 18px;
+    }
+    .progress__bar {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, var(--gold), #f4bc44);
+      transition: width .25s ease;
+    }
+    .step-meta { font-size: 12px; color: var(--muted); margin: 0 0 6px; font-weight: 600; }
+    .step-title { margin: 0 0 8px; font-size: 1.15rem; }
+    .step-q { margin: 0 0 16px; color: var(--muted); font-size: 14px; line-height: 1.5; }
+    .levels { display: grid; gap: 10px; margin-bottom: 16px; }
+    .level-btn {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      width: 100%;
+      padding: 14px 14px;
+      border-radius: 12px;
+      border: 2px solid var(--line);
+      background: #fff;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+    }
+    .level-btn:hover { border-color: #9bb4cc; }
+    .level-btn.is-active { border-color: var(--navy); background: #f4f8fc; }
+    .level-btn[data-level="green"].is-active { border-color: var(--ok); background: var(--ok-bg); }
+    .level-btn[data-level="amber"].is-active { border-color: var(--warn); background: var(--warn-bg); }
+    .level-btn[data-level="red"].is-active { border-color: var(--bad); background: var(--bad-bg); }
+    .level-emoji { font-size: 22px; line-height: 1; flex-shrink: 0; }
+    .level-copy strong { display: block; font-size: 15px; margin-bottom: 2px; }
+    .level-copy span { font-size: 13px; color: var(--muted); line-height: 1.4; }
+    .extra { margin-top: 4px; }
+    .extra[hidden] { display: none !important; }
+    label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+    textarea, input[type="text"] {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      font: inherit;
+      font-size: 14px;
+      resize: vertical;
+    }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .chip {
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: #fff;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .chip.is-on { border-color: var(--navy); background: #eef4fa; font-weight: 600; }
+    .actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+    .btn {
+      flex: 1;
+      min-width: 120px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: none;
+      font: inherit;
+      font-weight: 700;
+      font-size: 15px;
+      cursor: pointer;
+    }
+    .btn--ghost { background: #fff; border: 1px solid var(--line); color: var(--navy); }
+    .btn--pri {
+      background: linear-gradient(180deg, var(--gold-light), var(--gold));
+      color: var(--navy);
+    }
+    .btn:disabled { opacity: .55; cursor: not-allowed; }
+    .err { color: var(--bad); font-size: 13px; margin: 10px 0 0; min-height: 1.2em; }
+    .done {
+      text-align: center;
+      padding: 28px 12px;
+    }
+    .done h2 { margin: 0 0 10px; }
+    .done p { color: var(--muted); line-height: 1.55; margin: 0 0 16px; }
+    .foot-note {
+      margin-top: 14px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card" id="app">
+      <div class="head">
+        <span class="tag" id="termTag">This term</span>
+        <h1>Wellbeing check-in</h1>
+        <p>About 5 minutes. Confidential. If anything is affecting you at work, we will arrange a supportive 1-to-1 and complete the full review together.</p>
+      </div>
+      <div class="body" id="stepHost">
+        <p class="muted" style="margin:0">Loadingù</p>
+      </div>
+    </div>
+    <p class="foot-note">Only ops admin and directors are notified when you flag a concern. ùAll goodù check-ins are recorded without a 1-to-1 request.</p>
+  </div>
+
+  <script src="/portal/portal_wellbeing_checkin.js?v=20260605-wellbeing"></script>
+  <script>
+  (function () {
+    var wb = window.portalWellbeingCheckin;
+    if (!wb) return;
+
+    var STRESSOR_HINTS = {
+      demands: ["High workload", "Back-to-back sessions", "Unclear priorities", "Not enough breaks"],
+      control: ["Little input into planning", "Rigid timetable", "Can't adjust approach"],
+      support: ["Hard to reach manager", "Unclear who to ask", "Slow responses"],
+      relations: ["Team tension", "Feeling unheard", "Behaviour concerns"],
+      role: ["Unclear expectations", "Role changed recently", "Too many hats"],
+      change: ["Sudden changes", "Poor communication", "Job security worries"],
+    };
+
+    var state = {
+      step: 0,
+      domains: {},
+      general_note: "",
+      submitting: false,
+      existing: null,
+    };
+
+    function el(tag, cls, html) {
+      var n = document.createElement(tag);
+      if (cls) n.className = cls;
+      if (html != null) n.innerHTML = html;
+      return n;
+    }
+
+    function host() { return document.getElementById("stepHost"); }
+
+    function domainEntry(key) {
+      if (!state.domains[key]) {
+        state.domains[key] = { level: "green", note: "", stressors: [] };
+      }
+      return state.domains[key];
+    }
+
+    function renderDone(result) {
+      var has = result && result.row && result.row.has_concerns;
+      host().innerHTML =
+        '<div class="done">' +
+        '<h2>' + (has ? "Thank you ù we have received your check-in" : "Thank you ù all recorded") + '</h2>' +
+        '<p>' +
+        (has
+          ? "Someone from leadership will contact you to arrange a private 1-to-1. You do not need to fill in the long stress form now ù that is completed together in the meeting."
+          : "Glad to hear things are OK this term. You can close this page.") +
+        '</p>' +
+        '<button type="button" class="btn btn--pri" id="btnCloseDone">Back to portal</button>' +
+        '</div>';
+      document.getElementById("btnCloseDone").onclick = function () {
+        if (window.history.length > 1) window.history.back();
+        else window.location.href = "staff_dashboard.html";
+      };
+    }
+
+    function renderStep() {
+      var steps = wb.DOMAINS.length + 1;
+      var idx = state.step;
+      var h = host();
+      h.innerHTML = "";
+
+      if (idx >= steps) {
+        renderSubmit();
+        return;
+      }
+
+      var prog = el("div", "progress", '<div class="progress__bar"></div>');
+      prog.firstChild.style.width = Math.round(((idx + 1) / steps) * 100) + "%";
+      h.appendChild(prog);
+
+      if (idx === wb.DOMAINS.length) {
+        renderGeneralStep(h);
+        return;
+      }
+
+      var dom = wb.DOMAINS[idx];
+      var entry = domainEntry(dom.key);
+
+      h.appendChild(el("p", "step-meta", "Step " + (idx + 1) + " of " + steps));
+      h.appendChild(el("h2", "step-title", dom.title));
+      h.appendChild(el("p", "step-q", dom.question));
+
+      var levels = el("div", "levels");
+      [
+        { level: "green", emoji: "??", title: "All good", sub: "No concerns right now" },
+        { level: "amber", emoji: "??", title: "Some pressure", sub: "I'd like to talk when there is time" },
+        { level: "red", emoji: "??", title: "Need support soon", sub: "Please arrange a 1-to-1 with me" },
+      ].forEach(function (opt) {
+        var btn = el("button", "level-btn" + (entry.level === opt.level ? " is-active" : ""), "");
+        btn.type = "button";
+        btn.setAttribute("data-level", opt.level);
+        btn.innerHTML =
+          '<span class="level-emoji">' + opt.emoji + '</span>' +
+          '<span class="level-copy"><strong>' + opt.title + '</strong><span>' + opt.sub + '</span></span>';
+        btn.onclick = function () {
+          entry.level = opt.level;
+          renderStep();
+        };
+        levels.appendChild(btn);
+      });
+      h.appendChild(levels);
+
+      var extra = el("div", "extra");
+      extra.hidden = entry.level === "green";
+      extra.appendChild(el("label", "", "Anything you want us to know? (optional)"));
+      var ta = document.createElement("textarea");
+      ta.rows = 3;
+      ta.placeholder = "Short note in your own wordsù";
+      ta.value = entry.note || "";
+      ta.oninput = function () { entry.note = ta.value; };
+      extra.appendChild(ta);
+
+      var hints = STRESSOR_HINTS[dom.key] || [];
+      if (hints.length) {
+        extra.appendChild(el("label", "", "Common topics (tap any that apply)"));
+        var chips = el("div", "chips");
+        hints.forEach(function (hint) {
+          var on = (entry.stressors || []).indexOf(hint) >= 0;
+          var chip = el("button", "chip" + (on ? " is-on" : ""), hint);
+          chip.type = "button";
+          chip.onclick = function () {
+            entry.stressors = entry.stressors || [];
+            var i = entry.stressors.indexOf(hint);
+            if (i >= 0) entry.stressors.splice(i, 1);
+            else entry.stressors.push(hint);
+            renderStep();
+          };
+          chips.appendChild(chip);
+        });
+        extra.appendChild(chips);
+      }
+      h.appendChild(extra);
+
+      var actions = el("div", "actions");
+      if (idx > 0) {
+        var back = el("button", "btn btn--ghost", "Back");
+        back.type = "button";
+        back.onclick = function () { state.step--; renderStep(); };
+        actions.appendChild(back);
+      }
+      var next = el("button", "btn btn--pri", idx === wb.DOMAINS.length - 1 ? "Review & send" : "Next");
+      next.type = "button";
+      next.onclick = function () { state.step++; renderStep(); };
+      actions.appendChild(next);
+      h.appendChild(actions);
+    }
+
+    function renderGeneralStep(h) {
+      var steps = wb.DOMAINS.length + 1;
+      h.appendChild(el("p", "step-meta", "Step " + steps + " of " + steps));
+      h.appendChild(el("h2", "step-title", "Anything else?"));
+      h.appendChild(el("p", "step-q", "Optional message for leadership ù only read if you submit concerns above or write here."));
+      var ta = document.createElement("textarea");
+      ta.rows = 4;
+      ta.placeholder = "Optionalù";
+      ta.value = state.general_note || "";
+      ta.oninput = function () { state.general_note = ta.value; };
+      h.appendChild(ta);
+
+      var actions = el("div", "actions");
+      var back = el("button", "btn btn--ghost", "Back");
+      back.type = "button";
+      back.onclick = function () { state.step--; renderStep(); };
+      actions.appendChild(back);
+      var send = el("button", "btn btn--pri", "Submit check-in");
+      send.type = "button";
+      send.onclick = function () { state.step++; renderStep(); };
+      actions.appendChild(send);
+      h.appendChild(actions);
+    }
+
+    function renderSubmit() {
+      var h = host();
+      h.innerHTML = '<p style="margin:0">Sendingù</p>';
+      if (state.submitting) return;
+      state.submitting = true;
+      wb.submitCheckin({ domains: state.domains, general_note: state.general_note })
+        .then(function (res) {
+          renderDone(res);
+        })
+        .catch(function (err) {
+          state.submitting = false;
+          state.step = wb.DOMAINS.length;
+          h.innerHTML =
+            '<p class="err">' + String((err && err.message) || err || "Could not submit.") + '</p>' +
+            '<button type="button" class="btn btn--pri" id="btnRetry">Try again</button>';
+          document.getElementById("btnRetry").onclick = function () { renderStep(); };
+        });
+    }
+
+    function boot() {
+      document.getElementById("termTag").textContent = wb.termLabel(wb.currentTermKey());
+      wb.fetchOwnCheckinThisTerm()
+        .then(function (res) {
+          state.existing = res.checkin;
+          if (res.checkin) {
+            host().innerHTML =
+              '<div class="done">' +
+              '<h2>Check-in already sent this term</h2>' +
+              '<p>Status: <strong>' + res.checkin.status.replace(/_/g, " ") + '</strong>. ' +
+              (res.checkin.has_concerns
+                ? "Leadership has been notified. They will be in touch for your 1-to-1."
+                : "Thanks ù no further action needed right now.") +
+              '</p>' +
+              '<button type="button" class="btn btn--pri" id="btnBackPortal">Back to portal</button>' +
+              '</div>';
+            document.getElementById("btnBackPortal").onclick = function () {
+              window.location.href = /lead_dashboard/i.test(document.referrer || "") ? "lead_dashboard.html" : "staff_dashboard.html";
+            };
+            return;
+          }
+          renderStep();
+        })
+        .catch(function (err) {
+          host().innerHTML = '<p class="err">' + String((err && err.message) || err) + '</p>';
+        });
+    }
+
+    boot();
+  })();
+  </script>
+</body>
+</html>

@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Individual / team stress risk assessment — clubSENsational</title>
+  <title>1-to-1 stress & wellbeing review — clubSENsational</title>
+  <script src="/portal-static-bootstrap.js"></script>
   <link rel="preconnect" href="https://www.clubsensational.org" />
   <link rel="dns-prefetch" href="https://www.clubsensational.org" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -918,6 +919,8 @@
   <button type="button" class="btn btn-ghost" id="btn-save">Save draft</button>
   <button type="button" class="btn btn-ghost" id="btn-load">Load draft</button>
   <button type="button" class="btn btn-ghost" id="btn-clear">Clear draft</button>
+  <button type="button" class="btn btn-gold" id="btn-save-portal" hidden>Save to portal</button>
+  <button type="button" class="btn btn-gold" id="btn-complete-portal" hidden>Mark 1-to-1 complete</button>
   <span class="toolbar-msg" id="toolbar-msg"></span>
 </nav>
 
@@ -931,9 +934,9 @@
         <div class="badge-row">
           <span class="tag-confidential">Private &amp; confidential</span>
         </div>
-        <h1>Individual/team stress risk assessment form</h1>
-        <p class="subtitle">(1-2-1 / team discussion document)</p>
-        <p class="lead">Complete during the meeting. Drafts stay in this browser only.</p>
+        <h1>1-to-1 stress &amp; wellbeing review</h1>
+        <p class="subtitle">Complete together in the meeting (HSE stress risk assessment)</p>
+        <p class="lead" id="sraLead">Staff complete the short check-in first; admin/CEO open this document for the 1-to-1. Drafts can be saved to the portal when opened from a check-in.</p>
       </div>
     </div>
     <div class="header-fields">
@@ -2940,6 +2943,84 @@ document.addEventListener("DOMContentLoaded", function () {
     msg.textContent =
       (msg.textContent || "") +
       " file:// may block draft save or the PDF script; use a local server or Print/PDF.";
+  }
+
+  window.refreshRiskRow = refreshRiskRow;
+
+  var portalCheckinId = "";
+  try {
+    portalCheckinId = String(new URLSearchParams(window.location.search).get("checkin") || "").trim();
+  } catch (_qs) {}
+
+  var btnSavePortal = document.getElementById("btn-save-portal");
+  var btnCompletePortal = document.getElementById("btn-complete-portal");
+
+  function portalSaveSraToBackend(opts) {
+    opts = opts || {};
+    if (!portalCheckinId || !window.portalWellbeingCheckin) {
+      setMsg("Open from admin alert with ?checkin=… to save to portal.");
+      return Promise.reject(new Error("No check-in linked"));
+    }
+    return window.portalWellbeingCheckin
+      .saveSraDraft(portalCheckinId, collectValues(), { completed: !!opts.completed })
+      .then(function () {
+        setMsg(opts.completed ? "Marked complete in portal." : "Saved to portal.");
+      });
+  }
+
+  if (btnSavePortal) {
+    btnSavePortal.addEventListener("click", function () {
+      void portalSaveSraToBackend({ completed: false });
+    });
+  }
+  if (btnCompletePortal) {
+    btnCompletePortal.addEventListener("click", function () {
+      void portalSaveSraToBackend({ completed: true });
+    });
+  }
+
+  if (portalCheckinId) {
+    var leadEl = document.getElementById("sraLead");
+    if (leadEl) {
+      leadEl.textContent =
+        "Check-in linked. Pre-filled from staff answers — complete the 1-to-1 here and save to the portal.";
+    }
+    if (btnSavePortal) btnSavePortal.hidden = false;
+    if (btnCompletePortal) btnCompletePortal.hidden = false;
+    var portalScript = document.createElement("script");
+    portalScript.src = "/portal/portal_wellbeing_checkin.js?v=20260605-wellbeing";
+    portalScript.onload = function () {
+      if (!window.portalWellbeingCheckin) return;
+      window.portalWellbeingCheckin
+        .fetchCheckinForAdmin(portalCheckinId)
+        .then(function (pack) {
+          window.portalWellbeingCheckin.applyCheckinToSraForm(form, pack.checkin);
+          form.querySelectorAll(".domain-tbody tr").forEach(function (tr) {
+            syncRangeFromNumbers(tr);
+            refreshRiskRow(tr);
+            refreshStressorRowPicklists(tr);
+            syncStressorDetailVisibility(tr);
+            updateNoStressorQuickVisual(tr);
+          });
+          return window.portalWellbeingCheckin.loadSraDraft(portalCheckinId);
+        })
+        .then(function (draftRow) {
+          if (draftRow && Array.isArray(draftRow.draft_json) && draftRow.draft_json.length) {
+            applyValues(draftRow.draft_json);
+            form.querySelectorAll(".domain-tbody tr").forEach(function (tr) {
+              syncRangeFromNumbers(tr);
+              refreshRiskRow(tr);
+            });
+            setMsg("Loaded portal draft.");
+          } else {
+            setMsg("Pre-filled from staff check-in.");
+          }
+        })
+        .catch(function (err) {
+          setMsg(String((err && err.message) || err || "Could not load check-in."));
+        });
+    };
+    document.body.appendChild(portalScript);
   }
 });
 </script>
