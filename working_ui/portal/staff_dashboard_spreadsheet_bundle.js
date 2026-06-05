@@ -115,7 +115,7 @@
     "aurora": {
       "staffId": "aurora",
       "staffName": "Aurora",
-      "avatarFile": "portal/staff_photos/aurora.png",
+      "avatarFile": "portal/staff_photos/aurora.png?v=20260605-aurora-buena",
       "staffRoleTrack": "swimming",
       "canViewAll": false
     },
