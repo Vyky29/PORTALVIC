@@ -306,12 +306,149 @@
  }
  var cover = document.getElementById("sec-cover");
  if (cover) {
- var fields = cover.querySelectorAll("textarea, input");
+ var rolesEl = cover.querySelector(".js-wb-cover-roles");
  var rolesText = employment.rolesText || clean((checkin && checkin.staff_role) || "");
- if (fields[1] && rolesText && !clean(fields[1].value)) {
- fields[1].value = rolesText;
+ if (rolesEl && rolesText && !clean(rolesEl.value)) {
+ rolesEl.value = rolesText;
  }
  }
+ }
+
+ function markDomainSectionAllClear(sec) {
+ if (!sec || sec.classList.contains("portal-wb-domain-all-clear")) return;
+ sec.classList.add("portal-wb-domain-all-clear");
+ if (sec.querySelector(".portal-wb-all-clear-note")) return;
+ var note = document.createElement("p");
+ note.className = "portal-wb-all-clear-note";
+ note.textContent = "All good at staff check-in  no review needed for this area.";
+ var h2 = sec.querySelector(".section-title, h2");
+ if (h2 && h2.nextSibling) sec.insertBefore(note, h2.nextSibling);
+ else if (h2) h2.insertAdjacentElement("afterend", note);
+ else sec.insertBefore(note, sec.firstChild);
+ }
+
+ function applyDomainAllClearRow(tr) {
+ if (!tr) return;
+ tr.setAttribute("data-checkin-all-clear", "1");
+ tr.removeAttribute("data-checkin-stressor");
+ tr.removeAttribute("data-stressor-ui-collapsed");
+ var sel = tr.querySelector(".js-common-stressor");
+ var stText = tr.querySelector(".js-stressor-text");
+ var obs = tr.querySelector(".js-obs-text");
+ if (sel) sel.value = "__none__";
+ if (stText) stText.value = "";
+ if (obs) obs.value = "All good at staff check-in. No review needed.";
+ applyScoresToRow(tr, { s: 1, l: 1 });
+ var detail = tr.querySelector(".js-stressor-detail");
+ if (detail) detail.hidden = true;
+ if (typeof global.refreshRiskRow === "function") global.refreshRiskRow(tr);
+ if (typeof global.updateNoStressorQuickVisual === "function") {
+ global.updateNoStressorQuickVisual(tr);
+ }
+ }
+
+ function applyDomainAllClear(tbody, sec) {
+ if (!tbody || !tbody.rows.length) return;
+ while (tbody.rows.length > 1) {
+ tbody.deleteRow(tbody.rows.length - 1);
+ }
+ applyDomainAllClearRow(tbody.rows[0]);
+ if (sec) markDomainSectionAllClear(sec);
+ }
+
+ function applyConcernDomainFromCheckin(tbody, entry, dk) {
+ var note = clean(entry && entry.note);
+ var stressors = ((entry && entry.stressors) || [])
+ .map(function (s) {
+ return resolveStressorKey(s, dk);
+ })
+ .filter(Boolean);
+ var scores = levelToScores(entry && entry.level);
+ var rowCount = Math.max(1, stressors.length || (note ? 1 : 0));
+ ensureDomainRows(tbody, rowCount);
+ if (stressors.length) {
+ stressors.forEach(function (key, i) {
+ applyStressorToRow(tbody.rows[i], key, i === 0 ? note : "", scores, {
+ fromCheckinNote: i === 0 && !!note,
+ fromCheckinStressor: true,
+ });
+ });
+ } else {
+ applyStressorToRow(
+ tbody.rows[0],
+ null,
+ note || "Concern raised in wellbeing check-in",
+ scores,
+ { fromCheckinNote: !!note }
+ );
+ }
+ }
+
+ function eachCheckinDomain(form, checkin, fn) {
+ var domains = (checkin && checkin.domains) || {};
+ var domainMap = {
+ demands: "demands",
+ control: "control",
+ support: "support",
+ relations: "relations",
+ role: "role",
+ change: "change",
+ };
+ Object.keys(domainMap).forEach(function (dk) {
+ var tbody = form.querySelector('.domain-tbody[data-domain="' + domainMap[dk] + '"]');
+ var sec = document.getElementById("sec-" + dk);
+ if (!tbody || !tbody.rows.length) return;
+ fn(dk, domains[dk], tbody, sec);
+ });
+ }
+
+ function applyCheckinDomainsToSraForm(form, checkin) {
+ if (!form || !checkin) return;
+ eachCheckinDomain(form, checkin, function (dk, entry, tbody, sec) {
+ if (sec) sec.classList.remove("portal-wb-domain-all-clear");
+ var oldNote = sec && sec.querySelector(".portal-wb-all-clear-note");
+ if (oldNote) oldNote.remove();
+ tbody.querySelectorAll("tr").forEach(function (tr) {
+ tr.removeAttribute("data-checkin-all-clear");
+ });
+ if (!domainHasConcern(entry)) {
+ applyDomainAllClear(tbody, sec);
+ return;
+ }
+ applyConcernDomainFromCheckin(tbody, entry, dk);
+ });
+ }
+
+ function reapplyAllClearDomainsFromCheckin(form, checkin) {
+ if (!form || !checkin) return;
+ eachCheckinDomain(form, checkin, function (dk, entry, tbody, sec) {
+ if (domainHasConcern(entry)) return;
+ applyDomainAllClear(tbody, sec);
+ });
+ }
+
+ function wireWellbeingReviewVoice(form, staffName) {
+ if (!form || typeof global.PortalFeedbackVoiceInput === "undefined") return;
+ var ids = [];
+ var n = 0;
+ form.querySelectorAll("textarea").forEach(function (ta) {
+ if (ta.closest(".portal-wb-domain-all-clear")) return;
+ if (ta.closest(".portal-wb-cover-hr, .portal-wb-cover-controls, .portal-wb-cover-observations")) return;
+ if (ta.closest(".portal-wb-admin-hide")) return;
+ var field = ta.closest(".field");
+ if (field && field.offsetParent === null) return;
+ if (!ta.id) {
+ ta.id = "wb-sra-voice-" + n;
+ n += 1;
+ }
+ if (ta.dataset.portalFbVoiceWired === "1") return;
+ ids.push(ta.id);
+ });
+ if (!ids.length) return;
+ global.PortalFeedbackVoiceInput.init({
+ fields: ids,
+ staffName: staffName || "",
+ });
  }
 
  function buildCheckinRow(ctx, payload) {
@@ -535,9 +672,9 @@
  }
  }
 
- function applyCheckinToSraForm(form, checkin, employment) {
+ function applyCheckinToSraForm(form, checkin, employment, adminCtx) {
  if (!form || !checkin) return;
- var domains = checkin.domains || {};
+ adminCtx = adminCtx || {};
  var ins = form.querySelectorAll(".header-fields input");
  if (ins[0]) ins[0].value = "Stress RA - " + (checkin.staff_name || "");
  if (ins[3] && !ins[3].value) {
@@ -551,62 +688,29 @@
  }
  var cover = document.getElementById("sec-cover");
  if (cover) {
- var fields = cover.querySelectorAll("textarea, input");
- if (fields[0]) fields[0].value = checkin.staff_name || "";
- if (fields[1]) fields[1].value = checkin.staff_role || "";
- if (fields[4]) {
- fields[4].value =
+ var nameEl = cover.querySelector(".js-wb-cover-name");
+ var rolesEl = cover.querySelector(".js-wb-cover-roles");
+ var undertakenEl = cover.querySelector(".js-wb-cover-undertaken");
+ var triggerEl = cover.querySelector(".js-wb-cover-trigger");
+ if (nameEl) nameEl.value = checkin.staff_name || "";
+ if (rolesEl && !clean(rolesEl.value)) rolesEl.value = checkin.staff_role || "";
+ if (undertakenEl && !clean(undertakenEl.value)) {
+ undertakenEl.value = clean(adminCtx.staffName) || "";
+ }
+ if (triggerEl) {
+ var triggerText =
  "Staff wellbeing check-in (" +
  termLabel(checkin.term_key) +
  ") - " +
  (checkin.has_concerns ? "concerns flagged for 1-to-1" : "routine review");
+ if (checkin.general_note) {
+ triggerText += "\n\nStaff note: " + checkin.general_note;
  }
- if (fields[5] && checkin.general_note) {
- fields[5].value = "From check-in:\n" + checkin.general_note;
+ triggerEl.value = triggerText;
  }
  }
  if (employment) applyStaffEmploymentToSraForm(form, employment, checkin);
-
- var domainMap = {
- demands: "demands",
- control: "control",
- support: "support",
- relations: "relations",
- role: "role",
- change: "change",
- };
-
- Object.keys(domainMap).forEach(function (dk) {
- var entry = domains[dk];
- if (!domainHasConcern(entry)) return;
- var tbody = form.querySelector('.domain-tbody[data-domain="' + domainMap[dk] + '"]');
- if (!tbody || !tbody.rows.length) return;
- var note = clean(entry && entry.note);
- var stressors = ((entry && entry.stressors) || [])
- .map(function (s) {
- return resolveStressorKey(s, dk);
- })
- .filter(Boolean);
- var scores = levelToScores(entry && entry.level);
- var rowCount = Math.max(1, stressors.length || (note ? 1 : 0));
- ensureDomainRows(tbody, rowCount);
- if (stressors.length) {
- stressors.forEach(function (key, i) {
- applyStressorToRow(tbody.rows[i], key, i === 0 ? note : "", scores, {
- fromCheckinNote: i === 0 && !!note,
- fromCheckinStressor: true,
- });
- });
- } else {
- applyStressorToRow(
- tbody.rows[0],
- null,
- note || "Concern raised in wellbeing check-in",
- scores,
- { fromCheckinNote: !!note }
- );
- }
- });
+ applyCheckinDomainsToSraForm(form, checkin);
  }
 
  function levelLabel(level) {
@@ -728,6 +832,9 @@
  loadSraDraft: loadSraDraft,
  saveSraDraft: saveSraDraft,
  applyCheckinToSraForm: applyCheckinToSraForm,
+ applyCheckinDomainsToSraForm: applyCheckinDomainsToSraForm,
+ reapplyAllClearDomainsFromCheckin: reapplyAllClearDomainsFromCheckin,
+ wireWellbeingReviewVoice: wireWellbeingReviewVoice,
  domainHasConcern: domainHasConcern,
  checkinHasConcerns: checkinHasConcerns,
  renderAdminBanner: renderAdminBanner,

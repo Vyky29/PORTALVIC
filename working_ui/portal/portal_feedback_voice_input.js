@@ -648,7 +648,7 @@
     btn.setAttribute("aria-label", "Stop voice input");
     btn.setAttribute("aria-pressed", "true");
     if (statusEl) {
-      statusEl.textContent = "Recording… tap mic when finished.";
+      statusEl.textContent = "Recording — speak now, then tap mic again to finish.";
     }
 
     navigator.mediaDevices
@@ -728,7 +728,7 @@
     btn.setAttribute("aria-label", "Stop voice input");
     btn.setAttribute("aria-pressed", "true");
     if (statusEl) {
-      statusEl.textContent = "Listening… tap mic when finished.";
+      statusEl.textContent = "Listening — speak now, then tap mic again to finish.";
     }
 
     var rec = new Rec();
