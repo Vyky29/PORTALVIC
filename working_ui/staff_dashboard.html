@@ -93,7 +93,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260610-pwa-black-fix" />
   <script src="/portal/portal_screenshot_guard.js?v=20260610-pwa-black-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260620-staff-header-ach" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260620-today-inline-dayoff" />
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260620-inbox-logo-orbit" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260601-landscape-full" />
 </head>
@@ -261,8 +261,9 @@
 
     <section class="section-card section-card--today" id="portalTodaySection" aria-labelledby="todayHeading">
       <div class="section-head section-head--today">
-        <h2 class="today-section-title" id="todayHeading">TODAY</h2>
-        <p class="today-section-date" id="todayDateLine" aria-hidden="true"></p>
+        <h2 class="today-section-title" id="todayHeading">
+          <span class="today-section-title__label" id="todayHeadingLabel">TODAY</span><span class="today-section-date" id="todayDateLine"></span>
+        </h2>
       </div>
       <div class="today-grid" id="todayGrid" aria-live="polite">
                 <div class="today-grid-fallback" id="todayGridFallback" hidden aria-hidden="true">
@@ -9691,8 +9692,13 @@
       if(typeof portalSyncQuickMenuGuidePlacement === 'function') portalSyncQuickMenuGuidePlacement();
     }
 
+    const TODAY_DAY_OFF_ICON =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' +
+      '<rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4M8 2v4M3 10h18"></path><path d="m9 15 6 6M15 15l-6 6"></path></svg>';
+
     function applyTodayGridSizing(grid, count){
       if(!grid) return;
+      grid.classList.toggle('today-grid--fill', count >= 4);
       if(!count || count < 1){
         grid.style.removeProperty('--today-time-fs');
         grid.style.removeProperty('--today-name-fs');
@@ -9718,18 +9724,18 @@
         if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
         return;
       }
-      const todayHeading = document.getElementById('todayHeading');
+      const todayHeadingLabel = document.getElementById('todayHeadingLabel');
       const todayDateLine = document.getElementById('todayDateLine');
-      if(todayHeading){
+      if(todayHeadingLabel || todayDateLine){
         const todayTitle = portalTodaySectionTitleText();
         if(todayTitle.indexOf('TODAY ') === 0){
-          todayHeading.textContent = 'TODAY';
+          if(todayHeadingLabel) todayHeadingLabel.textContent = 'TODAY';
           if(todayDateLine) todayDateLine.textContent = todayTitle.slice(6).trim();
         }else if(todayTitle === 'TODAY'){
-          todayHeading.textContent = 'TODAY';
+          if(todayHeadingLabel) todayHeadingLabel.textContent = 'TODAY';
           if(todayDateLine) todayDateLine.textContent = '';
         }else{
-          todayHeading.textContent = todayTitle;
+          if(todayHeadingLabel) todayHeadingLabel.textContent = todayTitle;
           if(todayDateLine) todayDateLine.textContent = '';
         }
       }
@@ -9742,15 +9748,17 @@
       if(!count){
         applyTodayGridSizing(grid, 0);
         const empty = document.createElement('div');
-        empty.className = 'session-card session-card--empty';
+        empty.className = 'session-card session-card--empty session-card--day-off';
         empty.setAttribute('role', 'status');
         empty.style.pointerEvents = 'none';
         empty.style.cursor = 'default';
-        const dayWord = String(DEMO_VIEW_DAY || '').trim() || new Date().toLocaleDateString('en-GB', { weekday: 'long' });
         const loading = !!(dashboardData && dashboardData.portalIdentityResolved === false);
         empty.innerHTML = loading
-          ? '<div class="session-cell session-cell--client session-cell--empty-msg">Loading your schedule…</div>'
-          : `<div class="session-cell session-cell--client session-cell--empty-msg">No participants — ${escapeHtml(dayWord)}</div>`;
+          ? '<div class="today-day-off today-day-off--loading"><p class="today-day-off__title">Loading your schedule…</p></div>'
+          : '<div class="today-day-off" role="presentation">' +
+            '<span class="today-day-off__icon" aria-hidden="true">' + TODAY_DAY_OFF_ICON + '</span>' +
+            '<p class="today-day-off__title">Day off</p>' +
+            '<p class="today-day-off__sub">No sessions today</p></div>';
         grid.appendChild(empty);
         if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
         return;

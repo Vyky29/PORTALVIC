@@ -3335,20 +3335,25 @@
     }
 
     .section-head--today{
-      padding:12px 14px 14px;
+      padding:8px 12px 6px;
       align-items:center;
       justify-content:center;
-      flex-direction:column;
-      gap:6px;
+      flex-direction:row;
+      gap:0;
       text-align:center;
       border-bottom-color:rgba(23,50,71,.06);
     }
-    /* TODAY: centred under profile/logo area */
+    /* TODAY + date on one centred line */
     .section-card--today .section-head--today .today-section-title{
       margin:0;
       flex:0 1 auto;
       min-width:0;
       width:100%;
+      display:flex;
+      flex-wrap:wrap;
+      align-items:baseline;
+      justify-content:center;
+      gap:0;
       font-size:13px;
       font-weight:800;
       letter-spacing:.06em;
@@ -3359,15 +3364,24 @@
       overflow-wrap:break-word;
       word-break:break-word;
     }
+    .today-section-title__label{
+      display:inline;
+    }
     .today-section-date{
+      display:inline;
       margin:0;
-      width:100%;
-      font-size:15px;
+      font-size:13px;
       font-weight:700;
-      line-height:1.3;
-      letter-spacing:.01em;
+      line-height:1.25;
+      letter-spacing:.02em;
       color:var(--blue);
-      text-align:center;
+      text-transform:none;
+    }
+    .today-section-date:not(:empty)::before{
+      content:'·';
+      margin:0 .45em;
+      color:var(--muted);
+      font-weight:800;
     }
     .today-section-date:empty{display:none}
 
@@ -3432,27 +3446,95 @@
       flex-direction:column;
       flex:1 1 0;
       min-height:0;
-      padding:4px 6px 8px;
+      padding:6px 8px 8px;
       overflow-x:hidden;
       overflow-y:auto;
       -webkit-overflow-scrolling:touch;
       overscroll-behavior-y:contain;
     }
     .today-grid{
-      padding:12px 14px 16px;
+      padding:4px 8px 10px;
+    }
+    .today-grid:has(.session-card--day-off){
+      align-items:center;
+      justify-content:center;
     }
     .today-grid > .session-card.session-card--empty{
       width:100%;
       max-width:100%;
       flex:0 0 auto;
     }
+    .today-grid > .session-card.session-card--day-off{
+      flex:1 1 auto;
+      align-self:stretch;
+      min-height:min(220px, 42vh);
+      max-height:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      margin:0;
+      padding:20px 16px;
+      border-style:dashed;
+      border-color:rgba(45,132,179,.22);
+      background:linear-gradient(180deg,rgba(244,249,252,.95) 0%,#fff 100%);
+      box-shadow:none;
+    }
+    .today-day-off{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      text-align:center;
+      max-width:16rem;
+      margin:0 auto;
+    }
+    .today-day-off__icon{
+      width:52px;
+      height:52px;
+      border-radius:16px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:var(--blue);
+      background:rgba(45,132,179,.1);
+      box-shadow:0 0 0 1px rgba(45,132,179,.12) inset;
+    }
+    .today-day-off__icon svg{
+      width:30px;
+      height:30px;
+      display:block;
+    }
+    .today-day-off__title{
+      margin:0;
+      font-size:17px;
+      font-weight:800;
+      color:var(--ink);
+      line-height:1.2;
+    }
+    .today-day-off__sub{
+      margin:0;
+      font-size:13px;
+      font-weight:600;
+      color:var(--muted);
+      line-height:1.35;
+    }
+    .today-day-off--loading .today-day-off__title{
+      font-size:14px;
+      font-weight:600;
+      color:var(--muted);
+    }
     /* Today: una columna de filas; cada fila crece por igual (hasta 9); --today-* las pone JS */
     .today-grid-rows{
       display:flex;
       flex-direction:column;
       gap:var(--today-row-gap, 6px);
-      flex:1 1 0;
+      flex:0 1 auto;
       min-height:0;
+      width:100%;
+    }
+    .today-grid.today-grid--fill .today-grid-rows{
+      flex:1 1 0;
     }
     .section-card--today .session-card{
       padding:4px 10px;
@@ -3462,8 +3544,8 @@
       box-shadow:0 1px 4px rgba(23,50,71,.07);
       width:100%;
       min-width:0;
-      min-height:40px;
-      flex:1 1 0;
+      min-height:48px;
+      flex:0 0 auto;
       display:flex;
       flex-direction:column;
       align-items:stretch;
@@ -3989,6 +4071,13 @@
     .section-card--today .session-card .session-noclient,
     .section-card--today .session-card.session-card--empty .session-cell--empty-msg{
       color:#000;
+    }
+    .section-card--today .session-card.session-card--day-off .session-cell--empty-msg{
+      color:var(--muted);
+    }
+    .today-grid.today-grid--fill .section-card--today .session-card:not(.session-card--day-off){
+      flex:1 1 0;
+      min-height:36px;
     }
     .section-card--today .session-card.session-card--available .session-cell--client{color:#000}
 
