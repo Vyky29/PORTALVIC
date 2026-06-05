@@ -886,10 +886,8 @@
  if (h1) h1.textContent = name;
 
  var sub = document.getElementById("sraHeroSubtitle");
- if (sub) sub.textContent = meta.join(" ù ");
+ if (sub) sub.textContent = meta.join(" - ");
 
- var kicker = document.getElementById("portalWbHeroKicker");
- if (kicker) kicker.hidden = false;
 
  var lead = document.getElementById("sraLead");
  if (lead) lead.hidden = true;
@@ -902,7 +900,7 @@
  }
 
  document.body.classList.add("portal-wb-hero-ready");
- document.title = name + " ù 1-to-1 Wellbeing ù clubSENsational";
+ document.title = name + " - 1-to-1 Wellbeing - clubSENsational";
  }
 
  function renderAdminQuickNav() {

@@ -197,8 +197,8 @@
  var sharedBase =
  global.PORTAL_SHARED_JS_BASE ||
  (typeof location !== "undefined" ? location.origin + "/portal-shared-js" : "/portal-shared-js");
- bases.push(String(sharedBase).replace(/\/$/, "") + "/supabase-client.js");
  bases.push("/portal/supabase-client.js");
+ bases.push(String(sharedBase).replace(/\/$/, "") + "/supabase-client.js");
  function tryImport(i) {
  if (i >= bases.length) return Promise.resolve(null);
  return import(bases[i])
@@ -594,16 +594,15 @@
  if (session) requestStop(session, "manual");
  }
 
- var MIC_TOGGLE_GUARD_MS = 450;
+ var MIC_TOGGLE_GUARD_MS = 600;
  var NO_SPEECH_GRACE_MS = 2800;
 
  function preferWebSpeechCapture() {
  return !!getSpeechRecognition();
  }
 
- function canUseWhisperCapture() {
+ function canUseMediaRecorderCapture() {
  return (
- whisperAvailable &&
  typeof MediaRecorder !== "undefined" &&
  !!pickMime() &&
  typeof navigator !== "undefined" &&
@@ -617,36 +616,32 @@
  }
 
  function startCapture(textarea, btn, statusEl) {
- if (btn) btn.disabled = true;
- if (statusEl) statusEl.textContent = "Starting microphone...";
- probeWhisperAvailability().then(function () {
- if (btn) btn.disabled = false;
- if (canUseWhisperCapture()) {
- startWhisperCapture(textarea, btn, statusEl);
- return;
- }
- if (preferWebSpeechCapture()) {
- startWebSpeechCapture(textarea, btn, statusEl);
- return;
- }
- if (whisperAvailable) {
- startWhisperCapture(textarea, btn, statusEl);
- return;
- }
- if (statusEl) {
- statusEl.textContent =
- "Voice not supported in this browser - try Chrome on Android or desktop.";
- }
- });
- }
-
- function startWhisperCapture(textarea, btn, statusEl) {
  if (session && session.btn === btn) {
  if (shouldIgnoreMicToggle(session)) return;
  requestStop(session, "manual");
  return;
  }
  if (session) stopActiveSession();
+
+ wireScreenshotGuardVoiceRecovery();
+ setScreenshotGuardForRecording(true);
+
+ if (canUseMediaRecorderCapture()) {
+ startMediaRecorderCapture(textarea, btn, statusEl);
+ return;
+ }
+ if (preferWebSpeechCapture()) {
+ startWebSpeechCapture(textarea, btn, statusEl);
+ return;
+ }
+ if (statusEl) {
+ statusEl.textContent =
+ "Voice not supported in this browser - try Chrome on Android or desktop.";
+ }
+ probeWhisperAvailability();
+ }
+
+ function startMediaRecorderCapture(textarea, btn, statusEl) {
 
  var lang = getResolvedLang();
  var cfg = getLangConfig(lang);
@@ -686,9 +681,9 @@
  statusEl.textContent = "Recording - speak now, then tap mic again to finish.";
  }
 
- navigator.mediaDevices
- .getUserMedia({ audio: true })
- .then(function (stream) {
+ var mediaPromise = navigator.mediaDevices.getUserMedia({ audio: true });
+ probeWhisperAvailability();
+ mediaPromise.then(function (stream) {
  if (session !== s) {
  stream.getTracks().forEach(function (t) {
  t.stop();
@@ -724,14 +719,6 @@
  }
  return;
  }
-
- if (session && session.btn === btn) {
- if (shouldIgnoreMicToggle(session)) return;
- requestStop(session, "manual");
- return;
- }
-
- if (session) stopActiveSession();
 
  var lang = getResolvedLang();
  var cfg = getLangConfig(lang);
@@ -864,17 +851,13 @@
  bar.appendChild(statusEl);
  wrap.appendChild(bar);
 
- btn.addEventListener(
- "click",
- function (e) {
+ function onMicPress(e) {
  e.preventDefault();
  e.stopPropagation();
- wireScreenshotGuardVoiceRecovery();
- setScreenshotGuardForRecording(true);
  startCapture(ta, btn, statusEl);
- },
- true
- );
+ }
+
+ btn.addEventListener("click", onMicPress, true);
  }
 
  var initDone = false;

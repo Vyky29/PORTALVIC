@@ -122,20 +122,6 @@ body.portal-wellbeing-admin-mode .header-logo img {
  max-height: 96px;
 }
 
-body.portal-wellbeing-admin-mode .portal-wb-hero-kicker {
- display: inline-flex;
- align-items: center;
- font-size: 11px;
- font-weight: 700;
- letter-spacing: 0.06em;
- text-transform: uppercase;
- color: #f5d78a;
- background: rgba(228, 168, 42, 0.14);
- border: 1px solid rgba(245, 215, 138, 0.35);
- padding: 6px 11px;
- border-radius: 999px;
-}
-
 body.portal-wellbeing-admin-mode .tag-confidential {
  border-radius: 999px;
  font-size: 11px;
@@ -369,6 +355,12 @@ body.portal-wellbeing-admin-mode .header-fields .field:nth-child(3) {
 body.portal-wellbeing-admin-mode #btn-save,
 body.portal-wellbeing-admin-mode #btn-load,
 body.portal-wellbeing-admin-mode #btn-clear {
+ display: none !important;
+}
+
+body.portal-wellbeing-admin-mode .btn-add-row,
+body.portal-wellbeing-admin-mode .btn-expand-stressor,
+body.portal-wellbeing-admin-mode .table-actions {
  display: none !important;
 }
 
