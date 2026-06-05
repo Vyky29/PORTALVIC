@@ -275,14 +275,11 @@
       display:grid;
       grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
       align-items:center;
-      justify-items:stretch;
-      gap:clamp(8px,1.8vh,14px) clamp(20px,5vw,56px);
+      justify-items:center;
+      gap:8px clamp(18px,4.5vw,28px);
       width:100%;
       min-width:0;
       overflow:visible;
-    }
-    .topbar-lead .topbar-center{
-      justify-self:center;
     }
     .topbar-left{
       display:flex;

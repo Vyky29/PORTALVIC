@@ -93,8 +93,8 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260610-pwa-black-fix" />
   <script src="/portal/portal_screenshot_guard.js?v=20260610-pwa-black-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260605-mockup" />
-  <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260605-mockup" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260605-today-date-color" />
+  <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260605-photo-simple" />
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260620-inbox-logo-orbit" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260601-landscape-full" />
 </head>
@@ -207,16 +207,14 @@
     <header class="topbar" aria-labelledby="staffName">
       <div class="topbar-lead">
         <div class="topbar-left topbar-left--name">
-          <div class="topbar-profile-card" id="topbarProfileCard" data-gender="m">
-            <div class="topbar-staff-photo" id="topbarStaffPhoto" aria-hidden="true">
-              <img id="topbarStaffPhotoImg" alt="" hidden />
-              <span class="topbar-staff-photo__initials" id="topbarStaffPhotoInitials">…</span>
-            </div>
-            <h1 class="topbar-name" id="staffName" aria-label="Loading profile">
-              <span class="topbar-name__given" id="staffNameGiven">…</span>
-              <span class="topbar-name__surname" id="staffNameSurname" hidden></span>
-            </h1>
+          <div class="topbar-staff-photo" id="topbarStaffPhoto" aria-hidden="true">
+            <img id="topbarStaffPhotoImg" alt="" hidden />
+            <span class="topbar-staff-photo__initials" id="topbarStaffPhotoInitials">…</span>
           </div>
+          <h1 class="topbar-name" id="staffName" aria-label="Loading profile">
+            <span class="topbar-name__given" id="staffNameGiven">…</span>
+            <span class="topbar-name__surname" id="staffNameSurname" hidden></span>
+          </h1>
         </div>
         <div class="topbar-center">
           <div class="avatar-wrap avatar-wrap--portal-orbit-idle" id="avatarWrap" role="button" tabindex="0" aria-label="Open alerts and notifications">
@@ -970,8 +968,7 @@
   <script src="/portal/portal_participant_catalog.js?v=20260601-participant-dedupe"></script>
   <script src="/portal/staff_roster_resolve.js?v=20260611-javi-roster-guard"></script>
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260620-staff-header-ach" />
-  <script src="/portal/portal_staff_gender_embed.js?v=20260605-mockup"></script>
-  <script src="/portal/portal_topbar_header.js?v=20260605-mockup"></script>
+  <script src="/portal/portal_topbar_header.js?v=20260605-photo-simple"></script>
   <script src="/portal/portal_participant_achievements.js?v=20260602-ach-rls-landscape"></script>
   <script src="/portal/portal_client_sessions_overview.js?v=20260601-sessions-fit"></script>
   <script src="/portal/portal_induction.js?v=20260613-required-induction"></script>
@@ -9415,10 +9412,6 @@
       const givenEl = document.getElementById('staffNameGiven');
       const surEl = document.getElementById('staffNameSurname');
       if(!h1 || !givenEl) return;
-      if(document.getElementById('topbarProfileCard')){
-        h1.style.fontSize = '';
-        return;
-      }
       const minPx = 12;
       const maxPx = 17;
       const avail = h1.clientWidth;
