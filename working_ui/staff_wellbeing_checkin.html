@@ -1,384 +1,388 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Wellbeing Check-in — clubSENsational</title>
-  <script src="/portal-static-bootstrap.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="/portal/portal-wellbeing-checkin.css?v=20260607-wb-sections" />
+ <meta charset="UTF-8" />
+ <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+ <title>Wellbeing Check-in - clubSENsational</title>
+ <script src="/portal-static-bootstrap.js"></script>
+ <link rel="preconnect" href="https://fonts.googleapis.com" />
+ <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+ <link rel="stylesheet" href="/portal/portal-wellbeing-checkin.css?v=20260608-wb-fix" />
 </head>
 <body class="portal-wb-checkin">
-  <div class="portal-wb-wrap">
-    <div class="portal-wb-card" id="app">
-      <header class="portal-wb-head">
-        <div class="portal-wb-head-top">
-          <div class="portal-wb-logo">
-            <img src="https://www.clubsensational.org/wp-content/uploads/2026/03/F-02-1.png" width="40" height="40" alt="clubSENsational" decoding="async" />
-          </div>
-          <div class="portal-wb-head-copy">
-            <span class="portal-wb-tag" id="termTag">This term</span>
-            <h1>Wellbeing Check-in</h1>
-            <p>About 5 minutes. Confidential. If anything is affecting you at work, leadership will arrange a supportive 1-to-1 — you do not need to complete the long form alone.</p>
-          </div>
-        </div>
-      </header>
-      <div class="portal-wb-body" id="stepHost">
-        <p class="portal-wb-foot" style="margin:0;text-align:left">Loading…</p>
-      </div>
-    </div>
-    <p class="portal-wb-foot">Only ops admin and directors are notified when you flag a concern. “All good” check-ins are recorded without a 1-to-1 request.</p>
-  </div>
+ <div class="portal-wb-wrap">
+ <div class="portal-wb-card" id="app">
+ <header class="portal-wb-head">
+ <div class="portal-wb-head-top">
+ <div class="portal-wb-logo">
+ <img src="https://www.clubsensational.org/wp-content/uploads/2026/03/F-02-1.png" width="40" height="40" alt="clubSENsational" decoding="async" />
+ </div>
+ <div class="portal-wb-head-copy">
+ <span class="portal-wb-tag" id="termTag">This term</span>
+ <h1>Wellbeing Check-in</h1>
+ <p>About 5 minutes. Confidential. If anything is affecting you at work, leadership will arrange a supportive 1-to-1 - you do not need to complete the long form alone.</p>
+ </div>
+ </div>
+ </header>
+ <div class="portal-wb-body" id="stepHost">
+ <p class="portal-wb-foot" style="margin:0;text-align:left">Loading...</p>
+ </div>
+ </div>
+ <p class="portal-wb-foot">Only ops admin and directors are notified when you flag a concern. &quot;All good&quot; check-ins are recorded without a 1-to-1 request.</p>
+ </div>
 
-  <script src="/portal/portal_wellbeing_stressor_catalog.js?v=20260607-wb-sections"></script>
-  <script src="/portal/portal_wellbeing_checkin.js?v=20260607-wb-sections"></script>
-  <script src="/portal/portal_feedback_voice_input.js?v=20260617-form-voice"></script>
-  <script>
-  (function () {
-    var wb = window.portalWellbeingCheckin;
-    if (!wb) return;
+ <script src="/portal/portal_wellbeing_stressor_catalog.js?v=20260608-wb-fix"></script>
+ <script src="/portal/portal_wellbeing_checkin.js?v=20260608-wb-fix"></script>
+ <script src="/portal/portal_feedback_voice_input.js?v=20260617-form-voice"></script>
+ <script>
+ (function () {
+ var wb = window.portalWellbeingCheckin;
+ if (!wb) return;
+ if (!wb.DOMAINS.length) {
+ host().innerHTML = '<p class="portal-wb-err">Could not load the check-in form. Please hard-refresh the page (Ctrl+Shift+R).</p>';
+ return;
+ }
 
-    var DOMAIN_ICONS = {
-      demands: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>',
-      control: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3"/><path d="M2 10h4M10 8h4M18 12h4"/></svg>',
-      support: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/><path d="M8 9h8M8 13h5"/></svg>',
-      relations: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
-      role: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>',
-      change: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>',
-    };
+ var DOMAIN_ICONS = {
+ demands: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>',
+ control: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3"/><path d="M2 10h4M10 8h4M18 12h4"/></svg>',
+ support: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/><path d="M8 9h8M8 13h5"/></svg>',
+ relations: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+ role: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>',
+ change: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>',
+ };
 
-    var LEVEL_ICONS = {
-      green: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg>',
-      amber: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>',
-      red: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>',
-    };
+ var LEVEL_ICONS = {
+ green: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg>',
+ amber: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>',
+ red: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>',
+ };
 
-    var CHIP_CHECK =
-      '<svg class="portal-wb-stressor__tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+ var CHIP_CHECK =
+ '<svg class="portal-wb-stressor__tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
 
-    var state = {
-      step: 0,
-      domains: {},
-      general_note: "",
-      submitting: false,
-      existing: null,
-      staffName: "",
-    };
+ var state = {
+ step: 0,
+ domains: {},
+ general_note: "",
+ submitting: false,
+ existing: null,
+ staffName: "",
+ };
 
-    function el(tag, cls, html) {
-      var n = document.createElement(tag);
-      if (cls) n.className = cls;
-      if (html != null) n.innerHTML = html;
-      return n;
-    }
+ function el(tag, cls, html) {
+ var n = document.createElement(tag);
+ if (cls) n.className = cls;
+ if (html != null) n.innerHTML = html;
+ return n;
+ }
 
-    function host() { return document.getElementById("stepHost"); }
+ function host() { return document.getElementById("stepHost"); }
 
-    function domainEntry(key) {
-      if (!state.domains[key]) {
-        state.domains[key] = { level: "green", note: "", stressors: [] };
-      }
-      return state.domains[key];
-    }
+ function domainEntry(key) {
+ if (!state.domains[key]) {
+ state.domains[key] = { level: "green", note: "", stressors: [] };
+ }
+ return state.domains[key];
+ }
 
-    function stressorIsOn(entry, key) {
-      var resolved = wb.resolveStressorKey ? wb.resolveStressorKey(key) : key;
-      return (entry.stressors || []).some(function (s) {
-        var r = wb.resolveStressorKey ? wb.resolveStressorKey(s) : s;
-        return r === resolved;
-      });
-    }
+ function stressorIsOn(entry, key) {
+ var resolved = wb.resolveStressorKey ? wb.resolveStressorKey(key) : key;
+ return (entry.stressors || []).some(function (s) {
+ var r = wb.resolveStressorKey ? wb.resolveStressorKey(s) : s;
+ return r === resolved;
+ });
+ }
 
-    function toggleStressor(entry, key) {
-      entry.stressors = entry.stressors || [];
-      var resolved = wb.resolveStressorKey ? wb.resolveStressorKey(key) : key;
-      var i = -1;
-      entry.stressors.forEach(function (s, idx) {
-        var r = wb.resolveStressorKey ? wb.resolveStressorKey(s) : s;
-        if (r === resolved) i = idx;
-      });
-      if (i >= 0) entry.stressors.splice(i, 1);
-      else entry.stressors.push(resolved);
-    }
+ function toggleStressor(entry, key) {
+ entry.stressors = entry.stressors || [];
+ var resolved = wb.resolveStressorKey ? wb.resolveStressorKey(key) : key;
+ var i = -1;
+ entry.stressors.forEach(function (s, idx) {
+ var r = wb.resolveStressorKey ? wb.resolveStressorKey(s) : s;
+ if (r === resolved) i = idx;
+ });
+ if (i >= 0) entry.stressors.splice(i, 1);
+ else entry.stressors.push(resolved);
+ }
 
-    function renderStressorBlock(extra, domKey, entry) {
-      var items = (wb.getCheckinStressors && wb.getCheckinStressors()[domKey]) || [];
-      if (!items.length) return;
-      var block = el("div", "portal-wb-stressors");
-      block.appendChild(
-        el(
-          "div",
-          "portal-wb-stressors-head",
-          '<span class="portal-wb-field-label">Stressors</span>' +
-            '<span class="portal-wb-stressors-sub">Tap any that apply — these carry through to your 1-to-1 review</span>'
-        )
-      );
-      var grid = el("div", "portal-wb-stressor-grid");
-      items.forEach(function (item) {
-        var on = stressorIsOn(entry, item.key);
-        var btn = el(
-          "button",
-          "portal-wb-stressor" + (on ? " is-on" : ""),
-          CHIP_CHECK +
-            '<span class="portal-wb-stressor__label">' +
-            item.label +
-            "</span>" +
-            '<span class="portal-wb-stressor__full">' +
-            item.key +
-            "</span>"
-        );
-        btn.type = "button";
-        btn.setAttribute("aria-pressed", on ? "true" : "false");
-        btn.onclick = function () {
-          toggleStressor(entry, item.key);
-          renderStep();
-        };
-        grid.appendChild(btn);
-      });
-      block.appendChild(grid);
-      extra.appendChild(block);
-    }
+ function renderStressorBlock(extra, domKey, entry) {
+ var items = (wb.getCheckinStressors && wb.getCheckinStressors()[domKey]) || [];
+ if (!items.length) return;
+ var block = el("div", "portal-wb-stressors");
+ block.appendChild(
+ el(
+ "div",
+ "portal-wb-stressors-head",
+ '<span class="portal-wb-field-label">Stressors</span>' +
+ '<span class="portal-wb-stressors-sub">Tap any that apply - these carry through to your 1-to-1 review</span>'
+ )
+ );
+ var grid = el("div", "portal-wb-stressor-grid");
+ items.forEach(function (item) {
+ var on = stressorIsOn(entry, item.key);
+ var btn = el(
+ "button",
+ "portal-wb-stressor" + (on ? " is-on" : ""),
+ CHIP_CHECK +
+ '<span class="portal-wb-stressor__label">' +
+ item.label +
+ "</span>" +
+ '<span class="portal-wb-stressor__full">' +
+ item.key +
+ "</span>"
+ );
+ btn.type = "button";
+ btn.setAttribute("aria-pressed", on ? "true" : "false");
+ btn.onclick = function () {
+ toggleStressor(entry, item.key);
+ renderStep();
+ };
+ grid.appendChild(btn);
+ });
+ block.appendChild(grid);
+ extra.appendChild(block);
+ }
 
-    function attachVoiceForField(fieldId) {
-      if (typeof window.PortalFeedbackVoiceInput === "undefined") return;
-      if (!document.getElementById(fieldId)) return;
-      window.PortalFeedbackVoiceInput.attach({
-        fields: [fieldId],
-        staffName: state.staffName || "",
-      });
-    }
+ function attachVoiceForField(fieldId) {
+ if (typeof window.PortalFeedbackVoiceInput === "undefined") return;
+ if (!document.getElementById(fieldId)) return;
+ window.PortalFeedbackVoiceInput.attach({
+ fields: [fieldId],
+ staffName: state.staffName || "",
+ });
+ }
 
-    function renderDone(result) {
-      var has = result && result.row && result.row.has_concerns;
-      host().innerHTML =
-        '<div class="portal-wb-done">' +
-        '<div class="portal-wb-done-icon">' + LEVEL_ICONS.green + '</div>' +
-        '<h2>' + (has ? "Thank you — we have received your check-in" : "Thank you — all recorded") + '</h2>' +
-        '<p>' +
-        (has
-          ? "Someone from leadership will contact you to arrange a private 1-to-1. You do not need to fill in the long stress form now — that is completed together in the meeting."
-          : "Glad to hear things are OK this term. You can close this page.") +
-        '</p>' +
-        '<button type="button" class="portal-wb-btn portal-wb-btn--pri" id="btnCloseDone">Back to portal</button>' +
-        '</div>';
-      document.getElementById("btnCloseDone").onclick = function () {
-        if (window.history.length > 1) window.history.back();
-        else window.location.href = "staff_dashboard.html";
-      };
-    }
+ function renderDone(result) {
+ var has = result && result.row && result.row.has_concerns;
+ host().innerHTML =
+ '<div class="portal-wb-done">' +
+ '<div class="portal-wb-done-icon">' + LEVEL_ICONS.green + '</div>' +
+ '<h2>' + (has ? "Thank you - we have received your check-in" : "Thank you - all recorded") + '</h2>' +
+ '<p>' +
+ (has
+ ? "Someone from leadership will contact you to arrange a private 1-to-1. You do not need to fill in the long stress form now - that is completed together in the meeting."
+ : "Glad to hear things are OK this term. You can close this page.") +
+ '</p>' +
+ '<button type="button" class="portal-wb-btn portal-wb-btn--pri" id="btnCloseDone">Back to portal</button>' +
+ '</div>';
+ document.getElementById("btnCloseDone").onclick = function () {
+ if (window.history.length > 1) window.history.back();
+ else window.location.href = "staff_dashboard.html";
+ };
+ }
 
-    function renderStep() {
-      var steps = wb.DOMAINS.length + 1;
-      var idx = state.step;
-      var h = host();
-      h.innerHTML = "";
+ function renderStep() {
+ var steps = wb.DOMAINS.length + 1;
+ var idx = state.step;
+ var h = host();
+ h.innerHTML = "";
 
-      if (idx >= steps) {
-        renderSubmit();
-        return;
-      }
+ if (idx >= steps) {
+ renderSubmit();
+ return;
+ }
 
-      var progRow = el("div", "portal-wb-progress-row");
-      progRow.appendChild(el("span", "portal-wb-step-label", "Step " + (idx + 1) + " of " + steps));
-      h.appendChild(progRow);
+ var progRow = el("div", "portal-wb-progress-row");
+ progRow.appendChild(el("span", "portal-wb-step-label", "Step " + (idx + 1) + " of " + steps));
+ h.appendChild(progRow);
 
-      var prog = el("div", "portal-wb-progress", '<div class="portal-wb-progress__bar"></div>');
-      prog.firstChild.style.width = Math.round(((idx + 1) / steps) * 100) + "%";
-      h.appendChild(prog);
+ var prog = el("div", "portal-wb-progress", '<div class="portal-wb-progress__bar"></div>');
+ prog.firstChild.style.width = Math.round(((idx + 1) / steps) * 100) + "%";
+ h.appendChild(prog);
 
-      if (idx === wb.DOMAINS.length) {
-        renderGeneralStep(h, steps);
-        return;
-      }
+ if (idx === wb.DOMAINS.length) {
+ renderGeneralStep(h, steps);
+ return;
+ }
 
-      var dom = wb.DOMAINS[idx];
-      var entry = domainEntry(dom.key);
-      var icon = DOMAIN_ICONS[dom.key] || DOMAIN_ICONS.demands;
+ var dom = wb.DOMAINS[idx];
+ var entry = domainEntry(dom.key);
+ var icon = DOMAIN_ICONS[dom.key] || DOMAIN_ICONS.demands;
 
-      var head = el("div", "portal-wb-domain-head");
-      head.innerHTML =
-        '<div class="portal-wb-domain-icon">' + icon + '</div>' +
-        '<div><h2 class="portal-wb-domain-title">' + dom.title + '</h2>' +
-        '<p class="portal-wb-domain-q">' + dom.question + '</p></div>';
-      h.appendChild(head);
+ var head = el("div", "portal-wb-domain-head");
+ head.innerHTML =
+ '<div class="portal-wb-domain-icon">' + icon + '</div>' +
+ '<div><h2 class="portal-wb-domain-title">' + dom.title + '</h2>' +
+ '<p class="portal-wb-domain-q">' + dom.question + '</p></div>';
+ h.appendChild(head);
 
-      var levels = el("div", "portal-wb-levels");
-      [
-        { level: "green", title: "All good", sub: "No concerns right now" },
-        { level: "amber", title: "Some pressure", sub: "I'd like to talk when there is time" },
-        { level: "red", title: "Need support soon", sub: "Please arrange a 1-to-1 with me" },
-      ].forEach(function (opt) {
-        var btn = el("button", "portal-wb-level" + (entry.level === opt.level ? " is-active" : ""), "");
-        btn.type = "button";
-        btn.setAttribute("data-level", opt.level);
-        btn.innerHTML =
-          '<span class="portal-wb-level-icon">' + LEVEL_ICONS[opt.level] + '</span>' +
-          '<span class="portal-wb-level-copy"><strong>' + opt.title + '</strong><span>' + opt.sub + '</span></span>';
-        btn.onclick = function () {
-          entry.level = opt.level;
-          renderStep();
-        };
-        levels.appendChild(btn);
-      });
-      h.appendChild(levels);
+ var levels = el("div", "portal-wb-levels");
+ [
+ { level: "green", title: "All good", sub: "No concerns right now" },
+ { level: "amber", title: "Some pressure", sub: "I'd like to talk when there is time" },
+ { level: "red", title: "Need support soon", sub: "Please arrange a 1-to-1 with me" },
+ ].forEach(function (opt) {
+ var btn = el("button", "portal-wb-level" + (entry.level === opt.level ? " is-active" : ""), "");
+ btn.type = "button";
+ btn.setAttribute("data-level", opt.level);
+ btn.innerHTML =
+ '<span class="portal-wb-level-icon">' + LEVEL_ICONS[opt.level] + '</span>' +
+ '<span class="portal-wb-level-copy"><strong>' + opt.title + '</strong><span>' + opt.sub + '</span></span>';
+ btn.onclick = function () {
+ entry.level = opt.level;
+ renderStep();
+ };
+ levels.appendChild(btn);
+ });
+ h.appendChild(levels);
 
-      var extra = el("div", "portal-wb-extra");
-      extra.hidden = entry.level === "green";
-      renderStressorBlock(extra, dom.key, entry);
-      var comments = el("div", "portal-wb-comments");
-      comments.appendChild(el("label", "portal-wb-field-label", "Additional comments (optional)"));
-      comments.appendChild(el("p", "portal-wb-voice-hint", "Tap the microphone to dictate. Italian or Spanish is translated to English for our records."));
-      var ta = document.createElement("textarea");
-      ta.id = "wb-domain-note-" + dom.key;
-      ta.rows = 3;
-      ta.placeholder = "Anything else you want us to know…";
-      ta.value = entry.note || "";
-      ta.oninput = function () { entry.note = ta.value; };
-      comments.appendChild(ta);
-      extra.appendChild(comments);
-      h.appendChild(extra);
+ var extra = el("div", "portal-wb-extra");
+ extra.hidden = entry.level === "green";
+ renderStressorBlock(extra, dom.key, entry);
+ var comments = el("div", "portal-wb-comments");
+ comments.appendChild(el("label", "portal-wb-field-label", "Additional comments (optional)"));
+ comments.appendChild(el("p", "portal-wb-voice-hint", "Tap the microphone to dictate. Italian or Spanish is translated to English for our records."));
+ var ta = document.createElement("textarea");
+ ta.id = "wb-domain-note-" + dom.key;
+ ta.rows = 3;
+ ta.placeholder = "Anything else you want us to know...";
+ ta.value = entry.note || "";
+ ta.oninput = function () { entry.note = ta.value; };
+ comments.appendChild(ta);
+ extra.appendChild(comments);
+ h.appendChild(extra);
 
 
-      var actions = el("div", "portal-wb-actions");
-      if (idx > 0) {
-        var back = el("button", "portal-wb-btn portal-wb-btn--ghost", "Back");
-        back.type = "button";
-        back.onclick = function () { state.step--; renderStep(); };
-        actions.appendChild(back);
-      }
-      var next = el("button", "portal-wb-btn portal-wb-btn--pri", idx === wb.DOMAINS.length - 1 ? "Review & send" : "Next");
-      next.type = "button";
-      next.onclick = function () { state.step++; renderStep(); };
-      actions.appendChild(next);
-      h.appendChild(actions);
+ var actions = el("div", "portal-wb-actions");
+ if (idx > 0) {
+ var back = el("button", "portal-wb-btn portal-wb-btn--ghost", "Back");
+ back.type = "button";
+ back.onclick = function () { state.step--; renderStep(); };
+ actions.appendChild(back);
+ }
+ var next = el("button", "portal-wb-btn portal-wb-btn--pri", idx === wb.DOMAINS.length - 1 ? "Review & send" : "Next");
+ next.type = "button";
+ next.onclick = function () { state.step++; renderStep(); };
+ actions.appendChild(next);
+ h.appendChild(actions);
 
-      if (!extra.hidden) {
-        attachVoiceForField("wb-domain-note-" + dom.key);
-      }
-    }
+ if (!extra.hidden) {
+ attachVoiceForField("wb-domain-note-" + dom.key);
+ }
+ }
 
-    function renderGeneralStep(h, steps) {
-      h.appendChild(el("div", "portal-wb-domain-head",
-        '<div class="portal-wb-domain-icon">' + DOMAIN_ICONS.support + '</div>' +
-        '<div><h2 class="portal-wb-domain-title">Anything Else?</h2>' +
-        '<p class="portal-wb-domain-q">Optional message for leadership — only read if you flagged concerns above or write here.</p></div>'
-      ));
-      var genComments = el("div", "portal-wb-comments");
-      genComments.appendChild(el("p", "portal-wb-voice-hint", "Tap the microphone to dictate. Italian or Spanish is translated to English for our records."));
-      var ta = document.createElement("textarea");
-      ta.id = "wb-general-note";
-      ta.rows = 4;
-      ta.placeholder = "Optional…";
-      ta.value = state.general_note || "";
-      ta.oninput = function () { state.general_note = ta.value; };
-      genComments.appendChild(ta);
-      h.appendChild(genComments);
-      attachVoiceForField("wb-general-note");
+ function renderGeneralStep(h, steps) {
+ h.appendChild(el("div", "portal-wb-domain-head",
+ '<div class="portal-wb-domain-icon">' + DOMAIN_ICONS.support + '</div>' +
+ '<div><h2 class="portal-wb-domain-title">Anything Else?</h2>' +
+ '<p class="portal-wb-domain-q">Optional message for leadership - only read if you flagged concerns above or write here.</p></div>'
+ ));
+ var genComments = el("div", "portal-wb-comments");
+ genComments.appendChild(el("p", "portal-wb-voice-hint", "Tap the microphone to dictate. Italian or Spanish is translated to English for our records."));
+ var ta = document.createElement("textarea");
+ ta.id = "wb-general-note";
+ ta.rows = 4;
+ ta.placeholder = "Optional";
+ ta.value = state.general_note || "";
+ ta.oninput = function () { state.general_note = ta.value; };
+ genComments.appendChild(ta);
+ h.appendChild(genComments);
+ attachVoiceForField("wb-general-note");
 
-      var actions = el("div", "portal-wb-actions");
-      var back = el("button", "portal-wb-btn portal-wb-btn--ghost", "Back");
-      back.type = "button";
-      back.onclick = function () { state.step--; renderStep(); };
-      actions.appendChild(back);
-      var send = el("button", "portal-wb-btn portal-wb-btn--pri", "Submit check-in");
-      send.type = "button";
-      send.onclick = function () { state.step++; renderStep(); };
-      actions.appendChild(send);
-      h.appendChild(actions);
-    }
+ var actions = el("div", "portal-wb-actions");
+ var back = el("button", "portal-wb-btn portal-wb-btn--ghost", "Back");
+ back.type = "button";
+ back.onclick = function () { state.step--; renderStep(); };
+ actions.appendChild(back);
+ var send = el("button", "portal-wb-btn portal-wb-btn--pri", "Submit check-in");
+ send.type = "button";
+ send.onclick = function () { state.step++; renderStep(); };
+ actions.appendChild(send);
+ h.appendChild(actions);
+ }
 
-    function renderSubmit() {
-      var h = host();
-      h.innerHTML = '<p class="portal-wb-foot" style="margin:0;text-align:left">Sending…</p>';
-      if (state.submitting) return;
-      state.submitting = true;
-      wb.submitCheckin({ domains: state.domains, general_note: state.general_note })
-        .then(function (res) {
-          renderDone(res);
-        })
-        .catch(function (err) {
-          state.submitting = false;
-          state.step = wb.DOMAINS.length;
-          h.innerHTML =
-            '<p class="portal-wb-err">' + String((err && err.message) || err || "Could not submit.") + '</p>' +
-            '<button type="button" class="portal-wb-btn portal-wb-btn--pri" id="btnRetry">Try again</button>';
-          document.getElementById("btnRetry").onclick = function () { renderStep(); };
-        });
-    }
+ function renderSubmit() {
+ var h = host();
+ h.innerHTML = '<p class="portal-wb-foot" style="margin:0;text-align:left">Sending...</p>';
+ if (state.submitting) return;
+ state.submitting = true;
+ wb.submitCheckin({ domains: state.domains, general_note: state.general_note })
+ .then(function (res) {
+ renderDone(res);
+ })
+ .catch(function (err) {
+ state.submitting = false;
+ state.step = wb.DOMAINS.length;
+ h.innerHTML =
+ '<p class="portal-wb-err">' + String((err && err.message) || err || "Could not submit.") + '</p>' +
+ '<button type="button" class="portal-wb-btn portal-wb-btn--pri" id="btnRetry">Try again</button>';
+ document.getElementById("btnRetry").onclick = function () { renderStep(); };
+ });
+ }
 
-    function boot() {
-      document.getElementById("termTag").textContent = wb.termLabel(wb.currentTermKey());
-      import("/portal/auth-handler.js?v=20260605-wellbeing-ui")
-        .then(function (mod) {
-          var client = mod.getSupabaseClient && mod.getSupabaseClient();
-          if (!client) return null;
-          return client.auth.getUser().then(function (ur) {
-            var user = ur && ur.data && ur.data.user;
-            if (!user) return null;
-            return client
-              .from("staff_profiles")
-              .select("full_name,username")
-              .eq("id", user.id)
-              .maybeSingle()
-              .then(function (pr) {
-                var p = pr && pr.data;
-                state.staffName = (p && (p.full_name || p.username)) || "";
-                if (!state.staffName && user.email) {
-                  state.staffName = String(user.email).split("@")[0].replace(/[._]+/g, " ");
-                }
-                return state.staffName;
-              });
-          });
-        })
-        .catch(function () {})
-        .then(function () {
-          return wb.fetchOwnCheckinThisTerm();
-        })
-        .then(function (res) {
-          state.existing = res.checkin;
-          if (res.checkin && !wb.ALLOW_REPEAT_CHECKIN) {
-            host().innerHTML =
-              '<div class="portal-wb-done">' +
-              '<div class="portal-wb-done-icon">' + LEVEL_ICONS.green + '</div>' +
-              '<h2>Check-in already sent this term</h2>' +
-              '<p>Status: <strong>' + res.checkin.status.replace(/_/g, " ") + '</strong>. ' +
-              (res.checkin.has_concerns
-                ? "Leadership has been notified. They will be in touch for your 1-to-1."
-                : "Thanks — no further action needed right now.") +
-              '</p>' +
-              '<button type="button" class="portal-wb-btn portal-wb-btn--pri" id="btnBackPortal">Back to portal</button>' +
-              '</div>';
-            document.getElementById("btnBackPortal").onclick = function () {
-              window.location.href = /lead_dashboard/i.test(document.referrer || "") ? "lead_dashboard.html" : "staff_dashboard.html";
-            };
-            return;
-          }
-          if (res.checkin && wb.ALLOW_REPEAT_CHECKIN) {
-            state.domains = res.checkin.domains || {};
-            Object.keys(state.domains).forEach(function (dk) {
-              var e = state.domains[dk];
-              if (!e || !e.stressors) return;
-              e.stressors = e.stressors
-                .map(function (s) { return wb.resolveStressorKey ? wb.resolveStressorKey(s) : s; })
-                .filter(Boolean)
-                .filter(function (s, i, arr) { return arr.indexOf(s) === i; });
-            });
-            state.general_note = res.checkin.general_note || "";
-            var tag = document.getElementById("termTag");
-            if (tag) {
-              tag.textContent = wb.termLabel(wb.currentTermKey()) + " — test mode — edit & resend";
-            }
-          }
-          renderStep();
-        })
-        .catch(function (err) {
-          host().innerHTML = '<p class="portal-wb-err">' + String((err && err.message) || err) + '</p>';
-        });
-    }
+ function boot() {
+ document.getElementById("termTag").textContent = wb.termLabel(wb.currentTermKey());
+ import("/portal/auth-handler.js?v=20260605-wellbeing-ui")
+ .then(function (mod) {
+ var client = mod.getSupabaseClient && mod.getSupabaseClient();
+ if (!client) return null;
+ return client.auth.getUser().then(function (ur) {
+ var user = ur && ur.data && ur.data.user;
+ if (!user) return null;
+ return client
+ .from("staff_profiles")
+ .select("full_name,username")
+ .eq("id", user.id)
+ .maybeSingle()
+ .then(function (pr) {
+ var p = pr && pr.data;
+ state.staffName = (p && (p.full_name || p.username)) || "";
+ if (!state.staffName && user.email) {
+ state.staffName = String(user.email).split("@")[0].replace(/[._]+/g, " ");
+ }
+ return state.staffName;
+ });
+ });
+ })
+ .catch(function () {})
+ .then(function () {
+ return wb.fetchOwnCheckinThisTerm();
+ })
+ .then(function (res) {
+ state.existing = res.checkin;
+ if (res.checkin && !wb.ALLOW_REPEAT_CHECKIN) {
+ host().innerHTML =
+ '<div class="portal-wb-done">' +
+ '<div class="portal-wb-done-icon">' + LEVEL_ICONS.green + '</div>' +
+ '<h2>Check-in already sent this term</h2>' +
+ '<p>Status: <strong>' + res.checkin.status.replace(/_/g, " ") + '</strong>. ' +
+ (res.checkin.has_concerns
+ ? "Leadership has been notified. They will be in touch for your 1-to-1."
+ : "Thanks - no further action needed right now.") +
+ '</p>' +
+ '<button type="button" class="portal-wb-btn portal-wb-btn--pri" id="btnBackPortal">Back to portal</button>' +
+ '</div>';
+ document.getElementById("btnBackPortal").onclick = function () {
+ window.location.href = /lead_dashboard/i.test(document.referrer || "") ? "lead_dashboard.html" : "staff_dashboard.html";
+ };
+ return;
+ }
+ if (res.checkin && wb.ALLOW_REPEAT_CHECKIN) {
+ state.domains = res.checkin.domains || {};
+ Object.keys(state.domains).forEach(function (dk) {
+ var e = state.domains[dk];
+ if (!e || !e.stressors) return;
+ e.stressors = e.stressors
+ .map(function (s) { return wb.resolveStressorKey ? wb.resolveStressorKey(s) : s; })
+ .filter(Boolean)
+ .filter(function (s, i, arr) { return arr.indexOf(s) === i; });
+ });
+ state.general_note = res.checkin.general_note || "";
+ var tag = document.getElementById("termTag");
+ if (tag) {
+ tag.textContent = wb.termLabel(wb.currentTermKey()) + " - test mode - edit & resend";
+ }
+ }
+ renderStep();
+ })
+ .catch(function (err) {
+ host().innerHTML = '<p class="portal-wb-err">' + String((err && err.message) || err) + '</p>';
+ });
+ }
 
-    boot();
-  })();
-  </script>
+ boot();
+ })();
+ </script>
 </body>
 </html>
