@@ -276,9 +276,10 @@
       grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
       align-items:center;
       justify-items:center;
-      gap:8px 12px;
+      gap:8px clamp(18px,4.5vw,28px);
       width:100%;
       min-width:0;
+      overflow:visible;
     }
     .topbar-left{
       display:flex;
