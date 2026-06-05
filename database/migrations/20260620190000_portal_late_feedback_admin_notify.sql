@@ -1,6 +1,6 @@
 -- Late session feedback: no staff approval gate; admin Web Push when late feedback is saved + 9pm missing digest.
--- Apply in Portal Supabase. Configure Database Webhook INSERT on session_feedback → portal-push-dispatch-admin-alert.
--- Schedule 21:00 Europe/London cron → portal-push-feedback-9pm-digest (see function header).
+-- Apply in Portal Supabase, then 20260620220000_portal_late_feedback_push_webhook_and_cron.sql
+-- (SQL trigger + pg_cron; replace __PORTAL_PUSH_WEBHOOK_SECRET__ before running).
 
 begin;
 
