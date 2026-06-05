@@ -92,7 +92,7 @@
   <script src="/portal/portal_screenshot_guard.js?v=20260610-pwa-black-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
   <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260620-staff-header-ach" />
-  <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260620-inbox-premium" />
+  <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260620-inbox-logo-orbit" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260601-landscape-full" />
 </head>
 <body>
@@ -725,13 +725,52 @@
       <div class="sheet-handle"></div>
       <button type="button" class="portal-dm-btn portal-dm-btn--ghost portal-dm-back-btn" id="internalChatBackBtn" hidden aria-label="Back to chats">‹</button>
       <div class="portal-dm-inbox-brand" id="internalChatInboxBrand" aria-label="clubSENsational team chat">
-        <div class="portal-dm-inbox-brand__logo-wrap">
-          <img class="portal-dm-inbox-brand__logo" src="/portal/F-02-1.png" alt="" width="72" height="72" decoding="async" referrerpolicy="no-referrer-when-downgrade" onerror="typeof portalBrandLogoOnError==='function'?portalBrandLogoOnError(this):(this.onerror=null,this.src='/portal/portal_crest.svg')" />
+        <div class="portal-dm-inbox-brand__logo-stage" aria-hidden="true">
+          <svg class="portal-dm-inbox-brand__orbit-svg" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
+            <defs>
+              <filter id="portalDmOrbSoft" x="-40%" y="-40%" width="180%" height="180%">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="1.2" result="b"/>
+                <feMerge>
+                  <feMergeNode in="b"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
+            <g transform="translate(100,100)">
+              <g class="portal-dm-inbox-brand__orbit-layer portal-dm-inbox-brand__orbit-layer--cw" filter="url(#portalDmOrbSoft)">
+                <circle cx="0" cy="-92" r="7" fill="#2d84b3"/>
+                <circle cx="79.67" cy="-46" r="6" fill="#c6a24a"/>
+                <circle cx="79.67" cy="46" r="6" fill="#173247"/>
+                <circle cx="0" cy="92" r="7" fill="#d4af37"/>
+                <circle cx="-79.67" cy="46" r="6" fill="#2d84b3"/>
+                <circle cx="-79.67" cy="-46" r="6" fill="#5a9fc4"/>
+              </g>
+              <g class="portal-dm-inbox-brand__orbit-layer portal-dm-inbox-brand__orbit-layer--ccw" filter="url(#portalDmOrbSoft)">
+                <circle cx="0" cy="-82" r="5" fill="#c6a24a"/>
+                <circle cx="71.01" cy="-41" r="5" fill="#2d84b3"/>
+                <circle cx="71.01" cy="41" r="5" fill="#d4af37"/>
+                <circle cx="0" cy="82" r="5" fill="#173247"/>
+                <circle cx="-71.01" cy="41" r="5" fill="#8ebfe0"/>
+                <circle cx="-71.01" cy="-41" r="5" fill="#c6a24a"/>
+              </g>
+              <g class="portal-dm-inbox-brand__orbit-layer portal-dm-inbox-brand__orbit-layer--slow-ccw" filter="url(#portalDmOrbSoft)">
+                <circle cx="37.27" cy="-64" r="4" fill="#d4af37"/>
+                <circle cx="74" cy="-8" r="4" fill="#2d84b3"/>
+                <circle cx="37.27" cy="64" r="4" fill="#c6a24a"/>
+                <circle cx="-37.27" cy="64" r="4" fill="#173247"/>
+                <circle cx="-74" cy="-8" r="4" fill="#2d84b3"/>
+                <circle cx="-37.27" cy="-64" r="4" fill="#f4d78a"/>
+              </g>
+            </g>
+          </svg>
+          <div class="portal-dm-inbox-brand__logo-wrap">
+            <img class="portal-dm-inbox-brand__logo" src="/portal/F-02-1.png" alt="" width="72" height="72" decoding="async" referrerpolicy="no-referrer-when-downgrade" onerror="typeof portalBrandLogoOnError==='function'?portalBrandLogoOnError(this):(this.onerror=null,this.src='/portal/portal_crest.svg')" />
+          </div>
         </div>
         <p class="portal-dm-inbox-brand__tagline">Secure team messaging</p>
       </div>
       <h3 id="internalChatTitle">Chats</h3>
-      <button type="button" class="portal-dm-btn portal-dm-btn--ghost portal-dm-close-btn" id="internalChatCloseBtn" aria-label="Close chat">Close</button>
+      <button type="button" class="portal-dm-btn portal-dm-btn--ghost portal-dm-close-btn portal-dm-close-btn--inbox-x" id="internalChatCloseBtn" aria-label="Close chat"><span aria-hidden="true">×</span></button>
       <p id="internalChatSheetSub" hidden aria-hidden="true">Private messages with people you have a thread with.</p>
     </div>
     <div class="sheet-body portal-dm-wrap portal-dm-sheet-body" style="min-width:0">
