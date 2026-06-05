@@ -4,7 +4,7 @@
 (function (global) {
   "use strict";
 
-  /** TODO: set false before production ù one check-in per staff per term */
+  /** TODO: set false before production ÔøΩ one check-in per staff per term */
   var ALLOW_REPEAT_CHECKIN = true;
 
   var DOMAINS = [
@@ -49,70 +49,31 @@
     change: "Change",
   };
 
-  /**
-   * Chip labels are short; keys match staff_wellbeing_review.html stressorSuggestions exactly.
-   */
-  var CHECKIN_STRESSORS = {
-    demands: [
-      { key: "High workload / too many sessions", label: "High workload" },
-      { key: "Back to back sessions without breaks", label: "Back-to-back sessions" },
-      { key: "Unclear priorities or conflicting deadlines", label: "Unclear priorities" },
-      { key: "Insufficient staffing on shift", label: "Not enough staff on shift" },
-    ],
-    control: [
-      { key: "Limited input in planning", label: "Little input into planning" },
-      { key: "Little autonomy in daily decisions", label: "Can't adjust day-to-day" },
-      { key: "Rigid processes with no room to adapt", label: "Rigid processes" },
-      { key: "Unclear expectations from management", label: "Unclear expectations" },
-    ],
-    support: [
-      { key: "Unclear where to get support", label: "Unclear who to ask" },
-      { key: "Manager unavailable for check-ins", label: "Hard to reach manager" },
-      { key: "Information not cascaded in time", label: "Slow or late updates" },
-      { key: "Limited access to EAP or wellbeing resources", label: "Limited wellbeing support" },
-    ],
-    relations: [
-      { key: "Interpersonal conflict within the team", label: "Team tension" },
-      { key: "Perceived unfair treatment", label: "Feeling unfairly treated" },
-      { key: "Bullying or harassment concern", label: "Behaviour concerns" },
-      { key: "Lack of recognition or feedback", label: "Feeling unheard" },
-    ],
-    role: [
-      { key: "Unclear role boundaries", label: "Unclear expectations" },
-      { key: "Responsibilities exceed capacity", label: "Too many responsibilities" },
-      { key: "Unclear performance expectations", label: "Role changed recently" },
-      { key: "Commute or travel burden", label: "Travel / commute burden" },
-    ],
-    change: [
-      { key: "Poor communication during organisational change", label: "Poor communication" },
-      { key: "Consultation lacking on changes affecting role", label: "Sudden changes" },
-      { key: "Fear regarding job security", label: "Job security worries" },
-      { key: "Rapid change without adequate support", label: "Change without support" },
-    ],
-  };
+  function stressorCatalog() {
+    return global.portalWellbeingStressorCatalog || null;
+  }
 
-  /** Old check-in chip text -> SRA dropdown value */
-  var LEGACY_STRESSOR_MAP = {
-    "High workload": "High workload / too many sessions",
-    "Back-to-back sessions": "Back to back sessions without breaks",
-    "Unclear priorities": "Unclear priorities or conflicting deadlines",
-    "Not enough breaks": "Back to back sessions without breaks",
-    "Little input into planning": "Limited input in planning",
-    "Rigid timetable": "Rigid processes with no room to adapt",
-    "Can't adjust approach": "Little autonomy in daily decisions",
-    "Hard to reach manager": "Manager unavailable for check-ins",
-    "Unclear who to ask": "Unclear where to get support",
-    "Slow responses": "Information not cascaded in time",
-    "Team tension": "Interpersonal conflict within the team",
-    "Feeling unheard": "Lack of recognition or feedback",
-    "Behaviour concerns": "Bullying or harassment concern",
-    "Unclear expectations": "Unclear expectations from management",
-    "Role changed recently": "Unclear performance expectations",
-    "Too many hats": "Responsibilities exceed capacity",
-    "Sudden changes": "Consultation lacking on changes affecting role",
-    "Poor communication": "Poor communication during organisational change",
-    "Job security worries": "Fear regarding job security",
-  };
+  function getCheckinStressors() {
+    var cat = stressorCatalog();
+    return cat && cat.buildCheckinStressors ? cat.buildCheckinStressors() : {};
+  }
+
+  function resolveStressorKey(raw, selectEl) {
+    var cat = stressorCatalog();
+    var val = cat && cat.resolveKey ? cat.resolveKey(raw) : clean(raw);
+    if (!val) return "";
+    if (selectEl) {
+      for (var i = 0; i < selectEl.options.length; i++) {
+        if (selectEl.options[i].value === val) return val;
+      }
+    }
+    return val;
+  }
+
+  function stressorShortLabel(key) {
+    var cat = stressorCatalog();
+    return cat && cat.shortLabel ? cat.shortLabel(key) : clean(key);
+  }
 
   var LEVEL_ORDER = { green: 0, amber: 1, red: 2 };
 
@@ -134,7 +95,7 @@
     key = clean(key);
     var m = /^(\d{4})-(H1|H2)$/.exec(key);
     if (!m) return key || "This term";
-    return m[1] + (m[2] === "H1" ? " ù JanùJun" : " ù JulùDec");
+    return m[1] + (m[2] === "H1" ? " ÔøΩ JanÔøΩJun" : " ÔøΩ JulÔøΩDec");
   }
 
   function highestLevel(domains) {
@@ -189,8 +150,29 @@
     return { client: client, user: user, profile: profile, staffName: name || "Staff member" };
   }
 
+  function normalizeDomains(domains) {
+    var out = {};
+    Object.keys(domains || {}).forEach(function (key) {
+      var entry = domains[key] || {};
+      var stressors = (entry.stressors || [])
+        .map(function (s) {
+          return resolveStressorKey(s);
+        })
+        .filter(Boolean);
+      stressors = stressors.filter(function (s, i) {
+        return stressors.indexOf(s) === i;
+      });
+      out[key] = {
+        level: clean(entry.level || "green").toLowerCase() || "green",
+        note: clean(entry.note),
+        stressors: stressors,
+      };
+    });
+    return out;
+  }
+
   function buildCheckinRow(ctx, payload) {
-    var domains = payload.domains || {};
+    var domains = normalizeDomains(payload.domains || {});
     var generalNote = clean(payload.general_note);
     var hasConcerns = checkinHasConcerns(domains, generalNote);
     var hl = highestLevel(domains);
@@ -305,24 +287,6 @@
     return { s: 1, l: 1 };
   }
 
-  function resolveStressorKey(raw, selectEl) {
-    var val = clean(raw);
-    if (!val) return "";
-    if (LEGACY_STRESSOR_MAP[val]) val = LEGACY_STRESSOR_MAP[val];
-    if (selectEl) {
-      for (var i = 0; i < selectEl.options.length; i++) {
-        if (selectEl.options[i].value === val) return val;
-      }
-    }
-    Object.keys(CHECKIN_STRESSORS).forEach(function (dom) {
-      (CHECKIN_STRESSORS[dom] || []).forEach(function (item) {
-        if (item.key === val || item.label === val) val = item.key;
-      });
-    });
-    if (LEGACY_STRESSOR_MAP[val]) val = LEGACY_STRESSOR_MAP[val];
-    return val;
-  }
-
   function ensureDomainRows(tbody, count) {
     if (!tbody || count < 1) return;
     while (tbody.rows.length < count) {
@@ -414,7 +378,7 @@
     if (!form || !checkin) return;
     var domains = checkin.domains || {};
     var ins = form.querySelectorAll(".header-fields input");
-    if (ins[0]) ins[0].value = "Stress RA ù " + (checkin.staff_name || "");
+    if (ins[0]) ins[0].value = "Stress RA ÔøΩ " + (checkin.staff_name || "");
     if (ins[3] && !ins[3].value) {
       var d = new Date();
       ins[3].value =
@@ -433,7 +397,7 @@
         fields[4].value =
           "Staff wellbeing check-in (" +
           termLabel(checkin.term_key) +
-          ") ù " +
+          ") ÔøΩ " +
           (checkin.has_concerns ? "concerns flagged for 1-to-1" : "routine review");
       }
       if (fields[5] && checkin.general_note) {
@@ -458,7 +422,7 @@
       var note = clean(entry && entry.note);
       var stressors = ((entry && entry.stressors) || [])
         .map(function (s) {
-          return clean(s);
+          return resolveStressorKey(s);
         })
         .filter(Boolean);
       var scores = levelToScores(entry && entry.level);
@@ -495,10 +459,19 @@
     Object.keys(DOMAIN_LABELS).forEach(function (key) {
       var entry = domains[key];
       if (!domainHasConcern(entry)) return;
+      var stressors = ((entry && entry.stressors) || [])
+        .map(function (s) {
+          return resolveStressorKey(s);
+        })
+        .filter(Boolean)
+        .map(function (s) {
+          return stressorShortLabel(s);
+        });
       out.push({
         key: key,
         label: DOMAIN_LABELS[key] || key,
         level: clean((entry && entry.level) || "amber").toLowerCase(),
+        stressors: stressors,
       });
     });
     return out;
@@ -518,13 +491,18 @@
             : f.level === "amber"
               ? " portal-wb-admin-chip--amber"
               : "";
+        var stressorTxt =
+          f.stressors && f.stressors.length
+            ? " ¬∑ " + f.stressors.join(", ")
+            : "";
         return (
           '<span class="portal-wb-admin-chip' +
           cls +
           '">' +
           f.label +
-          " ù " +
+          " ¬∑ " +
           levelLabel(f.level) +
+          stressorTxt +
           "</span>"
         );
       })
@@ -539,22 +517,22 @@
       "</h2>" +
       '<p class="portal-wb-admin-banner__meta">' +
       term +
-      (checkin.staff_role ? " ù " + clean(checkin.staff_role) : "") +
+      (checkin.staff_role ? " ¬∑ " + clean(checkin.staff_role) : "") +
       (checkin.general_note
-        ? '<br><span style="opacity:.9">Staff note: ù' +
+        ? '<br><span style="opacity:.9">Staff note: ‚Äú' +
           clean(checkin.general_note).replace(/"/g, "'") +
-          "ù</span>"
+          "ÔøΩ</span>"
         : "") +
       "</p>" +
       '<div class="portal-wb-admin-banner__chips">' +
       chips +
       "</div>";
     host.hidden = false;
-    document.title = "1-to-1 Wellbeing Review ù " + name + " ù clubSENsational";
+    document.title = "1-to-1 Wellbeing Review ‚Äî " + name + " ‚Äî clubSENsational";
     var h1 = document.querySelector("#sra-form .brand h1");
-    if (h1) h1.textContent = "1-to-1 Wellbeing Review ù " + name;
+    if (h1) h1.textContent = "1-to-1 Wellbeing Review ‚Äî " + name;
     var sub = document.querySelector("#sra-form .brand .subtitle");
-    if (sub) sub.textContent = "Complete together ù HSE stress risk assessment";
+    if (sub) sub.textContent = "Complete together ¬∑ HSE stress risk assessment";
   }
 
   function renderAdminQuickNav() {
@@ -577,7 +555,9 @@
     ALLOW_REPEAT_CHECKIN: ALLOW_REPEAT_CHECKIN,
     DOMAINS: DOMAINS,
     DOMAIN_LABELS: DOMAIN_LABELS,
-    CHECKIN_STRESSORS: CHECKIN_STRESSORS,
+    getCheckinStressors: getCheckinStressors,
+    resolveStressorKey: resolveStressorKey,
+    stressorShortLabel: stressorShortLabel,
     currentTermKey: currentTermKey,
     termLabel: termLabel,
     submitCheckin: submitCheckin,

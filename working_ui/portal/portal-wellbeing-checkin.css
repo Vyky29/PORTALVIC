@@ -286,27 +286,90 @@ body.portal-wb-checkin {
   background: #fff;
 }
 
-.portal-wb-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.portal-wb-stressors { margin-bottom: 4px; }
 
-.portal-wb-chip {
-  padding: 8px 14px;
-  border-radius: 999px;
-  border: 1px solid var(--wb-line);
-  background: #fff;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--wb-muted);
-  cursor: pointer;
-  transition: all 0.12s ease;
+.portal-wb-stressors-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
 }
 
-.portal-wb-chip:hover { border-color: #9bb4cc; color: var(--wb-text); }
+.portal-wb-stressors-head .portal-wb-field-label { margin-bottom: 0; }
 
-.portal-wb-chip.is-on {
+.portal-wb-stressors-sub {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--wb-muted);
+}
+
+.portal-wb-stressor-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+@media (min-width: 480px) {
+  .portal-wb-stressor-grid { grid-template-columns: 1fr 1fr; }
+}
+
+.portal-wb-stressor {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  padding: 12px 14px 12px 40px;
+  border-radius: 14px;
+  border: 1.5px solid var(--wb-line);
+  background: #fff;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.portal-wb-stressor:hover {
+  border-color: #9bb4cc;
+  box-shadow: 0 2px 12px rgba(26, 35, 48, 0.06);
+}
+
+.portal-wb-stressor.is-on {
   border-color: var(--wb-navy);
-  background: linear-gradient(180deg, #f4f8fc, #eef4fa);
+  background: linear-gradient(180deg, #f8fbff, #eef4fa);
+  box-shadow: 0 4px 16px rgba(42, 49, 64, 0.08);
+}
+
+.portal-wb-stressor__tick {
+  position: absolute;
+  left: 12px;
+  top: 14px;
+  width: 18px;
+  height: 18px;
+  color: transparent;
+  transition: color 0.12s ease;
+}
+
+.portal-wb-stressor.is-on .portal-wb-stressor__tick { color: var(--wb-ok); }
+
+.portal-wb-stressor__label {
+  font-size: 13px;
+  font-weight: 700;
   color: var(--wb-navy);
+  line-height: 1.35;
+}
+
+.portal-wb-stressor__full {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--wb-muted);
+}
+
+.portal-wb-comments {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px dashed var(--wb-line);
 }
 
 .portal-wb-actions {

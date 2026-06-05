@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Wellbeing Check-in � clubSENsational</title>
+  <title>Wellbeing Check-in — clubSENsational</title>
   <script src="/portal-static-bootstrap.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="/portal/portal-wellbeing-checkin.css?v=20260605-wb-ui" />
+  <link rel="stylesheet" href="/portal/portal-wellbeing-checkin.css?v=20260606-wb-stressors" />
 </head>
 <body class="portal-wb-checkin">
   <div class="portal-wb-wrap">
@@ -20,18 +20,19 @@
           <div class="portal-wb-head-copy">
             <span class="portal-wb-tag" id="termTag">This term</span>
             <h1>Wellbeing Check-in</h1>
-            <p>About 5 minutes. Confidential. If anything is affecting you at work, leadership will arrange a supportive 1-to-1 � you do not need to complete the long form alone.</p>
+            <p>About 5 minutes. Confidential. If anything is affecting you at work, leadership will arrange a supportive 1-to-1 — you do not need to complete the long form alone.</p>
           </div>
         </div>
       </header>
       <div class="portal-wb-body" id="stepHost">
-        <p class="portal-wb-foot" style="margin:0;text-align:left">Loading�</p>
+        <p class="portal-wb-foot" style="margin:0;text-align:left">Loading…</p>
       </div>
     </div>
-    <p class="portal-wb-foot">Only ops admin and directors are notified when you flag a concern. �All good� check-ins are recorded without a 1-to-1 request.</p>
+    <p class="portal-wb-foot">Only ops admin and directors are notified when you flag a concern. “All good” check-ins are recorded without a 1-to-1 request.</p>
   </div>
 
-  <script src="/portal/portal_wellbeing_checkin.js?v=20260605-wellbeing-ui"></script>
+  <script src="/portal/portal_wellbeing_stressor_catalog.js?v=20260606-wb-stressors"></script>
+  <script src="/portal/portal_wellbeing_checkin.js?v=20260606-wb-stressors"></script>
   <script src="/portal/portal_feedback_voice_input.js?v=20260617-form-voice"></script>
   <script>
   (function () {
@@ -52,6 +53,9 @@
       amber: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>',
       red: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>',
     };
+
+    var CHIP_CHECK =
+      '<svg class="portal-wb-stressor__tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
 
     var state = {
       step: 0,
@@ -78,6 +82,64 @@
       return state.domains[key];
     }
 
+    function stressorIsOn(entry, key) {
+      var resolved = wb.resolveStressorKey ? wb.resolveStressorKey(key) : key;
+      return (entry.stressors || []).some(function (s) {
+        var r = wb.resolveStressorKey ? wb.resolveStressorKey(s) : s;
+        return r === resolved;
+      });
+    }
+
+    function toggleStressor(entry, key) {
+      entry.stressors = entry.stressors || [];
+      var resolved = wb.resolveStressorKey ? wb.resolveStressorKey(key) : key;
+      var i = -1;
+      entry.stressors.forEach(function (s, idx) {
+        var r = wb.resolveStressorKey ? wb.resolveStressorKey(s) : s;
+        if (r === resolved) i = idx;
+      });
+      if (i >= 0) entry.stressors.splice(i, 1);
+      else entry.stressors.push(resolved);
+    }
+
+    function renderStressorBlock(extra, domKey, entry) {
+      var items = (wb.getCheckinStressors && wb.getCheckinStressors()[domKey]) || [];
+      if (!items.length) return;
+      var block = el("div", "portal-wb-stressors");
+      block.appendChild(
+        el(
+          "div",
+          "portal-wb-stressors-head",
+          '<span class="portal-wb-field-label">Stressors</span>' +
+            '<span class="portal-wb-stressors-sub">Tap any that apply � these carry through to your 1-to-1 review</span>'
+        )
+      );
+      var grid = el("div", "portal-wb-stressor-grid");
+      items.forEach(function (item) {
+        var on = stressorIsOn(entry, item.key);
+        var btn = el(
+          "button",
+          "portal-wb-stressor" + (on ? " is-on" : ""),
+          CHIP_CHECK +
+            '<span class="portal-wb-stressor__label">' +
+            item.label +
+            "</span>" +
+            '<span class="portal-wb-stressor__full">' +
+            item.key +
+            "</span>"
+        );
+        btn.type = "button";
+        btn.setAttribute("aria-pressed", on ? "true" : "false");
+        btn.onclick = function () {
+          toggleStressor(entry, item.key);
+          renderStep();
+        };
+        grid.appendChild(btn);
+      });
+      block.appendChild(grid);
+      extra.appendChild(block);
+    }
+
     function attachVoiceForField(fieldId) {
       if (typeof window.PortalFeedbackVoiceInput === "undefined") return;
       if (!document.getElementById(fieldId)) return;
@@ -92,10 +154,10 @@
       host().innerHTML =
         '<div class="portal-wb-done">' +
         '<div class="portal-wb-done-icon">' + LEVEL_ICONS.green + '</div>' +
-        '<h2>' + (has ? "Thank you � we have received your check-in" : "Thank you � all recorded") + '</h2>' +
+        '<h2>' + (has ? "Thank you — we have received your check-in" : "Thank you — all recorded") + '</h2>' +
         '<p>' +
         (has
-          ? "Someone from leadership will contact you to arrange a private 1-to-1. You do not need to fill in the long stress form now � that is completed together in the meeting."
+          ? "Someone from leadership will contact you to arrange a private 1-to-1. You do not need to fill in the long stress form now — that is completed together in the meeting."
           : "Glad to hear things are OK this term. You can close this page.") +
         '</p>' +
         '<button type="button" class="portal-wb-btn portal-wb-btn--pri" id="btnCloseDone">Back to portal</button>' +
@@ -163,38 +225,20 @@
 
       var extra = el("div", "portal-wb-extra");
       extra.hidden = entry.level === "green";
-      extra.appendChild(el("label", "portal-wb-field-label", "Anything you want us to know? (optional)"));
-      extra.appendChild(el("p", "portal-wb-voice-hint", "Tap the microphone to dictate. Italian or Spanish is translated to English for our records."));
+      renderStressorBlock(extra, dom.key, entry);
+      var comments = el("div", "portal-wb-comments");
+      comments.appendChild(el("label", "portal-wb-field-label", "Additional comments (optional)"));
+      comments.appendChild(el("p", "portal-wb-voice-hint", "Tap the microphone to dictate. Italian or Spanish is translated to English for our records."));
       var ta = document.createElement("textarea");
       ta.id = "wb-domain-note-" + dom.key;
       ta.rows = 3;
-      ta.placeholder = "Short note in your own words�";
+      ta.placeholder = "Anything else you want us to know…";
       ta.value = entry.note || "";
       ta.oninput = function () { entry.note = ta.value; };
-      extra.appendChild(ta);
-
-      var hints = (wb.CHECKIN_STRESSORS && wb.CHECKIN_STRESSORS[dom.key]) || [];
-      if (hints.length) {
-        extra.appendChild(el("label", "portal-wb-field-label", "Common topics (tap any that apply)"));
-        var chips = el("div", "portal-wb-chips");
-        hints.forEach(function (item) {
-          var key = item.key;
-          var on = (entry.stressors || []).indexOf(key) >= 0;
-          var chip = el("button", "portal-wb-chip" + (on ? " is-on" : ""), item.label);
-          chip.type = "button";
-          chip.title = key;
-          chip.onclick = function () {
-            entry.stressors = entry.stressors || [];
-            var i = entry.stressors.indexOf(key);
-            if (i >= 0) entry.stressors.splice(i, 1);
-            else entry.stressors.push(key);
-            renderStep();
-          };
-          chips.appendChild(chip);
-        });
-        extra.appendChild(chips);
-      }
+      comments.appendChild(ta);
+      extra.appendChild(comments);
       h.appendChild(extra);
+
 
       var actions = el("div", "portal-wb-actions");
       if (idx > 0) {
@@ -218,16 +262,18 @@
       h.appendChild(el("div", "portal-wb-domain-head",
         '<div class="portal-wb-domain-icon">' + DOMAIN_ICONS.support + '</div>' +
         '<div><h2 class="portal-wb-domain-title">Anything Else?</h2>' +
-        '<p class="portal-wb-domain-q">Optional message for leadership � only read if you flagged concerns above or write here.</p></div>'
+        '<p class="portal-wb-domain-q">Optional message for leadership — only read if you flagged concerns above or write here.</p></div>'
       ));
-      h.appendChild(el("p", "portal-wb-voice-hint", "Tap the microphone to dictate. Italian or Spanish is translated to English for our records."));
+      var genComments = el("div", "portal-wb-comments");
+      genComments.appendChild(el("p", "portal-wb-voice-hint", "Tap the microphone to dictate. Italian or Spanish is translated to English for our records."));
       var ta = document.createElement("textarea");
       ta.id = "wb-general-note";
       ta.rows = 4;
-      ta.placeholder = "Optional�";
+      ta.placeholder = "Optional…";
       ta.value = state.general_note || "";
       ta.oninput = function () { state.general_note = ta.value; };
-      h.appendChild(ta);
+      genComments.appendChild(ta);
+      h.appendChild(genComments);
       attachVoiceForField("wb-general-note");
 
       var actions = el("div", "portal-wb-actions");
@@ -244,7 +290,7 @@
 
     function renderSubmit() {
       var h = host();
-      h.innerHTML = '<p class="portal-wb-foot" style="margin:0;text-align:left">Sending�</p>';
+      h.innerHTML = '<p class="portal-wb-foot" style="margin:0;text-align:left">Sending…</p>';
       if (state.submitting) return;
       state.submitting = true;
       wb.submitCheckin({ domains: state.domains, general_note: state.general_note })
@@ -310,10 +356,18 @@
           }
           if (res.checkin && wb.ALLOW_REPEAT_CHECKIN) {
             state.domains = res.checkin.domains || {};
+            Object.keys(state.domains).forEach(function (dk) {
+              var e = state.domains[dk];
+              if (!e || !e.stressors) return;
+              e.stressors = e.stressors
+                .map(function (s) { return wb.resolveStressorKey ? wb.resolveStressorKey(s) : s; })
+                .filter(Boolean)
+                .filter(function (s, i, arr) { return arr.indexOf(s) === i; });
+            });
             state.general_note = res.checkin.general_note || "";
             var tag = document.getElementById("termTag");
             if (tag) {
-              tag.textContent = wb.termLabel(wb.currentTermKey()) + " · test mode — edit & resend";
+              tag.textContent = wb.termLabel(wb.currentTermKey()) + " � test mode � edit & resend";
             }
           }
           renderStep();
