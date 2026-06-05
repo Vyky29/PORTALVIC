@@ -94,6 +94,7 @@
   <script src="/portal/portal_screenshot_guard.js?v=20260610-pwa-black-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
   <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260620-today-inline-dayoff" />
+  <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260620-topbar-grid" />
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260620-inbox-logo-orbit" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260601-landscape-full" />
 </head>
@@ -206,6 +207,10 @@
     <header class="topbar" aria-labelledby="staffName">
       <div class="topbar-lead">
         <div class="topbar-left topbar-left--name">
+          <div class="topbar-staff-photo" id="topbarStaffPhoto" aria-hidden="true">
+            <img id="topbarStaffPhotoImg" alt="" hidden />
+            <span class="topbar-staff-photo__initials" id="topbarStaffPhotoInitials">…</span>
+          </div>
           <h1 class="topbar-name" id="staffName" aria-label="Loading profile">
             <span class="topbar-name__given" id="staffNameGiven">…</span>
             <span class="topbar-name__surname" id="staffNameSurname" hidden></span>
@@ -252,9 +257,20 @@
           </div>
         </div>
         <div class="topbar-right topbar-right--tools">
-          <button type="button" class="topbar-camera-btn topbar-achievements-btn" id="topbarCameraBtn" aria-label="Participant achievements">
-            <span class="topbar-camera-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
-          </button>
+          <div class="topbar-tools-grid" id="topbarToolsGrid" role="group" aria-label="Quick session tools">
+            <button type="button" class="topbar-tool-btn topbar-tool-btn--achievements" id="topbarToolAchievements" aria-label="Participant achievements — session photos">
+              <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
+            </button>
+            <button type="button" class="topbar-tool-btn topbar-tool-btn--participants" id="topbarToolParticipants" aria-label="My participants">
+              <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+            </button>
+            <button type="button" class="topbar-tool-btn topbar-tool-btn--venue" id="topbarToolVenue" data-portal-external-url="portal-venue-review.html" aria-label="Venue report">
+              <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V10l8-4 8 4v12"/><path d="M9 22v-6h6v6"/><path d="M8 6h8"/><path d="M10 10h4"/></svg></span>
+            </button>
+            <button type="button" class="topbar-tool-btn topbar-tool-btn--pickup" id="topbarToolPickup" data-portal-external-url="portal-pickup.html" aria-label="Pickup">
+              <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h11l4 4v6a2 2 0 0 1-2 2h-1"/><path d="M4 7v12a2 2 0 0 0 2 2h3"/><circle cx="8.5" cy="18.5" r="2.5"/><circle cx="15.5" cy="18.5" r="2.5"/><path d="M15 7v4h4"/></svg></span>
+            </button>
+          </div>
         </div>
       </div>
     </header>
@@ -912,6 +928,7 @@
   <script src="/portal/portal_participant_catalog.js?v=20260601-participant-dedupe"></script>
   <script src="/portal/staff_roster_resolve.js?v=20260611-javi-roster-guard"></script>
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260620-staff-header-ach" />
+  <script src="/portal/portal_topbar_header.js?v=20260620-topbar-grid"></script>
   <script src="/portal/portal_participant_achievements.js?v=20260602-ach-rls-landscape"></script>
   <script src="/portal/portal_client_sessions_overview.js?v=20260601-sessions-fit"></script>
   <script src="/portal/portal_induction.js?v=20260613-required-induction"></script>
@@ -9455,6 +9472,7 @@
           requestAnimationFrame(portalFitTopbarName);
         });
       }
+      if(typeof window.portalSyncTopbarStaffPhoto === 'function') window.portalSyncTopbarStaffPhoto();
     }
     window.renderHeader = renderHeader;
 
@@ -13495,7 +13513,7 @@
         });
       }
       function bindTopbarCamera(){
-        var btn = document.getElementById('topbarCameraBtn');
+        var btn = document.getElementById('topbarToolAchievements') || document.getElementById('topbarCameraBtn');
         if(!btn || btn.getAttribute('data-ach-topbar-bound') === '1') return;
         btn.setAttribute('data-ach-topbar-bound','1');
         btn.addEventListener('click', function(){
@@ -13518,9 +13536,15 @@
         });
       }
       if(document.readyState === 'loading'){
-        document.addEventListener('DOMContentLoaded', function(){ mountSheet(); configure(); bindQuickMenu(); bindTopbarCamera(); if(typeof portalApplyClientsDirectoryAccess === 'function') portalApplyClientsDirectoryAccess(); });
+        document.addEventListener('DOMContentLoaded', function(){
+          mountSheet(); configure(); bindQuickMenu(); bindTopbarCamera();
+          if(typeof window.portalInitTopbarToolsGrid === 'function') window.portalInitTopbarToolsGrid({ isLead: false });
+          if(typeof portalApplyClientsDirectoryAccess === 'function') portalApplyClientsDirectoryAccess();
+        });
       }else{
-        mountSheet(); configure(); bindQuickMenu(); bindTopbarCamera(); if(typeof portalApplyClientsDirectoryAccess === 'function') portalApplyClientsDirectoryAccess();
+        mountSheet(); configure(); bindQuickMenu(); bindTopbarCamera();
+        if(typeof window.portalInitTopbarToolsGrid === 'function') window.portalInitTopbarToolsGrid({ isLead: false });
+        if(typeof portalApplyClientsDirectoryAccess === 'function') portalApplyClientsDirectoryAccess();
       }
       window.addEventListener('portal:supabase-ready', function(){ configure(); });
     })();
