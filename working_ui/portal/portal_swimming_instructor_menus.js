@@ -7,6 +7,11 @@
   "use strict";
 
   var SWIMMING_MENU_IDS = ["quickMenuStaffTermReview", "quickMenuRoleTraining"];
+  var SWIMMING_HIDE_ACHIEVEMENT_IDS = [
+    "quickMenuParticipantAchievements",
+    "topbarToolAchievements",
+  ];
+  var SWIMMING_TOPBAR_TERM_REVIEW_ID = "topbarToolTermReview";
 
   function portalStaffRoleLabelIsSwimmingInstructor(role) {
     return /swimming\s*instructor/i.test(String(role || "").trim());
@@ -81,13 +86,21 @@
     }
   }
 
+  function setElementVisible(id, visible) {
+    var btn = global.document && global.document.getElementById(id);
+    if (!btn) return;
+    btn.hidden = !visible;
+    btn.setAttribute("aria-hidden", visible ? "false" : "true");
+  }
+
   function setSwimmingMenuVisible(show) {
     SWIMMING_MENU_IDS.forEach(function (id) {
-      var btn = global.document && global.document.getElementById(id);
-      if (!btn) return;
-      btn.hidden = !show;
-      btn.setAttribute("aria-hidden", show ? "false" : "true");
+      setElementVisible(id, show);
     });
+    SWIMMING_HIDE_ACHIEVEMENT_IDS.forEach(function (id) {
+      setElementVisible(id, !show);
+    });
+    setElementVisible(SWIMMING_TOPBAR_TERM_REVIEW_ID, show);
   }
 
   async function portalSyncSwimmingInstructorQuickMenus() {
