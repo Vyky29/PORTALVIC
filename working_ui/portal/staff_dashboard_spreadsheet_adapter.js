@@ -183,7 +183,6 @@
     rayan_ta: "rayan_tapa",
     rayyan_fi: "rayyan_f",
     aadam_ah: "adaam_ah",
-    aydaan_ah: "adaam_ah",
   };
 
   function canonicalParticipantClientId(nameRaw) {

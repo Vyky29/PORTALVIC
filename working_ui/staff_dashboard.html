@@ -962,7 +962,7 @@
   <script src="/portal/clients_info_embed.js?v=20260601-general-info"></script>
   <script src="/portal/clients_gender_embed.js?v=20260605-gender3"></script>
   <script src="/portal/portal_participants_sheet.js?v=20260601-new-participants-tab"></script>
-  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260601-participant-dedupe"></script>
+  <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260605-aydaan-client-id"></script>
   <script src="/portal/teflon_guide_demo_data.js?v=20260604-guide-roster"></script>
   <script src="/portal/teflon_guide_demo_merge.js?v=20260604-guide-roster"></script>
   <script src="/portal/portal_participant_catalog.js?v=20260601-participant-dedupe"></script>
@@ -2693,6 +2693,22 @@
       const tRaw = String(s && s.start != null ? s.start : '').trim();
       if(cid && tCanon) tryKey(String(sessionDateIso) + '|' + tCanon + '|' + cid);
       if(cid && tRaw && tRaw !== tCanon) tryKey(String(sessionDateIso) + '|' + tRaw + '|' + cid);
+      const scid0 = String(s && s.clientId || '').trim().toLowerCase();
+      if(scid0 && scid0 !== cid){
+        if(tCanon) tryKey(String(sessionDateIso) + '|' + tCanon + '|' + scid0);
+        if(tRaw && tRaw !== tCanon) tryKey(String(sessionDateIso) + '|' + tRaw + '|' + scid0);
+      }
+      try{
+        const notes = typeof clientNotesById !== 'undefined' ? clientNotesById : {};
+        const note = notes[cid] || notes[scid0] || null;
+        const nameSlug = typeof portalSlugifyClientKey === 'function'
+          ? portalSlugifyClientKey(note && note.name ? note.name : '')
+          : '';
+        if(nameSlug && nameSlug !== cid && nameSlug !== scid0){
+          if(tCanon) tryKey(String(sessionDateIso) + '|' + tCanon + '|' + nameSlug);
+          if(tRaw && tRaw !== tCanon) tryKey(String(sessionDateIso) + '|' + tRaw + '|' + nameSlug);
+        }
+      }catch(_){}
       const baseB = s.__portalBaseSession;
       const scid = typeof portalNormKeyStr === 'function' ? portalNormKeyStr(s && s.clientId) : String(s && s.clientId || '').trim().toLowerCase();
       if(baseB){
