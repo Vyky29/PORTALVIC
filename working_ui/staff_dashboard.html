@@ -943,7 +943,7 @@
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260616-michelle-only"></script>
   <script src="/portal/portal_dm_voice.js?v=20260602-feedback-voice-fix"></script>
-  <script src="/portal/portal_staff_chat_calls.js?v=20260620-call-mic-incoming"></script>
+  <script src="/portal/portal_staff_chat_calls.js?v=20260605-call-duration"></script>
   <script>
     console.log("ABSENT FIX VERSION LOADED 20260425");
     /** Real calendar weekday for “Today” (en-GB), aligned with staff_clients_machine.xlsx */
@@ -7092,6 +7092,13 @@
         }
         for(var mxi = 0; mxi < arr.length; mxi++){
           var m = arr[mxi];
+          if(window.portalStaffChatCalls && typeof window.portalStaffChatCalls.renderCallEndRow === "function"){
+            var callEndRow = window.portalStaffChatCalls.renderCallEndRow(m);
+            if(callEndRow){
+              msgsBox.appendChild(callEndRow);
+              continue;
+            }
+          }
           var mine = String(m.author_id || "").toLowerCase() === String(me || "").toLowerCase();
           var aid = String(m.author_id || "").trim();
           var row = document.createElement("div");

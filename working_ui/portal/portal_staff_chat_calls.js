@@ -6,8 +6,9 @@
   "use strict";
 
   var CALL_TAG = "[[portal-staff-call:";
+  var CALL_END_TAG = "[[portal-staff-call-end:";
   var CALL_TAG_END = "]]";
-  /** meet.jit.si requires OAuth for moderators ‚Äî unusable in embedded iframe. */
+  /** meet.jit.si requires OAuth for moderators ù unusable in embedded iframe. */
   var JITSI_JAAS_DOMAIN = "8x8.vc";
   var JITSI_JAAS_API_SRC = "https://8x8.vc/external_api.js";
   var JITSI_FALLBACK_DOMAIN = "meet.ffmuc.net";
@@ -20,6 +21,7 @@
     host: null,
     loading: false,
     apiSrc: "",
+    activeSession: null,
   };
 
   var incomingState = {
@@ -63,6 +65,50 @@
     return Math.random().toString(36).slice(2, 12);
   }
 
+  function parseCallEndPayload(body) {
+    var raw = String(body || "");
+    var start = raw.indexOf(CALL_END_TAG);
+    if (start < 0) return null;
+    var end = raw.indexOf(CALL_TAG_END, start);
+    if (end < 0) return null;
+    var json = raw.slice(start + CALL_END_TAG.length, end);
+    try {
+      var data = JSON.parse(json);
+      if (!data || data.durationSec == null) return null;
+      data.durationSec = Math.max(0, Math.round(Number(data.durationSec) || 0));
+      data.kind = String(data.kind || "video");
+      return data;
+    } catch (_e) {
+      return null;
+    }
+  }
+
+  function formatCallDuration(sec) {
+    sec = Math.max(0, Math.round(Number(sec) || 0));
+    if (sec < 60) return sec + " sec";
+    var m = Math.floor(sec / 60);
+    var s = sec % 60;
+    if (m < 60) return m + ":" + String(s).padStart(2, "0");
+    var h = Math.floor(m / 60);
+    m = m % 60;
+    return h + " hr" + (m ? " " + m + " min" : "");
+  }
+
+  function formatCallEndLabel(kind, durationSec) {
+    var kindLabel = humanLabel(String(kind || "video"), "");
+    return kindLabel + " ù " + formatCallDuration(durationSec);
+  }
+
+  function encodeCallEndBody(data) {
+    return (
+      formatCallEndLabel(data.kind, data.durationSec) +
+      "\n" +
+      CALL_END_TAG +
+      JSON.stringify(data) +
+      CALL_TAG_END
+    );
+  }
+
   function parseCallPayload(body) {
     var raw = String(body || "");
     var start = raw.indexOf(CALL_TAG);
@@ -100,6 +146,8 @@
   }
 
   function previewText(body) {
+    var endData = parseCallEndPayload(body);
+    if (endData) return formatCallEndLabel(endData.kind, endData.durationSec);
     var data = parseCallPayload(body);
     if (!data) return null;
     return humanLabel(String(data.kind || ""), String(data.title || ""));
@@ -202,7 +250,10 @@
       ".portal-incoming-call__actions{display:flex;gap:10px}" +
       ".portal-incoming-call__btn{flex:1;padding:12px 10px;border-radius:999px;border:0;font:inherit;font-size:14px;font-weight:800;cursor:pointer}" +
       ".portal-incoming-call__btn--decline{background:rgba(255,255,255,.12);color:#fff}" +
-      ".portal-incoming-call__btn--answer{background:#16a34a;color:#fff}";
+      ".portal-incoming-call__btn--answer{background:#16a34a;color:#fff}" +
+      ".portal-dm-call-end-row{display:flex;justify-content:center;width:100%;padding:6px 12px;box-sizing:border-box}" +
+      ".portal-dm-call-end{display:inline-flex;align-items:center;justify-content:center;gap:6px;max-width:min(100%,22rem);padding:6px 12px;border-radius:999px;background:rgba(23,50,71,.08);color:#667781;font-size:12px;font-weight:600;line-height:1.35;text-align:center}" +
+      ".portal-dm-call-end-icon{font-size:14px;line-height:1;opacity:.92;flex-shrink:0}";
     document.head.appendChild(st);
   }
 
@@ -535,7 +586,7 @@
         incomingState.notification = new Notification(
           kind === "video" ? "Incoming video call" : "Incoming voice call",
           {
-            body: label + " ‚Äî tap to answer",
+            body: label + " ù tap to answer",
             tag: "portal-incoming-call",
             requireInteraction: true,
             silent: false,
@@ -772,6 +823,7 @@
   }
 
   function closeInAppCall() {
+    var session = callState.activeSession;
     hideIncomingCallOverlay();
     disposeCallApi();
     var shell = callState.shell || document.getElementById("portalInAppCallShell");
@@ -782,6 +834,68 @@
     }
     if (shell) shell.hidden = true;
     document.body.classList.remove("portal-inapp-call-open");
+    callState.activeSession = null;
+    void postCallEndedMessage(session);
+  }
+
+  async function recentCallEndExists(client, threadId, room) {
+    if (!client || !threadId || !room) return false;
+    try {
+      var res = await client
+        .from("portal_staff_dm_messages")
+        .select("body,created_at")
+        .eq("thread_id", threadId)
+        .order("created_at", { ascending: false })
+        .limit(8);
+      if (res.error || !Array.isArray(res.data)) return false;
+      var cutoff = Date.now() - 15000;
+      for (var i = 0; i < res.data.length; i++) {
+        var row = res.data[i];
+        var data = parseCallEndPayload(row && row.body);
+        if (!data) continue;
+        if (String(data.room || "") !== String(room)) continue;
+        try {
+          if (row.created_at && new Date(row.created_at).getTime() >= cutoff) return true;
+        } catch (_d) {
+          return true;
+        }
+      }
+    } catch (_e) {}
+    return false;
+  }
+
+  async function postCallEndedMessage(session) {
+    if (!session || session.endedPosted || !session.joinedAt) return;
+    var durationSec = Math.max(0, Math.round((Date.now() - session.joinedAt) / 1000));
+    if (durationSec < 1) return;
+
+    var ctx = getContext();
+    var threadId = String(session.threadId || ctx.threadId || "").trim();
+    if (!ctx.client || !threadId) return;
+
+    if (await recentCallEndExists(ctx.client, threadId, session.room)) {
+      session.endedPosted = true;
+      return;
+    }
+
+    session.endedPosted = true;
+    var payload = {
+      v: 1,
+      kind: String(session.kind || "video"),
+      durationSec: durationSec,
+      room: String(session.room || ""),
+      endedAt: new Date().toISOString(),
+    };
+    var body = encodeCallEndBody(payload);
+    try {
+      var ins = await ctx.client
+        .from("portal_staff_dm_messages")
+        .insert([{ thread_id: threadId, body: body, message_type: "text" }]);
+      if (ins.error) throw ins.error;
+      if (typeof global.portalRenderInternalChatSheet === "function") {
+        await global.portalRenderInternalChatSheet();
+      }
+    } catch (_e) {}
   }
 
   async function openInAppCall(opts) {
@@ -791,6 +905,14 @@
 
     var kind = String(opts.kind || "video");
     var title = String(opts.title || opts.label || humanLabel(kind, opts.meetingTitle || "")).trim();
+    var ctx = getContext();
+    callState.activeSession = {
+      kind: kind,
+      threadId: String(ctx.threadId || "").trim(),
+      room: stripRoomSlug(room),
+      joinedAt: null,
+      endedPosted: false,
+    };
     var shell = ensureCallShell();
     var host = callState.host;
     var loading = shell.querySelector("#portalInAppCallLoading");
@@ -910,6 +1032,7 @@
       api.addEventListener("videoConferenceJoined", function () {
         hideCallLoading();
         applyJitsiIframeAllow(host);
+        if (callState.activeSession) callState.activeSession.joinedAt = Date.now();
         if (skipJitsiGum) {
           try {
             api.executeCommand("toggleAudio", false);
@@ -951,6 +1074,26 @@
       meetingTitle: data.title,
       asModerator: true,
     });
+  }
+
+  function renderCallEndRow(m) {
+    var data = parseCallEndPayload(m && m.body);
+    if (!data) return null;
+    var kind = String(data.kind || "video");
+    var icon =
+      kind === "meeting" ? "\uD83D\uDCC5" : kind === "video" ? "\uD83D\uDCF9" : "\uD83D\uDCDE";
+    var row = document.createElement("div");
+    row.className = "portal-dm-call-end-row";
+    row.setAttribute("role", "status");
+    row.innerHTML =
+      '<div class="portal-dm-call-end">' +
+      '<span class="portal-dm-call-end-icon" aria-hidden="true">' +
+      esc(icon) +
+      "</span>" +
+      "<span>" +
+      esc(formatCallEndLabel(kind, data.durationSec)) +
+      "</span></div>";
+    return row;
   }
 
   function renderCallCard(host, data, mine) {
@@ -995,6 +1138,13 @@
     escFn = escFn || esc;
     host.innerHTML = "";
     var body = String((m && m.body) || "");
+    if (parseCallEndPayload(body)) {
+      var endRow = renderCallEndRow(m);
+      if (endRow) {
+        host.appendChild(endRow.firstElementChild || endRow);
+      }
+      return;
+    }
     var callData = parseCallPayload(body);
     if (callData) {
       var me =
@@ -1266,9 +1416,13 @@
 
   global.portalStaffChatCalls = {
     CALL_TAG: CALL_TAG,
+    CALL_END_TAG: CALL_END_TAG,
     parseCallPayload: parseCallPayload,
+    parseCallEndPayload: parseCallEndPayload,
     previewText: previewText,
     fillMessageBody: fillMessageBody,
+    renderCallEndRow: renderCallEndRow,
+    formatCallEndLabel: formatCallEndLabel,
     sendCallInvite: sendCallInvite,
     startCall: startCall,
     openMeetingPanel: openMeetingPanel,
