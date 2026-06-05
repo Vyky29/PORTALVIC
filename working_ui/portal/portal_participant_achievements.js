@@ -1134,7 +1134,7 @@
       "</div>" +
       '<p class="muted portal-achievements-count" id="portalAchievementsCount"></p>' +
       '<div class="portal-achievements-icon-actions">' +
-      '<button type="button" class="portal-achievements-icon-btn" id="portalAchievementsOpenCamera" aria-label="Take photo">' +
+      '<button type="button" class="portal-achievements-icon-btn portal-achievements-icon-btn--camera" id="portalAchievementsOpenCamera" aria-label="Take photo">' +
       '<span class="portal-achievements-icon-btn__ico" aria-hidden="true">' +
       ICON_CAMERA +
       "</span>" +

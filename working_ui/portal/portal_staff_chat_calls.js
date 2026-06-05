@@ -7,7 +7,7 @@
 
   var CALL_TAG = "[[portal-staff-call:";
   var CALL_TAG_END = "]]";
-  /** meet.jit.si requires OAuth for moderators ù unusable in embedded iframe. */
+  /** meet.jit.si requires OAuth for moderators ÔøΩ unusable in embedded iframe. */
   var JITSI_JAAS_DOMAIN = "8x8.vc";
   var JITSI_JAAS_API_SRC = "https://8x8.vc/external_api.js";
   var JITSI_FALLBACK_DOMAIN = "meet.ffmuc.net";
@@ -30,6 +30,8 @@
     autoStopTimer: null,
     audioCtx: null,
     oscNodes: null,
+    ringEl: null,
+    audioPrimed: false,
     notification: null,
     overlay: null,
   };
@@ -176,16 +178,21 @@
       ".portal-inapp-call-shell[hidden]{display:none!important}" +
       ".portal-inapp-call-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:max(10px,env(safe-area-inset-top)) 14px 10px;background:linear-gradient(180deg,#173247,#0f2435);border-bottom:1px solid rgba(255,255,255,.1);flex-shrink:0}" +
       ".portal-inapp-call-title{font-size:15px;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}" +
+      ".portal-inapp-call-actions{display:flex;gap:8px;flex-shrink:0;align-items:center}" +
+      ".portal-inapp-call-flip{padding:8px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);color:#fff;font:inherit;font-size:13px;font-weight:700;cursor:pointer}" +
+      ".portal-inapp-call-flip[hidden]{display:none!important}" +
       ".portal-inapp-call-leave{flex-shrink:0;padding:8px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.25);background:rgba(220,38,38,.92);color:#fff;font:inherit;font-size:13px;font-weight:700;cursor:pointer}" +
       ".portal-inapp-call-leave:hover{filter:brightness(1.05)}" +
       ".portal-inapp-call-host{flex:1;min-height:0;position:relative;background:#000}" +
       ".portal-inapp-call-host iframe{border:0;width:100%!important;height:100%!important}" +
       ".portal-inapp-call-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:rgba(255,255,255,.85);background:#0f172a;z-index:2}" +
       ".portal-inapp-call-loading[hidden]{display:none!important}" +
-      ".portal-incoming-call{position:fixed;inset:0;z-index:12100;display:flex;align-items:flex-end;justify-content:center;padding:16px;padding-bottom:max(20px,env(safe-area-inset-bottom));background:rgba(8,18,28,.72);backdrop-filter:blur(6px)}" +
+      ".portal-incoming-call{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom));background:rgba(5,12,20,.94);backdrop-filter:blur(10px)}" +
       ".portal-incoming-call[hidden]{display:none!important}" +
-      ".portal-incoming-call__card{width:100%;max-width:22rem;padding:20px 18px 18px;border-radius:20px;background:linear-gradient(165deg,#173247,#0c1f2e);border:1px solid rgba(255,255,255,.14);box-shadow:0 18px 48px rgba(0,0,0,.45);color:#fff;text-align:center}" +
-      ".portal-incoming-call__icon{font-size:42px;line-height:1;margin:0 0 8px}" +
+      "body.portal-incoming-call-active{overflow:hidden}" +
+      ".portal-incoming-call__card{width:100%;max-width:24rem;padding:28px 22px 22px;border-radius:24px;background:linear-gradient(165deg,#173247,#0c1f2e);border:1px solid rgba(255,255,255,.16);box-shadow:0 24px 64px rgba(0,0,0,.55);color:#fff;text-align:center;animation:portalIncomingPulse .9s ease-in-out infinite alternate}" +
+      "@keyframes portalIncomingPulse{from{transform:scale(1)}to{transform:scale(1.02)}}" +
+      ".portal-incoming-call__icon{font-size:52px;line-height:1;margin:0 0 12px}" +
       ".portal-incoming-call__title{margin:0 0 6px;font-size:18px;font-weight:800}" +
       ".portal-incoming-call__sub{margin:0 0 16px;font-size:14px;color:rgba(255,255,255,.78)}" +
       ".portal-incoming-call__actions{display:flex;gap:10px}" +
@@ -244,8 +251,17 @@
     } catch (_n) {}
     incomingState.notification = null;
     try {
+      if (incomingState.ringEl) {
+        incomingState.ringEl.pause();
+        incomingState.ringEl.currentTime = 0;
+      }
+    } catch (_re) {}
+    try {
       if (navigator.vibrate) navigator.vibrate(0);
     } catch (_v) {}
+    try {
+      document.body.classList.remove("portal-incoming-call-active");
+    } catch (_b) {}
   }
 
   function hideIncomingCallOverlay() {
@@ -256,11 +272,25 @@
     if (ov) ov.hidden = true;
   }
 
-  function playIncomingRingtone() {
+  /** Unlock ring audio after a user tap (required on iOS). Call from Continue / first interaction. */
+  function primeCallRingAudio() {
+    if (incomingState.audioPrimed) return;
+    incomingState.audioPrimed = true;
+    try {
+      var Ctx = global.AudioContext || global.webkitAudioContext;
+      if (Ctx && !incomingState.audioCtx) {
+        incomingState.audioCtx = new Ctx();
+        void incomingState.audioCtx.resume();
+      }
+    } catch (_c) {}
+    playIncomingRingtoneWebAudio(true);
+  }
+
+  function playIncomingRingtoneWebAudio(silentPrime) {
     try {
       var Ctx = global.AudioContext || global.webkitAudioContext;
       if (!Ctx) return;
-      var ctx = new Ctx();
+      var ctx = incomingState.audioCtx || new Ctx();
       incomingState.audioCtx = ctx;
       var gain = ctx.createGain();
       gain.gain.value = 0.22;
@@ -278,8 +308,11 @@
       }
 
       function pattern() {
-        if (!incomingState.active || !incomingState.audioCtx) return;
+        if (!silentPrime && !incomingState.active) return;
+        if (!incomingState.audioCtx) return;
         var t = ctx.currentTime;
+        var vol = silentPrime ? 0.001 : 0.28;
+        gain.gain.value = vol;
         beep(523.25, t, 0.18);
         beep(659.25, t + 0.22, 0.18);
         beep(783.99, t + 0.44, 0.24);
@@ -290,8 +323,14 @@
       } else {
         pattern();
       }
-      incomingState.ringTimer = setInterval(pattern, 2200);
+      if (!silentPrime) {
+        incomingState.ringTimer = setInterval(pattern, 2200);
+      }
     } catch (_e) {}
+  }
+
+  function playIncomingRingtone() {
+    playIncomingRingtoneWebAudio(false);
   }
 
   function ensureIncomingCallOverlay() {
@@ -384,7 +423,15 @@
       if (!incomingState.active || !sub) return;
       sub.textContent = nm;
     });
+    try {
+      document.body.appendChild(ov);
+    } catch (_mv) {}
     ov.hidden = false;
+    document.body.classList.add("portal-incoming-call-active");
+
+    try {
+      if (typeof global.focus === "function") global.focus();
+    } catch (_f) {}
 
     if (navigator.vibrate) {
       navigator.vibrate([500, 180, 500, 180, 700]);
@@ -398,7 +445,7 @@
         incomingState.notification = new Notification(
           kind === "video" ? "Incoming video call" : "Incoming voice call",
           {
-            body: label + " ù tap to answer",
+            body: label + " ÔøΩ tap to answer",
             tag: "portal-incoming-call",
             requireInteraction: true,
             silent: false,
@@ -436,34 +483,36 @@
     startIncomingCallAlert(data, row);
   }
 
-  function bindRemoteVideoLayout(api) {
-    if (!api || !api.addListener) return;
-    function pinRemote(participant) {
-      if (!participant || !participant.id) return;
-      try {
-        api.executeCommand("setTileView", false);
-      } catch (_tv) {}
-      try {
-        if (typeof api.pinParticipant === "function") api.pinParticipant(participant.id, "large");
-        else api.executeCommand("pinParticipant", participant.id);
-      } catch (_pin) {}
-    }
-    api.addListener("participantJoined", function (participant) {
-      pinRemote(participant);
-    });
+  function bindCallLayout(api, audioOnly) {
+    if (!api || !api.addListener || audioOnly) return;
     api.addListener("videoConferenceJoined", function () {
       try {
         api.executeCommand("setTileView", false);
       } catch (_tv) {}
-      try {
-        var participants = api.getParticipantsInfo ? api.getParticipantsInfo() : [];
-        if (participants && participants.length) {
-          participants.forEach(function (p) {
-            if (p && p.participantId) pinRemote({ id: p.participantId });
-          });
-        }
-      } catch (_p) {}
     });
+    api.addListener("participantJoined", function () {
+      try {
+        api.executeCommand("setTileView", false);
+      } catch (_tv) {}
+    });
+  }
+
+  function flipCallCamera() {
+    var api = callState.api;
+    if (!api) return;
+    try {
+      api.executeCommand("toggleCamera");
+      return;
+    } catch (_a) {}
+    try {
+      api.executeCommand("toggle-camera");
+    } catch (_b) {}
+  }
+
+  function syncCallFlipButton(audioOnly) {
+    var btn = document.getElementById("portalInAppCallFlip");
+    if (!btn) return;
+    btn.hidden = !!audioOnly;
   }
 
   function ensureCallShell() {
@@ -480,8 +529,10 @@
     shell.innerHTML =
       '<div class="portal-inapp-call-head">' +
       '<span class="portal-inapp-call-title" id="portalInAppCallTitle">Call</span>' +
+      '<div class="portal-inapp-call-actions">' +
+      '<button type="button" class="portal-inapp-call-flip" id="portalInAppCallFlip" hidden title="Switch camera">Flip</button>' +
       '<button type="button" class="portal-inapp-call-leave" id="portalInAppCallLeave">Leave</button>' +
-      "</div>" +
+      "</div></div>" +
       '<div class="portal-inapp-call-host" id="portalInAppCallHost">' +
       '<div class="portal-inapp-call-loading" id="portalInAppCallLoading">Connecting...</div>' +
       "</div>";
@@ -494,6 +545,12 @@
     if (leaveBtn) {
       leaveBtn.addEventListener("click", function () {
         closeInAppCall();
+      });
+    }
+    var flipBtn = shell.querySelector("#portalInAppCallFlip");
+    if (flipBtn) {
+      flipBtn.addEventListener("click", function () {
+        flipCallCamera();
       });
     }
 
@@ -726,7 +783,14 @@
           channelLastN: -1,
           disableSelfView: false,
           disableFilmstrip: false,
+          disableLocalVideoFlip: false,
           startSilent: false,
+          constraints: {
+            video: {
+              height: { ideal: 720, max: 1080, min: 180 },
+              facingMode: "user",
+            },
+          },
         },
         interfaceConfigOverwrite: {
           APP_NAME: "clubSENsational",
@@ -740,11 +804,14 @@
           DISPLAY_WELCOME_PAGE_CONTENT: false,
           DISPLAY_WELCOME_FOOTER: false,
           HIDE_INVITE_MORE_HEADER: true,
+          VERTICAL_FILMSTRIP: true,
+          FILM_STRIP_MAX_HEIGHT: 140,
+          TOOLBAR_ALWAYS_VISIBLE: true,
           TOOLBAR_BUTTONS: [
             "microphone",
             "camera",
-            "closedcaptions",
-            "desktop",
+            "toggle-camera",
+            "settings",
             "fullscreen",
             "hangup",
             "tileview",
@@ -755,7 +822,8 @@
       var api = new JitsiMeetExternalAPI(session.domain, apiOptions);
 
       callState.api = api;
-      bindRemoteVideoLayout(api);
+      bindCallLayout(api, audioOnly);
+      syncCallFlipButton(audioOnly);
       hideIncomingCallOverlay();
 
       function hideCallLoading() {
@@ -1132,5 +1200,16 @@
     buildRoomName: buildRoomName,
     onDmMessageInsert: onDmMessageInsert,
     stopIncomingCallAlert: hideIncomingCallOverlay,
+    primeCallRingAudio: primeCallRingAudio,
   };
+
+  if (typeof document !== "undefined") {
+    document.addEventListener(
+      "click",
+      function primeOnce() {
+        primeCallRingAudio();
+      },
+      { once: true, capture: true }
+    );
+  }
 })(typeof window !== "undefined" ? window : globalThis);

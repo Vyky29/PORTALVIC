@@ -91,7 +91,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260610-pwa-black-fix" />
   <script src="/portal/portal_screenshot_guard.js?v=20260610-pwa-black-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260604-footer-chat" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260620-staff-header-ach" />
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260620-inbox-premium" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260601-landscape-full" />
 </head>
@@ -260,6 +260,7 @@
     <section class="section-card section-card--today" id="portalTodaySection" aria-labelledby="todayHeading">
       <div class="section-head section-head--today">
         <h2 class="today-section-title" id="todayHeading">TODAY</h2>
+        <p class="today-section-date" id="todayDateLine" aria-hidden="true"></p>
       </div>
       <div class="today-grid" id="todayGrid" aria-live="polite">
                 <div class="today-grid-fallback" id="todayGridFallback" hidden aria-hidden="true">
@@ -868,7 +869,7 @@
   <script src="/portal/teflon_guide_demo_merge.js?v=20260604-guide-roster"></script>
   <script src="/portal/portal_participant_catalog.js?v=20260601-participant-dedupe"></script>
   <script src="/portal/staff_roster_resolve.js?v=20260611-javi-roster-guard"></script>
-  <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260602-landscape-rail" />
+  <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260620-staff-header-ach" />
   <script src="/portal/portal_participant_achievements.js?v=20260602-ach-rls-landscape"></script>
   <script src="/portal/portal_client_sessions_overview.js?v=20260601-sessions-fit"></script>
   <script src="/portal/portal_induction.js?v=20260613-required-induction"></script>
@@ -883,7 +884,7 @@
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260616-michelle-only"></script>
   <script src="/portal/portal_dm_voice.js?v=20260602-feedback-voice-fix"></script>
-  <script src="/portal/portal_staff_chat_calls.js?v=20260620-call-ring-video"></script>
+  <script src="/portal/portal_staff_chat_calls.js?v=20260620-call-selfview-flip"></script>
   <script>
     console.log("ABSENT FIX VERSION LOADED 20260425");
     /** Real calendar weekday for “Today” (en-GB), aligned with staff_clients_machine.xlsx */
@@ -9333,13 +9334,13 @@
         }
         if(sn) sn.setAttribute('aria-label', 'Loading profile');
       }else{
-        if(givenEl) givenEl.textContent = split.given || '\u2026';
+        const firstName = split.given || String(dashboardData.staffName || '').trim().split(/\s+/).filter(Boolean)[0] || '\u2026';
+        if(givenEl) givenEl.textContent = firstName;
         if(surEl){
-          surEl.textContent = split.surname || '';
-          if(split.surname) surEl.removeAttribute('hidden');
-          else surEl.setAttribute('hidden', 'hidden');
+          surEl.textContent = '';
+          surEl.setAttribute('hidden', 'hidden');
         }
-        if(sn) sn.setAttribute('aria-label', dashboardData.staffName || (split.given + (split.surname ? ' ' + split.surname : '')));
+        if(sn) sn.setAttribute('aria-label', firstName);
       }
       if(typeof portalApplyClientsDirectoryAccess === 'function') portalApplyClientsDirectoryAccess();
       if(typeof portalApplyTopbarDateDisplayFromDate === 'function'){
@@ -9673,7 +9674,20 @@
         return;
       }
       const todayHeading = document.getElementById('todayHeading');
-      if(todayHeading) todayHeading.textContent = portalTodaySectionTitleText();
+      const todayDateLine = document.getElementById('todayDateLine');
+      if(todayHeading){
+        const todayTitle = portalTodaySectionTitleText();
+        if(todayTitle.indexOf('TODAY ') === 0){
+          todayHeading.textContent = 'TODAY';
+          if(todayDateLine) todayDateLine.textContent = todayTitle.slice(6).trim();
+        }else if(todayTitle === 'TODAY'){
+          todayHeading.textContent = 'TODAY';
+          if(todayDateLine) todayDateLine.textContent = '';
+        }else{
+          todayHeading.textContent = todayTitle;
+          if(todayDateLine) todayDateLine.textContent = '';
+        }
+      }
       const count = dashboardData.today.length || 0;
       grid.className = 'today-grid';
       grid.setAttribute('data-session-count', String(count));

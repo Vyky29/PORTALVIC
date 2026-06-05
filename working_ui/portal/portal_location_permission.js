@@ -653,6 +653,9 @@ export function requestNotificationPermission() {
  * @returns {Promise<Record<string, string>>}
  */
 export async function requestDefaultPortalPermissions() {
+  if (typeof window.portalStaffChatCalls?.primeCallRingAudio === "function") {
+    window.portalStaffChatCalls.primeCallRingAudio();
+  }
   persistSet("portal_default_perms_requested_v1", "1");
   persistSet("portal_all_perms_requested_v1", "1");
 
