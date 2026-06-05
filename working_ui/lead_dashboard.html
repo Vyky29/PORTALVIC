@@ -94,7 +94,7 @@
   <script src="/portal/portal_screenshot_guard.js?v=20260610-pwa-black-fix"></script>
   <title>clubSENsational Lead Dashboard</title>
   <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260604-lead-staff-dir" />
-  <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260620-topbar-swim-term" />
+  <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260620-topbar-tool-labels" />
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260620-inbox-logo-orbit" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260601-landscape-full" />
 </head>
@@ -258,24 +258,42 @@
         </div>
         <div class="topbar-right topbar-right--tools">
           <div class="topbar-tools-grid topbar-tools-grid--lead" id="topbarToolsGrid" role="group" aria-label="Quick session tools">
-            <button type="button" class="topbar-tool-btn topbar-tool-btn--achievements" id="topbarToolAchievements" aria-label="Participant achievements — session photos">
-              <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
-            </button>
-            <button type="button" class="topbar-tool-btn topbar-tool-btn--participants" id="topbarToolParticipants" aria-label="All participants">
-              <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
-            </button>
-            <button type="button" class="topbar-tool-btn topbar-tool-btn--venue" id="topbarToolVenue" data-portal-external-url="portal-venue-review.html" aria-label="Venue report">
-              <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V10l8-4 8 4v12"/><path d="M9 22v-6h6v6"/><path d="M8 6h8"/><path d="M10 10h4"/></svg></span>
-            </button>
-            <button type="button" class="topbar-tool-btn topbar-tool-btn--pickup" id="topbarToolPickup" data-portal-external-url="portal-pickup.html" aria-label="Pickup">
-              <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h11l4 4v6a2 2 0 0 1-2 2h-1"/><path d="M4 7v12a2 2 0 0 0 2 2h3"/><circle cx="8.5" cy="18.5" r="2.5"/><circle cx="15.5" cy="18.5" r="2.5"/><path d="M15 7v4h4"/></svg></span>
-            </button>
-            <button type="button" class="topbar-tool-btn topbar-tool-btn--lead-report" id="topbarToolLeadReport" data-portal-external-url="portal-lead-feedback.html" aria-label="Lead feedback report">
-              <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5"/></svg></span>
-            </button>
-            <button type="button" class="topbar-tool-btn topbar-tool-btn--sessions-overview" id="topbarToolSessionsOverview" data-portal-external-url="portal-lead-session-overview.html" aria-label="Sessions overview">
-              <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M9 18h6"/></svg></span>
-            </button>
+            <div class="topbar-tool-cell" id="topbarToolCellAchievements">
+              <button type="button" class="topbar-tool-btn topbar-tool-btn--achievements" id="topbarToolAchievements" aria-label="Participant achievements — session photos">
+                <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
+              </button>
+              <span class="topbar-tool-label" aria-hidden="true">PHOTO</span>
+            </div>
+            <div class="topbar-tool-cell">
+              <button type="button" class="topbar-tool-btn topbar-tool-btn--participants" id="topbarToolParticipants" aria-label="All participants">
+                <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+              </button>
+              <span class="topbar-tool-label topbar-tool-label--spacer" aria-hidden="true"></span>
+            </div>
+            <div class="topbar-tool-cell">
+              <button type="button" class="topbar-tool-btn topbar-tool-btn--venue" id="topbarToolVenue" data-portal-external-url="portal-venue-review.html" aria-label="Venue report">
+                <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V10l8-4 8 4v12"/><path d="M9 22v-6h6v6"/><path d="M8 6h8"/><path d="M10 10h4"/></svg></span>
+              </button>
+              <span class="topbar-tool-label" aria-hidden="true">VENUE</span>
+            </div>
+            <div class="topbar-tool-cell">
+              <button type="button" class="topbar-tool-btn topbar-tool-btn--pickup" id="topbarToolPickup" data-portal-external-url="portal-pickup.html" aria-label="Pickup">
+                <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h11l4 4v6a2 2 0 0 1-2 2h-1"/><path d="M4 7v12a2 2 0 0 0 2 2h3"/><circle cx="8.5" cy="18.5" r="2.5"/><circle cx="15.5" cy="18.5" r="2.5"/><path d="M15 7v4h4"/></svg></span>
+              </button>
+              <span class="topbar-tool-label" aria-hidden="true">PICKUP</span>
+            </div>
+            <div class="topbar-tool-cell">
+              <button type="button" class="topbar-tool-btn topbar-tool-btn--lead-report" id="topbarToolLeadReport" data-portal-external-url="portal-lead-feedback.html" aria-label="Lead feedback report">
+                <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5"/></svg></span>
+              </button>
+              <span class="topbar-tool-label" aria-hidden="true">LEAD</span>
+            </div>
+            <div class="topbar-tool-cell">
+              <button type="button" class="topbar-tool-btn topbar-tool-btn--sessions-overview" id="topbarToolSessionsOverview" data-portal-external-url="portal-lead-session-overview.html" aria-label="Sessions overview">
+                <span class="topbar-tool-btn__ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M9 18h6"/></svg></span>
+              </button>
+              <span class="topbar-tool-label" aria-hidden="true">OVERVIEW</span>
+            </div>
           </div>
         </div>
       </div>
@@ -955,7 +973,7 @@
   <script src="/portal/portal_guide_ack.js?v=20260604-guide-first-read"></script>
   <script src="/portal/portal_guide_menu.js?v=20260604-guide-first-read"></script>
   <script src="/portal/portal_quick_menu_accordion.js?v=20260604-training-chip"></script>
-  <script src="/portal/portal_swimming_instructor_menus.js?v=20260620-swim-topbar-term"></script>
+  <script src="/portal/portal_swimming_instructor_menus.js?v=20260620-swim-topbar-labels"></script>
   <script src="/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off"></script>
   <script src="/portal/portal_floating_internal_chat.js?v=20260604-footer-chat"></script>
   <script type="module" src="/portal/portal_quick_menu_service_leads.js?v=20260604-service-leads-lead-only"></script>

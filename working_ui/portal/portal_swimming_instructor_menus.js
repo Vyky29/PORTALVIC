@@ -9,9 +9,9 @@
   var SWIMMING_MENU_IDS = ["quickMenuStaffTermReview", "quickMenuRoleTraining"];
   var SWIMMING_HIDE_ACHIEVEMENT_IDS = [
     "quickMenuParticipantAchievements",
-    "topbarToolAchievements",
+    "topbarToolCellAchievements",
   ];
-  var SWIMMING_TOPBAR_TERM_REVIEW_ID = "topbarToolTermReview";
+  var SWIMMING_TOPBAR_TERM_REVIEW_CELL_ID = "topbarToolCellTermReview";
 
   function portalStaffRoleLabelIsSwimmingInstructor(role) {
     return /swimming\s*instructor/i.test(String(role || "").trim());
@@ -87,10 +87,10 @@
   }
 
   function setElementVisible(id, visible) {
-    var btn = global.document && global.document.getElementById(id);
-    if (!btn) return;
-    btn.hidden = !visible;
-    btn.setAttribute("aria-hidden", visible ? "false" : "true");
+    var el = global.document && global.document.getElementById(id);
+    if (!el) return;
+    el.hidden = !visible;
+    el.setAttribute("aria-hidden", visible ? "false" : "true");
   }
 
   function setSwimmingMenuVisible(show) {
@@ -100,7 +100,7 @@
     SWIMMING_HIDE_ACHIEVEMENT_IDS.forEach(function (id) {
       setElementVisible(id, !show);
     });
-    setElementVisible(SWIMMING_TOPBAR_TERM_REVIEW_ID, show);
+    setElementVisible(SWIMMING_TOPBAR_TERM_REVIEW_CELL_ID, show);
   }
 
   async function portalSyncSwimmingInstructorQuickMenus() {

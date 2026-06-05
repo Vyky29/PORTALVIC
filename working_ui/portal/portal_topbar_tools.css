@@ -67,27 +67,62 @@
 }
 .topbar-right--tools{
   align-items:flex-end;
-  padding-bottom:2px;
+  padding-bottom:0;
 }
 .topbar-tools-grid{
   display:grid;
-  grid-template-columns:repeat(2,38px);
-  grid-template-rows:repeat(2,38px);
-  gap:6px;
+  grid-template-columns:repeat(2,46px);
+  grid-auto-rows:auto;
+  gap:4px 6px;
   flex-shrink:0;
 }
 .topbar-tools-grid--lead{
-  grid-template-columns:repeat(3,34px);
-  grid-template-rows:repeat(2,34px);
-  gap:5px;
+  grid-template-columns:repeat(3,42px);
+  gap:3px 5px;
+}
+.topbar-tool-cell{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-start;
+  gap:2px;
+  min-width:0;
+  max-width:100%;
+}
+.topbar-tool-cell[hidden]{
+  display:none !important;
+}
+.topbar-tool-label{
+  display:block;
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  font-size:7px;
+  font-weight:700;
+  line-height:1;
+  letter-spacing:.03em;
+  text-align:center;
+  text-transform:uppercase;
+  color:rgba(49,69,85,.72);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.topbar-tool-label--spacer{
+  visibility:hidden;
+  min-height:7px;
+}
+.topbar-tools-grid--lead .topbar-tool-label{
+  font-size:6px;
+  letter-spacing:.02em;
 }
 .topbar-tool-btn{
   margin:0;
-  width:38px;
-  height:38px;
+  width:42px;
+  height:42px;
   min-width:0;
   padding:0;
-  border-radius:11px;
+  border-radius:12px;
   border:1px solid rgba(45,132,179,.28);
   background:#fff !important;
   color:var(--blue) !important;
@@ -99,22 +134,22 @@
   -webkit-tap-highlight-color:transparent;
 }
 .topbar-tools-grid--lead .topbar-tool-btn{
-  width:34px;
-  height:34px;
-  border-radius:10px;
+  width:38px;
+  height:38px;
+  border-radius:11px;
 }
 .topbar-tool-btn__ico{
   display:flex;
   align-items:center;
   justify-content:center;
-  width:20px;
-  height:20px;
+  width:22px;
+  height:22px;
   min-width:0;
   pointer-events:none;
 }
 .topbar-tools-grid--lead .topbar-tool-btn__ico{
-  width:18px;
-  height:18px;
+  width:20px;
+  height:20px;
 }
 .topbar-tool-btn__ico svg{
   display:block;
