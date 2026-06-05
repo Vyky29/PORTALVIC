@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>1-to-1 Wellbeing Review — clubSENsational</title>
   <script src="/portal-static-bootstrap.js"></script>
-  <link rel="stylesheet" href="/portal/portal-wellbeing-admin-sra.css?v=20260606-wb-stressors" />
-  <script src="/portal/portal_wellbeing_stressor_catalog.js?v=20260606-wb-stressors"></script>
+  <link rel="stylesheet" href="/portal/portal-wellbeing-admin-sra.css?v=20260607-wb-sections" />
+  <script src="/portal/portal_wellbeing_stressor_catalog.js?v=20260607-wb-sections"></script>
   <link rel="preconnect" href="https://www.clubsensational.org" />
   <link rel="dns-prefetch" href="https://www.clubsensational.org" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -1524,7 +1524,7 @@
   </section>
 
   <section class="section" id="sec-change">
-    <h2 class="section-title">Job security &amp; change</h2>
+    <h2 class="section-title">Job security and change</h2>
     <p class="pdf-parenthetical">(How employees feel how change is communicated and managed in the company, whether they are provided with relevant and timely information so they understand the need and potential implications of change(s), the degree to which they are consulted about change, for example).</p>
     <div class="table-scroll" role="region" aria-label="Job security and change table">
     <table class="domain-table">
@@ -1909,6 +1909,7 @@ window.stressorSuggestions = {
 
 if (window.portalWellbeingStressorCatalog) {
   window.portalWellbeingStressorCatalog.assertMatchesSuggestions(window.stressorSuggestions);
+  window.portalWellbeingStressorCatalog.applySectionTitlesToDocument();
 }
 
 window.observationHints = {
@@ -2120,14 +2121,16 @@ document.addEventListener("DOMContentLoaded", function () {
       .replace(/"/g, "&quot;");
   }
 
-  var DOMAIN_TITLES = {
-    demands: "Workload and job demands",
-    control: "Job control",
-    support: "Support, resources and communication",
-    relations: "Work relationships",
-    role: "Job role and conditions",
-    change: "Job security and change"
-  };
+  var DOMAIN_TITLES = window.portalWellbeingStressorCatalog
+    ? Object.assign({}, window.portalWellbeingStressorCatalog.DOMAIN_SECTION_TITLES)
+    : {
+        demands: "Workload and job demands",
+        control: "Job control",
+        support: "Support, resources and communication",
+        relations: "Work relationships",
+        role: "Job role and conditions",
+        change: "Job security and change",
+      };
 
   function populateStressorDropdowns() {
     var sug = window.stressorSuggestions || {};
@@ -2998,7 +3001,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (btnSavePortal) btnSavePortal.hidden = false;
     if (btnCompletePortal) btnCompletePortal.hidden = false;
     var portalScript = document.createElement("script");
-    portalScript.src = "/portal/portal_wellbeing_checkin.js?v=20260606-wb-stressors";
+    portalScript.src = "/portal/portal_wellbeing_checkin.js?v=20260607-wb-sections";
     portalScript.onload = function () {
       if (!window.portalWellbeingCheckin) return;
       window.portalWellbeingCheckin.renderAdminQuickNav();

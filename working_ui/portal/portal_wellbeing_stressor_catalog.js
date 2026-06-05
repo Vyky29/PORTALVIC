@@ -4,6 +4,27 @@
 (function (global) {
   "use strict";
 
+  /** HSE domain section titles — must match staff check-in and staff_wellbeing_review.html */
+  var DOMAIN_SECTION_TITLES = {
+    demands: "Workload and job demands",
+    control: "Job control",
+    support: "Support, resources and communication",
+    relations: "Work relationships",
+    role: "Job role and conditions",
+    change: "Job security and change",
+  };
+
+  var DOMAIN_QUESTIONS = {
+    demands: "Can you manage your workload and session demands comfortably?",
+    control: "Do you have enough input into how your work is planned and delivered?",
+    support: "Do you receive timely support from your manager and team?",
+    relations: "Do you feel treated fairly and respectfully at work?",
+    role: "Are your responsibilities and expectations clear?",
+    change: "Is organisational change communicated well, and do you feel secure in your role?",
+  };
+
+  var DOMAIN_ORDER = ["demands", "control", "support", "relations", "role", "change"];
+
   var STRESSOR_KEYS_BY_DOMAIN = {
     demands: [
       "High workload / too many sessions",
@@ -148,12 +169,17 @@
   }
 
   global.portalWellbeingStressorCatalog = {
+    DOMAIN_SECTION_TITLES: DOMAIN_SECTION_TITLES,
+    DOMAIN_QUESTIONS: DOMAIN_QUESTIONS,
+    DOMAIN_ORDER: DOMAIN_ORDER,
     STRESSOR_KEYS_BY_DOMAIN: STRESSOR_KEYS_BY_DOMAIN,
     STRESSOR_SHORT_LABELS: STRESSOR_SHORT_LABELS,
     LEGACY_STRESSOR_MAP: LEGACY_STRESSOR_MAP,
     shortLabel: shortLabel,
     resolveKey: resolveKey,
+    buildDomains: buildDomains,
     buildCheckinStressors: buildCheckinStressors,
+    applySectionTitlesToDocument: applySectionTitlesToDocument,
     assertMatchesSuggestions: assertMatchesSuggestions,
   };
 })(typeof window !== "undefined" ? window : globalThis);

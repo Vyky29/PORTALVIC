@@ -4,54 +4,29 @@
 (function (global) {
   "use strict";
 
-  /** TODO: set false before production � one check-in per staff per term */
+  /** TODO: set false before production — one check-in per staff per term */
   var ALLOW_REPEAT_CHECKIN = true;
-
-  var DOMAINS = [
-    {
-      key: "demands",
-      title: "Workload & Demands",
-      question: "Can you manage your workload and session demands comfortably?",
-    },
-    {
-      key: "control",
-      title: "Control & Autonomy",
-      question: "Do you have enough input into how your work is planned and delivered?",
-    },
-    {
-      key: "support",
-      title: "Support & Communication",
-      question: "Do you receive timely support from your manager and team?",
-    },
-    {
-      key: "relations",
-      title: "Working Relationships",
-      question: "Do you feel treated fairly and respectfully at work?",
-    },
-    {
-      key: "role",
-      title: "Role Clarity",
-      question: "Are your responsibilities and expectations clear?",
-    },
-    {
-      key: "change",
-      title: "Change & Security",
-      question: "Is organisational change communicated well, and do you feel secure in your role?",
-    },
-  ];
-
-  var DOMAIN_LABELS = {
-    demands: "Workload",
-    control: "Control",
-    support: "Support",
-    relations: "Relationships",
-    role: "Role",
-    change: "Change",
-  };
 
   function stressorCatalog() {
     return global.portalWellbeingStressorCatalog || null;
   }
+
+  function getDomains() {
+    var cat = stressorCatalog();
+    if (cat && cat.buildDomains) return cat.buildDomains();
+    return [];
+  }
+
+  function getDomainLabels() {
+    var cat = stressorCatalog();
+    if (cat && cat.DOMAIN_SECTION_TITLES) {
+      return Object.assign({}, cat.DOMAIN_SECTION_TITLES);
+    }
+    return {};
+  }
+
+  var DOMAINS = getDomains();
+  var DOMAIN_LABELS = getDomainLabels();
 
   function getCheckinStressors() {
     var cat = stressorCatalog();
@@ -95,7 +70,7 @@
     key = clean(key);
     var m = /^(\d{4})-(H1|H2)$/.exec(key);
     if (!m) return key || "This term";
-    return m[1] + (m[2] === "H1" ? " � Jan�Jun" : " � Jul�Dec");
+    return m[1] + (m[2] === "H1" ? " · Jan–Jun" : " · Jul–Dec");
   }
 
   function highestLevel(domains) {
@@ -378,7 +353,7 @@
     if (!form || !checkin) return;
     var domains = checkin.domains || {};
     var ins = form.querySelectorAll(".header-fields input");
-    if (ins[0]) ins[0].value = "Stress RA � " + (checkin.staff_name || "");
+    if (ins[0]) ins[0].value = "Stress RA — " + (checkin.staff_name || "");
     if (ins[3] && !ins[3].value) {
       var d = new Date();
       ins[3].value =
@@ -397,7 +372,7 @@
         fields[4].value =
           "Staff wellbeing check-in (" +
           termLabel(checkin.term_key) +
-          ") � " +
+          ") — " +
           (checkin.has_concerns ? "concerns flagged for 1-to-1" : "routine review");
       }
       if (fields[5] && checkin.general_note) {
@@ -493,14 +468,14 @@
               : "";
         var stressorTxt =
           f.stressors && f.stressors.length
-            ? " · " + f.stressors.join(", ")
+            ? " — " + f.stressors.join(", ")
             : "";
         return (
           '<span class="portal-wb-admin-chip' +
           cls +
           '">' +
           f.label +
-          " · " +
+          " — " +
           levelLabel(f.level) +
           stressorTxt +
           "</span>"
@@ -517,11 +492,11 @@
       "</h2>" +
       '<p class="portal-wb-admin-banner__meta">' +
       term +
-      (checkin.staff_role ? " · " + clean(checkin.staff_role) : "") +
+      (checkin.staff_role ? " — " + clean(checkin.staff_role) : "") +
       (checkin.general_note
-        ? '<br><span style="opacity:.9">Staff note: “' +
+        ? '<br><span style="opacity:.9">Staff note: —' +
           clean(checkin.general_note).replace(/"/g, "'") +
-          "�</span>"
+          "—</span>"
         : "") +
       "</p>" +
       '<div class="portal-wb-admin-banner__chips">' +
@@ -532,22 +507,38 @@
     var h1 = document.querySelector("#sra-form .brand h1");
     if (h1) h1.textContent = "1-to-1 Wellbeing Review — " + name;
     var sub = document.querySelector("#sra-form .brand .subtitle");
-    if (sub) sub.textContent = "Complete together · HSE stress risk assessment";
+    if (sub) sub.textContent = "Complete together \u00b7 HSE stress risk assessment";
   }
 
   function renderAdminQuickNav() {
     var nav = document.getElementById("portalWellbeingAdminSteps");
     if (!nav) return;
-    nav.innerHTML =
+    var cat = stressorCatalog();
+    var order = (cat && cat.DOMAIN_ORDER) || [
+      "demands",
+      "control",
+      "support",
+      "relations",
+      "role",
+      "change",
+    ];
+    var titles = (cat && cat.DOMAIN_SECTION_TITLES) || DOMAIN_LABELS;
+    var links =
       '<a href="#sec-cover">Cover</a>' +
-      '<a href="#sec-demands">Workload</a>' +
-      '<a href="#sec-control">Control</a>' +
-      '<a href="#sec-support">Support</a>' +
-      '<a href="#sec-relations">Relationships</a>' +
-      '<a href="#sec-role">Role</a>' +
-      '<a href="#sec-change">Change</a>' +
+      order
+        .map(function (key) {
+          return (
+            '<a href="#sec-' +
+            key +
+            '">' +
+            (titles[key] || key) +
+            "</a>"
+          );
+        })
+        .join("") +
       '<a href="#sec-summary">Summary &amp; actions</a>' +
       '<a href="#sec-sign">Sign-off</a>';
+    nav.innerHTML = links;
     nav.hidden = false;
   }
 

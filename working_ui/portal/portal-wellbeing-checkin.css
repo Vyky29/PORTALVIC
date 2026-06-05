@@ -1,5 +1,5 @@
 /**
- * Staff wellbeing check-in — corporate premium UI
+ * Staff wellbeing check-in â€” corporate premium UI
  */
 @import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap");
 
@@ -450,7 +450,7 @@ body.portal-wb-checkin {
 
 .portal-wb-err { color: var(--wb-bad); font-size: 13px; margin: 10px 0 0; }
 
-/* Voice bar from portal_feedback_voice_input — tune for wellbeing */
+/* Voice bar from portal_feedback_voice_input â€” tune for wellbeing */
 .portal-wb-extra .portal-fb-voice-wrap { margin-top: 4px; }
 .portal-wb-extra .portal-fb-voice-mic {
   border-color: rgba(42, 49, 64, 0.2);

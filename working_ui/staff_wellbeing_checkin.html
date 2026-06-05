@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Wellbeing Check-in ‚Äî clubSENsational</title>
+  <title>Wellbeing Check-in ó clubSENsational</title>
   <script src="/portal-static-bootstrap.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="/portal/portal-wellbeing-checkin.css?v=20260606-wb-stressors" />
+  <link rel="stylesheet" href="/portal/portal-wellbeing-checkin.css?v=20260607-wb-sections" />
 </head>
 <body class="portal-wb-checkin">
   <div class="portal-wb-wrap">
@@ -20,19 +20,19 @@
           <div class="portal-wb-head-copy">
             <span class="portal-wb-tag" id="termTag">This term</span>
             <h1>Wellbeing Check-in</h1>
-            <p>About 5 minutes. Confidential. If anything is affecting you at work, leadership will arrange a supportive 1-to-1 ‚Äî you do not need to complete the long form alone.</p>
+            <p>About 5 minutes. Confidential. If anything is affecting you at work, leadership will arrange a supportive 1-to-1 ó you do not need to complete the long form alone.</p>
           </div>
         </div>
       </header>
       <div class="portal-wb-body" id="stepHost">
-        <p class="portal-wb-foot" style="margin:0;text-align:left">Loading‚Ä¶</p>
+        <p class="portal-wb-foot" style="margin:0;text-align:left">LoadingÖ</p>
       </div>
     </div>
-    <p class="portal-wb-foot">Only ops admin and directors are notified when you flag a concern. ‚ÄúAll good‚Äù check-ins are recorded without a 1-to-1 request.</p>
+    <p class="portal-wb-foot">Only ops admin and directors are notified when you flag a concern. ìAll goodî check-ins are recorded without a 1-to-1 request.</p>
   </div>
 
-  <script src="/portal/portal_wellbeing_stressor_catalog.js?v=20260606-wb-stressors"></script>
-  <script src="/portal/portal_wellbeing_checkin.js?v=20260606-wb-stressors"></script>
+  <script src="/portal/portal_wellbeing_stressor_catalog.js?v=20260607-wb-sections"></script>
+  <script src="/portal/portal_wellbeing_checkin.js?v=20260607-wb-sections"></script>
   <script src="/portal/portal_feedback_voice_input.js?v=20260617-form-voice"></script>
   <script>
   (function () {
@@ -111,7 +111,7 @@
           "div",
           "portal-wb-stressors-head",
           '<span class="portal-wb-field-label">Stressors</span>' +
-            '<span class="portal-wb-stressors-sub">Tap any that apply ÔøΩ these carry through to your 1-to-1 review</span>'
+            '<span class="portal-wb-stressors-sub">Tap any that apply ó these carry through to your 1-to-1 review</span>'
         )
       );
       var grid = el("div", "portal-wb-stressor-grid");
@@ -154,10 +154,10 @@
       host().innerHTML =
         '<div class="portal-wb-done">' +
         '<div class="portal-wb-done-icon">' + LEVEL_ICONS.green + '</div>' +
-        '<h2>' + (has ? "Thank you ‚Äî we have received your check-in" : "Thank you ‚Äî all recorded") + '</h2>' +
+        '<h2>' + (has ? "Thank you ó we have received your check-in" : "Thank you ó all recorded") + '</h2>' +
         '<p>' +
         (has
-          ? "Someone from leadership will contact you to arrange a private 1-to-1. You do not need to fill in the long stress form now ‚Äî that is completed together in the meeting."
+          ? "Someone from leadership will contact you to arrange a private 1-to-1. You do not need to fill in the long stress form now ó that is completed together in the meeting."
           : "Glad to hear things are OK this term. You can close this page.") +
         '</p>' +
         '<button type="button" class="portal-wb-btn portal-wb-btn--pri" id="btnCloseDone">Back to portal</button>' +
@@ -232,7 +232,7 @@
       var ta = document.createElement("textarea");
       ta.id = "wb-domain-note-" + dom.key;
       ta.rows = 3;
-      ta.placeholder = "Anything else you want us to know‚Ä¶";
+      ta.placeholder = "Anything else you want us to knowÖ";
       ta.value = entry.note || "";
       ta.oninput = function () { entry.note = ta.value; };
       comments.appendChild(ta);
@@ -262,14 +262,14 @@
       h.appendChild(el("div", "portal-wb-domain-head",
         '<div class="portal-wb-domain-icon">' + DOMAIN_ICONS.support + '</div>' +
         '<div><h2 class="portal-wb-domain-title">Anything Else?</h2>' +
-        '<p class="portal-wb-domain-q">Optional message for leadership ‚Äî only read if you flagged concerns above or write here.</p></div>'
+        '<p class="portal-wb-domain-q">Optional message for leadership ó only read if you flagged concerns above or write here.</p></div>'
       ));
       var genComments = el("div", "portal-wb-comments");
       genComments.appendChild(el("p", "portal-wb-voice-hint", "Tap the microphone to dictate. Italian or Spanish is translated to English for our records."));
       var ta = document.createElement("textarea");
       ta.id = "wb-general-note";
       ta.rows = 4;
-      ta.placeholder = "Optional‚Ä¶";
+      ta.placeholder = "OptionalÖ";
       ta.value = state.general_note || "";
       ta.oninput = function () { state.general_note = ta.value; };
       genComments.appendChild(ta);
@@ -290,7 +290,7 @@
 
     function renderSubmit() {
       var h = host();
-      h.innerHTML = '<p class="portal-wb-foot" style="margin:0;text-align:left">Sending‚Ä¶</p>';
+      h.innerHTML = '<p class="portal-wb-foot" style="margin:0;text-align:left">SendingÖ</p>';
       if (state.submitting) return;
       state.submitting = true;
       wb.submitCheckin({ domains: state.domains, general_note: state.general_note })
@@ -345,7 +345,7 @@
               '<p>Status: <strong>' + res.checkin.status.replace(/_/g, " ") + '</strong>. ' +
               (res.checkin.has_concerns
                 ? "Leadership has been notified. They will be in touch for your 1-to-1."
-                : "Thanks ‚Äî no further action needed right now.") +
+                : "Thanks ó no further action needed right now.") +
               '</p>' +
               '<button type="button" class="portal-wb-btn portal-wb-btn--pri" id="btnBackPortal">Back to portal</button>' +
               '</div>';
@@ -367,7 +367,7 @@
             state.general_note = res.checkin.general_note || "";
             var tag = document.getElementById("termTag");
             if (tag) {
-              tag.textContent = wb.termLabel(wb.currentTermKey()) + " ÔøΩ test mode ÔøΩ edit & resend";
+              tag.textContent = wb.termLabel(wb.currentTermKey()) + " ó test mode ó edit & resend";
             }
           }
           renderStep();
