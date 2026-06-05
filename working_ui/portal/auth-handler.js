@@ -883,7 +883,7 @@ export async function bootstrapDashboardSupabase(_opts) {
       if (page === "lead_overview") {
         throw new Error("skip_location_on_lead_overview");
       }
-      const perm = await import("./portal_location_permission.js?v=20260619-enable-all-perms");
+      const perm = await import("./portal_location_permission.js?v=20260620-default-perms");
       window.portalLocationPermissionGranted = perm.portalLocationPermissionGranted;
       window.portalMicrophonePermissionGranted = perm.portalMicrophonePermissionGranted;
       window.portalCameraPermissionGranted = perm.portalCameraPermissionGranted;
@@ -893,6 +893,7 @@ export async function bootstrapDashboardSupabase(_opts) {
       window.portalRequestCameraPermission = perm.requestCameraPermission;
       window.portalRequestCallMediaPermissions = perm.requestCallMediaPermissions;
       window.portalRequestAllPortalPermissions = perm.requestAllPortalPermissions;
+      window.portalRequestDefaultPortalPermissions = perm.requestDefaultPortalPermissions;
       window.portalRefreshLocationUi = perm.portalRefreshLocationUi;
       window.portalRefreshMicrophoneUi = perm.portalRefreshMicrophoneUi;
       window.portalRefreshCameraUi = perm.portalRefreshCameraUi;

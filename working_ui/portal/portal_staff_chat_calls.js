@@ -7,7 +7,7 @@
 
   var CALL_TAG = "[[portal-staff-call:";
   var CALL_TAG_END = "]]";
-  /** meet.jit.si requires OAuth for moderators ÔøΩ unusable in embedded iframe. */
+  /** meet.jit.si requires OAuth for moderators ù unusable in embedded iframe. */
   var JITSI_JAAS_DOMAIN = "8x8.vc";
   var JITSI_JAAS_API_SRC = "https://8x8.vc/external_api.js";
   var JITSI_FALLBACK_DOMAIN = "meet.ffmuc.net";
@@ -20,6 +20,18 @@
     host: null,
     loading: false,
     apiSrc: "",
+  };
+
+  var incomingState = {
+    active: false,
+    payload: null,
+    ringTimer: null,
+    vibrateTimer: null,
+    autoStopTimer: null,
+    audioCtx: null,
+    oscNodes: null,
+    notification: null,
+    overlay: null,
   };
 
   function esc(s) {
@@ -169,8 +181,289 @@
       ".portal-inapp-call-host{flex:1;min-height:0;position:relative;background:#000}" +
       ".portal-inapp-call-host iframe{border:0;width:100%!important;height:100%!important}" +
       ".portal-inapp-call-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:rgba(255,255,255,.85);background:#0f172a;z-index:2}" +
-      ".portal-inapp-call-loading[hidden]{display:none!important}";
+      ".portal-inapp-call-loading[hidden]{display:none!important}" +
+      ".portal-incoming-call{position:fixed;inset:0;z-index:12100;display:flex;align-items:flex-end;justify-content:center;padding:16px;padding-bottom:max(20px,env(safe-area-inset-bottom));background:rgba(8,18,28,.72);backdrop-filter:blur(6px)}" +
+      ".portal-incoming-call[hidden]{display:none!important}" +
+      ".portal-incoming-call__card{width:100%;max-width:22rem;padding:20px 18px 18px;border-radius:20px;background:linear-gradient(165deg,#173247,#0c1f2e);border:1px solid rgba(255,255,255,.14);box-shadow:0 18px 48px rgba(0,0,0,.45);color:#fff;text-align:center}" +
+      ".portal-incoming-call__icon{font-size:42px;line-height:1;margin:0 0 8px}" +
+      ".portal-incoming-call__title{margin:0 0 6px;font-size:18px;font-weight:800}" +
+      ".portal-incoming-call__sub{margin:0 0 16px;font-size:14px;color:rgba(255,255,255,.78)}" +
+      ".portal-incoming-call__actions{display:flex;gap:10px}" +
+      ".portal-incoming-call__btn{flex:1;padding:12px 10px;border-radius:999px;border:0;font:inherit;font-size:14px;font-weight:800;cursor:pointer}" +
+      ".portal-incoming-call__btn--decline{background:rgba(255,255,255,.12);color:#fff}" +
+      ".portal-incoming-call__btn--answer{background:#16a34a;color:#fff}";
     document.head.appendChild(st);
+  }
+
+  function meUserId() {
+    var box = global.__PORTAL_SUPABASE__;
+    return String(
+      (box && box.staff_profile && box.staff_profile.id) ||
+        (box && box.session && box.session.user && box.session.user.id) ||
+        ""
+    ).trim();
+  }
+
+  function isInActiveCall() {
+    var shell = callState.shell || document.getElementById("portalInAppCallShell");
+    return !!(shell && !shell.hidden);
+  }
+
+  function stopIncomingRingtone() {
+    if (incomingState.ringTimer) {
+      clearInterval(incomingState.ringTimer);
+      incomingState.ringTimer = null;
+    }
+    if (incomingState.vibrateTimer) {
+      clearInterval(incomingState.vibrateTimer);
+      incomingState.vibrateTimer = null;
+    }
+    if (incomingState.autoStopTimer) {
+      clearTimeout(incomingState.autoStopTimer);
+      incomingState.autoStopTimer = null;
+    }
+    try {
+      if (incomingState.oscNodes) {
+        incomingState.oscNodes.forEach(function (n) {
+          try {
+            if (n.stop) n.stop();
+            if (n.disconnect) n.disconnect();
+          } catch (_s) {}
+        });
+      }
+    } catch (_o) {}
+    incomingState.oscNodes = null;
+    try {
+      if (incomingState.audioCtx && incomingState.audioCtx.state !== "closed") {
+        void incomingState.audioCtx.close();
+      }
+    } catch (_c) {}
+    incomingState.audioCtx = null;
+    try {
+      if (incomingState.notification) incomingState.notification.close();
+    } catch (_n) {}
+    incomingState.notification = null;
+    try {
+      if (navigator.vibrate) navigator.vibrate(0);
+    } catch (_v) {}
+  }
+
+  function hideIncomingCallOverlay() {
+    stopIncomingRingtone();
+    incomingState.active = false;
+    incomingState.payload = null;
+    var ov = incomingState.overlay || document.getElementById("portalIncomingCallOverlay");
+    if (ov) ov.hidden = true;
+  }
+
+  function playIncomingRingtone() {
+    try {
+      var Ctx = global.AudioContext || global.webkitAudioContext;
+      if (!Ctx) return;
+      var ctx = new Ctx();
+      incomingState.audioCtx = ctx;
+      var gain = ctx.createGain();
+      gain.gain.value = 0.22;
+      gain.connect(ctx.destination);
+
+      function beep(freq, start, dur) {
+        var osc = ctx.createOscillator();
+        osc.type = "sine";
+        osc.frequency.value = freq;
+        osc.connect(gain);
+        osc.start(start);
+        osc.stop(start + dur);
+        if (!incomingState.oscNodes) incomingState.oscNodes = [];
+        incomingState.oscNodes.push(osc);
+      }
+
+      function pattern() {
+        if (!incomingState.active || !incomingState.audioCtx) return;
+        var t = ctx.currentTime;
+        beep(523.25, t, 0.18);
+        beep(659.25, t + 0.22, 0.18);
+        beep(783.99, t + 0.44, 0.24);
+      }
+
+      if (ctx.state === "suspended") {
+        void ctx.resume().then(pattern).catch(function () {});
+      } else {
+        pattern();
+      }
+      incomingState.ringTimer = setInterval(pattern, 2200);
+    } catch (_e) {}
+  }
+
+  function ensureIncomingCallOverlay() {
+    injectStyles();
+    if (incomingState.overlay) return incomingState.overlay;
+    var ov = document.getElementById("portalIncomingCallOverlay");
+    if (!ov) {
+      ov = document.createElement("div");
+      ov.id = "portalIncomingCallOverlay";
+      ov.className = "portal-incoming-call";
+      ov.hidden = true;
+      ov.setAttribute("role", "alertdialog");
+      ov.setAttribute("aria-modal", "true");
+      ov.setAttribute("aria-label", "Incoming call");
+      ov.innerHTML =
+        '<div class="portal-incoming-call__card">' +
+        '<div class="portal-incoming-call__icon" id="portalIncomingCallIcon" aria-hidden="true">??</div>' +
+        '<h2 class="portal-incoming-call__title" id="portalIncomingCallTitle">Incoming call</h2>' +
+        '<p class="portal-incoming-call__sub" id="portalIncomingCallSub">Team chat</p>' +
+        '<div class="portal-incoming-call__actions">' +
+        '<button type="button" class="portal-incoming-call__btn portal-incoming-call__btn--decline" id="portalIncomingCallDecline">Decline</button>' +
+        '<button type="button" class="portal-incoming-call__btn portal-incoming-call__btn--answer" id="portalIncomingCallAnswer">Answer</button>' +
+        "</div></div>";
+      document.body.appendChild(ov);
+      var decline = ov.querySelector("#portalIncomingCallDecline");
+      var answer = ov.querySelector("#portalIncomingCallAnswer");
+      if (decline) {
+        decline.addEventListener("click", function () {
+          hideIncomingCallOverlay();
+        });
+      }
+      if (answer) {
+        answer.addEventListener("click", function () {
+          answerIncomingCall();
+        });
+      }
+    }
+    incomingState.overlay = ov;
+    return ov;
+  }
+
+  function resolveIncomingCallerLabel(row, cb) {
+    cb = typeof cb === "function" ? cb : function () {};
+    var ctx = getContext();
+    if (row && row.thread_id && ctx.threadId === String(row.thread_id) && ctx.peerLabel) {
+      cb(ctx.peerLabel);
+      return;
+    }
+    var box = global.__PORTAL_SUPABASE__;
+    var client = box && box.client;
+    var authorId = row && row.author_id ? String(row.author_id) : "";
+    if (!client || !authorId) {
+      cb("Team chat");
+      return;
+    }
+    client
+      .from("staff_profiles")
+      .select("full_name,username")
+      .eq("id", authorId)
+      .maybeSingle()
+      .then(function (res) {
+        var p = res && res.data;
+        var nm = p && (p.full_name || p.username);
+        cb(nm ? String(nm).trim() : "Team chat");
+      })
+      .catch(function () {
+        cb("Team chat");
+      });
+  }
+
+  function startIncomingCallAlert(data, row) {
+    if (!data || !data.room) return;
+    if (data.scheduledAt) return;
+    var kind = String(data.kind || "video");
+    hideIncomingCallOverlay();
+    incomingState.active = true;
+    incomingState.payload = data;
+
+    var ov = ensureIncomingCallOverlay();
+    var icon = ov.querySelector("#portalIncomingCallIcon");
+    var title = ov.querySelector("#portalIncomingCallTitle");
+    var sub = ov.querySelector("#portalIncomingCallSub");
+    var label = "Team chat";
+    if (icon) icon.textContent = kind === "video" ? "\uD83D\uDCF9" : "\uD83D\uDCDE";
+    if (title) {
+      title.textContent = kind === "video" ? "Incoming video call" : "Incoming voice call";
+    }
+    if (sub) sub.textContent = label;
+    resolveIncomingCallerLabel(row, function (nm) {
+      if (!incomingState.active || !sub) return;
+      sub.textContent = nm;
+    });
+    ov.hidden = false;
+
+    if (navigator.vibrate) {
+      navigator.vibrate([500, 180, 500, 180, 700]);
+      incomingState.vibrateTimer = setInterval(function () {
+        if (incomingState.active) navigator.vibrate([500, 180, 500, 180, 700]);
+      }, 2400);
+    }
+
+    if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+      try {
+        incomingState.notification = new Notification(
+          kind === "video" ? "Incoming video call" : "Incoming voice call",
+          {
+            body: label + " ù tap to answer",
+            tag: "portal-incoming-call",
+            requireInteraction: true,
+            silent: false,
+          }
+        );
+        incomingState.notification.onclick = function () {
+          try {
+            global.focus();
+          } catch (_f) {}
+          answerIncomingCall();
+        };
+      } catch (_n) {}
+    }
+
+    playIncomingRingtone();
+    incomingState.autoStopTimer = setTimeout(hideIncomingCallOverlay, 50000);
+  }
+
+  function answerIncomingCall() {
+    var data = incomingState.payload;
+    hideIncomingCallOverlay();
+    if (!data) return;
+    openCallFromPayload(data);
+  }
+
+  function onDmMessageInsert(row) {
+    if (!row) return;
+    var body = String(row.body || "");
+    var data = parseCallPayload(body);
+    if (!data) return;
+    var me = meUserId();
+    if (!me) return;
+    if (String(row.author_id || "").toLowerCase() === me.toLowerCase()) return;
+    if (isInActiveCall()) return;
+    startIncomingCallAlert(data, row);
+  }
+
+  function bindRemoteVideoLayout(api) {
+    if (!api || !api.addListener) return;
+    function pinRemote(participant) {
+      if (!participant || !participant.id) return;
+      try {
+        api.executeCommand("setTileView", false);
+      } catch (_tv) {}
+      try {
+        if (typeof api.pinParticipant === "function") api.pinParticipant(participant.id, "large");
+        else api.executeCommand("pinParticipant", participant.id);
+      } catch (_pin) {}
+    }
+    api.addListener("participantJoined", function (participant) {
+      pinRemote(participant);
+    });
+    api.addListener("videoConferenceJoined", function () {
+      try {
+        api.executeCommand("setTileView", false);
+      } catch (_tv) {}
+      try {
+        var participants = api.getParticipantsInfo ? api.getParticipantsInfo() : [];
+        if (participants && participants.length) {
+          participants.forEach(function (p) {
+            if (p && p.participantId) pinRemote({ id: p.participantId });
+          });
+        }
+      } catch (_p) {}
+    });
   }
 
   function ensureCallShell() {
@@ -233,7 +526,7 @@
           body: {
             room: room,
             displayName: displayName,
-            moderator: opts.asModerator !== false,
+            moderator: true,
           },
         });
         var data = res && res.data;
@@ -340,6 +633,7 @@
   }
 
   function closeInAppCall() {
+    hideIncomingCallOverlay();
     disposeCallApi();
     var shell = callState.shell || document.getElementById("portalInAppCallShell");
     var host = callState.host || (shell && shell.querySelector("#portalInAppCallHost"));
@@ -352,16 +646,29 @@
   }
 
   async function warmCallMediaIfNeeded(kind) {
-    var fn = global.portalRequestCallMediaPermissions;
-    if (typeof fn !== "function") return;
-    if (
-      typeof global.portalCommsMediaPermissionsGranted === "function" &&
-      global.portalCommsMediaPermissionsGranted()
-    ) {
-      return;
-    }
+    var audioOnly = kind === "audio";
     try {
-      await fn({ video: kind !== "audio" });
+      if (audioOnly) {
+        if (
+          typeof global.portalMicrophonePermissionGranted === "function" &&
+          global.portalMicrophonePermissionGranted()
+        ) {
+          return;
+        }
+        if (typeof global.portalRequestMicrophonePermission === "function") {
+          await global.portalRequestMicrophonePermission();
+        }
+        return;
+      }
+      if (
+        typeof global.portalCameraPermissionGranted === "function" &&
+        global.portalCameraPermissionGranted()
+      ) {
+        return;
+      }
+      if (typeof global.portalRequestCameraPermission === "function") {
+        await global.portalRequestCameraPermission();
+      }
     } catch (_warm) {}
   }
 
@@ -388,7 +695,7 @@
     loading = shell.querySelector("#portalInAppCallLoading");
 
     try {
-      var session = await resolveCallSession(room, { asModerator: opts.asModerator !== false });
+      var session = await resolveCallSession(room, { asModerator: true });
       var JitsiMeetExternalAPI = await loadJitsiApi(session.apiSrc);
       host = callState.host;
       if (!host) throw new Error("Call panel missing");
@@ -416,6 +723,10 @@
           requireDisplayName: false,
           enableLobby: false,
           hideConferenceSubject: true,
+          channelLastN: -1,
+          disableSelfView: false,
+          disableFilmstrip: false,
+          startSilent: false,
         },
         interfaceConfigOverwrite: {
           APP_NAME: "clubSENsational",
@@ -444,6 +755,8 @@
       var api = new JitsiMeetExternalAPI(session.domain, apiOptions);
 
       callState.api = api;
+      bindRemoteVideoLayout(api);
+      hideIncomingCallOverlay();
 
       function hideCallLoading() {
         var loadEl = shell.querySelector("#portalInAppCallLoading");
@@ -484,12 +797,13 @@
 
   function openCallFromPayload(data) {
     if (!data) return;
+    hideIncomingCallOverlay();
     void openInAppCall({
       room: data.room,
       kind: data.kind,
       title: humanLabel(data.kind, data.title),
       meetingTitle: data.title,
-      asModerator: false,
+      asModerator: true,
     });
   }
 
@@ -816,5 +1130,7 @@
     openInAppCall: openInAppCall,
     closeInAppCall: closeInAppCall,
     buildRoomName: buildRoomName,
+    onDmMessageInsert: onDmMessageInsert,
+    stopIncomingCallAlert: hideIncomingCallOverlay,
   };
 })(typeof window !== "undefined" ? window : globalThis);

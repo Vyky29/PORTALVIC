@@ -341,6 +341,15 @@ export function portalMicrophonePermissionGranted() {
   return _micState === "granted" || persistGet("portal_mic_granted_v1") === "1";
 }
 
+export function portalCameraPermissionGranted() {
+  return _camState === "granted" || persistGet("portal_cam_granted_v1") === "1";
+}
+
+/** Default portal setup: camera for calls/photos — microphone is optional (voice feedback only). */
+export function portalCommsMediaPermissionsGranted() {
+  return portalCameraPermissionGranted();
+}
+
 export function markMicrophoneGranted() {
   _micState = "granted";
   persistSet("portal_mic_granted_v1", "1");
@@ -542,38 +551,58 @@ export function requestCameraPermission() {
 }
 
 /**
- * One browser prompt for voice/video calls, chat meetings and session photos.
- * @param {{ video?: boolean }} [opts]
+ * Runtime media for calls — mic only when joining audio; camera for video (no upfront mic for video).
+ * @param {{ video?: boolean, audio?: boolean }} [opts]
  * @returns {Promise<{ microphone: string, camera: string }>}
  */
 export function requestCallMediaPermissions(opts = {}) {
   const wantVideo = opts.video !== false;
+  const wantAudio = opts.audio === true;
   return new Promise((resolve) => {
     if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
-      _micState = "unsupported";
-      _camState = "unsupported";
-      resolve({ microphone: "unsupported", camera: "unsupported" });
+      if (wantAudio) _micState = "unsupported";
+      if (wantVideo) _camState = "unsupported";
+      resolve({
+        microphone: wantAudio ? "unsupported" : "skipped",
+        camera: wantVideo ? "unsupported" : "skipped",
+      });
       return;
     }
-    const constraints = wantVideo ? { audio: true, video: true } : { audio: true, video: false };
+    const constraints = {
+      audio: wantAudio,
+      video: wantVideo,
+    };
+    if (!wantAudio && !wantVideo) {
+      resolve({ microphone: "skipped", camera: "skipped" });
+      return;
+    }
     navigator.mediaDevices
       .getUserMedia(constraints)
       .then((stream) => {
         stopMediaStream(stream);
-        markMicrophoneGranted();
+        if (wantAudio) markMicrophoneGranted();
         if (wantVideo) markCameraGranted();
-        resolve({ microphone: "granted", camera: wantVideo ? "granted" : _camState });
+        resolve({
+          microphone: wantAudio ? "granted" : "skipped",
+          camera: wantVideo ? "granted" : "skipped",
+        });
       })
       .catch((err) => {
         if (err && (err.name === "NotAllowedError" || err.name === "PermissionDeniedError")) {
-          markMicrophoneDenied();
+          if (wantAudio) markMicrophoneDenied();
           if (wantVideo) markCameraDenied();
-          resolve({ microphone: "denied", camera: wantVideo ? "denied" : _camState });
+          resolve({
+            microphone: wantAudio ? "denied" : "skipped",
+            camera: wantVideo ? "denied" : "skipped",
+          });
           return;
         }
-        _micState = "prompt";
+        if (wantAudio) _micState = "prompt";
         if (wantVideo) _camState = "prompt";
-        resolve({ microphone: "prompt", camera: wantVideo ? "prompt" : _camState });
+        resolve({
+          microphone: wantAudio ? "prompt" : "skipped",
+          camera: wantVideo ? "prompt" : "skipped",
+        });
       });
   });
 }
@@ -619,17 +648,19 @@ export function requestNotificationPermission() {
 }
 
 /**
- * Single user tap: notifications, mic, camera, and location (if required).
+ * Default portal setup in one in-app tap: alerts, camera, location (if required).
+ * Microphone is intentionally excluded — optional for voice session feedback only.
  * @returns {Promise<Record<string, string>>}
  */
-export async function requestAllPortalPermissions() {
+export async function requestDefaultPortalPermissions() {
+  persistSet("portal_default_perms_requested_v1", "1");
   persistSet("portal_all_perms_requested_v1", "1");
 
   const results = {
     notifications: "skipped",
-    microphone: "skipped",
     camera: "skipped",
     location: "skipped",
+    microphone: "optional",
   };
 
   if (!portalNotificationsGranted()) {
@@ -638,13 +669,10 @@ export async function requestAllPortalPermissions() {
     results.notifications = "granted";
   }
 
-  if (!portalCommsMediaPermissionsGranted()) {
-    const media = await requestCallMediaPermissions({ video: true });
-    results.microphone = media.microphone;
-    results.camera = media.camera;
+  if (!portalCameraPermissionGranted()) {
+    results.camera = await requestCameraPermission();
   } else {
-    results.microphone = portalMicrophonePermissionGranted() ? "granted" : "prompt";
-    results.camera = portalCameraPermissionGranted() ? "granted" : "prompt";
+    results.camera = "granted";
   }
 
   const locRequired = portalLocationRequiredForSetup();
@@ -652,16 +680,11 @@ export async function requestAllPortalPermissions() {
     results.location = await requestLocationPermission();
   } else if (portalLocationPermissionGranted()) {
     results.location = "granted";
+  } else {
+    results.location = "not_required";
   }
 
-  if (typeof window.portalRefreshAlertsNotifyUi === "function") {
-    window.portalRefreshAlertsNotifyUi();
-  }
-  portalRefreshLocationUi();
-  portalRefreshMicrophoneUi();
-  portalRefreshCameraUi();
-  portalRefreshEnableAllUi();
-  portalSyncAlertsSettingsChrome();
+  refreshDefaultPortalPermissionsUi();
 
   window.dispatchEvent(
     new CustomEvent("portal:all-permissions-change", { detail: results })
@@ -672,6 +695,22 @@ export async function requestAllPortalPermissions() {
   }
 
   return results;
+}
+
+/** @deprecated Use requestDefaultPortalPermissions — kept for callers. */
+export async function requestAllPortalPermissions() {
+  return requestDefaultPortalPermissions();
+}
+
+function refreshDefaultPortalPermissionsUi() {
+  if (typeof window.portalRefreshAlertsNotifyUi === "function") {
+    window.portalRefreshAlertsNotifyUi();
+  }
+  portalRefreshLocationUi();
+  portalRefreshMicrophoneUi();
+  portalRefreshCameraUi();
+  portalRefreshEnableAllUi();
+  portalSyncAlertsSettingsChrome();
 }
 
 export function portalMicrophoneReadyForSetup() {
@@ -702,20 +741,14 @@ export function portalSyncAlertsSettingsChrome() {
   const notifyOk = portalNotificationsGranted();
   const locRequired = portalLocationRequiredForSetup();
   const locOk = !locRequired || portalLocationPermissionGranted();
-  const commsOk = portalCommsMediaPermissionsGranted();
-  const incomplete = !notifyOk || !locOk || !commsOk;
+  const cameraOk = portalCameraPermissionGranted();
+  const incomplete = !notifyOk || !locOk || !cameraOk;
   btn.classList.toggle("menu-btn--settings-alerts-incomplete", incomplete);
   if (!sub) return;
   if (incomplete) {
-    const missing = [];
-    if (!notifyOk) missing.push("alerts");
-    if (!commsOk) missing.push("calls & camera");
-    if (locRequired && !locOk) missing.push("location");
-    sub.textContent = "Turn on " + missing.join(", ");
+    sub.textContent = "Tap Continue once";
   } else {
-    sub.textContent = locRequired
-      ? "Alerts, calls and location on"
-      : "Alerts and calls on";
+    sub.textContent = locRequired ? "Portal features on" : "Portal features on";
   }
   const locBlock = document.getElementById("portalLocationBlock");
   if (locBlock) locBlock.hidden = !locRequired;
@@ -747,9 +780,9 @@ export function portalRefreshMicrophoneUi() {
       btn.disabled = false;
     }
   } else {
-    statusEl.textContent = "Off — tap below for voice feedback.";
+    statusEl.textContent = "Optional — only if you want voice session feedback instead of typing.";
     if (btn) {
-      btn.textContent = "Allow microphone";
+      btn.textContent = "Allow microphone (optional)";
       btn.disabled = false;
     }
   }
@@ -796,29 +829,23 @@ export function portalRefreshEnableAllUi() {
   const btn = document.getElementById("portalEnableAllBtn");
   if (!statusEl && !btn) return;
 
-  const notifyOk = portalNotificationsGranted();
-  const commsOk = portalCommsMediaPermissionsGranted();
-  const locRequired = portalLocationRequiredForSetup();
-  const locOk = !locRequired || portalLocationPermissionGranted();
   const complete = portalMandatoryAlertsSettingsComplete();
 
   if (statusEl) {
     if (complete) {
-      statusEl.textContent = "All set — chat, calls, meetings and photos on this device.";
+      statusEl.textContent =
+        "Ready — alerts, chat, calls, video, meetings and photos. Microphone stays optional for voice feedback.";
     } else {
-      const parts = [];
-      if (!notifyOk) parts.push("alerts");
-      if (!commsOk) parts.push("mic & camera");
-      if (locRequired && !locOk) parts.push("location");
-      statusEl.textContent = "Still needed: " + parts.join(", ") + ".";
+      statusEl.textContent =
+        "Tap Continue once. We turn on alerts, camera and location (if your role needs it). Microphone is optional.";
     }
   }
   if (btn) {
     if (complete) {
-      btn.textContent = "All permissions on";
+      btn.textContent = "Continue";
       btn.disabled = true;
     } else {
-      btn.textContent = "Turn on all permissions";
+      btn.textContent = "Continue";
       btn.disabled = false;
     }
   }
@@ -987,8 +1014,8 @@ export function bindPortalLocationPermissionUi() {
         if (t.disabled) return;
         t.disabled = true;
         const prev = t.textContent;
-        t.textContent = "Please allow each prompt…";
-        void requestAllPortalPermissions().finally(() => {
+        t.textContent = "Allow when asked…";
+        void requestDefaultPortalPermissions().finally(() => {
           portalRefreshEnableAllUi();
           if (!portalMandatoryAlertsSettingsComplete()) {
             t.disabled = false;

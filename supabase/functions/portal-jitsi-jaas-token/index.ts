@@ -1,6 +1,6 @@
-// @ts-nocheck — Edge Function (Deno). Mint JaaS JWT for in-portal staff video/voice calls.
+// @ts-nocheck ï¿½ Edge Function (Deno). Mint JaaS JWT for in-portal staff video/voice calls.
 //
-// meet.jit.si now requires OAuth for the first moderator — embedded iframe cannot do that.
+// meet.jit.si now requires OAuth for the first moderator ï¿½ embedded iframe cannot do that.
 // JaaS (8x8.vc) with a signed JWT grants moderator and skips the lobby.
 //
 // Secrets:
@@ -85,7 +85,8 @@ Deno.serve(async (req) => {
   if (!room) return json({ ok: false, error: "room_required" }, 400);
 
   const displayName = String(body.displayName || "Staff").trim().slice(0, 120) || "Staff";
-  const asModerator = body.moderator !== false;
+  // Portal staff 1:1 calls: every participant must be moderator or JaaS keeps them in lobby.
+  const asModerator = true;
 
   const supabase = createClient(url, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
