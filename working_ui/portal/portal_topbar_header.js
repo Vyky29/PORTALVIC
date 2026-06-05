@@ -4,6 +4,7 @@
 (function (global) {
   "use strict";
 
+  /** Admin-provided staff photo only (spreadsheet boot / profile.avatarFile) — not user-uploaded auth metadata. */
   function staffPhotoUrl() {
     try {
       var dd = global.dashboardData;
@@ -11,27 +12,20 @@
         var u = String(dd.avatarFile).trim();
         if (u) return u;
       }
-      var box = global.__PORTAL_SUPABASE__;
-      var meta =
-        box &&
-        box.session &&
-        box.session.user &&
-        box.session.user.user_metadata &&
-        box.session.user.user_metadata.avatar_url;
-      return meta ? String(meta).trim() : "";
+      return "";
     } catch (_) {
       return "";
     }
   }
 
+  function staffFirstName(name) {
+    var parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+    return parts[0] || "";
+  }
+
   function photoInitials(name) {
-    var n = String(name || "").trim();
+    var n = staffFirstName(name);
     if (!n) return "?";
-    if (typeof global.clientInitials === "function") return global.clientInitials(n);
-    var parts = n.split(/\s+/).filter(Boolean);
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-    }
     return n.slice(0, 2).toUpperCase();
   }
 
@@ -41,7 +35,7 @@
     if (!img && !ini) return;
     var pending =
       global.dashboardData && global.dashboardData.portalIdentityResolved === false;
-    var name = pending ? "" : String((global.dashboardData && global.dashboardData.staffName) || "").trim();
+    var name = pending ? "" : staffFirstName((global.dashboardData && global.dashboardData.staffName) || "");
     var url = pending ? "" : staffPhotoUrl();
     if (img) {
       if (url) {

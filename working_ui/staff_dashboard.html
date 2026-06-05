@@ -94,7 +94,7 @@
   <script src="/portal/portal_screenshot_guard.js?v=20260610-pwa-black-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
   <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260620-today-inline-dayoff" />
-  <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260620-topbar-grid" />
+  <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260620-topbar-photo-center" />
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260620-inbox-logo-orbit" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260601-landscape-full" />
 </head>
@@ -928,7 +928,7 @@
   <script src="/portal/portal_participant_catalog.js?v=20260601-participant-dedupe"></script>
   <script src="/portal/staff_roster_resolve.js?v=20260611-javi-roster-guard"></script>
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260620-staff-header-ach" />
-  <script src="/portal/portal_topbar_header.js?v=20260620-topbar-grid"></script>
+  <script src="/portal/portal_topbar_header.js?v=20260620-topbar-admin-photo"></script>
   <script src="/portal/portal_participant_achievements.js?v=20260602-ach-rls-landscape"></script>
   <script src="/portal/portal_client_sessions_overview.js?v=20260601-sessions-fit"></script>
   <script src="/portal/portal_induction.js?v=20260613-required-induction"></script>
@@ -13255,8 +13255,7 @@
         if(typeof portalSyncOnboardingQuickMenu === 'function'){
           void portalSyncOnboardingQuickMenu();
         }
-        var metaAvatar = String((window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session && window.__PORTAL_SUPABASE__.session.user && window.__PORTAL_SUPABASE__.session.user.user_metadata && window.__PORTAL_SUPABASE__.session.user.user_metadata.avatar_url) || "").trim();
-        dashboardData.avatarFile = metaAvatar || boot.avatarFile || dashboardData.avatarFile || "";
+        dashboardData.avatarFile = boot.avatarFile || dashboardData.avatarFile || "";
         dashboardData.staffRoleTrack = boot.staffRoleTrack || dashboardData.staffRoleTrack || "swimming";
         if(typeof getDemoDateLabel === "function" && typeof getDemoDateTopbar === "function"){
           dashboardData.dateLabel = getDemoDateLabel(DEMO_VIEW_DAY);

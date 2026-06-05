@@ -947,7 +947,7 @@
   <script src="/portal/portal_participant_catalog.js?v=20260601-participant-dedupe"></script>
   <script src="portal/staff_roster_resolve.js?v=20260601-luliya-mic"></script>
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260602-landscape-rail" />
-  <script src="/portal/portal_topbar_header.js?v=20260620-topbar-grid"></script>
+  <script src="/portal/portal_topbar_header.js?v=20260620-topbar-admin-photo"></script>
   <script src="/portal/portal_participant_achievements.js?v=20260602-ach-rls-landscape"></script>
   <script src="/portal/portal_client_sessions_overview.js?v=20260601-sessions-fit"></script>
   <script src="/portal/portal_induction.js?v=20260613-required-induction"></script>
@@ -8714,13 +8714,13 @@
         }
         if(sn) sn.setAttribute('aria-label', 'Loading profile');
       }else{
-        if(givenEl) givenEl.textContent = split.given || '\u2026';
+        const firstName = split.given || String(dashboardData.staffName || '').trim().split(/\s+/).filter(Boolean)[0] || '\u2026';
+        if(givenEl) givenEl.textContent = firstName;
         if(surEl){
-          surEl.textContent = split.surname || '';
-          if(split.surname) surEl.removeAttribute('hidden');
-          else surEl.setAttribute('hidden', 'hidden');
+          surEl.textContent = '';
+          surEl.setAttribute('hidden', 'hidden');
         }
-        if(sn) sn.setAttribute('aria-label', dashboardData.staffName || (split.given + (split.surname ? ' ' + split.surname : '')));
+        if(sn) sn.setAttribute('aria-label', firstName);
       }
       if(typeof portalApplyClientsDirectoryAccess === 'function') portalApplyClientsDirectoryAccess();
       if(typeof portalApplyTopbarDateDisplayFromDate === 'function'){
@@ -12187,8 +12187,7 @@
             if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
           });
         }
-        var metaAvatar = String((window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session && window.__PORTAL_SUPABASE__.session.user && window.__PORTAL_SUPABASE__.session.user.user_metadata && window.__PORTAL_SUPABASE__.session.user.user_metadata.avatar_url) || "").trim();
-        dashboardData.avatarFile = metaAvatar || boot.avatarFile || dashboardData.avatarFile || "";
+        dashboardData.avatarFile = boot.avatarFile || dashboardData.avatarFile || "";
         dashboardData.staffRoleTrack = boot.staffRoleTrack || dashboardData.staffRoleTrack || "swimming";
         if(typeof getDemoDateLabel === "function" && typeof getDemoDateTopbar === "function"){
           dashboardData.dateLabel = getDemoDateLabel(DEMO_VIEW_DAY);
