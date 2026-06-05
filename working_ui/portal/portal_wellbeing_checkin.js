@@ -109,19 +109,91 @@
  .trim();
  }
 
- function currentTermKey() {
+ var TERM_SEASON_LABELS = {
+ autumn: "Autumn Term",
+ spring: "Spring Term",
+ summer: "Summer Term",
+ };
+
+ function todayIsoLocal() {
  var d = new Date();
- var y = d.getFullYear();
- var m = d.getMonth() + 1;
- var half = m <= 6 ? "H1" : "H2";
- return y + "-" + half;
+ return (
+ d.getFullYear() +
+ "-" +
+ String(d.getMonth() + 1).padStart(2, "0") +
+ "-" +
+ String(d.getDate()).padStart(2, "0")
+ );
+ }
+
+ /** Same season boundaries as admin-sessions-hub termLabelFromRange. */
+ function seasonFromMonth(month) {
+ var m = Number(month) || 0;
+ if (m >= 4 && m <= 7) return "summer";
+ if (m >= 9 && m <= 12) return "autumn";
+ if (m >= 1 && m <= 3) return "spring";
+ return "summer";
+ }
+
+ function termKeyFromSeason(year, season) {
+ return String(year) + "-" + clean(season).toLowerCase();
+ }
+
+ function parsePortalTermName(termName) {
+ var m = /^(Autumn|Spring|Summer)\s+Term\s+(\d{4})$/i.exec(clean(termName));
+ if (!m) return null;
+ return termKeyFromSeason(m[2], m[1].toLowerCase());
+ }
+
+ function currentTermKey() {
+ var timetable = global.PORTAL_TERM_FROM_TIMETABLE;
+ if (timetable && timetable.firstDate && timetable.lastDate) {
+ var today = todayIsoLocal();
+ var from = String(timetable.firstDate).slice(0, 10);
+ var to = String(timetable.lastDate).slice(0, 10);
+ if (today >= from && today <= to) {
+ var fromName = parsePortalTermName(timetable.termName);
+ if (fromName) return fromName;
+ var y =
+ Number(timetable.termCalendarYear) ||
+ parseInt(String(from).slice(0, 4), 10) ||
+ new Date().getFullYear();
+ return termKeyFromSeason(y, seasonFromMonth(parseInt(String(from).slice(5, 7), 10)));
+ }
+ }
+ var d = new Date();
+ return termKeyFromSeason(d.getFullYear(), seasonFromMonth(d.getMonth() + 1));
+ }
+
+ function legacyHalfToSeason(half) {
+ var m = new Date().getMonth() + 1;
+ if (half === "H1") return m <= 3 ? "spring" : "summer";
+ return m >= 9 ? "autumn" : "summer";
  }
 
  function termLabel(key) {
  key = clean(key);
- var m = /^(\d{4})-(H1|H2)$/.exec(key);
- if (!m) return key || "This term";
- return m[1] + (m[2] === "H1" ? " | Jan-Jun" : " | Jul-Dec");
+ if (!key) return "This term";
+ var seasonMatch = /^(\d{4})-(autumn|spring|summer)$/.exec(key);
+ if (seasonMatch) {
+ return (
+ TERM_SEASON_LABELS[seasonMatch[2]] ||
+ seasonMatch[2].charAt(0).toUpperCase() + seasonMatch[2].slice(1) + " Term"
+ ) +
+ " " +
+ seasonMatch[1];
+ }
+ var legacyHalf = /^(\d{4})-(H1|H2)$/.exec(key);
+ if (legacyHalf) {
+ var season = legacyHalfToSeason(legacyHalf[2]);
+ return (TERM_SEASON_LABELS[season] || "Term") + " " + legacyHalf[1];
+ }
+ if (TERM_SEASON_LABELS[key]) return TERM_SEASON_LABELS[key];
+ return key;
+ }
+
+ function currentTermLabel() {
+ return termLabel(currentTermKey());
  }
 
  function highestLevel(domains) {
@@ -320,7 +392,7 @@
  if (sec.querySelector(".portal-wb-all-clear-note")) return;
  var note = document.createElement("p");
  note.className = "portal-wb-all-clear-note";
- note.textContent = "All good at staff check-in ù no review needed for this area.";
+ note.textContent = "All good at staff check-in - no review needed for this area.";
  var h2 = sec.querySelector(".section-title, h2");
  if (h2 && h2.nextSibling) sec.insertBefore(note, h2.nextSibling);
  else if (h2) h2.insertAdjacentElement("afterend", note);
@@ -586,7 +658,7 @@
  b.className = "js-band score-band";
  });
  clone.querySelectorAll(".js-s-name, .js-l-name").forEach(function (x) {
- x.textContent = "\u2014";
+ x.textContent = "-";
  });
  clone.querySelectorAll(".js-common-stressor").forEach(function (s) {
  s.value = "";
@@ -745,62 +817,92 @@
  return out;
  }
 
+ function escapeHtml(s) {
+ return String(s || "")
+ .replace(/&/g, "&amp;")
+ .replace(/</g, "&lt;")
+ .replace(/>/g, "&gt;")
+ .replace(/"/g, "&quot;");
+ }
+
+ function buildAdminHeroFocusHtml(flagged, checkin) {
+ var parts = [];
+ var note = clean(checkin && checkin.general_note);
+ if (flagged.length) {
+ parts.push('<p class="portal-wb-hero-focus__label">Areas to review in this meeting</p>');
+ parts.push('<div class="portal-wb-hero-flags">');
+ flagged.forEach(function (f) {
+ var lvCls =
+ f.level === "red"
+ ? " portal-wb-hero-flag--red"
+ : f.level === "amber"
+ ? " portal-wb-hero-flag--amber"
+ : "";
+ parts.push('<article class="portal-wb-hero-flag' + lvCls + '">');
+ parts.push(
+ '<div class="portal-wb-hero-flag__head"><span class="portal-wb-hero-flag__domain">' +
+ escapeHtml(f.label) +
+ '</span><span class="portal-wb-hero-flag__level">' +
+ escapeHtml(levelLabel(f.level)) +
+ "</span></div>"
+ );
+ if (f.stressors && f.stressors.length) {
+ parts.push('<div class="portal-wb-hero-flag__topics">');
+ f.stressors.forEach(function (s) {
+ parts.push("<span>" + escapeHtml(s) + "</span>");
+ });
+ parts.push("</div>");
+ }
+ parts.push("</article>");
+ });
+ parts.push("</div>");
+ }
+ if (note) {
+ parts.push(
+ '<blockquote class="portal-wb-hero-note"><span class="portal-wb-hero-note__label">Staff message</span><p>' +
+ escapeHtml(note) +
+ "</p></blockquote>"
+ );
+ }
+ return parts.join("");
+ }
+
  function renderAdminBanner(checkin) {
- var host = document.getElementById("portalWellbeingAdminBanner");
- if (!host || !checkin) return;
+ if (!checkin) return;
  var name = clean(checkin.staff_name) || "Team member";
  var term = termLabel(checkin.term_key);
+ var role = clean(checkin.staff_role);
  var flagged = flaggedDomainsList(checkin);
- var chips = flagged
- .map(function (f) {
- var cls =
- f.level === "red"
- ? " portal-wb-admin-chip--red"
- : f.level === "amber"
- ? " portal-wb-admin-chip--amber"
- : "";
- var stressorTxt =
- f.stressors && f.stressors.length
- ? " - " + f.stressors.join(", ")
- : "";
- return (
- '<span class="portal-wb-admin-chip' +
- cls +
- '">' +
- f.label +
- " - " +
- levelLabel(f.level) +
- stressorTxt +
- "</span>"
- );
- })
- .join("");
- if (!chips) {
- chips = '<span class="portal-wb-admin-chip">General note from check-in</span>';
+ var meta = [term];
+ if (role) meta.push(role);
+
+ var legacyBanner = document.getElementById("portalWellbeingAdminBanner");
+ if (legacyBanner) {
+ legacyBanner.hidden = true;
+ legacyBanner.innerHTML = "";
  }
- host.innerHTML =
- '<p class="portal-wb-admin-banner__eyebrow">1-to-1 Wellbeing Review</p>' +
- "<h2>" +
- name +
- "</h2>" +
- '<p class="portal-wb-admin-banner__meta">' +
- term +
- (checkin.staff_role ? " - " + clean(checkin.staff_role) : "") +
- (checkin.general_note
- ? '<br><span style="opacity:.9">Staff note: "' +
- clean(checkin.general_note).replace(/"/g, "'") +
- '"</span>'
- : "") +
- "</p>" +
- '<div class="portal-wb-admin-banner__chips">' +
- chips +
- "</div>";
- host.hidden = false;
- document.title = "1-to-1 Wellbeing Review - " + name + " - clubSENsational";
- var h1 = document.querySelector("#sra-form .brand h1");
- if (h1) h1.textContent = "1-to-1 Wellbeing Review - " + name;
- var sub = document.querySelector("#sra-form .brand .subtitle");
- if (sub) sub.textContent = "Complete together | HSE stress risk assessment";
+
+ var h1 = document.getElementById("sraHeroTitle");
+ if (h1) h1.textContent = name;
+
+ var sub = document.getElementById("sraHeroSubtitle");
+ if (sub) sub.textContent = meta.join(" ù ");
+
+ var kicker = document.getElementById("portalWbHeroKicker");
+ if (kicker) kicker.hidden = false;
+
+ var lead = document.getElementById("sraLead");
+ if (lead) lead.hidden = true;
+
+ var focus = document.getElementById("portalWbHeroFocus");
+ if (focus) {
+ var html = buildAdminHeroFocusHtml(flagged, checkin);
+ focus.innerHTML = html;
+ focus.hidden = !html;
+ }
+
+ document.body.classList.add("portal-wb-hero-ready");
+ document.title = name + " ù 1-to-1 Wellbeing ù clubSENsational";
  }
 
  function renderAdminQuickNav() {
@@ -825,6 +927,7 @@
  applyStaffEmploymentToSraForm: applyStaffEmploymentToSraForm,
  stressorShortLabel: stressorShortLabel,
  currentTermKey: currentTermKey,
+ currentTermLabel: currentTermLabel,
  termLabel: termLabel,
  submitCheckin: submitCheckin,
  fetchCheckinForAdmin: fetchCheckinForAdmin,
