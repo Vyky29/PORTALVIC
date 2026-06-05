@@ -5,8 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>1-to-1 Wellbeing Review — clubSENsational</title>
   <script src="/portal-static-bootstrap.js"></script>
-  <link rel="stylesheet" href="/portal/portal-wellbeing-admin-sra.css?v=20260608-wb-fix" />
-  <script src="/portal/portal_wellbeing_stressor_catalog.js?v=20260608-wb-fix"></script>
+  <link rel="stylesheet" href="/portal/portal-wellbeing-admin-sra.css?v=20260609-wb-premium" />
+  <script src="/portal/portal_wellbeing_stressor_catalog.js?v=20260609-wb-premium"></script>
+  <script src="/portal/portal_feedback_voice_input.js?v=20260617-form-voice"></script>
   <link rel="preconnect" href="https://www.clubsensational.org" />
   <link rel="dns-prefetch" href="https://www.clubsensational.org" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -917,7 +918,6 @@
 <body>
 
 <div id="portalWellbeingAdminBanner" class="portal-wb-admin-banner" hidden></div>
-<nav id="portalWellbeingAdminSteps" class="portal-wb-admin-steps no-print" hidden aria-label="1-to-1 sections"></nav>
 
 <nav class="ceo-toolbar no-print" aria-label="Meeting tools">
   <button type="button" class="btn btn-gold" id="btn-print">Print / PDF</button>
@@ -2695,6 +2695,14 @@ document.addEventListener("DOMContentLoaded", function () {
       var row = t.closest("tr");
       if (row) {
         var ta = row.querySelector(".js-stressor-text");
+        if (t.value === "__none__" && row.getAttribute("data-checkin-stressor") === "1") {
+          t.value = t.dataset.wbPrevStressor || "";
+          setMsg("This row was flagged with a stressor in the staff check-in.");
+          return;
+        }
+        if (t.value && t.value !== "__none__" && t.value !== "__other__") {
+          t.dataset.wbPrevStressor = t.value;
+        }
         if (t.value === "__none__") {
           if (ta) ta.value = "";
         } else if (t.value && t.value !== "__other__" && ta) {
@@ -2748,6 +2756,10 @@ document.addEventListener("DOMContentLoaded", function () {
       e.stopPropagation();
 
       if (t.classList.contains("btn-no-stressor")) {
+        if (tr.getAttribute("data-checkin-stressor") === "1") {
+          setMsg("This row was flagged with a stressor in the staff check-in.");
+          return;
+        }
         var s = tr.querySelector(".js-common-stressor");
         var ta = tr.querySelector(".js-stressor-text");
         if (ta) ta.value = "";
@@ -3001,15 +3013,26 @@ document.addEventListener("DOMContentLoaded", function () {
     if (btnSavePortal) btnSavePortal.hidden = false;
     if (btnCompletePortal) btnCompletePortal.hidden = false;
     var portalScript = document.createElement("script");
-    portalScript.src = "/portal/portal_wellbeing_checkin.js?v=20260608-wb-fix";
+    portalScript.src = "/portal/portal_wellbeing_checkin.js?v=20260609-wb-premium";
     portalScript.onload = function () {
       if (!window.portalWellbeingCheckin) return;
-      window.portalWellbeingCheckin.renderAdminQuickNav();
+      if (window.portalWellbeingStressorCatalog) {
+        window.portalWellbeingStressorCatalog.applySectionTitlesToDocument();
+      }
       window.portalWellbeingCheckin
         .fetchCheckinForAdmin(portalCheckinId)
         .then(function (pack) {
+          return window.portalWellbeingCheckin
+            .fetchStaffEmploymentContext(pack.ctx.client, pack.checkin.staff_user_id)
+            .then(function (employment) {
+              return { pack: pack, employment: employment };
+            });
+        })
+        .then(function (bundle) {
+          var pack = bundle.pack;
+          var employment = bundle.employment;
           window.portalWellbeingCheckin.renderAdminBanner(pack.checkin);
-          window.portalWellbeingCheckin.applyCheckinToSraForm(form, pack.checkin);
+          window.portalWellbeingCheckin.applyCheckinToSraForm(form, pack.checkin, employment);
           form.querySelectorAll(".domain-tbody tr").forEach(function (tr) {
             syncRangeFromNumbers(tr);
             refreshRiskRow(tr);
@@ -3017,6 +3040,17 @@ document.addEventListener("DOMContentLoaded", function () {
             syncStressorDetailVisibility(tr);
             updateNoStressorQuickVisual(tr);
           });
+          if (typeof window.PortalFeedbackVoiceInput !== "undefined") {
+            var voiceIds = [];
+            form.querySelectorAll("textarea").forEach(function (ta, i) {
+              if (!ta.id) ta.id = "wb-sra-voice-" + i;
+              voiceIds.push(ta.id);
+            });
+            window.PortalFeedbackVoiceInput.init({
+              fields: voiceIds,
+              staffName: pack.checkin.staff_name || "",
+            });
+          }
           return window.portalWellbeingCheckin.loadSraDraft(portalCheckinId);
         })
         .then(function (draftRow) {

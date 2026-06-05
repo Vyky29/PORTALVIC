@@ -177,6 +177,13 @@ body.portal-wb-checkin {
   color: var(--wb-navy);
 }
 
+.portal-wb-domain-desc {
+  margin: 0 0 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--wb-muted);
+}
+
 .portal-wb-domain-q {
   margin: 0;
   font-size: 14px;

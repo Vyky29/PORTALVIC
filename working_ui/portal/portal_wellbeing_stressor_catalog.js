@@ -25,6 +25,15 @@
 
  var DOMAIN_ORDER = ["demands", "control", "support", "relations", "role", "change"];
 
+ var DOMAIN_DESCRIPTIONS = {
+ demands: "Workload, pace, and whether demands match your hours and skills.",
+ control: "Your input into planning work and room to adapt day to day.",
+ support: "Timely manager support, information, and wellbeing resources.",
+ relations: "Fair treatment, respect, and relationships with colleagues.",
+ role: "Clarity about responsibilities, expectations, and working conditions.",
+ change: "How change is communicated and how secure you feel in your role.",
+ };
+
  var STRESSOR_KEYS_BY_DOMAIN = {
  demands: [
  "High workload / too many sessions",
@@ -129,9 +138,10 @@
  return STRESSOR_SHORT_LABELS[key] || key;
  }
 
- function resolveKey(raw) {
+ function resolveKey(raw, domKey) {
  var val = String(raw || "").replace(/\s+/g, " ").trim();
  if (!val) return "";
+ if (domKey) return resolveKeyForDomain(val, domKey);
  if (LEGACY_STRESSOR_MAP[val]) return LEGACY_STRESSOR_MAP[val];
  var domains = Object.keys(STRESSOR_KEYS_BY_DOMAIN);
  for (var d = 0; d < domains.length; d++) {
@@ -145,12 +155,31 @@
  return val;
  }
 
+ function resolveKeyForDomain(raw, domKey) {
+ var val = String(raw || "").replace(/\s+/g, " ").trim();
+ if (!val || !domKey) return "";
+ var allowed = STRESSOR_KEYS_BY_DOMAIN[domKey] || [];
+ if (allowed.indexOf(val) >= 0) return val;
+ if (LEGACY_STRESSOR_MAP[val] && allowed.indexOf(LEGACY_STRESSOR_MAP[val]) >= 0) {
+ return LEGACY_STRESSOR_MAP[val];
+ }
+ for (var i = 0; i < allowed.length; i++) {
+ if (STRESSOR_SHORT_LABELS[allowed[i]] === val) return allowed[i];
+ }
+ return "";
+ }
+
+ function stressorKeysForDomain(domKey) {
+ return (STRESSOR_KEYS_BY_DOMAIN[domKey] || []).slice();
+ }
+
  function buildDomains() {
  return DOMAIN_ORDER.map(function (key) {
  return {
  key: key,
  title: DOMAIN_SECTION_TITLES[key],
  question: DOMAIN_QUESTIONS[key],
+ description: DOMAIN_DESCRIPTIONS[key] || "",
  };
  });
  }
@@ -171,6 +200,16 @@
  if (!sec) return;
  var h2 = sec.querySelector("h2.section-title, h2");
  if (h2) h2.textContent = DOMAIN_SECTION_TITLES[key] || key;
+ var brief = DOMAIN_DESCRIPTIONS[key];
+ if (!brief) return;
+ var desc = sec.querySelector(".portal-wb-hse-desc");
+ if (!desc) {
+ desc = document.createElement("p");
+ desc.className = "portal-wb-hse-desc pdf-parenthetical";
+ if (h2 && h2.nextSibling) sec.insertBefore(desc, h2.nextSibling);
+ else sec.appendChild(desc);
+ }
+ desc.textContent = brief;
  });
  }
 
@@ -190,12 +229,15 @@
  global.portalWellbeingStressorCatalog = {
  DOMAIN_SECTION_TITLES: DOMAIN_SECTION_TITLES,
  DOMAIN_QUESTIONS: DOMAIN_QUESTIONS,
+ DOMAIN_DESCRIPTIONS: DOMAIN_DESCRIPTIONS,
  DOMAIN_ORDER: DOMAIN_ORDER,
  STRESSOR_KEYS_BY_DOMAIN: STRESSOR_KEYS_BY_DOMAIN,
  STRESSOR_SHORT_LABELS: STRESSOR_SHORT_LABELS,
  LEGACY_STRESSOR_MAP: LEGACY_STRESSOR_MAP,
  shortLabel: shortLabel,
  resolveKey: resolveKey,
+ resolveKeyForDomain: resolveKeyForDomain,
+ stressorKeysForDomain: stressorKeysForDomain,
  buildDomains: buildDomains,
  buildCheckinStressors: buildCheckinStressors,
  applySectionTitlesToDocument: applySectionTitlesToDocument,

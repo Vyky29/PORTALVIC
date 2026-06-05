@@ -2,6 +2,27 @@
  * Admin / CEO 1-to-1 wellbeing review — streamlined portal mode (?checkin=)
  */
 
+body.portal-wellbeing-admin-mode #portalWellbeingAdminSteps,
+body.portal-wellbeing-admin-mode .portal-wb-admin-steps {
+  display: none !important;
+}
+
+body.portal-wellbeing-admin-mode .section .pdf-parenthetical:not(.portal-wb-hse-desc) {
+  display: none;
+}
+
+body.portal-wellbeing-admin-mode .portal-wb-hse-desc {
+  display: block;
+  margin-bottom: 14px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #4a5568;
+}
+
+body.portal-wellbeing-admin-mode tr[data-checkin-stressor="1"] .btn-no-stressor {
+  display: none !important;
+}
+
 body.portal-wellbeing-admin-mode {
   padding-bottom: 88px;
 }

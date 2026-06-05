@@ -7,7 +7,7 @@
  <script src="/portal-static-bootstrap.js"></script>
  <link rel="preconnect" href="https://fonts.googleapis.com" />
  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
- <link rel="stylesheet" href="/portal/portal-wellbeing-checkin.css?v=20260608-wb-fix" />
+ <link rel="stylesheet" href="/portal/portal-wellbeing-checkin.css?v=20260609-wb-premium" />
 </head>
 <body class="portal-wb-checkin">
  <div class="portal-wb-wrap">
@@ -31,15 +31,16 @@
  <p class="portal-wb-foot">Only ops admin and directors are notified when you flag a concern. &quot;All good&quot; check-ins are recorded without a 1-to-1 request.</p>
  </div>
 
- <script src="/portal/portal_wellbeing_stressor_catalog.js?v=20260608-wb-fix"></script>
- <script src="/portal/portal_wellbeing_checkin.js?v=20260608-wb-fix"></script>
+ <script src="/portal/portal_wellbeing_stressor_catalog.js?v=20260609-wb-premium"></script>
+ <script src="/portal/portal_wellbeing_checkin.js?v=20260609-wb-premium"></script>
  <script src="/portal/portal_feedback_voice_input.js?v=20260617-form-voice"></script>
  <script>
  (function () {
  var wb = window.portalWellbeingCheckin;
  if (!wb) return;
  if (!wb.DOMAINS.length) {
- host().innerHTML = '<p class="portal-wb-err">Could not load the check-in form. Please hard-refresh the page (Ctrl+Shift+R).</p>';
+ document.getElementById("stepHost").innerHTML =
+ '<p class="portal-wb-err">Could not load the check-in form. Please hard-refresh the page (Ctrl+Shift+R).</p>';
  return;
  }
 
@@ -79,31 +80,62 @@
 
  function host() { return document.getElementById("stepHost"); }
 
+ function sanitizeEntryStressors(domKey, entry) {
+ if (!entry) return;
+ var allowed = wb.stressorKeysForDomain ? wb.stressorKeysForDomain(domKey) : [];
+ entry.stressors = (entry.stressors || [])
+ .map(function (s) {
+ return wb.resolveStressorKey ? wb.resolveStressorKey(s, domKey) : s;
+ })
+ .filter(Boolean)
+ .filter(function (s) {
+ return !allowed.length || allowed.indexOf(s) >= 0;
+ })
+ .filter(function (s, i, arr) {
+ return arr.indexOf(s) === i;
+ });
+ }
+
  function domainEntry(key) {
  if (!state.domains[key]) {
  state.domains[key] = { level: "green", note: "", stressors: [] };
  }
+ sanitizeEntryStressors(key, state.domains[key]);
  return state.domains[key];
  }
 
- function stressorIsOn(entry, key) {
- var resolved = wb.resolveStressorKey ? wb.resolveStressorKey(key) : key;
+ function stressorIsOn(entry, domKey, key) {
+ var resolved = wb.resolveStressorKey ? wb.resolveStressorKey(key, domKey) : key;
+ if (!resolved) return false;
  return (entry.stressors || []).some(function (s) {
- var r = wb.resolveStressorKey ? wb.resolveStressorKey(s) : s;
- return r === resolved;
+ return (wb.resolveStressorKey ? wb.resolveStressorKey(s, domKey) : s) === resolved;
  });
  }
 
- function toggleStressor(entry, key) {
+ function toggleStressor(entry, domKey, key) {
  entry.stressors = entry.stressors || [];
- var resolved = wb.resolveStressorKey ? wb.resolveStressorKey(key) : key;
+ var resolved = wb.resolveStressorKey ? wb.resolveStressorKey(key, domKey) : key;
+ if (!resolved) return;
  var i = -1;
  entry.stressors.forEach(function (s, idx) {
- var r = wb.resolveStressorKey ? wb.resolveStressorKey(s) : s;
- if (r === resolved) i = idx;
+ if ((wb.resolveStressorKey ? wb.resolveStressorKey(s, domKey) : s) === resolved) i = idx;
  });
  if (i >= 0) entry.stressors.splice(i, 1);
  else entry.stressors.push(resolved);
+ }
+
+ function persistCurrentStep() {
+ var idx = state.step;
+ if (idx >= wb.DOMAINS.length) {
+ var gen = document.getElementById("wb-general-note");
+ if (gen) state.general_note = gen.value;
+ return;
+ }
+ var dom = wb.DOMAINS[idx];
+ if (!dom) return;
+ var entry = domainEntry(dom.key);
+ var ta = document.getElementById("wb-domain-note-" + dom.key);
+ if (ta) entry.note = ta.value;
  }
 
  function renderStressorBlock(extra, domKey, entry) {
@@ -115,12 +147,12 @@
  "div",
  "portal-wb-stressors-head",
  '<span class="portal-wb-field-label">Stressors</span>' +
- '<span class="portal-wb-stressors-sub">Tap any that apply - these carry through to your 1-to-1 review</span>'
+ '<span class="portal-wb-stressors-sub">Tap any that apply. These carry through to your 1-to-1 review.</span>'
  )
  );
  var grid = el("div", "portal-wb-stressor-grid");
  items.forEach(function (item) {
- var on = stressorIsOn(entry, item.key);
+ var on = stressorIsOn(entry, domKey, item.key);
  var btn = el(
  "button",
  "portal-wb-stressor" + (on ? " is-on" : ""),
@@ -135,7 +167,7 @@
  btn.type = "button";
  btn.setAttribute("aria-pressed", on ? "true" : "false");
  btn.onclick = function () {
- toggleStressor(entry, item.key);
+ toggleStressor(entry, domKey, item.key);
  renderStep();
  };
  grid.appendChild(btn);
@@ -173,6 +205,7 @@
  }
 
  function renderStep() {
+ persistCurrentStep();
  var steps = wb.DOMAINS.length + 1;
  var idx = state.step;
  var h = host();
@@ -204,6 +237,7 @@
  head.innerHTML =
  '<div class="portal-wb-domain-icon">' + icon + '</div>' +
  '<div><h2 class="portal-wb-domain-title">' + dom.title + '</h2>' +
+ (dom.description ? '<p class="portal-wb-domain-desc">' + dom.description + '</p>' : '') +
  '<p class="portal-wb-domain-q">' + dom.question + '</p></div>';
  h.appendChild(head);
 
@@ -232,7 +266,6 @@
  renderStressorBlock(extra, dom.key, entry);
  var comments = el("div", "portal-wb-comments");
  comments.appendChild(el("label", "portal-wb-field-label", "Additional comments (optional)"));
- comments.appendChild(el("p", "portal-wb-voice-hint", "Tap the microphone to dictate. Italian or Spanish is translated to English for our records."));
  var ta = document.createElement("textarea");
  ta.id = "wb-domain-note-" + dom.key;
  ta.rows = 3;
@@ -248,18 +281,16 @@
  if (idx > 0) {
  var back = el("button", "portal-wb-btn portal-wb-btn--ghost", "Back");
  back.type = "button";
- back.onclick = function () { state.step--; renderStep(); };
+ back.onclick = function () { persistCurrentStep(); state.step--; renderStep(); };
  actions.appendChild(back);
  }
  var next = el("button", "portal-wb-btn portal-wb-btn--pri", idx === wb.DOMAINS.length - 1 ? "Review & send" : "Next");
  next.type = "button";
- next.onclick = function () { state.step++; renderStep(); };
+ next.onclick = function () { persistCurrentStep(); state.step++; renderStep(); };
  actions.appendChild(next);
  h.appendChild(actions);
 
- if (!extra.hidden) {
- attachVoiceForField("wb-domain-note-" + dom.key);
- }
+ wireVoiceFields();
  }
 
  function renderGeneralStep(h, steps) {
@@ -269,7 +300,6 @@
  '<p class="portal-wb-domain-q">Optional message for leadership - only read if you flagged concerns above or write here.</p></div>'
  ));
  var genComments = el("div", "portal-wb-comments");
- genComments.appendChild(el("p", "portal-wb-voice-hint", "Tap the microphone to dictate. Italian or Spanish is translated to English for our records."));
  var ta = document.createElement("textarea");
  ta.id = "wb-general-note";
  ta.rows = 4;
@@ -278,16 +308,16 @@
  ta.oninput = function () { state.general_note = ta.value; };
  genComments.appendChild(ta);
  h.appendChild(genComments);
- attachVoiceForField("wb-general-note");
+ wireVoiceFields();
 
  var actions = el("div", "portal-wb-actions");
  var back = el("button", "portal-wb-btn portal-wb-btn--ghost", "Back");
  back.type = "button";
- back.onclick = function () { state.step--; renderStep(); };
+ back.onclick = function () { persistCurrentStep(); state.step--; renderStep(); };
  actions.appendChild(back);
  var send = el("button", "portal-wb-btn portal-wb-btn--pri", "Submit check-in");
  send.type = "button";
- send.onclick = function () { state.step++; renderStep(); };
+ send.onclick = function () { persistCurrentStep(); state.step++; renderStep(); };
  actions.appendChild(send);
  h.appendChild(actions);
  }
@@ -359,15 +389,9 @@
  return;
  }
  if (res.checkin && wb.ALLOW_REPEAT_CHECKIN) {
- state.domains = res.checkin.domains || {};
- Object.keys(state.domains).forEach(function (dk) {
- var e = state.domains[dk];
- if (!e || !e.stressors) return;
- e.stressors = e.stressors
- .map(function (s) { return wb.resolveStressorKey ? wb.resolveStressorKey(s) : s; })
- .filter(Boolean)
- .filter(function (s, i, arr) { return arr.indexOf(s) === i; });
- });
+ state.domains = wb.cloneDomainsFromCheckin
+ ? wb.cloneDomainsFromCheckin(res.checkin.domains || {})
+ : res.checkin.domains || {};
  state.general_note = res.checkin.general_note || "";
  var tag = document.getElementById("termTag");
  if (tag) {

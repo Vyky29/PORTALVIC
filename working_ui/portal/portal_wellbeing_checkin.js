@@ -28,6 +28,14 @@
  role: "Are your responsibilities and expectations clear?",
  change: "Is organisational change communicated well, and do you feel secure in your role?",
  };
+ var FALLBACK_DOMAIN_DESCRIPTIONS = {
+ demands: "Workload, pace, and whether demands match your hours and skills.",
+ control: "Your input into planning work and room to adapt day to day.",
+ support: "Timely manager support, information, and wellbeing resources.",
+ relations: "Fair treatment, respect, and relationships with colleagues.",
+ role: "Clarity about responsibilities, expectations, and working conditions.",
+ change: "How change is communicated and how secure you feel in your role.",
+ };
 
  function getDomains() {
  var cat = stressorCatalog();
@@ -37,6 +45,7 @@
  key: key,
  title: FALLBACK_DOMAIN_SECTION_TITLES[key],
  question: FALLBACK_DOMAIN_QUESTIONS[key],
+ description: FALLBACK_DOMAIN_DESCRIPTIONS[key] || "",
  };
  });
  }
@@ -54,16 +63,37 @@
  return cat && cat.buildCheckinStressors ? cat.buildCheckinStressors() : {};
  }
 
- function resolveStressorKey(raw, selectEl) {
+ function resolveStressorKey(raw, domKeyOrSelectEl, selectEl) {
+ var domKey = null;
+ var sel = null;
+ if (typeof domKeyOrSelectEl === "string") {
+ domKey = domKeyOrSelectEl;
+ sel = selectEl;
+ } else if (domKeyOrSelectEl && domKeyOrSelectEl.options) {
+ sel = domKeyOrSelectEl;
+ }
  var cat = stressorCatalog();
- var val = cat && cat.resolveKey ? cat.resolveKey(raw) : clean(raw);
+ var val = "";
+ if (cat && domKey && cat.resolveKeyForDomain) {
+ val = cat.resolveKeyForDomain(raw, domKey);
+ } else if (cat && cat.resolveKey) {
+ val = cat.resolveKey(raw);
+ } else {
+ val = clean(raw);
+ }
  if (!val) return "";
- if (selectEl) {
- for (var i = 0; i < selectEl.options.length; i++) {
- if (selectEl.options[i].value === val) return val;
+ if (sel) {
+ for (var i = 0; i < sel.options.length; i++) {
+ if (sel.options[i].value === val) return val;
  }
  }
  return val;
+ }
+
+ function stressorKeysForDomain(domKey) {
+ var cat = stressorCatalog();
+ if (cat && cat.stressorKeysForDomain) return cat.stressorKeysForDomain(domKey);
+ return [];
  }
 
  function stressorShortLabel(key) {
@@ -150,11 +180,15 @@
  var out = {};
  Object.keys(domains || {}).forEach(function (key) {
  var entry = domains[key] || {};
+ var allowed = stressorKeysForDomain(key);
  var stressors = (entry.stressors || [])
  .map(function (s) {
- return resolveStressorKey(s);
+ return resolveStressorKey(s, key);
  })
- .filter(Boolean);
+ .filter(Boolean)
+ .filter(function (s) {
+ return !allowed.length || allowed.indexOf(s) >= 0;
+ });
  stressors = stressors.filter(function (s, i) {
  return stressors.indexOf(s) === i;
  });
@@ -165,6 +199,119 @@
  };
  });
  return out;
+ }
+
+ function cloneDomainsFromCheckin(domains) {
+ var out = {};
+ Object.keys(domains || {}).forEach(function (key) {
+ var entry = domains[key] || {};
+ var allowed = stressorKeysForDomain(key);
+ var stressors = (entry.stressors || [])
+ .map(function (s) {
+ return resolveStressorKey(s, key);
+ })
+ .filter(Boolean)
+ .filter(function (s) {
+ return !allowed.length || allowed.indexOf(s) >= 0;
+ });
+ stressors = stressors.filter(function (s, i) {
+ return stressors.indexOf(s) === i;
+ });
+ out[key] = {
+ level: clean(entry.level || "green").toLowerCase() || "green",
+ note: clean(entry.note),
+ stressors: stressors.slice(),
+ };
+ });
+ return out;
+ }
+
+ async function fetchStaffEmploymentContext(client, staffUserId) {
+ var uid = clean(staffUserId);
+ if (!client || !uid) {
+ return { roles: [], sites: [], deptSiteText: "", rolesText: "" };
+ }
+ var roles = [];
+ var sites = [];
+ var profile = null;
+ try {
+ var pr = await client
+ .from("staff_profiles")
+ .select("staff_role,full_name")
+ .eq("id", uid)
+ .maybeSingle();
+ if (!pr.error && pr.data) profile = pr.data;
+ } catch (_) {}
+ try {
+ var rr = await client
+ .from("staff_role_rates")
+ .select("role,is_primary")
+ .eq("user_id", uid)
+ .order("is_primary", { ascending: false });
+ if (!rr.error && rr.data) {
+ rr.data.forEach(function (row) {
+ var role = clean(row.role);
+ if (role && roles.indexOf(role) < 0) roles.push(role);
+ });
+ }
+ } catch (_) {}
+ if (!roles.length && profile && profile.staff_role) {
+ roles.push(clean(profile.staff_role));
+ }
+ try {
+ var since = new Date();
+ since.setMonth(since.getMonth() - 6);
+ var sinceStr =
+ since.getFullYear() +
+ "-" +
+ String(since.getMonth() + 1).padStart(2, "0") +
+ "-" +
+ String(since.getDate()).padStart(2, "0");
+ var sv = await client
+ .from("schedule_overrides")
+ .select("anchor_venue")
+ .eq("anchor_staff_id", uid)
+ .gte("session_date", sinceStr);
+ if (!sv.error && sv.data) {
+ sv.data.forEach(function (row) {
+ var venue = clean(row.anchor_venue);
+ if (venue && sites.indexOf(venue) < 0) sites.push(venue);
+ });
+ }
+ } catch (_) {}
+ var lines = [];
+ if (roles.length && sites.length) {
+ var n = Math.max(roles.length, sites.length);
+ for (var i = 0; i < n; i++) {
+ lines.push((roles[i] || roles[0]) + " | " + (sites[i] || sites[0]));
+ }
+ } else if (roles.length) {
+ lines = roles.slice();
+ } else if (sites.length) {
+ lines = sites.slice();
+ }
+ return {
+ roles: roles,
+ sites: sites,
+ rolesText: roles.join(", "),
+ deptSiteText: lines.join("\n"),
+ };
+ }
+
+ function applyStaffEmploymentToSraForm(form, employment, checkin) {
+ if (!form || !employment) return;
+ var ins = form.querySelectorAll(".header-fields input");
+ if (ins[1] && employment.deptSiteText) {
+ ins[1].value = employment.deptSiteText;
+ }
+ var cover = document.getElementById("sec-cover");
+ if (cover) {
+ var fields = cover.querySelectorAll("textarea, input");
+ var rolesText = employment.rolesText || clean((checkin && checkin.staff_role) || "");
+ if (fields[1] && rolesText && !clean(fields[1].value)) {
+ fields[1].value = rolesText;
+ }
+ }
  }
 
  function buildCheckinRow(ctx, payload) {
@@ -324,6 +471,20 @@
  if (typeof global.refreshRiskRow === "function") global.refreshRiskRow(tr);
  }
 
+ function lockStressorRowFromCheckin(tr) {
+ if (!tr) return;
+ tr.setAttribute("data-checkin-stressor", "1");
+ var noneBtn = tr.querySelector(".btn-no-stressor");
+ if (noneBtn) noneBtn.hidden = true;
+ var sel = tr.querySelector(".js-common-stressor");
+ if (sel) {
+ Array.prototype.slice.call(sel.options).forEach(function (opt) {
+ if (opt.value === "__none__") opt.remove();
+ });
+ if (sel.value === "__none__") sel.value = "";
+ }
+ }
+
  function applyStressorToRow(tr, sraKey, note, scores, opts) {
  opts = opts || {};
  if (!tr) return;
@@ -346,6 +507,7 @@
  if (sel) {
  if (hasOption) {
  sel.value = resolved;
+ if (resolved) sel.dataset.wbPrevStressor = resolved;
  if (stText) stText.value = "";
  } else if (resolved || sraKey) {
  sel.value = "__other__";
@@ -368,9 +530,12 @@
  if (typeof global.updateNoStressorQuickVisual === "function") {
  global.updateNoStressorQuickVisual(tr);
  }
+ if (opts.fromCheckinStressor) {
+ lockStressorRowFromCheckin(tr);
+ }
  }
 
- function applyCheckinToSraForm(form, checkin) {
+ function applyCheckinToSraForm(form, checkin, employment) {
  if (!form || !checkin) return;
  var domains = checkin.domains || {};
  var ins = form.querySelectorAll(".header-fields input");
@@ -400,6 +565,7 @@
  fields[5].value = "From check-in:\n" + checkin.general_note;
  }
  }
+ if (employment) applyStaffEmploymentToSraForm(form, employment, checkin);
 
  var domainMap = {
  demands: "demands",
@@ -418,7 +584,7 @@
  var note = clean(entry && entry.note);
  var stressors = ((entry && entry.stressors) || [])
  .map(function (s) {
- return resolveStressorKey(s);
+ return resolveStressorKey(s, dk);
  })
  .filter(Boolean);
  var scores = levelToScores(entry && entry.level);
@@ -428,6 +594,7 @@
  stressors.forEach(function (key, i) {
  applyStressorToRow(tbody.rows[i], key, i === 0 ? note : "", scores, {
  fromCheckinNote: i === 0 && !!note,
+ fromCheckinStressor: true,
  });
  });
  } else {
@@ -534,34 +701,7 @@
 
  function renderAdminQuickNav() {
  var nav = document.getElementById("portalWellbeingAdminSteps");
- if (!nav) return;
- var cat = stressorCatalog();
- var order = (cat && cat.DOMAIN_ORDER) || [
- "demands",
- "control",
- "support",
- "relations",
- "role",
- "change",
- ];
- var titles = (cat && cat.DOMAIN_SECTION_TITLES) || getDomainLabels();
- var links =
- '<a href="#sec-cover">Cover</a>' +
- order
- .map(function (key) {
- return (
- '<a href="#sec-' +
- key +
- '">' +
- (titles[key] || key) +
- "</a>"
- );
- })
- .join("") +
- '<a href="#sec-summary">Summary &amp; actions</a>' +
- '<a href="#sec-sign">Sign-off</a>';
- nav.innerHTML = links;
- nav.hidden = false;
+ if (nav) nav.hidden = true;
  }
 
  global.portalWellbeingCheckin = {
@@ -573,8 +713,12 @@
  return getDomainLabels();
  },
  getDomainsList: getDomains,
+ cloneDomainsFromCheckin: cloneDomainsFromCheckin,
  getCheckinStressors: getCheckinStressors,
  resolveStressorKey: resolveStressorKey,
+ stressorKeysForDomain: stressorKeysForDomain,
+ fetchStaffEmploymentContext: fetchStaffEmploymentContext,
+ applyStaffEmploymentToSraForm: applyStaffEmploymentToSraForm,
  stressorShortLabel: stressorShortLabel,
  currentTermKey: currentTermKey,
  termLabel: termLabel,
