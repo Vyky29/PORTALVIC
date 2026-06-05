@@ -6,9 +6,9 @@
  <title>1-to-1 Wellbeing Review - clubSENsational</title>
  <script src="/portal-static-bootstrap.js"></script>
  <script src="/portal/term_from_timetable.js?v=20260604-teflon-guide-days"></script>
- <link rel="stylesheet" href="/portal/portal-wellbeing-admin-sra.css?v=20260610-wb-fix" />
- <script src="/portal/portal_wellbeing_stressor_catalog.js?v=20260610-wb-fix"></script>
- <script src="/portal/portal_feedback_voice_input.js?v=20260610-wb-fix"></script>
+ <link rel="stylesheet" href="/portal/portal-wellbeing-admin-sra.css?v=20260610-wb-voice2" />
+ <script src="/portal/portal_wellbeing_stressor_catalog.js?v=20260610-wb-voice2"></script>
+ <script src="/portal/portal_feedback_voice_input.js?v=20260610-wb-voice2"></script>
  <link rel="preconnect" href="https://www.clubsensational.org" />
  <link rel="dns-prefetch" href="https://www.clubsensational.org" />
  <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -3018,7 +3018,7 @@ document.addEventListener("DOMContentLoaded", function () {
  if (btnSavePortal) btnSavePortal.hidden = false;
  if (btnCompletePortal) btnCompletePortal.hidden = false;
  var portalScript = document.createElement("script");
- portalScript.src = "/portal/portal_wellbeing_checkin.js?v=20260610-wb-fix";
+ portalScript.src = "/portal/portal_wellbeing_checkin.js?v=20260610-wb-voice2";
  portalScript.onload = function () {
  if (!window.portalWellbeingCheckin) return;
  if (window.portalWellbeingStressorCatalog) {

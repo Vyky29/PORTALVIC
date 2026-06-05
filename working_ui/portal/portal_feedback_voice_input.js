@@ -222,7 +222,7 @@
  return getAuthHeaders().then(function (headers) {
  if (!headers) throw new Error("not_signed_in");
  var fd = new FormData();
- fd.append("file", blob, "feedback.webm");
+ fd.append("file", blob, blobFilenameForMime(mime));
  fd.append("language", whisperCode || "en");
  return fetch(supabaseFnUrl(), {
  method: "POST",
@@ -230,14 +230,23 @@
  body: fd,
  }).then(function (res) {
  return res.json().then(function (data) {
- if (res.status === 503 && data && data.fallback === "webspeech") {
- throw new Error("no_openai");
+ if (data && data.fallback === "webspeech") {
+ throw new Error("webspeech_fallback");
  }
  if (!res.ok || !data || !data.ok) throw new Error("transcribe_failed");
  return String(data.english || "").trim();
  });
  });
  });
+ }
+
+ function blobFilenameForMime(mime) {
+ var m = String(mime || "").toLowerCase();
+ if (m.indexOf("ogg") >= 0) return "feedback.ogg";
+ if (m.indexOf("mp4") >= 0 || m.indexOf("m4a") >= 0) return "feedback.m4a";
+ if (m.indexOf("mpeg") >= 0 || m.indexOf("mp3") >= 0) return "feedback.mp3";
+ if (m.indexOf("wav") >= 0) return "feedback.wav";
+ return "feedback.webm";
  }
 
  function pickMime() {
@@ -579,13 +588,27 @@
  })
  .catch(function (err) {
  cleanupSessionUi(s);
+ if (err && err.message === "not_signed_in") {
+ if (s.textarea) s.textarea.value = s.prefix;
+ if (s.statusEl) s.statusEl.textContent = "Sign in to the portal to use voice input.";
+ return;
+ }
+ if (
+ preferWebSpeechCapture() &&
+ err &&
+ (err.message === "webspeech_fallback" ||
+ err.message === "no_openai" ||
+ err.message === "transcribe_failed")
+ ) {
+ if (s.statusEl) {
+ s.statusEl.textContent =
+ "Live dictation - speak now, then tap mic again to finish.";
+ }
+ startWebSpeechCapture(s.textarea, s.btn, s.statusEl);
+ return;
+ }
  if (s.textarea) s.textarea.value = s.prefix;
  var msg = "Could not transcribe - type feedback below or try again.";
- if (err && err.message === "not_signed_in") {
- msg = "Sign in to the portal to use voice input.";
- } else if (err && err.message === "no_openai") {
- msg = "Voice is not available yet - type feedback below.";
- }
  if (s.statusEl) s.statusEl.textContent = msg;
  });
  }
@@ -615,6 +638,10 @@
  return !!(s && s.btn && Date.now() - (s.startedAt || 0) < MIC_TOGGLE_GUARD_MS);
  }
 
+ function shouldUseMediaRecorder() {
+ return whisperProbeDone && whisperAvailable && canUseMediaRecorderCapture();
+ }
+
  function startCapture(textarea, btn, statusEl) {
  if (session && session.btn === btn) {
  if (shouldIgnoreMicToggle(session)) return;
@@ -626,12 +653,18 @@
  wireScreenshotGuardVoiceRecovery();
  setScreenshotGuardForRecording(true);
 
- if (canUseMediaRecorderCapture()) {
+ if (shouldUseMediaRecorder()) {
  startMediaRecorderCapture(textarea, btn, statusEl);
  return;
  }
  if (preferWebSpeechCapture()) {
+ if (!whisperProbeDone) probeWhisperAvailability();
  startWebSpeechCapture(textarea, btn, statusEl);
+ return;
+ }
+ if (canUseMediaRecorderCapture()) {
+ if (!whisperProbeDone) probeWhisperAvailability();
+ startMediaRecorderCapture(textarea, btn, statusEl);
  return;
  }
  if (statusEl) {
