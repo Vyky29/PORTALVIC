@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <script src="/portal-static-bootstrap.js?v=20260601-luliya-mic"></script>
-<script src="/portal-shared-js/portal_late_submission.js?v=20260520"></script>
+<script src="/portal-shared-js/portal_late_submission.js?v=20260620-late-feedback-open"></script>
 <!-- Session feedback: Supabase when signed in; optional webhook: window.PORTAL_SESSION_FEEDBACK_WEBHOOK_URL -->
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -1216,22 +1216,13 @@ button{
     var banner = document.getElementById("portalLateApprovalBanner");
     if(!banner || typeof portalIsPastSessionDateIso !== "function") return;
     var iso = clean(ctx && ctx.session_date);
-    var sk = clean(ctx && ctx.portalSessionKey) || clean(qs.get("sessionKey"));
     if(!portalIsPastSessionDateIso(iso)){
       banner.hidden = true;
       banner.textContent = "";
       return;
     }
-    var approved = typeof portalFormLateSubmissionApproved === "function"
-      ? await portalFormLateSubmissionApproved(sk, "feedback")
-      : false;
-    if(approved){
-      banner.hidden = false;
-      banner.textContent = "Admin approved late feedback for this session. The form will save the original session date (" + (formatSessionDateLong(iso) || iso) + "), not today.";
-    } else {
-      banner.hidden = false;
-      banner.textContent = "This session is from a previous day. You need admin approval before you can submit late feedback. Go back to your dashboard and request approval from the client row.";
-    }
+    banner.hidden = false;
+    banner.textContent = "Late session feedback for " + (formatSessionDateLong(iso) || iso) + ". Submit when ready — admin is notified automatically when you save.";
   }
 
   function clearPhase2RadiosOnly(){
@@ -2508,16 +2499,6 @@ button{
     syncFeedbackManualFields();
 
     const ctx = buildResolvedContext();
-    var skLate = clean(ctx.portalSessionKey) || clean(qs.get("sessionKey"));
-    if(typeof portalIsPastSessionDateIso === "function" && portalIsPastSessionDateIso(ctx.session_date)){
-      var okLate = typeof portalFormLateSubmissionApproved === "function"
-        ? await portalFormLateSubmissionApproved(skLate, "feedback")
-        : false;
-      if(!okLate){
-        alert("Admin approval is required for late session feedback on this session date. Open the client on your dashboard and request approval first.");
-        return;
-      }
-    }
     const submitterHintPre =
       readPinIdentityName() || clean(instructorDisplayName) || "";
     if(!normalizeSessionTimeForKey(ctx.session_time, ctx.session_date)){

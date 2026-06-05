@@ -1,5 +1,6 @@
 /**
  * Late submission gate: past session_date requires admin approval before forms open/submit.
+ * Session feedback is self-serve (no approval); admins are notified when late feedback lands.
  */
 (function () {
   if (typeof window === "undefined") return;
@@ -35,6 +36,10 @@
     if (t === "incident") return "late incident report";
     return "late session feedback";
   };
+
+  function isLateSubmissionTypeFeedback(type) {
+    return String(type || "").toLowerCase() === "feedback";
+  }
 
   function portalSupabaseClient() {
     try {
@@ -156,6 +161,9 @@
     if (!item || !item.sessionKey) return { allowed: false, reason: "no_session" };
     var iso = portalSessionIsoFromKey(item.sessionKey);
     if (!portalIsPastSessionDateIso(iso)) return { allowed: true, late: false };
+    if (isLateSubmissionTypeFeedback(submissionType)) {
+      return { allowed: true, late: true, selfServe: true };
+    }
     if (portalLateSubmissionBypassForStaff()) {
       return { allowed: true, late: true, approved: true, bypass: true };
     }
@@ -214,6 +222,7 @@
     sessionKey,
     submissionType
   ) {
+    if (isLateSubmissionTypeFeedback(submissionType)) return true;
     if (portalLateSubmissionBypassForStaff()) return true;
     var qs =
       typeof URLSearchParams !== "undefined"

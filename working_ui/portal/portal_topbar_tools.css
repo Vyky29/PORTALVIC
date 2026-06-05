@@ -7,16 +7,21 @@
   align-items:center;
   justify-content:flex-end;
   justify-self:start;
-  gap:2px;
-  padding-bottom:0;
+  align-self:stretch;
+  gap:3px;
+  padding:0;
+  margin:0;
   min-height:100%;
+  height:100%;
   width:100%;
   max-width:100%;
   min-width:0;
+  box-sizing:border-box;
 }
 .topbar-staff-photo{
   width:64px;
   height:64px;
+  flex:0 0 auto;
   flex-shrink:0;
   border-radius:15px;
   overflow:hidden;
@@ -27,7 +32,8 @@
   align-items:center;
   justify-content:center;
   position:relative;
-  margin:0 auto;
+  align-self:center;
+  margin:0;
 }
 .topbar-staff-photo img{
   width:100%;
@@ -47,16 +53,19 @@
   overflow:hidden;
   text-overflow:ellipsis;
 }
-.topbar-left--name .topbar-name{
+.topbar-lead .topbar-left.topbar-left--name > h1.topbar-name,
+.topbar-lead .topbar-left.topbar-left--name .topbar-name{
   margin:0;
   padding:0;
-  flex:0 0 auto;
+  flex:0 0 auto !important;
+  align-self:stretch;
   align-items:center;
   justify-content:flex-end;
-  line-height:1.1;
+  line-height:1.05;
   width:100%;
   max-width:100%;
   min-width:0;
+  min-height:0;
   text-align:center;
 }
 .topbar-left--name .topbar-name__given,
@@ -116,6 +125,14 @@
   font-size:6px;
   letter-spacing:.02em;
 }
+.topbar-tool-cell--participants .topbar-tool-label{
+  font-size:5.5px;
+  letter-spacing:.01em;
+}
+.topbar-tools-grid--lead .topbar-tool-cell--participants .topbar-tool-label{
+  font-size:5px;
+  letter-spacing:0;
+}
 .topbar-tool-btn{
   margin:0;
   width:42px;
@@ -162,9 +179,12 @@
   color:#db2777 !important;
 }
 .topbar-tool-btn--term-review{
-  background:rgba(45,132,179,.12) !important;
-  color:var(--blue) !important;
-  border-color:rgba(45,132,179,.32);
+  background:rgba(45,132,179,.14) !important;
+  color:#1d7fa8 !important;
+  border-color:rgba(45,132,179,.34);
+}
+.topbar-tool-btn--term-review .topbar-tool-btn__ico svg path{
+  fill:rgba(45,132,179,.14);
 }
 .topbar-tool-btn--term-review:hover,
 .topbar-tool-btn--term-review:focus-visible{

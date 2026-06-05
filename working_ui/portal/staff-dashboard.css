@@ -301,6 +301,8 @@
     .topbar-left--name .topbar-name{
       text-align:center;
       align-items:center;
+      flex:0 0 auto;
+      justify-content:flex-end;
     }
     .topbar-right--tools{
       justify-content:flex-end;

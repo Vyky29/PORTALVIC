@@ -14,7 +14,8 @@
 //   supabase functions deploy portal-push-dispatch-admin-alert
 //
 // Database Webhooks (Dashboard → Integrations → Webhooks), same secret header on each:
-//   INSERT → portal_late_submission_requests
+//   INSERT → portal_late_submission_requests (incident/cancellation approval only)
+//   INSERT → session_feedback (late_session_feedback or past session_date)
 //   INSERT → cancellation_reports
 //   INSERT → incident_reports
 //   INSERT → portal_staff_dm_messages
@@ -38,6 +39,7 @@ const DEDUPE_TABLE = "portal_webpush_admin_alert_sent";
 
 const ALLOWED_TABLES = new Set([
   "portal_late_submission_requests",
+  "session_feedback",
   "cancellation_reports",
   "incident_reports",
   "portal_staff_dm_messages",
@@ -67,9 +69,31 @@ function buildAlert(
   const id = String(record.id ?? "").trim();
   if (!id) return null;
 
+  if (table === "session_feedback") {
+    const lateFlag = record.late_session_feedback === true;
+    const sessionDate = String(record.session_date ?? "").slice(0, 10);
+    const createdDay = String(record.created_at ?? "").slice(0, 10);
+    const isLate = lateFlag ||
+      (!!sessionDate && !!createdDay && sessionDate < createdDay);
+    if (!isLate) return null;
+    const client = String(record.client_name ?? "Participant").trim() ||
+      "Participant";
+    const who = String(record.completed_by_name ?? "Staff").trim() || "Staff";
+    const svc = String(record.service ?? "").trim();
+    return {
+      sourceId: id,
+      title: `Late feedback · ${client}`,
+      body: clampPushBody(
+        `${who} · ${sessionDate || "session"}${svc ? " · " + svc : ""} — submitted late`,
+      ),
+    };
+  }
+
   if (table === "portal_late_submission_requests") {
     const status = String(record.status ?? "").toLowerCase();
     if (status !== "pending") return null;
+    const subType = String(record.submission_type ?? "").toLowerCase();
+    if (subType === "feedback") return null;
     const client = String(record.client_name ?? "Participant").trim() ||
       "Participant";
     const typ = lateTypeLabel(String(record.submission_type ?? ""));
