@@ -13,16 +13,16 @@
   --topbar-tools-block-width:var(--topbar-tools-grid-w);
   --topbar-name-band-h:24px;
   --topbar-photo-h:calc(var(--topbar-card-h) - var(--topbar-name-band-h));
-  --topbar-profile-male-bg:rgba(137,181,193,0.20);
-  --topbar-profile-male-border:rgba(137,181,193,0.55);
+  --topbar-profile-male-bg:#dceef3;
+  --topbar-profile-male-border:#89b5c1;
   --topbar-profile-male-glow:rgba(137,181,193,0.32);
-  --topbar-profile-male-band:rgba(137,181,193,0.42);
-  --topbar-profile-male-ink:#005b96;
-  --topbar-profile-female-bg:rgba(236,143,190,0.20);
-  --topbar-profile-female-border:rgba(236,143,190,0.55);
+  --topbar-profile-male-band:#89b5c1;
+  --topbar-profile-male-ink:#004e7a;
+  --topbar-profile-female-bg:#fde6f0;
+  --topbar-profile-female-border:#ec8fbe;
   --topbar-profile-female-glow:rgba(236,143,190,0.32);
-  --topbar-profile-female-band:rgba(236,143,190,0.42);
-  --topbar-profile-female-ink:#c74386;
+  --topbar-profile-female-band:#ec8fbe;
+  --topbar-profile-female-ink:#a8326b;
 }
 .topbar-lead .topbar-left.topbar-left--name{
   align-self:center;
@@ -42,10 +42,11 @@
   box-sizing:border-box;
 }
 .topbar-profile-card{
-  display:flex;
-  flex-direction:column;
+  display:grid;
+  grid-template-rows:minmax(0,1fr) var(--topbar-name-band-h);
+  align-content:stretch;
   align-items:stretch;
-  justify-content:flex-start;
+  justify-content:stretch;
   width:100%;
   max-width:100%;
   min-width:0;
@@ -72,13 +73,12 @@
 }
 .topbar-staff-photo{
   width:100%;
-  height:var(--topbar-photo-h);
-  flex:0 0 auto;
+  height:100%;
   min-height:0;
   border-radius:0;
   overflow:hidden;
   border:none;
-  background:rgba(137,181,193,0.22);
+  background:var(--topbar-profile-male-bg);
   box-shadow:none;
   display:flex;
   align-items:stretch;
@@ -88,7 +88,7 @@
   margin:0;
 }
 .topbar-profile-card[data-gender="f"] .topbar-staff-photo{
-  background:rgba(236,143,190,0.22);
+  background:var(--topbar-profile-female-bg);
 }
 .topbar-staff-photo img{
   width:100%;
@@ -96,7 +96,10 @@
   object-fit:cover;
   object-position:center top;
   display:block;
-  background:rgba(137,181,193,0.15);
+  background:var(--topbar-profile-male-bg);
+}
+.topbar-profile-card[data-gender="f"] .topbar-staff-photo img{
+  background:var(--topbar-profile-female-bg);
 }
 .topbar-profile-card[data-staff-key="javi"] .topbar-staff-photo img,
 .topbar-profile-card[data-staff-key="javier"] .topbar-staff-photo img{
@@ -126,12 +129,12 @@ header.topbar .topbar-profile-card h1.topbar-name,
 .topbar-lead .topbar-left.topbar-left--name > h1.topbar-name,
 .topbar-lead .topbar-left.topbar-left--name .topbar-name,
 .topbar-profile-card .topbar-name{
-  margin:0;
+  margin:0 !important;
   padding:0 4px;
   flex:0 0 var(--topbar-name-band-h) !important;
   align-self:stretch;
   align-items:center;
-  justify-content:center;
+  justify-content:center !important;
   line-height:1;
   width:100%;
   max-width:100%;
@@ -144,19 +147,32 @@ header.topbar .topbar-profile-card h1.topbar-name,
   font-size:clamp(14px,3.6vw,17px);
   font-weight:800;
   letter-spacing:-0.01em;
-  color:var(--topbar-profile-male-ink);
-  background:var(--topbar-profile-male-band);
+  color:var(--topbar-profile-male-ink) !important;
+  background:var(--topbar-profile-male-band) !important;
   flex-direction:row;
+  border:none;
+  border-radius:0 0 12px 12px;
+  box-sizing:border-box;
 }
-.topbar-profile-card[data-gender="m"] .topbar-name,
-.topbar-profile-card[data-gender="m"] .topbar-name__given{
-  color:var(--topbar-profile-male-ink);
-  background:var(--topbar-profile-male-band);
+.topbar-profile-card[data-gender="m"] .topbar-name{
+  color:var(--topbar-profile-male-ink) !important;
+  background:var(--topbar-profile-male-band) !important;
 }
-.topbar-profile-card[data-gender="f"] .topbar-name,
-.topbar-profile-card[data-gender="f"] .topbar-name__given{
-  color:var(--topbar-profile-female-ink);
-  background:var(--topbar-profile-female-band);
+.topbar-profile-card[data-gender="f"] .topbar-name{
+  color:var(--topbar-profile-female-ink) !important;
+  background:var(--topbar-profile-female-band) !important;
+}
+.topbar-profile-card[data-gender="m"] .topbar-name__given,
+.topbar-profile-card[data-gender="m"] .topbar-name__surname{
+  color:var(--topbar-profile-male-ink) !important;
+}
+.topbar-profile-card[data-gender="f"] .topbar-name__given,
+.topbar-profile-card[data-gender="f"] .topbar-name__surname{
+  color:var(--topbar-profile-female-ink) !important;
+}
+.topbar-profile-card .topbar-name__given,
+.topbar-profile-card .topbar-name__surname{
+  background:transparent !important;
 }
 .topbar-left--name .topbar-name__given,
 .topbar-left--name .topbar-name__surname{
