@@ -121,6 +121,44 @@
     img.src = url;
   }
 
+  function normTopbarGender(value) {
+    var v = String(value || "")
+      .trim()
+      .toLowerCase();
+    if (v === "m" || v === "male" || v === "boy") return "m";
+    if (v === "f" || v === "female" || v === "girl") return "f";
+    return "";
+  }
+
+  function resolveTopbarStaffGender() {
+    var key = resolveTopbarStaffKey();
+    try {
+      var map = global.PORTAL_STAFF_GENDER_OVERRIDES || {};
+      if (key && map[key]) {
+        var fromMap = normTopbarGender(map[key]);
+        if (fromMap) return fromMap;
+      }
+    } catch (_) {}
+    try {
+      var box = global.__PORTAL_SUPABASE__ || {};
+      var profile = box.staff_profile;
+      if (profile) {
+        var fromProfile = normTopbarGender(profile.gender || profile.sex);
+        if (fromProfile) return fromProfile;
+      }
+    } catch (_) {}
+    return "m";
+  }
+
+  function portalSyncTopbarProfileCard() {
+    var card = document.getElementById("topbarProfileCard");
+    if (!card) return;
+    card.setAttribute("data-gender", resolveTopbarStaffGender());
+    var key = resolveTopbarStaffKey();
+    if (key) card.setAttribute("data-staff-key", key);
+    else card.removeAttribute("data-staff-key");
+  }
+
   function staffFirstName(name) {
     var parts = String(name || "").trim().split(/\s+/).filter(Boolean);
     return parts[0] || "";
@@ -231,6 +269,7 @@
   }
 
   global.portalSyncTopbarStaffPhoto = function portalSyncTopbarStaffPhoto() {
+    portalSyncTopbarProfileCard();
     var img = document.getElementById("topbarStaffPhotoImg");
     var ini = document.getElementById("topbarStaffPhotoInitials");
     if (!img && !ini) return;
