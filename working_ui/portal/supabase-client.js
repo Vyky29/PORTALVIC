@@ -169,6 +169,7 @@ export async function portalBumpAuthSessionGeneration(supabase) {
 export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, opts = {}) {
   const empty = {
     feedbackKeys: [],
+    absentFeedbackKeys: [],
     incidentKeys: [],
     cancellationKeys: [],
     absentKeys: [],
@@ -190,7 +191,7 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
   const [fb, inc, can, fbSharedRpc, quickMarks, fbCatchUp] = await Promise.all([
     supabase
       .from("session_feedback")
-      .select("portal_session_key")
+      .select("portal_session_key, attendance")
       .eq("submitted_by_user_id", userId)
       .not("portal_session_key", "is", null)
       .gte("session_date", sinceStr),
@@ -218,12 +219,43 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
     catchUpDates.length
       ? supabase
           .from("session_feedback")
-          .select("portal_session_key")
+          .select("portal_session_key, attendance")
           .eq("submitted_by_user_id", userId)
           .not("portal_session_key", "is", null)
           .in("session_date", catchUpDates)
       : Promise.resolve({ data: null, error: null }),
   ]);
+
+  function portalFeedbackAttendanceIsAbsent(attendance) {
+    const att = String(attendance != null ? attendance : "")
+      .trim()
+      .toLowerCase();
+    return att === "no" || att === "n" || att === "0" || att === "false";
+  }
+
+  /** @param {unknown} rows */
+  function partitionFeedbackRows(rows) {
+    const present = [];
+    const absent = [];
+    const seenP = new Set();
+    const seenA = new Set();
+    if (!Array.isArray(rows)) return { present, absent };
+    for (const r of rows) {
+      if (!r || typeof r !== "object") continue;
+      const k = String(/** @type {{ portal_session_key?: string }} */ (r).portal_session_key || "").trim();
+      if (!k) continue;
+      if (portalFeedbackAttendanceIsAbsent(/** @type {{ attendance?: string }} */ (r).attendance)) {
+        if (!seenA.has(k)) {
+          seenA.add(k);
+          absent.push(k);
+        }
+      } else if (!seenP.has(k)) {
+        seenP.add(k);
+        present.push(k);
+      }
+    }
+    return { present, absent };
+  }
 
   /** @param {unknown} rows */
   function dedupeKeys(rows) {
@@ -257,12 +289,12 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
     return dedupeKeys(rpcData);
   }
 
-  const ownFb = dedupeKeys(fb.data);
-  const catchUpFb = dedupeKeys(fbCatchUp && !fbCatchUp.error ? fbCatchUp.data : null);
+  const ownParts = partitionFeedbackRows(fb.data);
+  const catchUpParts = partitionFeedbackRows(fbCatchUp && !fbCatchUp.error ? fbCatchUp.data : null);
   const sharedFb = !fbSharedRpc || fbSharedRpc.error ? [] : feedbackKeysFromSharedRpc(fbSharedRpc.data);
 
   /** Roster peer read (RLS): co-instructors see keys even when area suffix differs from roster key. */
-  let peerFb = [];
+  let peerParts = { present: [], absent: [] };
   if (rosterSessionKeys.length) {
     const rosterDates = [
       ...new Set(
@@ -275,19 +307,34 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
       try {
         const peerRes = await supabase
           .from("session_feedback")
-          .select("portal_session_key")
+          .select("portal_session_key, attendance")
           .in("session_date", rosterDates)
           .not("portal_session_key", "is", null)
           .gte("session_date", sinceStr)
           .limit(400);
-        if (!peerRes.error) peerFb = dedupeKeys(peerRes.data);
+        if (!peerRes.error) peerParts = partitionFeedbackRows(peerRes.data);
       } catch (ePeer) {
         console.debug("[portal] session_feedback peer keys", ePeer);
       }
     }
   }
 
-  const feedbackMerged = [...new Set([...ownFb, ...catchUpFb, ...sharedFb, ...peerFb])];
+  const absentFeedbackKeys = [
+    ...new Set([
+      ...ownParts.absent,
+      ...catchUpParts.absent,
+      ...peerParts.absent,
+    ]),
+  ];
+  const feedbackMerged = [
+    ...new Set([
+      ...ownParts.present,
+      ...catchUpParts.present,
+      ...peerParts.present,
+      ...sharedFb,
+      ...absentFeedbackKeys,
+    ]),
+  ];
 
   /** @type {string[]} */
   const absentKeys = [];
@@ -315,6 +362,7 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
 
   return {
     feedbackKeys: feedbackMerged,
+    absentFeedbackKeys,
     incidentKeys: dedupeKeys(inc.data),
     cancellationKeys: dedupeKeys(can.data),
     absentKeys,
@@ -409,7 +457,8 @@ export function portalFeedbackSubmittedKeyMatchesRosterKey(submittedKey, rosterK
  * @param {string[]} submittedKeys
  * @param {string[]} rosterKeys
  */
-export function portalFanOutFeedbackKeysOntoRosterMemory(memory, submittedKeys, rosterKeys) {
+export function portalFanOutFeedbackKeysOntoRosterMemory(memory, submittedKeys, rosterKeys, opts = {}) {
+  const markAbsent = !!(opts && opts.markAbsent);
   const base = () => ({
     feedbackDone: false,
     incident: false,
@@ -423,7 +472,12 @@ export function portalFanOutFeedbackKeysOntoRosterMemory(memory, submittedKeys, 
     for (const fk of submittedKeys || []) {
       if (!portalFeedbackSubmittedKeyMatchesRosterKey(fk, rosterKey)) continue;
       const prev = memory[rosterKey] || base();
-      if (!prev.feedbackDone) {
+      if (markAbsent) {
+        if (!prev.absent) {
+          memory[rosterKey] = { ...prev, absent: true, feedbackDone: false };
+          changed = true;
+        }
+      } else if (!prev.absent && !prev.feedbackDone) {
         memory[rosterKey] = { ...prev, feedbackDone: true };
         changed = true;
       }
@@ -436,7 +490,7 @@ export function portalFanOutFeedbackKeysOntoRosterMemory(memory, submittedKeys, 
 /**
  * Merge server truth into the dashboard's in-memory review map (same object as localStorage mirror).
  * @param {Record<string, { feedbackDone?: boolean, incident?: boolean, absent?: boolean, cancelled?: boolean }>} memory
- * @param {{ feedbackKeys: string[], incidentKeys: string[], cancellationKeys: string[], absentKeys?: string[], quickFeedbackDoneKeys?: string[] }} packs
+ * @param {{ feedbackKeys: string[], absentFeedbackKeys?: string[], incidentKeys: string[], cancellationKeys: string[], absentKeys?: string[], quickFeedbackDoneKeys?: string[] }} packs
  * @param {{ rosterSessionKeys?: string[] }} [opts]
  */
 export function portalMergeReviewKeysIntoMemoryMap(memory, packs, opts = {}) {
@@ -447,11 +501,20 @@ export function portalMergeReviewKeysIntoMemoryMap(memory, packs, opts = {}) {
     cancelled: false,
   });
   let changed = false;
+  const absentFb = [...new Set(packs.absentFeedbackKeys || [])];
+  for (const k of absentFb) {
+    const prev = memory[k] || base();
+    if (!prev.absent) {
+      memory[k] = { ...prev, absent: true, feedbackDone: false };
+      changed = true;
+    }
+  }
   const submittedFb = [
     ...new Set([...(packs.feedbackKeys || []), ...(packs.quickFeedbackDoneKeys || [])]),
-  ];
+  ].filter((k) => absentFb.indexOf(k) < 0);
   for (const k of submittedFb) {
     const prev = memory[k] || base();
+    if (prev.absent) continue;
     if (!prev.feedbackDone) {
       memory[k] = { ...prev, feedbackDone: true };
       changed = true;
@@ -479,6 +542,11 @@ export function portalMergeReviewKeysIntoMemoryMap(memory, packs, opts = {}) {
     }
   }
   const rosterKeys = Array.isArray(opts.rosterSessionKeys) ? opts.rosterSessionKeys : [];
+  if (rosterKeys.length && absentFb.length) {
+    if (portalFanOutFeedbackKeysOntoRosterMemory(memory, absentFb, rosterKeys, { markAbsent: true })) {
+      changed = true;
+    }
+  }
   if (rosterKeys.length && submittedFb.length) {
     if (portalFanOutFeedbackKeysOntoRosterMemory(memory, submittedFb, rosterKeys)) {
       changed = true;

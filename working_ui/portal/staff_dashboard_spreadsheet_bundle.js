@@ -143,7 +143,7 @@
     "alex": {
       "staffId": "alex",
       "staffName": "Alex",
-      "avatarFile": "portal/staff_photos/alex.jpg",
+      "avatarFile": "portal/staff_photos/alex.png",
       "staffRoleTrack": "climbing",
       "canViewAll": false
     },

@@ -168,7 +168,7 @@
     return "";
   }
 
-  /** Roster slug → clients_info slug (abbreviated roster names vs full sheet names). */
+  /** Roster participant id slug aliases (session keys / feedback — not clients_info only). */
   var CLIENT_INFO_SLUG_ALIASES = {
     adam_a: "adam_ab",
     abodi_p: "abodi_pa",
@@ -180,9 +180,13 @@
     amar_ra: "amar_rai",
     steven_c: "steven_ces",
     steven_ce: "steven_ces",
-    rayan_ta: "rayan_tapa",
     rayyan_fi: "rayyan_f",
     aadam_ah: "adaam_ah",
+  };
+
+  /** clients_info sheet lookup only — must not change roster clientId / portal_session_key. */
+  var CLIENT_INFO_SHEET_ALIASES = {
+    rayan_ta: "rayan_tapa",
   };
 
   function canonicalParticipantClientId(nameRaw) {
@@ -271,8 +275,19 @@
       const hit = bySlug.get(tryKeys[i]);
       if (hit) return hit;
     }
+    const sheetAlias = CLIENT_INFO_SHEET_ALIASES[slug];
+    if (sheetAlias) return bySlug.get(sheetAlias) || "";
     const alias = CLIENT_INFO_SLUG_ALIASES[slug];
     if (alias) return bySlug.get(alias) || "";
+    for (const key in CLIENT_INFO_SHEET_ALIASES) {
+      if (
+        Object.prototype.hasOwnProperty.call(CLIENT_INFO_SHEET_ALIASES, key) &&
+        CLIENT_INFO_SHEET_ALIASES[key] === slug
+      ) {
+        const hit = bySlug.get(key);
+        if (hit) return hit;
+      }
+    }
     for (const key in CLIENT_INFO_SLUG_ALIASES) {
       if (
         Object.prototype.hasOwnProperty.call(CLIENT_INFO_SLUG_ALIASES, key) &&
