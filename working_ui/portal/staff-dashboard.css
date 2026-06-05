@@ -283,6 +283,184 @@
       min-width:0;
       overflow:visible;
     }
+    /* Staff dashboard — approved mockup: equal side columns, logo viewport-centred */
+    body.portal-staff-dashboard{
+      --topbar-profile-card-w:clamp(132px,24vw,300px);
+      --topbar-profile-card-h:clamp(158px,28.8vw,360px);
+      --topbar-profile-photo-h:clamp(118px,21.6vw,270px);
+      --topbar-tools-gap-x:clamp(5px,0.9vw,8px);
+      --topbar-tools-gap-y:clamp(5px,0.9vw,8px);
+      --topbar-tools-cell:calc((var(--topbar-profile-card-w) - var(--topbar-tools-gap-x)) / 2);
+      --topbar-tools-row-h:calc((var(--topbar-profile-card-h) - var(--topbar-tools-gap-y)) / 2);
+      --topbar-profile-male-bg:rgba(137,181,193,0.20);
+      --topbar-profile-male-border:rgba(137,181,193,0.55);
+      --topbar-profile-male-glow:rgba(137,181,193,0.45);
+      --topbar-profile-male-ink:#005b96;
+      --topbar-profile-female-bg:rgba(236,143,190,0.20);
+      --topbar-profile-female-border:rgba(236,143,190,0.55);
+      --topbar-profile-female-glow:rgba(236,143,190,0.45);
+      --topbar-profile-female-ink:#c74386;
+    }
+    body.portal-staff-dashboard .topbar{
+      padding:12px clamp(8px,2vw,20px) 10px;
+    }
+    body.portal-staff-dashboard .topbar-lead{
+      grid-template-columns:minmax(280px,1fr) auto minmax(280px,1fr);
+      align-items:center;
+      justify-items:stretch;
+      gap:clamp(10px,2.2vh,16px) clamp(28px,5.5vw,72px);
+      overflow:visible;
+    }
+    body.portal-staff-dashboard .topbar-left.topbar-left--name{
+      width:100%;
+      max-width:none;
+      min-width:0;
+      justify-content:flex-start;
+      justify-self:stretch;
+      align-items:flex-end;
+      align-self:end;
+      padding:0;
+    }
+    body.portal-staff-dashboard .topbar-profile-card{
+      width:var(--topbar-profile-card-w);
+      max-width:100%;
+      height:var(--topbar-profile-card-h);
+      min-height:var(--topbar-profile-card-h);
+      padding:4px 6px 8px;
+      border-radius:clamp(14px,2.4vw,22px);
+      border:2px solid var(--topbar-profile-male-border);
+      background:var(--topbar-profile-male-bg);
+      box-shadow:0 0 28px var(--topbar-profile-male-glow);
+      gap:clamp(2px,0.5vw,6px);
+      overflow:hidden;
+      justify-self:start;
+      margin:0;
+    }
+    body.portal-staff-dashboard .topbar-profile-card[data-gender="m"]{
+      border-color:var(--topbar-profile-male-border);
+      background:var(--topbar-profile-male-bg);
+      box-shadow:0 0 28px var(--topbar-profile-male-glow);
+    }
+    body.portal-staff-dashboard .topbar-profile-card[data-gender="f"]{
+      border-color:var(--topbar-profile-female-border);
+      background:var(--topbar-profile-female-bg);
+      box-shadow:0 0 28px var(--topbar-profile-female-glow);
+    }
+    body.portal-staff-dashboard .topbar-staff-photo{
+      width:100%;
+      height:var(--topbar-profile-photo-h);
+      flex:0 0 auto;
+      min-height:0;
+      border-radius:clamp(10px,1.8vw,16px);
+      margin:0;
+    }
+    body.portal-staff-dashboard .topbar-staff-photo img{
+      object-fit:cover;
+      object-position:center top;
+    }
+    body.portal-staff-dashboard .topbar-profile-card[data-staff-key="javi"] .topbar-staff-photo img,
+    body.portal-staff-dashboard .topbar-profile-card[data-staff-key="javier"] .topbar-staff-photo img{
+      object-position:38% top;
+    }
+    body.portal-staff-dashboard .topbar-staff-photo__initials{
+      font-size:clamp(28px,6vw,56px);
+      color:var(--topbar-profile-male-ink);
+    }
+    body.portal-staff-dashboard .topbar-profile-card[data-gender="f"] .topbar-staff-photo__initials{
+      color:var(--topbar-profile-female-ink);
+    }
+    body.portal-staff-dashboard header.topbar h1.topbar-name,
+    body.portal-staff-dashboard .topbar-profile-card .topbar-name,
+    body.portal-staff-dashboard .topbar-lead .topbar-left.topbar-left--name .topbar-name{
+      flex:1 1 auto !important;
+      display:flex;
+      flex-direction:row;
+      align-items:center;
+      justify-content:center;
+      min-height:0;
+      min-width:0;
+      padding:0 4px 2px;
+      font-size:clamp(42px,4vw,68px);
+      font-weight:800;
+      line-height:1;
+      letter-spacing:-0.02em;
+      color:var(--topbar-profile-male-ink);
+      white-space:nowrap;
+      overflow:hidden;
+    }
+    body.portal-staff-dashboard .topbar-profile-card[data-gender="f"] .topbar-name,
+    body.portal-staff-dashboard .topbar-profile-card[data-gender="f"] .topbar-name__given{
+      color:var(--topbar-profile-female-ink);
+    }
+    body.portal-staff-dashboard .topbar-center{
+      justify-self:center;
+      align-self:center;
+      overflow:visible;
+      padding:12px clamp(8px,2vw,16px) 6px;
+    }
+    body.portal-staff-dashboard .topbar-right.topbar-right--tools{
+      width:100%;
+      max-width:none;
+      min-width:0;
+      justify-content:flex-end;
+      justify-self:stretch;
+      align-items:flex-end;
+      align-self:end;
+      padding:0;
+    }
+    body.portal-staff-dashboard .topbar-tools-grid{
+      width:var(--topbar-profile-card-w);
+      max-width:100%;
+      grid-template-columns:repeat(2,var(--topbar-tools-cell));
+      gap:var(--topbar-tools-gap-y) var(--topbar-tools-gap-x);
+      justify-self:end;
+    }
+    body.portal-staff-dashboard .topbar-tool-btn{
+      max-width:var(--topbar-tools-cell);
+      min-height:var(--topbar-tools-row-h);
+      height:100%;
+      border-radius:clamp(10px,1.8vw,16px);
+      padding:clamp(6px,1.2vw,12px) clamp(4px,0.8vw,8px) clamp(5px,1vw,10px);
+    }
+    body.portal-staff-dashboard .topbar-tool-btn__ico{
+      width:clamp(22px,4.2vw,40px);
+      height:clamp(22px,4.2vw,40px);
+    }
+    body.portal-staff-dashboard .topbar-tool-label{
+      font-size:clamp(5px,0.95vw,9px);
+      letter-spacing:.03em;
+    }
+    @media (max-width:1100px){
+      body.portal-staff-dashboard .topbar-lead{
+        grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+        gap:clamp(8px,1.8vh,14px) clamp(16px,4vw,48px);
+      }
+    }
+    @media (max-width:720px){
+      body.portal-staff-dashboard{
+        --topbar-profile-card-w:clamp(108px,30vw,180px);
+        --topbar-profile-card-h:clamp(128px,35vw,214px);
+        --topbar-profile-photo-h:clamp(96px,26vw,160px);
+      }
+      body.portal-staff-dashboard .topbar-profile-card .topbar-name,
+      body.portal-staff-dashboard .topbar-lead .topbar-left.topbar-left--name .topbar-name{
+        font-size:clamp(22px,6.2vw,42px);
+      }
+      body.portal-staff-dashboard .topbar-lead{
+        gap:clamp(6px,1.5vh,12px) clamp(10px,3.2vw,28px);
+      }
+    }
+    @media (max-width:400px){
+      body.portal-staff-dashboard{
+        --topbar-profile-card-w:clamp(92px,27vw,132px);
+        --topbar-profile-card-h:clamp(110px,32vw,158px);
+        --topbar-profile-photo-h:clamp(82px,24vw,118px);
+      }
+      body.portal-staff-dashboard .topbar-profile-card .topbar-name,
+      body.portal-staff-dashboard .topbar-lead .topbar-left.topbar-left--name .topbar-name{
+        font-size:clamp(18px,5.8vw,28px);
+      }
+    }
     .topbar-left{
       display:flex;
       flex-wrap:nowrap;
