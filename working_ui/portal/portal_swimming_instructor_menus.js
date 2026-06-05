@@ -222,6 +222,45 @@
     });
   }
 
+  var CEO_FULL_TOPBAR_IDS = [
+    "quickMenuParticipantAchievements",
+    "topbarToolCellAchievements",
+    "topbarToolAchievements",
+    "quickMenuStaffTermReview",
+    "topbarToolCellTermReview",
+    "topbarToolTermReview",
+    "quickMenuWorkVenue",
+    "topbarToolCellVenue",
+    "topbarToolVenue",
+    "quickMenuDropoffPickup",
+    "topbarToolCellPickup",
+    "topbarToolPickup",
+  ];
+
+  function portalStaffIsCeoTopbarFullAccess() {
+    try {
+      var box = global.__PORTAL_SUPABASE__ || {};
+      var profile = box.staff_profile;
+      var email = (box.session && box.session.user && box.session.user.email) || "";
+      if (typeof global.portalCanAccessCeoDashboard === "function") {
+        return !!global.portalCanAccessCeoDashboard(profile, email);
+      }
+      if (typeof global.__portalCanAccessCeoDashboard === "function") {
+        return !!global.__portalCanAccessCeoDashboard(profile, email);
+      }
+      var staffKey = resolveCurrentStaffKey();
+      return staffKey === "victor" || staffKey === "javi" || staffKey === "raul";
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function applyCeoFullTopbarTools() {
+    setIdsVisible(CEO_FULL_TOPBAR_IDS, true);
+  }
+
+  global.portalSyncCeoFullTopbarTools = applyCeoFullTopbarTools;
+
   function applyNonSwimmingToolbar() {
     SWIMMING_MENU_IDS.forEach(function (id) {
       setElementVisible(id, false);
@@ -249,6 +288,16 @@
   }
 
   async function portalSyncSwimmingInstructorQuickMenus() {
+    if (portalStaffIsCeoTopbarFullAccess()) {
+      applyCeoFullTopbarTools();
+      try {
+        if (typeof global.applySetupRoleTrainingRow === "function") {
+          global.applySetupRoleTrainingRow();
+        }
+      } catch (_) {}
+      return;
+    }
+
     var show = await portalStaffIsSwimmingInstructor();
     var staffKey = resolveCurrentStaffKey();
 
