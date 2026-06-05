@@ -35,9 +35,25 @@ export {
   getSupabaseClient,
   getPortalStaffContext,
   clearPortalStaffContext,
+  portalClearPersistedSupabaseAuth,
+  portalClearCachedAuthSessionGeneration,
   portalFetchSubmittedReviewSessionKeys,
   portalMergeReviewKeysIntoMemoryMap,
 } from "./supabase-client.js";
+
+/** Bump to force a one-time sign-out + fresh login after a published portal build. */
+export const APP_VERSION = "2026-06-05-admin-hub-refresh";
+export const PORTAL_APP_VERSION = APP_VERSION;
+const PORTAL_APP_VERSION_STORAGE_KEY = "cs_portal_app_version";
+const PORTAL_AUTH_VERSION_KEYS = [
+  "cs_portal_user",
+  "cs_portal_session",
+  "cs_portal_auth",
+  "portal_user",
+  "portal_session",
+  "currentUser",
+  "loggedInUser",
+];
 
 let staffLoginMapSiblingFetched = false;
 
@@ -279,6 +295,78 @@ function readSafePostLoginRedirect() {
 
 function isLoginPage() {
   return Boolean(document.getElementById("login-form"));
+}
+
+/**
+ * One-time session refresh after a portal build bump.
+ * Clears only portal session/auth keys — not unrelated localStorage preferences.
+ */
+export function enforceAppVersion() {
+  if (typeof window === "undefined") return false;
+
+  const versionKey = PORTAL_APP_VERSION_STORAGE_KEY;
+  let savedVersion = "";
+  try {
+    savedVersion = localStorage.getItem(versionKey) || "";
+  } catch {
+    /* ignore */
+  }
+
+  if (savedVersion === APP_VERSION) return false;
+
+  try {
+    localStorage.setItem(versionKey, APP_VERSION);
+  } catch {
+    /* ignore */
+  }
+
+  PORTAL_AUTH_VERSION_KEYS.forEach((key) => {
+    try {
+      localStorage.removeItem(key);
+      sessionStorage.removeItem(key);
+    } catch {
+      /* ignore */
+    }
+  });
+
+  try {
+    clearPortalStaffContext();
+    portalClearCachedAuthSessionGeneration();
+    portalClearPersistedSupabaseAuth();
+  } catch {
+    /* ignore */
+  }
+
+  if (!(window.location.pathname || "").toLowerCase().includes("login")) {
+    try {
+      window.location.href = "login.html?updated=1";
+    } catch {
+      window.location.replace("login.html?updated=1");
+    }
+    return true;
+  }
+
+  return false;
+}
+
+/** @deprecated use enforceAppVersion */
+export function portalMaybeForceAppVersionRefresh() {
+  return enforceAppVersion();
+}
+
+function portalShowLoginUpdatedBannerIfNeeded() {
+  if (!isLoginPage() || typeof window === "undefined") return;
+  try {
+    const u = new URL(window.location.href);
+    if (u.searchParams.get("updated") !== "1") return;
+    const info = document.getElementById("login-updated-msg");
+    if (info) info.classList.add("visible");
+    u.searchParams.delete("updated");
+    const qs = u.searchParams.toString();
+    window.history.replaceState({}, "", u.pathname + (qs ? "?" + qs : "") + u.hash);
+  } catch {
+    /* ignore */
+  }
 }
 
 function portalNormalizeUrl(value) {
@@ -594,6 +682,8 @@ function bindLogin() {
  * @param {{ page?: string }} _opts
  */
 export async function bootstrapDashboardSupabase(_opts) {
+  if (enforceAppVersion()) return;
+
   const page = String((_opts && _opts.page) || "").trim().toLowerCase();
   const loginRedirect = portalPublishedLoginUrl();
   const isLeadOverview = page === "lead_overview";
@@ -1041,5 +1131,7 @@ export async function uploadStaffAvatar(file, opts = {}) {
 }
 
 if (isLoginPage()) {
+  enforceAppVersion();
+  portalShowLoginUpdatedBannerIfNeeded();
   bindLogin();
 }

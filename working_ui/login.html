@@ -273,6 +273,26 @@
       white-space:pre-wrap;
       overflow-wrap:break-word;
     }
+    .login-updated-msg{
+      margin:0 0 14px;
+      padding:0 12px;
+      font-size:.875rem;
+      line-height:1.45;
+      color:var(--ink);
+      background:var(--goldSoft);
+      border:1px solid rgba(244,183,64,.45);
+      border-radius:12px;
+      text-align:center;
+      opacity:0;
+      max-height:0;
+      overflow:hidden;
+      transition:opacity .25s ease,max-height .3s ease,padding .25s ease,margin .25s ease;
+    }
+    .login-updated-msg.visible{
+      opacity:1;
+      max-height:6rem;
+      padding:10px 12px;
+    }
   </style>
 </head>
 <body>
@@ -355,6 +375,8 @@
         </div>
         <h1 class="login-portal-text">Portal</h1>
       </header>
+
+      <p id="login-updated-msg" class="login-updated-msg" role="status" aria-live="polite">Your portal has been updated. Please log in again to continue.</p>
 
       <form id="login-form" novalidate method="post" action="">
         <div class="field">
@@ -454,6 +476,18 @@
   </script>
   <script>
     (function () {
+      var params = new URLSearchParams(window.location.search);
+      if (params.get("updated") === "1") {
+        var updatedMsg = document.getElementById("login-updated-msg");
+        if (updatedMsg) {
+          updatedMsg.hidden = false;
+          updatedMsg.classList.add("visible");
+        }
+      }
+    })();
+  </script>
+  <script>
+    (function () {
       window.PORTAL_CEO_DASHBOARD_URL = "ceo_dashboard.html";
       /* After Supabase sign-in, redirects use the PORTAL_*_URL values above (same-origin HTML on Vercel/static). */
       window.PORTAL_STAFF_DASHBOARD_URL = "staff_dashboard.html";
@@ -461,7 +495,7 @@
       window.PORTAL_LEAD_DASHBOARD_URL = "lead_dashboard.html";
       window.PORTAL_CHOOSE_URL = "portal_choose.html";
       window.PORTAL_AUTO_REDIRECT_FROM_LOGIN = true;
-      var portalJsVer = "20260618-ceo-access-lock";
+      var portalJsVer = "20260605-admin-hub-refresh";
       /* Auth ES module: load from portal next to this page (same origin avoids CORS issues). */
       var portalJsBase = new URL("portal/", window.location.href).href;
       var s = document.createElement("script");

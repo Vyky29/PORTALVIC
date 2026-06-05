@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260614-mob-fit" />
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260613-hours-all-week" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260603-form-record-modal" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260604-mob-nav" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260605-admin-hub-refresh" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260521-embed" />
   <script src="/portal/hr-contract-embed-html.js?v=20260521-embed"></script>
@@ -16847,6 +16847,174 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return '<button type="button" class="dash-hub__tile" data-view-target="'+esc(item.id)+'">'+band+label+descHtml+'</button>';
     }
+    var OPS_HUB_CARDS = [
+      {
+        id:'operator',
+        icon:'⚡',
+        title:'Operator',
+        description:'Daily operational workflow for managing today\u2019s sessions, urgent actions, covers, cancellations and staff communication.',
+        preview:['Today\u2019s live sessions','Covers and cancellations','Urgent operational actions','Receptionist workflow','Staff communication'],
+        status:'Use this area first when managing live day-to-day operations.',
+        primary:['dashboard','operations_admin','operator','scheduling','term_roster_edit'],
+        secondary:['roster_spreadsheets','absents_refunds','receptionist','leads']
+      },
+      {
+        id:'services',
+        icon:'🎯',
+        title:'Services & Participants',
+        description:'Manage services, session capacity, participants, reviews, report requests and ClassForKids-related operational information.',
+        preview:['Services and capacity','Session overview','Participant profiles','Waiting list','Reviews and reports'],
+        status:'Use this area to review clients, services, bookings and session progress.',
+        primary:['c4k_services','c4k_sessions','clients','c4k_waitlist','c4k_reviews'],
+        secondary:['orders_all','c4k_reports','servicecap','comms_ops']
+      },
+      {
+        id:'staffhr',
+        icon:'👥',
+        title:'Staff & HR',
+        description:'Manage staff records, onboarding, contracts, recruitment, interviews and HR-related workflows.',
+        preview:['Staff records','Onboarding progress','Contracts','Recruitment and interviews','Staff readiness'],
+        status:'Use this area for staff readiness, documents and employment workflows.',
+        primary:['staffhr','onboarding',{ id:'staffhr_contracts', label:'Employment contracts / CONTRACTS' },'recruitment','interviews'],
+        secondary:['comms_bookings']
+      },
+      {
+        id:'documents',
+        icon:'📄',
+        title:'Documents & Compliance',
+        description:'Access operational documents, payslips, timesheets, expenses, certificates, passports, checklists and first aid records.',
+        preview:['Payslips','Timesheets','Expenses','Certificates','Passports and checklists','First aid records'],
+        status:'Use this area to find generated PDFs, staff documents and compliance records.',
+        primary:['portal_documents','portal_payslips','portal_docs_timesheet','portal_docs_expense','portal_docs_certificate'],
+        secondary:['portal_docs_portalpin','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid','policies']
+      },
+      {
+        id:'finance',
+        icon:'💷',
+        title:'Finance',
+        description:'Review programme payments, operational payments, finance records and invoice-related workflows.',
+        preview:['Programme payments','Operational payments','Invoice creation','Xero / finance review','Refunds and credits'],
+        status:'Use this area for payment tracking, invoicing and Xero-related admin.',
+        primary:[
+          { id:'reenrol_payments', label:'Programme payments' },
+          { id:'c4k_payments', label:'Ops payments' },
+          { id:'reenrol_payments', label:'Payments' },
+          { id:'invoices', label:'Create invoice' },
+          { id:'invoices', label:'Xero / finance' }
+        ],
+        secondary:[]
+      },
+      {
+        id:'monitoring',
+        icon:'📡',
+        title:'Monitoring & Settings',
+        description:'Review portal activity, training readiness, staff live map, activity logs, alerts and system settings.',
+        preview:['Portal activity','Training readiness','Staff live map','Alerts inbox','Device notifications','System settings'],
+        status:'Use this area to monitor usage, readiness and system activity.',
+        primary:['portal_activity','portal_training_progress','staff_live_map','settings','logs'],
+        secondary:['portal_device_notifications','portal_nav_alerts','nav_all_menu']
+      }
+    ];
+    function opsHubResolveAction(action){
+      if(!action) return null;
+      if(typeof action === 'string') return navGetItem(action);
+      if(action && action.id){
+        var item = navGetItem(action.id);
+        if(!item) return null;
+        return { id:item.id, label:action.label || item.hubLabel || item.label, externalUrl:item.externalUrl, navAction:item.navAction };
+      }
+      return null;
+    }
+    function opsHubActionBtn(action, variant){
+      var item = opsHubResolveAction(action);
+      if(!item) return '';
+      var label = esc(item.label || '');
+      var cls = 'ops-hub-button' + (variant === 'secondary' ? ' ops-hub-button--secondary' : ' ops-hub-button--primary');
+      if(item.externalUrl){
+        return '<a class="'+cls+'" href="'+esc(String(item.externalUrl))+'">'+label+'</a>';
+      }
+      if(item.navAction === 'logout'){
+        return '<button type="button" class="'+cls+'" data-portal-logout="1">'+label+'</button>';
+      }
+      if(item.navAction === 'alerts'){
+        return '<button type="button" class="'+cls+'" data-admin-nav-action="alerts">'+label+'</button>';
+      }
+      if(item.navAction === 'device_notifications'){
+        return '<button type="button" class="'+cls+'" data-admin-nav-action="device_notifications">'+label+'</button>';
+      }
+      if(item.navAction === 'fullnav'){
+        return '<button type="button" class="'+cls+'" data-admin-nav-action="fullnav">'+label+'</button>';
+      }
+      return '<button type="button" class="'+cls+'" data-view-target="'+esc(item.id)+'">'+label+'</button>';
+    }
+    function opsHubActionsHtml(actions, variant){
+      return (actions || []).map(function(a){ return opsHubActionBtn(a, variant); }).filter(Boolean).join('');
+    }
+    function opsHubGlanceValueAlerts(){
+      var bd = $('alertBadge');
+      if(bd && String(bd.textContent || '').trim() !== ''){
+        var n = parseInt(bd.textContent, 10);
+        if(!isNaN(n)) return n;
+      }
+      if(typeof window.portalAdminBellPrepareForRender === 'function'){
+        return (window.portalAdminBellPrepareForRender() || []).length;
+      }
+      return (MOCK.alerts || []).length;
+    }
+    function opsHubGlanceHtml(){
+      refreshKpisFromDemo();
+      var now = new Date();
+      var dateStr = typeof portalFormatPortalDateDdMmYyyy === 'function'
+        ? portalFormatPortalDateDdMmYyyy(now)
+        : now.toLocaleDateString('en-GB');
+      var weekday = now.toLocaleDateString('en-GB', { weekday:'long' });
+      var alertsN = opsHubGlanceValueAlerts();
+      var onlineN = (MOCK.kpi && MOCK.kpi.activeStaff != null) ? MOCK.kpi.activeStaff : '\u2014';
+      var pendingN = Number(state.portalLatePendingCount || 0) + portalAbsentsPendingCount();
+      return (
+        '<div class="ops-hub__today" role="region" aria-label="Today at a glance">' +
+        '<div class="ops-hub__today-item"><span class="ops-hub__today-k">Today</span><span class="ops-hub__today-v">'+esc(weekday)+'</span><span class="ops-hub__today-s">'+esc(dateStr)+'</span></div>' +
+        '<div class="ops-hub__today-item"><span class="ops-hub__today-k">Alerts</span><span class="ops-hub__today-v'+(alertsN > 0 ? ' ops-hub__today-v--alert' : '')+'">'+esc(String(alertsN))+'</span><span class="ops-hub__today-s">Unread items</span></div>' +
+        '<div class="ops-hub__today-item"><span class="ops-hub__today-k">Online users</span><span class="ops-hub__today-v">'+esc(String(onlineN))+'</span><span class="ops-hub__today-s">Staff on roster today</span></div>' +
+        '<div class="ops-hub__today-item"><span class="ops-hub__today-k">Pending actions</span><span class="ops-hub__today-v'+(pendingN > 0 ? ' ops-hub__today-v--warn' : '')+'">'+esc(String(pendingN))+'</span><span class="ops-hub__today-s">Late forms &amp; absents</span></div>' +
+        '</div>'
+      );
+    }
+    function opsHubPreviewHtml(card){
+      var items = card && card.preview;
+      if(!items || !items.length) return '';
+      var chips = items.map(function(line){
+        return '<li class="ops-hub-chip"><span class="ops-hub-chip__dot" aria-hidden="true"></span><span class="ops-hub-chip__text">'+esc(line)+'</span></li>';
+      }).join('');
+      return (
+        '<div class="ops-hub-card__preview" aria-label="What\u2019s inside">' +
+        '<p class="ops-hub-card__preview-label">What\u2019s inside</p>' +
+        '<ul class="ops-hub-card__preview-list">'+chips+'</ul>' +
+        '</div>'
+      );
+    }
+    function opsHubCardHtml(card){
+      if(!card) return '';
+      var primaryHtml = opsHubActionsHtml(card.primary, 'primary');
+      var secondaryHtml = opsHubActionsHtml(card.secondary, 'secondary');
+      var moreHtml = secondaryHtml
+        ? '<details class="ops-hub-card__more"><summary class="ops-hub-card__more-summary">More tools</summary><div class="ops-hub-card__actions ops-hub-card__actions--secondary">'+secondaryHtml+'</div></details>'
+        : '';
+      return (
+        '<article class="ops-hub-card" data-ops-hub-card="'+esc(card.id)+'" aria-labelledby="ops-hub-title-'+esc(card.id)+'">' +
+        '<header class="ops-hub-card__header">' +
+        '<span class="ops-hub-card__badge" aria-hidden="true">'+esc(card.icon || '')+'</span>' +
+        '<div class="ops-hub-card__headings">' +
+        '<h2 class="ops-hub-card__title" id="ops-hub-title-'+esc(card.id)+'">'+esc(card.title)+'</h2>' +
+        '<p class="ops-hub-card__description">'+esc(card.description)+'</p>' +
+        '</div></header>' +
+        opsHubPreviewHtml(card) +
+        '<div class="ops-hub-card__actions ops-hub-card__actions--primary">'+primaryHtml+'</div>' +
+        moreHtml +
+        '<p class="ops-hub-card__status">'+esc(card.status)+'</p>' +
+        '</article>'
+      );
+    }
     function viewNavHubDashboard(){
       if(state.navHubGroup){
         var group = navGroupById(state.navHubGroup);
@@ -16866,26 +17034,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           );
         }
       }
-      var panels = NAV_GROUPS.map(function(group){
-        return (
-          '<button type="button" class="dash-hub-cat dash-hub-cat--pick admin-home-card" data-hub-cat="'+esc(group.id)+'" data-hub-open-group="'+esc(group.id)+'" title="'+escAttr('Open '+group.label)+'">' +
-          '<span class="dash-hub-cat__head">' +
-          adminNavIconHtml(group.id) +
-          '<span class="dash-hub-cat__label">'+esc(group.label)+'</span>' +
-          '</span>' +
-          '</button>'
-        );
-      }).join('');
+      var cards = OPS_HUB_CARDS.map(opsHubCardHtml).join('');
       return (
-        '<div class="dash-hub dash-hub--nav-index dash-hub--nav-index-pick">' +
-        portalAdminPageHeadRowHtml({
-          title: 'Dashboard',
-          titleIconId: 'nav_hub',
-          headStacked: true,
-          intro: 'Choose a category — same as the left menu.',
-          backMode: 'none'
-        }) +
-        '<div class="dash-hub-cat-grid dash-hub-cat-grid--pick admin-dashboard-grid">'+panels+'</div>' +
+        '<div class="dash-hub dash-hub--nav-index dash-hub--ops-hub ops-hub">' +
+        '<header class="ops-hub__intro">' +
+        '<h1 class="ops-hub__intro-title">Operations Hub</h1>' +
+        '<p class="ops-hub__intro-sub">Choose the area you need. Each section groups the main tools used to manage sessions, participants, staff, documents, finance and monitoring.</p>' +
+        '</header>' +
+        opsHubGlanceHtml() +
+        '<div class="ops-hub__grid admin-dashboard-grid">'+cards+'</div>' +
         '</div>'
       );
     }
@@ -23256,7 +23413,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var s = document.createElement("script");
       s.type = "module";
       s.textContent = `
-        import { portalLogout, bootstrapDashboardSupabase, portalCanWriteScheduleOverrides, portalCanAccessCeoDashboard } from "/portal/auth-handler.js?v=20260618-ceo-access-lock";
+        import { portalLogout, bootstrapDashboardSupabase, portalCanWriteScheduleOverrides, portalCanAccessCeoDashboard } from "/portal/auth-handler.js?v=20260605-admin-hub-refresh";
         window.portalCanWriteScheduleOverrides = portalCanWriteScheduleOverrides;
         window.__portalCanAccessCeoDashboard = portalCanAccessCeoDashboard;
         try { await bootstrapDashboardSupabase({ page: "admin" }); } catch (bootErr) {
