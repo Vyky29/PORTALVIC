@@ -52,7 +52,7 @@
     "roberto": {
       "staffId": "roberto",
       "staffName": "Roberto",
-      "avatarFile": "portal/staff_photos/roberto.jpg",
+      "avatarFile": "portal/staff_photos/roberto.png",
       "staffRoleTrack": "swimming",
       "canViewAll": false
     },
@@ -73,7 +73,7 @@
     "youssef": {
       "staffId": "youssef",
       "staffName": "Youssef",
-      "avatarFile": "portal/staff_photos/youssef.jpg",
+      "avatarFile": "portal/staff_photos/youssef.png",
       "staffRoleTrack": "swimming",
       "canViewAll": false
     },
@@ -101,7 +101,7 @@
     "godsway": {
       "staffId": "godsway",
       "staffName": "Godsway",
-      "avatarFile": "portal/staff_photos/godsway.jpg",
+      "avatarFile": "portal/staff_photos/godsway.png",
       "staffRoleTrack": "support",
       "canViewAll": false
     },
@@ -136,7 +136,7 @@
     "carlos": {
       "staffId": "carlos",
       "staffName": "Carlos",
-      "avatarFile": "portal/staff_photos/carlos.jpg",
+      "avatarFile": "portal/staff_photos/carlos.png",
       "staffRoleTrack": "climbing",
       "canViewAll": false
     },
@@ -185,14 +185,14 @@
     "simon": {
       "staffId": "simon",
       "staffName": "Simon",
-      "avatarFile": "portal/staff_photos/simon.jpg",
+      "avatarFile": "portal/staff_photos/simon.png",
       "staffRoleTrack": "swimming",
       "canViewAll": false
     },
     "teflon": {
       "staffId": "teflon",
       "staffName": "Teflon",
-      "avatarFile": "portal/staff_photos/youssef.jpg",
+      "avatarFile": "portal/staff_photos/youssef.png",
       "staffRoleTrack": "swimming",
       "canViewAll": false
     }

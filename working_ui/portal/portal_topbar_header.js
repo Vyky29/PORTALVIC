@@ -338,6 +338,11 @@
       grid.classList.toggle("topbar-tools-grid--lead", showSixIconGrid);
       grid.classList.remove("topbar-tools-grid--ceo-full");
     }
+    var leadRow = document.querySelector(".topbar-lead");
+    if (leadRow) {
+      leadRow.classList.toggle("topbar-lead--tools-6", showSixIconGrid);
+      leadRow.classList.toggle("topbar-lead--tools-4", !showSixIconGrid);
+    }
 
     LEAD_TOPBAR_CELL_IDS.forEach(function (id) {
       setElementVisible(id, showSixIconGrid);

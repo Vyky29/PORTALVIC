@@ -127,7 +127,7 @@ TEFLON_CLIENTS_INFO = [
 TEFLON_PROFILE = {
     "staffId": "teflon",
     "staffName": "Teflon",
-    "avatarFile": "portal/staff_photos/youssef.jpg",
+    "avatarFile": "portal/staff_photos/youssef.png",
     "staffRoleTrack": "swimming",
     "canViewAll": False,
 }
