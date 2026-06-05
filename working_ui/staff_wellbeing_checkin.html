@@ -7,7 +7,7 @@
  <script src="/portal-static-bootstrap.js"></script>
  <link rel="preconnect" href="https://fonts.googleapis.com" />
  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
- <link rel="stylesheet" href="/portal/portal-wellbeing-checkin.css?v=20260609-wb-voice-fix" />
+ <link rel="stylesheet" href="/portal/portal-wellbeing-checkin.css?v=20260610-wb-clean" />
 </head>
 <body class="portal-wb-checkin">
  <div class="portal-wb-wrap">
@@ -31,8 +31,8 @@
  <p class="portal-wb-foot">Only ops admin and directors are notified when you flag a concern. &quot;All good&quot; check-ins are recorded without a 1-to-1 request.</p>
  </div>
 
- <script src="/portal/portal_wellbeing_stressor_catalog.js?v=20260609-wb-voice-fix"></script>
- <script src="/portal/portal_wellbeing_checkin.js?v=20260609-wb-voice-fix"></script>
+ <script src="/portal/portal_wellbeing_stressor_catalog.js?v=20260610-wb-clean"></script>
+ <script src="/portal/portal_wellbeing_checkin.js?v=20260610-wb-clean"></script>
  <script src="/portal/portal_feedback_voice_input.js?v=20260617-form-voice"></script>
  <script>
  (function () {
@@ -96,9 +96,15 @@
  });
  }
 
+ function freshDomainEntry() {
+ return { level: "green", note: "", stressors: [] };
+ }
+
  function domainEntry(key) {
  if (!state.domains[key]) {
- state.domains[key] = { level: "green", note: "", stressors: [] };
+ state.domains[key] = freshDomainEntry();
+ } else {
+ state.domains[key].stressors = (state.domains[key].stressors || []).slice();
  }
  sanitizeEntryStressors(key, state.domains[key]);
  return state.domains[key];
@@ -259,6 +265,10 @@
  '<span class="portal-wb-level-copy"><strong>' + opt.title + '</strong><span>' + opt.sub + '</span></span>';
  btn.onclick = function () {
  entry.level = opt.level;
+ if (opt.level === "green") {
+ entry.stressors = [];
+ entry.note = "";
+ }
  renderStep();
  };
  levels.appendChild(btn);
@@ -393,13 +403,12 @@
  return;
  }
  if (res.checkin && wb.ALLOW_REPEAT_CHECKIN) {
- state.domains = wb.cloneDomainsFromCheckin
- ? wb.cloneDomainsFromCheckin(res.checkin.domains || {})
- : res.checkin.domains || {};
- state.general_note = res.checkin.general_note || "";
+ state.domains = {};
+ state.general_note = "";
+ state.step = 0;
  var tag = document.getElementById("termTag");
  if (tag) {
- tag.textContent = wb.termLabel(wb.currentTermKey()) + " - test mode - edit & resend";
+ tag.textContent = wb.termLabel(wb.currentTermKey()) + " - test mode - resubmit allowed";
  }
  }
  renderStep();
