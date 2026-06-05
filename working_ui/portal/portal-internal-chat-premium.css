@@ -1,0 +1,221 @@
+/**
+ * Premium internal chat ù shared immersive sheet + floating access button.
+ * Used by admin dashboard (staff/lead use staff-dashboard.css).
+ */
+:root{
+  --portal-chat-blue:#2d84b3;
+  --portal-chat-blue-soft:#eaf5fb;
+  --portal-chat-ink:#173247;
+  --portal-chat-muted:#64748b;
+  --portal-chat-line:#e2e8f0;
+}
+
+/* Floating chat button ù fixed corner, always on top of admin workspace */
+.portal-admin-floating-chat-wrap{
+  position:fixed;
+  right:max(14px, env(safe-area-inset-right, 0px));
+  bottom:max(18px, env(safe-area-inset-bottom, 0px));
+  z-index:12040;
+  pointer-events:none;
+}
+.portal-admin-floating-chat-wrap .portal-floating-chat-btn{
+  pointer-events:auto;
+  position:relative;
+  display:inline-flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  min-width:58px;
+  padding:10px 12px 9px;
+  border-radius:16px;
+  border:1px solid rgba(45,132,179,.35);
+  background:linear-gradient(145deg,#fff 0%,#eaf5fb 100%);
+  color:var(--portal-chat-blue);
+  box-shadow:0 4px 20px rgba(45,132,179,.22), 0 2px 8px rgba(23,50,71,.08);
+  cursor:pointer;
+  font:inherit;
+  -webkit-tap-highlight-color:transparent;
+  transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+.portal-admin-floating-chat-wrap .portal-floating-chat-btn:hover{
+  border-color:rgba(45,132,179,.5);
+  box-shadow:0 8px 28px rgba(45,132,179,.28);
+  transform:translateY(-1px);
+}
+.portal-admin-floating-chat-wrap .portal-floating-chat-btn:active{transform:translateY(0)}
+.portal-admin-floating-chat-wrap .portal-floating-chat-btn:focus-visible{
+  outline:2px solid var(--portal-chat-blue);
+  outline-offset:2px;
+}
+.portal-admin-floating-chat-wrap .portal-floating-chat-btn__icon{
+  width:28px;height:28px;border-radius:9px;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(45,132,179,.12);border:1px solid rgba(45,132,179,.2);
+}
+.portal-admin-floating-chat-wrap .portal-floating-chat-btn__svg{width:16px;height:16px;display:block;fill:currentColor}
+.portal-admin-floating-chat-wrap .portal-floating-chat-btn__label{
+  font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;line-height:1;
+}
+.portal-admin-floating-chat-wrap--unread .portal-floating-chat-btn{
+  animation:portal-admin-chat-fab-pulse 1.15s ease-in-out infinite;
+}
+@keyframes portal-admin-chat-fab-pulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(45,132,179,.35), 0 4px 16px rgba(45,132,179,.18)}
+  50%{box-shadow:0 0 0 8px rgba(45,132,179,.1), 0 6px 22px rgba(45,132,179,.26)}
+}
+.portal-floating-chat-badge{
+  position:absolute;top:4px;right:4px;min-width:18px;height:18px;padding:0 4px;
+  border-radius:999px;background:var(--portal-chat-blue);color:#fff;
+  font-size:10px;font-weight:800;line-height:1;display:inline-flex;align-items:center;justify-content:center;
+  border:2px solid #fff;box-sizing:border-box;pointer-events:none;
+}
+.portal-floating-chat-badge[hidden]{display:none!important}
+
+body.portal-internal-chat-open .portal-admin-floating-chat-wrap{opacity:.92}
+
+/* Immersive chat sheet */
+#internalChatSheet.sheet--portal-chat-immersive{
+  position:fixed;inset:0;z-index:12100;display:flex;flex-direction:column;
+  width:100%;max-width:100%;margin:0;height:100dvh;max-height:100dvh;
+  background:#f8fafc;border-radius:0;overflow:hidden;box-sizing:border-box;
+  padding-top:max(0px, env(safe-area-inset-top, 0px));
+  transform:translateY(105%);visibility:hidden;pointer-events:none;
+  transition:transform .28s ease, visibility 0s linear .28s;
+}
+#internalChatSheet.sheet--portal-chat-immersive.open{
+  transform:translateY(0);visibility:visible;pointer-events:auto;
+  transition:transform .28s ease, visibility 0s linear 0s;
+}
+body.portal-internal-chat-open{overflow:hidden}
+body.portal-inapp-call-open #internalChatSheet.sheet--portal-chat-immersive.open{
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
+body.portal-inapp-call-open #portalInternalChatBackdrop.open{
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
+#portalInternalChatBackdrop{
+  position:fixed;inset:0;z-index:12095;background:rgba(11,18,32,.42);
+  opacity:0;visibility:hidden;pointer-events:none;transition:opacity .22s ease;
+}
+#portalInternalChatBackdrop.open{opacity:1;visibility:visible;pointer-events:auto}
+
+#internalChatSheet .portal-dm-sheet-head{
+  flex-shrink:0;display:grid;grid-template-columns:auto 1fr auto;grid-template-rows:auto auto;
+  align-items:center;gap:4px 10px;padding:10px 12px 8px;
+  border-bottom:2px solid rgba(244,183,64,.45);background:#fff;min-width:0;
+}
+#internalChatSheet .portal-dm-inbox-brand{grid-column:1 / -1;justify-self:center;text-align:center}
+#internalChatSheet .portal-dm-inbox-brand__logo-stage{position:relative;width:72px;height:72px;margin:0 auto 4px}
+#internalChatSheet .portal-dm-inbox-brand__orbit-svg{position:absolute;inset:0;width:100%;height:100%}
+#internalChatSheet .portal-dm-inbox-brand__logo-wrap{
+  position:absolute;inset:12px;border-radius:50%;overflow:hidden;
+  box-shadow:0 0 0 2px rgba(244,183,64,.45);
+}
+#internalChatSheet .portal-dm-inbox-brand__logo{width:100%;height:100%;object-fit:cover;display:block}
+#internalChatSheet .portal-dm-inbox-brand__tagline{margin:0;font-size:11px;font-weight:700;color:var(--portal-chat-muted);letter-spacing:.06em;text-transform:uppercase}
+#internalChatSheet .portal-dm-inbox-brand__orbit-layer{transform-origin:50% 50%}
+#internalChatSheet .portal-dm-inbox-brand__orbit-layer--cw{animation:portal-dm-orbit-cw 18s linear infinite}
+#internalChatSheet .portal-dm-inbox-brand__orbit-layer--ccw{animation:portal-dm-orbit-ccw 24s linear infinite}
+#internalChatSheet .portal-dm-inbox-brand__orbit-layer--slow-ccw{animation:portal-dm-orbit-ccw 32s linear infinite}
+@keyframes portal-dm-orbit-cw{to{transform:rotate(360deg)}}
+@keyframes portal-dm-orbit-ccw{to{transform:rotate(-360deg)}}
+#internalChatSheet #internalChatTitle{
+  grid-column:2;margin:0;font-size:17px;font-weight:800;color:var(--portal-chat-ink);text-align:center;
+}
+#internalChatSheet .portal-dm-back-btn,#internalChatSheet .portal-dm-close-btn{
+  min-width:40px;min-height:40px;padding:0;border-radius:12px;border:1px solid rgba(45,132,179,.25);
+  background:#fff;color:var(--portal-chat-blue);font-size:22px;line-height:1;cursor:pointer;
+}
+#internalChatSheet .portal-dm-close-btn--inbox-x{
+  grid-column:3;grid-row:1;color:#dc2626;border-color:rgba(220,38,38,.25);font-size:26px;font-weight:700;
+}
+#internalChatSheet .portal-dm-back-btn{grid-column:1;grid-row:1}
+#internalChatSheet .portal-dm-sheet-body{
+  flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;padding:0;background:#f8fafc;
+}
+#internalChatSheet .portal-dm-inbox-nav{
+  display:flex;gap:8px;padding:8px 12px 0;flex-shrink:0;
+}
+#internalChatSheet .portal-dm-inbox-nav-btn{
+  flex:1;min-width:0;padding:10px 8px;border-radius:12px;border:1px solid rgba(45,132,179,.22);
+  background:#fff;color:var(--portal-chat-ink);font:inherit;font-size:12px;font-weight:800;cursor:pointer;
+}
+#internalChatSheet .portal-dm-inbox-nav-btn.is-active{
+  background:linear-gradient(180deg,#eaf5fb,#fff);border-color:rgba(45,132,179,.45);color:var(--portal-chat-blue);
+}
+#internalChatSheet .portal-dm-inbox-list{
+  flex:1;min-height:0;overflow:auto;padding:10px 12px;-webkit-overflow-scrolling:touch;
+}
+#internalChatSheet .portal-dm-thread-item{
+  display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;width:100%;
+  padding:12px 14px;border-radius:14px;border:1px solid var(--portal-chat-line);background:#fff;
+  cursor:pointer;font:inherit;margin:0 0 8px;box-sizing:border-box;min-width:0;
+}
+#internalChatSheet .portal-dm-thread-item:hover{
+  border-color:rgba(45,132,179,.32);background:linear-gradient(180deg,#fafdff,#f0f7fc);
+}
+#internalChatSheet .portal-dm-thread-peer{font-weight:700;font-size:15px;overflow-wrap:break-word;min-width:0}
+#internalChatSheet .portal-dm-thread-meta{font-size:12px;color:var(--portal-chat-muted)}
+#internalChatSheet .portal-dm-thread-view{
+  flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;position:relative;
+}
+#internalChatSheet .portal-dm-msgs-scroll{
+  flex:1;min-height:0;overflow:auto;padding:8px 10px;-webkit-overflow-scrolling:touch;
+  display:flex;flex-direction:column;gap:8px;background:#fff;
+}
+#internalChatSheet .portal-dm-compose-bar{
+  flex-shrink:0;display:flex;flex-direction:column;gap:8px;padding:10px 12px max(10px, env(safe-area-inset-bottom, 0px));
+  border-top:1px solid var(--portal-chat-line);background:#fff;
+}
+#internalChatSheet .portal-dm-compose-bar .txa{min-height:72px;max-height:140px;resize:vertical;width:100%;box-sizing:border-box}
+#internalChatSheet .portal-dm-btn{
+  display:inline-flex;align-items:center;justify-content:center;width:100%;padding:12px 16px;
+  border-radius:14px;font:inherit;font-weight:700;font-size:15px;cursor:pointer;border:1px solid transparent;
+}
+#internalChatSheet .portal-dm-btn--primary{background:var(--portal-chat-blue);color:#fff}
+#internalChatSheet .portal-dm-btn--ghost{background:#fff;color:var(--portal-chat-blue);border-color:rgba(45,132,179,.35)}
+
+.portal-dm-msg-row{display:flex;width:100%;min-width:0;padding:2px 6px;box-sizing:border-box}
+.portal-dm-msg-row--mine{justify-content:flex-end}
+.portal-dm-msg-row--them{justify-content:flex-start}
+.portal-dm-msg{
+  box-sizing:border-box;max-width:min(82%,280px);min-width:0;padding:8px 11px 6px;
+  font-size:14px;line-height:1.45;overflow-wrap:break-word;
+}
+.portal-dm-msg--mine{
+  background:linear-gradient(180deg,var(--portal-chat-blue) 0%,#2676a0 100%);
+  color:#fff;border-radius:14px 14px 4px 14px;
+}
+.portal-dm-msg--them{
+  background:#fff;color:var(--portal-chat-ink);border-radius:14px 14px 14px 4px;
+  border:1px solid rgba(45,132,179,.18);
+}
+.portal-dm-msg-time{font-size:11px;color:var(--portal-chat-muted);margin-top:4px;display:block}
+.portal-dm-msg--mine .portal-dm-msg-time{color:rgba(255,255,255,.72);text-align:right}
+.portal-dm-msg-by{font-size:11px;font-weight:600;margin:0 0 4px;color:#667781}
+
+.portal-dm-call-bar{
+  display:flex;gap:8px;padding:0 10px 6px;border-bottom:1px solid rgba(45,132,179,.12);flex-shrink:0;
+}
+.portal-dm-call-bar-btn{
+  flex:1;min-width:0;display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:10px 8px;border-radius:12px;border:1px solid rgba(45,132,179,.22);
+  background:linear-gradient(180deg,#fff,#f6fbff);font:inherit;font-size:13px;font-weight:700;cursor:pointer;
+}
+.portal-dm-call-bar-icon{font-size:15px;line-height:1}
+.portal-dm-call-card{display:flex;flex-direction:column;gap:10px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.14)}
+.portal-dm-msg--them .portal-dm-call-card{background:linear-gradient(180deg,#f8fbff,#eef6fc);border:1px solid rgba(45,132,179,.22)}
+.portal-dm-call-join-btn{width:100%;padding:10px;border-radius:12px;border:0;font:inherit;font-weight:800;cursor:pointer;background:var(--portal-chat-blue);color:#fff}
+.portal-dm-top-err{margin:8px 12px 0;font-size:13px;color:#dc2626}
+
+@media (min-width:900px){
+  #internalChatSheet.sheet--portal-chat-immersive{
+    left:50%;right:auto;width:min(720px, 100%);max-width:720px;
+    transform:translate(-50%, 105%);
+  }
+  #internalChatSheet.sheet--portal-chat-immersive.open{transform:translate(-50%, 0)}
+}

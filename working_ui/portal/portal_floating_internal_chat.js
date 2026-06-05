@@ -1,5 +1,5 @@
 /**
- * Internal Chat — footer dock button (badge + blue pulse when unread).
+ * Internal Chat  footer dock button (badge + blue pulse when unread).
  */
 (function (global) {
   "use strict";
@@ -20,6 +20,15 @@
     try {
       if (global.window.__PORTAL_STAFF_DM_HAS_UNREAD__) return 1;
     } catch (_) {}
+    try {
+      var hints = global.window.__PORTAL_ADMIN_DM_UNREAD_HINTS__;
+      if (Array.isArray(hints) && hints.length) return hints.length;
+    } catch (_) {}
+    try {
+      if (typeof global.window.portalAdminDmHasUnread === "function" && global.window.portalAdminDmHasUnread()) {
+        return 1;
+      }
+    } catch (_) {}
     return 0;
   }
 
@@ -29,6 +38,8 @@
       wrap.classList.toggle("dock-chat-wrap--idle", !unread);
       wrap.classList.toggle("topbar-chat-orbit-wrap--unread", unread);
       wrap.classList.toggle("topbar-chat-orbit-wrap--idle", !unread);
+      wrap.classList.toggle("portal-admin-floating-chat-wrap--unread", unread);
+      wrap.classList.toggle("portal-admin-floating-chat-wrap--idle", !unread);
     }
     if (btn) {
       btn.classList.toggle("portal-floating-chat-btn--unread", unread);
@@ -54,10 +65,10 @@
       badge.textContent = count > 99 ? "99+" : String(count);
       var label =
         count === 1
-          ? "Open internal chat — 1 unread message"
-          : "Open internal chat — " + count + " unread messages";
+          ? "Open internal chat  1 unread message"
+          : "Open internal chat  " + count + " unread messages";
       btn.setAttribute("aria-label", label);
-      btn.title = count === 1 ? "Chat — 1 new message" : "Chat — " + count + " new messages";
+      btn.title = count === 1 ? "Chat  1 new message" : "Chat  " + count + " new messages";
     } else {
       badge.hidden = true;
       badge.setAttribute("aria-hidden", "true");

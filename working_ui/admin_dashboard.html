@@ -46,6 +46,7 @@
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
   <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260604-mob-nav" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
+  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260605-admin-chat" />
 </head>
 <body>
   <script>
@@ -201,6 +202,66 @@
           <p id="portalNotifyStatus" class="portal-alerts-status" aria-live="polite"></p>
           <button type="button" class="btn btn--pri portal-alerts-action-btn" id="portalNotifyEnableBtn">Turn on notifications</button>
           <button type="button" class="btn btn--sec portal-alerts-action-btn" id="portalNotifyTestBtn">Send test alert</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="portal-admin-floating-chat-wrap portal-admin-floating-chat-wrap--idle" id="portalFloatingChatOrbitWrap">
+    <button type="button" class="portal-floating-chat-btn" id="portalFloatingChatBtn" aria-label="Open internal chat" title="Chat">
+      <span class="portal-floating-chat-btn__icon" aria-hidden="true"><svg class="portal-floating-chat-btn__svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg></span>
+      <span class="portal-floating-chat-btn__label">Chat</span>
+      <span class="portal-floating-chat-badge" id="portalFloatingChatBadge" hidden aria-hidden="true"></span>
+    </button>
+  </div>
+
+  <div id="portalInternalChatBackdrop" aria-hidden="true"></div>
+  <section class="sheet sheet--fullscreen sheet--portal-chat-immersive sheet--portal-chat-inbox" id="internalChatSheet" aria-labelledby="internalChatTitle" aria-hidden="true">
+    <div class="sheet-head portal-dm-sheet-head">
+      <button type="button" class="portal-dm-btn portal-dm-btn--ghost portal-dm-back-btn" id="internalChatBackBtn" hidden aria-label="Back to chats">‹</button>
+      <div class="portal-dm-inbox-brand" id="internalChatInboxBrand" aria-label="clubSENsational team chat">
+        <div class="portal-dm-inbox-brand__logo-stage" aria-hidden="true">
+          <svg class="portal-dm-inbox-brand__orbit-svg" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
+            <g transform="translate(100,100)">
+              <g class="portal-dm-inbox-brand__orbit-layer portal-dm-inbox-brand__orbit-layer--cw">
+                <circle cx="0" cy="-92" r="7" fill="#2d84b3"/><circle cx="79.67" cy="-46" r="6" fill="#c6a24a"/>
+                <circle cx="79.67" cy="46" r="6" fill="#173247"/><circle cx="0" cy="92" r="7" fill="#d4af37"/>
+                <circle cx="-79.67" cy="46" r="6" fill="#2d84b3"/><circle cx="-79.67" cy="-46" r="6" fill="#5a9fc4"/>
+              </g>
+              <g class="portal-dm-inbox-brand__orbit-layer portal-dm-inbox-brand__orbit-layer--ccw">
+                <circle cx="0" cy="-82" r="5" fill="#c6a24a"/><circle cx="71.01" cy="-41" r="5" fill="#2d84b3"/>
+                <circle cx="71.01" cy="41" r="5" fill="#d4af37"/><circle cx="0" cy="82" r="5" fill="#173247"/>
+              </g>
+            </g>
+          </svg>
+          <div class="portal-dm-inbox-brand__logo-wrap">
+            <img class="portal-dm-inbox-brand__logo" src="/portal/F-02-1.png" alt="" width="72" height="72" decoding="async" onerror="typeof portalBrandLogoOnError==='function'&&portalBrandLogoOnError(this)" />
+          </div>
+        </div>
+        <p class="portal-dm-inbox-brand__tagline">Secure team messaging</p>
+      </div>
+      <h3 id="internalChatTitle">Chats</h3>
+      <button type="button" class="portal-dm-btn portal-dm-btn--ghost portal-dm-close-btn portal-dm-close-btn--inbox-x" id="internalChatCloseBtn" aria-label="Close chat"><span aria-hidden="true">×</span></button>
+    </div>
+    <div class="sheet-body portal-dm-sheet-body portal-dm-wrap">
+      <p id="internalChatTopErr" class="portal-dm-top-err muted" hidden></p>
+      <div id="internalChatAdminChannelNav" class="portal-dm-inbox-nav">
+        <button type="button" class="portal-dm-inbox-nav-btn is-active" id="internalChatAdminTabStaff" data-admin-chat-channel="staff_lead">Staff &amp; leads</button>
+        <button type="button" class="portal-dm-inbox-nav-btn" id="internalChatAdminTabCeo" data-admin-chat-channel="ceo_exec">CEO&apos;s chat</button>
+      </div>
+      <div id="internalChatListWrap" class="portal-dm-inbox-list"></div>
+      <div id="internalChatThreadWrap" class="portal-dm-wrap portal-dm-thread-view" hidden aria-hidden="true">
+        <div id="internalChatCallBar" class="portal-dm-call-bar" hidden aria-hidden="true">
+          <button type="button" class="portal-dm-call-bar-btn" id="internalChatVoiceCallBtn" title="Start a voice call"><span class="portal-dm-call-bar-icon" aria-hidden="true">📞</span><span>Voice</span></button>
+          <button type="button" class="portal-dm-call-bar-btn" id="internalChatVideoCallBtn" title="Start a video call"><span class="portal-dm-call-bar-icon" aria-hidden="true">📹</span><span>Video</span></button>
+          <button type="button" class="portal-dm-call-bar-btn" id="internalChatMeetingBtn" title="Schedule a meeting"><span class="portal-dm-call-bar-icon" aria-hidden="true">📅</span><span>Meeting</span></button>
+        </div>
+        <div id="internalChatMessages" class="portal-dm-msgs-col portal-dm-msgs-scroll"></div>
+        <div class="portal-dm-compose-bar">
+          <label class="sr-only" for="internalChatInput">Your message</label>
+          <textarea id="internalChatInput" class="txa" placeholder="Write a message…" maxlength="8000"></textarea>
+          <p id="internalChatErr" class="muted" style="margin:0;font-size:13px;color:var(--danger);min-height:1.2em"></p>
+          <button type="button" class="portal-dm-btn portal-dm-btn--primary" id="internalChatSendBtn">Send</button>
         </div>
       </div>
     </div>
@@ -18480,6 +18541,218 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return role === 'ceo' || role === 'admin';
     }
+    function portalAdminDmPremiumSheetOpen(){
+      var sh = document.getElementById('internalChatSheet');
+      var bd = document.getElementById('portalInternalChatBackdrop');
+      if(!sh) return false;
+      sh.classList.add('open');
+      sh.setAttribute('aria-hidden', 'false');
+      if(bd){
+        bd.classList.add('open');
+        bd.setAttribute('aria-hidden', 'false');
+      }
+      document.body.classList.add('portal-internal-chat-open');
+      window.__PORTAL_ADMIN_PREMIUM_CHAT_OPEN = true;
+      return true;
+    }
+    function portalAdminDmPremiumSheetClose(){
+      var sh = document.getElementById('internalChatSheet');
+      var bd = document.getElementById('portalInternalChatBackdrop');
+      if(sh){
+        sh.classList.remove('open');
+        sh.setAttribute('aria-hidden', 'true');
+      }
+      if(bd){
+        bd.classList.remove('open');
+        bd.setAttribute('aria-hidden', 'true');
+      }
+      document.body.classList.remove('portal-internal-chat-open');
+      window.__PORTAL_ADMIN_PREMIUM_CHAT_OPEN = false;
+      window.__PORTAL_INTERNAL_CHAT_UI = window.__PORTAL_INTERNAL_CHAT_UI || {};
+      window.__PORTAL_INTERNAL_CHAT_UI.threadId = null;
+      window.__PORTAL_INTERNAL_CHAT_UI.peerLabel = '';
+      if(window.portalStaffChatCalls && typeof window.portalStaffChatCalls.syncCallBar === 'function'){
+        window.portalStaffChatCalls.syncCallBar({ inThread: false });
+      }
+    }
+    function portalAdminDmPremiumActive(){
+      var sh = document.getElementById('internalChatSheet');
+      return !!(sh && sh.classList.contains('open'));
+    }
+    function portalAdminDmListHostEl(){
+      if(portalAdminDmPremiumActive()){
+        return document.getElementById('internalChatListWrap');
+      }
+      return $('admDmListHost');
+    }
+    function portalAdminDmMsgsEl(){
+      if(portalAdminDmPremiumActive()){
+        return document.getElementById('internalChatMessages');
+      }
+      return $('admDmMsgs');
+    }
+    function portalAdminDmReplyInputEl(){
+      if(portalAdminDmPremiumActive()){
+        return document.getElementById('internalChatInput');
+      }
+      return $('admDmReplyBody');
+    }
+    function portalAdminDmReplyErrEl(){
+      if(portalAdminDmPremiumActive()){
+        return document.getElementById('internalChatErr');
+      }
+      return $('admDmThreadErr');
+    }
+    function portalAdminDmReplySendEl(){
+      if(portalAdminDmPremiumActive()){
+        return document.getElementById('internalChatSendBtn');
+      }
+      return $('admDmThreadSend');
+    }
+    function portalAdminDmPremiumSyncChannelTabs(){
+      var ch = portalAdminDmChannel();
+      var tabStaff = document.getElementById('internalChatAdminTabStaff');
+      var tabCeo = document.getElementById('internalChatAdminTabCeo');
+      var nav = document.getElementById('internalChatAdminChannelNav');
+      if(tabStaff) tabStaff.classList.toggle('is-active', ch === 'staff_lead');
+      if(tabCeo) tabCeo.classList.toggle('is-active', ch === 'ceo_exec');
+      if(nav) nav.hidden = !portalAdminDmPremiumActive();
+    }
+    function portalAdminDmPremiumSyncView(){
+      if(!portalAdminDmPremiumActive()) return;
+      var ui = window.__PORTAL_ADMIN_DM_UI || {};
+      var panel = String(ui.panel || 'list');
+      var inThread = panel === 'thread';
+      var listWrap = document.getElementById('internalChatListWrap');
+      var threadWrap = document.getElementById('internalChatThreadWrap');
+      var backBtn = document.getElementById('internalChatBackBtn');
+      var titleEl = document.getElementById('internalChatTitle');
+      var brandEl = document.getElementById('internalChatInboxBrand');
+      var nav = document.getElementById('internalChatAdminChannelNav');
+      if(listWrap) listWrap.hidden = inThread;
+      if(threadWrap){
+        threadWrap.hidden = !inThread;
+        threadWrap.setAttribute('aria-hidden', inThread ? 'false' : 'true');
+      }
+      if(backBtn) backBtn.hidden = !inThread;
+      if(brandEl) brandEl.hidden = inThread;
+      if(nav) nav.hidden = inThread;
+      portalAdminDmPremiumSyncChannelTabs();
+      if(titleEl){
+        if(!inThread){
+          titleEl.textContent = portalAdminDmChannel() === 'ceo_exec' ? "CEO's chat" : 'Chats';
+        }else{
+          var peerEl = $('admDmThreadPeer');
+          var peerTxt = peerEl ? String(peerEl.textContent || '').trim() : '';
+          titleEl.textContent = peerTxt || 'Conversation';
+        }
+      }
+      var gid = ui.groupId ? String(ui.groupId).trim() : '';
+      var tid = ui.threadId ? String(ui.threadId).trim() : '';
+      window.__PORTAL_INTERNAL_CHAT_UI = window.__PORTAL_INTERNAL_CHAT_UI || {};
+      window.__PORTAL_INTERNAL_CHAT_UI.threadId = inThread && tid && !gid ? tid : null;
+      window.__PORTAL_INTERNAL_CHAT_UI.peerLabel = inThread && !gid && titleEl ? String(titleEl.textContent || '').trim() : '';
+      var showCalls = inThread && !!tid && !gid;
+      if(window.portalStaffChatCalls && typeof window.portalStaffChatCalls.syncCallBar === 'function'){
+        window.portalStaffChatCalls.syncCallBar({ inThread: showCalls });
+      }else{
+        var callBar = document.getElementById('internalChatCallBar');
+        if(callBar){
+          callBar.hidden = !showCalls;
+          callBar.setAttribute('aria-hidden', showCalls ? 'false' : 'true');
+        }
+      }
+    }
+    function portalAdminPremiumBindSheetControls(){
+      if(window.__PORTAL_ADMIN_PREMIUM_CHAT_BOUND) return;
+      window.__PORTAL_ADMIN_PREMIUM_CHAT_BOUND = true;
+      var closeBtn = document.getElementById('internalChatCloseBtn');
+      if(closeBtn){
+        closeBtn.addEventListener('click', function(){
+          window.__PORTAL_ADMIN_DM_OPEN = false;
+          portalAdminDmPremiumSheetClose();
+          try{ portalAdminDmPatchGlobalChatBanner(); }catch(_cb){}
+        });
+      }
+      var backBtn = document.getElementById('internalChatBackBtn');
+      if(backBtn){
+        backBtn.addEventListener('click', function(){
+          window.__PORTAL_ADMIN_DM_UI = window.__PORTAL_ADMIN_DM_UI || {};
+          window.__PORTAL_ADMIN_DM_UI.threadId = '';
+          window.__PORTAL_ADMIN_DM_UI.groupId = '';
+          portalAdminDmTogglePanels('list');
+          void portalAdminDmRenderList();
+        });
+      }
+      var bd = document.getElementById('portalInternalChatBackdrop');
+      if(bd){
+        bd.addEventListener('click', function(){
+          window.__PORTAL_ADMIN_DM_OPEN = false;
+          portalAdminDmPremiumSheetClose();
+          try{ portalAdminDmPatchGlobalChatBanner(); }catch(_cb2){}
+        });
+      }
+      var tabStaff = document.getElementById('internalChatAdminTabStaff');
+      var tabCeo = document.getElementById('internalChatAdminTabCeo');
+      if(tabStaff){
+        tabStaff.addEventListener('click', function(){
+          if(portalAdminDmChannel() === 'staff_lead') return;
+          window.__PORTAL_ADMIN_DM_CHANNEL = 'staff_lead';
+          window.__PORTAL_ADMIN_DM_UI = { threadId: '', groupId: '', panel: 'list' };
+          portalAdminDmPremiumSyncView();
+          void portalAdminDmRenderList();
+        });
+      }
+      if(tabCeo){
+        tabCeo.addEventListener('click', function(){
+          if(portalAdminDmChannel() === 'ceo_exec') return;
+          window.__PORTAL_ADMIN_DM_CHANNEL = 'ceo_exec';
+          window.__PORTAL_ADMIN_DM_UI = { threadId: '', groupId: '', panel: 'list' };
+          portalAdminDmPremiumSyncView();
+          void portalAdminDmRenderList();
+        });
+      }
+      var sendBtn = document.getElementById('internalChatSendBtn');
+      if(sendBtn && !sendBtn.dataset.portalDmBound){
+        sendBtn.dataset.portalDmBound = '1';
+        sendBtn.addEventListener('click', function(){ void portalAdminDmSendReply(); });
+      }
+      var inp = document.getElementById('internalChatInput');
+      if(inp && !inp.dataset.portalDmEnterBound){
+        inp.dataset.portalDmEnterBound = '1';
+        inp.addEventListener('keydown', function(ev){
+          if(ev.key === 'Enter' && !ev.shiftKey){
+            ev.preventDefault();
+            void portalAdminDmSendReply();
+          }
+        });
+      }
+    }
+    function openAdminPremiumInternalChat(channel){
+      channel = String(channel || 'staff_lead').trim() === 'ceo_exec' ? 'ceo_exec' : 'staff_lead';
+      window.__PORTAL_ADMIN_DM_CHANNEL = channel;
+      window.__PORTAL_ADMIN_DM_OPEN = true;
+      window.__PORTAL_ADMIN_DM_UI = { threadId: '', groupId: '', panel: 'list' };
+      window.__PORTAL_INTERNAL_CHAT_UI = window.__PORTAL_INTERNAL_CHAT_UI || {};
+      window.__PORTAL_INTERNAL_CHAT_UI.threadId = null;
+      window.__PORTAL_INTERNAL_CHAT_UI.peerLabel = '';
+      portalAdminDmApplyTeamTileUnreadClass();
+      try{ portalAdminDmPatchGlobalChatBanner(); }catch(_cbn){}
+      portalInitAdminDmRealtime();
+      portalAdminPremiumBindSheetControls();
+      portalAdminDmBindVoiceControls();
+      portalAdminDmPremiumSheetOpen();
+      portalAdminDmPremiumSyncView();
+      portalAdminDmTogglePanels('list');
+      void portalAdminDmRenderList();
+      if(typeof window.portalInitFloatingInternalChat === 'function') window.portalInitFloatingInternalChat();
+      if(window.portalStaffChatCalls && typeof window.portalStaffChatCalls.syncCallBar === 'function'){
+        window.portalStaffChatCalls.syncCallBar({ inThread: false });
+      }
+    }
+    window.portalOpenInternalChatFromHeaderQuickMenu = function portalOpenInternalChatFromHeaderQuickMenu(){
+      openAdminPremiumInternalChat(window.__PORTAL_ADMIN_DM_CHANNEL || 'staff_lead');
+    };
     function portalAdminDmTogglePanels(panel){
       window.__PORTAL_ADMIN_DM_UI = window.__PORTAL_ADMIN_DM_UI || { threadId: '', groupId: '' };
       window.__PORTAL_ADMIN_DM_UI.panel = panel;
@@ -18489,6 +18762,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(L) L.hidden = panel !== 'list';
       if(C) C.hidden = panel !== 'compose';
       if(T) T.hidden = panel !== 'thread';
+      portalAdminDmPremiumSyncView();
     }
     function portalAdminDmApplyTeamTileUnreadClass(){
       var onStaff = !!window.__PORTAL_ADMIN_DM_UNREAD;
@@ -18617,6 +18891,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
       }catch(_op){}
       if(!prevUnread && nowUnread) portalAdminDmNotifyIncomingChat();
+      try{
+        var hintCount = (window.__PORTAL_ADMIN_DM_UNREAD_HINTS__ || []).length;
+        window.__PORTAL_STAFF_DM_UNREAD_COUNT__ = hintCount || (nowUnread ? 1 : 0);
+        if(typeof window.portalSyncFloatingChatUnreadFromMenuBtn === 'function'){
+          window.portalSyncFloatingChatUnreadFromMenuBtn();
+        }
+      }catch(_fab){}
     }
     function portalAdminDmNotifyIncomingChat(){
       var hints = typeof window.portalAdminBellResolveChatHints === 'function'
@@ -18885,6 +19166,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 }else if(ui.panel === 'list' && typeof portalAdminDmRenderList === 'function'){
                   void portalAdminDmRenderList();
                 }
+                if(row && window.portalStaffChatCalls && typeof window.portalStaffChatCalls.onDmMessageInsert === 'function'){
+                  window.portalStaffChatCalls.onDmMessageInsert(row);
+                }
               }, 320);
             }
           )
@@ -19016,8 +19300,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(inp) inp.value = '';
       var errB = $('admDmThreadErr');
       if(errB) errB.textContent = '';
-      portalAdminDmApplyTeamTileUnreadClass();
-      try{ portalAdminDmPatchGlobalChatBanner(); }catch(_cbn4){}
+      portalAdminDmPremiumSyncView();
+      if(portalAdminDmPremiumActive()) portalAdminDmBindVoiceControls();
       await portalAdminDmLoadMessages();
     }
     function openCeoExecDmChatModalToAllCeoGroup(){
@@ -19083,7 +19367,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(wrap) wrap.hidden = false;
     }
     async function portalAdminDmRenderList(){
-      var host = $('admDmListHost');
+      var host = portalAdminDmListHostEl();
       var client = getSchedSupabaseClient();
       var me = portalAdminDmMe();
       var ch = portalAdminDmChannel();
@@ -19216,10 +19500,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
       }
       if(peerEl) peerEl.textContent = peerLabel || 'Conversation';
-      var inp = $('admDmReplyBody');
+      var inp = portalAdminDmReplyInputEl();
       if(inp) inp.value = '';
-      var errB = $('admDmThreadErr');
+      var errB = portalAdminDmReplyErrEl();
       if(errB) errB.textContent = '';
+      portalAdminDmPremiumSyncView();
+      if(portalAdminDmPremiumActive()) portalAdminDmBindVoiceControls();
       await portalAdminDmLoadMessages();
     }
     function portalAdminDmMarkChannelReadFromMessages(arr, gid){
@@ -19241,7 +19527,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
     }
     async function portalAdminDmLoadMessages(){
-      var msgsBox = $('admDmMsgs');
+      var msgsBox = portalAdminDmMsgsEl();
       var client = getSchedSupabaseClient();
       var me = portalAdminDmMe();
       var ui = window.__PORTAL_ADMIN_DM_UI || {};
@@ -19318,8 +19604,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         ph.textContent = 'No messages yet.';
         msgsBox.appendChild(ph);
       }else{
+        if(!gid && tid && window.portalStaffChatCalls && typeof window.portalStaffChatCalls.scanThreadForIncomingCall === 'function'){
+          window.portalStaffChatCalls.scanThreadForIncomingCall(arr[arr.length - 1], me);
+        }
         for(var mi = 0; mi < arr.length; mi++){
           var m = arr[mi];
+          if(window.portalStaffChatCalls && typeof window.portalStaffChatCalls.renderCallEndRow === 'function'){
+            var callEndRow = window.portalStaffChatCalls.renderCallEndRow(m);
+            if(callEndRow){
+              msgsBox.appendChild(callEndRow);
+              continue;
+            }
+          }
           var mine = String(m.author_id || '').toLowerCase() === String(me || '').toLowerCase();
           var aid = String(m.author_id || '').trim();
           var arow = authorBy[aid] || {};
@@ -19345,7 +19641,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var bodyHost = document.createElement('div');
           bodyHost.className = 'portal-dm-msg-body';
           bodyHost.style.minWidth = '0';
-          if(window.portalDmVoice && window.portalDmVoice.fillMessageBody){
+          if(window.portalStaffChatCalls && window.portalStaffChatCalls.fillMessageBody){
+            await window.portalStaffChatCalls.fillMessageBody(bodyHost, m, client, esc, me);
+          }else if(window.portalDmVoice && window.portalDmVoice.fillMessageBody){
             await window.portalDmVoice.fillMessageBody(bodyHost, m, client, esc);
           }else{
             bodyHost.style.whiteSpace = 'pre-wrap';
@@ -19373,37 +19671,42 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function portalAdminDmBindVoiceControls(){
       var pv = window.portalDmVoice;
       if(!pv) return;
-      var replyTa = $('admDmReplyBody');
-      if(!replyTa) return;
-      pv.ensureMicButtonBefore(replyTa, 'admDmVoiceBtn');
-      pv.attachVoiceButton({
-        buttonId: 'admDmVoiceBtn',
-        textareaId: 'admDmReplyBody',
-        hintId: 'admDmVoiceBtnHint',
-        getContext: function(){
-          var ui = window.__PORTAL_ADMIN_DM_UI || {};
-          return {
-            client: getSchedSupabaseClient(),
-            threadId: String(ui.threadId || '').trim(),
-            groupId: String(ui.groupId || '').trim(),
-            authorId: portalAdminDmMe()
-          };
-        },
-        onSent: function(){ return portalAdminDmLoadMessages(); },
-        onError: function(msg){
-          var errB = $('admDmThreadErr');
-          if(errB) errB.textContent = msg;
-        }
-      });
+      function bindVoice(btnId, taId, errPick){
+        var replyTa = document.getElementById(taId);
+        if(!replyTa || replyTa.dataset.portalVoiceBound === '1') return;
+        replyTa.dataset.portalVoiceBound = '1';
+        pv.ensureMicButtonBefore(replyTa, btnId);
+        pv.attachVoiceButton({
+          buttonId: btnId,
+          textareaId: taId,
+          hintId: btnId + 'Hint',
+          getContext: function(){
+            var ui = window.__PORTAL_ADMIN_DM_UI || {};
+            return {
+              client: getSchedSupabaseClient(),
+              threadId: String(ui.threadId || '').trim(),
+              groupId: String(ui.groupId || '').trim(),
+              authorId: portalAdminDmMe()
+            };
+          },
+          onSent: function(){ return portalAdminDmLoadMessages(); },
+          onError: function(msg){
+            var errB = errPick();
+            if(errB) errB.textContent = msg;
+          }
+        });
+      }
+      bindVoice('admDmVoiceBtn', 'admDmReplyBody', function(){ return $('admDmThreadErr'); });
+      bindVoice('internalChatVoiceBtn', 'internalChatInput', function(){ return document.getElementById('internalChatErr'); });
     }
     async function portalAdminDmSendReply(){
       var client = getSchedSupabaseClient();
       var ui = window.__PORTAL_ADMIN_DM_UI || {};
       var gid = ui.groupId ? String(ui.groupId).trim() : '';
       var tid = ui.threadId ? String(ui.threadId).trim() : '';
-      var inp = $('admDmReplyBody');
-      var errB = $('admDmThreadErr');
-      var sendBtn = $('admDmThreadSend');
+      var inp = portalAdminDmReplyInputEl();
+      var errB = portalAdminDmReplyErrEl();
+      var sendBtn = portalAdminDmReplySendEl();
       var body = inp ? String(inp.value || '').trim() : '';
       var me = portalAdminDmMe();
       if(errB) errB.textContent = '';
@@ -19697,12 +20000,24 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return pullPage();
     }
     function openInternalDmChatModal(){
+      if(document.getElementById('internalChatSheet')){
+        openAdminPremiumInternalChat('staff_lead');
+        return;
+      }
       openAdminDmChannelModal('staff_lead');
     }
     function openCeoExecDmChatModal(){
+      if(document.getElementById('internalChatSheet')){
+        openAdminPremiumInternalChat('ceo_exec');
+        return;
+      }
       openAdminDmChannelModal('ceo_exec');
     }
     function openAdminDmChannelModal(channel){
+      if(document.getElementById('internalChatSheet')){
+        openAdminPremiumInternalChat(channel);
+        return;
+      }
       channel = String(channel || 'staff_lead').trim() === 'ceo_exec' ? 'ceo_exec' : 'staff_lead';
       window.__PORTAL_ADMIN_DM_CHANNEL = channel;
       window.__PORTAL_ADMIN_DM_OPEN = true;
@@ -23291,6 +23606,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           try{
             portalInitAdminDmRealtime();
             void portalAdminDmSyncIncomingAttention();
+            try{
+              portalAdminPremiumBindSheetControls();
+              if(typeof window.portalInitFloatingInternalChat === 'function') window.portalInitFloatingInternalChat();
+            }catch(_chat){}
             if(!window.__PORTAL_ADMIN_DM_POLL_INT){
               window.__PORTAL_ADMIN_DM_POLL_INT = setInterval(function(){
                 try{ void portalAdminDmSyncIncomingAttention(); }catch(_e){}
@@ -23372,6 +23691,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           closeModal();
           closeDrawer();
           closeSchedDrawer();
+          if(portalAdminDmPremiumActive()){
+            window.__PORTAL_ADMIN_DM_OPEN = false;
+            portalAdminDmPremiumSheetClose();
+            e.preventDefault();
+            return;
+          }
           var apEsc = $('alertsPop');
           if(apEsc) apEsc.classList.remove('open');
         }
@@ -23461,5 +23786,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       document.body.appendChild(s);
     })();
   </script>
+  <script src="/portal/portal_staff_chat_calls.js?v=20260605-call-caller-id"></script>
+  <script src="/portal/portal_floating_internal_chat.js?v=20260605-admin-chat"></script>
 </body>
 </html>
