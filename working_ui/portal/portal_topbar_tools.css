@@ -1,17 +1,24 @@
 /* Staff / lead topbar — worker photo + shortcut icon grid */
+.topbar-lead .topbar-left.topbar-left--name{
+  align-self:stretch;
+}
 .topbar-left.topbar-left--name{
   flex-direction:column;
-  align-items:flex-start;
+  align-items:center;
   justify-content:flex-end;
-  gap:4px;
-  padding-bottom:1px;
-  min-height:72px;
+  justify-self:start;
+  gap:5px;
+  padding-bottom:0;
+  min-height:100%;
+  width:100%;
+  max-width:100%;
+  min-width:0;
 }
 .topbar-staff-photo{
-  width:42px;
-  height:42px;
+  width:58px;
+  height:58px;
   flex-shrink:0;
-  border-radius:11px;
+  border-radius:14px;
   overflow:hidden;
   border:1px solid rgba(45,132,179,.3);
   background:linear-gradient(145deg,#fff 0%,#eaf5fb 100%);
@@ -20,6 +27,7 @@
   align-items:center;
   justify-content:center;
   position:relative;
+  margin:0 auto;
 }
 .topbar-staff-photo img{
   width:100%;
@@ -28,7 +36,7 @@
   display:block;
 }
 .topbar-staff-photo__initials{
-  font-size:14px;
+  font-size:17px;
   font-weight:800;
   color:var(--blue);
   letter-spacing:.02em;
@@ -40,13 +48,22 @@
   text-overflow:ellipsis;
 }
 .topbar-left--name .topbar-name{
-  margin-top:1px;
-  align-items:flex-start;
-  justify-content:flex-start;
-  line-height:1.12;
+  margin:0;
+  padding:0;
+  flex:0 0 auto;
+  align-items:center;
+  justify-content:flex-end;
+  line-height:1.1;
   width:100%;
   max-width:100%;
-  text-align:left;
+  min-width:0;
+  text-align:center;
+}
+.topbar-left--name .topbar-name__given,
+.topbar-left--name .topbar-name__surname{
+  text-align:center;
+  width:100%;
+  max-width:100%;
 }
 .topbar-right--tools{
   align-items:flex-end;

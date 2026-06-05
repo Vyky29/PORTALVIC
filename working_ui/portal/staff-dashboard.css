@@ -294,12 +294,13 @@
       align-self:center;
     }
     .topbar-left--name{
-      justify-content:flex-start;
+      justify-content:flex-end;
       justify-self:start;
+      align-items:center;
     }
     .topbar-left--name .topbar-name{
-      text-align:left;
-      align-items:flex-start;
+      text-align:center;
+      align-items:center;
     }
     .topbar-right--tools{
       justify-content:flex-end;
