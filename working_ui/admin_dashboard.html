@@ -18409,12 +18409,46 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var t = Date.parse(row.ends_at);
       return Number.isFinite(t) && t >= Date.now();
     }
-    function portalAdminMessageAudienceLabel(row){
+    function portalAdminMessageAudienceLabel(row, userById){
       if(!row) return '—';
       if(row.audience_scope === 'leads') return 'Leads';
-      if(row.delivery_scope === 'single_user') return 'Individual user';
+      if(row.delivery_scope === 'single_user'){
+        var uid = String(row.target_user_id || '').trim();
+        if(uid && userById && userById[uid]){
+          return 'Individual · ' + portalAdminStaffProfileOptionLabel(userById[uid]);
+        }
+        if(uid) return 'Individual · ' + uid.slice(0, 8) + '…';
+        return 'Individual user (none selected)';
+      }
       if(row.delivery_scope === 'staff_role' && row.target_staff_role) return 'Role · ' + String(row.target_staff_role);
       return 'All staff';
+    }
+    function portalAdminStaffProfileOptionLabel(row){
+      if(!row) return 'Unknown worker';
+      var label = String(row.full_name || row.username || '').trim() || String(row.id || '').slice(0, 8);
+      var bits = [];
+      if(row.app_role) bits.push(String(row.app_role));
+      if(row.staff_role) bits.push(String(row.staff_role));
+      return bits.length ? (label + ' — ' + bits.join(' · ')) : label;
+    }
+    function portalAdminLoadMessageTargetUserMap(client, rows){
+      if(!client || !rows || !rows.length) return Promise.resolve({});
+      var ids = [];
+      var seen = {};
+      rows.forEach(function(row){
+        if(String(row.delivery_scope || '') !== 'single_user') return;
+        var id = String(row.target_user_id || '').trim();
+        if(id && !seen[id]){ seen[id] = 1; ids.push(id); }
+      });
+      if(!ids.length) return Promise.resolve({});
+      return client.from('staff_profiles').select('id,full_name,username,app_role,staff_role,is_active').in('id', ids).then(function(res){
+        if(res.error) throw res.error;
+        var map = {};
+        (res.data || []).forEach(function(p){
+          if(p && p.id) map[String(p.id)] = p;
+        });
+        return map;
+      });
     }
     function portalAdminApplyComposeToFromRow(row){
       var toEl = $('cmpTo');
@@ -18474,7 +18508,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(xc) xc.onclick = closeFn;
       var bd = $('modalBackdrop');
       if(bd) bd.onclick = function(e){ if(e.target === bd) closeFn(); };
-      function renderManageList(rows, ackByMsg){
+      function renderManageList(rows, ackByMsg, userById){
         if(!host) return;
         if(!rows.length){
           host.innerHTML = '<p class="muted" style="margin:0">No announcements or reminders yet.</p>';
@@ -18491,7 +18525,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           return (
             '<div class="card" style="margin-bottom:12px;min-width:0" data-portal-msg-row="'+esc(id)+'">'+
             '<div class="card-h"><div style="min-width:0"><h3 style="margin:0;font-size:15px;overflow-wrap:break-word">'+esc(String(row.title||kindLabel))+'</h3>'+
-            '<p class="muted" style="margin:6px 0 0;font-size:12px;min-width:0;overflow-wrap:break-word">'+esc(kindLabel)+cat+' · '+esc(portalAdminMessageAudienceLabel(row))+' · '+esc(status)+' · '+esc(String(ackN))+' ack · '+esc(portalAdminFormatAckWhen(row.created_at))+'</p></div></div>'+
+            '<p class="muted" style="margin:6px 0 0;font-size:12px;min-width:0;overflow-wrap:break-word">'+esc(kindLabel)+cat+' · '+esc(portalAdminMessageAudienceLabel(row, userById))+' · '+esc(status)+' · '+esc(String(ackN))+' ack · '+esc(portalAdminFormatAckWhen(row.created_at))+'</p></div></div>'+
             '<div class="card-pad" style="display:flex;flex-wrap:wrap;gap:8px;min-width:0">'+
             '<button type="button" class="btn btn--sec btn--sm" data-portal-msg-edit="'+esc(id)+'">Edit</button>'+
             (active
@@ -18523,8 +18557,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             }
             return true;
           });
-          renderManageList(rows, maps.ackByMsg || {});
-          host._portalMsgRows = rows;
+          return portalAdminLoadMessageTargetUserMap(client, rows).then(function(userById){
+            renderManageList(rows, maps.ackByMsg || {}, userById || {});
+            host._portalMsgRows = rows;
+          });
         }).catch(function(err){
           if(host) host.innerHTML = '<p class="submission-state is-error" style="margin:0">'+esc(String(err && err.message ? err.message : err))+'</p>';
         });
