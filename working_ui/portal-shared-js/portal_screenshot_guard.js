@@ -60,10 +60,14 @@
 
   function portalScreenshotGuardCaptureAllowed() {
     try {
+      if (typeof global.portalIsGhostViewMode === "function" && global.portalIsGhostViewMode()) {
+        return true;
+      }
       var box = global.window.__PORTAL_SUPABASE__;
       var profile = box && box.staff_profile;
       if (profile && profile.app_role) {
-        return String(profile.app_role).toLowerCase() === "ceo";
+        var role = String(profile.app_role).toLowerCase();
+        return role === "ceo" || role === "admin";
       }
     } catch (_e4) {}
     return false;
@@ -284,43 +288,83 @@
     return /\/participants\//.test(src);
   }
 
+  var sensitiveTagQueue = [];
+  var sensitiveTagScheduled = false;
+
+  function tagSensitiveImage(img) {
+    if (!isWorkerSafeguardActive() || !img || img.nodeName !== "IMG") return;
+    if (img.classList.contains("portal-screenshot-protected")) return;
+    if (!shouldTagSensitiveImage(img)) return;
+    img.classList.add("portal-screenshot-protected");
+    img.setAttribute("draggable", "false");
+  }
+
+  function collectSensitiveImages(node, out) {
+    if (!node || node.nodeType !== 1 || !out) return;
+    if (node.nodeName === "IMG") {
+      out.push(node);
+      return;
+    }
+    if (node.querySelectorAll) {
+      node.querySelectorAll("img").forEach(function (img) {
+        out.push(img);
+      });
+    }
+  }
+
+  function flushSensitiveTagQueue() {
+    sensitiveTagScheduled = false;
+    if (!isWorkerSafeguardActive() || !sensitiveTagQueue.length) {
+      sensitiveTagQueue.length = 0;
+      return;
+    }
+    var batch = sensitiveTagQueue.slice();
+    sensitiveTagQueue.length = 0;
+    batch.forEach(tagSensitiveImage);
+  }
+
+  function queueSensitiveImagesFromNode(node) {
+    if (!isWorkerSafeguardActive() || !node) return;
+    var found = [];
+    collectSensitiveImages(node, found);
+    found.forEach(function (img) {
+      if (sensitiveTagQueue.indexOf(img) < 0) sensitiveTagQueue.push(img);
+    });
+    if (!sensitiveTagScheduled) {
+      sensitiveTagScheduled = true;
+      global.requestAnimationFrame(flushSensitiveTagQueue);
+    }
+  }
+
   function tagSensitiveImages(root) {
     if (!isWorkerSafeguardActive()) return;
-    var scope = root && root.querySelectorAll ? root : document;
-    try {
-      scope.querySelectorAll("img").forEach(function (img) {
-        if (!shouldTagSensitiveImage(img)) return;
-        img.classList.add("portal-screenshot-protected");
-        img.setAttribute("draggable", "false");
-      });
-    } catch (_eTag) {}
+    queueSensitiveImagesFromNode(root && root.querySelectorAll ? root : document.body || document.documentElement);
   }
 
   function startSensitiveImageObserver() {
     if (sensitiveObserver || !global.MutationObserver) return;
-    sensitiveObserver = new global.MutationObserver(function (mutations) {
-      if (!isWorkerSafeguardActive()) return;
-      mutations.forEach(function (m) {
-        if (m.type === "childList") {
-          m.addedNodes.forEach(function (node) {
-            if (!node || node.nodeType !== 1) return;
-            if (node.nodeName === "IMG") tagSensitiveImages(node.parentElement || document);
-            else tagSensitiveImages(node);
-          });
-        } else if (m.type === "attributes" && m.target && m.target.nodeName === "IMG") {
-          tagSensitiveImages(m.target.parentElement || document);
-        }
-      });
-    });
     var root = document.body || document.documentElement;
     if (!root) return;
+    sensitiveObserver = new global.MutationObserver(function (mutations) {
+      if (!isWorkerSafeguardActive()) return;
+      for (var i = 0; i < mutations.length; i++) {
+        var m = mutations[i];
+        if (m.type === "childList") {
+          for (var j = 0; j < m.addedNodes.length; j++) {
+            queueSensitiveImagesFromNode(m.addedNodes[j]);
+          }
+        } else if (m.type === "attributes" && m.target && m.target.nodeName === "IMG") {
+          queueSensitiveImagesFromNode(m.target);
+        }
+      }
+    });
     sensitiveObserver.observe(root, {
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ["src", "class"],
+      attributeFilter: ["src"],
     });
-    tagSensitiveImages(root);
+    queueSensitiveImagesFromNode(root);
   }
 
   function bindWorkerSafeguardEvents() {
@@ -412,8 +456,14 @@
       document.documentElement.classList.add("portal-screenshot-guard-workers");
       arm({ mobileOnly: false });
       bindWorkerSafeguardEvents();
-      startSensitiveImageObserver();
-      tagSensitiveImages(document);
+      var deferObserver = function () {
+        startSensitiveImageObserver();
+      };
+      if (typeof global.requestIdleCallback === "function") {
+        global.requestIdleCallback(deferObserver, { timeout: 1200 });
+      } else {
+        global.setTimeout(deferObserver, 400);
+      }
       if (document.hidden) setSensitiveHidden(true);
     } catch (_e11) {}
   }

@@ -229,10 +229,13 @@
   var tokenEarly = parseGhostTokenFromUrl();
   if (tokenEarly) {
     global.__PORTAL_GHOST_VERIFY_PROMISE__ = new Promise(function (resolve) {
+      var started = false;
       function finish() {
         resolve(global.__PORTAL_GHOST_VIEW__ || { active: false });
       }
       function start() {
+        if (started) return;
+        started = true;
         runGhostBootstrap().then(finish).catch(function () {
           global.__PORTAL_GHOST_VIEW__ = { active: false, error: "verify_failed" };
           finish();
@@ -242,7 +245,7 @@
         start();
       } else {
         global.addEventListener("portal:supabase-ready", start, { once: true });
-        setTimeout(start, 12000);
+        setTimeout(start, 2500);
       }
     });
   } else {
