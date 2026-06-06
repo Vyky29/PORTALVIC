@@ -8051,35 +8051,3 @@
       visibility:hidden;
       pointer-events:none;
     }
-
-    /* TODAY session cards — venue/pool/room icons only (`.session-venue-icon`). */
-    .lead-dashboard .session-card .session-venue-icon{
-      width:var(--session-venue-icon-size, clamp(58px, 8vh, 92px));
-      height:var(--session-venue-icon-size, clamp(58px, 8vh, 92px));
-      max-width:none;
-      max-height:none;
-      object-fit:contain;
-      flex-shrink:0;
-      display:block;
-    }
-    .lead-dashboard .session-card .session-venue-visual{
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      min-width:var(--session-venue-visual-min, clamp(70px, 9vh, 110px));
-      flex:1 1 auto;
-      min-height:0;
-    }
-    .lead-dashboard .section-card--today .session-card .session-line--symbol .session-area-note-icon:has(.session-venue-icon),
-    .lead-dashboard .section-card--today .session-card .session-today-override-pool-note .session-area-note-icon:has(.session-venue-icon){
-      width:auto;
-      height:auto;
-      max-width:none;
-      max-height:none;
-      flex:0 0 auto;
-      aspect-ratio:auto;
-    }
-    .lead-dashboard .section-card--today .session-card .session-area-note-icon .session-venue-icon{
-      width:var(--session-venue-icon-size, clamp(58px, 8vh, 92px));
-      height:var(--session-venue-icon-size, clamp(58px, 8vh, 92px));
-    }
