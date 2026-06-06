@@ -52,7 +52,7 @@
     "roberto": {
       "staffId": "roberto",
       "staffName": "Roberto",
-      "avatarFile": "portal/staff_photos/roberto.png",
+      "avatarFile": "portal/staff_photos/roberto.png?v=20260606-roberto-buena",
       "staffRoleTrack": "swimming",
       "canViewAll": false
     },
