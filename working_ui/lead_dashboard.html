@@ -4653,15 +4653,25 @@
       }catch(_){}
       return (__spreadsheetBoot && __spreadsheetBoot.staffRoleTrack) ? __spreadsheetBoot.staffRoleTrack : 'swimming';
     }
+    function portalStaffIsSupportWorkerForAreaNotes(){
+      const rt = String(staffRoleTrackForTodayBuild() || 'swimming').toLowerCase().replace(/[\s_-]+/g,'');
+      return rt === 'support' || rt === 'supportlead';
+    }
+    function poolTierForAreaNoteRow(s, activity, clientNotes, viewDay, hidePoolNotes){
+      return hidePoolNotes ? null : resolvePoolTier(s, activity, clientNotes, viewDay);
+    }
 
     function rosterSlotTimeLabel(s){
       const raw = String(s.timeSlotLabel || '').trim();
       return raw || formatSlotRange(s.start, s.end);
     }
-    function rosterAreaLabelForSession(s, activity, supportHidePoolNote){
+    /** Support workers: roster room (Hub Room, Room 2). Swimming instructors: roster pool area or activity fallback. */
+    function rosterAreaLabelForSession(s, activity, supportWorkerMode){
       let a = String(s.rosterArea != null ? s.rosterArea : '').trim();
-      if(!a) a = String(activity || '').trim();
-      if(supportHidePoolNote) return '';
+      if(!a){
+        if(supportWorkerMode) return '';
+        a = String(activity || '').trim();
+      }
       return a;
     }
     function clientGeneralBodyFromNotes(c, s){
@@ -6985,8 +6995,7 @@
       const viewDay = String(DEMO_VIEW_DAY).trim();
       const staffId = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
       const _rtPool = String(staffRoleTrackForTodayBuild() || 'swimming').toLowerCase().replace(/[\s_-]+/g,'');
-      /* Programme leads (e.g. Berta support_lead) still need Room / pool notes on the lead dashboard. */
-      const supportHidePoolNote = false;
+      const supportHidePoolNote = _rtPool === 'support' || _rtPool === 'supportlead';
       function rowTsForSession(sess){
         return portalSessionRowTimestamps(sessionDateKey, sess && sess.start, sess && sess.end, anchor);
       }
@@ -7070,7 +7079,7 @@
               activity,
               areaLabel: areaOpen,
               poolLocationLabel: poolLocOpen,
-              poolTier: resolvePoolTier(s, activity, cOpen, viewDay),
+              poolTier: poolTierForAreaNoteRow(s, activity, cOpen, viewDay, supportHidePoolNote),
               showPoolSymbol: !!(poolLocOpen || areaOpen),
               showSpecialty: showSpecOpen,
               specialtyLabel: specialtyInfoTitle(activity),
@@ -7118,7 +7127,7 @@
               activity,
               areaLabel: '',
               poolLocationLabel: null,
-              poolTier: resolvePoolTier(s, activity, cNo, viewDay),
+              poolTier: poolTierForAreaNoteRow(s, activity, cNo, viewDay, supportHidePoolNote),
               showPoolSymbol: true,
               showSpecialty: showSpecNo,
               specialtyLabel: specialtyInfoTitle(activity),
@@ -7149,7 +7158,7 @@
               activity,
               areaLabel: areaAbs,
               poolLocationLabel: poolLocationAbs,
-              poolTier: resolvePoolTier(s, activity, cAbs, viewDay),
+              poolTier: poolTierForAreaNoteRow(s, activity, cAbs, viewDay, supportHidePoolNote),
               showPoolSymbol: !!(poolLocationAbs || areaAbs),
               showSpecialty: showSpecAbs,
               specialtyLabel: specialtyInfoTitle(activity),
@@ -7205,7 +7214,7 @@
               activity,
               areaLabel: areaAbs,
               poolLocationLabel: poolLocationAbs,
-              poolTier: resolvePoolTier(s, activity, cAbs, viewDay),
+              poolTier: poolTierForAreaNoteRow(s, activity, cAbs, viewDay, supportHidePoolNote),
               showPoolSymbol: !!(poolLocationAbs || areaAbs),
               showSpecialty: showSpec,
               specialtyLabel: specialtyInfoTitle(activity),
@@ -7239,7 +7248,7 @@
                 activity,
                 areaLabel: areaCan,
                 poolLocationLabel: poolLocationCan,
-                poolTier: resolvePoolTier(s, activity, cCan, viewDay),
+                poolTier: poolTierForAreaNoteRow(s, activity, cCan, viewDay, supportHidePoolNote),
                 showPoolSymbol: !!(poolLocationCan || areaCan),
                 showSpecialty: showSpecCan,
                 specialtyLabel: specialtyInfoTitle(activity),
@@ -7267,7 +7276,7 @@
               activity,
               areaLabel: '',
               poolLocationLabel: null,
-              poolTier: resolvePoolTier(s, activity, c, viewDay),
+              poolTier: poolTierForAreaNoteRow(s, activity, c, viewDay, supportHidePoolNote),
               showPoolSymbol: true,
               showSpecialty: showSpec,
               specialtyLabel: specialtyInfoTitle(activity),
@@ -7288,7 +7297,7 @@
             let poolLocationLabel = resolvePoolLocationLabelFromSession(s, activity, c, viewDay);
             if(supportHidePoolNote) poolLocationLabel = null;
             const areaLabel = rosterAreaLabelForSession(s, activity, supportHidePoolNote);
-            const poolTier = resolvePoolTier(s, activity, c, viewDay);
+            const poolTier = poolTierForAreaNoteRow(s, activity, c, viewDay, supportHidePoolNote);
             const showPoolSymbol = !!(poolLocationLabel || areaLabel);
             const showSpec = !isBespokeActivity(activity);
             return Object.assign({
@@ -7325,7 +7334,7 @@
           let poolLocationLabel = resolvePoolLocationLabelFromSession(s, activity, c, viewDay);
           if(supportHidePoolNote) poolLocationLabel = null;
           const areaLabel = rosterAreaLabelForSession(s, activity, supportHidePoolNote);
-          const poolTier = resolvePoolTier(s, activity, c, viewDay);
+          const poolTier = poolTierForAreaNoteRow(s, activity, c, viewDay, supportHidePoolNote);
           const showPoolSymbol = !!(poolLocationLabel || areaLabel);
           const showSpec = !isBespokeActivity(activity);
           const sessionKey = `${sessionDateKey}|${s.start}|${effClientId}`;
@@ -7401,7 +7410,7 @@
               activity: activityCan,
               areaLabel: areaCan,
               poolLocationLabel: poolLocationCan,
-              poolTier: resolvePoolTier(s, activityCan, cCan, viewDay),
+              poolTier: poolTierForAreaNoteRow(s, activityCan, cCan, viewDay, supportHidePoolNote),
               showPoolSymbol: !!(poolLocationCan || areaCan),
               showSpecialty: showSpecCan,
               specialtyLabel: specialtyInfoTitle(activityCan),
@@ -7434,7 +7443,7 @@
             activity: activity0,
             areaLabel: '',
             poolLocationLabel: null,
-            poolTier: resolvePoolTier(s, activity0, c0, viewDay),
+            poolTier: poolTierForAreaNoteRow(s, activity0, c0, viewDay, supportHidePoolNote),
             showPoolSymbol: true,
             showSpecialty: !isBespokeActivity(activity0),
             specialtyLabel: specialtyInfoTitle(activity0),
@@ -7462,7 +7471,7 @@
           let poolLocationAbs = resolvePoolLocationLabelFromSession(s, activityA, cAbs, viewDay);
           if(supportHidePoolNote) poolLocationAbs = null;
           const areaAbs = rosterAreaLabelForSession(s, activityA, supportHidePoolNote);
-          const poolTier = resolvePoolTier(s, activityA, cAbs, viewDay);
+          const poolTier = poolTierForAreaNoteRow(s, activityA, cAbs, viewDay, supportHidePoolNote);
           const showSpec = !isBespokeActivity(activityA);
           extra.push(Object.assign({
             time: timeA,
@@ -7507,7 +7516,7 @@
         let poolLocationLabel = resolvePoolLocationLabelFromSession(s, activity, c, viewDay);
         if(supportHidePoolNote) poolLocationLabel = null;
         const areaLabel = rosterAreaLabelForSession(s, activity, supportHidePoolNote);
-        const poolTier = resolvePoolTier(s, activity, c, viewDay);
+        const poolTier = poolTierForAreaNoteRow(s, activity, c, viewDay, supportHidePoolNote);
         const showPoolSymbol = !!(poolLocationLabel || areaLabel);
         const showSpec = !isBespokeActivity(activity);
         const hasReplaceCoverOv = !!(slotOv && slotOv.override_type === 'client_replace_in_slot');
@@ -8519,7 +8528,7 @@
             var c = (notes || {})[effClientId] || (nameFromReplace ? { name: nameFromReplace, avatarFile: '' } : {});
             var slot = String(s.timeSlotLabel || '').trim();
             var activity = String(s.activity || 'Swimming').trim();
-            var areaNote = rosterAreaLabelForSession(s, activity, false) || '';
+            var areaNote = rosterAreaLabelForSession(s, activity, portalStaffIsSupportWorkerForAreaNotes()) || '';
             var manualOv = String(s && s.override || '').trim().toUpperCase();
             var hasAdminAbsence = !!(ov && ov.override_type === 'client_absence_announced');
             var hasAdminCancelled = !!(ov && ov.override_type === 'slot_clear_client' && ov.payload && ov.payload.cancelled_by_admin);
