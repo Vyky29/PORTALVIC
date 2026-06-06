@@ -1,0 +1,54 @@
+/* Area / pool note icons — TODAY rows + Next session list */
+.session-area-note-icon{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  line-height:0;
+  flex-shrink:0;
+  max-width:100%;
+}
+.session-area-note-icon .session-area-note-svg{
+  width:var(--today-icon, 22px);
+  height:var(--today-icon, 22px);
+  display:block;
+}
+.session-area-note-icon--sm .session-area-note-svg{
+  width:18px;
+  height:18px;
+}
+.session-area-note-icon--big-pool,
+.session-area-note-icon--lane-de,
+.session-area-note-icon--climbing-wall{
+  color:var(--ink, #173247);
+}
+.session-area-note-icon--small-pool{
+  color:#1565a8;
+}
+.session-area-note-icon--teaching-pool{
+  color:#29b6f6;
+}
+.session-area-note-icon--lane-se{
+  color:#00838f;
+}
+.session-area-note-icon--hub-room,
+.session-area-note-icon--bespoke{
+  color:#7b1fa2;
+}
+.session-area-note-icon--room-2,
+.session-area-note-icon--gym{
+  color:#00897b;
+}
+.session-area-note-icon--day-center{
+  color:#ef6c00;
+}
+.section-card--today .session-line--symbol .session-area-note-icon,
+.section-card--today .session-today-override-pool-note .session-area-note-icon{
+  margin:0 auto;
+}
+.calendar-day--tomorrow .calendar-day-area-note-icon{
+  margin-top:2px;
+}
+.calendar-day--tomorrow .calendar-day-area-note-icon .session-area-note-svg{
+  width:18px;
+  height:18px;
+}

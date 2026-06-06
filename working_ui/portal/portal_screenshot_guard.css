@@ -50,3 +50,33 @@ body.portal-achievements-camera-open .portal-achievements-camera-fs__viewport vi
   user-drag: none;
   pointer-events: auto;
 }
+
+/* Staff / lead safeguarding: deterrence watermark (CEO app_role exempt via JS). */
+html.portal-screenshot-guard-workers #portalScreenshotGuardWatermark {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483640;
+  pointer-events: none;
+  overflow: hidden;
+  opacity: 0.11;
+}
+html.portal-screenshot-guard-workers #portalScreenshotGuardWatermark span {
+  position: absolute;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink, #173247);
+  transform: rotate(-24deg);
+  white-space: nowrap;
+  max-width: none;
+}
+html.portal-screenshot-page-hidden.portal-screenshot-guard-workers #portalScreenshotGuardWatermark,
+html.portal-screenshot-sensitive-hidden.portal-screenshot-guard-workers #portalScreenshotGuardWatermark {
+  opacity: 0;
+  visibility: hidden;
+}
+html.portal-screenshot-guard-workers.portal-screenshot-guard-armed #app,
+html.portal-screenshot-guard-workers.portal-screenshot-guard-armed .app {
+  -webkit-touch-callout: none;
+}

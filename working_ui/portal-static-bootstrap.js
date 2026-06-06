@@ -35,13 +35,13 @@
       if (!document.querySelector('link[data-portal-screenshot-guard-css="1"]')) {
         var link = document.createElement("link");
         link.rel = "stylesheet";
-        link.href = base + "/portal_screenshot_guard.css?v=20260610-pwa-black-fix";
+        link.href = base + "/portal_screenshot_guard.css?v=20260606-screenshot-ceo";
         link.setAttribute("data-portal-screenshot-guard-css", "1");
         head.appendChild(link);
       }
       if (!document.querySelector('script[data-portal-screenshot-guard-js="1"]')) {
         var s = document.createElement("script");
-        s.src = base + "/portal_screenshot_guard.js?v=20260610-pwa-black-fix";
+        s.src = base + "/portal_screenshot_guard.js?v=20260606-screenshot-ceo";
         s.setAttribute("data-portal-screenshot-guard-js", "1");
         head.appendChild(s);
       }

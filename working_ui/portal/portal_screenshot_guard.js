@@ -7,8 +7,11 @@
   "use strict";
 
   var GUARD_ID = "portalScreenshotGuard";
+  var WATERMARK_ID = "portalScreenshotGuardWatermark";
   var armed = false;
   var bound = false;
+  var rolePolicyBound = false;
+  var workerSafeguardBound = false;
   var strictTokens = Object.create(null);
   var mediaCaptureTokens = Object.create(null);
   var lingerTimer = null;
@@ -242,10 +245,109 @@
     if (isPageVisible() && !document.hidden) hideBlackForce();
   }
 
+  function isWorkerDashboardPage() {
+    try {
+      var mode = document.documentElement.getAttribute("data-portal-screenshot-guard");
+      if (mode === "workers") return true;
+      var path = String((global.location && global.location.pathname) || "").toLowerCase();
+      return /staff_dashboard\.html/.test(path) || /lead_dashboard\.html/.test(path);
+    } catch (_e) {
+      return false;
+    }
+  }
+
+  function portalScreenshotGuardResolveAppRole() {
+    try {
+      var box = global.window.__PORTAL_SUPABASE__;
+      var profile = box && box.staff_profile;
+      if (profile && profile.app_role) return String(profile.app_role).toLowerCase();
+    } catch (_e) {}
+    return "";
+  }
+
+  function portalScreenshotGuardCaptureAllowed() {
+    return portalScreenshotGuardResolveAppRole() === "ceo";
+  }
+
+  function removeWatermark() {
+    var el = document.getElementById(WATERMARK_ID);
+    if (el) el.remove();
+  }
+
+  function ensureWatermark() {
+    if (!isWorkerDashboardPage() || portalScreenshotGuardCaptureAllowed()) {
+      removeWatermark();
+      return;
+    }
+    var root = document.getElementById(WATERMARK_ID);
+    if (!root) {
+      root = document.createElement("div");
+      root.id = WATERMARK_ID;
+      root.setAttribute("aria-hidden", "true");
+      (document.body || document.documentElement).appendChild(root);
+    }
+    if (root.childElementCount) return;
+    var phrases = ["Confidential", "Do not screenshot", "Safeguarding"];
+    var row;
+    var col;
+    for (row = 0; row < 9; row++) {
+      for (col = 0; col < 3; col++) {
+        var span = document.createElement("span");
+        span.textContent = phrases[(row + col) % phrases.length];
+        span.style.left = col * 34 - 6 + "%";
+        span.style.top = row * 13 + 2 + "%";
+        root.appendChild(span);
+      }
+    }
+  }
+
+  function bindWorkerSafeguardEvents() {
+    if (workerSafeguardBound) return;
+    workerSafeguardBound = true;
+    global.addEventListener(
+      "blur",
+      function () {
+        if (!armed || portalScreenshotGuardCaptureAllowed()) return;
+        if (isMediaCaptureActive()) return;
+        showBlack({ lingerMs: 2800, allowForegroundLinger: true });
+      },
+      true
+    );
+  }
+
+  function bindRolePolicyEvents() {
+    if (rolePolicyBound) return;
+    rolePolicyBound = true;
+    global.addEventListener("portal:supabase-ready", syncRolePolicy, true);
+  }
+
+  function syncRolePolicy() {
+    if (!isWorkerDashboardPage()) return;
+    try {
+      if (portalScreenshotGuardCaptureAllowed()) {
+        popStrict("safeguarding-workers");
+        document.documentElement.classList.remove("portal-screenshot-guard-workers");
+        removeWatermark();
+        disarm();
+        return;
+      }
+      document.documentElement.classList.add("portal-screenshot-guard-workers");
+      arm({ mobileOnly: true });
+      pushStrict("safeguarding-workers");
+      ensureWatermark();
+      bindWorkerSafeguardEvents();
+    } catch (_e5) {}
+  }
+
   function autoArmFromDocument() {
     try {
       var mode = document.documentElement.getAttribute("data-portal-screenshot-guard");
       if (mode === "off") return;
+      if (isWorkerDashboardPage()) {
+        bindRolePolicyEvents();
+        syncRolePolicy();
+        return;
+      }
       if (mode === "all") {
         arm({ mobileOnly: false });
         return;
@@ -265,6 +367,9 @@
     hideBlack: hideBlack,
     hideBlackForce: hideBlackForce,
     isMobilePortalDevice: isMobilePortalDevice,
+    syncRolePolicy: syncRolePolicy,
+    portalScreenshotGuardCaptureAllowed: portalScreenshotGuardCaptureAllowed,
+    portalScreenshotGuardResolveAppRole: portalScreenshotGuardResolveAppRole,
   };
 
   if (document.readyState === "loading") {

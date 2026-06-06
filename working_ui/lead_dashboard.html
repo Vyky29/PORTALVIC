@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en-GB">
+<html lang="en-GB" data-portal-screenshot-guard="workers">
 <head>
   <!--
     Deploy: Vercel/static desde `working_ui/` (mismo origen + `portal/`). `portal-app-shell` oculta chrome del host si la página va embebida.
@@ -90,13 +90,14 @@
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png?v=20260602-footerlogo" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png?v=20260602-footerlogo" />
   <link rel="manifest" href="/lead-dashboard.webmanifest?v=20260602-footerlogo" />
-  <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260610-pwa-black-fix" />
-  <script src="/portal/portal_screenshot_guard.js?v=20260610-pwa-black-fix"></script>
+  <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260606-screenshot-ceo" />
+  <script src="/portal/portal_screenshot_guard.js?v=20260606-screenshot-ceo"></script>
   <title>clubSENsational Lead Dashboard</title>
   <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260606-footer-chat-navy" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260606-topbar-icons" />
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260620-inbox-logo-orbit" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260601-landscape-full" />
+  <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260606-area-icons" />
 </head>
 <body>
   <script>
@@ -979,6 +980,7 @@
   <script src="/portal/portal_swimming_instructor_menus.js?v=20260621-ceo-topbar-full"></script>
   <script src="/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off"></script>
   <script src="/portal/portal_floating_internal_chat.js?v=20260604-footer-chat"></script>
+  <script src="/portal/portal_area_note_icons.js?v=20260606-area-icons"></script>
   <script type="module" src="/portal/portal_quick_menu_service_leads.js?v=20260604-service-leads-lead-only"></script>
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260616-michelle-only"></script>
@@ -4554,16 +4556,7 @@
       if(isMakeUpRowThird){
         return '<span class="session-pool-na" aria-hidden="true">—</span>';
       }
-      const label = item.areaLabel != null && String(item.areaLabel).trim()
-        ? String(item.areaLabel).trim()
-        : (item.poolLocationLabel ? String(item.poolLocationLabel).trim() : '');
-      if(label){
-        const { line1, line2 } = splitPoolLabelTwoLines(label);
-        const l2 = line2 ? `<span class="session-pool-label__ln2">${escapeHtml(line2)}</span>` : '';
-        const aria = escapeHtml(line2 ? `${line1} ${line2}` : line1);
-        return `<span class="session-pool-label" aria-label="${aria}"><span class="session-pool-label__ln1">${escapeHtml(line1)}</span>${l2}</span>`;
-      }
-      return '<span class="session-pool-na" aria-hidden="true">—</span>';
+      return todaySessionPoolColumnHtml(item);
     }
     function todaySessionSingleLineNoteText(item){
       const label = item && item.areaLabel != null && String(item.areaLabel).trim()
@@ -4588,14 +4581,14 @@
       if(!item || item.kind === 'closed'){
         return '<span class="session-pool-na" aria-hidden="true">—</span>';
       }
-      const label = item.areaLabel != null && String(item.areaLabel).trim()
-        ? String(item.areaLabel).trim()
-        : (item.poolLocationLabel ? String(item.poolLocationLabel).trim() : '');
-      if(label){
-        const { line1, line2 } = splitPoolLabelTwoLines(label);
-        const l2 = line2 ? `<span class="session-pool-label__ln2">${escapeHtml(line2)}</span>` : '';
-        const aria = escapeHtml(line2 ? `${line1} ${line2}` : line1);
-        return `<span class="session-pool-label" aria-label="${aria}"><span class="session-pool-label__ln1">${escapeHtml(line1)}</span>${l2}</span>`;
+      const label = typeof portalResolveAreaNoteLabelFromItem === 'function'
+        ? portalResolveAreaNoteLabelFromItem(item)
+        : (item.areaLabel != null && String(item.areaLabel).trim()
+          ? String(item.areaLabel).trim()
+          : (item.poolLocationLabel ? String(item.poolLocationLabel).trim() : ''));
+      if(label && typeof portalAreaNoteIconHtml === 'function'){
+        const icon = portalAreaNoteIconHtml(label);
+        if(icon) return icon;
       }
       return '<span class="session-pool-na" aria-hidden="true">—</span>';
     }
@@ -4613,7 +4606,10 @@
       const split = portalTodaySessionOverrideMovesPoolToCenter(item);
       const hasAlertPill = !!String(item.portalOverrideAlertPill || '').trim();
       const makeUpNoteHtml = !split && isMakeUpOverride
-        ? `<span class="session-makeup-note">${escapeHtml(todaySessionSingleLineNoteText(item) || '—')}</span>`
+        ? (function(){
+            const lbl = todaySessionSingleLineNoteText(item);
+            return lbl && typeof portalAreaNoteIconHtml === 'function' ? portalAreaNoteIconHtml(lbl) : '';
+          })()
         : '';
       const makeUpPillHtml = !split && isMakeUpOverride && !hasAlertPill
         ? '<span class="session-makeup-pill" aria-label="Make up session"><span>MAKEUP</span></span>'
@@ -10616,16 +10612,16 @@
           let noteWithOverride = '';
           if(isMakeUpTomorrowRow){
             noteWithOverride = [noteRaw, ovRaw].filter(Boolean).join(' · ');
-            if(noteRaw){
-              noteHtml = `<span class="calendar-day-area-note">${escapeHtml(noteRaw)}</span>`;
+            if(noteRaw && typeof portalAreaNoteIconHtml === 'function'){
+              noteHtml = portalAreaNoteIconHtml(noteRaw, { className: 'calendar-day-area-note-icon', size: 'sm' });
             }
             makeupPillHtml = '<span class="tomorrow-makeup-pill" aria-label="Make up session"><span>MAKE UP</span></span>';
           } else {
             noteWithOverride = noteRaw
               ? (ovRaw ? (noteRaw + ' · ' + ovRaw) : noteRaw)
               : ovRaw;
-            noteHtml = noteWithOverride
-              ? `<span class="calendar-day-area-note">${escapeHtml(noteWithOverride)}</span>`
+            noteHtml = noteRaw && typeof portalAreaNoteIconHtml === 'function'
+              ? portalAreaNoteIconHtml(noteRaw, { className: 'calendar-day-area-note-icon', size: 'sm' })
               : '';
           }
           const absentPillHtml = row.futureOverrideTone === 'absent-green'
