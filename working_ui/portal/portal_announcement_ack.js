@@ -26,6 +26,70 @@
   };
 
   /**
+   * Worker inbox visibility on staff/lead dashboards (ignores admin/ceo SELECT bypass in RLS).
+   * @param {object} row portal_staff_announcements row
+   * @param {{authUserId?:string,userId?:string,appRole?:string,staffRole?:string}} ctx
+   */
+  global.portalStaffAnnouncementRowVisibleOnWorkerInbox = function portalStaffAnnouncementRowVisibleOnWorkerInbox(
+    row,
+    ctx
+  ) {
+    ctx = ctx || {};
+    if (!row || !row.id) return false;
+
+    var uid = String(ctx.authUserId || ctx.userId || "").trim();
+    var appRole = String(ctx.appRole || "")
+      .trim()
+      .toLowerCase();
+    var staffRole = String(ctx.staffRole || "").trim();
+
+    var audience = String(row.audience_scope || "all_staff").trim();
+    var delivery = String(row.delivery_scope || "everyone").trim();
+    var targetUser = String(row.target_user_id || "").trim();
+    var targetRole = String(row.target_staff_role || "").trim();
+    var targetRoleBlank = !targetRole;
+
+    if (delivery === "single_user") {
+      return !!uid && targetUser === uid;
+    }
+
+    if (appRole === "staff") {
+      if (delivery === "everyone" && audience === "all_staff" && !targetUser && targetRoleBlank) {
+        return true;
+      }
+      if (
+        delivery === "staff_role" &&
+        audience === "all_staff" &&
+        targetRole &&
+        staffRole === targetRole
+      ) {
+        return true;
+      }
+      return false;
+    }
+
+    if (appRole === "lead") {
+      if (delivery === "everyone" && audience === "all_staff" && !targetUser && targetRoleBlank) {
+        return true;
+      }
+      if (delivery === "everyone" && audience === "leads") {
+        return true;
+      }
+      if (
+        delivery === "staff_role" &&
+        audience === "all_staff" &&
+        targetRole &&
+        staffRole === targetRole
+      ) {
+        return true;
+      }
+      return false;
+    }
+
+    return false;
+  };
+
+  /**
    * @param {object} rec ack map value
    * @param {string} key ack map key
    * @param {Record<string, boolean>} liveIdSet announcement ids from Supabase (go-live)

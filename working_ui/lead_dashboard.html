@@ -15,7 +15,7 @@
   <script src="/portal/portal-vapid-public.js?v=20260601-vapid"></script>
   <script src="/portal/portal_web_push_support.js?v=20260601-desktop-alerts"></script>
   <script src="/portal/portal_alerts_notifications_ui.js?v=20260601-alerts-test"></script>
-  <script src="/portal/portal_announcement_ack.js?v=20260606-message-paragraphs"></script>
+  <script src="/portal/portal_announcement_ack.js?v=20260606-worker-inbox-filter"></script>
   <script src="/portal-static-bootstrap.js?v=20260601-annual-profile-sync"></script>
   <!-- Optional: hide parent site chrome when embedded in another shell. -->
   <script>
@@ -7939,7 +7939,7 @@
         }
         const res = await client
           .from('portal_staff_announcements')
-          .select('id,title,body,message_type,priority,audience_scope,created_at,ends_at,reminder_category,hide_after_ack_amount,hide_after_ack_unit')
+          .select('id,title,body,message_type,priority,audience_scope,delivery_scope,target_user_id,target_staff_role,created_at,ends_at,reminder_category,hide_after_ack_amount,hide_after_ack_unit')
           .order('created_at', { ascending: false })
           .limit(50);
         if(res.error){
@@ -7947,12 +7947,21 @@
           return;
         }
         if(!Array.isArray(res.data)) return;
+        const prof = box && box.staff_profile;
+        const workerInboxCtx = {
+          authUserId: (box.session && box.session.user && box.session.user.id) || (prof && prof.id) || '',
+          appRole: prof && prof.app_role,
+          staffRole: prof && prof.staff_role
+        };
+        const inboxRows = typeof portalStaffAnnouncementRowVisibleOnWorkerInbox === 'function'
+          ? res.data.filter(function(row){ return portalStaffAnnouncementRowVisibleOnWorkerInbox(row, workerInboxCtx); })
+          : res.data;
         const now = Date.now();
         const annLiveFrom =
           typeof portalAnnouncementCreatedOnOrAfterLive === 'function'
             ? portalAnnouncementCreatedOnOrAfterLive
             : function(iso){ return String(iso || '').slice(0, 10) >= '2026-06-02'; };
-        const visible = res.data.filter(function(row){
+        const visible = inboxRows.filter(function(row){
           if(!row || !row.id) return false;
           if(row.ends_at){
             const t = Date.parse(row.ends_at);
