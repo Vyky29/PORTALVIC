@@ -180,27 +180,38 @@
   function portalTodayAreaNoteMetrics(sessionCount, scrollMode, gridEl) {
     var n = Math.min(9, Math.max(1, sessionCount | 0));
     if (scrollMode) {
-      return { iconPx: 32, areaIconPx: 38, labelFs: 10, symbolColMax: 72 };
+      return { iconPx: 32, areaIconPx: 38, labelFs: 10, symbolColMax: 72, stackGap: 6, labelBlock: 18 };
     }
+    var dense = n >= 6;
     var rowH = portalMeasureTodaySessionRowHeight(gridEl, n);
-    var labelFs = 10;
-    var labelReserve = labelFs + 8;
+    var labelFs = dense ? 9 : 10;
+    var stackGap = dense ? 4 : 6;
+    var labelBlock = Math.ceil(labelFs * 1.12) + stackGap + 2;
     var areaIconPx;
     if (rowH > 0) {
-      areaIconPx = Math.round(rowH * 0.74 - labelReserve);
+      var fitCap = Math.floor(rowH - labelBlock);
+      var scaled = Math.round(rowH * (dense ? 0.64 : 0.74) - labelBlock * 0.45);
+      areaIconPx = Math.min(fitCap, scaled);
     } else {
-      var areaByCount = { 1: 80, 2: 72, 3: 62, 4: 54, 5: 46, 6: 40 };
-      areaIconPx = areaByCount[n] || 38;
+      var areaByCount = { 1: 80, 2: 72, 3: 62, 4: 54, 5: 46, 6: 34, 7: 32, 8: 30, 9: 28 };
+      areaIconPx = areaByCount[n] || 28;
     }
-    var maxCap = n <= 1 ? 128 : n <= 2 ? 112 : n <= 4 ? 96 : n <= 6 ? 84 : 72;
-    var minCap = n <= 2 ? 56 : n <= 4 ? 46 : 36;
+    var maxCap = n <= 1 ? 128 : n <= 2 ? 112 : n <= 4 ? 96 : n <= 5 ? 84 : n <= 7 ? 66 : 58;
+    var minCap = n <= 2 ? 56 : n <= 4 ? 46 : n <= 5 ? 40 : 24;
     areaIconPx = Math.min(maxCap, Math.max(minCap, areaIconPx));
     var symbolColMax = Math.min(120, Math.max(68, Math.round(areaIconPx * 1.12)));
-    if (n <= 6) {
+    if (n <= 5) {
       areaIconPx = Math.min(maxCap, Math.max(areaIconPx, symbolColMax - 8));
     }
-    var iconPx = Math.max(28, Math.round(areaIconPx * 0.92));
-    return { iconPx: iconPx, areaIconPx: areaIconPx, labelFs: labelFs, symbolColMax: symbolColMax };
+    var iconPx = Math.max(dense ? 24 : 28, Math.round(areaIconPx * 0.92));
+    return {
+      iconPx: iconPx,
+      areaIconPx: areaIconPx,
+      labelFs: labelFs,
+      symbolColMax: symbolColMax,
+      stackGap: stackGap,
+      labelBlock: labelBlock,
+    };
   }
 
   global.portalMeasureTodaySessionRowHeight = portalMeasureTodaySessionRowHeight;

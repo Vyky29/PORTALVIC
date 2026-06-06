@@ -98,7 +98,7 @@
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260620-inbox-logo-orbit" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
-  <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260606-note-label-air" />
+  <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260606-dense-icons" />
   <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260622-ghost-view" />
 </head>
 <body class="staff-dashboard">
@@ -986,7 +986,7 @@
   <script src="/portal/portal_swimming_instructor_menus.js?v=20260610-roberto-topbar"></script>
   <script src="/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off"></script>
   <script src="/portal/portal_floating_internal_chat.js?v=20260604-footer-chat"></script>
-  <script src="/portal/portal_area_note_icons.js?v=20260606-note-label-air"></script>
+  <script src="/portal/portal_area_note_icons.js?v=20260606-dense-icons"></script>
   <script src="/portal/portal_today_next_chips.js?v=20260606-dayoff-med"></script>
   <script type="module" src="/portal/portal_quick_menu_service_leads.js?v=20260604-service-leads-lead-only"></script>
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
@@ -10094,6 +10094,8 @@
       grid.style.setProperty('--today-icon', iconPx + 'px');
       grid.style.setProperty('--today-area-icon', areaIconPx + 'px');
       grid.style.setProperty('--today-area-label-fs', areaM.labelFs + 'px');
+      grid.style.setProperty('--today-area-stack-gap', (areaM.stackGap != null ? areaM.stackGap : 6) + 'px');
+      grid.style.setProperty('--today-area-label-block', (areaM.labelBlock != null ? areaM.labelBlock : 18) + 'px');
       grid.style.setProperty('--today-symbol-col-max', areaM.symbolColMax + 'px');
       grid.style.setProperty('--today-row-gap', gapPx + 'px');
       grid.style.setProperty('--today-row-pad-y', padY + 'px');
