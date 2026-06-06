@@ -225,37 +225,34 @@
   function portalTodayAreaNoteMetrics(sessionCount, scrollMode, gridEl) {
     var n = Math.min(9, Math.max(1, sessionCount | 0));
     if (scrollMode) {
-      return { iconPx: 32, areaIconPx: 38, labelFs: 10, symbolColMax: 72, stackGap: 14, labelBlock: 26 };
+      return { iconPx: 32, areaIconPx: 56, labelFs: 0, symbolColMax: 72, stackGap: 0, labelBlock: 0 };
     }
     var dense = n >= 6;
     var rowH = portalMeasureTodaySessionRowHeight(gridEl, n);
-    var labelFs = dense ? 9 : 10;
-    var stackGap = dense ? 10 : 14;
-    var labelBlock = Math.ceil(labelFs * 1.12) + stackGap + 2;
     var areaIconPx;
     if (rowH > 0) {
-      var fitCap = Math.floor(rowH - labelBlock);
-      var scaled = Math.round(rowH * (dense ? 0.64 : 0.74) - labelBlock * 0.45);
+      var fitCap = Math.floor(rowH * 0.94);
+      var scaled = Math.round(rowH * (dense ? 0.86 : 0.92));
       areaIconPx = Math.min(fitCap, scaled);
     } else {
-      var areaByCount = { 1: 80, 2: 72, 3: 62, 4: 54, 5: 46, 6: 34, 7: 32, 8: 30, 9: 28 };
-      areaIconPx = areaByCount[n] || 28;
+      var areaByCount = { 1: 96, 2: 88, 3: 78, 4: 68, 5: 58, 6: 44, 7: 40, 8: 36, 9: 32 };
+      areaIconPx = areaByCount[n] || 32;
     }
-    var maxCap = n <= 1 ? 128 : n <= 2 ? 112 : n <= 4 ? 96 : n <= 5 ? 84 : n <= 7 ? 66 : 58;
-    var minCap = n <= 2 ? 56 : n <= 4 ? 46 : n <= 5 ? 40 : 24;
+    var maxCap = n <= 1 ? 140 : n <= 2 ? 124 : n <= 4 ? 108 : n <= 5 ? 96 : n <= 7 ? 78 : 68;
+    var minCap = n <= 2 ? 64 : n <= 4 ? 52 : n <= 5 ? 44 : 28;
     areaIconPx = Math.min(maxCap, Math.max(minCap, areaIconPx));
-    var symbolColMax = Math.min(120, Math.max(68, Math.round(areaIconPx * 1.12)));
+    var symbolColMax = Math.min(120, Math.max(68, Math.round(areaIconPx * 1.05)));
     if (n <= 5) {
-      areaIconPx = Math.min(maxCap, Math.max(areaIconPx, symbolColMax - 8));
+      areaIconPx = Math.min(maxCap, Math.max(areaIconPx, symbolColMax - 6));
     }
     var iconPx = Math.max(dense ? 24 : 28, Math.round(areaIconPx * 0.92));
     return {
       iconPx: iconPx,
       areaIconPx: areaIconPx,
-      labelFs: labelFs,
+      labelFs: 0,
       symbolColMax: symbolColMax,
-      stackGap: stackGap,
-      labelBlock: labelBlock,
+      stackGap: 0,
+      labelBlock: 0,
     };
   }
 
