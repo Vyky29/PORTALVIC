@@ -29,7 +29,7 @@
   --topbar-profile-female-bg:#fef5f9;
   --topbar-profile-female-border:#f5b8d4;
   --topbar-profile-female-glow:rgba(245,184,212,0.28);
-  --topbar-profile-female-band:#fce4ef;
+  --topbar-profile-female-band:#f5b8d4;
   --topbar-profile-female-ink:#9c2756;
 }
 .topbar-lead{
@@ -111,7 +111,13 @@ header.topbar .topbar{
   background:var(--topbar-profile-male-bg);
   box-shadow:0 0 14px var(--topbar-profile-male-glow);
 }
-.topbar-profile-card[data-gender="f"]{
+.topbar-profile-card[data-gender="f"],
+.topbar-profile-card[data-staff-key="sandra"],
+.topbar-profile-card[data-staff-key="aurora"],
+.topbar-profile-card[data-staff-key="berta"],
+.topbar-profile-card[data-staff-key="sevitha"],
+.topbar-profile-card[data-staff-key="lulia"],
+.topbar-profile-card[data-staff-key="michelle"]{
   border-color:var(--topbar-profile-female-border);
   background:var(--topbar-profile-female-bg);
   box-shadow:0 0 14px var(--topbar-profile-female-glow);
@@ -132,7 +138,13 @@ header.topbar .topbar{
   align-self:stretch;
   margin:0;
 }
-.topbar-profile-card[data-gender="f"] .topbar-staff-photo{
+.topbar-profile-card[data-gender="f"] .topbar-staff-photo,
+.topbar-profile-card[data-staff-key="sandra"] .topbar-staff-photo,
+.topbar-profile-card[data-staff-key="aurora"] .topbar-staff-photo,
+.topbar-profile-card[data-staff-key="berta"] .topbar-staff-photo,
+.topbar-profile-card[data-staff-key="sevitha"] .topbar-staff-photo,
+.topbar-profile-card[data-staff-key="lulia"] .topbar-staff-photo,
+.topbar-profile-card[data-staff-key="michelle"] .topbar-staff-photo{
   background:var(--topbar-profile-female-bg);
 }
 .topbar-staff-photo img{
@@ -143,7 +155,13 @@ header.topbar .topbar{
   display:block;
   background:var(--topbar-profile-male-bg);
 }
-.topbar-profile-card[data-gender="f"] .topbar-staff-photo img{
+.topbar-profile-card[data-gender="f"] .topbar-staff-photo img,
+.topbar-profile-card[data-staff-key="sandra"] .topbar-staff-photo img,
+.topbar-profile-card[data-staff-key="aurora"] .topbar-staff-photo img,
+.topbar-profile-card[data-staff-key="berta"] .topbar-staff-photo img,
+.topbar-profile-card[data-staff-key="sevitha"] .topbar-staff-photo img,
+.topbar-profile-card[data-staff-key="lulia"] .topbar-staff-photo img,
+.topbar-profile-card[data-staff-key="michelle"] .topbar-staff-photo img{
   background:var(--topbar-profile-female-bg);
 }
 .topbar-profile-card[data-staff-key="javi"] .topbar-staff-photo img,
@@ -167,7 +185,13 @@ header.topbar .topbar{
   overflow:hidden;
   text-overflow:ellipsis;
 }
-.topbar-profile-card[data-gender="f"] .topbar-staff-photo__initials{
+.topbar-profile-card[data-gender="f"] .topbar-staff-photo__initials,
+.topbar-profile-card[data-staff-key="sandra"] .topbar-staff-photo__initials,
+.topbar-profile-card[data-staff-key="aurora"] .topbar-staff-photo__initials,
+.topbar-profile-card[data-staff-key="berta"] .topbar-staff-photo__initials,
+.topbar-profile-card[data-staff-key="sevitha"] .topbar-staff-photo__initials,
+.topbar-profile-card[data-staff-key="lulia"] .topbar-staff-photo__initials,
+.topbar-profile-card[data-staff-key="michelle"] .topbar-staff-photo__initials{
   color:var(--topbar-profile-female-ink);
 }
 header.topbar .topbar-profile-card h1.topbar-name,
@@ -192,27 +216,46 @@ header.topbar .topbar-profile-card h1.topbar-name,
   font-size:clamp(15px,3.7vw,18px);
   font-weight:800;
   letter-spacing:-0.01em;
-  color:var(--topbar-profile-male-ink) !important;
-  background:var(--topbar-profile-male-band) !important;
   flex-direction:row;
   border:none;
   border-radius:0 0 12px 12px;
   box-sizing:border-box;
 }
-.topbar-profile-card[data-gender="m"] .topbar-name{
+.topbar-profile-card[data-gender="m"] .topbar-name,
+.topbar-profile-card:not([data-gender="f"]):not([data-staff-key="sandra"]):not([data-staff-key="aurora"]):not([data-staff-key="berta"]):not([data-staff-key="sevitha"]):not([data-staff-key="lulia"]):not([data-staff-key="michelle"]) .topbar-name{
   color:var(--topbar-profile-male-ink) !important;
   background:var(--topbar-profile-male-band) !important;
 }
-.topbar-profile-card[data-gender="f"] .topbar-name{
+.topbar-profile-card[data-gender="f"] .topbar-name,
+.topbar-profile-card[data-staff-key="sandra"] .topbar-name,
+.topbar-profile-card[data-staff-key="aurora"] .topbar-name,
+.topbar-profile-card[data-staff-key="berta"] .topbar-name,
+.topbar-profile-card[data-staff-key="sevitha"] .topbar-name,
+.topbar-profile-card[data-staff-key="lulia"] .topbar-name,
+.topbar-profile-card[data-staff-key="michelle"] .topbar-name{
   color:var(--topbar-profile-female-ink) !important;
   background:var(--topbar-profile-female-band) !important;
 }
 .topbar-profile-card[data-gender="m"] .topbar-name__given,
-.topbar-profile-card[data-gender="m"] .topbar-name__surname{
+.topbar-profile-card[data-gender="m"] .topbar-name__surname,
+.topbar-profile-card:not([data-gender="f"]):not([data-staff-key="sandra"]):not([data-staff-key="aurora"]):not([data-staff-key="berta"]):not([data-staff-key="sevitha"]):not([data-staff-key="lulia"]):not([data-staff-key="michelle"]) .topbar-name__given,
+.topbar-profile-card:not([data-gender="f"]):not([data-staff-key="sandra"]):not([data-staff-key="aurora"]):not([data-staff-key="berta"]):not([data-staff-key="sevitha"]):not([data-staff-key="lulia"]):not([data-staff-key="michelle"]) .topbar-name__surname{
   color:var(--topbar-profile-male-ink) !important;
 }
 .topbar-profile-card[data-gender="f"] .topbar-name__given,
-.topbar-profile-card[data-gender="f"] .topbar-name__surname{
+.topbar-profile-card[data-gender="f"] .topbar-name__surname,
+.topbar-profile-card[data-staff-key="sandra"] .topbar-name__given,
+.topbar-profile-card[data-staff-key="sandra"] .topbar-name__surname,
+.topbar-profile-card[data-staff-key="aurora"] .topbar-name__given,
+.topbar-profile-card[data-staff-key="aurora"] .topbar-name__surname,
+.topbar-profile-card[data-staff-key="berta"] .topbar-name__given,
+.topbar-profile-card[data-staff-key="berta"] .topbar-name__surname,
+.topbar-profile-card[data-staff-key="sevitha"] .topbar-name__given,
+.topbar-profile-card[data-staff-key="sevitha"] .topbar-name__surname,
+.topbar-profile-card[data-staff-key="lulia"] .topbar-name__given,
+.topbar-profile-card[data-staff-key="lulia"] .topbar-name__surname,
+.topbar-profile-card[data-staff-key="michelle"] .topbar-name__given,
+.topbar-profile-card[data-staff-key="michelle"] .topbar-name__surname{
   color:var(--topbar-profile-female-ink) !important;
 }
 .topbar-profile-card .topbar-name__given,

@@ -130,15 +130,37 @@
     return "";
   }
 
-  function resolveTopbarStaffGender() {
-    var key = resolveTopbarStaffKey();
+  function genderFromStaffMap(key, displayName) {
     try {
       var map = global.PORTAL_STAFF_GENDER_OVERRIDES || {};
       if (key && map[key]) {
-        var fromMap = normTopbarGender(map[key]);
-        if (fromMap) return fromMap;
+        var fromKey = normTopbarGender(map[key]);
+        if (fromKey) return fromKey;
+      }
+      var first = canonicalTopbarStaffKey(staffFirstName(displayName));
+      if (first && map[first]) {
+        var fromFirst = normTopbarGender(map[first]);
+        if (fromFirst) return fromFirst;
       }
     } catch (_) {}
+    return "";
+  }
+
+  function resolveTopbarStaffGender() {
+    var key = resolveTopbarStaffKey();
+    var displayName = "";
+    try {
+      var dd = global.dashboardData;
+      if (dd && dd.staffName) displayName = String(dd.staffName).trim();
+    } catch (_) {}
+    if (!displayName) {
+      try {
+        var givenEl = global.document && global.document.getElementById("staffNameGiven");
+        if (givenEl) displayName = String(givenEl.textContent || "").trim();
+      } catch (_) {}
+    }
+    var fromMap = genderFromStaffMap(key, displayName);
+    if (fromMap) return fromMap;
     try {
       var box = global.__PORTAL_SUPABASE__ || {};
       var profile = box.staff_profile;
@@ -375,6 +397,7 @@
   };
 
   global.portalStaffIsProgrammeLeadTopbar = portalStaffIsProgrammeLeadTopbar;
+  global.portalSyncTopbarProfileCard = portalSyncTopbarProfileCard;
 
   global.portalInitTopbarToolsGrid = function portalInitTopbarToolsGrid(opts) {
     opts = opts || {};
