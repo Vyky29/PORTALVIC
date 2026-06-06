@@ -93,7 +93,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260610-pwa-black-fix" />
   <script src="/portal/portal_screenshot_guard.js?v=20260610-pwa-black-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260606-today-rows-fit" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260606-today-dayoff" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260606-topbar-icons" />
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260620-inbox-logo-orbit" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260601-landscape-full" />
@@ -9844,6 +9844,7 @@
       grid.innerHTML = '';
       if(!count){
         applyTodayGridSizing(grid, 0);
+        grid.style.setProperty('--today-rows-fill', '0.333333');
         const empty = document.createElement('div');
         empty.className = 'session-card session-card--empty session-card--day-off';
         empty.setAttribute('role', 'status');

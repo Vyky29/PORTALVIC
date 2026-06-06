@@ -3465,8 +3465,8 @@
       padding:4px 8px 10px;
     }
     .today-grid:has(.session-card--day-off){
-      align-items:center;
-      justify-content:center;
+      align-items:stretch;
+      justify-content:flex-start;
     }
     .today-grid > .session-card.session-card--empty{
       width:100%;
@@ -3474,10 +3474,12 @@
       flex:0 0 auto;
     }
     .today-grid > .session-card.session-card--day-off{
-      flex:1 1 auto;
+      flex:0 0 auto;
       align-self:stretch;
-      min-height:min(220px, 42vh);
+      width:100%;
+      height:calc(100% * var(--today-rows-fill, 0.333333));
       max-height:100%;
+      min-height:0;
       display:flex;
       align-items:center;
       justify-content:center;
