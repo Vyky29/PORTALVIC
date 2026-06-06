@@ -6,7 +6,7 @@
   "use strict";
 
   var ICON_IMG_BASE = "/portal/area-note-icons/";
-  var ICON_IMG_VER = "20260622-fish-shark-colors";
+  var ICON_IMG_VER = "20260622-pool-fish-shark";
   var IMG_CLASS = "session-area-note-img";
 
   function escapeHtml(str) {
