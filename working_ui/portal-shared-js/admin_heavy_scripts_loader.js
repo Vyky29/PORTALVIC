@@ -8,7 +8,7 @@
     roster: [
       "/portal/term_from_timetable.js?v=20260602-javier-may20-catchup",
       "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260601-notas-participants",
-      "/portal/clients_info_embed.js?v=20260606-patrick-dhennin",
+      "/portal/clients_info_embed.js?v=20260606-patrick-ayden-w",
       "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260602-cap-roster",
       "/portal/portal-roster-rows-merge.js?v=20260601-term-slot",
       "/portal/staff_dashboard_portal_roster_source.js?v=20260602-javier-may20-catchup",
