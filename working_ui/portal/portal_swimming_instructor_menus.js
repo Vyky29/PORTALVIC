@@ -40,11 +40,12 @@
     pickup: true,
     planner: false,
     sixIcon: false,
+    leadExtras: false,
   };
 
   /**
    * Named swimming / special profiles (all include CLIENTS in the header).
-   * @type {Record<string, {photo:boolean,swReview:boolean,venue:boolean,pickup:boolean,planner:boolean,sixIcon:boolean}>}
+   * @type {Record<string, {photo:boolean,swReview:boolean,venue:boolean,pickup:boolean,planner:boolean,sixIcon:boolean,leadExtras?:boolean}>}
    */
   var EXPLICIT_TOPBAR_PROFILES = {
     roberto: {
@@ -53,7 +54,8 @@
       venue: true,
       pickup: true,
       planner: true,
-      sixIcon: true,
+      sixIcon: false,
+      leadExtras: false,
     },
     aurora: {
       photo: false,
@@ -260,6 +262,8 @@
     });
 
     global.__PORTAL_TOPBAR_SIX_ICON_GRID__ = !!profile.sixIcon;
+    global.__PORTAL_TOPBAR_LEAD_EXTRAS__ =
+      profile.leadExtras !== undefined ? !!profile.leadExtras : !!profile.sixIcon;
   }
 
   function applyCeoStaffTopbarTools() {
@@ -270,6 +274,7 @@
       setElementVisible(id, false);
     });
     global.__PORTAL_TOPBAR_SIX_ICON_GRID__ = false;
+    global.__PORTAL_TOPBAR_LEAD_EXTRAS__ = false;
   }
 
   global.portalSyncCeoFullTopbarTools = applyCeoStaffTopbarTools;

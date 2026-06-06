@@ -493,19 +493,17 @@ header.topbar .topbar-profile-card h1.topbar-name,
   border-color:rgba(45,132,179,.34);
 }
 .topbar-tool-label--session-planner{
-  font-size:4.5px;
-  letter-spacing:0;
-  line-height:1.08;
-  white-space:normal;
+  font-size:var(--topbar-tool-label-size);
+  letter-spacing:.02em;
+  line-height:1.05;
+  white-space:nowrap;
   max-width:100%;
   overflow:hidden;
-  display:-webkit-box;
-  -webkit-line-clamp:2;
-  -webkit-box-orient:vertical;
+  text-overflow:ellipsis;
 }
 .topbar-tools-grid--lead .topbar-tool-label--session-planner,
 .topbar-tools-grid--eight .topbar-tool-label--session-planner{
-  font-size:4px;
+  font-size:var(--topbar-tool-label-size-6);
 }
 .topbar-tool-btn:hover,
 .topbar-tool-btn:focus-visible{

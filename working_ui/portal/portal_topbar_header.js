@@ -362,9 +362,12 @@
     global.__PORTAL_TOPBAR_IS_LEAD__ = isLeadShell;
 
     var isProgrammeLead = !isLeadShell && portalStaffIsProgrammeLeadTopbar();
-    var swimmingSix =
+    var swimmingSixGrid =
       !isLeadShell && !isProgrammeLead && !!global.__PORTAL_TOPBAR_SIX_ICON_GRID__;
-    var showLeadExtras = isLeadShell || isProgrammeLead || swimmingSix;
+    var showLeadExtras =
+      isLeadShell ||
+      isProgrammeLead ||
+      (swimmingSixGrid && !!global.__PORTAL_TOPBAR_LEAD_EXTRAS__);
 
     LEAD_TOPBAR_CELL_IDS.forEach(function (id) {
       setElementVisible(id, showLeadExtras);
@@ -375,7 +378,7 @@
 
     var visibleToolCount = countVisibleTopbarToolCells();
     var useEightGrid = visibleToolCount >= 7;
-    var useSixGrid = !useEightGrid && showLeadExtras;
+    var useSixGrid = !useEightGrid && (showLeadExtras || visibleToolCount === 6);
 
     var grid = document.getElementById("topbarToolsGrid");
     if (grid) {
