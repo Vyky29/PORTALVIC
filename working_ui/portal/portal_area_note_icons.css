@@ -96,9 +96,6 @@
 .session-area-note-icon--lane-de .session-area-note-img{
   filter:brightness(0) saturate(100%);
 }
-.session-area-note-icon--lane-se .session-area-note-img{
-  filter:brightness(0) saturate(100%) invert(46%) sepia(98%) saturate(2476%) hue-rotate(176deg) brightness(104%) contrast(101%);
-}
 .section-card--today .session-today-override-pool-note .session-area-note-stack{
   margin-top:0;
 }
