@@ -94,7 +94,7 @@
     "giuseppe": {
       "staffId": "giuseppe",
       "staffName": "Giuseppe",
-      "avatarFile": "portal/staff_photos/giuseppe.jpg",
+      "avatarFile": "portal/staff_photos/giuseppe.png?v=20260606-giuseppe-bw",
       "staffRoleTrack": "support",
       "canViewAll": false
     },
