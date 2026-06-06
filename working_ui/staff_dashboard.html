@@ -997,6 +997,7 @@
   <script src="/portal/portal-ghost-view.js?v=20260606-ghost-perf"></script>
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260621-lead-inbox" />
   <script src="/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact"></script>
+  <script src="/portal/portal_dashboard_ui_coalesce.js?v=20260606-photo-stable"></script>
   <script src="/portal/portal_topbar_header.js?v=20260610-roberto-topbar"></script>
   <script src="/portal/portal_participant_achievements.js?v=20260621-lead-inbox"></script>
   <script src="/portal/portal_client_sessions_overview.js?v=20260601-sessions-fit"></script>
@@ -1010,7 +1011,7 @@
   <script src="/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off"></script>
   <script src="/portal/portal_floating_internal_chat.js?v=20260604-footer-chat"></script>
   <script src="/portal/portal_area_note_icons.js?v=20260606-small-pool-mockup"></script>
-  <script src="/portal/portal_today_next_chips.js?v=20260606-dayoff-med"></script>
+  <script src="/portal/portal_today_next_chips.js?v=20260606-photo-stable"></script>
   <script type="module" src="/portal/portal_quick_menu_service_leads.js?v=20260604-service-leads-lead-only"></script>
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260616-michelle-only"></script>
@@ -4476,8 +4477,17 @@
       if(!slot) return;
       const url = resolveParticipantPhotoUrl(name, clientId);
       if(url){
+        const norm = typeof portalNormalizeParticipantPhotoUrl === 'function'
+          ? portalNormalizeParticipantPhotoUrl(url)
+          : url;
+        const existing = slot.querySelector('img');
+        const existingSrc = existing ? String(existing.getAttribute('src') || existing.src || '') : '';
+        if(existing && existingSrc && (existingSrc === norm || existingSrc.endsWith(norm) || norm.endsWith(existingSrc.split('?')[0]))){
+          slot.classList.add('client-photo-slot--has-photo');
+          return;
+        }
         slot.classList.add('client-photo-slot--has-photo');
-        slot.innerHTML = '<img class="portal-screenshot-protected" src="' + escapeHtml(url) + '" alt="" loading="lazy" decoding="async" draggable="false" onerror="portalClientPhotoSlotFallback(this)">';
+        slot.innerHTML = '<img class="portal-screenshot-protected" src="' + escapeHtml(url) + '" alt="" loading="eager" fetchpriority="low" decoding="async" draggable="false" onerror="portalClientPhotoSlotFallback(this)">';
       } else {
         slot.classList.remove('client-photo-slot--has-photo');
         slot.innerHTML = clientPhotoSlotPlaceholderHtml();
@@ -4494,7 +4504,10 @@
       const initials = escapeHtml(clientInitials(name));
       const url = resolveParticipantPhotoUrl(name, clientId);
       if(!url) return initials;
-      return initials + '<img class="clients-grid-avatar-img portal-screenshot-protected" src="' + escapeHtml(url) + '" alt="" loading="lazy" decoding="async" draggable="false" onerror="this.remove()">';
+      var loadAttr = typeof portalParticipantPhotoLoadingAttr === 'function'
+        ? portalParticipantPhotoLoadingAttr()
+        : ' loading="eager" fetchpriority="low"';
+      return initials + '<img class="clients-grid-avatar-img portal-screenshot-protected" src="' + escapeHtml(url) + '" alt=""' + loadAttr + ' decoding="async" draggable="false" onerror="this.remove()">';
     }
     /** Topbar: first token = given name line; remaining tokens = surname line. */
     function splitStaffTopbarName(fullName){
@@ -8294,6 +8307,9 @@
       const participants = typeof portalDedupeParticipantListEntries === 'function'
         ? portalDedupeParticipantListEntries(participantsRaw, resolveParticipantPhotoUrl)
         : participantsRaw;
+      if(typeof portalPreloadParticipantPhotoUrls === 'function'){
+        portalPreloadParticipantPhotoUrls(participants.map(function(p){ return p && p.photoUrl; }));
+      }
       return {
         weekday: weekday,
         dateLabel: dateLabel,
@@ -9684,7 +9700,13 @@
         }
         if(avSrc){
           av.classList.toggle('avatar--brand-default', isBrandDefault);
-          avImg.src = avSrc;
+          const avNorm = typeof portalNormalizeParticipantPhotoUrl === 'function'
+            ? portalNormalizeParticipantPhotoUrl(avSrc)
+            : avSrc;
+          const curAv = String(avImg.getAttribute('src') || avImg.src || '');
+          if(!curAv || (curAv !== avNorm && !curAv.endsWith(avNorm) && !avNorm.endsWith(curAv.split('?')[0]))){
+            avImg.src = avSrc;
+          }
           avImg.style.display = '';
         } else {
           av.classList.remove('avatar--brand-default');
@@ -10148,15 +10170,24 @@
       const count = Math.min(9, dashboardData.today.length || 0);
       grid.className = 'today-grid';
       grid.setAttribute('data-session-count', String(count));
-      const fb = document.getElementById('todayGridFallback');
-      if(fb) fb.remove();
-      grid.innerHTML = '';
       if(!count){
         applyTodayGridSizing(grid, 0);
         const preview = dashboardData && dashboardData.portalTodayNextSessionPreview;
         const loading = !!(dashboardData && dashboardData.portalIdentityResolved === false);
+        const dayOffSig = typeof portalTodayDayOffPanelSignature === 'function'
+          ? portalTodayDayOffPanelSignature({ preview: preview && !loading ? preview : null, loading: loading })
+          : '';
+        if(dayOffSig && grid.getAttribute('data-day-off-sig') === dayOffSig && grid.querySelector('.today-day-panel')){
+          grid.classList.add('today-grid--day-off');
+          if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
+          return;
+        }
+        const fb = document.getElementById('todayGridFallback');
+        if(fb) fb.remove();
+        grid.innerHTML = '';
         grid.classList.add('today-grid--day-off');
         grid.style.setProperty('--today-rows-fill', '1');
+        grid.setAttribute('data-day-off-sig', dayOffSig || '');
         grid.innerHTML = portalTodayDayOffPanelHtml({
           preview: preview && !loading ? preview : null,
           loading: loading
@@ -10165,6 +10196,10 @@
         if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
         return;
       }
+      const fb = document.getElementById('todayGridFallback');
+      if(fb) fb.remove();
+      grid.innerHTML = '';
+      grid.removeAttribute('data-day-off-sig');
       applyTodayGridSizing(grid, count);
       const list = dashboardData.today.slice(0, 9);
       const rowsWrap = document.createElement('div');
@@ -11695,9 +11730,25 @@
           return '(' + s.toUpperCase() + ')';
         };
         const nextRows = dashboardData.tomorrow || [];
+        const tomorrowSig = typeof portalTomorrowListSignature === 'function'
+          ? portalTomorrowListSignature(nextRows.map(normalizeTomorrowRow))
+          : '';
+        if(typeof portalPreloadParticipantPhotoUrls === 'function'){
+          portalPreloadParticipantPhotoUrls(nextRows.map(function(item){
+            const row = normalizeTomorrowRow(item);
+            return row.avatarFile;
+          }));
+        }
         if(!nextRows.length){
           tl.innerHTML = '<div class="clients-grid-empty" role="status">No sessions on your next work day in the next three weeks.</div>';
+          tl.setAttribute('data-tomorrow-sig', 'empty');
+        } else if(tl.getAttribute('data-tomorrow-sig') === tomorrowSig && tl.querySelector('.calendar-day--tomorrow, .calendar-day--tomorrow-btn')){
+          /* keep existing participant photos — avoid reload flicker */
         } else {
+          tl.setAttribute('data-tomorrow-sig', tomorrowSig);
+          const photoLoadAttr = typeof portalParticipantPhotoLoadingAttr === 'function'
+            ? portalParticipantPhotoLoadingAttr()
+            : ' loading="eager" fetchpriority="low"';
           tl.innerHTML = nextRows.map(item => {
             const row = normalizeTomorrowRow(item);
             const timeShown = row.timeSlotLabel && String(row.timeSlotLabel).trim()
@@ -11712,7 +11763,7 @@
             const vCls = venueChipClass(row.venue);
             const src = row.avatarFile ? String(row.avatarFile).trim() : '';
             const avatar = src
-              ? `<div class="calendar-day-avatar"><img class="portal-screenshot-protected" src="${escapeHtml(src)}" alt="" loading="lazy" decoding="async" draggable="false" onerror="this.closest('.calendar-day-avatar').classList.add('calendar-day-avatar--empty');this.remove();"/></div>`
+              ? `<div class="calendar-day-avatar"><img class="portal-screenshot-protected" src="${escapeHtml(src)}" alt=""${photoLoadAttr} decoding="async" draggable="false" onerror="this.closest('.calendar-day-avatar').classList.add('calendar-day-avatar--empty');this.remove();"/></div>`
               : `<div class="calendar-day-avatar calendar-day-avatar--empty" title="Photo" aria-label="Participant photo placeholder">${camSvg}</div>`;
             const noteRaw = String(row.areaNote || '').trim();
           const ovRaw = String(row.futureOverrideLabel || '').trim();
@@ -13549,7 +13600,7 @@
         if (!boot0 || !Array.isArray(boot0.sessionsModel) || !boot0.sessionsModel.length) return null;
         return { staffId: portalLocalCanonicalStaffKey(keys[0]), boot: boot0 };
       }
-      function portalStaffFinishIdentityUi(profileForRoster, p, session) {
+      function portalStaffApplyIdentityResolved(profileForRoster, p, session) {
         if (!dashboardData) return;
         dashboardData.staffName =
           typeof window.portalTopbarDisplayNameFromAuth === "function"
@@ -13560,6 +13611,9 @@
                   ""
               ).trim();
         dashboardData.portalIdentityResolved = true;
+      }
+      function portalStaffFinishIdentityUi(profileForRoster, p, session) {
+        portalStaffApplyIdentityResolved(profileForRoster, p, session);
         if (typeof renderHeader === "function") renderHeader();
         if (typeof renderToday === "function") renderToday();
         if (typeof renderMiniCounts === "function") renderMiniCounts();
@@ -13754,7 +13808,7 @@
           var dw = String(DEMO_VIEW_DAY || "").trim() || new Date().toLocaleDateString("en-GB", { weekday: "long" });
           dashboardData.venueMeta = dashboardData.today.length ? (dashboardData.today.length + " sessions") : ("No participants — " + dw);
         })();
-        portalStaffFinishIdentityUi(profileForRoster, p, session);
+        portalStaffApplyIdentityResolved(profileForRoster, p, session);
         if(typeof window.portalApplyScheduleOverridesToSessionsModelSafe === "function"){
           try{
             if (runId !== _rehydrateRun) return;
@@ -13800,7 +13854,7 @@
           }
         }catch(_){}
 
-        function _finishStaffRehydrateUi(){
+        function _finishStaffRehydrateUiNow(){
           if(typeof portalMarkFeedbackReconciledFromExports === "function"){
             portalMarkFeedbackReconciledFromExports();
           }
@@ -13821,6 +13875,13 @@
           if(typeof window.portalApplyAfterVenueReturnFromUrl === "function"){
             window.portalApplyAfterVenueReturnFromUrl();
           }
+        }
+        function _finishStaffRehydrateUi(){
+          if(typeof portalScheduleDashboardUiFinish === "function"){
+            portalScheduleDashboardUiFinish(_finishStaffRehydrateUiNow, 48);
+            return;
+          }
+          _finishStaffRehydrateUiNow();
         }
         function _portalStaffRebuildAfterOverridesFetch(staffId){
           if(typeof buildSelectedDayViewFromLauraModel !== "function") return;

@@ -118,6 +118,13 @@
       var box = document.getElementById("topbarStaffPhoto");
       if (box) box.setAttribute("aria-hidden", "false");
     };
+    var current = String(img.getAttribute("src") || img.src || "");
+    if (current && (current === url || current.endsWith(url) || url.endsWith(current.split("?")[0]))) {
+      if (img.complete && img.naturalWidth > 0) {
+        img.onload();
+      }
+      return;
+    }
     img.src = url;
   }
 

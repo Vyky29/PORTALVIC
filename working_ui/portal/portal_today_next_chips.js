@@ -71,10 +71,16 @@
       var name = esc(rawName);
       var rawId = String((p && p.clientId) || "").trim();
       var src = p && p.photoUrl ? String(p.photoUrl).trim() : "";
+      var loadAttr =
+        typeof global.portalParticipantPhotoLoadingAttr === "function"
+          ? global.portalParticipantPhotoLoadingAttr()
+          : ' loading="eager" fetchpriority="low"';
       var av = src
         ? '<img class="portal-screenshot-protected" src="' +
           esc(src) +
-          '" alt="" loading="lazy" decoding="async" draggable="false" onerror="this.remove();this.parentElement.classList.add(\'today-participant-chip__avatar--empty\');"/>'
+          '" alt=""' +
+          loadAttr +
+          ' decoding="async" draggable="false" onerror="this.remove();this.parentElement.classList.add(\'today-participant-chip__avatar--empty\');"/>'
         : "";
       var chipCol = portalTodayNextChipColumnStyle(chipIdx, chips.length);
       html +=
