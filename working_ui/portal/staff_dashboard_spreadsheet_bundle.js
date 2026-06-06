@@ -87,7 +87,7 @@
     "bismark": {
       "staffId": "bismark",
       "staffName": "Bismark",
-      "avatarFile": "portal/staff_photos/bismark.jpg",
+      "avatarFile": "portal/staff_photos/bismark.png?v=20260606-bismark-buena",
       "staffRoleTrack": "support",
       "canViewAll": false
     },
