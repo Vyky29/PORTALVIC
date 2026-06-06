@@ -188,22 +188,22 @@
   function portalTodayAreaNoteMetrics(sessionCount, scrollMode, gridEl) {
     var n = Math.min(9, Math.max(1, sessionCount | 0));
     if (scrollMode) {
-      return { iconPx: 30, areaIconPx: 36, labelFs: 9, symbolColMax: 72 };
+      return { iconPx: 32, areaIconPx: 38, labelFs: 8, symbolColMax: 72 };
     }
     var rowH = portalMeasureTodaySessionRowHeight(gridEl, n);
     var areaIconPx;
     if (rowH > 0) {
-      areaIconPx = Math.round(rowH * 0.58);
+      areaIconPx = Math.round(rowH * 0.78);
     } else {
-      var areaByCount = { 1: 72, 2: 64, 3: 56, 4: 50, 5: 44, 6: 40 };
-      areaIconPx = areaByCount[n] || 38;
+      var areaByCount = { 1: 80, 2: 72, 3: 64, 4: 56, 5: 48, 6: 44 };
+      areaIconPx = areaByCount[n] || 40;
     }
-    var maxCap = n <= 1 ? 120 : n <= 2 ? 108 : n <= 4 ? 96 : n <= 6 ? 84 : 72;
-    var minCap = n <= 2 ? 52 : n <= 4 ? 44 : 36;
+    var maxCap = n <= 1 ? 132 : n <= 2 ? 120 : n <= 4 ? 104 : n <= 6 ? 88 : 72;
+    var minCap = n <= 2 ? 56 : n <= 4 ? 48 : 36;
     areaIconPx = Math.min(maxCap, Math.max(minCap, areaIconPx));
-    var symbolColMax = Math.min(128, Math.max(72, Math.round(areaIconPx * 1.22)));
-    var iconPx = Math.max(28, Math.round(areaIconPx * 0.92));
-    var labelFs = Math.min(14, Math.max(8, Math.round(areaIconPx * 0.19)));
+    var symbolColMax = n <= 2 ? 80 : n <= 4 ? 76 : 72;
+    var iconPx = Math.max(28, Math.round(areaIconPx * 0.95));
+    var labelFs = n <= 4 ? 8 : 7;
     return { iconPx: iconPx, areaIconPx: areaIconPx, labelFs: labelFs, symbolColMax: symbolColMax };
   }
 
