@@ -93,7 +93,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260610-pwa-black-fix" />
   <script src="/portal/portal_screenshot_guard.js?v=20260610-pwa-black-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260606-today-rows" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260606-today-rows-fit" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260606-topbar-icons" />
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260620-inbox-logo-orbit" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260601-landscape-full" />
@@ -9792,6 +9792,7 @@
       if(!count || count < 1){
         grid.style.removeProperty('--today-rows-fill');
         grid.style.removeProperty('--today-session-count');
+        grid.style.removeProperty('--today-row-pad-y');
         grid.style.removeProperty('--today-time-fs');
         grid.style.removeProperty('--today-name-fs');
         grid.style.removeProperty('--today-icon');
@@ -9802,14 +9803,16 @@
       grid.style.setProperty('--today-rows-fill', n === 1 ? '0.333333' : '1');
       grid.style.setProperty('--today-session-count', String(n));
       const t = (n - 1) / 8;
-      const timeFs = Math.round(11 + (1 - t) * 6);
-      const nameFs = Math.min(18, timeFs + 1);
-      const iconPx = Math.round(16 + (1 - t) * 12);
-      const gapPx = Math.round(3 + (1 - t) * 5);
+      const timeFs = Math.round(11 + (1 - t) * 5);
+      const nameFs = Math.min(16, timeFs + 1);
+      const iconPx = Math.round(14 + (1 - t) * 10);
+      const gapPx = n >= 7 ? 2 : (n >= 4 ? 3 : Math.round(4 + (3 - n) * 0.5));
+      const padY = n >= 8 ? 2 : (n >= 5 ? 3 : 4);
       grid.style.setProperty('--today-time-fs', timeFs + 'px');
       grid.style.setProperty('--today-name-fs', nameFs + 'px');
       grid.style.setProperty('--today-icon', iconPx + 'px');
       grid.style.setProperty('--today-row-gap', gapPx + 'px');
+      grid.style.setProperty('--today-row-pad-y', padY + 'px');
     }
 
     function renderToday(){
@@ -9833,7 +9836,7 @@
           if(todayDateLine) todayDateLine.textContent = '';
         }
       }
-      const count = dashboardData.today.length || 0;
+      const count = Math.min(9, dashboardData.today.length || 0);
       grid.className = 'today-grid';
       grid.setAttribute('data-session-count', String(count));
       const fb = document.getElementById('todayGridFallback');
@@ -9858,7 +9861,7 @@
         return;
       }
       applyTodayGridSizing(grid, count);
-      const list = dashboardData.today.slice();
+      const list = dashboardData.today.slice(0, 9);
       const rowsWrap = document.createElement('div');
       rowsWrap.className = 'today-grid-rows';
       rowsWrap.setAttribute('role', 'list');

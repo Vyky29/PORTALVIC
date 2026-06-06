@@ -3720,7 +3720,7 @@
       outline:none;
     }
 
-    /* TODAY: fila central del grid main; la rejilla hace scroll si hay muchas sesiones */
+    /* TODAY: fila central del grid main; hasta 9 sesiones sin scroll (reparto proporcional) */
     .section-card.section-card--today{
       min-height:0;
       height:100%;
@@ -3740,9 +3740,10 @@
       min-height:0;
       padding:4px 6px 8px;
       overflow-x:hidden;
-      overflow-y:auto;
-      -webkit-overflow-scrolling:touch;
-      overscroll-behavior-y:contain;
+      overflow-y:hidden;
+    }
+    .section-card--today .today-grid:has(.today-grid-rows){
+      overflow-y:hidden;
     }
     .today-grid{
       padding:12px 14px 16px;
@@ -3765,7 +3766,10 @@
     }
     .section-card--today .today-grid-rows > .session-card{
       flex:1 1 0;
-      min-height:44px;
+      min-height:0;
+      max-height:none;
+      padding:var(--today-row-pad-y,4px) 8px;
+      overflow:hidden;
     }
     .section-card--today .session-card{
       padding:4px 10px;
