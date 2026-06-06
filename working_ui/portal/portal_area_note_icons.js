@@ -56,12 +56,20 @@
     bespoke: { label: "Bespoke", cls: "session-area-note-icon--bespoke" },
   };
 
-  function portalAreaNoteIconMarkup(key) {
+  function portalAreaNoteIconMarkup(key, opts) {
+    opts = opts || {};
+    var venueCls = opts.venueSessionCard ? " session-venue-icon" : "";
     var meta = ICONS[key];
-    if (meta && meta.svg) return meta.svg;
+    if (meta && meta.svg) {
+      return meta.svg.replace(
+        'class="' + SVG_CLASS + '"',
+        'class="' + SVG_CLASS + venueCls + '"'
+      );
+    }
     return (
       '<img class="' +
       IMG_CLASS +
+      venueCls +
       '" src="' +
       ICON_IMG_BASE +
       key +
@@ -143,8 +151,11 @@
       '" role="img" aria-label="' +
       escapeHtml(meta.label) +
       '">' +
-      portalAreaNoteIconMarkup(key) +
+      portalAreaNoteIconMarkup(key, opts) +
       "</span>";
+    if (opts.venueSessionCard) {
+      iconHtml = '<span class="session-venue-visual">' + iconHtml + "</span>";
+    }
     if (!opts.showLabel) return iconHtml;
     var caption = opts.labelText
       ? String(opts.labelText).trim()
@@ -213,7 +224,37 @@
     return { iconPx: iconPx, areaIconPx: areaIconPx, labelFs: labelFs, symbolColMax: symbolColMax };
   }
 
+  /** Card-height sizing for `.session-venue-icon` inside TODAY session cards only. */
+  function portalApplySessionVenueIconSizing(gridEl, sessionCount, scrollMode) {
+    if (!gridEl) return;
+    if (!sessionCount || sessionCount < 1) {
+      gridEl.style.removeProperty("--session-venue-icon-size");
+      gridEl.style.removeProperty("--session-venue-visual-min");
+      return;
+    }
+    var n = Math.min(9, Math.max(1, sessionCount | 0));
+    var rowH = portalMeasureTodaySessionRowHeight(gridEl, n);
+    var iconPx;
+    if (scrollMode || n >= 7) {
+      iconPx =
+        rowH > 0
+          ? Math.min(92, Math.max(58, Math.round(rowH * 0.42)))
+          : 72;
+    } else {
+      var labelReserve = 12;
+      var fallbacks = { 1: 92, 2: 88, 3: 84, 4: 78, 5: 72, 6: 66 };
+      iconPx =
+        rowH > 0
+          ? Math.min(92, Math.max(58, Math.round((rowH - labelReserve) * 0.78)))
+          : fallbacks[n] || 66;
+    }
+    var visualMin = Math.min(110, Math.max(70, iconPx + 12));
+    gridEl.style.setProperty("--session-venue-icon-size", iconPx + "px");
+    gridEl.style.setProperty("--session-venue-visual-min", visualMin + "px");
+  }
+
   global.portalMeasureTodaySessionRowHeight = portalMeasureTodaySessionRowHeight;
+  global.portalApplySessionVenueIconSizing = portalApplySessionVenueIconSizing;
 
   global.portalNormalizeAreaNoteKey = portalNormalizeAreaNoteKey;
   global.portalResolveAreaNoteLabelFromItem = portalResolveAreaNoteLabelFromItem;

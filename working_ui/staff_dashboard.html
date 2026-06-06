@@ -93,7 +93,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260606-watermark-shot" />
   <script src="/portal/portal_screenshot_guard.js?v=20260606-watermark-shot"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260610-note-icon-few" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260610-session-venue-icon" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260610-roberto-topbar" />
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260620-inbox-logo-orbit" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
@@ -101,7 +101,7 @@
   <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260610-note-icon-few" />
   <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260622-ghost-view" />
 </head>
-<body>
+<body class="staff-dashboard">
   <script>
   /* Embedded shell: if only <body> is injected, <head> (PWA metas) is missing and iOS keeps the Safari bar. */
   (function(){
@@ -986,7 +986,7 @@
   <script src="/portal/portal_swimming_instructor_menus.js?v=20260610-roberto-topbar"></script>
   <script src="/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off"></script>
   <script src="/portal/portal_floating_internal_chat.js?v=20260604-footer-chat"></script>
-  <script src="/portal/portal_area_note_icons.js?v=20260610-note-icon-few"></script>
+  <script src="/portal/portal_area_note_icons.js?v=20260610-session-venue-icon"></script>
   <script src="/portal/portal_today_next_chips.js?v=20260606-dayoff-med"></script>
   <script type="module" src="/portal/portal_quick_menu_service_leads.js?v=20260604-service-leads-lead-only"></script>
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
@@ -5175,7 +5175,7 @@
           ? String(item.areaLabel).trim()
           : (item.poolLocationLabel ? String(item.poolLocationLabel).trim() : ''));
       if(label && typeof portalAreaNoteIconHtml === 'function'){
-        const icon = portalAreaNoteIconHtml(label, { showLabel: true });
+        const icon = portalAreaNoteIconHtml(label, { showLabel: true, venueSessionCard: true });
         if(icon) return icon;
       }
       return '<span class="session-pool-na" aria-hidden="true">—</span>';
@@ -9990,6 +9990,7 @@
         grid.style.removeProperty('--today-area-label-fs');
         grid.style.removeProperty('--today-symbol-col-max');
         grid.style.removeProperty('--today-row-gap');
+        if(typeof portalApplySessionVenueIconSizing === 'function') portalApplySessionVenueIconSizing(grid, 0, false);
         return;
       }
       const n = Math.min(9, count);
@@ -10025,6 +10026,13 @@
       grid.style.setProperty('--today-symbol-col-max', areaM.symbolColMax + 'px');
       grid.style.setProperty('--today-row-gap', gapPx + 'px');
       grid.style.setProperty('--today-row-pad-y', padY + 'px');
+      if(typeof portalApplySessionVenueIconSizing === 'function'){
+        portalApplySessionVenueIconSizing(grid, n, scrollMode);
+        const visualMin = parseFloat(grid.style.getPropertyValue('--session-venue-visual-min'));
+        if(Number.isFinite(visualMin) && visualMin > areaM.symbolColMax){
+          grid.style.setProperty('--today-symbol-col-max', Math.round(visualMin) + 'px');
+        }
+      }
     }
 
     function renderToday(){
