@@ -101,7 +101,7 @@
     "godsway": {
       "staffId": "godsway",
       "staffName": "Godsway",
-      "avatarFile": "portal/staff_photos/godsway.png",
+      "avatarFile": "portal/staff_photos/godsway.png?v=20260606-godsway-buena",
       "staffRoleTrack": "support",
       "canViewAll": false
     },
