@@ -1,13 +1,14 @@
 /**
  * Area / pool note icons for TODAY rows, Next session list, etc.
- * PNG assets cropped from the approved mockup (portal/area-note-icons/).
+ * Pool size icons are crisp SVG; other areas use PNG from mockup crops.
  */
 (function (global) {
   "use strict";
 
   var ICON_IMG_BASE = "/portal/area-note-icons/";
-  var ICON_IMG_VER = "20260622-icon-polish";
+  var ICON_IMG_VER = "20260622-pool-svg";
   var IMG_CLASS = "session-area-note-img";
+  var SVG_CLASS = "session-area-note-svg";
 
   function escapeHtml(str) {
     return String(str || "")
@@ -17,9 +18,33 @@
       .replace(/"/g, "&quot;");
   }
 
+  var SVG_HEAD =
+    '<svg class="' +
+    SVG_CLASS +
+    '" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" fill="none">';
+
   var ICONS = {
-    "big-pool": { label: "Big Pool", cls: "session-area-note-icon--big-pool" },
-    "small-pool": { label: "Small Pool", cls: "session-area-note-icon--small-pool" },
+    "big-pool": {
+      label: "Big Pool",
+      cls: "session-area-note-icon--big-pool",
+      svg:
+        SVG_HEAD +
+        '<rect x="2.5" y="7.5" width="19" height="11" rx="2" stroke="currentColor" stroke-width="1.85"/>' +
+        '<path d="M5 13.2c2.4-1.1 4.8-1.1 7.2 0s4.8 1.1 7.2 0" stroke="currentColor" stroke-width="1.55" stroke-linecap="round"/>' +
+        '<circle cx="18.8" cy="10.5" r="1.15" fill="currentColor"/>' +
+        '<circle cx="18.8" cy="15" r="1.15" fill="currentColor"/>' +
+        "</svg>",
+    },
+    "small-pool": {
+      label: "Small Pool",
+      cls: "session-area-note-icon--small-pool",
+      svg:
+        SVG_HEAD +
+        '<rect x="4.5" y="8.5" width="15" height="9" rx="2" stroke="currentColor" stroke-width="1.85"/>' +
+        '<path d="M6.5 12.8c1.9-.95 3.8-.95 5.7 0 1.9.95 3.8.95 5.7 0" stroke="currentColor" stroke-width="1.55" stroke-linecap="round"/>' +
+        '<circle cx="17.2" cy="12.2" r="1.1" fill="currentColor"/>' +
+        "</svg>",
+    },
     "teaching-pool": { label: "Teaching Pool", cls: "session-area-note-icon--teaching-pool" },
     "lane-se": { label: "Lane (SE)", cls: "session-area-note-icon--lane-se" },
     "lane-de": { label: "Lane (DE)", cls: "session-area-note-icon--lane-de" },
@@ -32,6 +57,8 @@
   };
 
   function portalAreaNoteIconMarkup(key) {
+    var meta = ICONS[key];
+    if (meta && meta.svg) return meta.svg;
     return (
       '<img class="' +
       IMG_CLASS +

@@ -39,11 +39,12 @@
   border:none;
 }
 .section-card--today .session-line--symbol .session-area-note-icon{
-  width:var(--today-area-icon, 42px);
-  height:var(--today-area-icon, 42px);
+  width:var(--today-area-icon, 40px);
+  height:calc(var(--today-area-icon, 40px) - 10px);
   flex-shrink:0;
-  padding:0 2px;
+  padding:0;
   box-sizing:border-box;
+  overflow:visible;
 }
 .section-card--today .session-line--symbol .session-area-note-icon .session-area-note-img,
 .section-card--today .session-line--symbol .session-area-note-icon .session-area-note-svg{
@@ -51,6 +52,7 @@
   height:100%;
   max-width:100%;
   max-height:100%;
+  display:block;
 }
 .section-card--today .session-line--symbol .session-area-note-label{
   display:block;
@@ -70,13 +72,18 @@
   border:none;
   background:transparent;
 }
-/* Shark / big pool — black silhouette */
-.session-area-note-icon--big-pool .session-area-note-img,
+.session-area-note-icon--big-pool,
+.session-area-note-icon--big-pool .session-area-note-svg{
+  color:#1a1a1e;
+}
+.session-area-note-icon--small-pool,
+.session-area-note-icon--small-pool .session-area-note-svg{
+  color:#0ea5e9;
+}
+/* Lane PNG tints */
 .session-area-note-icon--lane-de .session-area-note-img{
   filter:brightness(0) saturate(100%);
 }
-/* Fish / small pool — bright blue */
-.session-area-note-icon--small-pool .session-area-note-img,
 .session-area-note-icon--lane-se .session-area-note-img{
   filter:brightness(0) saturate(100%) invert(46%) sepia(98%) saturate(2476%) hue-rotate(176deg) brightness(104%) contrast(101%);
 }

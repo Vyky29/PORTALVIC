@@ -3475,8 +3475,12 @@
     }
     .section-card--today .today-grid.today-grid--session-scroll .today-grid-rows > .session-card{
       flex:0 0 auto;
-      min-height:54px;
+      min-height:58px;
       max-height:none;
+      overflow:visible;
+    }
+    .section-card--today .today-grid.today-grid--session-scroll .today-grid-rows > .session-card .session-line--symbol{
+      overflow:visible;
     }
     .today-grid{
       padding:4px 8px 10px;
