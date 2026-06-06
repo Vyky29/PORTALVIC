@@ -93,7 +93,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260606-screenshot-ceo" />
   <script src="/portal/portal_screenshot_guard.js?v=20260606-screenshot-ceo"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260622-next-chip-client" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260622-next-session-tap" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260606-topbar-icons" />
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260620-inbox-logo-orbit" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
@@ -9931,11 +9931,19 @@
       }
       return id;
     }
-    function openClientFromNextSessionParticipant(clientId, name){
+    function openClientFromNextSessionParticipant(clientId, name, timeHint){
       const preview = dashboardData && dashboardData.portalTodayNextSessionPreview;
-      const sub = preview
-        ? ('Next session · ' + String(preview.weekday || '').trim() + ' ' + String(preview.dateLabel || '').trim()).trim()
-        : 'Next session participant';
+      let sub = 'Next session participant';
+      const hint = String(timeHint || '').trim();
+      if(hint){
+        const sheetTitle = typeof formatNextSessionSheetTitle === 'function' ? String(formatNextSessionSheetTitle() || '').trim() : '';
+        sub = sheetTitle && sheetTitle !== 'No upcoming sessions' ? (sheetTitle + ' · ' + hint) : hint;
+      }else if(preview){
+        sub = ('Next session · ' + String(preview.weekday || '').trim() + ' ' + String(preview.dateLabel || '').trim()).trim();
+      }else if(typeof formatNextSessionSheetTitle === 'function'){
+        const sheetTitle = String(formatNextSessionSheetTitle() || '').trim();
+        if(sheetTitle && sheetTitle !== 'No upcoming sessions') sub = sheetTitle;
+      }
       const resolvedId = portalResolveClientIdForParticipant(clientId, name);
       let item = resolvedId ? buildClientDirectorySheetItem(resolvedId, sub) : null;
       if(!item){
@@ -9963,16 +9971,25 @@
           if(typeof openSheet === 'function') openSheet('tomorrowSheet');
         });
       });
-      grid.querySelectorAll('[data-next-session-participant="1"]').forEach(function(btn){
-        btn.addEventListener('click', function(ev){
-          ev.preventDefault();
-          ev.stopPropagation();
-          openClientFromNextSessionParticipant(
-            btn.getAttribute('data-next-session-client') || '',
-            btn.getAttribute('data-next-session-name') || ''
-          );
-        });
-      });
+    }
+    function portalInitNextSessionParticipantDelegation(){
+      if(window.__PORTAL_NEXT_SESSION_PARTICIPANT_BOUND__) return;
+      window.__PORTAL_NEXT_SESSION_PARTICIPANT_BOUND__ = true;
+      const onParticipantTap = function(ev){
+        const el = ev.target.closest('[data-next-session-participant="1"]');
+        if(!el) return;
+        ev.preventDefault();
+        ev.stopPropagation();
+        openClientFromNextSessionParticipant(
+          el.getAttribute('data-next-session-client') || '',
+          el.getAttribute('data-next-session-name') || '',
+          el.getAttribute('data-next-session-time') || ''
+        );
+      };
+      const todayGrid = document.getElementById('todayGrid');
+      if(todayGrid) todayGrid.addEventListener('click', onParticipantTap);
+      const tomorrowList = document.getElementById('tomorrowList');
+      if(tomorrowList) tomorrowList.addEventListener('click', onParticipantTap);
     }
 
     function applyTodayGridSizing(grid, count){
@@ -11630,7 +11647,14 @@
             );
             const absentRowCls = row.futureOverrideTone === 'absent-green' || row.futureOverrideTone === 'cancelled-green' ? ' calendar-day--tomorrow-absent-noninteractive' : '';
             const absentRowTab = row.futureOverrideTone === 'absent-green' || row.futureOverrideTone === 'cancelled-green' ? ' tabindex="-1"' : '';
-          return `<div class="calendar-day calendar-day--tomorrow${ovToneCls}${absentRowCls}"${absentRowTab} aria-label="${aria}">${avatar}<div class="calendar-day-tomorrow-middle"><span class="calendar-day-name">${n}</span>${noteHtml}${makeupPillHtml}${absentPillHtml}${cancelledPillHtml}</div><div class="tomorrow-venue-block ${vCls}"><span class="tomorrow-venue-block-time">${t}</span><span class="tomorrow-venue-block-venue">${v}</span></div></div>`;
+            const rowInner = `${avatar}<div class="calendar-day-tomorrow-middle"><span class="calendar-day-name">${n}</span>${noteHtml}${makeupPillHtml}${absentPillHtml}${cancelledPillHtml}</div><div class="tomorrow-venue-block ${vCls}"><span class="tomorrow-venue-block-time">${t}</span><span class="tomorrow-venue-block-venue">${v}</span></div>`;
+            const rawClientId = escapeHtml(String(row.clientId || '').trim());
+            const rawName = escapeHtml(String(row.name || '').trim());
+            const timeSub = escapeHtml(String(timeShown || '').trim());
+            if(absentRowCls){
+              return `<div class="calendar-day calendar-day--tomorrow${ovToneCls}${absentRowCls}"${absentRowTab} aria-label="${aria}">${rowInner}</div>`;
+            }
+            return `<button type="button" class="calendar-day calendar-day--tomorrow calendar-day--tomorrow-btn${ovToneCls}" data-next-session-participant="1" data-next-session-client="${rawClientId}" data-next-session-name="${rawName}" data-next-session-time="${timeSub}" aria-label="Open profile for ${aria}">${rowInner}</button>`;
           }).join('');
         }
       }
@@ -12269,6 +12293,7 @@
       }
     }
 
+    portalInitNextSessionParticipantDelegation();
     backdropEl = document.getElementById('backdrop');
     const demoQuickOverlay = document.getElementById('demoQuickActionOverlay');
     const demoQuickPanel = document.getElementById('demoQuickActionPanel');

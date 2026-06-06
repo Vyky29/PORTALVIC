@@ -4997,6 +4997,24 @@
       cursor:default;
       user-select:none;
     }
+    button.calendar-day--tomorrow-btn{
+      display:grid;
+      width:100%;
+      margin:0;
+      padding:10px 12px;
+      border:1px solid var(--line);
+      border-radius:12px;
+      background:#fff;
+      font:inherit;
+      color:inherit;
+      text-align:left;
+      cursor:pointer;
+      -webkit-tap-highlight-color:transparent;
+    }
+    button.calendar-day--tomorrow-btn:focus-visible{
+      outline:2px solid rgba(45,132,179,.45);
+      outline-offset:2px;
+    }
     .week-absent-under-service{
       display:flex;
       flex-direction:column;
