@@ -7204,30 +7204,30 @@
       width:100%;
       gap:4px;
       padding:5px 3px 6px;
-      background:linear-gradient(145deg,#fff 0%,#eaf5fb 100%);
-      border-color:rgba(45,132,179,.32);
-      color:var(--blue);
-      box-shadow:0 2px 12px rgba(45,132,179,.14);
+      background:linear-gradient(145deg,#1e425c 0%,var(--ink) 100%);
+      border-color:rgba(23,50,71,.58);
+      color:#fff;
+      box-shadow:0 2px 12px rgba(23,50,71,.24);
     }
     .dock-nav-item--chat:hover{
-      border-color:rgba(45,132,179,.45);
-      background:linear-gradient(145deg,#f6fbff 0%,#ddeef8 100%);
-      box-shadow:0 6px 20px rgba(45,132,179,.2);
+      border-color:rgba(23,50,71,.78);
+      background:linear-gradient(145deg,#234d6a 0%,#1a3a52 100%);
+      box-shadow:0 6px 20px rgba(23,50,71,.3);
     }
     .dock-nav-item--chat .dock-nav-item__icon{
       position:static;
       transform:none;
       margin:0;
-      background:rgba(45,132,179,.12);
-      color:var(--blue);
-      border:1px solid rgba(45,132,179,.22);
+      background:rgba(255,255,255,.14);
+      color:#fff;
+      border:1px solid rgba(255,255,255,.24);
     }
     .dock-nav-item--chat .dock-nav-item__icon svg{fill:currentColor;stroke:none}
     .dock-nav-item--chat .dock-nav-item__label{
       position:static;
       transform:none;
       margin:0;
-      color:var(--blue);
+      color:#fff;
       opacity:1;
       visibility:visible;
       white-space:nowrap;
@@ -7237,20 +7237,35 @@
       line-height:1.05;
     }
     .dock-nav-item.dock-nav-item--chat:focus-visible{
-      outline:2px solid var(--blue);
+      outline:2px solid var(--ink);
       outline-offset:2px;
     }
     .dock-chat-wrap--unread .dock-nav-item--chat{
       animation:dock-chat-unread-pulse 1.15s ease-in-out infinite;
+      background:linear-gradient(145deg,#42a5f5 0%,#1565c0 100%);
+      border-color:rgba(100,181,246,.92);
+      color:#fff;
+      box-shadow:0 0 0 0 rgba(33,150,243,.5),0 4px 18px rgba(33,150,243,.34);
     }
+    .dock-chat-wrap--unread .dock-nav-item--chat:hover{
+      background:linear-gradient(145deg,#64b5f6 0%,#1976d2 100%);
+      border-color:#90caf9;
+      box-shadow:0 0 0 0 rgba(33,150,243,.55),0 6px 22px rgba(33,150,243,.42);
+    }
+    .dock-chat-wrap--unread .dock-nav-item--chat .dock-nav-item__icon{
+      background:rgba(255,255,255,.22);
+      border-color:rgba(255,255,255,.38);
+      color:#fff;
+    }
+    .dock-chat-wrap--unread .dock-nav-item--chat .dock-nav-item__label{color:#fff}
     @keyframes dock-chat-unread-pulse{
       0%,100%{
-        box-shadow:0 0 0 0 rgba(45,132,179,.42), 0 2px 10px rgba(23,50,71,.08);
-        border-color:rgba(45,132,179,.45);
+        box-shadow:0 0 0 0 rgba(33,150,243,.55),0 2px 14px rgba(33,150,243,.32);
+        border-color:rgba(100,181,246,.92);
       }
       50%{
-        box-shadow:0 0 0 7px rgba(45,132,179,.12), 0 4px 14px rgba(45,132,179,.22);
-        border-color:rgba(45,132,179,.72);
+        box-shadow:0 0 0 10px rgba(33,150,243,.14),0 6px 24px rgba(33,150,243,.58);
+        border-color:#bbdefb;
       }
     }
     .dock-nav-item--chat .portal-floating-chat-badge{
@@ -7262,7 +7277,7 @@
       height:18px;
       padding:0 4px;
       border-radius:999px;
-      background:var(--blue);
+      background:#0d47a1;
       color:#fff;
       font-size:10px;
       font-weight:800;
@@ -7275,21 +7290,42 @@
       z-index:2;
       pointer-events:none;
     }
+    .dock-chat-wrap--unread .dock-nav-item--chat .portal-floating-chat-badge{
+      background:#0d47a1;
+      box-shadow:0 0 0 2px rgba(187,222,251,.55);
+    }
     body.dock-context-menu .dock-nav-item--chat{
-      background:#fff;
-      border-color:rgba(23,50,71,.14);
-      box-shadow:0 2px 8px rgba(23,50,71,.08);
+      background:linear-gradient(145deg,#fff 0%,#eaf5fb 100%);
+      border-color:rgba(45,132,179,.32);
+      color:var(--blue);
+      box-shadow:0 2px 12px rgba(45,132,179,.14);
+    }
+    body.dock-context-menu .dock-nav-item--chat:hover{
+      border-color:rgba(45,132,179,.45);
+      background:linear-gradient(145deg,#f6fbff 0%,#ddeef8 100%);
+      box-shadow:0 6px 20px rgba(45,132,179,.2);
     }
     body.dock-context-menu .dock-nav-item--chat .dock-nav-item__icon{
-      background:rgba(23,50,71,.1);
-      border-color:rgba(23,50,71,.12);
-      color:var(--ink);
+      background:rgba(45,132,179,.12);
+      border-color:rgba(45,132,179,.22);
+      color:var(--blue);
     }
-    body.dock-context-menu .dock-nav-item--chat .dock-nav-item__label{color:var(--ink)}
-    body.dock-context-clients .dock-nav-item--chat{
-      background:linear-gradient(180deg,#e9f4fb 0%,#ddeef8 100%);
-      border-color:rgba(45,132,179,.38);
+    body.dock-context-menu .dock-nav-item--chat .dock-nav-item__label{color:var(--blue)}
+    body.dock-context-menu .dock-nav-item.dock-nav-item--chat:focus-visible{
+      outline:2px solid var(--blue);
+      outline-offset:2px;
     }
+    body.dock-context-menu .dock-chat-wrap--unread .dock-nav-item--chat{
+      background:linear-gradient(145deg,#42a5f5 0%,#1565c0 100%);
+      border-color:rgba(100,181,246,.92);
+      color:#fff;
+    }
+    body.dock-context-menu .dock-chat-wrap--unread .dock-nav-item--chat .dock-nav-item__icon{
+      background:rgba(255,255,255,.22);
+      border-color:rgba(255,255,255,.38);
+      color:#fff;
+    }
+    body.dock-context-menu .dock-chat-wrap--unread .dock-nav-item--chat .dock-nav-item__label{color:#fff}
 
     .dock-nav-item--quick-menu{
       position:relative;
