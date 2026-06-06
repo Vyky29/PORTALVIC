@@ -151,10 +151,6 @@
   function syncAchievementScreenshotGuard() {
     var g = global.PortalScreenshotGuard;
     if (!g) return;
-    if (typeof g.pushStrict === "function" && typeof g.popStrict === "function") {
-      if (isAchievementGalleryViewerOpen()) g.pushStrict("participant-achievements");
-      else g.popStrict("participant-achievements");
-    }
     if (typeof g.pushMediaCaptureBypass === "function" && typeof g.popMediaCaptureBypass === "function") {
       if (isAchievementCameraOpen()) g.pushMediaCaptureBypass("participant-achievements-camera");
       else g.popMediaCaptureBypass("participant-achievements-camera");

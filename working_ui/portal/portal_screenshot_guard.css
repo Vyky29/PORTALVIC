@@ -24,23 +24,16 @@
 
 #portalScreenshotGuard.is-active {
   opacity: 1;
-  pointer-events: auto;
+  pointer-events: none;
 }
 
-/* App switcher / background: white + logo only. */
-html.portal-screenshot-page-hidden #portalScreenshotGuard.is-active {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-/* Brief foreground flash on desktop capture shortcuts / blur. */
+/* Brief flash only when JS detects a screenshot shortcut (never while app is backgrounded). */
 html.portal-screenshot-foreground-mask #portalScreenshotGuard.is-active {
   opacity: 1;
   pointer-events: none;
 }
 
-html:not(.portal-screenshot-page-hidden):not(.portal-screenshot-foreground-mask) #portalScreenshotGuard.is-active {
-  pointer-events: none;
+html:not(.portal-screenshot-foreground-mask) #portalScreenshotGuard.is-active {
   opacity: 0;
 }
 
