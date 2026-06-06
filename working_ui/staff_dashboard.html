@@ -9904,14 +9904,11 @@
             const av = src
               ? '<img class="portal-screenshot-protected" src="' + escapeHtml(src) + '" alt="" loading="lazy" decoding="async" draggable="false" onerror="this.remove();this.parentElement.classList.add(\'today-participant-chip__avatar--empty\');"/>'
               : '';
-            const med = p.hasMedicalAlert
-              ? '<span class="today-participant-chip__med" title="Medical condition on file">' + TODAY_PARTICIPANT_MED_ICON + '</span>'
-              : '';
             const chipCol = typeof portalTodayNextChipColumnStyle === 'function' ? portalTodayNextChipColumnStyle(chipIdx, chips.length) : '';
             html += '<button type="button" class="today-participant-chip"' + (chipCol ? ' style="' + chipCol + '"' : '') + ' data-next-session-participant="1" data-next-session-client="' + escapeHtml(rawId) + '" data-next-session-name="' + escapeHtml(rawName) + '" aria-label="Open profile for ' + name + '" role="listitem">';
             html += '<span class="today-participant-chip__avatar-wrap">';
             html += '<span class="today-participant-chip__avatar' + (src ? '' : ' today-participant-chip__avatar--empty') + '">' + av + '</span>';
-            html += med + '</span>';
+            html += '</span>';
             html += '<span class="today-participant-chip__name">' + name + '</span></button>';
           });
           html += '</div>';
