@@ -3721,8 +3721,10 @@
       width:var(--today-next-avatar, 56px);
       height:var(--today-next-avatar, 56px);
       flex-shrink:0;
+      border-radius:50%;
     }
     .today-participant-chip__avatar{
+      position:relative;
       width:100%;
       height:100%;
       border-radius:50%;
@@ -3733,6 +3735,8 @@
       box-sizing:border-box;
     }
     .today-participant-chip__avatar img{
+      position:absolute;
+      inset:0;
       width:100%;
       height:100%;
       object-fit:cover;
@@ -3743,8 +3747,8 @@
     .today-participant-chip__avatar--empty{
       background:rgba(23,50,71,.1);
     }
-    .today-participant-chip__med{
-      display:none;
+    .today-day-panel__chips .today-participant-chip__med{
+      display:none !important;
     }
     .today-participant-chip__med-svg{
       width:11px;

@@ -93,7 +93,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260606-watermark-shot" />
   <script src="/portal/portal_screenshot_guard.js?v=20260606-watermark-shot"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260622-chip-center" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260606-dayoff-circles" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260606-female-pink" />
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260620-inbox-logo-orbit" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
@@ -987,7 +987,7 @@
   <script src="/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off"></script>
   <script src="/portal/portal_floating_internal_chat.js?v=20260604-footer-chat"></script>
   <script src="/portal/portal_area_note_icons.js?v=20260606-next-note-label"></script>
-  <script src="/portal/portal_today_next_chips.js?v=20260622-chip-center"></script>
+  <script src="/portal/portal_today_next_chips.js?v=20260606-dayoff-circles"></script>
   <script type="module" src="/portal/portal_quick_menu_service_leads.js?v=20260604-service-leads-lead-only"></script>
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260616-michelle-only"></script>
@@ -9886,7 +9886,6 @@
       html += '<p class="today-day-panel__off-sub">No sessions today</p></div></div>';
       if(hasNext){
         const chips = Array.isArray(preview.participants) ? preview.participants : [];
-        const gridVars = portalTodayNextChipGridVars(chips.length);
         const aria = 'Next session ' + String(preview.weekday || '') + ' ' + String(preview.dateLabel || '');
         html += '<div class="today-day-panel__next">';
         html += '<button type="button" class="today-day-panel__next-open" data-open-next-session="1" aria-label="' + escapeHtml(aria.trim()) + '">';
@@ -9895,23 +9894,9 @@
         html += '<span class="today-day-panel__next-date">' + escapeHtml(preview.weekday || '') + ' · ' + escapeHtml(preview.dateLabel || '') + '</span></div>';
         html += '</button>';
         if(chips.length){
-          html += '<div class="today-day-panel__chips" style="--today-next-avatar:' + gridVars.avatar + 'px;--today-next-chip-gap-x:' + gridVars.gapX + 'px;--today-next-chip-gap-y:' + gridVars.gapY + 'px" data-chip-count="' + chips.length + '" role="list">';
-          chips.forEach(function(p, chipIdx){
-            const rawName = String(p.name || '—').trim();
-            const name = escapeHtml(rawName);
-            const rawId = String(p.clientId || '').trim();
-            const src = p.photoUrl ? String(p.photoUrl).trim() : '';
-            const av = src
-              ? '<img class="portal-screenshot-protected" src="' + escapeHtml(src) + '" alt="" loading="lazy" decoding="async" draggable="false" onerror="this.remove();this.parentElement.classList.add(\'today-participant-chip__avatar--empty\');"/>'
-              : '';
-            const chipCol = typeof portalTodayNextChipColumnStyle === 'function' ? portalTodayNextChipColumnStyle(chipIdx, chips.length) : '';
-            html += '<button type="button" class="today-participant-chip"' + (chipCol ? ' style="' + chipCol + '"' : '') + ' data-next-session-participant="1" data-next-session-client="' + escapeHtml(rawId) + '" data-next-session-name="' + escapeHtml(rawName) + '" aria-label="Open profile for ' + name + '" role="listitem">';
-            html += '<span class="today-participant-chip__avatar-wrap">';
-            html += '<span class="today-participant-chip__avatar' + (src ? '' : ' today-participant-chip__avatar--empty') + '">' + av + '</span>';
-            html += '</span>';
-            html += '<span class="today-participant-chip__name">' + name + '</span></button>';
-          });
-          html += '</div>';
+          html += typeof portalTodayNextParticipantChipsHtml === 'function'
+            ? portalTodayNextParticipantChipsHtml(chips, { escapeHtml: escapeHtml })
+            : '';
         }
         html += '</div>';
       }
