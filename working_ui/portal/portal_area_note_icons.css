@@ -241,7 +241,7 @@
 .session-area-note-stack:has(.session-area-note-icon--room-2),
 .session-area-note-inline:has(.session-area-note-icon--room-2){ --area-note-accent:#78a8a2; }
 .session-area-note-stack:has(.session-area-note-icon--gym),
-.session-area-note-inline:has(.session-area-note-icon--gym){ --area-note-accent:#71a7a0; }
+.session-area-note-inline:has(.session-area-note-icon--gym){ --area-note-accent:#5a9ea8; }
 .session-area-note-stack:has(.session-area-note-icon--climbing-wall),
 .session-area-note-inline:has(.session-area-note-icon--climbing-wall){ --area-note-accent:#7c6bae; }
 .session-area-note-stack:has(.session-area-note-icon--day-center),
