@@ -34,7 +34,7 @@
   flex-direction:column;
   align-items:center;
   justify-content:center;
-  gap:2px;
+  gap:6px;
   width:100%;
   min-width:0;
   max-width:100%;
@@ -78,11 +78,11 @@
   display:block;
   margin:0;
   padding:0;
-  font-size:var(--today-area-label-fs, 8px);
+  font-size:var(--today-area-label-fs, 10px);
   font-weight:600;
-  line-height:1;
+  line-height:1.1;
   letter-spacing:0;
-  color:var(--muted, #64748b);
+  color:var(--area-note-accent, var(--muted, #64748b));
   text-align:center;
   max-width:100%;
   min-width:0;
@@ -92,7 +92,6 @@
   border:none;
   background:transparent;
   flex:0 0 auto;
-  opacity:.92;
 }
 .section-card--today .session-today-override-pool-note .session-area-note-stack{
   margin-top:0;
@@ -108,7 +107,8 @@
   aspect-ratio:1;
 }
 .section-card--today .session-today-override-pool-note .session-area-note-label{
-  font-size:var(--today-area-label-fs, 8px);
+  font-size:var(--today-area-label-fs, 10px);
+  color:var(--area-note-accent, var(--muted, #64748b));
 }
 .session-area-note-icon--sm .session-area-note-img,
 .session-area-note-icon--sm .session-area-note-svg{
@@ -138,7 +138,7 @@
   font-size:13px;
   font-weight:600;
   line-height:1.25;
-  color:var(--muted, #64748b);
+  color:var(--area-note-accent, var(--muted, #64748b));
   min-width:0;
   overflow:hidden;
   text-overflow:ellipsis;
@@ -161,7 +161,7 @@
   min-height:0;
   width:100%;
   max-width:100%;
-  max-height:calc(100% - 14px);
+  max-height:calc(100% - 22px);
   overflow:visible;
 }
 .staff-dashboard .section-card--today .session-card .session-line--symbol .session-area-note-icon:has(.session-venue-icon),
@@ -196,10 +196,34 @@
 .lead-dashboard .section-card--today .session-card .session-line--symbol .session-area-note-label,
 .staff-dashboard .section-card--today .session-card .session-today-override-pool-note .session-area-note-label,
 .lead-dashboard .section-card--today .session-card .session-today-override-pool-note .session-area-note-label{
-  font-size:var(--today-area-label-fs, 8px);
+  font-size:var(--today-area-label-fs, 10px);
   font-weight:600;
   letter-spacing:0;
   text-transform:capitalize;
-  color:var(--muted);
-  line-height:1;
+  color:var(--area-note-accent, var(--muted));
+  line-height:1.1;
 }
+
+/* Label tint matched to each area-note PNG accent. */
+.session-area-note-stack:has(.session-area-note-icon--big-pool),
+.session-area-note-inline:has(.session-area-note-icon--big-pool){ --area-note-accent:#6190b4; }
+.session-area-note-stack:has(.session-area-note-icon--small-pool),
+.session-area-note-inline:has(.session-area-note-icon--small-pool){ --area-note-accent:#698cac; }
+.session-area-note-stack:has(.session-area-note-icon--teaching-pool),
+.session-area-note-inline:has(.session-area-note-icon--teaching-pool){ --area-note-accent:#82c0ea; }
+.session-area-note-stack:has(.session-area-note-icon--lane-se),
+.session-area-note-inline:has(.session-area-note-icon--lane-se){ --area-note-accent:#70a2b0; }
+.session-area-note-stack:has(.session-area-note-icon--lane-de),
+.session-area-note-inline:has(.session-area-note-icon--lane-de){ --area-note-accent:#7b8a9e; }
+.session-area-note-stack:has(.session-area-note-icon--hub-room),
+.session-area-note-inline:has(.session-area-note-icon--hub-room){ --area-note-accent:#8781ba; }
+.session-area-note-stack:has(.session-area-note-icon--room-2),
+.session-area-note-inline:has(.session-area-note-icon--room-2){ --area-note-accent:#78a8a2; }
+.session-area-note-stack:has(.session-area-note-icon--gym),
+.session-area-note-inline:has(.session-area-note-icon--gym){ --area-note-accent:#71a7a0; }
+.session-area-note-stack:has(.session-area-note-icon--climbing-wall),
+.session-area-note-inline:has(.session-area-note-icon--climbing-wall){ --area-note-accent:#8b9dac; }
+.session-area-note-stack:has(.session-area-note-icon--day-center),
+.session-area-note-inline:has(.session-area-note-icon--day-center){ --area-note-accent:#eabd7f; }
+.session-area-note-stack:has(.session-area-note-icon--bespoke),
+.session-area-note-inline:has(.session-area-note-icon--bespoke){ --area-note-accent:#a992a7; }

@@ -180,11 +180,11 @@
   function portalTodayAreaNoteMetrics(sessionCount, scrollMode, gridEl) {
     var n = Math.min(9, Math.max(1, sessionCount | 0));
     if (scrollMode) {
-      return { iconPx: 32, areaIconPx: 38, labelFs: 8, symbolColMax: 72 };
+      return { iconPx: 32, areaIconPx: 38, labelFs: 10, symbolColMax: 72 };
     }
     var rowH = portalMeasureTodaySessionRowHeight(gridEl, n);
-    var labelFs = 8;
-    var labelReserve = labelFs + 4;
+    var labelFs = 10;
+    var labelReserve = labelFs + 8;
     var areaIconPx;
     if (rowH > 0) {
       areaIconPx = Math.round(rowH * 0.74 - labelReserve);
