@@ -602,6 +602,7 @@
       object-fit:contain;
       object-position:center;
       background:linear-gradient(180deg,#f2f7fb,#e5edf5);
+      transform:scale(1.10);
     }
 
     /* Especificidad alta: en Elementor el tema suele estilar `h1` y tapa el clamp local */

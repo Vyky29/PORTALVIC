@@ -108,7 +108,7 @@
     "javier": {
       "staffId": "javier",
       "staffName": "Javier",
-      "avatarFile": "portal/staff_photos/javier.jpg",
+      "avatarFile": "portal/staff_photos/javier.png",
       "staffRoleTrack": "swimming",
       "canViewAll": false
     },
