@@ -11,7 +11,7 @@
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
   <script src="/portal/admin-portal-form-record-modal.js?v=20260603-form-record-modal"></script>
   <script src="/portal/admin-portal-day-ops.js?v=20260603-form-record-modal"></script>
-  <script src="/portal/admin-sessions-hub.js?v=20260608-lead-overview"></script>
+  <script src="/portal/admin-sessions-hub.js?v=20260610-feedback-stats-parity"></script>
   <script src="/portal/session_feedback_portal_data.js?v=20260527-ma-apr-may"></script>
   <script src="/portal/session_feedback_status_portal_data.js?v=20260527-ma-apr-may"></script>
 </head>
@@ -90,7 +90,7 @@
     </div>
   </main>
   <script type="module">
-    import { portalInitLeadSessionOverviewPage } from "/portal/portal_lead_session_overview_page.js?v=20260622-michelle-dc";
+    import { portalInitLeadSessionOverviewPage } from "/portal/portal_lead_session_overview_page.js?v=20260610-feedback-stats-parity";
     if (typeof portalLockLandscape === "function") void portalLockLandscape();
     window.addEventListener("pagehide", function () {
       if (typeof portalUnlockOrientation === "function") void portalUnlockOrientation();

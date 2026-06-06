@@ -2875,6 +2875,34 @@
     return false;
   };
 
+  /** Submitted feedback row matches any roster slot in the unit (lead feedback tab parity). */
+  AdminSessionsHub.prototype.feedbackUnitHasSubmitted = function (unit) {
+    if (!unit || !unit.slots || !unit.slots.length) return false;
+    var hub = this;
+    var day = clean(unit.slots[0].session_date);
+    if (!day) return false;
+    var submitted = hub.feedbackLogRowsForDay(day);
+    for (var si = 0; si < unit.slots.length; si++) {
+      var slot = unit.slots[si];
+      if (shouldOmitOverviewSlot(hub, slot)) continue;
+      if (hub.opts && hub.opts.slotScopeFilter && !hub.opts.slotScopeFilter(slot)) continue;
+      for (var fi = 0; fi < submitted.length; fi++) {
+        if (feedbackFitsSlot(submitted[fi], slot)) return true;
+      }
+    }
+    return false;
+  };
+
+  /** Unit satisfied for overview stats / roster (matches Feedbacks tab awaiting rules). */
+  AdminSessionsHub.prototype.feedbackUnitResolved = function (unit) {
+    if (this.feedbackUnitAbsent(unit)) return true;
+    if (this.feedbackUnitComplete(unit)) return true;
+    if (this.opts && this.opts.feedbackMixAwaitingSlots && this.feedbackUnitHasSubmitted(unit)) {
+      return true;
+    }
+    return false;
+  };
+
   function absentFeedbackFitsSlot(fb, slot) {
     if (!fb || !slot) return false;
     if (!isAbsentFeedbackRow(fb)) return false;
@@ -3043,7 +3071,7 @@
     var total = units.length;
     var rosterDone = 0;
     for (var i = 0; i < units.length; i++) {
-      if (hub.feedbackUnitComplete(units[i]) || hub.feedbackUnitAbsent(units[i])) rosterDone++;
+      if (hub.feedbackUnitResolved(units[i])) rosterDone++;
     }
     if (this.mode === "feedback") {
       if (total > 0) return { total: total, done: rosterDone };
@@ -3254,7 +3282,7 @@
       var unitComplete = {};
       var unitAbsent = {};
       for (var u = 0; u < units.length; u++) {
-        unitComplete[units[u].key] = hub.feedbackUnitComplete(units[u]);
+        unitComplete[units[u].key] = hub.feedbackUnitResolved(units[u]);
         unitAbsent[units[u].key] = hub.feedbackUnitAbsent(units[u]);
       }
       var trackRows = slots
@@ -3873,17 +3901,6 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       });
     }
 
-    function unitHasSubmittedFeedback(unit) {
-      var slots = scopedSlots(unit);
-      if (!slots.length) return false;
-      for (var si = 0; si < slots.length; si++) {
-        for (var fi = 0; fi < submitted.length; fi++) {
-          if (feedbackFitsSlot(submitted[fi], slots[si])) return true;
-        }
-      }
-      return false;
-    }
-
     for (var u = 0; u < units.length; u++) {
       var unit = units[u];
       var slots = scopedSlots(unit);
@@ -3906,7 +3923,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         if (afb && out.indexOf(afb) < 0) out.push(afb);
         continue;
       }
-      if (!unitHasSubmittedFeedback(unit) && !hub.feedbackUnitComplete(unit)) {
+      if (!hub.feedbackUnitResolved(unit)) {
         out.push({ _ashAwaitingSlot: true, slot: rep });
       }
     }
@@ -3950,7 +3967,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var unitComplete = {};
     var unitAbsent = {};
     for (var u = 0; u < units.length; u++) {
-      unitComplete[units[u].key] = hub.feedbackUnitComplete(units[u]);
+      unitComplete[units[u].key] = hub.feedbackUnitResolved(units[u]);
       unitAbsent[units[u].key] = hub.feedbackUnitAbsent(units[u]);
     }
     var displaySlots = hub.sortOverviewSlotsForDisplay(
@@ -4674,7 +4691,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var unitComplete = {};
     var unitAbsent = {};
     for (var u = 0; u < units.length; u++) {
-      unitComplete[units[u].key] = hub.feedbackUnitComplete(units[u]);
+      unitComplete[units[u].key] = hub.feedbackUnitResolved(units[u]);
       unitAbsent[units[u].key] = hub.feedbackUnitAbsent(units[u]);
     }
     var q = this.clientSearch.toLowerCase();

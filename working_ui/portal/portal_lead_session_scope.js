@@ -438,9 +438,13 @@ export function portalLeadDayFeedbackStats(iso, scopes, leadProfileKey, hub) {
           .filter((u) => u.slots.length > 0)
       : [];
 
-  const unitDone = (u) =>
-    (typeof hub.feedbackUnitComplete === "function" && hub.feedbackUnitComplete(u)) ||
-    (typeof hub.feedbackUnitAbsent === "function" && hub.feedbackUnitAbsent(u));
+  const unitDone = (u) => {
+    if (typeof hub.feedbackUnitResolved === "function") return hub.feedbackUnitResolved(u);
+    return (
+      (typeof hub.feedbackUnitComplete === "function" && hub.feedbackUnitComplete(u)) ||
+      (typeof hub.feedbackUnitAbsent === "function" && hub.feedbackUnitAbsent(u))
+    );
+  };
 
   if (isBespokeLeadDay(scopes, day)) {
     const done =
@@ -453,30 +457,11 @@ export function portalLeadDayFeedbackStats(iso, scopes, leadProfileKey, hub) {
     const slug = clientSlugFromSlot(s);
     if (slug) clients.add(slug);
   });
-  const total = clients.size * 2;
-  if (portalLeadDayUsesProgrammeWideRoster(scopes, day)) {
-    let done = 0;
-    if (typeof hub.feedbackLogRowsForDay === "function") {
-      const rows = hub.feedbackLogRowsForDay(day) || [];
-      done = rows.filter(function (fb) {
-        if (!fb || fb._ashAwaitingSlot) return false;
-        if (fb._ashAbsentMark) return false;
-        const att = String(fb.attendance || "").toLowerCase();
-        if (att.indexOf("no") === 0) return false;
-        return true;
-      }).length;
-    } else {
-      units.forEach((u) => {
-        if (unitDone(u)) done += 1;
-      });
-    }
-    return { total, done: Math.min(done, total) };
-  }
+  const total = units.length > 0 ? units.length : clients.size * 2;
   let done = 0;
   units.forEach((u) => {
     if (unitDone(u)) done += 1;
   });
-  if (total > 0) done = Math.min(done, total);
   return { total, done };
 }
 
