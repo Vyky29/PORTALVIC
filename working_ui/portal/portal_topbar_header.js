@@ -177,6 +177,17 @@
     el.setAttribute("aria-hidden", visible ? "false" : "true");
   }
 
+  function countVisibleTopbarToolCells() {
+    var grid = document.getElementById("topbarToolsGrid");
+    if (!grid) return 0;
+    var cells = grid.querySelectorAll(".topbar-tool-cell");
+    var n = 0;
+    for (var i = 0; i < cells.length; i++) {
+      if (!cells[i].hidden) n++;
+    }
+    return n;
+  }
+
   function canonicalTopbarStaffKey(value) {
     var k = String(value || "")
       .trim()
@@ -331,25 +342,31 @@
     var isProgrammeLead = !isLeadShell && portalStaffIsProgrammeLeadTopbar();
     var swimmingSix =
       !isLeadShell && !isProgrammeLead && !!global.__PORTAL_TOPBAR_SIX_ICON_GRID__;
-    var showSixIconGrid = isLeadShell || isProgrammeLead || swimmingSix;
+    var showLeadExtras = isLeadShell || isProgrammeLead || swimmingSix;
+
+    LEAD_TOPBAR_CELL_IDS.forEach(function (id) {
+      setElementVisible(id, showLeadExtras);
+    });
+    LEAD_TOPBAR_BTN_IDS.forEach(function (id) {
+      setElementVisible(id, showLeadExtras);
+    });
+
+    var visibleToolCount = countVisibleTopbarToolCells();
+    var useEightGrid = visibleToolCount >= 7;
+    var useSixGrid = !useEightGrid && showLeadExtras;
 
     var grid = document.getElementById("topbarToolsGrid");
     if (grid) {
-      grid.classList.toggle("topbar-tools-grid--lead", showSixIconGrid);
+      grid.classList.toggle("topbar-tools-grid--eight", useEightGrid);
+      grid.classList.toggle("topbar-tools-grid--lead", useSixGrid);
       grid.classList.remove("topbar-tools-grid--ceo-full");
     }
     var leadRow = document.querySelector(".topbar-lead");
     if (leadRow) {
-      leadRow.classList.toggle("topbar-lead--tools-6", showSixIconGrid);
-      leadRow.classList.toggle("topbar-lead--tools-4", !showSixIconGrid);
+      leadRow.classList.toggle("topbar-lead--tools-8", useEightGrid);
+      leadRow.classList.toggle("topbar-lead--tools-6", useSixGrid);
+      leadRow.classList.toggle("topbar-lead--tools-4", !useSixGrid && !useEightGrid);
     }
-
-    LEAD_TOPBAR_CELL_IDS.forEach(function (id) {
-      setElementVisible(id, showSixIconGrid);
-    });
-    LEAD_TOPBAR_BTN_IDS.forEach(function (id) {
-      setElementVisible(id, showSixIconGrid);
-    });
 
     var isCeo = portalStaffIsCeoTopbarFullAccess();
     if (isCeo && !isLeadShell && typeof global.portalSyncCeoFullTopbarTools === "function") {
