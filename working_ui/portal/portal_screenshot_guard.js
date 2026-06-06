@@ -97,6 +97,9 @@
     var el = ensureEl();
     el.classList.add("is-active");
     setSensitiveHidden(true);
+    if (document.documentElement.classList.contains("portal-screenshot-guard-workers")) {
+      ensureWatermark();
+    }
     if (opts.persist) return;
     var ms = opts.lingerMs != null ? opts.lingerMs : isStrict() ? STRICT_LINGER_MS : DEFAULT_LINGER_MS;
     lingerTimer = global.setTimeout(function () {
@@ -113,7 +116,10 @@
     global.clearTimeout(lingerTimer);
     var el = document.getElementById(GUARD_ID);
     if (el) el.classList.remove("is-active");
-    if (isPageVisible() && !isMediaCaptureActive()) setSensitiveHidden(false);
+    if (isPageVisible() && !isMediaCaptureActive()) {
+      setSensitiveHidden(false);
+      removeWatermark();
+    }
   }
 
   function onPageVisible() {
@@ -332,9 +338,9 @@
         return;
       }
       document.documentElement.classList.add("portal-screenshot-guard-workers");
-      arm({ mobileOnly: true });
+      removeWatermark();
+      arm({ mobileOnly: false });
       pushStrict("safeguarding-workers");
-      ensureWatermark();
       bindWorkerSafeguardEvents();
     } catch (_e5) {}
   }

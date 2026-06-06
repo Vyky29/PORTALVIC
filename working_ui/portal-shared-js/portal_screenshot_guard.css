@@ -51,14 +51,15 @@ body.portal-achievements-camera-open .portal-achievements-camera-fs__viewport vi
   pointer-events: auto;
 }
 
-/* Staff / lead safeguarding: deterrence watermark (CEO app_role exempt via JS). */
+/* Staff / lead: watermark only while content is hidden (app switch / capture attempt). CEOs exempt via JS. */
 html.portal-screenshot-guard-workers #portalScreenshotGuardWatermark {
   position: fixed;
   inset: 0;
   z-index: 2147483640;
   pointer-events: none;
   overflow: hidden;
-  opacity: 0.11;
+  opacity: 0;
+  visibility: hidden;
 }
 html.portal-screenshot-guard-workers #portalScreenshotGuardWatermark span {
   position: absolute;
@@ -71,10 +72,9 @@ html.portal-screenshot-guard-workers #portalScreenshotGuardWatermark span {
   white-space: nowrap;
   max-width: none;
 }
-html.portal-screenshot-page-hidden.portal-screenshot-guard-workers #portalScreenshotGuardWatermark,
 html.portal-screenshot-sensitive-hidden.portal-screenshot-guard-workers #portalScreenshotGuardWatermark {
-  opacity: 0;
-  visibility: hidden;
+  opacity: 0.12;
+  visibility: visible;
 }
 html.portal-screenshot-guard-workers.portal-screenshot-guard-armed #app,
 html.portal-screenshot-guard-workers.portal-screenshot-guard-armed .app {
