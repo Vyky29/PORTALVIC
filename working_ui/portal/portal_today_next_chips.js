@@ -1,0 +1,43 @@
+(function (global) {
+  "use strict";
+
+  /** Avatar + gap sizing for Next session chips on day-off TODAY panel. */
+  function portalTodayNextChipGridVars(count) {
+    var n = Math.max(1, Number(count) || 1);
+    var avatar = 64;
+    if (n === 1) avatar = 84;
+    else if (n === 2) avatar = 76;
+    else if (n <= 4) avatar = 68;
+    else if (n <= 6) avatar = 66;
+    else if (n <= 9) avatar = 72;
+    else if (n <= 12) avatar = 50;
+    else avatar = 44;
+    var gapX = n >= 7 ? 5 : 8;
+    var gapY = n >= 7 ? 4 : 6;
+    return { avatar: avatar, gapX: gapX, gapY: gapY };
+  }
+
+  /**
+   * 6-column grid placement: rows of 3; orphan row centred (1 mid, 2 split halves).
+   * index is 0-based.
+   */
+  function portalTodayNextChipColumnStyle(index, count) {
+    var i = index | 0;
+    var n = Math.max(1, Number(count) || 1);
+    if (i < 0 || i >= n) return "";
+    var remainder = n % 3;
+    var fullRows = Math.floor(n / 3);
+    var row = Math.floor(i / 3);
+    var isPartialRow = remainder > 0 && row === fullRows;
+    if (!isPartialRow) {
+      var pos = i % 3;
+      return "grid-column:" + (1 + pos * 2) + " / span 2";
+    }
+    var idxInPartial = i - fullRows * 3;
+    if (remainder === 1) return "grid-column:3 / span 2";
+    return idxInPartial === 0 ? "grid-column:2 / span 2" : "grid-column:4 / span 2";
+  }
+
+  global.portalTodayNextChipGridVars = portalTodayNextChipGridVars;
+  global.portalTodayNextChipColumnStyle = portalTodayNextChipColumnStyle;
+})(typeof window !== "undefined" ? window : globalThis);
