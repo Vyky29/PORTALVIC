@@ -92,10 +92,6 @@
   flex:0 0 auto;
   opacity:.92;
 }
-/* Lane PNG tints */
-.session-area-note-icon--lane-de .session-area-note-img{
-  filter:brightness(0) saturate(100%);
-}
 .section-card--today .session-today-override-pool-note .session-area-note-stack{
   margin-top:0;
 }
