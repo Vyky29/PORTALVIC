@@ -231,7 +231,7 @@
 .session-area-note-stack:has(.session-area-note-icon--small-pool),
 .session-area-note-inline:has(.session-area-note-icon--small-pool){ --area-note-accent:#1874c9; }
 .session-area-note-stack:has(.session-area-note-icon--teaching-pool),
-.session-area-note-inline:has(.session-area-note-icon--teaching-pool){ --area-note-accent:#82c0ea; }
+.session-area-note-inline:has(.session-area-note-icon--teaching-pool){ --area-note-accent:#5a9ea8; }
 .session-area-note-stack:has(.session-area-note-icon--lane-se),
 .session-area-note-inline:has(.session-area-note-icon--lane-se){ --area-note-accent:#70a2b0; }
 .session-area-note-stack:has(.session-area-note-icon--lane-de),
