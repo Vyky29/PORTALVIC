@@ -230,7 +230,13 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
     const att = String(attendance != null ? attendance : "")
       .trim()
       .toLowerCase();
-    return att === "no" || att === "n" || att === "0" || att === "false";
+    if (!att) return false;
+    if (att === "no" || att === "n" || att === "0" || att === "false") return true;
+    if (/^(no[\s\-/]|n\/)/.test(att)) return true;
+    if (/\b(no[\s-]?show|noshow|did not attend|absent|absence|cancel)/.test(att)) {
+      return true;
+    }
+    return false;
   }
 
   /** @param {unknown} rows */

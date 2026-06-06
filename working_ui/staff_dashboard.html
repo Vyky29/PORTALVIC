@@ -960,7 +960,7 @@
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260605-javi-arranz"></script>
   <script src="/portal/session_feedback_portal_data.js?v=20260527-ma-apr-may"></script>
   <script src="/portal/session_feedback_status_portal_data.js?v=20260526-all-complete"></script>
-  <script src="/portal/staff_portal_feedback_bridge.js?v=20260605-ah-brothers-separate"></script>
+  <script src="/portal/staff_portal_feedback_bridge.js?v=20260622-absent-complete"></script>
   <script src="/portal-shared-js/portal_late_submission.js?v=20260620-late-feedback-open"></script>
   <script src="/portal/portal-roster-rows-merge.js?v=20260615-fadi-roster-merge"></script>
   <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260610-javier-may14-roster"></script>
@@ -1395,8 +1395,20 @@
       return rosterKey.indexOf(statusKey) >= 0 || statusKey.indexOf(rosterKey) >= 0;
     }
     function portalStatusRowIsDoneForCalendar(st){
-      return st && (st.overviewStatus === 'absent' || st.feedbackComplete === true
-        || String(st.overviewStatus || '').trim() === 'feedback_submitted');
+      const bridge = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
+      if(bridge && typeof bridge.statusRowDone === 'function') return bridge.statusRowDone(st);
+      return st && (String(st.overviewStatus || '').trim().toLowerCase() === 'absent' || st.feedbackComplete === true
+        || String(st.overviewStatus || '').trim().toLowerCase() === 'feedback_submitted');
+    }
+    function portalReviewFlagsForResolvedSession(iso, staffId, s){
+      const bridge = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
+      const notes = typeof clientNotesById !== 'undefined' ? clientNotesById : {};
+      if(bridge && typeof bridge.reviewFlagsForResolvedSession === 'function'){
+        return bridge.reviewFlagsForResolvedSession(iso, staffId, s, notes);
+      }
+      const absent = bridge && typeof bridge.rosterSessionMarkedAbsent === 'function'
+        && bridge.rosterSessionMarkedAbsent(iso, staffId, s, notes);
+      return { feedbackDone: !absent, incident: false, absent: !!absent, cancelled: false };
     }
     /** Authoritative completion from SESSION_FEEDBACK_STATUS_PORTAL_SOURCE for one roster row. */
     function portalRosterReviewStateFromStatusBundle(s, sessionDateIso, staffId){
@@ -1408,17 +1420,7 @@
           if(!/^\d{4}-\d{2}-\d{2}$/.test(iso) || !sid || !s) return null;
           const notes = typeof clientNotesById !== 'undefined' ? clientNotesById : {};
           if(bridge.sessionComplete(iso, sid, s, notes, {})){
-            const src = window.SESSION_FEEDBACK_STATUS_PORTAL_SOURCE;
-            let absent = false;
-            if(src && Array.isArray(src.rows)){
-              src.rows.forEach(function(st){
-                if(String(st.date || '').trim().substring(0, 10) !== iso) return;
-                if(!portalStaffOwnsFeedbackStatusRow(sid, st)) return;
-                if(!portalStatusRowMatchesRosterClient(st, s)) return;
-                if(st.overviewStatus === 'absent') absent = true;
-              });
-            }
-            return { feedbackDone: !absent, incident: false, absent: absent, cancelled: false };
+            return portalReviewFlagsForResolvedSession(iso, sid, s);
           }
           const src = window.SESSION_FEEDBACK_STATUS_PORTAL_SOURCE;
           if(src && Array.isArray(src.rows)){
@@ -1460,20 +1462,14 @@
               && (String(st.feedbackUnitKey || '').indexOf('day_centre') >= 0 || /day\s*centre/i.test(String(st.service || '')));
           });
           if(allDay.some(portalStatusRowIsDoneForCalendar)) {
-            const doneHit = allDay.find(portalStatusRowIsDoneForCalendar);
-            return {
-              feedbackDone: doneHit.overviewStatus !== 'absent',
-              incident: false,
-              absent: doneHit.overviewStatus === 'absent',
-              cancelled: false
-            };
+            return portalReviewFlagsForResolvedSession(iso, sid, s);
           }
           if(typeof window !== 'undefined' && window.SESSION_FEEDBACK_PORTAL_SOURCE && Array.isArray(window.SESSION_FEEDBACK_PORTAL_SOURCE.rows)){
-            const fb = window.SESSION_FEEDBACK_PORTAL_SOURCE.rows.some(function(r){
+            const fbHit = window.SESSION_FEEDBACK_PORTAL_SOURCE.rows.find(function(r){
               return String(r.date || '').trim().substring(0, 10) === iso
                 && portalSlugifyClientKey(r.clientName) === clientKey;
             });
-            if(fb) return { feedbackDone: true, incident: false, absent: false, cancelled: false };
+            if(fbHit) return portalReviewFlagsForResolvedSession(iso, sid, s);
           }
         }
         const mg = matches.map(function(st){ return String(st.feedbackMergeGroup || '').trim(); }).find(Boolean);
@@ -1490,27 +1486,11 @@
               && groupRowDone(st);
           });
           if(groupDone){
-            const doneHit = src.rows.find(function(st){
-              return String(st.date || '').trim().substring(0, 10) === iso
-                && String(st.feedbackMergeGroup || '').trim() === mg
-                && groupRowDone(st);
-            });
-            return {
-              feedbackDone: doneHit && doneHit.overviewStatus !== 'absent',
-              incident: false,
-              absent: !!(doneHit && doneHit.overviewStatus === 'absent'),
-              cancelled: false
-            };
+            return portalReviewFlagsForResolvedSession(iso, sid, s);
           }
         }
         if(matches.some(portalStatusRowIsDoneForCalendar)){
-          const doneHit = matches.find(portalStatusRowIsDoneForCalendar);
-          return {
-            feedbackDone: doneHit.overviewStatus !== 'absent',
-            incident: false,
-            absent: doneHit.overviewStatus === 'absent',
-            cancelled: false
-          };
+          return portalReviewFlagsForResolvedSession(iso, sid, s);
         }
         if(matches.some(function(st){ return !portalStatusRowIsDoneForCalendar(st); })){
           return { feedbackDone: false, incident: false, absent: false, cancelled: false };
@@ -1533,8 +1513,7 @@
         src.rows.forEach(function(st){
           if(!st || !st.date) return;
           const iso = String(st.date).trim().substring(0, 10);
-          const done = st.overviewStatus === 'absent' || st.feedbackComplete === true
-            || String(st.overviewStatus || '').trim() === 'feedback_submitted';
+          const done = portalStatusRowIsDoneForCalendar(st);
           const mg = String(st.feedbackMergeGroup || '').trim();
           if(done && mg){
             if(!doneMergeGroups[iso]) doneMergeGroups[iso] = Object.create(null);
@@ -1584,10 +1563,11 @@
             }
             if(!hit) return;
             const prev = sessionReviewMapMemory[sk] || { feedbackDone: false, incident: false, absent: false, cancelled: false };
+            const flags = portalReviewFlagsForResolvedSession(iso, staffId, s);
             const next = {
-              feedbackDone: stRow && stRow.overviewStatus !== 'absent',
+              feedbackDone: !!flags.feedbackDone,
               incident: !!prev.incident,
-              absent: !!(stRow && stRow.overviewStatus === 'absent'),
+              absent: !!flags.absent,
               cancelled: !!prev.cancelled
             };
             if(next.feedbackDone !== prev.feedbackDone || next.absent !== prev.absent){
@@ -1636,8 +1616,13 @@
               ? portalSessionReviewKeyForModelRow(s, dayWord, iso)
               : '';
             if(!sk) return;
-            const att = String(row.attendance != null ? row.attendance : '').trim().toLowerCase();
-            const isAbsent = att === 'no' || att === 'n' || att === '0' || att === 'false';
+            const bridgeSeed = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
+            const isAbsent = bridgeSeed && typeof bridgeSeed.submittedRowMarksAbsent === 'function'
+              ? bridgeSeed.submittedRowMarksAbsent(row)
+              : (function(att){
+                att = String(att != null ? att : '').trim().toLowerCase();
+                return att === 'no' || att === 'n' || att === '0' || att === 'false';
+              })(row.attendance);
             const prev = sessionReviewMapMemory[sk] || { feedbackDone: false, incident: false, absent: false, cancelled: false };
             const next = {
               feedbackDone: !isAbsent,
@@ -2737,6 +2722,22 @@
         if(fromBundle.absent) out.absent = true;
         if(fromBundle.incident) out.incident = true;
         if(fromBundle.cancelled) out.cancelled = true;
+      }
+      if(!out.feedbackDone && !out.absent && !out.cancelled){
+        const bridgeMerge = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
+        const notesMerge = typeof clientNotesById !== 'undefined' ? clientNotesById : {};
+        if(bridgeMerge && typeof bridgeMerge.sessionComplete === 'function'
+          && bridgeMerge.sessionComplete(sessionDateIso, staffId, s, notesMerge, out)){
+          const flags = typeof portalReviewFlagsForResolvedSession === 'function'
+            ? portalReviewFlagsForResolvedSession(sessionDateIso, staffId, s)
+            : null;
+          if(flags){
+            if(flags.absent) out.absent = true;
+            else if(flags.feedbackDone) out.feedbackDone = true;
+          }else{
+            out.feedbackDone = true;
+          }
+        }
       }
       return out;
     }

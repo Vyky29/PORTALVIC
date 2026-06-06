@@ -135,21 +135,42 @@
     return isDayCentreServiceLabel(blob) || /day_centre|day_centre/i.test(blob);
   }
 
+  function portalAttendanceIsAbsent(attendance) {
+    const att = String(attendance != null ? attendance : "")
+      .trim()
+      .toLowerCase();
+    if (!att) return false;
+    if (att === "no" || att === "n" || att === "false" || att === "0") return true;
+    if (/^(no[\s\-/]|n\/)/.test(att)) return true;
+    if (/\b(no[\s-]?show|noshow|did not attend|absent|absence|cancel)/.test(att)) {
+      return true;
+    }
+    return false;
+  }
+
+  function statusOverviewIsAbsent(st) {
+    return String(st && st.overviewStatus ? st.overviewStatus : "")
+      .trim()
+      .toLowerCase() === "absent";
+  }
+
   function statusRowDone(st) {
-    return (
-      st &&
-      (st.overviewStatus === "absent" ||
-        st.feedbackComplete === true ||
-        String(st.overviewStatus || "").trim() === "feedback_submitted")
-    );
+    if (!st) return false;
+    const os = String(st.overviewStatus || "")
+      .trim()
+      .toLowerCase();
+    if (os === "absent" || os === "cancelled") return true;
+    if (st.feedbackComplete === true) return true;
+    if (os === "feedback_submitted") return true;
+    return false;
+  }
+
+  function submittedRowMarksAbsent(r) {
+    return portalAttendanceIsAbsent(r && r.attendance);
   }
 
   function submittedRowDone(r) {
-    const att = String(r.attendance != null ? r.attendance : "")
-      .trim()
-      .toLowerCase();
-    if (att === "no" || att === "n" || att === "false" || att === "0") return true;
-    return true;
+    return !!r;
   }
 
   function statusClientSlug(st) {
@@ -183,16 +204,55 @@
     return false;
   }
 
+  function submittedRowCoversRosterSession(r, s, clientNotesById) {
+    const rosterKey = rosterKeyForSession(s, clientNotesById);
+    const rKey = slug(r && r.clientName);
+    if (!rosterKey || !rKey) return false;
+    if (rosterKey === rKey) return true;
+    if (/_ah$/.test(rosterKey) && /_ah$/.test(rKey) && rosterKey !== rKey) return false;
+    return rosterKey.indexOf(rKey) >= 0 || rKey.indexOf(rosterKey) >= 0;
+  }
+
   function anySubmittedCoversRosterSession(iso, s, clientNotesById) {
     const day = String(iso || "").trim().substring(0, 10);
-    const rosterKey = rosterKeyForSession(s, clientNotesById);
-    if (!rosterKey) return false;
     return submittedRowsForDateAll(day).some(function (r) {
-      const rKey = slug(r.clientName);
-      if (!rKey) return false;
-      if (rosterKey === rKey) return true;
-      return rosterKey.indexOf(rKey) >= 0 || rKey.indexOf(rosterKey) >= 0;
+      return submittedRowCoversRosterSession(r, s, clientNotesById);
     });
+  }
+
+  function anyAbsentSubmittedCoversRosterSession(iso, s, clientNotesById) {
+    const day = String(iso || "").trim().substring(0, 10);
+    return submittedRowsForDateAll(day).some(function (r) {
+      return (
+        submittedRowMarksAbsent(r) &&
+        submittedRowCoversRosterSession(r, s, clientNotesById)
+      );
+    });
+  }
+
+  function rosterSessionMarkedAbsent(iso, staffId, s, clientNotesById) {
+    if (anyAbsentSubmittedCoversRosterSession(iso, s, clientNotesById)) return true;
+    const owned = statusRowsForStaffDate(iso, staffId);
+    const allDay = statusRowsForDateAll(iso);
+    const matchingOwned = owned.filter(function (st) {
+      return clientMatch(st, s, clientNotesById);
+    });
+    const pool = matchingOwned.length
+      ? matchingOwned
+      : allDay.filter(function (st) {
+          return clientMatch(st, s, clientNotesById);
+        });
+    return pool.some(statusOverviewIsAbsent);
+  }
+
+  function reviewFlagsForResolvedSession(iso, staffId, s, clientNotesById) {
+    const absent = rosterSessionMarkedAbsent(iso, staffId, s, clientNotesById);
+    return {
+      feedbackDone: !absent,
+      incident: false,
+      absent: absent,
+      cancelled: false,
+    };
   }
 
   /** Co-instructors: any row in the merge group on this day (admin mergeGroupFeedbackComplete parity). */
@@ -370,6 +430,7 @@
   function sessionComplete(iso, staffId, s, clientNotesById, mergedRec) {
     const rec = mergedRec || {};
     if (rec.feedbackDone || rec.absent || rec.cancelled) return true;
+    if (rosterSessionMarkedAbsent(iso, staffId, s, clientNotesById)) return true;
     if (anySubmittedCoversRosterSession(iso, s, clientNotesById)) return true;
     const clientKey = rosterKeyForSession(s, clientNotesById);
     if (isDayCentreRosterSession(s) && clientKey && dayCentreClientResolved(iso, staffId, clientKey)) {
@@ -471,6 +532,12 @@
     slug: slug,
     staffOwnsInstructor: staffOwnsInstructor,
     clientMatch: clientMatch,
+    portalAttendanceIsAbsent: portalAttendanceIsAbsent,
+    statusOverviewIsAbsent: statusOverviewIsAbsent,
+    statusRowDone: statusRowDone,
+    submittedRowMarksAbsent: submittedRowMarksAbsent,
+    rosterSessionMarkedAbsent: rosterSessionMarkedAbsent,
+    reviewFlagsForResolvedSession: reviewFlagsForResolvedSession,
     statusRowsForStaffDate: statusRowsForStaffDate,
     statusRowsForDateAll: statusRowsForDateAll,
     submittedRowsForStaffDate: submittedRowsForStaffDate,

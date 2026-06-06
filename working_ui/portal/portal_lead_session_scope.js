@@ -495,13 +495,25 @@ function statusRowUnitKey(st) {
   return iso + "|" + client + "|" + slot;
 }
 
-function statusRowDone(st) {
-  if (!st) return false;
-  if (String(st.overviewStatus || "").trim().toLowerCase() === "absent") return true;
-  if (st.feedbackComplete === true) return true;
-  if (String(st.overviewStatus || "").trim().toLowerCase() === "feedback_submitted") {
+function portalLeadAttendanceIsAbsent(attendance) {
+  const att = String(attendance != null ? attendance : "")
+    .trim()
+    .toLowerCase();
+  if (!att) return false;
+  if (att === "no" || att === "n" || att === "false" || att === "0") return true;
+  if (/^(no[\s\-/]|n\/)/.test(att)) return true;
+  if (/\b(no[\s-]?show|noshow|did not attend|absent|absence|cancel)/.test(att)) {
     return true;
   }
+  return false;
+}
+
+function statusRowDone(st) {
+  if (!st) return false;
+  const os = String(st.overviewStatus || "").trim().toLowerCase();
+  if (os === "absent" || os === "cancelled") return true;
+  if (st.feedbackComplete === true) return true;
+  if (os === "feedback_submitted") return true;
   return false;
 }
 
