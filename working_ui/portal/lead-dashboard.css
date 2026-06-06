@@ -4153,7 +4153,7 @@
     .section-card--today .session-card .session-card-body{
       flex:1 1 auto;
       display:grid;
-      grid-template-columns:minmax(72px,84px) minmax(0,1fr) minmax(56px,72px);
+      grid-template-columns:minmax(72px,84px) minmax(0,1fr) minmax(56px,var(--today-symbol-col-max,72px));
       align-items:center;
       align-content:center;
       column-gap:6px;

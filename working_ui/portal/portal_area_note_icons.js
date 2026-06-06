@@ -156,7 +156,32 @@
     );
   }
 
+  /** Icon + label metrics for TODAY session rows (few sessions → larger symbols). */
+  function portalTodayAreaNoteMetrics(sessionCount, scrollMode, gridEl) {
+    var n = Math.min(9, Math.max(1, sessionCount | 0));
+    if (scrollMode) {
+      return { iconPx: 30, areaIconPx: 36, labelFs: 9, symbolColMax: 72 };
+    }
+    var areaByCount = { 1: 64, 2: 58, 3: 52, 4: 46, 5: 42, 6: 40 };
+    var areaIconPx = areaByCount[n] || 38;
+    var symbolColMax = n <= 2 ? 88 : n <= 4 ? 80 : 72;
+    try {
+      if (gridEl && gridEl.clientHeight && n <= 4) {
+        var cardH = gridEl.clientHeight;
+        var rowsFill = n === 1 ? 0.333333 : 1;
+        var gap = n >= 4 ? 3 : 5;
+        var rowH = (cardH * rowsFill - gap * (n - 1)) / n;
+        var fromRow = Math.round(rowH * 0.54);
+        areaIconPx = Math.min(72, Math.max(areaIconPx, fromRow));
+      }
+    } catch (_e) {}
+    var iconPx = Math.max(28, Math.round(areaIconPx * 0.88));
+    var labelFs = n <= 2 ? 10 : n <= 4 ? 9 : 8;
+    return { iconPx: iconPx, areaIconPx: areaIconPx, labelFs: labelFs, symbolColMax: symbolColMax };
+  }
+
   global.portalNormalizeAreaNoteKey = portalNormalizeAreaNoteKey;
   global.portalResolveAreaNoteLabelFromItem = portalResolveAreaNoteLabelFromItem;
   global.portalAreaNoteIconHtml = portalAreaNoteIconHtml;
+  global.portalTodayAreaNoteMetrics = portalTodayAreaNoteMetrics;
 })(typeof window !== "undefined" ? window : globalThis);
