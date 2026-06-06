@@ -111,6 +111,22 @@
       planner: true,
       sixIcon: true,
     },
+    berta: {
+      photo: true,
+      swReview: true,
+      venue: true,
+      pickup: true,
+      planner: true,
+      sixIcon: false,
+    },
+    john: {
+      photo: true,
+      swReview: true,
+      venue: true,
+      pickup: true,
+      planner: true,
+      sixIcon: false,
+    },
   };
 
   var CEO_STAFF_TOPBAR_IDS = [
@@ -150,6 +166,8 @@
     if (!k) return "";
     if (k === "luliya" || k === "aida" || k === "stf021") return "lulia";
     if (k === "yousef" || k === "yousseff" || k === "yusef") return "youssef";
+    if (k === "stf006") return "john";
+    if (k === "stf012") return "berta";
     return k;
   }
 

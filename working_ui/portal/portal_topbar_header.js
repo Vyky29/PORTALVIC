@@ -427,7 +427,9 @@
 
         if (toolBtn.id === "topbarToolSessionPlanner") {
           if (typeof global.openSheet === "function") {
-            global.openSheet("staffSessionPlanSheet");
+            global.openSheet(
+              global.__PORTAL_TOPBAR_IS_LEAD__ ? "leadSessionPlanSheet" : "staffSessionPlanSheet",
+            );
           }
           return;
         }
