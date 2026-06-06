@@ -189,6 +189,13 @@
       "staffRoleTrack": "swimming",
       "canViewAll": false
     },
+    "andres": {
+      "staffId": "andres",
+      "staffName": "Andres",
+      "avatarFile": "portal/staff_photos/andres.png?v=20260606-andres-buena",
+      "staffRoleTrack": "climbing",
+      "canViewAll": false
+    },
     "teflon": {
       "staffId": "teflon",
       "staffName": "Teflon",
