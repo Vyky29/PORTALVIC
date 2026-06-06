@@ -172,7 +172,7 @@
   flex:0 0 auto;
   min-width:0;
   max-width:100%;
-  max-height:calc(100% - 10px);
+  max-height:calc(100% - 16px);
 }
 .staff-dashboard .section-card--today .session-card .session-line--symbol .session-area-note-icon:has(.session-venue-icon),
 .staff-dashboard .section-card--today .session-card .session-today-override-pool-note .session-area-note-icon:has(.session-venue-icon),
@@ -180,9 +180,9 @@
 .lead-dashboard .section-card--today .session-card .session-today-override-pool-note .session-area-note-icon:has(.session-venue-icon){
   --today-note-size:unset;
   width:min(100%, var(--today-area-icon, 40px), 90cqh);
-  height:min(var(--today-area-icon, 40px), 90cqh, calc(100% - 10px));
+  height:min(var(--today-area-icon, 40px), 90cqh, calc(100% - 16px));
   max-width:100%;
-  max-height:calc(100% - 10px);
+  max-height:calc(100% - 16px);
   flex:0 0 auto;
   flex-shrink:0;
   aspect-ratio:1;
@@ -198,8 +198,13 @@
   display:block;
 }
 .staff-dashboard .section-card--today .session-card .session-line--symbol .session-area-note-label,
-.lead-dashboard .section-card--today .session-card .session-line--symbol .session-area-note-label{
-  font-size:var(--today-area-label-fs, 8px);
+.lead-dashboard .section-card--today .session-card .session-line--symbol .session-area-note-label,
+.staff-dashboard .section-card--today .session-card .session-today-override-pool-note .session-area-note-label,
+.lead-dashboard .section-card--today .session-card .session-today-override-pool-note .session-area-note-label{
+  font-size:12px;
   font-weight:600;
-  line-height:1;
+  letter-spacing:.01em;
+  text-transform:capitalize;
+  color:var(--muted);
+  line-height:1.2;
 }

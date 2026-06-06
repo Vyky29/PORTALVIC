@@ -199,14 +199,14 @@
   function portalTodayAreaNoteMetrics(sessionCount, scrollMode, gridEl) {
     var n = Math.min(9, Math.max(1, sessionCount | 0));
     if (scrollMode) {
-      return { iconPx: 32, areaIconPx: 38, labelFs: 8, symbolColMax: 72 };
+      return { iconPx: 32, areaIconPx: 38, labelFs: 12, symbolColMax: 72 };
     }
     var rowH = portalMeasureTodaySessionRowHeight(gridEl, n);
-    var labelFs = n <= 4 ? 8 : 7;
+    var labelFs = 12;
+    var labelReserve = labelFs + 4;
     var areaIconPx;
     if (rowH > 0) {
-      /* Icon fills most of the row; caption stays a fixed small size via CSS. */
-      areaIconPx = Math.round(rowH * 0.74 - 10);
+      areaIconPx = Math.round(rowH * 0.74 - labelReserve);
     } else {
       var areaByCount = { 1: 80, 2: 72, 3: 62, 4: 54, 5: 46, 6: 40 };
       areaIconPx = areaByCount[n] || 38;
