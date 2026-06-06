@@ -164,7 +164,7 @@
     "sevitha": {
       "staffId": "sevitha",
       "staffName": "Sevitha",
-      "avatarFile": "portal/staff_photos/sevitha.png",
+      "avatarFile": "portal/staff_photos/sevitha.png?v=20260606-sevitha-buena",
       "staffRoleTrack": "admin",
       "canViewAll": true
     },
