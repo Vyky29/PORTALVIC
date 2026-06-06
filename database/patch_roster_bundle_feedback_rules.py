@@ -26,6 +26,17 @@ SUNDAY_FEEDBACK_MERGES = [
             {"time_slot": "4.30 to 5.15", "service": "Multi-Activity"},
         ],
     },
+    {
+        "day": "Sunday",
+        "client_name": "Yusuf Ah",
+        "instructors": "ROBERTO",
+        "mergeKey": "yusuf_ah_roberto_sun_swim",
+        "slots": [
+            {"time_slot": "9 to 9.30", "service": "Aquatic Activity"},
+            {"time_slot": "9 to 10.15", "service": "Aquatic Activity"},
+            {"time_slot": "9.30 to 10.15", "service": "Multi-Activity"},
+        ],
+    },
 ]
 
 OVERVIEW_OMIT_ROSTER_SLOTS = [
@@ -33,6 +44,18 @@ OVERVIEW_OMIT_ROSTER_SLOTS = [
         "weekday": "Wednesday",
         "client_slug": "cyrus",
         "time_slot": "4 to 4.30",
+        "service": "Aquatic Activity",
+    },
+    {
+        "weekday": "Sunday",
+        "client_slug": "yusuf_ah",
+        "time_slot": "9 to 9.30",
+        "service": "Aquatic Activity",
+    },
+    {
+        "weekday": "Sunday",
+        "client_slug": "yusuf_ah",
+        "time_slot": "9 to 10.15",
         "service": "Aquatic Activity",
     },
 ]

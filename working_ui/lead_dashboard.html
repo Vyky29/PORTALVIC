@@ -967,7 +967,7 @@
   <script src="portal/clients_gender_embed.js?v=20260605-gender3"></script>
   <script src="/portal/portal_participants_sheet.js?v=20260601-new-participants-tab"></script>
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260605-ah-brothers-separate"></script>
-  <script src="/portal/portal_participant_catalog.js?v=20260601-participant-dedupe"></script>
+  <script src="/portal/portal_participant_catalog.js?v=20260606-next-dedupe"></script>
   <script src="portal/staff_roster_resolve.js?v=20260601-luliya-mic"></script>
   <script src="/portal/portal-ghost-view.js?v=20260622-ghost-lead"></script>
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260621-lead-inbox" />
@@ -3880,7 +3880,9 @@
       'kate': 'portal/participants/kate.png',
       'kamy': 'portal/participants/kamy.png',
       'cyrus': 'portal/participants/cyrus.png?v=20260606-cyrus',
-      'erik': 'portal/participants/erik.png'
+      'erik': 'portal/participants/erik.png',
+      'gabriel': 'portal/participants/gabriel.png',
+      'yoan': 'portal/participants/yoan.png'
     };
     function clientPhotoUrl(name){
       const key = String(name || '').trim().toLowerCase().replace(/\s+/g, ' ');
@@ -7661,7 +7663,7 @@
       const dateLabel = typeof portalFormatPortalDateDdMmYyyy === 'function'
         ? portalFormatPortalDateDdMmYyyy(info.date)
         : '';
-      const participants = rows.map(function(r){
+      const participantsRaw = rows.map(function(r){
         const name = String(r && r.name || '').trim() || '—';
         const clientId = String(r && r.clientId || '').trim();
         let photoUrl = typeof resolveParticipantPhotoUrl === 'function'
@@ -7675,10 +7677,13 @@
           hasMedicalAlert: portalParticipantHasMedicalAlert(clientId, name)
         };
       });
+      const participants = typeof portalDedupeParticipantListEntries === 'function'
+        ? portalDedupeParticipantListEntries(participantsRaw, resolveParticipantPhotoUrl)
+        : participantsRaw;
       return {
         weekday: weekday,
         dateLabel: dateLabel,
-        sessionCount: rows.length,
+        sessionCount: participants.length,
         venueLabel: venueKeys[0] || '',
         participants: participants
       };
@@ -8482,7 +8487,7 @@
           if(ovF && ovF.override_type === 'instructor_reassign' && String(ovF.payload && ovF.payload.covering_staff_id || '').trim()) return false;
           return true;
         });
-        return nextSessionsAfterFilter
+        var nextSessionRows = nextSessionsAfterFilter
           .sort(function(a, b){ return portalParseTimeSortVal(a.start) - portalParseTimeSortVal(b.start); })
           .map(function(s){
             var sessionDateIso = info && info.date && typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(info.date) : '';
@@ -8575,6 +8580,9 @@
               futureOverrideTone: futureOverrideTone
             };
           });
+        return typeof portalDedupeParticipantListEntries === 'function'
+          ? portalDedupeParticipantListEntries(nextSessionRows)
+          : nextSessionRows;
       }
       window.__portalSyncNextSessionFromModel = function(){
         var id = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();

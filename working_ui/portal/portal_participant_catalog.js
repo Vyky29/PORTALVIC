@@ -107,8 +107,23 @@
     });
   }
 
+  /** One tile/row per participant when linked services share the same day (e.g. Yusuf aquatic + MA). */
+  function portalDedupeParticipantListEntries(entries, photoUrlFn) {
+    var seen = new Set();
+    var out = [];
+    (Array.isArray(entries) ? entries : []).forEach(function (entry) {
+      if (!entry) return;
+      var key = participantCatalogMergeKey(entry.name, entry.clientId, photoUrlFn);
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      out.push(entry);
+    });
+    return out;
+  }
+
   global.portalNormalizeParticipantDisplayName = normalizeParticipantDisplayName;
   global.portalIsParticipantCatalogExcluded = isParticipantCatalogExcluded;
   global.portalDedupeParticipantClientIds = portalDedupeParticipantClientIds;
   global.portalFilterParticipantCatalogIds = portalFilterParticipantCatalogIds;
+  global.portalDedupeParticipantListEntries = portalDedupeParticipantListEntries;
 })(typeof window !== "undefined" ? window : globalThis);
