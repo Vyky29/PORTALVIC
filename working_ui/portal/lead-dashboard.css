@@ -4193,7 +4193,10 @@
       overflow:visible;
     }
     .section-card--today .today-grid-rows > .session-card .session-line--symbol{
-      overflow:visible;
+      overflow:hidden;
+    }
+    .section-card--today .session-card .session-card-body{
+      overflow:hidden;
     }
     .section-card--today .session-card{
       padding:var(--today-row-pad-y,4px) 4px var(--today-row-pad-y,4px) 10px;
