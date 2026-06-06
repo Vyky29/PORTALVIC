@@ -3905,14 +3905,14 @@
       flex:1 1 0;
       min-height:0;
       max-height:none;
-      padding:var(--today-row-pad-y,4px) 8px;
+      padding:var(--today-row-pad-y,4px) 4px var(--today-row-pad-y,4px) 10px;
       overflow:visible;
     }
     .section-card--today .today-grid-rows > .session-card .session-line--symbol{
       overflow:visible;
     }
     .section-card--today .session-card{
-      padding:4px 10px;
+      padding:var(--today-row-pad-y,4px) 4px var(--today-row-pad-y,4px) 10px;
       border-radius:12px;
       gap:0;
       border-color:rgba(45,132,179,.34);
@@ -3948,12 +3948,12 @@
     .section-card--today .session-card .session-card-body{
       flex:1 1 auto;
       display:grid;
-      grid-template-columns:minmax(72px,84px) minmax(0,1fr) minmax(56px,var(--today-symbol-col-max,72px));
-      align-items:center;
-      align-content:center;
-      column-gap:6px;
+      grid-template-columns:minmax(72px,84px) minmax(0,1fr) var(--today-symbol-col-max,72px);
+      align-items:stretch;
+      align-content:stretch;
+      column-gap:4px;
       width:100%;
-      min-height:0;
+      min-height:100%;
       min-width:0;
     }
     .section-card--today .session-line--time{
@@ -4038,6 +4038,8 @@
       justify-content:center;
       width:100%;
       min-width:0;
+      min-height:0;
+      flex:1 1 auto;
       gap:3px;
     }
     .section-card--today .session-line--name .session-name-stack > .portal-sched-ov-badge{
@@ -4127,18 +4129,19 @@
       align-items:center;
       justify-content:center;
       align-self:stretch;
-      padding-top:0;
+      justify-self:stretch;
       line-height:0;
       min-height:0;
       min-width:0;
       width:100%;
-      margin:0;
+      max-width:var(--today-symbol-col-max,72px);
+      margin:0 0 0 auto;
       padding:0;
       box-sizing:border-box;
       color:var(--blue);
     }
     .section-card--today .session-card .session-card-body.session-card-body--today-ov-split .session-line--symbol{
-      padding:0 4px;
+      padding:0;
     }
     .section-card--today .session-line--override{
       display:flex;
@@ -4205,18 +4208,22 @@
       margin-right:0;
     }
     .section-card--today .session-line--symbol .session-right-note{
-      width:auto;
+      width:100%;
       height:100%;
       min-width:0;
+      max-width:100%;
       display:flex;
+      flex-direction:column;
       align-items:center;
       justify-content:center;
     }
     .section-card--today .session-line--symbol .session-right-status{
-      width:auto;
+      width:100%;
       height:100%;
       min-width:0;
+      max-width:100%;
       display:flex;
+      flex-direction:column;
       align-items:center;
       justify-content:center;
     }
