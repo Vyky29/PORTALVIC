@@ -129,6 +129,32 @@
   min-width: 0;
   font: inherit;
   color: inherit;
+  position: relative;
+}
+
+.portal-achievements-participant--inbox {
+  flex-wrap: wrap;
+  align-items: flex-start;
+  border-color: rgba(45, 132, 179, 0.35);
+  background: linear-gradient(180deg, rgba(244, 249, 252, 0.98) 0%, #fff 100%);
+}
+
+.portal-achievements-participant__sub {
+  display: block;
+  width: calc(100% - 20px);
+  min-width: 0;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.35;
+  margin-top: 2px;
+  overflow-wrap: break-word;
+}
+
+.portal-achievements-participant--inbox .portal-achievements-participant__chev {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .portal-achievements-participant:active {
@@ -1203,4 +1229,34 @@ header.topbar button.topbar-camera-btn.topbar-achievements-btn:active,
 .portal-ach-detail__meta {
   margin: 2px 0 0;
   font-size: 13px;
+}
+
+/* Admin — lead inbox assign bar */
+.portal-admin-achievement-thumb-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.portal-ach-inbox-assign {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 0 2px 4px;
+}
+.portal-ach-inbox-assign__select {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  font-size: 12px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: #fff;
+  color: var(--navy, #0f172a);
+}
+.portal-ach-inbox-assign__btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }

@@ -122,7 +122,7 @@
     "berta": {
       "staffId": "berta",
       "staffName": "Berta",
-      "avatarFile": "portal/staff_photos/berta.jpg",
+      "avatarFile": "portal/staff_photos/berta.png",
       "staffRoleTrack": "support_lead",
       "canViewAll": false
     },

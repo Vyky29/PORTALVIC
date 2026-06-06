@@ -160,6 +160,13 @@
       });
   }
 
+  var INBOX_CLIENT_ID = "_inbox";
+  var INBOX_CLIENT_NAME = "Inbox (unassigned)";
+
+  function isInboxGroupKey(key) {
+    return normalizeClientId(key) === INBOX_CLIENT_ID;
+  }
+
   function groupByParticipant(rows) {
     var map = Object.create(null);
     var order = [];
@@ -167,9 +174,11 @@
       var key = normalizeClientId(row.client_id) || String(row.client_name || "").trim().toLowerCase();
       if (!key) key = "unknown";
       if (!map[key]) {
+        var displayName = String(row.client_name || row.client_id || key).trim();
+        if (key === INBOX_CLIENT_ID) displayName = INBOX_CLIENT_NAME;
         map[key] = {
           key: key,
-          clientName: String(row.client_name || row.client_id || key).trim(),
+          clientName: displayName,
           photos: [],
         };
         order.push(key);
@@ -177,11 +186,31 @@
       map[key].photos.push(row);
     });
     order.sort(function (a, b) {
+      if (a === INBOX_CLIENT_ID) return -1;
+      if (b === INBOX_CLIENT_ID) return 1;
       return map[a].clientName.localeCompare(map[b].clientName, "en", { sensitivity: "base" });
     });
     return order.map(function (k) {
       return map[k];
     });
+  }
+
+  function participantAssignOptions(excludeKey) {
+    return directoryState.groups.filter(function (g) {
+      return g.key !== excludeKey && !isInboxGroupKey(g.key);
+    });
+  }
+
+  async function assignInboxPhoto(photoId, clientId, clientName) {
+    var client = cfg.getClient();
+    if (!client) throw new Error("Sign in required.");
+    var res = await client.rpc("portal_admin_assign_achievement_photo", {
+      p_photo_id: photoId,
+      p_client_id: clientId,
+      p_client_name: clientName,
+    });
+    if (res.error) throw res.error;
+    return res.data;
   }
 
   function uniqueStaffNames(photos) {
@@ -283,12 +312,15 @@
   async function renderParticipantDetail(key) {
     var client = cfg.getClient();
     var host = document.getElementById("portalAdminAchievementsList");
+    var statusEl = document.getElementById("portalAdminAchievementsStatus");
     var group = directoryState.byKey[key];
     if (!host || !group) {
       renderDirectory();
       return;
     }
     var staffList = uniqueStaffNames(group.photos);
+    var isInbox = isInboxGroupKey(key);
+    var assignTargets = isInbox ? participantAssignOptions(key) : [];
     var detail = document.createElement("div");
     detail.className = "portal-ach-detail";
     detail.innerHTML =
@@ -303,7 +335,10 @@
       " photo" +
       (group.photos.length === 1 ? "" : "s") +
       (staffList.length ? " · " + esc(staffList.join(", ")) : "") +
-      ". Double-click a photo to view full screen.</p>" +
+      (isInbox
+        ? ". Assign each photo to a participant folder below."
+        : ". Double-click a photo to view full screen.") +
+      "</p>" +
       "</div></div>" +
       '<div class="portal-admin-achievement-gallery portal-ach-detail__gallery portal-achievement-protected"></div>';
     host.innerHTML = "";
@@ -321,6 +356,8 @@
             "aria-label",
             esc(group.clientName) + " — " + esc(statusLabel(row.status)) + " — " + esc(caption)
           );
+          var wrap = document.createElement("div");
+          wrap.className = "portal-admin-achievement-thumb-wrap";
           btn.innerHTML =
             (url
               ? '<img src="' + esc(url) + '" alt="" draggable="false" class="portal-achievement-protected" />'
@@ -341,7 +378,47 @@
             e.preventDefault();
             void openViewer(group.photos, photoIndex);
           });
-          grid.appendChild(btn);
+          wrap.appendChild(btn);
+          if (isInbox && row.status === "draft" && assignTargets.length) {
+            var assignBar = document.createElement("div");
+            assignBar.className = "portal-ach-inbox-assign";
+            var select = document.createElement("select");
+            select.className = "portal-ach-inbox-assign__select";
+            select.setAttribute("aria-label", "Assign to participant");
+            assignTargets.forEach(function (t) {
+              var opt = document.createElement("option");
+              opt.value = t.key;
+              opt.textContent = t.clientName;
+              select.appendChild(opt);
+            });
+            var assignBtn = document.createElement("button");
+            assignBtn.type = "button";
+            assignBtn.className = "btn btn--sec btn--sm portal-ach-inbox-assign__btn";
+            assignBtn.textContent = "Assign";
+            assignBtn.addEventListener("click", function () {
+              var target = assignTargets.find(function (t) {
+                return t.key === select.value;
+              });
+              if (!target) return;
+              assignBtn.disabled = true;
+              void assignInboxPhoto(row.id, target.key, target.clientName)
+                .then(function () {
+                  void refresh();
+                })
+                .catch(function (err) {
+                  console.error(err);
+                  assignBtn.disabled = false;
+                  if (statusEl) {
+                    statusEl.textContent = (err && err.message) || "Could not assign photo.";
+                    statusEl.className = "portal-forms-status is-error";
+                  }
+                });
+            });
+            assignBar.appendChild(select);
+            assignBar.appendChild(assignBtn);
+            wrap.appendChild(assignBar);
+          }
+          grid.appendChild(wrap);
         });
       })(group.photos[i], i);
     }
@@ -428,7 +505,7 @@
     return (
       '<div id="portalAdminAchievementsRoot" class="portal-day-ops-embed">' +
       '<h1 class="page-title">Participant achievements</h1>' +
-      '<p class="page-intro">All in-app photos, by participant (A–Z). Tap a participant to see their photos; each photo is titled date-photographer-time.</p>' +
+      '<p class="page-intro">All in-app photos, by participant (A–Z). Lead inbox photos appear under <strong>Inbox (unassigned)</strong> until you assign them to a participant.</p>' +
       '<div class="portal-activity-toolbar">' +
       '<button type="button" class="btn btn--sec btn--sm" id="portalAdminAchievementsRefresh">Refresh</button>' +
       "</div>" +

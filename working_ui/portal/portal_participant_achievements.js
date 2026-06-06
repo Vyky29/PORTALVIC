@@ -6,6 +6,8 @@
   "use strict";
 
   var BUCKET = "participant-achievements";
+  var LEAD_INBOX_CLIENT_ID = "_inbox";
+  var LEAD_INBOX_CLIENT_NAME = "Inbox";
   var MAX_PHOTOS = 10;
   var MAX_EDGE_PX = 3840;
   var JPEG_QUALITY = 0.92;
@@ -22,6 +24,9 @@
     },
     getWorkingDateIso: function () {
       return new Date().toISOString().slice(0, 10);
+    },
+    isLeadInboxMode: function () {
+      return false;
     },
   };
 
@@ -96,6 +101,37 @@
     if (options.getClient) cfg.getClient = options.getClient;
     if (options.getTodayParticipants) cfg.getTodayParticipants = options.getTodayParticipants;
     if (options.getWorkingDateIso) cfg.getWorkingDateIso = options.getWorkingDateIso;
+    if (options.isLeadInboxMode) cfg.isLeadInboxMode = options.isLeadInboxMode;
+  }
+
+  function isLeadInboxMode() {
+    try {
+      return !!cfg.isLeadInboxMode();
+    } catch (_e) {
+      return false;
+    }
+  }
+
+  function isInboxParticipant(p) {
+    return normalizeClientId(p && p.clientId) === LEAD_INBOX_CLIENT_ID;
+  }
+
+  function inboxParticipant() {
+    return {
+      clientId: LEAD_INBOX_CLIENT_ID,
+      clientName: LEAD_INBOX_CLIENT_NAME,
+      portalSessionKey: null,
+      isInbox: true,
+    };
+  }
+
+  function selectInboxParticipant(opts) {
+    opts = opts || {};
+    selectParticipant(inboxParticipant());
+    if (opts.openCamera) {
+      setCaptureMode("camera");
+      void captureFromCamera();
+    }
   }
 
   function isAchievementGalleryViewerOpen() {
@@ -703,17 +739,31 @@
   function renderParticipantPicker() {
     var host = document.getElementById("portalAchievementsParticipantList");
     var dayEl = document.getElementById("portalAchievementsDayLabel");
+    var hintEl = document.getElementById("portalAchievementsPickHint");
     if (dayEl) {
       dayEl.textContent = formatWorkingDayLabel();
     }
+    if (hintEl) {
+      hintEl.textContent = isLeadInboxMode()
+        ? "Take photos for the admin inbox (no participant), or pick someone from Today."
+        : "Same participants as your Today list (A–Z).";
+    }
     if (!host) return;
     var uniq = getTodayParticipantList();
-    if (!uniq.length) {
+    var html = "";
+    if (isLeadInboxMode()) {
+      html +=
+        '<button type="button" class="portal-achievements-participant portal-achievements-participant--inbox" data-ach-inbox="1">' +
+        '<span class="portal-achievements-participant__name">Inbox — no participant</span>' +
+        '<span class="portal-achievements-participant__sub muted">Admin assigns to the right client later</span>' +
+        '<span class="portal-achievements-participant__chev" aria-hidden="true">›</span></button>';
+    }
+    if (!uniq.length && !isLeadInboxMode()) {
       host.innerHTML =
         '<p class="muted portal-achievements-empty">No participants on your <strong>Today</strong> list for this day. Open the dashboard for that day first, or check your rota.</p>';
       return;
     }
-    host.innerHTML = uniq
+    html += uniq
       .map(function (p) {
         return (
           '<button type="button" class="portal-achievements-participant" data-ach-client="' +
@@ -728,6 +778,13 @@
         );
       })
       .join("");
+    host.innerHTML = html;
+    var inboxBtn = host.querySelector("[data-ach-inbox]");
+    if (inboxBtn) {
+      inboxBtn.addEventListener("click", function () {
+        selectInboxParticipant();
+      });
+    }
     host.querySelectorAll("[data-ach-client]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         selectParticipant({
@@ -754,9 +811,13 @@
     void refreshGallery();
   }
 
-  /** Topbar camera: open sheet; auto-start camera when exactly one Today participant. */
+  /** Topbar camera: lead inbox, or auto-start when exactly one Today participant. */
   function openCameraDirect() {
     bindSheet();
+    if (isLeadInboxMode()) {
+      selectInboxParticipant({ openCamera: true });
+      return;
+    }
     var list = getTodayParticipantList();
     if (list.length === 1) {
       selectParticipant(list[0]);
@@ -787,9 +848,15 @@
     if (cap) cap.hidden = step !== "capture";
     var nameEl = document.getElementById("portalAchievementsSelectedName");
     if (nameEl && state.participant) {
-      nameEl.textContent = state.participant.clientName || state.participant.clientId;
+      nameEl.textContent = isInboxParticipant(state.participant)
+        ? "Inbox — no participant"
+        : state.participant.clientName || state.participant.clientId;
     } else if (nameEl) {
       nameEl.textContent = "";
+    }
+    var backBtn = document.getElementById("portalAchievementsBackParticipants");
+    if (backBtn) {
+      backBtn.textContent = isLeadInboxMode() ? "Change" : "Participants";
     }
     var countEl = document.getElementById("portalAchievementsCount");
     if (countEl) {
@@ -903,7 +970,12 @@
     }
     if (!state.photos.length) {
       closeGalleryViewer();
-      host.innerHTML = '<p class="muted portal-achievements-empty">No photos yet for this participant.</p>';
+      host.innerHTML =
+        '<p class="muted portal-achievements-empty">' +
+        (isInboxParticipant(state.participant)
+          ? "No inbox photos yet for today."
+          : "No photos yet for this participant.") +
+        "</p>";
       return;
     }
     host.innerHTML =
@@ -1093,7 +1165,8 @@
     }
   }
 
-  function openSheet() {
+  function openSheet(opts) {
+    opts = opts || {};
     bindSheet();
     closeGalleryViewer();
     closeCameraFullscreen();
@@ -1103,9 +1176,17 @@
     state.cameraMode = "photo";
     signedUrlCache = Object.create(null);
     stopCamera();
+    setStatus("");
+    var titleEl = document.getElementById("achievementsSheetTitle");
+    if (titleEl) {
+      titleEl.textContent = isLeadInboxMode() ? "Session photos" : "Participant achievements";
+    }
+    if (isLeadInboxMode() && opts.inboxMode !== false) {
+      selectInboxParticipant({ openCamera: opts.openCamera !== false });
+      return;
+    }
     renderParticipantPicker();
     showStep("pick");
-    setStatus("");
     setCaptureMode("hub");
     var cap = document.getElementById("portalAchievementsStepCapture");
     if (cap) cap.hidden = true;
@@ -1124,7 +1205,7 @@
       '<div id="portalAchievementsStatus" class="portal-achievements-status" role="status"></div>' +
       '<div id="portalAchievementsStepPick">' +
       '<p class="portal-achievements-step-title">Today — <span id="portalAchievementsDayLabel"></span></p>' +
-      '<p class="muted portal-achievements-pick-hint">Same participants as your Today list (A–Z).</p>' +
+      '<p class="muted portal-achievements-pick-hint" id="portalAchievementsPickHint">Same participants as your Today list (A–Z).</p>' +
       '<div id="portalAchievementsParticipantList" class="portal-achievements-participant-list"></div>' +
       "</div>" +
       '<div id="portalAchievementsStepCapture" hidden>' +

@@ -966,10 +966,10 @@
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260605-ah-brothers-separate"></script>
   <script src="/portal/portal_participant_catalog.js?v=20260601-participant-dedupe"></script>
   <script src="portal/staff_roster_resolve.js?v=20260601-luliya-mic"></script>
-  <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260602-landscape-rail" />
+  <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260621-lead-inbox" />
   <script src="/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact"></script>
   <script src="/portal/portal_topbar_header.js?v=20260605-topbar-align"></script>
-  <script src="/portal/portal_participant_achievements.js?v=20260602-ach-rls-landscape"></script>
+  <script src="/portal/portal_participant_achievements.js?v=20260621-lead-inbox"></script>
   <script src="/portal/portal_client_sessions_overview.js?v=20260601-sessions-fit"></script>
   <script src="/portal/portal_induction.js?v=20260613-required-induction"></script>
   <script src="/portal/portal_induction_bind.js?v=20260615-tprog-sync"></script>
@@ -12523,7 +12523,8 @@
               var anchor = typeof getViewAnchorCalendarDate === 'function' ? getViewAnchorCalendarDate(viewDay) : new Date();
               return typeof normaliseIsoDate === 'function' ? normaliseIsoDate(anchor) : new Date().toISOString().slice(0,10);
             }catch(_){ return new Date().toISOString().slice(0,10); }
-          }
+          },
+          isLeadInboxMode: function(){ return true; }
         });
       }
       function bindQuickMenu(){
