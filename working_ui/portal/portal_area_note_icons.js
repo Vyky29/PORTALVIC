@@ -48,11 +48,13 @@
         '<svg class="' +
         SVG_CLASS +
         '" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" fill="none">' +
-        '<path d="M8 16c1.5-3 3-4.5 4-6 1 1.5 2.5 3 4 6" stroke="#4fc3f7" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>' +
-        '<path d="M10 9c.8-1.6 1.6-2.4 2-2.4s1.2.8 2 2.4" stroke="#81d4fa" stroke-width="1.4" stroke-linecap="round"/>' +
-        '<circle cx="7" cy="8" r="1" fill="#4fc3f7"/>' +
-        '<circle cx="12" cy="6" r=".9" fill="#81d4fa"/>' +
-        '<circle cx="16" cy="9" r=".85" fill="#4fc3f7"/>' +
+        '<path d="M4.5 17.5c2-.7 4-.7 6 0s4 .7 6 0 4-.7 6 0" stroke="#4fc3f7" stroke-width="1.7" stroke-linecap="round"/>' +
+        '<path d="M12 17.5V10.8" stroke="#4fc3f7" stroke-width="2" stroke-linecap="round"/>' +
+        '<path d="M12 10.8C9.4 8.8 7.8 7 7 5" stroke="#81d4fa" stroke-width="1.75" stroke-linecap="round"/>' +
+        '<path d="M12 10.8c2.6-2 4.2-3.8 5-5.8" stroke="#4fc3f7" stroke-width="1.75" stroke-linecap="round"/>' +
+        '<path d="M6.8 6.5c0 1.15-.75 2.1-1.45 2.1s-1.45-.95-1.45-2.1.65-1.95 1.45-2.45c.8.5 1.45 1.3 1.45 2.45z" fill="#4fc3f7"/>' +
+        '<path d="M12 4c0 1.35-.95 2.45-1.75 2.45S8.5 5.35 8.5 4s.95-2.2 1.75-2.75C11.05 1.8 12 3 12 4z" fill="#81d4fa"/>' +
+        '<path d="M17.2 6.5c0 1.15-.75 2.1-1.45 2.1s-1.45-.95-1.45-2.1.65-1.95 1.45-2.45c.8.5 1.45 1.3 1.45 2.45z" fill="#4fc3f7"/>' +
         "</svg>",
     },
     "lane-se": {
@@ -62,9 +64,11 @@
         '<svg class="' +
         SVG_CLASS +
         '" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" fill="none">' +
-        '<path d="M4 13c2.5-2 5-2.5 7.5-1.2 1.2.6 2.2 1.6 3 2.8.5.7 1.2 1.1 2 1.1h2.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>' +
-        '<path d="M4 13c1.2-1.4 2.8-2.2 4.5-2.2" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>' +
-        '<circle cx="17.5" cy="10" r="1" fill="currentColor"/>' +
+        '<path d="M19.5 12l-3.2-2.6v5.2z" fill="currentColor"/>' +
+        '<ellipse cx="10.8" cy="12" rx="6.8" ry="4.1" stroke="currentColor" stroke-width="2"/>' +
+        '<path d="M13.8 8.8c-.95-.95-1.85-1.35-2.7-1.35" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>' +
+        '<path d="M8.8 14.6c.85.55 1.7.8 2.55.8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>' +
+        '<circle cx="7.2" cy="11.5" r="1.2" fill="currentColor"/>' +
         "</svg>",
     },
     "lane-de": {
@@ -74,9 +78,8 @@
         '<svg class="' +
         SVG_CLASS +
         '" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" fill="none">' +
-        '<path d="M3 14c2-1.5 4.2-2 6.5-1.2 1.4.5 2.6 1.5 3.5 2.8.6.9 1.5 1.4 2.5 1.4H20" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>' +
-        '<path d="M8 9.5l1.2-2.2M11 8.5V6.5M14 9.5l-1.2-2.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>' +
-        '<circle cx="17.5" cy="10.5" r="1" fill="currentColor"/>' +
+        '<path d="M20.5 12 17.2 10 14.5 9.6 12.2 10.2 10.5 5.4 9 10.2 5.5 11 3 12 5.5 13 9 13.8 10.5 18.6 12.2 13.8 14.5 14.3 17.2 14Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>' +
+        '<circle cx="6.4" cy="11.2" r="1.15" fill="currentColor"/>' +
         "</svg>",
     },
     "hub-room": {
