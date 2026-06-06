@@ -975,8 +975,8 @@
     "day": "Sunday",
     "instructors": "JOHN",
     "service": "Multi-Activity",
-    "area": "Big Pool",
-    "time_slot": "11 to 11.45",
+    "area": "Hub Room",
+    "time_slot": "11.45 to 12.30",
     "venue": "SwimFarm",
     "session_date": "2026-05-17"
   },
@@ -3355,8 +3355,8 @@
     "day": "Sunday",
     "instructors": "JOHN",
     "service": "Multi-Activity",
-    "area": "Big Pool",
-    "time_slot": "11 to 11.45",
+    "area": "Hub Room",
+    "time_slot": "11.45 to 12.30",
     "venue": "SwimFarm",
     "session_date": "2026-06-07"
   },
@@ -4885,8 +4885,8 @@
     "day": "Sunday",
     "instructors": "BERTA",
     "service": "Multi-Activity",
-    "area": "Big Pool",
-    "time_slot": "11 to 11.45",
+    "area": "Hub Room",
+    "time_slot": "11.45 to 12.30",
     "venue": "SwimFarm",
     "session_date": "2026-06-14"
   },
@@ -6415,8 +6415,8 @@
     "day": "Sunday",
     "instructors": "JOHN",
     "service": "Multi-Activity",
-    "area": "Big Pool",
-    "time_slot": "11 to 11.45",
+    "area": "Hub Room",
+    "time_slot": "11.45 to 12.30",
     "venue": "SwimFarm",
     "session_date": "2026-06-21"
   },
@@ -7945,8 +7945,8 @@
     "day": "Sunday",
     "instructors": "JOHN",
     "service": "Multi-Activity",
-    "area": "Big Pool",
-    "time_slot": "11 to 11.45",
+    "area": "Hub Room",
+    "time_slot": "11.45 to 12.30",
     "venue": "SwimFarm",
     "session_date": "2026-06-28"
   },
@@ -9475,8 +9475,8 @@
     "day": "Sunday",
     "instructors": "JOHN",
     "service": "Multi-Activity",
-    "area": "Big Pool",
-    "time_slot": "11 to 11.45",
+    "area": "Hub Room",
+    "time_slot": "11.45 to 12.30",
     "venue": "SwimFarm",
     "session_date": "2026-07-05"
   },
@@ -11005,8 +11005,8 @@
     "day": "Sunday",
     "instructors": "BERTA",
     "service": "Multi-Activity",
-    "area": "Big Pool",
-    "time_slot": "11 to 11.45",
+    "area": "Hub Room",
+    "time_slot": "11.45 to 12.30",
     "venue": "SwimFarm",
     "session_date": "2026-07-12"
   },
@@ -12829,8 +12829,8 @@
     "day": "Sunday",
     "instructors": "JOHN, BERTA",
     "service": "Multi-Activity",
-    "area": "Big Pool",
-    "time_slot": "11 to 11.45",
+    "area": "Hub Room",
+    "time_slot": "11.45 to 12.30",
     "venue": "SwimFarm"
   },
   {

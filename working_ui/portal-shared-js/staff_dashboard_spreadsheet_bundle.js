@@ -66,7 +66,7 @@
     "angel": {
       "staffId": "angel",
       "staffName": "Angel",
-      "avatarFile": "portal/staff_photos/angel.jpg",
+      "avatarFile": "portal/staff_photos/angel.png?v=20260605-angel-buena",
       "staffRoleTrack": "swimming",
       "canViewAll": false
     },
@@ -115,7 +115,7 @@
     "aurora": {
       "staffId": "aurora",
       "staffName": "Aurora",
-      "avatarFile": "portal/staff_photos/aurora.jpg",
+      "avatarFile": "portal/staff_photos/aurora.png?v=20260605-aurora-buena",
       "staffRoleTrack": "swimming",
       "canViewAll": false
     },
@@ -143,7 +143,7 @@
     "alex": {
       "staffId": "alex",
       "staffName": "Alex",
-      "avatarFile": "portal/staff_photos/alex.jpg",
+      "avatarFile": "portal/staff_photos/alex.png",
       "staffRoleTrack": "climbing",
       "canViewAll": false
     },
@@ -975,8 +975,8 @@
     "day": "Sunday",
     "instructors": "JOHN",
     "service": "Multi-Activity",
-    "area": "Big Pool",
-    "time_slot": "11 to 11.45",
+    "area": "Hub Room",
+    "time_slot": "11.45 to 12.30",
     "venue": "SwimFarm",
     "session_date": "2026-05-17"
   },
@@ -3355,8 +3355,8 @@
     "day": "Sunday",
     "instructors": "JOHN",
     "service": "Multi-Activity",
-    "area": "Big Pool",
-    "time_slot": "11 to 11.45",
+    "area": "Hub Room",
+    "time_slot": "11.45 to 12.30",
     "venue": "SwimFarm",
     "session_date": "2026-06-07"
   },
@@ -4885,8 +4885,8 @@
     "day": "Sunday",
     "instructors": "BERTA",
     "service": "Multi-Activity",
-    "area": "Big Pool",
-    "time_slot": "11 to 11.45",
+    "area": "Hub Room",
+    "time_slot": "11.45 to 12.30",
     "venue": "SwimFarm",
     "session_date": "2026-06-14"
   },
@@ -6415,8 +6415,8 @@
     "day": "Sunday",
     "instructors": "JOHN",
     "service": "Multi-Activity",
-    "area": "Big Pool",
-    "time_slot": "11 to 11.45",
+    "area": "Hub Room",
+    "time_slot": "11.45 to 12.30",
     "venue": "SwimFarm",
     "session_date": "2026-06-21"
   },
@@ -7945,8 +7945,8 @@
     "day": "Sunday",
     "instructors": "JOHN",
     "service": "Multi-Activity",
-    "area": "Big Pool",
-    "time_slot": "11 to 11.45",
+    "area": "Hub Room",
+    "time_slot": "11.45 to 12.30",
     "venue": "SwimFarm",
     "session_date": "2026-06-28"
   },
@@ -9475,8 +9475,8 @@
     "day": "Sunday",
     "instructors": "JOHN",
     "service": "Multi-Activity",
-    "area": "Big Pool",
-    "time_slot": "11 to 11.45",
+    "area": "Hub Room",
+    "time_slot": "11.45 to 12.30",
     "venue": "SwimFarm",
     "session_date": "2026-07-05"
   },
@@ -11005,8 +11005,8 @@
     "day": "Sunday",
     "instructors": "BERTA",
     "service": "Multi-Activity",
-    "area": "Big Pool",
-    "time_slot": "11 to 11.45",
+    "area": "Hub Room",
+    "time_slot": "11.45 to 12.30",
     "venue": "SwimFarm",
     "session_date": "2026-07-12"
   },
@@ -12829,8 +12829,8 @@
     "day": "Sunday",
     "instructors": "JOHN, BERTA",
     "service": "Multi-Activity",
-    "area": "Big Pool",
-    "time_slot": "11 to 11.45",
+    "area": "Hub Room",
+    "time_slot": "11.45 to 12.30",
     "venue": "SwimFarm"
   },
   {
