@@ -59,7 +59,7 @@
     "dan": {
       "staffId": "dan",
       "staffName": "Dan",
-      "avatarFile": "portal/staff_photos/dan.jpg",
+      "avatarFile": "portal/staff_photos/dan.png?v=20260606-dan-buena",
       "staffRoleTrack": "swimming",
       "canViewAll": false
     },
