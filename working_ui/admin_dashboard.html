@@ -12411,7 +12411,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var id = 'pp-' + cid;
       var inClass = String(row.inClass || '').trim().toLowerCase();
       var wl = row.onWaitingList === true || String(row.onWaitingList || '').toLowerCase() === 'true';
-      var bookingStatus = forceStatus ? forceStatus : (wl ? 'waiting_list' : (inClass === 'yes' || inClass === 'y' ? 'programme_in' : 'programme_in'));
+      var rowStatus = String(row.bookingStatus || '').trim().toLowerCase();
+      var bookingStatus = forceStatus ? forceStatus : (rowStatus === 'trial' ? 'trial' : (wl ? 'waiting_list' : (inClass === 'yes' || inClass === 'y' ? 'programme_in' : 'programme_in')));
       var parentDisp = String(row.parentDisplay || '').trim();
       if(!parentDisp){
         parentDisp = (String(row.parentFirstName || '').trim() + ' ' + String(row.parentLastName || '').trim()).trim() || '—';
