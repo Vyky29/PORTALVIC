@@ -93,7 +93,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260610-pwa-black-fix" />
   <script src="/portal/portal_screenshot_guard.js?v=20260610-pwa-black-fix"></script>
   <title>clubSENsational Lead Dashboard</title>
-  <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260606-today-dayoff" />
+  <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260606-today-dayoff-next" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260606-topbar-icons" />
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260620-inbox-logo-orbit" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260601-landscape-full" />
@@ -7638,6 +7638,37 @@
         return buildSelectedDayViewFromLauraModel(null, iso) || [];
       }catch(_){ return []; }
     }
+    function portalBuildTodayNextSessionPreview(staffId){
+      const id = String(staffId || '').trim().toLowerCase();
+      if(!id) return null;
+      const info = typeof window.portalFindNextSessionCalendarInfo === 'function'
+        ? window.portalFindNextSessionCalendarInfo(id, new Date(), sessionsModel)
+        : null;
+      if(!info || !info.date) return null;
+      const iso = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(info.date) : '';
+      let rows = [];
+      try{
+        rows = iso ? portalBuildTodayRowsForIso(iso) : [];
+      }catch(_){ rows = []; }
+      if(!rows.length) return null;
+      const venues = {};
+      rows.forEach(function(r){
+        const base = r && r.__portalBaseSession;
+        const v = String(r.sessionVenue || (base && base.venue) || '').trim();
+        if(v && v !== '—') venues[v] = (venues[v] || 0) + 1;
+      });
+      const venueKeys = Object.keys(venues).sort(function(a, b){ return venues[b] - venues[a]; });
+      const weekday = info.date.toLocaleDateString('en-GB', { weekday: 'long' });
+      const dateLabel = typeof portalFormatPortalDateDdMmYyyy === 'function'
+        ? portalFormatPortalDateDdMmYyyy(info.date)
+        : '';
+      return {
+        weekday: weekday,
+        dateLabel: dateLabel,
+        sessionCount: rows.length,
+        venueLabel: venueKeys[0] || ''
+      };
+    }
     function portalSyncTodaySectionDisplay(modelOverride){
       const id = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
       let rows = [];
@@ -7648,6 +7679,7 @@
       }catch(_){ rows = []; }
       dashboardData.portalTodaySectionHeading = '';
       dashboardData.portalTodaySectionMode = 'today';
+      dashboardData.portalTodayNextSessionPreview = null;
       const todayOff = id && typeof portalIsViewingLiveCalendarToday === 'function' && portalIsViewingLiveCalendarToday()
         && typeof portalStaffTodayBlockIsOff === 'function'
         && portalStaffTodayBlockIsOff(id);
@@ -7656,23 +7688,14 @@
         && dashboardData.portalIdentityResolved !== false
         && typeof portalIsViewingLiveCalendarToday === 'function'
         && portalIsViewingLiveCalendarToday()){
-        const info = typeof window.portalFindNextSessionCalendarInfo === 'function'
-          ? window.portalFindNextSessionCalendarInfo(id, new Date(), sessionsModel)
-          : null;
-        if(info && info.date){
-          const iso = typeof portalIsoYmdFromDate === 'function' ? portalIsoYmdFromDate(info.date) : '';
-          let nextRows = [];
-          try{
-            nextRows = iso ? portalBuildTodayRowsForIso(iso) : [];
-          }catch(_){ nextRows = []; }
-          if(nextRows.length){
-            dashboardData.today = nextRows;
-            dashboardData.portalTodaySectionHeading = portalFormatNextSessionSectionHeading(info.date);
-            dashboardData.portalTodaySectionMode = 'next_session';
-            dashboardData.venueMeta = nextRows.length === 1 ? '1 participant' : (nextRows.length + ' participants');
-            return nextRows;
-          }
-        }
+        const preview = portalBuildTodayNextSessionPreview(id);
+        dashboardData.portalTodayNextSessionPreview = preview;
+        dashboardData.today = [];
+        const dw = String(DEMO_VIEW_DAY || '').trim() || new Date().toLocaleDateString('en-GB', { weekday: 'long' });
+        dashboardData.venueMeta = preview
+          ? ('Next session ' + preview.dateLabel)
+          : ('No participants — ' + dw);
+        return [];
       }
       dashboardData.today = rows;
       const dw = String(DEMO_VIEW_DAY || '').trim() || new Date().toLocaleDateString('en-GB', { weekday: 'long' });
@@ -7760,6 +7783,7 @@
       nextSessionCalendarDate: null,
       portalTodaySectionHeading: '',
       portalTodaySectionMode: 'today',
+      portalTodayNextSessionPreview: null,
       week: [],
       /** Term grid: months/range filled from term_from_timetable.js; sample feedback only for demo usernames (see portalApplyTermCalendarForStaff). */
       termName: 'Summer Term 2026',
@@ -8518,13 +8542,20 @@
                 futureOverrideTone = String(ovMeta.tone || '').trim();
               }
             }
+            var displayName = c.name || nameFromReplace || (s.status === 'closed' ? 'Closed' : 'No participant');
+            var photoUrl = typeof resolveParticipantPhotoUrl === 'function'
+              ? resolveParticipantPhotoUrl(displayName, effClientId)
+              : '';
+            if(!photoUrl && c.avatarFile) photoUrl = String(c.avatarFile).trim();
+            if(!photoUrl && typeof clientPhotoUrl === 'function') photoUrl = clientPhotoUrl(displayName) || '';
             return {
               time: slot || portalFormatRange(s.start, s.end),
               timeSlotLabel: slot,
               start: s.start,
-              name: c.name || nameFromReplace || (s.status === 'closed' ? 'Closed' : 'No participant'),
+              clientId: effClientId,
+              name: displayName,
               venue: s.venue || '—',
-              avatarFile: c.avatarFile || '',
+              avatarFile: photoUrl,
               areaNote: String(areaNote).trim(),
               futureOverrideLabel: futureOverrideLabel,
               futureOverrideTone: futureOverrideTone
@@ -9107,6 +9138,40 @@
     const TODAY_DAY_OFF_ICON =
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' +
       '<rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4M8 2v4M3 10h18"></path><path d="m9 15 6 6M15 15l-6 6"></path></svg>';
+    const TODAY_NEXT_SESSION_CAL_ICON =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' +
+      '<rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4M8 2v4M3 10h18"></path></svg>';
+    function portalTodayNextSessionPreviewHtml(preview){
+      if(!preview) return '';
+      const n = Number(preview.sessionCount) || 0;
+      const countLabel = n === 1 ? '1 session planned' : (n + ' sessions planned');
+      const venue = String(preview.venueLabel || '').trim();
+      const venueHtml = venue
+        ? '<p class="today-next-session-preview__venue">' + escapeHtml(venue) + '</p>'
+        : '';
+      return '<div class="today-next-session-preview__label">' +
+        '<span class="today-next-session-preview__label-ico" aria-hidden="true">' + TODAY_NEXT_SESSION_CAL_ICON + '</span>' +
+        '<span>Next session:</span></div>' +
+        '<p class="today-next-session-preview__day">' + escapeHtml(preview.weekday || '') + '</p>' +
+        '<p class="today-next-session-preview__date">' + escapeHtml(preview.dateLabel || '') + '</p>' +
+        '<div class="today-next-session-preview__rule" aria-hidden="true"></div>' +
+        '<p class="today-next-session-preview__count">' + escapeHtml(countLabel) + '</p>' +
+        venueHtml;
+    }
+    function portalBindTodayNextSessionPreview(previewEl, preview){
+      if(!previewEl || !preview) return;
+      const label = 'Next session ' + String(preview.weekday || '') + ' ' + String(preview.dateLabel || '');
+      previewEl.setAttribute('role', 'button');
+      previewEl.setAttribute('tabindex', '0');
+      previewEl.setAttribute('aria-label', label.trim());
+      const open = function(){
+        if(typeof openSheet === 'function') openSheet('tomorrowSheet');
+      };
+      previewEl.addEventListener('click', open);
+      previewEl.addEventListener('keydown', function(e){
+        if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); open(); }
+      });
+    }
 
     function applyTodayGridSizing(grid, count){
       if(!grid) return;
@@ -9143,7 +9208,16 @@
         return;
       }
       const todayHeading = document.getElementById('todayHeading');
-      if(todayHeading) todayHeading.textContent = portalTodaySectionTitleText();
+      if(todayHeading){
+        const isLive = typeof portalIsViewingLiveCalendarToday === 'function' && portalIsViewingLiveCalendarToday();
+        if(isLive){
+          const d = portalResolveTodaySectionCalendarDate();
+          const num = d && typeof portalFormatPortalDateDdMmYyyy === 'function' ? portalFormatPortalDateDdMmYyyy(d) : '';
+          todayHeading.textContent = num ? ('TODAY ' + num) : 'TODAY';
+        }else{
+          todayHeading.textContent = portalTodaySectionTitleText();
+        }
+      }
       const count = Math.min(9, dashboardData.today.length || 0);
       grid.className = 'today-grid';
       grid.setAttribute('data-session-count', String(count));
@@ -9152,13 +9226,19 @@
       grid.innerHTML = '';
       if(!count){
         applyTodayGridSizing(grid, 0);
-        grid.style.setProperty('--today-rows-fill', '0.333333');
+        const preview = dashboardData && dashboardData.portalTodayNextSessionPreview;
+        const loading = !!(dashboardData && dashboardData.portalIdentityResolved === false);
+        if(preview && !loading){
+          grid.classList.add('today-grid--day-off-with-next');
+          grid.style.setProperty('--today-rows-fill', '0.38');
+        }else{
+          grid.style.setProperty('--today-rows-fill', '0.333333');
+        }
         const empty = document.createElement('div');
         empty.className = 'session-card session-card--empty session-card--day-off';
         empty.setAttribute('role', 'status');
         empty.style.pointerEvents = 'none';
         empty.style.cursor = 'default';
-        const loading = !!(dashboardData && dashboardData.portalIdentityResolved === false);
         empty.innerHTML = loading
           ? '<div class="today-day-off today-day-off--loading"><p class="today-day-off__title">Loading your schedule…</p></div>'
           : '<div class="today-day-off" role="presentation">' +
@@ -9166,6 +9246,13 @@
             '<p class="today-day-off__title">Day off</p>' +
             '<p class="today-day-off__sub">No sessions today</p></div>';
         grid.appendChild(empty);
+        if(preview && !loading){
+          const previewEl = document.createElement('div');
+          previewEl.className = 'today-next-session-preview';
+          previewEl.innerHTML = portalTodayNextSessionPreviewHtml(preview);
+          portalBindTodayNextSessionPreview(previewEl, preview);
+          grid.appendChild(previewEl);
+        }
         if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
         return;
       }
@@ -10433,20 +10520,32 @@
           for(let i = 0; i < key.length; i++) h = (h + key.charCodeAt(i) * (i + 1)) % 997;
           return pools[h % pools.length];
         };
+        const resolveTomorrowRowPhoto = (name, clientId, avatarFile) => {
+          const fromResolve = typeof resolveParticipantPhotoUrl === 'function'
+            ? resolveParticipantPhotoUrl(name, clientId)
+            : '';
+          if(fromResolve) return fromResolve;
+          const fromItem = avatarFile ? String(avatarFile).trim() : '';
+          if(fromItem) return fromItem;
+          return typeof clientPhotoUrl === 'function' ? (clientPhotoUrl(name) || '') : '';
+        };
         const normalizeTomorrowRow = item => {
           const foLab = item && item.futureOverrideLabel != null ? String(item.futureOverrideLabel).trim() : '';
           const foTone = item && item.futureOverrideTone != null ? String(item.futureOverrideTone).trim() : '';
+          const clientId = item && item.clientId != null ? String(item.clientId).trim() : '';
           if(item && item.time != null && item.name != null){
             const slot = item.timeSlotLabel != null && String(item.timeSlotLabel).trim()
               ? String(item.timeSlotLabel).trim()
               : '';
+            const name = String(item.name);
             return {
               time: String(item.time),
               timeSlotLabel: slot,
               start: item.start != null && item.start !== '' ? String(item.start) : '',
-              name: String(item.name),
+              clientId,
+              name,
               venue: item.venue != null ? String(item.venue) : '—',
-              avatarFile: item.avatarFile,
+              avatarFile: resolveTomorrowRowPhoto(name, clientId, item.avatarFile),
               areaNote: item.areaNote != null ? String(item.areaNote).trim() : '',
               futureOverrideLabel: foLab,
               futureOverrideTone: foTone
@@ -10455,25 +10554,29 @@
           const d = String(item && item.detail ? item.detail : '').trim();
           const dot = d.indexOf('·');
           if(dot > 0){
+            const name = d.slice(dot + 1).trim();
             return {
               time: d.slice(0, dot).trim(),
               timeSlotLabel: '',
               start: item && item.start != null && item.start !== '' ? String(item.start) : '',
-              name: d.slice(dot + 1).trim(),
+              clientId,
+              name,
               venue: item && item.venue != null ? String(item.venue) : '—',
-              avatarFile: item && item.avatarFile,
+              avatarFile: resolveTomorrowRowPhoto(name, clientId, item && item.avatarFile),
               areaNote: item && item.areaNote != null ? String(item.areaNote).trim() : '',
               futureOverrideLabel: foLab,
               futureOverrideTone: foTone
             };
           }
+          const name = d || '—';
           return {
             time: '—',
             timeSlotLabel: '',
             start: '',
-            name: d || '—',
+            clientId,
+            name,
             venue: '—',
-            avatarFile: item && item.avatarFile,
+            avatarFile: resolveTomorrowRowPhoto(name, clientId, item && item.avatarFile),
             areaNote: '',
             futureOverrideLabel: foLab,
             futureOverrideTone: foTone
@@ -10502,7 +10605,7 @@
             const vCls = venueChipClass(row.venue);
             const src = row.avatarFile ? String(row.avatarFile).trim() : '';
             const avatar = src
-              ? `<div class="calendar-day-avatar"><img src="${escapeHtml(src)}" alt="" loading="lazy" decoding="async"/></div>`
+              ? `<div class="calendar-day-avatar"><img class="portal-screenshot-protected" src="${escapeHtml(src)}" alt="" loading="lazy" decoding="async" draggable="false" onerror="this.closest('.calendar-day-avatar').classList.add('calendar-day-avatar--empty');this.remove();"/></div>`
               : `<div class="calendar-day-avatar calendar-day-avatar--empty" title="Photo" aria-label="Participant photo placeholder">${camSvg}</div>`;
             const noteRaw = String(row.areaNote || '').trim();
           const ovRaw = String(row.futureOverrideLabel || '').trim();
