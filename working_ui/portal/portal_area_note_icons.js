@@ -82,8 +82,53 @@
     return "";
   }
 
+  function portalNormalizeProgrammeKey(raw) {
+    return String(raw || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[\-_]+/g, " ")
+      .replace(/\s+/g, " ");
+  }
+
+  function portalClientKeyFromContext(ctx) {
+    ctx = ctx || {};
+    var cid = String(ctx.clientId || "")
+      .trim()
+      .toLowerCase();
+    if (cid && cid !== "closed" && cid !== "available") return cid;
+    return String(ctx.name || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+  }
+
+  /** Map roster room + programme to the area note label staff should see. */
+  global.portalApplySessionAreaNoteOverrides = function portalApplySessionAreaNoteOverrides(ctx) {
+    ctx = ctx || {};
+    var activity = portalNormalizeProgrammeKey(
+      ctx.activity || ctx.rosterService || ctx.service || ""
+    );
+    if (/day\s*cent(re|er)/.test(activity)) return "Day Centre";
+
+    var clientKey = portalClientKeyFromContext(ctx);
+    if (clientKey === "tinashe" && activity.indexOf("bespoke") >= 0) return "Bespoke";
+
+    return "";
+  };
+
   function portalResolveAreaNoteLabelFromItem(item) {
     if (!item) return "";
+    var override = portalApplySessionAreaNoteOverrides({
+      activity: item.activity,
+      rosterService: item.rosterService,
+      service: item.service,
+      clientId: item.clientId,
+      name: item.name,
+      rosterArea: item.areaLabel,
+      areaLabel: item.areaLabel,
+    });
+    if (override) return override;
+
     var area =
       item.areaLabel != null && String(item.areaLabel).trim()
         ? String(item.areaLabel).trim()
