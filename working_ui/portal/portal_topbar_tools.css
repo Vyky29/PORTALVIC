@@ -24,11 +24,11 @@
   --topbar-profile-male-glow:rgba(137,181,193,0.32);
   --topbar-profile-male-band:#89b5c1;
   --topbar-profile-male-ink:#004e7a;
-  --topbar-profile-female-bg:#fde6f0;
-  --topbar-profile-female-border:#ec8fbe;
-  --topbar-profile-female-glow:rgba(236,143,190,0.32);
-  --topbar-profile-female-band:#ec8fbe;
-  --topbar-profile-female-ink:#a8326b;
+  --topbar-profile-female-bg:#fef5f9;
+  --topbar-profile-female-border:#f5b8d4;
+  --topbar-profile-female-glow:rgba(245,184,212,0.28);
+  --topbar-profile-female-band:#fce4ef;
+  --topbar-profile-female-ink:#9c2756;
 }
 .topbar-lead{
   min-height:var(--topbar-row-h);
