@@ -39,6 +39,10 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     ],
     "alex": [
       "2026-06-21"
+    ],
+    "carlos": [
+      "2026-06-21",
+      "2026-07-05"
     ]
   },
   "termStaffOffWeekdaysRangeByProfileKey": {
@@ -426,9 +430,7 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     "carlos": [
       "2026-06-07",
       "2026-06-14",
-      "2026-06-21",
       "2026-06-28",
-      "2026-07-05",
       "2026-07-12"
     ],
     "dan": [
@@ -810,7 +812,8 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-07-17"
     ],
     "andres": [
-      "2026-06-21"
+      "2026-06-21",
+      "2026-07-05"
     ]
   }
 };

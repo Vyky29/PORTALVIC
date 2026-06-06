@@ -6183,7 +6183,7 @@
     {
       "client_name": "Zakariya",
       "day": "Sunday",
-      "instructors": "CARLOS",
+      "instructors": "BISMARK",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "1 to 2",
@@ -6203,7 +6203,7 @@
     {
       "client_name": "Amaar Ah",
       "day": "Sunday",
-      "instructors": "BISMARK",
+      "instructors": "GODSWAY",
       "service": "Multi-Activity",
       "area": "Hub Room",
       "time_slot": "1.15 to 2",
@@ -6263,7 +6263,7 @@
     {
       "client_name": "Hazem",
       "day": "Sunday",
-      "instructors": "CARLOS",
+      "instructors": "BISMARK",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "10 to 11",
@@ -6313,7 +6313,7 @@
     {
       "client_name": "Yusuf Ah",
       "day": "Sunday",
-      "instructors": "BISMARK",
+      "instructors": "GODSWAY",
       "service": "Multi-Activity",
       "area": "Hub Room",
       "time_slot": "10.15 to 11",
@@ -6343,7 +6343,7 @@
     {
       "client_name": "Arthur Mo",
       "day": "Sunday",
-      "instructors": "BISMARK",
+      "instructors": "GODSWAY",
       "service": "Multi-Activity",
       "area": "Hub Room",
       "time_slot": "11 to 11.45",
@@ -6403,7 +6403,7 @@
     {
       "client_name": "Zaid",
       "day": "Sunday",
-      "instructors": "CARLOS",
+      "instructors": "BISMARK",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "11 to 12",
@@ -6483,7 +6483,7 @@
     {
       "client_name": "Serine",
       "day": "Sunday",
-      "instructors": "CARLOS",
+      "instructors": "BISMARK",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "12 to 1",
@@ -6493,7 +6493,7 @@
     {
       "client_name": "Adaam Ah",
       "day": "Sunday",
-      "instructors": "BISMARK",
+      "instructors": "GODSWAY",
       "service": "Multi-Activity",
       "area": "Hub Room",
       "time_slot": "12.30 to 1.15",
@@ -6593,7 +6593,7 @@
     {
       "client_name": "Patrick",
       "day": "Sunday",
-      "instructors": "CARLOS",
+      "instructors": "BISMARK",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "2 to 3",
@@ -6673,7 +6673,7 @@
     {
       "client_name": "Jack S",
       "day": "Sunday",
-      "instructors": "BISMARK",
+      "instructors": "GODSWAY",
       "service": "Multi-Activity",
       "area": "Hub Room",
       "time_slot": "9.30 to 10.15",
@@ -9243,7 +9243,7 @@
     {
       "client_name": "Zakariya",
       "day": "Sunday",
-      "instructors": "CARLOS",
+      "instructors": "ANDRES",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "1 to 2",
@@ -9323,7 +9323,7 @@
     {
       "client_name": "Hazem",
       "day": "Sunday",
-      "instructors": "CARLOS",
+      "instructors": "ANDRES",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "10 to 11",
@@ -9463,7 +9463,7 @@
     {
       "client_name": "Zaid",
       "day": "Sunday",
-      "instructors": "CARLOS",
+      "instructors": "ANDRES",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "11 to 12",
@@ -9543,7 +9543,7 @@
     {
       "client_name": "Serine",
       "day": "Sunday",
-      "instructors": "CARLOS",
+      "instructors": "ANDRES",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "12 to 1",
@@ -9653,7 +9653,7 @@
     {
       "client_name": "Patrick",
       "day": "Sunday",
-      "instructors": "CARLOS",
+      "instructors": "ANDRES",
       "service": "Climbing Activity",
       "area": "Wall",
       "time_slot": "2 to 3",
