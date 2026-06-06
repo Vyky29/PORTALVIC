@@ -45,7 +45,7 @@
     "sandra": {
       "staffId": "sandra",
       "staffName": "Sandra",
-      "avatarFile": "portal/staff_photos/sandra.jpg",
+      "avatarFile": "portal/staff_photos/sandra.png?v=20260606-sandra",
       "staffRoleTrack": "fitness",
       "canViewAll": false
     },
