@@ -242,8 +242,8 @@
   display:block;
   width:auto;
   height:auto;
-  max-width:min(100%, 100cqw, calc(100cqh * 538 / 484));
-  max-height:min(100%, 100cqh, calc(100cqw * 484 / 538));
+  max-width:min(100%, 100cqw, calc(var(--today-area-icon, 52px) * 538 / 484));
+  max-height:min(100%, 100cqh, var(--today-area-icon, 52px));
   min-width:0;
   min-height:0;
   object-fit:contain;

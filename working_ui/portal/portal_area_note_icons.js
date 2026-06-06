@@ -6,7 +6,7 @@
   "use strict";
 
   var ICON_IMG_BASE = "/portal/area-note-icons/";
-  var ICON_IMG_VER = "20260606-area-icons-contain";
+  var ICON_IMG_VER = "20260606-area-icons-name-scale";
   var IMG_CLASS = "session-area-note-img";
   var SVG_CLASS = "session-area-note-svg";
 
@@ -222,34 +222,49 @@
     }
   }
 
-  function portalTodayAreaNoteMetrics(sessionCount, scrollMode, gridEl) {
+  function portalTodayAreaNoteMetrics(sessionCount, scrollMode, gridEl, nameFs) {
     var n = Math.min(9, Math.max(1, sessionCount | 0));
     var venueAspect = 538 / 484;
+    var nameFont = Math.max(12, Math.min(26, Number(nameFs) || 14));
+    var nameLineH = nameFont * 1.22;
     if (scrollMode) {
-      return { iconPx: 32, areaIconPx: 52, labelFs: 0, symbolColMax: 72, stackGap: 0, labelBlock: 0 };
+      var scrollH = Math.round(nameLineH * 2.05);
+      return {
+        iconPx: 30,
+        areaIconPx: scrollH,
+        labelFs: 0,
+        symbolColMax: Math.min(88, Math.ceil(scrollH * venueAspect) + 4),
+        stackGap: 0,
+        labelBlock: 0,
+      };
     }
     var dense = n >= 6;
     var rowH = portalMeasureTodaySessionRowHeight(gridEl, n);
     var rowPad = dense ? 4 : 6;
+    var nameMult = { 1: 2.85, 2: 2.65, 3: 2.45, 4: 2.25, 5: 2.05 };
     var areaIconPx;
-    if (rowH > 0) {
-      var fitH = Math.max(28, rowH - rowPad * 2);
-      areaIconPx = Math.floor(fitH * (dense ? 0.9 : 0.94));
+    if (n <= 5) {
+      areaIconPx = Math.round(nameLineH * (nameMult[n] || 2.05));
     } else {
-      var areaByCount = { 1: 88, 2: 80, 3: 70, 4: 60, 5: 52, 6: 40, 7: 36, 8: 32, 9: 28 };
-      areaIconPx = areaByCount[n] || 28;
+      var rowFit =
+        rowH > 0 ? Math.floor((rowH - rowPad * 2) * (dense ? 0.82 : 0.88)) : 0;
+      var nameFit = Math.round(nameLineH * (dense ? 1.95 : 2.15));
+      areaIconPx = rowFit > 0 ? Math.min(rowFit, nameFit) : nameFit;
     }
-    var maxCap = n <= 1 ? 120 : n <= 2 ? 108 : n <= 4 ? 96 : n <= 5 ? 84 : n <= 7 ? 68 : 56;
-    var minCap = n <= 2 ? 56 : n <= 4 ? 44 : n <= 5 ? 36 : 24;
+    var minCap = n <= 2 ? 44 : n <= 4 ? 38 : n <= 5 ? 34 : 28;
+    var maxCap = Math.round(nameLineH * (n <= 1 ? 3.15 : n <= 3 ? 2.95 : n <= 5 ? 2.75 : 2.35));
     areaIconPx = Math.min(maxCap, Math.max(minCap, areaIconPx));
     if (rowH > 0) {
-      areaIconPx = Math.min(areaIconPx, Math.max(minCap, Math.floor((rowH - rowPad * 2) * 0.94)));
+      areaIconPx = Math.min(
+        areaIconPx,
+        Math.max(minCap, Math.floor((rowH - rowPad * 2) * (n <= 5 ? 0.72 : 0.85)))
+      );
     }
     var symbolColMax = Math.min(
-      120,
-      Math.max(68, Math.ceil(areaIconPx * venueAspect) + 4)
+      108,
+      Math.max(58, Math.ceil(areaIconPx * venueAspect) + 4)
     );
-    var iconPx = Math.max(dense ? 24 : 28, Math.round(areaIconPx * 0.92));
+    var iconPx = Math.max(dense ? 24 : 26, Math.round(areaIconPx * 0.92));
     return {
       iconPx: iconPx,
       areaIconPx: areaIconPx,
