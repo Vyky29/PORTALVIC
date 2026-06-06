@@ -13,10 +13,13 @@
   var armed = false;
   var bound = false;
   var rolePolicyBound = false;
+  var workerSafeguardBound = false;
+  var sensitiveObserver = null;
   var mediaCaptureTokens = Object.create(null);
   var lingerTimer = null;
   var watchdogTimer = null;
   var SCREENSHOT_MASK_MS = 1500;
+  var WORKER_MASK_MS = 4200;
 
   function isMobilePortalDevice() {
     try {
@@ -93,6 +96,7 @@
   function setSensitiveHidden(on) {
     try {
       document.documentElement.classList.toggle("portal-screenshot-sensitive-hidden", !!on);
+      document.documentElement.classList.toggle("portal-screenshot-worker-sensitive-hidden", !!on);
     } catch (_e5) {}
   }
 
@@ -121,7 +125,13 @@
     el.classList.add("is-active");
     setSensitiveHidden(true);
     setForegroundMask(true);
-    lingerTimer = global.setTimeout(hideMaskForce, opts.lingerMs != null ? opts.lingerMs : SCREENSHOT_MASK_MS);
+    var linger =
+      opts.lingerMs != null
+        ? opts.lingerMs
+        : isWorkerSafeguardActive()
+          ? WORKER_MASK_MS
+          : SCREENSHOT_MASK_MS;
+    lingerTimer = global.setTimeout(hideMaskForce, linger);
   }
 
   function startWatchdog() {
@@ -190,7 +200,7 @@
       function (e) {
         if (!armed) return;
         var t = e.target;
-        if (t && t.closest && t.closest(".portal-screenshot-protected")) e.preventDefault();
+        if (t && t.closest && isSensitiveSurface(t)) e.preventDefault();
       },
       true
     );
@@ -200,7 +210,7 @@
       function (e) {
         if (!armed) return;
         var t = e.target;
-        if (t && t.closest && t.closest(".portal-screenshot-protected")) e.preventDefault();
+        if (t && t.closest && isSensitiveSurface(t)) e.preventDefault();
       },
       true
     );
@@ -242,6 +252,129 @@
     if (isPageVisible()) hideMaskForce();
   }
 
+  function isSensitiveSurface(node) {
+    if (!node || !node.closest) return false;
+    return !!node.closest(
+      ".portal-screenshot-protected, .portal-achievement-protected, #clientPhotoSlot, .clients-grid-avatar, .today-participant-chip__avatar, .calendar-day-avatar, .portal-achievements-viewer, .portal-achievements-gallery, .portal-ach-cam-gallery"
+    );
+  }
+
+  function isWorkerSafeguardActive() {
+    if (!armed || portalScreenshotGuardCaptureAllowed()) return false;
+    try {
+      return document.documentElement.classList.contains("portal-screenshot-guard-workers");
+    } catch (_eW) {}
+    return false;
+  }
+
+  function shouldTagSensitiveImage(img) {
+    if (!img || img.nodeName !== "IMG") return false;
+    if (img.closest("#topbarStaffPhoto") || img.closest(".avatar-wrap") || img.closest(".portal-dm-inbox-brand")) {
+      return false;
+    }
+    if (img.classList.contains("portal-screenshot-guard-logo")) return false;
+    var src = String(img.getAttribute("src") || "").toLowerCase();
+    if (/f-02-1\.png|portal_crest|footerlogo|\/staff_photos\//.test(src)) return false;
+    if (img.classList.contains("portal-achievement-protected") || img.classList.contains("portal-screenshot-protected")) {
+      return true;
+    }
+    if (img.closest("#clientPhotoSlot, .clients-grid-avatar, .today-participant-chip__avatar, .calendar-day-avatar, .portal-achievements-gallery, .portal-achievements-viewer, .portal-ach-cam-gallery")) {
+      return true;
+    }
+    return /\/participants\//.test(src);
+  }
+
+  function tagSensitiveImages(root) {
+    if (!isWorkerSafeguardActive()) return;
+    var scope = root && root.querySelectorAll ? root : document;
+    try {
+      scope.querySelectorAll("img").forEach(function (img) {
+        if (!shouldTagSensitiveImage(img)) return;
+        img.classList.add("portal-screenshot-protected");
+        img.setAttribute("draggable", "false");
+      });
+    } catch (_eTag) {}
+  }
+
+  function startSensitiveImageObserver() {
+    if (sensitiveObserver || !global.MutationObserver) return;
+    sensitiveObserver = new global.MutationObserver(function (mutations) {
+      if (!isWorkerSafeguardActive()) return;
+      mutations.forEach(function (m) {
+        if (m.type === "childList") {
+          m.addedNodes.forEach(function (node) {
+            if (!node || node.nodeType !== 1) return;
+            if (node.nodeName === "IMG") tagSensitiveImages(node.parentElement || document);
+            else tagSensitiveImages(node);
+          });
+        } else if (m.type === "attributes" && m.target && m.target.nodeName === "IMG") {
+          tagSensitiveImages(m.target.parentElement || document);
+        }
+      });
+    });
+    var root = document.body || document.documentElement;
+    if (!root) return;
+    sensitiveObserver.observe(root, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["src", "class"],
+    });
+    tagSensitiveImages(root);
+  }
+
+  function bindWorkerSafeguardEvents() {
+    if (workerSafeguardBound) return;
+    workerSafeguardBound = true;
+
+    document.addEventListener(
+      "visibilitychange",
+      function () {
+        if (!isWorkerSafeguardActive()) return;
+        if (document.hidden) setSensitiveHidden(true);
+        else if (!isPhotoCaptureUiActive()) setSensitiveHidden(false);
+      },
+      true
+    );
+
+    global.addEventListener(
+      "pagehide",
+      function () {
+        if (!isWorkerSafeguardActive()) return;
+        setSensitiveHidden(true);
+      },
+      true
+    );
+
+    global.addEventListener(
+      "blur",
+      function () {
+        if (!isWorkerSafeguardActive()) return;
+        setSensitiveHidden(true);
+      },
+      true
+    );
+
+    global.addEventListener(
+      "focus",
+      function () {
+        if (!isWorkerSafeguardActive()) return;
+        if (isPageVisible() && !isPhotoCaptureUiActive()) setSensitiveHidden(false);
+      },
+      true
+    );
+
+    document.addEventListener(
+      "copy",
+      function (e) {
+        if (!isWorkerSafeguardActive()) return;
+        var t = e.target;
+        if (t && isSensitiveSurface(t)) e.preventDefault();
+      },
+      true
+    );
+  }
+
   function isWorkerDashboardPage() {
     try {
       var mode = document.documentElement.getAttribute("data-portal-screenshot-guard");
@@ -278,6 +411,10 @@
       }
       document.documentElement.classList.add("portal-screenshot-guard-workers");
       arm({ mobileOnly: false });
+      bindWorkerSafeguardEvents();
+      startSensitiveImageObserver();
+      tagSensitiveImages(document);
+      if (document.hidden) setSensitiveHidden(true);
     } catch (_e11) {}
   }
 

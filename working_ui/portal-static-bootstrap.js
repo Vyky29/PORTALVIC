@@ -36,13 +36,13 @@
       if (!document.querySelector('link[data-portal-screenshot-guard-css="1"]')) {
         var link = document.createElement("link");
         link.rel = "stylesheet";
-        link.href = base + "/portal_screenshot_guard.css?v=20260622-screenshot-only";
+        link.href = base + "/portal_screenshot_guard.css?v=20260606-worker-photo-guard";
         link.setAttribute("data-portal-screenshot-guard-css", "1");
         head.appendChild(link);
       }
       if (!document.querySelector('script[data-portal-screenshot-guard-js="1"]')) {
         var s = document.createElement("script");
-        s.src = base + "/portal_screenshot_guard.js?v=20260622-screenshot-only";
+        s.src = base + "/portal_screenshot_guard.js?v=20260606-worker-photo-guard";
         s.setAttribute("data-portal-screenshot-guard-js", "1");
         head.appendChild(s);
       }

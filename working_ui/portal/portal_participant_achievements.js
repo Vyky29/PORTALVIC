@@ -371,7 +371,7 @@
     }
     btn.classList.add("has-thumb");
     btn.innerHTML =
-      '<img src="' + esc(url) + '" alt="" class="portal-ach-cam-gallery__thumb portal-achievement-protected" draggable="false" />';
+      '<img src="' + esc(url) + '" alt="" class="portal-ach-cam-gallery__thumb portal-screenshot-protected portal-achievement-protected" draggable="false" />';
   }
 
   async function flipCamera() {
@@ -997,7 +997,7 @@
       cell.innerHTML =
         '<img src="' +
         esc(url) +
-        '" alt="" draggable="false" class="portal-achievement-protected" />' +
+        '" alt="" draggable="false" class="portal-screenshot-protected portal-achievement-protected" />' +
         (who
           ? '<span class="portal-achievements-thumb__by">' + esc(who) + "</span>"
           : "");
