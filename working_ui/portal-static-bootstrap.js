@@ -30,18 +30,19 @@
           path
         );
       if (!sensitive) return;
+      if (document.querySelector('script[src*="portal_screenshot_guard.js"]')) return;
       var base = window.PORTAL_SHARED_JS_BASE || "/portal-shared-js";
       var head = document.head || document.documentElement;
       if (!document.querySelector('link[data-portal-screenshot-guard-css="1"]')) {
         var link = document.createElement("link");
         link.rel = "stylesheet";
-        link.href = base + "/portal_screenshot_guard.css?v=20260606-screenshot-ceo";
+        link.href = base + "/portal_screenshot_guard.css?v=20260622-ios-screenshot";
         link.setAttribute("data-portal-screenshot-guard-css", "1");
         head.appendChild(link);
       }
       if (!document.querySelector('script[data-portal-screenshot-guard-js="1"]')) {
         var s = document.createElement("script");
-        s.src = base + "/portal_screenshot_guard.js?v=20260606-screenshot-ceo";
+        s.src = base + "/portal_screenshot_guard.js?v=20260622-ios-screenshot";
         s.setAttribute("data-portal-screenshot-guard-js", "1");
         head.appendChild(s);
       }

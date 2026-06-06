@@ -118,7 +118,7 @@
     if (el) el.classList.remove("is-active");
     if (isPageVisible() && !isMediaCaptureActive()) {
       setSensitiveHidden(false);
-      removeWatermark();
+      if (!workerWatermarkShouldPersist()) removeWatermark();
     }
   }
 
@@ -275,16 +275,46 @@
     return portalScreenshotGuardResolveAppRole() === "ceo";
   }
 
+  function workerWatermarkShouldPersist() {
+    return (
+      isWorkerDashboardPage() &&
+      !portalScreenshotGuardCaptureAllowed() &&
+      isMobilePortalDevice()
+    );
+  }
+
   function removeWatermark() {
     var el = document.getElementById(WATERMARK_ID);
     if (el) el.remove();
   }
 
+  function watermarkPhrases() {
+    var phrases = ["Confidential", "Do not screenshot", "Safeguarding"];
+    try {
+      var box = global.window.__PORTAL_SUPABASE__;
+      var profile = box && box.staff_profile;
+      var who =
+        (profile && (profile.full_name || profile.username || profile.display_name)) || "";
+      who = String(who).trim();
+      if (who) {
+        var short = who.split(/\s+/).slice(0, 2).join(" ");
+        if (short) phrases = [short, "Confidential", "Do not screenshot", "Safeguarding"];
+      }
+    } catch (_e) {}
+    return phrases;
+  }
+
   function ensureWatermark() {
     if (!isWorkerDashboardPage() || portalScreenshotGuardCaptureAllowed()) {
       removeWatermark();
+      try {
+        document.documentElement.classList.add("portal-screenshot-ceo");
+      } catch (_e0) {}
       return;
     }
+    try {
+      document.documentElement.classList.remove("portal-screenshot-ceo");
+    } catch (_e1) {}
     var root = document.getElementById(WATERMARK_ID);
     if (!root) {
       root = document.createElement("div");
@@ -293,7 +323,7 @@
       (document.body || document.documentElement).appendChild(root);
     }
     if (root.childElementCount) return;
-    var phrases = ["Confidential", "Do not screenshot", "Safeguarding"];
+    var phrases = watermarkPhrases();
     var row;
     var col;
     for (row = 0; row < 9; row++) {
@@ -305,6 +335,12 @@
         root.appendChild(span);
       }
     }
+  }
+
+  function refreshWorkerWatermarkIdentity() {
+    if (!workerWatermarkShouldPersist()) return;
+    removeWatermark();
+    ensureWatermark();
   }
 
   function bindWorkerSafeguardEvents() {
@@ -325,6 +361,7 @@
     if (rolePolicyBound) return;
     rolePolicyBound = true;
     global.addEventListener("portal:supabase-ready", syncRolePolicy, true);
+    global.addEventListener("portal:supabase-ready", refreshWorkerWatermarkIdentity, true);
   }
 
   function syncRolePolicy() {
@@ -338,8 +375,8 @@
         return;
       }
       document.documentElement.classList.add("portal-screenshot-guard-workers");
-      removeWatermark();
       arm({ mobileOnly: false });
+      ensureWatermark();
       pushStrict("safeguarding-workers");
       bindWorkerSafeguardEvents();
     } catch (_e5) {}

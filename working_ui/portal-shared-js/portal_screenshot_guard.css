@@ -51,7 +51,7 @@ body.portal-achievements-camera-open .portal-achievements-camera-fs__viewport vi
   pointer-events: auto;
 }
 
-/* Staff / lead: watermark only while content is hidden (app switch / capture attempt). CEOs exempt via JS. */
+/* Staff / lead safeguarding watermark. CEOs exempt via .portal-screenshot-ceo (JS). */
 html.portal-screenshot-guard-workers #portalScreenshotGuardWatermark {
   position: fixed;
   inset: 0;
@@ -72,9 +72,21 @@ html.portal-screenshot-guard-workers #portalScreenshotGuardWatermark span {
   white-space: nowrap;
   max-width: none;
 }
-html.portal-screenshot-sensitive-hidden.portal-screenshot-guard-workers #portalScreenshotGuardWatermark {
+/* Desktop staff: watermark only while masking (app switch / capture attempt). */
+html.portal-screenshot-sensitive-hidden.portal-screenshot-guard-workers:not(.portal-screenshot-ceo) #portalScreenshotGuardWatermark {
   opacity: 0.12;
   visibility: visible;
+}
+/* Mobile / PWA staff: always-on subtle watermark — iOS cannot block hardware screenshots. */
+@media (max-width: 768px), (display-mode: standalone) {
+  html.portal-screenshot-guard-workers.portal-screenshot-guard-armed:not(.portal-screenshot-ceo) #portalScreenshotGuardWatermark {
+    opacity: 0.08;
+    visibility: visible;
+  }
+  html.portal-screenshot-sensitive-hidden.portal-screenshot-guard-workers:not(.portal-screenshot-ceo) #portalScreenshotGuardWatermark {
+    opacity: 0.14;
+    visibility: visible;
+  }
 }
 html.portal-screenshot-guard-workers.portal-screenshot-guard-armed #app,
 html.portal-screenshot-guard-workers.portal-screenshot-guard-armed .app {
