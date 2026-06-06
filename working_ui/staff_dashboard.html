@@ -3879,15 +3879,8 @@
     function portalReminderAckMapSave(map){
       try{ localStorage.setItem(PORTAL_REMINDER_ACK_STORAGE, JSON.stringify(map || {})); }catch(_){}
     }
-    function portalReminderSignatureKey(item){
-      if(typeof window !== 'undefined' && typeof window.portalReminderSignatureKey === 'function'){
-        return window.portalReminderSignatureKey(item);
-      }
-      const id = String(item && item.portalAdminReminderId || '').trim();
-      return id ? ('portal-rem:' + id) : '';
-    }
     function portalReminderIsAcked(item){
-      const key = portalReminderSignatureKey(item);
+      const key = typeof portalReminderSignatureKey === 'function' ? portalReminderSignatureKey(item) : '';
       if(!key) return false;
       return !!portalReminderAckMapLoad()[key];
     }
