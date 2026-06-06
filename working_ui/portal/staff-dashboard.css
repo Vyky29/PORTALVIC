@@ -4097,7 +4097,7 @@
       white-space:nowrap;
       min-width:0;
     }
-    /* Pool/room bajo el nombre cuando el override ocupa solo la columna derecha */
+    /* Override rows: right column = chip only; area PNG stays on normal rows. */
     .section-card--today .session-today-override-pool-note{
       display:flex;
       flex-direction:column;

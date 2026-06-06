@@ -5230,9 +5230,7 @@
       const nameCore = item.kind === 'closed'
         ? '<span class="session-meta-name">Closed</span>'
         : `<span class="session-meta-name">${escapeHtml(item.name)}</span>`;
-      const poolCenterHtml = split && item.kind !== 'closed'
-        ? `<div class="session-today-override-pool-note">${todaySessionPoolColumnHtml(item)}</div>`
-        : '';
+      const poolCenterHtml = '';
       const namePart = `<span class="session-name-stack">${inlineOverrideTop}${ovBadge}${nameCore}${poolCenterHtml}${makeUpNoteHtml}${makeUpPillHtml}</span>`;
       const bodyCls = split ? 'session-card-body session-card-body--today-ov-split' : 'session-card-body';
       const rightColInner = split
