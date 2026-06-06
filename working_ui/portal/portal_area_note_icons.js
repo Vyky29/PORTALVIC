@@ -6,7 +6,7 @@
   "use strict";
 
   var ICON_IMG_BASE = "/portal/area-note-icons/";
-  var ICON_IMG_VER = "20260606-bespoke-mockup";
+  var ICON_IMG_VER = "20260606-venue-visible";
   var IMG_CLASS = "session-area-note-img";
   var SVG_CLASS = "session-area-note-svg";
 
@@ -180,10 +180,10 @@
   function portalTodayAreaNoteMetrics(sessionCount, scrollMode, gridEl) {
     var n = Math.min(9, Math.max(1, sessionCount | 0));
     if (scrollMode) {
-      return { iconPx: 32, areaIconPx: 38, labelFs: 12, symbolColMax: 72 };
+      return { iconPx: 32, areaIconPx: 38, labelFs: 8, symbolColMax: 72 };
     }
     var rowH = portalMeasureTodaySessionRowHeight(gridEl, n);
-    var labelFs = 12;
+    var labelFs = 8;
     var labelReserve = labelFs + 4;
     var areaIconPx;
     if (rowH > 0) {

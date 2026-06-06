@@ -1183,6 +1183,24 @@
       letter-spacing:.03em;
       text-transform:uppercase;
     }
+    .announcement-lock-badge--announcement{
+      background:#fecaca;
+      color:#7f1d1d;
+      border-color:rgba(127,29,29,.35);
+    }
+    .announcement-lock-badge--reminder{
+      background:#ffe4e6;
+      color:#be123c;
+      border-color:rgba(190,18,60,.22);
+    }
+    .announcement-lock-card--announcement{
+      border-color:rgba(185,28,28,.32);
+      background:linear-gradient(180deg,#fff5f5 0%,#fee2e2 100%);
+    }
+    .announcement-lock-card--reminder{
+      border-color:rgba(244,63,94,.24);
+      background:linear-gradient(180deg,#fffafa 0%,#fff1f2 100%);
+    }
     .announcement-lock-copy{
       margin:0 0 10px;
       color:#334155;
@@ -1257,6 +1275,61 @@
       background:linear-gradient(180deg,#fff1f2 0%,#ffe4e6 100%);
     }
     .announcement-history-item + .announcement-history-item{margin-top:8px}
+    .announcement-history-kind{
+      display:block;
+      font-size:10px;
+      font-weight:800;
+      letter-spacing:.06em;
+      text-transform:uppercase;
+      opacity:.88;
+      margin-bottom:2px;
+    }
+    .announcement-history-item--announcement{
+      border-color:rgba(185,28,28,.5);
+      background:linear-gradient(180deg,#ffe4e6 0%,#fecdd3 100%);
+    }
+    .announcement-history-item--announcement > .announcement-history-toggle{
+      background:linear-gradient(180deg,#fecdd3 0%,#fca5a5 100%);
+      color:#7f1d1d;
+    }
+    .announcement-history-item--announcement > .announcement-history-toggle:focus:not(:focus-visible){
+      background:linear-gradient(180deg,#fecdd3 0%,#fca5a5 100%);
+      color:#7f1d1d;
+    }
+    .announcement-history-item--announcement > .announcement-history-toggle:hover,
+    .announcement-history-item--announcement.is-open > .announcement-history-toggle{
+      background:linear-gradient(180deg,#b91c1c 0%,#991b1b 100%);
+      color:#fff;
+    }
+    .announcement-history-item--announcement > .announcement-history-toggle:active,
+    .announcement-history-item--announcement.is-open > .announcement-history-toggle:active,
+    .announcement-history-item--announcement.is-open > .announcement-history-toggle:focus:not(:focus-visible){
+      background:linear-gradient(180deg,#991b1b 0%,#7f1d1d 100%);
+      color:#fff;
+    }
+    .announcement-history-item--reminder{
+      border-color:rgba(251,113,133,.42);
+      background:linear-gradient(180deg,#fff1f2 0%,#ffe4e6 100%);
+    }
+    .announcement-history-item--reminder > .announcement-history-toggle{
+      background:linear-gradient(180deg,#fff1f2 0%,#ffe4e6 100%);
+      color:#9f1239;
+    }
+    .announcement-history-item--reminder > .announcement-history-toggle:focus:not(:focus-visible){
+      background:linear-gradient(180deg,#fff1f2 0%,#ffe4e6 100%);
+      color:#9f1239;
+    }
+    .announcement-history-item--reminder > .announcement-history-toggle:hover,
+    .announcement-history-item--reminder.is-open > .announcement-history-toggle{
+      background:linear-gradient(180deg,#fb7185 0%,#f43f5e 100%);
+      color:#fff;
+    }
+    .announcement-history-item--reminder > .announcement-history-toggle:active,
+    .announcement-history-item--reminder.is-open > .announcement-history-toggle:active,
+    .announcement-history-item--reminder.is-open > .announcement-history-toggle:focus:not(:focus-visible){
+      background:linear-gradient(180deg,#f43f5e 0%,#e11d48 100%);
+      color:#fff;
+    }
     .announcement-history-toggle{
       width:100%;
       border:0;

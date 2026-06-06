@@ -93,12 +93,12 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260606-watermark-shot" />
   <script src="/portal/portal_screenshot_guard.js?v=20260606-watermark-shot"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260610-session-venue-icon" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260605-ann-rem-unified" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260610-topbar-colors" />
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260620-inbox-logo-orbit" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
-  <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260606-bespoke-mockup" />
+  <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260606-venue-visible" />
   <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260622-ghost-view" />
 </head>
 <body class="staff-dashboard">
@@ -438,7 +438,7 @@
         <div class="menu-group" id="portalQuickMenuNotificationsGroup" hidden>
           <div class="menu-group-title" id="portalQuickMenuAnnouncementsHeading">Announcements</div>
           <div class="menu-grid menu-grid--portal-notices" id="portalQuickMenuNoticesGrid"></div>
-          <div class="menu-group-title menu-group-title--portal-reminders" id="portalQuickMenuRemindersHeading">Reminders</div>
+          <div class="menu-group-title menu-group-title--portal-reminders" id="portalQuickMenuRemindersHeading">Feedbacks</div>
           <div class="menu-grid menu-grid--portal-safeguarding-policy" id="portalQuickMenuSafeguardingPolicySlot" hidden></div>
           <div class="menu-grid menu-grid--portal-outstanding-feedback" id="portalQuickMenuOutstandingFeedbackSlot" hidden></div>
           <div class="menu-grid menu-grid--portal-wellbeing-review" id="portalQuickMenuWellbeingReviewSlot" hidden></div>
@@ -775,8 +775,8 @@
   <section class="sheet sheet--fullscreen sheet--mobile-frame" id="announcementsSheet" aria-labelledby="announcementsTitle">
     <div class="sheet-head">
       <div class="sheet-handle"></div>
-      <h3 id="announcementsTitle">Announcements</h3>
-      <p>Timetable changes and operational updates.</p>
+      <h3 id="announcementsTitle">Announcements &amp; reminders</h3>
+      <p>Read, confirm, and sign site-wide updates and personal reminders.</p>
     </div>
     <div class="sheet-body" id="announcementsSheetBody">
       <div id="announcementPendingHost"></div>
@@ -982,11 +982,11 @@
   <script src="/portal/portal_induction_bind.js?v=20260615-tprog-sync"></script>
   <script src="/portal/portal_guide_ack.js?v=20260604-guide-first-read"></script>
   <script src="/portal/portal_guide_menu.js?v=20260604-guide-first-read"></script>
-  <script src="/portal/portal_quick_menu_accordion.js?v=20260604-training-chip"></script>
+  <script src="/portal/portal_quick_menu_accordion.js?v=20260606-feedbacks-category"></script>
   <script src="/portal/portal_swimming_instructor_menus.js?v=20260610-roberto-topbar"></script>
   <script src="/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off"></script>
   <script src="/portal/portal_floating_internal_chat.js?v=20260604-footer-chat"></script>
-  <script src="/portal/portal_area_note_icons.js?v=20260606-bespoke-mockup"></script>
+  <script src="/portal/portal_area_note_icons.js?v=20260606-venue-visible"></script>
   <script src="/portal/portal_today_next_chips.js?v=20260606-dayoff-med"></script>
   <script type="module" src="/portal/portal_quick_menu_service_leads.js?v=20260604-service-leads-lead-only"></script>
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
@@ -3891,43 +3891,9 @@
       if(!key) return false;
       return !!portalReminderAckMapLoad()[key];
     }
-    /** Admin-published reminders (Training / Timesheet / Notes) for logo-lite quick menu. */
+    /** Admin-published reminders — signed via announcements sheet (not quick-menu list). */
     function portalBuildAdminReminderSectionHtml(){
-      const rows = dashboardData && Array.isArray(dashboardData.portalRemindersFromAdmin) ? dashboardData.portalRemindersFromAdmin : [];
-      const pending = rows.filter(function(r){ return r && !portalReminderIsAcked(r); });
-      if(!pending.length) return '';
-      const by = { training: [], timesheet: [], notes: [] };
-      pending.forEach(function(r){
-        if(!r) return;
-        const c = String(r.category || 'notes').toLowerCase();
-        const k = by[c] ? c : 'notes';
-        by[k].push(r);
-      });
-      function listItems(arr){
-        if(!arr.length) return '';
-        return '<ul class="portal-admin-reminder-list">' + arr.map(function(r){
-          const t = escapeHtml(String(r.title || '').trim() || 'Reminder');
-          const b = escapeHtml(String(r.body || '').trim());
-          const rid = escapeHtml(String(r.portalAdminReminderId || '').trim());
-          const markBtn = rid
-            ? ('<button type="button" class="portal-reminder-mark-btn" data-portal-reminder-ack="' + rid + '">Mark read</button>')
-            : '';
-          return '<li><div class="portal-admin-reminder-head"><strong>' + t + '</strong>' + markBtn + '</div><div class="portal-admin-reminder-body">' + b + '</div></li>';
-        }).join('') + '</ul>';
-      }
-      let inner = '';
-      if(by.training.length){
-        inner += '<div class="portal-qm-admin-rem-sub" role="group" aria-label="Training reminders"><h5>Training</h5>' + listItems(by.training) + '</div>';
-      }
-      if(by.timesheet.length){
-        inner += '<div class="portal-qm-admin-rem-sub" role="group" aria-label="Timesheet reminders"><h5>Timesheet</h5>' + listItems(by.timesheet) + '</div>';
-      }
-      if(by.notes.length){
-        inner += '<div class="portal-qm-admin-rem-sub" role="group" aria-label="Notes reminders"><h5>Notes</h5>' + listItems(by.notes) + '</div>';
-      }
-      if(!inner) return '';
-      return '<section class="portal-qm-chunk portal-qm-chunk--admin-reminders" aria-label="Team reminders">' +
-        '<h4 class="portal-qm-chunk-title">Team reminders</h4>' + inner + '</section>';
+      return '';
     }
     const PORTAL_SAFEGUARDING_FEEDBACK_POLICY_READ_KEY = 'portalSafeguardingFeedbackPolicyRead_v1';
     function portalSafeguardingFeedbackPolicyIsRead(){
@@ -4002,7 +3968,7 @@
       const bodyCopy =
         '<p>Session register and session feedback are <strong>mandatory for safeguarding</strong>. You must complete both on the <strong>same day</strong> as each session you deliver.</p>' +
         '<p>This applies to every client session on your timetable, including when a participant is absent or a session is shortened. Late completion may be flagged for follow-up.</p>' +
-        '<p>If you have outstanding sessions, tap <strong>Outstanding feedbacks</strong> under Reminders to open them from your dashboard.</p>';
+        '<p>If you have outstanding sessions, tap <strong>Outstanding feedbacks</strong> under Feedbacks to open them from your dashboard.</p>';
       if(read){
         host.innerHTML =
           '<article class="announcement-lock-card">' +
@@ -4028,7 +3994,6 @@
       if(fbHtml){
         chunks.push(
           '<section class="portal-qm-chunk portal-qm-chunk--feedbacks" aria-label="Feedbacks">' +
-          '<h4 class="portal-qm-chunk-title">Feedbacks</h4>' +
           '<div class="portal-qm-reminder-stack portal-qm-reminder-stack--feedbacks">' + fbHtml + '</div>' +
           '</section>'
         );
@@ -8762,14 +8727,52 @@
         return typ === 'announcement' || typ === 'contract';
       });
     }
+    function portalReminderAsSignableNotice(r){
+      if(!r || !r.portalAdminReminderId) return null;
+      return {
+        type: 'reminder',
+        title: String(r.title || 'Reminder').trim() || 'Reminder',
+        text: String(r.body || '').trim(),
+        href: '#portal-rem-' + String(r.portalAdminReminderId),
+        portalAdminReminderId: String(r.portalAdminReminderId),
+        reminderCategory: r.category,
+        created_at: r.created_at
+      };
+    }
+    function portalSignableSignatureKey(item){
+      if(!item || typeof item !== 'object') return '';
+      if(String(item.type || '') === 'reminder' || item.portalAdminReminderId){
+        return portalReminderSignatureKey(item);
+      }
+      return portalAnnouncementSignatureKey(item);
+    }
+    function portalSignableItemIsReminder(item){
+      return !!(item && (String(item.type || '') === 'reminder' || item.portalAdminReminderId));
+    }
     function portalActiveAnnouncementItems(){
       if(dashboardData && !dashboardData.portalIdentityResolved) return [];
       if(dashboardData && dashboardData.portalAnnouncementAcksMerged === false) return [];
-      const ack = portalAnnouncementAckMapLoad();
-      return portalAnnouncementItemsFromNotices().filter(function(n){
+      const annAck = portalAnnouncementAckMapLoad();
+      const remAck = portalReminderAckMapLoad();
+      const items = [];
+      portalAnnouncementItemsFromNotices().forEach(function(n){
         const k = portalAnnouncementSignatureKey(n);
-        return !!k && !ack[k];
+        if(!!k && !annAck[k]) items.push(Object.assign({ type: 'announcement' }, n));
       });
+      const rems = dashboardData && Array.isArray(dashboardData.portalRemindersFromAdmin) ? dashboardData.portalRemindersFromAdmin : [];
+      rems.forEach(function(r){
+        const n = portalReminderAsSignableNotice(r);
+        if(!n) return;
+        const k = portalReminderSignatureKey(n);
+        if(!!k && !remAck[k]) items.push(n);
+      });
+      items.sort(function(a, b){
+        const ta = Date.parse(a.created_at || '');
+        const tb = Date.parse(b.created_at || '');
+        if(Number.isFinite(ta) && Number.isFinite(tb) && ta !== tb) return ta - tb;
+        return 0;
+      });
+      return items;
     }
     function portalAnnouncementPendingItem(){
       const list = portalActiveAnnouncementItems();
@@ -8804,6 +8807,26 @@
       });
       out.sort(function(a,b){ return b.signedAt - a.signedAt; });
       return out;
+    }
+    function portalSignedMessageHistoryRows(){
+      const ann = portalAnnouncementHistoryRows().map(function(r){
+        return Object.assign({ kind: 'announcement' }, r);
+      });
+      const remAck = portalReminderAckMapLoad();
+      const rem = [];
+      Object.keys(remAck).forEach(function(k){
+        const rec = remAck[k];
+        if(!rec || typeof rec !== 'object') return;
+        if(String(k || '').indexOf('portal-rem:') !== 0) return;
+        rem.push({
+          key: k,
+          kind: 'reminder',
+          title: String(rec.title || 'Reminder').trim() || 'Reminder',
+          text: String(rec.text || '').trim(),
+          signedAt: Number(rec.signedAt || 0)
+        });
+      });
+      return ann.concat(rem).sort(function(a, b){ return b.signedAt - a.signedAt; });
     }
     function portalAnnouncementHistoryDateLabel(ms){
       if(!Number.isFinite(ms) || ms <= 0) return '';
@@ -8851,8 +8874,14 @@
       const pending = portalAnnouncementPendingItem();
       if(pending){
         portalAnnouncementLockRequired = true;
-        const t = String(pending.title || 'Announcement').trim() || 'Announcement';
-        const txt = String(pending.text || '').trim() || 'Please read this update carefully.';
+        const isReminder = portalSignableItemIsReminder(pending);
+        const kindLabel = isReminder ? 'Reminder' : 'Announcement';
+        const t = String(pending.title || kindLabel).trim() || kindLabel;
+        const txt = String(pending.text || '').trim() || (isReminder ? 'Please read this reminder carefully.' : 'Please read this update carefully.');
+        const confirmLabel = isReminder
+          ? 'I have read and understood this reminder.'
+          : 'I have read and understood this announcement.';
+        const signKey = portalSignableSignatureKey(pending);
         if(String(pending.type || '') === 'contract' && pending.portalContractId){
           const signHref = 'contract_sign.html?contract_id=' + encodeURIComponent(String(pending.portalContractId));
           hostPending.innerHTML =
@@ -8865,12 +8894,13 @@
             '</article>';
         }else{
         hostPending.innerHTML =
-          '<article class="announcement-lock-card">' +
-            '<div class="announcement-lock-head"><strong>' + escapeHtml(t) + '</strong></div>' +
+          '<article class="announcement-lock-card announcement-lock-card--' + (isReminder ? 'reminder' : 'announcement') + '">' +
+            '<div class="announcement-lock-head"><strong>' + escapeHtml(t) + '</strong>' +
+            '<span class="announcement-lock-badge announcement-lock-badge--' + (isReminder ? 'reminder' : 'announcement') + '">' + escapeHtml(kindLabel) + '</span></div>' +
             '<p class="announcement-lock-copy">' + escapeHtml(txt) + '</p>' +
             '<div class="announcement-lock-actions">' +
-              '<label class="announcement-lock-check"><input type="checkbox" id="announcementReadConfirm"> I have read and understood this announcement.</label>' +
-              '<button type="button" class="announcement-sign-btn" id="announcementSignBtn" disabled data-announcement-sign-key="' + escapeHtml(portalAnnouncementSignatureKey(pending)) + '">Sign and submit</button>' +
+              '<label class="announcement-lock-check"><input type="checkbox" id="announcementReadConfirm"> ' + escapeHtml(confirmLabel) + '</label>' +
+              '<button type="button" class="announcement-sign-btn" id="announcementSignBtn" disabled data-announcement-sign-key="' + escapeHtml(signKey) + '">Sign and submit</button>' +
             '</div>' +
           '</article>';
         }
@@ -8882,19 +8912,20 @@
         portalAnnouncementLockRequired = false;
         hostHistory.hidden = false;
         hostHistory.setAttribute('aria-hidden', 'false');
-        const rows = portalAnnouncementHistoryRows();
+        const rows = portalSignedMessageHistoryRows();
         if(!rows.length){
-          hostHistory.innerHTML = '<article class="announcement-history-card"><p class="alerts-sheet-placeholder" style="margin:0;">No signed announcements yet.</p></article>';
+          hostHistory.innerHTML = '<article class="announcement-history-card"><p class="alerts-sheet-placeholder" style="margin:0;">No signed announcements or reminders yet.</p></article>';
         }else{
           hostHistory.innerHTML =
             '<article class="announcement-history-card">' +
-              '<p class="announcement-history-head">Signed announcements log</p>' +
+              '<p class="announcement-history-head">Signed Announcements/Reminders</p>' +
               rows.map(function(r, i){
                 const dt = portalAnnouncementHistoryDateLabel(r.signedAt);
                 const lines = portalAnnouncementHistoryHeadingLines(r.title);
+                const kind = String(r.kind || 'announcement') === 'reminder' ? 'reminder' : 'announcement';
                 const link = '';
-                return '<div class="announcement-history-item' + (i === 0 ? ' is-open' : '') + '">' +
-                  '<button type="button" class="announcement-history-toggle" data-announcement-toggle><span class="announcement-history-title"><span class="announcement-history-title-line">' + escapeHtml(lines.line1) + '</span>' + (lines.line2 ? '<span class="announcement-history-title-line">' + escapeHtml(lines.line2) + '</span>' : '') + '</span><span class="announcement-history-date">' + escapeHtml(dt) + '</span></button>' +
+                return '<div class="announcement-history-item announcement-history-item--' + kind + (i === 0 ? ' is-open' : '') + '">' +
+                  '<button type="button" class="announcement-history-toggle" data-announcement-toggle><span class="announcement-history-title"><span class="announcement-history-kind">' + escapeHtml(kind === 'reminder' ? 'Reminder' : 'Announcement') + '</span><span class="announcement-history-title-line">' + escapeHtml(lines.line1) + '</span>' + (lines.line2 ? '<span class="announcement-history-title-line">' + escapeHtml(lines.line2) + '</span>' : '') + '</span><span class="announcement-history-date">' + escapeHtml(dt) + '</span></button>' +
                   '<div class="announcement-history-body"><p style="margin:0;">' + escapeHtml(r.text || 'No details captured.') + '</p>' + link + '</div>' +
                 '</div>';
               }).join('') +
@@ -9813,23 +9844,23 @@
           'Need your signature',
           buildAnnouncementQuickRow(
             'announcementNewNotice',
-            'New announcement',
-            'New announcement — open to read and sign before continuing',
+            'New Announcement/Reminder',
+            'New announcement or reminder — open to read and sign before continuing',
             'menu-btn--announcement-attention'
           ),
           'pending'
         );
       }
-      const signedHistoryRows = typeof portalAnnouncementHistoryRows === 'function'
-        ? portalAnnouncementHistoryRows()
-        : [];
+      const signedHistoryRows = typeof portalSignedMessageHistoryRows === 'function'
+        ? portalSignedMessageHistoryRows()
+        : (typeof portalAnnouncementHistoryRows === 'function' ? portalAnnouncementHistoryRows() : []);
       if(signedHistoryRows.length > 0){
         appendAnnouncementSubcategory(
-          'Previously Signed',
+          'Previously signed',
           buildAnnouncementQuickRow(
             'announcementSignedLog',
-            'Signed Announcements',
-            'Signed Announcements — open log to read',
+            'Signed Announcements/Reminders',
+            'Signed announcements and reminders — open log to read',
             'menu-btn--announcement-signed'
           ),
           'signed'
@@ -9847,13 +9878,16 @@
         const items = typeof portalActiveAnnouncementItems === 'function' ? portalActiveAnnouncementItems() : [];
         if(!items.length) return;
         const p = items[0];
-        const k = typeof portalAnnouncementSignatureKey === 'function' ? portalAnnouncementSignatureKey(p) : '';
+        const k = typeof portalSignableSignatureKey === 'function'
+          ? portalSignableSignatureKey(p)
+          : (typeof portalAnnouncementSignatureKey === 'function' ? portalAnnouncementSignatureKey(p) : '');
         if(!k) return;
         let sysDone = {};
         try{ sysDone = JSON.parse(sessionStorage.getItem('portalAnnSystemNotified_v1') || '{}') || {}; }catch(_){ sysDone = {}; }
         if(sysDone[k]) return;
         const lineTitle = String(p && p.title || '').trim() || 'Open the portal to read and sign.';
-        const title = 'New announcement to sign from Staff';
+        const isReminder = typeof portalSignableItemIsReminder === 'function' && portalSignableItemIsReminder(p);
+        const title = isReminder ? 'New reminder to sign from Staff' : 'New announcement to sign from Staff';
         const ok = portalStaffNotifyOsWhiteTile(title, lineTitle, 'clubsensational-portal-ann-' + k);
         if(ok){
           sysDone[k] = Date.now();
@@ -12671,32 +12705,6 @@
         if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
         return;
       }
-      const remAck = e.target && e.target.closest ? e.target.closest('[data-portal-reminder-ack]') : null;
-      if(remAck){
-        e.preventDefault();
-        e.stopPropagation();
-        const remId = String(remAck.getAttribute('data-portal-reminder-ack') || '').trim();
-        if(!remId) return;
-        const rows = dashboardData && Array.isArray(dashboardData.portalRemindersFromAdmin) ? dashboardData.portalRemindersFromAdmin : [];
-        const item = rows.find(function(r){ return r && String(r.portalAdminReminderId || '') === remId; });
-        if(!item) return;
-        const key = portalReminderSignatureKey(item);
-        if(!key) return;
-        const ack = portalReminderAckMapLoad();
-        ack[key] = {
-          title: item.title || 'Reminder',
-          text: item.body || '',
-          signedAt: Date.now(),
-          portalAdminReminderId: remId
-        };
-        portalReminderAckMapSave(ack);
-        if(typeof portalPersistReminderAckToSupabase === 'function'){
-          void portalPersistReminderAckToSupabase(item);
-        }
-        if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
-        if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
-        return;
-      }
       const ann = e.target.closest('#announcementNewNotice, #announcementSignedLog');
       if(ann){
         e.preventDefault();
@@ -12744,8 +12752,22 @@
         const key = String(signBtn.getAttribute('data-announcement-sign-key') || '').trim();
         if(!key) return;
         const pending = portalAnnouncementPendingItem();
-        const expected = pending ? portalAnnouncementSignatureKey(pending) : '';
+        const expected = pending ? portalSignableSignatureKey(pending) : '';
         if(!pending || key !== expected) return;
+        const isReminder = portalSignableItemIsReminder(pending);
+        if(isReminder){
+          const remAck = portalReminderAckMapLoad();
+          remAck[key] = {
+            title: pending.title || 'Reminder',
+            text: pending.text || '',
+            signedAt: Date.now(),
+            portalAdminReminderId: pending.portalAdminReminderId || ''
+          };
+          portalReminderAckMapSave(remAck);
+          if(typeof portalPersistReminderAckToSupabase === 'function'){
+            void portalPersistReminderAckToSupabase(pending);
+          }
+        }else{
         const ack = portalAnnouncementAckMapLoad();
         ack[key] = {
           title: pending.title || 'Announcement',
@@ -12760,11 +12782,12 @@
         if(typeof portalPersistAnnouncementAckToSupabase === 'function'){
           void portalPersistAnnouncementAckToSupabase(pending);
         }
+        }
         portalAnnouncementLockRequired = false;
         renderAnnouncementsSheetContent();
         if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
         if(typeof renderHeader === 'function') renderHeader();
-        var hideMs = portalAnnouncementHideDelayMs(pending);
+        var hideMs = isReminder ? null : portalAnnouncementHideDelayMs(pending);
         if(hideMs && hideMs > 0 && hideMs < 7 * 24 * 60 * 60 * 1000){
           setTimeout(function(){
             if(typeof renderAnnouncementsSheetContent === 'function') renderAnnouncementsSheetContent();
