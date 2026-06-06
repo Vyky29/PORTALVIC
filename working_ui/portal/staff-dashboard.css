@@ -4030,10 +4030,10 @@
     }
     .section-card--today .session-line--symbol{
       display:flex;
-      align-items:flex-start;
+      align-items:center;
       justify-content:center;
       align-self:stretch;
-      padding-top:1px;
+      padding-top:0;
       line-height:0;
       min-height:0;
       min-width:0;

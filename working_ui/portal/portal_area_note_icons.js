@@ -166,28 +166,48 @@
   }
 
   /** Icon + label metrics for TODAY session rows (few sessions → larger symbols). */
+  function portalMeasureTodaySessionRowHeight(gridEl, sessionCount) {
+    if (!gridEl) return 0;
+    try {
+      var card = gridEl.querySelector(".today-grid-rows > .session-card");
+      if (card && card.getBoundingClientRect) {
+        var measured = card.getBoundingClientRect().height;
+        if (measured > 0) return measured;
+      }
+      var ch = gridEl.clientHeight;
+      if (!ch) return 0;
+      var n = Math.max(1, sessionCount | 0);
+      var rowsFill = n === 1 ? 0.333333 : 1;
+      var gap = n >= 4 ? 3 : 5;
+      return (ch * rowsFill - gap * (n - 1)) / n;
+    } catch (_e) {
+      return 0;
+    }
+  }
+
   function portalTodayAreaNoteMetrics(sessionCount, scrollMode, gridEl) {
     var n = Math.min(9, Math.max(1, sessionCount | 0));
     if (scrollMode) {
       return { iconPx: 30, areaIconPx: 36, labelFs: 9, symbolColMax: 72 };
     }
-    var areaByCount = { 1: 64, 2: 58, 3: 52, 4: 46, 5: 42, 6: 40 };
-    var areaIconPx = areaByCount[n] || 38;
-    var symbolColMax = n <= 2 ? 88 : n <= 4 ? 80 : 72;
-    try {
-      if (gridEl && gridEl.clientHeight && n <= 4) {
-        var cardH = gridEl.clientHeight;
-        var rowsFill = n === 1 ? 0.333333 : 1;
-        var gap = n >= 4 ? 3 : 5;
-        var rowH = (cardH * rowsFill - gap * (n - 1)) / n;
-        var fromRow = Math.round(rowH * 0.54);
-        areaIconPx = Math.min(72, Math.max(areaIconPx, fromRow));
-      }
-    } catch (_e) {}
-    var iconPx = Math.max(28, Math.round(areaIconPx * 0.88));
-    var labelFs = n <= 2 ? 10 : n <= 4 ? 9 : 8;
+    var rowH = portalMeasureTodaySessionRowHeight(gridEl, n);
+    var areaIconPx;
+    if (rowH > 0) {
+      areaIconPx = Math.round(rowH * 0.58);
+    } else {
+      var areaByCount = { 1: 72, 2: 64, 3: 56, 4: 50, 5: 44, 6: 40 };
+      areaIconPx = areaByCount[n] || 38;
+    }
+    var maxCap = n <= 1 ? 120 : n <= 2 ? 108 : n <= 4 ? 96 : n <= 6 ? 84 : 72;
+    var minCap = n <= 2 ? 52 : n <= 4 ? 44 : 36;
+    areaIconPx = Math.min(maxCap, Math.max(minCap, areaIconPx));
+    var symbolColMax = Math.min(128, Math.max(72, Math.round(areaIconPx * 1.22)));
+    var iconPx = Math.max(28, Math.round(areaIconPx * 0.92));
+    var labelFs = Math.min(14, Math.max(8, Math.round(areaIconPx * 0.19)));
     return { iconPx: iconPx, areaIconPx: areaIconPx, labelFs: labelFs, symbolColMax: symbolColMax };
   }
+
+  global.portalMeasureTodaySessionRowHeight = portalMeasureTodaySessionRowHeight;
 
   global.portalNormalizeAreaNoteKey = portalNormalizeAreaNoteKey;
   global.portalResolveAreaNoteLabelFromItem = portalResolveAreaNoteLabelFromItem;
