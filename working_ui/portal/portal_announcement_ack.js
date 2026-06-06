@@ -141,6 +141,79 @@
   /**
    * Merge server-side acks into localStorage ack map (cross-device / fresh browser).
    */
+  global.PORTAL_REMINDER_ACK_STORAGE = "portalReminderAckMap_v1";
+
+  global.portalReminderSignatureKey = function portalReminderSignatureKey(item) {
+    var id = String((item && item.portalAdminReminderId) || "").trim();
+    return id ? "portal-rem:" + id : "";
+  };
+
+  /**
+   * @param {object} pending Reminder item with portalAdminReminderId, title, body.
+   */
+  global.portalPersistReminderAckToSupabase = async function portalPersistReminderAckToSupabase(
+    pending
+  ) {
+    try {
+      var remId = String((pending && pending.portalAdminReminderId) || "").trim();
+      if (!remId) return { ok: false };
+      var wrapped = { portalAnnouncementId: remId };
+      return await global.portalPersistAnnouncementAckToSupabase(wrapped);
+    } catch (e) {
+      try {
+        console.warn("[portal] reminder ack", e);
+      } catch (_) {}
+      return { ok: false };
+    }
+  };
+
+  global.portalMergeReminderAcksFromSupabase = async function portalMergeReminderAcksFromSupabase(
+    reminderIds,
+    loadMap,
+    saveMap
+  ) {
+    try {
+      var ids = (reminderIds || [])
+        .map(function (id) {
+          return String(id || "").trim();
+        })
+        .filter(Boolean);
+      if (!ids.length) return;
+      var box = readBox();
+      var client = box && box.client;
+      var session = box && box.session;
+      var uid = session && session.user && session.user.id;
+      if (!client || !uid || !client.from) return;
+      var res = await client
+        .from("portal_staff_announcement_acks")
+        .select("announcement_id,signed_at,staff_full_name")
+        .eq("staff_id", uid)
+        .in("announcement_id", ids);
+      if (res.error || !Array.isArray(res.data) || !res.data.length) return;
+      var ack = typeof loadMap === "function" ? loadMap() : {};
+      var changed = false;
+      res.data.forEach(function (row) {
+        var remId = String(row.announcement_id || "").trim();
+        if (!remId) return;
+        var key = "portal-rem:" + remId;
+        if (ack[key]) return;
+        var signedAt = Date.parse(row.signed_at || "");
+        ack[key] = {
+          title: "Reminder",
+          text: "",
+          signedAt: Number.isFinite(signedAt) ? signedAt : Date.now(),
+          portalAdminReminderId: remId,
+        };
+        changed = true;
+      });
+      if (changed && typeof saveMap === "function") saveMap(ack);
+    } catch (e) {
+      try {
+        console.warn("[portal] merge reminder acks", e);
+      } catch (_) {}
+    }
+  };
+
   global.portalMergeAnnouncementAcksFromSupabase = async function portalMergeAnnouncementAcksFromSupabase(
     announcementIds,
     loadMap,

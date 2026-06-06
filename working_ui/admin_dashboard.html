@@ -18210,6 +18210,68 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return new Date(iso).toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
       }catch(_){ return String(iso); }
     }
+    function portalAdminAckStaffExcluded(r){
+      var who = String(r.staff_full_name || r.staff_username || '').trim().toLowerCase();
+      if(!who) return false;
+      if(who.indexOf('javier marquez') !== -1) return true;
+      if(who === 'javier') return true;
+      return false;
+    }
+    function portalAdminRenderMessageAckCards(host, messages, ackByMsg, opts){
+      opts = opts || {};
+      var signedLabel = opts.signedLabel || 'Signed';
+      var emptyLabel = opts.emptyLabel || 'No signatures yet';
+      if(!messages.length){
+        host.innerHTML = '<p class="muted" style="margin:0">' + esc(opts.emptyMessages || 'Nothing published yet.') + '</p>';
+        return;
+      }
+      host.innerHTML = messages.map(function(msg){
+        var mid = String(msg.id || '');
+        var rows = ackByMsg[mid] || [];
+        var bodyRows = rows.length ? rows.map(function(r){
+          var who = String(r.staff_full_name || r.staff_username || r.staff_id || '—').trim() || '—';
+          return '<tr><td>'+esc(who)+'</td><td>'+esc(portalAdminFormatAckWhen(r.signed_at))+'</td></tr>';
+        }).join('') : '<tr><td colspan="2"><span class="muted">'+esc(emptyLabel)+'</span></td></tr>';
+        var kind = String(msg.message_type || 'announcement').toLowerCase();
+        var kindLabel = kind === 'reminder' ? 'Reminder' : 'Announcement';
+        return (
+          '<div class="card" style="margin-bottom:12px;min-width:0">'+
+          '<div class="card-h"><div style="min-width:0"><h3 style="margin:0;font-size:15px;overflow-wrap:break-word">'+esc(String(msg.title||kindLabel))+'</h3>'+
+          '<p class="muted" style="margin:6px 0 0;font-size:12px;min-width:0;overflow-wrap:break-word">'+esc(kindLabel)+' · Published '+esc(portalAdminFormatAckWhen(msg.created_at))+' · <strong>'+esc(String(rows.length))+'</strong> '+esc(signedLabel.toLowerCase())+'</p></div></div>'+
+          '<div class="card-pad" style="overflow:auto;padding:0"><table class="tbl" style="min-width:280px"><thead><tr><th>Staff</th><th>'+esc(signedLabel)+'</th></tr></thead><tbody>'+bodyRows+'</tbody></table></div></div>'
+        );
+      }).join('');
+    }
+    function portalAdminLoadMessageAckMaps(client){
+      return Promise.all([
+        client.from('portal_staff_announcement_acks')
+          .select('announcement_id,staff_id,signed_at,staff_full_name,staff_username')
+          .order('signed_at', { ascending: false })
+          .limit(1000),
+        client.from('portal_staff_announcements')
+          .select('id,message_type')
+          .in('message_type', ['announcement', 'reminder'])
+          .limit(200)
+      ]).then(function(results){
+        var ackRes = results[0];
+        var msgRes = results[1];
+        if(ackRes.error) throw ackRes.error;
+        if(msgRes.error) throw msgRes.error;
+        var msgTypes = {};
+        (msgRes.data || []).forEach(function(m){
+          msgTypes[String(m.id || '')] = String(m.message_type || '').toLowerCase();
+        });
+        var ackByMsg = {};
+        (ackRes.data || []).forEach(function(a){
+          if(portalAdminAckStaffExcluded(a)) return;
+          var aid = String(a.announcement_id || '');
+          if(!aid) return;
+          if(!ackByMsg[aid]) ackByMsg[aid] = [];
+          ackByMsg[aid].push(a);
+        });
+        return { ackByMsg: ackByMsg, msgTypes: msgTypes };
+      });
+    }
     function openPortalAdminAnnouncementSignedModal(){
       closeSidebarMob();
       var client = getSchedSupabaseClient();
@@ -18262,13 +18324,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           host.innerHTML = '<p class="muted" style="margin:0">No announcements published yet (live from 2 Jun 2026).</p>';
           return;
         }
-        function portalAdminAckStaffExcluded(r){
-          var who = String(r.staff_full_name || r.staff_username || '').trim().toLowerCase();
-          if(!who) return false;
-          if(who.indexOf('javier marquez') !== -1) return true;
-          if(who === 'javier') return true;
-          return false;
-        }
         var ackByAnn = {};
         acks.forEach(function(a){
           if(portalAdminAckStaffExcluded(a)) return;
@@ -18277,24 +18332,242 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(!ackByAnn[aid]) ackByAnn[aid] = [];
           ackByAnn[aid].push(a);
         });
-        var html = announcements.map(function(ann){
-          var aid = String(ann.id || '');
-          var rows = ackByAnn[aid] || [];
-          var bodyRows = rows.length ? rows.map(function(r){
-            var who = String(r.staff_full_name || r.staff_username || r.staff_id || '—').trim() || '—';
-            return '<tr><td>'+esc(who)+'</td><td>'+esc(portalAdminFormatAckWhen(r.signed_at))+'</td></tr>';
-          }).join('') : '<tr><td colspan="2"><span class="muted">No signatures yet</span></td></tr>';
-          return (
-            '<div class="card" style="margin-bottom:12px;min-width:0">'+
-            '<div class="card-h"><div style="min-width:0"><h3 style="margin:0;font-size:15px;overflow-wrap:break-word">'+esc(String(ann.title||'Announcement'))+'</h3>'+
-            '<p class="muted" style="margin:6px 0 0;font-size:12px">Published '+esc(portalAdminFormatAckWhen(ann.created_at))+' · <strong>'+esc(String(rows.length))+'</strong> signed</p></div></div>'+
-            '<div class="card-pad" style="overflow:auto;padding:0"><table class="tbl" style="min-width:280px"><thead><tr><th>Staff</th><th>Signed</th></tr></thead><tbody>'+bodyRows+'</tbody></table></div></div>'
-          );
-        }).join('');
-        host.innerHTML = html;
+        portalAdminRenderMessageAckCards(host, announcements, ackByAnn, {
+          signedLabel: 'Signed',
+          emptyLabel: 'No signatures yet'
+        });
       }).catch(function(err){
         if(host) host.innerHTML = '<p class="submission-state is-error" style="margin:0">'+esc(String(err && err.message ? err.message : err))+'</p>';
       });
+    }
+    function openPortalAdminReminderAckModal(){
+      closeSidebarMob();
+      var client = getSchedSupabaseClient();
+      if(!client || !client.from){
+        alert('Sign in to Supabase as admin/CEO to view reminder acknowledgments.');
+        return;
+      }
+      openModal(
+        '<div class="modal-h"><h2 id="modalTitle">Acknowledged reminders</h2></div>'+
+        '<div class="modal-b" style="min-width:0">'+
+        '<p class="muted" style="margin:0 0 12px;font-size:13px;line-height:1.55;min-width:0;overflow-wrap:break-word">Who has marked each reminder as read (live from Supabase).</p>'+
+        '<div id="portalAdminRemAckHost"><p class="muted" style="margin:0">Loading…</p></div>'+
+        '</div>'+
+        '<div class="modal-f"><button type="button" class="btn btn--ghost" id="portalAdminRemAckClose">Close</button></div>'
+      );
+      var host = $('portalAdminRemAckHost');
+      var closeFn = function(){ closeModal(); };
+      var xc = $('portalAdminRemAckClose');
+      if(xc) xc.onclick = closeFn;
+      var bd = $('modalBackdrop');
+      if(bd) bd.onclick = function(e){ if(e.target === bd) closeFn(); };
+      Promise.all([
+        client.from('portal_staff_announcements')
+          .select('id,title,created_at,message_type,reminder_category')
+          .eq('message_type', 'reminder')
+          .order('created_at', { ascending: false })
+          .limit(30),
+        client.from('portal_staff_announcement_acks')
+          .select('announcement_id,staff_id,signed_at,staff_full_name,staff_username')
+          .order('signed_at', { ascending: false })
+          .limit(500)
+      ]).then(function(results){
+        if(!host) return;
+        var remRes = results[0];
+        var ackRes = results[1];
+        if(remRes.error){
+          host.innerHTML = '<p class="submission-state is-error" style="margin:0">Could not load reminders: '+esc(String(remRes.error.message||remRes.error))+'</p>';
+          return;
+        }
+        if(ackRes.error){
+          host.innerHTML = '<p class="submission-state is-error" style="margin:0">Could not load acknowledgments: '+esc(String(ackRes.error.message||ackRes.error))+'</p>';
+          return;
+        }
+        var reminders = Array.isArray(remRes.data) ? remRes.data : [];
+        var acks = Array.isArray(ackRes.data) ? ackRes.data : [];
+        var ackByRem = {};
+        acks.forEach(function(a){
+          if(portalAdminAckStaffExcluded(a)) return;
+          var rid = String(a.announcement_id || '');
+          if(!rid) return;
+          if(!ackByRem[rid]) ackByRem[rid] = [];
+          ackByRem[rid].push(a);
+        });
+        portalAdminRenderMessageAckCards(host, reminders, ackByRem, {
+          signedLabel: 'Marked read',
+          emptyLabel: 'No one has marked this yet',
+          emptyMessages: 'No reminders published yet.'
+        });
+      }).catch(function(err){
+        if(host) host.innerHTML = '<p class="submission-state is-error" style="margin:0">'+esc(String(err && err.message ? err.message : err))+'</p>';
+      });
+    }
+    function portalAdminMessageIsActive(row){
+      if(!row) return false;
+      if(!row.ends_at) return true;
+      var t = Date.parse(row.ends_at);
+      return Number.isFinite(t) && t >= Date.now();
+    }
+    function portalAdminMessageAudienceLabel(row){
+      if(!row) return '—';
+      if(row.audience_scope === 'leads') return 'Leads';
+      if(row.delivery_scope === 'single_user') return 'Individual user';
+      if(row.delivery_scope === 'staff_role' && row.target_staff_role) return 'Role · ' + String(row.target_staff_role);
+      return 'All staff';
+    }
+    function portalAdminApplyComposeToFromRow(row){
+      var toEl = $('cmpTo');
+      if(!toEl || !row) return;
+      var val = 'all_everyone';
+      if(row.audience_scope === 'leads') val = 'leads_everyone';
+      else if(row.delivery_scope === 'single_user') val = 'single_user';
+      else if(row.delivery_scope === 'staff_role') val = 'specific_roles';
+      for(var i = 0; i < toEl.options.length; i++){
+        if(toEl.options[i].value === val){ toEl.selectedIndex = i; break; }
+      }
+      portalOnComposeToChange();
+      if(val === 'single_user' && row.target_user_id){
+        void portalLoadComposerStaffPicker().then(function(){
+          var pu = $('cmpTargetUser');
+          if(pu) pu.value = String(row.target_user_id);
+        });
+      }
+      if(val === 'specific_roles' && row.target_staff_role){
+        var pr = $('cmpTargetRole');
+        if(pr) pr.value = String(row.target_staff_role);
+      }
+    }
+    function portalAdminApplyHideAfterAckFromRow(row){
+      if(!row) return;
+      var en = $('cmpHideAfterAckEnable');
+      var amt = $('cmpHideAfterAckAmount');
+      var unit = $('cmpHideAfterAckUnit');
+      if(!en) return;
+      if(row.hide_after_ack_amount && row.hide_after_ack_unit){
+        en.checked = true;
+        if(amt) amt.value = String(row.hide_after_ack_amount);
+        if(unit) unit.value = String(row.hide_after_ack_unit);
+      }else{
+        en.checked = false;
+      }
+      portalWireComposeHideAfterAckControls();
+    }
+    function openPortalAdminMessagesManageModal(){
+      closeSidebarMob();
+      var client = getSchedSupabaseClient();
+      if(!client || !client.from){
+        alert('Sign in to Supabase as admin/CEO to manage messages.');
+        return;
+      }
+      openModal(
+        '<div class="modal-h"><h2 id="modalTitle">Manage sent messages</h2></div>'+
+        '<div class="modal-b" style="min-width:0">'+
+        '<p class="muted" style="margin:0 0 12px;font-size:13px;line-height:1.55;min-width:0;overflow-wrap:break-word">Edit, undo send (hide from staff), restore, or permanently delete announcements and reminders.</p>'+
+        '<div id="portalAdminMsgManageHost"><p class="muted" style="margin:0">Loading…</p></div>'+
+        '</div>'+
+        '<div class="modal-f"><button type="button" class="btn btn--ghost" id="portalAdminMsgManageClose">Close</button></div>'
+      );
+      var host = $('portalAdminMsgManageHost');
+      var closeFn = function(){ closeModal(); };
+      var xc = $('portalAdminMsgManageClose');
+      if(xc) xc.onclick = closeFn;
+      var bd = $('modalBackdrop');
+      if(bd) bd.onclick = function(e){ if(e.target === bd) closeFn(); };
+      function renderManageList(rows, ackByMsg){
+        if(!host) return;
+        if(!rows.length){
+          host.innerHTML = '<p class="muted" style="margin:0">No announcements or reminders yet.</p>';
+          return;
+        }
+        host.innerHTML = rows.map(function(row){
+          var id = String(row.id || '');
+          var kind = String(row.message_type || 'announcement').toLowerCase();
+          var kindLabel = kind === 'reminder' ? 'Reminder' : 'Announcement';
+          var active = portalAdminMessageIsActive(row);
+          var ackN = (ackByMsg[id] || []).length;
+          var status = active ? 'Active' : 'Undone (hidden from staff)';
+          var cat = kind === 'reminder' ? (' · ' + esc(String(row.reminder_category || 'notes'))) : '';
+          return (
+            '<div class="card" style="margin-bottom:12px;min-width:0" data-portal-msg-row="'+esc(id)+'">'+
+            '<div class="card-h"><div style="min-width:0"><h3 style="margin:0;font-size:15px;overflow-wrap:break-word">'+esc(String(row.title||kindLabel))+'</h3>'+
+            '<p class="muted" style="margin:6px 0 0;font-size:12px;min-width:0;overflow-wrap:break-word">'+esc(kindLabel)+cat+' · '+esc(portalAdminMessageAudienceLabel(row))+' · '+esc(status)+' · '+esc(String(ackN))+' ack · '+esc(portalAdminFormatAckWhen(row.created_at))+'</p></div></div>'+
+            '<div class="card-pad" style="display:flex;flex-wrap:wrap;gap:8px;min-width:0">'+
+            '<button type="button" class="btn btn--sec btn--sm" data-portal-msg-edit="'+esc(id)+'">Edit</button>'+
+            (active
+              ? '<button type="button" class="btn btn--ghost btn--sm" data-portal-msg-revoke="'+esc(id)+'">Undo send</button>'
+              : '<button type="button" class="btn btn--ghost btn--sm" data-portal-msg-restore="'+esc(id)+'">Restore</button>')+
+            '<button type="button" class="btn btn--ghost btn--sm" data-portal-msg-delete="'+esc(id)+'" style="color:#9b2424">Delete</button>'+
+            '</div></div>'
+          );
+        }).join('');
+      }
+      function reloadManage(){
+        if(host) host.innerHTML = '<p class="muted" style="margin:0">Loading…</p>';
+        Promise.all([
+          client.from('portal_staff_announcements')
+            .select('id,title,body,message_type,created_at,ends_at,reminder_category,audience_scope,delivery_scope,target_staff_role,target_user_id,hide_after_ack_amount,hide_after_ack_unit')
+            .in('message_type', ['announcement', 'reminder'])
+            .order('created_at', { ascending: false })
+            .limit(40),
+          portalAdminLoadMessageAckMaps(client)
+        ]).then(function(results){
+          var msgRes = results[0];
+          var maps = results[1];
+          if(msgRes.error) throw msgRes.error;
+          var rows = (msgRes.data || []).filter(function(row){
+            var kind = String(row.message_type || '').toLowerCase();
+            if(kind === 'announcement'){
+              var d = String(row.created_at || '').trim().slice(0, 10);
+              return d && d >= '2026-06-02';
+            }
+            return true;
+          });
+          renderManageList(rows, maps.ackByMsg || {});
+          host._portalMsgRows = rows;
+        }).catch(function(err){
+          if(host) host.innerHTML = '<p class="submission-state is-error" style="margin:0">'+esc(String(err && err.message ? err.message : err))+'</p>';
+        });
+      }
+      if(host){
+        host.onclick = function(e){
+          var t = e.target && e.target.closest ? e.target.closest('[data-portal-msg-edit],[data-portal-msg-revoke],[data-portal-msg-restore],[data-portal-msg-delete]') : null;
+          if(!t || !host.contains(t)) return;
+          var rows = host._portalMsgRows || [];
+          var editId = t.getAttribute('data-portal-msg-edit');
+          var revokeId = t.getAttribute('data-portal-msg-revoke');
+          var restoreId = t.getAttribute('data-portal-msg-restore');
+          var deleteId = t.getAttribute('data-portal-msg-delete');
+          var row = rows.find(function(r){ return String(r.id||'') === String(editId||revokeId||restoreId||deleteId||''); });
+          if(editId && row){
+            closeFn();
+            openComposeModalAnnouncementOrReminder(String(row.message_type||'').toLowerCase() === 'reminder', row);
+            return;
+          }
+          if(revokeId){
+            if(!confirm('Undo send? Staff will stop seeing this message immediately.')) return;
+            client.from('portal_staff_announcements').update({ ends_at: new Date().toISOString() }).eq('id', revokeId).then(function(res){
+              if(res.error){ alert('Could not undo send: ' + String(res.error.message || res.error)); return; }
+              reloadManage();
+            });
+            return;
+          }
+          if(restoreId){
+            client.from('portal_staff_announcements').update({ ends_at: null }).eq('id', restoreId).then(function(res){
+              if(res.error){ alert('Could not restore: ' + String(res.error.message || res.error)); return; }
+              reloadManage();
+            });
+            return;
+          }
+          if(deleteId){
+            if(!confirm('Permanently delete this message and all acknowledgment records?')) return;
+            client.from('portal_staff_announcements').delete().eq('id', deleteId).then(function(res){
+              if(res.error){ alert('Could not delete: ' + String(res.error.message || res.error)); return; }
+              reloadManage();
+            });
+          }
+        };
+      }
+      reloadManage();
     }
     function openPortalAdminGuideReadModal(){
       closeSidebarMob();
@@ -18375,8 +18648,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<span class="dayops-screen-nav__desc">Targeted</span>'+
         '</div></div></button>'+
         '</div>'+
-        '<div style="margin-top:12px;min-width:0">'+
+        '<div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;min-width:0">'+
         '<button type="button" id="dayopsAnnHubSigned" class="btn btn--sec" style="width:100%;max-width:100%">Signed announcements log</button>'+
+        '<button type="button" id="dayopsAnnHubReminderAck" class="btn btn--sec" style="width:100%;max-width:100%">Acknowledged reminders log</button>'+
+        '<button type="button" id="dayopsAnnHubManage" class="btn btn--ghost" style="width:100%;max-width:100%">Manage sent messages</button>'+
         '</div></div>'+
         '<div class="modal-f"><button type="button" class="btn btn--ghost" id="dayopsAnnHubClose">Cancel</button></div>'
       );
@@ -18387,6 +18662,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(rem) rem.onclick = function(){ closeHub(); openComposeModalAnnouncementOrReminder(true); };
       var signed = $('dayopsAnnHubSigned');
       if(signed) signed.onclick = function(){ closeHub(); openPortalAdminAnnouncementSignedModal(); };
+      var remAck = $('dayopsAnnHubReminderAck');
+      if(remAck) remAck.onclick = function(){ closeHub(); openPortalAdminReminderAckModal(); };
+      var manage = $('dayopsAnnHubManage');
+      if(manage) manage.onclick = function(){ closeHub(); openPortalAdminMessagesManageModal(); };
       var xc = $('dayopsAnnHubClose');
       if(xc) xc.onclick = closeHub;
       var bd = $('modalBackdrop');
@@ -22477,6 +22756,47 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       portalOnComposeToChange();
     }
+    function portalTryUpdateStaffAnnouncementFromComposer(editId){
+      var client = getSchedSupabaseClient();
+      if(!client) return Promise.resolve({ ok:false, skip:true, message:'no supabase' });
+      var id = String(editId || '').trim();
+      if(!id) return Promise.resolve({ ok:false, skip:false, message:'Missing message id' });
+      var body = ($('cmpBody') && $('cmpBody').value || '').trim() || '(empty)';
+      var composeKind = String($('cmpComposeKind') && $('cmpComposeKind').value || '').trim().toLowerCase();
+      var title = String($('cmpTitle') && $('cmpTitle').value || '').trim();
+      if(!title) return Promise.resolve({ ok:false, skip:false, message:'Title required' });
+      title = title.length > 200 ? title.slice(0, 197) + '…' : title;
+      var tgt = portalBuildAnnouncementTargetsFromComposer();
+      if(!tgt.ok) return Promise.resolve({ ok:false, skip:false, message:tgt.message || 'Invalid audience' });
+      var row = {
+        title:title,
+        body:body,
+        audience_scope:tgt.audience_scope,
+        delivery_scope:tgt.delivery_scope,
+        target_staff_role:tgt.target_staff_role,
+        target_user_id:tgt.target_user_id
+      };
+      if(composeKind === 'reminder'){
+        var remCat = String($('cmpRemCat') && $('cmpRemCat').value || 'notes').trim().toLowerCase();
+        if(['training','timesheet','notes'].indexOf(remCat) === -1) remCat = 'notes';
+        row.reminder_category = remCat;
+        row.hide_after_ack_amount = null;
+        row.hide_after_ack_unit = null;
+      }else{
+        var hideApply = portalApplyHideAfterAckToAnnouncementRow(row);
+        if(hideApply && hideApply.ok === false) return Promise.resolve({ ok:false, skip:false, message:hideApply.message || 'Invalid hide timeframe' });
+        if(!($('cmpHideAfterAckEnable') && $('cmpHideAfterAckEnable').checked)){
+          row.hide_after_ack_amount = null;
+          row.hide_after_ack_unit = null;
+        }
+      }
+      if(row.target_staff_role === undefined || row.target_staff_role === '') row.target_staff_role = null;
+      if(row.target_user_id === undefined || row.target_user_id === '') row.target_user_id = null;
+      return client.from('portal_staff_announcements').update(row).eq('id', id).select('id').then(function(res){
+        if(res.error) return { ok:false, skip:false, message:String(res.error.message || res.error) };
+        return { ok:true, id:id };
+      });
+    }
     function portalTryInsertStaffAnnouncementFromComposer(){
       var client = getSchedSupabaseClient();
       if(!client) return Promise.resolve({ ok:false, skip:true, message:'no supabase' });
@@ -22545,6 +22865,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       opts = opts || {};
       var needTitle = !!opts.needTitle;
       var fixedTyp = opts.typ || '';
+      var editId = String(opts.editId || ($('cmpEditId') && $('cmpEditId').value) || '').trim();
       $('btnCmpX').onclick = closeModal;
       $('btnCmpSend').onclick = function(){
         var title = needTitle ? String($('cmpTitle') && $('cmpTitle').value || '').trim() : '';
@@ -22560,7 +22881,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           });
           var histLine = needTitle ? (title + ' — ' + body) : body;
           pushCommsHistory(typ, histLine.slice(0, 100) + (histLine.length > 100 ? '…' : ''));
-          logAction('manual', 'Notification queued · '+typ, MOCK.profile.name);
+          logAction('manual', (editId ? 'Message updated' : 'Notification queued') + ' · '+typ, MOCK.profile.name);
           closeModal();
           if(state.view==='communications' || state.view==='comms_ops') setView('comms_ops');
           else if(state.view==='comms_bookings') setView('comms_bookings');
@@ -22576,10 +22897,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           return;
         }
         if(btn) btn.disabled = true;
-        portalTryInsertStaffAnnouncementFromComposer().then(function(ins){
+        var savePromise = editId
+          ? portalTryUpdateStaffAnnouncementFromComposer(editId)
+          : portalTryInsertStaffAnnouncementFromComposer();
+        savePromise.then(function(ins){
           if(btn) btn.disabled = false;
           if(ins && ins.ok){
-            finishLocal('Published to staff portal. Workers see it after refresh or realtime.');
+            finishLocal(editId ? 'Updated on staff portal. Workers see changes after refresh or realtime.' : 'Published to staff portal. Workers see it after refresh or realtime.');
             return;
           }
           if(ins && ins.skip){
@@ -22602,16 +22926,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       };
       $('modalBackdrop').onclick = function(e){ if(e.target=== $('modalBackdrop')) closeModal(); };
     }
-    function openComposeModalAnnouncementOrReminder(isReminder){
+    function openComposeModalAnnouncementOrReminder(isReminder, editRow){
       var kind = isReminder ? 'reminder' : 'announcement';
+      var editId = editRow && editRow.id ? String(editRow.id) : '';
       var remCatHtml = isReminder
         ? ('<label class="muted" style="display:block;margin-top:12px">Reminder category</label>'+
           '<select class="sel" id="cmpRemCat" style="max-width:100%;min-width:0;box-sizing:border-box">'+
           '<option value="training">Training</option><option value="timesheet">Timesheet</option><option value="notes">Notes</option></select>')
         : '';
       openModal(
-        '<div class="modal-h"><h2 id="modalTitle">'+(isReminder ? 'Compose reminder' : 'Compose announcement')+'</h2></div><div class="modal-b" style="min-width:0">'+
+        '<div class="modal-h"><h2 id="modalTitle">'+(editId ? (isReminder ? 'Edit reminder' : 'Edit announcement') : (isReminder ? 'Compose reminder' : 'Compose announcement'))+'</h2></div><div class="modal-b" style="min-width:0">'+
         '<input type="hidden" id="cmpComposeKind" value="'+esc(kind)+'"/>'+
+        '<input type="hidden" id="cmpEditId" value="'+esc(editId)+'"/>'+
         '<label class="muted">Title</label><input type="text" class="inp" id="cmpTitle" maxlength="200" placeholder="'+(isReminder ? 'Reminder title…' : 'Announcement title…')+'" style="max-width:100%;min-width:0;box-sizing:border-box"/>'+
         '<label class="muted" style="display:block;margin-top:12px">Message</label><textarea class="txa" id="cmpBody" placeholder="Internal message…" style="max-width:100%;min-width:0;box-sizing:border-box;min-height:120px"></textarea>'+
         remCatHtml+
@@ -22619,11 +22945,28 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portalComposeToSelectHtml()+
         (kind === 'announcement' ? portalComposeHideAfterAckHtml(true) : '')+
         '</div>'+
-        '<div class="modal-f"><button type="button" class="btn btn--ghost" id="btnCmpX">Cancel</button><button type="button" class="btn btn--pri" id="btnCmpSend">Queue message</button></div>'
+        '<div class="modal-f"><button type="button" class="btn btn--ghost" id="btnCmpX">Cancel</button><button type="button" class="btn btn--pri" id="btnCmpSend">'+(editId ? 'Save changes' : 'Queue message')+'</button></div>'
       );
       portalWireComposeToControls();
       if(kind === 'announcement') portalWireComposeHideAfterAckControls();
-      portalBindComposeSendHandler({ needTitle:true, typ:kind });
+      if(editRow){
+        var tEl = $('cmpTitle');
+        var bEl = $('cmpBody');
+        if(tEl) tEl.value = String(editRow.title || '');
+        if(bEl) bEl.value = String(editRow.body || '');
+        if(isReminder){
+          var rc = $('cmpRemCat');
+          if(rc){
+            var cat = String(editRow.reminder_category || 'notes').toLowerCase();
+            if(['training','timesheet','notes'].indexOf(cat) === -1) cat = 'notes';
+            rc.value = cat;
+          }
+        }else{
+          portalAdminApplyHideAfterAckFromRow(editRow);
+        }
+        portalAdminApplyComposeToFromRow(editRow);
+      }
+      portalBindComposeSendHandler({ needTitle:true, typ:kind, editId:editId });
     }
     function openComposeModal(preset){
       var p0 = String(preset || '').trim().toLowerCase();

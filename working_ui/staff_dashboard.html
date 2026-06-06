@@ -3865,12 +3865,39 @@
       }
       return rows.join('');
     }
+    const PORTAL_REMINDER_ACK_STORAGE = typeof window !== 'undefined' && window.PORTAL_REMINDER_ACK_STORAGE
+      ? window.PORTAL_REMINDER_ACK_STORAGE
+      : 'portalReminderAckMap_v1';
+    function portalReminderAckMapLoad(){
+      try{
+        const raw = localStorage.getItem(PORTAL_REMINDER_ACK_STORAGE);
+        if(!raw) return {};
+        const o = JSON.parse(raw);
+        return o && typeof o === 'object' ? o : {};
+      }catch(_){ return {}; }
+    }
+    function portalReminderAckMapSave(map){
+      try{ localStorage.setItem(PORTAL_REMINDER_ACK_STORAGE, JSON.stringify(map || {})); }catch(_){}
+    }
+    function portalReminderSignatureKey(item){
+      if(typeof window !== 'undefined' && typeof window.portalReminderSignatureKey === 'function'){
+        return window.portalReminderSignatureKey(item);
+      }
+      const id = String(item && item.portalAdminReminderId || '').trim();
+      return id ? ('portal-rem:' + id) : '';
+    }
+    function portalReminderIsAcked(item){
+      const key = portalReminderSignatureKey(item);
+      if(!key) return false;
+      return !!portalReminderAckMapLoad()[key];
+    }
     /** Admin-published reminders (Training / Timesheet / Notes) for logo-lite quick menu. */
     function portalBuildAdminReminderSectionHtml(){
       const rows = dashboardData && Array.isArray(dashboardData.portalRemindersFromAdmin) ? dashboardData.portalRemindersFromAdmin : [];
-      if(!rows.length) return '';
+      const pending = rows.filter(function(r){ return r && !portalReminderIsAcked(r); });
+      if(!pending.length) return '';
       const by = { training: [], timesheet: [], notes: [] };
-      rows.forEach(function(r){
+      pending.forEach(function(r){
         if(!r) return;
         const c = String(r.category || 'notes').toLowerCase();
         const k = by[c] ? c : 'notes';
@@ -3881,7 +3908,11 @@
         return '<ul class="portal-admin-reminder-list">' + arr.map(function(r){
           const t = escapeHtml(String(r.title || '').trim() || 'Reminder');
           const b = escapeHtml(String(r.body || '').trim());
-          return '<li><strong>' + t + '</strong><div class="portal-admin-reminder-body">' + b + '</div></li>';
+          const rid = escapeHtml(String(r.portalAdminReminderId || '').trim());
+          const markBtn = rid
+            ? ('<button type="button" class="portal-reminder-mark-btn" data-portal-reminder-ack="' + rid + '">Mark read</button>')
+            : '';
+          return '<li><div class="portal-admin-reminder-head"><strong>' + t + '</strong>' + markBtn + '</div><div class="portal-admin-reminder-body">' + b + '</div></li>';
         }).join('') + '</ul>';
       }
       let inner = '';
@@ -8577,6 +8608,14 @@
           .filter(function(row){ return String(row.message_type || '').toLowerCase().trim() === 'announcement'; })
           .map(function(row){ return String(row.id || ''); })
           .filter(Boolean);
+        const remIds = remList.map(function(r){ return String(r && r.portalAdminReminderId || '').trim(); }).filter(Boolean);
+        if(remIds.length && typeof portalMergeReminderAcksFromSupabase === 'function'){
+          await portalMergeReminderAcksFromSupabase(
+            remIds,
+            portalReminderAckMapLoad,
+            portalReminderAckMapSave
+          );
+        }
         if(annIds.length && typeof portalMergeAnnouncementAcksFromSupabase === 'function'){
           await portalMergeAnnouncementAcksFromSupabase(
             annIds,
@@ -12630,6 +12669,32 @@
         if(typeof portalMarkSafeguardingFeedbackPolicyRead === 'function') portalMarkSafeguardingFeedbackPolicyRead();
         if(typeof renderSafeguardingFeedbackPolicySheet === 'function') renderSafeguardingFeedbackPolicySheet();
         if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
+        return;
+      }
+      const remAck = e.target && e.target.closest ? e.target.closest('[data-portal-reminder-ack]') : null;
+      if(remAck){
+        e.preventDefault();
+        e.stopPropagation();
+        const remId = String(remAck.getAttribute('data-portal-reminder-ack') || '').trim();
+        if(!remId) return;
+        const rows = dashboardData && Array.isArray(dashboardData.portalRemindersFromAdmin) ? dashboardData.portalRemindersFromAdmin : [];
+        const item = rows.find(function(r){ return r && String(r.portalAdminReminderId || '') === remId; });
+        if(!item) return;
+        const key = portalReminderSignatureKey(item);
+        if(!key) return;
+        const ack = portalReminderAckMapLoad();
+        ack[key] = {
+          title: item.title || 'Reminder',
+          text: item.body || '',
+          signedAt: Date.now(),
+          portalAdminReminderId: remId
+        };
+        portalReminderAckMapSave(ack);
+        if(typeof portalPersistReminderAckToSupabase === 'function'){
+          void portalPersistReminderAckToSupabase(item);
+        }
+        if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
+        if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
         return;
       }
       const ann = e.target.closest('#announcementNewNotice, #announcementSignedLog');
