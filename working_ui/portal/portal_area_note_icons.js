@@ -6,7 +6,7 @@
   "use strict";
 
   var ICON_IMG_BASE = "/portal/area-note-icons/";
-  var ICON_IMG_VER = "20260606-big-pool-mockup";
+  var ICON_IMG_VER = "20260606-small-pool-mockup";
   var IMG_CLASS = "session-area-note-img";
   var SVG_CLASS = "session-area-note-svg";
 
@@ -25,16 +25,7 @@
 
   var ICONS = {
     "big-pool": { label: "Big Pool", cls: "session-area-note-icon--big-pool" },
-    "small-pool": {
-      label: "Small Pool",
-      cls: "session-area-note-icon--small-pool",
-      svg:
-        SVG_HEAD +
-        '<rect x="4.5" y="8.5" width="15" height="9" rx="2" stroke="currentColor" stroke-width="1.85"/>' +
-        '<path d="M6.5 12.8c1.9-.95 3.8-.95 5.7 0 1.9.95 3.8.95 5.7 0" stroke="currentColor" stroke-width="1.55" stroke-linecap="round"/>' +
-        '<circle cx="17.2" cy="12.2" r="1.1" fill="currentColor"/>' +
-        "</svg>",
-    },
+    "small-pool": { label: "Small Pool", cls: "session-area-note-icon--small-pool" },
     "teaching-pool": { label: "Teaching Pool", cls: "session-area-note-icon--teaching-pool" },
     "lane-se": { label: "Lane (SE)", cls: "session-area-note-icon--lane-se" },
     "lane-de": { label: "Lane (DE)", cls: "session-area-note-icon--lane-de" },
