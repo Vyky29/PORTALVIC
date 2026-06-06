@@ -4190,7 +4190,10 @@
       min-height:0;
       max-height:none;
       padding:var(--today-row-pad-y,4px) 8px;
-      overflow:hidden;
+      overflow:visible;
+    }
+    .section-card--today .today-grid-rows > .session-card .session-line--symbol{
+      overflow:visible;
     }
     .section-card--today .session-card{
       padding:4px 10px;
