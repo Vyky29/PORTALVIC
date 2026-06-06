@@ -3951,6 +3951,19 @@
       flex:1 1 auto;
       min-height:0;
     }
+    /* 5 participants: 3 on row 1, 2 centred on row 2 */
+    .today-day-panel__chips[data-chip-count="5"]{
+      grid-template-columns:repeat(6, minmax(0, 1fr));
+    }
+    .today-day-panel__chips[data-chip-count="5"] .today-participant-chip:nth-child(-n+3){
+      grid-column:span 2;
+    }
+    .today-day-panel__chips[data-chip-count="5"] .today-participant-chip:nth-child(4){
+      grid-column:2 / span 2;
+    }
+    .today-day-panel__chips[data-chip-count="5"] .today-participant-chip:nth-child(5){
+      grid-column:4 / span 2;
+    }
     .today-day-panel__chips[data-chip-count="7"],
     .today-day-panel__chips[data-chip-count="8"],
     .today-day-panel__chips[data-chip-count="9"]{

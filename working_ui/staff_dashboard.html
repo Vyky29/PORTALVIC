@@ -93,7 +93,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260622-screenshot-only" />
   <script src="/portal/portal_screenshot_guard.js?v=20260622-screenshot-only"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260622-next-chips-large" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260622-next-chips-5" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260606-topbar-icons" />
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260620-inbox-logo-orbit" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
@@ -9913,13 +9913,6 @@
             html += '<span class="today-participant-chip__name">' + name + '</span></button>';
           });
           html += '</div>';
-        }
-        const venue = String(preview.venueLabel || '').trim();
-        const n = Number(preview.sessionCount) || 0;
-        const meta = [venue, n === 1 ? '1 session' : (n + ' sessions')].filter(Boolean).join(' · ');
-        if(meta){
-          html += '<button type="button" class="today-day-panel__next-open" data-open-next-session="1" aria-label="Open next session list">';
-          html += '<p class="today-day-panel__meta">' + escapeHtml(meta) + '</p></button>';
         }
         html += '</div>';
       }
