@@ -6,6 +6,9 @@
   line-height:0;
   flex-shrink:0;
   max-width:100%;
+  background:transparent;
+  border:none;
+  box-shadow:none;
 }
 .session-area-note-icon .session-area-note-img,
 .session-area-note-icon .session-area-note-svg{
@@ -16,34 +19,46 @@
   object-position:center;
   -webkit-user-drag:none;
   user-select:none;
+  background:transparent;
+  border:none;
+  box-shadow:none;
+  vertical-align:top;
 }
 .section-card--today .session-line--symbol .session-area-note-stack{
   display:flex;
   flex-direction:column;
   align-items:center;
   justify-content:flex-start;
-  gap:1px;
+  gap:0;
   width:100%;
   min-width:0;
   max-width:100%;
-  margin-top:-2px;
-  padding-top:0;
+  margin:0;
+  padding:0;
+  background:transparent;
+  border:none;
 }
 .section-card--today .session-line--symbol .session-area-note-icon{
   width:var(--today-area-icon, 42px);
   height:var(--today-area-icon, 42px);
   flex-shrink:0;
+  padding:0 2px;
+  box-sizing:border-box;
 }
 .section-card--today .session-line--symbol .session-area-note-icon .session-area-note-img,
 .section-card--today .session-line--symbol .session-area-note-icon .session-area-note-svg{
   width:100%;
   height:100%;
+  max-width:100%;
+  max-height:100%;
 }
 .section-card--today .session-line--symbol .session-area-note-label{
   display:block;
+  margin:1px 0 0;
+  padding:0;
   font-size:9px;
   font-weight:700;
-  line-height:1.1;
+  line-height:1.05;
   letter-spacing:.01em;
   color:var(--muted, #64748b);
   text-align:center;
@@ -52,6 +67,18 @@
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap;
+  border:none;
+  background:transparent;
+}
+/* Shark / big pool — black silhouette */
+.session-area-note-icon--big-pool .session-area-note-img,
+.session-area-note-icon--lane-de .session-area-note-img{
+  filter:brightness(0) saturate(100%);
+}
+/* Fish / small pool — bright blue */
+.session-area-note-icon--small-pool .session-area-note-img,
+.session-area-note-icon--lane-se .session-area-note-img{
+  filter:brightness(0) saturate(100%) invert(46%) sepia(98%) saturate(2476%) hue-rotate(176deg) brightness(104%) contrast(101%);
 }
 .section-card--today .session-today-override-pool-note .session-area-note-stack{
   margin-top:0;
