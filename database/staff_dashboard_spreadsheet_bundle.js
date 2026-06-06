@@ -80,7 +80,7 @@
     "john": {
       "staffId": "john",
       "staffName": "John",
-      "avatarFile": "portal/staff_photos/john.jpg",
+      "avatarFile": "portal/staff_photos/john.png",
       "staffRoleTrack": "support_lead",
       "canViewAll": false
     },
@@ -129,7 +129,7 @@
     "victor": {
       "staffId": "victor",
       "staffName": "Victor",
-      "avatarFile": "portal/staff_photos/victor.jpg",
+      "avatarFile": "portal/staff_photos/victor.png",
       "staffRoleTrack": "manager",
       "canViewAll": true
     },
@@ -157,14 +157,14 @@
     "raul": {
       "staffId": "raul",
       "staffName": "Raul",
-      "avatarFile": "portal/staff_photos/raul.jpg",
+      "avatarFile": "portal/staff_photos/raul.png",
       "staffRoleTrack": "manager",
       "canViewAll": true
     },
     "sevitha": {
       "staffId": "sevitha",
       "staffName": "Sevitha",
-      "avatarFile": "portal/staff_photos/sevitha.jpg",
+      "avatarFile": "portal/staff_photos/sevitha.png",
       "staffRoleTrack": "admin",
       "canViewAll": true
     },
