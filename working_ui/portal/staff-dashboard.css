@@ -3747,8 +3747,22 @@
     .today-participant-chip__avatar--empty{
       background:rgba(23,50,71,.1);
     }
-    .today-day-panel__chips .today-participant-chip__med{
-      display:none !important;
+    .today-participant-chip__med{
+      position:absolute;
+      top:-4px;
+      right:-4px;
+      z-index:2;
+      width:17px;
+      height:17px;
+      border-radius:50%;
+      background:#fff;
+      border:1.5px solid #fff;
+      box-shadow:0 1px 5px rgba(183,28,28,.32);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:#c62828;
+      pointer-events:none;
     }
     .today-participant-chip__med-svg{
       width:11px;

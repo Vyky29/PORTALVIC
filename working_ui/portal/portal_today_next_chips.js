@@ -46,6 +46,9 @@
     return idxInPartial === 0 ? "grid-column:2 / span 2" : "grid-column:4 / span 2";
   }
 
+  var TODAY_PARTICIPANT_MED_ICON =
+    '<svg class="today-participant-chip__med-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M9 2h6a1 1 0 0 1 1 1v5h5a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-5v5a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-5H3a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1h5V3a1 1 0 0 1 1-1z"/></svg>';
+
   /** Day-off NEXT SESSION participant circles — one equal chip per client. */
   function portalTodayNextParticipantChipsHtml(participants, opts) {
     opts = opts || {};
@@ -90,7 +93,14 @@
         (src ? "" : " today-participant-chip__avatar--empty") +
         '">' +
         av +
-        "</span></span>";
+        "</span>";
+      if (p && p.hasMedicalAlert) {
+        html +=
+          '<span class="today-participant-chip__med" title="Medical condition on file">' +
+          TODAY_PARTICIPANT_MED_ICON +
+          "</span>";
+      }
+      html += "</span>";
       html += '<span class="today-participant-chip__name">' + name + "</span></button>";
     });
     html += "</div>";
