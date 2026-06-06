@@ -6,7 +6,7 @@
   "use strict";
 
   var ICON_IMG_BASE = "/portal/area-note-icons/";
-  var ICON_IMG_VER = "20260606-teaching-pool-mockup";
+  var ICON_IMG_VER = "20260606-big-pool-mockup";
   var IMG_CLASS = "session-area-note-img";
   var SVG_CLASS = "session-area-note-svg";
 
