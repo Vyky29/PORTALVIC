@@ -243,7 +243,7 @@
 .session-area-note-stack:has(.session-area-note-icon--gym),
 .session-area-note-inline:has(.session-area-note-icon--gym){ --area-note-accent:#71a7a0; }
 .session-area-note-stack:has(.session-area-note-icon--climbing-wall),
-.session-area-note-inline:has(.session-area-note-icon--climbing-wall){ --area-note-accent:#8b9dac; }
+.session-area-note-inline:has(.session-area-note-icon--climbing-wall){ --area-note-accent:#7c6bae; }
 .session-area-note-stack:has(.session-area-note-icon--day-center),
 .session-area-note-inline:has(.session-area-note-icon--day-center){ --area-note-accent:#eabd7f; }
 .session-area-note-stack:has(.session-area-note-icon--bespoke),

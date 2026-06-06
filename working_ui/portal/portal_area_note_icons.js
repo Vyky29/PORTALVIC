@@ -6,7 +6,7 @@
   "use strict";
 
   var ICON_IMG_BASE = "/portal/area-note-icons/";
-  var ICON_IMG_VER = "20260606-pool-label-contrast";
+  var ICON_IMG_VER = "20260606-wall-mockup";
   var IMG_CLASS = "session-area-note-img";
   var SVG_CLASS = "session-area-note-svg";
 
@@ -32,7 +32,7 @@
     "hub-room": { label: "Hub Room", cls: "session-area-note-icon--hub-room" },
     "room-2": { label: "Room 2", cls: "session-area-note-icon--room-2" },
     gym: { label: "Gym", cls: "session-area-note-icon--gym" },
-    "climbing-wall": { label: "Climbing Wall", cls: "session-area-note-icon--climbing-wall" },
+    "climbing-wall": { label: "Wall", cls: "session-area-note-icon--climbing-wall" },
     "day-center": { label: "Day Centre", cls: "session-area-note-icon--day-center" },
     bespoke: { label: "Bespoke", cls: "session-area-note-icon--bespoke" },
   };
