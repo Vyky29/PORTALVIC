@@ -6,7 +6,7 @@
   "use strict";
 
   var ICON_IMG_BASE = "/portal/area-note-icons/";
-  var ICON_IMG_VER = "20260606-hub-room-mockup-v2";
+  var ICON_IMG_VER = "20260606-area-icons-layout";
   var IMG_CLASS = "session-area-note-img";
   var SVG_CLASS = "session-area-note-svg";
 
@@ -231,17 +231,17 @@
     var rowH = portalMeasureTodaySessionRowHeight(gridEl, n);
     var areaIconPx;
     if (rowH > 0) {
-      var fitCap = Math.floor(rowH * 0.94);
-      var scaled = Math.round(rowH * (dense ? 0.86 : 0.92));
+      var fitCap = Math.floor(rowH * 0.96);
+      var scaled = Math.round(rowH * (dense ? 0.9 : 0.94));
       areaIconPx = Math.min(fitCap, scaled);
     } else {
-      var areaByCount = { 1: 96, 2: 88, 3: 78, 4: 68, 5: 58, 6: 44, 7: 40, 8: 36, 9: 32 };
-      areaIconPx = areaByCount[n] || 32;
+      var areaByCount = { 1: 100, 2: 92, 3: 82, 4: 72, 5: 62, 6: 48, 7: 44, 8: 40, 9: 36 };
+      areaIconPx = areaByCount[n] || 36;
     }
-    var maxCap = n <= 1 ? 140 : n <= 2 ? 124 : n <= 4 ? 108 : n <= 5 ? 96 : n <= 7 ? 78 : 68;
-    var minCap = n <= 2 ? 64 : n <= 4 ? 52 : n <= 5 ? 44 : 28;
+    var maxCap = n <= 1 ? 148 : n <= 2 ? 132 : n <= 4 ? 116 : n <= 5 ? 104 : n <= 7 ? 84 : 72;
+    var minCap = n <= 2 ? 68 : n <= 4 ? 56 : n <= 5 ? 48 : 32;
     areaIconPx = Math.min(maxCap, Math.max(minCap, areaIconPx));
-    var symbolColMax = Math.min(120, Math.max(68, Math.round(areaIconPx * 1.05)));
+    var symbolColMax = Math.min(132, Math.max(70, Math.round(areaIconPx * 1.1)));
     if (n <= 5) {
       areaIconPx = Math.min(maxCap, Math.max(areaIconPx, symbolColMax - 6));
     }
