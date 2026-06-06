@@ -1,6 +1,6 @@
 /**
  * Area / pool note icons for TODAY rows, Next session list, etc.
- * Icon-only in schedule cards; label kept in aria-label for accessibility.
+ * TODAY rows use icon + compact label stack; small contexts stay icon-only.
  */
 (function (global) {
   "use strict";
@@ -127,7 +127,7 @@
         "</svg>",
     },
     "day-center": {
-      label: "Day Center",
+      label: "Day Centre",
       cls: "session-area-note-icon--day-center",
       svg:
         '<svg class="' +
@@ -168,7 +168,7 @@
     if (s === "hub room") return "hub-room";
     if (s === "room 2" || s === "room2") return "room-2";
     if (s === "gym" || s === "fitness" || s === "fitness gym") return "gym";
-    if (s.indexOf("climbing") >= 0) return "climbing-wall";
+    if (s === "wall" || s.indexOf("climbing") >= 0) return "climbing-wall";
     if (s.indexOf("day centre") >= 0 || s.indexOf("day center") >= 0) return "day-center";
     if (s === "bespoke") return "bespoke";
     if (s === "swimming" || s === "swimming activity" || s === "aquatic activity") return "";
@@ -201,6 +201,15 @@
     return pool;
   }
 
+  var AREA_NOTE_SHORT_LABELS = {
+    "climbing-wall": "Wall",
+  };
+
+  function portalAreaNoteCaptionLabel(key, meta) {
+    if (AREA_NOTE_SHORT_LABELS[key]) return AREA_NOTE_SHORT_LABELS[key];
+    return meta && meta.label ? meta.label : "";
+  }
+
   function portalAreaNoteIconHtml(labelOrKey, opts) {
     var key = ICONS[labelOrKey] ? labelOrKey : portalNormalizeAreaNoteKey(labelOrKey);
     var meta = ICONS[key];
@@ -208,7 +217,7 @@
     opts = opts || {};
     var extraCls = opts.className ? " " + String(opts.className).trim() : "";
     var sizeCls = opts.size === "sm" ? " session-area-note-icon--sm" : "";
-    return (
+    var iconHtml =
       '<span class="session-area-note-icon ' +
       meta.cls +
       extraCls +
@@ -217,7 +226,15 @@
       escapeHtml(meta.label) +
       '">' +
       meta.svg +
-      "</span>"
+      "</span>";
+    if (!opts.showLabel) return iconHtml;
+    var caption = portalAreaNoteCaptionLabel(key, meta);
+    return (
+      '<span class="session-area-note-stack">' +
+      iconHtml +
+      '<span class="session-area-note-label" aria-hidden="true">' +
+      escapeHtml(caption) +
+      "</span></span>"
     );
   }
 

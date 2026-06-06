@@ -33,6 +33,7 @@
   <script src="/portal/portal-comms-order-payments.js?v=20260617-cfk-order-enrich"></script>
   <script src="/portal/portal-admin-settings-hub.js?v=20260617-settings-hub"></script>
   <script src="/portal/admin-onboarding.js?v=20260530-onboarding-clickdocs"></script>
+  <script src="/portal/admin-parent-notify-send.js?v=20260622-parent-notify"></script>
   <script src="/portal/admin-logs.js?v=20260601-logs-merge"></script>
   <script src="/portal/portal-roster-rows-merge.js?v=20260601-term-slot"></script>
   <script src="/portal/admin-portal-term-slot.js?v=20260602-term-slot-copy"></script>
@@ -8411,6 +8412,40 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function notifyDigitsOnly(s){
       return String(s == null ? '' : s).replace(/\D/g, '');
     }
+    /** Fill missing parent contact from Participants / Parents export when booking meta is empty. */
+    function adminParentNotifyPrefillFromDirectory(meta, slot){
+      var out = Object.assign({}, meta || {});
+      var pp = slot && typeof adminParticipantsParentsRowForClientDisplayName === 'function'
+        ? adminParticipantsParentsRowForClientDisplayName(slot.clientDisplay)
+        : null;
+      if(!pp) return out;
+      if(!String(out.parentCarerName || '').trim() && pp.parentDisplay){
+        out.parentCarerName = String(pp.parentDisplay).trim();
+      }
+      if(!String(out.parentEmail || '').trim() && pp.username){
+        out.parentEmail = String(pp.username).trim();
+      }
+      if(!String(out.parentWhatsapp || '').trim() && pp.mobile){
+        out.parentWhatsapp = notifyDigitsOnly(String(pp.mobile).trim());
+      }
+      return out;
+    }
+    function portalParentNotifyConfigureOnce(){
+      if(window.__portalParentNotifyConfigured || !window.PortalParentNotifySend) return;
+      window.__portalParentNotifyConfigured = true;
+      window.PortalParentNotifySend.configure({
+        esc: esc,
+        toast: portalAdminToast,
+        getClient: getSchedSupabaseClient,
+        getSupabaseUrl: function(){
+          var u = typeof window.SUPABASE_URL === 'string' ? window.SUPABASE_URL.trim() : '';
+          return u || 'https://cklpnwhlqsulpmkipmqb.supabase.co';
+        },
+        getAnonKey: function(){
+          return typeof window.SUPABASE_ANON_KEY === 'string' ? window.SUPABASE_ANON_KEY : '';
+        }
+      });
+    }
     function notifyParentMessagePayment(slot, ov, meta, snap){
       var client = bookingEffectiveParticipantLabel(slot, ov) || String(slot.clientDisplay || 'this participant').trim();
       var when = String(slot.whenLabel || '').trim();
@@ -8483,10 +8518,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         booking.overrides = prevOvr;
       }
       if(!pack) return;
-      var meta = pack.meta;
+      var meta = adminParentNotifyPrefillFromDirectory(pack.meta, slot);
       var subj = kind === 'instructor_change'
         ? 'Instructor update · '+String(slot.clientDisplay || '').trim()
         : 'Payment reminder · '+String(slot.clientDisplay || '').trim();
+      portalParentNotifyConfigureOnce();
       function pnMaybeSaveContact(){
         if(!$('pnSaveContact') || !$('pnSaveContact').checked) return;
         bookingSaveMetaMergeSlot(dateIso, slot.demoId, {
@@ -8498,30 +8534,49 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       openModal(
         '<div class="modal-h"><h2 id="modalTitle">Message for parent</h2></div><div class="modal-b">'+
-        '<p class="muted" style="margin-top:0;min-width:0;overflow-wrap:break-word">Compose WhatsApp or email on your device. Attach the instructor photo separately, as you do today. Nothing is sent automatically from this dashboard.</p>'+
+        '<p class="muted" style="margin-top:0;min-width:0;overflow-wrap:break-word">Send from the portal (email via Resend, WhatsApp via Business API) or open your own mail/WhatsApp app. Attach the instructor photo separately when needed. Every server send is logged for audit.</p>'+
         '<div class="grid-2" style="grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px">'+
         '<div><label class="muted" for="pnParentName">Parent / carer name</label><input id="pnParentName" class="inp" style="max-width:100%" value="'+esc(meta.parentCarerName || '')+'" /></div>'+
         '<div><label class="muted" for="pnParentEmail">Email</label><input id="pnParentEmail" class="inp" type="email" style="max-width:100%" value="'+esc(meta.parentEmail || '')+'" autocomplete="off" /></div>'+
         '<div style="grid-column:1/-1"><label class="muted" for="pnParentWa">WhatsApp (digits, incl. country code)</label><input id="pnParentWa" class="inp" style="max-width:100%" value="'+esc(meta.parentWhatsapp || '')+'" autocomplete="off" /></div>'+
         '</div>'+
+        '<fieldset style="margin:12px 0 0;padding:0;border:0;min-width:0"><legend class="muted" style="margin-bottom:6px">Send channel</legend>'+
+        '<div style="display:flex;flex-wrap:wrap;gap:12px;min-width:0">'+
+        '<label style="display:inline-flex;align-items:center;gap:6px;min-width:0"><input type="radio" name="pnChannel" id="pnChannelEmail" value="email" /> <span>Email</span></label>'+
+        '<label style="display:inline-flex;align-items:center;gap:6px;min-width:0"><input type="radio" name="pnChannel" id="pnChannelWa" value="whatsapp" /> <span>WhatsApp</span></label>'+
+        '<label style="display:inline-flex;align-items:center;gap:6px;min-width:0"><input type="radio" name="pnChannel" id="pnChannelBoth" value="both" checked /> <span>Both</span></label>'+
+        '</div></fieldset>'+
         '<label class="muted" for="pnBody" style="display:block;margin-top:12px">Message</label>'+
         '<textarea class="txa" id="pnBody" style="min-height:200px;max-width:100%">'+esc(pack.body)+'</textarea>'+
+        '<p class="muted" id="pnSendStatus" style="margin:8px 0 0;min-width:0;overflow-wrap:break-word;display:none" role="status"></p>'+
         '<label style="display:flex;align-items:center;gap:8px;margin-top:10px"><input type="checkbox" id="pnSaveContact" /> <span class="muted">Save parent contact on this booking slot ('+esc(dateIso)+')</span></label>'+
         '</div>'+
         '<div class="modal-f" style="flex-wrap:wrap;gap:8px">'+
         '<button type="button" class="btn btn--ghost" id="pnClose">Close</button>'+
-        '<button type="button" class="btn btn--sec" id="pnCopy">Copy message</button>'+
-        '<button type="button" class="btn btn--sec" id="pnMail">Open email</button>'+
-        '<button type="button" class="btn btn--pri" id="pnWa">Open WhatsApp</button>'+
+        '<button type="button" class="btn btn--sec" id="pnCopy">Copy</button>'+
+        '<button type="button" class="btn btn--sec" id="pnMail">Open email app</button>'+
+        '<button type="button" class="btn btn--sec" id="pnWa">Open WhatsApp app</button>'+
+        '<button type="button" class="btn btn--pri" id="pnSend" style="background:#15803d;border-color:#15803d">Send now</button>'+
         '</div>'
       );
+      function pnSelectedChannel(){
+        var r = document.querySelector('input[name="pnChannel"]:checked');
+        return r && r.value ? String(r.value) : 'both';
+      }
       function pnUpdateChannelButtons(){
         var em = (($('pnParentEmail') && $('pnParentEmail').value) || '').trim();
         var wa = notifyDigitsOnly(($('pnParentWa') && $('pnParentWa').value) || '');
+        var ch = pnSelectedChannel();
         var mb = $('pnMail');
         var wb = $('pnWa');
+        var sb = $('pnSend');
         if(mb) mb.disabled = !em;
         if(wb) wb.disabled = !wa;
+        if(sb){
+          var needEm = ch === 'email' || ch === 'both';
+          var needWa = ch === 'whatsapp' || ch === 'both';
+          sb.disabled = !((!needEm || em) && (!needWa || wa));
+        }
       }
       $('pnClose').onclick = function(){
         pnMaybeSaveContact();
@@ -8542,11 +8597,77 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           }
         }
       };
-      ['pnBody','pnParentEmail','pnParentWa'].forEach(function(id){
+      ['pnBody','pnParentEmail','pnParentWa','pnParentName'].forEach(function(id){
         var el = $(id);
         if(el) el.addEventListener('input', pnUpdateChannelButtons);
       });
+      document.querySelectorAll('input[name="pnChannel"]').forEach(function(el){
+        el.addEventListener('change', pnUpdateChannelButtons);
+      });
       pnUpdateChannelButtons();
+      $('pnSend').onclick = function(){
+        if(!window.PortalParentNotifySend || typeof window.PortalParentNotifySend.send !== 'function'){
+          alert('Send module not loaded — refresh the page.');
+          return;
+        }
+        var ch = pnSelectedChannel();
+        var body = (($('pnBody') && $('pnBody').value) || '').trim();
+        var em = (($('pnParentEmail') && $('pnParentEmail').value) || '').trim();
+        var wa = notifyDigitsOnly(($('pnParentWa') && $('pnParentWa').value) || '');
+        if(!body){ alert('Message is empty'); return; }
+        if((ch === 'email' || ch === 'both') && !em){ alert('Enter an email address'); return; }
+        if((ch === 'whatsapp' || ch === 'both') && !wa){ alert('Enter a WhatsApp number'); return; }
+        var btn = $('pnSend');
+        var statusEl = $('pnSendStatus');
+        if(btn){ btn.disabled = true; btn.textContent = 'Sending…'; }
+        if(statusEl){ statusEl.style.display = 'none'; statusEl.textContent = ''; }
+        var ov = pack.ov;
+        var venue = slot && (slot.venue || (ov && ov.venue)) ? String(slot.venue || ov.venue).trim() : '';
+        void window.PortalParentNotifySend.send({
+          kind: kind,
+          channel: ch,
+          parentName: (($('pnParentName') && $('pnParentName').value) || '').trim(),
+          parentEmail: em,
+          parentWhatsapp: wa,
+          subject: subj,
+          body: body,
+          clientDisplay: String(slot.clientDisplay || '').trim(),
+          sessionDate: dateIso,
+          slotId: String(slot.demoId || '').trim(),
+          venue: venue
+        }).then(function(res){
+          if(btn){ btn.disabled = false; btn.textContent = 'Send now'; }
+          pnUpdateChannelButtons();
+          if(!res || !res.ok){
+            var err = (res && res.error) ? String(res.error) : 'send_failed';
+            if(statusEl){
+              statusEl.style.display = 'block';
+              statusEl.textContent = 'Send failed: ' + err.replace(/_/g, ' ');
+            }else{
+              alert('Send failed: ' + err);
+            }
+            return;
+          }
+          pnMaybeSaveContact();
+          var msg = window.PortalParentNotifySend.formatSendResult(res.data);
+          pushCommsHistory('parent message sent', subj + ' — ' + msg);
+          if(statusEl){
+            statusEl.style.display = 'block';
+            statusEl.textContent = msg;
+          }
+          if(typeof portalAdminToast === 'function') portalAdminToast(msg, 'ok');
+          else alert(msg);
+        }).catch(function(){
+          if(btn){ btn.disabled = false; btn.textContent = 'Send now'; }
+          pnUpdateChannelButtons();
+          if(statusEl){
+            statusEl.style.display = 'block';
+            statusEl.textContent = 'Send failed — check your connection.';
+          }else{
+            alert('Send failed');
+          }
+        });
+      };
       $('pnWa').onclick = function(){
         var body = (($('pnBody') && $('pnBody').value) || '').trim();
         var wa = notifyDigitsOnly(($('pnParentWa') && $('pnParentWa').value) || '');

@@ -12,13 +12,50 @@
   height:var(--today-icon, 32px);
   display:block;
 }
+.section-card--today .session-line--symbol .session-area-note-stack{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-start;
+  gap:1px;
+  width:100%;
+  min-width:0;
+  max-width:100%;
+  margin-top:-2px;
+  padding-top:0;
+}
 .section-card--today .session-line--symbol .session-area-note-icon{
-  width:var(--today-icon, 32px);
-  height:var(--today-icon, 32px);
+  width:var(--today-area-icon, 42px);
+  height:var(--today-area-icon, 42px);
+  flex-shrink:0;
 }
 .section-card--today .session-line--symbol .session-area-note-icon .session-area-note-svg{
   width:100%;
   height:100%;
+}
+.section-card--today .session-line--symbol .session-area-note-label{
+  display:block;
+  font-size:9px;
+  font-weight:700;
+  line-height:1.1;
+  letter-spacing:.01em;
+  color:var(--muted, #64748b);
+  text-align:center;
+  max-width:100%;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.section-card--today .session-today-override-pool-note .session-area-note-stack{
+  margin-top:0;
+}
+.section-card--today .session-today-override-pool-note .session-area-note-icon{
+  width:var(--today-area-icon, 36px);
+  height:var(--today-area-icon, 36px);
+}
+.section-card--today .session-today-override-pool-note .session-area-note-label{
+  font-size:10px;
 }
 .session-area-note-icon--sm .session-area-note-svg{
   width:18px;
