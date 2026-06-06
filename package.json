@@ -7,6 +7,8 @@
     "supabase:init": "supabase init",
     "supabase:login": "supabase login",
     "supabase:link": "supabase link --project-ref cklpnwhlqsulpmkipmqb",
+    "supabase:db:push": "supabase db push",
+    "supabase:migration:list": "supabase migration list",
     "supabase:functions:list": "supabase functions list",
     "deploy:ghost": "supabase functions deploy portal-admin-ghost-start --no-verify-jwt && supabase functions deploy portal-admin-ghost-verify --no-verify-jwt",
     "deploy:parent-notify": "supabase functions deploy portal-parent-notify-send --no-verify-jwt"
