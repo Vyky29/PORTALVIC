@@ -202,25 +202,23 @@
       return { iconPx: 32, areaIconPx: 38, labelFs: 8, symbolColMax: 72 };
     }
     var rowH = portalMeasureTodaySessionRowHeight(gridEl, n);
-    var labelFs = n <= 6 ? 8 : 7;
+    var labelFs = n <= 4 ? 8 : 7;
     var areaIconPx;
     if (rowH > 0) {
-      var labelReserve = labelFs + 4;
-      var heightShare = n <= 1 ? 0.72 : n <= 3 ? 0.68 : n <= 6 ? 0.62 : 0.52;
-      areaIconPx = Math.round(rowH * heightShare - labelReserve);
+      /* Icon fills most of the row; caption stays a fixed small size via CSS. */
+      areaIconPx = Math.round(rowH * 0.74 - 10);
     } else {
-      var areaByCount = { 1: 52, 2: 48, 3: 44, 4: 40, 5: 36, 6: 34 };
-      areaIconPx = areaByCount[n] || 40;
+      var areaByCount = { 1: 80, 2: 72, 3: 62, 4: 54, 5: 46, 6: 40 };
+      areaIconPx = areaByCount[n] || 38;
     }
-    var maxCap = n <= 1 ? 54 : n <= 2 ? 52 : n <= 4 ? 48 : n <= 6 ? 44 : 38;
-    var minCap = n <= 1 ? 40 : n <= 2 ? 38 : n <= 4 ? 34 : n <= 6 ? 30 : 28;
+    var maxCap = n <= 1 ? 128 : n <= 2 ? 112 : n <= 4 ? 96 : n <= 6 ? 84 : 72;
+    var minCap = n <= 2 ? 56 : n <= 4 ? 46 : 36;
     areaIconPx = Math.min(maxCap, Math.max(minCap, areaIconPx));
-    var symbolColMax = 72;
+    var symbolColMax = Math.min(120, Math.max(68, Math.round(areaIconPx * 1.12)));
     if (n <= 6) {
-      symbolColMax = Math.min(72, Math.max(56, areaIconPx + 4));
-      areaIconPx = Math.min(maxCap, Math.max(areaIconPx, symbolColMax - 6));
+      areaIconPx = Math.min(maxCap, Math.max(areaIconPx, symbolColMax - 8));
     }
-    var iconPx = Math.max(28, Math.round(areaIconPx * 0.96));
+    var iconPx = Math.max(28, Math.round(areaIconPx * 0.92));
     return { iconPx: iconPx, areaIconPx: areaIconPx, labelFs: labelFs, symbolColMax: symbolColMax };
   }
 
