@@ -4612,7 +4612,7 @@
       const v = item && item.sessionVenue != null ? String(item.sessionVenue).trim() : '';
       return v || '—';
     }
-    /** True when pool/room note stacks under the name (centre) and the override pill/symbol occupies the right column (still 3 columns). */
+    /** True when override chip/symbol occupies the right column (area PNG hidden to avoid clutter). */
     function portalTodaySessionOverrideMovesPoolToCenter(item){
       if(!item) return false;
       if(String(item.portalOverrideAlertPill || '').trim()) return true;

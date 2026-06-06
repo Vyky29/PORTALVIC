@@ -33,7 +33,7 @@
   <script src="/portal/admin-hr.js?v=20260601-annual-profile"></script>
   <script src="/portal/admin-payments.js?v=20260531-la-column"></script>
   <script src="/portal/portal-comms-order-payments.js?v=20260617-cfk-order-enrich"></script>
-  <script src="/portal/portal-admin-settings-hub.js?v=20260617-settings-hub"></script>
+  <script src="/portal/portal-admin-settings-hub.js?v=20260606-help-unanswered"></script>
   <script src="/portal/admin-onboarding.js?v=20260530-onboarding-clickdocs"></script>
   <script src="/portal/admin-parent-notify-send.js?v=20260622-parent-notify"></script>
   <script src="/portal/admin-logs.js?v=20260601-logs-merge"></script>
@@ -18663,6 +18663,60 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(host) host.innerHTML = '<p class="submission-state is-error" style="margin:0">'+esc(String(err && err.message ? err.message : err))+'</p>';
         });
     }
+    function openPortalAdminHelpUnansweredModal(){
+      closeSidebarMob();
+      var client = getSchedSupabaseClient();
+      if(!client || !client.from){
+        alert('Sign in to Supabase as admin to view Portal help unanswered log.');
+        return;
+      }
+      openModal(
+        '<div class="modal-h"><h2 id="modalTitle">Portal help — unanswered questions</h2></div>'+
+        '<div class="modal-b" style="min-width:0">'+
+        '<p class="muted" style="margin:0 0 12px;font-size:13px;line-height:1.55;min-width:0;overflow-wrap:break-word">Staff/lead questions from <strong>Portal help</strong> with no confident FAQ match. Add new topics to <code>portal/portal_help_knowledge.json</code> when you see repeats.</p>'+
+        '<div id="portalAdminHelpUnansweredHost"><p class="muted" style="margin:0">Loading…</p></div>'+
+        '</div>'+
+        '<div class="modal-f"><button type="button" class="btn btn--ghost" id="portalAdminHelpUnansweredClose">Close</button></div>'
+      );
+      var host = $('portalAdminHelpUnansweredHost');
+      var closeFn = function(){ closeModal(); };
+      var xc = $('portalAdminHelpUnansweredClose');
+      if(xc) xc.onclick = closeFn;
+      var bd = $('modalBackdrop');
+      if(bd) bd.onclick = function(e){ if(e.target === bd) closeFn(); };
+      client.from('portal_help_unanswered_log')
+        .select('id,created_at,staff_id,staff_full_name,question_text,best_guess_id,best_score')
+        .order('created_at', { ascending: false })
+        .limit(500)
+        .then(function(res){
+          if(!host) return;
+          if(res.error){
+            host.innerHTML = '<p class="submission-state is-error" style="margin:0">Could not load: '+esc(String(res.error.message||res.error))+'</p>';
+            return;
+          }
+          var rows = Array.isArray(res.data) ? res.data : [];
+          if(!rows.length){
+            host.innerHTML = '<p class="muted" style="margin:0">No unanswered questions logged yet — staff will see matches when the bot knows the answer.</p>';
+            return;
+          }
+          var bodyRows = rows.map(function(r){
+            var who = String(r.staff_full_name || r.staff_id || '—').trim() || '—';
+            var q = String(r.question_text || '').trim() || '—';
+            var guess = String(r.best_guess_id || '').trim();
+            var score = r.best_score != null ? String(r.best_score) : '0';
+            var guessCell = guess ? esc(guess)+' <span class="muted">('+esc(score)+')</span>' : '<span class="muted">—</span>';
+            return '<tr><td style="white-space:nowrap">'+esc(portalAdminFormatAckWhen(r.created_at))+'</td><td style="min-width:0;overflow-wrap:break-word">'+esc(who)+'</td><td style="min-width:0;overflow-wrap:anywhere;max-width:280px">'+esc(q)+'</td><td style="min-width:0;overflow-wrap:break-word">'+guessCell+'</td></tr>';
+          }).join('');
+          host.innerHTML =
+            '<div class="card" style="min-width:0"><div class="card-pad" style="overflow:auto;padding:0;max-height:min(60vh,520px)">'+
+            '<table class="tbl" style="min-width:520px"><thead><tr><th>When</th><th>Staff</th><th>Question</th><th>Best guess</th></tr></thead><tbody>'+
+            bodyRows+
+            '</tbody></table></div></div>'+
+            '<p class="muted" style="margin:10px 0 0;font-size:11px;overflow-wrap:break-word">Showing up to '+esc(String(rows.length))+' most recent rows.</p>';
+        }).catch(function(err){
+          if(host) host.innerHTML = '<p class="submission-state is-error" style="margin:0">'+esc(String(err && err.message ? err.message : err))+'</p>';
+        });
+    }
     function openDayOpsAnnouncementsHubModal(){
       closeSidebarMob();
       openModal(
@@ -20843,6 +20897,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(id==='settings'){
         var guideReadBtn = $('portalAdminGuideReadLogBtn');
         if(guideReadBtn) guideReadBtn.onclick = openPortalAdminGuideReadModal;
+        var helpUnansweredBtn = $('portalAdminHelpUnansweredBtn');
+        if(helpUnansweredBtn) helpUnansweredBtn.onclick = openPortalAdminHelpUnansweredModal;
         if(!state._settingsHubRepaintOnly){
           portalAdminRefreshSettingsView();
         }

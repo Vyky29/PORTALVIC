@@ -166,6 +166,31 @@
       });
   }
 
+  function queryHelpUnanswered(client) {
+    if (!client || !client.from) return Promise.resolve({ count: null, recent: [] });
+    return client
+      .from("portal_help_unanswered_log")
+      .select(
+        "id,created_at,staff_id,staff_full_name,question_text,best_guess_id,best_score",
+      )
+      .order("created_at", { ascending: false })
+      .limit(200)
+      .then(function (res) {
+        if (res.error) {
+          return { count: null, recent: [], error: String(res.error.message || res.error) };
+        }
+        var rows = Array.isArray(res.data) ? res.data : [];
+        return { count: rows.length, recent: rows.slice(0, 5), error: "" };
+      })
+      .catch(function (err) {
+        return {
+          count: null,
+          recent: [],
+          error: String((err && err.message) || err),
+        };
+      });
+  }
+
   function loadLivePayments(getClient) {
     return new Promise(function (resolve) {
       if (typeof global.portalLoadLivePaymentsSource !== "function") {
@@ -206,7 +231,10 @@
       return Promise.all([
         queryLatePending(client),
         queryClientPaymentsCount(client),
-      ]).then(function (pair) {
+        queryHelpUnanswered(client),
+      ]).then(function (triple) {
+        var pair = [triple[0], triple[1]];
+        var helpLog = triple[2] || { count: null, recent: [], error: "" };
         var rows = payRows();
         var pay = aggregatePayments(rows);
         var exports = {
@@ -246,6 +274,7 @@
               k.sessionFeedbackRows :
               null,
           },
+          helpUnanswered: helpLog,
         };
       });
     });
@@ -336,6 +365,36 @@
     var ops = snap.ops || {};
     var ex = snap.exports || {};
     var term = snap.term || {};
+    var help = snap.helpUnanswered || {};
+    var helpCount = help.count != null ? help.count : null;
+    var helpErr = String(help.error || "").trim();
+    var helpPreview = Array.isArray(help.recent) ? help.recent : [];
+    var helpChip =
+      helpErr ?
+        '<span class="chip chip--urg">Log unavailable</span>' :
+        helpCount > 0 ?
+          '<span class="chip chip--info">' +
+            esc(String(helpCount)) +
+            " logged</span>" :
+          '<span class="chip chip--ok">None recent</span>';
+    var helpPreviewHtml = "";
+    if (!helpErr && helpPreview.length) {
+      helpPreviewHtml =
+        '<ul class="admin-settings-help-preview" style="margin:10px 0 0;padding:0 0 0 18px;min-width:0">' +
+        helpPreview
+          .slice(0, 3)
+          .map(function (row) {
+            var q = String(row.question_text || "").trim();
+            if (q.length > 72) q = q.slice(0, 69) + "…";
+            return (
+              '<li class="muted" style="margin:0 0 6px;font-size:12px;line-height:1.35;overflow-wrap:anywhere">' +
+              esc(q || "—") +
+              "</li>"
+            );
+          })
+          .join("") +
+        "</ul>";
+    }
 
     var sessChip = sess.ok ?
       '<span class="chip chip--ok">Signed in</span>' :
@@ -426,6 +485,19 @@
       '<p class="muted" style="margin:0 0 12px;max-width:42rem;overflow-wrap:break-word">How this app is organised and how it differs from the staff phone dashboard.</p>' +
       '<a class="btn btn--pri btn--sm" href="/admin_portal_guide.html" target="_blank" rel="noopener">Open admin portal guide</a> ' +
       '<button type="button" class="btn btn--sec btn--sm" id="portalAdminGuideReadLogBtn" style="margin-left:8px">Staff guide — who marked read</button></div>' +
+      '<div class="card card-pad" style="margin-bottom:14px;border-color:#c9d4f5;background:linear-gradient(180deg,#f8f9ff,#eef1fc)">' +
+      '<h3 style="margin:0 0 8px;font-size:14px">Portal help bot — unanswered</h3>' +
+      '<p class="muted" style="margin:0 0 8px;max-width:42rem;overflow-wrap:break-word">Questions staff/lead asked in <strong>Portal help</strong> that did not match the FAQ. Use this list to add topics to <code>portal_help_knowledge.json</code>.</p>' +
+      "<p style=\"margin:0\">" +
+      helpChip +
+      "</p>" +
+      (helpErr ?
+        '<p class="submission-state is-error" style="margin:8px 0 0;font-size:12px">' +
+          esc(helpErr) +
+          " — apply migration <code>20260606120000_portal_help_unanswered_log</code> on Portal Supabase if needed.</p>" :
+        "") +
+      helpPreviewHtml +
+      '<button type="button" class="btn btn--sec btn--sm" id="portalAdminHelpUnansweredBtn" style="margin-top:12px">View full log</button></div>' +
       '<div class="card card-pad" style="margin-bottom:14px;border-color:#e8d9a8;background:linear-gradient(180deg,#fffdf5,#fff8e6)">' +
       '<h3 style="margin:0 0 8px;font-size:14px">Device notifications</h3>' +
       '<p class="muted" style="margin:0 0 8px;max-width:42rem;overflow-wrap:break-word">' +
