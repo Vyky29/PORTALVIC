@@ -3647,23 +3647,32 @@
     }
 
     .section-head--today{
-      padding:5px 10px 2px;
+      padding:8px 12px 6px;
       align-items:center;
-      justify-content:flex-start;
+      justify-content:center;
+      flex-direction:row;
       gap:0;
+      text-align:center;
       border-bottom-color:rgba(23,50,71,.06);
     }
-    /* TODAY: same typography as Overview title */
+    /* TODAY / NEXT SESSION: centred band title */
     .section-card--today .section-head--today .today-section-title{
       margin:0;
       flex:0 1 auto;
       min-width:0;
+      width:100%;
+      display:flex;
+      flex-wrap:wrap;
+      align-items:baseline;
+      justify-content:center;
+      gap:0;
       font-size:13px;
       font-weight:800;
-      letter-spacing:.04em;
+      letter-spacing:.06em;
       text-transform:uppercase;
       color:var(--muted);
-      line-height:1.2;
+      line-height:1.25;
+      text-align:center;
       overflow-wrap:break-word;
       word-break:break-word;
     }
@@ -3743,13 +3752,20 @@
       max-width:100%;
       flex:0 0 auto;
     }
-    /* Today: una columna de filas; cada fila crece por igual (hasta 9); --today-* las pone JS */
+    /* Today: filas reparten el alto (1→⅓ total, 2→½+½, 3+→partes iguales); --today-* lo pone JS */
     .today-grid-rows{
       display:flex;
       flex-direction:column;
       gap:var(--today-row-gap, 6px);
-      flex:1 1 0;
+      flex:0 0 auto;
+      width:100%;
+      height:calc(100% * var(--today-rows-fill, 1));
+      max-height:100%;
       min-height:0;
+    }
+    .section-card--today .today-grid-rows > .session-card{
+      flex:1 1 0;
+      min-height:44px;
     }
     .section-card--today .session-card{
       padding:4px 10px;
@@ -3760,7 +3776,7 @@
       width:100%;
       min-width:0;
       min-height:40px;
-      flex:1 1 0;
+      flex:0 0 auto;
       display:flex;
       flex-direction:column;
       align-items:stretch;

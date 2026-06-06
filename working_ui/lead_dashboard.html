@@ -93,7 +93,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260610-pwa-black-fix" />
   <script src="/portal/portal_screenshot_guard.js?v=20260610-pwa-black-fix"></script>
   <title>clubSENsational Lead Dashboard</title>
-  <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260606-topbar-icons" />
+  <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260606-today-rows" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260606-topbar-icons" />
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260620-inbox-logo-orbit" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260601-landscape-full" />
@@ -9107,6 +9107,8 @@
     function applyTodayGridSizing(grid, count){
       if(!grid) return;
       if(!count || count < 1){
+        grid.style.removeProperty('--today-rows-fill');
+        grid.style.removeProperty('--today-session-count');
         grid.style.removeProperty('--today-time-fs');
         grid.style.removeProperty('--today-name-fs');
         grid.style.removeProperty('--today-icon');
@@ -9114,6 +9116,8 @@
         return;
       }
       const n = Math.min(9, count);
+      grid.style.setProperty('--today-rows-fill', n === 1 ? '0.333333' : '1');
+      grid.style.setProperty('--today-session-count', String(n));
       const t = (n - 1) / 8;
       const timeFs = Math.round(11 + (1 - t) * 6);
       const nameFs = Math.min(18, timeFs + 1);

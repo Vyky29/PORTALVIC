@@ -3532,17 +3532,20 @@
       font-weight:600;
       color:var(--muted);
     }
-    /* Today: una columna de filas; cada fila crece por igual (hasta 9); --today-* las pone JS */
+    /* Today: filas reparten el alto (1→⅓ total, 2→½+½, 3+→partes iguales); --today-* lo pone JS */
     .today-grid-rows{
       display:flex;
       flex-direction:column;
       gap:var(--today-row-gap, 6px);
-      flex:0 1 auto;
-      min-height:0;
+      flex:0 0 auto;
       width:100%;
+      height:calc(100% * var(--today-rows-fill, 1));
+      max-height:100%;
+      min-height:0;
     }
-    .today-grid.today-grid--fill .today-grid-rows{
+    .section-card--today .today-grid-rows > .session-card{
       flex:1 1 0;
+      min-height:44px;
     }
     .section-card--today .session-card{
       padding:4px 10px;
@@ -4082,10 +4085,6 @@
     }
     .section-card--today .session-card.session-card--day-off .session-cell--empty-msg{
       color:var(--muted);
-    }
-    .today-grid.today-grid--fill .section-card--today .session-card:not(.session-card--day-off){
-      flex:1 1 0;
-      min-height:36px;
     }
     .section-card--today .session-card.session-card--available .session-cell--client{color:#000}
 
