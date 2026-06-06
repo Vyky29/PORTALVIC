@@ -224,9 +224,9 @@
 
 /* Label tint matched to each area-note PNG accent. */
 .session-area-note-stack:has(.session-area-note-icon--big-pool),
-.session-area-note-inline:has(.session-area-note-icon--big-pool){ --area-note-accent:#6190b4; }
+.session-area-note-inline:has(.session-area-note-icon--big-pool){ --area-note-accent:#3f4a54; }
 .session-area-note-stack:has(.session-area-note-icon--small-pool),
-.session-area-note-inline:has(.session-area-note-icon--small-pool){ --area-note-accent:#698cac; }
+.session-area-note-inline:has(.session-area-note-icon--small-pool){ --area-note-accent:#1874c9; }
 .session-area-note-stack:has(.session-area-note-icon--teaching-pool),
 .session-area-note-inline:has(.session-area-note-icon--teaching-pool){ --area-note-accent:#82c0ea; }
 .session-area-note-stack:has(.session-area-note-icon--lane-se),
