@@ -48,12 +48,13 @@
   overflow:hidden;
 }
 .section-card--today .session-line--symbol .session-area-note-icon{
+  --today-note-size:min(var(--today-area-icon, 48px), 96cqh, 96cqw);
   flex:1 1 0;
   min-height:0;
-  width:auto;
-  height:auto;
-  max-width:100%;
-  max-height:min(var(--today-area-icon, 48px), 92cqh, 100%);
+  width:var(--today-note-size);
+  height:var(--today-note-size);
+  max-width:var(--today-note-size);
+  max-height:var(--today-note-size);
   aspect-ratio:1;
   align-self:center;
   flex-shrink:1;
@@ -110,9 +111,13 @@
   margin-top:0;
 }
 .section-card--today .session-today-override-pool-note .session-area-note-icon{
+  --today-note-size:min(var(--today-area-icon, 48px), 96cqh, 96cqw);
   flex:1 1 0;
   min-height:0;
-  max-height:min(var(--today-area-icon, 48px), 92cqh, 100%);
+  width:var(--today-note-size);
+  height:var(--today-note-size);
+  max-width:var(--today-note-size);
+  max-height:var(--today-note-size);
   aspect-ratio:1;
 }
 .section-card--today .session-today-override-pool-note .session-area-note-label{
