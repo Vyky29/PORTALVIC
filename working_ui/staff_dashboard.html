@@ -93,7 +93,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260606-screenshot-ceo" />
   <script src="/portal/portal_screenshot_guard.js?v=20260606-screenshot-ceo"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260622-next-session-tap" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260622-next-chips-large" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260606-topbar-icons" />
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260620-inbox-logo-orbit" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
@@ -9855,11 +9855,17 @@
       else if(n <= 4) cols = 2;
       else if(n <= 9) cols = 3;
       else cols = 4;
-      let avatar = 42;
-      if(n >= 7) avatar = 38;
-      if(n >= 10) avatar = 34;
-      if(n >= 13) avatar = 30;
-      return { cols: cols, avatar: avatar };
+      let avatar = 64;
+      if(n === 1) avatar = 84;
+      else if(n === 2) avatar = 76;
+      else if(n <= 4) avatar = 68;
+      else if(n <= 6) avatar = 66;
+      else if(n <= 9) avatar = 72;
+      else if(n <= 12) avatar = 50;
+      else avatar = 44;
+      const gapX = n >= 7 ? 5 : 8;
+      const gapY = n >= 7 ? 4 : 6;
+      return { cols: cols, avatar: avatar, gapX: gapX, gapY: gapY };
     }
     function portalTodayDayOffPanelHtml(opts){
       opts = opts || {};
@@ -9887,7 +9893,7 @@
         html += '<span class="today-day-panel__next-date">' + escapeHtml(preview.weekday || '') + ' · ' + escapeHtml(preview.dateLabel || '') + '</span></div>';
         html += '</button>';
         if(chips.length){
-          html += '<div class="today-day-panel__chips" style="--today-next-chip-cols:' + gridVars.cols + ';--today-next-avatar:' + gridVars.avatar + 'px" role="list">';
+          html += '<div class="today-day-panel__chips" style="--today-next-chip-cols:' + gridVars.cols + ';--today-next-avatar:' + gridVars.avatar + 'px;--today-next-chip-gap-x:' + gridVars.gapX + 'px;--today-next-chip-gap-y:' + gridVars.gapY + 'px" data-chip-count="' + chips.length + '" role="list">';
           chips.forEach(function(p){
             const rawName = String(p.name || '—').trim();
             const name = escapeHtml(rawName);

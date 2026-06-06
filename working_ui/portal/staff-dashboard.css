@@ -3543,7 +3543,23 @@
       padding:28px 16px 24px;
     }
     .today-day-panel--has-next .today-day-panel__off{
-      padding-bottom:10px;
+      padding:8px 12px 6px;
+      gap:10px;
+    }
+    .today-day-panel--has-next .today-day-panel__off-icon{
+      width:32px;
+      height:32px;
+      border-radius:10px;
+    }
+    .today-day-panel--has-next .today-day-panel__off-icon svg{
+      width:18px;
+      height:18px;
+    }
+    .today-day-panel--has-next .today-day-panel__off-title{
+      font-size:14px;
+    }
+    .today-day-panel--has-next .today-day-panel__off-sub{
+      font-size:11px;
     }
     .today-day-panel__off-icon{
       width:40px;
@@ -3584,9 +3600,9 @@
       flex:1 1 auto;
       display:flex;
       flex-direction:column;
-      gap:10px;
+      gap:8px;
       margin:0;
-      padding:12px 12px 14px;
+      padding:10px 10px 12px;
       border:0;
       border-top:1px solid rgba(23,50,71,.08);
       background:linear-gradient(180deg,#f4f9fd 0%,#eef5fb 100%);
@@ -3642,11 +3658,19 @@
     .today-day-panel__chips{
       display:grid;
       grid-template-columns:repeat(var(--today-next-chip-cols, 3), minmax(0, 1fr));
-      gap:8px 4px;
+      gap:var(--today-next-chip-gap-y, 6px) var(--today-next-chip-gap-x, 6px);
       align-items:start;
       justify-items:center;
+      align-content:space-evenly;
       width:100%;
       min-width:0;
+      flex:1 1 auto;
+      min-height:0;
+    }
+    .today-day-panel__chips[data-chip-count="7"],
+    .today-day-panel__chips[data-chip-count="8"],
+    .today-day-panel__chips[data-chip-count="9"]{
+      align-content:space-evenly;
     }
     .today-participant-chip{
       display:flex;
@@ -3673,8 +3697,10 @@
     }
     .today-participant-chip__avatar-wrap{
       position:relative;
-      width:var(--today-next-avatar, 40px);
-      height:var(--today-next-avatar, 40px);
+      width:min(var(--today-next-avatar, 56px), 94%);
+      max-width:100%;
+      aspect-ratio:1;
+      height:auto;
       flex-shrink:0;
     }
     .today-participant-chip__avatar{
@@ -3726,16 +3752,22 @@
       flex-shrink:0;
     }
     .today-participant-chip__name{
-      font-size:10px;
+      font-size:11px;
       font-weight:700;
       color:var(--ink);
       text-align:center;
-      line-height:1.12;
+      line-height:1.15;
       width:100%;
       min-width:0;
       overflow:hidden;
       text-overflow:ellipsis;
       white-space:nowrap;
+    }
+    .today-day-panel__chips[data-chip-count="7"] .today-participant-chip__name,
+    .today-day-panel__chips[data-chip-count="8"] .today-participant-chip__name,
+    .today-day-panel__chips[data-chip-count="9"] .today-participant-chip__name{
+      font-size:10px;
+      line-height:1.1;
     }
     .today-day-panel__meta{
       margin:0;
