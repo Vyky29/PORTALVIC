@@ -1,13 +1,14 @@
 /**
  * Mobile portal screenshot deterrence (best-effort in browser/PWA).
- * Black overlay only while the app is in the background (app switcher / task switch).
- * Never block touches while the page is visible — fixes PWA stuck black screen.
+ * White overlay + club logo while the app is in the background (app switcher).
+ * Never block touches while the page is visible — fixes PWA stuck overlay.
  */
 (function (global) {
   "use strict";
 
   var GUARD_ID = "portalScreenshotGuard";
-  var WATERMARK_ID = "portalScreenshotGuardWatermark";
+  var LOGO_SRC = "/portal/F-02-1.png";
+  var LOGO_FALLBACK = "/portal/portal_crest.svg";
   var armed = false;
   var bound = false;
   var rolePolicyBound = false;
@@ -61,12 +62,24 @@
     el.id = GUARD_ID;
     el.setAttribute("aria-hidden", "true");
     el.setAttribute("role", "presentation");
+    var img = document.createElement("img");
+    img.className = "portal-screenshot-guard-logo";
+    img.src = LOGO_SRC;
+    img.alt = "";
+    img.decoding = "async";
+    img.draggable = false;
+    img.setAttribute("aria-hidden", "true");
+    img.onerror = function () {
+      this.onerror = null;
+      this.src = LOGO_FALLBACK;
+    };
+    el.appendChild(img);
     var root = document.body || document.documentElement;
     root.appendChild(el);
     el.addEventListener(
       "click",
       function () {
-        if (isPageVisible()) hideBlackForce();
+        if (isPageVisible()) hideMaskForce();
       },
       true
     );
@@ -79,13 +92,19 @@
     } catch (_e) {}
   }
 
+  function setForegroundMask(on) {
+    try {
+      document.documentElement.classList.toggle("portal-screenshot-foreground-mask", !!on);
+    } catch (_e2) {}
+  }
+
   function syncPageHiddenClass() {
     try {
       document.documentElement.classList.toggle("portal-screenshot-page-hidden", !!document.hidden);
-    } catch (_e) {}
+    } catch (_e3) {}
   }
 
-  function showBlack(opts) {
+  function showMask(opts) {
     if (!armed || isMediaCaptureActive()) return;
     opts = opts || {};
     global.clearTimeout(lingerTimer);
@@ -97,40 +116,38 @@
     var el = ensureEl();
     el.classList.add("is-active");
     setSensitiveHidden(true);
-    if (document.documentElement.classList.contains("portal-screenshot-guard-workers")) {
-      ensureWatermark();
-    }
+    if (opts.allowForegroundLinger) setForegroundMask(true);
     if (opts.persist) return;
     var ms = opts.lingerMs != null ? opts.lingerMs : isStrict() ? STRICT_LINGER_MS : DEFAULT_LINGER_MS;
     lingerTimer = global.setTimeout(function () {
       if (document.hidden) return;
-      hideBlackForce();
+      hideMaskForce();
     }, ms);
   }
 
-  function hideBlack() {
-    hideBlackForce();
+  function hideMask() {
+    hideMaskForce();
   }
 
-  function hideBlackForce() {
+  function hideMaskForce() {
     global.clearTimeout(lingerTimer);
+    setForegroundMask(false);
     var el = document.getElementById(GUARD_ID);
     if (el) el.classList.remove("is-active");
     if (isPageVisible() && !isMediaCaptureActive()) {
       setSensitiveHidden(false);
-      if (!workerWatermarkShouldPersist()) removeWatermark();
     }
   }
 
   function onPageVisible() {
     syncPageHiddenClass();
-    hideBlackForce();
+    hideMaskForce();
   }
 
   function onPageHidden() {
     syncPageHiddenClass();
     if (!armed || isMediaCaptureActive()) return;
-    showBlack({ persist: true });
+    showMask({ persist: true });
   }
 
   function startWatchdog() {
@@ -138,7 +155,7 @@
     watchdogTimer = global.setInterval(function () {
       if (!armed || !isPageVisible() || isMediaCaptureActive()) return;
       var el = document.getElementById(GUARD_ID);
-      if (el && el.classList.contains("is-active")) hideBlackForce();
+      if (el && el.classList.contains("is-active")) hideMaskForce();
     }, 2500);
   }
 
@@ -151,7 +168,7 @@
       function () {
         if (!armed) return;
         if (isMediaCaptureActive()) {
-          hideBlackForce();
+          hideMaskForce();
           return;
         }
         if (document.hidden) onPageHidden();
@@ -173,9 +190,9 @@
       "keyup",
       function (e) {
         if (!armed) return;
-        if (e.key === "PrintScreen") showBlack({ lingerMs: 4500, allowForegroundLinger: true });
+        if (e.key === "PrintScreen") showMask({ lingerMs: 4500, allowForegroundLinger: true });
         if (e.ctrlKey && e.shiftKey && (e.key === "s" || e.key === "S")) {
-          showBlack({ lingerMs: 4500, allowForegroundLinger: true });
+          showMask({ lingerMs: 4500, allowForegroundLinger: true });
         }
       },
       true
@@ -211,11 +228,11 @@
     armed = true;
     try {
       document.documentElement.classList.add("portal-screenshot-guard-armed");
-    } catch (_e2) {}
+    } catch (_e4) {}
     ensureEl();
     bindEvents();
     syncPageHiddenClass();
-    if (isPageVisible()) hideBlackForce();
+    if (isPageVisible()) hideMaskForce();
     return true;
   }
 
@@ -223,32 +240,32 @@
     armed = false;
     try {
       document.documentElement.classList.remove("portal-screenshot-guard-armed");
-    } catch (_e3) {}
-    hideBlackForce();
+    } catch (_e5) {}
+    hideMaskForce();
   }
 
   function pushStrict(token) {
     var key = String(token || "default");
     strictTokens[key] = 1;
-    if (armed && document.hidden && !isMediaCaptureActive()) showBlack({ persist: true });
+    if (armed && document.hidden && !isMediaCaptureActive()) showMask({ persist: true });
   }
 
   function popStrict(token) {
     var key = String(token || "default");
     delete strictTokens[key];
-    if (isPageVisible() && !isMediaCaptureActive()) hideBlackForce();
+    if (isPageVisible() && !isMediaCaptureActive()) hideMaskForce();
   }
 
   function pushMediaCaptureBypass(token) {
     var key = String(token || "default");
     mediaCaptureTokens[key] = 1;
-    hideBlackForce();
+    hideMaskForce();
   }
 
   function popMediaCaptureBypass(token) {
     var key = String(token || "default");
     delete mediaCaptureTokens[key];
-    if (isPageVisible() && !document.hidden) hideBlackForce();
+    if (isPageVisible() && !document.hidden) hideMaskForce();
   }
 
   function isWorkerDashboardPage() {
@@ -257,7 +274,7 @@
       if (mode === "workers") return true;
       var path = String((global.location && global.location.pathname) || "").toLowerCase();
       return /staff_dashboard\.html/.test(path) || /lead_dashboard\.html/.test(path);
-    } catch (_e) {
+    } catch (_e6) {
       return false;
     }
   }
@@ -267,80 +284,12 @@
       var box = global.window.__PORTAL_SUPABASE__;
       var profile = box && box.staff_profile;
       if (profile && profile.app_role) return String(profile.app_role).toLowerCase();
-    } catch (_e) {}
+    } catch (_e7) {}
     return "";
   }
 
   function portalScreenshotGuardCaptureAllowed() {
     return portalScreenshotGuardResolveAppRole() === "ceo";
-  }
-
-  function workerWatermarkShouldPersist() {
-    return (
-      isWorkerDashboardPage() &&
-      !portalScreenshotGuardCaptureAllowed() &&
-      isMobilePortalDevice()
-    );
-  }
-
-  function removeWatermark() {
-    var el = document.getElementById(WATERMARK_ID);
-    if (el) el.remove();
-  }
-
-  function watermarkPhrases() {
-    var phrases = ["Confidential", "Do not screenshot", "Safeguarding"];
-    try {
-      var box = global.window.__PORTAL_SUPABASE__;
-      var profile = box && box.staff_profile;
-      var who =
-        (profile && (profile.full_name || profile.username || profile.display_name)) || "";
-      who = String(who).trim();
-      if (who) {
-        var short = who.split(/\s+/).slice(0, 2).join(" ");
-        if (short) phrases = [short, "Confidential", "Do not screenshot", "Safeguarding"];
-      }
-    } catch (_e) {}
-    return phrases;
-  }
-
-  function ensureWatermark() {
-    if (!isWorkerDashboardPage() || portalScreenshotGuardCaptureAllowed()) {
-      removeWatermark();
-      try {
-        document.documentElement.classList.add("portal-screenshot-ceo");
-      } catch (_e0) {}
-      return;
-    }
-    try {
-      document.documentElement.classList.remove("portal-screenshot-ceo");
-    } catch (_e1) {}
-    var root = document.getElementById(WATERMARK_ID);
-    if (!root) {
-      root = document.createElement("div");
-      root.id = WATERMARK_ID;
-      root.setAttribute("aria-hidden", "true");
-      (document.body || document.documentElement).appendChild(root);
-    }
-    if (root.childElementCount) return;
-    var phrases = watermarkPhrases();
-    var row;
-    var col;
-    for (row = 0; row < 9; row++) {
-      for (col = 0; col < 3; col++) {
-        var span = document.createElement("span");
-        span.textContent = phrases[(row + col) % phrases.length];
-        span.style.left = col * 34 - 6 + "%";
-        span.style.top = row * 13 + 2 + "%";
-        root.appendChild(span);
-      }
-    }
-  }
-
-  function refreshWorkerWatermarkIdentity() {
-    if (!workerWatermarkShouldPersist()) return;
-    removeWatermark();
-    ensureWatermark();
   }
 
   function bindWorkerSafeguardEvents() {
@@ -351,7 +300,7 @@
       function () {
         if (!armed || portalScreenshotGuardCaptureAllowed()) return;
         if (isMediaCaptureActive()) return;
-        showBlack({ lingerMs: 2800, allowForegroundLinger: true });
+        showMask({ lingerMs: 2800, allowForegroundLinger: true });
       },
       true
     );
@@ -361,7 +310,6 @@
     if (rolePolicyBound) return;
     rolePolicyBound = true;
     global.addEventListener("portal:supabase-ready", syncRolePolicy, true);
-    global.addEventListener("portal:supabase-ready", refreshWorkerWatermarkIdentity, true);
   }
 
   function syncRolePolicy() {
@@ -370,16 +318,14 @@
       if (portalScreenshotGuardCaptureAllowed()) {
         popStrict("safeguarding-workers");
         document.documentElement.classList.remove("portal-screenshot-guard-workers");
-        removeWatermark();
         disarm();
         return;
       }
       document.documentElement.classList.add("portal-screenshot-guard-workers");
       arm({ mobileOnly: false });
-      ensureWatermark();
       pushStrict("safeguarding-workers");
       bindWorkerSafeguardEvents();
-    } catch (_e5) {}
+    } catch (_e8) {}
   }
 
   function autoArmFromDocument() {
@@ -396,7 +342,7 @@
         return;
       }
       arm({ mobileOnly: true });
-    } catch (_e4) {}
+    } catch (_e9) {}
   }
 
   global.PortalScreenshotGuard = {
@@ -406,9 +352,9 @@
     popStrict: popStrict,
     pushMediaCaptureBypass: pushMediaCaptureBypass,
     popMediaCaptureBypass: popMediaCaptureBypass,
-    showBlack: showBlack,
-    hideBlack: hideBlack,
-    hideBlackForce: hideBlackForce,
+    showBlack: showMask,
+    hideBlack: hideMask,
+    hideBlackForce: hideMaskForce,
     isMobilePortalDevice: isMobilePortalDevice,
     syncRolePolicy: syncRolePolicy,
     portalScreenshotGuardCaptureAllowed: portalScreenshotGuardCaptureAllowed,

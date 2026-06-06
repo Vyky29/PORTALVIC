@@ -2,20 +2,44 @@
   position: fixed;
   inset: 0;
   z-index: 2147483646;
-  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
   opacity: 0;
   pointer-events: none;
   transition: none;
   touch-action: none;
 }
 
+#portalScreenshotGuard .portal-screenshot-guard-logo {
+  width: min(52vw, 220px);
+  max-width: 78%;
+  height: auto;
+  object-fit: contain;
+  -webkit-user-drag: none;
+  user-drag: none;
+  pointer-events: none;
+}
+
 #portalScreenshotGuard.is-active {
   opacity: 1;
-  /* Block touches only while the app is in the background; foreground recovery via JS watchdog. */
   pointer-events: auto;
 }
 
-html:not(.portal-screenshot-page-hidden) #portalScreenshotGuard.is-active {
+/* App switcher / background: white + logo only. */
+html.portal-screenshot-page-hidden #portalScreenshotGuard.is-active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Brief foreground flash on desktop capture shortcuts / blur. */
+html.portal-screenshot-foreground-mask #portalScreenshotGuard.is-active {
+  opacity: 1;
+  pointer-events: none;
+}
+
+html:not(.portal-screenshot-page-hidden):not(.portal-screenshot-foreground-mask) #portalScreenshotGuard.is-active {
   pointer-events: none;
   opacity: 0;
 }
@@ -51,43 +75,6 @@ body.portal-achievements-camera-open .portal-achievements-camera-fs__viewport vi
   pointer-events: auto;
 }
 
-/* Staff / lead safeguarding watermark. CEOs exempt via .portal-screenshot-ceo (JS). */
-html.portal-screenshot-guard-workers #portalScreenshotGuardWatermark {
-  position: fixed;
-  inset: 0;
-  z-index: 2147483640;
-  pointer-events: none;
-  overflow: hidden;
-  opacity: 0;
-  visibility: hidden;
-}
-html.portal-screenshot-guard-workers #portalScreenshotGuardWatermark span {
-  position: absolute;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink, #173247);
-  transform: rotate(-24deg);
-  white-space: nowrap;
-  max-width: none;
-}
-/* Desktop staff: watermark only while masking (app switch / capture attempt). */
-html.portal-screenshot-sensitive-hidden.portal-screenshot-guard-workers:not(.portal-screenshot-ceo) #portalScreenshotGuardWatermark {
-  opacity: 0.12;
-  visibility: visible;
-}
-/* Mobile / PWA staff: always-on subtle watermark — iOS cannot block hardware screenshots. */
-@media (max-width: 768px), (display-mode: standalone) {
-  html.portal-screenshot-guard-workers.portal-screenshot-guard-armed:not(.portal-screenshot-ceo) #portalScreenshotGuardWatermark {
-    opacity: 0.08;
-    visibility: visible;
-  }
-  html.portal-screenshot-sensitive-hidden.portal-screenshot-guard-workers:not(.portal-screenshot-ceo) #portalScreenshotGuardWatermark {
-    opacity: 0.14;
-    visibility: visible;
-  }
-}
 html.portal-screenshot-guard-workers.portal-screenshot-guard-armed #app,
 html.portal-screenshot-guard-workers.portal-screenshot-guard-armed .app {
   -webkit-touch-callout: none;
