@@ -3745,6 +3745,23 @@
     .section-card--today .today-grid:has(.today-grid-rows){
       overflow-y:hidden;
     }
+    .section-card--today .today-grid.today-grid--session-scroll{
+      overflow-y:auto;
+      -webkit-overflow-scrolling:touch;
+      overscroll-behavior:contain;
+      scrollbar-width:thin;
+      scrollbar-color:rgba(45,132,179,.35) transparent;
+    }
+    .section-card--today .today-grid.today-grid--session-scroll .today-grid-rows{
+      height:auto;
+      flex:0 0 auto;
+      max-height:none;
+    }
+    .section-card--today .today-grid.today-grid--session-scroll .today-grid-rows > .session-card{
+      flex:0 0 auto;
+      min-height:54px;
+      max-height:none;
+    }
     .today-grid{
       padding:12px 14px 16px;
     }
