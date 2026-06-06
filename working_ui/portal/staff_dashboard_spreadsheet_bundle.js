@@ -178,7 +178,7 @@
     "michelle": {
       "staffId": "michelle",
       "staffName": "Michelle",
-      "avatarFile": "portal/staff_photos/michelle.jpg",
+      "avatarFile": "portal/staff_photos/michelle.png",
       "staffRoleTrack": "support",
       "canViewAll": false
     },
