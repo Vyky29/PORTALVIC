@@ -244,4 +244,4 @@
 .session-area-note-stack:has(.session-area-note-icon--day-center),
 .session-area-note-inline:has(.session-area-note-icon--day-center){ --area-note-accent:#eabd7f; }
 .session-area-note-stack:has(.session-area-note-icon--bespoke),
-.session-area-note-inline:has(.session-area-note-icon--bespoke){ --area-note-accent:#a992a7; }
+.session-area-note-inline:has(.session-area-note-icon--bespoke){ --area-note-accent:#ec6644; }
