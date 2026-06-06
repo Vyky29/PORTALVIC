@@ -92,10 +92,6 @@
   flex:0 0 auto;
   opacity:.92;
 }
-.session-area-note-icon--big-pool,
-.session-area-note-icon--big-pool .session-area-note-svg{
-  color:#1a1a1e;
-}
 .session-area-note-icon--small-pool,
 .session-area-note-icon--small-pool .session-area-note-svg{
   color:#0ea5e9;

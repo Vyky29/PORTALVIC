@@ -1,12 +1,12 @@
 /**
  * Area / pool note icons for TODAY rows, Next session list, etc.
- * Pool size icons are crisp SVG; other areas use PNG from mockup crops.
+ * PNG crops from approved mockup (portal/area-note-icons/).
  */
 (function (global) {
   "use strict";
 
   var ICON_IMG_BASE = "/portal/area-note-icons/";
-  var ICON_IMG_VER = "20260622-pool-svg";
+  var ICON_IMG_VER = "20260606-big-pool-mockup";
   var IMG_CLASS = "session-area-note-img";
   var SVG_CLASS = "session-area-note-svg";
 
@@ -24,17 +24,7 @@
     '" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" fill="none">';
 
   var ICONS = {
-    "big-pool": {
-      label: "Big Pool",
-      cls: "session-area-note-icon--big-pool",
-      svg:
-        SVG_HEAD +
-        '<rect x="2.5" y="7.5" width="19" height="11" rx="2" stroke="currentColor" stroke-width="1.85"/>' +
-        '<path d="M5 13.2c2.4-1.1 4.8-1.1 7.2 0s4.8 1.1 7.2 0" stroke="currentColor" stroke-width="1.55" stroke-linecap="round"/>' +
-        '<circle cx="18.8" cy="10.5" r="1.15" fill="currentColor"/>' +
-        '<circle cx="18.8" cy="15" r="1.15" fill="currentColor"/>' +
-        "</svg>",
-    },
+    "big-pool": { label: "Big Pool", cls: "session-area-note-icon--big-pool" },
     "small-pool": {
       label: "Small Pool",
       cls: "session-area-note-icon--small-pool",
