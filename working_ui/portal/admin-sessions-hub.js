@@ -253,7 +253,11 @@
     if (fbDone) {
       return '<span class="ash-status ash-status--done">Feedback submitted</span>';
     }
-    return '<span class="ash-status ash-status--wait">Awaiting feedback</span>';
+    return (
+      '<span class="ash-status ash-status--wait" title="No matching row in session feedback export for this date, participant, and instructor">' +
+      '<span class="ash-status__wide">Awaiting feedback</span>' +
+      '<span class="ash-status__compact">Awaiting</span></span>'
+    );
   }
 
   /** Overview roster table: awaiting feedback first, then submitted, then absent. */
