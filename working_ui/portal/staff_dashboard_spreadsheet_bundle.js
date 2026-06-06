@@ -337,7 +337,7 @@
     "instructors": "JOHN, GODSWAY, BISMARK",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.15 to 6.15",
+    "time_slot": "4.30 to 6",
     "venue": "SwimFarm",
     "session_date": "2026-05-13"
   },
@@ -647,7 +647,7 @@
     "instructors": "BISMARK, GIUSEPPE, JOHN",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.15 to 6.15",
+    "time_slot": "4.30 to 6",
     "venue": "SwimFarm",
     "session_date": "2026-05-15"
   },
@@ -1327,7 +1327,7 @@
     "instructors": "BISMARK, GIUSEPPE, JOHN",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.15 to 6.15",
+    "time_slot": "4.30 to 6",
     "venue": "SwimFarm",
     "session_date": "2026-05-18"
   },
@@ -1767,7 +1767,7 @@
     "instructors": "JOHN, GODSWAY, BISMARK",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.15 to 6.15",
+    "time_slot": "4.30 to 6",
     "venue": "SwimFarm",
     "session_date": "2026-05-20"
   },
@@ -2077,7 +2077,7 @@
     "instructors": "BISMARK, GIUSEPPE, JOHN",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.15 to 6.15",
+    "time_slot": "4.30 to 6",
     "venue": "SwimFarm",
     "session_date": "2026-05-22"
   },
@@ -2197,7 +2197,7 @@
     "instructors": "BISMARK, GIUSEPPE, JOHN",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.15 to 6.15",
+    "time_slot": "4.30 to 6",
     "venue": "SwimFarm",
     "session_date": "2026-06-01"
   },
@@ -2657,7 +2657,7 @@
     "instructors": "JOHN, GODSWAY, BISMARK",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.15 to 6.15",
+    "time_slot": "4.30 to 6",
     "venue": "SwimFarm",
     "session_date": "2026-06-03"
   },
@@ -2997,7 +2997,7 @@
     "instructors": "BISMARK, GIUSEPPE, JOHN",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.15 to 6.15",
+    "time_slot": "4.30 to 6",
     "venue": "SwimFarm",
     "session_date": "2026-06-05"
   },
@@ -3727,7 +3727,7 @@
     "instructors": "BISMARK, GIUSEPPE, JOHN",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.15 to 6.15",
+    "time_slot": "4.30 to 6",
     "venue": "SwimFarm",
     "session_date": "2026-06-08"
   },
@@ -4187,7 +4187,7 @@
     "instructors": "JOHN, GODSWAY, BISMARK",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.15 to 6.15",
+    "time_slot": "4.30 to 6",
     "venue": "SwimFarm",
     "session_date": "2026-06-10"
   },
@@ -4527,7 +4527,7 @@
     "instructors": "BISMARK, GIUSEPPE, JOHN",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.15 to 6.15",
+    "time_slot": "4.30 to 6",
     "venue": "SwimFarm",
     "session_date": "2026-06-12"
   },
@@ -5257,7 +5257,7 @@
     "instructors": "BISMARK, GIUSEPPE, JOHN",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.15 to 6.15",
+    "time_slot": "4.30 to 6",
     "venue": "SwimFarm",
     "session_date": "2026-06-15"
   },
@@ -5717,7 +5717,7 @@
     "instructors": "JOHN, GODSWAY, BISMARK",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.15 to 6.15",
+    "time_slot": "4.30 to 6",
     "venue": "SwimFarm",
     "session_date": "2026-06-17"
   },
@@ -6057,7 +6057,7 @@
     "instructors": "BISMARK, GIUSEPPE, JOHN",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.15 to 6.15",
+    "time_slot": "4.30 to 6",
     "venue": "SwimFarm",
     "session_date": "2026-06-19"
   },
@@ -6787,7 +6787,7 @@
     "instructors": "BISMARK, GIUSEPPE, JOHN",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.15 to 6.15",
+    "time_slot": "4.30 to 6",
     "venue": "SwimFarm",
     "session_date": "2026-06-22"
   },
@@ -7247,7 +7247,7 @@
     "instructors": "JOHN, GODSWAY, BISMARK",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.15 to 6.15",
+    "time_slot": "4.30 to 6",
     "venue": "SwimFarm",
     "session_date": "2026-06-24"
   },
@@ -7587,7 +7587,7 @@
     "instructors": "BISMARK, GIUSEPPE, JOHN",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.15 to 6.15",
+    "time_slot": "4.30 to 6",
     "venue": "SwimFarm",
     "session_date": "2026-06-26"
   },
@@ -8317,7 +8317,7 @@
     "instructors": "BISMARK, GIUSEPPE, JOHN",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.15 to 6.15",
+    "time_slot": "4.30 to 6",
     "venue": "SwimFarm",
     "session_date": "2026-06-29"
   },
@@ -8777,7 +8777,7 @@
     "instructors": "JOHN, GODSWAY, BISMARK",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.15 to 6.15",
+    "time_slot": "4.30 to 6",
     "venue": "SwimFarm",
     "session_date": "2026-07-01"
   },
@@ -9117,7 +9117,7 @@
     "instructors": "BISMARK, GIUSEPPE, JOHN",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.15 to 6.15",
+    "time_slot": "4.30 to 6",
     "venue": "SwimFarm",
     "session_date": "2026-07-03"
   },
@@ -9847,7 +9847,7 @@
     "instructors": "BISMARK, GIUSEPPE, JOHN",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.15 to 6.15",
+    "time_slot": "4.30 to 6",
     "venue": "SwimFarm",
     "session_date": "2026-07-06"
   },
@@ -10307,7 +10307,7 @@
     "instructors": "JOHN, GODSWAY, BISMARK",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.15 to 6.15",
+    "time_slot": "4.30 to 6",
     "venue": "SwimFarm",
     "session_date": "2026-07-08"
   },
@@ -10647,7 +10647,7 @@
     "instructors": "BISMARK, GIUSEPPE, JOHN",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.15 to 6.15",
+    "time_slot": "4.30 to 6",
     "venue": "SwimFarm",
     "session_date": "2026-07-10"
   },
@@ -11377,7 +11377,7 @@
     "instructors": "BISMARK, GIUSEPPE, JOHN",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.15 to 6.15",
+    "time_slot": "4.30 to 6",
     "venue": "SwimFarm",
     "session_date": "2026-07-13"
   },
@@ -11837,7 +11837,7 @@
     "instructors": "JOHN, GODSWAY, BISMARK",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.15 to 6.15",
+    "time_slot": "4.30 to 6",
     "venue": "SwimFarm",
     "session_date": "2026-07-15"
   },
@@ -12177,7 +12177,7 @@
     "instructors": "BISMARK, GIUSEPPE, JOHN",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.15 to 6.15",
+    "time_slot": "4.30 to 6",
     "venue": "SwimFarm",
     "session_date": "2026-07-17"
   },
@@ -12242,7 +12242,7 @@
     "instructors": "BISMARK, GIUSEPPE, JOHN",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.15 to 6.15",
+    "time_slot": "4.30 to 6",
     "venue": "SwimFarm"
   },
   {
@@ -12350,7 +12350,7 @@
     "instructors": "BISMARK, GIUSEPPE, JOHN",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.15 to 6.15",
+    "time_slot": "4.30 to 6",
     "venue": "SwimFarm"
   },
   {
@@ -13601,7 +13601,7 @@
     "instructors": "JOHN, GODSWAY, BISMARK",
     "service": "Bespoke Programme",
     "area": "Hub Room",
-    "time_slot": "4.15 to 6.15",
+    "time_slot": "4.30 to 6",
     "venue": "SwimFarm"
   },
   {

@@ -93,8 +93,8 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260610-pwa-black-fix" />
   <script src="/portal/portal_screenshot_guard.js?v=20260610-pwa-black-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260605-day-off-red" />
-  <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260605-topbar-align" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260606-topbar-fine" />
+  <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260606-topbar-fine" />
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260620-inbox-logo-orbit" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260601-landscape-full" />
 </head>
@@ -1657,7 +1657,7 @@
       let changed = false;
       try{
         const sid = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
-        const resetV = '20260602-youssef-term-jun1';
+        const resetV = '20260606-john-tinashe-jun1';
         if(sid && typeof portalClearCatchUpExportReviewFlags === 'function'){
           let prev = '';
           try{ prev = localStorage.getItem('portalCatchUpReviewReset_v1') || ''; }catch(_){}

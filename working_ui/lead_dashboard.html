@@ -93,8 +93,8 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260610-pwa-black-fix" />
   <script src="/portal/portal_screenshot_guard.js?v=20260610-pwa-black-fix"></script>
   <title>clubSENsational Lead Dashboard</title>
-  <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260605-mockup-compact" />
-  <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260605-topbar-align" />
+  <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260606-topbar-fine" />
+  <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260606-topbar-fine" />
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260620-inbox-logo-orbit" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260601-landscape-full" />
 </head>
@@ -1169,7 +1169,7 @@
         localStorage.setItem(PORTAL_SESSION_REVIEW_MAP_STORAGE, JSON.stringify(sessionReviewMapMemory));
       }catch(e){}
     }
-    /** `portal_session_key` for client sessions on the current view weekday (same key for every co-instructor on that slot). */
+    /** `portal_session_key` values for term-to-date (co-instructor shared feedback RPC). */
     function portalCollectRosterSessionKeysForReviewSync(){
       const keys = new Set();
       try{
@@ -1181,31 +1181,54 @@
           const sk = String(it.sessionKey || '').trim();
           if(sk) keys.add(sk);
         }
-        const viewDay = String(typeof DEMO_VIEW_DAY !== 'undefined' ? DEMO_VIEW_DAY : '').trim();
         const staffId = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
-        if(viewDay && staffId && Array.isArray(sessionsModel)){
+        if(!staffId || !Array.isArray(sessionsModel)) return [...keys].slice(0, 400);
+        const baseReal = typeof window.__portalIsRealClientSession === 'function' ? window.__portalIsRealClientSession : null;
+        const isReal = function(s, iso){
+          if(baseReal) return baseReal(s, iso);
+          const st = String(s.status || '').toLowerCase();
+          if(st === 'closed' || st === 'available') return false;
+          const cid = String(s.clientId || '').toLowerCase();
+          return Boolean(cid && cid !== 'closed' && cid !== 'available');
+        };
+        const addDay = function(dayWord, sessionDateKey){
+          const rel = typeof portalTermFeedbackSessionsForDate === 'function'
+            ? portalTermFeedbackSessionsForDate(dayWord, sessionDateKey, staffId, isReal)
+            : [];
+          for(let j = 0; j < rel.length; j++){
+            const s = rel[j];
+            const rk = typeof portalSessionReviewKeyForModelRow === 'function'
+              ? portalSessionReviewKeyForModelRow(s, dayWord, sessionDateKey)
+              : `${sessionDateKey}|${s.start}|${s.clientId}`;
+            if(rk) keys.add(rk);
+          }
+        };
+        const viewDay = String(typeof DEMO_VIEW_DAY !== 'undefined' ? DEMO_VIEW_DAY : '').trim();
+        if(viewDay){
           const anchor = typeof getViewAnchorCalendarDate === 'function' ? getViewAnchorCalendarDate(viewDay) : null;
           if(anchor && !isNaN(anchor.getTime())){
-            const y = anchor.getFullYear();
-            const mo = anchor.getMonth();
-            const da = anchor.getDate();
-            const sessionDateKey = `${y}-${String(mo + 1).padStart(2, '0')}-${String(da).padStart(2, '0')}`;
-            for(let j = 0; j < sessionsModel.length; j++){
-              const s = sessionsModel[j];
-              if(!s || String(s.staffId || '').trim().toLowerCase() !== staffId) continue;
-              if(String(s.day || '').trim() !== viewDay) continue;
-              const st = typeof sessionModelStatus === 'function' ? sessionModelStatus(s) : '';
-              if(st === 'Closed' || st === 'Available') continue;
-              if(!s.clientId) continue;
-              const rk = typeof portalSessionReviewKeyForModelRow === 'function'
-                ? portalSessionReviewKeyForModelRow(s, viewDay, sessionDateKey)
-                : `${sessionDateKey}|${s.start}|${s.clientId}`;
-              if(rk) keys.add(rk);
+            const sessionDateKey = `${anchor.getFullYear()}-${String(anchor.getMonth() + 1).padStart(2, '0')}-${String(anchor.getDate()).padStart(2, '0')}`;
+            addDay(viewDay, sessionDateKey);
+          }
+        }
+        const t = window.PORTAL_TERM_FROM_TIMETABLE;
+        if(t && t.firstDate && t.lastDate){
+          const cur = new Date(String(t.firstDate) + 'T12:00:00');
+          const last = new Date(String(t.lastDate) + 'T12:00:00');
+          const todayIso = typeof portalTermLocalYmdFromMs === 'function'
+            ? portalTermLocalYmdFromMs(termCalendarNowMs())
+            : new Date().toISOString().slice(0, 10);
+          while(cur.getTime() <= last.getTime()){
+            const sessionDateKey = termCalendarDateKey(cur.getFullYear(), cur.getMonth(), cur.getDate());
+            if(sessionDateKey <= todayIso){
+              const dayWord = cur.toLocaleDateString('en-GB', { weekday: 'long' });
+              addDay(dayWord, sessionDateKey);
             }
+            cur.setDate(cur.getDate() + 1);
           }
         }
       }catch(_){}
-      return [...keys].slice(0, 250);
+      return [...keys].slice(0, 400);
     }
     /** Merge feedback / incident / cancellation rows from Supabase so a second device shows the same greens as the first. */
     async function portalMergeServerReviewStateForDashboard(){
@@ -1216,7 +1239,13 @@
         const mod = await import(PORTAL_SUPABASE_CLIENT_MODULE);
         if(!mod.portalFetchSubmittedReviewSessionKeys || !mod.portalMergeReviewKeysIntoMemoryMap) return;
         const rosterKeys = typeof portalCollectRosterSessionKeysForReviewSync === 'function' ? portalCollectRosterSessionKeysForReviewSync() : [];
-        const keys = await mod.portalFetchSubmittedReviewSessionKeys(box.client, uid, { rosterSessionKeys: rosterKeys });
+        const catchUpDates = typeof portalTermStaffCatchUpFeedbackDates === 'function'
+          ? portalTermStaffCatchUpFeedbackDates(String(STAFF_DASHBOARD_ID || '').trim().toLowerCase())
+          : [];
+        const keys = await mod.portalFetchSubmittedReviewSessionKeys(box.client, uid, {
+          rosterSessionKeys: rosterKeys,
+          catchUpSessionDates: catchUpDates
+        });
         const merged = mod.portalMergeReviewKeysIntoMemoryMap(sessionReviewMapMemory, keys, { rosterSessionKeys: rosterKeys });
         if(merged){
           persistSessionReviewMap();
