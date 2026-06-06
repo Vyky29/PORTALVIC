@@ -99,6 +99,7 @@
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
   <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260622-area-label" />
+  <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260622-ghost-view" />
 </head>
 <body>
   <script>
@@ -968,6 +969,7 @@
   <script src="/portal/staff_dashboard_spreadsheet_adapter.js?v=20260605-ah-brothers-separate"></script>
   <script src="/portal/portal_participant_catalog.js?v=20260601-participant-dedupe"></script>
   <script src="portal/staff_roster_resolve.js?v=20260601-luliya-mic"></script>
+  <script src="/portal/portal-ghost-view.js?v=20260622-ghost-view"></script>
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260621-lead-inbox" />
   <script src="/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact"></script>
   <script src="/portal/portal_topbar_header.js?v=20260605-topbar-align"></script>
@@ -12442,7 +12444,24 @@
         }
         return "";
       }
+      function portalLeadGhostCanonicalKey(raw){
+        var k = String(raw || "")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "")
+          .trim();
+        if(!k) return "";
+        if(typeof window.portalCanonicalStaffRosterKey === "function"){
+          return window.portalCanonicalStaffRosterKey(k) || k;
+        }
+        if(k === "luliya" || k === "aida" || k === "stf021") return "lulia";
+        return k;
+      }
       async function rehydrateFromProfile(){
+        try{
+          if(window.__PORTAL_GHOST_VERIFY_PROMISE__) await window.__PORTAL_GHOST_VERIFY_PROMISE__;
+        }catch(_ghostWait){}
         var p = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
         var session = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session;
         var user = session && session.user ? session.user : null;
@@ -12461,8 +12480,38 @@
           }
           return;
         }
-        if (typeof window.portalBootstrapStaffRosterFromProfile !== "function") return;
-        var rosterHit = window.portalBootstrapStaffRosterFromProfile(profileForRoster, user);
+        if(window.__PORTAL_GHOST_VIEW__ && window.__PORTAL_GHOST_VIEW__.error){
+          if(typeof window.dashboardData !== "undefined" && window.dashboardData){
+            window.dashboardData.portalIdentityResolved = true;
+            if(typeof renderHeader === "function") renderHeader();
+            if(typeof renderToday === "function") renderToday();
+          }
+          return;
+        }
+        var rosterHit = null;
+        if(window.__PORTAL_GHOST_VIEW__ && window.__PORTAL_GHOST_VIEW__.active){
+          var ghost = window.__PORTAL_GHOST_VIEW__;
+          var ghostAdapter = typeof StaffDashboardSpreadsheetAdapter !== "undefined" ? StaffDashboardSpreadsheetAdapter : null;
+          var ghostSource =
+            typeof window.portalResolveStaffDashboardSource === "function"
+              ? window.portalResolveStaffDashboardSource()
+              : window.STAFF_DASHBOARD_SOURCE;
+          var ghostKey = portalLeadGhostCanonicalKey(String(ghost.rosterKey || "").trim().toLowerCase());
+          if(ghostAdapter && ghostSource && ghostKey){
+            var ghostBoot = ghostAdapter.bootstrap({ source: ghostSource, staffId: ghostKey });
+            if(ghostBoot){
+              rosterHit = { staffId: ghostKey, boot: ghostBoot };
+              profileForRoster = {
+                username: ghostKey,
+                full_name: String(ghost.displayName || ghostKey).trim(),
+              };
+            }
+          }
+        }
+        if(!rosterHit){
+          if (typeof window.portalBootstrapStaffRosterFromProfile !== "function") return;
+          rosterHit = window.portalBootstrapStaffRosterFromProfile(profileForRoster, user);
+        }
         if (!rosterHit || !rosterHit.boot) {
           if (typeof window.dashboardData !== "undefined" && window.dashboardData) {
             window.dashboardData.portalIdentityResolved = true;
@@ -12517,9 +12566,12 @@
         }
 
         var _sess = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session;
-        dashboardData.staffName = typeof window.portalTopbarDisplayNameFromAuth === "function"
-          ? window.portalTopbarDisplayNameFromAuth(p, _sess)
-          : String(p.full_name || p.username || "").trim();
+        var ghostView = window.__PORTAL_GHOST_VIEW__ && window.__PORTAL_GHOST_VIEW__.active ? window.__PORTAL_GHOST_VIEW__ : null;
+        dashboardData.staffName = ghostView
+          ? String(ghostView.displayName || staffId || "").trim()
+          : (typeof window.portalTopbarDisplayNameFromAuth === "function"
+            ? window.portalTopbarDisplayNameFromAuth(p, _sess)
+            : String(p.full_name || p.username || "").trim());
         dashboardData.portalIdentityResolved = true;
         if(typeof portalHydrateAnnouncementsFromSupabase === 'function'){
           void portalHydrateAnnouncementsFromSupabase().then(function(){
@@ -12754,10 +12806,16 @@
         });
         const profile = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
         const session = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session;
+        if (window.__PORTAL_GHOST_VERIFY_PROMISE__) {
+          try { await window.__PORTAL_GHOST_VERIFY_PROMISE__; } catch (_g) {}
+        }
         if (window.dashboardData) {
-          const displayName = typeof window.portalTopbarDisplayNameFromAuth === "function"
-            ? window.portalTopbarDisplayNameFromAuth(profile, session)
-            : (profile ? String(profile.full_name || profile.username || "").trim() : "");
+          const ghostView = window.__PORTAL_GHOST_VIEW__ && window.__PORTAL_GHOST_VIEW__.active ? window.__PORTAL_GHOST_VIEW__ : null;
+          const displayName = ghostView
+            ? String(ghostView.displayName || ghostView.rosterKey || "").trim()
+            : (typeof window.portalTopbarDisplayNameFromAuth === "function"
+              ? window.portalTopbarDisplayNameFromAuth(profile, session)
+              : (profile ? String(profile.full_name || profile.username || "").trim() : ""));
           if (displayName) window.dashboardData.staffName = displayName;
           if (!String(window.STAFF_DASHBOARD_ID || "").trim()) {
             window.dashboardData.portalIdentityResolved = false;

@@ -128,6 +128,9 @@
   function surfaceForProfile(p) {
     var route = String((p && p.dashboard_route) || "").toLowerCase();
     if (route.indexOf("lead") >= 0) return "lead";
+    var app = String((p && p.app_role) || "").toLowerCase();
+    var staffRole = String((p && p.staff_role) || "").toLowerCase();
+    if (app === "lead" || staffRole.indexOf("lead") >= 0) return "lead";
     return "staff";
   }
 
