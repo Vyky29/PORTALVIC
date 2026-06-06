@@ -18676,12 +18676,29 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<p class="muted" style="margin:0 0 12px;font-size:13px;line-height:1.55;min-width:0;overflow-wrap:break-word">Staff/lead questions from <strong>Portal help</strong> with no confident FAQ match. Add new topics to <code>portal/portal_help_knowledge.json</code> when you see repeats.</p>'+
         '<div id="portalAdminHelpUnansweredHost"><p class="muted" style="margin:0">Loading…</p></div>'+
         '</div>'+
-        '<div class="modal-f"><button type="button" class="btn btn--ghost" id="portalAdminHelpUnansweredClose">Close</button></div>'
+        '<div class="modal-f"><button type="button" class="btn btn--sec" id="portalAdminHelpUnansweredCopy" hidden>Copy questions</button><button type="button" class="btn btn--ghost" id="portalAdminHelpUnansweredClose">Close</button></div>'
       );
       var host = $('portalAdminHelpUnansweredHost');
       var closeFn = function(){ closeModal(); };
       var xc = $('portalAdminHelpUnansweredClose');
       if(xc) xc.onclick = closeFn;
+      var copyBtn = $('portalAdminHelpUnansweredCopy');
+      var copyQuestions = function(rows){
+        var lines = (rows || []).map(function(r){ return String(r.question_text || '').trim(); }).filter(Boolean);
+        if(!lines.length) return;
+        var text = lines.join('\n');
+        if(navigator.clipboard && navigator.clipboard.writeText){
+          navigator.clipboard.writeText(text).then(function(){
+            if(typeof portalAdminToast === 'function') portalAdminToast('Copied '+String(lines.length)+' question(s) to clipboard.');
+            else alert('Copied '+String(lines.length)+' question(s).');
+          }).catch(function(){
+            alert(text.slice(0, 4000));
+          });
+          return;
+        }
+        alert(text.slice(0, 4000));
+      };
+      if(copyBtn) copyBtn.onclick = function(){ copyQuestions(window.__portalAdminHelpUnansweredRows || []); };
       var bd = $('modalBackdrop');
       if(bd) bd.onclick = function(e){ if(e.target === bd) closeFn(); };
       client.from('portal_help_unanswered_log')
@@ -18692,9 +18709,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(!host) return;
           if(res.error){
             host.innerHTML = '<p class="submission-state is-error" style="margin:0">Could not load: '+esc(String(res.error.message||res.error))+'</p>';
+            if(copyBtn) copyBtn.hidden = true;
             return;
           }
           var rows = Array.isArray(res.data) ? res.data : [];
+          window.__portalAdminHelpUnansweredRows = rows;
+          if(copyBtn) copyBtn.hidden = !rows.length;
           if(!rows.length){
             host.innerHTML = '<p class="muted" style="margin:0">No unanswered questions logged yet — staff will see matches when the bot knows the answer.</p>';
             return;
@@ -18715,6 +18735,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             '<p class="muted" style="margin:10px 0 0;font-size:11px;overflow-wrap:break-word">Showing up to '+esc(String(rows.length))+' most recent rows.</p>';
         }).catch(function(err){
           if(host) host.innerHTML = '<p class="submission-state is-error" style="margin:0">'+esc(String(err && err.message ? err.message : err))+'</p>';
+          if(copyBtn) copyBtn.hidden = true;
         });
     }
     function openDayOpsAnnouncementsHubModal(){
