@@ -44,19 +44,14 @@ html.portal-screenshot-guard-armed body {
   -webkit-touch-callout: none;
 }
 
-html.portal-screenshot-sensitive-hidden .portal-screenshot-protected,
 html.portal-screenshot-worker-sensitive-hidden .portal-screenshot-protected,
-html.portal-screenshot-sensitive-hidden .portal-achievement-protected,
 html.portal-screenshot-worker-sensitive-hidden .portal-achievement-protected {
   visibility: hidden !important;
   opacity: 0 !important;
 }
 
-html.portal-screenshot-sensitive-hidden .portal-screenshot-protected img,
-html.portal-screenshot-sensitive-hidden .portal-screenshot-protected video,
 html.portal-screenshot-worker-sensitive-hidden .portal-screenshot-protected img,
 html.portal-screenshot-worker-sensitive-hidden .portal-screenshot-protected video,
-html.portal-screenshot-sensitive-hidden .portal-achievement-protected img,
 html.portal-screenshot-worker-sensitive-hidden .portal-achievement-protected img {
   filter: brightness(0) !important;
 }
@@ -80,32 +75,32 @@ html.portal-screenshot-guard-workers.portal-screenshot-guard-armed .app {
   -webkit-touch-callout: none;
 }
 
-/* Staff/lead: club watermark on participant photos (screenshots stay low-value). */
-html.portal-screenshot-guard-workers.portal-screenshot-guard-armed #clientPhotoSlot.client-photo-slot--has-photo,
-html.portal-screenshot-guard-workers.portal-screenshot-guard-armed .clients-grid-avatar,
-html.portal-screenshot-guard-workers.portal-screenshot-guard-armed .today-participant-chip__avatar-wrap,
-html.portal-screenshot-guard-workers.portal-screenshot-guard-armed .calendar-day-avatar:has(img.portal-screenshot-protected),
-html.portal-screenshot-guard-workers.portal-screenshot-guard-armed .portal-achievements-viewer__stage,
-html.portal-screenshot-guard-workers.portal-screenshot-guard-armed .portal-achievements-thumb__open,
-html.portal-screenshot-guard-workers.portal-screenshot-guard-armed .portal-ach-cam-gallery.has-thumb {
+/* Staff/lead: full-size red circle watermark only while a screenshot is detected. */
+html.portal-screenshot-guard-workers.portal-screenshot-sensitive-hidden #clientPhotoSlot.client-photo-slot--has-photo,
+html.portal-screenshot-guard-workers.portal-screenshot-sensitive-hidden .clients-grid-avatar,
+html.portal-screenshot-guard-workers.portal-screenshot-sensitive-hidden .today-participant-chip__avatar,
+html.portal-screenshot-guard-workers.portal-screenshot-sensitive-hidden .calendar-day-avatar:has(img.portal-screenshot-protected),
+html.portal-screenshot-guard-workers.portal-screenshot-sensitive-hidden .portal-achievements-viewer__stage,
+html.portal-screenshot-guard-workers.portal-screenshot-sensitive-hidden .portal-achievements-thumb__open,
+html.portal-screenshot-guard-workers.portal-screenshot-sensitive-hidden .portal-ach-cam-gallery.has-thumb {
   position: relative;
   overflow: hidden;
 }
 
-html.portal-screenshot-guard-workers.portal-screenshot-guard-armed #clientPhotoSlot.client-photo-slot--has-photo::after,
-html.portal-screenshot-guard-workers.portal-screenshot-guard-armed .clients-grid-avatar::after,
-html.portal-screenshot-guard-workers.portal-screenshot-guard-armed .today-participant-chip__avatar-wrap::after,
-html.portal-screenshot-guard-workers.portal-screenshot-guard-armed .calendar-day-avatar:has(img.portal-screenshot-protected)::after,
-html.portal-screenshot-guard-workers.portal-screenshot-guard-armed .portal-achievements-viewer__stage::after,
-html.portal-screenshot-guard-workers.portal-screenshot-guard-armed .portal-achievements-thumb__open::after,
-html.portal-screenshot-guard-workers.portal-screenshot-guard-armed .portal-ach-cam-gallery.has-thumb::after {
+html.portal-screenshot-guard-workers.portal-screenshot-sensitive-hidden #clientPhotoSlot.client-photo-slot--has-photo::after,
+html.portal-screenshot-guard-workers.portal-screenshot-sensitive-hidden .clients-grid-avatar::after,
+html.portal-screenshot-guard-workers.portal-screenshot-sensitive-hidden .today-participant-chip__avatar::after,
+html.portal-screenshot-guard-workers.portal-screenshot-sensitive-hidden .calendar-day-avatar:has(img.portal-screenshot-protected)::after,
+html.portal-screenshot-guard-workers.portal-screenshot-sensitive-hidden .portal-achievements-viewer__stage::after,
+html.portal-screenshot-guard-workers.portal-screenshot-sensitive-hidden .portal-achievements-thumb__open::after,
+html.portal-screenshot-guard-workers.portal-screenshot-sensitive-hidden .portal-ach-cam-gallery.has-thumb::after {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 3;
   pointer-events: none;
-  background: url("/portal/F-02-1.png") center / min(46%, 72px) no-repeat;
-  opacity: 0.44;
+  border-radius: 50%;
+  background: url("/portal/announcements_logo_red.png") center / 96% no-repeat;
 }
 
 html.portal-screenshot-guard-workers.portal-screenshot-guard-armed .portal-screenshot-protected,

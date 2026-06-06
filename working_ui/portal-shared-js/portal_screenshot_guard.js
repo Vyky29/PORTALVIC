@@ -97,11 +97,16 @@
     return el;
   }
 
-  function setSensitiveHidden(on) {
+  function setScreenshotWatermark(on) {
     try {
       document.documentElement.classList.toggle("portal-screenshot-sensitive-hidden", !!on);
-      document.documentElement.classList.toggle("portal-screenshot-worker-sensitive-hidden", !!on);
     } catch (_e5) {}
+  }
+
+  function setWorkerSensitiveHidden(on) {
+    try {
+      document.documentElement.classList.toggle("portal-screenshot-worker-sensitive-hidden", !!on);
+    } catch (_e5a) {}
   }
 
   function setForegroundMask(on) {
@@ -116,7 +121,7 @@
     var el = document.getElementById(GUARD_ID);
     if (el) el.classList.remove("is-active");
     if (isPageVisible() && !isPhotoCaptureUiActive()) {
-      setSensitiveHidden(false);
+      setScreenshotWatermark(false);
     }
   }
 
@@ -127,7 +132,7 @@
     global.clearTimeout(lingerTimer);
     var el = ensureEl();
     el.classList.add("is-active");
-    setSensitiveHidden(true);
+    setScreenshotWatermark(true);
     setForegroundMask(true);
     var linger =
       opts.lingerMs != null
@@ -375,8 +380,8 @@
       "visibilitychange",
       function () {
         if (!isWorkerSafeguardActive()) return;
-        if (document.hidden) setSensitiveHidden(true);
-        else if (!isPhotoCaptureUiActive()) setSensitiveHidden(false);
+        if (document.hidden) setWorkerSensitiveHidden(true);
+        else if (!isPhotoCaptureUiActive()) setWorkerSensitiveHidden(false);
       },
       true
     );
@@ -385,7 +390,7 @@
       "pagehide",
       function () {
         if (!isWorkerSafeguardActive()) return;
-        setSensitiveHidden(true);
+        setWorkerSensitiveHidden(true);
       },
       true
     );
@@ -394,7 +399,7 @@
       "blur",
       function () {
         if (!isWorkerSafeguardActive()) return;
-        setSensitiveHidden(true);
+        setWorkerSensitiveHidden(true);
       },
       true
     );
@@ -403,7 +408,7 @@
       "focus",
       function () {
         if (!isWorkerSafeguardActive()) return;
-        if (isPageVisible() && !isPhotoCaptureUiActive()) setSensitiveHidden(false);
+        if (isPageVisible() && !isPhotoCaptureUiActive()) setWorkerSensitiveHidden(false);
       },
       true
     );
@@ -464,7 +469,7 @@
       } else {
         global.setTimeout(deferObserver, 400);
       }
-      if (document.hidden) setSensitiveHidden(true);
+      if (document.hidden) setWorkerSensitiveHidden(true);
     } catch (_e11) {}
   }
 
