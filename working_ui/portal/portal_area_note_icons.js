@@ -193,17 +193,18 @@
     var rowH = portalMeasureTodaySessionRowHeight(gridEl, n);
     var areaIconPx;
     if (rowH > 0) {
-      areaIconPx = Math.round(rowH * 0.58);
+      /* Icon fills most of the row; label stays a fixed small caption below. */
+      areaIconPx = Math.round(rowH * 0.74 - 10);
     } else {
-      var areaByCount = { 1: 72, 2: 64, 3: 56, 4: 50, 5: 44, 6: 40 };
+      var areaByCount = { 1: 80, 2: 72, 3: 62, 4: 54, 5: 46, 6: 40 };
       areaIconPx = areaByCount[n] || 38;
     }
-    var maxCap = n <= 1 ? 120 : n <= 2 ? 108 : n <= 4 ? 96 : n <= 6 ? 84 : 72;
-    var minCap = n <= 2 ? 52 : n <= 4 ? 44 : 36;
+    var maxCap = n <= 1 ? 128 : n <= 2 ? 112 : n <= 4 ? 96 : n <= 6 ? 84 : 72;
+    var minCap = n <= 2 ? 56 : n <= 4 ? 46 : 36;
     areaIconPx = Math.min(maxCap, Math.max(minCap, areaIconPx));
-    var symbolColMax = Math.min(128, Math.max(72, Math.round(areaIconPx * 1.22)));
+    var symbolColMax = Math.min(120, Math.max(68, Math.round(areaIconPx * 1.12)));
     var iconPx = Math.max(28, Math.round(areaIconPx * 0.92));
-    var labelFs = Math.min(14, Math.max(8, Math.round(areaIconPx * 0.19)));
+    var labelFs = n <= 2 ? 8 : n <= 4 ? 8 : 7;
     return { iconPx: iconPx, areaIconPx: areaIconPx, labelFs: labelFs, symbolColMax: symbolColMax };
   }
 

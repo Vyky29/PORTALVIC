@@ -34,7 +34,7 @@
   flex-direction:column;
   align-items:center;
   justify-content:center;
-  gap:clamp(2px, 8cqh, 6px);
+  gap:2px;
   width:100%;
   min-width:0;
   max-width:100%;
@@ -48,11 +48,10 @@
   overflow:hidden;
 }
 .section-card--today .session-line--symbol .session-area-note-icon{
-  width:min(100%, var(--today-area-icon, 40px), 82cqh);
-  height:min(var(--today-area-icon, 40px), 82cqh);
-  max-height:calc(100% - 1.15em);
+  width:min(100%, var(--today-area-icon, 40px), 90cqh);
+  height:min(var(--today-area-icon, 40px), 90cqh, calc(100% - 10px));
   aspect-ratio:1;
-  flex:0 1 auto;
+  flex:0 0 auto;
   flex-shrink:0;
   padding:0;
   box-sizing:border-box;
@@ -70,7 +69,7 @@
   display:block;
   margin:0;
   padding:0;
-  font-size:max(var(--today-area-label-fs, 9px), min(13px, 17cqh));
+  font-size:var(--today-area-label-fs, 8px);
   font-weight:700;
   line-height:1.05;
   letter-spacing:.01em;
@@ -104,13 +103,12 @@
   margin-top:0;
 }
 .section-card--today .session-today-override-pool-note .session-area-note-icon{
-  width:min(var(--today-area-icon, 36px), 82cqh);
-  height:min(var(--today-area-icon, 36px), 82cqh);
-  max-height:calc(100% - 1.15em);
+  width:min(var(--today-area-icon, 36px), 90cqh);
+  height:min(var(--today-area-icon, 36px), 90cqh, calc(100% - 10px));
   aspect-ratio:1;
 }
 .section-card--today .session-today-override-pool-note .session-area-note-label{
-  font-size:max(var(--today-area-label-fs, 9px), min(13px, 17cqh));
+  font-size:var(--today-area-label-fs, 8px);
 }
 .session-area-note-icon--sm .session-area-note-img,
 .session-area-note-icon--sm .session-area-note-svg{
