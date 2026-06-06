@@ -132,7 +132,7 @@
       display:grid;
       grid-template-columns:minmax(0,1fr);
       grid-template-rows:auto minmax(0,1fr) auto;
-      row-gap:10px;
+      row-gap:6px;
       align-content:stretch;
       overflow-x:hidden;
       overflow-y:hidden;
@@ -147,7 +147,7 @@
       min-width:0;
       width:100%;
       padding-bottom:0;
-      margin-bottom:6px;
+      margin-bottom:2px;
     }
     .portal-dashboard-dock-adjacent .section-card.section-card--overview{
       margin-bottom:0;
@@ -267,7 +267,7 @@
       align-items:center;
       justify-content:stretch;
       gap:0;
-      margin-bottom:12px;
+      margin-bottom:4px;
       flex-shrink:0;
       padding:10px 4px 6px;
       width:100%;
@@ -3433,7 +3433,7 @@
     }
 
     .section-head--today{
-      padding:8px 12px 6px;
+      padding:6px 12px 4px;
       align-items:center;
       justify-content:center;
       flex-direction:row;
@@ -3531,6 +3531,7 @@
       min-height:0;
       height:100%;
       max-height:100%;
+      flex:1 1 0;
       display:flex;
       flex-direction:column;
       margin-bottom:0;
@@ -3544,7 +3545,7 @@
       flex-direction:column;
       flex:1 1 0;
       min-height:0;
-      padding:6px 8px 8px;
+      padding:4px 8px 6px;
       overflow-x:hidden;
       overflow-y:hidden;
     }
@@ -3894,11 +3895,11 @@
       display:flex;
       flex-direction:column;
       gap:var(--today-row-gap, 6px);
-      flex:0 0 auto;
+      flex:1 1 0;
       width:100%;
-      height:calc(100% * var(--today-rows-fill, 1));
-      max-height:100%;
       min-height:0;
+      height:100%;
+      max-height:calc(100% * var(--today-rows-fill, 1));
     }
     .section-card--today .today-grid-rows > .session-card{
       flex:1 1 0;
