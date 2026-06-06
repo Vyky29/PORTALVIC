@@ -99,7 +99,7 @@
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
   <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260606-dense-icons" />
-  <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260622-ghost-view" />
+  <link rel="stylesheet" href="/portal/portal_help_bot.css?v=20260606-help-bot" />
 </head>
 <body class="lead-dashboard">
   <script>
@@ -575,6 +575,10 @@
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div>
               <div class="menu-btn-copy"><strong>Guide</strong><span class="menu-btn-sub">clubSENsational portal guide</span></div>
             </button>
+            <button type="button" class="menu-btn menu-btn--portal-help" id="quickMenuPortalHelp" data-open="portalHelpSheet" aria-label="Portal help — ask questions about using the portal">
+              <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+              <div class="menu-btn-copy"><strong>Portal help</strong><span class="menu-btn-sub">Ask how to use login, feedback &amp; more</span></div>
+            </button>
             <button type="button" class="menu-btn menu-btn--portal-guide portal-onboarding-menu-hidden" id="quickMenuOnboardingJobSettings" data-portal-external-url="onboarding_job_application.html" hidden aria-hidden="true" aria-label="Job application — view completed form">
               <div class="menu-btn-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 12h6M9 16h6"/></svg></div>
               <div class="menu-btn-copy"><strong>Job application</strong><span class="menu-btn-sub">View your completed application</span></div>
@@ -777,6 +781,24 @@
     <div class="sheet-body" id="announcementsSheetBody">
       <div id="announcementPendingHost"></div>
       <div id="announcementHistoryHost"></div>
+    </div>
+  </section>
+
+  <section class="sheet sheet--fullscreen sheet--mobile-frame sheet--portal-help" id="portalHelpSheet" aria-labelledby="portalHelpTitle">
+    <div class="sheet-head">
+      <div class="sheet-handle"></div>
+      <h3 id="portalHelpTitle">Portal help</h3>
+      <p>Ask about login, the dashboard, feedback, announcements, My participants and more.</p>
+    </div>
+    <div class="sheet-body portal-help-body" style="min-width:0">
+      <div id="portalHelpMessages" class="portal-help-msgs" role="log" aria-live="polite" aria-relevant="additions"></div>
+      <div id="portalHelpSuggestions" class="portal-help-suggestions" hidden></div>
+      <div class="portal-help-compose">
+        <label class="topbar-sr-only" for="portalHelpInput">Your question</label>
+        <textarea id="portalHelpInput" class="txa" rows="2" maxlength="500" placeholder="Type a question…" enterkeyhint="send"></textarea>
+        <button type="button" class="portal-help-send" id="portalHelpSendBtn">Ask</button>
+      </div>
+      <p class="portal-help-foot muted">Need the full walkthrough? <a href="portal_guide.html">Open Portal guide</a></p>
     </div>
   </section>
 
@@ -992,6 +1014,7 @@
   <script src="/portal/portal_induction_bind.js?v=20260615-tprog-sync"></script>
   <script src="/portal/portal_guide_ack.js?v=20260604-guide-first-read"></script>
   <script src="/portal/portal_guide_menu.js?v=20260604-guide-first-read"></script>
+  <script src="/portal/portal_help_bot.js?v=20260606-help-bot"></script>
   <script src="/portal/portal_quick_menu_accordion.js?v=20260606-feedbacks-category"></script>
   <script src="/portal/portal_swimming_instructor_menus.js?v=20260610-roberto-topbar"></script>
   <script src="/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off"></script>

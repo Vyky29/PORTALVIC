@@ -1,0 +1,167 @@
+{
+  "version": "2026-06",
+  "topics": [
+    {
+      "id": "login",
+      "title": "Logging in",
+      "keywords": ["login", "log in", "sign in", "password", "email", "link", "signed out", "iniciar sesion", "contraseña", "entrar", "acceder"],
+      "answer": "Open the portal link you were given and sign in with your club email and password.\n\nIf CS Portal does not recognise you after installing the app, log out and sign in again in Safari or Chrome first, then reopen the home-screen icon.\n\nForgotten password: use the reset option on the login page or contact the office."
+    },
+    {
+      "id": "install",
+      "title": "Install CS Portal on your phone",
+      "keywords": ["install", "home screen", "pwa", "app", "iphone", "android", "safari", "chrome", "add to home", "cs portal", "instalar", "pantalla inicio"],
+      "answer": "Add the portal to your home screen so it opens full-screen as CS Portal with the club icon.\n\niPhone (Safari): Share → Add to Home Screen → Add.\n\nAndroid (Chrome): ⋮ menu → Install app / Add to Home screen.\n\nSign in once; the app remembers you until you log out."
+    },
+    {
+      "id": "dashboard",
+      "title": "Understanding your dashboard",
+      "keywords": ["dashboard", "today", "main screen", "home", "panel", "pantalla principal", "inicio"],
+      "answer": "Your dashboard is the main screen before, during and after sessions.\n\nSession cards show today’s participants and what still needs doing.\n\nThe logo halo shows if feedback, chat, announcements or documents need attention.\n\nUse Next session, Week and Term under the cards for planning."
+    },
+    {
+      "id": "colours",
+      "title": "Session card colours",
+      "keywords": ["colour", "color", "orange", "green", "blue", "red", "purple", "lilac", "card", "colores", "naranja", "verde"],
+      "answer": "Blue — scheduled, nothing to do yet.\n\nOrange — feedback still pending; tap the card to submit.\n\nGreen — feedback submitted or absence recorded.\n\nRed — incident or urgent item.\n\nPurple — schedule change (cancellation or roster change)."
+    },
+    {
+      "id": "logo-halo",
+      "title": "Logo halo and notification centre",
+      "keywords": ["logo", "halo", "dot", "notification centre", "notifications", "tap logo", "halos", "punto", "notificaciones"],
+      "answer": "Coloured dots around the club logo show what is waiting. Tap the logo to open the notification centre.\n\nOrange — outstanding feedback.\nBlue — new internal chat message.\nRed — announcement or document to sign.\nGreen — all up to date.\nMultiple dots — more than one type waiting."
+    },
+    {
+      "id": "feedback",
+      "title": "Session feedback",
+      "keywords": ["feedback", "outstanding", "orange card", "submit feedback", "session card", "comentarios", "informe sesion"],
+      "answer": "Always open feedback from the orange session card when you can — it pre-fills participant, date and time.\n\nComplete engagement, regulation, independence and notes, then submit.\n\nQuick menu → Session feedback is only a backup; you must pick the participant yourself."
+    },
+    {
+      "id": "absent",
+      "title": "Marking absent",
+      "keywords": ["absent", "did not attend", "no show", "ausente", "no vino"],
+      "answer": "If a participant did not attend, mark Absent from their session card or participant card.\n\nThe card turns green once absence is recorded — you do not need separate feedback for that session."
+    },
+    {
+      "id": "participants",
+      "title": "My participants",
+      "keywords": ["participants", "clients", "roster", "my participants", "all participants", "bottom bar", "clientes", "participantes"],
+      "answer": "Open My participants from the bottom bar (CLIENTS) or Quick menu.\n\nMy participants — your roster.\nAll participants — search anyone at the club.\n\nTap a name for quick actions: Feedback, Absence, Incident, Cancellation and General Info."
+    },
+    {
+      "id": "general-info",
+      "title": "General Info on a participant",
+      "keywords": ["general info", "medical", "triggers", "communication", "goals", "informacion general", "medico"],
+      "answer": "On a participant card, tap General Info for age, medical notes, triggers, support level and communication preferences.\n\nRead this before community or home sessions — especially for new participants."
+    },
+    {
+      "id": "quick-menu",
+      "title": "Quick menu",
+      "keywords": ["quick menu", "menu", "forms", "hamburger", "menu rapido", "formularios"],
+      "answer": "Open Quick menu from your dashboard (☰) for all forms: feedback, incident, cancellation, timesheet, expenses, venue review, pickup, documents, training and settings.\n\nTiles you do not need are hidden for your role."
+    },
+    {
+      "id": "announcements",
+      "title": "Announcements and signing",
+      "keywords": ["announcement", "sign", "confirm", "red halo", "signed announcements", "anuncio", "firmar"],
+      "answer": "When the office posts an announcement, the logo halo may turn red. Tap the logo → read the message → Sign / confirm.\n\nSigned items move to Signed announcements / reminders in the same centre."
+    },
+    {
+      "id": "reminders",
+      "title": "Reminders",
+      "keywords": ["reminder", "reminders", "outstanding feedbacks x1", "recordatorio", "pendiente"],
+      "answer": "Under Reminders in the notification centre (tap the logo), tiles such as Outstanding feedbacks (orange) jump straight to sessions still waiting for feedback.\n\nTerm view on the dashboard shows days in red when feedback is still outstanding."
+    },
+    {
+      "id": "chat",
+      "title": "Internal chat",
+      "keywords": ["chat", "internal chat", "message", "office", "voice note", "cliq", "mensaje", "chat interno"],
+      "answer": "Open Internal chat from the notification centre for quick messages with the office.\n\nA blue halo means a new message is waiting. You can send text or a voice note (mic).\n\nKeep Zoho Cliq installed for now — portal chat runs alongside it."
+    },
+    {
+      "id": "timesheet",
+      "title": "Timesheet",
+      "keywords": ["timesheet", "hours", "pay", "24th", "green row", "orange row", "nomina", "horas", "hoja horas"],
+      "answer": "Quick menu → Finance → Timesheet.\n\nSubmit by the 24th of the month so hours land in that month’s pay.\n\nGreen rows — feedback complete, ready to pay.\nOrange rows — feedback still pending; complete it from the dashboard session card."
+    },
+    {
+      "id": "expenses",
+      "title": "Expenses",
+      "keywords": ["expense", "expenses", "receipt", "claim", "gastos", "recibo"],
+      "answer": "Quick menu → Finance → Expenses.\n\nAdd Description, Amount (GBP) and upload a receipt photo for each line. Use + Add row for multiple items.\n\nA PDF is saved to My Documents when you submit."
+    },
+    {
+      "id": "documents",
+      "title": "My Documents",
+      "keywords": ["documents", "payslip", "payslips", "pdf", "my documents", "documentos", "nomina pdf"],
+      "answer": "Quick menu → My Documents for payslips, signed contracts, signed announcements and expense PDFs.\n\nPayslips appear here when published — you can delete Zoho People if you wish; keep Zoho Cliq."
+    },
+    {
+      "id": "venue-review",
+      "title": "Venue review",
+      "keywords": ["venue review", "opening", "closing", "checks", "venue", "revision local", "apertura"],
+      "answer": "Quick menu → Venue review (or top bar VENUE on some dashboards).\n\nRecord opening or closing checks: confirm venue, date and time, then answer whether there are issues to report."
+    },
+    {
+      "id": "pickup",
+      "title": "Pickup and handover",
+      "keywords": ["pickup", "pick up", "drop off", "handover", "collection", "recogida", "entrega"],
+      "answer": "Quick menu → Pickup / handover (or top bar PICKUP).\n\nSearch for a participant or tap New to start today’s handover.\n\nComplete Drop Off on arrival and Pick Up when they are collected."
+    },
+    {
+      "id": "incident",
+      "title": "Incident report",
+      "keywords": ["incident", "safeguarding", "accident", "report", "incidente", "seguridad"],
+      "answer": "Quick menu → Incident report, or use the quick action on a participant card.\n\nUse for anything that needs recording for safeguarding or safety. Submit as soon as you can."
+    },
+    {
+      "id": "cancellation",
+      "title": "Cancellation",
+      "keywords": ["cancellation", "cancel", "session cancelled", "cancelacion", "cancelar"],
+      "answer": "Quick menu → Cancellation when a session cannot go ahead.\n\nYou can also start from a participant card if you already know which child it affects."
+    },
+    {
+      "id": "alerts-settings",
+      "title": "Alerts, notifications and permissions",
+      "keywords": ["alerts", "notifications", "push", "microphone", "location", "permission", "alertas", "notificaciones", "microfono"],
+      "answer": "Quick menu → Settings → Alerts & notifications.\n\nTurn on notifications once per device (use Send test to check).\n\nLocation is only for Bespoke Programme / Day Centre staff during session windows.\n\nMicrophone is optional — for voice feedback or voice notes in chat."
+    },
+    {
+      "id": "guide",
+      "title": "Portal guide",
+      "keywords": ["guide", "help", "getting started", "guia", "ayuda", "manual"],
+      "answer": "The full Portal guide covers everything step by step with screenshots.\n\nQuick menu → Settings → Guide (or Getting started at the top until you mark it read).\n\nMark as read at the end so the logo reminder clears."
+    },
+    {
+      "id": "topbar",
+      "title": "Top bar buttons (PHOTO, CLIENTS, VENUE…)",
+      "keywords": ["photo", "clients", "venue", "pickup", "review", "plan", "stats", "lead", "top bar", "header buttons", "botones"],
+      "answer": "Top bar shortcuts (if shown for your role):\n\nPHOTO — session photos.\nCLIENTS — My participants.\nVENUE — venue review.\nPICKUP — drop off / pick up.\nREVIEW — swimming term review (swimming staff).\nPLAN — session planner (when active).\nLEAD / STATS — programme lead tools only."
+    },
+    {
+      "id": "logout",
+      "title": "Logout",
+      "keywords": ["logout", "log out", "sign out", "cerrar sesion", "salir"],
+      "answer": "Quick menu → scroll to Settings → Logout.\n\nUse this on shared devices. You will need to sign in again next time."
+    },
+    {
+      "id": "lead-tools",
+      "title": "Lead-only tools",
+      "keywords": ["lead", "programme lead", "stats", "session overview", "lead report", "performance review", "term review lead"],
+      "answer": "Programme leads see extra top-bar and Quick menu items: LEAD feedback report, STATS (sessions overview), performance / term review tools and Lead session report.\n\nIf you think you should have lead access but do not see these, contact the office."
+    },
+    {
+      "id": "profile-update",
+      "title": "Update my profile",
+      "keywords": ["profile", "annual", "personal details", "emergency contact", "update profile", "perfil", "datos personales"],
+      "answer": "Quick menu → Update my profile (annual profile check-in) to confirm personal and emergency details.\n\nComplete once a year when prompted, or open from the Quick menu any time."
+    },
+    {
+      "id": "term-week",
+      "title": "Week and Term views",
+      "keywords": ["week", "term", "calendar", "next session", "overview", "semana", "trimestre"],
+      "answer": "Under your dashboard overview cards:\n\nNext session — upcoming slot list.\nWeek — sessions grouped by day this week.\nTerm — working days in the term; red days still have outstanding feedback."
+    }
+  ]
+}
