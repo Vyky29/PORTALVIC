@@ -129,7 +129,7 @@
     "victor": {
       "staffId": "victor",
       "staffName": "Victor",
-      "avatarFile": "portal/staff_photos/victor.png",
+      "avatarFile": "portal/staff_photos/victor.png?v=20260606-victor-gris",
       "staffRoleTrack": "manager",
       "canViewAll": true
     },
