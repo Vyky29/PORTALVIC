@@ -359,6 +359,7 @@ body:has(#workspace .dash-hub--ops-admin) .admin-main{ min-height:0; }
 }
 @media (min-width:1200px){
   .dash-hub__grid--6{grid-template-columns:repeat(6,minmax(0,1fr))}
+  .dash-hub__grid--7{grid-template-columns:repeat(7,minmax(0,1fr))}
 }
 .dash-hub__tile{
   display:flex;
@@ -1048,8 +1049,39 @@ body:has(#workspace .dash-hub--dayops) .admin-main{
 .dash-hub--dayops .dash-hub__sessions-grids > .dash-hub__grid{
   flex:1;
 }
-.dash-hub--dayops .dash-hub__panel--team > .dash-hub__grid--6{
-  grid-template-columns:repeat(6,minmax(0,1fr));
+.dash-hub--dayops .dash-hub__panel--team > .dash-hub__grid--7{
+  grid-template-columns:repeat(7,minmax(0,1fr));
+  gap:clamp(5px,0.65vh,8px);
+}
+.dash-hub--dayops .dash-hub__panel--team .dash-hub__tile{
+  min-height:clamp(86px,9vh,104px);
+  padding-bottom:clamp(5px,0.7vh,8px);
+}
+.dash-hub--dayops .dash-hub__panel--team .dash-hub__tile-band{
+  min-height:clamp(38px,4.8vh,46px);
+  padding:clamp(5px,0.7vh,7px);
+}
+.dash-hub--dayops .dash-hub__panel--team .dash-hub__tile-band .admin-nav-ico{
+  width:clamp(28px,3.6vh,34px);
+  height:clamp(28px,3.6vh,34px);
+}
+.dash-hub--dayops .dash-hub__panel--team .dash-hub__tile-band .admin-nav-ico svg{
+  width:clamp(20px,2.6vh,24px);
+  height:clamp(20px,2.6vh,24px);
+}
+.dash-hub--dayops .dash-hub__panel--team .dash-hub__tile-label{
+  font-size:clamp(9.5px,1.05vh,11px);
+  line-height:1.15;
+  padding:5px clamp(4px,0.5vw,6px) 0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  white-space:normal;
+}
+.dash-hub--dayops .dash-hub__panel--team .dash-hub__tile-desc{
+  display:none;
 }
 .dash-hub--dayops .dash-hub__sessions-grids > .dash-hub__grid--5{
   grid-template-columns:repeat(5,minmax(0,1fr));
@@ -1176,7 +1208,7 @@ body.admin-touch-compact .dash-hub--nav-index:not(.dash-hub--nav-index-pick) .da
   overflow:visible;
   max-height:none;
 }
-body.admin-touch-compact .dash-hub--dayops .dash-hub__panel--team > .dash-hub__grid--6,
+body.admin-touch-compact .dash-hub--dayops .dash-hub__panel--team > .dash-hub__grid--7,
 body.admin-touch-compact .dash-hub--dayops .dash-hub__sessions-grids > .dash-hub__grid--5,
 body.admin-touch-compact .dash-hub--dayops .dash-hub__sessions-grids > .dash-hub__grid--6{
   grid-template-columns:repeat(2,minmax(0,1fr)) !important;
@@ -1247,7 +1279,9 @@ body.admin-touch-compact .dash-hub--dayops .dash-hub__sessions-grids > .dash-hub
     gap:8px;
     min-height:0;
   }
-  .dash-hub--dayops .dash-hub__panel--team > .dash-hub__grid--6,
+  .dash-hub--dayops .dash-hub__panel--team > .dash-hub__grid--7{
+    grid-template-columns:repeat(7,minmax(0,1fr));
+  }
   .dash-hub--dayops .dash-hub__sessions-grids > .dash-hub__grid--5,
   .dash-hub--dayops .dash-hub__sessions-grids > .dash-hub__grid--6{
     grid-template-columns:repeat(3,minmax(0,1fr));
@@ -1285,7 +1319,7 @@ body.admin-touch-compact .dash-hub--dayops .dash-hub__sessions-grids > .dash-hub
   }
 }
 @media (orientation:landscape) and (max-height:420px){
-  .dash-hub--dayops .dash-hub__panel--team > .dash-hub__grid--6,
+  .dash-hub--dayops .dash-hub__panel--team > .dash-hub__grid--7,
   .dash-hub--dayops .dash-hub__sessions-grids > .dash-hub__grid--5,
   .dash-hub--dayops .dash-hub__sessions-grids > .dash-hub__grid--6{
     grid-template-columns:repeat(2,minmax(0,1fr));
