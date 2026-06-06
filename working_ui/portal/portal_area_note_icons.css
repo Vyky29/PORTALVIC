@@ -116,7 +116,29 @@
   margin:0 auto;
 }
 .calendar-day--tomorrow .calendar-day-area-note-icon{
+  margin-top:0;
+}
+.calendar-day--tomorrow .session-area-note-inline{
+  display:inline-flex;
+  flex-direction:row;
+  align-items:center;
+  gap:6px;
+  min-width:0;
+  max-width:100%;
   margin-top:2px;
+}
+.calendar-day--tomorrow .session-area-note-inline .session-area-note-label{
+  display:block;
+  margin:0;
+  padding:0;
+  font-size:13px;
+  font-weight:600;
+  line-height:1.25;
+  color:var(--muted, #64748b);
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
 }
 .calendar-day--tomorrow .calendar-day-area-note-icon .session-area-note-img,
 .calendar-day--tomorrow .calendar-day-area-note-icon .session-area-note-svg{

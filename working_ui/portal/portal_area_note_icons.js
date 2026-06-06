@@ -146,11 +146,20 @@
       portalAreaNoteIconMarkup(key) +
       "</span>";
     if (!opts.showLabel) return iconHtml;
-    var caption = portalAreaNoteCaptionLabel(key, meta);
+    var caption = opts.labelText
+      ? String(opts.labelText).trim()
+      : portalAreaNoteCaptionLabel(key, meta);
+    if (!caption && meta && meta.label) caption = meta.label;
+    var wrapCls =
+      opts.layout === "inline" ? "session-area-note-inline" : "session-area-note-stack";
     return (
-      '<span class="session-area-note-stack">' +
+      '<span class="' +
+      wrapCls +
+      '">' +
       iconHtml +
-      '<span class="session-area-note-label" aria-hidden="true">' +
+      '<span class="session-area-note-label"' +
+      (opts.layout === "inline" ? "" : ' aria-hidden="true"') +
+      ">" +
       escapeHtml(caption) +
       "</span></span>"
     );
