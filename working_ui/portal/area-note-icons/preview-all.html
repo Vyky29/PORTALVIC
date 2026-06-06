@@ -14,14 +14,12 @@
     section { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin-bottom: 18px; }
     h2 { font-size: 1rem; margin: 0 0 6px; }
     .hint { font-size: 13px; color: var(--muted); margin: 0 0 14px; line-height: 1.4; }
-    .warn { color: var(--warn); font-weight: 600; }
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
     .card { border: 1px solid var(--line); border-radius: 10px; padding: 10px; min-width: 0; background: #fafcff; }
     .card--wide { grid-column: 1 / -1; }
     .name { font-size: 12px; font-weight: 700; margin: 0 0 8px; word-break: break-word; }
     .file { font-size: 11px; color: var(--muted); margin: 0 0 8px; font-family: ui-monospace, monospace; }
-    .frame { display: flex; align-items: center; justify-content: center; min-height: 96px; padding: 8px; border-radius: 8px; background: #fff; border: 1px dashed var(--line); }
-    .frame--row { min-height: auto; padding: 12px; }
+    .frame { display: flex; align-items: center; justify-content: center; min-height: 96px; padding: 8px; border-radius: 8px; background: repeating-conic-gradient(#e2e8f0 0% 25%, #fff 0% 50%) 50% / 16px 16px; border: 1px dashed var(--line); }
     .frame img { max-width: 100%; height: auto; display: block; }
     .frame--dark { background: #111; }
     .tag { display: inline-block; margin-top: 8px; font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 2px 6px; border-radius: 999px; }
@@ -32,86 +30,61 @@
 </head>
 <body>
   <main>
-    <h1>Area note icons — todas las imágenes</h1>
+    <h1>Area note icons — preview</h1>
     <p class="lead">
-      Referencia del mockup (recortes que diste) vs archivos que usa el portal hoy.
-      <span class="warn">Big Pool y Small Pool usan PNG del mockup en el dashboard (ya no SVG genérico).</span>
+      Pool icons from approved mockups with <strong>transparent background</strong> (checkerboard = alpha).
+      Loaded by <code>/portal/area-note-icons/*.png</code> via <code>portal_area_note_icons.js</code>.
     </p>
 
     <section>
-      <h2>1. Tu mockup — fila completa (referencia)</h2>
-      <p class="hint">Así deben verse label + dibujo en la tarjeta.</p>
+      <h2>Pool mockups — en uso</h2>
+      <p class="hint">Big Pool, Small Pool and Teaching Pool (splash).</p>
+      <div class="grid">
+        <div class="card">
+          <p class="name">Big Pool</p>
+          <p class="file">big-pool.png</p>
+          <div class="frame"><img src="big-pool.png" alt="" /></div>
+          <span class="tag tag--ok">Mockup · transparent</span>
+        </div>
+        <div class="card">
+          <p class="name">Small Pool</p>
+          <p class="file">small-pool.png</p>
+          <div class="frame"><img src="small-pool.png" alt="" /></div>
+          <span class="tag tag--ok">Mockup · transparent</span>
+        </div>
+        <div class="card">
+          <p class="name">Teaching Pool</p>
+          <p class="file">teaching-pool.png</p>
+          <div class="frame"><img src="teaching-pool.png" alt="" /></div>
+          <span class="tag tag--ok">Mockup · transparent</span>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Mockup reference (full sheet)</h2>
+      <p class="hint">Original 11-area mockup — not deployed as icons.</p>
       <div class="grid">
         <div class="card card--wide">
-          <p class="name">Big Pool — fila mockup</p>
-          <p class="file">_row_big.png</p>
-          <div class="frame frame--row"><img src="_row_big.png" alt="Big Pool row mockup" /></div>
-          <span class="tag tag--ref">Referencia mockup</span>
-        </div>
-        <div class="card card--wide">
-          <p class="name">Small Pool — fila mockup</p>
-          <p class="file">_row_small.png</p>
-          <div class="frame frame--row"><img src="_row_small.png" alt="Small Pool row mockup" /></div>
-          <span class="tag tag--ref">Referencia mockup</span>
+          <p class="name">11 areas mockup</p>
+          <p class="file">_source-mockup-11-areas.png</p>
+          <div class="frame frame--row"><img src="_source-mockup-11-areas.png" alt="Full mockup reference" /></div>
+          <span class="tag tag--ref">Referencia</span>
         </div>
       </div>
     </section>
 
     <section>
-      <h2>2. Tu mockup — solo el dibujo (recorte icono)</h2>
-      <p class="hint">Recortes del gráfico de pool (sin el texto).</p>
+      <h2>Otros iconos — fondo negro (pendiente mockup)</h2>
       <div class="grid">
-        <div class="card">
-          <p class="name">Big Pool icon crop</p>
-          <p class="file">_icon_big.png</p>
-          <div class="frame"><img src="_icon_big.png" alt="Big Pool icon crop" /></div>
-          <span class="tag tag--ref">Referencia mockup</span>
-        </div>
-        <div class="card">
-          <p class="name">Small Pool icon crop</p>
-          <p class="file">_icon_small.png</p>
-          <div class="frame"><img src="_icon_small.png" alt="Small Pool icon crop" /></div>
-          <span class="tag tag--ref">Referencia mockup</span>
-        </div>
-      </div>
-    </section>
-
-    <section>
-      <h2>3. Portal hoy — PNG en repo (otros dibujos / genéricos)</h2>
-      <p class="hint">Estos son los que carga <code>/portal/area-note-icons/*.png</code>. Fondo negro, estilo distinto al mockup.</p>
-      <div class="grid">
-        <div class="card"><p class="name">Big Pool</p><p class="file">big-pool.png</p><div class="frame"><img src="big-pool.png" alt="" /></div><span class="tag tag--ok">Mockup · en uso</span></div>
-        <div class="card"><p class="name">Small Pool</p><p class="file">small-pool.png</p><div class="frame"><img src="small-pool.png" alt="" /></div><span class="tag tag--ok">Mockup · en uso</span></div>
-        <div class="card"><p class="name">Teaching Pool</p><p class="file">teaching-pool.png</p><div class="frame frame--dark"><img src="teaching-pool.png" alt="" /></div><span class="tag tag--bad">En uso</span></div>
-        <div class="card"><p class="name">Hub Room</p><p class="file">hub-room.png</p><div class="frame frame--dark"><img src="hub-room.png" alt="" /></div><span class="tag tag--bad">En uso</span></div>
-        <div class="card"><p class="name">Room 2</p><p class="file">room-2.png</p><div class="frame frame--dark"><img src="room-2.png" alt="" /></div><span class="tag tag--bad">En uso</span></div>
-        <div class="card"><p class="name">Lane (SE)</p><p class="file">lane-se.png</p><div class="frame frame--dark"><img src="lane-se.png" alt="" /></div><span class="tag tag--bad">En uso</span></div>
-        <div class="card"><p class="name">Lane (DE)</p><p class="file">lane-de.png</p><div class="frame frame--dark"><img src="lane-de.png" alt="" /></div><span class="tag tag--bad">En uso</span></div>
-        <div class="card"><p class="name">Day Centre</p><p class="file">day-center.png</p><div class="frame frame--dark"><img src="day-center.png" alt="" /></div><span class="tag tag--bad">En uso</span></div>
-        <div class="card"><p class="name">Gym</p><p class="file">gym.png</p><div class="frame frame--dark"><img src="gym.png" alt="" /></div><span class="tag tag--bad">En uso</span></div>
-        <div class="card"><p class="name">Climbing Wall</p><p class="file">climbing-wall.png</p><div class="frame frame--dark"><img src="climbing-wall.png" alt="" /></div><span class="tag tag--bad">En uso</span></div>
-        <div class="card"><p class="name">Bespoke</p><p class="file">bespoke.png</p><div class="frame frame--dark"><img src="bespoke.png" alt="" /></div><span class="tag tag--bad">En uso</span></div>
-      </div>
-    </section>
-
-    <section>
-      <h2>4. Portal hoy — Big / Small Pool (SVG en código)</h2>
-      <p class="hint">Lo que ves en las tarjetas TODAY para esos dos pools — rectángulo + olas, no tus PNG.</p>
-      <div class="grid">
-        <div class="card">
-          <p class="name">Big Pool SVG (portal)</p>
-          <div class="frame">
-            <svg class="session-area-note-svg" viewBox="0 0 24 24" width="72" height="72" xmlns="http://www.w3.org/2000/svg" fill="none" aria-hidden="true"><rect x="2.5" y="7.5" width="19" height="11" rx="2" stroke="currentColor" stroke-width="1.85"/><path d="M5 13.2c2.4-1.1 4.8-1.1 7.2 0s4.8 1.1 7.2 0" stroke="currentColor" stroke-width="1.55" stroke-linecap="round"/><circle cx="18.8" cy="10.5" r="1.15" fill="currentColor"/><circle cx="18.8" cy="15" r="1.15" fill="currentColor"/></svg>
-          </div>
-          <span class="tag tag--bad">En uso en dashboard</span>
-        </div>
-        <div class="card">
-          <p class="name">Small Pool SVG (portal)</p>
-          <div class="frame">
-            <svg class="session-area-note-svg" viewBox="0 0 24 24" width="72" height="72" xmlns="http://www.w3.org/2000/svg" fill="none" aria-hidden="true" style="color:#0ea5e9"><rect x="4.5" y="8.5" width="15" height="9" rx="2" stroke="currentColor" stroke-width="1.85"/><path d="M6.5 12.8c1.9-.95 3.8-.95 5.7 0 1.9.95 3.8.95 5.7 0" stroke="currentColor" stroke-width="1.55" stroke-linecap="round"/><circle cx="17.2" cy="12.2" r="1.1" fill="currentColor"/></svg>
-          </div>
-          <span class="tag tag--bad">En uso en dashboard</span>
-        </div>
+        <div class="card"><p class="name">Hub Room</p><p class="file">hub-room.png</p><div class="frame frame--dark"><img src="hub-room.png" alt="" /></div><span class="tag tag--bad">Genérico</span></div>
+        <div class="card"><p class="name">Room 2</p><p class="file">room-2.png</p><div class="frame frame--dark"><img src="room-2.png" alt="" /></div><span class="tag tag--bad">Genérico</span></div>
+        <div class="card"><p class="name">Lane (SE)</p><p class="file">lane-se.png</p><div class="frame frame--dark"><img src="lane-se.png" alt="" /></div><span class="tag tag--bad">Genérico</span></div>
+        <div class="card"><p class="name">Lane (DE)</p><p class="file">lane-de.png</p><div class="frame frame--dark"><img src="lane-de.png" alt="" /></div><span class="tag tag--bad">Genérico</span></div>
+        <div class="card"><p class="name">Day Centre</p><p class="file">day-center.png</p><div class="frame frame--dark"><img src="day-center.png" alt="" /></div><span class="tag tag--bad">Genérico</span></div>
+        <div class="card"><p class="name">Gym</p><p class="file">gym.png</p><div class="frame frame--dark"><img src="gym.png" alt="" /></div><span class="tag tag--bad">Genérico</span></div>
+        <div class="card"><p class="name">Climbing Wall</p><p class="file">climbing-wall.png</p><div class="frame frame--dark"><img src="climbing-wall.png" alt="" /></div><span class="tag tag--bad">Genérico</span></div>
+        <div class="card"><p class="name">Bespoke</p><p class="file">bespoke.png</p><div class="frame frame--dark"><img src="bespoke.png" alt="" /></div><span class="tag tag--bad">Genérico</span></div>
       </div>
     </section>
   </main>
