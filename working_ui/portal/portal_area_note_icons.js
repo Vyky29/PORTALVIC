@@ -180,12 +180,12 @@
   function portalTodayAreaNoteMetrics(sessionCount, scrollMode, gridEl) {
     var n = Math.min(9, Math.max(1, sessionCount | 0));
     if (scrollMode) {
-      return { iconPx: 32, areaIconPx: 38, labelFs: 10, symbolColMax: 72, stackGap: 6, labelBlock: 18 };
+      return { iconPx: 32, areaIconPx: 38, labelFs: 10, symbolColMax: 72, stackGap: 10, labelBlock: 22 };
     }
     var dense = n >= 6;
     var rowH = portalMeasureTodaySessionRowHeight(gridEl, n);
     var labelFs = dense ? 9 : 10;
-    var stackGap = dense ? 4 : 6;
+    var stackGap = dense ? 8 : 10;
     var labelBlock = Math.ceil(labelFs * 1.12) + stackGap + 2;
     var areaIconPx;
     if (rowH > 0) {

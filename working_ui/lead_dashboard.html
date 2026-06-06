@@ -98,7 +98,7 @@
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260620-inbox-logo-orbit" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
-  <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260606-dense-icons" />
+  <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260606-area-note-gap" />
   <link rel="stylesheet" href="/portal/portal_help_bot.css?v=20260606-help-bot" />
 </head>
 <body class="lead-dashboard">
@@ -9469,8 +9469,8 @@
       grid.style.setProperty('--today-icon', iconPx + 'px');
       grid.style.setProperty('--today-area-icon', areaIconPx + 'px');
       grid.style.setProperty('--today-area-label-fs', areaM.labelFs + 'px');
-      grid.style.setProperty('--today-area-stack-gap', (areaM.stackGap != null ? areaM.stackGap : 6) + 'px');
-      grid.style.setProperty('--today-area-label-block', (areaM.labelBlock != null ? areaM.labelBlock : 18) + 'px');
+      grid.style.setProperty('--today-area-stack-gap', (areaM.stackGap != null ? areaM.stackGap : 10) + 'px');
+      grid.style.setProperty('--today-area-label-block', (areaM.labelBlock != null ? areaM.labelBlock : 22) + 'px');
       grid.style.setProperty('--today-symbol-col-max', areaM.symbolColMax + 'px');
       grid.style.setProperty('--today-row-gap', gapPx + 'px');
       grid.style.setProperty('--today-row-pad-y', padY + 'px');
