@@ -36,6 +36,9 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
     ],
     "javier": [
       "2026-05-21"
+    ],
+    "alex": [
+      "2026-06-21"
     ]
   },
   "termStaffOffWeekdaysRangeByProfileKey": {
@@ -228,6 +231,9 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       3,
       5,
       6
+    ],
+    "andres": [
+      0
     ]
   },
   "termStaffWeekdayIndicesDashboardByProfileKey": {
@@ -333,13 +339,15 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       3,
       5,
       6
+    ],
+    "andres": [
+      0
     ]
   },
   "termStaffShiftDatesByProfileKey": {
     "alex": [
       "2026-06-07",
       "2026-06-14",
-      "2026-06-21",
       "2026-06-28",
       "2026-07-05",
       "2026-07-12"
@@ -800,6 +808,9 @@ window.PORTAL_TERM_FROM_TIMETABLE = {
       "2026-07-14",
       "2026-07-15",
       "2026-07-17"
+    ],
+    "andres": [
+      "2026-06-21"
     ]
   }
 };
