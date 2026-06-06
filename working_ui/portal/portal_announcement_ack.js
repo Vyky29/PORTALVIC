@@ -264,4 +264,59 @@
       } catch (_) {}
     }
   };
+
+  /** Escape + paragraph breaks for announcement/reminder body (pending sign + signed log). */
+  global.portalFormatSignableMessageHtml = function portalFormatSignableMessageHtml(raw) {
+    function esc(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+    var text = String(raw || "").trim();
+    if (!text) {
+      return '<p class="announcement-message-p announcement-message-p--empty">No details captured.</p>';
+    }
+    if (/\n\s*\n/.test(text)) {
+      return text
+        .split(/\n\s*\n+/)
+        .map(function (block) {
+          return String(block || "").trim();
+        })
+        .filter(Boolean)
+        .map(function (block) {
+          return (
+            '<p class="announcement-message-p">' +
+            esc(block).replace(/\n/g, "<br>") +
+            "</p>"
+          );
+        })
+        .join("");
+    }
+    if (/\n/.test(text)) {
+      return (
+        '<p class="announcement-message-p">' +
+        esc(text).replace(/\n/g, "<br>") +
+        "</p>"
+      );
+    }
+    if (text.length < 80) {
+      return '<p class="announcement-message-p">' + esc(text) + "</p>";
+    }
+    var parts = text.match(/[^.!?]+[.!?]+(?:\s+|$)|[^.!?]+$/g) || [text];
+    parts = parts
+      .map(function (part) {
+        return String(part || "").trim();
+      })
+      .filter(Boolean);
+    if (parts.length <= 1) {
+      return '<p class="announcement-message-p">' + esc(text) + "</p>";
+    }
+    return parts
+      .map(function (part) {
+        return '<p class="announcement-message-p">' + esc(part) + "</p>";
+      })
+      .join("");
+  };
 })(typeof window !== "undefined" ? window : globalThis);

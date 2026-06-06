@@ -1206,6 +1206,20 @@
       color:#334155;
       overflow-wrap:break-word;
     }
+    .announcement-message-block .announcement-message-p{
+      margin:0 0 10px;
+      color:#334155;
+      font-size:15px;
+      line-height:1.5;
+      overflow-wrap:break-word;
+    }
+    .announcement-message-block .announcement-message-p:last-child{
+      margin-bottom:0;
+    }
+    .announcement-history-body.announcement-message-block .announcement-message-p{
+      font-size:14px;
+      line-height:1.48;
+    }
     .announcement-lock-actions{
       display:grid;
       grid-template-columns:1fr;
