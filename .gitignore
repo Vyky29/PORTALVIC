@@ -38,5 +38,5 @@ hr_source/
 payments_source/
 *.xlsx
 
-# Optional: uncomment if you add Node tooling later
-# node_modules/
+# Node (Supabase CLI via package.json)
+node_modules/

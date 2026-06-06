@@ -50,6 +50,8 @@ export function portalLeadProgrammeKey(profile, authEmail) {
   const fullNameKey = normKey(profile && profile.full_name);
   if (fullNameKey.indexOf("traperocasado") >= 0 || fullNameKey.indexOf("berta") >= 0) return "berta";
   if (fullNameKey.indexOf("kyeifram") >= 0 || fullNameKey.indexOf("john") >= 0) return "john";
+  if (fullNameKey.indexOf("michelle") >= 0) return "michelle";
+  if (em.indexOf("michelle@youtimecounselling") >= 0) return "michelle";
   if (usernameKey === "stf006" || em === "stf006@staff.import.pending") return "john";
   if (usernameKey === "stf012" || em === "stf012@staff.import.pending") return "berta";
   const inferred = portalInferStaffKey(profile, authEmail);
@@ -70,6 +72,16 @@ const JOHN_SCOPES = [
     weekdays: ["Sunday"],
     serviceKeys: ["multi"],
     venues: ["swimfarm"],
+    programmeWideRoster: true,
+  },
+];
+
+const MICHELLE_SCOPES = [
+  {
+    id: "day-centre-all",
+    label: "Day Centre — all programme days",
+    weekdays: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+    serviceKeys: ["daycentre"],
     programmeWideRoster: true,
   },
 ];
@@ -104,11 +116,16 @@ function normKey(v) {
 
 function normService(v) {
   const s = normKey(v);
+  if (s.indexOf("daycentre") >= 0 || s.indexOf("daycenter") >= 0) return "daycentre";
   if (s.indexOf("bespoke") >= 0) return "bespoke";
   if (s.indexOf("multi") >= 0) return "multi";
   if (s.indexOf("aquatic") >= 0) return "aquatic";
   if (s.indexOf("climb") >= 0) return "climbing";
   return s;
+}
+
+function isDayCentreService(serviceRaw) {
+  return normService(serviceRaw) === "daycentre";
 }
 
 function serviceExcludedForLeadOverview(serviceRaw) {
@@ -190,6 +207,7 @@ export function portalLeadSessionScopesForProfile(profile, authEmail) {
   const key = portalLeadProgrammeKey(profile, authEmail);
   if (key === "john") return JOHN_SCOPES.slice();
   if (key === "berta") return BERTA_SCOPES.slice();
+  if (key === "michelle") return MICHELLE_SCOPES.slice();
   return [];
 }
 
@@ -208,6 +226,7 @@ function weekdayFromIso(iso) {
 function serviceMatches(serviceRaw, scope) {
   const sk = normService(serviceRaw);
   if (!scope.serviceKeys || !scope.serviceKeys.length) return true;
+  if (scope.serviceKeys.indexOf("daycentre") >= 0 && isDayCentreService(serviceRaw)) return true;
   return scope.serviceKeys.indexOf(sk) >= 0;
 }
 

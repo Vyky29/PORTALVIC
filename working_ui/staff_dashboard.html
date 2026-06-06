@@ -93,11 +93,13 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260606-screenshot-ceo" />
   <script src="/portal/portal_screenshot_guard.js?v=20260606-screenshot-ceo"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260622-next-session-grid" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260622-next-chip-client" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260606-topbar-icons" />
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260620-inbox-logo-orbit" />
-  <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260601-landscape-full" />
+  <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
+  <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
   <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260622-area-label" />
+  <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260622-ghost-view" />
 </head>
 <body>
   <script>
@@ -970,6 +972,7 @@
   <script src="/portal/teflon_guide_demo_merge.js?v=20260604-guide-roster"></script>
   <script src="/portal/portal_participant_catalog.js?v=20260601-participant-dedupe"></script>
   <script src="/portal/staff_roster_resolve.js?v=20260611-javi-roster-guard"></script>
+  <script src="/portal/portal-ghost-view.js?v=20260622-ghost-view"></script>
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260621-lead-inbox" />
   <script src="/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact"></script>
   <script src="/portal/portal_topbar_header.js?v=20260605-topbar-align"></script>
@@ -9877,14 +9880,18 @@
         const chips = Array.isArray(preview.participants) ? preview.participants : [];
         const gridVars = portalTodayNextChipGridVars(chips.length);
         const aria = 'Next session ' + String(preview.weekday || '') + ' ' + String(preview.dateLabel || '');
-        html += '<button type="button" class="today-day-panel__next" data-open-next-session="1" aria-label="' + escapeHtml(aria.trim()) + '">';
+        html += '<div class="today-day-panel__next">';
+        html += '<button type="button" class="today-day-panel__next-open" data-open-next-session="1" aria-label="' + escapeHtml(aria.trim()) + '">';
         html += '<div class="today-day-panel__next-head">';
         html += '<span class="today-day-panel__next-kicker">Next session</span>';
         html += '<span class="today-day-panel__next-date">' + escapeHtml(preview.weekday || '') + ' · ' + escapeHtml(preview.dateLabel || '') + '</span></div>';
+        html += '</button>';
         if(chips.length){
           html += '<div class="today-day-panel__chips" style="--today-next-chip-cols:' + gridVars.cols + ';--today-next-avatar:' + gridVars.avatar + 'px" role="list">';
           chips.forEach(function(p){
-            const name = escapeHtml(p.name || '—');
+            const rawName = String(p.name || '—').trim();
+            const name = escapeHtml(rawName);
+            const rawId = String(p.clientId || '').trim();
             const src = p.photoUrl ? String(p.photoUrl).trim() : '';
             const av = src
               ? '<img class="portal-screenshot-protected" src="' + escapeHtml(src) + '" alt="" loading="lazy" decoding="async" draggable="false" onerror="this.remove();this.parentElement.classList.add(\'today-participant-chip__avatar--empty\');"/>'
@@ -9892,31 +9899,80 @@
             const med = p.hasMedicalAlert
               ? '<span class="today-participant-chip__med" title="Medical condition on file">' + TODAY_PARTICIPANT_MED_ICON + '</span>'
               : '';
-            html += '<div class="today-participant-chip" role="listitem">';
+            html += '<button type="button" class="today-participant-chip" data-next-session-participant="1" data-next-session-client="' + escapeHtml(rawId) + '" data-next-session-name="' + escapeHtml(rawName) + '" aria-label="Open profile for ' + name + '" role="listitem">';
             html += '<span class="today-participant-chip__avatar-wrap">';
             html += '<span class="today-participant-chip__avatar' + (src ? '' : ' today-participant-chip__avatar--empty') + '">' + av + '</span>';
             html += med + '</span>';
-            html += '<span class="today-participant-chip__name">' + name + '</span></div>';
+            html += '<span class="today-participant-chip__name">' + name + '</span></button>';
           });
           html += '</div>';
         }
         const venue = String(preview.venueLabel || '').trim();
         const n = Number(preview.sessionCount) || 0;
         const meta = [venue, n === 1 ? '1 session' : (n + ' sessions')].filter(Boolean).join(' · ');
-        if(meta) html += '<p class="today-day-panel__meta">' + escapeHtml(meta) + '</p>';
-        html += '</button>';
+        if(meta){
+          html += '<button type="button" class="today-day-panel__next-open" data-open-next-session="1" aria-label="Open next session list">';
+          html += '<p class="today-day-panel__meta">' + escapeHtml(meta) + '</p></button>';
+        }
+        html += '</div>';
       }
       html += '</div>';
       return html;
     }
+    function portalResolveClientIdForParticipant(clientId, name){
+      const id = String(clientId || '').trim();
+      if(id && typeof clientNotesById !== 'undefined' && clientNotesById[id]) return id;
+      const want = String(name || '').trim().toLowerCase();
+      if(!want || typeof clientNotesById === 'undefined') return id;
+      const keys = Object.keys(clientNotesById);
+      for(let i = 0; i < keys.length; i++){
+        const c = clientNotesById[keys[i]];
+        if(c && String(c.name || '').trim().toLowerCase() === want) return keys[i];
+      }
+      return id;
+    }
+    function openClientFromNextSessionParticipant(clientId, name){
+      const preview = dashboardData && dashboardData.portalTodayNextSessionPreview;
+      const sub = preview
+        ? ('Next session · ' + String(preview.weekday || '').trim() + ' ' + String(preview.dateLabel || '').trim()).trim()
+        : 'Next session participant';
+      const resolvedId = portalResolveClientIdForParticipant(clientId, name);
+      let item = resolvedId ? buildClientDirectorySheetItem(resolvedId, sub) : null;
+      if(!item){
+        item = {
+          kind: 'client',
+          clientId: resolvedId || '',
+          name: String(name || '—').trim() || '—',
+          time: sub,
+          general: '',
+          specialty: '',
+          activity: '',
+          openSheet: true,
+          directoryProfile: true
+        };
+      }else{
+        item.directoryProfile = true;
+        item.time = sub;
+      }
+      openClient(item);
+    }
     function portalBindTodayDayOffPanel(grid){
       if(!grid) return;
-      const nextBtn = grid.querySelector('[data-open-next-session="1"]');
-      if(!nextBtn) return;
-      const open = function(){
-        if(typeof openSheet === 'function') openSheet('tomorrowSheet');
-      };
-      nextBtn.addEventListener('click', open);
+      grid.querySelectorAll('[data-open-next-session="1"]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          if(typeof openSheet === 'function') openSheet('tomorrowSheet');
+        });
+      });
+      grid.querySelectorAll('[data-next-session-participant="1"]').forEach(function(btn){
+        btn.addEventListener('click', function(ev){
+          ev.preventDefault();
+          ev.stopPropagation();
+          openClientFromNextSessionParticipant(
+            btn.getAttribute('data-next-session-client') || '',
+            btn.getAttribute('data-next-session-name') || ''
+          );
+        });
+      });
     }
 
     function applyTodayGridSizing(grid, count){
@@ -11781,6 +11837,7 @@
       sheet.classList.remove('open');
       sheet.setAttribute('aria-hidden', 'true');
       document.getElementById('clientBtnSessionsOverview')?.setAttribute('aria-expanded', 'false');
+      if(typeof portalUnlockOrientation === 'function') void portalUnlockOrientation();
       const stillOpen = document.querySelectorAll('.sheet.open').length;
       if(stillOpen === 0 && backdropEl){
         backdropEl.classList.remove('open');
@@ -11812,6 +11869,7 @@
       document.body.style.overflow = 'hidden';
       document.getElementById('clientBtnSessionsOverview')?.setAttribute('aria-expanded', 'true');
       syncDockNavContext();
+      if(typeof portalLockLandscape === 'function') void portalLockLandscape();
       if(window.PortalClientSessionsOverview && typeof window.PortalClientSessionsOverview.render === 'function'){
         try{
           await window.PortalClientSessionsOverview.render(host, { clientId, clientName });
@@ -13365,6 +13423,9 @@
       async function rehydrateFromProfile(){
         var runId = ++_rehydrateRun;
         try {
+        try {
+          if (window.__PORTAL_GHOST_VERIFY_PROMISE__) await window.__PORTAL_GHOST_VERIFY_PROMISE__;
+        } catch (_ghostWait) {}
         var p = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
         var session = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session;
         var user = session && session.user ? session.user : null;
@@ -13379,7 +13440,31 @@
           portalStaffFinishIdentityUi(profileForRoster, p, session);
           return;
         }
-        var rosterHit = portalStaffBootstrapRosterFromSession(profileForRoster, user);
+        if (window.__PORTAL_GHOST_VIEW__ && window.__PORTAL_GHOST_VIEW__.error) {
+          portalStaffFinishIdentityUi(profileForRoster, p, session);
+          return;
+        }
+        var rosterHit = null;
+        if (window.__PORTAL_GHOST_VIEW__ && window.__PORTAL_GHOST_VIEW__.active) {
+          var ghost = window.__PORTAL_GHOST_VIEW__;
+          var ghostAdapter = typeof StaffDashboardSpreadsheetAdapter !== "undefined" ? StaffDashboardSpreadsheetAdapter : null;
+          var ghostSource =
+            typeof window.portalResolveStaffDashboardSource === "function"
+              ? window.portalResolveStaffDashboardSource()
+              : window.STAFF_DASHBOARD_SOURCE;
+          var ghostKey = portalLocalCanonicalStaffKey(String(ghost.rosterKey || "").trim().toLowerCase());
+          if (ghostAdapter && ghostSource && ghostKey) {
+            var ghostBoot = ghostAdapter.bootstrap({ source: ghostSource, staffId: ghostKey });
+            if (ghostBoot) {
+              rosterHit = { staffId: ghostKey, boot: ghostBoot };
+              profileForRoster = {
+                username: ghostKey,
+                full_name: String(ghost.displayName || ghostKey).trim(),
+              };
+            }
+          }
+        }
+        if (!rosterHit) rosterHit = portalStaffBootstrapRosterFromSession(profileForRoster, user);
         if (!rosterHit || !rosterHit.boot) {
           console.warn(
             "staff_dashboard: roster bootstrap failed",

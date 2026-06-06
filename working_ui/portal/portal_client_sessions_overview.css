@@ -261,3 +261,26 @@ body.portal-sessions-overview-open{
 @media (max-width: 420px) and (orientation: portrait){
   .pcso-kpi-grid{grid-template-columns:1fr;gap:8px}
 }
+
+@media (max-width: 900px) and (orientation: portrait){
+  body.portal-sessions-overview-open #clientSessionsOverviewSheet.sheet--sessions-overview.open::before,
+  body.portal-force-landscape-hint #clientSessionsOverviewSheet.sheet--sessions-overview.open::before{
+    content:"Rotate your phone sideways for the full sessions table";
+    display:block;
+    margin:0 0 8px;
+    padding:8px 10px;
+    border-radius:10px;
+    background:#eff6ff;
+    border:1px solid #bfdbfe;
+    color:#1e3a5f;
+    font-size:12px;
+    font-weight:700;
+    text-align:center;
+    overflow-wrap:anywhere;
+  }
+}
+
+html.portal-force-landscape,
+body.portal-force-landscape{
+  min-height:100dvh;
+}

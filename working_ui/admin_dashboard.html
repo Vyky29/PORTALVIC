@@ -24,7 +24,9 @@
   <script src="/portal/admin-portal-achievements.js?v=20260621-lead-inbox"></script>
   <link rel="stylesheet" href="/portal/portal_staff_map.css?v=20260602-staff-map-header" />
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260621-lead-inbox" />
-  <script src="/portal/admin-portal-staff-map.js?v=20260602-staff-map-header"></script>
+  <script src="/portal/admin-portal-staff-map.js?v=20260622-ghost-map"></script>
+  <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260622-ghost-view" />
+  <script src="/portal/admin-portal-ghost-teleport.js?v=20260622-ghost-view"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
   <script src="/portal/portal_dm_voice.js?v=20260531-dm-voice"></script>
   <script src="/portal/portal-change-log.js?v=20260601-changelog-merge"></script>
@@ -325,6 +327,7 @@
       { id:'portal_activity', label:'Portal activity' },
       { id:'portal_training_progress', label:'Training & readiness' },
       { id:'staff_live_map', label:'Staff live map' },
+      { id:'staff_ghost_teleport', label:'Dashboard teleport' },
       { id:'staffhr', label:'Staff & HR' },
       { id:'onboarding', label:'Onboarding' },
       { id:'staffhr_contracts', label:'Employment contracts', hubLabel:'CONTRACTS' },
@@ -363,7 +366,7 @@
       { id:'g_zoho', label:'H&R (ZohoPeople)', children:['staffhr','onboarding','staffhr_contracts','interviews'] },
       { id:'g_supabase', label:'Documents', children:['portal_payslips','portal_docs_timesheet','portal_docs_expense','portal_docs_portalpin','portal_docs_certificate','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid'] },
       { id:'g_xero', label:'Finance (Xero)', children:['reenrol_payments','invoices'] },
-      { id:'g_settings_portal', label:'Settings & dashboards', children:['__h:This app','settings','portal_device_notifications','logs','portal_nav_alerts','__h:Monitoring','portal_activity','portal_training_progress','staff_live_map','__h:Other portals','portal_nav_staff','portal_nav_lead','portal_nav_ceo','portal_nav_admin','__h:Session','portal_nav_logout'] }
+      { id:'g_settings_portal', label:'Settings & dashboards', children:['__h:This app','settings','portal_device_notifications','logs','portal_nav_alerts','__h:Monitoring','portal_activity','portal_training_progress','staff_live_map','staff_ghost_teleport','__h:Other portals','portal_nav_staff','portal_nav_lead','portal_nav_ceo','portal_nav_admin','__h:Session','portal_nav_logout'] }
     ];
     /* Stroke SVGs (outline), inherit sidebar text colour — replaces emoji glyphs */
     var NAV_ICON_SVGS = {
@@ -403,6 +406,7 @@
       portal_activity:'<path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/>',
       portal_training_progress:'<path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',
       staff_live_map:'<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>',
+      staff_ghost_teleport:'<path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>',
       reports:'<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
       policies:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>',
       settings:'<line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>',
@@ -1899,6 +1903,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             window.PortalStaffLiveMap.destroyModule();
           }
         }catch(_mapDestroy){}
+      }
+      if(state.view === 'staff_ghost_teleport' && id !== 'staff_ghost_teleport'){
+        try{
+          if(window.PortalGhostTeleport && typeof window.PortalGhostTeleport.destroyModule === 'function'){
+            window.PortalGhostTeleport.destroyModule();
+          }
+        }catch(_ghostDestroy){}
       }
       if(id === 'novo_dashboard') id = 'dashboard';
       if(id === 'novo_schedule') id = 'c4k_services';
@@ -16319,6 +16330,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       else if(id==='portal_training_progress') html = viewPortalTrainingProgress();
       else if(id==='participant_achievements') html = viewParticipantAchievements();
       else if(id==='staff_live_map') html = viewStaffLiveMap();
+      else if(id==='staff_ghost_teleport') html = viewStaffGhostTeleport();
       else if(id==='policies') html = viewPoliciesSignoffs();
       else if(id==='onboarding') html = viewOnboarding();
       else if(id==='reports') html = viewReports();
@@ -16992,6 +17004,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portal_activity:'Staff portal visits — login, pages, and active-tab time (UK London).',
         portal_training_progress:'Staff readiness — training, compliance sign-offs, and app/device setup in one operational view.',
         staff_live_map:'Live map during Bespoke Programme and Day Centre shift windows only: from 15 minutes before first qualifying session until 30 minutes after last.',
+        staff_ghost_teleport:'Open any worker dashboard in read-only ghost view — roster and TODAY mirror without their PIN or logging them out.',
         policies:'Documents · sign-offs · compliance',
         invoices:'Build draft invoice lines here, then export a CSV ready to import into Xero.',
         c4k_payments:'Term fees and balances owed — programme finance grid with one row per family.',
@@ -17255,6 +17268,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portalDashTileHtml('portal_activity', '', 'analytics', 'Portal activity', 'Login, pages & time on app', false, 'analytics')+
         portalDashTileHtml('portal_training_progress', '', 'analytics', 'Staff readiness', 'Training, compliance and app setup', false, 'analytics')+
         portalDashTileHtml('staff_live_map', '', 'clients', 'Staff live map', 'On-site locations (~10 m)', false, 'scheduling')+
+        portalDashTileHtml('staff_ghost_teleport', '', 'analytics', 'Dashboard teleport', 'Read-only ghost view of worker app', false, 'analytics')+
         portalDashTileHtml('', '', 'announcements', 'Announcements', 'Notices &amp; reminders', false, 'announcements', 'announcements_comms');
       return (
         '<div class="dash-hub dash-hub--dayops">'+
@@ -17514,8 +17528,35 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function bindStaffLiveMapModule(){
       portalStaffLiveMapConfigureOnce();
+      portalGhostTeleportConfigureOnce();
       if(window.PortalStaffLiveMap && typeof window.PortalStaffLiveMap.bindModule === 'function'){
         window.PortalStaffLiveMap.bindModule();
+      }
+    }
+    function portalGhostTeleportConfigureOnce(){
+      if(window.__portalGhostTeleportConfigured || !window.PortalGhostTeleport) return;
+      window.__portalGhostTeleportConfigured = true;
+      window.PortalGhostTeleport.configure({
+        esc: esc,
+        toast: portalAdminToast,
+        getClient: getSchedSupabaseClient,
+        getSupabaseUrl: function(){
+          var u = typeof window.SUPABASE_URL === 'string' ? window.SUPABASE_URL.trim() : '';
+          return u || 'https://cklpnwhlqsulpmkipmqb.supabase.co';
+        },
+        getAnonKey: function(){
+          return typeof window.SUPABASE_ANON_KEY === 'string' ? window.SUPABASE_ANON_KEY : '';
+        }
+      });
+    }
+    function viewStaffGhostTeleport(){
+      portalGhostTeleportConfigureOnce();
+      return window.PortalGhostTeleport ? window.PortalGhostTeleport.viewHtml() : '<p class="page-intro">Ghost teleport module failed to load.</p>';
+    }
+    function bindStaffGhostTeleportModule(){
+      portalGhostTeleportConfigureOnce();
+      if(window.PortalGhostTeleport && typeof window.PortalGhostTeleport.bindModule === 'function'){
+        window.PortalGhostTeleport.bindModule();
       }
     }
     function viewPoliciesSignoffs(){
@@ -20473,7 +20514,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       root.querySelectorAll('[data-act]').forEach(function(b){
         b.addEventListener('click', function(){
           var v = b.getAttribute('data-act');
-          if(v==='dashboard'||v==='operations'||v==='operations_admin'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='c4k_registers'||v==='c4k_late_submissions'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='staffhr_contracts'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='scheduling'||v==='term_roster_edit'||v==='roster_spreadsheets'||v==='absents_refunds'||v==='portal_documents'||v==='portal_payslips'||v==='portal_activity'||v==='portal_training_progress'||v==='participant_achievements'||v==='staff_live_map'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='interviews'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings'||v==='logs') setView(v);
+          if(v==='dashboard'||v==='operations'||v==='operations_admin'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='c4k_registers'||v==='c4k_late_submissions'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='staffhr_contracts'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='scheduling'||v==='term_roster_edit'||v==='roster_spreadsheets'||v==='absents_refunds'||v==='portal_documents'||v==='portal_payslips'||v==='portal_activity'||v==='portal_training_progress'||v==='participant_achievements'||v==='staff_live_map'||v==='staff_ghost_teleport'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='interviews'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings'||v==='logs') setView(v);
           closeSidebarMob();
         });
       });
@@ -20796,6 +20837,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(id==='portal_training_progress') bindPortalTrainingProgressModule();
       if(id==='participant_achievements') bindParticipantAchievementsModule();
       if(id==='staff_live_map') bindStaffLiveMapModule();
+      if(id==='staff_ghost_teleport') bindStaffGhostTeleportModule();
       if(id==='clients'){
         var root2 = $('workspace');
         function paxContactsFindById(pid){

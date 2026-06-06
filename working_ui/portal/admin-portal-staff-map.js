@@ -132,7 +132,16 @@
       '<p class="portal-staff-map-list-heading">On map</p>' +
       rows
       .map(function (r) {
+        var ghostBtn =
+          global.PortalGhostTeleport && typeof global.PortalGhostTeleport.openForUserId === "function"
+            ? ' <button type="button" class="btn btn--ghost btn--sm portal-staff-map-ghost-btn" data-map-ghost="' +
+              esc(r.staff_user_id) +
+              '" data-map-ghost-surface="' +
+              esc(r.staff_surface || "staff") +
+              '">Ghost view</button>'
+            : "";
         return (
+          '<div class="portal-staff-map-list-item-wrap">' +
           '<button type="button" class="portal-staff-map-list-item" data-map-focus="' +
           esc(r.staff_user_id) +
           '">' +
@@ -145,7 +154,9 @@
           esc(formatAgo(r.updated_at)) +
           " · ~" +
           esc(String(Math.round(displayRadiusM(r.accuracy_m)))) +
-          " m</span></button>"
+          " m</span></button>" +
+          ghostBtn +
+          "</div>"
         );
       })
       .join("");
@@ -156,6 +167,17 @@
         if (_map && m) {
           _map.setView(m.getLatLng ? m.getLatLng() : m.getBounds().getCenter(), 17);
         }
+      });
+    });
+    host.querySelectorAll("[data-map-ghost]").forEach(function (btn) {
+      btn.addEventListener("click", function (ev) {
+        ev.stopPropagation();
+        var uid = btn.getAttribute("data-map-ghost");
+        var surface = btn.getAttribute("data-map-ghost-surface") || "staff";
+        if (!uid || !global.PortalGhostTeleport || typeof global.PortalGhostTeleport.openForUserId !== "function") {
+          return;
+        }
+        void global.PortalGhostTeleport.openForUserId(uid, surface, btn);
       });
     });
   }

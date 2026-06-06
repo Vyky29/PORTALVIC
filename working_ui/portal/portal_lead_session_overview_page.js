@@ -1,5 +1,5 @@
 /**
- * Standalone Session overview for programme leads (John, Berta).
+ * Standalone Session overview for programme leads (John, Berta, Michelle).
  */
 import { bootstrapDashboardSupabase } from "./auth-handler.js";
 import { portalCanAccessServiceLeadsMenu } from "./portal_quick_menu_service_leads.js";

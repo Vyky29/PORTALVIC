@@ -1,0 +1,20 @@
+{
+  "name": "portalvic",
+  "private": true,
+  "description": "PORTALVIC — Supabase CLI runs from this repo via npx (no global install).",
+  "scripts": {
+    "supabase": "supabase",
+    "supabase:init": "supabase init",
+    "supabase:login": "supabase login",
+    "supabase:link": "supabase link --project-ref cklpnwhlqsulpmkipmqb",
+    "supabase:functions:list": "supabase functions list",
+    "deploy:ghost": "supabase functions deploy portal-admin-ghost-start --no-verify-jwt && supabase functions deploy portal-admin-ghost-verify --no-verify-jwt",
+    "deploy:parent-notify": "supabase functions deploy portal-parent-notify-send --no-verify-jwt"
+  },
+  "devDependencies": {
+    "supabase": "^2.67.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

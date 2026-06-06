@@ -7,7 +7,8 @@
   <title>Session overview · Programme lead</title>
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260526-lead-overview" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260603-form-record-modal" />
-  <link rel="stylesheet" href="/portal/portal-lead-session-overview.css?v=20260608-lead-overview" />
+  <link rel="stylesheet" href="/portal/portal-lead-session-overview.css?v=20260622-next-chip-client" />
+  <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
   <script src="/portal/admin-portal-form-record-modal.js?v=20260603-form-record-modal"></script>
   <script src="/portal/admin-portal-day-ops.js?v=20260603-form-record-modal"></script>
   <script src="/portal/admin-sessions-hub.js?v=20260608-lead-overview"></script>
@@ -89,7 +90,11 @@
     </div>
   </main>
   <script type="module">
-    import { portalInitLeadSessionOverviewPage } from "/portal/portal_lead_session_overview_page.js?v=20260615-lead-overview-fix";
+    import { portalInitLeadSessionOverviewPage } from "/portal/portal_lead_session_overview_page.js?v=20260622-michelle-dc";
+    if (typeof portalLockLandscape === "function") void portalLockLandscape();
+    window.addEventListener("pagehide", function () {
+      if (typeof portalUnlockOrientation === "function") void portalUnlockOrientation();
+    });
     portalInitLeadSessionOverviewPage().catch(function (e) {
       console.error(e);
       alert("Could not load session overview. Try again or return to the lead dashboard.");
