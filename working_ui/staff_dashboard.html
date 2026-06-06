@@ -93,11 +93,11 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260606-screenshot-ceo" />
   <script src="/portal/portal_screenshot_guard.js?v=20260606-screenshot-ceo"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260606-footer-chat-navy" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260606-today-row-icons" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260606-topbar-icons" />
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260620-inbox-logo-orbit" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260601-landscape-full" />
-  <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260606-area-icons" />
+  <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260606-today-row-icons" />
 </head>
 <body>
   <script>
@@ -8248,11 +8248,21 @@
       const dateLabel = typeof portalFormatPortalDateDdMmYyyy === 'function'
         ? portalFormatPortalDateDdMmYyyy(info.date)
         : '';
+      const participants = rows.slice(0, 6).map(function(r){
+        const name = String(r && r.name || '').trim() || '—';
+        const clientId = String(r && r.clientId || '').trim();
+        let photoUrl = typeof resolveParticipantPhotoUrl === 'function'
+          ? resolveParticipantPhotoUrl(name, clientId)
+          : '';
+        if(!photoUrl && typeof clientPhotoUrl === 'function') photoUrl = clientPhotoUrl(name) || '';
+        return { name: name, clientId: clientId, photoUrl: photoUrl };
+      });
       return {
         weekday: weekday,
         dateLabel: dateLabel,
         sessionCount: rows.length,
-        venueLabel: venueKeys[0] || ''
+        venueLabel: venueKeys[0] || '',
+        participants: participants
       };
     }
     function portalSyncTodaySectionDisplay(modelOverride){
@@ -9813,39 +9823,64 @@
     const TODAY_DAY_OFF_ICON =
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' +
       '<rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4M8 2v4M3 10h18"></path><path d="m9 15 6 6M15 15l-6 6"></path></svg>';
-    const TODAY_NEXT_SESSION_CAL_ICON =
-      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' +
-      '<rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4M8 2v4M3 10h18"></path></svg>';
-    function portalTodayNextSessionPreviewHtml(preview){
-      if(!preview) return '';
-      const n = Number(preview.sessionCount) || 0;
-      const countLabel = n === 1 ? '1 session planned' : (n + ' sessions planned');
-      const venue = String(preview.venueLabel || '').trim();
-      const venueHtml = venue
-        ? '<p class="today-next-session-preview__venue">' + escapeHtml(venue) + '</p>'
-        : '';
-      return '<div class="today-next-session-preview__label">' +
-        '<span class="today-next-session-preview__label-ico" aria-hidden="true">' + TODAY_NEXT_SESSION_CAL_ICON + '</span>' +
-        '<span>Next session:</span></div>' +
-        '<p class="today-next-session-preview__day">' + escapeHtml(preview.weekday || '') + '</p>' +
-        '<p class="today-next-session-preview__date">' + escapeHtml(preview.dateLabel || '') + '</p>' +
-        '<div class="today-next-session-preview__rule" aria-hidden="true"></div>' +
-        '<p class="today-next-session-preview__count">' + escapeHtml(countLabel) + '</p>' +
-        venueHtml;
+    function portalTodayDayOffPanelHtml(opts){
+      opts = opts || {};
+      const loading = !!opts.loading;
+      const preview = opts.preview;
+      if(loading){
+        return '<div class="today-day-panel today-day-panel--loading" role="status">' +
+          '<p class="today-day-panel__loading">Loading your schedule…</p></div>';
+      }
+      const hasNext = !!(preview && (Number(preview.sessionCount) || 0));
+      let html = '<div class="today-day-panel' + (hasNext ? ' today-day-panel--has-next' : ' today-day-panel--solo') + '" role="status">';
+      html += '<div class="today-day-panel__off">';
+      html += '<span class="today-day-panel__off-icon" aria-hidden="true">' + TODAY_DAY_OFF_ICON + '</span>';
+      html += '<div class="today-day-panel__off-copy">';
+      html += '<p class="today-day-panel__off-title">Day off</p>';
+      html += '<p class="today-day-panel__off-sub">No sessions today</p></div></div>';
+      if(hasNext){
+        const chips = Array.isArray(preview.participants) ? preview.participants : [];
+        const extra = Math.max(0, (Number(preview.sessionCount) || 0) - chips.length);
+        const aria = 'Next session ' + String(preview.weekday || '') + ' ' + String(preview.dateLabel || '');
+        html += '<button type="button" class="today-day-panel__next" data-open-next-session="1" aria-label="' + escapeHtml(aria.trim()) + '">';
+        html += '<div class="today-day-panel__next-head">';
+        html += '<span class="today-day-panel__next-kicker">Next session</span>';
+        html += '<span class="today-day-panel__next-date">' + escapeHtml(preview.weekday || '') + ' · ' + escapeHtml(preview.dateLabel || '') + '</span></div>';
+        if(chips.length){
+          html += '<div class="today-day-panel__chips" role="list">';
+          chips.forEach(function(p){
+            const name = escapeHtml(p.name || '—');
+            const src = p.photoUrl ? String(p.photoUrl).trim() : '';
+            const av = src
+              ? '<img class="portal-screenshot-protected" src="' + escapeHtml(src) + '" alt="" loading="lazy" decoding="async" draggable="false" onerror="this.remove();this.parentElement.classList.add(\'today-participant-chip__avatar--empty\');"/>'
+              : '';
+            html += '<div class="today-participant-chip" role="listitem">';
+            html += '<span class="today-participant-chip__avatar' + (src ? '' : ' today-participant-chip__avatar--empty') + '">' + av + '</span>';
+            html += '<span class="today-participant-chip__name">' + name + '</span></div>';
+          });
+          if(extra > 0){
+            html += '<div class="today-participant-chip today-participant-chip--more" role="listitem" aria-label="' + extra + ' more participants">';
+            html += '<span class="today-participant-chip__more">+' + extra + '</span></div>';
+          }
+          html += '</div>';
+        }
+        const venue = String(preview.venueLabel || '').trim();
+        const n = Number(preview.sessionCount) || 0;
+        const meta = [venue, n === 1 ? '1 session' : (n + ' sessions')].filter(Boolean).join(' · ');
+        if(meta) html += '<p class="today-day-panel__meta">' + escapeHtml(meta) + '</p>';
+        html += '</button>';
+      }
+      html += '</div>';
+      return html;
     }
-    function portalBindTodayNextSessionPreview(previewEl, preview){
-      if(!previewEl || !preview) return;
-      const label = 'Next session ' + String(preview.weekday || '') + ' ' + String(preview.dateLabel || '');
-      previewEl.setAttribute('role', 'button');
-      previewEl.setAttribute('tabindex', '0');
-      previewEl.setAttribute('aria-label', label.trim());
+    function portalBindTodayDayOffPanel(grid){
+      if(!grid) return;
+      const nextBtn = grid.querySelector('[data-open-next-session="1"]');
+      if(!nextBtn) return;
       const open = function(){
         if(typeof openSheet === 'function') openSheet('tomorrowSheet');
       };
-      previewEl.addEventListener('click', open);
-      previewEl.addEventListener('keydown', function(e){
-        if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); open(); }
-      });
+      nextBtn.addEventListener('click', open);
     }
 
     function applyTodayGridSizing(grid, count){
@@ -9866,7 +9901,7 @@
       const t = (n - 1) / 8;
       const timeFs = Math.round(11 + (1 - t) * 5);
       const nameFs = Math.min(16, timeFs + 1);
-      const iconPx = Math.round(14 + (1 - t) * 10);
+      const iconPx = Math.max(28, Math.round(26 + (1 - t) * 10));
       const gapPx = n >= 7 ? 2 : (n >= 4 ? 3 : Math.round(4 + (3 - n) * 0.5));
       const padY = n >= 8 ? 2 : (n >= 5 ? 3 : 4);
       grid.style.setProperty('--today-time-fs', timeFs + 'px');
@@ -9907,31 +9942,13 @@
         applyTodayGridSizing(grid, 0);
         const preview = dashboardData && dashboardData.portalTodayNextSessionPreview;
         const loading = !!(dashboardData && dashboardData.portalIdentityResolved === false);
-        if(preview && !loading){
-          grid.classList.add('today-grid--day-off-with-next');
-          grid.style.setProperty('--today-rows-fill', '0.38');
-        }else{
-          grid.style.setProperty('--today-rows-fill', '0.333333');
-        }
-        const empty = document.createElement('div');
-        empty.className = 'session-card session-card--empty session-card--day-off';
-        empty.setAttribute('role', 'status');
-        empty.style.pointerEvents = 'none';
-        empty.style.cursor = 'default';
-        empty.innerHTML = loading
-          ? '<div class="today-day-off today-day-off--loading"><p class="today-day-off__title">Loading your schedule…</p></div>'
-          : '<div class="today-day-off" role="presentation">' +
-            '<span class="today-day-off__icon" aria-hidden="true">' + TODAY_DAY_OFF_ICON + '</span>' +
-            '<p class="today-day-off__title">Day off</p>' +
-            '<p class="today-day-off__sub">No sessions today</p></div>';
-        grid.appendChild(empty);
-        if(preview && !loading){
-          const previewEl = document.createElement('div');
-          previewEl.className = 'today-next-session-preview';
-          previewEl.innerHTML = portalTodayNextSessionPreviewHtml(preview);
-          portalBindTodayNextSessionPreview(previewEl, preview);
-          grid.appendChild(previewEl);
-        }
+        grid.classList.add('today-grid--day-off');
+        grid.style.setProperty('--today-rows-fill', '1');
+        grid.innerHTML = portalTodayDayOffPanelHtml({
+          preview: preview && !loading ? preview : null,
+          loading: loading
+        });
+        portalBindTodayDayOffPanel(grid);
         if(typeof syncPortalReminderChrome === 'function') syncPortalReminderChrome();
         return;
       }

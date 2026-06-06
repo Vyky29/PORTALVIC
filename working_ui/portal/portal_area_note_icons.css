@@ -8,9 +8,17 @@
   max-width:100%;
 }
 .session-area-note-icon .session-area-note-svg{
-  width:var(--today-icon, 22px);
-  height:var(--today-icon, 22px);
+  width:var(--today-icon, 32px);
+  height:var(--today-icon, 32px);
   display:block;
+}
+.section-card--today .session-line--symbol .session-area-note-icon{
+  width:var(--today-icon, 32px);
+  height:var(--today-icon, 32px);
+}
+.section-card--today .session-line--symbol .session-area-note-icon .session-area-note-svg{
+  width:100%;
+  height:100%;
 }
 .session-area-note-icon--sm .session-area-note-svg{
   width:18px;
