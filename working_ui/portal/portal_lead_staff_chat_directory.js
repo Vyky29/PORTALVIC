@@ -28,18 +28,26 @@
     return prof || (global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.staff_profile) || {};
   }
 
-  function portalStaffIsLeadUser(prof) {
+  /** Full messenger inbox (search, staff directory, calls) ù lead, admin, CEO on any portal. */
+  function portalStaffHasFullMessengerAccess(prof) {
     var row = profileRow(prof);
     var ar = String(row.app_role || "").toLowerCase();
-    if (ar === "lead") return true;
+    if (ar === "lead" || ar === "admin" || ar === "ceo") return true;
     var dr = String(row.dashboard_route || "").toLowerCase();
-    if (dr === "lead_dashboard.html") return true;
+    if (dr === "lead_dashboard.html" || dr === "admin_dashboard.html" || dr === "ceo_dashboard.html") {
+      return true;
+    }
     try {
-      if (typeof location !== "undefined" && /lead_dashboard\.html/i.test(String(location.pathname || ""))) {
+      var path = String((typeof location !== "undefined" && location.pathname) || "");
+      if (/lead_dashboard\.html|admin_dashboard\.html|ceo_dashboard\.html/i.test(path)) {
         return true;
       }
     } catch (_e) {}
     return false;
+  }
+
+  function portalStaffIsLeadUser(prof) {
+    return portalStaffHasFullMessengerAccess(prof);
   }
 
   function portalStaffIsStaffUser(prof) {
@@ -608,6 +616,7 @@
   }
 
   global.portalLeadStaffChatDirectory = {
+    portalStaffHasFullMessengerAccess: portalStaffHasFullMessengerAccess,
     portalStaffIsLeadUser: portalStaffIsLeadUser,
     portalStaffIsStaffUser: portalStaffIsStaffUser,
     portalStaffHasPeerDirectory: portalStaffHasPeerDirectory,
