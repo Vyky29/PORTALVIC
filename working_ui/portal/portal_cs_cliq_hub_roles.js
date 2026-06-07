@@ -59,7 +59,6 @@
 
   function getTier() {
     if (isManagementProfile()) return "management";
-    if (isLeadProfile() || /lead_dashboard\.html/.test(portalPath())) return "lead";
     return "staff";
   }
 
@@ -73,17 +72,10 @@
         { id: "files", label: "Files", icon: "files" },
       ];
     }
-    if (tier === "lead") {
-      return [
-        { id: "chats", label: "Inbox", icon: "inbox" },
-        { id: "calendar", label: "Meetings", icon: "meetings" },
-        { id: "files", label: "Files", icon: "files" },
-      ];
-    }
     return [
       { id: "chats", label: "Inbox", icon: "inbox" },
-      { id: "files", label: "Files", icon: "files" },
       { id: "support", label: "Support", icon: "support" },
+      { id: "calendar", label: "Meetings", icon: "meetings" },
     ];
   }
 
@@ -96,7 +88,7 @@
   }
 
   function canCreateConversations() {
-    return getTier() !== "staff";
+    return getTier() === "management";
   }
 
   function canUseTeams() {
@@ -104,7 +96,7 @@
   }
 
   function canScheduleMeetings() {
-    return getTier() === "management" || getTier() === "lead";
+    return getTier() === "management";
   }
 
   function meetingButtonLabel() {

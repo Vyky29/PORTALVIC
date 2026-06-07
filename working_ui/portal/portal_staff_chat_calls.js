@@ -43,6 +43,7 @@
   var INCOMING_CALL_MAX_AGE_MS = 120000;
   var incomingRowRetryMax = 8;
   var incomingHandledIds = Object.create(null);
+  var threadParticipantCache = Object.create(null);
 
   function esc(s) {
     return String(s == null ? "" : s)
@@ -281,19 +282,32 @@
     return tid;
   }
 
+  function isCsCliqUiActive() {
+    return !!(
+      global.__PORTAL_CS_CLIQ_ACTIVE ||
+      global.__PORTAL_CS_CLIQ_EMBED_OPEN ||
+      document.getElementById("csCliqRoot")
+    );
+  }
+
   function getContext() {
     var box = global.__PORTAL_SUPABASE__;
-    var ui = global.__PORTAL_INTERNAL_CHAT_UI || {};
     var adminUi = global.__PORTAL_ADMIN_DM_UI || {};
-    var threadId = String(ui.threadId || "").trim();
-    var groupId = String(adminUi.groupId || "").trim();
-    var peerLabel = String(ui.peerLabel || "").trim();
-    if (global.__PORTAL_CS_CLIQ_ACTIVE || document.getElementById("csCliqRoot")) {
-      if (!threadId) threadId = String(adminUi.threadId || "").trim();
-      if (!groupId) groupId = String(adminUi.groupId || "").trim();
-      if (groupId) threadId = "";
-      if (!peerLabel) peerLabel = String(adminUi.peerLabel || "").trim();
+    var ui = global.__PORTAL_INTERNAL_CHAT_UI || {};
+    var cliq = isCsCliqUiActive();
+    var threadId = "";
+    var groupId = "";
+    var peerLabel = "";
+    if (cliq) {
+      threadId = String(adminUi.threadId || "").trim();
+      groupId = String(adminUi.groupId || "").trim();
+      peerLabel = String(adminUi.peerLabel || "").trim();
+    } else {
+      threadId = String(ui.threadId || "").trim();
+      groupId = String(adminUi.groupId || "").trim();
+      peerLabel = String(ui.peerLabel || adminUi.peerLabel || "").trim();
     }
+    if (groupId) threadId = "";
     return {
       client: box && box.client,
       threadId: threadId,
@@ -301,6 +315,34 @@
       me: authUserId(),
       peerLabel: peerLabel,
     };
+  }
+
+  async function isIncomingDmForMe(row) {
+    var me = meUserId();
+    if (!me || !row) return false;
+    var tid = String(row.thread_id || "").trim();
+    if (!tid) return false;
+    var box = global.__PORTAL_SUPABASE__;
+    var client = box && box.client;
+    if (!client) return false;
+    var cached = threadParticipantCache[tid];
+    if (cached && Date.now() - cached.ts < 120000) {
+      return cached.a === me || cached.b === me;
+    }
+    try {
+      var res = await client
+        .from("portal_staff_dm_threads")
+        .select("participant_a,participant_b")
+        .eq("id", tid)
+        .maybeSingle();
+      if (res.error || !res.data) return false;
+      var a = String(res.data.participant_a || "");
+      var b = String(res.data.participant_b || "");
+      threadParticipantCache[tid] = { a: a, b: b, ts: Date.now() };
+      return a === me || b === me;
+    } catch (_part) {
+      return false;
+    }
   }
 
   async function refreshThreadAfterCall() {
@@ -746,8 +788,17 @@
     if (!isRecentLiveCall(data, row)) return;
     var rowId = row.id ? String(row.id) : "";
     if (rowId && incomingHandledIds[rowId]) return;
-    if (rowId) incomingHandledIds[rowId] = true;
-    startIncomingCallAlert(data, row);
+    var tid = row.thread_id ? String(row.thread_id).trim() : "";
+    void (async function () {
+      if (tid) {
+        var mine = await isIncomingDmForMe(row);
+        if (!mine) return;
+      }
+      if (isInActiveCall()) return;
+      if (rowId && incomingHandledIds[rowId]) return;
+      if (rowId) incomingHandledIds[rowId] = true;
+      startIncomingCallAlert(data, row);
+    })();
   }
 
   function startIncomingCallAlert(data, row) {

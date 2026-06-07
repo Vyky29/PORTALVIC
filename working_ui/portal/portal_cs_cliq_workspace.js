@@ -174,7 +174,20 @@
     };
   }
 
+  var configuredIconHtml = defaultNavIconHtml;
+
+  function iconHtml(id) {
+    return configuredIconHtml(id);
+  }
+
+  function runChannelAction(name) {
+    var acts = channelActions();
+    if (acts && typeof acts[name] === "function") acts[name]();
+  }
+
   function applyConfigure(overrides) {
+    overrides = overrides || {};
+    if (overrides.adminNavIconHtml) configuredIconHtml = overrides.adminNavIconHtml;
     if (!global.PortalAdminCsCliq || typeof global.PortalAdminCsCliq.configure !== "function") return;
     global.PortalAdminCsCliq.configure(buildConfigureOptions(overrides));
   }
@@ -186,10 +199,12 @@
     canManageChannels: canManageChannels,
     openView: openView,
     channelActions: channelActions,
+    runChannelAction: runChannelAction,
     onPaneOpen: onPaneOpen,
     syncChannelsChrome: syncChannelsChrome,
     buildConfigureOptions: buildConfigureOptions,
     applyConfigure: applyConfigure,
     defaultNavIconHtml: defaultNavIconHtml,
+    iconHtml: iconHtml,
   };
 })(typeof window !== "undefined" ? window : globalThis);

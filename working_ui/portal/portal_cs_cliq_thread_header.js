@@ -27,7 +27,7 @@
     var header = document.getElementById("csCliqThreadHeader");
     if (!header) return;
     var inThread = String(ui.panel || "") === "thread";
-    header.hidden = !inThread;
+    header.classList.toggle("is-open", inThread);
     header.setAttribute("aria-hidden", inThread ? "false" : "true");
     if (!inThread) return;
     var label = String(ui.peerLabel || "").trim() || "Conversation";
@@ -65,5 +65,47 @@
     }
   }
 
-  global.portalCsCliqThreadHeader = { sync: sync, initials: initials, esc: esc };
+  function syncInternal(peerLabel, peerRole) {
+    var header = document.getElementById("internalChatThreadHeader");
+    if (!header) return;
+    var label = String(peerLabel || "").trim() || "Conversation";
+    var nameEl = document.getElementById("internalChatThreadName");
+    var roleEl = document.getElementById("internalChatThreadRole");
+    var statusEl = document.getElementById("internalChatThreadStatus");
+    var avatarEl = document.getElementById("internalChatThreadAvatar");
+    if (nameEl) nameEl.textContent = label;
+    if (avatarEl) avatarEl.textContent = initials(label);
+    var role = String(peerRole || "").trim() || "Staff";
+    if (roleEl) roleEl.textContent = role;
+    if (statusEl) {
+      try {
+        var away = String(global.localStorage.getItem("portal_cs_cliq_workspace_status") || "at_work") === "away";
+        statusEl.textContent = away ? "Away" : "Available";
+      } catch (_s) {
+        statusEl.textContent = "Available";
+      }
+    }
+    var restricted =
+      global.portalInternalChatOfficeRestricted &&
+      typeof global.portalInternalChatOfficeRestricted === "function" &&
+      global.portalInternalChatOfficeRestricted();
+    var callBar = document.getElementById("internalChatCallBar");
+    if (callBar) {
+      callBar.hidden = false;
+      callBar.setAttribute("aria-hidden", "false");
+    }
+    var filesBtn = document.getElementById("internalChatThreadFilesBtn");
+    if (filesBtn) {
+      filesBtn.hidden = !!restricted;
+      filesBtn.setAttribute("aria-hidden", restricted ? "true" : "false");
+    }
+    header.classList.add("is-open");
+    header.removeAttribute("hidden");
+    header.setAttribute("aria-hidden", "false");
+    if (global.portalCsCliqThreadFiles && typeof global.portalCsCliqThreadFiles.onThreadChange === "function") {
+      global.portalCsCliqThreadFiles.onThreadChange();
+    }
+  }
+
+  global.portalCsCliqThreadHeader = { sync: sync, syncInternal: syncInternal, initials: initials, esc: esc };
 })(typeof window !== "undefined" ? window : globalThis);

@@ -76,6 +76,29 @@
             global.portalExecutiveDmInit(channel || "staff_lead");
           }
         },
+        channels: {
+          composeAnnouncement: function () {
+            if (global.portalCsCliqComposeSheet && typeof global.portalCsCliqComposeSheet.open === "function") {
+              global.portalCsCliqComposeSheet.open("announcement");
+            }
+          },
+          composeReminder: function () {
+            if (global.portalCsCliqComposeSheet && typeof global.portalCsCliqComposeSheet.open === "function") {
+              global.portalCsCliqComposeSheet.open("reminder");
+            }
+          },
+          signedLog: function () {
+            if (typeof global.openSheet === "function") global.openSheet("announcementsSheet");
+          },
+          reminderAck: function () {
+            if (typeof global.openSheet === "function") global.openSheet("announcementsSheet");
+          },
+          manage: function () {
+            if (global.portalCsCliqComposeSheet && typeof global.portalCsCliqComposeSheet.openManage === "function") {
+              global.portalCsCliqComposeSheet.openManage();
+            }
+          },
+        },
       });
       return;
     }
@@ -89,9 +112,21 @@
     });
   }
 
+  function canOpenEmbed() {
+    if (onAdminPortal()) return false;
+    var box = global.__PORTAL_SUPABASE__ || {};
+    return !!(
+      box.staff_profile &&
+      box.client &&
+      global.PortalAdminCsCliq &&
+      typeof global.PortalAdminCsCliq.viewHtml === "function"
+    );
+  }
+
   function open(channel, opts) {
     opts = opts || {};
     if (onAdminPortal()) return false;
+    if (!canOpenEmbed()) return false;
     channel = String(channel || "staff_lead").trim() === "ceo_exec" ? "ceo_exec" : "staff_lead";
     if (!global.PortalAdminCsCliq || typeof global.PortalAdminCsCliq.viewHtml !== "function") {
       return false;
@@ -104,6 +139,9 @@
     global.__PORTAL_CS_CLIQ_EMBED_OPEN = true;
     global.__PORTAL_CS_CLIQ_EMBED_SHEET = backdrop;
     global.__PORTAL_CS_CLIQ_ACTIVE = true;
+    global.__PORTAL_INTERNAL_CHAT_UI = global.__PORTAL_INTERNAL_CHAT_UI || {};
+    global.__PORTAL_INTERNAL_CHAT_UI.threadId = null;
+    global.__PORTAL_INTERNAL_CHAT_UI.peerLabel = "";
     global.__PORTAL_CS_CLIQ_PENDING_CHANNEL = channel;
     var pane = String(opts.pane || global.__PORTAL_CS_CLIQ_PENDING_PANE || "chats").trim();
     if (pane === "channels" || pane === "teams" || pane === "operations") pane = pane === "channels" ? "announcements" : "chats";
@@ -142,7 +180,7 @@
     if (global.PortalAdminCsCliq && typeof global.PortalAdminCsCliq.destroyModule === "function") {
       global.PortalAdminCsCliq.destroyModule();
     }
-    document.body.classList.remove(BODY_LOCK);
+    document.body.classList.remove(BODY_LOCK, "portal-cs-cliq-mobile-subscreen", "admin-cs-cliq-mobile-subscreen");
   }
 
   function isOpen() {

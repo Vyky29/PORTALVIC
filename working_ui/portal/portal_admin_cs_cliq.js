@@ -19,6 +19,46 @@
   };
 
   var WORKSPACE_KEY = "portal_cs_cliq_workspace_status";
+  var MOBILE_MAX_WIDTH = 899;
+
+  function mobileLayoutActive() {
+    try {
+      var w = global.innerWidth || document.documentElement.clientWidth || 0;
+      var h = global.innerHeight || document.documentElement.clientHeight || 0;
+      if (w <= MOBILE_MAX_WIDTH) return true;
+      if (w < 1280 && h <= 640) {
+        try {
+          if (global.matchMedia && global.matchMedia("(orientation: landscape)").matches) return true;
+        } catch (_land) {}
+      }
+    } catch (_e) {}
+    return false;
+  }
+
+  function syncMobileSubscreen(panel) {
+    panel = String(panel || "list");
+    var mobile = mobileLayoutActive();
+    var sub = mobile && (panel === "thread" || panel === "compose");
+    document.body.classList.toggle("portal-cs-cliq-mobile-subscreen", sub);
+    document.body.classList.toggle(
+      "admin-cs-cliq-mobile-subscreen",
+      sub && document.body.classList.contains("admin-touch-compact")
+    );
+    var root = document.getElementById("csCliqRoot");
+    if (root) {
+      root.classList.toggle("portal-cs-cliq--subscreen", sub);
+    }
+  }
+
+  function bindMobileResize() {
+    if (global.__PORTAL_CS_CLIQ_MOBILE_RESIZE_BOUND) return;
+    global.__PORTAL_CS_CLIQ_MOBILE_RESIZE_BOUND = true;
+    global.addEventListener("resize", function () {
+      if (!document.getElementById("csCliqRoot")) return;
+      var ui = global.__PORTAL_ADMIN_DM_UI || {};
+      syncMobileSubscreen(String(ui.panel || "list"));
+    });
+  }
 
   var RAIL_SVGS = {
     chats:
@@ -180,7 +220,15 @@
       '<h2 class="portal-cs-cliq__chat-title" id="csCliqTitle">Inbox</h2>' +
       '<button type="button" class="portal-cs-cliq__new-btn" id="csCliqBtnNew">New</button>' +
       "</div>" +
-      '<div id="csCliqChannelNav" class="portal-dm-inbox-nav" hidden aria-hidden="true"></div>' +
+      '<div id="csCliqChannelNav" class="portal-dm-inbox-nav" hidden aria-hidden="true">' +
+      '<button type="button" class="portal-dm-inbox-nav-btn is-active" id="csCliqTabStaff">Team inbox</button>' +
+      '<button type="button" class="portal-dm-inbox-nav-btn" id="csCliqTabCeo">CEO chat</button>' +
+      "</div>" +
+      '<div id="csCliqCeoQuickWrap" class="portal-cs-cliq-ceo-quick" hidden>' +
+      '<div class="portal-cs-cliq-channel-row">' +
+      '<button type="button" class="portal-cs-cliq-channel-btn portal-cs-cliq-channel-btn--primary" id="csCliqQCeoGroup">CEOs</button>' +
+      '<button type="button" class="portal-cs-cliq-channel-btn" id="csCliqQCeoLiaisonGroup">CEOs &amp; Admin</button>' +
+      "</div></div>" +
       '<div id="csCliqListPanel">' +
       '<div id="csCliqListWrap" class="portal-dm-inbox-list"></div>' +
       "</div></aside>" +
@@ -205,7 +253,7 @@
       "</div></div>" +
       '<div id="csCliqThreadPanel" class="portal-dm-thread-view portal-cs-cliq-thread" hidden aria-hidden="true">' +
       '<span id="csCliqThreadPeerHidden" hidden aria-hidden="true"></span>' +
-      '<header class="portal-cs-cliq-thread-header" id="csCliqThreadHeader" hidden>' +
+      '<header class="portal-cs-cliq-thread-header" id="csCliqThreadHeader" aria-hidden="true">' +
       '<button type="button" class="portal-cs-cliq__back-btn" id="csCliqBackBtn" aria-label="Back to inbox">‹</button>' +
       '<div class="portal-cs-cliq-thread-header__identity">' +
       '<span class="portal-cs-cliq-thread-header__avatar" id="csCliqThreadAvatar" aria-hidden="true"></span>' +
@@ -216,7 +264,6 @@
       "</div></div>" +
       callBarHtml("csCliqHead", true) +
       '<button type="button" class="portal-cs-cliq-thread-header__files" id="csCliqThreadFilesBtn">Files</button>' +
-      '<button type="button" class="portal-cs-cliq-thread-header__more" id="csCliqThreadMoreBtn" aria-label="More options">⋯</button>' +
       "</header>" +
       '<div id="csCliqThreadFilesPanel" class="portal-cs-cliq-thread-files-panel" hidden></div>' +
       '<div id="csCliqMessages" class="portal-dm-msgs-col portal-dm-msgs-scroll portal-cs-cliq-messages"></div>' +
@@ -318,6 +365,9 @@
     if (pane === "calendar" && global.portalCsCliqMeetingsHub && typeof global.portalCsCliqMeetingsHub.refresh === "function") {
       global.portalCsCliqMeetingsHub.refresh();
     }
+    if (pane === "support" && global.portalCsCliqSupport && typeof global.portalCsCliqSupport.refresh === "function") {
+      global.portalCsCliqSupport.refresh();
+    }
     if (pane === "announcements" && global.portalCsCliqAnnouncementsHub && typeof global.portalCsCliqAnnouncementsHub.refresh === "function") {
       global.portalCsCliqAnnouncementsHub.refresh();
     }
@@ -387,6 +437,7 @@
     if (global.portalCsCliqThreadFiles && typeof global.portalCsCliqThreadFiles.bind === "function") {
       global.portalCsCliqThreadFiles.bind();
     }
+    bindMobileResize();
   }
 
   function syncInboxLayout(hooks) {
@@ -407,7 +458,11 @@
     var emptyState = document.getElementById("csCliqInboxEmpty");
     var chatBody = document.querySelector("#csCliqRoot .portal-cs-cliq__chat-body");
     if (chatBody) chatBody.setAttribute("data-cs-cliq-panel", panel);
-    if (typeof hooks.onMobileSubscreen === "function") hooks.onMobileSubscreen(panel);
+    if (typeof hooks.onMobileSubscreen === "function") {
+      hooks.onMobileSubscreen(panel);
+    } else {
+      syncMobileSubscreen(panel);
+    }
     if (listPanel) listPanel.hidden = false;
     if (composePanel) composePanel.hidden = !inCompose;
     if (threadPanel) {
@@ -421,7 +476,14 @@
     if (listCol) listCol.classList.toggle("portal-cs-cliq-inbox__list-col--hidden-mobile", inThread || inCompose);
     if (convCol) convCol.classList.toggle("portal-cs-cliq-inbox__conversation-col--active", inThread || inCompose);
     if (backBtn) backBtn.hidden = !inThread && !inCompose;
-    if (nav) nav.hidden = true;
+    if (nav) {
+      var showNav =
+        global.portalCsCliqHubRoles &&
+        typeof global.portalCsCliqHubRoles.isManagementProfile === "function" &&
+        global.portalCsCliqHubRoles.isManagementProfile();
+      nav.hidden = !showNav;
+      nav.setAttribute("aria-hidden", showNav ? "false" : "true");
+    }
     if (newBtn) {
       var canNew = !(
         global.portalCsCliqHubRoles &&
@@ -429,6 +491,11 @@
         !global.portalCsCliqHubRoles.canCreateConversations()
       );
       newBtn.hidden = inThread || inCompose || !canNew;
+    }
+    var threadHeader = document.getElementById("csCliqThreadHeader");
+    if (threadHeader) {
+      threadHeader.classList.toggle("is-open", inThread);
+      threadHeader.setAttribute("aria-hidden", inThread ? "false" : "true");
     }
     if (global.portalCsCliqThreadHeader && typeof global.portalCsCliqThreadHeader.sync === "function") {
       global.portalCsCliqThreadHeader.sync(ui);
@@ -466,7 +533,11 @@
     var root = document.getElementById("csCliqRoot");
     if (root) delete root.dataset.portalCsCliqBound;
     global.__PORTAL_CS_CLIQ_ACTIVE = false;
+    document.body.classList.remove("portal-cs-cliq-mobile-subscreen", "admin-cs-cliq-mobile-subscreen");
   }
+
+  global.portalCsCliqMobileActive = mobileLayoutActive;
+  global.portalCsCliqSyncMobileSubscreen = syncMobileSubscreen;
 
   global.PortalAdminCsCliq = {
     configure: configure,
@@ -476,5 +547,7 @@
     setRailPane: setRailPane,
     syncInboxLayout: syncInboxLayout,
     syncPhonePaneContext: syncPhonePaneContext,
+    syncMobileSubscreen: syncMobileSubscreen,
+    mobileLayoutActive: mobileLayoutActive,
   };
 })(window);

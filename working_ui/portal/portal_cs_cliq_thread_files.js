@@ -149,7 +149,7 @@
 
   function ensureInternalChrome() {
     var wrap = document.getElementById("internalChatThreadWrap");
-    if (!wrap || document.getElementById("internalChatThreadFilesBar")) return;
+    if (!wrap || document.getElementById("internalChatThreadFilesBtn") || document.getElementById("internalChatThreadFilesBar")) return;
     var bar = document.createElement("div");
     bar.id = "internalChatThreadFilesBar";
     bar.className = "portal-cs-cliq-thread-files-bar";

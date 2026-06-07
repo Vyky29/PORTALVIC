@@ -165,10 +165,14 @@
   display: none !important;
 }
 
-#csCliqRoot .portal-cs-cliq__head-call-bar .portal-dm-call-bar-btn,
-#csCliqRoot #csCliqHeadCallBar .portal-dm-call-bar-btn {
-  padding: 8px 10px;
-  font-size: 11px;
+#csCliqRoot .portal-cs-cliq-thread-header .portal-cs-cliq__head-call-bar .portal-dm-call-bar-btn,
+#csCliqRoot .portal-cs-cliq-thread-header #csCliqHeadCallBar .portal-dm-call-bar-btn {
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  padding: 0;
+  font-size: 0;
+  border-radius: 10px;
 }
 
 @media (max-width: 699px) {
@@ -198,14 +202,12 @@
     grid-column: 3;
     grid-row: 1;
   }
-  #csCliqRoot .portal-cs-cliq__head-call-bar,
-  #csCliqRoot #csCliqHeadCallBar {
+  #csCliqRoot .portal-cs-cliq__chat-head .portal-cs-cliq__head-call-bar {
     grid-column: 1 / -1;
     grid-row: 2;
     justify-content: stretch;
   }
-  #csCliqRoot .portal-cs-cliq__head-call-bar .portal-dm-call-bar-btn,
-  #csCliqRoot #csCliqHeadCallBar .portal-dm-call-bar-btn {
+  #csCliqRoot .portal-cs-cliq__chat-head .portal-cs-cliq__head-call-bar .portal-dm-call-bar-btn {
     flex: 1 1 0;
     min-width: 0;
   }
@@ -254,6 +256,31 @@
   overflow: hidden;
 }
 
+#csCliqRoot .portal-cs-cliq-inbox.portal-cs-cliq__chat-body {
+  display: grid;
+  grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+  gap: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+#csCliqRoot .portal-cs-cliq-inbox__list-col {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--portal-chat-line, #e2e8f0);
+  background: #fff;
+}
+
+#csCliqRoot .portal-cs-cliq-inbox__conversation-col {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  background: #f8fbfd;
+}
+
 #csCliqRoot #csCliqListPanel[hidden],
 #csCliqRoot #csCliqThreadPanel[hidden],
 #csCliqRoot #csCliqComposePanel[hidden],
@@ -269,10 +296,29 @@
 }
 
 @media (max-width: 899px) {
+  #csCliqRoot .portal-cs-cliq-inbox.portal-cs-cliq__chat-body {
+    display: flex;
+    flex-direction: column;
+    grid-template-columns: none;
+  }
+
+  #csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="list"] .portal-cs-cliq-inbox__conversation-col {
+    display: none !important;
+  }
+
+  #csCliqRoot .portal-cs-cliq-inbox__list-col {
+    flex: 1 1 auto;
+    min-height: 0;
+    border-right: none;
+    background: transparent;
+  }
+
   #csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="thread"] #csCliqListPanel,
   #csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="thread"] #csCliqChannelNav,
+  #csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="thread"] #csCliqCeoQuickWrap,
   #csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="compose"] #csCliqListPanel,
-  #csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="compose"] #csCliqChannelNav {
+  #csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="compose"] #csCliqChannelNav,
+  #csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="compose"] #csCliqCeoQuickWrap {
     display: none !important;
   }
 }
@@ -305,24 +351,50 @@
   color: var(--portal-chat-blue);
 }
 
-#csCliqRoot #csCliqStaffLeadsQuickWrap,
 #csCliqRoot #csCliqCeoQuickWrap {
-  margin: 12px 12px 0;
-  padding: 14px 12px 12px;
-  border-radius: 14px;
-  background: #f8fafc;
-  border: 1px solid rgba(45, 132, 179, 0.12);
+  flex-shrink: 0;
+  margin: 0;
+  padding: 10px 12px 8px;
   min-width: 0;
 }
 
-#csCliqRoot #csCliqStaffLeadsQuickWrap > .muted,
-#csCliqRoot #csCliqCeoQuickWrap > .muted {
-  margin-bottom: 12px !important;
+#csCliqRoot .portal-cs-cliq-channel-row {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
 }
 
-#csCliqRoot #csCliqStaffLeadsQuickWrap .filter-row,
-#csCliqRoot #csCliqCeoQuickWrap .filter-row {
-  gap: 10px !important;
+#csCliqRoot .portal-cs-cliq-channel-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 12px 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(45, 132, 179, 0.22);
+  background: linear-gradient(180deg, #fff 0%, #f4fbff 100%);
+  color: var(--portal-chat-ink, #173247);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(23, 50, 71, 0.06);
+  -webkit-tap-highlight-color: transparent;
+}
+
+#csCliqRoot .portal-cs-cliq-channel-btn--primary {
+  background: linear-gradient(180deg, #2d84b3 0%, #2676a0 100%);
+  border-color: rgba(45, 132, 179, 0.45);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(45, 132, 179, 0.24);
+}
+
+#csCliqRoot .portal-cs-cliq-channel-btn:active {
+  transform: translateY(1px);
+}
+
+#csCliqRoot .portal-cs-cliq-channel-btn[hidden] {
+  display: none !important;
 }
 
 #csCliqRoot #csCliqListPanel {
@@ -626,10 +698,8 @@
   color: #145a3a;
 }
 
-#csCliqRoot .portal-dm-compose-bar.portal-cs-cliq-composer {
-  padding: 0;
-  border-top: 0;
-  background: transparent;
+#csCliqRoot .portal-dm-compose-bar.portal-cs-cliq-composer:not(.portal-cs-cliq-composer--legacy) {
+  flex-shrink: 0;
 }
 
 #csCliqRoot .portal-cs-cliq-composer .txa,
@@ -917,12 +987,6 @@ body.admin-view-cs-cliq .portal-admin-floating-chat-wrap {
   background: rgba(45, 132, 179, 0.1);
 }
 
-#csCliqRoot #csCliqCeoQuickWrap {
-  flex-shrink: 0;
-  padding: 0 12px 8px;
-  min-width: 0;
-}
-
 /* —— Channels pane —— */
 #csCliqRoot .portal-cs-cliq__channels-head {
   flex-shrink: 0;
@@ -1149,13 +1213,7 @@ body.admin-view-cs-cliq .portal-admin-floating-chat-wrap {
     min-height: 0;
   }
 
-  #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq__chat-head {
-    padding-top: max(10px, env(safe-area-inset-top, 0px));
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    grid-template-rows: auto;
-  }
-
-  #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq__chat-title {
+  #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq-inbox__list-head .portal-cs-cliq__chat-title {
     text-align: left;
     font-size: 16px;
     white-space: nowrap;
@@ -1163,24 +1221,76 @@ body.admin-view-cs-cliq .portal-admin-floating-chat-wrap {
     text-overflow: ellipsis;
   }
 
-  #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq__new-btn {
+  #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq-inbox__list-head .portal-cs-cliq__new-btn {
     display: none !important;
   }
 
-  #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq__head-call-bar,
-  #csCliqRoot.portal-cs-cliq--subscreen #csCliqHeadCallBar {
-    grid-column: 3;
-    grid-row: 1;
-    flex-wrap: nowrap;
-    justify-content: flex-end;
-    gap: 4px;
+  #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadHeader.portal-cs-cliq-thread-header {
+    padding-top: max(12px, env(safe-area-inset-top, 0px));
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    align-items: center;
   }
 
-  #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq__head-call-bar .portal-dm-call-bar-btn,
-  #csCliqRoot.portal-cs-cliq--subscreen #csCliqHeadCallBar .portal-dm-call-bar-btn {
+  #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadHeader .portal-cs-cliq__back-btn {
+    order: 0;
+    flex: 0 0 36px;
+  }
+
+  #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadHeader .portal-cs-cliq-thread-header__identity {
+    order: 1;
+    flex: 1 1 calc(100% - 48px);
+    min-width: 0;
+    max-width: calc(100% - 48px);
+  }
+
+  #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadHeader .portal-cs-cliq-thread-header__name {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    word-break: break-word;
+  }
+
+  #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadHeader .portal-cs-cliq-thread-header__status {
+    display: none;
+  }
+
+  #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadHeader #csCliqHeadCallBar {
+    order: 2;
+    flex: 1 1 auto;
+    width: 100%;
+    justify-content: flex-start;
+    gap: 6px;
+  }
+
+  #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadHeader #csCliqHeadCallBar .portal-dm-call-bar-btn {
     flex: 0 0 auto;
-    padding: 6px 8px;
-    font-size: 10px;
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    font-size: 0;
+  }
+
+  #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadHeader .portal-cs-cliq-thread-header__files {
+    order: 3;
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+
+  #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadHeader .portal-cs-cliq-thread-header__more {
+    display: none !important;
+  }
+
+  body.portal-cs-cliq-embed-open.portal-cs-cliq-mobile-subscreen .portal-cs-cliq-embed-head {
+    display: none;
+  }
+
+  body.portal-cs-cliq-embed-open.portal-cs-cliq-mobile-subscreen .portal-cs-cliq-embed-sheet {
+    border-radius: 0;
+    max-height: 100dvh;
+    height: 100dvh;
   }
 
   #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq-composer {

@@ -12,6 +12,7 @@
     chat: false,
     late_approval: true,
     wellbeing: true,
+    staff_support: true,
   };
 
   var bootstrapSilent = false;
@@ -139,6 +140,115 @@
       clientName: staff,
       sessionDate: "",
     };
+  }
+
+  function clampSub(text, max) {
+    text = String(text || "").replace(/\s+/g, " ").trim();
+    max = max || 140;
+    if (text.length <= max) return text;
+    return text.slice(0, max - 1) + "…";
+  }
+
+  function activityFromSupportDm(row, authorName) {
+    if (!row || !row.id) return null;
+    var body = String(row.body || "");
+    if (
+      global.portalCsCliqSupportRoute &&
+      typeof global.portalCsCliqSupportRoute.isSupportRouteBody === "function" &&
+      !global.portalCsCliqSupportRoute.isSupportRouteBody(body)
+    ) {
+      return null;
+    }
+    if (
+      body.indexOf("[CS Cliq Support]") !== 0 &&
+      body.indexOf("[CS Cliq Meeting request]") !== 0
+    ) {
+      return null;
+    }
+    var nm = String(authorName || "Staff").trim() || "Staff";
+    var isMeeting = body.indexOf("[CS Cliq Meeting request]") === 0;
+    var preview = body.replace(/^\[CS Cliq[^\]]+\]\s*/i, "").trim();
+    return {
+      id: "support-author-" + String(row.author_id || row.id),
+      title: (isMeeting ? "Meeting request" : "Support") + " · " + nm,
+      sub: clampSub(preview, 140) || "Tap to open chat with " + nm,
+      created_at: row.created_at || new Date().toISOString(),
+      kind: "staff_support",
+      view: "cs_cliq",
+      recordId: String(row.thread_id || ""),
+      clientName: nm,
+      sessionDate: "",
+    };
+  }
+
+  function clearStaffSupportAlerts() {
+    var list = listRef().filter(function (a) {
+      return !a || a.kind !== "staff_support";
+    });
+    global.__PORTAL_ADMIN_ACTIVITY_ALERTS__ = list;
+    sortNewestFirst();
+    if (typeof global.__portalAdminRenderAlerts === "function") {
+      global.__portalAdminRenderAlerts();
+    }
+  }
+
+  function syncSupportUnreadFromMessages(messages, profBy, me, opts) {
+    opts = opts || {};
+    if (!Array.isArray(messages) || !messages.length) return 0;
+    me = String(me || "").trim();
+    var box = global.__PORTAL_SUPABASE__ || {};
+    var role = String((box.staff_profile && box.staff_profile.app_role) || "").toLowerCase();
+    if (role !== "admin" && role !== "ceo") return 0;
+    var pushed = 0;
+    var seenAuthors = {};
+    messages.forEach(function (row) {
+      if (!row || !row.id || !row.thread_id) return;
+      if (me && String(row.author_id || "") === me) return;
+      var authorId = String(row.author_id || "");
+      if (!authorId || seenAuthors[authorId]) return;
+      var pr = (profBy && profBy[authorId]) || {};
+      var nm = String(pr.full_name || pr.username || "Staff").trim() || "Staff";
+      var item = activityFromSupportDm(row, nm);
+      if (!item) return;
+      seenAuthors[authorId] = true;
+      if (pushActivityAlert(item, { silent: !!opts.silent })) pushed++;
+    });
+    return pushed;
+  }
+
+  async function onStaffDmInsert(row) {
+    if (!row || !row.id || !row.thread_id) return false;
+    var me = "";
+    try {
+      me = String(
+        (global.__PORTAL_SUPABASE__ &&
+          global.__PORTAL_SUPABASE__.session &&
+          global.__PORTAL_SUPABASE__.session.user &&
+          global.__PORTAL_SUPABASE__.session.user.id) ||
+          ""
+      ).trim();
+    } catch (_me) {}
+    if (me && String(row.author_id || "") === me) return false;
+    var box = global.__PORTAL_SUPABASE__ || {};
+    var role = String((box.staff_profile && box.staff_profile.app_role) || "").toLowerCase();
+    if (role !== "admin" && role !== "ceo") return false;
+    var authorName = "Staff";
+    var client = box.client;
+    if (client && row.author_id) {
+      try {
+        var pr = await client
+          .from("staff_profiles")
+          .select("full_name,username")
+          .eq("id", String(row.author_id))
+          .maybeSingle();
+        if (!pr.error && pr.data) {
+          authorName = String(pr.data.full_name || pr.data.username || authorName).trim() || authorName;
+        }
+      } catch (_p) {}
+    }
+    var item = activityFromSupportDm(row, authorName);
+    if (!item) return false;
+    return pushActivityAlert(item, { silent: false });
   }
 
   function activityFromChatHint(hint, idx) {
@@ -379,5 +489,9 @@
   global.portalAdminPushActivityAlert = pushActivityAlert;
   global.portalAdminBellRemoveLateRequest = removeLateRequestAlert;
   global.portalAdminBellSyncLateFromServer = syncLateRequestsFromServer;
+  global.portalAdminBellOnStaffDmInsert = onStaffDmInsert;
+  global.portalAdminBellSyncSupportUnread = syncSupportUnreadFromMessages;
+  global.portalAdminBellClearStaffSupport = clearStaffSupportAlerts;
+  global.portalAdminActivityFromSupportDm = activityFromSupportDm;
   unlockBellAudioOnGesture();
 })(typeof window !== "undefined" ? window : globalThis);
