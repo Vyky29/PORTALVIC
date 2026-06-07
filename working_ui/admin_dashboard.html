@@ -51,9 +51,9 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260607-admin-topbar-portals" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260605-admin-mobile-nav" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
-  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260607-admin-chat-colors" />
+  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260605-admin-mobile-nav" />
   <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260605-leads-channel-ui" />
 </head>
 <body>
@@ -144,6 +144,13 @@
             <span class="admin-badge" id="alertBadge">0</span>
           </button>
           <nav class="admin-portal-switch" id="adminPortalSwitch" aria-label="Switch portal" hidden></nav>
+          <div class="portal-admin-floating-chat-wrap portal-admin-floating-chat-wrap--idle admin-topbar-chat-wrap" id="portalFloatingChatOrbitWrap">
+            <button type="button" class="portal-floating-chat-btn" id="portalFloatingChatBtn" aria-label="Open internal chat" title="Chat">
+              <span class="portal-floating-chat-btn__icon" aria-hidden="true"><svg class="portal-floating-chat-btn__svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg></span>
+              <span class="portal-floating-chat-btn__label">Chat</span>
+              <span class="portal-floating-chat-badge" id="portalFloatingChatBadge" hidden aria-hidden="true"></span>
+            </button>
+          </div>
           <button type="button" class="admin-profile" id="btnProfileMini">
             <span class="admin-av" id="miniAv">
               <img id="miniAvImg" alt="" hidden decoding="async" />
@@ -217,14 +224,6 @@
       </div>
     </div>
   </section>
-
-  <div class="portal-admin-floating-chat-wrap portal-admin-floating-chat-wrap--idle" id="portalFloatingChatOrbitWrap">
-    <button type="button" class="portal-floating-chat-btn" id="portalFloatingChatBtn" aria-label="Open internal chat" title="Chat">
-      <span class="portal-floating-chat-btn__icon" aria-hidden="true"><svg class="portal-floating-chat-btn__svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg></span>
-      <span class="portal-floating-chat-btn__label">Chat</span>
-      <span class="portal-floating-chat-badge" id="portalFloatingChatBadge" hidden aria-hidden="true"></span>
-    </button>
-  </div>
 
   <div id="portalInternalChatBackdrop" aria-hidden="true"></div>
   <section class="sheet sheet--fullscreen sheet--portal-chat-immersive sheet--portal-chat-inbox" id="internalChatSheet" aria-labelledby="internalChatTitle" aria-hidden="true">
@@ -24371,17 +24370,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '</div>';
       }).join('');
       $('adminNav').innerHTML = navHtml;
-      var bottomNavItems = NAV.filter(function(item){ return !item.skipBottomNav; });
-      if(document.body.classList.contains('admin-touch-compact')){
-        bottomNavItems = MOBILE_BOTTOM_NAV_IDS.map(function(id){ return navGetItem(id); }).filter(Boolean);
-      }
-      $('adminBottomNav').innerHTML = bottomNavItems.map(function(item){
-        var lab = item.hubLabel || item.label;
-        if(item.navAction === 'fullnav'){
-          return '<button type="button" data-admin-nav-action="fullnav">'+esc(lab)+'</button>';
+      var bottomEl = $('adminBottomNav');
+      if(bottomEl){
+        if(document.body.classList.contains('admin-touch-compact')){
+          bottomEl.innerHTML = '';
+        }else{
+          var bottomNavItems = NAV.filter(function(item){ return !item.skipBottomNav; });
+          bottomEl.innerHTML = bottomNavItems.map(function(item){
+            var lab = item.hubLabel || item.label;
+            if(item.navAction === 'fullnav'){
+              return '<button type="button" data-admin-nav-action="fullnav">'+esc(lab)+'</button>';
+            }
+            return '<button type="button" data-view="'+esc(item.id)+'">'+esc(lab)+'</button>';
+          }).join('');
         }
-        return '<button type="button" data-view="'+esc(item.id)+'">'+esc(lab)+'</button>';
-      }).join('');
+      }
       var cur = state.view;
       document.querySelectorAll('#adminNav button').forEach(function(b){
         var v = b.getAttribute('data-view');
