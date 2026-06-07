@@ -177,7 +177,6 @@
     return slug(st && (st.client || st.clientName));
   }
 
-  /** Same client/day as admin overview — any instructor's submitted row can complete a slot. */
   function submittedRowMatchesStatusClient(r, st) {
     const stKey = statusClientSlug(st);
     const rKey = slug(r && r.clientName);
@@ -186,22 +185,35 @@
     return stKey.indexOf(rKey) >= 0 || rKey.indexOf(stKey) >= 0;
   }
 
-  function anySubmittedCoversStatusRow(iso, st) {
+  /** Submitted row completes a status slot only for the same instructor/unit (not support vs swim). */
+  function submittedCoversStatusRow(iso, st) {
+    if (!st) return false;
+    if (isDayCentreStatusRow(st)) {
+      return submittedRowsForDateAll(iso).some(function (r) {
+        return submittedRowMatchesStatusClient(r, st) && !submittedRowMarksAbsent(r);
+      });
+    }
     return submittedRowsForDateAll(iso).some(function (r) {
-      return submittedRowMatchesStatusClient(r, st);
+      if (!submittedRowMatchesStatusClient(r, st)) return false;
+      if (submittedRowMarksAbsent(r)) return false;
+      if (staffOwnsInstructor(st.instructor, r.instructor)) return true;
+      if (st.matchedFeedbackBy && staffOwnsInstructor(st.matchedFeedbackBy, r.instructor)) {
+        return true;
+      }
+      const rPk = String(
+        (r && (r.portalSessionKey || r.portal_session_key)) || ""
+      ).trim();
+      const stUk = String(st.feedbackUnitKey || "").trim();
+      if (rPk && stUk && rPk === stUk) return true;
+      return false;
     });
   }
 
-  /** Status row done in overview OR covered by anyone's submitted feedback (admin parity). */
+  /** Status row done in overview OR covered by a matching instructor's submitted feedback. */
   function statusSlotResolved(iso, st) {
     if (!st) return false;
     if (statusRowDone(st)) return true;
-    if (anySubmittedCoversStatusRow(iso, st)) return true;
-    const by = String(st.matchedFeedbackBy || "").trim();
-    if (by && anySubmittedCoversStatusRow(iso, { client: st.client, clientName: st.client })) {
-      return true;
-    }
-    return false;
+    return submittedCoversStatusRow(iso, st);
   }
 
   function submittedRowCoversRosterSession(r, s, clientNotesById) {
@@ -213,11 +225,17 @@
     return rosterKey.indexOf(rKey) >= 0 || rKey.indexOf(rosterKey) >= 0;
   }
 
-  function anySubmittedCoversRosterSession(iso, s, clientNotesById) {
-    const day = String(iso || "").trim().substring(0, 10);
-    return submittedRowsForDateAll(day).some(function (r) {
-      return submittedRowCoversRosterSession(r, s, clientNotesById);
+  function staffSubmittedCoversRosterSession(iso, staffId, s, clientNotesById) {
+    return submittedRowsForStaffDate(iso, staffId).some(function (r) {
+      return (
+        !submittedRowMarksAbsent(r) &&
+        submittedRowCoversRosterSession(r, s, clientNotesById)
+      );
     });
+  }
+
+  function anySubmittedCoversRosterSession(iso, s, clientNotesById) {
+    return staffSubmittedCoversRosterSession(iso, "", s, clientNotesById);
   }
 
   function anyAbsentSubmittedCoversRosterSession(iso, s, clientNotesById) {
@@ -255,22 +273,23 @@
     };
   }
 
-  /** Co-instructors: any row in the merge group on this day (admin mergeGroupFeedbackComplete parity). */
+  /** Co-instructors: merge group complete when this staff owns a row in the group and it is resolved. */
   function mergeGroupResolved(iso, staffId, groupKey) {
     const g = String(groupKey || "").trim();
     if (!g) return false;
-    return statusRowsForDateAll(iso).some(function (st) {
-      return (
-        String(st.feedbackMergeGroup || "").trim() === g &&
-        statusSlotResolved(iso, st)
-      );
+    const ownedInGroup = statusRowsForStaffDate(iso, staffId).filter(function (st) {
+      return String(st.feedbackMergeGroup || "").trim() === g;
+    });
+    if (!ownedInGroup.length) return false;
+    return ownedInGroup.some(function (st) {
+      return statusSlotResolved(iso, st);
     });
   }
 
-  function feedbackUnitKeyResolved(iso, unitKey) {
+  function feedbackUnitKeyResolved(iso, staffId, unitKey) {
     const u = String(unitKey || "").trim();
     if (!u) return false;
-    return statusRowsForDateAll(iso).some(function (st) {
+    return statusRowsForStaffDate(iso, staffId).some(function (st) {
       return (
         String(st.feedbackUnitKey || "").trim() === u &&
         statusSlotResolved(iso, st)
@@ -285,9 +304,11 @@
     const hits = status.filter(function (st) {
       return isDayCentreStatusRow(st) && statusClientSlug(st) === key;
     });
-    if (hits.some(function (st) {
-      return statusSlotResolved(iso, st);
-    })) {
+    if (
+      hits.some(function (st) {
+        return statusSlotResolved(iso, st);
+      })
+    ) {
       return true;
     }
     return submittedRowsForDateAll(iso).some(function (r) {
@@ -323,10 +344,10 @@
         });
       });
     }
-    const subAll = submittedRowsForDateAll(iso);
-    if (subAll.length) {
+    const sub = submittedRowsForStaffDate(iso, staffId);
+    if (sub.length) {
       return roster.filter(function (s) {
-        return subAll.some(function (r) {
+        return sub.some(function (r) {
           return clientMatch({ clientName: r.clientName }, s, clientNotesById);
         });
       });
@@ -386,7 +407,7 @@
   }
 
   /**
-   * Day green from status export (merge groups / shared units), any instructor on that day.
+   * Day green from status export (merge groups / shared units), staff-owned rows only.
    */
   function exportMarksDayComplete(iso, staffId) {
     const c = dayFeedbackCountsFromPortalExports(iso, staffId);
@@ -405,7 +426,7 @@
         if (mergeGroupResolved(iso, staffId, mg)) continue;
       }
       const uk = String(st.feedbackUnitKey || "").trim();
-      if (uk && feedbackUnitKeyResolved(iso, uk)) continue;
+      if (uk && feedbackUnitKeyResolved(iso, staffId, uk)) continue;
       return false;
     }
     return true;
@@ -431,27 +452,27 @@
     const rec = mergedRec || {};
     if (rec.feedbackDone || rec.absent || rec.cancelled) return true;
     if (rosterSessionMarkedAbsent(iso, staffId, s, clientNotesById)) return true;
-    if (anySubmittedCoversRosterSession(iso, s, clientNotesById)) return true;
+    if (staffSubmittedCoversRosterSession(iso, staffId, s, clientNotesById)) return true;
     const clientKey = rosterKeyForSession(s, clientNotesById);
-    if (isDayCentreRosterSession(s) && clientKey && dayCentreClientResolved(iso, staffId, clientKey)) {
+    if (
+      isDayCentreRosterSession(s) &&
+      clientKey &&
+      dayCentreClientResolved(iso, staffId, clientKey)
+    ) {
       return true;
     }
     const owned = statusRowsForStaffDate(iso, staffId);
-    const allDay = statusRowsForDateAll(iso);
-    const matchingAll = allDay.filter(function (st) {
-      return clientMatch(st, s, clientNotesById);
-    });
     const matchingOwned = owned.filter(function (st) {
       return clientMatch(st, s, clientNotesById);
     });
     if (
-      matchingAll.some(function (st) {
+      matchingOwned.some(function (st) {
         return statusSlotResolved(iso, st);
       })
     ) {
       return true;
     }
-    const mergeSources = matchingOwned.length ? matchingOwned : matchingAll;
+    const mergeSources = matchingOwned;
     const mg = mergeSources
       .map(function (st) {
         return String(st.feedbackMergeGroup || "").trim();
@@ -463,7 +484,7 @@
         return String(st.feedbackUnitKey || "").trim();
       })
       .find(Boolean);
-    if (unitKey && feedbackUnitKeyResolved(iso, unitKey)) return true;
+    if (unitKey && feedbackUnitKeyResolved(iso, staffId, unitKey)) return true;
     const sub = submittedRowsForStaffDate(iso, staffId);
     const fbHit = sub.find(function (r) {
       return clientMatch({ clientName: r.clientName }, s, clientNotesById);
@@ -543,6 +564,7 @@
     submittedRowsForStaffDate: submittedRowsForStaffDate,
     submittedRowsForDateAll: submittedRowsForDateAll,
     statusSlotResolved: statusSlotResolved,
+    submittedCoversStatusRow: submittedCoversStatusRow,
     anySubmittedCoversRosterSession: anySubmittedCoversRosterSession,
     dayCentreClientResolved: dayCentreClientResolved,
     mergeGroupResolved: mergeGroupResolved,

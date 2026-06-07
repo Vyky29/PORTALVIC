@@ -1008,7 +1008,7 @@
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260606-carlos-covers"></script>
   <script src="/portal/session_feedback_portal_data.js?v=20260527-ma-apr-may"></script>
   <script src="/portal/session_feedback_status_portal_data.js?v=20260526-all-complete"></script>
-  <script src="/portal/staff_portal_feedback_bridge.js?v=20260622-absent-complete"></script>
+  <script src="/portal/staff_portal_feedback_bridge.js?v=20260624-instructor-unit-feedback"></script>
   <script src="/portal-shared-js/portal_late_submission.js?v=20260620-late-feedback-open"></script>
   <script src="/portal/portal-roster-rows-merge.js?v=20260615-fadi-roster-merge"></script>
   <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260610-javier-may14-roster"></script>
@@ -1539,6 +1539,7 @@
           const groupDone = src.rows.some(function(st){
             return String(st.date || '').trim().substring(0, 10) === iso
               && String(st.feedbackMergeGroup || '').trim() === mg
+              && portalStaffOwnsFeedbackStatusRow(sid, st)
               && groupRowDone(st);
           });
           if(groupDone){
@@ -1608,13 +1609,21 @@
               let mg = '';
               src.rows.forEach(function(st){
                 if(String(st.date || '').trim().substring(0, 10) !== iso) return;
+                if(!portalStaffOwnsFeedbackStatusRow(staffId, st)) return;
                 if(!portalStatusRowMatchesRosterClient(st, s)) return;
                 const m = String(st.feedbackMergeGroup || '').trim();
                 if(m) mg = m;
               });
               if(mg && doneMergeGroups[iso][mg]){
-                hit = true;
-                stRow = doneMergeGroups[iso][mg];
+                const staffInGroup = src.rows.some(function(st){
+                  return String(st.date || '').trim().substring(0, 10) === iso
+                    && String(st.feedbackMergeGroup || '').trim() === mg
+                    && portalStaffOwnsFeedbackStatusRow(staffId, st);
+                });
+                if(staffInGroup){
+                  hit = true;
+                  stRow = doneMergeGroups[iso][mg];
+                }
               }
             }
             if(!hit) return;
@@ -1652,9 +1661,9 @@
           if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
           const catchUpDay = typeof portalTermIsCatchUpFeedbackDate === 'function'
             && portalTermIsCatchUpFeedbackDate(iso, staffId);
+          const instructor = String(row.instructor || row.completedBy || '').trim();
+          if(!portalStaffMatchesStatusInstructor(staffId, instructor)) return;
           if(catchUpDay){
-            const instructor = String(row.instructor || row.completedBy || '').trim();
-            if(!portalStaffMatchesStatusInstructor(staffId, instructor)) return;
             const att0 = String(row.attendance != null ? row.attendance : '').trim().toLowerCase();
             if(att0 === 'no' || att0 === 'n' || att0 === '0' || att0 === 'false') return;
           }
@@ -2599,6 +2608,22 @@
       if(!item || !item.sessionKey) return null;
       return sessionReviewMapMemory[item.sessionKey] || null;
     }
+    /** Export bundle overrides stale localStorage when support vs instructor units differ. */
+    function getEffectiveSessionReviewRecord(item){
+      const mem = getSessionReviewRecord(item) || { feedbackDone: false, incident: false, absent: false, cancelled: false };
+      if(!item || !item.__portalBaseSession || !item.sessionKey) return mem;
+      const iso = portalSessionDateIsoFromItemSessionKey(item);
+      const staffId = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
+      if(!iso || !staffId || typeof portalRosterReviewStateFromStatusBundle !== 'function') return mem;
+      const bundle = portalRosterReviewStateFromStatusBundle(item.__portalBaseSession, iso, staffId);
+      if(!bundle) return mem;
+      return {
+        feedbackDone: bundle.feedbackDone === false ? false : !!(bundle.feedbackDone || mem.feedbackDone),
+        incident: !!(bundle.incident || mem.incident),
+        absent: !!(bundle.absent || mem.absent),
+        cancelled: !!(bundle.cancelled || mem.cancelled)
+      };
+    }
     function portalSessionDateIsoFromItemSessionKey(item){
       if(!item || !item.sessionKey) return null;
       const part = String(item.sessionKey).split('|')[0] || '';
@@ -2703,7 +2728,7 @@
         if(item.noSessionFeedbackRequired) continue;
         if(!isSessionEndedForFeedback(item)) continue;
         eligible++;
-        const r = getSessionReviewRecord(item) || {};
+        const r = getEffectiveSessionReviewRecord(item) || {};
         if(r.feedbackDone || r.absent || r.cancelled) continue;
         pending.push(item);
       }
@@ -2736,11 +2761,17 @@
       if(typeof portalSessionReviewKeyForModelRow === 'function'){
         tryKey(portalSessionReviewKeyForModelRow(s, dayWord, sessionDateIso));
       }
+      const activityMerge = String(s && (s.activity || s.rosterService || 'Swimming') || '').trim();
+      const areaSuffix = typeof portalSessionFeedbackUnitSuffix === 'function'
+        ? portalSessionFeedbackUnitSuffix(s, activityMerge, portalStaffIsSupportWorkerForAreaNotes())
+        : '';
       const cid = typeof portalEffectiveClientIdForReview === 'function'
         ? portalEffectiveClientIdForReview(s, sessionDateIso)
         : String(s && s.clientId || '').trim().toLowerCase();
       const tCanon = typeof portalCanonicalHmToken === 'function' ? portalCanonicalHmToken(s && s.start) : '';
       const tRaw = String(s && s.start != null ? s.start : '').trim();
+      if(areaSuffix && cid && tCanon) tryKey(String(sessionDateIso) + '|' + tCanon + '|' + cid + areaSuffix);
+      if(areaSuffix && cid && tRaw && tRaw !== tCanon) tryKey(String(sessionDateIso) + '|' + tRaw + '|' + cid + areaSuffix);
       if(cid && tCanon) tryKey(String(sessionDateIso) + '|' + tCanon + '|' + cid);
       if(cid && tRaw && tRaw !== tCanon) tryKey(String(sessionDateIso) + '|' + tRaw + '|' + cid);
       const scid0 = String(s && s.clientId || '').trim().toLowerCase();
@@ -2774,10 +2805,17 @@
         ? portalRosterReviewStateFromStatusBundle(s, sessionDateIso, staffId)
         : null;
       if(fromBundle){
-        if(fromBundle.feedbackDone) out.feedbackDone = true;
-        if(fromBundle.absent) out.absent = true;
+        if(fromBundle.absent){
+          out.absent = true;
+          out.feedbackDone = false;
+        }else if(fromBundle.cancelled){
+          out.cancelled = true;
+        }else if(fromBundle.feedbackDone){
+          out.feedbackDone = true;
+        }else if(fromBundle.feedbackDone === false){
+          out.feedbackDone = false;
+        }
         if(fromBundle.incident) out.incident = true;
-        if(fromBundle.cancelled) out.cancelled = true;
       }
       if(!out.feedbackDone && !out.absent && !out.cancelled){
         const bridgeMerge = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
@@ -4226,7 +4264,7 @@
       if(!item || item.kind !== 'client' || !item.sessionKey) return '';
       if(item.noSessionFeedbackRequired) return '';
       if(item.portalOverrideSuppressReviewOrange) return '';
-      const r = getSessionReviewRecord(item) || {};
+      const r = getEffectiveSessionReviewRecord(item) || {};
       if(r.absent) return 'session-card--review-done';
       if(r.cancelled) return 'session-card--review-done';
       if(r.feedbackDone) return 'session-card--review-done';
@@ -7574,11 +7612,37 @@
       }
       return String(s.clientId || '').trim().toLowerCase();
     }
+    function portalSlugifyAreaKey(area){
+      return String(area || '').toLowerCase().trim()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '') || 'default';
+    }
+    function portalSessionNeedsFeedbackUnitSuffix(s, activity){
+      const act = String(activity || (s && (s.activity || s.rosterService || s.service)) || '').trim().toLowerCase();
+      if(/day\s*centre/.test(act)) return false;
+      if(/multi[-\s]?activity/.test(act) || act === 'bespoke') return true;
+      if(act.indexOf('climbing') >= 0) return true;
+      return false;
+    }
+    function portalSessionFeedbackUnitSuffix(s, activity, supportWorkerMode){
+      if(!portalSessionNeedsFeedbackUnitSuffix(s, activity)) return '';
+      const area = rosterAreaLabelForSession(s, activity, supportWorkerMode);
+      const ak = portalSlugifyAreaKey(area);
+      return ak ? '|' + ak : '';
+    }
+    function portalBuildSessionReviewKey(sessionDateIso, s, viewDayWord, clientId){
+      if(!s || !sessionDateIso) return '';
+      const cid = String(clientId != null ? clientId : '').trim().toLowerCase();
+      if(!cid) return '';
+      const activity = String(s.activity || s.rosterService || 'Swimming').trim();
+      const suffix = portalSessionFeedbackUnitSuffix(s, activity, portalStaffIsSupportWorkerForAreaNotes());
+      return String(sessionDateIso) + '|' + String(s.start || '') + '|' + cid + suffix;
+    }
     function portalSessionReviewKeyForModelRow(s, viewDayWord, sessionDateIso){
       if(!portalSessionContributesToReviewKeys(s, viewDayWord, sessionDateIso)) return '';
       const cid = portalEffectiveClientIdForReview(s, sessionDateIso);
       if(!cid) return '';
-      return String(sessionDateIso) + '|' + String(s.start || '') + '|' + cid;
+      return portalBuildSessionReviewKey(sessionDateIso, s, viewDayWord, cid);
     }
     window.portalWeekStripSessionShouldCount = function(s, dayName, staffId){
       const sid = String(staffId || '').trim().toLowerCase();
@@ -7811,7 +7875,7 @@
               general: (reasonOpen || 'This block was closed on the rota and has been reopened for you for this date.') + (genOpen ? (' ' + genOpen) : ''),
               specialty: showSpecOpen ? pickSpecialtyBody(cOpen, activity) : '',
               openSheet: true,
-              sessionKey: `${sessionDateKey}|${s.start}|${cid0}`,
+              sessionKey: portalBuildSessionReviewKey(sessionDateKey, s, anchorDayWord, cid0),
               sessionStartTs,
               sessionEndTs,
               scheduleAdminAdjusted: true,
@@ -8062,7 +8126,7 @@
           const poolTier = poolTierForAreaNoteRow(s, activity, c, viewDay, supportHidePoolNote);
           const showPoolSymbol = !!(poolLocationLabel || areaLabel);
           const showSpec = !isBespokeActivity(activity);
-          const sessionKey = `${sessionDateKey}|${s.start}|${effClientId}`;
+          const sessionKey = portalBuildSessionReviewKey(sessionDateKey, s, anchorDayWord, effClientId);
           const hasReplaceOv = !!(ov && ov.override_type === 'client_replace_in_slot');
           const replacedVisual = manualOv === 'REPLACED';
           const makeUpPink = (hasReplaceOv || replacedVisual) && !isSessionEndedForFeedback({
@@ -8237,7 +8301,7 @@
         if(!c) return;
         const activity = (s.activity || 'Swimming').trim();
         const time = rosterSlotTimeLabel(s);
-        const sessionKey = `${sessionDateKey}|${s.start}|${effCoverId}`;
+        const sessionKey = portalBuildSessionReviewKey(sessionDateKey, s, anchorDayWord, effCoverId);
         let poolLocationLabel = resolvePoolLocationLabelFromSession(s, activity, c, viewDay);
         if(supportHidePoolNote) poolLocationLabel = null;
         const areaLabel = rosterAreaLabelForSession(s, activity, supportHidePoolNote);

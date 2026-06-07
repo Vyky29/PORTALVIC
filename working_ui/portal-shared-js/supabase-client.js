@@ -332,6 +332,29 @@ function portalSessionKeyClientSlugsMatch(submittedKey, rosterKey) {
   return false;
 }
 
+/** Area token from portal_session_key / feedback unit key (hub_room, big_pool, climbing, …). */
+function portalSessionKeyAreaToken(key) {
+  const parts = String(key || "")
+    .split("|")
+    .map((p) => String(p || "").trim().toLowerCase())
+    .filter(Boolean);
+  if (parts.length < 4) return "";
+  const last = parts[parts.length - 1];
+  if (last === "day_centre") return last;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(last) || /^\d{1,2}:\d{2}$/.test(last)) return "";
+  if (parts.length >= 5) return last;
+  if (/^\d{1,2}:\d{2}$/.test(parts[1])) return last;
+  return "";
+}
+
+function portalSessionKeyAreaTokensCompatible(submittedKey, rosterKey) {
+  const sArea = portalSessionKeyAreaToken(submittedKey);
+  const rArea = portalSessionKeyAreaToken(rosterKey);
+  if (!sArea && !rArea) return true;
+  if (!sArea || !rArea) return false;
+  return sArea === rArea;
+}
+
 /**
  * Roster keys use `YYYY-MM-DD|HH:mm|client_id`; Supabase often stores `YYYY-MM-DD||client_slug`.
  */
@@ -354,6 +377,7 @@ export function portalFeedbackSubmittedKeyMatchesRosterKey(submittedKey, rosterK
       return false;
     }
   }
+  if (!portalSessionKeyAreaTokensCompatible(s, r)) return false;
   if (portalSessionKeyClientSlugsMatch(s, r)) return true;
   const rClient = String(rParts[2] || rParts[1] || "")
     .trim()
