@@ -1058,12 +1058,13 @@
     }
     try {
       if (!opts.quiet) setStatus("Deleting…");
+      if (row.storage_path) {
+        var rm = await client.storage.from(BUCKET).remove([row.storage_path]);
+        if (rm.error) throw rm.error;
+      }
       var rpc = await client.rpc("portal_delete_achievement_draft", { p_photo_id: row.id });
       if (rpc.error) {
         if (/does not exist|portal_delete_achievement_draft/i.test(rpc.error.message || "")) {
-          if (row.storage_path) {
-            await client.storage.from(BUCKET).remove([row.storage_path]);
-          }
           var del = await client.from("portal_participant_achievement_photos").delete().eq("id", row.id);
           if (del.error) throw del.error;
         } else {

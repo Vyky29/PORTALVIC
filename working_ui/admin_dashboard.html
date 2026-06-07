@@ -21,7 +21,7 @@
   <script src="/portal/admin-portal-pins.js?v=20260530-portal-pins-db"></script>
   <script src="/portal/admin-portal-activity.js?v=20260604-visit-activity"></script>
   <script src="/portal/admin-training-progress.js?v=20260604-staff-readiness"></script>
-  <script src="/portal/admin-portal-achievements.js?v=20260622-photo-delete"></script>
+  <script src="/portal/admin-portal-achievements.js?v=20260623-delete-dm-fix"></script>
   <link rel="stylesheet" href="/portal/portal_staff_map.css?v=20260602-staff-map-header" />
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260622-photo-delete" />
   <script src="/portal/admin-portal-staff-map.js?v=20260622-ghost-map"></script>
@@ -20929,7 +20929,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var insG = await client.from('portal_ceo_group_message').insert([{ group_id: gid, author_id: me, body: body, message_type: 'text' }]).select('id');
           if(insG.error) throw insG.error;
         }else{
-          var ins = await client.from('portal_staff_dm_messages').insert([{ thread_id: tid, body: body, message_type: 'text' }]).select('id');
+          var ins = await client.rpc('portal_staff_dm_insert_message', {
+            p_thread_id: tid,
+            p_body: body,
+            p_message_type: 'text'
+          });
+          if(ins.error){
+            ins = await client.from('portal_staff_dm_messages').insert([{ thread_id: tid, author_id: me, body: body, message_type: 'text' }]).select('id');
+          }
           if(ins.error) throw ins.error;
         }
         if(inp) inp.value = '';
@@ -21435,7 +21442,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             if(!threadId && ins.error) throw ins.error;
           }
           if(!threadId) throw new Error('Could not resolve thread.');
-          var msg = await client.from('portal_staff_dm_messages').insert([{ thread_id: threadId, body: body, message_type: 'text' }]).select('id');
+          var msg = await client.rpc('portal_staff_dm_insert_message', {
+            p_thread_id: threadId,
+            p_body: body,
+            p_message_type: 'text'
+          });
+          if(msg.error){
+            msg = await client.from('portal_staff_dm_messages').insert([{ thread_id: threadId, author_id: me, body: body, message_type: 'text' }]).select('id');
+          }
           if(msg.error) throw msg.error;
           return threadId;
         }

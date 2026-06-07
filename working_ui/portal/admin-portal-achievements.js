@@ -9,6 +9,8 @@
   var ICON_NEXT =
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>';
 
+  var ACH_BUCKET = "participant-achievements";
+
   var cfg = {
     esc: function (s) {
       return String(s == null ? "" : s);
@@ -213,9 +215,14 @@
     return res.data;
   }
 
-  async function deletePhoto(photoId) {
+  async function deletePhoto(photoId, storagePath) {
     var client = cfg.getClient();
     if (!client) throw new Error("Sign in required.");
+    storagePath = String(storagePath || "").trim();
+    if (storagePath) {
+      var rm = await client.storage.from(ACH_BUCKET).remove([storagePath]);
+      if (rm.error) throw rm.error;
+    }
     var res = await client.rpc("portal_admin_delete_achievement_photo", {
       p_photo_id: photoId,
     });
@@ -443,7 +450,7 @@
               return;
             }
             deleteBtn.disabled = true;
-            void deletePhoto(row.id)
+            void deletePhoto(row.id, row.storage_path)
               .then(function () {
                 void refresh();
                 if (statusEl) {
