@@ -21,7 +21,7 @@
   };
 
   var viewerState = { photos: [], index: -1 };
-  var directoryState = { groups: [], byKey: Object.create(null) };
+  var directoryState = { groups: [], byKey: Object.create(null), activeKey: "" };
 
   function configure(options) {
     if (!options) return;
@@ -346,6 +346,8 @@
 
   /** Drill-down: one participant's photos with caption DD/MM/YYYY-Photographer-HH:MM. */
   async function renderParticipantDetail(key) {
+    key = String(key || "").trim();
+    directoryState.activeKey = key;
     var client = cfg.getClient();
     var host = document.getElementById("portalAdminAchievementsList");
     var statusEl = document.getElementById("portalAdminAchievementsStatus");
@@ -441,7 +443,7 @@
               assignBtn.disabled = true;
               void assignInboxPhoto(row.id, target.key, target.clientName)
                 .then(function () {
-                  void refresh();
+                  void refresh({ stayOnKey: key });
                 })
                 .catch(function (err) {
                   console.error(err);
@@ -471,7 +473,7 @@
             deleteBtn.disabled = true;
             void deletePhoto(row.id, row.storage_path)
               .then(function () {
-                void refresh();
+                void refresh({ stayOnKey: key });
                 if (statusEl) {
                   statusEl.textContent = "Photo deleted.";
                   statusEl.className = "portal-forms-status";
@@ -494,13 +496,15 @@
     }
   }
 
-  async function refresh() {
+  async function refresh(opts) {
+    opts = opts || {};
+    var stayOnKey = opts.stayOnKey != null ? String(opts.stayOnKey).trim() : "";
     var client = cfg.getClient();
     var host = document.getElementById("portalAdminAchievementsList");
     var status = document.getElementById("portalAdminAchievementsStatus");
     if (!client || !host) return;
     closeViewer();
-    if (status) status.textContent = "Loading…";
+    if (status && !stayOnKey) status.textContent = "Loading…";
     try {
       var rows = await fetchAllPhotos(client);
       var groups = groupByParticipant(rows);
@@ -509,6 +513,16 @@
       groups.forEach(function (g) {
         directoryState.byKey[g.key] = g;
       });
+      if (stayOnKey && directoryState.byKey[stayOnKey]) {
+        directoryState.activeKey = stayOnKey;
+        if (status) {
+          status.textContent = "";
+          status.className = "portal-forms-status";
+        }
+        await renderParticipantDetail(stayOnKey);
+        return;
+      }
+      directoryState.activeKey = "";
       if (status) {
         status.textContent =
           rows.length +
@@ -551,6 +565,7 @@
     var btn = document.getElementById("portalAdminAchievementsRefresh");
     if (btn) {
       btn.addEventListener("click", function () {
+        directoryState.activeKey = "";
         void refresh();
       });
     }
@@ -559,6 +574,7 @@
       host.addEventListener("click", function (e) {
         var back = e.target && e.target.closest && e.target.closest("[data-ach-back]");
         if (back) {
+          directoryState.activeKey = "";
           renderDirectory();
           return;
         }
