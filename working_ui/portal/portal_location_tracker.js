@@ -10,7 +10,7 @@ import {
   portalLocationPermissionGranted,
   probeLocationPermissionState,
   tryProbeLocationGrantedViaGeolocation,
-} from "./portal_location_permission.js?v=20260607-voice-transcriptor";
+} from "./portal_location_permission.js?v=20260607-voice-es-it-en";
 
 const MIN_SEND_INTERVAL_MS = 120000;
 const MIN_MOVE_M = 25;

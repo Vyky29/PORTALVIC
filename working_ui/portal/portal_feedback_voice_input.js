@@ -115,22 +115,42 @@
  }
 
  function resolveStaffVoiceGroup(staffName) {
- var tokens = nameTokens(staffName);
- try {
- var prof = global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.staff_profile;
- if (prof) {
- tokens = tokens.concat(nameTokens(prof.full_name || prof.username || ""));
- }
- } catch (_) {}
- var i;
- for (i = 0; i < tokens.length; i++) {
- if (ITALIAN_STAFF[tokens[i]]) return "italian";
- }
- for (i = 0; i < tokens.length; i++) {
- if (SPANISH_STAFF[tokens[i]]) return "spanish";
- }
- return "english";
- }
+  var tokens = nameTokens(staffName);
+  try {
+    var prof = global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.staff_profile;
+    if (prof && prof.nationality) {
+      var nat = String(prof.nationality || "")
+        .trim()
+        .toLowerCase();
+      if (
+        /^(uk|u\.k\.|united kingdom|british|britain|great britain|english|england|scottish|scotland|welsh|wales|northern ireland)$/.test(
+          nat
+        ) ||
+        nat.includes("british") ||
+        nat.includes("united kingdom")
+      ) {
+        return "english";
+      }
+      if (nat.includes("spanish") || nat.includes("spain") || nat.includes("espa")) {
+        return "spanish";
+      }
+      if (nat.includes("italian") || nat.includes("italy") || nat.includes("italia")) {
+        return "italian";
+      }
+    }
+    if (prof) {
+      tokens = tokens.concat(nameTokens(prof.full_name || prof.username || ""));
+    }
+  } catch (_) {}
+  var i;
+  for (i = 0; i < tokens.length; i++) {
+    if (ITALIAN_STAFF[tokens[i]]) return "italian";
+  }
+  for (i = 0; i < tokens.length; i++) {
+    if (SPANISH_STAFF[tokens[i]]) return "spanish";
+  }
+  return "english";
+}
 
  function defaultLangForGroup(group) {
  if (group === "italian") return "it-IT";
