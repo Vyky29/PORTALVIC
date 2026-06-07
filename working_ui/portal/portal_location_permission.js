@@ -102,30 +102,13 @@ function micResolveStaffVoiceGroup() {
 }
 
 function portalMicSetupHintText() {
-  const resolved = micResolveStaffVoiceGroup();
-  if (resolved.group === "spanish") {
-    return "You can record session feedback in Spanish — we live-transcribe into English for records.";
-  }
-  if (resolved.group === "italian") {
-    return "You can record session feedback in Italian — we live-transcribe into English for records.";
-  }
-  if (resolved.group === "other") {
-    if (resolved.lang) {
-      return (
-        "You can record session feedback in " +
-        resolved.lang +
-        " — we live-transcribe into English for records."
-      );
-    }
-    return "You can record session feedback in your official language — we live-transcribe into English for records.";
-  }
-  return "You can record session feedback in English — text is saved for records. Optional for calls.";
+  return "";
 }
 
 function portalRefreshMicrophoneHint() {
   const hintEl = document.getElementById("portalMicHint");
   if (!hintEl) return;
-  hintEl.textContent = portalMicSetupHintText();
+  hintEl.textContent = "";
 }
 
 function locationContextHint() {
@@ -709,6 +692,7 @@ export async function requestDefaultPortalPermissions() {
 
   if (portalMandatoryAlertsSettingsComplete()) {
     persistSet("portal_alerts_prompt_shown_v1", "1");
+    persistSet("portal_portal_features_setup_v1", "1");
     removeNotifyTapBanner();
   }
 
@@ -767,8 +751,8 @@ export function portalSyncAlertsSettingsChrome() {
   if (!sub) return;
   if (incomplete) {
     if (!notifyOk) sub.textContent = "Tap once for portal features";
-    else if (!camOk) sub.textContent = "Camera needed for video & photos";
-    else sub.textContent = "Location needed for your role";
+    else if (!camOk) sub.textContent = "Camera needed for video and photos";
+    else sub.textContent = "Location needed for live map";
   } else {
     sub.textContent = "Portal features on";
   }
@@ -790,7 +774,7 @@ export function portalRefreshMicrophoneUi() {
       btn.textContent = "Not supported";
     }
   } else if (st === "granted") {
-    statusEl.textContent = "On — ready for voice session feedback (English text in the form).";
+    statusEl.textContent = "On — voice-to-text ready on forms.";
     if (btn) {
       btn.textContent = "Microphone on";
       btn.disabled = true;
@@ -802,9 +786,9 @@ export function portalRefreshMicrophoneUi() {
       btn.disabled = false;
     }
   } else {
-    statusEl.textContent = "Off — optional, for voice session feedback (Spanish, Italian or English → English).";
+    statusEl.textContent = "Off — optional voice-to-text for typing fields.";
     if (btn) {
-      btn.textContent = "Allow microphone (optional)";
+      btn.textContent = "Allow microphone";
       btn.disabled = false;
     }
   }
@@ -862,31 +846,31 @@ export function portalRefreshEnableAllUi() {
   const readyStatus = document.getElementById("portalDefaultPermsReadyStatus");
   if (readyStatus && complete) {
     readyStatus.textContent = locRequired
-      ? "On — alerts, camera, and live map when your sessions need it."
+      ? "On — alerts, camera and live map when your Bespoke, Day Centre or Climbing sessions need it."
       : "On — alerts and camera ready on this device.";
   }
 
   if (statusEl) {
     if (complete) {
       statusEl.textContent = locRequired
-        ? "Ready — alerts, camera, and live map when your sessions need it."
+        ? "Ready — alerts, camera and live map when your sessions need it."
         : "Ready — alerts and camera on for calls, chat and roster changes.";
     } else {
       const parts = ["alerts"];
       if (camRequired) parts.push("camera");
-      if (locRequired) parts.push("location");
+      if (locRequired) parts.push("location for the live map");
       statusEl.textContent =
-        "Tap anywhere on the app once (or Continue below). The browser may ask for " +
-        parts.join(" and ") +
-        ". Turn on the microphone below for voice session feedback (Spanish, Italian or English → English).";
+        "One tap turns on " +
+        parts.join(", ") +
+        ". Saved on this device after you allow — same as signing the portal announcement.";
     }
   }
   if (btn) {
     if (complete) {
-      btn.textContent = "Continue";
+      btn.textContent = "Portal features on";
       btn.disabled = true;
     } else {
-      btn.textContent = "Continue";
+      btn.textContent = "Turn on portal features";
       btn.disabled = false;
     }
   }
@@ -913,7 +897,7 @@ export function portalRefreshLocationUi() {
   } else if (st === "granted") {
     var upload = typeof window !== "undefined" ? window.__PORTAL_LOCATION_LAST_UPLOAD__ : null;
     if (upload && upload.ok) {
-      statusEl.textContent = "On — office can see you on the live map during your Bespoke / Day Centre shift.";
+      statusEl.textContent = "On — office can see you on the live map during Bespoke, Day Centre or Climbing shifts.";
     } else if (upload && upload.ok === false && upload.message) {
       statusEl.textContent = "On — could not send yet. Tap Refresh or wait for the next GPS update.";
     } else {
@@ -931,8 +915,8 @@ export function portalRefreshLocationUi() {
     }
   } else {
     statusEl.textContent = portalLocationRequiredForSetup()
-      ? "Off — required for Bespoke Programme and Day Centre during your shift."
-      : "Not required for your rota today — only needed for Bespoke Programme and Day Centre staff during their shift.";
+      ? "Off — required for Bespoke, Day Centre or Climbing during your shift."
+      : "Not required for your rota today — only when you deliver Bespoke, Day Centre or Climbing.";
     if (btn) {
       btn.textContent = "Allow location";
       btn.disabled = false;
@@ -1002,7 +986,7 @@ function ensureNotifyTapBanner() {
   banner.className = "portal-notify-tap-banner";
   banner.setAttribute("role", "status");
   banner.textContent =
-    "Tap anywhere once for alerts, camera, and location (if your rota needs it). Microphone is optional in Settings → Advanced.";
+    "Tap once to turn on portal features (alerts, camera, live map if your rota needs it). Microphone is optional in Settings.";
   document.body.appendChild(banner);
 }
 
@@ -1084,6 +1068,7 @@ export async function portalEnsureMandatoryAlertsSettings(opts = {}) {
   refreshDefaultPortalPermissionsUi();
   if (portalMandatoryAlertsSettingsComplete()) {
     persistSet("portal_alerts_prompt_shown_v1", "1");
+    persistSet("portal_portal_features_setup_v1", "1");
     removeNotifyTapBanner();
     portalSyncAlertsSettingsChrome();
     if (typeof window.portalEnsureWebPushSubscription === "function") {
@@ -1144,30 +1129,6 @@ export function bindPortalLocationPermissionUi() {
   }
   alertsSheet.setAttribute("data-portal-location-ui-bound", "1");
   bindPortalLocationUploadUiRefresh();
-  if (alertsSheet.getAttribute("data-portal-enable-all-bound") !== "1") {
-    alertsSheet.setAttribute("data-portal-enable-all-bound", "1");
-    alertsSheet.addEventListener(
-      "click",
-      (e) => {
-        const t =
-          e.target && e.target.closest ? e.target.closest("#portalEnableAllBtn") : null;
-        if (!t || !alertsSheet.contains(t)) return;
-        e.preventDefault();
-        if (t.disabled) return;
-        t.disabled = true;
-        const prev = t.textContent;
-        t.textContent = "Allow when asked…";
-        void requestDefaultPortalPermissions().finally(() => {
-          portalRefreshEnableAllUi();
-          if (!portalMandatoryAlertsSettingsComplete()) {
-            t.disabled = false;
-            t.textContent = prev;
-          }
-        });
-      },
-      true
-    );
-  }
   if (alertsSheet.getAttribute("data-portal-mic-ui-bound") !== "1") {
     alertsSheet.setAttribute("data-portal-mic-ui-bound", "1");
     alertsSheet.addEventListener(

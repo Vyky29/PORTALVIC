@@ -726,51 +726,33 @@
     <div class="sheet-head">
       <div class="sheet-handle"></div>
       <h3 id="alertsNotificationsTitle">Portal features</h3>
-      <p>One tap turns on alerts and camera. Allow the microphone below for session feedback — speak in <strong>Spanish, Italian or English</strong>; we save <strong>English</strong> on the form.</p>
+      <p id="portalAlertsSheetIntro">Alerts, camera and live map when your rota needs it (Bespoke, Day Centre or Climbing). Saved on this device — we won’t ask again after you turn it on.</p>
     </div>
     <div class="sheet-body">
       <div class="portal-alerts-panel">
         <div class="portal-alerts-block portal-alerts-block--ready" id="portalDefaultPermsReady" hidden>
-          <h4 class="portal-alerts-section-title">Portal features</h4>
-          <p id="portalDefaultPermsReadyStatus" class="portal-alerts-status" aria-live="polite">On — alerts and camera ready on this device.</p>
+          <p id="portalDefaultPermsReadyStatus" class="portal-alerts-status" aria-live="polite">On — portal features ready on this device.</p>
         </div>
         <div class="portal-alerts-block portal-alerts-block--primary" id="portalDefaultPermsBlock">
-          <h4 class="portal-alerts-section-title">First-time setup</h4>
-          <p class="portal-alerts-hint muted">Tap anywhere on the dashboard once, or Continue here. The browser asks for alerts and camera (and location if you deliver Bespoke or Day Centre). Turn on the microphone below when you write session feedback.</p>
           <p id="portalEnableAllStatus" class="portal-alerts-status" aria-live="polite"></p>
-          <button type="button" class="portal-alerts-action-btn portal-alerts-action-btn--primary" id="portalEnableAllBtn">Continue</button>
-          <button type="button" class="portal-alerts-action-btn portal-alerts-action-btn--ghost" id="portalNotifyTestBtn">Send test alert</button>
+          <button type="button" class="portal-alerts-action-btn portal-alerts-action-btn--primary" id="portalEnableAllBtn">Turn on portal features</button>
         </div>
         <div class="portal-alerts-block portal-alerts-block--voice" id="portalVoiceFeedbackBlock">
-          <h4 class="portal-alerts-section-title">Voice session feedback</h4>
-          <p class="portal-alerts-hint muted portal-alerts-voice-langs">Spanish, Italian or English → saved in English on the feedback form.</p>
-          <p id="portalMicHint" class="portal-alerts-hint muted"></p>
+          <p class="portal-alerts-hint muted">Optional: transcribe your voice to text in Feedback, Incident, Cancellation and Reports.</p>
           <p id="portalMicStatus" class="portal-alerts-status" aria-live="polite"></p>
-          <button type="button" class="portal-alerts-action-btn" id="portalMicEnableBtn">Allow microphone (optional)</button>
-          <p class="portal-alerts-hint muted portal-alerts-voice-how">On the session feedback form, tap the microphone, speak, then review the English text before you submit.</p>
+          <button type="button" class="portal-alerts-action-btn" id="portalMicEnableBtn">Allow microphone</button>
+          <p class="portal-alerts-hint muted portal-alerts-voice-how">On a form, tap the mic, speak, review the text, then submit.</p>
         </div>
-        <details class="portal-alerts-details" id="portalAlertsAdvancedDetails" open>
-          <summary class="portal-alerts-details-summary">Advanced settings</summary>
-        <div class="portal-alerts-block">
-          <h4 class="portal-alerts-section-title">Notifications</h4>
-          <p class="portal-alerts-hint muted">For incoming calls, chat and roster changes.</p>
-          <p id="portalNotifyStatus" class="portal-alerts-status" aria-live="polite"></p>
-          <button type="button" class="portal-alerts-action-btn" id="portalNotifyEnableBtn">Turn on notifications</button>
+        <div class="portal-alerts-compat" hidden aria-hidden="true">
+          <p id="portalNotifyStatus"></p>
+          <button type="button" id="portalNotifyEnableBtn"></button>
+          <button type="button" id="portalNotifyTestBtn"></button>
+          <div id="portalLocationBlock"><p id="portalLocationStatus"></p><button type="button" id="portalLocationEnableBtn"></button></div>
+          <p id="portalCamStatus"></p>
+          <button type="button" id="portalCamEnableBtn"></button>
+          <p id="portalMicHint"></p>
         </div>
-        <div class="portal-alerts-block" id="portalLocationBlock">
-          <h4 class="portal-alerts-section-title">Location</h4>
-          <p class="portal-alerts-hint muted">Only if you deliver Bespoke Programme or Day Centre on your rota.</p>
-          <p id="portalLocationStatus" class="portal-alerts-status" aria-live="polite"></p>
-          <button type="button" class="portal-alerts-action-btn" id="portalLocationEnableBtn">Allow location</button>
-        </div>
-        <div class="portal-alerts-block">
-          <h4 class="portal-alerts-section-title">Camera</h4>
-          <p class="portal-alerts-hint muted">For session photos and video calls.</p>
-          <p id="portalCamStatus" class="portal-alerts-status" aria-live="polite"></p>
-          <button type="button" class="portal-alerts-action-btn" id="portalCamEnableBtn">Allow camera</button>
-        </div>
-        </details>
-        <p class="portal-alerts-footnote muted">Location sharing runs only during your Bespoke Programme or Day Centre shift on the rota.</p>
+        <p class="portal-alerts-footnote muted">Live map shares your location only during your shift window on the rota.</p>
       </div>
     </div>
   </section>
