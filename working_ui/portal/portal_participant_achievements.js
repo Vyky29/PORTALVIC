@@ -201,7 +201,7 @@
   function cameraErrorMessage(err) {
     var name = String((err && err.name) || "").trim();
     if (name === "NotAllowedError" || name === "PermissionDeniedError") {
-      return "Could not open camera. Allow camera access in your browser settings.";
+      return "Camera blocked on this device. Tap Allow camera now, or Use phone camera below. If there is no prompt: iPhone Settings → Safari → Camera → Allow (or Settings → the portal site → Camera).";
     }
     if (name === "NotFoundError" || name === "DevicesNotFoundError") {
       return "No camera found on this device.";
@@ -438,6 +438,88 @@
     el.innerHTML = html || "";
   }
 
+  function ensureNativePhotoInput() {
+    var inp = document.getElementById("portalAchievementsNativePhotoInput");
+    if (inp) return inp;
+    inp = document.createElement("input");
+    inp.type = "file";
+    inp.accept = "image/*";
+    inp.setAttribute("capture", "environment");
+    inp.id = "portalAchievementsNativePhotoInput";
+    inp.hidden = true;
+    inp.addEventListener("change", function () {
+      var file = inp.files && inp.files[0];
+      inp.value = "";
+      if (!file || !state.participant) return;
+      setStatus("Saving…");
+      void uploadPhotoBlob(file)
+        .then(function () {
+          setStatus("Photo saved.");
+          setCaptureMode("gallery");
+          void refreshGallery();
+        })
+        .catch(function (e) {
+          setStatus(esc(uploadErrorMessage(e)), true);
+        });
+    });
+    document.body.appendChild(inp);
+    return inp;
+  }
+
+  function openNativePhotoPicker() {
+    if (!state.participant) {
+      setStatus("Choose a participant first.", true);
+      return;
+    }
+    if (state.photos.length >= MAX_PHOTOS) {
+      setStatus("Maximum " + MAX_PHOTOS + " photos for this participant today.", true);
+      return;
+    }
+    ensureNativePhotoInput().click();
+  }
+
+  function showCameraFailure(err) {
+    var name = String((err && err.name) || "").trim();
+    var msg = esc(cameraErrorMessage(err));
+    var html = msg;
+    if (name === "NotAllowedError" || name === "PermissionDeniedError" || name === "SecurityError") {
+      html +=
+        '<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;min-width:0">' +
+        '<button type="button" class="btn btn--pri btn--sm" id="portalAchievementsCamRetryBtn">Allow camera now</button>' +
+        '<button type="button" class="btn btn--sec btn--sm" id="portalAchievementsNativeCamBtn">Use phone camera</button>' +
+        "</div>";
+    }
+    setStatus(html, true);
+    var retry = document.getElementById("portalAchievementsCamRetryBtn");
+    if (retry) {
+      retry.onclick = function () {
+        var req =
+          global.portalRequestCameraPermission ||
+          (global.window && global.window.portalRequestCameraPermission);
+        if (typeof req !== "function") {
+          openNativePhotoPicker();
+          return;
+        }
+        setStatus("Waiting for camera permission…");
+        void req().then(function (st) {
+          if (st === "granted") void captureFromCamera();
+          else showCameraFailure({ name: "NotAllowedError" });
+        });
+      };
+    }
+    var nat = document.getElementById("portalAchievementsNativeCamBtn");
+    if (nat) nat.onclick = function () {
+      openNativePhotoPicker();
+    };
+    if (global.portalMarkCameraDenied) global.portalMarkCameraDenied();
+  }
+
+  function noteCameraGranted() {
+    if (typeof global.portalMarkCameraGranted === "function") {
+      global.portalMarkCameraGranted();
+    }
+  }
+
   function resizeBlobToJpeg(blob) {
     return new Promise(function (resolve, reject) {
       var img = new Image();
@@ -498,11 +580,11 @@
       setStatus("");
       state.cameraMode = "photo";
       setCameraFooterMode();
-      openCameraFullscreen();
       pushCameraMediaBypass();
-      showCameraLiveUi();
       state.stream = await acquireCameraStream(state.facingMode);
-      pushCameraMediaBypass();
+      noteCameraGranted();
+      openCameraFullscreen();
+      showCameraLiveUi();
       video.srcObject = state.stream;
       video.hidden = false;
       applyVideoZoom();
@@ -511,7 +593,7 @@
       console.error(err);
       closeCameraFullscreen();
       setCaptureMode("hub");
-      setStatus(cameraErrorMessage(err), true);
+      showCameraFailure(err);
     }
   }
 

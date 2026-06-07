@@ -342,7 +342,10 @@ export function portalMicrophonePermissionGranted() {
 }
 
 export function portalCameraPermissionGranted() {
-  return _camState === "granted" || persistGet("portal_cam_granted_v1") === "1";
+  if (_camState === "denied") return false;
+  if (_camState === "granted") return true;
+  if (persistGet("portal_cam_denied_v1") === "1") return false;
+  return persistGet("portal_cam_granted_v1") === "1";
 }
 
 /** Default portal setup: camera + microphone for calls, photos and voice notes. */
@@ -379,6 +382,7 @@ export function markCameraGranted() {
 export function markCameraDenied() {
   _camState = "denied";
   persistSet("portal_cam_denied_v1", "1");
+  persistRemove("portal_cam_granted_v1");
   window.dispatchEvent(
     new CustomEvent("portal:camera-permission-change", { detail: { state: "denied" } })
   );
@@ -665,22 +669,22 @@ export async function requestDefaultPortalPermissions() {
     microphone: "skipped",
   };
 
+  // Camera + mic first while the Continue tap is still a valid user gesture (iOS Safari).
+  const needMic = !portalMicrophonePermissionGranted();
+  const needCam = !portalCameraPermissionGranted();
+  if (needMic || needCam) {
+    const media = await requestCallMediaPermissions({ video: needCam, audio: needMic });
+    results.microphone = needMic ? media.microphone : "granted";
+    results.camera = needCam ? media.camera : "granted";
+  } else {
+    results.microphone = "granted";
+    results.camera = "granted";
+  }
+
   if (!portalNotificationsGranted()) {
     results.notifications = await requestNotificationPermission();
   } else {
     results.notifications = "granted";
-  }
-
-  if (!portalMicrophonePermissionGranted()) {
-    results.microphone = await requestMicrophonePermission();
-  } else {
-    results.microphone = "granted";
-  }
-
-  if (!portalCameraPermissionGranted()) {
-    results.camera = await requestCameraPermission();
-  } else {
-    results.camera = "granted";
   }
 
   const locRequired = portalLocationRequiredForSetup();
