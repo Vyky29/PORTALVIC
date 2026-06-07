@@ -15,7 +15,7 @@
   <script src="/portal/portal-vapid-public.js?v=20260601-vapid"></script>
   <script src="/portal/portal_web_push_support.js?v=20260601-desktop-alerts"></script>
   <script src="/portal/portal_alerts_notifications_ui.js?v=20260622-mandatory-perms"></script>
-  <script src="/portal/portal_announcement_ack.js?v=20260606-worker-inbox-filter"></script>
+  <script src="/portal/portal_announcement_ack.js?v=20260624-perms-announce"></script>
   <script src="/portal-static-bootstrap.js?v=20260601-annual-profile-sync"></script>
   <!-- Optional: hide parent site chrome when embedded in another shell. -->
   <script>
@@ -7975,7 +7975,7 @@
         }
         const res = await client
           .from('portal_staff_announcements')
-          .select('id,title,body,message_type,priority,audience_scope,delivery_scope,target_user_id,target_staff_role,created_at,ends_at,reminder_category,hide_after_ack_amount,hide_after_ack_unit')
+          .select('id,title,body,message_type,priority,audience_scope,delivery_scope,target_user_id,target_staff_role,created_at,ends_at,reminder_category,hide_after_ack_amount,hide_after_ack_unit,on_ack_action')
           .order('created_at', { ascending: false })
           .limit(50);
         if(res.error){
@@ -8036,7 +8036,8 @@
               category: cat,
               title: String(row.title || 'Reminder').trim() || 'Reminder',
               body: String(row.body || '').trim(),
-              created_at: row.created_at
+              created_at: row.created_at,
+              onAckAction: String(row.on_ack_action || '').trim()
             });
             return;
           }
@@ -8049,7 +8050,8 @@
             href: '#portal-ann-' + id,
             portalAnnouncementId: id,
             hideAfterAckAmount: row.hide_after_ack_amount,
-            hideAfterAckUnit: row.hide_after_ack_unit
+            hideAfterAckUnit: row.hide_after_ack_unit,
+            onAckAction: String(row.on_ack_action || '').trim()
           });
         });
         if(!Array.isArray(dashboardData.portalRemindersFromAdmin)) dashboardData.portalRemindersFromAdmin = [];
@@ -8224,7 +8226,8 @@
         href: '#portal-rem-' + String(r.portalAdminReminderId),
         portalAdminReminderId: String(r.portalAdminReminderId),
         reminderCategory: r.category,
-        created_at: r.created_at
+        created_at: r.created_at,
+        onAckAction: String(r.onAckAction || r.on_ack_action || '').trim()
       };
     }
     function portalSignableSignatureKey(item){
@@ -8266,6 +8269,8 @@
       const list = portalActiveAnnouncementItems();
       return list.length ? list[0] : null;
     }
+    window.portalActiveAnnouncementItems = portalActiveAnnouncementItems;
+    window.portalAnnouncementPendingItem = portalAnnouncementPendingItem;
     function portalAnnouncementLockActive(){
       const annOpen = !!document.getElementById('announcementsSheet')?.classList.contains('open');
       return !!(portalAnnouncementLockRequired && annOpen && portalAnnouncementPendingItem());
@@ -8370,6 +8375,9 @@
           ? 'I have read and understood this reminder.'
           : 'I have read and understood this announcement.';
         const signKey = portalSignableSignatureKey(pending);
+        const signBtnLabel = (typeof portalSignableItemTriggersPortalPermissions === 'function' && portalSignableItemTriggersPortalPermissions(pending))
+          ? 'Sign and turn on portal features'
+          : 'Sign and submit';
         const bodyHtml = typeof portalFormatSignableMessageHtml === 'function'
           ? portalFormatSignableMessageHtml(txt)
           : ('<p class="announcement-message-p">' + escapeHtml(txt) + '</p>');
@@ -8380,7 +8388,7 @@
             '<div class="announcement-lock-copy announcement-message-block">' + bodyHtml + '</div>' +
             '<div class="announcement-lock-actions">' +
               '<label class="announcement-lock-check"><input type="checkbox" id="announcementReadConfirm"> ' + escapeHtml(confirmLabel) + '</label>' +
-              '<button type="button" class="announcement-sign-btn" id="announcementSignBtn" disabled data-announcement-sign-key="' + escapeHtml(signKey) + '">Sign and submit</button>' +
+              '<button type="button" class="announcement-sign-btn" id="announcementSignBtn" disabled data-announcement-sign-key="' + escapeHtml(signKey) + '">' + escapeHtml(signBtnLabel) + '</button>' +
             '</div>' +
           '</article>';
         hostHistory.innerHTML = '';
@@ -11099,6 +11107,10 @@
       if(!currentSheet) return;
       if(id === 'announcementsSheet' && typeof renderAnnouncementsSheetContent === 'function'){
         renderAnnouncementsSheetContent();
+        const pendingAnn = portalAnnouncementPendingItem();
+        if(pendingAnn && typeof portalActivatePermissionsFromSignableItem === 'function'){
+          void portalActivatePermissionsFromSignableItem(pendingAnn);
+        }
       }
       if(id === 'safeguardingFeedbackPolicySheet' && typeof renderSafeguardingFeedbackPolicySheet === 'function'){
         renderSafeguardingFeedbackPolicySheet();
@@ -12038,6 +12050,9 @@
         const pending = portalAnnouncementPendingItem();
         const expected = pending ? portalSignableSignatureKey(pending) : '';
         if(!pending || key !== expected) return;
+        if(typeof portalActivatePermissionsFromSignableItem === 'function'){
+          void portalActivatePermissionsFromSignableItem(pending);
+        }
         const isReminder = portalSignableItemIsReminder(pending);
         if(isReminder){
           const remAck = portalReminderAckMapLoad();

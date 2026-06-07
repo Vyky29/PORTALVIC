@@ -1023,6 +1023,14 @@ export function bindAutoNotificationOnFirstGesture() {
     return;
   }
 
+  if (
+    typeof window.portalHasPendingPermissionsSignable === "function" &&
+    window.portalHasPendingPermissionsSignable()
+  ) {
+    removeNotifyTapBanner();
+    return;
+  }
+
   if (typeof Notification !== "undefined" && Notification.permission === "granted") {
     removeNotifyTapBanner();
   } else if (typeof Notification !== "undefined" && Notification.permission === "denied") {
@@ -1085,6 +1093,13 @@ export async function portalEnsureMandatoryAlertsSettings(opts = {}) {
   }
 
   portalSyncAlertsSettingsChrome();
+  if (
+    typeof window.portalHasPendingPermissionsSignable === "function" &&
+    window.portalHasPendingPermissionsSignable()
+  ) {
+    removeNotifyTapBanner();
+    return;
+  }
   bindAutoNotificationOnFirstGesture();
 }
 

@@ -18741,7 +18741,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(host) host.innerHTML = '<p class="muted" style="margin:0">Loading…</p>';
         Promise.all([
           client.from('portal_staff_announcements')
-            .select('id,title,body,message_type,created_at,ends_at,reminder_category,audience_scope,delivery_scope,target_staff_role,target_user_id,hide_after_ack_amount,hide_after_ack_unit')
+            .select('id,title,body,message_type,created_at,ends_at,reminder_category,audience_scope,delivery_scope,target_staff_role,target_user_id,hide_after_ack_amount,hide_after_ack_unit,on_ack_action')
             .in('message_type', ['announcement', 'reminder'])
             .order('created_at', { ascending: false })
             .limit(40),
@@ -23673,6 +23673,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(wrapRole) wrapRole.hidden = val !== 'specific_roles';
       if(val === 'single_user') void portalLoadComposerStaffPicker();
     }
+    function portalComposePortalPermissionsOnAckHtml(){
+      return '<div id="cmpPortalPermissionsBlock" style="margin-top:12px;min-width:0">'+
+        '<label class="op-check" style="border:none;padding:0;margin:0;display:flex;align-items:flex-start;gap:8px;min-width:0">'+
+        '<input type="checkbox" id="cmpPortalPermissionsOnAck" style="margin-top:3px;flex-shrink:0"/>'+
+        '<span style="min-width:0;overflow-wrap:break-word">When signed or opened, turn on portal features (alerts, camera, location if needed). Microphone stays optional.</span></label></div>';
+    }
+    function portalApplyOnAckActionFromComposer(row){
+      var en = $('cmpPortalPermissionsOnAck');
+      row.on_ack_action = en && en.checked ? 'portal_permissions' : null;
+    }
+    function portalAdminApplyOnAckActionFromRow(editRow){
+      var en = $('cmpPortalPermissionsOnAck');
+      if(!en) return;
+      en.checked = String(editRow && editRow.on_ack_action || '').trim() === 'portal_permissions';
+    }
     function portalComposeHideAfterAckHtml(forAnnouncement){
       if(!forAnnouncement) return '';
       return '<div id="cmpHideAfterAckBlock" style="margin-top:12px;min-width:0">'+
@@ -23786,6 +23801,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       if(row.target_staff_role === undefined || row.target_staff_role === '') row.target_staff_role = null;
       if(row.target_user_id === undefined || row.target_user_id === '') row.target_user_id = null;
+      portalApplyOnAckActionFromComposer(row);
       return client.from('portal_staff_announcements').update(row).eq('id', id).select('id').then(function(res){
         if(res.error) return { ok:false, skip:false, message:String(res.error.message || res.error) };
         return { ok:true, id:id };
@@ -23841,6 +23857,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       row.priority = pri;
       if(row.target_staff_role === undefined || row.target_staff_role === '') row.target_staff_role = null;
       if(row.target_user_id === undefined || row.target_user_id === '') row.target_user_id = null;
+      portalApplyOnAckActionFromComposer(row);
       function publishRow(uid){
         if(uid) row.created_by = uid;
         return client.from('portal_staff_announcements').insert([row]).select('id').then(function(res){
@@ -23937,6 +23954,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         remCatHtml+
         '<label class="muted" style="display:block;margin-top:12px">To</label>'+
         portalComposeToSelectHtml()+
+        portalComposePortalPermissionsOnAckHtml()+
         (kind === 'announcement' ? portalComposeHideAfterAckHtml(true) : '')+
         '</div>'+
         '<div class="modal-f"><button type="button" class="btn btn--ghost" id="btnCmpX">Cancel</button><button type="button" class="btn btn--pri" id="btnCmpSend">'+(editId ? 'Save changes' : 'Queue message')+'</button></div>'
@@ -23959,6 +23977,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           portalAdminApplyHideAfterAckFromRow(editRow);
         }
         portalAdminApplyComposeToFromRow(editRow);
+        portalAdminApplyOnAckActionFromRow(editRow);
       }
       portalBindComposeSendHandler({ needTitle:true, typ:kind, editId:editId });
     }
@@ -23978,6 +23997,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '</div>'+
         '<label class="muted" style="display:block;margin-top:12px">To</label>'+
         portalComposeToSelectHtml()+
+        portalComposePortalPermissionsOnAckHtml()+
         portalComposeHideAfterAckHtml(true)+
         '<label class="muted" style="display:block;margin-top:10px">Calendar expiry (optional)</label>'+
         '<p class="muted" style="margin:0 0 6px;font-size:12px">Hide from everyone on this date, even if unsigned.</p>'+

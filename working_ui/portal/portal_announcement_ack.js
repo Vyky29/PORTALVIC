@@ -329,7 +329,6 @@
     }
   };
 
-  /** Escape + paragraph breaks for announcement/reminder body (pending sign + signed log). */
   global.portalFormatSignableMessageHtml = function portalFormatSignableMessageHtml(raw) {
     function esc(str) {
       return String(str || "")
@@ -382,5 +381,30 @@
         return '<p class="announcement-message-p">' + esc(part) + "</p>";
       })
       .join("");
+  };
+
+  global.portalSignableItemTriggersPortalPermissions = function portalSignableItemTriggersPortalPermissions(item) {
+    return String(item && (item.onAckAction || item.on_ack_action) || "").trim() === "portal_permissions";
+  };
+
+  global.portalHasPendingPermissionsSignable = function portalHasPendingPermissionsSignable() {
+    try {
+      var fn = global.portalActiveAnnouncementItems;
+      if (typeof fn !== "function") return false;
+      return fn().some(function (it) {
+        return global.portalSignableItemTriggersPortalPermissions(it);
+      });
+    } catch (_) {
+      return false;
+    }
+  };
+
+  /** User gesture: run default portal permissions when signable asks for it. */
+  global.portalActivatePermissionsFromSignableItem = async function portalActivatePermissionsFromSignableItem(item) {
+    if (!global.portalSignableItemTriggersPortalPermissions(item)) return null;
+    if (typeof global.portalRequestDefaultPortalPermissions === "function") {
+      return await global.portalRequestDefaultPortalPermissions();
+    }
+    return null;
   };
 })(typeof window !== "undefined" ? window : globalThis);
