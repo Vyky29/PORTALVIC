@@ -27,6 +27,7 @@ import {
   resolveStaffKeyFromAuthEmail,
   portalCanonicalStaffRosterKey,
   PORTAL_LOGIN_UNKNOWN_NAME_HELP,
+  portalIsRegisteredPortalLoginEmail,
   mergeStaffLoginEmailMap,
 } from "./auth-map.js";
 
@@ -451,6 +452,10 @@ function bindLogin() {
   async function fetchStaffProfile(supabase, userId) {
     const selectCols =
       "id, username, full_name, app_role, staff_role, dashboard_route, auth_session_generation, is_active, nationality";
+    const rpc = await supabase.rpc("portal_get_session_staff_profile");
+    if (!rpc.error && rpc.data && typeof rpc.data === "object") {
+      return rpc.data;
+    }
     const byId = await supabase
       .from("staff_profiles")
       .select(selectCols)
@@ -460,12 +465,36 @@ function bindLogin() {
     return byId.data;
   }
 
-  async function redirectUrlForUser(supabase, userId) {
+  async function portalLogoutAfterProfileFailure() {
+    try {
+      await portalLogout();
+    } catch {
+      /* ignore */
+    }
+    clearPortalStaffContext();
+  }
+
+  function portalStaffProfileMissingMessage(opts) {
+    opts = opts || {};
+    const registered = opts.registeredLogin !== false;
+    if (registered) {
+      return (
+        "Sign-in worked, but your staff record is not linked yet. " +
+        "Contact the office — ops can fix this in Supabase in a few minutes."
+      );
+    }
+    return (
+      "This account is not set up for the club portal. " +
+      "Use your staff first name or work email from the office."
+    );
+  }
+
+  async function redirectUrlForUser(supabase, userId, loginOpts) {
+    loginOpts = loginOpts || {};
     const profile = await fetchStaffProfile(supabase, userId);
     if (!profile) {
-      showError(
-        "No staff profile for this account. Ask an admin to link your user in public.staff_profiles."
-      );
+      await portalLogoutAfterProfileFailure();
+      showError(portalStaffProfileMissingMessage(loginOpts));
       return null;
     }
     if (profile.is_active === false) {
@@ -600,7 +629,11 @@ function bindLogin() {
     } = await supabase.auth.getSession();
     if (!session?.user?.id) return;
     try {
-      const url = await redirectUrlForUser(supabase, session.user.id);
+      const sessionEmail = String(session.user.email || "").trim();
+      const url = await redirectUrlForUser(supabase, session.user.id, {
+        email: sessionEmail,
+        registeredLogin: portalIsRegisteredPortalLoginEmail(sessionEmail),
+      });
       if (!url) return;
       const nextUrl = readSafePostLoginRedirect();
       window.location.replace(nextUrl || url);
@@ -654,7 +687,10 @@ function bindLogin() {
       );
     }
     try {
-      const url = await redirectUrlForUser(supabase, data.user.id);
+      const url = await redirectUrlForUser(supabase, data.user.id, {
+        email,
+        registeredLogin: true,
+      });
       if (!url) return;
       const nextUrl = readSafePostLoginRedirect();
       window.location.href = nextUrl || url;
@@ -763,12 +799,19 @@ export async function bootstrapDashboardSupabase(_opts) {
       }
       return;
     }
-    const { data: profile, error } = await supabase
-      .from("staff_profiles")
-      .select("id, username, full_name, app_role, staff_role, dashboard_route, auth_session_generation, is_active, nationality")
-      .eq("id", session.user.id)
-      .maybeSingle();
-    if (error) throw error;
+    let profile = null;
+    const rpc = await supabase.rpc("portal_get_session_staff_profile");
+    if (!rpc.error && rpc.data && typeof rpc.data === "object") {
+      profile = rpc.data;
+    } else {
+      const { data: profileRow, error } = await supabase
+        .from("staff_profiles")
+        .select("id, username, full_name, app_role, staff_role, dashboard_route, auth_session_generation, is_active, nationality")
+        .eq("id", session.user.id)
+        .maybeSingle();
+      if (error) throw error;
+      profile = profileRow;
+    }
 
     if (profile && profile.is_active === false) {
       try {

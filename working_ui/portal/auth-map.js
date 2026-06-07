@@ -165,12 +165,40 @@ export function mergeStaffLoginEmailMap(extra) {
     }
     STAFF_USERNAME_TO_EMAIL[key] = email;
   }
+  PORTAL_REGISTERED_LOGIN_EMAILS = null;
   rebuildNormalizedLookup();
 }
 
 /** Shown when the name field does not match any staff in STAFF_USERNAME_TO_EMAIL. */
 export const PORTAL_LOGIN_UNKNOWN_NAME_HELP =
-  "Name or email not recognised. Contact the office if you need help.";
+  "Name or email not recognised. Only club staff can use this portal — contact the office if you need access.";
+
+/** Cached set of Supabase Auth emails allowed to sign in (values from staff login map). */
+let PORTAL_REGISTERED_LOGIN_EMAILS = null;
+
+export function portalRegisteredLoginEmailsSet() {
+  if (PORTAL_REGISTERED_LOGIN_EMAILS) return PORTAL_REGISTERED_LOGIN_EMAILS;
+  const set = new Set();
+  for (const email of Object.values(STAFF_USERNAME_TO_EMAIL)) {
+    const resolved = resolveCorporateAuthEmail(String(email || "").trim());
+    if (resolved) set.add(resolved.toLowerCase());
+  }
+  for (const email of PORTAL_EXECUTIVE_AUTH_EMAILS) {
+    set.add(String(email || "").trim().toLowerCase());
+  }
+  for (const alias of Object.keys(PORTAL_CORPORATE_LOGIN_EMAIL_ALIASES)) {
+    set.add(resolveCorporateAuthEmail(alias).toLowerCase());
+  }
+  PORTAL_REGISTERED_LOGIN_EMAILS = set;
+  return set;
+}
+
+/** True when this email is on the portal roster (before Supabase Auth is called). */
+export function portalIsRegisteredPortalLoginEmail(rawEmail) {
+  const lower = resolveCorporateAuthEmail(String(rawEmail || "").trim()).toLowerCase();
+  if (!lower) return false;
+  return portalRegisteredLoginEmailsSet().has(lower);
+}
 
 function isPlausibleLoginEmail(value) {
   const s = String(value || "").trim();
@@ -197,10 +225,11 @@ export function resolveDemoEmail(rawUsername) {
     if (PORTAL_CORPORATE_AUTH_EMAIL_TO_STAFF_KEY[lower]) {
       return resolveCorporateAuthEmail(lower);
     }
-    if (lower.endsWith("@clubsensational.org") || lower.endsWith("@clbusensational.org")) {
-      return resolveCorporateAuthEmail(lower);
+    const resolved = resolveCorporateAuthEmail(lower);
+    if (portalIsRegisteredPortalLoginEmail(resolved)) {
+      return resolved;
     }
-    return lower;
+    return null;
   }
 
   if (/^stf\d{3}@staff\.import\.pending$/.test(lower)) {
