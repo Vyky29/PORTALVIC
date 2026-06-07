@@ -1,7 +1,7 @@
 // @ts-nocheck — Web Push when a live call invite is inserted (DM or CEO group).
 // Requires same VAPID + PORTAL_PUSH_* secrets as other portal-push-dispatch-* functions.
 //
-// Deploy: supabase functions deploy portal-push-dispatch-incoming-call --project-ref cklpnwhlqsulpmkipmqb
+// Deploy: supabase functions deploy portal-push-dispatch-incoming-call --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb
 // Triggers: migration 20260621103000_portal_incoming_call_web_push.sql (replace webhook secret).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
