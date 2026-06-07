@@ -89,6 +89,22 @@
     return false;
   };
 
+  /** Signed production announcement/reminder ack (persists in worker archive even if row is later unpublished). */
+  global.portalAnnouncementAckIsArchivedSigned = function portalAnnouncementAckIsArchivedSigned(
+    rec,
+    key
+  ) {
+    if (!rec || typeof rec !== "object") return false;
+    var annId =
+      String(rec.portalAnnouncementId || "").trim() ||
+      global.portalAnnouncementIdFromAckKey(key);
+    if (!annId) return false;
+    var signedAt = Number(rec.signedAt || 0);
+    if (!Number.isFinite(signedAt) || signedAt < global.PORTAL_ANNOUNCEMENTS_LIVE_FROM_MS)
+      return false;
+    return true;
+  };
+
   /**
    * @param {object} rec ack map value
    * @param {string} key ack map key
@@ -99,16 +115,13 @@
     key,
     liveIdSet
   ) {
-    if (!rec || typeof rec !== "object") return false;
+    if (!global.portalAnnouncementAckIsArchivedSigned(rec, key)) return false;
     var liveSet = liveIdSet && typeof liveIdSet === "object" ? liveIdSet : {};
+    if (!Object.keys(liveSet).length) return true;
     var annId =
       String(rec.portalAnnouncementId || "").trim() ||
       global.portalAnnouncementIdFromAckKey(key);
-    if (!annId || !liveSet[annId]) return false;
-    var signedAt = Number(rec.signedAt || 0);
-    if (!Number.isFinite(signedAt) || signedAt < global.PORTAL_ANNOUNCEMENTS_LIVE_FROM_MS)
-      return false;
-    return true;
+    return !!(annId && liveSet[annId]);
   };
 
   /** Drop pre-launch / orphan announcement ack rows from localStorage. */
@@ -124,7 +137,6 @@
       /* Do not prune until live announcement ids are loaded — empty set would wipe valid acks on every cold open. */
       if (!Object.keys(liveSet).length) return false;
       var changed = false;
-      var welcomeNeedle = "welcome to the new club";
       Object.keys(ack).forEach(function (k) {
         var rec = ack[k];
         if (!rec || typeof rec !== "object") {
@@ -132,14 +144,7 @@
           changed = true;
           return;
         }
-        var title = String(rec.title || "")
-          .trim()
-          .toLowerCase();
-        if (title.indexOf(welcomeNeedle) !== -1) {
-          delete ack[k];
-          changed = true;
-          return;
-        }
+        if (global.portalAnnouncementAckIsArchivedSigned(rec, k)) return;
         if (!global.portalAnnouncementAckRecordIsLive(rec, k, liveSet)) {
           delete ack[k];
           changed = true;

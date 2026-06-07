@@ -15,7 +15,7 @@
   <script src="/portal/portal-vapid-public.js?v=20260601-vapid"></script>
   <script src="/portal/portal_web_push_support.js?v=20260601-desktop-alerts"></script>
   <script src="/portal/portal_alerts_notifications_ui.js?v=20260624-push-icon"></script>
-  <script src="/portal/portal_announcement_ack.js?v=20260624-perms-announce"></script>
+  <script src="/portal/portal_announcement_ack.js?v=20260605-signed-log-persist"></script>
   <script src="/portal-static-bootstrap.js?v=20260601-annual-profile-sync"></script>
   <!-- Optional: hide parent site chrome when embedded in another shell. -->
   <script>
@@ -8156,15 +8156,15 @@
         if(changed) portalAnnouncementAckMapSave(ack);
       }catch(_){}
     }
-    /** Removes test / demo signed announcements from local ack (pool safety, bank holiday, ase, etc.). */
+    /** Removes test / demo signed announcements from local ack (legacy pool/holiday demo keys only). */
     function portalPruneTestAnnouncementAckKeys(){
       try{
         const ack = portalAnnouncementAckMapLoad();
         let changed = false;
-        const titleNeedles = ['pool safety', 'bank holiday', 'spring checklist', 'revised hours'];
         Object.keys(ack).forEach(function(k){
           const rec = ack[k];
           if(!rec || typeof rec !== 'object') return;
+          if(typeof portalAnnouncementAckIsArchivedSigned === 'function' && portalAnnouncementAckIsArchivedSigned(rec, k)) return;
           const title = String(rec.title || '').trim().toLowerCase();
           const href = String(rec.href || '').trim().toLowerCase();
           const keyLow = String(k || '').toLowerCase();
@@ -8173,16 +8173,12 @@
             changed = true;
             return;
           }
-          if(titleNeedles.some(function(n){ return title.indexOf(n) !== -1; })){
-            delete ack[k];
-            changed = true;
-            return;
-          }
           if(
             href.indexOf('portal-announcement-signed-pool') !== -1 ||
             href.indexOf('portal-announcement-signed-holiday') !== -1 ||
             keyLow.indexOf('portal-announcement-signed-pool') !== -1 ||
-            keyLow.indexOf('portal-announcement-signed-holiday') !== -1
+            keyLow.indexOf('portal-announcement-signed-holiday') !== -1 ||
+            keyLow.indexOf('#portal-staff-demo-') !== -1
           ){
             delete ack[k];
             changed = true;
@@ -8286,15 +8282,15 @@
     }
     function portalAnnouncementHistoryRows(){
       const ack = portalAnnouncementAckMapLoad();
-      const liveSet = portalLiveAnnouncementIdSet();
       const out = [];
       Object.keys(ack).forEach(function(k){
         const rec = ack[k];
         if(!rec || typeof rec !== 'object') return;
-        if(typeof portalAnnouncementAckRecordIsLive === 'function'){
-          if(!portalAnnouncementAckRecordIsLive(rec, k, liveSet)) return;
+        if(typeof portalAnnouncementAckIsArchivedSigned === 'function'){
+          if(!portalAnnouncementAckIsArchivedSigned(rec, k)) return;
+        }else if(typeof portalAnnouncementAckRecordIsLive === 'function'){
+          if(!portalAnnouncementAckRecordIsLive(rec, k, portalLiveAnnouncementIdSet())) return;
         }
-        if(portalAnnouncementAckPastHideWindow(rec)) return;
         out.push({
           key: k,
           title: String(rec.title || 'Announcement').trim() || 'Announcement',
