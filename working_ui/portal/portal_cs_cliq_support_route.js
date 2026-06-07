@@ -220,12 +220,70 @@
     } catch (_once) {}
   }
 
+  function threadHasParticipant(threadRow, userId) {
+    userId = String(userId || "").trim();
+    if (!userId || !threadRow) return false;
+    return (
+      String(threadRow.participant_a || "") === userId ||
+      String(threadRow.participant_b || "") === userId
+    );
+  }
+
+  function itemWhenMs(item) {
+    try {
+      return item && item.when ? new Date(item.when).getTime() : 0;
+    } catch (_t) {
+      return 0;
+    }
+  }
+
+  /** Shared staff inbox shows one row per worker (not one per CEO thread). */
+  function dedupeInboxByWorkerPeer(items, me) {
+    if (!Array.isArray(items) || items.length < 2) return items || [];
+    me = String(me || "").trim();
+    var peerKeep = {};
+    var out = [];
+    items.forEach(function (item) {
+      if (!item || item.kind !== "dm" || item.isTeamChat || !item.peerId) {
+        out.push(item);
+        return;
+      }
+      var key = String(item.peerId);
+      var kept = peerKeep[key];
+      if (!kept) {
+        peerKeep[key] = item;
+        out.push(item);
+        return;
+      }
+      var mine = threadHasParticipant(item.threadRow, me);
+      var keptMine = threadHasParticipant(kept.threadRow, me);
+      if (mine && !keptMine) {
+        kept.id = item.id;
+        kept.when = item.when;
+        kept.threadRow = item.threadRow;
+        kept.lastSender = item.lastSender || kept.lastSender;
+        kept.lastPreview = item.lastPreview || kept.lastPreview;
+      } else if (!mine && keptMine) {
+        /* keep existing */
+      } else if (itemWhenMs(item) > itemWhenMs(kept)) {
+        kept.id = item.id;
+        kept.when = item.when;
+        kept.threadRow = item.threadRow;
+        kept.lastSender = item.lastSender || kept.lastSender;
+        kept.lastPreview = item.lastPreview || kept.lastPreview;
+      }
+      kept.unreadCount = (Number(kept.unreadCount) || 0) + (Number(item.unreadCount) || 0);
+    });
+    return out;
+  }
+
   global.portalCsCliqSupportRoute = {
     routeToCeos: routeToCeos,
     buildMessageBody: buildMessageBody,
     isSupportRouteBody: isSupportRouteBody,
     purgeLocalTestData: purgeLocalTestData,
     purgeLocalTestDataOnce: purgeLocalTestDataOnce,
+    dedupeInboxByWorkerPeer: dedupeInboxByWorkerPeer,
     SUPPORT_PREFIX: SUPPORT_PREFIX,
     MEETING_PREFIX: MEETING_PREFIX,
   };

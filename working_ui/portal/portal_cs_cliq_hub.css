@@ -190,6 +190,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  line-height: 1.2;
 }
 
 #csCliqRoot .portal-cs-cliq-thread-header__role {
@@ -206,15 +207,7 @@
 }
 
 #csCliqRoot .portal-cs-cliq-thread-header__more {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  border: 1px solid var(--cs-hub-line, #e2e8f0);
-  background: #fff;
-  font-size: 18px;
-  line-height: 1;
-  cursor: pointer;
-  flex-shrink: 0;
+  display: none !important;
 }
 
 #csCliqRoot #csCliqHeadCallBar.portal-cs-cliq__head-call-bar {

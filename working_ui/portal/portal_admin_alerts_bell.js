@@ -169,7 +169,7 @@
     var isMeeting = body.indexOf("[CS Cliq Meeting request]") === 0;
     var preview = body.replace(/^\[CS Cliq[^\]]+\]\s*/i, "").trim();
     return {
-      id: "support-" + String(row.id),
+      id: "support-author-" + String(row.author_id || row.id),
       title: (isMeeting ? "Meeting request" : "Support") + " · " + nm,
       sub: clampSub(preview, 140) || "Tap to open chat with " + nm,
       created_at: row.created_at || new Date().toISOString(),
@@ -190,6 +190,30 @@
     if (typeof global.__portalAdminRenderAlerts === "function") {
       global.__portalAdminRenderAlerts();
     }
+  }
+
+  function syncSupportUnreadFromMessages(messages, profBy, me, opts) {
+    opts = opts || {};
+    if (!Array.isArray(messages) || !messages.length) return 0;
+    me = String(me || "").trim();
+    var box = global.__PORTAL_SUPABASE__ || {};
+    var role = String((box.staff_profile && box.staff_profile.app_role) || "").toLowerCase();
+    if (role !== "admin" && role !== "ceo") return 0;
+    var pushed = 0;
+    var seenAuthors = {};
+    messages.forEach(function (row) {
+      if (!row || !row.id || !row.thread_id) return;
+      if (me && String(row.author_id || "") === me) return;
+      var authorId = String(row.author_id || "");
+      if (!authorId || seenAuthors[authorId]) return;
+      var pr = (profBy && profBy[authorId]) || {};
+      var nm = String(pr.full_name || pr.username || "Staff").trim() || "Staff";
+      var item = activityFromSupportDm(row, nm);
+      if (!item) return;
+      seenAuthors[authorId] = true;
+      if (pushActivityAlert(item, { silent: !!opts.silent })) pushed++;
+    });
+    return pushed;
   }
 
   async function onStaffDmInsert(row) {
@@ -466,6 +490,7 @@
   global.portalAdminBellRemoveLateRequest = removeLateRequestAlert;
   global.portalAdminBellSyncLateFromServer = syncLateRequestsFromServer;
   global.portalAdminBellOnStaffDmInsert = onStaffDmInsert;
+  global.portalAdminBellSyncSupportUnread = syncSupportUnreadFromMessages;
   global.portalAdminBellClearStaffSupport = clearStaffSupportAlerts;
   global.portalAdminActivityFromSupportDm = activityFromSupportDm;
   unlockBellAudioOnGesture();

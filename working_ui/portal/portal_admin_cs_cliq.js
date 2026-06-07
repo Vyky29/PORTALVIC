@@ -264,7 +264,6 @@
       "</div></div>" +
       callBarHtml("csCliqHead", true) +
       '<button type="button" class="portal-cs-cliq-thread-header__files" id="csCliqThreadFilesBtn">Files</button>' +
-      '<button type="button" class="portal-cs-cliq-thread-header__more" id="csCliqThreadMoreBtn" aria-label="More options">⋯</button>' +
       "</header>" +
       '<div id="csCliqThreadFilesPanel" class="portal-cs-cliq-thread-files-panel" hidden></div>' +
       '<div id="csCliqMessages" class="portal-dm-msgs-col portal-dm-msgs-scroll portal-cs-cliq-messages"></div>' +

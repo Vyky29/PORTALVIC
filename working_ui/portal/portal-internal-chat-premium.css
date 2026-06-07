@@ -304,7 +304,16 @@ body.portal-inapp-call-open #portalInternalChatBackdrop.open{
   flex-shrink:0;border:1px solid var(--portal-chat-line);background:#fff;color:var(--portal-chat-ink);
   border-radius:999px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;
 }
-#internalChatSheet .portal-cs-cliq-thread-header__more{width:36px;height:36px;border-radius:10px;padding:0}
+#internalChatSheet .portal-cs-cliq-thread-header__more{display:none!important}
+@media (max-width:899px){
+  #internalChatSheet .portal-cs-cliq-thread-header{flex-wrap:wrap;gap:8px 10px}
+  #internalChatSheet .portal-cs-cliq-thread-header__identity{flex:1 1 calc(100% - 48px);max-width:calc(100% - 48px)}
+  #internalChatSheet .portal-cs-cliq-thread-header__name{
+    white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word;line-height:1.2;
+  }
+  #internalChatSheet .portal-cs-cliq-thread-header__status{display:none}
+  #internalChatSheet .portal-cs-cliq__head-call-bar{width:100%;justify-content:flex-start}
+}
 #internalChatSheet .portal-cs-cliq__head-call-bar{
   display:flex;gap:6px;padding:0;border:0;flex-shrink:0;
 }

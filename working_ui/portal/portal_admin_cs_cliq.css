@@ -1227,26 +1227,41 @@ body.admin-view-cs-cliq .portal-admin-floating-chat-wrap {
 
   #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadHeader.portal-cs-cliq-thread-header {
     padding-top: max(12px, env(safe-area-inset-top, 0px));
-    flex-wrap: nowrap;
-    gap: 8px;
-  }
-
-  #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadHeader .portal-cs-cliq-thread-header__identity {
-    flex: 1 1 auto;
-    min-width: 0;
-    order: 1;
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    align-items: center;
   }
 
   #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadHeader .portal-cs-cliq__back-btn {
     order: 0;
-    flex-shrink: 0;
+    flex: 0 0 36px;
+  }
+
+  #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadHeader .portal-cs-cliq-thread-header__identity {
+    order: 1;
+    flex: 1 1 calc(100% - 48px);
+    min-width: 0;
+    max-width: calc(100% - 48px);
+  }
+
+  #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadHeader .portal-cs-cliq-thread-header__name {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    word-break: break-word;
+  }
+
+  #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadHeader .portal-cs-cliq-thread-header__status {
+    display: none;
   }
 
   #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadHeader #csCliqHeadCallBar {
     order: 2;
-    flex: 0 0 auto;
-    width: auto;
-    justify-content: flex-end;
+    flex: 1 1 auto;
+    width: 100%;
+    justify-content: flex-start;
     gap: 6px;
   }
 
@@ -1258,10 +1273,14 @@ body.admin-view-cs-cliq .portal-admin-floating-chat-wrap {
     font-size: 0;
   }
 
-  #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadHeader .portal-cs-cliq-thread-header__files,
-  #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadHeader .portal-cs-cliq-thread-header__more {
+  #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadHeader .portal-cs-cliq-thread-header__files {
     order: 3;
     flex-shrink: 0;
+    margin-left: auto;
+  }
+
+  #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadHeader .portal-cs-cliq-thread-header__more {
+    display: none !important;
   }
 
   body.portal-cs-cliq-embed-open.portal-cs-cliq-mobile-subscreen .portal-cs-cliq-embed-head {

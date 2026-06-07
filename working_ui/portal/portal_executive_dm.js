@@ -1434,6 +1434,20 @@
           }
           item.unreadCount = unreadByThread[item.id] || 0;
         });
+        if(typeof global.portalAdminBellSyncSupportUnread === 'function' && uq && !uq.error && Array.isArray(uq.data)){
+          var supportUnread = uq.data.filter(function(m){
+            if(!m || !m.thread_id) return false;
+            if(!portalAdminDmMessageCountsAsUnread(m)) return false;
+            var tid = String(m.thread_id);
+            if(!portalAdminDmIsMessageAfterAck(m.created_at, portalAdminDmGetThreadAck(tid))) return false;
+            if(global.portalCsCliqSupportRoute && typeof global.portalCsCliqSupportRoute.isSupportRouteBody === 'function'){
+              return global.portalCsCliqSupportRoute.isSupportRouteBody(m.body);
+            }
+            var b = String(m.body || '');
+            return b.indexOf('[CS Cliq Support]') === 0 || b.indexOf('[CS Cliq Meeting request]') === 0;
+          });
+          global.portalAdminBellSyncSupportUnread(supportUnread, profBy, me, { silent: false });
+        }
       }
       if(groupIds.length){
         var lastByGroup = {};
@@ -1701,6 +1715,13 @@
         });
       });
       await portalAdminDmEnrichListItems(client, me, ch, merged, profBy);
+      if(
+        portalAdminDmUsesSharedStaffInbox() &&
+        global.portalCsCliqSupportRoute &&
+        typeof global.portalCsCliqSupportRoute.dedupeInboxByWorkerPeer === 'function'
+      ){
+        merged = global.portalCsCliqSupportRoute.dedupeInboxByWorkerPeer(merged, me);
+      }
       var fixedOrder = portalAdminDmFixedGroupSlugOrder();
       merged.sort(function(a, b){
         var af = a.kind === 'group' ? fixedOrder.indexOf(String(a.slug || '').toLowerCase()) : -1;

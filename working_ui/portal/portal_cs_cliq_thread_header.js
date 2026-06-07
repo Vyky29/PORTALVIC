@@ -95,14 +95,9 @@
       callBar.setAttribute("aria-hidden", "false");
     }
     var filesBtn = document.getElementById("internalChatThreadFilesBtn");
-    var moreBtn = document.getElementById("internalChatThreadMoreBtn");
     if (filesBtn) {
       filesBtn.hidden = !!restricted;
       filesBtn.setAttribute("aria-hidden", restricted ? "true" : "false");
-    }
-    if (moreBtn) {
-      moreBtn.hidden = !!restricted;
-      moreBtn.setAttribute("aria-hidden", restricted ? "true" : "false");
     }
     header.classList.add("is-open");
     header.removeAttribute("hidden");

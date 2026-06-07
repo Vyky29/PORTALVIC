@@ -198,9 +198,12 @@
   gap: 6px;
 }
 
-.portal-cs-cliq-embed-host #csCliqRoot .portal-cs-cliq-thread-header__files,
-.portal-cs-cliq-embed-host #csCliqRoot .portal-cs-cliq-thread-header__more {
+.portal-cs-cliq-embed-host #csCliqRoot .portal-cs-cliq-thread-header__files {
   flex-shrink: 0;
+}
+
+.portal-cs-cliq-embed-host #csCliqRoot .portal-cs-cliq-thread-header__more {
+  display: none !important;
 }
 
 .portal-cs-cliq-embed-host #csCliqRoot .portal-cs-cliq-composer {
@@ -258,12 +261,29 @@ body.portal-cs-cliq-embed-open {
 
   .portal-cs-cliq-embed-host #csCliqRoot #csCliqThreadHeader.portal-cs-cliq-thread-header {
     padding-top: max(10px, env(safe-area-inset-top, 0px));
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    align-items: center;
   }
 
   .portal-cs-cliq-embed-host #csCliqRoot #csCliqThreadHeader .portal-cs-cliq-thread-header__identity {
-    flex: 1 1 auto;
+    flex: 1 1 calc(100% - 48px);
     min-width: 0;
+    max-width: calc(100% - 48px);
+  }
+
+  .portal-cs-cliq-embed-host #csCliqRoot #csCliqThreadHeader .portal-cs-cliq-thread-header__name {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    word-break: break-word;
+    line-height: 1.2;
+  }
+
+  .portal-cs-cliq-embed-host #csCliqRoot #csCliqThreadHeader .portal-cs-cliq-thread-header__status {
+    display: none;
   }
 
   .portal-cs-cliq-embed-host #csCliqRoot #csCliqHeadCallBar {
