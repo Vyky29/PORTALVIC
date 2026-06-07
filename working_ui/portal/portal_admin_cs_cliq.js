@@ -180,6 +180,11 @@
       "</div>" +
       '<div id="csCliqQCeosHost" class="filter-row" style="flex-wrap:wrap;gap:8px;margin-top:8px;min-width:0"></div>' +
       "</div>" +
+      '<div id="csCliqStaffLeadsQuickWrap" hidden style="min-width:0">' +
+      '<p class="muted" style="margin:0 0 8px;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase">Quick open</p>' +
+      '<div class="filter-row" style="flex-wrap:wrap;gap:8px;min-width:0">' +
+      '<button type="button" class="btn btn--pri btn--sm" id="csCliqQStaffLeadsGroup">Ring all staff &amp; leads</button>' +
+      "</div></div>" +
       '<div id="csCliqListWrap" class="portal-dm-inbox-list"></div>' +
       "</div>" +
       '<div id="csCliqComposePanel" hidden>' +

@@ -12,6 +12,7 @@ import {
   insertDedupeOrSkip,
   jsonPushResponse,
   loadAdminCeoUserIds,
+  loadStaffLeadUserIds,
   sendPushPayloadToUserIds,
   staffPushOpenBase,
   verifyPortalPushWebhook,
@@ -153,6 +154,19 @@ async function resolveTargetUserIds(
   }
 
   if (table === "portal_ceo_group_message") {
+    const groupId = String(record.group_id || "").trim();
+    if (groupId) {
+      const { data: grp } = await admin
+        .from("portal_ceo_group")
+        .select("slug")
+        .eq("id", groupId)
+        .maybeSingle();
+      const slug = String(grp?.slug || "").toLowerCase();
+      if (slug === "staff_leads_ops") {
+        const workers = await loadStaffLeadUserIds(admin);
+        return workers.filter((id) => id && id !== authorId);
+      }
+    }
     const admins = await loadAdminCeoUserIds(admin);
     return admins.filter((id) => id && id !== authorId);
   }

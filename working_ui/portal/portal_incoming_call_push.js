@@ -68,14 +68,15 @@
     if (!row) return false;
 
     if (src === "group" && row.group_id) {
-      global.__PORTAL_ADMIN_DM_UI = global.__PORTAL_ADMIN_DM_UI || {};
-      global.__PORTAL_ADMIN_DM_UI.groupId = String(row.group_id);
-      global.__PORTAL_ADMIN_DM_UI.threadId = "";
-      global.__PORTAL_ADMIN_DM_UI.panel = "thread";
-      if (typeof global.portalAdminDmOpenGroupThread === "function") {
+      var isAdmin =
+        typeof global.portalAdminDmOpenGroupThread === "function" &&
+        typeof global.portalAdminDmMe === "function";
+      if (isAdmin) {
+        global.__PORTAL_ADMIN_DM_UI = global.__PORTAL_ADMIN_DM_UI || {};
+        global.__PORTAL_ADMIN_DM_UI.groupId = String(row.group_id);
+        global.__PORTAL_ADMIN_DM_UI.threadId = "";
+        global.__PORTAL_ADMIN_DM_UI.panel = "thread";
         await global.portalAdminDmOpenGroupThread(String(row.group_id));
-      } else if (typeof global.portalAdminDmLoadMessages === "function") {
-        await global.portalAdminDmLoadMessages();
       }
     } else if (row.thread_id) {
       global.__PORTAL_INTERNAL_CHAT_UI = global.__PORTAL_INTERNAL_CHAT_UI || {};

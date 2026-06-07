@@ -22,6 +22,8 @@
     loading: false,
     apiSrc: "",
     activeSession: null,
+    participants: Object.create(null),
+    rosterOpen: false,
   };
 
   var incomingState = {
@@ -208,6 +210,60 @@
     ).trim();
   }
 
+  function isPortalAdminModerator() {
+    var role = String(
+      (global.__PORTAL_SUPABASE__ &&
+        global.__PORTAL_SUPABASE__.staff_profile &&
+        global.__PORTAL_SUPABASE__.staff_profile.app_role) ||
+        ""
+    ).toLowerCase();
+    return role === "admin" || role === "ceo";
+  }
+
+  function dmThreadPairGuess(me, peer) {
+    if (typeof global.portalDmCanonThreadParticipantsGuess === "function") {
+      return global.portalDmCanonThreadParticipantsGuess(me, peer);
+    }
+    me = String(me || "").trim();
+    peer = String(peer || "").trim();
+    return me < peer
+      ? { participant_a: me, participant_b: peer }
+      : { participant_a: peer, participant_b: me };
+  }
+
+  async function ensureDmThreadId(client, me, peerId) {
+    if (!client || !me || !peerId || peerId === me) return "";
+    var guess = dmThreadPairGuess(me, peerId);
+    var a = guess.participant_a;
+    var b = guess.participant_b;
+    function pickId(rows) {
+      var row0 = Array.isArray(rows) && rows[0] ? rows[0] : null;
+      return row0 && row0.id ? String(row0.id) : "";
+    }
+    var r = await client
+      .from("portal_staff_dm_threads")
+      .select("id")
+      .eq("participant_a", a)
+      .eq("participant_b", b)
+      .maybeSingle();
+    if (r.error) return "";
+    var tid = r.data && r.data.id ? String(r.data.id) : "";
+    if (tid) return tid;
+    var ins = await client
+      .from("portal_staff_dm_threads")
+      .insert([{ participant_a: a, participant_b: b }])
+      .select("id");
+    tid = pickId(ins.data);
+    if (!tid && ins.error && global.portalDmIsCheckOrderedPairError && global.portalDmIsCheckOrderedPairError(ins.error)) {
+      ins = await client
+        .from("portal_staff_dm_threads")
+        .insert([{ participant_a: b, participant_b: a }])
+        .select("id");
+      tid = pickId(ins.data);
+    }
+    return tid;
+  }
+
   function getContext() {
     var box = global.__PORTAL_SUPABASE__;
     var ui = global.__PORTAL_INTERNAL_CHAT_UI || {};
@@ -336,7 +392,21 @@
       ".portal-incoming-call__btn--answer{background:#16a34a;color:#fff}" +
       ".portal-dm-call-end-row{display:flex;justify-content:center;width:100%;padding:6px 12px;box-sizing:border-box}" +
       ".portal-dm-call-end{display:inline-flex;align-items:center;justify-content:center;gap:6px;max-width:min(100%,22rem);padding:6px 12px;border-radius:999px;background:rgba(23,50,71,.08);color:#667781;font-size:12px;font-weight:600;line-height:1.35;text-align:center}" +
-      ".portal-dm-call-end-icon{font-size:14px;line-height:1;opacity:.92;flex-shrink:0}";
+      ".portal-dm-call-end-icon{font-size:14px;line-height:1;opacity:.92;flex-shrink:0}" +
+      ".portal-inapp-call-manage{padding:8px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);color:#fff;font:inherit;font-size:13px;font-weight:700;cursor:pointer}" +
+      ".portal-inapp-call-manage[hidden]{display:none!important}" +
+      ".portal-inapp-call-roster{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;background:rgba(15,23,42,.97);padding:12px 14px max(12px,env(safe-area-inset-bottom));box-sizing:border-box}" +
+      ".portal-inapp-call-roster[hidden]{display:none!important}" +
+      ".portal-inapp-call-roster__head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;min-width:0}" +
+      ".portal-inapp-call-roster__title{font-size:15px;font-weight:800;min-width:0;overflow-wrap:break-word}" +
+      ".portal-inapp-call-roster__close{padding:6px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.25);background:transparent;color:#fff;font:inherit;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0}" +
+      ".portal-inapp-call-roster__section{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:rgba(255,255,255,.65);margin:8px 0 6px}" +
+      ".portal-inapp-call-roster__list{display:flex;flex-direction:column;gap:6px;overflow:auto;min-height:0;flex:1}" +
+      ".portal-inapp-call-roster__row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.06);min-width:0}" +
+      ".portal-inapp-call-roster__name{font-size:13px;font-weight:600;min-width:0;overflow-wrap:break-word;flex:1}" +
+      ".portal-inapp-call-roster__btn{padding:6px 10px;border-radius:999px;border:0;font:inherit;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0}" +
+      ".portal-inapp-call-roster__btn--invite{background:#2563eb;color:#fff}" +
+      ".portal-inapp-call-roster__btn--kick{background:#dc2626;color:#fff}";
     document.head.appendChild(st);
   }
 
@@ -766,12 +836,22 @@
       '<div class="portal-inapp-call-head">' +
       '<span class="portal-inapp-call-title" id="portalInAppCallTitle">Call</span>' +
       '<div class="portal-inapp-call-actions">' +
+      '<button type="button" class="portal-inapp-call-manage" id="portalInAppCallManage" hidden title="Add or remove people">People</button>' +
       '<button type="button" class="portal-inapp-call-flip" id="portalInAppCallFlip" hidden title="Switch camera">Flip</button>' +
       '<button type="button" class="portal-inapp-call-leave" id="portalInAppCallLeave">Leave</button>' +
       "</div></div>" +
       '<div class="portal-inapp-call-host" id="portalInAppCallHost">' +
       '<div class="portal-inapp-call-loading" id="portalInAppCallLoading">Connecting...</div>' +
-      "</div>";
+      '<div class="portal-inapp-call-roster" id="portalInAppCallRoster" hidden aria-hidden="true">' +
+      '<div class="portal-inapp-call-roster__head">' +
+      '<span class="portal-inapp-call-roster__title">People on this call</span>' +
+      '<button type="button" class="portal-inapp-call-roster__close" id="portalInAppCallRosterClose">Done</button>' +
+      "</div>" +
+      '<p class="portal-inapp-call-roster__section">In the call now</p>' +
+      '<div class="portal-inapp-call-roster__list" id="portalInAppCallRosterLive"></div>' +
+      '<p class="portal-inapp-call-roster__section">Invite staff or lead</p>' +
+      '<div class="portal-inapp-call-roster__list" id="portalInAppCallRosterInvite"></div>' +
+      "</div></div>";
 
     document.body.appendChild(shell);
     callState.shell = shell;
@@ -789,6 +869,18 @@
         flipCallCamera();
       });
     }
+    var manageBtn = shell.querySelector("#portalInAppCallManage");
+    if (manageBtn) {
+      manageBtn.addEventListener("click", function () {
+        void toggleCallRoster(true);
+      });
+    }
+    var rosterClose = shell.querySelector("#portalInAppCallRosterClose");
+    if (rosterClose) {
+      rosterClose.addEventListener("click", function () {
+        toggleCallRoster(false);
+      });
+    }
 
     if (!shell.dataset.portalEscBound) {
       shell.dataset.portalEscBound = "1";
@@ -798,6 +890,159 @@
     }
 
     return shell;
+  }
+
+  function syncCallManageButton() {
+    var btn = document.getElementById("portalInAppCallManage");
+    if (!btn) return;
+    var show = isPortalAdminModerator() && !!callState.activeSession;
+    btn.hidden = !show;
+  }
+
+  function toggleCallRoster(open) {
+    var panel = document.getElementById("portalInAppCallRoster");
+    if (!panel) return;
+    callState.rosterOpen = !!open;
+    panel.hidden = !open;
+    panel.setAttribute("aria-hidden", open ? "false" : "true");
+    if (open) void renderCallRosterPanel();
+  }
+
+  function renderCallRosterLiveList() {
+    var host = document.getElementById("portalInAppCallRosterLive");
+    if (!host) return;
+    host.innerHTML = "";
+    var ids = Object.keys(callState.participants || {});
+    if (!ids.length) {
+      host.innerHTML =
+        '<p class="muted" style="margin:0;font-size:13px;color:rgba(255,255,255,.7);min-width:0;overflow-wrap:break-word">Waiting for people to join?</p>';
+      return;
+    }
+    ids.forEach(function (pid) {
+      var p = callState.participants[pid] || {};
+      var row = document.createElement("div");
+      row.className = "portal-inapp-call-roster__row";
+      var nm = document.createElement("span");
+      nm.className = "portal-inapp-call-roster__name";
+      nm.textContent = String(p.displayName || "Guest");
+      row.appendChild(nm);
+      if (pid && pid !== "local" && isPortalAdminModerator()) {
+        var kick = document.createElement("button");
+        kick.type = "button";
+        kick.className = "portal-inapp-call-roster__btn portal-inapp-call-roster__btn--kick";
+        kick.textContent = "Remove";
+        kick.addEventListener("click", function () {
+          try {
+            if (callState.api) callState.api.executeCommand("kickParticipant", pid);
+          } catch (_k) {}
+        });
+        row.appendChild(kick);
+      }
+      host.appendChild(row);
+    });
+  }
+
+  async function renderCallRosterInviteList() {
+    var host = document.getElementById("portalInAppCallRosterInvite");
+    if (!host) return;
+    host.innerHTML =
+      '<p class="muted" style="margin:0;font-size:13px;color:rgba(255,255,255,.7);min-width:0">Loading?</p>';
+    var session = callState.activeSession;
+    if (!session || !session.room) {
+      host.textContent = "No active call.";
+      return;
+    }
+    var ctx = getContext();
+    if (!ctx.client) {
+      host.textContent = "Not signed in.";
+      return;
+    }
+    var me = authUserId();
+    var res = await ctx.client
+      .from("staff_profiles")
+      .select("id,full_name,username,app_role,is_active")
+      .in("app_role", ["staff", "lead"])
+      .or("is_active.is.null,is_active.eq.true")
+      .order("full_name", { ascending: true })
+      .limit(200);
+    if (res.error || !Array.isArray(res.data)) {
+      host.textContent = "Could not load directory.";
+      return;
+    }
+    host.innerHTML = "";
+    res.data.forEach(function (row) {
+      if (!row || !row.id) return;
+      var id = String(row.id);
+      if (me && id === me) return;
+      var label = String(row.full_name || row.username || id.slice(0, 8)).trim();
+      var item = document.createElement("div");
+      item.className = "portal-inapp-call-roster__row";
+      var nm = document.createElement("span");
+      nm.className = "portal-inapp-call-roster__name";
+      nm.textContent = label;
+      item.appendChild(nm);
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "portal-inapp-call-roster__btn portal-inapp-call-roster__btn--invite";
+      btn.textContent = "Invite";
+      btn.addEventListener("click", function () {
+        btn.disabled = true;
+        btn.textContent = "Sending?";
+        void inviteWorkerToActiveCall(id, session).finally(function () {
+          btn.disabled = false;
+          btn.textContent = "Invite";
+        });
+      });
+      host.appendChild(item);
+    });
+    if (!host.children.length) {
+      host.innerHTML =
+        '<p class="muted" style="margin:0;font-size:13px;color:rgba(255,255,255,.7);min-width:0">No staff or leads found.</p>';
+    }
+  }
+
+  async function renderCallRosterPanel() {
+    renderCallRosterLiveList();
+    await renderCallRosterInviteList();
+  }
+
+  async function inviteWorkerToActiveCall(workerId, session) {
+    session = session || callState.activeSession;
+    if (!session || !session.room) throw new Error("No active call.");
+    var ctx = getContext();
+    var me = authUserId();
+    if (!ctx.client || !me) throw new Error("Not signed in.");
+    workerId = String(workerId || "").trim();
+    if (!workerId || workerId === me) throw new Error("Invalid recipient.");
+    var tid = await ensureDmThreadId(ctx.client, me, workerId);
+    if (!tid) throw new Error("Could not open chat.");
+    var caller = await resolveCallerIdentity(ctx.client);
+    var payload = buildCallPayload({
+      kind: session.kind || "video",
+      room: session.room,
+      title: "",
+      scheduledAt: null,
+      callerId: caller.id,
+      callerName: caller.name,
+    });
+    var body = encodeCallBody(payload);
+    var ins = await ctx.client
+      .from("portal_staff_dm_messages")
+      .insert([{ thread_id: tid, author_id: caller.id, body: body, message_type: "text" }])
+      .select("id");
+    if (ins.error) throw ins.error;
+    if (session.groupId) {
+      await ctx.client
+        .from("portal_ceo_group_message")
+        .insert([
+          {
+            group_id: session.groupId,
+            author_id: caller.id,
+            body: body,
+            message_type: "text",
+          },
+        ]);
+    }
   }
 
   function stripRoomSlug(room) {
@@ -929,6 +1174,9 @@
     var session = callState.activeSession;
     hideIncomingCallOverlay();
     disposeCallApi();
+    callState.participants = Object.create(null);
+    callState.rosterOpen = false;
+    toggleCallRoster(false);
     var shell = callState.shell || document.getElementById("portalInAppCallShell");
     var host = callState.host || (shell && shell.querySelector("#portalInAppCallHost"));
     if (host) {
@@ -1032,6 +1280,8 @@
     if (loading) loading.hidden = false;
     shell.hidden = false;
     document.body.classList.add("portal-inapp-call-open");
+    callState.participants = Object.create(null);
+    syncCallManageButton();
 
     disposeCallApi();
     if (host) host.innerHTML = '<div class="portal-inapp-call-loading" id="portalInAppCallLoading">Connecting...</div>';
@@ -1153,6 +1403,21 @@
             } catch (_vi) {}
           }
         }
+      });
+      api.addEventListener("participantJoined", function (participant) {
+        if (!participant) return;
+        var pid = String(participant.id || participant.participantId || "").trim();
+        if (!pid) return;
+        callState.participants[pid] = {
+          displayName: String(participant.displayName || participant.formattedDisplayName || "Guest"),
+        };
+        if (callState.rosterOpen) renderCallRosterLiveList();
+      });
+      api.addEventListener("participantLeft", function (participant) {
+        if (!participant) return;
+        var pid = String(participant.id || participant.participantId || "").trim();
+        if (pid) delete callState.participants[pid];
+        if (callState.rosterOpen) renderCallRosterLiveList();
       });
       api.addEventListener("prejoinScreenLoaded", function () {
         applyJitsiIframeAllow(host);
@@ -1296,7 +1561,10 @@
     var scheduledAt = opts.scheduledAt ? String(opts.scheduledAt) : "";
     if (!client || (!threadId && !groupId)) throw new Error("Not available.");
 
-    var room = buildRoomName(groupId || threadId, kind, { group: !!groupId });
+    var room = String(opts.room || "").trim();
+    if (!room) {
+      room = buildRoomName(groupId || threadId, kind, { group: !!groupId });
+    }
     var caller = await resolveCallerIdentity(client);
     var payload = buildCallPayload({
       kind: kind,

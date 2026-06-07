@@ -88,6 +88,27 @@ export async function loadAdminCeoUserIds(
   return ids;
 }
 
+export async function loadStaffLeadUserIds(
+  admin: SupabaseClient,
+): Promise<string[]> {
+  const { data, error } = await admin
+    .from("staff_profiles")
+    .select("id,is_active")
+    .in("app_role", ["staff", "lead"]);
+  if (error) {
+    console.error("[portal-webpush] staff/lead profiles", error);
+    throw error;
+  }
+  const ids: string[] = [];
+  for (const row of data ?? []) {
+    const r = row as { id?: string; is_active?: boolean | null };
+    if (r.is_active === false) continue;
+    const id = String(r.id ?? "").trim();
+    if (id) ids.push(id);
+  }
+  return ids;
+}
+
 export async function sendPushPayloadToUserIds(
   admin: SupabaseClient,
   userIds: string[],

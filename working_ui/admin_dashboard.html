@@ -19364,6 +19364,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       admDmComposePanel: 'csCliqComposePanel',
       admDmThreadPanel: 'csCliqThreadPanel',
       admDmCeoQuickWrap: 'csCliqCeoQuickWrap',
+      admDmStaffLeadsQuickWrap: 'csCliqStaffLeadsQuickWrap',
+      admDmQStaffLeadsGroup: 'csCliqQStaffLeadsGroup',
       admDmQCeosHost: 'csCliqQCeosHost',
       admDmQOpsAdmin: 'csCliqQOpsAdmin',
       admDmQCeoGroup: 'csCliqQCeoGroup',
@@ -19411,6 +19413,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         void portalAdminDmRenderList();
         var wrapQ = portalAdminDmEl('admDmCeoQuickWrap');
         if(wrapQ) wrapQ.hidden = true;
+        var wrapSl = portalAdminDmEl('admDmStaffLeadsQuickWrap');
+        if(wrapSl) wrapSl.hidden = false;
+        void portalAdminDmFillStaffLeadsQuickPicks();
       });
       bindClick('csCliqTabCeo', function(){
         if(portalAdminDmChannel() === 'ceo_exec') return;
@@ -19420,6 +19425,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         void portalAdminDmRenderList();
         var wrapQ = portalAdminDmEl('admDmCeoQuickWrap');
         if(wrapQ) wrapQ.hidden = false;
+        var wrapSl = portalAdminDmEl('admDmStaffLeadsQuickWrap');
+        if(wrapSl) wrapSl.hidden = true;
         void portalAdminDmFillCeoQuickPicks();
       });
       bindClick('csCliqSendBtn', function(){ void portalAdminDmSendReply(); });
@@ -19468,7 +19475,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       void portalAdminDmRenderList();
       var wrapQ = portalAdminDmEl('admDmCeoQuickWrap');
       if(wrapQ) wrapQ.hidden = channel !== 'ceo_exec';
+      var wrapSl = portalAdminDmEl('admDmStaffLeadsQuickWrap');
+      if(wrapSl) wrapSl.hidden = channel !== 'staff_lead';
       if(channel === 'ceo_exec') void portalAdminDmFillCeoQuickPicks();
+      if(channel === 'staff_lead') void portalAdminDmFillStaffLeadsQuickPicks();
       if(typeof window.portalInitFloatingInternalChat === 'function') window.portalInitFloatingInternalChat();
       window.__PORTAL_DM_REFRESH_THREAD = function(){ return portalAdminDmLoadMessages(); };
       if(window.portalStaffChatCalls && typeof window.portalStaffChatCalls.bindCallBar === 'function'){
@@ -20181,6 +20191,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     var PORTAL_CEO_ALL_GROUP_SLUG = 'all_ceos';
     var PORTAL_CEO_LIAISON_GROUP_SLUG = 'ceo_liaison';
+    var PORTAL_STAFF_LEADS_OPS_GROUP_SLUG = 'staff_leads_ops';
     function portalAdminDmMyAppRole(){
       return String((window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile && window.__PORTAL_SUPABASE__.staff_profile.app_role) || '').toLowerCase();
     }
@@ -20211,6 +20222,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     async function portalAdminDmResolveLiaisonCeoGroupId(client){
       if(!client) return '';
       var g = await client.from('portal_ceo_group').select('id').eq('slug', PORTAL_CEO_LIAISON_GROUP_SLUG).maybeSingle();
+      if(g.error || !g.data || !g.data.id) return '';
+      return String(g.data.id);
+    }
+    async function portalAdminDmResolveStaffLeadsOpsGroupId(client){
+      if(!client) return '';
+      var g = await client.from('portal_ceo_group').select('id,title').eq('slug', PORTAL_STAFF_LEADS_OPS_GROUP_SLUG).maybeSingle();
       if(g.error || !g.data || !g.data.id) return '';
       return String(g.data.id);
     }
@@ -20342,6 +20359,26 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         host.appendChild(btn);
       });
       if(wrap) wrap.hidden = false;
+    }
+    async function portalAdminDmFillStaffLeadsQuickPicks(){
+      if(portalAdminDmChannel() !== 'staff_lead') return;
+      var wrap = portalAdminDmEl('admDmStaffLeadsQuickWrap');
+      var grpBtn = portalAdminDmEl('admDmQStaffLeadsGroup');
+      var client = getSchedSupabaseClient();
+      if(!client) return;
+      var gid = await portalAdminDmResolveStaffLeadsOpsGroupId(client);
+      if(grpBtn){
+        if(!gid){
+          grpBtn.hidden = true;
+          grpBtn.onclick = null;
+        }else{
+          grpBtn.hidden = false;
+          grpBtn.onclick = function(){
+            void (async function(){ await portalAdminDmOpenGroupThread(gid); })();
+          };
+        }
+      }
+      if(wrap) wrap.hidden = !gid;
     }
     function portalAdminDmAckIsoForList(ch, kind){
       try{
@@ -20557,6 +20594,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             if(!portalAdminDmViewerSeesCeoGroupSlug(gsl)) return;
             merged.push({ kind: 'group', id: String(g.id), label: String(g.title || g.slug || 'Group'), when: g.updated_at });
           });
+        }
+      }
+      if(ch === 'staff_lead'){
+        var gidOps = await portalAdminDmResolveStaffLeadsOpsGroupId(client);
+        if(gidOps){
+          var gops = await client.from('portal_ceo_group').select('id,title,slug,updated_at').eq('id', gidOps).maybeSingle();
+          if(!gops.error && gops.data && gops.data.id){
+            merged.push({
+              kind: 'group',
+              id: String(gops.data.id),
+              label: String(gops.data.title || 'Staff & leads (group)'),
+              when: gops.data.updated_at
+            });
+          }
         }
       }
       var res = await portalAdminDmFetchStaffDmThreads(client, me, ch);
@@ -21227,6 +21278,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '</div>'+
         '<div id="admDmQCeosHost" class="filter-row" style="flex-wrap:wrap;gap:8px;margin-top:8px;min-width:0"></div>'+
         '</div>'+
+        '<div id="admDmStaffLeadsQuickWrap" hidden style="margin:0 0 12px;min-width:0">'+
+        '<p class="muted" style="margin:0 0 8px;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase">Quick open</p>'+
+        '<div class="filter-row" style="flex-wrap:wrap;gap:8px;min-width:0">'+
+        '<button type="button" class="btn btn--pri btn--sm" id="admDmQStaffLeadsGroup">Ring all staff &amp; leads</button>'+
+        '</div></div>'+
         '<div id="admDmListHost" style="min-width:0;max-height:44vh;overflow:auto"></div>'+
         '<div class="filter-row" style="margin-top:12px;flex-wrap:wrap;gap:8px">'+
         '<button type="button" class="btn btn--sec btn--sm" id="admDmBtnClose">Close</button>'+
@@ -21303,7 +21359,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       void portalAdminDmRenderList();
       var wrapQ = $('admDmCeoQuickWrap');
       if(wrapQ) wrapQ.hidden = channel !== 'ceo_exec';
+      var wrapSl = $('admDmStaffLeadsQuickWrap');
+      if(wrapSl) wrapSl.hidden = channel !== 'staff_lead';
       if(channel === 'ceo_exec') void portalAdminDmFillCeoQuickPicks();
+      if(channel === 'staff_lead') void portalAdminDmFillStaffLeadsQuickPicks();
     }
     async function portalSendInternalDmFirstMessage(){
       var errEl = portalAdminDmEl('admDmComposeErr');
@@ -25198,8 +25257,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       document.body.appendChild(s);
     })();
   </script>
-  <script src="/portal/portal_staff_chat_calls.js?v=20260607-calls-alerts"></script>
-  <script src="/portal/portal_incoming_call_push.js?v=20260621-incoming-call"></script>
+  <script src="/portal/portal_staff_chat_calls.js?v=20260622-call-roster"></script>
+  <script src="/portal/portal_incoming_call_push.js?v=20260622-incoming-call"></script>
   <script src="/portal/portal_floating_internal_chat.js?v=20260605-admin-chat"></script>
 </body>
 </html>

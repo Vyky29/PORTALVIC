@@ -14,7 +14,7 @@
   -->
   <script src="/portal/portal-vapid-public.js?v=20260601-vapid"></script>
   <script src="/portal/portal_web_push_support.js?v=20260601-desktop-alerts"></script>
-  <script src="/portal/portal_alerts_notifications_ui.js?v=20260607-calls-alerts"></script>
+  <script src="/portal/portal_alerts_notifications_ui.js?v=20260622-mandatory-perms"></script>
   <script src="/portal/portal_announcement_ack.js?v=20260606-worker-inbox-filter"></script>
   <script src="/portal-static-bootstrap.js?v=20260601-annual-profile-sync"></script>
   <!-- Optional: hide parent site chrome when embedded in another shell. -->
@@ -725,13 +725,13 @@
     <div class="sheet-head">
       <div class="sheet-handle"></div>
       <h3 id="alertsNotificationsTitle">Portal features</h3>
-      <p>Alerts for calls, chat and roster changes turn on with one tap anywhere on the dashboard. Microphone is optional (voice feedback only).</p>
+      <p>Calls, chat and roster alerts turn on with one tap — camera too. Live map when your rota needs it. Microphone is optional (voice feedback only).</p>
     </div>
     <div class="sheet-body">
       <div class="portal-alerts-panel">
         <div class="portal-alerts-block portal-alerts-block--primary">
           <h4 class="portal-alerts-section-title">Continue</h4>
-          <p class="portal-alerts-hint muted">One tap turns on alerts on this device. The browser may ask for notifications — accept once. Microphone and camera stay optional below.</p>
+          <p class="portal-alerts-hint muted">One tap turns on alerts and camera on this device. The browser may also ask for location if you deliver Bespoke or Day Centre. Microphone stays optional below.</p>
           <p id="portalEnableAllStatus" class="portal-alerts-status" aria-live="polite"></p>
           <button type="button" class="portal-alerts-action-btn portal-alerts-action-btn--primary" id="portalEnableAllBtn">Continue</button>
           <button type="button" class="portal-alerts-action-btn portal-alerts-action-btn--ghost" id="portalNotifyTestBtn">Send test alert</button>
@@ -1033,8 +1033,8 @@
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260616-michelle-only"></script>
   <script src="/portal/portal_dm_voice.js?v=20260602-feedback-voice-fix"></script>
-  <script src="/portal/portal_staff_chat_calls.js?v=20260607-calls-alerts"></script>
-  <script src="/portal/portal_incoming_call_push.js?v=20260621-incoming-call"></script>
+  <script src="/portal/portal_staff_chat_calls.js?v=20260622-call-roster"></script>
+  <script src="/portal/portal_incoming_call_push.js?v=20260622-incoming-call"></script>
   <script src="/portal/portal_sheet_back.js?v=20260607-sheet-back"></script>
   <script src="/portal/portal_lead_staff_chat_directory.js?v=20260619-lead-staff-rls"></script>
   <script>
@@ -6846,6 +6846,16 @@
               console.warn("[portal] Realtime portal_staff_dm_messages", status, err || "");
             }
           });
+        ch.on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "portal_ceo_group_message" },
+          function(payload){
+            var rowG = payload && (payload.new || payload.record);
+            if(rowG && window.portalStaffChatCalls && typeof window.portalStaffChatCalls.onGroupMessageInsert === "function"){
+              window.portalStaffChatCalls.onGroupMessageInsert(rowG);
+            }
+          }
+        );
         window.__PORTAL_STAFF_DM_RT_CH = ch;
       }catch(e){
         console.warn("[portal] portalInitStaffDmRealtime", e);
