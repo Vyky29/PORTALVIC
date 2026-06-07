@@ -636,7 +636,7 @@
       });
       setStatus("Saving…");
       await uploadPhotoBlob(blob);
-      setStatus("");
+      setStatus("Photo saved.");
       void updateFooterGalleryThumb();
       showCameraLiveUi();
     } catch (e) {
@@ -728,9 +728,31 @@
     return res.data.signedUrl;
   }
 
+  async function fetchInboxDraftPhotos(sessionDate) {
+    var client = cfg.getClient();
+    if (!client) return [];
+    var day = String(sessionDate || londonTodayIso()).trim().slice(0, 10);
+    var userRes = await client.auth.getUser();
+    var uid = userRes.data && userRes.data.user && userRes.data.user.id;
+    if (!uid) return [];
+    var res = await client
+      .from("portal_participant_achievement_photos")
+      .select("id, storage_path, created_at, width, height, staff_user_id, staff_display_name")
+      .eq("session_date", day)
+      .eq("client_id", LEAD_INBOX_CLIENT_ID)
+      .eq("staff_user_id", uid)
+      .eq("status", "draft")
+      .order("created_at", { ascending: true });
+    if (res.error) throw res.error;
+    return res.data || [];
+  }
+
   async function fetchDraftPhotosForParticipant(participant, sessionDate) {
     var client = cfg.getClient();
     if (!client || !participant) return [];
+    if (isInboxParticipant(participant)) {
+      return fetchInboxDraftPhotos(sessionDate);
+    }
     var cid = normalizeClientId(participant.clientId);
     var day = String(sessionDate || londonTodayIso()).trim().slice(0, 10);
     var sessionKey = participant.portalSessionKey
