@@ -6,6 +6,7 @@
 
   var CACHE_KEY_STAFF = "__PORTAL_LEAD_STAFF_DIRECTORY_ROWS__";
   var CACHE_KEY_LEADS = "__PORTAL_STAFF_LEADS_DIRECTORY_ROWS__";
+  var CACHE_KEY_DIRECTORS = "__PORTAL_STAFF_DIRECTORS_DIRECTORY_ROWS__";
 
   function esc(s) {
     return String(s == null ? "" : s)
@@ -28,18 +29,26 @@
     return prof || (global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.staff_profile) || {};
   }
 
-  function portalStaffIsLeadUser(prof) {
+  /** Full messenger inbox (search, staff directory, calls) � lead, admin, CEO on any portal. */
+  function portalStaffHasFullMessengerAccess(prof) {
     var row = profileRow(prof);
     var ar = String(row.app_role || "").toLowerCase();
-    if (ar === "lead") return true;
+    if (ar === "lead" || ar === "admin" || ar === "ceo") return true;
     var dr = String(row.dashboard_route || "").toLowerCase();
-    if (dr === "lead_dashboard.html") return true;
+    if (dr === "lead_dashboard.html" || dr === "admin_dashboard.html" || dr === "ceo_dashboard.html") {
+      return true;
+    }
     try {
-      if (typeof location !== "undefined" && /lead_dashboard\.html/i.test(String(location.pathname || ""))) {
+      var path = String((typeof location !== "undefined" && location.pathname) || "");
+      if (/lead_dashboard\.html|admin_dashboard\.html|ceo_dashboard\.html/i.test(path)) {
         return true;
       }
     } catch (_e) {}
     return false;
+  }
+
+  function portalStaffIsLeadUser(prof) {
+    return portalStaffHasFullMessengerAccess(prof);
   }
 
   function portalStaffIsStaffUser(prof) {
@@ -56,19 +65,30 @@
     return portalStaffIsLeadUser(prof) || portalStaffIsStaffUser(prof);
   }
 
+  function staffInitiatePeer(row) {
+    if (global.portalDmRoles && typeof global.portalDmRoles.portalDmStaffInitiatePeer === "function") {
+      return global.portalDmRoles.portalDmStaffInitiatePeer(row);
+    }
+    if (!row || row.is_active === false) return false;
+    var ar = String(row.app_role || "").toLowerCase();
+    return ar === "admin" || ar === "ceo";
+  }
+
   function getDirectoryMode(prof) {
     if (portalStaffIsLeadUser(prof)) return "staff";
-    if (portalStaffIsStaffUser(prof)) return "leads";
+    if (portalStaffIsStaffUser(prof)) return "directors";
     return "";
   }
 
   function directoryCacheKey(mode) {
-    return mode === "leads" ? CACHE_KEY_LEADS : CACHE_KEY_STAFF;
+    if (mode === "leads") return CACHE_KEY_LEADS;
+    if (mode === "directors") return CACHE_KEY_DIRECTORS;
+    return CACHE_KEY_STAFF;
   }
 
   function isDirectoryTab(tab) {
     tab = String(tab || "").toLowerCase();
-    return tab === "staff" || tab === "leads" || tab === "directory";
+    return tab === "staff" || tab === "leads" || tab === "directors" || tab === "directory";
   }
 
   function portalStaffIsRestrictedWorkerChat(prof) {
@@ -174,7 +194,8 @@
     global.__PORTAL_INTERNAL_CHAT_UI = global.__PORTAL_INTERNAL_CHAT_UI || {};
     if (tab === "directory") {
       var mode = getDirectoryMode();
-      global.__PORTAL_INTERNAL_CHAT_UI.inboxTab = mode === "leads" ? "leads" : "staff";
+      global.__PORTAL_INTERNAL_CHAT_UI.inboxTab =
+        mode === "leads" ? "leads" : mode === "directors" ? "directors" : "staff";
     } else {
       global.__PORTAL_INTERNAL_CHAT_UI.inboxTab = "chats";
     }
@@ -202,18 +223,21 @@
     if (nav && hasDirectory && !inThread) {
       var chatsBtn = document.getElementById("internalChatInboxTabChats");
       var dirBtn =
+        document.getElementById("internalChatInboxTabDirectors") ||
         document.getElementById("internalChatInboxTabLeads") ||
         document.getElementById("internalChatInboxTabStaff");
       if (chatsBtn) chatsBtn.classList.toggle("is-active", tab === "chats");
       if (dirBtn) {
         dirBtn.classList.toggle("is-active", tab === "directory");
         if (dirMode === "leads") dirBtn.textContent = "Leads";
+        else if (dirMode === "directors") dirBtn.textContent = "Directors";
         else if (dirMode === "staff") dirBtn.textContent = "Staff";
       }
       var search = getSearchInput();
       if (search) {
-        search.placeholder =
-          dirMode === "leads" ? "Search leads or chats?" : "Search staff or chats?";
+        if (dirMode === "leads") search.placeholder = "Search leads or chats...";
+        else if (dirMode === "directors") search.placeholder = "Search directors or chats...";
+        else search.placeholder = "Search staff or chats...";
       }
     }
 
@@ -328,13 +352,18 @@
   function directoryEmptyMessage(query, mode) {
     mode = mode || "staff";
     if (query) {
-      return mode === "leads" ? "No leads match your search." : "No staff match your search.";
+      if (mode === "leads") return "No leads match your search.";
+      if (mode === "directors") return "No directors or admin match your search.";
+      return "No staff match your search.";
     }
     if (mode === "leads") {
       return (
         "No session leads found. " +
         "If you expected leads here, ask ops to apply the latest portal database update (staff?lead team chat)."
       );
+    }
+    if (mode === "directors") {
+      return "No directors or admin found. Contact ops if you expected Raul, Javier, Victor, or admin here.";
     }
     return (
       "No colleagues found in the team directory. " +
@@ -346,13 +375,14 @@
     if (!row) return false;
     var ar = String(row.app_role || "").toLowerCase();
     if (mode === "leads") return ar === "lead";
+    if (mode === "directors") return staffInitiatePeer(row);
     if (mode === "staff") return ar !== "lead" && ar !== "admin" && ar !== "ceo";
     return true;
   }
 
   async function loadDirectoryRows(client, me, mode, opts) {
     opts = opts || {};
-    mode = mode === "leads" ? "leads" : "staff";
+    mode = mode === "leads" ? "leads" : mode === "directors" ? "directors" : "staff";
     if (!client || !me) return [];
     var cacheKey = directoryCacheKey(mode);
     if (!opts.force && global[cacheKey] && Array.isArray(global[cacheKey])) {
@@ -369,6 +399,8 @@
       var q = client.from("staff_profiles").select(selectCols).order("full_name", { ascending: true });
       if (mode === "leads") {
         q = q.eq("app_role", "lead");
+      } else if (mode === "directors") {
+        q = q.in("app_role", ["admin", "ceo"]);
       }
       return q.range(from, to).then(function (res) {
         if (res.error) {
@@ -397,6 +429,17 @@
           });
         });
         if (batch.length < chunk) {
+          if (mode === "directors") {
+            return pullDirectorNameMatches().then(function () {
+              rows.sort(function (a, b) {
+                return String(a.label || "").localeCompare(String(b.label || ""), "en", {
+                  sensitivity: "base",
+                });
+              });
+              global[cacheKey] = rows;
+              return rows;
+            });
+          }
           rows.sort(function (a, b) {
             return String(a.label || "").localeCompare(String(b.label || ""), "en", {
               sensitivity: "base",
@@ -408,6 +451,45 @@
         from += chunk;
         return pullPage();
       });
+    }
+
+    function pullDirectorNameMatches() {
+      var seen = {};
+      rows.forEach(function (r) {
+        if (r && r.id) seen[String(r.id)] = true;
+      });
+      var fromDir = 0;
+      function pullNamed() {
+        var to = fromDir + chunk - 1;
+        return client
+          .from("staff_profiles")
+          .select(selectCols)
+          .order("full_name", { ascending: true })
+          .range(fromDir, to)
+          .then(function (res) {
+            if (res.error) return rows;
+            var batch = res.data || [];
+            batch.forEach(function (row) {
+              if (!row || row.is_active === false) return;
+              if (!staffInitiatePeer(row)) return;
+              var id = String(row.id || "").trim();
+              if (!id || id.toLowerCase() === String(me).toLowerCase() || seen[id]) return;
+              seen[id] = true;
+              var label = peerLabelFromRow(row);
+              if (!label) return;
+              rows.push({
+                id: id,
+                label: label,
+                role: roleSubtitle(row),
+                sortKey: normKey(label),
+              });
+            });
+            if (batch.length < chunk) return rows;
+            fromDir += chunk;
+            return pullNamed();
+          });
+      }
+      return pullNamed();
     }
 
     return pullPage();
@@ -497,7 +579,9 @@
     }
 
     host.innerHTML =
-      '<p class="portal-dm-lead-empty">Loading ' + (mode === "leads" ? "leads" : "team") + "?</p>";
+      '<p class="portal-dm-lead-empty">Loading ' +
+      (mode === "leads" ? "leads" : mode === "directors" ? "directors" : "team") +
+      "...</p>";
 
     try {
       var rows = await loadDirectoryRows(client, me, mode);
@@ -573,9 +657,13 @@
           ? rows.length === 1
             ? "Message a lead"
             : "Message a session lead"
-          : rows.length === 1
-            ? "Message someone"
-            : "Message someone on the team";
+          : mode === "directors"
+            ? rows.length === 1
+              ? "Message a director or admin"
+              : "Message a director or admin"
+            : rows.length === 1
+              ? "Message someone"
+              : "Message someone on the team";
       host.appendChild(heading);
 
       var list = document.createElement("div");
@@ -596,6 +684,7 @@
     try {
       delete global[CACHE_KEY_STAFF];
       delete global[CACHE_KEY_LEADS];
+      delete global[CACHE_KEY_DIRECTORS];
     } catch (_cache) {}
     syncInboxChrome({ inThread: false });
     if (getInboxTab() === "directory") {
@@ -608,9 +697,11 @@
   }
 
   global.portalLeadStaffChatDirectory = {
+    portalStaffHasFullMessengerAccess: portalStaffHasFullMessengerAccess,
     portalStaffIsLeadUser: portalStaffIsLeadUser,
     portalStaffIsStaffUser: portalStaffIsStaffUser,
     portalStaffHasPeerDirectory: portalStaffHasPeerDirectory,
+    staffInitiatePeer: staffInitiatePeer,
     portalStaffIsRestrictedWorkerChat: portalStaffIsRestrictedWorkerChat,
     syncInboxChrome: syncInboxChrome,
     renderStaffDirectory: renderStaffDirectory,
@@ -629,6 +720,7 @@
       try {
         delete global[CACHE_KEY_STAFF];
         delete global[CACHE_KEY_LEADS];
+        delete global[CACHE_KEY_DIRECTORS];
       } catch (_e) {}
     },
   };
