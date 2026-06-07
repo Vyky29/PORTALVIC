@@ -4430,10 +4430,55 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(adminSchedAquaticSlotCountOnDate(iso, slot.clientSlug) <= 1) return false;
       return !adminSchedAquaticSameInstructorOnDate(iso, slot.clientSlug);
     }
+    function adminSchedIsMultiActivityProgramme(programme){
+      return String(programme || '').toLowerCase().indexOf('multi') >= 0;
+    }
+    function adminSchedMaUsesInstructorSplit(slot){
+      if(!slot || !adminSchedIsMultiActivityProgramme(slot.programme)) return false;
+      if(String(slot.sheetDay || '').trim() !== 'Sunday') return false;
+      return String(slot.venue || '').trim().toLowerCase() === 'swimfarm';
+    }
+    function adminSchedPrimaryInstructorKey(slot){
+      var rid = normalizeSchedAnchorStaffId(slot.staffRosterId);
+      return rid || 'staff';
+    }
+    function adminSchedInstructorMatchesMergeRule(ruleInst, slot){
+      var want = String(ruleInst || '').trim().toUpperCase();
+      if(!want) return true;
+      var nm = String(slot.staffName || '').trim().toUpperCase();
+      var rid = normalizeSchedAnchorStaffId(slot.staffRosterId);
+      if(nm.indexOf(want) >= 0) return true;
+      if(want === 'ROBERTO' && rid === 'roberto') return true;
+      if(want === 'JAVIER' && rid === 'javier') return true;
+      return false;
+    }
+    function adminSchedFeedbackMergeGroup(slot){
+      var src = window.STAFF_DASHBOARD_SOURCE;
+      var rules = src && Array.isArray(src.sundayFeedbackMerges) ? src.sundayFeedbackMerges : [];
+      var wd = String(slot.sheetDay || '').trim();
+      var cid = adminRosterSlugify(slot.clientSlug);
+      var timeLabel = String(slot.anchorTimeLabel || '').trim();
+      var prog = String(slot.programme || '');
+      for(var mi = 0; mi < rules.length; mi++){
+        var rule = rules[mi];
+        if(rule.day && String(rule.day).trim() !== wd) continue;
+        if(adminRosterSlugify(rule.client_name) !== cid) continue;
+        if(!adminSchedInstructorMatchesMergeRule(rule.instructors, slot)) continue;
+        var sub = rule.slots || [];
+        for(var sj = 0; sj < sub.length; sj++){
+          if(String(sub[sj].time_slot || '').trim() !== timeLabel) continue;
+          if(String(sub[sj].service || '').trim().toLowerCase() !== prog.trim().toLowerCase()) continue;
+          return String(rule.mergeKey || '').trim() || (cid + '_' + String(rule.instructors || '').toLowerCase() + '_merged');
+        }
+      }
+      return '';
+    }
     function adminSchedFeedbackUnitKey(slot){
       var iso = String(slot.sessionDate || '').trim().substring(0, 10);
       var cid = String(slot.clientSlug || '').trim().toLowerCase();
       if(!iso || !cid) return String(slot.demoId || '');
+      var mergeGroup = adminSchedFeedbackMergeGroup(slot);
+      if(mergeGroup) return iso + '|merge|' + mergeGroup;
       var prog = String(slot.programme || '').toLowerCase();
       if(prog.indexOf('day centre') >= 0) return iso + '|' + cid + '|day_centre';
       if(adminSchedIsAquaticProgramme(slot.programme)){
@@ -4443,7 +4488,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return iso + '|' + cid + '|aquatic';
       }
       var area = String(slot.rosterArea || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '_');
-      return iso + '|' + cid + '|' + String(slot.anchorStart || '').slice(0, 5) + '|' + prog + '|' + area;
+      var maKey = iso + '|' + cid + '|' + String(slot.anchorStart || '').slice(0, 5) + '|' + prog + '|' + area;
+      if(adminSchedMaUsesInstructorSplit(slot)){
+        return maKey + '|' + adminSchedPrimaryInstructorKey(slot);
+      }
+      return maKey;
     }
     function adminPickRepresentativeSchedSlot(unit){
       var slots = unit.slots || [];
@@ -15611,7 +15660,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
     var ADMIN_SESSIONS_HUB_SRC =
-      '/portal/admin-sessions-hub.js?v=20260605-feedback-merge-units';
+      '/portal/admin-sessions-hub.js?v=20260605-feedback-mon-sat-fix';
 
     /** Club closed — half-term 23–31 May 2026, bank holiday 4 May (see PORTAL_TERM_FROM_TIMETABLE). */
     function portalAdminDayIsClubClosed(iso){

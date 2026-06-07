@@ -1319,6 +1319,13 @@
     return slugify(clean(raw)) || "staff";
   }
 
+  /** Sunday SwimFarm only: support worker vs swim instructor = separate feedback units. */
+  function maFeedbackUnitUsesInstructorSplit(slot) {
+    if (!slot || !isMultiActivityService(slot.service)) return false;
+    if (weekdayLongFromIso(slot.session_date) !== "Sunday") return false;
+    return clean(slot.venue).toLowerCase() === "swimfarm";
+  }
+
   /** Day Centre: one feedback per client per calendar day (any worker, any roster block). */
   function feedbackUnitKey(slot) {
     var mergeGroup = feedbackMergeGroupForSlot(slot);
@@ -1332,7 +1339,7 @@
     }
     var t = slot.time_start || normTimeKey(slot.time_slot);
     if (isMultiActivityService(slot.service)) {
-      return (
+      var maKey =
         slot.session_date +
         "|" +
         cid +
@@ -1341,10 +1348,11 @@
         "|" +
         serviceKey(slot.service) +
         "|" +
-        sessionAreaKey(slot.area) +
-        "|" +
-        primaryInstructorKey(slot)
-      );
+        sessionAreaKey(slot.area);
+      if (maFeedbackUnitUsesInstructorSplit(slot)) {
+        return maKey + "|" + primaryInstructorKey(slot);
+      }
+      return maKey;
     }
     if (isBespokeService(slot.service)) {
       return (
@@ -2657,7 +2665,7 @@
     var rosterDone = 0;
     for (var di = 0; di < displaySlots.length; di++) {
       var slot = displaySlots[di];
-      var ukey = slot.feedback_unit_key || feedbackUnitKey(slot);
+      var ukey = feedbackUnitKey(slot);
       if (unitAbsent[ukey] || hub.slotIsAbsent(slot)) {
         rosterDone++;
         continue;
@@ -2885,7 +2893,7 @@
           return !q || s.client_name.toLowerCase().indexOf(q) !== -1;
         })
         .map(function (slot) {
-          var ukey = slot.feedback_unit_key || feedbackUnitKey(slot);
+          var ukey = feedbackUnitKey(slot);
           var fbDone = unitComplete[ukey] || hub.slotFeedbackComplete(slot);
           var isAbsent = unitAbsent[ukey] || hub.slotIsAbsent(slot);
           var fbCell = rosterFeedbackStatusHtml(isAbsent, fbDone);
@@ -3994,7 +4002,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     );
     var rows = displaySlots
       .map(function (slot) {
-        var ukey = slot.feedback_unit_key || feedbackUnitKey(slot);
+        var ukey = feedbackUnitKey(slot);
         var fbDone = unitComplete[ukey] || hub.slotFeedbackComplete(slot);
         var isAbsent = unitAbsent[ukey] || hub.slotIsAbsent(slot);
         var fbCell = rosterFeedbackStatusHtml(isAbsent, fbDone);

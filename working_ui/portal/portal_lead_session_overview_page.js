@@ -21,7 +21,7 @@ import {
   PORTAL_LEAD_SUMMER_TERM_START,
 } from "./portal_lead_session_scope.js";
 
-const HUB_SRC = "/portal/admin-sessions-hub.js?v=20260605-feedback-merge-units";
+const HUB_SRC = "/portal/admin-sessions-hub.js?v=20260605-feedback-mon-sat-fix";
 const LEAD_URL = "lead_dashboard.html";
 
 const state = { tab: "feedback", scopes: [] };
