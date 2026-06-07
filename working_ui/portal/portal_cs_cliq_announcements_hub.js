@@ -1,5 +1,5 @@
 /**
- * CS Cliq Announcements centre — management create, review and logs.
+ * CS Cliq Announcements centre ï¿½ management create, review and logs.
  */
 (function (global) {
   "use strict";
@@ -124,7 +124,7 @@
       '<option value="role:climbing">Climbing staff</option>' +
       '<option value="role:support">Support staff</option>' +
       "</select></label>" +
-      '<label class="portal-cs-cliq-announcement-modal__field"><span>Message</span><textarea id="portalCsCliqAnnouncementBody" rows="5" maxlength="8000" placeholder="Write the update for staff and leads…"></textarea></label>' +
+      '<label class="portal-cs-cliq-announcement-modal__field"><span>Message</span><textarea id="portalCsCliqAnnouncementBody" rows="5" maxlength="8000" placeholder="Write the update for staff and leadsï¿½"></textarea></label>' +
       '<label class="portal-cs-cliq-announcement-modal__check"><input type="checkbox" id="portalCsCliqAnnouncementRequireAck" checked /> Require acknowledgement</label>' +
       '<p id="portalCsCliqAnnouncementErr" class="portal-cs-cliq-announcement-modal__err" hidden></p>' +
       '<div class="portal-cs-cliq-announcement-modal__actions">' +
@@ -198,7 +198,7 @@
     }
     var tgt = audienceTargets(aud);
     var row = {
-      title: title.length > 200 ? title.slice(0, 197) + "…" : title,
+      title: title.length > 200 ? title.slice(0, 197) + "â€¦" : title,
       body: body,
       message_type: "announcement",
       priority: "normal",
@@ -225,9 +225,9 @@
         global.dispatchEvent(new CustomEvent("portal-cs-cliq-announcement-sent", { detail: row }));
       } catch (_ev) {}
       refresh();
-      if (global.portalCsCliqAnnouncementInbox && typeof global.portalCsCliqAnnouncementInbox.refreshInboxes === "function") {
-        global.portalCsCliqAnnouncementInbox.refreshInboxes();
-      }
+      try {
+        global.dispatchEvent(new CustomEvent("portal-staff-announcements-changed"));
+      } catch (_ev2) {}
     } catch (e) {
       if (err) {
         err.textContent = String((e && e.message) || e || "Could not send announcement.");
@@ -247,7 +247,7 @@
       "</div>" +
       '<p class="portal-cs-cliq-announcements-item__meta">' +
       esc(formatWhen(row.created_at)) +
-      " · " +
+      " ï¿½ " +
       esc(audienceLabel(row)) +
       "</p>" +
       '<p class="portal-cs-cliq-announcements-item__preview">' +
@@ -273,9 +273,9 @@
       '<p class="portal-cs-cliq-meetings-card__desc">Publish an update to staff and leads. Recipients see it in their Inbox.</p>' +
       '<button type="button" class="portal-cs-cliq-meetings-btn portal-cs-cliq-meetings-btn--pri" data-cs-cliq-ann-hub="create">Create announcement</button>' +
       "</section>" +
-      '<section class="portal-cs-cliq-meetings-card"><h3 class="portal-cs-cliq-meetings-card__title">Recent announcements</h3><div id="csCliqAnnRecent" class="portal-cs-cliq-announcements-list"><p class="portal-cs-cliq-meetings-empty">Loading…</p></div></section>' +
-      '<section class="portal-cs-cliq-meetings-card"><h3 class="portal-cs-cliq-meetings-card__title">Signed announcements</h3><div id="csCliqAnnSigned" class="portal-cs-cliq-announcements-list"><p class="portal-cs-cliq-meetings-empty">Loading…</p></div></section>' +
-      '<section class="portal-cs-cliq-meetings-card"><h3 class="portal-cs-cliq-meetings-card__title">Unread announcements</h3><div id="csCliqAnnUnread" class="portal-cs-cliq-announcements-list"><p class="portal-cs-cliq-meetings-empty">Loading…</p></div></section>';
+      '<section class="portal-cs-cliq-meetings-card"><h3 class="portal-cs-cliq-meetings-card__title">Recent announcements</h3><div id="csCliqAnnRecent" class="portal-cs-cliq-announcements-list"><p class="portal-cs-cliq-meetings-empty">Loadingï¿½</p></div></section>' +
+      '<section class="portal-cs-cliq-meetings-card"><h3 class="portal-cs-cliq-meetings-card__title">Signed announcements</h3><div id="csCliqAnnSigned" class="portal-cs-cliq-announcements-list"><p class="portal-cs-cliq-meetings-empty">Loadingï¿½</p></div></section>' +
+      '<section class="portal-cs-cliq-meetings-card"><h3 class="portal-cs-cliq-meetings-card__title">Unread announcements</h3><div id="csCliqAnnUnread" class="portal-cs-cliq-announcements-list"><p class="portal-cs-cliq-meetings-empty">Loadingï¿½</p></div></section>';
 
     var rows = await fetchAnnouncements();
     var ackMap = await fetchAckIds();

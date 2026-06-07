@@ -1,5 +1,5 @@
 /**
- * CS Cliq Operations Communication Hub ó premium three-panel layout.
+ * CS Cliq Operations Communication Hub ù premium three-panel layout.
  */
 
 #csCliqRoot.portal-cs-cliq--hub {
@@ -58,7 +58,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 14px 14px 8px;
+  padding: 16px 14px 10px;
   flex-shrink: 0;
 }
 
@@ -91,7 +91,7 @@
 #csCliqRoot #csCliqListWrap {
   flex: 1 1 auto;
   overflow: auto;
-  padding: 8px 10px 12px;
+  padding: 6px 12px 14px;
 }
 
 #csCliqRoot .portal-cs-cliq-inbox__conversation-col {
@@ -139,7 +139,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 12px;
+  padding: 12px 14px;
   border-bottom: 1px solid var(--cs-hub-line, #e2e8f0);
   background: #fff;
   flex-shrink: 0;
@@ -579,6 +579,15 @@
   color: var(--cs-hub-muted, #64748b);
 }
 
+#csCliqRoot .portal-cs-cliq-file-row__open {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--cs-hub-blue, #2d84b3);
+}
+
 #csCliqRoot #csCliqChannelNav {
   display: none !important;
 }
@@ -929,36 +938,140 @@
 }
 
 #csCliqRoot .portal-cs-cliq-inbox-section__label {
-  margin: 12px 0 6px;
-  padding: 0 4px;
+  margin: 14px 4px 8px;
+  padding: 0;
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--cs-hub-muted, #64748b);
 }
 
 #csCliqRoot .portal-cs-cliq-inbox-section__label:first-child {
-  margin-top: 0;
+  margin-top: 2px;
 }
 
-#csCliqRoot .portal-dm-thread-item--announcement .portal-cs-cliq-announcement-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--cs-hub-blue-soft, #eaf5fb);
-  color: var(--cs-hub-blue, #2d84b3);
-  font-size: 14px;
-  font-weight: 800;
+#csCliqRoot .portal-cs-cliq-thread-header__files {
   flex-shrink: 0;
+  border: 1px solid var(--cs-hub-line, #e2e8f0);
+  background: #fff;
+  color: var(--cs-hub-ink, #173247);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
 }
 
-#csCliqRoot .portal-cs-cliq-announcement-tag {
-  background: #eef6ff;
-  color: #2d84b3;
+#csCliqRoot .portal-cs-cliq-thread-header__files.is-active,
+.portal-cs-cliq-thread-files-bar .portal-cs-cliq-thread-header__files.is-active {
+  background: var(--cs-hub-blue-soft, #eaf5fb);
+  border-color: rgba(45, 132, 179, 0.28);
+  color: var(--cs-hub-blue, #2d84b3);
+}
+
+.portal-cs-cliq-thread-files-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 12px 0;
+}
+
+.portal-cs-cliq-thread-files-panel {
+  margin: 0 12px;
+  padding: 12px;
+  border: 1px solid var(--cs-hub-line, #e2e8f0);
+  border-radius: 14px;
+  background: #fff;
+  max-height: 220px;
+  overflow: auto;
+}
+
+#csCliqRoot .portal-cs-cliq-thread-files-panel {
+  margin: 0 14px 8px;
+}
+
+.portal-cs-cliq-thread-files-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: var(--cs-hub-muted, #64748b);
+}
+
+.portal-cs-cliq-thread-files-panel__head strong {
+  color: var(--cs-hub-ink, #173247);
+  font-size: 13px;
+}
+
+.portal-cs-cliq-thread-files-panel__empty,
+.portal-cs-cliq-thread-files-panel__loading {
+  margin: 0;
+  font-size: 13px;
+  color: var(--cs-hub-muted, #64748b);
+}
+
+.portal-cs-cliq-thread-files-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.portal-cs-cliq-thread-files-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--cs-hub-line, #e2e8f0);
+  border-radius: 12px;
+  background: #fafcfd;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+}
+
+.portal-cs-cliq-thread-files-item__type {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--cs-hub-blue, #2d84b3);
+}
+
+.portal-cs-cliq-thread-files-item__meta {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.portal-cs-cliq-thread-files-item__name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--cs-hub-ink, #173247);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.portal-cs-cliq-thread-files-item__when {
+  font-size: 11px;
+  color: var(--cs-hub-muted, #64748b);
+}
+
+#csCliqRoot .portal-cs-cliq-files-section__desc {
+  margin: -4px 0 10px;
+  font-size: 13px;
+  color: var(--cs-hub-muted, #64748b);
+  line-height: 1.45;
+}
+
+#csCliqRoot .portal-cs-cliq-messages {
+  padding: 8px 14px 12px;
 }
 
 .portal-cs-cliq-announcement-modal,

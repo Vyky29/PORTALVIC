@@ -215,8 +215,10 @@
       '<span class="portal-cs-cliq-thread-header__status" id="csCliqThreadStatus">Available</span>' +
       "</div></div>" +
       callBarHtml("csCliqHead", true) +
+      '<button type="button" class="portal-cs-cliq-thread-header__files" id="csCliqThreadFilesBtn">Files</button>' +
       '<button type="button" class="portal-cs-cliq-thread-header__more" id="csCliqThreadMoreBtn" aria-label="More options">⋯</button>' +
       "</header>" +
+      '<div id="csCliqThreadFilesPanel" class="portal-cs-cliq-thread-files-panel" hidden></div>' +
       '<div id="csCliqMessages" class="portal-dm-msgs-col portal-dm-msgs-scroll portal-cs-cliq-messages"></div>' +
       '<div class="portal-cs-cliq-composer portal-dm-compose-bar">' +
       '<div class="portal-cs-cliq-composer__shell">' +
@@ -273,6 +275,11 @@
       '<div class="portal-cs-cliq-files-section">' +
       '<p class="portal-cs-cliq-files-section__title">Recent from chat</p>' +
       '<div id="csCliqFilesGallery" class="portal-cs-cliq-files-list"></div>' +
+      "</div>" +
+      '<div class="portal-cs-cliq-files-section" id="csCliqFilesAllSection" hidden>' +
+      '<p class="portal-cs-cliq-files-section__title">All shared files</p>' +
+      '<p class="portal-cs-cliq-files-section__desc">Every photo and document sent across CS Cliq, with conversation and date.</p>' +
+      '<div id="csCliqFilesAllGallery" class="portal-cs-cliq-files-list"></div>' +
       "</div></div></div>" +
       '<div id="csCliqCalendarPane" class="portal-cs-cliq__pane portal-cs-cliq__pane--meetings" data-cs-cliq-pane="calendar" hidden>' +
       '<div class="portal-cs-cliq-meetings-centre" id="csCliqMeetingsCentre"></div>' +
@@ -377,8 +384,8 @@
       cfg.initChat(ch);
     }
 
-    if (global.portalCsCliqAnnouncementInbox && typeof global.portalCsCliqAnnouncementInbox.init === "function") {
-      global.portalCsCliqAnnouncementInbox.init();
+    if (global.portalCsCliqThreadFiles && typeof global.portalCsCliqThreadFiles.bind === "function") {
+      global.portalCsCliqThreadFiles.bind();
     }
   }
 

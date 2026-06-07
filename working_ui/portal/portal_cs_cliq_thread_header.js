@@ -60,6 +60,9 @@
       meetBtn.title = ml;
       meetBtn.setAttribute("aria-label", ml);
     }
+    if (global.portalCsCliqThreadFiles && typeof global.portalCsCliqThreadFiles.onThreadChange === "function") {
+      global.portalCsCliqThreadFiles.onThreadChange();
+    }
   }
 
   global.portalCsCliqThreadHeader = { sync: sync, initials: initials, esc: esc };
