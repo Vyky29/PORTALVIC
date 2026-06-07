@@ -200,16 +200,36 @@
   function getContext() {
     var box = global.__PORTAL_SUPABASE__;
     var ui = global.__PORTAL_INTERNAL_CHAT_UI || {};
+    var adminUi = global.__PORTAL_ADMIN_DM_UI || {};
+    var threadId = String(ui.threadId || "").trim();
+    var peerLabel = String(ui.peerLabel || "").trim();
+    if (global.__PORTAL_CS_CLIQ_ACTIVE || document.getElementById("csCliqRoot")) {
+      if (!threadId) threadId = String(adminUi.threadId || "").trim();
+      if (String(adminUi.groupId || "").trim()) threadId = "";
+      if (!peerLabel) peerLabel = String(adminUi.peerLabel || "").trim();
+    }
     return {
       client: box && box.client,
-      threadId: String(ui.threadId || "").trim(),
+      threadId: threadId,
       me: String(
         (box && box.staff_profile && box.staff_profile.id) ||
           (box && box.session && box.session.user && box.session.user.id) ||
           ""
       ).trim(),
-      peerLabel: String(ui.peerLabel || "").trim(),
+      peerLabel: peerLabel,
     };
+  }
+
+  async function refreshThreadAfterCall() {
+    if (typeof global.__PORTAL_DM_REFRESH_THREAD === "function") {
+      try {
+        await global.__PORTAL_DM_REFRESH_THREAD();
+        return;
+      } catch (_adm) {}
+    }
+    if (typeof global.portalRenderInternalChatSheet === "function") {
+      await global.portalRenderInternalChatSheet();
+    }
   }
 
   function shortDisplayName(value) {
@@ -931,9 +951,7 @@
         .from("portal_staff_dm_messages")
         .insert([{ thread_id: threadId, body: body, message_type: "text" }]);
       if (ins.error) throw ins.error;
-      if (typeof global.portalRenderInternalChatSheet === "function") {
-        await global.portalRenderInternalChatSheet();
-      }
+      await refreshThreadAfterCall();
     } catch (_e) {}
   }
 
@@ -1266,9 +1284,7 @@
         title: ctx.peerLabel ? "Call with " + ctx.peerLabel : humanLabel(kind, ""),
         asModerator: true,
       });
-      if (typeof global.portalRenderInternalChatSheet === "function") {
-        await global.portalRenderInternalChatSheet();
-      }
+      await refreshThreadAfterCall();
     } catch (e) {
       if (errEl) errEl.textContent = String((e && e.message) || e || "Could not start call");
     } finally {
@@ -1368,9 +1384,7 @@
               scheduledAt: scheduledAt,
             });
             panel.hidden = true;
-            if (typeof global.portalRenderInternalChatSheet === "function") {
-              await global.portalRenderInternalChatSheet();
-            }
+            await refreshThreadAfterCall();
           } catch (e) {
             if (err) {
               err.textContent = String((e && e.message) || e || "Could not schedule meeting");
@@ -1449,21 +1463,36 @@
     });
   }
 
+  function handleCallButtonClick(kind) {
+    kind = String(kind || "").trim();
+    if (kind === "meeting") {
+      openMeetingPanel();
+      return;
+    }
+    if (kind === "audio" || kind === "video") {
+      void startCall(kind);
+    }
+  }
+
+  function bindOneCallButton(btn, kind) {
+    if (!btn || btn.dataset.portalCallBound === "1") return;
+    btn.dataset.portalCallBound = "1";
+    btn.addEventListener("click", function () {
+      handleCallButtonClick(kind);
+    });
+  }
+
   function bindCallButtons(root) {
     if (!root || root.dataset.portalCallsBound) return;
     root.dataset.portalCallsBound = "1";
     root.querySelectorAll("[data-portal-call-kind]").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        var kind = String(btn.getAttribute("data-portal-call-kind") || "").trim();
-        if (kind === "meeting") {
-          openMeetingPanel();
-          return;
-        }
-        if (kind === "audio" || kind === "video") {
-          void startCall(kind);
-        }
-      });
+      bindOneCallButton(btn, btn.getAttribute("data-portal-call-kind"));
     });
+    if (!root.querySelector("[data-portal-call-kind]")) {
+      bindOneCallButton(root.querySelector("#internalChatVoiceCallBtn"), "audio");
+      bindOneCallButton(root.querySelector("#internalChatVideoCallBtn"), "video");
+      bindOneCallButton(root.querySelector("#internalChatMeetingBtn"), "meeting");
+    }
   }
 
   function bindCallBar() {
@@ -1484,6 +1513,7 @@
     if (csCliqCallsActive()) {
       hideLegacyCallBarsExcept(showBar ? ui.barId : "");
     }
+    if (document.getElementById("csCliqRoot")) bindCallBar();
     if (!bar) return;
     bar.hidden = !showBar;
     bar.setAttribute("aria-hidden", showBar ? "false" : "true");
@@ -1515,6 +1545,7 @@
     startCall: startCall,
     openMeetingPanel: openMeetingPanel,
     syncCallBar: syncCallBar,
+    bindCallBar: bindCallBar,
     openInAppCall: openInAppCall,
     closeInAppCall: closeInAppCall,
     buildRoomName: buildRoomName,
