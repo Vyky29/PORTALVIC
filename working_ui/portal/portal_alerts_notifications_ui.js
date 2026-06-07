@@ -6,6 +6,11 @@
   "use strict";
 
   var bound = false;
+  var PORTAL_NOTIFY_ICON = "/portal/app-icon/icon-192.png?v=20260624-push-icon";
+
+  function portalNotifyIconOpts() {
+    return { icon: PORTAL_NOTIFY_ICON, badge: PORTAL_NOTIFY_ICON };
+  }
 
   function alertsSheetEl() {
     return document.getElementById("alertsNotificationsSheet");
@@ -137,9 +142,9 @@
       .then(function (r) {
         if (r === "granted") {
           try {
-            new Notification("Portal alerts on", {
+            new Notification("Portal alerts on", Object.assign({
               body: "Announcements, roster changes and incoming calls on this device.",
-            });
+            }, portalNotifyIconOpts()));
           } catch (e) {
             if (statusEl) {
               statusEl.textContent =
@@ -202,9 +207,9 @@
 
   function sendTestNotification(statusEl) {
     try {
-      new Notification("Test: portal notification", {
+      new Notification("Test: portal notification", Object.assign({
         body: "If you see this, notifications can reach your device.",
-      });
+      }, portalNotifyIconOpts()));
       if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
       if (typeof global.portalEnsureWebPushSubscription === "function") {
         void global.portalEnsureWebPushSubscription().then(function (wp) {

@@ -1,9 +1,20 @@
 /* clubSENsational portal — minimal service worker for installability + Web Push.
  * Register from staff/lead/admin dashboard after login. Push payload: JSON { title, body, url?, portalOpen?, tag?, requireInteraction?, vibrate?, call? }
- * v20260621-incoming-call
+ * v20260624-push-icon
  */
+var PORTAL_PUSH_ICON_PATH = '/portal/app-icon/icon-192.png?v=20260624-push-icon';
+
 self.addEventListener('install', function (event) {
-  self.skipWaiting();
+  event.waitUntil(
+    caches
+      .open('portal-push-icons-v1')
+      .then(function (cache) {
+        return cache.add(PORTAL_PUSH_ICON_PATH).catch(function () {});
+      })
+      .then(function () {
+        return self.skipWaiting();
+      })
+  );
 });
 
 self.addEventListener('activate', function (event) {
@@ -27,10 +38,16 @@ function portalAppendQueryParam(absUrl, key, value) {
 
 function portalPushIconUrl() {
   try {
-    return new URL('portal/app-icon/apple-touch-icon.png', self.registration.scope).href;
-  } catch (e) {
-    return 'portal/app-icon/apple-touch-icon.png';
-  }
+    var origin =
+      self.location && self.location.origin
+        ? String(self.location.origin)
+        : '';
+    if (!origin && self.registration && self.registration.scope) {
+      origin = new URL('.', self.registration.scope).origin;
+    }
+    if (origin) return origin + PORTAL_PUSH_ICON_PATH;
+  } catch (e) {}
+  return PORTAL_PUSH_ICON_PATH;
 }
 
 function portalNotifyOpenClients(title, body, portalOpen, callData) {

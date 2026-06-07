@@ -44,7 +44,7 @@ export {
 } from "./supabase-client.js";
 
 /** Bump to force a one-time sign-out + fresh login after a published portal build. */
-export const APP_VERSION = "2026-06-05-admin-hub-refresh";
+export const APP_VERSION = "2026-06-24-push-icon-ghost-handoff";
 export const PORTAL_APP_VERSION = APP_VERSION;
 const PORTAL_APP_VERSION_STORAGE_KEY = "cs_portal_app_version";
 const PORTAL_AUTH_VERSION_KEYS = [
