@@ -110,6 +110,16 @@
   border-bottom: 0;
 }
 
+.portal-cs-cliq-embed-host #csCliqRoot .portal-cs-cliq__pane {
+  min-height: 0;
+}
+
+.portal-cs-cliq-embed-host #csCliqRoot .portal-cs-cliq__module-body,
+.portal-cs-cliq-embed-host #csCliqRoot .portal-cs-cliq__channels-body {
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 body.portal-cs-cliq-embed-open {
   overflow: hidden;
 }

@@ -36,7 +36,7 @@
     backdrop.innerHTML =
       '<div id="portalCsCliqEmbedSheet" class="portal-cs-cliq-embed-sheet" role="dialog" aria-modal="true" aria-label="CS Cliq">' +
       '<header class="portal-cs-cliq-embed-head">' +
-      '<button type="button" class="portal-cs-cliq-embed-close" id="portalCsCliqEmbedClose" aria-label="Close CS Cliq">◊</button>' +
+      '<button type="button" class="portal-cs-cliq-embed-close" id="portalCsCliqEmbedClose" aria-label="Close CS Cliq">ù</button>' +
       '<div class="portal-cs-cliq-embed-head__meta">' +
       '<span class="portal-cs-cliq-embed-kicker">Club Sensational</span>' +
       '<h2 class="portal-cs-cliq-embed-title">CS Cliq</h2>' +
@@ -63,31 +63,28 @@
   function configureOnce() {
     if (configured || !global.PortalAdminCsCliq) return;
     configured = true;
+    if (global.portalCsCliqWorkspace && typeof global.portalCsCliqWorkspace.applyConfigure === "function") {
+      global.portalCsCliqWorkspace.applyConfigure({
+        initChat: function (channel) {
+          if (typeof global.portalExecutiveDmInit === "function") {
+            global.portalExecutiveDmInit(channel || "staff_lead");
+          }
+        },
+      });
+      return;
+    }
     global.PortalAdminCsCliq.configure({
       esc: esc,
-      adminNavIconHtml: function () {
-        return "";
-      },
       initChat: function (channel) {
         if (typeof global.portalExecutiveDmInit === "function") {
           global.portalExecutiveDmInit(channel || "staff_lead");
         }
       },
-      openAdminView: function () {
-        try {
-          global.location.assign("/admin_dashboard.html");
-        } catch (_nav) {}
-      },
-      focusChats: function () {
-        if (global.PortalAdminCsCliq && typeof global.PortalAdminCsCliq.setRailPane === "function") {
-          global.PortalAdminCsCliq.setRailPane("chats");
-        }
-      },
-      channels: {},
     });
   }
 
-  function open(channel) {
+  function open(channel, opts) {
+    opts = opts || {};
     if (onAdminPortal()) return false;
     channel = String(channel || "staff_lead").trim() === "ceo_exec" ? "ceo_exec" : "staff_lead";
     if (!global.PortalAdminCsCliq || typeof global.PortalAdminCsCliq.viewHtml !== "function") {
@@ -102,7 +99,9 @@
     global.__PORTAL_CS_CLIQ_EMBED_SHEET = backdrop;
     global.__PORTAL_CS_CLIQ_ACTIVE = true;
     global.__PORTAL_CS_CLIQ_PENDING_CHANNEL = channel;
-    global.__PORTAL_CS_CLIQ_PENDING_PANE = "chats";
+    var pane = String(opts.pane || global.__PORTAL_CS_CLIQ_PENDING_PANE || "chats").trim();
+    if (["chats", "channels", "phone", "files", "calendar"].indexOf(pane) < 0) pane = "chats";
+    global.__PORTAL_CS_CLIQ_PENDING_PANE = pane;
     global.__PORTAL_ADMIN_DM_CHANNEL = channel;
 
     host.innerHTML = global.PortalAdminCsCliq.viewHtml();
