@@ -1020,7 +1020,8 @@
   <script src="/portal/teflon_guide_demo_merge.js?v=20260604-guide-roster"></script>
   <script src="/portal/portal_participant_catalog.js?v=20260606-next-dedupe"></script>
   <script src="/portal/staff_roster_resolve.js?v=20260611-javi-roster-guard"></script>
-  <script src="/portal/portal-ghost-view.js?v=20260605-ghost-teleport-fix"></script>
+  <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260624-ghost-handoff" />
+  <script src="/portal/portal-ghost-view.js?v=20260624-ghost-handoff"></script>
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260607-inbox-compact" />
   <script src="/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact"></script>
   <script src="/portal/portal_dashboard_ui_coalesce.js?v=20260606-photo-stable"></script>
@@ -1924,15 +1925,27 @@
         const tu = new URL(u, typeof window !== 'undefined' && window.location ? window.location.href : undefined);
         const dash = typeof portalQuickMenuPortalReturnBaseUrl === 'function' ? portalQuickMenuPortalReturnBaseUrl() : '';
         if(dash) tu.searchParams.set('portalReturn', dash);
+        if(window.__PORTAL_GHOST_VIEW__ && window.__PORTAL_GHOST_VIEW__.active){
+          const g = window.__PORTAL_GHOST_VIEW__;
+          if(g.rosterKey) tu.searchParams.set('ghostRosterKey', String(g.rosterKey));
+          if(g.staffUserId) tu.searchParams.set('ghostStaffUserId', String(g.staffUserId));
+          if(g.displayName) tu.searchParams.set('ghostDisplayName', String(g.displayName));
+          tu.searchParams.set('ghostView', '1');
+        }
         if(/(policies_portal|risk_assessment|ra_portal|risk_assessments_portal)/i.test(tu.pathname) && typeof window !== 'undefined' && window.dashboardData){
           const nm = String(window.dashboardData.staffName || '').trim();
           let role = '';
           try{
-            const p = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
-            if(p){
-              const ar = String(p.app_role || p.staff_role || '').trim().toLowerCase().replace(/[\s_]+/g,'');
-              const map = { staff:'Staff', lead:'Lead', admin:'Admin', ceo:'CEO', support:'Support', manager:'Manager' };
-              if(ar) role = map[ar] || (ar.charAt(0).toUpperCase() + ar.slice(1));
+            if(window.__PORTAL_GHOST_VIEW__ && window.__PORTAL_GHOST_VIEW__.active){
+              const rawRole = String(window.dashboardData.staffRoleTrack || window.dashboardData.staffRole || '').trim();
+              role = rawRole ? rawRole.replace(/_/g, ' ') : '';
+            }else{
+              const p = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
+              if(p){
+                const ar = String(p.app_role || p.staff_role || '').trim().toLowerCase().replace(/[\s_]+/g,'');
+                const map = { staff:'Staff', lead:'Lead', admin:'Admin', ceo:'CEO', support:'Support', manager:'Manager' };
+                if(ar) role = map[ar] || (ar.charAt(0).toUpperCase() + ar.slice(1));
+              }
             }
           }catch(_){}
           if(!role){
@@ -13628,10 +13641,16 @@
         const profile = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
         const session = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session;
         if (window.dashboardData) {
-          const displayName = typeof window.portalTopbarDisplayNameFromAuth === "function"
-            ? window.portalTopbarDisplayNameFromAuth(profile, session)
-            : (profile ? String(profile.full_name || profile.username || "").trim() : "");
-          if (displayName) window.dashboardData.staffName = displayName;
+          const ghostEarly =
+            window.__PORTAL_GHOST_VIEW__ && window.__PORTAL_GHOST_VIEW__.active
+              ? window.__PORTAL_GHOST_VIEW__
+              : null;
+          if (!ghostEarly) {
+            const displayName = typeof window.portalTopbarDisplayNameFromAuth === "function"
+              ? window.portalTopbarDisplayNameFromAuth(profile, session)
+              : (profile ? String(profile.full_name || profile.username || "").trim() : "");
+            if (displayName) window.dashboardData.staffName = displayName;
+          }
           if (!String(window.STAFF_DASHBOARD_ID || "").trim()) {
             window.dashboardData.portalIdentityResolved = false;
           }
@@ -13831,14 +13850,27 @@
       }
       function portalStaffApplyIdentityResolved(profileForRoster, p, session) {
         if (!dashboardData) return;
-        dashboardData.staffName =
-          typeof window.portalTopbarDisplayNameFromAuth === "function"
-            ? window.portalTopbarDisplayNameFromAuth(p || profileForRoster, session)
-            : String(
-                (profileForRoster && (profileForRoster.full_name || profileForRoster.username)) ||
-                  (p && (p.full_name || p.username)) ||
-                  ""
-              ).trim();
+        const ghost =
+          window.__PORTAL_GHOST_VIEW__ && window.__PORTAL_GHOST_VIEW__.active
+            ? window.__PORTAL_GHOST_VIEW__
+            : null;
+        if (ghost) {
+          dashboardData.staffName = String(
+            ghost.displayName ||
+              (profileForRoster && (profileForRoster.full_name || profileForRoster.username)) ||
+              ghost.rosterKey ||
+              ""
+          ).trim();
+        } else {
+          dashboardData.staffName =
+            typeof window.portalTopbarDisplayNameFromAuth === "function"
+              ? window.portalTopbarDisplayNameFromAuth(p || profileForRoster, session)
+              : String(
+                  (profileForRoster && (profileForRoster.full_name || profileForRoster.username)) ||
+                    (p && (p.full_name || p.username)) ||
+                    ""
+                ).trim();
+        }
         dashboardData.portalIdentityResolved = true;
       }
       function portalStaffFinishIdentityUi(profileForRoster, p, session) {

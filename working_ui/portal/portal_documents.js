@@ -27,6 +27,35 @@ function portalSanitizeFilenamePart(value) {
     .slice(0, 80) || "document";
 }
 
+function portalDocumentsGhostHandoffFromLocation(loc) {
+  try {
+    if (typeof window !== "undefined" && typeof window.portalParseGhostHandoffFromUrl === "function") {
+      return window.portalParseGhostHandoffFromUrl(loc);
+    }
+    const base = loc || (typeof location !== "undefined" ? location : null);
+    if (!base || !base.search) return null;
+    const q = new URLSearchParams(String(base.search || ""));
+    const rosterKey = String(q.get("ghostRosterKey") || "").trim().toLowerCase();
+    const staffUserId = String(q.get("ghostStaffUserId") || "").trim();
+    if (!rosterKey && !staffUserId) return null;
+    if (q.get("ghostView") !== "1" && !staffUserId) return null;
+    return {
+      rosterKey,
+      staffUserId,
+      displayName: String(q.get("ghostDisplayName") || "").trim(),
+      readOnly: true
+    };
+  } catch (_) {
+    return null;
+  }
+}
+
+function portalDocumentsEffectiveUserId(user, loc) {
+  const ghost = portalDocumentsGhostHandoffFromLocation(loc);
+  if (ghost && ghost.staffUserId) return String(ghost.staffUserId).trim();
+  return user && user.id ? user.id : "";
+}
+
 async function portalGetSupabaseClient() {
   let lastErr = null;
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -155,10 +184,11 @@ export async function portalUploadPdfAndCreateDocument(options) {
 
 export async function portalListMyDocuments() {
   const { supabase, user } = await portalRequireUser();
+  const targetUserId = portalDocumentsEffectiveUserId(user);
   const { data, error } = await supabase
     .from("documents")
     .select("id, title, category, document_type, created_at, related_date, file_url, source_page")
-    .eq("user_id", user.id)
+    .eq("user_id", targetUserId)
     .is("hidden_by_user_at", null)
     .order("created_at", { ascending: false });
   if (error) throw error;
@@ -169,6 +199,10 @@ export async function portalListMyDocuments() {
 export async function portalHideMyDocumentFromList(docId) {
   const id = String(docId || "").trim();
   if (!id) throw new Error("Missing document id.");
+  const ghost = portalDocumentsGhostHandoffFromLocation();
+  if (ghost && ghost.readOnly) {
+    throw new Error("Ghost view is read-only.");
+  }
   const { supabase } = await portalRequireUser();
   const { error } = await supabase.rpc("hide_my_document", { doc_id: id });
   if (error) throw error;

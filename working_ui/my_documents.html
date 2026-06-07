@@ -196,6 +196,8 @@
     </div>
   </div>
 
+  <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260624-ghost-handoff" />
+  <script src="/portal/portal-ghost-view.js?v=20260624-ghost-handoff"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js?v=20260612-induction-view"></script>
   <script src="/portal/portal_induction.js?v=20260612-induction-view"></script>
   <script src="/portal/portal_induction_certificate.js?v=20260612-induction-view"></script>
@@ -215,7 +217,7 @@
     }
 
     async function portalImportDocumentsModule(tag) {
-      const v = "20260423-13";
+      const v = "20260624-ghost-handoff";
       const custom =
         typeof window !== "undefined" && window.PORTAL_WP_UPLOADS_BASE
           ? String(window.PORTAL_WP_UPLOADS_BASE).trim().replace(/\/$/, "")
@@ -758,6 +760,8 @@
       const root = document.getElementById("docsRoot");
       if (!root) return;
       const filterCat = parseCategoryFilter();
+      const ghostReadOnly =
+        typeof window.portalIsGhostViewMode === "function" && window.portalIsGhostViewMode();
       const grouped = { finance: [], reports: [], training: [], payslips: [] };
       (list || []).forEach((doc) => {
         const cat = String(doc.category || "").toLowerCase();
@@ -813,7 +817,7 @@
                 }>
                   <span class="btn-label-desk">${isInductionCert ? "View certificate" : "View / Download"}</span><span class="btn-label-mob"><span class="btn-mob-row1">${isInductionCert ? "View" : "Download"}</span><span class="btn-mob-row2" aria-live="polite"></span></span>
                 </button>
-                ${isPayslip || isInductionCert ? "" : `<button type="button" class="btn btn-outline" data-doc-id="${docId}">Delete</button>`}
+                ${isPayslip || isInductionCert || ghostReadOnly ? "" : `<button type="button" class="btn btn-outline" data-doc-id="${docId}">Delete</button>`}
               </div>
             </div>
           `;

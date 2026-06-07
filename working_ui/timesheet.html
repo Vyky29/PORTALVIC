@@ -142,6 +142,8 @@
       .actions .btn{width:100%}
     }
   </style>
+  <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260624-ghost-handoff" />
+  <script src="portal/portal-ghost-view.js?v=20260624-ghost-handoff"></script>
   <script src="portal/portal_return_and_shell.js?v=20260510-portal-admin"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js?v=20260423-1"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js?v=20260419-99"></script>
@@ -229,7 +231,7 @@
 
   <script type="module">
     async function portalImportDocumentsModule(tag) {
-      const v = "20260602-deadline24";
+      const v = "20260624-ghost-handoff";
       const custom =
         typeof window !== "undefined" && window.PORTAL_WP_UPLOADS_BASE
           ? String(window.PORTAL_WP_UPLOADS_BASE).trim().replace(/\/$/, "")
@@ -333,8 +335,31 @@
       potentialHours: 0,
       totalCost: 0,
       potentialCost: 0,
-      pendingCost: 0
+      pendingCost: 0,
+      ghostReadOnly: false,
+      ghostHandoff: null
     };
+
+    function parseGhostHandoff() {
+      if (typeof window.portalParseGhostHandoffFromUrl === "function") {
+        return window.portalParseGhostHandoffFromUrl();
+      }
+      try {
+        const q = new URLSearchParams(String(location.search || ""));
+        const rosterKey = String(q.get("ghostRosterKey") || "").trim().toLowerCase();
+        const staffUserId = String(q.get("ghostStaffUserId") || "").trim();
+        if (!rosterKey && !staffUserId) return null;
+        if (q.get("ghostView") !== "1" && !staffUserId) return null;
+        return {
+          rosterKey,
+          staffUserId,
+          displayName: String(q.get("ghostDisplayName") || "").trim(),
+          readOnly: true
+        };
+      } catch (_) {
+        return null;
+      }
+    }
 
     function money(n) { return (Math.round((Number(n) + Number.EPSILON) * 100) / 100).toFixed(2); }
     function esc(v) { return String(v || "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
@@ -796,7 +821,7 @@
       return { hourly_rate: hourly, role_label: role };
     }
 
-    function resolveRosterSessions(profile, user) {
+    function resolveRosterSessions(profile, user, ghostRosterKey) {
       if (typeof window.StaffDashboardSpreadsheetAdapter === "undefined" || !window.STAFF_DASHBOARD_SOURCE) {
         throw new Error("Spreadsheet roster source is unavailable.");
       }
@@ -805,6 +830,8 @@
       const emailLocal = authEmail.split("@")[0] || "";
       const seen = new Set();
       const dedup = [];
+      const ghostKey = String(ghostRosterKey || "").trim().toLowerCase();
+      if (ghostKey) pushRosterCandidate(dedup, seen, ghostKey);
       const fromAuth = rosterKeyFromAuthEmail(authEmail);
       if (fromAuth) pushRosterCandidate(dedup, seen, fromAuth);
       pushRosterCandidate(dedup, seen, profile.username);
@@ -838,13 +865,15 @@
       return [];
     }
 
-    function rosterCandidatesForUser(profile, user) {
+    function rosterCandidatesForUser(profile, user, ghostRosterKey) {
       const p = profile || {};
       const meta = (user && user.user_metadata) || {};
       const authEmail = String((user && user.email) || "").trim();
       const emailLocal = authEmail.split("@")[0] || "";
       const seen = new Set();
       const dedup = [];
+      const ghostKey = String(ghostRosterKey || "").trim().toLowerCase();
+      if (ghostKey) pushRosterCandidate(dedup, seen, ghostKey);
       const fromAuth = rosterKeyFromAuthEmail(authEmail);
       if (fromAuth) pushRosterCandidate(dedup, seen, fromAuth);
       pushRosterCandidate(dedup, seen, p.username);
@@ -857,8 +886,8 @@
       pushRosterCandidate(dedup, seen, emailLocal);
       return dedup;
     }
-    function manualRosterKeyForUser(profile, user) {
-      const cands = rosterCandidatesForUser(profile, user);
+    function manualRosterKeyForUser(profile, user, ghostRosterKey) {
+      const cands = rosterCandidatesForUser(profile, user, ghostRosterKey);
       for (let i = 0; i < cands.length; i++) {
         if (MANUAL_TIMESHEET_ROSTER_KEYS.has(cands[i])) return cands[i];
       }
@@ -1030,7 +1059,11 @@
 
     async function loadData() {
       const { user, supabase } = await portalRequireUser();
-      state.userId = String(user.id || "").trim();
+      const ghostHandoff = parseGhostHandoff();
+      state.ghostHandoff = ghostHandoff;
+      state.ghostReadOnly = !!(ghostHandoff && ghostHandoff.readOnly);
+      state.userId = String((ghostHandoff && ghostHandoff.staffUserId) || user.id || "").trim();
+      const ghostRosterKey = ghostHandoff && ghostHandoff.rosterKey ? ghostHandoff.rosterKey : "";
       const period = computePayrollPeriod(new Date());
       state.periodStart = isoDate(period.start);
       state.periodEnd = isoDate(period.end);
@@ -1049,11 +1082,13 @@
       const rateRow = rateRes.data || {};
       buildRoleRateMap(roleRatesRes && roleRatesRes.data ? roleRatesRes.data : []);
 
-      const manualKey = manualRosterKeyForUser(profile, user);
+      const manualKey = manualRosterKeyForUser(profile, user, ghostRosterKey);
       if (manualKey) {
         state.manual = true;
         state.staffRosterKey = manualKey;
-        state.employeeName = resolveEmployeeDisplayName(profile, user, manualKey);
+        state.employeeName = ghostHandoff && ghostHandoff.displayName
+          ? ghostHandoff.displayName
+          : resolveEmployeeDisplayName(profile, user, manualKey);
         const mpay = applyPayRateFromProfile(rateRow, profile, manualKey);
         state.roleLabel = state.primaryRole || mpay.role_label;
         state.hourlyRate = state.primaryRate != null ? state.primaryRate : Number(mpay.hourly_rate || 0);
@@ -1062,11 +1097,14 @@
         document.getElementById("roleLabel").textContent = state.roleLabel || "-";
         document.getElementById("rateTop").textContent = `£${money(state.hourlyRate)}/h`;
         setupManualMode();
+        if (state.ghostReadOnly) applyGhostReadOnlyUi();
         return;
       }
 
-      const sessionsModel = resolveRosterSessions(profile, user);
-      state.employeeName = resolveEmployeeDisplayName(profile, user, state.staffRosterKey);
+      const sessionsModel = resolveRosterSessions(profile, user, ghostRosterKey);
+      state.employeeName = ghostHandoff && ghostHandoff.displayName
+        ? ghostHandoff.displayName
+        : resolveEmployeeDisplayName(profile, user, state.staffRosterKey);
       const pay = applyPayRateFromProfile(rateRow, profile, state.staffRosterKey);
       state.roleLabel = pay.role_label;
       state.hourlyRate = Number(pay.hourly_rate || 0);
@@ -1099,6 +1137,19 @@
       document.getElementById("empName").textContent = state.employeeName || "-";
       document.getElementById("roleLabel").textContent = state.roleLabel || "-";
       renderTable();
+      if (state.ghostReadOnly) applyGhostReadOnlyUi();
+    }
+
+    function applyGhostReadOnlyUi() {
+      const btn = document.getElementById("submitBtn");
+      if (btn) {
+        btn.disabled = true;
+        btn.title = "Read-only ghost view";
+      }
+      const note = document.getElementById("statusNote");
+      if (note && !String(note.textContent || "").includes("ghost view")) {
+        note.textContent = String(note.textContent || "") + " Ghost view — read-only.";
+      }
     }
 
     async function generatePdfBlob() {
@@ -1297,6 +1348,14 @@
 
     document.getElementById("submitBtn").addEventListener("click", async () => {
       const btn = document.getElementById("submitBtn");
+      if (state.ghostReadOnly) {
+        if (typeof window.portalGhostViewToast === "function") {
+          window.portalGhostViewToast("Ghost view is read-only.");
+        } else {
+          alert("Ghost view is read-only.");
+        }
+        return;
+      }
       if (state.manual && !state.manualEntries.length) {
         alert("Add at least one block of hours before submitting.");
         return;

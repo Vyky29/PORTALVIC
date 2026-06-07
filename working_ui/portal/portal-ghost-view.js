@@ -152,6 +152,47 @@
     return !!(global.__PORTAL_GHOST_VIEW__ && global.__PORTAL_GHOST_VIEW__.active);
   }
 
+  /** Handoff for child pages (timesheet, payslips) opened from ghost dashboard quick menu. */
+  function portalParseGhostHandoffFromUrl(loc) {
+    try {
+      var base = loc || (typeof global.location !== "undefined" ? global.location : null);
+      if (!base || !base.search) return null;
+      var q = new URLSearchParams(String(base.search || ""));
+      var rosterKey = String(q.get("ghostRosterKey") || "")
+        .trim()
+        .toLowerCase();
+      var staffUserId = String(q.get("ghostStaffUserId") || "").trim();
+      if (!rosterKey && !staffUserId) return null;
+      if (q.get("ghostView") !== "1" && !staffUserId) return null;
+      return {
+        rosterKey: rosterKey,
+        staffUserId: staffUserId,
+        displayName: String(q.get("ghostDisplayName") || "").trim(),
+        readOnly: true,
+      };
+    } catch (_e) {
+      return null;
+    }
+  }
+
+  function portalAppendGhostHandoffToUrl(url) {
+    var handoff =
+      global.__PORTAL_GHOST_VIEW__ && global.__PORTAL_GHOST_VIEW__.active
+        ? global.__PORTAL_GHOST_VIEW__
+        : null;
+    if (!handoff) return String(url || "");
+    try {
+      var tu = new URL(String(url || ""), global.location.href);
+      if (handoff.rosterKey) tu.searchParams.set("ghostRosterKey", String(handoff.rosterKey));
+      if (handoff.staffUserId) tu.searchParams.set("ghostStaffUserId", String(handoff.staffUserId));
+      if (handoff.displayName) tu.searchParams.set("ghostDisplayName", String(handoff.displayName));
+      tu.searchParams.set("ghostView", "1");
+      return tu.href;
+    } catch (_e2) {
+      return String(url || "");
+    }
+  }
+
   async function verifyGhostToken(token) {
     var cfg = supabaseConfig();
     if (!cfg.url || !cfg.anon) {
@@ -296,8 +337,23 @@
   } else {
     global.__PORTAL_GHOST_VIEW__ = { active: false };
     global.__PORTAL_GHOST_VERIFY_PROMISE__ = Promise.resolve(global.__PORTAL_GHOST_VIEW__);
+    var handoffEarly = portalParseGhostHandoffFromUrl();
+    if (handoffEarly) {
+      global.__PORTAL_GHOST_VIEW__ = {
+        active: true,
+        staffUserId: handoffEarly.staffUserId,
+        rosterKey: handoffEarly.rosterKey,
+        displayName: handoffEarly.displayName,
+        readOnly: true,
+        handoffOnly: true,
+      };
+      applyGhostBanner(global.__PORTAL_GHOST_VIEW__);
+      bindReadOnlyGuards();
+    }
   }
 
   global.portalIsGhostViewMode = portalIsGhostViewMode;
   global.portalGhostViewToast = portalGhostViewToast;
+  global.portalParseGhostHandoffFromUrl = portalParseGhostHandoffFromUrl;
+  global.portalAppendGhostHandoffToUrl = portalAppendGhostHandoffToUrl;
 })(typeof window !== "undefined" ? window : globalThis);
