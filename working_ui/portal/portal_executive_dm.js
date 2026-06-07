@@ -1688,6 +1688,13 @@
         var pid = ch === 'staff_lead' ? peerSl : peerCe;
         return portalAdminDmProfileMatchesChannel(profBy[pid] || {});
       });
+      if(
+        portalAdminDmUsesSharedStaffInbox() &&
+        global.portalCsCliqSupportRoute &&
+        typeof global.portalCsCliqSupportRoute.collapseStaffDmRowsToCanonical === 'function'
+      ){
+        rows = await global.portalCsCliqSupportRoute.collapseStaffDmRowsToCanonical(client, rows, profBy, me);
+      }
       rows.forEach(function(r){
         var id = String(r.id || '');
         var peerSl = portalAdminDmWorkerPeerFromThread(r, profBy, me);
@@ -1715,13 +1722,6 @@
         });
       });
       await portalAdminDmEnrichListItems(client, me, ch, merged, profBy);
-      if(
-        portalAdminDmUsesSharedStaffInbox() &&
-        global.portalCsCliqSupportRoute &&
-        typeof global.portalCsCliqSupportRoute.dedupeInboxByWorkerPeer === 'function'
-      ){
-        merged = global.portalCsCliqSupportRoute.dedupeInboxByWorkerPeer(merged, me);
-      }
       var fixedOrder = portalAdminDmFixedGroupSlugOrder();
       merged.sort(function(a, b){
         var af = a.kind === 'group' ? fixedOrder.indexOf(String(a.slug || '').toLowerCase()) : -1;
@@ -1766,13 +1766,44 @@
     async function portalAdminDmOpenThread(tid){
       tid = String(tid || '').trim();
       if(!tid) return;
+      var me = portalAdminDmMe();
+      var client = getSchedSupabaseClient();
+      if(
+        client && me && portalAdminDmUsesSharedStaffInbox() &&
+        global.portalCsCliqSupportRoute &&
+        typeof global.portalCsCliqSupportRoute.resolveCanonicalThreadRow === 'function'
+      ){
+        try{
+          var tresCanon = await client.from('portal_staff_dm_threads').select('id,participant_a,participant_b,updated_at').eq('id', tid).maybeSingle();
+          if(tresCanon && tresCanon.data){
+            var idsCanon = [String(tresCanon.data.participant_a||''), String(tresCanon.data.participant_b||'')].filter(Boolean);
+            var profCanon = {};
+            if(idsCanon.length){
+              var prCanon = await client.from('staff_profiles').select('id,full_name,username,app_role,staff_role,dashboard_route,is_active').in('id', idsCanon);
+              if(!prCanon.error && Array.isArray(prCanon.data)){
+                prCanon.data.forEach(function(p){ if(p && p.id) profCanon[String(p.id)] = p; });
+              }
+            }
+            var workerIdCanon = portalAdminDmWorkerPeerFromThread(tresCanon.data, profCanon, me);
+            if(workerIdCanon && portalAdminDmIsWorkerRecipient(profCanon[workerIdCanon] || {})){
+              var allWorkerRows = await client
+                .from('portal_staff_dm_threads')
+                .select('id,participant_a,participant_b,updated_at')
+                .or('participant_a.eq.' + workerIdCanon + ',participant_b.eq.' + workerIdCanon)
+                .order('updated_at', { ascending: false })
+                .limit(40);
+              var candidates = !allWorkerRows.error && Array.isArray(allWorkerRows.data) ? allWorkerRows.data : [tresCanon.data];
+              var canonRow = await global.portalCsCliqSupportRoute.resolveCanonicalThreadRow(client, workerIdCanon, candidates, profCanon);
+              if(canonRow && canonRow.id) tid = String(canonRow.id);
+            }
+          }
+        }catch(_canonOpen){}
+      }
       window.__PORTAL_ADMIN_DM_UI = window.__PORTAL_ADMIN_DM_UI || {};
       window.__PORTAL_ADMIN_DM_UI.groupId = '';
       window.__PORTAL_ADMIN_DM_UI.groupSlug = '';
       window.__PORTAL_ADMIN_DM_UI.threadId = tid;
       portalAdminDmTogglePanels('thread');
-      var me = portalAdminDmMe();
-      var client = getSchedSupabaseClient();
       var peerEl = portalAdminDmEl('admDmThreadPeer');
       var peerLabel = '';
       if(client && me){

@@ -1059,8 +1059,8 @@
   <script src="/portal/portal_dm_roles.js?v=20260604-cliq-unified"></script>
   <script src="/portal/portal_dm_thread_avatar.js?v=20260621-cliq-embed"></script>
   <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260604-cliq-access"></script>
-  <script src="/portal/portal_cs_cliq_support_route.js?v=20260608-inbox-fix"></script>
-  <script src="/portal/portal_cs_cliq_support.js?v=20260607-support-route"></script>
+  <script src="/portal/portal_cs_cliq_support_route.js?v=20260608-staff-silent"></script>
+  <script src="/portal/portal_cs_cliq_support.js?v=20260608-staff-silent"></script>
   <script src="/portal/portal_cs_cliq_announcements_hub.js?v=20260604-cliq-fix"></script>
   <script src="/portal/portal_cs_cliq_announcement_inbox.js?v=20260607-cliq-fix"></script>
   <script src="/portal/portal_cs_cliq_thread_header.js?v=20260608-inbox-fix"></script>
@@ -1070,7 +1070,7 @@
   <script src="/portal/portal_cs_cliq_compose_sheet.js?v=20260604-cliq-fix"></script>
   <script src="/portal/portal_cs_cliq_files_hub.js?v=20260604-cliq-files"></script>
   <script src="/portal/portal_cs_cliq_meetings_hub.js?v=20260622-meetings-centre"></script>
-  <script src="/portal/portal_executive_dm.js?v=20260608-inbox-fix"></script>
+  <script src="/portal/portal_executive_dm.js?v=20260608-one-thread"></script>
   <script src="/portal/portal_cs_cliq_embed.js?v=20260607-cliq-fix"></script>
   <script src="/portal/portal_dm_executive_cliq.js?v=20260604-cliq-unified"></script>
   <script src="/portal/portal_lead_staff_chat_directory.js?v=20260604-cliq-unified"></script>
@@ -7370,10 +7370,17 @@
         var rowIds = rows.map(function(r){ return String(r.id || ""); }).filter(Boolean);
         var msgRows = [];
         if(rowIds.length){
-          var msgRes = await client.from("portal_staff_dm_messages").select("thread_id,author_id,created_at").in("thread_id", rowIds).order("created_at", { ascending: false }).limit(600);
+          var msgRes = await client.from("portal_staff_dm_messages").select("thread_id,author_id,created_at,body").in("thread_id", rowIds).order("created_at", { ascending: false }).limit(600);
           if(!msgRes.error && Array.isArray(msgRes.data)) msgRows = msgRes.data;
         }
         var msgsByThread = portalStaffDmMsgsByThread(msgRows);
+        if(window.portalCsCliqSupportRoute && typeof window.portalCsCliqSupportRoute.filterStaffInboxThreadRows === 'function'){
+          rows = window.portalCsCliqSupportRoute.filterStaffInboxThreadRows(rows, msgsByThread, me);
+        }
+        if(!rows.length){
+          listHost.innerHTML = "<p class=\"portal-dm-inbox-empty\">No conversations yet. When someone replies to your support request, it appears here.</p>";
+          return;
+        }
         var lastAuthorProfBy = {};
         var lastAuthorIds = [];
         msgRows.forEach(function(m){
