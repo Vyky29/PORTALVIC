@@ -112,9 +112,17 @@
     });
   }
 
+  function canOpenEmbed() {
+    if (global.portalDmRoles && typeof global.portalDmRoles.portalDmUsesAdminCliq === "function") {
+      return global.portalDmRoles.portalDmUsesAdminCliq();
+    }
+    return false;
+  }
+
   function open(channel, opts) {
     opts = opts || {};
     if (onAdminPortal()) return false;
+    if (!canOpenEmbed()) return false;
     channel = String(channel || "staff_lead").trim() === "ceo_exec" ? "ceo_exec" : "staff_lead";
     if (!global.PortalAdminCsCliq || typeof global.PortalAdminCsCliq.viewHtml !== "function") {
       return false;

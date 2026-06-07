@@ -1061,7 +1061,7 @@
   <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260604-cliq-access"></script>
   <script src="/portal/portal_cs_cliq_support.js?v=20260604-cliq-access"></script>
   <script src="/portal/portal_cs_cliq_announcements_hub.js?v=20260604-cliq-fix"></script>
-  <script src="/portal/portal_cs_cliq_announcement_inbox.js?v=20260622-announcements"></script>
+  <script src="/portal/portal_cs_cliq_announcement_inbox.js?v=20260604-ceo-channels"></script>
   <script src="/portal/portal_cs_cliq_thread_header.js?v=20260604-cliq-thread"></script>
   <script src="/portal/portal_cs_cliq_thread_files.js?v=20260604-cliq-files"></script>
   <script src="/portal/portal_admin_cs_cliq.js?v=20260604-cliq-thread"></script>
@@ -1069,9 +1069,9 @@
   <script src="/portal/portal_cs_cliq_compose_sheet.js?v=20260604-cliq-fix"></script>
   <script src="/portal/portal_cs_cliq_files_hub.js?v=20260604-cliq-files"></script>
   <script src="/portal/portal_cs_cliq_meetings_hub.js?v=20260622-meetings-centre"></script>
-  <script src="/portal/portal_executive_dm.js?v=20260622-announcements"></script>
-  <script src="/portal/portal_cs_cliq_embed.js?v=20260604-cliq-fix"></script>
-  <script src="/portal/portal_dm_executive_cliq.js?v=20260621-cliq-embed"></script>
+  <script src="/portal/portal_executive_dm.js?v=20260604-ceo-channels"></script>
+  <script src="/portal/portal_cs_cliq_embed.js?v=20260604-inbox-access"></script>
+  <script src="/portal/portal_dm_executive_cliq.js?v=20260604-inbox-access"></script>
   <script src="/portal/portal_lead_staff_chat_directory.js?v=20260604-cliq-access"></script>
   <script src="/portal/portal_incoming_call_push.js?v=20260622-incoming-call"></script>
   <script src="/portal/portal_sheet_back.js?v=20260607-sheet-back"></script>
@@ -7039,36 +7039,11 @@
       }
     }
     window.portalOpenInternalChatFromHeaderQuickMenu = function portalOpenInternalChatFromHeaderQuickMenu(){
-      if(window.portalDmExecutiveCliq && window.portalDmExecutiveCliq.tryOpenAdminCliq()) return;
-      try{
-        if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
-      }catch(_cl){}
-      try{
-        delete window.__PORTAL_OFFICE_DM_PEER_CACHE;
-      }catch(_c){}
-      window.__PORTAL_INTERNAL_CHAT_UI = window.__PORTAL_INTERNAL_CHAT_UI || {};
-      if(portalInternalChatOfficeRestricted()){
-        window.__PORTAL_INTERNAL_CHAT_UI.threadId = null;
-        window.__PORTAL_INTERNAL_CHAT_UI.skipResetThreadOnNextSheetOpen = false;
-        window.__PORTAL_INTERNAL_CHAT_UI.inboxTab = window.__PORTAL_INTERNAL_CHAT_UI.inboxTab || 'chats';
-        void (async function(){
-          if(typeof window.portalStaffDmAckInboxOpened === 'function'){
-            await window.portalStaffDmAckInboxOpened();
-          }
-          if(typeof openSheet === 'function') openSheet('internalChatSheet');
-        })();
-      }else{
-        window.__PORTAL_INTERNAL_CHAT_UI.threadId = null;
-        if(portalStaffIsLeadUser()){
-          window.__PORTAL_INTERNAL_CHAT_UI.inboxTab = window.__PORTAL_INTERNAL_CHAT_UI.inboxTab || 'chats';
-        }
-        void (async function(){
-          if(typeof window.portalStaffDmAckInboxOpened === 'function'){
-            await window.portalStaffDmAckInboxOpened();
-          }
-          if(typeof openSheet === 'function') openSheet('internalChatSheet');
-        })();
+      if(window.portalDmExecutiveCliq && typeof window.portalDmExecutiveCliq.openPortalWorkerChat === 'function'){
+        window.portalDmExecutiveCliq.openPortalWorkerChat(window.__PORTAL_ADMIN_DM_CHANNEL || 'staff_lead');
+        return;
       }
+      if(typeof openSheet === 'function') openSheet('internalChatSheet');
     };
     window.portalStaffResolveOfficeDefaultPeerId = async function portalStaffResolveOfficeDefaultPeerId(){
       try{
