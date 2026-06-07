@@ -1,5 +1,5 @@
 /**
- * CS Cliq Operations Communication Hub ó premium three-panel layout.
+ * CS Cliq Operations Communication Hub ù premium three-panel layout.
  */
 
 #csCliqRoot.portal-cs-cliq--hub {
@@ -368,6 +368,54 @@
 #csCliqRoot .portal-cs-cliq-support-card {
   flex-direction: column;
   align-items: flex-start;
+}
+
+#csCliqRoot .portal-cs-cliq__link-card .dayops-screen-nav__stack {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+#csCliqRoot .dayops-screen-nav__ico-wrap {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cs-hub-blue-soft, #eaf5fb);
+  color: var(--cs-hub-blue, #2d84b3);
+}
+
+#csCliqRoot .dayops-screen-nav__ico-wrap svg,
+#csCliqRoot .portal-cs-cliq-channel-ico svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+#csCliqRoot .portal-cs-cliq__link-card .dayops-screen-nav__meta {
+  min-width: 0;
+}
+
+#csCliqRoot .portal-cs-cliq__link-card .dayops-screen-nav__label {
+  display: block;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--cs-hub-ink, #173247);
+}
+
+#csCliqRoot .portal-cs-cliq__link-card .dayops-screen-nav__desc {
+  display: block;
+  font-size: 12px;
+  color: var(--cs-hub-muted, #64748b);
+  margin-top: 2px;
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-empty[hidden] {
+  display: none !important;
 }
 
 #csCliqRoot .portal-cs-cliq-files-search {

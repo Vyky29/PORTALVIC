@@ -207,7 +207,7 @@
       '<div class="filter-row" style="margin-top:12px;flex-wrap:wrap;gap:8px">' +
       '<button type="button" class="btn btn--sec btn--sm" id="csCliqComposeBack">Back to threads</button>' +
       '<button type="button" class="btn btn--pri btn--sm" id="csCliqComposeSend">Send</button>' +
-      "</div>" +
+      "</div></div>" +
       '<div id="csCliqThreadPanel" class="portal-dm-thread-view portal-cs-cliq-thread" hidden aria-hidden="true">' +
       '<span id="csCliqThreadPeerHidden" hidden aria-hidden="true"></span>' +
       '<header class="portal-cs-cliq-thread-header" id="csCliqThreadHeader" hidden>' +
