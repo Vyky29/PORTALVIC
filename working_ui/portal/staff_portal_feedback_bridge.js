@@ -375,7 +375,12 @@
         (r && (r.portalSessionKey || r.portal_session_key)) || ""
       ).trim();
       const stUk = String(st.feedbackUnitKey || "").trim();
-      if (rPk && stUk && rPk === stUk) return true;
+      if (rPk && stUk && rPk === stUk) {
+        if (statusRowNeedsPerStaffUnitFeedback(st)) {
+          return staffOwnsInstructor(st.instructor, r.instructor);
+        }
+        return true;
+      }
       return false;
     });
   }

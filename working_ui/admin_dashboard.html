@@ -4435,10 +4435,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function adminSchedIsMultiActivityProgramme(programme){
       return String(programme || '').toLowerCase().indexOf('multi') >= 0;
     }
+    function adminSchedIsClimbingProgramme(programme){
+      var p = String(programme || '').toLowerCase();
+      return p.indexOf('climb') >= 0;
+    }
     function adminSchedMaUsesInstructorSplit(slot){
       if(!slot || !adminSchedIsMultiActivityProgramme(slot.programme)) return false;
       if(String(slot.sheetDay || '').trim() !== 'Sunday') return false;
       return String(slot.venue || '').trim().toLowerCase() === 'swimfarm';
+    }
+    function adminSchedUsesInstructorSplit(slot){
+      if(adminSchedMaUsesInstructorSplit(slot)) return true;
+      return adminSchedIsClimbingProgramme(slot && slot.programme);
     }
     function adminSchedPrimaryInstructorKey(slot){
       var rid = normalizeSchedAnchorStaffId(slot.staffRosterId);
@@ -4491,7 +4499,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       var area = String(slot.rosterArea || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '_');
       var maKey = iso + '|' + cid + '|' + String(slot.anchorStart || '').slice(0, 5) + '|' + prog + '|' + area;
-      if(adminSchedMaUsesInstructorSplit(slot)){
+      if(adminSchedUsesInstructorSplit(slot)){
         return maKey + '|' + adminSchedPrimaryInstructorKey(slot);
       }
       return maKey;
@@ -15662,7 +15670,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
     var ADMIN_SESSIONS_HUB_SRC =
-      '/portal/admin-sessions-hub.js?v=20260605-feedback-mon-sat-fix';
+      '/portal/admin-sessions-hub.js?v=20260605-feedback-instructor-match';
 
     /** Club closed — half-term 23–31 May 2026, bank holiday 4 May (see PORTAL_TERM_FROM_TIMETABLE). */
     function portalAdminDayIsClubClosed(iso){

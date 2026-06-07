@@ -1388,8 +1388,14 @@
     var by = clean(completedBy).toLowerCase();
     if (!by) return true;
     var insts = slot.instructors || [];
-    for (var i = 0; i < insts.length; i++) {
-      if (completedByMatchesInstructor(completedBy, insts[i])) return true;
+    if (!insts.length && slot.instructor_label) {
+      insts = parseInstructors(slot.instructor_label);
+    }
+    if (insts.length) {
+      for (var i = 0; i < insts.length; i++) {
+        if (completedByMatchesInstructor(completedBy, insts[i])) return true;
+      }
+      return false;
     }
     var kind = slotAreaKind(slot);
     if (kind === "hub") return /godsway|giuseppe|bismark|john|berta/.test(by);
@@ -1636,6 +1642,11 @@
     return clean(slot.venue).toLowerCase() === "swimfarm";
   }
 
+  /** Climbing: Carlos / Alex / Bismark each owe separate feedback even on the same client day. */
+  function climbingFeedbackUnitUsesInstructorSplit(slot) {
+    return !!(slot && isClimbingService(slot.service));
+  }
+
   /** Day Centre: one feedback per client per calendar day (any worker, any roster block). */
   function feedbackUnitKey(slot) {
     var mergeGroup = feedbackMergeGroupForSlot(slot);
@@ -1682,6 +1693,22 @@
         return slot.session_date + "|" + cid + "|" + t + "|aquatic";
       }
       return slot.session_date + "|" + cid + "|aquatic";
+    }
+    if (isClimbingService(slot.service)) {
+      var climbKey =
+        slot.session_date +
+        "|" +
+        cid +
+        "|" +
+        t +
+        "|" +
+        serviceKey(slot.service) +
+        "|" +
+        sessionAreaKey(slot.area);
+      if (climbingFeedbackUnitUsesInstructorSplit(slot)) {
+        return climbKey + "|" + primaryInstructorKey(slot);
+      }
+      return climbKey;
     }
     return slot.session_key || slot.session_date + "|" + cid + "|" + t;
   }
