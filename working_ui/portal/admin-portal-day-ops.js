@@ -23,7 +23,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var HUB_SRC = '/portal/admin-sessions-hub.js?v=20260605-feedback-count-parity';
+  var HUB_SRC = '/portal/admin-sessions-hub.js?v=20260605-feedback-merge-units';
   var EDGE_FETCH_MS = 12000;
 
   function fetchWithTimeout(url, options, ms) {

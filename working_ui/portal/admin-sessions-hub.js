@@ -870,6 +870,8 @@
     keys.push(base);
     if (isMultiActivityService(slot.service) || isBespokeService(slot.service)) {
       keys.push(feedbackUnitKey(slot));
+      var mg = feedbackMergeGroupForSlot(slot);
+      if (mg) keys.push(slot.session_date + "|merge|" + mg);
       if (isMultiActivityService(slot.service)) {
         var area = sessionAreaKey(slot.area);
         var inst = primaryInstructorKey(slot);
@@ -881,6 +883,8 @@
     }
     if (isAquaticService(slot.service)) {
       keys.push(feedbackUnitKey(slot));
+      var mergeAquatic = feedbackMergeGroupForSlot(slot);
+      if (mergeAquatic) keys.push(slot.session_date + "|merge|" + mergeAquatic);
       keys.push(slot.session_date + "|" + cid + "|aquatic");
       if (!clientNeedsPerSlotAquaticFeedback(slot)) keys.push(base);
     }
@@ -1627,6 +1631,10 @@
 
   /** Day Centre: one feedback per client per calendar day (any worker, any roster block). */
   function feedbackUnitKey(slot) {
+    var mergeGroup = feedbackMergeGroupForSlot(slot);
+    if (mergeGroup) {
+      return slot.session_date + "|merge|" + mergeGroup;
+    }
     var cid = canonicalClientSlug(slot.client_name);
     if (!slot.session_date || !cid) return "";
     if (isDayCentreService(slot.service)) {
@@ -1726,11 +1734,23 @@
     var units = groupSlotsForFeedback(slots);
     var out = [];
     for (var i = 0; i < units.length; i++) {
-      var rep = pickRepresentativeSlotForUnit(units[i]);
-      if (!rep || shouldOmitOverviewSlot(hub, rep)) continue;
+      var rep = pickOverviewRepresentativeSlot(hub, units[i]);
+      if (!rep) continue;
       out.push(rep);
     }
     return out;
+  }
+
+  /** Prefer a visible roster row when merge groups hide duplicate aquatic blocks (e.g. Yusuf + Roberto). */
+  function pickOverviewRepresentativeSlot(hub, unit) {
+    var slots = unit && unit.slots ? unit.slots : [];
+    if (!slots.length) return null;
+    var rep = pickRepresentativeSlotForUnit(unit);
+    if (rep && !shouldOmitOverviewSlot(hub, rep)) return rep;
+    for (var i = 0; i < slots.length; i++) {
+      if (!shouldOmitOverviewSlot(hub, slots[i])) return slots[i];
+    }
+    return null;
   }
 
   function expectedSessionsByWeekdayConfig() {

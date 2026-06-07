@@ -634,6 +634,8 @@
     keys.push(base);
     if (isMultiActivityService(slot.service) || isBespokeService(slot.service)) {
       keys.push(feedbackUnitKey(slot));
+      var mg = feedbackMergeGroupForSlot(slot);
+      if (mg) keys.push(slot.session_date + "|merge|" + mg);
       if (isMultiActivityService(slot.service)) {
         var area = sessionAreaKey(slot.area);
         var inst = primaryInstructorKey(slot);
@@ -1319,6 +1321,10 @@
 
   /** Day Centre: one feedback per client per calendar day (any worker, any roster block). */
   function feedbackUnitKey(slot) {
+    var mergeGroup = feedbackMergeGroupForSlot(slot);
+    if (mergeGroup) {
+      return slot.session_date + "|merge|" + mergeGroup;
+    }
     var cid = canonicalClientSlug(slot.client_name);
     if (!slot.session_date || !cid) return "";
     if (isDayCentreService(slot.service)) {
@@ -1373,6 +1379,62 @@
       map[key].slots.push(slot);
     }
     return order;
+  }
+
+  function slotIsAfternoonSession(slot) {
+    var st = slot.time_start || normTimeKey(slot.time_slot);
+    return !!(st && st >= "16:00");
+  }
+
+  /** One overview row per feedback unit (Day Centre blocks collapse to one row per client). */
+  function pickRepresentativeSlotForUnit(unit) {
+    var slots = unit.slots;
+    if (!slots || !slots.length) return null;
+    var rep = slots[0];
+    var si;
+    for (si = 1; si < slots.length; si++) {
+      if ((slots[si].time_start || "") < (rep.time_start || "")) rep = slots[si];
+    }
+    if (slots.length === 1 || !isDayCentreService(rep.service)) return rep;
+    var last = rep;
+    for (si = 0; si < slots.length; si++) {
+      if ((slots[si].time_start || "") >= (last.time_start || "")) last = slots[si];
+    }
+    if (last === rep) return rep;
+    var merged = Object.assign({}, rep);
+    var a = clean(rep.time_slot);
+    var b = clean(last.time_slot);
+    if (a && b && a !== b) {
+      var startPart = a.indexOf(" to ") >= 0 ? a.split(" to ")[0] : a;
+      var endPart = b.indexOf(" to ") >= 0 ? b.split(" to ").pop() : b;
+      merged.time_slot = startPart + " to " + endPart;
+      var pt = parseTimeSlot(merged.time_slot, rep.day);
+      merged.time_start = pt.start;
+    }
+    return merged;
+  }
+
+  function overviewDisplaySlotsFromUnits(hub, slots) {
+    var units = groupSlotsForFeedback(slots);
+    var out = [];
+    for (var i = 0; i < units.length; i++) {
+      var rep = pickOverviewRepresentativeSlot(hub, units[i]);
+      if (!rep) continue;
+      out.push(rep);
+    }
+    return out;
+  }
+
+  /** Prefer a visible roster row when merge groups hide duplicate aquatic blocks (e.g. Yusuf + Roberto). */
+  function pickOverviewRepresentativeSlot(hub, unit) {
+    var slots = unit && unit.slots ? unit.slots : [];
+    if (!slots.length) return null;
+    var rep = pickRepresentativeSlotForUnit(unit);
+    if (rep && !shouldOmitOverviewSlot(hub, rep)) return rep;
+    for (var i = 0; i < slots.length; i++) {
+      if (!shouldOmitOverviewSlot(hub, slots[i])) return slots[i];
+    }
+    return null;
   }
 
   function formatInstructorPill(name) {

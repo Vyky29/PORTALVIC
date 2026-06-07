@@ -547,6 +547,19 @@
     const status = statusRowsForStaffDate(iso, staffId);
     const sub = submittedRowsForStaffDate(iso, staffId);
     const thru = feedbackCoverageThroughIso();
+    function applicableStatusCount(rows) {
+      const mergeSeen = Object.create(null);
+      let n = 0;
+      rows.forEach(function (st) {
+        const mg = String(st.feedbackMergeGroup || "").trim();
+        if (mg) {
+          if (mergeSeen[mg]) return;
+          mergeSeen[mg] = true;
+        }
+        n++;
+      });
+      return n;
+    }
     if (status.length) {
       const dayCentreDone = Object.create(null);
       const mergeDone = Object.create(null);
@@ -578,11 +591,11 @@
           if (!statusSlotResolved(iso, st)) unresolvedShared++;
         });
         if (unresolvedShared === 0) {
-          return { applicable: status.length, unresolved: 0 };
+          return { applicable: applicableStatusCount(status), unresolved: 0 };
         }
         return null;
       }
-      return { applicable: status.length, unresolved: unresolved };
+      return { applicable: applicableStatusCount(status), unresolved: unresolved };
     }
     if (sub.length) {
       return { applicable: sub.length, unresolved: 0 };
