@@ -1026,6 +1026,9 @@
     .portal-alerts-details{margin:0 0 8px;min-width:0}
     .portal-alerts-details-summary{margin:0 0 14px;font-size:14px;font-weight:700;color:var(--ink);cursor:pointer;list-style:none}
     .portal-alerts-details-summary::-webkit-details-marker{display:none}
+    .portal-alerts-block--voice{margin:0 0 22px;padding:14px 14px 12px;border-radius:14px;border:1px solid rgba(45,132,179,.28);background:linear-gradient(180deg,rgba(45,132,179,.07),rgba(255,255,255,0));min-width:0}
+    .portal-alerts-block--voice .portal-alerts-section-title{color:var(--blue)}
+    .portal-alerts-voice-how{margin-top:10px;margin-bottom:0;font-size:12px;line-height:1.45}
     #portalNotifyEnableBtn,#portalNotifyTestBtn,#portalLocationEnableBtn{
       width:100%;
       justify-content:center;

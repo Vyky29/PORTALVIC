@@ -104,22 +104,22 @@ function micResolveStaffVoiceGroup() {
 function portalMicSetupHintText() {
   const resolved = micResolveStaffVoiceGroup();
   if (resolved.group === "spanish") {
-    return "You can record session feedback in Spanish — we live-transcribe into English for records.";
+    return "Session feedback transcriptor: speak in Spanish on the feedback form — we live-transcribe into English for records.";
   }
   if (resolved.group === "italian") {
-    return "You can record session feedback in Italian — we live-transcribe into English for records.";
+    return "Session feedback transcriptor: speak in Italian on the feedback form — we live-transcribe into English for records.";
   }
   if (resolved.group === "other") {
     if (resolved.lang) {
       return (
-        "You can record session feedback in " +
+        "Session feedback transcriptor: speak in " +
         resolved.lang +
-        " — we live-transcribe into English for records."
+        " on the feedback form — we live-transcribe into English for records."
       );
     }
-    return "You can record session feedback in your official language — we live-transcribe into English for records.";
+    return "Session feedback transcriptor: speak in your official language on the feedback form — we live-transcribe into English for records.";
   }
-  return "Optional — for voice session feedback (live-transcribed into English). Not required for calls.";
+  return "Optional transcriptor for session feedback — speak on the feedback form; we live-transcribe into English. Not required for calls.";
 }
 
 function portalRefreshMicrophoneHint() {
@@ -790,21 +790,21 @@ export function portalRefreshMicrophoneUi() {
       btn.textContent = "Not supported";
     }
   } else if (st === "granted") {
-    statusEl.textContent = "On — ready for voice feedback notes.";
+    statusEl.textContent = "On — ready for the feedback form transcriptor (English text from your voice).";
     if (btn) {
       btn.textContent = "Microphone on";
       btn.disabled = true;
     }
   } else if (st === "denied") {
-    statusEl.textContent = "Blocked — allow microphone for this site in browser settings.";
+    statusEl.textContent = "Blocked — allow microphone for this site to use the feedback transcriptor.";
     if (btn) {
       btn.textContent = "Open browser settings";
       btn.disabled = false;
     }
   } else {
-    statusEl.textContent = "Off — optional, for voice feedback notes.";
+    statusEl.textContent = "Off — turn on to speak session feedback; we transcribe into English.";
     if (btn) {
-      btn.textContent = "Allow microphone (optional)";
+      btn.textContent = "Allow microphone for feedback";
       btn.disabled = false;
     }
   }
@@ -878,7 +878,7 @@ export function portalRefreshEnableAllUi() {
       statusEl.textContent =
         "Tap anywhere on the app once (or Continue below). The browser may ask for " +
         parts.join(" and ") +
-        ". Microphone is optional in Advanced settings.";
+        ". Turn on the voice transcriptor below for session feedback.";
     }
   }
   if (btn) {
