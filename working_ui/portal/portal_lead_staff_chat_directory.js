@@ -1,10 +1,11 @@
 /**
- * Lead dashboard ù staff directory in internal chat (WhatsApp-style contact list).
+ * Lead dashboard ? staff directory in internal chat (WhatsApp-style contact list).
  */
 (function (global) {
   "use strict";
 
-  var CACHE_KEY = "__PORTAL_LEAD_STAFF_DIRECTORY_ROWS__";
+  var CACHE_KEY_STAFF = "__PORTAL_LEAD_STAFF_DIRECTORY_ROWS__";
+  var CACHE_KEY_LEADS = "__PORTAL_STAFF_LEADS_DIRECTORY_ROWS__";
 
   function esc(s) {
     return String(s == null ? "" : s)
@@ -39,6 +40,35 @@
       }
     } catch (_e) {}
     return false;
+  }
+
+  function portalStaffIsStaffUser(prof) {
+    var row = profileRow(prof);
+    if (portalStaffIsLeadUser(row)) return false;
+    var ar = String(row.app_role || "").toLowerCase();
+    if (ar === "staff") return true;
+    if (ar === "admin" || ar === "ceo") return false;
+    var sr = String(row.staff_role || "").toLowerCase();
+    return !!(sr && sr !== "manager" && sr !== "admin");
+  }
+
+  function portalStaffHasPeerDirectory(prof) {
+    return portalStaffIsLeadUser(prof) || portalStaffIsStaffUser(prof);
+  }
+
+  function getDirectoryMode(prof) {
+    if (portalStaffIsLeadUser(prof)) return "staff";
+    if (portalStaffIsStaffUser(prof)) return "leads";
+    return "";
+  }
+
+  function directoryCacheKey(mode) {
+    return mode === "leads" ? CACHE_KEY_LEADS : CACHE_KEY_STAFF;
+  }
+
+  function isDirectoryTab(tab) {
+    tab = String(tab || "").toLowerCase();
+    return tab === "staff" || tab === "leads" || tab === "directory";
   }
 
   function portalStaffIsRestrictedWorkerChat(prof) {
@@ -137,17 +167,24 @@
 
   function getInboxTab() {
     var ui = global.__PORTAL_INTERNAL_CHAT_UI || {};
-    return String(ui.inboxTab || "chats").toLowerCase() === "staff" ? "staff" : "chats";
+    return isDirectoryTab(ui.inboxTab) ? "directory" : "chats";
   }
 
   function setInboxTab(tab) {
     global.__PORTAL_INTERNAL_CHAT_UI = global.__PORTAL_INTERNAL_CHAT_UI || {};
-    global.__PORTAL_INTERNAL_CHAT_UI.inboxTab = tab === "staff" ? "staff" : "chats";
+    if (tab === "directory") {
+      var mode = getDirectoryMode();
+      global.__PORTAL_INTERNAL_CHAT_UI.inboxTab = mode === "leads" ? "leads" : "staff";
+    } else {
+      global.__PORTAL_INTERNAL_CHAT_UI.inboxTab = "chats";
+    }
   }
 
   function syncInboxChrome(opts) {
     opts = opts || {};
-    var isLead = !!opts.isLead;
+    var prof = profileRow(opts.profile);
+    var hasDirectory =
+      opts.hasDirectory != null ? !!opts.hasDirectory : portalStaffHasPeerDirectory(prof);
     var inThread = !!opts.inThread;
     var chrome = document.getElementById("internalChatLeadInboxChrome");
     var nav = document.getElementById("internalChatLeadInboxNav");
@@ -156,19 +193,31 @@
     var listWrap = document.getElementById("internalChatListWrap");
     var tab = getInboxTab();
     var query = getSearchQuery();
+    var dirMode = getDirectoryMode(prof);
 
     if (chrome) {
-      chrome.hidden = !isLead || inThread;
-      chrome.setAttribute("aria-hidden", !isLead || inThread ? "true" : "false");
+      chrome.hidden = !hasDirectory || inThread;
+      chrome.setAttribute("aria-hidden", !hasDirectory || inThread ? "true" : "false");
     }
-    if (nav && isLead && !inThread) {
+    if (nav && hasDirectory && !inThread) {
       var chatsBtn = document.getElementById("internalChatInboxTabChats");
-      var staffBtn = document.getElementById("internalChatInboxTabStaff");
+      var dirBtn =
+        document.getElementById("internalChatInboxTabLeads") ||
+        document.getElementById("internalChatInboxTabStaff");
       if (chatsBtn) chatsBtn.classList.toggle("is-active", tab === "chats");
-      if (staffBtn) staffBtn.classList.toggle("is-active", tab === "staff");
+      if (dirBtn) {
+        dirBtn.classList.toggle("is-active", tab === "directory");
+        if (dirMode === "leads") dirBtn.textContent = "Leads";
+        else if (dirMode === "staff") dirBtn.textContent = "Staff";
+      }
+      var search = getSearchInput();
+      if (search) {
+        search.placeholder =
+          dirMode === "leads" ? "Search leads or chats?" : "Search staff or chats?";
+      }
     }
 
-    if (!isLead || inThread) {
+    if (!hasDirectory || inThread) {
       if (staffWrap) {
         staffWrap.hidden = true;
         staffWrap.setAttribute("aria-hidden", "true");
@@ -191,8 +240,8 @@
       listWrap.setAttribute("aria-hidden", tab === "chats" ? "false" : "true");
     }
     if (staffWrap) {
-      staffWrap.hidden = tab !== "staff";
-      staffWrap.setAttribute("aria-hidden", tab === "staff" ? "false" : "true");
+      staffWrap.hidden = tab !== "directory";
+      staffWrap.setAttribute("aria-hidden", tab === "directory" ? "false" : "true");
     }
     if (suggestions) {
       var showSuggestions = tab === "chats" && !!query;
@@ -200,7 +249,7 @@
       suggestions.setAttribute("aria-hidden", showSuggestions ? "false" : "true");
     }
 
-    if (isLead && !inThread) {
+    if (hasDirectory && !inThread && dirMode) {
       var box = global.__PORTAL_SUPABASE__;
       var client = box && box.client;
       var me = String(
@@ -208,16 +257,16 @@
           (box && box.session && box.session.user && box.session.user.id) ||
           ""
       ).trim();
-      void loadStaffRows(client, me);
+      void loadDirectoryRows(client, me, dirMode);
     }
   }
 
   function onSearchInput() {
     syncSearchClearBtn();
-    syncInboxChrome({ isLead: true, inThread: false });
+    syncInboxChrome({ inThread: false });
     var tab = getInboxTab();
-    if (tab === "staff") {
-      void renderStaffDirectory();
+    if (tab === "directory") {
+      void renderPeerDirectory();
       return;
     }
     if (typeof global.portalRenderInternalChatSheet === "function") {
@@ -234,10 +283,10 @@
       var btn = ev.target && ev.target.closest && ev.target.closest("[data-inbox-tab]");
       if (!btn) return;
       var tab = String(btn.getAttribute("data-inbox-tab") || "").toLowerCase();
-      setInboxTab(tab === "staff" ? "staff" : "chats");
-      syncInboxChrome({ isLead: true, inThread: false });
-      if (tab === "staff") {
-        void renderStaffDirectory();
+      setInboxTab(isDirectoryTab(tab) ? "directory" : "chats");
+      syncInboxChrome({ inThread: false });
+      if (isDirectoryTab(tab)) {
+        void renderPeerDirectory();
       } else if (typeof global.portalRenderInternalChatSheet === "function") {
         void global.portalRenderInternalChatSheet();
       }
@@ -276,9 +325,16 @@
     }
   }
 
-  function directoryEmptyMessage(query) {
+  function directoryEmptyMessage(query, mode) {
+    mode = mode || "staff";
     if (query) {
-      return "No staff match your search.";
+      return mode === "leads" ? "No leads match your search." : "No staff match your search.";
+    }
+    if (mode === "leads") {
+      return (
+        "No session leads found. " +
+        "If you expected leads here, ask ops to apply the latest portal database update (staff?lead team chat)."
+      );
     }
     return (
       "No colleagues found in the team directory. " +
@@ -286,11 +342,21 @@
     );
   }
 
-  async function loadStaffRows(client, me, opts) {
+  function directoryRowMatchesMode(row, mode) {
+    if (!row) return false;
+    var ar = String(row.app_role || "").toLowerCase();
+    if (mode === "leads") return ar === "lead";
+    if (mode === "staff") return ar !== "lead" && ar !== "admin" && ar !== "ceo";
+    return true;
+  }
+
+  async function loadDirectoryRows(client, me, mode, opts) {
     opts = opts || {};
+    mode = mode === "leads" ? "leads" : "staff";
     if (!client || !me) return [];
-    if (!opts.force && global[CACHE_KEY] && Array.isArray(global[CACHE_KEY])) {
-      return global[CACHE_KEY];
+    var cacheKey = directoryCacheKey(mode);
+    if (!opts.force && global[cacheKey] && Array.isArray(global[cacheKey])) {
+      return global[cacheKey];
     }
 
     var selectCols = "id,full_name,username,app_role,staff_role,dashboard_route,is_active";
@@ -300,51 +366,55 @@
 
     function pullPage() {
       var to = from + chunk - 1;
-      return client
-        .from("staff_profiles")
-        .select(selectCols)
-        .order("full_name", { ascending: true })
-        .range(from, to)
-        .then(function (res) {
-          if (res.error) {
-            var errMsg = String(res.error.message || res.error || "Load failed");
-            if (selectCols.indexOf("dashboard_route") !== -1 && /dashboard_route/i.test(errMsg)) {
-              selectCols = "id,full_name,username,app_role,staff_role,is_active";
-              from = 0;
-              rows = [];
-              return pullPage();
-            }
-            throw res.error;
+      var q = client.from("staff_profiles").select(selectCols).order("full_name", { ascending: true });
+      if (mode === "leads") {
+        q = q.eq("app_role", "lead");
+      }
+      return q.range(from, to).then(function (res) {
+        if (res.error) {
+          var errMsg = String(res.error.message || res.error || "Load failed");
+          if (selectCols.indexOf("dashboard_route") !== -1 && /dashboard_route/i.test(errMsg)) {
+            selectCols = "id,full_name,username,app_role,staff_role,is_active";
+            from = 0;
+            rows = [];
+            return pullPage();
           }
-          var batch = res.data || [];
-          batch.forEach(function (row) {
-            if (!row || row.is_active === false) return;
-            var id = String(row.id || "").trim();
-            if (!id || id.toLowerCase() === String(me).toLowerCase()) return;
-            var label = peerLabelFromRow(row);
-            if (!label) return;
-            rows.push({
-              id: id,
-              label: label,
-              role: roleSubtitle(row),
-              sortKey: normKey(label),
+          throw res.error;
+        }
+        var batch = res.data || [];
+        batch.forEach(function (row) {
+          if (!row || row.is_active === false) return;
+          if (!directoryRowMatchesMode(row, mode)) return;
+          var id = String(row.id || "").trim();
+          if (!id || id.toLowerCase() === String(me).toLowerCase()) return;
+          var label = peerLabelFromRow(row);
+          if (!label) return;
+          rows.push({
+            id: id,
+            label: label,
+            role: roleSubtitle(row),
+            sortKey: normKey(label),
+          });
+        });
+        if (batch.length < chunk) {
+          rows.sort(function (a, b) {
+            return String(a.label || "").localeCompare(String(b.label || ""), "en", {
+              sensitivity: "base",
             });
           });
-          if (batch.length < chunk) {
-            rows.sort(function (a, b) {
-              return String(a.label || "").localeCompare(String(b.label || ""), "en", {
-                sensitivity: "base",
-              });
-            });
-            global[CACHE_KEY] = rows;
-            return rows;
-          }
-          from += chunk;
-          return pullPage();
-        });
+          global[cacheKey] = rows;
+          return rows;
+        }
+        from += chunk;
+        return pullPage();
+      });
     }
 
     return pullPage();
+  }
+
+  async function loadStaffRows(client, me, opts) {
+    return loadDirectoryRows(client, me, "staff", opts);
   }
 
   function filterStaffRows(rows, query) {
@@ -407,10 +477,9 @@
     }
   }
 
-  async function renderStaffDirectory(query) {
+  async function renderPeerDirectory(query) {
     bindInboxNav();
     var host = document.getElementById("internalChatStaffDirectoryList");
-    var search = getSearchInput();
     if (!host) return;
 
     var box = global.__PORTAL_SUPABASE__;
@@ -420,22 +489,25 @@
         (box && box.session && box.session.user && box.session.user.id) ||
         ""
     ).trim();
+    var mode = getDirectoryMode(box && box.staff_profile);
 
-    if (!portalStaffIsLeadUser()) {
+    if (!mode) {
       host.innerHTML = "";
       return;
     }
 
-    host.innerHTML = '<p class="portal-dm-lead-empty">Loading teamù</p>';
+    host.innerHTML =
+      '<p class="portal-dm-lead-empty">Loading ' + (mode === "leads" ? "leads" : "team") + "?</p>";
 
     try {
-      var rows = await loadStaffRows(client, me);
+      var rows = await loadDirectoryRows(client, me, mode);
       var q = typeof query === "string" ? query : getSearchQuery();
       rows = filterStaffRows(rows, q);
 
       host.innerHTML = "";
       if (!rows.length) {
-        host.innerHTML = '<p class="portal-dm-lead-empty">' + directoryEmptyMessage(q) + "</p>";
+        host.innerHTML =
+          '<p class="portal-dm-lead-empty">' + directoryEmptyMessage(q, mode) + "</p>";
         return;
       }
 
@@ -443,15 +515,19 @@
     } catch (e) {
       host.innerHTML =
         '<p class="portal-dm-lead-empty portal-dm-lead-empty--err">' +
-        esc(String((e && e.message) || e || "Could not load staff")) +
+        esc(String((e && e.message) || e || "Could not load directory")) +
         "</p>";
     }
+  }
+
+  async function renderStaffDirectory(query) {
+    return renderPeerDirectory(query);
   }
 
   async function renderStaffSuggestions(query) {
     bindInboxNav();
     var host = document.getElementById("internalChatLeadStaffSuggestions");
-    if (!host || !portalStaffIsLeadUser() || getInboxTab() !== "chats") {
+    if (!host || !portalStaffHasPeerDirectory() || getInboxTab() !== "chats") {
       if (host) {
         host.hidden = true;
         host.innerHTML = "";
@@ -477,19 +553,29 @@
 
     host.hidden = false;
     host.setAttribute("aria-hidden", "false");
-    host.innerHTML = '<p class="portal-dm-lead-empty">Searching teamù</p>';
+    host.innerHTML = '<p class="portal-dm-lead-empty">Searching team?</p>';
 
     try {
-      var rows = filterStaffRows(await loadStaffRows(client, me), q);
+      var mode = getDirectoryMode(box && box.staff_profile) || "staff";
+      var rows = filterStaffRows(await loadDirectoryRows(client, me, mode), q);
       host.innerHTML = "";
       if (!rows.length) {
-        host.innerHTML = '<p class="portal-dm-lead-empty">No staff match ù' + esc(q) + "ù.</p>";
+        var noun = mode === "leads" ? "leads" : "staff";
+        host.innerHTML =
+          '<p class="portal-dm-lead-empty">No ' + esc(noun) + " match ?" + esc(q) + "?.</p>";
         return;
       }
 
       var heading = document.createElement("p");
       heading.className = "portal-dm-lead-suggestions-title";
-      heading.textContent = rows.length === 1 ? "Message someone" : "Message someone on the team";
+      heading.textContent =
+        mode === "leads"
+          ? rows.length === 1
+            ? "Message a lead"
+            : "Message a session lead"
+          : rows.length === 1
+            ? "Message someone"
+            : "Message someone on the team";
       host.appendChild(heading);
 
       var list = document.createElement("div");
@@ -504,34 +590,45 @@
     }
   }
 
-  function initLeadInbox() {
+  function initWorkerPeerInbox() {
     bindInboxNav();
-    if (!portalStaffIsLeadUser()) return;
+    if (!portalStaffHasPeerDirectory()) return;
     try {
-      delete global[CACHE_KEY];
+      delete global[CACHE_KEY_STAFF];
+      delete global[CACHE_KEY_LEADS];
     } catch (_cache) {}
-    syncInboxChrome({ isLead: true, inThread: false });
-    if (getInboxTab() === "staff") {
-      void renderStaffDirectory();
+    syncInboxChrome({ inThread: false });
+    if (getInboxTab() === "directory") {
+      void renderPeerDirectory();
     }
+  }
+
+  function initLeadInbox() {
+    return initWorkerPeerInbox();
   }
 
   global.portalLeadStaffChatDirectory = {
     portalStaffIsLeadUser: portalStaffIsLeadUser,
+    portalStaffIsStaffUser: portalStaffIsStaffUser,
+    portalStaffHasPeerDirectory: portalStaffHasPeerDirectory,
     portalStaffIsRestrictedWorkerChat: portalStaffIsRestrictedWorkerChat,
     syncInboxChrome: syncInboxChrome,
     renderStaffDirectory: renderStaffDirectory,
+    renderPeerDirectory: renderPeerDirectory,
     renderStaffSuggestions: renderStaffSuggestions,
     openPeerChat: openPeerChat,
     initLeadInbox: initLeadInbox,
+    initWorkerPeerInbox: initWorkerPeerInbox,
     getInboxTab: getInboxTab,
     setInboxTab: setInboxTab,
     getSearchQuery: getSearchQuery,
     matchesSearchQuery: matchesSearchQuery,
     initialsFromLabel: initialsFromLabel,
+    getDirectoryMode: getDirectoryMode,
     clearCache: function () {
       try {
-        delete global[CACHE_KEY];
+        delete global[CACHE_KEY_STAFF];
+        delete global[CACHE_KEY_LEADS];
       } catch (_e) {}
     },
   };

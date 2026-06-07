@@ -314,6 +314,37 @@
     onPick(docInp);
   }
 
+  function bindWorkerInternalChatAttachments() {
+    attachFilePickers({
+      textareaId: "internalChatInput",
+      photoBtnId: "internalChatPhotoBtn",
+      docBtnId: "internalChatDocBtn",
+      getContext: function () {
+        var box = global.__PORTAL_SUPABASE__ || {};
+        var ui = global.__PORTAL_INTERNAL_CHAT_UI || {};
+        return {
+          client: box.client,
+          threadId: String(ui.threadId || "").trim(),
+          groupId: "",
+          authorId: String(
+            (box.staff_profile && box.staff_profile.id) ||
+              (box.session && box.session.user && box.session.user.id) ||
+              ""
+          ).trim(),
+        };
+      },
+      onSent: function () {
+        if (typeof global.portalRenderInternalChatSheet === "function") {
+          return global.portalRenderInternalChatSheet();
+        }
+      },
+      onError: function (msg) {
+        var errB = document.getElementById("internalChatErr");
+        if (errB) errB.textContent = msg;
+      },
+    });
+  }
+
   global.portalDmAttachments = {
     BUCKET: BUCKET,
     isImageMsg: isImageMsg,
@@ -321,5 +352,6 @@
     fillMessageBody: fillMessageBody,
     sendAttachment: sendAttachment,
     attachFilePickers: attachFilePickers,
+    bindWorkerInternalChatAttachments: bindWorkerInternalChatAttachments,
   };
 })(typeof window !== "undefined" ? window : globalThis);

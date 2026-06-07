@@ -95,7 +95,7 @@
   <title>clubSENsational Lead Dashboard</title>
   <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260606-today-card-align" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260610-topbar-colors" />
-  <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260620-inbox-logo-orbit" />
+  <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260624-staff-lead-dm" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
   <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260607-area-icons-transparent" />
@@ -1037,10 +1037,11 @@
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260616-michelle-only"></script>
   <script src="/portal/portal_dm_voice.js?v=20260602-feedback-voice-fix"></script>
+  <script src="/portal/portal_dm_attachments.js?v=20260624-staff-lead-dm"></script>
   <script src="/portal/portal_staff_chat_calls.js?v=20260622-call-roster"></script>
   <script src="/portal/portal_incoming_call_push.js?v=20260622-incoming-call"></script>
   <script src="/portal/portal_sheet_back.js?v=20260607-sheet-back"></script>
-  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260619-lead-staff-rls"></script>
+  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260624-staff-lead-dm"></script>
   <script>
     console.log("ABSENT FIX VERSION LOADED 20260425");
     /** Real calendar weekday for “Today” (en-GB), aligned with staff_clients_machine.xlsx */
@@ -6486,13 +6487,13 @@
           offHost.hidden = true;
           offHost.innerHTML = "";
         }
-        if(portalStaffIsLeadUser() && window.portalLeadStaffChatDirectory && window.portalLeadStaffChatDirectory.getInboxTab() === 'staff'){
+        if(window.portalLeadStaffChatDirectory && typeof window.portalLeadStaffChatDirectory.getInboxTab === 'function' && window.portalLeadStaffChatDirectory.getInboxTab() === 'directory'){
           listHost.innerHTML = "";
           if(errTop){
             errTop.textContent = "";
             errTop.hidden = true;
           }
-          window.portalLeadStaffChatDirectory.syncInboxChrome({ isLead: true, inThread: false });
+          window.portalLeadStaffChatDirectory.syncInboxChrome({ inThread: false });
           void window.portalLeadStaffChatDirectory.renderStaffDirectory();
           return;
         }
@@ -6544,8 +6545,8 @@
               : "No conversations yet. When the office sends you a direct message, it appears here.");
           listHost.innerHTML = "<p class=\"portal-dm-inbox-empty\">"+emptyMsg+"</p>";
           if(portalStaffIsLeadUser() && window.portalLeadStaffChatDirectory){
-            window.portalLeadStaffChatDirectory.syncInboxChrome({ isLead: true, inThread: false });
-            if(window.portalLeadStaffChatDirectory.getInboxTab() === 'staff'){
+            window.portalLeadStaffChatDirectory.syncInboxChrome({ inThread: false });
+            if(window.portalLeadStaffChatDirectory.getInboxTab() === 'directory'){
               void window.portalLeadStaffChatDirectory.renderStaffDirectory();
             }else if(leadSearchQ){
               void window.portalLeadStaffChatDirectory.renderStaffSuggestions(leadSearchQ);
@@ -6600,8 +6601,8 @@
           void window.portalStaffDmSyncUnreadChrome();
         }
         if(portalStaffIsLeadUser() && window.portalLeadStaffChatDirectory){
-          window.portalLeadStaffChatDirectory.syncInboxChrome({ isLead: true, inThread: false });
-          if(window.portalLeadStaffChatDirectory.getInboxTab() === 'staff'){
+          window.portalLeadStaffChatDirectory.syncInboxChrome({ inThread: false });
+          if(window.portalLeadStaffChatDirectory.getInboxTab() === 'directory'){
             void window.portalLeadStaffChatDirectory.renderStaffDirectory();
           }else if(leadSearchQ){
             void window.portalLeadStaffChatDirectory.renderStaffSuggestions(leadSearchQ);
@@ -6777,6 +6778,9 @@
             }
           });
         }
+      }
+      if(window.portalDmAttachments && typeof window.portalDmAttachments.bindWorkerInternalChatAttachments === 'function'){
+        window.portalDmAttachments.bindWorkerInternalChatAttachments();
       }
       portalSyncInternalChatMobileViewport();
     };
@@ -11164,8 +11168,8 @@
           window.__PORTAL_INTERNAL_CHAT_UI.skipResetThreadOnNextSheetOpen = false;
         }catch(_icc){}
         portalBindInternalChatCloseControls();
-        if(window.portalLeadStaffChatDirectory && typeof window.portalLeadStaffChatDirectory.initLeadInbox === 'function'){
-          window.portalLeadStaffChatDirectory.initLeadInbox();
+        if(window.portalLeadStaffChatDirectory && typeof window.portalLeadStaffChatDirectory.initWorkerPeerInbox === 'function'){
+          window.portalLeadStaffChatDirectory.initWorkerPeerInbox();
         }
         void (async function(){
           if(typeof window.portalStaffDmAckInboxOpened === 'function'){

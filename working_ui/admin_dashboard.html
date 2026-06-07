@@ -19318,6 +19318,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(portalAdminDmIsWorkerRecipient(pb)) return b;
       return portalDmPeerIdForThread(me, row);
     }
+    function portalAdminDmIsPeerTeamChatThread(row, profBy){
+      if(!row || !profBy) return false;
+      var a = String(row.participant_a || '');
+      var b = String(row.participant_b || '');
+      if(!a || !b) return false;
+      return portalAdminDmIsWorkerRecipient(profBy[a] || {}) && portalAdminDmIsWorkerRecipient(profBy[b] || {});
+    }
+    function portalAdminDmTeamChatLabel(row, names){
+      if(!row) return 'Team chat';
+      names = names || {};
+      var a = String(row.participant_a || '');
+      var b = String(row.participant_b || '');
+      var la = String(names[a] || a.slice(0, 8) || '?').trim();
+      var lb = String(names[b] || b.slice(0, 8) || '?').trim();
+      return la + ' ↔ ' + lb;
+    }
     async function portalAdminDmFindStaffLeadThreadForWorker(client, workerId){
       workerId = String(workerId || '').trim();
       if(!client || !workerId) return '';
@@ -20551,6 +20567,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!row) return 'Message';
       var mt = String(row.message_type || 'text').toLowerCase();
       if(mt === 'voice') return 'Voice message';
+      if(mt === 'image') return 'Photo';
+      if(mt === 'file') return 'Document';
       var body = String(row.body || '').trim();
       if(body.indexOf('[[portal-staff-call:') >= 0) return 'Call invite';
       if(body.indexOf('[[portal-staff-call-end:') >= 0) return 'Call ended';
@@ -20701,9 +20719,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       var roleTag = '';
       if(item.kind === 'dm' && ch === 'staff_lead'){
-        var rt = portalAdminDmWorkerRoleTag(item.peerProf || {});
-        if(rt === 'Lead') roleTag = '<span class="portal-dm-thread-role-tag portal-dm-thread-role-tag--lead">Lead</span>';
-        else if(rt === 'Staff') roleTag = '<span class="portal-dm-thread-role-tag portal-dm-thread-role-tag--staff">Staff</span>';
+        if(item.isTeamChat){
+          roleTag = '<span class="portal-dm-thread-role-tag portal-dm-thread-role-tag--team">Team chat</span>';
+        }else{
+          var rt = portalAdminDmWorkerRoleTag(item.peerProf || {});
+          if(rt === 'Lead') roleTag = '<span class="portal-dm-thread-role-tag portal-dm-thread-role-tag--lead">Lead</span>';
+          else if(rt === 'Staff') roleTag = '<span class="portal-dm-thread-role-tag portal-dm-thread-role-tag--staff">Staff</span>';
+        }
       }else if(item.kind === 'group'){
         roleTag = '<span class="portal-dm-thread-role-tag portal-dm-thread-role-tag--group">Group</span>';
       }
@@ -20795,8 +20817,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       rows.forEach(function(r){
         var id = String(r.id || '');
         var peer = ch === 'staff_lead' ? portalAdminDmWorkerPeerFromThread(r, profBy, me) : portalDmPeerIdForThread(me, r);
-        var label = names[peer] || ('Chat · ' + peer.slice(0, 8));
-        merged.push({ kind: 'dm', id: id, label: label, when: r.updated_at, peerId: peer, peerProf: profBy[peer] || {} });
+        var isTeamChat = ch === 'staff_lead' && portalAdminDmIsPeerTeamChatThread(r, profBy);
+        var label = isTeamChat ? portalAdminDmTeamChatLabel(r, names) : (names[peer] || ('Chat · ' + peer.slice(0, 8)));
+        merged.push({
+          kind: 'dm',
+          id: id,
+          label: label,
+          when: r.updated_at,
+          peerId: peer,
+          peerProf: profBy[peer] || {},
+          isTeamChat: isTeamChat,
+          threadRow: r
+        });
       });
       await portalAdminDmEnrichListItems(client, me, ch, merged, profBy);
       merged.sort(function(a, b){
@@ -20847,8 +20879,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           peerId = portalAdminDmChannel() === 'staff_lead'
             ? portalAdminDmWorkerPeerFromThread(trow, profMap, me)
             : portalDmPeerIdForThread(me, trow);
+          if(portalAdminDmChannel() === 'staff_lead' && portalAdminDmIsPeerTeamChatThread(trow, profMap)){
+            var namesMap = {};
+            Object.keys(profMap).forEach(function(k){
+              var p = profMap[k] || {};
+              namesMap[k] = String(p.full_name || p.username || '').trim() || k.slice(0, 8);
+            });
+            peerLabel = portalAdminDmTeamChatLabel(trow, namesMap);
+            peerId = '';
+          }
         }
-        if(peerId){
+        if(peerId && !peerLabel){
           var pr2 = await client.from('staff_profiles').select('full_name,username').eq('id', peerId).maybeSingle();
           if(!pr2.error && pr2.data){
             peerLabel = (pr2.data.full_name || pr2.data.username || '').trim() || peerId;
@@ -21439,6 +21480,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '#admDmListHost .portal-dm-thread-role-tag--staff{color:#145a3a}'+
         '#admDmListHost .portal-dm-thread-role-tag--lead{color:#7c3aed}'+
         '#admDmListHost .portal-dm-thread-role-tag--group{color:#0369a1}'+
+        '#admDmListHost .portal-dm-thread-role-tag--team{color:#b45309}'+
         '#admDmListHost .portal-dm-thread-preview{font-size:13px;line-height:1.4;color:var(--muted,#64748b);min-width:0;width:100%;overflow-wrap:break-word;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}'+
         '#admDmListHost .portal-dm-thread-item--unread .portal-dm-thread-preview{color:var(--ink,#173247);font-weight:600}'+
         '#admDmListHost .portal-dm-thread-preview-sender{font-weight:700}'+

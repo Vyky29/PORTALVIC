@@ -95,7 +95,7 @@
   <title>clubSENsational Staff Dashboard</title>
   <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260606-today-card-align" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260610-topbar-colors" />
-  <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260620-inbox-logo-orbit" />
+  <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260624-staff-lead-dm" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
   <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260607-area-icons-transparent" />
@@ -871,7 +871,23 @@
     </div>
     <div class="sheet-body portal-dm-wrap portal-dm-sheet-body" style="min-width:0">
       <p id="internalChatTopErr" class="portal-dm-top-err muted" hidden></p>
+      <div id="internalChatLeadInboxChrome" class="portal-dm-lead-inbox-chrome" hidden aria-hidden="true">
+        <div class="portal-dm-lead-search-row">
+          <label class="topbar-sr-only" for="internalChatLeadSearch">Search chats or leads</label>
+          <span class="portal-dm-lead-search-icon" aria-hidden="true">⌕</span>
+          <input type="search" id="internalChatLeadSearch" class="portal-dm-lead-search-input" placeholder="Search leads or chats…" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" />
+          <button type="button" id="internalChatLeadSearchClear" class="portal-dm-lead-search-clear" hidden aria-label="Clear search">×</button>
+        </div>
+        <div id="internalChatLeadInboxNav" class="portal-dm-inbox-nav">
+          <button type="button" class="portal-dm-inbox-nav-btn is-active" id="internalChatInboxTabChats" data-inbox-tab="chats">Chats</button>
+          <button type="button" class="portal-dm-inbox-nav-btn" id="internalChatInboxTabLeads" data-inbox-tab="leads">Leads</button>
+        </div>
+      </div>
       <div id="internalChatListWrap" class="portal-dm-inbox-list"></div>
+      <div id="internalChatLeadStaffSuggestions" class="portal-dm-lead-staff-suggestions" hidden aria-hidden="true" role="list"></div>
+      <div id="internalChatStaffDirectoryWrap" class="portal-dm-staff-directory" hidden aria-hidden="true">
+        <div id="internalChatStaffDirectoryList" class="portal-dm-staff-directory-list" role="list"></div>
+      </div>
       <div id="internalChatOfficeComposeHost" class="portal-dm-office-compose-host" hidden></div>
       <div id="internalChatThreadWrap" class="portal-dm-wrap portal-dm-thread-view" hidden aria-hidden="true">
         <p id="internalChatPeerLabel" class="portal-dm-peer-label" hidden aria-hidden="true"></p>
@@ -1027,7 +1043,9 @@
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260616-michelle-only"></script>
   <script src="/portal/portal_dm_voice.js?v=20260602-feedback-voice-fix"></script>
+  <script src="/portal/portal_dm_attachments.js?v=20260624-staff-lead-dm"></script>
   <script src="/portal/portal_staff_chat_calls.js?v=20260622-call-roster"></script>
+  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260624-staff-lead-dm"></script>
   <script src="/portal/portal_incoming_call_push.js?v=20260622-incoming-call"></script>
   <script src="/portal/portal_sheet_back.js?v=20260607-sheet-back"></script>
   <script>
@@ -6396,6 +6414,16 @@
       var sr = String(row.staff_role || '').toLowerCase();
       return sr === 'manager' || sr === 'admin';
     }
+    function portalStaffProfileIsLeadPeer(row){
+      if(!row || row.is_active === false) return false;
+      return String(row.app_role || '').toLowerCase() === 'lead';
+    }
+    function portalStaffInboxPeerAllowed(row){
+      return portalStaffProfileIsOfficePeer(row) || portalStaffProfileIsLeadPeer(row);
+    }
+    function portalStaffDmAuthorCountsAsUnread(authorProf){
+      return portalStaffProfileIsOfficePeer(authorProf || {}) || portalStaffProfileIsLeadPeer(authorProf || {});
+    }
     function portalInternalChatOfficeRestricted(){
       return portalStaffActsAsWorkerMessenger();
     }
@@ -6571,7 +6599,7 @@
     function portalStaffDmIsUnreadOfficeMessage(m, authorProf, me){
       if(!m) return false;
       if(String(m.author_id || '').toLowerCase() === String(me || '').toLowerCase()) return false;
-      return portalStaffProfileIsOfficePeer(authorProf || {});
+      return portalStaffDmAuthorCountsAsUnread(authorProf);
     }
     function portalStaffDmLastOfficeMessage(msgsByThread, threadId, authorProfBy, me){
       var list = msgsByThread[threadId] || [];
@@ -6602,7 +6630,7 @@
         if(String(m.author_id || '').toLowerCase() === String(me || '').toLowerCase()) continue;
         var prof = authorProfBy[String(m.author_id || '')] || {};
         if(portalStaffActsAsWorkerMessenger()){
-          if(!portalStaffProfileIsOfficePeer(prof)) continue;
+          if(!portalStaffDmAuthorCountsAsUnread(prof)) continue;
         }
         if(!seen){
           count++;
@@ -6699,7 +6727,7 @@
             var a = String(r && r.participant_a || '');
             var b = String(r && r.participant_b || '');
             var peer = a === me ? b : a;
-            return portalStaffProfileIsOfficePeer(profU[peer] || {});
+            return portalStaffInboxPeerAllowed(profU[peer] || {});
           })
           .map(function(r){ return r && r.id ? String(r.id) : ''; })
           .filter(Boolean);
@@ -6762,7 +6790,7 @@
       if(titleEl) titleEl.textContent = inThread && peerLabel ? String(peerLabel) : 'Chats';
       var backBtn = document.getElementById('internalChatBackBtn');
       if(backBtn){
-        var hideBack = !inThread || !!portalInternalChatOfficeRestricted();
+        var hideBack = !inThread;
         backBtn.hidden = hideBack;
         backBtn.setAttribute('aria-hidden', hideBack ? 'true' : 'false');
       }
@@ -7089,14 +7117,46 @@
         if(portalStaffActsAsWorkerMessenger(box && box.staff_profile)){
           rows = rows.filter(function(r){
             var peer = portalDmPeerIdForThread(me, r);
-            return portalStaffProfileIsOfficePeer(profBy[peer] || {});
+            return portalStaffInboxPeerAllowed(profBy[peer] || {});
+          });
+        }
+        var staffSearchQ = '';
+        var staffHasDirectory = window.portalLeadStaffChatDirectory && typeof window.portalLeadStaffChatDirectory.portalStaffHasPeerDirectory === 'function' && window.portalLeadStaffChatDirectory.portalStaffHasPeerDirectory(box && box.staff_profile);
+        if(staffHasDirectory && window.portalLeadStaffChatDirectory && typeof window.portalLeadStaffChatDirectory.getInboxTab === 'function' && window.portalLeadStaffChatDirectory.getInboxTab() === 'directory'){
+          listHost.innerHTML = '';
+          if(errTop){
+            errTop.textContent = '';
+            errTop.hidden = true;
+          }
+          window.portalLeadStaffChatDirectory.syncInboxChrome({ inThread: false });
+          void window.portalLeadStaffChatDirectory.renderPeerDirectory();
+          return;
+        }
+        if(staffHasDirectory && window.portalLeadStaffChatDirectory && typeof window.portalLeadStaffChatDirectory.getSearchQuery === 'function'){
+          staffSearchQ = window.portalLeadStaffChatDirectory.getSearchQuery();
+        }
+        if(staffSearchQ && window.portalLeadStaffChatDirectory && typeof window.portalLeadStaffChatDirectory.matchesSearchQuery === 'function'){
+          rows = rows.filter(function(r){
+            var peer = portalDmPeerIdForThread(me, r);
+            var label = portalDmPeerDisplayLabel(peer, profBy[peer] || {});
+            return window.portalLeadStaffChatDirectory.matchesSearchQuery(label, staffSearchQ);
           });
         }
         if(!rows.length){
           var staffEmptyMsg = portalInternalChatOfficeRestricted()
-            ? "No messages yet. When the office contacts you, the conversation appears here. You cannot start new chats from this inbox."
-            : "No conversations yet. When someone messages you, it appears here.";
+            ? (staffSearchQ
+              ? 'No chats match your search. Check the suggestions below or open the <strong>Leads</strong> tab.'
+              : 'No messages yet. Admin chats and lead conversations appear here. Open the <strong>Leads</strong> tab to message a session lead.')
+            : 'No conversations yet. When someone messages you, it appears here.';
           listHost.innerHTML = "<p class=\"portal-dm-inbox-empty\">"+staffEmptyMsg+"</p>";
+          if(staffHasDirectory && window.portalLeadStaffChatDirectory){
+            window.portalLeadStaffChatDirectory.syncInboxChrome({ inThread: false });
+            if(window.portalLeadStaffChatDirectory.getInboxTab() === 'directory'){
+              void window.portalLeadStaffChatDirectory.renderPeerDirectory();
+            }else if(staffSearchQ){
+              void window.portalLeadStaffChatDirectory.renderStaffSuggestions(staffSearchQ);
+            }
+          }
           return;
         }
         var rowIds = rows.map(function(r){ return String(r.id || ""); }).filter(Boolean);
@@ -7145,6 +7205,20 @@
         if(typeof window.portalStaffDmSyncUnreadChrome === "function"){
           void window.portalStaffDmSyncUnreadChrome();
         }
+        if(staffHasDirectory && window.portalLeadStaffChatDirectory){
+          window.portalLeadStaffChatDirectory.syncInboxChrome({ inThread: false });
+          if(window.portalLeadStaffChatDirectory.getInboxTab() === 'directory'){
+            void window.portalLeadStaffChatDirectory.renderPeerDirectory();
+          }else if(staffSearchQ){
+            void window.portalLeadStaffChatDirectory.renderStaffSuggestions(staffSearchQ);
+          }else{
+            var sugHost = document.getElementById('internalChatLeadStaffSuggestions');
+            if(sugHost){
+              sugHost.hidden = true;
+              sugHost.innerHTML = '';
+            }
+          }
+        }
         return;
       }
       var offHostThread = document.getElementById("internalChatOfficeComposeHost");
@@ -7189,7 +7263,7 @@
       function portalDmIncomingIsUnread(m){
         if(!m || String(m.author_id || "").toLowerCase() === String(me || "").toLowerCase()) return false;
         var aid = String(m.author_id || "").trim();
-        if(!portalStaffProfileIsOfficePeer(authorBy[aid] || {})) return false;
+        if(!portalStaffDmAuthorCountsAsUnread(authorBy[aid] || {})) return false;
         if(!seenAtOpen) return true;
         try{ return new Date(m.created_at) > new Date(seenAtOpen); }catch(_d){ return true; }
       }
@@ -7309,6 +7383,9 @@
             }
           });
         }
+      }
+      if(window.portalDmAttachments && typeof window.portalDmAttachments.bindWorkerInternalChatAttachments === 'function'){
+        window.portalDmAttachments.bindWorkerInternalChatAttachments();
       }
       portalSyncInternalChatMobileViewport();
     };
@@ -12029,6 +12106,9 @@
           window.__PORTAL_INTERNAL_CHAT_UI.skipResetThreadOnNextSheetOpen = false;
         }catch(_icc){}
         portalBindInternalChatCloseControls();
+        if(window.portalLeadStaffChatDirectory && typeof window.portalLeadStaffChatDirectory.initWorkerPeerInbox === 'function'){
+          window.portalLeadStaffChatDirectory.initWorkerPeerInbox();
+        }
         void (async function(){
           if(typeof window.portalStaffDmAckInboxOpened === 'function'){
             await window.portalStaffDmAckInboxOpened();
