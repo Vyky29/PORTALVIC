@@ -224,19 +224,10 @@
       '<button type="button" class="portal-dm-inbox-nav-btn is-active" id="csCliqTabStaff">Team inbox</button>' +
       '<button type="button" class="portal-dm-inbox-nav-btn" id="csCliqTabCeo">CEO chat</button>' +
       "</div>" +
-      '<div id="csCliqCeoQuickWrap" class="portal-cs-cliq-ceo-quick" hidden style="margin:0;padding:8px 12px 4px;min-width:0">' +
-      '<div class="filter-row" style="flex-wrap:wrap;gap:8px;margin:0">' +
-      '<button type="button" class="btn btn--pri btn--sm" id="csCliqQCeoGroup">CEOs</button>' +
-      '<button type="button" class="btn btn--pri btn--sm" id="csCliqQCeoLiaisonGroup">CEOs &amp; Sevitha</button>' +
-      '<button type="button" class="btn btn--sec btn--sm" id="csCliqQOpsAdmin">Ops admin</button>' +
-      '<span id="csCliqQCeosHost" style="display:contents"></span>' +
-      "</div></div>" +
-      '<div id="csCliqStaffLeadsQuickWrap" class="portal-cs-cliq-staff-leads-quick" hidden style="margin:0;padding:8px 12px 4px;min-width:0">' +
-      '<div class="filter-row" style="flex-wrap:wrap;gap:8px;margin:0">' +
-      '<button type="button" class="btn btn--pri btn--sm" id="csCliqQLeadsChannel">Leads channel</button>' +
-      '<button type="button" class="btn btn--sec btn--sm" id="csCliqQRingAllLeads">Ring all leads</button>' +
-      '<button type="button" class="btn btn--sec btn--sm" id="csCliqQCallSelectedLeads">Call selected leads</button>' +
-      '<button type="button" class="btn btn--pri btn--sm" id="csCliqQStaffLeadsGroup">Staff &amp; leads group</button>' +
+      '<div id="csCliqCeoQuickWrap" class="portal-cs-cliq-ceo-quick" hidden>' +
+      '<div class="portal-cs-cliq-channel-row">' +
+      '<button type="button" class="portal-cs-cliq-channel-btn portal-cs-cliq-channel-btn--primary" id="csCliqQCeoGroup">CEOs</button>' +
+      '<button type="button" class="portal-cs-cliq-channel-btn" id="csCliqQCeoLiaisonGroup">CEOs &amp; Admin</button>' +
       "</div></div>" +
       '<div id="csCliqListPanel">' +
       '<div id="csCliqListWrap" class="portal-dm-inbox-list"></div>' +
@@ -374,6 +365,9 @@
     if (pane === "phone") syncPhonePaneContext();
     if (pane === "calendar" && global.portalCsCliqMeetingsHub && typeof global.portalCsCliqMeetingsHub.refresh === "function") {
       global.portalCsCliqMeetingsHub.refresh();
+    }
+    if (pane === "support" && global.portalCsCliqSupport && typeof global.portalCsCliqSupport.refresh === "function") {
+      global.portalCsCliqSupport.refresh();
     }
     if (pane === "announcements" && global.portalCsCliqAnnouncementsHub && typeof global.portalCsCliqAnnouncementsHub.refresh === "function") {
       global.portalCsCliqAnnouncementsHub.refresh();

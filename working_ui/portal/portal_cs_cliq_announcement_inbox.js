@@ -12,7 +12,7 @@
       return "CEOs — Raúl · Victor · Javier";
     }
     if (slug === "ceo_liaison" || /ceo\s*liaison/i.test(title) || /ceos.*sevitha/i.test(title)) {
-      return "CEOs & Sevitha";
+      return "CEOs & Admin";
     }
     if (slug === "staff_leads_ops" || /operations\s*group/i.test(title)) return "Leads coordination";
     if (slug === "session_leads") return "Session leads";

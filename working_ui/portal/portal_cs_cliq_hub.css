@@ -490,6 +490,20 @@
   gap: 10px;
 }
 
+#csCliqRoot .portal-cs-cliq-support-grid--staff {
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+#csCliqRoot .portal-cs-cliq-support-confirm .portal-dm-btn {
+  margin-top: 12px;
+}
+
+#csCliqRoot .portal-cs-cliq__pane[data-cs-cliq-pane="support"] .portal-cs-cliq__module-body,
+#csCliqRoot .portal-cs-cliq__pane[data-cs-cliq-pane="calendar"] .portal-cs-cliq-meetings-centre {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.72) 0%, rgba(248, 252, 255, 0.92) 100%);
+}
+
 #csCliqRoot .portal-cs-cliq-support-card {
   flex-direction: column;
   align-items: flex-start;
@@ -675,6 +689,20 @@
 
   #csCliqRoot .portal-cs-cliq-inbox {
     grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
+  }
+
+  #csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="list"] .portal-cs-cliq-inbox__conversation-col {
+    display: none !important;
+  }
+
+  #csCliqRoot .portal-cs-cliq-inbox__list-col {
+    background: transparent;
+  }
+
+  #csCliqRoot .portal-cs-cliq-channel-row {
+    flex-direction: row;
   }
 
   #csCliqRoot .portal-cs-cliq-inbox__list-col--hidden-mobile {

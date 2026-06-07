@@ -46,11 +46,24 @@
     } catch (_ev) {}
   }
 
+  function openMeetingRequest() {
+    if (global.portalStaffChatCalls && typeof global.portalStaffChatCalls.openMeetingPanel === "function") {
+      global.portalStaffChatCalls.openMeetingPanel({ contextual: false });
+      return;
+    }
+    submit("meeting_request");
+  }
+
   function bindPane() {
     var pane = document.getElementById("csCliqSupportPane");
     if (!pane || pane.dataset.bound === "1") return;
     pane.dataset.bound = "1";
     pane.addEventListener("click", function (ev) {
+      var meetingBtn = ev.target.closest("[data-cs-cliq-support-action='meeting']");
+      if (meetingBtn) {
+        openMeetingRequest();
+        return;
+      }
       var btn = ev.target.closest("[data-cs-cliq-support-type]");
       if (!btn) return;
       submit(String(btn.getAttribute("data-cs-cliq-support-type") || "other"));
@@ -64,7 +77,7 @@
       safeguarding: "Safeguarding concern",
       staff_issue: "Staff issue",
       meeting_request: "Meeting request",
-      other: "Other",
+      other: "Need help",
     };
     var req = {
       id: "sr-" + Date.now(),
@@ -78,6 +91,15 @@
     all.unshift(req);
     writeRequests(all);
     pushManagementAlert(req);
+    if (global.portalCsCliqSupportRoute && typeof global.portalCsCliqSupportRoute.routeToCeos === "function") {
+      void global.portalCsCliqSupportRoute.routeToCeos(req).then(function (res) {
+        if (!res || !res.ok) {
+          try {
+            console.warn("[cs-cliq-support] route to CEOs", res && res.reason);
+          } catch (_w) {}
+        }
+      });
+    }
     showConfirmation(req);
   }
 
@@ -90,7 +112,7 @@
       "<p>Your <strong>" +
       esc(req.label) +
       "</strong> request was routed to Management. Someone will follow up in your inbox.</p>" +
-      '<button type="button" class="btn btn--pri" id="csCliqSupportDone">Back to options</button>' +
+      '<button type="button" class="portal-dm-btn portal-dm-btn--primary" id="csCliqSupportDone">Back to options</button>' +
       "</div>";
     var done = document.getElementById("csCliqSupportDone");
     if (done) {
@@ -103,31 +125,17 @@
   function renderPane() {
     var host = document.getElementById("csCliqSupportBody");
     if (!host) return;
-    var options = [
-      { id: "urgent_callback", title: "Urgent call back", sub: "Request a call from Management" },
-      { id: "participant_concern", title: "Participant concern", sub: "Raise a participant-related issue" },
-      { id: "safeguarding", title: "Safeguarding concern", sub: "Confidential safeguarding route" },
-      { id: "staff_issue", title: "Staff issue", sub: "Workplace or roster concern" },
-      { id: "meeting_request", title: "Meeting request", sub: "Ask for a meeting with Management or a Lead" },
-      { id: "other", title: "Other", sub: "General support request" },
-    ];
     host.innerHTML =
-      '<p class="portal-cs-cliq-support-lead">Choose a support type. Management receives an alert in their inbox.</p>' +
-      '<div class="portal-cs-cliq-support-grid">' +
-      options
-        .map(function (o) {
-          return (
-            '<button type="button" class="portal-cs-cliq-support-card" data-cs-cliq-support-type="' +
-            esc(o.id) +
-            '"><span class="portal-cs-cliq-support-card__title">' +
-            esc(o.title) +
-            '</span><span class="portal-cs-cliq-support-card__sub">' +
-            esc(o.sub) +
-            "</span></button>"
-          );
-        })
-        .join("") +
-      "</div>";
+      '<p class="portal-cs-cliq-support-lead">Choose how Management should follow up. Your request is routed to the ops inbox.</p>' +
+      '<div class="portal-cs-cliq-support-grid portal-cs-cliq-support-grid--staff">' +
+      '<button type="button" class="portal-cs-cliq-support-card" data-cs-cliq-support-type="other">' +
+      '<span class="portal-cs-cliq-support-card__title">Need help</span>' +
+      '<span class="portal-cs-cliq-support-card__sub">Ask Management or a Lead for support</span>' +
+      "</button>" +
+      '<button type="button" class="portal-cs-cliq-support-card" data-cs-cliq-support-action="meeting">' +
+      '<span class="portal-cs-cliq-support-card__title">Meeting request</span>' +
+      '<span class="portal-cs-cliq-support-card__sub">Request a voice or video meeting</span>' +
+      "</button></div>";
   }
 
   function refresh() {
@@ -155,7 +163,25 @@
     all.unshift(req);
     writeRequests(all);
     pushManagementAlert(req);
+    if (global.portalCsCliqSupportRoute && typeof global.portalCsCliqSupportRoute.routeToCeos === "function") {
+      void global.portalCsCliqSupportRoute.routeToCeos(req);
+    }
     return req;
+  }
+
+  function purgeTestMeetingAlerts() {
+    if (global.portalCsCliqSupportRoute && typeof global.portalCsCliqSupportRoute.purgeLocalTestData === "function") {
+      global.portalCsCliqSupportRoute.purgeLocalTestData();
+    } else {
+      try {
+        global.localStorage.removeItem("portal_cs_cliq_support_requests");
+        global.localStorage.removeItem("portal_cs_cliq_upcoming_meetings");
+      } catch (_e) {}
+    }
+  }
+
+  if (global.portalCsCliqSupportRoute && typeof global.portalCsCliqSupportRoute.purgeLocalTestDataOnce === "function") {
+    global.portalCsCliqSupportRoute.purgeLocalTestDataOnce();
   }
 
   global.portalCsCliqSupport = {
@@ -163,5 +189,6 @@
     readRequests: readRequests,
     submit: submit,
     submitMeetingRequest: submitMeetingRequest,
+    purgeTestMeetingAlerts: purgeTestMeetingAlerts,
   };
 })(typeof window !== "undefined" ? window : globalThis);

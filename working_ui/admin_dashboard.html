@@ -28,19 +28,20 @@
   <script src="/portal/portal_dm_icons.js?v=20260624-dm-icons"></script>
   <script src="/portal/portal_dm_thread_avatar.js?v=20260621-cliq-embed"></script>
   <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260604-cliq-access"></script>
-  <script src="/portal/portal_cs_cliq_support.js?v=20260621-cliq-hub"></script>
+  <script src="/portal/portal_cs_cliq_support_route.js?v=20260607-support-route"></script>
+  <script src="/portal/portal_cs_cliq_support.js?v=20260607-support-route"></script>
   <script src="/portal/portal_cs_cliq_announcements_hub.js?v=20260604-cliq-inbox"></script>
   <script src="/portal/portal_cs_cliq_announcement_inbox.js?v=20260622-announcements"></script>
   <script src="/portal/portal_cs_cliq_thread_header.js?v=20260604-cliq-thread"></script>
   <script src="/portal/portal_cs_cliq_thread_files.js?v=20260604-cliq-files"></script>
   <script src="/portal/portal_dm_roles.js?v=20260604-cliq-unified"></script>
-  <script src="/portal/portal_admin_cs_cliq.js?v=20260604-cliq-mobile"></script>
+  <script src="/portal/portal_admin_cs_cliq.js?v=20260607-cliq-fix"></script>
   <script src="/portal/portal_cs_cliq_workspace.js?v=20260604-cliq-inbox"></script>
   <script src="/portal/portal_cs_cliq_compose_sheet.js?v=20260604-cliq-fix"></script>
   <script src="/portal/portal_cs_cliq_files_hub.js?v=20260604-cliq-files"></script>
   <script src="/portal/portal_cs_cliq_meetings_hub.js?v=20260622-meetings-centre"></script>
   <link rel="stylesheet" href="/portal/portal_cs_cliq_workspace.css?v=20260604-cliq-fix" />
-  <link rel="stylesheet" href="/portal/portal_cs_cliq_hub.css?v=20260604-cliq-mobile" />
+  <link rel="stylesheet" href="/portal/portal_cs_cliq_hub.css?v=20260607-cliq-fix" />
   <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260622-ghost-view" />
   <script src="/portal/admin-portal-ghost-teleport.js?v=20260622-ghost-lead"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
@@ -68,7 +69,7 @@
   <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260605-admin-mobile-landscape" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260605-admin-mobile-nav" />
-  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260604-cliq-mobile" />
+  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260607-cliq-fix" />
 </head>
 <body>
   <script>
@@ -314,7 +315,7 @@
   <!-- Large portal datasets load on demand (portalAdminLoadScriptSet) so Day operations opens without freezing. -->
   <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260602-cap-roster"></script>
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260521-late-perf"></script>
-  <script src="/portal/portal_admin_alerts_bell.js?v=20260605-no-chat-bell"></script>
+  <script src="/portal/portal_admin_alerts_bell.js?v=20260607-support-route"></script>
   <script src="/portal/portal_admin_dayops_badges.js?v=20260605-dayops-badges-per-admin"></script>
   <script src="/portal/portal-admin-web-push.js?v=20260601-desktop-alerts"></script>
 
@@ -20266,6 +20267,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                   window.portalStaffChatCalls.onDmMessageInsert(row);
                 }
                 if(portalAdminDmMessageCountsAsUnread(row)) void portalAdminDmSyncIncomingAttention();
+                if(row && typeof window.portalAdminBellOnStaffDmInsert === 'function'){
+                  void window.portalAdminBellOnStaffDmInsert(row);
+                }
                 if(!window.__PORTAL_ADMIN_DM_OPEN) return;
                 var ui = window.__PORTAL_ADMIN_DM_UI || {};
                 var tid = ui.threadId ? String(ui.threadId) : '';
@@ -24832,6 +24836,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           void portalAdminDmOpenFromHint(hintIdx);
         }else{
           openDayOpsAdminChatHubModal();
+        }
+        return;
+      }
+      if(tab === 'cs_cliq'){
+        setView('cs_cliq');
+        var supportThreadId = String(meta.recordId || '').trim();
+        if(supportThreadId && typeof portalAdminDmOpenThread === 'function'){
+          void portalAdminDmOpenThread(supportThreadId);
         }
         return;
       }

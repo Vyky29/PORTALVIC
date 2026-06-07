@@ -267,8 +267,7 @@
         var wrapQ = portalAdminDmEl('admDmCeoQuickWrap');
         if(wrapQ) wrapQ.hidden = true;
         var wrapSl = portalAdminDmEl('admDmStaffLeadsQuickWrap');
-        if(wrapSl) wrapSl.hidden = false;
-        void portalAdminDmFillStaffLeadsQuickPicks();
+        if(wrapSl) wrapSl.hidden = true;
       });
       bindClick('csCliqTabCeo', function(){
         if(portalAdminDmChannel() === 'ceo_exec') return;
@@ -329,9 +328,12 @@
       var wrapQ = portalAdminDmEl('admDmCeoQuickWrap');
       if(wrapQ) wrapQ.hidden = channel !== 'ceo_exec';
       var wrapSl = portalAdminDmEl('admDmStaffLeadsQuickWrap');
-      if(wrapSl) wrapSl.hidden = channel !== 'staff_lead';
+      if(wrapSl) wrapSl.hidden = true;
       if(channel === 'ceo_exec') void portalAdminDmFillCeoQuickPicks();
-      if(channel === 'staff_lead') void portalAdminDmFillStaffLeadsQuickPicks();
+      else {
+        var wrapQHide = portalAdminDmEl('admDmCeoQuickWrap');
+        if(wrapQHide) wrapQHide.hidden = true;
+      }
       if(typeof window.portalInitFloatingInternalChat === 'function') window.portalInitFloatingInternalChat();
       window.__PORTAL_DM_REFRESH_THREAD = function(){ return portalAdminDmLoadMessages(); };
       if(window.portalStaffChatCalls && typeof window.portalStaffChatCalls.bindCallBar === 'function'){
@@ -983,6 +985,9 @@
                   window.portalStaffChatCalls.onDmMessageInsert(row);
                 }
                 if(portalAdminDmMessageCountsAsUnread(row)) void portalAdminDmSyncIncomingAttention();
+                if(row && typeof window.portalAdminBellOnStaffDmInsert === 'function'){
+                  void window.portalAdminBellOnStaffDmInsert(row);
+                }
                 if(!window.__PORTAL_ADMIN_DM_OPEN) return;
                 var ui = window.__PORTAL_ADMIN_DM_UI || {};
                 var tid = ui.threadId ? String(ui.threadId) : '';
@@ -1232,27 +1237,13 @@
     async function portalAdminDmFillCeoQuickPicks(){
       if(portalAdminDmChannel() !== 'ceo_exec') return;
       var wrap = portalAdminDmEl('admDmCeoQuickWrap');
-      var host = portalAdminDmEl('admDmQCeosHost');
-      var opsBtn = portalAdminDmEl('admDmQOpsAdmin');
       var ceoGrpBtn = portalAdminDmEl('admDmQCeoGroup');
       var ceoLiaisonBtn = portalAdminDmEl('admDmQCeoLiaisonGroup');
-      if(host) host.innerHTML = '';
       var client = getSchedSupabaseClient();
-      if(!client || !host) return;
+      if(!client) return;
       var gidTrio = await portalAdminDmResolveInternalCeoGroupId(client);
       var gidLiaison = await portalAdminDmResolveLiaisonCeoGroupId(client);
-      if(opsBtn){
-        opsBtn.onclick = function(){
-          void (async function(){
-            var oid = await portalAdminDmResolveFirstOpsAdminId(client);
-            if(!oid){
-              try{ alert('No operations admin profile found.'); }catch(_a){}
-              return;
-            }
-            await portalAdminDmEnsureDmThreadAndOpen(oid);
-          })();
-        };
-      }
+      var visible = 0;
       if(ceoGrpBtn){
         if(!gidTrio || !portalAdminDmViewerSeesInternalCeoRingGroup()){
           ceoGrpBtn.hidden = true;
@@ -1263,6 +1254,7 @@
           ceoGrpBtn.onclick = function(){
             void (async function(){ await portalAdminDmOpenGroupThread(gidTrio); })();
           };
+          visible++;
         }
       }
       if(ceoLiaisonBtn){
@@ -1271,64 +1263,18 @@
           ceoLiaisonBtn.onclick = null;
         }else{
           ceoLiaisonBtn.hidden = false;
-          ceoLiaisonBtn.textContent = 'CEOs & Sevitha';
+          ceoLiaisonBtn.textContent = 'CEOs & Admin';
           ceoLiaisonBtn.onclick = function(){
             void (async function(){ await portalAdminDmOpenGroupThread(gidLiaison); })();
           };
+          visible++;
         }
       }
-      var me = portalAdminDmMe();
-      var lr = await client.from('staff_profiles').select('id,full_name,username').eq('app_role', 'ceo').or('is_active.is.null,is_active.eq.true').order('full_name', { ascending: true });
-      if(lr.error || !Array.isArray(lr.data)) return;
-      lr.data.forEach(function(row){
-        if(!row || !row.id) return;
-        var id0 = String(row.id);
-        if(me && id0 === me) return;
-        var lab = ((row.full_name || row.username || '').trim() || id0.slice(0, 8)).split(/\s+/)[0] || 'CEO';
-        var btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'btn btn--sec btn--sm';
-        btn.textContent = lab;
-        btn.addEventListener('click', function(){
-          void portalAdminDmEnsureDmThreadAndOpen(id0);
-        });
-        host.appendChild(btn);
-      });
-      if(wrap) wrap.hidden = false;
+      if(wrap) wrap.hidden = visible === 0;
     }
     async function portalAdminDmFillStaffLeadsQuickPicks(){
-      if(portalAdminDmChannel() !== 'staff_lead') return;
       var wrap = portalAdminDmEl('admDmStaffLeadsQuickWrap');
-      var channelBtn = portalAdminDmEl('admDmQLeadsChannel');
-      var ringBtn = portalAdminDmEl('admDmQRingAllLeads');
-      var pickBtn = portalAdminDmEl('admDmQCallSelectedLeads');
-      var client = getSchedSupabaseClient();
-      if(!client) return;
-      var gid = await portalAdminDmResolveSessionLeadsGroupId(client);
-      function wire(btn, fn){
-        if(!btn) return;
-        if(!gid){
-          btn.hidden = true;
-          btn.onclick = null;
-          return;
-        }
-        btn.hidden = false;
-        btn.onclick = fn;
-      }
-      wire(channelBtn, function(){
-        if(window.portalStaffChatCalls && typeof window.portalStaffChatCalls.openLeadsChannelPicker === 'function'){
-          void window.portalStaffChatCalls.openLeadsChannelPicker();
-        }
-      });
-      wire(ringBtn, function(){
-        void portalAdminDmRingAllLeads(gid);
-      });
-      wire(pickBtn, function(){
-        if(window.portalStaffChatCalls && typeof window.portalStaffChatCalls.openLeadsCallPicker === 'function'){
-          void window.portalStaffChatCalls.openLeadsCallPicker();
-        }
-      });
-      if(wrap) wrap.hidden = !gid;
+      if(wrap) wrap.hidden = true;
     }
     function portalAdminDmReadStoreKey(){
       var box = window.__PORTAL_SUPABASE__;
@@ -1544,7 +1490,7 @@
       slug = String(slug || '').toLowerCase();
       title = String(title || '').trim();
       if(slug === 'all_ceos' || /all\s*ceos/i.test(title) || /ceos.*raul.*victor.*javier/i.test(title)) return 'CEOs — Raúl · Victor · Javier';
-      if(slug === 'ceo_liaison' || /ceo\s*liaison/i.test(title) || /ceos.*sevitha/i.test(title)) return 'CEOs & Sevitha';
+      if(slug === 'ceo_liaison' || /ceo\s*liaison/i.test(title) || /ceos.*sevitha/i.test(title) || /ceos.*admin/i.test(title)) return 'CEOs & Admin';
       if(slug === 'staff_leads_ops' || /operations\s*group/i.test(title)) return 'Leads coordination';
       return title || 'Group';
     }
