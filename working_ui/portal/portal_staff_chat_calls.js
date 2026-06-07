@@ -958,13 +958,24 @@
       return;
     }
     var me = authUserId();
-    var res = await ctx.client
-      .from("staff_profiles")
-      .select("id,full_name,username,app_role,is_active")
-      .in("app_role", ["staff", "lead"])
-      .or("is_active.is.null,is_active.eq.true")
-      .order("full_name", { ascending: true })
-      .limit(200);
+    var ui = global.window && global.window.__PORTAL_ADMIN_DM_UI;
+    var leadsOnly =
+      ui && String(ui.groupSlug || "").trim() === "session_leads";
+    var res = leadsOnly
+      ? await ctx.client
+          .from("staff_profiles")
+          .select("id,full_name,username,app_role,is_active")
+          .eq("app_role", "lead")
+          .or("is_active.is.null,is_active.eq.true")
+          .order("full_name", { ascending: true })
+          .limit(200)
+      : await ctx.client
+          .from("staff_profiles")
+          .select("id,full_name,username,app_role,is_active")
+          .in("app_role", ["staff", "lead"])
+          .or("is_active.is.null,is_active.eq.true")
+          .order("full_name", { ascending: true })
+          .limit(200);
     if (res.error || !Array.isArray(res.data)) {
       host.textContent = "Could not load directory.";
       return;
@@ -1248,7 +1259,14 @@
       } else {
         var ins = await ctx.client
           .from("portal_staff_dm_messages")
-          .insert([{ thread_id: threadId, body: body, message_type: "text" }]);
+          .insert([
+            {
+              thread_id: threadId,
+              author_id: me,
+              body: body,
+              message_type: "text",
+            },
+          ]);
         if (ins.error) throw ins.error;
       }
       await refreshThreadAfterCall();
@@ -1880,6 +1898,230 @@
     if (panel && !inThread) panel.hidden = true;
   }
 
+  function ensureLeadsCallPickerModal() {
+    var existing = document.getElementById("portalLeadsCallPickerModal");
+    if (existing) return existing;
+    var modal = document.createElement("div");
+    modal.id = "portalLeadsCallPickerModal";
+    modal.className = "portal-leads-call-picker";
+    modal.hidden = true;
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-modal", "true");
+    modal.setAttribute("aria-labelledby", "portalLeadsCallPickerTitle");
+    modal.innerHTML =
+      '<div class="portal-leads-call-picker__backdrop" data-portal-leads-call-close="1"></div>' +
+      '<div class="portal-leads-call-picker__card">' +
+      '<div class="portal-leads-call-picker__head">' +
+      '<h3 id="portalLeadsCallPickerTitle">Call selected leads</h3>' +
+      '<button type="button" class="portal-leads-call-picker__close" data-portal-leads-call-close="1" aria-label="Close">?</button>' +
+      "</div>" +
+      '<p class="portal-leads-call-picker__sub">Choose who gets a join invite. Only selected leads are rung ? not the whole channel.</p>' +
+      '<div class="portal-leads-call-picker__tools">' +
+      '<button type="button" class="btn btn--ghost btn--sm" id="portalLeadsCallPickerAll">Select all</button>' +
+      '<button type="button" class="btn btn--ghost btn--sm" id="portalLeadsCallPickerNone">Clear</button>' +
+      "</div>" +
+      '<div id="portalLeadsCallPickerList" class="portal-leads-call-picker__list"></div>' +
+      '<p id="portalLeadsCallPickerErr" class="portal-leads-call-picker__err" hidden></p>' +
+      '<div class="portal-leads-call-picker__actions">' +
+      '<button type="button" class="btn btn--sec" data-portal-leads-call-close="1">Cancel</button>' +
+      '<button type="button" class="btn btn--sec" id="portalLeadsCallPickerVoice">Voice call</button>' +
+      '<button type="button" class="btn btn--pri" id="portalLeadsCallPickerVideo">Video call</button>' +
+      "</div></div>";
+    document.body.appendChild(modal);
+    if (!document.getElementById("portalLeadsCallPickerStyles")) {
+      var st = document.createElement("style");
+      st.id = "portalLeadsCallPickerStyles";
+      st.textContent =
+        ".portal-leads-call-picker{position:fixed;inset:0;z-index:12050;display:grid;place-items:center;padding:16px}" +
+        ".portal-leads-call-picker[hidden]{display:none!important}" +
+        ".portal-leads-call-picker__backdrop{position:absolute;inset:0;background:rgba(15,23,42,.45)}" +
+        ".portal-leads-call-picker__card{position:relative;z-index:1;width:min(100%,420px);max-height:min(88vh,640px);overflow:auto;background:#fff;border-radius:16px;padding:16px;box-shadow:0 24px 60px rgba(15,23,42,.22);min-width:0}" +
+        ".portal-leads-call-picker__head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;min-width:0}" +
+        ".portal-leads-call-picker__head h3{margin:0;font-size:17px;min-width:0;overflow-wrap:break-word}" +
+        ".portal-leads-call-picker__close{border:0;background:transparent;font-size:24px;line-height:1;cursor:pointer;color:#667781;padding:0 4px}" +
+        ".portal-leads-call-picker__sub{margin:8px 0 12px;font-size:13px;line-height:1.45;color:#667781;overflow-wrap:break-word}" +
+        ".portal-leads-call-picker__tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}" +
+        ".portal-leads-call-picker__list{display:flex;flex-direction:column;gap:6px;max-height:min(42vh,320px);overflow:auto;min-width:0}" +
+        ".portal-leads-call-picker__row{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid rgba(23,50,71,.08);border-radius:10px;min-width:0}" +
+        ".portal-leads-call-picker__row label{flex:1;min-width:0;font-size:14px;line-height:1.35;overflow-wrap:break-word;cursor:pointer}" +
+        ".portal-leads-call-picker__err{margin:10px 0 0;font-size:13px;color:#b42318;overflow-wrap:break-word}" +
+        ".portal-leads-call-picker__actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;margin-top:14px}";
+      document.head.appendChild(st);
+    }
+    modal.addEventListener("click", function (ev) {
+      if (ev.target && ev.target.getAttribute("data-portal-leads-call-close") === "1") {
+        modal.hidden = true;
+      }
+    });
+    return modal;
+  }
+
+  async function loadActiveLeadsForPicker() {
+    var ctx = getContext();
+    if (!ctx.client) throw new Error("Not signed in.");
+    var res = await ctx.client
+      .from("staff_profiles")
+      .select("id,full_name,username,app_role,is_active")
+      .eq("app_role", "lead")
+      .or("is_active.is.null,is_active.eq.true")
+      .order("full_name", { ascending: true })
+      .limit(200);
+    if (res.error || !Array.isArray(res.data)) throw new Error("Could not load leads.");
+    return res.data.filter(function (row) {
+      return row && row.id;
+    });
+  }
+
+  async function startSelectedLeadsCall(leadIds, kind) {
+    kind = String(kind || "video").trim();
+    leadIds = (leadIds || []).map(function (id) {
+      return String(id || "").trim();
+    }).filter(Boolean);
+    if (!leadIds.length) throw new Error("Select at least one lead.");
+    var ctx = getContext();
+    var me = authUserId();
+    if (!ctx.client || !me) throw new Error("Not signed in.");
+    var caller = await resolveCallerIdentity(ctx.client);
+    var room = buildRoomName("leads-pick-" + me.slice(0, 8), kind, { group: false });
+    var payload = buildCallPayload({
+      kind: kind,
+      room: room,
+      title: "Leads call",
+      scheduledAt: null,
+      callerId: caller.id,
+      callerName: caller.name,
+    });
+    await openInAppCall({
+      room: payload.room,
+      kind: payload.kind,
+      title: "Leads call",
+      asModerator: true,
+    });
+    var session = callState.activeSession;
+    if (!session) throw new Error("Could not start call.");
+    for (var i = 0; i < leadIds.length; i++) {
+      try {
+        await inviteWorkerToActiveCall(leadIds[i], session);
+      } catch (_one) {}
+    }
+    await refreshThreadAfterCall();
+  }
+
+  async function openLeadsCallPicker() {
+    var modal = ensureLeadsCallPickerModal();
+    var list = document.getElementById("portalLeadsCallPickerList");
+    var errEl = document.getElementById("portalLeadsCallPickerErr");
+    if (errEl) {
+      errEl.hidden = true;
+      errEl.textContent = "";
+    }
+    if (list) {
+      list.innerHTML =
+        '<p class="muted" style="margin:0;font-size:13px;min-width:0">Loading leads?</p>';
+    }
+    modal.hidden = false;
+    try {
+      var rows = await loadActiveLeadsForPicker();
+      if (!list) return;
+      list.innerHTML = "";
+      if (!rows.length) {
+        list.innerHTML =
+          '<p class="muted" style="margin:0;font-size:13px;min-width:0">No active leads found.</p>';
+        return;
+      }
+      rows.forEach(function (row) {
+        var id = String(row.id);
+        var label = String(row.full_name || row.username || id.slice(0, 8)).trim();
+        var rowEl = document.createElement("div");
+        rowEl.className = "portal-leads-call-picker__row";
+        rowEl.innerHTML =
+          '<input type="checkbox" id="portalLeadsPick_' +
+          id.replace(/[^a-zA-Z0-9_-]/g, "") +
+          '" value="' +
+          id +
+          '" />' +
+          '<label for="portalLeadsPick_' +
+          id.replace(/[^a-zA-Z0-9_-]/g, "") +
+          '">' +
+          label +
+          "</label>";
+        list.appendChild(rowEl);
+      });
+    } catch (e) {
+      if (list) {
+        list.innerHTML =
+          '<p class="muted" style="margin:0;font-size:13px;color:#b42318;min-width:0;overflow-wrap:break-word">' +
+          String((e && e.message) || e || "Could not load leads.") +
+          "</p>";
+      }
+    }
+    function selectedLeadIds() {
+      if (!list) return [];
+      return Array.prototype.slice
+        .call(list.querySelectorAll('input[type="checkbox"]:checked'))
+        .map(function (inp) {
+          return String(inp.value || "").trim();
+        })
+        .filter(Boolean);
+    }
+    function wirePickerBtn(id, kind) {
+      var btn = document.getElementById(id);
+      if (!btn || btn.dataset.portalLeadsPickerBound === "1") return;
+      btn.dataset.portalLeadsPickerBound = "1";
+      btn.addEventListener("click", function () {
+        void (async function () {
+          if (errEl) {
+            errEl.hidden = true;
+            errEl.textContent = "";
+          }
+          var ids = selectedLeadIds();
+          if (!ids.length) {
+            if (errEl) {
+              errEl.textContent = "Select at least one lead.";
+              errEl.hidden = false;
+            }
+            return;
+          }
+          btn.disabled = true;
+          try {
+            modal.hidden = true;
+            await startSelectedLeadsCall(ids, kind);
+          } catch (e2) {
+            modal.hidden = false;
+            if (errEl) {
+              errEl.textContent = String((e2 && e2.message) || e2 || "Could not start call.");
+              errEl.hidden = false;
+            }
+          } finally {
+            btn.disabled = false;
+          }
+        })();
+      });
+    }
+    wirePickerBtn("portalLeadsCallPickerVoice", "audio");
+    wirePickerBtn("portalLeadsCallPickerVideo", "video");
+    var allBtn = document.getElementById("portalLeadsCallPickerAll");
+    if (allBtn && allBtn.dataset.portalLeadsPickerBound !== "1") {
+      allBtn.dataset.portalLeadsPickerBound = "1";
+      allBtn.addEventListener("click", function () {
+        if (!list) return;
+        list.querySelectorAll('input[type="checkbox"]').forEach(function (inp) {
+          inp.checked = true;
+        });
+      });
+    }
+    var noneBtn = document.getElementById("portalLeadsCallPickerNone");
+    if (noneBtn && noneBtn.dataset.portalLeadsPickerBound !== "1") {
+      noneBtn.dataset.portalLeadsPickerBound = "1";
+      noneBtn.addEventListener("click", function () {
+        if (!list) return;
+        list.querySelectorAll('input[type="checkbox"]').forEach(function (inp) {
+          inp.checked = false;
+        });
+      });
+    }
+  }
+
   global.portalStaffChatCalls = {
     CALL_TAG: CALL_TAG,
     CALL_END_TAG: CALL_END_TAG,
@@ -1905,6 +2147,8 @@
     },
     stopIncomingCallAlert: hideIncomingCallOverlay,
     primeCallRingAudio: primeCallRingAudio,
+    openLeadsCallPicker: openLeadsCallPicker,
+    startSelectedLeadsCall: startSelectedLeadsCall,
   };
 
   if (typeof document !== "undefined") {
