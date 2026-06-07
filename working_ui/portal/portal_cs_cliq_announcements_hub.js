@@ -256,59 +256,74 @@
     );
   }
 
+  function navIcon(id) {
+    if (global.portalCsCliqWorkspace && typeof global.portalCsCliqWorkspace.iconHtml === "function") {
+      return global.portalCsCliqWorkspace.iconHtml(id);
+    }
+    if (global.portalCsCliqWorkspace && typeof global.portalCsCliqWorkspace.defaultNavIconHtml === "function") {
+      return global.portalCsCliqWorkspace.defaultNavIconHtml(id);
+    }
+    return "";
+  }
+
+  function runChannel(name) {
+    if (global.portalCsCliqWorkspace && typeof global.portalCsCliqWorkspace.runChannelAction === "function") {
+      global.portalCsCliqWorkspace.runChannelAction(name);
+      return;
+    }
+    var acts =
+      global.portalCsCliqWorkspace && typeof global.portalCsCliqWorkspace.channelActions === "function"
+        ? global.portalCsCliqWorkspace.channelActions()
+        : {};
+    if (acts && typeof acts[name] === "function") acts[name]();
+  }
+
+  function dayOpsCardHtml(id, eyebrow, desc, tone, action) {
+    return (
+      '<button type="button" class="card card-pad dash-link-card card--premium dayops-screen-nav__card portal-cs-cliq__link-card" data-cs-cliq-ann-hub="' +
+      esc(action) +
+      '" data-dayops-tone="' +
+      esc(tone) +
+      '" style="flex:1;min-width:0">' +
+      '<div class="dash-link-row dayops-screen-nav__stack" style="min-width:0">' +
+      '<span class="dayops-screen-nav__ico-wrap" aria-hidden="true">' +
+      navIcon(id) +
+      "</span>" +
+      '<div class="dash-link-meta dayops-screen-nav__meta" style="min-width:0">' +
+      '<span class="dayops-screen-nav__label">' +
+      esc(eyebrow) +
+      "</span>" +
+      '<span class="dayops-screen-nav__desc">' +
+      esc(desc) +
+      "</span></div></div></button>"
+    );
+  }
+
   async function render() {
     var host = document.getElementById("csCliqAnnouncementsCentre");
     if (!host) return;
     if (!canManage()) {
       host.innerHTML =
-        '<header class="portal-cs-cliq-meetings-header"><h2>Announcements</h2>' +
-        "<p>Management users can create organisation-wide updates here.</p></header>";
+        '<header class="portal-cs-cliq__channels-head"><h2>Announcements &amp; reminders</h2>' +
+        '<p class="portal-cs-cliq-announcements-dayops__intro muted">Management users can create organisation-wide updates here.</p></header>';
       return;
     }
     host.innerHTML =
-      '<header class="portal-cs-cliq-meetings-header"><h2>Announcements</h2>' +
-      "<p>Create and manage organisation-wide updates and reminders.</p></header>" +
-      '<section class="portal-cs-cliq-meetings-card portal-cs-cliq-meetings-card--primary">' +
-      "<h3>Create announcement</h3>" +
-      '<p class="portal-cs-cliq-meetings-card__desc">Publish an update to staff and leads. Recipients see it in their Inbox.</p>' +
-      '<button type="button" class="portal-cs-cliq-meetings-btn portal-cs-cliq-meetings-btn--pri" data-cs-cliq-ann-hub="create">Create announcement</button>' +
-      "</section>" +
-      '<section class="portal-cs-cliq-meetings-card"><h3 class="portal-cs-cliq-meetings-card__title">Recent announcements</h3><div id="csCliqAnnRecent" class="portal-cs-cliq-announcements-list"><p class="portal-cs-cliq-meetings-empty">Loading�</p></div></section>' +
-      '<section class="portal-cs-cliq-meetings-card"><h3 class="portal-cs-cliq-meetings-card__title">Signed announcements</h3><div id="csCliqAnnSigned" class="portal-cs-cliq-announcements-list"><p class="portal-cs-cliq-meetings-empty">Loading�</p></div></section>' +
-      '<section class="portal-cs-cliq-meetings-card"><h3 class="portal-cs-cliq-meetings-card__title">Unread announcements</h3><div id="csCliqAnnUnread" class="portal-cs-cliq-announcements-list"><p class="portal-cs-cliq-meetings-empty">Loading�</p></div></section>';
-
-    var rows = await fetchAnnouncements();
-    var ackMap = await fetchAckIds();
-    var recentHost = document.getElementById("csCliqAnnRecent");
-    var signedHost = document.getElementById("csCliqAnnSigned");
-    var unreadHost = document.getElementById("csCliqAnnUnread");
-    if (recentHost) {
-      recentHost.innerHTML = rows.length
-        ? rows.slice(0, 8).map(function (r) {
-            return renderCard(r);
-          }).join("")
-        : '<p class="portal-cs-cliq-meetings-empty">No announcements yet.</p>';
-    }
-    var signed = rows.filter(function (r) {
-      return !!ackMap[String(r.id || "")];
-    });
-    if (signedHost) {
-      signedHost.innerHTML = signed.length
-        ? signed.slice(0, 8).map(function (r) {
-            return renderCard(r, "Signed");
-          }).join("")
-        : '<p class="portal-cs-cliq-meetings-empty">No signed announcements yet.</p>';
-    }
-    var unread = rows.filter(function (r) {
-      return !ackMap[String(r.id || "")] && !r.ends_at;
-    });
-    if (unreadHost) {
-      unreadHost.innerHTML = unread.length
-        ? unread.slice(0, 8).map(function (r) {
-            return renderCard(r, "Unread");
-          }).join("")
-        : '<p class="portal-cs-cliq-meetings-empty">No unread announcements.</p>';
-    }
+      '<div class="portal-cs-cliq-announcements-dayops">' +
+      '<header class="portal-cs-cliq__channels-head">' +
+      "<h2>Announcements &amp; reminders</h2>" +
+      '<p class="portal-cs-cliq-announcements-dayops__intro muted">Send a site-wide <strong>announcement</strong> or a targeted <strong>reminder</strong> (training, timesheet, notes).</p>' +
+      "</header>" +
+      '<div class="portal-cs-cliq__channels-body">' +
+      '<div class="portal-cs-cliq__channels-grid">' +
+      dayOpsCardHtml("announcements", "Announcement", "Site-wide", "announcements", "announce") +
+      dayOpsCardHtml("reminders", "Reminder", "Targeted", "reminders", "reminder") +
+      "</div>" +
+      '<div class="portal-cs-cliq__channels-actions">' +
+      '<button type="button" class="btn btn--sec" data-cs-cliq-ann-hub="signed">Signed announcements log</button>' +
+      '<button type="button" class="btn btn--sec" data-cs-cliq-ann-hub="reminder-ack">Acknowledged reminders log</button>' +
+      '<button type="button" class="btn btn--ghost" data-cs-cliq-ann-hub="manage">Manage sent messages</button>' +
+      "</div></div></div>";
   }
 
   function bindHost(host) {
@@ -317,7 +332,13 @@
     host.addEventListener("click", function (ev) {
       var btn = ev.target.closest("[data-cs-cliq-ann-hub]");
       if (!btn) return;
-      if (btn.getAttribute("data-cs-cliq-ann-hub") === "create") openModal();
+      var act = btn.getAttribute("data-cs-cliq-ann-hub");
+      if (act === "announce") runChannel("composeAnnouncement");
+      else if (act === "reminder") runChannel("composeReminder");
+      else if (act === "signed") runChannel("signedLog");
+      else if (act === "reminder-ack") runChannel("reminderAck");
+      else if (act === "manage") runChannel("manage");
+      else if (act === "create") openModal();
     });
   }
 

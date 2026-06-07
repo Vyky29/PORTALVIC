@@ -254,6 +254,31 @@
   overflow: hidden;
 }
 
+#csCliqRoot .portal-cs-cliq-inbox.portal-cs-cliq__chat-body {
+  display: grid;
+  grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+  gap: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+#csCliqRoot .portal-cs-cliq-inbox__list-col {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--portal-chat-line, #e2e8f0);
+  background: #fff;
+}
+
+#csCliqRoot .portal-cs-cliq-inbox__conversation-col {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  background: #f8fbfd;
+}
+
 #csCliqRoot #csCliqListPanel[hidden],
 #csCliqRoot #csCliqThreadPanel[hidden],
 #csCliqRoot #csCliqComposePanel[hidden],

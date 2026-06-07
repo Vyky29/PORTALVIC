@@ -94,13 +94,13 @@
   <script src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Lead Dashboard</title>
   <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260607-admin-chat-colors" />
-  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260607-admin-chat-colors" />
+  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260604-cliq-inbox" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260610-topbar-colors" />
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260624-staff-lead-dm" />
   <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260604-cliq-files" />
   <link rel="stylesheet" href="/portal/portal_cs_cliq_embed.css?v=20260604-cliq-brand" />
   <link rel="stylesheet" href="/portal/portal_cs_cliq_workspace.css?v=20260621-cliq-workspace" />
-  <link rel="stylesheet" href="/portal/portal_cs_cliq_hub.css?v=20260604-cliq-files" />
+  <link rel="stylesheet" href="/portal/portal_cs_cliq_hub.css?v=20260604-cliq-inbox" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
   <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260607-area-icons-transparent" />
@@ -874,28 +874,47 @@
         <div id="internalChatStaffDirectoryList" class="portal-dm-staff-directory-list" role="list"></div>
       </div>
       <div id="internalChatOfficeComposeHost" class="portal-dm-office-compose-host" hidden></div>
-      <div id="internalChatThreadWrap" class="portal-dm-wrap portal-dm-thread-view" hidden aria-hidden="true">
+      <div id="internalChatThreadWrap" class="portal-dm-wrap portal-dm-thread-view portal-cs-cliq-thread" hidden aria-hidden="true">
         <p id="internalChatPeerLabel" class="portal-dm-peer-label" hidden aria-hidden="true"></p>
-        <div id="internalChatCallBar" class="portal-dm-call-bar" hidden aria-hidden="true">
-          <button type="button" class="portal-dm-call-bar-btn" id="internalChatVoiceCallBtn" title="Start a voice call">
-            <span class="portal-dm-call-bar-icon" data-dm-icon="phone" aria-hidden="true"></span>
-            <span>Voice</span>
-          </button>
-          <button type="button" class="portal-dm-call-bar-btn" id="internalChatVideoCallBtn" title="Start a video call">
-            <span class="portal-dm-call-bar-icon" data-dm-icon="video" aria-hidden="true"></span>
-            <span>Video</span>
-          </button>
-          <button type="button" class="portal-dm-call-bar-btn" id="internalChatMeetingBtn" title="Schedule a meeting">
-            <span class="portal-dm-call-bar-icon" data-dm-icon="calendar" aria-hidden="true"></span>
-            <span>Meeting</span>
-          </button>
-        </div>
-        <div id="internalChatMessages" class="portal-dm-msgs-col portal-dm-msgs-scroll"></div>
-        <div class="portal-dm-compose-bar">
-          <label class="topbar-sr-only" for="internalChatInput">Your message</label>
-          <textarea id="internalChatInput" class="txa" placeholder="Write a message…" maxlength="8000"></textarea>
-          <p id="internalChatErr" class="muted" style="margin:0;font-size:13px;color:var(--danger);min-height:1.2em"></p>
-          <button type="button" class="portal-dm-btn portal-dm-btn--primary" id="internalChatSendBtn">Send</button>
+        <header class="portal-cs-cliq-thread-header" id="internalChatThreadHeader" hidden>
+          <button type="button" class="portal-cs-cliq__back-btn" id="internalChatThreadBackBtn" aria-label="Back to inbox">‹</button>
+          <div class="portal-cs-cliq-thread-header__identity">
+            <span class="portal-cs-cliq-thread-header__avatar" id="internalChatThreadAvatar" aria-hidden="true"></span>
+            <div class="portal-cs-cliq-thread-header__meta">
+              <span class="portal-cs-cliq-thread-header__name" id="internalChatThreadName">Conversation</span>
+              <span class="portal-cs-cliq-thread-header__role" id="internalChatThreadRole">Staff</span>
+              <span class="portal-cs-cliq-thread-header__status" id="internalChatThreadStatus">Available</span>
+            </div>
+          </div>
+          <div id="internalChatCallBar" class="portal-dm-call-bar portal-cs-cliq__head-call-bar" hidden aria-hidden="true">
+            <button type="button" class="portal-dm-call-bar-btn" id="internalChatVoiceCallBtn" title="Start a voice call">
+              <span class="portal-dm-call-bar-icon" data-dm-icon="phone" aria-hidden="true"></span>
+              <span class="portal-dm-call-bar-label">Voice</span>
+            </button>
+            <button type="button" class="portal-dm-call-bar-btn" id="internalChatVideoCallBtn" title="Start a video call">
+              <span class="portal-dm-call-bar-icon" data-dm-icon="video" aria-hidden="true"></span>
+              <span class="portal-dm-call-bar-label">Video</span>
+            </button>
+            <button type="button" class="portal-dm-call-bar-btn" id="internalChatMeetingBtn" title="Schedule a meeting">
+              <span class="portal-dm-call-bar-icon" data-dm-icon="calendar" aria-hidden="true"></span>
+              <span class="portal-dm-call-bar-label">Meeting</span>
+            </button>
+          </div>
+          <button type="button" class="portal-cs-cliq-thread-header__files" id="internalChatThreadFilesBtn">Files</button>
+          <button type="button" class="portal-cs-cliq-thread-header__more" id="internalChatThreadMoreBtn" aria-label="More options">⋯</button>
+        </header>
+        <div id="internalChatThreadFilesPanel" class="portal-cs-cliq-thread-files-panel" hidden></div>
+        <div id="internalChatMessages" class="portal-dm-msgs-col portal-dm-msgs-scroll portal-cs-cliq-messages"></div>
+        <div class="portal-cs-cliq-composer portal-dm-compose-bar">
+          <div class="portal-cs-cliq-composer__shell">
+            <div class="portal-cs-cliq-composer__leading" id="internalChatComposerLeading" aria-label="Message tools"></div>
+            <label class="topbar-sr-only" for="internalChatInput">Your message</label>
+            <textarea id="internalChatInput" class="portal-cs-cliq-composer__input txa" placeholder="Message…" maxlength="8000" rows="1"></textarea>
+            <button type="button" class="portal-cs-cliq-composer__send portal-dm-btn portal-dm-btn--primary" id="internalChatSendBtn" aria-label="Send message">
+              <span class="portal-cs-cliq-composer__send-ico" data-dm-icon="send" aria-hidden="true"></span>
+            </button>
+          </div>
+          <p id="internalChatErr" class="portal-cs-cliq-composer__err muted"></p>
         </div>
       </div>
     </div>
@@ -1037,10 +1056,10 @@
   <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260622-announcements"></script>
   <script src="/portal/portal_cs_cliq_support.js?v=20260621-cliq-hub"></script>
   <script src="/portal/portal_cs_cliq_announcement_inbox.js?v=20260622-announcements"></script>
-  <script src="/portal/portal_cs_cliq_thread_header.js?v=20260604-cliq-files"></script>
+  <script src="/portal/portal_cs_cliq_thread_header.js?v=20260604-cliq-inbox"></script>
   <script src="/portal/portal_cs_cliq_thread_files.js?v=20260604-cliq-files"></script>
   <script src="/portal/portal_admin_cs_cliq.js?v=20260604-cliq-files"></script>
-  <script src="/portal/portal_cs_cliq_workspace.js?v=20260622-announcements"></script>
+  <script src="/portal/portal_cs_cliq_workspace.js?v=20260604-cliq-inbox"></script>
   <script src="/portal/portal_cs_cliq_compose_sheet.js?v=20260621-cliq-workspace"></script>
   <script src="/portal/portal_cs_cliq_files_hub.js?v=20260604-cliq-files"></script>
   <script src="/portal/portal_cs_cliq_meetings_hub.js?v=20260622-meetings-centre"></script>
@@ -5897,20 +5916,29 @@
           portalCloseInternalChatReturnToAlertsMenu();
         });
       }
+      function portalInternalChatBackToInbox(){
+        if(portalInternalChatOfficeRestricted()){
+          portalCloseInternalChatReturnToAlertsMenu();
+          return;
+        }
+        window.__PORTAL_INTERNAL_CHAT_UI = window.__PORTAL_INTERNAL_CHAT_UI || {};
+        window.__PORTAL_INTERNAL_CHAT_UI.threadId = null;
+        var inpBack = document.getElementById('internalChatInput');
+        if(inpBack) inpBack.value = '';
+        void window.portalRenderInternalChatSheet();
+      }
       var backBtn = document.getElementById('internalChatBackBtn');
       if(backBtn && !backBtn.dataset.portalDmBound){
         backBtn.dataset.portalDmBound = '1';
-        backBtn.addEventListener('click', function(){
-          if(portalInternalChatOfficeRestricted()){
-            portalCloseInternalChatReturnToAlertsMenu();
-            return;
-          }
-          window.__PORTAL_INTERNAL_CHAT_UI = window.__PORTAL_INTERNAL_CHAT_UI || {};
-          window.__PORTAL_INTERNAL_CHAT_UI.threadId = null;
-          var inpBack = document.getElementById('internalChatInput');
-          if(inpBack) inpBack.value = '';
-          void window.portalRenderInternalChatSheet();
-        });
+        backBtn.addEventListener('click', portalInternalChatBackToInbox);
+      }
+      var threadBackBtn = document.getElementById('internalChatThreadBackBtn');
+      if(threadBackBtn && !threadBackBtn.dataset.portalDmBound){
+        threadBackBtn.dataset.portalDmBound = '1';
+        threadBackBtn.addEventListener('click', portalInternalChatBackToInbox);
+      }
+      if(window.portalCsCliqThreadFiles && typeof window.portalCsCliqThreadFiles.bind === 'function'){
+        window.portalCsCliqThreadFiles.bind();
       }
       var inp = document.getElementById('internalChatInput');
       if(inp && !inp.dataset.portalDmViewportBound){
@@ -6644,6 +6672,18 @@
       if(peerEl) peerEl.textContent = peerLabel ? String(peerLabel) : "Conversation";
       window.__PORTAL_INTERNAL_CHAT_UI = window.__PORTAL_INTERNAL_CHAT_UI || {};
       window.__PORTAL_INTERNAL_CHAT_UI.peerLabel = peerLabel;
+      var peerRole = 'Staff';
+      if(peerId){
+        var prRole = await client.from('staff_profiles').select('app_role,staff_role').eq('id', peerId).maybeSingle();
+        if(!prRole.error && prRole.data){
+          var appRole = String(prRole.data.app_role || '').toLowerCase();
+          if(appRole === 'lead') peerRole = 'Lead';
+          else if(appRole === 'admin' || appRole === 'ceo') peerRole = 'Management';
+        }
+      }
+      if(window.portalCsCliqThreadHeader && typeof window.portalCsCliqThreadHeader.syncInternal === 'function'){
+        window.portalCsCliqThreadHeader.syncInternal(peerLabel, peerRole);
+      }
       portalSyncInternalChatSheetView(true, peerLabel);
       var msgsBox = document.getElementById("internalChatMessages");
       var inp = document.getElementById("internalChatInput");

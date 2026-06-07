@@ -508,6 +508,26 @@
   margin-top: 2px;
 }
 
+#csCliqRoot .portal-cs-cliq-announcements-dayops {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+
+#csCliqRoot .portal-cs-cliq-announcements-dayops__intro {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--cs-hub-muted, #64748b);
+}
+
+#csCliqRoot .portal-cs-cliq-announcements-dayops .portal-cs-cliq__channels-grid .portal-cs-cliq__link-card {
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+}
+
 #csCliqRoot .portal-cs-cliq-inbox-empty[hidden] {
   display: none !important;
 }

@@ -65,5 +65,25 @@
     }
   }
 
-  global.portalCsCliqThreadHeader = { sync: sync, initials: initials, esc: esc };
+  function syncInternal(peerLabel, peerRole) {
+    var header = document.getElementById("internalChatThreadHeader");
+    if (!header) return;
+    var label = String(peerLabel || "").trim() || "Conversation";
+    var nameEl = document.getElementById("internalChatThreadName");
+    var roleEl = document.getElementById("internalChatThreadRole");
+    var statusEl = document.getElementById("internalChatThreadStatus");
+    var avatarEl = document.getElementById("internalChatThreadAvatar");
+    if (nameEl) nameEl.textContent = label;
+    if (avatarEl) avatarEl.textContent = initials(label);
+    var role = String(peerRole || "").trim() || "Staff";
+    if (roleEl) roleEl.textContent = role;
+    if (statusEl) statusEl.textContent = "Available";
+    header.hidden = false;
+    header.setAttribute("aria-hidden", "false");
+    if (global.portalCsCliqThreadFiles && typeof global.portalCsCliqThreadFiles.onThreadChange === "function") {
+      global.portalCsCliqThreadFiles.onThreadChange();
+    }
+  }
+
+  global.portalCsCliqThreadHeader = { sync: sync, syncInternal: syncInternal, initials: initials, esc: esc };
 })(typeof window !== "undefined" ? window : globalThis);
