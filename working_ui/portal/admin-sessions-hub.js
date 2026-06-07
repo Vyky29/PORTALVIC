@@ -4024,7 +4024,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     '<th>Participant</th><th>Service</th><th class="ash-th-star" title="Engagement (1–5)">' +
     AdminSessionsHub.ENGAGEMENT_STAR_HEADER +
     "</th><th>Regulation</th><th>Independence</th>" +
-    "<th>Positive (opt.)</th><th>Relevant (opt.)</th><th>Reviewed by:</th>";
+    "<th>Positive</th><th>Relevant</th><th>Reviewed by:</th>";
 
   /** Portal feedback row must match a roster slot on that calendar day (e.g. Tom Thu only, Gabriel Sun only). */
   AdminSessionsHub.prototype.feedbackAllowedOnCalendarDay = function (fb) {
@@ -5661,7 +5661,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     var hub = this;
     var kind = noteKind === "relevant" ? "relevant" : "positive";
     var rows = this.feedbackNotesRows(kind);
-    var noteLabel = kind === "relevant" ? "Relevant (opt.)" : "Positive (opt.)";
+    var noteLabel = kind === "relevant" ? "Relevant" : "Positive";
     var noteField = kind === "relevant" ? "relevant_information" : "positive_feedback";
     var iso = this.selectedDay;
     var emptyMsg =

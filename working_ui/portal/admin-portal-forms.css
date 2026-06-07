@@ -62,6 +62,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.portal-day-ops-embed .portal-forms-table--lead-reports thead th,
 .portal-day-ops-embed .portal-forms-table--lead-reports th,
 .portal-day-ops-embed .portal-forms-table--lead-reports td {
   text-align: center;
@@ -101,6 +102,9 @@
   overflow-wrap: break-word;
 }
 .portal-day-ops-embed .portal-forms-table--lead-reports .col-brief-desc {
+  text-align: center;
+}
+.portal-day-ops-embed .portal-forms-table--lead-reports .col-actions {
   text-align: center;
 }
 .portal-day-ops-embed .portal-forms-activity-log-mount {

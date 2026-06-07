@@ -555,8 +555,8 @@
       '<th scope="col" class="pcso-tbl__emo" aria-label="Regulation and emotions">' + emotionHeaderHtml() + "</th>" +
       '<th scope="col" class="pcso-tbl__indep">Independence</th>' +
       '<th scope="col" class="pcso-tbl__inc">Incidents</th>' +
-      '<th scope="col" class="pcso-tbl__pos">Positive <span class="pcso-opt">(opt.)</span></th>' +
-      '<th scope="col" class="pcso-tbl__rel">Relevant <span class="pcso-opt">(opt.)</span></th>' +
+      '<th scope="col" class="pcso-tbl__pos">Positive</th>' +
+      '<th scope="col" class="pcso-tbl__rel">Relevant</th>' +
       "</tr></thead><tbody>" +
       feedback.map(function (r) { return feedbackTableRow(r, incMap); }).join("") +
       "</tbody></table></div>"

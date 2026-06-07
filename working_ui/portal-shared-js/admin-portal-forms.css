@@ -62,6 +62,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.portal-day-ops-embed .portal-forms-table--lead-reports thead th,
 .portal-day-ops-embed .portal-forms-table--lead-reports th,
 .portal-day-ops-embed .portal-forms-table--lead-reports td {
   text-align: center;

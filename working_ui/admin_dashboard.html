@@ -9,7 +9,7 @@
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260607-fb-table-center" />
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260613-hours-all-week" />
-  <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260603-form-record-modal" />
+  <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260607-lead-table-center" />
   <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260605-admin-mobile-landscape" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260521-embed" />
@@ -3288,8 +3288,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         adminC4kEmotionHeaderLegendHtml() +
         '</th>' +
         '<th scope="col" class="c4k-sf-col-indep">Independence</th>' +
-        '<th scope="col" class="c4k-sf-col-pos" title="Positive feedback (optional)">Positive <span class="muted" style="font-weight:600">(opt.)</span></th>' +
-        '<th scope="col" class="c4k-sf-col-rel" title="Relevant information (optional)">Relevant <span class="muted" style="font-weight:600">(opt.)</span></th>' +
+        '<th scope="col" class="c4k-sf-col-pos" title="Positive feedback">Positive</th>' +
+        '<th scope="col" class="c4k-sf-col-rel" title="Relevant information">Relevant</th>' +
         '<th scope="col" class="c4k-sf-col-inst" title="Staff who submitted feedback and when">Reviewed by</th>' +
         '</tr></thead>'
       );
@@ -3462,7 +3462,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '<div class="c4k-reg-rel-cta c4k-reg-rel-cta--clear c4k-sf-kpi-col__body" style="min-width:0" role="status" aria-live="polite" aria-label="No relevant rows left to review">' +
           adminC4kRelevantCtaIconBadgeHtml('clear') +
           '<span class="c4k-reg-rel-cta__hint">All reviewed</span>' +
-          '<span class="c4k-reg-rel-cta__sub-clear">Nothing left to review in Relevant (opt.) for this term.</span>' +
+          '<span class="c4k-reg-rel-cta__sub-clear">Nothing left to review in Relevant for this term.</span>' +
           '</div>'
         );
       }
@@ -3485,7 +3485,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '<div class="c4k-reg-rel-cta c4k-reg-rel-cta--clear c4k-sf-kpi-col__body" style="min-width:0" aria-hidden="true">' +
           adminC4kRelevantCtaIconBadgeHtml('clear') +
           '<span class="c4k-reg-rel-cta__hint">All reviewed</span>' +
-          '<span class="c4k-reg-rel-cta__sub-clear">Nothing left to review in Relevant (opt.) for this term.</span>' +
+          '<span class="c4k-reg-rel-cta__sub-clear">Nothing left to review in Relevant for this term.</span>' +
           '</div>'
         );
       }
@@ -13360,7 +13360,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div data-c4k-panel="ses" class="c4k-panel">'+
         '<div class="card card-pad"><p class="muted" style="margin:0;max-width:52rem;min-width:0;overflow-wrap:break-word">Session export rows matched to this participant (same name rules as roster). <strong>Booked services</strong> and timetable lines stay under <strong>Services</strong>.</p></div>'+
         paxSesKpiHtml+
-        '<div class="card" style="margin-top:12px"><div class="card-h"><h3>All feedbacks</h3><button type="button" class="btn btn--ghost btn--sm" data-view-target="c4k_registers">Open full grid</button></div><div class="card-pad" style="overflow:auto;padding:0"><table class="tbl tbl--center tbl--dense"><thead><tr><th>Date</th><th title="Feedback completed by (sheet)">Instructor</th><th scope="col" class="c4k-sf-col-svc" title="Service and session time (second line)">Service</th><th>Engagement</th><th scope="col" class="c4k-sf-col-emo" title="Emotions / regulation (icons)" aria-label="Emotions and regulation">' + adminC4kEmotionHeaderLegendHtml() + '</th><th scope="col" class="c4k-sf-col-indep">Independence</th><th scope="col" title="Workbook attendance column">Attendance</th><th scope="col" title="Incidents / notes">Incidents</th><th scope="col" class="c4k-sf-col-pos" title="Click the cell when there is text to open review and notify">Positive <span class="muted" style="font-weight:600">(opt.)</span></th><th scope="col" class="c4k-sf-col-rel" title="Click the cell when there is text to open review actions">Relevant <span class="muted" style="font-weight:600">(opt.)</span></th></tr></thead><tbody>'+dregRows+'</tbody></table></div></div>'+
+        '<div class="card" style="margin-top:12px"><div class="card-h"><h3>All feedbacks</h3><button type="button" class="btn btn--ghost btn--sm" data-view-target="c4k_registers">Open full grid</button></div><div class="card-pad" style="overflow:auto;padding:0"><table class="tbl tbl--center tbl--dense"><thead><tr><th>Date</th><th title="Feedback completed by (sheet)">Instructor</th><th scope="col" class="c4k-sf-col-svc" title="Service and session time (second line)">Service</th><th>Engagement</th><th scope="col" class="c4k-sf-col-emo" title="Emotions / regulation (icons)" aria-label="Emotions and regulation">' + adminC4kEmotionHeaderLegendHtml() + '</th><th scope="col" class="c4k-sf-col-indep">Independence</th><th scope="col" title="Workbook attendance column">Attendance</th><th scope="col" title="Incidents / notes">Incidents</th><th scope="col" class="c4k-sf-col-pos" title="Click the cell when there is text to open review and notify">Positive</th><th scope="col" class="c4k-sf-col-rel" title="Click the cell when there is text to open review actions">Relevant</th></tr></thead><tbody>'+dregRows+'</tbody></table></div></div>'+
         '</div>'+
         '<div data-c4k-panel="att" class="c4k-panel">'+paxAttPanel+'</div>'+
         '<div data-c4k-panel="bill" class="c4k-panel">'+paxBillPanel+'</div>'+
@@ -15299,7 +15299,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           rows.length
         );
       }
-      var colLabel = mode === 'positive' ? 'Positive (opt.)' : 'Relevant (opt.)';
+      var colLabel = mode === 'positive' ? 'Positive' : 'Relevant';
       if(tbody){
         tbody.innerHTML = rows.length
           ? rows.map(function(d){ return adminHubPosRelRowHtml(d, mode); }).join('')
@@ -15681,7 +15681,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
     var ADMIN_SESSIONS_HUB_SRC =
-      '/portal/admin-sessions-hub.js?v=20260607-overview-filters';
+      '/portal/admin-sessions-hub.js?v=20260607-no-opt-labels';
 
     /** Club closed — half-term 23–31 May 2026, bank holiday 4 May (see PORTAL_TERM_FROM_TIMETABLE). */
     function portalAdminDayIsClubClosed(iso){
