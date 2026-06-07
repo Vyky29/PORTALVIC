@@ -155,7 +155,7 @@ async function smtpConnect(config: ParentNotifySmtpConfig): Promise<{
   } else {
     conn = await Deno.connect({ hostname: config.host, port: config.port });
   }
-  const reader = conn.readable.getReader();
+  let reader = conn.readable.getReader();
   const greet = await smtpReadResponse(reader, carry);
   if (greet.code !== 220) throw new Error(`smtp_${greet.code}:${greet.text.slice(0, 200)}`);
 
