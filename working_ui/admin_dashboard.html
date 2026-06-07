@@ -51,8 +51,8 @@
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
   <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260604-mob-nav" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
-  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260605-admin-chat" />
-  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260607-cs-cliq-bc" />
+  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260621-msg-time" />
+  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260621-inbox-preview" />
 </head>
 <body>
   <script>
@@ -20343,6 +20343,199 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
       if(wrap) wrap.hidden = false;
     }
+    function portalAdminDmAckIsoForList(ch, kind){
+      try{
+        if(kind === 'group') return String(localStorage.getItem('portal_admin_ceo_group_ack_iso') || '').trim();
+        if(ch === 'ceo_exec') return String(localStorage.getItem('portal_admin_ceo_dm_ack_iso') || '').trim();
+        return String(localStorage.getItem('portal_admin_dm_ack_iso') || '').trim();
+      }catch(_a){ return ''; }
+    }
+    function portalAdminDmPreviewBody(row){
+      if(!row) return 'Message';
+      var mt = String(row.message_type || 'text').toLowerCase();
+      if(mt === 'voice') return 'Voice message';
+      var body = String(row.body || '').trim();
+      if(body.indexOf('[[portal-staff-call:') >= 0) return 'Call invite';
+      if(body.indexOf('[[portal-staff-call-end:') >= 0) return 'Call ended';
+      body = body.replace(/\s+/g, ' ');
+      if(body.length > 80) body = body.slice(0, 79).trimEnd() + '\u2026';
+      return body || 'Message';
+    }
+    function portalAdminDmSenderLabel(authorId, profBy, me){
+      authorId = String(authorId || '').trim();
+      me = String(me || '').trim();
+      if(authorId && me && authorId === me) return 'You';
+      var pr = profBy[authorId] || {};
+      return String(pr.full_name || pr.username || '').trim() || 'Unknown sender';
+    }
+    function portalAdminDmWorkerRoleTag(prof){
+      prof = prof || {};
+      var ar = String(prof.app_role || '').toLowerCase();
+      if(ar === 'lead') return 'Lead';
+      if(ar === 'staff') return 'Staff';
+      var sr = String(prof.staff_role || '').toLowerCase();
+      if(sr.indexOf('lead') >= 0) return 'Lead';
+      return '';
+    }
+    function portalAdminDmFormatListWhen(iso){
+      if(!iso) return '';
+      try{
+        return new Date(iso).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+      }catch(_d){ return ''; }
+    }
+    async function portalAdminDmEnrichListItems(client, me, ch, merged, profBy){
+      if(!client || !me || !Array.isArray(merged) || !merged.length) return merged;
+      profBy = profBy || {};
+      var dmIds = merged.filter(function(i){ return i.kind === 'dm'; }).map(function(i){ return i.id; });
+      var groupIds = merged.filter(function(i){ return i.kind === 'group'; }).map(function(i){ return i.id; });
+      var ackDm = portalAdminDmAckIsoForList(ch, 'dm');
+      var ackGroup = portalAdminDmAckIsoForList(ch, 'group');
+      async function ensureAuthors(ids){
+        var missing = (ids || []).filter(function(id, idx, arr){
+          return id && arr.indexOf(id) === idx && !profBy[id];
+        });
+        if(!missing.length) return;
+        var pr = await client.from('staff_profiles').select('id,full_name,username,app_role,staff_role').in('id', missing);
+        if(!pr.error && Array.isArray(pr.data)){
+          pr.data.forEach(function(p){ if(p && p.id) profBy[String(p.id)] = p; });
+        }
+      }
+      if(dmIds.length){
+        var lastByThread = {};
+        var unreadByThread = {};
+        var lq = await client.from('portal_staff_dm_messages')
+          .select('thread_id,author_id,body,created_at,message_type')
+          .in('thread_id', dmIds)
+          .order('created_at', { ascending: false })
+          .limit(Math.min(Math.max(dmIds.length * 4, 24), 240));
+        if(!lq.error && Array.isArray(lq.data)){
+          var authorIds = [];
+          lq.data.forEach(function(m){
+            if(!m || !m.thread_id) return;
+            var tid = String(m.thread_id);
+            if(!lastByThread[tid]){
+              lastByThread[tid] = m;
+              authorIds.push(String(m.author_id || ''));
+            }
+          });
+          await ensureAuthors(authorIds);
+        }
+        if(ackDm){
+          var uq = await client.from('portal_staff_dm_messages')
+            .select('thread_id')
+            .in('thread_id', dmIds)
+            .neq('author_id', me)
+            .gt('created_at', ackDm);
+          if(!uq.error && Array.isArray(uq.data)){
+            uq.data.forEach(function(m){
+              if(!m || !m.thread_id) return;
+              var tid = String(m.thread_id);
+              unreadByThread[tid] = (unreadByThread[tid] || 0) + 1;
+            });
+          }
+        }
+        merged.forEach(function(item){
+          if(item.kind !== 'dm') return;
+          var m = lastByThread[item.id];
+          if(m){
+            item.lastSender = portalAdminDmSenderLabel(m.author_id, profBy, me);
+            item.lastPreview = portalAdminDmPreviewBody(m);
+            item.when = m.created_at || item.when;
+          }
+          item.unreadCount = unreadByThread[item.id] || 0;
+        });
+      }
+      if(groupIds.length){
+        var lastByGroup = {};
+        var unreadByGroup = {};
+        var glq = await client.from('portal_ceo_group_message')
+          .select('group_id,author_id,body,created_at,message_type')
+          .in('group_id', groupIds)
+          .order('created_at', { ascending: false })
+          .limit(Math.min(Math.max(groupIds.length * 4, 16), 120));
+        if(!glq.error && Array.isArray(glq.data)){
+          var gAuthorIds = [];
+          glq.data.forEach(function(m){
+            if(!m || !m.group_id) return;
+            var gid = String(m.group_id);
+            if(!lastByGroup[gid]){
+              lastByGroup[gid] = m;
+              gAuthorIds.push(String(m.author_id || ''));
+            }
+          });
+          await ensureAuthors(gAuthorIds);
+        }
+        if(ackGroup){
+          var guq = await client.from('portal_ceo_group_message')
+            .select('group_id')
+            .in('group_id', groupIds)
+            .neq('author_id', me)
+            .gt('created_at', ackGroup);
+          if(!guq.error && Array.isArray(guq.data)){
+            guq.data.forEach(function(m){
+              if(!m || !m.group_id) return;
+              var gid = String(m.group_id);
+              unreadByGroup[gid] = (unreadByGroup[gid] || 0) + 1;
+            });
+          }
+        }
+        merged.forEach(function(item){
+          if(item.kind !== 'group') return;
+          var gm = lastByGroup[item.id];
+          if(gm){
+            item.lastSender = portalAdminDmSenderLabel(gm.author_id, profBy, me);
+            item.lastPreview = portalAdminDmPreviewBody(gm);
+            item.when = gm.created_at || item.when;
+          }
+          item.unreadCount = unreadByGroup[item.id] || 0;
+        });
+      }
+      return merged;
+    }
+    function portalAdminDmRenderThreadListItem(item, me, ch){
+      var when = portalAdminDmFormatListWhen(item.when);
+      var unread = Number(item.unreadCount) || 0;
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'portal-dm-thread-item' + (unread > 0 ? ' portal-dm-thread-item--unread' : '');
+      if(item.kind === 'group'){
+        btn.setAttribute('data-adm-dm-group', item.id);
+        btn.addEventListener('click', function(){
+          void portalAdminDmOpenGroupThread(item.id);
+        });
+      }else{
+        btn.setAttribute('data-adm-dm-thread', item.id);
+        btn.addEventListener('click', function(){
+          void portalAdminDmOpenThread(item.id);
+        });
+      }
+      var roleTag = '';
+      if(item.kind === 'dm' && ch === 'staff_lead'){
+        var rt = portalAdminDmWorkerRoleTag(item.peerProf || {});
+        if(rt) roleTag = '<span class="portal-dm-thread-role-tag">'+esc(rt)+'</span>';
+      }else if(item.kind === 'group'){
+        roleTag = '<span class="portal-dm-thread-role-tag">Group</span>';
+      }
+      var preview = '';
+      if(item.lastSender || item.lastPreview){
+        var sender = esc(String(item.lastSender || '').trim());
+        var prev = esc(String(item.lastPreview || '').trim());
+        preview = '<div class="portal-dm-thread-preview"><span class="portal-dm-thread-preview-sender">'+sender+(sender && prev ? ': ' : '')+'</span><span class="portal-dm-thread-preview-text">'+prev+'</span></div>';
+      }else{
+        preview = '<div class="portal-dm-thread-preview portal-dm-thread-preview--empty">No messages yet</div>';
+      }
+      var badge = unread > 0
+        ? '<span class="portal-dm-thread-unread-badge" aria-label="'+esc(String(unread)+' unread')+'">'+esc(unread > 99 ? '99+' : String(unread))+'</span>'
+        : '';
+      btn.innerHTML =
+        '<div class="portal-dm-thread-item__head">'+
+          '<span class="portal-dm-thread-peer">'+esc(item.label)+roleTag+'</span>'+
+          '<span class="portal-dm-thread-when">'+esc(when || 'Conversation')+'</span>'+
+        '</div>'+
+        preview+
+        badge;
+      return btn;
+    }
     async function portalAdminDmRenderList(){
       var host = portalAdminDmListHostEl();
       var client = getSchedSupabaseClient();
@@ -20398,8 +20591,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var id = String(r.id || '');
         var peer = ch === 'staff_lead' ? portalAdminDmWorkerPeerFromThread(r, profBy, me) : portalDmPeerIdForThread(me, r);
         var label = names[peer] || ('Chat · ' + peer.slice(0, 8));
-        merged.push({ kind: 'dm', id: id, label: label, when: r.updated_at });
+        merged.push({ kind: 'dm', id: id, label: label, when: r.updated_at, peerId: peer, peerProf: profBy[peer] || {} });
       });
+      await portalAdminDmEnrichListItems(client, me, ch, merged, profBy);
       merged.sort(function(a, b){
         var ta = 0;
         var tb = 0;
@@ -20417,26 +20611,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       host.innerHTML = '';
       merged.forEach(function(item){
-        var when = '';
-        try{
-          if(item.when) when = new Date(item.when).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-        }catch(_d){}
-        var btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'portal-dm-thread-item';
-        if(item.kind === 'group'){
-          btn.setAttribute('data-adm-dm-group', item.id);
-          btn.addEventListener('click', function(){
-            void portalAdminDmOpenGroupThread(item.id);
-          });
-        }else{
-          btn.setAttribute('data-adm-dm-thread', item.id);
-          btn.addEventListener('click', function(){
-            void portalAdminDmOpenThread(item.id);
-          });
-        }
-        btn.innerHTML = '<span class="portal-dm-thread-peer">'+esc(item.label)+'</span><span class="portal-dm-thread-meta">'+esc(when || 'Conversation')+'</span>';
-        host.appendChild(btn);
+        host.appendChild(portalAdminDmRenderThreadListItem(item, me, ch));
       });
     }
     async function portalAdminDmOpenThread(tid){
@@ -21011,9 +21186,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="modal-h"><h2 id="modalTitle">'+esc(title)+'</h2></div>'+
         '<div class="modal-b" style="min-width:0">'+
         '<style>'+
-        '#admDmListHost .portal-dm-thread-item{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;width:100%;min-width:0;padding:12px 14px;border-radius:14px;border:1px solid rgba(0,0,0,.1);background:var(--surface,#fff);cursor:pointer;font:inherit;margin:0 0 8px;box-sizing:border-box}'+
+        '#admDmListHost .portal-dm-thread-item{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;width:100%;min-width:0;padding:12px 44px 12px 14px;border-radius:14px;border:1px solid rgba(0,0,0,.1);background:var(--surface,#fff);cursor:pointer;font:inherit;margin:0 0 8px;box-sizing:border-box;position:relative}'+
+        '#admDmListHost .portal-dm-thread-item--unread{border-color:rgba(45,132,179,.35);background:linear-gradient(180deg,#f4fbff,#fff)}'+
         '#admDmListHost .portal-dm-thread-item:active{opacity:.92}'+
-        '#admDmListHost .portal-dm-thread-peer{font-weight:700;font-size:15px;min-width:0;overflow-wrap:break-word}'+
+        '#admDmListHost .portal-dm-thread-item__head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;width:100%;min-width:0}'+
+        '#admDmListHost .portal-dm-thread-peer{font-weight:700;font-size:15px;min-width:0;overflow-wrap:break-word;flex:1}'+
+        '#admDmListHost .portal-dm-thread-when{flex-shrink:0;font-size:11px;color:#145a3a;white-space:nowrap}'+
+        '#admDmListHost .portal-dm-thread-role-tag{font-size:11px;font-weight:700;color:#145a3a;margin-left:6px}'+
+        '#admDmListHost .portal-dm-thread-preview{font-size:13px;line-height:1.4;color:var(--muted,#64748b);min-width:0;width:100%;overflow-wrap:break-word;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}'+
+        '#admDmListHost .portal-dm-thread-item--unread .portal-dm-thread-preview{color:var(--ink,#173247);font-weight:600}'+
+        '#admDmListHost .portal-dm-thread-preview-sender{font-weight:700}'+
+        '#admDmListHost .portal-dm-thread-unread-badge{position:absolute;top:50%;right:12px;transform:translateY(-50%);min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:#dc2626;color:#fff;font-size:11px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;line-height:1}'+
         '#admDmListHost .portal-dm-thread-meta{font-size:12px;color:var(--muted,#64748b)}'+
         '#admDmMsgs{display:flex;flex-direction:column;gap:4px;align-items:stretch;min-width:0;min-height:140px;max-height:46vh;overflow:auto;padding:6px 2px;border:1px solid rgba(0,0,0,.08);border-radius:12px;background:#e5e7eb}'+
         '#admDmMsgs .portal-dm-msg-row{display:flex;width:100%;min-width:0;padding:2px 6px;box-sizing:border-box}'+
@@ -25016,6 +25199,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     })();
   </script>
   <script src="/portal/portal_staff_chat_calls.js?v=20260607-group-calls"></script>
+  <script src="/portal/portal_incoming_call_push.js?v=20260621-incoming-call"></script>
   <script src="/portal/portal_floating_internal_chat.js?v=20260605-admin-chat"></script>
 </body>
 </html>

@@ -575,6 +575,7 @@
           var d = ev.data;
           if (!d || !d.type) return;
           if (d.type === "portal-push-received") {
+            if (d.portalOpen === "incoming_call") return;
             portalAdminShowInboundAlert({
               title: d.title,
               body: d.body,
@@ -582,6 +583,7 @@
             return;
           }
           if (d.type !== "portal-notification-click") return;
+          if (d.portalOpen === "incoming_call") return;
           if (d.portalOpen === "alerts") {
             portalAdminOpenAlertsNotificationsSheet();
           }
