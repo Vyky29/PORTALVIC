@@ -112,6 +112,24 @@
     }
   }
 
+  /** Staff per participant: 10/day. Lead inbox: no cap. */
+  function maxPhotosForCurrentParticipant() {
+    if (isLeadInboxMode() || isInboxParticipant(state.participant)) return null;
+    return MAX_PHOTOS;
+  }
+
+  function isAtPhotoLimit() {
+    var max = maxPhotosForCurrentParticipant();
+    if (max == null) return false;
+    return state.photos.length >= max;
+  }
+
+  function photoLimitMessage() {
+    var max = maxPhotosForCurrentParticipant();
+    if (max == null) return "";
+    return "Maximum " + max + " photos for this participant today. Delete one to add another.";
+  }
+
   function isInboxParticipant(p) {
     return normalizeClientId(p && p.clientId) === LEAD_INBOX_CLIENT_ID;
   }
@@ -471,8 +489,8 @@
       setStatus("Choose a participant first.", true);
       return;
     }
-    if (state.photos.length >= MAX_PHOTOS) {
-      setStatus("Maximum " + MAX_PHOTOS + " photos for this participant today.", true);
+    if (isAtPhotoLimit()) {
+      setStatus(photoLimitMessage(), true);
       return;
     }
     ensureNativePhotoInput().click();
@@ -569,8 +587,8 @@
       setStatus("Choose a participant first.", true);
       return;
     }
-    if (state.photos.length >= MAX_PHOTOS) {
-      setStatus("Maximum " + MAX_PHOTOS + " photos for this participant today.", true);
+    if (isAtPhotoLimit()) {
+      setStatus(photoLimitMessage(), true);
       return;
     }
     var video = document.getElementById("portalAchievementsCameraVideo");
@@ -611,8 +629,8 @@
       setStatus("Video is not available yet.", true);
       return;
     }
-    if (state.photos.length >= MAX_PHOTOS) {
-      setStatus("Maximum " + MAX_PHOTOS + " photos for this participant today.", true);
+    if (isAtPhotoLimit()) {
+      setStatus(photoLimitMessage(), true);
       return;
     }
     var video = document.getElementById("portalAchievementsCameraVideo");
@@ -975,8 +993,11 @@
     }
     var countEl = document.getElementById("portalAchievementsCount");
     if (countEl) {
+      var max = maxPhotosForCurrentParticipant();
       countEl.textContent =
-        state.photos.length + " / " + MAX_PHOTOS + " photos (high quality, in-app only)";
+        max == null
+          ? state.photos.length + " photo" + (state.photos.length === 1 ? "" : "s") + " (high quality, in-app only)"
+          : state.photos.length + " / " + max + " photos (high quality, in-app only)";
     }
   }
 
@@ -1037,11 +1058,18 @@
     }
     try {
       if (!opts.quiet) setStatus("Deleting…");
-      if (row.storage_path) {
-        await client.storage.from(BUCKET).remove([row.storage_path]);
+      var rpc = await client.rpc("portal_delete_achievement_draft", { p_photo_id: row.id });
+      if (rpc.error) {
+        if (/does not exist|portal_delete_achievement_draft/i.test(rpc.error.message || "")) {
+          if (row.storage_path) {
+            await client.storage.from(BUCKET).remove([row.storage_path]);
+          }
+          var del = await client.from("portal_participant_achievement_photos").delete().eq("id", row.id);
+          if (del.error) throw del.error;
+        } else {
+          throw rpc.error;
+        }
       }
-      var del = await client.from("portal_participant_achievement_photos").delete().eq("id", row.id);
-      if (del.error) throw del.error;
       delete signedUrlCache[row.storage_path];
       await refreshGallery();
       if (!opts.quiet) setStatus("");
@@ -1097,47 +1125,45 @@
       '<div class="portal-achievements-gallery-grid portal-achievement-protected"></div>';
     var grid = host.querySelector(".portal-achievements-gallery-grid");
     for (var i = 0; i < state.photos.length; i++) {
-      var row = state.photos[i];
-      var url = await signedUrlFor(row.storage_path);
-      var wrap = document.createElement("div");
-      var pw = Number(row.width) || 0;
-      var ph = Number(row.height) || 0;
-      wrap.className = "portal-achievements-thumb";
-      if (pw > 0 && ph > 0) {
-        wrap.style.aspectRatio = pw + " / " + ph;
-        wrap.classList.add(pw >= ph ? "is-landscape" : "is-portrait");
-      }
-      wrap.setAttribute("data-ach-photo-index", String(i));
-      var who = String(row.staff_display_name || "").trim();
-      var cell = document.createElement("button");
-      cell.type = "button";
-      cell.className = "portal-achievements-thumb__open";
-      cell.setAttribute("aria-label", "View photo " + (i + 1) + " of " + state.photos.length);
-      cell.innerHTML =
-        '<img src="' +
-        esc(url) +
-        '" alt="" draggable="false" class="portal-screenshot-protected portal-achievement-protected" />' +
-        (who
-          ? '<span class="portal-achievements-thumb__by">' + esc(who) + "</span>"
-          : "");
-      var delBtn = document.createElement("button");
-      delBtn.type = "button";
-      delBtn.className = "portal-achievements-thumb__delete";
-      delBtn.setAttribute("aria-label", "Delete photo " + (i + 1));
-      delBtn.textContent = "×";
-      wrap.appendChild(cell);
-      wrap.appendChild(delBtn);
-      cell.addEventListener("click", function () {
-        var idx = Number(wrap.getAttribute("data-ach-photo-index"));
-        if (!Number.isFinite(idx)) return;
-        void openGalleryViewer(idx);
-      });
-      delBtn.addEventListener("click", function (ev) {
-        ev.preventDefault();
-        ev.stopPropagation();
-        void deletePhotoById(row);
-      });
-      grid.appendChild(wrap);
+      (function (row, index) {
+        void signedUrlFor(row.storage_path).then(function (url) {
+          var pw = Number(row.width) || 0;
+          var ph = Number(row.height) || 0;
+          var wrap = document.createElement("div");
+          wrap.className = "portal-achievements-thumb";
+          if (pw > 0 && ph > 0) {
+            wrap.style.aspectRatio = pw + " / " + ph;
+            wrap.classList.add(pw >= ph ? "is-landscape" : "is-portrait");
+          }
+          wrap.setAttribute("data-ach-photo-index", String(index));
+          var who = String(row.staff_display_name || "").trim();
+          var cell = document.createElement("button");
+          cell.type = "button";
+          cell.className = "portal-achievements-thumb__open";
+          cell.setAttribute("aria-label", "View photo " + (index + 1) + " of " + state.photos.length);
+          cell.innerHTML =
+            '<img src="' +
+            esc(url) +
+            '" alt="" draggable="false" class="portal-screenshot-protected portal-achievement-protected" />' +
+            (who ? '<span class="portal-achievements-thumb__by">' + esc(who) + "</span>" : "");
+          var delBtn = document.createElement("button");
+          delBtn.type = "button";
+          delBtn.className = "portal-achievements-thumb__delete";
+          delBtn.setAttribute("aria-label", "Delete photo " + (index + 1));
+          delBtn.textContent = "×";
+          wrap.appendChild(cell);
+          wrap.appendChild(delBtn);
+          cell.addEventListener("click", function () {
+            void openGalleryViewer(index);
+          });
+          delBtn.addEventListener("click", function (ev) {
+            ev.preventDefault();
+            ev.stopPropagation();
+            void deletePhotoById(row);
+          });
+          grid.appendChild(wrap);
+        });
+      })(state.photos[i], i);
     }
     if (state.viewerIndex >= 0 && state.viewerIndex < state.photos.length) {
       void openGalleryViewer(state.viewerIndex);

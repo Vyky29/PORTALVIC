@@ -213,6 +213,16 @@
     return res.data;
   }
 
+  async function deletePhoto(photoId) {
+    var client = cfg.getClient();
+    if (!client) throw new Error("Sign in required.");
+    var res = await client.rpc("portal_admin_delete_achievement_photo", {
+      p_photo_id: photoId,
+    });
+    if (res.error) throw res.error;
+    return res.data;
+  }
+
   function uniqueStaffNames(photos) {
     var seen = Object.create(null);
     var names = [];
@@ -336,8 +346,8 @@
       (group.photos.length === 1 ? "" : "s") +
       (staffList.length ? " · " + esc(staffList.join(", ")) : "") +
       (isInbox
-        ? ". Assign each photo to a participant folder below."
-        : ". Double-click a photo to view full screen.") +
+        ? ". Assign each photo to a participant folder below, or delete ones that are not usable."
+        : ". Double-click a photo to view full screen. Delete any photo that should not be kept.") +
       "</p>" +
       "</div></div>" +
       '<div class="portal-admin-achievement-gallery portal-ach-detail__gallery portal-achievement-protected"></div>';
@@ -379,6 +389,8 @@
             void openViewer(group.photos, photoIndex);
           });
           wrap.appendChild(btn);
+          var actionBar = document.createElement("div");
+          actionBar.className = "portal-ach-admin-photo-actions";
           if (isInbox && row.status === "draft" && assignTargets.length) {
             var assignBar = document.createElement("div");
             assignBar.className = "portal-ach-inbox-assign";
@@ -416,8 +428,40 @@
             });
             assignBar.appendChild(select);
             assignBar.appendChild(assignBtn);
-            wrap.appendChild(assignBar);
+            actionBar.appendChild(assignBar);
           }
+          var deleteBtn = document.createElement("button");
+          deleteBtn.type = "button";
+          deleteBtn.className = "btn btn--ghost btn--sm portal-ach-admin-delete__btn";
+          deleteBtn.textContent = "Delete";
+          deleteBtn.addEventListener("click", function () {
+            if (
+              !global.confirm(
+                "Delete this photo permanently? This cannot be undone."
+              )
+            ) {
+              return;
+            }
+            deleteBtn.disabled = true;
+            void deletePhoto(row.id)
+              .then(function () {
+                void refresh();
+                if (statusEl) {
+                  statusEl.textContent = "Photo deleted.";
+                  statusEl.className = "portal-forms-status";
+                }
+              })
+              .catch(function (err) {
+                console.error(err);
+                deleteBtn.disabled = false;
+                if (statusEl) {
+                  statusEl.textContent = (err && err.message) || "Could not delete photo.";
+                  statusEl.className = "portal-forms-status is-error";
+                }
+              });
+          });
+          actionBar.appendChild(deleteBtn);
+          wrap.appendChild(actionBar);
           grid.appendChild(wrap);
         });
       })(group.photos[i], i);

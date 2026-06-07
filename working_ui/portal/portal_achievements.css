@@ -1306,3 +1306,15 @@ header.topbar button.topbar-camera-btn.topbar-achievements-btn:active,
   flex: 0 0 auto;
   white-space: nowrap;
 }
+.portal-ach-admin-photo-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 0 2px 4px;
+}
+.portal-ach-admin-delete__btn {
+  align-self: flex-start;
+  max-width: 100%;
+  color: var(--danger, #b91c1c);
+}
