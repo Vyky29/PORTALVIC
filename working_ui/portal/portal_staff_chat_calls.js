@@ -105,11 +105,12 @@
   function formatCallEndParts(kind, durationSec) {
     var kindLabel = humanLabel(String(kind || "video"), "");
     var duration = formatCallDuration(durationSec);
+    var line = kindLabel + " ended " + duration;
     return {
       kind: kindLabel,
       duration: duration,
-      title: kindLabel + " ended",
-      summary: kindLabel + " ended ? " + duration,
+      title: line,
+      summary: line,
     };
   }
 
@@ -409,9 +410,9 @@
       ".portal-dm-call-end-row{display:flex;justify-content:center;width:100%;padding:6px 12px;box-sizing:border-box}" +
       ".portal-dm-call-end{display:inline-flex;align-items:center;justify-content:flex-start;gap:8px;max-width:min(100%,22rem);padding:8px 14px;border-radius:14px;background:rgba(23,50,71,.07);border:1px solid rgba(23,50,71,.08);color:#667781;font-size:12px;line-height:1.35;text-align:left;min-width:0}" +
       ".portal-dm-call-end-icon{display:inline-flex;align-items:center;justify-content:center;color:#64748b;flex-shrink:0}" +
-      ".portal-dm-call-end-copy{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0}" +
+      ".portal-dm-call-end-copy{display:inline;min-width:0;font-size:12px;font-weight:700;color:#334155;overflow-wrap:break-word}" +
       ".portal-dm-call-end-title{font-size:12px;font-weight:700;color:#334155;overflow-wrap:break-word}" +
-      ".portal-dm-call-end-dur{font-size:11px;font-weight:600;color:#64748b;letter-spacing:.02em}" +
+      ".portal-dm-call-end-dur{font-size:12px;font-weight:600;color:#64748b;letter-spacing:.02em}" +
       ".portal-inapp-call-manage{padding:8px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);color:#fff;font:inherit;font-size:13px;font-weight:700;cursor:pointer}" +
       ".portal-inapp-call-manage[hidden]{display:none!important}" +
       ".portal-inapp-call-roster{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;background:rgba(15,23,42,.97);padding:12px 14px max(12px,env(safe-area-inset-bottom));box-sizing:border-box}" +
@@ -1489,6 +1490,7 @@
   }
 
   function renderCallEndRow(m) {
+    injectStyles();
     var data = parseCallEndPayload(m && m.body);
     if (!data) return null;
     var kind = String(data.kind || "video");
@@ -1503,12 +1505,8 @@
       iconHtml +
       "</span>" +
       '<span class="portal-dm-call-end-copy">' +
-      '<span class="portal-dm-call-end-title">' +
       esc(parts.title) +
-      "</span>" +
-      '<span class="portal-dm-call-end-dur">' +
-      esc(parts.duration) +
-      "</span></span></div>";
+      "</span></div>";
     return row;
   }
 
