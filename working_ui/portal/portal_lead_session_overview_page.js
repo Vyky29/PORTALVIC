@@ -12,7 +12,6 @@ import {
   portalLeadAbsentMarkInScope,
   portalLeadFeedbackInScope,
   portalLeadInferFeedbackVenue,
-  portalLeadDayFeedbackStats,
   portalLeadProgrammeKey,
   portalLeadDayIsClubClosed,
   portalLeadDayIsProgrammeWorkDay,
@@ -21,7 +20,7 @@ import {
   PORTAL_LEAD_SUMMER_TERM_START,
 } from "./portal_lead_session_scope.js";
 
-const HUB_SRC = "/portal/admin-sessions-hub.js?v=20260605-feedback-instructor-own";
+const HUB_SRC = "/portal/admin-sessions-hub.js?v=20260607-feedback-unit-key";
 const LEAD_URL = "lead_dashboard.html";
 
 const state = { tab: "feedback", scopes: [] };
@@ -328,13 +327,10 @@ function applyScopedPayload(scopes) {
   return p;
 }
 
-function makeLeadFeedbackDayStats(scopes, leadKey) {
-  return function (iso) {
-    const hub = window.__plsoFeedbackHub;
-    if (!hub) return { required: 0, completed: 0 };
-    const st = portalLeadDayFeedbackStats(iso, scopes, leadKey, hub);
-    if (!st) return { required: 0, completed: 0 };
-    return { required: st.total, completed: st.done };
+function makeLeadFeedbackDayStats(_scopes, _leadKey) {
+  /* Same source as the day table — hub.dayStats(display slots), not unit-only totals. */
+  return function () {
+    return null;
   };
 }
 

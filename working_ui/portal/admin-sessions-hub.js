@@ -770,12 +770,11 @@
   }
 
   function overrideIsCancelledType(ov) {
+    var t = String(ov && ov.override_type || "").trim();
+    if (String(ov && ov.status || "active").trim() !== "active") return false;
+    if (t === "slot_close") return true;
     var p = overridePayloadObj(ov);
-    return (
-      String(ov && ov.override_type || "").trim() === "slot_clear_client" &&
-      !!p.cancelled_by_admin &&
-      String(ov && ov.status || "active").trim() === "active"
-    );
+    return t === "slot_clear_client" && !!p.cancelled_by_admin;
   }
 
   function overrideClientName(ov) {
@@ -1297,6 +1296,8 @@
   function portalKeyAreaToken(raw) {
     var k = sessionAreaKey(raw);
     if (k === "multi_activity" || k === "multiactivity" || k === "bespoke_programme") return "";
+    /* Unit suffix in portal_session_key (not roster pool/hub area slug). */
+    if (k === "aquatic" || k === "day_centre") return "";
     return k;
   }
 

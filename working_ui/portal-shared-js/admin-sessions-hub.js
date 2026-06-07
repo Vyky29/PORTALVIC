@@ -1040,6 +1040,7 @@
   function portalKeyAreaToken(raw) {
     var k = sessionAreaKey(raw);
     if (k === "multi_activity" || k === "multiactivity" || k === "bespoke_programme") return "";
+    if (k === "aquatic" || k === "day_centre") return "";
     return k;
   }
 
