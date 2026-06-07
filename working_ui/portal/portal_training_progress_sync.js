@@ -216,6 +216,16 @@
     if (res.error) throw res.error;
   }
 
+  function resolveAuthUserId(opts, box) {
+    opts = opts || {};
+    box = box || {};
+    var fromOpts = String(opts.userId || "").trim();
+    if (fromOpts) return fromOpts;
+    var session = opts.session || box.session;
+    var uid = session && session.user && session.user.id;
+    return uid ? String(uid).trim() : "";
+  }
+
   async function upsertSetup(client, userId, row) {
     if (!client || !userId) return;
     var payload = Object.assign({ staff_user_id: userId }, row);
@@ -264,11 +274,7 @@
       var client = opts.client || box.client;
       var session = opts.session || box.session;
       var profile = opts.profile || box.staff_profile;
-      var userId =
-        opts.userId ||
-        (session && session.user && session.user.id) ||
-        (profile && profile.id) ||
-        "";
+      var userId = resolveAuthUserId(opts, box);
       if (!client || !userId) return { ok: false };
 
       var email = (session && session.user && session.user.email) || "";
@@ -284,24 +290,25 @@
       return { ok: true };
     } catch (e) {
       try {
-        console.warn("[portal] training progress sync", e);
+        console.debug("[portal] training progress sync", e);
       } catch (_) {}
       return { ok: false, error: e };
     }
   };
 
+  var trainingProgressSyncQueued = false;
+  function queueTrainingProgressSync() {
+    if (trainingProgressSyncQueued) return;
+    trainingProgressSyncQueued = true;
+    void global.portalSyncTrainingProgressToSupabase().finally(function () {
+      trainingProgressSyncQueued = false;
+    });
+  }
+
   if (global.addEventListener) {
-    global.addEventListener("portal:supabase-ready", function () {
-      void global.portalSyncTrainingProgressToSupabase();
-    });
-    global.addEventListener("portal:location-permission-change", function () {
-      void global.portalSyncTrainingProgressToSupabase();
-    });
-    global.addEventListener("portal:microphone-permission-change", function () {
-      void global.portalSyncTrainingProgressToSupabase();
-    });
-    global.addEventListener("portal:induction-progress", function () {
-      void global.portalSyncTrainingProgressToSupabase();
-    });
+    global.addEventListener("portal:supabase-ready", queueTrainingProgressSync);
+    global.addEventListener("portal:location-permission-change", queueTrainingProgressSync);
+    global.addEventListener("portal:microphone-permission-change", queueTrainingProgressSync);
+    global.addEventListener("portal:induction-progress", queueTrainingProgressSync);
   }
 })(typeof window !== "undefined" ? window : globalThis);

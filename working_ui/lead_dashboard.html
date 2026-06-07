@@ -1045,7 +1045,6 @@
   <script src="/portal/portal_sheet_back.js?v=20260607-sheet-back"></script>
   <script src="/portal/portal_lead_staff_chat_directory.js?v=20260624-staff-lead-dm"></script>
   <script>
-    console.log("ABSENT FIX VERSION LOADED 20260425");
     /** Real calendar weekday for “Today” (en-GB), aligned with staff_clients_machine.xlsx */
     function portalWeekdayLongEnGB(d){
       return new Date(d).toLocaleDateString('en-GB', { weekday: 'long' });
@@ -5583,7 +5582,6 @@
         const sess = box.session;
         if(!sess || !sess.user) return;
         const isoList = typeof portalScheduleOverrideFetchIsoList === 'function' ? portalScheduleOverrideFetchIsoList() : [portalIsoYmdFromDate(new Date())];
-        console.log("OVERRIDE FETCH ISO LIST", isoList);
         const selectCols = 'id,created_at,session_date,anchor_start,anchor_end,anchor_staff_id,anchor_venue,anchor_client_id,anchor_time_slot_label,override_type,payload,status';
         const merged = [];
         const CHUNK = 40;
@@ -10813,6 +10811,7 @@
     }
 
     function portalDebugLogAbsentAggregates(){
+      if(!/(?:^|[?&])portalDebug=1(?:&|$)/.test(String(window.location.search||''))) return;
       try{
         const nextSessionData = Array.isArray(dashboardData.tomorrow) ? dashboardData.tomorrow : [];
         const termData = {
@@ -10850,7 +10849,6 @@
       const tl = document.getElementById('tomorrowList');
       const wl = document.getElementById('weekList');
       if(tl){
-        console.log("RENDERING NEXT SESSION VIEW");
         const camSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>';
         const venueChipClass = v => {
           const key = String(v || '').trim().toLowerCase().replace(/[\s_-]+/g, '');
@@ -11018,7 +11016,6 @@
         }
       }
       if(wl){
-        console.log("RENDERING THIS WEEK VIEW");
         wl.innerHTML = (dashboardData.week || []).map(renderWeekRowHtml).join('');
       }
       const termTitle = document.getElementById('termSheetTitle');
@@ -12867,13 +12864,11 @@
             sessionsModel = await window.portalApplyScheduleOverridesToSessionsModelSafe();
           }catch(_e){}
         }
-        console.log("TODAY USING MODEL", sessionsModel);
         if(typeof hydrateSessionReviewMapFromStorage === "function") hydrateSessionReviewMapFromStorage();
         if(typeof portalSeedAllReviewDoneFromPortalExports === "function") portalSeedAllReviewDoneFromPortalExports();
         if(typeof portalEnrichClientNotesFromPortalFeedback === "function") portalEnrichClientNotesFromPortalFeedback();
         if(typeof rebuildTermShiftAndFeedbackFromSessionModel === "function") rebuildTermShiftAndFeedbackFromSessionModel();
         portalSyncTodaySectionDisplay(sessionsModel);
-        console.log("TODAY DATA FINAL", dashboardData.today);
         if (typeof window.__portalSyncNextSessionFromModel === "function") window.__portalSyncNextSessionFromModel();
         dashboardData.week = buildWeekRows(staffId);
         (function(){

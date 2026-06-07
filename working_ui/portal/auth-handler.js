@@ -1021,7 +1021,7 @@ export async function bootstrapDashboardSupabase(_opts) {
     }
     try {
       if (page !== "lead_overview" && !isGhostDashboard) {
-        await import("./portal_training_progress_sync.js?v=20260615-tprog-sync");
+        await import("./portal_training_progress_sync.js?v=20260625-tprog-rls");
         if (typeof window.portalSyncTrainingProgressToSupabase === "function") {
           await window.portalSyncTrainingProgressToSupabase({
             client: supabase,
