@@ -5,7 +5,11 @@
 (function (global) {
   "use strict";
 
-  var alertsSheet = document.getElementById("alertsNotificationsSheet");
+  var bound = false;
+
+  function alertsSheetEl() {
+    return document.getElementById("alertsNotificationsSheet");
+  }
 
   function qNotify(id) {
     return document.getElementById(id);
@@ -14,9 +18,9 @@
   function notifyContextHint() {
     try {
       if (typeof global !== "undefined" && global.self !== global.top) {
-        return " Open the portal in a full browser tab.";
+        return " Open the portal in a full browser tab (not inside another site frame).";
       }
-    } catch (_) {}
+    } catch (_e) {}
     if (typeof global !== "undefined" && global.isSecureContext === false) {
       return " Needs HTTPS.";
     }
@@ -35,13 +39,10 @@
       "aria-disabled",
       testBtn.disabled ? "true" : "false"
     );
-    if (permission === "granted") {
-      testBtn.textContent = "Send test alert";
-    } else if (permission === "denied") {
-      testBtn.textContent = "Send test alert";
+    testBtn.textContent = "Send test alert";
+    if (permission === "denied") {
       testBtn.title = "Allow notifications in browser settings first.";
     } else {
-      testBtn.textContent = "Send test alert";
       testBtn.title = "Turns alerts on and sends a test notification.";
     }
   }
@@ -107,6 +108,9 @@
     if (typeof global.portalSyncAlertsSettingsChrome === "function") {
       global.portalSyncAlertsSettingsChrome();
     }
+    if (typeof global.portalRefreshEnableAllUi === "function") {
+      global.portalRefreshEnableAllUi();
+    }
   }
 
   global.portalRefreshAlertsNotifyUi = refresh;
@@ -134,7 +138,7 @@
         if (r === "granted") {
           try {
             new Notification("Portal alerts on", {
-              body: "Announcements and roster changes on this device.",
+              body: "Announcements, roster changes and incoming calls on this device.",
             });
           } catch (e) {
             if (statusEl) {
@@ -202,6 +206,14 @@
         body: "If you see this, notifications can reach your device.",
       });
       if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+      if (typeof global.portalEnsureWebPushSubscription === "function") {
+        void global.portalEnsureWebPushSubscription().then(function (wp) {
+          if (statusEl && wp && wp.ok) {
+            statusEl.textContent = "On — including alerts when the app is closed.";
+          }
+          refresh();
+        });
+      }
     } catch (e) {
       if (statusEl) {
         statusEl.textContent =
@@ -212,27 +224,82 @@
     }
   }
 
-  if (alertsSheet) {
+  function onContinueClick(btn) {
+    var statusEl = qNotify("portalEnableAllStatus");
+    if (typeof global.portalRequestDefaultPortalPermissions === "function") {
+      btn.disabled = true;
+      var prev = btn.textContent;
+      btn.textContent = "Allow when asked…";
+      void global.portalRequestDefaultPortalPermissions().finally(function () {
+        if (typeof global.portalRefreshEnableAllUi === "function") {
+          global.portalRefreshEnableAllUi();
+        }
+        refresh();
+        if (
+          typeof global.portalMandatoryAlertsSettingsComplete === "function" &&
+          global.portalMandatoryAlertsSettingsComplete()
+        ) {
+          return;
+        }
+        btn.disabled = false;
+        btn.textContent = prev;
+      });
+      return;
+    }
+    if (statusEl) {
+      statusEl.textContent =
+        "Still loading — close this sheet, wait a few seconds, open Settings again and tap Continue.";
+    }
+    void requestNotifyThenRefresh();
+  }
+
+  function bindAlertsSheetUi() {
+    var alertsSheet = alertsSheetEl();
+    if (!alertsSheet || bound) return;
+    bound = true;
     alertsSheet.addEventListener(
       "click",
       function (e) {
         var t =
           e.target && e.target.closest
-            ? e.target.closest("#portalNotifyEnableBtn, #portalNotifyTestBtn")
+            ? e.target.closest(
+                "#portalNotifyEnableBtn, #portalNotifyTestBtn, #portalEnableAllBtn"
+              )
             : null;
         if (!t || !alertsSheet.contains(t)) return;
         e.preventDefault();
         if (t.disabled) return;
         if (t.id === "portalNotifyEnableBtn") onEnableClick();
         else if (t.id === "portalNotifyTestBtn") onTestClick();
+        else if (t.id === "portalEnableAllBtn") onContinueClick(t);
       },
       true
     );
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", refresh);
-  } else {
+  function init() {
+    bindAlertsSheetUi();
+    if (typeof global.portalBindPortalLocationPermissionUi === "function") {
+      try {
+        global.portalBindPortalLocationPermissionUi();
+      } catch (_e) {}
+    }
     refresh();
   }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+
+  global.addEventListener("portal:supabase-ready", function () {
+    bindAlertsSheetUi();
+    if (typeof global.portalBindPortalLocationPermissionUi === "function") {
+      try {
+        global.portalBindPortalLocationPermissionUi();
+      } catch (_e2) {}
+    }
+    refresh();
+  });
 })(typeof window !== "undefined" ? window : globalThis);

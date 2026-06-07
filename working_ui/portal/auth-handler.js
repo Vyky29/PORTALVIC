@@ -1039,6 +1039,8 @@ export async function bootstrapDashboardSupabase(_opts) {
       window.portalRequestNotificationPermission = perm.requestNotificationPermission;
       window.portalEnsureMandatoryAlertsSettings = perm.portalEnsureMandatoryAlertsSettings;
       window.portalSyncAlertsSettingsChrome = perm.portalSyncAlertsSettingsChrome;
+      window.portalMandatoryAlertsSettingsComplete = perm.portalMandatoryAlertsSettingsComplete;
+      window.portalBindPortalLocationPermissionUi = perm.bindPortalLocationPermissionUi;
       perm.bindPortalLocationPermissionUi();
       perm.bindMandatoryAlertsSettingsResume();
       await Promise.all([
