@@ -1684,9 +1684,30 @@
     }
   }
 
+  function meetingPanelHost() {
+    if (global.__PORTAL_CS_CLIQ_ACTIVE || global.__PORTAL_CS_CLIQ_EMBED_OPEN) {
+      return document.body;
+    }
+    var root = document.getElementById("csCliqRoot");
+    if (root) return root;
+    return document.getElementById(resolveCallUi().threadWrapId) || document.body;
+  }
+
+  function mountMeetingPanel(panel) {
+    if (!panel) return;
+    var host = meetingPanelHost();
+    if (panel.parentElement !== host) host.appendChild(panel);
+    var onBody = host === document.body;
+    panel.classList.toggle("portal-dm-meeting-panel--hub", !onBody && host.id === "csCliqRoot");
+    panel.classList.toggle("portal-dm-meeting-panel--global", onBody);
+  }
+
   function ensureMeetingPanel() {
     var existing = document.getElementById("portalStaffChatMeetingPanel");
-    if (existing) return existing;
+    if (existing) {
+      mountMeetingPanel(existing);
+      return existing;
+    }
 
     var panel = document.createElement("div");
     panel.id = "portalStaffChatMeetingPanel";
@@ -1711,9 +1732,11 @@
       '<button type="button" class="portal-dm-btn portal-dm-btn--primary" id="portalStaffChatMeetingSendBtn">Create meeting</button>' +
       "</div></div>";
 
-    var threadWrap = document.getElementById(resolveCallUi().threadWrapId);
-    if (threadWrap) threadWrap.appendChild(panel);
-    else document.body.appendChild(panel);
+    mountMeetingPanel(panel);
+
+    panel.addEventListener("click", function (ev) {
+      if (ev.target === panel) panel.hidden = true;
+    });
 
     var cancelBtn = panel.querySelector("#portalStaffChatMeetingCancelBtn");
     if (cancelBtn) {
@@ -1796,7 +1819,7 @@
             }
             var meetingTitle = title;
             if (duration) meetingTitle += " (" + duration + " min)";
-            if (notes) meetingTitle += " ù " + notes;
+            if (notes) meetingTitle += " ‚Äî " + notes;
             await sendCallInvite({
               client: ctx.client,
               threadId: ctx.threadId,
@@ -1824,6 +1847,8 @@
 
   function openMeetingPanel() {
     var panel = ensureMeetingPanel();
+    mountMeetingPanel(panel);
+    bindCallBar();
     var titleEl = document.getElementById("portalStaffChatMeetingTitle");
     var subEl = document.getElementById("portalStaffChatMeetingSub");
     var titleInp = document.getElementById("portalStaffChatMeetingTitleInput");

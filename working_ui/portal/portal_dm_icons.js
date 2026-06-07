@@ -20,6 +20,7 @@
     chevronLeft: '<path d="M15 18l-6-6 6-6"/>',
     play: '<polygon points="5 3 19 12 5 21 5 3"/>',
     pause: '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>',
+    send: '<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>',
   };
 
   var KIND_MAP = {

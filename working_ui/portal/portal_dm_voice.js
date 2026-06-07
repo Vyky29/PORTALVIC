@@ -420,8 +420,10 @@
   function ensureMicButtonBefore(textarea, buttonId) {
     if (!textarea || !textarea.parentNode) return null;
     injectStyles();
+    var shell = textarea.closest(".portal-cs-cliq-composer__shell");
+    var premium = !!(shell && shell.querySelector(".portal-cs-cliq-composer__leading"));
     var parent = textarea.parentNode;
-    if (!parent.classList.contains("portal-dm-compose-row")) {
+    if (!premium && !parent.classList.contains("portal-dm-compose-row")) {
       var row = document.createElement("div");
       row.className = "portal-dm-compose-row";
       parent.insertBefore(row, textarea);
@@ -436,14 +438,23 @@
     var btn = document.createElement("button");
     btn.type = "button";
     btn.id = buttonId;
-    btn.className = "portal-dm-voice-btn";
+    btn.className = "portal-dm-voice-btn" + (premium ? " portal-cs-cliq-composer__tool-btn" : "");
     btn.innerHTML = dmIcon("mic");
-    parent.insertBefore(btn, textarea);
+    if (premium) {
+      var leading = shell.querySelector(".portal-cs-cliq-composer__leading");
+      if (leading) leading.insertBefore(btn, leading.firstChild);
+    } else {
+      parent.insertBefore(btn, textarea);
+    }
     var hint = document.createElement("p");
     hint.className = "portal-dm-voice-rec-hint";
     hint.id = buttonId + "Hint";
     hint.hidden = true;
-    parent.parentNode.insertBefore(hint, parent.nextSibling);
+    if (premium && shell && shell.parentNode) {
+      shell.parentNode.insertBefore(hint, shell.nextSibling);
+    } else {
+      parent.parentNode.insertBefore(hint, parent.nextSibling);
+    }
     return btn;
   }
 

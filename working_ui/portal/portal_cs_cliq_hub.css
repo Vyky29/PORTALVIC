@@ -1,5 +1,5 @@
 /**
- * CS Cliq Operations Communication Hub ù premium three-panel layout.
+ * CS Cliq Operations Communication Hub ‚Äî premium three-panel layout.
  */
 
 #csCliqRoot.portal-cs-cliq--hub {
@@ -239,44 +239,137 @@
 
 #csCliqRoot .portal-cs-cliq-composer {
   flex-shrink: 0;
-  padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
-  background: #fff;
+  padding: 10px 14px calc(12px + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, #fff 0%, #f8fbfd 100%);
   border-top: 1px solid var(--cs-hub-line, #e2e8f0);
   display: flex;
   flex-direction: column;
-  gap: 8px;
-}
-
-#csCliqRoot .portal-cs-cliq-composer__tools {
-  display: flex;
-  align-items: center;
   gap: 6px;
-  min-height: 0;
 }
 
-#csCliqRoot .portal-cs-cliq-composer__row {
+#csCliqRoot .portal-cs-cliq-composer__shell {
   display: flex;
   align-items: flex-end;
   gap: 8px;
+  width: 100%;
+  min-width: 0;
+  padding: 6px 6px 6px 4px;
+  border-radius: 18px;
+  border: 1px solid rgba(45, 132, 179, 0.16);
+  background: #fff;
+  box-shadow: 0 2px 14px rgba(23, 50, 71, 0.06);
+}
+
+#csCliqRoot .portal-cs-cliq-composer__leading {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+#csCliqRoot .portal-cs-cliq-composer__attach-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+#csCliqRoot .portal-cs-cliq-composer__tool-btn.portal-dm-voice-btn,
+#csCliqRoot .portal-cs-cliq-composer__tool-btn.portal-dm-attach-btn {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #5b7f96;
+  box-shadow: none;
+}
+
+#csCliqRoot .portal-cs-cliq-composer__tool-btn.portal-dm-voice-btn:hover,
+#csCliqRoot .portal-cs-cliq-composer__tool-btn.portal-dm-attach-btn:hover {
+  background: #eef6fb;
+  color: var(--cs-hub-blue, #2d84b3);
+}
+
+#csCliqRoot .portal-cs-cliq-composer__tool-btn .portal-dm-ico {
+  width: 20px;
+  height: 20px;
 }
 
 #csCliqRoot .portal-cs-cliq-composer__input {
   flex: 1 1 auto;
   min-width: 0;
-  min-height: 42px;
+  min-height: 24px;
   max-height: 120px;
-  border-radius: 14px;
-  border: 1px solid var(--cs-hub-line, #e2e8f0);
-  padding: 10px 12px;
+  margin: 0;
+  padding: 8px 4px 8px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   resize: none;
   font: inherit;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--cs-hub-ink, #173247);
+  box-shadow: none;
+  outline: none;
+}
+
+#csCliqRoot .portal-cs-cliq-composer__input::placeholder {
+  color: #94a3b8;
+}
+
+#csCliqRoot .portal-cs-cliq-composer__input:focus {
+  outline: none;
+  box-shadow: none;
 }
 
 #csCliqRoot .portal-cs-cliq-composer__send {
   flex-shrink: 0;
-  border-radius: 12px;
-  min-width: 72px;
-  padding: 10px 14px;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  padding: 0;
+  margin: 0 2px 2px 0;
+  border: 0;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #3a96c7 0%, #2d84b3 100%);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(45, 132, 179, 0.35);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+#csCliqRoot .portal-cs-cliq-composer__send:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(45, 132, 179, 0.42);
+}
+
+#csCliqRoot .portal-cs-cliq-composer__send:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+#csCliqRoot .portal-cs-cliq-composer__send-ico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 2px;
+}
+
+#csCliqRoot .portal-cs-cliq-composer__send-ico .portal-dm-ico {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2;
+}
+
+#csCliqRoot .portal-cs-cliq-composer .portal-dm-voice-rec-hint {
+  margin: 0;
+  padding: 0 6px;
+  font-size: 11px;
 }
 
 #csCliqRoot .portal-cs-cliq-composer__err {
@@ -284,6 +377,7 @@
   min-height: 1.1em;
   font-size: 12px;
   color: #dc2626;
+  padding: 0 4px;
 }
 
 #csCliqRoot .portal-cs-cliq-compose-screen {

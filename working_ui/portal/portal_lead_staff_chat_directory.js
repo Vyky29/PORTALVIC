@@ -29,7 +29,7 @@
     return prof || (global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.staff_profile) || {};
   }
 
-  /** Full messenger inbox (search, staff directory, calls) � lead, admin, CEO on any portal. */
+  /** Full messenger inbox (search, staff directory, calls) — lead, admin, CEO on any portal. */
   function portalStaffHasFullMessengerAccess(prof) {
     var row = profileRow(prof);
     var ar = String(row.app_role || "").toLowerCase();

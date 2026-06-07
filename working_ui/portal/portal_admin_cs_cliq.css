@@ -8,6 +8,7 @@
   --portal-chat-ink: #173247;
   --portal-chat-muted: #64748b;
   --portal-chat-line: #e2e8f0;
+  position: relative;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -260,15 +261,20 @@
   display: none !important;
 }
 
-#csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="thread"] #csCliqListPanel,
-#csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="thread"] #csCliqChannelNav,
 #csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="thread"] #csCliqComposePanel,
-#csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="compose"] #csCliqListPanel,
-#csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="compose"] #csCliqChannelNav,
 #csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="compose"] #csCliqThreadPanel,
 #csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="list"] #csCliqThreadPanel,
 #csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="list"] #csCliqComposePanel {
   display: none !important;
+}
+
+@media (max-width: 899px) {
+  #csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="thread"] #csCliqListPanel,
+  #csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="thread"] #csCliqChannelNav,
+  #csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="compose"] #csCliqListPanel,
+  #csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="compose"] #csCliqChannelNav {
+    display: none !important;
+  }
 }
 
 #csCliqRoot .portal-dm-inbox-nav {
@@ -620,23 +626,16 @@
   color: #145a3a;
 }
 
-#csCliqRoot .portal-dm-compose-bar {
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 10px 12px;
-  border-top: 1px solid var(--portal-chat-line);
-  background: #fff;
+#csCliqRoot .portal-dm-compose-bar.portal-cs-cliq-composer {
+  padding: 0;
+  border-top: 0;
+  background: transparent;
 }
 
-#csCliqRoot .portal-dm-compose-bar .txa {
-  min-height: 72px;
-  max-height: 140px;
-  resize: vertical;
-  width: 100%;
+#csCliqRoot .portal-cs-cliq-composer .txa,
+#csCliqRoot .portal-cs-cliq-composer__input {
+  resize: none !important;
   box-sizing: border-box;
-  min-width: 0;
 }
 
 #csCliqRoot .portal-dm-btn {
@@ -753,12 +752,28 @@ body.admin-view-cs-cliq .portal-admin-floating-chat-wrap {
   box-sizing: border-box;
 }
 
+.portal-dm-meeting-panel--global,
+#portalStaffChatMeetingPanel.portal-dm-meeting-panel--global {
+  position: fixed;
+  inset: 0;
+  z-index: 13060;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.48);
+  box-sizing: border-box;
+}
+
 #csCliqRoot .portal-dm-meeting-panel[hidden],
-#csCliqRoot #portalStaffChatMeetingPanel[hidden] {
+#csCliqRoot #portalStaffChatMeetingPanel[hidden],
+.portal-dm-meeting-panel--global[hidden],
+#portalStaffChatMeetingPanel.portal-dm-meeting-panel--global[hidden] {
   display: none !important;
 }
 
-#csCliqRoot .portal-dm-meeting-panel-card {
+#csCliqRoot .portal-dm-meeting-panel-card,
+.portal-dm-meeting-panel--global .portal-dm-meeting-panel-card {
   width: min(100%, 380px);
   padding: 16px;
   border-radius: 14px;
@@ -768,14 +783,16 @@ body.admin-view-cs-cliq .portal-admin-floating-chat-wrap {
   min-width: 0;
 }
 
-#csCliqRoot .portal-dm-meeting-panel-card h4 {
+#csCliqRoot .portal-dm-meeting-panel-card h4,
+.portal-dm-meeting-panel--global .portal-dm-meeting-panel-card h4 {
   margin: 0 0 6px;
   font-size: 18px;
   line-height: 1.25;
   color: var(--portal-chat-ink);
 }
 
-#csCliqRoot .portal-dm-meeting-panel-sub {
+#csCliqRoot .portal-dm-meeting-panel-sub,
+.portal-dm-meeting-panel--global .portal-dm-meeting-panel-sub {
   margin: 0 0 14px;
   font-size: 13px;
   line-height: 1.45;
@@ -783,7 +800,8 @@ body.admin-view-cs-cliq .portal-admin-floating-chat-wrap {
   overflow-wrap: break-word;
 }
 
-#csCliqRoot .portal-dm-meeting-field {
+#csCliqRoot .portal-dm-meeting-field,
+.portal-dm-meeting-panel--global .portal-dm-meeting-field {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -791,13 +809,19 @@ body.admin-view-cs-cliq .portal-admin-floating-chat-wrap {
   min-width: 0;
 }
 
-#csCliqRoot .portal-dm-meeting-field span {
+#csCliqRoot .portal-dm-meeting-field span,
+.portal-dm-meeting-panel--global .portal-dm-meeting-field span {
   font-size: 12px;
   font-weight: 700;
   color: var(--portal-chat-muted);
 }
 
-#csCliqRoot .portal-dm-meeting-field input {
+#csCliqRoot .portal-dm-meeting-field input,
+#csCliqRoot .portal-dm-meeting-field select,
+#csCliqRoot .portal-dm-meeting-field textarea,
+.portal-dm-meeting-panel--global .portal-dm-meeting-field input,
+.portal-dm-meeting-panel--global .portal-dm-meeting-field select,
+.portal-dm-meeting-panel--global .portal-dm-meeting-field textarea {
   width: 100%;
   box-sizing: border-box;
   padding: 10px 12px;
@@ -807,7 +831,8 @@ body.admin-view-cs-cliq .portal-admin-floating-chat-wrap {
   min-width: 0;
 }
 
-#csCliqRoot .portal-dm-meeting-actions {
+#csCliqRoot .portal-dm-meeting-actions,
+.portal-dm-meeting-panel--global .portal-dm-meeting-actions {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
@@ -1158,15 +1183,17 @@ body.admin-view-cs-cliq .portal-admin-floating-chat-wrap {
     font-size: 10px;
   }
 
-  #csCliqRoot.portal-cs-cliq--subscreen .portal-dm-compose-bar {
+  #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq-composer {
     padding: 8px 10px calc(10px + env(safe-area-inset-bottom, 0px));
     background: #f0f2f5;
   }
 
-  #csCliqRoot.portal-cs-cliq--subscreen .portal-dm-compose-bar .txa {
-    min-height: 44px;
-    max-height: 120px;
-    resize: none;
+  #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq-composer__shell {
+    border-color: rgba(45, 132, 179, 0.12);
+    box-shadow: 0 1px 8px rgba(23, 50, 71, 0.05);
+  }
+
+  #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq-composer__input {
     font-size: 16px;
   }
 

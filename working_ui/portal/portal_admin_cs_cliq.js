@@ -213,7 +213,7 @@
       '<header class="portal-cs-cliq-thread-header" id="csCliqThreadHeader" hidden>' +
       '<button type="button" class="portal-cs-cliq__back-btn" id="csCliqBackBtn" aria-label="Back to inbox">‹</button>' +
       '<div class="portal-cs-cliq-thread-header__identity">' +
-      '<span class="portal-cs-cliq-thread-header__avatar" id="csCliqThreadAvatar" aria-hidden="true">?</span>' +
+      '<span class="portal-cs-cliq-thread-header__avatar" id="csCliqThreadAvatar" aria-hidden="true"></span>' +
       '<div class="portal-cs-cliq-thread-header__meta">' +
       '<span class="portal-cs-cliq-thread-header__name" id="csCliqThreadName">Conversation</span>' +
       '<span class="portal-cs-cliq-thread-header__role" id="csCliqThreadRole">Staff</span>' +
@@ -224,12 +224,12 @@
       "</header>" +
       '<div id="csCliqMessages" class="portal-dm-msgs-col portal-dm-msgs-scroll portal-cs-cliq-messages"></div>' +
       '<div class="portal-cs-cliq-composer portal-dm-compose-bar">' +
-      '<div class="portal-cs-cliq-composer__tools" id="csCliqComposerTools" aria-label="Attachments"></div>' +
-      '<div class="portal-cs-cliq-composer__row">' +
-      '<label class="sr-only" for="csCliqInput">Your message</label>' +
-      '<textarea id="csCliqInput" class="portal-cs-cliq-composer__input txa" placeholder="Write a message…" maxlength="8000" rows="1"></textarea>' +
-      '<button type="button" class="portal-cs-cliq-composer__send portal-dm-btn portal-dm-btn--primary" id="csCliqSendBtn" aria-label="Send message">Send</button>' +
-      "</div>" +
+      '<div class="portal-cs-cliq-composer__shell">' +
+      '<div class="portal-cs-cliq-composer__leading" id="csCliqComposerLeading" aria-label="Message tools"></div>' +
+      '<textarea id="csCliqInput" class="portal-cs-cliq-composer__input txa" aria-label="Message" placeholder="Message…" maxlength="8000" rows="1"></textarea>' +
+      '<button type="button" class="portal-cs-cliq-composer__send portal-dm-btn portal-dm-btn--primary" id="csCliqSendBtn" aria-label="Send message">' +
+      '<span class="portal-cs-cliq-composer__send-ico" data-dm-icon="send" aria-hidden="true"></span>' +
+      "</button></div>" +
       '<p id="csCliqErr" class="portal-cs-cliq-composer__err muted"></p>' +
       "</div></div></section></div></div>" +
       '<div id="csCliqChannelsPane" class="portal-cs-cliq__pane" data-cs-cliq-pane="channels" hidden>' +
@@ -487,6 +487,79 @@
     }
   }
 
+  function syncInboxLayout(hooks) {
+    hooks = hooks || {};
+    var ui = global.__PORTAL_ADMIN_DM_UI || {};
+    var panel = String(ui.panel || "list");
+    var inThread = panel === "thread";
+    var inCompose = panel === "compose";
+    var listPanel = document.getElementById("csCliqListPanel");
+    var composePanel = document.getElementById("csCliqComposePanel");
+    var threadPanel = document.getElementById("csCliqThreadPanel");
+    var backBtn = document.getElementById("csCliqBackBtn");
+    var titleEl = document.getElementById("csCliqTitle");
+    var nav = document.getElementById("csCliqChannelNav");
+    var newBtn = document.getElementById("csCliqBtnNew");
+    var listCol = document.getElementById("csCliqListColumn");
+    var convCol = document.getElementById("csCliqConversationCol");
+    var emptyState = document.getElementById("csCliqInboxEmpty");
+    var chatBody = document.querySelector("#csCliqRoot .portal-cs-cliq__chat-body");
+    if (chatBody) chatBody.setAttribute("data-cs-cliq-panel", panel);
+    if (typeof hooks.onMobileSubscreen === "function") hooks.onMobileSubscreen(panel);
+    if (listPanel) listPanel.hidden = false;
+    if (composePanel) composePanel.hidden = !inCompose;
+    if (threadPanel) {
+      threadPanel.hidden = !inThread;
+      threadPanel.setAttribute("aria-hidden", inThread ? "false" : "true");
+    }
+    if (emptyState) {
+      emptyState.hidden = inThread || inCompose;
+      emptyState.setAttribute("aria-hidden", inThread || inCompose ? "true" : "false");
+    }
+    if (listCol) listCol.classList.toggle("portal-cs-cliq-inbox__list-col--hidden-mobile", inThread || inCompose);
+    if (convCol) convCol.classList.toggle("portal-cs-cliq-inbox__conversation-col--active", inThread || inCompose);
+    if (backBtn) backBtn.hidden = !inThread && !inCompose;
+    if (nav) nav.hidden = inThread || inCompose;
+    if (newBtn) {
+      var canNew = !(
+        global.portalCsCliqHubRoles &&
+        global.portalCsCliqHubRoles.canCreateConversations &&
+        !global.portalCsCliqHubRoles.canCreateConversations()
+      );
+      newBtn.hidden = inThread || inCompose || !canNew;
+    }
+    if (global.portalCsCliqThreadHeader && typeof global.portalCsCliqThreadHeader.sync === "function") {
+      global.portalCsCliqThreadHeader.sync(ui);
+    }
+    if (typeof hooks.onChannelTabs === "function") hooks.onChannelTabs();
+    if (titleEl) {
+      if (inCompose) {
+        titleEl.textContent = "New message";
+      } else if (typeof hooks.inboxTitle === "function") {
+        titleEl.textContent = hooks.inboxTitle();
+      } else {
+        titleEl.textContent = "Inbox";
+      }
+    }
+    var gid = ui.groupId ? String(ui.groupId).trim() : "";
+    var tid = ui.threadId ? String(ui.threadId).trim() : "";
+    global.__PORTAL_INTERNAL_CHAT_UI = global.__PORTAL_INTERNAL_CHAT_UI || {};
+    global.__PORTAL_INTERNAL_CHAT_UI.threadId = inThread && tid && !gid ? tid : null;
+    global.__PORTAL_INTERNAL_CHAT_UI.peerLabel =
+      inThread && !gid ? String(ui.peerLabel || "").trim() : "";
+    var showCalls = inThread && (!!tid || !!gid);
+    if (global.portalStaffChatCalls && typeof global.portalStaffChatCalls.syncCallBar === "function") {
+      global.portalStaffChatCalls.syncCallBar({ inThread: showCalls });
+    } else {
+      var callBar = document.getElementById("csCliqHeadCallBar");
+      if (callBar) {
+        callBar.hidden = !showCalls;
+        callBar.setAttribute("aria-hidden", showCalls ? "false" : "true");
+      }
+    }
+    syncPhonePaneContext();
+  }
+
   function destroyModule() {
     var root = document.getElementById("csCliqRoot");
     if (root) delete root.dataset.portalCsCliqBound;
@@ -499,6 +572,7 @@
     bindModule: bindModule,
     destroyModule: destroyModule,
     setRailPane: setRailPane,
+    syncInboxLayout: syncInboxLayout,
     syncPhonePaneContext: syncPhonePaneContext,
   };
 })(window);

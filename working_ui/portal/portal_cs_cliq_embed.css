@@ -41,11 +41,30 @@
 .portal-cs-cliq-embed-head {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
   flex-shrink: 0;
   padding: 12px 16px 10px;
   border-bottom: 1px solid rgba(23, 50, 71, 0.08);
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 252, 255, 0.94));
+}
+
+.portal-cs-cliq-embed-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.portal-cs-cliq-embed-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: #fff;
+  border: 1px solid rgba(45, 132, 179, 0.12);
+  box-shadow: 0 2px 8px rgba(23, 50, 71, 0.08);
 }
 
 .portal-cs-cliq-embed-close {

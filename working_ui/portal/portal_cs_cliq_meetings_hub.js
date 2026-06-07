@@ -1,5 +1,5 @@
 /**
- * CS Cliq Calendar / meetings hub — schedule with staff from open chats.
+ * CS Cliq Calendar / meetings hub â€” schedule with staff from open chats.
  */
 (function (global) {
   "use strict";
@@ -31,7 +31,7 @@
     if (status) status.textContent = active && label ? label : "No active chat selected";
     if (hint) {
       hint.textContent = active
-        ? "Schedule a video meeting — " + label + " will get a join button in the thread."
+        ? "Schedule a video meeting â€” " + label + " will get a join button in the thread."
         : "Open a staff or lead chat from Chats, then return here to schedule a meeting with them.";
     }
     if (!host) return;
@@ -43,7 +43,11 @@
         action: "meeting",
       });
     }
-    items.push({ title: "Staff term calendar", sub: "Sessions, roster, and term dates", action: "scheduling" });
+    items.push({
+      title: "Staff roster calendar",
+      sub: "Term sessions and worker schedules (separate from video meetings)",
+      action: "scheduling",
+    });
     items.push({ title: "Open Chats", sub: "Pick someone to meet with", action: "chats" });
     host.innerHTML = items
       .map(function (item, idx) {
