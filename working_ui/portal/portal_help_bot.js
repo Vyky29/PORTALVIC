@@ -217,6 +217,89 @@
     }).filter(Boolean);
   }
 
+  function knowledgeForAssist(data, match) {
+    var topics = (data && data.topics) || [];
+    var picked = [];
+    var i;
+    if (match && match.suggestions && match.suggestions.length) {
+      for (i = 0; i < match.suggestions.length && picked.length < 6; i++) {
+        picked.push(match.suggestions[i]);
+      }
+    }
+    if (match && match.bestGuess && picked.indexOf(match.bestGuess) === -1) {
+      picked.unshift(match.bestGuess);
+    }
+    if (!picked.length) {
+      picked = topics.slice(0, 8);
+    }
+    return picked.slice(0, 8).map(function (t) {
+      return {
+        title: String(t.title || ""),
+        answer: String(t.answer || "").slice(0, 900),
+      };
+    });
+  }
+
+  function configureAssistOnce() {
+    if (global.__portalOpenAiAssistConfigured || !global.PortalOpenAiAssist) return;
+    global.__portalOpenAiAssistConfigured = true;
+    var box = global.__PORTAL_SUPABASE__;
+    global.PortalOpenAiAssist.configure({
+      getClient: function () {
+        return box && box.client ? box.client : null;
+      },
+      getSupabaseUrl: function () {
+        var u = typeof global.SUPABASE_URL === "string" ? global.SUPABASE_URL.trim() : "";
+        return u || "https://cklpnwhlqsulpmkipmqb.supabase.co";
+      },
+      getAnonKey: function () {
+        return typeof global.SUPABASE_ANON_KEY === "string" ? global.SUPABASE_ANON_KEY : "";
+      },
+    });
+    void global.PortalOpenAiAssist.probe();
+  }
+
+  async function tryAssistAnswer(question, match, msgsHost, sugHost, data) {
+    if (!global.PortalOpenAiAssist) return false;
+    configureAssistOnce();
+    var avail = await global.PortalOpenAiAssist.probe();
+    if (!avail.openai) return false;
+
+    appendBubble(
+      msgsHost,
+      "bot",
+      '<span class="muted">Thinking…</span>'
+    );
+    var thinking = msgsHost && msgsHost.lastElementChild;
+
+    var res = await global.PortalOpenAiAssist.helpAnswer(
+      question,
+      knowledgeForAssist(data, match)
+    );
+    if (thinking && thinking.parentNode) thinking.parentNode.removeChild(thinking);
+
+    if (!res || !res.ok || !res.text) return false;
+
+    appendBubble(
+      msgsHost,
+      "bot",
+      "<strong>AI assistant</strong><br>" +
+        formatAnswerHtml(res.text) +
+        '<p class="portal-help-guide-link"><a href="portal_guide.html" target="_blank" rel="noopener">Open full guide</a></p>'
+    );
+    renderSuggestions(
+      sugHost,
+      match.suggestions && match.suggestions.length
+        ? match.suggestions
+        : starterTopics(data),
+      function (topic) {
+        appendBubble(msgsHost, "user", escapeHtml(topic.title));
+        answerTopic(topic, msgsHost, sugHost);
+      }
+    );
+    return true;
+  }
+
   async function logUnanswered(question, match) {
     try {
       var box = global.__PORTAL_SUPABASE__;
@@ -269,6 +352,12 @@
       return;
     }
 
+    var assisted = await tryAssistAnswer(q, match, msgsHost, sugHost, data);
+    if (assisted) {
+      await logUnanswered(q, match);
+      return;
+    }
+
     appendBubble(
       msgsHost,
       "bot",
@@ -289,7 +378,7 @@
     appendBubble(
       msgsHost,
       "bot",
-      "Hi — ask about login, the dashboard, feedback, announcements, My participants, timesheets or installing CS Portal."
+      "Hi — ask about login, the dashboard, feedback, announcements, My participants, timesheets or installing CS Portal. When FAQ does not match, AI can help if enabled."
     );
     renderSuggestions(sugHost, starterTopics(data), function (topic) {
       appendBubble(msgsHost, "user", escapeHtml(topic.title));

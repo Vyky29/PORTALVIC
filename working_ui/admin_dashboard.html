@@ -36,6 +36,7 @@
   <script src="/portal/portal-admin-settings-hub.js?v=20260607-parent-notify-test"></script>
   <script src="/portal/admin-onboarding.js?v=20260530-onboarding-clickdocs"></script>
   <script src="/portal/admin-parent-notify-send.js?v=20260622-parent-notify"></script>
+  <script src="/portal/portal-openai-assist.js?v=20260607-openai-assist"></script>
   <script src="/portal/admin-logs.js?v=20260601-logs-merge"></script>
   <script src="/portal/portal-roster-rows-merge.js?v=20260601-term-slot"></script>
   <script src="/portal/admin-portal-term-slot.js?v=20260602-term-slot-copy"></script>
@@ -22783,6 +22784,38 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(mr) mr.innerHTML = '';
     }
 
+    function portalOpenAiAssistConfigureOnce(){
+      if(window.__portalOpenAiAssistConfigured || !window.PortalOpenAiAssist) return;
+      window.__portalOpenAiAssistConfigured = true;
+      window.PortalOpenAiAssist.configure({
+        getClient: getSchedSupabaseClient,
+        getSupabaseUrl: function(){
+          var u = typeof window.SUPABASE_URL === 'string' ? window.SUPABASE_URL.trim() : '';
+          return u || 'https://cklpnwhlqsulpmkipmqb.supabase.co';
+        },
+        getAnonKey: function(){
+          return typeof window.SUPABASE_ANON_KEY === 'string' ? window.SUPABASE_ANON_KEY : '';
+        }
+      });
+    }
+    function reportContextForClient(cid){
+      var c = cid ? MOCK.clientsById[cid] : null;
+      var f = finance();
+      var bits = [];
+      if(c){
+        bits.push('Participant: '+String(c.name||'').trim());
+        if(c.attendancePct != null) bits.push('Attendance: '+c.attendancePct+'%');
+        if(c.sessionsAttended != null) bits.push('Sessions attended: '+c.sessionsAttended);
+        if(c.pattern) bits.push('Pattern: '+c.pattern);
+        if(Array.isArray(c.positives) && c.positives.length){
+          bits.push('Positive points:\n- '+c.positives.join('\n- '));
+        }
+      }else{
+        bits.push('General operations summary (no single participant selected).');
+        bits.push('Sessions (period): '+f.sessions);
+      }
+      return bits.join('\n');
+    }
     function reportDraftForClient(cid){
       var c = cid ? MOCK.clientsById[cid] : null;
       var f = finance();
@@ -22805,22 +22838,27 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
 
     function openReportModal(cid, repItemId){
       state.reportTargetClient = cid||null;
+      portalOpenAiAssistConfigureOnce();
       var opts = '<option value="">General / operations</option>'+Object.keys(MOCK.clientsById).map(function(k){
         var c = MOCK.clientsById[k];
         return '<option value="'+esc(c.id)+'">'+esc(c.name)+'</option>';
       }).join('');
       openModal(
         '<div class="modal-h"><h2 id="modalTitle">Report generation</h2></div><div class="modal-b">'+
-        '<p class="muted" style="margin-top:0">Structured output for families and files — demo workflow: generate, edit, copy or export.</p>'+
+        '<p class="muted" style="margin-top:0;min-width:0;overflow-wrap:break-word">Draft reports for families and files. With <strong>OpenAI</strong> configured on Supabase, Generate uses AI from your notes; otherwise a simple template is used.</p>'+
         '<div class="filter-row" style="margin-bottom:12px">'+
         '<select class="sel" id="repClient" style="max-width:100%">'+opts+'</select>'+
         '<select class="sel" id="repType"><option value="progress">Progress report</option><option value="parent_summary">Parent summary</option><option value="term">Term review draft</option><option value="trial">Trial summary</option><option value="ehcp">EHCP contribution</option><option value="observation">Observation</option></select></div>'+
+        '<label class="muted" for="repContext" style="display:block;margin-bottom:6px">Notes for AI (optional)</label>'+
+        '<textarea class="txa" id="repContext" placeholder="Bullet points, session highlights, things to mention…" style="min-height:88px;max-width:100%;margin-bottom:12px"></textarea>'+
         '<label class="sr-only" for="repBody">Report body</label>'+
-        '<textarea class="txa" id="repBody" style="min-height:220px"></textarea></div>'+
-        '<div class="modal-f">'+
+        '<textarea class="txa" id="repBody" style="min-height:220px;max-width:100%"></textarea>'+
+        '<p class="muted" id="repAiStatus" style="margin:8px 0 0;font-size:12px;line-height:1.45;min-width:0;overflow-wrap:break-word;display:none" role="status"></p></div>'+
+        '<div class="modal-f" style="flex-wrap:wrap;gap:8px">'+
         '<button type="button" class="btn btn--ghost" id="btnCloseModal">Cancel</button>'+
         '<button type="button" class="btn btn--sec" id="btnCopyRep">Copy</button>'+
         '<button type="button" class="btn btn--sec" id="btnJsonRep">Export JSON</button>'+
+        '<button type="button" class="btn btn--sec" id="btnAiImprove">Improve with AI</button>'+
         '<button type="button" class="btn btn--pri" id="btnGenRep">Generate draft</button></div>'
       );
       if(cid) $('repClient').value = cid;
@@ -22834,10 +22872,105 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(rt) for(var i=0;i<rt.options.length;i++) if(rt.options[i].value===want){ rt.selectedIndex=i; break; }
         }
       }
+      function repClientName(){
+        var id = ($('repClient') && $('repClient').value) || '';
+        var c = id && MOCK.clientsById[id] ? MOCK.clientsById[id] : null;
+        return c ? String(c.name || '').trim() : '';
+      }
+      function repCombinedContext(){
+        var id = ($('repClient') && $('repClient').value) || null;
+        var notes = (($('repContext') && $('repContext').value) || '').trim();
+        var base = reportContextForClient(id);
+        return notes ? (base + '\n\nStaff notes:\n' + notes) : base;
+      }
+      function repSetStatus(msg, isErr){
+        var el = $('repAiStatus');
+        if(!el) return;
+        if(!msg){ el.style.display = 'none'; el.textContent = ''; return; }
+        el.style.display = 'block';
+        el.className = isErr ? 'submission-state is-error' : 'muted';
+        el.style.margin = '8px 0 0';
+        el.style.fontSize = '12px';
+        el.textContent = msg;
+      }
       $('btnCloseModal').onclick = closeModal;
       $('btnGenRep').onclick = function(){
         var id = $('repClient').value || null;
-        $('repBody').value = reportDraftForClient(id);
+        var btn = $('btnGenRep');
+        var runTemplate = function(){
+          $('repBody').value = reportDraftForClient(id);
+          repSetStatus('Template draft — add OPENAI_API_KEY on Supabase for AI drafts.', true);
+        };
+        if(!window.PortalOpenAiAssist){
+          runTemplate();
+          return;
+        }
+        btn.disabled = true;
+        btn.textContent = 'Generating…';
+        repSetStatus('');
+        void window.PortalOpenAiAssist.probe().then(function(av){
+          if(!av.openai){
+            btn.disabled = false;
+            btn.textContent = 'Generate draft';
+            runTemplate();
+            return null;
+          }
+          return window.PortalOpenAiAssist.reportDraft({
+            reportType: ($('repType') && $('repType').value) || 'progress',
+            clientName: repClientName(),
+            context: repCombinedContext()
+          });
+        }).then(function(res){
+          btn.disabled = false;
+          btn.textContent = 'Generate draft';
+          if(!res) return;
+          if(res.ok && res.text){
+            $('repBody').value = res.text;
+            repSetStatus('AI draft generated — review and edit before sending.');
+            return;
+          }
+          runTemplate();
+        }).catch(function(){
+          btn.disabled = false;
+          btn.textContent = 'Generate draft';
+          runTemplate();
+        });
+      };
+      $('btnAiImprove').onclick = function(){
+        var body = (($('repBody') && $('repBody').value) || '').trim();
+        if(!body){ alert('Write or generate a draft first.'); return; }
+        if(!window.PortalOpenAiAssist){ alert('AI module not loaded — refresh the page.'); return; }
+        var btn = $('btnAiImprove');
+        btn.disabled = true;
+        btn.textContent = 'Improving…';
+        repSetStatus('');
+        void window.PortalOpenAiAssist.probe().then(function(av){
+          if(!av.openai){
+            btn.disabled = false;
+            btn.textContent = 'Improve with AI';
+            repSetStatus('OpenAI not configured on Supabase.', true);
+            return null;
+          }
+          return window.PortalOpenAiAssist.reportImprove({
+            reportType: ($('repType') && $('repType').value) || 'progress',
+            clientName: repClientName(),
+            existingText: body
+          });
+        }).then(function(res){
+          btn.disabled = false;
+          btn.textContent = 'Improve with AI';
+          if(!res) return;
+          if(res.ok && res.text){
+            $('repBody').value = res.text;
+            repSetStatus('Draft improved — check facts before sending.');
+            return;
+          }
+          repSetStatus('Could not improve — try again or edit manually.', true);
+        }).catch(function(){
+          btn.disabled = false;
+          btn.textContent = 'Improve with AI';
+          repSetStatus('AI error — edit manually.', true);
+        });
       };
       $('btnCopyRep').onclick = function(){ navigator.clipboard.writeText($('repBody').value).catch(function(){ alert('Copy manually'); }); };
       $('btnJsonRep').onclick = function(){

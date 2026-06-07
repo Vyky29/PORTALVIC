@@ -11,7 +11,8 @@
     "supabase:migration:list": "supabase migration list",
     "supabase:functions:list": "supabase functions list",
     "deploy:ghost": "supabase functions deploy portal-admin-ghost-start --no-verify-jwt && supabase functions deploy portal-admin-ghost-verify --no-verify-jwt",
-    "deploy:parent-notify": "supabase functions deploy portal-parent-notify-send --no-verify-jwt"
+    "deploy:parent-notify": "supabase functions deploy portal-parent-notify-send --no-verify-jwt",
+    "deploy:openai-assist": "supabase functions deploy portal-openai-assist --no-verify-jwt"
   },
   "devDependencies": {
     "supabase": "^2.67.2"
