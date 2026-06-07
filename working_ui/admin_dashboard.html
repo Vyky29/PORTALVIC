@@ -25,6 +25,7 @@
   <link rel="stylesheet" href="/portal/portal_staff_map.css?v=20260602-staff-map-header" />
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260621-lead-inbox" />
   <script src="/portal/admin-portal-staff-map.js?v=20260622-ghost-map"></script>
+  <script src="/portal/portal_admin_cs_cliq.js?v=20260605-cs-cliq"></script>
   <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260622-ghost-view" />
   <script src="/portal/admin-portal-ghost-teleport.js?v=20260622-ghost-lead"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
@@ -51,6 +52,7 @@
   <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260604-mob-nav" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260605-admin-chat" />
+  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260605-cs-cliq" />
 </head>
 <body>
   <script>
@@ -316,6 +318,7 @@
       { id:'orders_all', label:'All', hubLabel:'Bookings' },
       { id:'comms_bookings', label:'Staff & shift notices' },
       { id:'comms_ops', label:'Ops comms & log' },
+      { id:'cs_cliq', label:'CS Cliq', hubLabel:'Messaging' },
       { id:'clients', label:'Participants' },
       { id:'c4k_payments', label:'Programme payments (operations)', hubLabel:'Ops payments' },
       { id:'reenrol_payments', label:'Programme payments', hubLabel:'Payments' },
@@ -367,6 +370,7 @@
       { id:'g_zoho', label:'H&R (ZohoPeople)', children:['staffhr','onboarding','staffhr_contracts','interviews'] },
       { id:'g_supabase', label:'Documents', children:['portal_payslips','portal_docs_timesheet','portal_docs_expense','portal_docs_portalpin','portal_docs_certificate','portal_docs_passport','portal_docs_checklist','portal_docs_firstaid'] },
       { id:'g_xero', label:'Finance (Xero)', children:['reenrol_payments','invoices'] },
+      { id:'g_cs_cliq', label:'CS Cliq', children:['cs_cliq'] },
       { id:'g_settings_portal', label:'Settings & dashboards', children:['__h:This app','settings','portal_device_notifications','logs','portal_nav_alerts','__h:Monitoring','portal_activity','portal_training_progress','staff_live_map','staff_ghost_teleport','__h:Other portals','portal_nav_staff','portal_nav_lead','portal_nav_ceo','portal_nav_admin','__h:Session','portal_nav_logout'] }
     ];
     /* Stroke SVGs (outline), inherit sidebar text colour — replaces emoji glyphs */
@@ -397,6 +401,8 @@
       orders_outstanding:'<path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/><circle cx="5" cy="5" r="3" fill="currentColor" stroke="none"/>',
       comms_bookings:'<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>',
       comms_ops:'<path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>',
+      cs_cliq:'<path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>',
+      g_cs_cliq:'<path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>',
       staffhr:'<path d="M9 5H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="15" y2="16"/><line x1="9" y1="20" x2="13" y2="20"/>',
       onboarding:'<path d="M2 3h6a4 4 0 014 4v14a4 4 0 00-4-4H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a4 4 0 014-4h6z"/>',
       staffhr_contracts:'<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>',
@@ -1912,6 +1918,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           }
         }catch(_ghostDestroy){}
       }
+      if(state.view === 'cs_cliq' && id !== 'cs_cliq'){
+        window.__PORTAL_CS_CLIQ_ACTIVE = false;
+        window.__PORTAL_ADMIN_DM_OPEN = false;
+        try{
+          if(window.PortalAdminCsCliq && typeof window.PortalAdminCsCliq.destroyModule === 'function'){
+            window.PortalAdminCsCliq.destroyModule();
+          }
+        }catch(_csCliqDestroy){}
+      }
       if(id === 'novo_dashboard') id = 'dashboard';
       if(id === 'novo_schedule') id = 'c4k_services';
       if(id === 'novo_orders') id = 'orders_all';
@@ -1991,7 +2006,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       comms_ops_order: true,
       dashboard: true,
       operations: true,
-      operations_admin: true
+      operations_admin: true,
+      cs_cliq: true
     };
     function portalAdminExtractPageTitle(html){
       var m = String(html || '').match(/<h[12]\s+class="page-title"[^>]*>([\s\S]*?)<\/h[12]>/i);
@@ -16479,6 +16495,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       else if(id==='participant_achievements') html = viewParticipantAchievements();
       else if(id==='staff_live_map') html = viewStaffLiveMap();
       else if(id==='staff_ghost_teleport') html = viewStaffGhostTeleport();
+      else if(id==='cs_cliq') html = viewCsCliq();
       else if(id==='policies') html = viewPoliciesSignoffs();
       else if(id==='onboarding') html = viewOnboarding();
       else if(id==='reports') html = viewReports();
@@ -17705,6 +17722,32 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       portalGhostTeleportConfigureOnce();
       if(window.PortalGhostTeleport && typeof window.PortalGhostTeleport.bindModule === 'function'){
         window.PortalGhostTeleport.bindModule();
+      }
+    }
+    function portalAdminCsCliqConfigureOnce(){
+      if(window.__portalAdminCsCliqConfigured || !window.PortalAdminCsCliq) return;
+      window.__portalAdminCsCliqConfigured = true;
+      window.PortalAdminCsCliq.configure({
+        esc: esc,
+        adminNavIconHtml: adminNavIconHtml,
+        initChat: portalAdminCsCliqInitChat,
+        channels: {
+          composeAnnouncement: function(){ openComposeModalAnnouncementOrReminder(false); },
+          composeReminder: function(){ openComposeModalAnnouncementOrReminder(true); },
+          signedLog: function(){ openPortalAdminAnnouncementSignedModal(); },
+          reminderAck: function(){ openPortalAdminReminderAckModal(); },
+          manage: function(){ openPortalAdminMessagesManageModal(); }
+        }
+      });
+    }
+    function viewCsCliq(){
+      portalAdminCsCliqConfigureOnce();
+      return window.PortalAdminCsCliq ? window.PortalAdminCsCliq.viewHtml() : '<p class="page-intro">CS Cliq module failed to load.</p>';
+    }
+    function bindCsCliqModule(){
+      portalAdminCsCliqConfigureOnce();
+      if(window.PortalAdminCsCliq && typeof window.PortalAdminCsCliq.bindModule === 'function'){
+        window.PortalAdminCsCliq.bindModule();
       }
     }
     function viewPoliciesSignoffs(){
@@ -19006,37 +19049,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function openDayOpsAdminChatHubModal(){
       closeSidebarMob();
-      openModal(
-        '<div class="modal-h"><h2 id="modalTitle">Chat</h2></div>'+
-        '<div class="modal-b" style="min-width:0">'+
-        '<p class="muted" style="margin:0 0 14px;font-size:13px;line-height:1.55;min-width:0;overflow-wrap:break-word">Pick a channel. <strong>Internal</strong> is for staff and session leads. <strong>CEO\'s chat</strong> is for admins and CEOs (groups and DMs).</p>'+
-        '<div style="display:flex;flex-direction:row;gap:10px;min-width:0">'+
-        '<button type="button" id="dayopsChatHubInternal" class="card card-pad dash-link-card card--premium dayops-screen-nav__card" data-dayops-tone="notify" style="flex:1;min-width:0">'+
-        '<div class="dash-link-row dayops-screen-nav__stack">'+
-        '<span class="dayops-screen-nav__ico-wrap" aria-hidden="true">'+adminNavIconHtml('comms_ops')+'</span>'+
-        '<div class="dash-link-meta dayops-screen-nav__meta" style="min-width:0">'+
-        '<span class="dayops-screen-nav__label">Internal chat</span>'+
-        '<span class="dayops-screen-nav__desc">Staff &amp; leads</span>'+
-        '</div></div></button>'+
-        '<button type="button" id="dayopsChatHubCeo" class="card card-pad dash-link-card card--premium dayops-screen-nav__card" data-dayops-tone="feedback" style="flex:1;min-width:0">'+
-        '<div class="dash-link-row dayops-screen-nav__stack">'+
-        '<span class="dayops-screen-nav__ico-wrap" aria-hidden="true">'+adminNavIconHtml('portal_nav_ceo')+'</span>'+
-        '<div class="dash-link-meta dayops-screen-nav__meta" style="min-width:0">'+
-        '<span class="dayops-screen-nav__label">CEO\'s chat</span>'+
-        '<span class="dayops-screen-nav__desc">Admin &amp; CEO</span>'+
-        '</div></div></button>'+
-        '</div></div>'+
-        '<div class="modal-f"><button type="button" class="btn btn--ghost" id="dayopsChatHubClose">Cancel</button></div>'
-      );
-      var closeHub = function(){ closeModal(); };
-      var intBtn = $('dayopsChatHubInternal');
-      if(intBtn) intBtn.onclick = function(){ closeHub(); openInternalDmChatModal(); };
-      var ceoBtn = $('dayopsChatHubCeo');
-      if(ceoBtn) ceoBtn.onclick = function(){ closeHub(); openCeoExecDmChatModal(); };
-      var xc = $('dayopsChatHubClose');
-      if(xc) xc.onclick = closeHub;
-      var bd = $('modalBackdrop');
-      if(bd) bd.onclick = function(e){ if(e.target === bd) closeHub(); };
+      window.__PORTAL_CS_CLIQ_PENDING_PANE = 'chats';
+      setView('cs_cliq');
     }
 
     /** Day operations tile actions (called from bindView click handlers on each render). */
@@ -19057,7 +19071,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return;
       }
       if(a === 'announcements_comms'){
-        openDayOpsAnnouncementsHubModal();
+        closeSidebarMob();
+        window.__PORTAL_CS_CLIQ_PENDING_PANE = 'channels';
+        setView('cs_cliq');
         return;
       }
       if(a === 'admin_chat_hub'){
@@ -19329,6 +19345,128 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       window.__PORTAL_ADMIN_PREMIUM_CHAT_OPEN = true;
       return true;
     }
+    function portalAdminDmCsCliqEmbedActive(){
+      return !!(window.__PORTAL_CS_CLIQ_ACTIVE && state.view === 'cs_cliq');
+    }
+    function portalAdminDmPremiumSheetActive(){
+      var sh = document.getElementById('internalChatSheet');
+      return !!(sh && sh.classList.contains('open'));
+    }
+    var PORTAL_ADMIN_DM_CS_CLIQ_ID_MAP = {
+      admDmListPanel: 'csCliqListPanel',
+      admDmComposePanel: 'csCliqComposePanel',
+      admDmThreadPanel: 'csCliqThreadPanel',
+      admDmCeoQuickWrap: 'csCliqCeoQuickWrap',
+      admDmQCeosHost: 'csCliqQCeosHost',
+      admDmQOpsAdmin: 'csCliqQOpsAdmin',
+      admDmQCeoGroup: 'csCliqQCeoGroup',
+      admDmPeerSearch: 'csCliqPeerSearch',
+      admDmPeerUser: 'csCliqPeerUser',
+      admDmPeerSuggest: 'csCliqPeerSuggest',
+      admDmFirstBody: 'csCliqFirstBody',
+      admDmComposeErr: 'csCliqComposeErr',
+      admDmComposeBack: 'csCliqComposeBack',
+      admDmComposeSend: 'csCliqComposeSend',
+      admDmBtnNew: 'csCliqBtnNew',
+      admDmThreadPeer: 'csCliqThreadPeerHidden'
+    };
+    function portalAdminDmEl(id){
+      if(portalAdminDmCsCliqEmbedActive()){
+        var mapped = PORTAL_ADMIN_DM_CS_CLIQ_ID_MAP[id];
+        if(mapped){
+          var el = document.getElementById(mapped);
+          if(el) return el;
+        }
+      }
+      return $(id);
+    }
+    function portalAdminCsCliqBindControls(){
+      if(!portalAdminDmCsCliqEmbedActive()) return;
+      function bindClick(elId, fn){
+        var el = document.getElementById(elId);
+        if(!el || el.dataset.portalCsCliqBound === '1') return;
+        el.dataset.portalCsCliqBound = '1';
+        el.addEventListener('click', fn);
+      }
+      bindClick('csCliqBackBtn', function(){
+        window.__PORTAL_ADMIN_DM_UI = window.__PORTAL_ADMIN_DM_UI || {};
+        window.__PORTAL_ADMIN_DM_UI.threadId = '';
+        window.__PORTAL_ADMIN_DM_UI.groupId = '';
+        window.__PORTAL_ADMIN_DM_UI.peerLabel = '';
+        portalAdminDmTogglePanels('list');
+        void portalAdminDmRenderList();
+      });
+      bindClick('csCliqTabStaff', function(){
+        if(portalAdminDmChannel() === 'staff_lead') return;
+        window.__PORTAL_ADMIN_DM_CHANNEL = 'staff_lead';
+        window.__PORTAL_ADMIN_DM_UI = { threadId: '', groupId: '', panel: 'list', peerLabel: '' };
+        portalAdminDmPremiumSyncView();
+        void portalAdminDmRenderList();
+        var wrapQ = portalAdminDmEl('admDmCeoQuickWrap');
+        if(wrapQ) wrapQ.hidden = true;
+      });
+      bindClick('csCliqTabCeo', function(){
+        if(portalAdminDmChannel() === 'ceo_exec') return;
+        window.__PORTAL_ADMIN_DM_CHANNEL = 'ceo_exec';
+        window.__PORTAL_ADMIN_DM_UI = { threadId: '', groupId: '', panel: 'list', peerLabel: '' };
+        portalAdminDmPremiumSyncView();
+        void portalAdminDmRenderList();
+        var wrapQ = portalAdminDmEl('admDmCeoQuickWrap');
+        if(wrapQ) wrapQ.hidden = false;
+        void portalAdminDmFillCeoQuickPicks();
+      });
+      bindClick('csCliqSendBtn', function(){ void portalAdminDmSendReply(); });
+      var inp = document.getElementById('csCliqInput');
+      if(inp && inp.dataset.portalDmEnterBound !== '1'){
+        inp.dataset.portalDmEnterBound = '1';
+        inp.addEventListener('keydown', function(ev){
+          if(ev.key === 'Enter' && !ev.shiftKey){
+            ev.preventDefault();
+            void portalAdminDmSendReply();
+          }
+        });
+      }
+      bindClick('csCliqBtnNew', function(){
+        portalAdminDmTogglePanels('compose');
+        portalResetAdminDmPeerPick();
+        void portalLoadDmPeerUserSelect().then(function(){
+          var s = portalAdminDmEl('admDmPeerSearch');
+          if(s){ try{ s.focus(); }catch(_f){} }
+        });
+      });
+      bindClick('csCliqComposeBack', function(){
+        portalAdminDmTogglePanels('list');
+        window.__PORTAL_ADMIN_DM_UI = window.__PORTAL_ADMIN_DM_UI || {};
+        window.__PORTAL_ADMIN_DM_UI.threadId = '';
+        window.__PORTAL_ADMIN_DM_UI.groupId = '';
+        void portalAdminDmRenderList();
+      });
+      bindClick('csCliqComposeSend', function(){ void portalSendInternalDmFirstMessage(); });
+      portalWireAdminDmPeerAutocomplete();
+    }
+    function portalAdminCsCliqInitChat(channel){
+      channel = String(channel || 'staff_lead').trim() === 'ceo_exec' ? 'ceo_exec' : 'staff_lead';
+      window.__PORTAL_CS_CLIQ_ACTIVE = true;
+      window.__PORTAL_ADMIN_DM_CHANNEL = channel;
+      window.__PORTAL_ADMIN_DM_OPEN = true;
+      window.__PORTAL_ADMIN_DM_UI = { threadId: '', groupId: '', panel: 'list', peerLabel: '' };
+      portalAdminDmApplyTeamTileUnreadClass();
+      try{ portalAdminDmPatchGlobalChatBanner(); }catch(_cbn){}
+      portalInitAdminDmRealtime();
+      portalAdminCsCliqBindControls();
+      portalAdminDmBindVoiceControls();
+      portalAdminDmPremiumSyncView();
+      portalAdminDmTogglePanels('list');
+      void portalLoadDmPeerUserSelect();
+      void portalAdminDmRenderList();
+      var wrapQ = portalAdminDmEl('admDmCeoQuickWrap');
+      if(wrapQ) wrapQ.hidden = channel !== 'ceo_exec';
+      if(channel === 'ceo_exec') void portalAdminDmFillCeoQuickPicks();
+      if(typeof window.portalInitFloatingInternalChat === 'function') window.portalInitFloatingInternalChat();
+      if(window.portalStaffChatCalls && typeof window.portalStaffChatCalls.syncCallBar === 'function'){
+        window.portalStaffChatCalls.syncCallBar({ inThread: false });
+      }
+    }
     function portalAdminDmPremiumSheetClose(){
       var sh = document.getElementById('internalChatSheet');
       var bd = document.getElementById('portalInternalChatBackdrop');
@@ -19350,50 +19488,107 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
     }
     function portalAdminDmPremiumActive(){
-      var sh = document.getElementById('internalChatSheet');
-      return !!(sh && sh.classList.contains('open'));
+      return portalAdminDmCsCliqEmbedActive() || portalAdminDmPremiumSheetActive();
     }
     function portalAdminDmListHostEl(){
-      if(portalAdminDmPremiumActive()){
-        return document.getElementById('internalChatListWrap');
-      }
+      if(portalAdminDmCsCliqEmbedActive()) return document.getElementById('csCliqListWrap');
+      if(portalAdminDmPremiumSheetActive()) return document.getElementById('internalChatListWrap');
       return $('admDmListHost');
     }
     function portalAdminDmMsgsEl(){
-      if(portalAdminDmPremiumActive()){
-        return document.getElementById('internalChatMessages');
-      }
+      if(portalAdminDmCsCliqEmbedActive()) return document.getElementById('csCliqMessages');
+      if(portalAdminDmPremiumSheetActive()) return document.getElementById('internalChatMessages');
       return $('admDmMsgs');
     }
     function portalAdminDmReplyInputEl(){
-      if(portalAdminDmPremiumActive()){
-        return document.getElementById('internalChatInput');
-      }
+      if(portalAdminDmCsCliqEmbedActive()) return document.getElementById('csCliqInput');
+      if(portalAdminDmPremiumSheetActive()) return document.getElementById('internalChatInput');
       return $('admDmReplyBody');
     }
     function portalAdminDmReplyErrEl(){
-      if(portalAdminDmPremiumActive()){
-        return document.getElementById('internalChatErr');
-      }
+      if(portalAdminDmCsCliqEmbedActive()) return document.getElementById('csCliqErr');
+      if(portalAdminDmPremiumSheetActive()) return document.getElementById('internalChatErr');
       return $('admDmThreadErr');
     }
     function portalAdminDmReplySendEl(){
-      if(portalAdminDmPremiumActive()){
-        return document.getElementById('internalChatSendBtn');
-      }
+      if(portalAdminDmCsCliqEmbedActive()) return document.getElementById('csCliqSendBtn');
+      if(portalAdminDmPremiumSheetActive()) return document.getElementById('internalChatSendBtn');
       return $('admDmThreadSend');
     }
     function portalAdminDmPremiumSyncChannelTabs(){
       var ch = portalAdminDmChannel();
+      if(portalAdminDmCsCliqEmbedActive()){
+        var tabStaffCs = document.getElementById('csCliqTabStaff');
+        var tabCeoCs = document.getElementById('csCliqTabCeo');
+        if(tabStaffCs) tabStaffCs.classList.toggle('is-active', ch === 'staff_lead');
+        if(tabCeoCs) tabCeoCs.classList.toggle('is-active', ch === 'ceo_exec');
+        return;
+      }
       var tabStaff = document.getElementById('internalChatAdminTabStaff');
       var tabCeo = document.getElementById('internalChatAdminTabCeo');
       var nav = document.getElementById('internalChatAdminChannelNav');
       if(tabStaff) tabStaff.classList.toggle('is-active', ch === 'staff_lead');
       if(tabCeo) tabCeo.classList.toggle('is-active', ch === 'ceo_exec');
-      if(nav) nav.hidden = !portalAdminDmPremiumActive();
+      if(nav) nav.hidden = !portalAdminDmPremiumSheetActive();
+    }
+    function portalAdminCsCliqSyncChatView(){
+      var ui = window.__PORTAL_ADMIN_DM_UI || {};
+      var panel = String(ui.panel || 'list');
+      var inThread = panel === 'thread';
+      var inCompose = panel === 'compose';
+      var listPanel = document.getElementById('csCliqListPanel');
+      var composePanel = document.getElementById('csCliqComposePanel');
+      var threadPanel = document.getElementById('csCliqThreadPanel');
+      var backBtn = document.getElementById('csCliqBackBtn');
+      var titleEl = document.getElementById('csCliqTitle');
+      var nav = document.getElementById('csCliqChannelNav');
+      var newBtn = document.getElementById('csCliqBtnNew');
+      if(listPanel) listPanel.hidden = inThread || inCompose;
+      if(composePanel) composePanel.hidden = !inCompose;
+      if(threadPanel){
+        threadPanel.hidden = !inThread;
+        threadPanel.setAttribute('aria-hidden', inThread ? 'false' : 'true');
+      }
+      if(backBtn) backBtn.hidden = !inThread && !inCompose;
+      if(nav) nav.hidden = inThread || inCompose;
+      if(newBtn) newBtn.hidden = inThread || inCompose;
+      portalAdminDmPremiumSyncChannelTabs();
+      if(titleEl){
+        if(inCompose){
+          titleEl.textContent = 'New message';
+        }else if(!inThread){
+          titleEl.textContent = portalAdminDmChannel() === 'ceo_exec' ? "CEO's chat" : 'Chats';
+        }else{
+          var peerTxt = String(ui.peerLabel || '').trim();
+          if(!peerTxt){
+            var peerEl = portalAdminDmEl('admDmThreadPeer');
+            peerTxt = peerEl ? String(peerEl.textContent || '').trim() : '';
+          }
+          titleEl.textContent = peerTxt || 'Conversation';
+        }
+      }
+      var gid = ui.groupId ? String(ui.groupId).trim() : '';
+      var tid = ui.threadId ? String(ui.threadId).trim() : '';
+      window.__PORTAL_INTERNAL_CHAT_UI = window.__PORTAL_INTERNAL_CHAT_UI || {};
+      window.__PORTAL_INTERNAL_CHAT_UI.threadId = inThread && tid && !gid ? tid : null;
+      window.__PORTAL_INTERNAL_CHAT_UI.peerLabel = inThread && !gid && titleEl ? String(titleEl.textContent || '').trim() : '';
+      var showCalls = inThread && !!tid && !gid;
+      if(window.portalStaffChatCalls && typeof window.portalStaffChatCalls.syncCallBar === 'function'){
+        window.portalStaffChatCalls.syncCallBar({ inThread: showCalls });
+      }else{
+        var callBar = document.getElementById('csCliqCallBar');
+        if(callBar){
+          callBar.hidden = !showCalls;
+          callBar.setAttribute('aria-hidden', showCalls ? 'false' : 'true');
+        }
+      }
     }
     function portalAdminDmPremiumSyncView(){
-      if(!portalAdminDmPremiumActive()) return;
+      if(portalAdminDmCsCliqEmbedActive()){
+        portalAdminCsCliqSyncChatView();
+        return;
+      }
+      if(!portalAdminDmPremiumSheetActive()) return;
       var ui = window.__PORTAL_ADMIN_DM_UI || {};
       var panel = String(ui.panel || 'list');
       var inThread = panel === 'thread';
@@ -19416,8 +19611,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(!inThread){
           titleEl.textContent = portalAdminDmChannel() === 'ceo_exec' ? "CEO's chat" : 'Chats';
         }else{
-          var peerEl = $('admDmThreadPeer');
-          var peerTxt = peerEl ? String(peerEl.textContent || '').trim() : '';
+          var peerEl = portalAdminDmEl('admDmThreadPeer');
+          var peerTxt = String(ui.peerLabel || '').trim();
+          if(!peerTxt && peerEl) peerTxt = String(peerEl.textContent || '').trim();
           titleEl.textContent = peerTxt || 'Conversation';
         }
       }
@@ -19504,25 +19700,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function openAdminPremiumInternalChat(channel){
       channel = String(channel || 'staff_lead').trim() === 'ceo_exec' ? 'ceo_exec' : 'staff_lead';
-      window.__PORTAL_ADMIN_DM_CHANNEL = channel;
-      window.__PORTAL_ADMIN_DM_OPEN = true;
-      window.__PORTAL_ADMIN_DM_UI = { threadId: '', groupId: '', panel: 'list' };
-      window.__PORTAL_INTERNAL_CHAT_UI = window.__PORTAL_INTERNAL_CHAT_UI || {};
-      window.__PORTAL_INTERNAL_CHAT_UI.threadId = null;
-      window.__PORTAL_INTERNAL_CHAT_UI.peerLabel = '';
-      portalAdminDmApplyTeamTileUnreadClass();
-      try{ portalAdminDmPatchGlobalChatBanner(); }catch(_cbn){}
-      portalInitAdminDmRealtime();
-      portalAdminPremiumBindSheetControls();
-      portalAdminDmBindVoiceControls();
-      portalAdminDmPremiumSheetOpen();
-      portalAdminDmPremiumSyncView();
-      portalAdminDmTogglePanels('list');
-      void portalAdminDmRenderList();
-      if(typeof window.portalInitFloatingInternalChat === 'function') window.portalInitFloatingInternalChat();
-      if(window.portalStaffChatCalls && typeof window.portalStaffChatCalls.syncCallBar === 'function'){
-        window.portalStaffChatCalls.syncCallBar({ inThread: false });
-      }
+      window.__PORTAL_CS_CLIQ_PENDING_CHANNEL = channel;
+      window.__PORTAL_CS_CLIQ_PENDING_PANE = 'chats';
+      closeSidebarMob();
+      setView('cs_cliq');
     }
     window.portalOpenInternalChatFromHeaderQuickMenu = function portalOpenInternalChatFromHeaderQuickMenu(){
       openAdminPremiumInternalChat(window.__PORTAL_ADMIN_DM_CHANNEL || 'staff_lead');
@@ -19530,9 +19711,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function portalAdminDmTogglePanels(panel){
       window.__PORTAL_ADMIN_DM_UI = window.__PORTAL_ADMIN_DM_UI || { threadId: '', groupId: '' };
       window.__PORTAL_ADMIN_DM_UI.panel = panel;
-      var L = $('admDmListPanel');
-      var C = $('admDmComposePanel');
-      var T = $('admDmThreadPanel');
+      var L = portalAdminDmEl('admDmListPanel');
+      var C = portalAdminDmEl('admDmComposePanel');
+      var T = portalAdminDmEl('admDmThreadPanel');
       if(L) L.hidden = panel !== 'list';
       if(C) C.hidden = panel !== 'compose';
       if(T) T.hidden = panel !== 'thread';
@@ -19562,7 +19743,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       document.querySelectorAll('#dayopsChatHubCeo').forEach(function(el){
         el.classList.toggle('dayops-screen-nav__card--portal-ceo-dm-unread', onCeo || !!window.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD);
       });
-      document.querySelectorAll('#adminNav button[data-view="operations"], #adminNav button[data-view="dashboard"]').forEach(function(nb){
+      document.querySelectorAll('#adminNav button[data-view="operations"], #adminNav button[data-view="dashboard"], #adminNav button[data-view="cs_cliq"]').forEach(function(nb){
         nb.classList.toggle('admin-nav-item--chat-unread', onAny);
       });
     }
@@ -20065,14 +20246,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       window.__PORTAL_ADMIN_DM_UI.groupId = gid;
       portalAdminDmTogglePanels('thread');
       var client = getSchedSupabaseClient();
-      var peerEl = $('admDmThreadPeer');
+      var peerEl = portalAdminDmEl('admDmThreadPeer');
+      var groupLabel = 'Group';
       if(peerEl && client){
         var gr = await client.from('portal_ceo_group').select('title').eq('id', gid).maybeSingle();
-        peerEl.textContent = (!gr.error && gr.data && gr.data.title) ? String(gr.data.title) : 'Group';
+        groupLabel = (!gr.error && gr.data && gr.data.title) ? String(gr.data.title) : 'Group';
+        peerEl.textContent = groupLabel;
       }
-      var inp = $('admDmReplyBody');
+      window.__PORTAL_ADMIN_DM_UI.peerLabel = groupLabel;
+      var inp = portalAdminDmReplyInputEl();
       if(inp) inp.value = '';
-      var errB = $('admDmThreadErr');
+      var errB = portalAdminDmReplyErrEl();
       if(errB) errB.textContent = '';
       portalAdminDmPremiumSyncView();
       if(portalAdminDmPremiumActive()) portalAdminDmBindVoiceControls();
@@ -20090,10 +20274,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     async function portalAdminDmFillCeoQuickPicks(){
       if(portalAdminDmChannel() !== 'ceo_exec') return;
-      var wrap = $('admDmCeoQuickWrap');
-      var host = $('admDmQCeosHost');
-      var opsBtn = $('admDmQOpsAdmin');
-      var ceoGrpBtn = $('admDmQCeoGroup');
+      var wrap = portalAdminDmEl('admDmCeoQuickWrap');
+      var host = portalAdminDmEl('admDmQCeosHost');
+      var opsBtn = portalAdminDmEl('admDmQOpsAdmin');
+      var ceoGrpBtn = portalAdminDmEl('admDmQCeoGroup');
       if(host) host.innerHTML = '';
       var client = getSchedSupabaseClient();
       if(!client || !host) return;
@@ -20245,7 +20429,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       portalAdminDmTogglePanels('thread');
       var me = portalAdminDmMe();
       var client = getSchedSupabaseClient();
-      var peerEl = $('admDmThreadPeer');
+      var peerEl = portalAdminDmEl('admDmThreadPeer');
       var peerLabel = '';
       if(client && me){
         var tres = await client.from('portal_staff_dm_threads').select('participant_a,participant_b').eq('id', tid).maybeSingle();
@@ -20273,7 +20457,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           }
         }
       }
-      if(peerEl) peerEl.textContent = peerLabel || 'Conversation';
+      window.__PORTAL_ADMIN_DM_UI = window.__PORTAL_ADMIN_DM_UI || {};
+      window.__PORTAL_ADMIN_DM_UI.peerLabel = peerLabel || 'Conversation';
+      if(peerEl) peerEl.textContent = window.__PORTAL_ADMIN_DM_UI.peerLabel;
       var inp = portalAdminDmReplyInputEl();
       if(inp) inp.value = '';
       var errB = portalAdminDmReplyErrEl();
@@ -20568,8 +20754,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     /** If hidden peer empty, resolve from typed search (exact / unique match / Group). */
     function portalAdminDmSyncHiddenPeerFromSearch(){
-      var hidden = $('admDmPeerUser');
-      var search = $('admDmPeerSearch');
+      var hidden = portalAdminDmEl('admDmPeerUser');
+      var search = portalAdminDmEl('admDmPeerSearch');
       if(!hidden || !search) return;
       if(String(hidden.value || '').trim()) return;
       var id = portalAdminDmResolvePeerIdFromSearchText(search.value);
@@ -20617,9 +20803,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return '';
     }
     function portalWireAdminDmPeerAutocomplete(){
-      var search = $('admDmPeerSearch');
-      var hidden = $('admDmPeerUser');
-      var box = $('admDmPeerSuggest');
+      var search = portalAdminDmEl('admDmPeerSearch');
+      var hidden = portalAdminDmEl('admDmPeerUser');
+      var box = portalAdminDmEl('admDmPeerSuggest');
       if(!search || !hidden || !box) return;
       if(search.dataset.portalAdmPeerComboBound) return;
       search.dataset.portalAdmPeerComboBound = '1';
@@ -20675,16 +20861,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         window.__PORTAL_ADMIN_DM_PEER_DOC_CLICK = true;
         document.addEventListener('click', function(ev){
           var t = ev.target;
-          if(t && t.closest && (t.closest('#admDmPeerSuggest') || t.closest('#admDmPeerSearch'))) return;
-          var bx = $('admDmPeerSuggest');
+          if(t && t.closest && (t.closest('#admDmPeerSuggest') || t.closest('#admDmPeerSearch') || t.closest('#csCliqPeerSuggest') || t.closest('#csCliqPeerSearch'))) return;
+          var bx = portalAdminDmEl('admDmPeerSuggest');
           if(bx) bx.hidden = true;
         });
       }
     }
     function portalResetAdminDmPeerPick(){
-      var search = $('admDmPeerSearch');
-      var hidden = $('admDmPeerUser');
-      var box = $('admDmPeerSuggest');
+      var search = portalAdminDmEl('admDmPeerSearch');
+      var hidden = portalAdminDmEl('admDmPeerUser');
+      var box = portalAdminDmEl('admDmPeerSuggest');
       if(search) search.value = '';
       if(hidden) hidden.value = '';
       if(box){
@@ -20695,11 +20881,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function portalLoadDmPeerUserSelect(){
       window.__PORTAL_ADMIN_DM_PEER_ROWS = [];
       var seen = {};
-      var hidden = $('admDmPeerUser');
-      var search = $('admDmPeerSearch');
+      var hidden = portalAdminDmEl('admDmPeerUser');
+      var search = portalAdminDmEl('admDmPeerSearch');
       if(hidden) hidden.value = '';
       if(search) search.value = '';
-      var box = $('admDmPeerSuggest');
+      var box = portalAdminDmEl('admDmPeerSuggest');
       if(box){
         box.innerHTML = '';
         box.hidden = true;
@@ -20788,10 +20974,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       openAdminDmChannelModal('ceo_exec');
     }
     function openAdminDmChannelModal(channel){
-      if(document.getElementById('internalChatSheet')){
-        openAdminPremiumInternalChat(channel);
-        return;
-      }
+      openAdminPremiumInternalChat(channel);
+      return;
       channel = String(channel || 'staff_lead').trim() === 'ceo_exec' ? 'ceo_exec' : 'staff_lead';
       window.__PORTAL_ADMIN_DM_CHANNEL = channel;
       window.__PORTAL_ADMIN_DM_OPEN = true;
@@ -20920,15 +21104,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(channel === 'ceo_exec') void portalAdminDmFillCeoQuickPicks();
     }
     async function portalSendInternalDmFirstMessage(){
-      var errEl = $('admDmComposeErr');
+      var errEl = portalAdminDmEl('admDmComposeErr');
       if(errEl) errEl.textContent = '';
       var client = getSchedSupabaseClient();
       var me = portalAdminDmMe();
       portalAdminDmSyncHiddenPeerFromSearch();
-      var hid = $('admDmPeerUser');
+      var hid = portalAdminDmEl('admDmPeerUser');
       var peer = String(hid && hid.value || '').trim();
-      var body = String($('admDmFirstBody') && $('admDmFirstBody').value || '').trim();
-      var sendBtn = $('admDmComposeSend');
+      var body = String(portalAdminDmEl('admDmFirstBody') && portalAdminDmEl('admDmFirstBody').value || '').trim();
+      var sendBtn = portalAdminDmEl('admDmComposeSend');
       var ch = portalAdminDmChannel();
       if(!client){
         if(errEl) errEl.textContent = 'Not signed in to Supabase.';
@@ -21022,13 +21206,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(!gidG) throw new Error('CEO group is not set up. Apply Supabase migrations (portal_ceo_group_chat + ceo_liaison row).');
           var insG = await client.from('portal_ceo_group_message').insert([{ group_id: gidG, author_id: me, body: body, message_type: 'text' }]).select('id');
           if(insG.error) throw insG.error;
-          var fb = $('admDmFirstBody');
+          var fb = portalAdminDmEl('admDmFirstBody');
           if(fb) fb.value = '';
           await portalAdminDmOpenGroupThread(gidG);
         }else{
           await validatePeerRole(peer);
           var threadId = await dmEnsureThreadAndInsert(peer);
-          var fb2 = $('admDmFirstBody');
+          var fb2 = portalAdminDmEl('admDmFirstBody');
           if(fb2) fb2.value = '';
           await portalAdminDmOpenThread(threadId);
         }
@@ -21126,7 +21310,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       root.querySelectorAll('[data-act]').forEach(function(b){
         b.addEventListener('click', function(){
           var v = b.getAttribute('data-act');
-          if(v==='dashboard'||v==='operations'||v==='operations_admin'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='c4k_registers'||v==='c4k_late_submissions'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='staffhr_contracts'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='scheduling'||v==='term_roster_edit'||v==='roster_spreadsheets'||v==='absents_refunds'||v==='portal_documents'||v==='portal_payslips'||v==='portal_activity'||v==='portal_training_progress'||v==='participant_achievements'||v==='staff_live_map'||v==='staff_ghost_teleport'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='interviews'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings'||v==='logs') setView(v);
+          if(v==='dashboard'||v==='operations'||v==='operations_admin'||v==='clients'||v==='c4k_services'||v==='c4k_sessions'||v==='c4k_payments'||v==='c4k_waitlist'||v==='c4k_registers'||v==='c4k_late_submissions'||v==='c4k_reviews'||v==='c4k_reports'||v==='staffhr'||v==='staffhr_contracts'||v==='bookings'||v==='orders_all'||v==='orders_outstanding'||v==='leads'||v==='servicecap'||v==='invoices'||v==='scheduling'||v==='term_roster_edit'||v==='roster_spreadsheets'||v==='absents_refunds'||v==='portal_documents'||v==='portal_payslips'||v==='portal_activity'||v==='portal_training_progress'||v==='participant_achievements'||v==='staff_live_map'||v==='staff_ghost_teleport'||v==='cs_cliq'||v==='policies'||v==='onboarding'||v==='recruitment'||v==='interviews'||v==='reports'||v==='communications'||v==='comms_bookings'||v==='comms_ops'||v==='comms_ops_order'||v==='receptionist'||v==='operator'||v==='settings'||v==='logs') setView(v);
           closeSidebarMob();
         });
       });
@@ -21460,6 +21644,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(id==='participant_achievements') bindParticipantAchievementsModule();
       if(id==='staff_live_map') bindStaffLiveMapModule();
       if(id==='staff_ghost_teleport') bindStaffGhostTeleportModule();
+      if(id==='cs_cliq') bindCsCliqModule();
       if(id==='clients'){
         var root2 = $('workspace');
         function paxContactsFindById(pid){
