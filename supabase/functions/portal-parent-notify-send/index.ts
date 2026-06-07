@@ -1,6 +1,7 @@
 // portal-parent-notify-send
 // -------------------------
-// Admin-only: send a parent/carer message via Resend (email) and/or WhatsApp Cloud API.
+// Admin-only: send a parent/carer message via Google Workspace SMTP (email)
+// and/or WhatsApp Cloud API.
 //
 // POST JSON:
 // {
@@ -19,9 +20,7 @@
 //
 // Env:
 //   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY (auto)
-//   RESEND_API_KEY
-//   PORTAL_PARENT_NOTIFY_FROM — e.g. "clubSENsational <admin@clubsensational.org>"
-//   PORTAL_MAIL_FROM — fallback from address
+//   SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_USER, SMTP_PASS, SMTP_FROM
 //   PORTAL_MAIL_REPLY_TO — optional reply-to (info@)
 //   META_WHATSAPP_TOKEN, META_WHATSAPP_PHONE_NUMBER_ID
 //   PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE — optional approved template for cold outbound
@@ -38,7 +37,8 @@ import {
   maskEmailForLog,
   maskPhoneForLog,
   normalizeParentPhoneE164,
-  sendParentEmailViaResend,
+  readParentNotifySmtpConfig,
+  sendParentEmailViaSmtp,
   sendParentMobileMessage,
 } from "../_shared/portal_parent_messaging.ts";
 
@@ -66,15 +66,6 @@ function parseChannel(v: unknown): NotifyChannel | null {
   const c = str(v, 16).toLowerCase();
   if (c === "email" || c === "whatsapp" || c === "both") return c;
   return null;
-}
-
-function mailFromAddress(): string {
-  const custom = str(Deno.env.get("PORTAL_PARENT_NOTIFY_FROM"), 200);
-  if (custom) return custom;
-  const generic = str(Deno.env.get("PORTAL_MAIL_FROM"), 200);
-  if (generic.includes("<")) return generic;
-  if (generic) return `clubSENsational <${generic}>`;
-  return "clubSENsational <admin@clubsensational.org>";
 }
 
 Deno.serve(async (req) => {
@@ -126,23 +117,22 @@ Deno.serve(async (req) => {
     return portalAdminJson(400, { ok: false, error: "missing_subject" });
   }
 
-  const resendKey = str(Deno.env.get("RESEND_API_KEY"), 500);
+  const smtpConfig = readParentNotifySmtpConfig();
   const replyTo = str(Deno.env.get("PORTAL_MAIL_REPLY_TO"), 320);
 
   let emailStatus = channel === "whatsapp" ? "skipped" : "pending";
   let whatsappStatus = channel === "email" ? "skipped" : "pending";
-  let resendId = "";
+  let emailMessageId = "";
   let whatsappMessageId = "";
   const errors: string[] = [];
 
   if (channel === "email" || channel === "both") {
-    if (!resendKey) {
+    if (!smtpConfig) {
       emailStatus = "failed";
-      errors.push("resend_not_configured");
+      errors.push("smtp_not_configured");
     } else {
-      const sent = await sendParentEmailViaResend({
-        apiKey: resendKey,
-        from: mailFromAddress(),
+      const sent = await sendParentEmailViaSmtp({
+        config: smtpConfig,
         replyTo: replyTo || undefined,
         to: parentEmail,
         subject,
@@ -150,7 +140,7 @@ Deno.serve(async (req) => {
       });
       if (sent.ok) {
         emailStatus = "sent";
-        resendId = sent.id;
+        emailMessageId = sent.id;
       } else {
         emailStatus = "failed";
         errors.push(sent.error);
@@ -194,12 +184,13 @@ Deno.serve(async (req) => {
     body_text: bodyText,
     email_status: emailStatus,
     whatsapp_status: whatsappStatus,
-    resend_id: resendId || null,
+    resend_id: emailMessageId || null,
     whatsapp_message_id: whatsappMessageId || null,
     error_detail: errors.length ? errors.join(" | ").slice(0, 2000) : null,
     meta: {
       parent_email_masked: parentEmail ? maskEmailForLog(parentEmail) : null,
       parent_phone_masked: parentPhone ? maskPhoneForLog(parentPhone) : null,
+      email_provider: "smtp",
     },
   };
 
@@ -226,7 +217,7 @@ Deno.serve(async (req) => {
   return portalAdminJson(200, {
     ok: true,
     logId: inserted?.id || null,
-    email: { status: emailStatus, id: resendId || undefined },
+    email: { status: emailStatus, id: emailMessageId || undefined },
     whatsapp: { status: whatsappStatus, id: whatsappMessageId || undefined },
     partial: errors.length > 0,
     warnings: errors.length ? errors : undefined,

@@ -1,4 +1,4 @@
-/** Resend + WhatsApp/Twilio helpers for portal-parent-notify-send. */
+/** Google Workspace SMTP + WhatsApp/Twilio helpers for portal-parent-notify-send. */
 
 export function normalizeParentPhoneE164(raw: string): string | null {
   let digits = String(raw || "").replace(/\D/g, "");
@@ -35,45 +35,237 @@ export type SendEmailResult =
   | { ok: true; id: string }
   | { ok: false; error: string };
 
-export async function sendParentEmailViaResend(opts: {
-  apiKey: string;
+export type ParentNotifySmtpConfig = {
+  host: string;
+  port: number;
+  secure: boolean;
+  user: string;
+  pass: string;
   from: string;
+};
+
+export function readParentNotifySmtpConfig(): ParentNotifySmtpConfig | null {
+  const host = (Deno.env.get("SMTP_HOST") ?? "").trim();
+  const portRaw = (Deno.env.get("SMTP_PORT") ?? "587").trim();
+  const port = parseInt(portRaw, 10);
+  const secure = ((Deno.env.get("SMTP_SECURE") ?? "false").trim().toLowerCase() ===
+    "true");
+  const user = (Deno.env.get("SMTP_USER") ?? "").trim();
+  const pass = (Deno.env.get("SMTP_PASS") ?? "").trim();
+  const from = (Deno.env.get("SMTP_FROM") ?? "").trim() || user;
+  if (!host || !user || !pass) return null;
+  return {
+    host,
+    port: Number.isFinite(port) ? port : 587,
+    secure,
+    user,
+    pass,
+    from,
+  };
+}
+
+function smtpBase64(value: string): string {
+  const bytes = new TextEncoder().encode(value);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
+}
+
+function parseMailbox(raw: string): { display: string; address: string } {
+  const trimmed = String(raw || "").trim();
+  const match = trimmed.match(/^(.+?)\s*<([^>]+)>$/);
+  if (match) {
+    return { display: match[1].trim(), address: match[2].trim() };
+  }
+  return { display: "", address: trimmed };
+}
+
+function formatFromHeader(from: string): string {
+  const box = parseMailbox(from);
+  if (box.display && box.address) {
+    return `"${box.display.replace(/"/g, '\\"')}" <${box.address}>`;
+  }
+  return box.address || from;
+}
+
+function encodeSubject(subject: string): string {
+  if (/^[\x20-\x7E]*$/.test(subject)) return subject;
+  return `=?UTF-8?B?${smtpBase64(subject)}?=`;
+}
+
+function dotStuff(data: string): string {
+  return data
+    .split("\r\n")
+    .map((line) => (line.startsWith(".") ? `.${line}` : line))
+    .join("\r\n");
+}
+
+type SmtpConn = Deno.Conn | Deno.TlsConn;
+
+async function smtpWrite(conn: SmtpConn, line: string): Promise<void> {
+  await conn.write(new TextEncoder().encode(`${line}\r\n`));
+}
+
+async function smtpReadResponse(
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  carry: { value: string },
+): Promise<{ code: number; text: string }> {
+  const dec = new TextDecoder();
+  while (true) {
+    while (carry.value.includes("\r\n")) {
+      const idx = carry.value.indexOf("\r\n");
+      const line = carry.value.slice(0, idx);
+      carry.value = carry.value.slice(idx + 2);
+      if (line.length >= 4 && line[3] === "-") continue;
+      const code = parseInt(line.slice(0, 3), 10);
+      if (!Number.isFinite(code)) throw new Error(`smtp_bad_response:${line.slice(0, 120)}`);
+      return { code, text: line };
+    }
+    const chunk = await reader.read();
+    if (chunk.done) throw new Error("smtp_connection_closed");
+    carry.value += dec.decode(chunk.value);
+  }
+}
+
+async function smtpCommand(
+  conn: SmtpConn,
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  carry: { value: string },
+  command: string,
+  expectMin = 200,
+  expectMax = 399,
+): Promise<{ code: number; text: string }> {
+  await smtpWrite(conn, command);
+  const res = await smtpReadResponse(reader, carry);
+  if (res.code < expectMin || res.code > expectMax) {
+    throw new Error(`smtp_${res.code}:${res.text.slice(0, 200)}`);
+  }
+  return res;
+}
+
+async function smtpConnect(config: ParentNotifySmtpConfig): Promise<{
+  conn: SmtpConn;
+  reader: ReadableStreamDefaultReader<Uint8Array>;
+  carry: { value: string };
+}> {
+  const carry = { value: "" };
+  let conn: SmtpConn;
+  if (config.secure) {
+    conn = await Deno.connectTls({ hostname: config.host, port: config.port });
+  } else {
+    conn = await Deno.connect({ hostname: config.host, port: config.port });
+  }
+  const reader = conn.readable.getReader();
+  const greet = await smtpReadResponse(reader, carry);
+  if (greet.code !== 220) throw new Error(`smtp_${greet.code}:${greet.text.slice(0, 200)}`);
+
+  await smtpCommand(conn, reader, carry, "EHLO portal-parent-notify");
+
+  if (!config.secure) {
+    const tls = await smtpCommand(conn, reader, carry, "STARTTLS", 220, 220);
+    if (tls.code !== 220) throw new Error(`smtp_starttls_failed:${tls.text.slice(0, 200)}`);
+    try {
+      reader.releaseLock();
+    } catch {
+      // ignore
+    }
+    conn = await Deno.startTls(conn, { hostname: config.host });
+    reader = conn.readable.getReader();
+    carry.value = "";
+    await smtpCommand(conn, reader, carry, "EHLO portal-parent-notify");
+  }
+
+  await smtpCommand(conn, reader, carry, "AUTH LOGIN", 334, 334);
+  await smtpCommand(conn, reader, carry, smtpBase64(config.user), 334, 334);
+  await smtpCommand(conn, reader, carry, smtpBase64(config.pass), 235, 235);
+
+  return { conn, reader, carry };
+}
+
+async function smtpClose(
+  conn: SmtpConn,
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  carry: { value: string },
+): Promise<void> {
+  try {
+    await smtpCommand(conn, reader, carry, "QUIT", 200, 221);
+  } catch {
+    // ignore shutdown errors
+  } finally {
+    try {
+      reader.releaseLock();
+    } catch {
+      // ignore
+    }
+    try {
+      conn.close();
+    } catch {
+      // ignore
+    }
+  }
+}
+
+export async function sendParentEmailViaSmtp(opts: {
+  config: ParentNotifySmtpConfig;
   replyTo?: string;
   to: string;
   subject: string;
   bodyText: string;
 }): Promise<SendEmailResult> {
-  const payload: Record<string, unknown> = {
-    from: opts.from,
-    to: [opts.to],
-    subject: opts.subject,
-    text: opts.bodyText,
-    html: plainTextToHtml(opts.bodyText),
-  };
-  if (opts.replyTo) payload.reply_to = opts.replyTo;
+  const fromHeader = formatFromHeader(opts.config.from);
+  const fromEnvelope = parseMailbox(opts.config.from).address || opts.config.user;
+  const messageId = `portal-${crypto.randomUUID()}@${fromEnvelope.split("@")[1] || "clubsensational.org"}`;
+  const boundary = `portal_${crypto.randomUUID().replace(/-/g, "")}`;
+  const html = plainTextToHtml(opts.bodyText);
+  const headers = [
+    `From: ${fromHeader}`,
+    `To: ${opts.to}`,
+    `Subject: ${encodeSubject(opts.subject)}`,
+    `Message-ID: <${messageId}>`,
+    "MIME-Version: 1.0",
+    `Content-Type: multipart/alternative; boundary="${boundary}"`,
+  ];
+  if (opts.replyTo) headers.push(`Reply-To: ${opts.replyTo}`);
+  const body = [
+    `--${boundary}`,
+    "Content-Type: text/plain; charset=UTF-8",
+    "Content-Transfer-Encoding: 8bit",
+    "",
+    opts.bodyText,
+    `--${boundary}`,
+    "Content-Type: text/html; charset=UTF-8",
+    "Content-Transfer-Encoding: 8bit",
+    "",
+    html,
+    `--${boundary}--`,
+    "",
+  ].join("\r\n");
+
+  let conn: SmtpConn | null = null;
+  let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
+  let carry: { value: string } | null = null;
 
   try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${opts.apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-    const text = await res.text();
-    if (!res.ok) {
-      return { ok: false, error: `resend_${res.status}: ${text.slice(0, 400)}` };
+    const session = await smtpConnect(opts.config);
+    conn = session.conn;
+    reader = session.reader;
+    carry = session.carry;
+
+    await smtpCommand(conn, reader, carry, `MAIL FROM:<${fromEnvelope}>`);
+    await smtpCommand(conn, reader, carry, `RCPT TO:<${opts.to}>`);
+    await smtpCommand(conn, reader, carry, "DATA", 354, 354);
+    await conn.write(new TextEncoder().encode(dotStuff(`${headers.join("\r\n")}\r\n\r\n${body}`) + "\r\n.\r\n"));
+    const sent = await smtpReadResponse(reader, carry);
+    if (sent.code < 200 || sent.code > 299) {
+      return { ok: false, error: `smtp_${sent.code}:${sent.text.slice(0, 400)}` };
     }
-    let parsed: { id?: string } = {};
-    try {
-      parsed = JSON.parse(text);
-    } catch {
-      parsed = {};
-    }
-    return { ok: true, id: String(parsed.id || "") };
+    return { ok: true, id: messageId };
   } catch (e) {
     return { ok: false, error: String(e) };
+  } finally {
+    if (conn && reader && carry) {
+      await smtpClose(conn, reader, carry);
+    }
   }
 }
 
