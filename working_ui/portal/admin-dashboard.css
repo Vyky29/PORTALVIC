@@ -763,7 +763,7 @@
 
     .admin-main{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0}
     .admin-bottom-nav{
-      display:none;
+      display:none !important;
       position:fixed;
       left:0;
       right:0;
@@ -4342,9 +4342,6 @@
       background:linear-gradient(180deg,#334155 0%,#1e293b 100%);
       outline:2px solid rgba(125,211,252,.45);
       outline-offset:2px;
-    }
-    body.admin-touch-compact .admin-bottom-nav{
-      display:none !important;
     }
     body.admin-touch-compact .admin-topbar-chat-wrap{
       position:relative;

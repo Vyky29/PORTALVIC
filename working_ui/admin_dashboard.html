@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260624-eng-star" />
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260613-hours-all-week" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260603-form-record-modal" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260605-dayops-badge-overlay" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260605-admin-mobile-landscape" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260521-embed" />
   <script src="/portal/hr-contract-embed-html.js?v=20260521-embed"></script>
@@ -51,7 +51,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260605-admin-mobile-nav" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260605-admin-mobile-landscape" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260605-admin-mobile-nav" />
   <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260605-leads-channel-ui" />
@@ -24371,20 +24371,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }).join('');
       $('adminNav').innerHTML = navHtml;
       var bottomEl = $('adminBottomNav');
-      if(bottomEl){
-        if(document.body.classList.contains('admin-touch-compact')){
-          bottomEl.innerHTML = '';
-        }else{
-          var bottomNavItems = NAV.filter(function(item){ return !item.skipBottomNav; });
-          bottomEl.innerHTML = bottomNavItems.map(function(item){
-            var lab = item.hubLabel || item.label;
-            if(item.navAction === 'fullnav'){
-              return '<button type="button" data-admin-nav-action="fullnav">'+esc(lab)+'</button>';
-            }
-            return '<button type="button" data-view="'+esc(item.id)+'">'+esc(lab)+'</button>';
-          }).join('');
-        }
-      }
+      if(bottomEl) bottomEl.innerHTML = '';
       var cur = state.view;
       document.querySelectorAll('#adminNav button').forEach(function(b){
         var v = b.getAttribute('data-view');
@@ -24395,8 +24382,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
 
     function adminTouchCompactLayoutActive(){
       try{
+        if(adminIsDesktopShell()) return false;
         var w = window.innerWidth || document.documentElement.clientWidth || 0;
-        return w <= ADMIN_MOBILE_MAX_WIDTH;
+        var h = window.innerHeight || document.documentElement.clientHeight || 0;
+        if(w <= ADMIN_MOBILE_MAX_WIDTH) return true;
+        /* Landscape phone: width often exceeds 899px — still use drawer nav + topbar chat */
+        if(w < 1280 && h <= 640){
+          try{
+            if(matchMedia('(orientation: landscape)').matches) return true;
+          }catch(_land){}
+        }
+        return false;
       }catch(e){ return false; }
     }
     function adminIsMobileNavLayout(){

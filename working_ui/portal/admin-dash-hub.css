@@ -1194,7 +1194,7 @@ body.admin-touch-compact:has(#workspace .dash-hub--nav-index:not(.dash-hub--nav-
   min-height:0 !important;
   flex:1 1 auto;
   -webkit-overflow-scrolling:touch;
-  padding-bottom:calc(64px + env(safe-area-inset-bottom, 0px)) !important;
+  padding-bottom:calc(18px + env(safe-area-inset-bottom, 0px)) !important;
 }
 body.admin-touch-compact:has(#workspace .dash-hub--dayops) .dash-hub--dayops,
 body.admin-touch-compact:has(#workspace .dash-hub--nav-index:not(.dash-hub--nav-index-pick)) .dash-hub--nav-index:not(.dash-hub--nav-index-pick){
@@ -2044,7 +2044,7 @@ body:has(#workspace .dash-hub--ops-hub) .admin-main{
   overflow-wrap:break-word;
 }
 body.admin-touch-compact:has(#workspace .dash-hub--ops-hub) .admin-workspace{
-  padding-bottom:calc(64px + env(safe-area-inset-bottom, 0px)) !important;
+  padding-bottom:calc(18px + env(safe-area-inset-bottom, 0px)) !important;
 }
 body.sidebar-open:has(#workspace .dash-hub--ops-hub) .ops-hub,
 body.sidebar-open:has(#workspace .dash-hub--ops-hub) .dash-hub--ops-hub{
