@@ -836,9 +836,11 @@
     var html = "";
     if (isLeadInboxMode()) {
       html +=
-        '<button type="button" class="portal-achievements-participant portal-achievements-participant--inbox" data-ach-inbox="1">' +
-        '<span class="portal-achievements-participant__name">Inbox — no participant</span>' +
-        '<span class="portal-achievements-participant__sub muted">Admin assigns to the right client later</span>' +
+        '<button type="button" class="portal-achievements-participant portal-achievements-participant--inbox" data-ach-inbox="1" aria-label="Inbox — no participant. Admin assigns to the right client later">' +
+        '<span class="portal-achievements-participant__text">' +
+        '<span class="portal-achievements-participant__name">Inbox</span>' +
+        '<span class="portal-achievements-participant__sub muted">No participant</span>' +
+        "</span>" +
         '<span class="portal-achievements-participant__chev" aria-hidden="true">›</span></button>';
     }
     if (!uniq.length && !isLeadInboxMode()) {
@@ -931,11 +933,19 @@
     if (cap) cap.hidden = step !== "capture";
     var nameEl = document.getElementById("portalAchievementsSelectedName");
     if (nameEl && state.participant) {
-      nameEl.textContent = isInboxParticipant(state.participant)
-        ? "Inbox — no participant"
-        : state.participant.clientName || state.participant.clientId;
+      if (isInboxParticipant(state.participant)) {
+        nameEl.textContent = "Inbox";
+        nameEl.classList.add("portal-achievements-selected-name--inbox");
+        nameEl.setAttribute("title", "No participant — admin assigns later");
+      } else {
+        nameEl.textContent = state.participant.clientName || state.participant.clientId;
+        nameEl.classList.remove("portal-achievements-selected-name--inbox");
+        nameEl.removeAttribute("title");
+      }
     } else if (nameEl) {
       nameEl.textContent = "";
+      nameEl.classList.remove("portal-achievements-selected-name--inbox");
+      nameEl.removeAttribute("title");
     }
     var backBtn = document.getElementById("portalAchievementsBackParticipants");
     if (backBtn) {

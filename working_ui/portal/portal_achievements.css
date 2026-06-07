@@ -133,28 +133,74 @@
 }
 
 .portal-achievements-participant--inbox {
-  flex-wrap: wrap;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0 8px;
+  padding: 10px 12px;
   border-color: rgba(45, 132, 179, 0.35);
   background: linear-gradient(180deg, rgba(244, 249, 252, 0.98) 0%, #fff 100%);
 }
 
+.portal-achievements-participant--inbox .portal-achievements-participant__text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.portal-achievements-participant--inbox .portal-achievements-participant__name {
+  flex: none;
+  font-size: 14px;
+  line-height: 1.2;
+}
+
 .portal-achievements-participant__sub {
   display: block;
-  width: calc(100% - 20px);
   min-width: 0;
   font-size: 11px;
   font-weight: 600;
-  line-height: 1.35;
-  margin-top: 2px;
+  line-height: 1.3;
   overflow-wrap: break-word;
 }
 
+.portal-achievements-participant--inbox .portal-achievements-participant__sub {
+  margin-top: 0;
+  font-size: 11px;
+}
+
 .portal-achievements-participant--inbox .portal-achievements-participant__chev {
-  position: absolute;
-  right: 14px;
-  top: 50%;
-  transform: translateY(-50%);
+  position: static;
+  transform: none;
+  font-size: 18px;
+}
+
+.portal-achievements-selected-name--inbox {
+  font-size: 18px;
+  line-height: 1.25;
+}
+
+@media (max-width: 480px) {
+  .portal-achievements-participant--inbox {
+    padding: 8px 10px;
+    gap: 0 6px;
+  }
+
+  .portal-achievements-participant--inbox .portal-achievements-participant__name {
+    font-size: 13px;
+  }
+
+  .portal-achievements-participant--inbox .portal-achievements-participant__sub {
+    font-size: 10px;
+  }
+
+  .portal-achievements-participant--inbox .portal-achievements-participant__chev {
+    font-size: 16px;
+  }
+
+  .portal-achievements-selected-name--inbox {
+    font-size: 16px;
+  }
 }
 
 .portal-achievements-participant:active {
