@@ -1,6 +1,6 @@
 /**
  * Staff live map — share GPS only around today's roster shift:
- * from 15 minutes before first session until 30 minutes after last session.
+ * from 10 minutes before first session until 30 minutes after last session.
  *
  * Mandatory live-map staff (location block in Settings + shift GPS):
  * - Leads: Berta, John, Michelle
@@ -11,7 +11,7 @@
 (function (global) {
   "use strict";
 
-  var BEFORE_MS = 15 * 60 * 1000;
+  var BEFORE_MS = 10 * 60 * 1000;
   var AFTER_MS = 30 * 60 * 1000;
 
   /** Roster keys (staffProfiles) with mandatory location sharing when on shift. */

@@ -1053,7 +1053,7 @@ export async function bootstrapDashboardSupabase(_opts) {
       perm.portalRefreshCameraUi();
       perm.portalRefreshEnableAllUi();
       perm.portalSyncAlertsSettingsChrome();
-      const loc = await import("./portal_location_tracker.js?v=20260605-mandatory-staff");
+      const loc = await import("./portal_location_tracker.js?v=20260623-shift-10m");
       window.portalRestartLocationTracker = function () {
         return loc.restartPortalLocationTracker({ page, profile, session });
       };

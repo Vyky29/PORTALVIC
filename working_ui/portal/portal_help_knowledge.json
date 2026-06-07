@@ -125,7 +125,7 @@
       "id": "alerts-settings",
       "title": "Alerts, notifications and permissions",
       "keywords": ["alerts", "notifications", "push", "microphone", "location", "permission", "alertas", "notificaciones", "microfono"],
-      "answer": "Quick menu → Settings → Alerts & notifications.\n\nTurn on notifications once per device (use Send test to check).\n\nLocation is only for Bespoke Programme / Day Centre staff during session windows.\n\nMicrophone is optional — for voice feedback or voice notes in chat."
+      "answer": "Quick menu → Settings → Alerts & notifications.\n\nTurn on notifications once per device (use Send test to check).\n\nLocation is only for Bespoke Programme / Day Centre staff during their rota shift (10 minutes before until 30 minutes after).\n\nMicrophone is optional — for voice feedback or voice notes in chat."
     },
     {
       "id": "guide",

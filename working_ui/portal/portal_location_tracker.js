@@ -1,5 +1,6 @@
 /**
- * Shares staff/lead GPS with portal_staff_live_locations while the app tab is visible.
+ * Shares staff/lead GPS with portal_staff_live_locations during the roster shift window
+ * (10 min before first qualifying session until 30 min after last).
  */
 import { getSharedSupabaseClient } from "./supabase-client.js";
 import { portalPresenceSurface } from "./portal_live_presence.js";
@@ -88,7 +89,7 @@ async function ensureShiftWindowModule() {
   if (_shiftWindowModuleLoading) return;
   _shiftWindowModuleLoading = true;
   try {
-    await import("./portal_live_map_shift_window.js?v=20260605-mandatory-staff");
+    await import("./portal_live_map_shift_window.js?v=20260623-shift-10m");
   } catch (err) {
     console.debug("[portal] live map shift window module skipped:", err);
   } finally {
@@ -142,7 +143,7 @@ async function syncLiveMapShiftWindow() {
     return;
   }
 
-  if (document.visibilityState === "visible" && portalLocationPermissionGranted()) {
+  if (portalLocationPermissionGranted()) {
     startWatchInternal();
   }
   scheduleShiftBoundaryTimer();
@@ -165,7 +166,6 @@ function sendCurrentPositionOnce(force) {
 function startWatchInternal() {
   if (typeof navigator === "undefined" || !navigator.geolocation) return;
   if (!portalLocationPermissionGranted() || !isLiveMapSharingAllowed()) return;
-  cancelStopSharing();
   if (_watchId == null) {
     sendCurrentPositionOnce(true);
     _watchId = navigator.geolocation.watchPosition(onPosition, onPositionError, GEO_OPTS);
@@ -244,10 +244,6 @@ async function upsertLocation(pos, opts = {}) {
   return true;
 }
 
-/** @type {ReturnType<typeof setTimeout> | null} */
-let _stopSharingTimer = null;
-const STOP_SHARING_DELAY_MS = 90000;
-
 async function stopSharing() {
   if (!_client || !_userId) return;
   try {
@@ -259,21 +255,6 @@ async function stopSharing() {
         .eq("staff_user_id", _userId);
     }
   } catch (_) {}
-}
-
-function scheduleStopSharing() {
-  if (_stopSharingTimer) clearTimeout(_stopSharingTimer);
-  _stopSharingTimer = setTimeout(() => {
-    _stopSharingTimer = null;
-    if (document.visibilityState === "hidden") void stopSharing();
-  }, STOP_SHARING_DELAY_MS);
-}
-
-function cancelStopSharing() {
-  if (_stopSharingTimer) {
-    clearTimeout(_stopSharingTimer);
-    _stopSharingTimer = null;
-  }
 }
 
 function onPosition(pos) {
@@ -368,21 +349,9 @@ export async function startPortalLocationTracker(opts = {}) {
   }
 
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") {
-      cancelStopSharing();
-      void probeLocationPermissionState().then(() => {
-        void syncLiveMapShiftWindow();
-      });
-    } else {
-      clearWatch();
-      scheduleStopSharing();
-    }
-  });
-
-  window.addEventListener("pagehide", () => {
-    clearWatch();
-    clearShiftBoundaryTimer();
-    void stopSharing();
+    void probeLocationPermissionState().then(() => {
+      void syncLiveMapShiftWindow();
+    });
   });
 
   bindShiftWindowListeners();
@@ -390,9 +359,7 @@ export async function startPortalLocationTracker(opts = {}) {
   _trackerProfile = profile;
   _trackerSession = session || null;
 
-  if (document.visibilityState === "visible") {
-    await syncLiveMapShiftWindow();
-  }
+  await syncLiveMapShiftWindow();
 }
 
 /** Re-run tracker after the user grants location in settings. */

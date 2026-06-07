@@ -902,9 +902,9 @@ export function portalRefreshLocationUi() {
   } else if (st === "granted") {
     var upload = typeof window !== "undefined" ? window.__PORTAL_LOCATION_LAST_UPLOAD__ : null;
     if (upload && upload.ok) {
-      statusEl.textContent = "On — office can see you on the live map during Bespoke / Day Centre sessions.";
+      statusEl.textContent = "On — office can see you on the live map during your Bespoke / Day Centre shift (10 min before until 30 min after).";
     } else if (upload && upload.ok === false && upload.message) {
-      statusEl.textContent = "On — could not send yet. Keep app open or tap Refresh.";
+      statusEl.textContent = "On — could not send yet. Tap Refresh or wait for the next GPS update.";
     } else {
       statusEl.textContent = "On — getting GPS…";
     }
