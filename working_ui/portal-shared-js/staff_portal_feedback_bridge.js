@@ -127,16 +127,72 @@
     return isDayCentreServiceLabel(st.service);
   }
 
-  /** Climbing / MA / Bespoke: each instructor+area unit is separate — do not trust admin export alone. */
+  /** Climbing / MA / per-slot Aquatic: each instructor+area unit is separate — not Day Centre / Bespoke / merge groups. */
   function statusRowNeedsPerStaffUnitFeedback(st) {
-    if (!st || isDayCentreStatusRow(st)) return false;
+    if (!st || isDayCentreStatusRow(st) || isBespokeStatusRow(st)) return false;
+    if (String(st.feedbackMergeGroup || "").trim()) return false;
     const svc = String(st.service || "").toLowerCase();
-    if (/multi[-\s]?activity/.test(svc) || svc.indexOf("bespoke") >= 0) return true;
+    if (/multi[-\s]?activity/.test(svc)) return true;
     if (svc.indexOf("climbing") >= 0 || svc.indexOf("climb") >= 0) return true;
+    if (svc.indexOf("aquatic") >= 0 || svc.indexOf("swimming") >= 0) {
+      const uk = String(st.feedbackUnitKey || "");
+      return /^\d{4}-\d{2}-\d{2}\|[^|]+\|\d{1,2}:\d{2}\|aquatic/i.test(uk);
+    }
     const uk = String(st.feedbackUnitKey || "");
-    if (uk.split("|").length >= 4) return true;
-    if (/multi[-\s]?activity|bespoke|climbing|climb/.test(uk)) return true;
+    if (/multi[-\s]?activity|climbing|climb/.test(uk)) return true;
+    if (uk.split("|").length >= 5 && uk.indexOf("bespoke") < 0 && uk.indexOf("day_centre") < 0) {
+      return true;
+    }
     return false;
+  }
+
+  function isBespokeStatusRow(st) {
+    if (!st) return false;
+    const u = String(st.feedbackUnitKey || "").toLowerCase();
+    if (u.indexOf("bespoke") >= 0) return true;
+    return serviceKindFromLabel(st.service) === "bespoke";
+  }
+
+  function isBespokeRosterSession(s) {
+    const act = String((s && (s.activity || s.rosterService || s.service)) || "")
+      .trim()
+      .toLowerCase();
+    return act.indexOf("bespoke") >= 0;
+  }
+
+  function submittedRowIsBespoke(r) {
+    if (serviceKindFromLabel(r && r.service) === "bespoke") return true;
+    const pk = String((r && (r.portalSessionKey || r.portal_session_key)) || "").toLowerCase();
+    return pk.indexOf("bespoke") >= 0;
+  }
+
+  function bespokeClientResolved(iso, clientSlug) {
+    const key = String(clientSlug || "").trim();
+    if (!key) return false;
+    return submittedRowsForDateAll(iso).some(function (r) {
+      if (submittedRowMarksAbsent(r)) return false;
+      if (!submittedRowIsBespoke(r)) return false;
+      const rKey = slug(r.clientName);
+      return rKey === key || rKey.indexOf(key) >= 0 || key.indexOf(rKey) >= 0;
+    });
+  }
+
+  /** Yusuf / Cyrus: Aquatic + Multi-Activity same instructor → one feedback covers the merge group. */
+  function submittedCoversMergeGroup(iso, st) {
+    const mg = String(st && st.feedbackMergeGroup ? st.feedbackMergeGroup : "").trim();
+    if (!mg) return false;
+    const groupRows = statusRowsForDateAll(iso).filter(function (row) {
+      return String(row.feedbackMergeGroup || "").trim() === mg;
+    });
+    if (!groupRows.length) return false;
+    return submittedRowsForDateAll(iso).some(function (r) {
+      if (submittedRowMarksAbsent(r)) return false;
+      if (!submittedRowMatchesStatusClient(r, st)) return false;
+      for (let i = 0; i < groupRows.length; i++) {
+        if (staffOwnsInstructor(groupRows[i].instructor, r.instructor)) return true;
+      }
+      return false;
+    });
   }
 
   function serviceKindFromLabel(label) {
@@ -202,7 +258,8 @@
       .trim()
       .toLowerCase();
     if (/day\s*centre/.test(act)) return false;
-    if (/multi[-\s]?activity/.test(act) || act === "bespoke") return true;
+    if (act.indexOf("bespoke") >= 0) return false;
+    if (/multi[-\s]?activity/.test(act)) return true;
     if (act.indexOf("climbing") >= 0 || act.indexOf("climb") >= 0) return true;
     return false;
   }
@@ -224,13 +281,6 @@
         pk.indexOf("multi") >= 0 ||
         rSvc.indexOf("multi") >= 0 ||
         serviceKindFromLabel(r.service) === "multi_activity"
-      );
-    }
-    if (act.indexOf("bespoke") >= 0) {
-      return (
-        pk.indexOf("bespoke") >= 0 ||
-        rSvc.indexOf("bespoke") >= 0 ||
-        serviceKindFromLabel(r.service) === "bespoke"
       );
     }
     return true;
@@ -303,6 +353,16 @@
         return submittedRowMatchesStatusClient(r, st) && !submittedRowMarksAbsent(r);
       });
     }
+    if (isBespokeStatusRow(st)) {
+      return submittedRowsForDateAll(iso).some(function (r) {
+        return (
+          submittedRowMatchesStatusClient(r, st) &&
+          !submittedRowMarksAbsent(r) &&
+          submittedRowIsBespoke(r)
+        );
+      });
+    }
+    if (submittedCoversMergeGroup(iso, st)) return true;
     return submittedRowsForDateAll(iso).some(function (r) {
       if (!submittedRowMatchesStatusClient(r, st)) return false;
       if (submittedRowMarksAbsent(r)) return false;
@@ -324,6 +384,10 @@
   function statusSlotResolved(iso, st) {
     if (!st) return false;
     if (statusOverviewIsAbsent(st)) return true;
+    if (String(st.feedbackMergeGroup || "").trim()) {
+      if (submittedCoversMergeGroup(iso, st)) return true;
+      return submittedCoversStatusRow(iso, st);
+    }
     if (statusRowNeedsPerStaffUnitFeedback(st)) {
       return submittedCoversStatusRow(iso, st);
     }
@@ -341,6 +405,10 @@
   }
 
   function staffSubmittedCoversRosterSession(iso, staffId, s, clientNotesById) {
+    const clientKey = rosterKeyForSession(s, clientNotesById);
+    if (isBespokeRosterSession(s) && clientKey && bespokeClientResolved(iso, clientKey)) {
+      return true;
+    }
     return submittedRowsForStaffDate(iso, staffId).some(function (r) {
       return (
         !submittedRowMarksAbsent(r) &&
@@ -577,6 +645,9 @@
     ) {
       return true;
     }
+    if (isBespokeRosterSession(s) && clientKey && bespokeClientResolved(iso, clientKey)) {
+      return true;
+    }
     const owned = statusRowsForStaffDate(iso, staffId);
     const matchingOwned = owned.filter(function (st) {
       return clientMatch(st, s, clientNotesById);
@@ -603,7 +674,10 @@
     if (unitKey && feedbackUnitKeyResolved(iso, staffId, unitKey)) return true;
     const sub = submittedRowsForStaffDate(iso, staffId);
     const fbHit = sub.find(function (r) {
-      return clientMatch({ clientName: r.clientName }, s, clientNotesById);
+      return (
+        clientMatch({ clientName: r.clientName }, s, clientNotesById) &&
+        submittedRowMatchesRosterServiceUnit(r, s)
+      );
     });
     return !!fbHit && submittedRowDone(fbHit);
   }
