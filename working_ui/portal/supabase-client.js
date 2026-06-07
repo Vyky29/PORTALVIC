@@ -408,6 +408,15 @@ function portalSessionKeyAreaToken(key) {
     .map((p) => String(p || "").trim().toLowerCase())
     .filter(Boolean);
   if (parts.length < 4) return "";
+  /* date|client|HH:mm|service|area|instructor — trailing token is instructor, not area */
+  if (
+    parts.length >= 6 &&
+    /^\d{4}-\d{2}-\d{2}$/.test(parts[0]) &&
+    /^\d{1,2}:\d{2}$/.test(parts[2]) &&
+    /multi|climb|aquatic|bespoke|day_centre|swim/.test(parts[3])
+  ) {
+    return parts[4] || "";
+  }
   const last = parts[parts.length - 1];
   if (last === "day_centre") return last;
   if (/^\d{4}-\d{2}-\d{2}$/.test(last) || /^\d{1,2}:\d{2}$/.test(last)) return "";
@@ -420,8 +429,17 @@ function portalSessionKeyAreaTokensCompatible(submittedKey, rosterKey) {
   const sArea = portalSessionKeyAreaToken(submittedKey);
   const rArea = portalSessionKeyAreaToken(rosterKey);
   if (!sArea && !rArea) return true;
-  if (!sArea || !rArea) return false;
-  return sArea === rArea;
+  if (sArea && rArea) {
+    if (sArea === rArea) return true;
+    if (
+      (sArea.includes("climb") || sArea === "climbing" || sArea === "climbing_wall") &&
+      (rArea.includes("climb") || rArea === "climbing" || rArea === "climbing_wall")
+    ) {
+      return true;
+    }
+    return false;
+  }
+  return true;
 }
 
 function portalSessionKeyTimeToken(key) {

@@ -205,6 +205,22 @@
     return "";
   }
 
+  function portalKeyTimeToken(key) {
+    const parts = String(key || "")
+      .split("|")
+      .map(function (p) {
+        return String(p || "").trim();
+      })
+      .filter(Boolean);
+    for (let i = 0; i < parts.length; i++) {
+      const m = parts[i].match(/^(\d{1,2}):(\d{2})$/);
+      if (m) {
+        return String(Number(m[1])).padStart(2, "0") + ":" + m[2];
+      }
+    }
+    return "";
+  }
+
   function portalKeyAreaToken(key) {
     const parts = String(key || "")
       .split("|")
@@ -213,6 +229,15 @@
       })
       .filter(Boolean);
     if (parts.length < 4) return "";
+    /* date|client|HH:mm|service|area|instructor — last segment is instructor, not area */
+    if (
+      parts.length >= 6 &&
+      /^\d{4}-\d{2}-\d{2}$/.test(parts[0]) &&
+      /^\d{1,2}:\d{2}$/.test(parts[2]) &&
+      /multi|climb|aquatic|bespoke|day_centre|swim/.test(parts[3])
+    ) {
+      return parts[4] || "";
+    }
     const last = parts[parts.length - 1];
     if (last === "day_centre") return last;
     if (/^\d{4}-\d{2}-\d{2}$/.test(last) || /^\d{1,2}:\d{2}$/.test(last)) return "";
@@ -225,15 +250,39 @@
     const aa = portalKeyAreaToken(a);
     const bb = portalKeyAreaToken(b);
     if (!aa && !bb) return true;
-    if (!aa || !bb) return false;
-    if (aa === bb) return true;
-    if (
-      (aa.indexOf("climb") >= 0 || aa === "climbing" || aa === "climbing_wall") &&
-      (bb.indexOf("climb") >= 0 || bb === "climbing" || bb === "climbing_wall")
-    ) {
-      return true;
+    if (aa && bb) {
+      if (aa === bb) return true;
+      if (
+        (aa.indexOf("climb") >= 0 || aa === "climbing" || aa === "climbing_wall") &&
+        (bb.indexOf("climb") >= 0 || bb === "climbing" || bb === "climbing_wall")
+      ) {
+        return true;
+      }
+      return false;
     }
-    return false;
+    return true;
+  }
+
+  function rosterSessionStartHm(s) {
+    return portalKeyTimeToken(String(s && s.start != null ? s.start : ""));
+  }
+
+  /** Match status export row to one roster session (client + slot time + service), not every row that day. */
+  function statusRowMatchesRosterSession(st, s, clientNotesById) {
+    if (!clientMatch(st, s, clientNotesById)) return false;
+    const rowTime = portalKeyTimeToken(st.feedbackUnitKey);
+    const rosterTime = rosterSessionStartHm(s);
+    if (rowTime && rosterTime && rowTime !== rosterTime) return false;
+    const stKind = serviceKindFromLabel(st.service);
+    const act = String(
+      (s && (s.activity || s.rosterService || s.service)) || ""
+    )
+      .trim()
+      .toLowerCase();
+    if (stKind === "climbing" && act.indexOf("climb") < 0) return false;
+    if (stKind === "multi_activity" && !/multi[-\s]?activity/.test(act)) return false;
+    if (stKind === "bespoke" && act.indexOf("bespoke") < 0) return false;
+    return true;
   }
 
   function submittedRowMatchesStatusUnit(r, st) {
@@ -668,7 +717,7 @@
     }
     const owned = statusRowsForStaffDate(iso, staffId);
     const matchingOwned = owned.filter(function (st) {
-      return clientMatch(st, s, clientNotesById);
+      return statusRowMatchesRosterSession(st, s, clientNotesById);
     });
     if (
       matchingOwned.some(function (st) {
@@ -772,6 +821,7 @@
     submittedRowsForStaffDate: submittedRowsForStaffDate,
     submittedRowsForDateAll: submittedRowsForDateAll,
     statusSlotResolved: statusSlotResolved,
+    statusRowMatchesRosterSession: statusRowMatchesRosterSession,
     submittedCoversStatusRow: submittedCoversStatusRow,
     anySubmittedCoversRosterSession: anySubmittedCoversRosterSession,
     dayCentreClientResolved: dayCentreClientResolved,
