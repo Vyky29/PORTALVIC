@@ -127,6 +127,115 @@
     return isDayCentreServiceLabel(st.service);
   }
 
+  /** Climbing / MA / Bespoke: each instructor+area unit is separate — do not trust admin export alone. */
+  function statusRowNeedsPerStaffUnitFeedback(st) {
+    if (!st || isDayCentreStatusRow(st)) return false;
+    const svc = String(st.service || "").toLowerCase();
+    if (/multi[-\s]?activity/.test(svc) || svc.indexOf("bespoke") >= 0) return true;
+    if (svc.indexOf("climbing") >= 0 || svc.indexOf("climb") >= 0) return true;
+    const uk = String(st.feedbackUnitKey || "");
+    if (uk.split("|").length >= 4) return true;
+    if (/multi[-\s]?activity|bespoke|climbing|climb/.test(uk)) return true;
+    return false;
+  }
+
+  function serviceKindFromLabel(label) {
+    const k = String(label || "")
+      .toLowerCase()
+      .replace(/[\s_-]+/g, " ");
+    if (k.indexOf("climbing") >= 0 || k.indexOf("climb") >= 0) return "climbing";
+    if (/multi[-\s]?activity/.test(k) || k.indexOf("multi activity") >= 0) return "multi_activity";
+    if (k.indexOf("bespoke") >= 0) return "bespoke";
+    return "";
+  }
+
+  function portalKeyAreaToken(key) {
+    const parts = String(key || "")
+      .split("|")
+      .map(function (p) {
+        return String(p || "").trim().toLowerCase();
+      })
+      .filter(Boolean);
+    if (parts.length < 4) return "";
+    const last = parts[parts.length - 1];
+    if (last === "day_centre") return last;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(last) || /^\d{1,2}:\d{2}$/.test(last)) return "";
+    if (parts.length >= 5) return last;
+    if (/^\d{1,2}:\d{2}$/.test(parts[1])) return last;
+    return "";
+  }
+
+  function portalKeyAreaTokensCompatible(a, b) {
+    const aa = portalKeyAreaToken(a);
+    const bb = portalKeyAreaToken(b);
+    if (!aa && !bb) return true;
+    if (!aa || !bb) return false;
+    if (aa === bb) return true;
+    if (
+      (aa.indexOf("climb") >= 0 || aa === "climbing" || aa === "climbing_wall") &&
+      (bb.indexOf("climb") >= 0 || bb === "climbing" || bb === "climbing_wall")
+    ) {
+      return true;
+    }
+    return false;
+  }
+
+  function submittedRowMatchesStatusUnit(r, st) {
+    if (!r || !st) return false;
+    const stKind = serviceKindFromLabel(st.service);
+    let rKind = serviceKindFromLabel(r.service);
+    const rPk = String((r && (r.portalSessionKey || r.portal_session_key)) || "").trim();
+    const stUk = String(st.feedbackUnitKey || "").trim();
+    if (!rKind && rPk) {
+      const pkLow = rPk.toLowerCase();
+      if (pkLow.indexOf("climb") >= 0) rKind = "climbing";
+      else if (pkLow.indexOf("multi") >= 0) rKind = "multi_activity";
+      else if (pkLow.indexOf("bespoke") >= 0) rKind = "bespoke";
+    }
+    if (stKind && rKind && stKind !== rKind) return false;
+    if (rPk && stUk && !portalKeyAreaTokensCompatible(rPk, stUk)) return false;
+    return true;
+  }
+
+  function rosterSessionNeedsUnitSuffix(s) {
+    const act = String((s && (s.activity || s.rosterService || s.service)) || "")
+      .trim()
+      .toLowerCase();
+    if (/day\s*centre/.test(act)) return false;
+    if (/multi[-\s]?activity/.test(act) || act === "bespoke") return true;
+    if (act.indexOf("climbing") >= 0 || act.indexOf("climb") >= 0) return true;
+    return false;
+  }
+
+  function submittedRowMatchesRosterServiceUnit(r, s) {
+    if (!r || !s || !rosterSessionNeedsUnitSuffix(s)) return true;
+    const act = String((s.activity || s.rosterService || s.service) || "").toLowerCase();
+    const pk = String((r.portalSessionKey || r.portal_session_key) || "").toLowerCase();
+    const rSvc = String(r.service || "").toLowerCase();
+    if (act.indexOf("climbing") >= 0 || act.indexOf("climb") >= 0) {
+      return (
+        pk.indexOf("climb") >= 0 ||
+        rSvc.indexOf("climb") >= 0 ||
+        serviceKindFromLabel(r.service) === "climbing"
+      );
+    }
+    if (/multi[-\s]?activity/.test(act)) {
+      return (
+        pk.indexOf("multi") >= 0 ||
+        rSvc.indexOf("multi") >= 0 ||
+        serviceKindFromLabel(r.service) === "multi_activity"
+      );
+    }
+    if (act.indexOf("bespoke") >= 0) {
+      return (
+        pk.indexOf("bespoke") >= 0 ||
+        rSvc.indexOf("bespoke") >= 0 ||
+        serviceKindFromLabel(r.service) === "bespoke"
+      );
+    }
+    return true;
+  }
+
   function isDayCentreRosterSession(s) {
     if (!s) return false;
     const blob = String(
@@ -160,6 +269,7 @@
       .trim()
       .toLowerCase();
     if (os === "absent" || os === "cancelled") return true;
+    if (statusRowNeedsPerStaffUnitFeedback(st)) return false;
     if (st.feedbackComplete === true) return true;
     if (os === "feedback_submitted") return true;
     return false;
@@ -196,6 +306,7 @@
     return submittedRowsForDateAll(iso).some(function (r) {
       if (!submittedRowMatchesStatusClient(r, st)) return false;
       if (submittedRowMarksAbsent(r)) return false;
+      if (!submittedRowMatchesStatusUnit(r, st)) return false;
       if (staffOwnsInstructor(st.instructor, r.instructor)) return true;
       if (st.matchedFeedbackBy && staffOwnsInstructor(st.matchedFeedbackBy, r.instructor)) {
         return true;
@@ -212,6 +323,10 @@
   /** Status row done in overview OR covered by a matching instructor's submitted feedback. */
   function statusSlotResolved(iso, st) {
     if (!st) return false;
+    if (statusOverviewIsAbsent(st)) return true;
+    if (statusRowNeedsPerStaffUnitFeedback(st)) {
+      return submittedCoversStatusRow(iso, st);
+    }
     if (statusRowDone(st)) return true;
     return submittedCoversStatusRow(iso, st);
   }
@@ -229,7 +344,8 @@
     return submittedRowsForStaffDate(iso, staffId).some(function (r) {
       return (
         !submittedRowMarksAbsent(r) &&
-        submittedRowCoversRosterSession(r, s, clientNotesById)
+        submittedRowCoversRosterSession(r, s, clientNotesById) &&
+        submittedRowMatchesRosterServiceUnit(r, s)
       );
     });
   }
