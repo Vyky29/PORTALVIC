@@ -944,6 +944,14 @@
       keys.push(broadDateClient);
       if (normTimeKey(fb.session_time)) keys.push(tk);
     }
+    if (isBespokeService(svc)) {
+      var bt = normTimeKey(fb.session_time) || parsedPk.time;
+      if (bt) {
+        keys.push(
+          sd + "|" + nm + "|" + bt + "|" + serviceKey(svc) + "|hub_room"
+        );
+      }
+    }
     return keys;
   }
 
@@ -1401,8 +1409,18 @@
         if (!parts[1] && parts[2] && canonicalClientSlug(parts[2]) === canonicalClientSlug(slot.client_name)) {
           return true;
         }
+        // feedback_unit_key layout: date|client|time|service|area
+        if (
+          parts[1] &&
+          !normTimeKey(parts[1]) &&
+          normTimeKey(parts[2]) === st &&
+          canonicalClientSlug(parts[1]) === canonicalClientSlug(slot.client_name)
+        ) {
+          return true;
+        }
       }
       if (parts.length >= 2 && normTimeKey(parts[1]) === st) return true;
+      if (parts.length >= 3 && normTimeKey(parts[2]) === st) return true;
     }
     if (clientNeedsPerSlotAquaticFeedback(slot)) return false;
     return !ft;
@@ -1433,6 +1451,12 @@
     }
     if (isPhysicalActivityService(fb.service) && isPhysicalActivityService(slot.service)) {
       return true;
+    }
+    if (isBespokeService(fb.service) && isBespokeService(slot.service)) return true;
+    if (isBespokeService(fb.service) && serviceKey(slot.service).indexOf("group session") !== -1) return true;
+    if (isBespokeService(slot.service) && serviceKey(fb.service).indexOf("group session") !== -1) return true;
+    if (isBespokeService(slot.service) && isMultiActivityService(fb.service)) {
+      return completedByFitsSlotArea(fb.completed_by_name, slot);
     }
     return false;
   }
@@ -1566,7 +1590,12 @@
         var slotArea = sessionAreaKey(slot.area);
         if (pkArea && slotArea && pkArea !== slotArea) {
           if (isBespokeService(slot.service)) {
-            return portalBespokeAreaTokensCompatible(pkArea, slotArea);
+            if (portalBespokeAreaTokensCompatible(pkArea, slotArea)) return true;
+            if (parts.length >= 5) {
+              var pkAreaTail = portalKeyAreaToken(parts[4]);
+              if (pkAreaTail && portalBespokeAreaTokensCompatible(pkAreaTail, slotArea)) return true;
+            }
+            return false;
           }
           if (isMultiActivityService(slot.service) || isClimbingService(slot.service)) {
             return completedByFitsSlotArea(fb.completed_by_name, slot);
