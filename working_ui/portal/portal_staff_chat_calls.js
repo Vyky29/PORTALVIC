@@ -1685,8 +1685,11 @@
   }
 
   function meetingPanelHost() {
+    if (global.__PORTAL_CS_CLIQ_ACTIVE || global.__PORTAL_CS_CLIQ_EMBED_OPEN) {
+      return document.body;
+    }
     var root = document.getElementById("csCliqRoot");
-    if (global.__PORTAL_CS_CLIQ_ACTIVE && root) return root;
+    if (root) return root;
     return document.getElementById(resolveCallUi().threadWrapId) || document.body;
   }
 
@@ -1694,7 +1697,9 @@
     if (!panel) return;
     var host = meetingPanelHost();
     if (panel.parentElement !== host) host.appendChild(panel);
-    panel.classList.toggle("portal-dm-meeting-panel--hub", host.id === "csCliqRoot");
+    var onBody = host === document.body;
+    panel.classList.toggle("portal-dm-meeting-panel--hub", !onBody && host.id === "csCliqRoot");
+    panel.classList.toggle("portal-dm-meeting-panel--global", onBody);
   }
 
   function ensureMeetingPanel() {

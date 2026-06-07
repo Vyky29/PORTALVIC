@@ -43,7 +43,11 @@
         action: "meeting",
       });
     }
-    items.push({ title: "Staff term calendar", sub: "Sessions, roster, and term dates", action: "scheduling" });
+    items.push({
+      title: "Staff roster calendar",
+      sub: "Term sessions and worker schedules (separate from video meetings)",
+      action: "scheduling",
+    });
     items.push({ title: "Open Chats", sub: "Pick someone to meet with", action: "chats" });
     host.innerHTML = items
       .map(function (item, idx) {
