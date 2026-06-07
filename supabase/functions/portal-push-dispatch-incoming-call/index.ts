@@ -161,7 +161,10 @@ Deno.serve(async (req) => {
   }
 
   const forbidden = verifyPortalPushWebhook(req);
-  if (forbidden) return forbidden;
+  if (forbidden) {
+    console.warn("[portal-push-incoming-call] forbidden — check x-portal-webhook-secret");
+    return forbidden;
+  }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -174,25 +177,34 @@ Deno.serve(async (req) => {
   try {
     payload = await req.json();
   } catch {
+    console.log("[portal-push-incoming-call] skip", { reason: "bad json" });
     return jsonPushResponse({ skipped: true, reason: "bad json" }, 400);
   }
 
   const table = String(payload.table || "").trim();
+  console.log("[portal-push-incoming-call] invoke", { table });
   if (
     table !== "portal_staff_dm_messages" &&
     table !== "portal_ceo_group_message"
   ) {
+    console.log("[portal-push-incoming-call] skip", { reason: "table", table });
     return jsonPushResponse({ skipped: true, reason: "table" });
   }
 
   const record = payload.record;
   if (!record || typeof record !== "object") {
+    console.log("[portal-push-incoming-call] skip", { reason: "no record", table });
     return jsonPushResponse({ skipped: true, reason: "no record" });
   }
 
   const body = String(record.body || "");
   const callData = parseCallPayload(body);
   if (!callData) {
+    console.log("[portal-push-incoming-call] skip", {
+      reason: "not live call invite",
+      table,
+      messageId: String(record.id || "").slice(0, 8),
+    });
     return jsonPushResponse({ skipped: true, reason: "not live call invite" });
   }
 
@@ -208,6 +220,7 @@ Deno.serve(async (req) => {
     messageId,
   );
   if (dedupe === "duplicate") {
+    console.log("[portal-push-incoming-call] skip", { reason: "already sent", messageId });
     return jsonPushResponse({ skipped: true, reason: "already sent" });
   }
   if (dedupe === "error") {
@@ -240,6 +253,13 @@ Deno.serve(async (req) => {
 
   const targetIds = await resolveTargetUserIds(admin, table, record);
   if (!targetIds.length) {
+    console.log("[portal-push-incoming-call] done", {
+      sent: 0,
+      targets: 0,
+      note: "no targets",
+      messageId,
+      source,
+    });
     return jsonPushResponse({ ok: true, sent: 0, targets: 0, note: "no targets" });
   }
 
@@ -280,6 +300,14 @@ Deno.serve(async (req) => {
     const result = await sendPushPayloadToUserIds(admin, [userId], pushPayload);
     sent += result.sent;
   }
+
+  console.log("[portal-push-incoming-call] done", {
+    sent,
+    targets: targetIds.length,
+    messageId,
+    source,
+    kind,
+  });
 
   return jsonPushResponse({
     ok: true,
