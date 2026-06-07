@@ -1769,6 +1769,8 @@ body:has(#workspace .dash-hub--ops-hub) .admin-main{
 .ops-hub__today-item{
   display:flex;
   flex-direction:column;
+  align-items:center;
+  justify-content:center;
   gap:1px;
   min-width:0;
   max-width:100%;
@@ -1778,6 +1780,7 @@ body:has(#workspace .dash-hub--ops-hub) .admin-main{
   background:#fff;
   box-shadow:0 1px 2px rgba(15,23,42,.05);
   box-sizing:border-box;
+  text-align:center;
 }
 .ops-hub__today-k{
   font-size:10px;
@@ -1785,6 +1788,8 @@ body:has(#workspace .dash-hub--ops-hub) .admin-main{
   letter-spacing:.08em;
   text-transform:uppercase;
   color:var(--dh-muted,#64748b);
+  width:100%;
+  text-align:center;
 }
 .ops-hub__today-v{
   font-size:clamp(16px,1vw + 14px,18px);
@@ -1792,6 +1797,8 @@ body:has(#workspace .dash-hub--ops-hub) .admin-main{
   line-height:1.15;
   color:#173247;
   overflow-wrap:break-word;
+  width:100%;
+  text-align:center;
 }
 .ops-hub__today-v--alert{color:#dc2626}
 .ops-hub__today-v--warn{color:#c2410c}
@@ -1800,6 +1807,8 @@ body:has(#workspace .dash-hub--ops-hub) .admin-main{
   line-height:1.3;
   color:var(--dh-muted,#64748b);
   overflow-wrap:break-word;
+  width:100%;
+  text-align:center;
 }
 .ops-hub__grid{
   display:grid;
