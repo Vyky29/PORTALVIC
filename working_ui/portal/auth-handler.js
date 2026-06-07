@@ -1017,7 +1017,7 @@ export async function bootstrapDashboardSupabase(_opts) {
       if (page === "lead_overview") {
         throw new Error("skip_location_on_lead_overview");
       }
-      const perm = await import("./portal_location_permission.js?v=20260623-shift-copy");
+      const perm = await import("./portal_location_permission.js?v=20260623-perms-ux");
       window.portalLocationPermissionGranted = perm.portalLocationPermissionGranted;
       window.portalMicrophonePermissionGranted = perm.portalMicrophonePermissionGranted;
       window.portalCameraPermissionGranted = perm.portalCameraPermissionGranted;

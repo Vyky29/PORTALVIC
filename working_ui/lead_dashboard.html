@@ -725,13 +725,17 @@
     <div class="sheet-head">
       <div class="sheet-handle"></div>
       <h3 id="alertsNotificationsTitle">Portal features</h3>
-      <p>Calls, chat and roster alerts turn on with one tap — camera too. Live map when your rota needs it. Microphone is optional (voice feedback only).</p>
+      <p>One tap anywhere on the app turns on alerts and camera. Location only if your rota needs it. Microphone is optional — see Advanced settings.</p>
     </div>
     <div class="sheet-body">
       <div class="portal-alerts-panel">
-        <div class="portal-alerts-block portal-alerts-block--primary">
-          <h4 class="portal-alerts-section-title">Continue</h4>
-          <p class="portal-alerts-hint muted">One tap turns on alerts and camera on this device. The browser may also ask for location if you deliver Bespoke or Day Centre. Microphone stays optional below.</p>
+        <div class="portal-alerts-block portal-alerts-block--ready" id="portalDefaultPermsReady" hidden>
+          <h4 class="portal-alerts-section-title">Portal features</h4>
+          <p id="portalDefaultPermsReadyStatus" class="portal-alerts-status" aria-live="polite">On — alerts and camera ready on this device.</p>
+        </div>
+        <div class="portal-alerts-block portal-alerts-block--primary" id="portalDefaultPermsBlock">
+          <h4 class="portal-alerts-section-title">First-time setup</h4>
+          <p class="portal-alerts-hint muted">Tap anywhere on the dashboard once, or Continue here. The browser asks for alerts and camera (and location if you deliver Bespoke or Day Centre). Nothing else is required in Settings except optional microphone below.</p>
           <p id="portalEnableAllStatus" class="portal-alerts-status" aria-live="polite"></p>
           <button type="button" class="portal-alerts-action-btn portal-alerts-action-btn--primary" id="portalEnableAllBtn">Continue</button>
           <button type="button" class="portal-alerts-action-btn portal-alerts-action-btn--ghost" id="portalNotifyTestBtn">Send test alert</button>

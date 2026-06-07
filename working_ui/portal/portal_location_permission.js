@@ -849,11 +849,22 @@ export function portalRefreshCameraUi() {
 export function portalRefreshEnableAllUi() {
   const statusEl = document.getElementById("portalEnableAllStatus");
   const btn = document.getElementById("portalEnableAllBtn");
+  const block = document.getElementById("portalDefaultPermsBlock");
+  const readyBlock = document.getElementById("portalDefaultPermsReady");
   if (!statusEl && !btn) return;
 
   const complete = portalMandatoryAlertsSettingsComplete();
   const locRequired = portalLocationRequiredForSetup();
   const camRequired = portalCameraRequiredForSetup();
+
+  if (block) block.hidden = !!complete;
+  if (readyBlock) readyBlock.hidden = !complete;
+  const readyStatus = document.getElementById("portalDefaultPermsReadyStatus");
+  if (readyStatus && complete) {
+    readyStatus.textContent = locRequired
+      ? "On — alerts, camera, and live map when your sessions need it."
+      : "On — alerts and camera ready on this device.";
+  }
 
   if (statusEl) {
     if (complete) {
@@ -865,9 +876,9 @@ export function portalRefreshEnableAllUi() {
       if (camRequired) parts.push("camera");
       if (locRequired) parts.push("location");
       statusEl.textContent =
-        "Tap Continue once. The browser may ask for " +
+        "Tap anywhere on the app once (or Continue below). The browser may ask for " +
         parts.join(" and ") +
-        " — accept each once. Microphone stays optional below.";
+        ". Microphone is optional in Advanced settings.";
     }
   }
   if (btn) {
@@ -991,7 +1002,7 @@ function ensureNotifyTapBanner() {
   banner.className = "portal-notify-tap-banner";
   banner.setAttribute("role", "status");
   banner.textContent =
-    "Tap anywhere once to turn on alerts, camera, and location (if needed) for calls and chat.";
+    "Tap anywhere once for alerts, camera, and location (if your rota needs it). Microphone is optional in Settings → Advanced.";
   document.body.appendChild(banner);
 }
 
@@ -1045,13 +1056,8 @@ export function bindAutoNotificationOnFirstGesture() {
   document.addEventListener("touchstart", onGesture, true);
 }
 
-/** Alerts sheet opened — refresh UI; on a user gesture, prompt notifications if still default. */
+/** Alerts sheet opened — refresh UI only (no auto prompts; first app tap handles defaults). */
 export async function portalOnAlertsSheetOpened() {
-  if (portalUserActivationActive()) {
-    if (typeof Notification !== "undefined" && Notification.permission === "default") {
-      await requestNotificationPermission();
-    }
-  }
   await portalRefreshMandatoryAlertsSettingsUi();
 }
 
@@ -1067,6 +1073,7 @@ export async function portalEnsureMandatoryAlertsSettings(opts = {}) {
     probeMicrophonePermissionState(),
     probeCameraPermissionState(),
   ]);
+  refreshDefaultPortalPermissionsUi();
   if (portalMandatoryAlertsSettingsComplete()) {
     persistSet("portal_alerts_prompt_shown_v1", "1");
     removeNotifyTapBanner();
