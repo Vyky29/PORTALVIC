@@ -19,6 +19,7 @@ import {
   portalBumpAuthSessionGeneration,
   portalGetCachedAuthSessionGeneration,
   portalSetCachedAuthSessionGeneration,
+  portalClearCachedAuthSessionGeneration,
   bindPortalRemoteLogoutOnStaleAuthGeneration,
 } from "./supabase-client.js";
 import {
@@ -714,6 +715,18 @@ function bindLogin() {
   }
 }
 
+/** Admin ghost teleport (`?ghostToken=`) — read-only mirror; skip single-session kick + visit side effects. */
+function portalIsGhostDashboardSession() {
+  if (typeof window === "undefined") return false;
+  try {
+    const q = new URLSearchParams(String(window.location.search || ""));
+    if (q.get("ghostToken") || q.get("ghost")) return true;
+  } catch {
+    /* ignore */
+  }
+  return !!(window.__PORTAL_GHOST_VIEW__ && window.__PORTAL_GHOST_VIEW__.active);
+}
+
 /**
  * Optional: dashboards may import this; does not change DOM.
  * @param {{ page?: string }} _opts
@@ -722,6 +735,7 @@ export async function bootstrapDashboardSupabase(_opts) {
   if (enforceAppVersion()) return;
 
   const page = String((_opts && _opts.page) || "").trim().toLowerCase();
+  const isGhostDashboard = portalIsGhostDashboardSession();
   const loginRedirect = portalPublishedLoginUrl();
   const isLeadOverview = page === "lead_overview";
   const leadHubUrl = portalPublishedLeadUrl();
@@ -925,17 +939,23 @@ export async function bootstrapDashboardSupabase(_opts) {
 
     if (profile) {
       const gen = Number(profile.auth_session_generation) || 0;
-      const cached = portalGetCachedAuthSessionGeneration();
-      if (cached != null && gen > cached) {
-        try {
-          await portalLogout();
-        } catch {
-          /* ignore */
+      if (isGhostDashboard) {
+        // Reused ghost tab can hold a stale generation in sessionStorage; never kick admin out mid-teleport.
+        portalClearCachedAuthSessionGeneration();
+        portalSetCachedAuthSessionGeneration(gen);
+      } else {
+        const cached = portalGetCachedAuthSessionGeneration();
+        if (cached != null && gen > cached) {
+          try {
+            await portalLogout();
+          } catch {
+            /* ignore */
+          }
+          window.location.href = loginRedirect;
+          return;
         }
-        window.location.href = loginRedirect;
-        return;
+        portalSetCachedAuthSessionGeneration(gen);
       }
-      portalSetCachedAuthSessionGeneration(gen);
     }
 
     if (typeof window !== "undefined" && profile && page === "lead") {
@@ -963,7 +983,7 @@ export async function bootstrapDashboardSupabase(_opts) {
         /* ignore */
       }
     }
-    if (typeof window !== "undefined" && session?.user?.id) {
+    if (typeof window !== "undefined" && session?.user?.id && !isGhostDashboard) {
       window.__PORTAL_AUTH_GEN_DISPOSE__ = bindPortalRemoteLogoutOnStaleAuthGeneration(
         supabase,
         session.user.id,
@@ -976,7 +996,7 @@ export async function bootstrapDashboardSupabase(_opts) {
       new CustomEvent("portal:supabase-ready", { detail: window.__PORTAL_SUPABASE__ })
     );
     try {
-      if (page === "lead_overview") {
+      if (page === "lead_overview" || isGhostDashboard) {
         throw new Error("skip_presence_on_lead_overview");
       }
       const { startPortalLivePresence, mountPortalLivePresenceBar } = await import(
@@ -990,7 +1010,7 @@ export async function bootstrapDashboardSupabase(_opts) {
       console.debug("[portal] live presence skipped:", presenceErr);
     }
     try {
-      if (page !== "lead_overview") {
+      if (page !== "lead_overview" && !isGhostDashboard) {
         const { startPortalVisitTracker } = await import(
           "./portal_visit_tracker.js?v=20260601-visit-insert-fix"
         );
@@ -1000,7 +1020,7 @@ export async function bootstrapDashboardSupabase(_opts) {
       console.debug("[portal] visit tracker skipped:", visitErr);
     }
     try {
-      if (page !== "lead_overview") {
+      if (page !== "lead_overview" && !isGhostDashboard) {
         await import("./portal_training_progress_sync.js?v=20260615-tprog-sync");
         if (typeof window.portalSyncTrainingProgressToSupabase === "function") {
           await window.portalSyncTrainingProgressToSupabase({
@@ -1014,7 +1034,7 @@ export async function bootstrapDashboardSupabase(_opts) {
       console.debug("[portal] training progress sync skipped:", tprogErr);
     }
     try {
-      if (page === "lead_overview") {
+      if (page === "lead_overview" || isGhostDashboard) {
         throw new Error("skip_location_on_lead_overview");
       }
       const perm = await import("./portal_location_permission.js?v=20260624-perms-announce");

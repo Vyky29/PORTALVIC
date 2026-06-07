@@ -182,6 +182,43 @@
     return { ok: true, data: j };
   }
 
+  function waitForSupabaseSession(maxMs) {
+    maxMs = Number(maxMs) > 0 ? Number(maxMs) : 8000;
+    return new Promise(function (resolve) {
+      if (global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.session) {
+        resolve(global.__PORTAL_SUPABASE__.session);
+        return;
+      }
+      var done = false;
+      function finish(sess) {
+        if (done) return;
+        done = true;
+        resolve(sess || null);
+      }
+      global.addEventListener(
+        "portal:supabase-ready",
+        function () {
+          finish(global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.session);
+        },
+        { once: true }
+      );
+      setTimeout(function () {
+        if (global.supabase && global.supabase.auth) {
+          global.supabase.auth
+            .getSession()
+            .then(function (r) {
+              finish(r && r.data && r.data.session ? r.data.session : null);
+            })
+            .catch(function () {
+              finish(null);
+            });
+          return;
+        }
+        finish(null);
+      }, maxMs);
+    });
+  }
+
   async function runGhostBootstrap() {
     var token = parseGhostTokenFromUrl();
     if (!token) {
@@ -189,7 +226,13 @@
       return;
     }
 
+    await waitForSupabaseSession(8000);
+
     var result = await verifyGhostToken(token);
+    if ((!result.ok || !result.data) && result.error === "admin_session_required") {
+      await waitForSupabaseSession(4000);
+      result = await verifyGhostToken(token);
+    }
     if (!result.ok || !result.data) {
       global.__PORTAL_GHOST_VIEW__ = {
         active: false,
@@ -200,7 +243,7 @@
         var err = document.createElement("div");
         err.className = "portal-ghost-view-error-panel";
         err.innerHTML =
-          "<strong>Ghost view unavailable</strong><p>Sign in to the admin portal on this device, then open Teleport again.</p>";
+          "<strong>Ghost view unavailable</strong><p>Stay signed in to the admin portal on this device, then open Teleport again. If this keeps happening, close other portal tabs and retry.</p>";
         document.body.insertBefore(err, document.body.firstChild);
       } catch (_e) {}
       return;
@@ -236,16 +279,18 @@
       function start() {
         if (started) return;
         started = true;
-        runGhostBootstrap().then(finish).catch(function () {
-          global.__PORTAL_GHOST_VIEW__ = { active: false, error: "verify_failed" };
-          finish();
-        });
+        runGhostBootstrap()
+          .then(finish)
+          .catch(function () {
+            global.__PORTAL_GHOST_VIEW__ = { active: false, error: "verify_failed" };
+            finish();
+          });
       }
       if (global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.session) {
         start();
       } else {
         global.addEventListener("portal:supabase-ready", start, { once: true });
-        setTimeout(start, 2500);
+        setTimeout(start, 8000);
       }
     });
   } else {
