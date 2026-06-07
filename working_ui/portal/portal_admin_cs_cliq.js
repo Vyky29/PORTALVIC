@@ -224,12 +224,12 @@
       "</header>" +
       '<div id="csCliqMessages" class="portal-dm-msgs-col portal-dm-msgs-scroll portal-cs-cliq-messages"></div>' +
       '<div class="portal-cs-cliq-composer portal-dm-compose-bar">' +
-      '<div class="portal-cs-cliq-composer__tools" id="csCliqComposerTools" aria-label="Attachments"></div>' +
-      '<div class="portal-cs-cliq-composer__row">' +
-      '<label class="sr-only" for="csCliqInput">Your message</label>' +
-      '<textarea id="csCliqInput" class="portal-cs-cliq-composer__input txa" placeholder="Write a message…" maxlength="8000" rows="1"></textarea>' +
-      '<button type="button" class="portal-cs-cliq-composer__send portal-dm-btn portal-dm-btn--primary" id="csCliqSendBtn" aria-label="Send message">Send</button>' +
-      "</div>" +
+      '<div class="portal-cs-cliq-composer__shell">' +
+      '<div class="portal-cs-cliq-composer__leading" id="csCliqComposerLeading" aria-label="Message tools"></div>' +
+      '<textarea id="csCliqInput" class="portal-cs-cliq-composer__input txa" aria-label="Message" placeholder="Message…" maxlength="8000" rows="1"></textarea>' +
+      '<button type="button" class="portal-cs-cliq-composer__send portal-dm-btn portal-dm-btn--primary" id="csCliqSendBtn" aria-label="Send message">' +
+      '<span class="portal-cs-cliq-composer__send-ico" data-dm-icon="send" aria-hidden="true"></span>' +
+      "</button></div>" +
       '<p id="csCliqErr" class="portal-cs-cliq-composer__err muted"></p>' +
       "</div></div></section></div></div>" +
       '<div id="csCliqChannelsPane" class="portal-cs-cliq__pane" data-cs-cliq-pane="channels" hidden>' +

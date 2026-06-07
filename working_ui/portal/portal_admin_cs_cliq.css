@@ -626,23 +626,16 @@
   color: #145a3a;
 }
 
-#csCliqRoot .portal-dm-compose-bar {
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 10px 12px;
-  border-top: 1px solid var(--portal-chat-line);
-  background: #fff;
+#csCliqRoot .portal-dm-compose-bar.portal-cs-cliq-composer {
+  padding: 0;
+  border-top: 0;
+  background: transparent;
 }
 
-#csCliqRoot .portal-dm-compose-bar .txa {
-  min-height: 72px;
-  max-height: 140px;
-  resize: vertical;
-  width: 100%;
+#csCliqRoot .portal-cs-cliq-composer .txa,
+#csCliqRoot .portal-cs-cliq-composer__input {
+  resize: none !important;
   box-sizing: border-box;
-  min-width: 0;
 }
 
 #csCliqRoot .portal-dm-btn {
@@ -1190,15 +1183,17 @@ body.admin-view-cs-cliq .portal-admin-floating-chat-wrap {
     font-size: 10px;
   }
 
-  #csCliqRoot.portal-cs-cliq--subscreen .portal-dm-compose-bar {
+  #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq-composer {
     padding: 8px 10px calc(10px + env(safe-area-inset-bottom, 0px));
     background: #f0f2f5;
   }
 
-  #csCliqRoot.portal-cs-cliq--subscreen .portal-dm-compose-bar .txa {
-    min-height: 44px;
-    max-height: 120px;
-    resize: none;
+  #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq-composer__shell {
+    border-color: rgba(45, 132, 179, 0.12);
+    box-shadow: 0 1px 8px rgba(23, 50, 71, 0.05);
+  }
+
+  #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq-composer__input {
     font-size: 16px;
   }
 

@@ -197,9 +197,16 @@
     return { id: msgId, path: path };
   }
 
-  function ensureComposeRow(textarea) {
+  function resolveComposeChrome(textarea) {
     if (!textarea || !textarea.parentNode) return null;
     injectStyles();
+    var shell = textarea.closest(".portal-cs-cliq-composer__shell");
+    if (shell) {
+      var leading = shell.querySelector(".portal-cs-cliq-composer__leading");
+      if (leading) {
+        return { mode: "premium", shell: shell, actions: leading, field: textarea };
+      }
+    }
     var parent = textarea.parentNode;
     if (!parent.classList.contains("portal-dm-compose-row")) {
       var row = document.createElement("div");
@@ -208,7 +215,14 @@
       row.appendChild(textarea);
       parent = row;
     }
-    return parent;
+    return { mode: "classic", row: parent, field: textarea };
+  }
+
+  function ensureComposeRow(textarea) {
+    var chrome = resolveComposeChrome(textarea);
+    if (!chrome) return null;
+    if (chrome.mode === "premium") return chrome.actions;
+    return chrome.row;
   }
 
   function attachFilePickers(opts) {
@@ -220,14 +234,21 @@
         : opts.textarea;
     if (!textarea || textarea.dataset.portalDmAttachBound === "1") return;
     textarea.dataset.portalDmAttachBound = "1";
-    var row = ensureComposeRow(textarea);
-    if (!row) return;
-
-    var actions = row.querySelector(".portal-dm-attach-actions");
+    var chrome = resolveComposeChrome(textarea);
+    if (!chrome) return;
+    var row = chrome.mode === "premium" ? chrome.actions : chrome.row;
+    var actionsHost = chrome && chrome.mode === "premium" ? chrome.actions : row;
+    var actions = actionsHost.querySelector(".portal-dm-attach-actions");
     if (!actions) {
       actions = document.createElement("div");
-      actions.className = "portal-dm-attach-actions";
-      row.insertBefore(actions, textarea);
+      actions.className =
+        "portal-dm-attach-actions" +
+        (chrome && chrome.mode === "premium" ? " portal-cs-cliq-composer__attach-actions" : "");
+      if (chrome && chrome.mode === "premium") {
+        actionsHost.appendChild(actions);
+      } else {
+        actionsHost.insertBefore(actions, textarea);
+      }
     }
 
     var photoInp = document.createElement("input");
@@ -253,7 +274,8 @@
       var btn = document.createElement("button");
       btn.type = "button";
       btn.id = id;
-      btn.className = "portal-dm-attach-btn";
+      btn.className =
+        "portal-dm-attach-btn" + (chrome && chrome.mode === "premium" ? " portal-cs-cliq-composer__tool-btn" : "");
       btn.innerHTML = label;
       btn.title = title;
       btn.setAttribute("aria-label", title);
