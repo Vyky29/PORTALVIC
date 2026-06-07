@@ -1704,9 +1704,6 @@
           });
         }
       }
-      if(unified && global.portalCsCliqAnnouncementInbox && typeof global.portalCsCliqAnnouncementInbox.prependToHost === 'function'){
-        await global.portalCsCliqAnnouncementInbox.prependToHost(host);
-      }
       if(!host.children.length){
         host.innerHTML = '<p class="muted" style="margin:0;font-size:13px;min-width:0;overflow-wrap:break-word">No conversations yet. Use <strong>New message</strong> to start.</p>';
       }
