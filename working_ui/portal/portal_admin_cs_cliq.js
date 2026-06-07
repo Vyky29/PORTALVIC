@@ -168,7 +168,7 @@
       "</div>" +
       '<div class="portal-cs-cliq__chat-body portal-dm-wrap" data-cs-cliq-panel="list">' +
       '<div id="csCliqChannelNav" class="portal-dm-inbox-nav">' +
-      '<button type="button" class="portal-dm-inbox-nav-btn is-active" id="csCliqTabStaff" data-admin-chat-channel="staff_lead">Staff &amp; leads</button>' +
+      '<button type="button" class="portal-dm-inbox-nav-btn is-active" id="csCliqTabStaff" data-admin-chat-channel="staff_lead">Staff · Leads channel</button>' +
       '<button type="button" class="portal-dm-inbox-nav-btn" id="csCliqTabCeo" data-admin-chat-channel="ceo_exec">CEO&apos;s chat</button>' +
       "</div>" +
       '<div id="csCliqListPanel">' +

@@ -15,18 +15,22 @@
     "relevant",
   ];
 
-  function staffUserId() {
+  /** Same identity key as admin DM read acks — per auth user, not shared across admins. */
+  function adminUserId() {
     try {
-      var p =
-        global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.staff_profile;
-      var id = p && (p.id || p.staff_id);
-      if (id) return String(id);
+      var box = global.__PORTAL_SUPABASE__;
+      var uid =
+        box && box.session && box.session.user && box.session.user.id;
+      if (uid) return String(uid);
+      var p = box && box.staff_profile;
+      var sid = p && (p.id || p.staff_id);
+      if (sid) return String(sid);
     } catch (_) {}
     return "anon";
   }
 
   function storeKey() {
-    return STORE_PREFIX + staffUserId();
+    return STORE_PREFIX + adminUserId();
   }
 
   function readStore() {
@@ -132,30 +136,11 @@
   }
 
   function countRelevantSinceSeen() {
-    var hub = global.AdminSessionsHub;
-    if (!hub || typeof hub.countPendingRelevant !== "function") return 0;
     var ack = seenMs("relevant");
     var rows = feedbackRows();
-    if (!ack) return hub.countPendingRelevant(rows);
-    var reviewed =
-      typeof hub.readReviewedKeys === "function" ? hub.readReviewedKeys() : {};
-    var clean =
-      typeof hub.clean === "function"
-        ? hub.clean
-        : function (s) {
-            return String(s == null ? "" : s).trim();
-          };
-    var keyFn =
-      typeof hub.feedbackRowKey === "function"
-        ? hub.feedbackRowKey
-        : function (fb) {
-            return (
-              clean(fb && fb.portal_session_key) ||
-              clean(fb && fb.session_date) +
-                "|" +
-                String((fb && fb.client_name) || "").trim().toLowerCase()
-            );
-          };
+    var clean = function (s) {
+      return String(s == null ? "" : s).trim();
+    };
     var n = 0;
     rows.forEach(function (fb) {
       if (!fb || !clean(fb.relevant_information)) return;
@@ -164,9 +149,12 @@
         String(fb.attendance).toLowerCase().indexOf("no") === 0
       )
         return;
-      if (reviewed[keyFn(fb)]) return;
       var t = feedbackSubmittedMs(fb);
-      if (!t || t > ack) n++;
+      if (!ack) {
+        n++;
+        return;
+      }
+      if (t > ack) n++;
     });
     return n;
   }
@@ -195,12 +183,14 @@
     return out;
   }
 
+  /** Overlay on the icon chip only — no tile layout changes (same idea as medical X on avatars). */
   function badgeHost(el) {
     if (!el) return null;
     return (
-      el.querySelector(".dash-hub__tile-band") ||
+      el.querySelector(".dash-hub__tile-band .admin-nav-ico") ||
+      el.querySelector(".dayops-screen-nav__ico-wrap .admin-nav-ico") ||
       el.querySelector(".dayops-screen-nav__ico-wrap") ||
-      el
+      el.querySelector(".dash-hub__tile-band")
     );
   }
 

@@ -3683,7 +3683,6 @@
       text-align:center;
     }
     .dayops-screen-nav__ico-wrap{
-      position:relative;
       display:inline-flex;
       align-items:center;
       justify-content:center;
@@ -3695,10 +3694,6 @@
       background:#f1f5f9;
       border:1px solid rgba(148,163,184,.38);
       color:#1e6b96;
-    }
-    .dayops-screen-nav__ico-wrap .portal-dayops-tile-badge{
-      top:-4px;
-      right:-6px;
     }
     /* Per-shortcut icon chip hues (variables on card, consumed by .ico-wrap) */
     .dayops-screen-nav__card[data-dayops-tone] .dayops-screen-nav__ico-wrap{
