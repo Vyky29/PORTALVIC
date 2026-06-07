@@ -509,6 +509,15 @@
       '<button type="button" class="btn btn--pri btn--sm" id="portalAdminParentNotifyTestBtn">Send test email</button>' +
       "</div>" +
       '<p class="muted" id="portalAdminParentNotifyTestStatus" style="margin:10px 0 0;font-size:12px;line-height:1.45;min-width:0;overflow-wrap:break-word;display:none" role="status"></p></div>' +
+      '<div class="card card-pad" style="margin-bottom:14px;border-color:#c5e0f5;background:linear-gradient(180deg,#f5faff,#eaf4fc)">' +
+      '<h3 style="margin:0 0 8px;font-size:14px">Parent notify — test WhatsApp</h3>' +
+      '<p class="muted" style="margin:0 0 10px;max-width:42rem;overflow-wrap:break-word">After Meta secrets and an approved template are set in Supabase, send a test via the <strong>WhatsApp Business API</strong>. Use your own mobile first. Meta usually requires an approved template for cold outbound — set <code>PORTAL_PARENT_NOTIFY_WHATSAPP_TEMPLATE</code> to match.</p>' +
+      '<label class="muted" for="portalAdminParentNotifyTestWa" style="display:block;margin-bottom:6px">WhatsApp number (digits, country code)</label>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;min-width:0">' +
+      '<input id="portalAdminParentNotifyTestWa" class="inp" type="tel" inputmode="tel" autocomplete="tel" placeholder="e.g. 447..." style="flex:1 1 220px;min-width:0;max-width:100%" />' +
+      '<button type="button" class="btn btn--pri btn--sm" id="portalAdminParentNotifyTestWaBtn">Send test WhatsApp</button>' +
+      "</div>" +
+      '<p class="muted" id="portalAdminParentNotifyTestWaStatus" style="margin:10px 0 0;font-size:12px;line-height:1.45;min-width:0;overflow-wrap:break-word;display:none" role="status"></p></div>' +
       '<div class="card card-pad" style="margin-bottom:14px;border-color:#e8d9a8;background:linear-gradient(180deg,#fffdf5,#fff8e6)">' +
       '<h3 style="margin:0 0 8px;font-size:14px">Device notifications</h3>' +
       '<p class="muted" style="margin:0 0 8px;max-width:42rem;overflow-wrap:break-word">' +

@@ -51,7 +51,7 @@
   <script src="/portal/admin-hr.js?v=20260607-roster-avatars"></script>
   <script src="/portal/admin-payments.js?v=20260531-la-column"></script>
   <script src="/portal/portal-comms-order-payments.js?v=20260617-cfk-order-enrich"></script>
-  <script src="/portal/portal-admin-settings-hub.js?v=20260607-parent-notify-test"></script>
+  <script src="/portal/portal-admin-settings-hub.js?v=20260622-parent-notify-wa-test"></script>
   <script src="/portal/admin-onboarding.js?v=20260530-onboarding-clickdocs"></script>
   <script src="/portal/admin-parent-notify-send.js?v=20260622-parent-notify"></script>
   <script src="/portal/portal-openai-assist.js?v=20260607-openai-assist"></script>
@@ -18923,6 +18923,77 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       reloadManage();
     }
+    function portalAdminBindParentNotifyTestWhatsApp(){
+      var btn = $('portalAdminParentNotifyTestWaBtn');
+      var input = $('portalAdminParentNotifyTestWa');
+      var statusEl = $('portalAdminParentNotifyTestWaStatus');
+      if(!btn || !input) return;
+      btn.onclick = function(){
+        portalParentNotifyConfigureOnce();
+        if(!window.PortalParentNotifySend || typeof window.PortalParentNotifySend.send !== 'function'){
+          alert('Send module not loaded — refresh the page.');
+          return;
+        }
+        var wa = notifyDigitsOnly(String(input.value || '').trim());
+        if(!wa){
+          alert('Enter a WhatsApp number (digits with country code, e.g. 447...).');
+          return;
+        }
+        btn.disabled = true;
+        btn.textContent = 'Sending…';
+        if(statusEl){
+          statusEl.style.display = 'none';
+          statusEl.textContent = '';
+          statusEl.className = 'muted';
+        }
+        void window.PortalParentNotifySend.send({
+          kind: 'whatsapp_test',
+          channel: 'whatsapp',
+          parentWhatsapp: wa,
+          subject: 'Portal test — parent notify WhatsApp',
+          body: 'Portal test from ClubSENsational admin.\n\nIf you receive this, WhatsApp Business API is configured correctly.',
+          clientDisplay: 'WhatsApp API test'
+        }).then(function(res){
+          btn.disabled = false;
+          btn.textContent = 'Send test WhatsApp';
+          if(!res || !res.ok){
+            var fmtErr = window.PortalParentNotifySend && typeof window.PortalParentNotifySend.formatNotifyError === 'function'
+              ? window.PortalParentNotifySend.formatNotifyError(res && res.error, res && res.data)
+              : String((res && res.error) || 'send failed').replace(/_/g, ' ');
+            if(statusEl){
+              statusEl.style.display = 'block';
+              statusEl.className = 'submission-state is-error';
+              statusEl.style.margin = '10px 0 0';
+              statusEl.style.fontSize = '12px';
+              statusEl.textContent = fmtErr;
+            }else{
+              alert(fmtErr);
+            }
+            return;
+          }
+          var msg = window.PortalParentNotifySend.formatSendResult(res.data);
+          if(statusEl){
+            statusEl.style.display = 'block';
+            statusEl.className = 'muted';
+            statusEl.style.margin = '10px 0 0';
+            statusEl.style.fontSize = '12px';
+            statusEl.textContent = msg + ' — check WhatsApp on +' + wa + '.';
+          }
+          if(typeof portalAdminToast === 'function') portalAdminToast(msg, 'ok');
+          else alert(msg);
+        }).catch(function(){
+          btn.disabled = false;
+          btn.textContent = 'Send test WhatsApp';
+          if(statusEl){
+            statusEl.style.display = 'block';
+            statusEl.className = 'submission-state is-error';
+            statusEl.style.margin = '10px 0 0';
+            statusEl.style.fontSize = '12px';
+            statusEl.textContent = 'Send failed — check Edge Function logs in Supabase.';
+          }
+        });
+      };
+    }
     function portalAdminBindParentNotifyTestSend(){
       var btn = $('portalAdminParentNotifyTestBtn');
       var input = $('portalAdminParentNotifyTestEmail');
@@ -21916,6 +21987,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var helpUnansweredBtn = $('portalAdminHelpUnansweredBtn');
         if(helpUnansweredBtn) helpUnansweredBtn.onclick = openPortalAdminHelpUnansweredModal;
         portalAdminBindParentNotifyTestSend();
+        portalAdminBindParentNotifyTestWhatsApp();
         if(!state._settingsHubRepaintOnly){
           portalAdminRefreshSettingsView();
         }
