@@ -25,7 +25,7 @@
   <link rel="stylesheet" href="/portal/portal_staff_map.css?v=20260602-staff-map-header" />
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260621-lead-inbox" />
   <script src="/portal/admin-portal-staff-map.js?v=20260622-ghost-map"></script>
-  <script src="/portal/portal_admin_cs_cliq.js?v=20260607-cs-cliq-bc"></script>
+  <script src="/portal/portal_admin_cs_cliq.js?v=20260607-group-calls"></script>
   <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260622-ghost-view" />
   <script src="/portal/admin-portal-ghost-teleport.js?v=20260622-ghost-lead"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
@@ -19585,7 +19585,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       window.__PORTAL_INTERNAL_CHAT_UI = window.__PORTAL_INTERNAL_CHAT_UI || {};
       window.__PORTAL_INTERNAL_CHAT_UI.threadId = inThread && tid && !gid ? tid : null;
       window.__PORTAL_INTERNAL_CHAT_UI.peerLabel = inThread && !gid && titleEl ? String(titleEl.textContent || '').trim() : '';
-      var showCalls = inThread && !!tid && !gid;
+      var showCalls = inThread && (!!tid || !!gid);
       if(window.portalStaffChatCalls && typeof window.portalStaffChatCalls.syncCallBar === 'function'){
         window.portalStaffChatCalls.syncCallBar({ inThread: showCalls });
       }else{
@@ -19638,7 +19638,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       window.__PORTAL_INTERNAL_CHAT_UI = window.__PORTAL_INTERNAL_CHAT_UI || {};
       window.__PORTAL_INTERNAL_CHAT_UI.threadId = inThread && tid && !gid ? tid : null;
       window.__PORTAL_INTERNAL_CHAT_UI.peerLabel = inThread && !gid && titleEl ? String(titleEl.textContent || '').trim() : '';
-      var showCalls = inThread && !!tid && !gid;
+      var showCalls = inThread && (!!tid || !!gid);
       if(window.portalStaffChatCalls && typeof window.portalStaffChatCalls.syncCallBar === 'function'){
         window.portalStaffChatCalls.syncCallBar({ inThread: showCalls });
       }else{
@@ -20126,6 +20126,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 var row = payload && (payload.new || payload.record);
                 var aid = row && row.author_id ? String(row.author_id) : '';
                 var me = portalAdminDmMe();
+                if(row && window.portalStaffChatCalls && typeof window.portalStaffChatCalls.onDmMessageInsert === 'function'){
+                  window.portalStaffChatCalls.onDmMessageInsert(row);
+                }
                 if(aid && me && aid !== me) void portalAdminDmSyncIncomingAttention();
                 if(!window.__PORTAL_ADMIN_DM_OPEN) return;
                 var ui = window.__PORTAL_ADMIN_DM_UI || {};
@@ -20136,9 +20139,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                   void portalAdminDmLoadMessages();
                 }else if(ui.panel === 'list' && typeof portalAdminDmRenderList === 'function'){
                   void portalAdminDmRenderList();
-                }
-                if(row && window.portalStaffChatCalls && typeof window.portalStaffChatCalls.onDmMessageInsert === 'function'){
-                  window.portalStaffChatCalls.onDmMessageInsert(row);
                 }
               }, 320);
             }
@@ -20153,6 +20153,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 var row = payload && (payload.new || payload.record);
                 var aid = row && row.author_id ? String(row.author_id) : '';
                 var me = portalAdminDmMe();
+                if(row && window.portalStaffChatCalls && typeof window.portalStaffChatCalls.onGroupMessageInsert === 'function'){
+                  window.portalStaffChatCalls.onGroupMessageInsert(row);
+                }
                 if(aid && me && aid !== me) void portalAdminDmSyncIncomingAttention();
                 if(!window.__PORTAL_ADMIN_DM_OPEN) return;
                 var ui = window.__PORTAL_ADMIN_DM_UI || {};
@@ -20580,7 +20583,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         ph.textContent = 'No messages yet.';
         msgsBox.appendChild(ph);
       }else{
-        if(!gid && tid && window.portalStaffChatCalls && typeof window.portalStaffChatCalls.scanThreadForIncomingCall === 'function'){
+        if(arr.length && window.portalStaffChatCalls && typeof window.portalStaffChatCalls.scanThreadForIncomingCall === 'function'){
           window.portalStaffChatCalls.scanThreadForIncomingCall(arr[arr.length - 1], me);
         }
         for(var mi = 0; mi < arr.length; mi++){
@@ -25012,7 +25015,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       document.body.appendChild(s);
     })();
   </script>
-  <script src="/portal/portal_staff_chat_calls.js?v=20260607-caller-id-fix"></script>
+  <script src="/portal/portal_staff_chat_calls.js?v=20260607-group-calls"></script>
   <script src="/portal/portal_floating_internal_chat.js?v=20260605-admin-chat"></script>
 </body>
 </html>

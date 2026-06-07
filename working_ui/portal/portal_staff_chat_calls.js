@@ -153,10 +153,12 @@
     return humanLabel(String(data.kind || ""), String(data.title || ""));
   }
 
-  function buildRoomName(threadId, kind) {
-    var tid = slugPart(String(threadId || "thread").slice(0, 8));
+  function buildRoomName(id, kind, opts) {
+    opts = opts || {};
+    var scope = opts.group ? "grp" : "dm";
+    var key = slugPart(String(id || "thread").slice(0, 8));
     var k = slugPart(kind || "call");
-    return ROOM_PREFIX + tid + "-" + k + "-" + randomSuffix();
+    return ROOM_PREFIX + scope + "-" + key + "-" + k + "-" + randomSuffix();
   }
 
   function buildCallPayload(opts) {
@@ -211,15 +213,18 @@
     var ui = global.__PORTAL_INTERNAL_CHAT_UI || {};
     var adminUi = global.__PORTAL_ADMIN_DM_UI || {};
     var threadId = String(ui.threadId || "").trim();
+    var groupId = String(adminUi.groupId || "").trim();
     var peerLabel = String(ui.peerLabel || "").trim();
     if (global.__PORTAL_CS_CLIQ_ACTIVE || document.getElementById("csCliqRoot")) {
       if (!threadId) threadId = String(adminUi.threadId || "").trim();
-      if (String(adminUi.groupId || "").trim()) threadId = "";
+      if (!groupId) groupId = String(adminUi.groupId || "").trim();
+      if (groupId) threadId = "";
       if (!peerLabel) peerLabel = String(adminUi.peerLabel || "").trim();
     }
     return {
       client: box && box.client,
       threadId: threadId,
+      groupId: groupId,
       me: authUserId(),
       peerLabel: peerLabel,
     };
@@ -354,7 +359,7 @@
     }
   }
 
-  function fetchDmRowForIncoming(row, attempt, cb) {
+  function fetchIncomingRowForRetry(row, attempt, cb) {
     attempt = attempt || 0;
     cb = typeof cb === "function" ? cb : function () {};
     var box = global.__PORTAL_SUPABASE__;
@@ -363,9 +368,14 @@
       cb(null);
       return;
     }
+    var table = row.group_id ? "portal_ceo_group_message" : "portal_staff_dm_messages";
+    var select =
+      table === "portal_ceo_group_message"
+        ? "id,author_id,body,group_id,created_at"
+        : "id,author_id,body,thread_id,created_at";
     client
-      .from("portal_staff_dm_messages")
-      .select("id,author_id,body,thread_id,created_at")
+      .from(table)
+      .select(select)
       .eq("id", row.id)
       .maybeSingle()
       .then(function (res) {
@@ -638,7 +648,7 @@
     if (data && data.callerId && isOwnCallAuthor(data.callerId)) return;
     if (!data) {
       if (!row.id || attempt >= incomingRowRetryMax) return;
-      fetchDmRowForIncoming(row, attempt, function (full) {
+      fetchIncomingRowForRetry(row, attempt, function (full) {
         if (full) processIncomingCallRow(full, incomingRowRetryMax);
       });
       return;
@@ -702,6 +712,10 @@
   }
 
   function onDmMessageInsert(row) {
+    processIncomingCallRow(row, 0);
+  }
+
+  function onGroupMessageInsert(row) {
     processIncomingCallRow(row, 0);
   }
 
@@ -927,15 +941,14 @@
     void postCallEndedMessage(session);
   }
 
-  async function recentCallEndExists(client, threadId, room) {
-    if (!client || !threadId || !room) return false;
+  async function recentCallEndExists(client, scopeId, room, opts) {
+    opts = opts || {};
+    if (!client || !scopeId || !room) return false;
+    var table = opts.group ? "portal_ceo_group_message" : "portal_staff_dm_messages";
     try {
-      var res = await client
-        .from("portal_staff_dm_messages")
-        .select("body,created_at")
-        .eq("thread_id", threadId)
-        .order("created_at", { ascending: false })
-        .limit(8);
+      var q = client.from(table).select("body,created_at").order("created_at", { ascending: false }).limit(8);
+      q = opts.group ? q.eq("group_id", scopeId) : q.eq("thread_id", scopeId);
+      var res = await q;
       if (res.error || !Array.isArray(res.data)) return false;
       var cutoff = Date.now() - 15000;
       for (var i = 0; i < res.data.length; i++) {
@@ -959,10 +972,12 @@
     if (durationSec < 1) return;
 
     var ctx = getContext();
+    var me = authUserId();
     var threadId = String(session.threadId || ctx.threadId || "").trim();
-    if (!ctx.client || !threadId) return;
+    var groupId = String(session.groupId || ctx.groupId || "").trim();
+    if (!ctx.client || (!threadId && !groupId)) return;
 
-    if (await recentCallEndExists(ctx.client, threadId, session.room)) {
+    if (await recentCallEndExists(ctx.client, groupId || threadId, session.room, { group: !!groupId })) {
       session.endedPosted = true;
       return;
     }
@@ -977,10 +992,17 @@
     };
     var body = encodeCallEndBody(payload);
     try {
-      var ins = await ctx.client
-        .from("portal_staff_dm_messages")
-        .insert([{ thread_id: threadId, body: body, message_type: "text" }]);
-      if (ins.error) throw ins.error;
+      if (groupId) {
+        var insG = await ctx.client
+          .from("portal_ceo_group_message")
+          .insert([{ group_id: groupId, author_id: me, body: body, message_type: "text" }]);
+        if (insG.error) throw insG.error;
+      } else {
+        var ins = await ctx.client
+          .from("portal_staff_dm_messages")
+          .insert([{ thread_id: threadId, body: body, message_type: "text" }]);
+        if (ins.error) throw ins.error;
+      }
       await refreshThreadAfterCall();
     } catch (_e) {}
   }
@@ -996,6 +1018,7 @@
     callState.activeSession = {
       kind: kind,
       threadId: String(ctx.threadId || "").trim(),
+      groupId: String(ctx.groupId || "").trim(),
       room: stripRoomSlug(room),
       joinedAt: null,
       endedPosted: false,
@@ -1267,12 +1290,13 @@
     opts = opts || {};
     var client = opts.client;
     var threadId = String(opts.threadId || "").trim();
+    var groupId = String(opts.groupId || "").trim();
     var kind = String(opts.kind || "video");
     var title = String(opts.title || "").trim();
     var scheduledAt = opts.scheduledAt ? String(opts.scheduledAt) : "";
-    if (!client || !threadId) throw new Error("Not available.");
+    if (!client || (!threadId && !groupId)) throw new Error("Not available.");
 
-    var room = buildRoomName(threadId, kind);
+    var room = buildRoomName(groupId || threadId, kind, { group: !!groupId });
     var caller = await resolveCallerIdentity(client);
     var payload = buildCallPayload({
       kind: kind,
@@ -1283,10 +1307,18 @@
       callerName: caller.name,
     });
     var body = encodeCallBody(payload);
-    var ins = await client
-      .from("portal_staff_dm_messages")
-      .insert([{ thread_id: threadId, body: body, message_type: "text" }])
-      .select("id");
+    var ins;
+    if (groupId) {
+      ins = await client
+        .from("portal_ceo_group_message")
+        .insert([{ group_id: groupId, author_id: caller.id, body: body, message_type: "text" }])
+        .select("id");
+    } else {
+      ins = await client
+        .from("portal_staff_dm_messages")
+        .insert([{ thread_id: threadId, body: body, message_type: "text" }])
+        .select("id");
+    }
     if (ins.error) throw ins.error;
     if (ins.data && ins.data[0] && ins.data[0].id) {
       incomingHandledIds[String(ins.data[0].id)] = true;
@@ -1294,11 +1326,19 @@
     return payload;
   }
 
+  function callTitleForContext(ctx, kind, meetingTitle) {
+    ctx = ctx || getContext();
+    if (ctx.groupId) {
+      return ctx.peerLabel ? "Group call ? " + ctx.peerLabel : humanLabel(kind, meetingTitle || "");
+    }
+    return ctx.peerLabel ? "Call with " + ctx.peerLabel : humanLabel(kind, meetingTitle || "");
+  }
+
   async function startCall(kind) {
     var ctx = getContext();
     var errEl = resolveErrEl();
     if (errEl) errEl.textContent = "";
-    if (!ctx.client || !ctx.threadId) {
+    if (!ctx.client || (!ctx.threadId && !ctx.groupId)) {
       if (errEl) errEl.textContent = "Open a conversation first.";
       return;
     }
@@ -1309,12 +1349,13 @@
       var payload = await sendCallInvite({
         client: ctx.client,
         threadId: ctx.threadId,
+        groupId: ctx.groupId,
         kind: kind,
       });
       await openInAppCall({
         room: payload.room,
         kind: payload.kind,
-        title: ctx.peerLabel ? "Call with " + ctx.peerLabel : humanLabel(kind, ""),
+        title: callTitleForContext(ctx, kind, ""),
         asModerator: true,
       });
       await refreshThreadAfterCall();
@@ -1400,7 +1441,7 @@
             return;
           }
           var ctx = getContext();
-          if (!ctx.client || !ctx.threadId) {
+          if (!ctx.client || (!ctx.threadId && !ctx.groupId)) {
             if (err) {
               err.textContent = "Not available.";
               err.hidden = false;
@@ -1412,6 +1453,7 @@
             await sendCallInvite({
               client: ctx.client,
               threadId: ctx.threadId,
+              groupId: ctx.groupId,
               kind: "meeting",
               title: title,
               scheduledAt: scheduledAt,
@@ -1583,6 +1625,7 @@
     closeInAppCall: closeInAppCall,
     buildRoomName: buildRoomName,
     onDmMessageInsert: onDmMessageInsert,
+    onGroupMessageInsert: onGroupMessageInsert,
     processIncomingCallRow: processIncomingCallRow,
     scanThreadForIncomingCall: function (lastMsg) {
       processIncomingCallRow(lastMsg, 0);

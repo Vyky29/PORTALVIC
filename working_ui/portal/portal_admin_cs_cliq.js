@@ -110,12 +110,14 @@
     var tid = String(ui.threadId || adminUi.threadId || "").trim();
     var gid = String(adminUi.groupId || "").trim();
     var peer = String(ui.peerLabel || adminUi.peerLabel || "").trim();
-    var active = !!tid && !gid;
-    if (peerEl) peerEl.textContent = active && peer ? peer : "No active 1:1 chat";
+    var active = !!tid || !!gid;
+    if (peerEl) peerEl.textContent = active && peer ? peer : "No active chat";
     if (hintEl) {
       hintEl.textContent = active
-        ? "Calls and meetings use your open chat with " + peer + "."
-        : "Open a staff or lead chat from Chats, then return here to call or schedule.";
+        ? gid
+          ? "Calls and meetings use the open group: " + peer + "."
+          : "Calls and meetings use your open chat with " + peer + "."
+        : "Open a staff, lead, or group chat from Chats, then return here to call or schedule.";
     }
     if (bar) {
       bar.hidden = !active;
