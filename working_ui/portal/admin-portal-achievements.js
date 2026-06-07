@@ -33,6 +33,14 @@
     return cfg.esc(s);
   }
 
+  function participantAvatarHtml(name, clientId) {
+    if (typeof global.portalParticipantAvatarInnerHtml === "function") {
+      return global.portalParticipantAvatarInnerHtml(name, clientId, { esc: esc });
+    }
+    var label = esc(String(name || "").trim() || "?");
+    return '<span class="portal-roster-avatar" aria-hidden="true">' + label.slice(0, 2) + "</span>";
+  }
+
   function normalizeClientId(id) {
     return String(id || "")
       .trim()
@@ -329,6 +337,8 @@
           '<button type="button" class="portal-ach-person" data-participant-key="' +
           esc(g.key) +
           '">' +
+          participantAvatarHtml(g.clientName, g.key) +
+          '<span class="portal-ach-person__text">' +
           '<span class="portal-ach-person__name">' +
           esc(g.clientName) +
           "</span>" +
@@ -336,7 +346,7 @@
           n +
           " photo" +
           (n === 1 ? "" : "s") +
-          "</span></button>";
+          "</span></span></button>";
       });
       html += "</div></section>";
     });
@@ -365,6 +375,9 @@
       '<div class="portal-ach-detail__head">' +
       '<button type="button" class="btn btn--sec btn--sm" data-ach-back="1">&larr; All participants</button>' +
       '<div class="portal-ach-detail__titles">' +
+      '<div class="portal-ach-detail__identity">' +
+      participantAvatarHtml(group.clientName, group.key) +
+      '<div class="portal-ach-detail__identity-text">' +
       '<h2 class="portal-ach-detail__name">' +
       esc(group.clientName) +
       "</h2>" +
@@ -376,8 +389,7 @@
       (isInbox
         ? ". Assign each photo to a participant folder below, or delete ones that are not usable."
         : ". Double-click a photo to view full screen. Delete any photo that should not be kept.") +
-      "</p>" +
-      "</div></div>" +
+      "</p></div></div></div></div>" +
       '<div class="portal-admin-achievement-gallery portal-ach-detail__gallery portal-achievement-protected"></div>';
     host.innerHTML = "";
     host.appendChild(detail);

@@ -124,7 +124,9 @@
       ".hr-tbl thead th{background:#f8fafc;color:#0f172a;font-size:11px;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}",
       ".hr-tbl tbody tr{cursor:pointer}",
       ".hr-tbl tbody tr:hover{background:#f8fafc}",
-      ".hr-name{font-weight:700;color:#0f172a;white-space:nowrap}",
+      ".hr-name{font-weight:700;color:#0f172a;white-space:nowrap;display:flex;align-items:center;gap:8px;min-width:0}",
+      ".hr-name__text{min-width:0;overflow:hidden;text-overflow:ellipsis}",
+      ".hr-name .portal-roster-avatar--staff{width:32px;height:32px;border-radius:10px;font-size:11px;flex:0 0 auto}",
       ".hr-tbl--center th,.hr-tbl--center td{text-align:center;vertical-align:middle}",
       ".hr-pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;margin-left:6px}",
       ".hr-pill--on{background:#e7f6ee;color:#15803d}",
@@ -227,7 +229,23 @@
     });
   }
 
-  function personActive(r) { return !!state.linkedKeys[nk(r)]; }
+  function hrStaffAvatarHtml(person) {
+    if (typeof global.portalStaffAvatarInnerHtml !== "function") return "";
+    var name = person && (person.employee_name || person.staff_name) ? String(person.employee_name || person.staff_name).trim() : "";
+    var key = person && person.staff_id ? String(person.staff_id).trim() : firstKey(name);
+    return global.portalStaffAvatarInnerHtml(key || name, {
+      esc: esc,
+      displayName: name,
+      className: "portal-roster-avatar portal-roster-avatar--staff",
+    });
+  }
+
+  function hrNameCell(person) {
+    var label = esc((person && person.employee_name) || "—");
+    var av = hrStaffAvatarHtml(person);
+    if (!av) return '<td class="hr-name">' + label + "</td>";
+    return '<td class="hr-name">' + av + '<span class="hr-name__text">' + label + "</span></td>";
+  }
 
   // Read the first non-empty value among likely matrix keys (the workbook column
   // names vary), so the staff table can surface fields without a fixed schema.
@@ -545,7 +563,7 @@
         var ven = (rsum && rsum.venues) || pickData(d, STAFF_COL_KEYS.venues);
         var rota = (rsum && rsum.days) || pickData(d, STAFF_COL_KEYS.rota);
         html += '<tr data-hr-person="' + esc(nk(p)) + '">'
-          + '<td class="hr-name">' + esc(p.employee_name || "—") + '</td>'
+          + hrNameCell(p)
           + '<td>' + (esc(role) || dash) + '</td>'
           + '<td>' + (esc(shifts) || dash) + '</td>'
           + '<td>' + (esc(svc) || dash) + '</td>'
@@ -653,7 +671,7 @@
     } else {
       rows.forEach(function (r) {
         var d = r.data || {};
-        body += '<tr data-hr-person="' + esc(nk(r)) + '"><td class="hr-name">' + esc(r.employee_name || "—") + '</td>';
+        body += '<tr data-hr-person="' + esc(nk(r)) + '">' + hrNameCell(r);
         cols.forEach(function (c) { body += '<td>' + esc(d[c] != null ? d[c] : "") + '</td>'; });
         body += '</tr>';
       });
@@ -728,7 +746,7 @@
       + '<button type="button" class="btn btn--pri" id="hrPersonSave">Save changes</button>';
 
     var screen = openScreen({
-      headIcon: icon("user", 22),
+      headIcon: hrStaffAvatarHtml(personRow) || icon("user", 22),
       title: displayName,
       sub: sub,
       body: '<div class="hr-person">' + sections + '</div>',

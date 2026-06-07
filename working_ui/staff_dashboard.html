@@ -1011,11 +1011,12 @@
   <script src="/portal/staff_roster_resolve.js?v=20260611-javi-roster-guard"></script>
   <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260624-ghost-handoff" />
   <script src="/portal/portal-ghost-view.js?v=20260624-ghost-handoff"></script>
-  <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260607-inbox-compact" />
+  <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260607-roster-avatars" />
   <script src="/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact"></script>
   <script src="/portal/portal_dashboard_ui_coalesce.js?v=20260606-photo-stable"></script>
+  <script src="/portal/portal_participant_photos.js?v=20260607-roster-avatars"></script>
   <script src="/portal/portal_topbar_header.js?v=20260610-roberto-topbar"></script>
-  <script src="/portal/portal_participant_achievements.js?v=20260622-photo-delete"></script>
+  <script src="/portal/portal_participant_achievements.js?v=20260607-roster-avatars"></script>
   <script src="/portal/portal_client_sessions_overview.js?v=20260607-no-opt-labels"></script>
   <script src="/portal/portal_induction.js?v=20260613-required-induction"></script>
   <script src="/portal/portal_induction_bind.js?v=20260615-tprog-sync"></script>
@@ -4615,54 +4616,9 @@
      * Add more by mapping the participant's display name (case-insensitive,
      * spaces collapsed) to an image under working_ui/portal/participants/.
      */
-    const PARTICIPANT_PHOTOS = {
-      'jack w': 'portal/participants/jack-w.jpg',
-      'jack walker': 'portal/participants/jack-w.jpg',
-      'jack s': 'portal/participants/jack-s.png',
-      'arthur ma': 'portal/participants/arthur-manners.png',
-      'arthur mo': 'portal/participants/arthur-mo.png',
-      'arthur manners': 'portal/participants/arthur-manners.png',
-      'ayaan': 'portal/participants/ayaan.png',
-      'adam ab': 'portal/participants/adam-ab.png',
-      'adam a': 'portal/participants/adam-ab.png',
-      'haneef': 'portal/participants/haneef.png',
-      'haneff': 'portal/participants/haneef.png',
-      'amaar ah': 'portal/participants/amaar-ah.png',
-      'aydaan ah': 'portal/participants/aydaan-ah.png',
-      'aydan ah': 'portal/participants/aydaan-ah.png',
-      'adaam ah': 'portal/participants/adaam-ah.png',
-      'aadam ah': 'portal/participants/adaam-ah.png',
-      'amir': 'portal/participants/amir.png',
-      'serine': 'portal/participants/serine.png',
-      'fadi': 'portal/participants/fadi.png',
-      'scott': 'portal/participants/scott.png',
-      'stephanie': 'portal/participants/stephanie.png',
-      'timi': 'portal/participants/timi.png',
-      'ikram': 'portal/participants/ikram.png',
-      'rodin': 'portal/participants/rodin.png',
-      'zaid': 'portal/participants/zaid.png',
-      'yusef ah': 'portal/participants/yusef-ah.png',
-      'yusuf ah': 'portal/participants/yusef-ah.png',
-      'rayyan fi': 'portal/participants/rayaan-fi.png',
-      'rayaan fi': 'portal/participants/rayaan-fi.png',
-      'rayyan f': 'portal/participants/rayaan-fi.png',
-      'rayaan f': 'portal/participants/rayaan-fi.png',
-      'tinashe': 'portal/participants/tinashe.png',
-      'yassir': 'portal/participants/yassir.png',
-      'faris': 'portal/participants/faris.png',
-      'eiji': 'portal/participants/eiji.png',
-      'hazem': 'portal/participants/hazem.png',
-      'samer': 'portal/participants/samer.png',
-      'kate': 'portal/participants/kate.png',
-      'kamy': 'portal/participants/kamy.png',
-      'cyrus': 'portal/participants/cyrus.png?v=20260606-cyrus',
-      'erik': 'portal/participants/erik.png',
-      'gabriel': 'portal/participants/gabriel.png',
-      'yoan': 'portal/participants/yoan.png'
-    };
     function clientPhotoUrl(name){
-      const key = String(name || '').trim().toLowerCase().replace(/\s+/g, ' ');
-      return Object.prototype.hasOwnProperty.call(PARTICIPANT_PHOTOS, key) ? PARTICIPANT_PHOTOS[key] : '';
+      if(typeof portalParticipantPhotoUrl === 'function') return portalParticipantPhotoUrl(name) || '';
+      return '';
     }
     function resolveParticipantPhotoUrl(name, clientId){
       const c = clientId && clientNotesById[clientId];
@@ -14554,6 +14510,11 @@
           },
           isLeadInboxMode: function(){
             return typeof portalStaffIsProgrammeLeadTopbar === 'function' && portalStaffIsProgrammeLeadTopbar();
+          },
+          resolveParticipantPhotoUrl: function(name, clientId){
+            if(typeof resolveParticipantPhotoUrl === 'function') return resolveParticipantPhotoUrl(name, clientId) || '';
+            if(typeof clientPhotoUrl === 'function') return clientPhotoUrl(name) || '';
+            return '';
           }
         });
       }

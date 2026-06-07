@@ -102,6 +102,32 @@
     if (options.getTodayParticipants) cfg.getTodayParticipants = options.getTodayParticipants;
     if (options.getWorkingDateIso) cfg.getWorkingDateIso = options.getWorkingDateIso;
     if (options.isLeadInboxMode) cfg.isLeadInboxMode = options.isLeadInboxMode;
+    if (options.resolveParticipantPhotoUrl) cfg.resolveParticipantPhotoUrl = options.resolveParticipantPhotoUrl;
+  }
+
+  function resolveParticipantPhotoUrl(name, clientId) {
+    try {
+      if (typeof cfg.resolveParticipantPhotoUrl === "function") {
+        var fromCfg = String(cfg.resolveParticipantPhotoUrl(name, clientId) || "").trim();
+        if (fromCfg) return fromCfg;
+      }
+    } catch (_e) {}
+    if (typeof global.portalParticipantPhotoUrl === "function") {
+      return String(global.portalParticipantPhotoUrl(name) || "").trim();
+    }
+    return "";
+  }
+
+  function participantAvatarHtml(name, clientId) {
+    var avatarFile = resolveParticipantPhotoUrl(name, clientId);
+    if (typeof global.portalParticipantAvatarInnerHtml === "function") {
+      return global.portalParticipantAvatarInnerHtml(name, clientId, {
+        esc: esc,
+        avatarFile: avatarFile,
+        className: "portal-roster-avatar portal-achievements-participant__avatar",
+      });
+    }
+    return '<span class="portal-roster-avatar portal-achievements-participant__avatar" aria-hidden="true">' + esc(String(name || "?").slice(0, 2)) + "</span>";
   }
 
   function isLeadInboxMode() {
@@ -897,7 +923,9 @@
           esc(p.clientName) +
           '" data-ach-key="' +
           esc(p.portalSessionKey || "") +
-          '"><span class="portal-achievements-participant__name">' +
+          '">' +
+          participantAvatarHtml(p.clientName, p.clientId) +
+          '<span class="portal-achievements-participant__name">' +
           esc(p.clientName) +
           '</span><span class="portal-achievements-participant__chev" aria-hidden="true">›</span></button>'
         );
@@ -974,16 +1002,22 @@
     var nameEl = document.getElementById("portalAchievementsSelectedName");
     if (nameEl && state.participant) {
       if (isInboxParticipant(state.participant)) {
-        nameEl.textContent = "Inbox";
+        nameEl.innerHTML =
+          '<span class="portal-achievements-selected-name__label">Inbox</span>';
         nameEl.classList.add("portal-achievements-selected-name--inbox");
         nameEl.setAttribute("title", "No participant — admin assigns later");
       } else {
-        nameEl.textContent = state.participant.clientName || state.participant.clientId;
+        var selName = state.participant.clientName || state.participant.clientId;
+        nameEl.innerHTML =
+          participantAvatarHtml(selName, state.participant.clientId) +
+          '<span class="portal-achievements-selected-name__label">' +
+          esc(selName) +
+          "</span>";
         nameEl.classList.remove("portal-achievements-selected-name--inbox");
         nameEl.removeAttribute("title");
       }
     } else if (nameEl) {
-      nameEl.textContent = "";
+      nameEl.innerHTML = "";
       nameEl.classList.remove("portal-achievements-selected-name--inbox");
       nameEl.removeAttribute("title");
     }
@@ -1353,7 +1387,7 @@
       '<div id="portalAchievementsStepCapture" hidden>' +
       '<div class="portal-achievements-capture-head">' +
       '<button type="button" class="portal-achievements-participants-chip" id="portalAchievementsBackParticipants">Participants</button>' +
-      '<p class="portal-achievements-selected-name" id="portalAchievementsSelectedName"></p>' +
+      '<div class="portal-achievements-selected-name" id="portalAchievementsSelectedName"></div>' +
       "</div>" +
       '<p class="muted portal-achievements-count" id="portalAchievementsCount"></p>' +
       '<div class="portal-achievements-icon-actions">' +

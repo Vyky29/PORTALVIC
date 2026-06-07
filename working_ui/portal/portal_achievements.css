@@ -86,6 +86,9 @@
 }
 
 .portal-achievements-selected-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin: 0;
   font-size: 22px;
   font-weight: 700;
@@ -94,6 +97,18 @@
   min-width: 0;
   width: 100%;
   overflow-wrap: break-word;
+}
+
+.portal-achievements-selected-name__label {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+.portal-achievements-selected-name .portal-roster-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  flex: 0 0 auto;
 }
 
 .portal-achievements-count {
@@ -112,6 +127,43 @@
   flex-direction: column;
   gap: 10px;
   min-width: 0;
+}
+
+.portal-roster-avatar {
+  position: relative;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #e8f2f8 0%, #d4e6f2 100%);
+  color: #1e4d66;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.portal-roster-avatar--staff {
+  background: linear-gradient(145deg, #eef2f7 0%, #dbe4ee 100%);
+  color: #334155;
+}
+
+.portal-roster-avatar__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  border-radius: inherit;
+}
+
+.portal-roster-avatar--has-photo {
+  color: transparent;
 }
 
 .portal-achievements-participant {
@@ -205,6 +257,12 @@
 
 .portal-achievements-participant:active {
   background: var(--hoverUnifiedBg, #dbeeff);
+}
+
+.portal-achievements-participant__avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
 }
 
 .portal-achievements-participant__name {
@@ -1204,9 +1262,9 @@ header.topbar button.topbar-camera-btn.topbar-achievements-btn:active,
 }
 .portal-ach-person {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
   min-width: 0;
   text-align: left;
   padding: 8px 10px;
@@ -1224,6 +1282,21 @@ header.topbar button.topbar-camera-btn.topbar-achievements-btn:active,
   transform: translateY(-1px);
   outline: none;
 }
+.portal-ach-person .portal-roster-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.portal-ach-person__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
 .portal-ach-person__name {
   font-size: 13px;
   font-weight: 700;
@@ -1237,6 +1310,29 @@ header.topbar button.topbar-camera-btn.topbar-achievements-btn:active,
 .portal-ach-person__count {
   font-size: 11px;
   color: var(--muted, #64748b);
+}
+
+.portal-ach-detail__identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.portal-ach-detail__identity .portal-roster-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  flex: 0 0 auto;
+}
+
+.portal-ach-detail__identity .portal-ach-detail__name {
+  margin: 0;
+}
+
+.portal-ach-detail__identity-text {
+  min-width: 0;
+  flex: 1;
 }
 @media (max-width: 1100px) {
   .portal-ach-letter__grid {
