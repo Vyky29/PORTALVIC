@@ -15,6 +15,7 @@
     channels: {},
     openAdminView: function () {},
     focusChats: function () {},
+    onPaneOpen: function () {},
   };
 
   var WORKSPACE_KEY = "portal_cs_cliq_workspace_status";
@@ -44,6 +45,7 @@
     if (options.channels) cfg.channels = options.channels;
     if (options.openAdminView) cfg.openAdminView = options.openAdminView;
     if (options.focusChats) cfg.focusChats = options.focusChats;
+    if (options.onPaneOpen) cfg.onPaneOpen = options.onPaneOpen;
   }
 
   function readWorkspaceStatus() {
@@ -135,6 +137,9 @@
       bar.setAttribute("aria-hidden", active ? "false" : "true");
     }
     syncWorkspacePills();
+    if (global.portalCsCliqMeetingsHub && typeof global.portalCsCliqMeetingsHub.refresh === "function") {
+      global.portalCsCliqMeetingsHub.refresh();
+    }
   }
 
   function railBtn(id, label, disabled, soon) {
@@ -225,8 +230,8 @@
       "</div></div></div></div>" +
       '<div id="csCliqChannelsPane" class="portal-cs-cliq__pane" data-cs-cliq-pane="channels" hidden>' +
       '<div class="portal-cs-cliq__channels-head">' +
-      "<h2>Channels</h2>" +
-      '<p class="muted" style="margin:8px 0 0;font-size:13px;line-height:1.5;min-width:0;overflow-wrap:break-word">Announcements and reminders for staff — same tools as Day operations.</p>' +
+      '<div class="portal-cs-cliq__pane-title-row"><h2>Channels</h2><span class="portal-cs-cliq__pane-badge">Staff comms</span></div>' +
+      '<p class="muted portal-cs-cliq__pane-lead">Broadcast announcements and targeted reminders to staff and leads — synced across every portal.</p>' +
       "</div>" +
       '<div class="portal-cs-cliq__channels-body">' +
       '<div class="portal-cs-cliq__channels-grid">' +
@@ -255,8 +260,8 @@
       '<button type="button" id="csCliqChManage" class="btn btn--ghost">Manage sent messages</button>' +
       "</div></div></div>" +
       '<div id="csCliqPhonePane" class="portal-cs-cliq__pane" data-cs-cliq-pane="phone" hidden>' +
-      '<div class="portal-cs-cliq__module-head"><h2>Phone</h2>' +
-      '<p class="muted portal-cs-cliq__module-sub">Voice and video from your open 1:1 chat — same as in the thread header.</p></div>' +
+      '<div class="portal-cs-cliq__module-head"><div class="portal-cs-cliq__pane-title-row"><h2>Phone</h2><span class="portal-cs-cliq__pane-badge">Live</span></div>' +
+      '<p class="muted portal-cs-cliq__module-sub">Voice, video, and meeting invites from your open chat — the same controls as in the thread header.</p></div>' +
       '<div class="portal-cs-cliq__module-body">' +
       '<div class="portal-cs-cliq__workspace-card card card-pad">' +
       '<p class="muted" style="margin:0 0 8px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase">My workspace</p>' +
@@ -275,8 +280,8 @@
       '<button type="button" class="btn btn--pri btn--sm" id="csCliqPhoneOpenChats">Open Chats</button>' +
       "</div></div></div></div>" +
       '<div id="csCliqFilesPane" class="portal-cs-cliq__pane" data-cs-cliq-pane="files" hidden>' +
-      '<div class="portal-cs-cliq__module-head"><h2>Files</h2>' +
-      '<p class="muted portal-cs-cliq__module-sub">Portal documents and chat attachments in one place.</p></div>' +
+      '<div class="portal-cs-cliq__module-head"><div class="portal-cs-cliq__pane-title-row"><h2>Files</h2><span class="portal-cs-cliq__pane-badge">Shared</span></div>' +
+      '<p class="muted portal-cs-cliq__module-sub">Club documents and recent photos or files from your chat threads.</p></div>' +
       '<div class="portal-cs-cliq__module-body">' +
       '<button type="button" class="card card-pad dash-link-card card--premium portal-cs-cliq__link-card" id="csCliqFilesPortalDocs">' +
       '<div class="dash-link-row dayops-screen-nav__stack" style="min-width:0">' +
@@ -287,13 +292,21 @@
       '<span class="dayops-screen-nav__label">Portal documents</span>' +
       '<span class="dayops-screen-nav__desc">Policies, uploads, and shared club files</span>' +
       "</div></div></button>" +
-      '<p class="muted portal-cs-cliq__module-note">A shared media gallery from chat threads will appear here in a later update.</p>' +
-      "</div></div>" +
+      '<div class="portal-cs-cliq-files-section">' +
+      '<p class="portal-cs-cliq-files-section__title">Recent from chat</p>' +
+      '<div id="csCliqFilesGallery" class="portal-cs-cliq-files-gallery"></div>' +
+      "</div></div></div>" +
       '<div id="csCliqCalendarPane" class="portal-cs-cliq__pane" data-cs-cliq-pane="calendar" hidden>' +
-      '<div class="portal-cs-cliq__module-head"><h2>Calendar</h2>' +
-      '<p class="muted portal-cs-cliq__module-sub">Scheduling and meeting invites from chat.</p></div>' +
+      '<div class="portal-cs-cliq__module-head"><div class="portal-cs-cliq__pane-title-row"><h2>Meetings</h2><span class="portal-cs-cliq__pane-badge">Calendar</span></div>' +
+      '<p class="muted portal-cs-cliq__module-sub">Organise meetings with staff and open the term scheduling calendar.</p></div>' +
       '<div class="portal-cs-cliq__module-body">' +
-      '<button type="button" class="card card-pad dash-link-card card--premium portal-cs-cliq__link-card" id="csCliqCalScheduling">' +
+      '<div class="portal-cs-cliq-meetings-active card card-pad">' +
+      '<p class="muted" style="margin:0 0 6px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase">Active chat</p>' +
+      '<p id="csCliqMeetingsActivePeer" class="portal-cs-cliq__phone-peer" style="margin:0;font-size:16px;font-weight:800">No active chat selected</p>' +
+      '<p id="csCliqMeetingsHint" class="muted" style="margin:8px 0 0;font-size:13px;line-height:1.5">Open a chat from Chats to schedule a meeting with that person.</p>' +
+      "</div>" +
+      '<div id="csCliqMeetingsHub" class="portal-cs-cliq-meetings-hub"></div>' +
+      '<button type="button" class="card card-pad dash-link-card card--premium portal-cs-cliq__link-card" id="csCliqCalScheduling" style="margin-top:12px">' +
       '<div class="dash-link-row dayops-screen-nav__stack" style="min-width:0">' +
       '<span class="dayops-screen-nav__ico-wrap" aria-hidden="true">' +
       (RAIL_SVGS.calendar || "") +
@@ -303,8 +316,7 @@
       '<span class="dayops-screen-nav__desc">Roster, sessions, and term calendar</span>' +
       "</div></div></button>" +
       '<div class="portal-cs-cliq__calendar-actions card card-pad" style="margin-top:12px;min-width:0">' +
-      '<p class="muted" style="margin:0 0 10px;font-size:13px;line-height:1.5;min-width:0;overflow-wrap:break-word">Schedule a meeting in your open 1:1 chat — everyone gets a join button in the thread.</p>' +
-      '<button type="button" class="btn btn--pri" id="csCliqCalScheduleMeeting">Schedule meeting in chat</button>' +
+      '<button type="button" class="btn btn--pri" id="csCliqCalScheduleMeeting">Schedule meeting in open chat</button>' +
       '<button type="button" class="btn btn--sec" id="csCliqCalOpenChats" style="margin-top:8px">Open Chats</button>' +
       "</div></div></div>" +
       '<div id="csCliqSoonPane" class="portal-cs-cliq__pane portal-cs-cliq__soon" data-cs-cliq-pane="soon" hidden>' +
@@ -339,6 +351,7 @@
     if (pane === "chats" && typeof cfg.initChat === "function") {
       cfg.initChat(global.__PORTAL_ADMIN_DM_CHANNEL || "staff_lead");
     }
+    if (typeof cfg.onPaneOpen === "function") cfg.onPaneOpen(pane);
   }
 
   function bindModule() {
@@ -433,6 +446,9 @@
     if (remAck && ch.reminderAck) remAck.addEventListener("click", ch.reminderAck);
     var manage = document.getElementById("csCliqChManage");
     if (manage && ch.manage) manage.addEventListener("click", ch.manage);
+    if (global.portalCsCliqWorkspace && typeof global.portalCsCliqWorkspace.syncChannelsChrome === "function") {
+      global.portalCsCliqWorkspace.syncChannelsChrome();
+    }
   }
 
   function destroyModule() {

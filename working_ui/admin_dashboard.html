@@ -26,7 +26,13 @@
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260622-photo-delete" />
   <script src="/portal/admin-portal-staff-map.js?v=20260622-ghost-map"></script>
   <script src="/portal/portal_dm_icons.js?v=20260624-dm-icons"></script>
-  <script src="/portal/portal_admin_cs_cliq.js?v=20260605-mobile-chat"></script>
+  <script src="/portal/portal_dm_thread_avatar.js?v=20260621-cliq-embed"></script>
+  <script src="/portal/portal_admin_cs_cliq.js?v=20260621-cliq-workspace"></script>
+  <script src="/portal/portal_cs_cliq_workspace.js?v=20260621-cliq-workspace"></script>
+  <script src="/portal/portal_cs_cliq_compose_sheet.js?v=20260621-cliq-workspace"></script>
+  <script src="/portal/portal_cs_cliq_files_hub.js?v=20260621-cliq-workspace"></script>
+  <script src="/portal/portal_cs_cliq_meetings_hub.js?v=20260621-cliq-workspace"></script>
+  <link rel="stylesheet" href="/portal/portal_cs_cliq_workspace.css?v=20260621-cliq-workspace" />
   <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260622-ghost-view" />
   <script src="/portal/admin-portal-ghost-teleport.js?v=20260622-ghost-lead"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
@@ -17815,6 +17821,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function portalAdminCsCliqConfigureOnce(){
       if(window.__portalAdminCsCliqConfigured || !window.PortalAdminCsCliq) return;
       window.__portalAdminCsCliqConfigured = true;
+      if(window.portalCsCliqWorkspace && typeof window.portalCsCliqWorkspace.applyConfigure === 'function'){
+        window.portalCsCliqWorkspace.applyConfigure({
+          esc: esc,
+          adminNavIconHtml: adminNavIconHtml,
+          initChat: portalAdminCsCliqInitChat,
+          openAdminView: function(viewId){ setView(String(viewId || 'cs_cliq')); },
+          focusChats: function(){
+            if(window.PortalAdminCsCliq && typeof window.PortalAdminCsCliq.setRailPane === 'function'){
+              window.PortalAdminCsCliq.setRailPane('chats');
+            }
+          }
+        });
+        return;
+      }
       window.PortalAdminCsCliq.configure({
         esc: esc,
         adminNavIconHtml: adminNavIconHtml,
@@ -20797,16 +20817,28 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         });
       }
       var roleTag = '';
+      var avatarItem = { kind: item.kind, label: item.label, unreadCount: unread, isTeamChat: !!item.isTeamChat };
       if(item.kind === 'dm' && ch === 'staff_lead'){
         if(item.isTeamChat){
           roleTag = '<span class="portal-dm-thread-role-tag portal-dm-thread-role-tag--team">Team chat</span>';
         }else{
           var rt = portalAdminDmWorkerRoleTag(item.peerProf || {});
-          if(rt === 'Lead') roleTag = '<span class="portal-dm-thread-role-tag portal-dm-thread-role-tag--lead">Lead</span>';
-          else if(rt === 'Staff') roleTag = '<span class="portal-dm-thread-role-tag portal-dm-thread-role-tag--staff">Staff</span>';
+          if(rt === 'Lead'){
+            roleTag = '<span class="portal-dm-thread-role-tag portal-dm-thread-role-tag--lead">Lead</span>';
+            avatarItem.roleTone = 'lead';
+          }else if(rt === 'Staff'){
+            roleTag = '<span class="portal-dm-thread-role-tag portal-dm-thread-role-tag--staff">Staff</span>';
+            avatarItem.roleTone = 'staff';
+          }
         }
       }else if(item.kind === 'group'){
         roleTag = '<span class="portal-dm-thread-role-tag portal-dm-thread-role-tag--group">Group</span>';
+      }else if(ch === 'ceo_exec'){
+        avatarItem.roleTone = 'exec';
+      }
+      var avatarHtml = '';
+      if(window.portalDmThreadAvatar && typeof window.portalDmThreadAvatar.html === 'function'){
+        avatarHtml = window.portalDmThreadAvatar.html(avatarItem, esc, ch);
       }
       var preview = '';
       if(item.lastSender || item.lastPreview){
@@ -20820,11 +20852,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         ? '<span class="portal-dm-thread-unread-badge" aria-label="'+esc(String(unread)+' unread')+'">'+esc(unread > 99 ? '99+' : String(unread))+'</span>'
         : '';
       btn.innerHTML =
-        '<div class="portal-dm-thread-item__head">'+
-          '<span class="portal-dm-thread-peer">'+esc(item.label)+roleTag+'</span>'+
-          '<span class="portal-dm-thread-when">'+esc(when || 'Conversation')+'</span>'+
+        avatarHtml+
+        '<div class="portal-dm-thread-item__body">'+
+          '<div class="portal-dm-thread-item__head">'+
+            '<span class="portal-dm-thread-peer">'+esc(item.label)+roleTag+'</span>'+
+            '<span class="portal-dm-thread-when">'+esc(when || 'Conversation')+'</span>'+
+          '</div>'+
+          preview+
         '</div>'+
-        preview+
         badge;
       return btn;
     }

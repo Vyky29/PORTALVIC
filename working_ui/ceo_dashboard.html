@@ -6,6 +6,23 @@
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <script src="/portal/portal_dm_voice.js?v=20260531-dm-voice"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <script src="/portal/portal_dm_icons.js?v=20260624-dm-icons"></script>
+  <script src="/portal/portal_dm_attachments.js?v=20260624-dm-icons"></script>
+  <script src="/portal/portal_staff_chat_calls.js?v=20260605-call-end-spacing"></script>
+  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260621-cliq-workspace" />
+  <link rel="stylesheet" href="/portal/portal_cs_cliq_embed.css?v=20260621-cliq-embed" />
+  <link rel="stylesheet" href="/portal/portal_cs_cliq_workspace.css?v=20260621-cliq-workspace" />
+  <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
+  <script src="/portal/portal_dm_roles.js?v=20260621-dm-roles"></script>
+  <script src="/portal/portal_dm_thread_avatar.js?v=20260621-cliq-embed"></script>
+  <script src="/portal/portal_admin_cs_cliq.js?v=20260621-cliq-workspace"></script>
+  <script src="/portal/portal_cs_cliq_workspace.js?v=20260621-cliq-workspace"></script>
+  <script src="/portal/portal_cs_cliq_compose_sheet.js?v=20260621-cliq-workspace"></script>
+  <script src="/portal/portal_cs_cliq_files_hub.js?v=20260621-cliq-workspace"></script>
+  <script src="/portal/portal_cs_cliq_meetings_hub.js?v=20260621-cliq-workspace"></script>
+  <script src="/portal/portal_executive_dm.js?v=20260621-cliq-embed"></script>
+  <script src="/portal/portal_cs_cliq_embed.js?v=20260621-cliq-workspace"></script>
+  <script src="/portal/portal_dm_executive_cliq.js?v=20260621-cliq-workspace"></script>
   <title>clubSENsational Portal — CEO</title>
   <link rel="icon" href="/portal/F-02-1.png" type="image/png" />
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
@@ -1251,12 +1268,14 @@
         <section id="ceo-messages" class="ceo-panel ceo-panel--chat" aria-labelledby="ceoChatPanelTitle">
           <h2 id="ceoChatPanelTitle" class="ceo-panel__title">Messages</h2>
           <p class="ceo-panel__lead">
-            Direct lines to the other directors and the group chat. Each button opens a private conversation.
+            CS Cliq workspace with chats, channels, calls, files, and meetings — the same premium tools as Admin and director staff portals.
           </p>
+          <button type="button" class="ceo-ops-team-btn" id="ceoOpenCsCliqBtn" style="margin-bottom:14px">Open CS Cliq workspace</button>
+          <p class="ceo-panel__lead" style="margin-top:0;font-size:0.92rem">Quick lines to directors and the group chat:</p>
           <div id="ceoDmDirectButtons" class="ceo-dm-direct">
             <p class="ceo-dm-direct__empty">Loading directors…</p>
           </div>
-          <p class="ceo-panel__hint">Opens the same secure direct-message sheet used across the portal.</p>
+          <p class="ceo-panel__hint">Quick buttons open a lightweight thread sheet. Use CS Cliq for the full workspace.</p>
         </section>
 
         <section id="ceo-insights" class="ceo-panel ceo-panel--insights" aria-labelledby="ceoInsightsTitle">
@@ -1511,7 +1530,16 @@
         portalCeoLogoutUrl.replace(/\\/g, "\\\\").replace(/"/g, '\\"') +
         "\";\n" +
         "});\n" +
-        "mountPortalCeoDm();\n";
+        "mountPortalCeoDm();\n" +
+        "document.getElementById(\"ceoOpenCsCliqBtn\")?.addEventListener(\"click\", function(){\n" +
+        "  if(window.portalCsCliqEmbed && typeof window.portalCsCliqEmbed.open === \"function\"){\n" +
+        "    window.portalCsCliqEmbed.open(\"ceo_exec\");\n" +
+        "    return;\n" +
+        "  }\n" +
+        "  if(window.portalDmExecutiveCliq && typeof window.portalDmExecutiveCliq.tryOpenAdminCliq === \"function\"){\n" +
+        "    window.portalDmExecutiveCliq.tryOpenAdminCliq(\"ceo_exec\");\n" +
+        "  }\n" +
+        "});\n";
       document.body.appendChild(s);
     })();
   </script>
