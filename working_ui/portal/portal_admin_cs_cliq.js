@@ -19,6 +19,46 @@
   };
 
   var WORKSPACE_KEY = "portal_cs_cliq_workspace_status";
+  var MOBILE_MAX_WIDTH = 899;
+
+  function mobileLayoutActive() {
+    try {
+      var w = global.innerWidth || document.documentElement.clientWidth || 0;
+      var h = global.innerHeight || document.documentElement.clientHeight || 0;
+      if (w <= MOBILE_MAX_WIDTH) return true;
+      if (w < 1280 && h <= 640) {
+        try {
+          if (global.matchMedia && global.matchMedia("(orientation: landscape)").matches) return true;
+        } catch (_land) {}
+      }
+    } catch (_e) {}
+    return false;
+  }
+
+  function syncMobileSubscreen(panel) {
+    panel = String(panel || "list");
+    var mobile = mobileLayoutActive();
+    var sub = mobile && (panel === "thread" || panel === "compose");
+    document.body.classList.toggle("portal-cs-cliq-mobile-subscreen", sub);
+    document.body.classList.toggle(
+      "admin-cs-cliq-mobile-subscreen",
+      sub && document.body.classList.contains("admin-touch-compact")
+    );
+    var root = document.getElementById("csCliqRoot");
+    if (root) {
+      root.classList.toggle("portal-cs-cliq--subscreen", sub);
+    }
+  }
+
+  function bindMobileResize() {
+    if (global.__PORTAL_CS_CLIQ_MOBILE_RESIZE_BOUND) return;
+    global.__PORTAL_CS_CLIQ_MOBILE_RESIZE_BOUND = true;
+    global.addEventListener("resize", function () {
+      if (!document.getElementById("csCliqRoot")) return;
+      var ui = global.__PORTAL_ADMIN_DM_UI || {};
+      syncMobileSubscreen(String(ui.panel || "list"));
+    });
+  }
 
   var RAIL_SVGS = {
     chats:
@@ -404,6 +444,7 @@
     if (global.portalCsCliqThreadFiles && typeof global.portalCsCliqThreadFiles.bind === "function") {
       global.portalCsCliqThreadFiles.bind();
     }
+    bindMobileResize();
   }
 
   function syncInboxLayout(hooks) {
@@ -424,7 +465,11 @@
     var emptyState = document.getElementById("csCliqInboxEmpty");
     var chatBody = document.querySelector("#csCliqRoot .portal-cs-cliq__chat-body");
     if (chatBody) chatBody.setAttribute("data-cs-cliq-panel", panel);
-    if (typeof hooks.onMobileSubscreen === "function") hooks.onMobileSubscreen(panel);
+    if (typeof hooks.onMobileSubscreen === "function") {
+      hooks.onMobileSubscreen(panel);
+    } else {
+      syncMobileSubscreen(panel);
+    }
     if (listPanel) listPanel.hidden = false;
     if (composePanel) composePanel.hidden = !inCompose;
     if (threadPanel) {
@@ -495,7 +540,11 @@
     var root = document.getElementById("csCliqRoot");
     if (root) delete root.dataset.portalCsCliqBound;
     global.__PORTAL_CS_CLIQ_ACTIVE = false;
+    document.body.classList.remove("portal-cs-cliq-mobile-subscreen", "admin-cs-cliq-mobile-subscreen");
   }
+
+  global.portalCsCliqMobileActive = mobileLayoutActive;
+  global.portalCsCliqSyncMobileSubscreen = syncMobileSubscreen;
 
   global.PortalAdminCsCliq = {
     configure: configure,
@@ -505,5 +554,7 @@
     setRailPane: setRailPane,
     syncInboxLayout: syncInboxLayout,
     syncPhonePaneContext: syncPhonePaneContext,
+    syncMobileSubscreen: syncMobileSubscreen,
+    mobileLayoutActive: mobileLayoutActive,
   };
 })(window);

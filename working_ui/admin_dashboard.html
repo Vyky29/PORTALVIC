@@ -34,13 +34,13 @@
   <script src="/portal/portal_cs_cliq_thread_header.js?v=20260604-cliq-thread"></script>
   <script src="/portal/portal_cs_cliq_thread_files.js?v=20260604-cliq-files"></script>
   <script src="/portal/portal_dm_roles.js?v=20260604-cliq-unified"></script>
-  <script src="/portal/portal_admin_cs_cliq.js?v=20260604-cliq-unified"></script>
+  <script src="/portal/portal_admin_cs_cliq.js?v=20260604-cliq-mobile"></script>
   <script src="/portal/portal_cs_cliq_workspace.js?v=20260604-cliq-inbox"></script>
   <script src="/portal/portal_cs_cliq_compose_sheet.js?v=20260604-cliq-fix"></script>
   <script src="/portal/portal_cs_cliq_files_hub.js?v=20260604-cliq-files"></script>
   <script src="/portal/portal_cs_cliq_meetings_hub.js?v=20260622-meetings-centre"></script>
   <link rel="stylesheet" href="/portal/portal_cs_cliq_workspace.css?v=20260604-cliq-fix" />
-  <link rel="stylesheet" href="/portal/portal_cs_cliq_hub.css?v=20260604-cliq-thread" />
+  <link rel="stylesheet" href="/portal/portal_cs_cliq_hub.css?v=20260604-cliq-mobile" />
   <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260622-ghost-view" />
   <script src="/portal/admin-portal-ghost-teleport.js?v=20260622-ghost-lead"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
@@ -68,7 +68,7 @@
   <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260605-admin-mobile-landscape" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260605-admin-mobile-nav" />
-  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260604-cliq-thread" />
+  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260604-cliq-mobile" />
 </head>
 <body>
   <script>
@@ -19713,11 +19713,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       try{ mobile = adminTouchCompactLayoutActive(); }catch(_mob){}
       var sub = mobile && (panel === 'thread' || panel === 'compose');
       document.body.classList.toggle('admin-cs-cliq-mobile-subscreen', sub);
+      document.body.classList.toggle('portal-cs-cliq-mobile-subscreen', sub);
       var root = document.getElementById('csCliqRoot');
-      if(root){
-        root.classList.toggle('portal-cs-cliq--subscreen', sub);
-        root.setAttribute('data-cs-cliq-panel', String(panel || 'list'));
-      }
+      if(root) root.classList.toggle('portal-cs-cliq--subscreen', sub);
     }
     function portalAdminCsCliqSyncChatView(){
       if(window.PortalAdminCsCliq && typeof window.PortalAdminCsCliq.syncInboxLayout === 'function'){

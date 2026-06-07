@@ -202,14 +202,12 @@
     grid-column: 3;
     grid-row: 1;
   }
-  #csCliqRoot .portal-cs-cliq__head-call-bar,
-  #csCliqRoot #csCliqHeadCallBar {
+  #csCliqRoot .portal-cs-cliq__chat-head .portal-cs-cliq__head-call-bar {
     grid-column: 1 / -1;
     grid-row: 2;
     justify-content: stretch;
   }
-  #csCliqRoot .portal-cs-cliq__head-call-bar .portal-dm-call-bar-btn,
-  #csCliqRoot #csCliqHeadCallBar .portal-dm-call-bar-btn {
+  #csCliqRoot .portal-cs-cliq__chat-head .portal-cs-cliq__head-call-bar .portal-dm-call-bar-btn {
     flex: 1 1 0;
     min-width: 0;
   }
@@ -1190,38 +1188,51 @@ body.admin-view-cs-cliq .portal-admin-floating-chat-wrap {
 
   #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadHeader.portal-cs-cliq-thread-header {
     padding-top: max(12px, env(safe-area-inset-top, 0px));
-    flex-wrap: wrap;
-    row-gap: 8px;
+    flex-wrap: nowrap;
+    gap: 8px;
   }
 
   #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadHeader .portal-cs-cliq-thread-header__identity {
-    flex: 1 1 calc(100% - 52px);
+    flex: 1 1 auto;
     min-width: 0;
     order: 1;
   }
 
   #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadHeader .portal-cs-cliq__back-btn {
     order: 0;
+    flex-shrink: 0;
   }
 
   #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadHeader #csCliqHeadCallBar {
-    order: 3;
-    flex: 1 1 100%;
-    justify-content: stretch;
+    order: 2;
+    flex: 0 0 auto;
+    width: auto;
+    justify-content: flex-end;
     gap: 6px;
   }
 
   #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadHeader #csCliqHeadCallBar .portal-dm-call-bar-btn {
-    flex: 1 1 0;
-    min-width: 0;
-    width: auto;
+    flex: 0 0 auto;
+    width: 36px;
+    min-width: 36px;
     height: 36px;
     font-size: 0;
   }
 
   #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadHeader .portal-cs-cliq-thread-header__files,
   #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadHeader .portal-cs-cliq-thread-header__more {
-    order: 2;
+    order: 3;
+    flex-shrink: 0;
+  }
+
+  body.portal-cs-cliq-embed-open.portal-cs-cliq-mobile-subscreen .portal-cs-cliq-embed-head {
+    display: none;
+  }
+
+  body.portal-cs-cliq-embed-open.portal-cs-cliq-mobile-subscreen .portal-cs-cliq-embed-sheet {
+    border-radius: 0;
+    max-height: 100dvh;
+    height: 100dvh;
   }
 
   #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq-composer {

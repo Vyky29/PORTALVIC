@@ -180,7 +180,7 @@
     if (global.PortalAdminCsCliq && typeof global.PortalAdminCsCliq.destroyModule === "function") {
       global.PortalAdminCsCliq.destroyModule();
     }
-    document.body.classList.remove(BODY_LOCK);
+    document.body.classList.remove(BODY_LOCK, "portal-cs-cliq-mobile-subscreen", "admin-cs-cliq-mobile-subscreen");
   }
 
   function isOpen() {

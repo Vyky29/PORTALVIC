@@ -406,15 +406,23 @@
       if(nav) nav.hidden = !portalAdminDmPremiumSheetActive();
     }
     function portalAdminCsCliqSyncMobileSubscreen(panel){
+      if(window.portalCsCliqSyncMobileSubscreen && typeof window.portalCsCliqSyncMobileSubscreen === 'function'){
+        window.portalCsCliqSyncMobileSubscreen(panel);
+        return;
+      }
       var mobile = false;
-      try{ mobile = adminTouchCompactLayoutActive(); }catch(_mob){}
+      try{
+        if(window.portalCsCliqMobileActive && typeof window.portalCsCliqMobileActive === 'function'){
+          mobile = window.portalCsCliqMobileActive();
+        }else{
+          mobile = (window.innerWidth || document.documentElement.clientWidth || 0) <= 899;
+        }
+      }catch(_mob){}
       var sub = mobile && (panel === 'thread' || panel === 'compose');
+      document.body.classList.toggle('portal-cs-cliq-mobile-subscreen', sub);
       document.body.classList.toggle('admin-cs-cliq-mobile-subscreen', sub);
       var root = document.getElementById('csCliqRoot');
-      if(root){
-        root.classList.toggle('portal-cs-cliq--subscreen', sub);
-        root.setAttribute('data-cs-cliq-panel', String(panel || 'list'));
-      }
+      if(root) root.classList.toggle('portal-cs-cliq--subscreen', sub);
     }
     function portalAdminCsCliqSyncChatView(){
       if(window.PortalAdminCsCliq && typeof window.PortalAdminCsCliq.syncInboxLayout === 'function'){

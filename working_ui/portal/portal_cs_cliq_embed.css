@@ -243,6 +243,50 @@ body.portal-cs-cliq-embed-open {
   overflow: hidden;
 }
 
+@media (max-width: 899px) {
+  .portal-cs-cliq-embed-backdrop {
+    padding: 0;
+  }
+
+  .portal-cs-cliq-embed-sheet {
+    width: 100%;
+    max-width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+  }
+
+  .portal-cs-cliq-embed-host #csCliqRoot #csCliqThreadHeader.portal-cs-cliq-thread-header {
+    padding-top: max(10px, env(safe-area-inset-top, 0px));
+    flex-wrap: nowrap;
+  }
+
+  .portal-cs-cliq-embed-host #csCliqRoot #csCliqThreadHeader .portal-cs-cliq-thread-header__identity {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .portal-cs-cliq-embed-host #csCliqRoot #csCliqHeadCallBar {
+    flex: 0 0 auto;
+    width: auto;
+  }
+
+  .portal-cs-cliq-embed-host #csCliqRoot #csCliqHeadCallBar .portal-dm-call-bar-btn {
+    flex: 0 0 auto;
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    padding: 0;
+    font-size: 0;
+  }
+
+  body.portal-cs-cliq-embed-open.portal-cs-cliq-mobile-subscreen .portal-cs-cliq-embed-backdrop {
+    background: #fff;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
 @media (min-width: 900px) {
   .portal-cs-cliq-embed-backdrop {
     padding: 18px 20px;

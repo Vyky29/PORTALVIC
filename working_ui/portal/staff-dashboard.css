@@ -958,24 +958,24 @@
       0%,100%{ box-shadow:0 0 0 0 rgba(45,132,179,.28); }
       50%{ box-shadow:0 0 0 6px rgba(45,132,179,.1); }
     }
-    .portal-dm-call-bar{
+    #internalChatSheet .portal-dm-call-bar{
       display:flex;align-items:stretch;gap:8px;width:100%;min-width:0;padding:0 2px 4px;
       border-bottom:1px solid rgba(45,132,179,.12);margin-bottom:2px;
     }
-    .portal-dm-call-bar[aria-busy="true"]{opacity:.72;pointer-events:none}
-    .portal-dm-call-bar-btn{
+    #internalChatSheet .portal-dm-call-bar[aria-busy="true"]{opacity:.72;pointer-events:none}
+    #internalChatSheet .portal-dm-call-bar-btn{
       flex:1;min-width:0;display:inline-flex;align-items:center;justify-content:center;gap:6px;
       padding:10px 8px;border-radius:12px;border:1px solid rgba(45,132,179,.22);
       background:linear-gradient(180deg,#fff,#f6fbff);color:var(--ink);font:inherit;font-size:13px;font-weight:700;
       cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s ease,border-color .15s ease,box-shadow .15s ease;
     }
-    .portal-dm-call-bar-btn:hover{
+    #internalChatSheet .portal-dm-call-bar-btn:hover{
       background:linear-gradient(180deg,#f6fbff,#e8f4fc);border-color:rgba(45,132,179,.38);
       box-shadow:0 2px 8px rgba(45,132,179,.12);
     }
-    .portal-dm-call-bar-btn:active{transform:translateY(1px)}
-    .portal-dm-call-bar-btn:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
-    .portal-dm-call-bar-icon{display:inline-flex;align-items:center;justify-content:center;color:var(--blue)}
+    #internalChatSheet .portal-dm-call-bar-btn:active{transform:translateY(1px)}
+    #internalChatSheet .portal-dm-call-bar-btn:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+    #internalChatSheet .portal-dm-call-bar-icon{display:inline-flex;align-items:center;justify-content:center;color:var(--blue)}
     .portal-dm-call-card{
       display:flex;flex-direction:column;gap:10px;min-width:0;padding:10px 12px;border-radius:12px;
       background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);
