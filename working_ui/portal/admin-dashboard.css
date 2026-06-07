@@ -851,12 +851,15 @@
     }
     .admin-profile{display:flex;align-items:center;gap:8px;padding:4px 10px 4px 4px;border-radius:9999px;border:1px solid var(--btnSecBorder);cursor:pointer;background:var(--btnSecBg);transition:background .15s,border-color .15s}
     .admin-profile:hover,.admin-profile:focus-visible{background:#f1f5f9;border-color:#8eb4d0;outline:none}
-    .admin-av{width:32px;height:32px;border-radius:8px;background:var(--blueSoft);color:var(--blue);font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center}
-    .admin-profile span{font-size:12px;font-weight:600;color:var(--ink);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .view-toggle{width:44px;height:26px;border-radius:99px;border:1px solid var(--line);background:#e2e8f0;padding:0;cursor:pointer;position:relative;flex-shrink:0}
-    .view-toggle::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.12);transition:transform .2s}
-    .view-toggle[aria-checked="true"]{background:var(--blue);border-color:var(--blue)}
-    .view-toggle[aria-checked="true"]::after{transform:translateX(18px)}
+    .admin-av{width:32px;height:32px;border-radius:8px;background:var(--blueSoft);color:var(--blue);font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;position:relative}
+    .admin-av img{width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit}
+    .admin-av.admin-av--photo,#miniAv.admin-av--photo{background:transparent;color:transparent}
+    .admin-profile span#miniName{font-size:12px;font-weight:600;color:var(--ink);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .admin-portal-switch{display:flex;align-items:center;gap:4px;flex-shrink:0;padding:2px;border-radius:12px;border:1px solid var(--line);background:#f8fafc}
+    .admin-portal-switch__btn{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:9px;border:none;background:transparent;color:#64748b;text-decoration:none;cursor:pointer;transition:background .15s,color .15s,box-shadow .15s;padding:0;flex-shrink:0}
+    .admin-portal-switch__btn svg{width:18px;height:18px;display:block}
+    .admin-portal-switch__btn:hover,.admin-portal-switch__btn:focus-visible{background:#e8f2f8;color:var(--blue);outline:none}
+    .admin-portal-switch__btn.is-active{background:var(--blueSoft);color:var(--blue);box-shadow:inset 0 0 0 1px rgba(45,132,179,.22);cursor:default}
 
     .admin-workspace{flex:1;overflow-y:auto;overflow-x:hidden;padding:22px 24px 32px;-webkit-overflow-scrolling:touch;position:relative;isolation:isolate}
     .view-panel{display:none}
@@ -4063,7 +4066,7 @@
     body.admin-touch-compact .admin-topbar-meta{order:3;margin-left:auto;flex-shrink:0}
     body.admin-touch-compact .admin-topbar .admin-search-wrap,
     body.admin-touch-compact .admin-topbar .admin-date,
-    body.admin-touch-compact .admin-topbar #viewToggle,
+    body.admin-touch-compact .admin-topbar #adminPortalSwitch,
     body.admin-touch-compact .admin-topbar #btnAlerts{display:none !important}
     body.admin-touch-compact .admin-profile{padding:2px;border-radius:999px;border:none;background:transparent}
     body.admin-touch-compact .admin-profile span#miniName{display:none}
