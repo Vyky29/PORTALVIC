@@ -2937,7 +2937,9 @@
             if(item.kind === 'closed' || item.kind === 'available') continue;
             if(item.noSessionFeedbackRequired) continue;
             if(!isSessionEndedForFeedback(item)) continue;
-            const r = getSessionReviewRecord(item) || {};
+            const r = typeof getEffectiveSessionReviewRecord === 'function'
+              ? (getEffectiveSessionReviewRecord(item) || {})
+              : (getSessionReviewRecord(item) || {});
             if(r.feedbackDone || r.absent || r.cancelled) continue;
             pending++;
           }
@@ -3611,8 +3613,16 @@
       const todayKey = portalTermLocalYmdFromMs(termCalendarNowMs());
       return key >= fromIso && key <= todayKey;
     }
+    function portalTermCalendarDayCountsForOutstanding(iso, fbMap){
+      const st = fbMap && fbMap[String(iso || '').trim().slice(0, 10)];
+      return st === 'pending' || st === 'late';
+    }
     function portalOutstandingSessionFeedbackCountAcrossTerm(){
       try{
+        if(typeof rebuildTermShiftAndFeedbackFromSessionModel === 'function'){
+          rebuildTermShiftAndFeedbackFromSessionModel();
+        }
+        const fbMap = (dashboardData && dashboardData.termFeedbackByDate) ? dashboardData.termFeedbackByDate : {};
         const t = window.PORTAL_TERM_FROM_TIMETABLE;
         const staffId = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
         const worked = Array.isArray(dashboardData.termWorkedWeekdays) ? dashboardData.termWorkedWeekdays.map(Number) : [];
@@ -3636,6 +3646,11 @@
           const dayWord = cur.toLocaleDateString('en-GB', { weekday: 'long' });
           const key = termCalendarDateKey(cur.getFullYear(), cur.getMonth(), cur.getDate());
           if(!portalFeedbackReminderDayInScope(key)){
+            cur.setDate(cur.getDate() + 1);
+            continue;
+          }
+          /* Same source of truth as term calendar green cells — do not nag when the day is complete. */
+          if(!portalTermCalendarDayCountsForOutstanding(key, fbMap)){
             cur.setDate(cur.getDate() + 1);
             continue;
           }
@@ -3697,6 +3712,7 @@
           portalTermStaffExtraCalendarDates(staffId).forEach(function(key){
             if(!key || (fromFloor && key >= fromFloor)) return;
             if(!portalFeedbackReminderDayInScope(key)) return;
+            if(!portalTermCalendarDayCountsForOutstanding(key, fbMap)) return;
             const curExtra = new Date(String(key) + 'T12:00:00');
             const dayWord = curExtra.toLocaleDateString('en-GB', { weekday: 'long' });
             const isReal = function(s){
@@ -4096,13 +4112,12 @@
       if(!dashboardData || !dashboardData.portalIdentityResolved) return '';
       if(!st) st = typeof portalReminderState === 'function' ? portalReminderState() : {};
       const need = !!(st.sessionFeedbackNeed);
-      const n = need ? Math.max(0, Number(st.sessionFeedbackCount) || 0) : 0;
+      if(!need) return '';
+      const n = Math.max(0, Number(st.sessionFeedbackCount) || 0);
       const fbIcon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 12h6M9 16h6"/></svg>';
-      const tone = need ? ' menu-btn--qm-outstanding-feedback--need menu-btn--portal-pulse' : ' menu-btn--qm-outstanding-feedback--complete';
-      const title = need ? 'Outstanding feedbacks x' + String(n) : 'Outstanding feedbacks = 0';
-      const aria = need
-        ? 'Outstanding feedback — ' + n + ' incomplete sessions, tap to open'
-        : 'Outstanding feedbacks — none pending through today, tap to review sessions';
+      const tone = ' menu-btn--qm-outstanding-feedback--need menu-btn--portal-pulse';
+      const title = 'Outstanding feedbacks x' + String(n);
+      const aria = 'Outstanding feedback — ' + n + ' incomplete sessions, tap to open';
       return '<button type="button" class="menu-btn notice menu-btn--qm-tile menu-btn--qm-outstanding-feedback' + tone + '" id="portalOutstandingFeedbackBtn" data-action="open-pending-feedback" aria-label="' + escapeHtml(aria) + '">' +
         '<div class="menu-btn-icon" aria-hidden="true">' + fbIcon + '</div>' +
         '<div class="menu-btn-copy"><strong>' + escapeHtml(title) + '</strong></div>' +
