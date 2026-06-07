@@ -367,8 +367,19 @@
 #csCliqRoot .portal-dm-thread-role-tag {
   font-size: 11px;
   font-weight: 700;
-  color: #145a3a;
   margin-left: 6px;
+}
+
+#csCliqRoot .portal-dm-thread-role-tag--staff {
+  color: #145a3a;
+}
+
+#csCliqRoot .portal-dm-thread-role-tag--lead {
+  color: #7c3aed;
+}
+
+#csCliqRoot .portal-dm-thread-role-tag--group {
+  color: #0369a1;
 }
 
 #csCliqRoot .portal-dm-thread-preview {
