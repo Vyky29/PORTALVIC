@@ -23,7 +23,7 @@
   var pendingOverviewTab = null;
   var pendingFeedbackNoteFilter = undefined;
 
-  var HUB_SRC = '/portal-shared-js/admin-sessions-hub.js?v=20260607-feedback-unit-key';
+  var HUB_SRC = '/portal-shared-js/admin-sessions-hub.js?v=20260607-feedback-pool-area';
 
   function esc(s) {
     if (cfg.esc) return cfg.esc(s);

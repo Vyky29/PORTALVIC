@@ -1310,6 +1310,24 @@
     return false;
   }
 
+  /** Acton aquatic keys may say small_pool while roster area is teaching_pool (same session). */
+  function portalAquaticAreaTokensCompatible(pkArea, slotArea) {
+    if (!pkArea || !slotArea) return true;
+    if (pkArea === slotArea) return true;
+    if (pkArea === "aquatic" || slotArea === "aquatic") return true;
+    if (pkArea.indexOf("pool") >= 0 && slotArea.indexOf("pool") >= 0) return true;
+    if (/swim|aquatic/.test(pkArea) && /swim|aquatic|pool/.test(slotArea)) return true;
+    return false;
+  }
+
+  /** Area slug from portal_session_key segments (handles date|time|client|unit|area layouts). */
+  function portalKeyAreaFromParts(parts) {
+    if (!parts || parts.length < 4 || !/^\d{4}-\d{2}-\d{2}$/.test(parts[0])) return "";
+    var pkArea = portalKeyAreaToken(parts[3]);
+    if (!pkArea && parts.length >= 5) pkArea = portalKeyAreaToken(parts[4]);
+    return pkArea;
+  }
+
   function completedByMatchesInstructor(completedBy, instructorRaw) {
     var by = clean(completedBy).toLowerCase();
     var inst = clean(instructorRaw).toLowerCase();
@@ -1599,7 +1617,7 @@
     if (pk) {
       var parts = pk.split("|").map(clean);
       if (parts.length >= 4 && /^\d{4}-\d{2}-\d{2}$/.test(parts[0])) {
-        var pkArea = portalKeyAreaToken(parts[3]);
+        var pkArea = portalKeyAreaFromParts(parts);
         var slotArea = sessionAreaKey(slot.area);
         if (pkArea && slotArea && pkArea !== slotArea) {
           if (isBespokeService(slot.service)) {
@@ -1611,6 +1629,12 @@
             return false;
           }
           if (isMultiActivityService(slot.service) || isClimbingService(slot.service)) {
+            return completedByFitsSlotArea(fb.completed_by_name, slot);
+          }
+          if (isAquaticService(slot.service) && portalAquaticAreaTokensCompatible(pkArea, slotArea)) {
+            if (clientNeedsPerSlotAquaticFeedback(slot)) {
+              return completedByMatchesSlotInstructors(fb.completed_by_name, slot);
+            }
             return completedByFitsSlotArea(fb.completed_by_name, slot);
           }
           return false;
