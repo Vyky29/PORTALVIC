@@ -1557,6 +1557,10 @@
       renderCallCard(host, callData, mine);
       return;
     }
+    if (global.portalDmAttachments && (global.portalDmAttachments.isImageMsg(m) || global.portalDmAttachments.isFileMsg(m))) {
+      await global.portalDmAttachments.fillMessageBody(host, m, client, escFn);
+      return;
+    }
     if (global.portalDmVoice && global.portalDmVoice.fillMessageBody) {
       await global.portalDmVoice.fillMessageBody(host, m, client, escFn);
       return;
@@ -1956,6 +1960,295 @@
     return modal;
   }
 
+  function normalizeRole(row) {
+    return String((row && row.app_role) || "staff").trim().toLowerCase() || "staff";
+  }
+
+  function personLabel(row) {
+    return String((row && row.full_name) || (row && row.username) || (row && row.id) || "").trim();
+  }
+
+  function ensureLeadsChannelPickerModal() {
+    var existing = document.getElementById("portalLeadsChannelPickerModal");
+    if (existing) return existing;
+    var modal = document.createElement("div");
+    modal.id = "portalLeadsChannelPickerModal";
+    modal.className = "portal-leads-call-picker portal-leads-channel-picker";
+    modal.hidden = true;
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-modal", "true");
+    modal.setAttribute("aria-labelledby", "portalLeadsChannelPickerTitle");
+    modal.innerHTML =
+      '<div class="portal-leads-call-picker__backdrop" data-portal-leads-channel-close="1"></div>' +
+      '<div class="portal-leads-call-picker__card portal-leads-channel-picker__card">' +
+      '<div class="portal-leads-call-picker__head">' +
+      '<h3 id="portalLeadsChannelPickerTitle">Open channel</h3>' +
+      '<button type="button" class="portal-leads-call-picker__close" data-portal-leads-channel-close="1" aria-label="Close">?</button>' +
+      "</div>" +
+      '<p class="portal-leads-call-picker__sub">Choose who is in this channel. One person opens a direct chat; several leads open the Session leads channel; staff, leads and CEOs can use the ops channel.</p>' +
+      '<div class="portal-leads-channel-picker__presets">' +
+      '<button type="button" class="btn btn--ghost btn--sm" id="portalLeadsChannelPresetLeads">Leads only</button>' +
+      '<button type="button" class="btn btn--ghost btn--sm" id="portalLeadsChannelPresetStaff">Staff only</button>' +
+      '<button type="button" class="btn btn--ghost btn--sm" id="portalLeadsChannelPresetAll">Staff + leads + CEOs</button>' +
+      "</div>" +
+      '<div class="portal-leads-call-picker__tools">' +
+      '<button type="button" class="btn btn--ghost btn--sm" id="portalLeadsChannelPickerAll">Select all</button>' +
+      '<button type="button" class="btn btn--ghost btn--sm" id="portalLeadsChannelPickerNone">Clear</button>' +
+      "</div>" +
+      '<div id="portalLeadsChannelPickerList" class="portal-leads-call-picker__list"></div>' +
+      '<p id="portalLeadsChannelPickerErr" class="portal-leads-call-picker__err" hidden></p>' +
+      '<div class="portal-leads-call-picker__actions">' +
+      '<button type="button" class="btn btn--sec" data-portal-leads-channel-close="1">Cancel</button>' +
+      '<button type="button" class="btn btn--pri" id="portalLeadsChannelPickerOpen">Open channel</button>' +
+      "</div></div>";
+    document.body.appendChild(modal);
+    if (!document.getElementById("portalLeadsChannelPickerStyles")) {
+      var st = document.createElement("style");
+      st.id = "portalLeadsChannelPickerStyles";
+      st.textContent =
+        ".portal-leads-channel-picker__card{max-height:min(90vh,680px)}" +
+        ".portal-leads-channel-picker__presets{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px;min-width:0}" +
+        ".portal-leads-channel-picker__section{margin:10px 0 4px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#64748b;min-width:0}";
+      document.head.appendChild(st);
+    }
+    modal.addEventListener("click", function (ev) {
+      if (ev.target && ev.target.getAttribute("data-portal-leads-channel-close") === "1") {
+        modal.hidden = true;
+      }
+    });
+    return modal;
+  }
+
+  async function loadChannelPickerPeople(client) {
+    if (!client) throw new Error("Not signed in.");
+    var res = await client
+      .from("staff_profiles")
+      .select("id,full_name,username,app_role,is_active")
+      .or("is_active.is.null,is_active.eq.true")
+      .order("full_name", { ascending: true })
+      .limit(300);
+    if (res.error || !Array.isArray(res.data)) throw new Error("Could not load directory.");
+    return res.data.filter(function (row) {
+      if (!row || !row.id) return false;
+      var role = normalizeRole(row);
+      return role === "staff" || role === "lead" || role === "ceo" || role === "admin";
+    });
+  }
+
+  async function openChannelForSelection(selectedIds, peopleById) {
+    selectedIds = (selectedIds || [])
+      .map(function (id) {
+        return String(id || "").trim();
+      })
+      .filter(Boolean);
+    if (!selectedIds.length) throw new Error("Select at least one person.");
+    var ctx = getContext();
+    if (!ctx.client) throw new Error("Not signed in.");
+
+    if (selectedIds.length === 1) {
+      if (typeof global.portalAdminDmEnsureDmThreadAndOpen === "function") {
+        await global.portalAdminDmEnsureDmThreadAndOpen(selectedIds[0]);
+        return;
+      }
+      throw new Error("Chat is not ready.");
+    }
+
+    var roles = selectedIds.map(function (id) {
+      return normalizeRole(peopleById[id] || {});
+    });
+    var allLeads = roles.every(function (r) {
+      return r === "lead";
+    });
+
+    if (allLeads) {
+      var gidLeads =
+        typeof global.portalAdminDmResolveSessionLeadsGroupId === "function"
+          ? await global.portalAdminDmResolveSessionLeadsGroupId(ctx.client)
+          : "";
+      if (gidLeads && typeof global.portalAdminDmOpenGroupThread === "function") {
+        await global.portalAdminDmOpenGroupThread(gidLeads);
+        return;
+      }
+    }
+
+    var gidOps =
+      typeof global.portalAdminDmResolveStaffLeadsOpsGroupId === "function"
+        ? await global.portalAdminDmResolveStaffLeadsOpsGroupId(ctx.client)
+        : "";
+    if (gidOps && typeof global.portalAdminDmOpenGroupThread === "function") {
+      await global.portalAdminDmOpenGroupThread(gidOps);
+      return;
+    }
+
+    if (typeof global.portalAdminDmEnsureDmThreadAndOpen === "function") {
+      await global.portalAdminDmEnsureDmThreadAndOpen(selectedIds[0]);
+      return;
+    }
+    throw new Error("Could not open channel.");
+  }
+
+  async function openLeadsChannelPicker() {
+    var modal = ensureLeadsChannelPickerModal();
+    var list = document.getElementById("portalLeadsChannelPickerList");
+    var errEl = document.getElementById("portalLeadsChannelPickerErr");
+    if (errEl) {
+      errEl.hidden = true;
+      errEl.textContent = "";
+    }
+    if (list) {
+      list.innerHTML =
+        '<p class="muted" style="margin:0;font-size:13px;min-width:0">Loading people?</p>';
+    }
+    modal.hidden = false;
+    var people = [];
+    var peopleById = {};
+    try {
+      var ctx = getContext();
+      people = await loadChannelPickerPeople(ctx.client);
+      people.forEach(function (row) {
+        peopleById[String(row.id)] = row;
+      });
+      if (!list) return;
+      list.innerHTML = "";
+      if (!people.length) {
+        list.innerHTML =
+          '<p class="muted" style="margin:0;font-size:13px;min-width:0">No staff or leads found.</p>';
+        return;
+      }
+      var sections = [
+        { key: "lead", title: "Leads" },
+        { key: "staff", title: "Staff" },
+        { key: "ceo", title: "CEOs" },
+        { key: "admin", title: "Admins" },
+      ];
+      sections.forEach(function (sec) {
+        var rows = people.filter(function (row) {
+          return normalizeRole(row) === sec.key;
+        });
+        if (!rows.length) return;
+        var head = document.createElement("p");
+        head.className = "portal-leads-channel-picker__section";
+        head.textContent = sec.title;
+        list.appendChild(head);
+        rows.forEach(function (row) {
+          var id = String(row.id);
+          var safe = id.replace(/[^a-zA-Z0-9_-]/g, "");
+          var rowEl = document.createElement("div");
+          rowEl.className = "portal-leads-call-picker__row";
+          rowEl.innerHTML =
+            '<input type="checkbox" id="portalLeadsChan_' +
+            safe +
+            '" value="' +
+            id +
+            '" data-portal-role="' +
+            normalizeRole(row) +
+            '" />' +
+            '<label for="portalLeadsChan_' +
+            safe +
+            '">' +
+            personLabel(row) +
+            "</label>";
+          list.appendChild(rowEl);
+        });
+      });
+    } catch (e) {
+      if (list) {
+        list.innerHTML =
+          '<p class="muted" style="margin:0;font-size:13px;color:#b42318;min-width:0;overflow-wrap:break-word">' +
+          String((e && e.message) || e || "Could not load people.") +
+          "</p>";
+      }
+    }
+
+    function selectedIds() {
+      if (!list) return [];
+      return Array.prototype.slice
+        .call(list.querySelectorAll('input[type="checkbox"]:checked'))
+        .map(function (inp) {
+          return String(inp.value || "").trim();
+        })
+        .filter(Boolean);
+    }
+
+    function setChecks(filterFn, on) {
+      if (!list) return;
+      list.querySelectorAll('input[type="checkbox"]').forEach(function (inp) {
+        var id = String(inp.value || "");
+        if (filterFn(peopleById[id] || {})) inp.checked = !!on;
+      });
+    }
+
+    function wirePreset(id, filterFn) {
+      var btn = document.getElementById(id);
+      if (!btn || btn.dataset.portalLeadsChannelPresetBound === "1") return;
+      btn.dataset.portalLeadsChannelPresetBound = "1";
+      btn.addEventListener("click", function () {
+        setChecks(filterFn, true);
+      });
+    }
+    wirePreset("portalLeadsChannelPresetLeads", function (row) {
+      return normalizeRole(row) === "lead";
+    });
+    wirePreset("portalLeadsChannelPresetStaff", function (row) {
+      return normalizeRole(row) === "staff";
+    });
+    wirePreset("portalLeadsChannelPresetAll", function () {
+      return true;
+    });
+
+    var allBtn = document.getElementById("portalLeadsChannelPickerAll");
+    if (allBtn && allBtn.dataset.portalLeadsChannelBound !== "1") {
+      allBtn.dataset.portalLeadsChannelBound = "1";
+      allBtn.addEventListener("click", function () {
+        setChecks(function () {
+          return true;
+        }, true);
+      });
+    }
+    var noneBtn = document.getElementById("portalLeadsChannelPickerNone");
+    if (noneBtn && noneBtn.dataset.portalLeadsChannelBound !== "1") {
+      noneBtn.dataset.portalLeadsChannelBound = "1";
+      noneBtn.addEventListener("click", function () {
+        setChecks(function () {
+          return true;
+        }, false);
+      });
+    }
+    var openBtn = document.getElementById("portalLeadsChannelPickerOpen");
+    if (openBtn && openBtn.dataset.portalLeadsChannelOpenBound !== "1") {
+      openBtn.dataset.portalLeadsChannelOpenBound = "1";
+      openBtn.addEventListener("click", function () {
+        void (async function () {
+          if (errEl) {
+            errEl.hidden = true;
+            errEl.textContent = "";
+          }
+          var ids = selectedIds();
+          if (!ids.length) {
+            if (errEl) {
+              errEl.textContent = "Select at least one person.";
+              errEl.hidden = false;
+            }
+            return;
+          }
+          openBtn.disabled = true;
+          try {
+            modal.hidden = true;
+            await openChannelForSelection(ids, peopleById);
+          } catch (e2) {
+            modal.hidden = false;
+            if (errEl) {
+              errEl.textContent = String((e2 && e2.message) || e2 || "Could not open channel.");
+              errEl.hidden = false;
+            }
+          } finally {
+            openBtn.disabled = false;
+          }
+        })();
+      });
+    }
+  }
+
   async function loadActiveLeadsForPicker() {
     var ctx = getContext();
     if (!ctx.client) throw new Error("Not signed in.");
@@ -2148,6 +2441,7 @@
     stopIncomingCallAlert: hideIncomingCallOverlay,
     primeCallRingAudio: primeCallRingAudio,
     openLeadsCallPicker: openLeadsCallPicker,
+    openLeadsChannelPicker: openLeadsChannelPicker,
     startSelectedLeadsCall: startSelectedLeadsCall,
   };
 

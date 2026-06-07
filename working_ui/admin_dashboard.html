@@ -25,11 +25,12 @@
   <link rel="stylesheet" href="/portal/portal_staff_map.css?v=20260602-staff-map-header" />
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260622-photo-delete" />
   <script src="/portal/admin-portal-staff-map.js?v=20260622-ghost-map"></script>
-  <script src="/portal/portal_admin_cs_cliq.js?v=20260605-leads-channel-tab"></script>
+  <script src="/portal/portal_admin_cs_cliq.js?v=20260605-leads-channel-ui"></script>
   <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260622-ghost-view" />
   <script src="/portal/admin-portal-ghost-teleport.js?v=20260622-ghost-lead"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
-  <script src="/portal/portal_dm_voice.js?v=20260531-dm-voice"></script>
+  <script src="/portal/portal_dm_voice.js?v=20260605-dm-attach"></script>
+  <script src="/portal/portal_dm_attachments.js?v=20260605-dm-attach"></script>
   <script src="/portal/portal-change-log.js?v=20260601-changelog-merge"></script>
   <script src="/portal/admin-hr.js?v=20260601-annual-profile"></script>
   <script src="/portal/admin-payments.js?v=20260531-la-column"></script>
@@ -52,7 +53,7 @@
   <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260605-dayops-badges" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260623-admin-unread" />
-  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260623-lead-chip" />
+  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260605-leads-channel-ui" />
 </head>
 <body>
   <script>
@@ -20369,6 +20370,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       if(tid) await portalAdminDmOpenThread(tid);
     }
+    try{
+      window.portalAdminDmOpenGroupThread = portalAdminDmOpenGroupThread;
+      window.portalAdminDmEnsureDmThreadAndOpen = portalAdminDmEnsureDmThreadAndOpen;
+      window.portalAdminDmResolveSessionLeadsGroupId = portalAdminDmResolveSessionLeadsGroupId;
+      window.portalAdminDmResolveStaffLeadsOpsGroupId = portalAdminDmResolveStaffLeadsOpsGroupId;
+    }catch(_dmExport){}
     async function portalAdminDmOpenGroupThread(gid){
       gid = String(gid || '').trim();
       if(!gid) return;
@@ -20477,7 +20484,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         btn.onclick = fn;
       }
       wire(channelBtn, function(){
-        void (async function(){ await portalAdminDmOpenGroupThread(gid); })();
+        if(window.portalStaffChatCalls && typeof window.portalStaffChatCalls.openLeadsChannelPicker === 'function'){
+          void window.portalStaffChatCalls.openLeadsChannelPicker();
+        }
       });
       wire(ringBtn, function(){
         void portalAdminDmRingAllLeads(gid);
@@ -21009,6 +21018,37 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       msgsBox.scrollTop = msgsBox.scrollHeight;
     }
+    function portalAdminDmBindAttachmentControls(){
+      var pa = window.portalDmAttachments;
+      if(!pa || typeof pa.attachFilePickers !== 'function') return;
+      function bindAttach(textareaId, photoBtnId, docBtnId, errPick){
+        var ta = document.getElementById(textareaId);
+        if(!ta || ta.dataset.portalAttachUiBound === '1') return;
+        ta.dataset.portalAttachUiBound = '1';
+        pa.attachFilePickers({
+          textareaId: textareaId,
+          photoBtnId: photoBtnId,
+          docBtnId: docBtnId,
+          getContext: function(){
+            var ui = window.__PORTAL_ADMIN_DM_UI || {};
+            return {
+              client: getSchedSupabaseClient(),
+              threadId: String(ui.threadId || '').trim(),
+              groupId: String(ui.groupId || '').trim(),
+              authorId: portalAdminDmMe()
+            };
+          },
+          onSent: function(){ return portalAdminDmLoadMessages(); },
+          onError: function(msg){
+            var errB = errPick();
+            if(errB) errB.textContent = msg;
+          }
+        });
+      }
+      bindAttach('admDmReplyBody', 'admDmPhotoBtn', 'admDmDocBtn', function(){ return $('admDmThreadErr'); });
+      bindAttach('internalChatInput', 'internalChatPhotoBtn', 'internalChatDocBtn', function(){ return document.getElementById('internalChatErr'); });
+      bindAttach('csCliqInput', 'csCliqPhotoBtn', 'csCliqDocBtn', function(){ return document.getElementById('csCliqErr'); });
+    }
     function portalAdminDmBindVoiceControls(){
       var pv = window.portalDmVoice;
       if(!pv) return;
@@ -21039,6 +21079,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       bindVoice('admDmVoiceBtn', 'admDmReplyBody', function(){ return $('admDmThreadErr'); });
       bindVoice('internalChatVoiceBtn', 'internalChatInput', function(){ return document.getElementById('internalChatErr'); });
+      bindVoice('csCliqVoiceBtn', 'csCliqInput', function(){ return document.getElementById('csCliqErr'); });
+      portalAdminDmBindAttachmentControls();
     }
     async function portalAdminDmSendReply(){
       var client = getSchedSupabaseClient();
@@ -21431,10 +21473,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '</div>'+
         '<div id="admDmQCeosHost" class="filter-row" style="flex-wrap:wrap;gap:8px;margin-top:8px;min-width:0"></div>'+
         '</div>'+
-        '<div id="admDmStaffLeadsQuickWrap" hidden style="margin:0 0 12px;min-width:0">'+
-        '<p class="muted" style="margin:0 0 8px;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase">Leads channel</p>'+
-        '<div class="filter-row" style="flex-wrap:wrap;gap:8px;min-width:0">'+
-        '<button type="button" class="btn btn--sec btn--sm" id="admDmQLeadsChannel">Open channel</button>'+
+        '<div id="admDmStaffLeadsQuickWrap" hidden class="portal-dm-staff-leads-quick" style="margin:0 0 14px;min-width:0;padding:14px 12px 12px;border-radius:14px;background:#f8fafc;border:1px solid rgba(45,132,179,.12)">'+
+        '<p class="muted" style="margin:0 0 12px;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase">Leads channel</p>'+
+        '<div class="filter-row" style="flex-wrap:wrap;gap:10px;min-width:0">'+
+        '<button type="button" class="btn btn--sec btn--sm" id="admDmQLeadsChannel">Open channel…</button>'+
         '<button type="button" class="btn btn--pri btn--sm" id="admDmQRingAllLeads">Ring all leads</button>'+
         '<button type="button" class="btn btn--sec btn--sm" id="admDmQCallSelectedLeads">Call selected…</button>'+
         '</div></div>'+
@@ -25446,7 +25488,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       document.body.appendChild(s);
     })();
   </script>
-  <script src="/portal/portal_staff_chat_calls.js?v=20260624-leads-picker"></script>
+  <script src="/portal/portal_staff_chat_calls.js?v=20260605-channel-picker-attach"></script>
   <script src="/portal/portal_incoming_call_push.js?v=20260622-incoming-call"></script>
   <script src="/portal/portal_floating_internal_chat.js?v=20260605-admin-chat"></script>
 </body>

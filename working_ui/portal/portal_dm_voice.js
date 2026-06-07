@@ -175,6 +175,15 @@
 
   async function fillMessageBody(host, m, client, escFn) {
     escFn = escFn || esc;
+    var typ = String((m && m.message_type) || "text").toLowerCase();
+    if (
+      (typ === "image" || typ === "file") &&
+      global.portalDmAttachments &&
+      typeof global.portalDmAttachments.fillMessageBody === "function"
+    ) {
+      await global.portalDmAttachments.fillMessageBody(host, m, client, escFn);
+      return;
+    }
     host.innerHTML = "";
     if (!isVoice(m)) {
       var text = document.createElement("div");

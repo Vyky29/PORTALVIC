@@ -180,10 +180,10 @@
       "</div>" +
       '<div id="csCliqQCeosHost" class="filter-row" style="flex-wrap:wrap;gap:8px;margin-top:8px;min-width:0"></div>' +
       "</div>" +
-      '<div id="csCliqStaffLeadsQuickWrap" hidden style="min-width:0">' +
-      '<p class="muted" style="margin:0 0 8px;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase">Leads channel</p>' +
-      '<div class="filter-row" style="flex-wrap:wrap;gap:8px;min-width:0">' +
-      '<button type="button" class="btn btn--sec btn--sm" id="csCliqQLeadsChannel">Open channel</button>' +
+      '<div id="csCliqStaffLeadsQuickWrap" hidden class="portal-dm-staff-leads-quick" style="min-width:0">' +
+      '<p class="muted" style="margin:0 0 12px;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase">Leads channel</p>' +
+      '<div class="filter-row" style="flex-wrap:wrap;gap:10px;min-width:0">' +
+      '<button type="button" class="btn btn--sec btn--sm" id="csCliqQLeadsChannel">Open channel…</button>' +
       '<button type="button" class="btn btn--pri btn--sm" id="csCliqQRingAllLeads">Ring all leads</button>' +
       '<button type="button" class="btn btn--sec btn--sm" id="csCliqQCallSelectedLeads">Call selected…</button>' +
       "</div></div>" +

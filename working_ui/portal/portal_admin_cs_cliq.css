@@ -267,8 +267,9 @@
 #csCliqRoot .portal-dm-inbox-nav {
   display: flex;
   gap: 8px;
-  padding: 8px 12px 0;
+  padding: 12px 12px 10px;
   flex-shrink: 0;
+  margin-bottom: 2px;
 }
 
 #csCliqRoot .portal-dm-inbox-nav-btn {
@@ -291,6 +292,26 @@
   color: var(--portal-chat-blue);
 }
 
+#csCliqRoot #csCliqStaffLeadsQuickWrap,
+#csCliqRoot #csCliqCeoQuickWrap {
+  margin: 12px 12px 0;
+  padding: 14px 12px 12px;
+  border-radius: 14px;
+  background: #f8fafc;
+  border: 1px solid rgba(45, 132, 179, 0.12);
+  min-width: 0;
+}
+
+#csCliqRoot #csCliqStaffLeadsQuickWrap > .muted,
+#csCliqRoot #csCliqCeoQuickWrap > .muted {
+  margin-bottom: 12px !important;
+}
+
+#csCliqRoot #csCliqStaffLeadsQuickWrap .filter-row,
+#csCliqRoot #csCliqCeoQuickWrap .filter-row {
+  gap: 10px !important;
+}
+
 #csCliqRoot #csCliqListPanel {
   flex: 1 1 auto;
   min-height: 0;
@@ -303,7 +324,7 @@
   flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
-  padding: 10px 12px;
+  padding: 12px 12px 10px;
   -webkit-overflow-scrolling: touch;
 }
 
