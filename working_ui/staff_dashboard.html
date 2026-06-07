@@ -1508,6 +1508,10 @@
           const iso = String(sessionDateIso || '').trim().substring(0, 10);
           const sid = String(staffId || '').trim().toLowerCase();
           if(!/^\d{4}-\d{2}-\d{2}$/.test(iso) || !sid || !s) return null;
+          const exemptResolved = typeof portalRosterSessionFeedbackResolvedFlags === 'function'
+            ? portalRosterSessionFeedbackResolvedFlags(s, iso, sid)
+            : null;
+          if(exemptResolved) return exemptResolved;
           const notes = typeof clientNotesById !== 'undefined' ? clientNotesById : {};
           if(bridge.sessionComplete(iso, sid, s, notes, {})){
             return portalReviewFlagsForResolvedSession(iso, sid, s);
@@ -1535,6 +1539,10 @@
         const iso = String(sessionDateIso || '').trim().substring(0, 10);
         const sid = String(staffId || '').trim().toLowerCase();
         if(!/^\d{4}-\d{2}-\d{2}$/.test(iso) || !sid) return null;
+        const exemptResolved = typeof portalRosterSessionFeedbackResolvedFlags === 'function'
+          ? portalRosterSessionFeedbackResolvedFlags(s, iso, sid)
+          : null;
+        if(exemptResolved) return exemptResolved;
         const matches = [];
         src.rows.forEach(function(st){
           if(String(st.date || '').trim().substring(0, 10) !== iso) return;
@@ -2670,10 +2678,32 @@
     /** Export bundle overrides stale localStorage when support vs instructor units differ. */
     function getEffectiveSessionReviewRecord(item){
       const mem = getSessionReviewRecord(item) || { feedbackDone: false, incident: false, absent: false, cancelled: false };
-      if(!item || !item.__portalBaseSession || !item.sessionKey) return mem;
+      if(!item || !item.sessionKey) return mem;
       const iso = portalSessionDateIsoFromItemSessionKey(item);
       const staffId = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
-      if(!iso || !staffId || typeof portalRosterReviewStateFromStatusBundle !== 'function') return mem;
+      if(!iso || !staffId) return mem;
+      const baseS = item.__portalBaseSession || null;
+      if(baseS && typeof portalRosterSessionFeedbackResolvedFlags === 'function'){
+        const ex = portalRosterSessionFeedbackResolvedFlags(baseS, iso, staffId);
+        if(ex){
+          return {
+            feedbackDone: ex.feedbackDone === false ? !!mem.feedbackDone : !!(ex.feedbackDone || mem.feedbackDone),
+            incident: !!(ex.incident || mem.incident),
+            absent: !!(ex.absent || mem.absent),
+            cancelled: !!(ex.cancelled || mem.cancelled)
+          };
+        }
+      }
+      if(item.noSessionFeedbackRequired){
+        const pill = String(item.portalOverrideAlertPill || '').trim().toUpperCase();
+        return {
+          feedbackDone: !!(mem.feedbackDone || (pill !== 'ABSENT' && pill !== 'CANCELLED')),
+          incident: !!mem.incident,
+          absent: !!(mem.absent || pill === 'ABSENT'),
+          cancelled: !!(mem.cancelled || pill === 'CANCELLED')
+        };
+      }
+      if(typeof portalRosterReviewStateFromStatusBundle !== 'function') return mem;
       const bundle = portalRosterReviewStateFromStatusBundle(item.__portalBaseSession, iso, staffId);
       if(!bundle){
         const floorIso = portalMachineRosterFeedbackFloorIso();
@@ -2818,6 +2848,22 @@
     function portalGetMergedSessionReviewRecordForRoster(s, dayWord, sessionDateIso){
       const out = { feedbackDone: false, incident: false, absent: false, cancelled: false };
       if(!s || !sessionDateIso) return out;
+      const staffIdEarly = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
+      const exemptEarly = typeof portalRosterSessionFeedbackResolvedFlags === 'function'
+        ? portalRosterSessionFeedbackResolvedFlags(s, sessionDateIso, staffIdEarly)
+        : null;
+      if(exemptEarly){
+        if(exemptEarly.absent){
+          out.absent = true;
+          out.feedbackDone = false;
+        }else if(exemptEarly.cancelled){
+          out.cancelled = true;
+        }else if(exemptEarly.feedbackDone){
+          out.feedbackDone = true;
+        }
+        if(exemptEarly.incident) out.incident = true;
+        return out;
+      }
       const add = function(rec){
         if(!rec) return;
         if(rec.feedbackDone) out.feedbackDone = true;
@@ -3678,12 +3724,8 @@
           const dayShiftEnded = Number.isFinite(dayShiftEndMs) && nowMs >= (dayShiftEndMs + SHIFT_FEEDBACK_GRACE_MS);
           for(let i = 0; dayShiftEnded && i < relFb.length; i++){
             const s = relFb[i];
-            const manualOv = String(s && s.override || '').trim().toUpperCase();
-            if(manualOv === 'ABSENT') continue;
-            const ovS = typeof portalTodayScheduleOverrideForSession === 'function'
-              ? portalTodayScheduleOverrideForSession(s, key)
-              : null;
-            if(ovS && String(ovS.override_type || '').trim() === 'client_absence_announced') continue;
+            if(typeof portalRosterSessionFeedbackExempt === 'function'
+              && portalRosterSessionFeedbackExempt(s, key, staffId)) continue;
             const sk = typeof portalSessionReviewKeyForModelRow === 'function'
               ? portalSessionReviewKeyForModelRow(s, dayWord, key)
               : `${key}|${s.start}|${s.clientId}`;
@@ -3735,12 +3777,8 @@
             const dayShiftEnded = Number.isFinite(dayShiftEndMs) && nowMs >= (dayShiftEndMs + SHIFT_FEEDBACK_GRACE_MS);
             for(let i = 0; dayShiftEnded && i < relFb.length; i++){
               const s = relFb[i];
-              const manualOv = String(s && s.override || '').trim().toUpperCase();
-              if(manualOv === 'ABSENT') continue;
-              const ovS = typeof portalTodayScheduleOverrideForSession === 'function'
-                ? portalTodayScheduleOverrideForSession(s, key)
-                : null;
-              if(ovS && String(ovS.override_type || '').trim() === 'client_absence_announced') continue;
+              if(typeof portalRosterSessionFeedbackExempt === 'function'
+                && portalRosterSessionFeedbackExempt(s, key, staffId)) continue;
               const sk = typeof portalSessionReviewKeyForModelRow === 'function'
                 ? portalSessionReviewKeyForModelRow(s, dayWord, key)
                 : `${key}|${s.start}|${s.clientId}`;
@@ -7677,6 +7715,74 @@
       }
       return true;
     }
+    /** Sessions that need no feedback register (absent, cancelled, closed, covered away, no client). */
+    function portalRosterSessionFeedbackResolvedFlags(s, sessionDateIso, staffId){
+      if(!s) return null;
+      const iso = String(sessionDateIso || '').trim().slice(0, 10);
+      const sid = String(staffId != null ? staffId : (typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '')).trim().toLowerCase();
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
+      const manualOv = String(s && s.override || '').trim().toUpperCase();
+      if(manualOv === 'ABSENT'){
+        return { feedbackDone: false, incident: false, absent: true, cancelled: false };
+      }
+      if(manualOv === 'CLOSED' || manualOv === 'NO_CLIENT'){
+        return { feedbackDone: true, incident: false, absent: false, cancelled: false };
+      }
+      if(manualOv === 'CANCELLED'){
+        return { feedbackDone: false, incident: false, absent: false, cancelled: true };
+      }
+      const st = typeof sessionModelStatus === 'function' ? sessionModelStatus(s) : '';
+      const openedClosed = typeof portalSessionHasSlotOpenOverride === 'function' && portalSessionHasSlotOpenOverride(s, iso);
+      if(st === 'Available'){
+        return { feedbackDone: true, incident: false, absent: false, cancelled: false };
+      }
+      if(st === 'Closed' && !openedClosed){
+        return { feedbackDone: true, incident: false, absent: false, cancelled: false };
+      }
+      const ov = typeof portalTodayScheduleOverrideForSession === 'function'
+        ? portalTodayScheduleOverrideForSession(s, iso)
+        : null;
+      if(ov){
+        const t = String(ov.override_type || '').trim();
+        if(t === 'client_absence_announced'){
+          return { feedbackDone: false, incident: false, absent: true, cancelled: false };
+        }
+        if(t === 'slot_close'){
+          return { feedbackDone: false, incident: false, absent: false, cancelled: true };
+        }
+        if(t === 'slot_clear_client'){
+          if(ov.payload && ov.payload.cancelled_by_admin){
+            return { feedbackDone: false, incident: false, absent: false, cancelled: true };
+          }
+          return { feedbackDone: true, incident: false, absent: false, cancelled: false };
+        }
+        if(t === 'instructor_reassign'){
+          const cov = String(ov.payload && ov.payload.covering_staff_id || '').trim().toLowerCase();
+          const orig = typeof portalNormKeyStr === 'function' ? portalNormKeyStr(s.staffId) : String(s.staffId || '').trim().toLowerCase();
+          if(cov && orig === sid){
+            return { feedbackDone: true, incident: false, absent: false, cancelled: false };
+          }
+        }
+      }
+      if(typeof portalSessionContributesToReviewKeys === 'function'){
+        const dayWord = iso ? new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' }) : '';
+        if(!portalSessionContributesToReviewKeys(s, dayWord, iso)){
+          return { feedbackDone: true, incident: false, absent: false, cancelled: false };
+        }
+      }
+      try{
+        const bridge = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
+        const notes = typeof clientNotesById !== 'undefined' ? clientNotesById : {};
+        if(bridge && typeof bridge.rosterSessionMarkedAbsent === 'function'
+          && bridge.rosterSessionMarkedAbsent(iso, sid, s, notes)){
+          return { feedbackDone: false, incident: false, absent: true, cancelled: false };
+        }
+      }catch(_){}
+      return null;
+    }
+    function portalRosterSessionFeedbackExempt(s, sessionDateIso, staffId){
+      return !!portalRosterSessionFeedbackResolvedFlags(s, sessionDateIso, staffId);
+    }
     function portalEffectiveClientIdForReview(s, sessionDateIso){
       if(!s || !sessionDateIso) return String(s && s.clientId || '').trim().toLowerCase();
       const isoEff = portalNormalizeScheduleOverrideSessionDate(sessionDateIso);
@@ -10693,12 +10799,8 @@
       const sessions = weekListClientSessionsForDay(dayName);
       for(let i = 0; i < sessions.length; i++){
         const s = sessions[i];
-        const manualOv = String(s && s.override || '').trim().toUpperCase();
-        if(manualOv === 'ABSENT') continue;
-        const ov = typeof portalTodayScheduleOverrideForSession === 'function'
-          ? portalTodayScheduleOverrideForSession(s, sessionDateIso)
-          : null;
-        if(ov && String(ov.override_type || '').trim() === 'client_absence_announced') continue;
+        if(typeof portalRosterSessionFeedbackExempt === 'function'
+          && portalRosterSessionFeedbackExempt(s, sessionDateIso, STAFF_DASHBOARD_ID)) continue;
         const syn = weekListSyntheticFeedbackItem(s, cell);
         if(!syn.sessionKey) continue;
         const item = { sessionEndTs: syn.sessionEndTs, sessionKey: syn.sessionKey };
@@ -11371,12 +11473,8 @@
       const da = cur.getDate();
       for(let i = 0; i < list.length; i++){
         const s = list[i];
-        const manualOv = String(s && s.override || '').trim().toUpperCase();
-        if(manualOv === 'ABSENT') continue;
-        const ovS = typeof portalTodayScheduleOverrideForSession === 'function'
-          ? portalTodayScheduleOverrideForSession(s, iso)
-          : null;
-        if(ovS && String(ovS.override_type || '').trim() === 'client_absence_announced') continue;
+        if(typeof portalRosterSessionFeedbackExempt === 'function'
+          && portalRosterSessionFeedbackExempt(s, iso, staffId)) continue;
         const cid = String(s && s.clientId || '').toLowerCase();
         if(!cid || cid === 'closed' || cid === 'available') continue;
         const endMs = buildSessionEndMsForCalendarDate(y, mo, da, s.end);
@@ -11409,12 +11507,8 @@
       const da = curDate.getDate();
       for(let i = 0; i < list.length; i++){
         const s = list[i];
-        const manualOv = String(s && s.override || '').trim().toUpperCase();
-        if(manualOv === 'ABSENT') continue;
-        const ovS = typeof portalTodayScheduleOverrideForSession === 'function'
-          ? portalTodayScheduleOverrideForSession(s, isoKey)
-          : null;
-        if(ovS && String(ovS.override_type || '').trim() === 'client_absence_announced') continue;
+        if(typeof portalRosterSessionFeedbackExempt === 'function'
+          && portalRosterSessionFeedbackExempt(s, isoKey, staffId)) continue;
         const sk = typeof portalSessionReviewKeyForModelRow === 'function'
           ? portalSessionReviewKeyForModelRow(s, dayWord, isoKey)
           : `${isoKey}|${s.start}|${s.clientId}`;
@@ -11433,7 +11527,7 @@
         if(rec.feedbackDone || rec.absent || rec.cancelled) continue;
         return false;
       }
-      return applicable > 0;
+      return applicable > 0 || list.length > 0;
     }
     function rebuildTermShiftAndFeedbackFromSessionModel(){
       const t = window.PORTAL_TERM_FROM_TIMETABLE;
@@ -11557,12 +11651,8 @@
           if(key === todayKey){
             let minStart = Infinity;
             relFb.forEach(function(s){
-              const manualOv = String(s && s.override || '').trim().toUpperCase();
-              if(manualOv === 'ABSENT') return;
-              const ovS = typeof portalTodayScheduleOverrideForSession === 'function'
-                ? portalTodayScheduleOverrideForSession(s, key)
-                : null;
-              if(ovS && String(ovS.override_type || '').trim() === 'client_absence_announced') return;
+              if(typeof portalRosterSessionFeedbackExempt === 'function'
+                && portalRosterSessionFeedbackExempt(s, key, staffId)) return;
               const sk = typeof portalSessionReviewKeyForModelRow === 'function'
                 ? portalSessionReviewKeyForModelRow(s, dayWord, key)
                 : `${key}|${s.start}|${s.clientId}`;
@@ -11592,12 +11682,8 @@
             let applicable = 0;
             let unresolved = 0;
             relFb.forEach(function(s){
-              const manualOv = String(s && s.override || '').trim().toUpperCase();
-              if(manualOv === 'ABSENT') return;
-              const ovS = typeof portalTodayScheduleOverrideForSession === 'function'
-                ? portalTodayScheduleOverrideForSession(s, key)
-                : null;
-              if(ovS && String(ovS.override_type || '').trim() === 'client_absence_announced') return;
+              if(typeof portalRosterSessionFeedbackExempt === 'function'
+                && portalRosterSessionFeedbackExempt(s, key, staffId)) return;
               const sk = typeof portalSessionReviewKeyForModelRow === 'function'
                 ? portalSessionReviewKeyForModelRow(s, dayWord, key)
                 : `${key}|${s.start}|${s.clientId}`;
@@ -11620,19 +11706,15 @@
               allDone = true;
             }
             if(applicable === 0){
-              fbMap[key] = 'pending';
+              fbMap[key] = relFb.length ? 'complete' : 'pending';
             } else if(allDone){
               fbMap[key] = 'complete';
             } else {
               const nowMs = termCalendarNowMs();
               let anyEndedIncomplete = false;
               relFb.forEach(function(s){
-                const manualOv = String(s && s.override || '').trim().toUpperCase();
-                if(manualOv === 'ABSENT') return;
-                const ovS = typeof portalTodayScheduleOverrideForSession === 'function'
-                  ? portalTodayScheduleOverrideForSession(s, key)
-                  : null;
-                if(ovS && String(ovS.override_type || '').trim() === 'client_absence_announced') return;
+                if(typeof portalRosterSessionFeedbackExempt === 'function'
+                  && portalRosterSessionFeedbackExempt(s, key, staffId)) return;
                 const sk = typeof portalSessionReviewKeyForModelRow === 'function'
                   ? portalSessionReviewKeyForModelRow(s, dayWord, key)
                   : `${key}|${s.start}|${s.clientId}`;
