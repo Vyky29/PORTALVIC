@@ -1,5 +1,5 @@
 /**
- * CS Cliq Files hub ù recent chat attachments and portal documents.
+ * CS Cliq Files hub ÔøΩ recent chat attachments and portal documents.
  */
 (function (global) {
   "use strict";
@@ -47,7 +47,7 @@
     if (!host) return;
     var c = client();
     var me = meId();
-    host.innerHTML = '<p class="portal-cs-cliq-files-loading muted">Loading recent attachmentsù</p>';
+    host.innerHTML = '<p class="portal-cs-cliq-files-empty muted">Loading recent attachments‚Ä¶‚Ä¶</p>';
     if (!c || !me) {
       host.innerHTML = '<p class="portal-cs-cliq-files-empty muted">Sign in to see chat files.</p>';
       return;
@@ -70,7 +70,7 @@
           .order("updated_at", { ascending: false })
           .limit(40);
     if (threads.error || !Array.isArray(threads.data) || !threads.data.length) {
-      host.innerHTML = '<p class="portal-cs-cliq-files-empty muted">No chat attachments yet. Photos and documents shared in threads appear here.</p>';
+      host.innerHTML = '<p class="portal-cs-cliq-files-empty muted">Shared files will appear here when photos or documents are sent in chat.</p>';
       return;
     }
     var ids = threads.data.map(function (r) {
@@ -84,54 +84,76 @@
       .order("created_at", { ascending: false })
       .limit(24);
     if (msgs.error || !Array.isArray(msgs.data) || !msgs.data.length) {
-      host.innerHTML = '<p class="portal-cs-cliq-files-empty muted">No chat attachments yet. Share a photo or document in any thread to populate this gallery.</p>';
+      host.innerHTML = '<p class="portal-cs-cliq-files-empty muted">Shared files will appear here when photos or documents are sent in chat.</p>';
       return;
     }
     host.innerHTML = "";
+    host.dataset.allFiles = JSON.stringify(msgs.data);
     for (var i = 0; i < msgs.data.length; i++) {
-      var m = msgs.data[i];
-      if (!isAttachMsg(m)) continue;
-      var card = document.createElement("a");
-      card.className = "portal-cs-cliq-files-card";
-      card.href = "#";
-      card.setAttribute("data-cs-cliq-file-id", String(m.id || ""));
-      var isImg = String(m.message_type || "").toLowerCase() === "image";
-      var path = String(m.audio_storage_path || "");
-      var url = path ? await signedUrl(c, path) : "";
-      var thumb = document.createElement("div");
-      thumb.className = "portal-cs-cliq-files-card__thumb" + (isImg ? " portal-cs-cliq-files-card__thumb--image" : "");
-      if (isImg && url) {
-        var img = document.createElement("img");
-        img.src = url;
-        img.alt = "";
-        img.loading = "lazy";
-        thumb.appendChild(img);
-      } else {
-        thumb.innerHTML = '<span class="portal-cs-cliq-files-card__ext">' + esc(fileName(m).split(".").pop() || "DOC") + "</span>";
-      }
-      var meta = document.createElement("div");
-      meta.className = "portal-cs-cliq-files-card__meta";
-      meta.innerHTML =
-        '<span class="portal-cs-cliq-files-card__name">' +
-        esc(fileName(m)) +
-        '</span><span class="portal-cs-cliq-files-card__when">' +
-        esc(String(m.created_at || "").slice(0, 16).replace("T", " ")) +
-        "</span>";
-      card.appendChild(thumb);
-      card.appendChild(meta);
-      card.addEventListener("click", function (ev) {
-        ev.preventDefault();
-        if (url) {
-          try {
-            global.open(url, "_blank", "noopener");
-          } catch (_o) {}
-        }
-      });
-      host.appendChild(card);
+      var row = await buildRow(msgs.data[i], c);
+      if (row) host.appendChild(row);
     }
     if (!host.children.length) {
-      host.innerHTML = '<p class="portal-cs-cliq-files-empty muted">No chat attachments yet.</p>';
+      host.innerHTML = '<p class="portal-cs-cliq-files-empty muted">Shared files will appear here when photos or documents are sent in chat.</p>';
     }
+    bindSearch(host);
+  }
+
+  async function buildRow(m, c) {
+    if (!isAttachMsg(m)) return null;
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "portal-cs-cliq-file-row";
+    btn.setAttribute("data-cs-cliq-file-name", fileName(m).toLowerCase());
+    var isImg = String(m.message_type || "").toLowerCase() === "image";
+    var path = String(m.audio_storage_path || "");
+    var url = path ? await signedUrl(c, path) : "";
+    var icon = document.createElement("span");
+    icon.className = "portal-cs-cliq-file-row__icon";
+    if (isImg && url) {
+      var img = document.createElement("img");
+      img.src = url;
+      img.alt = "";
+      img.loading = "lazy";
+      icon.appendChild(img);
+    } else {
+      icon.textContent = (fileName(m).split(".").pop() || "DOC").slice(0, 4).toUpperCase();
+    }
+    var meta = document.createElement("span");
+    meta.className = "portal-cs-cliq-file-row__meta";
+    meta.innerHTML =
+      '<span class="portal-cs-cliq-file-row__name">' +
+      esc(fileName(m)) +
+      '</span><span class="portal-cs-cliq-file-row__sub">' +
+      esc((isImg ? "Photo" : "Document") + " ¬∑ " + String(m.created_at || "").slice(0, 16).replace("T", " ")) +
+      "</span>";
+    var open = document.createElement("span");
+    open.className = "portal-cs-cliq-file-row__open";
+    open.textContent = "Open";
+    btn.appendChild(icon);
+    btn.appendChild(meta);
+    btn.appendChild(open);
+    btn.addEventListener("click", function () {
+      if (url) {
+        try {
+          global.open(url, "_blank", "noopener");
+        } catch (_o) {}
+      }
+    });
+    return btn;
+  }
+
+  function bindSearch(host) {
+    var input = document.getElementById("csCliqFilesSearch");
+    if (!input || input.dataset.bound === "1") return;
+    input.dataset.bound = "1";
+    input.addEventListener("input", function () {
+      var q = String(input.value || "").trim().toLowerCase();
+      host.querySelectorAll(".portal-cs-cliq-file-row").forEach(function (row) {
+        var name = String(row.getAttribute("data-cs-cliq-file-name") || "");
+        row.hidden = !!(q && name.indexOf(q) < 0);
+      });
+    });
   }
 
   global.portalCsCliqFilesHub = { refresh: refresh };

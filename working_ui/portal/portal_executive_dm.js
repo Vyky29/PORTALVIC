@@ -412,18 +412,33 @@
       var titleEl = document.getElementById('csCliqTitle');
       var nav = document.getElementById('csCliqChannelNav');
       var newBtn = document.getElementById('csCliqBtnNew');
+      var listCol = document.getElementById('csCliqListColumn');
+      var convCol = document.getElementById('csCliqConversationCol');
+      var emptyState = document.getElementById('csCliqInboxEmpty');
       var chatBody = document.querySelector('#csCliqRoot .portal-cs-cliq__chat-body');
       if(chatBody) chatBody.setAttribute('data-cs-cliq-panel', panel);
       portalAdminCsCliqSyncMobileSubscreen(panel);
-      if(listPanel) listPanel.hidden = inThread || inCompose;
+      if(listPanel) listPanel.hidden = false;
       if(composePanel) composePanel.hidden = !inCompose;
       if(threadPanel){
         threadPanel.hidden = !inThread;
         threadPanel.setAttribute('aria-hidden', inThread ? 'false' : 'true');
       }
+      if(emptyState){
+        emptyState.hidden = inThread || inCompose;
+        emptyState.setAttribute('aria-hidden', inThread || inCompose ? 'true' : 'false');
+      }
+      if(listCol) listCol.classList.toggle('portal-cs-cliq-inbox__list-col--hidden-mobile', inThread || inCompose);
+      if(convCol) convCol.classList.toggle('portal-cs-cliq-inbox__conversation-col--active', inThread || inCompose);
       if(backBtn) backBtn.hidden = !inThread && !inCompose;
       if(nav) nav.hidden = inThread || inCompose;
-      if(newBtn) newBtn.hidden = inThread || inCompose;
+      if(newBtn){
+        var canNew = !(window.portalCsCliqHubRoles && window.portalCsCliqHubRoles.canCreateConversations && !window.portalCsCliqHubRoles.canCreateConversations());
+        newBtn.hidden = inThread || inCompose || !canNew;
+      }
+      if(window.portalCsCliqThreadHeader && typeof window.portalCsCliqThreadHeader.sync === 'function'){
+        window.portalCsCliqThreadHeader.sync(ui);
+      }
       portalAdminDmPremiumSyncChannelTabs();
       if(titleEl){
         if(inCompose){
@@ -1196,6 +1211,8 @@
       }
       if(peerEl) peerEl.textContent = groupLabel;
       window.__PORTAL_ADMIN_DM_UI.peerLabel = groupLabel;
+      window.__PORTAL_ADMIN_DM_UI.peerRole = 'Group';
+      window.__PORTAL_ADMIN_DM_UI.peerIsLeadOrManagement = true;
       var inp = portalAdminDmReplyInputEl();
       if(inp) inp.value = '';
       var errB = portalAdminDmReplyErrEl();
@@ -1384,6 +1401,16 @@
       var sr = String(prof.staff_role || '').toLowerCase();
       if(sr.indexOf('lead') >= 0) return 'Lead';
       return '';
+    }
+    function portalAdminDmPeerRoleLabel(prof){
+      prof = prof || {};
+      var ar = String(prof.app_role || '').toLowerCase();
+      if(ar === 'admin' || ar === 'ceo') return 'Management';
+      return portalAdminDmWorkerRoleTag(prof) || 'Staff';
+    }
+    function portalAdminDmPeerIsLeadOrManagement(prof){
+      var label = portalAdminDmPeerRoleLabel(prof);
+      return label === 'Lead' || label === 'Management';
     }
     function portalAdminDmFormatListWhen(iso){
       if(!iso) return '';
@@ -1675,10 +1702,10 @@
       if(client && me){
         var tres = await client.from('portal_staff_dm_threads').select('participant_a,participant_b').eq('id', tid).maybeSingle();
         var peerId = '';
+        var profMap = {};
         if(tres && tres.data){
           var trow = tres.data;
           var ids = [String(trow.participant_a||''), String(trow.participant_b||'')].filter(Boolean);
-          var profMap = {};
           if(ids.length){
             var prM = await client.from('staff_profiles').select('id,full_name,username,app_role,staff_role,dashboard_route,is_active').in('id', ids);
             if(!prM.error && Array.isArray(prM.data)){
@@ -1696,15 +1723,23 @@
             });
             peerLabel = portalAdminDmTeamChatLabel(trow, namesMap);
             peerId = '';
+            window.__PORTAL_ADMIN_DM_UI.peerRole = 'Team';
+            window.__PORTAL_ADMIN_DM_UI.peerIsLeadOrManagement = true;
           }
         }
+        var peerProf = peerId ? (profMap[peerId] || {}) : {};
         if(peerId && !peerLabel){
-          var pr2 = await client.from('staff_profiles').select('full_name,username').eq('id', peerId).maybeSingle();
+          var pr2 = await client.from('staff_profiles').select('full_name,username,app_role,staff_role').eq('id', peerId).maybeSingle();
           if(!pr2.error && pr2.data){
             peerLabel = (pr2.data.full_name || pr2.data.username || '').trim() || peerId;
+            peerProf = pr2.data;
           }else{
             peerLabel = peerId;
           }
+        }
+        if(peerId){
+          window.__PORTAL_ADMIN_DM_UI.peerRole = portalAdminDmPeerRoleLabel(peerProf);
+          window.__PORTAL_ADMIN_DM_UI.peerIsLeadOrManagement = portalAdminDmPeerIsLeadOrManagement(peerProf);
         }
       }
       window.__PORTAL_ADMIN_DM_UI = window.__PORTAL_ADMIN_DM_UI || {};

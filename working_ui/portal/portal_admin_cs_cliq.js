@@ -164,48 +164,37 @@
   function viewHtml() {
     var annIco = cfg.adminNavIconHtml("announcements");
     var remIco = cfg.adminNavIconHtml("reminders");
+    var railPlaceholder =
+      global.portalCsCliqHubRoles && typeof global.portalCsCliqHubRoles.buildRailHtml === "function"
+        ? global.portalCsCliqHubRoles.buildRailHtml()
+        : railBtn("chats", "Inbox", false, false) + railBtn("files", "Files", false, false);
     return (
-      '<div id="csCliqRoot" class="portal-cs-cliq">' +
+      '<div id="csCliqRoot" class="portal-cs-cliq portal-cs-cliq--hub">' +
       '<div class="portal-cs-cliq__layout">' +
-      '<nav class="portal-cs-cliq__rail" aria-label="CS Cliq">' +
-      railBtn("chats", "Chats", false, false) +
-      railBtn("channels", "Channels", false, false) +
-      railBtn("phone", "Phone", false, false) +
-      railBtn("files", "Files", false, false) +
-      railBtn("calendar", "Calendar", false, false) +
+      '<nav class="portal-cs-cliq__rail" aria-label="Operations communication hub">' +
+      railPlaceholder +
       "</nav>" +
       '<div class="portal-cs-cliq__main">' +
-      '<div id="csCliqChatsPane" class="portal-cs-cliq__pane" data-cs-cliq-pane="chats">' +
-      '<div class="portal-cs-cliq__chat-head">' +
-      '<button type="button" class="portal-cs-cliq__back-btn" id="csCliqBackBtn" hidden aria-label="Back to chats">‹</button>' +
-      '<h2 class="portal-cs-cliq__chat-title" id="csCliqTitle">Chats</h2>' +
-      callBarHtml("csCliqHead", true) +
+      '<div id="csCliqChatsPane" class="portal-cs-cliq__pane portal-cs-cliq__pane--inbox" data-cs-cliq-pane="chats">' +
+      '<div class="portal-cs-cliq-inbox portal-cs-cliq__chat-body portal-dm-wrap" data-cs-cliq-panel="list">' +
+      '<aside class="portal-cs-cliq-inbox__list-col" id="csCliqListColumn">' +
+      '<div class="portal-cs-cliq-inbox__list-head">' +
+      '<h2 class="portal-cs-cliq__chat-title" id="csCliqTitle">Inbox</h2>' +
       '<button type="button" class="portal-cs-cliq__new-btn" id="csCliqBtnNew">New</button>' +
       "</div>" +
-      '<div class="portal-cs-cliq__chat-body portal-dm-wrap" data-cs-cliq-panel="list">' +
       '<div id="csCliqChannelNav" class="portal-dm-inbox-nav">' +
       '<button type="button" class="portal-dm-inbox-nav-btn is-active" id="csCliqTabStaff" data-admin-chat-channel="staff_lead">Staff · Leads channel</button>' +
       '<button type="button" class="portal-dm-inbox-nav-btn" id="csCliqTabCeo" data-admin-chat-channel="ceo_exec">CEO&apos;s chat</button>' +
       "</div>" +
       '<div id="csCliqListPanel">' +
-      '<div id="csCliqCeoQuickWrap" hidden style="min-width:0">' +
-      '<p class="muted" style="margin:0 0 8px;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase">Quick open</p>' +
-      '<div class="filter-row" style="flex-wrap:wrap;gap:8px;min-width:0">' +
-      '<button type="button" class="btn btn--sec btn--sm" id="csCliqQOpsAdmin">Operations admin</button>' +
-      '<button type="button" class="btn btn--pri btn--sm" id="csCliqQCeoGroup">CEO group</button>' +
-      "</div>" +
-      '<div id="csCliqQCeosHost" class="filter-row" style="flex-wrap:wrap;gap:8px;margin-top:8px;min-width:0"></div>' +
-      "</div>" +
-      '<div id="csCliqStaffLeadsQuickWrap" hidden class="portal-dm-staff-leads-quick" style="min-width:0">' +
-      '<p class="muted" style="margin:0 0 12px;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase">Leads channel</p>' +
-      '<div class="filter-row" style="flex-wrap:wrap;gap:10px;min-width:0">' +
-      '<button type="button" class="btn btn--sec btn--sm" id="csCliqQLeadsChannel">Open channel…</button>' +
-      '<button type="button" class="btn btn--pri btn--sm" id="csCliqQRingAllLeads">Ring all leads</button>' +
-      '<button type="button" class="btn btn--sec btn--sm" id="csCliqQCallSelectedLeads">Call selected…</button>' +
-      "</div></div>" +
       '<div id="csCliqListWrap" class="portal-dm-inbox-list"></div>' +
+      "</div></aside>" +
+      '<section class="portal-cs-cliq-inbox__conversation-col" id="csCliqConversationCol">' +
+      '<div id="csCliqInboxEmpty" class="portal-cs-cliq-inbox-empty" aria-hidden="false">' +
+      '<p class="portal-cs-cliq-inbox-empty__title">Select a conversation</p>' +
+      '<p class="portal-cs-cliq-inbox-empty__sub">Your messages, calls and meeting requests live here.</p>' +
       "</div>" +
-      '<div id="csCliqComposePanel" hidden>' +
+      '<div id="csCliqComposePanel" class="portal-cs-cliq-compose-screen" hidden>' +
       '<label class="muted">Recipient</label>' +
       '<div id="csCliqPeerPickWrap">' +
       '<input type="text" id="csCliqPeerSearch" autocomplete="off" autocapitalize="off" spellcheck="false" aria-autocomplete="list" aria-controls="csCliqPeerSuggest" placeholder="Search staff or lead…" />' +
@@ -218,20 +207,35 @@
       '<div class="filter-row" style="margin-top:12px;flex-wrap:wrap;gap:8px">' +
       '<button type="button" class="btn btn--sec btn--sm" id="csCliqComposeBack">Back to threads</button>' +
       '<button type="button" class="btn btn--pri btn--sm" id="csCliqComposeSend">Send</button>' +
-      "</div></div>" +
-      '<div id="csCliqThreadPanel" class="portal-dm-thread-view" hidden aria-hidden="true">' +
+      "</div>" +
+      '<div id="csCliqThreadPanel" class="portal-dm-thread-view portal-cs-cliq-thread" hidden aria-hidden="true">' +
       '<span id="csCliqThreadPeerHidden" hidden aria-hidden="true"></span>' +
-      '<div id="csCliqMessages" class="portal-dm-msgs-col portal-dm-msgs-scroll"></div>' +
-      '<div class="portal-dm-compose-bar">' +
+      '<header class="portal-cs-cliq-thread-header" id="csCliqThreadHeader" hidden>' +
+      '<button type="button" class="portal-cs-cliq__back-btn" id="csCliqBackBtn" aria-label="Back to inbox">‹</button>' +
+      '<div class="portal-cs-cliq-thread-header__identity">' +
+      '<span class="portal-cs-cliq-thread-header__avatar" id="csCliqThreadAvatar" aria-hidden="true">?</span>' +
+      '<div class="portal-cs-cliq-thread-header__meta">' +
+      '<span class="portal-cs-cliq-thread-header__name" id="csCliqThreadName">Conversation</span>' +
+      '<span class="portal-cs-cliq-thread-header__role" id="csCliqThreadRole">Staff</span>' +
+      '<span class="portal-cs-cliq-thread-header__status" id="csCliqThreadStatus">Available</span>' +
+      "</div></div>" +
+      callBarHtml("csCliqHead", true) +
+      '<button type="button" class="portal-cs-cliq-thread-header__more" id="csCliqThreadMoreBtn" aria-label="More options">⋯</button>' +
+      "</header>" +
+      '<div id="csCliqMessages" class="portal-dm-msgs-col portal-dm-msgs-scroll portal-cs-cliq-messages"></div>' +
+      '<div class="portal-cs-cliq-composer portal-dm-compose-bar">' +
+      '<div class="portal-cs-cliq-composer__tools" id="csCliqComposerTools" aria-label="Attachments"></div>' +
+      '<div class="portal-cs-cliq-composer__row">' +
       '<label class="sr-only" for="csCliqInput">Your message</label>' +
-      '<textarea id="csCliqInput" class="txa" placeholder="Write a message…" maxlength="8000"></textarea>' +
-      '<p id="csCliqErr" class="muted" style="margin:0;font-size:13px;color:var(--danger);min-height:1.2em"></p>' +
-      '<button type="button" class="portal-dm-btn portal-dm-btn--primary" id="csCliqSendBtn">Send</button>' +
-      "</div></div></div></div>" +
+      '<textarea id="csCliqInput" class="portal-cs-cliq-composer__input txa" placeholder="Write a message…" maxlength="8000" rows="1"></textarea>' +
+      '<button type="button" class="portal-cs-cliq-composer__send portal-dm-btn portal-dm-btn--primary" id="csCliqSendBtn" aria-label="Send message">Send</button>' +
+      "</div>" +
+      '<p id="csCliqErr" class="portal-cs-cliq-composer__err muted"></p>' +
+      "</div></div></section></div></div>" +
       '<div id="csCliqChannelsPane" class="portal-cs-cliq__pane" data-cs-cliq-pane="channels" hidden>' +
       '<div class="portal-cs-cliq__channels-head">' +
-      '<div class="portal-cs-cliq__pane-title-row"><h2>Channels</h2><span class="portal-cs-cliq__pane-badge">Staff comms</span></div>' +
-      '<p class="muted portal-cs-cliq__pane-lead">Broadcast announcements and targeted reminders to staff and leads — synced across every portal.</p>' +
+      '<div class="portal-cs-cliq__pane-title-row"><h2>Broadcasts</h2><span class="portal-cs-cliq__pane-badge">Management</span></div>' +
+      '<p class="muted portal-cs-cliq__pane-lead">Site-wide announcements and targeted reminders for staff and leads.</p>' +
       "</div>" +
       '<div class="portal-cs-cliq__channels-body">' +
       '<div class="portal-cs-cliq__channels-grid">' +
@@ -259,7 +263,32 @@
       '<button type="button" id="csCliqChRemAck" class="btn btn--sec">Acknowledged reminders log</button>' +
       '<button type="button" id="csCliqChManage" class="btn btn--ghost">Manage sent messages</button>' +
       "</div></div></div>" +
-      '<div id="csCliqPhonePane" class="portal-cs-cliq__pane" data-cs-cliq-pane="phone" hidden>' +
+      '<div id="csCliqTeamsPane" class="portal-cs-cliq__pane" data-cs-cliq-pane="teams" hidden>' +
+      '<div class="portal-cs-cliq__module-head"><div class="portal-cs-cliq__pane-title-row"><h2>Teams</h2><span class="portal-cs-cliq__pane-badge">Groups</span></div>' +
+      '<p class="muted portal-cs-cliq__module-sub">Staff groups, lead channels and operations threads.</p></div>' +
+      '<div class="portal-cs-cliq__module-body" id="csCliqTeamsList"></div></div>' +
+      '<div id="csCliqSupportPane" class="portal-cs-cliq__pane" data-cs-cliq-pane="support" hidden>' +
+      '<div class="portal-cs-cliq__module-head"><div class="portal-cs-cliq__pane-title-row"><h2>Support</h2><span class="portal-cs-cliq__pane-badge">Staff</span></div>' +
+      '<p class="muted portal-cs-cliq__module-sub">Request help from Management or Leads.</p></div>' +
+      '<div class="portal-cs-cliq__module-body" id="csCliqSupportBody"></div></div>' +
+      '<div id="csCliqOperationsPane" class="portal-cs-cliq__pane" data-cs-cliq-pane="operations" hidden>' +
+      '<div class="portal-cs-cliq__module-head"><div class="portal-cs-cliq__pane-title-row"><h2>Operations</h2><span class="portal-cs-cliq__pane-badge">Quick actions</span></div>' +
+      '<p class="muted portal-cs-cliq__module-sub">Management shortcuts for leads channels, groups and coordination.</p></div>' +
+      '<div class="portal-cs-cliq__module-body portal-cs-cliq-operations-body">' +
+      '<div id="csCliqCeoQuickWrap" class="portal-cs-cliq-ops-block" hidden>' +
+      '<p class="portal-cs-cliq-ops-block__title">Executive</p>' +
+      '<div class="filter-row" style="flex-wrap:wrap;gap:8px">' +
+      '<button type="button" class="btn btn--sec btn--sm" id="csCliqQOpsAdmin">Operations admin</button>' +
+      '<button type="button" class="btn btn--pri btn--sm" id="csCliqQCeoGroup">CEO group</button>' +
+      "</div><div id=\"csCliqQCeosHost\" class=\"filter-row\" style=\"flex-wrap:wrap;gap:8px;margin-top:8px\"></div></div>" +
+      '<div id="csCliqStaffLeadsQuickWrap" class="portal-cs-cliq-ops-block" hidden>' +
+      '<p class="portal-cs-cliq-ops-block__title">Leads channel</p>' +
+      '<div class="filter-row" style="flex-wrap:wrap;gap:8px">' +
+      '<button type="button" class="btn btn--sec btn--sm" id="csCliqQLeadsChannel">Open channel</button>' +
+      '<button type="button" class="btn btn--pri btn--sm" id="csCliqQRingAllLeads">Ring all leads</button>' +
+      '<button type="button" class="btn btn--sec btn--sm" id="csCliqQCallSelectedLeads">Call selected</button>' +
+      "</div></div></div></div>" +
+      '<div id="csCliqPhonePane" class="portal-cs-cliq__pane portal-cs-cliq__pane--legacy" data-cs-cliq-pane="phone" hidden aria-hidden="true">' +
       '<div class="portal-cs-cliq__module-head"><div class="portal-cs-cliq__pane-title-row"><h2>Phone</h2><span class="portal-cs-cliq__pane-badge">Live</span></div>' +
       '<p class="muted portal-cs-cliq__module-sub">Voice, video, and meeting invites from your open chat — the same controls as in the thread header.</p></div>' +
       '<div class="portal-cs-cliq__module-body">' +
@@ -292,9 +321,12 @@
       '<span class="dayops-screen-nav__label">Portal documents</span>' +
       '<span class="dayops-screen-nav__desc">Policies, uploads, and shared club files</span>' +
       "</div></div></button>" +
+      '<div class="portal-cs-cliq-files-search-wrap">' +
+      '<input type="search" id="csCliqFilesSearch" class="portal-cs-cliq-files-search" placeholder="Search files…" autocomplete="off" />' +
+      "</div>" +
       '<div class="portal-cs-cliq-files-section">' +
       '<p class="portal-cs-cliq-files-section__title">Recent from chat</p>' +
-      '<div id="csCliqFilesGallery" class="portal-cs-cliq-files-gallery"></div>' +
+      '<div id="csCliqFilesGallery" class="portal-cs-cliq-files-list"></div>' +
       "</div></div></div>" +
       '<div id="csCliqCalendarPane" class="portal-cs-cliq__pane" data-cs-cliq-pane="calendar" hidden>' +
       '<div class="portal-cs-cliq__module-head"><div class="portal-cs-cliq__pane-title-row"><h2>Meetings</h2><span class="portal-cs-cliq__pane-badge">Calendar</span></div>' +
@@ -329,7 +361,7 @@
   function setRailPane(pane) {
     var root = document.getElementById("csCliqRoot");
     if (!root) return;
-    var allowed = { chats: 1, channels: 1, phone: 1, files: 1, calendar: 1, soon: 1 };
+    var allowed = { chats: 1, channels: 1, phone: 1, files: 1, calendar: 1, teams: 1, support: 1, operations: 1, soon: 1 };
     if (!allowed[pane]) pane = "chats";
     root.querySelectorAll("[data-cs-cliq-rail]").forEach(function (btn) {
       var id = btn.getAttribute("data-cs-cliq-rail");
@@ -340,12 +372,18 @@
     var phone = document.getElementById("csCliqPhonePane");
     var files = document.getElementById("csCliqFilesPane");
     var calendar = document.getElementById("csCliqCalendarPane");
+    var teams = document.getElementById("csCliqTeamsPane");
+    var support = document.getElementById("csCliqSupportPane");
+    var operations = document.getElementById("csCliqOperationsPane");
     var soon = document.getElementById("csCliqSoonPane");
     if (chats) chats.hidden = pane !== "chats";
     if (channels) channels.hidden = pane !== "channels";
-    if (phone) phone.hidden = pane !== "phone";
+    if (phone) phone.hidden = true;
     if (files) files.hidden = pane !== "files";
     if (calendar) calendar.hidden = pane !== "calendar";
+    if (teams) teams.hidden = pane !== "teams";
+    if (support) support.hidden = pane !== "support";
+    if (operations) operations.hidden = pane !== "operations";
     if (soon) soon.hidden = pane !== "soon";
     if (pane === "phone") syncPhonePaneContext();
     if (pane === "chats" && typeof cfg.initChat === "function") {
@@ -362,27 +400,25 @@
     if (global.portalDmIcons && typeof global.portalDmIcons.upgrade === "function") {
       global.portalDmIcons.upgrade(root);
     }
+    if (global.portalCsCliqHubRoles && typeof global.portalCsCliqHubRoles.applyRootChrome === "function") {
+      global.portalCsCliqHubRoles.applyRootChrome();
+    }
 
     var pendingPane = String(global.__PORTAL_CS_CLIQ_PENDING_PANE || "chats").trim();
-    if (
-      pendingPane !== "channels" &&
-      pendingPane !== "phone" &&
-      pendingPane !== "files" &&
-      pendingPane !== "calendar" &&
-      pendingPane !== "soon"
-    ) {
-      pendingPane = "chats";
-    }
+    var allowedPending = { chats: 1, channels: 1, files: 1, calendar: 1, teams: 1, support: 1, operations: 1, soon: 1 };
+    if (!allowedPending[pendingPane]) pendingPane = "chats";
     global.__PORTAL_CS_CLIQ_PENDING_PANE = "";
     setRailPane(pendingPane);
 
-    root.querySelectorAll("[data-cs-cliq-rail]").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        if (btn.disabled) return;
-        var rail = btn.getAttribute("data-cs-cliq-rail") || "chats";
-        setRailPane(rail);
+    var railNav = root.querySelector(".portal-cs-cliq__rail");
+    if (railNav && railNav.dataset.portalCsCliqRailBound !== "1") {
+      railNav.dataset.portalCsCliqRailBound = "1";
+      railNav.addEventListener("click", function (ev) {
+        var btn = ev.target.closest("[data-cs-cliq-rail]");
+        if (!btn || btn.disabled) return;
+        setRailPane(btn.getAttribute("data-cs-cliq-rail") || "chats");
       });
-    });
+    }
 
     root.querySelectorAll("[data-cs-cliq-workspace]").forEach(function (btn) {
       btn.addEventListener("click", function () {

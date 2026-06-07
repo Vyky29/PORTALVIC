@@ -1698,14 +1698,17 @@
     panel.innerHTML =
       '<div class="portal-dm-meeting-panel-card">' +
       '<h4 id="portalStaffChatMeetingTitle">Schedule meeting</h4>' +
-      '<p class="portal-dm-meeting-panel-sub">Everyone gets a join button in this chat. The meeting opens inside the portal.</p>' +
-      '<label class="portal-dm-meeting-field"><span>Title</span><input type="text" id="portalStaffChatMeetingTitleInput" maxlength="120" placeholder="e.g. Weekly handover" /></label>' +
+      '<p class="portal-dm-meeting-panel-sub" id="portalStaffChatMeetingSub">Everyone gets a join button in this chat. The meeting opens inside the portal.</p>' +
+      '<label class="portal-dm-meeting-field"><span>Meeting title</span><input type="text" id="portalStaffChatMeetingTitleInput" maxlength="120" placeholder="e.g. Weekly handover" /></label>' +
       '<label class="portal-dm-meeting-field"><span>Date</span><input type="date" id="portalStaffChatMeetingDateInput" /></label>' +
       '<label class="portal-dm-meeting-field"><span>Time</span><input type="time" id="portalStaffChatMeetingTimeInput" /></label>' +
+      '<label class="portal-dm-meeting-field"><span>Duration</span><select id="portalStaffChatMeetingDurationInput"><option value="15">15 minutes</option><option value="30" selected>30 minutes</option><option value="45">45 minutes</option><option value="60">1 hour</option></select></label>' +
+      '<label class="portal-dm-meeting-field"><span>Participants</span><input type="text" id="portalStaffChatMeetingParticipantsInput" readonly /></label>' +
+      '<label class="portal-dm-meeting-field"><span>Notes</span><textarea id="portalStaffChatMeetingNotesInput" rows="3" maxlength="500" placeholder="Optional context for attendees"></textarea></label>' +
       '<p id="portalStaffChatMeetingErr" class="portal-dm-meeting-err" hidden></p>' +
       '<div class="portal-dm-meeting-actions">' +
       '<button type="button" class="portal-dm-btn portal-dm-btn--ghost" id="portalStaffChatMeetingCancelBtn">Cancel</button>' +
-      '<button type="button" class="portal-dm-btn portal-dm-btn--primary" id="portalStaffChatMeetingSendBtn">Send invite</button>' +
+      '<button type="button" class="portal-dm-btn portal-dm-btn--primary" id="portalStaffChatMeetingSendBtn">Create meeting</button>' +
       "</div></div>";
 
     var threadWrap = document.getElementById(resolveCallUi().threadWrapId);
@@ -1731,9 +1734,13 @@
           var titleInp = document.getElementById("portalStaffChatMeetingTitleInput");
           var dateInp = document.getElementById("portalStaffChatMeetingDateInput");
           var timeInp = document.getElementById("portalStaffChatMeetingTimeInput");
+          var durationInp = document.getElementById("portalStaffChatMeetingDurationInput");
+          var notesInp = document.getElementById("portalStaffChatMeetingNotesInput");
           var title = titleInp ? String(titleInp.value || "").trim() : "";
           var dateVal = dateInp ? String(dateInp.value || "").trim() : "";
           var timeVal = timeInp ? String(timeInp.value || "").trim() : "";
+          var duration = durationInp ? String(durationInp.value || "30").trim() : "30";
+          var notes = notesInp ? String(notesInp.value || "").trim() : "";
           if (!title) {
             if (err) {
               err.textContent = "Enter a meeting title.";
@@ -1766,14 +1773,36 @@
             }
             return;
           }
+          var ui = global.__PORTAL_ADMIN_DM_UI || global.__PORTAL_INTERNAL_CHAT_UI || {};
+          var peerLabel = String(ui.peerLabel || "").trim();
+          var isStaffRequest =
+            global.portalCsCliqHubRoles &&
+            typeof global.portalCsCliqHubRoles.canScheduleMeetings === "function" &&
+            !global.portalCsCliqHubRoles.canScheduleMeetings();
           sendBtn.disabled = true;
           try {
+            if (isStaffRequest) {
+              if (global.portalCsCliqSupport && typeof global.portalCsCliqSupport.submitMeetingRequest === "function") {
+                global.portalCsCliqSupport.submitMeetingRequest({
+                  with: peerLabel,
+                  title: title,
+                  scheduledAt: scheduledAt,
+                  duration: duration + " min",
+                  notes: notes,
+                });
+              }
+              panel.hidden = true;
+              return;
+            }
+            var meetingTitle = title;
+            if (duration) meetingTitle += " (" + duration + " min)";
+            if (notes) meetingTitle += " ù " + notes;
             await sendCallInvite({
               client: ctx.client,
               threadId: ctx.threadId,
               groupId: ctx.groupId,
               kind: "meeting",
-              title: title,
+              title: meetingTitle,
               scheduledAt: scheduledAt,
             });
             panel.hidden = true;
@@ -1795,10 +1824,30 @@
 
   function openMeetingPanel() {
     var panel = ensureMeetingPanel();
+    var titleEl = document.getElementById("portalStaffChatMeetingTitle");
+    var subEl = document.getElementById("portalStaffChatMeetingSub");
     var titleInp = document.getElementById("portalStaffChatMeetingTitleInput");
     var dateInp = document.getElementById("portalStaffChatMeetingDateInput");
     var timeInp = document.getElementById("portalStaffChatMeetingTimeInput");
+    var participantsInp = document.getElementById("portalStaffChatMeetingParticipantsInput");
+    var notesInp = document.getElementById("portalStaffChatMeetingNotesInput");
+    var sendBtn = document.getElementById("portalStaffChatMeetingSendBtn");
     var err = document.getElementById("portalStaffChatMeetingErr");
+    var ui = global.__PORTAL_ADMIN_DM_UI || global.__PORTAL_INTERNAL_CHAT_UI || {};
+    var peerLabel = String(ui.peerLabel || "").trim() || "Current chat";
+    var isStaffRequest =
+      global.portalCsCliqHubRoles &&
+      typeof global.portalCsCliqHubRoles.canScheduleMeetings === "function" &&
+      !global.portalCsCliqHubRoles.canScheduleMeetings();
+    if (titleEl) titleEl.textContent = isStaffRequest ? "Request meeting" : "Schedule meeting";
+    if (subEl) {
+      subEl.textContent = isStaffRequest
+        ? "Your request is routed to Management. They will confirm a time in your inbox."
+        : "Everyone gets a join button in this chat. The meeting opens inside the portal.";
+    }
+    if (sendBtn) sendBtn.textContent = isStaffRequest ? "Request meeting" : "Create meeting";
+    if (participantsInp) participantsInp.value = peerLabel;
+    if (notesInp) notesInp.value = "";
     if (err) {
       err.hidden = true;
       err.textContent = "";

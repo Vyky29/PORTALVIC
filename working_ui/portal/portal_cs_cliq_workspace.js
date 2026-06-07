@@ -142,8 +142,18 @@
     if (pane === "calendar" && global.portalCsCliqMeetingsHub && typeof global.portalCsCliqMeetingsHub.refresh === "function") {
       void global.portalCsCliqMeetingsHub.refresh();
     }
-    if (pane === "phone" && global.PortalAdminCsCliq && typeof global.PortalAdminCsCliq.syncPhonePaneContext === "function") {
-      global.PortalAdminCsCliq.syncPhonePaneContext();
+    if (pane === "teams" && global.portalCsCliqTeams && typeof global.portalCsCliqTeams.refresh === "function") {
+      void global.portalCsCliqTeams.refresh();
+    }
+    if (pane === "support" && global.portalCsCliqSupport && typeof global.portalCsCliqSupport.refresh === "function") {
+      global.portalCsCliqSupport.refresh();
+    }
+    if (pane === "operations") {
+      var ch = global.__PORTAL_ADMIN_DM_CHANNEL || "staff_lead";
+      var wrapQ = document.getElementById("csCliqCeoQuickWrap");
+      if (wrapQ) wrapQ.hidden = ch !== "ceo_exec";
+      var wrapSl = document.getElementById("csCliqStaffLeadsQuickWrap");
+      if (wrapSl) wrapSl.hidden = ch !== "staff_lead";
     }
     syncChannelsChrome();
   }
