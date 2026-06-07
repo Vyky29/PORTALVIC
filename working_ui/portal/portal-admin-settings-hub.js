@@ -500,7 +500,7 @@
       '<button type="button" class="btn btn--sec btn--sm" id="portalAdminHelpUnansweredBtn" style="margin-top:12px">View full log</button></div>' +
       '<div class="card card-pad" style="margin-bottom:14px;border-color:#b8e6cf;background:linear-gradient(180deg,#f4fdf8,#e8f8ef)">' +
       '<h3 style="margin:0 0 8px;font-size:14px">Parent notify — test email</h3>' +
-      '<p class="muted" style="margin:0 0 10px;max-width:42rem;overflow-wrap:break-word">Send a test message via <strong>Google SMTP</strong> (<code>info@clubsensational.org</code>). Use this before messaging parents from Bookings or Scheduling.</p>' +
+      '<p class="muted" style="margin:0 0 10px;max-width:42rem;overflow-wrap:break-word">Send a test message via <strong>Google SMTP</strong> (<code>info@clubsensational.org</code>). After it works, use <strong>Notify parent</strong> from <strong>Bookings</strong>, <strong>Scheduling</strong>, or an <strong>Ops order</strong> line — not the old demo-only confirmation button.</p>' +
       '<label class="muted" for="portalAdminParentNotifyTestEmail" style="display:block;margin-bottom:6px">Send to</label>' +
       '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;min-width:0">' +
       '<input id="portalAdminParentNotifyTestEmail" class="inp" type="email" autocomplete="email" style="flex:1 1 220px;min-width:0;max-width:100%" value="' +

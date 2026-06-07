@@ -8496,6 +8496,60 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         'ClubSENsational'
       );
     }
+    function notifyParentMessageBookingConfirmation(slot, meta, svc){
+      var client = String(slot.clientDisplay || (svc && svc.pax) || 'this participant').trim();
+      var when = String(slot.whenLabel || '').trim();
+      var venue = String(slot.venue || '').trim();
+      var service = String((meta && meta.service) || slot.programme || (svc && svc.programme) || 'sessions').trim();
+      var ref = svc && svc.bookingRef ? String(svc.bookingRef).trim() : '';
+      return (
+        'Hi'+(meta && meta.parentCarerName ? ' '+meta.parentCarerName : '')+',\n\n'+
+        'This is ClubSENsational.\n\n'+
+        'This confirms '+client+"'s booking for "+service+(when ? (' ('+when+')') : '')+(venue ? (' at '+venue+'.') : '.')+
+        (ref ? (' Booking ref: '+ref+'.') : '')+'\n\n'+
+        'If anything looks wrong, reply to this email and we will help.\n\n'+
+        'Thank you,\n'+
+        'ClubSENsational'
+      );
+    }
+    function portalCommsOrderOpenParentNotify(svcIdx){
+      var rawKey = String(state.commsOrderDetailKey || '').trim();
+      var pack = portalCommsOrderResolvePack(rawKey);
+      var idx = parseInt(String(svcIdx != null ? svcIdx : ''), 10);
+      if(!pack || !Array.isArray(pack.services) || Number.isNaN(idx) || idx < 0 || idx >= pack.services.length){
+        try{ window.alert('Could not open notify — refresh the order and try again.'); }catch(_e){}
+        return;
+      }
+      var svc = pack.services[idx];
+      var pax = String(svc.pax || '').trim();
+      var clientDisplay = pax || String(pack.parentName || 'Participant').trim();
+      var slot = {
+        demoId: 'comms-' + String(svc.bookingRef || idx).replace(/\s+/g, '-'),
+        clientDisplay: clientDisplay,
+        sessionDate: booking.selectedDate || isoDateLocal(new Date()),
+        venue: String(svc.venue || '').trim(),
+        programme: String(svc.programme || '').trim(),
+        whenLabel: String(svc.schedule || '').trim()
+      };
+      var bal = Math.max(0, (svc.amount || 0) - (svc.paid || 0));
+      var kind = bal > 0.02 ? 'payment_due' : 'booking_confirmation';
+      var meta = {
+        parentCarerName: String(pack.parentName || svc.parent || '').trim(),
+        service: svc.programme
+      };
+      meta = adminParentNotifyPrefillFromDirectory(meta, slot);
+      var body = kind === 'payment_due'
+        ? notifyParentMessagePayment(slot, null, meta, { outstanding: bal, nextDue: null })
+        : notifyParentMessageBookingConfirmation(slot, meta, svc);
+      openParentNotifyModal({
+        kind: kind,
+        slot: slot,
+        dateIso: slot.sessionDate,
+        defaultChannel: 'email',
+        hideSaveContact: true,
+        notifyPack: { ov: null, meta: meta, snap: { outstanding: bal, nextDue: null }, body: body }
+      });
+    }
     /**
      * Staff-only: compose a parent message and open WhatsApp / email / copy. Parents do not log into this portal.
      * opts.kind: payment_due | instructor_change
@@ -8508,32 +8562,47 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var dateIso = String((opts && opts.dateIso) || slot.sessionDate || booking.selectedDate || isoDateLocal(new Date())).trim();
       var useSchedOv = !!(opts && opts.useSchedOverrides);
       var prevOvr = booking.overrides;
-      if(useSchedOv && Array.isArray(sched.overrides)) booking.overrides = sched.overrides;
       var pack = null;
-      try{
-        pack = bookingWithLoadedDate(dateIso, function(){
-          var ov = findOverrideForSlot(slot, booking.overrides);
-          var meta = bookingMetaForSlot(slot, ov);
-          var snap = kind === 'payment_due' ? bookingFinanceSnapshot(slot) : null;
-          var newName = (opts && opts.newInstructorName) ? String(opts.newInstructorName).trim() : '';
-          if(kind === 'instructor_change' && !newName){
-            var ci = $('schedFormCoverInput');
-            if(ci && ci.value) newName = String(ci.value).trim();
-          }
-          var body = kind === 'instructor_change'
-            ? notifyParentMessageInstructor(slot, ov, meta, newName)
-            : notifyParentMessagePayment(slot, ov, meta, snap || { outstanding:0, nextDue:null });
-          return { ov: ov, meta: meta, snap: snap, body: body };
-        });
-      }finally{
-        booking.overrides = prevOvr;
+      if(opts && opts.notifyPack){
+        pack = opts.notifyPack;
+      }else{
+        if(useSchedOv && Array.isArray(sched.overrides)) booking.overrides = sched.overrides;
+        try{
+          pack = bookingWithLoadedDate(dateIso, function(){
+            var ov = findOverrideForSlot(slot, booking.overrides);
+            var meta = bookingMetaForSlot(slot, ov);
+            var snap = kind === 'payment_due' ? bookingFinanceSnapshot(slot) : null;
+            var newName = (opts && opts.newInstructorName) ? String(opts.newInstructorName).trim() : '';
+            if(kind === 'instructor_change' && !newName){
+              var ci = $('schedFormCoverInput');
+              if(ci && ci.value) newName = String(ci.value).trim();
+            }
+            var body = kind === 'instructor_change'
+              ? notifyParentMessageInstructor(slot, ov, meta, newName)
+              : notifyParentMessagePayment(slot, ov, meta, snap || { outstanding:0, nextDue:null });
+            return { ov: ov, meta: meta, snap: snap, body: body };
+          });
+        }finally{
+          booking.overrides = prevOvr;
+        }
       }
       if(!pack) return;
       var meta = adminParentNotifyPrefillFromDirectory(pack.meta, slot);
       var subj = kind === 'instructor_change'
         ? 'Instructor update · '+String(slot.clientDisplay || '').trim()
-        : 'Payment reminder · '+String(slot.clientDisplay || '').trim();
+        : kind === 'booking_confirmation'
+          ? 'Booking confirmation · '+String(slot.clientDisplay || '').trim()
+          : 'Payment reminder · '+String(slot.clientDisplay || '').trim();
+      var defaultChannel = (opts && opts.defaultChannel) ? String(opts.defaultChannel) : 'email';
+      if(defaultChannel !== 'email' && defaultChannel !== 'whatsapp' && defaultChannel !== 'both') defaultChannel = 'email';
+      var hideSaveContact = !!(opts && opts.hideSaveContact);
       portalParentNotifyConfigureOnce();
+      function pnFormatErr(err, data){
+        if(window.PortalParentNotifySend && typeof window.PortalParentNotifySend.formatNotifyError === 'function'){
+          return window.PortalParentNotifySend.formatNotifyError(err, data);
+        }
+        return String(err || 'send failed').replace(/_/g, ' ');
+      }
       function pnMaybeSaveContact(){
         if(!$('pnSaveContact') || !$('pnSaveContact').checked) return;
         bookingSaveMetaMergeSlot(dateIso, slot.demoId, {
@@ -8553,14 +8622,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '</div>'+
         '<fieldset style="margin:12px 0 0;padding:0;border:0;min-width:0"><legend class="muted" style="margin-bottom:6px">Send channel</legend>'+
         '<div style="display:flex;flex-wrap:wrap;gap:12px;min-width:0">'+
-        '<label style="display:inline-flex;align-items:center;gap:6px;min-width:0"><input type="radio" name="pnChannel" id="pnChannelEmail" value="email" /> <span>Email</span></label>'+
-        '<label style="display:inline-flex;align-items:center;gap:6px;min-width:0"><input type="radio" name="pnChannel" id="pnChannelWa" value="whatsapp" /> <span>WhatsApp</span></label>'+
-        '<label style="display:inline-flex;align-items:center;gap:6px;min-width:0"><input type="radio" name="pnChannel" id="pnChannelBoth" value="both" checked /> <span>Both</span></label>'+
+        '<label style="display:inline-flex;align-items:center;gap:6px;min-width:0"><input type="radio" name="pnChannel" id="pnChannelEmail" value="email"'+(defaultChannel==='email'?' checked':'')+' /> <span>Email</span></label>'+
+        '<label style="display:inline-flex;align-items:center;gap:6px;min-width:0"><input type="radio" name="pnChannel" id="pnChannelWa" value="whatsapp"'+(defaultChannel==='whatsapp'?' checked':'')+' /> <span>WhatsApp</span></label>'+
+        '<label style="display:inline-flex;align-items:center;gap:6px;min-width:0"><input type="radio" name="pnChannel" id="pnChannelBoth" value="both"'+(defaultChannel==='both'?' checked':'')+' /> <span>Both</span></label>'+
         '</div></fieldset>'+
         '<label class="muted" for="pnBody" style="display:block;margin-top:12px">Message</label>'+
         '<textarea class="txa" id="pnBody" style="min-height:200px;max-width:100%">'+esc(pack.body)+'</textarea>'+
         '<p class="muted" id="pnSendStatus" style="margin:8px 0 0;min-width:0;overflow-wrap:break-word;display:none" role="status"></p>'+
-        '<label style="display:flex;align-items:center;gap:8px;margin-top:10px"><input type="checkbox" id="pnSaveContact" /> <span class="muted">Save parent contact on this booking slot ('+esc(dateIso)+')</span></label>'+
+        (hideSaveContact ? '' :
+        '<label style="display:flex;align-items:center;gap:8px;margin-top:10px"><input type="checkbox" id="pnSaveContact" /> <span class="muted">Save parent contact on this booking slot ('+esc(dateIso)+')</span></label>')+
         '</div>'+
         '<div class="modal-f" style="flex-wrap:wrap;gap:8px">'+
         '<button type="button" class="btn btn--ghost" id="pnClose">Close</button>'+
@@ -8572,7 +8642,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       );
       function pnSelectedChannel(){
         var r = document.querySelector('input[name="pnChannel"]:checked');
-        return r && r.value ? String(r.value) : 'both';
+        return r && r.value ? String(r.value) : defaultChannel;
       }
       function pnUpdateChannelButtons(){
         var em = (($('pnParentEmail') && $('pnParentEmail').value) || '').trim();
@@ -8650,12 +8720,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(btn){ btn.disabled = false; btn.textContent = 'Send now'; }
           pnUpdateChannelButtons();
           if(!res || !res.ok){
-            var err = (res && res.error) ? String(res.error) : 'send_failed';
+            var err = pnFormatErr((res && res.error) ? res.error : 'send_failed', res && res.data);
             if(statusEl){
               statusEl.style.display = 'block';
-              statusEl.textContent = 'Send failed: ' + err.replace(/_/g, ' ');
+              statusEl.textContent = err;
             }else{
-              alert('Send failed: ' + err);
+              alert(err);
             }
             return;
           }
@@ -17759,7 +17829,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<label class="muted" style="display:block;font-size:12px;margin-top:10px">Receipt</label><select class="sel" style="max-width:100%;width:100%;min-width:0;box-sizing:border-box;margin-top:4px"><option>Send Receipt</option><option>Do not send</option></select>'+
         '<div style="margin-top:14px"><button type="button" class="btn btn--pri comms-order-payact" style="width:100%;max-width:100%;box-sizing:border-box" data-comms-order-payact="'+escAttr(dataPayAttr)+'">'+payButtonLabel+'</button></div>';
     }
-    function portalCommsOrderStatusColumnHtml(svc, packSource){
+    function portalCommsOrderStatusColumnHtml(svc, packSource, svcIdx){
       svc = svc || {};
       var bal = (svc.amount||0)-(svc.paid||0);
       var paidUp = bal <= 0.02;
@@ -17773,10 +17843,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var liveNote = packSource && packSource !== 'demo'
         ? '<p class="muted" style="margin:0 0 8px;font-size:11px;line-height:1.4;overflow-wrap:break-word">Totals from <strong>Clients Payments</strong>'+(packSource==='client_payments' ? ' (live Supabase)' : ' (export)')+'.</p>'
         : '';
+      var idxNum = parseInt(String(svcIdx != null ? svcIdx : ''), 10);
+      var notifyBtn = (!Number.isNaN(idxNum) && idxNum >= 0)
+        ? '<button type="button" class="btn btn--sec btn--sm comms-order-notify-parent" data-comms-notify-idx="'+idxNum+'">Notify parent</button>'
+        : '';
       return '<div style="min-width:0">'+liveNote+
         '<p style="margin:0 0 8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0">'+chip+' <strong style="min-width:0;overflow-wrap:break-word">'+label+'</strong></p>'+
         warn+
-        '<button type="button" class="btn btn--sec btn--sm comms-order-sendconf">Send Confirmation Email</button>'+
+        notifyBtn+
         '</div>';
     }
     function portalCommsOrderFilterClosedSessionIsos(isos){
@@ -17925,7 +17999,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '<summary><span class="comms-order-paydetails__sum"><span class="comms-order-paydetails__mark" aria-hidden="true">&#128179;</span><span>Record a payment</span><span class="comms-order-paydetails__chev" aria-hidden="true"></span></span></summary>'+
           '<div style="padding:14px 16px 16px">'+
           '<div class="comms-order-paygrid">'+
-          portalCommsOrderStatusColumnHtml(svc, packSrc)+
+          portalCommsOrderStatusColumnHtml(svc, packSrc, idx)+
           '<div style="min-width:0">'+
           '<p class="muted" style="margin:0 0 10px;font-size:12px;line-height:1.45;min-width:0;overflow-wrap:break-word">Items <strong>'+money(svc.amount)+'</strong> · Paid <strong>'+money(svc.paid)+'</strong> · Balance <strong>'+money(bal)+'</strong></p>'+
           portalCommsOrderPayFieldsHtml(payAttr, payBtnLabel, bal, 'svc'+idx)+
@@ -18639,15 +18713,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           btn.disabled = false;
           btn.textContent = 'Send test email';
           if(!res || !res.ok){
-            var err = (res && res.error) ? String(res.error).replace(/_/g, ' ') : 'send failed';
+            var fmtErr = window.PortalParentNotifySend && typeof window.PortalParentNotifySend.formatNotifyError === 'function'
+              ? window.PortalParentNotifySend.formatNotifyError(res && res.error, res && res.data)
+              : String((res && res.error) || 'send failed').replace(/_/g, ' ');
             if(statusEl){
               statusEl.style.display = 'block';
               statusEl.className = 'submission-state is-error';
               statusEl.style.margin = '10px 0 0';
               statusEl.style.fontSize = '12px';
-              statusEl.textContent = 'Send failed: ' + err;
+              statusEl.textContent = fmtErr;
             }else{
-              alert('Send failed: ' + err);
+              alert(fmtErr);
             }
             return;
           }
@@ -21168,10 +21244,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             }catch(_e){}
           });
         });
-        root.querySelectorAll('.comms-order-mockbtn,.comms-order-sendconf').forEach(function(b){
+        root.querySelectorAll('.comms-order-mockbtn').forEach(function(b){
           b.addEventListener('click', function(ev){
             ev.preventDefault();
-            try{ window.alert('Demo only — this booking UI is not wired to ClassForKids in this file.'); }catch(_e){}
+            try{ window.alert('Demo only — invoice amount edits are not wired in this screen.'); }catch(_e){}
+          });
+        });
+        root.querySelectorAll('.comms-order-notify-parent').forEach(function(b){
+          b.addEventListener('click', function(ev){
+            ev.preventDefault();
+            var idx = parseInt(String(b.getAttribute('data-comms-notify-idx') || ''), 10);
+            portalCommsOrderOpenParentNotify(idx);
           });
         });
       }

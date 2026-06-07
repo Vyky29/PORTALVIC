@@ -84,14 +84,41 @@
       parts.push(data.whatsapp.status === 'sent_sms' ? 'SMS sent' : 'WhatsApp sent');
     }
     if (data.partial && data.warnings && data.warnings.length) {
-      parts.push('Warning: ' + data.warnings.join('; '));
+      parts.push('Warning: ' + data.warnings.map(formatNotifyError).join('; '));
     }
     return parts.length ? parts.join(' · ') : 'Sent.';
+  }
+
+  function formatNotifyError(err, data) {
+    var code = String(err == null ? '' : err).trim();
+    var map = {
+      session_expired: 'Your session expired — sign in again.',
+      unauthorized: 'Not allowed — sign in as admin or CEO.',
+      invalid_channel: 'Choose Email, WhatsApp, or Both.',
+      empty_body: 'Message is empty.',
+      missing_parent_email: 'Enter a parent email address.',
+      missing_parent_whatsapp: 'Enter a WhatsApp number (digits, with country code).',
+      missing_subject: 'Subject is missing.',
+      smtp_not_configured: 'Email is not configured — add SMTP secrets on the Portal Supabase project.',
+      whatsapp_not_configured: 'WhatsApp is not configured — choose Email only or add Meta secrets.',
+      meta_whatsapp_not_configured: 'WhatsApp is not configured — choose Email only or add Meta secrets.',
+      send_failed: 'Send failed — check Edge Function logs in Supabase.',
+      server_misconfigured: 'Server misconfigured — contact support.',
+      invalid_json: 'Invalid request — refresh and try again.',
+      method_not_allowed: 'Invalid request method.'
+    };
+    if (map[code]) return map[code];
+    if (data && Array.isArray(data.warnings) && data.warnings.length) {
+      return data.warnings.map(formatNotifyError).join('; ');
+    }
+    if (!code) return 'Send failed — try again.';
+    return code.replace(/_/g, ' ');
   }
 
   global.PortalParentNotifySend = {
     configure: configure,
     send: sendParentNotify,
-    formatSendResult: formatSendResult
+    formatSendResult: formatSendResult,
+    formatNotifyError: formatNotifyError
   };
 })(typeof window !== 'undefined' ? window : globalThis);
