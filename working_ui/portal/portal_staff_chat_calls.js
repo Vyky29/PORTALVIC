@@ -96,9 +96,19 @@
     return h + " hr" + (m ? " " + m + " min" : "");
   }
 
-  function formatCallEndLabel(kind, durationSec) {
+  function formatCallEndParts(kind, durationSec) {
     var kindLabel = humanLabel(String(kind || "video"), "");
-    return kindLabel + " ? " + formatCallDuration(durationSec);
+    var duration = formatCallDuration(durationSec);
+    return {
+      kind: kindLabel,
+      duration: duration,
+      title: kindLabel + " ended",
+      summary: kindLabel + " ended ? " + duration,
+    };
+  }
+
+  function formatCallEndLabel(kind, durationSec) {
+    return formatCallEndParts(kind, durationSec).summary;
   }
 
   function encodeCallEndBody(data) {
@@ -391,8 +401,11 @@
       ".portal-incoming-call__btn--decline{background:rgba(255,255,255,.12);color:#fff}" +
       ".portal-incoming-call__btn--answer{background:#16a34a;color:#fff}" +
       ".portal-dm-call-end-row{display:flex;justify-content:center;width:100%;padding:6px 12px;box-sizing:border-box}" +
-      ".portal-dm-call-end{display:inline-flex;align-items:center;justify-content:center;gap:6px;max-width:min(100%,22rem);padding:6px 12px;border-radius:999px;background:rgba(23,50,71,.08);color:#667781;font-size:12px;font-weight:600;line-height:1.35;text-align:center}" +
-      ".portal-dm-call-end-icon{font-size:14px;line-height:1;opacity:.92;flex-shrink:0}" +
+      ".portal-dm-call-end{display:inline-flex;align-items:center;justify-content:flex-start;gap:8px;max-width:min(100%,22rem);padding:8px 14px;border-radius:14px;background:rgba(23,50,71,.07);border:1px solid rgba(23,50,71,.08);color:#667781;font-size:12px;line-height:1.35;text-align:left;min-width:0}" +
+      ".portal-dm-call-end-icon{font-size:15px;line-height:1;opacity:.92;flex-shrink:0}" +
+      ".portal-dm-call-end-copy{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0}" +
+      ".portal-dm-call-end-title{font-size:12px;font-weight:700;color:#334155;overflow-wrap:break-word}" +
+      ".portal-dm-call-end-dur{font-size:11px;font-weight:600;color:#64748b;letter-spacing:.02em}" +
       ".portal-inapp-call-manage{padding:8px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);color:#fff;font:inherit;font-size:13px;font-weight:700;cursor:pointer}" +
       ".portal-inapp-call-manage[hidden]{display:none!important}" +
       ".portal-inapp-call-roster{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;background:rgba(15,23,42,.97);padding:12px 14px max(12px,env(safe-area-inset-bottom));box-sizing:border-box}" +
@@ -1475,6 +1488,7 @@
     var kind = String(data.kind || "video");
     var icon =
       kind === "meeting" ? "\uD83D\uDCC5" : kind === "video" ? "\uD83D\uDCF9" : "\uD83D\uDCDE";
+    var parts = formatCallEndParts(kind, data.durationSec);
     var row = document.createElement("div");
     row.className = "portal-dm-call-end-row";
     row.setAttribute("role", "status");
@@ -1483,9 +1497,13 @@
       '<span class="portal-dm-call-end-icon" aria-hidden="true">' +
       esc(icon) +
       "</span>" +
-      "<span>" +
-      esc(formatCallEndLabel(kind, data.durationSec)) +
-      "</span></div>";
+      '<span class="portal-dm-call-end-copy">' +
+      '<span class="portal-dm-call-end-title">' +
+      esc(parts.title) +
+      "</span>" +
+      '<span class="portal-dm-call-end-dur">' +
+      esc(parts.duration) +
+      "</span></span></div>";
     return row;
   }
 
@@ -1917,7 +1935,7 @@
       '<div class="portal-leads-call-picker__card">' +
       '<div class="portal-leads-call-picker__head">' +
       '<h3 id="portalLeadsCallPickerTitle">Call selected leads</h3>' +
-      '<button type="button" class="portal-leads-call-picker__close" data-portal-leads-call-close="1" aria-label="Close">?</button>' +
+      '<button type="button" class="portal-leads-call-picker__close" data-portal-leads-call-close="1" aria-label="Close">×</button>' +
       "</div>" +
       '<p class="portal-leads-call-picker__sub">Choose who gets a join invite. Only selected leads are rung ? not the whole channel.</p>' +
       '<div class="portal-leads-call-picker__tools">' +

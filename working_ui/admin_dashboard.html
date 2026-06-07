@@ -20571,7 +20571,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(mt === 'file') return 'Document';
       var body = String(row.body || '').trim();
       if(body.indexOf('[[portal-staff-call:') >= 0) return 'Call invite';
-      if(body.indexOf('[[portal-staff-call-end:') >= 0) return 'Call ended';
+      if(body.indexOf('[[portal-staff-call-end:') >= 0){
+        if(window.portalStaffChatCalls && typeof window.portalStaffChatCalls.parseCallEndPayload === 'function'){
+          var endData = window.portalStaffChatCalls.parseCallEndPayload(body);
+          if(endData && typeof window.portalStaffChatCalls.formatCallEndLabel === 'function'){
+            return window.portalStaffChatCalls.formatCallEndLabel(endData.kind, endData.durationSec);
+          }
+        }
+        return 'Call ended';
+      }
       body = body.replace(/\s+/g, ' ');
       if(body.length > 80) body = body.slice(0, 79).trimEnd() + '\u2026';
       return body || 'Message';
@@ -25530,7 +25538,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       document.body.appendChild(s);
     })();
   </script>
-  <script src="/portal/portal_staff_chat_calls.js?v=20260605-channel-picker-attach"></script>
+  <script src="/portal/portal_staff_chat_calls.js?v=20260624-call-end-label"></script>
   <script src="/portal/portal_incoming_call_push.js?v=20260622-incoming-call"></script>
   <script src="/portal/portal_floating_internal_chat.js?v=20260605-admin-chat"></script>
 </body>
