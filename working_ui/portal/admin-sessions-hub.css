@@ -1257,15 +1257,35 @@
     .ash-filter-apply-btn { flex-shrink: 0; align-self: flex-end; }
     .ash-btn--secondary { background: #e2e8f0; border-color: #cbd5e1; color: var(--navy); }
     .ash-btn--secondary:hover { background: #cbd5e1; }
+    .ash-table--feedback th {
+      text-align: center;
+      vertical-align: middle;
+    }
+    .ash-table--feedback td {
+      text-align: center;
+      vertical-align: middle;
+    }
+    .ash-table--feedback .ash-cell-sub { text-align: center; }
+    .ash-table--feedback .ash-regulation-group { justify-content: center; }
     .ash-table--feedback .ash-cell-note { max-width: min(260px, 28vw); white-space: normal; line-height: 1.35; font-size: 12px; hyphens: auto; }
     .ash-table--notes-only .ash-cell-note { max-width: min(520px, 55vw); }
-    .ash-table--feedback td.ash-cell-instructor { text-align: right; white-space: nowrap; }
+    .ash-table--feedback th:nth-child(6),
+    .ash-table--feedback th:nth-child(7),
+    .ash-table--feedback td:nth-child(6),
+    .ash-table--feedback td:nth-child(7) {
+      text-align: left;
+      vertical-align: top;
+    }
+    .ash-table--feedback.ash-table--notes-only th:nth-child(3),
+    .ash-table--feedback.ash-table--notes-only td:nth-child(3) {
+      text-align: left;
+      vertical-align: top;
+    }
+    .ash-table--feedback td.ash-cell-instructor { text-align: center; white-space: nowrap; }
     .ash-table--feedback .ash-emotion { width: 14px; height: 14px; }
     .ash-regulation-group { display: inline-flex; flex-wrap: wrap; gap: 5px; align-items: center; vertical-align: middle; }
     .ash-regulation-face { display: inline-flex; width: 24px; height: 24px; flex-shrink: 0; line-height: 0; }
     .ash-regulation-face svg { width: 24px; height: 24px; display: block; }
-    .ash-table--feedback th:nth-child(4),
-    .ash-table--feedback td:nth-child(4) { text-align: center; }
     .ash-table--feedback th.ash-th-star { text-align: center; vertical-align: middle; }
     .ash-th-star__ico { display: inline-flex; align-items: center; justify-content: center; color: var(--navy); }
     .ash-th-star__ico svg { display: block; }
