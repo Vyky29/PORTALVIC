@@ -6751,7 +6751,10 @@
     }
 
     .sheet-head{padding:12px 18px 0;text-align:center}
-    .sheet-handle{width:54px;height:6px;border-radius:999px;background:#d9e3ee;margin:0 auto 14px}
+    .sheet-handle{width:54px;height:6px;border-radius:999px;background:#d9e3ee;margin:0 auto 14px;cursor:pointer;touch-action:none;-webkit-tap-highlight-color:transparent;position:relative}
+    .sheet-handle::before{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:max(72px,100%);height:32px;border-radius:999px}
+    .sheet-handle:focus-visible{outline:2px solid var(--ink);outline-offset:4px}
+    .sheet-head:has(.sheet-handle[role="button"]){cursor:default}
     .sheet h3{margin:0 0 8px;font-size:18px;color:var(--ink)}
     .sheet p{margin:0 0 14px;font-size:13px;color:var(--muted)}
     .sheet-body{padding:0 16px 8px}

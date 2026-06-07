@@ -1034,6 +1034,7 @@
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260616-michelle-only"></script>
   <script src="/portal/portal_dm_voice.js?v=20260602-feedback-voice-fix"></script>
   <script src="/portal/portal_staff_chat_calls.js?v=20260607-caller-id-fix"></script>
+  <script src="/portal/portal_sheet_back.js?v=20260607-sheet-back"></script>
   <script src="/portal/portal_lead_staff_chat_directory.js?v=20260619-lead-staff-rls"></script>
   <script>
     console.log("ABSENT FIX VERSION LOADED 20260425");
@@ -11049,11 +11050,15 @@
       document.body.classList.toggle('portal-sessions-overview-open', !!sessionsOverviewOpen);
       if(typeof syncDockQuickMenuAttention === 'function') syncDockQuickMenuAttention();
     }
-    function openSheet(id){
+    function openSheet(id, opts){
+      opts = opts || {};
+      if(typeof portalRecordSheetNavigation === 'function' && !opts.skipNavRecord){
+        portalRecordSheetNavigation(id);
+      }
       if(typeof portalAnnouncementLockActive === 'function' && portalAnnouncementLockActive() && id !== 'announcementsSheet'){
         closeSheet({ bypassAnnouncementLock: true });
       }
-      if(closeSheet() === false){
+      if(closeSheet({ preserveNavStack: true }) === false){
         if(id === 'announcementsSheet' && document.getElementById('announcementsSheet')?.classList.contains('open')){
           if(typeof renderAnnouncementsSheetContent === 'function') renderAnnouncementsSheetContent();
           syncDockNavContext();
@@ -11173,6 +11178,7 @@
       syncPortalInternalChatImmersive();
       syncDockNavContext();
       if(typeof syncPortalIosAlertPreviewStack === 'function') syncPortalIosAlertPreviewStack();
+      if(typeof portalOnSheetClosed === 'function') portalOnSheetClosed(opts || {});
       return true;
     }
 
@@ -11793,14 +11799,24 @@
       if(genSh && genSh.classList.contains('open')){
         closeClientGeneralSheet();
       }
-      const openSheets = $$('.sheet.open');
-      const onlyMenuOpen = openSheets.length === 1 && openSheets[0].id === 'menuSheet';
-      if(onlyMenuOpen){
-        closeSheet({ bypassAnnouncementLock: true });
+      const menuOpen = document.getElementById('menuSheet')?.classList.contains('open');
+      if(menuOpen){
+        if(typeof portalNavigateSheetBack === 'function') portalNavigateSheetBack();
+        else closeSheet({ bypassAnnouncementLock: true });
+        return;
+      }
+      if(typeof portalQuickMenuDockShouldBack === 'function' && portalQuickMenuDockShouldBack()){
+        if(typeof portalNavigateSheetBack === 'function') portalNavigateSheetBack();
+        else closeSheet({ bypassAnnouncementLock: true });
         return;
       }
       openSheet('menuSheet');
     }
+    window.openSheet = openSheet;
+    window.closeSheet = closeSheet;
+    window.closeClientGeneralSheet = closeClientGeneralSheet;
+    window.closeClientSessionsOverviewSheet = closeClientSessionsOverviewSheet;
+    if(typeof portalInitSheetBackNavigation === 'function') portalInitSheetBackNavigation();
     document.getElementById('dockDashboardTile')?.addEventListener('click', handleDashboardDockClick);
     document.getElementById('dockQuickMenuTile')?.addEventListener('click', handleQuickMenuDockClick);
     const avatarWrapEl = document.getElementById('avatarWrap');
