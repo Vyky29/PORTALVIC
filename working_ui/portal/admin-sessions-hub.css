@@ -1266,6 +1266,9 @@
     .ash-regulation-face svg { width: 24px; height: 24px; display: block; }
     .ash-table--feedback th:nth-child(4),
     .ash-table--feedback td:nth-child(4) { text-align: center; }
+    .ash-table--feedback th.ash-th-star { text-align: center; vertical-align: middle; }
+    .ash-th-star__ico { display: inline-flex; align-items: center; justify-content: center; color: var(--navy); }
+    .ash-th-star__ico svg { display: block; }
     .ash-table-title--sub { margin-top: 22px; font-size: 14px; font-weight: 700; color: var(--muted); }
     .ash-table-wrap--sub { margin-bottom: 8px; }
     .ash-table--compact td, .ash-table--compact th { padding: 8px 10px; font-size: 12px; }
