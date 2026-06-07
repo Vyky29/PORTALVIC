@@ -218,14 +218,33 @@
   async function deletePhoto(photoId, storagePath) {
     var client = cfg.getClient();
     if (!client) throw new Error("Sign in required.");
+    photoId = String(photoId || "").trim();
     storagePath = String(storagePath || "").trim();
+    if (!photoId) throw new Error("Missing photo id.");
+
     if (storagePath) {
       var rm = await client.storage.from(ACH_BUCKET).remove([storagePath]);
-      if (rm.error) throw rm.error;
+      if (rm.error && !/not found|object not found/i.test(String(rm.error.message || ""))) {
+        console.warn("[achievements] storage remove", rm.error);
+      }
     }
+
     var res = await client.rpc("portal_admin_delete_achievement_photo", {
       p_photo_id: photoId,
     });
+    if (
+      res.error &&
+      /direct deletion from storage|storage tables is not allowed/i.test(
+        String(res.error.message || "")
+      )
+    ) {
+      var del = await client
+        .from("portal_participant_achievement_photos")
+        .delete()
+        .eq("id", photoId);
+      if (del.error) throw del.error;
+      return { id: photoId, storage_path: storagePath, storage_deleted: !!storagePath };
+    }
     if (res.error) throw res.error;
     return res.data;
   }
