@@ -872,9 +872,11 @@
       keys.push(feedbackUnitKey(slot));
       if (isMultiActivityService(slot.service)) {
         var area = sessionAreaKey(slot.area);
+        var inst = primaryInstructorKey(slot);
         if (area && area !== "default") keys.push(base + "|" + area);
         keys.push(base + "|" + serviceKey(slot.service));
         keys.push(base + "|" + serviceKey(slot.service) + "|" + area);
+        keys.push(base + "|" + serviceKey(slot.service) + "|" + area + "|" + inst);
       }
     }
     if (isAquaticService(slot.service)) {
@@ -1613,6 +1615,16 @@
     return true;
   }
 
+  /** Support vs swim instructor on the same MA block are separate feedback units. */
+  function primaryInstructorKey(slot) {
+    var raw = "";
+    if (slot.instructors && slot.instructors.length) raw = slot.instructors[0];
+    else if (slot.instructor_label) {
+      raw = String(slot.instructor_label).split(/[,/&]+|\s+and\s+/gi)[0];
+    }
+    return slugify(clean(raw)) || "staff";
+  }
+
   /** Day Centre: one feedback per client per calendar day (any worker, any roster block). */
   function feedbackUnitKey(slot) {
     var cid = canonicalClientSlug(slot.client_name);
@@ -1621,7 +1633,22 @@
       return slot.session_date + "|" + cid + "|day_centre";
     }
     var t = slot.time_start || normTimeKey(slot.time_slot);
-    if (isBespokeService(slot.service) || isMultiActivityService(slot.service)) {
+    if (isMultiActivityService(slot.service)) {
+      return (
+        slot.session_date +
+        "|" +
+        cid +
+        "|" +
+        t +
+        "|" +
+        serviceKey(slot.service) +
+        "|" +
+        sessionAreaKey(slot.area) +
+        "|" +
+        primaryInstructorKey(slot)
+      );
+    }
+    if (isBespokeService(slot.service)) {
       return (
         slot.session_date +
         "|" +
@@ -3097,10 +3124,27 @@
       .filter(function (u) {
         return u.slots.length > 0;
       });
-    var total = units.length;
+    var unitComplete = {};
+    var unitAbsent = {};
+    for (var ui = 0; ui < units.length; ui++) {
+      unitComplete[units[ui].key] = hub.feedbackUnitResolved(units[ui]);
+      unitAbsent[units[ui].key] = hub.feedbackUnitAbsent(units[ui]);
+    }
+    var displaySlots = overviewDisplaySlotsFromUnits(hub, slots);
+    var total = displaySlots.length;
     var rosterDone = 0;
-    for (var i = 0; i < units.length; i++) {
-      if (hub.feedbackUnitResolved(units[i])) rosterDone++;
+    for (var di = 0; di < displaySlots.length; di++) {
+      var slot = displaySlots[di];
+      var ukey = slot.feedback_unit_key || feedbackUnitKey(slot);
+      if (unitAbsent[ukey] || hub.slotIsAbsent(slot)) {
+        rosterDone++;
+        continue;
+      }
+      if (hub.slotHasCancellation(slot)) {
+        rosterDone++;
+        continue;
+      }
+      if (unitComplete[ukey] || hub.slotFeedbackComplete(slot)) rosterDone++;
     }
     if (this.mode === "feedback") {
       if (total > 0) return { total: total, done: rosterDone };
