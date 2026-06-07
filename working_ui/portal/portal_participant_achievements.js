@@ -189,8 +189,12 @@
     if (g && typeof g.pushMediaCaptureBypass === "function") {
       g.pushMediaCaptureBypass("participant-achievements-camera");
     }
+    if (g && typeof g.releaseCaptureUiBlockers === "function") {
+      g.releaseCaptureUiBlockers();
+    }
     try {
       document.documentElement.classList.remove("portal-screenshot-sensitive-hidden");
+      document.documentElement.classList.remove("portal-screenshot-worker-sensitive-hidden");
     } catch (_e) {}
   }
 
@@ -494,10 +498,11 @@
       setStatus("");
       state.cameraMode = "photo";
       setCameraFooterMode();
-      pushCameraMediaBypass();
       openCameraFullscreen();
+      pushCameraMediaBypass();
       showCameraLiveUi();
       state.stream = await acquireCameraStream(state.facingMode);
+      pushCameraMediaBypass();
       video.srcObject = state.stream;
       video.hidden = false;
       applyVideoZoom();

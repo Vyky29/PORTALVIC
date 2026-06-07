@@ -372,6 +372,12 @@
     queueSensitiveImagesFromNode(root);
   }
 
+  function releaseCaptureUiBlockers() {
+    hideMaskForce();
+    setWorkerSensitiveHidden(false);
+    setScreenshotWatermark(false);
+  }
+
   function bindWorkerSafeguardEvents() {
     if (workerSafeguardBound) return;
     workerSafeguardBound = true;
@@ -380,8 +386,11 @@
       "visibilitychange",
       function () {
         if (!isWorkerSafeguardActive()) return;
-        if (document.hidden) setWorkerSensitiveHidden(true);
-        else if (!isPhotoCaptureUiActive()) setWorkerSensitiveHidden(false);
+        if (document.hidden) {
+          if (!isPhotoCaptureUiActive()) setWorkerSensitiveHidden(true);
+          return;
+        }
+        if (isPhotoCaptureUiActive() || isPageVisible()) setWorkerSensitiveHidden(false);
       },
       true
     );
@@ -390,6 +399,7 @@
       "pagehide",
       function () {
         if (!isWorkerSafeguardActive()) return;
+        if (isPhotoCaptureUiActive()) return;
         setWorkerSensitiveHidden(true);
       },
       true
@@ -399,6 +409,7 @@
       "blur",
       function () {
         if (!isWorkerSafeguardActive()) return;
+        if (isPhotoCaptureUiActive() || isMediaCaptureActive()) return;
         setWorkerSensitiveHidden(true);
       },
       true
@@ -408,7 +419,11 @@
       "focus",
       function () {
         if (!isWorkerSafeguardActive()) return;
-        if (isPageVisible() && !isPhotoCaptureUiActive()) setWorkerSensitiveHidden(false);
+        if (isPhotoCaptureUiActive() || isMediaCaptureActive()) {
+          setWorkerSensitiveHidden(false);
+          return;
+        }
+        if (isPageVisible()) setWorkerSensitiveHidden(false);
       },
       true
     );
@@ -501,6 +516,7 @@
     hideBlack: hideMaskForce,
     hideBlackForce: hideMaskForce,
     triggerScreenshotMask: triggerScreenshotMask,
+    releaseCaptureUiBlockers: releaseCaptureUiBlockers,
     isMobilePortalDevice: isMobilePortalDevice,
     syncRolePolicy: syncRolePolicy,
     portalScreenshotGuardCaptureAllowed: portalScreenshotGuardCaptureAllowed,
