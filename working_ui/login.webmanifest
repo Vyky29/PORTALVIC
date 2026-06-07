@@ -1,13 +1,13 @@
 {
-  "name": "CS Portal",
-  "short_name": "CS Portal",
-  "id": "portalvic-lead-dashboard",
-  "start_url": "./lead_dashboard.html",
+  "name": "clubSENsational Portal",
+  "short_name": "Sign in",
+  "id": "clubsensational-portal-login",
+  "start_url": "./login.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f4f8fb",
-  "theme_color": "#edf4fb",
-  "description": "Lead schedule, programme tools, and quick menu.",
+  "theme_color": "#f4f8fb",
+  "description": "Portal sign in",
   "icons": [
     {
       "src": "/portal/app-icon/icon-192.png",

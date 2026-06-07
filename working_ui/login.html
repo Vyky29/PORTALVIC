@@ -14,43 +14,8 @@
   <link rel="apple-touch-icon" sizes="180x180" href="/portal/app-icon/apple-touch-icon.png?v=20260602-footerlogo" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png?v=20260602-footerlogo" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png?v=20260602-footerlogo" />
+  <link rel="manifest" href="/login.webmanifest?v=20260625-manifest-fix" />
   <!-- PWA · login.html · dashboards: admin_dashboard, staff_dashboard, lead_dashboard, ceo_dashboard -->
-  <script>
-  (function(){
-    try {
-      if (document.getElementById('portalLoginPwaManifest')) return;
-      if (location.protocol !== 'https:' && location.protocol !== 'http:') return;
-      var start = (location.origin + location.pathname + (location.search || ''));
-      if (!start) return;
-      var sc = location.origin + '/';
-      var payload = {
-        'name': 'clubSENsational Portal',
-        'short_name': 'Sign in',
-        'id': 'clubsensational-portal-login',
-        'start_url': start,
-        'scope': sc,
-        'display': 'standalone',
-        'background_color': '#f4f8fb',
-        'theme_color': '#f4f8fb',
-        'description': 'Portal sign in',
-        'icons': [
-          { 'src': '/portal/app-icon/icon-192.png?v=20260602-footerlogo', 'sizes': '192x192', 'type': 'image/png', 'purpose': 'any' },
-          { 'src': '/portal/app-icon/icon-512.png?v=20260602-footerlogo', 'sizes': '512x512', 'type': 'image/png', 'purpose': 'any' },
-          { 'src': '/portal/app-icon/apple-touch-icon.png?v=20260602-footerlogo', 'sizes': '180x180', 'type': 'image/png', 'purpose': 'any' },
-          { 'src': '/portal/app-icon/icon-maskable-192.png?v=20260602-footerlogo', 'sizes': '192x192', 'type': 'image/png', 'purpose': 'maskable' },
-          { 'src': '/portal/app-icon/icon-maskable-512.png?v=20260602-footerlogo', 'sizes': '512x512', 'type': 'image/png', 'purpose': 'maskable' }
-        ]
-      };
-      var blob = new Blob([JSON.stringify(payload)], { type: 'application/manifest+json' });
-      var l = document.createElement('link');
-      l.id = 'portalLoginPwaManifest';
-      l.rel = 'manifest';
-      l.href = URL.createObjectURL(blob);
-      (document.head || document.getElementsByTagName('head')[0]).appendChild(l);
-    } catch (e) {}
-  })();
-  </script>
-  <!-- Dashboard targets: PORTAL_*_DASHBOARD_URL at end of body (defaults: same-origin *.html on this deploy). -->
   <title>clubSENsational Portal — Sign in</title>
   <style>
     :root{
