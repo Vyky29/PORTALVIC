@@ -2163,15 +2163,16 @@
     function portalAdminCanOpenAllCeoGroup(){
       var sp = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
       if(!sp) return false;
+      if(global.portalDmRoles && typeof global.portalDmRoles.portalDmIsExecutiveCeoTrioMember === 'function'){
+        return global.portalDmRoles.portalDmIsExecutiveCeoTrioMember(sp);
+      }
+      var ar = String(sp.app_role || '').toLowerCase();
+      var user = String(sp.username || '').trim().toLowerCase();
+      if(ar === 'ceo' && (user === 'raul' || user === 'victor' || user === 'javi')) return true;
       if(global.portalDmRoles && typeof global.portalDmRoles.portalDmIsDirectorProfile === 'function'){
         return global.portalDmRoles.portalDmIsDirectorProfile(sp);
       }
-      var full = String(sp.full_name || '').trim();
-      var user = String(sp.username || '').trim();
-      var first = (full.split(/\s+/)[0] || user || '').trim();
-      var n = portalAdminDmNormPeerKey(first);
-      if(!n) return false;
-      return n === 'victor' || n === 'raul' || n === 'javi' || n === 'javier';
+      return false;
     }
     function portalAdminDmDisplayNameFromLabel(label){
       var t = String(label || '').trim();

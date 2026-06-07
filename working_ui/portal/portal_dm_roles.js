@@ -1,5 +1,5 @@
 /**
- * Shared internal-chat role rules ó directors (Raul, Javier, Victor), admin, staff reachability.
+ * Shared internal-chat role rules ù directors (Raul, Javier, Victor), admin, staff reachability.
  */
 (function (global) {
   "use strict";
@@ -81,6 +81,18 @@
     return false;
   }
 
+  /** Named CEO accounts (Raul, Victor, Javi) plus Javier Arranz / Palan ù not staff named Javier. */
+  function portalDmIsExecutiveCeoTrioMember(row) {
+    row = profileRow(row);
+    if (!row || row.is_active === false) return false;
+    var ar = String(row.app_role || "").toLowerCase();
+    var u = String(row.username || "")
+      .trim()
+      .toLowerCase();
+    if (ar === "ceo" && (u === "raul" || u === "victor" || u === "javi")) return true;
+    return portalDmIsDirectorProfile(row);
+  }
+
   function portalDmOnAdminPortal() {
     try {
       return /admin_dashboard\.html/i.test(String((global.location && global.location.pathname) || ""));
@@ -92,6 +104,7 @@
   global.portalDmRoles = {
     normKey: normKey,
     portalDmIsDirectorProfile: portalDmIsDirectorProfile,
+    portalDmIsExecutiveCeoTrioMember: portalDmIsExecutiveCeoTrioMember,
     portalDmIsAdminProfile: portalDmIsAdminProfile,
     portalDmStaffInitiatePeer: portalDmStaffInitiatePeer,
     portalDmUsesAdminCliq: portalDmUsesAdminCliq,

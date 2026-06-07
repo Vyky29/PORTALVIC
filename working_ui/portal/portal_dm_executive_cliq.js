@@ -37,13 +37,19 @@
     }
   }
 
-  function tryOpenAdminCliq(channel) {
-    if (!usesAdminCliq() || onAdminPortal()) return false;
+  function tryOpenWorkerCliqEmbed(channel) {
+    if (onAdminPortal()) return false;
     channel = String(channel || "staff_lead").trim() === "ceo_exec" ? "ceo_exec" : "staff_lead";
     if (global.portalCsCliqEmbed && typeof global.portalCsCliqEmbed.open === "function") {
       return global.portalCsCliqEmbed.open(channel);
     }
     return false;
+  }
+
+  /** @deprecated Prefer tryOpenWorkerCliqEmbed ù kept for ceo_dashboard fallback. */
+  function tryOpenAdminCliq(channel) {
+    if (!usesAdminCliq() || onAdminPortal()) return false;
+    return tryOpenWorkerCliqEmbed(channel);
   }
 
   /** Restricted staff/leads: internal chat sheet only (no full CS Cliq embed). */
@@ -76,16 +82,16 @@
     return true;
   }
 
-  /** Staff/lead portal chat entry: executives get CS Cliq embed; everyone else gets restricted inbox. */
+  /** Staff/lead portal chat entry: CS Cliq embed for everyone (tier-limited rail); sheet is fallback only. */
   function openPortalWorkerChat(channel) {
     if (onAdminPortal()) return false;
-    if (isRestrictedWorkerChat()) return openRestrictedWorkerInternalChat(channel);
-    if (tryOpenAdminCliq(channel)) return true;
+    if (tryOpenWorkerCliqEmbed(channel)) return true;
     return openRestrictedWorkerInternalChat(channel);
   }
 
   global.portalDmExecutiveCliq = {
     tryOpenAdminCliq: tryOpenAdminCliq,
+    tryOpenWorkerCliqEmbed: tryOpenWorkerCliqEmbed,
     openRestrictedWorkerInternalChat: openRestrictedWorkerInternalChat,
     openPortalWorkerChat: openPortalWorkerChat,
   };

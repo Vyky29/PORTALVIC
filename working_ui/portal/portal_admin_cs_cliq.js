@@ -180,7 +180,24 @@
       '<h2 class="portal-cs-cliq__chat-title" id="csCliqTitle">Inbox</h2>' +
       '<button type="button" class="portal-cs-cliq__new-btn" id="csCliqBtnNew">New</button>' +
       "</div>" +
-      '<div id="csCliqChannelNav" class="portal-dm-inbox-nav" hidden aria-hidden="true"></div>' +
+      '<div id="csCliqChannelNav" class="portal-dm-inbox-nav" hidden aria-hidden="true">' +
+      '<button type="button" class="portal-dm-inbox-nav-btn is-active" id="csCliqTabStaff">Team inbox</button>' +
+      '<button type="button" class="portal-dm-inbox-nav-btn" id="csCliqTabCeo">CEO chat</button>' +
+      "</div>" +
+      '<div id="csCliqCeoQuickWrap" class="portal-cs-cliq-ceo-quick" hidden style="margin:0;padding:8px 12px 4px;min-width:0">' +
+      '<div class="filter-row" style="flex-wrap:wrap;gap:8px;margin:0">' +
+      '<button type="button" class="btn btn--pri btn--sm" id="csCliqQCeoGroup">CEOs</button>' +
+      '<button type="button" class="btn btn--pri btn--sm" id="csCliqQCeoLiaisonGroup">CEOs &amp; Sevitha</button>' +
+      '<button type="button" class="btn btn--sec btn--sm" id="csCliqQOpsAdmin">Ops admin</button>' +
+      '<span id="csCliqQCeosHost" style="display:contents"></span>' +
+      "</div></div>" +
+      '<div id="csCliqStaffLeadsQuickWrap" class="portal-cs-cliq-staff-leads-quick" hidden style="margin:0;padding:8px 12px 4px;min-width:0">' +
+      '<div class="filter-row" style="flex-wrap:wrap;gap:8px;margin:0">' +
+      '<button type="button" class="btn btn--pri btn--sm" id="csCliqQLeadsChannel">Leads channel</button>' +
+      '<button type="button" class="btn btn--sec btn--sm" id="csCliqQRingAllLeads">Ring all leads</button>' +
+      '<button type="button" class="btn btn--sec btn--sm" id="csCliqQCallSelectedLeads">Call selected leads</button>' +
+      '<button type="button" class="btn btn--pri btn--sm" id="csCliqQStaffLeadsGroup">Staff &amp; leads group</button>' +
+      "</div></div>" +
       '<div id="csCliqListPanel">' +
       '<div id="csCliqListWrap" class="portal-dm-inbox-list"></div>' +
       "</div></aside>" +
@@ -421,7 +438,14 @@
     if (listCol) listCol.classList.toggle("portal-cs-cliq-inbox__list-col--hidden-mobile", inThread || inCompose);
     if (convCol) convCol.classList.toggle("portal-cs-cliq-inbox__conversation-col--active", inThread || inCompose);
     if (backBtn) backBtn.hidden = !inThread && !inCompose;
-    if (nav) nav.hidden = true;
+    if (nav) {
+      var showNav =
+        global.portalCsCliqHubRoles &&
+        typeof global.portalCsCliqHubRoles.isManagementProfile === "function" &&
+        global.portalCsCliqHubRoles.isManagementProfile();
+      nav.hidden = !showNav;
+      nav.setAttribute("aria-hidden", showNav ? "false" : "true");
+    }
     if (newBtn) {
       var canNew = !(
         global.portalCsCliqHubRoles &&
