@@ -188,7 +188,7 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
     .map((d) => String(d || "").trim().slice(0, 10))
     .filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d));
 
-  const [fb, inc, can, fbSharedRpc, quickMarks, fbCatchUp] = await Promise.all([
+  const [fb, inc, can, fbExactShared, quickMarks, fbCatchUp] = await Promise.all([
     supabase
       .from("session_feedback")
       .select("portal_session_key, attendance")
@@ -208,7 +208,12 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
       .not("portal_session_key", "is", null)
       .gte("session_date", sinceStr),
     rosterSessionKeys.length
-      ? supabase.rpc("portal_feedback_submitted_keys_for_sessions", { p_keys: rosterSessionKeys })
+      ? supabase
+          .from("session_feedback")
+          .select("portal_session_key, attendance")
+          .in("portal_session_key", rosterSessionKeys)
+          .not("portal_session_key", "is", null)
+          .gte("session_date", sinceStr)
       : Promise.resolve({ data: null, error: null }),
     supabase
       .from("portal_staff_session_quick_marks")
@@ -297,47 +302,19 @@ export async function portalFetchSubmittedReviewSessionKeys(supabase, userId, op
 
   const ownParts = partitionFeedbackRows(fb.data);
   const catchUpParts = partitionFeedbackRows(fbCatchUp && !fbCatchUp.error ? fbCatchUp.data : null);
-  const sharedFb = !fbSharedRpc || fbSharedRpc.error ? [] : feedbackKeysFromSharedRpc(fbSharedRpc.data);
-
-  /** Roster peer read (RLS): co-instructors see keys even when area suffix differs from roster key. */
-  let peerParts = { present: [], absent: [] };
-  if (rosterSessionKeys.length) {
-    const rosterDates = [
-      ...new Set(
-        rosterSessionKeys
-          .map((k) => String(k || "").split("|")[0].trim())
-          .filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d))
-      ),
-    ].slice(0, 21);
-    if (rosterDates.length) {
-      try {
-        const peerRes = await supabase
-          .from("session_feedback")
-          .select("portal_session_key, attendance")
-          .in("session_date", rosterDates)
-          .not("portal_session_key", "is", null)
-          .gte("session_date", sinceStr)
-          .limit(400);
-        if (!peerRes.error) peerParts = partitionFeedbackRows(peerRes.data);
-      } catch (ePeer) {
-        console.debug("[portal] session_feedback peer keys", ePeer);
-      }
-    }
-  }
+  /** Co-instructor slots only: exact portal_session_key match (not loose client/day bleed). */
+  const exactSharedParts = partitionFeedbackRows(
+    fbExactShared && !fbExactShared.error ? fbExactShared.data : null
+  );
 
   const absentFeedbackKeys = [
-    ...new Set([
-      ...ownParts.absent,
-      ...catchUpParts.absent,
-      ...peerParts.absent,
-    ]),
+    ...new Set([...ownParts.absent, ...catchUpParts.absent, ...exactSharedParts.absent]),
   ];
   const feedbackMerged = [
     ...new Set([
       ...ownParts.present,
       ...catchUpParts.present,
-      ...peerParts.present,
-      ...sharedFb,
+      ...exactSharedParts.present,
       ...absentFeedbackKeys,
     ]),
   ];
@@ -447,6 +424,20 @@ function portalSessionKeyAreaTokensCompatible(submittedKey, rosterKey) {
   return sArea === rArea;
 }
 
+function portalSessionKeyTimeToken(key) {
+  const parts = String(key || "")
+    .split("|")
+    .map((p) => String(p || "").trim())
+    .filter(Boolean);
+  for (let i = 1; i < parts.length; i++) {
+    const m = parts[i].match(/^(\d{1,2}):(\d{2})$/);
+    if (m) {
+      return String(Number(m[1])).padStart(2, "0") + ":" + m[2];
+    }
+  }
+  return "";
+}
+
 /**
  * Roster keys use `YYYY-MM-DD|HH:mm|client_id`; Supabase often stores `YYYY-MM-DD||client_slug`.
  */
@@ -468,6 +459,11 @@ export function portalFeedbackSubmittedKeyMatchesRosterKey(submittedKey, rosterK
     } catch {
       return false;
     }
+  }
+  const rTime = portalSessionKeyTimeToken(r);
+  const sTime = portalSessionKeyTimeToken(s);
+  if (rTime) {
+    if (!sTime || sTime !== rTime) return false;
   }
   if (!portalSessionKeyAreaTokensCompatible(s, r)) return false;
   if (portalSessionKeyClientSlugsMatch(s, r)) return true;

@@ -1635,11 +1635,9 @@
     return slugify(clean(raw)) || "staff";
   }
 
-  /** Sunday SwimFarm only: support worker vs swim instructor = separate feedback units. */
+  /** Sunday SwimFarm: support worker vs swim instructor = separate feedback units. */
   function maFeedbackUnitUsesInstructorSplit(slot) {
-    if (!slot || !isMultiActivityService(slot.service)) return false;
-    if (weekdayLongFromIso(slot.session_date) !== "Sunday") return false;
-    return clean(slot.venue).toLowerCase() === "swimfarm";
+    return !!(slot && isMultiActivityService(slot.service));
   }
 
   /** Climbing: Carlos / Alex / Bismark each owe separate feedback even on the same client day. */

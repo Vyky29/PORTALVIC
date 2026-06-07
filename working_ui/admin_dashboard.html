@@ -4440,9 +4440,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return p.indexOf('climb') >= 0;
     }
     function adminSchedMaUsesInstructorSplit(slot){
-      if(!slot || !adminSchedIsMultiActivityProgramme(slot.programme)) return false;
-      if(String(slot.sheetDay || '').trim() !== 'Sunday') return false;
-      return String(slot.venue || '').trim().toLowerCase() === 'swimfarm';
+      return !!(slot && adminSchedIsMultiActivityProgramme(slot.programme));
     }
     function adminSchedUsesInstructorSplit(slot){
       if(adminSchedMaUsesInstructorSplit(slot)) return true;
@@ -15670,7 +15668,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return out.sort(function(a, b){ return a.localeCompare(b); });
     }
     var ADMIN_SESSIONS_HUB_SRC =
-      '/portal/admin-sessions-hub.js?v=20260605-feedback-instructor-match';
+      '/portal/admin-sessions-hub.js?v=20260605-feedback-instructor-own';
 
     /** Club closed — half-term 23–31 May 2026, bank holiday 4 May (see PORTAL_TERM_FROM_TIMETABLE). */
     function portalAdminDayIsClubClosed(iso){

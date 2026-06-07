@@ -1009,7 +1009,7 @@
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260606-carlos-covers"></script>
   <script src="/portal/session_feedback_portal_data.js?v=20260527-ma-apr-may"></script>
   <script src="/portal/session_feedback_status_portal_data.js?v=20260526-all-complete"></script>
-  <script src="/portal/staff_portal_feedback_bridge.js?v=20260605-feedback-instructor-match"></script>
+  <script src="/portal/staff_portal_feedback_bridge.js?v=20260605-feedback-instructor-own"></script>
   <script src="/portal-shared-js/portal_late_submission.js?v=20260620-late-feedback-open"></script>
   <script src="/portal/portal-roster-rows-merge.js?v=20260615-fadi-roster-merge"></script>
   <script src="/portal/staff_dashboard_portal_roster_source.js?v=20260610-javier-may14-roster"></script>
@@ -1274,7 +1274,7 @@
     /** Persisted register/feedback flags so returning from session_feedback.html keeps row colours. */
     const PORTAL_SESSION_REVIEW_MAP_STORAGE = 'portalSessionReviewMap_v1';
     /** Same folder as auth-handler on the CDN; used to pull server-side review keys onto this device. */
-    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260605-ah-brothers-separate';
+    const PORTAL_SUPABASE_CLIENT_MODULE = '/portal/supabase-client.js?v=20260605-feedback-instructor-own';
     /**
      * Web Push (app closed / phone locked): VAPID **public** key only — generate pair with `npx web-push generate-vapid-keys`,
      * put public key here (or `window.__PORTAL_VAPID_PUBLIC_KEY__` on the host page); private key lives in Supabase Edge secrets only.
@@ -1480,6 +1480,16 @@
       return st && (String(st.overviewStatus || '').trim().toLowerCase() === 'absent' || st.feedbackComplete === true
         || String(st.overviewStatus || '').trim().toLowerCase() === 'feedback_submitted');
     }
+    function portalMachineRosterFeedbackFloorIso(){
+      try{
+        const t = typeof window !== 'undefined' ? window.PORTAL_TERM_FROM_TIMETABLE : null;
+        if(t){
+          const v = String(t.termResumeDate || t.termDashboardCalendarFrom || '').trim().slice(0, 10);
+          if(/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+        }
+      }catch(_){}
+      return '2026-06-01';
+    }
     function portalReviewFlagsForResolvedSession(iso, staffId, s){
       const bridge = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
       const notes = typeof clientNotesById !== 'undefined' ? clientNotesById : {};
@@ -1513,6 +1523,10 @@
               if(!portalStatusRowIsDoneForCalendar(st)) ownedPending = true;
             });
             if(ownedPending) return { feedbackDone: false, incident: false, absent: false, cancelled: false };
+          }
+          const floorIso = portalMachineRosterFeedbackFloorIso();
+          if(iso >= floorIso){
+            return { feedbackDone: false, incident: false, absent: false, cancelled: false };
           }
           return null;
         }
@@ -1737,6 +1751,15 @@
       try{
         const sid = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
         const resetV = '20260606-john-tinashe-jun1';
+        const machineResetV = '20260605-feedback-instructor-own';
+        if(sid && typeof portalClearMachineRosterCrossInstructorReviewFlags === 'function'){
+          let prevMachine = '';
+          try{ prevMachine = localStorage.getItem('portalMachineReviewReset_v1') || ''; }catch(_){}
+          if(prevMachine !== machineResetV){
+            if(portalClearMachineRosterCrossInstructorReviewFlags(sid)) changed = true;
+            try{ localStorage.setItem('portalMachineReviewReset_v1', machineResetV); }catch(_){}
+          }
+        }
         if(sid && typeof portalClearCatchUpExportReviewFlags === 'function'){
           let prev = '';
           try{ prev = localStorage.getItem('portalCatchUpReviewReset_v1') || ''; }catch(_){}
@@ -2652,10 +2675,23 @@
       const staffId = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
       if(!iso || !staffId || typeof portalRosterReviewStateFromStatusBundle !== 'function') return mem;
       const bundle = portalRosterReviewStateFromStatusBundle(item.__portalBaseSession, iso, staffId);
-      if(!bundle) return mem;
+      if(!bundle){
+        const floorIso = portalMachineRosterFeedbackFloorIso();
+        if(iso >= floorIso && !portalStaffInGhostView()){
+          return {
+            feedbackDone: false,
+            incident: !!mem.incident,
+            absent: !!mem.absent,
+            cancelled: !!mem.cancelled
+          };
+        }
+        return mem;
+      }
       const ghost = portalStaffInGhostView();
       return {
-        feedbackDone: bundle.feedbackDone === false ? false : !!(bundle.feedbackDone || (!ghost && mem.feedbackDone)),
+        feedbackDone: bundle.feedbackDone === false
+          ? !!mem.feedbackDone
+          : !!(bundle.feedbackDone || (!ghost && mem.feedbackDone)),
         incident: !!(bundle.incident || mem.incident),
         absent: !!(bundle.absent || mem.absent),
         cancelled: !!(bundle.cancelled || mem.cancelled)
@@ -10985,12 +11021,28 @@
       if(!Array.isArray(list) || !id) return false;
       return list.some(function(k){ return String(k || '').trim().toLowerCase() === id; });
     }
-    /** Javier catch-up May days: show real pending feedback (orange), not static export greens. */
     function portalTermIsCatchUpFeedbackDate(isoYmd, staffId){
       const iso = String(isoYmd || '').trim().slice(0, 10);
       if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return false;
       return portalTermStaffLateSubmissionBypass(staffId)
         && portalTermStaffCatchUpFeedbackDates(staffId).indexOf(iso) >= 0;
+    }
+    function portalClearMachineRosterCrossInstructorReviewFlags(staffId){
+      const sid = String(staffId || '').trim().toLowerCase();
+      if(!sid) return false;
+      const floor = portalMachineRosterFeedbackFloorIso();
+      let changed = false;
+      Object.keys(sessionReviewMapMemory || {}).forEach(function(sk){
+        const iso = String(sk || '').split('|')[0];
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(iso) || iso < floor) return;
+        const prev = sessionReviewMapMemory[sk];
+        if(prev && prev.feedbackDone && !prev.incident && !prev.absent && !prev.cancelled){
+          sessionReviewMapMemory[sk] = Object.assign({}, prev, { feedbackDone: false });
+          changed = true;
+        }
+      });
+      if(changed && typeof persistSessionReviewMap === 'function') persistSessionReviewMap();
+      return changed;
     }
     function portalClearCatchUpExportReviewFlags(staffId){
       const sid = String(staffId || '').trim().toLowerCase();

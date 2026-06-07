@@ -652,7 +652,7 @@
 
   function sessionComplete(iso, staffId, s, clientNotesById, mergedRec) {
     const rec = mergedRec || {};
-    if (rec.feedbackDone || rec.absent || rec.cancelled) return true;
+    if (rec.absent || rec.cancelled) return true;
     if (rosterSessionMarkedAbsent(iso, staffId, s, clientNotesById)) return true;
     if (staffSubmittedCoversRosterSession(iso, staffId, s, clientNotesById)) return true;
     const clientKey = rosterKeyForSession(s, clientNotesById);
