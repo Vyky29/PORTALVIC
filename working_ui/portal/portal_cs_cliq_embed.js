@@ -100,7 +100,9 @@
     global.__PORTAL_CS_CLIQ_ACTIVE = true;
     global.__PORTAL_CS_CLIQ_PENDING_CHANNEL = channel;
     var pane = String(opts.pane || global.__PORTAL_CS_CLIQ_PENDING_PANE || "chats").trim();
-    if (["chats", "channels", "phone", "files", "calendar"].indexOf(pane) < 0) pane = "chats";
+    if (["chats", "channels", "phone", "files", "calendar", "teams", "support", "operations"].indexOf(pane) < 0) {
+      pane = "chats";
+    }
     global.__PORTAL_CS_CLIQ_PENDING_PANE = pane;
     global.__PORTAL_ADMIN_DM_CHANNEL = channel;
 
