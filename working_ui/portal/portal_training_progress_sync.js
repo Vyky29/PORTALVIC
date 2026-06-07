@@ -199,6 +199,17 @@
 
   async function upsertProgress(client, userId, row) {
     if (!client || !userId || !row || !row.track) return;
+    var rpcRes = await client.rpc("portal_sync_my_training_progress", {
+      p_track: row.track,
+      p_current_module: row.current_module || 0,
+      p_modules_total: row.modules_total || 0,
+      p_progress_pct: row.progress_pct || 0,
+      p_module_states: row.module_states || {},
+      p_phase_label: row.phase_label || "",
+      p_completed_at: row.completed_at || null,
+    });
+    if (!rpcRes.error) return;
+    if (String(rpcRes.error.code || "") !== "PGRST202") throw rpcRes.error;
     var payload = {
       staff_user_id: userId,
       track: row.track,
@@ -228,6 +239,18 @@
 
   async function upsertSetup(client, userId, row) {
     if (!client || !userId) return;
+    var rpcRes = await client.rpc("portal_sync_my_setup_status", {
+      p_staff_display_name: row.staff_display_name || "",
+      p_is_pwa: !!row.is_pwa,
+      p_push_enabled: !!row.push_enabled,
+      p_location_granted: !!row.location_granted,
+      p_microphone_granted: !!row.microphone_granted,
+      p_last_shell: row.last_shell || "browser",
+      p_last_seen_at: row.last_seen_at || new Date().toISOString(),
+      p_client_meta: row.client_meta || {},
+    });
+    if (!rpcRes.error) return;
+    if (String(rpcRes.error.code || "") !== "PGRST202") throw rpcRes.error;
     var payload = Object.assign({ staff_user_id: userId }, row);
     var res = await client
       .from("portal_staff_setup_status")

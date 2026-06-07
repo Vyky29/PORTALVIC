@@ -7542,27 +7542,27 @@
               }, 350);
             }
           )
+          .on(
+            "postgres_changes",
+            { event: "INSERT", schema: "public", table: "portal_ceo_group_message" },
+            function(payload){
+              var rowG = payload && (payload.new || payload.record);
+              if(rowG && window.portalStaffChatCalls && typeof window.portalStaffChatCalls.onGroupMessageInsert === "function"){
+                window.portalStaffChatCalls.onGroupMessageInsert(rowG);
+              }
+            }
+          )
           .subscribe(function(status, err){
             if(status === "SUBSCRIBED"){
               window.__PORTAL_STAFF_DM_RT_READY = true;
               try{ console.info("[portal] Realtime: portal_staff_dm_messages"); }catch(_s){}
             }else if(status === "CHANNEL_ERROR" || status === "TIMED_OUT"){
-              console.warn("[portal] Realtime portal_staff_dm_messages", status, err || "");
+              console.debug("[portal] Realtime portal_staff_dm_messages", status, err || "");
             }
           });
-        ch.on(
-          "postgres_changes",
-          { event: "INSERT", schema: "public", table: "portal_ceo_group_message" },
-          function(payload){
-            var rowG = payload && (payload.new || payload.record);
-            if(rowG && window.portalStaffChatCalls && typeof window.portalStaffChatCalls.onGroupMessageInsert === "function"){
-              window.portalStaffChatCalls.onGroupMessageInsert(rowG);
-            }
-          }
-        );
         window.__PORTAL_STAFF_DM_RT_CH = ch;
       }catch(e){
-        console.warn("[portal] portalInitStaffDmRealtime", e);
+        console.debug("[portal] portalInitStaffDmRealtime", e);
       }
     };
     window.portalWaitForSupabaseClientReady = async function portalWaitForSupabaseClientReady(timeoutMs){
@@ -13183,12 +13183,24 @@
           sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyU8 });
         }
         const box = window.__PORTAL_SUPABASE__;
-        const token = box && box.session && box.session.access_token ? String(box.session.access_token).trim() : '';
-        if(!token) return { ok: false, reason: 'no-session' };
+        if(!box || !box.session || !box.session.access_token) return { ok: false, reason: 'no-session' };
+        if(window.__PORTAL_WPS_SKIP__) return { ok: false, reason: 'skipped' };
+        const subJson = sub.toJSON();
+        if(box.client && typeof box.client.functions.invoke === 'function'){
+          const fnRes = await box.client.functions.invoke('portal-push-subscribe', {
+            body: { subscription: subJson }
+          });
+          if(!fnRes.error) return { ok: true };
+          const st = Number(fnRes.error.status || fnRes.error.context && fnRes.error.context.status || 0);
+          if(st === 401 || st === 403) window.__PORTAL_WPS_SKIP__ = true;
+          console.debug('[portal] portal-push-subscribe', fnRes.error);
+          return { ok: false, reason: 'subscribe-fn', status: st || 0 };
+        }
         const mod = await import(PORTAL_SUPABASE_CLIENT_MODULE);
         const fnUrl = typeof mod.getSupabaseFunctionUrl === 'function' ? mod.getSupabaseFunctionUrl('portal-push-subscribe') : '';
         const anon = typeof mod.getSupabaseAnonKey === 'function' ? mod.getSupabaseAnonKey() : '';
         if(!fnUrl || !anon) return { ok: false, reason: 'no-fn-url' };
+        const token = String(box.session.access_token).trim();
         const res = await fetch(fnUrl, {
           method: 'POST',
           headers: {
@@ -13196,17 +13208,18 @@
             'Authorization': 'Bearer ' + token,
             'apikey': anon
           },
-          body: JSON.stringify({ subscription: sub.toJSON() })
+          body: JSON.stringify({ subscription: subJson })
         });
         if(!res.ok){
+          if(res.status === 401 || res.status === 403) window.__PORTAL_WPS_SKIP__ = true;
           let detail = '';
           try{ detail = await res.text(); }catch(_){}
-          console.warn('[portal] portal-push-subscribe', res.status, detail);
+          console.debug('[portal] portal-push-subscribe', res.status, detail);
           return { ok: false, reason: 'subscribe-http', status: res.status };
         }
         return { ok: true };
       }catch(e){
-        console.warn('[portal] portalEnsureWebPushSubscription', e);
+        console.debug('[portal] portalEnsureWebPushSubscription', e);
         return { ok: false, reason: 'exception' };
       }finally{
         window.__PORTAL_WPS_IN_FLIGHT = false;
