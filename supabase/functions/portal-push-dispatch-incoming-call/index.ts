@@ -108,8 +108,16 @@ async function resolveTargetUserIds(
   admin: ReturnType<typeof createClient>,
   table: string,
   record: Record<string, unknown>,
+  callData?: Record<string, unknown> | null,
 ): Promise<string[]> {
-  const authorId = String(record.author_id || "").trim();
+  let authorId = String(record.author_id || "").trim();
+  if (!authorId && callData) {
+    authorId = String(callData.callerId || "").trim();
+  }
+  if (!authorId) {
+    const parsed = parseCallPayload(String(record.body || ""));
+    if (parsed) authorId = String(parsed.callerId || "").trim();
+  }
   if (!authorId) return [];
 
   const { data: authorProf } = await admin
@@ -251,7 +259,7 @@ Deno.serve(async (req) => {
     ? clampPushBody(`${callerName} — ${groupTitle}`)
     : clampPushBody(`${callerName} is calling`);
 
-  const targetIds = await resolveTargetUserIds(admin, table, record);
+  const targetIds = await resolveTargetUserIds(admin, table, record, callData);
   if (!targetIds.length) {
     console.log("[portal-push-incoming-call] done", {
       sent: 0,
@@ -259,6 +267,7 @@ Deno.serve(async (req) => {
       note: "no targets",
       messageId,
       source,
+      authorId: authorId || null,
     });
     return jsonPushResponse({ ok: true, sent: 0, targets: 0, note: "no targets" });
   }

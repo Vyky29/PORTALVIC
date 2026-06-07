@@ -1316,7 +1316,14 @@
     } else {
       ins = await client
         .from("portal_staff_dm_messages")
-        .insert([{ thread_id: threadId, body: body, message_type: "text" }])
+        .insert([
+          {
+            thread_id: threadId,
+            author_id: caller.id,
+            body: body,
+            message_type: "text",
+          },
+        ])
         .select("id");
     }
     if (ins.error) throw ins.error;
