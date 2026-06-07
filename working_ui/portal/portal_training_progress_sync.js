@@ -171,11 +171,21 @@
     } catch (_) {}
     var loc = false;
     var mic = false;
+    var cam = false;
+    var featuresComplete = false;
+    var featuresCompletedAt = null;
     try {
       loc = global.localStorage.getItem("portal_location_granted_v1") === "1";
     } catch (_) {}
     try {
-      mic = global.localStorage.getItem("portal_microphone_granted_v1") === "1";
+      mic = global.localStorage.getItem("portal_mic_granted_v1") === "1";
+    } catch (_) {}
+    try {
+      cam = global.localStorage.getItem("portal_cam_granted_v1") === "1";
+    } catch (_) {}
+    try {
+      featuresComplete = global.localStorage.getItem("portal_portal_features_setup_v1") === "1";
+      featuresCompletedAt = global.localStorage.getItem("portal_portal_features_setup_at_v1");
     } catch (_) {}
     if (typeof global.portalLocationPermissionGranted === "function" && global.portalLocationPermissionGranted()) {
       loc = true;
@@ -183,12 +193,30 @@
     if (typeof global.portalMicrophonePermissionGranted === "function" && global.portalMicrophonePermissionGranted()) {
       mic = true;
     }
+    if (typeof global.portalCameraPermissionGranted === "function" && global.portalCameraPermissionGranted()) {
+      cam = true;
+    }
+    if (
+      typeof global.portalMandatoryAlertsSettingsComplete === "function" &&
+      global.portalMandatoryAlertsSettingsComplete()
+    ) {
+      featuresComplete = true;
+    }
+    if (featuresComplete && !featuresCompletedAt) {
+      featuresCompletedAt = new Date().toISOString();
+      try {
+        global.localStorage.setItem("portal_portal_features_setup_at_v1", featuresCompletedAt);
+      } catch (_) {}
+    }
     return {
       staff_display_name: display,
       is_pwa: isPwaShell(),
       push_enabled: push,
       location_granted: loc,
       microphone_granted: mic,
+      camera_granted: cam,
+      portal_features_complete: featuresComplete,
+      portal_features_completed_at: featuresCompletedAt,
       last_shell: isPwaShell() ? "pwa" : "browser",
       last_seen_at: new Date().toISOString(),
       client_meta: {
@@ -245,6 +273,9 @@
       p_push_enabled: !!row.push_enabled,
       p_location_granted: !!row.location_granted,
       p_microphone_granted: !!row.microphone_granted,
+      p_camera_granted: !!row.camera_granted,
+      p_portal_features_complete: !!row.portal_features_complete,
+      p_portal_features_completed_at: row.portal_features_completed_at || null,
       p_last_shell: row.last_shell || "browser",
       p_last_seen_at: row.last_seen_at || new Date().toISOString(),
       p_client_meta: row.client_meta || {},
@@ -332,6 +363,8 @@
     global.addEventListener("portal:supabase-ready", queueTrainingProgressSync);
     global.addEventListener("portal:location-permission-change", queueTrainingProgressSync);
     global.addEventListener("portal:microphone-permission-change", queueTrainingProgressSync);
+    global.addEventListener("portal:camera-permission-change", queueTrainingProgressSync);
+    global.addEventListener("portal:all-permissions-change", queueTrainingProgressSync);
     global.addEventListener("portal:induction-progress", queueTrainingProgressSync);
   }
 })(typeof window !== "undefined" ? window : globalThis);

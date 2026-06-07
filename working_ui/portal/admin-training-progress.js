@@ -18,10 +18,29 @@
     loading: false,
     filter: "all",
     tab: "training_compliance",
+    permissionsAnnouncementIds: [],
   };
 
   var INDUCTION_MODULES = 6;
   var INDUCTION_REQUIRED_KEYS = { alex: true, michelle: true, carlos: true };
+
+  /** Staff roster keys that need live-map location when on Bespoke / Day Centre / Climbing shifts. */
+  var LIVE_MAP_MANDATORY_KEYS = {
+    berta: true,
+    john: true,
+    michelle: true,
+    youssef: true,
+    lulia: true,
+    raul: true,
+    victor: true,
+    giuseppe: true,
+    bismark: true,
+    godsway: true,
+    alex: true,
+    carlos: true,
+    andres: true,
+    javi: true,
+  };
 
   function normStaffKey(value) {
     return String(value || "")
@@ -189,26 +208,32 @@
     return "complete";
   }
 
-  function locationRequired(row) {
-    return swimmingRequired(row) || demoHash(row.id, "loc") % 3 !== 0;
+  function locationRequiredForRow(row) {
+    var key = profileRosterKey(row.profile);
+    return !!(key && LIVE_MAP_MANDATORY_KEYS[key]);
   }
 
-  function microphoneOptional(row) {
-    return !swimmingRequired(row) && demoHash(row.id, "mic") % 2 === 0;
+  function portalFeaturesComplete(row) {
+    var s = row.setup || {};
+    if (s.portal_features_complete) return true;
+    if (!s.push_enabled) return false;
+    if (!s.camera_granted) return false;
+    if (locationRequiredForRow(row) && !s.location_granted) return false;
+    return true;
+  }
+
+  function permissionsAnnouncementSigned(row) {
+    return !!(row.permissionsSetupAck && row.permissionsSetupAck.signed_at);
   }
 
   function webOnlyApproved(row) {
-    var s = row.setup;
-    if (!s || s.is_pwa) return false;
-    return demoHash(row.id, "web_ok") % 4 === 0;
+    return false;
   }
 
   function deviceRegistered(row) {
     var s = row.setup;
-    if (!s) return demoHash(row.id, "device") % 5 !== 0;
-    if (s.is_pwa) return true;
-    if (s.last_seen_at) return demoHash(row.id, "device") % 7 !== 0;
-    return false;
+    if (!s) return false;
+    return !!s.is_pwa;
   }
 
   function portalAccess(row) {
@@ -237,13 +262,7 @@
   }
 
   function appReady(row) {
-    var s = row.setup || {};
-    var access = portalAccess(row);
-    var appOk = access === "app" || webOnlyApproved(row);
-    if (!appOk) return false;
-    if (!s.push_enabled) return false;
-    if (!deviceRegistered(row)) return false;
-    return true;
+    return portalFeaturesComplete(row);
   }
 
   function overallReady(row) {
@@ -262,8 +281,10 @@
       portalAccess: portalAccess(row),
       deviceRegistered: deviceRegistered(row),
       webOnlyApproved: webOnlyApproved(row),
-      locationRequired: locationRequired(row),
-      microphoneOptional: microphoneOptional(row),
+      locationRequired: locationRequiredForRow(row),
+      microphoneOptional: true,
+      portalFeaturesComplete: portalFeaturesComplete(row),
+      permissionsAnnouncementSigned: permissionsAnnouncementSigned(row),
       trainingReady: trainingReady(row),
       complianceReady: complianceReady(row),
       appReady: appReady(row),
@@ -311,11 +332,16 @@
     if (r.announcements === "outstanding") items.push("Announcements not signed");
     if (r.wellbeing === "outstanding") items.push("Wellbeing review outstanding");
     var s = row.setup || {};
+    if (!portalFeaturesComplete(row)) items.push("Portal features not activated");
+    if (state.permissionsAnnouncementIds.length && !permissionsAnnouncementSigned(row)) {
+      items.push("Setup announcement not signed");
+    }
     if (!s.push_enabled) items.push("Alerts disabled");
+    if (!s.camera_granted) items.push("Camera disabled");
     if (r.portalAccess === "web" && !r.webOnlyApproved) items.push("Using web only");
-    if (!r.deviceRegistered) items.push("No device registered");
+    if (!r.deviceRegistered) items.push("App not installed");
     if (r.locationRequired && !s.location_granted) items.push("Location disabled");
-    if (!r.microphoneOptional && !s.microphone_granted) items.push("Microphone disabled");
+    if (!s.microphone_granted) items.push("Microphone off (optional voice-to-text)");
     return items;
   }
 
@@ -346,6 +372,12 @@
     }
     if (items.indexOf("Missing induction modules") >= 0) {
       return "Send induction reminder and book check-in";
+    }
+    if (items.indexOf("Portal features not activated") >= 0) {
+      return "Ask worker to tap Turn on portal features in Settings";
+    }
+    if (items.indexOf("Setup announcement not signed") >= 0) {
+      return "Ask worker to read and sign the portal setup announcement";
     }
     if (items.indexOf("Alerts disabled") >= 0) {
       return "Ask worker to enable alerts in app settings";
@@ -379,7 +411,8 @@
     return row.readiness.portalAccess === "web";
   }
 
-  function mergeRows(profiles, progressRows, setupRows) {
+  function mergeRows(profiles, progressRows, setupRows, permissionAcksByStaff) {
+    permissionAcksByStaff = permissionAcksByStaff || {};
     var byUser = {};
     (profiles || []).forEach(function (p) {
       byUser[p.id] = {
@@ -388,6 +421,7 @@
         profile: p,
         tracks: {},
         setup: null,
+        permissionsSetupAck: null,
       };
     });
     (progressRows || []).forEach(function (r) {
@@ -418,6 +452,11 @@
       }
     });
     applyInferredTrainingDefaults(byUser, profiles);
+    Object.keys(byUser).forEach(function (k) {
+      if (permissionAcksByStaff[k]) {
+        byUser[k].permissionsSetupAck = permissionAcksByStaff[k];
+      }
+    });
     return Object.keys(byUser)
       .map(function (k) {
         return enrichRow(byUser[k]);
@@ -545,16 +584,44 @@
       if (!r.locationRequired) return statusBadge("muted", "Not Required");
       return s.location_granted ? statusBadge("ok", "Enabled") : statusBadge("bad", "Disabled");
     }
+    if (field === "camera") {
+      return s.camera_granted ? statusBadge("ok", "Enabled") : statusBadge("bad", "Disabled");
+    }
     if (field === "microphone") {
-      if (r.microphoneOptional && !s.microphone_granted) {
-        return statusBadge("muted", "Optional");
-      }
-      return s.microphone_granted ? statusBadge("ok", "Enabled") : statusBadge("bad", "Disabled");
+      return s.microphone_granted ? statusBadge("ok", "Enabled") : statusBadge("muted", "Optional");
     }
     if (field === "alerts") {
       return s.push_enabled ? statusBadge("ok", "Enabled") : statusBadge("bad", "Disabled");
     }
     return statusBadge("muted", "—");
+  }
+
+  function portalFeaturesCell(row) {
+    var s = row.setup || {};
+    if (portalFeaturesComplete(row)) {
+      var at = s.portal_features_completed_at || s.updated_at;
+      return (
+        statusBadge("ok", "On") +
+        (at ? '<span class="muted portal-sready-subdate">' + esc(formatLondon(at)) + "</span>" : "")
+      );
+    }
+    return statusBadge("bad", "Not set up");
+  }
+
+  function permissionsAnnouncementCell(row) {
+    var ack = row.permissionsSetupAck;
+    if (ack && ack.signed_at) {
+      return (
+        statusBadge("ok", "Signed") +
+        '<span class="muted portal-sready-subdate">' +
+        esc(formatLondon(ack.signed_at)) +
+        "</span>"
+      );
+    }
+    if (!state.permissionsAnnouncementIds.length) {
+      return statusBadge("muted", "No active notice");
+    }
+    return statusBadge("bad", "Not signed");
   }
 
   function renderKpis(rows) {
@@ -686,17 +753,23 @@
           "<td>" +
           (r.deviceRegistered ? statusBadge("ok", "Yes") : statusBadge("bad", "No")) +
           "</td>" +
+          '<td class="portal-sready-cell">' +
+          portalFeaturesCell(row) +
+          "</td>" +
+          '<td class="portal-sready-cell">' +
+          permissionsAnnouncementCell(row) +
+          "</td>" +
           "<td>" +
           permissionCell(row, "alerts") +
+          "</td>" +
+          "<td>" +
+          permissionCell(row, "camera") +
           "</td>" +
           "<td>" +
           permissionCell(row, "location") +
           "</td>" +
           "<td>" +
           permissionCell(row, "microphone") +
-          "</td>" +
-          '<td class="muted portal-tprog-seen">' +
-          esc(formatLondon(s.updated_at || s.last_seen_at)) +
           "</td>" +
           '<td class="muted portal-tprog-seen">' +
           esc(formatLondon(s.last_seen_at)) +
@@ -717,10 +790,12 @@
       "<th>Staff</th>" +
       "<th>Portal access</th>" +
       "<th>Device registered</th>" +
+      "<th>Portal features</th>" +
+      "<th>Setup announcement</th>" +
       "<th>Alerts</th>" +
+      "<th>Camera</th>" +
       "<th>Location</th>" +
       "<th>Microphone</th>" +
-      "<th>Last login</th>" +
       "<th>Last seen</th>" +
       "<th>Device status</th>" +
       "</tr></thead><tbody>" +
@@ -858,13 +933,58 @@
 
     var setupRes = await client.from("portal_staff_setup_status").select("*");
 
+    var annRes = await client
+      .from("portal_staff_announcements")
+      .select("id, ends_at")
+      .eq("on_ack_action", "portal_permissions");
+
+    var allPermissionAnns = annRes.data || [];
+    var nowMs = Date.now();
+    state.permissionsAnnouncementIds = allPermissionAnns
+      .filter(function (a) {
+        if (!a || !a.id) return false;
+        if (!a.ends_at) return true;
+        return new Date(a.ends_at).getTime() >= nowMs;
+      })
+      .map(function (a) {
+        return a.id;
+      });
+
+    var permissionAnnIds = allPermissionAnns
+      .map(function (a) {
+        return a && a.id;
+      })
+      .filter(Boolean);
+
+    var permissionAcksByStaff = {};
+    var ackErr = null;
+    if (permissionAnnIds.length) {
+      var ackRes = await client
+        .from("portal_staff_announcement_acks")
+        .select("staff_id, signed_at, announcement_id")
+        .in("announcement_id", permissionAnnIds);
+      if (ackRes.error) {
+        ackErr = ackRes.error.message;
+      } else {
+        (ackRes.data || []).forEach(function (ack) {
+          if (!ack || !ack.staff_id) return;
+          var prev = permissionAcksByStaff[ack.staff_id];
+          if (!prev || new Date(ack.signed_at).getTime() > new Date(prev.signed_at).getTime()) {
+            permissionAcksByStaff[ack.staff_id] = ack;
+          }
+        });
+      }
+    }
+
     state.loading = false;
     if (btn) btn.disabled = false;
 
     var err =
       (profilesRes.error && profilesRes.error.message) ||
       (progressRes.error && progressRes.error.message) ||
-      (setupRes.error && setupRes.error.message);
+      (setupRes.error && setupRes.error.message) ||
+      (annRes.error && annRes.error.message) ||
+      ackErr;
 
     if (err) {
       if (/does not exist|relation/i.test(err)) {
@@ -880,7 +1000,7 @@
       return;
     }
 
-    state.rows = mergeRows(profilesRes.data, progressRes.data, setupRes.data);
+    state.rows = mergeRows(profilesRes.data, progressRes.data, setupRes.data, permissionAcksByStaff);
     setStatus("");
     renderTable(state.rows);
   }

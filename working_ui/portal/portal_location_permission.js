@@ -693,6 +693,9 @@ export async function requestDefaultPortalPermissions() {
   if (portalMandatoryAlertsSettingsComplete()) {
     persistSet("portal_alerts_prompt_shown_v1", "1");
     persistSet("portal_portal_features_setup_v1", "1");
+    if (!persistGet("portal_portal_features_setup_at_v1")) {
+      persistSet("portal_portal_features_setup_at_v1", new Date().toISOString());
+    }
     removeNotifyTapBanner();
   }
 
@@ -1069,6 +1072,9 @@ export async function portalEnsureMandatoryAlertsSettings(opts = {}) {
   if (portalMandatoryAlertsSettingsComplete()) {
     persistSet("portal_alerts_prompt_shown_v1", "1");
     persistSet("portal_portal_features_setup_v1", "1");
+    if (!persistGet("portal_portal_features_setup_at_v1")) {
+      persistSet("portal_portal_features_setup_at_v1", new Date().toISOString());
+    }
     removeNotifyTapBanner();
     portalSyncAlertsSettingsChrome();
     if (typeof window.portalEnsureWebPushSubscription === "function") {
