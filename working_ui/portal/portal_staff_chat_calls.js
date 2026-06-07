@@ -1586,10 +1586,8 @@
   function syncCallBar(opts) {
     opts = opts || {};
     var inThread = !!opts.inThread;
-    var workerInboxOnly =
-      typeof global.portalInternalChatOfficeRestricted === "function" &&
-      global.portalInternalChatOfficeRestricted();
-    var showBar = inThread && !workerInboxOnly;
+    // Workers only see office/admin threads in inbox; when a thread is open, calls are allowed.
+    var showBar = inThread;
     var ui = resolveCallUi();
     var bar = document.getElementById(ui.barId);
     if (csCliqCallsActive()) {

@@ -143,7 +143,7 @@ async function resolveTargetUserIds(
     const peer = a === authorId ? b : a;
     if (peer && peer !== authorId) targets.add(peer);
 
-    if (authorRole === "staff") {
+    if (authorRole === "staff" || authorRole === "lead") {
       const admins = await loadAdminCeoUserIds(admin);
       admins.forEach((id) => {
         if (id && id !== authorId) targets.add(id);

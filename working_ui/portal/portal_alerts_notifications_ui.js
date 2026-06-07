@@ -93,8 +93,8 @@
           : null;
       var desktopHint =
         env && env.desktop
-          ? " Alerts are on by default — tap Continue or Send test alert once on this computer (Mac and Windows each need Allow in that browser)."
-          : " Alerts are on by default — tap Send test alert or Continue to allow on this device.";
+          ? " Alerts turn on with one tap anywhere on the dashboard (Mac and Windows each need Allow in that browser)."
+          : " Alerts turn on with one tap anywhere on the dashboard.";
       if (typeof global.portalNotifyEnvironmentHint === "function") {
         desktopHint += global.portalNotifyEnvironmentHint(env);
       }
