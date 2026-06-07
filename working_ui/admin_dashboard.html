@@ -18024,7 +18024,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
 
     function portalAdminRefreshSettingsView(){
-      var root = $('adminMain') || document.getElementById('adminMain');
+      var root = $('workspace') || document.getElementById('workspace');
       if(!root || state.view !== 'settings') return;
       if(!window.PortalAdminSettingsHub){
         root.innerHTML = '<h1 class="page-title">Settings</h1><p class="page-intro">Settings hub script missing.</p>';
