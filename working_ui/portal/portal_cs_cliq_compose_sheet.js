@@ -99,8 +99,12 @@
     if (err) err.textContent = "";
     shell.dataset.composeKind = kind;
     shell.removeAttribute("hidden");
+    shell.style.display = "";
     shell.setAttribute("aria-hidden", "false");
     shell.classList.add("is-open");
+    try {
+      document.body.classList.add("portal-cs-cliq-compose-open");
+    } catch (_b) {}
     if (titleInp) titleInp.focus();
   }
 
@@ -110,6 +114,10 @@
     shell.classList.remove("is-open");
     shell.setAttribute("hidden", "");
     shell.setAttribute("aria-hidden", "true");
+    shell.style.display = "none";
+    try {
+      document.body.classList.remove("portal-cs-cliq-compose-open");
+    } catch (_b) {}
   }
 
   async function publish() {

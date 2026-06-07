@@ -35,10 +35,10 @@
   <script src="/portal/portal_cs_cliq_thread_files.js?v=20260604-cliq-files"></script>
   <script src="/portal/portal_admin_cs_cliq.js?v=20260604-cliq-files"></script>
   <script src="/portal/portal_cs_cliq_workspace.js?v=20260604-cliq-inbox"></script>
-  <script src="/portal/portal_cs_cliq_compose_sheet.js?v=20260621-cliq-workspace"></script>
+  <script src="/portal/portal_cs_cliq_compose_sheet.js?v=20260604-cliq-fix"></script>
   <script src="/portal/portal_cs_cliq_files_hub.js?v=20260604-cliq-files"></script>
   <script src="/portal/portal_cs_cliq_meetings_hub.js?v=20260622-meetings-centre"></script>
-  <link rel="stylesheet" href="/portal/portal_cs_cliq_workspace.css?v=20260621-cliq-workspace" />
+  <link rel="stylesheet" href="/portal/portal_cs_cliq_workspace.css?v=20260604-cliq-fix" />
   <link rel="stylesheet" href="/portal/portal_cs_cliq_hub.css?v=20260604-cliq-inbox" />
   <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260622-ghost-view" />
   <script src="/portal/admin-portal-ghost-teleport.js?v=20260622-ghost-lead"></script>
@@ -17838,6 +17838,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             if(window.PortalAdminCsCliq && typeof window.PortalAdminCsCliq.setRailPane === 'function'){
               window.PortalAdminCsCliq.setRailPane('chats');
             }
+          },
+          channels: {
+            composeAnnouncement: function(){ openComposeModalAnnouncementOrReminder(false); },
+            composeReminder: function(){ openComposeModalAnnouncementOrReminder(true); },
+            signedLog: function(){ openPortalAdminAnnouncementSignedModal(); },
+            reminderAck: function(){ openPortalAdminReminderAckModal(); },
+            manage: function(){ openPortalAdminMessagesManageModal(); }
           }
         });
         return;

@@ -201,6 +201,11 @@
   pointer-events: none;
 }
 
+.portal-cs-cliq-compose-sheet[hidden] {
+  display: none !important;
+  pointer-events: none !important;
+}
+
 .portal-cs-cliq-compose-sheet.is-open {
   pointer-events: auto;
 }

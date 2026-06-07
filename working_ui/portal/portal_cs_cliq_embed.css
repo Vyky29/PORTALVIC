@@ -133,6 +133,34 @@
   min-height: 0;
 }
 
+.portal-cs-cliq-embed-host #csCliqRoot .portal-cs-cliq__pane--announcements,
+.portal-cs-cliq-embed-host #csCliqRoot .portal-cs-cliq-announcements-dayops {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.portal-cs-cliq-embed-host #csCliqRoot .portal-cs-cliq-announcements-centre {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+.portal-cs-cliq-embed-host #csCliqRoot #csCliqThreadPanel,
+.portal-cs-cliq-embed-host #csCliqRoot .portal-cs-cliq-thread {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.portal-cs-cliq-embed-host #csCliqRoot .portal-cs-cliq-composer {
+  flex-shrink: 0;
+}
+
 .portal-cs-cliq-embed-host #csCliqRoot .portal-cs-cliq__module-body,
 .portal-cs-cliq-embed-host #csCliqRoot .portal-cs-cliq__channels-body {
   overflow: auto;

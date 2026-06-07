@@ -76,6 +76,29 @@
             global.portalExecutiveDmInit(channel || "staff_lead");
           }
         },
+        channels: {
+          composeAnnouncement: function () {
+            if (global.portalCsCliqComposeSheet && typeof global.portalCsCliqComposeSheet.open === "function") {
+              global.portalCsCliqComposeSheet.open("announcement");
+            }
+          },
+          composeReminder: function () {
+            if (global.portalCsCliqComposeSheet && typeof global.portalCsCliqComposeSheet.open === "function") {
+              global.portalCsCliqComposeSheet.open("reminder");
+            }
+          },
+          signedLog: function () {
+            if (typeof global.openSheet === "function") global.openSheet("announcementsSheet");
+          },
+          reminderAck: function () {
+            if (typeof global.openSheet === "function") global.openSheet("announcementsSheet");
+          },
+          manage: function () {
+            if (global.portalCsCliqComposeSheet && typeof global.portalCsCliqComposeSheet.openManage === "function") {
+              global.portalCsCliqComposeSheet.openManage();
+            }
+          },
+        },
       });
       return;
     }
