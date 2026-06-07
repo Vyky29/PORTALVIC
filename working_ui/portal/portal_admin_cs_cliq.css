@@ -22,10 +22,10 @@
 
 @media (max-width: 899px) {
   #csCliqRoot.portal-cs-cliq {
-    min-height: calc(100dvh - 148px);
-    max-height: calc(100dvh - 148px);
-    margin: -4px -8px 0;
-    border-radius: 10px;
+    min-height: 0;
+    max-height: none;
+    margin: 0;
+    border-radius: 0;
   }
 }
 
@@ -920,4 +920,196 @@ body.admin-view-cs-cliq .portal-admin-floating-chat-wrap {
   border-radius: 50%;
   background: var(--portal-chat-blue, #2d84b3);
   box-shadow: 0 0 0 2px #fff;
+}
+
+/* —— Mobile: bottom rail + full-screen conversation sub-screens —— */
+@media (max-width: 899px) {
+  body.admin-touch-compact.admin-view-cs-cliq .admin-workspace {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 0 !important;
+    overflow: hidden;
+  }
+
+  body.admin-touch-compact.admin-view-cs-cliq #csCliqRoot.portal-cs-cliq {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    height: 100%;
+    margin: 0;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+  }
+
+  #csCliqRoot .portal-cs-cliq__layout {
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  #csCliqRoot .portal-cs-cliq__main {
+    order: 1;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  #csCliqRoot .portal-cs-cliq__rail {
+    order: 2;
+    flex: 0 0 auto;
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: space-around;
+    width: 100%;
+    min-width: 0;
+    border-right: none;
+    border-top: 1px solid var(--portal-chat-line);
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    gap: 2px;
+  }
+
+  #csCliqRoot .portal-cs-cliq__rail-btn {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 72px;
+    padding: 8px 2px 6px;
+  }
+
+  #csCliqRoot .portal-cs-cliq__rail-label {
+    font-size: 6px;
+  }
+
+  #csCliqRoot .portal-cs-cliq__chat-head {
+    padding: max(8px, env(safe-area-inset-top, 0px)) 10px 8px;
+    gap: 6px;
+  }
+
+  #csCliqRoot .portal-dm-inbox-nav {
+    padding: 8px 10px 6px;
+    gap: 6px;
+  }
+
+  #csCliqRoot .portal-dm-inbox-nav-btn {
+    padding: 8px 6px;
+    font-size: 11px;
+  }
+
+  #csCliqRoot .portal-cs-cliq__back-btn::before {
+    content: "‹";
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  /* Thread / compose: hide chrome, use full viewport like a chat app */
+  body.admin-touch-compact.admin-cs-cliq-mobile-subscreen .admin-topbar {
+    display: none !important;
+  }
+
+  body.admin-touch-compact.admin-cs-cliq-mobile-subscreen {
+    overflow: hidden;
+  }
+
+  body.admin-touch-compact.admin-cs-cliq-mobile-subscreen .admin-main {
+    min-height: 100dvh;
+    max-height: 100dvh;
+  }
+
+  body.admin-touch-compact.admin-cs-cliq-mobile-subscreen .admin-workspace {
+    min-height: 100dvh;
+    max-height: 100dvh;
+  }
+
+  #csCliqRoot.portal-cs-cliq--subscreen {
+    position: fixed;
+    inset: 0;
+    z-index: 12100;
+    width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    background: #fff;
+  }
+
+  #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq__rail {
+    display: none !important;
+  }
+
+  #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq__layout {
+    height: 100%;
+    min-height: 0;
+  }
+
+  #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq__main,
+  #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq__pane,
+  #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq__chat-body,
+  #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadPanel,
+  #csCliqRoot.portal-cs-cliq--subscreen #csCliqComposePanel {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq__chat-head {
+    padding-top: max(10px, env(safe-area-inset-top, 0px));
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-rows: auto;
+  }
+
+  #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq__chat-title {
+    text-align: left;
+    font-size: 16px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq__new-btn {
+    display: none !important;
+  }
+
+  #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq__head-call-bar,
+  #csCliqRoot.portal-cs-cliq--subscreen #csCliqHeadCallBar {
+    grid-column: 3;
+    grid-row: 1;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    gap: 4px;
+  }
+
+  #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq__head-call-bar .portal-dm-call-bar-btn,
+  #csCliqRoot.portal-cs-cliq--subscreen #csCliqHeadCallBar .portal-dm-call-bar-btn {
+    flex: 0 0 auto;
+    padding: 6px 8px;
+    font-size: 10px;
+  }
+
+  #csCliqRoot.portal-cs-cliq--subscreen .portal-dm-compose-bar {
+    padding: 8px 10px calc(10px + env(safe-area-inset-bottom, 0px));
+    background: #f0f2f5;
+  }
+
+  #csCliqRoot.portal-cs-cliq--subscreen .portal-dm-compose-bar .txa {
+    min-height: 44px;
+    max-height: 120px;
+    resize: none;
+    font-size: 16px;
+  }
+
+  #csCliqRoot.portal-cs-cliq--subscreen #csCliqMessages {
+    background: #e5ddd5;
+    background-image: radial-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+    background-size: 12px 12px;
+  }
+
+  #csCliqRoot.portal-cs-cliq--subscreen #csCliqComposePanel {
+    padding: 12px 12px calc(12px + env(safe-area-inset-bottom, 0px));
+    overflow: auto;
+  }
 }

@@ -26,7 +26,7 @@
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260622-photo-delete" />
   <script src="/portal/admin-portal-staff-map.js?v=20260622-ghost-map"></script>
   <script src="/portal/portal_dm_icons.js?v=20260624-dm-icons"></script>
-  <script src="/portal/portal_admin_cs_cliq.js?v=20260624-dm-icons"></script>
+  <script src="/portal/portal_admin_cs_cliq.js?v=20260605-mobile-chat"></script>
   <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260622-ghost-view" />
   <script src="/portal/admin-portal-ghost-teleport.js?v=20260622-ghost-lead"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
@@ -54,7 +54,7 @@
   <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260605-admin-mobile-landscape" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260605-admin-mobile-nav" />
-  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260605-rail-labels" />
+  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260605-mobile-chat" />
 </head>
 <body>
   <script>
@@ -1926,6 +1926,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(state.view === 'cs_cliq' && id !== 'cs_cliq'){
         window.__PORTAL_CS_CLIQ_ACTIVE = false;
         window.__PORTAL_ADMIN_DM_OPEN = false;
+        document.body.classList.remove('admin-cs-cliq-mobile-subscreen');
         try{
           if(window.PortalAdminCsCliq && typeof window.PortalAdminCsCliq.destroyModule === 'function'){
             window.PortalAdminCsCliq.destroyModule();
@@ -19679,6 +19680,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(tabCeo) tabCeo.classList.toggle('is-active', ch === 'ceo_exec');
       if(nav) nav.hidden = !portalAdminDmPremiumSheetActive();
     }
+    function portalAdminCsCliqSyncMobileSubscreen(panel){
+      var mobile = false;
+      try{ mobile = adminTouchCompactLayoutActive(); }catch(_mob){}
+      var sub = mobile && (panel === 'thread' || panel === 'compose');
+      document.body.classList.toggle('admin-cs-cliq-mobile-subscreen', sub);
+      var root = document.getElementById('csCliqRoot');
+      if(root){
+        root.classList.toggle('portal-cs-cliq--subscreen', sub);
+        root.setAttribute('data-cs-cliq-panel', String(panel || 'list'));
+      }
+    }
     function portalAdminCsCliqSyncChatView(){
       var ui = window.__PORTAL_ADMIN_DM_UI || {};
       var panel = String(ui.panel || 'list');
@@ -19693,6 +19705,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var newBtn = document.getElementById('csCliqBtnNew');
       var chatBody = document.querySelector('#csCliqRoot .portal-cs-cliq__chat-body');
       if(chatBody) chatBody.setAttribute('data-cs-cliq-panel', panel);
+      portalAdminCsCliqSyncMobileSubscreen(panel);
       if(listPanel) listPanel.hidden = inThread || inCompose;
       if(composePanel) composePanel.hidden = !inCompose;
       if(threadPanel){
@@ -24445,8 +24458,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function adminApplyTouchCompactLayoutClass(){
       var on = adminTouchCompactLayoutActive();
       document.body.classList.toggle('admin-touch-compact', on);
-      if(!on) closeMenu();
-      else syncMenuAria();
+      if(!on){
+        closeMenu();
+        document.body.classList.remove('admin-cs-cliq-mobile-subscreen');
+      }else syncMenuAria();
+      if(state.view === 'cs_cliq' && portalAdminDmCsCliqEmbedActive()){
+        try{
+          var ui = window.__PORTAL_ADMIN_DM_UI || {};
+          portalAdminCsCliqSyncMobileSubscreen(String(ui.panel || 'list'));
+        }catch(_csMob){}
+      }
     }
     function bindAdminMobileNavOnce(){
       if(window.__adminMobNavBound) return;
