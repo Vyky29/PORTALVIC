@@ -127,6 +127,9 @@
     global.__PORTAL_CS_CLIQ_EMBED_OPEN = true;
     global.__PORTAL_CS_CLIQ_EMBED_SHEET = backdrop;
     global.__PORTAL_CS_CLIQ_ACTIVE = true;
+    global.__PORTAL_INTERNAL_CHAT_UI = global.__PORTAL_INTERNAL_CHAT_UI || {};
+    global.__PORTAL_INTERNAL_CHAT_UI.threadId = null;
+    global.__PORTAL_INTERNAL_CHAT_UI.peerLabel = "";
     global.__PORTAL_CS_CLIQ_PENDING_CHANNEL = channel;
     var pane = String(opts.pane || global.__PORTAL_CS_CLIQ_PENDING_PANE || "chats").trim();
     if (pane === "channels" || pane === "teams" || pane === "operations") pane = pane === "channels" ? "announcements" : "chats";
