@@ -15,6 +15,17 @@
     return false;
   }
 
+  function isRestrictedWorkerChat() {
+    if (
+      global.portalLeadStaffChatDirectory &&
+      typeof global.portalLeadStaffChatDirectory.portalStaffIsRestrictedWorkerChat === "function"
+    ) {
+      return global.portalLeadStaffChatDirectory.portalStaffIsRestrictedWorkerChat(profileRow());
+    }
+    var ar = String(profileRow().app_role || "").toLowerCase();
+    return ar === "staff" || ar === "lead";
+  }
+
   function onAdminPortal() {
     if (global.portalDmRoles && typeof global.portalDmRoles.portalDmOnAdminPortal === "function") {
       return global.portalDmRoles.portalDmOnAdminPortal();
@@ -68,6 +79,7 @@
   /** Staff/lead portal chat entry: executives get CS Cliq embed; everyone else gets restricted inbox. */
   function openPortalWorkerChat(channel) {
     if (onAdminPortal()) return false;
+    if (isRestrictedWorkerChat()) return openRestrictedWorkerInternalChat(channel);
     if (tryOpenAdminCliq(channel)) return true;
     return openRestrictedWorkerInternalChat(channel);
   }

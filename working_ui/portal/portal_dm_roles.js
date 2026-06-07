@@ -1,5 +1,5 @@
 /**
- * Shared internal-chat role rules â€” directors (Raul, Javier, Victor), admin, staff reachability.
+ * Shared internal-chat role rules — directors (Raul, Javier, Victor), admin, staff reachability.
  */
 (function (global) {
   "use strict";
@@ -35,12 +35,23 @@
 
   function portalDmIsDirectorProfile(row) {
     if (!row || row.is_active === false) return false;
+    var ar = String(row.app_role || "").toLowerCase();
+    if (ar === "staff") return false;
     var p = profileNameParts(row);
-    if (DIRECTOR_FIRST_KEYS[p.username] || DIRECTOR_FIRST_KEYS[p.first]) return true;
-    if (p.username.indexOf("palan") >= 0 || p.full.indexOf("palan") >= 0) return true;
+    if (p.username === "raul" || p.username === "victor") return true;
+    if (p.username.indexOf("palan") >= 0) return true;
+    if (p.username === "javi" || p.username === "javier") {
+      return (
+        DIRECTOR_SURNAME_KEYS[p.last] ||
+        p.full.indexOf("arranz") >= 0 ||
+        p.full.indexOf("palan") >= 0
+      );
+    }
+    if (p.full.indexOf("palan") >= 0 || p.full.indexOf("arranz") >= 0) return true;
+    if (p.first === "raul" || p.first === "victor") return true;
     if (
-      (DIRECTOR_FIRST_KEYS[p.first] || p.first === "javier" || p.first === "javi") &&
-      (DIRECTOR_SURNAME_KEYS[p.last] || p.full.indexOf("arranz") >= 0)
+      (p.first === "javier" || p.first === "javi") &&
+      (DIRECTOR_SURNAME_KEYS[p.last] || p.full.indexOf("arranz") >= 0 || p.full.indexOf("palan") >= 0)
     ) {
       return true;
     }
@@ -64,6 +75,8 @@
    */
   function portalDmUsesAdminCliq(prof) {
     var row = profileRow(prof);
+    var ar = String(row.app_role || "").toLowerCase();
+    if (ar === "staff" || ar === "lead") return false;
     if (portalDmIsAdminProfile(row) || portalDmIsDirectorProfile(row)) return true;
     return false;
   }

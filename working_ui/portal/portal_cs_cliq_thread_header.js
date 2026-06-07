@@ -77,7 +77,33 @@
     if (avatarEl) avatarEl.textContent = initials(label);
     var role = String(peerRole || "").trim() || "Staff";
     if (roleEl) roleEl.textContent = role;
-    if (statusEl) statusEl.textContent = "Available";
+    if (statusEl) {
+      try {
+        var away = String(global.localStorage.getItem("portal_cs_cliq_workspace_status") || "at_work") === "away";
+        statusEl.textContent = away ? "Away" : "Available";
+      } catch (_s) {
+        statusEl.textContent = "Available";
+      }
+    }
+    var restricted =
+      global.portalInternalChatOfficeRestricted &&
+      typeof global.portalInternalChatOfficeRestricted === "function" &&
+      global.portalInternalChatOfficeRestricted();
+    var callBar = document.getElementById("internalChatCallBar");
+    if (callBar) {
+      callBar.hidden = false;
+      callBar.setAttribute("aria-hidden", "false");
+    }
+    var filesBtn = document.getElementById("internalChatThreadFilesBtn");
+    var moreBtn = document.getElementById("internalChatThreadMoreBtn");
+    if (filesBtn) {
+      filesBtn.hidden = !!restricted;
+      filesBtn.setAttribute("aria-hidden", restricted ? "true" : "false");
+    }
+    if (moreBtn) {
+      moreBtn.hidden = !!restricted;
+      moreBtn.setAttribute("aria-hidden", restricted ? "true" : "false");
+    }
     header.classList.add("is-open");
     header.removeAttribute("hidden");
     header.setAttribute("aria-hidden", "false");

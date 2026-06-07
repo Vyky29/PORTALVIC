@@ -113,8 +113,11 @@
   }
 
   function canOpenEmbed() {
+    var prof = (global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.staff_profile) || {};
+    var ar = String(prof.app_role || "").toLowerCase();
+    if (ar === "staff" || ar === "lead") return false;
     if (global.portalDmRoles && typeof global.portalDmRoles.portalDmUsesAdminCliq === "function") {
-      return global.portalDmRoles.portalDmUsesAdminCliq();
+      return global.portalDmRoles.portalDmUsesAdminCliq(prof);
     }
     return false;
   }

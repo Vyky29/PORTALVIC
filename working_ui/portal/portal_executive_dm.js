@@ -558,9 +558,11 @@
       if(typeof closeSidebarMob === 'function') closeSidebarMob();
       if(typeof setView === 'function') setView('cs_cliq');
     }
-    window.portalOpenInternalChatFromHeaderQuickMenu = function portalOpenInternalChatFromHeaderQuickMenu(){
-      openAdminPremiumInternalChat(window.__PORTAL_ADMIN_DM_CHANNEL || 'staff_lead');
-    };
+    if(/admin_dashboard\.html/i.test(String(window.location.pathname || ''))){
+      window.portalOpenInternalChatFromHeaderQuickMenu = function portalOpenInternalChatFromHeaderQuickMenu(){
+        openAdminPremiumInternalChat(window.__PORTAL_ADMIN_DM_CHANNEL || 'staff_lead');
+      };
+    }
     function portalAdminDmTogglePanels(panel){
       window.__PORTAL_ADMIN_DM_UI = window.__PORTAL_ADMIN_DM_UI || { threadId: '', groupId: '' };
       window.__PORTAL_ADMIN_DM_UI.panel = panel;
