@@ -1,12 +1,43 @@
 /**
  * Staff live map — share GPS only around today's roster shift:
  * from 15 minutes before first session until 30 minutes after last session.
+ *
+ * Mandatory live-map staff (location block in Settings + shift GPS):
+ * - Leads: Berta, John, Michelle
+ * - Day Centre: Youssef, Lulia, Michelle, Raul, Victor
+ * - Bespoke support: John, Giuseppe, Bismark, Godsway
+ * - Climbing: Alex, Carlos, Andres, Javi
  */
 (function (global) {
   "use strict";
 
   var BEFORE_MS = 15 * 60 * 1000;
   var AFTER_MS = 30 * 60 * 1000;
+
+  /** Roster keys (staffProfiles) with mandatory location sharing when on shift. */
+  var PORTAL_LIVE_MAP_MANDATORY_STAFF = {
+    berta: true,
+    john: true,
+    michelle: true,
+    youssef: true,
+    lulia: true,
+    raul: true,
+    victor: true,
+    giuseppe: true,
+    bismark: true,
+    godsway: true,
+    alex: true,
+    carlos: true,
+    andres: true,
+    javi: true,
+  };
+
+  /** Leads: any rostered session today counts for the shift window (not only bespoke/day centre). */
+  var PORTAL_LIVE_MAP_LEAD_STAFF = {
+    berta: true,
+    john: true,
+    michelle: true,
+  };
 
   function localTodayIso() {
     try {
@@ -50,6 +81,23 @@
     return new Date(y, mo, da, h, m, 0, 0).getTime();
   }
 
+  function resolveStaffRosterKey(profile, authUser, bootWrap) {
+    if (bootWrap && bootWrap.staffId) {
+      return String(bootWrap.staffId).trim().toLowerCase();
+    }
+    var fn = global.portalPrimaryStaffRosterKey;
+    if (typeof fn === "function") {
+      var k = fn(profile, authUser);
+      if (k) return String(k).trim().toLowerCase();
+    }
+    return "";
+  }
+
+  function portalLiveMapMandatoryStaff(profile, authUser, bootWrap) {
+    var key = resolveStaffRosterKey(profile, authUser, bootWrap);
+    return !!(key && PORTAL_LIVE_MAP_MANDATORY_STAFF[key]);
+  }
+
   function sessionQualifiesForLiveLocation(s) {
     var svc = String(
       (s && (s.service || s.serviceName || s.programme)) || ""
@@ -57,8 +105,19 @@
     return (
       svc.indexOf("bespoke") !== -1 ||
       svc.indexOf("day centre") !== -1 ||
-      svc.indexOf("day center") !== -1
+      svc.indexOf("day center") !== -1 ||
+      svc.indexOf("climbing") !== -1
     );
+  }
+
+  /** Shift-window sessions: bespoke, day centre, climbing; leads also count any client session. */
+  function sessionQualifiesForLiveLocationShift(s, staffKey) {
+    if (sessionQualifiesForLiveLocation(s)) return true;
+    if (!staffKey || !PORTAL_LIVE_MAP_LEAD_STAFF[staffKey]) return false;
+    if (!s || s.clientId === "closed" || !s.start || !s.end) return false;
+    var cid = String(s.clientId || s.clientSlug || "").trim().toLowerCase();
+    if (!cid || cid === "available" || cid === "noclient" || cid === "no client") return false;
+    return true;
   }
 
   function sessionsForCalendarToday(sessionsModel) {
@@ -92,8 +151,7 @@
   }
 
   /**
-   * True when the worker has any Bespoke Programme or Day Centre session on their rota
-   * (not just today — controls whether Location appears in Settings at all).
+   * True when the worker must enable Location in Settings (mandatory list or qualifying roster).
    * @param {Record<string, unknown> | null | undefined} profile
    * @param {import("@supabase/supabase-js").User | null | undefined} authUser
    */
@@ -101,6 +159,7 @@
     var bootFn = global.portalBootstrapStaffRosterFromProfile;
     var bootWrap =
       typeof bootFn === "function" ? bootFn(profile || null, authUser || null) : null;
+    if (portalLiveMapMandatoryStaff(profile, authUser, bootWrap)) return true;
     if (!bootWrap || !bootWrap.boot) return false;
     var model = bootWrap.boot.sessionsModel || [];
     for (var i = 0; i < model.length; i++) {
@@ -113,7 +172,7 @@
   }
 
   /**
-   * True when the worker has Bespoke Programme or Day Centre on today's rota.
+   * True when the worker has a qualifying session on today's calendar rota.
    * @param {Record<string, unknown> | null | undefined} profile
    * @param {import("@supabase/supabase-js").User | null | undefined} authUser
    */
@@ -122,8 +181,11 @@
     var bootWrap =
       typeof bootFn === "function" ? bootFn(profile || null, authUser || null) : null;
     if (!bootWrap || !bootWrap.boot) return false;
+    var staffKey = resolveStaffRosterKey(profile, authUser, bootWrap);
     var todaySessions = sessionsForCalendarToday(bootWrap.boot.sessionsModel);
-    return todaySessions.some(sessionQualifiesForLiveLocation);
+    return todaySessions.some(function (s) {
+      return sessionQualifiesForLiveLocationShift(s, staffKey);
+    });
   }
 
   /**
@@ -135,12 +197,15 @@
     var bootFn = global.portalBootstrapStaffRosterFromProfile;
     var bootWrap =
       typeof bootFn === "function" ? bootFn(profile || null, authUser || null) : null;
+    var staffKey = resolveStaffRosterKey(profile, authUser, bootWrap);
+    var mandatory = portalLiveMapMandatoryStaff(profile, authUser, bootWrap);
 
     if (!bootWrap || !bootWrap.boot) {
       return {
         allowed: false,
-        reason: "no_roster",
-        locationRequired: false,
+        reason: mandatory ? "no_roster_mandatory" : "no_roster",
+        locationRequired: mandatory,
+        staffId: staffKey || null,
         todayIso: todayIso,
         windowStartMs: null,
         windowEndMs: null,
@@ -148,15 +213,17 @@
     }
 
     var todaySessions = sessionsForCalendarToday(bootWrap.boot.sessionsModel);
-    var qualifyingSessions = todaySessions.filter(sessionQualifiesForLiveLocation);
-    var locationRequired = qualifyingSessions.length > 0;
+    var qualifyingSessions = todaySessions.filter(function (s) {
+      return sessionQualifiesForLiveLocationShift(s, staffKey);
+    });
+    var locationRequired = mandatory || qualifyingSessions.length > 0;
 
     if (!todaySessions.length) {
       return {
         allowed: false,
         reason: "no_shift_today",
-        locationRequired: false,
-        staffId: bootWrap.staffId,
+        locationRequired: mandatory,
+        staffId: staffKey || bootWrap.staffId,
         todayIso: todayIso,
         windowStartMs: null,
         windowEndMs: null,
@@ -166,9 +233,9 @@
     if (!qualifyingSessions.length) {
       return {
         allowed: false,
-        reason: "location_not_required",
-        locationRequired: false,
-        staffId: bootWrap.staffId,
+        reason: mandatory ? "no_qualifying_shift_today" : "location_not_required",
+        locationRequired: mandatory,
+        staffId: staffKey || bootWrap.staffId,
         todayIso: todayIso,
         windowStartMs: null,
         windowEndMs: null,
@@ -181,7 +248,8 @@
       return {
         allowed: false,
         reason: "invalid_shift_times",
-        staffId: bootWrap.staffId,
+        staffId: staffKey || bootWrap.staffId,
+        locationRequired: locationRequired,
         todayIso: todayIso,
         windowStartMs: null,
         windowEndMs: null,
@@ -202,13 +270,14 @@
       allowed: allowed,
       reason: reason,
       locationRequired: locationRequired,
-      staffId: bootWrap.staffId,
+      staffId: staffKey || bootWrap.staffId,
       todayIso: todayIso,
       shiftStartMs: bounds.shiftStartMs,
       shiftEndMs: bounds.shiftEndMs,
       windowStartMs: windowStartMs,
       windowEndMs: windowEndMs,
       sessionCount: qualifyingSessions.length,
+      mandatory: mandatory,
     };
   }
 
@@ -229,6 +298,7 @@
   global.portalLiveMapLocationRequiredForWorker = portalLiveMapLocationRequiredForWorker;
   global.portalLiveMapLocationRequiredToday = portalLiveMapLocationRequiredToday;
   global.portalLiveMapMsUntilShiftBoundary = portalLiveMapMsUntilShiftBoundary;
+  global.PORTAL_LIVE_MAP_MANDATORY_STAFF = PORTAL_LIVE_MAP_MANDATORY_STAFF;
   global.PORTAL_LIVE_MAP_SHIFT_BEFORE_MS = BEFORE_MS;
   global.PORTAL_LIVE_MAP_SHIFT_AFTER_MS = AFTER_MS;
 })(typeof window !== "undefined" ? window : globalThis);

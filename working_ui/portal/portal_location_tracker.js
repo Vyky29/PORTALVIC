@@ -88,7 +88,7 @@ async function ensureShiftWindowModule() {
   if (_shiftWindowModuleLoading) return;
   _shiftWindowModuleLoading = true;
   try {
-    await import("./portal_live_map_shift_window.js?v=20260610-live-map-fix");
+    await import("./portal_live_map_shift_window.js?v=20260605-mandatory-staff");
   } catch (err) {
     console.debug("[portal] live map shift window module skipped:", err);
   } finally {
