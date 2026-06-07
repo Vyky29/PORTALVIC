@@ -213,7 +213,7 @@
       '<header class="portal-cs-cliq-thread-header" id="csCliqThreadHeader" hidden>' +
       '<button type="button" class="portal-cs-cliq__back-btn" id="csCliqBackBtn" aria-label="Back to inbox">‹</button>' +
       '<div class="portal-cs-cliq-thread-header__identity">' +
-      '<span class="portal-cs-cliq-thread-header__avatar" id="csCliqThreadAvatar" aria-hidden="true">?</span>' +
+      '<span class="portal-cs-cliq-thread-header__avatar" id="csCliqThreadAvatar" aria-hidden="true"></span>' +
       '<div class="portal-cs-cliq-thread-header__meta">' +
       '<span class="portal-cs-cliq-thread-header__name" id="csCliqThreadName">Conversation</span>' +
       '<span class="portal-cs-cliq-thread-header__role" id="csCliqThreadRole">Staff</span>' +

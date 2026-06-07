@@ -33,14 +33,20 @@
     backdrop.id = "portalCsCliqEmbedBackdrop";
     backdrop.className = "portal-cs-cliq-embed-backdrop";
     backdrop.setAttribute("aria-hidden", "true");
+    var logoSrc =
+      (global.PORTAL_BRAND_LOGO_SRC && String(global.PORTAL_BRAND_LOGO_SRC)) || "/portal/F-02-1.png";
     backdrop.innerHTML =
       '<div id="portalCsCliqEmbedSheet" class="portal-cs-cliq-embed-sheet" role="dialog" aria-modal="true" aria-label="CS Cliq">' +
       '<header class="portal-cs-cliq-embed-head">' +
-      '<button type="button" class="portal-cs-cliq-embed-close" id="portalCsCliqEmbedClose" aria-label="Close CS Cliq">ù</button>' +
+      '<div class="portal-cs-cliq-embed-brand">' +
+      '<img class="portal-cs-cliq-embed-logo" src="' +
+      esc(logoSrc) +
+      '" alt="" width="40" height="40" decoding="async" referrerpolicy="no-referrer-when-downgrade" onerror="typeof portalBrandLogoOnError===\'function\'?portalBrandLogoOnError(this):(this.onerror=null,this.src=\'/portal/portal_crest.svg\')" />' +
       '<div class="portal-cs-cliq-embed-head__meta">' +
-      '<span class="portal-cs-cliq-embed-kicker">Club Sensational</span>' +
+      '<span class="portal-cs-cliq-embed-kicker">clubSENsational</span>' +
       '<h2 class="portal-cs-cliq-embed-title">CS Cliq</h2>' +
-      "</div>" +
+      "</div></div>" +
+      '<button type="button" class="portal-cs-cliq-embed-close" id="portalCsCliqEmbedClose" aria-label="Close CS Cliq">&times;</button>' +
       "</header>" +
       '<div id="portalCsCliqEmbedHost" class="portal-cs-cliq-embed-host"></div>' +
       "</div>";

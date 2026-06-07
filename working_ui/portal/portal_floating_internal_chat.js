@@ -1,5 +1,5 @@
 /**
- * Internal Chat  footer dock button (badge + blue pulse when unread).
+ * Internal Chat â€” footer dock button (badge + blue pulse when unread).
  */
 (function (global) {
   "use strict";
@@ -65,10 +65,10 @@
       badge.textContent = count > 99 ? "99+" : String(count);
       var label =
         count === 1
-          ? "Open internal chat  1 unread message"
-          : "Open internal chat  " + count + " unread messages";
+          ? "Open internal chat â€” 1 unread message"
+          : "Open internal chat â€” " + count + " unread messages";
       btn.setAttribute("aria-label", label);
-      btn.title = count === 1 ? "Chat  1 new message" : "Chat  " + count + " new messages";
+      btn.title = count === 1 ? "Chat â€” 1 new message" : "Chat â€” " + count + " new messages";
     } else {
       badge.hidden = true;
       badge.setAttribute("aria-hidden", "true");

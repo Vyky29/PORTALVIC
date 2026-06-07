@@ -29,14 +29,14 @@
       '<div class="portal-cs-cliq-compose-sheet__backdrop" data-cs-cliq-compose-close></div>' +
       '<div class="portal-cs-cliq-compose-sheet__panel" role="dialog" aria-modal="true" aria-labelledby="portalCsCliqComposeTitle">' +
       '<header class="portal-cs-cliq-compose-sheet__head">' +
-      '<button type="button" class="portal-cs-cliq-compose-sheet__close" data-cs-cliq-compose-close aria-label="Close">×</button>' +
-      '<div><p class="portal-cs-cliq-compose-sheet__kicker">CS Cliq · Channels</p><h3 id="portalCsCliqComposeTitle">Compose</h3></div>' +
+      '<button type="button" class="portal-cs-cliq-compose-sheet__close" data-cs-cliq-compose-close aria-label="Close">&times;</button>' +
+      '<div><p class="portal-cs-cliq-compose-sheet__kicker">CS Cliq Â· Channels</p><h3 id="portalCsCliqComposeTitle">Compose</h3></div>' +
       "</header>" +
       '<div class="portal-cs-cliq-compose-sheet__body">' +
       '<label class="portal-cs-cliq-compose-label">Title</label>' +
-      '<input type="text" id="portalCsCliqComposeTitleInput" class="portal-cs-cliq-compose-input" maxlength="200" placeholder="Title for staff…" />' +
+      '<input type="text" id="portalCsCliqComposeTitleInput" class="portal-cs-cliq-compose-input" maxlength="200" placeholder="Title for staffâ€¦" />' +
       '<label class="portal-cs-cliq-compose-label">Message</label>' +
-      '<textarea id="portalCsCliqComposeBody" class="portal-cs-cliq-compose-textarea" placeholder="Write your announcement or reminder…"></textarea>' +
+      '<textarea id="portalCsCliqComposeBody" class="portal-cs-cliq-compose-textarea" placeholder="Write your announcement or reminderâ€¦"></textarea>' +
       '<div id="portalCsCliqComposeReminderWrap" hidden>' +
       '<label class="portal-cs-cliq-compose-label">Reminder category</label>' +
       '<select id="portalCsCliqComposeRemCat" class="portal-cs-cliq-compose-select">' +
@@ -131,7 +131,7 @@
     }
     var tgt = audienceTargets(aud);
     var row = {
-      title: title.length > 200 ? title.slice(0, 197) + "…" : title,
+      title: title.length > 200 ? title.slice(0, 197) + "â€¦" : title,
       body: body,
       message_type: kind,
       priority: "normal",

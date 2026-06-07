@@ -401,76 +401,15 @@
       }
     }
     function portalAdminCsCliqSyncChatView(){
-      var ui = window.__PORTAL_ADMIN_DM_UI || {};
-      var panel = String(ui.panel || 'list');
-      var inThread = panel === 'thread';
-      var inCompose = panel === 'compose';
-      var listPanel = document.getElementById('csCliqListPanel');
-      var composePanel = document.getElementById('csCliqComposePanel');
-      var threadPanel = document.getElementById('csCliqThreadPanel');
-      var backBtn = document.getElementById('csCliqBackBtn');
-      var titleEl = document.getElementById('csCliqTitle');
-      var nav = document.getElementById('csCliqChannelNav');
-      var newBtn = document.getElementById('csCliqBtnNew');
-      var listCol = document.getElementById('csCliqListColumn');
-      var convCol = document.getElementById('csCliqConversationCol');
-      var emptyState = document.getElementById('csCliqInboxEmpty');
-      var chatBody = document.querySelector('#csCliqRoot .portal-cs-cliq__chat-body');
-      if(chatBody) chatBody.setAttribute('data-cs-cliq-panel', panel);
-      portalAdminCsCliqSyncMobileSubscreen(panel);
-      if(listPanel) listPanel.hidden = false;
-      if(composePanel) composePanel.hidden = !inCompose;
-      if(threadPanel){
-        threadPanel.hidden = !inThread;
-        threadPanel.setAttribute('aria-hidden', inThread ? 'false' : 'true');
-      }
-      if(emptyState){
-        emptyState.hidden = inThread || inCompose;
-        emptyState.setAttribute('aria-hidden', inThread || inCompose ? 'true' : 'false');
-      }
-      if(listCol) listCol.classList.toggle('portal-cs-cliq-inbox__list-col--hidden-mobile', inThread || inCompose);
-      if(convCol) convCol.classList.toggle('portal-cs-cliq-inbox__conversation-col--active', inThread || inCompose);
-      if(backBtn) backBtn.hidden = !inThread && !inCompose;
-      if(nav) nav.hidden = inThread || inCompose;
-      if(newBtn){
-        var canNew = !(window.portalCsCliqHubRoles && window.portalCsCliqHubRoles.canCreateConversations && !window.portalCsCliqHubRoles.canCreateConversations());
-        newBtn.hidden = inThread || inCompose || !canNew;
-      }
-      if(window.portalCsCliqThreadHeader && typeof window.portalCsCliqThreadHeader.sync === 'function'){
-        window.portalCsCliqThreadHeader.sync(ui);
-      }
-      portalAdminDmPremiumSyncChannelTabs();
-      if(titleEl){
-        if(inCompose){
-          titleEl.textContent = 'New message';
-        }else if(!inThread){
-          titleEl.textContent = portalAdminDmChannel() === 'ceo_exec' ? "CEO's chat" : 'Chats';
-        }else{
-          var peerTxt = String(ui.peerLabel || '').trim();
-          if(!peerTxt){
-            var peerEl = portalAdminDmEl('admDmThreadPeer');
-            peerTxt = peerEl ? String(peerEl.textContent || '').trim() : '';
+      if(window.PortalAdminCsCliq && typeof window.PortalAdminCsCliq.syncInboxLayout === 'function'){
+        window.PortalAdminCsCliq.syncInboxLayout({
+          onMobileSubscreen: portalAdminCsCliqSyncMobileSubscreen,
+          onChannelTabs: portalAdminDmPremiumSyncChannelTabs,
+          inboxTitle: function(){
+            return portalAdminDmChannel() === 'ceo_exec' ? "CEO's chat" : 'Inbox';
           }
-          titleEl.textContent = peerTxt || 'Conversation';
-        }
-      }
-      var gid = ui.groupId ? String(ui.groupId).trim() : '';
-      var tid = ui.threadId ? String(ui.threadId).trim() : '';
-      window.__PORTAL_INTERNAL_CHAT_UI = window.__PORTAL_INTERNAL_CHAT_UI || {};
-      window.__PORTAL_INTERNAL_CHAT_UI.threadId = inThread && tid && !gid ? tid : null;
-      window.__PORTAL_INTERNAL_CHAT_UI.peerLabel = inThread && !gid && titleEl ? String(titleEl.textContent || '').trim() : '';
-      var showCalls = inThread && (!!tid || !!gid);
-      if(window.portalStaffChatCalls && typeof window.portalStaffChatCalls.syncCallBar === 'function'){
-        window.portalStaffChatCalls.syncCallBar({ inThread: showCalls });
-      }else{
-        var callBar = document.getElementById('csCliqHeadCallBar');
-        if(callBar){
-          callBar.hidden = !showCalls;
-          callBar.setAttribute('aria-hidden', showCalls ? 'false' : 'true');
-        }
-      }
-      if(window.PortalAdminCsCliq && typeof window.PortalAdminCsCliq.syncPhonePaneContext === 'function'){
-        window.PortalAdminCsCliq.syncPhonePaneContext();
+        });
+        return;
       }
     }
     function portalAdminDmPremiumSyncView(){
@@ -1524,9 +1463,16 @@
     function portalAdminDmRenderThreadListItem(item, me, ch){
       var when = portalAdminDmFormatListWhen(item.when);
       var unread = Number(item.unreadCount) || 0;
+      var ui = window.__PORTAL_ADMIN_DM_UI || {};
+      var active =
+        (item.kind === 'group' && String(ui.groupId || '') === String(item.id || '')) ||
+        (item.kind !== 'group' && String(ui.threadId || '') === String(item.id || ''));
       var btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = 'portal-dm-thread-item' + (unread > 0 ? ' portal-dm-thread-item--unread' : '');
+      btn.className =
+        'portal-dm-thread-item' +
+        (unread > 0 ? ' portal-dm-thread-item--unread' : '') +
+        (active ? ' portal-dm-thread-item--active' : '');
       if(item.kind === 'group'){
         btn.setAttribute('data-adm-dm-group', item.id);
         btn.addEventListener('click', function(){

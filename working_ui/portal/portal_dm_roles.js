@@ -1,5 +1,5 @@
 /**
- * Shared internal-chat role rules — directors (Raul, Javier, Victor), admin, staff reachability.
+ * Shared internal-chat role rules â€” directors (Raul, Javier, Victor), admin, staff reachability.
  */
 (function (global) {
   "use strict";

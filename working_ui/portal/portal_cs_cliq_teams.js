@@ -1,5 +1,5 @@
 /**
- * CS Cliq Teams pane — group chats for Lead and Management.
+ * CS Cliq Teams pane â€” group chats for Lead and Management.
  */
 (function (global) {
   "use strict";
@@ -27,7 +27,7 @@
   async function refresh() {
     var host = document.getElementById("csCliqTeamsList");
     if (!host) return;
-    host.innerHTML = '<p class="muted portal-cs-cliq-teams-loading">Loading teams…</p>';
+    host.innerHTML = '<p class="muted portal-cs-cliq-teams-loading">Loading teamsâ€¦</p>';
     var c = client();
     var items = STATIC_TEAMS.slice();
     if (c) {
@@ -38,7 +38,7 @@
           items.push({
             id: String(g.id),
             title: String(g.title || g.slug || "Group"),
-            sub: "Group chat · " + String(g.slug || "team"),
+            sub: "Group chat Â· " + String(g.slug || "team"),
             groupId: String(g.id),
           });
         });

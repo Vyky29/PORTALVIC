@@ -1,5 +1,5 @@
 /**
- * CS Cliq workspace bridge ù channels, files, calendar, and portal routing.
+ * CS Cliq workspace bridge ‚Äî channels, files, calendar, and portal routing.
  */
 (function (global) {
   "use strict";

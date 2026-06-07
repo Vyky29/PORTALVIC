@@ -1,5 +1,5 @@
 /**
- * CS Cliq Files hub � recent chat attachments and portal documents.
+ * CS Cliq Files hub — recent chat attachments and portal documents.
  */
 (function (global) {
   "use strict";
