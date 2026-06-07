@@ -10,7 +10,7 @@ import {
   portalLocationPermissionGranted,
   probeLocationPermissionState,
   tryProbeLocationGrantedViaGeolocation,
-} from "./portal_location_permission.js?v=20260622-mandatory-perms";
+} from "./portal_location_permission.js?v=20260623-shift-copy";
 
 const MIN_SEND_INTERVAL_MS = 120000;
 const MIN_MOVE_M = 25;

@@ -902,7 +902,7 @@ export function portalRefreshLocationUi() {
   } else if (st === "granted") {
     var upload = typeof window !== "undefined" ? window.__PORTAL_LOCATION_LAST_UPLOAD__ : null;
     if (upload && upload.ok) {
-      statusEl.textContent = "On — office can see you on the live map during your Bespoke / Day Centre shift (10 min before until 30 min after).";
+      statusEl.textContent = "On — office can see you on the live map during your Bespoke / Day Centre shift.";
     } else if (upload && upload.ok === false && upload.message) {
       statusEl.textContent = "On — could not send yet. Tap Refresh or wait for the next GPS update.";
     } else {
@@ -920,8 +920,8 @@ export function portalRefreshLocationUi() {
     }
   } else {
     statusEl.textContent = portalLocationRequiredForSetup()
-      ? "Off — required for Bespoke Programme and Day Centre during your session."
-      : "Not required for your rota today — only needed for Bespoke Programme and Day Centre staff during sessions.";
+      ? "Off — required for Bespoke Programme and Day Centre during your shift."
+      : "Not required for your rota today — only needed for Bespoke Programme and Day Centre staff during their shift.";
     if (btn) {
       btn.textContent = "Allow location";
       btn.disabled = false;
