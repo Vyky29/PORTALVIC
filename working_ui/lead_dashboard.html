@@ -1045,7 +1045,9 @@
   <script src="/portal/portal_staff_chat_calls.js?v=20260605-call-end-spacing"></script>
   <script src="/portal/portal_incoming_call_push.js?v=20260622-incoming-call"></script>
   <script src="/portal/portal_sheet_back.js?v=20260607-sheet-back"></script>
-  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260624-staff-lead-dm"></script>
+  <script src="/portal/portal_dm_roles.js?v=20260621-dm-roles"></script>
+  <script src="/portal/portal_dm_executive_cliq.js?v=20260621-dm-roles"></script>
+  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260621-dm-roles"></script>
   <script>
     /** Real calendar weekday for “Today” (en-GB), aligned with staff_clients_machine.xlsx */
     function portalWeekdayLongEnGB(d){
@@ -6209,6 +6211,7 @@
       }
     }
     window.portalOpenInternalChatFromHeaderQuickMenu = function portalOpenInternalChatFromHeaderQuickMenu(){
+      if(window.portalDmExecutiveCliq && window.portalDmExecutiveCliq.tryOpenAdminCliq()) return;
       try{
         if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
       }catch(_cl){}

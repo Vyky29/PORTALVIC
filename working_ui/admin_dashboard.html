@@ -25519,6 +25519,26 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(apEsc) apEsc.classList.remove('open');
         }
       });
+      try{
+        var portalOpenParams = new URLSearchParams(String(location.search || ''));
+        if(portalOpenParams.get('portal_open') === 'cs_cliq'){
+          var portalCliqChannel = portalOpenParams.get('portal_cliq_channel');
+          try{
+            var storedCliqChannel = String(sessionStorage.getItem('portal_cliq_pending_channel') || '').trim();
+            if(storedCliqChannel){
+              portalCliqChannel = storedCliqChannel;
+              sessionStorage.removeItem('portal_cliq_pending_channel');
+            }
+          }catch(_storedCliq){}
+          openAdminPremiumInternalChat(portalCliqChannel || 'staff_lead');
+          if(history.replaceState){
+            var cleanUrl = new URL(location.href);
+            cleanUrl.searchParams.delete('portal_open');
+            cleanUrl.searchParams.delete('portal_cliq_channel');
+            history.replaceState({}, '', cleanUrl.pathname + cleanUrl.search + cleanUrl.hash);
+          }
+        }
+      }catch(_portalCliqOpen){}
     }
 
     if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', init);

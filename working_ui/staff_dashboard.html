@@ -876,14 +876,14 @@
       <p id="internalChatTopErr" class="portal-dm-top-err muted" hidden></p>
       <div id="internalChatLeadInboxChrome" class="portal-dm-lead-inbox-chrome" hidden aria-hidden="true">
         <div class="portal-dm-lead-search-row">
-          <label class="topbar-sr-only" for="internalChatLeadSearch">Search chats or leads</label>
+          <label class="topbar-sr-only" for="internalChatLeadSearch">Search chats or directors</label>
           <span class="portal-dm-lead-search-icon" aria-hidden="true">⌕</span>
-          <input type="search" id="internalChatLeadSearch" class="portal-dm-lead-search-input" placeholder="Search leads or chats…" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" />
+          <input type="search" id="internalChatLeadSearch" class="portal-dm-lead-search-input" placeholder="Search directors or chats…" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" />
           <button type="button" id="internalChatLeadSearchClear" class="portal-dm-lead-search-clear" hidden aria-label="Clear search">×</button>
         </div>
         <div id="internalChatLeadInboxNav" class="portal-dm-inbox-nav">
           <button type="button" class="portal-dm-inbox-nav-btn is-active" id="internalChatInboxTabChats" data-inbox-tab="chats">Chats</button>
-          <button type="button" class="portal-dm-inbox-nav-btn" id="internalChatInboxTabLeads" data-inbox-tab="leads">Leads</button>
+          <button type="button" class="portal-dm-inbox-nav-btn" id="internalChatInboxTabDirectors" data-inbox-tab="directors">Directors</button>
         </div>
       </div>
       <div id="internalChatListWrap" class="portal-dm-inbox-list"></div>
@@ -1050,7 +1050,9 @@
   <script src="/portal/portal_dm_voice.js?v=20260624-dm-icons"></script>
   <script src="/portal/portal_dm_attachments.js?v=20260624-dm-icons"></script>
   <script src="/portal/portal_staff_chat_calls.js?v=20260605-call-end-spacing"></script>
-  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260624-staff-lead-dm"></script>
+  <script src="/portal/portal_dm_roles.js?v=20260621-dm-roles"></script>
+  <script src="/portal/portal_dm_executive_cliq.js?v=20260621-dm-roles"></script>
+  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260621-dm-roles"></script>
   <script src="/portal/portal_incoming_call_push.js?v=20260622-incoming-call"></script>
   <script src="/portal/portal_sheet_back.js?v=20260607-sheet-back"></script>
   <script>
@@ -6581,15 +6583,17 @@
       var sr = String(row.staff_role || '').toLowerCase();
       return sr === 'manager' || sr === 'admin';
     }
-    function portalStaffProfileIsLeadPeer(row){
-      if(!row || row.is_active === false) return false;
-      return String(row.app_role || '').toLowerCase() === 'lead';
+    function portalStaffDmStaffReachablePeer(row){
+      if(window.portalDmRoles && typeof window.portalDmRoles.portalDmStaffInitiatePeer === 'function'){
+        return window.portalDmRoles.portalDmStaffInitiatePeer(row);
+      }
+      return portalStaffProfileIsOfficePeer(row);
     }
     function portalStaffInboxPeerAllowed(row){
-      return portalStaffProfileIsOfficePeer(row) || portalStaffProfileIsLeadPeer(row);
+      return portalStaffDmStaffReachablePeer(row);
     }
     function portalStaffDmAuthorCountsAsUnread(authorProf){
-      return portalStaffProfileIsOfficePeer(authorProf || {}) || portalStaffProfileIsLeadPeer(authorProf || {});
+      return portalStaffInboxPeerAllowed(authorProf || {});
     }
     function portalStaffIsLeadUser(prof){
       if(window.portalLeadStaffChatDirectory && typeof window.portalLeadStaffChatDirectory.portalStaffIsLeadUser === 'function'){
@@ -7003,6 +7007,7 @@
       }
     }
     window.portalOpenInternalChatFromHeaderQuickMenu = function portalOpenInternalChatFromHeaderQuickMenu(){
+      if(window.portalDmExecutiveCliq && window.portalDmExecutiveCliq.tryOpenAdminCliq()) return;
       try{
         if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
       }catch(_cl){}
@@ -7011,17 +7016,10 @@
       }catch(_c){}
       window.__PORTAL_INTERNAL_CHAT_UI = window.__PORTAL_INTERNAL_CHAT_UI || {};
       if(portalInternalChatOfficeRestricted()){
+        window.__PORTAL_INTERNAL_CHAT_UI.threadId = null;
+        window.__PORTAL_INTERNAL_CHAT_UI.skipResetThreadOnNextSheetOpen = false;
+        window.__PORTAL_INTERNAL_CHAT_UI.inboxTab = window.__PORTAL_INTERNAL_CHAT_UI.inboxTab || 'chats';
         void (async function(){
-          try{
-            var tid = typeof window.portalStaffResolveOfficeThreadForQuickOpen === 'function'
-              ? String(await window.portalStaffResolveOfficeThreadForQuickOpen() || '').trim()
-              : '';
-            window.__PORTAL_INTERNAL_CHAT_UI.threadId = tid || null;
-            window.__PORTAL_INTERNAL_CHAT_UI.skipResetThreadOnNextSheetOpen = !!tid;
-          }catch(_e){
-            window.__PORTAL_INTERNAL_CHAT_UI.threadId = null;
-            window.__PORTAL_INTERNAL_CHAT_UI.skipResetThreadOnNextSheetOpen = false;
-          }
           if(typeof window.portalStaffDmAckInboxOpened === 'function'){
             await window.portalStaffDmAckInboxOpened();
           }
@@ -7347,8 +7345,8 @@
           var staffEmptyMsg;
           if(portalInternalChatOfficeRestricted()){
             staffEmptyMsg = staffSearchQ
-              ? 'No chats match your search. Check the suggestions below or open the <strong>Leads</strong> tab.'
-              : 'No messages yet. Admin chats and lead conversations appear here. Open the <strong>Leads</strong> tab to message a session lead.';
+              ? 'No chats match your search. Check the suggestions below or open the <strong>Directors</strong> tab.'
+              : 'No messages yet. Conversations with directors and admin appear here. Open the <strong>Directors</strong> tab to start a chat.';
           }else if(portalStaffIsLeadUser()){
             var leadQ = leadSearchQ || staffSearchQ;
             staffEmptyMsg = leadQ
