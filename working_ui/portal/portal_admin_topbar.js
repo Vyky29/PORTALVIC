@@ -181,6 +181,15 @@
     applyPhoto(img, initialsEl, avWrap, candidates, 0, displayName);
   };
 
+  var EXEC_PORTAL_SWITCH_KEYS = { victor: 1, raul: 1, javi: 1 };
+
+  function canUseAdminPortalSwitch(profile, authEmail) {
+    var key = inferStaffKey(profile, authEmail);
+    return !!EXEC_PORTAL_SWITCH_KEYS[key];
+  }
+
+  global.portalCanUseAdminPortalSwitch = canUseAdminPortalSwitch;
+
   global.portalMountAdminPortalSwitch = function portalMountAdminPortalSwitch() {
     var host = document.getElementById("adminPortalSwitch");
     if (!host) return;
@@ -190,6 +199,12 @@
     var profile = ctx.staff_profile || null;
     var email = String((ctx.session && ctx.session.user && ctx.session.user.email) || "").trim();
     if (!profile && !email) {
+      host.hidden = true;
+      host.setAttribute("aria-hidden", "true");
+      return;
+    }
+
+    if (!canUseAdminPortalSwitch(profile, email)) {
       host.hidden = true;
       host.setAttribute("aria-hidden", "true");
       return;

@@ -887,14 +887,14 @@
     }
     .portal-dm-msg--them,
     .portal-dm-msg--them-read{
-      background:linear-gradient(180deg,#fff4df 0%,var(--goldSoft) 100%);
-      color:var(--ink);border-radius:14px 14px 14px 4px;border:1px solid rgba(244,183,64,.45);
-      box-shadow:0 2px 6px rgba(249,191,46,.18);
+      background:#fff;
+      color:var(--ink);border-radius:14px 14px 14px 4px;border:1px solid rgba(45,132,179,.18);
+      box-shadow:0 2px 8px rgba(23,50,71,.06);
     }
     .portal-dm-msg--them-unread{
-      background:linear-gradient(180deg,var(--sen-gold) 0%,var(--gold) 100%);
-      color:var(--ink);border-radius:14px 14px 14px 4px;border:1px solid rgba(217,119,6,.35);
-      box-shadow:0 2px 10px rgba(249,191,46,.32);
+      background:linear-gradient(180deg,#f0f8ff 0%,#e8f4fc 100%);
+      color:var(--ink);border-radius:14px 14px 14px 4px;border:1px solid rgba(45,132,179,.32);
+      box-shadow:0 2px 10px rgba(45,132,179,.12);
     }
     .portal-dm-msg--them-unread .portal-dm-msg-by{color:rgba(23,50,71,.82)}
     .portal-dm-msg--them-unread .portal-dm-msg-time{color:rgba(23,50,71,.62)}
@@ -1785,7 +1785,7 @@
       margin-top:14px;margin-bottom:14px;padding:12px 14px;border:1px solid rgba(0,0,0,.1);border-radius:12px;background:var(--surface);min-width:0;
     }
     .portal-dm-office-compose-host .sel,.portal-dm-office-compose-host .txa{max-width:100%;min-width:0;box-sizing:border-box}
-    /* Internal chat: full-screen immersive — no dock; corporate blue/gold bubbles */
+    /* Internal chat: full-screen immersive — corporate blue/white (matches admin portal chat) */
     body.portal-internal-chat-open .dock-bar{display:none !important}
     body.portal-internal-chat-open{--fab-reserved-bottom:max(8px, env(safe-area-inset-bottom, 0px))}
     #internalChatSheet.sheet--portal-chat-immersive.sheet--fullscreen.sheet--mobile-frame{
@@ -2319,7 +2319,7 @@
       padding:8px 8px 20px;
       margin-bottom:0;
       scroll-padding-bottom:20px;
-      background:#e5ddd5;
+      background:#fff;
     }
     #internalChatSheet .portal-dm-compose-bar{
       position:relative;

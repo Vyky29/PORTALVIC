@@ -1794,7 +1794,7 @@
       margin-top:14px;margin-bottom:14px;padding:12px 14px;border:1px solid rgba(0,0,0,.1);border-radius:12px;background:var(--surface);min-width:0;
     }
     .portal-dm-office-compose-host .sel,.portal-dm-office-compose-host .txa{max-width:100%;min-width:0;box-sizing:border-box}
-    /* Internal chat: full-screen immersive — no dock; corporate blue/gold bubbles */
+    /* Internal chat: full-screen immersive — corporate blue/white (matches admin portal chat) */
     body.portal-internal-chat-open .dock-bar{display:none !important}
     body.portal-internal-chat-open{--fab-reserved-bottom:max(8px, env(safe-area-inset-bottom, 0px))}
     #internalChatSheet.sheet--portal-chat-immersive.sheet--fullscreen.sheet--mobile-frame{
