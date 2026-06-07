@@ -25,7 +25,7 @@
   <link rel="stylesheet" href="/portal/portal_staff_map.css?v=20260602-staff-map-header" />
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260621-lead-inbox" />
   <script src="/portal/admin-portal-staff-map.js?v=20260622-ghost-map"></script>
-  <script src="/portal/portal_admin_cs_cliq.js?v=20260605-cs-cliq"></script>
+  <script src="/portal/portal_admin_cs_cliq.js?v=20260607-cs-cliq-bc"></script>
   <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260622-ghost-view" />
   <script src="/portal/admin-portal-ghost-teleport.js?v=20260622-ghost-lead"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
@@ -52,7 +52,7 @@
   <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260604-mob-nav" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260605-admin-chat" />
-  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260605-cs-cliq" />
+  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260607-cs-cliq-bc" />
 </head>
 <body>
   <script>
@@ -258,9 +258,9 @@
       <div id="internalChatListWrap" class="portal-dm-inbox-list"></div>
       <div id="internalChatThreadWrap" class="portal-dm-wrap portal-dm-thread-view" hidden aria-hidden="true">
         <div id="internalChatCallBar" class="portal-dm-call-bar" hidden aria-hidden="true">
-          <button type="button" class="portal-dm-call-bar-btn" id="internalChatVoiceCallBtn" title="Start a voice call"><span class="portal-dm-call-bar-icon" aria-hidden="true">📞</span><span>Voice</span></button>
-          <button type="button" class="portal-dm-call-bar-btn" id="internalChatVideoCallBtn" title="Start a video call"><span class="portal-dm-call-bar-icon" aria-hidden="true">📹</span><span>Video</span></button>
-          <button type="button" class="portal-dm-call-bar-btn" id="internalChatMeetingBtn" title="Schedule a meeting"><span class="portal-dm-call-bar-icon" aria-hidden="true">📅</span><span>Meeting</span></button>
+          <button type="button" class="portal-dm-call-bar-btn" id="internalChatVoiceCallBtn" data-portal-call-kind="audio" title="Start a voice call"><span class="portal-dm-call-bar-icon" aria-hidden="true">📞</span><span>Voice</span></button>
+          <button type="button" class="portal-dm-call-bar-btn" id="internalChatVideoCallBtn" data-portal-call-kind="video" title="Start a video call"><span class="portal-dm-call-bar-icon" aria-hidden="true">📹</span><span>Video</span></button>
+          <button type="button" class="portal-dm-call-bar-btn" id="internalChatMeetingBtn" data-portal-call-kind="meeting" title="Schedule a meeting"><span class="portal-dm-call-bar-icon" aria-hidden="true">📅</span><span>Meeting</span></button>
         </div>
         <div id="internalChatMessages" class="portal-dm-msgs-col portal-dm-msgs-scroll"></div>
         <div class="portal-dm-compose-bar">
@@ -1963,6 +1963,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       document.body.classList.remove('pax-contacts-detail-open');
       state.pendingBookingsScroll = (id === 'orders_all' ? (bookingsScroll || null) : null);
       state.view = id;
+      document.body.classList.toggle('admin-view-cs-cliq', id === 'cs_cliq');
       var g = navGroupForView(id);
       if(g){
         Object.keys(state.navGroupsOpen).forEach(function(k){ state.navGroupsOpen[k] = (k === g); });
@@ -17731,6 +17732,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         esc: esc,
         adminNavIconHtml: adminNavIconHtml,
         initChat: portalAdminCsCliqInitChat,
+        openAdminView: function(viewId){ setView(String(viewId || 'cs_cliq')); },
+        focusChats: function(){
+          if(window.PortalAdminCsCliq && typeof window.PortalAdminCsCliq.setRailPane === 'function'){
+            window.PortalAdminCsCliq.setRailPane('chats');
+          }
+        },
         channels: {
           composeAnnouncement: function(){ openComposeModalAnnouncementOrReminder(false); },
           composeReminder: function(){ openComposeModalAnnouncementOrReminder(true); },
@@ -19543,6 +19550,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var titleEl = document.getElementById('csCliqTitle');
       var nav = document.getElementById('csCliqChannelNav');
       var newBtn = document.getElementById('csCliqBtnNew');
+      var chatBody = document.querySelector('#csCliqRoot .portal-cs-cliq__chat-body');
+      if(chatBody) chatBody.setAttribute('data-cs-cliq-panel', panel);
       if(listPanel) listPanel.hidden = inThread || inCompose;
       if(composePanel) composePanel.hidden = !inCompose;
       if(threadPanel){
@@ -19576,11 +19585,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(window.portalStaffChatCalls && typeof window.portalStaffChatCalls.syncCallBar === 'function'){
         window.portalStaffChatCalls.syncCallBar({ inThread: showCalls });
       }else{
-        var callBar = document.getElementById('csCliqCallBar');
+        var callBar = document.getElementById('csCliqHeadCallBar');
         if(callBar){
           callBar.hidden = !showCalls;
           callBar.setAttribute('aria-hidden', showCalls ? 'false' : 'true');
         }
+      }
+      if(window.PortalAdminCsCliq && typeof window.PortalAdminCsCliq.syncPhonePaneContext === 'function'){
+        window.PortalAdminCsCliq.syncPhonePaneContext();
       }
     }
     function portalAdminDmPremiumSyncView(){
@@ -24996,7 +25008,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       document.body.appendChild(s);
     })();
   </script>
-  <script src="/portal/portal_staff_chat_calls.js?v=20260605-call-caller-id"></script>
+  <script src="/portal/portal_staff_chat_calls.js?v=20260607-cs-cliq-bc"></script>
   <script src="/portal/portal_floating_internal_chat.js?v=20260605-admin-chat"></script>
 </body>
 </html>

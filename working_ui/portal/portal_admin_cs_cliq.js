@@ -13,7 +13,11 @@
     },
     initChat: function () {},
     channels: {},
+    openAdminView: function () {},
+    focusChats: function () {},
   };
+
+  var WORKSPACE_KEY = "portal_cs_cliq_workspace_status";
 
   var RAIL_SVGS = {
     chats:
@@ -38,6 +42,86 @@
     if (options.adminNavIconHtml) cfg.adminNavIconHtml = options.adminNavIconHtml;
     if (options.initChat) cfg.initChat = options.initChat;
     if (options.channels) cfg.channels = options.channels;
+    if (options.openAdminView) cfg.openAdminView = options.openAdminView;
+    if (options.focusChats) cfg.focusChats = options.focusChats;
+  }
+
+  function readWorkspaceStatus() {
+    try {
+      var v = String(localStorage.getItem(WORKSPACE_KEY) || "at_work").trim();
+      return v === "away" ? "away" : "at_work";
+    } catch (_e) {
+      return "at_work";
+    }
+  }
+
+  function writeWorkspaceStatus(status) {
+    try {
+      localStorage.setItem(WORKSPACE_KEY, status === "away" ? "away" : "at_work");
+    } catch (_e2) {}
+  }
+
+  function callBarHtml(prefix, compact) {
+    var p = esc(prefix || "csCliq");
+    var extraClass = compact ? " portal-cs-cliq__head-call-bar" : "";
+    return (
+      '<div id="' +
+      p +
+      'CallBar" class="portal-dm-call-bar portal-cs-cliq__call-bar' +
+      extraClass +
+      '" hidden aria-hidden="true">' +
+      '<button type="button" class="portal-dm-call-bar-btn" id="' +
+      p +
+      'VoiceCallBtn" data-portal-call-kind="audio" title="Start a voice call"><span class="portal-dm-call-bar-icon" aria-hidden="true">📞</span>' +
+      (compact ? '<span class="sr-only">Voice</span>' : '<span class="portal-dm-call-bar-label">Voice</span>') +
+      "</button>" +
+      '<button type="button" class="portal-dm-call-bar-btn" id="' +
+      p +
+      'VideoCallBtn" data-portal-call-kind="video" title="Start a video call"><span class="portal-dm-call-bar-icon" aria-hidden="true">📹</span>' +
+      (compact ? '<span class="sr-only">Video</span>' : '<span class="portal-dm-call-bar-label">Video</span>') +
+      "</button>" +
+      '<button type="button" class="portal-dm-call-bar-btn" id="' +
+      p +
+      'MeetingBtn" data-portal-call-kind="meeting" title="Schedule a meeting"><span class="portal-dm-call-bar-icon" aria-hidden="true">📅</span>' +
+      (compact ? '<span class="sr-only">Meeting</span>' : '<span class="portal-dm-call-bar-label">Meeting</span>') +
+      "</button></div>"
+    );
+  }
+
+  function syncWorkspacePills() {
+    var status = readWorkspaceStatus();
+    var root = document.getElementById("csCliqRoot");
+    if (!root) return;
+    root.querySelectorAll("[data-cs-cliq-workspace]").forEach(function (btn) {
+      btn.classList.toggle("is-active", btn.getAttribute("data-cs-cliq-workspace") === status);
+    });
+    var statusEl = document.getElementById("csCliqPhoneStatusLabel");
+    if (statusEl) {
+      statusEl.textContent = status === "away" ? "Away" : "At work";
+    }
+  }
+
+  function syncPhonePaneContext() {
+    var peerEl = document.getElementById("csCliqPhonePeer");
+    var hintEl = document.getElementById("csCliqPhoneHint");
+    var bar = document.getElementById("csCliqPhoneCallBar");
+    var ui = global.__PORTAL_INTERNAL_CHAT_UI || {};
+    var adminUi = global.__PORTAL_ADMIN_DM_UI || {};
+    var tid = String(ui.threadId || adminUi.threadId || "").trim();
+    var gid = String(adminUi.groupId || "").trim();
+    var peer = String(ui.peerLabel || adminUi.peerLabel || "").trim();
+    var active = !!tid && !gid;
+    if (peerEl) peerEl.textContent = active && peer ? peer : "No active 1:1 chat";
+    if (hintEl) {
+      hintEl.textContent = active
+        ? "Calls and meetings use your open chat with " + peer + "."
+        : "Open a staff or lead chat from Chats, then return here to call or schedule.";
+    }
+    if (bar) {
+      bar.hidden = !active;
+      bar.setAttribute("aria-hidden", active ? "false" : "true");
+    }
+    syncWorkspacePills();
   }
 
   function railBtn(id, label, disabled, soon) {
@@ -68,18 +152,19 @@
       '<nav class="portal-cs-cliq__rail" aria-label="CS Cliq">' +
       railBtn("chats", "Chats", false, false) +
       railBtn("channels", "Channels", false, false) +
-      railBtn("phone", "Phone", true, true) +
-      railBtn("files", "Files", true, true) +
-      railBtn("calendar", "Calendar", true, true) +
+      railBtn("phone", "Phone", false, false) +
+      railBtn("files", "Files", false, false) +
+      railBtn("calendar", "Calendar", false, false) +
       "</nav>" +
       '<div class="portal-cs-cliq__main">' +
       '<div id="csCliqChatsPane" class="portal-cs-cliq__pane" data-cs-cliq-pane="chats">' +
       '<div class="portal-cs-cliq__chat-head">' +
       '<button type="button" class="portal-cs-cliq__back-btn" id="csCliqBackBtn" hidden aria-label="Back to chats">‹</button>' +
       '<h2 class="portal-cs-cliq__chat-title" id="csCliqTitle">Chats</h2>' +
+      callBarHtml("csCliqHead", true) +
       '<button type="button" class="portal-cs-cliq__new-btn" id="csCliqBtnNew">New</button>' +
       "</div>" +
-      '<div class="portal-cs-cliq__chat-body portal-dm-wrap">' +
+      '<div class="portal-cs-cliq__chat-body portal-dm-wrap" data-cs-cliq-panel="list">' +
       '<div id="csCliqChannelNav" class="portal-dm-inbox-nav">' +
       '<button type="button" class="portal-dm-inbox-nav-btn is-active" id="csCliqTabStaff" data-admin-chat-channel="staff_lead">Staff &amp; leads</button>' +
       '<button type="button" class="portal-dm-inbox-nav-btn" id="csCliqTabCeo" data-admin-chat-channel="ceo_exec">CEO&apos;s chat</button>' +
@@ -111,11 +196,6 @@
       "</div></div>" +
       '<div id="csCliqThreadPanel" class="portal-dm-thread-view" hidden aria-hidden="true">' +
       '<span id="csCliqThreadPeerHidden" hidden aria-hidden="true"></span>' +
-      '<div id="csCliqCallBar" class="portal-dm-call-bar" hidden aria-hidden="true">' +
-      '<button type="button" class="portal-dm-call-bar-btn" id="csCliqVoiceCallBtn" title="Start a voice call"><span class="portal-dm-call-bar-icon" aria-hidden="true">📞</span><span>Voice</span></button>' +
-      '<button type="button" class="portal-dm-call-bar-btn" id="csCliqVideoCallBtn" title="Start a video call"><span class="portal-dm-call-bar-icon" aria-hidden="true">📹</span><span>Video</span></button>' +
-      '<button type="button" class="portal-dm-call-bar-btn" id="csCliqMeetingBtn" title="Schedule a meeting"><span class="portal-dm-call-bar-icon" aria-hidden="true">📅</span><span>Meeting</span></button>' +
-      "</div>" +
       '<div id="csCliqMessages" class="portal-dm-msgs-col portal-dm-msgs-scroll"></div>' +
       '<div class="portal-dm-compose-bar">' +
       '<label class="sr-only" for="csCliqInput">Your message</label>' +
@@ -154,6 +234,59 @@
       '<button type="button" id="csCliqChRemAck" class="btn btn--sec">Acknowledged reminders log</button>' +
       '<button type="button" id="csCliqChManage" class="btn btn--ghost">Manage sent messages</button>' +
       "</div></div></div>" +
+      '<div id="csCliqPhonePane" class="portal-cs-cliq__pane" data-cs-cliq-pane="phone" hidden>' +
+      '<div class="portal-cs-cliq__module-head"><h2>Phone</h2>' +
+      '<p class="muted portal-cs-cliq__module-sub">Voice and video from your open 1:1 chat — same as in the thread header.</p></div>' +
+      '<div class="portal-cs-cliq__module-body">' +
+      '<div class="portal-cs-cliq__workspace-card card card-pad">' +
+      '<p class="muted" style="margin:0 0 8px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase">My workspace</p>' +
+      '<div class="filter-row" style="flex-wrap:wrap;gap:8px;min-width:0">' +
+      '<button type="button" class="btn btn--sec btn--sm is-active" data-cs-cliq-workspace="at_work">At work</button>' +
+      '<button type="button" class="btn btn--sec btn--sm" data-cs-cliq-workspace="away">Away</button>' +
+      "</div>" +
+      '<p class="muted" style="margin:10px 0 0;font-size:13px;min-width:0;overflow-wrap:break-word">Status: <strong id="csCliqPhoneStatusLabel">At work</strong></p>' +
+      "</div>" +
+      '<div class="portal-cs-cliq__phone-active card card-pad" style="margin-top:12px;min-width:0">' +
+      '<p class="muted" style="margin:0 0 6px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase">Active chat</p>' +
+      '<p id="csCliqPhonePeer" class="portal-cs-cliq__phone-peer" style="margin:0;font-size:16px;font-weight:800;min-width:0;overflow-wrap:break-word">No active 1:1 chat</p>' +
+      '<p id="csCliqPhoneHint" class="muted" style="margin:8px 0 0;font-size:13px;line-height:1.5;min-width:0;overflow-wrap:break-word">Open a staff or lead chat from Chats, then return here to call or schedule.</p>' +
+      callBarHtml("csCliqPhone", false) +
+      '<div class="filter-row" style="margin-top:12px;flex-wrap:wrap;gap:8px;min-width:0">' +
+      '<button type="button" class="btn btn--pri btn--sm" id="csCliqPhoneOpenChats">Open Chats</button>' +
+      "</div></div></div></div>" +
+      '<div id="csCliqFilesPane" class="portal-cs-cliq__pane" data-cs-cliq-pane="files" hidden>' +
+      '<div class="portal-cs-cliq__module-head"><h2>Files</h2>' +
+      '<p class="muted portal-cs-cliq__module-sub">Portal documents and chat attachments in one place.</p></div>' +
+      '<div class="portal-cs-cliq__module-body">' +
+      '<button type="button" class="card card-pad dash-link-card card--premium portal-cs-cliq__link-card" id="csCliqFilesPortalDocs">' +
+      '<div class="dash-link-row dayops-screen-nav__stack" style="min-width:0">' +
+      '<span class="dayops-screen-nav__ico-wrap" aria-hidden="true">' +
+      (RAIL_SVGS.files || "") +
+      "</span>" +
+      '<div class="dash-link-meta dayops-screen-nav__meta" style="min-width:0">' +
+      '<span class="dayops-screen-nav__label">Portal documents</span>' +
+      '<span class="dayops-screen-nav__desc">Policies, uploads, and shared club files</span>' +
+      "</div></div></button>" +
+      '<p class="muted portal-cs-cliq__module-note">A shared media gallery from chat threads will appear here in a later update.</p>' +
+      "</div></div>" +
+      '<div id="csCliqCalendarPane" class="portal-cs-cliq__pane" data-cs-cliq-pane="calendar" hidden>' +
+      '<div class="portal-cs-cliq__module-head"><h2>Calendar</h2>' +
+      '<p class="muted portal-cs-cliq__module-sub">Scheduling and meeting invites from chat.</p></div>' +
+      '<div class="portal-cs-cliq__module-body">' +
+      '<button type="button" class="card card-pad dash-link-card card--premium portal-cs-cliq__link-card" id="csCliqCalScheduling">' +
+      '<div class="dash-link-row dayops-screen-nav__stack" style="min-width:0">' +
+      '<span class="dayops-screen-nav__ico-wrap" aria-hidden="true">' +
+      (RAIL_SVGS.calendar || "") +
+      "</span>" +
+      '<div class="dash-link-meta dayops-screen-nav__meta" style="min-width:0">' +
+      '<span class="dayops-screen-nav__label">Staff scheduling</span>' +
+      '<span class="dayops-screen-nav__desc">Roster, sessions, and term calendar</span>' +
+      "</div></div></button>" +
+      '<div class="portal-cs-cliq__calendar-actions card card-pad" style="margin-top:12px;min-width:0">' +
+      '<p class="muted" style="margin:0 0 10px;font-size:13px;line-height:1.5;min-width:0;overflow-wrap:break-word">Schedule a meeting in your open 1:1 chat — everyone gets a join button in the thread.</p>' +
+      '<button type="button" class="btn btn--pri" id="csCliqCalScheduleMeeting">Schedule meeting in chat</button>' +
+      '<button type="button" class="btn btn--sec" id="csCliqCalOpenChats" style="margin-top:8px">Open Chats</button>' +
+      "</div></div></div>" +
       '<div id="csCliqSoonPane" class="portal-cs-cliq__pane portal-cs-cliq__soon" data-cs-cliq-pane="soon" hidden>' +
       "<h2 id=\"csCliqSoonTitle\">Coming soon</h2>" +
       '<p id="csCliqSoonBody">This section will arrive in a later CS Cliq phase.</p>' +
@@ -164,16 +297,28 @@
   function setRailPane(pane) {
     var root = document.getElementById("csCliqRoot");
     if (!root) return;
+    var allowed = { chats: 1, channels: 1, phone: 1, files: 1, calendar: 1, soon: 1 };
+    if (!allowed[pane]) pane = "chats";
     root.querySelectorAll("[data-cs-cliq-rail]").forEach(function (btn) {
       var id = btn.getAttribute("data-cs-cliq-rail");
       btn.classList.toggle("is-active", id === pane);
     });
     var chats = document.getElementById("csCliqChatsPane");
     var channels = document.getElementById("csCliqChannelsPane");
+    var phone = document.getElementById("csCliqPhonePane");
+    var files = document.getElementById("csCliqFilesPane");
+    var calendar = document.getElementById("csCliqCalendarPane");
     var soon = document.getElementById("csCliqSoonPane");
     if (chats) chats.hidden = pane !== "chats";
     if (channels) channels.hidden = pane !== "channels";
+    if (phone) phone.hidden = pane !== "phone";
+    if (files) files.hidden = pane !== "files";
+    if (calendar) calendar.hidden = pane !== "calendar";
     if (soon) soon.hidden = pane !== "soon";
+    if (pane === "phone") syncPhonePaneContext();
+    if (pane === "chats" && typeof cfg.initChat === "function") {
+      cfg.initChat(global.__PORTAL_ADMIN_DM_CHANNEL || "staff_lead");
+    }
   }
 
   function bindModule() {
@@ -182,29 +327,70 @@
     root.dataset.portalCsCliqBound = "1";
 
     var pendingPane = String(global.__PORTAL_CS_CLIQ_PENDING_PANE || "chats").trim();
-    if (pendingPane !== "channels" && pendingPane !== "soon") pendingPane = "chats";
+    if (
+      pendingPane !== "channels" &&
+      pendingPane !== "phone" &&
+      pendingPane !== "files" &&
+      pendingPane !== "calendar" &&
+      pendingPane !== "soon"
+    ) {
+      pendingPane = "chats";
+    }
     global.__PORTAL_CS_CLIQ_PENDING_PANE = "";
     setRailPane(pendingPane);
 
     root.querySelectorAll("[data-cs-cliq-rail]").forEach(function (btn) {
       btn.addEventListener("click", function () {
-        if (btn.disabled) {
-          var id = btn.getAttribute("data-cs-cliq-rail");
-          var soonTitle = document.getElementById("csCliqSoonTitle");
-          var soonBody = document.getElementById("csCliqSoonBody");
-          if (soonTitle) soonTitle.textContent = btn.querySelector(".portal-cs-cliq__rail-label").textContent.trim();
-          if (soonBody)
-            soonBody.textContent = "Phone, Files, and Calendar are planned for a later CS Cliq phase.";
-          setRailPane("soon");
-          return;
-        }
+        if (btn.disabled) return;
         var rail = btn.getAttribute("data-cs-cliq-rail") || "chats";
         setRailPane(rail);
-        if (rail === "chats" && typeof cfg.initChat === "function") {
-          cfg.initChat(global.__PORTAL_ADMIN_DM_CHANNEL || "staff_lead");
-        }
       });
     });
+
+    root.querySelectorAll("[data-cs-cliq-workspace]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        writeWorkspaceStatus(btn.getAttribute("data-cs-cliq-workspace"));
+        syncWorkspacePills();
+      });
+    });
+
+    var openChats = document.getElementById("csCliqPhoneOpenChats");
+    if (openChats) {
+      openChats.addEventListener("click", function () {
+        if (typeof cfg.focusChats === "function") cfg.focusChats();
+        else setRailPane("chats");
+      });
+    }
+    var calOpenChats = document.getElementById("csCliqCalOpenChats");
+    if (calOpenChats) {
+      calOpenChats.addEventListener("click", function () {
+        if (typeof cfg.focusChats === "function") cfg.focusChats();
+        else setRailPane("chats");
+      });
+    }
+    var calMeet = document.getElementById("csCliqCalScheduleMeeting");
+    if (calMeet) {
+      calMeet.addEventListener("click", function () {
+        if (global.portalStaffChatCalls && typeof global.portalStaffChatCalls.openMeetingPanel === "function") {
+          global.portalStaffChatCalls.openMeetingPanel();
+        }
+      });
+    }
+    var filesBtn = document.getElementById("csCliqFilesPortalDocs");
+    if (filesBtn) {
+      filesBtn.addEventListener("click", function () {
+        if (typeof cfg.openAdminView === "function") cfg.openAdminView("portal_documents");
+      });
+    }
+    var calSched = document.getElementById("csCliqCalScheduling");
+    if (calSched) {
+      calSched.addEventListener("click", function () {
+        if (typeof cfg.openAdminView === "function") cfg.openAdminView("scheduling");
+      });
+    }
+
+    syncWorkspacePills();
+    syncPhonePaneContext();
 
     if (pendingPane === "chats" && typeof cfg.initChat === "function") {
       var ch = global.__PORTAL_CS_CLIQ_PENDING_CHANNEL || global.__PORTAL_ADMIN_DM_CHANNEL || "staff_lead";
@@ -237,5 +423,6 @@
     bindModule: bindModule,
     destroyModule: destroyModule,
     setRailPane: setRailPane,
+    syncPhonePaneContext: syncPhonePaneContext,
   };
 })(window);

@@ -137,13 +137,73 @@
 #csCliqRoot .portal-cs-cliq__chat-head {
   flex-shrink: 0;
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 8px;
   padding: 10px 14px;
   border-bottom: 1px solid var(--portal-chat-line);
   background: #fff;
   min-width: 0;
+}
+
+#csCliqRoot .portal-cs-cliq__head-call-bar,
+#csCliqRoot #csCliqHeadCallBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+#csCliqRoot .portal-cs-cliq__head-call-bar[hidden],
+#csCliqRoot #csCliqHeadCallBar[hidden] {
+  display: none !important;
+}
+
+#csCliqRoot .portal-cs-cliq__head-call-bar .portal-dm-call-bar-btn,
+#csCliqRoot #csCliqHeadCallBar .portal-dm-call-bar-btn {
+  padding: 8px 10px;
+  font-size: 11px;
+}
+
+@media (max-width: 699px) {
+  #csCliqRoot .portal-cs-cliq__head-call-bar .portal-dm-call-bar-label,
+  #csCliqRoot #csCliqHeadCallBar .portal-dm-call-bar-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+  }
+  #csCliqRoot .portal-cs-cliq__chat-head {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+  }
+  #csCliqRoot .portal-cs-cliq__chat-title {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  #csCliqRoot .portal-cs-cliq__back-btn {
+    grid-row: 1;
+  }
+  #csCliqRoot .portal-cs-cliq__new-btn {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  #csCliqRoot .portal-cs-cliq__head-call-bar,
+  #csCliqRoot #csCliqHeadCallBar {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-content: stretch;
+  }
+  #csCliqRoot .portal-cs-cliq__head-call-bar .portal-dm-call-bar-btn,
+  #csCliqRoot #csCliqHeadCallBar .portal-dm-call-bar-btn {
+    flex: 1 1 0;
+    min-width: 0;
+  }
 }
 
 #csCliqRoot .portal-cs-cliq__chat-title {
@@ -184,6 +244,24 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+#csCliqRoot #csCliqListPanel[hidden],
+#csCliqRoot #csCliqThreadPanel[hidden],
+#csCliqRoot #csCliqComposePanel[hidden],
+#csCliqRoot #csCliqChannelNav[hidden] {
+  display: none !important;
+}
+
+#csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="thread"] #csCliqListPanel,
+#csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="thread"] #csCliqChannelNav,
+#csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="thread"] #csCliqComposePanel,
+#csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="compose"] #csCliqListPanel,
+#csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="compose"] #csCliqChannelNav,
+#csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="compose"] #csCliqThreadPanel,
+#csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="list"] #csCliqThreadPanel,
+#csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="list"] #csCliqComposePanel {
+  display: none !important;
 }
 
 #csCliqRoot .portal-dm-inbox-nav {
@@ -270,6 +348,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  position: relative;
 }
 
 #csCliqRoot .portal-dm-thread-view {
@@ -379,9 +458,153 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  padding: 8px 12px;
+  padding: 0;
+  border-bottom: 0;
+  background: transparent;
+}
+
+#csCliqRoot #csCliqPhoneCallBar {
+  margin-top: 12px;
+  padding: 0;
+}
+
+#csCliqRoot #csCliqPhoneCallBar[hidden] {
+  display: none !important;
+}
+
+#csCliqRoot .portal-cs-cliq__module-head {
+  flex-shrink: 0;
+  padding: 14px 16px 10px;
   border-bottom: 1px solid var(--portal-chat-line);
   background: #fff;
+  min-width: 0;
+}
+
+#csCliqRoot .portal-cs-cliq__module-head h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--portal-chat-ink);
+}
+
+#csCliqRoot .portal-cs-cliq__module-sub {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+#csCliqRoot .portal-cs-cliq__module-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 14px 16px;
+  -webkit-overflow-scrolling: touch;
+}
+
+#csCliqRoot .portal-cs-cliq__link-card {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+  cursor: pointer;
+}
+
+#csCliqRoot .portal-cs-cliq__module-note {
+  margin: 12px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+#csCliqRoot .portal-cs-cliq__phone-peer {
+  color: var(--portal-chat-ink);
+}
+
+#csCliqRoot [data-cs-cliq-workspace].is-active {
+  border-color: rgba(45, 132, 179, 0.45);
+  background: linear-gradient(180deg, #eaf5fb, #fff);
+  color: var(--portal-chat-blue);
+}
+
+body.admin-view-cs-cliq .portal-admin-floating-chat-wrap {
+  display: none !important;
+}
+
+#csCliqRoot .portal-dm-meeting-panel,
+#csCliqRoot #portalStaffChatMeetingPanel {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.42);
+  box-sizing: border-box;
+}
+
+#csCliqRoot .portal-dm-meeting-panel[hidden],
+#csCliqRoot #portalStaffChatMeetingPanel[hidden] {
+  display: none !important;
+}
+
+#csCliqRoot .portal-dm-meeting-panel-card {
+  width: min(100%, 380px);
+  padding: 16px;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid var(--portal-chat-line);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
+  min-width: 0;
+}
+
+#csCliqRoot .portal-dm-meeting-panel-card h4 {
+  margin: 0 0 6px;
+  font-size: 18px;
+  line-height: 1.25;
+  color: var(--portal-chat-ink);
+}
+
+#csCliqRoot .portal-dm-meeting-panel-sub {
+  margin: 0 0 14px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--portal-chat-muted);
+  overflow-wrap: break-word;
+}
+
+#csCliqRoot .portal-dm-meeting-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+  min-width: 0;
+}
+
+#csCliqRoot .portal-dm-meeting-field span {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--portal-chat-muted);
+}
+
+#csCliqRoot .portal-dm-meeting-field input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  font: inherit;
+  min-width: 0;
+}
+
+#csCliqRoot .portal-dm-meeting-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
 }
 
 #csCliqRoot .portal-dm-call-bar-btn {

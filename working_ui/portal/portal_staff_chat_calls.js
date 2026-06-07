@@ -8,7 +8,7 @@
   var CALL_TAG = "[[portal-staff-call:";
   var CALL_END_TAG = "[[portal-staff-call-end:";
   var CALL_TAG_END = "]]";
-  /** meet.jit.si requires OAuth for moderators ù unusable in embedded iframe. */
+  /** meet.jit.si requires OAuth for moderators ? unusable in embedded iframe. */
   var JITSI_JAAS_DOMAIN = "8x8.vc";
   var JITSI_JAAS_API_SRC = "https://8x8.vc/external_api.js";
   var JITSI_FALLBACK_DOMAIN = "meet.ffmuc.net";
@@ -96,7 +96,7 @@
 
   function formatCallEndLabel(kind, durationSec) {
     var kindLabel = humanLabel(String(kind || "video"), "");
-    return kindLabel + " ù " + formatCallDuration(durationSec);
+    return kindLabel + " ? " + formatCallDuration(durationSec);
   }
 
   function encodeCallEndBody(data) {
@@ -553,7 +553,7 @@
       incomingState.notification = new Notification(
         kind === "video" ? "Incoming video call" : "Incoming voice call",
         {
-          body: String(callerLabel || "Team chat") + " ó tap to answer",
+          body: String(callerLabel || "Team chat") + " ? tap to answer",
           tag: "portal-incoming-call",
           requireInteraction: true,
           silent: false,
@@ -1095,7 +1095,7 @@
       setTimeout(hideCallLoading, 4500);
     } catch (e) {
       closeInAppCall();
-      var errEl = document.getElementById("internalChatErr");
+      var errEl = resolveErrEl();
       if (errEl) {
         errEl.textContent = String((e && e.message) || e || "Could not start call");
       }
@@ -1245,13 +1245,14 @@
 
   async function startCall(kind) {
     var ctx = getContext();
-    var errEl = document.getElementById("internalChatErr");
+    var errEl = resolveErrEl();
     if (errEl) errEl.textContent = "";
     if (!ctx.client || !ctx.threadId) {
       if (errEl) errEl.textContent = "Open a conversation first.";
       return;
     }
-    var bar = document.getElementById("internalChatCallBar");
+    var ui = resolveCallUi();
+    var bar = document.getElementById(ui.barId);
     if (bar) bar.setAttribute("aria-busy", "true");
     try {
       var payload = await sendCallInvite({
@@ -1299,7 +1300,7 @@
       '<button type="button" class="portal-dm-btn portal-dm-btn--primary" id="portalStaffChatMeetingSendBtn">Send invite</button>' +
       "</div></div>";
 
-    var threadWrap = document.getElementById("internalChatThreadWrap");
+    var threadWrap = document.getElementById(resolveCallUi().threadWrapId);
     if (threadWrap) threadWrap.appendChild(panel);
     else document.body.appendChild(panel);
 
@@ -1414,30 +1415,61 @@
     if (titleInp) titleInp.focus();
   }
 
+  function csCliqCallsActive() {
+    return !!(global.__PORTAL_CS_CLIQ_ACTIVE && document.getElementById("csCliqHeadCallBar"));
+  }
+
+  function resolveCallUi() {
+    if (csCliqCallsActive()) {
+      return {
+        barId: "csCliqHeadCallBar",
+        errId: "csCliqErr",
+        threadWrapId: "csCliqThreadPanel",
+      };
+    }
+    return {
+      barId: "internalChatCallBar",
+      errId: "internalChatErr",
+      threadWrapId: "internalChatThreadWrap",
+    };
+  }
+
+  function resolveErrEl() {
+    var ui = resolveCallUi();
+    return document.getElementById(ui.errId);
+  }
+
+  function hideLegacyCallBarsExcept(activeBarId) {
+    ["internalChatCallBar", "csCliqHeadCallBar", "csCliqPhoneCallBar"].forEach(function (id) {
+      if (id === activeBarId) return;
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.hidden = true;
+      el.setAttribute("aria-hidden", "true");
+    });
+  }
+
+  function bindCallButtons(root) {
+    if (!root || root.dataset.portalCallsBound) return;
+    root.dataset.portalCallsBound = "1";
+    root.querySelectorAll("[data-portal-call-kind]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var kind = String(btn.getAttribute("data-portal-call-kind") || "").trim();
+        if (kind === "meeting") {
+          openMeetingPanel();
+          return;
+        }
+        if (kind === "audio" || kind === "video") {
+          void startCall(kind);
+        }
+      });
+    });
+  }
+
   function bindCallBar() {
-    var bar = document.getElementById("internalChatCallBar");
-    if (!bar || bar.dataset.portalCallsBound) return;
-    bar.dataset.portalCallsBound = "1";
-
-    var voiceBtn = document.getElementById("internalChatVoiceCallBtn");
-    var videoBtn = document.getElementById("internalChatVideoCallBtn");
-    var meetBtn = document.getElementById("internalChatMeetingBtn");
-
-    if (voiceBtn) {
-      voiceBtn.addEventListener("click", function () {
-        void startCall("audio");
-      });
-    }
-    if (videoBtn) {
-      videoBtn.addEventListener("click", function () {
-        void startCall("video");
-      });
-    }
-    if (meetBtn) {
-      meetBtn.addEventListener("click", function () {
-        openMeetingPanel();
-      });
-    }
+    bindCallButtons(document.getElementById("internalChatCallBar"));
+    bindCallButtons(document.getElementById("csCliqHeadCallBar"));
+    bindCallButtons(document.getElementById("csCliqPhoneCallBar"));
   }
 
   function syncCallBar(opts) {
@@ -1447,11 +1479,25 @@
       typeof global.portalInternalChatOfficeRestricted === "function" &&
       global.portalInternalChatOfficeRestricted();
     var showBar = inThread && !workerInboxOnly;
-    var bar = document.getElementById("internalChatCallBar");
+    var ui = resolveCallUi();
+    var bar = document.getElementById(ui.barId);
+    if (csCliqCallsActive()) {
+      hideLegacyCallBarsExcept(showBar ? ui.barId : "");
+    }
     if (!bar) return;
     bar.hidden = !showBar;
     bar.setAttribute("aria-hidden", showBar ? "false" : "true");
     if (showBar) bindCallBar();
+    if (csCliqCallsActive()) {
+      var legacyBar = document.getElementById("internalChatCallBar");
+      if (legacyBar) {
+        legacyBar.hidden = true;
+        legacyBar.setAttribute("aria-hidden", "true");
+      }
+      if (global.PortalAdminCsCliq && typeof global.PortalAdminCsCliq.syncPhonePaneContext === "function") {
+        global.PortalAdminCsCliq.syncPhonePaneContext();
+      }
+    }
     var panel = document.getElementById("portalStaffChatMeetingPanel");
     if (panel && !inThread) panel.hidden = true;
   }
