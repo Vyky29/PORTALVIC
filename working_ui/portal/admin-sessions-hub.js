@@ -2322,6 +2322,7 @@
     this.rangeTo = addDaysIso(this.weekStart, 6);
     this.clientSearch = "";
     this.instructorFilter = "";
+    this.serviceFilter = "";
     this.feedbackNoteFilter = "";
     this.scheduleDate = isoToday();
     this.payload = {
@@ -3350,6 +3351,101 @@
     });
   };
 
+  AdminSessionsHub.prototype.overviewFilterOptionsForDay = function (dayIso) {
+    var hub = this;
+    var instMap = {};
+    var svcMap = {};
+    var slots = this.expandSlotsForDate(dayIso);
+    for (var i = 0; i < slots.length; i++) {
+      var s = slots[i];
+      if (shouldOmitOverviewSlot(hub, s)) continue;
+      if (isTeflonDemoRosterSlot(s)) continue;
+      var svc = clean(s.service);
+      if (svc) svcMap[svc] = true;
+      var labels = (s.instructors || [])
+        .concat(String(s.instructor_label || "").split(/,|\/|&|\band\b/gi))
+        .map(function (x) {
+          return clean(x);
+        })
+        .filter(Boolean);
+      for (var j = 0; j < labels.length; j++) instMap[labels[j]] = true;
+    }
+    return {
+      instructors: Object.keys(instMap).sort(function (a, b) {
+        return a.localeCompare(b, "en", { sensitivity: "base" });
+      }),
+      services: Object.keys(svcMap).sort(function (a, b) {
+        return a.localeCompare(b, "en", { sensitivity: "base" });
+      }),
+    };
+  };
+
+  AdminSessionsHub.prototype.slotPassesOverviewFilters = function (slot) {
+    var q = clean(this.clientSearch).toLowerCase();
+    if (q && slot.client_name.toLowerCase().indexOf(q) === -1) return false;
+    var inst = clean(this.instructorFilter);
+    if (inst) {
+      var labels = (slot.instructors || [])
+        .concat(String(slot.instructor_label || "").split(/,|\/|&|\band\b/gi))
+        .map(function (x) {
+          return clean(x);
+        })
+        .filter(Boolean);
+      var hit = false;
+      for (var li = 0; li < labels.length; li++) {
+        if (completedByMatchesInstructor(labels[li], inst)) {
+          hit = true;
+          break;
+        }
+      }
+      if (!hit) return false;
+    }
+    var svcFilter = clean(this.serviceFilter);
+    if (svcFilter && clean(slot.service) !== svcFilter) return false;
+    return true;
+  };
+
+  AdminSessionsHub.prototype.overviewFilterRowHtml = function () {
+    var esc = this.escapeHtml;
+    var opts = this.overviewFilterOptionsForDay(this.selectedDay);
+    var instHtml = '<option value="">All instructors</option>';
+    for (var i = 0; i < opts.instructors.length; i++) {
+      var n = opts.instructors[i];
+      instHtml +=
+        '<option value="' +
+        esc(n) +
+        '"' +
+        (this.instructorFilter === n ? " selected" : "") +
+        ">" +
+        esc(n) +
+        "</option>";
+    }
+    var svcHtml = '<option value="">All services</option>';
+    for (var j = 0; j < opts.services.length; j++) {
+      var s = opts.services[j];
+      svcHtml +=
+        '<option value="' +
+        esc(s) +
+        '"' +
+        (this.serviceFilter === s ? " selected" : "") +
+        ">" +
+        esc(s) +
+        "</option>";
+    }
+    return (
+      '<div class="ash-filter-row ash-filter-row--feedback">' +
+      '<label class="ash-filter-label">Search client<input type="search" id="ashClientSearch" class="ash-input ash-input--grow" placeholder="Name contains\u2026" value="' +
+      esc(this.clientSearch) +
+      '"></label>' +
+      '<label class="ash-filter-label">Instructor<select id="ashInstructorFilter" class="ash-input ash-input--instructor">' +
+      instHtml +
+      "</select></label>" +
+      '<label class="ash-filter-label">Service<select id="ashServiceFilter" class="ash-input ash-input--instructor">' +
+      svcHtml +
+      "</select></label></div>"
+    );
+  };
+
   AdminSessionsHub.prototype.weekPickerSearchRowHtml = function () {
     var esc = this.escapeHtml;
     return (
@@ -3473,7 +3569,6 @@
 
     if (hub.tab === "tracking") {
       var slots = hub.expandSlotsForDate(hub.selectedDay);
-      var q = clean(hub.clientSearch).toLowerCase();
       var units = hub.getFeedbackUnitsForDate(hub.selectedDay);
       var unitComplete = {};
       var unitAbsent = {};
@@ -3484,7 +3579,7 @@
       var trackRows = slots
         .filter(function (s) {
           if (shouldOmitOverviewSlot(hub, s)) return false;
-          return !q || s.client_name.toLowerCase().indexOf(q) !== -1;
+          return hub.slotPassesOverviewFilters(s);
         })
         .map(function (slot) {
           var ukey = feedbackUnitKey(slot);
@@ -4770,6 +4865,11 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
         hub.refreshClientFilterView();
         return;
       }
+      if (t.id === "ashServiceFilter") {
+        hub.serviceFilter = t.value || "";
+        hub.refreshClientFilterView();
+        return;
+      }
       if (t.id === "ashRangeFrom") hub.rangeFrom = t.value || hub.rangeFrom;
       if (t.id === "ashRangeTo") hub.rangeTo = t.value || hub.rangeTo;
       if (t.id === "ashScheduleDate") hub.scheduleDate = t.value || hub.scheduleDate;
@@ -4878,10 +4978,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
     if (hubDayIsClubClosed(hub, this.selectedDay)) {
       return (
         this.htmlFeedbackWeekDaysRow({ overviewPicker: true }) +
-        '<div class="ash-filter-row">' +
-        '<label class="ash-filter-label">Search client<input type="search" id="ashClientSearch" class="ash-input" placeholder="Name contains\u2026" value="' +
-        esc(this.clientSearch) +
-        '"></label></div>' +
+        this.overviewFilterRowHtml() +
         '<h3 class="ash-table-title">' +
         esc(formatLongDate(this.selectedDay)) +
         ' <span class="ash-badge" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca">Closed</span></h3>' +
@@ -4898,13 +4995,12 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
       unitComplete[units[u].key] = hub.feedbackUnitResolved(units[u]);
       unitAbsent[units[u].key] = hub.feedbackUnitAbsent(units[u]);
     }
-    var q = this.clientSearch.toLowerCase();
     var scopedSlots = slots.filter(function (s) {
       return !shouldOmitOverviewSlot(hub, s) && !isTeflonDemoRosterSlot(s);
     });
     var displaySlots = hub.sortOverviewSlotsForDisplay(
       overviewDisplaySlotsFromUnits(hub, scopedSlots).filter(function (s) {
-        return !q || s.client_name.toLowerCase().indexOf(q) !== -1;
+        return hub.slotPassesOverviewFilters(s);
       }),
       unitComplete,
       unitAbsent
@@ -4977,11 +5073,7 @@ AdminSessionsHub.prototype.openNotifyModal = function (fb) {
 
     return (
       this.htmlFeedbackWeekDaysRow({ overviewPicker: true }) +
-      '<div class="ash-filter-row">' +
-      '<label class="ash-filter-label">Search client<input type="search" id="ashClientSearch" class="ash-input" placeholder="Name contains\u2026" value="' +
-      esc(this.clientSearch) +
-      '"></label>' +
-      "</div>" +
+      this.overviewFilterRowHtml() +
       '<h3 class="ash-table-title">' +
       esc(formatLongDate(this.selectedDay)) +
       ' <span class="ash-badge ash-badge--booked">Roster</span>' +
