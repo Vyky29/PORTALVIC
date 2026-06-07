@@ -560,6 +560,10 @@
   color: #b45309;
 }
 
+#csCliqRoot .portal-dm-thread-role-tag--ops {
+  color: #9a3412;
+}
+
 #csCliqRoot .portal-dm-thread-preview {
   font-size: 13px;
   line-height: 1.4;

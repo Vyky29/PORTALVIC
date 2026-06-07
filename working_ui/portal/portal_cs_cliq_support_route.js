@@ -359,29 +359,49 @@
     });
   }
 
+  async function resolveOpsAdminId(client) {
+    if (
+      global.portalCsCliqManagementInbox &&
+      typeof global.portalCsCliqManagementInbox.resolveSevithaStaffId === "function"
+    ) {
+      var sid = await global.portalCsCliqManagementInbox.resolveSevithaStaffId(client);
+      if (sid) return String(sid);
+    }
+    if (typeof global.portalAdminDmResolveFirstOpsAdminId === "function") {
+      return String((await global.portalAdminDmResolveFirstOpsAdminId(client)) || "").trim();
+    }
+    if (!client) return "";
+    var q = await client
+      .from("staff_profiles")
+      .select("id,is_active")
+      .eq("app_role", "admin")
+      .order("full_name", { ascending: true })
+      .limit(40);
+    if (q.error || !Array.isArray(q.data)) return "";
+    var row = q.data.find(function (r) {
+      return r && r.is_active !== false;
+    });
+    return row && row.id ? String(row.id) : "";
+  }
+
+  /** Staff support ? Sevitha ops line (CEOs read in "Sevitha & staff"). */
   async function routeToCeos(req) {
     var box = clientBox();
     var client = box.client;
     var me = meId();
     if (!client || !me) return { ok: false, reason: "no_client" };
     var body = buildMessageBody(req);
-    var ceos = await loadExecutiveCeoProfiles(client);
-    if (!ceos.length) return { ok: false, reason: "no_ceos" };
-    var sent = 0;
-    var threadIds = [];
-    for (var i = 0; i < ceos.length; i++) {
-      var ceo = ceos[i];
-      var ceoId = String(ceo.id || "").trim();
-      if (!ceoId || ceoId === me) continue;
-      var tid = await ensureDmThreadId(client, me, ceoId);
-      if (!tid) continue;
-      var mid = await insertThreadMessage(client, tid, body);
-      if (mid) {
-        sent++;
-        threadIds.push(tid);
-      }
-    }
-    return { ok: sent > 0, sent: sent, threadIds: threadIds, body: body };
+    var opsId = await resolveOpsAdminId(client);
+    if (!opsId) return { ok: false, reason: "no_ops_admin" };
+    var tid = await ensureDmThreadId(client, me, opsId);
+    if (!tid) return { ok: false, reason: "no_thread" };
+    var mid = await insertThreadMessage(client, tid, body);
+    return {
+      ok: !!mid,
+      sent: mid ? 1 : 0,
+      threadIds: mid ? [tid] : [],
+      body: body,
+    };
   }
 
   function purgeLocalTestData() {
@@ -430,6 +450,8 @@
     resolveCanonicalThreadRow: resolveCanonicalThreadRow,
     resolvePrimaryManagementPeer: resolvePrimaryManagementPeer,
     findDmThreadId: findDmThreadId,
+    ensureDmThreadId: ensureDmThreadId,
+    resolveOpsAdminId: resolveOpsAdminId,
     SUPPORT_PREFIX: SUPPORT_PREFIX,
     MEETING_PREFIX: MEETING_PREFIX,
   };
