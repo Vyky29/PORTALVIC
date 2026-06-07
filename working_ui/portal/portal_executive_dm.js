@@ -167,8 +167,8 @@
       }
     }
     /** Internal chat (admin): threads with staff or leads only — not admin↔admin (those live under CEO's Chat). CEO's Chat: CEOs and other admins. */
-    function portalAdminDmProfileMatchesChannel(profileRow){
-      var ch = portalAdminDmChannel();
+    function portalAdminDmProfileMatchesChannel(profileRow, channelOverride){
+      var ch = channelOverride || portalAdminDmChannel();
       var role = String(profileRow && profileRow.app_role || '').toLowerCase();
       if(ch === 'staff_lead'){
         return portalAdminDmIsWorkerRecipient(profileRow);
@@ -1460,6 +1460,26 @@
       }
       return merged;
     }
+    function portalAdminDmCsCliqUnifiedInbox(){
+      return !!(global.__PORTAL_CS_CLIQ_ACTIVE);
+    }
+    function portalAdminDmSimplifyGroupLabel(slug, title){
+      if(global.portalCsCliqAnnouncementInbox && typeof global.portalCsCliqAnnouncementInbox.simplifyGroupLabel === 'function'){
+        return global.portalCsCliqAnnouncementInbox.simplifyGroupLabel(slug, title);
+      }
+      slug = String(slug || '').toLowerCase();
+      title = String(title || '').trim();
+      if(slug === 'all_ceos' || /all\s*ceos/i.test(title)) return 'Executive group';
+      if(slug === 'ceo_liaison' || /ceo\s*liaison/i.test(title)) return 'Management group';
+      if(slug === 'staff_leads_ops' || /operations\s*group/i.test(title)) return 'Leads coordination';
+      return title || 'Group';
+    }
+    function portalAdminDmRenderInboxSectionLabel(text){
+      var el = document.createElement('p');
+      el.className = 'portal-cs-cliq-inbox-section__label';
+      el.textContent = text;
+      return el;
+    }
     function portalAdminDmRenderThreadListItem(item, me, ch){
       var when = portalAdminDmFormatListWhen(item.when);
       var unread = Number(item.unreadCount) || 0;
@@ -1543,32 +1563,56 @@
       }
       host.innerHTML = '<p class="muted" style="margin:0;font-size:13px">Loading conversations…</p>';
       var merged = [];
-      if(ch === 'ceo_exec'){
-        var gres = await client.from('portal_ceo_group').select('id,title,slug,updated_at').order('updated_at', { ascending: false });
-        if(!gres.error && Array.isArray(gres.data)){
-          gres.data.forEach(function(g){
-            if(!g || !g.id) return;
-            var gsl = String(g.slug || '').toLowerCase();
-            if(!portalAdminDmViewerSeesCeoGroupSlug(gsl)) return;
-            merged.push({ kind: 'group', id: String(g.id), label: String(g.title || g.slug || 'Group'), when: g.updated_at });
-          });
-        }
+      var unified = portalAdminDmCsCliqUnifiedInbox();
+      var groupIds = {};
+      function pushGroup(g){
+        if(!g || !g.id) return;
+        var gid = String(g.id);
+        if(groupIds[gid]) return;
+        var gsl = String(g.slug || '').toLowerCase();
+        if(!portalAdminDmViewerSeesCeoGroupSlug(gsl)) return;
+        groupIds[gid] = true;
+        merged.push({
+          kind: 'group',
+          id: gid,
+          slug: gsl,
+          label: portalAdminDmSimplifyGroupLabel(gsl, String(g.title || g.slug || 'Group')),
+          when: g.updated_at
+        });
       }
-      if(ch === 'staff_lead'){
+      if(unified){
+        var gresAll = await client.from('portal_ceo_group').select('id,title,slug,updated_at').order('updated_at', { ascending: false });
+        if(!gresAll.error && Array.isArray(gresAll.data)){
+          gresAll.data.forEach(pushGroup);
+        }
+      }else if(ch === 'ceo_exec'){
+        var gres = await client.from('portal_ceo_group').select('id,title,slug,updated_at').order('updated_at', { ascending: false });
+        if(!gres.error && Array.isArray(gres.data)) gres.data.forEach(pushGroup);
+      }else if(ch === 'staff_lead'){
         var gidLeads = await portalAdminDmResolveSessionLeadsGroupId(client);
         if(gidLeads){
           var gLeads = await client.from('portal_ceo_group').select('id,title,slug,updated_at').eq('id', gidLeads).maybeSingle();
-          if(!gLeads.error && gLeads.data && gLeads.data.id){
-            merged.push({
-              kind: 'group',
-              id: String(gLeads.data.id),
-              label: String(gLeads.data.title || 'Session leads'),
-              when: gLeads.data.updated_at
-            });
-          }
+          if(!gLeads.error && gLeads.data) pushGroup(gLeads.data);
         }
       }
-      var res = await portalAdminDmFetchStaffDmThreads(client, me, ch);
+      var res;
+      if(unified && global.portalCsCliqHubRoles && typeof global.portalCsCliqHubRoles.getTier === 'function' && global.portalCsCliqHubRoles.getTier() === 'management'){
+        var resSl = await portalAdminDmFetchStaffDmThreads(client, me, 'staff_lead');
+        var resCe = await portalAdminDmFetchStaffDmThreads(client, me, 'ceo_exec');
+        var rowsMerged = [];
+        if(!resSl.error && Array.isArray(resSl.data)) rowsMerged = rowsMerged.concat(resSl.data);
+        if(!resCe.error && Array.isArray(resCe.data)) rowsMerged = rowsMerged.concat(resCe.data);
+        var seenTid = {};
+        rowsMerged = rowsMerged.filter(function(r){
+          var id = String(r && r.id || '');
+          if(!id || seenTid[id]) return false;
+          seenTid[id] = true;
+          return true;
+        });
+        res = { data: rowsMerged, error: resSl.error || resCe.error };
+      }else{
+        res = await portalAdminDmFetchStaffDmThreads(client, me, ch);
+      }
       if(res.error){
         host.innerHTML = '<p class="muted" style="margin:0;color:var(--danger);min-width:0;overflow-wrap:break-word">'+esc(String(res.error.message || res.error))+'</p>';
         return;
@@ -1593,13 +1637,30 @@
         }
       }
       rows = rows.filter(function(r){
-        var pid = ch === 'staff_lead' ? portalAdminDmWorkerPeerFromThread(r, profBy, me) : portalDmPeerIdForThread(me, r);
+        var peerSl = portalAdminDmWorkerPeerFromThread(r, profBy, me);
+        var peerCe = portalDmPeerIdForThread(me, r);
+        if(unified){
+          return portalAdminDmProfileMatchesChannel(profBy[peerSl] || {}, 'staff_lead') ||
+            portalAdminDmIsPeerTeamChatThread(r, profBy) ||
+            portalAdminDmProfileMatchesChannel(profBy[peerCe] || {}, 'ceo_exec');
+        }
+        var pid = ch === 'staff_lead' ? peerSl : peerCe;
         return portalAdminDmProfileMatchesChannel(profBy[pid] || {});
       });
       rows.forEach(function(r){
         var id = String(r.id || '');
-        var peer = ch === 'staff_lead' ? portalAdminDmWorkerPeerFromThread(r, profBy, me) : portalDmPeerIdForThread(me, r);
+        var peerSl = portalAdminDmWorkerPeerFromThread(r, profBy, me);
+        var peerCe = portalDmPeerIdForThread(me, r);
+        var peer = ch === 'staff_lead' ? peerSl : peerCe;
         var isTeamChat = ch === 'staff_lead' && portalAdminDmIsPeerTeamChatThread(r, profBy);
+        if(unified){
+          isTeamChat = portalAdminDmIsPeerTeamChatThread(r, profBy);
+          if(isTeamChat || portalAdminDmProfileMatchesChannel(profBy[peerSl] || {}, 'staff_lead')){
+            peer = peerSl;
+          }else{
+            peer = peerCe;
+          }
+        }
         var label = isTeamChat ? portalAdminDmTeamChatLabel(r, names) : (names[peer] || ('Chat · ' + peer.slice(0, 8)));
         merged.push({
           kind: 'dm',
@@ -1620,18 +1681,35 @@
         try{ if(b.when) tb = new Date(b.when).getTime(); }catch(_e2){}
         return tb - ta;
       });
-      if(!merged.length){
-        host.innerHTML = '<p class="muted" style="margin:0;font-size:13px;min-width:0;overflow-wrap:break-word">'+
-          (ch === 'ceo_exec'
-            ? 'No conversations yet. Use <strong>Quick open</strong> above or <strong>New message</strong>.'
-            : 'No threads yet. Use <strong>New message</strong>.')+
-          '</p>';
-        return;
-      }
       host.innerHTML = '';
-      merged.forEach(function(item){
-        host.appendChild(portalAdminDmRenderThreadListItem(item, me, ch));
-      });
+      if(merged.length){
+        var groups = merged.filter(function(item){ return item.kind === 'group'; });
+        var dms = merged.filter(function(item){ return item.kind !== 'group'; });
+        if(unified){
+          if(dms.length){
+            host.appendChild(portalAdminDmRenderInboxSectionLabel('Messages'));
+            dms.forEach(function(item){
+              host.appendChild(portalAdminDmRenderThreadListItem(item, me, ch));
+            });
+          }
+          if(groups.length){
+            host.appendChild(portalAdminDmRenderInboxSectionLabel('Groups'));
+            groups.forEach(function(item){
+              host.appendChild(portalAdminDmRenderThreadListItem(item, me, ch));
+            });
+          }
+        }else{
+          merged.forEach(function(item){
+            host.appendChild(portalAdminDmRenderThreadListItem(item, me, ch));
+          });
+        }
+      }
+      if(unified && global.portalCsCliqAnnouncementInbox && typeof global.portalCsCliqAnnouncementInbox.prependToHost === 'function'){
+        await global.portalCsCliqAnnouncementInbox.prependToHost(host);
+      }
+      if(!host.children.length){
+        host.innerHTML = '<p class="muted" style="margin:0;font-size:13px;min-width:0;overflow-wrap:break-word">No conversations yet. Use <strong>New message</strong> to start.</p>';
+      }
     }
     async function portalAdminDmOpenThread(tid){
       tid = String(tid || '').trim();

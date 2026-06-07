@@ -149,6 +149,7 @@
       scheduled_at: String(opts.scheduledAt || "").trim(),
       duration: String(opts.duration || "").trim(),
       notes: String(opts.notes || "").trim(),
+      meetingType: String(opts.meetingType || "video").trim() === "voice" ? "voice" : "video",
     };
     var all = readRequests();
     all.unshift(req);

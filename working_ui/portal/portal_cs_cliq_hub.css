@@ -1,5 +1,5 @@
 /**
- * CS Cliq Operations Communication Hub â€” premium three-panel layout.
+ * CS Cliq Operations Communication Hub — premium three-panel layout.
  */
 
 #csCliqRoot.portal-cs-cliq--hub {
@@ -579,7 +579,10 @@
   color: var(--cs-hub-muted, #64748b);
 }
 
-#csCliqRoot.portal-cs-cliq--tier-staff #csCliqChannelNav,
+#csCliqRoot #csCliqChannelNav {
+  display: none !important;
+}
+
 #csCliqRoot.portal-cs-cliq--tier-staff #csCliqBtnNew {
   display: none !important;
 }
@@ -621,4 +624,458 @@
   #csCliqRoot .portal-cs-cliq-inbox__conversation-col--active {
     display: flex;
   }
+}
+
+/* Meetings centre */
+#csCliqRoot .portal-cs-cliq__pane--meetings {
+  overflow: auto;
+  padding: 0;
+}
+
+#csCliqRoot .portal-cs-cliq-meetings-centre {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 20px 16px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+#csCliqRoot .portal-cs-cliq-meetings-header h2 {
+  margin: 0 0 6px;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--cs-hub-ink, #173247);
+  letter-spacing: -0.02em;
+}
+
+#csCliqRoot .portal-cs-cliq-meetings-header p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--cs-hub-muted, #64748b);
+}
+
+#csCliqRoot .portal-cs-cliq-meetings-card {
+  background: var(--cs-hub-surface, #fff);
+  border: 1px solid var(--cs-hub-line, #e2e8f0);
+  border-radius: 14px;
+  padding: 16px 18px;
+  box-shadow: var(--cs-hub-shadow, 0 2px 12px rgba(23, 50, 71, 0.06));
+}
+
+#csCliqRoot .portal-cs-cliq-meetings-card--primary {
+  border-color: rgba(45, 132, 179, 0.22);
+  background: linear-gradient(180deg, #fff 0%, #f8fcff 100%);
+}
+
+#csCliqRoot .portal-cs-cliq-meetings-card--muted {
+  background: #fafcfd;
+}
+
+#csCliqRoot .portal-cs-cliq-meetings-card__eyebrow {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cs-hub-muted, #64748b);
+}
+
+#csCliqRoot .portal-cs-cliq-meetings-card h3,
+#csCliqRoot .portal-cs-cliq-meetings-card__title {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--cs-hub-ink, #173247);
+}
+
+#csCliqRoot .portal-cs-cliq-meetings-card__role {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cs-hub-blue, #2d84b3);
+}
+
+#csCliqRoot .portal-cs-cliq-meetings-card__desc {
+  margin: 0 0 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--cs-hub-muted, #64748b);
+}
+
+#csCliqRoot .portal-cs-cliq-meetings-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+#csCliqRoot .portal-cs-cliq-meetings-btn--pri {
+  background: var(--cs-hub-blue, #2d84b3);
+  color: #fff;
+  border-color: var(--cs-hub-blue, #2d84b3);
+}
+
+#csCliqRoot .portal-cs-cliq-meetings-btn--pri:hover {
+  background: #2574a0;
+}
+
+#csCliqRoot .portal-cs-cliq-meetings-btn--sec {
+  background: #fff;
+  color: var(--cs-hub-ink, #173247);
+  border-color: var(--cs-hub-line, #e2e8f0);
+}
+
+#csCliqRoot .portal-cs-cliq-meetings-btn--sec:hover {
+  border-color: rgba(45, 132, 179, 0.35);
+  background: var(--cs-hub-blue-soft, #eaf5fb);
+}
+
+#csCliqRoot .portal-cs-cliq-meetings-btn--ghost {
+  background: transparent;
+  color: var(--cs-hub-muted, #64748b);
+  border-color: var(--cs-hub-line, #e2e8f0);
+}
+
+#csCliqRoot .portal-cs-cliq-meetings-empty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--cs-hub-muted, #64748b);
+  line-height: 1.5;
+}
+
+#csCliqRoot .portal-cs-cliq-meetings-upcoming__title {
+  margin: 4px 0 10px;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--cs-hub-ink, #173247);
+}
+
+#csCliqRoot .portal-cs-cliq-meetings-upcoming__group {
+  margin-bottom: 12px;
+}
+
+#csCliqRoot .portal-cs-cliq-meetings-upcoming__label {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--cs-hub-muted, #64748b);
+}
+
+#csCliqRoot .portal-cs-cliq-meetings-upcoming-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#csCliqRoot .portal-cs-cliq-meetings-upcoming-card {
+  background: var(--cs-hub-surface, #fff);
+  border: 1px solid var(--cs-hub-line, #e2e8f0);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+#csCliqRoot .portal-cs-cliq-meetings-upcoming-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+#csCliqRoot .portal-cs-cliq-meetings-upcoming-card__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--cs-hub-ink, #173247);
+}
+
+#csCliqRoot .portal-cs-cliq-meetings-upcoming-card__type {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--cs-hub-blue-soft, #eaf5fb);
+  color: var(--cs-hub-blue, #2d84b3);
+}
+
+#csCliqRoot .portal-cs-cliq-meetings-upcoming-card__when,
+#csCliqRoot .portal-cs-cliq-meetings-upcoming-card__who {
+  margin: 0 0 4px;
+  font-size: 12px;
+  color: var(--cs-hub-muted, #64748b);
+  line-height: 1.45;
+}
+
+#csCliqRoot .portal-cs-cliq-meetings-upcoming-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+#csCliqRoot .portal-cs-cliq-meetings-requests-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#csCliqRoot .portal-cs-cliq-meetings-request-item {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f8fbfd;
+  border: 1px solid var(--cs-hub-line, #e2e8f0);
+}
+
+#csCliqRoot .portal-cs-cliq-meetings-request-item__title {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--cs-hub-ink, #173247);
+}
+
+#csCliqRoot .portal-cs-cliq-meetings-request-item__meta,
+#csCliqRoot .portal-cs-cliq-meetings-request-item__when {
+  margin: 0;
+  font-size: 12px;
+  color: var(--cs-hub-muted, #64748b);
+  line-height: 1.4;
+}
+
+@media (max-width: 599px) {
+  #csCliqRoot .portal-cs-cliq-meetings-centre {
+    padding: 16px 12px 24px;
+  }
+
+  #csCliqRoot .portal-cs-cliq-meetings-btn {
+    width: 100%;
+  }
+
+  #csCliqRoot .portal-cs-cliq-meetings-upcoming-card__actions .portal-cs-cliq-meetings-btn {
+    flex: 1 1 calc(50% - 4px);
+  }
+}
+
+/* Announcements centre + inbox */
+#csCliqRoot .portal-cs-cliq__pane--announcements,
+#csCliqRoot .portal-cs-cliq-announcements-centre {
+  overflow: auto;
+}
+
+#csCliqRoot .portal-cs-cliq-announcements-centre {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 20px 16px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+#csCliqRoot .portal-cs-cliq-announcements-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#csCliqRoot .portal-cs-cliq-announcements-item {
+  border: 1px solid var(--cs-hub-line, #e2e8f0);
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: #fafcfd;
+}
+
+#csCliqRoot .portal-cs-cliq-announcements-item__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+#csCliqRoot .portal-cs-cliq-announcements-item h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--cs-hub-ink, #173247);
+}
+
+#csCliqRoot .portal-cs-cliq-announcements-item__tag {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--cs-hub-blue-soft, #eaf5fb);
+  color: var(--cs-hub-blue, #2d84b3);
+  flex-shrink: 0;
+}
+
+#csCliqRoot .portal-cs-cliq-announcements-item__meta,
+#csCliqRoot .portal-cs-cliq-announcements-item__preview {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--cs-hub-muted, #64748b);
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-section__label {
+  margin: 12px 0 6px;
+  padding: 0 4px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cs-hub-muted, #64748b);
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-section__label:first-child {
+  margin-top: 0;
+}
+
+#csCliqRoot .portal-dm-thread-item--announcement .portal-cs-cliq-announcement-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cs-hub-blue-soft, #eaf5fb);
+  color: var(--cs-hub-blue, #2d84b3);
+  font-size: 14px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+#csCliqRoot .portal-cs-cliq-announcement-tag {
+  background: #eef6ff;
+  color: #2d84b3;
+}
+
+.portal-cs-cliq-announcement-modal,
+.portal-cs-cliq-announcement-reader {
+  position: fixed;
+  inset: 0;
+  z-index: 13070;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.portal-cs-cliq-announcement-modal[hidden],
+.portal-cs-cliq-announcement-reader[hidden] {
+  display: none !important;
+}
+
+.portal-cs-cliq-announcement-modal__card,
+.portal-cs-cliq-announcement-reader__card {
+  width: min(520px, 100%);
+  max-height: min(90vh, 720px);
+  overflow: auto;
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 12px 40px rgba(23, 50, 71, 0.16);
+  padding: 20px;
+}
+
+.portal-cs-cliq-announcement-modal h3,
+.portal-cs-cliq-announcement-reader h3 {
+  margin: 0 0 14px;
+  font-size: 20px;
+  font-weight: 800;
+  color: #173247;
+}
+
+.portal-cs-cliq-announcement-modal__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.portal-cs-cliq-announcement-modal__field span {
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.portal-cs-cliq-announcement-modal__field input,
+.portal-cs-cliq-announcement-modal__field select,
+.portal-cs-cliq-announcement-modal__field textarea {
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font: inherit;
+  color: #173247;
+}
+
+.portal-cs-cliq-announcement-modal__check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 14px;
+  font-size: 13px;
+  color: #173247;
+}
+
+.portal-cs-cliq-announcement-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.portal-cs-cliq-announcement-modal__err {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: #b42318;
+}
+
+.portal-cs-cliq-announcement-reader__close {
+  float: right;
+  border: 0;
+  background: transparent;
+  font-size: 24px;
+  line-height: 1;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.portal-cs-cliq-announcement-reader__eyebrow {
+  margin: 0 0 4px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.portal-cs-cliq-announcement-reader__when {
+  margin: 0 0 14px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.portal-cs-cliq-announcement-reader__body {
+  margin-bottom: 16px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #173247;
+}
+
+.portal-cs-cliq-announcement-reader__body p {
+  margin: 0 0 10px;
 }

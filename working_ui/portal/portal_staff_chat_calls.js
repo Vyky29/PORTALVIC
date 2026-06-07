@@ -1702,8 +1702,38 @@
     panel.classList.toggle("portal-dm-meeting-panel--global", onBody);
   }
 
+  function dispatchMeetingCreated(detail) {
+    try {
+      global.dispatchEvent(new CustomEvent("portal-cs-cliq-meeting-created", { detail: detail || {} }));
+    } catch (_ev) {}
+  }
+
+  function meetingPanelMarkup() {
+    return (
+      '<div class="portal-dm-meeting-panel-card">' +
+      '<h4 id="portalStaffChatMeetingTitle">Schedule meeting</h4>' +
+      '<p class="portal-dm-meeting-panel-sub" id="portalStaffChatMeetingSub">Set date, time and attendees. Invites appear in chat when a conversation is open.</p>' +
+      '<label class="portal-dm-meeting-field"><span>Meeting title</span><input type="text" id="portalStaffChatMeetingTitleInput" maxlength="120" placeholder="e.g. Weekly handover" /></label>' +
+      '<label class="portal-dm-meeting-field"><span>Participants</span><input type="text" id="portalStaffChatMeetingParticipantsInput" placeholder="Name or team" /></label>' +
+      '<label class="portal-dm-meeting-field"><span>Date</span><input type="date" id="portalStaffChatMeetingDateInput" /></label>' +
+      '<label class="portal-dm-meeting-field"><span>Time</span><input type="time" id="portalStaffChatMeetingTimeInput" /></label>' +
+      '<label class="portal-dm-meeting-field"><span>Duration</span><select id="portalStaffChatMeetingDurationInput"><option value="15">15 minutes</option><option value="30" selected>30 minutes</option><option value="45">45 minutes</option><option value="60">1 hour</option></select></label>' +
+      '<label class="portal-dm-meeting-field"><span>Meeting type</span><select id="portalStaffChatMeetingTypeInput"><option value="video">Video</option><option value="voice">Voice</option></select></label>' +
+      '<label class="portal-dm-meeting-field"><span>Notes</span><textarea id="portalStaffChatMeetingNotesInput" rows="3" maxlength="500" placeholder="Optional context for attendees"></textarea></label>' +
+      '<p id="portalStaffChatMeetingErr" class="portal-dm-meeting-err" hidden></p>' +
+      '<div class="portal-dm-meeting-actions">' +
+      '<button type="button" class="portal-dm-btn portal-dm-btn--ghost" id="portalStaffChatMeetingCancelBtn">Cancel</button>' +
+      '<button type="button" class="portal-dm-btn portal-dm-btn--primary" id="portalStaffChatMeetingSendBtn">Create meeting</button>' +
+      "</div></div>"
+    );
+  }
+
   function ensureMeetingPanel() {
     var existing = document.getElementById("portalStaffChatMeetingPanel");
+    if (existing && !existing.querySelector("#portalStaffChatMeetingTypeInput")) {
+      existing.remove();
+      existing = null;
+    }
     if (existing) {
       mountMeetingPanel(existing);
       return existing;
@@ -1716,21 +1746,7 @@
     panel.setAttribute("role", "dialog");
     panel.setAttribute("aria-modal", "true");
     panel.setAttribute("aria-labelledby", "portalStaffChatMeetingTitle");
-    panel.innerHTML =
-      '<div class="portal-dm-meeting-panel-card">' +
-      '<h4 id="portalStaffChatMeetingTitle">Schedule meeting</h4>' +
-      '<p class="portal-dm-meeting-panel-sub" id="portalStaffChatMeetingSub">Everyone gets a join button in this chat. The meeting opens inside the portal.</p>' +
-      '<label class="portal-dm-meeting-field"><span>Meeting title</span><input type="text" id="portalStaffChatMeetingTitleInput" maxlength="120" placeholder="e.g. Weekly handover" /></label>' +
-      '<label class="portal-dm-meeting-field"><span>Date</span><input type="date" id="portalStaffChatMeetingDateInput" /></label>' +
-      '<label class="portal-dm-meeting-field"><span>Time</span><input type="time" id="portalStaffChatMeetingTimeInput" /></label>' +
-      '<label class="portal-dm-meeting-field"><span>Duration</span><select id="portalStaffChatMeetingDurationInput"><option value="15">15 minutes</option><option value="30" selected>30 minutes</option><option value="45">45 minutes</option><option value="60">1 hour</option></select></label>' +
-      '<label class="portal-dm-meeting-field"><span>Participants</span><input type="text" id="portalStaffChatMeetingParticipantsInput" readonly /></label>' +
-      '<label class="portal-dm-meeting-field"><span>Notes</span><textarea id="portalStaffChatMeetingNotesInput" rows="3" maxlength="500" placeholder="Optional context for attendees"></textarea></label>' +
-      '<p id="portalStaffChatMeetingErr" class="portal-dm-meeting-err" hidden></p>' +
-      '<div class="portal-dm-meeting-actions">' +
-      '<button type="button" class="portal-dm-btn portal-dm-btn--ghost" id="portalStaffChatMeetingCancelBtn">Cancel</button>' +
-      '<button type="button" class="portal-dm-btn portal-dm-btn--primary" id="portalStaffChatMeetingSendBtn">Create meeting</button>' +
-      "</div></div>";
+    panel.innerHTML = meetingPanelMarkup();
 
     mountMeetingPanel(panel);
 
@@ -1758,15 +1774,26 @@
           var dateInp = document.getElementById("portalStaffChatMeetingDateInput");
           var timeInp = document.getElementById("portalStaffChatMeetingTimeInput");
           var durationInp = document.getElementById("portalStaffChatMeetingDurationInput");
+          var typeInp = document.getElementById("portalStaffChatMeetingTypeInput");
+          var participantsInp = document.getElementById("portalStaffChatMeetingParticipantsInput");
           var notesInp = document.getElementById("portalStaffChatMeetingNotesInput");
           var title = titleInp ? String(titleInp.value || "").trim() : "";
           var dateVal = dateInp ? String(dateInp.value || "").trim() : "";
           var timeVal = timeInp ? String(timeInp.value || "").trim() : "";
           var duration = durationInp ? String(durationInp.value || "30").trim() : "30";
+          var meetingType = typeInp ? String(typeInp.value || "video").trim() : "video";
+          var participants = participantsInp ? String(participantsInp.value || "").trim() : "";
           var notes = notesInp ? String(notesInp.value || "").trim() : "";
           if (!title) {
             if (err) {
               err.textContent = "Enter a meeting title.";
+              err.hidden = false;
+            }
+            return;
+          }
+          if (!participants) {
+            if (err) {
+              err.textContent = "Enter at least one participant.";
               err.hidden = false;
             }
             return;
@@ -1789,47 +1816,53 @@
             return;
           }
           var ctx = getContext();
-          if (!ctx.client || (!ctx.threadId && !ctx.groupId)) {
-            if (err) {
-              err.textContent = "Not available.";
-              err.hidden = false;
-            }
-            return;
-          }
-          var ui = global.__PORTAL_ADMIN_DM_UI || global.__PORTAL_INTERNAL_CHAT_UI || {};
-          var peerLabel = String(ui.peerLabel || "").trim();
+          var hasThread = !!(ctx.threadId || ctx.groupId);
           var isStaffRequest =
             global.portalCsCliqHubRoles &&
             typeof global.portalCsCliqHubRoles.canScheduleMeetings === "function" &&
             !global.portalCsCliqHubRoles.canScheduleMeetings();
+          var meetingDetail = {
+            id: "mtg-" + Date.now(),
+            title: title,
+            participants: participants,
+            scheduledAt: scheduledAt,
+            duration: duration + " min",
+            type: meetingType === "voice" ? "voice" : "video",
+            notes: notes,
+          };
           sendBtn.disabled = true;
           try {
             if (isStaffRequest) {
               if (global.portalCsCliqSupport && typeof global.portalCsCliqSupport.submitMeetingRequest === "function") {
                 global.portalCsCliqSupport.submitMeetingRequest({
-                  with: peerLabel,
+                  with: participants,
                   title: title,
                   scheduledAt: scheduledAt,
                   duration: duration + " min",
                   notes: notes,
+                  meetingType: meetingType,
                 });
               }
               panel.hidden = true;
               return;
             }
-            var meetingTitle = title;
-            if (duration) meetingTitle += " (" + duration + " min)";
-            if (notes) meetingTitle += " ‚Äî " + notes;
-            await sendCallInvite({
-              client: ctx.client,
-              threadId: ctx.threadId,
-              groupId: ctx.groupId,
-              kind: "meeting",
-              title: meetingTitle,
-              scheduledAt: scheduledAt,
-            });
+            if (hasThread && ctx.client) {
+              var meetingTitle = title;
+              if (duration) meetingTitle += " (" + duration + " min)";
+              if (meetingType === "voice") meetingTitle = "[Voice] " + meetingTitle;
+              if (notes) meetingTitle += " ù " + notes;
+              await sendCallInvite({
+                client: ctx.client,
+                threadId: ctx.threadId,
+                groupId: ctx.groupId,
+                kind: "meeting",
+                title: meetingTitle,
+                scheduledAt: scheduledAt,
+              });
+              await refreshThreadAfterCall();
+            }
+            dispatchMeetingCreated(meetingDetail);
             panel.hidden = true;
-            await refreshThreadAfterCall();
           } catch (e) {
             if (err) {
               err.textContent = String((e && e.message) || e || "Could not schedule meeting");
@@ -1845,7 +1878,8 @@
     return panel;
   }
 
-  function openMeetingPanel() {
+  function openMeetingPanel(opts) {
+    opts = opts || {};
     var panel = ensureMeetingPanel();
     mountMeetingPanel(panel);
     bindCallBar();
@@ -1854,12 +1888,21 @@
     var titleInp = document.getElementById("portalStaffChatMeetingTitleInput");
     var dateInp = document.getElementById("portalStaffChatMeetingDateInput");
     var timeInp = document.getElementById("portalStaffChatMeetingTimeInput");
+    var durationInp = document.getElementById("portalStaffChatMeetingDurationInput");
+    var typeInp = document.getElementById("portalStaffChatMeetingTypeInput");
     var participantsInp = document.getElementById("portalStaffChatMeetingParticipantsInput");
     var notesInp = document.getElementById("portalStaffChatMeetingNotesInput");
     var sendBtn = document.getElementById("portalStaffChatMeetingSendBtn");
     var err = document.getElementById("portalStaffChatMeetingErr");
-    var ui = global.__PORTAL_ADMIN_DM_UI || global.__PORTAL_INTERNAL_CHAT_UI || {};
-    var peerLabel = String(ui.peerLabel || "").trim() || "Current chat";
+    var adminUi = global.__PORTAL_ADMIN_DM_UI || {};
+    var internalUi = global.__PORTAL_INTERNAL_CHAT_UI || {};
+    var peerLabel = String(adminUi.peerLabel || internalUi.peerLabel || "").trim();
+    var hasChat = !!(
+      String(adminUi.threadId || internalUi.threadId || "").trim() ||
+      String(adminUi.groupId || "").trim()
+    );
+    var contextual = !!opts.contextual && hasChat && !!peerLabel;
+    var prefill = opts.prefill || null;
     var isStaffRequest =
       global.portalCsCliqHubRoles &&
       typeof global.portalCsCliqHubRoles.canScheduleMeetings === "function" &&
@@ -1867,30 +1910,70 @@
     if (titleEl) titleEl.textContent = isStaffRequest ? "Request meeting" : "Schedule meeting";
     if (subEl) {
       subEl.textContent = isStaffRequest
-        ? "Your request is routed to Management. They will confirm a time in your inbox."
-        : "Everyone gets a join button in this chat. The meeting opens inside the portal.";
+        ? "Ask a Lead or Management user to arrange a meeting."
+        : "Set date, time and attendees. Invites appear in chat when a conversation is open.";
     }
     if (sendBtn) sendBtn.textContent = isStaffRequest ? "Request meeting" : "Create meeting";
-    if (participantsInp) participantsInp.value = peerLabel;
-    if (notesInp) notesInp.value = "";
+    if (participantsInp) {
+      if (prefill && prefill.participants) {
+        participantsInp.value = prefill.participants;
+        participantsInp.readOnly = false;
+      } else if (contextual && peerLabel) {
+        participantsInp.value = peerLabel;
+        participantsInp.readOnly = true;
+      } else {
+        participantsInp.value = "";
+        participantsInp.readOnly = false;
+      }
+      participantsInp.placeholder = "Name or team";
+    }
+    if (notesInp) notesInp.value = prefill && prefill.notes ? prefill.notes : "";
     if (err) {
       err.hidden = true;
       err.textContent = "";
     }
-    if (titleInp) titleInp.value = "";
+    if (titleInp) titleInp.value = prefill && prefill.title ? prefill.title : "";
+    if (durationInp) {
+      var durVal = prefill && prefill.duration ? String(prefill.duration).replace(/\D/g, "") : "30";
+      durationInp.value = durVal || "30";
+    }
+    if (typeInp) {
+      typeInp.value = prefill && prefill.type === "voice" ? "voice" : "video";
+    }
     var now = new Date();
     now.setMinutes(now.getMinutes() + 30 - (now.getMinutes() % 15));
-    if (dateInp) {
-      dateInp.value =
-        now.getFullYear() +
-        "-" +
-        String(now.getMonth() + 1).padStart(2, "0") +
-        "-" +
-        String(now.getDate()).padStart(2, "0");
+    if (prefill && prefill.scheduledAt) {
+      try {
+        var preDate = new Date(prefill.scheduledAt);
+        if (dateInp) {
+          dateInp.value =
+            preDate.getFullYear() +
+            "-" +
+            String(preDate.getMonth() + 1).padStart(2, "0") +
+            "-" +
+            String(preDate.getDate()).padStart(2, "0");
+        }
+        if (timeInp) {
+          timeInp.value =
+            String(preDate.getHours()).padStart(2, "0") + ":" + String(preDate.getMinutes()).padStart(2, "0");
+        }
+      } catch (_pd) {
+        prefill = null;
+      }
     }
-    if (timeInp) {
-      timeInp.value =
-        String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0");
+    if (!prefill || !prefill.scheduledAt) {
+      if (dateInp) {
+        dateInp.value =
+          now.getFullYear() +
+          "-" +
+          String(now.getMonth() + 1).padStart(2, "0") +
+          "-" +
+          String(now.getDate()).padStart(2, "0");
+      }
+      if (timeInp) {
+        timeInp.value =
+          String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0");
+      }
     }
     panel.hidden = false;
     if (titleInp) titleInp.focus();

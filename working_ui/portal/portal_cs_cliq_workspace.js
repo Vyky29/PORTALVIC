@@ -1,5 +1,5 @@
 /**
- * CS Cliq workspace bridge ‚Äî channels, files, calendar, and portal routing.
+ * CS Cliq workspace bridge ù announcements, files, meetings, and portal routing.
  */
 (function (global) {
   "use strict";
@@ -142,33 +142,19 @@
     if (pane === "calendar" && global.portalCsCliqMeetingsHub && typeof global.portalCsCliqMeetingsHub.refresh === "function") {
       void global.portalCsCliqMeetingsHub.refresh();
     }
-    if (pane === "teams" && global.portalCsCliqTeams && typeof global.portalCsCliqTeams.refresh === "function") {
-      void global.portalCsCliqTeams.refresh();
+    if (pane === "announcements" && global.portalCsCliqAnnouncementsHub && typeof global.portalCsCliqAnnouncementsHub.refresh === "function") {
+      global.portalCsCliqAnnouncementsHub.refresh();
     }
     if (pane === "support" && global.portalCsCliqSupport && typeof global.portalCsCliqSupport.refresh === "function") {
       global.portalCsCliqSupport.refresh();
     }
-    if (pane === "operations") {
-      var ch = global.__PORTAL_ADMIN_DM_CHANNEL || "staff_lead";
-      var wrapQ = document.getElementById("csCliqCeoQuickWrap");
-      if (wrapQ) wrapQ.hidden = ch !== "ceo_exec";
-      var wrapSl = document.getElementById("csCliqStaffLeadsQuickWrap");
-      if (wrapSl) wrapSl.hidden = ch !== "staff_lead";
+    if (pane === "channels" && global.PortalAdminCsCliq && typeof global.PortalAdminCsCliq.setRailPane === "function") {
+      global.PortalAdminCsCliq.setRailPane("announcements");
     }
-    syncChannelsChrome();
   }
 
   function syncChannelsChrome() {
-    var root = document.getElementById("csCliqRoot");
-    if (!root) return;
-    var manage = document.getElementById("csCliqChManage");
-    var ann = document.getElementById("csCliqChAnn");
-    var rem = document.getElementById("csCliqChRem");
-    var can = canManageChannels();
-    if (manage) manage.hidden = !can;
-    if (ann) ann.toggleAttribute("disabled", !can);
-    if (rem) rem.toggleAttribute("disabled", !can);
-    root.classList.toggle("portal-cs-cliq--channels-readonly", !can);
+    return;
   }
 
   function buildConfigureOptions(overrides) {
