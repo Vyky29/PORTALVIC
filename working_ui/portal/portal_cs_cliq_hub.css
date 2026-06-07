@@ -135,8 +135,8 @@
   flex-direction: column;
 }
 
-#csCliqRoot .portal-cs-cliq-thread-header {
-  display: flex;
+#csCliqRoot #csCliqThreadHeader.portal-cs-cliq-thread-header {
+  display: none;
   align-items: center;
   gap: 10px;
   padding: 12px 14px;
@@ -146,6 +146,12 @@
   position: sticky;
   top: 0;
   z-index: 2;
+  min-width: 0;
+}
+
+#csCliqRoot #csCliqThreadHeader.portal-cs-cliq-thread-header.is-open,
+#csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="thread"] #csCliqThreadHeader.portal-cs-cliq-thread-header {
+  display: flex !important;
 }
 
 #csCliqRoot .portal-cs-cliq-thread-header__identity {
@@ -227,8 +233,17 @@
   background: #fff;
 }
 
-#csCliqRoot #csCliqHeadCallBar .portal-dm-call-bar-label {
-  display: none;
+#csCliqRoot #csCliqHeadCallBar .portal-dm-call-bar-label,
+#csCliqRoot #csCliqHeadCallBar .sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
 }
 
 #csCliqRoot .portal-cs-cliq-messages {

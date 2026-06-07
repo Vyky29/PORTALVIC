@@ -158,5 +158,10 @@
     return req;
   }
 
-  global.portalCsCliqSupport = { refresh: refresh, readRequests: readRequests, submitMeetingRequest: submitMeetingRequest };
+  global.portalCsCliqSupport = {
+    refresh: refresh,
+    readRequests: readRequests,
+    submit: submit,
+    submitMeetingRequest: submitMeetingRequest,
+  };
 })(typeof window !== "undefined" ? window : globalThis);

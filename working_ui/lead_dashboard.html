@@ -94,13 +94,13 @@
   <script src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Lead Dashboard</title>
   <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260607-admin-chat-colors" />
-  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260604-cliq-inbox" />
+  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260604-cliq-access" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260610-topbar-colors" />
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260624-staff-lead-dm" />
-  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260604-cliq-fix" />
-  <link rel="stylesheet" href="/portal/portal_cs_cliq_embed.css?v=20260604-cliq-fix" />
+  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260604-cliq-thread" />
+  <link rel="stylesheet" href="/portal/portal_cs_cliq_embed.css?v=20260604-cliq-thread" />
   <link rel="stylesheet" href="/portal/portal_cs_cliq_workspace.css?v=20260604-cliq-fix" />
-  <link rel="stylesheet" href="/portal/portal_cs_cliq_hub.css?v=20260604-cliq-inbox" />
+  <link rel="stylesheet" href="/portal/portal_cs_cliq_hub.css?v=20260604-cliq-thread" />
   <link rel="stylesheet" href="/portal/portal_client_sessions_overview.css?v=20260622-next-chip-client" />
   <script src="/portal/portal_orientation_lock.js?v=20260622-next-chip-client"></script>
   <link rel="stylesheet" href="/portal/portal_area_note_icons.css?v=20260607-area-icons-transparent" />
@@ -1051,15 +1051,15 @@
   <script src="/portal/portal_incoming_call_push.js?v=20260622-incoming-call"></script>
   <script src="/portal/portal_sheet_back.js?v=20260607-sheet-back"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
-  <script src="/portal/portal_dm_roles.js?v=20260621-dm-roles"></script>
+  <script src="/portal/portal_dm_roles.js?v=20260604-cliq-access"></script>
   <script src="/portal/portal_dm_thread_avatar.js?v=20260621-cliq-embed"></script>
-  <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260622-announcements"></script>
-  <script src="/portal/portal_cs_cliq_support.js?v=20260621-cliq-hub"></script>
+  <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260604-cliq-access"></script>
+  <script src="/portal/portal_cs_cliq_support.js?v=20260604-cliq-access"></script>
   <script src="/portal/portal_cs_cliq_announcements_hub.js?v=20260604-cliq-fix"></script>
   <script src="/portal/portal_cs_cliq_announcement_inbox.js?v=20260622-announcements"></script>
-  <script src="/portal/portal_cs_cliq_thread_header.js?v=20260604-cliq-inbox"></script>
+  <script src="/portal/portal_cs_cliq_thread_header.js?v=20260604-cliq-thread"></script>
   <script src="/portal/portal_cs_cliq_thread_files.js?v=20260604-cliq-files"></script>
-  <script src="/portal/portal_admin_cs_cliq.js?v=20260604-cliq-fix"></script>
+  <script src="/portal/portal_admin_cs_cliq.js?v=20260604-cliq-thread"></script>
   <script src="/portal/portal_cs_cliq_workspace.js?v=20260604-cliq-inbox"></script>
   <script src="/portal/portal_cs_cliq_compose_sheet.js?v=20260604-cliq-fix"></script>
   <script src="/portal/portal_cs_cliq_files_hub.js?v=20260604-cliq-files"></script>
@@ -1067,7 +1067,7 @@
   <script src="/portal/portal_executive_dm.js?v=20260622-announcements"></script>
   <script src="/portal/portal_cs_cliq_embed.js?v=20260604-cliq-fix"></script>
   <script src="/portal/portal_dm_executive_cliq.js?v=20260621-cliq-embed"></script>
-  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260621-dm-roles"></script>
+  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260604-cliq-access"></script>
   <script>
     /** Real calendar weekday for “Today” (en-GB), aligned with staff_clients_machine.xlsx */
     function portalWeekdayLongEnGB(d){
@@ -5826,7 +5826,11 @@
         return window.portalLeadStaffChatDirectory.portalStaffIsLeadUser(prof);
       }
       prof = prof || (window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile) || {};
-      return String(prof.app_role || '').toLowerCase() === 'lead';
+      if(window.portalDmRoles && typeof window.portalDmRoles.portalDmUsesAdminCliq === 'function'){
+        return window.portalDmRoles.portalDmUsesAdminCliq(prof);
+      }
+      var ar = String(prof.app_role || '').toLowerCase();
+      return ar === 'admin' || ar === 'ceo';
     }
     function portalStaffIsRestrictedWorkerChat(prof){
       if(window.portalLeadStaffChatDirectory && typeof window.portalLeadStaffChatDirectory.portalStaffIsRestrictedWorkerChat === 'function'){
@@ -6555,6 +6559,9 @@
         if(portalStaffIsRestrictedWorkerChat(box && box.staff_profile)){
           rows = rows.filter(function(r){
             var peer = portalDmPeerIdForThread(me, r);
+            if(window.portalLeadStaffChatDirectory && typeof window.portalLeadStaffChatDirectory.portalStaffInboxPeerAllowed === 'function'){
+              return window.portalLeadStaffChatDirectory.portalStaffInboxPeerAllowed(profBy[peer] || {});
+            }
             return portalStaffProfileIsOfficePeer(profBy[peer] || {});
           });
         }
@@ -6571,7 +6578,7 @@
         }
         if(!rows.length){
           var emptyMsg = portalInternalChatOfficeRestricted()
-            ? "No conversations yet. When the office sends you a message, it appears here. If you expected a thread with the office, check that an active admin or CEO exists in staff_profiles."
+            ? "No conversations yet. Use <strong>Request support</strong> or <strong>Request meeting</strong> above, or wait for Management to message you."
             : (portalStaffIsLeadUser()
               ? (leadSearchQ
                 ? "No chats match your search. Check the team matches below or open the <strong>Staff</strong> tab."

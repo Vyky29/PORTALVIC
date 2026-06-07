@@ -205,7 +205,7 @@
       "</div></div>" +
       '<div id="csCliqThreadPanel" class="portal-dm-thread-view portal-cs-cliq-thread" hidden aria-hidden="true">' +
       '<span id="csCliqThreadPeerHidden" hidden aria-hidden="true"></span>' +
-      '<header class="portal-cs-cliq-thread-header" id="csCliqThreadHeader" hidden>' +
+      '<header class="portal-cs-cliq-thread-header" id="csCliqThreadHeader" aria-hidden="true">' +
       '<button type="button" class="portal-cs-cliq__back-btn" id="csCliqBackBtn" aria-label="Back to inbox">‹</button>' +
       '<div class="portal-cs-cliq-thread-header__identity">' +
       '<span class="portal-cs-cliq-thread-header__avatar" id="csCliqThreadAvatar" aria-hidden="true"></span>' +
@@ -429,6 +429,11 @@
         !global.portalCsCliqHubRoles.canCreateConversations()
       );
       newBtn.hidden = inThread || inCompose || !canNew;
+    }
+    var threadHeader = document.getElementById("csCliqThreadHeader");
+    if (threadHeader) {
+      threadHeader.classList.toggle("is-open", inThread);
+      threadHeader.setAttribute("aria-hidden", inThread ? "false" : "true");
     }
     if (global.portalCsCliqThreadHeader && typeof global.portalCsCliqThreadHeader.sync === "function") {
       global.portalCsCliqThreadHeader.sync(ui);

@@ -161,6 +161,78 @@
   flex-shrink: 0;
 }
 
+/* Premium open-thread chrome (match internal chat sheet) */
+.portal-cs-cliq-embed-host #csCliqRoot #csCliqThreadHeader.portal-cs-cliq-thread-header {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #fff;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.portal-cs-cliq-embed-host #csCliqRoot #csCliqThreadHeader.portal-cs-cliq-thread-header.is-open,
+.portal-cs-cliq-embed-host #csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="thread"] #csCliqThreadHeader {
+  display: flex !important;
+}
+
+.portal-cs-cliq-embed-host #csCliqRoot .portal-cs-cliq-thread-header__identity {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.portal-cs-cliq-embed-host #csCliqRoot .portal-cs-cliq__back-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.portal-cs-cliq-embed-host #csCliqRoot #csCliqHeadCallBar {
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.portal-cs-cliq-embed-host #csCliqRoot .portal-cs-cliq-thread-header__files,
+.portal-cs-cliq-embed-host #csCliqRoot .portal-cs-cliq-thread-header__more {
+  flex-shrink: 0;
+}
+
+.portal-cs-cliq-embed-host #csCliqRoot .portal-cs-cliq-composer {
+  padding: 10px 14px calc(12px + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, #fff 0%, #f8fbfd 100%);
+  border-top: 1px solid #e2e8f0;
+}
+
+.portal-cs-cliq-embed-host #csCliqRoot .portal-cs-cliq-composer__shell {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 18px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+}
+
+.portal-cs-cliq-embed-host #csCliqRoot .portal-cs-cliq-composer__leading {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.portal-cs-cliq-embed-host #csCliqRoot .portal-cs-cliq-messages {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  background: #f8fbfd;
+}
+
 .portal-cs-cliq-embed-host #csCliqRoot .portal-cs-cliq__module-body,
 .portal-cs-cliq-embed-host #csCliqRoot .portal-cs-cliq__channels-body {
   overflow: auto;

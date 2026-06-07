@@ -27,7 +27,7 @@
     var header = document.getElementById("csCliqThreadHeader");
     if (!header) return;
     var inThread = String(ui.panel || "") === "thread";
-    header.hidden = !inThread;
+    header.classList.toggle("is-open", inThread);
     header.setAttribute("aria-hidden", inThread ? "false" : "true");
     if (!inThread) return;
     var label = String(ui.peerLabel || "").trim() || "Conversation";
@@ -78,7 +78,8 @@
     var role = String(peerRole || "").trim() || "Staff";
     if (roleEl) roleEl.textContent = role;
     if (statusEl) statusEl.textContent = "Available";
-    header.hidden = false;
+    header.classList.add("is-open");
+    header.removeAttribute("hidden");
     header.setAttribute("aria-hidden", "false");
     if (global.portalCsCliqThreadFiles && typeof global.portalCsCliqThreadFiles.onThreadChange === "function") {
       global.portalCsCliqThreadFiles.onThreadChange();

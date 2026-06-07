@@ -165,10 +165,14 @@
   display: none !important;
 }
 
-#csCliqRoot .portal-cs-cliq__head-call-bar .portal-dm-call-bar-btn,
-#csCliqRoot #csCliqHeadCallBar .portal-dm-call-bar-btn {
-  padding: 8px 10px;
-  font-size: 11px;
+#csCliqRoot .portal-cs-cliq-thread-header .portal-cs-cliq__head-call-bar .portal-dm-call-bar-btn,
+#csCliqRoot .portal-cs-cliq-thread-header #csCliqHeadCallBar .portal-dm-call-bar-btn {
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  padding: 0;
+  font-size: 0;
+  border-radius: 10px;
 }
 
 @media (max-width: 699px) {
@@ -651,10 +655,8 @@
   color: #145a3a;
 }
 
-#csCliqRoot .portal-dm-compose-bar.portal-cs-cliq-composer {
-  padding: 0;
-  border-top: 0;
-  background: transparent;
+#csCliqRoot .portal-dm-compose-bar.portal-cs-cliq-composer:not(.portal-cs-cliq-composer--legacy) {
+  flex-shrink: 0;
 }
 
 #csCliqRoot .portal-cs-cliq-composer .txa,
@@ -1174,13 +1176,7 @@ body.admin-view-cs-cliq .portal-admin-floating-chat-wrap {
     min-height: 0;
   }
 
-  #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq__chat-head {
-    padding-top: max(10px, env(safe-area-inset-top, 0px));
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    grid-template-rows: auto;
-  }
-
-  #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq__chat-title {
+  #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq-inbox__list-head .portal-cs-cliq__chat-title {
     text-align: left;
     font-size: 16px;
     white-space: nowrap;
@@ -1188,24 +1184,44 @@ body.admin-view-cs-cliq .portal-admin-floating-chat-wrap {
     text-overflow: ellipsis;
   }
 
-  #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq__new-btn {
+  #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq-inbox__list-head .portal-cs-cliq__new-btn {
     display: none !important;
   }
 
-  #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq__head-call-bar,
-  #csCliqRoot.portal-cs-cliq--subscreen #csCliqHeadCallBar {
-    grid-column: 3;
-    grid-row: 1;
-    flex-wrap: nowrap;
-    justify-content: flex-end;
-    gap: 4px;
+  #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadHeader.portal-cs-cliq-thread-header {
+    padding-top: max(12px, env(safe-area-inset-top, 0px));
+    flex-wrap: wrap;
+    row-gap: 8px;
   }
 
-  #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq__head-call-bar .portal-dm-call-bar-btn,
-  #csCliqRoot.portal-cs-cliq--subscreen #csCliqHeadCallBar .portal-dm-call-bar-btn {
-    flex: 0 0 auto;
-    padding: 6px 8px;
-    font-size: 10px;
+  #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadHeader .portal-cs-cliq-thread-header__identity {
+    flex: 1 1 calc(100% - 52px);
+    min-width: 0;
+    order: 1;
+  }
+
+  #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadHeader .portal-cs-cliq__back-btn {
+    order: 0;
+  }
+
+  #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadHeader #csCliqHeadCallBar {
+    order: 3;
+    flex: 1 1 100%;
+    justify-content: stretch;
+    gap: 6px;
+  }
+
+  #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadHeader #csCliqHeadCallBar .portal-dm-call-bar-btn {
+    flex: 1 1 0;
+    min-width: 0;
+    width: auto;
+    height: 36px;
+    font-size: 0;
+  }
+
+  #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadHeader .portal-cs-cliq-thread-header__files,
+  #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadHeader .portal-cs-cliq-thread-header__more {
+    order: 2;
   }
 
   #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq-composer {
