@@ -102,7 +102,7 @@ Deno.serve(async (req) => {
 
   const { data: profile, error: profErr } = await supabase
     .from("staff_profiles")
-    .select("id, is_active")
+    .select("id, full_name, username, is_active")
     .eq("id", userId)
     .maybeSingle();
 
@@ -113,6 +113,12 @@ Deno.serve(async (req) => {
   if (!profile || profile.is_active === false) {
     return json({ ok: false, error: "forbidden" }, 403);
   }
+
+  const profileName = String(profile.full_name || profile.username || "").trim();
+  const jaasDisplayName =
+    (profileName ? profileName.split(/\s+/).filter(Boolean)[0] : "") ||
+    displayName ||
+    "Staff";
 
   const now = Math.floor(Date.now() / 1000);
   const exp = now + 60 * 60 * 3;
@@ -131,7 +137,7 @@ Deno.serve(async (req) => {
       context: {
         user: {
           id: userId,
-          name: displayName,
+          name: jaasDisplayName,
           email: email || undefined,
           moderator: asModerator ? "true" : "false",
         },

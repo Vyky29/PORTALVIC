@@ -172,8 +172,8 @@
       title: String(opts.title || "").trim(),
       scheduledAt: opts.scheduledAt || null,
       createdAt: new Date().toISOString(),
-      callerId: String(ctx.me || "").trim(),
-      callerName: callerDisplayName(),
+      callerId: String(opts.callerId || authUserId() || ctx.me || "").trim(),
+      callerName: String(opts.callerName || callerDisplayName()).trim(),
     };
   }
 
@@ -197,6 +197,15 @@
     }
   }
 
+  function authUserId() {
+    var box = global.__PORTAL_SUPABASE__;
+    return String(
+      (box && box.session && box.session.user && box.session.user.id) ||
+        (box && box.staff_profile && box.staff_profile.id) ||
+        ""
+    ).trim();
+  }
+
   function getContext() {
     var box = global.__PORTAL_SUPABASE__;
     var ui = global.__PORTAL_INTERNAL_CHAT_UI || {};
@@ -211,11 +220,7 @@
     return {
       client: box && box.client,
       threadId: threadId,
-      me: String(
-        (box && box.staff_profile && box.staff_profile.id) ||
-          (box && box.session && box.session.user && box.session.user.id) ||
-          ""
-      ).trim(),
+      me: authUserId(),
       peerLabel: peerLabel,
     };
   }
@@ -241,13 +246,40 @@
 
   function callerDisplayName() {
     var box = global.__PORTAL_SUPABASE__;
+    var sessionId = authUserId();
     var p = box && box.staff_profile;
-    var nm = shortDisplayName((p && p.full_name) || (p && p.username) || "");
-    if (nm) return nm;
+    var nm = "";
+    if (p && sessionId && String(p.id || "") === String(sessionId)) {
+      nm = shortDisplayName(p.full_name || p.username);
+      if (nm) return nm;
+    }
+    var email = box && box.session && box.session.user && box.session.user.email;
+    if (email) {
+      var local = String(email).split("@")[0] || "";
+      local = local.replace(/[._+-]+/g, " ").trim();
+      nm = shortDisplayName(local);
+      if (nm) return nm;
+    }
     try {
       nm = shortDisplayName(global.dashboardData && global.dashboardData.staffName);
     } catch (_d) {}
     return nm || "Staff";
+  }
+
+  async function resolveCallerIdentity(client) {
+    var uid = authUserId();
+    var name = callerDisplayName();
+    if (client && uid) {
+      try {
+        var res = await client
+          .from("staff_profiles")
+          .select("full_name,username")
+          .eq("id", uid)
+          .maybeSingle();
+        if (res.data) name = incomingCallerLabelFromProfile(res.data);
+      } catch (_e) {}
+    }
+    return { id: uid, name: name };
   }
 
   function incomingCallerLabelFromProfile(prof) {
@@ -259,16 +291,11 @@
   function isOwnCallAuthor(authorId) {
     authorId = String(authorId || "").trim().toLowerCase();
     if (!authorId) return false;
+    var me = authUserId().toLowerCase();
+    if (me && me === authorId) return true;
     var box = global.__PORTAL_SUPABASE__;
-    var candidates = [
-      box && box.staff_profile && box.staff_profile.id,
-      box && box.session && box.session.user && box.session.user.id,
-    ];
-    for (var i = 0; i < candidates.length; i++) {
-      var id = candidates[i];
-      if (id && String(id).trim().toLowerCase() === authorId) return true;
-    }
-    return false;
+    var profId = box && box.staff_profile && box.staff_profile.id;
+    return !!(profId && String(profId).trim().toLowerCase() === authorId);
   }
 
   function injectStyles() {
@@ -309,12 +336,7 @@
   }
 
   function meUserId() {
-    var box = global.__PORTAL_SUPABASE__;
-    return String(
-      (box && box.staff_profile && box.staff_profile.id) ||
-        (box && box.session && box.session.user && box.session.user.id) ||
-        ""
-    ).trim();
+    return authUserId();
   }
 
   function isInActiveCall() {
@@ -537,30 +559,38 @@
     cb = typeof cb === "function" ? cb : function () {};
     data = data || parseCallPayload(row && row.body);
 
-    if (data && data.callerName) {
-      cb(shortDisplayName(data.callerName) || String(data.callerName).trim());
+    var box = global.__PORTAL_SUPABASE__;
+    var client = box && box.client;
+    var authorId = String((row && row.author_id) || "").trim();
+    if (!authorId && data) authorId = String(data.callerId || "").trim();
+
+    function fallbackName() {
+      if (data && data.callerName) {
+        cb(shortDisplayName(data.callerName) || String(data.callerName).trim());
+        return;
+      }
+      cb("Team chat");
+    }
+
+    if (!client || !authorId) {
+      fallbackName();
       return;
     }
 
-    var box = global.__PORTAL_SUPABASE__;
-    var client = box && box.client;
-    var authorId = String(
-      (data && data.callerId) || (row && row.author_id) || ""
-    ).trim();
-    if (!client || !authorId) {
-      cb("Team chat");
-      return;
-    }
     client
       .from("staff_profiles")
       .select("full_name,username,app_role,staff_role")
       .eq("id", authorId)
       .maybeSingle()
       .then(function (res) {
-        cb(incomingCallerLabelFromProfile(res && res.data));
+        if (res && res.data) {
+          cb(incomingCallerLabelFromProfile(res.data));
+          return;
+        }
+        fallbackName();
       })
       .catch(function () {
-        cb("Team chat");
+        fallbackName();
       });
   }
 
@@ -1243,11 +1273,14 @@
     if (!client || !threadId) throw new Error("Not available.");
 
     var room = buildRoomName(threadId, kind);
+    var caller = await resolveCallerIdentity(client);
     var payload = buildCallPayload({
       kind: kind,
       room: room,
       title: title,
       scheduledAt: scheduledAt || null,
+      callerId: caller.id,
+      callerName: caller.name,
     });
     var body = encodeCallBody(payload);
     var ins = await client
