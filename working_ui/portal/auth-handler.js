@@ -475,6 +475,17 @@ function bindLogin() {
     clearPortalStaffContext();
   }
 
+  function portalLoginFailureMessage(resolvedEmail) {
+    const lower = String(resolvedEmail || "").trim().toLowerCase();
+    if (/^stf\d{3}@staff\.import\.pending$/.test(lower)) {
+      return (
+        "Wrong PIN. Use your first name (e.g. Aurora) and the 4-digit PIN from the office — not an old test password. " +
+        "If you forgot your PIN, ask the office."
+      );
+    }
+    return "Wrong password. Check your email and password, or contact the office.";
+  }
+
   function portalStaffProfileMissingMessage(opts) {
     opts = opts || {};
     const registered = opts.registeredLogin !== false;
@@ -670,13 +681,7 @@ function bindLogin() {
       password,
     });
     if (error || !data?.user?.id) {
-      showError(
-        "Wrong password, or this staff account is not created in Supabase yet. " +
-          "Restore the shared test password: run database/provision_staff_auth_users.py with SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY (default 990099; Supabase often requires min 6 characters). " +
-          "Or reset each user in Supabase → Authentication → Users. " +
-          "Email provider minimum password length must allow the bootstrap password (default 990099 = 6 chars). " +
-          "ES: si no entra nadie, vuelve a ejecutar provision_staff_auth_users.py o supabase_update_test_passwords.sql (contraseña de prueba 990099 en stf*@staff.import.pending)."
-      );
+      showError(portalLoginFailureMessage(email));
       return;
     }
     try {

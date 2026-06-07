@@ -258,6 +258,13 @@
       max-height:6rem;
       padding:10px 12px;
     }
+    .login-hint{
+      margin:0 0 12px;
+      font-size:.8125rem;
+      line-height:1.45;
+      color:var(--muted);
+      text-align:center;
+    }
   </style>
 </head>
 <body>
@@ -343,14 +350,16 @@
 
       <p id="login-updated-msg" class="login-updated-msg" role="status" aria-live="polite">Your portal has been updated. Please log in again to continue.</p>
 
+      <p class="login-hint">Staff: your first name and the 4-digit PIN from the office.</p>
+
       <form id="login-form" novalidate method="post" action="">
         <div class="field">
           <label for="name">Name or email</label>
           <input id="name" name="name" type="text" autocomplete="username" placeholder="First name or email" />
         </div>
         <div class="field">
-          <label for="password">Password</label>
-          <input id="password" name="password" type="password" autocomplete="current-password" placeholder="Password" />
+          <label for="password">PIN or password</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" inputmode="numeric" placeholder="4-digit PIN" />
         </div>
         <button type="submit" class="btn-login" id="btn-login">Login</button>
       </form>
@@ -375,6 +384,7 @@
         Godsway: "stf009@staff.import.pending",
         Javier: "stf010@staff.import.pending",
         Aurora: "stf011@staff.import.pending",
+        "Aurora Garcia": "stf011@staff.import.pending",
         Michelle: "michelle@youtimecounselling.com",
         Berta: "b.traperocasado@gmail.com",
         Victor: "victor@clubsensational.org",
@@ -460,7 +470,7 @@
       window.PORTAL_LEAD_DASHBOARD_URL = "lead_dashboard.html";
       window.PORTAL_CHOOSE_URL = "portal_choose.html";
       window.PORTAL_AUTO_REDIRECT_FROM_LOGIN = true;
-      var portalJsVer = "20260624-push-icon-ghost-handoff";
+      var portalJsVer = "20260607-login-pin-hint";
       /* Auth ES module: load from portal next to this page (same origin avoids CORS issues). */
       var portalJsBase = new URL("portal/", window.location.href).href;
       var s = document.createElement("script");

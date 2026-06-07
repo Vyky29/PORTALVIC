@@ -76,6 +76,7 @@ export const STAFF_USERNAME_TO_EMAIL = {
   Godsway: "stf009@staff.import.pending",
   Javier: "stf010@staff.import.pending",
   Aurora: "stf011@staff.import.pending",
+  "Aurora Garcia": "stf011@staff.import.pending",
   Michelle: "michelle@youtimecounselling.com",
   "michelle@youtimecounselling.com": "michelle@youtimecounselling.com",
   Berta: "b.traperocasado@gmail.com",
