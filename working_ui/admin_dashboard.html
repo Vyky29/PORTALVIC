@@ -33,7 +33,7 @@
   <script src="/portal/admin-hr.js?v=20260601-annual-profile"></script>
   <script src="/portal/admin-payments.js?v=20260531-la-column"></script>
   <script src="/portal/portal-comms-order-payments.js?v=20260617-cfk-order-enrich"></script>
-  <script src="/portal/portal-admin-settings-hub.js?v=20260606-help-unanswered"></script>
+  <script src="/portal/portal-admin-settings-hub.js?v=20260607-parent-notify-test"></script>
   <script src="/portal/admin-onboarding.js?v=20260530-onboarding-clickdocs"></script>
   <script src="/portal/admin-parent-notify-send.js?v=20260622-parent-notify"></script>
   <script src="/portal/admin-logs.js?v=20260601-logs-merge"></script>
@@ -8545,7 +8545,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       openModal(
         '<div class="modal-h"><h2 id="modalTitle">Message for parent</h2></div><div class="modal-b">'+
-        '<p class="muted" style="margin-top:0;min-width:0;overflow-wrap:break-word">Send from the portal (email via Resend, WhatsApp via Business API) or open your own mail/WhatsApp app. Attach the instructor photo separately when needed. Every server send is logged for audit.</p>'+
+        '<p class="muted" style="margin-top:0;min-width:0;overflow-wrap:break-word">Send from the portal (email via Google SMTP, WhatsApp via Business API) or open your own mail/WhatsApp app. Attach the instructor photo separately when needed. Every server send is logged for audit.</p>'+
         '<div class="grid-2" style="grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px">'+
         '<div><label class="muted" for="pnParentName">Parent / carer name</label><input id="pnParentName" class="inp" style="max-width:100%" value="'+esc(meta.parentCarerName || '')+'" /></div>'+
         '<div><label class="muted" for="pnParentEmail">Email</label><input id="pnParentEmail" class="inp" type="email" style="max-width:100%" value="'+esc(meta.parentEmail || '')+'" autocomplete="off" /></div>'+
@@ -18606,6 +18606,74 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       reloadManage();
     }
+    function portalAdminBindParentNotifyTestSend(){
+      var btn = $('portalAdminParentNotifyTestBtn');
+      var input = $('portalAdminParentNotifyTestEmail');
+      var statusEl = $('portalAdminParentNotifyTestStatus');
+      if(!btn || !input) return;
+      btn.onclick = function(){
+        portalParentNotifyConfigureOnce();
+        if(!window.PortalParentNotifySend || typeof window.PortalParentNotifySend.send !== 'function'){
+          alert('Send module not loaded — refresh the page.');
+          return;
+        }
+        var em = String(input.value || '').trim();
+        if(!em){
+          alert('Enter an email address to receive the test.');
+          return;
+        }
+        btn.disabled = true;
+        btn.textContent = 'Sending…';
+        if(statusEl){
+          statusEl.style.display = 'none';
+          statusEl.textContent = '';
+        }
+        void window.PortalParentNotifySend.send({
+          kind: 'smtp_test',
+          channel: 'email',
+          parentEmail: em,
+          subject: 'Portal test — parent notify email',
+          body: 'This is a test from the ClubSENsational admin portal.\n\nIf you receive this, Google SMTP (info@clubsensational.org) is working.\n\nYou can now use Notify parent from Bookings or Scheduling.',
+          clientDisplay: 'SMTP test'
+        }).then(function(res){
+          btn.disabled = false;
+          btn.textContent = 'Send test email';
+          if(!res || !res.ok){
+            var err = (res && res.error) ? String(res.error).replace(/_/g, ' ') : 'send failed';
+            if(statusEl){
+              statusEl.style.display = 'block';
+              statusEl.className = 'submission-state is-error';
+              statusEl.style.margin = '10px 0 0';
+              statusEl.style.fontSize = '12px';
+              statusEl.textContent = 'Send failed: ' + err;
+            }else{
+              alert('Send failed: ' + err);
+            }
+            return;
+          }
+          var msg = window.PortalParentNotifySend.formatSendResult(res.data);
+          if(statusEl){
+            statusEl.style.display = 'block';
+            statusEl.className = 'muted';
+            statusEl.style.margin = '10px 0 0';
+            statusEl.style.fontSize = '12px';
+            statusEl.textContent = msg + ' — check ' + em + ' (and spam).';
+          }
+          if(typeof portalAdminToast === 'function') portalAdminToast(msg, 'ok');
+          else alert(msg);
+        }).catch(function(){
+          btn.disabled = false;
+          btn.textContent = 'Send test email';
+          if(statusEl){
+            statusEl.style.display = 'block';
+            statusEl.className = 'submission-state is-error';
+            statusEl.style.margin = '10px 0 0';
+            statusEl.style.fontSize = '12px';
+            statusEl.textContent = 'Send failed — check Edge Function logs.';
+          }
+        });
+      };
+    }
     function openPortalAdminGuideReadModal(){
       closeSidebarMob();
       var client = getSchedSupabaseClient();
@@ -20920,6 +20988,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(guideReadBtn) guideReadBtn.onclick = openPortalAdminGuideReadModal;
         var helpUnansweredBtn = $('portalAdminHelpUnansweredBtn');
         if(helpUnansweredBtn) helpUnansweredBtn.onclick = openPortalAdminHelpUnansweredModal;
+        portalAdminBindParentNotifyTestSend();
         if(!state._settingsHubRepaintOnly){
           portalAdminRefreshSettingsView();
         }

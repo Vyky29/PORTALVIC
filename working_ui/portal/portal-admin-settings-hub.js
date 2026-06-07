@@ -498,6 +498,17 @@
         "") +
       helpPreviewHtml +
       '<button type="button" class="btn btn--sec btn--sm" id="portalAdminHelpUnansweredBtn" style="margin-top:12px">View full log</button></div>' +
+      '<div class="card card-pad" style="margin-bottom:14px;border-color:#b8e6cf;background:linear-gradient(180deg,#f4fdf8,#e8f8ef)">' +
+      '<h3 style="margin:0 0 8px;font-size:14px">Parent notify — test email</h3>' +
+      '<p class="muted" style="margin:0 0 10px;max-width:42rem;overflow-wrap:break-word">Send a test message via <strong>Google SMTP</strong> (<code>info@clubsensational.org</code>). Use this before messaging parents from Bookings or Scheduling.</p>' +
+      '<label class="muted" for="portalAdminParentNotifyTestEmail" style="display:block;margin-bottom:6px">Send to</label>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;min-width:0">' +
+      '<input id="portalAdminParentNotifyTestEmail" class="inp" type="email" autocomplete="email" style="flex:1 1 220px;min-width:0;max-width:100%" value="' +
+      esc(sess.email || "") +
+      '" />' +
+      '<button type="button" class="btn btn--pri btn--sm" id="portalAdminParentNotifyTestBtn">Send test email</button>' +
+      "</div>" +
+      '<p class="muted" id="portalAdminParentNotifyTestStatus" style="margin:10px 0 0;font-size:12px;line-height:1.45;min-width:0;overflow-wrap:break-word;display:none" role="status"></p></div>' +
       '<div class="card card-pad" style="margin-bottom:14px;border-color:#e8d9a8;background:linear-gradient(180deg,#fffdf5,#fff8e6)">' +
       '<h3 style="margin:0 0 8px;font-size:14px">Device notifications</h3>' +
       '<p class="muted" style="margin:0 0 8px;max-width:42rem;overflow-wrap:break-word">' +
