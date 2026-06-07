@@ -20,6 +20,11 @@
       .replace(/"/g, "&quot;");
   }
 
+  function dmIcon(name) {
+    var ic = global.portalDmIcons;
+    return ic && typeof ic.svg === "function" ? ic.svg(name) : "";
+  }
+
   function msgType(m) {
     return String((m && m.message_type) || "text").toLowerCase();
   }
@@ -121,7 +126,7 @@
       var row = document.createElement("div");
       row.className = "portal-dm-file-msg";
       row.innerHTML =
-        '<span aria-hidden="true">📎</span>' +
+        dmIcon("paperclip") +
         (urlF
           ? '<a href="' + escFn(urlF) + '" target="_blank" rel="noopener noreferrer">' + label + "</a>"
           : "<span>" + label + "</span>");
@@ -241,12 +246,15 @@
 
     function addBtn(id, label, title, onClick) {
       var existing = document.getElementById(id);
-      if (existing) return existing;
+      if (existing) {
+        if (!existing.querySelector(".portal-dm-ico")) existing.innerHTML = label;
+        return existing;
+      }
       var btn = document.createElement("button");
       btn.type = "button";
       btn.id = id;
       btn.className = "portal-dm-attach-btn";
-      btn.textContent = label;
+      btn.innerHTML = label;
       btn.title = title;
       btn.setAttribute("aria-label", title);
       btn.addEventListener("click", onClick);
@@ -256,7 +264,7 @@
 
     var photoBtn = addBtn(
       opts.photoBtnId || "portalDmPhotoBtn",
-      "🖼",
+      dmIcon("gallery"),
       "Send photo",
       function () {
         photoInp.click();
@@ -264,7 +272,7 @@
     );
     var docBtn = addBtn(
       opts.docBtnId || "portalDmDocBtn",
-      "📎",
+      dmIcon("paperclip"),
       "Send document",
       function () {
         docInp.click();

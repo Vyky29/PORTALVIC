@@ -52,6 +52,12 @@
       .replace(/"/g, "&quot;");
   }
 
+  function dmIconForKind(kind) {
+    var ic = global.portalDmIcons;
+    if (ic && typeof ic.forKind === "function") return ic.forKind(kind);
+    return "";
+  }
+
   function slugPart(s) {
     return String(s || "")
       .toLowerCase()
@@ -393,7 +399,7 @@
       "body.portal-incoming-call-active{overflow:hidden}" +
       ".portal-incoming-call__card{width:100%;max-width:24rem;padding:28px 22px 22px;border-radius:24px;background:linear-gradient(165deg,#173247,#0c1f2e);border:1px solid rgba(255,255,255,.16);box-shadow:0 24px 64px rgba(0,0,0,.55);color:#fff;text-align:center;animation:portalIncomingPulse .9s ease-in-out infinite alternate}" +
       "@keyframes portalIncomingPulse{from{transform:scale(1)}to{transform:scale(1.02)}}" +
-      ".portal-incoming-call__icon{font-size:52px;line-height:1;margin:0 0 12px}" +
+      ".portal-incoming-call__icon{display:flex;align-items:center;justify-content:center;color:#5a9fc4;margin:0 0 12px}" +
       ".portal-incoming-call__title{margin:0 0 6px;font-size:18px;font-weight:800}" +
       ".portal-incoming-call__sub{margin:0 0 16px;font-size:14px;color:rgba(255,255,255,.78)}" +
       ".portal-incoming-call__actions{display:flex;gap:10px}" +
@@ -402,7 +408,7 @@
       ".portal-incoming-call__btn--answer{background:#16a34a;color:#fff}" +
       ".portal-dm-call-end-row{display:flex;justify-content:center;width:100%;padding:6px 12px;box-sizing:border-box}" +
       ".portal-dm-call-end{display:inline-flex;align-items:center;justify-content:flex-start;gap:8px;max-width:min(100%,22rem);padding:8px 14px;border-radius:14px;background:rgba(23,50,71,.07);border:1px solid rgba(23,50,71,.08);color:#667781;font-size:12px;line-height:1.35;text-align:left;min-width:0}" +
-      ".portal-dm-call-end-icon{font-size:15px;line-height:1;opacity:.92;flex-shrink:0}" +
+      ".portal-dm-call-end-icon{display:inline-flex;align-items:center;justify-content:center;color:#64748b;flex-shrink:0}" +
       ".portal-dm-call-end-copy{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0}" +
       ".portal-dm-call-end-title{font-size:12px;font-weight:700;color:#334155;overflow-wrap:break-word}" +
       ".portal-dm-call-end-dur{font-size:11px;font-weight:600;color:#64748b;letter-spacing:.02em}" +
@@ -623,7 +629,7 @@
       ov.setAttribute("aria-label", "Incoming call");
       ov.innerHTML =
         '<div class="portal-incoming-call__card">' +
-        '<div class="portal-incoming-call__icon" id="portalIncomingCallIcon" aria-hidden="true">??</div>' +
+        '<div class="portal-incoming-call__icon" id="portalIncomingCallIcon" aria-hidden="true"></div>' +
         '<h2 class="portal-incoming-call__title" id="portalIncomingCallTitle">Incoming call</h2>' +
         '<p class="portal-incoming-call__sub" id="portalIncomingCallSub">Team chat</p>' +
         '<div class="portal-incoming-call__actions">' +
@@ -756,7 +762,7 @@
     var title = ov.querySelector("#portalIncomingCallTitle");
     var sub = ov.querySelector("#portalIncomingCallSub");
     var label = "Team chat";
-    if (icon) icon.textContent = kind === "video" ? "\uD83D\uDCF9" : "\uD83D\uDCDE";
+    if (icon) icon.innerHTML = dmIconForKind(kind);
     if (title) {
       title.textContent = kind === "video" ? "Incoming video call" : "Incoming voice call";
     }
@@ -1486,8 +1492,7 @@
     var data = parseCallEndPayload(m && m.body);
     if (!data) return null;
     var kind = String(data.kind || "video");
-    var icon =
-      kind === "meeting" ? "\uD83D\uDCC5" : kind === "video" ? "\uD83D\uDCF9" : "\uD83D\uDCDE";
+    var iconHtml = dmIconForKind(kind);
     var parts = formatCallEndParts(kind, data.durationSec);
     var row = document.createElement("div");
     row.className = "portal-dm-call-end-row";
@@ -1495,7 +1500,7 @@
     row.innerHTML =
       '<div class="portal-dm-call-end">' +
       '<span class="portal-dm-call-end-icon" aria-hidden="true">' +
-      esc(icon) +
+      iconHtml +
       "</span>" +
       '<span class="portal-dm-call-end-copy">' +
       '<span class="portal-dm-call-end-title">' +
@@ -1512,7 +1517,7 @@
     var title = String(data.title || "").trim();
     var label = humanLabel(kind, title);
     var when = data.scheduledAt ? formatWhen(data.scheduledAt) : "";
-    var icon = kind === "meeting" ? "\uD83D\uDCC5" : kind === "video" ? "\uD83D\uDCF9" : "\uD83D\uDCDE";
+    var iconHtml = dmIconForKind(kind);
     var live = !when;
 
     var card = document.createElement("div");
@@ -1522,7 +1527,7 @@
     card.innerHTML =
       '<div class="portal-dm-call-card-head">' +
       '<span class="portal-dm-call-card-icon" aria-hidden="true">' +
-      esc(icon) +
+      iconHtml +
       "</span>" +
       '<div class="portal-dm-call-card-titles">' +
       '<div class="portal-dm-call-card-label">' +
@@ -1935,7 +1940,7 @@
       '<div class="portal-leads-call-picker__card">' +
       '<div class="portal-leads-call-picker__head">' +
       '<h3 id="portalLeadsCallPickerTitle">Call selected leads</h3>' +
-      '<button type="button" class="portal-leads-call-picker__close" data-portal-leads-call-close="1" aria-label="Close">×</button>' +
+      '<button type="button" class="portal-leads-call-picker__close" data-portal-leads-call-close="1" aria-label="Close">?</button>' +
       "</div>" +
       '<p class="portal-leads-call-picker__sub">Choose who gets a join invite. Only selected leads are rung ? not the whole channel.</p>' +
       '<div class="portal-leads-call-picker__tools">' +

@@ -232,7 +232,10 @@
 }
 
 #csCliqRoot .portal-cs-cliq__back-btn {
-  font-size: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0;
   line-height: 1;
   padding: 0;
   width: 40px;

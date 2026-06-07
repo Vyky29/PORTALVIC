@@ -61,6 +61,14 @@
     } catch (_e2) {}
   }
 
+  function callBarIcon(name) {
+    var ic = global.portalDmIcons;
+    if (ic && typeof ic.svg === "function") {
+      return '<span class="portal-dm-call-bar-icon" aria-hidden="true">' + ic.svg(name) + "</span>";
+    }
+    return '<span class="portal-dm-call-bar-icon" data-dm-icon="' + esc(name) + '" aria-hidden="true"></span>';
+  }
+
   function callBarHtml(prefix, compact) {
     var p = esc(prefix || "csCliq");
     var extraClass = compact ? " portal-cs-cliq__head-call-bar" : "";
@@ -72,17 +80,20 @@
       '" hidden aria-hidden="true">' +
       '<button type="button" class="portal-dm-call-bar-btn" id="' +
       p +
-      'VoiceCallBtn" data-portal-call-kind="audio" title="Start a voice call"><span class="portal-dm-call-bar-icon" aria-hidden="true">📞</span>' +
+      'VoiceCallBtn" data-portal-call-kind="audio" title="Start a voice call">' +
+      callBarIcon("phone") +
       (compact ? '<span class="sr-only">Voice</span>' : '<span class="portal-dm-call-bar-label">Voice</span>') +
       "</button>" +
       '<button type="button" class="portal-dm-call-bar-btn" id="' +
       p +
-      'VideoCallBtn" data-portal-call-kind="video" title="Start a video call"><span class="portal-dm-call-bar-icon" aria-hidden="true">📹</span>' +
+      'VideoCallBtn" data-portal-call-kind="video" title="Start a video call">' +
+      callBarIcon("video") +
       (compact ? '<span class="sr-only">Video</span>' : '<span class="portal-dm-call-bar-label">Video</span>') +
       "</button>" +
       '<button type="button" class="portal-dm-call-bar-btn" id="' +
       p +
-      'MeetingBtn" data-portal-call-kind="meeting" title="Schedule a meeting"><span class="portal-dm-call-bar-icon" aria-hidden="true">📅</span>' +
+      'MeetingBtn" data-portal-call-kind="meeting" title="Schedule a meeting">' +
+      callBarIcon("calendar") +
       (compact ? '<span class="sr-only">Meeting</span>' : '<span class="portal-dm-call-bar-label">Meeting</span>') +
       "</button></div>"
     );
@@ -334,6 +345,10 @@
     var root = document.getElementById("csCliqRoot");
     if (!root || root.dataset.portalCsCliqBound === "1") return;
     root.dataset.portalCsCliqBound = "1";
+
+    if (global.portalDmIcons && typeof global.portalDmIcons.upgrade === "function") {
+      global.portalDmIcons.upgrade(root);
+    }
 
     var pendingPane = String(global.__PORTAL_CS_CLIQ_PENDING_PANE || "chats").trim();
     if (

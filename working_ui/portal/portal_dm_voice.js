@@ -28,6 +28,16 @@
       .replace(/"/g, "&quot;");
   }
 
+  function dmIcon(name) {
+    var ic = global.portalDmIcons;
+    return ic && typeof ic.svg === "function" ? ic.svg(name) : "";
+  }
+
+  function setPlayBtnState(btn, playing) {
+    if (!btn) return;
+    btn.innerHTML = dmIcon(playing ? "pause" : "play");
+  }
+
   function formatDur(ms) {
     ms = Math.max(0, Number(ms) || 0);
     var sec = Math.floor(ms / 1000);
@@ -148,13 +158,13 @@
       }
     });
     audio.addEventListener("play", function () {
-      playBtn.textContent = "❚❚";
+      setPlayBtnState(playBtn, true);
     });
     audio.addEventListener("pause", function () {
-      playBtn.textContent = "▶";
+      setPlayBtnState(playBtn, false);
     });
     audio.addEventListener("ended", function () {
-      playBtn.textContent = "▶";
+      setPlayBtnState(playBtn, false);
       seek.value = "0";
     });
     audio.addEventListener("loadedmetadata", function () {
@@ -200,7 +210,9 @@
     var wrap = document.createElement("div");
     wrap.className = "portal-dm-voice-msg";
     wrap.innerHTML =
-      '<button type="button" class="portal-dm-voice-play" title="Play voice message" aria-label="Play voice message">▶</button>' +
+      '<button type="button" class="portal-dm-voice-play" title="Play voice message" aria-label="Play voice message">' +
+      dmIcon("play") +
+      "</button>" +
       '<div class="portal-dm-voice-track">' +
       '<input type="range" class="portal-dm-voice-seek" min="0" max="100" value="0" aria-label="Seek" />' +
       '<span class="portal-dm-voice-dur">' +
@@ -417,12 +429,15 @@
       parent = row;
     }
     var existing = document.getElementById(buttonId);
-    if (existing) return existing;
+    if (existing) {
+      if (!existing.querySelector(".portal-dm-ico")) existing.innerHTML = dmIcon("mic");
+      return existing;
+    }
     var btn = document.createElement("button");
     btn.type = "button";
     btn.id = buttonId;
     btn.className = "portal-dm-voice-btn";
-    btn.textContent = "🎤";
+    btn.innerHTML = dmIcon("mic");
     parent.insertBefore(btn, textarea);
     var hint = document.createElement("p");
     hint.className = "portal-dm-voice-rec-hint";

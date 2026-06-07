@@ -975,7 +975,7 @@
     }
     .portal-dm-call-bar-btn:active{transform:translateY(1px)}
     .portal-dm-call-bar-btn:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
-    .portal-dm-call-bar-icon{font-size:15px;line-height:1}
+    .portal-dm-call-bar-icon{display:inline-flex;align-items:center;justify-content:center;color:var(--blue)}
     .portal-dm-call-card{
       display:flex;flex-direction:column;gap:10px;min-width:0;padding:10px 12px;border-radius:12px;
       background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);
@@ -984,7 +984,7 @@
       background:linear-gradient(180deg,#f8fbff,#eef6fc);border-color:rgba(45,132,179,.22);
     }
     .portal-dm-call-card-head{display:flex;align-items:flex-start;gap:10px;min-width:0}
-    .portal-dm-call-card-icon{font-size:20px;line-height:1;flex-shrink:0}
+    .portal-dm-call-card-icon{display:inline-flex;align-items:center;justify-content:center;color:var(--blue);flex-shrink:0}
     .portal-dm-call-card-titles{flex:1;min-width:0}
     .portal-dm-call-card-label{font-weight:700;font-size:14px;line-height:1.3;min-width:0;overflow-wrap:break-word}
     .portal-dm-call-card-when{font-size:12px;opacity:.88;margin-top:2px;line-height:1.35}
@@ -1862,8 +1862,7 @@
       border-radius:50%;
       background:transparent;
       box-shadow:none;
-      font-size:28px;
-      font-weight:400;
+      font-size:0;
       line-height:1;
       color:var(--blue);
       justify-self:start;

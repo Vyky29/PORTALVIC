@@ -1,5 +1,5 @@
 /**
- * Premium internal chat ù shared immersive sheet + floating access button.
+ * Premium internal chat ? shared immersive sheet + floating access button.
  * Used by admin dashboard (staff/lead use staff-dashboard.css).
  */
 :root{
@@ -10,7 +10,7 @@
   --portal-chat-line:#e2e8f0;
 }
 
-/* Floating chat button ù fixed corner, always on top of admin workspace */
+/* Floating chat button ? fixed corner, always on top of admin workspace */
 .portal-admin-floating-chat-wrap{
   position:fixed;
   right:max(14px, env(safe-area-inset-right, 0px));
@@ -128,7 +128,7 @@ body.portal-inapp-call-open #portalInternalChatBackdrop.open{
 }
 #internalChatSheet .portal-dm-back-btn,#internalChatSheet .portal-dm-close-btn{
   min-width:40px;min-height:40px;padding:0;border-radius:12px;border:1px solid rgba(45,132,179,.25);
-  background:#fff;color:var(--portal-chat-blue);font-size:22px;line-height:1;cursor:pointer;
+  background:#fff;color:var(--portal-chat-blue);font-size:0;line-height:1;cursor:pointer;
 }
 #internalChatSheet .portal-dm-close-btn--inbox-x{
   grid-column:3;grid-row:1;color:#dc2626;border-color:rgba(220,38,38,.25);font-size:26px;font-weight:700;
@@ -229,7 +229,8 @@ body.portal-inapp-call-open #portalInternalChatBackdrop.open{
   padding:10px 8px;border-radius:12px;border:1px solid rgba(45,132,179,.22);
   background:linear-gradient(180deg,#fff,#f6fbff);font:inherit;font-size:13px;font-weight:700;cursor:pointer;
 }
-.portal-dm-call-bar-icon{font-size:15px;line-height:1}
+.portal-dm-call-bar-icon{display:inline-flex;align-items:center;justify-content:center;color:var(--portal-chat-blue)}
+.portal-dm-call-card-icon{display:inline-flex;align-items:center;justify-content:center;color:var(--portal-chat-blue)}
 .portal-dm-call-card{display:flex;flex-direction:column;gap:10px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.14)}
 .portal-dm-msg--them .portal-dm-call-card{background:linear-gradient(180deg,#f8fbff,#eef6fc);border:1px solid rgba(45,132,179,.22)}
 .portal-dm-call-join-btn{width:100%;padding:10px;border-radius:12px;border:0;font:inherit;font-weight:800;cursor:pointer;background:var(--portal-chat-blue);color:#fff}

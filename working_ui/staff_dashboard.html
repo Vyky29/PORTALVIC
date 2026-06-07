@@ -893,15 +893,15 @@
         <p id="internalChatPeerLabel" class="portal-dm-peer-label" hidden aria-hidden="true"></p>
         <div id="internalChatCallBar" class="portal-dm-call-bar" hidden aria-hidden="true">
           <button type="button" class="portal-dm-call-bar-btn" id="internalChatVoiceCallBtn" title="Start a voice call">
-            <span class="portal-dm-call-bar-icon" aria-hidden="true">📞</span>
+            <span class="portal-dm-call-bar-icon" data-dm-icon="phone" aria-hidden="true"></span>
             <span>Voice</span>
           </button>
           <button type="button" class="portal-dm-call-bar-btn" id="internalChatVideoCallBtn" title="Start a video call">
-            <span class="portal-dm-call-bar-icon" aria-hidden="true">📹</span>
+            <span class="portal-dm-call-bar-icon" data-dm-icon="video" aria-hidden="true"></span>
             <span>Video</span>
           </button>
           <button type="button" class="portal-dm-call-bar-btn" id="internalChatMeetingBtn" title="Schedule a meeting">
-            <span class="portal-dm-call-bar-icon" aria-hidden="true">📅</span>
+            <span class="portal-dm-call-bar-icon" data-dm-icon="calendar" aria-hidden="true"></span>
             <span>Meeting</span>
           </button>
         </div>
@@ -1043,9 +1043,10 @@
   <script type="module" src="/portal/portal_quick_menu_service_leads.js?v=20260604-service-leads-lead-only"></script>
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260616-michelle-only"></script>
-  <script src="/portal/portal_dm_voice.js?v=20260602-feedback-voice-fix"></script>
-  <script src="/portal/portal_dm_attachments.js?v=20260624-staff-lead-dm"></script>
-  <script src="/portal/portal_staff_chat_calls.js?v=20260624-call-end-label"></script>
+  <script src="/portal/portal_dm_icons.js?v=20260624-dm-icons"></script>
+  <script src="/portal/portal_dm_voice.js?v=20260624-dm-icons"></script>
+  <script src="/portal/portal_dm_attachments.js?v=20260624-dm-icons"></script>
+  <script src="/portal/portal_staff_chat_calls.js?v=20260624-dm-icons"></script>
   <script src="/portal/portal_lead_staff_chat_directory.js?v=20260624-staff-lead-dm"></script>
   <script src="/portal/portal_incoming_call_push.js?v=20260622-incoming-call"></script>
   <script src="/portal/portal_sheet_back.js?v=20260607-sheet-back"></script>

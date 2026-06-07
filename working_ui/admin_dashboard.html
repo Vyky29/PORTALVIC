@@ -25,12 +25,13 @@
   <link rel="stylesheet" href="/portal/portal_staff_map.css?v=20260602-staff-map-header" />
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260622-photo-delete" />
   <script src="/portal/admin-portal-staff-map.js?v=20260622-ghost-map"></script>
-  <script src="/portal/portal_admin_cs_cliq.js?v=20260605-leads-channel-ui"></script>
+  <script src="/portal/portal_dm_icons.js?v=20260624-dm-icons"></script>
+  <script src="/portal/portal_admin_cs_cliq.js?v=20260624-dm-icons"></script>
   <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260622-ghost-view" />
   <script src="/portal/admin-portal-ghost-teleport.js?v=20260622-ghost-lead"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
-  <script src="/portal/portal_dm_voice.js?v=20260605-dm-attach"></script>
-  <script src="/portal/portal_dm_attachments.js?v=20260605-dm-attach"></script>
+  <script src="/portal/portal_dm_voice.js?v=20260624-dm-icons"></script>
+  <script src="/portal/portal_dm_attachments.js?v=20260624-dm-icons"></script>
   <script src="/portal/portal-change-log.js?v=20260601-changelog-merge"></script>
   <script src="/portal/admin-hr.js?v=20260601-annual-profile"></script>
   <script src="/portal/admin-payments.js?v=20260531-la-column"></script>
@@ -259,9 +260,9 @@
       <div id="internalChatListWrap" class="portal-dm-inbox-list"></div>
       <div id="internalChatThreadWrap" class="portal-dm-wrap portal-dm-thread-view" hidden aria-hidden="true">
         <div id="internalChatCallBar" class="portal-dm-call-bar" hidden aria-hidden="true">
-          <button type="button" class="portal-dm-call-bar-btn" id="internalChatVoiceCallBtn" data-portal-call-kind="audio" title="Start a voice call"><span class="portal-dm-call-bar-icon" aria-hidden="true">📞</span><span>Voice</span></button>
-          <button type="button" class="portal-dm-call-bar-btn" id="internalChatVideoCallBtn" data-portal-call-kind="video" title="Start a video call"><span class="portal-dm-call-bar-icon" aria-hidden="true">📹</span><span>Video</span></button>
-          <button type="button" class="portal-dm-call-bar-btn" id="internalChatMeetingBtn" data-portal-call-kind="meeting" title="Schedule a meeting"><span class="portal-dm-call-bar-icon" aria-hidden="true">📅</span><span>Meeting</span></button>
+          <button type="button" class="portal-dm-call-bar-btn" id="internalChatVoiceCallBtn" data-portal-call-kind="audio" title="Start a voice call"><span class="portal-dm-call-bar-icon" data-dm-icon="phone" aria-hidden="true"></span><span>Voice</span></button>
+          <button type="button" class="portal-dm-call-bar-btn" id="internalChatVideoCallBtn" data-portal-call-kind="video" title="Start a video call"><span class="portal-dm-call-bar-icon" data-dm-icon="video" aria-hidden="true"></span><span>Video</span></button>
+          <button type="button" class="portal-dm-call-bar-btn" id="internalChatMeetingBtn" data-portal-call-kind="meeting" title="Schedule a meeting"><span class="portal-dm-call-bar-icon" data-dm-icon="calendar" aria-hidden="true"></span><span>Meeting</span></button>
         </div>
         <div id="internalChatMessages" class="portal-dm-msgs-col portal-dm-msgs-scroll"></div>
         <div class="portal-dm-compose-bar">
@@ -25538,7 +25539,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       document.body.appendChild(s);
     })();
   </script>
-  <script src="/portal/portal_staff_chat_calls.js?v=20260624-call-end-label"></script>
+  <script src="/portal/portal_staff_chat_calls.js?v=20260624-dm-icons"></script>
   <script src="/portal/portal_incoming_call_push.js?v=20260622-incoming-call"></script>
   <script src="/portal/portal_floating_internal_chat.js?v=20260605-admin-chat"></script>
 </body>
