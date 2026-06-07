@@ -43,10 +43,13 @@
   }
 
   async function probe(force) {
-    if (availability.checked && !force) return availability;
     var token = await authToken();
     if (!token) {
+      if (!force && availability.checked) return availability;
       availability = { checked: true, openai: false, model: "" };
+      return availability;
+    }
+    if (availability.checked && !force && availability.openai) {
       return availability;
     }
     try {

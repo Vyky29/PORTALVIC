@@ -243,9 +243,9 @@
   function configureAssistOnce() {
     if (global.__portalOpenAiAssistConfigured || !global.PortalOpenAiAssist) return;
     global.__portalOpenAiAssistConfigured = true;
-    var box = global.__PORTAL_SUPABASE__;
     global.PortalOpenAiAssist.configure({
       getClient: function () {
+        var box = global.__PORTAL_SUPABASE__;
         return box && box.client ? box.client : null;
       },
       getSupabaseUrl: function () {
@@ -256,48 +256,51 @@
         return typeof global.SUPABASE_ANON_KEY === "string" ? global.SUPABASE_ANON_KEY : "";
       },
     });
-    void global.PortalOpenAiAssist.probe();
   }
 
   async function tryAssistAnswer(question, match, msgsHost, sugHost, data) {
     if (!global.PortalOpenAiAssist) return false;
-    configureAssistOnce();
-    var avail = await global.PortalOpenAiAssist.probe();
-    if (!avail.openai) return false;
+    try {
+      configureAssistOnce();
+      var avail = await global.PortalOpenAiAssist.probe(true);
+      if (!avail.openai) return false;
 
-    appendBubble(
-      msgsHost,
-      "bot",
-      '<span class="muted">Thinking…</span>'
-    );
-    var thinking = msgsHost && msgsHost.lastElementChild;
+      appendBubble(
+        msgsHost,
+        "bot",
+        '<span class="muted">Thinking…</span>'
+      );
+      var thinking = msgsHost && msgsHost.lastElementChild;
 
-    var res = await global.PortalOpenAiAssist.helpAnswer(
-      question,
-      knowledgeForAssist(data, match)
-    );
-    if (thinking && thinking.parentNode) thinking.parentNode.removeChild(thinking);
+      var res = await global.PortalOpenAiAssist.helpAnswer(
+        question,
+        knowledgeForAssist(data, match)
+      );
+      if (thinking && thinking.parentNode) thinking.parentNode.removeChild(thinking);
 
-    if (!res || !res.ok || !res.text) return false;
+      if (!res || !res.ok || !res.text) return false;
 
-    appendBubble(
-      msgsHost,
-      "bot",
-      "<strong>AI assistant</strong><br>" +
-        formatAnswerHtml(res.text) +
-        '<p class="portal-help-guide-link"><a href="portal_guide.html" target="_blank" rel="noopener">Open full guide</a></p>'
-    );
-    renderSuggestions(
-      sugHost,
-      match.suggestions && match.suggestions.length
-        ? match.suggestions
-        : starterTopics(data),
-      function (topic) {
-        appendBubble(msgsHost, "user", escapeHtml(topic.title));
-        answerTopic(topic, msgsHost, sugHost);
-      }
-    );
-    return true;
+      appendBubble(
+        msgsHost,
+        "bot",
+        "<strong>AI assistant</strong><br>" +
+          formatAnswerHtml(res.text) +
+          '<p class="portal-help-guide-link"><a href="portal_guide.html" target="_blank" rel="noopener">Open full guide</a></p>'
+      );
+      renderSuggestions(
+        sugHost,
+        match.suggestions && match.suggestions.length
+          ? match.suggestions
+          : starterTopics(data),
+        function (topic) {
+          appendBubble(msgsHost, "user", escapeHtml(topic.title));
+          answerTopic(topic, msgsHost, sugHost);
+        }
+      );
+      return true;
+    } catch (_err) {
+      return false;
+    }
   }
 
   async function logUnanswered(question, match) {
@@ -336,40 +339,59 @@
     renderSuggestions(sugHost, [], function () {});
   }
 
-  async function handleQuestion(raw, msgsHost, sugHost, data) {
+  async function handleQuestion(raw, msgsHost, sugHost, data, ui) {
     var q = String(raw || "").trim();
     if (!q) return;
-    appendBubble(msgsHost, "user", escapeHtml(q));
-    var match = portalHelpMatchQuestion(q, data);
-    if (match.ok && match.topic) {
-      answerTopic(match.topic, msgsHost, sugHost);
-      if (match.suggestions && match.suggestions.length) {
-        renderSuggestions(sugHost, match.suggestions, function (topic) {
-          appendBubble(msgsHost, "user", escapeHtml(topic.title));
-          answerTopic(topic, msgsHost, sugHost);
-        });
+    if (ui && ui.sendBtn) ui.sendBtn.disabled = true;
+    if (ui && ui.input) ui.input.disabled = true;
+    try {
+      appendBubble(msgsHost, "user", escapeHtml(q));
+      var match = portalHelpMatchQuestion(q, data);
+      if (match.ok && match.topic) {
+        answerTopic(match.topic, msgsHost, sugHost);
+        if (match.suggestions && match.suggestions.length) {
+          renderSuggestions(sugHost, match.suggestions, function (topic) {
+            appendBubble(msgsHost, "user", escapeHtml(topic.title));
+            answerTopic(topic, msgsHost, sugHost);
+          });
+        }
+        return;
       }
-      return;
-    }
 
-    var assisted = await tryAssistAnswer(q, match, msgsHost, sugHost, data);
-    if (assisted) {
+      var assisted = await tryAssistAnswer(q, match, msgsHost, sugHost, data);
+      if (assisted) {
+        await logUnanswered(q, match);
+        return;
+      }
+
+      appendBubble(
+        msgsHost,
+        "bot",
+        "I could not find an exact match yet. Try rephrasing, pick a topic below, or open the " +
+          '<a href="portal_guide.html" target="_blank" rel="noopener">full Portal guide</a>. ' +
+          "Your question was saved so we can improve answers."
+      );
       await logUnanswered(q, match);
-      return;
+      renderSuggestions(sugHost, match.suggestions && match.suggestions.length ? match.suggestions : starterTopics(data), function (topic) {
+        appendBubble(msgsHost, "user", escapeHtml(topic.title));
+        answerTopic(topic, msgsHost, sugHost);
+      });
+    } catch (_err) {
+      appendBubble(
+        msgsHost,
+        "bot",
+        "Something went wrong — try again or open the " +
+          '<a href="portal_guide.html" target="_blank" rel="noopener">Portal guide</a>.'
+      );
+    } finally {
+      if (ui && ui.sendBtn) ui.sendBtn.disabled = false;
+      if (ui && ui.input) {
+        ui.input.disabled = false;
+        try {
+          ui.input.focus();
+        } catch (_e2) {}
+      }
     }
-
-    appendBubble(
-      msgsHost,
-      "bot",
-      "I could not find an exact match yet. Try rephrasing, pick a topic below, or open the " +
-        '<a href="portal_guide.html" target="_blank" rel="noopener">full Portal guide</a>. ' +
-        "Your question was saved so we can improve answers."
-    );
-    await logUnanswered(q, match);
-    renderSuggestions(sugHost, match.suggestions && match.suggestions.length ? match.suggestions : starterTopics(data), function (topic) {
-      appendBubble(msgsHost, "user", escapeHtml(topic.title));
-      answerTopic(topic, msgsHost, sugHost);
-    });
   }
 
   function resetHelpSession(msgsHost, sugHost, data) {
@@ -427,7 +449,7 @@
       void loadKnowledge().then(function (data) {
         var q = input.value;
         input.value = "";
-        void handleQuestion(q, msgsHost, sugHost, data);
+        void handleQuestion(q, msgsHost, sugHost, data, { sendBtn: sendBtn, input: input });
       });
     });
 
