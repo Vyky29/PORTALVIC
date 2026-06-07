@@ -199,7 +199,7 @@
     "teflon": {
       "staffId": "teflon",
       "staffName": "Teflon",
-      "avatarFile": "portal/staff_photos/youssef.png",
+      "avatarFile": "portal/staff_photos/teflon.png",
       "staffRoleTrack": "swimming",
       "canViewAll": false
     }
