@@ -395,6 +395,7 @@ body:has(#workspace .dash-hub--ops-admin) .admin-main{ min-height:0; }
   box-shadow:0 0 0 2px rgba(99,102,241,.2),0 6px 18px rgba(15,23,42,.08);
 }
 .dash-hub__tile-band{
+  position:relative;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -405,6 +406,24 @@ body:has(#workspace .dash-hub--ops-admin) .admin-main{ min-height:0; }
   border-radius:13px 13px 0 0;
   background:var(--dh-tile-bg,#eef2ff);
   color:var(--dh-tile-fg,#4f46e5);
+}
+.portal-dayops-tile-badge{
+  position:absolute;
+  top:4px;
+  right:8px;
+  min-width:18px;
+  height:18px;
+  padding:0 5px;
+  border-radius:99px;
+  background:var(--danger,#dc2626);
+  color:#fff;
+  font-size:10px;
+  font-weight:800;
+  line-height:18px;
+  text-align:center;
+  box-shadow:0 0 0 2px #fff;
+  pointer-events:none;
+  z-index:2;
 }
 .dash-hub__tile-band .admin-nav-ico svg{
   width:26px;

@@ -1,5 +1,6 @@
 /**
- * Admin topbar bell — incidents, cancellations, chat, late approval requests only.
+ * Admin topbar bell — incidents, cancellations, late approvals, wellbeing only.
+ * Chat uses the floating chat badge; not included here.
  * Newest first; short sound when a new allowed alert arrives.
  */
 (function (global) {
@@ -8,7 +9,7 @@
   var ALLOWED = {
     incident: true,
     cancellation: true,
-    chat: true,
+    chat: false,
     late_approval: true,
     wellbeing: true,
   };
@@ -350,7 +351,10 @@
 
   function prepareForRender() {
     pruneDisallowed();
-    syncChatBellAlerts({ silent: true });
+    var list = listRef().filter(function (a) {
+      return a && a.kind !== "chat";
+    });
+    global.__PORTAL_ADMIN_ACTIVITY_ALERTS__ = list;
     sortNewestFirst();
     return listRef().slice();
   }

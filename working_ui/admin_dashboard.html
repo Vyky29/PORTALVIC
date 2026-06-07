@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260614-mob-fit" />
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260613-hours-all-week" />
   <link rel="stylesheet" href="/portal/admin-portal-forms.css?v=20260603-form-record-modal" />
-  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260606-team-row7" />
+  <link rel="stylesheet" href="/portal/admin-dash-hub.css?v=20260605-dayops-badges" />
   <link rel="stylesheet" href="/portal/portal_activity_admin.css?v=20260531-portal-activity" />
   <link rel="stylesheet" href="/portal/hr-contract-embed.css?v=20260521-embed" />
   <script src="/portal/hr-contract-embed-html.js?v=20260521-embed"></script>
@@ -49,7 +49,7 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260604-mob-nav" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260605-dayops-badges" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260623-admin-unread" />
   <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260623-lead-chip" />
@@ -296,7 +296,8 @@
   <!-- Large portal datasets load on demand (portalAdminLoadScriptSet) so Day operations opens without freezing. -->
   <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260602-cap-roster"></script>
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260521-late-perf"></script>
-  <script src="/portal/portal_admin_alerts_bell.js?v=20260602-chat-alerts"></script>
+  <script src="/portal/portal_admin_alerts_bell.js?v=20260605-no-chat-bell"></script>
+  <script src="/portal/portal_admin_dayops_badges.js?v=20260605-dayops-badges"></script>
   <script src="/portal/portal-admin-web-push.js?v=20260601-desktop-alerts"></script>
 
   <script>
@@ -1978,6 +1979,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
       $('workspace').innerHTML = renderView(id);
       bindView(id);
+      try{
+        if(typeof window.portalAdminDayOpsBadgesMarkSeenView === 'function'){
+          window.portalAdminDayOpsBadgesMarkSeenView(id);
+        }
+        if(typeof window.portalAdminDayOpsBadgesRefresh === 'function'){
+          window.portalAdminDayOpsBadgesRefresh();
+        }
+      }catch(_badgeView){}
       syncNavGroupsUi();
       if(_hadRegisterPeek){
         try{ renderNav(); }catch(_rnNav){}
@@ -15688,6 +15697,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function openSessionsHubTab(tabId){
       sessionsHubEnsureState().tab = tabId || 'overview';
       sessionsHubEnsureState().sfSection = 'main';
+      try{
+        if(typeof window.portalAdminDayOpsBadgesMarkSeenHubTab === 'function'){
+          window.portalAdminDayOpsBadgesMarkSeenHubTab(tabId);
+        }
+      }catch(_badgeTab){}
       setView('c4k_sessions');
     }
     function c4kSessionFeedbackPanelInnerHtml(){
@@ -15896,6 +15910,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(tab.mode === 'view' && tab.view){ setView(tab.view); return; }
           h.tab = id;
           h.sfSection = 'main';
+          try{
+            if(typeof window.portalAdminDayOpsBadgesMarkSeenHubTab === 'function'){
+              window.portalAdminDayOpsBadgesMarkSeenHubTab(id);
+            }
+          }catch(_badgeHubTab){}
           sessionsHubRefreshActiveTab();
         };
       });
@@ -16986,13 +17005,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var toneAttr = toneKey ? (' data-dayops-tone="'+esc(toneKey)+'"') : '';
       var da = String(dayopsAct || '').trim();
       var ext = String(externalUrl || '').trim();
+      var badgeKey = typeof window.portalAdminDayOpsBadgeKeyFromRoute === 'function'
+        ? window.portalAdminDayOpsBadgeKeyFromRoute(da, viewId || act)
+        : '';
+      var badgeAttr = badgeKey ? (' data-portal-badge-key="'+esc(badgeKey)+'"') : '';
       var inner =
         '<span class="dash-hub__tile-band" aria-hidden="true">'+adminNavIconHtml(id)+'</span>'+
         '<span class="dash-hub__tile-label">'+esc(eyebrow)+'</span>'+
         '<span class="dash-hub__tile-desc">'+titleHtml+'</span>';
       if(ext){
         return (
-          '<a class="dash-hub__tile'+mod+extra+'"'+toneAttr+
+          '<a class="dash-hub__tile'+mod+extra+'"'+toneAttr+badgeAttr+
           ' href="'+esc(ext)+'" target="_blank" rel="noopener noreferrer">'+inner+'</a>'
         );
       }
@@ -17002,7 +17025,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           ? (' data-act="'+esc(act)+'"')
           : (' data-view-target="'+esc(viewId)+'"'));
       return (
-        '<button type="button" class="dash-hub__tile'+mod+extra+'"'+toneAttr+attr+'>'+inner+'</button>'
+        '<button type="button" class="dash-hub__tile'+mod+extra+'"'+toneAttr+attr+badgeAttr+'>'+inner+'</button>'
       );
     }
     function portalDashPanel(opts){
@@ -17039,12 +17062,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var toneKey = String(tone || '').trim();
       var toneAttr = toneKey ? (' data-dayops-tone="'+esc(toneKey)+'"') : '';
       var da = String(dayopsAct || '').trim();
+      var badgeKey = typeof window.portalAdminDayOpsBadgeKeyFromRoute === 'function'
+        ? window.portalAdminDayOpsBadgeKeyFromRoute(da, viewId || act)
+        : '';
+      var badgeAttr = badgeKey ? (' data-portal-badge-key="'+esc(badgeKey)+'"') : '';
       var attr = da
         ? (' data-dayops-act="'+esc(da)+'"')
         : (act
           ? (' data-act="'+esc(act)+'"')
           : (' data-view-target="'+esc(viewId)+'"'));
-      return '<button type="button" class="card card-pad dash-link-card card--premium dayops-screen-nav__card'+mod+'"'+toneAttr+attr+'>'+
+      return '<button type="button" class="card card-pad dash-link-card card--premium dayops-screen-nav__card'+mod+'"'+toneAttr+attr+badgeAttr+'>'+
         '<div class="dash-link-row dayops-screen-nav__stack">'+
         '<span class="dayops-screen-nav__ico-wrap" aria-hidden="true">'+adminNavIconHtml(id)+'</span>'+
         '<div class="dash-link-meta dayops-screen-nav__meta" style="min-width:0">'+
@@ -19062,6 +19089,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
 
     /** Day operations tile actions (called from bindView click handlers on each render). */
     function portalRunDayOpsAct(a){
+      a = String(a || '').trim();
+      try{
+        if(typeof window.portalAdminDayOpsBadgesMarkSeenDayopsAct === 'function'){
+          window.portalAdminDayOpsBadgesMarkSeenDayopsAct(a);
+        }
+      }catch(_badgeAct){}
       if(a === 'sessions_hub_overview'){ closeSidebarMob(); openSessionsHubTab('overview'); return; }
       if(a === 'sessions_hub_feedback'){ closeSidebarMob(); openSessionsHubTab('feedback'); return; }
       if(a === 'sessions_hub_positive'){ closeSidebarMob(); openSessionsHubTab('positive'); return; }
@@ -19867,18 +19900,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminDmOnUnreadAttentionChanged(prevUnread){
       try{ portalAdminDmPatchGlobalChatBanner(); }catch(_pb){}
-      try{
-        if(typeof window.portalAdminSyncChatBellAlerts === 'function'){
-          window.portalAdminSyncChatBellAlerts({ silent: true });
-        }
-        if(typeof window.__portalAdminRenderAlerts === 'function'){
-          window.__portalAdminRenderAlerts();
-        }
-      }catch(_bell){}
       var nowUnread = portalAdminDmHasUnread();
-      if(!prevUnread && nowUnread && typeof window.portalAdminBellPlaySound === 'function'){
-        window.portalAdminBellPlaySound();
-      }
       if(prevUnread === nowUnread) return;
       try{ recomputeOperatorSuggestions(); }catch(_rs){}
       try{
@@ -24523,6 +24545,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
 
     function portalAdminOpenActivityAlert(meta){
       meta = meta || {};
+      try{
+        if(typeof window.portalAdminDayOpsBadgesMarkSeenActivity === 'function'){
+          window.portalAdminDayOpsBadgesMarkSeenActivity(meta);
+        }
+      }catch(_badgeAlert){}
       var tab = String(meta.view || '').trim();
       if(tab === 'chat'){
         var hintIdx = meta.chatHintIdx;
@@ -24746,9 +24773,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             state.portalLatePendingCount = lateN || 0;
           }
         }catch(_lc){}
-        if(typeof window.portalAdminSyncChatBellAlerts === 'function'){
-          window.portalAdminSyncChatBellAlerts({ silent: true });
-        }
         if(typeof window.portalAdminBellSetBootstrapSilent === 'function'){
           window.portalAdminBellSetBootstrapSilent(false);
         }
@@ -24851,7 +24875,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return '<button type="button" class="line-item portal-admin-activity-alert"'+jump+meta+' style="width:100%;text-align:left;border:0;background:transparent;cursor:pointer;padding:12px 16px;font:inherit"><div><strong>'+esc(a.title)+'</strong><div class="muted">'+esc(a.sub)+'</div></div><span class="chip chip--info">'+esc(a.t || 'New')+'</span></button>';
       }).join('');
       var emptyHtml = !activityHtml
-        ? '<p class="muted" style="margin:12px 16px">No incidents, cancellations, chat, or approval requests right now.</p>'
+        ? '<p class="muted" style="margin:12px 16px">No incidents, cancellations, or approval requests right now.</p>'
         : '';
       pop.innerHTML = '<div class="card-h" style="border-radius:var(--radiusLg) var(--radiusLg) 0 0"><h3 style="margin:0;font-size:14px">Alerts</h3></div>'+activityHtml+emptyHtml;
       var bd = $('alertBadge');
@@ -24865,6 +24889,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       var btnAlerts = $('btnAlerts');
       if(btnAlerts) btnAlerts.classList.toggle('admin-icon-btn--has-alerts', n > 0);
+      try{
+        if(typeof window.portalAdminDayOpsBadgesRefresh === 'function'){
+          window.portalAdminDayOpsBadgesRefresh();
+        }
+      }catch(_badgeBell){}
     }
     try{ window.__portalAdminRenderAlerts = renderAlerts; }catch(e){}
 

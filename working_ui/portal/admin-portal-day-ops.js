@@ -190,6 +190,9 @@
       trackingHub.setPayload(payload);
       if (typeof trackingHub.renderPanels === 'function') trackingHub.renderPanels();
     }
+    if (typeof global.portalAdminDayOpsBadgesRefresh === 'function') {
+      global.portalAdminDayOpsBadgesRefresh();
+    }
   }
 
   var sessionFeedbackRtBound = false;
