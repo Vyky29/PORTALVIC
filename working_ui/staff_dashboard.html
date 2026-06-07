@@ -1297,9 +1297,31 @@
     /** Last time a review was touched (Quick actions); used for reminder tone. */
     const sessionReviewActivityTs = {};
 
-    function hydrateSessionReviewMapFromStorage(){
+    function portalStaffInGhostView(){
+      return !!(typeof window !== 'undefined' && window.__PORTAL_GHOST_VIEW__ && window.__PORTAL_GHOST_VIEW__.active);
+    }
+    function portalSessionReviewMapStorageKey(staffId){
+      const sid = String(
+        staffId != null ? staffId : (typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '')
+      ).trim().toLowerCase();
+      return sid ? (PORTAL_SESSION_REVIEW_MAP_STORAGE + ':' + sid) : PORTAL_SESSION_REVIEW_MAP_STORAGE;
+    }
+    function portalClearSessionReviewMapMemory(){
+      Object.keys(sessionReviewMapMemory).forEach(function(k){ delete sessionReviewMapMemory[k]; });
+      Object.keys(sessionReviewActivityTs).forEach(function(k){ delete sessionReviewActivityTs[k]; });
+    }
+    function hydrateSessionReviewMapFromStorage(staffIdOverride){
+      portalClearSessionReviewMapMemory();
       try{
-        const raw = localStorage.getItem(PORTAL_SESSION_REVIEW_MAP_STORAGE);
+        const storageKey = portalSessionReviewMapStorageKey(staffIdOverride);
+        let raw = localStorage.getItem(storageKey);
+        if(!raw && staffIdOverride && !portalStaffInGhostView()){
+          const legacy = localStorage.getItem(PORTAL_SESSION_REVIEW_MAP_STORAGE);
+          if(legacy){
+            raw = legacy;
+            try{ localStorage.setItem(storageKey, legacy); }catch(_){}
+          }
+        }
         if(!raw) return;
         const o = JSON.parse(raw);
         if(!o || typeof o !== 'object') return;
@@ -1317,7 +1339,7 @@
     }
     function persistSessionReviewMap(){
       try{
-        localStorage.setItem(PORTAL_SESSION_REVIEW_MAP_STORAGE, JSON.stringify(sessionReviewMapMemory));
+        localStorage.setItem(portalSessionReviewMapStorageKey(), JSON.stringify(sessionReviewMapMemory));
       }catch(e){}
     }
     /** Roster review keys for Supabase sync (today list + full term window for this staff). */
@@ -2631,8 +2653,9 @@
       if(!iso || !staffId || typeof portalRosterReviewStateFromStatusBundle !== 'function') return mem;
       const bundle = portalRosterReviewStateFromStatusBundle(item.__portalBaseSession, iso, staffId);
       if(!bundle) return mem;
+      const ghost = portalStaffInGhostView();
       return {
-        feedbackDone: bundle.feedbackDone === false ? false : !!(bundle.feedbackDone || mem.feedbackDone),
+        feedbackDone: bundle.feedbackDone === false ? false : !!(bundle.feedbackDone || (!ghost && mem.feedbackDone)),
         incident: !!(bundle.incident || mem.incident),
         absent: !!(bundle.absent || mem.absent),
         cancelled: !!(bundle.cancelled || mem.cancelled)
@@ -2772,6 +2795,7 @@
         keySeen[k] = true;
         add(getSessionReviewRecord({ sessionKey: k }) || null);
       };
+      if(!portalStaffInGhostView()){
       if(typeof portalSessionReviewKeyForModelRow === 'function'){
         tryKey(portalSessionReviewKeyForModelRow(s, dayWord, sessionDateIso));
       }
@@ -2812,6 +2836,7 @@
           if(tCanon) tryKey(String(sessionDateIso) + '|' + tCanon + '|' + bC);
           if(tRaw && tRaw !== tCanon) tryKey(String(sessionDateIso) + '|' + tRaw + '|' + bC);
         }
+      }
       }
       const staffId = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
       const fromBundle = (!portalTermIsCatchUpFeedbackDate(sessionDateIso, staffId)
@@ -14055,7 +14080,7 @@
           var weekdayTop = now.toLocaleDateString("en-GB", { weekday: "long" });
           dashboardData.dateTopbar = weekdayTop + "\n" + pad(now.getDate()) + "/" + pad(now.getMonth() + 1) + "/" + now.getFullYear();
         }
-        if(typeof hydrateSessionReviewMapFromStorage === "function") hydrateSessionReviewMapFromStorage();
+        if(typeof hydrateSessionReviewMapFromStorage === "function") hydrateSessionReviewMapFromStorage(staffId);
         if(typeof portalMarkFeedbackReconciledFromExports === "function"){
           portalMarkFeedbackReconciledFromExports();
         }
