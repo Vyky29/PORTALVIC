@@ -651,20 +651,49 @@
   function feedbackAliasKeysForRow(fb) {
     var keys = [];
     var pk = clean(fb.portal_session_key);
+    var svc = clean(fb.service);
     if (pk) {
       keys.push(pk);
       var norm = normalizePortalSessionKey(pk);
       if (norm) keys.push(norm);
       var parts = pk.split("|").map(clean);
       if (parts.length >= 4 && /^\d{4}-\d{2}-\d{2}$/.test(parts[0])) {
-        keys.push(parts[0] + "|" + normTimeKey(parts[1]) + "|" + parts[2]);
+        var pkTimeFirst = normTimeKey(parts[1]);
+        var pkClientTime = normTimeKey(parts[2]);
+        if (pkTimeFirst && /^\d{2}:\d{2}$/.test(pkTimeFirst) && parts[2]) {
+          keys.push(parts[0] + "|" + pkTimeFirst + "|" + canonicalClientSlug(parts[2]));
+          if (isBespokeService(svc)) {
+            keys.push(
+              parts[0] +
+                "|" +
+                canonicalClientSlug(parts[2]) +
+                "|" +
+                pkTimeFirst +
+                "|" +
+                serviceKey(svc) +
+                "|" +
+                (portalKeyAreaFromParts(parts) || "hub_room")
+            );
+          }
+        } else if (pkClientTime && /^\d{2}:\d{2}$/.test(pkClientTime) && parts[1]) {
+          keys.push(
+            parts[0] +
+              "|" +
+              canonicalClientSlug(parts[1]) +
+              "|" +
+              pkClientTime +
+              "|" +
+              serviceKey(svc) +
+              "|" +
+              (portalKeyAreaFromParts(parts) || "hub_room")
+          );
+        }
       }
     }
     var sd = feedbackSessionDate(fb);
     var nm = canonicalClientSlug(fb.client_name);
     var rawSlug = slugify(fb.client_name);
     if (!sd || !nm) return keys;
-    var svc = clean(fb.service);
     var parsedPk = parsePortalSessionKeyFields(pk);
     if (parsedPk.date && parsedPk.clientSlug) {
       if (parsedPk.time) keys.push(parsedPk.date + "|" + parsedPk.time + "|" + parsedPk.clientSlug);
@@ -698,6 +727,13 @@
     }
     if (isDayCentreService(svc)) {
       keys.push(sd + "|" + nm + "|day_centre");
+    }
+    if (isBespokeService(svc)) {
+      var bt = normTimeKey(fb.session_time) || parsedPk.time;
+      var bespokeArea = pk ? portalKeyAreaFromParts(pk.split("|").map(clean)) || "hub_room" : "hub_room";
+      if (bt) {
+        keys.push(sd + "|" + nm + "|" + bt + "|" + serviceKey(svc) + "|" + bespokeArea);
+      }
     }
     return keys;
   }
@@ -1294,6 +1330,22 @@
     return feedbackAreaKindFromFb(fb) === "climb" || isClimbingService(fb.service);
   }
 
+  /** SwimFarm bespoke: one attended feedback per client/day (hub staff), even if portal key time/area differ. */
+  function bespokeSwimfarmHubDayCovers(fb, slot) {
+    if (!fb || !slot) return false;
+    if (!isBespokeService(slot.service)) return false;
+    if (isAbsentFeedbackRow(fb)) return false;
+    if (clean(slot.venue).toLowerCase() !== "swimfarm") return false;
+    if (slotAreaKind(slot) !== "hub") return false;
+    if (!feedbackRosterDateMatches(fb, slot)) return false;
+    if (canonicalClientSlug(fb.client_name) !== canonicalClientSlug(slot.client_name)) return false;
+    if (!completedByFitsSlotArea(fb.completed_by_name, slot)) return false;
+    if (!servicesCompatibleForSlot(fb, slot)) return false;
+    var er = fb.engagement_rating;
+    if (er != null && er !== "" && !isNaN(Number(er))) return true;
+    return !!clean(fb.positive_feedback);
+  }
+
   function feedbackFitsSlot(fb, slot) {
     if (!fb || !slot) return false;
     if (fb.attendance && String(fb.attendance).toLowerCase().indexOf("no") === 0) return false;
@@ -1304,6 +1356,7 @@
     }
     if (sundayWestwayClimbDayCovers(fb, slot)) return true;
     if (sundaySwimFarmMultiAreaDayCovers(fb, slot)) return true;
+    if (bespokeSwimfarmHubDayCovers(fb, slot)) return true;
     var fbSvc = serviceKey(clean(fb.service));
     var slotSvc = serviceKey(clean(slot.service));
     if (fbSvc && slotSvc && fbSvc !== slotSvc && !servicesCompatibleForSlot(fb, slot)) return false;
