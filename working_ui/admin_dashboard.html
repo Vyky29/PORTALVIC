@@ -22487,12 +22487,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var insG = await client.from('portal_ceo_group_message').insert([{ group_id: gid, author_id: me, body: body, message_type: 'text' }]).select('id');
           if(insG.error) throw insG.error;
         }else{
-          if(
-            portalAdminDmCeoUsesSharedWorkerOpsInbox &&
-            window.portalCsCliqSupportRoute &&
-            typeof window.portalCsCliqSupportRoute.resolveOpsAdminId === 'function' &&
-            typeof window.portalCsCliqSupportRoute.findDmThreadId === 'function'
-          ){
+          if(portalAdminDmCeoUsesSharedWorkerOpsInbox()){
             var workerIdSend = String(ui.managementWorkerId || ui.workerId || '').trim();
             if(!workerIdSend && tid){
               try{
@@ -22511,13 +22506,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               }catch(_wSend){}
             }
             if(workerIdSend){
-              var wProfSend = profSend[workerIdSend] || null;
-              if(!wProfSend || portalAdminDmIsWorkerRecipient(wProfSend)){
-                var opsTidSend = await portalAdminDmFindStaffLeadThreadForWorker(client, workerIdSend);
-                if(opsTidSend){
-                  tid = String(opsTidSend);
-                  window.__PORTAL_ADMIN_DM_UI.threadId = tid;
-                }
+              var opsTidSend = await portalAdminDmFindStaffLeadThreadForWorker(client, workerIdSend);
+              if(opsTidSend){
+                tid = String(opsTidSend);
+                window.__PORTAL_ADMIN_DM_UI.threadId = tid;
               }
             }
           }
