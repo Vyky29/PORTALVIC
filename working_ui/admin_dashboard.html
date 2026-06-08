@@ -23243,7 +23243,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               : [gid];
           portalAdminDmSetGroupAckAll(sendAlias, new Date().toISOString());
         }
-        void portalAdminDmSyncIncomingAttention();
+        void portalAdminDmSyncIncomingAttention({ suppressNotify: true });
         portalAdminDmScheduleSidebarListRefresh({ immediate: true });
       }catch(e){
         if(errB) errB.textContent = String((e && e.message) || e || 'Send failed');

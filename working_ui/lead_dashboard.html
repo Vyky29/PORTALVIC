@@ -747,10 +747,14 @@
           <button type="button" class="portal-alerts-action-btn" id="portalMicEnableBtn">Allow microphone</button>
           <p class="portal-alerts-hint muted portal-alerts-voice-how">On a form, tap the mic, speak, review the text, then submit.</p>
         </div>
+        <div class="portal-alerts-block" id="portalPushNotifyBlock">
+          <h4 class="portal-alerts-section-title">Background alerts</h4>
+          <p class="portal-alerts-hint muted">Announcements, roster changes and incoming calls when the app is closed. On iPhone, add the portal to your Home Screen first.</p>
+          <p id="portalNotifyStatus" class="portal-alerts-status" aria-live="polite"></p>
+          <button type="button" class="portal-alerts-action-btn" id="portalNotifyTestBtn" hidden>Send test alert</button>
+        </div>
         <div class="portal-alerts-compat" hidden aria-hidden="true">
-          <p id="portalNotifyStatus"></p>
           <button type="button" id="portalNotifyEnableBtn"></button>
-          <button type="button" id="portalNotifyTestBtn"></button>
           <div id="portalLocationBlock"><p id="portalLocationStatus"></p><button type="button" id="portalLocationEnableBtn"></button></div>
           <p id="portalCamStatus"></p>
           <button type="button" id="portalCamEnableBtn"></button>

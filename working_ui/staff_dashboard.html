@@ -752,10 +752,14 @@
           <button type="button" class="portal-alerts-action-btn" id="portalMicEnableBtn">Allow microphone</button>
           <p class="portal-alerts-hint muted portal-alerts-voice-how">On a form, tap the mic, speak, review the text, then submit.</p>
         </div>
+        <div class="portal-alerts-block" id="portalPushNotifyBlock">
+          <h4 class="portal-alerts-section-title">Background alerts</h4>
+          <p class="portal-alerts-hint muted">Announcements, roster changes and incoming calls when the app is closed. On iPhone, add the portal to your Home Screen first.</p>
+          <p id="portalNotifyStatus" class="portal-alerts-status" aria-live="polite"></p>
+          <button type="button" class="portal-alerts-action-btn" id="portalNotifyTestBtn" hidden>Send test alert</button>
+        </div>
         <div class="portal-alerts-compat" hidden aria-hidden="true">
-          <p id="portalNotifyStatus"></p>
           <button type="button" id="portalNotifyEnableBtn"></button>
-          <button type="button" id="portalNotifyTestBtn"></button>
           <div id="portalLocationBlock"><p id="portalLocationStatus"></p><button type="button" id="portalLocationEnableBtn"></button></div>
           <p id="portalCamStatus"></p>
           <button type="button" id="portalCamEnableBtn"></button>
@@ -1081,7 +1085,7 @@
   <script src="/portal/portal_lead_staff_chat_directory.js?v=20260609-chat-shell-no-flash"></script>
   <script src="/portal/portal_worker_group_thread.js?v=20260625-staff-pool-channels"></script>
   <script src="/portal/portal_incoming_call_push.js?v=20260608-stale-call-fix"></script>
-  <script src="/portal/portal_sheet_back.js?v=20260607-sheet-back"></script>
+  <script src="/portal/portal_sheet_back.js?v=20260608-chat-dashboard-exit"></script>
   <script>
     /** Real calendar weekday for “Today” (en-GB), aligned with staff_clients_machine.xlsx */
     function portalWeekdayLongEnGB(d){
@@ -6784,7 +6788,7 @@
       portalBindInternalChatMobileViewport();
       portalSyncInternalChatMobileViewport();
     }
-    function portalCloseInternalChatReturnToAlertsMenu(){
+    function portalCloseInternalChatToDashboard(){
       try{
         window.__PORTAL_INTERNAL_CHAT_UI = window.__PORTAL_INTERNAL_CHAT_UI || {};
         var closingTid = window.__PORTAL_INTERNAL_CHAT_UI.threadId ? String(window.__PORTAL_INTERNAL_CHAT_UI.threadId).trim() : '';
@@ -6796,6 +6800,11 @@
         window.__PORTAL_INTERNAL_CHAT_UI.skipResetThreadOnNextSheetOpen = false;
       }catch(_ui){}
       if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
+      if(typeof window.portalStaffDmSyncUnreadChrome === 'function') void window.portalStaffDmSyncUnreadChrome();
+    }
+    window.portalCloseInternalChatToDashboard = portalCloseInternalChatToDashboard;
+    function portalCloseInternalChatReturnToAlertsMenu(){
+      portalCloseInternalChatToDashboard();
       setTimeout(function(){
         if(typeof portalSyncAnnouncementsAndRemindersUi === 'function') portalSyncAnnouncementsAndRemindersUi();
         else if(typeof renderNotices === 'function') renderNotices();
@@ -6807,12 +6816,12 @@
       if(closeBtn && !closeBtn.dataset.portalDmBound){
         closeBtn.dataset.portalDmBound = '1';
         closeBtn.addEventListener('click', function(){
-          portalCloseInternalChatReturnToAlertsMenu();
+          portalCloseInternalChatToDashboard();
         });
       }
       function portalInternalChatBackToInbox(){
         if(portalInternalChatOfficeRestricted()){
-          portalCloseInternalChatReturnToAlertsMenu();
+          portalCloseInternalChatToDashboard();
           return;
         }
         window.__PORTAL_INTERNAL_CHAT_UI = window.__PORTAL_INTERNAL_CHAT_UI || {};
