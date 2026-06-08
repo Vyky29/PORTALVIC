@@ -93,7 +93,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260607-camera-fix" />
   <script src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Lead Dashboard</title>
-  <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260622-lead-chat-inbox" />
+  <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260622-lead-chat-composer" />
   <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260622-lead-chat-inbox" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260610-topbar-colors" />
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260624-staff-lead-dm" />
@@ -860,12 +860,12 @@
         <div class="portal-dm-lead-search-row">
           <label class="topbar-sr-only" for="internalChatLeadSearch">Search chats or staff</label>
           <span class="portal-dm-lead-search-icon" aria-hidden="true">⌕</span>
-          <input type="search" id="internalChatLeadSearch" class="portal-dm-lead-search-input" placeholder="Search staff or chats…" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" />
+          <input type="search" id="internalChatLeadSearch" class="portal-dm-lead-search-input" placeholder="Search CS Team or chats…" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" />
           <button type="button" id="internalChatLeadSearchClear" class="portal-dm-lead-search-clear" hidden aria-label="Clear search">×</button>
         </div>
         <div id="internalChatLeadInboxNav" class="portal-dm-inbox-nav">
           <button type="button" class="portal-dm-inbox-nav-btn is-active" id="internalChatInboxTabChats" data-inbox-tab="chats">Chats</button>
-          <button type="button" class="portal-dm-inbox-nav-btn" id="internalChatInboxTabStaff" data-inbox-tab="staff">Staff</button>
+          <button type="button" class="portal-dm-inbox-nav-btn" id="internalChatInboxTabStaff" data-inbox-tab="staff">CS Team</button>
         </div>
       </div>
       <div id="internalChatListWrap" class="portal-dm-inbox-list"></div>
@@ -1068,7 +1068,7 @@
   <script src="/portal/portal_executive_dm.js?v=20260622-chat-restore"></script>
   <script src="/portal/portal_cs_cliq_embed.js?v=20260607-cliq-fix"></script>
   <script src="/portal/portal_dm_executive_cliq.js?v=20260622-chat-restore"></script>
-  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260622-lead-chat-inbox"></script>
+  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260622-lead-csteam"></script>
   <script>
     /** Real calendar weekday for “Today” (en-GB), aligned with staff_clients_machine.xlsx */
     function portalWeekdayLongEnGB(d){
@@ -6573,8 +6573,8 @@
             ? "No conversations yet. Use <strong>Request support</strong> or <strong>Request meeting</strong> above, or wait for Management to message you."
             : (portalStaffIsLeadUser()
               ? (leadSearchQ
-                ? "No chats match your search. Check the team matches below or open the <strong>Staff</strong> tab."
-                : "No conversations yet. Search above to message a colleague, or open the <strong>Staff</strong> tab.")
+                ? "No chats match your search. Check the team matches below or open the <strong>CS Team</strong> tab."
+                : "No conversations yet. Search above to message a colleague, or open the <strong>CS Team</strong> tab.")
               : "No conversations yet. When the office sends you a direct message, it appears here.");
           listHost.innerHTML = "<p class=\"portal-dm-inbox-empty\">"+emptyMsg+"</p>";
           if(portalStaffIsLeadUser() && window.portalLeadStaffChatDirectory){

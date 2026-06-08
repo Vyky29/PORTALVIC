@@ -5,6 +5,7 @@
   "use strict";
 
   var CACHE_KEY_STAFF = "__PORTAL_LEAD_STAFF_DIRECTORY_ROWS__";
+  var CACHE_KEY_CSTEAM = "__PORTAL_LEAD_CSTEAM_DIRECTORY_ROWS__";
   var CACHE_KEY_LEADS = "__PORTAL_STAFF_LEADS_DIRECTORY_ROWS__";
   var CACHE_KEY_DIRECTORS = "__PORTAL_STAFF_DIRECTORS_DIRECTORY_ROWS__";
 
@@ -29,7 +30,7 @@
     return prof || (global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.staff_profile) || {};
   }
 
-  /** Full messenger inbox (search, staff directory, calls) — lead, admin, CEO on any portal. */
+  /** Full messenger inbox (search, staff directory, calls) - lead, admin, CEO on any portal. */
   function portalStaffHasFullMessengerAccess(prof) {
     var row = profileRow(prof);
     var ar = String(row.app_role || "").toLowerCase();
@@ -49,6 +50,12 @@
 
   function portalStaffIsLeadUser(prof) {
     return portalStaffHasFullMessengerAccess(prof);
+  }
+
+  /** Session lead (app_role lead) - not admin/CEO on another shell. */
+  function portalStaffIsSessionLead(prof) {
+    var row = profileRow(prof);
+    return String(row.app_role || "").toLowerCase() === "lead";
   }
 
   function portalStaffIsStaffUser(prof) {
@@ -75,7 +82,7 @@
   }
 
   function getDirectoryMode(prof) {
-    if (portalStaffIsLeadUser(prof)) return "staff";
+    if (portalStaffIsSessionLead(prof)) return "csteam";
     if (portalStaffIsStaffUser(prof)) return "directors";
     return "";
   }
@@ -83,6 +90,7 @@
   function directoryCacheKey(mode) {
     if (mode === "leads") return CACHE_KEY_LEADS;
     if (mode === "directors") return CACHE_KEY_DIRECTORS;
+    if (mode === "csteam") return CACHE_KEY_CSTEAM;
     return CACHE_KEY_STAFF;
   }
 
@@ -231,12 +239,14 @@
         dirBtn.classList.toggle("is-active", tab === "directory");
         if (dirMode === "leads") dirBtn.textContent = "Leads";
         else if (dirMode === "directors") dirBtn.textContent = "Directors";
+        else if (dirMode === "csteam") dirBtn.textContent = "CS Team";
         else if (dirMode === "staff") dirBtn.textContent = "Staff";
       }
       var search = getSearchInput();
       if (search) {
         if (dirMode === "leads") search.placeholder = "Search leads or chats...";
         else if (dirMode === "directors") search.placeholder = "Search directors or chats...";
+        else if (dirMode === "csteam") search.placeholder = "Search CS Team or chats...";
         else search.placeholder = "Search staff or chats...";
       }
     }
@@ -363,6 +373,7 @@
     if (query) {
       if (mode === "leads") return "No leads match your search.";
       if (mode === "directors") return "No directors or admin match your search.";
+      if (mode === "csteam") return "No CS Team members match your search.";
       return "No staff match your search.";
     }
     if (mode === "leads") {
@@ -373,6 +384,12 @@
     }
     if (mode === "directors") {
       return "No directors or admin found. Contact ops if you expected Raul, Javier, Victor, or admin here.";
+    }
+    if (mode === "csteam") {
+      return (
+        "No CS Team members found. " +
+        "If you expected colleagues, admin, or management here, ask ops to check your portal access."
+      );
     }
     return (
       "No colleagues found in the team directory. " +
@@ -385,13 +402,21 @@
     var ar = String(row.app_role || "").toLowerCase();
     if (mode === "leads") return ar === "lead";
     if (mode === "directors") return staffInitiatePeer(row);
+    if (mode === "csteam") return ar !== "lead";
     if (mode === "staff") return ar !== "lead" && ar !== "admin" && ar !== "ceo";
     return true;
   }
 
   async function loadDirectoryRows(client, me, mode, opts) {
     opts = opts || {};
-    mode = mode === "leads" ? "leads" : mode === "directors" ? "directors" : "staff";
+    mode =
+      mode === "leads"
+        ? "leads"
+        : mode === "directors"
+          ? "directors"
+          : mode === "csteam"
+            ? "csteam"
+            : "staff";
     if (!client || !me) return [];
     var cacheKey = directoryCacheKey(mode);
     if (!opts.force && global[cacheKey] && Array.isArray(global[cacheKey])) {
@@ -589,7 +614,13 @@
 
     host.innerHTML =
       '<p class="portal-dm-lead-empty">Loading ' +
-      (mode === "leads" ? "leads" : mode === "directors" ? "directors" : "team") +
+      (mode === "leads"
+        ? "leads"
+        : mode === "directors"
+          ? "directors"
+          : mode === "csteam"
+            ? "CS Team"
+            : "team") +
       "...</p>";
 
     try {
@@ -653,7 +684,8 @@
       var rows = filterStaffRows(await loadDirectoryRows(client, me, mode), q);
       host.innerHTML = "";
       if (!rows.length) {
-        var noun = mode === "leads" ? "leads" : "staff";
+        var noun =
+          mode === "leads" ? "leads" : mode === "csteam" ? "CS Team members" : "staff";
         host.innerHTML =
           '<p class="portal-dm-lead-empty">No ' + esc(noun) + " match ?" + esc(q) + "?.</p>";
         return;
@@ -670,9 +702,13 @@
             ? rows.length === 1
               ? "Message a director or admin"
               : "Message a director or admin"
-            : rows.length === 1
-              ? "Message someone"
-              : "Message someone on the team";
+            : mode === "csteam"
+              ? rows.length === 1
+                ? "Message someone on CS Team"
+                : "Message someone on CS Team"
+              : rows.length === 1
+                ? "Message someone"
+                : "Message someone on the team";
       host.appendChild(heading);
 
       var list = document.createElement("div");
@@ -692,6 +728,7 @@
     if (!portalStaffHasPeerDirectory()) return;
     try {
       delete global[CACHE_KEY_STAFF];
+      delete global[CACHE_KEY_CSTEAM];
       delete global[CACHE_KEY_LEADS];
       delete global[CACHE_KEY_DIRECTORS];
     } catch (_cache) {}
@@ -708,6 +745,7 @@
   global.portalLeadStaffChatDirectory = {
     portalStaffHasFullMessengerAccess: portalStaffHasFullMessengerAccess,
     portalStaffIsLeadUser: portalStaffIsLeadUser,
+    portalStaffIsSessionLead: portalStaffIsSessionLead,
     portalStaffIsStaffUser: portalStaffIsStaffUser,
     portalStaffHasPeerDirectory: portalStaffHasPeerDirectory,
     staffInitiatePeer: staffInitiatePeer,
@@ -728,6 +766,7 @@
     clearCache: function () {
       try {
         delete global[CACHE_KEY_STAFF];
+        delete global[CACHE_KEY_CSTEAM];
         delete global[CACHE_KEY_LEADS];
         delete global[CACHE_KEY_DIRECTORS];
       } catch (_e) {}
