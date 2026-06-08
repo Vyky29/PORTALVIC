@@ -4,6 +4,8 @@
 (function (global) {
   "use strict";
 
+  var PENDING_CALL_KEY = "portal_pending_incoming_call_v1";
+
   function parseIncomingCallQuery() {
     try {
       var q = new URLSearchParams(String(global.location.search || ""));
@@ -32,6 +34,35 @@
     } catch (_e2) {}
   }
 
+  function stashPendingIncomingCall(opts) {
+    opts = opts || {};
+    var msgId = String(opts.msgId || opts.messageId || "").trim();
+    if (!msgId) return;
+    try {
+      global.sessionStorage.setItem(
+        PENDING_CALL_KEY,
+        JSON.stringify({
+          msgId: msgId,
+          src: String(opts.src || opts.source || "dm").trim() === "group" ? "group" : "dm",
+          ts: Date.now(),
+        })
+      );
+    } catch (_s) {}
+  }
+
+  function consumePendingIncomingCall() {
+    try {
+      var raw = global.sessionStorage.getItem(PENDING_CALL_KEY);
+      if (!raw) return null;
+      global.sessionStorage.removeItem(PENDING_CALL_KEY);
+      var p = JSON.parse(raw);
+      if (!p || !p.msgId || Date.now() - Number(p.ts || 0) > 120000) return null;
+      return p;
+    } catch (_c) {
+      return null;
+    }
+  }
+
   async function fetchCallMessageRow(client, msgId, src) {
     if (!client || !msgId) return null;
     var table = src === "group" ? "portal_ceo_group_message" : "portal_staff_dm_messages";
@@ -47,11 +78,47 @@
     }
   }
 
+  async function openChatForIncomingRow(row) {
+    if (!row) return;
+    var calls = global.portalStaffChatCalls;
+    if (calls && typeof calls.openIncomingCallChatContext === "function") {
+      await calls.openIncomingCallChatContext(row);
+      return;
+    }
+    if (row.group_id) {
+      global.__PORTAL_INTERNAL_CHAT_UI = global.__PORTAL_INTERNAL_CHAT_UI || {};
+      global.__PORTAL_ADMIN_DM_UI = global.__PORTAL_ADMIN_DM_UI || {};
+      global.__PORTAL_INTERNAL_CHAT_UI.groupId = String(row.group_id);
+      global.__PORTAL_INTERNAL_CHAT_UI.threadId = "";
+      if (typeof global.portalAdminDmOpenGroupThread === "function") {
+        await global.portalAdminDmOpenGroupThread(String(row.group_id));
+        return;
+      }
+    } else if (row.thread_id) {
+      global.__PORTAL_INTERNAL_CHAT_UI = global.__PORTAL_INTERNAL_CHAT_UI || {};
+      global.__PORTAL_INTERNAL_CHAT_UI.threadId = String(row.thread_id);
+      global.__PORTAL_INTERNAL_CHAT_UI.groupId = "";
+    }
+    try {
+      if (typeof global.closeSheet === "function") {
+        global.closeSheet({ bypassAnnouncementLock: true });
+      }
+    } catch (_c) {}
+    if (typeof global.openSheet === "function") {
+      global.openSheet("internalChatSheet");
+    }
+    if (typeof global.portalRenderInternalChatSheet === "function") {
+      await global.portalRenderInternalChatSheet();
+    }
+  }
+
   async function handleIncomingCallPush(opts) {
     opts = opts || {};
     var msgId = String(opts.msgId || opts.messageId || "").trim();
     var src = String(opts.src || opts.source || "dm").trim() === "group" ? "group" : "dm";
     if (!msgId) return false;
+
+    stashPendingIncomingCall({ msgId: msgId, src: src });
 
     var box = global.__PORTAL_SUPABASE__ || {};
     var client = box.client;
@@ -67,27 +134,13 @@
     var row = await fetchCallMessageRow(client, msgId, src);
     if (!row) return false;
 
-    if (src === "group" && row.group_id) {
-      var isAdmin =
-        typeof global.portalAdminDmOpenGroupThread === "function" &&
-        typeof global.portalAdminDmMe === "function";
-      if (isAdmin) {
-        global.__PORTAL_ADMIN_DM_UI = global.__PORTAL_ADMIN_DM_UI || {};
-        global.__PORTAL_ADMIN_DM_UI.groupId = String(row.group_id);
-        global.__PORTAL_ADMIN_DM_UI.threadId = "";
-        global.__PORTAL_ADMIN_DM_UI.panel = "thread";
-        await global.portalAdminDmOpenGroupThread(String(row.group_id));
-      }
-    } else if (row.thread_id) {
-      global.__PORTAL_INTERNAL_CHAT_UI = global.__PORTAL_INTERNAL_CHAT_UI || {};
-      global.__PORTAL_INTERNAL_CHAT_UI.threadId = String(row.thread_id);
-      if (typeof global.portalRenderInternalChatSheet === "function") {
-        await global.portalRenderInternalChatSheet();
-      }
-    }
+    await openChatForIncomingRow(row);
 
     if (typeof calls.processIncomingCallRow === "function") {
       calls.processIncomingCallRow(row, 0);
+      try {
+        global.sessionStorage.removeItem(PENDING_CALL_KEY);
+      } catch (_clr) {}
       return true;
     }
     return false;
@@ -96,11 +149,11 @@
   function handlePushMessage(data) {
     if (!data || data.portalOpen !== "incoming_call") return;
     var call = data.call || {};
-    var msgId = String(call.messageId || "").trim();
+    var msgId = String(call.messageId || call.msgId || "").trim();
     if (!msgId) return;
     void handleIncomingCallPush({
       msgId: msgId,
-      src: call.source || "dm",
+      src: call.source || call.src || "dm",
     });
   }
 
@@ -125,6 +178,28 @@
     } catch (_e2) {}
   }
 
+  function bindPendingIncomingCallOnVisible() {
+    if (global.__PORTAL_INCOMING_CALL_VIS_BOUND__) return;
+    global.__PORTAL_INCOMING_CALL_VIS_BOUND__ = true;
+    global.document.addEventListener("visibilitychange", function () {
+      if (global.document.visibilityState !== "visible") return;
+      var pending = consumePendingIncomingCall();
+      if (!pending || !pending.msgId) return;
+      if (global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.client) {
+        void handleIncomingCallPush(pending);
+        return;
+      }
+      stashPendingIncomingCall(pending);
+      global.addEventListener(
+        "portal:supabase-ready",
+        function () {
+          void handleIncomingCallPush(pending);
+        },
+        { once: true }
+      );
+    });
+  }
+
   function consumeIncomingCallQueryOnReady() {
     var parsed = parseIncomingCallQuery();
     if (!parsed || !parsed.msgId) return;
@@ -145,6 +220,7 @@
 
   bindIncomingCallPushMessages();
   if (typeof document !== "undefined") {
+    bindPendingIncomingCallOnVisible();
     if (document.readyState === "loading") {
       document.addEventListener("DOMContentLoaded", consumeIncomingCallQueryOnReady);
     } else {

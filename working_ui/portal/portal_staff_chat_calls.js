@@ -3120,6 +3120,7 @@
     clearIncomingThreadCache: clearIncomingThreadCache,
     pollRecentIncomingCalls: pollRecentIncomingCalls,
     bootIncomingCallPoll: bootIncomingCallPoll,
+    openIncomingCallChatContext: openIncomingCallChatContext,
     stopIncomingCallAlert: hideIncomingCallOverlay,
     primeCallRingAudio: primeCallRingAudio,
     openLeadsCallPicker: openLeadsCallPicker,

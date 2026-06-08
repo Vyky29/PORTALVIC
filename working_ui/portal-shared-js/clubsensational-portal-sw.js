@@ -1,6 +1,6 @@
 /* clubSENsational portal — minimal service worker for installability + Web Push.
  * Register from staff/lead/admin dashboard after login. Push payload: JSON { title, body, url?, portalOpen?, tag?, requireInteraction?, vibrate?, call? }
- * v20260624-push-icon
+ * v20260608-incoming-call-push
  */
 var PORTAL_PUSH_ICON_PATH = '/portal/app-icon/icon-192.png?v=20260624-push-icon';
 
@@ -61,6 +61,11 @@ function portalNotifyOpenClients(title, body, portalOpen, callData) {
           portalOpen: portalOpen,
           call: callData || null,
         });
+        if (portalOpen === 'incoming_call' && typeof client.focus === 'function') {
+          try {
+            client.focus();
+          } catch (eFocus) {}
+        }
       } catch (e) {}
     });
   });
@@ -109,6 +114,7 @@ self.addEventListener('push', function (event) {
     tag: tag,
     renotify: true,
     requireInteraction: requireInteraction,
+    silent: false,
     data: { url: url, portalOpen: portalOpen, call: callData },
   };
   if (vibrate) notifyOpts.vibrate = vibrate;
@@ -127,6 +133,7 @@ self.addEventListener('notificationclick', function (event) {
   var portalOpen = String(data.portalOpen || '');
   var openAlerts = portalOpen === 'alerts';
   var openCall = portalOpen === 'incoming_call';
+  var callData = data.call || null;
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (list) {
       for (var i = 0; i < list.length; i++) {
@@ -135,18 +142,20 @@ self.addEventListener('notificationclick', function (event) {
             list[i].postMessage({
               type: 'portal-notification-click',
               portalOpen: openAlerts ? 'alerts' : (openCall ? 'incoming_call' : ''),
-              call: data.call || null,
+              call: callData,
+              url: u,
             });
           } catch (e) {}
+          if (openCall && u && typeof list[i].navigate === 'function') {
+            try {
+              return list[i].navigate(u);
+            } catch (eNav) {}
+          }
           return list[i].focus();
         }
       }
       if (self.clients.openWindow) {
-        var target = u;
-        if (openAlerts) {
-          target = portalAppendQueryParam(u, 'portalOpen', 'alerts');
-        }
-        return self.clients.openWindow(target);
+        return self.clients.openWindow(u);
       }
     })
   );
