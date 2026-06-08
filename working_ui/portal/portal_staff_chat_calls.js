@@ -817,7 +817,26 @@
         void incomingState.audioCtx.resume();
       }
     } catch (_c) {}
-    ensureIncomingRingElement();
+    var audio = ensureIncomingRingElement();
+    if (audio) {
+      try {
+        var prevVol = audio.volume;
+        audio.volume = 0.001;
+        audio.currentTime = 0;
+        var silentPlay = audio.play();
+        if (silentPlay && typeof silentPlay.then === "function") {
+          silentPlay
+            .then(function () {
+              audio.pause();
+              audio.currentTime = 0;
+              audio.volume = prevVol || 0.85;
+            })
+            .catch(function () {
+              audio.volume = prevVol || 0.85;
+            });
+        }
+      } catch (_ap) {}
+    }
     playIncomingRingtoneWebAudio(true);
   }
 
