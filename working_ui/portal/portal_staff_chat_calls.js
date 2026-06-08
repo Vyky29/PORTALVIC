@@ -29,6 +29,7 @@
   var incomingState = {
     active: false,
     payload: null,
+    incomingRow: null,
     ringTimer: null,
     vibrateTimer: null,
     autoStopTimer: null,
@@ -569,6 +570,9 @@
       ".portal-incoming-call__icon{display:flex;align-items:center;justify-content:center;color:#5a9fc4;margin:0 0 12px}" +
       ".portal-incoming-call__title{margin:0 0 6px;font-size:18px;font-weight:800}" +
       ".portal-incoming-call__sub{margin:0 0 16px;font-size:14px;color:rgba(255,255,255,.78)}" +
+      ".portal-incoming-call__sound-hint{margin:0 0 12px;font-size:12px;font-weight:700;color:#90caf9;animation:portalIncomingSoundHint 1.1s ease-in-out infinite alternate}" +
+      ".portal-incoming-call__sound-hint[hidden]{display:none!important}" +
+      "@keyframes portalIncomingSoundHint{from{opacity:.55}to{opacity:1}}" +
       ".portal-incoming-call__actions{display:flex;gap:10px}" +
       ".portal-incoming-call__btn{flex:1;padding:12px 10px;border-radius:999px;border:0;font:inherit;font-size:14px;font-weight:800;cursor:pointer}" +
       ".portal-incoming-call__btn--decline{background:rgba(255,255,255,.12);color:#fff}" +
@@ -665,6 +669,89 @@
     } catch (_o) {}
   }
 
+  function pcmToWavBlob(samples, sampleRate) {
+    var buffer = new ArrayBuffer(44 + samples.length * 2);
+    var view = new DataView(buffer);
+    function writeStr(off, s) {
+      for (var i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i));
+    }
+    writeStr(0, "RIFF");
+    view.setUint32(4, 36 + samples.length * 2, true);
+    writeStr(8, "WAVE");
+    writeStr(12, "fmt ");
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    writeStr(36, "data");
+    view.setUint32(40, samples.length * 2, true);
+    var offset = 44;
+    for (var j = 0; j < samples.length; j++) {
+      var s = Math.max(-1, Math.min(1, samples[j]));
+      view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+      offset += 2;
+    }
+    return new Blob([buffer], { type: "audio/wav" });
+  }
+
+  function incomingRingtoneBlobUrl() {
+    if (incomingState.ringBlobUrl) return incomingState.ringBlobUrl;
+    var sampleRate = 8000;
+    var durationSec = 2.2;
+    var samples = Math.floor(sampleRate * durationSec);
+    var data = new Float32Array(samples);
+    for (var i = 0; i < samples; i++) {
+      var t = i / sampleRate;
+      var cycle = t % 2.2;
+      var env = cycle < 0.18 || (cycle >= 0.22 && cycle < 0.4) || (cycle >= 0.44 && cycle < 0.62) ? 1 : 0;
+      var tone = 523.25;
+      if (cycle >= 0.22 && cycle < 0.4) tone = 659.25;
+      if (cycle >= 0.44 && cycle < 0.62) tone = 783.99;
+      data[i] = Math.sin((2 * Math.PI * tone * t)) * env * 0.34;
+    }
+    incomingState.ringBlobUrl = URL.createObjectURL(pcmToWavBlob(data, sampleRate));
+    return incomingState.ringBlobUrl;
+  }
+
+  function ensureIncomingRingElement() {
+    if (incomingState.ringEl) return incomingState.ringEl;
+    if (typeof document === "undefined") return null;
+    var audio = document.createElement("audio");
+    audio.id = "portalIncomingCallRing";
+    audio.loop = true;
+    audio.preload = "auto";
+    audio.setAttribute("playsinline", "true");
+    audio.setAttribute("webkit-playsinline", "true");
+    audio.src = incomingRingtoneBlobUrl();
+    audio.volume = 0.85;
+    incomingState.ringEl = audio;
+    try {
+      document.body.appendChild(audio);
+    } catch (_a) {}
+    return audio;
+  }
+
+  function showIncomingSoundHint() {
+    if (!incomingState.active) return;
+    var hint = document.getElementById("portalIncomingCallSoundHint");
+    if (hint) hint.hidden = false;
+  }
+
+  function hideIncomingSoundHint() {
+    var hint = document.getElementById("portalIncomingCallSoundHint");
+    if (hint) hint.hidden = true;
+  }
+
+  function resumeIncomingRingFromGesture() {
+    primeCallRingAudio();
+    hideIncomingSoundHint();
+    if (!incomingState.active) return;
+    playIncomingRingtone(true);
+  }
+
   function stopIncomingRingtone() {
     if (incomingState.ringTimer) {
       clearInterval(incomingState.ringTimer);
@@ -690,21 +777,26 @@
     } catch (_o) {}
     incomingState.oscNodes = null;
     try {
-      if (incomingState.audioCtx && incomingState.audioCtx.state !== "closed") {
-        void incomingState.audioCtx.close();
-      }
-    } catch (_c) {}
-    incomingState.audioCtx = null;
-    try {
-      if (incomingState.notification) incomingState.notification.close();
-    } catch (_n) {}
-    incomingState.notification = null;
-    try {
       if (incomingState.ringEl) {
         incomingState.ringEl.pause();
         incomingState.ringEl.currentTime = 0;
       }
     } catch (_re) {}
+    try {
+      if (incomingState.notification) incomingState.notification.close();
+    } catch (_n) {}
+    incomingState.notification = null;
+  }
+
+  function hideIncomingCallOverlay() {
+    stopIncomingRingtone();
+    incomingState.active = false;
+    incomingState.payload = null;
+    incomingState.incomingRow = null;
+    syncIncomingCallFooterChrome(false);
+    var ov = incomingState.overlay || document.getElementById("portalIncomingCallOverlay");
+    if (ov) ov.hidden = true;
+    hideIncomingSoundHint();
     try {
       if (navigator.vibrate) navigator.vibrate(0);
     } catch (_v) {}
@@ -713,26 +805,19 @@
     } catch (_b) {}
   }
 
-  function hideIncomingCallOverlay() {
-    stopIncomingRingtone();
-    incomingState.active = false;
-    incomingState.payload = null;
-    syncIncomingCallFooterChrome(false);
-    var ov = incomingState.overlay || document.getElementById("portalIncomingCallOverlay");
-    if (ov) ov.hidden = true;
-  }
-
   /** Unlock ring audio after a user tap (required on iOS). Call from Continue / first interaction. */
   function primeCallRingAudio() {
-    if (incomingState.audioPrimed) return;
-    incomingState.audioPrimed = true;
+    if (!incomingState.audioPrimed) incomingState.audioPrimed = true;
     try {
       var Ctx = global.AudioContext || global.webkitAudioContext;
       if (Ctx && !incomingState.audioCtx) {
         incomingState.audioCtx = new Ctx();
+      }
+      if (incomingState.audioCtx && incomingState.audioCtx.state === "suspended") {
         void incomingState.audioCtx.resume();
       }
     } catch (_c) {}
+    ensureIncomingRingElement();
     playIncomingRingtoneWebAudio(true);
   }
 
@@ -779,8 +864,30 @@
     } catch (_e) {}
   }
 
-  function playIncomingRingtone() {
+  function playIncomingRingtone(fromGesture) {
     playIncomingRingtoneWebAudio(false);
+    var audio = ensureIncomingRingElement();
+    if (!audio) {
+      if (!fromGesture) showIncomingSoundHint();
+      return;
+    }
+    audio.currentTime = 0;
+    var playPromise;
+    try {
+      playPromise = audio.play();
+    } catch (_p) {
+      if (!fromGesture) showIncomingSoundHint();
+      return;
+    }
+    if (playPromise && typeof playPromise.then === "function") {
+      playPromise
+        .then(function () {
+          hideIncomingSoundHint();
+        })
+        .catch(function () {
+          if (!fromGesture) showIncomingSoundHint();
+        });
+    }
   }
 
   function ensureIncomingCallOverlay() {
@@ -800,6 +907,7 @@
         '<div class="portal-incoming-call__icon" id="portalIncomingCallIcon" aria-hidden="true"></div>' +
         '<h2 class="portal-incoming-call__title" id="portalIncomingCallTitle">Incoming call</h2>' +
         '<p class="portal-incoming-call__sub" id="portalIncomingCallSub">Team chat</p>' +
+        '<p class="portal-incoming-call__sound-hint" id="portalIncomingCallSoundHint" hidden>Tap anywhere to enable ringtone</p>' +
         '<div class="portal-incoming-call__actions">' +
         '<button type="button" class="portal-incoming-call__btn portal-incoming-call__btn--decline" id="portalIncomingCallDecline">Decline</button>' +
         '<button type="button" class="portal-incoming-call__btn portal-incoming-call__btn--answer" id="portalIncomingCallAnswer">Answer</button>' +
@@ -809,17 +917,90 @@
       var answer = ov.querySelector("#portalIncomingCallAnswer");
       if (decline) {
         decline.addEventListener("click", function () {
+          primeCallRingAudio();
           hideIncomingCallOverlay();
         });
       }
       if (answer) {
         answer.addEventListener("click", function () {
-          answerIncomingCall();
+          primeCallRingAudio();
+          void answerIncomingCall();
         });
       }
+      bindIncomingOverlayGestures(ov);
     }
     incomingState.overlay = ov;
     return ov;
+  }
+
+  function bindIncomingOverlayGestures(ov) {
+    if (!ov || ov.getAttribute("data-portal-sound-bound") === "1") return;
+    ov.setAttribute("data-portal-sound-bound", "1");
+    ov.addEventListener(
+      "touchstart",
+      function () {
+        resumeIncomingRingFromGesture();
+      },
+      { capture: true, passive: true }
+    );
+    ov.addEventListener(
+      "click",
+      function (ev) {
+        if (ev.target && ev.target.closest && ev.target.closest("#portalIncomingCallAnswer,#portalIncomingCallDecline")) {
+          return;
+        }
+        resumeIncomingRingFromGesture();
+      },
+      true
+    );
+  }
+
+  function bindIncomingFooterChatOpen() {
+    var btn = global.document && global.document.getElementById("portalFloatingChatBtn");
+    if (!btn || btn.getAttribute("data-portal-incoming-chat-bound") === "1") return;
+    btn.setAttribute("data-portal-incoming-chat-bound", "1");
+    btn.addEventListener(
+      "click",
+      function (ev) {
+        if (!incomingState.active) return;
+        ev.preventDefault();
+        ev.stopPropagation();
+        resumeIncomingRingFromGesture();
+        void openIncomingCallChatContext(incomingState.incomingRow);
+      },
+      true
+    );
+  }
+
+  async function openIncomingCallChatContext(row) {
+    row = row || incomingState.incomingRow;
+    if (!row) return;
+    var tid = String(row.thread_id || "").trim();
+    var gid = String(row.group_id || "").trim();
+    if (!tid && !gid) return;
+    global.__PORTAL_INTERNAL_CHAT_UI = global.__PORTAL_INTERNAL_CHAT_UI || {};
+    if (gid) {
+      global.__PORTAL_INTERNAL_CHAT_UI.groupId = gid;
+      global.__PORTAL_INTERNAL_CHAT_UI.threadId = "";
+      if (typeof global.portalAdminDmOpenGroupThread === "function") {
+        await global.portalAdminDmOpenGroupThread(gid);
+        return;
+      }
+    } else {
+      global.__PORTAL_INTERNAL_CHAT_UI.threadId = tid;
+      global.__PORTAL_INTERNAL_CHAT_UI.groupId = "";
+    }
+    try {
+      if (typeof global.closeSheet === "function") {
+        global.closeSheet({ bypassAnnouncementLock: true });
+      }
+    } catch (_c) {}
+    if (typeof global.openSheet === "function") {
+      global.openSheet("internalChatSheet");
+    }
+    if (typeof global.portalRenderInternalChatSheet === "function") {
+      await global.portalRenderInternalChatSheet();
+    }
   }
 
   function resolveIncomingCallerLabel(row, data, cb) {
@@ -1010,6 +1191,7 @@
           btn.setAttribute("aria-hidden", "false");
         }
       }
+      bindIncomingFooterChatOpen();
       return;
     }
     if (wrap) {
@@ -1031,6 +1213,7 @@
     hideIncomingCallOverlay();
     incomingState.active = true;
     incomingState.payload = data;
+    incomingState.incomingRow = row || null;
 
     var ov = ensureIncomingCallOverlay();
     var icon = ov.querySelector("#portalIncomingCallIcon");
@@ -1053,6 +1236,8 @@
     ov.hidden = false;
     document.body.classList.add("portal-incoming-call-active");
     syncIncomingCallFooterChrome(true);
+    bindIncomingFooterChatOpen();
+    hideIncomingSoundHint();
 
     try {
       if (typeof global.focus === "function") global.focus();
@@ -1065,14 +1250,27 @@
       }, 2400);
     }
 
-    playIncomingRingtone();
+    playIncomingRingtone(false);
     incomingState.autoStopTimer = setTimeout(hideIncomingCallOverlay, 50000);
   }
 
-  function answerIncomingCall() {
+  async function answerIncomingCall() {
     var data = incomingState.payload;
+    var row = incomingState.incomingRow;
     hideIncomingCallOverlay();
     if (!data) return;
+    try {
+      if (typeof global.portalRequestCallMediaPermissions === "function") {
+        var audioOnly = String(data.kind || "video") === "audio";
+        await global.portalRequestCallMediaPermissions({
+          video: !audioOnly,
+          audio: true,
+        });
+      }
+    } catch (_perm) {}
+    try {
+      await openIncomingCallChatContext(row);
+    } catch (_chat) {}
     openCallFromPayload(data);
   }
 
@@ -2911,13 +3109,11 @@
   };
 
   if (typeof document !== "undefined") {
-    document.addEventListener(
-      "click",
-      function primeOnce() {
-        primeCallRingAudio();
-      },
-      { once: true, capture: true }
-    );
+    function primeOnce() {
+      primeCallRingAudio();
+    }
+    document.addEventListener("click", primeOnce, { once: true, capture: true });
+    document.addEventListener("touchstart", primeOnce, { once: true, capture: true, passive: true });
     global.addEventListener("portal:supabase-ready", function () {
       clearIncomingThreadCache();
       bootIncomingCallPoll();
@@ -2935,5 +3131,6 @@
     if (global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.client) {
       bootIncomingCallPoll();
     }
+    bindIncomingFooterChatOpen();
   }
 })(typeof window !== "undefined" ? window : globalThis);
