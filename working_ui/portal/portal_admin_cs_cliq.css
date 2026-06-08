@@ -470,6 +470,30 @@ body.admin-view-cs-cliq #csCliqRoot .portal-cs-cliq-thread-header__status {
   min-width: 0;
 }
 
+#csCliqRoot .portal-cs-cliq-inbox-lane-hint {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 8px 14px 10px;
+  font-size: 12px;
+  line-height: 1.45;
+  font-weight: 600;
+  color: #475569;
+  background: linear-gradient(180deg, #f8fbfd, #fff);
+  border-bottom: 1px solid rgba(23, 50, 71, 0.08);
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-lane-hint[data-cs-cliq-inbox-lane-hint="ops"] {
+  color: #9a3412;
+  background: linear-gradient(180deg, #fff7ed, #fff);
+  border-bottom-color: rgba(234, 88, 12, 0.12);
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-lane-empty {
+  padding: 4px 2px 0;
+}
+
 #csCliqRoot .portal-cs-cliq-inbox-categories {
   flex-shrink: 0;
   display: grid;

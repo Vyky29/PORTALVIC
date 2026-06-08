@@ -70,7 +70,31 @@
         bar.innerHTML = "";
         bar.className = "portal-cs-cliq-inbox-categories";
       }
+      renderCeoInboxLaneHint("direct", false);
     }
+  }
+
+  function ceoInboxLaneHintText(activeCat) {
+    if (activeCat === "ops") {
+      return "Shared Sevitha\u2194staff line with Raul, Javi & Sevitha (Admin). Your replies are signed with your name.";
+    }
+    return "Directors, CEO groups (CEOs, Sev + CEOs), and Admin \u2014 your leadership circle.";
+  }
+
+  function renderCeoInboxLaneHint(activeCat, show) {
+    var hint = document.getElementById("csCliqInboxLaneHint");
+    if (!hint) return;
+    if (!show) {
+      hint.hidden = true;
+      hint.setAttribute("aria-hidden", "true");
+      hint.textContent = "";
+      return;
+    }
+    activeCat = activeCat === "ops" ? "ops" : "direct";
+    hint.hidden = false;
+    hint.setAttribute("aria-hidden", "false");
+    hint.textContent = ceoInboxLaneHintText(activeCat);
+    hint.setAttribute("data-cs-cliq-inbox-lane-hint", activeCat);
   }
 
   function getCeoInboxCategory() {
@@ -496,15 +520,9 @@
 
   function emptyInboxMessage(activeCat) {
     if (activeCat === "ops") {
-      return (
-        "No staff ops threads here yet. " +
-        "This tab is the shared Sevitha\u2194worker line \u2014 Roberto, instructors, support, etc."
-      );
+      return "No staff ops threads yet. Tap a staff name when one appears, or wait for the shared roster to load.";
     }
-    return (
-      "No direct chats here yet. " +
-      "Directors, CEO groups (CEOs, Sev + CEOs), and Admin live in this tab."
-    );
+    return "No direct chats yet. Open CEOs, Sev + CEOs, or message Raul, Javi, or Admin.";
   }
 
   async function renderAdminInbox(host, ctx) {
@@ -519,6 +537,9 @@
     var activeCat = sharedWorkerOps ? getCeoInboxCategory() : "direct";
     if (sharedWorkerOps) {
       renderCeoInboxNav(activeCat, split);
+      renderCeoInboxLaneHint(activeCat, true);
+    } else {
+      renderCeoInboxLaneHint("direct", false);
     }
     var dmItems = sharedWorkerOps
       ? activeCat === "ops"
@@ -528,7 +549,7 @@
     host.innerHTML = "";
     if (!dmItems.length) {
       host.innerHTML =
-        '<p class="muted" style="margin:0;font-size:13px;min-width:0;overflow-wrap:break-word">' +
+        '<p class="muted portal-cs-cliq-inbox-lane-empty" style="margin:0;font-size:13px;min-width:0;overflow-wrap:break-word">' +
         (sharedWorkerOps
           ? emptyInboxMessage(activeCat)
           : "No conversations here yet. Staff names appear in this list as soon as profiles are loaded \u2014 tap anyone to message.") +

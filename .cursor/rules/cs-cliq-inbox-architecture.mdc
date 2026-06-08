@@ -1,0 +1,40 @@
+---
+description: CS Cliq inbox lanes (Direct / Staff ops / Channels) for admin CEO trio and ops admin
+globs: working_ui/portal/portal_cs_cliq*.js,working_ui/portal/portal_admin_cs_cliq*,working_ui/admin_dashboard.html
+alwaysApply: false
+---
+
+# CS Cliq — inbox architecture (Portal admin)
+
+## Product rule (do not mix lanes in one flat list for CEOs)
+
+| Surface | Who | Contents |
+|---------|-----|----------|
+| **Inbox → Direct** | Victor, Raul, Javi | 1:1 DMs between directors, **Admin** (Sevitha ops contact), groups **`all_ceos`** (label **CEOs**) and **`ceo_liaison`** (label **Sev + CEOs**) with member chips |
+| **Inbox → Staff ops** | Victor, Raul, Javi | Shared **Sevitha↔worker** thread per staff member (Roberto, instructors, support). Not personal CEO↔worker DMs |
+| **Inbox** (single list) | Sevitha (ops admin) | Full staff roster + own ops lane |
+| **Channels → Leads / Staff** | Admin / CEOs | Group broadcast channels (session leads, staff pools). **No** `all_ceos` / `ceo_liaison` here for directors — those live in **Direct** |
+| **Staff dashboard** | Workers / leads | One row **Admin** only — never surface director names |
+
+## UI copy (CEO trio)
+
+- **Direct hint:** leadership circle (directors, CEO groups, Admin).
+- **Staff ops hint:** shared Sevitha↔staff line; replies signed with sender name.
+- Do not re-add **Shared ops** pill when the **Staff ops** tab is active (redundant).
+- Suppress chat toasts when CS Cliq inbox is already open (`portalAdminDmShouldSuppressIncomingChatNotify`).
+
+## Data / routing
+
+- Ops worker thread: `portal_staff_dm_ensure_ops_thread` / Sevitha participant — lane `inboxLane: 'ops'`.
+- CEO personal DM with another director: normal DM thread — **Direct** tab only.
+- God-mode send-as-Admin: `portalCeoGodModeAdmin` + RPC `portal_staff_dm_insert_ops_admin_message` (migration `20260629120000_portal_dm_insert_ops_admin_message.sql`).
+- Incoming call ring: only the intended peer (not all directors on staff calls).
+
+## Key modules
+
+- `portal_cs_cliq_admin_inbox.js` — Direct / Staff ops split, lane hints, director groups in Direct.
+- `portal_cs_cliq_management_inbox.js` — `buildSections`, ops vs mine lanes.
+- `portal_cs_cliq_admin_channels.js` — Leads / Staff channels; hide empty CEOs tab.
+- `admin_dashboard.html` — `portalAdminDmRenderList`, group labels (`CEOs`, `Sev + CEOs`), member chips.
+
+When changing inbox behaviour, preserve lane separation and update hints/labels together.

@@ -227,10 +227,11 @@
       '<div id="csCliqCeoQuickWrap" class="portal-cs-cliq-ceo-quick" hidden>' +
       '<div class="portal-cs-cliq-channel-row">' +
       '<button type="button" class="portal-cs-cliq-channel-btn portal-cs-cliq-channel-btn--primary" id="csCliqQCeoGroup">CEOs</button>' +
-      '<button type="button" class="portal-cs-cliq-channel-btn" id="csCliqQCeoLiaisonGroup">CEOs &amp; Admin</button>' +
+      '<button type="button" class="portal-cs-cliq-channel-btn" id="csCliqQCeoLiaisonGroup">Sev + CEOs</button>' +
       "</div></div>" +
       '<div id="csCliqListPanel">' +
       '<div id="csCliqInboxCategoryBar" class="portal-cs-cliq-inbox-categories" hidden aria-hidden="true"></div>' +
+      '<p id="csCliqInboxLaneHint" class="portal-cs-cliq-inbox-lane-hint" hidden aria-hidden="true"></p>' +
       '<div id="csCliqListWrap" class="portal-dm-inbox-list"></div>' +
       "</div></aside>" +
       '<div id="csCliqChatsConvHost" class="portal-cs-cliq-inbox__conv-host">' +
