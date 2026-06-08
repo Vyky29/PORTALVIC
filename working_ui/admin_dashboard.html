@@ -36,7 +36,7 @@
   <script src="/portal/portal_cs_cliq_thread_header.js?v=20260608-staff-admin-lane"></script>
   <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260608-inbox-staff-roster-all"></script>
   <script src="/portal/portal_dm_read_cursor.js?v=20260609-read-cursor"></script>
-  <script src="/portal/portal_cs_cliq_support_route.js?v=20260608-staff-admin-lane"></script>
+  <script src="/portal/portal_cs_cliq_support_route.js?v=20260608-ops-thread-rpc"></script>
   <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260627-raul-dan-dm"></script>
   <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260608-inbox-staff-roster-all"></script>
   <script src="/portal/portal_cs_cliq_admin_channels.js?v=20260608-ceo-dm-send-fix"></script>
@@ -21331,6 +21331,25 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var me = portalAdminDmMe();
       peerId = String(peerId || '').trim();
       if(!client || !me || !peerId || peerId === me) return;
+      var sharedWorkerPeer = false;
+      if(
+        portalAdminDmUsesSharedStaffInbox() &&
+        window.portalCsCliqSupportRoute &&
+        typeof window.portalCsCliqSupportRoute.ensureOpsThreadForWorker === 'function'
+      ){
+        try{
+          var prPeer = await client.from('staff_profiles').select('id,app_role,staff_role,dashboard_route,is_active,full_name,username').eq('id', peerId).maybeSingle();
+          if(!prPeer.error && prPeer.data && portalAdminDmIsWorkerRecipient(prPeer.data)){
+            sharedWorkerPeer = true;
+            var opsTidOpen = await window.portalCsCliqSupportRoute.ensureOpsThreadForWorker(client, peerId);
+            if(opsTidOpen){
+              await portalAdminDmOpenThread(opsTidOpen);
+              return;
+            }
+          }
+        }catch(_opsOpenPeer){}
+      }
+      if(sharedWorkerPeer) return;
       var guess = portalDmCanonThreadParticipantsGuess(me, peerId);
       var a = guess.participant_a;
       var b = guess.participant_b;
@@ -23748,6 +23767,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             threadId = q.id;
           }
           if(!threadId){
+            if(
+              portalAdminDmUsesSharedStaffInbox() &&
+              window.portalCsCliqSupportRoute &&
+              typeof window.portalCsCliqSupportRoute.ensureOpsThreadForWorker === 'function'
+            ){
+              threadId = await window.portalCsCliqSupportRoute.ensureOpsThreadForWorker(client, peerId);
+            }
+          }
+          if(!threadId && !(ch === 'staff_lead' && portalAdminDmUsesSharedStaffInbox())){
             var ins = await client.from('portal_staff_dm_threads').insert([{ participant_a: a, participant_b: b }]).select('id');
             threadId = dmPickThreadIdFromRows(ins.data);
             if(!threadId && ins.error && portalDmIsCheckOrderedPairError(ins.error)){
@@ -27842,7 +27870,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       document.body.appendChild(s);
     })();
   </script>
-  <script src="/portal/portal_staff_chat_calls.js?v=20260608-incoming-cache-fix"></script>
+  <script src="/portal/portal_staff_chat_calls.js?v=20260608-ops-thread-rpc"></script>
   <script src="/portal/portal_incoming_call_push.js?v=20260622-incoming-call"></script>
   <script src="/portal/portal_floating_internal_chat.js?v=20260609-header-chat-bell"></script>
   <script>

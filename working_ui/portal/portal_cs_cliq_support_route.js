@@ -108,10 +108,58 @@
     return "";
   }
 
+  function viewerUsesSharedOpsInbox() {
+    if (typeof global.portalAdminDmUsesSharedStaffInbox === "function") {
+      return !!global.portalAdminDmUsesSharedStaffInbox();
+    }
+    var p = clientBox().staff_profile || {};
+    var app = String(p.app_role || "").toLowerCase();
+    if (app === "admin" || app === "ceo") return true;
+    var sr = String(p.staff_role || "").toLowerCase();
+    return sr === "manager" || sr === "admin";
+  }
+
+  async function resolveWorkerIdInPair(client, userA, userB) {
+    userA = String(userA || "").trim();
+    userB = String(userB || "").trim();
+    if (!client || !userA || !userB || userA === userB) return "";
+    var pr = await client
+      .from("staff_profiles")
+      .select("id,app_role,staff_role,dashboard_route,is_active,full_name,username")
+      .in("id", [userA, userB]);
+    if (pr.error || !Array.isArray(pr.data)) return "";
+    var profBy = {};
+    pr.data.forEach(function (p) {
+      if (p && p.id) profBy[String(p.id)] = p;
+    });
+    if (isWorkerRecipient(profBy[userA] || {})) return userA;
+    if (isWorkerRecipient(profBy[userB] || {})) return userB;
+    return "";
+  }
+
+  /** CEO/admin shared inbox: Sevitha↔worker via security definer RPC (browser INSERT 403). */
+  async function ensureOpsThreadForWorker(client, workerId) {
+    workerId = String(workerId || "").trim();
+    if (!client || !workerId) return "";
+    if (!viewerUsesSharedOpsInbox()) return "";
+    var rpc = await client.rpc("portal_staff_dm_ensure_ops_thread", {
+      p_worker_id: workerId,
+    });
+    if (!rpc.error && rpc.data) return String(rpc.data);
+    return "";
+  }
+
   async function ensureDmThreadId(client, me, peerId) {
     if (!client || !me || !peerId || peerId === me) return "";
     var tid = await findDmThreadId(client, me, peerId);
     if (tid) return tid;
+    if (viewerUsesSharedOpsInbox()) {
+      var workerId = await resolveWorkerIdInPair(client, me, peerId);
+      if (workerId) {
+        tid = await ensureOpsThreadForWorker(client, workerId);
+        return tid || "";
+      }
+    }
     var guess = dmThreadPairGuess(me, peerId);
     var a = guess.participant_a;
     var b = guess.participant_b;
@@ -461,7 +509,8 @@
       }
     }
     var row = await resolveCanonicalThreadRow(client, workerId, res.data, profBy);
-    return row && row.id ? String(row.id) : "";
+    if (row && row.id) return String(row.id);
+    return ensureOpsThreadForWorker(client, workerId);
   }
 
   async function resolveStaffOfficeThreadId(client, me) {
@@ -574,6 +623,7 @@
     findDmThreadId: findDmThreadId,
     findOfficeThreadForWorker: findOfficeThreadForWorker,
     ensureDmThreadId: ensureDmThreadId,
+    ensureOpsThreadForWorker: ensureOpsThreadForWorker,
     resolveOpsAdminId: resolveOpsAdminId,
     resolveStaffOfficeThreadId: resolveStaffOfficeThreadId,
     SUPPORT_PREFIX: SUPPORT_PREFIX,

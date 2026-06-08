@@ -300,6 +300,12 @@
   }
 
   async function ensureDmThreadId(client, me, peerId) {
+    if (
+      global.portalCsCliqSupportRoute &&
+      typeof global.portalCsCliqSupportRoute.ensureDmThreadId === "function"
+    ) {
+      return global.portalCsCliqSupportRoute.ensureDmThreadId(client, me, peerId);
+    }
     if (!client || !me || !peerId || peerId === me) return "";
     var guess = dmThreadPairGuess(me, peerId);
     var a = guess.participant_a;
