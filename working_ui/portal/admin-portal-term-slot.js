@@ -588,27 +588,50 @@
   function injectStyleOnce() {
     if (document.getElementById("adminTermSlotStyle")) return;
     var css = [
-      ".trs-wrap{min-width:0;max-width:52rem}",
-      ".trs-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;margin:0 0 16px}",
-      "@media(max-width:640px){.trs-grid{grid-template-columns:1fr}}",
+      "body.admin-view-term-slot .admin-workspace{padding:14px 18px 18px;display:flex;flex-direction:column;min-height:0}",
+      "body.admin-view-term-slot .admin-term-slot-root{flex:1 1 auto;display:flex;flex-direction:column;min-height:0}",
+      "body.admin-view-term-slot .trs-page{flex:1 1 auto;display:flex;flex-direction:column;min-height:0}",
+      "body.admin-view-term-slot .trs-panel{flex:1 1 auto;display:flex;flex-direction:column;min-height:0}",
+      "body.admin-view-term-slot .trs-panel__body{flex:1 1 auto}",
+      "body.admin-view-term-slot .admin-term-slot-root{width:100%;max-width:none;min-width:0}",
+      ".trs-page{width:100%;max-width:none;min-width:0;margin:0}",
+      ".trs-panel{width:100%;max-width:none;min-width:0;border:1px solid var(--line,#e2e8f0);border-radius:16px;background:#fff;box-shadow:0 1px 2px rgba(15,23,42,.04);overflow:hidden}",
+      ".trs-panel--cancel{border-color:#fecaca}",
+      ".trs-panel__head{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:12px 20px;padding:18px 22px;border-bottom:1px solid #e2e8f0;background:linear-gradient(180deg,#f8fafc 0%,#fff 100%)}",
+      ".trs-panel__title{min-width:0;flex:1 1 280px}",
+      ".trs-panel__title h1{margin:0;font-size:22px;line-height:1.2;color:#0f172a;font-weight:800}",
+      ".trs-panel__title p{margin:6px 0 0;font-size:13px;line-height:1.45;color:#64748b;max-width:56rem;overflow-wrap:break-word}",
+      ".trs-panel__head-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;flex:0 0 auto}",
+      ".trs-panel__body{padding:18px 22px 20px;min-width:0}",
+      ".trs-row{display:grid;gap:12px 16px;min-width:0}",
+      ".trs-row + .trs-row{margin-top:14px;padding-top:14px;border-top:1px solid #eef2f7}",
+      ".trs-row--identity,.trs-row--details{grid-template-columns:repeat(4,minmax(0,1fr))}",
+      ".trs-row--control{grid-template-columns:minmax(0,1.05fr) minmax(0,1.35fr) minmax(0,1fr);align-items:start}",
+      "@media(max-width:1100px){.trs-row--identity,.trs-row--details{grid-template-columns:repeat(2,minmax(0,1fr))}.trs-row--control{grid-template-columns:1fr}}",
+      "@media(max-width:640px){.trs-row--identity,.trs-row--details,.trs-row--control{grid-template-columns:1fr}.trs-panel__head,.trs-panel__body,.trs-panel__foot{padding-left:14px;padding-right:14px}}",
       ".trs-field{display:flex;flex-direction:column;gap:4px;min-width:0}",
-      ".trs-field label{font-size:12px;font-weight:700;color:#475569}",
-      ".trs-field input,.trs-field select{font:inherit;padding:9px 11px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;color:#0f172a;min-width:0;width:100%;box-sizing:border-box}",
+      ".trs-field label{font-size:11px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:#64748b}",
+      ".trs-field input{font:inherit;padding:10px 12px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;color:#0f172a;min-width:0;width:100%;box-sizing:border-box}",
+      ".trs-field input[readonly]{background:#f8fafc;color:#475569}",
       ".trs-field .participant-field-wrap{position:relative;min-width:0}",
       ".trs-field .portal-name-suggest{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:40;margin:0;padding:4px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 8px 24px rgba(15,23,42,.12);max-height:220px;overflow-y:auto}",
       ".trs-field .portal-name-suggest[hidden]{display:none!important}",
       ".trs-field .portal-name-suggest__item{display:block;width:100%;text-align:left;padding:8px 10px;border:0;background:transparent;font:inherit;color:#0f172a;border-radius:8px;cursor:pointer;min-width:0;overflow-wrap:break-word}",
       ".trs-field .portal-name-suggest__item:hover,.trs-field .portal-name-suggest__item:focus{background:rgba(59,130,246,.1);outline:none}",
-      ".trs-scope{border:1px solid #e2e8f0;border-radius:14px;padding:12px 14px;margin:0 0 16px;background:#f8fafc}",
-      ".trs-scope label{display:flex;gap:10px;align-items:flex-start;padding:8px 0;cursor:pointer;min-width:0}",
-      ".trs-scope label span{min-width:0;overflow-wrap:break-word}",
-      ".trs-scope strong{display:block;color:#0f172a;font-size:13px}",
-      ".trs-scope em{display:block;font-style:normal;font-size:12px;color:#64748b;margin-top:2px}",
-      ".trs-action{border:1px solid #e2e8f0;border-radius:14px;padding:12px 14px;margin:0 0 16px;background:#fff}",
-      ".trs-action--cancel{border-color:#fecaca;background:#fff1f2}",
-      ".trs-reason-wrap{margin:0 0 16px}",
-      ".trs-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}",
-      ".trs-msg{min-height:1.2em;font-size:13px;color:#64748b;margin:10px 0 0;overflow-wrap:break-word}",
+      ".trs-control-block{display:flex;flex-direction:column;gap:8px;min-width:0}",
+      ".trs-control-label{font-size:11px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:#64748b}",
+      ".trs-pills{display:flex;flex-wrap:wrap;gap:8px;min-width:0}",
+      ".trs-pill{display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border:1px solid #e2e8f0;border-radius:999px;background:#fff;color:#0f172a;font-size:13px;font-weight:600;line-height:1.25;cursor:pointer;min-width:0;max-width:100%;overflow-wrap:break-word;transition:border-color .15s,background .15s,box-shadow .15s}",
+      ".trs-pill:hover{border-color:#cbd5e1;background:#f8fafc}",
+      ".trs-pill:has(input:checked){border-color:#3b82f6;background:#eff6ff;box-shadow:0 0 0 1px rgba(59,130,246,.15)}",
+      ".trs-pill--warn:has(input:checked){border-color:#f87171;background:#fff1f2;box-shadow:0 0 0 1px rgba(248,113,113,.2)}",
+      ".trs-pill input{margin:0;flex:0 0 auto}",
+      ".trs-control-block--reason[hidden]{display:none!important}",
+      ".trs-row--details[hidden]{display:none!important}",
+      ".trs-panel__foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 16px;padding:14px 22px;border-top:1px solid #e2e8f0;background:#f8fafc}",
+      ".trs-foot-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}",
+      ".trs-msg{min-width:0;flex:1 1 220px;font-size:13px;color:#64748b;margin:0;overflow-wrap:break-word;text-align:right}",
+      "@media(max-width:640px){.trs-msg{text-align:left}}",
     ].join("\n");
     var st = document.createElement("style");
     st.id = "adminTermSlotStyle";
@@ -654,18 +677,14 @@
   function syncTermSlotActionUi(root) {
     if (!root) return;
     var action = formAction(root);
-    var cancelBox = root.querySelector("#trsActionBox");
-    var reasonWrap = root.querySelector(".trs-reason-wrap");
-    var grid = root.querySelector(".trs-grid");
+    var panel = root.querySelector("#trsPanel");
+    var reasonBlock = root.querySelector("#trsReasonBlock");
+    var detailsRow = root.querySelector("#trsDetailsRow");
     var isCancel = action === "cancel_service";
     var isNoPart = action === "no_participant";
-    if (cancelBox) cancelBox.classList.toggle("trs-action--cancel", isCancel);
-    if (reasonWrap) reasonWrap.hidden = action === "update";
-    if (grid) {
-      grid.querySelectorAll(".trs-field--optional-edit").forEach(function (el) {
-        el.hidden = isCancel;
-      });
-    }
+    if (panel) panel.classList.toggle("trs-panel--cancel", isCancel);
+    if (reasonBlock) reasonBlock.hidden = action === "update";
+    if (detailsRow) detailsRow.hidden = isCancel;
     var saveBtn = root.querySelector("#trsSave");
     if (saveBtn && !state.saving) {
       if (isCancel) saveBtn.textContent = "Cancel service";
@@ -683,45 +702,67 @@
     var preAction = String(pre.action || "update");
 
     root.innerHTML =
-      '<div class="trs-wrap">' +
-      '<div class="trs-grid">' +
+      '<div class="trs-page">' +
+      '<div class="trs-panel card card--premium" id="trsPanel">' +
+      '<div class="trs-panel__head">' +
+      '<div class="trs-panel__title">' +
+      "<h1>Edit term slot</h1>" +
+      "<p>Update, cancel or clear a participante from the term timetable. One-day covers and absences stay in <strong>Schedule &amp; Covers</strong>.</p>" +
+      "</div>" +
+      '<div class="trs-panel__head-actions">' +
+      '<button type="button" class="btn btn--sec" id="trsLoadBundle">Load from roster</button>' +
+      "</div>" +
+      "</div>" +
+      '<div class="trs-panel__body">' +
+      '<div class="trs-row trs-row--identity">' +
       '<div class="trs-field"><label for="trsAnchorDate">Anchor date</label><input type="date" id="trsAnchorDate" value="' + esc(anchor) + '"/></div>' +
       '<div class="trs-field"><label>Weekday</label><input type="text" id="trsWeekday" readonly value="' + esc(weekday) + '"/></div>' +
       '<div class="trs-field"><label for="trsClient">Participante</label><div class="participant-field-wrap"><input type="text" id="trsClient" value="' + esc(pre.client_name || "") + '" placeholder="e.g. Kirushy" autocomplete="off"/><div id="trsClientSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Participantes"></div></div></div>' +
       '<div class="trs-field"><label for="trsTimeSlot">Time slot</label><input type="text" id="trsTimeSlot" value="' + esc(pre.time_slot || "") + '" placeholder="e.g. 4.30 to 5"/></div>' +
-      '<div class="trs-field trs-field--optional-edit"><label for="trsInstructors">Instructor(s)</label><div class="participant-field-wrap"><input type="text" id="trsInstructors" value="' + esc(pre.instructors || "") + '" placeholder="e.g. DAN, RAUL" autocomplete="off"/><div id="trsInstructorsSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Instructors"></div></div></div>' +
-      '<div class="trs-field trs-field--optional-edit"><label for="trsService">Service</label><div class="participant-field-wrap"><input type="text" id="trsService" value="' + esc(pre.service || "") + '" placeholder="e.g. Aquatic Activity" autocomplete="off"/><div id="trsServiceSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Services"></div></div></div>' +
-      '<div class="trs-field trs-field--optional-edit"><label for="trsVenue">Venue</label><div class="participant-field-wrap"><input type="text" id="trsVenue" value="' + esc(pre.venue || "") + '" placeholder="e.g. Northolt" autocomplete="off"/><div id="trsVenueSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Venues"></div></div></div>' +
-      '<div class="trs-field trs-field--optional-edit"><label for="trsArea">Pool / area</label><input type="text" id="trsArea" value="' + esc(pre.area || "") + '" placeholder="e.g. Teaching Pool"/></div>' +
       "</div>" +
-      '<div class="trs-action" id="trsActionBox" role="group" aria-labelledby="trsActionLegend">' +
-      '<div id="trsActionLegend" style="font-weight:800;font-size:13px;margin:0 0 6px;color:#0f172a">What to do</div>' +
-      '<label><input type="radio" name="trsAction" value="update"' + (preAction === "update" ? " checked" : "") + '/><span><strong>Update slot</strong><em>Change time, instructor, service, venue…</em></span></label>' +
-      '<label><input type="radio" name="trsAction" value="cancel_service"' + (preAction === "cancel_service" ? " checked" : "") + '/><span><strong>Cancel service</strong><em>Remove this participante from the roster (left the term). Same as Scheduling → Cancelled.</em></span></label>' +
-      '<label><input type="radio" name="trsAction" value="no_participant"' + (preAction === "no_participant" ? " checked" : "") + '/><span><strong>No participant</strong><em>Keep the staff slot open with no client booked. Same as Scheduling → No Participant.</em></span></label>' +
+      '<div class="trs-row trs-row--details" id="trsDetailsRow">' +
+      '<div class="trs-field"><label for="trsInstructors">Instructor(s)</label><div class="participant-field-wrap"><input type="text" id="trsInstructors" value="' + esc(pre.instructors || "") + '" placeholder="e.g. DAN, RAUL" autocomplete="off"/><div id="trsInstructorsSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Instructors"></div></div></div>' +
+      '<div class="trs-field"><label for="trsService">Service</label><div class="participant-field-wrap"><input type="text" id="trsService" value="' + esc(pre.service || "") + '" placeholder="e.g. Aquatic Activity" autocomplete="off"/><div id="trsServiceSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Services"></div></div></div>' +
+      '<div class="trs-field"><label for="trsVenue">Venue</label><div class="participant-field-wrap"><input type="text" id="trsVenue" value="' + esc(pre.venue || "") + '" placeholder="e.g. Northolt" autocomplete="off"/><div id="trsVenueSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Venues"></div></div></div>' +
+      '<div class="trs-field"><label for="trsArea">Pool / area</label><input type="text" id="trsArea" value="' + esc(pre.area || "") + '" placeholder="e.g. Teaching Pool"/></div>' +
       "</div>" +
-      '<div class="trs-reason-wrap trs-field"><label for="trsReason">Reason (optional)</label><input type="text" id="trsReason" value="' + esc(pre.reason || "") + '" placeholder="e.g. Cancelled summer term"/></div>' +
-      '<div class="trs-scope" role="group" aria-labelledby="trsScopeLegend">' +
-      '<div id="trsScopeLegend" style="font-weight:800;font-size:13px;margin:0 0 6px;color:#0f172a">Apply change to</div>' +
-      '<label><input type="radio" name="trsScope" value="single_day" checked/><span><strong>This day only</strong><em>One dated exception on the anchor date.</em></span></label>' +
-      '<label><input type="radio" name="trsScope" value="weekday_term"/><span><strong>Every ' + esc(weekday || "weekday") + ' until end of term</strong><em>Updates the weekly template for all ' + esc(weekday || "weekday") + 's in the term.</em></span></label>' +
-      '<label><input type="radio" name="trsScope" value="rest_of_term"/><span><strong>Rest of term (from anchor date)</strong><em>Same weekday from the anchor date through ' + esc(bounds.lastDate) + '.</em></span></label>' +
+      '<div class="trs-row trs-row--control" id="trsControlRow">' +
+      '<div class="trs-control-block" id="trsActionBox" role="group" aria-labelledby="trsActionLegend">' +
+      '<span class="trs-control-label" id="trsActionLegend">Action</span>' +
+      '<div class="trs-pills">' +
+      '<label class="trs-pill" title="Change time, instructor, service, venue…"><input type="radio" name="trsAction" value="update"' + (preAction === "update" ? " checked" : "") + "/> Update slot</label>" +
+      '<label class="trs-pill trs-pill--warn" title="Remove this participante from the roster (left the term)"><input type="radio" name="trsAction" value="cancel_service"' + (preAction === "cancel_service" ? " checked" : "") + "/> Cancel service</label>" +
+      '<label class="trs-pill" title="Keep the staff slot open with no client booked"><input type="radio" name="trsAction" value="no_participant"' + (preAction === "no_participant" ? " checked" : "") + "/> No participant</label>" +
+      "</div></div>" +
+      '<div class="trs-control-block" role="group" aria-labelledby="trsScopeLegend">' +
+      '<span class="trs-control-label" id="trsScopeLegend">Apply to</span>' +
+      '<div class="trs-pills trs-pills--scope">' +
+      '<label class="trs-pill" title="One dated exception on the anchor date"><input type="radio" name="trsScope" value="single_day" checked/> This day only</label>' +
+      '<label class="trs-pill" title="Updates the weekly template for all matching weekdays in the term"><input type="radio" name="trsScope" value="weekday_term"/> Every <span id="trsScopeWeekdayLabel">' + esc(weekday || "weekday") + "</span> until end of term</label>" +
+      '<label class="trs-pill" title="Same weekday from the anchor date through term end"><input type="radio" name="trsScope" value="rest_of_term"/> Rest of term (from anchor)</label>' +
+      "</div></div>" +
+      '<div class="trs-control-block trs-control-block--reason" id="trsReasonBlock">' +
+      '<label class="trs-control-label" for="trsReason">Reason</label>' +
+      '<input type="text" id="trsReason" value="' + esc(pre.reason || "") + '" placeholder="e.g. Cancelled summer term"/>' +
       "</div>" +
-      '<div class="trs-actions">' +
+      "</div>" +
+      "</div>" +
+      '<div class="trs-panel__foot">' +
+      '<div class="trs-foot-actions">' +
       '<button type="button" class="btn btn--pri" id="trsSave"' + (state.saving ? " disabled" : "") + ">" + (state.saving ? "Saving…" : "Save term slot") + "</button>" +
-      '<button type="button" class="btn btn--sec" id="trsLoadBundle">Load from roster</button>' +
       '<button type="button" class="btn btn--ghost" data-view-target="scheduling">Schedule &amp; Covers</button>' +
       "</div>" +
       '<p class="trs-msg" id="trsMsg">' + (state.saving ? "Saving…" : "") + "</p>" +
-      "</div>";
+      "</div>" +
+      "</div></div>";
 
     var anchorEl = root.querySelector("#trsAnchorDate");
     var wdEl = root.querySelector("#trsWeekday");
     if (anchorEl && wdEl) {
       anchorEl.addEventListener("change", function () {
         wdEl.value = weekdayLongFromIso(normIso(anchorEl.value));
-        var labels = root.querySelectorAll(".trs-scope label span strong");
-        if (labels[1]) labels[1].textContent = "Every " + wdEl.value + " until end of term";
+        var scopeWd = root.querySelector("#trsScopeWeekdayLabel");
+        if (scopeWd) scopeWd.textContent = wdEl.value;
       });
     }
     root.querySelectorAll('input[name="trsAction"]').forEach(function (inp) {

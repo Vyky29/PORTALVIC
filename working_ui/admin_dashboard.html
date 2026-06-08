@@ -69,7 +69,7 @@
   <script src="/portal/portal-roster-rows-merge.js?v=20260609-term-slot-cancel"></script>
   <script src="/portal-shared-js/participant_services.js?v=20260609-term-slot-autofill"></script>
   <script src="/portal-shared-js/portal_field_autocomplete.js?v=20260609-term-slot-autofill"></script>
-  <script src="/portal/admin-portal-term-slot.js?v=20260609-term-slot-cancel"></script>
+  <script src="/portal/admin-portal-term-slot.js?v=20260609-term-slot-full"></script>
   <script src="/portal/portal-staff-timetable-merge.js?v=20260612-hours-edit"></script>
   <script src="/portal/spreadsheet_reference_data.js?v=20260616-day-centre-hours"></script>
   <script src="/portal/admin-roster-spreadsheet-reference.js?v=20260616-day-centre-hours"></script>
@@ -1997,6 +1997,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       state.pendingBookingsScroll = (id === 'orders_all' ? (bookingsScroll || null) : null);
       state.view = id;
       document.body.classList.toggle('admin-view-cs-cliq', id === 'cs_cliq');
+      document.body.classList.toggle('admin-view-term-slot', id === 'term_roster_edit');
       if(id === 'cs_cliq'){
         try{ portalAdminDmPremiumSheetClose(); }catch(_cliqClose){}
         try{
@@ -17934,9 +17935,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div id="logsModuleRoot"></div>';
     }
     function viewTermRosterEdit(){
-      return '<h1 class="page-title" style="display:flex;align-items:center;gap:10px">'+adminNavIconHtml('term_roster_edit')+'<span>Edit term slot</span></h1>'+
-        '<p class="page-intro">Update the term timetable — choose whether the change applies to one day, every matching weekday until term end, or from the anchor date forward. One-day covers and absences stay in <strong>Schedule &amp; Covers</strong>.</p>'+
-        '<div id="termSlotModuleRoot"></div>';
+      return '<div id="termSlotModuleRoot" class="admin-term-slot-root"></div>';
     }
     function portalSpreadsheetRefConfigureOnce(){
       if(window.__portalSpreadsheetRefConfigured || !window.PortalSpreadsheetReference) return;
