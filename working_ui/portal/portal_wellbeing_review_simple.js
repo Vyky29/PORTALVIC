@@ -342,6 +342,12 @@
         ? "Hide Advanced Stress Risk Assessment"
         : "Advanced Stress Risk Assessment";
     });
+
+    if (document.body.classList.contains("portal-wellbeing-admin-mode")) {
+      wrap.hidden = false;
+      toggle.setAttribute("aria-expanded", "true");
+      toggle.textContent = "Hide Advanced Stress Risk Assessment";
+    }
   }
 
   function mountAdminSimpleReview(opts) {

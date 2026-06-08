@@ -233,12 +233,59 @@
  return any;
  }
 
+ async function waitForAuthSession(client, maxMs) {
+ maxMs = maxMs || 2800;
+ var session = null;
+ try {
+ var box = global.__PORTAL_SUPABASE__;
+ if (box && box.session && box.session.user && box.session.user.id) return box.session;
+ } catch (_) {}
+ try {
+ var r = await client.auth.getSession();
+ session = r && r.data && r.data.session;
+ } catch (_) {}
+ if (session && session.user && session.user.id) return session;
+ try {
+ var ur = await client.auth.getUser();
+ if (ur && ur.data && ur.data.user && ur.data.user.id) {
+ var r2 = await client.auth.getSession();
+ session = r2 && r2.data && r2.data.session;
+ if (session && session.user && session.user.id) return session;
+ }
+ } catch (_) {}
+ return await new Promise(function (resolve) {
+ var t = null;
+ var subWrap = client.auth.onAuthStateChange(function (event, next) {
+ if (next && next.user && next.user.id && (event === "INITIAL_SESSION" || event === "SIGNED_IN")) {
+ if (t != null) clearTimeout(t);
+ try {
+ subWrap.data.subscription.unsubscribe();
+ } catch (_) {}
+ resolve(next);
+ }
+ });
+ t = setTimeout(function () {
+ try {
+ subWrap.data.subscription.unsubscribe();
+ } catch (_) {}
+ resolve(null);
+ }, maxMs);
+ });
+ }
+
  async function getAuthClient() {
- var mod = await import("/portal/auth-handler.js?v=20260605-wellbeing");
- var client = mod.getSupabaseClient && mod.getSupabaseClient();
+ if (global.__portalWellbeingAuthReady) {
+ try {
+ await global.__portalWellbeingAuthReady;
+ } catch (_) {}
+ }
+ var sbMod = await import("/portal/supabase-client.js?v=20260610-wellbeing-auth");
+ var client =
+ (sbMod.getSharedSupabaseClient && sbMod.getSharedSupabaseClient()) ||
+ (await import("/portal/auth-handler.js?v=20260610-wellbeing-auth")).getSupabaseClient();
  if (!client) throw new Error("Sign in to the portal first.");
- var userRes = await client.auth.getUser();
- var user = userRes && userRes.data && userRes.data.user;
+ var session = await waitForAuthSession(client, 2800);
+ var user = session && session.user;
  if (!user || !user.id) throw new Error("Sign in to the portal first.");
  var profile = null;
  try {

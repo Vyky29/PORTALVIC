@@ -6,7 +6,7 @@
  <title>1-to-1 Wellbeing Review - clubSENsational</title>
  <script src="/portal-static-bootstrap.js"></script>
  <script src="/portal/term_from_timetable.js?v=20260604-teflon-guide-days"></script>
- <link rel="stylesheet" href="/portal/portal-wellbeing-admin-sra.css?v=20260608-wb-sra-cards" />
+ <link rel="stylesheet" href="/portal/portal-wellbeing-admin-sra.css?v=20260608-wb-sra-cards2" />
  <link rel="stylesheet" href="/portal/portal-wellbeing-review-simple.css?v=20260604-wb-flow-refine" />
  <link rel="stylesheet" href="/portal-shared-js/portal_form_feedback_skin.css?v=20260609-autofill" />
  <script src="/portal/portal_wellbeing_stressor_catalog.js?v=20260610-wb-voice2"></script>
@@ -878,6 +878,56 @@
  color: var(--muted);
  line-height: 1.55;
  border-top: 1px solid var(--line);
+ }
+
+ /* Admin 1-to-1: override legacy wide table (must beat rules above) */
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .table-scroll {
+ overflow: visible !important;
+ border: none !important;
+ box-shadow: none !important;
+ }
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap table.domain-table {
+ min-width: 0 !important;
+ width: 100% !important;
+ display: block !important;
+ }
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .domain-table thead {
+ display: none !important;
+ }
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .domain-table tbody {
+ display: block !important;
+ width: 100% !important;
+ }
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .domain-table tbody tr {
+ display: grid !important;
+ grid-template-columns: 1fr 1fr 1fr !important;
+ grid-template-areas:
+  "stressor stressor stressor"
+  "obs obs obs"
+  "sev like score"
+  "controls controls controls" !important;
+ gap: 10px 12px !important;
+ margin-bottom: 14px !important;
+ padding: 16px !important;
+ border: 1px solid rgba(42, 49, 64, 0.12) !important;
+ border-radius: 12px !important;
+ background: #fff !important;
+ box-shadow: 0 1px 3px rgba(26, 35, 48, 0.06) !important;
+ }
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .domain-table td {
+ display: block !important;
+ border: none !important;
+ padding: 0 !important;
+ }
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .who-cell,
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .when-cell {
+ display: none !important;
+ }
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .js-picklists-obs-wrap,
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .js-picklists-measures-wrap,
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .js-s-range,
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .js-l-range {
+ display: none !important;
  }
 
  </style>
@@ -2227,6 +2277,16 @@ document.addEventListener("DOMContentLoaded", function () {
  }
 
  function setPicklistWrapsVisibility(tr) {
+ if (
+ document.body.classList.contains("portal-wellbeing-admin-mode") ||
+ tr.getAttribute("data-checkin-stressor") === "1"
+ ) {
+ var wObsSkip = tr.querySelector(".js-picklists-obs-wrap");
+ var wMeasSkip = tr.querySelector(".js-picklists-measures-wrap");
+ if (wObsSkip) wObsSkip.hidden = true;
+ if (wMeasSkip) wMeasSkip.hidden = true;
+ return;
+ }
  var sel = tr.querySelector(".js-common-stressor");
  var wObs = tr.querySelector(".js-picklists-obs-wrap");
  var wMeas = tr.querySelector(".js-picklists-measures-wrap");
@@ -3219,7 +3279,6 @@ document.addEventListener("DOMContentLoaded", function () {
  window.portalWellbeingCheckin.reapplyCheckinStressorsFromCheckin(form, pack.checkin);
  }
  window.portalWellbeingCheckin.reapplyAllClearDomainsFromCheckin(form, pack.checkin);
- simplifyAdminSraTables(form);
  form.querySelectorAll(".domain-tbody tr").forEach(function (tr) {
  syncRangeFromNumbers(tr);
  refreshRiskRow(tr);
@@ -3227,6 +3286,14 @@ document.addEventListener("DOMContentLoaded", function () {
  syncStressorDetailVisibility(tr);
  updateNoStressorQuickVisual(tr);
  });
+ simplifyAdminSraTables(form);
+ var advWrap = document.getElementById("portalWbAdvancedWrap");
+ var advToggle = document.getElementById("portalWbToggleAdvanced");
+ if (advWrap && advToggle) {
+ advWrap.hidden = false;
+ advToggle.setAttribute("aria-expanded", "true");
+ advToggle.textContent = "Hide Advanced Stress Risk Assessment";
+ }
  if (window.portalWellbeingCheckin.wireWellbeingReviewVoice) {
  window.portalWellbeingCheckin.wireWellbeingReviewVoice(form, pack.ctx.staffName || "");
  }
