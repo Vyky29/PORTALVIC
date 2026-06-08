@@ -22,6 +22,34 @@
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   }
 
+  /** Thread header: first name only for 1:1 (Michelle, Victor). Groups keep full label. */
+  function headerDisplayName(label, ui) {
+    ui = ui || {};
+    label = String(label || "").trim();
+    if (!label) return "Conversation";
+    if (ui.groupId) return label;
+    var prof = ui.peerProf || null;
+    if (global.portalChatActorIdentity) {
+      if (typeof global.portalChatActorIdentity.profileDisplayName === "function") {
+        var fromProf = String(global.portalChatActorIdentity.profileDisplayName(prof) || "").trim();
+        if (fromProf) return fromProf;
+      }
+      if (typeof global.portalChatActorIdentity.displayName === "function") {
+        var fromActor = String(global.portalChatActorIdentity.displayName(prof) || "").trim();
+        if (fromActor) return fromActor;
+      }
+    }
+    if (prof) {
+      var raw = String(prof.full_name || prof.username || "").trim();
+      if (raw) {
+        var nameParts = raw.split(/\s+/).filter(Boolean);
+        if (nameParts.length) return nameParts[0];
+      }
+    }
+    var labelParts = label.split(/\s+/).filter(Boolean);
+    return labelParts[0] || label;
+  }
+
   function sync(ui) {
     ui = ui || global.__PORTAL_ADMIN_DM_UI || {};
     var header = document.getElementById("csCliqThreadHeader");
@@ -30,7 +58,7 @@
     header.classList.toggle("is-open", inThread);
     header.setAttribute("aria-hidden", inThread ? "false" : "true");
     if (!inThread) return;
-    var label = String(ui.peerLabel || "").trim() || "Conversation";
+    var label = headerDisplayName(String(ui.peerLabel || "").trim() || "Conversation", ui);
     var nameEl = document.getElementById("csCliqThreadName");
     var roleEl = document.getElementById("csCliqThreadRole");
     var statusEl = document.getElementById("csCliqThreadStatus");
@@ -121,10 +149,11 @@
     }
   }
 
-  function syncInternal(peerLabel, peerRole) {
+  function syncInternal(peerLabel, peerRole, peerProf) {
     var header = document.getElementById("internalChatThreadHeader");
     if (!header) return;
-    var label = String(peerLabel || "").trim() || "Conversation";
+    var ui = { peerProf: peerProf || null };
+    var label = headerDisplayName(String(peerLabel || "").trim() || "Conversation", ui);
     var nameEl = document.getElementById("internalChatThreadName");
     var roleEl = document.getElementById("internalChatThreadRole");
     var statusEl = document.getElementById("internalChatThreadStatus");
@@ -169,6 +198,7 @@
     syncInternal: syncInternal,
     syncBackUnread: syncBackUnread,
     initials: initials,
+    headerDisplayName: headerDisplayName,
     esc: esc,
   };
 })(typeof window !== "undefined" ? window : globalThis);
