@@ -21,6 +21,9 @@
 //   INSERT → portal_staff_dm_messages
 //   INSERT → portal_ceo_group_message
 //   URL: https://<ref>.supabase.co/functions/v1/portal-push-dispatch-admin-alert
+//
+// Prefer SQL triggers (migration 20260628120000_portal_dm_chat_admin_push_webhook.sql) for chat tables
+// so push works without manual Dashboard webhook setup.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
@@ -135,6 +138,13 @@ function buildAlert(
   }
 
   if (table === "portal_staff_dm_messages") {
+    const rawBody = String(record.body ?? "");
+    if (
+      rawBody.includes("[[portal-staff-call:") ||
+      rawBody.includes("[[portal-staff-call-end:")
+    ) {
+      return null;
+    }
     const nm = String(authorName ?? "Someone").trim() || "Someone";
     const msgType = String(record.message_type ?? "text").toLowerCase();
     const hasAudio = !!String(record.audio_storage_path ?? "").trim();
@@ -149,6 +159,13 @@ function buildAlert(
   }
 
   if (table === "portal_ceo_group_message") {
+    const rawBody = String(record.body ?? "");
+    if (
+      rawBody.includes("[[portal-staff-call:") ||
+      rawBody.includes("[[portal-staff-call-end:")
+    ) {
+      return null;
+    }
     const nm = String(authorName ?? "Someone").trim() || "Someone";
     const gt = String(groupTitle ?? "CEO chat").trim() || "CEO chat";
     const msgType = String(record.message_type ?? "text").toLowerCase();

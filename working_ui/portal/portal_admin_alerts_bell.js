@@ -447,10 +447,13 @@
     var box = global.__PORTAL_SUPABASE__ || {};
     var role = String((box.staff_profile && box.staff_profile.app_role) || "").toLowerCase();
     if (role !== "admin" && role !== "ceo") return false;
-    if (typeof global.portalSyncFloatingChatUnreadFromMenuBtn === "function") {
+    if (typeof global.portalAdminDmSyncIncomingAttention === "function") {
+      await global.portalAdminDmSyncIncomingAttention();
+    } else if (typeof global.portalSyncFloatingChatUnreadFromMenuBtn === "function") {
       global.portalSyncFloatingChatUnreadFromMenuBtn();
-    } else if (typeof global.portalAdminDmSyncIncomingAttention === "function") {
-      void global.portalAdminDmSyncIncomingAttention();
+    }
+    if (typeof global.portalAdminDmNotifyIncomingMessageRow === "function") {
+      global.portalAdminDmNotifyIncomingMessageRow(row);
     }
     return false;
   }
