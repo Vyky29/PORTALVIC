@@ -215,7 +215,8 @@ body.portal-wb-checkin {
 
 .portal-wb-level.is-active { box-shadow: 0 4px 16px rgba(26, 35, 48, 0.08); }
 
-.portal-wb-level[data-level="green"].is-active {
+.portal-wb-level[data-level="green"].is-active,
+.portal-wb-level[data-response="all_good"].is-active {
  border-color: var(--wb-ok);
  background: var(--wb-ok-bg);
 }
@@ -225,7 +226,8 @@ body.portal-wb-checkin {
  background: var(--wb-warn-bg);
 }
 
-.portal-wb-level[data-level="red"].is-active {
+.portal-wb-level[data-level="red"].is-active,
+.portal-wb-level[data-response="support_requested"].is-active {
  border-color: var(--wb-bad);
  background: var(--wb-bad-bg);
 }
@@ -244,9 +246,11 @@ body.portal-wb-checkin {
 
 .portal-wb-level-icon svg { width: 18px; height: 18px; }
 
-.portal-wb-level[data-level="green"] .portal-wb-level-icon { color: var(--wb-ok); }
+.portal-wb-level[data-level="green"] .portal-wb-level-icon,
+.portal-wb-level[data-response="all_good"] .portal-wb-level-icon { color: var(--wb-ok); }
 .portal-wb-level[data-level="amber"] .portal-wb-level-icon { color: var(--wb-warn); }
-.portal-wb-level[data-level="red"] .portal-wb-level-icon { color: var(--wb-bad); }
+.portal-wb-level[data-level="red"] .portal-wb-level-icon,
+.portal-wb-level[data-response="support_requested"] .portal-wb-level-icon { color: var(--wb-bad); }
 
 .portal-wb-level-copy strong {
  display: block;

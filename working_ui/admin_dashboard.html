@@ -21,6 +21,7 @@
   <script src="/portal/admin-portal-pins.js?v=20260530-portal-pins-db"></script>
   <script src="/portal/admin-portal-activity.js?v=20260604-visit-activity"></script>
   <script src="/portal/admin-training-progress.js?v=20260607-app-device-readiness"></script>
+  <script src="/portal/portal_wellbeing_admin_actions.js?v=20260604-wb-flow-refine"></script>
   <script src="/portal/portal_participant_photos.js?v=20260609-achievement-videos"></script>
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260609-michelle-off"></script>
   <script src="/portal/portal_staff_photos.js?v=20260609-admin-photo-fix"></script>
@@ -327,7 +328,7 @@
   <!-- Large portal datasets load on demand (portalAdminLoadScriptSet) so Day operations opens without freezing. -->
   <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260602-cap-roster"></script>
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260521-late-perf"></script>
-  <script src="/portal/portal_admin_alerts_bell.js?v=20260609-header-chat-bell"></script>
+  <script src="/portal/portal_admin_alerts_bell.js?v=20260604-wb-flow-refine"></script>
   <script src="/portal/portal_admin_dayops_badges.js?v=20260605-dayops-badges-per-admin"></script>
   <script src="/portal/portal-admin-web-push.js?v=20260601-desktop-alerts"></script>
 
@@ -18207,6 +18208,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="toolbar" style="margin-bottom:14px;flex-wrap:wrap;gap:8px">'+
         '<button type="button" class="btn btn--pri" data-view-target="staffhr_contracts">+ New employment contract</button>'+
         '<button type="button" class="btn btn--sec" data-open-compose data-preset="announcement">Compose announcement</button></div>'+
+        (window.PortalWellbeingAdminActions ? window.PortalWellbeingAdminActions.viewHtml() : '')+
         '<div id="hrModuleRoot"></div>';
     }
 
@@ -23921,6 +23923,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         });
       }
       if(id==='staffhr'){
+        if(window.PortalWellbeingAdminActions){
+          window.PortalWellbeingAdminActions.configure({
+            esc: esc,
+            getClient: getSchedSupabaseClient
+          });
+          window.PortalWellbeingAdminActions.bindModule();
+        }
         if(window.AdminHR && $('hrModuleRoot')){
           window.AdminHR.configure({
             getClient: getSchedSupabaseClient,
@@ -26891,6 +26900,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminFetchWellbeingAlerts(client){
       if(!client || !client.from || window.__PORTAL_WELLBEING_ALERTS_TABLE_MISSING__) return;
+      if(typeof window.portalAdminBellSyncWellbeingFromServer === 'function'){
+        void window.portalAdminBellSyncWellbeingFromServer(client, { silent: true }).catch(function(err){
+          if(portalAdminWellbeingAlertsTableMissing(err)){
+            window.__PORTAL_WELLBEING_ALERTS_TABLE_MISSING__ = true;
+            return;
+          }
+          console.warn('[admin] wellbeing alerts', err);
+        });
+        return;
+      }
       client.from('portal_wellbeing_admin_notifications').select('id,created_at,headline,body,checkin_id').is('read_at',null).order('created_at',{ascending:false}).limit(40).then(function(res){
         if(res.error){
           if(portalAdminWellbeingAlertsTableMissing(res.error)){
