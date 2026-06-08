@@ -12573,8 +12573,6 @@
         const fbGo = e.target.closest('[data-action="open-pending-feedback"]');
         if(fbGo){
           e.preventDefault();
-          const fbSt = typeof portalReminderState === 'function' ? portalReminderState() : null;
-          if(!fbSt || !fbSt.sessionFeedbackNeed) return;
           if(typeof portalSetReviewFlowOrigin === 'function') portalSetReviewFlowOrigin('term');
           if(typeof window.portalOpenTermSheetAndFocusOldestFeedbackDay === 'function'){
             window.portalOpenTermSheetAndFocusOldestFeedbackDay();
@@ -12661,8 +12659,6 @@
       if(!hit) return;
       e.preventDefault();
       e.stopPropagation();
-      const fbSt = typeof portalReminderState === 'function' ? portalReminderState() : null;
-      if(!fbSt || !fbSt.sessionFeedbackNeed) return;
       if(typeof portalSetReviewFlowOrigin === 'function') portalSetReviewFlowOrigin('term');
       if(typeof window.portalOpenTermSheetAndFocusOldestFeedbackDay === 'function'){
         window.portalOpenTermSheetAndFocusOldestFeedbackDay();
