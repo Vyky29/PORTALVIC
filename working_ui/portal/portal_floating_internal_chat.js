@@ -1,5 +1,5 @@
 /**
- * Internal Chat — footer dock button (badge + blue pulse when unread).
+ * Internal Chat — header Chat button (badge + pulse when unread).
  */
 (function (global) {
   "use strict";

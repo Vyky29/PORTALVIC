@@ -1,7 +1,6 @@
 /**
- * Admin topbar bell — incidents, cancellations, late approvals, wellbeing only.
- * Chat uses the floating chat badge; not included here.
- * Newest first; short sound when a new allowed alert arrives.
+ * Admin topbar bell — incidents, cancellations, late approvals, wellbeing.
+ * Chat unread uses the Chat button badge in the header only (never this bell).
  */
 (function (global) {
   "use strict";
@@ -12,7 +11,7 @@
     chat: false,
     late_approval: true,
     wellbeing: true,
-    staff_support: true,
+    staff_support: false,
   };
 
   var bootstrapSilent = false;
@@ -232,23 +231,12 @@
     var box = global.__PORTAL_SUPABASE__ || {};
     var role = String((box.staff_profile && box.staff_profile.app_role) || "").toLowerCase();
     if (role !== "admin" && role !== "ceo") return false;
-    var authorName = "Staff";
-    var client = box.client;
-    if (client && row.author_id) {
-      try {
-        var pr = await client
-          .from("staff_profiles")
-          .select("full_name,username")
-          .eq("id", String(row.author_id))
-          .maybeSingle();
-        if (!pr.error && pr.data) {
-          authorName = String(pr.data.full_name || pr.data.username || authorName).trim() || authorName;
-        }
-      } catch (_p) {}
+    if (typeof global.portalSyncFloatingChatUnreadFromMenuBtn === "function") {
+      global.portalSyncFloatingChatUnreadFromMenuBtn();
+    } else if (typeof global.portalAdminDmSyncIncomingAttention === "function") {
+      void global.portalAdminDmSyncIncomingAttention();
     }
-    var item = activityFromSupportDm(row, authorName);
-    if (!item) return false;
-    return pushActivityAlert(item, { silent: false });
+    return false;
   }
 
   function activityFromChatHint(hint, idx) {

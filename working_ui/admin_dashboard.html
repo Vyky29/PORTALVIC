@@ -75,9 +75,9 @@
   <link rel="apple-touch-icon" href="/portal/app-icon/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="/portal/app-icon/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
-  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260605-admin-mobile-landscape" />
+  <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260609-header-chat-bell" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
-  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260609-compact-header" />
+  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260609-header-chat-bell" />
   <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260609-portal-white-chat" />
 </head>
 <body>
@@ -169,9 +169,9 @@
           </button>
           <nav class="admin-portal-switch" id="adminPortalSwitch" aria-label="Switch portal" hidden></nav>
           <div class="portal-admin-floating-chat-wrap portal-admin-floating-chat-wrap--idle admin-topbar-chat-wrap" id="portalFloatingChatOrbitWrap">
-            <button type="button" class="portal-floating-chat-btn" id="portalFloatingChatBtn" aria-label="Open internal chat" title="Chat">
+            <button type="button" class="admin-icon-btn portal-floating-chat-btn" id="portalFloatingChatBtn" aria-label="Open internal chat" title="Chat">
               <span class="portal-floating-chat-btn__icon" aria-hidden="true"><svg class="portal-floating-chat-btn__svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg></span>
-              <span class="portal-floating-chat-btn__label">Chat</span>
+              <span class="portal-floating-chat-btn__label" aria-hidden="true">Chat</span>
               <span class="portal-floating-chat-badge" id="portalFloatingChatBadge" hidden aria-hidden="true"></span>
             </button>
           </div>
@@ -324,7 +324,7 @@
   <!-- Large portal datasets load on demand (portalAdminLoadScriptSet) so Day operations opens without freezing. -->
   <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260602-cap-roster"></script>
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260521-late-perf"></script>
-  <script src="/portal/portal_admin_alerts_bell.js?v=20260608-inbox-fix"></script>
+  <script src="/portal/portal_admin_alerts_bell.js?v=20260609-header-chat-bell"></script>
   <script src="/portal/portal_admin_dayops_badges.js?v=20260605-dayops-badges-per-admin"></script>
   <script src="/portal/portal-admin-web-push.js?v=20260601-desktop-alerts"></script>
 
@@ -21316,21 +21316,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           }, 0);
         });
         if(typeof window.portalAdminBellSyncSupportUnread === 'function' && uq && !uq.error && Array.isArray(uq.data)){
-          var supportUnread = uq.data.filter(function(m){
-            if(!m || !m.thread_id) return false;
-            if(!portalAdminDmMessageCountsAsUnread(m)) return false;
-            var tid = String(m.thread_id);
-            if(!portalAdminDmIsMessageAfterAck(
-              m.created_at,
-              portalAdminDmGetThreadAckEffective(tid, workerThreadMap, dmThreadWorkerById)
-            )) return false;
-            if(window.portalCsCliqSupportRoute && typeof window.portalCsCliqSupportRoute.isSupportRouteBody === 'function'){
-              return window.portalCsCliqSupportRoute.isSupportRouteBody(m.body);
-            }
-            var b = String(m.body || '');
-            return b.indexOf('[CS Cliq Support]') === 0 || b.indexOf('[CS Cliq Meeting request]') === 0;
-          });
-          window.portalAdminBellSyncSupportUnread(supportUnread, profBy, me, { silent: true });
+          /* Support-route DMs bump the Chat header badge only — not the ops bell. */
+          if(typeof window.portalSyncFloatingChatUnreadFromMenuBtn === 'function'){
+            window.portalSyncFloatingChatUnreadFromMenuBtn();
+          }
         }
       }
       if(groupIds.length){
@@ -26035,6 +26024,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           window.portalAdminBellSetBootstrapSilent(true);
         }
         window.__PORTAL_ADMIN_ACTIVITY_ALERTS__ = [];
+        if(typeof window.portalAdminBellClearStaffSupport === 'function'){
+          window.portalAdminBellClearStaffSupport();
+        }
         var since = new Date();
         since.setDate(since.getDate() - 3);
         var sinceIso = since.toISOString();
@@ -26760,6 +26752,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
   </script>
   <script src="/portal/portal_staff_chat_calls.js?v=20260609-chat-identity"></script>
   <script src="/portal/portal_incoming_call_push.js?v=20260622-incoming-call"></script>
-  <script src="/portal/portal_floating_internal_chat.js?v=20260605-admin-chat"></script>
+  <script src="/portal/portal_floating_internal_chat.js?v=20260609-header-chat-bell"></script>
 </body>
 </html>

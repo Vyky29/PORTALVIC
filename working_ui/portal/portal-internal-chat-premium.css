@@ -10,12 +10,15 @@
   --portal-chat-line:#e2e8f0;
 }
 
-/* Floating chat button ? fixed corner, always on top of admin workspace */
-.portal-admin-floating-chat-wrap{
+/* Floating chat button — fixed corner only when not in admin topbar */
+.portal-admin-floating-chat-wrap:not(.admin-topbar-chat-wrap){
   position:fixed;
   right:max(14px, env(safe-area-inset-right, 0px));
   bottom:max(18px, env(safe-area-inset-bottom, 0px));
   z-index:12040;
+  pointer-events:none;
+}
+.portal-admin-floating-chat-wrap{
   pointer-events:none;
 }
 .portal-admin-floating-chat-wrap .portal-floating-chat-btn{

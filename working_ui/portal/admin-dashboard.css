@@ -814,6 +814,51 @@
     .admin-search-wrap input:focus{outline:2px solid rgba(45,132,179,.25);border-color:var(--blue);background:#fff}
     .admin-search-ico{position:absolute;left:12px;top:50%;transform:translateY(-50%);opacity:.45;font-size:14px}
     .admin-topbar-meta{display:flex;align-items:center;gap:10px;flex-shrink:0}
+    .admin-topbar .admin-topbar-chat-wrap.portal-admin-floating-chat-wrap{
+      position:relative;
+      right:auto;
+      bottom:auto;
+      z-index:auto;
+      pointer-events:auto;
+      flex-shrink:0;
+    }
+    .admin-topbar .admin-topbar-chat-wrap .portal-floating-chat-btn{
+      width:40px;
+      height:40px;
+      min-width:40px;
+      padding:0;
+      gap:0;
+      border-radius:10px;
+      flex-direction:row;
+      box-shadow:none;
+    }
+    .admin-topbar .admin-topbar-chat-wrap .portal-floating-chat-btn__label{
+      display:none;
+    }
+    .admin-topbar .admin-topbar-chat-wrap .portal-floating-chat-btn__icon{
+      width:24px;
+      height:24px;
+      border-radius:8px;
+      background:transparent;
+      border:none;
+    }
+    .admin-topbar .admin-topbar-chat-wrap .portal-floating-chat-btn__svg{
+      fill:currentColor;
+    }
+    .admin-topbar .admin-topbar-chat-wrap .portal-floating-chat-badge{
+      top:4px;
+      right:4px;
+      background:var(--blue);
+      border-color:var(--btnSecBg);
+    }
+    .admin-topbar .admin-topbar-chat-wrap--unread .portal-floating-chat-btn{
+      border-color:rgba(45,132,179,.45);
+      animation:portal-admin-chat-header-pulse 1.15s ease-in-out infinite;
+    }
+    @keyframes portal-admin-chat-header-pulse{
+      0%,100%{box-shadow:0 0 0 0 rgba(45,132,179,.2)}
+      50%{box-shadow:0 0 0 4px rgba(45,132,179,.12)}
+    }
     .admin-date{font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap}
     .admin-icon-btn{
       position:relative;width:40px;height:40px;border:1px solid var(--btnSecBorder);border-radius:10px;background:var(--btnSecBg);cursor:pointer;
