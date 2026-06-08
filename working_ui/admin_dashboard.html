@@ -328,7 +328,7 @@
   <!-- Large portal datasets load on demand (portalAdminLoadScriptSet) so Day operations opens without freezing. -->
   <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260602-cap-roster"></script>
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260521-late-perf"></script>
-  <script src="/portal/portal_admin_alerts_bell.js?v=20260608-wb-bell-prune"></script>
+  <script src="/portal/portal_admin_alerts_bell.js?v=20260608-wb-bell-dismiss"></script>
   <script src="/portal/portal_admin_dayops_badges.js?v=20260605-dayops-badges-per-admin"></script>
   <script src="/portal/portal-admin-web-push.js?v=20260601-desktop-alerts"></script>
 
@@ -26905,6 +26905,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var activityList = typeof window.portalAdminBellPrepareForRender === 'function'
         ? window.portalAdminBellPrepareForRender()
         : (window.__PORTAL_ADMIN_ACTIVITY_ALERTS__ || []);
+      var wellbeingN = (activityList || []).filter(function(a){ return a && a.kind === 'wellbeing'; }).length;
       var activityHtml = (activityList || []).map(function(a){
         var jump = a.view ? ' data-alert-view="'+esc(a.view)+'"' : '';
         var meta = '';
@@ -26914,12 +26915,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(a.view === 'chat' && (a.chatHintIdx !== '' && a.chatHintIdx !== undefined && a.chatHintIdx !== null)){
           meta += ' data-alert-chat-hint="'+esc(String(a.chatHintIdx))+'"';
         }
-        return '<button type="button" class="line-item portal-admin-activity-alert"'+jump+meta+' style="width:100%;text-align:left;border:0;background:transparent;cursor:pointer;padding:12px 16px;font:inherit"><div><strong>'+esc(a.title)+'</strong><div class="muted">'+esc(a.sub)+'</div></div><span class="chip chip--info">'+esc(a.t || 'New')+'</span></button>';
+        var dismiss = '';
+        if(a.kind === 'wellbeing' && a.recordId){
+          dismiss = '<button type="button" class="portal-admin-wellbeing-dismiss" data-wellbeing-dismiss="'+esc(a.recordId)+'" title="Dismiss alert" aria-label="Dismiss">×</button>';
+        }
+        return '<div class="portal-admin-activity-row">'+
+          '<button type="button" class="line-item portal-admin-activity-alert"'+jump+meta+' style="flex:1;text-align:left;border:0;background:transparent;cursor:pointer;padding:12px 16px;font:inherit"><div><strong>'+esc(a.title)+'</strong><div class="muted">'+esc(a.sub)+'</div></div><span class="chip chip--info">'+esc(a.t || 'New')+'</span></button>'+
+          dismiss+
+        '</div>';
       }).join('');
       var emptyHtml = !activityHtml
         ? '<p class="muted" style="margin:12px 16px">No incidents, cancellations, or approval requests right now.</p>'
         : '';
-      pop.innerHTML = '<div class="card-h" style="border-radius:var(--radiusLg) var(--radiusLg) 0 0"><h3 style="margin:0;font-size:14px">Alerts</h3></div>'+activityHtml+emptyHtml;
+      var clearWellbeingBtn = wellbeingN > 0
+        ? '<button type="button" class="btn btn--ghost btn--sm" id="portalAdminClearWellbeingAlerts" style="margin-left:auto;font-size:12px">Clear wellbeing ('+wellbeingN+')</button>'
+        : '';
+      pop.innerHTML = '<div class="card-h" style="border-radius:var(--radiusLg) var(--radiusLg) 0 0;display:flex;align-items:center;gap:8px;padding-right:12px"><h3 style="margin:0;font-size:14px">Alerts</h3>'+clearWellbeingBtn+'</div>'+activityHtml+emptyHtml;
       var bd = $('alertBadge');
       var n = (activityList || []).length;
       if(bd){
@@ -27342,6 +27353,27 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(alertsPopEl && !alertsPopEl.dataset.activityJumpBound){
         alertsPopEl.dataset.activityJumpBound = '1';
         alertsPopEl.addEventListener('click', function(ev){
+          var dismissBtn = ev.target && ev.target.closest ? ev.target.closest('[data-wellbeing-dismiss]') : null;
+          if(dismissBtn && alertsPopEl.contains(dismissBtn)){
+            ev.preventDefault();
+            ev.stopPropagation();
+            var cid = String(dismissBtn.getAttribute('data-wellbeing-dismiss') || '').trim();
+            var client = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client;
+            if(cid && client && typeof window.portalAdminBellDismissWellbeingCheckin === 'function'){
+              void window.portalAdminBellDismissWellbeingCheckin(client, cid);
+            }
+            return;
+          }
+          var clearAll = ev.target && ev.target.closest ? ev.target.closest('#portalAdminClearWellbeingAlerts') : null;
+          if(clearAll && alertsPopEl.contains(clearAll)){
+            ev.preventDefault();
+            ev.stopPropagation();
+            var c2 = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client;
+            if(c2 && typeof window.portalAdminBellDismissAllWellbeing === 'function'){
+              void window.portalAdminBellDismissAllWellbeing(c2);
+            }
+            return;
+          }
           var btn = ev.target && ev.target.closest ? ev.target.closest('[data-alert-view]') : null;
           if(!btn || !alertsPopEl.contains(btn)) return;
           var v = String(btn.getAttribute('data-alert-view') || '').trim();
