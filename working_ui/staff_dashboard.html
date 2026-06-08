@@ -1057,7 +1057,7 @@
   <script src="/portal/portal_dm_voice.js?v=20260608-composer-cols"></script>
   <script src="/portal/portal_dm_composer_wa.js?v=20260608-composer-cols"></script>
   <script src="/portal/portal_dm_attachments.js?v=20260608-plus-sheet-icons"></script>
-  <script src="/portal/portal_chat_actor_identity.js?v=20260608-staff-admin-lane"></script>
+  <script src="/portal/portal_chat_actor_identity.js?v=20260608-victor-dm-identity"></script>
   <script src="/portal/portal_staff_chat_calls.js?v=20260609-chat-identity"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
   <script src="/portal/portal_dm_roles.js?v=20260609-mgmt-identity"></script>
@@ -6648,6 +6648,16 @@
       return portalStaffDmStaffReachablePeer(row);
     }
     function portalStaffDmAuthorCountsAsUnread(authorProf){
+      if(portalStaffIsRestrictedWorkerChat()){
+        if(
+          window.portalChatActorIdentity &&
+          typeof window.portalChatActorIdentity.isManagementAuthor === 'function' &&
+          window.portalChatActorIdentity.isManagementAuthor(authorProf || {})
+        ){
+          return true;
+        }
+        return portalStaffProfileIsOpsAdminPeer(authorProf || {});
+      }
       return portalStaffInboxPeerAllowed(authorProf || {});
     }
     function portalStaffIsLeadUser(prof){

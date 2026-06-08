@@ -2022,6 +2022,13 @@
     }
     async function portalAdminDmSendReply(){
       var client = getSchedSupabaseClient();
+      if(
+        window.portalChatActorIdentity &&
+        typeof window.portalChatActorIdentity.ensureSessionProfile === 'function' &&
+        client
+      ){
+        await window.portalChatActorIdentity.ensureSessionProfile(client);
+      }
       var ui = window.__PORTAL_ADMIN_DM_UI || {};
       var gid = ui.groupId ? String(ui.groupId).trim() : '';
       var tid = ui.threadId ? String(ui.threadId).trim() : '';

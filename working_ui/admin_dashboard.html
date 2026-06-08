@@ -29,7 +29,7 @@
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260609-achievement-videos" />
   <script src="/portal/admin-portal-staff-map.js?v=20260622-ghost-map"></script>
   <script src="/portal/portal_dm_roles.js?v=20260609-mgmt-identity"></script>
-  <script src="/portal/portal_chat_actor_identity.js?v=20260608-staff-admin-lane"></script>
+  <script src="/portal/portal_chat_actor_identity.js?v=20260608-victor-dm-identity"></script>
   <script src="/portal/portal_dm_icons.js?v=20260624-dm-icons"></script>
   <script src="/portal/portal_dm_thread_avatar.js?v=20260608-staff-admin-lane"></script>
   <script src="/portal/portal_cs_cliq_thread_header.js?v=20260608-staff-admin-lane"></script>
@@ -22656,6 +22656,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     async function portalAdminDmSendReply(){
       var client = getSchedSupabaseClient();
+      if(
+        window.portalChatActorIdentity &&
+        typeof window.portalChatActorIdentity.ensureSessionProfile === 'function' &&
+        client
+      ){
+        await window.portalChatActorIdentity.ensureSessionProfile(client);
+      }
       var ui = window.__PORTAL_ADMIN_DM_UI || {};
       var gid = ui.groupId ? String(ui.groupId).trim() : '';
       var tid = ui.threadId ? String(ui.threadId).trim() : '';
@@ -23168,6 +23175,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var errEl = portalAdminDmEl('admDmComposeErr');
       if(errEl) errEl.textContent = '';
       var client = getSchedSupabaseClient();
+      if(
+        window.portalChatActorIdentity &&
+        typeof window.portalChatActorIdentity.ensureSessionProfile === 'function' &&
+        client
+      ){
+        await window.portalChatActorIdentity.ensureSessionProfile(client);
+      }
       var me = portalAdminDmMe();
       portalAdminDmSyncHiddenPeerFromSearch();
       var hid = portalAdminDmEl('admDmPeerUser');

@@ -222,22 +222,11 @@
     );
   }
 
-  /** Staff / lead inbox: director wrote or called on behalf of Admin. */
+  /** Staff / lead inbox: unified Admin label — never attribute a named director to workers. */
   function workerFacingAuthorChip(authorProf) {
     authorProf = authorProf || {};
-    if (isDirectorAuthor(authorProf)) {
-      var user = normKey(authorProf.username);
-      var first = normKey(String(authorProf.full_name || "").split(/\s+/)[0] || "");
-      if (user === "victor" || first === "victor") return "Admin (Victor Director)";
-      if (user === "raul" || first === "raul") return "Admin (Ra\u00fal Director)";
-      var nm = profileDisplayName(authorProf) || "Director";
-      return nm + " (Admin)";
-    }
-    if (isOpsAdminAuthor(authorProf)) return "Admin";
-    if (String(authorProf.app_role || "").toLowerCase() === "ceo" && !isDirectorAuthor(authorProf)) {
-      return (profileDisplayName(authorProf) || "CEO") + " (Admin)";
-    }
-    return profileDisplayName(authorProf) || "Admin";
+    if (isManagementAuthor(authorProf)) return "Admin";
+    return profileDisplayName(authorProf) || "Team";
   }
 
   /** Admin board (Sevitha / directors): show who actually sent, not generic Admin. */
@@ -259,7 +248,7 @@
 
   /**
    * Line above a DM bubble — same thread, label depends on author + viewer + lane.
-   * Staff/lead: Admin (Victor Director) | Admin | Javi (Admin)
+   * Staff/lead: Admin (unified) | Team
    * Management board: Victor (Director) | Admin | …
    */
   function portalChatManagementMsgAuthorChip(opts) {

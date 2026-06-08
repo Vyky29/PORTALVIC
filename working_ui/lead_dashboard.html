@@ -1050,7 +1050,7 @@
   <script src="/portal/portal_dm_voice.js?v=20260608-composer-cols"></script>
   <script src="/portal/portal_dm_composer_wa.js?v=20260608-composer-cols"></script>
   <script src="/portal/portal_dm_attachments.js?v=20260608-plus-sheet-icons"></script>
-  <script src="/portal/portal_chat_actor_identity.js?v=20260609-inbox-firstname"></script>
+  <script src="/portal/portal_chat_actor_identity.js?v=20260608-victor-dm-identity"></script>
   <script src="/portal/portal_staff_chat_calls.js?v=20260609-lead-console-fix"></script>
   <script src="/portal/portal_incoming_call_push.js?v=20260622-incoming-call"></script>
   <script src="/portal/portal_sheet_back.js?v=20260607-sheet-back"></script>
@@ -6003,6 +6003,19 @@
     /** One line above bubble: office authors show Admin lane labels (director attribution). */
     function portalDmInternalMsgAuthorChip(mine, authorProf){
       if(mine) return '';
+      if(portalStaffIsRestrictedWorkerChat()){
+        if(
+          portalStaffProfileIsOfficePeer(authorProf || {}) ||
+          (
+            window.portalChatActorIdentity &&
+            window.portalChatActorIdentity.isManagementAuthor &&
+            window.portalChatActorIdentity.isManagementAuthor(authorProf)
+          )
+        ){
+          return 'Admin';
+        }
+        return portalDmShortDisplayName(authorProf) || 'Team';
+      }
       if(
         window.portalChatActorIdentity &&
         typeof window.portalChatActorIdentity.managementMsgAuthorChip === 'function' &&
@@ -6021,10 +6034,6 @@
           peerRole: ar === 'lead' ? 'lead' : 'staff',
           audience: 'worker'
         });
-      }
-      if(portalStaffIsRestrictedWorkerChat()){
-        if(portalStaffProfileIsOfficePeer(authorProf || {})) return 'Admin';
-        return portalDmShortDisplayName(authorProf) || 'Team';
       }
       return portalDmShortDisplayName(authorProf) || '';
     }
@@ -6177,16 +6186,18 @@
       var mine = !!(me && aid && me.toLowerCase() === aid.toLowerCase());
       var sender = '';
       if(
-        window.portalChatActorIdentity &&
-        typeof window.portalChatActorIdentity.workerPreviewSender === 'function' &&
+        portalStaffIsRestrictedWorkerChat() &&
         prof &&
         (
           portalStaffProfileIsOfficePeer(prof) ||
-          (window.portalChatActorIdentity.isManagementAuthor &&
-            window.portalChatActorIdentity.isManagementAuthor(prof))
+          (
+            window.portalChatActorIdentity &&
+            window.portalChatActorIdentity.isManagementAuthor &&
+            window.portalChatActorIdentity.isManagementAuthor(prof)
+          )
         )
       ){
-        sender = window.portalChatActorIdentity.workerPreviewSender(prof, { mine: mine });
+        sender = 'Admin';
       }else if(mine){
         sender = 'You';
       }else{
