@@ -20087,19 +20087,28 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var el = document.getElementById('portalAdminChatBanner');
       if(el) el.remove();
     }
-    function portalAdminDmRefreshListAfterRead(){
-      if(!window.__PORTAL_ADMIN_DM_OPEN) return;
+    function portalAdminDmSidebarListShouldRefresh(){
+      if(!window.__PORTAL_ADMIN_DM_OPEN) return false;
       var ui = window.__PORTAL_ADMIN_DM_UI || {};
       var panel = String(ui.panel || 'list');
+      if(panel === 'list') return true;
       if(panel === 'thread' || panel === 'compose'){
-        portalAdminDmApplyTeamTileUnreadClass();
-        return;
+        if(portalAdminDmCsCliqEmbedActive()) return true;
+        if(portalAdminDmPremiumSheetActive()){
+          var listWrap = document.getElementById('internalChatListWrap');
+          if(listWrap && !listWrap.hidden) return true;
+        }
       }
+      return false;
+    }
+    function portalAdminDmScheduleSidebarListRefresh(opts){
+      opts = opts || {};
+      if(!portalAdminDmSidebarListShouldRefresh()) return;
       if(window.__PORTAL_ADMIN_DM_LIST_REFRESH_DEB){
         clearTimeout(window.__PORTAL_ADMIN_DM_LIST_REFRESH_DEB);
-      }
-      window.__PORTAL_ADMIN_DM_LIST_REFRESH_DEB = setTimeout(function(){
         window.__PORTAL_ADMIN_DM_LIST_REFRESH_DEB = null;
+      }
+      var run = function(){
         void portalAdminDmRenderList().then(function(){
           if(
             window.portalCsCliqAdminChannels &&
@@ -20108,7 +20117,25 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             window.portalCsCliqAdminChannels.refreshFromContext();
           }
         });
-      }, 700);
+      };
+      if(opts.immediate) run();
+      else{
+        window.__PORTAL_ADMIN_DM_LIST_REFRESH_DEB = setTimeout(function(){
+          window.__PORTAL_ADMIN_DM_LIST_REFRESH_DEB = null;
+          run();
+        }, opts.delayMs != null ? opts.delayMs : 700);
+      }
+    }
+    function portalAdminDmRefreshListAfterRead(){
+      if(!window.__PORTAL_ADMIN_DM_OPEN) return;
+      var ui = window.__PORTAL_ADMIN_DM_UI || {};
+      var panel = String(ui.panel || 'list');
+      if(panel === 'thread' || panel === 'compose'){
+        portalAdminDmApplyTeamTileUnreadClass();
+        portalAdminDmScheduleSidebarListRefresh();
+        return;
+      }
+      portalAdminDmScheduleSidebarListRefresh();
     }
     function portalAdminDmGroupItemIsActive(item, ui){
       if(!item || item.kind !== 'group') return false;
@@ -20514,11 +20541,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 var ui = window.__PORTAL_ADMIN_DM_UI || {};
                 var tid = ui.threadId ? String(ui.threadId) : '';
                 var changedTid = row && row.thread_id ? String(row.thread_id) : '';
-                if(ui.panel === 'thread' && tid && changedTid && tid !== changedTid) return;
+                if(ui.panel === 'thread' && tid && changedTid && tid !== changedTid){
+                  portalAdminDmScheduleSidebarListRefresh({ delayMs: 320 });
+                  return;
+                }
                 if(ui.panel === 'thread' && typeof portalAdminDmLoadMessages === 'function'){
                   void portalAdminDmLoadMessages();
-                }else if(ui.panel === 'list' && typeof portalAdminDmRenderList === 'function'){
-                  void portalAdminDmRenderList();
+                  portalAdminDmScheduleSidebarListRefresh({ delayMs: 320 });
+                }else if(ui.panel === 'list'){
+                  portalAdminDmScheduleSidebarListRefresh({ immediate: true });
                 }
               }, 320);
             }
@@ -20543,8 +20574,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 var changedGid = row && row.group_id ? String(row.group_id) : '';
                 if(ui.panel === 'thread' && gid && changedGid && gid === changedGid){
                   void portalAdminDmLoadMessages();
-                }else if(ui.panel === 'list' && typeof portalAdminDmRenderList === 'function'){
-                  void portalAdminDmRenderList();
+                  portalAdminDmScheduleSidebarListRefresh({ delayMs: 320 });
+                }else if(ui.panel === 'thread'){
+                  portalAdminDmScheduleSidebarListRefresh({ delayMs: 320 });
+                }else if(ui.panel === 'list'){
+                  portalAdminDmScheduleSidebarListRefresh({ immediate: true });
                 }
               }, 320);
             }
@@ -22448,10 +22482,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           portalAdminDmSetGroupAckAll(sendAlias, new Date().toISOString());
         }
         void portalAdminDmSyncIncomingAttention();
-        var uiAfter = window.__PORTAL_ADMIN_DM_UI || {};
-        if(String(uiAfter.panel || '') === 'list' && typeof portalAdminDmRenderList === 'function'){
-          void portalAdminDmRenderList();
-        }
+        portalAdminDmScheduleSidebarListRefresh({ immediate: true });
       }catch(e){
         if(errB) errB.textContent = String((e && e.message) || e || 'Send failed');
       }finally{
