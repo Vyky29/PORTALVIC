@@ -39,7 +39,7 @@
   <script src="/portal/portal_cs_cliq_announcements_hub.js?v=20260604-cliq-inbox"></script>
   <script src="/portal/portal_cs_cliq_announcement_inbox.js?v=20260622-announcements"></script>
   <script src="/portal/portal_cs_cliq_thread_header.js?v=20260609-group-chips"></script>
-  <script src="/portal/portal_cs_cliq_group_members.js?v=20260609-group-chips"></script>
+  <script src="/portal/portal_cs_cliq_group_members.js?v=20260609-javi-label"></script>
   <script src="/portal/portal_cs_cliq_thread_files.js?v=20260604-cliq-files"></script>
   <script src="/portal/portal_dm_roles.js?v=20260622-chat-restore"></script>
   <script src="/portal/portal_admin_cs_cliq.js?v=20260609-channels-split"></script>
@@ -20425,7 +20425,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function portalAdminDmMyAppRole(){
       return String((window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile && window.__PORTAL_SUPABASE__.staff_profile.app_role) || '').toLowerCase();
     }
-    /** Internal CEO circle (`all_ceos`): Raúl, Victor, Javier only — not Sevitha or other admins. */
+    /** Internal CEO circle (`all_ceos`): Raúl, Victor, Javi only — not Sevitha or other admins. */
     function portalAdminDmViewerSeesInternalCeoRingGroup(){
       return portalAdminCanOpenAllCeoGroup();
     }
@@ -20468,7 +20468,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function portalAdminDmSimplifyGroupLabel(slug, title){
       slug = String(slug || '').toLowerCase();
       title = String(title || '').trim();
-      if(slug === 'all_ceos' || /all\s*ceos/i.test(title) || /ceos.*raul.*victor.*javier/i.test(title)) return 'CEOs — Raúl · Victor · Javier';
+      if(slug === 'all_ceos' || /all\s*ceos/i.test(title) || /ceos.*raul.*victor.*javi/i.test(title)) return 'CEOs — Raúl · Victor · Javi';
       if(slug === 'ceo_liaison' || /ceo\s*liaison/i.test(title) || /ceos.*sevitha/i.test(title)) return 'CEOs & Sevitha';
       if(slug === 'staff_leads_ops' || /operations\s*group/i.test(title)) return 'Leads coordination';
       if(slug === 'session_leads') return 'Session leads';
@@ -21760,7 +21760,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         .replace(/[\u0300-\u036f]/g, '')
         .replace(/[^a-z0-9]+/g, '');
     }
-    /** Executive trio only — Raúl, Victor, Javier Arranz (Palan). */
+    /** Executive trio only — Raúl, Victor, Javi Arranz (CEO; not staff Javier Marquez). */
     function portalAdminCanOpenAllCeoGroup(){
       var sp = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
       if(!sp) return false;

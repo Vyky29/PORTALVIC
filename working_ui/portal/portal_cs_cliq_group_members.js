@@ -30,11 +30,22 @@
     return full.split(/\s+/)[0] || full;
   }
 
+  /** Javi (CEO) and Javier Marquez (staff) share similar names — prefer portal username. */
+  function profileChipLabel(row) {
+    var user = String((row && row.username) || "")
+      .trim()
+      .toLowerCase();
+    if (user === "javi") return "Javi";
+    if (user === "javier") return "Javier";
+    return firstName((row && row.full_name) || (row && row.username) || "");
+  }
+
   function chipFromProfile(row, fallback) {
     if (!row) return null;
     var full = String(row.full_name || row.username || fallback || "").trim();
     if (!full) return null;
-    return { label: firstName(full) || full, title: full };
+    var label = profileChipLabel(row) || firstName(full) || full;
+    return { label: label, title: full };
   }
 
   async function loadSessionLeadChips(supabase) {
@@ -176,5 +187,6 @@
     slugShowsMembers: slugShowsMembers,
     syncGroupMemberChips: syncGroupMemberChips,
     renderChips: renderChips,
+    profileChipLabel: profileChipLabel,
   };
 })(typeof window !== "undefined" ? window : globalThis);

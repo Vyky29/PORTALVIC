@@ -107,7 +107,12 @@
         var p = profBy[id] || {};
         var full = String(p.full_name || p.username || "").trim();
         if (!full) return;
-        chips.push({ label: full.split(/\s+/)[0] || full, title: full });
+        var label =
+          global.portalCsCliqGroupMembers &&
+          typeof global.portalCsCliqGroupMembers.profileChipLabel === "function"
+            ? global.portalCsCliqGroupMembers.profileChipLabel(p)
+            : full.split(/\s+/)[0] || full;
+        chips.push({ label: label, title: full });
       });
       return chips;
     }
