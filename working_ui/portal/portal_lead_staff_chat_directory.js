@@ -141,6 +141,13 @@
     if (!row) return "";
     if (
       global.portalChatActorIdentity &&
+      typeof global.portalChatActorIdentity.inboxPeerLabel === "function"
+    ) {
+      var inbox = global.portalChatActorIdentity.inboxPeerLabel(row);
+      if (inbox) return inbox;
+    }
+    if (
+      global.portalChatActorIdentity &&
       typeof global.portalChatActorIdentity.profilePeerLabel === "function"
     ) {
       var label = global.portalChatActorIdentity.profilePeerLabel(row);

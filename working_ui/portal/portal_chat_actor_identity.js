@@ -149,9 +149,32 @@
   }
 
   function nameFromProfile(prof, id) {
-    var label = profilePeerLabel(prof);
+    var label = profileInboxLabel(prof);
     if (label) return label;
     return id ? String(id).slice(0, 8) : "";
+  }
+
+  function isWorkerInboxPeer(prof) {
+    if (!prof || prof.is_active === false) return false;
+    if (
+      global.portalInternalDmIsWorkerRecipient &&
+      typeof global.portalInternalDmIsWorkerRecipient === "function"
+    ) {
+      return global.portalInternalDmIsWorkerRecipient(prof);
+    }
+    var ar = String(prof.app_role || "").toLowerCase();
+    return ar === "staff" || ar === "lead";
+  }
+
+  /** Inbox / thread list: workers & leads = first name only; directors/admin keep familiar labels. */
+  function profileInboxLabel(prof) {
+    prof = prof || {};
+    if (isWorkerInboxPeer(prof)) {
+      return shortName(prof.full_name || prof.username || "") || profileDisplayName(prof) || "";
+    }
+    var label = profilePeerLabel(prof);
+    if (label) return label;
+    return shortName(prof.full_name || prof.username || "") || "";
   }
 
   function normKey(v) {
@@ -339,6 +362,8 @@
     displayName: portalChatActorDisplayName,
     profileDisplayName: profileDisplayName,
     profilePeerLabel: profilePeerLabel,
+    profileInboxLabel: profileInboxLabel,
+    inboxPeerLabel: profileInboxLabel,
     ensureSessionProfile: portalChatEnsureSessionProfile,
     resolveCallerIdentity: portalChatResolveCallerIdentity,
     isSelfUserId: portalChatIsSelfUserId,

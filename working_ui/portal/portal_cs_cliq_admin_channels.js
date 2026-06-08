@@ -265,7 +265,11 @@
       btn.type = "button";
       btn.className = "portal-cs-cliq-channel-card portal-cs-cliq-channel-card--ghost";
       btn.setAttribute("data-cs-cliq-lead-ghost", String(lead.id || ""));
-      var label = String(lead.full_name || lead.username || "Lead").trim() || "Lead";
+      var label =
+        global.portalChatActorIdentity && typeof global.portalChatActorIdentity.inboxPeerLabel === "function"
+          ? String(global.portalChatActorIdentity.inboxPeerLabel(lead) || "").trim()
+          : String(lead.full_name || lead.username || "Lead").trim();
+      label = label || "Lead";
       btn.innerHTML =
         '<span class="portal-cs-cliq-channel-card__title">' +
         esc(label) +

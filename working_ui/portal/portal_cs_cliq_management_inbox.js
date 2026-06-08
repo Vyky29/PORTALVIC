@@ -1,5 +1,5 @@
 /**
- * Management CS Cliq inbox ó one dedicated thread per worker (mine) + Sevitha ops lane for CEOs.
+ * Management CS Cliq inbox ù one dedicated thread per worker (mine) + Sevitha ops lane for CEOs.
  */
 (function (global) {
   "use strict";
@@ -124,7 +124,16 @@
 
   function makeDmItem(worker, row, lane, names) {
     var wid = String(worker.id);
-    var label = String(names[wid] || worker.full_name || worker.username || "Staff").trim() || "Staff";
+    var label = "";
+    if (
+      global.portalChatActorIdentity &&
+      typeof global.portalChatActorIdentity.inboxPeerLabel === "function"
+    ) {
+      label = String(global.portalChatActorIdentity.inboxPeerLabel(worker) || "").trim();
+    }
+    if (!label) {
+      label = String(names[wid] || worker.full_name || worker.username || "Staff").trim() || "Staff";
+    }
     return {
       kind: "dm",
       id: row && row.id ? String(row.id) : "",
@@ -172,7 +181,14 @@
       var id0 = String(w.id || "");
       if (!id0) return;
       profBy[id0] = w;
-      names[id0] = String(w.full_name || w.username || "").trim() || id0.slice(0, 8);
+      if (
+        global.portalChatActorIdentity &&
+        typeof global.portalChatActorIdentity.inboxPeerLabel === "function"
+      ) {
+        names[id0] = String(global.portalChatActorIdentity.inboxPeerLabel(w) || "").trim() || id0.slice(0, 8);
+      } else {
+        names[id0] = String(w.full_name || w.username || "").trim() || id0.slice(0, 8);
+      }
     });
 
     var mineItems = [];
@@ -181,7 +197,7 @@
       var wid = String(w.id || "");
       if (!wid || wid === me) return;
       if (ceoViewer && !sevithaViewer && sevithaId) {
-        // CEOs share one ops line per worker (Sevitha ? staff) ó not personal CEO ? worker silos.
+        // CEOs share one ops line per worker (Sevitha ? staff) ù not personal CEO ? worker silos.
         if (opsMap[wid]) opsItems.push(makeDmItem(w, opsMap[wid], "ops", names));
         else if (mineMap[wid]) opsItems.push(makeDmItem(w, mineMap[wid], "ops", names));
         else opsItems.push(makeDmItem(w, null, "ops", names));

@@ -22,13 +22,17 @@
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   }
 
-  /** Thread header: first name only for 1:1 (Michelle, Victor). Groups keep full label. */
+    /** Thread header: first name for workers; directors/admin keep display names. */
   function headerDisplayName(label, ui) {
     ui = ui || {};
     label = String(label || "").trim();
     if (!label) return "Conversation";
     if (ui.groupId) return label;
     var prof = ui.peerProf || null;
+    if (prof && global.portalChatActorIdentity && typeof global.portalChatActorIdentity.inboxPeerLabel === "function") {
+      var inboxNm = String(global.portalChatActorIdentity.inboxPeerLabel(prof) || "").trim();
+      if (inboxNm) return inboxNm;
+    }
     if (global.portalChatActorIdentity) {
       if (typeof global.portalChatActorIdentity.profileDisplayName === "function") {
         var fromProf = String(global.portalChatActorIdentity.profileDisplayName(prof) || "").trim();
