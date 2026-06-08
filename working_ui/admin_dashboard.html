@@ -20553,9 +20553,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       try{
         var hintCount = (window.__PORTAL_ADMIN_DM_UNREAD_HINTS__ || []).length;
-        if(!window.__PORTAL_ADMIN_DM_OPEN){
-          window.__PORTAL_STAFF_DM_UNREAD_COUNT__ = hintCount || (nowUnread ? 1 : 0);
-        }
+        window.__PORTAL_STAFF_DM_UNREAD_COUNT__ = hintCount || (nowUnread ? 1 : 0);
         if(typeof window.portalSyncFloatingChatUnreadFromMenuBtn === 'function'){
           window.portalSyncFloatingChatUnreadFromMenuBtn();
         }
@@ -20857,6 +20855,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(hs || hgStaff) portalAdminDmTryOsNotifyIncoming('staff');
           if(hc || hgCeo) portalAdminDmTryOsNotifyIncoming('ceo');
         }
+        var scanTids = staffTids.concat(execTids).filter(function(id, idx, arr){
+          return id && arr.indexOf(id) === idx;
+        });
+        if(scanTids.length) void portalAdminDmScanPendingIncomingCalls(client, scanTids);
       }catch(_e){
         try{ console.warn('[portal] portalAdminDmSyncIncomingAttention', _e); }catch(_log){}
         portalAdminDmApplyTeamTileUnreadClass();
@@ -21595,6 +21597,35 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         void window.portalDmReadCursor.markGroups(cl, ids, iso);
       }
     }
+    async function portalAdminDmScanPendingIncomingCalls(client, threadIds){
+      threadIds = (threadIds || []).filter(function(id, idx, arr){
+        id = String(id || '').trim();
+        return id && arr.indexOf(id) === idx;
+      });
+      if(!client || !threadIds.length) return;
+      if(!window.portalStaffChatCalls || typeof window.portalStaffChatCalls.processIncomingCallRow !== 'function') return;
+      if(window.portalStaffChatCalls.incomingCallActive && typeof window.portalStaffChatCalls.incomingCallActive === 'function'){
+        if(window.portalStaffChatCalls.incomingCallActive()) return;
+      }
+      try{
+        var q = await client.from('portal_staff_dm_messages')
+          .select('id,author_id,body,thread_id,created_at')
+          .in('thread_id', threadIds)
+          .order('created_at', { ascending: false })
+          .limit(48);
+        if(q.error || !Array.isArray(q.data)) return;
+        var seenThread = Object.create(null);
+        q.data.forEach(function(m){
+          if(!m || !m.thread_id) return;
+          var body = String(m.body || '');
+          if(body.indexOf('[[portal-staff-call:') < 0 || body.indexOf('[[portal-staff-call-end:') >= 0) return;
+          var tid = String(m.thread_id);
+          if(seenThread[tid]) return;
+          seenThread[tid] = true;
+          window.portalStaffChatCalls.processIncomingCallRow(m, 0);
+        });
+      }catch(_scanCall){}
+    }
     async function portalAdminDmBuildWorkerThreadMap(client, me, workerIds){
       var map = Object.create(null);
       workerIds = (workerIds || []).filter(function(id, idx, arr){
@@ -21602,6 +21633,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return id && arr.indexOf(id) === idx;
       });
       if(!client || !me || !workerIds.length) return map;
+      var ceoSharedOps = portalAdminDmCeoUsesSharedWorkerOpsInbox();
       for(var wi = 0; wi < workerIds.length; wi++){
         var wid = workerIds[wi];
         var res = await client
@@ -21610,7 +21642,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           .or('participant_a.eq.' + wid + ',participant_b.eq.' + wid)
           .limit(40);
         if(res.error || !Array.isArray(res.data)) continue;
-        map[wid] = res.data
+        var ids = res.data
           .filter(function(r){
             if(!r || !r.id) return false;
             var a = String(r.participant_a || '');
@@ -21618,6 +21650,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             return a === me || b === me;
           })
           .map(function(r){ return String(r.id); });
+        if(ceoSharedOps){
+          try{
+            var opsTid = await portalAdminDmFindStaffLeadThreadForWorker(client, wid);
+            opsTid = String(opsTid || '').trim();
+            if(opsTid && ids.indexOf(opsTid) < 0) ids.push(opsTid);
+          }catch(_opsTid){}
+        }
+        map[wid] = ids;
       }
       return map;
     }
@@ -27453,7 +27493,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             if(!window.__PORTAL_ADMIN_DM_POLL_INT){
               window.__PORTAL_ADMIN_DM_POLL_INT = setInterval(function(){
                 try{ void portalAdminDmSyncIncomingAttention(); }catch(_e){}
-              }, 95000);
+              }, 28000);
             }
           }catch(_dm){}
         });
@@ -27674,7 +27714,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       document.body.appendChild(s);
     })();
   </script>
-  <script src="/portal/portal_staff_chat_calls.js?v=20260609-chat-identity"></script>
+  <script src="/portal/portal_staff_chat_calls.js?v=20260627-shared-inbox-calls"></script>
   <script src="/portal/portal_incoming_call_push.js?v=20260622-incoming-call"></script>
   <script src="/portal/portal_floating_internal_chat.js?v=20260609-header-chat-bell"></script>
 </body>

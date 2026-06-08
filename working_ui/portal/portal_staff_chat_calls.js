@@ -241,6 +241,53 @@
     return role === "admin" || role === "ceo";
   }
 
+  function isWorkerRecipientProfile(row) {
+    if (typeof global.portalInternalDmIsWorkerRecipient === "function") {
+      return global.portalInternalDmIsWorkerRecipient(row);
+    }
+    if (!row || row.is_active === false) return false;
+    var app = String(row.app_role || "").toLowerCase();
+    if (app === "admin" || app === "ceo") return false;
+    var sr = String(row.staff_role || "").toLowerCase();
+    if (sr === "manager" || sr === "admin") return false;
+    return !!(row.full_name || row.username);
+  }
+
+  function isOfficeParticipantProfile(row) {
+    if (!row || row.is_active === false) return false;
+    var app = String(row.app_role || "").toLowerCase();
+    if (app === "admin" || app === "ceo") return true;
+    var sr = String(row.staff_role || "").toLowerCase();
+    return sr === "manager" || sr === "admin";
+  }
+
+  function usesAdminSharedInbox() {
+    if (isPortalAdminModerator()) return true;
+    if (
+      global.portalDmRoles &&
+      typeof global.portalDmRoles.portalDmUsesAdminCliq === "function" &&
+      global.portalDmRoles.portalDmUsesAdminCliq()
+    ) {
+      return true;
+    }
+    var sp = global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.staff_profile;
+    var sr = String((sp && sp.staff_role) || "").toLowerCase();
+    return sr === "manager" || sr === "admin";
+  }
+
+  function isManagementWorkerThreadPair(profBy, a, b) {
+    profBy = profBy || {};
+    a = String(a || "").trim();
+    b = String(b || "").trim();
+    if (!a || !b) return false;
+    var pa = profBy[a] || {};
+    var pb = profBy[b] || {};
+    return (
+      (isWorkerRecipientProfile(pa) && isOfficeParticipantProfile(pb)) ||
+      (isWorkerRecipientProfile(pb) && isOfficeParticipantProfile(pa))
+    );
+  }
+
   function dmThreadPairGuess(me, peer) {
     if (typeof global.portalDmCanonThreadParticipantsGuess === "function") {
       return global.portalDmCanonThreadParticipantsGuess(me, peer);
@@ -330,7 +377,9 @@
     if (!client) return false;
     var cached = threadParticipantCache[tid];
     if (cached && Date.now() - cached.ts < 120000) {
-      return cached.a === me || cached.b === me;
+      if (cached.a === me || cached.b === me) return true;
+      if (cached.sharedInbox && usesAdminSharedInbox()) return true;
+      return false;
     }
     try {
       var res = await client
@@ -341,8 +390,28 @@
       if (res.error || !res.data) return false;
       var a = String(res.data.participant_a || "");
       var b = String(res.data.participant_b || "");
-      threadParticipantCache[tid] = { a: a, b: b, ts: Date.now() };
-      return a === me || b === me;
+      if (a === me || b === me) {
+        threadParticipantCache[tid] = { a: a, b: b, ts: Date.now(), sharedInbox: false };
+        return true;
+      }
+      if (usesAdminSharedInbox()) {
+        var pr = await client
+          .from("staff_profiles")
+          .select("id,app_role,staff_role,is_active,full_name,username")
+          .in("id", [a, b]);
+        var profBy = {};
+        if (!pr.error && Array.isArray(pr.data)) {
+          pr.data.forEach(function (p) {
+            if (p && p.id) profBy[String(p.id)] = p;
+          });
+        }
+        if (isManagementWorkerThreadPair(profBy, a, b)) {
+          threadParticipantCache[tid] = { a: a, b: b, ts: Date.now(), sharedInbox: true };
+          return true;
+        }
+      }
+      threadParticipantCache[tid] = { a: a, b: b, ts: Date.now(), sharedInbox: false };
+      return false;
     } catch (_part) {
       return false;
     }
@@ -2707,6 +2776,9 @@
     onDmMessageInsert: onDmMessageInsert,
     onGroupMessageInsert: onGroupMessageInsert,
     processIncomingCallRow: processIncomingCallRow,
+    incomingCallActive: function () {
+      return !!incomingState.active;
+    },
     scanThreadForIncomingCall: function (lastMsg) {
       processIncomingCallRow(lastMsg, 0);
     },
