@@ -34,13 +34,13 @@
   <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260608-cliq-channels"></script>
   <script src="/portal/portal_cs_cliq_support_route.js?v=20260608-inbox-fix"></script>
   <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260609-staff-mgmt"></script>
-  <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260608-group-dedupe"></script>
+  <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260625-staff-pool-channels"></script>
   <script src="/portal/portal_cs_cliq_admin_channels.js?v=20260608-group-dedupe"></script>
   <script src="/portal/portal_cs_cliq_support.js?v=20260607-support-route"></script>
   <script src="/portal/portal_cs_cliq_announcements_hub.js?v=20260604-cliq-inbox"></script>
-  <script src="/portal/portal_cs_cliq_announcement_inbox.js?v=20260608-group-dedupe"></script>
+  <script src="/portal/portal_cs_cliq_announcement_inbox.js?v=20260625-staff-pool-channels"></script>
   <script src="/portal/portal_cs_cliq_thread_header.js?v=20260609-group-chips"></script>
-  <script src="/portal/portal_cs_cliq_group_members.js?v=20260609-group-member-chips"></script>
+  <script src="/portal/portal_cs_cliq_group_members.js?v=20260625-staff-pool-channels"></script>
   <script src="/portal/portal_cs_cliq_thread_files.js?v=20260604-cliq-files"></script>
   <script src="/portal/portal_admin_cs_cliq.js?v=20260609-channels-split"></script>
   <script src="/portal/portal_cs_cliq_workspace.js?v=20260608-cliq-channels"></script>
@@ -20547,6 +20547,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(slug === 'ceo_liaison' || /ceo\s*liaison/i.test(title) || /ceos.*sevitha/i.test(title)) return 'CEOs & Sevitha';
       if(slug === 'staff_leads_ops' || /operations\s*group/i.test(title)) return 'Leads coordination';
       if(slug === 'session_leads') return 'Session leads';
+      if(slug === 'swimming_instructors') return 'Swimming Instructors';
+      if(slug === 'climbing_instructors') return 'Climbing Instructors';
+      if(slug === 'support_staff') return 'Support Staff';
+      if(slug === 'pool_leads') return 'Leads';
       return title || 'Group';
     }
     /** Quick-open / default compose group: internal ring for CEOs + inner ops admins; liaison for other admins. */
@@ -20583,7 +20587,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     }
     function portalAdminDmStaffChannelGroupSlug(slug){
       slug = String(slug || '').toLowerCase();
-      return slug === PORTAL_SESSION_LEADS_GROUP_SLUG || slug === PORTAL_STAFF_LEADS_OPS_GROUP_SLUG;
+      if(slug === PORTAL_SESSION_LEADS_GROUP_SLUG || slug === PORTAL_STAFF_LEADS_OPS_GROUP_SLUG) return true;
+      if(window.portalCsCliqAnnouncementInbox && typeof window.portalCsCliqAnnouncementInbox.isStaffPoolChannelSlug === 'function'){
+        return window.portalCsCliqAnnouncementInbox.isStaffPoolChannelSlug(slug);
+      }
+      return slug === 'swimming_instructors' || slug === 'climbing_instructors' || slug === 'support_staff' || slug === 'pool_leads';
     }
     function portalAdminDmMessageCountsAsUnread(m){
       if(!m) return false;
@@ -21333,8 +21341,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         groupIds[gid] = true;
         var gsl = String(g.slug || '').toLowerCase();
         var title = String(g.title || g.slug || 'Group');
-        var canon = portalAdminDmCanonicalGroupSlug(gsl, title) || gsl || ('id:' + gid);
-        var slugForPolicy = canon.indexOf('id:') === 0 ? gsl : canon;
+        var canon = portalAdminDmCanonicalGroupSlug(gsl, title);
+        if(!canon || String(canon).indexOf('id:') === 0){
+          var labelCanon = portalAdminDmCanonicalGroupSlug('', portalAdminDmSimplifyGroupLabel(gsl, title));
+          if(labelCanon && String(labelCanon).indexOf('id:') !== 0) canon = labelCanon;
+        }
+        if(!canon) canon = gsl || ('id:' + gid);
+        var slugForPolicy = String(canon).indexOf('id:') === 0 ? gsl : canon;
         if(!portalAdminDmViewerSeesCeoGroupSlug(slugForPolicy)) return;
         var slot = groupCanonSlots[canon];
         if(!slot){

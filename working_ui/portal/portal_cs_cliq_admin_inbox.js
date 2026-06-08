@@ -121,6 +121,33 @@
       return String(item.slug || "").toLowerCase();
     }
 
+    function isStaffPoolChannelSlug(slug) {
+      if (
+        global.portalCsCliqAnnouncementInbox &&
+        typeof global.portalCsCliqAnnouncementInbox.isStaffPoolChannelSlug === "function"
+      ) {
+        return global.portalCsCliqAnnouncementInbox.isStaffPoolChannelSlug(slug);
+      }
+      slug = String(slug || "").toLowerCase();
+      return (
+        slug === "swimming_instructors" ||
+        slug === "climbing_instructors" ||
+        slug === "support_staff" ||
+        slug === "pool_leads"
+      );
+    }
+
+    function labelDedupeKey(item) {
+      if (!item || item.kind !== "group") return "";
+      var lbl = String(item.label || "")
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, " ");
+      return lbl ? "l:" + lbl : "";
+    }
+
     function key(item) {
       if (!item) return "";
       if (item.kind === "group") {
@@ -134,8 +161,11 @@
     function push(bucket, item) {
       if (!item) return;
       var k = key(item);
+      var lk = labelDedupeKey(item);
       if (k && seen[k]) return;
+      if (lk && seen[lk]) return;
       if (k) seen[k] = true;
+      if (lk) seen[lk] = true;
       bucket.push(item);
     }
 
@@ -150,6 +180,10 @@
         var slug = String(item.slug || "").toLowerCase();
         if (slug === "session_leads" || slug === "staff_leads_ops") {
           push(leadItems, item);
+          return;
+        }
+        if (isStaffPoolChannelSlug(slug)) {
+          push(staffItems, item);
           return;
         }
         if (!seesSlug(slug)) return;
@@ -190,6 +224,29 @@
         })
       );
     }
+
+    var staffPoolOrder =
+      global.portalCsCliqAnnouncementInbox &&
+      typeof global.portalCsCliqAnnouncementInbox.staffPoolChannelSlugOrder === "function"
+        ? global.portalCsCliqAnnouncementInbox.staffPoolChannelSlugOrder()
+        : ["swimming_instructors", "climbing_instructors", "support_staff", "pool_leads"];
+    var staffGroups = staffItems.filter(function (i) {
+      return i.kind === "group";
+    });
+    var staffTeams = staffItems.filter(function (i) {
+      return i.kind !== "group";
+    });
+    staffGroups.sort(function (a, b) {
+      var as = canonicalSlug(a);
+      var bs = canonicalSlug(b);
+      var ai = staffPoolOrder.indexOf(as);
+      var bi = staffPoolOrder.indexOf(bs);
+      if (ai < 0) ai = 999;
+      if (bi < 0) bi = 999;
+      if (ai !== bi) return ai - bi;
+      return String(a.label || "").localeCompare(String(b.label || ""));
+    });
+    staffItems = staffGroups.concat(staffTeams);
 
     return { leadItems: leadItems, staffItems: staffItems, ceoItems: ceoItems };
   }

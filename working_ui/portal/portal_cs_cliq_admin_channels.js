@@ -136,9 +136,16 @@
   function renderChannelCard(item, esc, when, chips) {
     var unread = Number(item.unreadCount) || 0;
     var ui = global.__PORTAL_ADMIN_DM_UI || {};
+    var activeGroupIds = [String(item.id || "")];
+    if (Array.isArray(item.aliasGroupIds)) {
+      item.aliasGroupIds.forEach(function (aid) {
+        aid = String(aid || "").trim();
+        if (aid && activeGroupIds.indexOf(aid) < 0) activeGroupIds.push(aid);
+      });
+    }
     var active =
       item.kind === "group" &&
-      String(ui.groupId || "") === String(item.id || "") &&
+      activeGroupIds.indexOf(String(ui.groupId || "")) >= 0 &&
       String(ui.panel || "") === "thread";
     var btn = document.createElement("button");
     btn.type = "button";

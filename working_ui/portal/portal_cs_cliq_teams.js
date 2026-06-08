@@ -42,6 +42,10 @@
     var slug = String((row && row.slug) || "").trim();
     if (slug === "session_leads") return "All session leads";
     if (slug === "staff_leads_ops") return "Staff & leads operations";
+    if (slug === "swimming_instructors") return "Swimming instructors";
+    if (slug === "climbing_instructors") return "Climbing instructors";
+    if (slug === "support_staff") return "Support staff";
+    if (slug === "pool_leads") return "Leads";
     if (slug === "ceo_liaison") return "CEO & ops liaison";
     if (slug === "all_ceos") return "All CEOs";
     return slug ? "Group · " + slug.replace(/_/g, " ") : "Group chat";

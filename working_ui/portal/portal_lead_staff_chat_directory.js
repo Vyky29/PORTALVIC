@@ -11,6 +11,12 @@
   var CACHE_KEY_STAFFMGMT = "__PORTAL_STAFF_MGMT_DIRECTORY_ROWS__";
   var STAFF_MGMT_GROUP_SLUG = "ceo_liaison";
   var STAFF_MGMT_GROUP_LABEL = "Directors (group)";
+  var STAFF_POOL_GROUPS = [
+    { slug: "swimming_instructors", label: "Swimming Instructors", appRole: "staff", staffRole: "swimming" },
+    { slug: "climbing_instructors", label: "Climbing Instructors", appRole: "staff", staffRole: "climbing" },
+    { slug: "support_staff", label: "Support Staff", appRole: "staff", staffRole: "support" },
+    { slug: "pool_leads", label: "Leads", appRole: "lead" },
+  ];
 
   function esc(s) {
     return String(s == null ? "" : s)
@@ -695,6 +701,106 @@
     return String(g.data.id);
   }
 
+  function matchStaffPoolGroupDef(prof) {
+    if (!prof || prof.is_active === false) return null;
+    var ar = String(prof.app_role || "staff").toLowerCase();
+    var sr = String(prof.staff_role || "").toLowerCase();
+    for (var i = 0; i < STAFF_POOL_GROUPS.length; i++) {
+      var def = STAFF_POOL_GROUPS[i];
+      if (def.appRole === "lead" && ar === "lead") return def;
+      if (def.appRole === "staff" && ar === "staff" && sr === def.staffRole) return def;
+    }
+    return null;
+  }
+
+  async function resolveStaffPoolGroupEntry(client, prof) {
+    var def = matchStaffPoolGroupDef(prof);
+    if (!def || !client) return null;
+    var g = await client
+      .from("portal_ceo_group")
+      .select("id,title,slug,updated_at")
+      .eq("slug", def.slug)
+      .maybeSingle();
+    if (g.error || !g.data || !g.data.id) return null;
+    return {
+      kind: "group",
+      groupId: String(g.data.id),
+      groupSlug: def.slug,
+      label: def.label,
+      role: "Group",
+      category: "pool",
+      attachAdminChip: true,
+      sortKey: "8",
+    };
+  }
+
+  async function appendWorkerPoolGroupInboxRow(client, me, prof, listHost, helpers) {
+    if (!client || !me || !listHost || typeof helpers !== "object") return false;
+    var htmlFn = helpers.threadListItemHtml;
+    var previewFn = helpers.previewFromMessage;
+    if (typeof htmlFn !== "function" || typeof previewFn !== "function") return false;
+    try {
+      var entry = await resolveStaffPoolGroupEntry(client, prof);
+      if (!entry || !entry.groupId) return false;
+      var gWhen = "";
+      var gPrev = { sender: "", preview: "" };
+      var gUnread = 0;
+      var gmsgRes = await client
+        .from("portal_ceo_group_message")
+        .select("author_id,body,created_at,message_type")
+        .eq("group_id", entry.groupId)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      if (!gmsgRes.error && Array.isArray(gmsgRes.data) && gmsgRes.data[0]) {
+        var gLast = gmsgRes.data[0];
+        try {
+          if (gLast.created_at) {
+            gWhen = new Date(gLast.created_at).toLocaleString("en-GB", {
+              day: "2-digit",
+              month: "short",
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+          }
+        } catch (_gw) {}
+        var gAuthors = {};
+        if (gLast.author_id) {
+          var gAp = await client
+            .from("staff_profiles")
+            .select("id,full_name,username,app_role,staff_role,is_active")
+            .eq("id", gLast.author_id)
+            .maybeSingle();
+          if (!gAp.error && gAp.data) gAuthors[String(gLast.author_id)] = gAp.data;
+        }
+        gPrev = previewFn(gLast, gAuthors, me);
+      }
+      var gActive =
+        String((global.__PORTAL_INTERNAL_CHAT_UI && global.__PORTAL_INTERNAL_CHAT_UI.groupId) || "") ===
+        String(entry.groupId);
+      var gBtn = document.createElement("button");
+      gBtn.type = "button";
+      gBtn.className = "portal-dm-thread-item" + (gActive ? " portal-dm-thread-item--active" : "");
+      gBtn.setAttribute("data-dm-group", String(entry.groupId));
+      gBtn.innerHTML = htmlFn(entry.label, gWhen, gUnread, {
+        lastSender: gPrev.sender,
+        lastPreview: gPrev.preview,
+        roleChip: "Group",
+        roleChipClass: "portal-dm-role-chip--group",
+        attachAdminChip: true,
+      });
+      gBtn.addEventListener("click", function () {
+        global.__PORTAL_INTERNAL_CHAT_UI.threadId = null;
+        global.__PORTAL_INTERNAL_CHAT_UI.groupId = String(entry.groupId);
+        global.__PORTAL_INTERNAL_CHAT_UI.peerLabel = entry.label;
+        void global.portalRenderInternalChatSheet();
+      });
+      listHost.appendChild(gBtn);
+      return true;
+    } catch (_poolRow) {
+      return false;
+    }
+  }
+
   async function loadStaffMgmtDirectoryRows(client, me, opts) {
     opts = opts || {};
     if (!client || !me) return [];
@@ -1270,6 +1376,8 @@
     openPeerChat: openPeerChat,
     openGroupChat: openGroupChat,
     loadStaffMgmtDirectoryRows: loadStaffMgmtDirectoryRows,
+    resolveStaffPoolGroupEntry: resolveStaffPoolGroupEntry,
+    appendWorkerPoolGroupInboxRow: appendWorkerPoolGroupInboxRow,
     STAFF_MGMT_GROUP_SLUG: STAFF_MGMT_GROUP_SLUG,
     STAFF_MGMT_GROUP_LABEL: STAFF_MGMT_GROUP_LABEL,
     initLeadInbox: initLeadInbox,

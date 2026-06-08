@@ -9,6 +9,10 @@
     staff_leads_ops: true,
     all_ceos: true,
     ceo_liaison: true,
+    swimming_instructors: true,
+    climbing_instructors: true,
+    support_staff: true,
+    pool_leads: true,
   };
 
   var KNOWN_LEAD_KEYS = {
@@ -204,6 +208,29 @@
       .filter(Boolean);
   }
 
+  async function loadStaffRoleChips(supabase, staffRole, appRole) {
+    staffRole = String(staffRole || "").toLowerCase();
+    appRole = String(appRole || "staff").toLowerCase();
+    var q = supabase
+      .from("staff_profiles")
+      .select("id,full_name,username,app_role,staff_role,is_active")
+      .or("is_active.is.null,is_active.eq.true")
+      .order("full_name", { ascending: true })
+      .limit(40);
+    if (appRole === "lead") {
+      q = q.eq("app_role", "lead");
+    } else {
+      q = q.eq("app_role", "staff").eq("staff_role", staffRole);
+    }
+    var res = await q;
+    if (res.error || !Array.isArray(res.data)) return [];
+    return res.data
+      .map(function (row) {
+        return chipFromProfile(row);
+      })
+      .filter(Boolean);
+  }
+
   async function loadMemberChips(groupSlug, groupId) {
     groupSlug = String(groupSlug || "").toLowerCase();
     groupId = String(groupId || "").trim();
@@ -217,6 +244,14 @@
       primary = await loadCeoChips(supabase);
     } else if (groupSlug === "ceo_liaison") {
       primary = await loadLiaisonChips(supabase);
+    } else if (groupSlug === "swimming_instructors") {
+      primary = await loadStaffRoleChips(supabase, "swimming", "staff");
+    } else if (groupSlug === "climbing_instructors") {
+      primary = await loadStaffRoleChips(supabase, "climbing", "staff");
+    } else if (groupSlug === "support_staff") {
+      primary = await loadStaffRoleChips(supabase, "support", "staff");
+    } else if (groupSlug === "pool_leads") {
+      primary = await loadStaffRoleChips(supabase, "", "lead");
     }
     var extra = groupId ? await loadGroupAuthorChips(supabase, groupId) : [];
     return mergeChips(primary, extra);

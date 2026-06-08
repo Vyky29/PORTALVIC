@@ -1055,7 +1055,11 @@
     }
     function portalAdminDmStaffChannelGroupSlug(slug){
       slug = String(slug || '').toLowerCase();
-      return slug === PORTAL_SESSION_LEADS_GROUP_SLUG || slug === PORTAL_STAFF_LEADS_OPS_GROUP_SLUG;
+      if(slug === PORTAL_SESSION_LEADS_GROUP_SLUG || slug === PORTAL_STAFF_LEADS_OPS_GROUP_SLUG) return true;
+      if(window.portalCsCliqAnnouncementInbox && typeof window.portalCsCliqAnnouncementInbox.isStaffPoolChannelSlug === 'function'){
+        return window.portalCsCliqAnnouncementInbox.isStaffPoolChannelSlug(slug);
+      }
+      return slug === 'swimming_instructors' || slug === 'climbing_instructors' || slug === 'support_staff' || slug === 'pool_leads';
     }
     function portalAdminDmMessageCountsAsUnread(m){
       if(!m) return false;

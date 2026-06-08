@@ -1078,7 +1078,8 @@
   <script src="/portal/portal_cs_cliq_embed.js?v=20260607-cliq-fix"></script>
   <script src="/portal/portal_dm_executive_cliq.js?v=20260622-chat-restore"></script>
   <script src="/portal/portal_staff_photos.js?v=20260608-csteam-icons-roles"></script>
-  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260609-inbox-profiles"></script>
+  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260625-staff-pool-channels"></script>
+  <script src="/portal/portal_worker_group_thread.js?v=20260625-staff-pool-channels"></script>
   <script src="/portal/portal_incoming_call_push.js?v=20260622-incoming-call"></script>
   <script src="/portal/portal_sheet_back.js?v=20260607-sheet-back"></script>
   <script>
@@ -7669,6 +7670,21 @@
         });
         if(useStaffMgmtInbox){
           await portalStaffAppendMgmtGroupInboxRow(client, me, listHost);
+        }
+        if(
+          window.portalLeadStaffChatDirectory &&
+          typeof window.portalLeadStaffChatDirectory.appendWorkerPoolGroupInboxRow === 'function'
+        ){
+          await window.portalLeadStaffChatDirectory.appendWorkerPoolGroupInboxRow(
+            client,
+            me,
+            box && box.staff_profile,
+            listHost,
+            {
+              threadListItemHtml: portalStaffDmThreadListItemHtml,
+              previewFromMessage: portalStaffDmPreviewFromMessage
+            }
+          );
         }
         if(useStaffMgmtInbox && !listHost.children.length){
           listHost.innerHTML = "<p class=\"portal-dm-inbox-empty\">No messages yet. Tap <strong>Chat</strong> on the dashboard to message Admin.</p>";
