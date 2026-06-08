@@ -97,6 +97,10 @@
       typeof global.portalInternalChatOfficeRestricted === "function" &&
       global.portalInternalChatOfficeRestricted()
     ) {
+      if (typeof global.portalCloseInternalChatToDashboard === "function") {
+        global.portalCloseInternalChatToDashboard();
+        return true;
+      }
       if (typeof global.portalCloseInternalChatReturnToAlertsMenu === "function") {
         global.portalCloseInternalChatReturnToAlertsMenu();
         return true;
@@ -117,6 +121,14 @@
     if (backInternalChatThread()) return true;
 
     var current = getTopOpenSheetId();
+    if (current === "internalChatSheet") {
+      if (typeof global.portalCloseInternalChatToDashboard === "function") {
+        global.portalCloseInternalChatToDashboard();
+        clearStack();
+        return true;
+      }
+    }
+
     if (!current) return false;
 
     var entry = popNavForSheet(current);
