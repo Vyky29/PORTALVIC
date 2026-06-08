@@ -28,7 +28,13 @@
     label = String(label || "").trim();
     if (!label) return "Conversation";
     if (ui.groupId) return label;
-    if (ui.managementOpsPeer || ui.opsAdminPeer) {
+    if (ui.namedOpsAdminPeer || (ui.opsAdminPeer && ui.useAdminLaneAvatar === false)) {
+      if (global.portalOpsAdminDisplay && typeof global.portalOpsAdminDisplay.managementLabel === "function") {
+        return global.portalOpsAdminDisplay.managementLabel(ui.peerProf || {});
+      }
+      return (global.portalOpsAdminDisplay && global.portalOpsAdminDisplay.label) || "Sevitha (Admin)";
+    }
+    if (ui.managementOpsPeer || (ui.opsAdminPeer && ui.useAdminLaneAvatar !== false)) {
       return (
         (global.portalCsCliqSupportRoute && global.portalCsCliqSupportRoute.MANAGEMENT_INBOX_LABEL) ||
         "Admin"
@@ -78,13 +84,16 @@
       }
       return false;
     }
+    var genericAdminLane = !!(ui.managementOpsPeer || (ui.opsAdminPeer && ui.useAdminLaneAvatar !== false && !ui.namedOpsAdminPeer));
+    var namedOpsAdmin = !!(ui.namedOpsAdminPeer || (ui.opsAdminPeer && ui.useAdminLaneAvatar === false));
+    if (namedOpsAdmin && !username) username = "sevitha";
     var item = {
       kind: ui.groupId ? "group" : "dm",
       label: label,
-      peerProfile: ui.managementOpsPeer || ui.opsAdminPeer ? null : prof,
-      username: ui.managementOpsPeer || ui.opsAdminPeer ? "" : username,
+      peerProfile: genericAdminLane ? null : prof,
+      username: genericAdminLane ? "" : username,
       isTeamChat: !!ui.isTeamChat,
-      useAdminLaneAvatar: !!(ui.managementOpsPeer || ui.opsAdminPeer),
+      useAdminLaneAvatar: genericAdminLane,
     };
     if (global.portalDmThreadAvatar && typeof global.portalDmThreadAvatar.innerHtml === "function") {
       if (

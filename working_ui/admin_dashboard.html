@@ -35,7 +35,7 @@
   <script src="/portal/portal_admin_topbar.js?v=20260629-topbar-session-v2"></script>
   <script src="/portal/portal_dm_icons.js?v=20260624-dm-icons"></script>
   <script src="/portal/portal_dm_thread_avatar.js?v=20260608-staff-admin-lane"></script>
-  <script src="/portal/portal_cs_cliq_thread_header.js?v=20260608-staff-admin-lane"></script>
+  <script src="/portal/portal_cs_cliq_thread_header.js?v=20260609-sevitha-admin-photo"></script>
   <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260608-inbox-staff-roster-all"></script>
   <script src="/portal/portal_dm_read_cursor.js?v=20260609-read-cursor"></script>
   <script src="/portal/portal_cs_cliq_support_route.js?v=20260608-ops-thread-rpc"></script>
@@ -86,7 +86,7 @@
   <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260609-header-chat-bell" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260608-incoming-poll" />
-  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260609-ceo-group-chips" />
+  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260609-inbox-lane-hints" />
 </head>
 <body>
   <script>
@@ -19798,6 +19798,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         window.portalDmRoles.portalDmIsOperationsAdminProfile(prof)
       );
     }
+    function portalAdminDmNamedOpsAdminLabel(prof){
+      if(
+        window.portalOpsAdminDisplay &&
+        typeof window.portalOpsAdminDisplay.managementLabel === 'function'
+      ){
+        return String(window.portalOpsAdminDisplay.managementLabel(prof || {}) || '').trim();
+      }
+      return (window.portalOpsAdminDisplay && window.portalOpsAdminDisplay.label) || 'Sevitha (Admin)';
+    }
     function portalAdminDmIsWorkerRecipient(row){
       if(typeof window.portalInternalDmIsWorkerRecipient === 'function'){
         return window.portalInternalDmIsWorkerRecipient(row);
@@ -22222,9 +22231,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       var roleTag = '';
       var peerProf = item.peerProf || null;
-      var opsAdminPeer = portalAdminDmIsOpsAdminPeer(peerProf) || !!item.useAdminLaneAvatar;
+      var opsAdminPeer = portalAdminDmIsOpsAdminPeer(peerProf);
+      var useAdminLaneAvatar = !!item.useAdminLaneAvatar;
+      var namedOpsAdmin = opsAdminPeer && !useAdminLaneAvatar;
       var displayLabel = item.label;
-      if(opsAdminPeer){
+      if(namedOpsAdmin){
+        displayLabel = portalAdminDmNamedOpsAdminLabel(peerProf);
+        if(!displayLabel) displayLabel = String(item.label || '').trim() || 'Sevitha (Admin)';
+      }else if(useAdminLaneAvatar || (opsAdminPeer && !peerProf)){
         displayLabel = 'Admin';
       }else if(
         window.portalChatActorIdentity &&
@@ -22233,14 +22247,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       ){
         displayLabel = String(window.portalChatActorIdentity.inboxPeerLabel(peerProf) || displayLabel).trim() || displayLabel;
       }
+      var avatarPeerProf = peerProf;
+      if(namedOpsAdmin && !avatarPeerProf){
+        avatarPeerProf = { username: 'sevitha', full_name: displayLabel, app_role: 'admin' };
+      }
+      var avatarUsername = avatarPeerProf && avatarPeerProf.username ? String(avatarPeerProf.username).trim() : '';
+      if(namedOpsAdmin && !avatarUsername) avatarUsername = 'sevitha';
       var avatarItem = {
         kind: item.kind,
         label: displayLabel,
         unreadCount: unread,
         isTeamChat: !!item.isTeamChat,
-        peerProfile: opsAdminPeer ? null : peerProf,
-        username: opsAdminPeer ? '' : (peerProf && peerProf.username ? String(peerProf.username).trim() : ''),
-        useAdminLaneAvatar: opsAdminPeer
+        peerProfile: useAdminLaneAvatar ? null : avatarPeerProf,
+        username: useAdminLaneAvatar ? '' : avatarUsername,
+        useAdminLaneAvatar: useAdminLaneAvatar
       };
       if(item.kind === 'dm' && item.inboxLane === 'ops'){
         var inOpsTab = !!(
@@ -22479,12 +22499,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           personalDmItems.push({
             kind: 'dm',
             id: String(r.id),
-            label: opsAdminPersonal ? (window.portalOpsAdminDisplay && window.portalOpsAdminDisplay.label ? window.portalOpsAdminDisplay.label : 'Sevitha (Admin)') : threadListLabel(r, peer),
+            label: opsAdminPersonal ? portalAdminDmNamedOpsAdminLabel(peerProfPersonal) : threadListLabel(r, peer),
             when: r.updated_at,
             peerId: peer,
             workerId: portalAdminDmIsWorkerRecipient(peerProfPersonal) ? peer : '',
-            peerProf: opsAdminPersonal ? null : peerProfPersonal,
-            useAdminLaneAvatar: opsAdminPersonal,
+            peerProf: peerProfPersonal,
+            useAdminLaneAvatar: false,
             isTeamChat: false,
             threadRow: r,
             inboxLane: 'personal'
@@ -22519,15 +22539,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var isTeamChat = ch === 'staff_lead' && portalAdminDmIsPeerTeamChatThread(r, profBy);
           var peerProfMerged = profBy[peer] || {};
           var opsAdminMerged = portalAdminDmIsOpsAdminPeer(peerProfMerged);
-          var label = isTeamChat ? portalAdminDmTeamChatLabel(r, names) : (opsAdminMerged ? 'Admin' : threadListLabel(r, peer));
+          var label = isTeamChat
+            ? portalAdminDmTeamChatLabel(r, names)
+            : (opsAdminMerged ? portalAdminDmNamedOpsAdminLabel(peerProfMerged) : threadListLabel(r, peer));
           merged.push({
             kind: 'dm',
             id: id,
             label: label,
             when: r.updated_at,
             peerId: peer,
-            peerProf: opsAdminMerged ? null : peerProfMerged,
-            useAdminLaneAvatar: opsAdminMerged,
+            peerProf: peerProfMerged,
+            useAdminLaneAvatar: false,
             isTeamChat: isTeamChat,
             threadRow: r
           });
@@ -22855,9 +22877,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       window.__PORTAL_ADMIN_DM_UI.peerId = peerId || '';
       window.__PORTAL_ADMIN_DM_UI.opsAdminPeer = portalAdminDmIsOpsAdminPeer(peerProf);
       window.__PORTAL_ADMIN_DM_UI.managementOpsPeer = false;
+      window.__PORTAL_ADMIN_DM_UI.useAdminLaneAvatar = false;
+      window.__PORTAL_ADMIN_DM_UI.namedOpsAdminPeer = false;
       if(window.__PORTAL_ADMIN_DM_UI.opsAdminPeer){
-        window.__PORTAL_ADMIN_DM_UI.peerLabel = 'Admin';
-        window.__PORTAL_ADMIN_DM_UI.peerProf = null;
+        if(portalAdminDmChannel() === 'ceo_exec'){
+          window.__PORTAL_ADMIN_DM_UI.namedOpsAdminPeer = true;
+          window.__PORTAL_ADMIN_DM_UI.peerLabel = portalAdminDmNamedOpsAdminLabel(peerProf);
+        }else{
+          window.__PORTAL_ADMIN_DM_UI.useAdminLaneAvatar = true;
+          window.__PORTAL_ADMIN_DM_UI.peerLabel = 'Admin';
+          window.__PORTAL_ADMIN_DM_UI.peerProf = null;
+        }
       }
       var peerRoleRaw = peerProf ? String(peerProf.app_role || '').toLowerCase() : '';
       window.__PORTAL_ADMIN_DM_UI.peerRole = portalAdminDmFormatPeerRole(peerProf && peerProf.app_role);
