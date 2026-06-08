@@ -15,7 +15,7 @@
     ],
     feedback: [
       "/portal/cancellations_portal_data.js?v=20260528-timi-cancel",
-      "/portal/session_feedback_status_portal_data.js?v=20260608-june8-reviewed",
+      "/portal/session_feedback_status_portal_data.js?v=20260608-june8-partial",
       "/portal/session_feedback_portal_data.js?v=20260531-multi-90",
       "/portal/venue_reviews_portal_data.js?v=20260520",
     ],
