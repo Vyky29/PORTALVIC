@@ -33,13 +33,13 @@
   <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260608-cliq-channels"></script>
   <script src="/portal/portal_cs_cliq_support_route.js?v=20260608-inbox-fix"></script>
   <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260609-staff-mgmt"></script>
-  <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260609-inbox-no-ops-lane"></script>
-  <script src="/portal/portal_cs_cliq_admin_channels.js?v=20260609-channels-categories"></script>
+  <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260609-group-member-chips"></script>
+  <script src="/portal/portal_cs_cliq_admin_channels.js?v=20260609-group-member-chips"></script>
   <script src="/portal/portal_cs_cliq_support.js?v=20260607-support-route"></script>
   <script src="/portal/portal_cs_cliq_announcements_hub.js?v=20260604-cliq-inbox"></script>
   <script src="/portal/portal_cs_cliq_announcement_inbox.js?v=20260622-announcements"></script>
   <script src="/portal/portal_cs_cliq_thread_header.js?v=20260609-group-chips"></script>
-  <script src="/portal/portal_cs_cliq_group_members.js?v=20260609-javi-label"></script>
+  <script src="/portal/portal_cs_cliq_group_members.js?v=20260609-group-member-chips"></script>
   <script src="/portal/portal_cs_cliq_thread_files.js?v=20260604-cliq-files"></script>
   <script src="/portal/portal_dm_roles.js?v=20260622-chat-restore"></script>
   <script src="/portal/portal_admin_cs_cliq.js?v=20260609-channels-split"></script>
@@ -77,7 +77,7 @@
   <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260605-admin-mobile-landscape" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260608-inbox-fix" />
-  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260609-channels-split" />
+  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260609-group-member-chips" />
 </head>
 <body>
   <script>
@@ -20658,6 +20658,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(errB) errB.textContent = '';
       portalAdminDmPremiumSyncView();
       if(portalAdminDmPremiumActive()) portalAdminDmBindVoiceControls();
+      if(
+        window.portalCsCliqGroupMembers &&
+        typeof window.portalCsCliqGroupMembers.syncGroupMemberChips === 'function'
+      ){
+        void window.portalCsCliqGroupMembers.syncGroupMemberChips(window.__PORTAL_ADMIN_DM_UI);
+      }
       await portalAdminDmLoadMessages();
     }
     function openCeoExecDmChatModalToAllCeoGroup(){

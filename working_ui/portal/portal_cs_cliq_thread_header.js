@@ -37,8 +37,13 @@
     var avatarEl = document.getElementById("csCliqThreadAvatar");
     if (nameEl) nameEl.textContent = label;
     if (avatarEl) avatarEl.textContent = initials(label);
-    var role = ui.groupId ? "Group" : ui.peerRole || "Staff";
-    if (roleEl) roleEl.textContent = role;
+    if (roleEl) {
+      if (ui.groupId && global.portalCsCliqGroupMembers && global.portalCsCliqGroupMembers.slugShowsMembers(ui.groupSlug)) {
+        roleEl.textContent = "Members";
+      } else {
+        roleEl.textContent = ui.groupId ? "Group" : ui.peerRole || "Staff";
+      }
+    }
     if (statusEl) {
       try {
         var away = String(global.localStorage.getItem("portal_cs_cliq_workspace_status") || "at_work") === "away";

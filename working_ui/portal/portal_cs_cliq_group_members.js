@@ -1,5 +1,5 @@
 /**
- * CS Cliq group thread header — member name chips (WhatsApp-style).
+ * CS Cliq group thread header + channel cards — member name chips (WhatsApp-style).
  */
 (function (global) {
   "use strict";
@@ -9,6 +9,12 @@
     staff_leads_ops: true,
     all_ceos: true,
     ceo_liaison: true,
+  };
+
+  var KNOWN_LEAD_KEYS = {
+    john: true,
+    berta: true,
+    michelle: true,
   };
 
   function esc(s) {
@@ -24,6 +30,15 @@
     return box.client || null;
   }
 
+  function normKey(v) {
+    return String(v || "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "");
+  }
+
   function firstName(full) {
     full = String(full || "").trim();
     if (!full) return "";
@@ -37,6 +52,8 @@
       .toLowerCase();
     if (user === "javi") return "Javi";
     if (user === "javier") return "Javier";
+    if (user === "raul" || user === "raúl") return "Raúl";
+    if (user === "victor") return "Victor";
     return firstName((row && row.full_name) || (row && row.username) || "");
   }
 
@@ -48,27 +65,71 @@
     return { label: label, title: full };
   }
 
+  function isSessionLeadProfile(row) {
+    if (!row || row.is_active === false) return false;
+    var ar = String(row.app_role || "").toLowerCase();
+    if (ar === "admin" || ar === "ceo") return false;
+    if (ar === "lead") return true;
+    var dr = String(row.dashboard_route || "").toLowerCase();
+    if (dr.indexOf("lead_dashboard") >= 0) return true;
+    var u = normKey(row.username);
+    var first = normKey(String(row.full_name || "").split(/\s+/).filter(Boolean)[0] || "");
+    if (KNOWN_LEAD_KEYS[u] || KNOWN_LEAD_KEYS[first]) return true;
+    return false;
+  }
+
+  function isExecutiveCeoProfile(row) {
+    if (!row || row.is_active === false) return false;
+    if (
+      global.portalDmRoles &&
+      typeof global.portalDmRoles.portalDmIsExecutiveCeoTrioMember === "function"
+    ) {
+      return global.portalDmRoles.portalDmIsExecutiveCeoTrioMember(row);
+    }
+    var u = normKey(row.username);
+    var first = normKey(String(row.full_name || "").split(/\s+/).filter(Boolean)[0] || "");
+    return u === "victor" || u === "raul" || u === "javi" || first === "victor" || first === "raul" || first === "javi";
+  }
+
+  function mergeChips(primary, extra) {
+    var out = [];
+    var seen = Object.create(null);
+    function push(list) {
+      (list || []).forEach(function (c) {
+        if (!c || !c.label) return;
+        var k = normKey(c.label);
+        if (!k || seen[k]) return;
+        seen[k] = true;
+        out.push(c);
+      });
+    }
+    push(primary);
+    push(extra);
+    return out;
+  }
+
   async function loadSessionLeadChips(supabase) {
     if (
       global.portalCsCliqAdminInbox &&
       typeof global.portalCsCliqAdminInbox.loadSessionLeads === "function"
     ) {
       var leads = await global.portalCsCliqAdminInbox.loadSessionLeads(supabase);
-      return (leads || [])
+      var fromHelper = (leads || [])
         .map(function (row) {
           return chipFromProfile(row);
         })
         .filter(Boolean);
+      if (fromHelper.length) return fromHelper;
     }
     var res = await supabase
       .from("staff_profiles")
-      .select("id,full_name,username,app_role,is_active")
-      .eq("app_role", "lead")
+      .select("id,full_name,username,app_role,staff_role,dashboard_route,is_active")
       .or("is_active.is.null,is_active.eq.true")
       .order("full_name", { ascending: true })
-      .limit(20);
+      .limit(80);
     if (res.error || !Array.isArray(res.data)) return [];
     return res.data
+      .filter(isSessionLeadProfile)
       .map(function (row) {
         return chipFromProfile(row);
       })
@@ -85,6 +146,7 @@
       .limit(10);
     if (res.error || !Array.isArray(res.data)) return [];
     return res.data
+      .filter(isExecutiveCeoProfile)
       .map(function (row) {
         return chipFromProfile(row);
       })
@@ -102,6 +164,8 @@
       .limit(5);
     if (!adminRes.error && Array.isArray(adminRes.data)) {
       adminRes.data.forEach(function (row) {
+        var u = normKey(row.username);
+        if (u !== "sevitha" && u !== "info") return;
         var c = chipFromProfile(row);
         if (c) chips.push(c);
       });
@@ -109,21 +173,80 @@
     return chips;
   }
 
-  async function loadMemberChips(groupSlug) {
+  async function loadGroupAuthorChips(supabase, groupId) {
+    groupId = String(groupId || "").trim();
+    if (!supabase || !groupId) return [];
+    var msgRes = await supabase
+      .from("portal_ceo_group_message")
+      .select("author_id")
+      .eq("group_id", groupId)
+      .order("created_at", { ascending: false })
+      .limit(160);
+    if (msgRes.error || !Array.isArray(msgRes.data)) return [];
+    var ids = [];
+    msgRes.data.forEach(function (m) {
+      var id = String((m && m.author_id) || "").trim();
+      if (id && ids.indexOf(id) === -1) ids.push(id);
+    });
+    if (!ids.length) return [];
+    var profRes = await supabase
+      .from("staff_profiles")
+      .select("id,full_name,username,app_role,staff_role,is_active")
+      .in("id", ids);
+    if (profRes.error || !Array.isArray(profRes.data)) return [];
+    return profRes.data
+      .filter(function (row) {
+        return row && row.is_active !== false;
+      })
+      .map(function (row) {
+        return chipFromProfile(row);
+      })
+      .filter(Boolean);
+  }
+
+  async function loadMemberChips(groupSlug, groupId) {
     groupSlug = String(groupSlug || "").toLowerCase();
-    if (!MEMBER_SLUGS[groupSlug]) return [];
+    groupId = String(groupId || "").trim();
+    if (!MEMBER_SLUGS[groupSlug] && !groupId) return [];
     var supabase = client();
     if (!supabase) return [];
+    var primary = [];
     if (groupSlug === "session_leads" || groupSlug === "staff_leads_ops") {
-      return loadSessionLeadChips(supabase);
+      primary = await loadSessionLeadChips(supabase);
+    } else if (groupSlug === "all_ceos") {
+      primary = await loadCeoChips(supabase);
+    } else if (groupSlug === "ceo_liaison") {
+      primary = await loadLiaisonChips(supabase);
     }
-    if (groupSlug === "all_ceos") return loadCeoChips(supabase);
-    if (groupSlug === "ceo_liaison") return loadLiaisonChips(supabase);
-    return [];
+    var extra = groupId ? await loadGroupAuthorChips(supabase, groupId) : [];
+    return mergeChips(primary, extra);
   }
 
   function slugShowsMembers(groupSlug) {
     return !!MEMBER_SLUGS[String(groupSlug || "").toLowerCase()];
+  }
+
+  function chipsHtml(members, opts) {
+    opts = opts || {};
+    members = Array.isArray(members) ? members : [];
+    if (!members.length) {
+      return opts.emptyHtml != null ? String(opts.emptyHtml) : "";
+    }
+    var tone = String(opts.tone || "").trim();
+    var toneClass = tone ? " portal-cs-cliq-group-member-chip--" + tone : "";
+    return members
+      .map(function (m) {
+        return (
+          '<span class="portal-cs-cliq-group-member-chip' +
+          toneClass +
+          '" title="' +
+          esc(m.title || m.label) +
+          '">' +
+          esc(m.label) +
+          "</span>"
+        );
+      })
+      .join("");
   }
 
   function renderChips(container, members) {
@@ -137,17 +260,7 @@
     }
     container.hidden = false;
     container.setAttribute("aria-hidden", "false");
-    container.innerHTML = members
-      .map(function (m) {
-        return (
-          '<span class="portal-cs-cliq-group-member-chip" title="' +
-          esc(m.title || m.label) +
-          '">' +
-          esc(m.label) +
-          "</span>"
-        );
-      })
-      .join("");
+    container.innerHTML = chipsHtml(members);
   }
 
   function hideChips(container) {
@@ -168,17 +281,17 @@
       return;
     }
     var slug = String(ui.groupSlug || "").toLowerCase();
-    if (!slugShowsMembers(slug)) {
+    var token = ++loadToken;
+    host.hidden = false;
+    host.setAttribute("aria-hidden", "false");
+    host.innerHTML =
+      '<span class="portal-cs-cliq-group-member-chip portal-cs-cliq-group-member-chip--loading">…</span>';
+    var members = await loadMemberChips(slug, ui.groupId);
+    if (token !== loadToken) return;
+    if (!members.length && !slugShowsMembers(slug)) {
       hideChips(host);
       return;
     }
-    var token = ++loadToken;
-    hideChips(host);
-    host.hidden = false;
-    host.setAttribute("aria-hidden", "false");
-    host.innerHTML = '<span class="portal-cs-cliq-group-member-chip portal-cs-cliq-group-member-chip--loading">…</span>';
-    var members = await loadMemberChips(slug);
-    if (token !== loadToken) return;
     renderChips(host, members);
   }
 
@@ -187,6 +300,8 @@
     slugShowsMembers: slugShowsMembers,
     syncGroupMemberChips: syncGroupMemberChips,
     renderChips: renderChips,
+    chipsHtml: chipsHtml,
     profileChipLabel: profileChipLabel,
+    chipFromProfile: chipFromProfile,
   };
 })(typeof window !== "undefined" ? window : globalThis);

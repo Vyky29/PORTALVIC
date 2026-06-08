@@ -111,7 +111,11 @@
 
     function key(item) {
       if (!item) return "";
-      if (item.kind === "group") return "g:" + String(item.id || item.slug || "");
+      if (item.kind === "group") {
+        var slug = String(item.slug || "").toLowerCase();
+        if (slug) return "g:" + slug;
+        return "g:" + String(item.id || "");
+      }
       return "d:" + String(item.id || item.workerId || item.label || "");
     }
 

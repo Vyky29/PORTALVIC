@@ -1458,6 +1458,70 @@ body.admin-view-cs-cliq .portal-admin-floating-chat-wrap {
   overflow-wrap: break-word;
 }
 
+#csCliqRoot .portal-cs-cliq-channel-card__member-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
+  width: 100%;
+  align-items: center;
+}
+
+#csCliqRoot .portal-cs-cliq-channel-card__members--empty {
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+#csCliqRoot .portal-cs-cliq-group-member-chip {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  min-width: 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.35;
+  background: rgba(45, 132, 179, 0.12);
+  color: #1e4a63;
+  border: 1px solid rgba(45, 132, 179, 0.18);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#csCliqRoot .portal-cs-cliq-group-member-chip--lead {
+  background: rgba(124, 58, 237, 0.1);
+  color: #5b21b6;
+  border-color: rgba(124, 58, 237, 0.18);
+}
+
+#csCliqRoot .portal-cs-cliq-group-member-chip--ceo {
+  background: rgba(234, 88, 12, 0.1);
+  color: #9a3412;
+  border-color: rgba(234, 88, 12, 0.18);
+}
+
+#csCliqRoot .portal-cs-cliq-group-member-chip--loading {
+  opacity: 0.55;
+  font-style: italic;
+}
+
+#csCliqRoot .portal-cs-cliq-thread-header__members {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
+  width: 100%;
+  margin-top: 2px;
+}
+
+#csCliqRoot .portal-cs-cliq-thread-header__meta {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
 #csCliqRoot .portal-cs-cliq-channel-card__when {
   font-size: 11px;
   font-weight: 600;

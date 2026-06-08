@@ -76,17 +76,31 @@
 
   function memberSubtitle(item, chips) {
     chips = Array.isArray(chips) ? chips : [];
-    if (chips.length) {
-      var names = chips
-        .map(function (c) {
-          return String((c && c.label) || "").trim();
-        })
-        .filter(Boolean)
-        .slice(0, 8);
-      if (names.length) return "Group (" + names.join(", ") + ")";
-    }
+    if (chips.length) return "";
     if (item && item.isTeamChat) return "Team chat";
     return "Group";
+  }
+
+  function renderMemberChipsRow(chips, esc) {
+    chips = Array.isArray(chips) ? chips : [];
+    if (!chips.length) {
+      return '<span class="portal-cs-cliq-channel-card__members portal-cs-cliq-channel-card__members--empty">Group</span>';
+    }
+    var inner =
+      global.portalCsCliqGroupMembers &&
+      typeof global.portalCsCliqGroupMembers.chipsHtml === "function"
+        ? global.portalCsCliqGroupMembers.chipsHtml(chips)
+        : esc(
+            chips
+              .map(function (c) {
+                return String((c && c.label) || "").trim();
+              })
+              .filter(Boolean)
+              .join(", ")
+          );
+    return (
+      '<span class="portal-cs-cliq-channel-card__member-chips" aria-label="Members">' + inner + "</span>"
+    );
   }
 
   async function loadMemberChipsForItem(item) {
@@ -96,7 +110,7 @@
       typeof global.portalCsCliqGroupMembers.loadMemberChips === "function" &&
       item.kind === "group"
     ) {
-      return global.portalCsCliqGroupMembers.loadMemberChips(item.slug || "");
+      return global.portalCsCliqGroupMembers.loadMemberChips(item.slug || "", item.id || "");
     }
     if (item.isTeamChat && item.threadRow) {
       var profBy = (lastCtx && lastCtx.profBy) || {};
@@ -137,7 +151,8 @@
     } else if (item.id) {
       btn.setAttribute("data-cs-cliq-channel-dm", String(item.id || ""));
     }
-    var membersLine = esc(memberSubtitle(item, chips));
+    var membersLine = chips.length ? "" : esc(memberSubtitle(item, chips));
+    var memberChipsHtml = renderMemberChipsRow(chips, esc);
     var sender = esc(String(item.lastSender || "").trim());
     var prev = esc(String(item.lastPreview || "").trim());
     var previewLine =
@@ -148,9 +163,10 @@
       '<span class="portal-cs-cliq-channel-card__title">' +
       esc(item.label || "Channel") +
       "</span>" +
-      '<span class="portal-cs-cliq-channel-card__members">' +
-      membersLine +
-      "</span>" +
+      memberChipsHtml +
+      (membersLine
+        ? '<span class="portal-cs-cliq-channel-card__members">' + membersLine + "</span>"
+        : "") +
       '<span class="portal-cs-cliq-channel-card__when">' +
       esc(when || "") +
       "</span>" +
