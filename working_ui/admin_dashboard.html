@@ -31,8 +31,8 @@
   <script src="/portal/portal_dm_roles.js?v=20260609-mgmt-identity"></script>
   <script src="/portal/portal_chat_actor_identity.js?v=20260609-inbox-firstname"></script>
   <script src="/portal/portal_dm_icons.js?v=20260624-dm-icons"></script>
-  <script src="/portal/portal_dm_thread_avatar.js?v=20260609-admin-photo-fix"></script>
-  <script src="/portal/portal_cs_cliq_thread_header.js?v=20260609-thread-avatar-ops"></script>
+  <script src="/portal/portal_dm_thread_avatar.js?v=20260608-ceo-dm-admin-icon"></script>
+  <script src="/portal/portal_cs_cliq_thread_header.js?v=20260608-ceo-dm-admin-icon"></script>
   <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260608-cliq-channels"></script>
   <script src="/portal/portal_dm_read_cursor.js?v=20260609-read-cursor"></script>
   <script src="/portal/portal_cs_cliq_support_route.js?v=20260609-staff-ops-thread"></script>
@@ -78,8 +78,8 @@
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
   <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260609-header-chat-bell" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
-  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260609-header-chat-bell" />
-  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260609-empty-thread-compose-v2" />
+  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260608-ceo-dm-admin-icon" />
+  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260608-ceo-dm-admin-icon" />
 </head>
 <body>
   <script>
@@ -21595,9 +21595,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             var workerId = String(item.workerId || item.peerId || '').trim();
             var tid = String(item.id || '').trim();
             window.__PORTAL_ADMIN_DM_UI.inboxLane = item.inboxLane || 'mine';
-            if(workerId){
+            if(workerId && portalAdminDmIsWorkerRecipient(item.peerProf || {})){
               window.__PORTAL_ADMIN_DM_UI.managementWorkerId = workerId;
               window.__PORTAL_ADMIN_DM_UI.workerId = workerId;
+            }else{
+              window.__PORTAL_ADMIN_DM_UI.managementWorkerId = '';
+              window.__PORTAL_ADMIN_DM_UI.workerId = '';
             }
             if(tid){
               void portalAdminDmOpenThread(tid);
@@ -22481,10 +22484,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       tid = String(tid || '').trim();
       if(!portalAdminDmCeoUsesSharedWorkerOpsInbox()) return { workerId: '', threadId: tid };
       var workerId = String(ui.managementWorkerId || ui.workerId || '').trim();
+      var workerProf = null;
+      if(workerId && ui.peerProf && String(ui.peerProf.id || '') === workerId){
+        workerProf = ui.peerProf;
+      }
       if(!workerId){
         var peerProf = ui.peerProf || null;
         if(peerProf && peerProf.id && portalAdminDmIsWorkerRecipient(peerProf)){
           workerId = String(peerProf.id).trim();
+          workerProf = peerProf;
         }
       }
       if(!workerId && tid && client){
@@ -22499,11 +22507,25 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                 prSend.data.forEach(function(p){ if(p && p.id) profSend[String(p.id)] = p; });
               }
             }
-            workerId = portalAdminDmWorkerPeerFromThread(tresSend.data, profSend, me);
+            var candidate = portalAdminDmWorkerPeerFromThread(tresSend.data, profSend, me);
+            if(candidate && portalAdminDmIsWorkerRecipient(profSend[candidate] || {})){
+              workerId = candidate;
+              workerProf = profSend[candidate] || null;
+            }
           }
         }catch(_wSend){}
       }
-      if(!workerId) return { workerId: '', threadId: tid };
+      if(workerId && !workerProf && client){
+        try{
+          var prW = await client.from('staff_profiles').select('id,full_name,username,app_role,staff_role,is_active').eq('id', workerId).maybeSingle();
+          if(!prW.error && prW.data) workerProf = prW.data;
+        }catch(_pw){}
+      }
+      if(!workerId || !portalAdminDmIsWorkerRecipient(workerProf || {})){
+        window.__PORTAL_ADMIN_DM_UI = window.__PORTAL_ADMIN_DM_UI || {};
+        window.__PORTAL_ADMIN_DM_UI.inboxLane = 'personal';
+        return { workerId: '', threadId: tid };
+      }
       var opsTid = await portalAdminDmFindStaffLeadThreadForWorker(client, workerId);
       if(opsTid){
         window.__PORTAL_ADMIN_DM_UI = window.__PORTAL_ADMIN_DM_UI || {};

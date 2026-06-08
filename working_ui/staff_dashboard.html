@@ -94,7 +94,7 @@
   <script src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
   <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260609-white-chat" />
-  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260609-thread-avatar-ops" />
+  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260608-ceo-dm-admin-icon" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260610-topbar-colors" />
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260608-orbit-center" />
   <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260609-portal-white-chat" />
@@ -1061,13 +1061,13 @@
   <script src="/portal/portal_staff_chat_calls.js?v=20260609-chat-identity"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
   <script src="/portal/portal_dm_roles.js?v=20260609-mgmt-identity"></script>
-  <script src="/portal/portal_dm_thread_avatar.js?v=20260608-inbox-photos"></script>
+  <script src="/portal/portal_dm_thread_avatar.js?v=20260608-ceo-dm-admin-icon"></script>
   <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260622-chat-restore"></script>
   <script src="/portal/portal_cs_cliq_support_route.js?v=20260609-staff-ops-thread"></script>
   <script src="/portal/portal_cs_cliq_support.js?v=20260607-support-route"></script>
   <script src="/portal/portal_cs_cliq_announcements_hub.js?v=20260604-cliq-fix"></script>
   <script src="/portal/portal_cs_cliq_announcement_inbox.js?v=20260607-cliq-fix"></script>
-  <script src="/portal/portal_cs_cliq_thread_header.js?v=20260608-mgmt-ops-identity"></script>
+  <script src="/portal/portal_cs_cliq_thread_header.js?v=20260608-ceo-dm-admin-icon"></script>
   <script src="/portal/portal_cs_cliq_thread_files.js?v=20260604-cliq-files"></script>
   <script src="/portal/portal_admin_cs_cliq.js?v=20260608-inbox-fix"></script>
   <script src="/portal/portal_cs_cliq_workspace.js?v=20260604-cliq-inbox"></script>
@@ -6931,10 +6931,11 @@
           kind: 'dm',
           label: label,
           unreadCount: unreadCount,
-          peerProfile: opts.peerProfile || null,
-          roleTone: opts.peerProfile && window.portalDmThreadAvatar.roleToneFromProfile
+          peerProfile: opts.useAdminLaneAvatar ? null : (opts.peerProfile || null),
+          useAdminLaneAvatar: !!opts.useAdminLaneAvatar,
+          roleTone: opts.useAdminLaneAvatar ? 'exec' : (opts.peerProfile && window.portalDmThreadAvatar.roleToneFromProfile
             ? window.portalDmThreadAvatar.roleToneFromProfile(opts.peerProfile)
-            : ''
+            : '')
         }, escapeHtml, 'staff_lead');
       }
       var preview = '';
@@ -7675,7 +7676,8 @@
           var itemOpts = {
             lastSender: prev.sender,
             lastPreview: prev.preview,
-            peerProfile: peerProf
+            peerProfile: officePeer ? null : peerProf,
+            useAdminLaneAvatar: !!officePeer
           };
           if(useStaffMgmtInbox && window.portalLeadStaffChatDirectory){
             itemOpts.roleChip = window.portalLeadStaffChatDirectory.peerRoleChipLabel(peerProf);

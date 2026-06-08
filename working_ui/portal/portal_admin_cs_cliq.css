@@ -683,6 +683,22 @@ body.admin-view-cs-cliq #csCliqRoot .portal-cs-cliq-thread-header__status {
   color: #3730a3;
 }
 
+#csCliqRoot .portal-dm-thread-avatar--admin-lane {
+  background: linear-gradient(145deg, #eef2ff, #dbe4ff);
+  color: #3730a3;
+}
+
+#csCliqRoot .portal-dm-thread-avatar__admin-icon {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+#csCliqRoot .portal-cs-cliq-thread-header__avatar.portal-dm-thread-avatar--admin-lane .portal-dm-thread-avatar__admin-icon {
+  width: 26px;
+  height: 26px;
+}
+
 #csCliqRoot .portal-dm-thread-avatar--photo,
 #csCliqRoot .portal-dm-thread-avatar.portal-roster-avatar--has-photo {
   position: relative;

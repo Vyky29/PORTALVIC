@@ -82,9 +82,10 @@
     var item = {
       kind: ui.groupId ? "group" : "dm",
       label: label,
-      peerProfile: prof,
-      username: username,
+      peerProfile: ui.managementOpsPeer ? null : prof,
+      username: ui.managementOpsPeer ? "" : username,
       isTeamChat: !!ui.isTeamChat,
+      useAdminLaneAvatar: !!ui.managementOpsPeer,
     };
     if (global.portalDmThreadAvatar && typeof global.portalDmThreadAvatar.innerHtml === "function") {
       if (

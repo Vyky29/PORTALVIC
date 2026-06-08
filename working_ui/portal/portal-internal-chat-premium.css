@@ -221,6 +221,10 @@ body.portal-inapp-call-open #portalInternalChatBackdrop.open{
 #internalChatSheet .portal-dm-thread-avatar--default{background:linear-gradient(145deg,#eaf5fb,#d4e8f4);color:#1d6f96}
 #internalChatSheet .portal-dm-thread-avatar--staff{background:linear-gradient(145deg,#e8f8ef,#ccefdc);color:#166534}
 #internalChatSheet .portal-dm-thread-avatar--lead{background:linear-gradient(145deg,#f3ecff,#e4d4ff);color:#6d28d9}
+#internalChatSheet .portal-dm-thread-avatar--exec{background:linear-gradient(145deg,#eef2ff,#dbe4ff);color:#3730a3}
+#internalChatSheet .portal-dm-thread-avatar--admin-lane{background:linear-gradient(145deg,#eef2ff,#dbe4ff);color:#3730a3}
+#internalChatSheet .portal-dm-thread-avatar__admin-icon{width:22px;height:22px;display:block}
+#internalChatSheet .portal-cs-cliq-thread-header__avatar.portal-dm-thread-avatar--admin-lane .portal-dm-thread-avatar__admin-icon{width:26px;height:26px}
 #internalChatSheet .portal-dm-thread-avatar--photo,
 #internalChatSheet .portal-dm-thread-avatar.portal-roster-avatar--has-photo{
   position:relative;overflow:hidden;padding:0;

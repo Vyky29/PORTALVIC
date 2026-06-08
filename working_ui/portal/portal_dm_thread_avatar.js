@@ -54,6 +54,15 @@
     var label = item && item.label ? item.label : "";
     var username = String((item && item.username) || "").trim();
     var prof = item && (item.peerProfile || item.profile);
+    if (item && item.useAdminLaneAvatar) {
+      tone = "exec";
+      return (
+        '<span class="portal-dm-thread-avatar portal-dm-thread-avatar--exec portal-dm-thread-avatar--admin-lane" aria-hidden="true">' +
+        '<svg class="portal-dm-thread-avatar__admin-icon" viewBox="0 0 24 24" focusable="false" aria-hidden="true">' +
+        '<path fill="currentColor" d="M12 2l7 4v6c0 5-3.5 9.2-7 10-3.5-.8-7-5-7-10V6l7-4z"/>' +
+        "</svg></span>"
+      );
+    }
     if (!username && prof && prof.username) username = String(prof.username || "").trim();
     var avatarUrl = normalizeAvatarUrl(
       (item && (item.avatarUrl || item.avatar_url)) ||
