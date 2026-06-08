@@ -180,10 +180,8 @@
     workers.forEach(function (w) {
       var wid = String(w.id || "");
       if (!wid || wid === me) return;
-      mineItems.push(makeDmItem(w, mineMap[wid] || null, "mine", names));
-      if (showOpsLane) {
-        opsItems.push(makeDmItem(w, opsMap[wid] || null, "ops", names));
-      }
+      if (mineMap[wid]) mineItems.push(makeDmItem(w, mineMap[wid], "mine", names));
+      if (showOpsLane && opsMap[wid]) opsItems.push(makeDmItem(w, opsMap[wid], "ops", names));
     });
 
     mineItems.sort(function (a, b) {

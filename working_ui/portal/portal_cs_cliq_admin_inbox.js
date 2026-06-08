@@ -273,17 +273,16 @@
   function flattenDmInbox(merged, splitSections, teamDmItems) {
     var items = [];
     var seen = Object.create(null);
-    var opsByWorker = Object.create(null);
-    if (splitSections && Array.isArray(splitSections.opsItems)) {
-      splitSections.opsItems.forEach(function (opsItem) {
-        var wk = String((opsItem && opsItem.workerId) || "").trim();
-        if (wk && opsItem) opsByWorker[wk] = opsItem;
-      });
+    function hasInboxActivity(item) {
+      if (!item) return false;
+      if (Number(item.unreadCount) > 0) return true;
+      return !!String(item.lastPreview || "").trim();
     }
     function push(item) {
       if (!item || item.kind !== "dm" || item.isTeamChat) return;
       // Flat inbox = viewer's own 1:1 DMs. Ops lane (Sevitha ↔ worker) lives in Channels split view only.
       if (item.inboxLane === "ops") return;
+      if (!hasInboxActivity(item)) return;
       var tid = String(item.id || "").trim();
       var wk = String(item.workerId || item.peerId || "").trim();
       if (tid) {
@@ -292,17 +291,6 @@
         if (wk) seen["w:" + wk] = true;
         items.push(item);
         return;
-      }
-      // Worker slot without a thread yet — hide unless it has list preview activity.
-      if (item.synthetic && !item.lastPreview && !item.when) {
-        var fb = wk && opsByWorker[wk];
-        if (!fb || (!fb.lastPreview && !fb.when)) return;
-        item = Object.assign({}, item, {
-          lastPreview: fb.lastPreview,
-          lastSender: fb.lastSender,
-          when: fb.when,
-          unreadCount: fb.unreadCount || 0,
-        });
       }
       if (!wk || seen["w:" + wk]) return;
       seen["w:" + wk] = true;

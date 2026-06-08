@@ -35,8 +35,8 @@
   <script src="/portal/portal_cs_cliq_thread_header.js?v=20260609-admin-thread-fix"></script>
   <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260608-cliq-channels"></script>
   <script src="/portal/portal_cs_cliq_support_route.js?v=20260608-inbox-fix"></script>
-  <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260609-staff-mgmt"></script>
-  <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260609-ceo-dedupe"></script>
+  <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260609-inbox-activity"></script>
+  <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260609-inbox-activity"></script>
   <script src="/portal/portal_cs_cliq_admin_channels.js?v=20260609-white-perf"></script>
   <script src="/portal/portal_cs_cliq_support.js?v=20260607-support-route"></script>
   <script src="/portal/portal_cs_cliq_announcements_hub.js?v=20260604-cliq-inbox"></script>
@@ -21331,16 +21331,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               typeof window.portalCsCliqAdminInbox.shouldUseCategorizedInbox === 'function' &&
               window.portalCsCliqAdminInbox.shouldUseCategorizedInbox();
             var workerId = String(item.workerId || item.peerId || '').trim();
+            var tid = String(item.id || '').trim();
+            window.__PORTAL_ADMIN_DM_UI.inboxLane = item.inboxLane || 'mine';
+            if(tid){
+              void portalAdminDmOpenThread(tid);
+              return;
+            }
             if(
               useFlatInbox &&
               workerId &&
               portalAdminDmIsWorkerRecipient(item.peerProf || {})
             ){
-              window.__PORTAL_ADMIN_DM_UI.inboxLane = 'mine';
               void portalAdminDmOpenManagementWorker(workerId, 'mine');
               return;
             }
-            window.__PORTAL_ADMIN_DM_UI.inboxLane = item.inboxLane || 'mine';
             void portalAdminDmOpenThread(item.id);
           });
         }
@@ -21552,6 +21556,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             label: threadListLabel(r, peer),
             when: r.updated_at,
             peerId: peer,
+            workerId: peer,
             peerProf: profBy[peer] || {},
             isTeamChat: false,
             threadRow: r,
@@ -21726,6 +21731,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         typeof window.portalCsCliqAdminInbox.shouldUseCategorizedInbox === 'function' &&
         window.portalCsCliqAdminInbox.shouldUseCategorizedInbox();
       var skipCanonical =
+        useFlatInbox ||
         String((window.__PORTAL_ADMIN_DM_UI || {}).inboxLane || '') === 'ops' ||
         (
           !useFlatInbox &&
