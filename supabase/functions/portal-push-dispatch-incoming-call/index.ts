@@ -336,6 +336,7 @@ Deno.serve(async (req) => {
     messageId,
     source,
     kind,
+    note: sent === 0 ? "no portal_push_subscriptions or all sends failed" : "ok",
   });
 
   return jsonPushResponse({

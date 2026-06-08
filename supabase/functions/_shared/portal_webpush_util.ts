@@ -127,6 +127,9 @@ export async function sendPushPayloadToUserIds(
   }
 
   if (!subs?.length) {
+    console.log("[portal-webpush] no subscriptions for targets", {
+      targets: userIds.length,
+    });
     return { sent: 0, targets: userIds.length };
   }
 

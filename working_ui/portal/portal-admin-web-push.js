@@ -559,7 +559,16 @@
         Notification.permission === "granted" &&
         typeof global.portalEnsureWebPushSubscription === "function"
       ) {
-        void global.portalEnsureWebPushSubscription();
+        void global.portalEnsureWebPushSubscription().then(function (wp) {
+          if (wp && wp.ok === false && wp.reason === "no-notify-perm") {
+            requestAnimationFrame(portalAdminOpenAlertsNotificationsSheet);
+          }
+        });
+      } else if (
+        typeof Notification !== "undefined" &&
+        Notification.permission === "default"
+      ) {
+        requestAnimationFrame(portalAdminOpenAlertsNotificationsSheet);
       }
       portalEnsureAdminMandatoryNotifications();
     } catch (_) {}
