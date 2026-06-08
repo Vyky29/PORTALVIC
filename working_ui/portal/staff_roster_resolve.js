@@ -100,6 +100,27 @@
     return !!(pk && EXEC_OR_ADMIN_ROSTER_KEYS[pk]);
   }
 
+  /** Ignore ?portalPreview=teflon when a real signed-in user is not the teflon demo account. */
+  function portalStaffShouldIgnoreTeflonPreview(profile, authUser) {
+    try {
+      var qs = new URLSearchParams(window.location.search || "");
+      if (String(qs.get("portalPreview") || "").trim().toLowerCase() !== "teflon") return false;
+      var pk = portalPrimaryStaffRosterKey(profile, authUser);
+      return !!pk && pk !== "teflon";
+    } catch (_ignore) {
+      return false;
+    }
+  }
+
+  function portalStaffClearTeflonPreviewFromUrl() {
+    try {
+      var u = new URL(window.location.href);
+      if (!u.searchParams.has("portalPreview")) return;
+      u.searchParams.delete("portalPreview");
+      window.history.replaceState({}, "", u.pathname + u.search + u.hash);
+    } catch (_url) {}
+  }
+
   function portalStaffRosterKeyCandidates(profile, authUser) {
     var p = profile || {};
     var user = authUser || null;
@@ -210,4 +231,6 @@
   window.portalBootstrapStaffRosterFromProfile = portalBootstrapStaffRosterFromProfile;
   window.portalRosterKeyFromAuthEmail = portalRosterKeyFromAuthEmail;
   window.portalStaffIsExecOrAdminProfile = portalStaffIsExecOrAdminProfile;
+  window.portalStaffShouldIgnoreTeflonPreview = portalStaffShouldIgnoreTeflonPreview;
+  window.portalStaffClearTeflonPreviewFromUrl = portalStaffClearTeflonPreviewFromUrl;
 })();

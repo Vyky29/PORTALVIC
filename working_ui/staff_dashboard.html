@@ -1032,7 +1032,7 @@
   <script src="/portal/teflon_guide_demo_data.js?v=20260604-guide-roster"></script>
   <script src="/portal/teflon_guide_demo_merge.js?v=20260604-guide-roster"></script>
   <script src="/portal/portal_participant_catalog.js?v=20260606-next-dedupe"></script>
-  <script src="/portal/staff_roster_resolve.js?v=20260611-javi-roster-guard"></script>
+  <script src="/portal/staff_roster_resolve.js?v=20260629-teflon-preview-guard"></script>
   <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260624-ghost-handoff" />
   <script src="/portal/portal-ghost-view.js?v=20260624-ghost-handoff"></script>
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260609-achievement-videos" />
@@ -14896,6 +14896,21 @@
         var session = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.session;
         var user = session && session.user ? session.user : null;
         var profileForRoster = p || {};
+        if (
+          user &&
+          typeof window.portalStaffShouldIgnoreTeflonPreview === "function" &&
+          window.portalStaffShouldIgnoreTeflonPreview(p || profileForRoster, user)
+        ) {
+          if (typeof window.portalStaffClearTeflonPreviewFromUrl === "function") {
+            window.portalStaffClearTeflonPreviewFromUrl();
+          }
+          STAFF_DASHBOARD_ID = "";
+          try { window.STAFF_DASHBOARD_ID = ""; } catch (_) {}
+          _staffRosterHydratedOk = false;
+          __spreadsheetBoot = null;
+          sessionsModel = [];
+          clientNotesById = {};
+        }
         if (!p && user) {
           profileForRoster = {
             username: String(user.email || "").split("@")[0],
@@ -14947,7 +14962,11 @@
         if (!newSessions.length) {
           if (_staffRosterHydratedOk && Array.isArray(sessionsModel) && sessionsModel.length) {
             var prevSid = portalLocalCanonicalStaffKey(STAFF_DASHBOARD_ID);
-            if (prevSid && prevSid === staffId) {
+            var authSid =
+              typeof window.portalPrimaryStaffRosterKey === "function" && user
+                ? portalLocalCanonicalStaffKey(window.portalPrimaryStaffRosterKey(p || profileForRoster, user))
+                : "";
+            if (prevSid && prevSid === staffId && (!authSid || authSid === staffId)) {
               console.warn("staff_dashboard: keep roster (empty re-bootstrap)", staffId);
               portalStaffFinishIdentityUi(profileForRoster, p, session);
               return;
