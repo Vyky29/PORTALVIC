@@ -2,7 +2,7 @@
   // Source consumed by staff_dashboard_spreadsheet_adapter.js
   window.STAFF_DASHBOARD_SOURCE = {
   "staffPhotosBaseUrl": "portal/staff_photos/",
-  "staffPhotoExtension": "jpg",
+  "staffPhotoExtension": "png",
   "sundayDateOverrides": {
     "2026-06-07": {
       "leadOnDuty": "John",
@@ -45,7 +45,7 @@
     "sandra": {
       "staffId": "sandra",
       "staffName": "Sandra",
-      "avatarFile": "portal/staff_photos/sandra.jpg",
+      "avatarFile": "portal/staff_photos/sandra.png",
       "staffRoleTrack": "fitness",
       "canViewAll": false
     },
@@ -66,7 +66,7 @@
     "angel": {
       "staffId": "angel",
       "staffName": "Angel",
-      "avatarFile": "portal/staff_photos/angel.jpg",
+      "avatarFile": "portal/staff_photos/angel.png",
       "staffRoleTrack": "swimming",
       "canViewAll": false
     },
@@ -94,7 +94,7 @@
     "giuseppe": {
       "staffId": "giuseppe",
       "staffName": "Giuseppe",
-      "avatarFile": "portal/staff_photos/giuseppe.jpg",
+      "avatarFile": "portal/staff_photos/giuseppe.png",
       "staffRoleTrack": "support",
       "canViewAll": false
     },
@@ -115,7 +115,7 @@
     "aurora": {
       "staffId": "aurora",
       "staffName": "Aurora",
-      "avatarFile": "portal/staff_photos/aurora.jpg",
+      "avatarFile": "portal/staff_photos/aurora.png",
       "staffRoleTrack": "swimming",
       "canViewAll": false
     },
@@ -143,14 +143,14 @@
     "alex": {
       "staffId": "alex",
       "staffName": "Alex",
-      "avatarFile": "portal/staff_photos/alex.jpg",
+      "avatarFile": "portal/staff_photos/alex.png",
       "staffRoleTrack": "climbing",
       "canViewAll": false
     },
     "javi": {
       "staffId": "javi",
       "staffName": "Javi",
-      "avatarFile": "portal/staff_photos/javi.jpg",
+      "avatarFile": "portal/staff_photos/javi.png",
       "staffRoleTrack": "manager",
       "canViewAll": true
     },
@@ -171,7 +171,6 @@
     "lulia": {
       "staffId": "lulia",
       "staffName": "Lulia",
-      "avatarFile": "portal/staff_photos/lulia.jpg",
       "staffRoleTrack": "support",
       "canViewAll": false
     },

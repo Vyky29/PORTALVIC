@@ -92,6 +92,9 @@
     if (u && urls.indexOf(u) < 0) urls.push(u);
   }
 
+  /** No static file on disk — use initials only (avoids console 404 spam). */
+  var NO_STATIC_PHOTO = { lulia: true };
+
   function resolveStaffPhotoCandidates(nameOrKey, opts) {
     opts = opts || {};
     var urls = [];
@@ -100,22 +103,23 @@
     if (base.charAt(base.length - 1) !== "/") base += "/";
 
     keys.forEach(function (key) {
+      if (NO_STATIC_PHOTO[key]) return;
+      var hadProfileFile = false;
       try {
         var src = global.STAFF_DASHBOARD_SOURCE;
         if (key && src && src.staffProfiles && src.staffProfiles[key]) {
-          var af = src.staffProfiles[key].avatarFile;
+          var af = String(src.staffProfiles[key].avatarFile || "").trim();
           if (af) {
-            pushCandidate(urls, af);
+            hadProfileFile = true;
             pushCandidate(urls, swapPhotoExt(af, "png"));
-            pushCandidate(urls, swapPhotoExt(af, "jpg"));
+            pushCandidate(urls, af);
           }
         }
       } catch (_) {}
+      if (hadProfileFile) return;
       if (!key) return;
       pushCandidate(urls, base + key + ".png");
       pushCandidate(urls, base + key + ".jpg");
-      pushCandidate(urls, base + key + ".jpeg");
-      pushCandidate(urls, base + key + ".webp");
     });
     return urls;
   }
