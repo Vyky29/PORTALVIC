@@ -1086,10 +1086,10 @@
  }
 
  var h1 = document.getElementById("sraHeroTitle");
- if (h1) h1.textContent = name;
+ if (h1) h1.textContent = "1-to-1 Wellbeing Review";
 
  var sub = document.getElementById("sraHeroSubtitle");
- if (sub) sub.textContent = meta.join(" - ");
+ if (sub) sub.textContent = name + (meta.length ? " · " + meta.join(" · ") : "");
 
 
  var lead = document.getElementById("sraLead");
