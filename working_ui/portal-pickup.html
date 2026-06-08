@@ -98,6 +98,37 @@
       letter-spacing:normal;
       margin-bottom:8px;
     }
+    .participant-field-wrap{ position:relative; min-width:0; }
+    .portal-name-suggest{
+      position:absolute;
+      left:0;
+      right:0;
+      top:calc(100% + 4px);
+      z-index:40;
+      max-height:220px;
+      overflow-y:auto;
+      margin:0;
+      padding:6px 0;
+      border-radius:10px;
+      border:1px solid rgba(139,92,246,0.2);
+      background:#fff;
+      box-shadow:0 10px 28px rgba(91,33,182,0.12);
+    }
+    .portal-name-suggest[hidden]{ display:none !important; }
+    .portal-name-suggest__item{
+      display:block;
+      width:100%;
+      margin:0;
+      padding:10px 12px;
+      border:none;
+      background:transparent;
+      text-align:left;
+      font:inherit;
+      font-size:15px;
+      cursor:pointer;
+    }
+    .portal-name-suggest__item:hover,
+    .portal-name-suggest__item:focus{ background:rgba(139,92,246,0.1); }
     .participant-row{
       display:grid;
       grid-template-columns:minmax(0,1fr) auto;
@@ -959,8 +990,10 @@
         <div class="field participant-field">
           <label for="searchInput"><span class="field-icon-pickup" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>Participant name</label>
           <div class="participant-row">
-            <input id="searchInput" class="input" type="text" placeholder="Start typing a name…" list="pickupParticipantList" autocomplete="off" spellcheck="false" />
-            <datalist id="pickupParticipantList"></datalist>
+            <div class="participant-field-wrap" style="min-width:0">
+              <input id="searchInput" class="input" type="text" placeholder="Start typing a name…" autocomplete="off" spellcheck="false" />
+              <div id="pickupSearchSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Matching participants"></div>
+            </div>
             <button type="button" class="btn btn-pickup-new" id="addParticipantBtn">New</button>
           </div>
         </div>
@@ -996,7 +1029,10 @@
                     <div class="grid">
                       <div class="full dropoff-line">
                         <label for="participantName">Name of participant</label>
-                        <input id="participantName" class="input" required spellcheck="false">
+                        <div class="participant-field-wrap">
+                          <input id="participantName" class="input" required spellcheck="false" autocomplete="off" />
+                          <div id="pickupParticipantSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Matching participants"></div>
+                        </div>
                       </div>
                       <div class="full dropoff-line">
                         <span class="field-label-block">Date and time</span>
@@ -1371,6 +1407,41 @@
           opt.value = nm;
           dl.appendChild(opt);
         });
+      }
+      async function wirePickupParticipantSuggest(){
+        function loadScript(src){
+          return new Promise(function(resolve, reject){
+            var s = document.createElement('script');
+            s.src = src;
+            s.onload = function(){ resolve(); };
+            s.onerror = function(){ reject(new Error('script ' + src)); };
+            document.head.appendChild(s);
+          });
+        }
+        var shared = (window.PORTAL_SHARED_JS_BASE || '/portal-shared-js').replace(/\/$/, '');
+        try{
+          await loadScript(shared + '/clients_info_embed.js?v=20260609-autofill');
+          await loadScript('/portal/staff_dashboard_spreadsheet_bundle.js?v=20260609-autofill');
+          await loadScript(shared + '/participant_services.js?v=20260609-autofill');
+          await loadScript(shared + '/portal_field_autocomplete.js?v=20260609-autofill');
+          if(typeof window.portalWireFieldSuggest !== 'function') return;
+          window.portalWireFieldSuggest(searchInput, document.getElementById('pickupSearchSuggest'), {
+            kind: 'participant',
+            strict: false,
+            onPick: function(name){
+              if(name) searchInput.value = name;
+            }
+          });
+          var pNameEl = document.getElementById('participantName');
+          if(pNameEl){
+            window.portalWireFieldSuggest(pNameEl, document.getElementById('pickupParticipantSuggest'), {
+              kind: 'participant',
+              strict: true
+            });
+          }
+        }catch(err){
+          console.warn('[pickup] participant autofill', err);
+        }
       }
       function markPendingDelete(id){
         if(!id) return;
@@ -2488,6 +2559,7 @@
       resizePickupSignatureCanvas();
       clearPickupSignaturePad();
 
+      await wirePickupParticipantSuggest();
       renderRoleButtons('emotionalState');
       renderRoleButtons('dropRole');
       renderRoleButtons('pickupRole');

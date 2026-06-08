@@ -113,6 +113,39 @@ input,select,textarea{
   font-family:inherit;
   color:var(--text);
 }
+.participant-field-wrap{ position:relative; }
+.portal-name-suggest{
+  position:absolute;
+  left:0;
+  right:0;
+  top:calc(100% + 4px);
+  z-index:40;
+  max-height:220px;
+  overflow-y:auto;
+  margin:0;
+  padding:6px 0;
+  border-radius:10px;
+  border:1px solid rgba(11,18,32,0.12);
+  background:#fff;
+  box-shadow:0 10px 28px rgba(15, 20, 30, 0.14);
+}
+.portal-name-suggest[hidden]{ display:none !important; }
+.portal-name-suggest__item{
+  display:block;
+  width:100%;
+  margin:0;
+  padding:10px 12px;
+  border:none;
+  background:transparent;
+  text-align:left;
+  font:inherit;
+  font-size:15px;
+  cursor:pointer;
+}
+.portal-name-suggest__item:hover,
+.portal-name-suggest__item:focus{
+  background:rgba(100,116,139,0.12);
+}
 input[readonly]{
   background:#fafafa;
   color:var(--muted);
@@ -349,8 +382,8 @@ button{
         <div id="cancellationDetailsEditable">
         <div class="field full">
           <label for="clientName"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span> Client name <span class="req">*</span></label>
-          <input type="text" id="clientName" name="clientName" list="cancellationClientNameList" placeholder="Type the first letters — only names starting with that text appear" autocomplete="off" spellcheck="false" required />
-          <datalist id="cancellationClientNameList"></datalist>
+          <input type="text" id="clientName" name="clientName" placeholder="Type the first letters — pick from the list" autocomplete="off" spellcheck="false" required />
+          <div id="cancellationClientSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Matching participants"></div>
         </div>
 
         <div class="field full">
@@ -1085,6 +1118,15 @@ button{
     renderCancellationContextCard();
   }
 
+  function wireCancellationParticipantSuggest(){
+    if(!clientNameEl || typeof window.portalWireFieldSuggest !== 'function') return;
+    window.portalWireFieldSuggest(clientNameEl, document.getElementById('cancellationClientSuggest'), {
+      kind: 'participant',
+      strict: true,
+      onPick: refreshCancellationFromClientField
+    });
+  }
+
   function refreshCancellationFromClientField(){
     if (!cancellationServiceEl || !clientNameEl) return;
     syncCancellationClientDatalist();
@@ -1347,11 +1389,14 @@ button{
     .catch(function(){})
     .then(function(){ return loadPortalScriptOnceCx(__portalJsCx('staff_dashboard_spreadsheet_bundle.js?v=20260518-roster-fix')); })
     .catch(function(){})
-    .then(function(){ return loadPortalScriptOnceCx(__portalJsCx('participant_services.js?v=20260520-acat-feedback-picker')); })
+    .then(function(){ return loadPortalScriptOnceCx(__portalJsCx('participant_services.js?v=20260609-autofill')); })
+    .catch(function(){})
+    .then(function(){ return loadPortalScriptOnceCx(__portalJsCx('portal_field_autocomplete.js?v=20260609-autofill')); })
     .catch(function(){})
     .then(function(){ return enrichCancellationContext(); })
     .catch(function(){})
     .then(function(){
+      wireCancellationParticipantSuggest();
       applyCancellationContextUi();
       refreshCancellationFromClientField();
     })
