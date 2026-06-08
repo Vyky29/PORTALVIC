@@ -29,28 +29,26 @@
     return prof || (global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.staff_profile) || {};
   }
 
-  /** Full CS Cliq / messenger ù only Raul, Javier (Palan), Victor, admin and CEO. */
+  /** Full messenger inbox (search, staff directory, calls) ‚Äî lead, admin, CEO on any portal. */
   function portalStaffHasFullMessengerAccess(prof) {
     var row = profileRow(prof);
-    if (global.portalDmRoles && typeof global.portalDmRoles.portalDmUsesAdminCliq === "function") {
-      return global.portalDmRoles.portalDmUsesAdminCliq(row);
-    }
     var ar = String(row.app_role || "").toLowerCase();
-    return ar === "admin" || ar === "ceo";
+    if (ar === "lead" || ar === "admin" || ar === "ceo") return true;
+    var dr = String(row.dashboard_route || "").toLowerCase();
+    if (dr === "lead_dashboard.html" || dr === "admin_dashboard.html" || dr === "ceo_dashboard.html") {
+      return true;
+    }
+    try {
+      var path = String((typeof location !== "undefined" && location.pathname) || "");
+      if (/lead_dashboard\.html|admin_dashboard\.html|ceo_dashboard\.html/i.test(path)) {
+        return true;
+      }
+    } catch (_e) {}
+    return false;
   }
 
-  /** @deprecated Use portalStaffHasFullMessengerAccess ù kept for call sites expecting this name. */
   function portalStaffIsLeadUser(prof) {
     return portalStaffHasFullMessengerAccess(prof);
-  }
-
-  /** Session lead on roster (e.g. Berta, John) ù not the executive trio. */
-  function portalStaffIsSessionLead(prof) {
-    var row = profileRow(prof);
-    if (portalStaffHasFullMessengerAccess(row)) return false;
-    var ar = String(row.app_role || "").toLowerCase();
-    var sr = String(row.staff_role || "").toLowerCase();
-    return ar === "lead" || sr === "manager";
   }
 
   function portalStaffIsStaffUser(prof) {
@@ -64,13 +62,7 @@
   }
 
   function portalStaffHasPeerDirectory(prof) {
-    var row = profileRow(prof);
-    if (portalStaffHasFullMessengerAccess(row)) return true;
-    return portalStaffIsStaffUser(row);
-  }
-
-  function portalStaffInboxPeerAllowed(row) {
-    return staffInitiatePeer(row);
+    return portalStaffIsLeadUser(prof) || portalStaffIsStaffUser(prof);
   }
 
   function staffInitiatePeer(row) {
@@ -101,10 +93,12 @@
 
   function portalStaffIsRestrictedWorkerChat(prof) {
     var row = profileRow(prof);
-    if (portalStaffHasFullMessengerAccess(row)) return false;
-    if (portalStaffIsStaffUser(row)) return true;
-    if (portalStaffIsSessionLead(row)) return true;
-    return false;
+    if (portalStaffIsLeadUser(row)) return false;
+    var ar = String(row.app_role || "").toLowerCase();
+    if (ar === "staff") return true;
+    if (ar === "admin" || ar === "ceo") return false;
+    var sr = String(row.staff_role || "").toLowerCase();
+    return !!(sr && sr !== "manager" && sr !== "admin");
   }
 
   function peerLabelFromRow(row) {
@@ -207,138 +201,12 @@
     }
   }
 
-  function ensureRestrictedHub() {
-    if (portalStaffHasFullMessengerAccess()) return null;
-    var listWrap = document.getElementById("internalChatListWrap");
-    if (!listWrap || !listWrap.parentElement) return null;
-    var hub = document.getElementById("internalChatRestrictedHub");
-    if (!hub) {
-      hub = document.createElement("div");
-      hub.id = "internalChatRestrictedHub";
-      hub.className = "portal-dm-restricted-hub";
-      hub.setAttribute("role", "group");
-      hub.setAttribute("aria-label", "Team support");
-      hub.innerHTML =
-        '<button type="button" class="portal-dm-restricted-hub__btn" data-restricted-hub="support">' +
-        '<span class="portal-dm-restricted-hub__label">Request support</span>' +
-        '<span class="portal-dm-restricted-hub__sub">Management team</span></button>' +
-        '<button type="button" class="portal-dm-restricted-hub__btn" data-restricted-hub="meeting">' +
-        '<span class="portal-dm-restricted-hub__label">Request meeting</span>' +
-        '<span class="portal-dm-restricted-hub__sub">With management</span></button>';
-      listWrap.parentElement.insertBefore(hub, listWrap);
-      hub.addEventListener("click", function (ev) {
-        var btn = ev.target.closest("[data-restricted-hub]");
-        if (!btn) return;
-        var act = String(btn.getAttribute("data-restricted-hub") || "");
-        if (act === "support") {
-          openRestrictedSupportPicker();
-          return;
-        }
-        if (act === "meeting" && global.portalStaffChatCalls && typeof global.portalStaffChatCalls.openMeetingPanel === "function") {
-          global.portalStaffChatCalls.openMeetingPanel({ contextual: false });
-        }
-      });
-    }
-    return hub;
-  }
-
-  function openRestrictedSupportPicker() {
-    var existing = document.getElementById("internalChatSupportPicker");
-    if (existing) {
-      existing.hidden = false;
-      existing.setAttribute("aria-hidden", "false");
-      return;
-    }
-    var sheet = document.getElementById("internalChatSheet");
-    if (!sheet) return;
-    var picker = document.createElement("div");
-    picker.id = "internalChatSupportPicker";
-    picker.className = "portal-dm-support-picker";
-    picker.setAttribute("role", "dialog");
-    picker.setAttribute("aria-label", "Request support");
-    var options = [
-      { id: "urgent_callback", title: "Urgent call back" },
-      { id: "participant_concern", title: "Participant concern" },
-      { id: "safeguarding", title: "Safeguarding" },
-      { id: "staff_issue", title: "Staff issue" },
-      { id: "other", title: "Other" },
-    ];
-    picker.innerHTML =
-      '<div class="portal-dm-support-picker__card">' +
-      '<div class="portal-dm-support-picker__head">' +
-      "<h4>Request support</h4>" +
-      '<button type="button" class="portal-dm-support-picker__close" aria-label="Close">&times;</button></div>' +
-      '<p class="portal-dm-support-picker__lead">Management receives your request in their inbox.</p>' +
-      '<div class="portal-dm-support-picker__grid">' +
-      options
-        .map(function (o) {
-          return (
-            '<button type="button" class="portal-dm-support-picker__opt" data-support-type="' +
-            esc(o.id) +
-            '">' +
-            esc(o.title) +
-            "</button>"
-          );
-        })
-        .join("") +
-      "</div></div>";
-    sheet.appendChild(picker);
-    picker.addEventListener("click", function (ev) {
-      if (ev.target.closest(".portal-dm-support-picker__close") || ev.target === picker) {
-        picker.hidden = true;
-        picker.setAttribute("aria-hidden", "true");
-        return;
-      }
-      var opt = ev.target.closest("[data-support-type]");
-      if (!opt) return;
-      var type = String(opt.getAttribute("data-support-type") || "other");
-      if (global.portalCsCliqSupport && typeof global.portalCsCliqSupport.submit === "function") {
-        global.portalCsCliqSupport.submit(type);
-      }
-      picker.innerHTML =
-        '<div class="portal-dm-support-picker__card portal-dm-support-picker__card--done">' +
-        "<h4>Support request sent</h4>" +
-        "<p>Management will follow up in your inbox.</p>" +
-        '<button type="button" class="btn btn--pri btn--sm" id="internalChatSupportDone">Done</button></div>';
-      var done = document.getElementById("internalChatSupportDone");
-      if (done) {
-        done.addEventListener("click", function () {
-          picker.hidden = true;
-          picker.setAttribute("aria-hidden", "true");
-        });
-      }
-    });
-  }
-
-  function profileName() {
-    var p = profileRow();
-    return String(p.full_name || p.username || "Staff member").trim();
-  }
-
-  function syncRestrictedHub(opts) {
-    opts = opts || {};
-    if (portalStaffHasFullMessengerAccess()) {
-      var existing = document.getElementById("internalChatRestrictedHub");
-      if (existing) {
-        existing.hidden = true;
-        existing.setAttribute("aria-hidden", "true");
-      }
-      return;
-    }
-    var hub = ensureRestrictedHub();
-    if (!hub) return;
-    var inThread = !!opts.inThread;
-    hub.hidden = inThread;
-    hub.setAttribute("aria-hidden", inThread ? "true" : "false");
-  }
-
   function syncInboxChrome(opts) {
     opts = opts || {};
     var prof = profileRow(opts.profile);
     var hasDirectory =
       opts.hasDirectory != null ? !!opts.hasDirectory : portalStaffHasPeerDirectory(prof);
     var inThread = !!opts.inThread;
-    syncRestrictedHub({ inThread: inThread });
     var chrome = document.getElementById("internalChatLeadInboxChrome");
     var nav = document.getElementById("internalChatLeadInboxNav");
     var staffWrap = document.getElementById("internalChatStaffDirectoryWrap");
@@ -831,13 +699,10 @@
   global.portalLeadStaffChatDirectory = {
     portalStaffHasFullMessengerAccess: portalStaffHasFullMessengerAccess,
     portalStaffIsLeadUser: portalStaffIsLeadUser,
-    portalStaffIsSessionLead: portalStaffIsSessionLead,
     portalStaffIsStaffUser: portalStaffIsStaffUser,
     portalStaffHasPeerDirectory: portalStaffHasPeerDirectory,
-    portalStaffInboxPeerAllowed: portalStaffInboxPeerAllowed,
     staffInitiatePeer: staffInitiatePeer,
     portalStaffIsRestrictedWorkerChat: portalStaffIsRestrictedWorkerChat,
-    syncRestrictedHub: syncRestrictedHub,
     syncInboxChrome: syncInboxChrome,
     renderStaffDirectory: renderStaffDirectory,
     renderPeerDirectory: renderPeerDirectory,

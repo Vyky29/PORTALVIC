@@ -69,14 +69,9 @@
     return portalDmIsDirectorProfile(row) || portalDmIsAdminProfile(row);
   }
 
-  /**
-   * Full CS Cliq on every portal (staff / lead / admin embed):
-   * Raul, Javier Arranz (Palan), Victor, plus admin and CEO.
-   */
+  /** Raul, Javier Arranz (Palan), Victor, admin, and CEO use the admin CS Cliq experience. */
   function portalDmUsesAdminCliq(prof) {
     var row = profileRow(prof);
-    var ar = String(row.app_role || "").toLowerCase();
-    if (ar === "staff" || ar === "lead") return false;
     if (portalDmIsAdminProfile(row) || portalDmIsDirectorProfile(row)) return true;
     return false;
   }

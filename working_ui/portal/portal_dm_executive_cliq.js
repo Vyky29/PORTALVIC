@@ -15,17 +15,6 @@
     return false;
   }
 
-  function isRestrictedWorkerChat() {
-    if (
-      global.portalLeadStaffChatDirectory &&
-      typeof global.portalLeadStaffChatDirectory.portalStaffIsRestrictedWorkerChat === "function"
-    ) {
-      return global.portalLeadStaffChatDirectory.portalStaffIsRestrictedWorkerChat(profileRow());
-    }
-    var ar = String(profileRow().app_role || "").toLowerCase();
-    return ar === "staff" || ar === "lead";
-  }
-
   function onAdminPortal() {
     if (global.portalDmRoles && typeof global.portalDmRoles.portalDmOnAdminPortal === "function") {
       return global.portalDmRoles.portalDmOnAdminPortal();
@@ -37,8 +26,8 @@
     }
   }
 
-  function tryOpenWorkerCliqEmbed(channel) {
-    if (onAdminPortal()) return false;
+  function tryOpenAdminCliq(channel) {
+    if (!usesAdminCliq() || onAdminPortal()) return false;
     channel = String(channel || "staff_lead").trim() === "ceo_exec" ? "ceo_exec" : "staff_lead";
     if (global.portalCsCliqEmbed && typeof global.portalCsCliqEmbed.open === "function") {
       return global.portalCsCliqEmbed.open(channel);
@@ -46,53 +35,7 @@
     return false;
   }
 
-  /** @deprecated Prefer tryOpenWorkerCliqEmbed ù kept for ceo_dashboard fallback. */
-  function tryOpenAdminCliq(channel) {
-    if (!usesAdminCliq() || onAdminPortal()) return false;
-    return tryOpenWorkerCliqEmbed(channel);
-  }
-
-  /** Restricted staff/leads: internal chat sheet only (no full CS Cliq embed). */
-  function openRestrictedWorkerInternalChat(channel) {
-    if (onAdminPortal() || usesAdminCliq()) return false;
-    var sheet = global.document && global.document.getElementById("internalChatSheet");
-    if (!sheet) return false;
-    channel = String(channel || "staff_lead").trim() === "ceo_exec" ? "ceo_exec" : "staff_lead";
-    global.__PORTAL_ADMIN_DM_CHANNEL = channel;
-    try {
-      if (typeof global.closeSheet === "function") {
-        global.closeSheet({ bypassAnnouncementLock: true });
-      }
-    } catch (_cl) {}
-    try {
-      delete global.__PORTAL_OFFICE_DM_PEER_CACHE;
-    } catch (_c) {}
-    global.__PORTAL_INTERNAL_CHAT_UI = global.__PORTAL_INTERNAL_CHAT_UI || {};
-    global.__PORTAL_INTERNAL_CHAT_UI.threadId = null;
-    global.__PORTAL_INTERNAL_CHAT_UI.skipResetThreadOnNextSheetOpen = false;
-    global.__PORTAL_INTERNAL_CHAT_UI.inboxTab = global.__PORTAL_INTERNAL_CHAT_UI.inboxTab || "chats";
-    void (async function () {
-      if (typeof global.portalStaffDmAckInboxOpened === "function") {
-        await global.portalStaffDmAckInboxOpened();
-      }
-      if (typeof global.openSheet === "function") {
-        global.openSheet("internalChatSheet");
-      }
-    })();
-    return true;
-  }
-
-  /** Staff/lead portal chat entry: CS Cliq embed for everyone (tier-limited rail); sheet is fallback only. */
-  function openPortalWorkerChat(channel) {
-    if (onAdminPortal()) return false;
-    if (tryOpenWorkerCliqEmbed(channel)) return true;
-    return openRestrictedWorkerInternalChat(channel);
-  }
-
   global.portalDmExecutiveCliq = {
     tryOpenAdminCliq: tryOpenAdminCliq,
-    tryOpenWorkerCliqEmbed: tryOpenWorkerCliqEmbed,
-    openRestrictedWorkerInternalChat: openRestrictedWorkerInternalChat,
-    openPortalWorkerChat: openPortalWorkerChat,
   };
 })(typeof window !== "undefined" ? window : globalThis);
