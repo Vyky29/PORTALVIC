@@ -20023,7 +20023,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         window.__PORTAL_ADMIN_DM_UI.managementWorkerId = '';
         portalAdminDmTogglePanels('list');
         portalAdminDmRefreshListAfterRead();
-        void portalAdminDmSyncIncomingAttention();
+        void portalAdminDmSyncIncomingAttention({ suppressNotify: true });
       });
       bindClick('csCliqTabStaff', function(){
         if(portalAdminDmChannel() === 'staff_lead') return;
@@ -20371,14 +20371,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function portalAdminDmHasUnread(){
       return !!(window.__PORTAL_ADMIN_DM_UNREAD || window.__PORTAL_ADMIN_CEO_DM_UNREAD || window.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD);
     }
-    /** No toast while in a thread or on a call (avoids "Chat · Raul" when calling Roberto). */
+    /** No toast while chat hub is open (inbox or thread) or on a call. */
     function portalAdminDmShouldSuppressIncomingChatNotify(){
       if(window.portalStaffChatCalls){
         if(typeof window.portalStaffChatCalls.incomingCallActive === 'function' && window.portalStaffChatCalls.incomingCallActive()) return true;
         if(typeof window.portalStaffChatCalls.outboundCallActive === 'function' && window.portalStaffChatCalls.outboundCallActive()) return true;
       }
+      if(window.__PORTAL_CS_CLIQ_ACTIVE && state && state.view === 'cs_cliq') return true;
+      if(window.__PORTAL_ADMIN_PREMIUM_CHAT_OPEN || portalAdminDmPremiumSheetActive()) return true;
       if(!window.__PORTAL_ADMIN_DM_OPEN && !window.__PORTAL_CS_CLIQ_ACTIVE) return false;
       var ui = window.__PORTAL_ADMIN_DM_UI || {};
+      if(String(ui.panel || '') === 'list') return true;
       return String(ui.panel || '') === 'thread' && !!(ui.threadId || ui.groupId);
     }
     /** Chat unread: campana only (no in-page banner — it shifted layout / overlapped controls). */
@@ -20531,6 +20534,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
       });
       window.__PORTAL_STAFF_DM_UNREAD_COUNT__ = total;
+      window.__PORTAL_ADMIN_DM_LIST_KNOWS_UNREAD = total > 0;
       if(total <= 0){
         window.__PORTAL_ADMIN_DM_UNREAD = false;
         window.__PORTAL_ADMIN_CEO_DM_UNREAD = false;
@@ -20916,6 +20920,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         window.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD = hgCeo;
         portalAdminDmApplyTeamTileUnreadClass();
         var suppressLoginNotify = !!window.__PORTAL_ADMIN_DM_UNREAD_INITIAL_SYNC;
+        var nowUnread = portalAdminDmHasUnread();
+        if(!prevUnread && nowUnread && window.__PORTAL_ADMIN_DM_LIST_KNOWS_UNREAD){
+          prevUnread = true;
+        }
         portalAdminDmOnUnreadAttentionChanged(prevUnread, opts);
         if(suppressLoginNotify){
           window.__PORTAL_ADMIN_DM_UNREAD_INITIAL_SYNC = false;
