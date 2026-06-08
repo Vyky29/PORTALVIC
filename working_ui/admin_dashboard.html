@@ -22424,7 +22424,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           personalDmItems.push({
             kind: 'dm',
             id: String(r.id),
-            label: opsAdminPersonal ? (global.portalOpsAdminDisplay && global.portalOpsAdminDisplay.label ? global.portalOpsAdminDisplay.label : 'Sevitha (Admin)') : threadListLabel(r, peer),
+            label: opsAdminPersonal ? (window.portalOpsAdminDisplay && window.portalOpsAdminDisplay.label ? window.portalOpsAdminDisplay.label : 'Sevitha (Admin)') : threadListLabel(r, peer),
             when: r.updated_at,
             peerId: peer,
             workerId: portalAdminDmIsWorkerRecipient(peerProfPersonal) ? peer : '',
