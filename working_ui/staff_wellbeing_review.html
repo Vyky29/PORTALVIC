@@ -6,11 +6,11 @@
  <title>1-to-1 Wellbeing Review - clubSENsational</title>
  <script src="/portal-static-bootstrap.js"></script>
  <script src="/portal/term_from_timetable.js?v=20260604-teflon-guide-days"></script>
- <link rel="stylesheet" href="/portal/portal-wellbeing-admin-sra.css?v=20260610-wb-plain-labels" />
+ <link rel="stylesheet" href="/portal/portal-wellbeing-admin-sra.css?v=20260610-wb-premium-cards" />
  <link rel="stylesheet" href="/portal/portal-wellbeing-review-simple.css?v=20260604-wb-flow-refine" />
  <link rel="stylesheet" href="/portal-shared-js/portal_form_feedback_skin.css?v=20260609-autofill" />
  <script src="/portal/portal_wellbeing_stressor_catalog.js?v=20260610-wb-voice2"></script>
- <script src="/portal/portal_wellbeing_review_simple.js?v=20260608-wb-sra-cards"></script>
+ <script src="/portal/portal_wellbeing_review_simple.js?v=20260610-wb-premium-cards"></script>
  <script src="/portal/portal_feedback_voice_input.js?v=20260610-wb-voice2"></script>
  <link rel="preconnect" href="https://www.clubsensational.org" />
  <link rel="dns-prefetch" href="https://www.clubsensational.org" />
@@ -880,45 +880,85 @@
  border-top: 1px solid var(--line);
  }
 
- /* Admin 1-to-1: override legacy wide table (must beat rules above) */
+ /* Admin 1-to-1: premium card layout (beats min-width:1140px above) */
  body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .table-scroll {
  overflow: visible !important;
  border: none !important;
  box-shadow: none !important;
+ background: transparent !important;
+ margin-top: 10px !important;
+ }
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap table.domain-table,
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .domain-table tbody,
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .domain-table tr {
+ min-width: 0 !important;
+ max-width: 100% !important;
+ width: 100% !important;
  }
  body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap table.domain-table {
- min-width: 0 !important;
- width: 100% !important;
  display: block !important;
+ table-layout: auto !important;
+ border: none !important;
  }
  body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .domain-table thead {
  display: none !important;
  }
  body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .domain-table tbody {
  display: block !important;
- width: 100% !important;
  }
- body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .domain-table tbody tr {
+ body.portal-wellbeing-admin-mode #portalWbAdvancedWrap .domain-tbody > tr,
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .domain-tbody > tr {
  display: grid !important;
- grid-template-columns: 1fr 1fr 1fr !important;
+ grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
  grid-template-areas:
   "stressor stressor stressor"
   "obs obs obs"
   "sev like score"
   "controls controls controls" !important;
- gap: 10px 12px !important;
- margin-bottom: 14px !important;
- padding: 16px !important;
- border: 1px solid rgba(42, 49, 64, 0.12) !important;
- border-radius: 12px !important;
+ gap: 14px 12px !important;
+ margin-bottom: 16px !important;
+ padding: 18px !important;
+ border: 1px solid #dbe4ef !important;
+ border-radius: 14px !important;
  background: #fff !important;
- box-shadow: 0 1px 3px rgba(26, 35, 48, 0.06) !important;
+ box-shadow: 0 4px 18px rgba(23, 50, 71, 0.07) !important;
  }
  body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .domain-table td {
  display: block !important;
  border: none !important;
  padding: 0 !important;
+ min-width: 0 !important;
  }
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .portal-wb-field-label {
+ display: block;
+ margin: 0 0 8px;
+ font-size: 11px;
+ font-weight: 800;
+ letter-spacing: 0.06em;
+ text-transform: uppercase;
+ color: #5c6778;
+ line-height: 1.3;
+ }
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .stressor-cell .portal-wb-field-label {
+ color: #c2410c;
+ font-size: 12px;
+ }
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .portal-wb-field-hint {
+ display: block;
+ margin: -4px 0 8px;
+ font-size: 11px;
+ font-weight: 500;
+ color: #728290;
+ line-height: 1.35;
+ text-transform: none;
+ letter-spacing: 0;
+ }
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .stressor-cell { grid-area: stressor !important; }
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .obs-cell { grid-area: obs !important; }
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .sl-td:nth-child(3) { grid-area: sev !important; }
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .sl-td:nth-child(4) { grid-area: like !important; }
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .score-td { grid-area: score !important; }
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .controls-cell { grid-area: controls !important; }
  body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .who-cell,
  body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .when-cell {
  display: none !important;
@@ -926,8 +966,86 @@
  body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .js-picklists-obs-wrap,
  body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .js-picklists-measures-wrap,
  body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .js-s-range,
- body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .js-l-range {
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .js-l-range,
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .sl-caption,
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .sl-num-input,
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .micro-label {
  display: none !important;
+ }
+ body.portal-wellbeing-admin-mode .portal-wb-section-guide {
+ margin: 8px 0 12px;
+ padding: 10px 12px;
+ border-radius: 10px;
+ background: #f0f6fb;
+ border: 1px solid #d4e4f2;
+ color: #3d5568;
+ font-size: 13px;
+ line-height: 1.5;
+ }
+ body.portal-wellbeing-admin-mode .portal-wb-scale-pills {
+ display: flex;
+ gap: 6px;
+ margin-top: 2px;
+ }
+ body.portal-wellbeing-admin-mode .portal-wb-scale-pill {
+ flex: 1;
+ min-width: 0;
+ min-height: 42px;
+ padding: 0;
+ border: 1px solid #c5cdd8;
+ border-radius: 10px;
+ background: #fff;
+ font-weight: 800;
+ font-size: 15px;
+ color: #3d4f63;
+ cursor: pointer;
+ transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
+ }
+ body.portal-wellbeing-admin-mode .portal-wb-scale-pill:hover {
+ border-color: #2d84b3;
+ background: #f4f9fc;
+ }
+ body.portal-wellbeing-admin-mode .portal-wb-scale-pill.is-active {
+ color: #fff;
+ border-color: #256f99;
+ background: linear-gradient(180deg, #2d84b3 0%, #256f99 100%);
+ box-shadow: 0 2px 8px rgba(45, 132, 179, 0.28);
+ }
+ body.portal-wellbeing-admin-mode .portal-wb-scale-pill--like.is-active {
+ border-color: #b45309;
+ background: linear-gradient(180deg, #f4b740 0%, #d99a1f 100%);
+ box-shadow: 0 2px 8px rgba(244, 183, 64, 0.35);
+ }
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .score-td .js-score {
+ width: 100%;
+ min-height: 42px;
+ margin-bottom: 6px;
+ font-size: 22px;
+ font-weight: 800;
+ text-align: center;
+ border-radius: 10px;
+ border: 1px solid #c5cdd8;
+ background: #f8fafc;
+ }
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .score-band {
+ text-align: center;
+ font-size: 12px;
+ font-weight: 700;
+ padding: 6px 8px;
+ border-radius: 8px;
+ }
+ @media (max-width: 720px) {
+ body.portal-wellbeing-admin-mode #portalWbAdvancedWrap .domain-tbody > tr,
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .domain-tbody > tr {
+  grid-template-columns: 1fr !important;
+  grid-template-areas:
+   "stressor"
+   "obs"
+   "sev"
+   "like"
+   "score"
+   "controls" !important;
+ }
  }
 
  </style>
@@ -2185,6 +2303,10 @@ document.addEventListener("DOMContentLoaded", function () {
  var out = tr.querySelector(".js-score");
  var bandEl = tr.querySelector(".js-band");
  updateSlLabels(tr);
+ if (document.body.classList.contains("portal-wellbeing-admin-mode")) {
+ syncAdminScalePills(tr, "s");
+ syncAdminScalePills(tr, "l");
+ }
  if (!out) return;
  var s = sIn && sIn.value !== "" ? parseInt(sIn.value, 10) : NaN;
  var l = lIn && lIn.value !== "" ? parseInt(lIn.value, 10) : NaN;
@@ -2331,6 +2453,10 @@ document.addEventListener("DOMContentLoaded", function () {
  }
 
  function refreshStressorRowPicklists(tr) {
+ if (document.body.classList.contains("portal-wellbeing-admin-mode")) {
+ setPicklistWrapsVisibility(tr);
+ return;
+ }
  var tb = tr.closest(".domain-tbody");
  var dom = tb ? tb.getAttribute("data-domain") : "";
  var sel = tr.querySelector(".js-common-stressor");
@@ -2782,72 +2908,130 @@ document.addEventListener("DOMContentLoaded", function () {
 
  populateStressorDropdowns();
 
+ function ensureAdminFieldLabel(td, text, hint) {
+ if (!td) return;
+ var existing = td.querySelector(".portal-wb-field-label");
+ if (!existing) {
+ existing = document.createElement("div");
+ existing.className = "portal-wb-field-label";
+ td.insertBefore(existing, td.firstChild);
+ }
+ existing.textContent = text;
+ var hintEl = td.querySelector(".portal-wb-field-hint");
+ if (hint) {
+ if (!hintEl) {
+ hintEl = document.createElement("div");
+ hintEl.className = "portal-wb-field-hint";
+ if (existing.nextSibling) td.insertBefore(hintEl, existing.nextSibling);
+ else td.appendChild(hintEl);
+ }
+ hintEl.textContent = hint;
+ } else if (hintEl) {
+ hintEl.remove();
+ }
+ }
+
+ function syncAdminScalePills(tr, axis) {
+ var wrap = tr.querySelector(".sl-wrap." + (axis === "s" ? "sev" : "like"));
+ if (!wrap) return;
+ var val = "";
+ var input = tr.querySelector(".js-" + axis);
+ if (input && input.value !== "") val = String(input.value);
+ wrap.querySelectorAll(".portal-wb-scale-pill").forEach(function (btn) {
+ btn.classList.toggle("is-active", btn.getAttribute("data-val") === val);
+ });
+ }
+
+ function wireAdminScalePills(tr, axis) {
+ var wrap = tr.querySelector(".sl-wrap." + (axis === "s" ? "sev" : "like"));
+ if (!wrap) return;
+ var key = axis === "s" ? "sevPills" : "likePills";
+ if (wrap.dataset[key] === "1") {
+ syncAdminScalePills(tr, axis);
+ return;
+ }
+ wrap.dataset[key] = "1";
+ var input = tr.querySelector(".js-" + axis);
+ var range = tr.querySelector(".js-" + axis + "-range");
+ var pills = document.createElement("div");
+ pills.className = "portal-wb-scale-pills";
+ pills.setAttribute("role", "group");
+ var pillClass = axis === "s" ? "portal-wb-scale-pill" : "portal-wb-scale-pill portal-wb-scale-pill--like";
+ var ariaBase = axis === "s" ? "How serious" : "How likely";
+ for (var i = 1; i <= 5; i++) {
+ (function (n) {
+ var btn = document.createElement("button");
+ btn.type = "button";
+ btn.className = pillClass;
+ btn.textContent = String(n);
+ btn.setAttribute("data-val", String(n));
+ btn.setAttribute("aria-label", ariaBase + ": " + n + " of 5");
+ btn.addEventListener("click", function () {
+ if (input) input.value = String(n);
+ if (range) range.value = String(n);
+ syncAdminScalePills(tr, axis);
+ refreshRiskRow(tr);
+ });
+ pills.appendChild(btn);
+ })(i);
+ }
+ wrap.appendChild(pills);
+ syncAdminScalePills(tr, axis);
+ }
+
+ function wireAdminSraRow(tr) {
+ if (!tr || tr.dataset.adminCard === "1") return;
+ tr.dataset.adminCard = "1";
+ tr.classList.add("portal-wb-sra-card");
+ var tds = tr.querySelectorAll("td");
+ if (tds[6]) tds[6].hidden = true;
+ if (tds[7]) tds[7].hidden = true;
+ ensureAdminFieldLabel(tds[0], "Stressor from check-in");
+ ensureAdminFieldLabel(tds[1], "What did you discuss?");
+ ensureAdminFieldLabel(tds[2], "How serious is it?", "1 = low impact · 5 = very serious");
+ ensureAdminFieldLabel(tds[3], "How likely is harm?", "1 = unlikely · 5 = very likely");
+ ensureAdminFieldLabel(tds[4], "Overall risk", "Calculated automatically");
+ ensureAdminFieldLabel(tds[5], "Agreed actions", "Support, changes and follow-up");
+ wireAdminScalePills(tr, "s");
+ wireAdminScalePills(tr, "l");
+ tr.querySelectorAll(".js-picklists-obs-wrap, .js-picklists-measures-wrap").forEach(function (el) {
+ el.hidden = true;
+ });
+ var obs = tr.querySelector(".obs-cell .js-obs-text");
+ if (obs) {
+ obs.placeholder = "What was discussed about this stressor in the 1-to-1?";
+ obs.rows = 3;
+ }
+ var controls = tr.querySelector(".controls-cell .js-controls-text");
+ if (controls) {
+ controls.placeholder = "What support or changes were agreed? Who will follow up?";
+ controls.rows = 3;
+ }
+ tr.querySelectorAll(".js-s, .js-l").forEach(function (inp) {
+ if (inp.classList.contains("js-s")) {
+ inp.setAttribute("aria-label", "How serious is it? 1 = low impact, 5 = very serious");
+ } else {
+ inp.setAttribute("aria-label", "How likely is harm? 1 = unlikely, 5 = very likely");
+ }
+ });
+ var score = tr.querySelector(".js-score");
+ if (score) score.setAttribute("aria-label", "Overall risk score");
+ }
+
  function simplifyAdminSraTables(root) {
  if (!root) return;
  var admin = document.body.classList.contains("portal-wellbeing-admin-mode");
- var colLabels = admin
- ? [
- "Stressor from check-in",
- "What did you discuss?",
- "How serious is it?",
- "How likely is harm?",
- "Overall risk",
- "Agreed actions to reduce risk",
- ]
- : [
- "Stressor",
- "Observations",
- "Severity (S)",
- "Likelihood (L)",
- "Score",
- "Control measures",
- "By who",
- "By when",
- ];
- root.querySelectorAll(".domain-tbody tr").forEach(function (tr) {
- var tds = tr.querySelectorAll("td");
- colLabels.forEach(function (lbl, i) {
- if (tds[i]) tds[i].setAttribute("data-col-label", lbl);
- });
- });
  if (!admin) return;
- root.querySelectorAll(".domain-table thead").forEach(function (thead) {
- thead.hidden = true;
- var ths = thead.querySelectorAll("th");
- if (ths[2]) ths[2].innerHTML = 'How serious is it? <span class="th-sub">1 = low impact · 5 = very serious</span>';
- if (ths[3]) ths[3].innerHTML = 'How likely is harm? <span class="th-sub">1 = unlikely · 5 = very likely</span>';
- if (ths[4]) ths[4].innerHTML = 'Overall risk <span class="th-sub">Calculated from the two scores above</span>';
+ root.querySelectorAll(".table-scroll").forEach(function (scroll) {
+ if (scroll.querySelector(".portal-wb-section-guide")) return;
+ var guide = document.createElement("div");
+ guide.className = "portal-wb-section-guide no-print";
+ guide.textContent =
+ "Each card is one stressor. Use the numbered buttons to score how serious it is and how likely harm is. Overall risk updates automatically.";
+ scroll.insertBefore(guide, scroll.firstChild);
  });
- root.querySelectorAll(".js-picklists-obs-wrap, .js-picklists-measures-wrap").forEach(function (el) {
- el.hidden = true;
- });
- root.querySelectorAll(".obs-cell .micro-label.obs-micro").forEach(function (lbl) {
- lbl.textContent = "Conversation notes";
- });
- root.querySelectorAll(".controls-cell .micro-label.controls-micro").forEach(function (lbl) {
- if (!lbl.closest(".js-picklists-measures-wrap")) lbl.textContent = "Agreed actions";
- });
- root.querySelectorAll(".obs-cell .js-obs-text").forEach(function (ta) {
- ta.placeholder = "What was discussed about this stressor in the 1-to-1?";
- ta.rows = 3;
- });
- root.querySelectorAll(".controls-cell .js-controls-text").forEach(function (ta) {
- ta.placeholder = "What support or changes were agreed? Who will follow up?";
- ta.rows = 3;
- });
- root.querySelectorAll(".js-s, .js-l").forEach(function (inp) {
- if (inp.classList.contains("js-s")) {
- inp.setAttribute("aria-label", "How serious is it? Pick 1 for low impact up to 5 for very serious");
- inp.setAttribute("title", "1 = low impact · 5 = very serious");
- } else {
- inp.setAttribute("aria-label", "How likely is harm? Pick 1 for unlikely up to 5 for very likely");
- inp.setAttribute("title", "1 = unlikely · 5 = very likely");
- }
- inp.placeholder = "1–5";
- });
- root.querySelectorAll(".js-score").forEach(function (inp) {
- inp.setAttribute("aria-label", "Overall risk score");
- inp.placeholder = "—";
+ root.querySelectorAll(".domain-tbody tr").forEach(function (tr) {
+ wireAdminSraRow(tr);
  });
  }
 
@@ -3013,11 +3197,21 @@ document.addEventListener("DOMContentLoaded", function () {
  clone.querySelectorAll(".js-common-stressor").forEach(function (s) {
  s.value = "";
  });
+ clone.removeAttribute("data-admin-card");
+ clone.classList.remove("portal-wb-sra-card");
+ clone.querySelectorAll(".portal-wb-field-label, .portal-wb-field-hint, .portal-wb-scale-pills").forEach(function (el) {
+ el.remove();
+ });
+ clone.querySelectorAll(".sl-wrap").forEach(function (wrap) {
+ delete wrap.dataset.sevPills;
+ delete wrap.dataset.likePills;
+ });
  tb.appendChild(clone);
  refreshStressorRowPicklists(clone);
  collapseStressorDetail(clone);
  updateNoStressorQuickVisual(clone);
  refreshRiskRow(clone);
+ if (document.body.classList.contains("portal-wellbeing-admin-mode")) wireAdminSraRow(clone);
  setMsg("Row added.");
  });
  });
@@ -3316,6 +3510,9 @@ document.addEventListener("DOMContentLoaded", function () {
  updateNoStressorQuickVisual(tr);
  });
  simplifyAdminSraTables(form);
+ window.setTimeout(function () {
+ simplifyAdminSraTables(form);
+ }, 0);
  var advWrap = document.getElementById("portalWbAdvancedWrap");
  var advToggle = document.getElementById("portalWbToggleAdvanced");
  if (advWrap && advToggle) {
