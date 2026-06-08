@@ -1050,12 +1050,12 @@
   <script src="/portal/portal_dm_voice.js?v=20260608-composer-cols"></script>
   <script src="/portal/portal_dm_composer_wa.js?v=20260608-composer-cols"></script>
   <script src="/portal/portal_dm_attachments.js?v=20260608-plus-sheet-icons"></script>
-  <script src="/portal/portal_chat_actor_identity.js?v=20260609-lead-console-fix"></script>
+  <script src="/portal/portal_chat_actor_identity.js?v=20260609-mgmt-identity"></script>
   <script src="/portal/portal_staff_chat_calls.js?v=20260609-lead-console-fix"></script>
   <script src="/portal/portal_incoming_call_push.js?v=20260622-incoming-call"></script>
   <script src="/portal/portal_sheet_back.js?v=20260607-sheet-back"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
-  <script src="/portal/portal_dm_roles.js?v=20260622-chat-restore"></script>
+  <script src="/portal/portal_dm_roles.js?v=20260609-mgmt-identity"></script>
   <script src="/portal/portal_dm_thread_avatar.js?v=20260608-inbox-photos"></script>
   <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260622-chat-restore"></script>
   <script src="/portal/portal_cs_cliq_support_route.js?v=20260608-inbox-fix"></script>
@@ -5983,9 +5983,28 @@
       var parts = t.split(/\s+/);
       return parts[0] || t;
     }
-    /** One line above bubble: workers see "Admin" for office authors (admin/CEO/manager). */
+    /** One line above bubble: office authors show Admin lane labels (director attribution). */
     function portalDmInternalMsgAuthorChip(mine, authorProf){
       if(mine) return '';
+      if(
+        window.portalChatActorIdentity &&
+        typeof window.portalChatActorIdentity.managementMsgAuthorChip === 'function' &&
+        (
+          portalStaffProfileIsOfficePeer(authorProf || {}) ||
+          (window.portalChatActorIdentity.isManagementAuthor &&
+            window.portalChatActorIdentity.isManagementAuthor(authorProf))
+        )
+      ){
+        var prof = (window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile) || {};
+        var ar = String(prof.app_role || '').toLowerCase();
+        return window.portalChatActorIdentity.managementMsgAuthorChip({
+          mine: false,
+          authorProf: authorProf || {},
+          channel: 'staff_lead',
+          peerRole: ar === 'lead' ? 'lead' : 'staff',
+          audience: 'worker'
+        });
+      }
       if(portalStaffIsRestrictedWorkerChat()){
         if(portalStaffProfileIsOfficePeer(authorProf || {})) return 'Admin';
         return portalDmShortDisplayName(authorProf) || 'Team';

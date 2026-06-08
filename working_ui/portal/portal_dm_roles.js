@@ -1,5 +1,5 @@
 /**
- * Shared internal-chat role rules ù directors (Raul, Javier, Victor), admin, staff reachability.
+ * Shared internal-chat role rules ? directors (Raul, Javier, Victor), admin, staff reachability.
  */
 (function (global) {
   "use strict";
@@ -64,6 +64,13 @@
     return ar === "admin" || ar === "ceo";
   }
 
+  /** Operations admin (e.g. Sevitha) ? app_role admin, not a named director. */
+  function portalDmIsOperationsAdminProfile(row) {
+    if (!row || row.is_active === false) return false;
+    if (String(row.app_role || "").toLowerCase() !== "admin") return false;
+    return !portalDmIsDirectorProfile(row);
+  }
+
   /** Staff may start a DM only with the three directors or admin/CEO. */
   function portalDmStaffInitiatePeer(row) {
     return portalDmIsDirectorProfile(row) || portalDmIsAdminProfile(row);
@@ -76,7 +83,7 @@
     return false;
   }
 
-  /** Named CEO accounts (Raul, Victor, Javi) plus Javier Arranz / Palan ù not staff named Javier. */
+  /** Named CEO accounts (Raul, Victor, Javi) plus Javier Arranz / Palan ? not staff named Javier. */
   function portalDmIsExecutiveCeoTrioMember(row) {
     row = profileRow(row);
     if (!row || row.is_active === false) return false;
@@ -101,6 +108,7 @@
     portalDmIsDirectorProfile: portalDmIsDirectorProfile,
     portalDmIsExecutiveCeoTrioMember: portalDmIsExecutiveCeoTrioMember,
     portalDmIsAdminProfile: portalDmIsAdminProfile,
+    portalDmIsOperationsAdminProfile: portalDmIsOperationsAdminProfile,
     portalDmStaffInitiatePeer: portalDmStaffInitiatePeer,
     portalDmUsesAdminCliq: portalDmUsesAdminCliq,
     portalDmOnAdminPortal: portalDmOnAdminPortal,

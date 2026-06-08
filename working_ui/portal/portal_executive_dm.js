@@ -1326,10 +1326,27 @@
       if(body.length > 80) body = body.slice(0, 79).trimEnd() + '\u2026';
       return body || 'Message';
     }
-    function portalAdminDmSenderLabel(authorId, profBy){
+    function portalAdminDmSenderLabel(authorId, profBy, itemCtx){
       authorId = String(authorId || '').trim();
-      if(authorId && portalAdminDmIsMyMessage(authorId)) return 'You';
       var pr = profBy[authorId] || {};
+      var mine = authorId && portalAdminDmIsMyMessage(authorId);
+      var peerRole = '';
+      if(itemCtx && itemCtx.peerProf){
+        peerRole = String(itemCtx.peerProf.app_role || '').toLowerCase();
+      }else if(window.__PORTAL_ADMIN_DM_UI && window.__PORTAL_ADMIN_DM_UI.peerRole){
+        peerRole = String(window.__PORTAL_ADMIN_DM_UI.peerRole || '').toLowerCase();
+      }
+      if(
+        window.portalChatActorIdentity &&
+        typeof window.portalChatActorIdentity.managementListSenderLabel === 'function'
+      ){
+        return window.portalChatActorIdentity.managementListSenderLabel(pr, {
+          mine: mine,
+          channel: portalAdminDmChannel(),
+          peerRole: peerRole
+        });
+      }
+      if(mine) return 'You';
       return String(pr.full_name || pr.username || '').trim() || 'Unknown sender';
     }
     function portalAdminDmWorkerRoleTag(prof){
@@ -1408,7 +1425,7 @@
           if(item.kind !== 'dm') return;
           var m = lastByThread[item.id];
           if(m){
-            item.lastSender = portalAdminDmSenderLabel(m.author_id, profBy);
+            item.lastSender = portalAdminDmSenderLabel(m.author_id, profBy, item);
             item.lastPreview = portalAdminDmPreviewBody(m);
             item.when = m.created_at || item.when;
           }
@@ -1836,6 +1853,8 @@
         if(peerId0){
           var prPeer = await client.from('staff_profiles').select('app_role').eq('id', peerId0).maybeSingle();
           if(!prPeer.error && prPeer.data) peerRole = String(prPeer.data.app_role || '').toLowerCase();
+          window.__PORTAL_ADMIN_DM_UI = window.__PORTAL_ADMIN_DM_UI || {};
+          window.__PORTAL_ADMIN_DM_UI.peerRole = peerRole;
         }
       }
       var authorIds = [];
@@ -1886,7 +1905,8 @@
             channel: ch,
             peerRole: peerRole,
             authorRole: String(arow.app_role || '').toLowerCase(),
-            authorRow: arow
+            authorRow: arow,
+            authorProf: arow
           });
           if(chip){
             var chipEl = document.createElement('div');
@@ -2052,9 +2072,15 @@
       var parts = t.split(/\s+/);
       return parts[0] || t;
     }
-    /** Line above DM bubble: staff-facing threads show Admin for any admin/CEO author; CEO's Chat shows Admin for admin authors and first names for CEOs. */
+    /** Line above DM bubble — staff lane vs management board (see portal_chat_actor_identity.js). */
     function portalAdminDmMsgAuthorChip(opts){
       opts = opts || {};
+      if(
+        window.portalChatActorIdentity &&
+        typeof window.portalChatActorIdentity.managementMsgAuthorChip === 'function'
+      ){
+        return window.portalChatActorIdentity.managementMsgAuthorChip(opts);
+      }
       if(opts.mine) return '';
       var ch = String(opts.channel || '').trim();
       var peerRole = String(opts.peerRole || '').toLowerCase();

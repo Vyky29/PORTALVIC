@@ -1013,6 +1013,18 @@ body.admin-view-cs-cliq .portal-admin-floating-chat-wrap {
   display: none !important;
 }
 
+/* Legacy fullscreen sheet — keep out of CS Cliq embed (was bleeding through on wide layouts). */
+body.admin-view-cs-cliq #internalChatSheet,
+body.admin-view-cs-cliq #portalInternalChatBackdrop {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+body.admin-view-cs-cliq.portal-internal-chat-open {
+  overflow: auto;
+}
+
 #csCliqRoot .portal-dm-meeting-panel,
 #csCliqRoot #portalStaffChatMeetingPanel {
   position: absolute;

@@ -154,6 +154,151 @@
     return id ? String(id).slice(0, 8) : "";
   }
 
+  function normKey(v) {
+    if (global.portalDmRoles && typeof global.portalDmRoles.normKey === "function") {
+      return global.portalDmRoles.normKey(v);
+    }
+    return String(v || "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "");
+  }
+
+  function isDirectorAuthor(row) {
+    return !!(
+      global.portalDmRoles &&
+      typeof global.portalDmRoles.portalDmIsDirectorProfile === "function" &&
+      global.portalDmRoles.portalDmIsDirectorProfile(row)
+    );
+  }
+
+  function isOpsAdminAuthor(row) {
+    return !!(
+      global.portalDmRoles &&
+      typeof global.portalDmRoles.portalDmIsOperationsAdminProfile === "function" &&
+      global.portalDmRoles.portalDmIsOperationsAdminProfile(row)
+    );
+  }
+
+  function isManagementAuthor(row) {
+    if (!row || row.is_active === false) return false;
+    if (isDirectorAuthor(row) || isOpsAdminAuthor(row)) return true;
+    var ar = String(row.app_role || "").toLowerCase();
+    return ar === "admin" || ar === "ceo";
+  }
+
+  function viewerUsesAdminCliq(viewer) {
+    viewer = viewer || profileRow();
+    return !!(
+      global.portalDmRoles &&
+      typeof global.portalDmRoles.portalDmUsesAdminCliq === "function" &&
+      global.portalDmRoles.portalDmUsesAdminCliq(viewer)
+    );
+  }
+
+  /** Staff / lead inbox: director wrote or called on behalf of Admin. */
+  function workerFacingAuthorChip(authorProf) {
+    authorProf = authorProf || {};
+    if (isDirectorAuthor(authorProf)) {
+      var user = normKey(authorProf.username);
+      var first = normKey(String(authorProf.full_name || "").split(/\s+/)[0] || "");
+      if (user === "victor" || first === "victor") return "Admin (Victor Director)";
+      if (user === "raul" || first === "raul") return "Admin (Ra\u00fal Director)";
+      var nm = profileDisplayName(authorProf) || "Director";
+      return nm + " (Admin)";
+    }
+    if (isOpsAdminAuthor(authorProf)) return "Admin";
+    if (String(authorProf.app_role || "").toLowerCase() === "ceo" && !isDirectorAuthor(authorProf)) {
+      return (profileDisplayName(authorProf) || "CEO") + " (Admin)";
+    }
+    return profileDisplayName(authorProf) || "Admin";
+  }
+
+  /** Admin board (Sevitha / directors): show who actually sent, not generic Admin. */
+  function managementFacingAuthorChip(authorProf) {
+    authorProf = authorProf || {};
+    if (isDirectorAuthor(authorProf)) {
+      return (profileDisplayName(authorProf) || "Director") + " (Director)";
+    }
+    if (isOpsAdminAuthor(authorProf)) {
+      var nm = profileDisplayName(authorProf);
+      if (normKey(authorProf.username) === "sevitha" || normKey(nm) === "sevitha") return "Admin (Sevitha)";
+      return nm ? "Admin (" + nm + ")" : "Admin";
+    }
+    if (String(authorProf.app_role || "").toLowerCase() === "admin") {
+      var label = profilePeerLabel(authorProf) || profileDisplayName(authorProf);
+      return label ? label + " (Admin)" : "Admin";
+    }
+    if (String(authorProf.app_role || "").toLowerCase() === "ceo") {
+      return (profileDisplayName(authorProf) || "CEO") + " (CEO)";
+    }
+    return profileDisplayName(authorProf) || profilePeerLabel(authorProf) || "";
+  }
+
+  /**
+   * Line above a DM bubble — same thread, label depends on author + viewer + lane.
+   * Staff/lead: Admin (Victor Director) | Admin | Javi (Admin)
+   * Management board: Victor (Director) | Admin (Sevitha) | …
+   */
+  function portalChatManagementMsgAuthorChip(opts) {
+    opts = opts || {};
+    if (opts.mine) return "";
+    var author = opts.authorProf || opts.authorRow || {};
+    var viewer = opts.viewerProf || profileRow();
+    var peerRole = String(opts.peerRole || "").toLowerCase();
+    var ch = String(opts.channel || "").trim();
+    var staffLane = ch === "staff_lead" && (peerRole === "staff" || peerRole === "lead");
+
+    if (!isManagementAuthor(author)) {
+      return profileDisplayName(author) || shortName(author.full_name || author.username) || "Team";
+    }
+
+    if (opts.audience === "worker") {
+      return workerFacingAuthorChip(author);
+    }
+
+    if (staffLane && viewerUsesAdminCliq(viewer)) {
+      return managementFacingAuthorChip(author);
+    }
+
+    if (staffLane || opts.audience === "worker") {
+      return workerFacingAuthorChip(author);
+    }
+
+    if (ch === "ceo_exec") {
+      if (isOpsAdminAuthor(author)) return "Admin";
+      if (isDirectorAuthor(author)) return profileDisplayName(author) || "CEO";
+      if (String(author.app_role || "").toLowerCase() === "ceo") {
+        return profileDisplayName(author) || "CEO";
+      }
+    }
+
+    if (viewerUsesAdminCliq(viewer)) {
+      return managementFacingAuthorChip(author);
+    }
+
+    return workerFacingAuthorChip(author);
+  }
+
+  function portalChatManagementListSenderLabel(authorProf, opts) {
+    opts = opts || {};
+    if (!authorProf) return "Unknown sender";
+    if (opts.mine) {
+      return portalChatActorDisplayName(authorProf) || "You";
+    }
+    return portalChatManagementMsgAuthorChip(
+      Object.assign({}, opts, { authorProf: authorProf, mine: false })
+    );
+  }
+
+  function portalChatWorkerFacingCallerLabel(authorProf) {
+    if (!authorProf) return "Admin";
+    if (isManagementAuthor(authorProf)) return workerFacingAuthorChip(authorProf);
+    return profileDisplayName(authorProf) || shortName(authorProf.full_name || authorProf.username) || "Team chat";
+  }
+
   function portalDmThreadDisplayLabel(me, row, profBy) {
     profBy = profBy || {};
     me = String(me || "").trim();
@@ -185,5 +330,13 @@
     profilesMatchSession: profilesMatchSession,
     peerIdForThread: portalDmPeerIdForThread,
     threadDisplayLabel: portalDmThreadDisplayLabel,
+    managementMsgAuthorChip: portalChatManagementMsgAuthorChip,
+    managementListSenderLabel: portalChatManagementListSenderLabel,
+    workerFacingAuthorChip: workerFacingAuthorChip,
+    managementFacingAuthorChip: managementFacingAuthorChip,
+    workerFacingCallerLabel: portalChatWorkerFacingCallerLabel,
+    isManagementAuthor: isManagementAuthor,
+    isDirectorAuthor: isDirectorAuthor,
+    isOpsAdminAuthor: isOpsAdminAuthor,
   };
 })(typeof window !== "undefined" ? window : globalThis);

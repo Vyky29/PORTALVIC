@@ -418,6 +418,12 @@
     if (!prof) return "Team chat";
     if (
       global.portalChatActorIdentity &&
+      typeof global.portalChatActorIdentity.workerFacingCallerLabel === "function"
+    ) {
+      return global.portalChatActorIdentity.workerFacingCallerLabel(prof);
+    }
+    if (
+      global.portalChatActorIdentity &&
       typeof global.portalChatActorIdentity.profileDisplayName === "function"
     ) {
       return global.portalChatActorIdentity.profileDisplayName(prof) || "Team chat";
