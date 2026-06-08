@@ -266,6 +266,94 @@
     return q;
   }
 
+  function rosterSlug(value) {
+    var s = String(value || "").trim();
+    if (typeof global.adminRosterSlugify === "function") return global.adminRosterSlugify(s);
+    return s
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+  }
+
+  function parseHmToken(raw) {
+    var s = String(raw || "").trim().replace(/\./g, ":");
+    var m = s.match(/^(\d{1,2})(?::(\d{2}))?$/);
+    if (!m) return { h: 16, m: 30 };
+    return { h: parseInt(m[1], 10), m: parseInt(m[2] || "0", 10) };
+  }
+
+  function hourTo24(h, day) {
+    if (day !== "Sunday" && h < 8) return h + 12;
+    if (day === "Sunday" && h >= 1 && h <= 3) return h + 12;
+    return h;
+  }
+
+  function parseTimeSlotBounds(timeSlot, day) {
+    var parts = String(timeSlot || "")
+      .replace(/\s*-\s*/g, " to ")
+      .split(/\s+to\s+/i);
+    if (parts.length < 2) return { start: "16:30", end: "17:00" };
+    var a = parseHmToken(parts[0]);
+    var b = parseHmToken(parts[1]);
+    var ah = hourTo24(a.h, day);
+    var bh = hourTo24(b.h, day);
+    return {
+      start: String(ah).padStart(2, "0") + ":" + String(a.m).padStart(2, "0"),
+      end: String(bh).padStart(2, "0") + ":" + String(b.m).padStart(2, "0"),
+    };
+  }
+
+  function affectedDatesForPayload(p) {
+    var bounds = deps.getTermBounds();
+    if (p.scope === "single_day") return [p.anchorDate];
+    if (p.scope === "weekday_term") return allWeekdaysInTerm(p.day, bounds);
+    return weekdaysMatchingFromThrough(p.day, p.anchorDate, bounds.lastDate, bounds);
+  }
+
+  function writeScheduleOverridesForTermEdit(client, p, before, afterSnap, eventAction) {
+    var isCancel = eventAction === "cancel" || String(afterSnap.action || "") === "cancel_service";
+    var isNoPax = String(afterSnap.action || "") === "no_participant";
+    if (!isCancel && !isNoPax) return Promise.resolve();
+    var dates = affectedDatesForPayload(p);
+    if (!dates.length) return Promise.resolve();
+    var ovType = isNoPax ? "slot_clear_client" : "client_cancelled";
+    var paxName = isNoPax
+      ? String((before && before.client_name) || p.client_name || "").trim()
+      : String(p.client_name || "").trim();
+    if (!paxName) return Promise.resolve();
+    var times = parseTimeSlotBounds(p.time_slot, p.day);
+    var staffTok = String(p.instructors || "")
+      .split(/[,/&]|\band\b/i)[0]
+      .trim();
+    var rows = dates.map(function (iso) {
+      return {
+        session_date: iso,
+        anchor_staff_id: rosterSlug(staffTok),
+        anchor_start: times.start,
+        anchor_end: times.end,
+        anchor_venue: String(p.venue || "").trim(),
+        anchor_client_id: rosterSlug(paxName),
+        anchor_time_slot_label: String(p.time_slot || "").trim(),
+        override_type: ovType,
+        payload: {
+          cancelled_by_admin: true,
+          term_roster_edit: true,
+          scope: p.scope,
+          anchor_date: p.anchorDate,
+        },
+        reason:
+          String(p.reason || "").trim() ||
+          (isNoPax ? "Term roster · no participant" : "Term roster · cancel service"),
+        status: "active",
+        superseded_by: null,
+        spreadsheet_revision: "admin-dashboard:term_roster_edit",
+      };
+    });
+    return client.from("schedule_overrides").insert(rows).then(function (res) {
+      if (res.error) console.warn("[term-slot] schedule_overrides", res.error);
+    });
+  }
+
   function insertEvent(client, ev) {
     return client.from("portal_roster_row_events").insert([ev]);
   }
@@ -487,6 +575,11 @@
   function finishTermSlotSave(chain, root, p, before, afterSnap, eventAction, client, toastMsg) {
     chain
       .then(function (rowRef) {
+        return writeScheduleOverridesForTermEdit(client, p, before, afterSnap, eventAction).then(function () {
+          return rowRef;
+        });
+      })
+      .then(function (rowRef) {
         return insertEvent(client, {
           roster_row_id: rowRef && rowRef.id ? rowRef.id : null,
           action: eventAction || (before ? "update" : "create"),
@@ -500,6 +593,10 @@
             term_action: p.action,
             reason: p.reason || null,
           },
+        }).then(function (res) {
+          if (res.error) console.warn("[term-slot] portal_roster_row_events", res.error);
+        }).then(function () {
+          return rowRef;
         });
       })
       .then(function () {

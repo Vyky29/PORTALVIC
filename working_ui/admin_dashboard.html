@@ -70,7 +70,7 @@
   <script src="/portal/portal-roster-rows-merge.js?v=20260609-kirushy-rest-term"></script>
   <script src="/portal-shared-js/participant_services.js?v=20260609-term-slot-autofill"></script>
   <script src="/portal-shared-js/portal_field_autocomplete.js?v=20260609-term-slot-autofill"></script>
-  <script src="/portal/admin-portal-term-slot.js?v=20260609-kirushy-rest-term"></script>
+  <script src="/portal/admin-portal-term-slot.js?v=20260610-sched-log"></script>
   <script src="/portal/portal-staff-timetable-merge.js?v=20260612-hours-edit"></script>
   <script src="/portal/spreadsheet_reference_data.js?v=20260616-day-centre-hours"></script>
   <script src="/portal/admin-roster-spreadsheet-reference.js?v=20260616-day-centre-hours"></script>
@@ -12221,6 +12221,46 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
       return out;
     }
+    function schedBuildRosterLogFromCache(iso, cache){
+      var dated = [];
+      var template = [];
+      var noClient = [];
+      if(!iso || !cache || !cache.length) return { dated: dated, template: template, noClient: noClient };
+      var wdNorm = normDayLabel(portalWeekdayLongFromIsoDate(iso));
+      cache.forEach(function(row){
+        var st = String(row.status || '').trim();
+        var sd = adminNormIsoDate(row.session_date);
+        var pax = String(row.client_name || '').trim();
+        if(st === 'active' && /^no[\s_-]*client$/i.test(pax) && sd === iso){
+          noClient.push(row);
+          return;
+        }
+        if(st !== 'cancelled') return;
+        if(sd === iso) dated.push(row);
+        else if(!sd && normDayLabel(row.day) === wdNorm) template.push(row);
+      });
+      return { dated: dated, template: template, noClient: noClient };
+    }
+    function schedMergeRosterLogBuckets(a, b){
+      a = a || { dated: [], template: [], noClient: [] };
+      b = b || { dated: [], template: [], noClient: [] };
+      function dedupeRows(list){
+        var seen = {};
+        var out = [];
+        (list || []).forEach(function(row){
+          var key = String(row.id || '') + '|' + adminNormIsoDate(row.session_date) + '|' + normDayLabel(row.day) + '|' + schedNormTimeSlotKey(row.client_name) + '|' + schedNormTimeSlotKey(row.time_slot);
+          if(seen[key]) return;
+          seen[key] = true;
+          out.push(row);
+        });
+        return out;
+      }
+      return {
+        dated: dedupeRows((a.dated || []).concat(b.dated || [])),
+        template: dedupeRows((a.template || []).concat(b.template || [])),
+        noClient: dedupeRows((a.noClient || []).concat(b.noClient || [])),
+      };
+    }
     function schedResolveRosterLogAuthorName(row){
       if(!row) return 'Admin';
       var id = String(row.updated_by || row.created_by || '').trim();
@@ -12236,6 +12276,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var pax = normDayLabel(schedTermEventParticipantName(ev));
         var slot = schedNormTimeSlotKey((ev.after_snapshot || {}).time_slot);
         if(pax && slot) keys[pax + '|' + slot] = true;
+      });
+      return keys;
+    }
+    function schedOverrideDedupeKeys(){
+      var keys = {};
+      (sched.overrides || []).forEach(function(o){
+        var slug = adminRosterSlugify(String(o.anchor_client_id || '').trim());
+        var slot = schedNormTimeSlotKey(o.anchor_time_slot_label || normTimeShort(o.anchor_start));
+        if(slug && slot) keys[slug + '|' + slot] = true;
       });
       return keys;
     }
@@ -12293,11 +12342,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         });
       });
       var termDedupe = schedTermEventDedupeKeys();
+      var overrideDedupe = schedOverrideDedupeKeys();
       (sched.rosterLogRows||[]).forEach(function(entry){
         var row = entry.row || {};
         var paxName = String(row.client_name || '').trim();
-        var dedupeKey = normDayLabel(paxName) + '|' + schedNormTimeSlotKey(row.time_slot);
-        if(termDedupe[dedupeKey]) return;
+        var rosterKey = adminRosterSlugify(paxName) + '|' + schedNormTimeSlotKey(row.time_slot);
+        if(termDedupe[normDayLabel(paxName) + '|' + schedNormTimeSlotKey(row.time_slot)]) return;
+        if(overrideDedupe[rosterKey]) return;
         merged.push({
           created_at: entry.created_at || '',
           html: (function(){
@@ -12410,7 +12461,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           }, { once: true });
         }
       }else{
+        if(window.PortalRosterRowsMerge && typeof window.PortalRosterRowsMerge.loadAndCache === 'function'){
+          try{
+            await window.PortalRosterRowsMerge.loadAndCache(client);
+          }catch(_rosterCache){}
+        }
         var wdLong = portalWeekdayLongFromIsoDate(iso);
+        var cacheBuckets = schedBuildRosterLogFromCache(iso, window.PORTAL_ROSTER_ROWS_CACHE || []);
         var res = await client.from('schedule_overrides')
           .select('id,created_at,created_by,session_date,anchor_start,anchor_end,anchor_staff_id,anchor_venue,anchor_client_id,override_type,reason,status,payload')
           .eq('session_date', iso)
@@ -12425,18 +12482,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           .eq('session_date', iso)
           .order('updated_at', { ascending: false });
         var resNoClient = await client.from('portal_roster_rows')
-          .select('id,day,time_slot,session_date,created_at')
+          .select('id,day,time_slot,session_date,created_at,client_name,status')
           .eq('status', 'active')
           .eq('client_name', 'No client')
           .eq('session_date', iso);
-        var resRosterTpl = wdLong
-          ? await client.from('portal_roster_rows')
-            .select('id,created_at,updated_at,created_by,updated_by,client_name,day,time_slot,instructors,venue,session_date,status')
-            .eq('status', 'cancelled')
-            .is('session_date', null)
-            .eq('day', wdLong)
-            .order('updated_at', { ascending: false })
-          : { data: [], error: null };
+        var resRosterTpl = await client.from('portal_roster_rows')
+          .select('id,created_at,updated_at,created_by,updated_by,client_name,day,time_slot,instructors,venue,session_date,status')
+          .eq('status', 'cancelled')
+          .is('session_date', null)
+          .order('updated_at', { ascending: false });
         if(res.error){
           if(msg){ msg.textContent = 'Could not load overrides: '+String(res.error.message||res.error); msg.style.color = 'var(--danger)'; }
         }
@@ -12446,16 +12500,23 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }else{
           sched.termEvents = (resTerm.data || []).filter(function(ev){ return schedTermEventAppliesToDate(ev, iso); });
         }
+        var queryBuckets = {
+          dated: resRosterDated.error ? [] : (resRosterDated.data || []),
+          template: resRosterTpl.error ? [] : (resRosterTpl.data || []).filter(function(row){
+            return normDayLabel(row.day) === normDayLabel(wdLong);
+          }),
+          noClient: resNoClient.error ? [] : (resNoClient.data || []),
+        };
         if(resRosterDated.error || resRosterTpl.error){
           console.warn('[sched] portal_roster_rows cancel log:', resRosterDated.error || resRosterTpl.error);
-        }else{
-          sched.rosterLogRows = schedRosterCancelRowsForLog(
-            iso,
-            resRosterDated.data || [],
-            resRosterTpl.data || [],
-            resNoClient.error ? [] : (resNoClient.data || [])
-          );
         }
+        var mergedBuckets = schedMergeRosterLogBuckets(cacheBuckets, queryBuckets);
+        sched.rosterLogRows = schedRosterCancelRowsForLog(
+          iso,
+          mergedBuckets.dated,
+          mergedBuckets.template,
+          mergedBuckets.noClient
+        );
         var rosterAuthorRows = (sched.rosterLogRows || []).map(function(entry){ return entry.row; });
         await schedLoadOverrideAuthors(client, sched.overrides, sched.termEvents, rosterAuthorRows);
         if(sched.lastMsg && msg){ msg.textContent = sched.lastMsg; msg.style.color = 'var(--success)'; sched.lastMsg = ''; }
