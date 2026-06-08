@@ -206,6 +206,39 @@
   color: var(--cs-hub-muted, #64748b);
 }
 
+#csCliqRoot .portal-cs-cliq-thread-header__members {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+#csCliqRoot .portal-cs-cliq-group-member-chip {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #6d28d9;
+  background: #f3ecff;
+  border: 1px solid rgba(124, 58, 237, 0.2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+#csCliqRoot .portal-cs-cliq-group-member-chip--loading {
+  color: #64748b;
+  background: #f1f5f9;
+  border-color: rgba(100, 116, 139, 0.2);
+}
+
 #csCliqRoot .portal-cs-cliq-thread-header__more {
   display: none !important;
 }

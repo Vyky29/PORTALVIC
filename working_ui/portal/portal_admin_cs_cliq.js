@@ -261,6 +261,7 @@
       '<div class="portal-cs-cliq-thread-header__meta">' +
       '<span class="portal-cs-cliq-thread-header__name" id="csCliqThreadName">Conversation</span>' +
       '<span class="portal-cs-cliq-thread-header__role" id="csCliqThreadRole">Staff</span>' +
+      '<div class="portal-cs-cliq-thread-header__members" id="csCliqThreadMembers" hidden aria-hidden="true"></div>' +
       '<span class="portal-cs-cliq-thread-header__status" id="csCliqThreadStatus">Available</span>' +
       "</div></div>" +
       callBarHtml("csCliqHead", true) +

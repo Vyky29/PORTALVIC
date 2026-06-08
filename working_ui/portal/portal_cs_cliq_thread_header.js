@@ -63,6 +63,9 @@
     if (global.portalCsCliqThreadFiles && typeof global.portalCsCliqThreadFiles.onThreadChange === "function") {
       global.portalCsCliqThreadFiles.onThreadChange();
     }
+    if (global.portalCsCliqGroupMembers && typeof global.portalCsCliqGroupMembers.syncGroupMemberChips === "function") {
+      void global.portalCsCliqGroupMembers.syncGroupMemberChips(ui);
+    }
   }
 
   function syncBackUnread(count) {
