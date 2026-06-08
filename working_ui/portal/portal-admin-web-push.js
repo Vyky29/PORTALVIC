@@ -74,7 +74,16 @@
 
   function portalAdminHandleForegroundPush(d) {
     if (!d) return;
-    if (d.portalOpen === "incoming_call") return;
+    if (d.portalOpen === "incoming_call") {
+      if (typeof global.portalHandleIncomingCallPush === "function") {
+        var call = d.call || {};
+        void global.portalHandleIncomingCallPush({
+          msgId: call.messageId || call.msgId,
+          src: call.source || call.src || "dm",
+        });
+      }
+      return;
+    }
     try {
       if (typeof global.portalAdminDmSyncIncomingAttention === "function") {
         void global.portalAdminDmSyncIncomingAttention();

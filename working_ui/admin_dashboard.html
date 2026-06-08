@@ -330,7 +330,7 @@
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260521-late-perf"></script>
   <script src="/portal/portal_admin_alerts_bell.js?v=20260610-bell-absents"></script>
   <script src="/portal/portal_admin_dayops_badges.js?v=20260605-dayops-badges-per-admin"></script>
-  <script src="/portal/portal-admin-web-push.js?v=20260628-test-btn"></script>
+  <script src="/portal/portal-admin-web-push.js?v=20260608-chat-notify-fix"></script>
 
   <script>
   (function(){
@@ -20367,6 +20367,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function portalAdminDmHasUnread(){
       return !!(window.__PORTAL_ADMIN_DM_UNREAD || window.__PORTAL_ADMIN_CEO_DM_UNREAD || window.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD);
     }
+    /** No toast while actively inside a chat thread (avoids "Chat · Raul" when messaging Roberto). */
+    function portalAdminDmShouldSuppressIncomingChatNotify(){
+      if(!window.__PORTAL_ADMIN_DM_OPEN && !window.__PORTAL_CS_CLIQ_ACTIVE) return false;
+      var ui = window.__PORTAL_ADMIN_DM_UI || {};
+      return String(ui.panel || '') === 'thread' && !!(ui.threadId || ui.groupId);
+    }
     /** Chat unread: campana only (no in-page banner — it shifted layout / overlapped controls). */
     function portalAdminDmShouldShowChatBanner(){
       return false;
@@ -20534,7 +20540,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
       }catch(_fab){}
     }
-    function portalAdminDmOnUnreadAttentionChanged(prevUnread){
+    function portalAdminDmOnUnreadAttentionChanged(prevUnread, opts){
+      opts = opts || {};
       try{ portalAdminDmPatchGlobalChatBanner(); }catch(_pb){}
       var nowUnread = portalAdminDmHasUnread();
       if(prevUnread === nowUnread) return;
@@ -20548,8 +20555,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           }
         }
       }catch(_op){}
-      if(!prevUnread && nowUnread && !window.__PORTAL_ADMIN_DM_UNREAD_INITIAL_SYNC){
-        portalAdminDmNotifyIncomingChat();
+      if(!prevUnread && nowUnread && !window.__PORTAL_ADMIN_DM_UNREAD_INITIAL_SYNC && !opts.suppressNotify){
+        if(!portalAdminDmShouldSuppressIncomingChatNotify()){
+          portalAdminDmNotifyIncomingChat();
+        }
       }
       try{
         var hintCount = (window.__PORTAL_ADMIN_DM_UNREAD_HINTS__ || []).length;
@@ -20616,6 +20625,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function portalAdminDmNotifyIncomingMessageRow(row, opts){
       opts = opts || {};
       if(!row || portalAdminDmIsMyMessage(row.author_id)) return;
+      if(portalAdminDmShouldSuppressIncomingChatNotify()) return;
       var body = String(row.body || '');
       if(body.indexOf('[[portal-staff-call:') >= 0 || body.indexOf('[[portal-staff-call-end:') >= 0) return;
       if(row.thread_id && portalAdminDmIsViewingThread(row.thread_id)) return;
@@ -20732,7 +20742,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return hints;
     }
-    async function portalAdminDmSyncIncomingAttention(){
+    async function portalAdminDmSyncIncomingAttention(opts){
+      opts = opts || {};
       var prevUnread = portalAdminDmHasUnread();
       var client = getSchedSupabaseClient();
       var me = portalAdminDmMe();
@@ -20745,7 +20756,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(window.__PORTAL_ADMIN_DM_UNREAD_INITIAL_SYNC){
           window.__PORTAL_ADMIN_DM_UNREAD_INITIAL_SYNC = false;
         }
-        portalAdminDmOnUnreadAttentionChanged(prevUnread);
+        portalAdminDmOnUnreadAttentionChanged(prevUnread, opts);
         return;
       }
       try{
@@ -20894,7 +20905,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         window.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD = hgCeo;
         portalAdminDmApplyTeamTileUnreadClass();
         var suppressLoginNotify = !!window.__PORTAL_ADMIN_DM_UNREAD_INITIAL_SYNC;
-        portalAdminDmOnUnreadAttentionChanged(prevUnread);
+        portalAdminDmOnUnreadAttentionChanged(prevUnread, opts);
         if(suppressLoginNotify){
           window.__PORTAL_ADMIN_DM_UNREAD_INITIAL_SYNC = false;
         }else{
@@ -20909,7 +20920,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }catch(_e){
         try{ console.warn('[portal] portalAdminDmSyncIncomingAttention', _e); }catch(_log){}
         portalAdminDmApplyTeamTileUnreadClass();
-        portalAdminDmOnUnreadAttentionChanged(prevUnread);
+        portalAdminDmOnUnreadAttentionChanged(prevUnread, opts);
       }
     }
     function portalInitAdminDmRealtime(){
@@ -22876,7 +22887,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var uiReadSkip = window.__PORTAL_ADMIN_DM_UI || {};
         if((uiReadSkip.threadId || uiReadSkip.groupId) && String(uiReadSkip.panel || '') === 'thread'){
           portalAdminDmMarkChannelReadFromMessages(arr, { groupId: gid, threadId: tid });
-          void portalAdminDmSyncIncomingAttention();
+          void portalAdminDmSyncIncomingAttention({ suppressNotify: true });
           portalAdminDmRefreshListAfterRead();
         }
         return;
@@ -22991,7 +23002,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var uiRead = window.__PORTAL_ADMIN_DM_UI || {};
       if((uiRead.threadId || uiRead.groupId) && (uiRead.panel === 'thread' || String(uiRead.panel || '') === 'thread')){
         portalAdminDmMarkChannelReadFromMessages(arr, { groupId: gid, threadId: tid });
-        void portalAdminDmSyncIncomingAttention();
+        void portalAdminDmSyncIncomingAttention({ suppressNotify: true });
         portalAdminDmRefreshListAfterRead();
       }
       msgsBox.scrollTop = msgsBox.scrollHeight;
