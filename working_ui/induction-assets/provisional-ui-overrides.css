@@ -264,14 +264,15 @@
   z-index: 1;
 }
 
-.portal[data-provisional-induction] #complete.is-unlocked .completion-box .completion-inner {
+.portal[data-provisional-induction] #complete .completion-box .completion-inner {
   text-align: center;
 }
 
-.portal[data-provisional-induction] #complete.is-unlocked .completion-actions {
+.portal[data-provisional-induction] #complete .completion-actions {
   display: flex;
   justify-content: center;
-  margin-top: 8px;
+  align-items: center;
+  width: 100%;
 }
 
 /* ----- Learning outcomes (after journey) ----- */
