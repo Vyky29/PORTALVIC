@@ -196,12 +196,30 @@
     }
     var wp = await global.portalEnsureWebPushSubscription();
     if (wp && wp.ok) {
+      var env =
+        typeof global.portalNotifyEnvironment === "function"
+          ? global.portalNotifyEnvironment()
+          : {};
+      var iosCallHint = "";
+      if (
+        env.isIOS &&
+        env.mobile &&
+        typeof global.portalIsStandalonePwa === "function" &&
+        !global.portalIsStandalonePwa()
+      ) {
+        iosCallHint =
+          " For incoming calls when the app is closed, add the portal to your Home Screen and open it from that icon.";
+      }
       if (statusEl) {
         statusEl.textContent =
-          "Registered — tap Send test alert below to confirm banners reach this device.";
+          "Registered — tap Send test alert below to confirm banners reach this device." +
+          iosCallHint;
       }
       syncTestButton(qNotify("portalNotifyTestBtn"), "granted", { highlight: true });
-      portalAdminToastFallback("Notifications registered on this device.", 3600);
+      portalAdminToastFallback(
+        "Notifications registered on this device." + iosCallHint,
+        iosCallHint ? 7200 : 3600
+      );
       return wp;
     }
     var msg = portalAdminSubscribeFailureMessage(wp);

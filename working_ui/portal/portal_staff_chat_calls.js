@@ -42,6 +42,7 @@
   };
 
   var INCOMING_CALL_MAX_AGE_MS = 120000;
+  var INCOMING_CALL_RING_MAX_AGE_MS = 55000;
   var incomingRowRetryMax = 8;
   var incomingHandledIds = Object.create(null);
   var threadParticipantCache = Object.create(null);
@@ -619,6 +620,46 @@
     }
   }
 
+  function isWithinIncomingRingWindow(row) {
+    if (!row || !row.created_at) return true;
+    try {
+      return Date.now() - new Date(row.created_at).getTime() <= INCOMING_CALL_RING_MAX_AGE_MS;
+    } catch (_e) {
+      return true;
+    }
+  }
+
+  async function isIncomingCallInviteLive(client, row, data) {
+    if (!data || data.scheduledAt) return false;
+    if (!isWithinIncomingRingWindow(row)) return false;
+    var room = String(data.room || "").trim();
+    if (!client || !row || !room) return isWithinIncomingRingWindow(row);
+    var isGroup = !!row.group_id;
+    var table = isGroup ? "portal_ceo_group_message" : "portal_staff_dm_messages";
+    var scopeCol = isGroup ? "group_id" : "thread_id";
+    var scopeId = String(row.group_id || row.thread_id || "").trim();
+    if (!scopeId) return true;
+    var inviteAt = row.created_at ? String(row.created_at) : "";
+    if (!inviteAt) return true;
+    try {
+      var q = await client
+        .from(table)
+        .select("body,created_at")
+        .eq(scopeCol, scopeId)
+        .gte("created_at", inviteAt)
+        .like("body", "%portal-staff-call-end:%")
+        .order("created_at", { ascending: false })
+        .limit(6);
+      if (q.error || !Array.isArray(q.data)) return true;
+      for (var i = 0; i < q.data.length; i++) {
+        var endData = parseCallEndPayload(q.data[i].body);
+        if (!endData) continue;
+        if (String(endData.room || "") === room) return false;
+      }
+    } catch (_live) {}
+    return true;
+  }
+
   function fetchIncomingRowForRetry(row, attempt, cb) {
     attempt = attempt || 0;
     cb = typeof cb === "function" ? cb : function () {};
@@ -1139,6 +1180,13 @@
       }
       if (isInActiveCall()) return;
       if (rowId && incomingHandledIds[rowId]) return;
+      var box = global.__PORTAL_SUPABASE__;
+      var client = box && box.client;
+      var live = await isIncomingCallInviteLive(client, row, data);
+      if (!live) {
+        if (rowId) incomingHandledIds[rowId] = true;
+        return;
+      }
       if (rowId) incomingHandledIds[rowId] = true;
       startIncomingCallAlert(data, row);
     })();
@@ -3111,6 +3159,7 @@
     onDmMessageInsert: onDmMessageInsert,
     onGroupMessageInsert: onGroupMessageInsert,
     processIncomingCallRow: processIncomingCallRow,
+    isIncomingCallInviteLive: isIncomingCallInviteLive,
     incomingCallActive: function () {
       return !!incomingState.active;
     },

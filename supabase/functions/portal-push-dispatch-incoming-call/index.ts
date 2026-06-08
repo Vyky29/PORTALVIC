@@ -326,7 +326,11 @@ Deno.serve(async (req) => {
         groupId: String(record.group_id || ""),
       },
     });
-    const result = await sendPushPayloadToUserIds(admin, [userId], pushPayload);
+    const result = await sendPushPayloadToUserIds(admin, [userId], pushPayload, {
+      TTL: 90,
+      urgency: "high",
+      topic: `call-${String(callData.room || messageId).slice(0, 24)}`,
+    });
     sent += result.sent;
   }
 

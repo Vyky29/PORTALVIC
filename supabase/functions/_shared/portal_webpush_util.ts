@@ -113,6 +113,7 @@ export async function sendPushPayloadToUserIds(
   admin: SupabaseClient,
   userIds: string[],
   pushPayload: string,
+  options?: { TTL?: number; urgency?: string; topic?: string },
 ): Promise<{ sent: number; targets: number }> {
   if (!userIds.length) return { sent: 0, targets: 0 };
 
@@ -134,6 +135,9 @@ export async function sendPushPayloadToUserIds(
   }
 
   let sent = 0;
+  const ttl = options?.TTL ?? 86400;
+  const urgency = options?.urgency ?? "high";
+  const topic = options?.topic ? String(options.topic).slice(0, 32) : "";
   for (const row of subs) {
     const raw = row.subscription_json;
     if (!raw || typeof raw !== "object") continue;
@@ -141,7 +145,11 @@ export async function sendPushPayloadToUserIds(
       await webpush.sendNotification(
         raw as unknown as webpush.PushSubscription,
         pushPayload,
-        { TTL: 86400, urgency: "high" },
+        {
+          TTL: ttl,
+          urgency,
+          ...(topic ? { topic } : {}),
+        },
       );
       sent++;
     } catch (e) {

@@ -134,6 +134,20 @@
     var row = await fetchCallMessageRow(client, msgId, src);
     if (!row) return false;
 
+    var data =
+      calls.parseCallPayload && typeof calls.parseCallPayload === "function"
+        ? calls.parseCallPayload(String(row.body || ""))
+        : null;
+    if (
+      typeof calls.isIncomingCallInviteLive === "function" &&
+      !(await calls.isIncomingCallInviteLive(client, row, data))
+    ) {
+      try {
+        global.sessionStorage.removeItem(PENDING_CALL_KEY);
+      } catch (_dead) {}
+      return false;
+    }
+
     await openChatForIncomingRow(row);
 
     if (typeof calls.processIncomingCallRow === "function") {

@@ -18,6 +18,16 @@
     } catch (_) {}
   }
 
+  function portalIsStandalonePwa() {
+    try {
+      if (global.matchMedia && global.matchMedia("(display-mode: standalone)").matches) {
+        return true;
+      }
+      if (global.navigator && global.navigator.standalone === true) return true;
+    } catch (_) {}
+    return false;
+  }
+
   function portalNotifyEnvironment() {
     var ua = String((global.navigator && global.navigator.userAgent) || "");
     var isMac = /Macintosh|Mac OS X/i.test(ua);
@@ -63,6 +73,9 @@
       return "";
     }
     if (reason === "no-sw" || reason === "sw-timeout" || !env.pushSupported) {
+      if (env.isIOS && env.mobile) {
+        return " iPhone/iPad: add the portal to your Home Screen (Share → Add to Home Screen), open it from that icon, then turn on alerts — Safari tabs alone cannot ring for calls when closed.";
+      }
       if (env.isMac && env.isSafari) {
         return " Mac Safari: allow this site under Safari → Settings → Websites → Notifications. For alerts when the browser is closed, Safari 17+ or Chrome on this Mac works best.";
       }
@@ -165,6 +178,7 @@
 
   global.portalPersistGet = global.portalPersistGet || persistGet;
   global.portalPersistSet = global.portalPersistSet || persistSet;
+  global.portalIsStandalonePwa = portalIsStandalonePwa;
   global.portalNotifyEnvironment = portalNotifyEnvironment;
   global.portalNotifyEnvironmentHint = portalNotifyEnvironmentHint;
   global.portalUserActivationActive = global.portalUserActivationActive || portalUserActivationActive;
