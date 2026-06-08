@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="/induction-assets/induction-recap-completion-theme.css" />
   <link rel="stylesheet" href="/induction-assets/induction-quiz-theme.css" />
   <link rel="stylesheet" href="/induction-assets/provisional-video.css" />
+  <link rel="stylesheet" href="/induction-assets/module-completion-flow.css" />
   <link rel="stylesheet" href="/induction-assets/provisional-ui-overrides.css" />
   <link rel="stylesheet" href="/induction-assets/induction-portal-theme.css" />
   <link rel="stylesheet" href="/induction-assets/provisional-certificate.css" />
@@ -47,7 +48,7 @@
         <span id="overallProgressText">0% completed</span>
         <span id="overallProgressCount">0 / 5</span>
       </div>
-      <p class="small-note">Complete the journey, review learning outcomes, watch the video, then pass the quiz.</p>
+      <p class="small-note">Complete the journey, <strong>click every learning outcome</strong>, watch the video, then pass the quiz.</p>
     </div>
   </aside>
 
@@ -158,6 +159,7 @@
           <div class="section-title-row">
             <h3>What will you understand by the end of this module?</h3>
           </div>
+          <p class="outcomes-click-hint">To continue, <strong>click or tap every learning outcome</strong> in the list below. Each one will highlight when you have opened it. When all are highlighted, tick the confirmation box at the bottom.</p>
           <div class="outcomes" data-outcomes-group="outcomes">
             <div class="outcome clickable-progress" data-outcome-item="1" role="button" tabindex="0" aria-pressed="false">
               <span class="outcome-index" aria-hidden="true"></span>
@@ -176,7 +178,7 @@
               <div>Who to contact for support in each area</div>
             </div>
           </div>
-          <div class="stage-helper" id="outcomesHelper">Review each learning outcome to unlock the confirmation below.</div>
+          <div class="stage-helper" id="outcomesHelper">Click or tap each learning outcome in the list above. Every item must highlight before you can tick the confirmation box below.</div>
           <label class="check-item clickable-progress">
             <input type="checkbox" class="overall-check" data-stage-check="outcomes" id="outcomesCheck" disabled>
             <span>I have reviewed the learning outcomes and I am clear on what this module will help me understand.</span>

@@ -31,16 +31,31 @@
     return document.getElementById(id);
   }
 
+  function showQuizSection() {
+    var el = section('quiz');
+    if (!el) return;
+    el.classList.remove('gated-locked');
+    el.classList.add('is-unlocked', 'quiz-visible');
+    var banner = el.querySelector('.section-lock-banner');
+    if (banner) banner.style.display = 'none';
+  }
+
   function unlockStage(id) {
     var el = section(id);
     if (!el) return;
     el.classList.remove('gated-locked');
     el.classList.add('is-unlocked');
-    if (id === 'quiz') {
-      el.classList.add('quiz-visible');
-    }
     var banner = el.querySelector('.section-lock-banner');
     if (banner) banner.style.display = 'none';
+  }
+
+  function startQuizFlow() {
+    var state = loadState();
+    if (!state.video) return false;
+    state.quizStarted = true;
+    saveState(state);
+    showQuizSection();
+    return true;
   }
 
   function isStageDone(id, state) {
@@ -93,11 +108,8 @@
         vCheck.checked = true;
       }
     }
-    if (state.video) {
-      unlockStage('quiz');
-    }
-    if (state.quizPass) {
-      unlockStage('quiz');
+    if (state.quizStarted || state.quizPass) {
+      showQuizSection();
     }
     afterUnlockRefresh();
   }
@@ -133,14 +145,17 @@
       }
       if (done >= total) {
         helper.textContent =
-          'All learning outcomes reviewed. Tick the box below when you are ready to continue.';
+          'All learning outcomes opened. Tick the confirmation box below when you are ready to continue.';
+      } else if (done === 0) {
+        helper.textContent =
+          'Click or tap each learning outcome in the list above. Every item must highlight before you can tick the confirmation box below.';
       } else {
         helper.textContent =
-          'Review each learning outcome to unlock the confirmation below (' +
+          'Click or tap each learning outcome above (' +
           done +
           ' of ' +
           total +
-          ' reviewed).';
+          ' opened). All must be highlighted before you can tick the confirmation box below.';
       }
     }
 
@@ -321,8 +336,7 @@
         return;
       }
       e.preventDefault();
-      unlockStage('quiz');
-      unlockStage('complete');
+      startQuizFlow();
       location.hash = 'quiz';
       var quiz = section('quiz');
       if (quiz) quiz.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -333,7 +347,9 @@
     var st = loadState();
     if (st.video) {
       unlockStage('complete');
-      unlockStage('quiz');
+      if (st.quizStarted || st.quizPass) {
+        showQuizSection();
+      }
     }
   }
 

@@ -413,7 +413,7 @@
 }
 
 #quiz.quiz-visible .quiz-embed,
-.portal[data-provisional-induction] #quiz.is-unlocked .quiz-embed{
+.portal[data-provisional-induction] #quiz.quiz-visible .quiz-embed{
   display:block;
 }
 
