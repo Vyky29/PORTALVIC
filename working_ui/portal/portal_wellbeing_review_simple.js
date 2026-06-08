@@ -404,14 +404,28 @@
     renderClosing(closingHost, record);
   }
 
+  function mountDecisionsHost(form) {
+    var existing = document.getElementById("portalWbDecisionsHost");
+    if (existing) return existing;
+    var host = document.createElement("div");
+    host.id = "portalWbDecisionsHost";
+    host.className = "portal-wb-simple portal-wb-decisions-host";
+    var anchor = document.getElementById("portalWbAdvancedWrap");
+    if (anchor) anchor.insertAdjacentElement("afterend", host);
+    else form.appendChild(host);
+    return host;
+  }
+
   function mountClosingHost(form) {
     var existing = document.getElementById("portalWbClosingHost");
     if (existing) return existing;
     var closingHost = document.createElement("div");
     closingHost.id = "portalWbClosingHost";
     closingHost.className = "portal-wb-simple portal-wb-closing";
-    var wrap = document.getElementById("portalWbAdvancedWrap");
-    if (wrap) wrap.insertAdjacentElement("afterend", closingHost);
+    var anchor =
+      document.getElementById("portalWbDecisionsHost") ||
+      document.getElementById("portalWbAdvancedWrap");
+    if (anchor) anchor.insertAdjacentElement("afterend", closingHost);
     else form.appendChild(closingHost);
     return closingHost;
   }
@@ -419,22 +433,24 @@
   function wrapAdvancedSections(form) {
     if (!form || form.dataset.wbAdvancedWrapped === "1") return;
     form.dataset.wbAdvancedWrapped = "1";
+    var isAdmin = document.body.classList.contains("portal-wellbeing-admin-mode");
     var toggle = document.createElement("button");
     toggle.type = "button";
     toggle.id = "portalWbToggleAdvanced";
     toggle.className = "portal-wb-advanced-toggle no-print";
-    toggle.textContent = "Advanced Stress Risk Assessment";
+    toggle.textContent = "Show stressor review by category";
     toggle.setAttribute("aria-expanded", "false");
 
     var wrap = document.createElement("div");
     wrap.id = "portalWbAdvancedWrap";
     wrap.className = "portal-wb-advanced-wrap";
-    wrap.hidden = true;
+    wrap.hidden = !isAdmin;
 
     var intro = document.createElement("p");
     intro.className = "portal-wb-advanced-intro no-print";
-    intro.textContent =
-      "Optional detail per stressor from the check-in. Tap 1–5 for seriousness and likelihood, then note agreed actions.";
+    intro.textContent = isAdmin
+      ? "Review each HSE category from the check-in. Tap 1–5 for seriousness and likelihood, then note agreed actions."
+      : "Optional detail per stressor from the check-in. Tap 1–5 for seriousness and likelihood, then note agreed actions.";
     wrap.appendChild(intro);
 
     var move = [];
@@ -461,10 +477,15 @@
       wrap.hidden = !open;
       toggle.setAttribute("aria-expanded", open ? "true" : "false");
       toggle.textContent = open
-        ? "Hide Advanced Stress Risk Assessment"
-        : "Advanced Stress Risk Assessment";
+        ? "Hide stressor review by category"
+        : "Show stressor review by category";
     });
 
+    if (isAdmin) {
+      wrap.hidden = false;
+      toggle.hidden = true;
+      toggle.setAttribute("aria-expanded", "true");
+    }
   }
 
   function mountAdminSimpleReview(opts) {
@@ -485,11 +506,8 @@
     }
 
     var summaryHost = document.createElement("div");
-    var decisionsHost = document.createElement("div");
-    decisionsHost.id = "portalWbDecisionsHost";
     root.innerHTML = "";
     root.appendChild(summaryHost);
-    root.appendChild(decisionsHost);
 
     var record = withSignOffDefaults((opts.draft && opts.draft.simple) || emptyRecord(), {
       adminProfile: opts.adminProfile,
@@ -497,6 +515,7 @@
 
     renderSummary(summaryHost, checkin, wb);
     wrapAdvancedSections(form);
+    var decisionsHost = mountDecisionsHost(form);
     var closingHost = mountClosingHost(form);
     renderReviewForm(decisionsHost, closingHost, record);
 

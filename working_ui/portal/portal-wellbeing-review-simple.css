@@ -323,8 +323,12 @@ body.portal-wellbeing-admin-mode .page {
 }
 
 body.portal-wellbeing-admin-mode #portalWbAdvancedWrap {
-  padding-bottom: 36px;
-  margin-bottom: 16px;
+  padding: 0 28px 24px;
+  margin-bottom: 8px;
+}
+
+body.portal-wellbeing-admin-mode .portal-wb-decisions-host {
+  padding-top: 8px;
 }
 
 .portal-wb-advanced-toggle {
