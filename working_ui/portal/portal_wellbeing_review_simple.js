@@ -35,6 +35,39 @@
       .replace(/"/g, "&quot;");
   }
 
+  function todayIsoDate() {
+    var d = new Date();
+    return (
+      d.getFullYear() +
+      "-" +
+      String(d.getMonth() + 1).padStart(2, "0") +
+      "-" +
+      String(d.getDate()).padStart(2, "0")
+    );
+  }
+
+  function roleLabelFromProfile(profile) {
+    var role = String((profile && profile.app_role) || "").toLowerCase();
+    if (role === "ceo") return "CEO";
+    if (role === "admin") return "Administrator";
+    return "";
+  }
+
+  function withSignOffDefaults(record, opts) {
+    opts = opts || {};
+    record = Object.assign(emptyRecord(), record || {});
+    if (!record.sign_off_date) record.sign_off_date = todayIsoDate();
+    if (!record.conducted_by_name && opts.adminProfile) {
+      record.conducted_by_name = String(
+        (opts.adminProfile.full_name || opts.adminProfile.username) || ""
+      ).trim();
+    }
+    if (!record.conducted_by_role && opts.adminProfile) {
+      record.conducted_by_role = roleLabelFromProfile(opts.adminProfile);
+    }
+    return record;
+  }
+
   function emptyRecord() {
     return {
       main_concern: "",
@@ -50,7 +83,37 @@
       escalation_notes: "",
       escalated_to: "",
       escalation_date: "",
+      conducted_by_name: "",
+      conducted_by_role: "",
+      sign_off_date: "",
+      sign_off_confirmed: false,
     };
+  }
+
+  function validateForComplete(record) {
+    record = record || emptyRecord();
+    if (!record.outcome) {
+      return {
+        ok: false,
+        message: "Please select an outcome before marking the 1-to-1 complete.",
+        field: "wbOutcome",
+      };
+    }
+    if (!record.conducted_by_name) {
+      return {
+        ok: false,
+        message: "Please enter who led this 1-to-1.",
+        field: "wbConductedBy",
+      };
+    }
+    if (!record.sign_off_confirmed) {
+      return {
+        ok: false,
+        message: "Please confirm the record is accurate before completing.",
+        field: "wbSignOffConfirm",
+      };
+    }
+    return { ok: true };
   }
 
   function parseDraft(draftJson) {
@@ -227,7 +290,31 @@
       '" /></div>' +
       '<div class="field"><label for="wbEscalationDate">Escalation date</label><input type="date" id="wbEscalationDate" value="' +
       esc(record.escalation_date) +
-      '" /></div></div></section>";
+      '" /></div></div></section>' +
+      '<section class="portal-wb-simple__section portal-wb-signoff" id="portalWbSignOff">' +
+      '<div class="portal-wb-signoff__head">' +
+      "<h2>Sign off this 1-to-1</h2>" +
+      "<p>Confirm who led the conversation. This is stored with the portal record.</p>" +
+      "</div>" +
+      '<div class="portal-wb-signoff__grid">' +
+      '<div class="field"><label for="wbConductedBy">Led by (name)</label><input type="text" id="wbConductedBy" autocomplete="name" value="' +
+      esc(record.conducted_by_name) +
+      '" placeholder="Your full name" /></div>' +
+      '<div class="field"><label for="wbConductedRole">Role</label><input type="text" id="wbConductedRole" autocomplete="organization-title" value="' +
+      esc(record.conducted_by_role) +
+      '" placeholder="e.g. Ops Admin, Director" /></div>' +
+      '<div class="field"><label for="wbSignOffDate">Date completed</label><input type="date" id="wbSignOffDate" value="' +
+      esc(record.sign_off_date) +
+      '" /></div>' +
+      "</div>" +
+      '<label class="portal-wb-signoff__confirm">' +
+      '<input type="checkbox" id="wbSignOffConfirm"' +
+      (record.sign_off_confirmed ? " checked" : "") +
+      " />" +
+      "<span>I confirm this 1-to-1 took place and the record above is accurate.</span>" +
+      "</label>" +
+      '<div class="portal-wb-signoff__stamp" aria-hidden="true"><span class="portal-wb-signoff__line"></span><em>Authorised record</em></div>' +
+      "</section>";
 
     wireFormInteractions(host, record);
   }
@@ -287,6 +374,10 @@
     record.escalation_notes = el("wbEscalationNotes") ? el("wbEscalationNotes").value.trim() : "";
     record.escalated_to = el("wbEscalatedTo") ? el("wbEscalatedTo").value.trim() : "";
     record.escalation_date = el("wbEscalationDate") ? el("wbEscalationDate").value : "";
+    record.conducted_by_name = el("wbConductedBy") ? el("wbConductedBy").value.trim() : "";
+    record.conducted_by_role = el("wbConductedRole") ? el("wbConductedRole").value.trim() : "";
+    record.sign_off_date = el("wbSignOffDate") ? el("wbSignOffDate").value : "";
+    record.sign_off_confirmed = !!(el("wbSignOffConfirm") && el("wbSignOffConfirm").checked);
     return record;
   }
 
@@ -375,7 +466,12 @@
     root.appendChild(formHost);
 
     renderSummary(summaryHost, checkin, wb);
-    renderForm(formHost, (opts.draft && opts.draft.simple) || emptyRecord());
+    renderForm(
+      formHost,
+      withSignOffDefaults((opts.draft && opts.draft.simple) || emptyRecord(), {
+        adminProfile: opts.adminProfile,
+      })
+    );
     wrapAdvancedSections(form);
 
     return {
@@ -384,14 +480,26 @@
         return collectRecord(root);
       },
       apply: function (record) {
-        renderForm(formHost, record || emptyRecord());
+        renderForm(
+          formHost,
+          withSignOffDefaults(record || emptyRecord(), { adminProfile: opts.adminProfile })
+        );
       },
     };
+  }
+
+  function markAdminReady() {
+    if (typeof document === "undefined") return;
+    document.documentElement.classList.remove("portal-wb-admin-booting");
+    document.documentElement.classList.add("portal-wb-admin-ready");
+    if (document.body) document.body.classList.add("portal-wb-admin-ready");
   }
 
   global.portalWellbeingReviewSimple = {
     emptyRecord: emptyRecord,
     parseDraft: parseDraft,
+    validateForComplete: validateForComplete,
+    markAdminReady: markAdminReady,
     mountAdminSimpleReview: mountAdminSimpleReview,
     statusLabel: function (status) {
       var map = {

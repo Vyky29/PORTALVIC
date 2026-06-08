@@ -4,13 +4,22 @@
  <meta charset="UTF-8" />
  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
  <title>1-to-1 Wellbeing Review - clubSENsational</title>
+ <script>
+ (function () {
+ try {
+ if (/[?&]checkin=/.test(location.search || "")) {
+ document.documentElement.classList.add("portal-wb-admin-booting");
+ }
+ } catch (_) {}
+ })();
+ </script>
  <script src="/portal-static-bootstrap.js"></script>
  <script src="/portal/term_from_timetable.js?v=20260604-teflon-guide-days"></script>
- <link rel="stylesheet" href="/portal/portal-wellbeing-admin-sra.css?v=20260610-wb-risk-formula" />
- <link rel="stylesheet" href="/portal/portal-wellbeing-review-simple.css?v=20260604-wb-flow-refine" />
+ <link rel="stylesheet" href="/portal/portal-wellbeing-admin-sra.css?v=20260610-wb-signoff-premium" />
+ <link rel="stylesheet" href="/portal/portal-wellbeing-review-simple.css?v=20260610-wb-signoff-premium" />
  <link rel="stylesheet" href="/portal-shared-js/portal_form_feedback_skin.css?v=20260609-autofill" />
  <script src="/portal/portal_wellbeing_stressor_catalog.js?v=20260610-wb-voice2"></script>
- <script src="/portal/portal_wellbeing_review_simple.js?v=20260610-wb-clear-cards"></script>
+ <script src="/portal/portal_wellbeing_review_simple.js?v=20260610-wb-signoff-premium"></script>
  <script src="/portal/portal_feedback_voice_input.js?v=20260610-wb-voice2"></script>
  <link rel="preconnect" href="https://www.clubsensational.org" />
  <link rel="dns-prefetch" href="https://www.clubsensational.org" />
@@ -1094,6 +1103,13 @@
  </style>
 </head>
 <body>
+<script>
+try {
+ if (/[?&]checkin=/.test(location.search || "")) {
+ document.body.classList.add("portal-wellbeing-admin-mode");
+ }
+} catch (_) {}
+</script>
 
 <nav class="ceo-toolbar no-print" aria-label="Meeting tools">
  <button type="button" class="btn btn-gold" id="btn-print">Print / PDF</button>
@@ -3472,6 +3488,16 @@ document.addEventListener("DOMContentLoaded", function () {
  return false;
  }
 
+ function focusSimpleReviewField(fieldId) {
+ var el = document.getElementById(fieldId);
+ if (!el) return;
+ el.focus();
+ var block = el.closest(".portal-wb-simple__section") || el;
+ if (block && block.scrollIntoView) {
+ block.scrollIntoView({ behavior: "smooth", block: "center" });
+ }
+ }
+
  function portalSaveSraToBackend(opts) {
  opts = opts || {};
  if (!portalCheckinId || !window.portalWellbeingCheckin) {
@@ -3481,11 +3507,15 @@ document.addEventListener("DOMContentLoaded", function () {
  var payload = buildPortalDraftPayload();
  if (opts.completed && portalSimpleReview) {
  var simple = payload.simple || portalSimpleReview.collect();
- if (!simple || !simple.outcome) {
- setMsg("Please select an outcome before marking the 1-to-1 complete.");
- var outcomeEl = document.getElementById("wbOutcome");
- if (outcomeEl) outcomeEl.focus();
- return Promise.reject(new Error("Outcome required"));
+ var validation =
+ window.portalWellbeingReviewSimple &&
+ typeof window.portalWellbeingReviewSimple.validateForComplete === "function"
+ ? window.portalWellbeingReviewSimple.validateForComplete(simple)
+ : { ok: !!(simple && simple.outcome) };
+ if (!validation.ok) {
+ setMsg(validation.message || "Please complete all required fields.");
+ if (validation.field) focusSimpleReviewField(validation.field);
+ return Promise.reject(new Error(validation.message || "Validation failed"));
  }
  if (!payload.simple) payload = buildPortalDraftPayload();
  }
@@ -3561,6 +3591,7 @@ document.addEventListener("DOMContentLoaded", function () {
  checkin: pack.checkin,
  wb: window.portalWellbeingCheckin,
  draft: window.portalWellbeingReviewSimple.parseDraft(draftRow && draftRow.draft_json),
+ adminProfile: pack.ctx && pack.ctx.profile,
  });
  var heroFocus = document.getElementById("portalWbHeroFocus");
  if (heroFocus) heroFocus.hidden = true;
@@ -3599,8 +3630,14 @@ document.addEventListener("DOMContentLoaded", function () {
  if (window.portalWellbeingCheckin.wireWellbeingReviewVoice) {
  window.portalWellbeingCheckin.wireWellbeingReviewVoice(form, pack.ctx.staffName || "");
  }
+ if (window.portalWellbeingReviewSimple && window.portalWellbeingReviewSimple.markAdminReady) {
+ window.portalWellbeingReviewSimple.markAdminReady();
+ }
  })
  .catch(function (err) {
+ if (window.portalWellbeingReviewSimple && window.portalWellbeingReviewSimple.markAdminReady) {
+ window.portalWellbeingReviewSimple.markAdminReady();
+ }
  setMsg(String((err && err.message) || err || "Could not load check-in."));
  });
  };
