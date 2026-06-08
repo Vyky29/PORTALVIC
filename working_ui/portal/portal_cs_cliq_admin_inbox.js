@@ -248,6 +248,25 @@
     });
     staffItems = staffGroups.concat(staffTeams);
 
+    function dedupeBucket(items) {
+      var out = [];
+      var seenKeys = Object.create(null);
+      (items || []).forEach(function (item) {
+        if (!item) return;
+        var k = key(item);
+        var lk = labelDedupeKey(item);
+        if ((k && seenKeys[k]) || (lk && seenKeys[lk])) return;
+        if (k) seenKeys[k] = true;
+        if (lk) seenKeys[lk] = true;
+        out.push(item);
+      });
+      return out;
+    }
+
+    leadItems = dedupeBucket(leadItems);
+    staffItems = dedupeBucket(staffItems);
+    ceoItems = dedupeBucket(ceoItems);
+
     return { leadItems: leadItems, staffItems: staffItems, ceoItems: ceoItems };
   }
 

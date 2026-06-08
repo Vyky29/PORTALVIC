@@ -36,11 +36,11 @@
   <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260608-cliq-channels"></script>
   <script src="/portal/portal_cs_cliq_support_route.js?v=20260608-inbox-fix"></script>
   <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260609-staff-mgmt"></script>
-  <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260625-staff-pool-channels"></script>
-  <script src="/portal/portal_cs_cliq_admin_channels.js?v=20260608-group-dedupe"></script>
+  <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260609-ceo-dedupe"></script>
+  <script src="/portal/portal_cs_cliq_admin_channels.js?v=20260609-ceo-dedupe"></script>
   <script src="/portal/portal_cs_cliq_support.js?v=20260607-support-route"></script>
   <script src="/portal/portal_cs_cliq_announcements_hub.js?v=20260604-cliq-inbox"></script>
-  <script src="/portal/portal_cs_cliq_announcement_inbox.js?v=20260625-staff-pool-channels"></script>
+  <script src="/portal/portal_cs_cliq_announcement_inbox.js?v=20260609-ceo-dedupe"></script>
   <script src="/portal/portal_cs_cliq_group_members.js?v=20260625-staff-pool-channels"></script>
   <script src="/portal/portal_cs_cliq_thread_files.js?v=20260604-cliq-files"></script>
   <script src="/portal/portal_admin_cs_cliq.js?v=20260609-channels-split"></script>
@@ -20500,6 +20500,50 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return String(slug || '').toLowerCase();
     }
+    function portalAdminDmResolveGroupCanonKey(gsl, title, gid){
+      gsl = String(gsl || '').toLowerCase();
+      title = String(title || '').trim() || 'Group';
+      gid = String(gid || '').trim();
+      var canon = portalAdminDmCanonicalGroupSlug(gsl, title);
+      if(canon && String(canon).indexOf('id:') !== 0) return String(canon);
+      var simp = portalAdminDmSimplifyGroupLabel(gsl, title);
+      var fromSimp = portalAdminDmCanonicalGroupSlug('', simp);
+      if(fromSimp && String(fromSimp).indexOf('id:') !== 0) return String(fromSimp);
+      var lk = String(simp || title || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
+      if(lk) return 'label:' + lk;
+      return gsl || ('id:' + gid);
+    }
+    function portalAdminDmDedupeMergedGroups(merged){
+      if(!Array.isArray(merged) || !merged.length) return merged || [];
+      var out = [];
+      var slots = Object.create(null);
+      merged.forEach(function(item){
+        if(!item || item.kind !== 'group'){
+          out.push(item);
+          return;
+        }
+        var key = portalAdminDmResolveGroupCanonKey(item.slug, item.label || item.slug, item.id);
+        var slot = slots[key];
+        if(!slot){
+          item.canonicalSlug = String(item.canonicalSlug || key).replace(/^label:/, '');
+          if(String(item.canonicalSlug).indexOf('label:') === 0){
+            item.canonicalSlug = portalAdminDmCanonicalGroupSlug('', item.label || '') || item.canonicalSlug;
+          }
+          slots[key] = item;
+          out.push(item);
+          portalAdminDmRegisterGroupAliases(item);
+          return;
+        }
+        portalAdminDmMergeGroupSlot(slot, {
+          id: item.id,
+          slug: item.slug,
+          title: item.label,
+          updated_at: item.when
+        });
+        portalAdminDmRegisterGroupAliases(slot);
+      });
+      return out;
+    }
     function portalAdminDmGroupAliasIds(item){
       if(!item || item.kind !== 'group') return [];
       if(Array.isArray(item.aliasGroupIds) && item.aliasGroupIds.length){
@@ -20741,6 +20785,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         groupLabel = (!gr.error && gr.data && gr.data.title) ? String(gr.data.title) : 'Group';
         window.__PORTAL_ADMIN_DM_UI.groupSlug = (!gr.error && gr.data && gr.data.slug) ? String(gr.data.slug) : '';
       }
+      groupLabel = portalAdminDmSimplifyGroupLabel(window.__PORTAL_ADMIN_DM_UI.groupSlug, groupLabel) || groupLabel;
       if(peerEl) peerEl.textContent = groupLabel;
       window.__PORTAL_ADMIN_DM_UI.peerLabel = groupLabel;
       var inp = portalAdminDmReplyInputEl();
@@ -21354,26 +21399,25 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         groupIds[gid] = true;
         var gsl = String(g.slug || '').toLowerCase();
         var title = String(g.title || g.slug || 'Group');
-        var canon = portalAdminDmCanonicalGroupSlug(gsl, title);
-        if(!canon || String(canon).indexOf('id:') === 0){
-          var labelCanon = portalAdminDmCanonicalGroupSlug('', portalAdminDmSimplifyGroupLabel(gsl, title));
-          if(labelCanon && String(labelCanon).indexOf('id:') !== 0) canon = labelCanon;
+        var canonKey = portalAdminDmResolveGroupCanonKey(gsl, title, gid);
+        var canonSlug = portalAdminDmCanonicalGroupSlug(gsl, title);
+        if(!canonSlug || String(canonSlug).indexOf('id:') === 0){
+          canonSlug = portalAdminDmCanonicalGroupSlug('', portalAdminDmSimplifyGroupLabel(gsl, title)) || gsl;
         }
-        if(!canon) canon = gsl || ('id:' + gid);
-        var slugForPolicy = String(canon).indexOf('id:') === 0 ? gsl : canon;
+        var slugForPolicy = String(canonSlug).indexOf('id:') === 0 ? gsl : canonSlug;
         if(!portalAdminDmViewerSeesCeoGroupSlug(slugForPolicy)) return;
-        var slot = groupCanonSlots[canon];
+        var slot = groupCanonSlots[canonKey];
         if(!slot){
           slot = {
             kind: 'group',
             id: gid,
-            slug: gsl || canon,
-            canonicalSlug: canon,
+            slug: gsl || canonSlug,
+            canonicalSlug: canonSlug,
             label: portalAdminDmSimplifyGroupLabel(gsl, title),
             when: g.updated_at,
             aliasGroupIds: [gid]
           };
-          groupCanonSlots[canon] = slot;
+          groupCanonSlots[canonKey] = slot;
           portalAdminDmRegisterGroupAliases(slot);
           merged.push(slot);
           return;
@@ -21528,6 +21572,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           .concat(splitSections.opsItems || [])
           .concat(personalDmItems || []);
       }
+      merged = portalAdminDmDedupeMergedGroups(merged);
       await portalAdminDmEnrichListItems(client, me, ch, merged, profBy);
       var fixedOrder = portalAdminDmFixedGroupSlugOrder();
       merged.sort(function(a, b){
@@ -21841,6 +21886,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var ui = window.__PORTAL_ADMIN_DM_UI || {};
       var gid = ui.groupId ? String(ui.groupId).trim() : '';
       var tid = ui.threadId ? String(ui.threadId).trim() : '';
+      if(portalAdminDmCsCliqEmbedActive()){
+        var legacyMsgs = document.getElementById('internalChatMessages');
+        if(legacyMsgs) legacyMsgs.innerHTML = '';
+      }
       if(!msgsBox || !client){
         if(msgsBox) msgsBox.innerHTML = '<p class="muted" style="margin:0">Not available.</p>';
         return;

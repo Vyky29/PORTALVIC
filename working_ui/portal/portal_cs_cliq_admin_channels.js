@@ -298,8 +298,9 @@
 
   var lastCtx = null;
   var lastLeads = [];
+  var renderSeq = 0;
 
-  async function renderCategoryPanel(host, cat, ctx, cats, leads, esc) {
+  async function renderCategoryPanel(host, cat, ctx, cats, leads, esc, seq) {
     host.innerHTML = "";
     var formatWhen =
       typeof ctx.formatWhen === "function"
@@ -322,6 +323,7 @@
       if (leadThreads.length) {
         appendSectionLabel(host, "Lead channels");
         for (var i = 0; i < leadThreads.length; i++) {
+          if (seq !== renderSeq) return;
           var item = leadThreads[i];
           var chips = await loadMemberChipsForItem(item);
           host.appendChild(renderChannelCard(item, esc, formatWhen(item.when), chips));
@@ -341,6 +343,7 @@
         appendSectionEmpty(host, "No staff group channels yet.");
       } else {
         for (var s = 0; s < staffItems.length; s++) {
+          if (seq !== renderSeq) return;
           var sItem = staffItems[s];
           var sChips = await loadMemberChipsForItem(sItem);
           host.appendChild(renderChannelCard(sItem, esc, formatWhen(sItem.when), sChips));
@@ -364,6 +367,7 @@
         appendSectionEmpty(host, "No CEO group channels yet.");
       } else {
         for (var c = 0; c < ceoItems.length; c++) {
+          if (seq !== renderSeq) return;
           var cItem = ceoItems[c];
           var cChips = await loadMemberChipsForItem(cItem);
           host.appendChild(renderChannelCard(cItem, esc, formatWhen(cItem.when), cChips));
@@ -373,7 +377,7 @@
     }
   }
 
-  async function paintChannels(host, cat, ctx, leads) {
+  async function paintChannels(host, cat, ctx, leads, seq) {
     var esc =
       ctx.esc ||
       function (s) {
@@ -387,14 +391,16 @@
             return { leadItems: [], staffItems: [], ceoItems: [] };
           };
     var cats = buildCategories(ctx);
+    if (seq !== renderSeq) return;
     renderCategoryBar(cat, esc, function (nextCat) {
-      if (lastCtx && host) void paintChannels(host, nextCat, lastCtx, lastLeads);
+      if (lastCtx && host) void paintChannels(host, nextCat, lastCtx, lastLeads, renderSeq);
     });
-    await renderCategoryPanel(host, cat, ctx, cats, leads, esc);
+    await renderCategoryPanel(host, cat, ctx, cats, leads, esc, seq);
   }
 
   async function renderAdminChannels(host, ctx) {
     if (!host || !ctx) return;
+    var seq = ++renderSeq;
     lastCtx = ctx;
     syncCategoryChrome(true);
     var cat = getStoredCategory();
@@ -406,8 +412,9 @@
     ) {
       leads = await global.portalCsCliqAdminInbox.loadSessionLeads(ctx.client);
     }
+    if (seq !== renderSeq) return;
     lastLeads = leads;
-    await paintChannels(host, cat, ctx, leads);
+    await paintChannels(host, cat, ctx, leads, seq);
   }
 
   function refreshFromContext() {

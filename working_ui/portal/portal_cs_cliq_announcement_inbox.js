@@ -55,6 +55,11 @@
     }
     if (slug === "support_staff" || /support\s*staff/.test(nt)) return "support_staff";
     if (slug === "pool_leads" || (nt === "leads" && slug !== "session_leads")) return "pool_leads";
+    var simp = simplifyGroupLabel(slug, title);
+    if (simp && simp !== String(title || "").trim()) {
+      var fromSimp = canonicalGroupSlug("", simp);
+      if (fromSimp && fromSimp !== slug) return fromSimp;
+    }
     return slug;
   }
 
