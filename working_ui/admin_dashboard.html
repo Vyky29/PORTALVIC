@@ -20095,6 +20095,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var aliases = portalAdminDmGroupAliasIds(item);
       return aliases.indexOf(openGid) >= 0;
     }
+    window.__PORTAL_ADMIN_DM_UNREAD_INITIAL_SYNC = true;
     function portalAdminDmOnUnreadAttentionChanged(prevUnread){
       try{ portalAdminDmPatchGlobalChatBanner(); }catch(_pb){}
       var nowUnread = portalAdminDmHasUnread();
@@ -20109,7 +20110,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           }
         }
       }catch(_op){}
-      if(!prevUnread && nowUnread) portalAdminDmNotifyIncomingChat();
+      if(!prevUnread && nowUnread && !window.__PORTAL_ADMIN_DM_UNREAD_INITIAL_SYNC){
+        portalAdminDmNotifyIncomingChat();
+      }
       try{
         var hintCount = (window.__PORTAL_ADMIN_DM_UNREAD_HINTS__ || []).length;
         window.__PORTAL_STAFF_DM_UNREAD_COUNT__ = hintCount || (nowUnread ? 1 : 0);
@@ -20122,9 +20125,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var hints = typeof window.portalAdminBellResolveChatHints === 'function'
         ? window.portalAdminBellResolveChatHints()
         : (window.__PORTAL_ADMIN_DM_UNREAD_HINTS__ || []);
-      var names = hints.slice(0, 3).map(function(h){
-        return String(h.displayName || '').trim();
-      }).filter(Boolean);
+      var names = [];
+      var seenNames = {};
+      hints.some(function(h){
+        var nm = String(h.displayName || '').trim();
+        if(!nm) return false;
+        var key = nm.toLowerCase();
+        if(seenNames[key]) return false;
+        seenNames[key] = true;
+        names.push(nm);
+        return names.length >= 3;
+      });
       var title = names.length ? ('Chat · ' + names.join(', ')) : 'New chat message';
       var parts = [];
       if(window.__PORTAL_ADMIN_DM_UNREAD) parts.push('staff & leads');
@@ -20180,7 +20191,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(!m || !m.thread_id) return;
           if(!portalAdminDmMessageCountsAsUnread(m)) return;
           var tid = String(m.thread_id);
-          if(!portalAdminDmIsMessageAfterAck(m.created_at, portalAdminDmGetThreadAck(tid))) return;
+          var ackFn = cfg.getThreadAckEffective || portalAdminDmGetThreadAck;
+          if(!portalAdminDmIsMessageAfterAck(m.created_at, ackFn(tid))) return;
           var aid = String(m.author_id || '');
           var sk = kind + ':' + tid + ':' + aid;
           if(seen[sk]) return;
@@ -20246,6 +20258,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         window.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD = false;
         window.__PORTAL_ADMIN_DM_UNREAD_HINTS__ = [];
         portalAdminDmApplyTeamTileUnreadClass();
+        if(window.__PORTAL_ADMIN_DM_UNREAD_INITIAL_SYNC){
+          window.__PORTAL_ADMIN_DM_UNREAD_INITIAL_SYNC = false;
+        }
         portalAdminDmOnUnreadAttentionChanged(prevUnread);
         return;
       }
@@ -20255,6 +20270,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var profBy = {};
         var staffTids = [];
         var execTids = [];
+        var workerThreadMap = {};
+        var threadWorkerById = {};
         async function dmThreadListHasUnread(ids){
           if(!ids || !ids.length) return false;
           var q = await client.from('portal_staff_dm_messages')
@@ -20264,7 +20281,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(q.error || !Array.isArray(q.data)) return false;
           return q.data.some(function(m){
             if(!portalAdminDmMessageCountsAsUnread(m)) return false;
-            return portalAdminDmIsMessageAfterAck(m.created_at, portalAdminDmGetThreadAck(m.thread_id));
+            return portalAdminDmIsMessageAfterAck(
+              m.created_at,
+              portalAdminDmGetThreadAckEffective(m.thread_id, workerThreadMap, threadWorkerById)
+            );
           });
         }
         async function groupListHasUnread(ids){
@@ -20308,9 +20328,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           }
           staffTids = [];
           execTids = [];
+          var workerIdsForAck = [];
           allT.forEach(function(t){
             var wid = portalAdminDmWorkerPeerFromThread(t, profBy, me);
             var wprof = profBy[wid] || {};
+            if(wid && workerIdsForAck.indexOf(wid) < 0) workerIdsForAck.push(wid);
+            if(t && t.id) threadWorkerById[String(t.id)] = wid;
             if(portalAdminDmIsWorkerRecipient(wprof)) staffTids.push(String(t.id));
             else {
               var pid = portalDmPeerIdForThread(me, t);
@@ -20318,6 +20341,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               if(role === 'ceo' || role === 'admin') execTids.push(String(t.id));
             }
           });
+          workerThreadMap = await portalAdminDmBuildWorkerThreadMap(client, me, workerIdsForAck);
+          var getThreadAckEffective = function(tid){
+            return portalAdminDmGetThreadAckEffective(tid, workerThreadMap, threadWorkerById);
+          };
           hs = staffTids.length ? await dmThreadListHasUnread(staffTids) : false;
           hc = execTids.length ? await dmThreadListHasUnread(execTids) : false;
         }
@@ -20357,7 +20384,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             groupTitles: groupTitles,
             hs: hs,
             hc: hc,
-            hg: hgStaff || hgCeo
+            hg: hgStaff || hgCeo,
+            getThreadAckEffective: typeof getThreadAckEffective === 'function' ? getThreadAckEffective : portalAdminDmGetThreadAck
           });
         }catch(_uh){ unreadHints = []; }
         window.__PORTAL_ADMIN_DM_UNREAD_HINTS__ = unreadHints;
@@ -20365,9 +20393,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         window.__PORTAL_ADMIN_CEO_DM_UNREAD = hc;
         window.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD = hgCeo;
         portalAdminDmApplyTeamTileUnreadClass();
+        var suppressLoginNotify = !!window.__PORTAL_ADMIN_DM_UNREAD_INITIAL_SYNC;
         portalAdminDmOnUnreadAttentionChanged(prevUnread);
-        if(hs || hgStaff) portalAdminDmTryOsNotifyIncoming('staff');
-        if(hc || hgCeo) portalAdminDmTryOsNotifyIncoming('ceo');
+        if(suppressLoginNotify){
+          window.__PORTAL_ADMIN_DM_UNREAD_INITIAL_SYNC = false;
+        }else{
+          if(hs || hgStaff) portalAdminDmTryOsNotifyIncoming('staff');
+          if(hc || hgCeo) portalAdminDmTryOsNotifyIncoming('ceo');
+        }
       }catch(_e){
         try{ console.warn('[portal] portalAdminDmSyncIncomingAttention', _e); }catch(_log){}
         portalAdminDmApplyTeamTileUnreadClass();
@@ -20934,6 +20967,29 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!threadId) return '';
       return String(portalAdminDmReadStore().threads[threadId] || '').trim();
     }
+    function portalAdminDmGetThreadAckEffective(threadId, workerThreadMap, threadWorkerById){
+      threadId = String(threadId || '').trim();
+      if(!threadId) return '';
+      var best = portalAdminDmGetThreadAck(threadId);
+      var workerId = threadWorkerById && threadWorkerById[threadId] ? String(threadWorkerById[threadId] || '').trim() : '';
+      var tids = workerId && workerThreadMap && workerThreadMap[workerId] && workerThreadMap[workerId].length
+        ? workerThreadMap[workerId]
+        : [threadId];
+      tids.forEach(function(tid){
+        tid = String(tid || '').trim();
+        if(!tid) return;
+        var ack = portalAdminDmGetThreadAck(tid);
+        if(!ack) return;
+        if(!best){
+          best = ack;
+          return;
+        }
+        try{
+          if(new Date(ack).getTime() > new Date(best).getTime()) best = ack;
+        }catch(_ea){ best = ack; }
+      });
+      return best;
+    }
     function portalAdminDmUnreadSinceIso(ids, getAckFn){
       ids = ids || [];
       getAckFn = getAckFn || function(){ return ''; };
@@ -21180,12 +21236,26 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           .in('thread_id', dmIds)
           .gte('created_at', portalAdminDmUnreadSinceIso(dmIds, portalAdminDmGetThreadAck))
           .limit(1500);
+        var dmThreadWorkerById = {};
+        merged.forEach(function(item){
+          if(item.kind !== 'dm') return;
+          var wk0 = String(item.workerId || '').trim();
+          var tids0 = [];
+          if(wk0 && workerThreadMap[wk0] && workerThreadMap[wk0].length) tids0 = workerThreadMap[wk0].slice();
+          else if(item.id) tids0 = [String(item.id)];
+          tids0.forEach(function(tid0){
+            dmThreadWorkerById[String(tid0)] = wk0;
+          });
+        });
         if(!uq.error && Array.isArray(uq.data)){
           uq.data.forEach(function(m){
             if(!m || !m.thread_id) return;
             if(!portalAdminDmMessageCountsAsUnread(m)) return;
             var tid = String(m.thread_id);
-            if(!portalAdminDmIsMessageAfterAck(m.created_at, portalAdminDmGetThreadAck(tid))) return;
+            if(!portalAdminDmIsMessageAfterAck(
+              m.created_at,
+              portalAdminDmGetThreadAckEffective(tid, workerThreadMap, dmThreadWorkerById)
+            )) return;
             unreadByThread[tid] = (unreadByThread[tid] || 0) + 1;
           });
         }
@@ -21195,6 +21265,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var wk = String(item.workerId || '').trim();
           if(wk && workerThreadMap[wk] && workerThreadMap[wk].length) tids = workerThreadMap[wk].slice();
           else if(item.id) tids = [String(item.id)];
+          var threadWorkerById = {};
+          tids.forEach(function(tid0){
+            threadWorkerById[tid0] = wk;
+          });
           var m = null;
           tids.forEach(function(tid){
             var cand = lastByThread[tid];
@@ -21223,14 +21297,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             if(!m || !m.thread_id) return false;
             if(!portalAdminDmMessageCountsAsUnread(m)) return false;
             var tid = String(m.thread_id);
-            if(!portalAdminDmIsMessageAfterAck(m.created_at, portalAdminDmGetThreadAck(tid))) return false;
+            if(!portalAdminDmIsMessageAfterAck(
+              m.created_at,
+              portalAdminDmGetThreadAckEffective(tid, workerThreadMap, dmThreadWorkerById)
+            )) return false;
             if(window.portalCsCliqSupportRoute && typeof window.portalCsCliqSupportRoute.isSupportRouteBody === 'function'){
               return window.portalCsCliqSupportRoute.isSupportRouteBody(m.body);
             }
             var b = String(m.body || '');
             return b.indexOf('[CS Cliq Support]') === 0 || b.indexOf('[CS Cliq Meeting request]') === 0;
           });
-          window.portalAdminBellSyncSupportUnread(supportUnread, profBy, me, { silent: false });
+          window.portalAdminBellSyncSupportUnread(supportUnread, profBy, me, { silent: true });
         }
       }
       if(groupIds.length){
@@ -21420,7 +21497,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var ch = portalAdminDmChannel();
       if(!host) return;
       if(!client || !me){
-        host.innerHTML = '<p class="muted" style="margin:0;font-size:13px;min-width:0;overflow-wrap:break-word">Sign in to load conversations.</p>';
+        var pendingSid = String(
+          (window.__PORTAL_SUPABASE__ &&
+            window.__PORTAL_SUPABASE__.session &&
+            window.__PORTAL_SUPABASE__.session.user &&
+            window.__PORTAL_SUPABASE__.session.user.id) ||
+            ''
+        ).trim();
+        if(client && pendingSid){
+          host.innerHTML = '<p class="muted" style="margin:0;font-size:13px;min-width:0;overflow-wrap:break-word">Loading conversations…</p>';
+        }else{
+          host.innerHTML = '<p class="muted" style="margin:0;font-size:13px;min-width:0;overflow-wrap:break-word">Sign in to load conversations.</p>';
+        }
         return;
       }
       host.innerHTML = '<p class="muted" style="margin:0;font-size:13px">Loading conversations…</p>';
@@ -26405,6 +26493,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         window.addEventListener('portal:supabase-ready', function(){
           if(state.view === 'settings') portalAdminRefreshSettingsView();
           portalLateAdminScheduleBadgeRefresh();
+          if(
+            state.view === 'cs_cliq' &&
+            window.__PORTAL_CS_CLIQ_ACTIVE &&
+            typeof portalAdminDmRenderList === 'function'
+          ){
+            void portalAdminDmRenderList();
+          }
           try{
             portalInitAdminDmRealtime();
             void portalAdminDmSyncIncomingAttention();
