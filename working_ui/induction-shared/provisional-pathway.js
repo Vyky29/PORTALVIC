@@ -34,4 +34,9 @@
   };
 
   provisionalRefreshPathway();
+
+  if (window.addEventListener) {
+    window.addEventListener('portal:induction-hydrated', provisionalRefreshPathway);
+    window.addEventListener('portal:induction-progress-restored', provisionalRefreshPathway);
+  }
 })();

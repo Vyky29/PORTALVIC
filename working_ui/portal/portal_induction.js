@@ -142,9 +142,6 @@
       global.localStorage.removeItem(COMPLETE_KEY);
       global.localStorage.removeItem(COMPLETED_AT_KEY);
       global.localStorage.removeItem(CERT_PDF_DOWNLOADED_KEY);
-      for (var i = 1; i <= MODULES; i++) {
-        global.localStorage.removeItem("provisional-induction-module-" + i);
-      }
     } catch (_e2) {}
   }
 

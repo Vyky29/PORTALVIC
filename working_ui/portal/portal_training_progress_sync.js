@@ -35,6 +35,53 @@
     }
   }
 
+  function inductionModuleStorageKey(n) {
+    return "provisional-induction-module-" + n;
+  }
+
+  function mergeInductionModuleState(local, remote) {
+    local = local && typeof local === "object" ? local : {};
+    remote = remote && typeof remote === "object" ? remote : {};
+    return {
+      journey: !!(local.journey || remote.journey),
+      outcomes: !!(local.outcomes || remote.outcomes),
+      video: !!(local.video || remote.video),
+      quizStarted: !!(local.quizStarted || remote.quizStarted),
+      quizPass: !!(local.quizPass || remote.quizPass),
+      maxWatchedTime: Math.max(Number(local.maxWatchedTime) || 0, Number(remote.maxWatchedTime) || 0),
+    };
+  }
+
+  function applyInductionModuleStatesToLocalStorage(moduleStates) {
+    if (!moduleStates || typeof moduleStates !== "object") return false;
+    var changed = false;
+    for (var i = 1; i <= INDUCTION_MODULES; i++) {
+      var remote = moduleStates[String(i)];
+      if (!remote) continue;
+      var local = inductionModuleState(i);
+      var merged = mergeInductionModuleState(local, remote);
+      if (JSON.stringify(merged) === JSON.stringify(local)) continue;
+      try {
+        global.localStorage.setItem(inductionModuleStorageKey(i), JSON.stringify(merged));
+        changed = true;
+      } catch (_) {}
+    }
+    return changed;
+  }
+
+  async function fetchRemoteInductionModuleStates(client, userId) {
+    if (!client || !userId) return null;
+    var res = await client
+      .from("portal_staff_training_progress")
+      .select("module_states, progress_pct, phase_label, completed_at")
+      .eq("staff_user_id", userId)
+      .eq("track", "induction")
+      .maybeSingle();
+    if (res.error) throw res.error;
+    if (!res.data || !res.data.module_states) return null;
+    return res.data.module_states;
+  }
+
   function inductionModuleLabel(n, st) {
     if (st.quizPass) return "Done";
     if (st.video) return "Quiz pending";
@@ -57,8 +104,11 @@
       var st = inductionModuleState(i);
       moduleStates[String(i)] = {
         journey: !!st.journey,
+        outcomes: !!st.outcomes,
         video: !!st.video,
+        quizStarted: !!st.quizStarted,
         quizPass: !!st.quizPass,
+        maxWatchedTime: Number(st.maxWatchedTime) || 0,
         label: inductionModuleLabel(i, st),
       };
       if (st.quizPass) {
@@ -289,6 +339,38 @@
     if (res.error) throw res.error;
   }
 
+  global.portalHydrateInductionProgressFromSupabase = async function portalHydrateInductionProgressFromSupabase(opts) {
+    opts = opts || {};
+    try {
+      var box = global.__PORTAL_SUPABASE__ || {};
+      var client = opts.client || box.client;
+      var userId = resolveAuthUserId(opts, box);
+      if (!client || !userId) return { ok: false };
+
+      var remoteStates = await fetchRemoteInductionModuleStates(client, userId);
+      if (!remoteStates) return { ok: true, changed: false };
+
+      var changed = applyInductionModuleStatesToLocalStorage(remoteStates);
+      if (changed) {
+        try {
+          if (typeof global.provisionalRefreshPathway === "function") {
+            global.provisionalRefreshPathway();
+          }
+          if (typeof global.inductionRefreshProgress === "function") {
+            global.inductionRefreshProgress();
+          }
+          global.dispatchEvent(new CustomEvent("portal:induction-progress-restored"));
+        } catch (_) {}
+      }
+      return { ok: true, changed: changed };
+    } catch (e) {
+      try {
+        console.debug("[portal] induction hydrate", e);
+      } catch (_) {}
+      return { ok: false, error: e };
+    }
+  };
+
   global.portalCollectTrainingProgressSnapshot = function portalCollectTrainingProgressSnapshot(opts) {
     opts = opts || {};
     var profile = opts.profile;
@@ -332,6 +414,14 @@
       if (!client || !userId) return { ok: false };
 
       var email = (session && session.user && session.user.email) || "";
+      try {
+        var remoteStates = await fetchRemoteInductionModuleStates(client, userId);
+        if (remoteStates) applyInductionModuleStatesToLocalStorage(remoteStates);
+      } catch (mergeErr) {
+        try {
+          console.debug("[portal] induction merge before sync", mergeErr);
+        } catch (_) {}
+      }
       var snap = global.portalCollectTrainingProgressSnapshot({
         profile: profile,
         authEmail: email,

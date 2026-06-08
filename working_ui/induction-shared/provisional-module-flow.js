@@ -1,4 +1,5 @@
 (function () {
+  function startModuleFlow() {
   var portal = document.querySelector('.portal[data-provisional-induction]');
   if (!portal) return;
 
@@ -59,6 +60,8 @@
   }
 
   function isStageDone(id, state) {
+    if (id === 'journey') return !!state.journey;
+    if (id === 'outcomes') return !!state.outcomes;
     if (id === 'video') return !!state.video;
     if (id === 'quiz') return !!state.quizPass;
     var check = document.querySelector('[data-stage-check="' + id + '"]');
@@ -91,7 +94,21 @@
     if (refreshOutcomesUi) refreshOutcomesUi();
   }
 
+  function restoreStageChecks(state) {
+    if (state.journey) {
+      document.querySelectorAll('[data-stage-check="journey"]').forEach(function (input) {
+        input.checked = true;
+      });
+    }
+    if (state.outcomes) {
+      document.querySelectorAll('[data-stage-check="outcomes"]').forEach(function (input) {
+        input.checked = true;
+      });
+    }
+  }
+
   function applyUnlocks(state) {
+    restoreStageChecks(state);
     if (isStageDone('journey', state)) {
       unlockStage('outcomes');
     }
@@ -200,6 +217,8 @@
       document.querySelectorAll('[data-stage-check="outcomes"]').forEach(function (input) {
         input.addEventListener('change', function () {
           var state = loadState();
+          state.outcomes = input.checked;
+          saveState(state);
           applyUnlocks(state);
           refreshProgress();
           if (refreshOutcomesUi) refreshOutcomesUi();
@@ -213,6 +232,8 @@
   document.querySelectorAll('[data-stage-check="journey"]').forEach(function (input) {
     input.addEventListener('change', function () {
       var state = loadState();
+      state.journey = input.checked;
+      saveState(state);
       applyUnlocks(state);
       refreshProgress();
       afterUnlockRefresh();
@@ -376,4 +397,20 @@
   var state = loadState();
   applyUnlocks(state);
   refreshProgress();
+  }
+
+  function boot() {
+    var ready = window.__portalInductionProgressReady;
+    if (ready && typeof ready.then === 'function') {
+      ready.then(startModuleFlow).catch(startModuleFlow);
+      return;
+    }
+    startModuleFlow();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot, { once: true });
+  } else {
+    boot();
+  }
 })();

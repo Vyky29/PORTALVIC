@@ -28,10 +28,16 @@
     sheet.addEventListener("click", onInductionClick, true);
   }
 
-  function sync() {
+  async function sync() {
     bindMenuSheet();
     if (typeof global.portalInductionBindDashboard === "function") {
       global.portalInductionBindDashboard({ profile: profile(), authEmail: authEmail() });
+    }
+    if (typeof global.portalHydrateInductionProgressFromSupabase === "function") {
+      await global.portalHydrateInductionProgressFromSupabase();
+      if (typeof global.provisionalRefreshPathway === "function") {
+        global.provisionalRefreshPathway();
+      }
     }
     if (typeof global.portalSyncTrainingProgressToSupabase === "function") {
       void global.portalSyncTrainingProgressToSupabase();
