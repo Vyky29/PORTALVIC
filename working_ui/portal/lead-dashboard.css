@@ -1226,15 +1226,32 @@
       display:flex;
       align-items:flex-start;
       gap:8px;
+      min-height:44px;
+      cursor:pointer;
+      -webkit-tap-highlight-color:transparent;
+      touch-action:manipulation;
+      user-select:none;
       color:#1f2937;
       font-weight:600;
       font-size:15px;
       line-height:1.3;
     }
+    .announcement-lock-check input[type="checkbox"]{
+      width:22px;
+      height:22px;
+      min-width:22px;
+      margin-top:1px;
+      flex-shrink:0;
+      cursor:pointer;
+    }
     .announcement-sign-btn{
       border:0;
       border-radius:12px;
       padding:11px 12px;
+      min-height:48px;
+      cursor:pointer;
+      -webkit-tap-highlight-color:transparent;
+      touch-action:manipulation;
       background:linear-gradient(145deg,#dc2626,#b91c1c);
       color:#fff;
       font-weight:800;
@@ -5954,9 +5971,9 @@
       pointer-events:auto;
       transition:transform .28s ease, opacity .2s ease, visibility 0s linear 0s;
     }
-    /* Dock bar uses z-index 96; default .sheet.open is 82 — fullscreen sheets must stack above the dock or taps (esp. lower half / WebView) hit the nav strip instead of sheet controls. */
+    /* Fullscreen sheets above dock (z-index 125) so lower controls — announcement sign, menu tiles — receive taps on mobile/WebView. */
     .sheet.sheet--fullscreen.sheet--mobile-frame.open{
-      z-index:100;
+      z-index:130;
     }
 
     /* Tomorrow / week / term: fullscreen, centred in the viewport */
@@ -8036,10 +8053,13 @@
       outline:2px solid rgba(200,140,30,.55);
       outline-offset:2px;
     }
-    /* Pending announcement: block dashboard scroll behind sheet; dock stays visible on top (sheet was covering z-index 100). */
+    /* Pending announcement: block dashboard scroll behind sheet; hide dock so sign/checkbox taps are not stolen. */
     body.dock-context-announcement-lock #appBodyScroll{
       pointer-events:none;
       user-select:none;
+    }
+    body.dock-context-announcement-lock .dock-bar{
+      display:none !important;
     }
     /* My participants: mismo aspecto en lista/ficha que en dashboard (.dock-nav-item--clients base) */
     .dock-nav-item__icon{
