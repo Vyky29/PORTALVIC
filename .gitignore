@@ -3,6 +3,7 @@
 .env.*
 !.env.example
 *.local.env
+database/local-vault/*.local.sql
 working_ui/onboarding_portal_config.js
 
 # Local password vault (data + copies — never commit, never deploy)
