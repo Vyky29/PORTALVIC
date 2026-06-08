@@ -432,6 +432,21 @@ body.portal-inapp-call-open #portalInternalChatBackdrop.open{
 }
 #internalChatSheet .portal-cs-cliq-composer--chat .portal-cs-cliq-composer__send{
   display:none !important;
+  width:36px;height:36px;min-width:36px;padding:0;font-size:0;line-height:0;
+  background:linear-gradient(145deg,var(--portal-chat-blue),#2676a0);color:#fff;
+}
+#internalChatSheet .portal-cs-cliq-composer--chat.portal-cs-cliq-composer--has-text .portal-cs-cliq-composer__trailing .portal-dm-attach-btn,
+#internalChatSheet .portal-cs-cliq-composer--chat.portal-cs-cliq-composer--has-text .portal-cs-cliq-composer__trailing .portal-dm-voice-btn{
+  display:none !important;
+}
+#internalChatSheet .portal-cs-cliq-composer--chat.portal-cs-cliq-composer--has-text .portal-cs-cliq-composer__send{
+  display:inline-flex !important;align-items:center;justify-content:center;
+}
+#internalChatSheet .portal-cs-cliq-composer--chat .portal-cs-cliq-composer__send::after{
+  content:"";display:block;width:18px;height:18px;
+  background:currentColor;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m22 2-7 20-4-9-9-4Z'/%3E%3Cpath d='M22 2 11 13'/%3E%3C/svg%3E") center/contain no-repeat;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m22 2-7 20-4-9-9-4Z'/%3E%3Cpath d='M22 2 11 13'/%3E%3C/svg%3E") center/contain no-repeat;
 }
 #internalChatSheet .portal-cs-cliq-composer__err{margin:6px 0 0;font-size:12px;min-height:1.1em}
 #internalChatSheet .portal-cs-cliq-composer__shell{

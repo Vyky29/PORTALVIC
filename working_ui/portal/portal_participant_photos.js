@@ -20,6 +20,8 @@
     "amaar ah": "portal/participants/amaar-ah.png",
     "aydaan ah": "portal/participants/aydaan-ah.png",
     "aydan ah": "portal/participants/aydaan-ah.png",
+    "ayden w": "portal/participants/ayden-w.png",
+    "ayden walker": "portal/participants/ayden-w.png",
     "adaam ah": "portal/participants/adaam-ah.png",
     "aadam ah": "portal/participants/adaam-ah.png",
     amir: "portal/participants/amir.png",

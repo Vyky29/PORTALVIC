@@ -85,7 +85,7 @@
   }
 
   function portalStaffHasPeerDirectory(prof) {
-    return portalStaffIsLeadUser(prof) || portalStaffIsStaffUser(prof);
+    return portalStaffIsLeadUser(prof);
   }
 
   function staffInitiatePeer(row) {
@@ -99,19 +99,13 @@
 
   function getDirectoryMode(prof) {
     if (portalStaffIsSessionLead(prof)) return "csteam";
-    if (portalStaffIsStaffUser(prof)) return "staffmgmt";
     return "";
   }
 
-  /** Staff worker inbox/DM peers: ops admin + executive directors only. */
+  /** Staff worker inbox/DM peers: ops admin only (no director list). */
   function portalStaffWorkerMgmtPeerAllowed(row) {
     if (!row || row.is_active === false) return false;
-    var ar = String(row.app_role || "").toLowerCase();
-    if (ar === "admin") return true;
-    if (global.portalDmRoles && typeof global.portalDmRoles.portalDmIsDirectorProfile === "function") {
-      return global.portalDmRoles.portalDmIsDirectorProfile(row);
-    }
-    return false;
+    return String(row.app_role || "").toLowerCase() === "admin";
   }
 
   function directoryCacheKey(mode) {

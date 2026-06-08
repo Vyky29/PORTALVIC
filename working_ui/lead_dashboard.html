@@ -94,7 +94,7 @@
   <script src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Lead Dashboard</title>
   <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260622-lead-chat-thread" />
-  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260605-wa-composer" />
+  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260608-wa-send-plus" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260610-topbar-colors" />
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260608-no-chat-search" />
   <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260608-inbox-fix" />
@@ -904,18 +904,18 @@
         <div id="internalChatThreadFilesPanel" class="portal-cs-cliq-thread-files-panel" hidden></div>
         <div id="internalChatMessages" class="portal-dm-msgs-col portal-dm-msgs-scroll portal-cs-cliq-messages"></div>
         <div class="portal-cs-cliq-composer portal-cs-cliq-composer--chat portal-dm-compose-bar">
-          <button type="button" class="portal-cs-cliq-composer__plus" id="internalChatComposerPlusBtn" aria-label="Share a file from your device">+</button>
+          <button type="button" class="portal-cs-cliq-composer__plus" id="internalChatComposerPlusBtn" aria-label="Attach photo, file, or portal document">+</button>
           <div class="portal-cs-cliq-composer__shell">
             <label class="topbar-sr-only" for="internalChatInput">Your message</label>
             <textarea id="internalChatInput" class="portal-cs-cliq-composer__input txa" placeholder="Message…" maxlength="8000" rows="1" enterkeyhint="send"></textarea>
             <div class="portal-cs-cliq-composer__trailing" id="internalChatComposerTrailing" aria-label="Photo and voice">
               <button type="button" class="portal-cs-cliq-composer__tool-btn portal-dm-attach-btn" id="internalChatPhotoBtn" aria-label="Send photo"></button>
               <button type="button" class="portal-cs-cliq-composer__tool-btn portal-dm-voice-btn" id="internalChatVoiceBtn" aria-label="Record voice message"></button>
+              <button type="button" class="portal-cs-cliq-composer__send portal-dm-btn portal-dm-btn--primary" id="internalChatSendBtn" hidden aria-hidden="true" tabindex="-1" aria-label="Send message">Send</button>
             </div>
           </div>
           <p id="internalChatVoiceBtnHint" class="portal-dm-voice-rec-hint" hidden></p>
           <p id="internalChatErr" class="portal-cs-cliq-composer__err muted"></p>
-          <button type="button" class="portal-cs-cliq-composer__send portal-dm-btn portal-dm-btn--primary" id="internalChatSendBtn" hidden aria-hidden="true" tabindex="-1">Send</button>
         </div>
       </div>
     </div>
@@ -1048,7 +1048,8 @@
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260616-michelle-only"></script>
   <script src="/portal/portal_dm_icons.js?v=20260605-wa-composer"></script>
   <script src="/portal/portal_dm_voice.js?v=20260605-wa-composer"></script>
-  <script src="/portal/portal_dm_attachments.js?v=20260608-staff-mgmt-polish"></script>
+  <script src="/portal/portal_dm_composer_wa.js?v=20260608-wa-send-plus"></script>
+  <script src="/portal/portal_dm_attachments.js?v=20260608-wa-send-plus"></script>
   <script src="/portal/portal_staff_chat_calls.js?v=20260604-call-thread"></script>
   <script src="/portal/portal_incoming_call_push.js?v=20260622-incoming-call"></script>
   <script src="/portal/portal_sheet_back.js?v=20260607-sheet-back"></script>
@@ -1070,7 +1071,7 @@
   <script src="/portal/portal_executive_dm.js?v=20260622-chat-restore"></script>
   <script src="/portal/portal_cs_cliq_embed.js?v=20260607-cliq-fix"></script>
   <script src="/portal/portal_dm_executive_cliq.js?v=20260622-chat-restore"></script>
-  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260608-no-chat-search"></script>
+  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260608-staff-admin-only"></script>
   <script>
     /** Real calendar weekday for “Today” (en-GB), aligned with staff_clients_machine.xlsx */
     function portalWeekdayLongEnGB(d){
@@ -5925,7 +5926,12 @@
           if(threadWrap) threadWrap.classList.remove('portal-cs-cliq-thread--keyboard');
           setTimeout(portalSyncInternalChatMobileViewport, 80);
         });
-        inp.addEventListener('input', portalAutosizeInternalChatInput);
+        inp.addEventListener('input', function(){
+          portalAutosizeInternalChatInput();
+          if(window.portalDmComposerWa && typeof window.portalDmComposerWa.sync === 'function'){
+            window.portalDmComposerWa.sync('internalChatInput');
+          }
+        });
         inp.addEventListener('keydown', function(ev){
           if(ev.key === 'Enter' && !ev.shiftKey){
             ev.preventDefault();
@@ -5934,6 +5940,9 @@
             }
           }
         });
+      }
+      if(window.portalDmComposerWa && typeof window.portalDmComposerWa.bind === 'function'){
+        window.portalDmComposerWa.bind('internalChatInput');
       }
       if(window.portalDmIcons && typeof window.portalDmIcons.upgrade === 'function'){
         var composerRoot = document.querySelector('#internalChatThreadWrap .portal-cs-cliq-composer');
@@ -6889,6 +6898,9 @@
       if(window.portalDmAttachments && typeof window.portalDmAttachments.bindWorkerInternalChatAttachments === 'function'){
         window.portalDmAttachments.bindWorkerInternalChatAttachments();
       }
+      if(window.portalDmComposerWa && typeof window.portalDmComposerWa.sync === 'function'){
+        window.portalDmComposerWa.sync('internalChatInput');
+      }
       portalSyncInternalChatMobileViewport();
     };
     window.portalInternalChatSendMessage = async function portalInternalChatSendMessage(){
@@ -6922,6 +6934,9 @@
         }
         if(ins.error) throw ins.error;
         if(inp) inp.value = "";
+        if(window.portalDmComposerWa && typeof window.portalDmComposerWa.sync === 'function'){
+          window.portalDmComposerWa.sync('internalChatInput');
+        }
         await window.portalRenderInternalChatSheet();
       }catch(e){
         if(errB) errB.textContent = String((e && e.message) || e || "Send failed");

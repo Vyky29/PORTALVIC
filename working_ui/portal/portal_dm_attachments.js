@@ -68,7 +68,19 @@
       ".portal-dm-img-msg img{display:block;max-width:100%;height:auto;border-radius:12px;cursor:pointer}" +
       ".portal-dm-file-msg{display:flex;align-items:center;gap:8px;min-width:0;padding:6px 8px;border-radius:10px;background:rgba(15,23,42,.06)}" +
       ".portal-dm-file-msg a{color:inherit;font-weight:700;text-decoration:underline;min-width:0;overflow-wrap:anywhere}" +
-      ".portal-dm-attach-caption{margin-top:6px;font-size:13px;line-height:1.4;white-space:pre-wrap;overflow-wrap:break-word}";
+      ".portal-dm-attach-caption{margin-top:6px;font-size:13px;line-height:1.4;white-space:pre-wrap;overflow-wrap:break-word}" +
+      ".portal-dm-plus-sheet{position:fixed;inset:0;z-index:12000;display:flex;align-items:flex-end;justify-content:center;padding:12px;background:rgba(12,28,42,.38);backdrop-filter:blur(4px)}" +
+      ".portal-dm-plus-sheet[hidden]{display:none !important}" +
+      ".portal-dm-plus-sheet__card{width:min(100%,420px);border-radius:16px 16px 0 0;background:#fff;padding:12px 12px calc(12px + env(safe-area-inset-bottom));box-shadow:0 -8px 32px rgba(8,24,40,.18)}" +
+      ".portal-dm-plus-sheet__head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}" +
+      ".portal-dm-plus-sheet__head h4{margin:0;font-size:16px;font-weight:800}" +
+      ".portal-dm-plus-sheet__close{width:36px;height:36px;border:0;background:transparent;font-size:24px;cursor:pointer}" +
+      ".portal-dm-plus-sheet__opt{display:block;width:100%;padding:12px 14px;margin:0 0 8px;border-radius:12px;border:1px solid var(--line,#e2e8f0);background:#f8fbfd;font:inherit;font-weight:700;text-align:left;cursor:pointer}" +
+      ".portal-dm-plus-sheet__opt small{display:block;margin-top:2px;font-size:11px;font-weight:500;color:#64748b}" +
+      ".portal-dm-plus-sheet__list{max-height:min(50dvh,320px);overflow:auto;margin:0;padding:0;list-style:none}" +
+      ".portal-dm-plus-sheet__doc{padding:10px 12px;border-radius:10px;border:1px solid var(--line,#e2e8f0);background:#fff;font:inherit;text-align:left;cursor:pointer;width:100%;margin:0 0 8px}" +
+      ".portal-dm-plus-sheet__doc strong{display:block;font-size:13px;min-width:0;overflow-wrap:break-word}" +
+      ".portal-dm-plus-sheet__doc span{display:block;font-size:11px;color:#64748b;margin-top:2px}";
     document.head.appendChild(st);
   }
 
@@ -240,6 +252,198 @@
     return btn;
   }
 
+  function closePlusSheet() {
+    var sheet = document.getElementById("portalDmPlusAttachSheet");
+    if (sheet) sheet.hidden = true;
+  }
+
+  function ensurePlusSheet() {
+    injectStyles();
+    var sheet = document.getElementById("portalDmPlusAttachSheet");
+    if (sheet) return sheet;
+    sheet = document.createElement("div");
+    sheet.id = "portalDmPlusAttachSheet";
+    sheet.className = "portal-dm-plus-sheet";
+    sheet.hidden = true;
+    sheet.innerHTML =
+      '<div class="portal-dm-plus-sheet__card" role="dialog" aria-modal="true" aria-labelledby="portalDmPlusAttachTitle">' +
+      '<div class="portal-dm-plus-sheet__head"><h4 id="portalDmPlusAttachTitle">Share</h4>' +
+      '<button type="button" class="portal-dm-plus-sheet__close" aria-label="Close">×</button></div>' +
+      '<div id="portalDmPlusAttachBody"></div></div>';
+    document.body.appendChild(sheet);
+    sheet.addEventListener("click", function (ev) {
+      if (ev.target === sheet) closePlusSheet();
+    });
+    var closeBtn = sheet.querySelector(".portal-dm-plus-sheet__close");
+    if (closeBtn) closeBtn.addEventListener("click", closePlusSheet);
+    return sheet;
+  }
+
+  async function listPortalDocuments(client, userId) {
+    if (!client || !userId) return [];
+    var res = await client
+      .from("documents")
+      .select("id,title,category,document_type,created_at,file_url")
+      .eq("user_id", userId)
+      .is("hidden_by_user_at", null)
+      .order("created_at", { ascending: false })
+      .limit(30);
+    if (res.error || !Array.isArray(res.data)) return [];
+    return res.data;
+  }
+
+  async function attachPortalDocument(opts, docRow) {
+    var client = opts.client;
+    var path = String((docRow && docRow.file_url) || "").trim();
+    if (!client || !path) throw new Error("Document unavailable.");
+    var dl = await client.storage.from("documents").download(path);
+    if (dl.error || !dl.data) throw dl.error || new Error("Could not download document.");
+    var title = String((docRow && docRow.title) || "Document").trim() || "Document";
+    var mime = String(dl.data.type || "application/pdf");
+    var file = new File([dl.data], title.replace(/[^\w.\- ]+/g, "_").slice(0, 80) || "document.pdf", {
+      type: mime,
+    });
+    await sendAttachment({
+      client: client,
+      file: file,
+      caption: opts.caption || "",
+      threadId: opts.threadId,
+      groupId: opts.groupId,
+      kind: opts.groupId ? "group" : "thread",
+      authorId: opts.authorId,
+    });
+  }
+
+  function openPlusAttachMenu(opts, photoInp, docInp) {
+    var sheet = ensurePlusSheet();
+    var body = document.getElementById("portalDmPlusAttachBody");
+    if (!body) return;
+    body.innerHTML =
+      '<button type="button" class="portal-dm-plus-sheet__opt" data-plus-action="photo">' +
+      "Photo or camera<small>Take or choose a picture</small></button>" +
+      '<button type="button" class="portal-dm-plus-sheet__opt" data-plus-action="device">' +
+      "File from phone<small>PDF, Word, Excel, or other files</small></button>" +
+      '<button type="button" class="portal-dm-plus-sheet__opt" data-plus-action="portal">' +
+      "My portal documents<small>Timesheets, certificates, and uploads from My Records</small></button>";
+    sheet.hidden = false;
+    body.onclick = function (ev) {
+      var btn = ev.target && ev.target.closest && ev.target.closest("[data-plus-action]");
+      if (!btn) return;
+      var action = String(btn.getAttribute("data-plus-action") || "");
+      if (action === "photo") {
+        closePlusSheet();
+        if (photoInp) photoInp.click();
+        return;
+      }
+      if (action === "device") {
+        closePlusSheet();
+        if (docInp) docInp.click();
+        return;
+      }
+      if (action === "portal") {
+        void showPortalDocumentPicker(opts, photoInp, docInp);
+      }
+    };
+  }
+
+  async function showPortalDocumentPicker(opts, photoInp, docInp) {
+    var body = document.getElementById("portalDmPlusAttachBody");
+    if (!body) return;
+    body.innerHTML = '<p class="muted" style="margin:0 0 10px;font-size:13px">Loading your portal documents…</p>';
+    try {
+      if (typeof opts.getContext !== "function") throw new Error("Not signed in.");
+      var ctx = opts.getContext();
+      if (!ctx || !ctx.client) throw new Error("Not signed in.");
+      if (!ctx.threadId && !ctx.groupId) throw new Error("Open a conversation first.");
+      var box = global.__PORTAL_SUPABASE__ || {};
+      var userId = String(
+        (box.staff_profile && box.staff_profile.id) ||
+          (box.session && box.session.user && box.session.user.id) ||
+          ctx.authorId ||
+          ""
+      ).trim();
+      var docs = await listPortalDocuments(ctx.client, userId);
+      if (!docs.length) {
+        body.innerHTML =
+          '<p class="muted" style="margin:0 0 10px;font-size:13px;line-height:1.45">No portal documents yet. Use <strong>File from phone</strong> or upload from My Records first.</p>' +
+          '<button type="button" class="portal-dm-plus-sheet__opt" data-plus-action="back">Back</button>';
+        body.onclick = function (ev) {
+          var back = ev.target && ev.target.closest && ev.target.closest('[data-plus-action="back"]');
+          if (back) openPlusAttachMenu(opts, photoInp, docInp);
+        };
+        return;
+      }
+      var listHtml =
+        '<p class="muted" style="margin:0 0 8px;font-size:12px">Pick a document to share in this chat.</p>' +
+        '<div class="portal-dm-plus-sheet__list">';
+      docs.forEach(function (doc) {
+        var title = esc(String((doc && doc.title) || "Document"));
+        var meta = esc(String((doc && doc.document_type) || (doc && doc.category) || "Document"));
+        listHtml +=
+          '<button type="button" class="portal-dm-plus-sheet__doc" data-portal-doc-id="' +
+          esc(String(doc.id || "")) +
+          '"><strong>' +
+          title +
+          "</strong><span>" +
+          meta +
+          "</span></button>";
+      });
+      listHtml +=
+        '</div><button type="button" class="portal-dm-plus-sheet__opt" data-plus-action="back" style="margin-top:4px">Back</button>';
+      body.innerHTML = listHtml;
+      body.onclick = function (ev) {
+        var back = ev.target && ev.target.closest && ev.target.closest('[data-plus-action="back"]');
+        if (back) {
+          openPlusAttachMenu(opts, photoInp, docInp);
+          return;
+        }
+        var pick = ev.target && ev.target.closest && ev.target.closest("[data-portal-doc-id]");
+        if (!pick) return;
+        var docId = String(pick.getAttribute("data-portal-doc-id") || "");
+        var docRow = docs.find(function (d) {
+          return String(d.id || "") === docId;
+        });
+        if (!docRow) return;
+        closePlusSheet();
+        void (async function () {
+          try {
+            var ctx2 = opts.getContext();
+            var textarea =
+              typeof opts.textareaId === "string"
+                ? document.getElementById(opts.textareaId)
+                : opts.textarea;
+            await attachPortalDocument(
+              {
+                client: ctx2.client,
+                threadId: ctx2.threadId,
+                groupId: ctx2.groupId,
+                authorId: ctx2.authorId,
+                caption: textarea ? String(textarea.value || "").trim() : "",
+              },
+              docRow
+            );
+            if (textarea) textarea.value = "";
+            if (global.portalDmComposerWa && typeof global.portalDmComposerWa.sync === "function") {
+              global.portalDmComposerWa.sync(opts.textareaId || "internalChatInput");
+            }
+            if (typeof opts.onSent === "function") await opts.onSent();
+          } catch (e) {
+            if (opts.onError) opts.onError(String((e && e.message) || e || "Upload failed."));
+          }
+        })();
+      };
+    } catch (e) {
+      body.innerHTML =
+        '<p class="muted" style="margin:0 0 10px;font-size:13px">' +
+        esc(String((e && e.message) || e || "Could not load documents.")) +
+        '</p><button type="button" class="portal-dm-plus-sheet__opt" data-plus-action="back">Back</button>';
+      body.onclick = function (ev) {
+        var back = ev.target && ev.target.closest && ev.target.closest('[data-plus-action="back"]');
+        if (back) openPlusAttachMenu(opts, photoInp, docInp);
+      };
+    }
+  }
+
   function attachFilePickers(opts) {
     opts = opts || {};
     injectStyles();
@@ -352,7 +556,7 @@
       if (plusBtn && plusBtn.dataset.portalDmPlusBound !== "1") {
         plusBtn.dataset.portalDmPlusBound = "1";
         plusBtn.addEventListener("click", function () {
-          docInp.click();
+          openPlusAttachMenu(opts, photoInp, docInp);
         });
       }
     }
@@ -386,6 +590,9 @@
               authorId: ctx.authorId,
             });
             if (textarea) textarea.value = "";
+            if (global.portalDmComposerWa && typeof global.portalDmComposerWa.sync === "function") {
+              global.portalDmComposerWa.sync(opts.textareaId || "internalChatInput");
+            }
             if (typeof opts.onSent === "function") await opts.onSent();
           } catch (e) {
             if (opts.onError) opts.onError(String((e && e.message) || e || "Upload failed."));
