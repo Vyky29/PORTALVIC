@@ -347,6 +347,35 @@
     });
   }
 
+  var MANAGEMENT_INBOX_LABEL = "Management";
+
+  function staffOfficePeerFromThread(row, profBy, me) {
+    if (!row) return "";
+    var a = String(row.participant_a || "");
+    var b = String(row.participant_b || "");
+    var pa = (profBy && profBy[a]) || {};
+    var pb = (profBy && profBy[b]) || {};
+    if (isOfficeParticipant(pa)) return a;
+    if (isOfficeParticipant(pb)) return b;
+    return "";
+  }
+
+  /** Staff worker inbox: one row for all CEO/admin threads (Sevitha ops line). */
+  async function collapseWorkerOfficeInboxRows(client, rows, profBy, me) {
+    me = String(me || "").trim();
+    if (!Array.isArray(rows) || rows.length < 2) return rows || [];
+    var officeRows = [];
+    var other = [];
+    rows.forEach(function (r) {
+      if (!r || !r.id) return;
+      if (staffOfficePeerFromThread(r, profBy, me)) officeRows.push(r);
+      else other.push(r);
+    });
+    if (officeRows.length <= 1) return rows;
+    var canonical = await resolveCanonicalThreadRow(client, me, officeRows, profBy);
+    return other.concat([canonical || officeRows[0]]);
+  }
+
   function filterStaffInboxThreadRows(rows, msgsByThread, me) {
     if (!Array.isArray(rows)) return [];
     me = String(me || "").trim();
@@ -444,6 +473,9 @@
     isSupportRouteBody: isSupportRouteBody,
     isStaffSupportHandoffOnlyThread: isStaffSupportHandoffOnlyThread,
     filterStaffInboxThreadRows: filterStaffInboxThreadRows,
+    collapseWorkerOfficeInboxRows: collapseWorkerOfficeInboxRows,
+    staffOfficePeerFromThread: staffOfficePeerFromThread,
+    MANAGEMENT_INBOX_LABEL: MANAGEMENT_INBOX_LABEL,
     purgeLocalTestData: purgeLocalTestData,
     purgeLocalTestDataOnce: purgeLocalTestDataOnce,
     collapseStaffDmRowsToCanonical: collapseStaffDmRowsToCanonical,

@@ -30,8 +30,8 @@
   <script src="/portal/portal_dm_icons.js?v=20260624-dm-icons"></script>
   <script src="/portal/portal_dm_thread_avatar.js?v=20260621-cliq-embed"></script>
   <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260604-cliq-access"></script>
-  <script src="/portal/portal_cs_cliq_support_route.js?v=20260609-split-inbox"></script>
-  <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260609-split-inbox"></script>
+  <script src="/portal/portal_cs_cliq_support_route.js?v=20260609-staff-mgmt"></script>
+  <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260609-staff-mgmt"></script>
   <script src="/portal/portal_cs_cliq_support.js?v=20260607-support-route"></script>
   <script src="/portal/portal_cs_cliq_announcements_hub.js?v=20260604-cliq-inbox"></script>
   <script src="/portal/portal_cs_cliq_announcement_inbox.js?v=20260622-announcements"></script>
@@ -21107,7 +21107,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return portalAdminDmProfileMatchesChannel(profBy[pid] || {});
       });
       var useSplitInbox =
-        unified &&
         portalAdminDmUsesSharedStaffInbox() &&
         window.portalCsCliqManagementInbox &&
         typeof window.portalCsCliqManagementInbox.buildSections === 'function' &&
@@ -21189,7 +21188,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return;
       }
       host.innerHTML = '';
-      if((merged.length || (useSplitInbox && splitSections)) && unified){
+      if(merged.length || (useSplitInbox && splitSections)){
         var groups = merged.filter(function(item){ return item.kind === 'group'; });
         var dms = merged.filter(function(item){ return item.kind !== 'group'; });
         if(useSplitInbox && splitSections){

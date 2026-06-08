@@ -1743,8 +1743,14 @@
         var pid = ch === 'staff_lead' ? peerSl : peerCe;
         return portalAdminDmProfileMatchesChannel(profBy[pid] || {});
       });
+      if(
+        portalAdminDmRestrictedWorkerInbox() &&
+        global.portalCsCliqSupportRoute &&
+        typeof global.portalCsCliqSupportRoute.collapseWorkerOfficeInboxRows === 'function'
+      ){
+        rows = await global.portalCsCliqSupportRoute.collapseWorkerOfficeInboxRows(client, rows, profBy, me);
+      }
       var useSplitInbox =
-        unified &&
         portalAdminDmUsesSharedStaffInbox() &&
         global.portalCsCliqManagementInbox &&
         typeof global.portalCsCliqManagementInbox.buildSections === 'function' &&
@@ -1793,7 +1799,19 @@
               peer = peerCe;
             }
           }
-          var label = isTeamChat ? portalAdminDmTeamChatLabel(r, names) : (names[peer] || ('Chat · ' + peer.slice(0, 8)));
+          var route = global.portalCsCliqSupportRoute || {};
+          var officePeer = route.staffOfficePeerFromThread ? route.staffOfficePeerFromThread(r, profBy, me) : '';
+          if(!officePeer && unified && portalAdminDmRestrictedWorkerInbox()){
+            if(portalAdminDmIsWorkerRecipient(profBy[peerSl] || {}) && String(peerSl) === me && portalAdminDmProfileIsOfficeParticipant(profBy[peerCe] || {})){
+              officePeer = peerCe;
+              peer = peerCe;
+            }
+          }
+          if(officePeer) peer = officePeer;
+          var mgmtLabel = route.MANAGEMENT_INBOX_LABEL || 'Management';
+          var label = isTeamChat
+            ? portalAdminDmTeamChatLabel(r, names)
+            : (officePeer ? mgmtLabel : (names[peer] || ('Chat · ' + peer.slice(0, 8))));
           merged.push({
             kind: 'dm',
             id: id,
@@ -1802,7 +1820,8 @@
             peerId: peer,
             peerProf: profBy[peer] || {},
             isTeamChat: isTeamChat,
-            threadRow: r
+            threadRow: r,
+            isManagementLane: !!officePeer
           });
         });
       }
@@ -1831,7 +1850,7 @@
       if(merged.length || (useSplitInbox && splitSections && (splitSections.opsItems || []).length)){
         var groups = merged.filter(function(item){ return item.kind === 'group'; });
         var dms = merged.filter(function(item){ return item.kind !== 'group'; });
-        if(unified){
+        if(unified || useSplitInbox){
           if(useSplitInbox && splitSections){
             if(teamDmItems.length){
               host.appendChild(portalAdminDmRenderInboxSectionLabel('Team chats'));
@@ -1938,6 +1957,15 @@
           peerId = portalAdminDmChannel() === 'staff_lead'
             ? portalAdminDmWorkerPeerFromThread(trow, profMap, me)
             : portalDmPeerIdForThread(me, trow);
+          if(portalAdminDmRestrictedWorkerInbox() && global.portalCsCliqSupportRoute){
+            var officePeerOpen = global.portalCsCliqSupportRoute.staffOfficePeerFromThread
+              ? global.portalCsCliqSupportRoute.staffOfficePeerFromThread(trow, profMap, me)
+              : '';
+            if(officePeerOpen){
+              peerId = officePeerOpen;
+              peerLabel = global.portalCsCliqSupportRoute.MANAGEMENT_INBOX_LABEL || 'Management';
+            }
+          }
           if(portalAdminDmChannel() === 'staff_lead' && portalAdminDmIsPeerTeamChatThread(trow, profMap)){
             var namesMap = {};
             Object.keys(profMap).forEach(function(k){

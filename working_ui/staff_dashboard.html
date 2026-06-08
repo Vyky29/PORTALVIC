@@ -1059,8 +1059,9 @@
   <script src="/portal/portal_dm_roles.js?v=20260604-cliq-unified"></script>
   <script src="/portal/portal_dm_thread_avatar.js?v=20260621-cliq-embed"></script>
   <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260604-cliq-access"></script>
-  <script src="/portal/portal_cs_cliq_support_route.js?v=20260608-staff-silent"></script>
-  <script src="/portal/portal_cs_cliq_support.js?v=20260608-staff-silent"></script>
+  <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260609-staff-mgmt"></script>
+  <script src="/portal/portal_cs_cliq_support_route.js?v=20260609-staff-mgmt"></script>
+  <script src="/portal/portal_cs_cliq_support.js?v=20260609-staff-mgmt"></script>
   <script src="/portal/portal_cs_cliq_announcements_hub.js?v=20260604-cliq-fix"></script>
   <script src="/portal/portal_cs_cliq_announcement_inbox.js?v=20260607-cliq-fix"></script>
   <script src="/portal/portal_cs_cliq_thread_header.js?v=20260608-inbox-fix"></script>
@@ -1070,7 +1071,7 @@
   <script src="/portal/portal_cs_cliq_compose_sheet.js?v=20260604-cliq-fix"></script>
   <script src="/portal/portal_cs_cliq_files_hub.js?v=20260604-cliq-files"></script>
   <script src="/portal/portal_cs_cliq_meetings_hub.js?v=20260622-meetings-centre"></script>
-  <script src="/portal/portal_executive_dm.js?v=20260608-one-thread"></script>
+  <script src="/portal/portal_executive_dm.js?v=20260609-staff-mgmt"></script>
   <script src="/portal/portal_cs_cliq_embed.js?v=20260607-cliq-fix"></script>
   <script src="/portal/portal_dm_executive_cliq.js?v=20260604-cliq-unified"></script>
   <script src="/portal/portal_lead_staff_chat_directory.js?v=20260604-cliq-unified"></script>
@@ -7037,13 +7038,19 @@
         if(window.__PORTAL_OFFICE_DM_PEER_CACHE) return window.__PORTAL_OFFICE_DM_PEER_CACHE;
         var client = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client;
         if(!client) return '';
-        var res = await client.from('staff_profiles').select('id,full_name,app_role,staff_role,is_active').order('full_name', { ascending: true });
-        if(res.error || !Array.isArray(res.data)) return '';
         var pick = '';
-        for(var i = 0; i < res.data.length; i++){
-          var row = res.data[i];
-          if(row && row.is_active === false) continue;
-          if(row && row.id && portalStaffProfileIsOfficePeer(row)){ pick = String(row.id); break; }
+        if(window.portalCsCliqSupportRoute && typeof window.portalCsCliqSupportRoute.resolveOpsAdminId === 'function'){
+          pick = String(await window.portalCsCliqSupportRoute.resolveOpsAdminId(client) || '').trim();
+        }
+        if(!pick){
+          var res = await client.from('staff_profiles').select('id,full_name,app_role,staff_role,is_active').eq('app_role', 'admin').order('full_name', { ascending: true }).limit(20);
+          if(!res.error && Array.isArray(res.data)){
+            for(var i = 0; i < res.data.length; i++){
+              var row = res.data[i];
+              if(row && row.is_active === false) continue;
+              if(row && row.id && portalStaffProfileIsOfficePeer(row)){ pick = String(row.id); break; }
+            }
+          }
         }
         if(pick) window.__PORTAL_OFFICE_DM_PEER_CACHE = pick;
         return pick;
@@ -7377,6 +7384,13 @@
         if(window.portalCsCliqSupportRoute && typeof window.portalCsCliqSupportRoute.filterStaffInboxThreadRows === 'function'){
           rows = window.portalCsCliqSupportRoute.filterStaffInboxThreadRows(rows, msgsByThread, me);
         }
+        if(
+          portalStaffIsRestrictedWorkerChat(box && box.staff_profile) &&
+          window.portalCsCliqSupportRoute &&
+          typeof window.portalCsCliqSupportRoute.collapseWorkerOfficeInboxRows === 'function'
+        ){
+          rows = await window.portalCsCliqSupportRoute.collapseWorkerOfficeInboxRows(client, rows, profBy, me);
+        }
         if(!rows.length){
           listHost.innerHTML = "<p class=\"portal-dm-inbox-empty\">No conversations yet. When someone replies to your support request, it appears here.</p>";
           return;
@@ -7398,8 +7412,11 @@
         listHost.innerHTML = "";
         rows.forEach(function(r){
           var id = String(r.id || "");
-          var peer = portalDmPeerIdForThread(me, r);
-          var label = portalDmPeerDisplayLabel(peer, profBy[peer] || {});
+          var route = window.portalCsCliqSupportRoute || {};
+          var officePeer = route.staffOfficePeerFromThread ? route.staffOfficePeerFromThread(r, profBy, me) : '';
+          var peer = officePeer || portalDmPeerIdForThread(me, r);
+          var mgmtLabel = route.MANAGEMENT_INBOX_LABEL || 'Management';
+          var label = officePeer ? mgmtLabel : portalDmPeerDisplayLabel(peer, profBy[peer] || {});
           var when = "";
           try{
             if(r.updated_at) when = new Date(r.updated_at).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
