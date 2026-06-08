@@ -175,6 +175,45 @@
   border-radius: 10px;
 }
 
+/* Open-thread header — admin CS Cliq (embed rules live under .portal-cs-cliq-embed-host only). */
+#csCliqRoot #csCliqThreadHeader.portal-cs-cliq-thread-header {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--portal-chat-line);
+  background: #fff;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+#csCliqRoot #csCliqThreadHeader.portal-cs-cliq-thread-header.is-open,
+#csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="thread"] #csCliqThreadHeader,
+#csCliqRoot .portal-cs-cliq__channels-body[data-cs-cliq-panel="thread"] #csCliqThreadHeader {
+  display: flex !important;
+}
+
+#csCliqRoot .portal-cs-cliq-thread-header__identity {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#csCliqRoot .portal-cs-cliq-thread-header__avatar {
+  flex-shrink: 0;
+}
+
+#csCliqRoot .portal-cs-cliq-thread-header__files {
+  flex-shrink: 0;
+}
+
+body.admin-view-cs-cliq #csCliqRoot .portal-cs-cliq-thread-header__status {
+  display: none !important;
+}
+
 @media (max-width: 699px) {
   #csCliqRoot .portal-cs-cliq__head-call-bar .portal-dm-call-bar-label,
   #csCliqRoot #csCliqHeadCallBar .portal-dm-call-bar-label {

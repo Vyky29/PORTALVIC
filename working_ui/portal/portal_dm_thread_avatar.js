@@ -59,6 +59,10 @@
       (item && (item.avatarUrl || item.avatar_url)) ||
         (prof && prof.avatar_url)
     );
+    // Stale roster paths (concatenated full names) 404 — prefer username/first-name lookup below.
+    if (avatarUrl && avatarUrl.indexOf("/portal/staff_photos/") >= 0) {
+      avatarUrl = "";
+    }
 
     if (avatarUrl) {
       return (

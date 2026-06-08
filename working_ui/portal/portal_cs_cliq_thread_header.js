@@ -40,16 +40,39 @@
     if (roleEl) {
       if (ui.groupId && global.portalCsCliqGroupMembers && global.portalCsCliqGroupMembers.slugShowsMembers(ui.groupSlug)) {
         roleEl.textContent = "Members";
+      } else if (ui.groupId) {
+        roleEl.textContent = "Group";
       } else {
-        roleEl.textContent = ui.groupId ? "Group" : ui.peerRole || "Staff";
+        var roleTxt = String(ui.peerRole || "").trim();
+        if (!roleTxt) {
+          var prof = ui.peerProf || null;
+          var ar = prof ? String(prof.app_role || "").toLowerCase() : "";
+          if (ar === "admin") roleTxt = "Admin";
+          else if (ar === "ceo") roleTxt = "CEO";
+          else if (ar === "lead") roleTxt = "Lead";
+          else if (ar === "staff") roleTxt = "Staff";
+        }
+        roleEl.textContent = roleTxt || "Staff";
       }
     }
     if (statusEl) {
-      try {
-        var away = String(global.localStorage.getItem("portal_cs_cliq_workspace_status") || "at_work") === "away";
-        statusEl.textContent = away ? "Away" : "Available";
-      } catch (_s) {
-        statusEl.textContent = "Available";
+      var hideStatus =
+        document.body.classList.contains("admin-view-cs-cliq") ||
+        (global.portalCsCliqHubRoles &&
+          typeof global.portalCsCliqHubRoles.getTier === "function" &&
+          global.portalCsCliqHubRoles.getTier() === "management");
+      if (hideStatus) {
+        statusEl.hidden = true;
+        statusEl.setAttribute("aria-hidden", "true");
+      } else {
+        statusEl.hidden = false;
+        statusEl.setAttribute("aria-hidden", "false");
+        try {
+          var away = String(global.localStorage.getItem("portal_cs_cliq_workspace_status") || "at_work") === "away";
+          statusEl.textContent = away ? "Away" : "Available";
+        } catch (_s) {
+          statusEl.textContent = "Available";
+        }
       }
     }
     var tier = global.portalCsCliqHubRoles && global.portalCsCliqHubRoles.getTier ? global.portalCsCliqHubRoles.getTier() : "management";

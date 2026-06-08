@@ -23,7 +23,7 @@
   <script src="/portal/admin-training-progress.js?v=20260607-app-device-readiness"></script>
   <script src="/portal/portal_participant_photos.js?v=20260607-roster-avatars"></script>
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260606-carlos-covers"></script>
-  <script src="/portal/portal_staff_photos.js?v=20260625-admin-photo-fix"></script>
+  <script src="/portal/portal_staff_photos.js?v=20260609-admin-photo-fix"></script>
   <script src="/portal/admin-portal-achievements.js?v=20260607-roster-avatars"></script>
   <link rel="stylesheet" href="/portal/portal_staff_map.css?v=20260602-staff-map-header" />
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260607-roster-avatars" />
@@ -31,7 +31,8 @@
   <script src="/portal/portal_dm_roles.js?v=20260609-mgmt-identity"></script>
   <script src="/portal/portal_chat_actor_identity.js?v=20260609-mgmt-identity"></script>
   <script src="/portal/portal_dm_icons.js?v=20260624-dm-icons"></script>
-  <script src="/portal/portal_dm_thread_avatar.js?v=20260625-admin-photo-fix"></script>
+  <script src="/portal/portal_dm_thread_avatar.js?v=20260609-admin-photo-fix"></script>
+  <script src="/portal/portal_cs_cliq_thread_header.js?v=20260609-admin-thread-fix"></script>
   <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260608-cliq-channels"></script>
   <script src="/portal/portal_cs_cliq_support_route.js?v=20260608-inbox-fix"></script>
   <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260609-staff-mgmt"></script>
@@ -40,7 +41,6 @@
   <script src="/portal/portal_cs_cliq_support.js?v=20260607-support-route"></script>
   <script src="/portal/portal_cs_cliq_announcements_hub.js?v=20260604-cliq-inbox"></script>
   <script src="/portal/portal_cs_cliq_announcement_inbox.js?v=20260625-staff-pool-channels"></script>
-  <script src="/portal/portal_cs_cliq_thread_header.js?v=20260609-group-chips"></script>
   <script src="/portal/portal_cs_cliq_group_members.js?v=20260625-staff-pool-channels"></script>
   <script src="/portal/portal_cs_cliq_thread_files.js?v=20260604-cliq-files"></script>
   <script src="/portal/portal_admin_cs_cliq.js?v=20260609-channels-split"></script>
@@ -78,7 +78,7 @@
   <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260605-admin-mobile-landscape" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260608-orbit-center" />
-  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260609-unread-fix" />
+  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260609-admin-thread-fix" />
 </head>
 <body>
   <script>
@@ -19592,6 +19592,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return role === 'ceo' || role === 'admin';
     }
     function portalAdminDmPremiumSheetOpen(){
+      if(portalAdminDmCsCliqEmbedActive()){
+        portalAdminDmPremiumSheetClose();
+        return false;
+      }
       var sh = document.getElementById('internalChatSheet');
       var bd = document.getElementById('portalInternalChatBackdrop');
       if(!sh) return false;
@@ -21745,13 +21749,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       portalAdminDmTogglePanels('thread');
       var peerEl = portalAdminDmEl('admDmThreadPeer');
       var peerLabel = '';
+      var peerProf = null;
       if(client && me){
         var tres = await client.from('portal_staff_dm_threads').select('participant_a,participant_b').eq('id', tid).maybeSingle();
         var peerId = '';
+        var profMap = {};
         if(tres && tres.data){
           var trow = tres.data;
           var ids = [String(trow.participant_a||''), String(trow.participant_b||'')].filter(Boolean);
-          var profMap = {};
           if(ids.length){
             var prM = await client.from('staff_profiles').select('id,full_name,username,app_role,staff_role,dashboard_route,is_active').in('id', ids);
             if(!prM.error && Array.isArray(prM.data)){
@@ -21771,17 +21776,30 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             peerId = '';
           }
         }
-        if(peerId && !peerLabel){
-          var pr2 = await client.from('staff_profiles').select('full_name,username').eq('id', peerId).maybeSingle();
-          if(!pr2.error && pr2.data){
-            peerLabel = (pr2.data.full_name || pr2.data.username || '').trim() || peerId;
-          }else{
-            peerLabel = peerId;
+        if(peerId){
+          peerProf = profMap[peerId] || null;
+          if(!peerLabel){
+            if(peerProf){
+              peerLabel = (peerProf.full_name || peerProf.username || '').trim() || peerId;
+            }else{
+              var pr2 = await client.from('staff_profiles').select('full_name,username,app_role,staff_role').eq('id', peerId).maybeSingle();
+              if(!pr2.error && pr2.data){
+                peerProf = pr2.data;
+                peerLabel = (pr2.data.full_name || pr2.data.username || '').trim() || peerId;
+              }else{
+                peerLabel = peerId;
+              }
+            }
           }
         }
       }
       window.__PORTAL_ADMIN_DM_UI = window.__PORTAL_ADMIN_DM_UI || {};
       window.__PORTAL_ADMIN_DM_UI.peerLabel = peerLabel || 'Conversation';
+      window.__PORTAL_ADMIN_DM_UI.peerProf = peerProf;
+      var peerRoleRaw = peerProf ? String(peerProf.app_role || '').toLowerCase() : '';
+      window.__PORTAL_ADMIN_DM_UI.peerRole = portalAdminDmFormatPeerRole(peerProf && peerProf.app_role);
+      window.__PORTAL_ADMIN_DM_UI.peerIsLeadOrManagement =
+        peerRoleRaw === 'admin' || peerRoleRaw === 'ceo' || peerRoleRaw === 'lead';
       if(peerEl) peerEl.textContent = window.__PORTAL_ADMIN_DM_UI.peerLabel;
       var inp = portalAdminDmReplyInputEl();
       if(inp) inp.value = '';
@@ -21878,7 +21896,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var prPeer = await client.from('staff_profiles').select('app_role').eq('id', peerId0).maybeSingle();
           if(!prPeer.error && prPeer.data) peerRole = String(prPeer.data.app_role || '').toLowerCase();
           window.__PORTAL_ADMIN_DM_UI = window.__PORTAL_ADMIN_DM_UI || {};
-          window.__PORTAL_ADMIN_DM_UI.peerRole = peerRole;
+          window.__PORTAL_ADMIN_DM_UI.peerRole = portalAdminDmFormatPeerRole(peerRole);
         }
       }
       var authorIds = [];
@@ -21968,6 +21986,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         portalAdminDmRefreshListAfterRead();
       }
       msgsBox.scrollTop = msgsBox.scrollHeight;
+      if(window.portalCsCliqThreadHeader && typeof window.portalCsCliqThreadHeader.sync === 'function'){
+        window.portalCsCliqThreadHeader.sync(window.__PORTAL_ADMIN_DM_UI || {});
+      }
     }
     function portalAdminDmBindAttachmentControls(){
       var pa = window.portalDmAttachments;
@@ -22103,6 +22124,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!t) return '';
       var parts = t.split(/\s+/);
       return parts[0] || t;
+    }
+    function portalAdminDmFormatPeerRole(appRole){
+      var ar = String(appRole || '').toLowerCase();
+      if(ar === 'admin') return 'Admin';
+      if(ar === 'ceo') return 'CEO';
+      if(ar === 'lead') return 'Lead';
+      if(ar === 'staff') return 'Staff';
+      return ar ? ar.charAt(0).toUpperCase() + ar.slice(1) : '';
     }
     /** Line above DM bubble — staff lane vs management board (see portal_chat_actor_identity.js). */
     function portalAdminDmMsgAuthorChip(opts){
