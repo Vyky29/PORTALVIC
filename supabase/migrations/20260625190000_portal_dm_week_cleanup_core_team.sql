@@ -1,7 +1,12 @@
 -- Purge portal staff DMs from the current ISO week (Europe/London).
--- Keeps only messages sent TODAY in threads where BOTH participants are the core team:
--- Raúl, Victor, Sevitha, Michelle, John, Javi (CEO — username javi; not staff Javier Marquez).
--- Run the whole script at once in Supabase SQL editor (no temp tables — safe if statements split).
+-- KEEPS messages only in this window (London time):
+--   2026-06-07 08:30 → 2026-06-07 23:00
+-- in threads where BOTH participants are in the keep roster:
+--   Raúl, Victor, Dan, John, Javier (staff), Carlos, Michelle, Javi (CEO), Aurora, Sevitha.
+--
+-- Run the whole script at once in Supabase SQL editor.
+-- NOTE: If you already ran the old "keep TODAY" version, June 7 messages may already be
+-- gone — this script cannot restore deleted rows (only Supabase PITR backup could).
 
 begin;
 
@@ -9,14 +14,18 @@ with allowed as (
   select sp.id
   from public.staff_profiles sp
   where lower(coalesce(sp.username, '')) in (
-    'raul', 'victor', 'sevitha', 'javi', 'michelle', 'john'
+    'raul', 'victor', 'dan', 'john', 'javier', 'carlos', 'michelle', 'javi', 'aurora', 'sevitha'
   )
   or lower(coalesce(sp.full_name, '')) ~ '(^|[[:space:]])raul([[:space:]]|$|[[:punct:]])'
   or lower(coalesce(sp.full_name, '')) ~ '(^|[[:space:]])victor([[:space:]]|$|[[:punct:]])'
+  or lower(coalesce(sp.full_name, '')) ~ '(^|[[:space:]])dan([[:space:]]|$|[[:punct:]])'
+  or lower(coalesce(sp.full_name, '')) ~ '(^|[[:space:]])carlos([[:space:]]|$|[[:punct:]])'
+  or lower(coalesce(sp.full_name, '')) ~ '(^|[[:space:]])michelle([[:space:]]|$|[[:punct:]])'
+  or lower(coalesce(sp.full_name, '')) ~ '(^|[[:space:]])aurora([[:space:]]|$|[[:punct:]])'
   or lower(coalesce(sp.full_name, '')) ~ '(^|[[:space:]])sevitha([[:space:]]|$|[[:punct:]])'
   or lower(coalesce(sp.full_name, '')) ~ '(^|[[:space:]])javi([[:space:]]|$|[[:punct:]])'
-  or lower(coalesce(sp.full_name, '')) ~ '(^|[[:space:]])michelle([[:space:]]|$|[[:punct:]])'
   or lower(coalesce(sp.full_name, '')) ~ 'john[[:space:]]+kyei'
+  or lower(coalesce(sp.full_name, '')) ~ 'javier[[:space:]]+marquez'
 ),
 keep_threads as (
   select t.id
@@ -27,13 +36,15 @@ keep_threads as (
 bounds as (
   select
     date_trunc('week', now() at time zone 'Europe/London') as week_start,
-    date_trunc('day', now() at time zone 'Europe/London') as today_start
+    (timestamp '2026-06-07 08:30:00' at time zone 'Europe/London') as keep_from,
+    (timestamp '2026-06-07 23:00:00' at time zone 'Europe/London') as keep_until
 )
 delete from public.portal_staff_dm_messages m
 using bounds b
 where m.created_at >= b.week_start
   and not (
-    m.created_at >= b.today_start
+    m.created_at >= b.keep_from
+    and m.created_at <= b.keep_until
     and m.thread_id in (select id from keep_threads)
   );
 
