@@ -52,6 +52,15 @@
     return prof || (global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.staff_profile) || {};
   }
 
+  /** staff_dashboard.html — workers use Admin-only chat, not the lead directory UI. */
+  function portalStaffOnWorkerDashboard() {
+    try {
+      return /staff_dashboard\.html/i.test(String((typeof location !== "undefined" && location.pathname) || ""));
+    } catch (_e) {
+      return false;
+    }
+  }
+
   /** Full messenger inbox (search, staff directory, calls) - lead, admin, CEO on any portal. */
   function portalStaffHasFullMessengerAccess(prof) {
     var row = profileRow(prof);
@@ -91,6 +100,7 @@
   }
 
   function portalStaffHasPeerDirectory(prof) {
+    if (portalStaffOnWorkerDashboard() && !portalStaffIsSessionLead(prof)) return false;
     return portalStaffIsLeadUser(prof);
   }
 
@@ -134,7 +144,10 @@
     if (ar === "staff") return true;
     if (ar === "admin" || ar === "ceo") return false;
     var sr = String(row.staff_role || "").toLowerCase();
-    return !!(sr && sr !== "manager" && sr !== "admin");
+    if (sr && sr !== "manager" && sr !== "admin") return true;
+    // Profile not hydrated yet on staff dashboard → worker Admin chat (avoids lead inbox flash).
+    if (!ar && !sr && portalStaffOnWorkerDashboard()) return true;
+    return false;
   }
 
   function peerLabelFromRow(row) {
@@ -505,6 +518,9 @@
     var prof = profileRow(opts.profile);
     var hasDirectory =
       opts.hasDirectory != null ? !!opts.hasDirectory : portalStaffHasPeerDirectory(prof);
+    if (portalStaffOnWorkerDashboard() && portalStaffIsRestrictedWorkerChat(prof)) {
+      hasDirectory = false;
+    }
     var inThread = !!opts.inThread;
     var chrome = document.getElementById("internalChatLeadInboxChrome");
     var nav = document.getElementById("internalChatLeadInboxNav");
@@ -1364,6 +1380,7 @@
   }
 
   global.portalLeadStaffChatDirectory = {
+    portalStaffOnWorkerDashboard: portalStaffOnWorkerDashboard,
     portalStaffHasFullMessengerAccess: portalStaffHasFullMessengerAccess,
     portalStaffIsLeadUser: portalStaffIsLeadUser,
     portalStaffIsSessionLead: portalStaffIsSessionLead,
