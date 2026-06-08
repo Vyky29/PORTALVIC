@@ -74,9 +74,14 @@
     }
 
     if (global.portalStaffAvatarInnerHtml) {
-      return global.portalStaffAvatarInnerHtml(username || label, {
+      var photoKey = username;
+      if (!photoKey && label) {
+        photoKey = String(label).trim().split(/\s+/)[0] || label;
+      }
+      return global.portalStaffAvatarInnerHtml(photoKey || label, {
         esc: escFn,
         displayName: label,
+        username: username,
         className: "portal-dm-thread-avatar portal-dm-thread-avatar--" + tone,
         imgClass: "portal-dm-thread-avatar__img",
       });

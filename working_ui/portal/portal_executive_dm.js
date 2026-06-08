@@ -1526,7 +1526,15 @@
         });
       }
       var roleTag = '';
-      var avatarItem = { kind: item.kind, label: item.label, unreadCount: unread, isTeamChat: !!item.isTeamChat };
+      var peerProf = item.peerProf || null;
+      var avatarItem = {
+        kind: item.kind,
+        label: item.label,
+        unreadCount: unread,
+        isTeamChat: !!item.isTeamChat,
+        peerProfile: peerProf,
+        username: peerProf && peerProf.username ? String(peerProf.username).trim() : ''
+      };
       if(item.kind === 'dm' && ch === 'staff_lead'){
         if(item.isTeamChat){
           roleTag = '<span class="portal-dm-thread-role-tag portal-dm-thread-role-tag--team">Team chat</span>';

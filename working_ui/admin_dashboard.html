@@ -22,7 +22,8 @@
   <script src="/portal/admin-portal-activity.js?v=20260604-visit-activity"></script>
   <script src="/portal/admin-training-progress.js?v=20260607-app-device-readiness"></script>
   <script src="/portal/portal_participant_photos.js?v=20260607-roster-avatars"></script>
-  <script src="/portal/portal_staff_photos.js?v=20260607-roster-avatars"></script>
+  <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260606-carlos-covers"></script>
+  <script src="/portal/portal_staff_photos.js?v=20260625-admin-photo-fix"></script>
   <script src="/portal/admin-portal-achievements.js?v=20260607-roster-avatars"></script>
   <link rel="stylesheet" href="/portal/portal_staff_map.css?v=20260602-staff-map-header" />
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260607-roster-avatars" />
@@ -30,7 +31,7 @@
   <script src="/portal/portal_dm_roles.js?v=20260609-mgmt-identity"></script>
   <script src="/portal/portal_chat_actor_identity.js?v=20260609-mgmt-identity"></script>
   <script src="/portal/portal_dm_icons.js?v=20260624-dm-icons"></script>
-  <script src="/portal/portal_dm_thread_avatar.js?v=20260621-cliq-embed"></script>
+  <script src="/portal/portal_dm_thread_avatar.js?v=20260625-admin-photo-fix"></script>
   <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260608-cliq-channels"></script>
   <script src="/portal/portal_cs_cliq_support_route.js?v=20260608-inbox-fix"></script>
   <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260609-staff-mgmt"></script>
@@ -21263,7 +21264,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
       }
       var roleTag = '';
-      var avatarItem = { kind: item.kind, label: item.label, unreadCount: unread, isTeamChat: !!item.isTeamChat };
+      var peerProf = item.peerProf || null;
+      var avatarItem = {
+        kind: item.kind,
+        label: item.label,
+        unreadCount: unread,
+        isTeamChat: !!item.isTeamChat,
+        peerProfile: peerProf,
+        username: peerProf && peerProf.username ? String(peerProf.username).trim() : ''
+      };
       if(item.kind === 'dm' && item.inboxLane === 'ops'){
         roleTag = '<span class="portal-dm-thread-role-tag portal-dm-thread-role-tag--ops">Sevitha</span>';
       }else if(item.kind === 'dm' && ch === 'staff_lead'){
