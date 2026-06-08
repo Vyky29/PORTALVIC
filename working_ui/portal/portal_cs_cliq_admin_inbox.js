@@ -160,16 +160,6 @@
 
     function push(bucket, item) {
       if (!item) return;
-      var sharedWorkerOps = managementSharedWorkerOpsInbox();
-      if (
-        sharedWorkerOps &&
-        bucket === staffItems &&
-        item.kind === "dm" &&
-        !item.isTeamChat &&
-        (item.inboxLane === "ops" || isWorkerPeerItem(item))
-      ) {
-        return;
-      }
       var k = key(item);
       var lk = labelDedupeKey(item);
       if (k && seen[k]) return;
@@ -206,11 +196,7 @@
       }
     });
 
-    if (
-      splitSections &&
-      Array.isArray(splitSections.opsItems) &&
-      !managementSharedWorkerOpsInbox()
-    ) {
+    if (splitSections && Array.isArray(splitSections.opsItems)) {
       splitSections.opsItems.forEach(function (item) {
         if (item) push(staffItems, item);
       });
@@ -320,11 +306,8 @@
     }
     function push(item) {
       if (!item || item.kind !== "dm" || item.isTeamChat) return;
-      if (item.inboxLane === "ops") {
-        if (!sharedWorkerOps) return;
-      } else if (sharedWorkerOps && isWorkerPeerItem(item)) {
-        return;
-      }
+      if (item.inboxLane === "ops") return;
+      if (sharedWorkerOps && isWorkerPeerItem(item)) return;
       if (!shouldShowPersonalDm(item)) return;
       var tid = String(item.id || "").trim();
       var wk = String(item.workerId || item.peerId || "").trim();
@@ -339,12 +322,13 @@
       seen["w:" + wk] = true;
       items.push(item);
     }
-    (merged || []).forEach(push);
-    if (splitSections) {
+    (merged || []).forEach(function (item) {
+      if (item && item.inboxLane === "personal") push(item);
+      else if (!sharedWorkerOps) push(item);
+      else if (item && item.inboxLane !== "ops" && !isWorkerPeerItem(item)) push(item);
+    });
+    if (splitSections && !sharedWorkerOps) {
       (splitSections.mineItems || []).forEach(push);
-      if (sharedWorkerOps) {
-        (splitSections.opsItems || []).forEach(push);
-      }
     }
     (teamDmItems || []).forEach(function (item) {
       if (item && !item.isTeamChat) push(item);
@@ -377,7 +361,7 @@
         '<p class="muted" style="margin:0;font-size:13px;min-width:0;overflow-wrap:break-word">' +
         "No personal direct messages here yet. " +
         (sharedWorkerOps
-          ? "Staff and lead chats live here on the <strong>shared ops line</strong> (same thread for all CEOs). "
+          ? "Personal CEO and admin DMs only. Staff chats live under <strong>Channels → Staff</strong> (shared ops line for all directors). "
           : "<strong>Channels → Staff</strong> has group channels and team threads. ") +
         "Use <strong>New</strong> for CEO or admin DMs.</p>";
       return;

@@ -171,6 +171,8 @@
     } else if (item.id) {
       btn.setAttribute("data-cs-cliq-channel-dm", String(item.id || ""));
     }
+    if (item.inboxLane) btn.setAttribute("data-inbox-lane", String(item.inboxLane));
+    if (item.workerId) btn.setAttribute("data-worker-id", String(item.workerId));
     var membersLine = chips.length ? "" : esc(memberSubtitle(item, chips));
     var memberChipsHtml = renderMemberChipsRow(chips, esc);
     var sender = esc(String(item.lastSender || "").trim());
@@ -232,6 +234,11 @@
         global.__PORTAL_ADMIN_DM_UI = global.__PORTAL_ADMIN_DM_UI || {};
         global.__PORTAL_ADMIN_DM_UI.hubPane = "channels";
         global.__PORTAL_ADMIN_DM_UI.inboxLane = btn.getAttribute("data-inbox-lane") || "mine";
+        var workerId = String(btn.getAttribute("data-worker-id") || "").trim();
+        if (workerId) {
+          global.__PORTAL_ADMIN_DM_UI.managementWorkerId = workerId;
+          global.__PORTAL_ADMIN_DM_UI.workerId = workerId;
+        }
         if (global.PortalAdminCsCliq && typeof global.PortalAdminCsCliq.setRailPane === "function") {
           global.PortalAdminCsCliq.setRailPane("channels");
         }
@@ -365,7 +372,7 @@
         appendSectionEmpty(
           host,
           sharedWorkerOps
-            ? "No staff group channels yet. Individual staff chats are in Inbox."
+            ? "No staff group channels yet. Open a staff member below for the shared ops line."
             : "No staff group channels yet."
         );
       } else {

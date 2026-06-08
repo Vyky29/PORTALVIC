@@ -37,8 +37,8 @@
   <script src="/portal/portal_dm_read_cursor.js?v=20260609-read-cursor"></script>
   <script src="/portal/portal_cs_cliq_support_route.js?v=20260609-staff-ops-thread"></script>
   <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260609-ops-ensure-thread"></script>
-  <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260609-inbox-channels-split"></script>
-  <script src="/portal/portal_cs_cliq_admin_channels.js?v=20260609-inbox-channels-split"></script>
+  <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260608-ceo-inbox-routing"></script>
+  <script src="/portal/portal_cs_cliq_admin_channels.js?v=20260608-ceo-inbox-routing"></script>
   <script src="/portal/portal_cs_cliq_support.js?v=20260607-support-route"></script>
   <script src="/portal/portal_cs_cliq_announcements_hub.js?v=20260604-cliq-inbox"></script>
   <script src="/portal/portal_cs_cliq_announcement_inbox.js?v=20260609-ceo-dedupe"></script>
@@ -21595,6 +21595,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             var workerId = String(item.workerId || item.peerId || '').trim();
             var tid = String(item.id || '').trim();
             window.__PORTAL_ADMIN_DM_UI.inboxLane = item.inboxLane || 'mine';
+            if(workerId){
+              window.__PORTAL_ADMIN_DM_UI.managementWorkerId = workerId;
+              window.__PORTAL_ADMIN_DM_UI.workerId = workerId;
+            }
             if(tid){
               void portalAdminDmOpenThread(tid);
               return;
@@ -22087,9 +22091,15 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               var workerMine = portalAdminDmWorkerPeerFromThread(tresMine.data, profMine, me);
               if(workerMine && portalAdminDmIsWorkerRecipient(profMine[workerMine] || {})){
                 window.__PORTAL_ADMIN_DM_UI = window.__PORTAL_ADMIN_DM_UI || {};
-                window.__PORTAL_ADMIN_DM_UI.inboxLane = 'mine';
-                await portalAdminDmOpenManagementWorker(workerMine, 'mine');
-                return;
+                if(portalAdminDmCeoUsesSharedWorkerOpsInbox()){
+                  window.__PORTAL_ADMIN_DM_UI.inboxLane = 'ops';
+                  window.__PORTAL_ADMIN_DM_UI.managementWorkerId = workerMine;
+                  window.__PORTAL_ADMIN_DM_UI.workerId = workerMine;
+                }else{
+                  window.__PORTAL_ADMIN_DM_UI.inboxLane = 'mine';
+                  await portalAdminDmOpenManagementWorker(workerMine, 'mine');
+                  return;
+                }
               }
             }
           }
@@ -22117,6 +22127,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             if(wPeer && portalAdminDmIsWorkerRecipient(profW[wPeer] || {})){
               window.__PORTAL_ADMIN_DM_UI.managementWorkerId = wPeer;
               window.__PORTAL_ADMIN_DM_UI.workerId = wPeer;
+              if(portalAdminDmCeoUsesSharedWorkerOpsInbox()){
+                window.__PORTAL_ADMIN_DM_UI.inboxLane = 'ops';
+              }
             }
           }
         }catch(_wid){}
@@ -22462,6 +22475,46 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       bindVoice('csCliqVoiceBtn', 'csCliqInput', function(){ return document.getElementById('csCliqErr'); });
       portalAdminDmBindAttachmentControls();
     }
+    async function portalAdminDmResolveOpsWorkerSendTarget(client, ui, tid, me){
+      ui = ui || {};
+      me = String(me || '').trim();
+      tid = String(tid || '').trim();
+      if(!portalAdminDmCeoUsesSharedWorkerOpsInbox()) return { workerId: '', threadId: tid };
+      var workerId = String(ui.managementWorkerId || ui.workerId || '').trim();
+      if(!workerId){
+        var peerProf = ui.peerProf || null;
+        if(peerProf && peerProf.id && portalAdminDmIsWorkerRecipient(peerProf)){
+          workerId = String(peerProf.id).trim();
+        }
+      }
+      if(!workerId && tid && client){
+        try{
+          var tresSend = await client.from('portal_staff_dm_threads').select('participant_a,participant_b').eq('id', tid).maybeSingle();
+          if(tresSend && tresSend.data){
+            var idsSend = [String(tresSend.data.participant_a||''), String(tresSend.data.participant_b||'')].filter(Boolean);
+            var profSend = {};
+            if(idsSend.length){
+              var prSend = await client.from('staff_profiles').select('id,full_name,username,app_role,staff_role,is_active').in('id', idsSend);
+              if(!prSend.error && Array.isArray(prSend.data)){
+                prSend.data.forEach(function(p){ if(p && p.id) profSend[String(p.id)] = p; });
+              }
+            }
+            workerId = portalAdminDmWorkerPeerFromThread(tresSend.data, profSend, me);
+          }
+        }catch(_wSend){}
+      }
+      if(!workerId) return { workerId: '', threadId: tid };
+      var opsTid = await portalAdminDmFindStaffLeadThreadForWorker(client, workerId);
+      if(opsTid){
+        window.__PORTAL_ADMIN_DM_UI = window.__PORTAL_ADMIN_DM_UI || {};
+        window.__PORTAL_ADMIN_DM_UI.threadId = String(opsTid);
+        window.__PORTAL_ADMIN_DM_UI.managementWorkerId = workerId;
+        window.__PORTAL_ADMIN_DM_UI.workerId = workerId;
+        window.__PORTAL_ADMIN_DM_UI.inboxLane = 'ops';
+        return { workerId: workerId, threadId: String(opsTid) };
+      }
+      return { workerId: workerId, threadId: tid };
+    }
     async function portalAdminDmSendReply(){
       var client = getSchedSupabaseClient();
       var ui = window.__PORTAL_ADMIN_DM_UI || {};
@@ -22488,30 +22541,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(insG.error) throw insG.error;
         }else{
           if(portalAdminDmCeoUsesSharedWorkerOpsInbox()){
-            var workerIdSend = String(ui.managementWorkerId || ui.workerId || '').trim();
-            if(!workerIdSend && tid){
-              try{
-                var tresSend = await client.from('portal_staff_dm_threads').select('participant_a,participant_b').eq('id', tid).maybeSingle();
-                if(tresSend && tresSend.data){
-                  var idsSend = [String(tresSend.data.participant_a||''), String(tresSend.data.participant_b||'')].filter(Boolean);
-                  var profSend = {};
-                  if(idsSend.length){
-                    var prSend = await client.from('staff_profiles').select('id,full_name,username,app_role,staff_role,is_active').in('id', idsSend);
-                    if(!prSend.error && Array.isArray(prSend.data)){
-                      prSend.data.forEach(function(p){ if(p && p.id) profSend[String(p.id)] = p; });
-                    }
-                  }
-                  workerIdSend = portalAdminDmWorkerPeerFromThread(tresSend.data, profSend, me);
-                }
-              }catch(_wSend){}
-            }
-            if(workerIdSend){
-              var opsTidSend = await portalAdminDmFindStaffLeadThreadForWorker(client, workerIdSend);
-              if(opsTidSend){
-                tid = String(opsTidSend);
-                window.__PORTAL_ADMIN_DM_UI.threadId = tid;
-              }
-            }
+            var sendTarget = await portalAdminDmResolveOpsWorkerSendTarget(client, ui, tid, me);
+            tid = sendTarget.threadId || tid;
           }
           var ins = await client.rpc('portal_staff_dm_insert_message', {
             p_thread_id: tid,
