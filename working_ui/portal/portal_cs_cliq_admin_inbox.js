@@ -160,6 +160,16 @@
 
     function push(bucket, item) {
       if (!item) return;
+      var sharedWorkerOps = managementSharedWorkerOpsInbox();
+      if (
+        sharedWorkerOps &&
+        bucket === staffItems &&
+        item.kind === "dm" &&
+        !item.isTeamChat &&
+        (item.inboxLane === "ops" || isWorkerPeerItem(item))
+      ) {
+        return;
+      }
       var k = key(item);
       var lk = labelDedupeKey(item);
       if (k && seen[k]) return;
@@ -196,7 +206,11 @@
       }
     });
 
-    if (splitSections && Array.isArray(splitSections.opsItems)) {
+    if (
+      splitSections &&
+      Array.isArray(splitSections.opsItems) &&
+      !managementSharedWorkerOpsInbox()
+    ) {
       splitSections.opsItems.forEach(function (item) {
         if (item) push(staffItems, item);
       });
@@ -356,15 +370,16 @@
     var me = ctx.me;
     var ch = ctx.ch;
     var dmItems = flattenDmInbox(ctx.merged, ctx.splitSections, ctx.teamDmItems);
+    var sharedWorkerOps = managementSharedWorkerOpsInbox();
     host.innerHTML = "";
     if (!dmItems.length) {
       host.innerHTML =
         '<p class="muted" style="margin:0;font-size:13px;min-width:0;overflow-wrap:break-word">' +
         "No personal direct messages here yet. " +
         (sharedWorkerOps
-          ? "Staff and lead chats appear here on the <strong>shared ops line</strong> (same thread for all CEOs). "
-          : "<strong>Channels → Staff</strong> has the shared ops queue (Sevitha) and team threads. ") +
-        "Use <strong>New</strong> to start your own direct chat.</p>";
+          ? "Staff and lead chats live here on the <strong>shared ops line</strong> (same thread for all CEOs). "
+          : "<strong>Channels → Staff</strong> has group channels and team threads. ") +
+        "Use <strong>New</strong> for CEO or admin DMs.</p>";
       return;
     }
     var rendered = 0;
@@ -391,6 +406,7 @@
 
   global.portalCsCliqAdminInbox = {
     shouldUseCategorizedInbox: shouldUseCategorizedInbox,
+    managementSharedWorkerOpsInbox: managementSharedWorkerOpsInbox,
     loadSessionLeads: loadSessionLeads,
     openLeadGhostView: openLeadGhostView,
     renderAdminInbox: renderAdminInbox,
