@@ -212,12 +212,15 @@
   function resolveComposeChrome(textarea) {
     if (!textarea || !textarea.parentNode) return null;
     injectStyles();
+    var composer = textarea.closest(".portal-cs-cliq-composer--chat") || textarea.closest(".portal-cs-cliq-composer");
     var shell = textarea.closest(".portal-cs-cliq-composer__shell");
+    var trailing =
+      (composer && composer.querySelector(".portal-cs-cliq-composer__trailing")) ||
+      (shell && shell.querySelector(".portal-cs-cliq-composer__trailing"));
+    if (shell && trailing) {
+      return { mode: "wa", shell: shell, trailing: trailing, field: textarea, composer: composer || shell.parentNode };
+    }
     if (shell) {
-      var trailing = shell.querySelector(".portal-cs-cliq-composer__trailing");
-      if (trailing) {
-        return { mode: "wa", shell: shell, trailing: trailing, field: textarea };
-      }
       var leading = shell.querySelector(".portal-cs-cliq-composer__leading");
       if (leading) {
         return { mode: "premium", shell: shell, actions: leading, field: textarea };

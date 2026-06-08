@@ -400,15 +400,17 @@ body.portal-inapp-call-open #portalInternalChatBackdrop.open{
 }
 #internalChatSheet .portal-cs-cliq-composer--chat,
 #internalChatSheet .portal-cs-cliq-composer--chat.portal-dm-compose-bar{
-  display:flex;flex-direction:row;flex-wrap:wrap;align-items:flex-end;gap:0;padding:0;border-top:0;background:#eef3f7;
+  display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;gap:0;
+  padding:0 calc(6px + env(safe-area-inset-right, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) calc(6px + env(safe-area-inset-left, 0px));
+  border-top:0;background:#eef3f7;
 }
 #internalChatSheet .portal-cs-cliq-composer__plus{
   display:none;
 }
 #internalChatSheet .portal-cs-cliq-composer--chat .portal-cs-cliq-composer__plus{
   display:inline-flex;align-items:center;justify-content:center;
-  flex:0 0 auto;align-self:flex-end;
-  width:40px;height:40px;margin:0 0 calc(8px + env(safe-area-inset-bottom, 0px)) 6px;
+  flex:0 0 44px;width:44px;height:44px;align-self:center;
+  margin:8px 0 0;padding:0;
   border:0;border-radius:50%;background:transparent;
   color:#5b7f96;font-size:28px;line-height:1;cursor:pointer;
 }
@@ -416,14 +418,19 @@ body.portal-inapp-call-open #portalInternalChatBackdrop.open{
   opacity:.75;
 }
 #internalChatSheet .portal-cs-cliq-composer--chat > .portal-cs-cliq-composer__shell{
-  flex:1 1 auto;min-width:0;display:flex;align-items:flex-end;gap:4px;
-  margin:8px 8px calc(8px + env(safe-area-inset-bottom, 0px)) 0;
-  border-radius:24px;padding:4px 6px 4px 12px;
+  flex:1 1 auto;min-width:0;display:flex;align-items:center;
+  margin:8px 6px 0 0;
+  border-radius:22px;padding:8px 14px;
   border:1px solid rgba(45,132,179,.16);background:#fff;
   box-shadow:0 2px 14px rgba(23,50,71,.06);
 }
+#internalChatSheet .portal-cs-cliq-composer--chat .portal-cs-cliq-composer__trailing{
+  flex:0 0 40px;width:40px;min-width:40px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:6px;align-self:center;
+  margin:8px 0 0;padding:0;
+}
 #internalChatSheet .portal-cs-cliq-composer--chat .portal-cs-cliq-composer__err{
-  flex:0 0 100%;width:100%;margin:0 10px 6px;
+  flex:0 0 100%;width:100%;margin:6px 10px 0;
 }
 #internalChatSheet .portal-cs-cliq-composer--chat .portal-cs-cliq-composer__err:empty,
 #internalChatSheet .portal-cs-cliq-composer--chat .portal-dm-voice-rec-hint:empty,
@@ -437,7 +444,11 @@ body.portal-inapp-call-open #portalInternalChatBackdrop.open{
 }
 #internalChatSheet .portal-cs-cliq-composer__leading{display:flex;align-items:center;gap:2px;flex-shrink:0}
 #internalChatSheet .portal-cs-cliq-composer__trailing{
-  display:flex;align-items:center;gap:2px;flex-shrink:0;margin-left:2px;
+  display:flex;align-items:center;gap:2px;flex-shrink:0;
+}
+#internalChatSheet .portal-cs-cliq-composer--chat .portal-cs-cliq-composer__input{
+  flex:1 1 auto;min-width:0;width:100%;min-height:24px;max-height:120px;border:0;background:transparent;resize:none;
+  padding:0;font:inherit;font-size:16px;line-height:1.35;
 }
 #internalChatSheet .portal-cs-cliq-composer__input{
   flex:1 1 auto;min-width:0;min-height:24px;max-height:120px;border:0;background:transparent;resize:none;
@@ -449,8 +460,9 @@ body.portal-inapp-call-open #portalInternalChatBackdrop.open{
 }
 #internalChatSheet .portal-cs-cliq-composer--chat .portal-cs-cliq-composer__send{
   display:none !important;
-  width:36px;height:36px;min-width:36px;padding:0;font-size:0;line-height:0;
+  width:36px;height:36px;min-width:36px;min-height:36px;padding:0;font-size:0;line-height:0;
   background:linear-gradient(145deg,var(--portal-chat-blue),#2676a0);color:#fff;
+  flex:0 0 auto;
 }
 #internalChatSheet .portal-cs-cliq-composer--chat.portal-cs-cliq-composer--has-text .portal-cs-cliq-composer__trailing .portal-dm-attach-btn,
 #internalChatSheet .portal-cs-cliq-composer--chat.portal-cs-cliq-composer--has-text .portal-cs-cliq-composer__trailing .portal-dm-voice-btn{
@@ -472,8 +484,12 @@ body.portal-inapp-call-open #portalInternalChatBackdrop.open{
 }
 #internalChatSheet .portal-cs-cliq-composer__tool-btn.portal-dm-voice-btn,
 #internalChatSheet .portal-cs-cliq-composer__tool-btn.portal-dm-attach-btn{
-  width:36px;height:36px;min-width:36px;border:0;border-radius:50%;background:transparent;color:#5b7f96;box-shadow:none;
-  padding:0;display:inline-flex;align-items:center;justify-content:center;
+  width:36px;height:36px;min-width:36px;min-height:36px;border:0;border-radius:50%;background:transparent;color:#5b7f96;box-shadow:none;
+  padding:0;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;
+}
+#internalChatSheet .portal-cs-cliq-composer--chat .portal-cs-cliq-composer__tool-btn.portal-dm-voice-btn,
+#internalChatSheet .portal-cs-cliq-composer--chat .portal-cs-cliq-composer__tool-btn.portal-dm-attach-btn{
+  width:34px;height:34px;min-width:34px;min-height:34px;
 }
 #internalChatSheet .portal-cs-cliq-composer__tool-btn.portal-dm-voice-btn .portal-dm-ico,
 #internalChatSheet .portal-cs-cliq-composer__tool-btn.portal-dm-attach-btn .portal-dm-ico{

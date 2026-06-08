@@ -94,7 +94,7 @@
   <script src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
   <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260608-composer-row" />
-  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260608-composer-row" />
+  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260608-composer-cols" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260610-topbar-colors" />
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260608-csteam-icons-roles" />
   <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260608-inbox-fix" />
@@ -912,11 +912,11 @@
           <div class="portal-cs-cliq-composer__shell">
             <label class="topbar-sr-only" for="internalChatInput">Your message</label>
             <textarea id="internalChatInput" class="portal-cs-cliq-composer__input txa" placeholder="Message…" maxlength="8000" rows="1" enterkeyhint="send"></textarea>
-            <div class="portal-cs-cliq-composer__trailing" id="internalChatComposerTrailing" aria-label="Photo and voice">
-              <button type="button" class="portal-cs-cliq-composer__tool-btn portal-dm-attach-btn" id="internalChatPhotoBtn" aria-label="Send photo"></button>
-              <button type="button" class="portal-cs-cliq-composer__tool-btn portal-dm-voice-btn" id="internalChatVoiceBtn" aria-label="Record voice message"></button>
-              <button type="button" class="portal-cs-cliq-composer__send portal-dm-btn portal-dm-btn--primary" id="internalChatSendBtn" hidden aria-hidden="true" tabindex="-1" aria-label="Send message">Send</button>
-            </div>
+          </div>
+          <div class="portal-cs-cliq-composer__trailing" id="internalChatComposerTrailing" aria-label="Photo, voice, and send">
+            <button type="button" class="portal-cs-cliq-composer__tool-btn portal-dm-attach-btn" id="internalChatPhotoBtn" aria-label="Send photo"></button>
+            <button type="button" class="portal-cs-cliq-composer__tool-btn portal-dm-voice-btn" id="internalChatVoiceBtn" aria-label="Record voice message"></button>
+            <button type="button" class="portal-cs-cliq-composer__send portal-dm-btn portal-dm-btn--primary" id="internalChatSendBtn" hidden aria-hidden="true" tabindex="-1" aria-label="Send message">Send</button>
           </div>
           <p id="internalChatVoiceBtnHint" class="portal-dm-voice-rec-hint" hidden></p>
           <p id="internalChatErr" class="portal-cs-cliq-composer__err muted"></p>
@@ -1054,9 +1054,9 @@
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260616-michelle-only"></script>
   <script src="/portal/portal_dm_icons.js?v=20260605-wa-composer"></script>
-  <script src="/portal/portal_dm_voice.js?v=20260605-wa-composer"></script>
-  <script src="/portal/portal_dm_composer_wa.js?v=20260608-wa-send-plus"></script>
-  <script src="/portal/portal_dm_attachments.js?v=20260608-wa-send-plus"></script>
+  <script src="/portal/portal_dm_voice.js?v=20260608-composer-cols"></script>
+  <script src="/portal/portal_dm_composer_wa.js?v=20260608-composer-cols"></script>
+  <script src="/portal/portal_dm_attachments.js?v=20260608-composer-cols"></script>
   <script src="/portal/portal_staff_chat_calls.js?v=20260604-call-thread"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
   <script src="/portal/portal_dm_roles.js?v=20260622-chat-restore"></script>

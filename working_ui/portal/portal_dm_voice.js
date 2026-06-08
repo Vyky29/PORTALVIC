@@ -421,7 +421,10 @@
     if (!textarea || !textarea.parentNode) return null;
     injectStyles();
     var shell = textarea.closest(".portal-cs-cliq-composer__shell");
-    var trailing = shell && shell.querySelector(".portal-cs-cliq-composer__trailing");
+    var composer = textarea.closest(".portal-cs-cliq-composer--chat") || textarea.closest(".portal-cs-cliq-composer");
+    var trailing =
+      (composer && composer.querySelector(".portal-cs-cliq-composer__trailing")) ||
+      (shell && shell.querySelector(".portal-cs-cliq-composer__trailing"));
     var premium = !!(shell && shell.querySelector(".portal-cs-cliq-composer__leading"));
     var wa = !!trailing;
     var parent = textarea.parentNode;
