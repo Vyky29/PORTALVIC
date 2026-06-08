@@ -81,7 +81,7 @@
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
   <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260609-header-chat-bell" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
-  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260608-staff-admin-lane" />
+  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260608-incoming-poll" />
   <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260608-staff-admin-lane" />
 </head>
 <body>
@@ -21724,28 +21724,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       });
     }
     async function portalAdminDmPollRecentIncomingCalls(){
-      var client = getSchedSupabaseClient();
-      var me = portalAdminDmMe();
-      if(!client || !me) return;
-      if(!window.portalStaffChatCalls || typeof window.portalStaffChatCalls.processIncomingCallRow !== 'function') return;
-      if(window.portalStaffChatCalls.incomingCallActive && typeof window.portalStaffChatCalls.incomingCallActive === 'function'){
-        if(window.portalStaffChatCalls.incomingCallActive()) return;
+      if(window.portalStaffChatCalls && typeof window.portalStaffChatCalls.pollRecentIncomingCalls === 'function'){
+        return window.portalStaffChatCalls.pollRecentIncomingCalls();
       }
-      try{
-        var since = new Date(Date.now() - 130000).toISOString();
-        var q = await client.from('portal_staff_dm_messages')
-          .select('id,author_id,body,thread_id,created_at')
-          .gte('created_at', since)
-          .order('created_at', { ascending: false })
-          .limit(32);
-        if(!q.error && Array.isArray(q.data)) portalAdminDmFeedIncomingCallRows(q.data);
-        var gq = await client.from('portal_ceo_group_message')
-          .select('id,author_id,body,group_id,created_at')
-          .gte('created_at', since)
-          .order('created_at', { ascending: false })
-          .limit(24);
-        if(!gq.error && Array.isArray(gq.data)) portalAdminDmFeedIncomingCallRows(gq.data);
-      }catch(_pollCall){}
     }
     async function portalAdminDmScanPendingIncomingCalls(client, threadIds){
       threadIds = (threadIds || []).filter(function(id, idx, arr){
@@ -27870,7 +27851,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       document.body.appendChild(s);
     })();
   </script>
-  <script src="/portal/portal_staff_chat_calls.js?v=20260608-ops-thread-rpc"></script>
+  <script src="/portal/portal_staff_chat_calls.js?v=20260608-incoming-poll"></script>
   <script src="/portal/portal_incoming_call_push.js?v=20260622-incoming-call"></script>
   <script src="/portal/portal_floating_internal_chat.js?v=20260609-header-chat-bell"></script>
   <script>

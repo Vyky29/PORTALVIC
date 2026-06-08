@@ -93,7 +93,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260607-camera-fix" />
   <script src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260608-footer-dock" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260608-incoming-poll" />
   <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260608-staff-admin-lane" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260610-topbar-colors" />
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260608-orbit-center" />
@@ -1058,7 +1058,7 @@
   <script src="/portal/portal_dm_composer_wa.js?v=20260608-composer-cols"></script>
   <script src="/portal/portal_dm_attachments.js?v=20260608-plus-sheet-icons"></script>
   <script src="/portal/portal_chat_actor_identity.js?v=20260608-victor-dm-identity"></script>
-  <script src="/portal/portal_staff_chat_calls.js?v=20260609-chat-identity"></script>
+  <script src="/portal/portal_staff_chat_calls.js?v=20260608-incoming-poll"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
   <script src="/portal/portal_dm_roles.js?v=20260609-mgmt-identity"></script>
   <script src="/portal/portal_dm_thread_avatar.js?v=20260608-staff-admin-lane"></script>
@@ -15109,6 +15109,16 @@
           if(typeof window.portalApplyAfterVenueReturnFromUrl === "function"){
             window.portalApplyAfterVenueReturnFromUrl();
           }
+          try{
+            if(window.portalStaffChatCalls){
+              if(typeof window.portalStaffChatCalls.clearIncomingThreadCache === "function"){
+                window.portalStaffChatCalls.clearIncomingThreadCache();
+              }
+              if(typeof window.portalStaffChatCalls.pollRecentIncomingCalls === "function"){
+                void window.portalStaffChatCalls.pollRecentIncomingCalls();
+              }
+            }
+          }catch(_incomingPoll){}
         }
         function _finishStaffRehydrateUi(){
           if(typeof portalScheduleDashboardUiFinish === "function"){

@@ -426,12 +426,17 @@
             if (p && p.id) profBy[String(p.id)] = p;
           });
         }
-        if (isManagementWorkerThreadPair(profBy, a, b)) {
+      if (isManagementWorkerThreadPair(profBy, a, b)) {
+        if (!profileReadyForInbox()) return null;
+        if (usesAdminSharedInbox()) {
           threadParticipantCache[tid] = { a: a, b: b, ts: Date.now(), sharedInbox: true };
           return true;
         }
+        threadParticipantCache[tid] = { a: a, b: b, ts: Date.now(), sharedInbox: false };
+        return false;
       }
-      if (profileReadyForInbox()) {
+      }
+      if (profileReadyForInbox() && !usesAdminSharedInbox()) {
         threadParticipantCache[tid] = { a: a, b: b, ts: Date.now(), sharedInbox: false };
       }
       return false;
@@ -712,6 +717,7 @@
     stopIncomingRingtone();
     incomingState.active = false;
     incomingState.payload = null;
+    syncIncomingCallFooterChrome(false);
     var ov = incomingState.overlay || document.getElementById("portalIncomingCallOverlay");
     if (ov) ov.hidden = true;
   }
@@ -921,6 +927,14 @@
     void (async function () {
       if (tid) {
         var mine = await isIncomingDmForMe(row);
+        if (mine === null) {
+          if (attempt < incomingRowRetryMax) {
+            setTimeout(function () {
+              processIncomingCallRow(row, attempt + 1);
+            }, 650);
+          }
+          return;
+        }
         if (!mine) return;
       }
       if (isInActiveCall()) return;
@@ -928,6 +942,86 @@
       if (rowId) incomingHandledIds[rowId] = true;
       startIncomingCallAlert(data, row);
     })();
+  }
+
+  function feedIncomingCallRows(rows) {
+    if (incomingState.active || isInActiveCall()) return;
+    (rows || []).forEach(function (m) {
+      if (!m || !m.body) return;
+      var body = String(m.body || "");
+      if (body.indexOf(CALL_TAG) < 0 || body.indexOf(CALL_END_TAG) >= 0) return;
+      processIncomingCallRow(m, 0);
+    });
+  }
+
+  async function pollRecentIncomingCalls() {
+    if (incomingState.active || isInActiveCall()) return;
+    var box = global.__PORTAL_SUPABASE__;
+    var client = box && box.client;
+    if (!client || !meUserId()) return;
+    try {
+      var since = new Date(Date.now() - INCOMING_CALL_MAX_AGE_MS).toISOString();
+      var callLike = "%portal-staff-call:%";
+      var q = await client
+        .from("portal_staff_dm_messages")
+        .select("id,author_id,body,thread_id,created_at")
+        .gte("created_at", since)
+        .like("body", callLike)
+        .order("created_at", { ascending: false })
+        .limit(16);
+      if (!q.error && Array.isArray(q.data)) feedIncomingCallRows(q.data);
+      var gq = await client
+        .from("portal_ceo_group_message")
+        .select("id,author_id,body,group_id,created_at")
+        .gte("created_at", since)
+        .like("body", callLike)
+        .order("created_at", { ascending: false })
+        .limit(12);
+      if (!gq.error && Array.isArray(gq.data)) feedIncomingCallRows(gq.data);
+    } catch (_poll) {}
+  }
+
+  function bootIncomingCallPoll() {
+    if (global.__PORTAL_INCOMING_CALL_POLL_INT) return;
+    void pollRecentIncomingCalls();
+    global.__PORTAL_INCOMING_CALL_POLL_INT = setInterval(function () {
+      void pollRecentIncomingCalls();
+    }, 4000);
+  }
+
+  function syncIncomingCallFooterChrome(active) {
+    var wrap = global.document && global.document.getElementById("portalFloatingChatOrbitWrap");
+    var btn = global.document && global.document.getElementById("portalFloatingChatBtn");
+    if (!wrap && !btn) return;
+    if (active) {
+      if (wrap) {
+        wrap.classList.add("dock-chat-wrap--incoming-call");
+        wrap.classList.add("dock-chat-wrap--unread");
+        wrap.classList.add("portal-admin-floating-chat-wrap--incoming-call");
+        wrap.classList.add("portal-admin-floating-chat-wrap--unread");
+      }
+      if (btn) {
+        btn.classList.add("portal-floating-chat-btn--incoming-call");
+        btn.classList.add("portal-floating-chat-btn--unread");
+        btn.setAttribute("aria-label", "Incoming call — tap to open chat");
+        btn.title = "Incoming call";
+        if (btn.hidden) {
+          btn.hidden = false;
+          btn.setAttribute("aria-hidden", "false");
+        }
+      }
+      return;
+    }
+    if (wrap) {
+      wrap.classList.remove("dock-chat-wrap--incoming-call");
+      wrap.classList.remove("portal-admin-floating-chat-wrap--incoming-call");
+    }
+    if (btn) {
+      btn.classList.remove("portal-floating-chat-btn--incoming-call");
+    }
+    if (typeof global.portalSyncFloatingChatUnreadFromMenuBtn === "function") {
+      global.portalSyncFloatingChatUnreadFromMenuBtn();
+    }
   }
 
   function startIncomingCallAlert(data, row) {
@@ -958,6 +1052,7 @@
     } catch (_mv) {}
     ov.hidden = false;
     document.body.classList.add("portal-incoming-call-active");
+    syncIncomingCallFooterChrome(true);
 
     try {
       if (typeof global.focus === "function") global.focus();
@@ -2806,6 +2901,8 @@
       processIncomingCallRow(lastMsg, 0);
     },
     clearIncomingThreadCache: clearIncomingThreadCache,
+    pollRecentIncomingCalls: pollRecentIncomingCalls,
+    bootIncomingCallPoll: bootIncomingCallPoll,
     stopIncomingCallAlert: hideIncomingCallOverlay,
     primeCallRingAudio: primeCallRingAudio,
     openLeadsCallPicker: openLeadsCallPicker,
@@ -2823,14 +2920,20 @@
     );
     global.addEventListener("portal:supabase-ready", function () {
       clearIncomingThreadCache();
+      bootIncomingCallPoll();
+      setTimeout(function () {
+        clearIncomingThreadCache();
+        void pollRecentIncomingCalls();
+      }, 2000);
     });
     document.addEventListener("visibilitychange", function () {
       if (document.visibilityState !== "visible") return;
-      if (typeof global.portalAdminDmPollRecentIncomingCalls === "function") {
-        try {
-          void global.portalAdminDmPollRecentIncomingCalls();
-        } catch (_vis) {}
-      }
+      try {
+        void pollRecentIncomingCalls();
+      } catch (_vis) {}
     });
+    if (global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.client) {
+      bootIncomingCallPoll();
+    }
   }
 })(typeof window !== "undefined" ? window : globalThis);
