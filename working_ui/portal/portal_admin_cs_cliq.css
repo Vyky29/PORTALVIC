@@ -317,7 +317,7 @@ body.admin-view-cs-cliq #csCliqRoot .portal-cs-cliq-thread-header__status {
   flex-direction: column;
   min-height: 0;
   min-width: 0;
-  background: #f8fbfd;
+  background: #fff;
 }
 
 #csCliqRoot .portal-cs-cliq-inbox__conversation-col {
@@ -325,7 +325,7 @@ body.admin-view-cs-cliq #csCliqRoot .portal-cs-cliq-thread-header__status {
   flex-direction: column;
   min-height: 0;
   min-width: 0;
-  background: #f8fbfd;
+  background: #fff;
 }
 
 #csCliqRoot #csCliqListPanel[hidden],
@@ -871,7 +871,8 @@ body.admin-view-cs-cliq #csCliqRoot .portal-cs-cliq-thread-header__status {
   overflow: hidden;
 }
 
-#csCliqRoot #csCliqMessages {
+#csCliqRoot #csCliqMessages,
+#csCliqRoot .portal-cs-cliq-messages {
   flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
@@ -883,7 +884,8 @@ body.admin-view-cs-cliq #csCliqRoot .portal-cs-cliq-thread-header__status {
   background: #fff;
 }
 
-#csCliqRoot #csCliqMessages .portal-dm-msg-row {
+#csCliqRoot #csCliqMessages .portal-dm-msg-row,
+#csCliqRoot .portal-cs-cliq-messages .portal-dm-msg-row {
   display: flex;
   width: 100%;
   min-width: 0;
@@ -891,15 +893,18 @@ body.admin-view-cs-cliq #csCliqRoot .portal-cs-cliq-thread-header__status {
   box-sizing: border-box;
 }
 
-#csCliqRoot #csCliqMessages .portal-dm-msg-row--mine {
+#csCliqRoot #csCliqMessages .portal-dm-msg-row--mine,
+#csCliqRoot .portal-cs-cliq-messages .portal-dm-msg-row--mine {
   justify-content: flex-end;
 }
 
-#csCliqRoot #csCliqMessages .portal-dm-msg-row--them {
+#csCliqRoot #csCliqMessages .portal-dm-msg-row--them,
+#csCliqRoot .portal-cs-cliq-messages .portal-dm-msg-row--them {
   justify-content: flex-start;
 }
 
-#csCliqRoot #csCliqMessages .portal-dm-msg {
+#csCliqRoot #csCliqMessages .portal-dm-msg,
+#csCliqRoot .portal-cs-cliq-messages .portal-dm-msg {
   box-sizing: border-box;
   max-width: min(82%, 420px);
   min-width: 0;
@@ -910,35 +915,57 @@ body.admin-view-cs-cliq #csCliqRoot .portal-cs-cliq-thread-header__status {
   word-break: break-word;
 }
 
-#csCliqRoot #csCliqMessages .portal-dm-msg--mine {
-  background: #d9fdd3;
-  color: #111b21;
-  border-radius: 18px 18px 4px 18px;
-  box-shadow: 0 1px 1px rgba(11, 20, 26, 0.08);
+#csCliqRoot #csCliqMessages .portal-dm-msg--mine,
+#csCliqRoot .portal-cs-cliq-messages .portal-dm-msg--mine {
+  background: linear-gradient(180deg, var(--portal-chat-blue, #2d84b3) 0%, #2676a0 100%);
+  color: #fff;
+  border-radius: 14px 14px 4px 14px;
+  border: 1px solid rgba(45, 132, 179, 0.35);
+  box-shadow: 0 2px 8px rgba(45, 132, 179, 0.22);
 }
 
-#csCliqRoot #csCliqMessages .portal-dm-msg--them {
+#csCliqRoot #csCliqMessages .portal-dm-msg--them,
+#csCliqRoot .portal-cs-cliq-messages .portal-dm-msg--them {
   background: #fff;
-  color: #111b21;
-  border-radius: 18px 18px 18px 4px;
-  border: 0;
-  box-shadow: 0 1px 1px rgba(11, 20, 26, 0.1);
+  color: var(--portal-chat-ink, #173247);
+  border-radius: 14px 14px 14px 4px;
+  border: 1px solid rgba(45, 132, 179, 0.18);
+  box-shadow: 0 2px 8px rgba(23, 50, 71, 0.06);
 }
 
-#csCliqRoot #csCliqMessages .portal-dm-msg-time {
+#csCliqRoot #csCliqMessages .portal-dm-msg-time,
+#csCliqRoot .portal-cs-cliq-messages .portal-dm-msg-time {
   font-size: 11px;
   margin-top: 4px;
   display: block;
-  color: #145a3a;
+  color: var(--portal-chat-muted, #64748b);
 }
 
-#csCliqRoot #csCliqMessages .portal-dm-msg--mine .portal-dm-msg-time {
-  color: #145a3a;
+#csCliqRoot #csCliqMessages .portal-dm-msg--mine .portal-dm-msg-time,
+#csCliqRoot .portal-cs-cliq-messages .portal-dm-msg--mine .portal-dm-msg-time {
+  color: rgba(255, 255, 255, 0.72);
   text-align: right;
 }
 
-#csCliqRoot #csCliqMessages .portal-dm-msg--them .portal-dm-msg-time {
-  color: #145a3a;
+#csCliqRoot #csCliqMessages .portal-dm-msg--them .portal-dm-msg-time,
+#csCliqRoot .portal-cs-cliq-messages .portal-dm-msg--them .portal-dm-msg-time {
+  color: var(--portal-chat-muted, #64748b);
+}
+
+#csCliqRoot #csCliqMessages .portal-dm-msg-by,
+#csCliqRoot .portal-cs-cliq-messages .portal-dm-msg-by {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  margin: 0 0 4px;
+  min-width: 0;
+  overflow-wrap: break-word;
+  color: var(--portal-chat-muted, #64748b);
+}
+
+#csCliqRoot #csCliqMessages .portal-dm-msg--mine .portal-dm-msg-by,
+#csCliqRoot .portal-cs-cliq-messages .portal-dm-msg--mine .portal-dm-msg-by {
+  color: rgba(255, 255, 255, 0.88);
 }
 
 #csCliqRoot .portal-dm-compose-bar.portal-cs-cliq-composer:not(.portal-cs-cliq-composer--legacy) {
@@ -2006,6 +2033,15 @@ body.admin-view-cs-cliq.portal-internal-chat-open {
 
   #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq-composer__input {
     font-size: 16px;
+  }
+
+  #csCliqRoot.portal-cs-cliq--subscreen #csCliqMessages,
+  #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq-messages,
+  #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq-thread,
+  #csCliqRoot.portal-cs-cliq--subscreen #csCliqThreadPanel,
+  #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq-inbox__conversation-col,
+  #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq-inbox__conv-host {
+    background: #fff !important;
   }
 
   #csCliqRoot.portal-cs-cliq--subscreen #csCliqMessages {
