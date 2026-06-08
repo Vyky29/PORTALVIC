@@ -1985,13 +1985,45 @@
       visibility:hidden;
       pointer-events:none;
     }
-    #internalChatSheet.sheet--portal-chat-inbox #internalChatListWrap.portal-dm-inbox-list{
-      flex:1;
+    #internalChatSheet.sheet--portal-chat-inbox .portal-dm-sheet-body{
+      flex:1 1 auto;
       min-height:0;
-      overflow:auto;
+      overflow:hidden;
+    }
+    #internalChatSheet.sheet--portal-chat-inbox[data-inbox-pane="chats"] #internalChatStaffDirectoryWrap,
+    #internalChatSheet.sheet--portal-chat-inbox[data-inbox-pane="chats"] #internalChatThreadWrap,
+    #internalChatSheet.sheet--portal-chat-inbox[data-inbox-pane="chats"] #internalChatOfficeComposeHost{
+      display:none !important;
+      flex:0 0 0 !important;
+      height:0 !important;
+      min-height:0 !important;
+      overflow:hidden !important;
+      padding:0 !important;
+      margin:0 !important;
+      border:0 !important;
+    }
+    #internalChatSheet.sheet--portal-chat-inbox[data-inbox-pane="chats"] #internalChatListWrap.portal-dm-inbox-list{
+      flex:1 1 auto;
+      min-height:0;
+      overflow-y:auto;
       -webkit-overflow-scrolling:touch;
       padding:0;
       margin:0;
+      background:#fff;
+    }
+    #internalChatSheet.sheet--portal-chat-inbox[data-inbox-pane="staff"] #internalChatListWrap,
+    #internalChatSheet.sheet--portal-chat-inbox[data-inbox-pane="staff"] #internalChatLeadStaffSuggestions,
+    #internalChatSheet.sheet--portal-chat-inbox[data-inbox-pane="staff"] #internalChatThreadWrap,
+    #internalChatSheet.sheet--portal-chat-inbox[data-inbox-pane="staff"] #internalChatOfficeComposeHost{
+      display:none !important;
+    }
+    #internalChatSheet.sheet--portal-chat-inbox[data-inbox-pane="staff"] #internalChatStaffDirectoryWrap.portal-dm-staff-directory{
+      display:flex !important;
+      flex:1 1 auto;
+      min-height:0;
+      flex-direction:column;
+      overflow:hidden;
+      padding:0;
       background:#fff;
     }
     #internalChatSheet.sheet--portal-chat-inbox #internalChatOfficeComposeHost,
@@ -2304,14 +2336,14 @@
       flex-direction:column;
       padding-bottom:0;
     }
-    #internalChatSheet #internalChatListWrap{
-      flex:1;
+    #internalChatSheet.sheet--portal-chat-inbox #internalChatListWrap{
+      flex:1 1 auto;
       min-height:0;
-      overflow:auto;
+      overflow-y:auto;
       -webkit-overflow-scrolling:touch;
-      padding-bottom:var(--fab-reserved-bottom);
+      padding-bottom:0;
     }
-    #internalChatSheet #internalChatThreadWrap.portal-dm-thread-view{
+    #internalChatSheet.sheet--portal-chat-thread #internalChatThreadWrap.portal-dm-thread-view{
       flex:1;
       min-height:0;
       display:flex;

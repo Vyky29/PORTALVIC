@@ -273,6 +273,15 @@
       suggestions.setAttribute("aria-hidden", showSuggestions ? "false" : "true");
     }
 
+    var chatSheet = document.getElementById("internalChatSheet");
+    if (chatSheet) {
+      if (!hasDirectory || inThread) {
+        chatSheet.removeAttribute("data-inbox-pane");
+      } else {
+        chatSheet.setAttribute("data-inbox-pane", tab === "directory" ? "staff" : "chats");
+      }
+    }
+
     if (hasDirectory && !inThread && dirMode) {
       var box = global.__PORTAL_SUPABASE__;
       var client = box && box.client;

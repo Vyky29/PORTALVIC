@@ -93,8 +93,8 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260607-camera-fix" />
   <script src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Lead Dashboard</title>
-  <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260607-cliq-fix" />
-  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260608-inbox-fix" />
+  <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260622-lead-chat-inbox" />
+  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260622-lead-chat-inbox" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260610-topbar-colors" />
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260624-staff-lead-dm" />
   <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260608-inbox-fix" />
@@ -801,7 +801,7 @@
     </div>
   </section>
 
-  <section class="sheet sheet--fullscreen sheet--mobile-frame sheet--portal-chat-immersive sheet--portal-chat-inbox" id="internalChatSheet" aria-labelledby="internalChatTitle">
+  <section class="sheet sheet--fullscreen sheet--mobile-frame sheet--portal-chat-immersive sheet--portal-chat-inbox" id="internalChatSheet" data-inbox-pane="chats" aria-labelledby="internalChatTitle">
     <div class="sheet-head portal-dm-sheet-head">
       <div class="sheet-handle"></div>
       <button type="button" class="portal-dm-btn portal-dm-btn--ghost portal-dm-back-btn" id="internalChatBackBtn" hidden aria-label="Back to chats">‹</button>
@@ -1068,7 +1068,7 @@
   <script src="/portal/portal_executive_dm.js?v=20260622-chat-restore"></script>
   <script src="/portal/portal_cs_cliq_embed.js?v=20260607-cliq-fix"></script>
   <script src="/portal/portal_dm_executive_cliq.js?v=20260622-chat-restore"></script>
-  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260622-chat-restore"></script>
+  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260622-lead-chat-inbox"></script>
   <script>
     /** Real calendar weekday for “Today” (en-GB), aligned with staff_clients_machine.xlsx */
     function portalWeekdayLongEnGB(d){
@@ -6228,6 +6228,11 @@
           isLead: portalStaffIsLeadUser(),
           inThread: !!inThread
         });
+      }else{
+        var chatSheetPane = document.getElementById('internalChatSheet');
+        if(chatSheetPane && !inThread){
+          chatSheetPane.setAttribute('data-inbox-pane', 'chats');
+        }
       }
     }
     window.portalOpenInternalChatFromHeaderQuickMenu = function portalOpenInternalChatFromHeaderQuickMenu(){
