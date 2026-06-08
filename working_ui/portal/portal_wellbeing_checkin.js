@@ -233,12 +233,59 @@
  return any;
  }
 
+ async function waitForAuthSession(client, maxMs) {
+ maxMs = maxMs || 2800;
+ var session = null;
+ try {
+ var box = global.__PORTAL_SUPABASE__;
+ if (box && box.session && box.session.user && box.session.user.id) return box.session;
+ } catch (_) {}
+ try {
+ var r = await client.auth.getSession();
+ session = r && r.data && r.data.session;
+ } catch (_) {}
+ if (session && session.user && session.user.id) return session;
+ try {
+ var ur = await client.auth.getUser();
+ if (ur && ur.data && ur.data.user && ur.data.user.id) {
+ var r2 = await client.auth.getSession();
+ session = r2 && r2.data && r2.data.session;
+ if (session && session.user && session.user.id) return session;
+ }
+ } catch (_) {}
+ return await new Promise(function (resolve) {
+ var t = null;
+ var subWrap = client.auth.onAuthStateChange(function (event, next) {
+ if (next && next.user && next.user.id && (event === "INITIAL_SESSION" || event === "SIGNED_IN")) {
+ if (t != null) clearTimeout(t);
+ try {
+ subWrap.data.subscription.unsubscribe();
+ } catch (_) {}
+ resolve(next);
+ }
+ });
+ t = setTimeout(function () {
+ try {
+ subWrap.data.subscription.unsubscribe();
+ } catch (_) {}
+ resolve(null);
+ }, maxMs);
+ });
+ }
+
  async function getAuthClient() {
- var mod = await import("/portal/auth-handler.js?v=20260605-wellbeing");
- var client = mod.getSupabaseClient && mod.getSupabaseClient();
+ if (global.__portalWellbeingAuthReady) {
+ try {
+ await global.__portalWellbeingAuthReady;
+ } catch (_) {}
+ }
+ var sbMod = await import("/portal/supabase-client.js?v=20260610-wellbeing-auth");
+ var client =
+ (sbMod.getSharedSupabaseClient && sbMod.getSharedSupabaseClient()) ||
+ (await import("/portal/auth-handler.js?v=20260610-wellbeing-auth")).getSupabaseClient();
  if (!client) throw new Error("Sign in to the portal first.");
- var userRes = await client.auth.getUser();
- var user = userRes && userRes.data && userRes.data.user;
+ var session = await waitForAuthSession(client, 2800);
+ var user = session && session.user;
  if (!user || !user.id) throw new Error("Sign in to the portal first.");
  var profile = null;
  try {
@@ -553,6 +600,16 @@
  };
  }
 
+ function portalWellbeingSubmitError(err) {
+ var msg = String((err && err.message) || err || "");
+ if (/row-level security/i.test(msg)) {
+ return new Error(
+ "Could not save your check-in. If leadership has already opened your 1-to-1, ask them to complete it first — or ask an admin to apply the wellbeing RLS patch in Supabase."
+ );
+ }
+ return err instanceof Error ? err : new Error(msg || "Could not save check-in.");
+ }
+
  async function submitCheckin(payload) {
  var ctx = await getAuthClient();
  var row = buildCheckinRow(ctx, payload);
@@ -561,7 +618,7 @@
  .upsert(row, { onConflict: "staff_user_id,term_key" })
  .select("id,status,has_concerns,term_key,created_at")
  .single();
- if (res.error) throw res.error;
+ if (res.error) throw portalWellbeingSubmitError(res.error);
  return { ctx: ctx, row: res.data };
  }
 
@@ -707,17 +764,58 @@
  if (typeof global.refreshRiskRow === "function") global.refreshRiskRow(tr);
  }
 
+ function ensureCheckinStressorBadge(tr) {
+ if (!tr) return null;
+ var cell = tr.querySelector(".stressor-cell");
+ if (!cell) return null;
+ var badge = cell.querySelector(".portal-wb-checkin-stressor-badge");
+ if (!badge) {
+ badge = document.createElement("div");
+ badge.className = "portal-wb-checkin-stressor-badge";
+ badge.setAttribute("aria-live", "polite");
+ cell.insertBefore(badge, cell.firstChild);
+ }
+ return badge;
+ }
+
+ function setCheckinStressorBadge(tr, label) {
+ var badge = ensureCheckinStressorBadge(tr);
+ if (!badge) return;
+ var text = clean(label);
+ if (!text) {
+ badge.hidden = true;
+ badge.textContent = "";
+ tr.removeAttribute("data-wb-checkin-stressor-label");
+ return;
+ }
+ badge.hidden = false;
+ badge.textContent = text;
+ tr.setAttribute("data-wb-checkin-stressor-label", text);
+ }
+
  function lockStressorRowFromCheckin(tr) {
  if (!tr) return;
  tr.setAttribute("data-checkin-stressor", "1");
+ tr.classList.add("portal-wb-stressor-readonly");
+ var quick = tr.querySelector(".stressor-quick");
+ if (quick) quick.hidden = true;
+ var detail = tr.querySelector(".js-stressor-detail");
+ if (detail) detail.hidden = true;
  var noneBtn = tr.querySelector(".btn-no-stressor");
  if (noneBtn) noneBtn.hidden = true;
  var sel = tr.querySelector(".js-common-stressor");
  if (sel) {
+ sel.setAttribute("aria-hidden", "true");
+ sel.tabIndex = -1;
  Array.prototype.slice.call(sel.options).forEach(function (opt) {
  if (opt.value === "__none__") opt.remove();
  });
  if (sel.value === "__none__") sel.value = "";
+ }
+ var stText = tr.querySelector(".js-stressor-text");
+ if (stText) {
+ stText.setAttribute("aria-hidden", "true");
+ stText.tabIndex = -1;
  }
  }
 
@@ -727,10 +825,12 @@
  tr.removeAttribute("data-stressor-ui-collapsed");
  var detail = tr.querySelector(".js-stressor-detail");
  if (detail) detail.hidden = false;
+ var tb = tr.closest(".domain-tbody");
+ var domKey = tb ? tb.getAttribute("data-domain") : "";
  var sel = tr.querySelector(".js-common-stressor");
  var stText = tr.querySelector(".js-stressor-text");
  var obs = tr.querySelector(".js-obs-text");
- var resolved = sraKey ? resolveStressorKey(sraKey, sel) : "";
+ var resolved = sraKey ? resolveStressorKey(sraKey, domKey, sel) : "";
  var hasOption = false;
  if (sel && resolved) {
  for (var j = 0; j < sel.options.length; j++) {
@@ -767,8 +867,70 @@
  global.updateNoStressorQuickVisual(tr);
  }
  if (opts.fromCheckinStressor) {
+ var badgeLabel = "";
+ if (resolved && hasOption) badgeLabel = stressorShortLabel(resolved);
+ else if (stText && clean(stText.value)) badgeLabel = clean(stText.value);
+ else if (resolved || sraKey) badgeLabel = stressorShortLabel(resolved || sraKey) || clean(resolved || sraKey);
+ if (resolved) tr.setAttribute("data-wb-checkin-stressor-key", resolved);
+ setCheckinStressorBadge(tr, badgeLabel);
  lockStressorRowFromCheckin(tr);
  }
+ }
+
+ function reapplyCheckinStressorsFromCheckin(form, checkin) {
+ if (!form || !checkin) return;
+ eachCheckinDomain(form, checkin, function (dk, entry, tbody) {
+ if (!domainHasConcern(entry)) return;
+ var note = clean(entry && entry.note);
+ var stressors = ((entry && entry.stressors) || [])
+ .map(function (s) {
+ return resolveStressorKey(s, dk);
+ })
+ .filter(Boolean);
+ var scores = levelToScores(entry && entry.level);
+ if (!stressors.length) {
+ var tr0 = tbody.rows[0];
+ if (!tr0) return;
+ var sel0 = tr0.querySelector(".js-common-stressor");
+ var st0 = tr0.querySelector(".js-stressor-text");
+ var hasVal =
+ sel0 &&
+ sel0.value &&
+ sel0.value !== "" &&
+ sel0.value !== "__none__";
+ var hasText = st0 && clean(st0.value);
+ if (!hasVal && !hasText && note) {
+ applyStressorToRow(tr0, null, note, scores, { fromCheckinNote: true, fromCheckinStressor: true });
+ }
+ return;
+ }
+ ensureDomainRows(tbody, stressors.length);
+ stressors.forEach(function (key, i) {
+ var tr = tbody.rows[i];
+ if (!tr) return;
+ var sel = tr.querySelector(".js-common-stressor");
+ var stText = tr.querySelector(".js-stressor-text");
+ var hasVal =
+ sel &&
+ sel.value &&
+ sel.value !== "" &&
+ sel.value !== "__none__";
+ var hasText = stText && clean(stText.value);
+ if (!hasVal && !hasText) {
+ applyStressorToRow(tr, key, i === 0 ? note : "", scores, {
+ fromCheckinNote: i === 0 && !!note,
+ fromCheckinStressor: true,
+ });
+ } else if (tr.getAttribute("data-checkin-stressor") === "1") {
+ var label =
+ hasVal && sel.value !== "__other__"
+ ? stressorShortLabel(sel.value)
+ : clean(stText && stText.value);
+ setCheckinStressorBadge(tr, label);
+ lockStressorRowFromCheckin(tr);
+ }
+ });
+ });
  }
 
  function applyCheckinToSraForm(form, checkin, employment, adminCtx) {
@@ -842,7 +1004,7 @@
  if (!domainHasConcern(entry) && domainResponse(entry) !== "support_requested") return;
  var stressors = ((entry && entry.stressors) || [])
  .map(function (s) {
- return resolveStressorKey(s);
+ return resolveStressorKey(s, key);
  })
  .filter(Boolean)
  .map(function (s) {
@@ -975,6 +1137,7 @@
  saveSraDraft: saveSraDraft,
  applyCheckinToSraForm: applyCheckinToSraForm,
  applyCheckinDomainsToSraForm: applyCheckinDomainsToSraForm,
+ reapplyCheckinStressorsFromCheckin: reapplyCheckinStressorsFromCheckin,
  reapplyAllClearDomainsFromCheckin: reapplyAllClearDomainsFromCheckin,
  wireWellbeingReviewVoice: wireWellbeingReviewVoice,
  domainHasConcern: domainHasConcern,

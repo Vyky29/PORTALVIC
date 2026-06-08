@@ -309,6 +309,12 @@
     wrap.className = "portal-wb-advanced-wrap";
     wrap.hidden = true;
 
+    var intro = document.createElement("p");
+    intro.className = "portal-wb-advanced-intro no-print";
+    intro.textContent =
+      "One card per stressor from the check-in. Talk it through together, then score how serious it is and how likely harm is (1 = low · 5 = high). Note any agreed actions.";
+    wrap.appendChild(intro);
+
     var move = [];
     Array.prototype.forEach.call(form.children, function (child) {
       if (child.classList && child.classList.contains("header")) return;
@@ -336,6 +342,12 @@
         ? "Hide Advanced Stress Risk Assessment"
         : "Advanced Stress Risk Assessment";
     });
+
+    if (document.body.classList.contains("portal-wellbeing-admin-mode")) {
+      wrap.hidden = false;
+      toggle.setAttribute("aria-expanded", "true");
+      toggle.textContent = "Hide Advanced Stress Risk Assessment";
+    }
   }
 
   function mountAdminSimpleReview(opts) {

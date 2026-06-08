@@ -3211,6 +3211,13 @@
     }
     .alerts-pop.open{display:block}
     .alerts-pop .line-item{margin:0;border-radius:0;border:none;border-bottom:1px solid var(--line);background:transparent}
+    .portal-admin-activity-row{display:flex;align-items:stretch;border-bottom:1px solid var(--line)}
+    .portal-admin-activity-row .portal-admin-activity-alert{display:flex;align-items:center;justify-content:space-between;gap:8px}
+    .portal-admin-wellbeing-dismiss{
+      flex:0 0 auto;align-self:center;margin-right:10px;width:28px;height:28px;border:0;border-radius:8px;
+      background:#f1f5f9;color:#64748b;font-size:18px;line-height:1;cursor:pointer;
+    }
+    .portal-admin-wellbeing-dismiss:hover{background:#fee2e2;color:#b42318}
     .portal-admin-activity-alert:hover{background:#f8fafc!important}
     .portal-admin-activity-alert:focus-visible{outline:2px solid rgba(45,132,179,.35);outline-offset:-2px}
     .muted{font-size:12px;color:var(--muted)}
