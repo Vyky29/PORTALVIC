@@ -75,8 +75,14 @@
       ".portal-dm-plus-sheet__head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}" +
       ".portal-dm-plus-sheet__head h4{margin:0;font-size:16px;font-weight:800}" +
       ".portal-dm-plus-sheet__close{width:36px;height:36px;border:0;background:transparent;font-size:24px;cursor:pointer}" +
-      ".portal-dm-plus-sheet__opt{display:block;width:100%;padding:12px 14px;margin:0 0 8px;border-radius:12px;border:1px solid var(--line,#e2e8f0);background:#f8fbfd;font:inherit;font-weight:700;text-align:left;cursor:pointer}" +
-      ".portal-dm-plus-sheet__opt small{display:block;margin-top:2px;font-size:11px;font-weight:500;color:#64748b}" +
+      ".portal-dm-plus-sheet__opt{display:flex;align-items:flex-start;gap:12px;width:100%;padding:12px 14px;margin:0 0 8px;border-radius:12px;border:1px solid var(--line,#e2e8f0);background:#f8fbfd;font:inherit;font-weight:700;text-align:left;cursor:pointer;box-sizing:border-box;min-width:0}" +
+      ".portal-dm-plus-sheet__opt-copy{flex:1 1 auto;min-width:0;text-align:left}" +
+      ".portal-dm-plus-sheet__opt-ico{flex:0 0 auto;width:42px;height:42px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center}" +
+      ".portal-dm-plus-sheet__opt-ico .portal-dm-ico{width:22px;height:22px}" +
+      ".portal-dm-plus-sheet__opt-ico--photo{background:rgba(45,132,179,.14);color:#2d84b3}" +
+      ".portal-dm-plus-sheet__opt-ico--device{background:rgba(234,88,12,.12);color:#ea580c}" +
+      ".portal-dm-plus-sheet__opt-ico--portal{background:rgba(5,150,105,.12);color:#059669}" +
+      ".portal-dm-plus-sheet__opt small{display:block;margin-top:2px;font-size:11px;font-weight:500;color:#64748b;overflow-wrap:break-word}" +
       ".portal-dm-plus-sheet__list{max-height:min(50dvh,320px);overflow:auto;margin:0;padding:0;list-style:none}" +
       ".portal-dm-plus-sheet__doc{padding:10px 12px;border-radius:10px;border:1px solid var(--line,#e2e8f0);background:#fff;font:inherit;text-align:left;cursor:pointer;width:100%;margin:0 0 8px}" +
       ".portal-dm-plus-sheet__doc strong{display:block;font-size:13px;min-width:0;overflow-wrap:break-word}" +
@@ -260,6 +266,23 @@
     if (sheet) sheet.hidden = true;
   }
 
+  function plusSheetOptHtml(action, tone, iconName, title, subtitle) {
+    return (
+      '<button type="button" class="portal-dm-plus-sheet__opt" data-plus-action="' +
+      esc(action) +
+      '">' +
+      '<span class="portal-dm-plus-sheet__opt-ico portal-dm-plus-sheet__opt-ico--' +
+      esc(tone) +
+      '" aria-hidden="true">' +
+      dmIcon(iconName) +
+      '</span><span class="portal-dm-plus-sheet__opt-copy">' +
+      esc(title) +
+      "<small>" +
+      esc(subtitle) +
+      "</small></span></button>"
+    );
+  }
+
   function ensurePlusSheet() {
     injectStyles();
     var sheet = document.getElementById("portalDmPlusAttachSheet");
@@ -322,12 +345,15 @@
     var body = document.getElementById("portalDmPlusAttachBody");
     if (!body) return;
     body.innerHTML =
-      '<button type="button" class="portal-dm-plus-sheet__opt" data-plus-action="photo">' +
-      "Photo or camera<small>Take or choose a picture</small></button>" +
-      '<button type="button" class="portal-dm-plus-sheet__opt" data-plus-action="device">' +
-      "File from phone<small>PDF, Word, Excel, or other files</small></button>" +
-      '<button type="button" class="portal-dm-plus-sheet__opt" data-plus-action="portal">' +
-      "My portal documents<small>Timesheets, certificates, and uploads from My Records</small></button>";
+      plusSheetOptHtml("photo", "photo", "camera", "Photo or camera", "Take or choose a picture") +
+      plusSheetOptHtml("device", "device", "paperclip", "File from phone", "PDF, Word, Excel, or other files") +
+      plusSheetOptHtml(
+        "portal",
+        "portal",
+        "folder",
+        "My portal documents",
+        "Timesheets, certificates, and uploads from My Records"
+      );
     sheet.hidden = false;
     body.onclick = function (ev) {
       var btn = ev.target && ev.target.closest && ev.target.closest("[data-plus-action]");
