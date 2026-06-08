@@ -8,7 +8,7 @@
  <script src="/portal/term_from_timetable.js?v=20260604-teflon-guide-days"></script>
  <link rel="preconnect" href="https://fonts.googleapis.com" />
  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
- <link rel="stylesheet" href="/portal/portal-wellbeing-checkin.css?v=20260610-wb-voice2" />
+ <link rel="stylesheet" href="/portal/portal-wellbeing-checkin.css?v=20260604-wb-flow-fix" />
 </head>
 <body class="portal-wb-checkin">
  <div class="portal-wb-wrap">
@@ -33,7 +33,7 @@
  </div>
 
  <script src="/portal/portal_wellbeing_stressor_catalog.js?v=20260610-wb-voice2"></script>
- <script src="/portal/portal_wellbeing_checkin.js?v=20260604-wb-flow-refine"></script>
+ <script src="/portal/portal_wellbeing_checkin.js?v=20260604-wb-flow-fix"></script>
  <script src="/portal/portal_feedback_voice_input.js?v=20260610-wb-voice2"></script>
  <script>
  (function () {
@@ -265,6 +265,7 @@
  var btn = el("button", "portal-wb-level" + (active ? " is-active" : ""), "");
  btn.type = "button";
  btn.setAttribute("data-response", opt.response);
+ btn.setAttribute("data-level", opt.level);
  btn.innerHTML =
  '<span class="portal-wb-level-icon">' + LEVEL_ICONS[opt.level] + '</span>' +
  '<span class="portal-wb-level-copy"><strong>' + opt.title + '</strong><span>' + opt.sub + '</span></span>';

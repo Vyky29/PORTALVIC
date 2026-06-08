@@ -545,7 +545,7 @@
  staff_name: ctx.staffName,
  staff_role: clean((ctx.profile && (ctx.profile.staff_role || ctx.profile.app_role)) || ""),
  term_key: currentTermKey(),
- status: hasConcerns ? "awaiting_1to1" : "all_clear",
+ status: hasConcerns ? "needs_1to1" : "all_clear",
  has_concerns: hasConcerns,
  highest_level: hl,
  domains: domains,
