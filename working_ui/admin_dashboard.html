@@ -20120,6 +20120,43 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return aliases.indexOf(openGid) >= 0;
     }
     window.__PORTAL_ADMIN_DM_UNREAD_INITIAL_SYNC = true;
+    function portalAdminDmApplyChatBadgeFromMerged(merged){
+      merged = Array.isArray(merged) ? merged : [];
+      var total = 0;
+      var staffMsgs = 0;
+      var ceoMsgs = 0;
+      merged.forEach(function(item){
+        var n = Number(item.unreadCount) || 0;
+        if(n <= 0) return;
+        total += n;
+        if(item.kind === 'group'){
+          var gsl = String(item.canonicalSlug || item.slug || '').toLowerCase();
+          if(portalAdminDmStaffChannelGroupSlug(gsl)) staffMsgs += n;
+          else ceoMsgs += n;
+          return;
+        }
+        if(item.kind === 'dm'){
+          staffMsgs += n;
+        }
+      });
+      window.__PORTAL_STAFF_DM_UNREAD_COUNT__ = total;
+      if(total <= 0){
+        window.__PORTAL_ADMIN_DM_UNREAD = false;
+        window.__PORTAL_ADMIN_CEO_DM_UNREAD = false;
+        window.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD = false;
+        window.__PORTAL_ADMIN_DM_UNREAD_HINTS__ = [];
+      }else{
+        window.__PORTAL_ADMIN_DM_UNREAD = staffMsgs > 0;
+        window.__PORTAL_ADMIN_CEO_DM_UNREAD = ceoMsgs > 0;
+        window.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD = ceoMsgs > 0;
+      }
+      portalAdminDmApplyTeamTileUnreadClass();
+      try{
+        if(typeof window.portalSyncFloatingChatUnreadFromMenuBtn === 'function'){
+          window.portalSyncFloatingChatUnreadFromMenuBtn();
+        }
+      }catch(_fab){}
+    }
     function portalAdminDmOnUnreadAttentionChanged(prevUnread){
       try{ portalAdminDmPatchGlobalChatBanner(); }catch(_pb){}
       var nowUnread = portalAdminDmHasUnread();
@@ -20139,7 +20176,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       try{
         var hintCount = (window.__PORTAL_ADMIN_DM_UNREAD_HINTS__ || []).length;
-        window.__PORTAL_STAFF_DM_UNREAD_COUNT__ = hintCount || (nowUnread ? 1 : 0);
+        if(!window.__PORTAL_ADMIN_DM_OPEN){
+          window.__PORTAL_STAFF_DM_UNREAD_COUNT__ = hintCount || (nowUnread ? 1 : 0);
+        }
         if(typeof window.portalSyncFloatingChatUnreadFromMenuBtn === 'function'){
           window.portalSyncFloatingChatUnreadFromMenuBtn();
         }
@@ -20369,6 +20408,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var getThreadAckEffective = function(tid){
             return portalAdminDmGetThreadAckEffective(tid, workerThreadMap, threadWorkerById);
           };
+          if(
+            window.portalDmReadCursor &&
+            typeof window.portalDmReadCursor.syncTargets === 'function'
+          ){
+            await window.portalDmReadCursor.syncTargets(
+              client,
+              staffTids.concat(execTids),
+              []
+            );
+          }
           hs = staffTids.length ? await dmThreadListHasUnread(staffTids) : false;
           hc = execTids.length ? await dmThreadListHasUnread(execTids) : false;
         }
@@ -20395,6 +20444,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           }
           var gidLeads = await portalAdminDmResolveSessionLeadsGroupId(client);
           if(gidLeads && gidsStaff.indexOf(gidLeads) < 0) gidsStaff.push(gidLeads);
+          if(
+            window.portalDmReadCursor &&
+            typeof window.portalDmReadCursor.syncTargets === 'function'
+          ){
+            await window.portalDmReadCursor.syncTargets(client, [], gids.concat(gidsStaff));
+          }
           hgStaff = gidsStaff.length ? await groupListHasUnread(gidsStaff) : false;
           hgCeo = gids.length ? await groupListHasUnread(gids) : false;
         }catch(_g){ hgStaff = false; hgCeo = false; }
@@ -21364,12 +21419,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             return sum + (unreadByThread[tid] || 0);
           }, 0);
         });
-        if(typeof window.portalAdminBellSyncSupportUnread === 'function' && uq && !uq.error && Array.isArray(uq.data)){
-          /* Support-route DMs bump the Chat header badge only — not the ops bell. */
-          if(typeof window.portalSyncFloatingChatUnreadFromMenuBtn === 'function'){
-            window.portalSyncFloatingChatUnreadFromMenuBtn();
-          }
-        }
       }
       if(groupIds.length){
         var lastByGroup = {};
@@ -21432,6 +21481,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           }, 0);
         });
       }
+      portalAdminDmApplyChatBadgeFromMerged(merged);
       return merged;
     }
     function portalAdminDmRenderThreadListItem(item, me, ch){
