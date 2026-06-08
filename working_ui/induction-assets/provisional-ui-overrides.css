@@ -148,9 +148,7 @@
   color: rgba(15, 40, 64, 0.72) !important;
 }
 
-.portal[data-provisional-induction] .hero.hero--module-system .section-top--hero .hero-title-line__stack h2,
-.portal[data-provisional-induction] .hero.hero--module-system .hero-module-num,
-.portal[data-provisional-induction] .hero.hero--module-system .hero-heading-row .hero-module-num {
+.portal[data-provisional-induction] .hero.hero--module-system .section-top--hero .hero-title-line__stack h2 {
   color: #0f2840 !important;
 }
 
@@ -168,15 +166,6 @@
 .portal[data-provisional-induction] .hero.hero--module-system .module-hero__path-sep {
   color: rgba(15, 40, 64, 0.45) !important;
   opacity: 1 !important;
-}
-
-.portal[data-provisional-induction] .hero.hero--module-system .hero-module-num {
-  color: #9a6b00 !important;
-  background: rgba(255, 255, 255, 0.94) !important;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.85) inset,
-    0 6px 22px rgba(145, 96, 9, 0.14),
-    0 0 0 1px rgba(240, 179, 35, 0.12);
 }
 
 .portal[data-provisional-induction] .hero.hero--module-system .btn.btn-primary {
