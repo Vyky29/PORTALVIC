@@ -1050,7 +1050,7 @@
   <script src="/portal/portal_dm_voice.js?v=20260608-composer-cols"></script>
   <script src="/portal/portal_dm_composer_wa.js?v=20260608-composer-cols"></script>
   <script src="/portal/portal_dm_attachments.js?v=20260608-plus-sheet-icons"></script>
-  <script src="/portal/portal_chat_actor_identity.js?v=20260609-mgmt-identity"></script>
+  <script src="/portal/portal_chat_actor_identity.js?v=20260609-list-preview"></script>
   <script src="/portal/portal_staff_chat_calls.js?v=20260609-lead-console-fix"></script>
   <script src="/portal/portal_incoming_call_push.js?v=20260622-incoming-call"></script>
   <script src="/portal/portal_sheet_back.js?v=20260607-sheet-back"></script>
@@ -6152,11 +6152,29 @@
         '</div>' +
         badgeHtml;
     }
-    function portalStaffDmPreviewFromMessage(m, authorBy){
+    function portalStaffDmPreviewFromMessage(m, authorBy, me){
       if(!m) return { sender: '', preview: '' };
       var aid = String(m.author_id || '').trim();
+      me = String(me || '').trim();
       var prof = authorBy && aid ? authorBy[aid] : null;
-      var sender = prof ? String(prof.full_name || prof.username || '').trim() : '';
+      var mine = !!(me && aid && me.toLowerCase() === aid.toLowerCase());
+      var sender = '';
+      if(
+        window.portalChatActorIdentity &&
+        typeof window.portalChatActorIdentity.workerPreviewSender === 'function' &&
+        prof &&
+        (
+          portalStaffProfileIsOfficePeer(prof) ||
+          (window.portalChatActorIdentity.isManagementAuthor &&
+            window.portalChatActorIdentity.isManagementAuthor(prof))
+        )
+      ){
+        sender = window.portalChatActorIdentity.workerPreviewSender(prof, { mine: mine });
+      }else if(mine){
+        sender = 'You';
+      }else{
+        sender = prof ? String(prof.full_name || prof.username || '').trim() : '';
+      }
       var body = String(m.body || '').trim();
       if(body.indexOf('[[portal-staff-call:') >= 0) return { sender: sender, preview: 'Voice call' };
       if(body.indexOf('[[portal-staff-call-end:') >= 0) return { sender: sender, preview: 'Call ended' };
@@ -6733,7 +6751,7 @@
           }catch(_d){}
           var unreadCount = portalStaffDmCountUnreadInThread(id, msgsByThread, lastAuthorProfBy, me);
           var lastMsg = (msgsByThread[id] && msgsByThread[id][0]) ? msgsByThread[id][0] : null;
-          var prev = portalStaffDmPreviewFromMessage(lastMsg, lastAuthorProfBy);
+          var prev = portalStaffDmPreviewFromMessage(lastMsg, lastAuthorProfBy, me);
           var active = String((window.__PORTAL_INTERNAL_CHAT_UI && window.__PORTAL_INTERNAL_CHAT_UI.threadId) || '') === id;
           var peerProf = profBy[peer] || {};
           var roleChip = '';

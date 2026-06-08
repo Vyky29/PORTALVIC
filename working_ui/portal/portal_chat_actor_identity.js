@@ -299,6 +299,21 @@
     return profileDisplayName(authorProf) || shortName(authorProf.full_name || authorProf.username) || "Team chat";
   }
 
+  function portalChatWorkerPreviewSender(authorProf, opts) {
+    opts = opts || {};
+    if (!authorProf) return "";
+    if (opts.mine) return portalChatActorDisplayName(authorProf) || "You";
+    if (isManagementAuthor(authorProf)) {
+      return workerFacingAuthorChip(authorProf);
+    }
+    return (
+      profileDisplayName(authorProf) ||
+      profilePeerLabel(authorProf) ||
+      shortName(authorProf.full_name || authorProf.username) ||
+      ""
+    );
+  }
+
   function portalDmThreadDisplayLabel(me, row, profBy) {
     profBy = profBy || {};
     me = String(me || "").trim();
@@ -335,6 +350,7 @@
     workerFacingAuthorChip: workerFacingAuthorChip,
     managementFacingAuthorChip: managementFacingAuthorChip,
     workerFacingCallerLabel: portalChatWorkerFacingCallerLabel,
+    workerPreviewSender: portalChatWorkerPreviewSender,
     isManagementAuthor: isManagementAuthor,
     isDirectorAuthor: isDirectorAuthor,
     isOpsAdminAuthor: isOpsAdminAuthor,
