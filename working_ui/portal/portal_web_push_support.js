@@ -179,6 +179,86 @@
   global.portalPersistGet = global.portalPersistGet || persistGet;
   global.portalPersistSet = global.portalPersistSet || persistSet;
   global.portalIsStandalonePwa = portalIsStandalonePwa;
+  async function portalSendLocalTestNotification(opts) {
+    opts = opts || {};
+    var title = String(opts.title || "Test: portal notification").trim();
+    var body = String(
+      opts.body ||
+        "If you see this banner, notifications can reach your device."
+    ).trim();
+    var icon = String(opts.icon || "/portal/app-icon/icon-192.png?v=20260624-push-icon").trim();
+    if (typeof global.Notification === "undefined") {
+      return { ok: false, reason: "unsupported" };
+    }
+    if (global.Notification.permission !== "granted") {
+      return { ok: false, reason: "no-perm" };
+    }
+    var env = portalNotifyEnvironment();
+    var notifyOpts = {
+      body: body,
+      icon: icon,
+      badge: icon,
+      tag: "portal-local-test-" + Date.now(),
+      renotify: true,
+    };
+
+    if (env.mobile || env.isIOS || env.isAndroid) {
+      try {
+        var reg = await portalRegisterPortalServiceWorker();
+        if (reg && typeof reg.showNotification === "function") {
+          await reg.showNotification(title, notifyOpts);
+          if (global.navigator && global.navigator.vibrate) {
+            try {
+              global.navigator.vibrate([100, 50, 100]);
+            } catch (_v) {}
+          }
+          return { ok: true, via: "sw", env: env };
+        }
+      } catch (_sw) {}
+    }
+
+    try {
+      new global.Notification(title, notifyOpts);
+      if (global.navigator && global.navigator.vibrate) {
+        try {
+          global.navigator.vibrate([100, 50, 100]);
+        } catch (_v2) {}
+      }
+      return { ok: true, via: "window", env: env };
+    } catch (e) {
+      return { ok: false, reason: "exception", error: e, env: env };
+    }
+  }
+
+  function portalTestNotificationStatusMessage(result) {
+    result = result || {};
+    var env = result.env || portalNotifyEnvironment();
+    if (!result.ok) {
+      if (result.reason === "no-perm") {
+        return "Allow notifications for this site, then try Send test alert again.";
+      }
+      if (result.reason === "unsupported") {
+        return "Not supported on this browser." + portalNotifyEnvironmentHint(env);
+      }
+      return (
+        "Could not show test notification." +
+        portalNotifyEnvironmentHint(env, result.reason)
+      );
+    }
+    if (env.isIOS && env.mobile) {
+      return (
+        "Test sent — on iPhone you may not see a banner while the portal is open. " +
+        "Lock the phone or send a real chat message with the app closed."
+      );
+    }
+    if (env.mobile) {
+      return "Test sent — if you did not see a banner, switch away from the portal and try again.";
+    }
+    return "Test sent — if you saw the banner, this device is ready.";
+  }
+
+  global.portalSendLocalTestNotification = portalSendLocalTestNotification;
+  global.portalTestNotificationStatusMessage = portalTestNotificationStatusMessage;
   global.portalNotifyEnvironment = portalNotifyEnvironment;
   global.portalNotifyEnvironmentHint = portalNotifyEnvironmentHint;
   global.portalUserActivationActive = global.portalUserActivationActive || portalUserActivationActive;

@@ -582,25 +582,46 @@
     }
 
     function sendTestNotification(statusEl) {
-      try {
-        new Notification("Test: admin portal notification", {
-          body: "If you see this banner, notifications are working on this device.",
-          icon: "/portal/app-icon/icon-192.png?v=20260624-push-icon",
-          badge: "/portal/app-icon/icon-192.png?v=20260624-push-icon",
-        });
-        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-        if (statusEl) {
-          statusEl.textContent = "Test sent — if you saw the banner, this device is ready.";
+      var run = function () {
+        if (typeof global.portalSendLocalTestNotification === "function") {
+          return global.portalSendLocalTestNotification({
+            title: "Test: admin portal notification",
+            body: "If you see this banner, notifications are working on this device.",
+          }).then(function (result) {
+            var msg =
+              typeof global.portalTestNotificationStatusMessage === "function"
+                ? global.portalTestNotificationStatusMessage(result)
+                : result && result.ok
+                  ? "Test sent — if you saw the banner, this device is ready."
+                  : "Could not show test notification.";
+            if (statusEl) statusEl.textContent = msg;
+            if (result && result.ok) {
+              portalAdminToastFallback("Test notification sent.", 3200);
+            }
+          });
         }
-        portalAdminToastFallback("Test notification sent.", 3200);
-      } catch (e) {
-        if (statusEl) {
-          statusEl.textContent =
-            "Could not show test notification: " +
-            (e && e.message ? e.message : String(e)) +
-            notifyContextHint();
+        try {
+          new Notification("Test: admin portal notification", {
+            body: "If you see this banner, notifications are working on this device.",
+            icon: "/portal/app-icon/icon-192.png?v=20260624-push-icon",
+            badge: "/portal/app-icon/icon-192.png?v=20260624-push-icon",
+          });
+          if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+          if (statusEl) {
+            statusEl.textContent = "Test sent — if you saw the banner, this device is ready.";
+          }
+          portalAdminToastFallback("Test notification sent.", 3200);
+        } catch (e) {
+          if (statusEl) {
+            statusEl.textContent =
+              "Could not show test notification: " +
+              (e && e.message ? e.message : String(e)) +
+              notifyContextHint();
+          }
         }
-      }
+        return Promise.resolve();
+      };
+      return run();
     }
 
     function onTestClick() {

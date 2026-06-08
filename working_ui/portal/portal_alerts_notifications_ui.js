@@ -206,11 +206,13 @@
   }
 
   function sendTestNotification(statusEl) {
-    try {
-      new Notification("Test: portal notification", Object.assign({
-        body: "If you see this, notifications can reach your device.",
-      }, portalNotifyIconOpts()));
-      if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+    var finish = function (result) {
+      if (statusEl) {
+        statusEl.textContent =
+          typeof global.portalTestNotificationStatusMessage === "function"
+            ? global.portalTestNotificationStatusMessage(result || { ok: true })
+            : "Test sent — if you saw the banner, this device is ready.";
+      }
       if (typeof global.portalEnsureWebPushSubscription === "function") {
         void global.portalEnsureWebPushSubscription().then(function (wp) {
           if (statusEl && wp && wp.ok) {
@@ -218,7 +220,25 @@
           }
           refresh();
         });
+      } else {
+        refresh();
       }
+    };
+    if (typeof global.portalSendLocalTestNotification === "function") {
+      void global
+        .portalSendLocalTestNotification({
+          title: "Test: portal notification",
+          body: "If you see this, notifications can reach your device.",
+        })
+        .then(finish);
+      return;
+    }
+    try {
+      new Notification("Test: portal notification", Object.assign({
+        body: "If you see this, notifications can reach your device.",
+      }, portalNotifyIconOpts()));
+      if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+      finish({ ok: true });
     } catch (e) {
       if (statusEl) {
         statusEl.textContent =
