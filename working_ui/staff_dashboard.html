@@ -93,8 +93,8 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260607-camera-fix" />
   <script src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260607-cliq-fix" />
-  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260608-wa-send-plus" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260608-composer-row" />
+  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260608-composer-row" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260610-topbar-colors" />
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260608-csteam-icons-roles" />
   <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260608-inbox-fix" />
@@ -1060,7 +1060,7 @@
   <script src="/portal/portal_staff_chat_calls.js?v=20260604-call-thread"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
   <script src="/portal/portal_dm_roles.js?v=20260622-chat-restore"></script>
-  <script src="/portal/portal_dm_thread_avatar.js?v=20260621-cliq-embed"></script>
+  <script src="/portal/portal_dm_thread_avatar.js?v=20260608-inbox-photos"></script>
   <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260622-chat-restore"></script>
   <script src="/portal/portal_cs_cliq_support_route.js?v=20260608-inbox-fix"></script>
   <script src="/portal/portal_cs_cliq_support.js?v=20260607-support-route"></script>
@@ -1076,7 +1076,8 @@
   <script src="/portal/portal_executive_dm.js?v=20260622-chat-restore"></script>
   <script src="/portal/portal_cs_cliq_embed.js?v=20260607-cliq-fix"></script>
   <script src="/portal/portal_dm_executive_cliq.js?v=20260622-chat-restore"></script>
-  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260608-staff-admin-only"></script>
+  <script src="/portal/portal_staff_photos.js?v=20260608-csteam-icons-roles"></script>
+  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260608-csteam-icons-roles"></script>
   <script src="/portal/portal_incoming_call_push.js?v=20260622-incoming-call"></script>
   <script src="/portal/portal_sheet_back.js?v=20260607-sheet-back"></script>
   <script>
@@ -6892,7 +6893,15 @@
       if(opts.withAvatar){
         avatarHtml = '<span class="portal-dm-thread-avatar" aria-hidden="true">' + escapeHtml(portalStaffDmInboxInitials(label)) + '</span>';
       }else if(window.portalDmThreadAvatar && typeof window.portalDmThreadAvatar.html === 'function'){
-        avatarHtml = window.portalDmThreadAvatar.html({ kind: 'dm', label: label, unreadCount: unreadCount }, escapeHtml, 'staff_lead');
+        avatarHtml = window.portalDmThreadAvatar.html({
+          kind: 'dm',
+          label: label,
+          unreadCount: unreadCount,
+          peerProfile: opts.peerProfile || null,
+          roleTone: opts.peerProfile && window.portalDmThreadAvatar.roleToneFromProfile
+            ? window.portalDmThreadAvatar.roleToneFromProfile(opts.peerProfile)
+            : ''
+        }, escapeHtml, 'staff_lead');
       }
       var preview = '';
       if(opts.lastSender || opts.lastPreview){
@@ -7470,7 +7479,7 @@
         var peerIds = rows.map(function(r){ return portalDmPeerIdForThread(me, r); }).filter(Boolean);
         var profBy = {};
         if(peerIds.length){
-          var pr = await client.from("staff_profiles").select("id,full_name,username,app_role,staff_role").in("id", peerIds);
+          var pr = await client.from("staff_profiles").select("id,full_name,username,app_role,staff_role,avatar_url").in("id", peerIds);
           if(!pr.error && Array.isArray(pr.data)){
             pr.data.forEach(function(p){
               var id0 = String(p.id || "");
@@ -7579,7 +7588,8 @@
           var active = String((window.__PORTAL_INTERNAL_CHAT_UI && window.__PORTAL_INTERNAL_CHAT_UI.threadId) || '') === id;
           var itemOpts = {
             lastSender: prev.sender,
-            lastPreview: prev.preview
+            lastPreview: prev.preview,
+            peerProfile: peerProf
           };
           if(useStaffMgmtInbox && window.portalLeadStaffChatDirectory){
             itemOpts.roleChip = window.portalLeadStaffChatDirectory.peerRoleChipLabel(peerProf);
