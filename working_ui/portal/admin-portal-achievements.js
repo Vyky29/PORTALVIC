@@ -87,6 +87,29 @@
     return "info";
   }
 
+  function rowMediaType(row) {
+    if (row && String(row.media_type || "").toLowerCase() === "video") return "video";
+    var path = String((row && row.storage_path) || "");
+    if (/\.(webm|mp4|mov|m4v)$/i.test(path)) return "video";
+    return "photo";
+  }
+
+  function adminThumbInnerHtml(url, row) {
+    if (rowMediaType(row) === "video") {
+      return (
+        (url
+          ? '<video src="' +
+            esc(url) +
+            '" muted playsinline preload="metadata" draggable="false" class="portal-achievement-protected"></video>' +
+            '<span class="portal-admin-achievement-thumb__video-badge" aria-hidden="true">Video</span>'
+          : '<span class="portal-admin-achievement-thumb__empty muted">No preview</span>')
+      );
+    }
+    return url
+      ? '<img src="' + esc(url) + '" alt="" draggable="false" class="portal-achievement-protected" />'
+      : '<span class="portal-admin-achievement-thumb__empty muted">No preview</span>';
+  }
+
   async function signedUrl(client, path) {
     var res = await client.storage.from("participant-achievements").createSignedUrl(path, 3600);
     return res.data && res.data.signedUrl ? res.data.signedUrl : "";
@@ -278,7 +301,21 @@
       viewer.setAttribute("aria-hidden", "true");
     }
     var img = document.getElementById("portalAdminAchievementsViewerImg");
-    if (img) img.removeAttribute("src");
+    if (img) {
+      img.hidden = false;
+      img.removeAttribute("src");
+    }
+    var stage = viewer && viewer.querySelector(".portal-achievements-viewer__stage");
+    if (stage) {
+      var vid = stage.querySelector("video.portal-admin-achievements-viewer__video");
+      if (vid) {
+        try {
+          vid.pause();
+        } catch (_p) {}
+        vid.removeAttribute("src");
+        vid.hidden = true;
+      }
+    }
     document.body.classList.remove("portal-achievements-viewer-open");
     viewerState.index = -1;
     viewerState.photos = [];
@@ -299,9 +336,40 @@
     var row = photos[idx];
     var client = cfg.getClient();
     var url = client ? await signedUrl(client, row.storage_path) : "";
-    var img = document.getElementById("portalAdminAchievementsViewerImg");
-    if (img) img.src = url;
     var viewer = document.getElementById("portalAdminAchievementsViewer");
+    var stage = viewer && viewer.querySelector(".portal-achievements-viewer__stage");
+    var img = document.getElementById("portalAdminAchievementsViewerImg");
+    var isVideo = rowMediaType(row) === "video";
+    if (stage) {
+      var vid = stage.querySelector("video.portal-admin-achievements-viewer__video");
+      if (isVideo) {
+        if (!vid) {
+          vid = document.createElement("video");
+          vid.className = "portal-admin-achievements-viewer__video portal-achievement-protected";
+          vid.controls = true;
+          vid.playsInline = true;
+          vid.setAttribute("playsinline", "");
+          stage.appendChild(vid);
+        }
+        if (img) img.hidden = true;
+        vid.hidden = false;
+        vid.src = url;
+      } else {
+        if (vid) {
+          try {
+            vid.pause();
+          } catch (_p) {}
+          vid.hidden = true;
+          vid.removeAttribute("src");
+        }
+        if (img) {
+          img.hidden = false;
+          img.src = url;
+        }
+      }
+    } else if (img) {
+      img.src = url;
+    }
     if (viewer) {
       viewer.hidden = false;
       viewer.setAttribute("aria-hidden", "false");
@@ -409,9 +477,7 @@
           var wrap = document.createElement("div");
           wrap.className = "portal-admin-achievement-thumb-wrap";
           btn.innerHTML =
-            (url
-              ? '<img src="' + esc(url) + '" alt="" draggable="false" class="portal-achievement-protected" />'
-              : '<span class="portal-admin-achievement-thumb__empty muted">No preview</span>') +
+            adminThumbInnerHtml(url, row) +
             '<span class="portal-admin-achievement-thumb__cap">' +
             '<span class="chip chip--' +
             statusChipClass(row.status) +

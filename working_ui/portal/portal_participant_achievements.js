@@ -1,5 +1,5 @@
 /**
- * Participant achievements — in-app photos per participant (staff/lead).
+ * Participant achievements — in-app photos & short videos per participant (staff/lead).
  * Not saved to device gallery; screenshot guard overlay while viewing.
  */
 (function (global) {
@@ -11,6 +11,8 @@
   var MAX_PHOTOS = 10;
   var MAX_EDGE_PX = 3840;
   var JPEG_QUALITY = 0.92;
+  var MAX_VIDEO_MS = 60000;
+  var MIN_VIDEO_MS = 800;
 
   var cfg = {
     esc: function (s) {
@@ -54,6 +56,11 @@
     viewerIndex: -1,
     facingMode: "environment",
     zoomScale: 1,
+    videoRecorder: null,
+    videoChunks: [],
+    isRecordingVideo: false,
+    recordingStartedAt: 0,
+    recordingTimer: null,
   };
 
   var signedUrlCache = Object.create(null);
@@ -153,7 +160,63 @@
   function photoLimitMessage() {
     var max = maxPhotosForCurrentParticipant();
     if (max == null) return "";
-    return "Maximum " + max + " photos for this participant today. Delete one to add another.";
+    return "Maximum " + max + " photos/videos for this participant today. Delete one to add another.";
+  }
+
+  function rowMediaType(row) {
+    if (row && String(row.media_type || "").toLowerCase() === "video") return "video";
+    var path = String((row && row.storage_path) || "");
+    if (/\.(webm|mp4|mov|m4v)$/i.test(path)) return "video";
+    return "photo";
+  }
+
+  function formatDurationMs(ms) {
+    var sec = Math.max(0, Math.round(Number(ms || 0) / 1000));
+    if (sec < 60) return sec + "s";
+    var m = Math.floor(sec / 60);
+    var s = sec % 60;
+    return m + ":" + (s < 10 ? "0" : "") + s;
+  }
+
+  function pickVideoMime() {
+    if (typeof MediaRecorder === "undefined") return "";
+    var types = [
+      "video/webm;codecs=vp9,opus",
+      "video/webm;codecs=vp8,opus",
+      "video/webm",
+      "video/mp4",
+    ];
+    for (var i = 0; i < types.length; i++) {
+      if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(types[i])) return types[i];
+    }
+    return "";
+  }
+
+  function fileExtForMime(mime) {
+    var m = String(mime || "").toLowerCase();
+    if (m.indexOf("mp4") >= 0 || m.indexOf("quicktime") >= 0) return "mp4";
+    return "webm";
+  }
+
+  function streamHasAudio(stream) {
+    return !!(stream && stream.getAudioTracks && stream.getAudioTracks().length);
+  }
+
+  function updateRecordingUi() {
+    var snapBtn = document.getElementById("portalAchievementsSnap");
+    var wrap = document.getElementById("portalAchievementsCameraShutterWrap");
+    if (snapBtn) {
+      snapBtn.classList.toggle("is-recording", !!state.isRecordingVideo);
+      snapBtn.setAttribute(
+        "aria-label",
+        state.cameraMode === "video"
+          ? state.isRecordingVideo
+            ? "Stop recording"
+            : "Start recording"
+          : "Take photo"
+      );
+    }
+    if (wrap) wrap.classList.toggle("is-recording", !!state.isRecordingVideo);
   }
 
   function isInboxParticipant(p) {
@@ -221,11 +284,38 @@
     var msg = String((err && err.message) || err || "").trim();
     if (/row-level security|rls|policy/i.test(msg)) {
       return (
-        "Photo could not be saved (permissions). Ask ops to run Supabase migration " +
-        "20260602140000_portal_achievement_photos_worker_rls.sql, then sign out and in again."
+        "Could not be saved (permissions). Ask ops to run Supabase migration " +
+        "20260626200000_portal_achievement_videos.sql, then sign out and in again."
       );
     }
-    return msg || "Could not save photo";
+    if (/mime|content type|file size|payload too large/i.test(msg)) {
+      return "File type or size not allowed. Videos must be under 50 MB — try a shorter clip.";
+    }
+    return msg || "Could not save";
+  }
+
+  function mediaThumbInnerHtml(url, row) {
+    var who = String((row && row.staff_display_name) || "").trim();
+    var whoHtml = who ? '<span class="portal-achievements-thumb__by">' + esc(who) + "</span>" : "";
+    if (rowMediaType(row) === "video") {
+      var dur = row && row.duration_ms ? formatDurationMs(row.duration_ms) : "";
+      return (
+        '<video src="' +
+        esc(url) +
+        '" muted playsinline preload="metadata" draggable="false" class="portal-screenshot-protected portal-achievement-protected"></video>' +
+        '<span class="portal-achievements-thumb__video-badge" aria-hidden="true">' +
+        ICON_VIDEO +
+        (dur ? " " + esc(dur) : "") +
+        "</span>" +
+        whoHtml
+      );
+    }
+    return (
+      '<img src="' +
+      esc(url) +
+      '" alt="" draggable="false" class="portal-screenshot-protected portal-achievement-protected" />' +
+      whoHtml
+    );
   }
 
   function pushCameraMediaBypass() {
@@ -266,7 +356,9 @@
     return "Could not open camera. Check browser permissions.";
   }
 
-  async function acquireCameraStream(facingMode) {
+  async function acquireCameraStream(facingMode, opts) {
+    opts = opts || {};
+    var wantAudio = !!opts.audio;
     var fm = facingMode || state.facingMode || "environment";
     var videoAttempts = [
       { facingMode: { ideal: fm }, width: { ideal: 1920 }, height: { ideal: 1080 } },
@@ -280,13 +372,27 @@
       try {
         var v = videoAttempts[i];
         var constraints =
-          v === true ? { audio: false, video: true } : { audio: false, video: v };
+          v === true ? { audio: wantAudio, video: true } : { audio: wantAudio, video: v };
         return await navigator.mediaDevices.getUserMedia(constraints);
       } catch (err) {
         lastErr = err;
       }
     }
     throw lastErr || new Error("camera_unavailable");
+  }
+
+  async function ensureCameraStreamForMode() {
+    var video = document.getElementById("portalAchievementsCameraVideo");
+    if (!video) return;
+    var wantAudio = state.cameraMode === "video";
+    if (wantAudio && !streamHasAudio(state.stream)) {
+      pushCameraMediaBypass();
+      stopCameraTracksOnly();
+      state.stream = await acquireCameraStream(state.facingMode, { audio: true });
+      video.srcObject = state.stream;
+      video.hidden = false;
+      applyVideoZoom();
+    }
   }
 
   function applyVideoZoom() {
@@ -388,7 +494,9 @@
     if (videoBtn) {
       videoBtn.classList.toggle("is-active", !isPhoto);
       videoBtn.setAttribute("aria-pressed", !isPhoto ? "true" : "false");
+      videoBtn.disabled = !!state.isRecordingVideo;
     }
+    updateRecordingUi();
   }
 
   function showCameraLiveUi() {
@@ -418,18 +526,26 @@
       return;
     }
     btn.classList.add("has-thumb");
-    btn.innerHTML =
-      '<img src="' + esc(url) + '" alt="" class="portal-ach-cam-gallery__thumb portal-screenshot-protected portal-achievement-protected" draggable="false" />';
+    if (rowMediaType(last) === "video") {
+      btn.innerHTML =
+        '<video src="' +
+        esc(url) +
+        '" muted playsinline preload="metadata" class="portal-ach-cam-gallery__thumb portal-screenshot-protected portal-achievement-protected" draggable="false"></video>';
+    } else {
+      btn.innerHTML =
+        '<img src="' + esc(url) + '" alt="" class="portal-ach-cam-gallery__thumb portal-screenshot-protected portal-achievement-protected" draggable="false" />';
+    }
   }
 
   async function flipCamera() {
+    if (state.isRecordingVideo) return;
     state.facingMode = state.facingMode === "user" ? "environment" : "user";
     var video = document.getElementById("portalAchievementsCameraVideo");
     if (!video) return;
     pushCameraMediaBypass();
     stopCameraTracksOnly();
     try {
-      state.stream = await acquireCameraStream(state.facingMode);
+      state.stream = await acquireCameraStream(state.facingMode, { audio: state.cameraMode === "video" });
       video.srcObject = state.stream;
       video.hidden = false;
       applyVideoZoom();
@@ -440,6 +556,9 @@
   }
 
   function stopCameraTracksOnly() {
+    if (state.isRecordingVideo) {
+      void stopVideoRecordingInternal(true);
+    }
     var video = document.getElementById("portalAchievementsCameraVideo");
     if (video) video.srcObject = null;
     if (state.stream) {
@@ -625,7 +744,7 @@
       state.cameraMode = "photo";
       setCameraFooterMode();
       pushCameraMediaBypass();
-      state.stream = await acquireCameraStream(state.facingMode);
+      state.stream = await acquireCameraStream(state.facingMode, { audio: state.cameraMode === "video" });
       noteCameraGranted();
       openCameraFullscreen();
       showCameraLiveUi();
@@ -646,13 +765,119 @@
     syncAchievementScreenshotGuard();
   }
 
+  function stopVideoRecordingInternal(cancel) {
+    if (state.recordingTimer) {
+      clearTimeout(state.recordingTimer);
+      state.recordingTimer = null;
+    }
+    var rec = state.videoRecorder;
+    state.videoRecorder = null;
+    if (!rec || rec.state === "inactive") {
+      state.isRecordingVideo = false;
+      state.videoChunks = [];
+      updateRecordingUi();
+      return Promise.resolve(null);
+    }
+    return new Promise(function (resolve) {
+      rec.onstop = function () {
+        var chunks = state.videoChunks || [];
+        state.videoChunks = [];
+        state.isRecordingVideo = false;
+        updateRecordingUi();
+        setCameraFooterMode();
+        if (cancel || !chunks.length) {
+          resolve(null);
+          return;
+        }
+        var mime = rec.mimeType || pickVideoMime() || "video/webm";
+        resolve({
+          blob: new Blob(chunks, { type: String(mime).split(";")[0] }),
+          mime: mime,
+        });
+      };
+      try {
+        rec.stop();
+      } catch (_stop) {
+        state.isRecordingVideo = false;
+        updateRecordingUi();
+        resolve(null);
+      }
+    });
+  }
+
+  async function toggleVideoRecording() {
+    if (!state.participant) {
+      setStatus("Choose a participant first.", true);
+      return;
+    }
+    if (isAtPhotoLimit()) {
+      setStatus(photoLimitMessage(), true);
+      return;
+    }
+    if (state.isRecordingVideo) {
+      var snapBtnStop = document.getElementById("portalAchievementsSnap");
+      if (snapBtnStop) snapBtnStop.disabled = true;
+      try {
+        var durationMs = Date.now() - (state.recordingStartedAt || Date.now());
+        var result = await stopVideoRecordingInternal(false);
+        if (!result || !result.blob || !result.blob.size) {
+          setStatus("Recording failed.", true);
+          return;
+        }
+        if (durationMs < MIN_VIDEO_MS) {
+          setStatus("Recording too short — hold for at least one second.", true);
+          return;
+        }
+        var videoEl = document.getElementById("portalAchievementsCameraVideo");
+        setStatus("Saving…");
+        await uploadVideoBlob(result.blob, result.mime, durationMs, videoEl);
+        setStatus("Video saved.");
+        void updateFooterGalleryThumb();
+        showCameraLiveUi();
+      } catch (e) {
+        console.error(e);
+        setStatus(esc(uploadErrorMessage(e)), true);
+      } finally {
+        if (snapBtnStop) snapBtnStop.disabled = false;
+      }
+      return;
+    }
+    await ensureCameraStreamForMode();
+    var mime = pickVideoMime();
+    if (!mime || typeof MediaRecorder === "undefined" || !state.stream) {
+      setStatus("Video recording is not supported in this browser.", true);
+      return;
+    }
+    state.videoChunks = [];
+    var recorder = new MediaRecorder(state.stream, { mimeType: mime });
+    recorder.ondataavailable = function (ev) {
+      if (ev.data && ev.data.size) state.videoChunks.push(ev.data);
+    };
+    recorder.onerror = function () {
+      setStatus("Recording failed.", true);
+      void stopVideoRecordingInternal(true);
+    };
+    state.videoRecorder = recorder;
+    state.isRecordingVideo = true;
+    state.recordingStartedAt = Date.now();
+    recorder.start(1000);
+    state.recordingTimer = global.setTimeout(function () {
+      void toggleVideoRecording();
+    }, MAX_VIDEO_MS);
+    setStatus(
+      "Recording… tap again to stop (max " + Math.round(MAX_VIDEO_MS / 1000) + " seconds)."
+    );
+    updateRecordingUi();
+    setCameraFooterMode();
+  }
+
   async function snapPhoto() {
     if (!state.participant) {
       setStatus("Choose a participant first.", true);
       return;
     }
     if (state.cameraMode === "video") {
-      setStatus("Video is not available yet.", true);
+      await toggleVideoRecording();
       return;
     }
     if (isAtPhotoLimit()) {
@@ -746,9 +971,74 @@
         portal_session_key: p.portalSessionKey || null,
         storage_path: path,
         status: "draft",
+        media_type: "photo",
         width: encoded.width,
         height: encoded.height,
         byte_size: encoded.blob.size,
+      },
+    ]);
+    if (ins.error) {
+      try {
+        await client.storage.from(BUCKET).remove([path]);
+      } catch (_rm) {}
+      throw ins.error;
+    }
+
+    setStatus("");
+    await refreshGallery();
+  }
+
+  async function uploadVideoBlob(blob, mime, durationMs, videoEl) {
+    var client = cfg.getClient();
+    if (!client) throw new Error("Sign in required.");
+    var {
+      data: { user },
+    } = await client.auth.getUser();
+    if (!user || !user.id) throw new Error("Sign in required.");
+
+    var p = state.participant;
+    var day = londonTodayIso();
+    var cid = normalizeClientId(p.clientId);
+    var photoId = global.crypto && crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
+    var ext = fileExtForMime(mime);
+    var path = user.id + "/" + day + "/" + cid + "/" + photoId + "." + ext;
+    var contentType = String(mime || "video/webm").split(";")[0];
+
+    setStatus("Uploading…");
+    var up = await client.storage.from(BUCKET).upload(path, blob, {
+      contentType: contentType,
+      upsert: false,
+    });
+    if (up.error) throw up.error;
+
+    var staffName = "";
+    try {
+      var prof = await client
+        .from("staff_profiles")
+        .select("full_name, username")
+        .eq("id", user.id)
+        .maybeSingle();
+      staffName = String((prof.data && (prof.data.full_name || prof.data.username)) || "").trim();
+    } catch (_e) {}
+
+    var vw = videoEl && videoEl.videoWidth ? videoEl.videoWidth : null;
+    var vh = videoEl && videoEl.videoHeight ? videoEl.videoHeight : null;
+
+    var ins = await client.from("portal_participant_achievement_photos").insert([
+      {
+        staff_user_id: user.id,
+        staff_display_name: staffName,
+        client_id: cid,
+        client_name: String(p.clientName || "").trim() || cid,
+        session_date: day,
+        portal_session_key: p.portalSessionKey || null,
+        storage_path: path,
+        status: "draft",
+        media_type: "video",
+        duration_ms: Math.max(0, Math.round(Number(durationMs || 0))),
+        width: vw,
+        height: vh,
+        byte_size: blob.size,
       },
     ]);
     if (ins.error) {
@@ -781,7 +1071,7 @@
     if (!uid) return [];
     var res = await client
       .from("portal_participant_achievement_photos")
-      .select("id, storage_path, created_at, width, height, staff_user_id, staff_display_name")
+      .select("id, storage_path, created_at, width, height, staff_user_id, staff_display_name, media_type, duration_ms")
       .eq("session_date", day)
       .eq("client_id", LEAD_INBOX_CLIENT_ID)
       .eq("staff_user_id", uid)
@@ -811,7 +1101,7 @@
       if (/does not exist|portal_list_participant_achievement_drafts/i.test(res.error.message || "")) {
         var fallback = await client
           .from("portal_participant_achievement_photos")
-          .select("id, storage_path, created_at, width, height, staff_user_id, staff_display_name")
+          .select("id, storage_path, created_at, width, height, staff_user_id, staff_display_name, media_type, duration_ms")
           .eq("session_date", day)
           .eq("client_id", cid)
           .eq("status", "draft")
@@ -1030,8 +1320,8 @@
       var max = maxPhotosForCurrentParticipant();
       countEl.textContent =
         max == null
-          ? state.photos.length + " photo" + (state.photos.length === 1 ? "" : "s") + " (high quality, in-app only)"
-          : state.photos.length + " / " + max + " photos (high quality, in-app only)";
+          ? state.photos.length + " item" + (state.photos.length === 1 ? "" : "s") + " (high quality, in-app only)"
+          : state.photos.length + " / " + max + " photos/videos (high quality, in-app only)";
     }
   }
 
@@ -1042,7 +1332,21 @@
       viewer.setAttribute("aria-hidden", "true");
     }
     var img = document.getElementById("portalAchievementsViewerImg");
-    if (img) img.removeAttribute("src");
+    if (img) {
+      img.hidden = false;
+      img.removeAttribute("src");
+    }
+    var stage = viewer && viewer.querySelector(".portal-achievements-viewer__stage");
+    if (stage) {
+      var vid = stage.querySelector("video.portal-achievements-viewer__video");
+      if (vid) {
+        try {
+          vid.pause();
+        } catch (_p) {}
+        vid.removeAttribute("src");
+        vid.hidden = true;
+      }
+    }
     document.body.classList.remove("portal-achievements-viewer-open");
     state.viewerIndex = -1;
     if (state.participant) showStep("capture");
@@ -1063,9 +1367,44 @@
     state.viewerIndex = idx;
     var row = state.photos[idx];
     var url = await signedUrlFor(row.storage_path);
-    var img = document.getElementById("portalAchievementsViewerImg");
-    if (img) img.src = url;
     var viewer = document.getElementById("portalAchievementsGalleryViewer");
+    var stage = viewer && viewer.querySelector(".portal-achievements-viewer__stage");
+    var img = document.getElementById("portalAchievementsViewerImg");
+    var isVideo = rowMediaType(row) === "video";
+    if (stage) {
+      var vid = stage.querySelector("video.portal-achievements-viewer__video");
+      if (isVideo) {
+        if (!vid) {
+          vid = document.createElement("video");
+          vid.className =
+            "portal-achievements-viewer__video portal-screenshot-protected portal-achievement-protected";
+          vid.controls = true;
+          vid.playsInline = true;
+          vid.setAttribute("playsinline", "");
+          stage.appendChild(vid);
+        }
+        if (img) img.hidden = true;
+        vid.hidden = false;
+        vid.src = url;
+        try {
+          vid.load();
+        } catch (_ld) {}
+      } else {
+        if (vid) {
+          try {
+            vid.pause();
+          } catch (_p) {}
+          vid.hidden = true;
+          vid.removeAttribute("src");
+        }
+        if (img) {
+          img.hidden = false;
+          img.src = url;
+        }
+      }
+    } else if (img) {
+      img.src = url;
+    }
     if (viewer) {
       viewer.hidden = false;
       viewer.setAttribute("aria-hidden", "false");
@@ -1151,8 +1490,8 @@
       host.innerHTML =
         '<p class="muted portal-achievements-empty">' +
         (isInboxParticipant(state.participant)
-          ? "No inbox photos yet for today."
-          : "No photos yet for this participant.") +
+          ? "No inbox photos or videos yet for today."
+          : "No photos or videos yet for this participant.") +
         "</p>";
       return;
     }
@@ -1175,12 +1514,14 @@
           var cell = document.createElement("button");
           cell.type = "button";
           cell.className = "portal-achievements-thumb__open";
-          cell.setAttribute("aria-label", "View photo " + (index + 1) + " of " + state.photos.length);
-          cell.innerHTML =
-            '<img src="' +
-            esc(url) +
-            '" alt="" draggable="false" class="portal-screenshot-protected portal-achievement-protected" />' +
-            (who ? '<span class="portal-achievements-thumb__by">' + esc(who) + "</span>" : "");
+          cell.setAttribute(
+            "aria-label",
+            (rowMediaType(row) === "video" ? "View video " : "View photo ") +
+              (index + 1) +
+              " of " +
+              state.photos.length
+          );
+          cell.innerHTML = mediaThumbInnerHtml(url, row);
           var delBtn = document.createElement("button");
           delBtn.type = "button";
           delBtn.className = "portal-achievements-thumb__delete";
@@ -1273,6 +1614,7 @@
     var fsPhoto = document.getElementById("portalAchievementsFsPhoto");
     if (fsPhoto) {
       fsPhoto.addEventListener("click", function () {
+        if (state.isRecordingVideo) return;
         state.cameraMode = "photo";
         setCameraFooterMode();
         setStatus("");
@@ -1282,9 +1624,11 @@
     var fsVideo = document.getElementById("portalAchievementsFsVideo");
     if (fsVideo) {
       fsVideo.addEventListener("click", function () {
+        if (state.isRecordingVideo) return;
         state.cameraMode = "video";
         setCameraFooterMode();
-        setStatus("Video is not available yet.", true);
+        setStatus("Tap the shutter to start recording, tap again to stop.");
+        void ensureCameraStreamForMode();
       });
     }
 
@@ -1377,7 +1721,7 @@
       '<h3 id="achievementsSheetTitle">Participant achievements</h3>' +
       "</div>" +
       '<div class="sheet-body portal-achievements-sheet-body">' +
-      '<p class="portal-achievements-note">Photos stay in the portal only (not your phone gallery). On this device, screen captures show black while you view photos here.</p>' +
+      '<p class="portal-achievements-note">Photos and short videos stay in the portal only (not your phone gallery). On this device, screen captures show black while you view them here.</p>' +
       '<div id="portalAchievementsStatus" class="portal-achievements-status" role="status"></div>' +
       '<div id="portalAchievementsStepPick">' +
       '<p class="portal-achievements-step-title">Today — <span id="portalAchievementsDayLabel"></span></p>' +
@@ -1503,11 +1847,11 @@
     var rows = await listDraftsForFeedback(clientId, sessionDate, portalSessionKey);
     if (!rows.length) {
       host.innerHTML =
-        '<p class="muted" style="margin:0">No achievement photos for this participant. Take them from Quick menu → Participant achievements, then come back to attach them.</p>';
+        '<p class="muted" style="margin:0">No achievement photos or videos for this participant. Take them from Quick menu → Participant achievements, then come back to attach them.</p>';
       return [];
     }
     var html =
-      '<p class="portal-achievements-feedback-label">Attach achievement photos (optional) — up to ' +
+      '<p class="portal-achievements-feedback-label">Attach achievement photos/videos (optional) — up to ' +
       FEEDBACK_MAX_ATTACH +
       ' <span class="portal-achievements-feedback-count">0 / ' +
       FEEDBACK_MAX_ATTACH +
@@ -1525,14 +1869,11 @@
     host.innerHTML = html;
     var picks = host.querySelectorAll(".portal-achievements-feedback-thumb");
     for (var i = 0; i < picks.length; i++) {
-      (function (el, path) {
+      (function (el, path, row) {
         void signedUrlFor(path).then(function (url) {
-          el.innerHTML =
-            '<img src="' +
-            esc(url) +
-            '" alt="" draggable="false" class="portal-screenshot-protected portal-achievement-protected" />';
+          el.innerHTML = mediaThumbInnerHtml(url, row);
         });
-      })(picks[i], picks[i].getAttribute("data-path"));
+      })(picks[i], picks[i].getAttribute("data-path"), rows[i]);
     }
     host.querySelectorAll('input[name="achievementPhoto"]').forEach(function (box) {
       box.addEventListener("change", function () {
