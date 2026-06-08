@@ -280,59 +280,144 @@ body.portal-inapp-call-open #portalInternalChatBackdrop.open{
   display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--portal-chat-line);
   background:#fff;flex-shrink:0;
 }
+#internalChatSheet .portal-cs-cliq-thread-header--chat{
+  flex-wrap:nowrap;
+  gap:8px;
+  padding:max(8px, env(safe-area-inset-top, 0px)) 10px 8px;
+  background:linear-gradient(180deg,#f8fbfd 0%,#fff 100%);
+  box-shadow:0 1px 0 rgba(45,132,179,.08);
+}
+#internalChatSheet.sheet--portal-chat-thread .portal-dm-sheet-head{
+  display:none !important;
+}
+#internalChatSheet.sheet--portal-chat-thread .portal-dm-sheet-body{
+  padding-top:0;
+}
 #internalChatSheet .portal-cs-cliq-thread-header__identity{
   display:flex;align-items:center;gap:10px;flex:1 1 auto;min-width:0;
+}
+#internalChatSheet .portal-cs-cliq-thread-header--chat .portal-cs-cliq-thread-header__identity{
+  gap:8px;
 }
 #internalChatSheet .portal-cs-cliq-thread-header__avatar{
   width:40px;height:40px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
   background:linear-gradient(145deg,#eaf5fb,#d4e8f4);color:#1d6f96;font-size:13px;font-weight:800;flex-shrink:0;
 }
+#internalChatSheet .portal-cs-cliq-thread-header--chat .portal-cs-cliq-thread-header__avatar{
+  width:42px;height:42px;font-size:14px;
+}
 #internalChatSheet .portal-cs-cliq-thread-header__meta{min-width:0;display:flex;flex-direction:column;gap:1px}
 #internalChatSheet .portal-cs-cliq-thread-header__name{
   font-size:15px;font-weight:800;color:var(--portal-chat-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+#internalChatSheet .portal-cs-cliq-thread-header--chat .portal-cs-cliq-thread-header__name{
+  font-size:16px;line-height:1.2;
 }
 #internalChatSheet .portal-cs-cliq-thread-header__role{
   font-size:11px;font-weight:700;color:var(--portal-chat-blue);text-transform:uppercase;letter-spacing:.04em;
 }
 #internalChatSheet .portal-cs-cliq-thread-header__status{font-size:11px;color:var(--portal-chat-muted)}
+#internalChatSheet .portal-cs-cliq-thread-header__actions{
+  display:flex;align-items:center;gap:2px;flex-shrink:0;
+}
 #internalChatSheet .portal-cs-cliq__back-btn{
   width:36px;height:36px;border-radius:10px;border:1px solid var(--portal-chat-line);background:#fff;
   color:var(--portal-chat-ink);font-size:22px;line-height:1;cursor:pointer;flex-shrink:0;
 }
+#internalChatSheet .portal-cs-cliq-thread-header--chat .portal-cs-cliq__back-btn{
+  display:inline-flex;align-items:center;justify-content:flex-start;
+  width:auto;min-width:0;height:40px;padding:0 2px 0 0;
+  border:0;background:transparent;border-radius:0;gap:0;
+}
+#internalChatSheet .portal-cs-cliq__back-icon{
+  font-size:28px;line-height:1;font-weight:400;color:var(--portal-chat-blue);
+}
+#internalChatSheet .portal-cs-cliq__back-unread{
+  font-size:16px;font-weight:800;line-height:1;color:var(--portal-chat-blue);
+  min-width:0;padding-right:2px;
+}
+#internalChatSheet .portal-cs-cliq__back-unread[hidden]{display:none !important}
 #internalChatSheet .portal-cs-cliq-thread-header__files,
 #internalChatSheet .portal-cs-cliq-thread-header__more{
   flex-shrink:0;border:1px solid var(--portal-chat-line);background:#fff;color:var(--portal-chat-ink);
   border-radius:999px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;
 }
 #internalChatSheet .portal-cs-cliq-thread-header__more{display:none!important}
+#internalChatSheet .portal-cs-cliq-thread-header--chat .portal-cs-cliq-thread-header__role,
+#internalChatSheet .portal-cs-cliq-thread-header--chat .portal-cs-cliq-thread-header__status,
+#internalChatSheet .portal-cs-cliq-thread-header--chat .portal-cs-cliq-thread-header__files,
+#internalChatSheet .portal-cs-cliq-thread-header--chat .portal-cs-cliq__head-call-meeting{
+  display:none !important;
+}
 @media (max-width:899px){
-  #internalChatSheet .portal-cs-cliq-thread-header{flex-wrap:wrap;gap:8px 10px}
-  #internalChatSheet .portal-cs-cliq-thread-header__identity{flex:1 1 calc(100% - 48px);max-width:calc(100% - 48px)}
-  #internalChatSheet .portal-cs-cliq-thread-header__name{
+  #internalChatSheet .portal-cs-cliq-thread-header:not(.portal-cs-cliq-thread-header--chat){flex-wrap:wrap;gap:8px 10px}
+  #internalChatSheet .portal-cs-cliq-thread-header:not(.portal-cs-cliq-thread-header--chat) .portal-cs-cliq-thread-header__identity{flex:1 1 calc(100% - 48px);max-width:calc(100% - 48px)}
+  #internalChatSheet .portal-cs-cliq-thread-header:not(.portal-cs-cliq-thread-header--chat) .portal-cs-cliq-thread-header__name{
     white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word;line-height:1.2;
   }
-  #internalChatSheet .portal-cs-cliq-thread-header__status{display:none}
-  #internalChatSheet .portal-cs-cliq__head-call-bar{width:100%;justify-content:flex-start}
+  #internalChatSheet .portal-cs-cliq-thread-header:not(.portal-cs-cliq-thread-header--chat) .portal-cs-cliq-thread-header__status{display:none}
+  #internalChatSheet .portal-cs-cliq-thread-header:not(.portal-cs-cliq-thread-header--chat) .portal-cs-cliq__head-call-bar{width:100%;justify-content:flex-start}
 }
 #internalChatSheet .portal-cs-cliq__head-call-bar{
   display:flex;gap:6px;padding:0;border:0;flex-shrink:0;
 }
+#internalChatSheet .portal-cs-cliq-thread-header--chat .portal-cs-cliq__head-call-bar{
+  gap:0;
+}
 #internalChatSheet .portal-cs-cliq__head-call-bar .portal-dm-call-bar-btn{
   flex:0 0 auto;padding:6px 10px;border-radius:999px;font-size:11px;
 }
+#internalChatSheet .portal-cs-cliq-thread-header--chat .portal-cs-cliq__head-call-bar .portal-dm-call-bar-btn{
+  width:40px;height:40px;min-width:40px;padding:0;border-radius:50%;
+  border:0;background:transparent;color:var(--portal-chat-blue);box-shadow:none;
+}
+#internalChatSheet .portal-cs-cliq-thread-header--chat .portal-cs-cliq__head-call-bar .portal-dm-call-bar-btn:hover,
+#internalChatSheet .portal-cs-cliq-thread-header--chat .portal-cs-cliq__head-call-bar .portal-dm-call-bar-btn:focus-visible{
+  background:rgba(45,132,179,.1);
+}
 #internalChatSheet .portal-cs-cliq__head-call-bar .portal-dm-call-bar-label{display:none}
 @media (min-width:700px){
-  #internalChatSheet .portal-cs-cliq__head-call-bar .portal-dm-call-bar-label{display:inline}
+  #internalChatSheet .portal-cs-cliq-thread-header:not(.portal-cs-cliq-thread-header--chat) .portal-cs-cliq__head-call-bar .portal-dm-call-bar-label{display:inline}
 }
 #internalChatSheet .portal-cs-cliq-messages{
   flex:1;min-height:0;overflow:auto;padding:8px 14px 12px;background:#f8fbfd;
+}
+#internalChatSheet .portal-cs-cliq-thread--keyboard .portal-cs-cliq-messages{
+  scroll-behavior:smooth;
 }
 #internalChatSheet .portal-cs-cliq-composer{
   flex-shrink:0;padding:10px 14px calc(12px + env(safe-area-inset-bottom));background:linear-gradient(180deg,#fff 0%,#f8fbfd 100%);
   border-top:1px solid var(--portal-chat-line);
 }
+#internalChatSheet .portal-cs-cliq-composer--chat{
+  display:grid;grid-template-columns:44px minmax(0,1fr);grid-template-rows:auto auto;
+  align-items:end;padding:0;border-top:0;background:#eef3f7;
+}
+#internalChatSheet .portal-cs-cliq-composer__plus{
+  display:none;
+}
+#internalChatSheet .portal-cs-cliq-composer--chat .portal-cs-cliq-composer__plus{
+  display:inline-flex;align-items:center;justify-content:center;
+  grid-column:1;grid-row:1;align-self:end;
+  width:36px;height:36px;margin:0 0 10px 8px;
+  border:0;border-radius:50%;background:transparent;
+  color:#5b7f96;font-size:28px;line-height:1;cursor:pointer;
+}
+#internalChatSheet .portal-cs-cliq-composer--chat .portal-cs-cliq-composer__plus:active{
+  opacity:.75;
+}
+#internalChatSheet .portal-cs-cliq-composer--chat > .portal-cs-cliq-composer__shell{
+  grid-column:2;grid-row:1;display:flex;align-items:flex-end;gap:8px;
+  margin:8px 10px calc(8px + env(safe-area-inset-bottom, 0px)) 0;
+}
+#internalChatSheet .portal-cs-cliq-composer--chat .portal-cs-cliq-composer__err{
+  grid-column:1 / -1;margin:0 10px 6px;
+}
 #internalChatSheet .portal-cs-cliq-composer__shell{
   display:flex;align-items:flex-end;gap:8px;padding:8px 10px;border-radius:18px;border:1px solid var(--portal-chat-line);background:#fff;
+}
+#internalChatSheet .portal-cs-cliq-composer--chat .portal-cs-cliq-composer__shell{
+  border-radius:24px;padding:6px 8px 6px 4px;
 }
 #internalChatSheet .portal-cs-cliq-composer__leading{display:flex;align-items:center;gap:2px;flex-shrink:0}
 #internalChatSheet .portal-cs-cliq-composer__input{

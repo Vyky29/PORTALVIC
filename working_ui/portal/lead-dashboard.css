@@ -8225,10 +8225,16 @@
       border-top:1px solid rgba(23,50,71,.08);
       padding:10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
     }
-    #internalChatSheet .portal-cs-cliq-composer.portal-dm-compose-bar{
+    #internalChatSheet .portal-cs-cliq-composer.portal-dm-compose-bar:not(.portal-cs-cliq-composer--chat){
       display:flex;
       flex-direction:column;
       gap:6px;
+      margin:0;
+      box-shadow:none;
+    }
+    #internalChatSheet .portal-cs-cliq-composer--chat.portal-dm-compose-bar{
+      display:grid;
+      gap:0;
       margin:0;
       box-shadow:none;
     }

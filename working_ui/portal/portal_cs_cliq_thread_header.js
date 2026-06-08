@@ -65,6 +65,26 @@
     }
   }
 
+  function syncBackUnread(count) {
+    var el = document.getElementById("internalChatThreadBackUnread");
+    if (!el) return;
+    var n = Math.max(0, parseInt(count, 10) || 0);
+    if (n > 0) {
+      el.textContent = n > 99 ? "99+" : String(n);
+      el.hidden = false;
+      el.setAttribute("aria-hidden", "false");
+      el.setAttribute(
+        "aria-label",
+        n === 1 ? "1 unread message in other chats" : n + " unread messages in other chats"
+      );
+    } else {
+      el.textContent = "";
+      el.hidden = true;
+      el.setAttribute("aria-hidden", "true");
+      el.removeAttribute("aria-label");
+    }
+  }
+
   function syncInternal(peerLabel, peerRole) {
     var header = document.getElementById("internalChatThreadHeader");
     if (!header) return;
@@ -96,10 +116,11 @@
     }
     var filesBtn = document.getElementById("internalChatThreadFilesBtn");
     if (filesBtn) {
-      filesBtn.hidden = !!restricted;
-      filesBtn.setAttribute("aria-hidden", restricted ? "true" : "false");
+      filesBtn.hidden = true;
+      filesBtn.setAttribute("aria-hidden", "true");
     }
     header.classList.add("is-open");
+    header.classList.add("portal-cs-cliq-thread-header--chat");
     header.removeAttribute("hidden");
     header.setAttribute("aria-hidden", "false");
     if (global.portalCsCliqThreadFiles && typeof global.portalCsCliqThreadFiles.onThreadChange === "function") {
@@ -107,5 +128,11 @@
     }
   }
 
-  global.portalCsCliqThreadHeader = { sync: sync, syncInternal: syncInternal, initials: initials, esc: esc };
+  global.portalCsCliqThreadHeader = {
+    sync: sync,
+    syncInternal: syncInternal,
+    syncBackUnread: syncBackUnread,
+    initials: initials,
+    esc: esc,
+  };
 })(typeof window !== "undefined" ? window : globalThis);
