@@ -160,6 +160,28 @@
     return act.indexOf("bespoke") >= 0;
   }
 
+  /** 2:1 / 3:1 Bespoke SwimFarm Hub — one feedback covers all co-instructors (e.g. Tinashe). */
+  function isBespokeSharedRosterSession(s) {
+    if (!isBespokeRosterSession(s)) return false;
+    if (String((s && s.venue) || "").trim().toLowerCase() !== "swimfarm") return false;
+    const instBlob = String((s && (s.instructors || s.staffNames)) || "").trim();
+    if (instBlob) {
+      const parts = instBlob.split(/[,/&+]+|\s+and\s+/gi).filter(function (p) {
+        return String(p || "").trim();
+      });
+      if (parts.length >= 2) return true;
+    }
+    const cid = slug(String((s && s.clientId) || ""));
+    return cid === "tinashe";
+  }
+
+  function isBespokeSharedStatusRow(st) {
+    if (!st) return false;
+    const u = String(st.feedbackUnitKey || "");
+    if (u.indexOf("bespoke_shared") >= 0) return true;
+    return isBespokeStatusRow(st) && isBespokeSharedRosterSession({ service: st.service, venue: st.venue, clientId: st.client || st.clientName, instructors: st.instructor });
+  }
+
   function submittedRowIsBespoke(r) {
     if (serviceKindFromLabel(r && r.service) === "bespoke") return true;
     const pk = String((r && (r.portalSessionKey || r.portal_session_key)) || "").toLowerCase();
@@ -270,6 +292,16 @@
   /** Match status export row to one roster session (client + slot time + service), not every row that day. */
   function statusRowMatchesRosterSession(st, s, clientNotesById) {
     if (!clientMatch(st, s, clientNotesById)) return false;
+    if (isBespokeSharedStatusRow(st) || isBespokeSharedRosterSession(s)) {
+      const stKind = serviceKindFromLabel(st.service);
+      const act = String(
+        (s && (s.activity || s.rosterService || s.service)) || ""
+      )
+        .trim()
+        .toLowerCase();
+      if (stKind === "bespoke" && act.indexOf("bespoke") < 0) return false;
+      return true;
+    }
     const rowTime = portalKeyTimeToken(st.feedbackUnitKey);
     const rosterTime = rosterSessionStartHm(s);
     if (rowTime && rosterTime && rowTime !== rosterTime) return false;
@@ -402,6 +434,15 @@
         return submittedRowMatchesStatusClient(r, st) && !submittedRowMarksAbsent(r);
       });
     }
+    if (isBespokeSharedStatusRow(st)) {
+      return submittedRowsForDateAll(iso).some(function (r) {
+        return (
+          submittedRowMatchesStatusClient(r, st) &&
+          !submittedRowMarksAbsent(r) &&
+          submittedRowIsBespoke(r)
+        );
+      });
+    }
     if (isBespokeStatusRow(st)) {
       return submittedRowsForDateAll(iso).some(function (r) {
         return (
@@ -460,7 +501,11 @@
 
   function staffSubmittedCoversRosterSession(iso, staffId, s, clientNotesById) {
     const clientKey = rosterKeyForSession(s, clientNotesById);
-    if (isBespokeRosterSession(s) && clientKey && bespokeClientResolved(iso, clientKey)) {
+    if (
+      (isBespokeSharedRosterSession(s) || isBespokeRosterSession(s)) &&
+      clientKey &&
+      bespokeClientResolved(iso, clientKey)
+    ) {
       return true;
     }
     return submittedRowsForStaffDate(iso, staffId).some(function (r) {
@@ -616,6 +661,7 @@
     }
     if (status.length) {
       const dayCentreDone = Object.create(null);
+      const bespokeSharedDone = Object.create(null);
       const mergeDone = Object.create(null);
       let unresolved = 0;
       status.forEach(function (st) {
@@ -633,6 +679,14 @@
           if (ck && dayCentreDone[ck]) return;
           if (ck && dayCentreClientResolved(iso, staffId, ck)) {
             dayCentreDone[ck] = true;
+            return;
+          }
+        }
+        if (isBespokeSharedStatusRow(st)) {
+          const ck = statusClientSlug(st);
+          if (ck && bespokeSharedDone[ck]) return;
+          if (ck && bespokeClientResolved(iso, ck)) {
+            bespokeSharedDone[ck] = true;
             return;
           }
         }
@@ -710,6 +764,9 @@
       clientKey &&
       dayCentreClientResolved(iso, staffId, clientKey)
     ) {
+      return true;
+    }
+    if (isBespokeSharedRosterSession(s) && clientKey && bespokeClientResolved(iso, clientKey)) {
       return true;
     }
     if (isBespokeRosterSession(s) && clientKey && bespokeClientResolved(iso, clientKey)) {

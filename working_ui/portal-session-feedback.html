@@ -1701,6 +1701,30 @@ button{
     if(svcLow.indexOf("day centre") !== -1){
       return d + "|" + idPart + "|day_centre";
     }
+    if(svcLow.indexOf("bespoke") !== -1){
+      try{
+        const rows = window.STAFF_DASHBOARD_SOURCE && Array.isArray(window.STAFF_DASHBOARD_SOURCE.rows)
+          ? window.STAFF_DASHBOARD_SOURCE.rows
+          : [];
+        const wd = weekdayLongFromIso(d);
+        const want = slugifyPortal(nm);
+        const matches = [];
+        for(let i = 0; i < rows.length; i++){
+          const r = rows[i] || {};
+          if(!rosterRowMatchesContext(r, wd, want, svcLow, t)) continue;
+          matches.push(r);
+        }
+        const instCount = matches.reduce(function(max, r){
+          const blob = String(r.instructors || "").trim();
+          const n = blob ? blob.split(/[,/&+]+/).filter(Boolean).length : 0;
+          return Math.max(max, n);
+        }, 0);
+        const venue = matches.length ? String(matches[0].venue || "").trim().toLowerCase() : "";
+        if(instCount >= 2 && venue === "swimfarm"){
+          return d + "|" + idPart + "|bespoke_shared";
+        }
+      }catch(_){}
+    }
     if(svcLow.indexOf("multi-activity") !== -1 || svcLow.indexOf("bespoke") !== -1){
       try{
         const rows = window.STAFF_DASHBOARD_SOURCE && Array.isArray(window.STAFF_DASHBOARD_SOURCE.rows)

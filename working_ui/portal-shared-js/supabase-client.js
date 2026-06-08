@@ -341,9 +341,24 @@ function portalSessionKeyAreaToken(key) {
   if (parts.length < 4) return "";
   const last = parts[parts.length - 1];
   if (last === "day_centre") return last;
+  if (last === "bespoke_shared") return last;
   if (/^\d{4}-\d{2}-\d{2}$/.test(last) || /^\d{1,2}:\d{2}$/.test(last)) return "";
   if (parts.length >= 5) return last;
   if (/^\d{1,2}:\d{2}$/.test(parts[1])) return last;
+  return "";
+}
+
+function portalSessionKeyTimeToken(key) {
+  const parts = String(key || "")
+    .split("|")
+    .map((p) => String(p || "").trim())
+    .filter(Boolean);
+  for (let i = 1; i < parts.length; i++) {
+    const m = parts[i].match(/^(\d{1,2}):(\d{2})$/);
+    if (m) {
+      return String(Number(m[1])).padStart(2, "0") + ":" + m[2];
+    }
+  }
   return "";
 }
 
@@ -351,8 +366,18 @@ function portalSessionKeyAreaTokensCompatible(submittedKey, rosterKey) {
   const sArea = portalSessionKeyAreaToken(submittedKey);
   const rArea = portalSessionKeyAreaToken(rosterKey);
   if (!sArea && !rArea) return true;
-  if (!sArea || !rArea) return false;
-  return sArea === rArea;
+  if (sArea && rArea) {
+    if (sArea === rArea) return true;
+    if (sArea === "bespoke_shared" || rArea === "bespoke_shared") return true;
+    if (
+      (sArea.includes("hub") || sArea === "bespoke_shared") &&
+      (rArea.includes("hub") || rArea === "bespoke_shared")
+    ) {
+      return true;
+    }
+    return false;
+  }
+  return true;
 }
 
 /**
@@ -377,6 +402,9 @@ export function portalFeedbackSubmittedKeyMatchesRosterKey(submittedKey, rosterK
       return false;
     }
   }
+  const rTime = portalSessionKeyTimeToken(r);
+  const sTime = portalSessionKeyTimeToken(s);
+  if (rTime && sTime && sTime !== rTime) return false;
   if (!portalSessionKeyAreaTokensCompatible(s, r)) return false;
   if (portalSessionKeyClientSlugsMatch(s, r)) return true;
   const rClient = String(rParts[2] || rParts[1] || "")

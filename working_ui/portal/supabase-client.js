@@ -419,6 +419,7 @@ function portalSessionKeyAreaToken(key) {
   }
   const last = parts[parts.length - 1];
   if (last === "day_centre") return last;
+  if (last === "bespoke_shared") return last;
   if (/^\d{4}-\d{2}-\d{2}$/.test(last) || /^\d{1,2}:\d{2}$/.test(last)) return "";
   if (parts.length >= 5) return last;
   if (/^\d{1,2}:\d{2}$/.test(parts[1])) return last;
@@ -431,6 +432,13 @@ function portalSessionKeyAreaTokensCompatible(submittedKey, rosterKey) {
   if (!sArea && !rArea) return true;
   if (sArea && rArea) {
     if (sArea === rArea) return true;
+    if (sArea === "bespoke_shared" || rArea === "bespoke_shared") return true;
+    if (
+      (sArea.includes("hub") || sArea === "bespoke_shared") &&
+      (rArea.includes("hub") || rArea === "bespoke_shared")
+    ) {
+      return true;
+    }
     if (
       (sArea.includes("climb") || sArea === "climbing" || sArea === "climbing_wall") &&
       (rArea.includes("climb") || rArea === "climbing" || rArea === "climbing_wall")
@@ -480,9 +488,7 @@ export function portalFeedbackSubmittedKeyMatchesRosterKey(submittedKey, rosterK
   }
   const rTime = portalSessionKeyTimeToken(r);
   const sTime = portalSessionKeyTimeToken(s);
-  if (rTime) {
-    if (!sTime || sTime !== rTime) return false;
-  }
+  if (rTime && sTime && sTime !== rTime) return false;
   if (!portalSessionKeyAreaTokensCompatible(s, r)) return false;
   if (portalSessionKeyClientSlugsMatch(s, r)) return true;
   const rClientSlug = String(rParts[2] || rParts[1] || "")

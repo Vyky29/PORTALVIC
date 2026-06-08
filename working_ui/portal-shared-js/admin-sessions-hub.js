@@ -628,6 +628,13 @@
       keys.push(feedbackUnitKey(slot));
       return keys;
     }
+    if (isBespokeMultiStaffSharedSlot(slot)) {
+      keys.push(slot.session_date + "|" + cid);
+      keys.push(slot.session_date + "|" + cid + "|bespoke_shared");
+      keys.push(slot.session_date + "|" + cid + "|hub_room");
+      keys.push(feedbackUnitKey(slot));
+      return keys;
+    }
     var t = slot.time_start || normTimeKey(slot.time_slot);
     if (!t) return keys;
     var base = slot.session_date + "|" + t + "|" + cid;
@@ -751,6 +758,18 @@
     if (isDayCentreService(svc)) {
       return isoDate + "|" + id + "|day_centre";
     }
+    if (isBespokeService(svc)) {
+      var pseudoShared = {
+        service: svc,
+        venue: row.venue,
+        area: row.area,
+        instructors: parseInstructors(row.instructors || ""),
+        instructor_label: row.instructors || "",
+      };
+      if (isBespokeMultiStaffSharedSlot(pseudoShared)) {
+        return isoDate + "|" + id + "|bespoke_shared";
+      }
+    }
     if (isMultiActivityService(svc) || isBespokeService(svc)) {
       return isoDate + "|" + slot.start + "|" + id + "|" + sessionAreaKey(row.area);
     }
@@ -838,6 +857,22 @@
   function isDayCentreService(service) {
     var k = serviceKey(service);
     return k.indexOf("day centre") !== -1 || k.indexOf("day_centre") !== -1 || k.indexOf("daycentre") !== -1;
+  }
+
+  function slotInstructorCount(slot) {
+    var insts =
+      slot.instructors && slot.instructors.length
+        ? slot.instructors
+        : parseInstructors(slot.instructor_label || "");
+    return insts.length;
+  }
+
+  /** 2:1 / 3:1 Bespoke at SwimFarm Hub — one feedback per client per day for the whole team (e.g. Tinashe). */
+  function isBespokeMultiStaffSharedSlot(slot) {
+    if (!slot || !isBespokeService(slot.service)) return false;
+    if (clean(slot.venue).toLowerCase() !== "swimfarm") return false;
+    if (slotAreaKind(slot) !== "hub") return false;
+    return slotInstructorCount(slot) >= 2;
   }
 
   function dayCentreFeedbackServiceCompatible(fb, slot) {
@@ -1354,6 +1389,13 @@
     if (isDayCentreService(slot.service)) {
       return dayCentreFeedbackServiceCompatible(fb, slot);
     }
+    if (isBespokeMultiStaffSharedSlot(slot)) {
+      if (isAbsentFeedbackRow(fb)) return false;
+      if (!feedbackRosterDateMatches(fb, slot)) return false;
+      if (canonicalClientSlug(fb.client_name) !== canonicalClientSlug(slot.client_name)) return false;
+      if (!isBespokeService(fb.service) && !isDayCentreService(fb.service)) return false;
+      return true;
+    }
     if (sundayWestwayClimbDayCovers(fb, slot)) return true;
     if (sundaySwimFarmMultiAreaDayCovers(fb, slot)) return true;
     if (bespokeSwimfarmHubDayCovers(fb, slot)) return true;
@@ -1428,6 +1470,9 @@
     if (!slot.session_date || !cid) return "";
     if (isDayCentreService(slot.service)) {
       return slot.session_date + "|" + cid + "|day_centre";
+    }
+    if (isBespokeMultiStaffSharedSlot(slot)) {
+      return slot.session_date + "|" + cid + "|bespoke_shared";
     }
     var t = slot.time_start || normTimeKey(slot.time_slot);
     if (isMultiActivityService(slot.service)) {
