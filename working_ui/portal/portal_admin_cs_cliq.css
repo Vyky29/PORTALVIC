@@ -1007,6 +1007,171 @@ body.admin-view-cs-cliq .portal-admin-floating-chat-wrap {
   color: var(--portal-chat-ink);
 }
 
+#csCliqRoot .portal-cs-cliq__channels-head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+#csCliqRoot .portal-cs-cliq-channels-intro {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+#csCliqRoot .portal-cs-cliq-teams-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+#csCliqRoot .portal-cs-cliq-team-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(23, 50, 71, 0.1);
+  border-radius: 14px;
+  background: #fff;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+#csCliqRoot .portal-cs-cliq-team-card:hover {
+  border-color: rgba(45, 132, 179, 0.32);
+  background: linear-gradient(180deg, #fafdff, #f0f7fc);
+}
+
+#csCliqRoot .portal-cs-cliq-team-card__avatar {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: #1d6f96;
+  background: linear-gradient(145deg, #eaf5fb, #d4e8f4);
+  border: 1px solid rgba(23, 50, 71, 0.08);
+}
+
+#csCliqRoot .portal-cs-cliq-team-card__meta {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+#csCliqRoot .portal-cs-cliq-team-card__title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--portal-chat-ink);
+  overflow-wrap: break-word;
+}
+
+#csCliqRoot .portal-cs-cliq-team-card__sub {
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--portal-chat-muted);
+  overflow-wrap: break-word;
+}
+
+#csCliqRoot .portal-cs-cliq-teams-empty,
+#csCliqRoot .portal-cs-cliq-teams-loading {
+  margin: 0;
+  padding: 12px 4px;
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-wrap: break-word;
+}
+
+.portal-cs-cliq-group-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 13050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(11, 18, 32, 0.45);
+  box-sizing: border-box;
+}
+
+.portal-cs-cliq-group-modal[hidden] {
+  display: none !important;
+}
+
+.portal-cs-cliq-group-modal__card {
+  width: min(100%, 420px);
+  max-height: min(90dvh, 520px);
+  overflow: auto;
+  padding: 18px 16px 16px;
+  border-radius: 16px;
+  background: #fff;
+  border: 1px solid rgba(23, 50, 71, 0.12);
+  box-shadow: 0 18px 48px rgba(11, 18, 32, 0.18);
+  box-sizing: border-box;
+}
+
+.portal-cs-cliq-group-modal__card h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.portal-cs-cliq-group-modal__hint {
+  margin: 0 0 14px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.portal-cs-cliq-group-modal__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.portal-cs-cliq-group-modal__field input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid rgba(23, 50, 71, 0.18);
+  border-radius: 10px;
+  font: inherit;
+}
+
+.portal-cs-cliq-group-modal__err {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--danger, #dc2626);
+}
+
+.portal-cs-cliq-group-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
 #csCliqRoot .portal-cs-cliq__channels-body {
   flex: 1 1 auto;
   min-height: 0;

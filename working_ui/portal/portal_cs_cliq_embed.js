@@ -144,8 +144,8 @@
     global.__PORTAL_INTERNAL_CHAT_UI.peerLabel = "";
     global.__PORTAL_CS_CLIQ_PENDING_CHANNEL = channel;
     var pane = String(opts.pane || global.__PORTAL_CS_CLIQ_PENDING_PANE || "chats").trim();
-    if (pane === "channels" || pane === "teams" || pane === "operations") pane = pane === "channels" ? "announcements" : "chats";
-    if (["chats", "announcements", "phone", "files", "calendar", "support"].indexOf(pane) < 0) {
+    if (pane === "channels" || pane === "teams" || pane === "operations") pane = "channels";
+    if (["chats", "channels", "phone", "files", "calendar", "support"].indexOf(pane) < 0) {
       pane = "chats";
     }
     global.__PORTAL_CS_CLIQ_PENDING_PANE = pane;

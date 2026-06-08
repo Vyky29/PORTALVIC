@@ -148,8 +148,8 @@
     if (pane === "support" && global.portalCsCliqSupport && typeof global.portalCsCliqSupport.refresh === "function") {
       global.portalCsCliqSupport.refresh();
     }
-    if (pane === "channels" && global.PortalAdminCsCliq && typeof global.PortalAdminCsCliq.setRailPane === "function") {
-      global.PortalAdminCsCliq.setRailPane("announcements");
+    if (pane === "channels" && global.portalCsCliqTeams && typeof global.portalCsCliqTeams.refresh === "function") {
+      global.portalCsCliqTeams.refresh();
     }
   }
 

@@ -276,9 +276,17 @@
       "</button></div>" +
       '<p id="csCliqErr" class="portal-cs-cliq-composer__err muted"></p>' +
       "</div></div></section></div></div>" +
-      '<div id="csCliqAnnouncementsPane" class="portal-cs-cliq__pane portal-cs-cliq__pane--announcements" data-cs-cliq-pane="announcements" hidden>' +
-      '<div class="portal-cs-cliq-announcements-centre" id="csCliqAnnouncementsCentre"></div>' +
+      '<div id="csCliqChannelsPane" class="portal-cs-cliq__pane portal-cs-cliq__pane--channels" data-cs-cliq-pane="channels" hidden>' +
+      '<header class="portal-cs-cliq__channels-head">' +
+      '<div class="portal-cs-cliq__channels-head-row">' +
+      "<h2>Channels</h2>" +
+      '<button type="button" class="portal-cs-cliq__new-btn" id="csCliqChannelsNewBtn">New group</button>' +
       "</div>" +
+      '<p class="portal-cs-cliq-channels-intro muted">Group chats for staff and leads. Open a channel to message the group, or create a new one here.</p>' +
+      "</header>" +
+      '<div class="portal-cs-cliq__channels-body">' +
+      '<div id="csCliqTeamsList" class="portal-cs-cliq-teams-list"></div>' +
+      "</div></div>" +
       '<div id="csCliqSupportPane" class="portal-cs-cliq__pane" data-cs-cliq-pane="support" hidden>' +
       '<div class="portal-cs-cliq__module-head"><div class="portal-cs-cliq__pane-title-row"><h2>Support</h2><span class="portal-cs-cliq__pane-badge">Staff</span></div>' +
       '<p class="muted portal-cs-cliq__module-sub">Request help from Management or Leads.</p></div>' +
@@ -341,21 +349,21 @@
   function setRailPane(pane) {
     var root = document.getElementById("csCliqRoot");
     if (!root) return;
-    var allowed = { chats: 1, announcements: 1, phone: 1, files: 1, calendar: 1, support: 1, soon: 1 };
+    var allowed = { chats: 1, channels: 1, phone: 1, files: 1, calendar: 1, support: 1, soon: 1 };
     if (!allowed[pane]) pane = "chats";
     root.querySelectorAll("[data-cs-cliq-rail]").forEach(function (btn) {
       var id = btn.getAttribute("data-cs-cliq-rail");
       btn.classList.toggle("is-active", id === pane);
     });
     var chats = document.getElementById("csCliqChatsPane");
-    var announcements = document.getElementById("csCliqAnnouncementsPane");
+    var channels = document.getElementById("csCliqChannelsPane");
     var phone = document.getElementById("csCliqPhonePane");
     var files = document.getElementById("csCliqFilesPane");
     var calendar = document.getElementById("csCliqCalendarPane");
     var support = document.getElementById("csCliqSupportPane");
     var soon = document.getElementById("csCliqSoonPane");
     if (chats) chats.hidden = pane !== "chats";
-    if (announcements) announcements.hidden = pane !== "announcements";
+    if (channels) channels.hidden = pane !== "channels";
     if (phone) phone.hidden = true;
     if (files) files.hidden = pane !== "files";
     if (calendar) calendar.hidden = pane !== "calendar";
@@ -368,8 +376,8 @@
     if (pane === "support" && global.portalCsCliqSupport && typeof global.portalCsCliqSupport.refresh === "function") {
       global.portalCsCliqSupport.refresh();
     }
-    if (pane === "announcements" && global.portalCsCliqAnnouncementsHub && typeof global.portalCsCliqAnnouncementsHub.refresh === "function") {
-      global.portalCsCliqAnnouncementsHub.refresh();
+    if (pane === "channels" && global.portalCsCliqTeams && typeof global.portalCsCliqTeams.refresh === "function") {
+      global.portalCsCliqTeams.refresh();
     }
     if (pane === "chats" && typeof cfg.initChat === "function") {
       cfg.initChat(global.__PORTAL_ADMIN_DM_CHANNEL || "staff_lead");
@@ -390,7 +398,7 @@
     }
 
     var pendingPane = String(global.__PORTAL_CS_CLIQ_PENDING_PANE || "chats").trim();
-    var allowedPending = { chats: 1, announcements: 1, files: 1, calendar: 1, support: 1, soon: 1 };
+    var allowedPending = { chats: 1, channels: 1, files: 1, calendar: 1, support: 1, soon: 1 };
     if (!allowedPending[pendingPane]) pendingPane = "chats";
     global.__PORTAL_CS_CLIQ_PENDING_PANE = "";
     setRailPane(pendingPane);
@@ -423,6 +431,12 @@
     if (filesBtn) {
       filesBtn.addEventListener("click", function () {
         if (typeof cfg.openAdminView === "function") cfg.openAdminView("portal_documents");
+      });
+    }
+    var channelsNewBtn = document.getElementById("csCliqChannelsNewBtn");
+    if (channelsNewBtn && global.portalCsCliqTeams && typeof global.portalCsCliqTeams.openCreateModal === "function") {
+      channelsNewBtn.addEventListener("click", function () {
+        global.portalCsCliqTeams.openCreateModal();
       });
     }
     syncWorkspacePills();
