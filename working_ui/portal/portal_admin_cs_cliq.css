@@ -405,6 +405,98 @@
   overflow: hidden;
 }
 
+#csCliqRoot .portal-cs-cliq-inbox-categories {
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid var(--portal-chat-line);
+  background: linear-gradient(180deg, #fafcff, #fff);
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-cat-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  padding: 10px 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(23, 50, 71, 0.12);
+  background: #fff;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  box-shadow: 0 2px 8px rgba(23, 50, 71, 0.05);
+  -webkit-tap-highlight-color: transparent;
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-cat-btn__label {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--portal-chat-ink, #173247);
+  min-width: 0;
+  overflow-wrap: break-word;
+  width: 100%;
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-cat-btn__sub {
+  font-size: 10px;
+  font-weight: 600;
+  color: #64748b;
+  min-width: 0;
+  overflow-wrap: break-word;
+  width: 100%;
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-cat-btn.is-active {
+  border-color: rgba(45, 132, 179, 0.45);
+  background: linear-gradient(180deg, #edf7fd, #fff);
+  box-shadow: 0 4px 14px rgba(45, 132, 179, 0.14);
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-cat-btn.is-active .portal-cs-cliq-inbox-cat-btn__label {
+  color: #1d6f96;
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-cat-btn[data-cs-cliq-inbox-cat="leads"].is-active {
+  border-color: rgba(124, 58, 237, 0.35);
+  background: linear-gradient(180deg, #f8f2ff, #fff);
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-cat-btn[data-cs-cliq-inbox-cat="leads"].is-active .portal-cs-cliq-inbox-cat-btn__label {
+  color: #6d28d9;
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-cat-btn[data-cs-cliq-inbox-cat="staff"].is-active {
+  border-color: rgba(22, 101, 52, 0.28);
+  background: linear-gradient(180deg, #eefbf3, #fff);
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-cat-btn[data-cs-cliq-inbox-cat="staff"].is-active .portal-cs-cliq-inbox-cat-btn__label {
+  color: #166534;
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-cat-btn[data-cs-cliq-inbox-cat="ceos"].is-active {
+  border-color: rgba(55, 48, 163, 0.28);
+  background: linear-gradient(180deg, #eef2ff, #fff);
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-cat-btn[data-cs-cliq-inbox-cat="ceos"].is-active .portal-cs-cliq-inbox-cat-btn__label {
+  color: #3730a3;
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-section__hint {
+  margin: 0 0 10px;
+  padding: 0 4px;
+  font-size: 12px;
+  line-height: 1.45;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
 #csCliqRoot #csCliqListWrap {
   flex: 1 1 auto;
   min-height: 0;

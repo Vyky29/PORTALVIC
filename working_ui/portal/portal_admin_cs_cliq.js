@@ -230,6 +230,7 @@
       '<button type="button" class="portal-cs-cliq-channel-btn" id="csCliqQCeoLiaisonGroup">CEOs &amp; Admin</button>' +
       "</div></div>" +
       '<div id="csCliqListPanel">' +
+      '<div id="csCliqInboxCategoryBar" class="portal-cs-cliq-inbox-categories" hidden aria-hidden="true"></div>' +
       '<div id="csCliqListWrap" class="portal-dm-inbox-list"></div>' +
       "</div></aside>" +
       '<section class="portal-cs-cliq-inbox__conversation-col" id="csCliqConversationCol">' +
