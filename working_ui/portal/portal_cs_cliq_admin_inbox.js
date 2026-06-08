@@ -223,6 +223,8 @@
     if (!host || !ctx) return;
     syncInboxChrome();
     var renderItem = ctx.renderItem;
+    var me = ctx.me;
+    var ch = ctx.ch;
     var dmItems = flattenDmInbox(ctx.merged, ctx.splitSections, ctx.teamDmItems);
     host.innerHTML = "";
     if (!dmItems.length) {
@@ -233,9 +235,22 @@
         "Use <strong>New</strong> to start a direct chat.</p>";
       return;
     }
+    var rendered = 0;
     dmItems.forEach(function (item) {
-      host.appendChild(renderItem(item));
+      if (typeof renderItem !== "function") return;
+      try {
+        var el = renderItem.length > 1 ? renderItem(item, me, ch) : renderItem(item);
+        if (el) {
+          host.appendChild(el);
+          rendered += 1;
+        }
+      } catch (_renderErr) {}
     });
+    if (!rendered) {
+      host.innerHTML =
+        '<p class="muted" style="margin:0;font-size:13px;min-width:0;overflow-wrap:break-word">' +
+        "Could not render conversations. Try <strong>Channels</strong> or reload the page.</p>";
+    }
   }
 
   function hideCategoryChrome() {

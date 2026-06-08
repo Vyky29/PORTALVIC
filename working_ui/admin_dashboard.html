@@ -27,13 +27,13 @@
   <link rel="stylesheet" href="/portal/portal_staff_map.css?v=20260602-staff-map-header" />
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260607-roster-avatars" />
   <script src="/portal/admin-portal-staff-map.js?v=20260622-ghost-map"></script>
-  <script src="/portal/portal_chat_actor_identity.js?v=20260609-chat-identity"></script>
+  <script src="/portal/portal_chat_actor_identity.js?v=20260609-chat-identity-fix"></script>
   <script src="/portal/portal_dm_icons.js?v=20260624-dm-icons"></script>
   <script src="/portal/portal_dm_thread_avatar.js?v=20260621-cliq-embed"></script>
   <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260608-cliq-channels"></script>
   <script src="/portal/portal_cs_cliq_support_route.js?v=20260608-inbox-fix"></script>
   <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260609-staff-mgmt"></script>
-  <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260609-inbox-personal-dms"></script>
+  <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260609-inbox-global-fix"></script>
   <script src="/portal/portal_cs_cliq_admin_channels.js?v=20260609-channels-categories"></script>
   <script src="/portal/portal_cs_cliq_support.js?v=20260607-support-route"></script>
   <script src="/portal/portal_cs_cliq_announcements_hub.js?v=20260604-cliq-inbox"></script>
@@ -19421,8 +19421,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return msg.indexOf('check constraint') !== -1 && (msg.indexOf('ordered_pair') !== -1 || msg.indexOf('portal_staff_dm_threads_ordered') !== -1);
     }
     function portalDmPeerIdForThread(me, row){
-      if(global.portalChatActorIdentity && typeof global.portalChatActorIdentity.peerIdForThread === 'function'){
-        return global.portalChatActorIdentity.peerIdForThread(me, row);
+      if(window.portalChatActorIdentity && typeof window.portalChatActorIdentity.peerIdForThread === 'function'){
+        return window.portalChatActorIdentity.peerIdForThread(me, row);
       }
       var a = String(row && row.participant_a || '');
       var b = String(row && row.participant_b || '');
@@ -19432,8 +19432,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return b || a;
     }
     function portalAdminDmMe(){
-      if(global.portalChatActorIdentity && typeof global.portalChatActorIdentity.actorId === 'function'){
-        return global.portalChatActorIdentity.actorId();
+      if(window.portalChatActorIdentity && typeof window.portalChatActorIdentity.actorId === 'function'){
+        return window.portalChatActorIdentity.actorId();
       }
       var box = window.__PORTAL_SUPABASE__;
       return String((box && box.session && box.session.user && box.session.user.id) || (box && box.staff_profile && box.staff_profile.id) || '').trim();
@@ -19448,8 +19448,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return ids;
     }
     function portalAdminDmIsMyMessage(authorId){
-      if(global.portalChatActorIdentity && typeof global.portalChatActorIdentity.isSelfUserId === 'function'){
-        return global.portalChatActorIdentity.isSelfUserId(authorId);
+      if(window.portalChatActorIdentity && typeof window.portalChatActorIdentity.isSelfUserId === 'function'){
+        return window.portalChatActorIdentity.isSelfUserId(authorId);
       }
       authorId = String(authorId || '').trim().toLowerCase();
       if(!authorId) return false;
@@ -20844,8 +20844,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function portalAdminDmSenderLabel(authorId, profBy){
       authorId = String(authorId || '').trim();
       if(authorId && portalAdminDmIsMyMessage(authorId)){
-        if(global.portalChatActorIdentity && typeof global.portalChatActorIdentity.displayName === 'function'){
-          return global.portalChatActorIdentity.displayName(profBy[authorId]);
+        if(window.portalChatActorIdentity && typeof window.portalChatActorIdentity.displayName === 'function'){
+          return window.portalChatActorIdentity.displayName(profBy[authorId]);
         }
         return 'You';
       }
@@ -21072,11 +21072,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var host = portalAdminDmListHostEl();
       var client = getSchedSupabaseClient();
       if(
-        global.portalChatActorIdentity &&
-        typeof global.portalChatActorIdentity.ensureSessionProfile === 'function' &&
+        window.portalChatActorIdentity &&
+        typeof window.portalChatActorIdentity.ensureSessionProfile === 'function' &&
         client
       ){
-        await global.portalChatActorIdentity.ensureSessionProfile(client);
+        await window.portalChatActorIdentity.ensureSessionProfile(client);
       }
       var me = portalAdminDmMe();
       var ch = portalAdminDmChannel();
@@ -21166,10 +21166,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       function threadListLabel(row, peerId){
         if(
-          global.portalChatActorIdentity &&
-          typeof global.portalChatActorIdentity.threadDisplayLabel === 'function'
+          window.portalChatActorIdentity &&
+          typeof window.portalChatActorIdentity.threadDisplayLabel === 'function'
         ){
-          return global.portalChatActorIdentity.threadDisplayLabel(me, row, profBy);
+          return window.portalChatActorIdentity.threadDisplayLabel(me, row, profBy);
         }
         if(
           window.portalLeadStaffChatDirectory &&
