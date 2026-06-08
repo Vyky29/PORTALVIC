@@ -5971,8 +5971,12 @@
       pointer-events:auto;
       transition:transform .28s ease, opacity .2s ease, visibility 0s linear 0s;
     }
-    /* Fullscreen sheets above dock (z-index 125) so lower controls — announcement sign, menu tiles — receive taps on mobile/WebView. */
+    /* Default fullscreen sheets stay below the dock (z-index 125) so footer nav stays visible (Quick menu, Home, Chat). */
     .sheet.sheet--fullscreen.sheet--mobile-frame.open{
+      z-index:100;
+    }
+    #announcementsSheet.sheet--fullscreen.sheet--mobile-frame.open,
+    #safeguardingFeedbackPolicySheet.sheet--fullscreen.sheet--mobile-frame.open{
       z-index:130;
     }
 
@@ -7861,6 +7865,9 @@
       display:flex;
       align-items:stretch;
       justify-content:center;
+    }
+    .dock-chat-wrap:has(#portalFloatingChatBtn[hidden]){
+      display:none;
     }
     .dock-nav-item--chat{
       position:relative;
