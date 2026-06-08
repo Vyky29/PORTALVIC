@@ -150,6 +150,7 @@ async function resolveTargetUserIds(
     }
     if (peer && peer !== authorId) targets.add(peer);
 
+    // Fan-out to all admins only when staff/lead initiates (oversight). Director/admin DM calls ring the peer only.
     if (authorRole === "staff" || authorRole === "lead") {
       const admins = await loadAdminCeoUserIds(admin);
       admins.forEach((id) => {

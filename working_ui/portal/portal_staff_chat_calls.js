@@ -388,6 +388,58 @@
     threadParticipantCache = Object.create(null);
   }
 
+  async function isIncomingCallDmForMe(row) {
+    var me = meUserId();
+    if (!me || !row) return false;
+    var tid = String(row.thread_id || "").trim();
+    if (!tid) return false;
+    var cached = threadParticipantCache[tid];
+    if (cached && Date.now() - cached.ts < 120000) {
+      return cached.a === me || cached.b === me;
+    }
+    var box = global.__PORTAL_SUPABASE__;
+    var client = box && box.client;
+    if (!client) return null;
+    try {
+      var res = await client
+        .from("portal_staff_dm_threads")
+        .select("participant_a,participant_b")
+        .eq("id", tid)
+        .maybeSingle();
+      if (res.error || !res.data) return false;
+      var a = String(res.data.participant_a || "");
+      var b = String(res.data.participant_b || "");
+      threadParticipantCache[tid] = { a: a, b: b, ts: Date.now(), sharedInbox: false };
+      return a === me || b === me;
+    } catch (_callDm) {
+      return false;
+    }
+  }
+
+  async function isIncomingGroupCallForMe(row) {
+    var me = meUserId();
+    if (!me || !row) return false;
+    var gid = String(row.group_id || "").trim();
+    if (!gid) return false;
+    var authorId = String(row.author_id || "").trim();
+    if (authorId && authorId === me) return false;
+    var box = global.__PORTAL_SUPABASE__;
+    var client = box && box.client;
+    if (!client) return null;
+    try {
+      var grp = await client.from("portal_ceo_group").select("slug").eq("id", gid).maybeSingle();
+      var slug = String((grp.data && grp.data.slug) || "").toLowerCase();
+      var prof = (box && box.staff_profile) || {};
+      var role = String(prof.app_role || "").toLowerCase();
+      if (slug === "staff_leads_ops") {
+        return role === "staff" || role === "lead";
+      }
+      return role === "admin" || role === "ceo";
+    } catch (_callGrp) {
+      return false;
+    }
+  }
+
   async function isIncomingDmForMe(row) {
     var me = meUserId();
     if (!me || !row) return false;
@@ -1165,9 +1217,10 @@
     var rowId = row.id ? String(row.id) : "";
     if (rowId && incomingHandledIds[rowId]) return;
     var tid = row.thread_id ? String(row.thread_id).trim() : "";
+    var gid = row.group_id ? String(row.group_id).trim() : "";
     void (async function () {
       if (tid) {
-        var mine = await isIncomingDmForMe(row);
+        var mine = await isIncomingCallDmForMe(row);
         if (mine === null) {
           if (attempt < incomingRowRetryMax) {
             setTimeout(function () {
@@ -1177,6 +1230,17 @@
           return;
         }
         if (!mine) return;
+      } else if (gid) {
+        var mineGroup = await isIncomingGroupCallForMe(row);
+        if (mineGroup === null) {
+          if (attempt < incomingRowRetryMax) {
+            setTimeout(function () {
+              processIncomingCallRow(row, attempt + 1);
+            }, 650);
+          }
+          return;
+        }
+        if (!mineGroup) return;
       }
       if (isInActiveCall()) return;
       if (rowId && incomingHandledIds[rowId]) return;
