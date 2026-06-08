@@ -1,5 +1,5 @@
 /**
- * CS Cliq support routing ù one shared management thread per staff (WhatsApp-style).
+ * CS Cliq support routing ? one shared management thread per staff (WhatsApp-style).
  */
 (function (global) {
   "use strict";
@@ -153,6 +153,8 @@
   async function resolvePrimaryManagementPeer(client, staffId) {
     staffId = String(staffId || "").trim();
     if (!client || !staffId) return "";
+    var opsId = await resolveOpsAdminId(client);
+    if (opsId) return opsId;
     var res = await client
       .from("portal_staff_dm_threads")
       .select("id,participant_a,participant_b,updated_at")
@@ -196,6 +198,22 @@
     workerId = String(workerId || "").trim();
     candidateRows = Array.isArray(candidateRows) ? candidateRows : [];
     if (!workerId) return candidateRows[0] || null;
+    var opsId = await resolveOpsAdminId(client);
+    if (opsId) {
+      var opsMatch = candidateRows.find(function (r) {
+        var a = String(r.participant_a || "");
+        var b = String(r.participant_b || "");
+        return (a === workerId && b === opsId) || (b === workerId && a === opsId);
+      });
+      if (opsMatch) return opsMatch;
+      var opsTid = await findDmThreadId(client, workerId, opsId);
+      if (opsTid) {
+        var byOpsId = candidateRows.find(function (r) {
+          return String(r.id || "") === opsTid;
+        });
+        if (byOpsId) return byOpsId;
+      }
+    }
     var adminPeer = await resolvePrimaryManagementPeer(client, workerId);
     if (adminPeer) {
       var match = candidateRows.find(function (r) {

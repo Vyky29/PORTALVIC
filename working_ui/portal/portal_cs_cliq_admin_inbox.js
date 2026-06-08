@@ -198,7 +198,7 @@
 
     if (splitSections && Array.isArray(splitSections.opsItems)) {
       splitSections.opsItems.forEach(function (item) {
-        if (item && item.isTeamChat) push(staffItems, item);
+        if (item) push(staffItems, item);
       });
     }
 
@@ -273,16 +273,19 @@
   function flattenDmInbox(merged, splitSections, teamDmItems) {
     var items = [];
     var seen = Object.create(null);
-    function hasInboxActivity(item) {
+    function shouldShowPersonalDm(item) {
       if (!item) return false;
       if (Number(item.unreadCount) > 0) return true;
-      return !!String(item.lastPreview || "").trim();
+      if (String(item.lastPreview || "").trim()) return true;
+      if (String(item.id || "").trim()) return true;
+      if (item.when) return true;
+      return false;
     }
     function push(item) {
       if (!item || item.kind !== "dm" || item.isTeamChat) return;
-      // Flat inbox = viewer's own 1:1 DMs. Ops lane (Sevitha ↔ worker) lives in Channels split view only.
+      // Inbox = viewer personal DMs. Sevitha ops queue lives under Channels → Staff.
       if (item.inboxLane === "ops") return;
-      if (!hasInboxActivity(item)) return;
+      if (!shouldShowPersonalDm(item)) return;
       var tid = String(item.id || "").trim();
       var wk = String(item.workerId || item.peerId || "").trim();
       if (tid) {
@@ -328,9 +331,9 @@
     if (!dmItems.length) {
       host.innerHTML =
         '<p class="muted" style="margin:0;font-size:13px;min-width:0;overflow-wrap:break-word">' +
-        "No 1:1 direct messages here. " +
-        "<strong>Channels</strong> (left rail) has group chats and staff team threads. " +
-        "Use <strong>New</strong> to start a direct chat.</p>";
+        "No personal direct messages here yet. " +
+        "<strong>Channels → Staff</strong> has the shared ops queue (Sevitha) and team threads. " +
+        "Use <strong>New</strong> to start your own direct chat.</p>";
       return;
     }
     var rendered = 0;

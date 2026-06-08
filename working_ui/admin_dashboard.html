@@ -34,9 +34,10 @@
   <script src="/portal/portal_dm_thread_avatar.js?v=20260609-admin-photo-fix"></script>
   <script src="/portal/portal_cs_cliq_thread_header.js?v=20260609-short-header-name"></script>
   <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260608-cliq-channels"></script>
-  <script src="/portal/portal_cs_cliq_support_route.js?v=20260608-inbox-fix"></script>
+  <script src="/portal/portal_dm_read_cursor.js?v=20260609-read-cursor"></script>
+  <script src="/portal/portal_cs_cliq_support_route.js?v=20260609-ops-canonical"></script>
   <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260609-inbox-activity"></script>
-  <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260609-inbox-activity"></script>
+  <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260609-inbox-stable"></script>
   <script src="/portal/portal_cs_cliq_admin_channels.js?v=20260609-no-flicker"></script>
   <script src="/portal/portal_cs_cliq_support.js?v=20260607-support-route"></script>
   <script src="/portal/portal_cs_cliq_announcements_hub.js?v=20260604-cliq-inbox"></script>
@@ -20985,10 +20986,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function portalAdminDmSaveReadStore(store){
       try{ localStorage.setItem(portalAdminDmReadStoreKey(), JSON.stringify(store || { threads: {}, groups: {} })); }catch(_b){}
     }
+    function portalAdminDmPickLatestIso(a, b){
+      a = String(a || '').trim();
+      b = String(b || '').trim();
+      if(!a) return b;
+      if(!b) return a;
+      try{
+        return new Date(a).getTime() >= new Date(b).getTime() ? a : b;
+      }catch(_pi){ return a; }
+    }
     function portalAdminDmGetThreadAck(threadId){
       threadId = String(threadId || '').trim();
       if(!threadId) return '';
-      return String(portalAdminDmReadStore().threads[threadId] || '').trim();
+      var local = String(portalAdminDmReadStore().threads[threadId] || '').trim();
+      var server = window.portalDmReadCursor && typeof window.portalDmReadCursor.getThread === 'function'
+        ? window.portalDmReadCursor.getThread(threadId) : '';
+      return portalAdminDmPickLatestIso(local, server);
     }
     function portalAdminDmGetThreadAckEffective(threadId, workerThreadMap, threadWorkerById){
       threadId = String(threadId || '').trim();
@@ -21047,21 +21060,42 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       iso = String(iso || '').trim();
       if(!threadId || !iso) return;
       var s = portalAdminDmReadStore();
-      s.threads[threadId] = iso;
+      s.threads[threadId] = portalAdminDmPickLatestIso(s.threads[threadId], iso);
       portalAdminDmSaveReadStore(s);
+      if(window.portalDmReadCursor){
+        if(typeof window.portalDmReadCursor.cacheThread === 'function'){
+          window.portalDmReadCursor.cacheThread(threadId, s.threads[threadId]);
+        }
+        var cl = getSchedSupabaseClient();
+        if(cl && typeof window.portalDmReadCursor.markThread === 'function'){
+          void window.portalDmReadCursor.markThread(cl, threadId, s.threads[threadId]);
+        }
+      }
     }
     function portalAdminDmGetGroupAck(groupId){
       groupId = String(groupId || '').trim();
       if(!groupId) return '';
-      return String(portalAdminDmReadStore().groups[groupId] || '').trim();
+      var local = String(portalAdminDmReadStore().groups[groupId] || '').trim();
+      var server = window.portalDmReadCursor && typeof window.portalDmReadCursor.getGroup === 'function'
+        ? window.portalDmReadCursor.getGroup(groupId) : '';
+      return portalAdminDmPickLatestIso(local, server);
     }
     function portalAdminDmSetGroupAck(groupId, iso){
       groupId = String(groupId || '').trim();
       iso = String(iso || '').trim();
       if(!groupId || !iso) return;
       var s = portalAdminDmReadStore();
-      s.groups[groupId] = iso;
+      s.groups[groupId] = portalAdminDmPickLatestIso(s.groups[groupId], iso);
       portalAdminDmSaveReadStore(s);
+      if(window.portalDmReadCursor){
+        if(typeof window.portalDmReadCursor.cacheGroup === 'function'){
+          window.portalDmReadCursor.cacheGroup(groupId, s.groups[groupId]);
+        }
+        var cl = getSchedSupabaseClient();
+        if(cl && typeof window.portalDmReadCursor.markGroup === 'function'){
+          void window.portalDmReadCursor.markGroup(cl, groupId, s.groups[groupId]);
+        }
+      }
     }
     function portalAdminDmGetGroupAckEffective(groupId){
       groupId = String(groupId || '').trim();
@@ -21087,9 +21121,24 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       return best;
     }
     function portalAdminDmSetGroupAckAll(groupIds, iso){
+      iso = String(iso || '').trim();
+      if(!iso) return;
+      var s = portalAdminDmReadStore();
+      var ids = [];
       (groupIds || []).forEach(function(gid){
-        portalAdminDmSetGroupAck(gid, iso);
+        gid = String(gid || '').trim();
+        if(!gid) return;
+        s.groups[gid] = portalAdminDmPickLatestIso(s.groups[gid], iso);
+        ids.push(gid);
+        if(window.portalDmReadCursor && typeof window.portalDmReadCursor.cacheGroup === 'function'){
+          window.portalDmReadCursor.cacheGroup(gid, s.groups[gid]);
+        }
       });
+      portalAdminDmSaveReadStore(s);
+      var cl = getSchedSupabaseClient();
+      if(cl && window.portalDmReadCursor && typeof window.portalDmReadCursor.markGroups === 'function' && ids.length){
+        void window.portalDmReadCursor.markGroups(cl, ids, iso);
+      }
     }
     async function portalAdminDmBuildWorkerThreadMap(client, me, workerIds){
       var map = Object.create(null);
@@ -21714,6 +21763,23 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           .concat(personalDmItems || []);
       }
       merged = portalAdminDmDedupeMergedGroups(merged);
+      var prefetchThreads = [];
+      var prefetchGroups = [];
+      merged.forEach(function(item){
+        if(item && item.kind === 'dm' && item.id) prefetchThreads.push(String(item.id));
+        if(item && item.kind === 'group'){
+          portalAdminDmGroupAliasIds(item).forEach(function(gid){
+            gid = String(gid || '').trim();
+            if(gid) prefetchGroups.push(gid);
+          });
+        }
+      });
+      if(
+        window.portalDmReadCursor &&
+        typeof window.portalDmReadCursor.syncTargets === 'function'
+      ){
+        await window.portalDmReadCursor.syncTargets(client, prefetchThreads, prefetchGroups);
+      }
       await portalAdminDmEnrichListItems(client, me, ch, merged, profBy);
       var fixedOrder = portalAdminDmFixedGroupSlugOrder();
       merged.sort(function(a, b){
