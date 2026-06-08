@@ -98,15 +98,40 @@
     return !!(key && PORTAL_LIVE_MAP_MANDATORY_STAFF[key]);
   }
 
+  /** Roster sessions use activity / rosterService (spreadsheet adapter), not always service. */
+  function sessionLiveMapQualifyBlob(s) {
+    if (!s) return "";
+    return [
+      s.service,
+      s.serviceName,
+      s.programme,
+      s.activity,
+      s.rosterService,
+      s.rosterArea,
+      s.venue,
+    ]
+      .map(function (v) {
+        return String(v || "").trim();
+      })
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase()
+      .replace(/[\s_-]+/g, " ");
+  }
+
   function sessionQualifiesForLiveLocation(s) {
-    var svc = String(
-      (s && (s.service || s.serviceName || s.programme)) || ""
-    ).toLowerCase();
+    var blob = sessionLiveMapQualifyBlob(s);
+    if (!blob) return false;
     return (
-      svc.indexOf("bespoke") !== -1 ||
-      svc.indexOf("day centre") !== -1 ||
-      svc.indexOf("day center") !== -1 ||
-      svc.indexOf("climbing") !== -1
+      blob.indexOf("bespoke") !== -1 ||
+      blob.indexOf("day centre") !== -1 ||
+      blob.indexOf("day center") !== -1 ||
+      blob.indexOf("daycentre") !== -1 ||
+      blob.indexOf("climbing") !== -1 ||
+      blob.indexOf(" climb") !== -1 ||
+      blob.indexOf("climb ") !== -1 ||
+      blob === "climb" ||
+      /\bdc\b/.test(blob)
     );
   }
 

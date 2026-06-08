@@ -89,7 +89,7 @@ async function ensureShiftWindowModule() {
   if (_shiftWindowModuleLoading) return;
   _shiftWindowModuleLoading = true;
   try {
-    await import("./portal_live_map_shift_window.js?v=20260623-shift-10m");
+    await import("./portal_live_map_shift_window.js?v=20260608-dc-roster-fields");
   } catch (err) {
     console.debug("[portal] live map shift window module skipped:", err);
   } finally {
