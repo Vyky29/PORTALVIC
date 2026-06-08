@@ -83,6 +83,118 @@
   color: var(--text, #1a2330);
 }
 
+.portal-wb-flagged-area--quiet {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted, #5c6778);
+}
+
+.portal-wb-stressor-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.portal-wb-stressor-chip {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #fff7ed;
+  border: 1px solid #fdba74;
+  color: #9a3412;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.portal-wb-staff-quote {
+  margin: 0;
+  padding: 10px 12px;
+  border-left: 3px solid var(--gold, #e4a82a);
+  background: #fafbfc;
+  border-radius: 0 8px 8px 0;
+  font-size: 0.9rem;
+  font-style: italic;
+  color: var(--text, #1a2330);
+}
+
+.portal-wb-section-lead {
+  margin: -8px 0 16px;
+  padding-left: 14px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--muted, #5c6778);
+}
+
+.portal-wb-decisions__row {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.portal-wb-decisions__review {
+  max-width: 220px;
+}
+
+.portal-wb-concern-levels--compact {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.portal-wb-concern-levels--compact .portal-wb-concern-level {
+  padding: 10px 12px;
+}
+
+.portal-wb-concern-levels--compact .portal-wb-concern-level span {
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.portal-wb-action-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.portal-wb-action-pill {
+  padding: 7px 12px;
+  border: 1px solid var(--line, #c5cdd8);
+  border-radius: 999px;
+  background: #fff;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--navy, #2a3140);
+  cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+
+.portal-wb-action-pill.is-active {
+  border-color: var(--gold, #e4a82a);
+  background: #fffaf0;
+  color: var(--navy, #2a3140);
+}
+
+.portal-wb-escalation {
+  margin-top: 12px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--line, #c5cdd8);
+}
+
+.portal-wb-conversation {
+  background: #fafbfc;
+  border-color: #dbe4ef;
+}
+
+.portal-wb-closing {
+  padding: 0 28px 40px;
+}
+
+.portal-wb-closing .portal-wb-simple__section:first-child {
+  margin-top: 20px;
+}
+
 .portal-wb-simple .field {
   margin-bottom: 14px;
 }
@@ -172,14 +284,6 @@
   background: linear-gradient(165deg, #fffdf8 0%, #fff 55%, #fafbfc 100%);
 }
 
-.portal-wb-signoff__head p {
-  margin: -8px 0 18px;
-  padding-left: 14px;
-  font-size: 0.9rem;
-  line-height: 1.55;
-  color: var(--muted, #5c6778);
-}
-
 .portal-wb-signoff__grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -208,31 +312,6 @@
   height: 18px;
   accent-color: var(--gold, #e4a82a);
   flex-shrink: 0;
-}
-
-.portal-wb-signoff__stamp {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 6px;
-  margin-top: 20px;
-  padding-top: 12px;
-}
-
-.portal-wb-signoff__line {
-  display: block;
-  width: min(220px, 60%);
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--line-strong, #8b98a8), transparent);
-}
-
-.portal-wb-signoff__stamp em {
-  font-style: normal;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--muted, #5c6778);
 }
 
 body.portal-wellbeing-admin-mode {
@@ -327,14 +406,20 @@ body.portal-wellbeing-admin-mode #portalWbHeroFocus {
 }
 
 @media (max-width: 720px) {
-  .portal-wb-simple {
+  .portal-wb-simple,
+  .portal-wb-closing {
     padding: 0 16px 32px;
   }
 
   .portal-wb-simple__meta,
-  .portal-wb-simple__actions-grid,
-  .portal-wb-signoff__grid {
+  .portal-wb-signoff__grid,
+  .portal-wb-decisions__row,
+  .portal-wb-concern-levels--compact {
     grid-template-columns: 1fr;
+  }
+
+  .portal-wb-decisions__review {
+    max-width: none;
   }
 
   .portal-wb-advanced-toggle {

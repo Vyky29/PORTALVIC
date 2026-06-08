@@ -147,28 +147,46 @@
     }
   }
 
+  function conversationDisplayText(record) {
+    record = record || emptyRecord();
+    if (record.manager_notes) return record.manager_notes;
+    var parts = [];
+    if (record.main_concern) parts.push(record.main_concern);
+    if (record.impact) parts.push("Impact: " + record.impact);
+    if (record.support_requested) parts.push("Support requested: " + record.support_requested);
+    return parts.join("\n\n");
+  }
+
   function buildFlaggedHtml(checkin, wb) {
     var flagged = wb && wb.flaggedDomainsList ? wb.flaggedDomainsList(checkin) : [];
     if (!flagged.length) {
-      return '<p class="portal-wb-flagged-area">No specific areas were flagged. See the general note if provided.</p>';
+      return checkin.general_note
+        ? ""
+        : '<p class="portal-wb-flagged-area portal-wb-flagged-area--quiet">No specific areas flagged.</p>';
     }
     return flagged
       .map(function (f) {
-        var stressorList =
+        var chips =
           f.stressors && f.stressors.length
-            ? "<ul>" + f.stressors.map(function (s) { return "<li>" + esc(s) + "</li>"; }).join("") + "</ul>"
+            ? '<div class="portal-wb-stressor-chips">' +
+              f.stressors
+                .map(function (s) {
+                  return '<span class="portal-wb-stressor-chip">' + esc(s) + "</span>";
+                })
+                .join("") +
+              "</div>"
             : "";
         var note = "";
         var entry = (checkin.domains || {})[f.key];
         if (entry && entry.note) {
-          note = '<p><strong>Staff comments:</strong> ' + esc(entry.note) + "</p>";
+          note = '<p class="portal-wb-staff-quote">' + esc(entry.note) + "</p>";
         }
         return (
           '<div class="portal-wb-flagged-area">' +
           "<h3>" +
           esc(f.label) +
           "</h3>" +
-          (stressorList ? "<p><strong>Selected stressors:</strong></p>" + stressorList : "") +
+          chips +
           note +
           "</div>"
         );
@@ -181,7 +199,7 @@
     var areasText = areas.map(function (a) { return a.label; }).join(", ") || "—";
     host.innerHTML =
       '<section class="portal-wb-simple__section" id="portalWbStaffSummary">' +
-      "<h2>Staff Concern Summary</h2>" +
+      "<h2>Staff check-in</h2>" +
       '<dl class="portal-wb-simple__meta">' +
       "<div><dt>Staff member</dt><dd>" +
       esc(checkin.staff_name) +
@@ -201,18 +219,18 @@
       "</section>";
   }
 
-  function renderForm(host, record) {
+  function renderDecisions(host, record) {
     record = record || emptyRecord();
     var actionsHtml = QUICK_ACTIONS.map(function (a) {
       var on = (record.quick_actions || []).indexOf(a.id) >= 0;
       return (
-        '<label><input type="checkbox" data-wb-action="' +
+        '<button type="button" class="portal-wb-action-pill' +
+        (on ? " is-active" : "") +
+        '" data-wb-action="' +
         a.id +
-        '"' +
-        (on ? " checked" : "") +
-        " /> " +
+        '">' +
         esc(a.label) +
-        "</label>"
+        "</button>"
       );
     }).join("");
 
@@ -244,66 +262,64 @@
     }).join("");
 
     host.innerHTML =
-      '<section class="portal-wb-simple__section" id="portalWbConversation">' +
-      "<h2>Wellbeing Conversation Notes</h2>" +
-      '<div class="field"><label for="wbMainConcern">Main concern discussed</label><textarea id="wbMainConcern" rows="3">' +
-      esc(record.main_concern) +
-      "</textarea></div>" +
-      '<div class="field"><label for="wbImpact">Impact on work or wellbeing</label><textarea id="wbImpact" rows="3">' +
-      esc(record.impact) +
-      "</textarea></div>" +
-      '<div class="field"><label for="wbSupportRequested">Support requested by staff</label><textarea id="wbSupportRequested" rows="3">' +
-      esc(record.support_requested) +
-      "</textarea></div>" +
-      '<div class="field"><label for="wbManagerNotes">Manager notes</label><textarea id="wbManagerNotes" rows="4">' +
-      esc(record.manager_notes) +
-      "</textarea></div>" +
-      '<div class="field"><label for="wbAgreedActions">Agreed actions</label><textarea id="wbAgreedActions" rows="4">' +
-      esc(record.agreed_actions) +
-      "</textarea></div>" +
-      '<div class="field"><label for="wbReviewDate">Review date</label><input type="date" id="wbReviewDate" value="' +
-      esc(record.review_date) +
-      '" /></div>' +
-      '<div class="field"><span class="portal-wb-field-label">Quick actions</span><div class="portal-wb-simple__actions-grid" id="wbQuickActions">' +
-      actionsHtml +
-      "</div></div>" +
-      '<div class="field" id="wbQuickActionsOtherWrap" hidden><label for="wbQuickActionsOther">Other (please specify)</label><textarea id="wbQuickActionsOther" rows="2">' +
-      esc(record.quick_actions_other) +
-      "</textarea></div>" +
-      "</section>" +
-      '<section class="portal-wb-simple__section" id="portalWbConcernLevel">' +
-      "<h2>Overall concern level</h2>" +
-      '<div class="portal-wb-concern-levels" id="wbConcernLevels">' +
+      '<section class="portal-wb-simple__section portal-wb-decisions" id="portalWbDecisions">' +
+      "<h2>Record outcome</h2>" +
+      '<p class="portal-wb-section-lead">How serious is this, and what happens next?</p>' +
+      '<div class="portal-wb-decisions__row">' +
+      '<div class="field"><span class="portal-wb-field-label">Concern level</span><div class="portal-wb-concern-levels portal-wb-concern-levels--compact" id="wbConcernLevels">' +
       concernHtml +
-      "</div></section>" +
-      '<section class="portal-wb-simple__section" id="portalWbOutcome">' +
-      "<h2>Outcome</h2>" +
-      '<div class="field"><label for="wbOutcome">Outcome</label><select id="wbOutcome"><option value="">Select outcome</option>' +
+      "</div></div>" +
+      '<div class="field portal-wb-decisions__outcome"><label for="wbOutcome">Outcome</label><select id="wbOutcome"><option value="">Select outcome</option>' +
       outcomeHtml +
       "</select></div>" +
-      '<div id="wbEscalationFields" hidden>' +
-      '<div class="field"><label for="wbEscalationNotes">Escalation notes</label><textarea id="wbEscalationNotes" rows="3">' +
+      "</div>" +
+      '<div class="field"><span class="portal-wb-field-label">Actions agreed</span><div class="portal-wb-action-pills" id="wbQuickActions">' +
+      actionsHtml +
+      "</div></div>" +
+      '<div class="field" id="wbQuickActionsOtherWrap" hidden><label for="wbQuickActionsOther">Other action</label><input type="text" id="wbQuickActionsOther" value="' +
+      esc(record.quick_actions_other) +
+      '" placeholder="Describe other action" /></div>' +
+      '<div class="field portal-wb-decisions__review"><label for="wbReviewDate">Follow-up review date</label><input type="date" id="wbReviewDate" value="' +
+      esc(record.review_date) +
+      '" /></div>' +
+      '<div id="wbEscalationFields" class="portal-wb-escalation" hidden>' +
+      '<div class="field"><label for="wbEscalationNotes">Escalation notes</label><textarea id="wbEscalationNotes" rows="2">' +
       esc(record.escalation_notes) +
       "</textarea></div>" +
+      '<div class="portal-wb-decisions__row">' +
       '<div class="field"><label for="wbEscalatedTo">Escalated to</label><input type="text" id="wbEscalatedTo" value="' +
       esc(record.escalated_to) +
       '" /></div>' +
       '<div class="field"><label for="wbEscalationDate">Escalation date</label><input type="date" id="wbEscalationDate" value="' +
       esc(record.escalation_date) +
-      '" /></div></div></section>' +
+      '" /></div></div></div></section>";
+
+    wireDecisionsInteractions(host);
+  }
+
+  function renderClosing(host, record) {
+    record = record || emptyRecord();
+    host.innerHTML =
+      '<section class="portal-wb-simple__section portal-wb-conversation" id="portalWbConversation">' +
+      "<h2>Conversation notes</h2>" +
+      '<p class="portal-wb-section-lead">Optional — a short record of what you discussed.</p>' +
+      '<div class="field"><label for="wbConversationNotes">What was discussed</label><textarea id="wbConversationNotes" rows="4" placeholder="Key points from the conversation…">' +
+      esc(conversationDisplayText(record)) +
+      "</textarea></div>" +
+      '<div class="field"><label for="wbAgreedActions">Agreed actions &amp; follow-up</label><textarea id="wbAgreedActions" rows="3" placeholder="Who does what, and by when…">' +
+      esc(record.agreed_actions) +
+      "</textarea></div>" +
+      "</section>" +
       '<section class="portal-wb-simple__section portal-wb-signoff" id="portalWbSignOff">' +
-      '<div class="portal-wb-signoff__head">' +
-      "<h2>Sign off this 1-to-1</h2>" +
-      "<p>Confirm who led the conversation. This is stored with the portal record.</p>" +
-      "</div>" +
+      "<h2>Sign off</h2>" +
       '<div class="portal-wb-signoff__grid">' +
-      '<div class="field"><label for="wbConductedBy">Led by (name)</label><input type="text" id="wbConductedBy" autocomplete="name" value="' +
+      '<div class="field"><label for="wbConductedBy">Led by</label><input type="text" id="wbConductedBy" autocomplete="name" value="' +
       esc(record.conducted_by_name) +
-      '" placeholder="Your full name" /></div>' +
+      '" placeholder="Your name" /></div>' +
       '<div class="field"><label for="wbConductedRole">Role</label><input type="text" id="wbConductedRole" autocomplete="organization-title" value="' +
       esc(record.conducted_by_role) +
-      '" placeholder="e.g. Ops Admin, Director" /></div>' +
-      '<div class="field"><label for="wbSignOffDate">Date completed</label><input type="date" id="wbSignOffDate" value="' +
+      '" placeholder="e.g. Ops Admin" /></div>' +
+      '<div class="field"><label for="wbSignOffDate">Date</label><input type="date" id="wbSignOffDate" value="' +
       esc(record.sign_off_date) +
       '" /></div>' +
       "</div>" +
@@ -311,15 +327,14 @@
       '<input type="checkbox" id="wbSignOffConfirm"' +
       (record.sign_off_confirmed ? " checked" : "") +
       " />" +
-      "<span>I confirm this 1-to-1 took place and the record above is accurate.</span>" +
+      "<span>I confirm this 1-to-1 took place and the record is accurate.</span>" +
       "</label>" +
-      '<div class="portal-wb-signoff__stamp" aria-hidden="true"><span class="portal-wb-signoff__line"></span><em>Authorised record</em></div>' +
       "</section>";
 
-    wireFormInteractions(host, record);
+    wireClosingInteractions(host);
   }
 
-  function wireFormInteractions(host, record) {
+  function wireDecisionsInteractions(host) {
     host.querySelectorAll("[data-wb-concern]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         host.querySelectorAll("[data-wb-concern]").forEach(function (b) {
@@ -329,16 +344,20 @@
       });
     });
 
-    var otherWrap = host.querySelector("#wbQuickActionsOtherWrap");
-    var otherBox = host.querySelector('[data-wb-action="other"]');
-    function syncOther() {
-      if (!otherWrap || !otherBox) return;
-      otherWrap.hidden = !otherBox.checked;
+    host.querySelectorAll("[data-wb-action]").forEach(function (pill) {
+      pill.addEventListener("click", function () {
+        pill.classList.toggle("is-active");
+        if (pill.getAttribute("data-wb-action") === "other") syncOtherAction(host);
+      });
+    });
+
+    function syncOtherAction(scope) {
+      var otherWrap = scope.querySelector("#wbQuickActionsOtherWrap");
+      var otherPill = scope.querySelector('[data-wb-action="other"]');
+      if (!otherWrap || !otherPill) return;
+      otherWrap.hidden = !otherPill.classList.contains("is-active");
     }
-    if (otherBox) {
-      otherBox.addEventListener("change", syncOther);
-      syncOther();
-    }
+    syncOtherAction(host);
 
     var outcomeSel = host.querySelector("#wbOutcome");
     var escFields = host.querySelector("#wbEscalationFields");
@@ -352,20 +371,19 @@
     }
   }
 
+  function wireClosingInteractions() {}
+
   function collectRecord(root) {
     var record = emptyRecord();
     var el = function (id) {
       return root.querySelector("#" + id);
     };
-    record.main_concern = el("wbMainConcern") ? el("wbMainConcern").value.trim() : "";
-    record.impact = el("wbImpact") ? el("wbImpact").value.trim() : "";
-    record.support_requested = el("wbSupportRequested") ? el("wbSupportRequested").value.trim() : "";
-    record.manager_notes = el("wbManagerNotes") ? el("wbManagerNotes").value.trim() : "";
+    record.manager_notes = el("wbConversationNotes") ? el("wbConversationNotes").value.trim() : "";
     record.agreed_actions = el("wbAgreedActions") ? el("wbAgreedActions").value.trim() : "";
     record.review_date = el("wbReviewDate") ? el("wbReviewDate").value : "";
     record.quick_actions = [];
-    root.querySelectorAll("[data-wb-action]").forEach(function (cb) {
-      if (cb.checked) record.quick_actions.push(cb.getAttribute("data-wb-action"));
+    root.querySelectorAll("[data-wb-action].is-active").forEach(function (pill) {
+      record.quick_actions.push(pill.getAttribute("data-wb-action"));
     });
     record.quick_actions_other = el("wbQuickActionsOther") ? el("wbQuickActionsOther").value.trim() : "";
     var activeConcern = root.querySelector("[data-wb-concern].is-active");
@@ -381,8 +399,21 @@
     return record;
   }
 
-  function applyRecord(root, record) {
-    renderForm(root.querySelector("#portalWbConversationHost") || root, record);
+  function renderReviewForm(decisionsHost, closingHost, record) {
+    renderDecisions(decisionsHost, record);
+    renderClosing(closingHost, record);
+  }
+
+  function mountClosingHost(form) {
+    var existing = document.getElementById("portalWbClosingHost");
+    if (existing) return existing;
+    var closingHost = document.createElement("div");
+    closingHost.id = "portalWbClosingHost";
+    closingHost.className = "portal-wb-simple portal-wb-closing";
+    var wrap = document.getElementById("portalWbAdvancedWrap");
+    if (wrap) wrap.insertAdjacentElement("afterend", closingHost);
+    else form.appendChild(closingHost);
+    return closingHost;
   }
 
   function wrapAdvancedSections(form) {
@@ -434,11 +465,6 @@
         : "Advanced Stress Risk Assessment";
     });
 
-    if (document.body.classList.contains("portal-wellbeing-admin-mode")) {
-      wrap.hidden = false;
-      toggle.setAttribute("aria-expanded", "true");
-      toggle.textContent = "Hide Advanced Stress Risk Assessment";
-    }
   }
 
   function mountAdminSimpleReview(opts) {
@@ -459,30 +485,32 @@
     }
 
     var summaryHost = document.createElement("div");
-    var formHost = document.createElement("div");
-    formHost.id = "portalWbConversationHost";
+    var decisionsHost = document.createElement("div");
+    decisionsHost.id = "portalWbDecisionsHost";
     root.innerHTML = "";
     root.appendChild(summaryHost);
-    root.appendChild(formHost);
+    root.appendChild(decisionsHost);
+
+    var record = withSignOffDefaults((opts.draft && opts.draft.simple) || emptyRecord(), {
+      adminProfile: opts.adminProfile,
+    });
 
     renderSummary(summaryHost, checkin, wb);
-    renderForm(
-      formHost,
-      withSignOffDefaults((opts.draft && opts.draft.simple) || emptyRecord(), {
-        adminProfile: opts.adminProfile,
-      })
-    );
     wrapAdvancedSections(form);
+    var closingHost = mountClosingHost(form);
+    renderReviewForm(decisionsHost, closingHost, record);
 
     return {
       root: root,
+      form: form,
       collect: function () {
-        return collectRecord(root);
+        return collectRecord(form);
       },
-      apply: function (record) {
-        renderForm(
-          formHost,
-          withSignOffDefaults(record || emptyRecord(), { adminProfile: opts.adminProfile })
+      apply: function (nextRecord) {
+        renderReviewForm(
+          decisionsHost,
+          closingHost,
+          withSignOffDefaults(nextRecord || emptyRecord(), { adminProfile: opts.adminProfile })
         );
       },
     };

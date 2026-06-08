@@ -15,11 +15,11 @@
  </script>
  <script src="/portal-static-bootstrap.js"></script>
  <script src="/portal/term_from_timetable.js?v=20260604-teflon-guide-days"></script>
- <link rel="stylesheet" href="/portal/portal-wellbeing-admin-sra.css?v=20260610-wb-signoff-premium" />
- <link rel="stylesheet" href="/portal/portal-wellbeing-review-simple.css?v=20260610-wb-signoff-premium" />
+ <link rel="stylesheet" href="/portal/portal-wellbeing-admin-sra.css?v=20260610-wb-flow-slim" />
+ <link rel="stylesheet" href="/portal/portal-wellbeing-review-simple.css?v=20260610-wb-flow-slim" />
  <link rel="stylesheet" href="/portal-shared-js/portal_form_feedback_skin.css?v=20260609-autofill" />
  <script src="/portal/portal_wellbeing_stressor_catalog.js?v=20260610-wb-voice2"></script>
- <script src="/portal/portal_wellbeing_review_simple.js?v=20260610-wb-signoff-premium"></script>
+ <script src="/portal/portal_wellbeing_review_simple.js?v=20260610-wb-flow-slim"></script>
  <script src="/portal/portal_feedback_voice_input.js?v=20260610-wb-voice2"></script>
  <link rel="preconnect" href="https://www.clubsensational.org" />
  <link rel="dns-prefetch" href="https://www.clubsensational.org" />
@@ -3620,13 +3620,6 @@ document.addEventListener("DOMContentLoaded", function () {
  window.setTimeout(function () {
  simplifyAdminSraTables(form);
  }, 0);
- var advWrap = document.getElementById("portalWbAdvancedWrap");
- var advToggle = document.getElementById("portalWbToggleAdvanced");
- if (advWrap && advToggle) {
- advWrap.hidden = false;
- advToggle.setAttribute("aria-expanded", "true");
- advToggle.textContent = "Hide Advanced Stress Risk Assessment";
- }
  if (window.portalWellbeingCheckin.wireWellbeingReviewVoice) {
  window.portalWellbeingCheckin.wireWellbeingReviewVoice(form, pack.ctx.staffName || "");
  }
