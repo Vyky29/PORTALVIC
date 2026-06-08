@@ -492,6 +492,11 @@
   color:#166534;
   border-color:rgba(22,101,52,.16);
 }
+#internalChatSheet .portal-dm-role-chip--group{
+  background:#f5f3ff;
+  color:#5b21b6;
+  border-color:rgba(91,33,182,.18);
+}
 
 #internalChatSheet.sheet--portal-chat-inbox .portal-dm-staff-directory-copy{
   display:flex;
