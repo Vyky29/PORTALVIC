@@ -37,7 +37,7 @@
   <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260608-inbox-staff-roster-all"></script>
   <script src="/portal/portal_dm_read_cursor.js?v=20260609-read-cursor"></script>
   <script src="/portal/portal_cs_cliq_support_route.js?v=20260608-staff-admin-lane"></script>
-  <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260608-inbox-staff-roster-all"></script>
+  <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260627-raul-dan-dm"></script>
   <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260608-inbox-staff-roster-all"></script>
   <script src="/portal/portal_cs_cliq_admin_channels.js?v=20260608-ceo-dm-send-fix"></script>
   <script src="/portal/portal_cs_cliq_support.js?v=20260607-support-route"></script>
@@ -328,7 +328,7 @@
   <!-- Large portal datasets load on demand (portalAdminLoadScriptSet) so Day operations opens without freezing. -->
   <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260602-cap-roster"></script>
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260521-late-perf"></script>
-  <script src="/portal/portal_admin_alerts_bell.js?v=20260604-wb-flow-refine"></script>
+  <script src="/portal/portal_admin_alerts_bell.js?v=20260610-bell-absents"></script>
   <script src="/portal/portal_admin_dayops_badges.js?v=20260605-dayops-badges-per-admin"></script>
   <script src="/portal/portal-admin-web-push.js?v=20260601-desktop-alerts"></script>
 
@@ -21205,7 +21205,23 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         tid = await window.portalCsCliqManagementInbox.openWorkerThread(client, me, workerId, lane, sevithaId);
       }
       if(!tid){
-        if(lane === 'ops') return;
+        if(
+          lane === 'ops' &&
+          window.portalCsCliqSupportRoute &&
+          typeof window.portalCsCliqSupportRoute.findOfficeThreadForWorker === 'function'
+        ){
+          tid = await window.portalCsCliqSupportRoute.findOfficeThreadForWorker(client, workerId);
+        }
+      }
+      if(!tid){
+        if(lane === 'ops'){
+          try{
+            if(typeof portalAdminToast === 'function'){
+              portalAdminToast('Could not open this chat. Run migration 20260627120000_portal_dm_ensure_ops_thread in Supabase, then try again.', 'error');
+            }
+          }catch(_opsOpen){}
+          return;
+        }
         if(typeof portalAdminDmEnsureDmThreadAndOpen === 'function'){
           await portalAdminDmEnsureDmThreadAndOpen(workerId);
         }
@@ -26558,6 +26574,72 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       };
     }
 
+    function portalAdminClientFromSessionKey(sk){
+      var raw = String(sk || '').trim();
+      if(!raw) return { clientName: 'Participant', sessionDate: '' };
+      var parts = raw.split('|').map(function(p){ return String(p || '').trim(); });
+      var sessionDate = /^\d{4}-\d{2}-\d{2}$/.test(parts[0]) ? parts[0] : '';
+      var slug = '';
+      for(var i = parts.length - 1; i >= 1; i--){
+        var seg = parts[i];
+        if(!seg) continue;
+        if(/^\d{1,2}([:.]\d{2})?$/.test(seg)) continue;
+        slug = seg;
+        break;
+      }
+      var clientName = slug;
+      try{
+        var drawerId = resolveAdminClientDrawerIdFromDisplayName(slug.replace(/_/g, ' '));
+        if(!drawerId && slug) drawerId = resolveAdminClientDrawerId(String(slug).toLowerCase());
+        if(drawerId && MOCK.clientsById && MOCK.clientsById[drawerId] && MOCK.clientsById[drawerId].name){
+          clientName = MOCK.clientsById[drawerId].name;
+        }
+      }catch(_c){}
+      if(!clientName || clientName === slug){
+        clientName = String(slug || 'Participant').replace(/_/g, ' ').replace(/\b\w/g, function(c){ return c.toUpperCase(); }) || 'Participant';
+      }
+      return {
+        clientName: clientName,
+        sessionDate: sessionDate
+      };
+    }
+
+    function portalAdminActivityFromAbsentMark(row, staffName){
+      if(!row || !row.id) return null;
+      if(String(row.mark_type || '').trim() && String(row.mark_type || '').trim() !== 'absent') return null;
+      var parsed = portalAdminClientFromSessionKey(row.portal_session_key);
+      var client = parsed.clientName;
+      var sessionDate = String(row.session_date || parsed.sessionDate || '').trim().slice(0, 10);
+      var who = String(staffName || row.staff_name || 'Staff').trim() || 'Staff';
+      return {
+        id: 'abs-' + row.id,
+        title: 'Absent · ' + client,
+        sub: who + ' · ' + (sessionDate || '—'),
+        created_at: row.created_at,
+        kind: 'absent',
+        view: 'absents',
+        recordId: String(row.id || ''),
+        clientName: client,
+        sessionDate: sessionDate
+      };
+    }
+
+    async function portalAdminStaffNamesById(client, staffIds){
+      var nameByStaff = {};
+      if(!client || !staffIds || !staffIds.length) return nameByStaff;
+      try{
+        var spRes = await client.from('staff_profiles').select('id,full_name,username').in('id', staffIds);
+        if(!spRes.error && spRes.data){
+          spRes.data.forEach(function(sp){
+            var id = String(sp.id || '');
+            if(!id) return;
+            nameByStaff[id] = String(sp.full_name || sp.username || '').trim();
+          });
+        }
+      }catch(_sp){}
+      return nameByStaff;
+    }
+
     function portalAdminOpenActivityAlert(meta){
       meta = meta || {};
       try{
@@ -26778,7 +26860,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
         var results = await Promise.all([
           client.from('cancellation_reports').select('id,created_at,client_name,session_date,submitted_by_name').gte('created_at', sinceIso).order('created_at',{ascending:false}).limit(20),
-          client.from('incident_reports').select('id,created_at,client_name,session_date,submitted_by_name,incident_category').gte('created_at', sinceIso).order('created_at',{ascending:false}).limit(20)
+          client.from('incident_reports').select('id,created_at,client_name,session_date,submitted_by_name,incident_category').gte('created_at', sinceIso).order('created_at',{ascending:false}).limit(20),
+          client.from('portal_staff_session_quick_marks').select('id,created_at,session_date,portal_session_key,staff_user_id,mark_type').eq('mark_type','absent').gte('created_at', sinceIso).order('created_at',{ascending:false}).limit(20)
         ]);
         (results[0].data || []).forEach(function(r){
           var a = portalAdminActivityFromCancellation(r);
@@ -26792,6 +26875,25 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             window.portalAdminPushActivityAlert(a, { silent: true });
           }
         });
+        var absentRows = results[2].error ? [] : (results[2].data || []);
+        if(results[2].error){
+          console.warn('[admin] absent quick marks bootstrap', results[2].error);
+        }else if(absentRows.length){
+          var absentStaffIds = [];
+          var absentStaffSeen = {};
+          absentRows.forEach(function(r){
+            var sid = r && r.staff_user_id ? String(r.staff_user_id) : '';
+            if(sid && !absentStaffSeen[sid]){ absentStaffSeen[sid] = true; absentStaffIds.push(sid); }
+          });
+          var absentNameByStaff = await portalAdminStaffNamesById(client, absentStaffIds);
+          absentRows.forEach(function(r){
+            var uid = r && r.staff_user_id ? String(r.staff_user_id) : '';
+            var a = portalAdminActivityFromAbsentMark(r, uid && absentNameByStaff[uid] ? absentNameByStaff[uid] : '');
+            if(a && typeof window.portalAdminPushActivityAlert === 'function'){
+              window.portalAdminPushActivityAlert(a, { silent: true });
+            }
+          });
+        }
         try{
           if(window.PortalAdminLateSubmissions){
             portalLateAdminEnsureConfigured();
@@ -26870,6 +26972,25 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               window.portalAdminPushActivityAlert(a);
             }
           })
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'portal_staff_session_quick_marks' }, function(payload){
+            var row = payload && payload.new;
+            if(!row || String(row.mark_type || '').trim() !== 'absent') return;
+            void (async function(){
+              var staffName = '';
+              try{
+                if(row.staff_user_id && client){
+                  var spRes = await client.from('staff_profiles').select('full_name,username').eq('id', row.staff_user_id).maybeSingle();
+                  if(!spRes.error && spRes.data){
+                    staffName = String(spRes.data.full_name || spRes.data.username || '').trim();
+                  }
+                }
+              }catch(_sp){}
+              var a = portalAdminActivityFromAbsentMark(row, staffName);
+              if(a && typeof window.portalAdminPushActivityAlert === 'function'){
+                window.portalAdminPushActivityAlert(a);
+              }
+            })();
+          })
           .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'portal_wellbeing_admin_notifications' }, function(payload){
             var row = payload && payload.new;
             var item = typeof window.portalAdminActivityFromWellbeingNotification === 'function'
@@ -26901,7 +27022,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return '<button type="button" class="line-item portal-admin-activity-alert"'+jump+meta+' style="width:100%;text-align:left;border:0;background:transparent;cursor:pointer;padding:12px 16px;font:inherit"><div><strong>'+esc(a.title)+'</strong><div class="muted">'+esc(a.sub)+'</div></div><span class="chip chip--info">'+esc(a.t || 'New')+'</span></button>';
       }).join('');
       var emptyHtml = !activityHtml
-        ? '<p class="muted" style="margin:12px 16px">No incidents, cancellations, or approval requests right now.</p>'
+        ? '<p class="muted" style="margin:12px 16px">No incidents, cancellations, absents, or approval requests right now.</p>'
         : '';
       pop.innerHTML = '<div class="card-h" style="border-radius:var(--radiusLg) var(--radiusLg) 0 0"><h3 style="margin:0;font-size:14px">Alerts</h3></div>'+activityHtml+emptyHtml;
       var bd = $('alertBadge');

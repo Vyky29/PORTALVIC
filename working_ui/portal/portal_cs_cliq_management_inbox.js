@@ -232,14 +232,32 @@
     if (!client || !workerId) return "";
 
     var route = global.portalCsCliqSupportRoute || {};
-    if (lane === "ops" && sevithaId) {
-      if (typeof route.ensureDmThreadId === "function") {
-        return route.ensureDmThreadId(client, sevithaId, workerId);
+
+    async function findExistingOpsThread() {
+      if (sevithaId && typeof route.findDmThreadId === "function") {
+        var opsTid = await route.findDmThreadId(client, sevithaId, workerId);
+        if (opsTid) return opsTid;
       }
-      if (typeof route.findDmThreadId === "function") {
-        return route.findDmThreadId(client, sevithaId, workerId);
+      if (typeof route.findOfficeThreadForWorker === "function") {
+        return route.findOfficeThreadForWorker(client, workerId);
       }
       return "";
+    }
+
+    async function ensureOpsThreadRpc() {
+      try {
+        var rpc = await client.rpc("portal_staff_dm_ensure_ops_thread", { p_worker_id: workerId });
+        if (!rpc.error && rpc.data) return String(rpc.data);
+      } catch (_rpc) {}
+      return "";
+    }
+
+    if (lane === "ops" && sevithaId) {
+      var existing = await findExistingOpsThread();
+      if (existing) return existing;
+      var ensured = await ensureOpsThreadRpc();
+      if (ensured) return ensured;
+      return findExistingOpsThread();
     }
     if (typeof route.ensureDmThreadId === "function") {
       return route.ensureDmThreadId(client, me, workerId);

@@ -432,6 +432,38 @@
     return row && row.id ? String(row.id) : "";
   }
 
+  /** Any management↔worker thread (Sevitha line, Victor line, etc.) for CEO shared inbox open. */
+  async function findOfficeThreadForWorker(client, workerId) {
+    workerId = String(workerId || "").trim();
+    if (!client || !workerId) return "";
+    var res = await client
+      .from("portal_staff_dm_threads")
+      .select("id,participant_a,participant_b,updated_at")
+      .or("participant_a.eq." + workerId + ",participant_b.eq." + workerId)
+      .order("updated_at", { ascending: false })
+      .limit(40);
+    if (res.error || !Array.isArray(res.data) || !res.data.length) return "";
+    var officeIds = [];
+    res.data.forEach(function (r) {
+      var o = String(r.participant_a) === workerId ? String(r.participant_b) : String(r.participant_a);
+      if (o && officeIds.indexOf(o) < 0) officeIds.push(o);
+    });
+    var profBy = {};
+    if (officeIds.length) {
+      var pr = await client
+        .from("staff_profiles")
+        .select("id,app_role,staff_role,is_active")
+        .in("id", officeIds);
+      if (!pr.error && Array.isArray(pr.data)) {
+        pr.data.forEach(function (p) {
+          if (p && p.id) profBy[String(p.id)] = p;
+        });
+      }
+    }
+    var row = await resolveCanonicalThreadRow(client, workerId, res.data, profBy);
+    return row && row.id ? String(row.id) : "";
+  }
+
   async function resolveStaffOfficeThreadId(client, me) {
     me = String(me || "").trim();
     if (!client || !me) return "";
@@ -540,6 +572,7 @@
     resolveCanonicalThreadRow: resolveCanonicalThreadRow,
     resolvePrimaryManagementPeer: resolvePrimaryManagementPeer,
     findDmThreadId: findDmThreadId,
+    findOfficeThreadForWorker: findOfficeThreadForWorker,
     ensureDmThreadId: ensureDmThreadId,
     resolveOpsAdminId: resolveOpsAdminId,
     resolveStaffOfficeThreadId: resolveStaffOfficeThreadId,

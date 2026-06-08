@@ -10,6 +10,7 @@
     "late_approval",
     "cancellation",
     "incident",
+    "absent",
     "wellbeing",
     "feedback",
     "relevant",
@@ -168,6 +169,7 @@
       key === "late_approval" ||
       key === "cancellation" ||
       key === "incident" ||
+      key === "absent" ||
       key === "wellbeing"
     ) {
       return countAlertsByKind(key);
@@ -223,6 +225,7 @@
     relevant: "relevant",
     cancellations: "cancellation",
     incidents: "incident",
+    absents: "absent",
   };
 
   var DAYOPS_ACT_TO_BADGE = {
@@ -231,6 +234,7 @@
     sessions_hub_relevant: "relevant",
     sessions_hub_cancellations: "cancellation",
     sessions_hub_incidents: "incident",
+    sessions_hub_absents: "absent",
   };
 
   var VIEW_TO_BADGE = {

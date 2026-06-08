@@ -8,6 +8,7 @@
   var ALLOWED = {
     incident: true,
     cancellation: true,
+    absent: true,
     chat: false,
     late_approval: true,
     wellbeing: true,
