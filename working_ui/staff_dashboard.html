@@ -1799,7 +1799,7 @@
       let changed = false;
       try{
         const sid = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
-        const resetV = '20260606-john-tinashe-jun1';
+        const resetV = '20260608-javier-catchup-green';
         const machineResetV = '20260605-feedback-instructor-own';
         if(sid && typeof portalClearMachineRosterCrossInstructorReviewFlags === 'function'){
           let prevMachine = '';
@@ -3802,11 +3802,26 @@
           count += dayCount;
           cur.setDate(cur.getDate() + 1);
         }
-        /* Catch-up May days (before feedbackReminderFromIso) only appear via extra calendar dates. */
-        if(typeof portalTermStaffExtraCalendarDates === 'function'){
+        /* Catch-up May days (before feedbackReminderFromIso) only appear via extra / catch-up calendar dates. */
+        (function(){
+          const preTermKeys = [];
+          const seenPre = Object.create(null);
+          function addPreTerm(iso){
+            const k = String(iso || '').trim().slice(0, 10);
+            if(!/^\d{4}-\d{2}-\d{2}$/.test(k) || seenPre[k]) return;
+            seenPre[k] = true;
+            preTermKeys.push(k);
+          }
+          if(typeof portalTermStaffExtraCalendarDates === 'function'){
+            portalTermStaffExtraCalendarDates(staffId).forEach(addPreTerm);
+          }
+          if(typeof portalTermStaffCatchUpFeedbackDates === 'function'){
+            portalTermStaffCatchUpFeedbackDates(staffId).forEach(addPreTerm);
+          }
           const fromFloor = String(fromIso || '').slice(0, 10);
-          portalTermStaffExtraCalendarDates(staffId).forEach(function(key){
+          preTermKeys.forEach(function(key){
             if(!key || (fromFloor && key >= fromFloor)) return;
+            if(typeof portalTermDateForcedComplete === 'function' && portalTermDateForcedComplete(key, staffId)) return;
             if(!portalFeedbackReminderDayInScope(key)) return;
             if(!portalTermCalendarDayCountsForOutstanding(key, fbMap)) return;
             const curExtra = new Date(String(key) + 'T12:00:00');
@@ -3852,7 +3867,7 @@
             }
             count += dayCount;
           });
-        }
+        })();
         return Math.max(0, count);
       }catch(_){ return 0; }
     }
@@ -8615,6 +8630,7 @@
         ? portalGetMergedSessionReviewRecordForRoster(s, dayWord, sessionDateIso)
         : {};
       if(portalTermIsCatchUpFeedbackDate(iso, sid)){
+        if(portalTermStaffForcedCompleteDates(sid).indexOf(iso) >= 0) return true;
         const cid = typeof portalEffectiveClientIdForReview === 'function'
           ? portalEffectiveClientIdForReview(s, sessionDateIso)
           : String(s && s.clientId || '').trim().toLowerCase();
@@ -11840,6 +11856,7 @@
       if(!extras.length) return false;
       let changed = false;
       extras.forEach(function(iso){
+        if(portalTermStaffForcedCompleteDates(sid).indexOf(iso) >= 0) return;
         const dayWord = new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
         const rel = typeof portalTermFeedbackSessionsForDate === 'function'
           ? portalTermFeedbackSessionsForDate(dayWord, iso, sid, function(s){
@@ -12013,6 +12030,8 @@
       const map = dashboardData.termFeedbackByDate;
       const explicit = map && map[key];
       const staffId = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
+      /* Grandfather / forced-complete (Jun 1–7, Javier May catch-up) wins over stale fbMap late. */
+      if(staffId && portalTermDateForcedComplete(key, staffId)) return 'complete';
       if(staffId && portalTermIsCatchUpFeedbackDate(key, staffId)){
         const dayWordCatch = new Date(key + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
         const curCatch = new Date(key + 'T12:00:00');
@@ -12036,7 +12055,6 @@
       if(explicit === 'cancelled') return 'cancelled';
       if(explicit === 'late') return 'late';
       const dayWord = new Date(key + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
-      if(staffId && portalTermDateForcedComplete(key, staffId)) return 'complete';
       if(staffId && portalTermStaffOffWeekdayOnDate(key, staffId)) return 'pending';
       if(staffId && typeof portalTermExportMarksDayComplete === 'function'
         && portalTermExportMarksDayComplete(key, staffId)
@@ -12423,9 +12441,23 @@
         if(typeof portalTermClampCompleteIfSessionsStillRunning === 'function'){
           portalTermClampCompleteIfSessionsStillRunning(key, dayWord, staffId, relFb.length ? relFb : relAll, cur, fbMap);
         }
+        if(portalTermDateForcedComplete(key, staffId)) fbMap[key] = 'complete';
         cur.setDate(cur.getDate() + 1);
       }
-      portalTermStaffExtraCalendarDates(staffId).forEach(function(isoKey){
+      const termExtraCatchUpIsoKeys = (function(){
+        const seen = Object.create(null);
+        const out = [];
+        function add(iso){
+          const k = String(iso || '').trim().slice(0, 10);
+          if(!/^\d{4}-\d{2}-\d{2}$/.test(k) || seen[k]) return;
+          seen[k] = true;
+          out.push(k);
+        }
+        portalTermStaffExtraCalendarDates(staffId).forEach(add);
+        portalTermStaffCatchUpFeedbackDates(staffId).forEach(add);
+        return out;
+      })();
+      termExtraCatchUpIsoKeys.forEach(function(isoKey){
         if(Object.prototype.hasOwnProperty.call(fbMap, isoKey)) return;
         const curExtra = new Date(String(isoKey) + 'T12:00:00');
         const w = curExtra.getDay();
@@ -12606,7 +12638,10 @@
           const exportWorked = termStaffId && isoKey <= todayKeyGrid
             && typeof portalTermExportCountsAsWorkedDay === 'function'
             && portalTermExportCountsAsWorkedDay(isoKey, termStaffId, dayWordRoster);
-          const extraCatchUp = termStaffId && portalTermStaffExtraCalendarDates(termStaffId).indexOf(isoKey) >= 0;
+          const extraCatchUp = termStaffId && (
+            portalTermStaffExtraCalendarDates(termStaffId).indexOf(isoKey) >= 0
+            || (typeof portalTermIsCatchUpFeedbackDate === 'function' && portalTermIsCatchUpFeedbackDate(isoKey, termStaffId))
+          );
           const isWorked = extraCatchUp || (worked.includes(w) && (rosterApplies || exportWorked));
           let cls = 'term-cal-day';
           let label;

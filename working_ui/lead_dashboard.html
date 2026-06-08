@@ -10474,12 +10474,12 @@
       if(key > todayKey) return 'pending';
       const map = dashboardData.termFeedbackByDate;
       const explicit = map && map[key];
+      const staffId = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
+      if(staffId && portalTermDateForcedComplete(key, staffId)) return 'complete';
       if(explicit === 'complete') return 'complete';
       if(explicit === 'cancelled') return 'cancelled';
       if(explicit === 'late') return 'late';
-      const staffId = String(STAFF_DASHBOARD_ID || '').trim().toLowerCase();
       const dayWord = new Date(key + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
-      if(staffId && portalTermDateForcedComplete(key, staffId)) return 'complete';
       if(staffId && portalTermStaffOffWeekdayOnDate(key, staffId)) return 'pending';
       if(staffId && typeof portalTermExportMarksDayComplete === 'function'
         && portalTermExportMarksDayComplete(key, staffId)
@@ -10876,6 +10876,7 @@
         if(typeof portalTermClampCompleteIfSessionsStillRunning === 'function'){
           portalTermClampCompleteIfSessionsStillRunning(key, dayWord, staffId, relFb.length ? relFb : relAll, cur, fbMap);
         }
+        if(portalTermDateForcedComplete(key, staffId)) fbMap[key] = 'complete';
         cur.setDate(cur.getDate() + 1);
       }
       dashboardData.termShiftEndByDate = endMap;
