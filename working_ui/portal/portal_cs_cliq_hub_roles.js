@@ -96,6 +96,9 @@
   }
 
   function canCreateConversations() {
+    if (getTier() === "management" && /admin_dashboard\.html/.test(portalPath())) {
+      return false;
+    }
     return getTier() !== "staff";
   }
 

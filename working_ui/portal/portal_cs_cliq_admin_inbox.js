@@ -62,6 +62,11 @@
       nav.hidden = true;
       nav.setAttribute("aria-hidden", "true");
     }
+    var newBtn = document.getElementById("csCliqBtnNew");
+    if (newBtn) {
+      newBtn.hidden = true;
+      newBtn.setAttribute("aria-hidden", "true");
+    }
   }
 
   async function loadSessionLeads(client) {
@@ -304,6 +309,16 @@
       if (item.when) return true;
       return false;
     }
+    function pushWorkerRoster(item) {
+      if (!item || item.kind !== "dm" || item.isTeamChat) return;
+      if (!isWorkerPeerItem(item)) return;
+      var wk = String(item.workerId || item.peerId || "").trim();
+      if (!wk || seen["w:" + wk]) return;
+      seen["w:" + wk] = true;
+      var tid = String(item.id || "").trim();
+      if (tid) seen["t:" + tid] = true;
+      items.push(item);
+    }
     function push(item) {
       if (!item || item.kind !== "dm" || item.isTeamChat) return;
       if (item.inboxLane === "ops") return;
@@ -327,8 +342,12 @@
       else if (!sharedWorkerOps) push(item);
       else if (item && item.inboxLane !== "ops" && !isWorkerPeerItem(item)) push(item);
     });
-    if (splitSections && !sharedWorkerOps) {
-      (splitSections.mineItems || []).forEach(push);
+    if (splitSections) {
+      if (sharedWorkerOps && Array.isArray(splitSections.opsItems)) {
+        splitSections.opsItems.forEach(pushWorkerRoster);
+      } else if (Array.isArray(splitSections.mineItems)) {
+        splitSections.mineItems.forEach(pushWorkerRoster);
+      }
     }
     (teamDmItems || []).forEach(function (item) {
       if (item && !item.isTeamChat) push(item);
@@ -342,7 +361,10 @@
       try {
         if (b.when) tb = new Date(b.when).getTime();
       } catch (_e2) {}
-      return tb - ta;
+      if (ta > 0 && tb > 0) return tb - ta;
+      if (ta > 0) return -1;
+      if (tb > 0) return 1;
+      return String(a.label || "").localeCompare(String(b.label || ""), undefined, { sensitivity: "base" });
     });
     return items;
   }
@@ -359,11 +381,7 @@
     if (!dmItems.length) {
       host.innerHTML =
         '<p class="muted" style="margin:0;font-size:13px;min-width:0;overflow-wrap:break-word">' +
-        "No personal direct messages here yet. " +
-        (sharedWorkerOps
-          ? "Personal CEO and admin DMs only. Staff chats live under <strong>Channels → Staff</strong> (shared ops line for all directors). "
-          : "<strong>Channels → Staff</strong> has group channels and team threads. ") +
-        "Use <strong>New</strong> for CEO or admin DMs.</p>";
+        "No conversations here yet. Staff names appear in this list as soon as profiles are loaded — tap anyone to message.</p>";
       return;
     }
     var rendered = 0;
