@@ -111,7 +111,7 @@
       '<h3>Support request sent</h3>' +
       "<p>Your <strong>" +
       esc(req.label) +
-      "</strong> request was routed to Management. Someone will follow up in your inbox.</p>" +
+      "</strong> request was sent to Management. You will be contacted here when someone replies.</p>" +
       '<button type="button" class="portal-dm-btn portal-dm-btn--primary" id="csCliqSupportDone">Back to options</button>' +
       "</div>";
     var done = document.getElementById("csCliqSupportDone");

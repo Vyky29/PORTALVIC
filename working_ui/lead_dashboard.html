@@ -6585,10 +6585,17 @@
         var rowIds = rows.map(function(r){ return String(r.id || ""); }).filter(Boolean);
         var msgRows = [];
         if(rowIds.length){
-          var msgRes = await client.from("portal_staff_dm_messages").select("thread_id,author_id,created_at").in("thread_id", rowIds).order("created_at", { ascending: false }).limit(600);
+          var msgRes = await client.from("portal_staff_dm_messages").select("thread_id,author_id,created_at,body").in("thread_id", rowIds).order("created_at", { ascending: false }).limit(600);
           if(!msgRes.error && Array.isArray(msgRes.data)) msgRows = msgRes.data;
         }
         var msgsByThread = portalStaffDmMsgsByThread(msgRows);
+        if(window.portalCsCliqSupportRoute && typeof window.portalCsCliqSupportRoute.filterStaffInboxThreadRows === 'function'){
+          rows = window.portalCsCliqSupportRoute.filterStaffInboxThreadRows(rows, msgsByThread, me);
+        }
+        if(!rows.length){
+          listHost.innerHTML = "<p class=\"portal-dm-inbox-empty\">No conversations yet. When someone replies to your support request, it appears here.</p>";
+          return;
+        }
         var lastAuthorProfBy = {};
         var lastAuthorIds = [];
         msgRows.forEach(function(m){
