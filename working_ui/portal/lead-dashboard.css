@@ -8233,7 +8233,9 @@
       box-shadow:none;
     }
     #internalChatSheet .portal-cs-cliq-composer--chat.portal-dm-compose-bar{
-      display:grid;
+      display:flex;
+      flex-wrap:wrap;
+      align-items:flex-end;
       gap:0;
       margin:0;
       box-shadow:none;

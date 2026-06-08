@@ -390,16 +390,15 @@ body.portal-inapp-call-open #portalInternalChatBackdrop.open{
   border-top:1px solid var(--portal-chat-line);
 }
 #internalChatSheet .portal-cs-cliq-composer--chat{
-  display:grid;grid-template-columns:44px minmax(0,1fr);grid-template-rows:auto auto;
-  align-items:end;padding:0;border-top:0;background:#eef3f7;
+  display:flex;align-items:flex-end;gap:0;padding:0;border-top:0;background:#eef3f7;
 }
 #internalChatSheet .portal-cs-cliq-composer__plus{
   display:none;
 }
 #internalChatSheet .portal-cs-cliq-composer--chat .portal-cs-cliq-composer__plus{
   display:inline-flex;align-items:center;justify-content:center;
-  grid-column:1;grid-row:1;align-self:end;
-  width:36px;height:36px;margin:0 0 10px 8px;
+  flex:0 0 auto;align-self:flex-end;
+  width:40px;height:40px;margin:0 0 calc(8px + env(safe-area-inset-bottom, 0px)) 6px;
   border:0;border-radius:50%;background:transparent;
   color:#5b7f96;font-size:28px;line-height:1;cursor:pointer;
 }
@@ -407,26 +406,32 @@ body.portal-inapp-call-open #portalInternalChatBackdrop.open{
   opacity:.75;
 }
 #internalChatSheet .portal-cs-cliq-composer--chat > .portal-cs-cliq-composer__shell{
-  grid-column:2;grid-row:1;display:flex;align-items:flex-end;gap:8px;
-  margin:8px 10px calc(8px + env(safe-area-inset-bottom, 0px)) 0;
+  flex:1 1 auto;min-width:0;display:flex;align-items:flex-end;gap:4px;
+  margin:8px 8px calc(8px + env(safe-area-inset-bottom, 0px)) 0;
+  border-radius:24px;padding:4px 6px 4px 12px;
+  border:1px solid rgba(45,132,179,.16);background:#fff;
+  box-shadow:0 2px 14px rgba(23,50,71,.06);
 }
 #internalChatSheet .portal-cs-cliq-composer--chat .portal-cs-cliq-composer__err{
-  grid-column:1 / -1;margin:0 10px 6px;
+  flex:0 0 100%;width:100%;margin:0 10px 6px;
 }
 #internalChatSheet .portal-cs-cliq-composer__shell{
   display:flex;align-items:flex-end;gap:8px;padding:8px 10px;border-radius:18px;border:1px solid var(--portal-chat-line);background:#fff;
 }
-#internalChatSheet .portal-cs-cliq-composer--chat .portal-cs-cliq-composer__shell{
-  border-radius:24px;padding:6px 8px 6px 4px;
-}
 #internalChatSheet .portal-cs-cliq-composer__leading{display:flex;align-items:center;gap:2px;flex-shrink:0}
+#internalChatSheet .portal-cs-cliq-composer__trailing{
+  display:flex;align-items:center;gap:2px;flex-shrink:0;margin-left:2px;
+}
 #internalChatSheet .portal-cs-cliq-composer__input{
   flex:1 1 auto;min-width:0;min-height:24px;max-height:120px;border:0;background:transparent;resize:none;
-  padding:6px 0;font:inherit;font-size:15px;line-height:1.4;
+  padding:8px 0;font:inherit;font-size:16px;line-height:1.35;
 }
 #internalChatSheet .portal-cs-cliq-composer__send{
   flex-shrink:0;width:40px;height:40px;border-radius:50%;border:0;padding:0;
   background:linear-gradient(145deg,var(--portal-chat-blue),#2676a0);color:#fff;cursor:pointer;
+}
+#internalChatSheet .portal-cs-cliq-composer--chat .portal-cs-cliq-composer__send{
+  display:none !important;
 }
 #internalChatSheet .portal-cs-cliq-composer__err{margin:6px 0 0;font-size:12px;min-height:1.1em}
 #internalChatSheet .portal-cs-cliq-composer__shell{
@@ -435,11 +440,23 @@ body.portal-inapp-call-open #portalInternalChatBackdrop.open{
 }
 #internalChatSheet .portal-cs-cliq-composer__tool-btn.portal-dm-voice-btn,
 #internalChatSheet .portal-cs-cliq-composer__tool-btn.portal-dm-attach-btn{
-  width:36px;height:36px;border:0;border-radius:10px;background:transparent;color:#5b7f96;box-shadow:none;
+  width:36px;height:36px;min-width:36px;border:0;border-radius:50%;background:transparent;color:#5b7f96;box-shadow:none;
+  padding:0;display:inline-flex;align-items:center;justify-content:center;
+}
+#internalChatSheet .portal-cs-cliq-composer__tool-btn.portal-dm-voice-btn .portal-dm-ico,
+#internalChatSheet .portal-cs-cliq-composer__tool-btn.portal-dm-attach-btn .portal-dm-ico{
+  width:22px;height:22px;
+}
+#internalChatSheet .portal-cs-cliq-composer__tool-btn.portal-dm-voice-btn:active,
+#internalChatSheet .portal-cs-cliq-composer__tool-btn.portal-dm-attach-btn:active{
+  opacity:.75;
 }
 #internalChatSheet .portal-cs-cliq-composer__tool-btn.portal-dm-voice-btn:hover,
 #internalChatSheet .portal-cs-cliq-composer__tool-btn.portal-dm-attach-btn:hover{
-  background:#eef6fb;color:var(--portal-chat-blue);
+  background:transparent;color:var(--portal-chat-blue);
+}
+#internalChatSheet .portal-cs-cliq-composer--chat .portal-dm-voice-rec-hint{
+  margin:0 12px 4px;font-size:12px;color:var(--portal-chat-muted);
 }
 #internalChatSheet .portal-cs-cliq-thread-header.is-open{
   display:flex !important;

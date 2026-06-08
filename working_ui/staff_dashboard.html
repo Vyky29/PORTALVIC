@@ -94,7 +94,7 @@
   <script src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
   <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260607-cliq-fix" />
-  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260622-lead-chat-thread" />
+  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260605-wa-composer" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260610-topbar-colors" />
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260624-staff-lead-dm" />
   <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260608-inbox-fix" />
@@ -914,16 +914,18 @@
         <div id="internalChatThreadFilesPanel" class="portal-cs-cliq-thread-files-panel" hidden></div>
         <div id="internalChatMessages" class="portal-dm-msgs-col portal-dm-msgs-scroll portal-cs-cliq-messages"></div>
         <div class="portal-cs-cliq-composer portal-cs-cliq-composer--chat portal-dm-compose-bar">
-          <button type="button" class="portal-cs-cliq-composer__plus" id="internalChatComposerPlusBtn" aria-label="Add attachment">+</button>
+          <button type="button" class="portal-cs-cliq-composer__plus" id="internalChatComposerPlusBtn" aria-label="Share a file from your device">+</button>
           <div class="portal-cs-cliq-composer__shell">
-            <div class="portal-cs-cliq-composer__leading" id="internalChatComposerLeading" aria-label="Message tools"></div>
             <label class="topbar-sr-only" for="internalChatInput">Your message</label>
-            <textarea id="internalChatInput" class="portal-cs-cliq-composer__input txa" placeholder="Message…" maxlength="8000" rows="1"></textarea>
-            <button type="button" class="portal-cs-cliq-composer__send portal-dm-btn portal-dm-btn--primary" id="internalChatSendBtn" aria-label="Send message">
-              <span class="portal-cs-cliq-composer__send-ico" data-dm-icon="send" aria-hidden="true"></span>
-            </button>
+            <textarea id="internalChatInput" class="portal-cs-cliq-composer__input txa" placeholder="Message…" maxlength="8000" rows="1" enterkeyhint="send"></textarea>
+            <div class="portal-cs-cliq-composer__trailing" id="internalChatComposerTrailing" aria-label="Photo and voice">
+              <button type="button" class="portal-cs-cliq-composer__tool-btn portal-dm-attach-btn" id="internalChatPhotoBtn" aria-label="Send photo"></button>
+              <button type="button" class="portal-cs-cliq-composer__tool-btn portal-dm-voice-btn" id="internalChatVoiceBtn" aria-label="Record voice message"></button>
+            </div>
           </div>
+          <p id="internalChatVoiceBtnHint" class="portal-dm-voice-rec-hint" hidden></p>
           <p id="internalChatErr" class="portal-cs-cliq-composer__err muted"></p>
+          <button type="button" class="portal-cs-cliq-composer__send portal-dm-btn portal-dm-btn--primary" id="internalChatSendBtn" hidden aria-hidden="true" tabindex="-1">Send</button>
         </div>
       </div>
     </div>
@@ -1057,9 +1059,9 @@
   <script type="module" src="/portal/portal_quick_menu_service_leads.js?v=20260604-service-leads-lead-only"></script>
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260616-michelle-only"></script>
-  <script src="/portal/portal_dm_icons.js?v=20260624-dm-icons"></script>
-  <script src="/portal/portal_dm_voice.js?v=20260624-dm-icons"></script>
-  <script src="/portal/portal_dm_attachments.js?v=20260624-dm-icons"></script>
+  <script src="/portal/portal_dm_icons.js?v=20260605-wa-composer"></script>
+  <script src="/portal/portal_dm_voice.js?v=20260605-wa-composer"></script>
+  <script src="/portal/portal_dm_attachments.js?v=20260605-wa-composer"></script>
   <script src="/portal/portal_staff_chat_calls.js?v=20260604-call-thread"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
   <script src="/portal/portal_dm_roles.js?v=20260622-chat-restore"></script>
@@ -6722,10 +6724,17 @@
       var inp = document.getElementById('internalChatInput');
       if(inp && !inp.dataset.portalDmViewportBound){
         inp.dataset.portalDmViewportBound = '1';
+        function portalAutosizeInternalChatInput(){
+          try{
+            inp.style.height = 'auto';
+            inp.style.height = Math.min(inp.scrollHeight, 120) + 'px';
+          }catch(_ah){}
+        }
         inp.addEventListener('focus', function(){
           var threadWrap = document.getElementById('internalChatThreadWrap');
           if(threadWrap) threadWrap.classList.add('portal-cs-cliq-thread--keyboard');
           portalSyncInternalChatMobileViewport();
+          portalAutosizeInternalChatInput();
           setTimeout(portalScrollInternalChatComposeIntoView, 60);
           setTimeout(portalScrollInternalChatComposeIntoView, 280);
         });
@@ -6734,14 +6743,19 @@
           if(threadWrap) threadWrap.classList.remove('portal-cs-cliq-thread--keyboard');
           setTimeout(portalSyncInternalChatMobileViewport, 80);
         });
-      }
-      var plusBtn = document.getElementById('internalChatComposerPlusBtn');
-      if(plusBtn && !plusBtn.dataset.portalDmPlusBound){
-        plusBtn.dataset.portalDmPlusBound = '1';
-        plusBtn.addEventListener('click', function(){
-          var attach = document.querySelector('#internalChatComposerLeading .portal-dm-attach-btn');
-          if(attach) attach.click();
+        inp.addEventListener('input', portalAutosizeInternalChatInput);
+        inp.addEventListener('keydown', function(ev){
+          if(ev.key === 'Enter' && !ev.shiftKey){
+            ev.preventDefault();
+            if(typeof window.portalInternalChatSendMessage === 'function'){
+              void window.portalInternalChatSendMessage();
+            }
+          }
         });
+      }
+      if(window.portalDmIcons && typeof window.portalDmIcons.upgrade === 'function'){
+        var composerRoot = document.querySelector('#internalChatThreadWrap .portal-cs-cliq-composer');
+        if(composerRoot) window.portalDmIcons.upgrade(composerRoot);
       }
     }
     function portalDmPeerDisplayLabel(peerId, profRow){

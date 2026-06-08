@@ -421,9 +421,11 @@
     if (!textarea || !textarea.parentNode) return null;
     injectStyles();
     var shell = textarea.closest(".portal-cs-cliq-composer__shell");
+    var trailing = shell && shell.querySelector(".portal-cs-cliq-composer__trailing");
     var premium = !!(shell && shell.querySelector(".portal-cs-cliq-composer__leading"));
+    var wa = !!trailing;
     var parent = textarea.parentNode;
-    if (!premium && !parent.classList.contains("portal-dm-compose-row")) {
+    if (!premium && !wa && !parent.classList.contains("portal-dm-compose-row")) {
       var row = document.createElement("div");
       row.className = "portal-dm-compose-row";
       parent.insertBefore(row, textarea);
@@ -438,9 +440,12 @@
     var btn = document.createElement("button");
     btn.type = "button";
     btn.id = buttonId;
-    btn.className = "portal-dm-voice-btn" + (premium ? " portal-cs-cliq-composer__tool-btn" : "");
+    btn.className = "portal-dm-voice-btn" + (premium || wa ? " portal-cs-cliq-composer__tool-btn" : "");
     btn.innerHTML = dmIcon("mic");
-    if (premium) {
+    btn.setAttribute("aria-label", "Record voice message");
+    if (wa) {
+      trailing.appendChild(btn);
+    } else if (premium) {
       var leading = shell.querySelector(".portal-cs-cliq-composer__leading");
       if (leading) leading.insertBefore(btn, leading.firstChild);
     } else {
@@ -450,7 +455,9 @@
     hint.className = "portal-dm-voice-rec-hint";
     hint.id = buttonId + "Hint";
     hint.hidden = true;
-    if (premium && shell && shell.parentNode) {
+    if ((wa || premium) && shell && shell.parentNode) {
+      var existingHint = document.getElementById(buttonId + "Hint");
+      if (existingHint) return btn;
       shell.parentNode.insertBefore(hint, shell.nextSibling);
     } else {
       parent.parentNode.insertBefore(hint, parent.nextSibling);

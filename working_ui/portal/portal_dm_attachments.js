@@ -202,6 +202,10 @@
     injectStyles();
     var shell = textarea.closest(".portal-cs-cliq-composer__shell");
     if (shell) {
+      var trailing = shell.querySelector(".portal-cs-cliq-composer__trailing");
+      if (trailing) {
+        return { mode: "wa", shell: shell, trailing: trailing, field: textarea };
+      }
       var leading = shell.querySelector(".portal-cs-cliq-composer__leading");
       if (leading) {
         return { mode: "premium", shell: shell, actions: leading, field: textarea };
@@ -222,7 +226,18 @@
     var chrome = resolveComposeChrome(textarea);
     if (!chrome) return null;
     if (chrome.mode === "premium") return chrome.actions;
+    if (chrome.mode === "wa") return chrome.trailing;
     return chrome.row;
+  }
+
+  function bindExistingBtn(btn, label, onClick) {
+    if (!btn) return null;
+    if (!btn.querySelector(".portal-dm-ico") && label) btn.innerHTML = label;
+    if (btn.dataset.portalDmAttachClickBound !== "1") {
+      btn.dataset.portalDmAttachClickBound = "1";
+      btn.addEventListener("click", onClick);
+    }
+    return btn;
   }
 
   function attachFilePickers(opts) {
@@ -236,10 +251,11 @@
     textarea.dataset.portalDmAttachBound = "1";
     var chrome = resolveComposeChrome(textarea);
     if (!chrome) return;
-    var row = chrome.mode === "premium" ? chrome.actions : chrome.row;
-    var actionsHost = chrome && chrome.mode === "premium" ? chrome.actions : row;
+    var row = chrome.mode === "premium" ? chrome.actions : chrome.mode === "wa" ? chrome.trailing : chrome.row;
+    var actionsHost = chrome && (chrome.mode === "premium" || chrome.mode === "wa") ? (chrome.mode === "wa" ? chrome.trailing : chrome.actions) : row;
     var actions = actionsHost.querySelector(".portal-dm-attach-actions");
-    if (!actions) {
+    var isWa = chrome.mode === "wa";
+    if (!isWa && !actions) {
       actions = document.createElement("div");
       actions.className =
         "portal-dm-attach-actions" +
@@ -256,50 +272,90 @@
     photoInp.accept = "image/*";
     photoInp.hidden = true;
     photoInp.id = (opts.photoInputId || opts.textareaId || "dm") + "PhotoInp";
-    row.appendChild(photoInp);
+    if (isWa) {
+      photoInp.setAttribute("capture", "environment");
+    }
+    (chrome.shell || row).appendChild(photoInp);
 
     var docInp = document.createElement("input");
     docInp.type = "file";
-    docInp.accept = ".pdf,.doc,.docx,.xls,.xlsx,.txt,application/pdf";
+    docInp.accept = ".pdf,.doc,.docx,.xls,.xlsx,.txt,application/pdf,image/*";
     docInp.hidden = true;
     docInp.id = (opts.docInputId || opts.textareaId || "dm") + "DocInp";
-    row.appendChild(docInp);
+    (chrome.shell || row).appendChild(docInp);
 
     function addBtn(id, label, title, onClick) {
       var existing = document.getElementById(id);
       if (existing) {
-        if (!existing.querySelector(".portal-dm-ico")) existing.innerHTML = label;
-        return existing;
+        return bindExistingBtn(existing, label, onClick);
       }
       var btn = document.createElement("button");
       btn.type = "button";
       btn.id = id;
       btn.className =
-        "portal-dm-attach-btn" + (chrome && chrome.mode === "premium" ? " portal-cs-cliq-composer__tool-btn" : "");
+        "portal-dm-attach-btn" +
+        (chrome && (chrome.mode === "premium" || chrome.mode === "wa")
+          ? " portal-cs-cliq-composer__tool-btn"
+          : "");
       btn.innerHTML = label;
       btn.title = title;
       btn.setAttribute("aria-label", title);
       btn.addEventListener("click", onClick);
-      actions.appendChild(btn);
+      if (isWa) {
+        actionsHost.appendChild(btn);
+      } else if (actions) {
+        actions.appendChild(btn);
+      } else {
+        actionsHost.appendChild(btn);
+      }
       return btn;
     }
 
     var photoBtn = addBtn(
       opts.photoBtnId || "portalDmPhotoBtn",
-      dmIcon("gallery"),
-      "Send photo",
+      isWa ? dmIcon("camera") : dmIcon("gallery"),
+      isWa ? "Send photo" : "Send photo",
       function () {
         photoInp.click();
       }
     );
-    var docBtn = addBtn(
-      opts.docBtnId || "portalDmDocBtn",
-      dmIcon("paperclip"),
-      "Send document",
-      function () {
-        docInp.click();
+
+    var docBtn = null;
+    if (!isWa) {
+      docBtn = addBtn(
+        opts.docBtnId || "portalDmDocBtn",
+        dmIcon("paperclip"),
+        "Send document",
+        function () {
+          docInp.click();
+        }
+      );
+    } else {
+      docBtn = document.getElementById(opts.docBtnId || "internalChatDocBtn");
+      if (!docBtn) {
+        docBtn = document.createElement("button");
+        docBtn.type = "button";
+        docBtn.id = opts.docBtnId || "internalChatDocBtn";
+        docBtn.hidden = true;
+        docBtn.setAttribute("aria-hidden", "true");
+        docBtn.tabIndex = -1;
+        (chrome.shell || row).appendChild(docBtn);
       }
-    );
+      if (docBtn.dataset.portalDmAttachClickBound !== "1") {
+        docBtn.dataset.portalDmAttachClickBound = "1";
+        docBtn.addEventListener("click", function () {
+          docInp.click();
+        });
+      }
+      var plusBtn =
+        typeof opts.plusBtnId === "string" ? document.getElementById(opts.plusBtnId) : null;
+      if (plusBtn && plusBtn.dataset.portalDmPlusBound !== "1") {
+        plusBtn.dataset.portalDmPlusBound = "1";
+        plusBtn.addEventListener("click", function () {
+          docInp.click();
+        });
+      }
+    }
 
     function onPick(inp) {
       inp.addEventListener("change", function () {
@@ -318,7 +374,7 @@
             return;
           }
           photoBtn.disabled = true;
-          docBtn.disabled = true;
+          if (docBtn) docBtn.disabled = true;
           try {
             await sendAttachment({
               client: ctx.client,
@@ -335,7 +391,7 @@
             if (opts.onError) opts.onError(String((e && e.message) || e || "Upload failed."));
           } finally {
             photoBtn.disabled = false;
-            docBtn.disabled = false;
+            if (docBtn) docBtn.disabled = false;
           }
         })();
       });
@@ -349,13 +405,14 @@
       textareaId: "internalChatInput",
       photoBtnId: "internalChatPhotoBtn",
       docBtnId: "internalChatDocBtn",
+      plusBtnId: "internalChatComposerPlusBtn",
       getContext: function () {
         var box = global.__PORTAL_SUPABASE__ || {};
         var ui = global.__PORTAL_INTERNAL_CHAT_UI || {};
         return {
           client: box.client,
           threadId: String(ui.threadId || "").trim(),
-          groupId: "",
+          groupId: String(ui.groupId || "").trim(),
           authorId: String(
             (box.staff_profile && box.staff_profile.id) ||
               (box.session && box.session.user && box.session.user.id) ||
