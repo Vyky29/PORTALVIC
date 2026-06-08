@@ -367,6 +367,19 @@
     };
   }
 
+  function profileReadyForInbox() {
+    var sp = global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.staff_profile;
+    if (!sp) return false;
+    return !!(
+      String(sp.app_role || "").trim() ||
+      String(sp.staff_role || "").trim()
+    );
+  }
+
+  function clearIncomingThreadCache() {
+    threadParticipantCache = Object.create(null);
+  }
+
   async function isIncomingDmForMe(row) {
     var me = meUserId();
     if (!me || !row) return false;
@@ -379,7 +392,9 @@
     if (cached && Date.now() - cached.ts < 120000) {
       if (cached.a === me || cached.b === me) return true;
       if (cached.sharedInbox && usesAdminSharedInbox()) return true;
-      return false;
+      // Never reject from cache for exec shared inbox until profile is loaded
+      // (early poll before staff_profile caused 2min false negatives).
+      if (!usesAdminSharedInbox() && profileReadyForInbox()) return false;
     }
     try {
       var res = await client
@@ -410,7 +425,9 @@
           return true;
         }
       }
-      threadParticipantCache[tid] = { a: a, b: b, ts: Date.now(), sharedInbox: false };
+      if (profileReadyForInbox()) {
+        threadParticipantCache[tid] = { a: a, b: b, ts: Date.now(), sharedInbox: false };
+      }
       return false;
     } catch (_part) {
       return false;
@@ -2782,6 +2799,7 @@
     scanThreadForIncomingCall: function (lastMsg) {
       processIncomingCallRow(lastMsg, 0);
     },
+    clearIncomingThreadCache: clearIncomingThreadCache,
     stopIncomingCallAlert: hideIncomingCallOverlay,
     primeCallRingAudio: primeCallRingAudio,
     openLeadsCallPicker: openLeadsCallPicker,
@@ -2797,5 +2815,16 @@
       },
       { once: true, capture: true }
     );
+    global.addEventListener("portal:supabase-ready", function () {
+      clearIncomingThreadCache();
+    });
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState !== "visible") return;
+      if (typeof global.portalAdminDmPollRecentIncomingCalls === "function") {
+        try {
+          void global.portalAdminDmPollRecentIncomingCalls();
+        } catch (_vis) {}
+      }
+    });
   }
 })(typeof window !== "undefined" ? window : globalThis);
