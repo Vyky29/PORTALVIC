@@ -6,7 +6,7 @@
  <title>1-to-1 Wellbeing Review - clubSENsational</title>
  <script src="/portal-static-bootstrap.js"></script>
  <script src="/portal/term_from_timetable.js?v=20260604-teflon-guide-days"></script>
- <link rel="stylesheet" href="/portal/portal-wellbeing-admin-sra.css?v=20260610-wb-voice2" />
+ <link rel="stylesheet" href="/portal/portal-wellbeing-admin-sra.css?v=20260608-wb-stressor-table" />
  <link rel="stylesheet" href="/portal/portal-wellbeing-review-simple.css?v=20260604-wb-flow-refine" />
  <link rel="stylesheet" href="/portal-shared-js/portal_form_feedback_skin.css?v=20260609-autofill" />
  <script src="/portal/portal_wellbeing_stressor_catalog.js?v=20260610-wb-voice2"></script>
@@ -2304,6 +2304,11 @@ document.addEventListener("DOMContentLoaded", function () {
  var sel = tr.querySelector(".js-common-stressor");
  var ta = tr.querySelector(".js-stressor-text");
  if (!det) return;
+ if (tr.getAttribute("data-checkin-stressor") === "1") {
+ det.hidden = false;
+ setStressorExpandButton(tr, true);
+ return;
+ }
  if (tr.getAttribute("data-stressor-ui-collapsed") === "1") return;
  var v = sel ? sel.value : "";
  var txt = ta ? String(ta.value).trim() : "";
@@ -2700,6 +2705,28 @@ document.addEventListener("DOMContentLoaded", function () {
 
  populateStressorDropdowns();
 
+ function tagSraTableCellsForMobile(root) {
+ if (!root) return;
+ var colLabels = [
+ "Stressor",
+ "Observations",
+ "Severity (S)",
+ "Likelihood (L)",
+ "Score",
+ "Control measures",
+ "By who",
+ "By when",
+ ];
+ root.querySelectorAll(".domain-tbody tr").forEach(function (tr) {
+ var tds = tr.querySelectorAll("td");
+ colLabels.forEach(function (lbl, i) {
+ if (tds[i]) tds[i].setAttribute("data-col-label", lbl);
+ });
+ });
+ }
+
+ tagSraTableCellsForMobile(form);
+
  form.addEventListener("input", function (e) {
  var t = e.target;
  if (!(t instanceof HTMLElement)) return;
@@ -3094,7 +3121,7 @@ document.addEventListener("DOMContentLoaded", function () {
  if (btnSavePortal) btnSavePortal.hidden = false;
  if (btnCompletePortal) btnCompletePortal.hidden = false;
  var portalScript = document.createElement("script");
- portalScript.src = "/portal/portal_wellbeing_checkin.js?v=20260604-wb-flow-refine";
+ portalScript.src = "/portal/portal_wellbeing_checkin.js?v=20260608-wb-stressor-table";
  portalScript.onload = function () {
  if (!window.portalWellbeingCheckin) return;
  if (window.portalWellbeingStressorCatalog) {
@@ -3151,7 +3178,11 @@ document.addEventListener("DOMContentLoaded", function () {
  } else {
  setMsg("Pre-filled from staff check-in. Record your conversation below.");
  }
+ if (window.portalWellbeingCheckin.reapplyCheckinStressorsFromCheckin) {
+ window.portalWellbeingCheckin.reapplyCheckinStressorsFromCheckin(form, pack.checkin);
+ }
  window.portalWellbeingCheckin.reapplyAllClearDomainsFromCheckin(form, pack.checkin);
+ tagSraTableCellsForMobile(form);
  form.querySelectorAll(".domain-tbody tr").forEach(function (tr) {
  syncRangeFromNumbers(tr);
  refreshRiskRow(tr);

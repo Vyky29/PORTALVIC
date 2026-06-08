@@ -342,7 +342,11 @@
     if (!wellbeingBellIsPending(row)) return false;
     var a = activityFromWellbeingNotification(row);
     if (!a) return false;
-    return pushActivityAlert(a, { silent: !!opts.silent });
+    var pushed = pushActivityAlert(a, { silent: !!opts.silent });
+    if (typeof global.__portalAdminRenderAlerts === "function") {
+      global.__portalAdminRenderAlerts();
+    }
+    return pushed;
   }
 
   function onWellbeingCheckinUpdated(row) {

@@ -387,3 +387,189 @@ body.portal-wellbeing-admin-mode #btn-complete-portal {
  background: linear-gradient(180deg, #4ade80, #22c55e);
  color: #14532d;
 }
+
+/* Advanced SRA table: fit viewport, no horizontal scroll */
+body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .table-scroll {
+ overflow-x: visible;
+ border: none;
+ background: transparent;
+ box-shadow: none;
+ margin-top: 10px;
+}
+
+body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap table.domain-table {
+ min-width: 0;
+ width: 100%;
+ table-layout: fixed;
+}
+
+body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .domain-table th,
+body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .domain-table td {
+ padding: 8px;
+ font-size: 11px;
+}
+
+body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .domain-table th {
+ font-size: 10px;
+ line-height: 1.3;
+}
+
+body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .th-sub {
+ display: none;
+}
+
+body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .stressor-cell,
+body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .obs-cell,
+body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .controls-cell {
+ min-width: 0;
+ max-width: none;
+}
+
+body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .col-sl {
+ width: 11%;
+ min-width: 0;
+}
+
+body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .col-score {
+ width: 10%;
+ min-width: 0;
+}
+
+body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .who-cell,
+body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .when-cell,
+body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .domain-table th:nth-child(7),
+body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .domain-table th:nth-child(8) {
+ display: none;
+}
+
+body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .stressor-quick {
+ display: none !important;
+}
+
+body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .js-s-range,
+body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .js-l-range {
+ display: none;
+}
+
+body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .sl-wrap {
+ max-width: none;
+}
+
+body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .sl-caption {
+ font-size: 9px;
+ margin-bottom: 2px;
+}
+
+body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .sl-num-input {
+ min-height: 34px;
+ padding: 4px 2px;
+ font-size: 12px;
+}
+
+body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .js-score {
+ font-size: 12px;
+ min-height: 34px;
+ padding: 4px;
+}
+
+body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .score-band {
+ font-size: 8px;
+ min-height: 0;
+}
+
+body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .micro-label {
+ font-size: 9px;
+ margin: 4px 0 2px;
+}
+
+body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .domain-table td textarea {
+ min-height: 56px;
+}
+
+body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .btn-collapse-stressor {
+ display: none;
+}
+
+body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap tr[data-checkin-stressor="1"] .js-stressor-detail,
+body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap tr[data-checkin-stressor="1"] .js-stressor-detail[hidden] {
+ display: block !important;
+}
+
+body.portal-wellbeing-admin-mode .portal-wb-checkin-stressor-badge {
+ display: block;
+ margin-bottom: 8px;
+ padding: 8px 10px;
+ border-radius: 8px;
+ border: 1px solid #fdba74;
+ background: linear-gradient(180deg, #fff7ed 0%, #ffedd5 100%);
+ color: #9a3412;
+ font-size: 12px;
+ font-weight: 700;
+ line-height: 1.35;
+}
+
+body.portal-wellbeing-admin-mode .portal-wb-checkin-stressor-badge::before {
+ content: "From check-in: ";
+ font-weight: 600;
+ color: #c2410c;
+}
+
+body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap tr[data-checkin-stressor="1"] .js-common-stressor {
+ min-height: 36px;
+ padding: 6px 30px 6px 8px;
+ font-size: 11px;
+}
+
+body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap tr[data-checkin-stressor="1"] .js-stressor-text {
+ display: none;
+}
+
+body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .section {
+ padding-left: 20px;
+ padding-right: 20px;
+}
+
+@media (max-width: 900px) {
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .domain-table thead {
+ display: none;
+ }
+
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .domain-table,
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .domain-table tbody,
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .domain-table tr,
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .domain-table td {
+ display: block;
+ width: 100%;
+ }
+
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .domain-table tr {
+ margin-bottom: 12px;
+ padding: 12px;
+ border: 1px solid rgba(42, 49, 64, 0.12);
+ border-radius: 10px;
+ background: #fff;
+ }
+
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .domain-table td {
+ border: none;
+ padding: 8px 0;
+ }
+
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .domain-table td::before {
+ content: attr(data-col-label);
+ display: block;
+ margin-bottom: 4px;
+ font-size: 10px;
+ font-weight: 800;
+ letter-spacing: 0.05em;
+ text-transform: uppercase;
+ color: #5c6778;
+ }
+
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .sl-td,
+ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .score-td {
+ display: inline-block;
+ width: 32%;
+ vertical-align: top;
+ }
+}

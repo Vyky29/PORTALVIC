@@ -707,6 +707,33 @@
  if (typeof global.refreshRiskRow === "function") global.refreshRiskRow(tr);
  }
 
+ function ensureCheckinStressorBadge(tr) {
+ if (!tr) return null;
+ var cell = tr.querySelector(".stressor-cell");
+ if (!cell) return null;
+ var badge = cell.querySelector(".portal-wb-checkin-stressor-badge");
+ if (!badge) {
+ badge = document.createElement("div");
+ badge.className = "portal-wb-checkin-stressor-badge";
+ badge.setAttribute("aria-live", "polite");
+ cell.insertBefore(badge, cell.firstChild);
+ }
+ return badge;
+ }
+
+ function setCheckinStressorBadge(tr, label) {
+ var badge = ensureCheckinStressorBadge(tr);
+ if (!badge) return;
+ var text = clean(label);
+ if (!text) {
+ badge.hidden = true;
+ badge.textContent = "";
+ return;
+ }
+ badge.hidden = false;
+ badge.textContent = text;
+ }
+
  function lockStressorRowFromCheckin(tr) {
  if (!tr) return;
  tr.setAttribute("data-checkin-stressor", "1");
@@ -727,10 +754,12 @@
  tr.removeAttribute("data-stressor-ui-collapsed");
  var detail = tr.querySelector(".js-stressor-detail");
  if (detail) detail.hidden = false;
+ var tb = tr.closest(".domain-tbody");
+ var domKey = tb ? tb.getAttribute("data-domain") : "";
  var sel = tr.querySelector(".js-common-stressor");
  var stText = tr.querySelector(".js-stressor-text");
  var obs = tr.querySelector(".js-obs-text");
- var resolved = sraKey ? resolveStressorKey(sraKey, sel) : "";
+ var resolved = sraKey ? resolveStressorKey(sraKey, domKey, sel) : "";
  var hasOption = false;
  if (sel && resolved) {
  for (var j = 0; j < sel.options.length; j++) {
@@ -768,7 +797,67 @@
  }
  if (opts.fromCheckinStressor) {
  lockStressorRowFromCheckin(tr);
+ var badgeLabel = "";
+ if (resolved && hasOption) badgeLabel = stressorShortLabel(resolved);
+ else if (stText && clean(stText.value)) badgeLabel = clean(stText.value);
+ else if (resolved || sraKey) badgeLabel = stressorShortLabel(resolved || sraKey) || clean(resolved || sraKey);
+ setCheckinStressorBadge(tr, badgeLabel);
  }
+ }
+
+ function reapplyCheckinStressorsFromCheckin(form, checkin) {
+ if (!form || !checkin) return;
+ eachCheckinDomain(form, checkin, function (dk, entry, tbody) {
+ if (!domainHasConcern(entry)) return;
+ var note = clean(entry && entry.note);
+ var stressors = ((entry && entry.stressors) || [])
+ .map(function (s) {
+ return resolveStressorKey(s, dk);
+ })
+ .filter(Boolean);
+ var scores = levelToScores(entry && entry.level);
+ if (!stressors.length) {
+ var tr0 = tbody.rows[0];
+ if (!tr0) return;
+ var sel0 = tr0.querySelector(".js-common-stressor");
+ var st0 = tr0.querySelector(".js-stressor-text");
+ var hasVal =
+ sel0 &&
+ sel0.value &&
+ sel0.value !== "" &&
+ sel0.value !== "__none__";
+ var hasText = st0 && clean(st0.value);
+ if (!hasVal && !hasText && note) {
+ applyStressorToRow(tr0, null, note, scores, { fromCheckinNote: true, fromCheckinStressor: true });
+ }
+ return;
+ }
+ ensureDomainRows(tbody, stressors.length);
+ stressors.forEach(function (key, i) {
+ var tr = tbody.rows[i];
+ if (!tr) return;
+ var sel = tr.querySelector(".js-common-stressor");
+ var stText = tr.querySelector(".js-stressor-text");
+ var hasVal =
+ sel &&
+ sel.value &&
+ sel.value !== "" &&
+ sel.value !== "__none__";
+ var hasText = stText && clean(stText.value);
+ if (!hasVal && !hasText) {
+ applyStressorToRow(tr, key, i === 0 ? note : "", scores, {
+ fromCheckinNote: i === 0 && !!note,
+ fromCheckinStressor: true,
+ });
+ } else if (tr.getAttribute("data-checkin-stressor") === "1") {
+ var label =
+ hasVal && sel.value !== "__other__"
+ ? stressorShortLabel(sel.value)
+ : clean(stText && stText.value);
+ setCheckinStressorBadge(tr, label);
+ }
+ });
+ });
  }
 
  function applyCheckinToSraForm(form, checkin, employment, adminCtx) {
@@ -842,7 +931,7 @@
  if (!domainHasConcern(entry) && domainResponse(entry) !== "support_requested") return;
  var stressors = ((entry && entry.stressors) || [])
  .map(function (s) {
- return resolveStressorKey(s);
+ return resolveStressorKey(s, key);
  })
  .filter(Boolean)
  .map(function (s) {
@@ -975,6 +1064,7 @@
  saveSraDraft: saveSraDraft,
  applyCheckinToSraForm: applyCheckinToSraForm,
  applyCheckinDomainsToSraForm: applyCheckinDomainsToSraForm,
+ reapplyCheckinStressorsFromCheckin: reapplyCheckinStressorsFromCheckin,
  reapplyAllClearDomainsFromCheckin: reapplyAllClearDomainsFromCheckin,
  wireWellbeingReviewVoice: wireWellbeingReviewVoice,
  domainHasConcern: domainHasConcern,
