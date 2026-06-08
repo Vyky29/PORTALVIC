@@ -66,10 +66,10 @@
   <script src="/portal/admin-parent-notify-send.js?v=20260622-parent-notify"></script>
   <script src="/portal/portal-openai-assist.js?v=20260607-openai-assist"></script>
   <script src="/portal/admin-logs.js?v=20260601-logs-merge"></script>
-  <script src="/portal/portal-roster-rows-merge.js?v=20260609-term-slot-cancel"></script>
+  <script src="/portal/portal-roster-rows-merge.js?v=20260609-kirushy-rest-term"></script>
   <script src="/portal-shared-js/participant_services.js?v=20260609-term-slot-autofill"></script>
   <script src="/portal-shared-js/portal_field_autocomplete.js?v=20260609-term-slot-autofill"></script>
-  <script src="/portal/admin-portal-term-slot.js?v=20260609-term-slot-full"></script>
+  <script src="/portal/admin-portal-term-slot.js?v=20260609-kirushy-rest-term"></script>
   <script src="/portal/portal-staff-timetable-merge.js?v=20260612-hours-edit"></script>
   <script src="/portal/spreadsheet_reference_data.js?v=20260616-day-centre-hours"></script>
   <script src="/portal/admin-roster-spreadsheet-reference.js?v=20260616-day-centre-hours"></script>
@@ -4728,6 +4728,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function portalInvalidateAdminSlotsCache(){
       slotsForSelectedDate._byIso = null;
     }
+    function portalNotifyAdminRosterDataChanged(opts){
+      opts = opts || {};
+      portalInvalidateAdminSlotsCache();
+      try{
+        if(typeof adminMergeSpreadsheetSessionsForSlotLookup !== 'undefined' && adminMergeSpreadsheetSessionsForSlotLookup.invalidate){
+          adminMergeSpreadsheetSessionsForSlotLookup.invalidate();
+        }
+      }catch(_inv){}
+      if(opts.refreshScheduling && String(state.view || '') === 'scheduling' && typeof refreshSchedulingModule === 'function'){
+        void refreshSchedulingModule();
+      }
+    }
+    window.portalNotifyAdminRosterDataChanged = portalNotifyAdminRosterDataChanged;
+    window.addEventListener('portal:staff-dashboard-source-updated', function(){
+      portalNotifyAdminRosterDataChanged();
+    });
     /** Parse YYYY-MM-DD to local noon Date (stable weekday vs UTC shift). */
     function bookingParseIsoLocal(iso){
       var p = String(iso || '').split('-');

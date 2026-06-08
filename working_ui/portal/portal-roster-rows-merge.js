@@ -27,7 +27,7 @@
     return [
       String(row.day || "").toLowerCase(),
       String(row.client_name || "").toLowerCase(),
-      String(row.time_slot || "").toLowerCase(),
+      normTimeSlot(row.time_slot),
     ].join("|");
   }
 
@@ -35,8 +35,12 @@
     return [
       normIso(row.session_date),
       String(row.client_name || "").toLowerCase(),
-      String(row.time_slot || "").toLowerCase(),
+      normTimeSlot(row.time_slot),
     ].join("|");
+  }
+
+  function normTimeSlot(v) {
+    return String(v || "").toLowerCase().replace(/\s+/g, " ").trim();
   }
 
   /** From this ISO, machine/bundle dated rows keep their instructors; DB templates may not replace them. */
@@ -76,14 +80,22 @@
     var dated = Object.create(null);
     var cancelledTemplates = Object.create(null);
     var cancelledDated = Object.create(null);
+    var cancelledClientDay = Object.create(null);
 
     db.forEach(function (raw) {
       if (String(raw.status || "active") !== "active" && String(raw.status || "") !== "cancelled") return;
       var row = dbToAdapter(raw);
       if (!row.client_name || !row.time_slot) return;
       if (String(raw.status || "") === "cancelled") {
-        if (row.session_date) cancelledDated[datedSlotKey(row)] = true;
-        else if (row.day) cancelledTemplates[templateKey(row)] = true;
+        if (row.session_date) {
+          cancelledDated[datedSlotKey(row)] = true;
+          var iso = normIso(row.session_date);
+          if (iso) {
+            cancelledClientDay[
+              iso + "|" + String(row.client_name || "").toLowerCase() + "|" + String(row.day || weekdayLongFromIso(iso) || "").toLowerCase()
+            ] = true;
+          }
+        } else if (row.day) cancelledTemplates[templateKey(row)] = true;
         return;
       }
       if (row.session_date) dated[datedSlotKey(row)] = row;
@@ -97,6 +109,8 @@
       var iso = normIso(r.session_date);
       var sk = datedSlotKey(r);
       if (cancelledDated[sk]) return;
+      var dayLabel = String(r.day || weekdayLongFromIso(iso) || "").toLowerCase();
+      if (iso && cancelledClientDay[iso + "|" + String(r.client_name || "").toLowerCase() + "|" + dayLabel]) return;
       var tk = templateKey({ day: r.day || weekdayLongFromIso(iso), client_name: r.client_name, time_slot: r.time_slot });
       if (!dated[sk] && cancelledTemplates[tk]) return;
       if (dated[sk]) {

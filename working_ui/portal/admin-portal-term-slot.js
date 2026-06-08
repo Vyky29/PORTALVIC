@@ -112,15 +112,29 @@
     var src = global.STAFF_DASHBOARD_SOURCE;
     var rows = src && Array.isArray(src.rows) ? src.rows : [];
     var cLow = String(client || "").toLowerCase();
-    var tLow = String(timeSlot || "").toLowerCase();
+    var tLow = String(timeSlot || "").toLowerCase().replace(/\s+/g, " ").trim();
     for (var i = 0; i < rows.length; i++) {
       var r = rows[i];
       if (String(r.client_name || "").toLowerCase() !== cLow) continue;
-      if (String(r.time_slot || "").toLowerCase() !== tLow) continue;
+      var rowSlot = String(r.time_slot || "").toLowerCase().replace(/\s+/g, " ").trim();
+      if (rowSlot !== tLow) continue;
       if (anchorIso && normIso(r.session_date) && normIso(r.session_date) !== anchorIso) continue;
       return r;
     }
     return null;
+  }
+
+  function bundleCancelRow(p, iso) {
+    var slot = findBundleSlot(iso || p.anchorDate, p.client_name, p.time_slot);
+    return {
+      client_name: p.client_name,
+      day: p.day,
+      time_slot: slot ? String(slot.time_slot || p.time_slot).trim() : p.time_slot,
+      instructors: slot ? String(slot.instructors || p.instructors || "").trim() : p.instructors,
+      service: slot ? String(slot.service || p.service || "").trim() : p.service,
+      area: slot ? String(slot.area || p.area || "").trim() : p.area,
+      venue: slot ? String(slot.venue || p.venue || "").trim() : p.venue,
+    };
   }
 
   function fillFormFromBundle(root) {
@@ -135,6 +149,7 @@
       return;
     }
     var map = [
+      ["#trsTimeSlot", slot.time_slot],
       ["#trsInstructors", slot.instructors],
       ["#trsService", slot.service],
       ["#trsArea", slot.area],
@@ -387,22 +402,28 @@
     }
     var bounds = deps.getTermBounds();
     var before = findBundleSlot(p.anchorDate, p.client_name, p.time_slot);
-    var snap = snapshotRow(p);
+    var cancelRow = bundleCancelRow(p, p.anchorDate);
+    var snap = snapshotRow(Object.assign({}, p, { time_slot: cancelRow.time_slot }));
     snap.action = "cancel_service";
     state.saving = true;
     render(root);
     var chain = Promise.resolve();
     if (p.scope === "single_day") {
-      chain = ensureCancelledDated(client, p, p.anchorDate, p.day);
+      chain = ensureCancelledDated(client, cancelRow, p.anchorDate, p.day);
     } else if (p.scope === "weekday_term") {
-      chain = ensureCancelledTemplate(client, p).then(function () {
-        return cancelDatedRowsForWeekday(client, p.day, p.client_name, p.time_slot, bounds.firstDate, bounds.lastDate);
+      chain = ensureCancelledTemplate(client, cancelRow).then(function () {
+        return cancelDatedRowsForWeekday(client, cancelRow.day, cancelRow.client_name, cancelRow.time_slot, bounds.firstDate, bounds.lastDate);
       });
     } else {
       var dates = weekdaysMatchingFromThrough(p.day, p.anchorDate, bounds.lastDate, bounds);
-      chain = dates.reduce(function (acc, iso) {
-        return acc.then(function () { return ensureCancelledDated(client, p, iso, p.day); });
-      }, Promise.resolve());
+      chain = cancelDatedRowsForWeekday(client, cancelRow.day, cancelRow.client_name, cancelRow.time_slot, p.anchorDate, bounds.lastDate)
+        .then(function () {
+          return dates.reduce(function (acc, iso) {
+            return acc.then(function () {
+              return ensureCancelledDated(client, bundleCancelRow(p, iso), iso, p.day);
+            });
+          }, Promise.resolve());
+        });
     }
     finishTermSlotSave(chain, root, p, before, snap, "cancel", client, "Service cancelled — participante removed from roster.");
   }
@@ -489,6 +510,9 @@
       .then(function () {
         if (typeof global.portalRefreshStaffDashboardSourceFromPortal === "function") {
           global.portalRefreshStaffDashboardSourceFromPortal();
+        }
+        if (typeof global.portalNotifyAdminRosterDataChanged === "function") {
+          global.portalNotifyAdminRosterDataChanged({ refreshScheduling: true });
         }
         deps.toast(toastMsg || "Term slot saved.");
         if (global.PortalChangeLog && typeof global.PortalChangeLog.record === "function") {
