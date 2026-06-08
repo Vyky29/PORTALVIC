@@ -29,11 +29,11 @@
  <p class="portal-wb-foot" style="margin:0;text-align:left">Loading...</p>
  </div>
  </div>
- <p class="portal-wb-foot">Only ops admin and directors are notified when you flag a concern. &quot;All good&quot; check-ins are recorded without a 1-to-1 request.</p>
+ <p class="portal-wb-foot">Only Ops Admin and Directors are notified when you request support. &quot;All good&quot; check-ins are recorded without a wellbeing conversation request.</p>
  </div>
 
  <script src="/portal/portal_wellbeing_stressor_catalog.js?v=20260610-wb-voice2"></script>
- <script src="/portal/portal_wellbeing_checkin.js?v=20260610-wb-voice2"></script>
+ <script src="/portal/portal_wellbeing_checkin.js?v=20260604-wb-flow-refine"></script>
  <script src="/portal/portal_feedback_voice_input.js?v=20260610-wb-voice2"></script>
  <script>
  (function () {
@@ -98,7 +98,7 @@
  }
 
  function freshDomainEntry() {
- return { level: "green", note: "", stressors: [] };
+ return { response: "all_good", level: "green", note: "", stressors: [] };
  }
 
  function domainEntry(key) {
@@ -154,7 +154,7 @@
  "div",
  "portal-wb-stressors-head",
  '<span class="portal-wb-field-label">Stressors</span>' +
- '<span class="portal-wb-stressors-sub">Tap any that apply. These carry through to your 1-to-1 review.</span>'
+ '<span class="portal-wb-stressors-sub">Tap any that apply. Select at least one stressor or add a comment below.</span>'
  )
  );
  var grid = el("div", "portal-wb-stressor-grid");
@@ -208,7 +208,7 @@
  '<h2>' + (has ? "Thank you - we have received your check-in" : "Thank you - all recorded") + '</h2>' +
  '<p>' +
  (has
- ? "Someone from leadership will contact you to arrange a private 1-to-1. You do not need to fill in the long stress form now - that is completed together in the meeting."
+ ? "Someone from leadership will contact you to arrange a private wellbeing conversation. You do not need to complete any further forms now."
  : "Glad to hear things are OK this term. You can close this page.") +
  '</p>' +
  '<button type="button" class="portal-wb-btn portal-wb-btn--pri" id="btnCloseDone">Back to portal</button>' +
@@ -258,19 +258,20 @@
 
  var levels = el("div", "portal-wb-levels");
  [
- { level: "green", title: "All good", sub: "No concerns right now" },
- { level: "amber", title: "Some pressure", sub: "I'd like to talk when there is time" },
- { level: "red", title: "Need support soon", sub: "Please arrange a 1-to-1 with me" },
+ { response: "all_good", level: "green", title: "All good", sub: "No concerns right now." },
+ { response: "support_requested", level: "red", title: "I'd like support", sub: "Please arrange a wellbeing conversation with me." },
  ].forEach(function (opt) {
- var btn = el("button", "portal-wb-level" + (entry.level === opt.level ? " is-active" : ""), "");
+ var active = (entry.response || (entry.level === "green" ? "all_good" : "support_requested")) === opt.response;
+ var btn = el("button", "portal-wb-level" + (active ? " is-active" : ""), "");
  btn.type = "button";
- btn.setAttribute("data-level", opt.level);
+ btn.setAttribute("data-response", opt.response);
  btn.innerHTML =
  '<span class="portal-wb-level-icon">' + LEVEL_ICONS[opt.level] + '</span>' +
  '<span class="portal-wb-level-copy"><strong>' + opt.title + '</strong><span>' + opt.sub + '</span></span>';
  btn.onclick = function () {
+ entry.response = opt.response;
  entry.level = opt.level;
- if (opt.level === "green") {
+ if (opt.response === "all_good") {
  entry.stressors = [];
  entry.note = "";
  }
@@ -281,10 +282,11 @@
  h.appendChild(levels);
 
  var extra = el("div", "portal-wb-extra");
- extra.hidden = entry.level === "green";
+ var isSupport = (entry.response || (entry.level === "green" ? "all_good" : "support_requested")) === "support_requested";
+ extra.hidden = !isSupport;
  renderStressorBlock(extra, dom.key, entry);
  var comments = el("div", "portal-wb-comments");
- comments.appendChild(el("label", "portal-wb-field-label", "Additional comments (optional)"));
+ comments.appendChild(el("label", "portal-wb-field-label", "Additional comments"));
  var ta = document.createElement("textarea");
  ta.id = "wb-domain-note-" + dom.key;
  ta.rows = 3;
@@ -305,7 +307,21 @@
  }
  var next = el("button", "portal-wb-btn portal-wb-btn--pri", idx === wb.DOMAINS.length - 1 ? "Review & send" : "Next");
  next.type = "button";
- next.onclick = function () { persistCurrentStep(); state.step++; renderStep(); };
+ next.onclick = function () {
+ persistCurrentStep();
+ var current = domainEntry(dom.key);
+ var support = (current.response || (current.level === "green" ? "all_good" : "support_requested")) === "support_requested";
+ if (support) {
+ var hasStressor = (current.stressors || []).length > 0;
+ var hasNote = String(current.note || "").trim().length > 0;
+ if (!hasStressor && !hasNote) {
+ alert("Please select at least one stressor or add a written comment before continuing.");
+ return;
+ }
+ }
+ state.step++;
+ renderStep();
+ };
  actions.appendChild(next);
  h.appendChild(actions);
 
@@ -316,7 +332,7 @@
  h.appendChild(el("div", "portal-wb-domain-head",
  '<div class="portal-wb-domain-icon">' + DOMAIN_ICONS.support + '</div>' +
  '<div><h2 class="portal-wb-domain-title">Anything Else?</h2>' +
- '<p class="portal-wb-domain-q">Optional message for leadership - only read if you flagged concerns above or write here.</p></div>'
+ '<p class="portal-wb-domain-q">Optional message for leadership — only read if you requested support above, or write here.</p></div>'
  ));
  var genComments = el("div", "portal-wb-comments");
  var ta = document.createElement("textarea");

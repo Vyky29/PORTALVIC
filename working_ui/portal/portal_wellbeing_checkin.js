@@ -205,10 +205,18 @@
  return max;
  }
 
+ function domainResponse(entry) {
+ if (!entry) return "all_good";
+ var response = clean(entry.response || "").toLowerCase();
+ if (response === "support_requested" || response === "all_good") return response;
+ var lv = clean(entry.level || "green").toLowerCase();
+ if (lv === "amber" || lv === "red") return "support_requested";
+ return "all_good";
+ }
+
  function domainHasConcern(entry) {
  if (!entry) return false;
- var lv = clean(entry.level || "green").toLowerCase();
- if (lv === "amber" || lv === "red") return true;
+ if (domainResponse(entry) === "support_requested") return true;
  if (clean(entry.note)) return true;
  var stressors = entry.stressors;
  return Array.isArray(stressors) && stressors.some(function (s) {
@@ -264,8 +272,10 @@
  stressors = stressors.filter(function (s, i) {
  return stressors.indexOf(s) === i;
  });
+ var response = domainResponse(entry);
  out[key] = {
- level: clean(entry.level || "green").toLowerCase() || "green",
+ response: response,
+ level: response === "support_requested" ? "red" : "green",
  note: clean(entry.note),
  stressors: stressors,
  };
@@ -289,8 +299,10 @@
  stressors = stressors.filter(function (s, i) {
  return stressors.indexOf(s) === i;
  });
+ var response = domainResponse(entry);
  out[key] = {
- level: clean(entry.level || "green").toLowerCase() || "green",
+ response: response,
+ level: response === "support_requested" ? "red" : "green",
  note: clean(entry.note),
  stressors: stressors.slice(),
  };
@@ -533,7 +545,7 @@
  staff_name: ctx.staffName,
  staff_role: clean((ctx.profile && (ctx.profile.staff_role || ctx.profile.app_role)) || ""),
  term_key: currentTermKey(),
- status: hasConcerns ? "needs_1to1" : "all_clear",
+ status: hasConcerns ? "awaiting_1to1" : "all_clear",
  has_concerns: hasConcerns,
  highest_level: hl,
  domains: domains,
@@ -568,7 +580,7 @@
  .maybeSingle();
  if (res.error) throw res.error;
  if (!res.data) throw new Error("Check-in not found.");
- if (res.data.status === "needs_1to1") {
+ if (res.data.status === "needs_1to1" || res.data.status === "awaiting_1to1") {
  await ctx.client
  .from("portal_staff_wellbeing_checkins")
  .update({ status: "in_progress" })
@@ -604,6 +616,15 @@
  return res.data;
  }
 
+ async function resolveWellbeingNotifications(client, checkinId) {
+ if (!client || !checkinId) return;
+ await client
+ .from("portal_wellbeing_admin_notifications")
+ .update({ read_at: new Date().toISOString() })
+ .eq("checkin_id", checkinId)
+ .is("read_at", null);
+ }
+
  async function saveSraDraft(checkinId, draftJson, opts) {
  opts = opts || {};
  var ctx = await getAuthClient();
@@ -624,10 +645,16 @@
  var res = await ctx.client.from("portal_staff_wellbeing_sra").upsert(row, { onConflict: "checkin_id" });
  if (res.error) throw res.error;
  if (opts.completed) {
+ var finalStatus = "completed";
+ if (draftJson && typeof draftJson === "object" && !Array.isArray(draftJson)) {
+ var outcome = clean((draftJson.simple && draftJson.simple.outcome) || opts.outcome || "").toLowerCase();
+ if (outcome === "monitoring" || outcome === "ongoing_support") finalStatus = "monitoring";
+ }
  await ctx.client
  .from("portal_staff_wellbeing_checkins")
- .update({ status: "completed" })
+ .update({ status: finalStatus })
  .eq("id", checkinId);
+ await resolveWellbeingNotifications(ctx.client, checkinId);
  }
  return true;
  }
@@ -787,9 +814,22 @@
 
  function levelLabel(level) {
  var lv = clean(level || "green").toLowerCase();
- if (lv === "red") return "Needs support soon";
+ if (lv === "support_requested" || lv === "red") return "Support requested";
  if (lv === "amber") return "Some pressure";
- return "All good";
+ if (lv === "all_good" || lv === "green") return "All good";
+ return String(level || "").replace(/_/g, " ");
+ }
+
+ function statusLabel(status) {
+ var map = {
+ all_clear: "All good",
+ needs_1to1: "Awaiting 1 to 1",
+ awaiting_1to1: "Awaiting 1 to 1",
+ in_progress: "In progress",
+ completed: "Completed",
+ monitoring: "Monitoring",
+ };
+ return map[clean(status).toLowerCase()] || String(status || "").replace(/_/g, " ");
  }
 
  function flaggedDomainsList(checkin) {
@@ -798,7 +838,8 @@
  var labels = getDomainLabels();
  Object.keys(labels).forEach(function (key) {
  var entry = domains[key];
- if (!domainHasConcern(entry)) return;
+ if (!entry || domainResponse(entry) !== "support_requested") return;
+ if (!domainHasConcern(entry) && domainResponse(entry) !== "support_requested") return;
  var stressors = ((entry && entry.stressors) || [])
  .map(function (s) {
  return resolveStressorKey(s);
@@ -810,7 +851,7 @@
  out.push({
  key: key,
  label: labels[key] || key,
- level: clean((entry && entry.level) || "amber").toLowerCase(),
+ level: domainResponse(entry),
  stressors: stressors,
  });
  });
@@ -843,7 +884,7 @@
  '<div class="portal-wb-hero-flag__head"><span class="portal-wb-hero-flag__domain">' +
  escapeHtml(f.label) +
  '</span><span class="portal-wb-hero-flag__level">' +
- escapeHtml(levelLabel(f.level)) +
+ escapeHtml(levelLabel(f.level, (checkin.domains || {})[f.key])) +
  "</span></div>"
  );
  if (f.stressors && f.stressors.length) {
@@ -941,5 +982,8 @@
  renderAdminBanner: renderAdminBanner,
  renderAdminQuickNav: renderAdminQuickNav,
  flaggedDomainsList: flaggedDomainsList,
+ domainResponse: domainResponse,
+ statusLabel: statusLabel,
+ resolveWellbeingNotifications: resolveWellbeingNotifications,
  };
 })(typeof window !== "undefined" ? window : globalThis);

@@ -7,8 +7,10 @@
  <script src="/portal-static-bootstrap.js"></script>
  <script src="/portal/term_from_timetable.js?v=20260604-teflon-guide-days"></script>
  <link rel="stylesheet" href="/portal/portal-wellbeing-admin-sra.css?v=20260610-wb-voice2" />
+ <link rel="stylesheet" href="/portal/portal-wellbeing-review-simple.css?v=20260604-wb-flow-refine" />
  <link rel="stylesheet" href="/portal-shared-js/portal_form_feedback_skin.css?v=20260609-autofill" />
  <script src="/portal/portal_wellbeing_stressor_catalog.js?v=20260610-wb-voice2"></script>
+ <script src="/portal/portal_wellbeing_review_simple.js?v=20260604-wb-flow-refine"></script>
  <script src="/portal/portal_feedback_voice_input.js?v=20260610-wb-voice2"></script>
  <link rel="preconnect" href="https://www.clubsensational.org" />
  <link rel="dns-prefetch" href="https://www.clubsensational.org" />
@@ -2904,7 +2906,7 @@ document.addEventListener("DOMContentLoaded", function () {
  setMsg("localStorage unavailable (use http/https or allow storage).");
  return;
  }
- localStorage.setItem(STORAGE_KEY, JSON.stringify(collectValues()));
+ localStorage.setItem(STORAGE_KEY, JSON.stringify(portalCheckinId ? buildPortalDraftPayload() : collectValues()));
  setMsg("Draft saved.");
  } catch (e) {
  setMsg("Could not save (private mode or file://).");
@@ -2925,12 +2927,11 @@ document.addEventListener("DOMContentLoaded", function () {
  setMsg("No draft found.");
  return;
  }
- var arr = JSON.parse(raw);
- if (!Array.isArray(arr)) {
+ var parsed = JSON.parse(raw);
+ if (!applyPortalDraftPayload(parsed)) {
  setMsg("Draft format not recognised.");
  return;
  }
- applyValues(arr);
  setMsg("Draft loaded.");
  } catch (e) {
  setMsg("Could not load draft.");
@@ -3009,6 +3010,7 @@ document.addEventListener("DOMContentLoaded", function () {
  window.updateNoStressorQuickVisual = updateNoStressorQuickVisual;
 
  var portalCheckinId = "";
+ var portalSimpleReview = null;
  try {
  portalCheckinId = String(new URLSearchParams(window.location.search).get("checkin") || "").trim();
  } catch (_qs) {}
@@ -3016,16 +3018,61 @@ document.addEventListener("DOMContentLoaded", function () {
  var btnSavePortal = document.getElementById("btn-save-portal");
  var btnCompletePortal = document.getElementById("btn-complete-portal");
 
+ function buildPortalDraftPayload() {
+ var legacy = collectValues();
+ if (portalSimpleReview && typeof portalSimpleReview.collect === "function") {
+ return {
+ version: 2,
+ simple: portalSimpleReview.collect(),
+ legacy_values: legacy,
+ };
+ }
+ return legacy;
+ }
+
+ function applyPortalDraftPayload(draftJson) {
+ if (!draftJson) return false;
+ if (window.portalWellbeingReviewSimple && typeof window.portalWellbeingReviewSimple.parseDraft === "function") {
+ var parsed = window.portalWellbeingReviewSimple.parseDraft(draftJson);
+ if (parsed.legacy_values && parsed.legacy_values.length) {
+ applyValues(parsed.legacy_values);
+ }
+ if (portalSimpleReview && parsed.simple) {
+ portalSimpleReview.apply(parsed.simple);
+ }
+ return parsed.version === 2 || !!(parsed.legacy_values && parsed.legacy_values.length);
+ }
+ if (Array.isArray(draftJson) && draftJson.length) {
+ applyValues(draftJson);
+ return true;
+ }
+ return false;
+ }
+
  function portalSaveSraToBackend(opts) {
  opts = opts || {};
  if (!portalCheckinId || !window.portalWellbeingCheckin) {
  setMsg("Open from admin alert with ?checkin=... to save to portal.");
  return Promise.reject(new Error("No check-in linked"));
  }
+ var payload = buildPortalDraftPayload();
+ if (opts.completed && portalSimpleReview) {
+ var simple = payload.simple || portalSimpleReview.collect();
+ if (!simple || !simple.outcome) {
+ setMsg("Please select an outcome before marking the 1-to-1 complete.");
+ var outcomeEl = document.getElementById("wbOutcome");
+ if (outcomeEl) outcomeEl.focus();
+ return Promise.reject(new Error("Outcome required"));
+ }
+ if (!payload.simple) payload = buildPortalDraftPayload();
+ }
  return window.portalWellbeingCheckin
- .saveSraDraft(portalCheckinId, collectValues(), { completed: !!opts.completed })
+ .saveSraDraft(portalCheckinId, payload, { completed: !!opts.completed })
  .then(function () {
- setMsg(opts.completed ? "Marked complete in portal." : "Saved to portal.");
+ if (opts.completed && typeof window.portalAdminBellRemoveWellbeingForCheckin === "function") {
+ window.portalAdminBellRemoveWellbeingForCheckin(portalCheckinId);
+ }
+ setMsg(opts.completed ? "1-to-1 marked complete and saved to portal." : "Saved to portal.");
  });
  }
 
@@ -3047,7 +3094,7 @@ document.addEventListener("DOMContentLoaded", function () {
  if (btnSavePortal) btnSavePortal.hidden = false;
  if (btnCompletePortal) btnCompletePortal.hidden = false;
  var portalScript = document.createElement("script");
- portalScript.src = "/portal/portal_wellbeing_checkin.js?v=20260610-wb-voice2";
+ portalScript.src = "/portal/portal_wellbeing_checkin.js?v=20260604-wb-flow-refine";
  portalScript.onload = function () {
  if (!window.portalWellbeingCheckin) return;
  if (window.portalWellbeingStressorCatalog) {
@@ -3086,15 +3133,23 @@ document.addEventListener("DOMContentLoaded", function () {
  .then(function (result) {
  var pack = result.pack;
  var draftRow = result.draftRow;
- if (draftRow && Array.isArray(draftRow.draft_json) && draftRow.draft_json.length) {
- applyValues(draftRow.draft_json);
- form.querySelectorAll(".domain-tbody tr").forEach(function (tr) {
- syncRangeFromNumbers(tr);
- refreshRiskRow(tr);
+ if (window.portalWellbeingReviewSimple) {
+ portalSimpleReview = window.portalWellbeingReviewSimple.mountAdminSimpleReview({
+ checkin: pack.checkin,
+ wb: window.portalWellbeingCheckin,
+ draft: window.portalWellbeingReviewSimple.parseDraft(draftRow && draftRow.draft_json),
  });
- setMsg("Loaded saved draft.");
+ var heroFocus = document.getElementById("portalWbHeroFocus");
+ if (heroFocus) heroFocus.hidden = true;
+ }
+ if (draftRow && draftRow.draft_json) {
+ if (applyPortalDraftPayload(draftRow.draft_json)) {
+ setMsg("Loaded saved conversation record.");
  } else {
- setMsg("Pre-filled from staff check-in - complete flagged sections below.");
+ setMsg("Pre-filled from staff check-in.");
+ }
+ } else {
+ setMsg("Pre-filled from staff check-in. Record your conversation below.");
  }
  window.portalWellbeingCheckin.reapplyAllClearDomainsFromCheckin(form, pack.checkin);
  form.querySelectorAll(".domain-tbody tr").forEach(function (tr) {
