@@ -292,7 +292,7 @@
       '" /></div>' +
       '<div class="field"><label for="wbEscalationDate">Escalation date</label><input type="date" id="wbEscalationDate" value="' +
       esc(record.escalation_date) +
-      '" /></div></div></div></section>";
+      '" /></div></div></div></section>';
 
     wireDecisionsInteractions(host);
   }

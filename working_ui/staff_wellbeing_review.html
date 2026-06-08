@@ -9,6 +9,11 @@
  try {
  if (/[?&]checkin=/.test(location.search || "")) {
  document.documentElement.classList.add("portal-wb-admin-booting");
+ window.__portalWbFinishAdminBoot = function () {
+ document.documentElement.classList.remove("portal-wb-admin-booting");
+ document.documentElement.classList.add("portal-wb-admin-ready");
+ if (document.body) document.body.classList.add("portal-wb-admin-ready");
+ };
  }
  } catch (_) {}
  })();
@@ -19,7 +24,7 @@
  <link rel="stylesheet" href="/portal/portal-wellbeing-review-simple.css?v=20260610-wb-flow-slim" />
  <link rel="stylesheet" href="/portal-shared-js/portal_form_feedback_skin.css?v=20260609-autofill" />
  <script src="/portal/portal_wellbeing_stressor_catalog.js?v=20260610-wb-voice2"></script>
- <script src="/portal/portal_wellbeing_review_simple.js?v=20260610-wb-flow-slim"></script>
+ <script src="/portal/portal_wellbeing_review_simple.js?v=20260610-wb-syntax-fix"></script>
  <script src="/portal/portal_feedback_voice_input.js?v=20260610-wb-voice2"></script>
  <link rel="preconnect" href="https://www.clubsensational.org" />
  <link rel="dns-prefetch" href="https://www.clubsensational.org" />
@@ -3548,8 +3553,19 @@ document.addEventListener("DOMContentLoaded", function () {
  if (btnCompletePortal) btnCompletePortal.hidden = false;
  var portalScript = document.createElement("script");
  portalScript.src = "/portal/portal_wellbeing_checkin.js?v=20260610-wb-clear-header";
+ function finishAdminBoot() {
+ if (window.portalWellbeingReviewSimple && window.portalWellbeingReviewSimple.markAdminReady) {
+ window.portalWellbeingReviewSimple.markAdminReady();
+ } else if (typeof window.__portalWbFinishAdminBoot === "function") {
+ window.__portalWbFinishAdminBoot();
+ }
+ }
  portalScript.onload = function () {
- if (!window.portalWellbeingCheckin) return;
+ if (!window.portalWellbeingCheckin) {
+ setMsg("Could not load wellbeing module.");
+ finishAdminBoot();
+ return;
+ }
  if (window.portalWellbeingStressorCatalog) {
  window.portalWellbeingStressorCatalog.applySectionTitlesToDocument();
  }
@@ -3623,16 +3639,16 @@ document.addEventListener("DOMContentLoaded", function () {
  if (window.portalWellbeingCheckin.wireWellbeingReviewVoice) {
  window.portalWellbeingCheckin.wireWellbeingReviewVoice(form, pack.ctx.staffName || "");
  }
- if (window.portalWellbeingReviewSimple && window.portalWellbeingReviewSimple.markAdminReady) {
- window.portalWellbeingReviewSimple.markAdminReady();
- }
+ finishAdminBoot();
  })
  .catch(function (err) {
- if (window.portalWellbeingReviewSimple && window.portalWellbeingReviewSimple.markAdminReady) {
- window.portalWellbeingReviewSimple.markAdminReady();
- }
+ finishAdminBoot();
  setMsg(String((err && err.message) || err || "Could not load check-in."));
  });
+ portalScript.onerror = function () {
+ setMsg("Could not load wellbeing module.");
+ finishAdminBoot();
+ };
  };
  document.body.appendChild(portalScript);
  }
