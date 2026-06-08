@@ -89,6 +89,21 @@
     );
   }
 
+  function portalOpenInternalChatFromFooter() {
+    if (typeof global.portalOpenInternalChatFromHeaderQuickMenu === "function") {
+      global.portalOpenInternalChatFromHeaderQuickMenu();
+      return;
+    }
+    try {
+      if (typeof global.closeSheet === "function") {
+        global.closeSheet({ bypassAnnouncementLock: true });
+      }
+    } catch (_cl) {}
+    if (typeof global.openSheet === "function") {
+      global.openSheet("internalChatSheet", { bypassAnnouncementLock: true });
+    }
+  }
+
   function portalInitFloatingInternalChat() {
     var btn = portalFloatingChatBtn();
     if (!btn || btn.getAttribute("data-portal-floating-chat-bound") === "1") {
@@ -97,11 +112,13 @@
     }
     btn.setAttribute("data-portal-floating-chat-bound", "1");
     btn.hidden = false;
-    btn.setAttribute("aria-hidden", "false");
-    btn.addEventListener("click", function () {
-      if (typeof global.portalOpenInternalChatFromHeaderQuickMenu === "function") {
-        global.portalOpenInternalChatFromHeaderQuickMenu();
-      }
+    btn.removeAttribute("aria-hidden");
+    btn.addEventListener("click", function (ev) {
+      try {
+        ev.preventDefault();
+        ev.stopPropagation();
+      } catch (_ev) {}
+      portalOpenInternalChatFromFooter();
     });
 
     var origSync = global.portalStaffDmSyncUnreadChrome;

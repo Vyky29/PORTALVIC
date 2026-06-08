@@ -368,7 +368,7 @@
   <nav class="dock-bar" aria-label="Main navigation">
     <div class="dock-bar__nav" role="toolbar" aria-label="Footer navigation">
       <div class="dock-chat-wrap dock-chat-wrap--idle" id="portalFloatingChatOrbitWrap">
-        <button type="button" class="dock-nav-item dock-nav-item--chat portal-floating-chat-btn" id="portalFloatingChatBtn" aria-label="Open internal chat" title="Chat" hidden aria-hidden="true">
+        <button type="button" class="dock-nav-item dock-nav-item--chat portal-floating-chat-btn" id="portalFloatingChatBtn" aria-label="Open internal chat" title="Chat">
           <span class="dock-nav-item__icon portal-floating-chat-btn__icon" aria-hidden="true"><svg class="portal-floating-chat-btn__svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg></span>
           <span class="dock-nav-item__label">Chat</span>
           <span class="portal-floating-chat-badge" id="portalFloatingChatBadge" hidden aria-hidden="true"></span>
@@ -1051,7 +1051,7 @@
   <script src="/portal/portal_quick_menu_accordion.js?v=20260606-feedbacks-category"></script>
   <script src="/portal/portal_swimming_instructor_menus.js?v=20260610-roberto-topbar"></script>
   <script src="/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off"></script>
-  <script src="/portal/portal_floating_internal_chat.js?v=20260604-footer-chat"></script>
+  <script src="/portal/portal_floating_internal_chat.js?v=20260609-staff-chat-btn"></script>
   <script src="/portal/portal_area_note_icons.js?v=20260607-area-icons-transparent"></script>
   <script src="/portal/portal_today_next_chips.js?v=20260606-photo-stable"></script>
   <script type="module" src="/portal/portal_quick_menu_service_leads.js?v=20260604-service-leads-lead-only"></script>
@@ -7292,7 +7292,6 @@
       }
     }
     window.portalOpenInternalChatFromHeaderQuickMenu = function portalOpenInternalChatFromHeaderQuickMenu(){
-      if(window.portalDmExecutiveCliq && window.portalDmExecutiveCliq.tryOpenAdminCliq()) return;
       try{
         if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
       }catch(_cl){}
@@ -7300,8 +7299,14 @@
         delete window.__PORTAL_OFFICE_DM_PEER_CACHE;
       }catch(_c){}
       window.__PORTAL_INTERNAL_CHAT_UI = window.__PORTAL_INTERNAL_CHAT_UI || {};
+      var openChatSheet = function(){
+        if(typeof openSheet === 'function'){
+          openSheet('internalChatSheet', { bypassAnnouncementLock: true });
+        }
+      };
       if(portalInternalChatOfficeRestricted()){
         window.__PORTAL_INTERNAL_CHAT_UI.inboxTab = 'chats';
+        openChatSheet();
         void (async function(){
           try{
             var tid = typeof window.portalStaffResolveOfficeThreadForQuickOpen === 'function'
@@ -7316,20 +7321,25 @@
             window.__PORTAL_INTERNAL_CHAT_UI.skipResetThreadOnNextSheetOpen = false;
           }
           if(typeof window.portalStaffDmAckInboxOpened === 'function'){
-            await window.portalStaffDmAckInboxOpened();
+            void window.portalStaffDmAckInboxOpened();
           }
-          if(typeof openSheet === 'function') openSheet('internalChatSheet');
+          if(typeof window.portalRenderInternalChatSheet === 'function'){
+            await window.portalRenderInternalChatSheet();
+          }
         })();
       }else{
         window.__PORTAL_INTERNAL_CHAT_UI.threadId = null;
         if(portalStaffIsLeadUser()){
           window.__PORTAL_INTERNAL_CHAT_UI.inboxTab = window.__PORTAL_INTERNAL_CHAT_UI.inboxTab || 'chats';
         }
+        openChatSheet();
         void (async function(){
           if(typeof window.portalStaffDmAckInboxOpened === 'function'){
-            await window.portalStaffDmAckInboxOpened();
+            void window.portalStaffDmAckInboxOpened();
           }
-          if(typeof openSheet === 'function') openSheet('internalChatSheet');
+          if(typeof window.portalRenderInternalChatSheet === 'function'){
+            await window.portalRenderInternalChatSheet();
+          }
         })();
       }
     };
@@ -13088,7 +13098,7 @@
       if(typeof portalAnnouncementLockActive === 'function' && portalAnnouncementLockActive() && id !== 'announcementsSheet'){
         closeSheet({ bypassAnnouncementLock: true });
       }
-      if(closeSheet({ preserveNavStack: true }) === false){
+      if(closeSheet({ preserveNavStack: true, bypassAnnouncementLock: !!opts.bypassAnnouncementLock }) === false){
         if(id === 'announcementsSheet' && document.getElementById('announcementsSheet')?.classList.contains('open')){
           if(typeof renderAnnouncementsSheetContent === 'function') renderAnnouncementsSheetContent();
           syncDockNavContext();
