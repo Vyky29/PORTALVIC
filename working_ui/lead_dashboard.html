@@ -96,7 +96,7 @@
   <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260622-lead-chat-composer" />
   <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260622-lead-chat-inbox" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260610-topbar-colors" />
-  <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260624-staff-lead-dm" />
+  <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260622-lead-csteam-ui" />
   <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260608-inbox-fix" />
   <link rel="stylesheet" href="/portal/portal_cs_cliq_embed.css?v=20260608-inbox-fix" />
   <link rel="stylesheet" href="/portal/portal_cs_cliq_workspace.css?v=20260604-cliq-fix" />
@@ -1068,7 +1068,7 @@
   <script src="/portal/portal_executive_dm.js?v=20260622-chat-restore"></script>
   <script src="/portal/portal_cs_cliq_embed.js?v=20260607-cliq-fix"></script>
   <script src="/portal/portal_dm_executive_cliq.js?v=20260622-chat-restore"></script>
-  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260622-lead-csteam"></script>
+  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260622-lead-csteam-ui"></script>
   <script>
     /** Real calendar weekday for “Today” (en-GB), aligned with staff_clients_machine.xlsx */
     function portalWeekdayLongEnGB(d){
@@ -6049,10 +6049,18 @@
       }else{
         preview = '<div class="portal-dm-thread-preview portal-dm-thread-preview--empty">No messages yet</div>';
       }
+      var roleChipHtml = '';
+      if(opts.roleChip){
+        var chipClass = String(opts.roleChipClass || 'portal-dm-role-chip--staff').trim();
+        roleChipHtml = '<span class="portal-dm-role-chip ' + escapeHtml(chipClass) + '">' + escapeHtml(String(opts.roleChip)) + '</span>';
+      }
       return avatarHtml +
         '<div class="portal-dm-thread-item__body">' +
           '<div class="portal-dm-thread-item__head">' +
-            '<span class="portal-dm-thread-peer">' + escapeHtml(label) + '</span>' +
+            '<div class="portal-dm-thread-item__title">' +
+              '<span class="portal-dm-thread-peer">' + escapeHtml(label) + '</span>' +
+              roleChipHtml +
+            '</div>' +
             '<span class="portal-dm-thread-when">' + escapeHtml(when || 'Conversation') + '</span>' +
           '</div>' +
           preview +
@@ -6628,6 +6636,17 @@
           var lastMsg = (msgsByThread[id] && msgsByThread[id][0]) ? msgsByThread[id][0] : null;
           var prev = portalStaffDmPreviewFromMessage(lastMsg, lastAuthorProfBy);
           var active = String((window.__PORTAL_INTERNAL_CHAT_UI && window.__PORTAL_INTERNAL_CHAT_UI.threadId) || '') === id;
+          var peerProf = profBy[peer] || {};
+          var roleChip = '';
+          var roleChipClass = 'portal-dm-role-chip--staff';
+          if(window.portalLeadStaffChatDirectory){
+            if(typeof window.portalLeadStaffChatDirectory.peerRoleChipLabel === 'function'){
+              roleChip = window.portalLeadStaffChatDirectory.peerRoleChipLabel(peerProf);
+            }
+            if(typeof window.portalLeadStaffChatDirectory.roleChipClassForProfile === 'function'){
+              roleChipClass = window.portalLeadStaffChatDirectory.roleChipClassForProfile(peerProf);
+            }
+          }
           var btn = document.createElement("button");
           btn.type = "button";
           btn.className = "portal-dm-thread-item" +
@@ -6637,7 +6656,9 @@
           if(unreadCount > 0) btn.setAttribute("data-dm-unread-count", String(unreadCount));
           btn.innerHTML = portalStaffDmThreadListItemHtml(label, when, unreadCount, {
             lastSender: prev.sender,
-            lastPreview: prev.preview
+            lastPreview: prev.preview,
+            roleChip: roleChip,
+            roleChipClass: roleChipClass
           });
           btn.addEventListener("click", function(){
             window.__PORTAL_INTERNAL_CHAT_UI.threadId = id;

@@ -114,17 +114,62 @@
     return String(row.full_name || row.username || "").trim();
   }
 
-  function roleSubtitle(row) {
-    if (!row) return "Staff";
+  var CSTEAM_SECTIONS = [
+    { key: "ceo", label: "CEO" },
+    { key: "admin", label: "Admin" },
+    { key: "lead", label: "Leads" },
+    { key: "staff", label: "Staff" },
+  ];
+
+  function normalizeStaffRoleKey(sr) {
+    return String(sr || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[\s-]+/g, "_");
+  }
+
+  function peerRoleChipLabel(row) {
+    if (!row) return "Team";
     var ar = String(row.app_role || "").toLowerCase();
-    var sr = String(row.staff_role || "").toLowerCase();
+    var sr = normalizeStaffRoleKey(row.staff_role);
     if (ar === "ceo") return "CEO";
     if (ar === "admin") return "Admin";
-    if (ar === "lead") return "Lead";
+    if (ar === "lead") return "Session Lead";
     if (sr === "manager") return "Manager";
-    if (sr) return sr.charAt(0).toUpperCase() + sr.slice(1).replace(/_/g, " ");
+    if (sr === "swimming") return "Swimming Instructor";
+    if (sr === "climbing") return "Climbing Instructor";
+    if (sr === "fitness") return "Fitness Instructor";
+    if (sr === "support_lead" || sr === "supportlead") return "Support Worker (Lead)";
+    if (sr === "support") return "Support Worker";
+    if (sr === "admin") return "Admin";
+    if (sr) {
+      return sr
+        .split("_")
+        .filter(Boolean)
+        .map(function (w) {
+          return w.charAt(0).toUpperCase() + w.slice(1);
+        })
+        .join(" ");
+    }
     if (ar === "staff") return "Staff";
     return "Team";
+  }
+
+  function directoryCategoryKey(row) {
+    if (!row) return "staff";
+    var ar = String(row.app_role || "").toLowerCase();
+    if (ar === "ceo") return "ceo";
+    if (ar === "admin") return "admin";
+    if (ar === "lead") return "lead";
+    return "staff";
+  }
+
+  function roleChipClassForProfile(row) {
+    return "portal-dm-role-chip--" + directoryCategoryKey(row);
+  }
+
+  function roleSubtitle(row) {
+    return peerRoleChipLabel(row);
   }
 
   function initialsFromLabel(label) {
@@ -161,6 +206,16 @@
     clearBtn.setAttribute("aria-hidden", has ? "false" : "true");
   }
 
+  function roleChipHtml(label, category) {
+    return (
+      '<span class="portal-dm-role-chip portal-dm-role-chip--' +
+      esc(category || "staff") +
+      '">' +
+      esc(label) +
+      "</span>"
+    );
+  }
+
   function staffDirectoryItemHtml(row) {
     return (
       '<span class="portal-dm-staff-directory-avatar" aria-hidden="true">' +
@@ -170,15 +225,13 @@
       '<span class="portal-dm-staff-directory-name">' +
       esc(row.label) +
       "</span>" +
-      '<span class="portal-dm-staff-directory-role">' +
-      esc(row.role) +
-      "</span></span>"
+      roleChipHtml(row.role, row.category) +
+      "</span>"
     );
   }
 
-  function appendStaffRows(host, rows) {
+  function appendStaffRowsToList(host, rows) {
     if (!host) return;
-    host.innerHTML = "";
     rows.forEach(function (r) {
       var btn = document.createElement("button");
       btn.type = "button";
@@ -190,6 +243,58 @@
         void openPeerChat(r.id);
       });
       host.appendChild(btn);
+    });
+  }
+
+  function appendStaffRows(host, rows) {
+    if (!host) return;
+    host.innerHTML = "";
+    appendStaffRowsToList(host, rows);
+  }
+
+  function groupRowsByCategory(rows) {
+    var groups = { ceo: [], admin: [], lead: [], staff: [] };
+    rows.forEach(function (r) {
+      var k = r.category || "staff";
+      if (!groups[k]) groups[k] = [];
+      groups[k].push(r);
+    });
+    return groups;
+  }
+
+  function appendCsteamAccordion(host, rows) {
+    if (!host) return;
+    host.innerHTML = "";
+    var groups = groupRowsByCategory(rows);
+    var firstKey = "";
+    CSTEAM_SECTIONS.some(function (section) {
+      if ((groups[section.key] || []).length) {
+        firstKey = section.key;
+        return true;
+      }
+      return false;
+    });
+    CSTEAM_SECTIONS.forEach(function (section) {
+      var sectionRows = groups[section.key] || [];
+      if (!sectionRows.length) return;
+      var details = document.createElement("details");
+      details.className = "portal-dm-csteam-accordion";
+      if (section.key === firstKey) details.open = true;
+      var summary = document.createElement("summary");
+      summary.className = "portal-dm-csteam-accordion__head";
+      summary.innerHTML =
+        '<span class="portal-dm-csteam-accordion__label">' +
+        esc(section.label) +
+        '</span><span class="portal-dm-csteam-accordion__count">' +
+        esc(String(sectionRows.length)) +
+        '</span><span class="portal-dm-csteam-accordion__chev" aria-hidden="true"></span>';
+      details.appendChild(summary);
+      var list = document.createElement("div");
+      list.className = "portal-dm-csteam-accordion__list";
+      list.setAttribute("role", "list");
+      appendStaffRowsToList(list, sectionRows);
+      details.appendChild(list);
+      host.appendChild(details);
     });
   }
 
@@ -402,7 +507,7 @@
     var ar = String(row.app_role || "").toLowerCase();
     if (mode === "leads") return ar === "lead";
     if (mode === "directors") return staffInitiatePeer(row);
-    if (mode === "csteam") return ar !== "lead";
+    if (mode === "csteam") return true;
     if (mode === "staff") return ar !== "lead" && ar !== "admin" && ar !== "ceo";
     return true;
   }
@@ -458,7 +563,8 @@
           rows.push({
             id: id,
             label: label,
-            role: roleSubtitle(row),
+            role: peerRoleChipLabel(row),
+            category: directoryCategoryKey(row),
             sortKey: normKey(label),
           });
         });
@@ -514,7 +620,8 @@
               rows.push({
                 id: id,
                 label: label,
-                role: roleSubtitle(row),
+                role: peerRoleChipLabel(row),
+                category: directoryCategoryKey(row),
                 sortKey: normKey(label),
               });
             });
@@ -537,7 +644,11 @@
     var q = normKey(query);
     if (!q) return rows;
     return rows.filter(function (r) {
-      return normKey(r.label).indexOf(q) >= 0 || normKey(r.role).indexOf(q) >= 0;
+      return (
+        normKey(r.label).indexOf(q) >= 0 ||
+        normKey(r.role).indexOf(q) >= 0 ||
+        normKey(r.category).indexOf(q) >= 0
+      );
     });
   }
 
@@ -635,7 +746,11 @@
         return;
       }
 
-      appendStaffRows(host, rows);
+      if (mode === "csteam") {
+        appendCsteamAccordion(host, rows);
+      } else {
+        appendStaffRows(host, rows);
+      }
     } catch (e) {
       host.innerHTML =
         '<p class="portal-dm-lead-empty portal-dm-lead-empty--err">' +
@@ -750,6 +865,9 @@
     portalStaffHasPeerDirectory: portalStaffHasPeerDirectory,
     staffInitiatePeer: staffInitiatePeer,
     portalStaffIsRestrictedWorkerChat: portalStaffIsRestrictedWorkerChat,
+    peerRoleChipLabel: peerRoleChipLabel,
+    roleChipClassForProfile: roleChipClassForProfile,
+    directoryCategoryKey: directoryCategoryKey,
     syncInboxChrome: syncInboxChrome,
     renderStaffDirectory: renderStaffDirectory,
     renderPeerDirectory: renderPeerDirectory,

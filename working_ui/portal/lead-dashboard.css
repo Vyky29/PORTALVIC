@@ -2264,6 +2264,18 @@
       flex-direction:column;
       gap:6px;
     }
+    #internalChatSheet.sheet--portal-chat-inbox .portal-dm-thread-item__title{
+      display:flex;
+      flex-wrap:wrap;
+      align-items:center;
+      gap:6px;
+      min-width:0;
+      flex:1 1 auto;
+    }
+    #internalChatSheet.sheet--portal-chat-inbox .portal-dm-thread-item__title .portal-dm-thread-peer{
+      flex:0 1 auto;
+      min-width:0;
+    }
     #internalChatSheet.sheet--portal-chat-inbox .portal-dm-thread-avatar-wrap{
       flex-shrink:0;
       position:relative;
