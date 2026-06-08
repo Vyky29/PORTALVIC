@@ -81,6 +81,13 @@
     return weekdaysMatchingFromThrough(weekday, bounds.firstDate, bounds.lastDate, bounds);
   }
 
+  function mergedInstructorsFromForm(root) {
+    var staff = String((root.querySelector("#trsStaff") || {}).value || "").trim();
+    var inst = String((root.querySelector("#trsInstructors") || {}).value || "").trim();
+    if (inst) return inst;
+    return staff;
+  }
+
   function rowPayloadFromForm(root) {
     var anchor = normIso((root.querySelector("#trsAnchorDate") || {}).value);
     var day = weekdayLongFromIso(anchor);
@@ -89,7 +96,7 @@
       day: day,
       client_name: String((root.querySelector("#trsClient") || {}).value || "").trim(),
       time_slot: String((root.querySelector("#trsTimeSlot") || {}).value || "").trim(),
-      instructors: String((root.querySelector("#trsInstructors") || {}).value || "").trim(),
+      instructors: mergedInstructorsFromForm(root),
       service: String((root.querySelector("#trsService") || {}).value || "").trim(),
       area: String((root.querySelector("#trsArea") || {}).value || "").trim(),
       venue: String((root.querySelector("#trsVenue") || {}).value || "").trim(),
@@ -115,7 +122,7 @@
   function fillFormFromBundle(root) {
     var p = rowPayloadFromForm(root);
     if (!p.anchorDate || !p.client_name || !p.time_slot) {
-      deps.toast("Pick anchor date, client, and time slot first.");
+      deps.toast("Pick anchor date, participante, and time slot first.");
       return;
     }
     var slot = findBundleSlot(p.anchorDate, p.client_name, p.time_slot);
@@ -125,6 +132,7 @@
     }
     var map = [
       ["#trsInstructors", slot.instructors],
+      ["#trsStaff", slot.instructors],
       ["#trsService", slot.service],
       ["#trsArea", slot.area],
       ["#trsVenue", slot.venue],
@@ -133,6 +141,14 @@
       var el = root.querySelector(pair[0]);
       if (el) el.value = String(pair[1] || "");
     });
+    var instEl = root.querySelector("#trsInstructors");
+    var staffEl = root.querySelector("#trsStaff");
+    if (instEl && staffEl) {
+      var instRaw = String(instEl.value || "").trim();
+      if (instRaw.indexOf(",") < 0 && instRaw.indexOf(";") < 0) {
+        staffEl.value = instRaw;
+      }
+    }
     deps.toast("Loaded current bundle values — edit fields then Save.");
   }
 
@@ -257,8 +273,12 @@
       return;
     }
     if (!p.client_name || !p.time_slot || !p.day) {
-      deps.toast("Client and time slot are required.");
+      deps.toast("Participante and time slot are required.");
       return;
+    }
+    if (typeof global.portalResolveParticipantCanonicalName === "function") {
+      var canon = global.portalResolveParticipantCanonicalName(p.client_name);
+      if (canon) p.client_name = canon;
     }
     var bounds = deps.getTermBounds();
     state.saving = true;
@@ -343,7 +363,12 @@
       "@media(max-width:640px){.trs-grid{grid-template-columns:1fr}}",
       ".trs-field{display:flex;flex-direction:column;gap:4px;min-width:0}",
       ".trs-field label{font-size:12px;font-weight:700;color:#475569}",
-      ".trs-field input,.trs-field select{font:inherit;padding:9px 11px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;color:#0f172a;min-width:0}",
+      ".trs-field input,.trs-field select{font:inherit;padding:9px 11px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;color:#0f172a;min-width:0;width:100%;box-sizing:border-box}",
+      ".trs-field .participant-field-wrap{position:relative;min-width:0}",
+      ".trs-field .portal-name-suggest{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:40;margin:0;padding:4px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 8px 24px rgba(15,23,42,.12);max-height:220px;overflow-y:auto}",
+      ".trs-field .portal-name-suggest[hidden]{display:none!important}",
+      ".trs-field .portal-name-suggest__item{display:block;width:100%;text-align:left;padding:8px 10px;border:0;background:transparent;font:inherit;color:#0f172a;border-radius:8px;cursor:pointer;min-width:0;overflow-wrap:break-word}",
+      ".trs-field .portal-name-suggest__item:hover,.trs-field .portal-name-suggest__item:focus{background:rgba(59,130,246,.1);outline:none}",
       ".trs-scope{border:1px solid #e2e8f0;border-radius:14px;padding:12px 14px;margin:0 0 16px;background:#f8fafc}",
       ".trs-scope label{display:flex;gap:10px;align-items:flex-start;padding:8px 0;cursor:pointer;min-width:0}",
       ".trs-scope label span{min-width:0;overflow-wrap:break-word}",
@@ -358,6 +383,46 @@
     document.head.appendChild(st);
   }
 
+  function wireTermSlotAutofill(root) {
+    if (!root || typeof global.portalWireFieldSuggest !== "function") return;
+    var wire = global.portalWireFieldSuggest;
+
+    function onParticipantPick(name) {
+      var svcEl = root.querySelector("#trsService");
+      if (!svcEl || String(svcEl.value || "").trim()) return;
+      if (typeof global.portalCollectServicesForParticipantName !== "function") return;
+      var list = global.portalCollectServicesForParticipantName(name) || [];
+      if (list.length === 1) svcEl.value = list[0];
+    }
+
+    wire(root.querySelector("#trsClient"), root.querySelector("#trsClientSuggest"), {
+      kind: "participant",
+      strict: true,
+      match: "contains",
+      onPick: onParticipantPick,
+    });
+    wire(root.querySelector("#trsStaff"), root.querySelector("#trsStaffSuggest"), {
+      kind: "staff",
+      strict: false,
+      match: "contains",
+    });
+    wire(root.querySelector("#trsInstructors"), root.querySelector("#trsInstructorsSuggest"), {
+      kind: "instructor",
+      strict: false,
+      match: "contains",
+    });
+    wire(root.querySelector("#trsService"), root.querySelector("#trsServiceSuggest"), {
+      kind: "service",
+      strict: false,
+      match: "contains",
+    });
+    wire(root.querySelector("#trsVenue"), root.querySelector("#trsVenueSuggest"), {
+      kind: "venue",
+      strict: false,
+      match: "contains",
+    });
+  }
+
   function render(root) {
     if (!root) return;
     var bounds = deps.getTermBounds();
@@ -365,16 +430,20 @@
     var anchor = normIso(pre.anchorDate) || normIso(new Date().toISOString().slice(0, 10));
     var weekday = weekdayLongFromIso(anchor);
 
+    var preStaff = String(pre.staff || pre.instructors || "").trim();
+    if (preStaff.indexOf(",") >= 0 || preStaff.indexOf(";") >= 0) preStaff = "";
+
     root.innerHTML =
       '<div class="trs-wrap">' +
       '<div class="trs-grid">' +
       '<div class="trs-field"><label for="trsAnchorDate">Anchor date</label><input type="date" id="trsAnchorDate" value="' + esc(anchor) + '"/></div>' +
       '<div class="trs-field"><label>Weekday</label><input type="text" id="trsWeekday" readonly value="' + esc(weekday) + '"/></div>' +
-      '<div class="trs-field"><label for="trsClient">Client</label><input type="text" id="trsClient" value="' + esc(pre.client_name || "") + '" placeholder="e.g. Shire"/></div>' +
+      '<div class="trs-field"><label for="trsClient">Participante</label><div class="participant-field-wrap"><input type="text" id="trsClient" value="' + esc(pre.client_name || "") + '" placeholder="e.g. Shire" autocomplete="off"/><div id="trsClientSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Participantes"></div></div></div>' +
       '<div class="trs-field"><label for="trsTimeSlot">Time slot</label><input type="text" id="trsTimeSlot" value="' + esc(pre.time_slot || "") + '" placeholder="e.g. 9 to 9.30"/></div>' +
-      '<div class="trs-field"><label for="trsInstructors">Instructor(s)</label><input type="text" id="trsInstructors" value="' + esc(pre.instructors || "") + '" placeholder="e.g. JAVIER"/></div>' +
-      '<div class="trs-field"><label for="trsVenue">Venue</label><input type="text" id="trsVenue" value="' + esc(pre.venue || "") + '" placeholder="e.g. SwimFarm"/></div>' +
-      '<div class="trs-field"><label for="trsService">Service</label><input type="text" id="trsService" value="' + esc(pre.service || "") + '" placeholder="e.g. Aquatic Activity"/></div>' +
+      '<div class="trs-field"><label for="trsStaff">Staff</label><div class="participant-field-wrap"><input type="text" id="trsStaff" value="' + esc(preStaff) + '" placeholder="e.g. Javier" autocomplete="off"/><div id="trsStaffSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Staff"></div></div></div>' +
+      '<div class="trs-field"><label for="trsInstructors">Instructor(s)</label><div class="participant-field-wrap"><input type="text" id="trsInstructors" value="' + esc(pre.instructors || "") + '" placeholder="e.g. JAVIER, RAUL" autocomplete="off"/><div id="trsInstructorsSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Instructors"></div></div></div>' +
+      '<div class="trs-field"><label for="trsService">Service</label><div class="participant-field-wrap"><input type="text" id="trsService" value="' + esc(pre.service || "") + '" placeholder="e.g. Aquatic Activity" autocomplete="off"/><div id="trsServiceSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Services"></div></div></div>' +
+      '<div class="trs-field"><label for="trsVenue">Venue</label><div class="participant-field-wrap"><input type="text" id="trsVenue" value="' + esc(pre.venue || "") + '" placeholder="e.g. SwimFarm" autocomplete="off"/><div id="trsVenueSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Venues"></div></div></div>' +
       '<div class="trs-field"><label for="trsArea">Pool / area</label><input type="text" id="trsArea" value="' + esc(pre.area || "") + '" placeholder="e.g. Small Pool"/></div>' +
       "</div>" +
       '<div class="trs-scope" role="group" aria-labelledby="trsScopeLegend">' +
@@ -410,6 +479,7 @@
         if (typeof fn === "function") fn(b.getAttribute("data-view-target"));
       });
     });
+    wireTermSlotAutofill(root);
   }
 
   function openWithPrefill(prefill) {

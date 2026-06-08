@@ -184,10 +184,87 @@
     return opts.strict ? "" : typed;
   };
 
+  window.portalCollectUniqueServiceNames = function () {
+    var set = Object.create(null);
+    var out = [];
+    function add(nm) {
+      var n = clean(nm);
+      if (!n) return;
+      var k = normName(n);
+      if (set[k]) return;
+      set[k] = true;
+      out.push(n);
+    }
+    [
+      "Aquatic Activity",
+      "Swimming Activity",
+      "Multi-Activity",
+      "Day Centre",
+      "Climbing Activity",
+      "Bespoke Programme",
+      "Therapeutic Activity",
+      "Fitness Activity",
+    ].forEach(add);
+    try {
+      var rows =
+        window.STAFF_DASHBOARD_SOURCE && Array.isArray(window.STAFF_DASHBOARD_SOURCE.rows)
+          ? window.STAFF_DASHBOARD_SOURCE.rows
+          : [];
+      for (var i = 0; i < rows.length; i++) {
+        add(rows[i] && rows[i].service);
+      }
+    } catch (_) {}
+    return out.sort(function (a, b) {
+      return a.localeCompare(b, "en", { sensitivity: "base" });
+    });
+  };
+
+  window.portalCollectUniqueInstructorNames = function () {
+    var set = Object.create(null);
+    var out = [];
+    function add(nm) {
+      var n = clean(nm);
+      if (!n) return;
+      var k = normName(n);
+      if (set[k]) return;
+      set[k] = true;
+      out.push(n);
+    }
+    try {
+      var rows =
+        window.STAFF_DASHBOARD_SOURCE && Array.isArray(window.STAFF_DASHBOARD_SOURCE.rows)
+          ? window.STAFF_DASHBOARD_SOURCE.rows
+          : [];
+      for (var i = 0; i < rows.length; i++) {
+        var inst = clean(rows[i] && rows[i].instructors);
+        if (!inst) continue;
+        inst.split(/[,;/]+/).forEach(function (part) {
+          var p = clean(part);
+          if (!p) return;
+          add(p.charAt(0).toUpperCase() + p.slice(1).toLowerCase());
+        });
+      }
+    } catch (_) {}
+    try {
+      var staffList = window.portalCollectUniqueStaffNames();
+      for (var j = 0; j < staffList.length; j++) add(staffList[j]);
+    } catch (_s) {}
+    return out.sort(function (a, b) {
+      return a.localeCompare(b, "en", { sensitivity: "base" });
+    });
+  };
+
   window.portalCatalogForKind = function (kind) {
     kind = String(kind || "").toLowerCase();
     if (kind === "staff") return window.portalCollectUniqueStaffNames();
+    if (kind === "instructor" || kind === "instructors") {
+      return window.portalCollectUniqueInstructorNames();
+    }
+    if (kind === "service" || kind === "services") return window.portalCollectUniqueServiceNames();
     if (kind === "venue" || kind === "location") return window.portalCollectUniqueVenueNames();
+    if (kind === "participant" || kind === "participants" || kind === "client") {
+      return window.portalCollectUniqueParticipantNames();
+    }
     return window.portalCollectUniqueParticipantNames();
   };
 })();
