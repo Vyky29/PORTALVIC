@@ -537,12 +537,26 @@
       nav.setAttribute("aria-hidden", showNav ? "false" : "true");
     }
     if (newBtn) {
-      var canNew = !(
-        global.portalCsCliqHubRoles &&
-        global.portalCsCliqHubRoles.canCreateConversations &&
-        !global.portalCsCliqHubRoles.canCreateConversations()
-      );
+      var adminInboxRoster = false;
+      try {
+        adminInboxRoster = /admin_dashboard\.html/i.test(String(global.location.pathname || ""));
+      } catch (_p) {}
+      if (
+        !adminInboxRoster &&
+        global.portalCsCliqAdminInbox &&
+        typeof global.portalCsCliqAdminInbox.managementInboxFullStaffRoster === "function"
+      ) {
+        adminInboxRoster = global.portalCsCliqAdminInbox.managementInboxFullStaffRoster();
+      }
+      var canNew =
+        !adminInboxRoster &&
+        !(
+          global.portalCsCliqHubRoles &&
+          global.portalCsCliqHubRoles.canCreateConversations &&
+          !global.portalCsCliqHubRoles.canCreateConversations()
+        );
       newBtn.hidden = inThread || inCompose || !canNew || railPane !== "chats";
+      if (adminInboxRoster) newBtn.setAttribute("aria-hidden", "true");
     }
     if (channelsNewBtn) {
       channelsNewBtn.hidden = inThread || inCompose || railPane !== "channels";

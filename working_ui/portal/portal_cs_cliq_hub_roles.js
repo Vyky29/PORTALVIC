@@ -96,6 +96,7 @@
   }
 
   function canCreateConversations() {
+    // Admin dashboard: full staff roster in Inbox replaces New compose for all management (CEO + ops admin).
     if (getTier() === "management" && /admin_dashboard\.html/.test(portalPath())) {
       return false;
     }

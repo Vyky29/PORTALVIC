@@ -197,13 +197,15 @@
       var wid = String(w.id || "");
       if (!wid || wid === me) return;
       if (ceoViewer && !sevithaViewer && sevithaId) {
-        // CEOs share one ops line per worker (Sevitha ? staff) ù not personal CEO ? worker silos.
+        // CEOs share one ops line per worker (Sevitha ? staff) ? not personal CEO ? worker silos.
         if (opsMap[wid]) opsItems.push(makeDmItem(w, opsMap[wid], "ops", names));
         else if (mineMap[wid]) opsItems.push(makeDmItem(w, mineMap[wid], "ops", names));
         else opsItems.push(makeDmItem(w, null, "ops", names));
         return;
       }
+      // Ops admin (Sevitha) and other management: full staff roster in inbox ? click to open even with no history.
       if (mineMap[wid]) mineItems.push(makeDmItem(w, mineMap[wid], "mine", names));
+      else mineItems.push(makeDmItem(w, null, "mine", names));
       if (showOpsLane && opsMap[wid]) opsItems.push(makeDmItem(w, opsMap[wid], "ops", names));
     });
 

@@ -285,6 +285,10 @@
     return ar === "staff" || ar === "lead";
   }
 
+  function managementInboxFullStaffRoster() {
+    return shouldUseCategorizedInbox();
+  }
+
   function managementSharedWorkerOpsInbox() {
     if (!shouldUseCategorizedInbox()) return false;
     if (
@@ -343,10 +347,12 @@
       else if (item && item.inboxLane !== "ops" && !isWorkerPeerItem(item)) push(item);
     });
     if (splitSections) {
-      if (sharedWorkerOps && Array.isArray(splitSections.opsItems)) {
-        splitSections.opsItems.forEach(pushWorkerRoster);
-      } else if (Array.isArray(splitSections.mineItems)) {
-        splitSections.mineItems.forEach(pushWorkerRoster);
+      if (managementInboxFullStaffRoster()) {
+        if (sharedWorkerOps && Array.isArray(splitSections.opsItems)) {
+          splitSections.opsItems.forEach(pushWorkerRoster);
+        } else if (Array.isArray(splitSections.mineItems)) {
+          splitSections.mineItems.forEach(pushWorkerRoster);
+        }
       }
     }
     (teamDmItems || []).forEach(function (item) {
@@ -408,6 +414,7 @@
 
   global.portalCsCliqAdminInbox = {
     shouldUseCategorizedInbox: shouldUseCategorizedInbox,
+    managementInboxFullStaffRoster: managementInboxFullStaffRoster,
     managementSharedWorkerOpsInbox: managementSharedWorkerOpsInbox,
     loadSessionLeads: loadSessionLeads,
     openLeadGhostView: openLeadGhostView,
