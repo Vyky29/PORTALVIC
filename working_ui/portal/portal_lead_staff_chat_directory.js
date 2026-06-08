@@ -9,6 +9,7 @@
   var CACHE_KEY_LEADS = "__PORTAL_STAFF_LEADS_DIRECTORY_ROWS__";
   var CACHE_KEY_DIRECTORS = "__PORTAL_STAFF_DIRECTORS_DIRECTORY_ROWS__";
   var CACHE_KEY_STAFFMGMT = "__PORTAL_STAFF_MGMT_DIRECTORY_ROWS__";
+  var CACHE_KEY_CEO_EXEC = "__PORTAL_STAFF_CEO_EXEC_DIRECTORY_ROWS__";
   var STAFF_MGMT_GROUP_SLUG = "ceo_liaison";
   var STAFF_MGMT_GROUP_LABEL = "Directors (group)";
   var STAFF_POOL_GROUPS = [
@@ -110,6 +111,7 @@
   }
 
   function portalStaffHasPeerDirectory(prof) {
+    if (portalStaffIsCeoTrioOnWorkerDashboard(prof)) return true;
     if (portalStaffOnWorkerDashboard() && !portalStaffIsSessionLead(prof)) return false;
     return portalStaffIsLeadUser(prof);
   }
@@ -123,8 +125,21 @@
     return ar === "admin" || ar === "ceo";
   }
 
+  function portalStaffIsCeoTrioOnWorkerDashboard(prof) {
+    if (!portalStaffOnWorkerDashboard()) return false;
+    prof = profileRow(prof);
+    if (
+      global.portalDmRoles &&
+      typeof global.portalDmRoles.portalDmIsExecutiveCeoTrioMember === "function"
+    ) {
+      return global.portalDmRoles.portalDmIsExecutiveCeoTrioMember(prof);
+    }
+    return String(prof.app_role || "").toLowerCase() === "ceo";
+  }
+
   function getDirectoryMode(prof) {
     if (portalStaffIsSessionLead(prof)) return "csteam";
+    if (portalStaffIsCeoTrioOnWorkerDashboard(prof)) return "ceo_exec";
     return "";
   }
 
@@ -138,6 +153,7 @@
     if (mode === "leads") return CACHE_KEY_LEADS;
     if (mode === "directors") return CACHE_KEY_DIRECTORS;
     if (mode === "staffmgmt") return CACHE_KEY_STAFFMGMT;
+    if (mode === "ceo_exec") return CACHE_KEY_CEO_EXEC;
     if (mode === "csteam") return CACHE_KEY_CSTEAM;
     return CACHE_KEY_STAFF;
   }
@@ -196,6 +212,17 @@
     { slot: "raul", hint: "Raul" },
     { slot: "victor", hint: "Victor" },
     { slot: "javi", hint: "Javi" },
+  ];
+
+  var STAFF_CEO_EXEC_PEER_SLOTS = [
+    { slot: "raul", hint: "Raul" },
+    { slot: "javi", hint: "Javi" },
+    { slot: "victor", hint: "Victor" },
+  ];
+
+  var STAFF_CEO_EXEC_GROUPS = [
+    { slug: "all_ceos", label: "Raul & Javi" },
+    { slug: "ceo_liaison", label: "Raul, Javi & Sevitha" },
   ];
 
   function normalizeStaffRoleKey(sr) {
@@ -515,7 +542,7 @@
       global.__PORTAL_INTERNAL_CHAT_UI.inboxTab =
         mode === "leads"
           ? "leads"
-          : mode === "directors" || mode === "staffmgmt"
+          : mode === "directors" || mode === "staffmgmt" || mode === "ceo_exec"
             ? "directors"
             : "staff";
     } else {
@@ -554,7 +581,9 @@
       if (dirBtn) {
         dirBtn.classList.toggle("is-active", tab === "directory");
         if (dirMode === "leads") dirBtn.textContent = "Leads";
-        else if (dirMode === "directors" || dirMode === "staffmgmt") dirBtn.textContent = "Directors";
+        else if (dirMode === "directors" || dirMode === "staffmgmt" || dirMode === "ceo_exec") {
+          dirBtn.textContent = "Directors";
+        }
         else if (dirMode === "csteam") dirBtn.textContent = "CS Team";
         else if (dirMode === "staff") dirBtn.textContent = "Staff";
       }
@@ -622,13 +651,14 @@
   }
 
   function bindInboxNav() {
-    var chrome = document.getElementById("internalChatLeadInboxChrome");
-    if (!chrome || chrome.dataset.portalLeadInboxBound) return;
-    chrome.dataset.portalLeadInboxBound = "1";
+    var nav = document.getElementById("internalChatLeadInboxNav");
+    if (!nav || nav.dataset.portalLeadInboxBound) return;
+    nav.dataset.portalLeadInboxBound = "1";
 
-    chrome.addEventListener("click", function (ev) {
+    nav.addEventListener("click", function (ev) {
       var btn = ev.target && ev.target.closest && ev.target.closest("[data-inbox-tab]");
       if (!btn) return;
+      ev.preventDefault();
       var tab = String(btn.getAttribute("data-inbox-tab") || "").toLowerCase();
       setInboxTab(isDirectoryTab(tab) ? "directory" : "chats");
       syncInboxChrome({ inThread: false });
@@ -638,7 +668,6 @@
         void global.portalRenderInternalChatSheet();
       }
     });
-
   }
 
   function directoryEmptyMessage(query, mode) {
@@ -647,6 +676,7 @@
       if (mode === "leads") return "No leads match your search.";
       if (mode === "directors") return "No directors or admin match your search.";
       if (mode === "staffmgmt") return "No management contacts match your search.";
+      if (mode === "ceo_exec") return "No directors match your search.";
       if (mode === "csteam") return "No CS Team members match your search.";
       return "No staff match your search.";
     }
@@ -664,6 +694,9 @@
         "Management contacts are not available yet. " +
         "Ask ops to apply the latest portal database update (staff management chat)."
       );
+    }
+    if (mode === "ceo_exec") {
+      return "Director chats are not available yet. Ask ops to check CEO profiles and group setup.";
     }
     if (mode === "csteam") {
       return (
@@ -905,6 +938,84 @@
     return rows;
   }
 
+  async function resolveCeoExecGroupId(client, slug) {
+    if (!client || !slug) return "";
+    var g = await client
+      .from("portal_ceo_group")
+      .select("id,title,slug,updated_at")
+      .eq("slug", String(slug))
+      .maybeSingle();
+    if (g.error || !g.data || !g.data.id) return "";
+    return String(g.data.id);
+  }
+
+  async function loadCeoExecDirectoryRows(client, me, opts) {
+    opts = opts || {};
+    if (!client || !me) return [];
+    if (!opts.force && global[CACHE_KEY_CEO_EXEC] && Array.isArray(global[CACHE_KEY_CEO_EXEC])) {
+      return global[CACHE_KEY_CEO_EXEC];
+    }
+
+    var selectCols = "id,full_name,username,app_role,staff_role,is_active";
+    var profRes = await client
+      .from("staff_profiles")
+      .select(selectCols)
+      .or("is_active.is.null,is_active.eq.true");
+    if (profRes.error) throw profRes.error;
+
+    var selfSlot = "";
+    (profRes.data || []).forEach(function (row) {
+      if (!row || !row.id) return;
+      if (String(row.id).trim().toLowerCase() === String(me).trim().toLowerCase()) {
+        selfSlot = matchStaffMgmtCeoSlot(row);
+      }
+    });
+
+    var ceoBySlot = {};
+    (profRes.data || []).forEach(function (row) {
+      if (!row || !row.id) return;
+      var id = String(row.id).trim();
+      if (id.toLowerCase() === String(me).toLowerCase()) return;
+      var slot = matchStaffMgmtCeoSlot(row);
+      if (slot && !ceoBySlot[slot]) ceoBySlot[slot] = row;
+    });
+
+    var rows = [];
+    STAFF_CEO_EXEC_PEER_SLOTS.forEach(function (slotDef, idx) {
+      if (slotDef.slot === selfSlot) return;
+      var ceo = ceoBySlot[slotDef.slot];
+      if (!ceo) return;
+      rows.push({
+        kind: "dm",
+        id: String(ceo.id),
+        label: peerLabelFromRow(ceo) || slotDef.hint,
+        role: peerRoleChipLabel(ceo),
+        category: "ceo",
+        sortKey: String(idx + 1),
+      });
+    });
+
+    var groupSort = rows.length + 1;
+    var gi;
+    for (gi = 0; gi < STAFF_CEO_EXEC_GROUPS.length; gi++) {
+      var groupDef = STAFF_CEO_EXEC_GROUPS[gi];
+      var groupId = await resolveCeoExecGroupId(client, groupDef.slug);
+      if (!groupId) continue;
+      rows.push({
+        kind: "group",
+        groupId: groupId,
+        groupSlug: groupDef.slug,
+        label: groupDef.label,
+        role: "Group",
+        category: "group",
+        sortKey: String(groupSort + gi),
+      });
+    }
+
+    global[CACHE_KEY_CEO_EXEC] = rows;
+    return rows;
+  }
+
   async function loadDirectoryRows(client, me, mode, opts) {
     opts = opts || {};
     mode =
@@ -914,11 +1025,16 @@
           ? "directors"
           : mode === "staffmgmt"
             ? "staffmgmt"
-            : mode === "csteam"
-              ? "csteam"
-              : "staff";
+            : mode === "ceo_exec"
+              ? "ceo_exec"
+              : mode === "csteam"
+                ? "csteam"
+                : "staff";
     if (mode === "staffmgmt") {
       return loadStaffMgmtDirectoryRows(client, me, opts);
+    }
+    if (mode === "ceo_exec") {
+      return loadCeoExecDirectoryRows(client, me, opts);
     }
     if (!client || !me) return [];
     var cacheKey = directoryCacheKey(mode);
@@ -1148,9 +1264,11 @@
           ? "directors"
           : mode === "staffmgmt"
             ? "management contacts"
-          : mode === "csteam"
-            ? "CS Team"
-            : "team") +
+            : mode === "ceo_exec"
+              ? "directors"
+              : mode === "csteam"
+                ? "CS Team"
+                : "team") +
       "...</p>";
 
     try {
@@ -1328,14 +1446,16 @@
 
   function initWorkerPeerInbox() {
     bindInboxNav();
-    syncInboxChrome({ inThread: false });
-    if (!portalStaffHasPeerDirectory()) return;
+    var prof = profileRow();
+    syncInboxChrome({ profile: prof, inThread: false });
+    if (!portalStaffHasPeerDirectory(prof)) return;
     try {
       delete global[CACHE_KEY_STAFF];
       delete global[CACHE_KEY_CSTEAM];
       delete global[CACHE_KEY_LEADS];
       delete global[CACHE_KEY_DIRECTORS];
       delete global[CACHE_KEY_STAFFMGMT];
+      delete global[CACHE_KEY_CEO_EXEC];
     } catch (_cache) {}
     if (getInboxTab() === "directory") {
       void renderPeerDirectory();
@@ -1473,6 +1593,8 @@
     openPeerChat: openPeerChat,
     openGroupChat: openGroupChat,
     loadStaffMgmtDirectoryRows: loadStaffMgmtDirectoryRows,
+    loadCeoExecDirectoryRows: loadCeoExecDirectoryRows,
+    portalStaffIsCeoTrioOnWorkerDashboard: portalStaffIsCeoTrioOnWorkerDashboard,
     resolveStaffPoolGroupEntry: resolveStaffPoolGroupEntry,
     appendWorkerPoolGroupInboxRow: appendWorkerPoolGroupInboxRow,
     STAFF_MGMT_GROUP_SLUG: STAFF_MGMT_GROUP_SLUG,
@@ -1494,6 +1616,7 @@
         delete global[CACHE_KEY_LEADS];
         delete global[CACHE_KEY_DIRECTORS];
         delete global[CACHE_KEY_STAFFMGMT];
+        delete global[CACHE_KEY_CEO_EXEC];
       } catch (_e) {}
     },
   };
