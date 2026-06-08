@@ -12,6 +12,68 @@
     return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : "";
   }
 
+  function londonYesterdayIso() {
+    try {
+      var parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Europe/London",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).formatToParts(new Date(Date.now() - 86400000));
+      var y = parts.find(function (p) {
+        return p.type === "year";
+      });
+      var m = parts.find(function (p) {
+        return p.type === "month";
+      });
+      var d = parts.find(function (p) {
+        return p.type === "day";
+      });
+      if (y && m && d) return y.value + "-" + m.value + "-" + d.value;
+    } catch (_e) {}
+    var dt = new Date(Date.now() - 86400000);
+    return (
+      dt.getFullYear() +
+      "-" +
+      String(dt.getMonth() + 1).padStart(2, "0") +
+      "-" +
+      String(dt.getDate()).padStart(2, "0")
+    );
+  }
+
+  function feedbackAssumeCompleteThroughIso() {
+    var t = termCfg();
+    var fixed = normIso(t.termFeedbackAssumeCompleteThroughIso);
+    if (fixed) return fixed;
+    if (t.termFeedbackAssumeCompleteThroughYesterday) return londonYesterdayIso();
+    return "";
+  }
+
+  /** Catch-up export days stay actionable (per-client done list). */
+  function staffCatchUpFeedbackDates(staffId) {
+    var id = String(staffId || "").trim().toLowerCase();
+    var t = termCfg();
+    var bypass = Array.isArray(t.termStaffLateSubmissionBypassProfileKeys)
+      ? t.termStaffLateSubmissionBypassProfileKeys
+      : [];
+    if (!id || !bypass.some(function (k) { return String(k || "").trim().toLowerCase() === id; })) {
+      return [];
+    }
+    var map = t.termStaffCatchUpFeedbackDatesByProfileKey;
+    var raw = map && map[id];
+    if (!Array.isArray(raw)) return [];
+    return raw.map(normIso).filter(Boolean);
+  }
+
+  /** True when session feedback before today is treated complete (legacy Zoho / bulk catch-up). */
+  function feedbackAssumeComplete(iso, staffId) {
+    var key = normIso(iso);
+    var through = feedbackAssumeCompleteThroughIso();
+    if (!key || !through || key > through) return false;
+    if (staffCatchUpFeedbackDates(staffId).indexOf(key) >= 0) return false;
+    return true;
+  }
+
   function fromIso() {
     var t = termCfg();
     return normIso(t.termDashboardCalendarFrom) || normIso(t.termResumeDate) || "2026-06-01";
@@ -140,6 +202,8 @@
     staffDateInView: staffDateInView,
     feedbackReminderFromIso: feedbackReminderFromIso,
     feedbackReminderDayInScope: feedbackReminderDayInScope,
+    feedbackAssumeCompleteThroughIso: feedbackAssumeCompleteThroughIso,
+    feedbackAssumeComplete: feedbackAssumeComplete,
     applyView: applyView,
     workedWeekdaysForStaff: workedWeekdaysForStaff,
     staffOffWeekdayOnDate: staffOffWeekdayOnDate,

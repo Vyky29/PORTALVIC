@@ -1008,8 +1008,8 @@
     </div>
   </section>
 
-  <script src="portal/term_from_timetable.js?v=20260606-carlos-covers"></script>
-  <script src="/portal/term_calendar_dashboard_shared.js?v=20260523-feedback-window"></script>
+  <script src="portal/term_from_timetable.js?v=20260608-feedback-grandfather"></script>
+  <script src="/portal/term_calendar_dashboard_shared.js?v=20260608-feedback-grandfather"></script>
   <script src="portal/staff_dashboard_spreadsheet_bundle.js?v=20260606-carlos-covers"></script>
   <script src="portal/session_feedback_portal_data.js?v=20260527-ma-apr-may"></script>
   <script src="portal/session_feedback_status_portal_data.js?v=20260527-ma-apr-may"></script>
@@ -2273,6 +2273,12 @@
         if(item.noSessionFeedbackRequired) continue;
         if(!isSessionEndedForFeedback(item)) continue;
         eligible++;
+        const staffIdFb = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
+        const isoFb = typeof portalSessionDateIsoFromItemSessionKey === 'function'
+          ? portalSessionDateIsoFromItemSessionKey(item)
+          : String(item.sessionKey || '').split('|')[0];
+        if(typeof portalTermFeedbackAssumeComplete === 'function'
+          && portalTermFeedbackAssumeComplete(isoFb, staffIdFb)) continue;
         const r = getSessionReviewRecord(item) || {};
         if(r.feedbackDone || r.absent || r.cancelled) continue;
         pending.push(item);
@@ -2338,6 +2344,11 @@
           if(tRaw && tRaw !== tCanon) tryKey(String(sessionDateIso) + '|' + tRaw + '|' + bC);
         }
       }
+      const sidMerge = String(typeof STAFF_DASHBOARD_ID !== 'undefined' ? STAFF_DASHBOARD_ID : '').trim().toLowerCase();
+      if(typeof portalTermFeedbackAssumeComplete === 'function'
+        && portalTermFeedbackAssumeComplete(sessionDateIso, sidMerge)){
+        out.feedbackDone = true;
+      }
       return out;
     }
     /** Co-instructor / merge-group parity with staff dashboard (Bespoke shared feedback). */
@@ -2347,6 +2358,7 @@
       const rec = typeof portalGetMergedSessionReviewRecordForRoster === 'function'
         ? portalGetMergedSessionReviewRecordForRoster(s, dayWord, sessionDateIso)
         : {};
+      if(typeof portalTermFeedbackAssumeComplete === 'function' && portalTermFeedbackAssumeComplete(iso, sid)) return true;
       const bridge = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
       if(bridge && typeof bridge.rosterSessionCompleteForTerm === 'function'){
         return bridge.rosterSessionCompleteForTerm(iso, sid, s, clientNotesById, rec);
@@ -10293,8 +10305,16 @@
       if(!Array.isArray(raw)) return [];
       return raw.map(function(d){ return String(d || '').trim().slice(0, 10); }).filter(Boolean);
     }
+    function portalTermFeedbackAssumeComplete(isoYmd, staffId){
+      const ptd = window.PortalTermCalendarDashboard;
+      if(ptd && typeof ptd.feedbackAssumeComplete === 'function'){
+        return !!ptd.feedbackAssumeComplete(isoYmd, staffId);
+      }
+      return false;
+    }
     function portalTermDateForcedComplete(isoYmd, staffId){
       const iso = String(isoYmd || '').trim().slice(0, 10);
+      if(typeof portalTermFeedbackAssumeComplete === 'function' && portalTermFeedbackAssumeComplete(iso, staffId)) return true;
       return portalTermStaffForcedCompleteDates(staffId).indexOf(iso) >= 0;
     }
     function portalTermStaffAwayDatesFor(staffId){

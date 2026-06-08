@@ -1012,8 +1012,8 @@
     </div>
   </section>
 
-  <script src="/portal/term_from_timetable.js?v=20260606-carlos-covers"></script>
-  <script src="/portal/term_calendar_dashboard_shared.js?v=20260523-feedback-window"></script>
+  <script src="/portal/term_from_timetable.js?v=20260608-feedback-grandfather"></script>
+  <script src="/portal/term_calendar_dashboard_shared.js?v=20260608-feedback-grandfather"></script>
   <script src="/portal/staff_dashboard_spreadsheet_bundle.js?v=20260606-carlos-covers"></script>
   <script src="/portal/session_feedback_portal_data.js?v=20260527-ma-apr-may"></script>
   <script src="/portal/session_feedback_status_portal_data.js?v=20260526-all-complete"></script>
@@ -1521,6 +1521,13 @@
       }catch(_){}
       return '2026-06-01';
     }
+    function portalTermFeedbackAssumeComplete(isoYmd, staffId){
+      const ptd = window.PortalTermCalendarDashboard;
+      if(ptd && typeof ptd.feedbackAssumeComplete === 'function'){
+        return !!ptd.feedbackAssumeComplete(isoYmd, staffId);
+      }
+      return false;
+    }
     function portalReviewFlagsForResolvedSession(iso, staffId, s){
       const bridge = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
       const notes = typeof clientNotesById !== 'undefined' ? clientNotesById : {};
@@ -1561,6 +1568,9 @@
           }
           const floorIso = portalMachineRosterFeedbackFloorIso();
           if(iso >= floorIso){
+            if(typeof portalTermFeedbackAssumeComplete === 'function' && portalTermFeedbackAssumeComplete(iso, sid)){
+              return { feedbackDone: true, incident: false, absent: false, cancelled: false };
+            }
             return { feedbackDone: false, incident: false, absent: false, cancelled: false };
           }
           return null;
@@ -2737,6 +2747,14 @@
       if(typeof portalRosterReviewStateFromStatusBundle !== 'function') return mem;
       const bundle = portalRosterReviewStateFromStatusBundle(item.__portalBaseSession, iso, staffId);
       if(!bundle){
+        if(typeof portalTermFeedbackAssumeComplete === 'function' && portalTermFeedbackAssumeComplete(iso, staffId)){
+          return {
+            feedbackDone: true,
+            incident: !!mem.incident,
+            absent: !!mem.absent,
+            cancelled: !!mem.cancelled
+          };
+        }
         const floorIso = portalMachineRosterFeedbackFloorIso();
         if(iso >= floorIso && !portalStaffInGhostView()){
           return {
@@ -2893,6 +2911,11 @@
           out.feedbackDone = true;
         }
         if(exemptEarly.incident) out.incident = true;
+        return out;
+      }
+      if(typeof portalTermFeedbackAssumeComplete === 'function'
+        && portalTermFeedbackAssumeComplete(sessionDateIso, staffIdEarly)){
+        out.feedbackDone = true;
         return out;
       }
       const add = function(rec){
@@ -8595,6 +8618,7 @@
         if(portalTermCatchUpClientMarkedDone(iso, sid, cid)) return true;
         return !!(rec.feedbackDone || rec.absent || rec.cancelled);
       }
+      if(typeof portalTermFeedbackAssumeComplete === 'function' && portalTermFeedbackAssumeComplete(iso, sid)) return true;
       const bridge = typeof window !== 'undefined' ? window.PortalStaffFeedbackBridge : null;
       if(bridge && typeof bridge.rosterSessionCompleteForTerm === 'function'){
         return bridge.rosterSessionCompleteForTerm(sessionDateIso, staffId, s, clientNotesById, rec);
@@ -11842,6 +11866,7 @@
     }
     function portalTermDateForcedComplete(isoYmd, staffId){
       const iso = String(isoYmd || '').trim().slice(0, 10);
+      if(typeof portalTermFeedbackAssumeComplete === 'function' && portalTermFeedbackAssumeComplete(iso, staffId)) return true;
       return portalTermStaffForcedCompleteDates(staffId).indexOf(iso) >= 0;
     }
     function portalTermStaffAwayDatesFor(staffId){
