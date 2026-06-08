@@ -21221,6 +21221,33 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return map;
     }
+    async function portalAdminDmFetchLastMessageByThreadIds(client, threadIds){
+      var lastByThread = Object.create(null);
+      threadIds = (threadIds || []).filter(function(id, idx, arr){
+        id = String(id || '').trim();
+        return id && arr.indexOf(id) === idx;
+      });
+      if(!client || !threadIds.length) return lastByThread;
+      var chunkSize = 12;
+      for(var ci = 0; ci < threadIds.length; ci += chunkSize){
+        var chunk = threadIds.slice(ci, ci + chunkSize);
+        await Promise.all(chunk.map(function(tid){
+          return client
+            .from('portal_staff_dm_messages')
+            .select('thread_id,author_id,body,created_at,message_type')
+            .eq('thread_id', tid)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+            .then(function(res){
+              if(res.error || !res.data || !res.data.thread_id) return;
+              lastByThread[String(res.data.thread_id)] = res.data;
+            })
+            .catch(function(){});
+        }));
+      }
+      return lastByThread;
+    }
     async function portalAdminDmAckWorkerThreads(client, me, workerId, iso){
       workerId = String(workerId || '').trim();
       iso = String(iso || '').trim();
@@ -21305,15 +21332,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       profBy = profBy || {};
       var workerIds = [];
       merged.forEach(function(item){
-        if(item && item.kind === 'dm' && item.workerId){
-          workerIds.push(String(item.workerId));
+        if(item && item.kind === 'dm'){
+          var wk = String(item.workerId || item.peerId || '').trim();
+          if(wk) workerIds.push(wk);
         }
       });
       var workerThreadMap = await portalAdminDmBuildWorkerThreadMap(client, me, workerIds);
       var dmIds = [];
       merged.forEach(function(i){
         if(i.kind !== 'dm') return;
-        var wk = String(i.workerId || '').trim();
+        var wk = String(i.workerId || i.peerId || '').trim();
         var tids = wk && workerThreadMap[wk] && workerThreadMap[wk].length ? workerThreadMap[wk] : [];
         if(!tids.length && i.id) tids = [String(i.id)];
         tids.forEach(function(tid){
@@ -21339,22 +21367,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
       }
       if(dmIds.length){
-        var lastByThread = {};
+        var lastByThread = await portalAdminDmFetchLastMessageByThreadIds(client, dmIds);
         var unreadByThread = {};
-        var lq = await client.from('portal_staff_dm_messages')
-          .select('thread_id,author_id,body,created_at,message_type')
-          .in('thread_id', dmIds)
-          .order('created_at', { ascending: false })
-          .limit(Math.min(Math.max(dmIds.length * 4, 24), 240));
-        if(!lq.error && Array.isArray(lq.data)){
+        if(Object.keys(lastByThread).length){
           var authorIds = [];
-          lq.data.forEach(function(m){
-            if(!m || !m.thread_id) return;
-            var tid = String(m.thread_id);
-            if(!lastByThread[tid]){
-              lastByThread[tid] = m;
-              authorIds.push(String(m.author_id || ''));
-            }
+          Object.keys(lastByThread).forEach(function(tid){
+            authorIds.push(String(lastByThread[tid].author_id || ''));
           });
           await ensureAuthors(authorIds);
         }
@@ -21366,7 +21384,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var dmThreadWorkerById = {};
         merged.forEach(function(item){
           if(item.kind !== 'dm') return;
-          var wk0 = String(item.workerId || '').trim();
+          var wk0 = String(item.workerId || item.peerId || '').trim();
           var tids0 = [];
           if(wk0 && workerThreadMap[wk0] && workerThreadMap[wk0].length) tids0 = workerThreadMap[wk0].slice();
           else if(item.id) tids0 = [String(item.id)];
@@ -21389,7 +21407,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         merged.forEach(function(item){
           if(item.kind !== 'dm') return;
           var tids = [];
-          var wk = String(item.workerId || '').trim();
+          var wk = String(item.workerId || item.peerId || '').trim();
           if(wk && workerThreadMap[wk] && workerThreadMap[wk].length) tids = workerThreadMap[wk].slice();
           else if(item.id) tids = [String(item.id)];
           var threadWorkerById = {};
