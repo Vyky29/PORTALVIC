@@ -231,6 +231,7 @@
           push(staffItems, item);
           return;
         }
+        if (isDirectorDirectGroup(item) && managementSharedWorkerOpsInbox()) return;
         if (!seesSlug(slug)) return;
         push(ceoItems, item);
         return;
@@ -341,6 +342,30 @@
     return false;
   }
 
+  var DIRECTOR_DIRECT_GROUP_SLUGS = { all_ceos: true, ceo_liaison: true };
+
+  function groupSlugKey(item) {
+    if (!item || item.kind !== "group") return "";
+    var slug = String(item.canonicalSlug || item.slug || "").toLowerCase();
+    if (slug.indexOf("id:") === 0) slug = String(item.slug || "").toLowerCase();
+    return slug;
+  }
+
+  function isDirectorDirectGroup(item) {
+    return !!DIRECTOR_DIRECT_GROUP_SLUGS[groupSlugKey(item)];
+  }
+
+  function appendDirectorDirectGroups(merged, directItems, directSeen) {
+    if (!managementSharedWorkerOpsInbox()) return;
+    (merged || []).forEach(function (item) {
+      if (!item || item.kind !== "group" || !isDirectorDirectGroup(item)) return;
+      var gid = String(item.id || "").trim();
+      if (!gid || directSeen["g:" + gid]) return;
+      directSeen["g:" + gid] = true;
+      directItems.push(item);
+    });
+  }
+
   function splitDmInbox(merged, splitSections, teamDmItems) {
     var directItems = [];
     var opsItems = [];
@@ -404,6 +429,8 @@
     (teamDmItems || []).forEach(function (item) {
       if (item && !item.isTeamChat) pushDirect(item);
     });
+
+    appendDirectorDirectGroups(merged, directItems, directSeen);
 
     return {
       directItems: sortDmItems(directItems),
@@ -476,7 +503,7 @@
     }
     return (
       "No direct chats here yet. " +
-      "Message Raul, Javi, Admin, or other directors \u2014 your personal threads live in this tab."
+      "Directors, CEO groups (Ra\u00fal \u00b7 Victor \u00b7 Javi, CEOs & Sevitha), and Admin live in this tab."
     );
   }
 
@@ -542,5 +569,6 @@
     buildChannelCategories: buildChannelCategories,
     getCeoInboxCategory: getCeoInboxCategory,
     setCeoInboxCategory: setCeoInboxCategory,
+    isDirectorDirectGroup: isDirectorDirectGroup,
   };
 })(typeof window !== "undefined" ? window : globalThis);

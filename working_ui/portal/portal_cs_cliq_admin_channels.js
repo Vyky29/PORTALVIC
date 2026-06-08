@@ -292,11 +292,25 @@
     return null;
   }
 
-  function renderCategoryBar(activeCat, esc, rerender) {
+  function renderCategoryBar(activeCat, esc, rerender, cats) {
     var bar = categoryBarEl();
     if (!bar) return;
+    cats = cats || { ceoItems: [] };
+    var visible = CATEGORIES.filter(function (cat) {
+      if (cat.id !== "ceos") return true;
+      return (cats.ceoItems || []).length > 0;
+    });
+    if (!visible.length) visible = CATEGORIES.slice(0, 2);
+    if (
+      !visible.some(function (cat) {
+        return cat.id === activeCat;
+      })
+    ) {
+      activeCat = visible[0] ? visible[0].id : "leads";
+      setStoredCategory(activeCat);
+    }
     bar.innerHTML = "";
-    CATEGORIES.forEach(function (cat) {
+    visible.forEach(function (cat) {
       var btn = document.createElement("button");
       btn.type = "button";
       btn.className =
@@ -428,7 +442,7 @@
     if (seq !== renderSeq) return;
     renderCategoryBar(cat, esc, function (nextCat) {
       if (lastCtx && host) void paintChannels(host, nextCat, lastCtx, lastLeads, renderSeq);
-    });
+    }, cats);
     await renderCategoryPanel(host, cat, ctx, cats, leads, esc, seq);
   }
 
