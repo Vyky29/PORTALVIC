@@ -503,7 +503,7 @@
     }
     return (
       "No direct chats here yet. " +
-      "Directors, CEO groups (Ra\u00fal \u00b7 Victor \u00b7 Javi, CEOs & Sevitha), and Admin live in this tab."
+      "Directors, CEO groups (CEOs, Sev + CEOs), and Admin live in this tab."
     );
   }
 

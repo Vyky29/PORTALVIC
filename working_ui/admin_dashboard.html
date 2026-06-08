@@ -47,7 +47,7 @@
   <script src="/portal/portal_cs_cliq_support.js?v=20260607-support-route"></script>
   <script src="/portal/portal_cs_cliq_announcements_hub.js?v=20260604-cliq-inbox"></script>
   <script src="/portal/portal_cs_cliq_announcement_inbox.js?v=20260609-ceo-dedupe"></script>
-  <script src="/portal/portal_cs_cliq_group_members.js?v=20260625-staff-pool-channels"></script>
+  <script src="/portal/portal_cs_cliq_group_members.js?v=20260609-ceo-group-chips"></script>
   <script src="/portal/portal_cs_cliq_thread_files.js?v=20260604-cliq-files"></script>
   <script src="/portal/portal_admin_cs_cliq.js?v=20260608-inbox-staff-roster-all"></script>
   <script src="/portal/portal_cs_cliq_workspace.js?v=20260608-cliq-channels"></script>
@@ -86,7 +86,7 @@
   <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260609-header-chat-bell" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260608-incoming-poll" />
-  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260609-ceo-inbox-lanes" />
+  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260609-ceo-group-chips" />
 </head>
 <body>
   <script>
@@ -21217,8 +21217,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function portalAdminDmSimplifyGroupLabel(slug, title){
       slug = String(slug || '').toLowerCase();
       title = String(title || '').trim();
-      if(slug === 'all_ceos' || /all\s*ceos/i.test(title) || /ceos.*raul.*victor.*javi/i.test(title)) return 'CEOs — Raúl · Victor · Javi';
-      if(slug === 'ceo_liaison' || /ceo\s*liaison/i.test(title) || /ceos.*sevitha/i.test(title)) return 'CEOs & Sevitha';
+      if(slug === 'all_ceos' || /all\s*ceos/i.test(title) || /ceos.*raul.*victor.*javi/i.test(title)) return 'CEOs';
+      if(slug === 'ceo_liaison' || /ceo\s*liaison/i.test(title) || /ceos.*sevitha/i.test(title)) return 'Sev + CEOs';
       if(slug === 'staff_leads_ops' || /operations\s*group/i.test(title)) return 'Leads coordination';
       if(slug === 'session_leads') return 'Session leads';
       if(slug === 'swimming_instructors') return 'Swimming Instructors';
@@ -21514,7 +21514,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           ceoLiaisonBtn.onclick = null;
         }else{
           ceoLiaisonBtn.hidden = false;
-          ceoLiaisonBtn.textContent = 'CEOs & Sevitha';
+          ceoLiaisonBtn.textContent = 'Sev + CEOs';
           ceoLiaisonBtn.onclick = function(){
             void (async function(){ await portalAdminDmOpenGroupThread(gidLiaison); })();
           };
@@ -22132,6 +22132,22 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         });
       }
       portalAdminDmApplyChatBadgeFromMerged(merged);
+      if(
+        window.portalCsCliqGroupMembers &&
+        typeof window.portalCsCliqGroupMembers.loadMemberChips === 'function'
+      ){
+        var groupChipLoads = merged.map(function(item){
+          if(!item || item.kind !== 'group') return Promise.resolve();
+          var gslug = String(item.canonicalSlug || item.slug || '').toLowerCase();
+          if(gslug !== 'all_ceos' && gslug !== 'ceo_liaison') return Promise.resolve();
+          return window.portalCsCliqGroupMembers.loadMemberChips(gslug, item.id).then(function(chips){
+            item.memberChips = Array.isArray(chips) ? chips : [];
+          }).catch(function(){
+            item.memberChips = [];
+          });
+        });
+        await Promise.all(groupChipLoads);
+      }
       return merged;
     }
     function portalAdminDmRenderThreadListItem(item, me, ch){
@@ -22251,7 +22267,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           }
         }
       }else if(item.kind === 'group'){
-        roleTag = '<span class="portal-dm-thread-role-tag portal-dm-thread-role-tag--group">Group</span>';
+        var gslug0 = String(item.canonicalSlug || item.slug || '').toLowerCase();
+        if(gslug0 !== 'all_ceos' && gslug0 !== 'ceo_liaison'){
+          roleTag = '<span class="portal-dm-thread-role-tag portal-dm-thread-role-tag--group">Group</span>';
+        }
       }else if(ch === 'ceo_exec'){
         avatarItem.roleTone = 'exec';
       }
@@ -22270,6 +22289,19 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var badge = unread > 0
         ? '<span class="portal-dm-thread-unread-badge" aria-label="'+esc(String(unread)+' unread')+'">'+esc(unread > 99 ? '99+' : String(unread))+'</span>'
         : '';
+      var memberChipsRow = '';
+      if(
+        item.kind === 'group' &&
+        Array.isArray(item.memberChips) &&
+        item.memberChips.length &&
+        window.portalCsCliqGroupMembers &&
+        typeof window.portalCsCliqGroupMembers.chipsHtml === 'function'
+      ){
+        var chipsInner = window.portalCsCliqGroupMembers.chipsHtml(item.memberChips);
+        if(chipsInner){
+          memberChipsRow = '<div class="portal-dm-thread-item__member-chips" aria-label="Members">'+chipsInner+'</div>';
+        }
+      }
       btn.innerHTML =
         avatarHtml+
         '<div class="portal-dm-thread-item__body">'+
@@ -22277,6 +22309,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             '<span class="portal-dm-thread-peer">'+esc(displayLabel)+roleTag+'</span>'+
             '<span class="portal-dm-thread-when">'+esc(when || 'Conversation')+'</span>'+
           '</div>'+
+          memberChipsRow+
           preview+
         '</div>'+
         badge;

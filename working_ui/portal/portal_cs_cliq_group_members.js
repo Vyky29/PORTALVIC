@@ -54,6 +54,7 @@
     var user = String((row && row.username) || "")
       .trim()
       .toLowerCase();
+    if (user === "sevitha" || user === "info") return "Sev";
     if (user === "javi") return "Javi";
     if (user === "javier") return "Javier";
     if (user === "raul" || user === "raúl") return "Raúl";

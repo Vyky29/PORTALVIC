@@ -787,6 +787,16 @@ body.admin-view-cs-cliq #csCliqRoot .portal-cs-cliq-thread-header__status {
   background: linear-gradient(180deg, #edf7fd, #f8fcff);
 }
 
+#csCliqRoot .portal-dm-thread-item__member-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
+  width: 100%;
+  margin: 2px 0 4px;
+  align-items: center;
+}
+
 #csCliqRoot .portal-dm-thread-item__head {
   display: flex;
   align-items: flex-start;
