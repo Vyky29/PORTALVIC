@@ -32,6 +32,7 @@
   <script src="/portal/portal_dm_roles.js?v=20260609-mgmt-identity"></script>
   <script src="/portal/portal_ops_admin_display.js?v=20260629-admin-primary"></script>
   <script src="/portal/portal_chat_actor_identity.js?v=20260629-admin-primary"></script>
+  <script src="/portal/portal_admin_topbar.js?v=20260629-topbar-session-v2"></script>
   <script src="/portal/portal_dm_icons.js?v=20260624-dm-icons"></script>
   <script src="/portal/portal_dm_thread_avatar.js?v=20260608-staff-admin-lane"></script>
   <script src="/portal/portal_cs_cliq_thread_header.js?v=20260608-staff-admin-lane"></script>
@@ -18843,7 +18844,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         at:new Date().toISOString(),
         kind:kind||'manual',
         summary:summary||'',
-        source:source||portalAdminSessionDisplayName()
+        source:source||portalAdminSessionDisplayName()||MOCK.profile.name
       });
       if(MOCK.actionLog.length>80) MOCK.actionLog.length=80;
     }
@@ -27534,24 +27535,38 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
 
     function portalAdminSessionDisplayName(){
       try{
+        if(window.portalChatActorIdentity && typeof window.portalChatActorIdentity.displayName === 'function'){
+          var chatNm = String(window.portalChatActorIdentity.displayName() || '').trim();
+          if(chatNm && chatNm !== 'Staff') return chatNm;
+        }
         var ctx = window.__PORTAL_SUPABASE__ || {};
         var p = ctx.staff_profile;
         var n = p && String(p.full_name || p.username || '').trim();
         if(n) return n;
         var em = ctx.session && ctx.session.user && ctx.session.user.email;
-        if(em) return String(em).split('@')[0];
+        if(em){
+          var local = String(em).split('@')[0].replace(/[._+-]+/g, ' ').trim();
+          var word = local.split(/\s+/).filter(Boolean)[0] || '';
+          if(word) return word.charAt(0).toUpperCase() + word.slice(1);
+        }
       }catch(_){}
-      return MOCK.profile.name;
+      return '';
     }
     function portalAdminSessionInitials(name){
       name = String(name || portalAdminSessionDisplayName() || '').trim();
-      if(!name || name === MOCK.profile.name) return MOCK.profile.initial;
+      if(!name) return '?';
       var parts = name.split(/\s+/).filter(Boolean);
       if(!parts.length) return '?';
       if(parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
       return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
     }
     function portalAdminSyncTopbarIdentity(){
+      if(typeof window.portalSyncAdminTopbarProfileAsync === 'function'){
+        void window.portalSyncAdminTopbarProfileAsync().catch(function(){
+          if(typeof window.portalSyncAdminTopbarProfile === 'function') window.portalSyncAdminTopbarProfile();
+        });
+        return;
+      }
       if(typeof window.portalSyncAdminTopbarProfile === 'function'){
         window.portalSyncAdminTopbarProfile();
         return;
@@ -27859,7 +27874,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       };
     })();
   </script>
-  <script src="/portal/portal_admin_topbar.js?v=20260629-topbar-session"></script>
   <script>
     (function () {
       var s = document.createElement("script");
@@ -27879,17 +27893,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         ) {
           return;
         }
-        const profile = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
-        if (typeof window.portalSyncAdminTopbarProfile === "function") {
-          window.portalSyncAdminTopbarProfile({ profile });
-        } else if (profile) {
-          const displayName = String(profile.full_name || profile.username || "").trim();
-          if (displayName) {
-            const nameEl = document.getElementById("miniName");
-            if (nameEl) nameEl.textContent = displayName;
-            const avEl = document.getElementById("miniAvInitials");
-            if (avEl) avEl.textContent = displayName.charAt(0).toUpperCase();
+        if (typeof window.portalSyncAdminTopbarProfileAsync === "function") {
+          try { await window.portalSyncAdminTopbarProfileAsync(); } catch (_sync) {
+            if (typeof window.portalSyncAdminTopbarProfile === "function") {
+              window.portalSyncAdminTopbarProfile();
+            }
           }
+        } else if (typeof window.portalSyncAdminTopbarProfile === "function") {
+          window.portalSyncAdminTopbarProfile();
         }
         if (typeof window.portalMountAdminPortalSwitch === "function") {
           window.portalMountAdminPortalSwitch();

@@ -150,6 +150,40 @@
     return filename;
   }
 
+  var EXEC_DISPLAY_NAMES = { victor: "Victor", raul: "Raúl", javi: "Javi", sevitha: "Sevitha" };
+
+  function resolveDisplayName(profile, email) {
+    if (
+      global.portalChatActorIdentity &&
+      typeof global.portalChatActorIdentity.displayName === "function"
+    ) {
+      var chatNm = String(global.portalChatActorIdentity.displayName(profile) || "").trim();
+      if (chatNm && chatNm !== "Staff") return chatNm;
+    }
+    if (
+      global.portalChatActorIdentity &&
+      typeof global.portalChatActorIdentity.profileDisplayName === "function" &&
+      profile
+    ) {
+      var profNm = String(global.portalChatActorIdentity.profileDisplayName(profile) || "").trim();
+      if (profNm) return profNm;
+    }
+    var fromProfile = String((profile && (profile.full_name || profile.username)) || "").trim();
+    if (fromProfile) return fromProfile;
+    var key = inferStaffKey(profile, email);
+    if (key && EXEC_DISPLAY_NAMES[key]) return EXEC_DISPLAY_NAMES[key];
+    if (key) return key.charAt(0).toUpperCase() + key.slice(1);
+    if (email) {
+      var local = String(email).split("@")[0].replace(/[._+-]+/g, " ").trim();
+      var word = local.split(/\s+/).filter(Boolean)[0] || "";
+      if (word) {
+        if (EXEC_DISPLAY_NAMES[word.toLowerCase()]) return EXEC_DISPLAY_NAMES[word.toLowerCase()];
+        return word.charAt(0).toUpperCase() + word.slice(1);
+      }
+    }
+    return "";
+  }
+
   global.portalSyncAdminTopbarProfile = function portalSyncAdminTopbarProfile(opts) {
     opts = opts || {};
     var ctx = global.__PORTAL_SUPABASE__ || {};
@@ -159,11 +193,7 @@
         (ctx.session && ctx.session.user && ctx.session.user.email) ||
         "",
     ).trim();
-    var displayName = String(
-      opts.displayName ||
-        (profile && (profile.full_name || profile.username)) ||
-        "",
-    ).trim();
+    var displayName = String(opts.displayName || resolveDisplayName(profile, email) || "").trim();
 
     var nameEl = document.getElementById("miniName");
     if (nameEl && displayName) nameEl.textContent = displayName;
@@ -179,6 +209,25 @@
       return;
     }
     applyPhoto(img, initialsEl, avWrap, candidates, 0, displayName);
+  };
+
+  global.portalSyncAdminTopbarProfileAsync = async function portalSyncAdminTopbarProfileAsync(opts) {
+    opts = opts || {};
+    var ctx = global.__PORTAL_SUPABASE__ || {};
+    var client = opts.client || ctx.client;
+    var profile = opts.profile || ctx.staff_profile || null;
+    if (
+      client &&
+      global.portalChatActorIdentity &&
+      typeof global.portalChatActorIdentity.ensureSessionProfile === "function"
+    ) {
+      profile = (await global.portalChatActorIdentity.ensureSessionProfile(client)) || profile;
+    }
+    global.portalSyncAdminTopbarProfile({
+      profile: profile,
+      email: opts.email,
+      displayName: opts.displayName,
+    });
   };
 
   var EXEC_PORTAL_SWITCH_KEYS = { victor: 1, raul: 1, javi: 1 };
@@ -253,13 +302,24 @@
   };
 
   function syncFromPortalSession() {
-    if (!global.__PORTAL_SUPABASE__ || !global.__PORTAL_SUPABASE__.staff_profile) return;
+    var ctx = global.__PORTAL_SUPABASE__ || {};
+    if (!ctx.session && !ctx.staff_profile) return;
+    var run = function () {
+      global.portalMountAdminPortalSwitch();
+    };
+    if (typeof global.portalSyncAdminTopbarProfileAsync === "function") {
+      void global.portalSyncAdminTopbarProfileAsync().then(run).catch(function () {
+        global.portalSyncAdminTopbarProfile();
+        run();
+      });
+      return;
+    }
     global.portalSyncAdminTopbarProfile();
-    global.portalMountAdminPortalSwitch();
+    run();
   }
 
   global.addEventListener("portal:supabase-ready", syncFromPortalSession);
-  if (global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.staff_profile) {
+  if (global.__PORTAL_SUPABASE__ && (global.__PORTAL_SUPABASE__.session || global.__PORTAL_SUPABASE__.staff_profile)) {
     syncFromPortalSession();
   }
 })(typeof window !== "undefined" ? window : globalThis);
