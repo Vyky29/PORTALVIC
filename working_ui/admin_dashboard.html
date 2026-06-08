@@ -37,7 +37,7 @@
   <script src="/portal/portal_cs_cliq_support_route.js?v=20260608-inbox-fix"></script>
   <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260609-staff-mgmt"></script>
   <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260609-ceo-dedupe"></script>
-  <script src="/portal/portal_cs_cliq_admin_channels.js?v=20260609-ceo-dedupe"></script>
+  <script src="/portal/portal_cs_cliq_admin_channels.js?v=20260609-white-perf"></script>
   <script src="/portal/portal_cs_cliq_support.js?v=20260607-support-route"></script>
   <script src="/portal/portal_cs_cliq_announcements_hub.js?v=20260604-cliq-inbox"></script>
   <script src="/portal/portal_cs_cliq_announcement_inbox.js?v=20260609-ceo-dedupe"></script>
@@ -77,8 +77,8 @@
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
   <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260605-admin-mobile-landscape" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
-  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260608-orbit-center" />
-  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260609-admin-thread-fix" />
+  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260609-white-chat" />
+  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260609-white-chat" />
 </head>
 <body>
   <script>
@@ -20934,6 +20934,35 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!threadId) return '';
       return String(portalAdminDmReadStore().threads[threadId] || '').trim();
     }
+    function portalAdminDmUnreadSinceIso(ids, getAckFn){
+      ids = ids || [];
+      getAckFn = getAckFn || function(){ return ''; };
+      var oldestT = Infinity;
+      var oldestIso = '';
+      var anyNoAck = false;
+      ids.forEach(function(id){
+        id = String(id || '').trim();
+        if(!id) return;
+        var ack = String(getAckFn(id) || '').trim();
+        if(!ack){
+          anyNoAck = true;
+          return;
+        }
+        try{
+          var t = new Date(ack).getTime();
+          if(!isNaN(t) && t < oldestT){
+            oldestT = t;
+            oldestIso = ack;
+          }
+        }catch(_us){ anyNoAck = true; }
+      });
+      if(anyNoAck || !oldestIso){
+        var d = new Date();
+        d.setDate(d.getDate() - 60);
+        return d.toISOString();
+      }
+      return oldestIso;
+    }
     function portalAdminDmSetThreadAck(threadId, iso){
       threadId = String(threadId || '').trim();
       iso = String(iso || '').trim();
@@ -21148,7 +21177,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
         var uq = await client.from('portal_staff_dm_messages')
           .select('thread_id,author_id,created_at,body')
-          .in('thread_id', dmIds);
+          .in('thread_id', dmIds)
+          .gte('created_at', portalAdminDmUnreadSinceIso(dmIds, portalAdminDmGetThreadAck))
+          .limit(1500);
         if(!uq.error && Array.isArray(uq.data)){
           uq.data.forEach(function(m){
             if(!m || !m.thread_id) return;
@@ -21224,7 +21255,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
         var guq = await client.from('portal_ceo_group_message')
           .select('group_id,author_id,created_at,body')
-          .in('group_id', groupIds);
+          .in('group_id', groupIds)
+          .gte('created_at', portalAdminDmUnreadSinceIso(groupIds, portalAdminDmGetGroupAckEffective))
+          .limit(1500);
         if(!guq.error && Array.isArray(guq.data)){
           guq.data.forEach(function(m){
             if(!m || !m.group_id) return;

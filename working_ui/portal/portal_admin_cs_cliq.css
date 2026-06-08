@@ -1926,7 +1926,7 @@ body.admin-view-cs-cliq.portal-internal-chat-open {
 
   #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq-composer {
     padding: 8px 10px calc(10px + env(safe-area-inset-bottom, 0px));
-    background: #f0f2f5;
+    background: #fff;
   }
 
   #csCliqRoot.portal-cs-cliq--subscreen .portal-cs-cliq-composer__shell {
@@ -1939,9 +1939,7 @@ body.admin-view-cs-cliq.portal-internal-chat-open {
   }
 
   #csCliqRoot.portal-cs-cliq--subscreen #csCliqMessages {
-    background: #e5ddd5;
-    background-image: radial-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px);
-    background-size: 12px 12px;
+    background: #fff;
   }
 
   #csCliqRoot.portal-cs-cliq--subscreen #csCliqComposePanel {

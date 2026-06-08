@@ -233,7 +233,7 @@
   flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
-  background: #f8fbfd;
+  background: #fff;
 }
 
 .portal-cs-cliq-embed-host #csCliqRoot .portal-cs-cliq__module-body,

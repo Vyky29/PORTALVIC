@@ -103,20 +103,33 @@
     );
   }
 
-  async function loadMemberChipsForItem(item) {
+  function memberChipsCacheKey(item) {
+    if (!item) return "";
+    if (item.kind === "group") {
+      return "g:" + String(item.slug || "") + ":" + String(item.id || "");
+    }
+    if (item.isTeamChat) return "t:" + String(item.id || "");
+    return "";
+  }
+
+  async function loadMemberChipsForItem(item, chipCache) {
     if (!item) return [];
+    chipCache = chipCache || null;
+    var cacheKey = memberChipsCacheKey(item);
+    if (cacheKey && chipCache && chipCache[cacheKey]) {
+      return chipCache[cacheKey];
+    }
+    var chips = [];
     if (
       global.portalCsCliqGroupMembers &&
       typeof global.portalCsCliqGroupMembers.loadMemberChips === "function" &&
       item.kind === "group"
     ) {
-      return global.portalCsCliqGroupMembers.loadMemberChips(item.slug || "", item.id || "");
-    }
-    if (item.isTeamChat && item.threadRow) {
+      chips = await global.portalCsCliqGroupMembers.loadMemberChips(item.slug || "", item.id || "");
+    } else if (item.isTeamChat && item.threadRow) {
       var profBy = (lastCtx && lastCtx.profBy) || {};
       var a = String(item.threadRow.participant_a || "");
       var b = String(item.threadRow.participant_b || "");
-      var chips = [];
       [a, b].forEach(function (id) {
         var p = profBy[id] || {};
         var full = String(p.full_name || p.username || "").trim();
@@ -128,9 +141,9 @@
             : full.split(/\s+/)[0] || full;
         chips.push({ label: label, title: full });
       });
-      return chips;
     }
-    return [];
+    if (cacheKey && chipCache) chipCache[cacheKey] = chips;
+    return chips;
   }
 
   function renderChannelCard(item, esc, when, chips) {
@@ -302,6 +315,7 @@
 
   async function renderCategoryPanel(host, cat, ctx, cats, leads, esc, seq) {
     host.innerHTML = "";
+    var chipCache = {};
     var formatWhen =
       typeof ctx.formatWhen === "function"
         ? ctx.formatWhen
@@ -325,7 +339,7 @@
         for (var i = 0; i < leadThreads.length; i++) {
           if (seq !== renderSeq) return;
           var item = leadThreads[i];
-          var chips = await loadMemberChipsForItem(item);
+          var chips = await loadMemberChipsForItem(item, chipCache);
           host.appendChild(renderChannelCard(item, esc, formatWhen(item.when), chips));
         }
       } else {
@@ -345,7 +359,7 @@
         for (var s = 0; s < staffItems.length; s++) {
           if (seq !== renderSeq) return;
           var sItem = staffItems[s];
-          var sChips = await loadMemberChipsForItem(sItem);
+          var sChips = await loadMemberChipsForItem(sItem, chipCache);
           host.appendChild(renderChannelCard(sItem, esc, formatWhen(sItem.when), sChips));
         }
       }
@@ -369,7 +383,7 @@
         for (var c = 0; c < ceoItems.length; c++) {
           if (seq !== renderSeq) return;
           var cItem = ceoItems[c];
-          var cChips = await loadMemberChipsForItem(cItem);
+          var cChips = await loadMemberChipsForItem(cItem, chipCache);
           host.appendChild(renderChannelCard(cItem, esc, formatWhen(cItem.when), cChips));
         }
       }
@@ -418,6 +432,7 @@
   }
 
   function refreshFromContext() {
+    if (String(global.__PORTAL_CS_CLIQ_RAIL_PANE || "chats") !== "channels") return;
     var ctx = global.__PORTAL_ADMIN_DM_CHANNEL_CTX;
     var host = listHostEl();
     if (!ctx || !host || !shouldUseAdminChannels()) return;

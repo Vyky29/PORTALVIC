@@ -878,7 +878,8 @@
       box-shadow:0 1px 4px rgba(45,132,179,.28);
     }
     #internalChatMessages.portal-dm-msgs-col,
-    #internalChatSheet .portal-dm-msgs-scroll.portal-dm-msgs-col{
+    #internalChatSheet .portal-dm-msgs-scroll.portal-dm-msgs-col,
+    #internalChatSheet .portal-cs-cliq-messages{
       display:flex;flex-direction:column;gap:8px;align-items:stretch;width:100%;min-width:0;
       background:#fff;
     }
