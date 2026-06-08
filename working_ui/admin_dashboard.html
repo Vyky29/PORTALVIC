@@ -21300,6 +21300,36 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       return map;
     }
+    async function portalAdminDmBuildOpsThreadMap(client, workerIds){
+      var map = Object.create(null);
+      workerIds = (workerIds || []).filter(function(id, idx, arr){
+        id = String(id || '').trim();
+        return id && arr.indexOf(id) === idx;
+      });
+      if(!client || !workerIds.length) return map;
+      for(var oi = 0; oi < workerIds.length; oi++){
+        var wid = workerIds[oi];
+        try{
+          var opsTid = await portalAdminDmFindStaffLeadThreadForWorker(client, wid);
+          if(opsTid) map[wid] = String(opsTid);
+        }catch(_opsMap){}
+      }
+      return map;
+    }
+    /** Shared ops rows must preview the Sevitha↔worker thread, not the CEO↔worker personal DM. */
+    function portalAdminDmListItemThreadIds(item, workerThreadMap, opsThreadByWorker){
+      item = item || {};
+      workerThreadMap = workerThreadMap || {};
+      opsThreadByWorker = opsThreadByWorker || {};
+      var wk = String(item.workerId || item.peerId || '').trim();
+      if(item.inboxLane === 'ops'){
+        var opsTid = String(item.id || (wk && opsThreadByWorker[wk]) || '').trim();
+        return opsTid ? [opsTid] : [];
+      }
+      if(wk && workerThreadMap[wk] && workerThreadMap[wk].length) return workerThreadMap[wk].slice();
+      if(item.id) return [String(item.id)];
+      return [];
+    }
     async function portalAdminDmFetchLastMessageByThreadIds(client, threadIds){
       var lastByThread = Object.create(null);
       threadIds = (threadIds || []).filter(function(id, idx, arr){
@@ -21420,13 +21450,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
       });
       var workerThreadMap = await portalAdminDmBuildWorkerThreadMap(client, me, workerIds);
+      var opsWorkerIds = [];
+      merged.forEach(function(item){
+        if(item && item.kind === 'dm' && item.inboxLane === 'ops'){
+          var ow = String(item.workerId || item.peerId || '').trim();
+          if(ow && opsWorkerIds.indexOf(ow) < 0) opsWorkerIds.push(ow);
+        }
+      });
+      var opsThreadByWorker = await portalAdminDmBuildOpsThreadMap(client, opsWorkerIds);
       var dmIds = [];
       merged.forEach(function(i){
         if(i.kind !== 'dm') return;
-        var wk = String(i.workerId || i.peerId || '').trim();
-        var tids = wk && workerThreadMap[wk] && workerThreadMap[wk].length ? workerThreadMap[wk] : [];
-        if(!tids.length && i.id) tids = [String(i.id)];
-        tids.forEach(function(tid){
+        portalAdminDmListItemThreadIds(i, workerThreadMap, opsThreadByWorker).forEach(function(tid){
           if(tid && dmIds.indexOf(tid) < 0) dmIds.push(tid);
         });
       });
@@ -21467,10 +21502,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         merged.forEach(function(item){
           if(item.kind !== 'dm') return;
           var wk0 = String(item.workerId || item.peerId || '').trim();
-          var tids0 = [];
-          if(wk0 && workerThreadMap[wk0] && workerThreadMap[wk0].length) tids0 = workerThreadMap[wk0].slice();
-          else if(item.id) tids0 = [String(item.id)];
-          tids0.forEach(function(tid0){
+          portalAdminDmListItemThreadIds(item, workerThreadMap, opsThreadByWorker).forEach(function(tid0){
             dmThreadWorkerById[String(tid0)] = wk0;
           });
         });
@@ -21488,14 +21520,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
         merged.forEach(function(item){
           if(item.kind !== 'dm') return;
-          var tids = [];
           var wk = String(item.workerId || item.peerId || '').trim();
-          if(wk && workerThreadMap[wk] && workerThreadMap[wk].length) tids = workerThreadMap[wk].slice();
-          else if(item.id) tids = [String(item.id)];
-          var threadWorkerById = {};
-          tids.forEach(function(tid0){
-            threadWorkerById[tid0] = wk;
-          });
+          var tids = portalAdminDmListItemThreadIds(item, workerThreadMap, opsThreadByWorker);
           var m = null;
           tids.forEach(function(tid){
             var cand = lastByThread[tid];
