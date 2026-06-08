@@ -109,15 +109,57 @@ body.portal-inapp-call-open #portalInternalChatBackdrop.open{
   border-bottom:2px solid rgba(244,183,64,.45);background:#fff;min-width:0;
 }
 #internalChatSheet .portal-dm-inbox-brand{grid-column:1 / -1;justify-self:center;text-align:center}
-#internalChatSheet .portal-dm-inbox-brand__logo-stage{position:relative;width:72px;height:72px;margin:0 auto 4px}
-#internalChatSheet .portal-dm-inbox-brand__orbit-svg{position:absolute;inset:0;width:100%;height:100%}
-#internalChatSheet .portal-dm-inbox-brand__logo-wrap{
-  position:absolute;inset:12px;border-radius:50%;overflow:hidden;
-  box-shadow:0 0 0 2px rgba(244,183,64,.45);
+/* Logo + orbital aura share one centre (admin loads this file without portal-dm-inbox-premium.css). */
+#internalChatSheet .portal-dm-inbox-brand__logo-stage{
+  position:relative;
+  width:108px;
+  height:108px;
+  margin:0 auto 4px;
+  overflow:visible;
 }
-#internalChatSheet .portal-dm-inbox-brand__logo{width:100%;height:100%;object-fit:cover;display:block}
+#internalChatSheet .portal-dm-inbox-brand__orbit-svg{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:108px;
+  height:108px;
+  margin:0;
+  transform:translate(-50%, -50%);
+  pointer-events:none;
+  z-index:0;
+  overflow:visible;
+  display:block;
+}
+#internalChatSheet .portal-dm-inbox-brand__logo-wrap{
+  position:absolute;
+  left:50%;
+  top:50%;
+  z-index:1;
+  width:74px;
+  height:74px;
+  transform:translate(-50%, -50%);
+  border-radius:50%;
+  overflow:hidden;
+  background:#fff;
+  border:2px solid rgba(249,191,46,.5);
+  box-shadow:
+    0 0 0 1px rgba(249,191,46,.28),
+    0 0 14px rgba(249,191,46,.28),
+    0 6px 20px rgba(45,132,179,.14);
+}
+#internalChatSheet .portal-dm-inbox-brand__logo{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  transform:scale(1.28);
+  transform-origin:center center;
+}
 #internalChatSheet .portal-dm-inbox-brand__tagline{margin:0;font-size:11px;font-weight:700;color:var(--portal-chat-muted);letter-spacing:.06em;text-transform:uppercase}
-#internalChatSheet .portal-dm-inbox-brand__orbit-layer{transform-origin:50% 50%}
+#internalChatSheet .portal-dm-inbox-brand__orbit-layer{
+  transform-box:fill-box;
+  transform-origin:50% 50%;
+}
 #internalChatSheet .portal-dm-inbox-brand__orbit-layer--cw{animation:portal-dm-orbit-cw 18s linear infinite}
 #internalChatSheet .portal-dm-inbox-brand__orbit-layer--ccw{animation:portal-dm-orbit-ccw 24s linear infinite}
 #internalChatSheet .portal-dm-inbox-brand__orbit-layer--slow-ccw{animation:portal-dm-orbit-ccw 32s linear infinite}
