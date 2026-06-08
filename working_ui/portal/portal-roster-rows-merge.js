@@ -74,11 +74,18 @@
 
     var templates = Object.create(null);
     var dated = Object.create(null);
+    var cancelledTemplates = Object.create(null);
+    var cancelledDated = Object.create(null);
 
     db.forEach(function (raw) {
-      if (String(raw.status || "active") !== "active") return;
+      if (String(raw.status || "active") !== "active" && String(raw.status || "") !== "cancelled") return;
       var row = dbToAdapter(raw);
       if (!row.client_name || !row.time_slot) return;
+      if (String(raw.status || "") === "cancelled") {
+        if (row.session_date) cancelledDated[datedSlotKey(row)] = true;
+        else if (row.day) cancelledTemplates[templateKey(row)] = true;
+        return;
+      }
       if (row.session_date) dated[datedSlotKey(row)] = row;
       else if (row.day) templates[templateKey(row)] = row;
     });
@@ -89,13 +96,15 @@
     base.forEach(function (r) {
       var iso = normIso(r.session_date);
       var sk = datedSlotKey(r);
+      if (cancelledDated[sk]) return;
+      var tk = templateKey({ day: r.day || weekdayLongFromIso(iso), client_name: r.client_name, time_slot: r.time_slot });
+      if (!dated[sk] && cancelledTemplates[tk]) return;
       if (dated[sk]) {
         out.push(Object.assign({}, r, dated[sk], { session_date: iso, day: r.day || dated[sk].day }));
         seenDated[sk] = true;
         return;
       }
       if (iso) {
-        var tk = templateKey({ day: r.day || weekdayLongFromIso(iso), client_name: r.client_name, time_slot: r.time_slot });
         if (templates[tk]) {
           var tpl = templates[tk];
           var merged = Object.assign({}, r, tpl, {
@@ -129,13 +138,17 @@
   }
 
   function fetchActiveRows(client) {
+    return fetchRowsForMerge(client);
+  }
+
+  function fetchRowsForMerge(client) {
     if (!client || typeof client.from !== "function") {
       return Promise.resolve([]);
     }
     return client
       .from("portal_roster_rows")
       .select("id,client_name,day,time_slot,instructors,service,area,venue,session_date,status,updated_at")
-      .eq("status", "active")
+      .in("status", ["active", "cancelled"])
       .then(function (res) {
         if (res.error) {
           console.warn("[portal_roster_rows] fetch", res.error);
@@ -159,6 +172,7 @@
   global.PortalRosterRowsMerge = {
     mergePortalRosterRows: mergePortalRosterRows,
     fetchActiveRows: fetchActiveRows,
+    fetchRowsForMerge: fetchRowsForMerge,
     loadAndCache: loadAndCache,
     datedSlotKey: datedSlotKey,
     templateKey: templateKey,
