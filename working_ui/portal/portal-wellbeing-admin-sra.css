@@ -490,38 +490,28 @@ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .btn-collapse-stressor
  display: none;
 }
 
-body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap tr[data-checkin-stressor="1"] .js-stressor-detail,
-body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap tr[data-checkin-stressor="1"] .js-stressor-detail[hidden] {
- display: block !important;
+/* Check-in stressors: read-only label only — no picker or manual fields */
+body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap tr.portal-wb-stressor-readonly .js-stressor-detail,
+body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap tr[data-checkin-stressor="1"] .js-stressor-detail {
+ display: none !important;
 }
 
 body.portal-wellbeing-admin-mode .portal-wb-checkin-stressor-badge {
  display: block;
- margin-bottom: 8px;
- padding: 8px 10px;
- border-radius: 8px;
+ margin: 0;
+ padding: 10px 12px;
+ border-radius: 10px;
  border: 1px solid #fdba74;
  background: linear-gradient(180deg, #fff7ed 0%, #ffedd5 100%);
  color: #9a3412;
- font-size: 12px;
+ font-size: 13px;
  font-weight: 700;
- line-height: 1.35;
+ line-height: 1.4;
 }
 
-body.portal-wellbeing-admin-mode .portal-wb-checkin-stressor-badge::before {
- content: "From check-in: ";
- font-weight: 600;
- color: #c2410c;
-}
-
-body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap tr[data-checkin-stressor="1"] .js-common-stressor {
- min-height: 36px;
- padding: 6px 30px 6px 8px;
- font-size: 11px;
-}
-
-body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap tr[data-checkin-stressor="1"] .js-stressor-text {
- display: none;
+body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap tr.portal-wb-stressor-readonly .stressor-cell,
+body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap tr[data-checkin-stressor="1"] .stressor-cell {
+ vertical-align: middle !important;
 }
 
 body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .section {

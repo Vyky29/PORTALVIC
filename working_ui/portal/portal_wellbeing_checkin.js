@@ -728,23 +728,37 @@
  if (!text) {
  badge.hidden = true;
  badge.textContent = "";
+ tr.removeAttribute("data-wb-checkin-stressor-label");
  return;
  }
  badge.hidden = false;
  badge.textContent = text;
+ tr.setAttribute("data-wb-checkin-stressor-label", text);
  }
 
  function lockStressorRowFromCheckin(tr) {
  if (!tr) return;
  tr.setAttribute("data-checkin-stressor", "1");
+ tr.classList.add("portal-wb-stressor-readonly");
+ var quick = tr.querySelector(".stressor-quick");
+ if (quick) quick.hidden = true;
+ var detail = tr.querySelector(".js-stressor-detail");
+ if (detail) detail.hidden = true;
  var noneBtn = tr.querySelector(".btn-no-stressor");
  if (noneBtn) noneBtn.hidden = true;
  var sel = tr.querySelector(".js-common-stressor");
  if (sel) {
+ sel.setAttribute("aria-hidden", "true");
+ sel.tabIndex = -1;
  Array.prototype.slice.call(sel.options).forEach(function (opt) {
  if (opt.value === "__none__") opt.remove();
  });
  if (sel.value === "__none__") sel.value = "";
+ }
+ var stText = tr.querySelector(".js-stressor-text");
+ if (stText) {
+ stText.setAttribute("aria-hidden", "true");
+ stText.tabIndex = -1;
  }
  }
 
@@ -796,12 +810,13 @@
  global.updateNoStressorQuickVisual(tr);
  }
  if (opts.fromCheckinStressor) {
- lockStressorRowFromCheckin(tr);
  var badgeLabel = "";
  if (resolved && hasOption) badgeLabel = stressorShortLabel(resolved);
  else if (stText && clean(stText.value)) badgeLabel = clean(stText.value);
  else if (resolved || sraKey) badgeLabel = stressorShortLabel(resolved || sraKey) || clean(resolved || sraKey);
+ if (resolved) tr.setAttribute("data-wb-checkin-stressor-key", resolved);
  setCheckinStressorBadge(tr, badgeLabel);
+ lockStressorRowFromCheckin(tr);
  }
  }
 
@@ -855,6 +870,7 @@
  ? stressorShortLabel(sel.value)
  : clean(stText && stText.value);
  setCheckinStressorBadge(tr, label);
+ lockStressorRowFromCheckin(tr);
  }
  });
  });

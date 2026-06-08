@@ -6,7 +6,7 @@
  <title>1-to-1 Wellbeing Review - clubSENsational</title>
  <script src="/portal-static-bootstrap.js"></script>
  <script src="/portal/term_from_timetable.js?v=20260604-teflon-guide-days"></script>
- <link rel="stylesheet" href="/portal/portal-wellbeing-admin-sra.css?v=20260608-wb-stressor-table" />
+ <link rel="stylesheet" href="/portal/portal-wellbeing-admin-sra.css?v=20260608-wb-stressor-readonly" />
  <link rel="stylesheet" href="/portal/portal-wellbeing-review-simple.css?v=20260604-wb-flow-refine" />
  <link rel="stylesheet" href="/portal-shared-js/portal_form_feedback_skin.css?v=20260609-autofill" />
  <script src="/portal/portal_wellbeing_stressor_catalog.js?v=20260610-wb-voice2"></script>
@@ -2305,8 +2305,7 @@ document.addEventListener("DOMContentLoaded", function () {
  var ta = tr.querySelector(".js-stressor-text");
  if (!det) return;
  if (tr.getAttribute("data-checkin-stressor") === "1") {
- det.hidden = false;
- setStressorExpandButton(tr, true);
+ if (det) det.hidden = true;
  return;
  }
  if (tr.getAttribute("data-stressor-ui-collapsed") === "1") return;
@@ -2335,6 +2334,12 @@ document.addEventListener("DOMContentLoaded", function () {
  }
 
  function getStressorDisplayForPdf(tr) {
+ if (tr.getAttribute("data-checkin-stressor") === "1") {
+ var badge = tr.querySelector(".portal-wb-checkin-stressor-badge");
+ if (badge && String(badge.textContent || "").trim()) return String(badge.textContent).trim();
+ var lbl = tr.getAttribute("data-wb-checkin-stressor-label");
+ if (lbl) return lbl;
+ }
  var s = tr.querySelector(".js-common-stressor");
  var ta = tr.querySelector(".js-stressor-text");
  if (s && s.value === "__none__") return "No stressor (not applicable)";
@@ -3121,7 +3126,7 @@ document.addEventListener("DOMContentLoaded", function () {
  if (btnSavePortal) btnSavePortal.hidden = false;
  if (btnCompletePortal) btnCompletePortal.hidden = false;
  var portalScript = document.createElement("script");
- portalScript.src = "/portal/portal_wellbeing_checkin.js?v=20260608-wb-stressor-table";
+ portalScript.src = "/portal/portal_wellbeing_checkin.js?v=20260608-wb-stressor-readonly";
  portalScript.onload = function () {
  if (!window.portalWellbeingCheckin) return;
  if (window.portalWellbeingStressorCatalog) {
