@@ -312,7 +312,7 @@
     var intro = document.createElement("p");
     intro.className = "portal-wb-advanced-intro no-print";
     intro.textContent =
-      "One card per stressor from the check-in. Talk it through together, then score how serious it is and how likely harm is (1 = low · 5 = high). Note any agreed actions.";
+      "Optional detail per stressor from the check-in. Tap 1–5 for seriousness and likelihood, then note agreed actions.";
     wrap.appendChild(intro);
 
     var move = [];
@@ -377,9 +377,6 @@
     renderSummary(summaryHost, checkin, wb);
     renderForm(formHost, (opts.draft && opts.draft.simple) || emptyRecord());
     wrapAdvancedSections(form);
-
-    var sub = document.getElementById("sraHeroSubtitle");
-    if (sub) sub.textContent = "Wellbeing conversation record";
 
     return {
       root: root,
