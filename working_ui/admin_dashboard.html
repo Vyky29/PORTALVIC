@@ -27888,10 +27888,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
         if (
           window.portalCeoGodModeAdmin &&
-          typeof window.portalCeoGodModeAdmin.applyAfterBootstrap === "function" &&
-          window.portalCeoGodModeAdmin.applyAfterBootstrap()
+          typeof window.portalCeoGodModeAdmin.applyAfterBootstrap === "function"
         ) {
-          return;
+          window.portalCeoGodModeAdmin.applyAfterBootstrap();
         }
         if (typeof window.portalSyncAdminTopbarProfileAsync === "function") {
           try { await window.portalSyncAdminTopbarProfileAsync(); } catch (_sync) {
