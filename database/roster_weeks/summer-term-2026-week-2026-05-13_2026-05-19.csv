@@ -46,7 +46,7 @@ date,weekday,client,service,time_slot,instructor,venue,notes,session_key,feedbac
 2026-05-16,Saturday,Saaib,Aquatic Activity,12 to 12.30,YOUSSEF,Acton,Teaching Pool,2026-05-16|12:00|saaib,2026-05-16|12:00|saaib
 2026-05-17,Sunday,Shire,Aquatic Activity,9 to 9.30,JAVIER,SwimFarm,Small Pool,2026-05-17|09:00|shire,2026-05-17|09:00|shire
 2026-05-17,Sunday,Simon,Aquatic Activity,9 to 9.30,AURORA,SwimFarm,Small Pool,2026-05-17|09:00|simon,2026-05-17|09:00|simon
-2026-05-17,Sunday,Yusuf Ah,Multi-Activity,9 to 9.30,ROBERTO,SwimFarm,Small Pool,2026-05-17|09:00|yusuf_ah,2026-05-17|09:00|yusuf_ah
+2026-05-17,Sunday,Yusuf Ah,Aquatic Activity,9 to 9.30,ROBERTO,SwimFarm,Small Pool,2026-05-17|09:00|yusuf_ah,2026-05-17|09:00|yusuf_ah
 2026-05-17,Sunday,Adam Ab,Multi-Activity,9.30 to 10.15,AURORA,SwimFarm,Big Pool,2026-05-17|09:30|adam_ab|big_pool,2026-05-17|adam_ab|09:30|multi-activity|big_pool
 2026-05-17,Sunday,Jack S,Multi-Activity,9.30 to 10.15,GODSWAY,SwimFarm,Hub Room,2026-05-17|09:30|jack_s|hub_room,2026-05-17|jack_s|09:30|multi-activity|hub_room
 2026-05-17,Sunday,Jack W,Multi-Activity,9.30 to 10.15,JOHN,SwimFarm,Hub Room,2026-05-17|09:30|jack_w|hub_room,2026-05-17|jack_w|09:30|multi-activity|hub_room
@@ -91,12 +91,12 @@ date,weekday,client,service,time_slot,instructor,venue,notes,session_key,feedbac
 2026-05-17,Sunday,Erik,Multi-Activity,1.15 to 2,AURORA,SwimFarm,Big Pool,2026-05-17|13:15|erik|big_pool,2026-05-17|erik|13:15|multi-activity|big_pool
 2026-05-17,Sunday,Haneef,Multi-Activity,1.15 to 2,JAVIER,SwimFarm,Big Pool,2026-05-17|13:15|haneef|big_pool,2026-05-17|haneef|13:15|multi-activity|big_pool
 2026-05-17,Sunday,Rayyan Fi,Multi-Activity,1.15 to 2,GIUSEPPE,SwimFarm,Hub Room,2026-05-17|13:15|rayyan_fi|hub_room,2026-05-17|rayyan_fi|13:15|multi-activity|hub_room
-2026-05-17,Sunday,Max,Aquatic Activity,2 to 2.30,JAVIER,SwimFarm,Teaching Pool,2026-05-17|14:00|max,2026-05-17|14:00|max
-2026-05-17,Sunday,Rodin,Aquatic Activity,2 to 2.30,ROBERTO,SwimFarm,Teaching Pool,2026-05-17|14:00|rodin,2026-05-17|14:00|rodin
-2026-05-17,Sunday,Zakariya,Aquatic Activity,2 to 2.30,AURORA,SwimFarm,Teaching Pool,2026-05-17|14:00|zakariya,2026-05-17|14:00|zakariya
-2026-05-17,Sunday,Faris,Aquatic Activity,2.30 to 3,AURORA,SwimFarm,Teaching Pool,2026-05-17|14:30|faris,2026-05-17|14:30|faris
-2026-05-17,Sunday,Shaan,Aquatic Activity,2.30 to 3,JAVIER,SwimFarm,Teaching Pool,2026-05-17|14:30|shaan,2026-05-17|14:30|shaan
-2026-05-17,Sunday,Yoan,Aquatic Activity,2.30 to 3,ROBERTO,SwimFarm,Teaching Pool,2026-05-17|14:30|yoan,2026-05-17|14:30|yoan
+2026-05-17,Sunday,Max,Aquatic Activity,2 to 2.30,JAVIER,SwimFarm,Big Pool,2026-05-17|14:00|max,2026-05-17|14:00|max
+2026-05-17,Sunday,Rodin,Aquatic Activity,2 to 2.30,ROBERTO,SwimFarm,Big Pool,2026-05-17|14:00|rodin,2026-05-17|14:00|rodin
+2026-05-17,Sunday,Zakariya,Aquatic Activity,2 to 2.30,AURORA,SwimFarm,Big Pool,2026-05-17|14:00|zakariya,2026-05-17|14:00|zakariya
+2026-05-17,Sunday,Faris,Aquatic Activity,2.30 to 3,AURORA,SwimFarm,Big Pool,2026-05-17|14:30|faris,2026-05-17|14:30|faris
+2026-05-17,Sunday,Shaan,Aquatic Activity,2.30 to 3,JAVIER,SwimFarm,Big Pool,2026-05-17|14:30|shaan,2026-05-17|14:30|shaan
+2026-05-17,Sunday,Yoan,Aquatic Activity,2.30 to 3,ROBERTO,SwimFarm,Big Pool,2026-05-17|14:30|yoan,2026-05-17|14:30|yoan
 2026-05-18,Monday,Ikram,Day Centre,11 to 12,"RAUL, LULIYA",SwimFarm,Hub Room,2026-05-18|ikram|day_centre,2026-05-18|ikram|day_centre
 2026-05-18,Monday,Ikram,Day Centre,12 to 12.30,"ROBERTO, LULIYA, RAUL",SwimFarm,Hub Room,2026-05-18|ikram|day_centre,2026-05-18|ikram|day_centre
 2026-05-18,Monday,Fadi,Day Centre,12.30 to 3,"RAUL, VICTOR",SwimFarm,Hub Room,2026-05-18|fadi|day_centre,2026-05-18|fadi|day_centre

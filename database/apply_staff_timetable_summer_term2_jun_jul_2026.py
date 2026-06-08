@@ -91,6 +91,9 @@ SUNDAY_LEAD_ON_DUTY: dict[str, str] = {
     "2026-07-12": "Berta",
 }
 
+# Michelle off these Wednesday day-centre shifts (Ikram cover = Luliya only).
+MICHELLE_OFF_WEDNESDAYS = frozenset({"2026-06-10", "2026-06-17"})
+
 
 def slot(date: str, day: str, staff: str, time_range: str, venue: str) -> dict:
     raw = f"{staff} {time_range}".strip()
@@ -151,25 +154,29 @@ def wednesday_assignments() -> list[dict]:
     rows: list[dict] = []
     for iso in WEDNESDAYS:
         acton_ma = "Raul" if iso == "2026-06-24" else "Berta"
-        rows.extend(
+        day_rows = [
+            slot(iso, "Wednesday", acton_ma, "4.15-6.15", "Acton"),
+            slot(iso, "Wednesday", "Giuseppe", "4.15-6.15", "Acton"),
+            slot(iso, "Wednesday", "Javier", "4-6.30", "Acton"),
+            slot(iso, "Wednesday", "Youssef", "4-6.30", "Acton"),
+            slot(iso, "Wednesday", "Roberto", "4.30-6.30", "Northolt"),
+            slot(iso, "Wednesday", "Dan", "4.30-6.30", "Northolt"),
+            slot(iso, "Wednesday", "John", "4.15-6.15", "SwimFarm"),
+            slot(iso, "Wednesday", "Bismark", "4.15-6.15", "SwimFarm"),
+            slot(iso, "Wednesday", "Godsway", "4.15-6.15", "SwimFarm"),
+            slot(iso, "Wednesday", "Luliya", "11-4", "SwimFarm"),
+        ]
+        if iso not in MICHELLE_OFF_WEDNESDAYS:
+            day_rows.append(slot(iso, "Wednesday", "Michelle", "11-4", "SwimFarm"))
+        day_rows.extend(
             [
-                slot(iso, "Wednesday", acton_ma, "4.15-6.15", "Acton"),
-                slot(iso, "Wednesday", "Giuseppe", "4.15-6.15", "Acton"),
-                slot(iso, "Wednesday", "Javier", "4-6.30", "Acton"),
-                slot(iso, "Wednesday", "Youssef", "4-6.30", "Acton"),
-                slot(iso, "Wednesday", "Roberto", "4.30-6.30", "Northolt"),
-                slot(iso, "Wednesday", "Dan", "4.30-6.30", "Northolt"),
-                slot(iso, "Wednesday", "John", "4.15-6.15", "SwimFarm"),
-                slot(iso, "Wednesday", "Bismark", "4.15-6.15", "SwimFarm"),
-                slot(iso, "Wednesday", "Godsway", "4.15-6.15", "SwimFarm"),
-                slot(iso, "Wednesday", "Luliya", "11-4", "SwimFarm"),
-                slot(iso, "Wednesday", "Michelle", "11-4", "SwimFarm"),
                 slot(iso, "Wednesday", "Roberto", "11-3", "SwimFarm"),
                 slot(iso, "Wednesday", "Youssef", "11-3", "SwimFarm"),
                 slot(iso, "Wednesday", "Raul", "11-4", "SwimFarm"),
                 slot(iso, "Wednesday", "Victor", "11-4", "SwimFarm"),
             ]
         )
+        rows.extend(day_rows)
     return rows
 
 

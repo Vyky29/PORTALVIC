@@ -25,6 +25,9 @@ TUESDAY_SWAP_SLOT = "5.30 to 6"
 CARLOS_WEEKDAY_OFF_START = "2026-06-01"
 CARLOS_WEEKDAY_OFF_END = "2026-07-31"
 
+# Michelle off Ikram day-centre cover on these Wednesdays (Luliya only).
+MICHELLE_IKRAM_WEDNESDAY_OFF = frozenset({"2026-06-10", "2026-06-17"})
+
 
 def _strip_carlos_from_instructors(instr: str) -> str | None:
     parts = [p.strip() for p in instr.split(",") if p.strip()]
@@ -50,6 +53,25 @@ def patch_carlos_weekday_roster_off(rows: list[dict]) -> int:
         if new_instr and new_instr != instr:
             row["instructors"] = new_instr
             n += 1
+    return n
+
+
+def patch_michelle_ikram_wednesday_off(rows: list[dict]) -> int:
+    """Remove Michelle from Ikram day-centre rows on her off Wednesdays."""
+    n = 0
+    for row in rows:
+        sd = str(row.get("session_date") or "").strip()[:10]
+        if sd not in MICHELLE_IKRAM_WEDNESDAY_OFF:
+            continue
+        if str(row.get("client_name") or "").strip().lower() != "ikram":
+            continue
+        instr = str(row.get("instructors") or "").strip()
+        parts = [p.strip() for p in instr.split(",") if p.strip()]
+        kept = [p for p in parts if p.upper() != "MICHELLE"]
+        if len(kept) == len(parts):
+            continue
+        row["instructors"] = ", ".join(kept) if kept else "LULIA"
+        n += 1
     return n
 
 
@@ -465,6 +487,7 @@ def main() -> None:
     pool_small = patch_sunday_small_pool_shire_simon(merged)
     patched = patch_tuesday_hazem_rayan_instructors(merged)
     carlos_off = patch_carlos_weekday_roster_off(merged)
+    michelle_off = patch_michelle_ikram_wednesday_off(merged)
     JSON_PATH.write_text(
         json.dumps(merged, ensure_ascii=True, indent=2) + "\n",
         encoding="utf-8",
@@ -482,6 +505,11 @@ def main() -> None:
         print(
             f"Removed Carlos from {carlos_off} weekday roster row(s) "
             f"({CARLOS_WEEKDAY_OFF_START} .. {CARLOS_WEEKDAY_OFF_END}); Sunday climbing unchanged"
+        )
+    if michelle_off:
+        print(
+            f"Removed Michelle from {michelle_off} Ikram row(s) on "
+            f"{', '.join(sorted(MICHELLE_IKRAM_WEDNESDAY_OFF))}"
         )
 
 
