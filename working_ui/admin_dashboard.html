@@ -18843,7 +18843,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         at:new Date().toISOString(),
         kind:kind||'manual',
         summary:summary||'',
-        source:source||MOCK.profile.name
+        source:source||portalAdminSessionDisplayName()
       });
       if(MOCK.actionLog.length>80) MOCK.actionLog.length=80;
     }
@@ -27532,13 +27532,41 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       document.addEventListener('click', function(e){ if(e.target && e.target.id==='mockPathStep') opwfRunMockPath(); });
     }
 
+    function portalAdminSessionDisplayName(){
+      try{
+        var ctx = window.__PORTAL_SUPABASE__ || {};
+        var p = ctx.staff_profile;
+        var n = p && String(p.full_name || p.username || '').trim();
+        if(n) return n;
+        var em = ctx.session && ctx.session.user && ctx.session.user.email;
+        if(em) return String(em).split('@')[0];
+      }catch(_){}
+      return MOCK.profile.name;
+    }
+    function portalAdminSessionInitials(name){
+      name = String(name || portalAdminSessionDisplayName() || '').trim();
+      if(!name || name === MOCK.profile.name) return MOCK.profile.initial;
+      var parts = name.split(/\s+/).filter(Boolean);
+      if(!parts.length) return '?';
+      if(parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+      return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+    }
+    function portalAdminSyncTopbarIdentity(){
+      if(typeof window.portalSyncAdminTopbarProfile === 'function'){
+        window.portalSyncAdminTopbarProfile();
+        return;
+      }
+      var name = portalAdminSessionDisplayName();
+      var mnm = $('miniName');
+      if(mnm && name) mnm.textContent = name;
+      var mav = $('miniAvInitials');
+      if(mav && name) mav.textContent = portalAdminSessionInitials(name);
+    }
+
     function init(){
       var td = $('topDate');
       if(td) td.textContent = new Date().toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
-      var mav = $('miniAvInitials');
-      if(mav) mav.textContent = MOCK.profile.initial;
-      var mnm = $('miniName');
-      if(mnm) mnm.textContent = MOCK.profile.name;
+      portalAdminSyncTopbarIdentity();
       refreshKpisFromDemo();
       recomputeOperatorSuggestions();
       bindAdminMobileNavOnce();
@@ -27645,6 +27673,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!window.__portalAdminProfileRefreshBound){
         window.__portalAdminProfileRefreshBound = true;
         window.addEventListener('portal:supabase-ready', function(){
+          portalAdminSyncTopbarIdentity();
+          if(typeof window.portalMountAdminPortalSwitch === 'function') window.portalMountAdminPortalSwitch();
           if(state.view === 'settings') portalAdminRefreshSettingsView();
           portalLateAdminScheduleBadgeRefresh();
           if(
@@ -27829,7 +27859,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       };
     })();
   </script>
-  <script src="/portal/portal_admin_topbar.js?v=20260607-admin-topbar-portals"></script>
+  <script src="/portal/portal_admin_topbar.js?v=20260629-topbar-session"></script>
   <script>
     (function () {
       var s = document.createElement("script");

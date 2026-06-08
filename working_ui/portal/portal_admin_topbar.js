@@ -251,4 +251,15 @@
     host.hidden = false;
     host.removeAttribute("aria-hidden");
   };
+
+  function syncFromPortalSession() {
+    if (!global.__PORTAL_SUPABASE__ || !global.__PORTAL_SUPABASE__.staff_profile) return;
+    global.portalSyncAdminTopbarProfile();
+    global.portalMountAdminPortalSwitch();
+  }
+
+  global.addEventListener("portal:supabase-ready", syncFromPortalSession);
+  if (global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.staff_profile) {
+    syncFromPortalSession();
+  }
 })(typeof window !== "undefined" ? window : globalThis);
