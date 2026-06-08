@@ -50,11 +50,6 @@
   }
 
   function syncInboxChrome() {
-    var bar = document.getElementById("csCliqInboxCategoryBar");
-    if (bar) {
-      bar.hidden = true;
-      bar.setAttribute("aria-hidden", "true");
-    }
     var quick = document.getElementById("csCliqCeoQuickWrap");
     if (quick) quick.hidden = true;
     var nav = document.getElementById("csCliqChannelNav");
@@ -67,6 +62,51 @@
       newBtn.hidden = true;
       newBtn.setAttribute("aria-hidden", "true");
     }
+    if (!managementSharedWorkerOpsInbox()) {
+      var bar = document.getElementById("csCliqInboxCategoryBar");
+      if (bar) {
+        bar.hidden = true;
+        bar.setAttribute("aria-hidden", "true");
+        bar.innerHTML = "";
+        bar.className = "portal-cs-cliq-inbox-categories";
+      }
+    }
+  }
+
+  function getCeoInboxCategory() {
+    var ui = global.__PORTAL_ADMIN_DM_UI || {};
+    var cat = String(ui.inboxCategory || "direct").toLowerCase();
+    return cat === "ops" ? "ops" : "direct";
+  }
+
+  function setCeoInboxCategory(cat) {
+    global.__PORTAL_ADMIN_DM_UI = global.__PORTAL_ADMIN_DM_UI || {};
+    global.__PORTAL_ADMIN_DM_UI.inboxCategory = String(cat || "direct").toLowerCase() === "ops" ? "ops" : "direct";
+  }
+
+  function sortDmItems(items) {
+    items = Array.isArray(items) ? items.slice() : [];
+    items.sort(function (a, b) {
+      var ta = 0;
+      var tb = 0;
+      try {
+        if (a.when) ta = new Date(a.when).getTime();
+      } catch (_e) {}
+      try {
+        if (b.when) tb = new Date(b.when).getTime();
+      } catch (_e2) {}
+      if (ta > 0 && tb > 0) return tb - ta;
+      if (ta > 0) return -1;
+      if (tb > 0) return 1;
+      return String(a.label || "").localeCompare(String(b.label || ""), undefined, { sensitivity: "base" });
+    });
+    return items;
+  }
+
+  function countUnread(items) {
+    return (items || []).reduce(function (n, it) {
+      return n + Math.max(0, Number(it && it.unreadCount) || 0);
+    }, 0);
   }
 
   async function loadSessionLeads(client) {
@@ -301,10 +341,13 @@
     return false;
   }
 
-  function flattenDmInbox(merged, splitSections, teamDmItems) {
-    var items = [];
-    var seen = Object.create(null);
+  function splitDmInbox(merged, splitSections, teamDmItems) {
+    var directItems = [];
+    var opsItems = [];
+    var directSeen = Object.create(null);
+    var opsSeen = Object.create(null);
     var sharedWorkerOps = managementSharedWorkerOpsInbox();
+
     function shouldShowPersonalDm(item) {
       if (!item) return false;
       if (Number(item.unreadCount) > 0) return true;
@@ -313,17 +356,8 @@
       if (item.when) return true;
       return false;
     }
-    function pushWorkerRoster(item) {
-      if (!item || item.kind !== "dm" || item.isTeamChat) return;
-      if (!isWorkerPeerItem(item)) return;
-      var wk = String(item.workerId || item.peerId || "").trim();
-      if (!wk || seen["w:" + wk]) return;
-      seen["w:" + wk] = true;
-      var tid = String(item.id || "").trim();
-      if (tid) seen["t:" + tid] = true;
-      items.push(item);
-    }
-    function push(item) {
+
+    function pushDirect(item) {
       if (!item || item.kind !== "dm" || item.isTeamChat) return;
       if (item.inboxLane === "ops") return;
       if (sharedWorkerOps && isWorkerPeerItem(item)) return;
@@ -331,63 +365,147 @@
       var tid = String(item.id || "").trim();
       var wk = String(item.workerId || item.peerId || "").trim();
       if (tid) {
-        if (seen["t:" + tid]) return;
-        seen["t:" + tid] = true;
-        if (wk) seen["w:" + wk] = true;
-        items.push(item);
+        if (directSeen["t:" + tid]) return;
+        directSeen["t:" + tid] = true;
+        if (wk) directSeen["w:" + wk] = true;
+        directItems.push(item);
         return;
       }
-      if (!wk || seen["w:" + wk]) return;
-      seen["w:" + wk] = true;
-      items.push(item);
+      if (!wk || directSeen["w:" + wk]) return;
+      directSeen["w:" + wk] = true;
+      directItems.push(item);
     }
+
+    function pushOps(item) {
+      if (!item || item.kind !== "dm" || item.isTeamChat) return;
+      if (!isWorkerPeerItem(item)) return;
+      var wk = String(item.workerId || item.peerId || "").trim();
+      if (!wk || opsSeen["w:" + wk]) return;
+      opsSeen["w:" + wk] = true;
+      var tid = String(item.id || "").trim();
+      if (tid) opsSeen["t:" + tid] = true;
+      opsItems.push(item);
+    }
+
     (merged || []).forEach(function (item) {
-      if (item && item.inboxLane === "personal") push(item);
-      else if (!sharedWorkerOps) push(item);
-      else if (item && item.inboxLane !== "ops" && !isWorkerPeerItem(item)) push(item);
+      if (item && item.inboxLane === "personal") pushDirect(item);
+      else if (!sharedWorkerOps) pushDirect(item);
+      else if (item && item.inboxLane !== "ops" && !isWorkerPeerItem(item)) pushDirect(item);
     });
-    if (splitSections) {
-      if (managementInboxFullStaffRoster()) {
-        if (sharedWorkerOps && Array.isArray(splitSections.opsItems)) {
-          splitSections.opsItems.forEach(pushWorkerRoster);
-        } else if (Array.isArray(splitSections.mineItems)) {
-          splitSections.mineItems.forEach(pushWorkerRoster);
-        }
+
+    if (splitSections && managementInboxFullStaffRoster()) {
+      if (sharedWorkerOps && Array.isArray(splitSections.opsItems)) {
+        splitSections.opsItems.forEach(pushOps);
+      } else if (Array.isArray(splitSections.mineItems)) {
+        splitSections.mineItems.forEach(pushDirect);
       }
     }
+
     (teamDmItems || []).forEach(function (item) {
-      if (item && !item.isTeamChat) push(item);
+      if (item && !item.isTeamChat) pushDirect(item);
     });
-    items.sort(function (a, b) {
-      var ta = 0;
-      var tb = 0;
-      try {
-        if (a.when) ta = new Date(a.when).getTime();
-      } catch (_e) {}
-      try {
-        if (b.when) tb = new Date(b.when).getTime();
-      } catch (_e2) {}
-      if (ta > 0 && tb > 0) return tb - ta;
-      if (ta > 0) return -1;
-      if (tb > 0) return 1;
-      return String(a.label || "").localeCompare(String(b.label || ""), undefined, { sensitivity: "base" });
-    });
-    return items;
+
+    return {
+      directItems: sortDmItems(directItems),
+      opsItems: sortDmItems(opsItems),
+    };
+  }
+
+  function flattenDmInbox(merged, splitSections, teamDmItems) {
+    var split = splitDmInbox(merged, splitSections, teamDmItems);
+    if (managementSharedWorkerOpsInbox()) {
+      return getCeoInboxCategory() === "ops" ? split.opsItems : split.directItems;
+    }
+    return split.directItems.concat(split.opsItems);
+  }
+
+  var lastInboxCtx = null;
+
+  function renderCeoInboxNav(activeCat, split) {
+    var bar = document.getElementById("csCliqInboxCategoryBar");
+    if (!bar) return;
+    activeCat = activeCat === "ops" ? "ops" : "direct";
+    split = split || { directItems: [], opsItems: [] };
+    bar.hidden = false;
+    bar.setAttribute("aria-hidden", "false");
+    bar.className = "portal-dm-inbox-nav portal-cs-cliq-inbox-lane-nav";
+    var directUnread = countUnread(split.directItems);
+    var opsUnread = countUnread(split.opsItems);
+    var directLabel = "Direct" + (directUnread > 0 ? " (" + directUnread + ")" : "");
+    var opsLabel = "Staff ops" + (opsUnread > 0 ? " (" + opsUnread + ")" : "");
+    bar.innerHTML =
+      '<button type="button" class="portal-dm-inbox-nav-btn' +
+      (activeCat === "direct" ? " is-active" : "") +
+      '" data-cs-cliq-inbox-cat="direct">' +
+      directLabel +
+      "</button>" +
+      '<button type="button" class="portal-dm-inbox-nav-btn' +
+      (activeCat === "ops" ? " is-active" : "") +
+      '" data-cs-cliq-inbox-cat="ops">' +
+      opsLabel +
+      "</button>";
+    if (!bar.dataset.portalCeoInboxNavBound) {
+      bar.dataset.portalCeoInboxNavBound = "1";
+      bar.addEventListener("click", function (ev) {
+        var btn = ev.target && ev.target.closest && ev.target.closest("[data-cs-cliq-inbox-cat]");
+        if (!btn || !bar.contains(btn)) return;
+        ev.preventDefault();
+        setCeoInboxCategory(btn.getAttribute("data-cs-cliq-inbox-cat"));
+        rerenderAdminInbox();
+      });
+    }
+  }
+
+  function rerenderAdminInbox() {
+    var host = document.getElementById("csCliqListWrap");
+    if (host && lastInboxCtx) {
+      void renderAdminInbox(host, lastInboxCtx);
+      return;
+    }
+    if (typeof global.portalAdminDmRenderList === "function") {
+      void global.portalAdminDmRenderList();
+    }
+  }
+
+  function emptyInboxMessage(activeCat) {
+    if (activeCat === "ops") {
+      return (
+        "No staff ops threads here yet. " +
+        "This tab is the shared Sevitha\u2194worker line \u2014 Roberto, instructors, support, etc."
+      );
+    }
+    return (
+      "No direct chats here yet. " +
+      "Message Raul, Javi, Admin, or other directors \u2014 your personal threads live in this tab."
+    );
   }
 
   async function renderAdminInbox(host, ctx) {
     if (!host || !ctx) return;
+    lastInboxCtx = ctx;
     syncInboxChrome();
     var renderItem = ctx.renderItem;
     var me = ctx.me;
     var ch = ctx.ch;
-    var dmItems = flattenDmInbox(ctx.merged, ctx.splitSections, ctx.teamDmItems);
     var sharedWorkerOps = managementSharedWorkerOpsInbox();
+    var split = splitDmInbox(ctx.merged, ctx.splitSections, ctx.teamDmItems);
+    var activeCat = sharedWorkerOps ? getCeoInboxCategory() : "direct";
+    if (sharedWorkerOps) {
+      renderCeoInboxNav(activeCat, split);
+    }
+    var dmItems = sharedWorkerOps
+      ? activeCat === "ops"
+        ? split.opsItems
+        : split.directItems
+      : flattenDmInbox(ctx.merged, ctx.splitSections, ctx.teamDmItems);
     host.innerHTML = "";
     if (!dmItems.length) {
       host.innerHTML =
         '<p class="muted" style="margin:0;font-size:13px;min-width:0;overflow-wrap:break-word">' +
-        "No conversations here yet. Staff names appear in this list as soon as profiles are loaded — tap anyone to message.</p>";
+        (sharedWorkerOps
+          ? emptyInboxMessage(activeCat)
+          : "No conversations here yet. Staff names appear in this list as soon as profiles are loaded \u2014 tap anyone to message.") +
+        "</p>";
       return;
     }
     var rendered = 0;
@@ -419,7 +537,10 @@
     loadSessionLeads: loadSessionLeads,
     openLeadGhostView: openLeadGhostView,
     renderAdminInbox: renderAdminInbox,
+    rerenderAdminInbox: rerenderAdminInbox,
     hideCategoryChrome: hideCategoryChrome,
     buildChannelCategories: buildChannelCategories,
+    getCeoInboxCategory: getCeoInboxCategory,
+    setCeoInboxCategory: setCeoInboxCategory,
   };
 })(typeof window !== "undefined" ? window : globalThis);

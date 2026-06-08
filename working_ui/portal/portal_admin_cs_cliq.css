@@ -456,6 +456,20 @@ body.admin-view-cs-cliq #csCliqRoot .portal-cs-cliq-thread-header__status {
   overflow: hidden;
 }
 
+#csCliqRoot #csCliqInboxCategoryBar.portal-cs-cliq-inbox-lane-nav {
+  display: flex;
+  grid-template-columns: none;
+  gap: 8px;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid var(--portal-chat-line);
+  background: linear-gradient(180deg, #fafcff, #fff);
+}
+
+#csCliqRoot #csCliqInboxCategoryBar.portal-cs-cliq-inbox-lane-nav .portal-dm-inbox-nav-btn {
+  flex: 1;
+  min-width: 0;
+}
+
 #csCliqRoot .portal-cs-cliq-inbox-categories {
   flex-shrink: 0;
   display: grid;

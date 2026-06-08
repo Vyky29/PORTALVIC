@@ -42,7 +42,7 @@
   <script src="/portal/portal_ops_admin_display.js?v=20260629-admin-primary"></script>
   <script src="/portal/portal_ceo_god_mode_admin.js?v=20260629-admin-primary"></script>
   <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260629-admin-primary"></script>
-  <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260608-inbox-staff-roster-all"></script>
+  <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260609-ceo-inbox-lanes"></script>
   <script src="/portal/portal_cs_cliq_admin_channels.js?v=20260608-ceo-dm-send-fix"></script>
   <script src="/portal/portal_cs_cliq_support.js?v=20260607-support-route"></script>
   <script src="/portal/portal_cs_cliq_announcements_hub.js?v=20260604-cliq-inbox"></script>
@@ -86,7 +86,7 @@
   <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260609-header-chat-bell" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260608-incoming-poll" />
-  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260608-staff-admin-lane" />
+  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260609-ceo-inbox-lanes" />
 </head>
 <body>
   <script>
@@ -22222,7 +22222,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         useAdminLaneAvatar: opsAdminPeer
       };
       if(item.kind === 'dm' && item.inboxLane === 'ops'){
-        roleTag = '<span class="portal-dm-thread-role-tag portal-dm-thread-role-tag--ops">Shared ops</span>';
+        var inOpsTab = !!(
+          window.portalCsCliqAdminInbox &&
+          typeof window.portalCsCliqAdminInbox.managementSharedWorkerOpsInbox === 'function' &&
+          window.portalCsCliqAdminInbox.managementSharedWorkerOpsInbox() &&
+          window.portalCsCliqAdminInbox.getCeoInboxCategory &&
+          window.portalCsCliqAdminInbox.getCeoInboxCategory() === 'ops'
+        );
+        if(!inOpsTab){
+          roleTag = '<span class="portal-dm-thread-role-tag portal-dm-thread-role-tag--ops">Shared ops</span>';
+        }
       }else if(item.kind === 'dm' && ch === 'staff_lead'){
         if(item.isTeamChat){
           roleTag = '<span class="portal-dm-thread-role-tag portal-dm-thread-role-tag--team">Team chat</span>';
@@ -22621,6 +22630,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         });
       }
     }
+    window.portalAdminDmRenderList = portalAdminDmRenderList;
     async function portalAdminDmOpenThread(tid){
       tid = String(tid || '').trim();
       if(!tid) return;
