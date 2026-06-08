@@ -61,21 +61,31 @@
     }
   }
 
+  function portalStaffOnLeadDashboard() {
+    try {
+      return /lead_dashboard\.html/i.test(String((typeof location !== "undefined" && location.pathname) || ""));
+    } catch (_e) {
+      return false;
+    }
+  }
+
   /** Full messenger inbox (search, staff directory, calls) - lead, admin, CEO on any portal. */
   function portalStaffHasFullMessengerAccess(prof) {
     var row = profileRow(prof);
     var ar = String(row.app_role || "").toLowerCase();
     if (ar === "lead" || ar === "admin" || ar === "ceo") return true;
-    var dr = String(row.dashboard_route || "").toLowerCase();
-    if (dr === "lead_dashboard.html" || dr === "admin_dashboard.html" || dr === "ceo_dashboard.html") {
-      return true;
-    }
     try {
       var path = String((typeof location !== "undefined" && location.pathname) || "");
       if (/lead_dashboard\.html|admin_dashboard\.html|ceo_dashboard\.html/i.test(path)) {
         return true;
       }
     } catch (_e) {}
+    // On staff_dashboard, only app_role lead gets lead inbox — ignore dashboard_route (avoids flash).
+    if (portalStaffOnWorkerDashboard()) return false;
+    var dr = String(row.dashboard_route || "").toLowerCase();
+    if (dr === "lead_dashboard.html" || dr === "admin_dashboard.html" || dr === "ceo_dashboard.html") {
+      return true;
+    }
     return false;
   }
 
@@ -1256,8 +1266,69 @@
     }
   }
 
+  function portalStaffChatProfilePending(prof) {
+    if (!portalStaffOnWorkerDashboard()) return false;
+    return !String(profileRow(prof).app_role || "").trim();
+  }
+
+  /** Synchronous shell before async render — avoids lead inbox flash on staff_dashboard. */
+  function portalPrimeInternalChatShell() {
+    var chatSheet = document.getElementById("internalChatSheet");
+    if (!chatSheet || !chatSheet.classList.contains("open")) return;
+    var ui = global.__PORTAL_INTERNAL_CHAT_UI || {};
+    var tid = ui.threadId ? String(ui.threadId).trim() : "";
+    var gid = ui.groupId ? String(ui.groupId).trim() : "";
+    var inThread = !!(tid || gid);
+    var prof = profileRow();
+    var restricted = portalStaffIsRestrictedWorkerChat(prof);
+    var hasDirectory = portalStaffHasPeerDirectory(prof);
+
+    syncInboxChrome({ profile: prof, hasDirectory: hasDirectory, inThread: inThread });
+
+    var listHost = document.getElementById("internalChatListWrap");
+    var threadWrap = document.getElementById("internalChatThreadWrap");
+
+    if (inThread) {
+      if (listHost) {
+        listHost.hidden = true;
+        listHost.setAttribute("aria-hidden", "true");
+      }
+      if (threadWrap) {
+        threadWrap.hidden = false;
+        threadWrap.setAttribute("aria-hidden", "false");
+      }
+      chatSheet.classList.add("sheet--portal-chat-thread");
+      chatSheet.classList.remove("sheet--portal-chat-inbox");
+      var msgsBox = document.getElementById("internalChatMessages");
+      if (msgsBox && !msgsBox.querySelector(".portal-dm-msg-row")) {
+        msgsBox.innerHTML = '<p class="muted portal-dm-inbox-loading" style="margin:0">Loading…</p>';
+      }
+    } else if (restricted || portalStaffChatProfilePending(prof)) {
+      if (threadWrap) {
+        threadWrap.hidden = true;
+        threadWrap.setAttribute("aria-hidden", "true");
+      }
+      if (listHost) {
+        listHost.hidden = false;
+        listHost.setAttribute("aria-hidden", "false");
+        listHost.innerHTML =
+          '<p class="alerts-sheet-placeholder muted portal-dm-inbox-loading" style="min-width:0;overflow-wrap:break-word">Loading chat…</p>';
+      }
+      chatSheet.classList.add("sheet--portal-chat-inbox");
+      chatSheet.classList.remove("sheet--portal-chat-thread");
+    }
+
+    try {
+      chatSheet.setAttribute(
+        "data-portal-chat-shell",
+        restricted ? "worker" : hasDirectory ? "lead" : "standard"
+      );
+    } catch (_attr) {}
+  }
+
   function initWorkerPeerInbox() {
     bindInboxNav();
+    syncInboxChrome({ inThread: false });
     if (!portalStaffHasPeerDirectory()) return;
     try {
       delete global[CACHE_KEY_STAFF];
@@ -1266,7 +1337,6 @@
       delete global[CACHE_KEY_DIRECTORS];
       delete global[CACHE_KEY_STAFFMGMT];
     } catch (_cache) {}
-    syncInboxChrome({ inThread: false });
     if (getInboxTab() === "directory") {
       void renderPeerDirectory();
     }
@@ -1381,7 +1451,10 @@
 
   global.portalLeadStaffChatDirectory = {
     portalStaffOnWorkerDashboard: portalStaffOnWorkerDashboard,
+    portalStaffOnLeadDashboard: portalStaffOnLeadDashboard,
     portalStaffHasFullMessengerAccess: portalStaffHasFullMessengerAccess,
+    portalStaffChatProfilePending: portalStaffChatProfilePending,
+    portalPrimeInternalChatShell: portalPrimeInternalChatShell,
     portalStaffIsLeadUser: portalStaffIsLeadUser,
     portalStaffIsSessionLead: portalStaffIsSessionLead,
     portalStaffIsStaffUser: portalStaffIsStaffUser,
