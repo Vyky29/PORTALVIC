@@ -1,15 +1,8 @@
 /**
- * Admin CS Cliq inbox — Leads / Staff / CEOs category tabs + filtered thread lists.
+ * Admin CS Cliq inbox — flat 1:1 DMs (WhatsApp-style). Groups live in Channels.
  */
 (function (global) {
   "use strict";
-
-  var CAT_STORAGE_KEY = "portal_admin_cs_cliq_cat";
-  var CATEGORIES = [
-    { id: "leads", label: "Leads", sub: "Session leads" },
-    { id: "staff", label: "Staff", sub: "Pool staff" },
-    { id: "ceos", label: "CEOs", sub: "Directors" },
-  ];
 
   function profileRow() {
     return (global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.staff_profile) || {};
@@ -56,37 +49,14 @@
     return app === "admin" || app === "ceo";
   }
 
-  function getStoredCategory() {
-    try {
-      var v = String(sessionStorage.getItem(CAT_STORAGE_KEY) || "").trim();
-      return CATEGORIES.some(function (c) {
-        return c.id === v;
-      })
-        ? v
-        : "leads";
-    } catch (_s) {
-      return "leads";
-    }
-  }
-
-  function setStoredCategory(cat) {
-    try {
-      sessionStorage.setItem(CAT_STORAGE_KEY, String(cat || "leads"));
-    } catch (_w) {}
-  }
-
-  function categoryBarEl() {
-    return document.getElementById("csCliqInboxCategoryBar");
-  }
-
-  function syncCategoryChrome(show) {
-    var bar = categoryBarEl();
+  function syncInboxChrome() {
+    var bar = document.getElementById("csCliqInboxCategoryBar");
     if (bar) {
-      bar.hidden = !show;
-      bar.setAttribute("aria-hidden", show ? "false" : "true");
+      bar.hidden = true;
+      bar.setAttribute("aria-hidden", "true");
     }
     var quick = document.getElementById("csCliqCeoQuickWrap");
-    if (quick) quick.hidden = !!show;
+    if (quick) quick.hidden = true;
     var nav = document.getElementById("csCliqChannelNav");
     if (nav) {
       nav.hidden = true;
@@ -109,20 +79,6 @@
     });
   }
 
-  function appendSectionLabel(host, text) {
-    var el = document.createElement("p");
-    el.className = "portal-cs-cliq-inbox-section__label";
-    el.textContent = text;
-    host.appendChild(el);
-  }
-
-  function appendSectionEmpty(host, text) {
-    var el = document.createElement("p");
-    el.className = "muted portal-cs-cliq-inbox-section__empty";
-    el.textContent = text;
-    host.appendChild(el);
-  }
-
   async function openLeadGhostView(leadId, btn) {
     leadId = String(leadId || "").trim();
     if (!leadId) return;
@@ -135,42 +91,7 @@
     }
   }
 
-  function renderLeadGhostButton(lead, esc) {
-    var btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "portal-dm-thread-item portal-cs-cliq-inbox-ghost-btn";
-    btn.setAttribute("data-cs-cliq-lead-ghost", String(lead.id || ""));
-    var label = String(lead.full_name || lead.username || "Lead").trim() || "Lead";
-    var avatarItem = {
-      kind: "dm",
-      label: label,
-      roleTone: "lead",
-      peerProfile: lead,
-      username: lead.username,
-      avatar_url: lead.avatar_url,
-    };
-    var avatarHtml = "";
-    if (global.portalDmThreadAvatar && typeof global.portalDmThreadAvatar.html === "function") {
-      avatarHtml = global.portalDmThreadAvatar.html(avatarItem, esc, "staff_lead");
-    }
-    btn.innerHTML =
-      avatarHtml +
-      '<div class="portal-dm-thread-item__body">' +
-      '<div class="portal-dm-thread-item__head">' +
-      '<span class="portal-dm-thread-peer">' +
-      esc(label) +
-      '<span class="portal-dm-thread-role-tag portal-dm-thread-role-tag--lead">Lead</span></span>' +
-      '<span class="portal-dm-thread-when">Ghost view</span>' +
-      "</div>" +
-      '<div class="portal-dm-thread-preview portal-cs-cliq-inbox-ghost-btn__hint">Read-only — their inbox on mobile</div>' +
-      "</div>";
-    btn.addEventListener("click", function () {
-      void openLeadGhostView(String(lead.id || ""), btn);
-    });
-    return btn;
-  }
-
-  function buildCategories(ctx) {
+  function buildChannelCategories(ctx) {
     var merged = ctx.merged || [];
     var splitSections = ctx.splitSections;
     var teamDmItems = ctx.teamDmItems || [];
@@ -207,21 +128,6 @@
       else push(staffItems, item);
     });
 
-    if (splitSections && Array.isArray(splitSections.mineItems)) {
-      splitSections.mineItems.forEach(function (item) {
-        if (item && item.isTeamChat) return;
-        var prof = item.peerProf || {};
-        if (isSessionLeadProfile(prof)) return;
-        if (isCeoExecPeer(prof)) push(ceoItems, item);
-        else if (isStaffWorkerProfile(prof)) push(staffItems, item);
-      });
-      if (splitSections.showOpsLane && Array.isArray(splitSections.opsItems)) {
-        splitSections.opsItems.forEach(function (item) {
-          push(staffItems, item);
-        });
-      }
-    }
-
     merged.forEach(function (item) {
       if (!item) return;
       if (item.kind === "group") {
@@ -234,147 +140,94 @@
         push(ceoItems, item);
         return;
       }
-      if (item.isTeamChat) return;
-      if (splitSections && Array.isArray(splitSections.mineItems) && splitSections.mineItems.length) {
-        return;
+      if (item.isTeamChat) {
+        if (isLeadOnlyTeamChat(item, profBy)) push(leadItems, item);
+        else push(staffItems, item);
       }
-      var prof = item.peerProf || {};
-      if (isSessionLeadProfile(prof)) return;
-      if (isCeoExecPeer(prof)) push(ceoItems, item);
-      else if (isStaffWorkerProfile(prof)) push(staffItems, item);
     });
+
+    if (splitSections && Array.isArray(splitSections.opsItems)) {
+      splitSections.opsItems.forEach(function (item) {
+        if (item && item.isTeamChat) push(staffItems, item);
+      });
+    }
 
     var ceoGroups = ceoItems.filter(function (i) {
       return i.kind === "group";
     });
-    var ceoDms = ceoItems.filter(function (i) {
+    var ceoTeams = ceoItems.filter(function (i) {
       return i.kind !== "group";
     });
     if (typeof orderFixedGroups === "function") {
       ceoGroups = orderFixedGroups(ceoGroups);
     }
-    ceoItems = ceoGroups.concat(ceoDms);
+    ceoItems = ceoGroups.concat(ceoTeams);
+
+    if (typeof orderFixedGroups === "function") {
+      leadItems = orderFixedGroups(
+        leadItems.filter(function (i) {
+          return i.kind === "group";
+        })
+      ).concat(
+        leadItems.filter(function (i) {
+          return i.kind !== "group";
+        })
+      );
+    }
 
     return { leadItems: leadItems, staffItems: staffItems, ceoItems: ceoItems };
   }
 
-  function renderCategoryBar(activeCat, esc, rerender) {
-    var bar = categoryBarEl();
-    if (!bar) return;
-    bar.innerHTML = "";
-    CATEGORIES.forEach(function (cat) {
-      var btn = document.createElement("button");
-      btn.type = "button";
-      btn.className =
-        "portal-cs-cliq-inbox-cat-btn" + (activeCat === cat.id ? " is-active" : "");
-      btn.setAttribute("data-cs-cliq-inbox-cat", cat.id);
-      btn.innerHTML =
-        '<span class="portal-cs-cliq-inbox-cat-btn__label">' +
-        esc(cat.label) +
-        "</span>" +
-        '<span class="portal-cs-cliq-inbox-cat-btn__sub">' +
-        esc(cat.sub) +
-        "</span>";
-      btn.addEventListener("click", function () {
-        setStoredCategory(cat.id);
-        rerender(cat.id);
-      });
-      bar.appendChild(btn);
+  function flattenDmInbox(merged, splitSections, teamDmItems) {
+    var items = [];
+    var seen = Object.create(null);
+    function push(item) {
+      if (!item || item.kind !== "dm" || item.isTeamChat) return;
+      var k = String(item.id || item.workerId || "");
+      if (!k || seen[k]) return;
+      seen[k] = true;
+      items.push(item);
+    }
+    (merged || []).forEach(push);
+    if (splitSections) {
+      (splitSections.mineItems || []).forEach(push);
+      (splitSections.opsItems || []).forEach(push);
+    }
+    (teamDmItems || []).forEach(function (item) {
+      if (item && !item.isTeamChat) push(item);
     });
-  }
-
-  function renderCategoryPanel(host, cat, ctx, cats, leads, esc) {
-    host.innerHTML = "";
-    var renderItem = ctx.renderItem;
-
-    if (cat === "leads") {
-      appendSectionLabel(host, "View as lead (read-only)");
-      if (!leads.length) {
-        appendSectionEmpty(host, "No session leads found.");
-      } else {
-        leads.forEach(function (lead) {
-          host.appendChild(renderLeadGhostButton(lead, esc));
-        });
-      }
-      var leadThreads = cats.leadItems || [];
-      if (leadThreads.length) {
-        appendSectionLabel(host, "Lead conversations");
-        leadThreads.forEach(function (item) {
-          host.appendChild(renderItem(item));
-        });
-      } else {
-        appendSectionLabel(host, "Lead conversations");
-        appendSectionEmpty(
-          host,
-          "No lead-only group or lead-to-lead threads yet. Use ghost view above to inspect each lead inbox."
-        );
-      }
-      return;
-    }
-
-    if (cat === "staff") {
-      appendSectionLabel(host, "Staff chats");
-      var staffItems = cats.staffItems || [];
-      if (!staffItems.length) {
-        appendSectionEmpty(host, "No staff conversations yet.");
-      } else {
-        staffItems.forEach(function (item) {
-          host.appendChild(renderItem(item));
-        });
-      }
-      return;
-    }
-
-    if (cat === "ceos") {
-      appendSectionLabel(host, "CEO groups & messages");
-      if (ctx.isSevitha) {
-        var note = document.createElement("p");
-        note.className = "portal-cs-cliq-inbox-section__hint muted";
-        note.textContent =
-          "Internal CEO ring is hidden. Use CEOs & Admin or message directors individually.";
-        host.appendChild(note);
-      }
-      var ceoItems = cats.ceoItems || [];
-      if (!ceoItems.length) {
-        appendSectionEmpty(host, "No CEO conversations yet.");
-      } else {
-        ceoItems.forEach(function (item) {
-          host.appendChild(renderItem(item));
-        });
-      }
-    }
-  }
-
-  var lastCtx = null;
-  var lastLeads = [];
-
-  function paintInbox(host, cat, ctx, leads) {
-    var esc =
-      ctx.esc ||
-      function (s) {
-        return String(s == null ? "" : s);
-      };
-    var cats = buildCategories(ctx);
-    renderCategoryBar(cat, esc, function (nextCat) {
-      if (lastCtx && host) paintInbox(host, nextCat, lastCtx, lastLeads);
+    items.sort(function (a, b) {
+      var ta = 0;
+      var tb = 0;
+      try {
+        if (a.when) ta = new Date(a.when).getTime();
+      } catch (_e) {}
+      try {
+        if (b.when) tb = new Date(b.when).getTime();
+      } catch (_e2) {}
+      return tb - ta;
     });
-    renderCategoryPanel(host, cat, ctx, cats, leads, esc);
+    return items;
   }
 
   async function renderAdminInbox(host, ctx) {
     if (!host || !ctx) return;
-    lastCtx = ctx;
-    syncCategoryChrome(true);
-    var cat = getStoredCategory();
-    var leads = await loadSessionLeads(ctx.client);
-    lastLeads = leads;
-    paintInbox(host, cat, ctx, leads);
+    syncInboxChrome();
+    var renderItem = ctx.renderItem;
+    var dmItems = flattenDmInbox(ctx.merged, ctx.splitSections, ctx.teamDmItems);
+    host.innerHTML = "";
+    if (!dmItems.length) {
+      host.innerHTML =
+        '<p class="muted" style="margin:0;font-size:13px;min-width:0;overflow-wrap:break-word">No direct messages yet. Use <strong>New</strong> to start a chat.</p>';
+      return;
+    }
+    dmItems.forEach(function (item) {
+      host.appendChild(renderItem(item));
+    });
   }
 
   function hideCategoryChrome() {
-    syncCategoryChrome(false);
-    lastCtx = null;
-    lastLeads = [];
+    syncInboxChrome();
   }
 
   global.portalCsCliqAdminInbox = {
@@ -383,6 +236,6 @@
     openLeadGhostView: openLeadGhostView,
     renderAdminInbox: renderAdminInbox,
     hideCategoryChrome: hideCategoryChrome,
-    getStoredCategory: getStoredCategory,
+    buildChannelCategories: buildChannelCategories,
   };
 })(typeof window !== "undefined" ? window : globalThis);

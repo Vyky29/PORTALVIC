@@ -1057,7 +1057,8 @@
   <script src="/portal/portal_dm_voice.js?v=20260608-composer-cols"></script>
   <script src="/portal/portal_dm_composer_wa.js?v=20260608-composer-cols"></script>
   <script src="/portal/portal_dm_attachments.js?v=20260608-plus-sheet-icons"></script>
-  <script src="/portal/portal_staff_chat_calls.js?v=20260604-call-thread"></script>
+  <script src="/portal/portal_chat_actor_identity.js?v=20260609-chat-identity"></script>
+  <script src="/portal/portal_staff_chat_calls.js?v=20260609-chat-identity"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
   <script src="/portal/portal_dm_roles.js?v=20260622-chat-restore"></script>
   <script src="/portal/portal_dm_thread_avatar.js?v=20260608-inbox-photos"></script>
@@ -6966,7 +6967,7 @@
     window.portalStaffDmSyncUnreadChrome = async function portalStaffDmSyncUnreadChrome(){
       var box = window.__PORTAL_SUPABASE__;
       var client = box && box.client;
-      var me = String((box && box.staff_profile && box.staff_profile.id) || (box && box.session && box.session.user && box.session.user.id) || '').trim();
+      var me = String((box && box.session && box.session.user && box.session.user.id) || (box && box.staff_profile && box.staff_profile.id) || '').trim();
       portalStaffDmSetUnreadCount(0);
       if(!client || !me){
         if(typeof syncPortalHeaderAlertChrome === 'function'){
@@ -7982,7 +7983,7 @@
                 client: box && box.client,
                 threadId: String(ui.threadId || "").trim(),
                 groupId: String(ui.groupId || "").trim(),
-                authorId: String((box && box.staff_profile && box.staff_profile.id) || (box && box.session && box.session.user && box.session.user.id) || "").trim()
+                authorId: String((box && box.session && box.session.user && box.session.user.id) || (box && box.staff_profile && box.staff_profile.id) || "").trim()
               };
             },
             onSent: function(){ return window.portalRenderInternalChatSheet(); },

@@ -141,7 +141,13 @@ async function resolveTargetUserIds(
     if (error || !thread) return [];
     const a = String(thread.participant_a || "").trim();
     const b = String(thread.participant_b || "").trim();
-    const peer = a === authorId ? b : a;
+    let peer = "";
+    if (a === authorId) peer = b;
+    else if (b === authorId) peer = a;
+    else {
+      if (a && a !== authorId) targets.add(a);
+      if (b && b !== authorId) targets.add(b);
+    }
     if (peer && peer !== authorId) targets.add(peer);
 
     if (authorRole === "staff" || authorRole === "lead") {

@@ -233,6 +233,7 @@
       '<div id="csCliqInboxCategoryBar" class="portal-cs-cliq-inbox-categories" hidden aria-hidden="true"></div>' +
       '<div id="csCliqListWrap" class="portal-dm-inbox-list"></div>' +
       "</div></aside>" +
+      '<div id="csCliqChatsConvHost" class="portal-cs-cliq-inbox__conv-host">' +
       '<section class="portal-cs-cliq-inbox__conversation-col" id="csCliqConversationCol">' +
       '<div id="csCliqInboxEmpty" class="portal-cs-cliq-inbox-empty" aria-hidden="false">' +
       '<p class="portal-cs-cliq-inbox-empty__title">Select a conversation</p>' +
@@ -277,17 +278,20 @@
       '<span class="portal-cs-cliq-composer__send-ico" data-dm-icon="send" aria-hidden="true"></span>' +
       "</button></div>" +
       '<p id="csCliqErr" class="portal-cs-cliq-composer__err muted"></p>' +
-      "</div></div></section></div></div>" +
+      "</div></div></section></div></div></div>" +
       '<div id="csCliqChannelsPane" class="portal-cs-cliq__pane portal-cs-cliq__pane--channels" data-cs-cliq-pane="channels" hidden>' +
-      '<header class="portal-cs-cliq__channels-head">' +
-      '<div class="portal-cs-cliq__channels-head-row">' +
-      "<h2>Channels</h2>" +
+      '<div class="portal-cs-cliq-inbox portal-cs-cliq__channels-body portal-cs-cliq__chat-body" data-cs-cliq-panel="list">' +
+      '<aside class="portal-cs-cliq-inbox__list-col" id="csCliqChannelsListColumn">' +
+      '<div class="portal-cs-cliq-inbox__list-head">' +
+      '<h2 class="portal-cs-cliq__chat-title" id="csCliqChannelsTitle">Channels</h2>' +
       '<button type="button" class="portal-cs-cliq__new-btn" id="csCliqChannelsNewBtn">New group</button>' +
       "</div>" +
-      '<p class="portal-cs-cliq-channels-intro muted">Group chats for staff and leads. Open a channel to message the group, or create a new one here.</p>' +
-      "</header>" +
-      '<div class="portal-cs-cliq__channels-body">' +
-      '<div id="csCliqTeamsList" class="portal-cs-cliq-teams-list"></div>' +
+      '<p class="portal-cs-cliq-channels-intro muted">Group chats and team channels — Leads, Staff and CEOs.</p>' +
+      '<div id="csCliqChannelsCategoryBar" class="portal-cs-cliq-inbox-categories" hidden aria-hidden="true"></div>' +
+      '<div id="csCliqChannelsListPanel">' +
+      '<div id="csCliqTeamsList" class="portal-dm-inbox-list portal-cs-cliq-teams-list"></div>' +
+      "</div></aside>" +
+      '<div id="csCliqChannelsConvHost" class="portal-cs-cliq-inbox__conv-host"></div>' +
       "</div></div>" +
       '<div id="csCliqSupportPane" class="portal-cs-cliq__pane" data-cs-cliq-pane="support" hidden>' +
       '<div class="portal-cs-cliq__module-head"><div class="portal-cs-cliq__pane-title-row"><h2>Support</h2><span class="portal-cs-cliq__pane-badge">Staff</span></div>' +
@@ -348,11 +352,21 @@
     );
   }
 
+  function reparentConversationCol(pane) {
+    var col = document.getElementById("csCliqConversationCol");
+    var chatsHost = document.getElementById("csCliqChatsConvHost");
+    var channelsHost = document.getElementById("csCliqChannelsConvHost");
+    if (!col) return;
+    var target = pane === "channels" ? channelsHost : chatsHost;
+    if (target && col.parentElement !== target) target.appendChild(col);
+  }
+
   function setRailPane(pane) {
     var root = document.getElementById("csCliqRoot");
     if (!root) return;
     var allowed = { chats: 1, channels: 1, phone: 1, files: 1, calendar: 1, support: 1, soon: 1 };
     if (!allowed[pane]) pane = "chats";
+    global.__PORTAL_CS_CLIQ_RAIL_PANE = pane;
     root.querySelectorAll("[data-cs-cliq-rail]").forEach(function (btn) {
       var id = btn.getAttribute("data-cs-cliq-rail");
       btn.classList.toggle("is-active", id === pane);
@@ -381,6 +395,7 @@
     if (pane === "channels" && global.portalCsCliqTeams && typeof global.portalCsCliqTeams.refresh === "function") {
       global.portalCsCliqTeams.refresh();
     }
+    reparentConversationCol(pane);
     if (pane === "chats" && typeof cfg.initChat === "function") {
       cfg.initChat(global.__PORTAL_ADMIN_DM_CHANNEL || "staff_lead");
     }
@@ -462,18 +477,26 @@
     var panel = String(ui.panel || "list");
     var inThread = panel === "thread";
     var inCompose = panel === "compose";
+    var railPane = String(global.__PORTAL_CS_CLIQ_RAIL_PANE || "chats");
     var listPanel = document.getElementById("csCliqListPanel");
+    var channelsListPanel = document.getElementById("csCliqChannelsListPanel");
     var composePanel = document.getElementById("csCliqComposePanel");
     var threadPanel = document.getElementById("csCliqThreadPanel");
     var backBtn = document.getElementById("csCliqBackBtn");
     var titleEl = document.getElementById("csCliqTitle");
+    var channelsTitleEl = document.getElementById("csCliqChannelsTitle");
     var nav = document.getElementById("csCliqChannelNav");
     var newBtn = document.getElementById("csCliqBtnNew");
+    var channelsNewBtn = document.getElementById("csCliqChannelsNewBtn");
     var listCol = document.getElementById("csCliqListColumn");
+    var channelsListCol = document.getElementById("csCliqChannelsListColumn");
     var convCol = document.getElementById("csCliqConversationCol");
     var emptyState = document.getElementById("csCliqInboxEmpty");
-    var chatBody = document.querySelector("#csCliqRoot .portal-cs-cliq__chat-body");
+    var chatBody = document.querySelector("#csCliqChatsPane .portal-cs-cliq__chat-body");
+    var channelsBody = document.querySelector("#csCliqChannelsPane .portal-cs-cliq__channels-body");
     if (chatBody) chatBody.setAttribute("data-cs-cliq-panel", panel);
+    if (channelsBody) channelsBody.setAttribute("data-cs-cliq-panel", panel);
+    reparentConversationCol(railPane);
     if (typeof hooks.onMobileSubscreen === "function") {
       hooks.onMobileSubscreen(panel);
     } else {
@@ -490,8 +513,14 @@
       emptyState.setAttribute("aria-hidden", inThread || inCompose ? "true" : "false");
     }
     if (listCol) listCol.classList.toggle("portal-cs-cliq-inbox__list-col--hidden-mobile", inThread || inCompose);
+    if (channelsListCol) {
+      channelsListCol.classList.toggle("portal-cs-cliq-inbox__list-col--hidden-mobile", inThread || inCompose);
+    }
     if (convCol) convCol.classList.toggle("portal-cs-cliq-inbox__conversation-col--active", inThread || inCompose);
-    if (backBtn) backBtn.hidden = !inThread && !inCompose;
+    if (backBtn) {
+      backBtn.hidden = !inThread && !inCompose;
+      backBtn.setAttribute("aria-label", railPane === "channels" ? "Back to channels" : "Back to inbox");
+    }
     if (nav) {
       var showNav =
         global.portalCsCliqHubRoles &&
@@ -506,8 +535,12 @@
         global.portalCsCliqHubRoles.canCreateConversations &&
         !global.portalCsCliqHubRoles.canCreateConversations()
       );
-      newBtn.hidden = inThread || inCompose || !canNew;
+      newBtn.hidden = inThread || inCompose || !canNew || railPane !== "chats";
     }
+    if (channelsNewBtn) {
+      channelsNewBtn.hidden = inThread || inCompose || railPane !== "channels";
+    }
+    if (channelsListPanel) channelsListPanel.hidden = false;
     var threadHeader = document.getElementById("csCliqThreadHeader");
     if (threadHeader) {
       threadHeader.classList.toggle("is-open", inThread);
@@ -524,6 +557,13 @@
         titleEl.textContent = hooks.inboxTitle();
       } else {
         titleEl.textContent = "Inbox";
+      }
+    }
+    if (channelsTitleEl) {
+      if (inThread && ui.groupId) {
+        channelsTitleEl.textContent = String(ui.peerLabel || "Channel").trim() || "Channel";
+      } else {
+        channelsTitleEl.textContent = "Channels";
       }
     }
     var gid = ui.groupId ? String(ui.groupId).trim() : "";

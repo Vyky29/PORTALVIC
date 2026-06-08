@@ -1242,6 +1242,12 @@
   }
 
   function threadInboxDisplayLabel(me, row, profBy) {
+    if (
+      global.portalChatActorIdentity &&
+      typeof global.portalChatActorIdentity.threadDisplayLabel === "function"
+    ) {
+      return global.portalChatActorIdentity.threadDisplayLabel(me, row, profBy);
+    }
     profBy = profBy || {};
     me = String(me || "").trim();
     if (!row) return "Conversation";
@@ -1253,6 +1259,9 @@
       return peerLabelFromRow(prof) || (id ? id.slice(0, 8) : "");
     }
     if (portalStaffIsSessionLead(pa) && portalStaffIsSessionLead(pb) && a && b && a !== b) {
+      return nameFrom(pa, a) + " \u2194 " + nameFrom(pb, b);
+    }
+    if (a && b && a !== b && me && a !== me && b !== me) {
       return nameFrom(pa, a) + " \u2194 " + nameFrom(pb, b);
     }
     var peer = a === me ? b : b === me ? a : b || a;

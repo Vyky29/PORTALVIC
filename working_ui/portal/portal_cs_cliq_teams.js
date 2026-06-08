@@ -55,8 +55,10 @@
       btn.addEventListener("click", function () {
         var gid = String(btn.getAttribute("data-cs-cliq-group-id") || "").trim();
         if (!gid) return;
+        global.__PORTAL_ADMIN_DM_UI = global.__PORTAL_ADMIN_DM_UI || {};
+        global.__PORTAL_ADMIN_DM_UI.hubPane = "channels";
         if (global.PortalAdminCsCliq && typeof global.PortalAdminCsCliq.setRailPane === "function") {
-          global.PortalAdminCsCliq.setRailPane("chats");
+          global.PortalAdminCsCliq.setRailPane("channels");
         }
         if (typeof global.portalAdminDmOpenGroupThread === "function") {
           void global.portalAdminDmOpenGroupThread(gid);
@@ -65,7 +67,7 @@
     });
   }
 
-  async function refresh() {
+  async function legacyRefresh() {
     var host = document.getElementById("csCliqTeamsList");
     if (!host) return;
     host.innerHTML = '<p class="muted portal-cs-cliq-teams-loading">Loading channels…</p>';
@@ -108,6 +110,20 @@
       .join("");
     bindGroupButtons(host);
   }
+
+  async function refresh() {
+    if (
+      global.portalCsCliqAdminChannels &&
+      typeof global.portalCsCliqAdminChannels.shouldUseAdminChannels === "function" &&
+      global.portalCsCliqAdminChannels.shouldUseAdminChannels() &&
+      typeof global.portalCsCliqAdminChannels.refresh === "function"
+    ) {
+      return global.portalCsCliqAdminChannels.refresh();
+    }
+    return legacyRefresh();
+  }
+
+  global.portalCsCliqTeamsLegacyRefresh = legacyRefresh;
 
   function ensureModal() {
     var existing = document.getElementById("portalCsCliqGroupModal");
@@ -210,11 +226,17 @@
       var res = await c.from("portal_ceo_group").insert([{ slug: slug, title: title }]).select("id").maybeSingle();
       if (res.error) throw new Error(res.error.message || String(res.error));
       closeCreateModal();
-      await refresh();
+      if (typeof global.portalAdminDmRenderList === "function") {
+        await global.portalAdminDmRenderList();
+      } else {
+        await refresh();
+      }
       var gid = res.data && res.data.id ? String(res.data.id) : "";
       if (gid && typeof global.portalAdminDmOpenGroupThread === "function") {
+        global.__PORTAL_ADMIN_DM_UI = global.__PORTAL_ADMIN_DM_UI || {};
+        global.__PORTAL_ADMIN_DM_UI.hubPane = "channels";
         if (global.PortalAdminCsCliq && typeof global.PortalAdminCsCliq.setRailPane === "function") {
-          global.PortalAdminCsCliq.setRailPane("chats");
+          global.PortalAdminCsCliq.setRailPane("channels");
         }
         await global.portalAdminDmOpenGroupThread(gid);
       }

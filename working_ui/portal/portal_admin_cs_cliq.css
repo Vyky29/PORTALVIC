@@ -273,6 +273,14 @@
   background: #fff;
 }
 
+#csCliqRoot .portal-cs-cliq-inbox__conv-host {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  background: #f8fbfd;
+}
+
 #csCliqRoot .portal-cs-cliq-inbox__conversation-col {
   display: flex;
   flex-direction: column;
@@ -418,9 +426,9 @@
 #csCliqRoot .portal-cs-cliq-inbox-cat-btn {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 4px;
   min-width: 0;
   padding: 10px 8px;
   border-radius: 12px;
@@ -428,9 +436,47 @@
   background: #fff;
   cursor: pointer;
   font: inherit;
-  text-align: left;
+  text-align: center;
   box-shadow: 0 2px 8px rgba(23, 50, 71, 0.05);
   -webkit-tap-highlight-color: transparent;
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-cat-btn__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: rgba(23, 50, 71, 0.06);
+  color: #475569;
+  flex-shrink: 0;
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-cat-btn__icon svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-cat-btn.is-active .portal-cs-cliq-inbox-cat-btn__icon {
+  background: rgba(45, 132, 179, 0.14);
+  color: #1d6f96;
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-cat-btn[data-cs-cliq-inbox-cat="leads"].is-active .portal-cs-cliq-inbox-cat-btn__icon {
+  background: rgba(124, 58, 237, 0.12);
+  color: #6d28d9;
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-cat-btn[data-cs-cliq-inbox-cat="staff"].is-active .portal-cs-cliq-inbox-cat-btn__icon {
+  background: rgba(22, 101, 52, 0.12);
+  color: #166534;
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-cat-btn[data-cs-cliq-inbox-cat="ceos"].is-active .portal-cs-cliq-inbox-cat-btn__icon {
+  background: rgba(55, 48, 163, 0.12);
+  color: #3730a3;
 }
 
 #csCliqRoot .portal-cs-cliq-inbox-cat-btn__label {
@@ -440,6 +486,7 @@
   min-width: 0;
   overflow-wrap: break-word;
   width: 100%;
+  text-align: center;
 }
 
 #csCliqRoot .portal-cs-cliq-inbox-cat-btn__sub {
@@ -449,6 +496,7 @@
   min-width: 0;
   overflow-wrap: break-word;
   width: 100%;
+  text-align: center;
 }
 
 #csCliqRoot .portal-cs-cliq-inbox-cat-btn.is-active {
@@ -1325,11 +1373,158 @@ body.admin-view-cs-cliq .portal-admin-floating-chat-wrap {
 }
 
 #csCliqRoot .portal-cs-cliq__channels-body {
+  display: grid;
+  grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+  gap: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+#csCliqRoot .portal-cs-cliq-channels-intro {
+  margin: 0;
+  padding: 0 12px 8px;
+  font-size: 12px;
+  line-height: 1.45;
+  min-width: 0;
+  overflow-wrap: break-word;
+  flex-shrink: 0;
+}
+
+#csCliqRoot #csCliqChannelsListPanel {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#csCliqRoot #csCliqTeamsList.portal-dm-inbox-list {
   flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
-  padding: 14px 16px;
+  padding: 6px 12px 14px;
   -webkit-overflow-scrolling: touch;
+}
+
+#csCliqRoot .portal-cs-cliq-channel-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  width: 100%;
+  min-width: 0;
+  padding: 12px 40px 12px 12px;
+  margin-bottom: 8px;
+  border-radius: 16px;
+  border: 1px solid var(--portal-chat-line);
+  background: #fff;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  box-shadow: 0 2px 8px rgba(23, 50, 71, 0.04);
+  -webkit-tap-highlight-color: transparent;
+}
+
+#csCliqRoot .portal-cs-cliq-channel-card:hover {
+  border-color: rgba(45, 132, 179, 0.28);
+}
+
+#csCliqRoot .portal-cs-cliq-channel-card.is-active {
+  border-color: rgba(45, 132, 179, 0.45);
+  background: linear-gradient(180deg, #edf7fd, #fff);
+}
+
+#csCliqRoot .portal-cs-cliq-channel-card--unread {
+  border-color: rgba(45, 132, 179, 0.35);
+}
+
+#csCliqRoot .portal-cs-cliq-channel-card__title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--portal-chat-ink, #173247);
+  min-width: 0;
+  width: 100%;
+  overflow-wrap: break-word;
+}
+
+#csCliqRoot .portal-cs-cliq-channel-card__members {
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  min-width: 0;
+  width: 100%;
+  overflow-wrap: break-word;
+}
+
+#csCliqRoot .portal-cs-cliq-channel-card__when {
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  min-width: 0;
+  width: 100%;
+}
+
+#csCliqRoot .portal-cs-cliq-channel-card__preview {
+  font-size: 12px;
+  line-height: 1.4;
+  color: #334155;
+  min-width: 0;
+  width: 100%;
+  overflow-wrap: break-word;
+}
+
+#csCliqRoot .portal-cs-cliq-channel-card__preview--empty {
+  color: #94a3b8;
+  font-style: italic;
+}
+
+#csCliqRoot .portal-cs-cliq-channel-card__badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #0ea5e9;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#csCliqRoot .portal-cs-cliq-inbox__conv-host:empty {
+  display: none;
+}
+
+#csCliqRoot .portal-cs-cliq__pane--channels {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+@media (max-width: 899px) {
+  #csCliqRoot .portal-cs-cliq__channels-body {
+    display: flex;
+    flex-direction: column;
+    grid-template-columns: none;
+  }
+
+  #csCliqRoot .portal-cs-cliq__channels-body[data-cs-cliq-panel="list"] .portal-cs-cliq-inbox__conv-host {
+    display: none !important;
+  }
+
+  #csCliqRoot .portal-cs-cliq__channels-body[data-cs-cliq-panel="thread"] #csCliqChannelsListPanel,
+  #csCliqRoot .portal-cs-cliq__channels-body[data-cs-cliq-panel="thread"] #csCliqChannelsCategoryBar,
+  #csCliqRoot .portal-cs-cliq__channels-body[data-cs-cliq-panel="thread"] .portal-cs-cliq-channels-intro {
+    display: none !important;
+  }
 }
 
 #csCliqRoot .portal-cs-cliq__channels-grid {

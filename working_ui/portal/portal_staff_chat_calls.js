@@ -220,6 +220,9 @@
   }
 
   function authUserId() {
+    if (global.portalChatActorIdentity && typeof global.portalChatActorIdentity.actorId === "function") {
+      return global.portalChatActorIdentity.actorId();
+    }
     var box = global.__PORTAL_SUPABASE__;
     return String(
       (box && box.session && box.session.user && box.session.user.id) ||
@@ -365,6 +368,9 @@
   }
 
   function callerDisplayName() {
+    if (global.portalChatActorIdentity && typeof global.portalChatActorIdentity.displayName === "function") {
+      return global.portalChatActorIdentity.displayName();
+    }
     var box = global.__PORTAL_SUPABASE__;
     var sessionId = authUserId();
     var p = box && box.staff_profile;
@@ -387,6 +393,12 @@
   }
 
   async function resolveCallerIdentity(client) {
+    if (
+      global.portalChatActorIdentity &&
+      typeof global.portalChatActorIdentity.resolveCallerIdentity === "function"
+    ) {
+      return global.portalChatActorIdentity.resolveCallerIdentity(client);
+    }
     var uid = authUserId();
     var name = callerDisplayName();
     if (client && uid) {
@@ -409,6 +421,9 @@
   }
 
   function isOwnCallAuthor(authorId) {
+    if (global.portalChatActorIdentity && typeof global.portalChatActorIdentity.isSelfUserId === "function") {
+      return global.portalChatActorIdentity.isSelfUserId(authorId);
+    }
     authorId = String(authorId || "").trim().toLowerCase();
     if (!authorId) return false;
     var me = authUserId().toLowerCase();
@@ -712,6 +727,16 @@
         return;
       }
       cb("Team chat");
+    }
+
+    if (
+      data &&
+      data.callerName &&
+      authorId &&
+      String(data.callerId || "").trim() === authorId
+    ) {
+      cb(shortDisplayName(data.callerName) || String(data.callerName).trim());
+      return;
     }
 
     if (!client || !authorId) {
@@ -1711,6 +1736,12 @@
       if (errEl) errEl.textContent = "Open a conversation first.";
       return;
     }
+    if (
+      global.portalChatActorIdentity &&
+      typeof global.portalChatActorIdentity.ensureSessionProfile === "function"
+    ) {
+      await global.portalChatActorIdentity.ensureSessionProfile(ctx.client);
+    }
     var ui = resolveCallUi();
     var bar = document.getElementById(ui.barId);
     if (bar) bar.setAttribute("aria-busy", "true");
@@ -1901,7 +1932,7 @@
               var meetingTitle = title;
               if (duration) meetingTitle += " (" + duration + " min)";
               if (meetingType === "voice") meetingTitle = "[Voice] " + meetingTitle;
-              if (notes) meetingTitle += " ù " + notes;
+              if (notes) meetingTitle += " ? " + notes;
               await sendCallInvite({
                 client: ctx.client,
                 threadId: ctx.threadId,
