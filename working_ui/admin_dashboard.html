@@ -32,11 +32,11 @@
   <script src="/portal/portal_chat_actor_identity.js?v=20260609-inbox-firstname"></script>
   <script src="/portal/portal_dm_icons.js?v=20260624-dm-icons"></script>
   <script src="/portal/portal_dm_thread_avatar.js?v=20260609-admin-photo-fix"></script>
-  <script src="/portal/portal_cs_cliq_thread_header.js?v=20260609-inbox-firstname"></script>
+  <script src="/portal/portal_cs_cliq_thread_header.js?v=20260609-thread-avatar-ops"></script>
   <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260608-cliq-channels"></script>
   <script src="/portal/portal_dm_read_cursor.js?v=20260609-read-cursor"></script>
-  <script src="/portal/portal_cs_cliq_support_route.js?v=20260609-ops-canonical"></script>
-  <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260609-inbox-firstname"></script>
+  <script src="/portal/portal_cs_cliq_support_route.js?v=20260609-staff-ops-thread"></script>
+  <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260609-ops-ensure-thread"></script>
   <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260609-inbox-channels-split"></script>
   <script src="/portal/portal_cs_cliq_admin_channels.js?v=20260609-inbox-channels-split"></script>
   <script src="/portal/portal_cs_cliq_support.js?v=20260607-support-route"></script>
@@ -51,7 +51,7 @@
   <script src="/portal/portal_cs_cliq_files_hub.js?v=20260604-cliq-files"></script>
   <script src="/portal/portal_cs_cliq_meetings_hub.js?v=20260622-meetings-centre"></script>
   <link rel="stylesheet" href="/portal/portal_cs_cliq_workspace.css?v=20260609-portal-white-chat" />
-  <link rel="stylesheet" href="/portal/portal_cs_cliq_hub.css?v=20260609-empty-thread-compose" />
+  <link rel="stylesheet" href="/portal/portal_cs_cliq_hub.css?v=20260609-empty-thread-compose-v2" />
   <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260622-ghost-view" />
   <script src="/portal/admin-portal-ghost-teleport.js?v=20260622-ghost-lead"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
@@ -79,7 +79,7 @@
   <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260609-header-chat-bell" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260609-header-chat-bell" />
-  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260609-empty-thread-compose" />
+  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260609-empty-thread-compose-v2" />
 </head>
 <body>
   <script>
@@ -22487,6 +22487,40 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var insG = await client.from('portal_ceo_group_message').insert([{ group_id: gid, author_id: me, body: body, message_type: 'text' }]).select('id');
           if(insG.error) throw insG.error;
         }else{
+          if(
+            portalAdminDmCeoUsesSharedWorkerOpsInbox &&
+            window.portalCsCliqSupportRoute &&
+            typeof window.portalCsCliqSupportRoute.resolveOpsAdminId === 'function' &&
+            typeof window.portalCsCliqSupportRoute.findDmThreadId === 'function'
+          ){
+            var workerIdSend = String(ui.managementWorkerId || ui.workerId || '').trim();
+            if(!workerIdSend && tid){
+              try{
+                var tresSend = await client.from('portal_staff_dm_threads').select('participant_a,participant_b').eq('id', tid).maybeSingle();
+                if(tresSend && tresSend.data){
+                  var idsSend = [String(tresSend.data.participant_a||''), String(tresSend.data.participant_b||'')].filter(Boolean);
+                  var profSend = {};
+                  if(idsSend.length){
+                    var prSend = await client.from('staff_profiles').select('id,full_name,username,app_role,staff_role,is_active').in('id', idsSend);
+                    if(!prSend.error && Array.isArray(prSend.data)){
+                      prSend.data.forEach(function(p){ if(p && p.id) profSend[String(p.id)] = p; });
+                    }
+                  }
+                  workerIdSend = portalAdminDmWorkerPeerFromThread(tresSend.data, profSend, me);
+                }
+              }catch(_wSend){}
+            }
+            if(workerIdSend){
+              var wProfSend = profSend[workerIdSend] || null;
+              if(!wProfSend || portalAdminDmIsWorkerRecipient(wProfSend)){
+                var opsTidSend = await portalAdminDmFindStaffLeadThreadForWorker(client, workerIdSend);
+                if(opsTidSend){
+                  tid = String(opsTidSend);
+                  window.__PORTAL_ADMIN_DM_UI.threadId = tid;
+                }
+              }
+            }
+          }
           var ins = await client.rpc('portal_staff_dm_insert_message', {
             p_thread_id: tid,
             p_body: body,
