@@ -309,6 +309,12 @@
     wrap.className = "portal-wb-advanced-wrap";
     wrap.hidden = true;
 
+    var intro = document.createElement("p");
+    intro.className = "portal-wb-advanced-intro no-print";
+    intro.textContent =
+      "One card per stressor from the staff check-in. Discuss each point together, rate how serious and how likely it is, then note agreed actions.";
+    wrap.appendChild(intro);
+
     var move = [];
     Array.prototype.forEach.call(form.children, function (child) {
       if (child.classList && child.classList.contains("header")) return;

@@ -6,11 +6,11 @@
  <title>1-to-1 Wellbeing Review - clubSENsational</title>
  <script src="/portal-static-bootstrap.js"></script>
  <script src="/portal/term_from_timetable.js?v=20260604-teflon-guide-days"></script>
- <link rel="stylesheet" href="/portal/portal-wellbeing-admin-sra.css?v=20260608-wb-stressor-readonly" />
+ <link rel="stylesheet" href="/portal/portal-wellbeing-admin-sra.css?v=20260608-wb-sra-cards" />
  <link rel="stylesheet" href="/portal/portal-wellbeing-review-simple.css?v=20260604-wb-flow-refine" />
  <link rel="stylesheet" href="/portal-shared-js/portal_form_feedback_skin.css?v=20260609-autofill" />
  <script src="/portal/portal_wellbeing_stressor_catalog.js?v=20260610-wb-voice2"></script>
- <script src="/portal/portal_wellbeing_review_simple.js?v=20260604-wb-flow-refine"></script>
+ <script src="/portal/portal_wellbeing_review_simple.js?v=20260608-wb-sra-cards"></script>
  <script src="/portal/portal_feedback_voice_input.js?v=20260610-wb-voice2"></script>
  <link rel="preconnect" href="https://www.clubsensational.org" />
  <link rel="dns-prefetch" href="https://www.clubsensational.org" />
@@ -2710,9 +2710,19 @@ document.addEventListener("DOMContentLoaded", function () {
 
  populateStressorDropdowns();
 
- function tagSraTableCellsForMobile(root) {
+ function simplifyAdminSraTables(root) {
  if (!root) return;
- var colLabels = [
+ var admin = document.body.classList.contains("portal-wellbeing-admin-mode");
+ var colLabels = admin
+ ? [
+ "Stressor from check-in",
+ "What did you discuss?",
+ "How serious? (1 = low · 5 = high)",
+ "How likely? (1 = rare · 5 = very likely)",
+ "Overall risk score",
+ "Agreed actions to reduce risk",
+ ]
+ : [
  "Stressor",
  "Observations",
  "Severity (S)",
@@ -2728,9 +2738,31 @@ document.addEventListener("DOMContentLoaded", function () {
  if (tds[i]) tds[i].setAttribute("data-col-label", lbl);
  });
  });
+ if (!admin) return;
+ root.querySelectorAll(".js-picklists-obs-wrap, .js-picklists-measures-wrap").forEach(function (el) {
+ el.hidden = true;
+ });
+ root.querySelectorAll(".obs-cell .micro-label.obs-micro").forEach(function (lbl) {
+ lbl.textContent = "Conversation notes";
+ });
+ root.querySelectorAll(".controls-cell .micro-label.controls-micro").forEach(function (lbl) {
+ if (!lbl.closest(".js-picklists-measures-wrap")) lbl.textContent = "Agreed actions";
+ });
+ root.querySelectorAll(".obs-cell .js-obs-text").forEach(function (ta) {
+ ta.placeholder = "What was discussed about this stressor in the 1-to-1?";
+ ta.rows = 3;
+ });
+ root.querySelectorAll(".controls-cell .js-controls-text").forEach(function (ta) {
+ ta.placeholder = "What support or changes were agreed? Who will follow up?";
+ ta.rows = 3;
+ });
+ root.querySelectorAll(".js-s, .js-l").forEach(function (inp) {
+ inp.setAttribute("aria-label", inp.classList.contains("js-s") ? "Seriousness 1 to 5" : "Likelihood 1 to 5");
+ inp.placeholder = "1–5";
+ });
  }
 
- tagSraTableCellsForMobile(form);
+ simplifyAdminSraTables(form);
 
  form.addEventListener("input", function (e) {
  var t = e.target;
@@ -3187,7 +3219,7 @@ document.addEventListener("DOMContentLoaded", function () {
  window.portalWellbeingCheckin.reapplyCheckinStressorsFromCheckin(form, pack.checkin);
  }
  window.portalWellbeingCheckin.reapplyAllClearDomainsFromCheckin(form, pack.checkin);
- tagSraTableCellsForMobile(form);
+ simplifyAdminSraTables(form);
  form.querySelectorAll(".domain-tbody tr").forEach(function (tr) {
  syncRangeFromNumbers(tr);
  refreshRiskRow(tr);
