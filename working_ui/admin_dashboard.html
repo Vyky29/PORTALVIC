@@ -328,7 +328,7 @@
   <!-- Large portal datasets load on demand (portalAdminLoadScriptSet) so Day operations opens without freezing. -->
   <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260602-cap-roster"></script>
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260521-late-perf"></script>
-  <script src="/portal/portal_admin_alerts_bell.js?v=20260604-wb-flow-refine"></script>
+  <script src="/portal/portal_admin_alerts_bell.js?v=20260608-wb-bell-prune"></script>
   <script src="/portal/portal_admin_dayops_badges.js?v=20260605-dayops-badges-per-admin"></script>
   <script src="/portal/portal-admin-web-push.js?v=20260601-desktop-alerts"></script>
 
@@ -26802,6 +26802,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(typeof window.portalAdminBellSetBootstrapSilent === 'function'){
           window.portalAdminBellSetBootstrapSilent(false);
         }
+        if(typeof window.portalAdminBellSyncWellbeingFromServer === 'function'){
+          await window.portalAdminBellSyncWellbeingFromServer(client, { silent: true });
+        }
         if(typeof window.portalAdminBellPruneAndSort === 'function'){
           window.portalAdminBellPruneAndSort();
         }
@@ -26872,11 +26875,24 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           })
           .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'portal_wellbeing_admin_notifications' }, function(payload){
             var row = payload && payload.new;
+            if(typeof window.portalAdminBellOnWellbeingNotificationInsert === 'function'){
+              void window.portalAdminBellOnWellbeingNotificationInsert(client, row);
+              return;
+            }
             var item = typeof window.portalAdminActivityFromWellbeingNotification === 'function'
               ? window.portalAdminActivityFromWellbeingNotification(row)
               : null;
             if(item && typeof window.portalAdminPushActivityAlert === 'function'){
               window.portalAdminPushActivityAlert(item);
+            }
+          })
+          .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'portal_staff_wellbeing_checkins' }, function(payload){
+            var row = payload && payload.new;
+            if(row && typeof window.portalAdminBellOnWellbeingCheckinUpdated === 'function'){
+              window.portalAdminBellOnWellbeingCheckinUpdated(row);
+            }
+            if(typeof window.portalAdminBellSyncWellbeingFromServer === 'function'){
+              void window.portalAdminBellSyncWellbeingFromServer(client, { silent: true });
             }
           })
           .subscribe();
@@ -27000,7 +27016,6 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var client = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.client;
         if(!client || !client.from) return;
         portalAdminFetchVenueReviewAlerts(client);
-        portalAdminFetchWellbeingAlerts(client);
         void portalAdminBootstrapActivityAlerts();
         portalAdminEnsureActivityRealtime();
         void portalLateAdminRefreshNavBadge({ allowSound: false });
@@ -27008,6 +27023,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           window.__portalAdminBellPollIv = setInterval(function(){
             if(document.hidden) return;
             void portalLateAdminRefreshNavBadge({ allowSound: true });
+            if(typeof window.portalAdminBellSyncWellbeingFromServer === 'function'){
+              void window.portalAdminBellSyncWellbeingFromServer(client, { silent: true });
+            }
           }, 90000);
         }
       }catch(err){ console.warn(err); }

@@ -147,6 +147,50 @@
     };
   }
 
+  var WELLBEING_BELL_PENDING = {
+    needs_1to1: true,
+    awaiting_1to1: true,
+    in_progress: true,
+  };
+
+  function wellbeingCheckinFromRow(row) {
+    if (!row) return null;
+    var c = row.checkin;
+    if (Array.isArray(c)) c = c[0];
+    return c && typeof c === "object" ? c : null;
+  }
+
+  function wellbeingCheckinStatus(row) {
+    var c = wellbeingCheckinFromRow(row);
+    return String((c && c.status) || "").toLowerCase();
+  }
+
+  function wellbeingBellIsPending(row) {
+    var c = wellbeingCheckinFromRow(row);
+    if (!c) return false;
+    if (c.has_concerns === false) return false;
+    return !!WELLBEING_BELL_PENDING[wellbeingCheckinStatus(row)];
+  }
+
+  async function autoResolveStaleWellbeingNotifications(client, rows) {
+    if (!client || !rows || !rows.length) return;
+    var staleIds = [];
+    rows.forEach(function (r) {
+      if (!r || !r.id) return;
+      if (!wellbeingBellIsPending(r)) staleIds.push(r.id);
+    });
+    if (!staleIds.length) return;
+    try {
+      await client
+        .from("portal_wellbeing_admin_notifications")
+        .update({ read_at: new Date().toISOString() })
+        .in("id", staleIds)
+        .is("read_at", null);
+    } catch (err) {
+      console.warn("[admin-bell] resolve stale wellbeing notifications", err);
+    }
+  }
+
   function removeWellbeingAlertsForCheckin(checkinId) {
     var cid = String(checkinId || "").trim();
     if (!cid) return false;
@@ -164,22 +208,11 @@
     return true;
   }
 
-  async function syncWellbeingFromServer(client, opts) {
+  function applyWellbeingRowsToBell(rows, opts) {
     opts = opts || {};
-    if (!client || typeof client.from !== "function") return 0;
-    var res = await client
-      .from("portal_wellbeing_admin_notifications")
-      .select("id,created_at,headline,body,checkin_id")
-      .is("read_at", null)
-      .order("created_at", { ascending: false })
-      .limit(40);
-    if (res.error) {
-      console.warn("[admin-bell] wellbeing notifications", res.error);
-      return 0;
-    }
-    var rows = res.data || [];
+    var pending = (rows || []).filter(wellbeingBellIsPending);
     var pendingIds = {};
-    rows.forEach(function (r) {
+    pending.forEach(function (r) {
       if (!r || !r.id) return;
       pendingIds["wellbeing-" + r.id] = true;
     });
@@ -188,7 +221,7 @@
       return !!pendingIds[a.id];
     });
     global.__PORTAL_ADMIN_ACTIVITY_ALERTS__ = list;
-    rows.forEach(function (r) {
+    pending.forEach(function (r) {
       var a = activityFromWellbeingNotification(r);
       if (!a) return;
       pushActivityAlert(a, { silent: opts.silent || bootstrapSilent });
@@ -197,7 +230,53 @@
     if (typeof global.__portalAdminRenderAlerts === "function") {
       global.__portalAdminRenderAlerts();
     }
-    return rows.length;
+    return pending.length;
+  }
+
+  async function syncWellbeingFromServer(client, opts) {
+    opts = opts || {};
+    if (!client || typeof client.from !== "function") return 0;
+    var res = await client
+      .from("portal_wellbeing_admin_notifications")
+      .select(
+        "id,created_at,headline,body,checkin_id, checkin:portal_staff_wellbeing_checkins(status,has_concerns)"
+      )
+      .is("read_at", null)
+      .order("created_at", { ascending: false })
+      .limit(40);
+    if (res.error) {
+      console.warn("[admin-bell] wellbeing notifications", res.error);
+      return 0;
+    }
+    var rows = res.data || [];
+    await autoResolveStaleWellbeingNotifications(client, rows);
+    var pending = rows.filter(wellbeingBellIsPending);
+    return applyWellbeingRowsToBell(pending, opts);
+  }
+
+  async function onWellbeingNotificationInsert(client, row, opts) {
+    opts = opts || {};
+    if (!client || !row || !row.id) return false;
+    var checkinId = String(row.checkin_id || "").trim();
+    if (!checkinId) return false;
+    var res = await client
+      .from("portal_staff_wellbeing_checkins")
+      .select("status,has_concerns")
+      .eq("id", checkinId)
+      .maybeSingle();
+    if (res.error || !res.data) return false;
+    row.checkin = res.data;
+    if (!wellbeingBellIsPending(row)) return false;
+    var a = activityFromWellbeingNotification(row);
+    if (!a) return false;
+    return pushActivityAlert(a, { silent: !!opts.silent });
+  }
+
+  function onWellbeingCheckinUpdated(row) {
+    if (!row || !row.id) return;
+    var st = String(row.status || "").toLowerCase();
+    if (WELLBEING_BELL_PENDING[st]) return;
+    removeWellbeingAlertsForCheckin(row.id);
   }
 
   function clampSub(text, max) {
@@ -538,6 +617,8 @@
   global.portalAdminBellSyncLateFromServer = syncLateRequestsFromServer;
   global.portalAdminBellSyncWellbeingFromServer = syncWellbeingFromServer;
   global.portalAdminBellRemoveWellbeingForCheckin = removeWellbeingAlertsForCheckin;
+  global.portalAdminBellOnWellbeingNotificationInsert = onWellbeingNotificationInsert;
+  global.portalAdminBellOnWellbeingCheckinUpdated = onWellbeingCheckinUpdated;
   global.portalAdminBellOnStaffDmInsert = onStaffDmInsert;
   global.portalAdminBellSyncSupportUnread = syncSupportUnreadFromMessages;
   global.portalAdminBellClearStaffSupport = clearStaffSupportAlerts;
