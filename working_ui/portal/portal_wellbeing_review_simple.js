@@ -312,7 +312,7 @@
     var intro = document.createElement("p");
     intro.className = "portal-wb-advanced-intro no-print";
     intro.textContent =
-      "One card per stressor from the staff check-in. Discuss each point together, rate how serious and how likely it is, then note agreed actions.";
+      "One card per stressor from the check-in. Talk it through together, then score how serious it is and how likely harm is (1 = low · 5 = high). Note any agreed actions.";
     wrap.appendChild(intro);
 
     var move = [];

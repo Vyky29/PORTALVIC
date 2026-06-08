@@ -6,7 +6,7 @@
  <title>1-to-1 Wellbeing Review - clubSENsational</title>
  <script src="/portal-static-bootstrap.js"></script>
  <script src="/portal/term_from_timetable.js?v=20260604-teflon-guide-days"></script>
- <link rel="stylesheet" href="/portal/portal-wellbeing-admin-sra.css?v=20260608-wb-sra-cards2" />
+ <link rel="stylesheet" href="/portal/portal-wellbeing-admin-sra.css?v=20260610-wb-plain-labels" />
  <link rel="stylesheet" href="/portal/portal-wellbeing-review-simple.css?v=20260604-wb-flow-refine" />
  <link rel="stylesheet" href="/portal-shared-js/portal_form_feedback_skin.css?v=20260609-autofill" />
  <script src="/portal/portal_wellbeing_stressor_catalog.js?v=20260610-wb-voice2"></script>
@@ -2092,6 +2092,8 @@ document.addEventListener("DOMContentLoaded", function () {
  var STORAGE_KEY = "clubSENsational-stress-RA-v10";
  var SEV_NAMES = ["", "Insignificant", "Minor", "Moderate", "Severe", "Extreme"];
  var LIKE_NAMES = ["", "Remote", "Unlikely", "Possible", "Likely", "Almost certain"];
+ var SEV_NAMES_PLAIN = ["", "Very low", "Low", "Medium", "High", "Very high"];
+ var LIKE_NAMES_PLAIN = ["", "Very unlikely", "Unlikely", "Possible", "Likely", "Very likely"];
 
  var form = document.getElementById("sra-form");
  var msg = document.getElementById("toolbar-msg");
@@ -2155,11 +2157,21 @@ document.addEventListener("DOMContentLoaded", function () {
  var lIn = tr.querySelector(".js-l");
  var sv = sIn && sIn.value !== "" ? parseInt(sIn.value, 10) : NaN;
  var lv = lIn && lIn.value !== "" ? parseInt(lIn.value, 10) : NaN;
- if (sn) sn.textContent = sv >= 1 && sv <= 5 ? SEV_NAMES[sv] : "-";
- if (ln) ln.textContent = lv >= 1 && lv <= 5 ? LIKE_NAMES[lv] : "-";
+ var admin = document.body.classList.contains("portal-wellbeing-admin-mode");
+ var sevNames = admin ? SEV_NAMES_PLAIN : SEV_NAMES;
+ var likeNames = admin ? LIKE_NAMES_PLAIN : LIKE_NAMES;
+ if (sn) sn.textContent = sv >= 1 && sv <= 5 ? sevNames[sv] : admin ? "Pick 1–5" : "-";
+ if (ln) ln.textContent = lv >= 1 && lv <= 5 ? likeNames[lv] : admin ? "Pick 1–5" : "-";
  }
 
  function bandFromProduct(n) {
+ var admin = document.body.classList.contains("portal-wellbeing-admin-mode");
+ if (admin) {
+ if (n <= 3) return { text: "Low risk", cls: "b-low" };
+ if (n <= 6) return { text: "Medium risk", cls: "b-mod" };
+ if (n <= 12) return { text: "High risk", cls: "b-high" };
+ return { text: "Very high risk", cls: "b-vhigh" };
+ }
  if (n <= 3) return { text: "Low (1-3)", cls: "b-low" };
  if (n <= 6) return { text: "Moderate (4-6)", cls: "b-mod" };
  if (n <= 12) return { text: "High (8-12)", cls: "b-high" };
@@ -2777,9 +2789,9 @@ document.addEventListener("DOMContentLoaded", function () {
  ? [
  "Stressor from check-in",
  "What did you discuss?",
- "How serious? (1 = low · 5 = high)",
- "How likely? (1 = rare · 5 = very likely)",
- "Overall risk score",
+ "How serious is it?",
+ "How likely is harm?",
+ "Overall risk",
  "Agreed actions to reduce risk",
  ]
  : [
@@ -2799,6 +2811,13 @@ document.addEventListener("DOMContentLoaded", function () {
  });
  });
  if (!admin) return;
+ root.querySelectorAll(".domain-table thead").forEach(function (thead) {
+ thead.hidden = true;
+ var ths = thead.querySelectorAll("th");
+ if (ths[2]) ths[2].innerHTML = 'How serious is it? <span class="th-sub">1 = low impact · 5 = very serious</span>';
+ if (ths[3]) ths[3].innerHTML = 'How likely is harm? <span class="th-sub">1 = unlikely · 5 = very likely</span>';
+ if (ths[4]) ths[4].innerHTML = 'Overall risk <span class="th-sub">Calculated from the two scores above</span>';
+ });
  root.querySelectorAll(".js-picklists-obs-wrap, .js-picklists-measures-wrap").forEach(function (el) {
  el.hidden = true;
  });
@@ -2817,8 +2836,18 @@ document.addEventListener("DOMContentLoaded", function () {
  ta.rows = 3;
  });
  root.querySelectorAll(".js-s, .js-l").forEach(function (inp) {
- inp.setAttribute("aria-label", inp.classList.contains("js-s") ? "Seriousness 1 to 5" : "Likelihood 1 to 5");
+ if (inp.classList.contains("js-s")) {
+ inp.setAttribute("aria-label", "How serious is it? Pick 1 for low impact up to 5 for very serious");
+ inp.setAttribute("title", "1 = low impact · 5 = very serious");
+ } else {
+ inp.setAttribute("aria-label", "How likely is harm? Pick 1 for unlikely up to 5 for very likely");
+ inp.setAttribute("title", "1 = unlikely · 5 = very likely");
+ }
  inp.placeholder = "1–5";
+ });
+ root.querySelectorAll(".js-score").forEach(function (inp) {
+ inp.setAttribute("aria-label", "Overall risk score");
+ inp.placeholder = "—";
  });
  }
 
