@@ -91,6 +91,11 @@
     if (global.portalCsCliqThreadFiles && typeof global.portalCsCliqThreadFiles.onThreadChange === "function") {
       global.portalCsCliqThreadFiles.onThreadChange();
     }
+    var filesBtnAdmin = document.getElementById("csCliqThreadFilesBtn");
+    if (filesBtnAdmin) {
+      filesBtnAdmin.hidden = true;
+      filesBtnAdmin.setAttribute("aria-hidden", "true");
+    }
     if (global.portalCsCliqGroupMembers && typeof global.portalCsCliqGroupMembers.syncGroupMemberChips === "function") {
       void global.portalCsCliqGroupMembers.syncGroupMemberChips(ui);
     }
