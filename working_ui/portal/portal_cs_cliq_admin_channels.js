@@ -436,7 +436,13 @@
     var ctx = global.__PORTAL_ADMIN_DM_CHANNEL_CTX;
     var host = listHostEl();
     if (!ctx || !host || !shouldUseAdminChannels()) return;
-    void renderAdminChannels(host, ctx);
+    if (global.__PORTAL_CS_CLIQ_CHANNELS_REFRESH_DEB) {
+      clearTimeout(global.__PORTAL_CS_CLIQ_CHANNELS_REFRESH_DEB);
+    }
+    global.__PORTAL_CS_CLIQ_CHANNELS_REFRESH_DEB = setTimeout(function () {
+      global.__PORTAL_CS_CLIQ_CHANNELS_REFRESH_DEB = null;
+      void renderAdminChannels(host, ctx);
+    }, 800);
   }
 
   async function refresh() {

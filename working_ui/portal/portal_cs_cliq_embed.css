@@ -208,7 +208,7 @@
 
 .portal-cs-cliq-embed-host #csCliqRoot .portal-cs-cliq-composer {
   padding: 10px 14px calc(12px + env(safe-area-inset-bottom));
-  background: linear-gradient(180deg, #fff 0%, #f8fbfd 100%);
+  background: #fff;
   border-top: 1px solid #e2e8f0;
 }
 

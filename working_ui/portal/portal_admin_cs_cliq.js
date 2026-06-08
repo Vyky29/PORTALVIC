@@ -397,7 +397,13 @@
     }
     reparentConversationCol(pane);
     if (pane === "chats" && typeof cfg.initChat === "function") {
-      cfg.initChat(global.__PORTAL_ADMIN_DM_CHANNEL || "staff_lead");
+      var ch = String(global.__PORTAL_ADMIN_DM_CHANNEL || "staff_lead").trim() === "ceo_exec" ? "ceo_exec" : "staff_lead";
+      if (!global.__PORTAL_CS_CLIQ_CHAT_INIT_DONE) {
+        global.__PORTAL_CS_CLIQ_CHAT_INIT_DONE = true;
+        cfg.initChat(ch);
+      } else if (global.__PORTAL_ADMIN_DM_CHANNEL !== ch) {
+        cfg.initChat(ch);
+      }
     }
     if (typeof cfg.onPaneOpen === "function") cfg.onPaneOpen(pane);
   }
@@ -462,6 +468,7 @@
     if (pendingPane === "chats" && typeof cfg.initChat === "function") {
       var ch = global.__PORTAL_CS_CLIQ_PENDING_CHANNEL || global.__PORTAL_ADMIN_DM_CHANNEL || "staff_lead";
       global.__PORTAL_CS_CLIQ_PENDING_CHANNEL = "";
+      global.__PORTAL_CS_CLIQ_CHAT_INIT_DONE = true;
       cfg.initChat(ch);
     }
 

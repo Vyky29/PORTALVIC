@@ -139,7 +139,7 @@
   margin: 0;
   padding: 16px 12px;
   border-radius: 12px;
-  background: #f8fbfd;
+  background: #fff;
   border: 1px dashed rgba(45, 132, 179, 0.18);
   font-size: 13px;
   line-height: 1.5;
@@ -162,7 +162,7 @@
   padding: 14px 16px;
   border-radius: 14px;
   border: 1px solid rgba(23, 50, 71, 0.08);
-  background: linear-gradient(180deg, #fff, #f8fbfd);
+  background: #fff;
   cursor: pointer;
   font: inherit;
   text-align: left;
