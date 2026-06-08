@@ -270,9 +270,32 @@
     return { leadItems: leadItems, staffItems: staffItems, ceoItems: ceoItems };
   }
 
+  function isWorkerPeerItem(item) {
+    if (!item || item.kind !== "dm") return false;
+    var prof = item.peerProf || {};
+    if (global.portalInternalDmIsWorkerRecipient && typeof global.portalInternalDmIsWorkerRecipient === "function") {
+      return global.portalInternalDmIsWorkerRecipient(prof);
+    }
+    var ar = String(prof.app_role || "").toLowerCase();
+    return ar === "staff" || ar === "lead";
+  }
+
+  function managementSharedWorkerOpsInbox() {
+    if (!shouldUseCategorizedInbox()) return false;
+    if (
+      global.portalCsCliqManagementInbox &&
+      typeof global.portalCsCliqManagementInbox.isCeoViewer === "function" &&
+      global.portalCsCliqManagementInbox.isCeoViewer(profileRow())
+    ) {
+      return true;
+    }
+    return false;
+  }
+
   function flattenDmInbox(merged, splitSections, teamDmItems) {
     var items = [];
     var seen = Object.create(null);
+    var sharedWorkerOps = managementSharedWorkerOpsInbox();
     function shouldShowPersonalDm(item) {
       if (!item) return false;
       if (Number(item.unreadCount) > 0) return true;
@@ -283,8 +306,11 @@
     }
     function push(item) {
       if (!item || item.kind !== "dm" || item.isTeamChat) return;
-      // Inbox = viewer personal DMs. Sevitha ops queue lives under Channels → Staff.
-      if (item.inboxLane === "ops") return;
+      if (item.inboxLane === "ops") {
+        if (!sharedWorkerOps) return;
+      } else if (sharedWorkerOps && isWorkerPeerItem(item)) {
+        return;
+      }
       if (!shouldShowPersonalDm(item)) return;
       var tid = String(item.id || "").trim();
       var wk = String(item.workerId || item.peerId || "").trim();
@@ -302,6 +328,9 @@
     (merged || []).forEach(push);
     if (splitSections) {
       (splitSections.mineItems || []).forEach(push);
+      if (sharedWorkerOps) {
+        (splitSections.opsItems || []).forEach(push);
+      }
     }
     (teamDmItems || []).forEach(function (item) {
       if (item && !item.isTeamChat) push(item);
@@ -332,7 +361,9 @@
       host.innerHTML =
         '<p class="muted" style="margin:0;font-size:13px;min-width:0;overflow-wrap:break-word">' +
         "No personal direct messages here yet. " +
-        "<strong>Channels → Staff</strong> has the shared ops queue (Sevitha) and team threads. " +
+        (sharedWorkerOps
+          ? "Staff and lead chats appear here on the <strong>shared ops line</strong> (same thread for all CEOs). "
+          : "<strong>Channels → Staff</strong> has the shared ops queue (Sevitha) and team threads. ") +
         "Use <strong>New</strong> to start your own direct chat.</p>";
       return;
     }

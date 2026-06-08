@@ -36,8 +36,8 @@
   <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260608-cliq-channels"></script>
   <script src="/portal/portal_dm_read_cursor.js?v=20260609-read-cursor"></script>
   <script src="/portal/portal_cs_cliq_support_route.js?v=20260609-ops-canonical"></script>
-  <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260609-inbox-activity"></script>
-  <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260609-inbox-stable"></script>
+  <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260609-shared-ops"></script>
+  <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260609-shared-ops"></script>
   <script src="/portal/portal_cs_cliq_admin_channels.js?v=20260609-no-flicker"></script>
   <script src="/portal/portal_cs_cliq_support.js?v=20260607-support-route"></script>
   <script src="/portal/portal_cs_cliq_announcements_hub.js?v=20260604-cliq-inbox"></script>
@@ -19496,6 +19496,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var sr = String(prof.staff_role || '').toLowerCase();
       return sr === 'manager' || sr === 'admin';
     }
+    function portalAdminDmCeoUsesSharedWorkerOpsInbox(){
+      var sp = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
+      if(!sp || !window.portalCsCliqManagementInbox) return false;
+      if(typeof window.portalCsCliqManagementInbox.isSevithaProfile === 'function' && window.portalCsCliqManagementInbox.isSevithaProfile(sp)) return false;
+      if(typeof window.portalCsCliqManagementInbox.isCeoViewer === 'function') return window.portalCsCliqManagementInbox.isCeoViewer(sp);
+      return String(sp.app_role || '').toLowerCase() === 'ceo';
+    }
     function portalAdminDmWorkerPeerFromThread(row, profBy, me){
       if(!row) return '';
       var a = String(row.participant_a || '');
@@ -19525,6 +19532,21 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     async function portalAdminDmFindStaffLeadThreadForWorker(client, workerId){
       workerId = String(workerId || '').trim();
       if(!client || !workerId) return '';
+      if(
+        portalAdminDmUsesSharedStaffInbox() &&
+        window.portalCsCliqSupportRoute &&
+        typeof window.portalCsCliqSupportRoute.resolveOpsAdminId === 'function' &&
+        typeof window.portalCsCliqSupportRoute.findDmThreadId === 'function'
+      ){
+        var opsId = await window.portalCsCliqSupportRoute.resolveOpsAdminId(client);
+        if(opsId){
+          var opsTid = await window.portalCsCliqSupportRoute.findDmThreadId(client, workerId, opsId);
+          if(!opsTid && typeof window.portalCsCliqSupportRoute.ensureDmThreadId === 'function'){
+            opsTid = await window.portalCsCliqSupportRoute.ensureDmThreadId(client, opsId, workerId);
+          }
+          if(opsTid) return String(opsTid);
+        }
+      }
       var res = await client
         .from('portal_staff_dm_threads')
         .select('id,participant_a,participant_b,updated_at')
@@ -21582,7 +21604,11 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               workerId &&
               portalAdminDmIsWorkerRecipient(item.peerProf || {})
             ){
-              void portalAdminDmOpenManagementWorker(workerId, 'mine');
+              var openLane = item.inboxLane || 'mine';
+              if(openLane !== 'ops' && portalAdminDmCeoUsesSharedWorkerOpsInbox()){
+                openLane = 'ops';
+              }
+              void portalAdminDmOpenManagementWorker(workerId, openLane);
               return;
             }
             void portalAdminDmOpenThread(item.id);
@@ -21600,7 +21626,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         username: peerProf && peerProf.username ? String(peerProf.username).trim() : ''
       };
       if(item.kind === 'dm' && item.inboxLane === 'ops'){
-        roleTag = '<span class="portal-dm-thread-role-tag portal-dm-thread-role-tag--ops">Sevitha</span>';
+        roleTag = '<span class="portal-dm-thread-role-tag portal-dm-thread-role-tag--ops">Shared ops</span>';
       }else if(item.kind === 'dm' && ch === 'staff_lead'){
         if(item.isTeamChat){
           roleTag = '<span class="portal-dm-thread-role-tag portal-dm-thread-role-tag--team">Team chat</span>';
@@ -21804,6 +21830,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(a !== me && b !== me) return;
           if(portalAdminDmIsPeerTeamChatThread(r, profBy)) return;
           var peer = portalDmPeerIdForThread(me, r);
+          if(portalAdminDmCeoUsesSharedWorkerOpsInbox() && portalAdminDmIsWorkerRecipient(profBy[peer] || {})) return;
           personalDmItems.push({
             kind: 'dm',
             id: String(r.id),
