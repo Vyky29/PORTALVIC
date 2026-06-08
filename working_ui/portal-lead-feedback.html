@@ -145,8 +145,10 @@
 
             <div id="lrVenueFieldWrap">
             <label for="lrVenue"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span> Venue <span class="req">*</span></label>
-            <input id="lrVenue" name="lrVenue" type="text" maxlength="120" required list="lrVenueList" autocomplete="off" spellcheck="false" placeholder="Venue for this service" />
-            <datalist id="lrVenueList"></datalist>
+            <div class="participant-field-wrap">
+              <input id="lrVenue" name="lrVenue" type="text" maxlength="120" required autocomplete="off" spellcheck="false" placeholder="Type a letter — pick venue from the list" aria-autocomplete="list" aria-controls="lrVenueSuggest" />
+              <div id="lrVenueSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Matching venues"></div>
+            </div>
             </div>
 
             <div class="session-date-field" role="group">
@@ -267,7 +269,7 @@
   </div>
   <script src="/portal/portal_feedback_voice_input.js?v=20260617-form-voice"></script>
   <script type="module">
-    import { bootPortalLeadFeedback } from "/portal-shared-js/portal_lead_feedback_app.js?v=20260615-lead-report-fix";
+    import { bootPortalLeadFeedback } from "/portal-shared-js/portal_lead_feedback_app.js?v=20260609-autofill";
     bootPortalLeadFeedback().catch(function (e) {
       console.error(e);
       alert("Could not load lead report. Refresh the page or return to the lead dashboard.");

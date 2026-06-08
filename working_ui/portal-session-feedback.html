@@ -981,7 +981,7 @@ button{
         <div id="sessionDetailsEditable" class="field field--session-details field--session-details-shell">
           <label for="fbParticipantName"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span> Participant name <span class="req">*</span></label>
           <div class="participant-field-wrap">
-            <input id="fbParticipantName" name="fbParticipantName" type="text" maxlength="200" required autocomplete="off" spellcheck="false" placeholder="Type the first letters — only names starting with that text appear" aria-autocomplete="list" aria-controls="fbParticipantSuggest" aria-expanded="false" />
+            <input id="fbParticipantName" name="fbParticipantName" type="text" maxlength="200" required autocomplete="off" spellcheck="false" placeholder="Type a letter — pick from the list" aria-autocomplete="list" aria-controls="fbParticipantSuggest" aria-expanded="false" />
             <div id="fbParticipantSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Matching participants"></div>
           </div>
           <label for="fbService"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span> Service <span class="req">*</span></label>
@@ -1079,7 +1079,8 @@ button{
   const PORTAL_SESSION_REVIEW_MAP_STORAGE = "portalSessionReviewMap_v1";
   const PORTAL_CLIENTS_INFO_SCRIPT = __portalJs("clients_info_embed.js?v=20260517-roster-clients");
   const PORTAL_SPREADSHEET_BUNDLE_SCRIPT = __portalJs("staff_dashboard_spreadsheet_bundle.js?v=20260520-hazem-angel-aurora");
-  const PORTAL_PARTICIPANT_SERVICES_SCRIPT = __portalJs("participant_services.js?v=20260520-acat-feedback-picker");
+  const PORTAL_PARTICIPANT_SERVICES_SCRIPT = __portalJs("participant_services.js?v=20260609-autofill");
+  const PORTAL_FIELD_AUTOCOMPLETE_SCRIPT = __portalJs("portal_field_autocomplete.js?v=20260609-autofill");
 
   const qs = new URLSearchParams(typeof window !== "undefined" && window.location ? window.location.search : "");
   /** Set when opening from the staff dashboard row (YYYY-MM-DD|time|client_id). Hub "Feedback" link often has no key — see effectiveFeedbackSessionKey(). */
@@ -2803,6 +2804,19 @@ button{
     const el = document.getElementById("fbParticipantName");
     const suggest = document.getElementById("fbParticipantSuggest");
     if(!el || !suggest) return;
+    function afterParticipantPick(){
+      rebuildServiceSelectForParticipant("fbService", clean(el.value), "");
+    }
+    void loadPortalScriptOnce(PORTAL_FIELD_AUTOCOMPLETE_SCRIPT).then(function(){
+      if(typeof window.portalWireFieldSuggest === "function"){
+        window.portalWireFieldSuggest(el, suggest, {
+          kind: "participant",
+          strict: true,
+          onPick: afterParticipantPick
+        });
+        return;
+      }
+    }).catch(function(){});
     let hideTimer = null;
     function onPartTyping(){
       if(hideTimer){ clearTimeout(hideTimer); hideTimer = null; }
@@ -2818,6 +2832,17 @@ button{
     el.addEventListener("blur", function(){
       hideTimer = setTimeout(function(){
         hideParticipantSuggest("fbParticipantSuggest");
+        if(typeof window.portalResolveParticipantCanonicalName === "function"){
+          const resolved = window.portalResolveParticipantCanonicalName(el.value);
+          if(clean(el.value) && !resolved){
+            el.value = "";
+            el.setCustomValidity("Choose a participant from the list.");
+            try{ el.reportValidity(); }catch(_){}
+          }else{
+            el.setCustomValidity("");
+            if(resolved && resolved !== clean(el.value)) el.value = resolved;
+          }
+        }
       }, 160);
     });
     suggest.addEventListener("mousedown", function(ev){

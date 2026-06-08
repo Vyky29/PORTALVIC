@@ -9,6 +9,7 @@
 <title>Incident Report</title>
 <link rel="stylesheet" href="/portal-shared-js/portal_page_logo.css?v=20260519-form-context" />
 <link rel="stylesheet" href="/portal-shared-js/portal_page_logo_themes.css?v=20260519-form-context" />
+<link rel="stylesheet" href="/portal-shared-js/portal_form_feedback_skin.css?v=20260609-autofill" />
 <style>
 :root{
   /* Red theme — misma estructura que session feedback (acento + profundo + fondos suaves) */
@@ -493,8 +494,10 @@ button{
         <div class="field field--session-details">
 
           <label for="participantManual" id="participantManualLabel"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span> <span id="participantManualLabelText">Participant name</span> <span class="req">*</span></label>
-          <input id="participantManual" name="participantManual" type="text" maxlength="200" required autocomplete="off" spellcheck="false" list="participantManualNameList" placeholder="Type the first letters — only names starting with that text appear" />
-          <datalist id="participantManualNameList"></datalist>
+          <div class="participant-field-wrap">
+            <input id="participantManual" name="participantManual" type="text" maxlength="200" required autocomplete="off" spellcheck="false" placeholder="Type a letter — pick from the list" aria-autocomplete="list" aria-controls="participantManualSuggest" aria-expanded="false" />
+            <div id="participantManualSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Matching participants"></div>
+          </div>
           <label for="serviceManual"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span> Service <span class="req">*</span></label>
           <select id="serviceManual" name="serviceManual" required>
             <option value="">Select a service</option>
@@ -509,7 +512,10 @@ button{
 
         <div class="field">
           <label for="incidentLocation"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span> Location of incident</label>
-          <input id="incidentLocation" name="incidentLocation" type="text" maxlength="200" placeholder="Where the incident happened" />
+          <div class="participant-field-wrap">
+            <input id="incidentLocation" name="incidentLocation" type="text" maxlength="200" autocomplete="off" spellcheck="false" placeholder="Type a letter — pick venue from the list" aria-autocomplete="list" aria-controls="incidentLocationSuggest" />
+            <div id="incidentLocationSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Matching venues"></div>
+          </div>
         </div>
 
         <div class="field">
@@ -535,12 +541,18 @@ button{
 
         <div class="field">
           <label for="staffInvolved"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> Staff involved</label>
-          <input id="staffInvolved" name="staffInvolved" type="text" maxlength="300" placeholder="Names of staff involved" />
+          <div class="participant-field-wrap">
+            <input id="staffInvolved" name="staffInvolved" type="text" maxlength="300" autocomplete="off" spellcheck="false" placeholder="Type a letter — pick staff from the list" aria-autocomplete="list" aria-controls="staffInvolvedSuggest" />
+            <div id="staffInvolvedSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Matching staff"></div>
+          </div>
         </div>
 
         <div class="field">
           <label for="witness"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span> Witness</label>
-          <input id="witness" name="witness" type="text" maxlength="300" placeholder="Witness name(s)" />
+          <div class="participant-field-wrap">
+            <input id="witness" name="witness" type="text" maxlength="300" autocomplete="off" spellcheck="false" placeholder="Type a letter — pick staff from the list" aria-autocomplete="list" aria-controls="witnessSuggest" />
+            <div id="witnessSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Matching staff"></div>
+          </div>
         </div>
 
         <div class="field">
@@ -580,7 +592,10 @@ button{
           </div>
           <div class="field">
             <label for="myselfParticipant"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span> Participant involved (optional)</label>
-            <input id="myselfParticipant" name="participantManual" type="text" maxlength="200" autocomplete="off" spellcheck="false" list="participantManualNameList" placeholder="Type the first letters — only names starting with that text appear" />
+            <div class="participant-field-wrap">
+              <input id="myselfParticipant" name="participantManual" type="text" maxlength="200" autocomplete="off" spellcheck="false" placeholder="Type a letter — pick from the list" aria-autocomplete="list" aria-controls="myselfParticipantSuggest" />
+              <div id="myselfParticipantSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Matching participants"></div>
+            </div>
           </div>
           <div class="field">
             <label for="myselfWhatHappened"><span class="field-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg></span> What happened? <span class="req">*</span></label>
@@ -629,7 +644,8 @@ button{
   const PORTAL_SUPABASE_MODULE = __portalJs("supabase-client.js?v=20260517-incident");
   const PORTAL_CLIENTS_INFO_SCRIPT = __portalJs("clients_info_embed.js?v=20260517-roster-clients");
   const PORTAL_SPREADSHEET_BUNDLE_SCRIPT = __portalJs("staff_dashboard_spreadsheet_bundle.js?v=20260518-roster-fix");
-  const PORTAL_PARTICIPANT_SERVICES_SCRIPT = __portalJs("participant_services.js?v=20260520-acat-feedback-picker");
+  const PORTAL_PARTICIPANT_SERVICES_SCRIPT = __portalJs("participant_services.js?v=20260609-autofill");
+  const PORTAL_FIELD_AUTOCOMPLETE_SCRIPT = __portalJs("portal_field_autocomplete.js?v=20260609-autofill");
   const PORTAL_SESSION_REVIEW_MAP_STORAGE = "portalSessionReviewMap_v1";
 
   const qs = new URLSearchParams(location.search || "");
@@ -886,7 +902,6 @@ button{
     }
     const mp = document.getElementById("myselfParticipant");
     if(mp && !clean(mp.value) && clean(context.clientName)) mp.value = clean(context.clientName);
-    syncParticipantDatalistForInput("myselfParticipant", "participantManualNameList");
     syncIncidentSessionDate();
     syncMyselfInjuryUi();
   }
@@ -1274,8 +1289,6 @@ button{
 
   async function refreshIncidentParticipantAndServicePickers(){
     await ensurePortalRosterScriptsLoaded();
-    syncParticipantDatalistForInput("participantManual", "participantManualNameList");
-    syncParticipantDatalistForInput("myselfParticipant", "participantManualNameList");
     syncIncidentParticipantServiceSelect();
     syncIncidentSessionDate();
   }
@@ -1331,7 +1344,6 @@ button{
   function syncIncidentManualFields(){
     const pm = document.getElementById("participantManual");
     if(pm && !clean(pm.value)) pm.value = clean(context.clientName);
-    syncParticipantDatalistForInput("participantManual", "participantManualNameList");
     syncIncidentParticipantServiceSelect();
     syncIncidentSessionDate();
     const it = document.getElementById("incidentTime");
@@ -1671,24 +1683,43 @@ button{
     showIncidentStep("choose");
   });
 
-  function wireParticipantNameSuggest(inputId, datalistId, afterResolve){
-    const inp = document.getElementById(inputId);
-    if(!inp || inp.dataset.nameSuggestWired) return;
-    inp.dataset.nameSuggestWired = "1";
-    function onInput(){
-      syncParticipantDatalistForInput(inputId, datalistId);
-      const resolved = typeof window.portalResolveParticipantCanonicalName === "function"
-        ? window.portalResolveParticipantCanonicalName(inp.value)
-        : clean(inp.value);
-      if(resolved && resolved !== clean(inp.value)) inp.value = resolved;
-      if(typeof afterResolve === "function") afterResolve();
-    }
-    inp.addEventListener("input", onInput);
-    inp.addEventListener("change", onInput);
-    inp.addEventListener("focus", onInput);
+  function wireIncidentCatalogAutofill(){
+    if(typeof window.portalWireFieldSuggest !== "function") return;
+    window.portalWireFieldSuggest(document.getElementById("participantManual"), document.getElementById("participantManualSuggest"), {
+      kind: "participant",
+      strict: true,
+      onPick: function(){ syncIncidentParticipantServiceSelect(); }
+    });
+    window.portalWireFieldSuggest(document.getElementById("myselfParticipant"), document.getElementById("myselfParticipantSuggest"), {
+      kind: "participant",
+      strict: true
+    });
+    window.portalWireFieldSuggest(document.getElementById("incidentLocation"), document.getElementById("incidentLocationSuggest"), {
+      kind: "venue",
+      strict: true,
+      match: "contains"
+    });
+    window.portalWireFieldSuggest(document.getElementById("staffInvolved"), document.getElementById("staffInvolvedSuggest"), {
+      kind: "staff",
+      strict: true,
+      match: "contains"
+    });
+    window.portalWireFieldSuggest(document.getElementById("witness"), document.getElementById("witnessSuggest"), {
+      kind: "staff",
+      strict: true,
+      match: "contains"
+    });
   }
-  wireParticipantNameSuggest("participantManual", "participantManualNameList", syncIncidentParticipantServiceSelect);
-  wireParticipantNameSuggest("myselfParticipant", "participantManualNameList");
+
+  async function ensureIncidentAutofillScripts(){
+    await loadPortalScriptOnce(PORTAL_CLIENTS_INFO_SCRIPT);
+    await loadPortalScriptOnce(PORTAL_SPREADSHEET_BUNDLE_SCRIPT);
+    await loadPortalScriptOnce(PORTAL_PARTICIPANT_SERVICES_SCRIPT);
+    await loadPortalScriptOnce(PORTAL_FIELD_AUTOCOMPLETE_SCRIPT);
+    wireIncidentCatalogAutofill();
+  }
+
+  void ensureIncidentAutofillScripts();
 
   form.addEventListener("submit", async function(e){
     e.preventDefault();

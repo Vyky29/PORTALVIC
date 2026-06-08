@@ -2,7 +2,9 @@
  * Lead session report form (portal-lead-feedback.html) — wires lr* fields to lead_session_reports.
  */
 const PORTAL_AUTH_MODULE = "/portal/auth-handler.js?v=20260615-lead-report";
-const PORTAL_CLIENTS_SCRIPT = "/portal/clients_info_embed.js?v=20260615-lead-report";
+const PORTAL_CLIENTS_SCRIPT = "/portal/clients_info_embed.js?v=20260609-autofill";
+const PORTAL_AUTOCOMPLETE_SCRIPT = "/portal-shared-js/portal_field_autocomplete.js?v=20260609-autofill";
+const PORTAL_CATALOG_SCRIPT = "/portal-shared-js/participant_services.js?v=20260609-autofill";
 
 const LEAD_SERVICES = [
   "Bespoke Programme",
@@ -118,6 +120,14 @@ function getClientNames() {
 
 function wireNameSuggest(input, listEl) {
   if (!input || !listEl) return;
+  if (typeof window.portalWireFieldSuggest === "function") {
+    window.portalWireFieldSuggest(input, listEl, {
+      kind: "participant",
+      strict: true,
+      match: "startsWith",
+    });
+    return;
+  }
   let blurTimer = null;
   function closeList() {
     listEl.hidden = true;
@@ -290,14 +300,6 @@ export async function bootPortalLeadFeedback() {
     serviceEl.appendChild(opt);
   });
 
-  const venueList = document.getElementById("lrVenueList");
-  if (venueList) {
-    VENUE_OPTIONS.forEach((v) => {
-      const opt = document.createElement("option");
-      opt.value = v;
-      venueList.appendChild(opt);
-    });
-  }
   const venueInput = document.getElementById("lrVenue");
   if (venueInput && ctx.venue) venueInput.value = ctx.venue;
 
@@ -341,6 +343,8 @@ export async function bootPortalLeadFeedback() {
 
   try {
     await loadScriptOnce(PORTAL_CLIENTS_SCRIPT);
+    await loadScriptOnce(PORTAL_CATALOG_SCRIPT);
+    await loadScriptOnce(PORTAL_AUTOCOMPLETE_SCRIPT);
   } catch (e) {
     console.warn("[lead-report] clients embed", e);
   }
@@ -350,6 +354,15 @@ export async function bootPortalLeadFeedback() {
       document.getElementById("lrDayCentreParticipant" + i),
       document.getElementById("lrDayCentreSuggest" + i)
     );
+  }
+  const venueInput = document.getElementById("lrVenue");
+  const venueSuggest = document.getElementById("lrVenueSuggest");
+  if (venueInput && typeof window.portalWireFieldSuggest === "function") {
+    window.portalWireFieldSuggest(venueInput, venueSuggest, {
+      kind: "venue",
+      strict: true,
+      match: "contains",
+    });
   }
 
   form.querySelectorAll(".options").forEach((box) => {
