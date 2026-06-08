@@ -3,6 +3,46 @@
  * Does NOT restyle the page header (keeps original 1-to-1 hero).
  */
 
+/* Prevent legacy HSE form flash while admin review loads */
+html.portal-wb-admin-booting:not(.portal-wb-admin-ready) #sra-form > :not(.header) {
+  visibility: hidden !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+}
+
+html.portal-wb-admin-booting:not(.portal-wb-admin-ready) body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  background: linear-gradient(165deg, #dfe8f0 0%, #eef2f6 40%, #e8ecf2 100%);
+  pointer-events: none;
+}
+
+html.portal-wb-admin-booting:not(.portal-wb-admin-ready) body::after {
+  content: "Loading 1-to-1 review…";
+  position: fixed;
+  left: 50%;
+  top: 42%;
+  transform: translate(-50%, -50%);
+  z-index: 151;
+  padding: 16px 28px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 8px 32px rgba(15, 39, 64, 0.12);
+  font-size: 15px;
+  font-weight: 600;
+  color: #2a3140;
+}
+
+html.portal-wb-admin-ready body::before,
+html.portal-wb-admin-ready body::after {
+  display: none;
+}
+
 body.portal-wellbeing-admin-mode #portalWellbeingAdminSteps,
 body.portal-wellbeing-admin-mode .portal-wb-admin-steps,
 body.portal-wellbeing-admin-mode .toc,
@@ -34,15 +74,47 @@ body.portal-wellbeing-admin-mode .section.portal-wb-domain-all-clear .table-scro
   display: none;
 }
 
+body.portal-wellbeing-admin-mode .section.portal-wb-domain-all-clear {
+  padding: 12px 20px;
+  margin: 0;
+  border-bottom: 1px solid #e2e8f0;
+  background: transparent;
+  box-shadow: none;
+}
+
+body.portal-wellbeing-admin-mode .section.portal-wb-domain-all-clear .section-title {
+  font-size: 0.95rem;
+  margin: 0 0 6px;
+}
+
 body.portal-wellbeing-admin-mode .portal-wb-all-clear-note {
-  margin: 10px 0 0;
-  padding: 12px 14px;
-  border-radius: 10px;
-  border: 1px solid #86c5a8;
-  background: #e6f4ef;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #b8e0cc;
+  background: linear-gradient(180deg, #f0faf5 0%, #e6f4ef 100%);
   color: #1d6b4a;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
+  line-height: 1.4;
+}
+
+body.portal-wellbeing-admin-mode .portal-wb-all-clear-note::before {
+  content: "✓";
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #1d6b4a;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  flex-shrink: 0;
 }
 
 body.portal-wellbeing-admin-mode .portal-wb-advanced-intro {
