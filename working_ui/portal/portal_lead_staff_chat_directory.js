@@ -137,10 +137,10 @@
   }
 
   var CSTEAM_SECTIONS = [
-    { key: "ceo", label: "CEO" },
-    { key: "admin", label: "Admin" },
-    { key: "lead", label: "Leads" },
-    { key: "staff", label: "Staff" },
+    { key: "ceo", label: "CEO", icon: "crown" },
+    { key: "admin", label: "Admin", icon: "shield" },
+    { key: "lead", label: "Leads", icon: "users" },
+    { key: "staff", label: "Staff", icon: "user" },
   ];
 
   var STAFF_MGMT_SECTIONS = [
@@ -199,7 +199,48 @@
   }
 
   function roleChipClassForProfile(row) {
-    return "portal-dm-role-chip--" + directoryCategoryKey(row);
+    return "portal-dm-role-chip--" + staffRoleChipKeyFromProfile(row);
+  }
+
+  function staffRoleChipKeyFromProfile(row) {
+    if (!row) return "staff";
+    var ar = String(row.app_role || "").toLowerCase();
+    if (ar === "ceo") return "ceo";
+    if (ar === "admin") return "admin";
+    if (ar === "lead") return "lead";
+    var sr = normalizeStaffRoleKey(row.staff_role);
+    if (sr === "manager") return "manager";
+    if (sr === "swimming") return "swimming";
+    if (sr === "climbing") return "climbing";
+    if (sr === "fitness") return "fitness";
+    if (sr === "support_lead" || sr === "supportlead") return "support_lead";
+    if (sr === "support") return "support";
+    return "staff";
+  }
+
+  function normalizeStaffAvatarUrl(url) {
+    var u = String(url || "").trim();
+    if (!u) return "";
+    if (/^https?:\/\//i.test(u) || u.indexOf("data:") === 0) return u;
+    if (u.charAt(0) !== "/") u = "/" + u.replace(/^\.?\/*/, "");
+    return u;
+  }
+
+  function directoryRowFromProfile(row, me) {
+    var id = String(row.id || "").trim();
+    if (!id || id.toLowerCase() === String(me).toLowerCase()) return null;
+    var label = peerLabelFromRow(row);
+    if (!label) return null;
+    return {
+      id: id,
+      label: label,
+      username: String(row.username || "").trim(),
+      avatarUrl: normalizeStaffAvatarUrl(row.avatar_url),
+      role: peerRoleChipLabel(row),
+      staffRoleKey: staffRoleChipKeyFromProfile(row),
+      category: directoryCategoryKey(row),
+      sortKey: normKey(label),
+    };
   }
 
   function roleSubtitle(row) {
@@ -240,25 +281,74 @@
     clearBtn.setAttribute("aria-hidden", has ? "false" : "true");
   }
 
-  function roleChipHtml(label, category) {
+  function roleChipHtml(label, category, staffRoleKey) {
+    var chipKey = staffRoleKey || category || "staff";
     return (
       '<span class="portal-dm-role-chip portal-dm-role-chip--' +
-      esc(category || "staff") +
+      esc(chipKey) +
       '">' +
       esc(label) +
       "</span>"
     );
   }
 
+  function staffDirectoryAvatarHtml(row) {
+    var label = String((row && row.label) || "").trim();
+    var avatarUrl = normalizeStaffAvatarUrl(row && row.avatarUrl);
+    if (avatarUrl) {
+      var initials = esc(initialsFromLabel(label));
+      return (
+        '<span class="portal-dm-staff-directory-avatar portal-dm-staff-directory-avatar--photo" aria-hidden="true">' +
+        initials +
+        '<img class="portal-dm-staff-directory-avatar__img" src="' +
+        esc(avatarUrl) +
+        '" alt="" loading="lazy" decoding="async" draggable="false" onerror="this.remove();var p=this.parentElement;if(p)p.classList.remove(\'portal-dm-staff-directory-avatar--photo\');" />' +
+        "</span>"
+      );
+    }
+    if (global.portalStaffAvatarInnerHtml) {
+      return global.portalStaffAvatarInnerHtml((row && row.username) || label, {
+        esc: esc,
+        displayName: label,
+        className: "portal-dm-staff-directory-avatar",
+        imgClass: "portal-dm-staff-directory-avatar__img",
+      });
+    }
+    return (
+      '<span class="portal-dm-staff-directory-avatar" aria-hidden="true">' +
+      esc(initialsFromLabel(label)) +
+      "</span>"
+    );
+  }
+
+  function csteamSectionIconHtml(iconName) {
+    if (global.portalDmIcons && typeof global.portalDmIcons.svg === "function") {
+      return global.portalDmIcons.svg(iconName || "user", "portal-dm-csteam-accordion__ico-svg");
+    }
+    return "";
+  }
+
+  function csteamAccordionSummaryHtml(section, sectionRows) {
+    return (
+      '<span class="portal-dm-csteam-accordion__icon portal-dm-csteam-accordion__icon--' +
+      esc(section.key || "staff") +
+      '" aria-hidden="true">' +
+      csteamSectionIconHtml(section.icon) +
+      '</span><span class="portal-dm-csteam-accordion__label">' +
+      esc(section.label) +
+      '</span><span class="portal-dm-csteam-accordion__count">' +
+      esc(String(sectionRows.length)) +
+      '</span><span class="portal-dm-csteam-accordion__chev" aria-hidden="true"></span>'
+    );
+  }
+
   function staffDirectoryItemHtml(row) {
-    var chips = roleChipHtml(row.role, row.category);
+    var chips = roleChipHtml(row.role, row.category, row.staffRoleKey);
     if (row.attachAdmin) {
       chips += '<span class="portal-dm-role-chip portal-dm-role-chip--admin">+ Admin</span>';
     }
     return (
-      '<span class="portal-dm-staff-directory-avatar" aria-hidden="true">' +
-      esc(initialsFromLabel(row.label)) +
-      "</span>" +
+      staffDirectoryAvatarHtml(row) +
       '<span class="portal-dm-staff-directory-copy">' +
       '<span class="portal-dm-staff-directory-name">' +
       esc(row.label) +
@@ -328,12 +418,7 @@
       if (section.key === firstKey) details.open = true;
       var summary = document.createElement("summary");
       summary.className = "portal-dm-csteam-accordion__head";
-      summary.innerHTML =
-        '<span class="portal-dm-csteam-accordion__label">' +
-        esc(section.label) +
-        '</span><span class="portal-dm-csteam-accordion__count">' +
-        esc(String(sectionRows.length)) +
-        '</span><span class="portal-dm-csteam-accordion__chev" aria-hidden="true"></span>';
+      summary.innerHTML = csteamAccordionSummaryHtml(section, sectionRows);
       details.appendChild(summary);
       var list = document.createElement("div");
       list.className = "portal-dm-csteam-accordion__list";
@@ -364,12 +449,7 @@
       if (section.key === firstKey) details.open = true;
       var summary = document.createElement("summary");
       summary.className = "portal-dm-csteam-accordion__head";
-      summary.innerHTML =
-        '<span class="portal-dm-csteam-accordion__label">' +
-        esc(section.label) +
-        '</span><span class="portal-dm-csteam-accordion__count">' +
-        esc(String(sectionRows.length)) +
-        '</span><span class="portal-dm-csteam-accordion__chev" aria-hidden="true"></span>';
+      summary.innerHTML = csteamAccordionSummaryHtml(section, sectionRows);
       details.appendChild(summary);
       var list = document.createElement("div");
       list.className = "portal-dm-csteam-accordion__list";
@@ -711,7 +791,7 @@
       return global[cacheKey];
     }
 
-    var selectCols = "id,full_name,username,app_role,staff_role,dashboard_route,is_active";
+    var selectCols = "id,full_name,username,app_role,staff_role,dashboard_route,is_active,avatar_url";
     var rows = [];
     var from = 0;
     var chunk = 800;
@@ -728,7 +808,13 @@
         if (res.error) {
           var errMsg = String(res.error.message || res.error || "Load failed");
           if (selectCols.indexOf("dashboard_route") !== -1 && /dashboard_route/i.test(errMsg)) {
-            selectCols = "id,full_name,username,app_role,staff_role,is_active";
+            selectCols = "id,full_name,username,app_role,staff_role,is_active,avatar_url";
+            from = 0;
+            rows = [];
+            return pullPage();
+          }
+          if (selectCols.indexOf("avatar_url") !== -1 && /avatar_url/i.test(errMsg)) {
+            selectCols = selectCols.replace(/,?avatar_url/g, "");
             from = 0;
             rows = [];
             return pullPage();
@@ -739,17 +825,8 @@
         batch.forEach(function (row) {
           if (!row || row.is_active === false) return;
           if (!directoryRowMatchesMode(row, mode)) return;
-          var id = String(row.id || "").trim();
-          if (!id || id.toLowerCase() === String(me).toLowerCase()) return;
-          var label = peerLabelFromRow(row);
-          if (!label) return;
-          rows.push({
-            id: id,
-            label: label,
-            role: peerRoleChipLabel(row),
-            category: directoryCategoryKey(row),
-            sortKey: normKey(label),
-          });
+          var mapped = directoryRowFromProfile(row, me);
+          if (mapped) rows.push(mapped);
         });
         if (batch.length < chunk) {
           if (mode === "directors") {
@@ -798,15 +875,8 @@
               var id = String(row.id || "").trim();
               if (!id || id.toLowerCase() === String(me).toLowerCase() || seen[id]) return;
               seen[id] = true;
-              var label = peerLabelFromRow(row);
-              if (!label) return;
-              rows.push({
-                id: id,
-                label: label,
-                role: peerRoleChipLabel(row),
-                category: directoryCategoryKey(row),
-                sortKey: normKey(label),
-              });
+              var mapped = directoryRowFromProfile(row, me);
+              if (mapped) rows.push(mapped);
             });
             if (batch.length < chunk) return rows;
             fromDir += chunk;
@@ -1107,6 +1177,7 @@
     staffInitiatePeer: staffInitiatePeer,
     portalStaffIsRestrictedWorkerChat: portalStaffIsRestrictedWorkerChat,
     portalStaffWorkerMgmtPeerAllowed: portalStaffWorkerMgmtPeerAllowed,
+    staffRoleChipKeyFromProfile: staffRoleChipKeyFromProfile,
     peerRoleChipLabel: peerRoleChipLabel,
     roleChipClassForProfile: roleChipClassForProfile,
     directoryCategoryKey: directoryCategoryKey,

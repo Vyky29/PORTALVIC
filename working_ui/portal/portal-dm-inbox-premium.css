@@ -195,6 +195,22 @@
   font-weight:800;
   border:1px solid rgba(45,132,179,.18);
   letter-spacing:.02em;
+  position:relative;
+  overflow:hidden;
+}
+#internalChatSheet.sheet--portal-chat-inbox .portal-dm-staff-directory-avatar--photo,
+#internalChatSheet.sheet--portal-chat-inbox .portal-dm-staff-directory-avatar.portal-roster-avatar--has-photo{
+  padding:0;
+}
+#internalChatSheet.sheet--portal-chat-inbox .portal-dm-staff-directory-avatar__img,
+#internalChatSheet.sheet--portal-chat-inbox .portal-dm-staff-directory-avatar--photo img,
+#internalChatSheet.sheet--portal-chat-inbox .portal-dm-staff-directory-avatar.portal-roster-avatar--has-photo img{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  border-radius:50%;
 }
 #internalChatSheet.sheet--portal-chat-inbox .portal-dm-inbox-empty{
   margin:0;
@@ -417,6 +433,37 @@
 #internalChatSheet.sheet--portal-chat-inbox .portal-dm-csteam-accordion__head::-webkit-details-marker{
   display:none;
 }
+#internalChatSheet.sheet--portal-chat-inbox .portal-dm-csteam-accordion__icon{
+  flex-shrink:0;
+  width:28px;
+  height:28px;
+  border-radius:8px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(45,132,179,.1);
+  color:var(--blue);
+}
+#internalChatSheet.sheet--portal-chat-inbox .portal-dm-csteam-accordion__icon .portal-dm-ico{
+  width:16px;
+  height:16px;
+}
+#internalChatSheet.sheet--portal-chat-inbox .portal-dm-csteam-accordion__icon--ceo{
+  background:#fff7ed;
+  color:#c2410c;
+}
+#internalChatSheet.sheet--portal-chat-inbox .portal-dm-csteam-accordion__icon--admin{
+  background:#eef6fb;
+  color:#1d6f96;
+}
+#internalChatSheet.sheet--portal-chat-inbox .portal-dm-csteam-accordion__icon--lead{
+  background:#f3ecff;
+  color:#6d28d9;
+}
+#internalChatSheet.sheet--portal-chat-inbox .portal-dm-csteam-accordion__icon--staff{
+  background:#ecfdf5;
+  color:#166534;
+}
 #internalChatSheet.sheet--portal-chat-inbox .portal-dm-csteam-accordion__label{
   flex:1;
   min-width:0;
@@ -503,6 +550,36 @@
   background:#f5f3ff;
   color:#5b21b6;
   border-color:rgba(91,33,182,.18);
+}
+#internalChatSheet .portal-dm-role-chip--swimming{
+  background:#e0f2fe;
+  color:#0369a1;
+  border-color:rgba(3,105,161,.2);
+}
+#internalChatSheet .portal-dm-role-chip--climbing{
+  background:#ffedd5;
+  color:#c2410c;
+  border-color:rgba(194,65,12,.22);
+}
+#internalChatSheet .portal-dm-role-chip--fitness{
+  background:#fee2e2;
+  color:#b91c1c;
+  border-color:rgba(185,28,28,.18);
+}
+#internalChatSheet .portal-dm-role-chip--support{
+  background:#ede9fe;
+  color:#6d28d9;
+  border-color:rgba(109,40,217,.18);
+}
+#internalChatSheet .portal-dm-role-chip--support_lead{
+  background:#f3e8ff;
+  color:#7e22ce;
+  border-color:rgba(126,34,206,.2);
+}
+#internalChatSheet .portal-dm-role-chip--manager{
+  background:#e2e8f0;
+  color:#334155;
+  border-color:rgba(51,65,85,.16);
 }
 
 #internalChatSheet.sheet--portal-chat-inbox .portal-dm-staff-directory-copy{
