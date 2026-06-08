@@ -33,11 +33,11 @@
   <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260608-cliq-channels"></script>
   <script src="/portal/portal_cs_cliq_support_route.js?v=20260608-inbox-fix"></script>
   <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260609-staff-mgmt"></script>
-  <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260609-group-member-chips"></script>
-  <script src="/portal/portal_cs_cliq_admin_channels.js?v=20260609-group-member-chips"></script>
+  <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260608-group-dedupe"></script>
+  <script src="/portal/portal_cs_cliq_admin_channels.js?v=20260608-group-dedupe"></script>
   <script src="/portal/portal_cs_cliq_support.js?v=20260607-support-route"></script>
   <script src="/portal/portal_cs_cliq_announcements_hub.js?v=20260604-cliq-inbox"></script>
-  <script src="/portal/portal_cs_cliq_announcement_inbox.js?v=20260622-announcements"></script>
+  <script src="/portal/portal_cs_cliq_announcement_inbox.js?v=20260608-group-dedupe"></script>
   <script src="/portal/portal_cs_cliq_thread_header.js?v=20260609-group-chips"></script>
   <script src="/portal/portal_cs_cliq_group_members.js?v=20260609-group-member-chips"></script>
   <script src="/portal/portal_cs_cliq_thread_files.js?v=20260604-cliq-files"></script>
@@ -20457,13 +20457,64 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var fixed = [];
       var rest = [];
       (groups || []).forEach(function(item){
-        var slug = String(item && item.slug || '').toLowerCase();
+        var slug = String(item && (item.canonicalSlug || item.slug) || '').toLowerCase();
         var idx = order.indexOf(slug);
         if(idx >= 0) fixed.push({ item: item, idx: idx });
         else rest.push(item);
       });
       fixed.sort(function(a, b){ return a.idx - b.idx; });
       return fixed.map(function(x){ return x.item; }).concat(rest);
+    }
+    function portalAdminDmCanonicalGroupSlug(slug, title){
+      if(window.portalCsCliqAnnouncementInbox && typeof window.portalCsCliqAnnouncementInbox.canonicalGroupSlug === 'function'){
+        return window.portalCsCliqAnnouncementInbox.canonicalGroupSlug(slug, title);
+      }
+      return String(slug || '').toLowerCase();
+    }
+    function portalAdminDmGroupAliasIds(item){
+      if(!item || item.kind !== 'group') return [];
+      if(Array.isArray(item.aliasGroupIds) && item.aliasGroupIds.length){
+        return item.aliasGroupIds.filter(function(id, idx, arr){
+          id = String(id || '').trim();
+          return id && arr.indexOf(id) === idx;
+        });
+      }
+      var id = String(item.id || '').trim();
+      return id ? [id] : [];
+    }
+    function portalAdminDmRegisterGroupAliases(slot){
+      if(!slot || !slot.id) return;
+      window.__PORTAL_ADMIN_DM_GROUP_ALIASES = window.__PORTAL_ADMIN_DM_GROUP_ALIASES || {};
+      var ids = portalAdminDmGroupAliasIds(slot);
+      ids.forEach(function(id){
+        window.__PORTAL_ADMIN_DM_GROUP_ALIASES[String(id)] = ids.slice();
+      });
+    }
+    function portalAdminDmMergeGroupSlot(slot, g){
+      if(!slot || !g || !g.id) return slot;
+      var gid = String(g.id);
+      if(slot.aliasGroupIds.indexOf(gid) < 0) slot.aliasGroupIds.push(gid);
+      var gsl = String(g.slug || '').toLowerCase();
+      var canon = String(slot.canonicalSlug || portalAdminDmCanonicalGroupSlug(gsl, String(g.title || g.slug || 'Group')));
+      var slotExact = String(slot.slug || '').toLowerCase() === canon;
+      var newExact = gsl === canon;
+      var slotWhen = 0;
+      var newWhen = 0;
+      try{ if(slot.when) slotWhen = new Date(slot.when).getTime(); }catch(_sw){}
+      try{ if(g.updated_at) newWhen = new Date(g.updated_at).getTime(); }catch(_nw){}
+      if(newExact && !slotExact){
+        slot.id = gid;
+        slot.slug = gsl;
+        slot.when = g.updated_at || slot.when;
+      }else if(newExact === slotExact && newWhen >= slotWhen){
+        slot.id = gid;
+        slot.when = g.updated_at || slot.when;
+        if(gsl) slot.slug = gsl;
+      }else if(newWhen > slotWhen){
+        slot.when = g.updated_at || slot.when;
+      }
+      portalAdminDmRegisterGroupAliases(slot);
+      return slot;
     }
     function portalAdminDmSimplifyGroupLabel(slug, title){
       slug = String(slug || '').toLowerCase();
@@ -20631,6 +20682,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       window.__PORTAL_ADMIN_DM_UI.threadId = '';
       window.__PORTAL_ADMIN_DM_UI.groupId = gid;
       window.__PORTAL_ADMIN_DM_UI.groupSlug = '';
+      window.__PORTAL_ADMIN_DM_UI.groupAliasIds =
+        (window.__PORTAL_ADMIN_DM_GROUP_ALIASES && window.__PORTAL_ADMIN_DM_GROUP_ALIASES[gid]) ||
+        [gid];
       if(!window.__PORTAL_ADMIN_DM_UI.hubPane){
         window.__PORTAL_ADMIN_DM_UI.hubPane = String(window.__PORTAL_CS_CLIQ_RAIL_PANE || 'channels');
       }
@@ -20877,7 +20931,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!client || !me || !Array.isArray(merged) || !merged.length) return merged;
       profBy = profBy || {};
       var dmIds = merged.filter(function(i){ return i.kind === 'dm' && i.id; }).map(function(i){ return String(i.id); });
-      var groupIds = merged.filter(function(i){ return i.kind === 'group'; }).map(function(i){ return i.id; });
+      var groupIds = [];
+      merged.forEach(function(i){
+        if(i.kind !== 'group') return;
+        portalAdminDmGroupAliasIds(i).forEach(function(gid0){
+          gid0 = String(gid0 || '').trim();
+          if(gid0 && groupIds.indexOf(gid0) < 0) groupIds.push(gid0);
+        });
+      });
       async function ensureAuthors(ids){
         var missing = (ids || []).filter(function(id, idx, arr){
           return id && arr.indexOf(id) === idx && !profBy[id];
@@ -20979,13 +21040,29 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
         merged.forEach(function(item){
           if(item.kind !== 'group') return;
-          var gm = lastByGroup[item.id];
+          var aliasIds = portalAdminDmGroupAliasIds(item);
+          var gm = null;
+          aliasIds.forEach(function(gid0){
+            var cand = lastByGroup[gid0];
+            if(!cand) return;
+            if(!gm){
+              gm = cand;
+              return;
+            }
+            try{
+              if(new Date(cand.created_at).getTime() > new Date(gm.created_at).getTime()) gm = cand;
+            }catch(_gt){
+              gm = cand;
+            }
+          });
           if(gm){
             item.lastSender = portalAdminDmSenderLabel(gm.author_id, profBy);
             item.lastPreview = portalAdminDmPreviewBody(gm);
             item.when = gm.created_at || item.when;
           }
-          item.unreadCount = unreadByGroup[item.id] || 0;
+          item.unreadCount = aliasIds.reduce(function(sum, gid0){
+            return sum + (unreadByGroup[gid0] || 0);
+          }, 0);
         });
       }
       return merged;
@@ -21109,20 +21186,35 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var merged = [];
       var unified = !!window.__PORTAL_CS_CLIQ_ACTIVE;
       var groupIds = {};
+      var groupCanonSlots = {};
+      window.__PORTAL_ADMIN_DM_GROUP_ALIASES = {};
       function pushGroup(g){
         if(!g || !g.id) return;
         var gid = String(g.id);
         if(groupIds[gid]) return;
-        var gsl = String(g.slug || '').toLowerCase();
-        if(!portalAdminDmViewerSeesCeoGroupSlug(gsl)) return;
         groupIds[gid] = true;
-        merged.push({
-          kind: 'group',
-          id: gid,
-          slug: gsl,
-          label: portalAdminDmSimplifyGroupLabel(gsl, String(g.title || g.slug || 'Group')),
-          when: g.updated_at
-        });
+        var gsl = String(g.slug || '').toLowerCase();
+        var title = String(g.title || g.slug || 'Group');
+        var canon = portalAdminDmCanonicalGroupSlug(gsl, title) || gsl || ('id:' + gid);
+        var slugForPolicy = canon.indexOf('id:') === 0 ? gsl : canon;
+        if(!portalAdminDmViewerSeesCeoGroupSlug(slugForPolicy)) return;
+        var slot = groupCanonSlots[canon];
+        if(!slot){
+          slot = {
+            kind: 'group',
+            id: gid,
+            slug: gsl || canon,
+            canonicalSlug: canon,
+            label: portalAdminDmSimplifyGroupLabel(gsl, title),
+            when: g.updated_at,
+            aliasGroupIds: [gid]
+          };
+          groupCanonSlots[canon] = slot;
+          portalAdminDmRegisterGroupAliases(slot);
+          merged.push(slot);
+          return;
+        }
+        portalAdminDmMergeGroupSlot(slot, g);
       }
       if(unified){
         var gresAll = await client.from('portal_ceo_group').select('id,title,slug,updated_at').order('updated_at', { ascending: false });
@@ -21135,14 +21227,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var gidLeads = await portalAdminDmResolveSessionLeadsGroupId(client);
         if(gidLeads){
           var gLeads = await client.from('portal_ceo_group').select('id,title,slug,updated_at').eq('id', gidLeads).maybeSingle();
-          if(!gLeads.error && gLeads.data && gLeads.data.id){
-            merged.push({
-              kind: 'group',
-              id: String(gLeads.data.id),
-              label: String(gLeads.data.title || 'Session leads'),
-              when: gLeads.data.updated_at
-            });
-          }
+          if(!gLeads.error && gLeads.data && gLeads.data.id) pushGroup(gLeads.data);
         }
       }
       var res = await portalAdminDmFetchStaffDmThreads(client, me, ch);
@@ -21285,8 +21370,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       await portalAdminDmEnrichListItems(client, me, ch, merged, profBy);
       var fixedOrder = portalAdminDmFixedGroupSlugOrder();
       merged.sort(function(a, b){
-        var af = a.kind === 'group' ? fixedOrder.indexOf(String(a.slug || '').toLowerCase()) : -1;
-        var bf = b.kind === 'group' ? fixedOrder.indexOf(String(b.slug || '').toLowerCase()) : -1;
+        var af = a.kind === 'group' ? fixedOrder.indexOf(String(a.canonicalSlug || a.slug || '').toLowerCase()) : -1;
+        var bf = b.kind === 'group' ? fixedOrder.indexOf(String(b.canonicalSlug || b.slug || '').toLowerCase()) : -1;
         if(af >= 0 || bf >= 0){
           if(af >= 0 && bf >= 0) return af - bf;
           return af >= 0 ? -1 : 1;
@@ -21551,7 +21636,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var arr = [];
       var mres;
       if(gid){
-        mres = await client.from('portal_ceo_group_message').select(window.portalDmVoice ? window.portalDmVoice.MSG_FIELDS : 'id,author_id,body,created_at,message_type,audio_storage_path,audio_mime,duration_ms').eq('group_id', gid).order('created_at', { ascending: true });
+        var loadGroupIds =
+          Array.isArray(ui.groupAliasIds) && ui.groupAliasIds.length
+            ? ui.groupAliasIds.filter(function(id, idx, arr){
+                id = String(id || '').trim();
+                return id && arr.indexOf(id) === idx;
+              })
+            : [gid];
+        mres = await client.from('portal_ceo_group_message').select(window.portalDmVoice ? window.portalDmVoice.MSG_FIELDS : 'id,author_id,body,created_at,message_type,audio_storage_path,audio_mime,duration_ms').in('group_id', loadGroupIds).order('created_at', { ascending: true });
         if(mres.error){
           msgsBox.innerHTML = '<p class="muted" style="margin:0;color:var(--danger);min-width:0;overflow-wrap:break-word">'+esc(String(mres.error.message || mres.error))+'</p>';
           return;

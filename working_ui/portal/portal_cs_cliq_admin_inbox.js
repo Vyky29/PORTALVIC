@@ -109,10 +109,22 @@
     var ceoItems = [];
     var seen = Object.create(null);
 
+    function canonicalSlug(item) {
+      if (!item || item.kind !== "group") return "";
+      if (item.canonicalSlug) return String(item.canonicalSlug).toLowerCase();
+      if (
+        global.portalCsCliqAnnouncementInbox &&
+        typeof global.portalCsCliqAnnouncementInbox.canonicalGroupSlug === "function"
+      ) {
+        return global.portalCsCliqAnnouncementInbox.canonicalGroupSlug(item.slug || "", item.label || "");
+      }
+      return String(item.slug || "").toLowerCase();
+    }
+
     function key(item) {
       if (!item) return "";
       if (item.kind === "group") {
-        var slug = String(item.slug || "").toLowerCase();
+        var slug = canonicalSlug(item);
         if (slug) return "g:" + slug;
         return "g:" + String(item.id || "");
       }
