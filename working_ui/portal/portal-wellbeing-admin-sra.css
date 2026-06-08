@@ -137,11 +137,20 @@ body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .sl-wrap {
   border: 1px solid #e2e8f0;
 }
 
+body.portal-wellbeing-admin-mode .portal-wb-score-formula {
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #5c6778;
+  text-align: center;
+  line-height: 1.35;
+}
+
 body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .score-td .js-score {
   width: 100%;
-  min-height: 40px;
-  margin-bottom: 6px;
-  font-size: 22px;
+  min-height: 44px;
+  margin-bottom: 8px;
+  font-size: 28px;
   font-weight: 800;
   text-align: center;
   border-radius: 10px;

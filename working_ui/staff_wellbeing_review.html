@@ -6,7 +6,7 @@
  <title>1-to-1 Wellbeing Review - clubSENsational</title>
  <script src="/portal-static-bootstrap.js"></script>
  <script src="/portal/term_from_timetable.js?v=20260604-teflon-guide-days"></script>
- <link rel="stylesheet" href="/portal/portal-wellbeing-admin-sra.css?v=20260610-wb-clear-cards" />
+ <link rel="stylesheet" href="/portal/portal-wellbeing-admin-sra.css?v=20260610-wb-risk-formula" />
  <link rel="stylesheet" href="/portal/portal-wellbeing-review-simple.css?v=20260604-wb-flow-refine" />
  <link rel="stylesheet" href="/portal-shared-js/portal_form_feedback_skin.css?v=20260609-autofill" />
  <script src="/portal/portal_wellbeing_stressor_catalog.js?v=20260610-wb-voice2"></script>
@@ -1014,11 +1014,19 @@
  background: linear-gradient(180deg, #f4b740 0%, #d99a1f 100%);
  box-shadow: 0 2px 8px rgba(244, 183, 64, 0.35);
  }
+ body.portal-wellbeing-admin-mode .portal-wb-score-formula {
+ margin-bottom: 8px;
+ font-size: 13px;
+ font-weight: 600;
+ color: #5c6778;
+ text-align: center;
+ line-height: 1.35;
+ }
  body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .score-td .js-score {
  width: 100%;
- min-height: 42px;
- margin-bottom: 6px;
- font-size: 22px;
+ min-height: 44px;
+ margin-bottom: 8px;
+ font-size: 28px;
  font-weight: 800;
  text-align: center;
  border-radius: 10px;
@@ -2283,10 +2291,10 @@ document.addEventListener("DOMContentLoaded", function () {
  function bandFromProduct(n) {
  var admin = document.body.classList.contains("portal-wellbeing-admin-mode");
  if (admin) {
- if (n <= 3) return { text: "Low risk", cls: "b-low" };
- if (n <= 6) return { text: "Medium risk", cls: "b-mod" };
- if (n <= 12) return { text: "High risk", cls: "b-high" };
- return { text: "Very high risk", cls: "b-vhigh" };
+ if (n <= 3) return { text: "Low — monitor only", cls: "b-low" };
+ if (n <= 6) return { text: "Moderate — agree actions", cls: "b-mod" };
+ if (n <= 12) return { text: "High — act now", cls: "b-high" };
+ return { text: "Very high — act immediately", cls: "b-vhigh" };
  }
  if (n <= 3) return { text: "Low (1-3)", cls: "b-low" };
  if (n <= 6) return { text: "Moderate (4-6)", cls: "b-mod" };
@@ -2310,9 +2318,18 @@ document.addEventListener("DOMContentLoaded", function () {
  var l = lIn && lIn.value !== "" ? parseInt(lIn.value, 10) : NaN;
  if (s >= 1 && s <= 5 && l >= 1 && l <= 5) {
  var prod = s * l;
+ var admin = document.body.classList.contains("portal-wellbeing-admin-mode");
  out.value = String(prod);
  out.style.fontWeight = "700";
  out.style.color = prod <= 3 ? "#1d6b4a" : prod <= 6 ? "#b45309" : prod <= 12 ? "#b42318" : "#7f1d1d";
+ var formulaEl = tr.querySelector(".js-score-formula");
+ if (formulaEl) {
+ if (admin) {
+ formulaEl.textContent = String(s) + " × " + String(l) + " = " + String(prod);
+ } else {
+ formulaEl.textContent = "S " + String(s) + " × L " + String(l) + " = " + String(prod);
+ }
+ }
  if (bandEl) {
  var b = bandFromProduct(prod);
  bandEl.textContent = b.text;
@@ -2322,6 +2339,8 @@ document.addEventListener("DOMContentLoaded", function () {
  out.value = "";
  out.style.fontWeight = "";
  out.style.color = "";
+ var formulaElEmpty = tr.querySelector(".js-score-formula");
+ if (formulaElEmpty) formulaElEmpty.textContent = "";
  if (bandEl) {
  bandEl.textContent = "";
  bandEl.className = "js-band score-band";
@@ -3007,11 +3026,20 @@ document.addEventListener("DOMContentLoaded", function () {
  ensureAdminFieldLabel(tds[1], "What did you discuss?");
  ensureAdminFieldLabel(tds[2], "How serious is it?", "Tap 1 (low) to 5 (very serious)");
  ensureAdminFieldLabel(tds[3], "How likely is harm?", "Tap 1 (unlikely) to 5 (very likely)");
- ensureAdminFieldLabel(tds[4], "Overall risk");
- ensureAdminFieldLabel(tds[5], "Agreed actions");
+ ensureAdminFieldLabel(tds[4], "Overall risk", "Seriousness × likelihood");
  hideAdminSraClutter(tr);
  wireAdminScalePills(tr, "s");
  wireAdminScalePills(tr, "l");
+ var scoreTd = tr.querySelector(".score-td");
+ if (scoreTd && !scoreTd.querySelector(".js-score-formula")) {
+ var formula = document.createElement("div");
+ formula.className = "js-score-formula portal-wb-score-formula";
+ formula.setAttribute("aria-live", "polite");
+ var scoreIn = scoreTd.querySelector(".js-score");
+ if (scoreIn) scoreTd.insertBefore(formula, scoreIn);
+ else scoreTd.appendChild(formula);
+ }
+ ensureAdminFieldLabel(tds[5], "Agreed actions");
  var obs = tr.querySelector(".obs-cell .js-obs-text");
  if (obs) {
  obs.placeholder = "Notes from your conversation about this stressor…";
