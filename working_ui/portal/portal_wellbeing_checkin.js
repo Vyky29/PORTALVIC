@@ -600,6 +600,16 @@
  };
  }
 
+ function portalWellbeingSubmitError(err) {
+ var msg = String((err && err.message) || err || "");
+ if (/row-level security/i.test(msg)) {
+ return new Error(
+ "Could not save your check-in. If leadership has already opened your 1-to-1, ask them to complete it first — or ask an admin to apply the wellbeing RLS patch in Supabase."
+ );
+ }
+ return err instanceof Error ? err : new Error(msg || "Could not save check-in.");
+ }
+
  async function submitCheckin(payload) {
  var ctx = await getAuthClient();
  var row = buildCheckinRow(ctx, payload);
@@ -608,7 +618,7 @@
  .upsert(row, { onConflict: "staff_user_id,term_key" })
  .select("id,status,has_concerns,term_key,created_at")
  .single();
- if (res.error) throw res.error;
+ if (res.error) throw portalWellbeingSubmitError(res.error);
  return { ctx: ctx, row: res.data };
  }
 
