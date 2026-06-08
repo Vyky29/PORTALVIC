@@ -1,6 +1,6 @@
 /**
- * CEO "god mode" — read/write Sevitha's ops inbox as Admin (not as the signed-in director).
- * Full admin_dashboard is for Sevitha (operations admin) only; CEOs enter via ?portalGodAdmin=1.
+ * Ops admin chat helpers — CEOs can write on Sevitha's worker threads as Admin (ops lane / ?portalGodAdmin=1).
+ * Victor, Raúl and Javi use admin_dashboard.html for day-to-day ops; CEO portal is mainly insights.
  */
 (function (global) {
   "use strict";
@@ -50,10 +50,8 @@
     global.__PORTAL_ADMIN_DM_UI.godModeAdmin = true;
   }
 
-  function shouldRedirectCeoFromFullAdmin(prof) {
-    prof = prof || profile();
-    if (!prof || isActive()) return false;
-    return isCeoTrio(prof) && !isOpsAdminUser(prof);
+  function shouldRedirectCeoFromFullAdmin() {
+    return false;
   }
 
   function godModeAdminUrl() {
@@ -120,7 +118,12 @@
         .insert([
           {
             thread_id: threadId,
-            author_id: (global.__PORTAL_SUPABASE__ && global.__PORTAL_SUPABASE__.session && global.__PORTAL_SUPABASE__.session.user && global.__PORTAL_SUPABASE__.session.user.id) || null,
+            author_id:
+              (global.__PORTAL_SUPABASE__ &&
+                global.__PORTAL_SUPABASE__.session &&
+                global.__PORTAL_SUPABASE__.session.user &&
+                global.__PORTAL_SUPABASE__.session.user.id) ||
+              null,
             body: body,
             message_type: messageType,
           },
@@ -144,9 +147,9 @@
         ? global.portalOpsAdminDisplay.label
         : "Sevitha (Admin)";
     bar.textContent =
-      "Ops admin view — you are browsing and writing as " +
+      "Ops admin chat — writing as " +
       label +
-      " (workers see Admin). Your director chat stays on the CEO portal.";
+      " (staff see Admin). Use CEO portal chat for director-only threads.";
     var shell = global.document.querySelector(".admin-shell") || global.document.body;
     if (shell.firstChild) shell.insertBefore(bar, shell.firstChild);
     else shell.appendChild(bar);
@@ -154,16 +157,6 @@
 
   function applyAfterBootstrap() {
     if (queryFlag()) activate();
-    if (shouldRedirectCeoFromFullAdmin()) {
-      try {
-        global.location.replace(
-          new URL("ceo_dashboard.html", global.location.href).href
-        );
-      } catch (_r) {
-        global.location.href = "ceo_dashboard.html";
-      }
-      return true;
-    }
     if (isActive()) {
       mountBanner();
       try {

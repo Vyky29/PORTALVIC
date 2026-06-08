@@ -1,5 +1,5 @@
 /**
- * Victor, Raúl, Javi — switch Staff / Lead / CEO from Quick menu (or admin nav).
+ * Victor, Raúl, Javi — switch Staff / Lead / Admin (ops) / CEO (insights) from Quick menu.
  */
 import { portalInferStaffKey } from "./auth-handler.js";
 
@@ -51,9 +51,15 @@ export function portalExecWorkspaceSwitchTargets(currentMode) {
       url: publishedUrl("lead_dashboard.html", "PORTAL_LEAD_DASHBOARD_URL"),
     },
     {
+      mode: "admin",
+      label: "Admin Portal",
+      sub: "Day operations, chat, roster, feedback and admin tools",
+      url: publishedUrl("admin_dashboard.html", "PORTAL_ADMIN_DASHBOARD_URL"),
+    },
+    {
       mode: "ceo",
       label: "CEO Portal",
-      sub: "Directors chat, teams, channels and executive tools",
+      sub: "Strategic snapshot, finance trends and company insights",
       url: publishedUrl("ceo_dashboard.html", "PORTAL_CEO_DASHBOARD_URL"),
     },
   ];

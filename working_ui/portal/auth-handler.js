@@ -197,8 +197,8 @@ export function portalIsOperationsAdminUser(profile, authEmail) {
 }
 
 /**
- * Full admin dashboard (day ops, roster, etc.) — Sevitha (operations admin) only.
- * CEOs use ceo_dashboard.html; god-mode ops chat uses admin_dashboard?portalGodAdmin=1.
+ * Sevitha-only surfaces (e.g. restricted ops config) — not a block on admin_dashboard access.
+ * Victor, Raúl and Javi use admin_dashboard for day-to-day operations.
  */
 export function portalCanAccessAdminDashboardFull(profile, authEmail) {
   return portalIsOperationsAdminUser(profile, authEmail);
