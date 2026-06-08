@@ -1057,7 +1057,7 @@
     };
 
     var state = { view:'nav_hub', navHubGroup:null, drawerClient:null, drawerStaff:null, drawerIsSynthetic:false, reportTargetClient:null, search:'', shiftModalCtx:null, pendingBookingsScroll:null, pendingBookingsSlotFocus:null, commsOrderDetailKey:'', sessionOverview:{ iso:'', overrides:[] }, sessionFeedback:{ anchorIso:'', selectedIso:null, rangeFrom:'', rangeTo:'', clientQ:'' }, navGroupsOpen:{ g_operator:false, g_c4k:false, g_zoho:false, g_supabase:false, g_xero:false, g_indeed:false, g_settings_portal:false }, c4kServicesRegisterOpen:false, registerSessionSlot:null, scrollToCapacityEmbed:false, portalLatePendingCount:0 };
-    var sched = { slotsById:{}, overrides:[], activeSlot:null, lastMsg:'', waitingSupabaseRetryBound:false, weekAnchorIso:'' };
+    var sched = { slotsById:{}, overrides:[], termEvents:[], activeSlot:null, lastMsg:'', waitingSupabaseRetryBound:false, weekAnchorIso:'' };
     /** Schedule &amp; Covers: summer term 2 roster window (dated rows in spreadsheet bundle). */
     var SCHED_COVER_TERM_START = '2026-06-01';
     var SCHED_COVER_TERM_END = '2026-07-17';
@@ -10427,7 +10427,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var fn = String(fullName || '').trim().split(/\s+/).filter(Boolean)[0] || '';
       return fn || 'Admin';
     }
-    async function schedLoadOverrideAuthors(client, rows){
+    async function schedLoadOverrideAuthors(client, rows, termRows){
       sched.overrideAuthorById = sched.overrideAuthorById || {};
       if(!client){ return; }
       var ids = [];
@@ -10435,6 +10435,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       (rows || []).forEach(function(o){
         var id = String(o.created_by || '').trim();
         if(id && !seen[id]){ seen[id] = 1; ids.push(id); }
+      });
+      (termRows || []).forEach(function(ev){
+        var aid = String(ev.actor_id || '').trim();
+        if(aid && !seen[aid]){ seen[aid] = 1; ids.push(aid); }
       });
       if(!ids.length) return;
       try{
@@ -12119,28 +12123,117 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           '<td class="ash-td-center"><button type="button" class="btn btn--sec btn--sm" data-sched-change="'+esc(slot.demoId)+'" style="max-width:100%">Change</button></td></tr>';
       }).join('');
     }
+    function schedTermEventAppliesToDate(ev, iso){
+      if(!ev || !iso) return false;
+      var scope = String(ev.scope || '').trim();
+      var anchor = adminNormIsoDate(ev.anchor_session_date);
+      var snap = ev.after_snapshot || {};
+      var day = normDayLabel(snap.day || '');
+      var isoDow = normDayLabel(portalWeekdayLongFromIsoDate(iso));
+      if(scope === 'single_day') return anchor === iso;
+      if(!day || day !== isoDow) return false;
+      if(scope === 'weekday_term') return true;
+      if(scope === 'rest_of_term') return iso >= anchor;
+      return false;
+    }
+    function schedTermEventLabel(ev){
+      var snap = ev && ev.after_snapshot ? ev.after_snapshot : {};
+      var termAct = String(snap.action || '').trim();
+      if(String(ev.action || '').trim() === 'cancel' || termAct === 'cancel_service') return 'Cancelled';
+      if(termAct === 'no_participant') return 'No Participant';
+      return 'Term slot update';
+    }
+    function schedTermEventTypeClass(ev){
+      var lab = schedTermEventLabel(ev);
+      if(lab === 'Cancelled' || lab === 'No Participant') return 'override--cancelled';
+      return 'override--term';
+    }
+    function schedTermEventTimeLabel(ev){
+      var snap = ev && ev.after_snapshot ? ev.after_snapshot : {};
+      var ts = String(snap.time_slot || '').trim();
+      if(!ts) return '—';
+      var start = ts.split(/\s+to\s+/i)[0].trim();
+      return start || '—';
+    }
+    function schedTermEventParticipantName(ev){
+      var snap = ev.after_snapshot || {};
+      var before = ev.before_snapshot || {};
+      var termAct = String(snap.action || '').trim();
+      if(termAct === 'no_participant') return String(before.client_name || snap.client_name || '—');
+      return String(snap.client_name || before.client_name || '—');
+    }
+    function schedTermEventInstructor(ev){
+      var snap = ev.after_snapshot || {};
+      return String(snap.instructors || '').trim() || '—';
+    }
+    function schedTermEventReason(ev){
+      var ctx = ev.client_context || {};
+      return String(ctx.reason || '').trim() || '—';
+    }
+    function schedResolveTermEventAuthorName(ev){
+      if(!ev) return 'Admin';
+      var id = String(ev.actor_id || '').trim();
+      if(id && sched.overrideAuthorById && sched.overrideAuthorById[id]) return sched.overrideAuthorById[id];
+      var box = window.__PORTAL_SUPABASE__;
+      var me = box && box.staff_profile;
+      if(me && String(me.id) === id) return schedFirstDisplayName(me.full_name, me.username);
+      return 'Admin';
+    }
     function renderSchedLogRows(){
       var dateElL = $('schedDate');
       var logIso = dateElL && dateElL.value ? dateElL.value : isoDateLocal(new Date());
-      return (sched.overrides||[]).map(function(o){
-        var t = o.created_at ? new Date(o.created_at).toLocaleString('en-GB',{ day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }) : '—';
-        var cb = o.created_by ? String(o.created_by).slice(0,8)+'…' : '—';
-        var cBtn = resolveAdminClientDrawerId(o.anchor_client_id);
-        var cLab = esc(String(o.anchor_client_id || '—'));
-        var cCell = cBtn ? '<button type="button" class="btn btn--ghost btn--sm" data-client="'+esc(cBtn)+'" style="max-width:100%;text-align:left;overflow-wrap:break-word">'+cLab+'</button>' : cLab;
-        var sPlain = String(o.anchor_staff_id || '').trim();
-        var sKey = sPlain.toLowerCase();
-        var sCell = sKey
-          ? '<button type="button" class="btn btn--ghost btn--sm" data-staff-roster="'+esc(sKey)+'" data-staff-session-iso="'+esc(logIso)+'" data-staff-label="'+esc(sPlain)+'" style="max-width:100%;text-align:left;overflow-wrap:break-word">'+esc(sPlain)+'</button>'
-          : '<span class="muted">—</span>';
-        return '<tr><td style="white-space:nowrap">'+esc(normTimeShort(o.anchor_start))+'</td>'+
-          '<td><span class="override-chip ' + esc(schedOverrideTypeClass(o.override_type, o)) + '">' + esc(schedOverrideLabelForRow(o)) + '</span></td>'+
-          '<td style="min-width:0">'+cCell+'</td>'+
-          '<td style="min-width:0">'+sCell+'</td>'+
-          '<td style="min-width:0;max-width:220px;overflow-wrap:break-word">'+esc(o.reason||'—')+'</td>'+
-          '<td class="muted">'+esc(cb)+'</td>'+
-          '<td class="muted" style="white-space:nowrap">'+esc(t)+'</td></tr>';
-      }).join('');
+      var merged = [];
+      (sched.overrides||[]).forEach(function(o){
+        merged.push({
+          created_at: o.created_at || '',
+          html: (function(){
+            var t = o.created_at ? new Date(o.created_at).toLocaleString('en-GB',{ day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }) : '—';
+            var cb = schedResolveOverrideAuthorName(o);
+            var cBtn = resolveAdminClientDrawerId(o.anchor_client_id);
+            var cLab = esc(String(o.anchor_client_id || '—'));
+            var cCell = cBtn ? '<button type="button" class="btn btn--ghost btn--sm" data-client="'+esc(cBtn)+'" style="max-width:100%;text-align:left;overflow-wrap:break-word">'+cLab+'</button>' : cLab;
+            var sPlain = String(o.anchor_staff_id || '').trim();
+            var sKey = sPlain.toLowerCase();
+            var sCell = sKey
+              ? '<button type="button" class="btn btn--ghost btn--sm" data-staff-roster="'+esc(sKey)+'" data-staff-session-iso="'+esc(logIso)+'" data-staff-label="'+esc(sPlain)+'" style="max-width:100%;text-align:left;overflow-wrap:break-word">'+esc(sPlain)+'</button>'
+              : '<span class="muted">—</span>';
+            return '<tr><td style="white-space:nowrap">'+esc(normTimeShort(o.anchor_start))+'</td>'+
+              '<td><span class="override-chip ' + esc(schedOverrideTypeClass(o.override_type, o)) + '">' + esc(schedOverrideLabelForRow(o)) + '</span></td>'+
+              '<td style="min-width:0">'+cCell+'</td>'+
+              '<td style="min-width:0">'+sCell+'</td>'+
+              '<td style="min-width:0;max-width:220px;overflow-wrap:break-word">'+esc(o.reason||'—')+'</td>'+
+              '<td class="muted">'+esc(cb)+'</td>'+
+              '<td class="muted" style="white-space:nowrap">'+esc(t)+'</td></tr>';
+          })()
+        });
+      });
+      (sched.termEvents||[]).forEach(function(ev){
+        merged.push({
+          created_at: ev.created_at || '',
+          html: (function(){
+            var t = ev.created_at ? new Date(ev.created_at).toLocaleString('en-GB',{ day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }) : '—';
+            var cb = schedResolveTermEventAuthorName(ev);
+            var paxName = schedTermEventParticipantName(ev);
+            var cBtn = resolveAdminClientDrawerIdFromDisplayName(paxName);
+            var cLab = esc(paxName);
+            var cCell = cBtn ? '<button type="button" class="btn btn--ghost btn--sm" data-client="'+esc(cBtn)+'" style="max-width:100%;text-align:left;overflow-wrap:break-word">'+cLab+'</button>' : cLab;
+            var sPlain = schedTermEventInstructor(ev);
+            var sKey = sPlain.toLowerCase();
+            var sCell = sPlain && sPlain !== '—'
+              ? '<button type="button" class="btn btn--ghost btn--sm" data-staff-roster="'+esc(sKey)+'" data-staff-session-iso="'+esc(logIso)+'" data-staff-label="'+esc(sPlain)+'" style="max-width:100%;text-align:left;overflow-wrap:break-word">'+esc(sPlain)+'</button>'
+              : '<span class="muted">—</span>';
+            return '<tr><td style="white-space:nowrap">'+esc(schedTermEventTimeLabel(ev))+'</td>'+
+              '<td><span class="override-chip ' + esc(schedTermEventTypeClass(ev)) + '">' + esc(schedTermEventLabel(ev)) + '</span></td>'+
+              '<td style="min-width:0">'+cCell+'</td>'+
+              '<td style="min-width:0">'+sCell+'</td>'+
+              '<td style="min-width:0;max-width:220px;overflow-wrap:break-word">'+esc(schedTermEventReason(ev))+'</td>'+
+              '<td class="muted">'+esc(cb)+'</td>'+
+              '<td class="muted" style="white-space:nowrap">'+esc(t)+'</td></tr>';
+          })()
+        });
+      });
+      merged.sort(function(a, b){ return String(b.created_at || '').localeCompare(String(a.created_at || '')); });
+      return merged.map(function(row){ return row.html; }).join('');
     }
     function applySchedTableFilters(){
       var v = ($('schedVenueFilter') && $('schedVenueFilter').value) || '';
@@ -12209,6 +12302,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       var tbody = document.querySelector('#schedBaseTable tbody');
       var client = getSchedSupabaseClient();
       sched.overrides = [];
+      sched.termEvents = [];
       if(!client){
         if(msg){
           var extra = 'Connecting to Supabase...';
@@ -12227,11 +12321,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           .select('id,created_at,created_by,session_date,anchor_start,anchor_end,anchor_staff_id,anchor_venue,anchor_client_id,override_type,reason,status,payload')
           .eq('session_date', iso)
           .order('created_at', { ascending: false });
+        var resTerm = await client.from('portal_roster_row_events')
+          .select('id,created_at,actor_id,action,scope,anchor_session_date,before_snapshot,after_snapshot,client_context')
+          .order('created_at', { ascending: false })
+          .limit(300);
         if(res.error){
           if(msg){ msg.textContent = 'Could not load overrides: '+String(res.error.message||res.error); msg.style.color = 'var(--danger)'; }
         }else{
           sched.overrides = res.data || [];
-          await schedLoadOverrideAuthors(client, sched.overrides);
+          if(resTerm.error){
+            if(msg && !sched.overrides.length){ msg.textContent = 'Could not load term roster log: '+String(resTerm.error.message||resTerm.error); msg.style.color = 'var(--danger)'; }
+          }else{
+            sched.termEvents = (resTerm.data || []).filter(function(ev){ return schedTermEventAppliesToDate(ev, iso); });
+          }
+          await schedLoadOverrideAuthors(client, sched.overrides, sched.termEvents);
           if(sched.lastMsg && msg){ msg.textContent = sched.lastMsg; msg.style.color = 'var(--success)'; sched.lastMsg = ''; }
         }
       }
@@ -12245,9 +12348,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       schedFillAddStaffSelect();
       var logBody = document.querySelector('#schedLogTable tbody');
       if(logBody){
-        logBody.innerHTML = (sched.overrides && sched.overrides.length)
+        var logCount = (sched.overrides && sched.overrides.length) + (sched.termEvents && sched.termEvents.length);
+        logBody.innerHTML = logCount
           ? renderSchedLogRows()
-          : '<tr><td colspan="7" class="muted">No overrides logged for this date.</td></tr>';
+          : '<tr><td colspan="7" class="muted">No changes logged for this date.</td></tr>';
       }
       renderSchedAddedSessions();
       applySchedTableFilters();
@@ -12363,7 +12467,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         schedAddSessionFormHtml()+
         '<div class="section"><div class="section-h"><h2>Base schedule</h2><p>Click a row for full context and to add or review an override. Instructor and participant names open profiles when linked in admin data.</p></div>'+
         '<div class="card"><div class="card-pad" style="overflow:auto;padding:0"><table class="tbl sched-tbl" id="schedBaseTable"><thead><tr><th>Participant</th><th>Service</th><th>Time</th><th>Notes</th><th>Venue</th><th>Instructor</th><th>Roster</th><th>Override</th><th>Action</th></tr></thead><tbody></tbody></table></div></div></div>'+
-        '<div class="section" style="margin-top:22px"><div class="section-h"><h2>Change log</h2><p>Overrides stored for the selected date (Supabase).</p></div>'+
+        '<div class="section" style="margin-top:22px"><div class="section-h"><h2>Change log</h2><p>Day overrides and term roster edits for the selected date (Supabase).</p></div>'+
         '<div class="card"><div class="card-pad" style="overflow:auto;padding:0"><table class="tbl sched-tbl" id="schedLogTable"><thead><tr><th>Time</th><th>Type</th><th>Participant</th><th>Instructor</th><th>Reason</th><th>Created by</th><th>Created</th></tr></thead><tbody></tbody></table></div></div></div>';
     }
     function viewScheduling(){
