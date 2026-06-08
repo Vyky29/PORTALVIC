@@ -29,13 +29,13 @@
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260607-roster-avatars" />
   <script src="/portal/admin-portal-staff-map.js?v=20260622-ghost-map"></script>
   <script src="/portal/portal_dm_roles.js?v=20260609-mgmt-identity"></script>
-  <script src="/portal/portal_chat_actor_identity.js?v=20260608-admin-lane-identity"></script>
+  <script src="/portal/portal_chat_actor_identity.js?v=20260608-staff-admin-lane"></script>
   <script src="/portal/portal_dm_icons.js?v=20260624-dm-icons"></script>
-  <script src="/portal/portal_dm_thread_avatar.js?v=20260608-admin-lane-identity"></script>
-  <script src="/portal/portal_cs_cliq_thread_header.js?v=20260608-admin-lane-identity"></script>
+  <script src="/portal/portal_dm_thread_avatar.js?v=20260608-staff-admin-lane"></script>
+  <script src="/portal/portal_cs_cliq_thread_header.js?v=20260608-staff-admin-lane"></script>
   <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260608-cliq-channels"></script>
   <script src="/portal/portal_dm_read_cursor.js?v=20260609-read-cursor"></script>
-  <script src="/portal/portal_cs_cliq_support_route.js?v=20260609-staff-ops-thread"></script>
+  <script src="/portal/portal_cs_cliq_support_route.js?v=20260608-staff-admin-lane"></script>
   <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260609-ops-ensure-thread"></script>
   <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260608-ceo-inbox-routing"></script>
   <script src="/portal/portal_cs_cliq_admin_channels.js?v=20260608-ceo-inbox-routing"></script>
@@ -78,8 +78,8 @@
   <link rel="icon" type="image/png" sizes="512x512" href="/portal/app-icon/icon-512.png" />
   <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260609-header-chat-bell" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
-  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260608-admin-lane-identity" />
-  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260608-admin-lane-identity" />
+  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260608-staff-admin-lane" />
+  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260608-staff-admin-lane" />
 </head>
 <body>
   <script>
@@ -21631,14 +21631,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       }
       var roleTag = '';
       var peerProf = item.peerProf || null;
-      var opsAdminPeer = portalAdminDmIsOpsAdminPeer(peerProf);
+      var opsAdminPeer = portalAdminDmIsOpsAdminPeer(peerProf) || !!item.useAdminLaneAvatar;
       var displayLabel = item.label;
-      if(
-        opsAdminPeer &&
+      if(opsAdminPeer){
+        displayLabel = 'Admin';
+      }else if(
         window.portalChatActorIdentity &&
-        typeof window.portalChatActorIdentity.inboxPeerLabel === 'function'
+        typeof window.portalChatActorIdentity.inboxPeerLabel === 'function' &&
+        peerProf
       ){
-        displayLabel = String(window.portalChatActorIdentity.inboxPeerLabel(peerProf) || 'Admin').trim() || 'Admin';
+        displayLabel = String(window.portalChatActorIdentity.inboxPeerLabel(peerProf) || displayLabel).trim() || displayLabel;
       }
       var avatarItem = {
         kind: item.kind,
@@ -21855,14 +21857,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           if(portalAdminDmIsPeerTeamChatThread(r, profBy)) return;
           var peer = portalDmPeerIdForThread(me, r);
           if(portalAdminDmCeoUsesSharedWorkerOpsInbox() && portalAdminDmIsWorkerRecipient(profBy[peer] || {})) return;
+          var peerProfPersonal = profBy[peer] || {};
+          var opsAdminPersonal = portalAdminDmIsOpsAdminPeer(peerProfPersonal);
           personalDmItems.push({
             kind: 'dm',
             id: String(r.id),
-            label: threadListLabel(r, peer),
+            label: opsAdminPersonal ? 'Admin' : threadListLabel(r, peer),
             when: r.updated_at,
             peerId: peer,
             workerId: peer,
-            peerProf: profBy[peer] || {},
+            peerProf: opsAdminPersonal ? null : peerProfPersonal,
+            useAdminLaneAvatar: opsAdminPersonal,
             isTeamChat: false,
             threadRow: r,
             inboxLane: 'personal'
@@ -21895,14 +21900,17 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           var id = String(r.id || '');
           var peer = ch === 'staff_lead' ? portalAdminDmWorkerPeerFromThread(r, profBy, me) : portalDmPeerIdForThread(me, r);
           var isTeamChat = ch === 'staff_lead' && portalAdminDmIsPeerTeamChatThread(r, profBy);
-          var label = isTeamChat ? portalAdminDmTeamChatLabel(r, names) : threadListLabel(r, peer);
+          var peerProfMerged = profBy[peer] || {};
+          var opsAdminMerged = portalAdminDmIsOpsAdminPeer(peerProfMerged);
+          var label = isTeamChat ? portalAdminDmTeamChatLabel(r, names) : (opsAdminMerged ? 'Admin' : threadListLabel(r, peer));
           merged.push({
             kind: 'dm',
             id: id,
             label: label,
             when: r.updated_at,
             peerId: peer,
-            peerProf: profBy[peer] || {},
+            peerProf: opsAdminMerged ? null : peerProfMerged,
+            useAdminLaneAvatar: opsAdminMerged,
             isTeamChat: isTeamChat,
             threadRow: r
           });
@@ -22228,6 +22236,10 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       window.__PORTAL_ADMIN_DM_UI.peerProf = peerProf;
       window.__PORTAL_ADMIN_DM_UI.opsAdminPeer = portalAdminDmIsOpsAdminPeer(peerProf);
       window.__PORTAL_ADMIN_DM_UI.managementOpsPeer = false;
+      if(window.__PORTAL_ADMIN_DM_UI.opsAdminPeer){
+        window.__PORTAL_ADMIN_DM_UI.peerLabel = 'Admin';
+        window.__PORTAL_ADMIN_DM_UI.peerProf = null;
+      }
       var peerRoleRaw = peerProf ? String(peerProf.app_role || '').toLowerCase() : '';
       window.__PORTAL_ADMIN_DM_UI.peerRole = portalAdminDmFormatPeerRole(peerProf && peerProf.app_role);
       window.__PORTAL_ADMIN_DM_UI.peerIsLeadOrManagement =

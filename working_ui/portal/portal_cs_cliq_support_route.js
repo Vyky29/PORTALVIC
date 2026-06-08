@@ -365,7 +365,8 @@
     });
   }
 
-  var MANAGEMENT_INBOX_LABEL = "Management";
+  /** Staff-facing label for the shared ops admin line (never a named person). */
+  var MANAGEMENT_INBOX_LABEL = "Admin";
 
   function staffOfficePeerFromThread(row, profBy, me) {
     if (!row) return "";

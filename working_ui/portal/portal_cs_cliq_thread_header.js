@@ -28,14 +28,12 @@
     label = String(label || "").trim();
     if (!label) return "Conversation";
     if (ui.groupId) return label;
-    if (ui.managementOpsPeer) {
+    if (ui.managementOpsPeer || ui.opsAdminPeer) {
       return (
         (global.portalCsCliqSupportRoute && global.portalCsCliqSupportRoute.MANAGEMENT_INBOX_LABEL) ||
-        label ||
-        "Management"
+        "Admin"
       );
     }
-    if (ui.opsAdminPeer) return "Admin";
     var prof = ui.peerProf || null;
     if (prof && global.portalChatActorIdentity && typeof global.portalChatActorIdentity.inboxPeerLabel === "function") {
       var inboxNm = String(global.portalChatActorIdentity.inboxPeerLabel(prof) || "").trim();

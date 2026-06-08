@@ -94,7 +94,7 @@
   <script src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
   <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260609-white-chat" />
-  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260608-admin-lane-identity" />
+  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260608-staff-admin-lane" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260610-topbar-colors" />
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260608-orbit-center" />
   <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260609-portal-white-chat" />
@@ -1057,17 +1057,17 @@
   <script src="/portal/portal_dm_voice.js?v=20260608-composer-cols"></script>
   <script src="/portal/portal_dm_composer_wa.js?v=20260608-composer-cols"></script>
   <script src="/portal/portal_dm_attachments.js?v=20260608-plus-sheet-icons"></script>
-  <script src="/portal/portal_chat_actor_identity.js?v=20260608-admin-lane-identity"></script>
+  <script src="/portal/portal_chat_actor_identity.js?v=20260608-staff-admin-lane"></script>
   <script src="/portal/portal_staff_chat_calls.js?v=20260609-chat-identity"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
   <script src="/portal/portal_dm_roles.js?v=20260609-mgmt-identity"></script>
-  <script src="/portal/portal_dm_thread_avatar.js?v=20260608-admin-lane-identity"></script>
+  <script src="/portal/portal_dm_thread_avatar.js?v=20260608-staff-admin-lane"></script>
   <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260622-chat-restore"></script>
-  <script src="/portal/portal_cs_cliq_support_route.js?v=20260609-staff-ops-thread"></script>
+  <script src="/portal/portal_cs_cliq_support_route.js?v=20260608-staff-admin-lane"></script>
   <script src="/portal/portal_cs_cliq_support.js?v=20260607-support-route"></script>
   <script src="/portal/portal_cs_cliq_announcements_hub.js?v=20260604-cliq-fix"></script>
   <script src="/portal/portal_cs_cliq_announcement_inbox.js?v=20260607-cliq-fix"></script>
-  <script src="/portal/portal_cs_cliq_thread_header.js?v=20260608-admin-lane-identity"></script>
+  <script src="/portal/portal_cs_cliq_thread_header.js?v=20260608-staff-admin-lane"></script>
   <script src="/portal/portal_cs_cliq_thread_files.js?v=20260604-cliq-files"></script>
   <script src="/portal/portal_admin_cs_cliq.js?v=20260608-inbox-fix"></script>
   <script src="/portal/portal_cs_cliq_workspace.js?v=20260604-cliq-inbox"></script>
@@ -6975,16 +6975,18 @@
       var mine = !!(me && aid && me.toLowerCase() === aid.toLowerCase());
       var sender = '';
       if(
-        window.portalChatActorIdentity &&
-        typeof window.portalChatActorIdentity.workerPreviewSender === 'function' &&
+        portalStaffIsRestrictedWorkerChat() &&
         prof &&
         (
           portalStaffProfileIsOfficePeer(prof) ||
-          (window.portalChatActorIdentity.isManagementAuthor &&
-            window.portalChatActorIdentity.isManagementAuthor(prof))
+          (
+            window.portalChatActorIdentity &&
+            window.portalChatActorIdentity.isManagementAuthor &&
+            window.portalChatActorIdentity.isManagementAuthor(prof)
+          )
         )
       ){
-        sender = window.portalChatActorIdentity.workerPreviewSender(prof, { mine: mine });
+        sender = 'Admin';
       }else if(mine){
         sender = 'You';
       }else{
@@ -7653,10 +7655,13 @@
           var route = window.portalCsCliqSupportRoute || {};
           var officePeer = route.staffOfficePeerFromThread ? route.staffOfficePeerFromThread(r, profBy, me) : '';
           var peer = officePeer || portalDmPeerIdForThread(me, r);
-          var mgmtLabel = route.MANAGEMENT_INBOX_LABEL || 'Management';
+          var mgmtLabel = route.MANAGEMENT_INBOX_LABEL || 'Admin';
           var peerProf = profBy[peer] || {};
           var label;
-          if(officePeer){
+          var restrictedWorker = portalStaffIsRestrictedWorkerChat(box && box.staff_profile);
+          if(restrictedWorker){
+            label = mgmtLabel;
+          }else if(officePeer){
             label = mgmtLabel;
           }else if(useStaffMgmtInbox){
             label = portalDmPeerDisplayLabel(peer, peerProf);
@@ -7676,8 +7681,8 @@
           var itemOpts = {
             lastSender: prev.sender,
             lastPreview: prev.preview,
-            peerProfile: officePeer ? null : peerProf,
-            useAdminLaneAvatar: !!officePeer
+            peerProfile: (restrictedWorker || officePeer) ? null : peerProf,
+            useAdminLaneAvatar: !!(restrictedWorker || officePeer)
           };
           if(useStaffMgmtInbox && window.portalLeadStaffChatDirectory){
             itemOpts.roleChip = window.portalLeadStaffChatDirectory.peerRoleChipLabel(peerProf);
@@ -7912,7 +7917,7 @@
       var peerLabel = "Conversation";
       var managementOpsPeer = false;
       var routeOpen = window.portalCsCliqSupportRoute || {};
-      var mgmtOpenLabel = routeOpen.MANAGEMENT_INBOX_LABEL || 'Management';
+      var mgmtOpenLabel = routeOpen.MANAGEMENT_INBOX_LABEL || 'Admin';
       var tres = await client.from("portal_staff_dm_threads").select("participant_a,participant_b").eq("id", tid).maybeSingle();
       if(!tres.error && tres.data){
         var openIds = [String(tres.data.participant_a||''), String(tres.data.participant_b||'')].filter(Boolean);
@@ -7926,13 +7931,18 @@
         var officePeerOpen = routeOpen.staffOfficePeerFromThread
           ? routeOpen.staffOfficePeerFromThread(tres.data, profByOpen, me)
           : '';
-        if(portalStaffIsRestrictedWorkerChat() && officePeerOpen){
-          peerId = officePeerOpen;
-          peerProf = profByOpen[officePeerOpen] || null;
+        var dmPeerOpen = portalDmPeerIdForThread(me, tres.data);
+        var dmPeerProfOpen = profByOpen[dmPeerOpen] || null;
+        if(
+          portalStaffIsRestrictedWorkerChat() &&
+          (officePeerOpen || portalStaffProfileIsOpsAdminPeer(dmPeerProfOpen))
+        ){
+          peerId = officePeerOpen || dmPeerOpen;
+          peerProf = profByOpen[peerId] || dmPeerProfOpen || null;
           peerLabel = mgmtOpenLabel;
           managementOpsPeer = true;
         }else{
-          peerId = portalDmPeerIdForThread(me, tres.data);
+          peerId = dmPeerOpen;
         }
       }
       if(peerId && !managementOpsPeer){
@@ -7954,17 +7964,23 @@
       window.__PORTAL_INTERNAL_CHAT_UI.managementOpsPeer = managementOpsPeer;
       var peerRole = 'Staff';
       if(managementOpsPeer){
-        peerRole = 'Management';
+        peerRole = 'Admin';
       }else if(peerId){
         var prRole = await client.from('staff_profiles').select('app_role,staff_role').eq('id', peerId).maybeSingle();
         if(!prRole.error && prRole.data){
           var appRole = String(prRole.data.app_role || '').toLowerCase();
           if(appRole === 'lead') peerRole = 'Lead';
-          else if(appRole === 'admin' || appRole === 'ceo') peerRole = 'Management';
+          else if(appRole === 'admin') peerRole = 'Admin';
+          else if(appRole === 'ceo') peerRole = 'CEO';
         }
       }
       if(window.portalCsCliqThreadHeader && typeof window.portalCsCliqThreadHeader.syncInternal === 'function'){
-        window.portalCsCliqThreadHeader.syncInternal(peerLabel, peerRole, peerProf, { managementOpsPeer: managementOpsPeer });
+        window.portalCsCliqThreadHeader.syncInternal(
+          peerLabel,
+          peerRole,
+          managementOpsPeer ? null : peerProf,
+          { managementOpsPeer: managementOpsPeer, opsAdminPeer: managementOpsPeer }
+        );
       }
       if(window.portalDmIcons && typeof window.portalDmIcons.upgrade === 'function'){
         var threadRoot = document.getElementById('internalChatThreadWrap');
