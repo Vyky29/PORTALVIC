@@ -67,11 +67,32 @@
     return t.split(/\s+/).filter(Boolean)[0] || t;
   }
 
+  function profileDisplayName(prof) {
+    if (!prof) return "";
+    var user = String(prof.username || "").trim().toLowerCase();
+    if (user === "javi") return "Javi";
+    if (user === "javier") return "Javier";
+    if (user === "victor") return "Victor";
+    if (user === "raul" || user === "raúl") return "Raúl";
+    return shortName(prof.full_name || prof.username || "");
+  }
+
+  function profilePeerLabel(prof) {
+    if (!prof) return "";
+    var user = String(prof.username || "").trim().toLowerCase();
+    var full = String(prof.full_name || prof.username || "").trim();
+    if (user === "javi") {
+      return full.replace(/^Javier\b/i, "Javi") || "Javi";
+    }
+    if (user === "javier") return full || "Javier";
+    return full;
+  }
+
   function portalChatActorDisplayName(prof) {
     prof = prof || profileRow();
     var sid = sessionUserId();
     if (prof && sid && String(prof.id) === sid) {
-      var nm = shortName(prof.full_name || prof.username);
+      var nm = profileDisplayName(prof);
       if (nm) return nm;
     }
     var email = box().session && box().session.user && box().session.user.email;
@@ -101,7 +122,7 @@
           .eq("id", uid)
           .maybeSingle();
         if (res.data) {
-          name = shortName(res.data.full_name || res.data.username) || name;
+          name = profileDisplayName(res.data) || name;
         }
       } catch (_e) {}
     }
@@ -128,10 +149,9 @@
   }
 
   function nameFromProfile(prof, id) {
-    return (
-      String((prof && (prof.full_name || prof.username)) || "").trim() ||
-      (id ? String(id).slice(0, 8) : "")
-    );
+    var label = profilePeerLabel(prof);
+    if (label) return label;
+    return id ? String(id).slice(0, 8) : "";
   }
 
   function portalDmThreadDisplayLabel(me, row, profBy) {
@@ -157,6 +177,8 @@
     sessionUserId: sessionUserId,
     actorId: portalChatActorId,
     displayName: portalChatActorDisplayName,
+    profileDisplayName: profileDisplayName,
+    profilePeerLabel: profilePeerLabel,
     ensureSessionProfile: portalChatEnsureSessionProfile,
     resolveCallerIdentity: portalChatResolveCallerIdentity,
     isSelfUserId: portalChatIsSelfUserId,

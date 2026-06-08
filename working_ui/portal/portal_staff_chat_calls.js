@@ -416,6 +416,12 @@
 
   function incomingCallerLabelFromProfile(prof) {
     if (!prof) return "Team chat";
+    if (
+      global.portalChatActorIdentity &&
+      typeof global.portalChatActorIdentity.profileDisplayName === "function"
+    ) {
+      return global.portalChatActorIdentity.profileDisplayName(prof) || "Team chat";
+    }
     var nm = shortDisplayName(prof.full_name || prof.username);
     return nm || "Team chat";
   }

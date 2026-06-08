@@ -133,6 +133,13 @@
 
   function peerLabelFromRow(row) {
     if (!row) return "";
+    if (
+      global.portalChatActorIdentity &&
+      typeof global.portalChatActorIdentity.profilePeerLabel === "function"
+    ) {
+      var label = global.portalChatActorIdentity.profilePeerLabel(row);
+      if (label) return label;
+    }
     return String(row.full_name || row.username || "").trim();
   }
 
@@ -152,7 +159,7 @@
   var STAFF_MGMT_CEO_SLOTS = [
     { slot: "raul", hint: "Raul" },
     { slot: "victor", hint: "Victor" },
-    { slot: "javier", hint: "Javier" },
+    { slot: "javi", hint: "Javi" },
   ];
 
   function normalizeStaffRoleKey(sr) {
@@ -615,7 +622,7 @@
       );
     }
     if (mode === "directors") {
-      return "No directors or admin found. Contact ops if you expected Raul, Javier, Victor, or admin here.";
+      return "No directors or admin found. Contact ops if you expected Raul, Javi, Victor, or admin here.";
     }
     if (mode === "staffmgmt") {
       return (
@@ -656,14 +663,7 @@
     var p = profileNameParts(row);
     if (p.first === "raul" || p.username === "raul") return "raul";
     if (p.first === "victor" || p.username === "victor") return "victor";
-    if (
-      p.first === "javier" ||
-      p.first === "javi" ||
-      p.username === "javi" ||
-      p.username === "javier"
-    ) {
-      return "javier";
-    }
+    if (p.username === "javi" || p.first === "javi") return "javi";
     return "";
   }
 

@@ -33,7 +33,7 @@
   <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260608-cliq-channels"></script>
   <script src="/portal/portal_cs_cliq_support_route.js?v=20260608-inbox-fix"></script>
   <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260609-staff-mgmt"></script>
-  <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260609-inbox-global-fix"></script>
+  <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260609-inbox-no-ops-lane"></script>
   <script src="/portal/portal_cs_cliq_admin_channels.js?v=20260609-channels-categories"></script>
   <script src="/portal/portal_cs_cliq_support.js?v=20260607-support-route"></script>
   <script src="/portal/portal_cs_cliq_announcements_hub.js?v=20260604-cliq-inbox"></script>
@@ -21014,6 +21014,20 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }else{
           btn.addEventListener('click', function(){
             window.__PORTAL_ADMIN_DM_UI = window.__PORTAL_ADMIN_DM_UI || {};
+            var useFlatInbox =
+              window.portalCsCliqAdminInbox &&
+              typeof window.portalCsCliqAdminInbox.shouldUseCategorizedInbox === 'function' &&
+              window.portalCsCliqAdminInbox.shouldUseCategorizedInbox();
+            var workerId = String(item.workerId || item.peerId || '').trim();
+            if(
+              useFlatInbox &&
+              workerId &&
+              portalAdminDmIsWorkerRecipient(item.peerProf || {})
+            ){
+              window.__PORTAL_ADMIN_DM_UI.inboxLane = 'mine';
+              void portalAdminDmOpenManagementWorker(workerId, 'mine');
+              return;
+            }
             window.__PORTAL_ADMIN_DM_UI.inboxLane = item.inboxLane || 'mine';
             void portalAdminDmOpenThread(item.id);
           });
@@ -21377,9 +21391,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(!tid) return;
       var me = portalAdminDmMe();
       var client = getSchedSupabaseClient();
+      var useFlatInbox =
+        window.portalCsCliqAdminInbox &&
+        typeof window.portalCsCliqAdminInbox.shouldUseCategorizedInbox === 'function' &&
+        window.portalCsCliqAdminInbox.shouldUseCategorizedInbox();
       var skipCanonical =
         String((window.__PORTAL_ADMIN_DM_UI || {}).inboxLane || '') === 'ops' ||
         (
+          !useFlatInbox &&
           window.portalCsCliqManagementInbox &&
           typeof window.portalCsCliqManagementInbox.shouldUseSplitInbox === 'function' &&
           window.portalCsCliqManagementInbox.shouldUseSplitInbox()
@@ -21415,6 +21434,32 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             }
           }
         }catch(_canonOpen){}
+      }
+      if(useFlatInbox && client && me){
+        try{
+          var tresMine = await client.from('portal_staff_dm_threads').select('participant_a,participant_b').eq('id', tid).maybeSingle();
+          if(tresMine && tresMine.data){
+            var pa0 = String(tresMine.data.participant_a || '');
+            var pb0 = String(tresMine.data.participant_b || '');
+            if(pa0 !== me && pb0 !== me){
+              var idsMine = [pa0, pb0].filter(Boolean);
+              var profMine = {};
+              if(idsMine.length){
+                var prMine = await client.from('staff_profiles').select('id,full_name,username,app_role,staff_role,is_active').in('id', idsMine);
+                if(!prMine.error && Array.isArray(prMine.data)){
+                  prMine.data.forEach(function(p){ if(p && p.id) profMine[String(p.id)] = p; });
+                }
+              }
+              var workerMine = portalAdminDmWorkerPeerFromThread(tresMine.data, profMine, me);
+              if(workerMine && portalAdminDmIsWorkerRecipient(profMine[workerMine] || {})){
+                window.__PORTAL_ADMIN_DM_UI = window.__PORTAL_ADMIN_DM_UI || {};
+                window.__PORTAL_ADMIN_DM_UI.inboxLane = 'mine';
+                await portalAdminDmOpenManagementWorker(workerMine, 'mine');
+                return;
+              }
+            }
+          }
+        }catch(_flatMine){}
       }
       window.__PORTAL_ADMIN_DM_UI = window.__PORTAL_ADMIN_DM_UI || {};
       window.__PORTAL_ADMIN_DM_UI.groupId = '';

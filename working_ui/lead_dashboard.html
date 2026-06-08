@@ -5951,15 +5951,33 @@
         if(composerRoot) window.portalDmIcons.upgrade(composerRoot);
       }
     }
+    function portalLeadChatMeId(box){
+      box = box || window.__PORTAL_SUPABASE__ || {};
+      if(window.portalChatActorIdentity && typeof window.portalChatActorIdentity.actorId === 'function'){
+        return window.portalChatActorIdentity.actorId();
+      }
+      return String(
+        (box.session && box.session.user && box.session.user.id) ||
+        (box.staff_profile && box.staff_profile.id) ||
+        ''
+      ).trim();
+    }
     function portalDmPeerDisplayLabel(peerId, profRow){
       var pid = String(peerId || '').trim();
       var row = profRow || {};
       if(portalInternalChatOfficeRestricted() && portalStaffProfileIsOfficePeer(row)){
         return 'Admin';
       }
+      if(window.portalChatActorIdentity && typeof window.portalChatActorIdentity.profilePeerLabel === 'function'){
+        var nm = window.portalChatActorIdentity.profilePeerLabel(row);
+        if(nm) return nm;
+      }
       return ((row.full_name || row.username || '').trim() || pid.slice(0, 8));
     }
     function portalDmShortDisplayName(profRow){
+      if(window.portalChatActorIdentity && typeof window.portalChatActorIdentity.profileDisplayName === 'function'){
+        return window.portalChatActorIdentity.profileDisplayName(profRow);
+      }
       var t = String((profRow && (profRow.full_name || profRow.username)) || '').trim();
       if(!t) return '';
       var parts = t.split(/\s+/);
