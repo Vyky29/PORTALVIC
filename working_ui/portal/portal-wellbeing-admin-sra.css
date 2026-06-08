@@ -70,6 +70,24 @@ body.portal-wellbeing-admin-mode .section .pdf-parenthetical:not(.portal-wb-hse-
   display: none;
 }
 
+body.portal-wellbeing-admin-mode .portal-wb-advanced-toggle {
+  display: none !important;
+}
+
+body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap {
+  display: block !important;
+}
+
+body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap[hidden] {
+  display: block !important;
+}
+
+body.portal-wellbeing-admin-mode .portal-wb-advanced-wrap .section {
+  margin-top: 0;
+  padding-top: 16px;
+  padding-bottom: 16px;
+}
+
 body.portal-wellbeing-admin-mode .section.portal-wb-domain-all-clear .table-scroll {
   display: none;
 }
