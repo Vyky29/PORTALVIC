@@ -46,13 +46,13 @@
       }
     } catch (_rpc) {}
     try {
-      var res = await client
-        .from("staff_profiles")
-        .select(
-          "id,full_name,username,app_role,staff_role,dashboard_route,is_active,avatar_url,auth_session_generation,nationality"
-        )
-        .eq("id", sid)
-        .maybeSingle();
+      var selectCols =
+        "id,full_name,username,app_role,staff_role,dashboard_route,is_active,auth_session_generation,nationality";
+      var res = await client.from("staff_profiles").select(selectCols).eq("id", sid).maybeSingle();
+      if (res.error && /dashboard_route|auth_session_generation|nationality/i.test(String(res.error.message || res.error))) {
+        selectCols = "id,full_name,username,app_role,staff_role,is_active";
+        res = await client.from("staff_profiles").select(selectCols).eq("id", sid).maybeSingle();
+      }
       if (!res.error && res.data && res.data.id) {
         box().staff_profile = res.data;
         return res.data;

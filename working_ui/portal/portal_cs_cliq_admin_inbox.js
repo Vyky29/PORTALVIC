@@ -68,7 +68,7 @@
     if (!client) return [];
     var res = await client
       .from("staff_profiles")
-      .select("id,full_name,username,app_role,staff_role,dashboard_route,is_active,avatar_url")
+      .select("id,full_name,username,app_role,staff_role,dashboard_route,is_active")
       .eq("app_role", "lead")
       .or("is_active.is.null,is_active.eq.true")
       .order("full_name", { ascending: true })

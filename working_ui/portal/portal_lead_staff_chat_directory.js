@@ -523,6 +523,7 @@
 
     if (!hasDirectory || inThread) {
       if (staffWrap) {
+        blurFocusWithin(staffWrap);
         staffWrap.hidden = true;
         staffWrap.setAttribute("aria-hidden", "true");
       }
@@ -564,12 +565,7 @@
     if (hasDirectory && !inThread && dirMode) {
       var box = global.__PORTAL_SUPABASE__;
       var client = box && box.client;
-      var me = String(
-        (box && box.staff_profile && box.staff_profile.id) ||
-          (box && box.session && box.session.user && box.session.user.id) ||
-          ""
-      ).trim();
-      void loadDirectoryRows(client, me, dirMode);
+      void loadDirectoryRows(client, chatMeId(box), dirMode);
     }
   }
 
@@ -791,7 +787,7 @@
       return global[cacheKey];
     }
 
-    var selectCols = "id,full_name,username,app_role,staff_role,dashboard_route,is_active,avatar_url";
+    var selectCols = "id,full_name,username,app_role,staff_role,dashboard_route,is_active";
     var rows = [];
     var from = 0;
     var chunk = 800;
@@ -808,13 +804,7 @@
         if (res.error) {
           var errMsg = String(res.error.message || res.error || "Load failed");
           if (selectCols.indexOf("dashboard_route") !== -1 && /dashboard_route/i.test(errMsg)) {
-            selectCols = "id,full_name,username,app_role,staff_role,is_active,avatar_url";
-            from = 0;
-            rows = [];
-            return pullPage();
-          }
-          if (selectCols.indexOf("avatar_url") !== -1 && /avatar_url/i.test(errMsg)) {
-            selectCols = selectCols.replace(/,?avatar_url/g, "");
+            selectCols = "id,full_name,username,app_role,staff_role,is_active";
             from = 0;
             rows = [];
             return pullPage();
@@ -909,11 +899,7 @@
     peerId = String(peerId || "").trim();
     if (!peerId) return;
     var box = global.__PORTAL_SUPABASE__;
-    var me = String(
-      (box && box.staff_profile && box.staff_profile.id) ||
-        (box && box.session && box.session.user && box.session.user.id) ||
-        ""
-    ).trim();
+    var me = chatMeId(box);
     if (!me || peerId.toLowerCase() === me.toLowerCase()) return;
 
     var errTop = document.getElementById("internalChatTopErr");
@@ -1007,11 +993,7 @@
 
     var box = global.__PORTAL_SUPABASE__;
     var client = box && box.client;
-    var me = String(
-      (box && box.staff_profile && box.staff_profile.id) ||
-        (box && box.session && box.session.user && box.session.user.id) ||
-        ""
-    ).trim();
+    var me = chatMeId(box);
     var mode = getDirectoryMode(box && box.staff_profile);
 
     if (!mode) {
@@ -1084,11 +1066,8 @@
 
     var box = global.__PORTAL_SUPABASE__;
     var client = box && box.client;
-    var me = String(
-      (box && box.staff_profile && box.staff_profile.id) ||
-        (box && box.session && box.session.user && box.session.user.id) ||
-        ""
-    ).trim();
+    var me = chatMeId(box);
+    var mode = getDirectoryMode(box && box.staff_profile);
 
     host.hidden = false;
     host.setAttribute("aria-hidden", "false");
@@ -1182,9 +1161,30 @@
     };
   }
 
+  function chatMeId(box) {
+    box = box || global.__PORTAL_SUPABASE__ || {};
+    if (global.portalChatActorIdentity && typeof global.portalChatActorIdentity.actorId === "function") {
+      return global.portalChatActorIdentity.actorId();
+    }
+    return String(
+      (box.session && box.session.user && box.session.user.id) ||
+        (box.staff_profile && box.staff_profile.id) ||
+        ""
+    ).trim();
+  }
+
+  function blurFocusWithin(el) {
+    if (!el) return;
+    try {
+      var active = document.activeElement;
+      if (active && el.contains(active) && typeof active.blur === "function") active.blur();
+    } catch (_blur) {}
+  }
+
   async function loadProfilesForDmThreads(client, rows, me) {
-    me = String(me || "").trim();
+    me = String(me || chatMeId()).trim();
     rows = Array.isArray(rows) ? rows : [];
+    var uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     var ids = [];
     rows.forEach(function (r) {
       if (!r) return;
@@ -1192,21 +1192,14 @@
       if (r.participant_b) ids.push(String(r.participant_b));
     });
     ids = ids.filter(function (id, idx, arr) {
-      return id && id.toLowerCase() !== me.toLowerCase() && arr.indexOf(id) === idx;
+      return id && uuidRe.test(id) && id.toLowerCase() !== me.toLowerCase() && arr.indexOf(id) === idx;
     });
 
     var profBy = {};
     if (!client || !ids.length) return profBy;
 
-    var selectCols = "id,full_name,username,app_role,staff_role,avatar_url";
-    async function pull(cols) {
-      return client.from("staff_profiles").select(cols).in("id", ids);
-    }
-    var res = await pull(selectCols);
-    if (res.error && /avatar_url/i.test(String(res.error.message || res.error))) {
-      selectCols = selectCols.replace(/,?avatar_url/g, "");
-      res = await pull(selectCols);
-    }
+    var selectCols = "id,full_name,username,app_role,staff_role";
+    var res = await client.from("staff_profiles").select(selectCols).in("id", ids);
     if (!res.error && Array.isArray(res.data)) {
       res.data.forEach(function (p) {
         if (p && p.id) profBy[String(p.id)] = p;
@@ -1225,17 +1218,6 @@
           if (!profBy[id]) profBy[id] = profileRowFromDirectoryEntry(dr);
         });
       } catch (_dir) {}
-    }
-
-    missing = ids.filter(function (id) {
-      return !profBy[id];
-    });
-    for (var i = 0; i < missing.length; i++) {
-      var pid = missing[i];
-      try {
-        var one = await client.from("staff_profiles").select(selectCols).eq("id", pid).maybeSingle();
-        if (!one.error && one.data && one.data.id) profBy[String(one.data.id)] = one.data;
-      } catch (_one) {}
     }
 
     return profBy;
