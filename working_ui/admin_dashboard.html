@@ -30,14 +30,17 @@
   <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260609-achievement-videos" />
   <script src="/portal/admin-portal-staff-map.js?v=20260622-ghost-map"></script>
   <script src="/portal/portal_dm_roles.js?v=20260609-mgmt-identity"></script>
-  <script src="/portal/portal_chat_actor_identity.js?v=20260608-victor-dm-identity"></script>
+  <script src="/portal/portal_ops_admin_display.js?v=20260629-ceo-admin-split"></script>
+  <script src="/portal/portal_chat_actor_identity.js?v=20260629-ceo-admin-split"></script>
   <script src="/portal/portal_dm_icons.js?v=20260624-dm-icons"></script>
   <script src="/portal/portal_dm_thread_avatar.js?v=20260608-staff-admin-lane"></script>
   <script src="/portal/portal_cs_cliq_thread_header.js?v=20260608-staff-admin-lane"></script>
   <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260608-inbox-staff-roster-all"></script>
   <script src="/portal/portal_dm_read_cursor.js?v=20260609-read-cursor"></script>
   <script src="/portal/portal_cs_cliq_support_route.js?v=20260608-ops-thread-rpc"></script>
-  <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260627-raul-dan-dm"></script>
+  <script src="/portal/portal_ops_admin_display.js?v=20260629-ceo-admin-split"></script>
+  <script src="/portal/portal_ceo_god_mode_admin.js?v=20260629-ceo-admin-split"></script>
+  <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260629-ceo-admin-split"></script>
   <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260608-inbox-staff-roster-all"></script>
   <script src="/portal/portal_cs_cliq_admin_channels.js?v=20260608-ceo-dm-send-fix"></script>
   <script src="/portal/portal_cs_cliq_support.js?v=20260607-support-route"></script>
@@ -22420,7 +22423,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           personalDmItems.push({
             kind: 'dm',
             id: String(r.id),
-            label: opsAdminPersonal ? 'Admin' : threadListLabel(r, peer),
+            label: opsAdminPersonal ? (global.portalOpsAdminDisplay && global.portalOpsAdminDisplay.label ? global.portalOpsAdminDisplay.label : 'Sevitha (Admin)') : threadListLabel(r, peer),
             when: r.updated_at,
             peerId: peer,
             workerId: portalAdminDmIsWorkerRecipient(peerProfPersonal) ? peer : '',
@@ -23231,6 +23234,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           tid = await portalAdminDmNormalizeCeoExecSendThreadId(client, me, window.__PORTAL_ADMIN_DM_UI || ui, tid);
           window.__PORTAL_ADMIN_DM_UI = window.__PORTAL_ADMIN_DM_UI || {};
           window.__PORTAL_ADMIN_DM_UI.threadId = tid;
+          if(
+            window.portalCeoGodModeAdmin &&
+            typeof window.portalCeoGodModeAdmin.insertDmMessage === 'function' &&
+            window.portalCeoGodModeAdmin.shouldSendAsOpsAdmin(window.__PORTAL_ADMIN_DM_UI)
+          ){
+            await window.portalCeoGodModeAdmin.insertDmMessage(client, tid, body, 'text');
+          }else{
           var ins = await client.rpc('portal_staff_dm_insert_message', {
             p_thread_id: tid,
             p_body: body,
@@ -23240,6 +23250,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             ins = await client.from('portal_staff_dm_messages').insert([{ thread_id: tid, author_id: me, body: body, message_type: 'text' }]).select('id');
           }
           if(ins.error) throw ins.error;
+          }
         }
         if(inp) inp.value = '';
         await portalAdminDmLoadMessages();
@@ -27830,6 +27841,13 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         window.portalInferStaffKey = portalInferStaffKey;
         try { await bootstrapDashboardSupabase({ page: "admin" }); } catch (bootErr) {
           console.debug("[portal] admin bootstrap:", bootErr);
+        }
+        if (
+          window.portalCeoGodModeAdmin &&
+          typeof window.portalCeoGodModeAdmin.applyAfterBootstrap === "function" &&
+          window.portalCeoGodModeAdmin.applyAfterBootstrap()
+        ) {
+          return;
         }
         const profile = window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile;
         if (typeof window.portalSyncAdminTopbarProfile === "function") {

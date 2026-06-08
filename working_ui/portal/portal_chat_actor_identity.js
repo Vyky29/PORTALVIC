@@ -166,10 +166,15 @@
     return ar === "staff" || ar === "lead";
   }
 
-  /** Inbox / thread list: workers & leads = first name only; ops admin = generic Admin; directors keep familiar labels. */
+  /** Inbox / thread list: workers & leads = first name only; ops admin = Sevitha (Admin); directors keep familiar labels. */
   function profileInboxLabel(prof) {
     prof = prof || {};
-    if (isOpsAdminAuthor(prof)) return "Admin";
+    if (isOpsAdminAuthor(prof)) {
+      if (global.portalOpsAdminDisplay && typeof global.portalOpsAdminDisplay.managementLabel === "function") {
+        return global.portalOpsAdminDisplay.managementLabel(prof);
+      }
+      return "Sevitha (Admin)";
+    }
     if (isWorkerInboxPeer(prof)) {
       return shortName(prof.full_name || prof.username || "") || profileDisplayName(prof) || "";
     }
@@ -235,7 +240,12 @@
     if (isDirectorAuthor(authorProf)) {
       return (profileDisplayName(authorProf) || "Director") + " (Director)";
     }
-    if (isOpsAdminAuthor(authorProf)) return "Admin";
+    if (isOpsAdminAuthor(authorProf)) {
+      if (global.portalOpsAdminDisplay && typeof global.portalOpsAdminDisplay.managementLabel === "function") {
+        return global.portalOpsAdminDisplay.managementLabel(authorProf);
+      }
+      return "Sevitha (Admin)";
+    }
     if (String(authorProf.app_role || "").toLowerCase() === "admin") {
       var label = profilePeerLabel(authorProf) || profileDisplayName(authorProf);
       return label ? label + " (Admin)" : "Admin";
@@ -277,7 +287,12 @@
     }
 
     if (ch === "ceo_exec") {
-      if (isOpsAdminAuthor(author)) return "Admin";
+      if (isOpsAdminAuthor(author)) {
+        if (global.portalOpsAdminDisplay && typeof global.portalOpsAdminDisplay.managementLabel === "function") {
+          return global.portalOpsAdminDisplay.managementLabel(author);
+        }
+        return "Sevitha (Admin)";
+      }
       if (isDirectorAuthor(author)) return profileDisplayName(author) || "CEO";
       if (String(author.app_role || "").toLowerCase() === "ceo") {
         return profileDisplayName(author) || "CEO";

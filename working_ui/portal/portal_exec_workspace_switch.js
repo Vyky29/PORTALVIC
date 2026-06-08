@@ -1,5 +1,5 @@
 /**
- * Victor, Raúl, Javi — switch Staff / Lead / Admin from Quick menu (or admin nav).
+ * Victor, Raúl, Javi — switch Staff / Lead / CEO from Quick menu (or admin nav).
  */
 import { portalInferStaffKey } from "./auth-handler.js";
 
@@ -12,6 +12,8 @@ const ICONS = {
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>',
   admin:
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>',
+  ceo:
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg>',
 };
 
 function publishedUrl(filename, overrideKey) {
@@ -32,7 +34,7 @@ export function portalCanExecWorkspaceSwitch(profile, authEmail) {
   return EXEC_KEYS.has(key);
 }
 
-/** @param {"staff"|"lead"|"admin"} currentMode */
+/** @param {"staff"|"lead"|"ceo"|"admin"} currentMode */
 export function portalExecWorkspaceSwitchTargets(currentMode) {
   const mode = String(currentMode || "").trim().toLowerCase();
   const all = [
@@ -49,10 +51,10 @@ export function portalExecWorkspaceSwitchTargets(currentMode) {
       url: publishedUrl("lead_dashboard.html", "PORTAL_LEAD_DASHBOARD_URL"),
     },
     {
-      mode: "admin",
-      label: "Admin Portal",
-      sub: "Day operations, feedback overview and admin tools",
-      url: publishedUrl("admin_dashboard.html", "PORTAL_ADMIN_DASHBOARD_URL"),
+      mode: "ceo",
+      label: "CEO Portal",
+      sub: "Directors chat, teams, channels and executive tools",
+      url: publishedUrl("ceo_dashboard.html", "PORTAL_CEO_DASHBOARD_URL"),
     },
   ];
   return all.filter((t) => t.mode !== mode);
@@ -87,9 +89,10 @@ export function portalMountExecWorkspaceSwitch(host, currentMode, profile, authE
     btn.type = "button";
     btn.className = "menu-btn menu-btn--exec-workspace menu-btn--exec-workspace-" + t.mode;
     btn.setAttribute("data-portal-exec-workspace", t.mode);
+    const iconKey = t.mode === "ceo" ? "ceo" : t.mode;
     btn.innerHTML =
       '<div class="menu-btn-icon" aria-hidden="true">' +
-      (ICONS[t.mode] || ICONS.staff) +
+      (ICONS[iconKey] || ICONS.staff) +
       '</div><div class="menu-btn-copy"><strong>' +
       t.label +
       '</strong><span class="menu-btn-sub">' +

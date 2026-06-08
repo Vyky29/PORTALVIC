@@ -15,10 +15,13 @@
   <link rel="stylesheet" href="/portal/portal_cs_cliq_hub.css?v=20260608-inbox-fix" />
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
   <script src="/portal/portal_dm_roles.js?v=20260609-mgmt-identity"></script>
-  <script src="/portal/portal_chat_actor_identity.js?v=20260608-victor-dm-identity"></script>
+  <script src="/portal/portal_ops_admin_display.js?v=20260629-ceo-admin-split"></script>
+  <script src="/portal/portal_ceo_god_mode_admin.js?v=20260629-ceo-admin-split"></script>
+  <script src="/portal/portal_chat_actor_identity.js?v=20260629-ceo-admin-split"></script>
   <script src="/portal/portal_dm_thread_avatar.js?v=20260621-cliq-embed"></script>
   <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260622-chat-restore"></script>
   <script src="/portal/portal_cs_cliq_support_route.js?v=20260608-inbox-fix"></script>
+  <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260629-ceo-admin-split"></script>
   <script src="/portal/portal_cs_cliq_support.js?v=20260607-support-route"></script>
   <script src="/portal/portal_cs_cliq_announcements_hub.js?v=20260604-cliq-inbox"></script>
   <script src="/portal/portal_cs_cliq_announcement_inbox.js?v=20260604-ceo-channels"></script>
@@ -29,7 +32,7 @@
   <script src="/portal/portal_cs_cliq_compose_sheet.js?v=20260604-cliq-fix"></script>
   <script src="/portal/portal_cs_cliq_files_hub.js?v=20260604-cliq-files"></script>
   <script src="/portal/portal_cs_cliq_meetings_hub.js?v=20260622-meetings-centre"></script>
-  <script src="/portal/portal_executive_dm.js?v=20260609-mgmt-identity"></script>
+  <script src="/portal/portal_executive_dm.js?v=20260629-ceo-admin-split"></script>
   <script src="/portal/portal_cs_cliq_embed.js?v=20260607-cliq-fix"></script>
   <script src="/portal/portal_dm_executive_cliq.js?v=20260622-chat-restore"></script>
   <title>clubSENsational Portal — CEO</title>
@@ -1238,7 +1241,7 @@
         </nav>
         <p class="ceo-nav-kicker" style="margin-top:18px">Open workspace</p>
         <div class="ceo-dash-switch" role="group" aria-label="Open another dashboard">
-          <a class="ceo-dash-switch__opt" id="portalCeoNavAdmin" href="/admin_dashboard.html">Admin</a>
+          <a class="ceo-dash-switch__opt" id="portalCeoNavGodAdmin" href="admin_dashboard.html?portalGodAdmin=1#view=cs_cliq">Sevitha (Admin) chat</a>
           <a class="ceo-dash-switch__opt" id="portalCeoNavStaff" href="/staff_dashboard.html">Staff</a>
         </div>
       </div>
@@ -1280,6 +1283,7 @@
             CS Cliq workspace with chats, channels, calls, files, and meetings — the same premium tools as Admin and director staff portals.
           </p>
           <button type="button" class="ceo-ops-team-btn" id="ceoOpenCsCliqBtn" style="margin-bottom:14px">Open CS Cliq workspace</button>
+          <a class="ceo-ops-team-btn" id="ceoOpenGodAdminBtn" href="admin_dashboard.html?portalGodAdmin=1#view=cs_cliq" style="display:inline-flex;margin-bottom:14px;text-decoration:none">Open Sevitha (Admin) ops chat</a>
           <p class="ceo-panel__lead" style="margin-top:0;font-size:0.92rem">Quick lines to directors and the group chat:</p>
           <div id="ceoDmDirectButtons" class="ceo-dm-direct">
             <p class="ceo-dm-direct__empty">Loading directors…</p>

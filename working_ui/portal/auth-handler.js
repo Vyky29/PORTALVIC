@@ -190,6 +190,20 @@ export function portalInferEffectiveRole(profile, authEmail) {
   return PORTAL_USERNAME_ROLE_OVERRIDES[staffKey] || appRole || staffRole || "staff";
 }
 
+export function portalIsOperationsAdminUser(profile, authEmail) {
+  if (!profile) return false;
+  const key = portalInferStaffKey(profile, authEmail);
+  return key === "sevitha" || key === "info";
+}
+
+/**
+ * Full admin dashboard (day ops, roster, etc.) — Sevitha (operations admin) only.
+ * CEOs use ceo_dashboard.html; god-mode ops chat uses admin_dashboard?portalGodAdmin=1.
+ */
+export function portalCanAccessAdminDashboardFull(profile, authEmail) {
+  return portalIsOperationsAdminUser(profile, authEmail);
+}
+
 /**
  * Admin dashboard: **Admin**, **Manager** (`staff_role`), **CEO** (e.g. Victor), and username override `admin`.
  * Plain **staff** / **lead** (without manager/admin/CEO) are redirected to their own shells.
