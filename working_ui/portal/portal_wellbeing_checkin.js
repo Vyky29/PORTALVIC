@@ -604,10 +604,34 @@
  var msg = String((err && err.message) || err || "");
  if (/row-level security/i.test(msg)) {
  return new Error(
- "Could not save your check-in. If leadership has already opened your 1-to-1, ask them to complete it first — or ask an admin to apply the wellbeing RLS patch in Supabase."
+ "Could not save your check-in yet. Please try again in a moment — if it keeps failing, ask an admin to run database/fix_wellbeing_staff_submit.sql in Supabase."
+ );
+ }
+ if (/portal_wellbeing_staff_upsert_checkin/i.test(msg) && /does not exist/i.test(msg)) {
+ return new Error(
+ "Check-in save is not fully set up in the database yet. Ask an admin to run database/fix_wellbeing_staff_submit.sql in Supabase."
  );
  }
  return err instanceof Error ? err : new Error(msg || "Could not save check-in.");
+ }
+
+ function mapCheckinRpcRow(data) {
+ if (!data || typeof data !== "object") return null;
+ return {
+ id: data.id,
+ status: data.status,
+ has_concerns: data.has_concerns,
+ term_key: data.term_key,
+ created_at: data.created_at,
+ };
+ }
+
+ async function submitCheckinViaRpc(client, row) {
+ var rpc = await client.rpc("portal_wellbeing_staff_upsert_checkin", { p_row: row });
+ if (rpc.error) throw portalWellbeingSubmitError(rpc.error);
+ var mapped = mapCheckinRpcRow(rpc.data);
+ if (!mapped || !mapped.id) throw new Error("Check-in saved but response was incomplete.");
+ return mapped;
  }
 
  async function submitCheckin(payload) {
@@ -618,8 +642,17 @@
  .upsert(row, { onConflict: "staff_user_id,term_key" })
  .select("id,status,has_concerns,term_key,created_at")
  .single();
- if (res.error) throw portalWellbeingSubmitError(res.error);
- return { ctx: ctx, row: res.data };
+ if (!res.error) return { ctx: ctx, row: res.data };
+ var msg = String((res.error && res.error.message) || "");
+ if (/row-level security/i.test(msg)) {
+ try {
+ var viaRpc = await submitCheckinViaRpc(ctx.client, row);
+ return { ctx: ctx, row: viaRpc };
+ } catch (rpcErr) {
+ throw portalWellbeingSubmitError(rpcErr);
+ }
+ }
+ throw portalWellbeingSubmitError(res.error);
  }
 
  async function fetchCheckinForAdmin(checkinId) {
