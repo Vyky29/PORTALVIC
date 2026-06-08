@@ -46,6 +46,8 @@
   var incomingRowRetryMax = 8;
   var incomingHandledIds = Object.create(null);
   var threadParticipantCache = Object.create(null);
+  var callParticipantCache = Object.create(null);
+  var outboundCallActive = false;
 
   function esc(s) {
     return String(s == null ? "" : s)
@@ -386,6 +388,7 @@
 
   function clearIncomingThreadCache() {
     threadParticipantCache = Object.create(null);
+    callParticipantCache = Object.create(null);
   }
 
   async function isIncomingCallDmForMe(row) {
@@ -393,7 +396,7 @@
     if (!me || !row) return false;
     var tid = String(row.thread_id || "").trim();
     if (!tid) return false;
-    var cached = threadParticipantCache[tid];
+    var cached = callParticipantCache[tid];
     if (cached && Date.now() - cached.ts < 120000) {
       return cached.a === me || cached.b === me;
     }
@@ -409,7 +412,7 @@
       if (res.error || !res.data) return false;
       var a = String(res.data.participant_a || "");
       var b = String(res.data.participant_b || "");
-      threadParticipantCache[tid] = { a: a, b: b, ts: Date.now(), sharedInbox: false };
+      callParticipantCache[tid] = { a: a, b: b, ts: Date.now() };
       return a === me || b === me;
     } catch (_callDm) {
       return false;
@@ -1821,6 +1824,7 @@
     if (shell) shell.hidden = true;
     document.body.classList.remove("portal-inapp-call-open");
     callState.activeSession = null;
+    outboundCallActive = false;
     void postCallEndedMessage(session);
   }
 
@@ -2273,6 +2277,7 @@
     var ui = resolveCallUi();
     var bar = document.getElementById(ui.barId);
     if (bar) bar.setAttribute("aria-busy", "true");
+    outboundCallActive = true;
     try {
       var payload = await sendCallInvite({
         client: ctx.client,
@@ -2291,6 +2296,7 @@
       if (errEl) errEl.textContent = String((e && e.message) || e || "Could not start call");
     } finally {
       if (bar) bar.removeAttribute("aria-busy");
+      if (!callState.activeSession) outboundCallActive = false;
     }
   }
 
@@ -3226,6 +3232,9 @@
     isIncomingCallInviteLive: isIncomingCallInviteLive,
     incomingCallActive: function () {
       return !!incomingState.active;
+    },
+    outboundCallActive: function () {
+      return !!outboundCallActive || !!callState.activeSession;
     },
     scanThreadForIncomingCall: function (lastMsg) {
       processIncomingCallRow(lastMsg, 0);

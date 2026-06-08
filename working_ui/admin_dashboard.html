@@ -5,7 +5,7 @@
   <!-- Web Push: window.__PORTAL_VAPID_PUBLIC_KEY__ must match Supabase VAPID_PUBLIC_KEY (see portal-vapid-public.js). -->
   <meta charset="UTF-8" />
   <script src="/portal/portal-vapid-public.js?v=20260601-vapid"></script>
-  <script src="/portal/portal_web_push_support.js?v=20260609-call-peer-only"></script>
+  <script src="/portal/portal_web_push_support.js?v=20260610-call-toast-fix"></script>
   <script src="/portal/portal_brand.js?v=20260520-brand"></script>
   <link rel="stylesheet" href="/portal/admin-sessions-hub.css?v=20260607-fb-table-center" />
   <link rel="stylesheet" href="/portal/admin-roster-spreadsheet-reference.css?v=20260613-hours-all-week" />
@@ -328,9 +328,9 @@
   <!-- Large portal datasets load on demand (portalAdminLoadScriptSet) so Day operations opens without freezing. -->
   <script src="/portal-shared-js/admin_heavy_scripts_loader.js?v=20260602-cap-roster"></script>
   <script src="/portal-shared-js/admin_late_submission_queue.js?v=20260521-late-perf"></script>
-  <script src="/portal/portal_admin_alerts_bell.js?v=20260610-bell-absents"></script>
+  <script src="/portal/portal_admin_alerts_bell.js?v=20260610-call-toast-fix"></script>
   <script src="/portal/portal_admin_dayops_badges.js?v=20260605-dayops-badges-per-admin"></script>
-  <script src="/portal/portal-admin-web-push.js?v=20260609-call-peer-only"></script>
+  <script src="/portal/portal-admin-web-push.js?v=20260610-call-toast-fix"></script>
 
   <script>
   (function(){
@@ -20367,8 +20367,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     function portalAdminDmHasUnread(){
       return !!(window.__PORTAL_ADMIN_DM_UNREAD || window.__PORTAL_ADMIN_CEO_DM_UNREAD || window.__PORTAL_ADMIN_CEO_GROUP_DM_UNREAD);
     }
-    /** No toast while actively inside a chat thread (avoids "Chat · Raul" when messaging Roberto). */
+    /** No toast while in a thread or on a call (avoids "Chat · Raul" when calling Roberto). */
     function portalAdminDmShouldSuppressIncomingChatNotify(){
+      if(window.portalStaffChatCalls){
+        if(typeof window.portalStaffChatCalls.incomingCallActive === 'function' && window.portalStaffChatCalls.incomingCallActive()) return true;
+        if(typeof window.portalStaffChatCalls.outboundCallActive === 'function' && window.portalStaffChatCalls.outboundCallActive()) return true;
+      }
       if(!window.__PORTAL_ADMIN_DM_OPEN && !window.__PORTAL_CS_CLIQ_ACTIVE) return false;
       var ui = window.__PORTAL_ADMIN_DM_UI || {};
       return String(ui.panel || '') === 'thread' && !!(ui.threadId || ui.groupId);
@@ -20559,6 +20563,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         if(!portalAdminDmShouldSuppressIncomingChatNotify()){
           portalAdminDmNotifyIncomingChat();
         }
+      }
+      if(opts.suppressNotify && nowUnread && typeof window.portalAdminSyncChatBellAlerts === 'function'){
+        try{ window.portalAdminSyncChatBellAlerts({ silent: true }); }catch(_bell){}
       }
       try{
         var hintCount = (window.__PORTAL_ADMIN_DM_UNREAD_HINTS__ || []).length;
@@ -20953,12 +20960,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                   window.portalStaffChatCalls.onDmMessageInsert(row);
                 }
                 if(portalAdminDmMessageCountsAsUnread(row)){
-                  void portalAdminDmSyncIncomingAttention().then(function(){
+                  void portalAdminDmSyncIncomingAttention({ suppressNotify: true }).then(function(){
                     portalAdminDmNotifyIncomingMessageRow(row);
                   });
                 }
                 if(row && typeof window.portalAdminBellOnStaffDmInsert === 'function'){
-                  void window.portalAdminBellOnStaffDmInsert(row);
+                  var bodyBell = String(row.body || '');
+                  var isCallBell = bodyBell.indexOf('[[portal-staff-call:') >= 0 || bodyBell.indexOf('[[portal-staff-call-end:') >= 0;
+                  if(!isCallBell) void window.portalAdminBellOnStaffDmInsert(row);
                 }
                 if(!window.__PORTAL_ADMIN_DM_OPEN) return;
                 var ui = window.__PORTAL_ADMIN_DM_UI || {};
@@ -21000,7 +21009,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
                   window.portalStaffChatCalls.onGroupMessageInsert(row);
                 }
                 if(portalAdminDmMessageCountsAsUnread(row)){
-                  void portalAdminDmSyncIncomingAttention().then(function(){
+                  void portalAdminDmSyncIncomingAttention({ suppressNotify: true }).then(function(){
                     portalAdminDmNotifyIncomingMessageRow(row);
                   });
                 }
@@ -21039,7 +21048,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         void portalAdminDmPollRecentIncomingCalls();
         if(!window.__PORTAL_ADMIN_DM_POLL_INT){
           window.__PORTAL_ADMIN_DM_POLL_INT = setInterval(function(){
-            try{ void portalAdminDmSyncIncomingAttention(); }catch(_e){}
+            try{ void portalAdminDmSyncIncomingAttention({ suppressNotify: true }); }catch(_e){}
           }, 28000);
         }
         if(!window.__PORTAL_ADMIN_CALL_POLL_INT){
@@ -27862,8 +27871,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       document.body.appendChild(s);
     })();
   </script>
-  <script src="/portal/portal_staff_chat_calls.js?v=20260609-call-peer-only"></script>
-  <script src="/portal/portal_incoming_call_push.js?v=20260609-call-peer-only"></script>
+  <script src="/portal/portal_staff_chat_calls.js?v=20260610-call-toast-fix"></script>
+  <script src="/portal/portal_incoming_call_push.js?v=20260610-call-toast-fix"></script>
   <script src="/portal/portal_floating_internal_chat.js?v=20260609-header-chat-bell"></script>
   <script>
     (function(){

@@ -431,8 +431,18 @@
     return pushed;
   }
 
+  function isPortalCallMessageRow(row) {
+    if (!row) return false;
+    var body = String(row.body || "");
+    return (
+      body.indexOf("[[portal-staff-call:") >= 0 ||
+      body.indexOf("[[portal-staff-call-end:") >= 0
+    );
+  }
+
   async function onStaffDmInsert(row) {
     if (!row || !row.id || !row.thread_id) return false;
+    if (isPortalCallMessageRow(row)) return false;
     var me = "";
     try {
       me = String(
@@ -448,7 +458,7 @@
     var role = String((box.staff_profile && box.staff_profile.app_role) || "").toLowerCase();
     if (role !== "admin" && role !== "ceo") return false;
     if (typeof global.portalAdminDmSyncIncomingAttention === "function") {
-      await global.portalAdminDmSyncIncomingAttention();
+      await global.portalAdminDmSyncIncomingAttention({ suppressNotify: true });
     } else if (typeof global.portalSyncFloatingChatUnreadFromMenuBtn === "function") {
       global.portalSyncFloatingChatUnreadFromMenuBtn();
     }

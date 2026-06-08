@@ -86,7 +86,7 @@
     }
     try {
       if (typeof global.portalAdminDmSyncIncomingAttention === "function") {
-        void global.portalAdminDmSyncIncomingAttention();
+        void global.portalAdminDmSyncIncomingAttention({ suppressNotify: true });
       }
       if (typeof global.portalSyncFloatingChatUnreadFromMenuBtn === "function") {
         global.portalSyncFloatingChatUnreadFromMenuBtn();
