@@ -500,6 +500,66 @@
   color: #3730a3;
 }
 
+#csCliqRoot .portal-dm-thread-avatar--photo,
+#csCliqRoot .portal-dm-thread-avatar.portal-roster-avatar--has-photo {
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+}
+
+#csCliqRoot .portal-dm-thread-avatar__img,
+#csCliqRoot .portal-dm-thread-avatar--photo img,
+#csCliqRoot .portal-dm-thread-avatar.portal-roster-avatar--has-photo img,
+#csCliqRoot .portal-roster-avatar__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-section__label {
+  margin: 14px 0 8px;
+  padding: 0 4px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #64748b;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-section__label:first-child {
+  margin-top: 4px;
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-section__empty {
+  margin: 0 0 10px;
+  padding: 0 4px;
+  font-size: 13px;
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-ghost-btn {
+  border-style: dashed;
+  border-color: rgba(124, 58, 237, 0.28);
+  background: linear-gradient(180deg, #fdfbff, #fff);
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-ghost-btn:hover {
+  border-color: rgba(124, 58, 237, 0.42);
+  background: linear-gradient(180deg, #f8f2ff, #fff);
+}
+
+#csCliqRoot .portal-cs-cliq-inbox-ghost-btn__hint {
+  font-style: normal;
+  color: #7c3aed;
+  font-size: 12px;
+}
+
 #csCliqRoot .portal-dm-thread-item--unread {
   border-color: rgba(45, 132, 179, 0.35);
   background: linear-gradient(180deg, #f4fbff, #fff);

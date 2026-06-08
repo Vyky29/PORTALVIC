@@ -32,6 +32,7 @@
   <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260608-cliq-channels"></script>
   <script src="/portal/portal_cs_cliq_support_route.js?v=20260608-inbox-fix"></script>
   <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260609-staff-mgmt"></script>
+  <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260609-admin-inbox"></script>
   <script src="/portal/portal_cs_cliq_support.js?v=20260607-support-route"></script>
   <script src="/portal/portal_cs_cliq_announcements_hub.js?v=20260604-cliq-inbox"></script>
   <script src="/portal/portal_cs_cliq_announcement_inbox.js?v=20260622-announcements"></script>
@@ -73,7 +74,7 @@
   <link rel="stylesheet" href="/portal/admin-dashboard.css?v=20260605-admin-mobile-landscape" />
   <link rel="stylesheet" href="/portal/admin-shell-layout.css?v=20260604-shell" />
   <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260608-inbox-fix" />
-  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260608-cliq-channels" />
+  <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260609-admin-inbox" />
 </head>
 <body>
   <script>
@@ -21180,6 +21181,25 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         try{ if(b.when) tb = new Date(b.when).getTime(); }catch(_e2){}
         return tb - ta;
       });
+      var useCategorizedInbox =
+        window.portalCsCliqAdminInbox &&
+        typeof window.portalCsCliqAdminInbox.shouldUseCategorizedInbox === 'function' &&
+        window.portalCsCliqAdminInbox.shouldUseCategorizedInbox() &&
+        typeof window.portalCsCliqAdminInbox.renderAdminInbox === 'function';
+      if(useCategorizedInbox){
+        portalGhostTeleportConfigureOnce();
+        await window.portalCsCliqAdminInbox.renderAdminInbox(host, {
+          client: client,
+          me: me,
+          ch: ch,
+          esc: esc,
+          merged: merged,
+          splitSections: splitSections,
+          orderFixedGroups: portalAdminDmOrderFixedGroups,
+          renderItem: portalAdminDmRenderThreadListItem
+        });
+        return;
+      }
       if(!merged.length && !(useSplitInbox && splitSections && (splitSections.opsItems || []).length)){
         host.innerHTML = '<p class="muted" style="margin:0;font-size:13px;min-width:0;overflow-wrap:break-word">'+
           (ch === 'ceo_exec'
