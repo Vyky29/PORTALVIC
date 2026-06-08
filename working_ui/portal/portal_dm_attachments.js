@@ -398,6 +398,14 @@
     }
     onPick(photoInp);
     onPick(docInp);
+
+    if (global.portalDmIcons && typeof global.portalDmIcons.upgrade === "function") {
+      var composerRoot =
+        chrome.shell && chrome.shell.closest
+          ? chrome.shell.closest(".portal-cs-cliq-composer")
+          : null;
+      if (composerRoot) global.portalDmIcons.upgrade(composerRoot);
+    }
   }
 
   function bindWorkerInternalChatAttachments() {

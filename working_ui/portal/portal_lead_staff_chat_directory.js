@@ -1076,7 +1076,13 @@
       host.innerHTML = "";
       if (!rows.length) {
         var noun =
-          mode === "leads" ? "leads" : mode === "csteam" ? "CS Team members" : "staff";
+          mode === "leads"
+            ? "leads"
+            : mode === "staffmgmt"
+              ? "management contacts"
+              : mode === "csteam"
+                ? "CS Team members"
+                : "staff";
         host.innerHTML =
           '<p class="portal-dm-lead-empty">No ' + esc(noun) + " match ?" + esc(q) + "?.</p>";
         return;
@@ -1173,6 +1179,7 @@
         delete global[CACHE_KEY_CSTEAM];
         delete global[CACHE_KEY_LEADS];
         delete global[CACHE_KEY_DIRECTORS];
+        delete global[CACHE_KEY_STAFFMGMT];
       } catch (_e) {}
     },
   };

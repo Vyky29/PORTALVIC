@@ -1061,7 +1061,7 @@
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260616-michelle-only"></script>
   <script src="/portal/portal_dm_icons.js?v=20260605-wa-composer"></script>
   <script src="/portal/portal_dm_voice.js?v=20260605-wa-composer"></script>
-  <script src="/portal/portal_dm_attachments.js?v=20260605-wa-composer"></script>
+  <script src="/portal/portal_dm_attachments.js?v=20260608-staff-mgmt-polish"></script>
   <script src="/portal/portal_staff_chat_calls.js?v=20260604-call-thread"></script>
   <script src="/portal/portal_internal_dm_directory.js?v=20260523-dm-dir2"></script>
   <script src="/portal/portal_dm_roles.js?v=20260622-chat-restore"></script>
@@ -1081,7 +1081,7 @@
   <script src="/portal/portal_executive_dm.js?v=20260622-chat-restore"></script>
   <script src="/portal/portal_cs_cliq_embed.js?v=20260607-cliq-fix"></script>
   <script src="/portal/portal_dm_executive_cliq.js?v=20260622-chat-restore"></script>
-  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260605-staff-mgmt-chat"></script>
+  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260608-staff-mgmt-polish"></script>
   <script src="/portal/portal_incoming_call_push.js?v=20260622-incoming-call"></script>
   <script src="/portal/portal_sheet_back.js?v=20260607-sheet-back"></script>
   <script>
@@ -7332,6 +7332,60 @@
       var b = String(row && row.participant_b || "");
       return a === me ? b : a;
     }
+    function portalStaffUsesMgmtInbox(prof){
+      prof = prof || (window.__PORTAL_SUPABASE__ && window.__PORTAL_SUPABASE__.staff_profile) || {};
+      return portalStaffIsRestrictedWorkerChat(prof) &&
+        window.portalLeadStaffChatDirectory &&
+        typeof window.portalLeadStaffChatDirectory.getDirectoryMode === 'function' &&
+        window.portalLeadStaffChatDirectory.getDirectoryMode(prof) === 'staffmgmt';
+    }
+    async function portalStaffAppendMgmtGroupInboxRow(client, me, listHost){
+      if(!client || !me || !listHost) return false;
+      if(!window.portalLeadStaffChatDirectory || typeof window.portalLeadStaffChatDirectory.loadStaffMgmtDirectoryRows !== 'function') return false;
+      try{
+        var mgmtRows = await window.portalLeadStaffChatDirectory.loadStaffMgmtDirectoryRows(client, me);
+        var groupEntry = (mgmtRows || []).find(function(row0){ return row0 && row0.kind === 'group' && row0.groupId; });
+        if(!groupEntry) return false;
+        var gWhen = '';
+        var gPrev = { sender: '', preview: '' };
+        var gUnread = 0;
+        var gmsgRes = await client.from('portal_ceo_group_message').select('author_id,body,created_at,message_type').eq('group_id', groupEntry.groupId).order('created_at', { ascending: false }).limit(1);
+        if(!gmsgRes.error && Array.isArray(gmsgRes.data) && gmsgRes.data[0]){
+          var gLast = gmsgRes.data[0];
+          try{
+            if(gLast.created_at) gWhen = new Date(gLast.created_at).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+          }catch(_gw){}
+          var gAuthors = {};
+          if(gLast.author_id){
+            var gAp = await client.from('staff_profiles').select('id,full_name,username,app_role,staff_role,is_active').eq('id', gLast.author_id).maybeSingle();
+            if(!gAp.error && gAp.data) gAuthors[String(gLast.author_id)] = gAp.data;
+          }
+          gPrev = portalStaffDmPreviewFromMessage(gLast, gAuthors);
+        }
+        var gActive = String((window.__PORTAL_INTERNAL_CHAT_UI && window.__PORTAL_INTERNAL_CHAT_UI.groupId) || '') === String(groupEntry.groupId);
+        var gBtn = document.createElement('button');
+        gBtn.type = 'button';
+        gBtn.className = 'portal-dm-thread-item' + (gActive ? ' portal-dm-thread-item--active' : '');
+        gBtn.setAttribute('data-dm-group', String(groupEntry.groupId));
+        gBtn.innerHTML = portalStaffDmThreadListItemHtml(groupEntry.label, gWhen, gUnread, {
+          lastSender: gPrev.sender,
+          lastPreview: gPrev.preview,
+          roleChip: 'Group',
+          roleChipClass: 'portal-dm-role-chip--group',
+          attachAdminChip: true
+        });
+        gBtn.addEventListener('click', function(){
+          window.__PORTAL_INTERNAL_CHAT_UI.threadId = null;
+          window.__PORTAL_INTERNAL_CHAT_UI.groupId = String(groupEntry.groupId);
+          window.__PORTAL_INTERNAL_CHAT_UI.peerLabel = groupEntry.label;
+          void window.portalRenderInternalChatSheet();
+        });
+        listHost.appendChild(gBtn);
+        return true;
+      }catch(_grpRow){
+        return false;
+      }
+    }
     window.portalRenderInternalChatSheet = async function portalRenderInternalChatSheet(){
       portalBindInternalChatCloseControls();
       var listHost = document.getElementById("internalChatListWrap");
@@ -7441,36 +7495,39 @@
           });
         }
         if(!rows.length){
-          var staffEmptyMsg;
-          if(portalInternalChatOfficeRestricted()){
-            staffEmptyMsg = staffSearchQ
-              ? 'No chats match your search. Check the suggestions below or open the <strong>Directors</strong> tab.'
-              : 'No messages yet. Conversations with directors and admin appear here. Open the <strong>Directors</strong> tab to start a chat.';
-          }else if(portalStaffIsLeadUser()){
-            var leadQ = leadSearchQ || staffSearchQ;
-            staffEmptyMsg = leadQ
-              ? 'No chats match your search. Check the team matches below or open the <strong>Staff</strong> tab.'
-              : 'No conversations yet. Search above to message a colleague, or open the <strong>Staff</strong> tab.';
-          }else{
-            staffEmptyMsg = 'No conversations yet. When someone messages you, it appears here.';
-          }
-          listHost.innerHTML = "<p class=\"portal-dm-inbox-empty\">"+staffEmptyMsg+"</p>";
-          if(staffHasDirectory && window.portalLeadStaffChatDirectory){
-            window.portalLeadStaffChatDirectory.syncInboxChrome({ inThread: false });
-            if(window.portalLeadStaffChatDirectory.getInboxTab() === 'directory'){
-              void window.portalLeadStaffChatDirectory.renderPeerDirectory();
-            }else if(staffSearchQ){
-              void window.portalLeadStaffChatDirectory.renderStaffSuggestions(staffSearchQ);
+          var useStaffMgmtInboxEarly = portalStaffUsesMgmtInbox(box && box.staff_profile);
+          if(!useStaffMgmtInboxEarly){
+            var staffEmptyMsg;
+            if(portalInternalChatOfficeRestricted()){
+              staffEmptyMsg = staffSearchQ
+                ? 'No chats match your search. Check the suggestions below or open the <strong>Directors</strong> tab.'
+                : 'No messages yet. Conversations with directors and admin appear here. Open the <strong>Directors</strong> tab to start a chat.';
+            }else if(portalStaffIsLeadUser()){
+              var leadQ = leadSearchQ || staffSearchQ;
+              staffEmptyMsg = leadQ
+                ? 'No chats match your search. Check the team matches below or open the <strong>Staff</strong> tab.'
+                : 'No conversations yet. Search above to message a colleague, or open the <strong>Staff</strong> tab.';
+            }else{
+              staffEmptyMsg = 'No conversations yet. When someone messages you, it appears here.';
             }
-          }else if(portalStaffIsLeadUser() && window.portalLeadStaffChatDirectory){
-            window.portalLeadStaffChatDirectory.syncInboxChrome({ isLead: true, inThread: false });
-            if(window.portalLeadStaffChatDirectory.getInboxTab() === 'directory'){
-              void window.portalLeadStaffChatDirectory.renderPeerDirectory();
-            }else if(leadSearchQ){
-              void window.portalLeadStaffChatDirectory.renderStaffSuggestions(leadSearchQ);
+            listHost.innerHTML = "<p class=\"portal-dm-inbox-empty\">"+staffEmptyMsg+"</p>";
+            if(staffHasDirectory && window.portalLeadStaffChatDirectory){
+              window.portalLeadStaffChatDirectory.syncInboxChrome({ inThread: false });
+              if(window.portalLeadStaffChatDirectory.getInboxTab() === 'directory'){
+                void window.portalLeadStaffChatDirectory.renderPeerDirectory();
+              }else if(staffSearchQ){
+                void window.portalLeadStaffChatDirectory.renderStaffSuggestions(staffSearchQ);
+              }
+            }else if(portalStaffIsLeadUser() && window.portalLeadStaffChatDirectory){
+              window.portalLeadStaffChatDirectory.syncInboxChrome({ isLead: true, inThread: false });
+              if(window.portalLeadStaffChatDirectory.getInboxTab() === 'directory'){
+                void window.portalLeadStaffChatDirectory.renderPeerDirectory();
+              }else if(leadSearchQ){
+                void window.portalLeadStaffChatDirectory.renderStaffSuggestions(leadSearchQ);
+              }
             }
+            return;
           }
-          return;
         }
         var rowIds = rows.map(function(r){ return String(r.id || ""); }).filter(Boolean);
         var msgRows = [];
@@ -7491,8 +7548,10 @@
           rows = await window.portalCsCliqSupportRoute.collapseWorkerOfficeInboxRows(client, rows, profBy, me);
         }
         if(!rows.length){
-          listHost.innerHTML = "<p class=\"portal-dm-inbox-empty\">No conversations yet. When someone replies to your support request, it appears here.</p>";
-          return;
+          if(!portalStaffUsesMgmtInbox(box && box.staff_profile)){
+            listHost.innerHTML = "<p class=\"portal-dm-inbox-empty\">No conversations yet. When someone replies to your support request, it appears here.</p>";
+            return;
+          }
         }
         var lastAuthorProfBy = {};
         var lastAuthorIds = [];
@@ -7509,10 +7568,7 @@
           }
         }
         listHost.innerHTML = "";
-        var useStaffMgmtInbox = portalStaffIsRestrictedWorkerChat(box && box.staff_profile) &&
-          window.portalLeadStaffChatDirectory &&
-          typeof window.portalLeadStaffChatDirectory.getDirectoryMode === 'function' &&
-          window.portalLeadStaffChatDirectory.getDirectoryMode(box && box.staff_profile) === 'staffmgmt';
+        var useStaffMgmtInbox = portalStaffUsesMgmtInbox(box && box.staff_profile);
         rows.forEach(function(r){
           var id = String(r.id || "");
           var route = window.portalCsCliqSupportRoute || {};
@@ -7555,48 +7611,11 @@
           });
           listHost.appendChild(btn);
         });
-        if(useStaffMgmtInbox && window.portalLeadStaffChatDirectory && typeof window.portalLeadStaffChatDirectory.loadStaffMgmtDirectoryRows === 'function'){
-          try{
-            var mgmtRows = await window.portalLeadStaffChatDirectory.loadStaffMgmtDirectoryRows(client, me);
-            var groupEntry = (mgmtRows || []).find(function(row0){ return row0 && row0.kind === 'group' && row0.groupId; });
-            if(groupEntry){
-              var gWhen = '';
-              var gPrev = { sender: '', preview: '' };
-              var gUnread = 0;
-              var gmsgRes = await client.from('portal_ceo_group_message').select('author_id,body,created_at,message_type').eq('group_id', groupEntry.groupId).order('created_at', { ascending: false }).limit(1);
-              if(!gmsgRes.error && Array.isArray(gmsgRes.data) && gmsgRes.data[0]){
-                var gLast = gmsgRes.data[0];
-                try{
-                  if(gLast.created_at) gWhen = new Date(gLast.created_at).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-                }catch(_gw){}
-                var gAuthors = {};
-                if(gLast.author_id){
-                  var gAp = await client.from('staff_profiles').select('id,full_name,username,app_role,staff_role,is_active').eq('id', gLast.author_id).maybeSingle();
-                  if(!gAp.error && gAp.data) gAuthors[String(gLast.author_id)] = gAp.data;
-                }
-                gPrev = portalStaffDmPreviewFromMessage(gLast, gAuthors);
-              }
-              var gActive = String((window.__PORTAL_INTERNAL_CHAT_UI && window.__PORTAL_INTERNAL_CHAT_UI.groupId) || '') === String(groupEntry.groupId);
-              var gBtn = document.createElement('button');
-              gBtn.type = 'button';
-              gBtn.className = 'portal-dm-thread-item' + (gActive ? ' portal-dm-thread-item--active' : '');
-              gBtn.setAttribute('data-dm-group', String(groupEntry.groupId));
-              gBtn.innerHTML = portalStaffDmThreadListItemHtml(groupEntry.label, gWhen, gUnread, {
-                lastSender: gPrev.sender,
-                lastPreview: gPrev.preview,
-                roleChip: 'Group',
-                roleChipClass: 'portal-dm-role-chip--group',
-                attachAdminChip: true
-              });
-              gBtn.addEventListener('click', function(){
-                window.__PORTAL_INTERNAL_CHAT_UI.threadId = null;
-                window.__PORTAL_INTERNAL_CHAT_UI.groupId = String(groupEntry.groupId);
-                window.__PORTAL_INTERNAL_CHAT_UI.peerLabel = groupEntry.label;
-                void window.portalRenderInternalChatSheet();
-              });
-              listHost.appendChild(gBtn);
-            }
-          }catch(_grpInbox){}
+        if(useStaffMgmtInbox){
+          await portalStaffAppendMgmtGroupInboxRow(client, me, listHost);
+        }
+        if(useStaffMgmtInbox && !listHost.children.length){
+          listHost.innerHTML = "<p class=\"portal-dm-inbox-empty\">No messages yet. Open the <strong>Directors</strong> tab to message admin, a director, or the group.</p>";
         }
         if(typeof window.portalStaffDmSyncUnreadChrome === "function"){
           void window.portalStaffDmSyncUnreadChrome();
