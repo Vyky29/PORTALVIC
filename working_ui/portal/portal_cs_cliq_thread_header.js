@@ -35,6 +35,7 @@
         "Management"
       );
     }
+    if (ui.opsAdminPeer) return "Admin";
     var prof = ui.peerProf || null;
     if (prof && global.portalChatActorIdentity && typeof global.portalChatActorIdentity.inboxPeerLabel === "function") {
       var inboxNm = String(global.portalChatActorIdentity.inboxPeerLabel(prof) || "").trim();
@@ -82,10 +83,10 @@
     var item = {
       kind: ui.groupId ? "group" : "dm",
       label: label,
-      peerProfile: ui.managementOpsPeer ? null : prof,
-      username: ui.managementOpsPeer ? "" : username,
+      peerProfile: ui.managementOpsPeer || ui.opsAdminPeer ? null : prof,
+      username: ui.managementOpsPeer || ui.opsAdminPeer ? "" : username,
       isTeamChat: !!ui.isTeamChat,
-      useAdminLaneAvatar: !!ui.managementOpsPeer,
+      useAdminLaneAvatar: !!(ui.managementOpsPeer || ui.opsAdminPeer),
     };
     if (global.portalDmThreadAvatar && typeof global.portalDmThreadAvatar.innerHtml === "function") {
       if (

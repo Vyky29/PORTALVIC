@@ -166,9 +166,10 @@
     return ar === "staff" || ar === "lead";
   }
 
-  /** Inbox / thread list: workers & leads = first name only; directors/admin keep familiar labels. */
+  /** Inbox / thread list: workers & leads = first name only; ops admin = generic Admin; directors keep familiar labels. */
   function profileInboxLabel(prof) {
     prof = prof || {};
+    if (isOpsAdminAuthor(prof)) return "Admin";
     if (isWorkerInboxPeer(prof)) {
       return shortName(prof.full_name || prof.username || "") || profileDisplayName(prof) || "";
     }
@@ -245,11 +246,7 @@
     if (isDirectorAuthor(authorProf)) {
       return (profileDisplayName(authorProf) || "Director") + " (Director)";
     }
-    if (isOpsAdminAuthor(authorProf)) {
-      var nm = profileDisplayName(authorProf);
-      if (normKey(authorProf.username) === "sevitha" || normKey(nm) === "sevitha") return "Admin (Sevitha)";
-      return nm ? "Admin (" + nm + ")" : "Admin";
-    }
+    if (isOpsAdminAuthor(authorProf)) return "Admin";
     if (String(authorProf.app_role || "").toLowerCase() === "admin") {
       var label = profilePeerLabel(authorProf) || profileDisplayName(authorProf);
       return label ? label + " (Admin)" : "Admin";
@@ -263,7 +260,7 @@
   /**
    * Line above a DM bubble — same thread, label depends on author + viewer + lane.
    * Staff/lead: Admin (Victor Director) | Admin | Javi (Admin)
-   * Management board: Victor (Director) | Admin (Sevitha) | …
+   * Management board: Victor (Director) | Admin | …
    */
   function portalChatManagementMsgAuthorChip(opts) {
     opts = opts || {};
@@ -377,6 +374,8 @@
     workerFacingCallerLabel: portalChatWorkerFacingCallerLabel,
     workerPreviewSender: portalChatWorkerPreviewSender,
     isManagementAuthor: isManagementAuthor,
+    isOpsAdminAuthor: isOpsAdminAuthor,
+    isOpsAdminInboxPeer: isOpsAdminAuthor,
     isDirectorAuthor: isDirectorAuthor,
     isOpsAdminAuthor: isOpsAdminAuthor,
   };
