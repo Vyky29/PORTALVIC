@@ -221,6 +221,13 @@
   box-shadow:0 1px 0 rgba(255,255,255,.8);
   overflow:hidden;
 }
+#internalChatSheet.sheet--portal-chat-inbox .portal-dm-lead-inbox-chrome--tabs-only{
+  gap:0;
+  padding:8px 14px 6px;
+}
+#internalChatSheet.sheet--portal-chat-inbox #internalChatLeadStaffSuggestions{
+  display:none !important;
+}
 #internalChatSheet.sheet--portal-chat-inbox .portal-dm-lead-search-row,
 #internalChatSheet.sheet--portal-chat-inbox .portal-dm-inbox-nav{
   position:relative;

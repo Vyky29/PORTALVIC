@@ -96,7 +96,7 @@
   <link rel="stylesheet" href="/portal/lead-dashboard.css?v=20260622-lead-chat-thread" />
   <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260605-wa-composer" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260610-topbar-colors" />
-  <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260622-lead-csteam-ui" />
+  <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260608-no-chat-search" />
   <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260608-inbox-fix" />
   <link rel="stylesheet" href="/portal/portal_cs_cliq_embed.css?v=20260608-inbox-fix" />
   <link rel="stylesheet" href="/portal/portal_cs_cliq_workspace.css?v=20260604-cliq-fix" />
@@ -856,13 +856,7 @@
     </div>
     <div class="sheet-body portal-dm-wrap portal-dm-sheet-body" style="min-width:0">
       <p id="internalChatTopErr" class="portal-dm-top-err muted" hidden></p>
-      <div id="internalChatLeadInboxChrome" class="portal-dm-lead-inbox-chrome" hidden aria-hidden="true">
-        <div class="portal-dm-lead-search-row">
-          <label class="topbar-sr-only" for="internalChatLeadSearch">Search chats or staff</label>
-          <span class="portal-dm-lead-search-icon" aria-hidden="true">⌕</span>
-          <input type="search" id="internalChatLeadSearch" class="portal-dm-lead-search-input" placeholder="Search CS Team or chats…" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" />
-          <button type="button" id="internalChatLeadSearchClear" class="portal-dm-lead-search-clear" hidden aria-label="Clear search">×</button>
-        </div>
+      <div id="internalChatLeadInboxChrome" class="portal-dm-lead-inbox-chrome portal-dm-lead-inbox-chrome--tabs-only" hidden aria-hidden="true">
         <div id="internalChatLeadInboxNav" class="portal-dm-inbox-nav">
           <button type="button" class="portal-dm-inbox-nav-btn is-active" id="internalChatInboxTabChats" data-inbox-tab="chats">Chats</button>
           <button type="button" class="portal-dm-inbox-nav-btn" id="internalChatInboxTabStaff" data-inbox-tab="staff">CS Team</button>
@@ -1076,7 +1070,7 @@
   <script src="/portal/portal_executive_dm.js?v=20260622-chat-restore"></script>
   <script src="/portal/portal_cs_cliq_embed.js?v=20260607-cliq-fix"></script>
   <script src="/portal/portal_dm_executive_cliq.js?v=20260622-chat-restore"></script>
-  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260622-lead-csteam-ui"></script>
+  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260608-no-chat-search"></script>
   <script>
     /** Real calendar weekday for “Today” (en-GB), aligned with staff_clients_machine.xlsx */
     function portalWeekdayLongEnGB(d){
@@ -6610,32 +6604,17 @@
             return portalStaffProfileIsOfficePeer(profBy[peer] || {});
           });
         }
-        var leadSearchQ = '';
-        if(portalStaffIsLeadUser() && window.portalLeadStaffChatDirectory && typeof window.portalLeadStaffChatDirectory.getSearchQuery === 'function'){
-          leadSearchQ = window.portalLeadStaffChatDirectory.getSearchQuery();
-        }
-        if(leadSearchQ && window.portalLeadStaffChatDirectory && typeof window.portalLeadStaffChatDirectory.matchesSearchQuery === 'function'){
-          rows = rows.filter(function(r){
-            var peer = portalDmPeerIdForThread(me, r);
-            var label = portalDmPeerDisplayLabel(peer, profBy[peer] || {});
-            return window.portalLeadStaffChatDirectory.matchesSearchQuery(label, leadSearchQ);
-          });
-        }
         if(!rows.length){
           var emptyMsg = portalInternalChatOfficeRestricted()
             ? "No conversations yet. Use <strong>Request support</strong> or <strong>Request meeting</strong> above, or wait for Management to message you."
             : (portalStaffIsLeadUser()
-              ? (leadSearchQ
-                ? "No chats match your search. Check the team matches below or open the <strong>CS Team</strong> tab."
-                : "No conversations yet. Search above to message a colleague, or open the <strong>CS Team</strong> tab.")
+              ? "No conversations yet. Open the <strong>CS Team</strong> tab to message a colleague."
               : "No conversations yet. When the office sends you a direct message, it appears here.");
           listHost.innerHTML = "<p class=\"portal-dm-inbox-empty\">"+emptyMsg+"</p>";
           if(portalStaffIsLeadUser() && window.portalLeadStaffChatDirectory){
             window.portalLeadStaffChatDirectory.syncInboxChrome({ inThread: false });
             if(window.portalLeadStaffChatDirectory.getInboxTab() === 'directory'){
               void window.portalLeadStaffChatDirectory.renderStaffDirectory();
-            }else if(leadSearchQ){
-              void window.portalLeadStaffChatDirectory.renderStaffSuggestions(leadSearchQ);
             }
           }
           return;
@@ -6718,8 +6697,6 @@
           window.portalLeadStaffChatDirectory.syncInboxChrome({ inThread: false });
           if(window.portalLeadStaffChatDirectory.getInboxTab() === 'directory'){
             void window.portalLeadStaffChatDirectory.renderStaffDirectory();
-          }else if(leadSearchQ){
-            void window.portalLeadStaffChatDirectory.renderStaffSuggestions(leadSearchQ);
           }else{
             var sugHost = document.getElementById('internalChatLeadStaffSuggestions');
             if(sugHost){

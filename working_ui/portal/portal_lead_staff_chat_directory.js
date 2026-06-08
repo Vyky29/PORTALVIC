@@ -418,7 +418,6 @@
     var suggestions = document.getElementById("internalChatLeadStaffSuggestions");
     var listWrap = document.getElementById("internalChatListWrap");
     var tab = getInboxTab();
-    var query = getSearchQuery();
     var dirMode = getDirectoryMode(prof);
 
     if (chrome) {
@@ -439,13 +438,6 @@
         else if (dirMode === "csteam") dirBtn.textContent = "CS Team";
         else if (dirMode === "staff") dirBtn.textContent = "Staff";
       }
-      var search = getSearchInput();
-      if (search) {
-        if (dirMode === "leads") search.placeholder = "Search leads or chats...";
-        else if (dirMode === "directors" || dirMode === "staffmgmt") search.placeholder = "Search directors or chats...";
-        else if (dirMode === "csteam") search.placeholder = "Search CS Team or chats...";
-        else search.placeholder = "Search staff or chats...";
-      }
     }
 
     if (!hasDirectory || inThread) {
@@ -464,7 +456,6 @@
     }
 
     bindInboxNav();
-    syncSearchClearBtn();
 
     if (listWrap) {
       listWrap.hidden = tab !== "chats";
@@ -475,9 +466,9 @@
       staffWrap.setAttribute("aria-hidden", tab === "directory" ? "false" : "true");
     }
     if (suggestions) {
-      var showSuggestions = tab === "chats" && !!query;
-      suggestions.hidden = !showSuggestions;
-      suggestions.setAttribute("aria-hidden", showSuggestions ? "false" : "true");
+      suggestions.hidden = true;
+      suggestions.setAttribute("aria-hidden", "true");
+      suggestions.innerHTML = "";
     }
 
     var chatSheet = document.getElementById("internalChatSheet");
@@ -532,37 +523,6 @@
       }
     });
 
-    var search = getSearchInput();
-    if (search && !search.dataset.portalLeadSearchBound) {
-      search.dataset.portalLeadSearchBound = "1";
-      var deb;
-      search.addEventListener("input", function () {
-        if (deb) clearTimeout(deb);
-        deb = setTimeout(function () {
-          deb = null;
-          onSearchInput();
-        }, 160);
-      });
-      search.addEventListener("keydown", function (ev) {
-        if (ev.key === "Escape") {
-          search.value = "";
-          onSearchInput();
-        }
-      });
-    }
-
-    var clearBtn = document.getElementById("internalChatLeadSearchClear");
-    if (clearBtn && !clearBtn.dataset.portalLeadClearBound) {
-      clearBtn.dataset.portalLeadClearBound = "1";
-      clearBtn.addEventListener("click", function () {
-        var searchEl = getSearchInput();
-        if (searchEl) {
-          searchEl.value = "";
-          searchEl.focus();
-        }
-        onSearchInput();
-      });
-    }
   }
 
   function directoryEmptyMessage(query, mode) {
