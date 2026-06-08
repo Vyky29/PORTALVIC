@@ -26,6 +26,8 @@ set
   ]::text[]
 where id = 'participant-achievements';
 
+drop function if exists public.portal_list_participant_achievement_drafts(text, date, text);
+
 create or replace function public.portal_list_participant_achievement_drafts(
   p_client_id text,
   p_session_date date,
@@ -69,6 +71,14 @@ as $$
   order by p.created_at asc;
 $$;
 
+revoke all on function public.portal_list_participant_achievement_drafts(text, date, text) from public;
+grant execute on function public.portal_list_participant_achievement_drafts(text, date, text) to authenticated;
+
+comment on function public.portal_list_participant_achievement_drafts(text, date, text) is
+  'Draft achievement photos/videos for client+day; inbox (_inbox) scoped to the uploading staff member.';
+
+drop function if exists public.portal_admin_list_achievement_photos_all();
+
 create or replace function public.portal_admin_list_achievement_photos_all()
 returns table (
   id uuid,
@@ -108,6 +118,12 @@ as $$
   where public.portal_staff_profile_is_admin_or_ceo()
   order by p.client_name asc, p.created_at asc;
 $$;
+
+revoke all on function public.portal_admin_list_achievement_photos_all() from public;
+grant execute on function public.portal_admin_list_achievement_photos_all() to authenticated;
+
+comment on function public.portal_admin_list_achievement_photos_all() is
+  'All achievement photos/videos (any day/staff/status) for the admin participant directory view.';
 
 comment on column public.portal_participant_achievement_photos.media_type is
   'photo (default) or video — both attach to session feedback via portal_finalize_achievement_photos.';
