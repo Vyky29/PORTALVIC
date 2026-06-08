@@ -54,6 +54,60 @@
     return labelParts[0] || label;
   }
 
+  function syncAvatarEl(avatarEl, label, ui) {
+    if (!avatarEl) return;
+    ui = ui || {};
+    label = String(label || "").trim() || "Conversation";
+    var prof = ui.peerProf || null;
+    var username = prof && prof.username ? String(prof.username).trim() : "";
+    var headerClass = "portal-cs-cliq-thread-header__avatar";
+    function applyMarkup(markupHtml) {
+      var tmp = document.createElement("div");
+      tmp.innerHTML = markupHtml;
+      var inner = tmp.firstElementChild;
+      if (inner) {
+        avatarEl.className = headerClass + " " + String(inner.className || "").trim();
+        avatarEl.innerHTML = inner.innerHTML;
+        return true;
+      }
+      return false;
+    }
+    var item = {
+      kind: ui.groupId ? "group" : "dm",
+      label: label,
+      peerProfile: prof,
+      username: username,
+      isTeamChat: !!ui.isTeamChat,
+    };
+    if (global.portalDmThreadAvatar && typeof global.portalDmThreadAvatar.innerHtml === "function") {
+      if (
+        applyMarkup(
+          global.portalDmThreadAvatar.innerHtml(item, esc, ui.groupId ? "ceo_exec" : "staff_lead")
+        )
+      ) {
+        return;
+      }
+    }
+    if (global.portalStaffAvatarInnerHtml) {
+      var photoKey = username || String(label).trim().split(/\s+/)[0] || label;
+      if (
+        applyMarkup(
+          global.portalStaffAvatarInnerHtml(photoKey, {
+            esc: esc,
+            displayName: label,
+            username: username,
+            className: headerClass + " portal-dm-thread-avatar portal-dm-thread-avatar--staff",
+            imgClass: "portal-dm-thread-avatar__img",
+          })
+        )
+      ) {
+        return;
+      }
+    }
+    avatarEl.className = headerClass;
+    avatarEl.textContent = initials(label);
+  }
+
   function sync(ui) {
     ui = ui || global.__PORTAL_ADMIN_DM_UI || {};
     var header = document.getElementById("csCliqThreadHeader");
@@ -68,7 +122,7 @@
     var statusEl = document.getElementById("csCliqThreadStatus");
     var avatarEl = document.getElementById("csCliqThreadAvatar");
     if (nameEl) nameEl.textContent = label;
-    if (avatarEl) avatarEl.textContent = initials(label);
+    syncAvatarEl(avatarEl, label, ui);
     if (roleEl) {
       if (ui.groupId && global.portalCsCliqGroupMembers && global.portalCsCliqGroupMembers.slugShowsMembers(ui.groupSlug)) {
         roleEl.textContent = "Members";
@@ -163,7 +217,7 @@
     var statusEl = document.getElementById("internalChatThreadStatus");
     var avatarEl = document.getElementById("internalChatThreadAvatar");
     if (nameEl) nameEl.textContent = label;
-    if (avatarEl) avatarEl.textContent = initials(label);
+    syncAvatarEl(avatarEl, label, ui);
     var role = String(peerRole || "").trim() || "Staff";
     if (roleEl) roleEl.textContent = role;
     if (statusEl) {

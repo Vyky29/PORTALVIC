@@ -431,6 +431,45 @@
     return row && row.id ? String(row.id) : "";
   }
 
+  async function resolveStaffOfficeThreadId(client, me) {
+    me = String(me || "").trim();
+    if (!client || !me) return "";
+    var opsId = await resolveOpsAdminId(client);
+    if (!opsId) return "";
+    var res = await client
+      .from("portal_staff_dm_threads")
+      .select("id,participant_a,participant_b,updated_at")
+      .or("participant_a.eq." + me + ",participant_b.eq." + me)
+      .order("updated_at", { ascending: false });
+    if (res.error || !Array.isArray(res.data)) return "";
+    var rows = res.data;
+    var peerIds = [];
+    rows.forEach(function (r) {
+      var peer = String(r.participant_a) === me ? String(r.participant_b) : String(r.participant_a);
+      if (peer && peerIds.indexOf(peer) < 0) peerIds.push(peer);
+    });
+    var profBy = {};
+    if (peerIds.length) {
+      var pr = await client
+        .from("staff_profiles")
+        .select("id,full_name,username,app_role,staff_role,is_active")
+        .in("id", peerIds);
+      if (!pr.error && Array.isArray(pr.data)) {
+        pr.data.forEach(function (p) {
+          if (p && p.id) profBy[String(p.id)] = p;
+        });
+      }
+    }
+    var officeRows = rows.filter(function (r) {
+      return !!staffOfficePeerFromThread(r, profBy, me);
+    });
+    if (officeRows.length) {
+      var canon = await resolveCanonicalThreadRow(client, me, officeRows, profBy);
+      if (canon && canon.id) return String(canon.id);
+    }
+    return ensureDmThreadId(client, me, opsId);
+  }
+
   /** Staff support ? Sevitha ops line (CEOs read in "Sevitha & staff"). */
   async function routeToCeos(req) {
     var box = clientBox();
@@ -502,6 +541,7 @@
     findDmThreadId: findDmThreadId,
     ensureDmThreadId: ensureDmThreadId,
     resolveOpsAdminId: resolveOpsAdminId,
+    resolveStaffOfficeThreadId: resolveStaffOfficeThreadId,
     SUPPORT_PREFIX: SUPPORT_PREFIX,
     MEETING_PREFIX: MEETING_PREFIX,
   };

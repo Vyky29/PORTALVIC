@@ -119,10 +119,20 @@
     );
   }
 
+  function innerHtml(item, escFn, ch) {
+    escFn =
+      escFn ||
+      function (s) {
+        return String(s == null ? "" : s);
+      };
+    return innerAvatarHtml(item, escFn, toneFromItem(item, ch));
+  }
+
   global.portalDmThreadAvatar = {
     initials: initials,
     toneFromItem: toneFromItem,
     roleToneFromProfile: roleToneFromProfile,
+    innerHtml: innerHtml,
     html: html,
   };
 })(typeof window !== "undefined" ? window : globalThis);

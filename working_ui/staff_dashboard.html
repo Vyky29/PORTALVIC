@@ -94,7 +94,7 @@
   <script src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
   <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260609-white-chat" />
-  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260609-compact-header" />
+  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260609-thread-avatar-ops" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260610-topbar-colors" />
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260608-orbit-center" />
   <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260609-portal-white-chat" />
@@ -1063,11 +1063,11 @@
   <script src="/portal/portal_dm_roles.js?v=20260609-mgmt-identity"></script>
   <script src="/portal/portal_dm_thread_avatar.js?v=20260608-inbox-photos"></script>
   <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260622-chat-restore"></script>
-  <script src="/portal/portal_cs_cliq_support_route.js?v=20260608-inbox-fix"></script>
+  <script src="/portal/portal_cs_cliq_support_route.js?v=20260609-staff-ops-thread"></script>
   <script src="/portal/portal_cs_cliq_support.js?v=20260607-support-route"></script>
   <script src="/portal/portal_cs_cliq_announcements_hub.js?v=20260604-cliq-fix"></script>
   <script src="/portal/portal_cs_cliq_announcement_inbox.js?v=20260607-cliq-fix"></script>
-  <script src="/portal/portal_cs_cliq_thread_header.js?v=20260609-inbox-firstname"></script>
+  <script src="/portal/portal_cs_cliq_thread_header.js?v=20260609-thread-avatar-ops"></script>
   <script src="/portal/portal_cs_cliq_thread_files.js?v=20260604-cliq-files"></script>
   <script src="/portal/portal_admin_cs_cliq.js?v=20260608-inbox-fix"></script>
   <script src="/portal/portal_cs_cliq_workspace.js?v=20260604-cliq-inbox"></script>
@@ -7273,6 +7273,12 @@
       ).trim();
       if(!client || !me) return '';
       try{
+        if(
+          window.portalCsCliqSupportRoute &&
+          typeof window.portalCsCliqSupportRoute.resolveStaffOfficeThreadId === 'function'
+        ){
+          return String(await window.portalCsCliqSupportRoute.resolveStaffOfficeThreadId(client, me) || '').trim();
+        }
         var res = await client.from('portal_staff_dm_threads').select('id,participant_a,participant_b,updated_at').or('participant_a.eq.' + me + ',participant_b.eq.' + me).order('updated_at', { ascending: false });
         if(res.error || !Array.isArray(res.data)) return '';
         var rows = res.data;
@@ -7489,6 +7495,18 @@
       var ui = window.__PORTAL_INTERNAL_CHAT_UI || {};
       var tid = ui.threadId ? String(ui.threadId) : "";
       var gid = ui.groupId ? String(ui.groupId) : "";
+      if(
+        tid && !gid &&
+        portalStaffIsRestrictedWorkerChat(box && box.staff_profile) &&
+        window.portalCsCliqSupportRoute &&
+        typeof window.portalCsCliqSupportRoute.resolveStaffOfficeThreadId === 'function'
+      ){
+        var canonTid = String(await window.portalCsCliqSupportRoute.resolveStaffOfficeThreadId(client, me) || '').trim();
+        if(canonTid){
+          tid = canonTid;
+          window.__PORTAL_INTERNAL_CHAT_UI.threadId = tid;
+        }
+      }
       if(!tid && !gid){
         if(portalStaffIsRestrictedWorkerChat(box && box.staff_profile)){
           var adminQuickTid = typeof window.portalStaffResolveOfficeThreadForQuickOpen === 'function'
@@ -7879,12 +7897,14 @@
         return;
       }
       var peerId = "";
+      var peerProf = null;
       var tres = await client.from("portal_staff_dm_threads").select("participant_a,participant_b").eq("id", tid).maybeSingle();
       if(!tres.error && tres.data) peerId = portalDmPeerIdForThread(me, tres.data);
       var peerLabel = "Conversation";
       if(peerId){
-        var pr2 = await client.from("staff_profiles").select("full_name,username,app_role").eq("id", peerId).maybeSingle();
+        var pr2 = await client.from("staff_profiles").select("full_name,username,app_role,staff_role").eq("id", peerId).maybeSingle();
         if(!pr2.error && pr2.data){
+          peerProf = pr2.data;
           peerLabel = portalDmPeerDisplayLabel(peerId, pr2.data);
         }else{
           peerLabel = peerId;
@@ -7905,7 +7925,7 @@
         }
       }
       if(window.portalCsCliqThreadHeader && typeof window.portalCsCliqThreadHeader.syncInternal === 'function'){
-        window.portalCsCliqThreadHeader.syncInternal(peerLabel, peerRole);
+        window.portalCsCliqThreadHeader.syncInternal(peerLabel, peerRole, peerProf);
       }
       if(window.portalDmIcons && typeof window.portalDmIcons.upgrade === 'function'){
         var threadRoot = document.getElementById('internalChatThreadWrap');
@@ -8074,6 +8094,18 @@
       if(!client || (!tid && !gid)){
         if(errB) errB.textContent = "Not available.";
         return;
+      }
+      if(
+        tid && !gid &&
+        portalStaffIsRestrictedWorkerChat() &&
+        window.portalCsCliqSupportRoute &&
+        typeof window.portalCsCliqSupportRoute.resolveStaffOfficeThreadId === 'function'
+      ){
+        var canonSendTid = String(await window.portalCsCliqSupportRoute.resolveStaffOfficeThreadId(client, me) || '').trim();
+        if(canonSendTid){
+          tid = canonSendTid;
+          window.__PORTAL_INTERNAL_CHAT_UI.threadId = tid;
+        }
       }
       if(!body){
         if(errB) errB.textContent = "Enter a message.";

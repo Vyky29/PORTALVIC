@@ -231,6 +231,9 @@
 
     var route = global.portalCsCliqSupportRoute || {};
     if (lane === "ops" && sevithaId) {
+      if (typeof route.ensureDmThreadId === "function") {
+        return route.ensureDmThreadId(client, sevithaId, workerId);
+      }
       if (typeof route.findDmThreadId === "function") {
         return route.findDmThreadId(client, sevithaId, workerId);
       }
