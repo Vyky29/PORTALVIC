@@ -317,14 +317,17 @@ body.admin-view-cs-cliq #csCliqRoot .portal-cs-cliq-thread-header__status {
   flex-direction: column;
   min-height: 0;
   min-width: 0;
+  height: 100%;
   background: #fff;
 }
 
 #csCliqRoot .portal-cs-cliq-inbox__conversation-col {
   display: flex;
   flex-direction: column;
+  flex: 1 1 auto;
   min-height: 0;
   min-width: 0;
+  height: 100%;
   background: #fff;
 }
 
