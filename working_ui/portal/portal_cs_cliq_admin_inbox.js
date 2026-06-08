@@ -183,9 +183,18 @@
     var seen = Object.create(null);
     function push(item) {
       if (!item || item.kind !== "dm" || item.isTeamChat) return;
-      var k = String(item.id || item.workerId || "");
-      if (!k || seen[k]) return;
-      seen[k] = true;
+      var tid = String(item.id || "").trim();
+      if (tid) {
+        if (seen["t:" + tid]) return;
+        seen["t:" + tid] = true;
+        items.push(item);
+        return;
+      }
+      // Worker slot without a thread yet — hide unless it has list preview activity.
+      if (item.synthetic && !item.lastPreview && !item.when) return;
+      var wk = String(item.workerId || "").trim();
+      if (!wk || seen["w:" + wk]) return;
+      seen["w:" + wk] = true;
       items.push(item);
     }
     (merged || []).forEach(push);
@@ -218,7 +227,10 @@
     host.innerHTML = "";
     if (!dmItems.length) {
       host.innerHTML =
-        '<p class="muted" style="margin:0;font-size:13px;min-width:0;overflow-wrap:break-word">No direct messages yet. Use <strong>New</strong> to start a chat.</p>';
+        '<p class="muted" style="margin:0;font-size:13px;min-width:0;overflow-wrap:break-word">' +
+        "No 1:1 direct messages here. " +
+        "<strong>Channels</strong> (left rail) has group chats and staff team threads. " +
+        "Use <strong>New</strong> to start a direct chat.</p>";
       return;
     }
     dmItems.forEach(function (item) {

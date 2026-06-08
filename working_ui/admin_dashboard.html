@@ -33,7 +33,7 @@
   <script src="/portal/portal_cs_cliq_hub_roles.js?v=20260608-cliq-channels"></script>
   <script src="/portal/portal_cs_cliq_support_route.js?v=20260608-inbox-fix"></script>
   <script src="/portal/portal_cs_cliq_management_inbox.js?v=20260609-staff-mgmt"></script>
-  <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260609-inbox-dms-only"></script>
+  <script src="/portal/portal_cs_cliq_admin_inbox.js?v=20260609-inbox-personal-dms"></script>
   <script src="/portal/portal_cs_cliq_admin_channels.js?v=20260609-channels-categories"></script>
   <script src="/portal/portal_cs_cliq_support.js?v=20260607-support-route"></script>
   <script src="/portal/portal_cs_cliq_announcements_hub.js?v=20260604-cliq-inbox"></script>
@@ -20870,7 +20870,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
     async function portalAdminDmEnrichListItems(client, me, ch, merged, profBy){
       if(!client || !me || !Array.isArray(merged) || !merged.length) return merged;
       profBy = profBy || {};
-      var dmIds = merged.filter(function(i){ return i.kind === 'dm'; }).map(function(i){ return i.id; });
+      var dmIds = merged.filter(function(i){ return i.kind === 'dm' && i.id; }).map(function(i){ return String(i.id); });
       var groupIds = merged.filter(function(i){ return i.kind === 'group'; }).map(function(i){ return i.id; });
       async function ensureAuthors(ids){
         var missing = (ids || []).filter(function(id, idx, arr){
@@ -21130,7 +21130,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         host.innerHTML = '<p class="muted" style="margin:0;color:var(--danger);min-width:0;overflow-wrap:break-word">'+esc(String(res.error.message || res.error))+'</p>';
         return;
       }
-      var rows = Array.isArray(res.data) ? res.data : [];
+      var allThreadRows = Array.isArray(res.data) ? res.data.slice() : [];
+      var rows = allThreadRows.slice();
       var names = {};
       var profBy = {};
       if(
@@ -21190,10 +21191,30 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         window.portalCsCliqManagementInbox.shouldUseSplitInbox();
       var splitSections = null;
       var teamDmItems = [];
+      var personalDmItems = [];
       if(useSplitInbox){
         var teamRows = rows.filter(function(r){ return portalAdminDmIsPeerTeamChatThread(r, profBy); });
         var dmRows = rows.filter(function(r){ return !portalAdminDmIsPeerTeamChatThread(r, profBy); });
         splitSections = await window.portalCsCliqManagementInbox.buildSections(client, me, dmRows, profBy, names);
+        allThreadRows.forEach(function(r){
+          if(!r || !r.id) return;
+          var a = String(r.participant_a || '');
+          var b = String(r.participant_b || '');
+          if(a !== me && b !== me) return;
+          if(portalAdminDmIsPeerTeamChatThread(r, profBy)) return;
+          var peer = portalDmPeerIdForThread(me, r);
+          personalDmItems.push({
+            kind: 'dm',
+            id: String(r.id),
+            label: threadListLabel(r, peer),
+            when: r.updated_at,
+            peerId: peer,
+            peerProf: profBy[peer] || {},
+            isTeamChat: false,
+            threadRow: r,
+            inboxLane: 'personal'
+          });
+        });
         teamRows.forEach(function(r){
           var id = String(r.id || '');
           var peerSl = portalAdminDmWorkerPeerFromThread(r, profBy, me);
@@ -21238,7 +21259,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         merged = merged
           .concat(teamDmItems)
           .concat(splitSections.mineItems || [])
-          .concat(splitSections.opsItems || []);
+          .concat(splitSections.opsItems || [])
+          .concat(personalDmItems || []);
       }
       await portalAdminDmEnrichListItems(client, me, ch, merged, profBy);
       var fixedOrder = portalAdminDmFixedGroupSlugOrder();
