@@ -1067,7 +1067,7 @@
   <script src="/portal/portal_cs_cliq_support.js?v=20260607-support-route"></script>
   <script src="/portal/portal_cs_cliq_announcements_hub.js?v=20260604-cliq-fix"></script>
   <script src="/portal/portal_cs_cliq_announcement_inbox.js?v=20260607-cliq-fix"></script>
-  <script src="/portal/portal_cs_cliq_thread_header.js?v=20260609-thread-avatar-ops"></script>
+  <script src="/portal/portal_cs_cliq_thread_header.js?v=20260608-mgmt-ops-identity"></script>
   <script src="/portal/portal_cs_cliq_thread_files.js?v=20260604-cliq-files"></script>
   <script src="/portal/portal_admin_cs_cliq.js?v=20260608-inbox-fix"></script>
   <script src="/portal/portal_cs_cliq_workspace.js?v=20260604-cliq-inbox"></script>
@@ -6787,9 +6787,22 @@
       var parts = t.split(/\s+/);
       return parts[0] || t;
     }
-    /** One line above bubble: office authors show Admin lane labels (director attribution). */
+    /** One line above bubble: staff workers see unified Admin on the shared ops line. */
     function portalDmInternalMsgAuthorChip(mine, authorProf){
       if(mine) return '';
+      if(portalStaffIsRestrictedWorkerChat()){
+        if(
+          portalStaffProfileIsOfficePeer(authorProf || {}) ||
+          (
+            window.portalChatActorIdentity &&
+            window.portalChatActorIdentity.isManagementAuthor &&
+            window.portalChatActorIdentity.isManagementAuthor(authorProf)
+          )
+        ){
+          return 'Admin';
+        }
+        return portalDmShortDisplayName(authorProf) || 'Team';
+      }
       if(
         window.portalChatActorIdentity &&
         typeof window.portalChatActorIdentity.managementMsgAuthorChip === 'function' &&
@@ -6808,10 +6821,6 @@
           peerRole: ar === 'lead' ? 'lead' : 'staff',
           audience: 'worker'
         });
-      }
-      if(portalStaffIsRestrictedWorkerChat()){
-        if(portalStaffProfileIsOfficePeer(authorProf || {})) return 'Admin';
-        return portalDmShortDisplayName(authorProf) || 'Team';
       }
       return portalDmShortDisplayName(authorProf) || '';
     }
@@ -7646,10 +7655,10 @@
           var mgmtLabel = route.MANAGEMENT_INBOX_LABEL || 'Management';
           var peerProf = profBy[peer] || {};
           var label;
-          if(useStaffMgmtInbox){
-            label = portalDmPeerDisplayLabel(peer, peerProf);
-          }else if(officePeer){
+          if(officePeer){
             label = mgmtLabel;
+          }else if(useStaffMgmtInbox){
+            label = portalDmPeerDisplayLabel(peer, peerProf);
           }else if(window.portalLeadStaffChatDirectory && typeof window.portalLeadStaffChatDirectory.threadInboxDisplayLabel === 'function'){
             label = window.portalLeadStaffChatDirectory.threadInboxDisplayLabel(me, r, profBy);
           }else{
@@ -7898,10 +7907,33 @@
       }
       var peerId = "";
       var peerProf = null;
-      var tres = await client.from("portal_staff_dm_threads").select("participant_a,participant_b").eq("id", tid).maybeSingle();
-      if(!tres.error && tres.data) peerId = portalDmPeerIdForThread(me, tres.data);
       var peerLabel = "Conversation";
-      if(peerId){
+      var managementOpsPeer = false;
+      var routeOpen = window.portalCsCliqSupportRoute || {};
+      var mgmtOpenLabel = routeOpen.MANAGEMENT_INBOX_LABEL || 'Management';
+      var tres = await client.from("portal_staff_dm_threads").select("participant_a,participant_b").eq("id", tid).maybeSingle();
+      if(!tres.error && tres.data){
+        var openIds = [String(tres.data.participant_a||''), String(tres.data.participant_b||'')].filter(Boolean);
+        var profByOpen = {};
+        if(openIds.length){
+          var prOpen = await client.from('staff_profiles').select('id,full_name,username,app_role,staff_role,is_active').in('id', openIds);
+          if(!prOpen.error && Array.isArray(prOpen.data)){
+            prOpen.data.forEach(function(p){ if(p && p.id) profByOpen[String(p.id)] = p; });
+          }
+        }
+        var officePeerOpen = routeOpen.staffOfficePeerFromThread
+          ? routeOpen.staffOfficePeerFromThread(tres.data, profByOpen, me)
+          : '';
+        if(portalStaffIsRestrictedWorkerChat() && officePeerOpen){
+          peerId = officePeerOpen;
+          peerProf = profByOpen[officePeerOpen] || null;
+          peerLabel = mgmtOpenLabel;
+          managementOpsPeer = true;
+        }else{
+          peerId = portalDmPeerIdForThread(me, tres.data);
+        }
+      }
+      if(peerId && !managementOpsPeer){
         var pr2 = await client.from("staff_profiles").select("full_name,username,app_role,staff_role").eq("id", peerId).maybeSingle();
         if(!pr2.error && pr2.data){
           peerProf = pr2.data;
@@ -7909,14 +7941,19 @@
         }else{
           peerLabel = peerId;
         }
+      }else if(managementOpsPeer){
+        peerLabel = mgmtOpenLabel;
       }
       var peerEl = document.getElementById("internalChatPeerLabel");
       if(peerEl) peerEl.textContent = peerLabel ? String(peerLabel) : "Conversation";
       window.__PORTAL_INTERNAL_CHAT_UI = window.__PORTAL_INTERNAL_CHAT_UI || {};
       window.__PORTAL_INTERNAL_CHAT_UI.peerLabel = peerLabel;
       window.__PORTAL_INTERNAL_CHAT_UI.groupId = null;
+      window.__PORTAL_INTERNAL_CHAT_UI.managementOpsPeer = managementOpsPeer;
       var peerRole = 'Staff';
-      if(peerId){
+      if(managementOpsPeer){
+        peerRole = 'Management';
+      }else if(peerId){
         var prRole = await client.from('staff_profiles').select('app_role,staff_role').eq('id', peerId).maybeSingle();
         if(!prRole.error && prRole.data){
           var appRole = String(prRole.data.app_role || '').toLowerCase();
@@ -7925,7 +7962,7 @@
         }
       }
       if(window.portalCsCliqThreadHeader && typeof window.portalCsCliqThreadHeader.syncInternal === 'function'){
-        window.portalCsCliqThreadHeader.syncInternal(peerLabel, peerRole, peerProf);
+        window.portalCsCliqThreadHeader.syncInternal(peerLabel, peerRole, peerProf, { managementOpsPeer: managementOpsPeer });
       }
       if(window.portalDmIcons && typeof window.portalDmIcons.upgrade === 'function'){
         var threadRoot = document.getElementById('internalChatThreadWrap');

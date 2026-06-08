@@ -28,6 +28,13 @@
     label = String(label || "").trim();
     if (!label) return "Conversation";
     if (ui.groupId) return label;
+    if (ui.managementOpsPeer) {
+      return (
+        (global.portalCsCliqSupportRoute && global.portalCsCliqSupportRoute.MANAGEMENT_INBOX_LABEL) ||
+        label ||
+        "Management"
+      );
+    }
     var prof = ui.peerProf || null;
     if (prof && global.portalChatActorIdentity && typeof global.portalChatActorIdentity.inboxPeerLabel === "function") {
       var inboxNm = String(global.portalChatActorIdentity.inboxPeerLabel(prof) || "").trim();
@@ -207,10 +214,14 @@
     }
   }
 
-  function syncInternal(peerLabel, peerRole, peerProf) {
+  function syncInternal(peerLabel, peerRole, peerProf, opts) {
+    opts = opts || {};
     var header = document.getElementById("internalChatThreadHeader");
     if (!header) return;
-    var ui = { peerProf: peerProf || null };
+    var ui = {
+      peerProf: peerProf || null,
+      managementOpsPeer: !!opts.managementOpsPeer,
+    };
     var label = headerDisplayName(String(peerLabel || "").trim() || "Conversation", ui);
     var nameEl = document.getElementById("internalChatThreadName");
     var roleEl = document.getElementById("internalChatThreadRole");
