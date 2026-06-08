@@ -1168,6 +1168,97 @@
     return initWorkerPeerInbox();
   }
 
+  function profileRowFromDirectoryEntry(entry) {
+    if (!entry || !entry.id) return null;
+    var cat = String(entry.category || "").toLowerCase();
+    var appRole = cat === "ceo" ? "ceo" : cat === "admin" ? "admin" : cat === "lead" ? "lead" : "staff";
+    return {
+      id: String(entry.id),
+      full_name: String(entry.label || "").trim(),
+      username: String(entry.username || "").trim(),
+      app_role: appRole,
+      staff_role: String(entry.staffRoleKey || "").replace(/_/g, " "),
+      avatar_url: String(entry.avatarUrl || "").trim(),
+    };
+  }
+
+  async function loadProfilesForDmThreads(client, rows, me) {
+    me = String(me || "").trim();
+    rows = Array.isArray(rows) ? rows : [];
+    var ids = [];
+    rows.forEach(function (r) {
+      if (!r) return;
+      if (r.participant_a) ids.push(String(r.participant_a));
+      if (r.participant_b) ids.push(String(r.participant_b));
+    });
+    ids = ids.filter(function (id, idx, arr) {
+      return id && id.toLowerCase() !== me.toLowerCase() && arr.indexOf(id) === idx;
+    });
+
+    var profBy = {};
+    if (!client || !ids.length) return profBy;
+
+    var selectCols = "id,full_name,username,app_role,staff_role,avatar_url";
+    async function pull(cols) {
+      return client.from("staff_profiles").select(cols).in("id", ids);
+    }
+    var res = await pull(selectCols);
+    if (res.error && /avatar_url/i.test(String(res.error.message || res.error))) {
+      selectCols = selectCols.replace(/,?avatar_url/g, "");
+      res = await pull(selectCols);
+    }
+    if (!res.error && Array.isArray(res.data)) {
+      res.data.forEach(function (p) {
+        if (p && p.id) profBy[String(p.id)] = p;
+      });
+    }
+
+    var missing = ids.filter(function (id) {
+      return !profBy[id];
+    });
+    if (missing.length) {
+      try {
+        var dirRows = await loadDirectoryRows(client, me, "csteam", { force: false });
+        dirRows.forEach(function (dr) {
+          if (!dr || !dr.id) return;
+          var id = String(dr.id);
+          if (!profBy[id]) profBy[id] = profileRowFromDirectoryEntry(dr);
+        });
+      } catch (_dir) {}
+    }
+
+    missing = ids.filter(function (id) {
+      return !profBy[id];
+    });
+    for (var i = 0; i < missing.length; i++) {
+      var pid = missing[i];
+      try {
+        var one = await client.from("staff_profiles").select(selectCols).eq("id", pid).maybeSingle();
+        if (!one.error && one.data && one.data.id) profBy[String(one.data.id)] = one.data;
+      } catch (_one) {}
+    }
+
+    return profBy;
+  }
+
+  function threadInboxDisplayLabel(me, row, profBy) {
+    profBy = profBy || {};
+    me = String(me || "").trim();
+    if (!row) return "Conversation";
+    var a = String(row.participant_a || "");
+    var b = String(row.participant_b || "");
+    var pa = profBy[a] || {};
+    var pb = profBy[b] || {};
+    function nameFrom(prof, id) {
+      return peerLabelFromRow(prof) || (id ? id.slice(0, 8) : "");
+    }
+    if (portalStaffIsSessionLead(pa) && portalStaffIsSessionLead(pb) && a && b && a !== b) {
+      return nameFrom(pa, a) + " \u2194 " + nameFrom(pb, b);
+    }
+    var peer = a === me ? b : b === me ? a : b || a;
+    return nameFrom(profBy[peer] || {}, peer) || "Colleague";
+  }
+
   global.portalLeadStaffChatDirectory = {
     portalStaffHasFullMessengerAccess: portalStaffHasFullMessengerAccess,
     portalStaffIsLeadUser: portalStaffIsLeadUser,
@@ -1198,6 +1289,8 @@
     matchesSearchQuery: matchesSearchQuery,
     initialsFromLabel: initialsFromLabel,
     getDirectoryMode: getDirectoryMode,
+    loadProfilesForDmThreads: loadProfilesForDmThreads,
+    threadInboxDisplayLabel: threadInboxDisplayLabel,
     clearCache: function () {
       try {
         delete global[CACHE_KEY_STAFF];

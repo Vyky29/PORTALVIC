@@ -1072,7 +1072,7 @@
   <script src="/portal/portal_cs_cliq_embed.js?v=20260607-cliq-fix"></script>
   <script src="/portal/portal_dm_executive_cliq.js?v=20260622-chat-restore"></script>
   <script src="/portal/portal_staff_photos.js?v=20260608-csteam-icons-roles"></script>
-  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260608-csteam-icons-roles"></script>
+  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260609-inbox-profiles"></script>
   <script>
     /** Real calendar weekday for “Today” (en-GB), aligned with staff_clients_machine.xlsx */
     function portalWeekdayLongEnGB(d){
@@ -6602,15 +6602,19 @@
           return;
         }
         var rows = Array.isArray(res.data) ? res.data : [];
-        var peerIds = rows.map(function(r){ return portalDmPeerIdForThread(me, r); }).filter(Boolean);
         var profBy = {};
-        if(peerIds.length){
-          var pr = await client.from("staff_profiles").select("id,full_name,username,app_role,staff_role,avatar_url").in("id", peerIds);
-          if(!pr.error && Array.isArray(pr.data)){
-            pr.data.forEach(function(p){
-              var id0 = String(p.id || "");
-              profBy[id0] = p;
-            });
+        if(window.portalLeadStaffChatDirectory && typeof window.portalLeadStaffChatDirectory.loadProfilesForDmThreads === 'function'){
+          profBy = await window.portalLeadStaffChatDirectory.loadProfilesForDmThreads(client, rows, me);
+        }else{
+          var peerIds = rows.map(function(r){ return portalDmPeerIdForThread(me, r); }).filter(Boolean);
+          if(peerIds.length){
+            var pr = await client.from("staff_profiles").select("id,full_name,username,app_role,staff_role,avatar_url").in("id", peerIds);
+            if(!pr.error && Array.isArray(pr.data)){
+              pr.data.forEach(function(p){
+                var id0 = String(p.id || "");
+                profBy[id0] = p;
+              });
+            }
           }
         }
         if(portalStaffIsRestrictedWorkerChat(box && box.staff_profile)){
@@ -6658,7 +6662,10 @@
           if(aid && lastAuthorIds.indexOf(aid) === -1) lastAuthorIds.push(aid);
         });
         if(lastAuthorIds.length){
-          var lap = await client.from('staff_profiles').select('id,app_role,staff_role,is_active').in('id', lastAuthorIds);
+          var lap = await client.from('staff_profiles').select('id,full_name,username,app_role,staff_role,is_active,avatar_url').in('id', lastAuthorIds);
+          if(lap.error && /avatar_url/i.test(String(lap.error.message || lap.error))){
+            lap = await client.from('staff_profiles').select('id,full_name,username,app_role,staff_role,is_active').in('id', lastAuthorIds);
+          }
           if(!lap.error && Array.isArray(lap.data)){
             lap.data.forEach(function(p){
               if(p && p.id) lastAuthorProfBy[String(p.id)] = p;
@@ -6669,7 +6676,15 @@
         rows.forEach(function(r){
           var id = String(r.id || "");
           var peer = portalDmPeerIdForThread(me, r);
-          var label = portalDmPeerDisplayLabel(peer, profBy[peer] || {});
+          var label = '';
+          if(window.portalLeadStaffChatDirectory && typeof window.portalLeadStaffChatDirectory.threadInboxDisplayLabel === 'function'){
+            label = window.portalLeadStaffChatDirectory.threadInboxDisplayLabel(me, r, profBy);
+          }else{
+            label = portalDmPeerDisplayLabel(peer, profBy[peer] || {});
+          }
+          if(portalInternalChatOfficeRestricted() && portalStaffProfileIsOfficePeer(profBy[peer] || {})){
+            label = 'Admin';
+          }
           var when = "";
           try{
             if(r.updated_at) when = new Date(r.updated_at).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
