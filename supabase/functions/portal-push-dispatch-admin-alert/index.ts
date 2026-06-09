@@ -29,11 +29,13 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
   adminPushOpenBase,
   clampPushBody,
+  filterDmPushRecipientsAlreadyRead,
   initVapidFromEnv,
   insertDedupeOrSkip,
   jsonPushResponse,
   loadAdminCeoUserIds,
   PORTAL_PUSH_CORS_HEADERS,
+  resolveAdminDmPushRecipientIds,
   sendPushPayloadToUserIds,
   staffPushOpenBase,
   verifyPortalPushWebhook,
@@ -50,7 +52,7 @@ const ALLOWED_TABLES = new Set([
   "portal_ceo_group_message",
 ]);
 
-/** Chat tables: notify every admin/ceo except the author (group-style). */
+/** Chat tables: DM recipients resolved per thread; groups still broadcast to admin/ceo. */
 const CHAT_TABLES = new Set([
   "portal_staff_dm_messages",
   "portal_ceo_group_message",
@@ -367,12 +369,28 @@ Deno.serve(async (req) => {
   }
 
   let recipientIds = adminIds;
-  if (CHAT_TABLES.has(table) && authorId) {
+  if (table === "portal_staff_dm_messages" && authorId) {
+    const threadIdForPush = String(record.thread_id ?? "").trim();
+    recipientIds = await resolveAdminDmPushRecipientIds(
+      admin,
+      threadIdForPush,
+      authorId,
+      adminIds,
+    );
+    if (threadIdForPush && recipientIds.length) {
+      recipientIds = await filterDmPushRecipientsAlreadyRead(
+        admin,
+        threadIdForPush,
+        String(record.created_at ?? ""),
+        recipientIds,
+      );
+    }
+  } else if (CHAT_TABLES.has(table) && authorId) {
     recipientIds = adminIds.filter((id) => id !== authorId);
   }
   if (!recipientIds.length) {
     console.log("[portal-push-admin] skip", {
-      reason: "no recipients besides author",
+      reason: "no eligible recipients",
       table,
     });
     return jsonPushResponse({

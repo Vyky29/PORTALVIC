@@ -97,7 +97,7 @@ export async function loadAdminCeoUserIds(
 ): Promise<string[]> {
   const { data, error } = await admin
     .from("staff_profiles")
-    .select("id")
+    .select("id,is_active")
     .in("app_role", ["admin", "ceo"]);
   if (error) {
     console.error("[portal-webpush] admin/ceo profiles", error);
@@ -105,10 +105,195 @@ export async function loadAdminCeoUserIds(
   }
   const ids: string[] = [];
   for (const row of data ?? []) {
-    const id = String((row as { id?: string }).id ?? "").trim();
+    const r = row as { id?: string; is_active?: boolean | null };
+    if (r.is_active === false) continue;
+    const id = String(r.id ?? "").trim();
     if (id) ids.push(id);
   }
   return ids;
+}
+
+type PushProfileRow = {
+  id?: string;
+  app_role?: string | null;
+  staff_role?: string | null;
+  dashboard_route?: string | null;
+  is_active?: boolean | null;
+  username?: string | null;
+  full_name?: string | null;
+};
+
+const LEAD_KEYS = new Set(["berta", "john"]);
+const EXEC_APP = new Set(["admin", "ceo"]);
+const EXEC_STAFF_ROLE = new Set(["manager", "admin"]);
+const WORKER_STAFF_ROLE = new Set([
+  "swimming",
+  "climbing",
+  "fitness",
+  "support",
+  "support_lead",
+]);
+
+function normProfileKey(v: unknown): string {
+  return String(v ?? "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "");
+}
+
+/** Mirrors working_ui/portal/portal_internal_dm_directory.js */
+export function portalPushIsWorkerRecipient(
+  row: PushProfileRow | null | undefined,
+): boolean {
+  if (!row || row.is_active === false) return false;
+  const app = String(row.app_role ?? "").toLowerCase();
+  const sr = String(row.staff_role ?? "").toLowerCase();
+  if (EXEC_APP.has(app)) return false;
+  if (EXEC_STAFF_ROLE.has(sr)) return false;
+  if (app === "staff" || app === "lead") return true;
+  const u = normProfileKey(row.username);
+  const first = normProfileKey(
+    String(row.full_name ?? "").split(/\s+/).filter(Boolean)[0] ?? "",
+  );
+  if (LEAD_KEYS.has(u) || LEAD_KEYS.has(first)) return true;
+  if (WORKER_STAFF_ROLE.has(sr)) return true;
+  const dr = String(row.dashboard_route ?? "").toLowerCase();
+  if (dr === "staff_dashboard.html" || dr === "lead_dashboard.html") {
+    return true;
+  }
+  if (!app && (row.full_name || row.username)) {
+    if (!dr || (dr.indexOf("admin") === -1 && dr.indexOf("ceo") === -1)) {
+      return true;
+    }
+  }
+  if (row.full_name || row.username) {
+    if (!EXEC_APP.has(app) && !EXEC_STAFF_ROLE.has(sr)) return true;
+  }
+  return false;
+}
+
+export function portalPushIsExecAppRole(
+  row: PushProfileRow | null | undefined,
+): boolean {
+  const app = String(row?.app_role ?? "").toLowerCase();
+  return app === "admin" || app === "ceo";
+}
+
+/**
+ * DM push: worker↔admin ops threads → all admin/ceo (shared line).
+ * Other DMs → only admin/ceo thread participants (not every admin).
+ */
+export async function resolveAdminDmPushRecipientIds(
+  admin: SupabaseClient,
+  threadId: string,
+  authorId: string,
+  adminCeoIds: string[],
+): Promise<string[]> {
+  threadId = String(threadId ?? "").trim();
+  authorId = String(authorId ?? "").trim();
+  if (!threadId || !adminCeoIds.length) return [];
+
+  const { data: thread, error: threadErr } = await admin
+    .from("portal_staff_dm_threads")
+    .select("participant_a, participant_b")
+    .eq("id", threadId)
+    .maybeSingle();
+  if (threadErr) {
+    console.error("[portal-webpush] dm thread", threadErr);
+    return [];
+  }
+  if (!thread) return [];
+
+  const pa = String(thread.participant_a ?? "").trim();
+  const pb = String(thread.participant_b ?? "").trim();
+  const profileIds = [...new Set([pa, pb, authorId].filter(Boolean))];
+  if (!profileIds.length) return [];
+
+  const { data: profRows, error: profErr } = await admin
+    .from("staff_profiles")
+    .select(
+      "id,app_role,staff_role,dashboard_route,is_active,username,full_name",
+    )
+    .in("id", profileIds);
+  if (profErr) {
+    console.error("[portal-webpush] dm profiles", profErr);
+    return [];
+  }
+
+  const profBy: Record<string, PushProfileRow> = {};
+  for (const row of profRows ?? []) {
+    const id = String((row as PushProfileRow).id ?? "").trim();
+    if (id) profBy[id] = row as PushProfileRow;
+  }
+
+  const profA = profBy[pa] ?? null;
+  const profB = profBy[pb] ?? null;
+  const aWorker = portalPushIsWorkerRecipient(profA);
+  const bWorker = portalPushIsWorkerRecipient(profB);
+  const aExec = portalPushIsExecAppRole(profA);
+  const bExec = portalPushIsExecAppRole(profB);
+  const workerOps = (aWorker && bExec) || (bWorker && aExec);
+
+  let recipients: string[];
+  if (workerOps) {
+    recipients = adminCeoIds.filter((id) => id !== authorId);
+  } else {
+    const set = new Set<string>();
+    if (aExec && pa && pa !== authorId) set.add(pa);
+    if (bExec && pb && pb !== authorId) set.add(pb);
+    recipients = [...set].filter((id) => adminCeoIds.includes(id));
+  }
+
+  return recipients;
+}
+
+/** Skip users whose per-thread read cursor already covers this message. */
+export async function filterDmPushRecipientsAlreadyRead(
+  admin: SupabaseClient,
+  threadId: string,
+  messageCreatedAt: string,
+  recipientIds: string[],
+): Promise<string[]> {
+  threadId = String(threadId ?? "").trim();
+  const msgAt = String(messageCreatedAt ?? "").trim();
+  if (!threadId || !msgAt || !recipientIds.length) return recipientIds;
+
+  const { data: rows, error } = await admin
+    .from("portal_dm_read_cursor")
+    .select("user_id, read_at")
+    .eq("thread_id", threadId)
+    .in("user_id", recipientIds);
+  if (error) {
+    console.warn("[portal-webpush] read cursor lookup", error);
+    return recipientIds;
+  }
+
+  const readByUser: Record<string, string> = {};
+  for (const row of rows ?? []) {
+    const uid = String((row as { user_id?: string }).user_id ?? "").trim();
+    const readAt = String((row as { read_at?: string }).read_at ?? "").trim();
+    if (uid && readAt) readByUser[uid] = readAt;
+  }
+
+  let msgMs = NaN;
+  try {
+    msgMs = new Date(msgAt).getTime();
+  } catch {
+    return recipientIds;
+  }
+  if (!Number.isFinite(msgMs)) return recipientIds;
+
+  return recipientIds.filter((uid) => {
+    const readAt = String(readByUser[uid] ?? "").trim();
+    if (!readAt) return true;
+    try {
+      return msgMs > new Date(readAt).getTime() + 800;
+    } catch {
+      return true;
+    }
+  });
 }
 
 export async function loadStaffLeadUserIds(
