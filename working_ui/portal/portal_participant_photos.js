@@ -51,6 +51,20 @@
     erik: "portal/participants/erik.png",
     gabriel: "portal/participants/gabriel.png",
     yoan: "portal/participants/yoan.png",
+    gemma: "portal/participants/gemma.png?v=20260609-pilot",
+    kirushy: "portal/participants/kirushy.png?v=20260609-pilot",
+    zayana: "portal/participants/zayana.png?v=20260609-pilot",
+    eddie: "portal/participants/eddie.png?v=20260609-pilot",
+    joel: "portal/participants/joel.png?v=20260609-pilot",
+  };
+
+  /** AI illustration placeholders — replace with real photos when available. */
+  var PARTICIPANT_PHOTO_PLACEHOLDERS = {
+    gemma: true,
+    kirushy: true,
+    zayana: true,
+    eddie: true,
+    joel: true,
   };
 
   function photoKey(name) {
@@ -66,6 +80,11 @@
     if (/^https?:\/\//i.test(u) || u.indexOf("data:") === 0) return u;
     if (u.charAt(0) !== "/") u = "/" + u.replace(/^\.?\/*/, "");
     return u;
+  }
+
+  function portalParticipantPhotoIsPlaceholder(name) {
+    var key = photoKey(name);
+    return !!PARTICIPANT_PHOTO_PLACEHOLDERS[key];
   }
 
   function portalParticipantPhotoUrl(name, avatarOverride) {
@@ -105,6 +124,9 @@
     var url = portalParticipantPhotoUrl(name, opts.avatarFile);
     var initials = esc(portalParticipantInitials(name));
     var wrapClass = String(opts.className || "portal-roster-avatar").trim() || "portal-roster-avatar";
+    if (portalParticipantPhotoIsPlaceholder(name)) {
+      wrapClass += " portal-roster-avatar--placeholder";
+    }
     if (!url) {
       return '<span class="' + esc(wrapClass) + '" aria-hidden="true">' + initials + "</span>";
     }
@@ -130,7 +152,9 @@
   }
 
   global.PARTICIPANT_PHOTOS = PARTICIPANT_PHOTOS;
+  global.PARTICIPANT_PHOTO_PLACEHOLDERS = PARTICIPANT_PHOTO_PLACEHOLDERS;
   global.portalParticipantPhotoUrl = portalParticipantPhotoUrl;
+  global.portalParticipantPhotoIsPlaceholder = portalParticipantPhotoIsPlaceholder;
   global.portalParticipantInitials = portalParticipantInitials;
   global.portalParticipantAvatarInnerHtml = portalParticipantAvatarInnerHtml;
   global.portalNormalizeParticipantPhotoUrl = normalizePhotoUrl;
