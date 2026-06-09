@@ -8222,6 +8222,12 @@
 
     const PORTAL_ANNOUNCEMENT_ACK_STORAGE = 'portalAnnouncementAckMap_v1';
     let portalAnnouncementLockRequired = false;
+    /** 'signedLog' = quick menu signed history; 'newNotice' = pending sign flow. */
+    let portalAnnouncementsSheetEntry = '';
+    function portalOpenAnnouncementsSheet(entry){
+      portalAnnouncementsSheetEntry = entry === 'signedLog' ? 'signedLog' : 'newNotice';
+      openSheet('announcementsSheet');
+    }
     function portalAnnouncementAckMapLoad(){
       try{
         const raw = localStorage.getItem(PORTAL_ANNOUNCEMENT_ACK_STORAGE);
@@ -8656,7 +8662,8 @@
       const hostPending = document.getElementById('announcementPendingHost');
       const hostHistory = document.getElementById('announcementHistoryHost');
       if(!hostPending || !hostHistory) return;
-      const pending = portalAnnouncementPendingItem();
+      const signedLogView = portalAnnouncementsSheetEntry === 'signedLog';
+      const pending = signedLogView ? null : portalAnnouncementPendingItem();
       if(pending){
         portalAnnouncementLockRequired = true;
         const isReminder = portalSignableItemIsReminder(pending);
@@ -8726,8 +8733,9 @@
       const btn = document.getElementById('announcementsSheetBackBtn');
       if(!btn) return;
       const annOpen = !!document.getElementById('announcementsSheet')?.classList.contains('open');
+      const signedLogView = portalAnnouncementsSheetEntry === 'signedLog';
       const lockActive = !!(typeof portalAnnouncementLockActive === 'function' && portalAnnouncementLockActive());
-      const show = annOpen && !lockActive;
+      const show = annOpen && (signedLogView || !lockActive);
       btn.hidden = !show;
       btn.setAttribute('aria-hidden', show ? 'false' : 'true');
     }
@@ -11502,6 +11510,7 @@
       if(bypass){
         try{ portalAnnouncementLockRequired = false; }catch(_){}
       }
+      try{ portalAnnouncementsSheetEntry = ''; }catch(_){}
       try{
         if(window.PortalParticipantAchievements && typeof window.PortalParticipantAchievements.stopCamera === 'function'){
           window.PortalParticipantAchievements.stopCamera();
@@ -12322,7 +12331,7 @@
       if(ann){
         e.preventDefault();
         e.stopPropagation();
-        openSheet('announcementsSheet');
+        portalOpenAnnouncementsSheet(ann.id === 'announcementSignedLog' ? 'signedLog' : 'newNotice');
         return;
       }
       const trn = e.target.closest('#trainingNotice.notice--opens-setup');
@@ -12344,7 +12353,7 @@
       const ann = e.target.closest('#announcementNewNotice, #announcementSignedLog');
       if(ann){
         e.preventDefault();
-        openSheet('announcementsSheet');
+        portalOpenAnnouncementsSheet(ann.id === 'announcementSignedLog' ? 'signedLog' : 'newNotice');
         return;
       }
       const trn = e.target.closest('#trainingNotice.notice--opens-setup');
