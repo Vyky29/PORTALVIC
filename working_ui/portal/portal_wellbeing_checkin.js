@@ -558,24 +558,53 @@
  });
  }
 
+ function isTextareaVoiceEligible(ta) {
+ if (!ta || ta.tagName !== "TEXTAREA") return false;
+ if (ta.closest(".portal-wb-domain-all-clear")) return false;
+ if (ta.closest(".portal-wb-cover-hr, .portal-wb-cover-controls, .portal-wb-cover-observations")) return false;
+ if (ta.closest(".portal-wb-admin-hide")) return false;
+ if (ta.hidden) return false;
+ var tr = ta.closest("tr");
+ if (tr && tr.style && tr.style.display === "none") return false;
+ var rect = ta.getBoundingClientRect();
+ if (rect.width <= 0 && rect.height <= 0) return false;
+ return true;
+ }
+
+ function voiceNameFromProfile(profile) {
+ return clean((profile && (profile.full_name || profile.username)) || "");
+ }
+
  function wireWellbeingReviewVoice(form, staffName) {
  if (!form || typeof global.PortalFeedbackVoiceInput === "undefined") return;
  var ids = [];
+ var seen = {};
  var n = 0;
- form.querySelectorAll("textarea").forEach(function (ta) {
- if (ta.closest(".portal-wb-domain-all-clear")) return;
- if (ta.closest(".portal-wb-cover-hr, .portal-wb-cover-controls, .portal-wb-cover-observations")) return;
- if (ta.closest(".portal-wb-admin-hide")) return;
- if (ta.closest("[hidden]")) return;
+ function addTextarea(ta) {
+ if (!isTextareaVoiceEligible(ta)) return;
  if (!ta.id) {
  ta.id = "wb-sra-voice-" + n;
  n += 1;
  }
- if (ta.dataset.portalFbVoiceWired === "1") return;
+ if (seen[ta.id]) return;
+ if (ta.dataset.portalFbVoiceWired === "1") {
+ seen[ta.id] = 1;
  ids.push(ta.id);
+ return;
+ }
+ seen[ta.id] = 1;
+ ids.push(ta.id);
+ }
+ ["wbConversationNotes", "wbAgreedActions", "wbEscalationNotes"].forEach(function (id) {
+ addTextarea(document.getElementById(id));
  });
+ form
+ .querySelectorAll(
+ "#portalWbClosingHost textarea, #portalWbDecisionsHost textarea, #portalWbAdvancedWrap textarea.js-obs-text, #portalWbAdvancedWrap textarea.js-controls-text"
+ )
+ .forEach(addTextarea);
  if (!ids.length) return;
- global.PortalFeedbackVoiceInput.init({
+ global.PortalFeedbackVoiceInput.attach({
  fields: ids,
  staffName: staffName || "",
  });
@@ -1172,6 +1201,7 @@
  reapplyCheckinStressorsFromCheckin: reapplyCheckinStressorsFromCheckin,
  reapplyAllClearDomainsFromCheckin: reapplyAllClearDomainsFromCheckin,
  wireWellbeingReviewVoice: wireWellbeingReviewVoice,
+ voiceNameFromProfile: voiceNameFromProfile,
  domainHasConcern: domainHasConcern,
  checkinHasConcerns: checkinHasConcerns,
  renderAdminBanner: renderAdminBanner,

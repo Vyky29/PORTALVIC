@@ -512,17 +512,24 @@
     var record = withSignOffDefaults((opts.draft && opts.draft.simple) || emptyRecord(), {
       adminProfile: opts.adminProfile,
     });
+    var voiceName =
+      opts.voiceStaffName ||
+      (opts.adminProfile &&
+        String((opts.adminProfile.full_name || opts.adminProfile.username) || "").trim()) ||
+      "";
 
     renderSummary(summaryHost, checkin, wb);
     wrapAdvancedSections(form);
     var decisionsHost = mountDecisionsHost(form);
     var closingHost = mountClosingHost(form);
     renderReviewForm(decisionsHost, closingHost, record);
+    scheduleReviewVoice(form, voiceName);
 
     return {
       root: root,
       form: form,
       staffName: opts.staffName || (checkin && checkin.staff_name) || "",
+      voiceStaffName: voiceName,
       collect: function () {
         return collectRecord(form);
       },
@@ -532,7 +539,7 @@
           closingHost,
           withSignOffDefaults(nextRecord || emptyRecord(), { adminProfile: opts.adminProfile })
         );
-        refreshReviewVoice(form, opts.staffName || (checkin && checkin.staff_name) || "");
+        scheduleReviewVoice(form, voiceName);
       },
     };
   }
@@ -542,6 +549,17 @@
     if (wb && typeof wb.wireWellbeingReviewVoice === "function") {
       wb.wireWellbeingReviewVoice(form, staffName || "");
     }
+  }
+
+  function scheduleReviewVoice(form, staffName) {
+    if (!form) return;
+    refreshReviewVoice(form, staffName);
+    global.setTimeout(function () {
+      refreshReviewVoice(form, staffName);
+    }, 80);
+    global.setTimeout(function () {
+      refreshReviewVoice(form, staffName);
+    }, 400);
   }
 
   function markAdminReady() {
@@ -557,6 +575,7 @@
     validateForComplete: validateForComplete,
     markAdminReady: markAdminReady,
     refreshReviewVoice: refreshReviewVoice,
+    scheduleReviewVoice: scheduleReviewVoice,
     mountAdminSimpleReview: mountAdminSimpleReview,
     statusLabel: function (status) {
       var map = {

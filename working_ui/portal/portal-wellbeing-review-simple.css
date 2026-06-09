@@ -328,14 +328,21 @@ body.portal-wellbeing-admin-mode #portalWbAdvancedWrap {
 }
 
 .portal-wb-simple .portal-fb-voice-wrap,
-.portal-wb-closing .portal-fb-voice-wrap {
+.portal-wb-closing .portal-fb-voice-wrap,
+.portal-wb-advanced-wrap .portal-fb-voice-wrap {
   margin-top: 6px;
 }
 
 .portal-wb-simple .portal-fb-voice-mic,
-.portal-wb-closing .portal-fb-voice-mic {
+.portal-wb-closing .portal-fb-voice-mic,
+.portal-wb-advanced-wrap .portal-fb-voice-mic {
   border-color: rgba(42, 49, 64, 0.2);
   color: var(--navy, #2a3140);
+}
+
+.portal-wb-advanced-wrap .portal-fb-voice-bar {
+  position: relative;
+  z-index: 2;
 }
 
 body.portal-wellbeing-admin-mode .portal-wb-decisions-host {
