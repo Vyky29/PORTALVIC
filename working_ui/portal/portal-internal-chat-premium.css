@@ -707,8 +707,8 @@ body.portal-inapp-call-open #portalInternalChatBackdrop.open{
 #internalChatSheet[data-portal-chat-shell="worker"] .portal-dm-inbox-brand__tagline{
   display:none !important;
 }
-#internalChatSheet[data-portal-chat-shell="worker"].sheet--portal-chat-inbox,
-#internalChatSheet[data-portal-chat-shell="worker"].sheet--portal-chat-thread{
+#internalChatSheet.open[data-portal-chat-shell="worker"].sheet--portal-chat-inbox,
+#internalChatSheet.open[data-portal-chat-shell="worker"].sheet--portal-chat-thread{
   top:0 !important;
   height:100dvh !important;
   max-height:100dvh !important;
@@ -717,8 +717,8 @@ body.portal-inapp-call-open #portalInternalChatBackdrop.open{
 #internalChatSheet[data-portal-chat-shell="worker"] .portal-dm-sheet-head{
   display:none !important;
 }
-#internalChatSheet[data-portal-chat-shell="worker"] .portal-dm-sheet-body,
-#internalChatSheet[data-portal-chat-shell="worker"] #internalChatThreadWrap{
+#internalChatSheet.open[data-portal-chat-shell="worker"] .portal-dm-sheet-body,
+#internalChatSheet.open[data-portal-chat-shell="worker"] #internalChatThreadWrap{
   flex:1 1 auto;
   min-height:0;
   display:flex !important;

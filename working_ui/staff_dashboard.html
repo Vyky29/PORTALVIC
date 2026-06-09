@@ -94,7 +94,7 @@
   <script src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
   <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260609-initials-gender" />
-  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260608-chat-boot" />
+  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260608-chat-close-fix" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260610-topbar-colors" />
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260608-staff-admin-group" />
   <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260609-portal-white-chat" />
@@ -6874,6 +6874,20 @@
       portalBindInternalChatMobileViewport();
       portalSyncInternalChatMobileViewport();
     }
+    function portalInternalChatSheetIsOpen(){
+      var sh = document.getElementById('internalChatSheet');
+      return !!(sh && sh.classList.contains('open'));
+    }
+    function portalInvalidateInternalChatRender(){
+      window.__PORTAL_INTERNAL_CHAT_RENDER_EPOCH = (window.__PORTAL_INTERNAL_CHAT_RENDER_EPOCH || 0) + 1;
+      if(__PORTAL_STAFF_DM_RT_DEB){
+        clearTimeout(__PORTAL_STAFF_DM_RT_DEB);
+        __PORTAL_STAFF_DM_RT_DEB = null;
+      }
+    }
+    function portalInternalChatRenderAborted(renderEpoch){
+      return renderEpoch !== (window.__PORTAL_INTERNAL_CHAT_RENDER_EPOCH || 0) || !portalInternalChatSheetIsOpen();
+    }
     function portalResetInternalChatSheetChrome(){
       var chatSheet = document.getElementById('internalChatSheet');
       if(chatSheet){
@@ -6881,6 +6895,9 @@
         chatSheet.style.removeProperty('height');
         chatSheet.style.removeProperty('max-height');
         chatSheet.removeAttribute('data-inbox-pane');
+        chatSheet.removeAttribute('data-portal-chat-booting');
+        chatSheet.classList.remove('sheet--portal-chat-thread', 'sheet--portal-chat-inbox');
+        try{ chatSheet.removeAttribute('data-portal-chat-shell'); }catch(_shAttr){}
       }
       var chrome = document.getElementById('internalChatLeadInboxChrome');
       if(chrome){
@@ -6935,8 +6952,12 @@
         window.__PORTAL_INTERNAL_CHAT_UI.skipResetThreadOnNextSheetOpen = !!restrictedClose;
         window.__PORTAL_INTERNAL_CHAT_UI.inboxTab = 'chats';
       }catch(_ui){}
-      portalResetInternalChatSheetChrome();
+      portalInvalidateInternalChatRender();
       if(typeof closeSheet === 'function') closeSheet({ bypassAnnouncementLock: true });
+      if(typeof syncPortalInternalChatImmersive === 'function') syncPortalInternalChatImmersive();
+      document.body.classList.remove('portal-internal-chat-open');
+      document.body.style.overflow = '';
+      portalResetInternalChatSheetChrome();
       if(typeof portalClearSheetNavigation === 'function') portalClearSheetNavigation();
       if(typeof window.portalStaffDmSyncUnreadChrome === 'function') void window.portalStaffDmSyncUnreadChrome();
     }
@@ -7579,6 +7600,9 @@
       }
     };
     function portalStaffChatPreferThreadShell(){
+      if(!portalInternalChatSheetIsOpen()){
+        return false;
+      }
       if(typeof portalInternalChatOfficeRestricted !== 'function' || !portalInternalChatOfficeRestricted()){
         return false;
       }
@@ -7586,6 +7610,7 @@
       return !!(String(ui.threadId || '').trim() || String(ui.groupId || '').trim());
     }
     function portalSyncInternalChatSheetView(inThread, peerLabel){
+      if(!portalInternalChatSheetIsOpen()) return;
       if(portalStaffChatPreferThreadShell()) inThread = true;
       var chatSheet = document.getElementById('internalChatSheet');
       if(chatSheet){
@@ -8058,7 +8083,9 @@
       if(chatSheet) chatSheet.removeAttribute('data-portal-chat-booting');
     }
     window.portalRenderInternalChatSheet = async function portalRenderInternalChatSheet(){
+      var renderEpoch = (window.__PORTAL_INTERNAL_CHAT_RENDER_EPOCH || 0);
       try{
+      if(portalInternalChatRenderAborted(renderEpoch)) return;
       portalBindInternalChatCloseControls();
       if(window.portalLeadStaffChatDirectory && typeof window.portalLeadStaffChatDirectory.portalPrimeInternalChatShell === 'function'){
         window.portalLeadStaffChatDirectory.portalPrimeInternalChatShell();
@@ -8137,6 +8164,7 @@
           window.__PORTAL_INTERNAL_CHAT_UI.threadId = tid;
         }
       }
+      if(portalInternalChatRenderAborted(renderEpoch)) return;
       if(!tid && !gid){
         if(portalStaffIsRestrictedWorkerChat(box && box.staff_profile)){
           await portalRenderRestrictedWorkerInbox(client, me, box && box.staff_profile, listHost);
@@ -8155,6 +8183,7 @@
         }
         listHost.innerHTML = "";
         var res = await client.from("portal_staff_dm_threads").select("id,participant_a,participant_b,updated_at").or("participant_a.eq."+me+",participant_b.eq."+me).order("updated_at", { ascending: false });
+        if(portalInternalChatRenderAborted(renderEpoch)) return;
         if(res.error){
           if(errTop){
             errTop.textContent = String(res.error.message || res.error);
@@ -8543,7 +8572,9 @@
       var managementOpsPeer = false;
       var routeOpen = window.portalCsCliqSupportRoute || {};
       var mgmtOpenLabel = routeOpen.MANAGEMENT_INBOX_LABEL || 'Admin';
+      if(portalInternalChatRenderAborted(renderEpoch)) return;
       var tres = await client.from("portal_staff_dm_threads").select("participant_a,participant_b").eq("id", tid).maybeSingle();
+      if(portalInternalChatRenderAborted(renderEpoch)) return;
       if(!tres.error && tres.data){
         var openIds = [String(tres.data.participant_a||''), String(tres.data.participant_b||'')].filter(Boolean);
         var profByOpen = {};
@@ -8613,6 +8644,7 @@
         var threadRoot = document.getElementById('internalChatThreadWrap');
         if(threadRoot) window.portalDmIcons.upgrade(threadRoot);
       }
+      if(portalInternalChatRenderAborted(renderEpoch)) return;
       portalSyncInternalChatSheetView(true, peerLabel);
       var msgsBox = document.getElementById("internalChatMessages");
       var inp = document.getElementById("internalChatInput");
@@ -8622,6 +8654,7 @@
       var seenAtOpen = portalStaffDmGetSeenIso(tid);
       var dmMsgFields = window.portalDmVoice ? window.portalDmVoice.MSG_FIELDS : "id,author_id,body,created_at,message_type,audio_storage_path,audio_mime,duration_ms";
       var mres = await client.from("portal_staff_dm_messages").select(dmMsgFields).eq("thread_id", tid).order("created_at", { ascending: true });
+      if(portalInternalChatRenderAborted(renderEpoch)) return;
       if(mres.error){
         if(msgsBox) msgsBox.innerHTML = "<p class=\"muted\" style=\"color:var(--danger);min-width:0;overflow-wrap:break-word\">"+escapeHtml(String(mres.error.message || mres.error))+"</p>";
         return;
@@ -8776,9 +8809,11 @@
       if(window.portalDmComposerWa && typeof window.portalDmComposerWa.sync === 'function'){
         window.portalDmComposerWa.sync('internalChatInput');
       }
-      portalSyncInternalChatMobileViewport();
+      if(!portalInternalChatRenderAborted(renderEpoch)){
+        portalSyncInternalChatMobileViewport();
+      }
       }finally{
-        portalClearInternalChatBooting();
+        if(portalInternalChatSheetIsOpen()) portalClearInternalChatBooting();
       }
     };
     window.portalInternalChatSendMessage = async function portalInternalChatSendMessage(){
