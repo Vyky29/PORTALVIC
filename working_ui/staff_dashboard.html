@@ -1579,7 +1579,42 @@
             : null;
           if(exemptResolved) return exemptResolved;
           const notes = typeof clientNotesById !== 'undefined' ? clientNotesById : {};
-          if(bridge.sessionComplete(iso, sid, s, notes, {})){
+          const dayWord = new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long' });
+          const memOnly = (function(){
+            const o = { feedbackDone: false, incident: false, absent: false, cancelled: false };
+            const ingest = function(rec){
+              if(!rec) return;
+              if(rec.feedbackDone) o.feedbackDone = true;
+              if(rec.incident) o.incident = true;
+              if(rec.absent) o.absent = true;
+              if(rec.cancelled) o.cancelled = true;
+            };
+            const tryK = function(k){
+              if(!k) return;
+              ingest(getSessionReviewRecord({ sessionKey: k }));
+            };
+            if(typeof portalSessionReviewKeyForModelRow === 'function'){
+              tryK(portalSessionReviewKeyForModelRow(s, dayWord, iso));
+            }
+            const cid = typeof portalEffectiveClientIdForReview === 'function'
+              ? portalEffectiveClientIdForReview(s, iso)
+              : String(s && s.clientId || '').trim().toLowerCase();
+            const tc = typeof portalCanonicalHmToken === 'function' ? portalCanonicalHmToken(s && s.start) : '';
+            const tr = String(s && s.start != null ? s.start : '').trim();
+            if(cid && tc) tryK(iso + '|' + tc + '|' + cid);
+            if(cid && tr && tr !== tc) tryK(iso + '|' + tr + '|' + cid);
+            if(cid) tryK(iso + '||' + cid);
+            return o;
+          })();
+          if(memOnly.feedbackDone || memOnly.absent || memOnly.cancelled){
+            return {
+              feedbackDone: !!memOnly.feedbackDone,
+              incident: !!memOnly.incident,
+              absent: !!memOnly.absent,
+              cancelled: !!memOnly.cancelled
+            };
+          }
+          if(bridge.sessionComplete(iso, sid, s, notes, memOnly)){
             return portalReviewFlagsForResolvedSession(iso, sid, s);
           }
           const src = window.SESSION_FEEDBACK_STATUS_PORTAL_SOURCE;
@@ -3023,6 +3058,7 @@
       if(areaSuffix && cid && tRaw && tRaw !== tCanon) tryKey(String(sessionDateIso) + '|' + tRaw + '|' + cid + areaSuffix);
       if(cid && tCanon) tryKey(String(sessionDateIso) + '|' + tCanon + '|' + cid);
       if(cid && tRaw && tRaw !== tCanon) tryKey(String(sessionDateIso) + '|' + tRaw + '|' + cid);
+      if(cid) tryKey(String(sessionDateIso) + '||' + cid);
       const scid0 = String(s && s.clientId || '').trim().toLowerCase();
       if(scid0 && scid0 !== cid){
         if(tCanon) tryKey(String(sessionDateIso) + '|' + tCanon + '|' + scid0);
@@ -3062,9 +3098,8 @@
           out.cancelled = true;
         }else if(fromBundle.feedbackDone){
           out.feedbackDone = true;
-        }else if(fromBundle.feedbackDone === false){
-          out.feedbackDone = false;
         }
+        /* Stale status export rows must not wipe Supabase/local review memory. */
         if(fromBundle.incident) out.incident = true;
       }
       if(!out.feedbackDone && !out.absent && !out.cancelled){
