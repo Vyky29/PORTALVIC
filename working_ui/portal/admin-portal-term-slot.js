@@ -29,6 +29,7 @@
     rootEl: null,
     saving: false,
     prefill: null,
+    sessionPickerSelection: null,
   };
 
   function esc(s) { return deps.esc(s); }
@@ -93,6 +94,7 @@
   function rowPayloadFromForm(root) {
     var anchor = normIso((root.querySelector("#trsAnchorDate") || {}).value);
     var day = weekdayLongFromIso(anchor);
+    var scope = String((root.querySelector('input[name="trsScope"]:checked') || {}).value || "single_day");
     return {
       anchorDate: anchor,
       day: day,
@@ -102,10 +104,182 @@
       service: String((root.querySelector("#trsService") || {}).value || "").trim(),
       area: String((root.querySelector("#trsArea") || {}).value || "").trim(),
       venue: String((root.querySelector("#trsVenue") || {}).value || "").trim(),
-      scope: String((root.querySelector('input[name="trsScope"]:checked') || {}).value || "single_day"),
+      scope: scope,
+      selectedSessionDates: scope === "pick_sessions" ? readSelectedSessionDates(root) : null,
       action: formAction(root),
       reason: String((root.querySelector("#trsReason") || {}).value || "").trim(),
     };
+  }
+
+  function formatSessionDateLabel(iso) {
+    var dt = parseIsoLocal(iso);
+    if (!dt) return String(iso || "");
+    return dt.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+  }
+
+  function buildTermSessionDatesForSlot(p) {
+    if (!p.anchorDate || !p.day) return [];
+    var bounds = deps.getTermBounds();
+    var dates = weekdaysMatchingFromThrough(p.day, p.anchorDate, bounds.lastDate, bounds);
+    if (!p.client_name || !p.time_slot) return dates;
+    var timeNorm = normSlotTime(p.time_slot);
+    var svcNorm = normName(p.service || "");
+    var matched = dates.filter(function (iso) {
+      var row = findBundleSlot(iso, p.client_name, p.time_slot);
+      if (row) return !svcNorm || normName(row.service) === svcNorm;
+      return collectParticipantRows(p.client_name, iso).some(function (r) {
+        return normSlotTime(r.time_slot) === timeNorm && (!svcNorm || normName(r.service) === svcNorm);
+      });
+    });
+    return matched.length ? matched : dates;
+  }
+
+  function captureSessionPickerSelection(root) {
+    var sel = Object.create(null);
+    root.querySelectorAll('input[name="trsSessionCancel"]').forEach(function (inp) {
+      var iso = normIso(inp.value);
+      if (iso) sel[iso] = !!inp.checked;
+    });
+    state.sessionPickerSelection = sel;
+  }
+
+  function readSelectedSessionDates(root) {
+    var out = [];
+    root.querySelectorAll('input[name="trsSessionCancel"]:checked').forEach(function (inp) {
+      var iso = normIso(inp.value);
+      if (iso) out.push(iso);
+    });
+    return out.sort();
+  }
+
+  function sessionCancelDefaultChecked(iso, anchorIso, action, prevSel) {
+    if (prevSel && Object.prototype.hasOwnProperty.call(prevSel, iso)) return !!prevSel[iso];
+    if (action === "cancel_service" || action === "no_participant") return iso >= anchorIso;
+    return iso === anchorIso;
+  }
+
+  function refreshTermSlotSessionPicker(root) {
+    var block = root.querySelector("#trsSessionPickerBlock");
+    var host = root.querySelector("#trsSessionPicker");
+    var meta = root.querySelector("#trsSessionPickerMeta");
+    if (!block || !host) return;
+    var scopeEl = root.querySelector('input[name="trsScope"]:checked');
+    var scope = scopeEl ? String(scopeEl.value || "") : "";
+    var p = rowPayloadFromForm(root);
+    var show = scope === "pick_sessions" && p.client_name && p.time_slot && p.day;
+    block.hidden = !show;
+    if (!show) return;
+    captureSessionPickerSelection(root);
+    var dates = buildTermSessionDatesForSlot(p);
+    var prevSel = state.sessionPickerSelection || null;
+    var action = p.action || "update";
+    if (!dates.length) {
+      host.innerHTML = '<p class="trs-session-empty">No matching sessions left in the term for this slot.</p>';
+      if (meta) meta.textContent = "";
+      return;
+    }
+    var checkedCount = 0;
+    var html = '<div class="trs-session-list" role="group" aria-label="Sessions in term">';
+    dates.forEach(function (iso) {
+      var checked = sessionCancelDefaultChecked(iso, p.anchorDate, action, prevSel);
+      if (checked) checkedCount += 1;
+      html +=
+        '<label class="trs-session-item">' +
+        '<input type="checkbox" name="trsSessionCancel" value="' +
+        esc(iso) +
+        '"' +
+        (checked ? " checked" : "") +
+        "/>" +
+        '<span class="trs-session-item__main">' +
+        '<span class="trs-session-item__date">' +
+        esc(formatSessionDateLabel(iso)) +
+        "</span>" +
+        '<span class="trs-session-item__slot">' +
+        esc(p.time_slot) +
+        "</span>" +
+        "</span>" +
+        '<span class="trs-session-item__status" data-cancel-label="Cancel" data-attend-label="Attending"></span>' +
+        "</label>";
+    });
+    html += "</div>";
+    html +=
+      '<div class="trs-session-toolbar">' +
+      '<button type="button" class="btn btn--ghost btn--xs" id="trsSessionSelectFromAnchor">All from anchor</button>' +
+      '<button type="button" class="btn btn--ghost btn--xs" id="trsSessionSelectNone">All attending</button>' +
+      '<button type="button" class="btn btn--ghost btn--xs" id="trsSessionSelectAll">Cancel all listed</button>' +
+      "</div>";
+    host.innerHTML = html;
+    if (meta) meta.textContent = "(" + checkedCount + " cancel · " + (dates.length - checkedCount) + " attending)";
+    host.querySelectorAll(".trs-session-item").forEach(function (lbl) {
+      syncSessionItemStatusLabel(lbl);
+      var inp = lbl.querySelector('input[name="trsSessionCancel"]');
+      if (inp) {
+        inp.addEventListener("change", function () {
+          syncSessionItemStatusLabel(lbl);
+          captureSessionPickerSelection(root);
+          refreshTermSlotSessionPickerMeta(root, dates.length);
+        });
+      }
+    });
+    var fromAnchorBtn = host.querySelector("#trsSessionSelectFromAnchor");
+    if (fromAnchorBtn) {
+      fromAnchorBtn.addEventListener("click", function () {
+        host.querySelectorAll('input[name="trsSessionCancel"]').forEach(function (inp) {
+          inp.checked = normIso(inp.value) >= p.anchorDate;
+          syncSessionItemStatusLabel(inp.closest(".trs-session-item"));
+        });
+        captureSessionPickerSelection(root);
+        refreshTermSlotSessionPickerMeta(root, dates.length);
+      });
+    }
+    var noneBtn = host.querySelector("#trsSessionSelectNone");
+    if (noneBtn) {
+      noneBtn.addEventListener("click", function () {
+        host.querySelectorAll('input[name="trsSessionCancel"]').forEach(function (inp) {
+          inp.checked = false;
+          syncSessionItemStatusLabel(inp.closest(".trs-session-item"));
+        });
+        captureSessionPickerSelection(root);
+        refreshTermSlotSessionPickerMeta(root, dates.length);
+      });
+    }
+    var allBtn = host.querySelector("#trsSessionSelectAll");
+    if (allBtn) {
+      allBtn.addEventListener("click", function () {
+        host.querySelectorAll('input[name="trsSessionCancel"]').forEach(function (inp) {
+          inp.checked = true;
+          syncSessionItemStatusLabel(inp.closest(".trs-session-item"));
+        });
+        captureSessionPickerSelection(root);
+        refreshTermSlotSessionPickerMeta(root, dates.length);
+      });
+    }
+  }
+
+  function syncSessionItemStatusLabel(labelEl) {
+    if (!labelEl) return;
+    var inp = labelEl.querySelector('input[name="trsSessionCancel"]');
+    var status = labelEl.querySelector(".trs-session-item__status");
+    if (!inp || !status) return;
+    var cancel = inp.checked;
+    status.textContent = cancel ? "Cancel" : "Attending";
+    status.classList.toggle("trs-session-item__status--cancel", cancel);
+    status.classList.toggle("trs-session-item__status--attend", !cancel);
+  }
+
+  function refreshTermSlotSessionPickerMeta(root, total) {
+    var meta = root.querySelector("#trsSessionPickerMeta");
+    if (!meta) return;
+    var checked = readSelectedSessionDates(root).length;
+    meta.textContent = "(" + checked + " cancel · " + Math.max(0, total - checked) + " attending)";
+  }
+
+  function validatePickSessionsScope(p) {
+    if (p.scope !== "pick_sessions") return "";
+    if (!p.selectedSessionDates || !p.selectedSessionDates.length) {
+      return "Select at least one session to cancel (or pick another Apply to option).";
+    }
+    return "";
   }
 
   function normName(v) {
@@ -288,6 +462,7 @@
     if (!part) {
       rebuildTermSlotServiceSelect(root, "", "", anchor);
       clearAutofilledSlotFields(root);
+      refreshTermSlotSessionPicker(root);
       return false;
     }
     var chosenSvc = rebuildTermSlotServiceSelect(root, part, svcEl.value, anchor);
@@ -297,16 +472,19 @@
         var wd = weekdayLongFromIso(anchor);
         deps.toast("Pick a service for " + part + (wd ? " on " + wd : "") + ".");
       }
+      refreshTermSlotSessionPicker(root);
       return false;
     }
     var slot = findBundleSlotByParticipantService(anchor, part, chosenSvc);
     if (!slot) {
       clearAutofilledSlotFields(root);
       if (opts.toastIfMissing) deps.toast("No roster row for that participante and service on this date.");
+      refreshTermSlotSessionPicker(root);
       return false;
     }
     applyBundleSlotToForm(root, slot);
     if (opts.toastOnSuccess) deps.toast("Loaded from roster — check fields then Save.");
+    refreshTermSlotSessionPicker(root);
     return true;
   }
 
@@ -462,6 +640,9 @@
 
   function affectedDatesForPayload(p) {
     var bounds = deps.getTermBounds();
+    if (p.scope === "pick_sessions") {
+      return Array.isArray(p.selectedSessionDates) ? p.selectedSessionDates.slice().sort() : [];
+    }
     if (p.scope === "single_day") return [p.anchorDate];
     if (p.scope === "weekday_term") return allWeekdaysInTerm(p.day, bounds);
     return weekdaysMatchingFromThrough(p.day, p.anchorDate, bounds.lastDate, bounds);
@@ -485,6 +666,13 @@
     var sd = normIso(row.session_date);
     if (!sd) return p.scope === "weekday_term";
     if (p.scope === "single_day") return sd === p.anchorDate;
+    if (p.scope === "pick_sessions") {
+      var picked = Object.create(null);
+      (p.selectedSessionDates || []).forEach(function (d) {
+        picked[d] = true;
+      });
+      return !!picked[sd];
+    }
     if (p.scope === "weekday_term") return true;
     return sd >= p.anchorDate;
   }
@@ -721,6 +909,11 @@
       return;
     }
     var p = rowPayloadFromForm(root);
+    var pickErr = validatePickSessionsScope(p);
+    if (pickErr) {
+      deps.toast(pickErr);
+      return;
+    }
     if (!p.anchorDate || !p.client_name || !p.time_slot || !p.day) {
       deps.toast("Anchor date, participante, and time slot are required.");
       return;
@@ -741,7 +934,14 @@
     state.saving = true;
     render(root);
     var chain = Promise.resolve();
-    if (p.scope === "single_day") {
+    if (p.scope === "pick_sessions") {
+      var pickDates = affectedDatesForPayload(p);
+      chain = pickDates.reduce(function (acc, iso) {
+        return acc.then(function () {
+          return ensureCancelledDated(client, bundleCancelRow(p, iso), iso, weekdayLongFromIso(iso) || p.day);
+        });
+      }, Promise.resolve());
+    } else if (p.scope === "single_day") {
       chain = ensureCancelledDated(client, cancelRow, p.anchorDate, p.day);
     } else if (p.scope === "weekday_term") {
       chain = ensureCancelledTemplate(client, cancelRow).then(function () {
@@ -769,6 +969,11 @@
       return;
     }
     var p = rowPayloadFromForm(root);
+    var pickErrN = validatePickSessionsScope(p);
+    if (pickErrN) {
+      deps.toast(pickErrN);
+      return;
+    }
     if (!p.anchorDate || !p.client_name || !p.time_slot || !p.day) {
       deps.toast("Anchor date, participante, and time slot are required.");
       return;
@@ -794,7 +999,17 @@
       venue: p.venue,
     };
     var chain = Promise.resolve();
-    if (p.scope === "single_day") {
+    if (p.scope === "pick_sessions") {
+      var pickDatesN = affectedDatesForPayload(p);
+      chain = pickDatesN.reduce(function (acc, iso) {
+        return acc.then(function () {
+          var wd = weekdayLongFromIso(iso) || p.day;
+          return ensureCancelledDated(client, openRow, iso, wd).then(function () {
+            return upsertNoClientRow(client, openRow, iso, wd);
+          });
+        });
+      }, Promise.resolve());
+    } else if (p.scope === "single_day") {
       chain = ensureCancelledDated(client, openRow, p.anchorDate, p.day).then(function () {
         return upsertNoClientRow(client, openRow, p.anchorDate, p.day);
       });
@@ -912,6 +1127,11 @@
       applyNoParticipantTermSlot(root);
       return;
     }
+    var pickErrU = validatePickSessionsScope(p);
+    if (pickErrU) {
+      deps.toast(pickErrU);
+      return;
+    }
     if (!p.anchorDate) {
       deps.toast("Anchor date is required.");
       return;
@@ -943,6 +1163,15 @@
     if (p.scope === "single_day") {
       chain = chain.then(function () {
         return upsertDatedRow(client, p, p.anchorDate, p.day);
+      });
+    } else if (p.scope === "pick_sessions") {
+      var pickDatesU = affectedDatesForPayload(p);
+      chain = chain.then(function () {
+        return pickDatesU.reduce(function (acc, iso) {
+          return acc.then(function () {
+            return upsertDatedRow(client, p, iso, weekdayLongFromIso(iso) || p.day);
+          });
+        }, Promise.resolve());
       });
     } else if (p.scope === "weekday_term") {
       chain = chain
@@ -1009,6 +1238,23 @@
       ".trs-pill input{margin:0;flex:0 0 auto}",
       ".trs-control-block--reason[hidden]{display:none!important}",
       ".trs-row--details[hidden]{display:none!important}",
+      ".trs-row--sessions[hidden]{display:none!important}",
+      ".trs-row--sessions{margin-top:14px;padding-top:14px;border-top:1px solid #eef2f7}",
+      ".trs-control-block--sessions{grid-column:1/-1;min-width:0}",
+      ".trs-session-hint{margin:0 0 10px;font-size:12px;line-height:1.45;color:#64748b;overflow-wrap:break-word}",
+      ".trs-session-empty{margin:0;font-size:13px;color:#64748b}",
+      ".trs-session-list{display:flex;flex-direction:column;gap:6px;max-height:min(280px,42vh);overflow-y:auto;padding:2px;min-width:0}",
+      ".trs-session-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;cursor:pointer;min-width:0}",
+      ".trs-session-item:hover{border-color:#cbd5e1;background:#f8fafc}",
+      ".trs-session-item input{flex:0 0 auto;margin:0}",
+      ".trs-session-item__main{flex:1 1 auto;min-width:0;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}",
+      ".trs-session-item__date{font-size:13px;font-weight:700;color:#0f172a;min-width:0;overflow-wrap:break-word}",
+      ".trs-session-item__slot{font-size:12px;color:#64748b;min-width:0;overflow-wrap:break-word}",
+      ".trs-session-item__status{flex:0 0 auto;font-size:11px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;padding:4px 8px;border-radius:999px;white-space:nowrap}",
+      ".trs-session-item__status--cancel{background:#fff1f2;color:#be123c}",
+      ".trs-session-item__status--attend{background:#ecfdf5;color:#047857}",
+      ".trs-session-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}",
+      ".btn--xs{padding:6px 10px;font-size:12px;line-height:1.2}",
       ".trs-panel__foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 16px;padding:14px 22px;border-top:1px solid #e2e8f0;background:#f8fafc}",
       ".trs-foot-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}",
       ".trs-msg{min-width:0;flex:1 1 220px;font-size:13px;color:#64748b;margin:0;overflow-wrap:break-word;text-align:right}",
@@ -1078,6 +1324,7 @@
       else if (isNoPart) saveBtn.textContent = "Set No participant";
       else saveBtn.textContent = "Save term slot";
     }
+    refreshTermSlotSessionPicker(root);
   }
 
   function render(root) {
@@ -1087,6 +1334,7 @@
     var anchor = normIso(pre.anchorDate) || normIso(new Date().toISOString().slice(0, 10));
     var weekday = weekdayLongFromIso(anchor);
     var preAction = String(pre.action || "update");
+    var preScope = String(pre.scope || "single_day");
 
     root.innerHTML =
       '<div class="trs-page">' +
@@ -1094,7 +1342,7 @@
       '<div class="trs-panel__head">' +
       '<div class="trs-panel__title">' +
       "<h1>Edit term slot</h1>" +
-      "<p>Pick <strong>participante</strong> then <strong>service</strong> — time, instructor, venue and pool fill from the term roster. One-day covers stay in <strong>Schedule &amp; Covers</strong>.</p>" +
+      "<p>Pick <strong>participante</strong> then <strong>service</strong>. Use <strong>Selected sessions</strong> to cancel some future dates and keep others attending.</p>" +
       "</div>" +
       '<div class="trs-panel__head-actions">' +
       '<button type="button" class="btn btn--sec" id="trsLoadBundle">Reload from roster</button>' +
@@ -1113,6 +1361,12 @@
       '<div class="trs-field"><label for="trsVenue">Venue</label><div class="participant-field-wrap"><input type="text" id="trsVenue" value="' + esc(pre.venue || "") + '" placeholder="Auto from roster" autocomplete="off"/><div id="trsVenueSuggest" class="portal-name-suggest" role="listbox" hidden aria-label="Venues"></div></div></div>' +
       '<div class="trs-field"><label for="trsArea">Pool / area</label><input type="text" id="trsArea" value="' + esc(pre.area || "") + '" placeholder="Auto from roster"/></div>' +
       "</div>" +
+      '<div class="trs-row trs-row--sessions" id="trsSessionPickerBlock" hidden>' +
+      '<div class="trs-control-block trs-control-block--sessions">' +
+      '<span class="trs-control-label">Sessions in term <span id="trsSessionPickerMeta"></span></span>' +
+      '<p class="trs-session-hint">Checked = cancel / no participant that day. Unchecked = participante still attending that session.</p>' +
+      '<div id="trsSessionPicker"></div>' +
+      "</div></div>" +
       '<div class="trs-row trs-row--control" id="trsControlRow">' +
       '<div class="trs-control-block" id="trsActionBox" role="group" aria-labelledby="trsActionLegend">' +
       '<span class="trs-control-label" id="trsActionLegend">Action</span>' +
@@ -1124,9 +1378,10 @@
       '<div class="trs-control-block" role="group" aria-labelledby="trsScopeLegend">' +
       '<span class="trs-control-label" id="trsScopeLegend">Apply to</span>' +
       '<div class="trs-pills trs-pills--scope">' +
-      '<label class="trs-pill" title="One dated exception on the anchor date"><input type="radio" name="trsScope" value="single_day" checked/> This day only</label>' +
-      '<label class="trs-pill" title="Updates the weekly template for all matching weekdays in the term"><input type="radio" name="trsScope" value="weekday_term"/> Every <span id="trsScopeWeekdayLabel">' + esc(weekday || "weekday") + "</span> until end of term</label>" +
-      '<label class="trs-pill" title="Same weekday from the anchor date through term end"><input type="radio" name="trsScope" value="rest_of_term"/> Rest of term (from anchor)</label>' +
+      '<label class="trs-pill" title="One dated exception on the anchor date"><input type="radio" name="trsScope" value="single_day"' + (preScope === "single_day" ? " checked" : "") + "/> This day only</label>" +
+      '<label class="trs-pill" title="Updates the weekly template for all matching weekdays in the term"><input type="radio" name="trsScope" value="weekday_term"' + (preScope === "weekday_term" ? " checked" : "") + "/> Every <span id="trsScopeWeekdayLabel">' + esc(weekday || "weekday") + "</span> until end of term</label>" +
+      '<label class="trs-pill" title="Same weekday from the anchor date through term end"><input type="radio" name="trsScope" value="rest_of_term"' + (preScope === "rest_of_term" ? " checked" : "") + "/> Rest of term (from anchor)</label>" +
+      '<label class="trs-pill" title="Pick individual session dates in the term"><input type="radio" name="trsScope" value="pick_sessions"' + (preScope === "pick_sessions" ? " checked" : "") + "/> Selected sessions</label>" +
       "</div></div>" +
       '<div class="trs-control-block trs-control-block--reason" id="trsReasonBlock">' +
       '<label class="trs-control-label" for="trsReason">Reason</label>' +
@@ -1154,7 +1409,14 @@
       });
     }
     root.querySelectorAll('input[name="trsAction"]').forEach(function (inp) {
-      inp.addEventListener("change", function () { syncTermSlotActionUi(root); });
+      inp.addEventListener("change", function () {
+        syncTermSlotActionUi(root);
+      });
+    });
+    root.querySelectorAll('input[name="trsScope"]').forEach(function (inp) {
+      inp.addEventListener("change", function () {
+        refreshTermSlotSessionPicker(root);
+      });
     });
     syncTermSlotActionUi(root);
     var saveBtn = root.querySelector("#trsSave");
@@ -1175,6 +1437,7 @@
       }
       refreshTermSlotAutofill(root);
     }
+    refreshTermSlotSessionPicker(root);
   }
 
   function openWithPrefill(prefill) {
