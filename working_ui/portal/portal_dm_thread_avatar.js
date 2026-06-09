@@ -86,6 +86,14 @@
       );
     }
 
+    if (item && item.kind === "group") {
+      return (
+        '<span class="portal-dm-thread-avatar portal-dm-thread-avatar--group">' +
+        escFn(initials(label)) +
+        "</span>"
+      );
+    }
+
     if (global.portalStaffAvatarInnerHtml) {
       var photoKey = username;
       if (!photoKey && label) {

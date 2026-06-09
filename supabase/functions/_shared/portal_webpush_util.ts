@@ -27,14 +27,37 @@ export function verifyPortalPushWebhook(req: Request): Response | null {
   return null;
 }
 
+/** web-push expects URL-safe base64; local vault may store 32-byte hex. */
+export function normalizeVapidPrivateKey(raw: string): string {
+  const t = String(raw || "").trim();
+  if (!t) return "";
+  if (/^[0-9a-fA-F]{64}$/.test(t)) {
+    const pairs = t.match(/.{2}/g)!;
+    const bytes = new Uint8Array(pairs.map((h) => parseInt(h, 16)));
+    let bin = "";
+    bytes.forEach((b) => {
+      bin += String.fromCharCode(b);
+    });
+    return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+  return t;
+}
+
 export function initVapidFromEnv(): string | null {
   const vapidPublic = Deno.env.get("VAPID_PUBLIC_KEY") ?? "";
-  const vapidPrivate = Deno.env.get("VAPID_PRIVATE_KEY") ?? "";
+  const vapidPrivate = normalizeVapidPrivateKey(
+    Deno.env.get("VAPID_PRIVATE_KEY") ?? "",
+  );
   const vapidSubject = Deno.env.get("VAPID_SUBJECT") ??
     "mailto:hello@clubsensational.org";
   if (!vapidPublic || !vapidPrivate) return null;
-  webpush.setVapidDetails(vapidSubject, vapidPublic, vapidPrivate);
-  return vapidPublic;
+  try {
+    webpush.setVapidDetails(vapidSubject, vapidPublic, vapidPrivate);
+    return vapidPublic;
+  } catch (e) {
+    console.error("[portal-webpush] VAPID init", e);
+    return null;
+  }
 }
 
 /** Staff/lead roster + announcements landing page. */

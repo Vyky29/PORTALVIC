@@ -933,7 +933,7 @@
         }
       } catch (_ap) {}
     }
-    playIncomingRingtoneWebAudio(true);
+    /* Do not play the 3-tone ring pattern while priming — users heard it on app open. */
   }
 
   function playIncomingRingtoneWebAudio(silentPrime) {

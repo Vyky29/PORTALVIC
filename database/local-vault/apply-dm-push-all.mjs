@@ -32,6 +32,16 @@ function readEnv(key) {
   return line.slice(key.length + 1).trim();
 }
 
+/** web-push Edge secrets must be base64url; vault may store 32-byte hex. */
+function normalizeVapidPrivateKey(raw) {
+  const t = String(raw || "").trim();
+  if (!t) return "";
+  if (/^[0-9a-fA-F]{64}$/.test(t)) {
+    return Buffer.from(t, "hex").toString("base64url");
+  }
+  return t;
+}
+
 run("node database/local-vault/apply-chat-admin-push.mjs");
 run("node database/local-vault/apply-incoming-call-push.mjs");
 
@@ -43,15 +53,18 @@ run(
 );
 
 if (args.has("--secrets")) {
+  const vapidPrivate = normalizeVapidPrivateKey(readEnv("VAPID_PRIVATE_KEY"));
   const pairs = [
-    "PORTAL_PUSH_WEBHOOK_SECRET",
-    "VAPID_PUBLIC_KEY",
-    "VAPID_PRIVATE_KEY",
-    "VAPID_SUBJECT",
-    "PORTAL_PUSH_OPEN_URL",
-    "PORTAL_PUSH_ADMIN_OPEN_URL",
+    ["PORTAL_PUSH_WEBHOOK_SECRET", readEnv("PORTAL_PUSH_WEBHOOK_SECRET")],
+    ["VAPID_PUBLIC_KEY", readEnv("VAPID_PUBLIC_KEY")],
+    ["VAPID_PRIVATE_KEY", vapidPrivate],
+    ["VAPID_SUBJECT", readEnv("VAPID_SUBJECT")],
+    ["PORTAL_PUSH_OPEN_URL", readEnv("PORTAL_PUSH_OPEN_URL")],
+    ["PORTAL_PUSH_ADMIN_OPEN_URL", readEnv("PORTAL_PUSH_ADMIN_OPEN_URL")],
   ];
-  const setArgs = pairs.map((k) => `${k}="${readEnv(k).replace(/"/g, '\\"')}"`).join(" ");
+  const setArgs = pairs
+    .map(([k, v]) => `${k}="${String(v).replace(/"/g, '\\"')}"`)
+    .join(" ");
   run(`npx supabase secrets set ${setArgs}`);
 }
 
