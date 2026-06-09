@@ -183,6 +183,13 @@ export function portalExpandRosterKeysForSharedFeedbackLookup(rosterSessionKeys)
       }
       continue;
     }
+    if (last === "day_centre" && parts.length >= 2) {
+      const client = String(parts[1] || "").trim().toLowerCase();
+      if (client) {
+        out.add(`${date}||${client}`);
+      }
+      continue;
+    }
     if (parts.length >= 3 && parts[1] === "") {
       const client = String(parts[2] || "").trim().toLowerCase();
       if (client) {
