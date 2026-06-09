@@ -421,12 +421,19 @@
       }
     }
     if (typeof cfg.onPaneOpen === "function") cfg.onPaneOpen(pane);
+    if (typeof global.portalAdminDmSyncCsCliqRailUnread === "function") {
+      global.portalAdminDmSyncCsCliqRailUnread();
+    }
   }
 
   function bindModule() {
     var root = document.getElementById("csCliqRoot");
     if (!root || root.dataset.portalCsCliqBound === "1") return;
     root.dataset.portalCsCliqBound = "1";
+
+    if (typeof global.portalAdminCsCliqEnsureDmWatchers === "function") {
+      global.portalAdminCsCliqEnsureDmWatchers();
+    }
 
     if (global.portalDmIcons && typeof global.portalDmIcons.upgrade === "function") {
       global.portalDmIcons.upgrade(root);

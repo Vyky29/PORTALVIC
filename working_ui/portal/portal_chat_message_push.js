@@ -150,16 +150,107 @@
     } catch (_b) {}
   }
 
+  function chatAlertBeepBlobUrl() {
+    if (global.__PORTAL_CHAT_ALERT_BEEP_URL__) return global.__PORTAL_CHAT_ALERT_BEEP_URL__;
+    try {
+      var sampleRate = 8000;
+      var samples = Math.floor(sampleRate * 0.34);
+      var data = new Float32Array(samples);
+      for (var i = 0; i < samples; i++) {
+        var t = i / sampleRate;
+        var tone = t < 0.12 ? 880 : 1174.66;
+        var env = t < 0.12 ? 1 : t < 0.28 ? 1 : 0;
+        data[i] = Math.sin(2 * Math.PI * tone * t) * env * 0.42;
+      }
+      var numChannels = 1;
+      var bytesPerSample = 2;
+      var blockAlign = numChannels * bytesPerSample;
+      var dataSize = samples * blockAlign;
+      var buffer = new ArrayBuffer(44 + dataSize);
+      var view = new DataView(buffer);
+      var offset = 0;
+      function writeStr(s) {
+        for (var j = 0; j < s.length; j++) view.setUint8(offset++, s.charCodeAt(j));
+      }
+      writeStr("RIFF");
+      view.setUint32(offset, 36 + dataSize, true);
+      offset += 4;
+      writeStr("WAVEfmt ");
+      view.setUint32(offset, 16, true);
+      offset += 4;
+      view.setUint16(offset, 1, true);
+      offset += 2;
+      view.setUint16(offset, numChannels, true);
+      offset += 2;
+      view.setUint32(offset, sampleRate, true);
+      offset += 4;
+      view.setUint32(offset, sampleRate * blockAlign, true);
+      offset += 4;
+      view.setUint16(offset, blockAlign, true);
+      offset += 2;
+      view.setUint16(offset, 16, true);
+      offset += 2;
+      writeStr("data");
+      view.setUint32(offset, dataSize, true);
+      offset += 4;
+      for (var k = 0; k < samples; k++) {
+        var s = Math.max(-1, Math.min(1, data[k]));
+        view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+        offset += 2;
+      }
+      global.__PORTAL_CHAT_ALERT_BEEP_URL__ = URL.createObjectURL(
+        new Blob([buffer], { type: "audio/wav" })
+      );
+      return global.__PORTAL_CHAT_ALERT_BEEP_URL__;
+    } catch (_blob) {
+      return "";
+    }
+  }
+
+  function playChatMessageAlertSoundHtml5() {
+    try {
+      var el = global.__PORTAL_CHAT_ALERT_AUDIO__;
+      if (!el && typeof global.Audio !== "undefined") {
+        el = new global.Audio();
+        el.preload = "auto";
+        el.setAttribute("playsinline", "true");
+        el.setAttribute("webkit-playsinline", "true");
+        el.volume = 0.9;
+        global.__PORTAL_CHAT_ALERT_AUDIO__ = el;
+      }
+      if (!el) return false;
+      var src = chatAlertBeepBlobUrl();
+      if (!src) return false;
+      if (el.src !== src) el.src = src;
+      el.currentTime = 0;
+      var p = el.play();
+      if (p && typeof p.then === "function") {
+        p.then(function () {
+          global.__PORTAL_CHAT_SOUND_PLAYED__ = true;
+        }).catch(function () {});
+      } else {
+        global.__PORTAL_CHAT_SOUND_PLAYED__ = true;
+      }
+      return true;
+    } catch (_e) {
+      return false;
+    }
+  }
+
   function playChatMessageAlertSound() {
     primeChatAlertAudio();
+    global.__PORTAL_CHAT_SOUND_PLAYED__ = false;
     try {
       var Ctx = global.AudioContext || global.webkitAudioContext;
-      if (!Ctx) return false;
+      if (!Ctx) {
+        playChatMessageAlertSoundHtml5();
+        return false;
+      }
       var ctx = global.__PORTAL_CHAT_AUDIO_CTX__ || new Ctx();
       global.__PORTAL_CHAT_AUDIO_CTX__ = ctx;
       function chirp() {
         var gain = ctx.createGain();
-        gain.gain.value = 0.32;
+        gain.gain.value = 0.48;
         gain.connect(ctx.destination);
         function beep(freq, start, dur) {
           var osc = ctx.createOscillator();
@@ -172,14 +263,24 @@
         var t = ctx.currentTime;
         beep(880, t, 0.11);
         beep(1174.66, t + 0.13, 0.15);
+        global.__PORTAL_CHAT_SOUND_PLAYED__ = true;
       }
       if (ctx.state === "suspended") {
-        void ctx.resume().then(chirp).catch(function () {});
+        void ctx
+          .resume()
+          .then(chirp)
+          .catch(function () {
+            playChatMessageAlertSoundHtml5();
+          });
       } else {
         chirp();
       }
+      setTimeout(function () {
+        if (!global.__PORTAL_CHAT_SOUND_PLAYED__) playChatMessageAlertSoundHtml5();
+      }, 120);
       return true;
     } catch (_e) {
+      playChatMessageAlertSoundHtml5();
       return false;
     }
   }
