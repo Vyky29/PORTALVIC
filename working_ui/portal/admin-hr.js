@@ -229,6 +229,8 @@
     });
   }
 
+  function personActive(r) { return !!state.linkedKeys[nk(r)]; }
+
   function hrStaffAvatarHtml(person) {
     if (typeof global.portalStaffAvatarInnerHtml !== "function") return "";
     var name = person && (person.employee_name || person.staff_name) ? String(person.employee_name || person.staff_name).trim() : "";

@@ -63,7 +63,7 @@
   <script src="/portal/portal_dm_voice.js?v=20260609-dm-operator-strip"></script>
   <script src="/portal/portal_dm_attachments.js?v=20260624-dm-icons"></script>
   <script src="/portal/portal-change-log.js?v=20260601-changelog-merge"></script>
-  <script src="/portal/admin-hr.js?v=20260609-achievement-videos"></script>
+  <script src="/portal/admin-hr.js?v=20260610-hr-person-active"></script>
   <script src="/portal/admin-payments.js?v=20260531-la-column"></script>
   <script src="/portal/portal-comms-order-payments.js?v=20260617-cfk-order-enrich"></script>
   <script src="/portal/portal-admin-settings-hub.js?v=20260622-parent-notify-wa-test"></script>
@@ -18273,8 +18273,8 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         '<div class="toolbar" style="margin-bottom:14px;flex-wrap:wrap;gap:8px">'+
         '<button type="button" class="btn btn--pri" data-view-target="staffhr_contracts">+ New employment contract</button>'+
         '<button type="button" class="btn btn--sec" data-open-compose data-preset="announcement">Compose announcement</button></div>'+
-        (window.PortalWellbeingAdminActions ? window.PortalWellbeingAdminActions.viewHtml() : '')+
-        '<div id="hrModuleRoot"></div>';
+        '<div id="hrModuleRoot"></div>'+
+        (window.PortalWellbeingAdminActions ? window.PortalWellbeingAdminActions.viewHtml() : '');
     }
 
     function viewStaffHRContracts(){
