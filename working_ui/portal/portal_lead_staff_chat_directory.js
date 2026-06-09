@@ -1429,12 +1429,31 @@
       if (listHost) {
         listHost.hidden = false;
         listHost.setAttribute("aria-hidden", "false");
-        listHost.innerHTML =
-          '<p class="alerts-sheet-placeholder muted portal-dm-inbox-loading" style="min-width:0;overflow-wrap:break-word">Loading chat…</p>';
+        if (restricted) {
+          chatSheet.classList.add("sheet--portal-chat-thread");
+          chatSheet.classList.remove("sheet--portal-chat-inbox");
+          listHost.hidden = true;
+          listHost.setAttribute("aria-hidden", "true");
+          listHost.innerHTML = "";
+          if (threadWrap) {
+            threadWrap.hidden = false;
+            threadWrap.setAttribute("aria-hidden", "false");
+          }
+          var msgsBox = document.getElementById("internalChatMessages");
+          if (msgsBox && !msgsBox.querySelector(".portal-dm-msg-row")) {
+            msgsBox.innerHTML =
+              '<p class="muted portal-dm-inbox-loading" style="margin:0">Loading…</p>';
+          }
+        } else {
+          listHost.innerHTML =
+            '<p class="alerts-sheet-placeholder muted portal-dm-inbox-loading" style="min-width:0;overflow-wrap:break-word">Loading chat…</p>';
+          chatSheet.classList.add("sheet--portal-chat-inbox");
+          chatSheet.classList.remove("sheet--portal-chat-thread");
+        }
+      } else {
+        chatSheet.classList.add("sheet--portal-chat-inbox");
+        chatSheet.classList.remove("sheet--portal-chat-thread");
       }
-      chatSheet.classList.add("sheet--portal-chat-inbox");
-      chatSheet.classList.remove("sheet--portal-chat-thread");
-    }
 
     try {
       chatSheet.setAttribute(
@@ -1447,6 +1466,10 @@
   function initWorkerPeerInbox() {
     bindInboxNav();
     var prof = profileRow();
+    if (portalStaffIsRestrictedWorkerChat(prof)) {
+      syncInboxChrome({ profile: prof, hasDirectory: false, inThread: false });
+      return;
+    }
     syncInboxChrome({ profile: prof, inThread: false });
     if (!portalStaffHasPeerDirectory(prof)) return;
     try {

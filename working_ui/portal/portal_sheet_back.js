@@ -105,6 +105,7 @@
         global.portalCloseInternalChatReturnToAlertsMenu();
         return true;
       }
+      return true;
     }
     ui.threadId = null;
     global.__PORTAL_INTERNAL_CHAT_UI = ui;

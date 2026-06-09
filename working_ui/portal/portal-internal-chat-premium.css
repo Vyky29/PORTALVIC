@@ -689,6 +689,26 @@ body.portal-inapp-call-open #portalInternalChatBackdrop.open{
 .portal-dm-restricted-hub{
   display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px 12px 4px;
 }
+/* Staff workers (Teflon): Admin-only lane — never show inbox tabs, list, or legacy split UI */
+#internalChatSheet[data-portal-chat-shell="worker"] #internalChatLeadInboxChrome,
+#internalChatSheet[data-portal-chat-shell="worker"] #internalChatLeadStaffSuggestions,
+#internalChatSheet[data-portal-chat-shell="worker"] #internalChatStaffDirectoryWrap,
+#internalChatSheet[data-portal-chat-shell="worker"].sheet--portal-chat-thread #internalChatInboxBrand,
+#internalChatSheet[data-portal-chat-shell="worker"].sheet--portal-chat-thread #internalChatTitle,
+#internalChatSheet[data-portal-chat-shell="worker"].sheet--portal-chat-inbox #internalChatListWrap{
+  display:none !important;
+}
+#internalChatSheet[data-portal-chat-shell="worker"].sheet--portal-chat-inbox #internalChatThreadWrap{
+  display:flex !important;
+  flex-direction:column;
+  min-height:0;
+}
+#internalChatSheet[data-portal-chat-shell="worker"].sheet--portal-chat-inbox,
+#internalChatSheet[data-portal-chat-shell="worker"].sheet--portal-chat-thread{
+  top:0 !important;
+  height:100dvh !important;
+  max-height:100dvh !important;
+}
 .portal-dm-restricted-hub__btn{
   display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0;
   padding:12px;border-radius:14px;border:1px solid var(--portal-chat-line);background:#fff;
