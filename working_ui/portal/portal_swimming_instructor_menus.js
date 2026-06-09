@@ -262,8 +262,7 @@
     });
 
     global.__PORTAL_TOPBAR_SIX_ICON_GRID__ = !!profile.sixIcon;
-    global.__PORTAL_TOPBAR_LEAD_EXTRAS__ =
-      profile.leadExtras !== undefined ? !!profile.leadExtras : !!profile.sixIcon;
+    global.__PORTAL_TOPBAR_LEAD_EXTRAS__ = !!profile.leadExtras;
   }
 
   function applyCeoStaffTopbarTools() {
