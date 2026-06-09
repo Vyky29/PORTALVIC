@@ -1450,10 +1450,23 @@
           chatSheet.classList.add("sheet--portal-chat-inbox");
           chatSheet.classList.remove("sheet--portal-chat-thread");
         }
+      } else if (restricted) {
+        chatSheet.classList.add("sheet--portal-chat-thread");
+        chatSheet.classList.remove("sheet--portal-chat-inbox");
+        if (threadWrap) {
+          threadWrap.hidden = false;
+          threadWrap.setAttribute("aria-hidden", "false");
+        }
+        var msgsBoxOnly = document.getElementById("internalChatMessages");
+        if (msgsBoxOnly && !msgsBoxOnly.querySelector(".portal-dm-msg-row")) {
+          msgsBoxOnly.innerHTML =
+            '<p class="muted portal-dm-inbox-loading" style="margin:0">Loading…</p>';
+        }
       } else {
         chatSheet.classList.add("sheet--portal-chat-inbox");
         chatSheet.classList.remove("sheet--portal-chat-thread");
       }
+    }
 
     try {
       chatSheet.setAttribute(

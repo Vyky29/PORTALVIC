@@ -94,9 +94,9 @@
   <script src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
   <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260608-incoming-poll" />
-  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260609-worker-chat-only" />
+  <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260609-worker-no-inbox-flash" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260610-topbar-colors" />
-  <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260608-orbit-center" />
+  <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260609-worker-no-inbox-flash" />
   <link rel="stylesheet" href="/portal/portal_admin_cs_cliq.css?v=20260609-portal-white-chat" />
   <link rel="stylesheet" href="/portal/portal_cs_cliq_embed.css?v=20260608-inbox-fix" />
   <link rel="stylesheet" href="/portal/portal_cs_cliq_workspace.css?v=20260604-cliq-fix" />
@@ -1085,7 +1085,7 @@
   <script src="/portal/portal_cs_cliq_embed.js?v=20260607-cliq-fix"></script>
   <script src="/portal/portal_dm_executive_cliq.js?v=20260622-chat-restore"></script>
   <script src="/portal/portal_staff_photos.js?v=20260609-photo-png-fix"></script>
-  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260609-worker-chat-only"></script>
+  <script src="/portal/portal_lead_staff_chat_directory.js?v=20260609-worker-no-inbox-flash"></script>
   <script src="/portal/portal_worker_group_thread.js?v=20260625-staff-pool-channels"></script>
   <script src="/portal/portal_incoming_call_push.js?v=20260610-call-toast-fix"></script>
   <script src="/portal/portal_chat_message_push.js?v=20260609-chat-push-v4"></script>
@@ -7299,7 +7299,15 @@
         if(typeof syncDockQuickMenuAttention === 'function') syncDockQuickMenuAttention();
       }
     };
+    function portalStaffChatPreferThreadShell(){
+      if(typeof portalInternalChatOfficeRestricted !== 'function' || !portalInternalChatOfficeRestricted()){
+        return false;
+      }
+      var sh = document.getElementById('internalChatSheet');
+      return !!(sh && sh.classList.contains('open'));
+    }
     function portalSyncInternalChatSheetView(inThread, peerLabel){
+      if(portalStaffChatPreferThreadShell()) inThread = true;
       var chatSheet = document.getElementById('internalChatSheet');
       if(chatSheet){
         chatSheet.classList.toggle('sheet--portal-chat-thread', !!inThread);
@@ -13186,7 +13194,10 @@
         backdropEl.classList.add('sheet-backdrop--focus');
       }
       currentSheet.classList.add('open');
-      if(backdropEl) backdropEl.classList.add('open');
+      if(backdropEl){
+        if(id === 'internalChatSheet') backdropEl.classList.remove('open');
+        else backdropEl.classList.add('open');
+      }
       document.body.style.overflow = 'hidden';
       if(id === 'setupReminderSheet'){
         const tn = document.getElementById('trainingNotice');
@@ -13242,6 +13253,9 @@
         }
         if(window.portalLeadStaffChatDirectory && typeof window.portalLeadStaffChatDirectory.portalPrimeInternalChatShell === 'function'){
           window.portalLeadStaffChatDirectory.portalPrimeInternalChatShell();
+        }
+        if(restrictedChatOpen){
+          portalSyncInternalChatSheetView(true, 'Admin');
         }
         void (async function(){
           if(typeof window.portalStaffDmAckInboxOpened === 'function'){

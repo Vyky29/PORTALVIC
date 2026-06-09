@@ -689,25 +689,39 @@ body.portal-inapp-call-open #portalInternalChatBackdrop.open{
 .portal-dm-restricted-hub{
   display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px 12px 4px;
 }
-/* Staff workers (Teflon): Admin-only lane — never show inbox tabs, list, or legacy split UI */
+/* Staff workers (Teflon): Admin-only lane — never show legacy inbox chrome behind thread */
 #internalChatSheet[data-portal-chat-shell="worker"] #internalChatLeadInboxChrome,
 #internalChatSheet[data-portal-chat-shell="worker"] #internalChatLeadStaffSuggestions,
 #internalChatSheet[data-portal-chat-shell="worker"] #internalChatStaffDirectoryWrap,
-#internalChatSheet[data-portal-chat-shell="worker"].sheet--portal-chat-thread #internalChatInboxBrand,
-#internalChatSheet[data-portal-chat-shell="worker"].sheet--portal-chat-thread #internalChatTitle,
-#internalChatSheet[data-portal-chat-shell="worker"].sheet--portal-chat-inbox #internalChatListWrap{
+#internalChatSheet[data-portal-chat-shell="worker"] #internalChatInboxBrand,
+#internalChatSheet[data-portal-chat-shell="worker"] #internalChatTitle,
+#internalChatSheet[data-portal-chat-shell="worker"] #internalChatListWrap,
+#internalChatSheet[data-portal-chat-shell="worker"] #internalChatOfficeComposeHost,
+#internalChatSheet[data-portal-chat-shell="worker"] .portal-dm-inbox-brand__tagline{
   display:none !important;
-}
-#internalChatSheet[data-portal-chat-shell="worker"].sheet--portal-chat-inbox #internalChatThreadWrap{
-  display:flex !important;
-  flex-direction:column;
-  min-height:0;
 }
 #internalChatSheet[data-portal-chat-shell="worker"].sheet--portal-chat-inbox,
 #internalChatSheet[data-portal-chat-shell="worker"].sheet--portal-chat-thread{
   top:0 !important;
   height:100dvh !important;
   max-height:100dvh !important;
+  background:#fff !important;
+}
+#internalChatSheet[data-portal-chat-shell="worker"] .portal-dm-sheet-head{
+  display:none !important;
+}
+#internalChatSheet[data-portal-chat-shell="worker"] .portal-dm-sheet-body,
+#internalChatSheet[data-portal-chat-shell="worker"] #internalChatThreadWrap{
+  flex:1 1 auto;
+  min-height:0;
+  display:flex !important;
+  flex-direction:column;
+  background:#fff;
+}
+body.portal-internal-chat-open .sheet-backdrop.open{
+  opacity:0 !important;
+  visibility:hidden !important;
+  pointer-events:none !important;
 }
 .portal-dm-restricted-hub__btn{
   display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0;
