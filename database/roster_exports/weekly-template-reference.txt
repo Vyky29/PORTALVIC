@@ -9,7 +9,7 @@ Cliente | nota | Instructor | session time | venue
 CLOSED | Teaching Pool | YOUSSEF | 4 to 4.30 | Acton
 Adam Pi | Teaching Pool | ANGEL | 4 to 5.30 | Acton
 Eddie | Teaching Pool | YOUSSEF | 4.30 to 5 | Acton
-Kirushy | Teaching Pool | DAN | 4.30 to 5 | Northolt
+Kirushy | Teaching Pool | DAN | 4.30 to 5 | Northolt  [removed from term — left programme Jun 2026]
 Yunis | Teaching Pool | ROBERTO | 4.30 to 5 | Northolt
 Gemma | Teaching Pool | DAN | 5 to 5.30 | Northolt
 Joel | Teaching Pool | YOUSSEF | 5 to 5.30 | Acton

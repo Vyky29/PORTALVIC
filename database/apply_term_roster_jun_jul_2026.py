@@ -253,7 +253,6 @@ def monday_afternoon() -> list[dict]:
         r("Yunis", "Monday", "ROBERTO", "4.30 to 5", service=aa, area=tp, venue="Northolt"),
         r("Amar Ra", "Monday", "ROBERTO", "5 to 6", service=aa, area=tp, venue="Northolt"),
         r("Yamik", "Monday", "ROBERTO", "6 to 6.30", service=aa, area=tp, venue="Northolt"),
-        r("Kirushy", "Monday", "DAN", "4.30 to 5", service=aa, area=tp, venue="Northolt"),
         r("Gemma", "Monday", "DAN", "5 to 5.30", service=aa, area=tp, venue="Northolt"),
         r("Zayana", "Monday", "DAN", "5.30 to 6", service=aa, area=tp, venue="Northolt"),
         r("Adaam Ah", "Monday", "DAN", "6 to 6.30", service=aa, area=tp, venue="Northolt"),
