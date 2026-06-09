@@ -25,6 +25,8 @@
     "adaam ah": "portal/participants/adaam-ah.png",
     "aadam ah": "portal/participants/adaam-ah.png",
     amir: "portal/participants/amir.png",
+    anas: "portal/participants/anas.png",
+    "anas ismail": "portal/participants/anas.png",
     serine: "portal/participants/serine.png",
     fadi: "portal/participants/fadi.png",
     scott: "portal/participants/scott.png",
