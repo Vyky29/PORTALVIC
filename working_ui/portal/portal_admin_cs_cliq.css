@@ -357,6 +357,14 @@ body.admin-view-cs-cliq #csCliqRoot .portal-cs-cliq-thread-header__status {
     display: none !important;
   }
 
+  #csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="list"] .portal-cs-cliq-inbox__conv-host {
+    display: none !important;
+    flex: 0 0 auto !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    overflow: hidden;
+  }
+
   #csCliqRoot .portal-cs-cliq-inbox__list-col {
     flex: 1 1 auto;
     min-height: 0;
@@ -934,6 +942,7 @@ body.admin-view-cs-cliq #csCliqRoot .portal-cs-cliq-thread-header__status {
 }
 
 #csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="thread"] .portal-cs-cliq-inbox__conv-host,
+#csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="compose"] .portal-cs-cliq-inbox__conv-host,
 #csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="thread"] .portal-cs-cliq-inbox__conversation-col,
 #csCliqRoot .portal-cs-cliq-inbox__conversation-col--active {
   flex: 1 1 auto;

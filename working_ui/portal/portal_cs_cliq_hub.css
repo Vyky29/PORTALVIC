@@ -754,6 +754,14 @@
     display: none !important;
   }
 
+  #csCliqRoot .portal-cs-cliq__chat-body[data-cs-cliq-panel="list"] .portal-cs-cliq-inbox__conv-host {
+    display: none !important;
+    flex: 0 0 auto !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    overflow: hidden;
+  }
+
   #csCliqRoot .portal-cs-cliq-inbox__list-col {
     background: transparent;
   }
