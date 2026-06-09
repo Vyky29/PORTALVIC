@@ -2234,7 +2234,7 @@
       await global.portalDmAttachments.fillMessageBody(host, m, client, escFn);
       return;
     }
-    if (global.portalDmVoice && global.portalDmVoice.fillMessageBody) {
+    if (global.portalDmVoice && global.portalDmVoice.isVoice && global.portalDmVoice.isVoice(m)) {
       await global.portalDmVoice.fillMessageBody(host, m, client, escFn);
       return;
     }

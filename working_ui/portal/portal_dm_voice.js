@@ -196,11 +196,18 @@
     }
     host.innerHTML = "";
     if (!isVoice(m)) {
+      var plain = String((m && m.body) || "");
+      if (
+        global.portalChatActorIdentity &&
+        typeof global.portalChatActorIdentity.stripDmOperatorTag === "function"
+      ) {
+        plain = global.portalChatActorIdentity.stripDmOperatorTag(plain);
+      }
       var text = document.createElement("div");
       text.style.whiteSpace = "pre-wrap";
       text.style.minWidth = "0";
       text.style.overflowWrap = "break-word";
-      text.textContent = String((m && m.body) || "");
+      text.textContent = plain;
       host.appendChild(text);
       return;
     }

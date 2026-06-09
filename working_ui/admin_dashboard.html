@@ -23146,7 +23146,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           }else{
             bodyHost.style.whiteSpace = 'pre-wrap';
             bodyHost.style.overflowWrap = 'break-word';
-            bodyHost.textContent = String(m.body || '');
+            var plainBody = String(m.body || '');
+            if(
+              window.portalChatActorIdentity &&
+              typeof window.portalChatActorIdentity.stripDmOperatorTag === 'function'
+            ){
+              plainBody = window.portalChatActorIdentity.stripDmOperatorTag(plainBody);
+            }
+            bodyHost.textContent = plainBody;
           }
           div.appendChild(bodyHost);
           if(tline){
