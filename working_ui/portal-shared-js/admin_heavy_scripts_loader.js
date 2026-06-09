@@ -8,7 +8,7 @@
     roster: [
       "/portal/term_from_timetable.js?v=20260609-feedback-real",
       "/portal/staff_dashboard_spreadsheet_bundle.js?v=20260609-luliya-photo",
-      "/portal/clients_info_embed.js?v=20260606-ayden-info-trim",
+      "/portal/clients_info_embed.js?v=20260608-anas-ismail",
       "/portal/staff_dashboard_spreadsheet_adapter.js?v=20260602-cap-roster",
       "/portal/portal-roster-rows-merge.js?v=20260609-kirushy-rest-term",
       "/portal/staff_dashboard_portal_roster_source.js?v=20260602-javier-may20-catchup",
@@ -21,7 +21,7 @@
     ],
     payments: ["/portal/clients_payments_portal_data.js?v=20260507-portalfix"],
     absentees: ["/portal/absentees_credits_portal_data.js?v=20260530-abs"],
-    participants: ["/portal/participants_parents_portal_data.js?v=20260606-patrick-dhennin"],
+    participants: ["/portal/participants_parents_portal_data.js?v=20260608-anas-ismail"],
     oldpax: ["/portal/old_participants_portal_data.js?v=20260430-oldpax-export"],
     waitlist: ["/portal/waiting_list_portal_data.js?v=20260430-waitlist"],
     spreadsheet_ref: ["/portal/spreadsheet_reference_data.js?v=20260602-weekend"],
