@@ -38,6 +38,7 @@ PIN_NAME_TO_LOGIN_KEY: dict[str, str] = {
     "Dan Clarke": "Dan",
     "Bismark Gyan": "Bismark",
     "Carlos Herrero": "Carlos",
+    "Andres Borrego": "Andres",
     "Javier Marquez": "Javier",
     "Roberto Reali": "Roberto",
     "Youssef Moustafa": "Youssef",
