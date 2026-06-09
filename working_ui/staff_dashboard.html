@@ -93,7 +93,7 @@
   <link rel="stylesheet" href="/portal/portal_screenshot_guard.css?v=20260607-camera-fix" />
   <script src="/portal/portal_screenshot_guard.js?v=20260607-camera-fix"></script>
   <title>clubSENsational Staff Dashboard</title>
-  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260608-incoming-poll" />
+  <link rel="stylesheet" href="/portal/staff-dashboard.css?v=20260609-initials-gender" />
   <link rel="stylesheet" href="/portal/portal-internal-chat-premium.css?v=20260608-chat-boot" />
   <link rel="stylesheet" href="/portal/portal_topbar_tools.css?v=20260610-topbar-colors" />
   <link rel="stylesheet" href="/portal/portal-dm-inbox-premium.css?v=20260608-staff-admin-group" />
@@ -1038,10 +1038,10 @@
   <script src="/portal/staff_roster_resolve.js?v=20260629-teflon-preview-guard"></script>
   <link rel="stylesheet" href="/portal/portal_ghost_view.css?v=20260624-ghost-handoff" />
   <script src="/portal/portal-ghost-view.js?v=20260624-ghost-handoff"></script>
-  <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260609-achievement-videos" />
+  <link rel="stylesheet" href="/portal/portal_achievements.css?v=20260609-initials-gender" />
   <script src="/portal/portal_staff_gender_embed.js?v=20260605-mockup-compact"></script>
   <script src="/portal/portal_dashboard_ui_coalesce.js?v=20260606-photo-stable"></script>
-  <script src="/portal/portal_participant_photos.js?v=20260609-pilot-placeholders"></script>
+  <script src="/portal/portal_participant_photos.js?v=20260609-initials-gender"></script>
   <script src="/portal/portal_topbar_header.js?v=20260610-roberto-topbar"></script>
   <script src="/portal/portal_participant_achievements.js?v=20260609-achievement-videos"></script>
   <script src="/portal/portal_client_sessions_overview.js?v=20260607-no-opt-labels"></script>
@@ -1056,7 +1056,7 @@
   <script src="/portal/portal_wellbeing_review_reminder.js?v=20260604-wellbeing-reminder-off"></script>
   <script src="/portal/portal_floating_internal_chat.js?v=20260609-staff-dm-live"></script>
   <script src="/portal/portal_area_note_icons.js?v=20260607-area-icons-transparent"></script>
-  <script src="/portal/portal_today_next_chips.js?v=20260606-photo-stable"></script>
+  <script src="/portal/portal_today_next_chips.js?v=20260609-initials-gender"></script>
   <script type="module" src="/portal/portal_quick_menu_service_leads.js?v=20260604-service-leads-lead-only"></script>
   <script src="/portal/portal_onboarding_urls.js?v=20260601-onboarding-urls"></script>
   <script src="/portal/portal_onboarding_quick_menu.js?v=20260616-michelle-only"></script>
@@ -4815,13 +4815,23 @@
       if(fromNote) return fromNote;
       return clientPhotoUrl(name);
     }
-    function clientPhotoSlotPlaceholderHtml(){
+    function clientPhotoSlotPlaceholderHtml(name){
+      name = String(name || '').trim();
+      if(typeof portalParticipantInitials === 'function'){
+        var init = escapeHtml(portalParticipantInitials(name));
+        var gCls = typeof portalParticipantGenderClass === 'function'
+          ? portalParticipantGenderClass(name, 'client-photo-slot--')
+          : '';
+        return '<span class="client-photo-slot-initials' + gCls + '">' + init + '</span>';
+      }
       return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>';
     }
     function syncClientPhotoSlot(name, clientId){
       const slot = document.getElementById('clientPhotoSlot');
       if(!slot) return;
-      const url = resolveParticipantPhotoUrl(name, clientId);
+      const c = clientId && clientNotesById[clientId];
+      const displayName = String((c && c.name) || name || '').trim();
+      const url = resolveParticipantPhotoUrl(displayName, clientId);
       if(url){
         const norm = typeof portalNormalizeParticipantPhotoUrl === 'function'
           ? portalNormalizeParticipantPhotoUrl(url)
@@ -4833,17 +4843,29 @@
           return;
         }
         slot.classList.add('client-photo-slot--has-photo');
+        slot.classList.remove('client-photo-slot--m', 'client-photo-slot--f');
+        slot.setAttribute('data-participant-name', displayName);
         slot.innerHTML = '<img class="portal-screenshot-protected" src="' + escapeHtml(url) + '" alt="" loading="eager" fetchpriority="low" decoding="async" draggable="false" onerror="portalClientPhotoSlotFallback(this)">';
       } else {
         slot.classList.remove('client-photo-slot--has-photo');
-        slot.innerHTML = clientPhotoSlotPlaceholderHtml();
+        slot.classList.remove('client-photo-slot--m', 'client-photo-slot--f');
+        const g = typeof portalParticipantGender === 'function' ? portalParticipantGender(displayName) : '';
+        if(g === 'm') slot.classList.add('client-photo-slot--m');
+        else if(g === 'f') slot.classList.add('client-photo-slot--f');
+        slot.setAttribute('data-participant-name', displayName);
+        slot.innerHTML = clientPhotoSlotPlaceholderHtml(displayName);
       }
     }
     window.portalClientPhotoSlotFallback = function(img){
       const slot = img && img.parentElement;
       if(!slot) return;
       slot.classList.remove('client-photo-slot--has-photo');
-      slot.innerHTML = clientPhotoSlotPlaceholderHtml();
+      const nm = String(slot.getAttribute('data-participant-name') || '').trim();
+      slot.classList.remove('client-photo-slot--m', 'client-photo-slot--f');
+      const g = typeof portalParticipantGender === 'function' ? portalParticipantGender(nm) : '';
+      if(g === 'm') slot.classList.add('client-photo-slot--m');
+      else if(g === 'f') slot.classList.add('client-photo-slot--f');
+      slot.innerHTML = clientPhotoSlotPlaceholderHtml(nm);
     };
     /** Avatar inner HTML: initials always present; photo overlays them when on file. */
     function clientAvatarInner(name, clientId){
@@ -13477,10 +13499,14 @@
             const vLbl = tomorrowVenueParenLabel(row.venue);
             const v = escapeHtml(vLbl);
             const vCls = venueChipClass(row.venue);
-            const src = row.avatarFile ? String(row.avatarFile).trim() : '';
-            const avatar = src
-              ? `<div class="calendar-day-avatar"><img class="portal-screenshot-protected" src="${escapeHtml(src)}" alt=""${photoLoadAttr} decoding="async" draggable="false" onerror="this.closest('.calendar-day-avatar').classList.add('calendar-day-avatar--empty');this.remove();"/></div>`
-              : `<div class="calendar-day-avatar calendar-day-avatar--empty" title="Photo" aria-label="Participant photo placeholder">${camSvg}</div>`;
+            const src = (row.avatarFile ? String(row.avatarFile).trim() : '')
+              || (typeof resolveParticipantPhotoUrl === 'function' ? resolveParticipantPhotoUrl(row.name, row.clientId) : '')
+              || (typeof clientPhotoUrl === 'function' ? clientPhotoUrl(row.name) : '');
+            const avatar = typeof portalParticipantCalendarAvatarHtml === 'function'
+              ? portalParticipantCalendarAvatarHtml(row.name, src, escapeHtml)
+              : (src
+                ? `<div class="calendar-day-avatar calendar-day-avatar--photo"><img class="portal-screenshot-protected" src="${escapeHtml(src)}" alt=""${photoLoadAttr} decoding="async" draggable="false" onerror="this.remove();"/></div>`
+                : `<div class="calendar-day-avatar calendar-day-avatar--initials">${escapeHtml(clientInitials(row.name))}</div>`);
             const noteRaw = String(row.areaNote || '').trim();
           const ovRaw = String(row.futureOverrideLabel || '').trim();
           const isMakeUpTomorrowRow = row.futureOverrideTone === 'pink'

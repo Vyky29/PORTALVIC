@@ -49,6 +49,20 @@
   var TODAY_PARTICIPANT_MED_ICON =
     '<svg class="today-participant-chip__med-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M9 2h6a1 1 0 0 1 1 1v5h5a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-5v5a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-5H3a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1h5V3a1 1 0 0 1 1-1z"/></svg>';
 
+  function chipAvatarGenderClass(name) {
+    if (typeof global.portalParticipantGenderClass === "function") {
+      return global.portalParticipantGenderClass(name, "today-participant-chip__avatar--");
+    }
+    return "";
+  }
+
+  function chipAvatarInitials(name) {
+    if (typeof global.portalParticipantInitials === "function") {
+      return global.portalParticipantInitials(name);
+    }
+    return String(name || "?").slice(0, 2).toUpperCase();
+  }
+
   /** Day-off NEXT SESSION participant circles — one equal chip per client. */
   function portalTodayNextParticipantChipsHtml(participants, opts) {
     opts = opts || {};
@@ -75,13 +89,17 @@
         typeof global.portalParticipantPhotoLoadingAttr === "function"
           ? global.portalParticipantPhotoLoadingAttr()
           : ' loading="eager" fetchpriority="low"';
+      var genderCls = chipAvatarGenderClass(rawName);
       var av = src
         ? '<img class="portal-screenshot-protected" src="' +
           esc(src) +
           '" alt=""' +
           loadAttr +
-          ' decoding="async" draggable="false" onerror="this.remove();this.parentElement.classList.add(\'today-participant-chip__avatar--empty\');"/>'
-        : "";
+          ' decoding="async" draggable="false" onerror="this.remove();var el=this.parentElement;if(el){el.classList.add(\'today-participant-chip__avatar--initials\');el.textContent=' +
+          JSON.stringify(chipAvatarInitials(rawName)) +
+          ";}" +
+          '"/>'
+        : esc(chipAvatarInitials(rawName));
       var chipCol = portalTodayNextChipColumnStyle(chipIdx, chips.length);
       html +=
         '<button type="button" class="today-participant-chip"' +
@@ -96,7 +114,8 @@
       html += '<span class="today-participant-chip__avatar-wrap">';
       html +=
         '<span class="today-participant-chip__avatar' +
-        (src ? "" : " today-participant-chip__avatar--empty") +
+        (src ? "" : " today-participant-chip__avatar--initials") +
+        genderCls +
         '">' +
         av +
         "</span>";

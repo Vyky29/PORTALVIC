@@ -34,7 +34,7 @@
     rodin: "portal/participants/rodin.png",
     zaid: "portal/participants/zaid.png",
     "yusef ah": "portal/participants/yusef-ah.png",
-    "yusuf ah": "portal/participants/yusef-ah.png",
+    "yusuf ah": "portal/participants/yusuf-ah.png",
     "rayyan fi": "portal/participants/rayaan-fi.png",
     "rayaan fi": "portal/participants/rayaan-fi.png",
     "rayyan f": "portal/participants/rayaan-fi.png",
@@ -51,20 +51,6 @@
     erik: "portal/participants/erik.png",
     gabriel: "portal/participants/gabriel.png",
     yoan: "portal/participants/yoan.png",
-    gemma: "portal/participants/gemma.png?v=20260609-pilot",
-    kirushy: "portal/participants/kirushy.png?v=20260609-pilot",
-    zayana: "portal/participants/zayana.png?v=20260609-pilot",
-    eddie: "portal/participants/eddie.png?v=20260609-pilot",
-    joel: "portal/participants/joel.png?v=20260609-pilot",
-  };
-
-  /** AI illustration placeholders — replace with real photos when available. */
-  var PARTICIPANT_PHOTO_PLACEHOLDERS = {
-    gemma: true,
-    kirushy: true,
-    zayana: true,
-    eddie: true,
-    joel: true,
   };
 
   function photoKey(name) {
@@ -82,9 +68,35 @@
     return u;
   }
 
-  function portalParticipantPhotoIsPlaceholder(name) {
-    var key = photoKey(name);
-    return !!PARTICIPANT_PHOTO_PLACEHOLDERS[key];
+  function normGenderValue(v) {
+    v = String(v || "").trim().toLowerCase();
+    if (v === "m" || v === "male" || v === "boy") return "m";
+    if (v === "f" || v === "female" || v === "girl") return "f";
+    return "";
+  }
+
+  /** 'm', 'f', or '' — uses clients_gender_embed.js when loaded. */
+  function portalParticipantGender(name) {
+    try {
+      var map = global.PORTAL_CLIENT_GENDER_OVERRIDES || {};
+      var nameLower = photoKey(name);
+      var firstName = nameLower.split(/\s+/)[0] || "";
+      return (
+        normGenderValue(map[nameLower]) ||
+        normGenderValue(map[firstName]) ||
+        ""
+      );
+    } catch (_) {
+      return "";
+    }
+  }
+
+  function portalParticipantGenderClass(name, prefix) {
+    prefix = String(prefix || "portal-roster-avatar--").trim();
+    var g = portalParticipantGender(name);
+    if (g === "m") return " " + prefix + "m";
+    if (g === "f") return " " + prefix + "f";
+    return "";
   }
 
   function portalParticipantPhotoUrl(name, avatarOverride) {
@@ -112,11 +124,18 @@
       .replace(/"/g, "&quot;");
   }
 
+  function photoLoadAttr() {
+    if (typeof global.portalParticipantPhotoLoadingAttr === "function") {
+      return global.portalParticipantPhotoLoadingAttr();
+    }
+    return ' loading="eager" fetchpriority="low"';
+  }
+
   /**
    * Avatar inner HTML: initials + optional photo overlay (matches clients-grid pattern).
    * @param {string} name
    * @param {string} [clientId]
-   * @param {{ esc?: function, avatarFile?: string, className?: string, imgClass?: string }} [opts]
+   * @param {{ esc?: function, avatarFile?: string, className?: string, imgClass?: string, gender?: string }} [opts]
    */
   function portalParticipantAvatarInnerHtml(name, clientId, opts) {
     opts = opts || {};
@@ -124,16 +143,17 @@
     var url = portalParticipantPhotoUrl(name, opts.avatarFile);
     var initials = esc(portalParticipantInitials(name));
     var wrapClass = String(opts.className || "portal-roster-avatar").trim() || "portal-roster-avatar";
-    if (portalParticipantPhotoIsPlaceholder(name)) {
-      wrapClass += " portal-roster-avatar--placeholder";
+    var isStaff = wrapClass.indexOf("portal-roster-avatar--staff") >= 0;
+    if (!url && !isStaff) {
+      var gOpt = normGenderValue(opts.gender);
+      if (gOpt === "m") wrapClass += " portal-roster-avatar--m";
+      else if (gOpt === "f") wrapClass += " portal-roster-avatar--f";
+      else wrapClass += portalParticipantGenderClass(name, "portal-roster-avatar--");
     }
     if (!url) {
       return '<span class="' + esc(wrapClass) + '" aria-hidden="true">' + initials + "</span>";
     }
-    var loadAttr =
-      typeof global.portalParticipantPhotoLoadingAttr === "function"
-        ? global.portalParticipantPhotoLoadingAttr()
-        : ' loading="eager" fetchpriority="low"';
+    var loadAttr = photoLoadAttr();
     var imgClass = String(opts.imgClass || "portal-roster-avatar__img portal-screenshot-protected").trim();
     return (
       '<span class="' +
@@ -151,12 +171,47 @@
     );
   }
 
+  /** Term / tomorrow list avatar — photo or gender-coloured initials circle. */
+  function portalParticipantCalendarAvatarHtml(name, photoUrl, esc) {
+    esc = typeof esc === "function" ? esc : defaultEsc;
+    name = String(name || "").trim();
+    photoUrl = String(photoUrl || "").trim();
+    if (!photoUrl) photoUrl = portalParticipantPhotoUrl(name) || "";
+    var nameAttr = ' data-participant-name="' + esc(name) + '"';
+    if (photoUrl) {
+      var loadAttr = photoLoadAttr();
+      return (
+        '<div class="calendar-day-avatar calendar-day-avatar--photo"' +
+        nameAttr +
+        ">" +
+        '<img class="portal-screenshot-protected" src="' +
+        esc(photoUrl) +
+        '" alt=""' +
+        loadAttr +
+        ' decoding="async" draggable="false" onerror="if(window.portalParticipantCalendarAvatarFallback){window.portalParticipantCalendarAvatarFallback(this);}" />' +
+        "</div>"
+      );
+    }
+    var cls = "calendar-day-avatar calendar-day-avatar--initials" + portalParticipantGenderClass(name, "calendar-day-avatar--");
+    return '<div class="' + esc(cls.trim()) + '"' + nameAttr + ">" + esc(portalParticipantInitials(name)) + "</div>";
+  }
+
+  global.portalParticipantCalendarAvatarFallback = function (img) {
+    try {
+      var wrap = img && img.closest && img.closest(".calendar-day-avatar");
+      if (!wrap) return;
+      var name = String(wrap.getAttribute("data-participant-name") || "").trim();
+      wrap.outerHTML = portalParticipantCalendarAvatarHtml(name, "", defaultEsc);
+    } catch (_) {}
+  };
+
   global.PARTICIPANT_PHOTOS = PARTICIPANT_PHOTOS;
-  global.PARTICIPANT_PHOTO_PLACEHOLDERS = PARTICIPANT_PHOTO_PLACEHOLDERS;
   global.portalParticipantPhotoUrl = portalParticipantPhotoUrl;
-  global.portalParticipantPhotoIsPlaceholder = portalParticipantPhotoIsPlaceholder;
+  global.portalParticipantGender = portalParticipantGender;
+  global.portalParticipantGenderClass = portalParticipantGenderClass;
   global.portalParticipantInitials = portalParticipantInitials;
   global.portalParticipantAvatarInnerHtml = portalParticipantAvatarInnerHtml;
+  global.portalParticipantCalendarAvatarHtml = portalParticipantCalendarAvatarHtml;
   global.portalNormalizeParticipantPhotoUrl = normalizePhotoUrl;
 })(
   typeof window !== "undefined" ? window : typeof globalThis !== "undefined" ? globalThis : this

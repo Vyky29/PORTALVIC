@@ -3886,8 +3886,24 @@
       overflow:hidden;
       background:rgba(23,50,71,.1);
       border:2px solid rgba(45,132,179,.18);
-      display:block;
+      display:flex;
+      align-items:center;
+      justify-content:center;
       box-sizing:border-box;
+      font-size:calc(var(--today-next-avatar, 56px) * 0.28);
+      font-weight:800;
+      line-height:1;
+      color:#1a5f8a;
+    }
+    .today-participant-chip__avatar--m{
+      color:#1a5f8a;
+      background:#cfe8f7;
+      border-color:rgba(45,132,179,.35);
+    }
+    .today-participant-chip__avatar--f{
+      color:#8f3560;
+      background:#f8d8e8;
+      border-color:rgba(190,95,140,.38);
     }
     .today-participant-chip__avatar img{
       position:absolute;
@@ -5405,14 +5421,27 @@
       height:44px;
       border-radius:50%;
       flex-shrink:0;
-      border:2px dashed rgba(45,132,179,.38);
-      background:linear-gradient(180deg,#f5faff 0%,#e8f2fa 100%);
+      border:2px solid rgba(45,132,179,.28);
+      background:#cfe8f7;
       display:flex;
       align-items:center;
       justify-content:center;
       overflow:hidden;
       box-sizing:border-box;
-      color:var(--muted);
+      color:#1a5f8a;
+      font-size:13px;
+      font-weight:800;
+      line-height:1;
+    }
+    .calendar-day-avatar--m{
+      color:#1a5f8a;
+      background:#cfe8f7;
+      border-color:rgba(45,132,179,.35);
+    }
+    .calendar-day-avatar--f{
+      color:#8f3560;
+      background:#f8d8e8;
+      border-color:rgba(190,95,140,.38);
     }
     .calendar-day-avatar img{
       width:100%;
@@ -6650,13 +6679,28 @@
       height:92px;
       border-radius:50%;
       margin:10px auto 12px;
-      border:2px dashed rgba(45,132,179,.35);
-      background:linear-gradient(180deg,#f5faff 0%,#e8f2fa 100%);
+      border:2px solid rgba(45,132,179,.35);
+      background:#cfe8f7;
       display:flex;
       align-items:center;
       justify-content:center;
-      color:var(--muted);
+      color:#1a5f8a;
       flex-shrink:0;
+    }
+    .client-photo-slot--m{
+      color:#1a5f8a;
+      background:#cfe8f7;
+      border-color:rgba(45,132,179,.35);
+    }
+    .client-photo-slot--f{
+      color:#8f3560;
+      background:#f8d8e8;
+      border-color:rgba(190,95,140,.38);
+    }
+    .client-photo-slot-initials{
+      font-size:28px;
+      font-weight:800;
+      line-height:1;
     }
     .client-photo-slot--has-photo{
       border-style:solid;

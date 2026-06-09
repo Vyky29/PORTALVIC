@@ -147,6 +147,22 @@
   min-width: 0;
 }
 
+.portal-roster-avatar:not(.portal-roster-avatar--staff) {
+  border-radius: 50%;
+}
+
+.portal-roster-avatar--m:not(.portal-roster-avatar--staff) {
+  color: #1a5f8a;
+  background: #cfe8f7;
+  border: 1px solid rgba(45, 132, 179, 0.28);
+}
+
+.portal-roster-avatar--f:not(.portal-roster-avatar--staff) {
+  color: #8f3560;
+  background: #f8d8e8;
+  border: 1px solid rgba(190, 95, 140, 0.28);
+}
+
 .portal-roster-avatar--staff {
   background: linear-gradient(145deg, #eef2f7 0%, #dbe4ee 100%);
   color: #334155;
