@@ -196,11 +196,7 @@
       }
     } catch (_mode) {}
     if (portalIsQuickMenuSheetOpen()) {
-      if (typeof global.portalNavigateSheetBack === "function") {
-        global.portalNavigateSheetBack();
-      } else {
-        portalCloseQuickMenuSheet();
-      }
+      portalCloseQuickMenuSheet();
       portalSyncQuickMenuDockChrome();
       return "closed";
     }

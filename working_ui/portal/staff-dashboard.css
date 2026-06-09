@@ -7764,6 +7764,17 @@
       outline:2px solid var(--blue);
       outline-offset:2px;
     }
+    /* Quick menu open: keep footer dock above the sheet so Chat / Quick menu / Home stay tappable. */
+    body.dock-context-menu .dock-bar{
+      z-index:135;
+    }
+    body.dock-context-menu #menuSheet.sheet--fullscreen.sheet--mobile-frame.open{
+      bottom:var(--fab-reserved-bottom);
+      height:auto;
+      min-height:0;
+      max-height:calc(100dvh - var(--fab-reserved-bottom));
+      padding-bottom:max(12px, env(safe-area-inset-bottom, 0px));
+    }
     body.dock-context-menu .dock-nav-item--quick-menu{
       background:var(--ink) !important;
       border-color:rgba(255,255,255,.22);

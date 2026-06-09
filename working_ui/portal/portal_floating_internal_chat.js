@@ -92,6 +92,16 @@
   }
 
   function portalOpenInternalChatFromFooter() {
+    if (
+      typeof global.portalIsQuickMenuSheetOpen === "function" &&
+      global.portalIsQuickMenuSheetOpen()
+    ) {
+      if (typeof global.portalCloseQuickMenuSheet === "function") {
+        global.portalCloseQuickMenuSheet();
+      } else if (typeof global.closeSheet === "function") {
+        global.closeSheet({ bypassAnnouncementLock: true });
+      }
+    }
     if (typeof global.portalOpenInternalChatFromHeaderQuickMenu === "function") {
       global.portalOpenInternalChatFromHeaderQuickMenu();
       return;
