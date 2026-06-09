@@ -329,14 +329,51 @@
   color:var(--blue);
   box-shadow:0 2px 10px rgba(45,132,179,.12);
 }
-#internalChatSheet.sheet--portal-chat-inbox #internalChatStaffDirectoryWrap.portal-dm-staff-directory{
-  flex:1;
+/* Chats vs Directors — one pane at a time (staff + lead) */
+#internalChatSheet.sheet--portal-chat-inbox .portal-dm-sheet-body{
+  flex:1 1 auto;
   min-height:0;
-  display:flex;
+  overflow:hidden;
+}
+#internalChatSheet.sheet--portal-chat-inbox[data-inbox-pane="chats"] #internalChatStaffDirectoryWrap,
+#internalChatSheet.sheet--portal-chat-inbox[data-inbox-pane="chats"] #internalChatThreadWrap,
+#internalChatSheet.sheet--portal-chat-inbox[data-inbox-pane="chats"] #internalChatOfficeComposeHost{
+  display:none !important;
+  flex:0 0 0 !important;
+  height:0 !important;
+  min-height:0 !important;
+  overflow:hidden !important;
+  padding:0 !important;
+  margin:0 !important;
+  border:0 !important;
+}
+#internalChatSheet.sheet--portal-chat-inbox[data-inbox-pane="chats"] #internalChatListWrap.portal-dm-inbox-list{
+  flex:1 1 auto;
+  min-height:0;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+}
+#internalChatSheet.sheet--portal-chat-inbox[data-inbox-pane="staff"] #internalChatListWrap,
+#internalChatSheet.sheet--portal-chat-inbox[data-inbox-pane="staff"] #internalChatLeadStaffSuggestions,
+#internalChatSheet.sheet--portal-chat-inbox[data-inbox-pane="staff"] #internalChatThreadWrap,
+#internalChatSheet.sheet--portal-chat-inbox[data-inbox-pane="staff"] #internalChatOfficeComposeHost{
+  display:none !important;
+}
+#internalChatSheet.sheet--portal-chat-inbox:not([data-inbox-pane="staff"]) #internalChatStaffDirectoryWrap[hidden],
+#internalChatSheet.sheet--portal-chat-inbox[data-inbox-pane="chats"] #internalChatStaffDirectoryWrap{
+  display:none !important;
+}
+#internalChatSheet.sheet--portal-chat-inbox[data-inbox-pane="staff"] #internalChatStaffDirectoryWrap.portal-dm-staff-directory{
+  display:flex !important;
+  flex:1 1 auto;
+  min-height:0;
   flex-direction:column;
   overflow:hidden;
   padding:0;
   background:#fff;
+}
+#internalChatSheet.sheet--portal-chat-inbox:not([data-inbox-pane]) #internalChatStaffDirectoryWrap{
+  display:none !important;
 }
 #internalChatSheet.sheet--portal-chat-inbox .portal-dm-staff-directory-list{
   flex:1;
