@@ -460,6 +460,14 @@
   padding: 0 4px;
 }
 
+#csCliqRoot .portal-cs-cliq-composer__err:empty,
+#csCliqRoot .portal-cs-cliq-composer__err[hidden] {
+  display: none;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+}
+
 #csCliqRoot .portal-cs-cliq-compose-screen {
   flex: 1 1 auto;
   min-height: 0;
