@@ -5,6 +5,51 @@
 (function (global) {
   "use strict";
 
+  var DM_OPERATOR_TAG_RE = /^\[\[portal-dm-operator:([0-9a-f-]{36})\]\]/i;
+
+  function parseDmOperatorTag(body) {
+    var raw = String(body || "");
+    var m = raw.match(DM_OPERATOR_TAG_RE);
+    if (!m) return { operatorId: "", body: raw };
+    return { operatorId: String(m[1] || "").trim(), body: raw.slice(m[0].length) };
+  }
+
+  function parseDmOperatorId(body) {
+    return parseDmOperatorTag(body).operatorId;
+  }
+
+  function stripDmOperatorTag(body) {
+    return parseDmOperatorTag(body).body;
+  }
+
+  function embedDmOperatorTag(body, operatorId) {
+    var op = String(operatorId || "").trim();
+    var text = String(body || "");
+    if (!op) return text;
+    if (DM_OPERATOR_TAG_RE.test(text)) return text;
+    return "[[portal-dm-operator:" + op + "]]" + text;
+  }
+
+  function collectDmOperatorIdsFromMessages(rows) {
+    var out = [];
+    (rows || []).forEach(function (m) {
+      var op = parseDmOperatorId(m && m.body);
+      if (op && out.indexOf(op) < 0) out.push(op);
+    });
+    return out;
+  }
+
+  function resolveDmOperatorProf(body, authorProf, authorBy) {
+    authorProf = authorProf || {};
+    authorBy = authorBy || {};
+    var opId = parseDmOperatorId(body);
+    if (!opId) return null;
+    if (!isOpsAdminAuthor(authorProf) && String(authorProf.app_role || "").toLowerCase() !== "admin") {
+      return null;
+    }
+    return authorBy[opId] || { id: opId };
+  }
+
   function box() {
     return global.__PORTAL_SUPABASE__ || {};
   }
@@ -265,6 +310,10 @@
     opts = opts || {};
     if (opts.mine) return "";
     var author = opts.authorProf || opts.authorRow || {};
+    var opProf = resolveDmOperatorProf(opts.messageBody, author, opts.authorBy);
+    if (opProf) {
+      return managementFacingAuthorChip(opProf);
+    }
     var viewer = opts.viewerProf || profileRow();
     var peerRole = String(opts.peerRole || "").toLowerCase();
     var ch = String(opts.channel || "").trim();
@@ -311,6 +360,10 @@
     if (!authorProf) return "Unknown sender";
     if (opts.mine) {
       return portalChatActorDisplayName(authorProf) || "You";
+    }
+    var opProf = resolveDmOperatorProf(opts.messageBody, authorProf, opts.authorBy);
+    if (opProf) {
+      return managementFacingAuthorChip(opProf);
     }
     return portalChatManagementMsgAuthorChip(
       Object.assign({}, opts, { authorProf: authorProf, mine: false })
@@ -381,6 +434,10 @@
     isOpsAdminAuthor: isOpsAdminAuthor,
     isOpsAdminInboxPeer: isOpsAdminAuthor,
     isDirectorAuthor: isDirectorAuthor,
-    isOpsAdminAuthor: isOpsAdminAuthor,
+    parseDmOperatorTag: parseDmOperatorTag,
+    parseDmOperatorId: parseDmOperatorId,
+    stripDmOperatorTag: stripDmOperatorTag,
+    embedDmOperatorTag: embedDmOperatorTag,
+    collectDmOperatorIdsFromMessages: collectDmOperatorIdsFromMessages,
   };
 })(typeof window !== "undefined" ? window : globalThis);

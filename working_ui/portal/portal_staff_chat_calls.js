@@ -2198,6 +2198,12 @@
     escFn = escFn || esc;
     host.innerHTML = "";
     var body = String((m && m.body) || "");
+    if (
+      global.portalChatActorIdentity &&
+      typeof global.portalChatActorIdentity.stripDmOperatorTag === "function"
+    ) {
+      body = global.portalChatActorIdentity.stripDmOperatorTag(body);
+    }
     if (parseCallEndPayload(body)) {
       var endRow = renderCallEndRow(m);
       if (endRow) {

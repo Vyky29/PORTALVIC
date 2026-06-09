@@ -197,7 +197,9 @@ Deno.serve(async (req) => {
 
   const msgType = String(record.message_type ?? "text").toLowerCase();
   const hasAudio = !!String(record.audio_storage_path ?? "").trim();
-  let preview = clampPushBody(String(record.body ?? ""), 120);
+  let rawBody = String(record.body ?? "");
+  rawBody = rawBody.replace(/^\[\[portal-dm-operator:[0-9a-f-]{36}\]\]/i, "");
+  let preview = clampPushBody(rawBody, 120);
   if (msgType === "audio" || hasAudio) preview = "Voice message";
   if (!preview) preview = "New message";
 

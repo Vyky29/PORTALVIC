@@ -31,7 +31,7 @@
   <script src="/portal/admin-portal-staff-map.js?v=20260622-ghost-map"></script>
   <script src="/portal/portal_dm_roles.js?v=20260609-mgmt-identity"></script>
   <script src="/portal/portal_ops_admin_display.js?v=20260629-admin-primary"></script>
-  <script src="/portal/portal_chat_actor_identity.js?v=20260629-admin-primary"></script>
+  <script src="/portal/portal_chat_actor_identity.js?v=20260630-dm-operator"></script>
   <script src="/portal/portal_admin_topbar.js?v=20260629-topbar-session-v2"></script>
   <script src="/portal/portal_dm_icons.js?v=20260624-dm-icons"></script>
   <script src="/portal/portal_dm_thread_avatar.js?v=20260608-staff-admin-lane"></script>
@@ -19776,6 +19776,18 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return String(id || '').trim().toLowerCase() === authorId;
       });
     }
+    function portalAdminDmMessageIsMine(m){
+      if(!m) return false;
+      if(portalAdminDmIsMyMessage(m.author_id)) return true;
+      if(
+        window.portalChatActorIdentity &&
+        typeof window.portalChatActorIdentity.parseDmOperatorId === 'function'
+      ){
+        var opId = window.portalChatActorIdentity.parseDmOperatorId(m.body || '');
+        if(opId && portalAdminDmIsMyMessage(opId)) return true;
+      }
+      return false;
+    }
     function portalAdminDmChannel(){
       return String(window.__PORTAL_ADMIN_DM_CHANNEL || 'staff_lead').trim() === 'ceo_exec' ? 'ceo_exec' : 'staff_lead';
     }
@@ -20646,6 +20658,12 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
       if(msgType === 'image') return 'Photo';
       if(msgType === 'file') return 'File attachment';
       if(!body) return 'New message';
+      if(
+        window.portalChatActorIdentity &&
+        typeof window.portalChatActorIdentity.stripDmOperatorTag === 'function'
+      ){
+        body = window.portalChatActorIdentity.stripDmOperatorTag(body);
+      }
       if(body.length > 120) return body.slice(0, 117) + '…';
       return body;
     }
@@ -21925,14 +21943,29 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         }
         return 'Call ended';
       }
+      if(
+        window.portalChatActorIdentity &&
+        typeof window.portalChatActorIdentity.stripDmOperatorTag === 'function'
+      ){
+        body = window.portalChatActorIdentity.stripDmOperatorTag(body);
+      }
       body = body.replace(/\s+/g, ' ');
       if(body.length > 80) body = body.slice(0, 79).trimEnd() + '\u2026';
       return body || 'Message';
     }
-    function portalAdminDmSenderLabel(authorId, profBy, itemCtx){
+    function portalAdminDmSenderLabel(authorId, profBy, itemCtx, messageBody){
       authorId = String(authorId || '').trim();
       var pr = profBy[authorId] || {};
       var mine = authorId && portalAdminDmIsMyMessage(authorId);
+      if(
+        !mine &&
+        messageBody &&
+        window.portalChatActorIdentity &&
+        typeof window.portalChatActorIdentity.parseDmOperatorId === 'function'
+      ){
+        var opId = window.portalChatActorIdentity.parseDmOperatorId(messageBody);
+        if(opId && portalAdminDmIsMyMessage(opId)) mine = true;
+      }
       var peerRole = '';
       if(itemCtx && itemCtx.peerProf){
         peerRole = String(itemCtx.peerProf.app_role || '').toLowerCase();
@@ -21946,7 +21979,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         return window.portalChatActorIdentity.managementListSenderLabel(pr, {
           mine: mine,
           channel: portalAdminDmChannel(),
-          peerRole: peerRole
+          peerRole: peerRole,
+          messageBody: messageBody,
+          authorBy: profBy
         });
       }
       if(mine){
@@ -22027,6 +22062,16 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
           Object.keys(lastByThread).forEach(function(tid){
             authorIds.push(String(lastByThread[tid].author_id || ''));
           });
+          if(
+            window.portalChatActorIdentity &&
+            typeof window.portalChatActorIdentity.collectDmOperatorIdsFromMessages === 'function'
+          ){
+            authorIds = authorIds.concat(
+              window.portalChatActorIdentity.collectDmOperatorIdsFromMessages(
+                Object.keys(lastByThread).map(function(tid){ return lastByThread[tid]; })
+              )
+            );
+          }
           await ensureAuthors(authorIds);
         }
         var uq = await client.from('portal_staff_dm_messages')
@@ -22073,7 +22118,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             }
           });
           if(m){
-            item.lastSender = portalAdminDmSenderLabel(m.author_id, profBy, item);
+            item.lastSender = portalAdminDmSenderLabel(m.author_id, profBy, item, m.body);
             item.lastPreview = portalAdminDmPreviewBody(m);
             item.when = m.created_at || item.when;
           }
@@ -23029,6 +23074,14 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
         var x = String(m.author_id || '').trim();
         if(x && authorIds.indexOf(x) === -1) authorIds.push(x);
       });
+      if(
+        window.portalChatActorIdentity &&
+        typeof window.portalChatActorIdentity.collectDmOperatorIdsFromMessages === 'function'
+      ){
+        window.portalChatActorIdentity.collectDmOperatorIdsFromMessages(arr).forEach(function(opId){
+          if(opId && authorIds.indexOf(opId) === -1) authorIds.push(opId);
+        });
+      }
       var authorBy = {};
       if(authorIds.length){
         var ap = await client.from('staff_profiles').select('id,full_name,username,app_role').in('id', authorIds);
@@ -23058,7 +23111,7 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
               continue;
             }
           }
-          var mine = portalAdminDmIsMyMessage(m.author_id);
+          var mine = portalAdminDmMessageIsMine(m);
           var aid = String(m.author_id || '').trim();
           var arow = authorBy[aid] || {};
           var row = document.createElement('div');
@@ -23073,7 +23126,9 @@ var __OPWF_HTML = {"opHome":"<div class=\"grid-kpi grid-kpi--6\">\n            <
             peerRole: peerRole,
             authorRole: String(arow.app_role || '').toLowerCase(),
             authorRow: arow,
-            authorProf: arow
+            authorProf: arow,
+            messageBody: m.body,
+            authorBy: authorBy
           });
           if(chip){
             var chipEl = document.createElement('div');
