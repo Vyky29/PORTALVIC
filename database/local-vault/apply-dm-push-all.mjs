@@ -1,0 +1,67 @@
+#!/usr/bin/env node
+/**
+ * Apply DM chat + incoming-call Web Push on Portal (cklpnwhlqsulpmkipmqb) via Supabase CLI.
+ *
+ * Usage (from repo root):
+ *   node database/local-vault/apply-dm-push-all.mjs
+ *   node database/local-vault/apply-dm-push-all.mjs --secrets   # also sync push/VAPID edge secrets
+ *   node database/local-vault/apply-dm-push-all.mjs --deploy    # also redeploy push edge functions
+ */
+import { execSync } from "child_process";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const root = path.resolve(__dirname, "../..");
+const envPath = path.join(__dirname, "secrets.template.env");
+const args = new Set(process.argv.slice(2));
+
+function run(cmd, opts = {}) {
+  console.log("\n$", cmd);
+  execSync(cmd, { stdio: "inherit", cwd: root, ...opts });
+}
+
+function readEnv(key) {
+  if (!fs.existsSync(envPath)) throw new Error("Missing " + envPath);
+  const line = fs
+    .readFileSync(envPath, "utf8")
+    .split(/\r?\n/)
+    .find((l) => l.startsWith(key + "="));
+  if (!line) throw new Error(key + " not found in secrets.template.env");
+  return line.slice(key.length + 1).trim();
+}
+
+run("node database/local-vault/apply-chat-admin-push.mjs");
+run("node database/local-vault/apply-incoming-call-push.mjs");
+
+run("npx supabase db query --linked -f database/local-vault/step-chat-admin-push.local.sql");
+run("npx supabase db query --linked -f database/local-vault/step-incoming-call-push.local.sql");
+
+run(
+  'npx supabase db query --linked "select tgname, tgrelid::regclass as on_table from pg_trigger where not tgisinternal and tgname in (\'portal-staff-dm-admin-chat-push\',\'portal-ceo-group-admin-chat-push\',\'portal-staff-dm-incoming-call-push\',\'portal-ceo-group-incoming-call-push\') order by 1;"',
+);
+
+if (args.has("--secrets")) {
+  const pairs = [
+    "PORTAL_PUSH_WEBHOOK_SECRET",
+    "VAPID_PUBLIC_KEY",
+    "VAPID_PRIVATE_KEY",
+    "VAPID_SUBJECT",
+    "PORTAL_PUSH_OPEN_URL",
+    "PORTAL_PUSH_ADMIN_OPEN_URL",
+  ];
+  const setArgs = pairs.map((k) => `${k}="${readEnv(k).replace(/"/g, '\\"')}"`).join(" ");
+  run(`npx supabase secrets set ${setArgs}`);
+}
+
+if (args.has("--deploy")) {
+  run(
+    "npx supabase functions deploy portal-push-dispatch-admin-alert --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb",
+  );
+  run(
+    "npx supabase functions deploy portal-push-dispatch-incoming-call --no-verify-jwt --project-ref cklpnwhlqsulpmkipmqb",
+  );
+}
+
+console.log("\nDone. Re-test: Victor → Raul DM with Raul portal fully closed (PWA on iPhone).");
